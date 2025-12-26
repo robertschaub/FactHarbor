@@ -40,7 +40,7 @@ public sealed class AnalyzeController : ControllerBase
             {
                 await _jobs.UpdateStatusAsync(job.JobId, "FAILED", 100, "error", $"Runner trigger failed: {ex.Message}");
             }
-        }, ct);
+        });
 
         return Ok(new CreateJobResponse(job.JobId, job.Status));
     }
