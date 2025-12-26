@@ -7,9 +7,13 @@ namespace FactHarbor.Api.Services;
 public sealed class RunnerClient
 {
     private readonly IConfiguration _cfg;
-    private readonly HttpClient _http = new HttpClient();
+    private readonly HttpClient _http;
 
-    public RunnerClient(IConfiguration cfg) { _cfg = cfg; }
+    public RunnerClient(HttpClient http, IConfiguration cfg)
+    {
+        _http = http;
+        _cfg = cfg;
+    }
 
     public async Task TriggerRunnerAsync(string jobId, CancellationToken ct = default)
     {

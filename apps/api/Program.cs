@@ -23,7 +23,10 @@ builder.Services.AddDbContext<FhDbContext>(opt =>
 });
 
 builder.Services.AddScoped<JobService>();
-builder.Services.AddScoped<RunnerClient>();
+builder.Services.AddHttpClient<RunnerClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 
 var app = builder.Build();
 
