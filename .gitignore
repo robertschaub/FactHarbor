@@ -1,0 +1,38 @@
+# Secrets / local env
+**/.env.local
+**/.env.*.local
+**/appsettings.Development.json
+**/appsettings.*.Development.json
+!**/.env.example
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+build/
+.vercel/
+coverage/
+.turbo/
+
+# Logs
+*.log
+logs/
+
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SQLite
+apps/api/*.db
+apps/api/*.db-shm
+apps/api/*.db-wal

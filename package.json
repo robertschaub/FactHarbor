@@ -1,0 +1,12 @@
+{
+  "name": "factharbor-poc1",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "echo \"(add lint later)\"",
+    "test": "echo \"(add tests later)\""
+  }
+}

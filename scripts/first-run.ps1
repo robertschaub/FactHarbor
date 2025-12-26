@@ -1,0 +1,22 @@
+$ErrorActionPreference = "Stop"
+
+Write-Host "== FactHarbor POC1 first run =="
+
+# Start API in new terminal (creates DB on startup if missing)
+Start-Process -FilePath "powershell.exe" -ArgumentList @(
+  "-NoExit",
+  "-Command",
+  "cd `"$PSScriptRoot\..\apps\api`"; dotnet watch run"
+)
+
+# Start Web in new terminal
+Start-Process -FilePath "powershell.exe" -ArgumentList @(
+  "-NoExit",
+  "-Command",
+  "cd `"$PSScriptRoot\..\apps\web`"; npm install; npm run dev"
+)
+
+Write-Host ""
+Write-Host "Web:    http://localhost:3000"
+Write-Host "API:    http://localhost:5000"
+Write-Host "Swagger:http://localhost:5000/swagger"
