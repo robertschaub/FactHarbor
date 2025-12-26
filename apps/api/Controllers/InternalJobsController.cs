@@ -13,18 +13,27 @@ public sealed class InternalJobsController : ControllerBase
 {
     private readonly JobService _jobs;
     private readonly IConfiguration _cfg;
+    private readonly IWebHostEnvironment _env;
 
-    public InternalJobsController(JobService jobs, IConfiguration cfg)
+    public InternalJobsController(JobService jobs, IConfiguration cfg, IWebHostEnvironment env)
     {
         _jobs = jobs;
         _cfg = cfg;
+        _env = env;
     }
 
     private bool IsAuthorized()
     {
         var expected = _cfg["Admin:Key"];
         var got = Request.Headers["X-Admin-Key"].ToString();
-        return !string.IsNullOrWhiteSpace(expected) && got == expected;
+
+        // POC/dev ergonomics: if no admin key is configured, allow internal calls in Development.
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            return _env.IsDevelopment();
+        }
+
+        return got == expected;
     }
 
     [HttpPut("{jobId}/status")]
