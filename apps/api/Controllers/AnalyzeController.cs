@@ -33,11 +33,12 @@ public sealed class AnalyzeController : ControllerBase
         var jobId = job.JobId;
         _ = Task.Run(async () =>
         {
-            using var scope = _scopeFactory.CreateScope();
-            var jobs = scope.ServiceProvider.GetRequiredService<JobService>();
-            var runner = scope.ServiceProvider.GetRequiredService<RunnerClient>();
             try
             {
+                using var scope = _scopeFactory.CreateScope();
+                var jobs = scope.ServiceProvider.GetRequiredService<JobService>();
+                var runner = scope.ServiceProvider.GetRequiredService<RunnerClient>();
+
                 await jobs.UpdateStatusAsync(jobId, "QUEUED", 0, "info", "Triggering runner");
                 await runner.TriggerRunnerAsync(jobId);
             }
@@ -45,7 +46,9 @@ public sealed class AnalyzeController : ControllerBase
             {
                 try
                 {
-                    await jobs.UpdateStatusAsync(jobId, "FAILED", 100, "error", $"Runner trigger failed: {ex.Message}");
+                    using var scope2 = _scopeFactory.CreateScope();
+                    var jobs2 = scope2.ServiceProvider.GetRequiredService<JobService>();
+                    await jobs2.UpdateStatusAsync(jobId, "FAILED", 100, "error", $"Runner trigger failed: {ex.Message}");
                 }
                 catch
                 {
