@@ -3,17 +3,25 @@ import net from "net";
 import { URL } from "url";
 
 const MAX_BYTES = 2_000_000; // 2MB
+const MAX_REDIRECTS = 5;
+const FETCH_TIMEOUT_MS = 15_000;
 
 function isPrivateIp(ip: string): boolean {
   // IPv4
   if (net.isIP(ip) === 4) {
     const parts = ip.split(".").map((x) => parseInt(x, 10));
     const [a, b] = parts;
+    // Unspecified / non-routable
+    if (a === 0) return true;
     if (a === 10) return true;
     if (a === 127) return true;
     if (a === 169 && b === 254) return true;
     if (a === 172 && b >= 16 && b <= 31) return true;
     if (a === 192 && b === 168) return true;
+    // Carrier-grade NAT
+    if (a === 100 && b >= 64 && b <= 127) return true;
+    // Benchmarking
+    if (a === 198 && (b === 18 || b === 19)) return true;
     return false;
   }
   // IPv6 (coarse)
@@ -37,7 +45,7 @@ async function resolveAndCheck(hostname: string) {
 }
 
 export async function extractTextFromUrl(urlStr: string): Promise<string> {
-  const url = new URL(urlStr);
+  let url = new URL(urlStr);
 
   if (!["http:", "https:"].includes(url.protocol)) {
     throw new Error("Only http/https URLs are allowed");
@@ -46,9 +54,34 @@ export async function extractTextFromUrl(urlStr: string): Promise<string> {
     throw new Error("URLs with embedded credentials are not allowed");
   }
 
-  await resolveAndCheck(url.hostname);
+  // Follow redirects manually so each hop is re-checked (SSRF hardening).
+  let res: Response | null = null;
+  for (let i = 0; i <= MAX_REDIRECTS; i++) {
+    await resolveAndCheck(url.hostname);
 
-  const res = await fetch(url.toString(), { redirect: "follow" });
+    res = await fetch(url.toString(), {
+      redirect: "manual",
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
+    });
+
+    const isRedirect =
+      res.status === 301 || res.status === 302 || res.status === 303 || res.status === 307 || res.status === 308;
+
+    if (!isRedirect) break;
+
+    const loc = res.headers.get("location");
+    if (!loc) throw new Error("Redirect missing Location header");
+
+    url = new URL(loc, url);
+    if (!["http:", "https:"].includes(url.protocol)) {
+      throw new Error("Only http/https URLs are allowed");
+    }
+    if (url.username || url.password) {
+      throw new Error("URLs with embedded credentials are not allowed");
+    }
+  }
+
+  if (!res) throw new Error("Fetch failed");
   if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
 
   const contentType = res.headers.get("content-type") ?? "";

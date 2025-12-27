@@ -66,6 +66,8 @@ public sealed class JobsController : ControllerBase
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
         Response.Headers.Append("Connection", "keep-alive");
+        // Helps when running behind some proxies (best-effort; ignored elsewhere).
+        Response.Headers.Append("X-Accel-Buffering", "no");
 
         long lastId = 0;
 
@@ -79,9 +81,17 @@ public sealed class JobsController : ControllerBase
         await Response.Body.FlushAsync();
 
         // Poll for new events (POC)
-        for (var i = 0; i < 300; i++) // ~10 minutes at 2s interval
+        var ct = HttpContext.RequestAborted;
+        for (var i = 0; i < 300 && !ct.IsCancellationRequested; i++) // ~10 minutes at 2s interval
         {
-            await Task.Delay(2000);
+            try
+            {
+                await Task.Delay(2000, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
             var next = await _db.JobEvents
                 .Where(e => e.JobId == jobId && e.Id > lastId)
                 .OrderBy(e => e.Id)
