@@ -1,5 +1,7 @@
 using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace FactHarbor.Api.Controllers;
 
@@ -12,36 +14,85 @@ public sealed class AnalyzeController : ControllerBase
 {
     private readonly JobService _jobs;
     private readonly RunnerClient _runner;
+    private readonly IServiceScopeFactory? _scopeFactory;
+    private readonly ILogger<AnalyzeController>? _log;
 
+    // Back-compat constructor (keeps existing DI wiring working)
     public AnalyzeController(JobService jobs, RunnerClient runner)
     {
         _jobs = jobs;
         _runner = runner;
+        _scopeFactory = null;
+        _log = null;
+    }
+
+    // Preferred constructor (supports safe background trigger + logging)
+    public AnalyzeController(JobService jobs, RunnerClient runner, IServiceScopeFactory scopeFactory, ILogger<AnalyzeController> log)
+    {
+        _jobs = jobs;
+        _runner = runner;
+        _scopeFactory = scopeFactory;
+        _log = log;
     }
 
     [HttpPost]
     public async Task<ActionResult<CreateJobResponse>> Create([FromBody] CreateJobRequest req, CancellationToken ct)
     {
-        var it = req.inputType?.Trim().ToLowerInvariant();
-        if (it is not ("text" or "url")) return BadRequest("inputType must be 'text' or 'url'");
-        if (string.IsNullOrWhiteSpace(req.inputValue)) return BadRequest("inputValue required");
+        var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue);
 
-        var job = await _jobs.CreateJobAsync(it, req.inputValue);
-
-        // Trigger runner (best-effort)
-        _ = Task.Run(async () =>
+        // If we have scope factory + logger, do best-effort async trigger (POC-friendly).
+        if (_scopeFactory is not null && _log is not null)
         {
-            try
-            {
-                await _jobs.UpdateStatusAsync(job.JobId, "QUEUED", 0, "info", "Triggering runner");
-                await _runner.TriggerRunnerAsync(job.JobId);
-            }
-            catch (Exception ex)
-            {
-                await _jobs.UpdateStatusAsync(job.JobId, "FAILED", 100, "error", $"Runner trigger failed: {ex.Message}");
-            }
-        }, ct);
+            _ = TriggerRunnerBestEffortAsync(job.JobId);
+        }
+        else
+        {
+            // Fallback: trigger synchronously using request-scoped services
+            await _jobs.UpdateStatusAsync(job.JobId, "QUEUED", 0, "info", "Triggering runner");
+            await _runner.TriggerRunnerAsync(job.JobId);
+        }
 
         return Ok(new CreateJobResponse(job.JobId, job.Status));
+    }
+
+    private async Task TriggerRunnerBestEffortAsync(string jobId)
+    {
+        // _scopeFactory and _log are not null here (guarded by caller)
+        using var scope = _scopeFactory!.CreateScope();
+        var jobs = scope.ServiceProvider.GetRequiredService<JobService>();
+        var runner = scope.ServiceProvider.GetRequiredService<RunnerClient>();
+
+        try
+        {
+            await jobs.UpdateStatusAsync(jobId, "QUEUED", 0, "info", "Triggering runner");
+
+            // One retry helps on local dev when the web runner is still starting up.
+            for (var attempt = 1; attempt <= 2; attempt++)
+            {
+                try
+                {
+                    await runner.TriggerRunnerAsync(jobId);
+                    return;
+                }
+                catch (Exception ex) when (attempt == 1)
+                {
+                    _log!.LogWarning(ex, "Runner trigger failed (attempt 1), retrying. JobId={JobId}", jobId);
+                    await Task.Delay(1500);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _log!.LogError(ex, "Runner trigger failed. JobId={JobId}", jobId);
+
+            try
+            {
+                await jobs.UpdateStatusAsync(jobId, "FAILED", 100, "error", $"Runner trigger failed: {ex.Message}");
+            }
+            catch (Exception ex2)
+            {
+                _log!.LogError(ex2, "Failed to write FAILED status for JobId={JobId}", jobId);
+            }
+        }
     }
 }
