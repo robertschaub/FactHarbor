@@ -5,24 +5,31 @@ export const runtime = "nodejs";
 
 type RunJobRequest = { jobId: string };
 
-function requireEnv(name: string): string {
+function getEnv(name: string): string | null {
   const v = process.env[name];
-  if (!v || !v.trim()) throw new Error(`Missing env: ${name}`);
-  return v;
+  return v && v.trim() ? v : null;
 }
 
 export async function POST(req: Request) {
-  const expectedRunnerKey = requireEnv("FH_INTERNAL_RUNNER_KEY");
-  const got = req.headers.get("x-runner-key");
-  if (got !== expectedRunnerKey) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  const expectedRunnerKey = getEnv("FH_INTERNAL_RUNNER_KEY");
+  if (expectedRunnerKey) {
+    const got = req.headers.get("x-runner-key");
+    if (got !== expectedRunnerKey) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ ok: false, error: "FH_INTERNAL_RUNNER_KEY not set" }, { status: 503 });
   }
 
   const body = (await req.json()) as RunJobRequest;
   if (!body?.jobId) return NextResponse.json({ ok: false, error: "Missing jobId" }, { status: 400 });
 
-  const apiBase = requireEnv("FH_API_BASE_URL").replace(/\/$/, "");
-  const adminKey = requireEnv("FH_ADMIN_KEY");
+  const apiBaseRaw = getEnv("FH_API_BASE_URL");
+  if (!apiBaseRaw) return NextResponse.json({ ok: false, error: "FH_API_BASE_URL not set" }, { status: 503 });
+  const apiBase = apiBaseRaw.replace(/\/$/, "");
+
+  // In dev, allow the API to run without an admin key (API will accept it if configured similarly).
+  const adminKey = getEnv("FH_ADMIN_KEY");
 
   const jobId = body.jobId;
 
@@ -33,9 +40,11 @@ export async function POST(req: Request) {
   };
 
   const apiPutInternal = async (path: string, payload: any) => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (adminKey) headers["X-Admin-Key"] = adminKey;
     const res = await fetch(`${apiBase}${path}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", "X-Admin-Key": adminKey },
+      headers,
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error(`API PUT failed ${res.status}: ${await res.text()}`);

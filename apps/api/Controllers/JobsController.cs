@@ -61,7 +61,7 @@ public sealed class JobsController : ControllerBase
     }
 
     [HttpGet("{jobId}/events")]
-    public async Task EventsSse(string jobId)
+    public async Task EventsSse(string jobId, CancellationToken ct)
     {
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
@@ -69,36 +69,43 @@ public sealed class JobsController : ControllerBase
 
         long lastId = 0;
 
-        // Replay existing events
-        var existing = await _db.JobEvents.Where(e => e.JobId == jobId).OrderBy(e => e.Id).ToListAsync();
-        foreach (var e in existing)
+        try
         {
-            lastId = e.Id;
-            await WriteEvent(e);
-        }
-        await Response.Body.FlushAsync();
-
-        // Poll for new events (POC)
-        for (var i = 0; i < 300; i++) // ~10 minutes at 2s interval
-        {
-            await Task.Delay(2000);
-            var next = await _db.JobEvents
-                .Where(e => e.JobId == jobId && e.Id > lastId)
-                .OrderBy(e => e.Id)
-                .ToListAsync();
-
-            foreach (var e in next)
+            // Replay existing events
+            var existing = await _db.JobEvents.Where(e => e.JobId == jobId).OrderBy(e => e.Id).ToListAsync(ct);
+            foreach (var e in existing)
             {
                 lastId = e.Id;
                 await WriteEvent(e);
             }
-            await Response.Body.FlushAsync();
+            await Response.Body.FlushAsync(ct);
+
+            // Poll for new events (POC)
+            for (var i = 0; i < 300; i++) // ~10 minutes at 2s interval
+            {
+                await Task.Delay(2000, ct);
+                var next = await _db.JobEvents
+                    .Where(e => e.JobId == jobId && e.Id > lastId)
+                    .OrderBy(e => e.Id)
+                    .ToListAsync(ct);
+
+                foreach (var e in next)
+                {
+                    lastId = e.Id;
+                    await WriteEvent(e);
+                }
+                await Response.Body.FlushAsync(ct);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Client disconnected or request aborted; stop polling.
         }
 
         async Task WriteEvent(JobEventEntity e)
         {
             var payload = JsonSerializer.Serialize(new { id = e.Id, tsUtc = e.TsUtc.ToString("o"), level = e.Level, message = e.Message });
-            await Response.WriteAsync($"data: {payload}\n\n");
+            await Response.WriteAsync($"data: {payload}\n\n", ct);
         }
     }
 }
