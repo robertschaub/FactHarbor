@@ -16,8 +16,10 @@ const EvidenceSchema = z.object({
   summary: z.string(),
   source: z.object({
     type: z.enum(["url", "text", "unknown"]),
+    // OpenAI json_schema response_format is strict about required keys;
+    // represent "optional" fields as nullable instead.
     ref: z.string().nullable()
-  }).nullable()
+  })
 });
 
 const ScenarioSchema = z.object({
@@ -34,11 +36,17 @@ const ClaimSchema = z.object({
   scenarios: z.array(ScenarioSchema)
 });
 
+// The LLM only produces the "claims" structure.
+// We add meta server-side to avoid strict JSON Schema constraints on optional keys.
+const LlmOutputSchema = z.object({
+  claims: z.array(ClaimSchema)
+});
+
 const ResultSchema = z.object({
   meta: z.object({
     generatedUtc: z.string(),
     llmProvider: z.string(),
-    llmModel: z.string().nullable(),
+    llmModel: z.string(),
     inputType: z.enum(["text", "url"]),
     inputLength: z.number()
   }),
@@ -53,8 +61,8 @@ type AnalysisInput = {
 
 function getModel() {
   const provider = (process.env.LLM_PROVIDER ?? "openai").toLowerCase();
-  if (provider === "anthropic") return { provider: "anthropic", model: anthropic("claude-3-5-sonnet-20240620") };
-  return { provider: "openai", model: openai("gpt-4o-mini") };
+  if (provider === "anthropic") return { provider: "anthropic", modelName: "claude-3-5-sonnet-20240620", model: anthropic("claude-3-5-sonnet-20240620") };
+  return { provider: "openai", modelName: "gpt-4o-mini", model: openai("gpt-4o-mini") };
 }
 
 export async function runFactHarborAnalysis(input: AnalysisInput) {
@@ -74,14 +82,14 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   await onEvent("Calling LLM (structured extraction)", 40);
 
-  const { provider, model } = getModel();
+  const { provider, modelName, model } = getModel();
 
   const system = [
     "You are FactHarbor POC1.",
     "Task: analyze the input text according to the FactHarbor model.",
     "Return structured JSON only matching the given schema.",
     "Be conservative: do not invent citations or sources; if unknown, mark as unknown.",
-    "All fields are required; if a value is unknown, use null or the enum value 'unknown' as appropriate."
+    "When source.ref is unknown, use null."
   ].join("\n");
 
   const prompt = [
@@ -99,16 +107,27 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     model,
     system,
     prompt,
-    schema: ResultSchema
+    schema: LlmOutputSchema
   });
 
   await onEvent("Generating markdown report", 85);
 
-  const reportMarkdown = renderReport(out.object);
+  const result: z.infer<typeof ResultSchema> = {
+    meta: {
+      generatedUtc: new Date().toISOString(),
+      llmProvider: provider,
+      llmModel: modelName,
+      inputType: input.inputType,
+      inputLength: text.length
+    },
+    claims: out.object.claims
+  };
+
+  const reportMarkdown = renderReport(result);
 
   // What the .NET API stores
   return {
-    resultJson: out.object,
+    resultJson: result,
     reportMarkdown
   };
 }
