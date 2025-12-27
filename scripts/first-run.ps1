@@ -1,6 +1,10 @@
 $ErrorActionPreference = "Stop"
 
 Write-Host "== FactHarbor POC1 first run =="
+Write-Host ""
+Write-Host "Validating configuration..."
+powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\validate-config.ps1"
+Write-Host ""
 
 # Start API in new terminal (creates DB on startup if missing)
 Start-Process -FilePath "powershell.exe" -ArgumentList @(

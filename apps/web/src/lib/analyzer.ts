@@ -16,8 +16,8 @@ const EvidenceSchema = z.object({
   summary: z.string(),
   source: z.object({
     type: z.enum(["url", "text", "unknown"]),
-    ref: z.string().optional()
-  }).optional()
+    ref: z.string().nullable()
+  }).nullable()
 });
 
 const ScenarioSchema = z.object({
@@ -38,7 +38,7 @@ const ResultSchema = z.object({
   meta: z.object({
     generatedUtc: z.string(),
     llmProvider: z.string(),
-    llmModel: z.string().optional(),
+    llmModel: z.string().nullable(),
     inputType: z.enum(["text", "url"]),
     inputLength: z.number()
   }),
@@ -80,7 +80,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     "You are FactHarbor POC1.",
     "Task: analyze the input text according to the FactHarbor model.",
     "Return structured JSON only matching the given schema.",
-    "Be conservative: do not invent citations or sources; if unknown, mark as unknown."
+    "Be conservative: do not invent citations or sources; if unknown, mark as unknown.",
+    "All fields are required; if a value is unknown, use null or the enum value 'unknown' as appropriate."
   ].join("\n");
 
   const prompt = [

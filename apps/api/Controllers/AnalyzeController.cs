@@ -17,16 +17,7 @@ public sealed class AnalyzeController : ControllerBase
     private readonly IServiceScopeFactory? _scopeFactory;
     private readonly ILogger<AnalyzeController>? _log;
 
-    // Back-compat constructor (keeps existing DI wiring working)
-    public AnalyzeController(JobService jobs, RunnerClient runner)
-    {
-        _jobs = jobs;
-        _runner = runner;
-        _scopeFactory = null;
-        _log = null;
-    }
-
-    // Preferred constructor (supports safe background trigger + logging)
+    // constructor that supports safe background trigger + logging
     public AnalyzeController(JobService jobs, RunnerClient runner, IServiceScopeFactory scopeFactory, ILogger<AnalyzeController> log)
     {
         _jobs = jobs;
