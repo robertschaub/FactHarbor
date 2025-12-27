@@ -27,4 +27,4 @@ jobs:
         run: npm --workspace apps/web run build
 
       - name: Build API
-        run: dotnet build apps/api -c Release
+        run: dotnet build apps/api/apps.api.sln -c Release
