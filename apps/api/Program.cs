@@ -23,7 +23,14 @@ builder.Services.AddDbContext<FhDbContext>(opt =>
 });
 
 builder.Services.AddScoped<JobService>();
-builder.Services.AddScoped<RunnerClient>();
+builder.Services.AddHttpClient<RunnerClient>(client =>
+{
+    // IMPORTANT:
+    // The runner endpoint currently performs the full LLM workflow before responding.
+    // 15s is often too short (URL fetch + LLM call + status/result writes).
+    // Increase timeout for local/POC so the trigger request does not get canceled prematurely.
+    client.Timeout = TimeSpan.FromMinutes(5);
+});
 
 var app = builder.Build();
 
