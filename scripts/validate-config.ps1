@@ -45,6 +45,7 @@ $webAdminKey = $envMap["FH_ADMIN_KEY"]
 $llmProvider = $envMap["LLM_PROVIDER"]
 $openAiKey = $envMap["OPENAI_API_KEY"]
 $anthropicKey = $envMap["ANTHROPIC_API_KEY"]
+$llmProviderNormalized = if ([string]::IsNullOrWhiteSpace($llmProvider)) { "" } else { $llmProvider.ToLowerInvariant() }
 
 if ([string]::IsNullOrWhiteSpace($runnerBaseUrl)) { $errors += "Runner:BaseUrl is missing in appsettings.Development.json" }
 if ([string]::IsNullOrWhiteSpace($runnerKey)) { $errors += "Runner:RunnerKey is missing in appsettings.Development.json" }
@@ -68,9 +69,9 @@ if ($webApiBaseUrl -and ($webApiBaseUrl -ne "http://localhost:5000")) {
 
 if ([string]::IsNullOrWhiteSpace($llmProvider)) {
     $warnings += "LLM_PROVIDER is not set"
-} elseif ($llmProvider -eq "openai" -and [string]::IsNullOrWhiteSpace($openAiKey)) {
+} elseif ($llmProviderNormalized -eq "openai" -and [string]::IsNullOrWhiteSpace($openAiKey)) {
     $warnings += "OPENAI_API_KEY is missing for LLM_PROVIDER=openai"
-} elseif ($llmProvider -eq "anthropic" -and [string]::IsNullOrWhiteSpace($anthropicKey)) {
+} elseif (($llmProviderNormalized -eq "anthropic" -or $llmProviderNormalized -eq "claude") -and [string]::IsNullOrWhiteSpace($anthropicKey)) {
     $warnings += "ANTHROPIC_API_KEY is missing for LLM_PROVIDER=anthropic"
 }
 

@@ -36,3 +36,5 @@ Thumbs.db
 apps/api/*.db
 apps/api/*.db-shm
 apps/api/*.db-wal
+
+/apps/web/tsconfig.tsbuildinfo

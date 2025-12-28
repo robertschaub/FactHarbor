@@ -23,3 +23,4 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 - POC uses **SQLite** by default (file `apps/api/factharbor.db`).
 - The API creates jobs and triggers the Next runner (`/api/internal/run-job`).
 - Runner writes progress + results back to the API via internal endpoints.
+- LLM provider options: `openai` or `claude` (Claude uses `ANTHROPIC_API_KEY`).

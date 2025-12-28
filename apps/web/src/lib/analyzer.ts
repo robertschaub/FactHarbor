@@ -4,10 +4,11 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { generateObject } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 
-const VerdictSchema = z.object({
+const LlmVerdictSchema = z.object({
   scenarioId: z.string(),
   verdict: z.enum(["supported", "refuted", "unclear", "mixed"]),
-  confidence: z.number().min(0).max(1),
+  // OpenAI json_schema output_format does not support minimum/maximum on numbers.
+  confidence: z.number(),
   rationale: z.string()
 });
 
@@ -27,7 +28,7 @@ const ScenarioSchema = z.object({
   title: z.string(),
   description: z.string(),
   evidence: z.array(EvidenceSchema),
-  verdict: VerdictSchema
+  verdict: LlmVerdictSchema
 });
 
 const ClaimSchema = z.object({
@@ -42,6 +43,13 @@ const LlmOutputSchema = z.object({
   claims: z.array(ClaimSchema)
 });
 
+const ResultVerdictSchema = z.object({
+  scenarioId: z.string(),
+  verdict: z.enum(["supported", "refuted", "unclear", "mixed"]),
+  confidence: z.number().min(0).max(1),
+  rationale: z.string()
+});
+
 const ResultSchema = z.object({
   meta: z.object({
     generatedUtc: z.string(),
@@ -50,18 +58,28 @@ const ResultSchema = z.object({
     inputType: z.enum(["text", "url"]),
     inputLength: z.number()
   }),
-  claims: z.array(ClaimSchema)
+  claims: z.array(
+    ClaimSchema.extend({
+      scenarios: z.array(
+        ScenarioSchema.extend({
+          verdict: ResultVerdictSchema
+        })
+      )
+    })
+  )
 });
 
 type AnalysisInput = {
   inputType: "text" | "url";
   inputValue: string;
-  onEvent?: (message: string, progress: number) => Promise<void> | void;
+  onEvent?: (message: string, progress: number) => void;
 };
 
 function getModel() {
   const provider = (process.env.LLM_PROVIDER ?? "openai").toLowerCase();
-  if (provider === "anthropic") return { provider: "anthropic", modelName: "claude-3-5-sonnet-20240620", model: anthropic("claude-3-5-sonnet-20240620") };
+  if (provider === "anthropic" || provider === "claude") {
+    return { provider: "anthropic", modelName: "claude-opus-4-5-20251101", model: anthropic("claude-opus-4-5-20251101") };
+  }
   return { provider: "openai", modelName: "gpt-4o-mini", model: openai("gpt-4o-mini") };
 }
 
@@ -105,14 +123,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   const out = await generateObject({
     model,
-    system,
-    prompt,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: prompt }
+    ],
     schema: LlmOutputSchema
   });
 
   await onEvent("Generating markdown report", 85);
 
-  const result: z.infer<typeof ResultSchema> = {
+  const result = {
     meta: {
       generatedUtc: new Date().toISOString(),
       llmProvider: provider,
@@ -120,8 +140,17 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       inputType: input.inputType,
       inputLength: text.length
     },
-    claims: out.object.claims
-  };
+    claims: out.object.claims.map((claim) => ({
+      ...claim,
+      scenarios: claim.scenarios.map((scenario) => ({
+        ...scenario,
+        verdict: {
+          ...scenario.verdict,
+          confidence: Math.max(0, Math.min(1, scenario.verdict.confidence))
+        }
+      }))
+    }))
+  } satisfies z.infer<typeof ResultSchema>;
 
   const reportMarkdown = renderReport(result);
 

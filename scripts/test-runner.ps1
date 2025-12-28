@@ -4,26 +4,15 @@ Write-Host "== Testing Runner Connection =="
 Write-Host ""
 
 # Read API config
-$configPath = Join-Path $PSScriptRoot "..\apps\api\appsettings.Development.json"
-if (!(Test-Path $configPath)) {
-    Write-Host "? Missing config: $configPath" -ForegroundColor Red
-    exit 1
-}
-
-$apiConfig = Get-Content $configPath -Raw | ConvertFrom-Json
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$apiConfigPath = Join-Path $repoRoot "apps\api\appsettings.Development.json"
+$apiConfig = Get-Content $apiConfigPath | ConvertFrom-Json
 $runnerBaseUrl = $apiConfig.Runner.BaseUrl
 $runnerKey = $apiConfig.Runner.RunnerKey
 
-$runnerKeyDisplay = if ([string]::IsNullOrWhiteSpace($runnerKey)) {
-    "(missing)"
-} else {
-    $tail = $runnerKey.Substring([Math]::Max(0, $runnerKey.Length - 4))
-    "****$tail"
-}
-
 Write-Host "API Config:"
 Write-Host "  Runner:BaseUrl = $runnerBaseUrl"
-Write-Host "  Runner:RunnerKey = $runnerKeyDisplay"
+Write-Host "  Runner:RunnerKey = $runnerKey"
 Write-Host ""
 
 # Test if Next.js endpoint is reachable
@@ -37,27 +26,20 @@ try {
     }
 
     $response = Invoke-WebRequest -Uri $url -Method POST -Body $body -Headers $headers -ErrorAction Stop
-    Write-Host "V Endpoint is reachable (Status: $($response.StatusCode))" -ForegroundColor Green
+    Write-Host "✓ Endpoint is reachable (Status: $($response.StatusCode))" -ForegroundColor Green
 } catch {
-    $statusCode = $null
-    if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
-        $statusCode = $_.Exception.Response.StatusCode.value__
-    }
+    $statusCode = $_.Exception.Response.StatusCode.value__
     $errorMsg = $_.Exception.Message
-
-    if ($null -ne $statusCode) {
-        Write-Host "? Endpoint test failed (Status: $statusCode)" -ForegroundColor Red
-    } else {
-        Write-Host "? Endpoint test failed" -ForegroundColor Red
-    }
+    Write-Host "✗ Endpoint test failed (Status: $statusCode)" -ForegroundColor Red
     Write-Host "  Error: $errorMsg" -ForegroundColor Red
 
     if ($statusCode -eq 401) {
         Write-Host ""
-        Write-Host "? Authorization failed! Check that:" -ForegroundColor Yellow
+        Write-Host "⚠ Authorization failed! Check that:" -ForegroundColor Yellow
         Write-Host "  1. FH_INTERNAL_RUNNER_KEY in apps/web/.env.local matches Runner:RunnerKey"
         Write-Host "  2. Next.js app was restarted after creating .env.local"
     }
 }
 
 Write-Host ""
+

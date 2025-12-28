@@ -7,23 +7,6 @@ Write-Host "Validating configuration..."
 powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\validate-config.ps1"
 Write-Host ""
 
-function Stop-ByPort([int[]]$ports) {
-    foreach ($port in $ports) {
-        $connections = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
-        if (!$connections) { continue }
-        $pids = $connections | Select-Object -ExpandProperty OwningProcess -Unique
-        foreach ($pid in $pids) {
-            try {
-                $proc = Get-Process -Id $pid -ErrorAction Stop
-                Write-Host "Stopping PID $pid ($($proc.ProcessName)) on port $port" -ForegroundColor Yellow
-                Stop-Process -Id $pid -Force -ErrorAction Stop
-            } catch {
-                Write-Host "Could not stop PID $pid on port $port: $($_.Exception.Message)" -ForegroundColor Red
-            }
-        }
-    }
-}
-
 function Stop-Gracefully([string]$label, $cimProcesses) {
     if (!$cimProcesses) {
         Write-Host "No running $label processes found."
@@ -83,7 +66,7 @@ Start-Process -FilePath "powershell.exe" -ArgumentList @(
 Write-Host ""
 Write-Host "Services started!"
 Write-Host ""
-Write-Host "Web:    http://localhost:3000"
+Write-Host "Web:    http://localhost:3000  (use HTTP, not HTTPS)"
 Write-Host "API:    http://localhost:5000"
 Write-Host "Swagger:http://localhost:5000/swagger"
 Write-Host ""

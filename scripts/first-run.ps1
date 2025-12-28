@@ -14,6 +14,7 @@ Start-Process -FilePath "powershell.exe" -ArgumentList @(
 )
 
 # Start Web in new terminal
+Write-Host "Starting Web..."
 Start-Process -FilePath "powershell.exe" -ArgumentList @(
   "-NoExit",
   "-Command",
@@ -21,6 +22,10 @@ Start-Process -FilePath "powershell.exe" -ArgumentList @(
 )
 
 Write-Host ""
-Write-Host "Web:    http://localhost:3000"
+Write-Host "Services started!"
+Write-Host ""
+Write-Host "Web:    http://localhost:3000  (use HTTP, not HTTPS)"
 Write-Host "API:    http://localhost:5000"
 Write-Host "Swagger:http://localhost:5000/swagger"
+Write-Host ""
+Write-Host "Note: Make sure apps/web/.env.local exists with required environment variables."

@@ -20,7 +20,7 @@ export async function GET() {
   const providerOk =
     provider === "openai"
       ? checks.OPENAI_API_KEY_present
-      : provider === "anthropic"
+      : provider === "anthropic" || provider === "claude"
         ? checks.ANTHROPIC_API_KEY_present
         : false;
 
