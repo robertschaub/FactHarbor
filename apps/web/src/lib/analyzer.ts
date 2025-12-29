@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
-import { generateObject } from "ai";
+import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
+import { generateText, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 
 const LlmVerdictSchema = z.object({
@@ -80,6 +82,12 @@ function getModel() {
   if (provider === "anthropic" || provider === "claude") {
     return { provider: "anthropic", modelName: "claude-opus-4-5-20251101", model: anthropic("claude-opus-4-5-20251101") };
   }
+  if (provider === "google" || provider === "gemini") {
+    return { provider: "google", modelName: "gemini-1.5-flash", model: google("gemini-1.5-flash") };
+  }
+  if (provider === "mistral") {
+    return { provider: "mistral", modelName: "mistral-large-latest", model: mistral("mistral-large-latest") };
+  }
   return { provider: "openai", modelName: "gpt-4o-mini", model: openai("gpt-4o-mini") };
 }
 
@@ -121,13 +129,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     "- Provide a verdict per scenario: supported/refuted/unclear/mixed with confidence and rationale.",
   ].join("\n");
 
-  const out = await generateObject({
+  const out = await generateText({
     model,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: prompt }
     ],
-    schema: LlmOutputSchema
+    output: Output.object({ schema: LlmOutputSchema })
   });
 
   await onEvent("Generating markdown report", 85);
@@ -140,7 +148,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       inputType: input.inputType,
       inputLength: text.length
     },
-    claims: out.object.claims.map((claim) => ({
+    claims: out.output.claims.map((claim) => ({
       ...claim,
       scenarios: claim.scenarios.map((scenario) => ({
         ...scenario,

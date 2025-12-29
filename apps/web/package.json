@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.1",
+    "@ai-sdk/google": "^3.0.1",
+    "@ai-sdk/mistral": "^3.0.1",
     "@ai-sdk/openai": "^3.0.1",
     "ai": "^6.0.3",
     "next": "^14.2.0",
