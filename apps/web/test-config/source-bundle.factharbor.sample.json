@@ -1,0 +1,136 @@
+{
+  "sources": [
+    {
+      "url": "https://www.tse.jus.br/",
+      "title": "Superior Electoral Court (TSE)",
+      "sourceType": "Court",
+      "trackRecordScore": 78
+    },
+    {
+      "url": "https://www.stf.jus.br/portal/cms/verTexto.asp?servico=jurisprudencia",
+      "title": "Supreme Federal Court (STF) Jurisprudence Portal",
+      "sourceType": "Court",
+      "trackRecordScore": 78
+    },
+    {
+      "url": "https://www.gov.br/planalto/pt-br",
+      "title": "Government of Brazil (Planalto)",
+      "sourceType": "GovernmentAgency",
+      "trackRecordScore": 65
+    },
+    {
+      "url": "https://www.oas.org/en/iachr/",
+      "title": "Inter-American Commission on Human Rights (IACHR)",
+      "sourceType": "InternationalOrg",
+      "trackRecordScore": 80
+    },
+    {
+      "url": "https://www.oas.org/en/cidh/prensa/",
+      "title": "IACHR Press Releases",
+      "sourceType": "InternationalOrg",
+      "trackRecordScore": 78
+    },
+    {
+      "url": "https://www.un.org/en/",
+      "title": "United Nations",
+      "sourceType": "InternationalOrg",
+      "trackRecordScore": 80
+    },
+    {
+      "url": "https://www.oecd.org/",
+      "title": "OECD",
+      "sourceType": "InternationalOrg",
+      "trackRecordScore": 80
+    },
+    {
+      "url": "https://www.reuters.com/",
+      "title": "Reuters",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 85
+    },
+    {
+      "url": "https://apnews.com/",
+      "title": "Associated Press",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 82
+    },
+    {
+      "url": "https://www.bbc.com/news",
+      "title": "BBC News",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 80
+    },
+    {
+      "url": "https://www.ft.com/world/americas",
+      "title": "Financial Times - Americas",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 78
+    },
+    {
+      "url": "https://www.aljazeera.com/where/brazil/",
+      "title": "Al Jazeera - Brazil",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 72
+    },
+    {
+      "url": "https://www.folha.uol.com.br/internacional/en/",
+      "title": "Folha de S.Paulo (English)",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 72
+    },
+    {
+      "url": "https://www.theguardian.com/world/brazil",
+      "title": "The Guardian - Brazil",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 74
+    },
+    {
+      "url": "https://www.nytimes.com/topic/subject/brazil",
+      "title": "The New York Times - Brazil",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 78
+    },
+    {
+      "url": "https://www.washingtonpost.com/world/americas/",
+      "title": "The Washington Post - Americas",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 76
+    },
+    {
+      "url": "https://www.economist.com/the-americas",
+      "title": "The Economist - The Americas",
+      "sourceType": "NewsOutlet",
+      "trackRecordScore": 78
+    },
+    {
+      "url": "https://www.lawfaremedia.org/",
+      "title": "Lawfare",
+      "sourceType": "ThinkTank",
+      "trackRecordScore": 72
+    },
+    {
+      "url": "https://www.justice.gov/eoir/case-law",
+      "title": "U.S. DOJ - Case Law (comparative context)",
+      "sourceType": "GovernmentAgency",
+      "trackRecordScore": 70
+    },
+    {
+      "url": "https://www.hrw.org/world-report/2024/country-chapters/brazil",
+      "title": "Human Rights Watch - Brazil",
+      "sourceType": "NGO",
+      "trackRecordScore": 70
+    },
+    {
+      "url": "https://www.amnesty.org/en/location/americas/south-america/brazil/",
+      "title": "Amnesty International - Brazil",
+      "sourceType": "NGO",
+      "trackRecordScore": 70
+    },
+    {
+      "url": "https://www.transparency.org/en/countries/brazil",
+      "title": "Transparency International - Brazil",
+      "sourceType": "NGO",
+      "trackRecordScore": 72
+    }
+  ]
+}
