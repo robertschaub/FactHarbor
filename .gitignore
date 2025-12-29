@@ -38,3 +38,4 @@ apps/api/*.db-shm
 apps/api/*.db-wal
 
 /apps/web/tsconfig.tsbuildinfo
+apps/web/test-output/

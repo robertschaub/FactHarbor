@@ -77,6 +77,10 @@ type AnalysisInput = {
   onEvent?: (message: string, progress: number) => void;
 };
 
+export function clampConfidence(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
 function getModel() {
   const provider = (process.env.LLM_PROVIDER ?? "openai").toLowerCase();
   if (provider === "anthropic" || provider === "claude") {
@@ -114,7 +118,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     "You are FactHarbor POC1.",
     "Task: analyze the input text according to the FactHarbor model.",
     "Return structured JSON only matching the given schema.",
-    "Be conservative: do not invent citations or sources; if unknown, mark as unknown.",
+    "Grounding rules (balanced): use the input as primary evidence; cautious inference is allowed only in rationale and must be labeled 'inference:'.",
+    "Do not invent citations or sources. If the input does not support a point, mark it as unknown/unclear.",
+    "Evidence items must quote a short excerpt from the input in source.ref; do not paraphrase in source.ref.",
+    "If the only support is the claim statement itself, quote that exact text as evidence.",
+    "If no excerpt exists, use source.type=unknown and ref=null with an 'insufficient evidence in input' summary.",
     "When source.ref is unknown, use null."
   ].join("\n");
 
@@ -124,8 +132,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     "",
     "Instructions:",
     "- Identify notable claims in the text.",
-    "- For each claim, propose 2-5 relevant scenarios (interpretations/contexts).",
-    "- For each scenario, list evidence and counter-evidence (based on the input; if insufficient, say so).",
+    "- For each claim, propose 1-2 scenarios that are tightly anchored to the claim (avoid generic, boilerplate scenarios).",
+    "- For each scenario, list evidence and counter-evidence based on the input.",
+    "- Evidence summary can paraphrase; source.ref must be a direct excerpt from the input.",
+    "- If evidence is missing, include a single evidence item noting 'insufficient evidence in input' and set source.type=unknown/ref=null.",
+    "- If you add inference, do it only in the rationale and prefix with 'inference:'.",
     "- Provide a verdict per scenario: supported/refuted/unclear/mixed with confidence and rationale.",
   ].join("\n");
 
@@ -135,6 +146,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       { role: 'system', content: system },
       { role: 'user', content: prompt }
     ],
+    temperature: 0.2,
     output: Output.object({ schema: LlmOutputSchema })
   });
 
@@ -154,7 +166,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         ...scenario,
         verdict: {
           ...scenario.verdict,
-          confidence: Math.max(0, Math.min(1, scenario.verdict.confidence))
+          confidence: clampConfidence(scenario.verdict.confidence)
         }
       }))
     }))

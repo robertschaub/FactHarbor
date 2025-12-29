@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "lint": "echo \"(add lint later)\"",
-    "test": "echo \"(add tests later)\""
+    "test": "npm -w apps/web test",
+    "test:llm": "npm -w apps/web run test:llm"
   }
 }

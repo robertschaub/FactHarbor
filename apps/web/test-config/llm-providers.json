@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "inputType": "text",
+  "inputValue": "Bolsonaro judgment (trial) was fair and based on Brazil's law.",
+  "providers": [
+    "openai",
+    "claude",
+    "mistral"
+  ],
+  "outputDir": "test-output"
+}
