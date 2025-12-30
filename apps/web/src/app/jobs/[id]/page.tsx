@@ -1,9 +1,12 @@
 /**
- * Job Results Page - Enhanced for UN-3, UN-17, Article Verdict Problem
+ * Job Results Page - Enhanced for Questions (v2.3)
  * 
- * v2.2.2 - Fixed: Next.js 15 async params support
+ * New in v2.3:
+ * - Question detection display
+ * - Answer banner (YES/NO/PARTIALLY) instead of MISLEADING for questions
+ * - Key factors display
  * 
- * @version 2.2.2
+ * @version 2.3.0
  */
 
 "use client";
@@ -28,7 +31,6 @@ type Job = {
 type EventItem = { id: number; tsUtc: string; level: string; message: string };
 
 export default function JobPage() {
-  // Use useParams hook for client components in Next.js 15
   const params = useParams();
   const jobId = params?.id as string;
   
@@ -61,7 +63,6 @@ export default function JobPage() {
   useEffect(() => {
     if (!jobId) return;
     
-    // SSE events
     const es = new EventSource(`/api/fh/jobs/${jobId}/events`);
     es.onmessage = (evt) => {
       try {
@@ -79,12 +80,16 @@ export default function JobPage() {
   const report = job?.reportMarkdown ?? "";
   const jsonText = useMemo(() => (job?.resultJson ? JSON.stringify(job.resultJson, null, 2) : ""), [job]);
   
-  // Extract v2.2 components from resultJson
+  // Extract v2.3 components from resultJson
   const result = job?.resultJson;
-  const hasV22Data = result?.meta?.schemaVersion?.startsWith("2.2");
+  const schemaVersion = result?.meta?.schemaVersion || "";
+  const hasV22Data = schemaVersion.startsWith("2.2") || schemaVersion.startsWith("2.3");
+  const hasV23Data = schemaVersion.startsWith("2.3");
   const twoPanelSummary = result?.twoPanelSummary;
   const articleAnalysis = result?.articleAnalysis;
   const claimVerdicts = result?.claimVerdicts || [];
+  const questionAnswer = result?.questionAnswer;
+  const isQuestion = result?.meta?.isQuestion || articleAnalysis?.isQuestion;
 
   if (!jobId) {
     return <div style={{ padding: 20 }}>Loading job ID...</div>;
@@ -105,8 +110,9 @@ export default function JobPage() {
           <div style={{ marginTop: 8 }}><b>Input:</b> <code>{job.inputType}</code> — {job.inputPreview ?? "—"}</div>
           {hasV22Data && (
             <div style={{ marginTop: 8 }}>
-              <b>Schema:</b> <code>{result.meta.schemaVersion}</code>
+              <b>Schema:</b> <code>{schemaVersion}</code>
               {result.meta.analysisId && <> — <b>Analysis ID:</b> <code>{result.meta.analysisId}</code></>}
+              {isQuestion && <> — <span style={{ color: "#17a2b8", fontWeight: 600 }}>📝 QUESTION MODE</span></>}
             </div>
           )}
         </div>
@@ -138,26 +144,29 @@ export default function JobPage() {
         <button onClick={() => setTab("events")} style={tabStyle(tab === "events")}>📋 Events ({events.length})</button>
       </div>
 
-      {/* Summary Tab (UN-3 + Article Verdict) */}
+      {/* Summary Tab */}
       {tab === "summary" && hasV22Data && (
         <div style={{ border: "1px solid #333", borderRadius: 10, padding: 16 }}>
-          {/* Article Verdict Banner */}
-          {articleAnalysis && (
+          {/* Question Answer Banner (v2.3) OR Article Verdict Banner */}
+          {isQuestion && questionAnswer ? (
+            <QuestionAnswerBanner questionAnswer={questionAnswer} />
+          ) : articleAnalysis && (
             <ArticleVerdictBanner articleAnalysis={articleAnalysis} />
           )}
           
-          {/* Two-Panel Summary (UN-3) */}
+          {/* Two-Panel Summary */}
           {twoPanelSummary && (
             <TwoPanelSummary 
               articleSummary={twoPanelSummary.articleSummary}
               factharborAnalysis={twoPanelSummary.factharborAnalysis}
+              isQuestion={isQuestion}
             />
           )}
           
           {/* Claims List */}
           {claimVerdicts.length > 0 && (
             <div style={{ marginTop: 24 }}>
-              <h3 style={{ margin: "0 0 12px" }}>Claims Analyzed</h3>
+              <h3 style={{ margin: "0 0 12px" }}>{isQuestion ? "Supporting Analysis" : "Claims Analyzed"}</h3>
               {claimVerdicts.map((cv: any) => (
                 <ClaimCard key={cv.claimId} claim={cv} />
               ))}
@@ -166,7 +175,7 @@ export default function JobPage() {
         </div>
       )}
 
-      {/* Article View Tab (UN-17: Claim Highlighting) */}
+      {/* Article View Tab */}
       {tab === "article" && hasV22Data && (
         <div style={{ border: "1px solid #333", borderRadius: 10, padding: 16 }}>
           <h3 style={{ margin: "0 0 12px" }}>Article with Claim Highlighting</h3>
@@ -231,16 +240,156 @@ function getEventColor(level: string): string {
 }
 
 // ============================================================================
-// INLINE COMPONENTS (to avoid import issues)
+// NEW v2.3: Question Answer Banner
 // ============================================================================
 
-// Article Verdict Banner Component
+function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
+  const answerColors: Record<string, { bg: string; text: string; border: string }> = {
+    "YES": { bg: "#d4edda", text: "#155724", border: "#28a745" },
+    "NO": { bg: "#f8d7da", text: "#721c24", border: "#dc3545" },
+    "PARTIALLY": { bg: "#fff3cd", text: "#856404", border: "#ffc107" },
+    "INSUFFICIENT-EVIDENCE": { bg: "#e9ecef", text: "#495057", border: "#6c757d" },
+  };
+  
+  const color = answerColors[questionAnswer.answer] || answerColors["PARTIALLY"];
+  
+  return (
+    <div style={{ 
+      border: `2px solid ${color.border}`, 
+      borderRadius: 12, 
+      marginBottom: 20,
+      overflow: "hidden",
+      backgroundColor: "#fff"
+    }}>
+      {/* Question */}
+      <div style={{ padding: "12px 16px", backgroundColor: "#f0f7ff", borderBottom: "1px solid #ddd" }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#0056b3", textTransform: "uppercase", marginBottom: 4 }}>
+          📝 Question Asked
+        </div>
+        <div style={{ fontSize: 16, color: "#333", fontStyle: "italic" }}>
+          "{questionAnswer.question}"
+        </div>
+      </div>
+      
+      {/* Answer */}
+      <div style={{ padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#666", textTransform: "uppercase" }}>
+            Answer
+          </span>
+          <span style={{ 
+            padding: "10px 20px", 
+            borderRadius: 8, 
+            fontSize: 20, 
+            fontWeight: 700,
+            backgroundColor: color.bg,
+            color: color.text
+          }}>
+            {getAnswerEmoji(questionAnswer.answer)} {questionAnswer.answer}
+          </span>
+          <span style={{ fontSize: 14, color: "#666" }}>
+            {questionAnswer.confidence}% confidence
+          </span>
+        </div>
+        
+        {/* Short Answer */}
+        <div style={{ 
+          padding: 14, 
+          backgroundColor: "#f8f9fa", 
+          borderRadius: 8, 
+          marginBottom: 12,
+          borderLeft: `4px solid ${color.border}`
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 4 }}>
+            Short Answer
+          </div>
+          <div style={{ fontSize: 15, color: "#333", lineHeight: 1.5 }}>
+            {questionAnswer.shortAnswer}
+          </div>
+        </div>
+        
+        {/* Nuanced Answer */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 4 }}>
+            Detailed Answer
+          </div>
+          <div style={{ fontSize: 14, color: "#555", lineHeight: 1.6 }}>
+            {questionAnswer.nuancedAnswer}
+          </div>
+        </div>
+      </div>
+      
+      {/* Key Factors */}
+      {questionAnswer.keyFactors?.length > 0 && (
+        <div style={{ padding: "12px 16px", backgroundColor: "#f8f9fa", borderTop: "1px solid #eee" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 10 }}>
+            Key Factors
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {questionAnswer.keyFactors.map((factor: any, i: number) => (
+              <div key={i} style={{ 
+                display: "flex", 
+                alignItems: "flex-start", 
+                gap: 10,
+                padding: 10,
+                backgroundColor: "#fff",
+                borderRadius: 6,
+                border: "1px solid #ddd"
+              }}>
+                <span style={{ 
+                  fontSize: 18,
+                  minWidth: 24
+                }}>
+                  {factor.supports === "yes" ? "✅" : factor.supports === "no" ? "❌" : "➖"}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "#333" }}>
+                    {factor.factor}
+                    <span style={{ 
+                      marginLeft: 8, 
+                      fontSize: 11, 
+                      padding: "2px 6px", 
+                      borderRadius: 4,
+                      backgroundColor: factor.supports === "yes" ? "#d4edda" : factor.supports === "no" ? "#f8d7da" : "#e9ecef",
+                      color: factor.supports === "yes" ? "#155724" : factor.supports === "no" ? "#721c24" : "#495057"
+                    }}>
+                      {factor.supports.toUpperCase()}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+                    {factor.explanation}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getAnswerEmoji(answer: string): string {
+  switch (answer) {
+    case "YES": return "✅";
+    case "NO": return "❌";
+    case "PARTIALLY": return "⚠️";
+    case "INSUFFICIENT-EVIDENCE": return "❓";
+    default: return "❓";
+  }
+}
+
+// ============================================================================
+// Article Verdict Banner (for claims/articles, not questions)
+// ============================================================================
+
 function ArticleVerdictBanner({ articleAnalysis }: { articleAnalysis: any }) {
   const verdictColors: Record<string, { bg: string; text: string; border: string }> = {
     "CREDIBLE": { bg: "#d4edda", text: "#155724", border: "#28a745" },
     "MOSTLY-CREDIBLE": { bg: "#d1ecf1", text: "#0c5460", border: "#17a2b8" },
     "MISLEADING": { bg: "#fff3cd", text: "#856404", border: "#ffc107" },
     "FALSE": { bg: "#f8d7da", text: "#721c24", border: "#dc3545" },
+    "ANSWER-PROVIDED": { bg: "#d1ecf1", text: "#0c5460", border: "#17a2b8" },
   };
   
   const color = verdictColors[articleAnalysis.articleVerdict] || verdictColors["MISLEADING"];
@@ -346,10 +495,25 @@ function ArticleVerdictBanner({ articleAnalysis }: { articleAnalysis: any }) {
   );
 }
 
-// Two-Panel Summary Component (UN-3)
-function TwoPanelSummary({ articleSummary, factharborAnalysis }: { 
+function getVerdictEmoji(verdict: string): string {
+  switch (verdict) {
+    case "CREDIBLE": return "✅";
+    case "MOSTLY-CREDIBLE": return "🔵";
+    case "MISLEADING": return "⚠️";
+    case "FALSE": return "❌";
+    case "ANSWER-PROVIDED": return "💬";
+    default: return "❓";
+  }
+}
+
+// ============================================================================
+// Two-Panel Summary (updated for questions)
+// ============================================================================
+
+function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { 
   articleSummary: any; 
   factharborAnalysis: any;
+  isQuestion?: boolean;
 }) {
   return (
     <div style={{ 
@@ -358,7 +522,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: {
       gap: 16, 
       marginBottom: 20 
     }}>
-      {/* Left Panel: What the Article Claims */}
+      {/* Left Panel */}
       <div style={{ border: "1px solid #ddd", borderRadius: 12, overflow: "hidden", backgroundColor: "#fff" }}>
         <div style={{ 
           padding: "10px 14px", 
@@ -368,16 +532,16 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: {
           alignItems: "center",
           gap: 8
         }}>
-          <span>📄</span>
-          <b>What the Article Claims</b>
+          <span>{isQuestion ? "❓" : "📄"}</span>
+          <b>{isQuestion ? "The Question" : "What the Article Claims"}</b>
         </div>
         <div style={{ padding: 14 }}>
           <FieldRow label="Title" value={articleSummary.title} />
           <FieldRow label="Source" value={articleSummary.source} />
-          <FieldRow label="Main Argument" value={articleSummary.mainArgument} block />
+          <FieldRow label={isQuestion ? "Implied Claim" : "Main Argument"} value={articleSummary.mainArgument} block />
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 4 }}>
-              Key Findings
+              {isQuestion ? "Sub-questions" : "Key Findings"}
             </div>
             <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
               {articleSummary.keyFindings?.map((f: string, i: number) => (
@@ -388,7 +552,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: {
         </div>
       </div>
       
-      {/* Right Panel: FactHarbor Analysis */}
+      {/* Right Panel */}
       <div style={{ border: "2px solid #007bff", borderRadius: 12, overflow: "hidden", backgroundColor: "#fff" }}>
         <div style={{ 
           padding: "10px 14px", 
@@ -435,7 +599,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: {
             marginTop: 12
           }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase" }}>
-              Overall Verdict
+              {isQuestion ? "Overall Answer" : "Overall Verdict"}
             </div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#007bff" }}>
               {factharborAnalysis.overallVerdict}
@@ -451,7 +615,10 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: {
   );
 }
 
-// Claim Card Component
+// ============================================================================
+// Remaining Components (unchanged)
+// ============================================================================
+
 function ClaimCard({ claim }: { claim: any }) {
   const colors: Record<string, { bg: string; text: string; border: string }> = {
     "WELL-SUPPORTED": { bg: "#d4edda", text: "#155724", border: "#28a745" },
@@ -496,14 +663,11 @@ function ClaimCard({ claim }: { claim: any }) {
   );
 }
 
-// Claim Highlighter Component (UN-17)
 function ClaimHighlighter({ originalText, claimVerdicts }: { 
   originalText: string; 
   claimVerdicts: any[];
 }) {
   const [enabled, setEnabled] = useState(true);
-  
-  // For now, show a simplified view since we may not have exact positions
   const hasPositions = claimVerdicts.some(c => c.startOffset !== undefined);
   
   return (
@@ -578,7 +742,6 @@ function ClaimHighlighter({ originalText, claimVerdicts }: {
   );
 }
 
-// Helper Components
 function FieldRow({ label, value, block }: { label: string; value: string; block?: boolean }) {
   return (
     <div style={{ marginBottom: 12 }}>
@@ -616,16 +779,6 @@ function VerdictBadge({ verdict, confidence }: { verdict: string; confidence: nu
       {verdict} ({confidence}%)
     </span>
   );
-}
-
-function getVerdictEmoji(verdict: string): string {
-  switch (verdict) {
-    case "CREDIBLE": return "✅";
-    case "MOSTLY-CREDIBLE": return "🔵";
-    case "MISLEADING": return "⚠️";
-    case "FALSE": return "❌";
-    default: return "❓";
-  }
 }
 
 function getHighlightBg(color: string): string {

@@ -1,19 +1,17 @@
 /**
- * FactHarbor POC1 Analyzer v2.2
+ * FactHarbor POC1 Analyzer v2.3
+ * 
+ * New in v2.3:
+ * - Question Detection: Distinguishes questions from claims/articles
+ * - Answer Mode: Questions get YES/NO/PARTIALLY answers, not "MISLEADING" verdicts
+ * - Intent Classification: verification vs exploration questions
  * 
  * Implements:
  * - Article Verdict Problem: Context-aware analysis with article-level verdicts
  * - UN-3: Two-Panel Summary (Article Summary + FactHarbor Analysis)
  * - UN-17: Claim positions for in-article highlighting
  * 
- * Key features:
- * - Article verdict separate from claim average
- * - Central vs supporting claim classification
- * - Logical fallacy detection
- * - Claim character positions in original text
- * - Two-panel output structure
- * 
- * @version 2.2.0
+ * @version 2.3.0
  * @date December 2025
  */
 
@@ -31,7 +29,7 @@ import { searchWeb } from "@/lib/web-search";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.2.0",
+  schemaVersion: "2.3.0",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
   quick: {
@@ -58,12 +56,16 @@ function getActiveConfig() {
 }
 
 // ============================================================================
-// TYPES - Extended for UN-3, UN-17, Article Verdict Problem
+// TYPES - Extended for Question Detection (v2.3)
 // ============================================================================
+
+// NEW: Input type classification
+type InputType = "question" | "claim" | "article";
+type QuestionIntent = "verification" | "exploration" | "comparison";
 
 interface ResearchState {
   originalInput: string;
-  originalText: string;  // Full original text for claim position extraction
+  originalText: string;
   inputType: "text" | "url";
   understanding: ClaimUnderstanding | null;
   iterations: ResearchIteration[];
@@ -74,15 +76,21 @@ interface ResearchState {
 }
 
 interface ClaimUnderstanding {
+  // NEW v2.3: Input classification
+  detectedInputType: InputType;
+  questionIntent?: QuestionIntent;
+  questionBeingAsked?: string;  // Rephrased as clear question
+  impliedClaim?: string;        // The claim implied by the question
+  
   mainQuestion: string;
-  articleThesis: string;  // NEW: Main argument the article is making
+  articleThesis: string;
   subClaims: Array<{
     id: string;
     text: string;
     type: "legal" | "procedural" | "factual" | "evaluative";
     keyEntities: string[];
-    isCentral: boolean;  // NEW: Is this central to the article's argument?
-    startOffset?: number;  // NEW: Position in original text
+    isCentral: boolean;
+    startOffset?: number;
     endOffset?: number;
   }>;
   distinctEvents: Array<{
@@ -124,7 +132,6 @@ interface FetchedSource {
   category: string;
 }
 
-// NEW: Claim verdict with position for highlighting (UN-17)
 interface ClaimVerdict {
   claimId: string;
   claimText: string;
@@ -134,14 +141,33 @@ interface ClaimVerdict {
   riskTier: "A" | "B" | "C";
   reasoning: string;
   supportingFactIds: string[];
-  // UN-17: Position in original text for highlighting
   startOffset?: number;
   endOffset?: number;
   highlightColor: "green" | "yellow" | "red";
 }
 
-// NEW: Article-level analysis (Article Verdict Problem)
+// NEW v2.3: Question Answer structure
+interface QuestionAnswer {
+  question: string;
+  answer: "YES" | "NO" | "PARTIALLY" | "INSUFFICIENT-EVIDENCE";
+  confidence: number;
+  shortAnswer: string;  // 1-2 sentence direct answer
+  nuancedAnswer: string;  // Detailed explanation with caveats
+  keyFactors: Array<{
+    factor: string;
+    supports: "yes" | "no" | "neutral";
+    explanation: string;
+  }>;
+}
+
+// UPDATED: Article-level analysis with question support
 interface ArticleAnalysis {
+  // NEW v2.3: Input type info
+  inputType: InputType;
+  isQuestion: boolean;
+  questionAnswer?: QuestionAnswer;
+  
+  // Existing fields (used for claims/articles)
   articleThesis: string;
   thesisSupported: boolean;
   logicalFallacies: Array<{
@@ -149,11 +175,10 @@ interface ArticleAnalysis {
     description: string;
     affectedClaims: string[];
   }>;
-  articleVerdict: "CREDIBLE" | "MOSTLY-CREDIBLE" | "MISLEADING" | "FALSE";
+  articleVerdict: "CREDIBLE" | "MOSTLY-CREDIBLE" | "MISLEADING" | "FALSE" | "ANSWER-PROVIDED";
   articleConfidence: number;
   verdictDiffersFromClaimAverage: boolean;
   verdictDifferenceReason?: string;
-  // Summary of claim pattern
   claimPattern: {
     total: number;
     supported: number;
@@ -164,9 +189,7 @@ interface ArticleAnalysis {
   };
 }
 
-// NEW: UN-3 Two-Panel Structure
 interface TwoPanelSummary {
-  // Left panel: What the article claims
   articleSummary: {
     title: string;
     source: string;
@@ -175,7 +198,6 @@ interface TwoPanelSummary {
     reasoning: string;
     conclusion: string;
   };
-  // Right panel: FactHarbor's analysis
   factharborAnalysis: {
     sourceCredibility: string;
     claimVerdicts: Array<{
@@ -219,10 +241,16 @@ function getTrackRecordScore(url: string): number | null {
 }
 
 // ============================================================================
-// STEP 1: UNDERSTAND THE CLAIM (Enhanced for Article Verdict Problem)
+// STEP 1: UNDERSTAND THE INPUT (Enhanced for Question Detection)
 // ============================================================================
 
 const UNDERSTANDING_SCHEMA = z.object({
+  // NEW v2.3: Input classification
+  detectedInputType: z.enum(["question", "claim", "article"]),
+  questionIntent: z.enum(["verification", "exploration", "comparison"]).optional(),
+  questionBeingAsked: z.string().optional(),
+  impliedClaim: z.string().optional(),
+  
   mainQuestion: z.string(),
   articleThesis: z.string(),
   subClaims: z.array(z.object({
@@ -244,49 +272,63 @@ const UNDERSTANDING_SCHEMA = z.object({
 });
 
 async function understandClaim(input: string, model: any): Promise<ClaimUnderstanding> {
-  const systemPrompt = `You are a fact-checking analyst. Analyze the article/claim BEFORE researching.
+  const systemPrompt = `You are a fact-checking analyst. First, classify the input type, then analyze it.
 
-## YOUR TASK
+## STEP 1: CLASSIFY INPUT TYPE
 
-1. **Main Question**: What is the core question to verify?
+Determine if the input is:
 
-2. **Article Thesis**: What is the MAIN ARGUMENT or CONCLUSION the article is trying to make?
-   This is critical for detecting misleading articles with accurate facts but wrong conclusions.
+1. **QUESTION**: User is ASKING something, wants an answer
+   - Ends with "?" 
+   - Starts with "Is", "Was", "Did", "Does", "Are", "Were", "Can", "Should", "What", "How", "Why"
+   - Examples: "Was the election fair?", "Did X happen?", "Is Y true?"
+   
+2. **CLAIM**: User is ASSERTING something as true/false
+   - Declarative statement
+   - Examples: "The election was stolen", "X caused Y", "This is false"
+   
+3. **ARTICLE**: Longer text with multiple claims, arguments, structure
+   - Multiple paragraphs
+   - Has headline/title feel
+   - Makes several related claims
 
-3. **Sub-Claims**: Extract 3-6 TESTABLE factual claims. For each:
-   - ID (C1, C2, etc.)
-   - Text of the claim
-   - Type: legal | procedural | factual | evaluative
-   - Key entities
-   - **isCentral**: TRUE if this claim is CENTRAL to the article's main argument
-     FALSE if it's just a supporting fact
-   - approximatePosition: Quote the first few words of where this appears
+## STEP 2: FOR QUESTIONS
 
-4. **Distinct Events**: If multiple events (e.g., multiple trials), list separately
+If it's a QUESTION:
+- **questionIntent**: 
+  - "verification": Yes/No question (Was X fair? Did Y happen?)
+  - "exploration": Open question (What caused X? How did Y happen?)
+  - "comparison": Comparing options (Is X better than Y?)
+- **questionBeingAsked**: Rephrase as clear question
+- **impliedClaim**: What claim would need to be true for "YES" answer?
+  - Example: "Was the trial fair?" → implied claim: "The trial was fair"
+- **articleThesis**: Use the IMPLIED CLAIM (what would "YES" mean)
 
-5. **Legal Frameworks**: Name specific laws if relevant
+## STEP 3: EXTRACT TESTABLE CLAIMS
 
-6. **Research Questions**: 6-10 specific questions to answer
+For ALL input types, extract 3-6 testable claims:
+- For questions: These are sub-questions that help answer the main question
+- For claims/articles: These are the factual assertions to verify
 
-7. **Risk Tier**: A (health/legal/democracy) | B (complex/contested) | C (low-stakes)
+For each claim:
+- **isCentral**: Is this central to answering the question / main argument?
+- **type**: legal | procedural | factual | evaluative
 
-## CRITICAL: Central vs Supporting Claims
+## CRITICAL FOR QUESTIONS
 
-The distinction between CENTRAL and SUPPORTING claims is essential for the Article Verdict Problem:
-
-- **CENTRAL claim**: The main conclusion or argument. If false, the article is misleading.
-  Example: "Coffee cures cancer" - this IS the article's point
-
-- **SUPPORTING claim**: Background facts that support the central claim.
-  Example: "Coffee contains antioxidants" - this supports but isn't the main point
-
-An article with TRUE supporting claims but a FALSE central claim is MISLEADING.`;
+When input is a QUESTION:
+- The "articleThesis" should be the IMPLIED CLAIM (what "YES" would mean)
+- NOT the question itself
+- Example: 
+  - Input: "Was Bolsonaro's trial fair?"
+  - articleThesis: "Bolsonaro's trial was conducted fairly" (the implied claim)
+  - NOT: "Was Bolsonaro's trial fair?" (don't repeat the question)`;
 
   const result = await generateText({
     model,
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Analyze this for fact-checking:\n\n"${input}"` }
+      { role: "user", content: `Analyze this input for fact-checking:\n\n"${input}"` }
     ],
     temperature: 0.3,
     output: Output.object({ schema: UNDERSTANDING_SCHEMA })
@@ -294,7 +336,7 @@ An article with TRUE supporting claims but a FALSE central claim is MISLEADING.`
 
   const parsed = result.output as z.infer<typeof UNDERSTANDING_SCHEMA>;
   
-  // Find claim positions in original text (UN-17)
+  // Find claim positions in original text
   const claimsWithPositions = parsed.subClaims.map(claim => {
     const positions = findClaimPosition(input, claim.text);
     return {
@@ -310,23 +352,19 @@ An article with TRUE supporting claims but a FALSE central claim is MISLEADING.`
   };
 }
 
-// UN-17: Find claim position in original text
 function findClaimPosition(text: string, claimText: string): { start: number; end: number } | null {
   const normalizedText = text.toLowerCase();
   const normalizedClaim = claimText.toLowerCase();
   
-  // Try exact match first
   let index = normalizedText.indexOf(normalizedClaim);
   if (index !== -1) {
     return { start: index, end: index + claimText.length };
   }
   
-  // Try finding key phrases from the claim
   const keyPhrases = claimText.split(/[,.]/).map(p => p.trim()).filter(p => p.length > 10);
   for (const phrase of keyPhrases) {
     index = normalizedText.indexOf(phrase.toLowerCase());
     if (index !== -1) {
-      // Find sentence boundaries around this phrase
       const sentenceStart = Math.max(0, text.lastIndexOf('.', index) + 1);
       const sentenceEnd = text.indexOf('.', index + phrase.length);
       return { 
@@ -340,7 +378,7 @@ function findClaimPosition(text: string, claimText: string): { start: number; en
 }
 
 // ============================================================================
-// STEP 2-4: Research (Same as v2.1 with minor improvements)
+// STEP 2-4: Research (unchanged from v2.2)
 // ============================================================================
 
 interface ResearchDecision {
@@ -496,10 +534,32 @@ Only HIGH/MEDIUM specificity. Skip LOW.`;
 }
 
 // ============================================================================
-// STEP 5: GENERATE CLAIM VERDICTS (Enhanced for highlighting)
+// STEP 5: GENERATE VERDICTS (Enhanced for Questions)
 // ============================================================================
 
-const VERDICTS_SCHEMA = z.object({
+const VERDICTS_SCHEMA_QUESTION = z.object({
+  questionAnswer: z.object({
+    answer: z.enum(["YES", "NO", "PARTIALLY", "INSUFFICIENT-EVIDENCE"]),
+    confidence: z.number().min(0).max(100),
+    shortAnswer: z.string(),
+    nuancedAnswer: z.string(),
+    keyFactors: z.array(z.object({
+      factor: z.string(),
+      supports: z.enum(["yes", "no", "neutral"]),
+      explanation: z.string()
+    }))
+  }),
+  claimVerdicts: z.array(z.object({
+    claimId: z.string(),
+    verdict: z.enum(["WELL-SUPPORTED", "PARTIALLY-SUPPORTED", "UNCERTAIN", "REFUTED"]),
+    confidence: z.number().min(0).max(100),
+    riskTier: z.enum(["A", "B", "C"]),
+    reasoning: z.string(),
+    supportingFactIds: z.array(z.string())
+  }))
+});
+
+const VERDICTS_SCHEMA_CLAIM = z.object({
   claimVerdicts: z.array(z.object({
     claimId: z.string(),
     verdict: z.enum(["WELL-SUPPORTED", "PARTIALLY-SUPPORTED", "UNCERTAIN", "REFUTED"]),
@@ -525,8 +585,9 @@ const VERDICTS_SCHEMA = z.object({
 async function generateVerdicts(
   state: ResearchState,
   model: any
-): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis }> {
+): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis; questionAnswer?: QuestionAnswer }> {
   const understanding = state.understanding!;
+  const isQuestion = understanding.detectedInputType === "question";
   
   const factsFormatted = state.facts.map(f => 
     `[${f.id}] ${f.fact} (Source: ${f.sourceTitle})`
@@ -536,6 +597,129 @@ async function generateVerdicts(
     `${c.id}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`
   ).join("\n");
 
+  if (isQuestion) {
+    return await generateQuestionVerdicts(state, understanding, factsFormatted, claimsFormatted, model);
+  } else {
+    return await generateClaimVerdicts(state, understanding, factsFormatted, claimsFormatted, model);
+  }
+}
+
+async function generateQuestionVerdicts(
+  state: ResearchState,
+  understanding: ClaimUnderstanding,
+  factsFormatted: string,
+  claimsFormatted: string,
+  model: any
+): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis; questionAnswer: QuestionAnswer }> {
+  
+  const systemPrompt = `You are FactHarbor's verdict generator. The user asked a QUESTION. You must ANSWER it.
+
+## THE QUESTION
+"${understanding.questionBeingAsked || state.originalInput}"
+
+## YOUR TASK
+
+1. **ANSWER THE QUESTION** directly:
+   - YES: The evidence supports a "yes" answer
+   - NO: The evidence supports a "no" answer  
+   - PARTIALLY: Mixed evidence, some yes, some no
+   - INSUFFICIENT-EVIDENCE: Can't determine from available evidence
+
+2. **Provide a short answer** (1-2 sentences, direct)
+
+3. **Provide a nuanced answer** (detailed with caveats)
+
+4. **List key factors** that influenced your answer:
+   - Each factor supports "yes", "no", or is "neutral"
+
+5. **Also evaluate the sub-claims** that help answer the question
+
+## IMPORTANT
+
+- You are ANSWERING a question, not judging a claim as "misleading"
+- Be direct: If asked "Was X fair?", answer "YES/NO/PARTIALLY"
+- The implied claim for YES would be: "${understanding.impliedClaim || understanding.articleThesis}"`;
+
+  const userPrompt = `## QUESTION
+"${understanding.questionBeingAsked || state.originalInput}"
+
+## IMPLIED CLAIM (if YES)
+"${understanding.impliedClaim || understanding.articleThesis}"
+
+## SUB-CLAIMS TO EVALUATE
+${claimsFormatted}
+
+## AVAILABLE FACTS (${state.facts.length} total)
+${factsFormatted}
+
+Answer the question and evaluate the sub-claims.`;
+
+  const result = await generateText({
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ],
+    temperature: 0.3,
+    output: Output.object({ schema: VERDICTS_SCHEMA_QUESTION })
+  });
+
+  const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_QUESTION>;
+  
+  // Build claim verdicts with positions
+  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map(cv => {
+    const claim = understanding.subClaims.find(c => c.id === cv.claimId);
+    return {
+      ...cv,
+      claimText: claim?.text || "",
+      isCentral: claim?.isCentral || false,
+      startOffset: claim?.startOffset,
+      endOffset: claim?.endOffset,
+      highlightColor: getHighlightColor(cv.verdict)
+    };
+  });
+  
+  // Build claim pattern
+  const claimPattern = {
+    total: claimVerdicts.length,
+    supported: claimVerdicts.filter(v => v.verdict === "WELL-SUPPORTED").length,
+    uncertain: claimVerdicts.filter(v => v.verdict === "PARTIALLY-SUPPORTED" || v.verdict === "UNCERTAIN").length,
+    refuted: claimVerdicts.filter(v => v.verdict === "REFUTED").length,
+    centralClaimsTotal: claimVerdicts.filter(v => v.isCentral).length,
+    centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && v.verdict === "WELL-SUPPORTED").length
+  };
+
+  // Build question answer
+  const questionAnswer: QuestionAnswer = {
+    question: understanding.questionBeingAsked || state.originalInput,
+    ...parsed.questionAnswer
+  };
+
+  // Build article analysis for questions
+  const articleAnalysis: ArticleAnalysis = {
+    inputType: "question",
+    isQuestion: true,
+    questionAnswer,
+    articleThesis: understanding.impliedClaim || understanding.articleThesis,
+    thesisSupported: parsed.questionAnswer.answer === "YES",
+    logicalFallacies: [],
+    articleVerdict: "ANSWER-PROVIDED",
+    articleConfidence: parsed.questionAnswer.confidence,
+    verdictDiffersFromClaimAverage: false,
+    claimPattern
+  };
+
+  return { claimVerdicts, articleAnalysis, questionAnswer };
+}
+
+async function generateClaimVerdicts(
+  state: ResearchState,
+  understanding: ClaimUnderstanding,
+  factsFormatted: string,
+  claimsFormatted: string,
+  model: any
+): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis }> {
+  
   const systemPrompt = `You are FactHarbor's verdict generator. Generate verdicts for each claim AND an article-level verdict.
 
 ## ARTICLE VERDICT PROBLEM
@@ -543,15 +727,13 @@ async function generateVerdicts(
 The article's overall credibility is NOT just the average of claim verdicts!
 
 **Pattern 1: False Central Claim**
-- 4 supporting facts are TRUE ✅✅✅✅
-- 1 central conclusion is FALSE ❌
-- Simple average: 80% accurate
-- Reality: MISLEADING - the main point is wrong!
+- Supporting facts are TRUE
+- Central conclusion is FALSE
+- Article is MISLEADING despite high claim average
 
 **Pattern 2: Accurate Facts, Wrong Conclusion**
 - Facts are individually true
 - But the conclusion doesn't follow (logical fallacy)
-- Example: "Coffee has antioxidants" + "Antioxidants fight cancer" ≠ "Coffee cures cancer"
 
 ## LOGICAL FALLACIES TO DETECT
 
@@ -559,25 +741,11 @@ The article's overall credibility is NOT just the average of claim verdicts!
 - **Cherry-picking**: Selective use of evidence
 - **False equivalence**: Treating unequal things as equal
 - **Hasty generalization**: Broad conclusions from limited data
-- **Appeal to authority**: Using authority instead of evidence
-- **Straw man**: Misrepresenting the opposing view
 
 ## YOUR TASK
 
-1. For each claim, provide:
-   - verdict: WELL-SUPPORTED | PARTIALLY-SUPPORTED | UNCERTAIN | REFUTED
-   - confidence: 0-100%
-   - riskTier: A (high-stakes) | B (medium) | C (low)
-   - reasoning: 1-3 sentences
-   - supportingFactIds: Which facts support this verdict
-
-2. For the article as a whole:
-   - thesisSupported: Does the evidence support the main argument?
-   - logicalFallacies: Any logical errors?
-   - articleVerdict: CREDIBLE | MOSTLY-CREDIBLE | MISLEADING | FALSE
-   - articleConfidence: 0-100%
-   - verdictDiffersFromClaimAverage: true if article verdict ≠ simple average
-   - verdictDifferenceReason: Explain WHY if different`;
+1. For each claim: verdict, confidence, reasoning, supporting facts
+2. For the article: thesis supported?, fallacies?, overall verdict`;
 
   const userPrompt = `## ARTICLE THESIS
 "${understanding.articleThesis}"
@@ -597,12 +765,11 @@ Generate verdicts for each claim and the article overall.`;
       { role: "user", content: userPrompt }
     ],
     temperature: 0.3,
-    output: Output.object({ schema: VERDICTS_SCHEMA })
+    output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM })
   });
 
-  const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA>;
+  const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
   
-  // Enrich claim verdicts with position and highlight color
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map(cv => {
     const claim = understanding.subClaims.find(c => c.id === cv.claimId);
     return {
@@ -615,7 +782,6 @@ Generate verdicts for each claim and the article overall.`;
     };
   });
   
-  // Calculate claim pattern for article analysis
   const claimPattern = {
     total: claimVerdicts.length,
     supported: claimVerdicts.filter(v => v.verdict === "WELL-SUPPORTED").length,
@@ -628,6 +794,8 @@ Generate verdicts for each claim and the article overall.`;
   return {
     claimVerdicts,
     articleAnalysis: {
+      inputType: understanding.detectedInputType,
+      isQuestion: false,
       articleThesis: understanding.articleThesis,
       ...parsed.articleAnalysis,
       claimPattern
@@ -646,7 +814,7 @@ function getHighlightColor(verdict: string): "green" | "yellow" | "red" {
 }
 
 // ============================================================================
-// STEP 6: GENERATE TWO-PANEL SUMMARY (UN-3)
+// STEP 6: GENERATE TWO-PANEL SUMMARY (Enhanced for Questions)
 // ============================================================================
 
 async function generateTwoPanelSummary(
@@ -656,15 +824,24 @@ async function generateTwoPanelSummary(
   model: any
 ): Promise<TwoPanelSummary> {
   const understanding = state.understanding!;
+  const isQuestion = articleAnalysis.isQuestion;
   
-  // Left panel: Article Summary
+  // Left panel: Article Summary (or Question Summary)
   const articleSummary = {
-    title: extractTitle(state.originalText),
+    title: isQuestion 
+      ? `Question: ${understanding.questionBeingAsked || state.originalInput}`
+      : extractTitle(state.originalText),
     source: state.inputType === "url" ? state.originalInput : "User-provided text",
-    mainArgument: understanding.articleThesis,
+    mainArgument: isQuestion
+      ? `Implied claim: ${understanding.impliedClaim || understanding.articleThesis}`
+      : understanding.articleThesis,
     keyFindings: understanding.subClaims.slice(0, 4).map(c => c.text),
-    reasoning: `The article makes ${understanding.subClaims.length} claims to support its main argument.`,
-    conclusion: understanding.articleThesis
+    reasoning: isQuestion
+      ? `To answer this question, we examined ${understanding.subClaims.length} related claims.`
+      : `The article makes ${understanding.subClaims.length} claims to support its main argument.`,
+    conclusion: isQuestion
+      ? articleAnalysis.questionAnswer?.shortAnswer || ""
+      : understanding.articleThesis
   };
   
   // Right panel: FactHarbor Analysis
@@ -678,7 +855,9 @@ async function generateTwoPanelSummary(
       confidence: cv.confidence
     })),
     methodologyAssessment: generateMethodologyAssessment(state, articleAnalysis),
-    overallVerdict: `${articleAnalysis.articleVerdict} (${articleAnalysis.articleConfidence}% confidence)`,
+    overallVerdict: isQuestion
+      ? `Answer: ${articleAnalysis.questionAnswer?.answer} (${articleAnalysis.articleConfidence}% confidence)`
+      : `${articleAnalysis.articleVerdict} (${articleAnalysis.articleConfidence}% confidence)`,
     analysisId
   };
   
@@ -707,7 +886,11 @@ function calculateOverallCredibility(sources: FetchedSource[]): string {
 function generateMethodologyAssessment(state: ResearchState, articleAnalysis: ArticleAnalysis): string {
   const parts: string[] = [];
   
-  if (articleAnalysis.logicalFallacies.length > 0) {
+  if (articleAnalysis.isQuestion) {
+    parts.push("Question-answering mode");
+  }
+  
+  if (articleAnalysis.logicalFallacies?.length > 0) {
     parts.push(`Detected ${articleAnalysis.logicalFallacies.length} logical issue(s)`);
   }
   
@@ -727,7 +910,7 @@ function generateMethodologyAssessment(state: ResearchState, articleAnalysis: Ar
 }
 
 // ============================================================================
-// STEP 7: GENERATE COMPREHENSIVE REPORT
+// STEP 7: GENERATE COMPREHENSIVE REPORT (Enhanced for Questions)
 // ============================================================================
 
 async function generateReport(
@@ -738,35 +921,53 @@ async function generateReport(
   model: any
 ): Promise<string> {
   const understanding = state.understanding!;
+  const isQuestion = articleAnalysis.isQuestion;
   
-  // Build markdown report
   let report = `# FactHarbor Analysis Report\n\n`;
   report += `**Analysis ID:** ${twoPanelSummary.factharborAnalysis.analysisId}\n`;
   report += `**Generated:** ${new Date().toISOString()}\n`;
-  report += `**Schema Version:** ${CONFIG.schemaVersion}\n\n`;
+  report += `**Schema Version:** ${CONFIG.schemaVersion}\n`;
+  report += `**Input Type:** ${isQuestion ? "Question" : understanding.detectedInputType}\n\n`;
   
-  // Executive Summary with Article Verdict
+  // Executive Summary - Different for questions vs claims
   report += `## Executive Summary\n\n`;
-  report += `**Article Verdict:** ${articleAnalysis.articleVerdict} (${articleAnalysis.articleConfidence}% confidence)\n\n`;
-  report += `**Main Thesis:** ${articleAnalysis.articleThesis}\n\n`;
-  report += `**Thesis Supported:** ${articleAnalysis.thesisSupported ? "Yes" : "No"}\n\n`;
   
-  if (articleAnalysis.verdictDiffersFromClaimAverage) {
-    report += `> ⚠️ **Note:** The article verdict differs from the simple average of claim verdicts.\n`;
-    report += `> **Reason:** ${articleAnalysis.verdictDifferenceReason}\n\n`;
+  if (isQuestion && articleAnalysis.questionAnswer) {
+    const qa = articleAnalysis.questionAnswer;
+    report += `### Question\n${qa.question}\n\n`;
+    report += `### Answer: ${qa.answer} (${qa.confidence}% confidence)\n\n`;
+    report += `**Short Answer:** ${qa.shortAnswer}\n\n`;
+    report += `**Detailed Answer:** ${qa.nuancedAnswer}\n\n`;
+    
+    // Key factors
+    report += `### Key Factors\n\n`;
+    for (const factor of qa.keyFactors) {
+      const icon = factor.supports === "yes" ? "✅" : factor.supports === "no" ? "❌" : "➖";
+      report += `${icon} **${factor.factor}** (${factor.supports})\n`;
+      report += `   ${factor.explanation}\n\n`;
+    }
+  } else {
+    report += `**Article Verdict:** ${articleAnalysis.articleVerdict} (${articleAnalysis.articleConfidence}% confidence)\n\n`;
+    report += `**Main Thesis:** ${articleAnalysis.articleThesis}\n\n`;
+    report += `**Thesis Supported:** ${articleAnalysis.thesisSupported ? "Yes" : "No"}\n\n`;
+    
+    if (articleAnalysis.verdictDiffersFromClaimAverage) {
+      report += `> ⚠️ **Note:** The article verdict differs from the simple average of claim verdicts.\n`;
+      report += `> **Reason:** ${articleAnalysis.verdictDifferenceReason}\n\n`;
+    }
   }
   
   // Claim Pattern Summary
   const { claimPattern } = articleAnalysis;
-  report += `**Claim Analysis:**\n`;
+  report += `### Claim Analysis\n\n`;
   report += `- Total claims: ${claimPattern.total}\n`;
   report += `- Well-supported: ${claimPattern.supported}\n`;
   report += `- Uncertain/Partial: ${claimPattern.uncertain}\n`;
   report += `- Refuted: ${claimPattern.refuted}\n`;
   report += `- Central claims supported: ${claimPattern.centralClaimsSupported}/${claimPattern.centralClaimsTotal}\n\n`;
   
-  // Logical Fallacies (if any)
-  if (articleAnalysis.logicalFallacies.length > 0) {
+  // Logical Fallacies (if any, for non-questions)
+  if (!isQuestion && articleAnalysis.logicalFallacies?.length > 0) {
     report += `## ⚠️ Logical Issues Detected\n\n`;
     for (const fallacy of articleAnalysis.logicalFallacies) {
       report += `### ${fallacy.type}\n`;
@@ -793,12 +994,12 @@ async function generateReport(
     report += `---\n\n`;
   }
   
-  // Two-Panel Summary (UN-3)
+  // Two-Panel Summary
   report += `## Two-Panel Summary\n\n`;
-  report += `### What the Article Claims\n\n`;
+  report += `### ${isQuestion ? "The Question" : "What the Article Claims"}\n\n`;
   report += `**Title:** ${twoPanelSummary.articleSummary.title}\n\n`;
-  report += `**Main Argument:** ${twoPanelSummary.articleSummary.mainArgument}\n\n`;
-  report += `**Key Findings:**\n`;
+  report += `**${isQuestion ? "Implied Claim" : "Main Argument"}:** ${twoPanelSummary.articleSummary.mainArgument}\n\n`;
+  report += `**Key ${isQuestion ? "Sub-questions" : "Findings"}:**\n`;
   for (const finding of twoPanelSummary.articleSummary.keyFindings) {
     report += `- ${finding}\n`;
   }
@@ -807,7 +1008,7 @@ async function generateReport(
   report += `### FactHarbor's Assessment\n\n`;
   report += `**Source Credibility:** ${twoPanelSummary.factharborAnalysis.sourceCredibility}\n\n`;
   report += `**Methodology:** ${twoPanelSummary.factharborAnalysis.methodologyAssessment}\n\n`;
-  report += `**Overall Verdict:** ${twoPanelSummary.factharborAnalysis.overallVerdict}\n\n`;
+  report += `**Overall ${isQuestion ? "Answer" : "Verdict"}:** ${twoPanelSummary.factharborAnalysis.overallVerdict}\n\n`;
   
   // Evidence Summary
   report += `## Evidence Summary\n\n`;
@@ -894,13 +1095,14 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   }
   state.originalText = textToAnalyze;
   
-  // STEP 1: Understand
-  await emit("Step 1: Analyzing claim structure", 5);
+  // STEP 1: Understand (with question detection)
+  await emit("Step 1: Analyzing input type and structure", 5);
   try {
     state.understanding = await understandClaim(textToAnalyze, model);
   } catch (err) {
     console.error("Understanding failed:", err);
     state.understanding = {
+      detectedInputType: "claim",
       mainQuestion: textToAnalyze.slice(0, 200),
       articleThesis: textToAnalyze.slice(0, 200),
       subClaims: [{ id: "C1", text: textToAnalyze.slice(0, 200), type: "factual", keyEntities: [], isCentral: true }],
@@ -911,8 +1113,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     };
   }
   
+  const inputTypeLabel = state.understanding.detectedInputType === "question" ? "QUESTION" : "CLAIM/ARTICLE";
   await emit(
-    `Identified ${state.understanding.subClaims.length} claims (${state.understanding.subClaims.filter(c => c.isCentral).length} central)`, 
+    `Detected: ${inputTypeLabel} with ${state.understanding.subClaims.length} claims (${state.understanding.subClaims.filter(c => c.isCentral).length} central)`, 
     10
   );
   
@@ -983,9 +1186,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   
   // STEP 5: Generate verdicts
   await emit("Step 3: Generating verdicts", 65);
-  const { claimVerdicts, articleAnalysis } = await generateVerdicts(state, model);
+  const { claimVerdicts, articleAnalysis, questionAnswer } = await generateVerdicts(state, model);
   
-  // STEP 6: Two-panel summary (UN-3)
+  // STEP 6: Two-panel summary
   await emit("Step 4: Building two-panel summary", 75);
   const twoPanelSummary = await generateTwoPanelSummary(state, claimVerdicts, articleAnalysis, model);
   
@@ -1004,15 +1207,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       llmProvider: provider,
       llmModel: modelName,
       inputType: input.inputType,
+      detectedInputType: state.understanding!.detectedInputType,
+      isQuestion: articleAnalysis.isQuestion,
       inputLength: textToAnalyze.length,
       analysisTimeMs: Date.now() - startTime,
       analysisId: twoPanelSummary.factharborAnalysis.analysisId
     },
+    // Question answer (if applicable)
+    questionAnswer: questionAnswer || null,
     // UN-3: Two-panel summary
     twoPanelSummary,
     // Article Verdict Problem: Article-level analysis
     articleAnalysis,
-    // UN-17: Claims with positions for highlighting
+    // UN-17: Claims with positions
     claimVerdicts,
     // Research data
     understanding: state.understanding,
