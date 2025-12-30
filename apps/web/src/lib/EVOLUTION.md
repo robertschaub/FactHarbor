@@ -1,426 +1,432 @@
 # FactHarbor POC1 Evolution Documentation
 
-**Version**: 2.0.0  
+**Version**: 2.2.0  
 **Date**: December 30, 2025  
-**Author**: Analysis and implementation by Claude (Anthropic)
+**Status**: Implements UN-3, UN-17, and Article Verdict Problem
 
 ---
 
 ## Executive Summary
 
-This document describes the evolution of FactHarbor POC1 from a single-pass analyzer to an agent-style iterative research system. The goal was to match the quality of human-guided fact-checking analysis.
+Version 2.2 addresses three critical requirements:
 
-### Key Outcome
+1. **Article Verdict Problem**: Article credibility ≠ simple average of claim verdicts
+2. **UN-3**: Two-Panel Summary (Article Summary + FactHarbor Analysis)
+3. **UN-17**: In-Article Claim Highlighting with color-coded verdicts
 
-| Metric | Original POC1 | Evolved POC1 |
-|--------|---------------|--------------|
-| Output length | ~100 lines | **500-800 lines** |
-| Sources | 10 (excerpts) | **15-20 (full articles)** |
-| Specific citations | Generic | **Exact article numbers, figures** |
-| Expert quotes | None | **Named with attribution** |
-| Runtime | ~55 seconds | **2-4 minutes** |
-| Quality | Basic | **Reference-level** |
+### What's New in v2.2
 
----
-
-## Problem Statement
-
-### Original Architecture Limitations
-
-The original POC1 used a single-pass approach:
-
-```
-Input → 2 generic searches → 1500-char excerpts → 1 LLM call → Report
-```
-
-This produced thin reports lacking:
-- Specific legal citations (e.g., "Article 359-L")
-- Evidence details (e.g., "884-page report, 73 witnesses")
-- Named expert quotes
-- Separate analysis of distinct events
-- Meaningful confidence differentiation
-
-### Root Cause Analysis
-
-1. **Insufficient research depth**: Two generic searches couldn't find specific legal provisions
-2. **Excerpt truncation**: 1500-char excerpts missed detailed information buried in articles
-3. **No iterative refinement**: Single LLM call couldn't identify and fill knowledge gaps
-4. **No claim decomposition**: Complex claims treated as monolithic instead of decomposed
-
-### Reference Quality Gap
-
-A manually-guided analysis of the same claim (Bolsonaro trial) produced an 847-line report with:
-- Specific laws: "Lei da Ficha Limpa", "Law 14,197/2021 Article 359-L"
-- Evidence details: "884-page Federal Police report", "73 witnesses"
-- Expert quotes: "Harvard Professor Steven Levitsky called it 'a milestone'"
-- Separate analysis: TSE 2023 trial vs. STF 2025 trial
-- Differentiated confidence: 85% for legal basis, 70% for procedural fairness
+| Feature | Description | User Need |
+|---------|-------------|-----------|
+| Article Verdict | Separate article-level verdict that may differ from claim average | Article Verdict Problem |
+| Central vs Supporting Claims | Classification of claim importance | Article Verdict Problem |
+| Logical Fallacy Detection | Detects correlation→causation, cherry-picking, etc. | Article Verdict Problem |
+| Two-Panel Summary | Side-by-side: What they claim vs Our assessment | UN-3 |
+| Claim Positions | Character offsets for each claim in original text | UN-17 |
+| Claim Highlighting | Color-coded highlighting with hover tooltips | UN-17 |
 
 ---
 
-## Solution: Agent-Style Architecture
+## The Article Verdict Problem
 
-### New Pipeline
+### Problem Statement
+
+> "An analysis and verdict of the whole article is not the same as a summary of the analysis and verdicts of the parts (the claims)."
+
+### Example: The Misleading Article
 
 ```
-Input
-  │
-  ▼
-┌─────────────────────────────────────┐
-│ STEP 1: Understand Claim            │
-│ - Identify sub-claims               │
-│ - Extract distinct events           │
-│ - List legal frameworks             │
-│ - Generate research questions       │
-└─────────────────────────────────────┘
-  │
-  ▼
-┌─────────────────────────────────────┐
-│ STEP 2: Iterative Research Loop     │◄──┐
-│ - Decide what's missing             │   │
-│ - Execute targeted searches         │   │
-│ - Fetch full articles               │   │
-│ - Extract specific facts            │   │
-│                                     │   │
-│ Categories:                         │   │
-│ • Legal provisions                  │   │
-│ • Evidence/documents                │   │
-│ • Expert opinions                   │   │
-│ • Criticism (mandatory)             │   │
-└─────────────────────────────────────┘   │
-  │                                       │
-  │ Not sufficient? ──────────────────────┘
-  │
-  ▼ Sufficient facts gathered
-┌─────────────────────────────────────┐
-│ STEP 3: Generate Comprehensive      │
-│ Report                              │
-│ - Use all extracted facts           │
-│ - Cite sources with specifics       │
-│ - Separate distinct events          │
-│ - Multiple scenarios per claim      │
-└─────────────────────────────────────┘
-  │
-  ▼
-Output (500-800 lines)
+Article: "Coffee Cures Cancer!"
+
+Individual Claims:
+[1] Coffee contains antioxidants → ✅ WELL-SUPPORTED (95%)
+[2] Antioxidants fight cancer → ✅ WELL-SUPPORTED (85%)
+[3] Coffee cures cancer → ❌ REFUTED (10%)
+
+Simple Aggregation:
+- 2 supported, 1 refuted = 67% accurate
+- Naive conclusion: "Mostly accurate article"
+
+Reality:
+- The MAIN CLAIM (coffee cures cancer) is FALSE
+- Article commits logical fallacy (correlation ≠ causation)
+- Article is MISLEADING despite accurate supporting facts
+
+FactHarbor v2.2 Assessment:
+- Individual verdicts: As shown above
+- Article Verdict: MISLEADING
+- Reason: Central claim is unsupported; accurate facts used to reach false conclusion
+- Fallacy detected: Correlation presented as causation
 ```
 
-### Key Design Decisions
+### Solution: Central vs Supporting Claims
 
-#### 1. Claim Understanding Before Research
+v2.2 classifies each claim as:
 
-**Why**: The original system searched blindly. The evolved system first understands what it's analyzing.
+- **CENTRAL**: The main conclusion or argument. If false, the article is misleading.
+- **SUPPORTING**: Background facts that support the central claim.
 
-**Implementation**:
+The article verdict considers:
+1. Are the CENTRAL claims supported?
+2. Does the conclusion logically follow from the evidence?
+3. Are there logical fallacies?
+
+### Implementation
+
 ```typescript
 interface ClaimUnderstanding {
-  mainQuestion: string;
+  articleThesis: string;  // Main argument
   subClaims: Array<{
     id: string;
     text: string;
-    type: "legal" | "procedural" | "factual" | "evaluative";
-    keyEntities: string[];
+    isCentral: boolean;  // Central vs Supporting
+    // ...
   }>;
-  distinctEvents: Array<{
-    name: string;
-    date: string;
+}
+
+interface ArticleAnalysis {
+  articleThesis: string;
+  thesisSupported: boolean;
+  logicalFallacies: Array<{
+    type: string;  // "Correlation→Causation", "Cherry-picking", etc.
     description: string;
+    affectedClaims: string[];
   }>;
-  legalFrameworks: string[];  // e.g., ["Lei da Ficha Limpa", "Law 14,197/2021"]
-  researchQuestions: string[];
-  riskTier: "A" | "B" | "C";
+  articleVerdict: "CREDIBLE" | "MOSTLY-CREDIBLE" | "MISLEADING" | "FALSE";
+  verdictDiffersFromClaimAverage: boolean;
+  verdictDifferenceReason?: string;
 }
 ```
 
-**Example output for Bolsonaro case**:
-- Sub-claims: "Legal basis" (legal), "Procedural fairness" (procedural)
-- Distinct events: "TSE trial (June 2023)", "STF trial (September 2025)"
-- Legal frameworks: "Lei da Ficha Limpa", "Law 14,197/2021", "Constitution Article 142"
+### Logical Fallacies Detected
 
-#### 2. Iterative Research by Category
-
-**Why**: Different types of facts require different search strategies.
-
-**Categories**:
-| Category | Purpose | Example Queries |
-|----------|---------|-----------------|
-| `legal_provision` | Find specific statutes | "Law 14197/2021 Article 359 Brazil" |
-| `evidence` | Find documents/reports | "Bolsonaro federal police report evidence" |
-| `expert_quote` | Find named opinions | "Bolsonaro trial legal expert professor" |
-| `criticism` | Find opposing views | "Bolsonaro trial lawfare criticism unfair" |
-
-**Completion criteria**:
-- Minimum 12 facts extracted
-- At least 3 categories covered
-- Must include criticism (mandatory for balanced analysis)
-
-#### 3. Full Article Reading
-
-**Why**: 1500-char excerpts miss crucial details.
-
-**Change**:
-- Original: `excerpt = text.slice(0, 1500)`
-- Evolved: `fullText = text.slice(0, 12000)`
-
-This allows finding buried specifics like vote counts, sentence lengths, and expert quotes.
-
-#### 4. Specific Fact Extraction
-
-**Why**: The LLM needs to be prompted to extract specific, citable facts rather than generic summaries.
-
-**Specificity levels**:
-| Level | Example | Action |
-|-------|---------|--------|
-| HIGH | "Article 359-L: 3-12 years for coup" | ✅ Include |
-| MEDIUM | "The law criminalizes coup attempts" | ✅ Include |
-| LOW | "The trial followed procedures" | ❌ Filter out |
-
-**Extracted fact structure**:
-```typescript
-interface ExtractedFact {
-  id: string;           // "S3-F2"
-  fact: string;         // "Law 14,197/2021 Article 359-L establishes..."
-  category: string;     // "legal_provision"
-  specificity: string;  // "high"
-  sourceId: string;     // "S3"
-  sourceUrl: string;
-  sourceTitle: string;
-}
-```
-
-#### 5. Source Credibility Tracking
-
-**Why**: Not all sources are equal. Courts > Wire services > Think tanks > Partisan outlets.
-
-**Tiers**:
-| Tier | Score | Examples |
-|------|-------|----------|
-| HIGHEST | 0.9-1.0 | stf.jus.br, reuters.com, un.org |
-| HIGH | 0.8-0.89 | bbc.com, nytimes.com, lawfaremedia.org |
-| MEDIUM | 0.6-0.79 | cfr.org, hrw.org, politico.com |
-| LOW | < 0.6 | foxnews.com, breitbart.com |
+| Fallacy | Description |
+|---------|-------------|
+| Correlation→Causation | Assuming cause from correlation |
+| Cherry-picking | Selective use of evidence |
+| False equivalence | Treating unequal things as equal |
+| Hasty generalization | Broad conclusions from limited data |
+| Appeal to authority | Using authority instead of evidence |
+| Straw man | Misrepresenting the opposing view |
 
 ---
 
-## Implementation Details
+## UN-3: Two-Panel Summary
 
-### File Changes
+### Requirement
 
-**Replaced file**:
-```
-apps/web/src/lib/analyzer.ts
-```
+> Show an article summary (what they claim) side-by-side with FactHarbor's analysis summary (our assessment)
 
-**No new dependencies** - uses existing:
-- `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/mistral`
-- `ai` (Vercel AI SDK)
-- `zod`
-- Existing `web-search.ts` and `retrieval.ts`
-
-### Configuration
+### Implementation
 
 ```typescript
-const CONFIG = {
-  maxResearchIterations: 5,      // Max research loops
-  maxSourcesPerIteration: 4,     // Sources per loop
-  maxTotalSources: 20,           // Upper source limit
-  fullArticleMaxChars: 12000,    // Article read length
-  minFactsRequired: 12,          // Quality threshold
-  minCategories: 3,              // Must have 3+ categories
-  fetchTimeoutMs: 12000,         // Network timeout
-};
-```
-
-### Quality Gates
-
-The evolved system tracks quality metrics:
-
-```typescript
-qualityGates: {
-  passed: boolean,
-  summary: {
-    totalFacts: number,
-    factsByCategory: Record<string, number>,
-    totalSources: number,
-    sourcesByTier: { HIGHEST, HIGH, MEDIUM, LOW },
-    averageCredibility: number,
-    researchIterations: number
-  },
-  failures: string[]  // e.g., ["Missing criticism"]
+interface TwoPanelSummary {
+  // Left panel: What the article claims
+  articleSummary: {
+    title: string;
+    source: string;
+    mainArgument: string;
+    keyFindings: string[];
+    reasoning: string;
+    conclusion: string;
+  };
+  // Right panel: FactHarbor's analysis
+  factharborAnalysis: {
+    sourceCredibility: string;
+    claimVerdicts: Array<{
+      claim: string;
+      verdict: string;
+      confidence: number;
+    }>;
+    methodologyAssessment: string;
+    overallVerdict: string;
+    analysisId: string;
+  };
 }
+```
+
+### GUI Component
+
+The `TwoPanelSummary` component displays:
+
+```
+┌─────────────────────────┬─────────────────────────┐
+│ 📄 What the Article     │ 🔍 FactHarbor Analysis  │
+│    Claims               │                         │
+├─────────────────────────┼─────────────────────────┤
+│ Title: ...              │ Source Credibility: ... │
+│ Source: ...             │                         │
+│ Main Argument: ...      │ Claim Verdicts:         │
+│ Key Findings:           │ - Claim 1: ✅ SUPPORTED │
+│   • Finding 1           │ - Claim 2: 🟡 UNCERTAIN │
+│   • Finding 2           │ - Claim 3: ❌ REFUTED   │
+│ Conclusion: ...         │                         │
+│                         │ Methodology: ...        │
+│                         │ Overall: MISLEADING     │
+│                         │ ID: FH-ABC123           │
+└─────────────────────────┴─────────────────────────┘
 ```
 
 ---
 
-## API Changes
+## UN-17: In-Article Claim Highlighting
 
-### Response Structure
+### Requirement
 
-**Original**:
-```json
+> Highlight claims within articles with color-coded credibility indicators
+
+### Implementation
+
+```typescript
+interface ClaimVerdict {
+  claimId: string;
+  claimText: string;
+  verdict: string;
+  confidence: number;
+  // Position in original text
+  startOffset?: number;
+  endOffset?: number;
+  highlightColor: "green" | "yellow" | "red";
+}
+```
+
+### Color Coding
+
+| Color | Verdict | Meaning |
+|-------|---------|---------|
+| 🟢 Green | WELL-SUPPORTED | Strong evidence supports this claim |
+| 🟡 Yellow | UNCERTAIN / PARTIALLY-SUPPORTED | Mixed or insufficient evidence |
+| 🔴 Red | REFUTED | Evidence contradicts this claim |
+
+### GUI Component
+
+The `ClaimHighlighter` component:
+
+1. Parses original text
+2. Identifies claim positions
+3. Renders highlighted text
+4. Shows tooltip on hover/click with:
+   - Verdict and confidence
+   - Central/Supporting indicator
+   - Reasoning
+   - Risk tier
+
+### Example Output
+
+```
+Regular article text flows normally...
+
+[🟢 This claim is well-supported by evidence] and you can continue reading...
+
+More context and explanation...
+
+[🟡 This claim is uncertain with conflicting evidence] but the article continues...
+
+Additional information...
+
+[🔴 This claim has been refuted by research] and understanding that helps readers...
+```
+
+---
+
+## API Response Schema (v2.2.0)
+
+```typescript
 {
-  "meta": { "generatedUtc", "llmProvider", "inputType", "inputLength" },
-  "claims": [...],
-  "articleAnalysis": { ... }
-}
-```
-
-**Evolved**:
-```json
-{
-  "meta": {
-    "generatedUtc": "...",
-    "llmProvider": "anthropic",
-    "llmModel": "claude-sonnet-4-20250514",
-    "inputType": "text",
-    "inputLength": 62,
-    "analysisTimeMs": 180000,
-    "researchIterations": 4,
-    "sourcesConsulted": 16,
-    "factsExtracted": 24
+  meta: {
+    schemaVersion: "2.2.0",
+    analysisId: string,
+    // ... other meta fields
   },
-  "understanding": {
-    "mainQuestion": "...",
-    "subClaims": [...],
-    "distinctEvents": [...],
-    "legalFrameworks": [...],
-    "researchQuestions": [...]
+  
+  // UN-3: Two-Panel Summary
+  twoPanelSummary: TwoPanelSummary,
+  
+  // Article Verdict Problem
+  articleAnalysis: {
+    articleThesis: string,
+    thesisSupported: boolean,
+    logicalFallacies: Array<LogicalFallacy>,
+    articleVerdict: string,
+    articleConfidence: number,
+    verdictDiffersFromClaimAverage: boolean,
+    verdictDifferenceReason?: string,
+    claimPattern: {
+      total: number,
+      supported: number,
+      uncertain: number,
+      refuted: number,
+      centralClaimsSupported: number,
+      centralClaimsTotal: number
+    }
   },
-  "facts": [...],
-  "sources": [...],
-  "iterations": [...],
-  "qualityGates": { ... }
+  
+  // UN-17: Claims with positions
+  claimVerdicts: Array<{
+    claimId: string,
+    claimText: string,
+    isCentral: boolean,
+    verdict: string,
+    confidence: number,
+    reasoning: string,
+    startOffset?: number,
+    endOffset?: number,
+    highlightColor: string
+  }>,
+  
+  // ... other fields (understanding, facts, sources, etc.)
 }
-```
-
-### Event Log
-
-The evolved system emits more detailed progress events:
-
-```
-Step 1: Analyzing claim structure
-Identified 2 sub-claims, 2 distinct events
-Step 2.1: Researching Legal framework and specific statutes
-Fetching 4 sources
-Extracting facts from 4 sources
-Iteration 1: 4 sources, 8 total facts
-Step 2.2: Researching Evidence, documents, and specific facts
-...
-Step 2.3: Researching Criticism and opposing viewpoints
-...
-Research complete: 24 facts from 16 sources
-Step 3: Generating comprehensive report
-Analysis complete
 ```
 
 ---
 
-## Trade-offs
+## GUI Components
 
-### Advantages
+### New Components
 
-1. **Reference-quality output**: Matches human-guided analysis depth
-2. **Specific citations**: Actual article numbers, figures, named experts
-3. **Balanced analysis**: Mandatory criticism search ensures opposing views
-4. **Auditable**: Full fact/source provenance tracked
-5. **Quality gates**: Prevents publishing thin analyses
+| Component | File | Purpose |
+|-----------|------|---------|
+| `ArticleVerdictBanner` | `components/ArticleVerdictBanner.tsx` | Shows article-level verdict with claim pattern |
+| `TwoPanelSummary` | `components/TwoPanelSummary.tsx` | UN-3 two-panel layout |
+| `ClaimHighlighter` | `components/ClaimHighlighter.tsx` | UN-17 claim highlighting |
 
-### Costs
+### Updated Pages
 
-1. **Longer runtime**: 2-4 minutes vs. 55 seconds
-2. **Higher API cost**: ~$0.30-0.80 per analysis vs. ~$0.05
-3. **More LLM calls**: 5-10 calls vs. 1-2 calls
+| Page | File | Changes |
+|------|------|---------|
+| Job Results | `app/jobs/[id]/page.tsx` | New tabs: Summary, Article View; integrates all components |
 
-### When to Use
+### Tab Structure
 
-| Scenario | Recommendation |
-|----------|----------------|
-| Complex legal/political claims | ✅ Use evolved analyzer |
-| Simple factual checks | Consider simpler approach |
-| High-stakes (democracy, health) | ✅ Use evolved analyzer |
-| Quick screening | Consider simpler approach |
+```
+📊 Summary     - ArticleVerdictBanner + TwoPanelSummary + Claims List
+📖 Article    - ClaimHighlighter (UN-17)
+📝 Full Report - Markdown report (existing)
+🔧 JSON       - Raw JSON (existing)
+📋 Events     - Processing events (existing)
+```
+
+---
+
+## File Structure
+
+```
+apps/web/src/
+├── lib/
+│   └── analyzer.ts           # v2.2 with Article Verdict + UN-3 + UN-17
+├── components/
+│   ├── ArticleVerdictBanner.tsx   # Article-level verdict display
+│   ├── TwoPanelSummary.tsx        # UN-3 two-panel layout
+│   └── ClaimHighlighter.tsx       # UN-17 highlighting
+├── app/
+│   └── jobs/[id]/
+│       └── page.tsx          # Updated results page
+└── EVOLUTION.md              # This documentation
+```
+
+---
+
+## Migration from v2.1
+
+### New Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `understanding.articleThesis` | string | Main argument of the article |
+| `understanding.subClaims[].isCentral` | boolean | Central vs supporting |
+| `understanding.subClaims[].startOffset` | number | Position in text |
+| `twoPanelSummary` | object | UN-3 structure |
+| `articleAnalysis` | object | Article-level verdict |
+| `claimVerdicts[].isCentral` | boolean | Central indicator |
+| `claimVerdicts[].startOffset/endOffset` | number | Text positions |
+| `claimVerdicts[].highlightColor` | string | Color for highlighting |
+
+### Breaking Changes
+
+None - v2.2 is backward compatible. New fields are additions.
+
+### Consumer Updates
+
+```typescript
+// Check for v2.2 features
+if (result.meta.schemaVersion.startsWith("2.2")) {
+  // Use new features
+  const { twoPanelSummary, articleAnalysis, claimVerdicts } = result;
+} else {
+  // Fall back to report view
+}
+```
 
 ---
 
 ## Testing Checklist
 
-After integration, verify:
+### Article Verdict Problem
 
-- [ ] Event log shows multiple research iterations
-- [ ] Report includes specific legal citations (article numbers)
-- [ ] Report includes specific evidence (page counts, witness numbers)
-- [ ] Report includes named expert quotes
-- [ ] Distinct events (if any) analyzed separately
-- [ ] Counter-evidence/criticism section present
-- [ ] Quality gates status in response
-- [ ] Runtime ~2-4 minutes for complex claims
+- [ ] Central claims correctly identified
+- [ ] Article verdict differs from claim average when appropriate
+- [ ] Logical fallacies detected
+- [ ] Verdict difference reason provided
+- [ ] Claim pattern summary accurate
 
-### Test Case
+### UN-3: Two-Panel Summary
 
-**Input**: "Bolsonaro judgment (trial) was fair and based on Brazil's law?"
+- [ ] Article summary populated correctly
+- [ ] FactHarbor analysis populated correctly
+- [ ] Side-by-side display works
+- [ ] Mobile responsive (stacks vertically)
 
-**Expected output should include**:
-- TSE 2023 and STF 2025 trials analyzed separately
-- "Lei da Ficha Limpa" or "Complementary Law 64/1990"
-- "Law 14,197/2021 Article 359-L"
-- "884-page" or specific evidence reference
-- Named expert (e.g., "Professor X stated...")
-- WSJ/Economist criticism or similar
+### UN-17: Claim Highlighting
 
----
-
-## Future Improvements
-
-### Short-term
-- [ ] Caching for repeated queries
-- [ ] Parallel fact extraction across sources
-- [ ] Configurable depth (quick vs. deep mode)
-
-### Medium-term
-- [ ] Source archive integration (Archive.org)
-- [ ] Multi-language support
-- [ ] Claim deduplication across sessions
-
-### Long-term
-- [ ] Federated fact-checking (cross-org verification)
-- [ ] Real-time source monitoring
-- [ ] Automated claim detection from articles
+- [ ] Claim positions extracted
+- [ ] Highlights render correctly
+- [ ] Color coding matches verdicts
+- [ ] Tooltip shows on hover
+- [ ] Toggle to disable highlights works
+- [ ] Central claim badge (🔑) displays
 
 ---
 
-## Conclusion
+## Success Criteria (from Spec)
 
-The evolution from single-pass to agent-style architecture was necessary to achieve reference-quality fact-checking output. The trade-off of increased time and cost is justified for complex claims where accuracy and specificity matter.
+### Article Verdict Problem (POC1 Experimental)
 
-The key insight: **You cannot cite what you never found.** The original system's limited search depth meant it never encountered specific legal provisions or evidence details. The evolved system's iterative, categorized research ensures comprehensive evidence gathering before analysis.
+- [ ] ≥70% accuracy detecting misleading articles
+- [ ] ≤30% false positives on straightforward articles
+- [ ] Reasoning is comprehensible
+
+### UN-3
+
+- [ ] Both panels visible simultaneously
+- [ ] Clear distinction between "what they claim" and "our analysis"
+- [ ] Verdict colors match claim status
+
+### UN-17
+
+- [ ] Highlighting renders within 500ms
+- [ ] Color-blind friendly (icons + colors)
+- [ ] Screen reader compatible
 
 ---
 
-## Appendix: Improvement Steps Summary
+## Appendix: CODEX Review Compliance
 
-### Step 1: Diagnosis (Analysis Phase)
-- Compared POC1 output to reference report
-- Identified 8x length gap, missing specifics
-- Root cause: single-pass architecture
+v2.2 maintains all v2.1 compliance:
 
-### Step 2: Architecture Design
-- Designed 3-phase pipeline: Understand → Research → Report
-- Defined research categories and completion criteria
-- Specified fact specificity requirements
+| CODEX Concern | Status | Implementation |
+|---------------|--------|----------------|
+| Hallucination risk | ✅ | `sourceExcerpt` required |
+| Source credibility | ✅ | Metadata lookup only |
+| Breaking API | ✅ | Schema versioned |
+| Runtime | ✅ | Quick/deep modes |
+| Contradiction search | ✅ | Mandatory search |
 
-### Step 3: Implementation
-- Created claim understanding module
-- Implemented iterative research loop
-- Built specific fact extraction with filtering
-- Added source credibility tracking
-- Designed comprehensive report generation
+New in v2.2:
 
-### Step 4: Quality Assurance
-- Added quality gates (min facts, categories, criticism)
-- Implemented detailed event logging
-- Structured response for auditability
-
-### Step 5: Documentation
-- This evolution document
-- Integration guide
-- API changes documentation
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Article Verdict | ✅ | Separate from claim average |
+| Central claims | ✅ | Classified in understanding |
+| Fallacy detection | ✅ | 6 fallacy types |
+| Two-panel | ✅ | UN-3 structure |
+| Claim positions | ✅ | For UN-17 highlighting |
