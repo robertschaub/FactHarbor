@@ -24,6 +24,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [tab, setTab] = useState<"report" | "json" | "events">("report");
   const [err, setErr] = useState<string | null>(null);
+  const [showTechnicalNotes, setShowTechnicalNotes] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -61,6 +62,10 @@ export default function JobPage({ params }: { params: { id: string } }) {
   }, [jobId]);
 
   const report = job?.reportMarkdown ?? "";
+  const reportForDisplay = useMemo(() => {
+    if (showTechnicalNotes) return report;
+    return report.replace(/## Technical Notes[\s\S]*$/m, "").trim();
+  }, [report, showTechnicalNotes]);
   const jsonText = useMemo(() => (job?.resultJson ? JSON.stringify(job.resultJson, null, 2) : ""), [job]);
 
   return (
@@ -85,11 +90,17 @@ export default function JobPage({ params }: { params: { id: string } }) {
         <button onClick={() => setTab("report")} style={{ padding: "8px 10px", border: "1px solid #333", borderRadius: 10, cursor: "pointer" }}>Report</button>
         <button onClick={() => setTab("json")} style={{ padding: "8px 10px", border: "1px solid #333", borderRadius: 10, cursor: "pointer" }}>JSON</button>
         <button onClick={() => setTab("events")} style={{ padding: "8px 10px", border: "1px solid #333", borderRadius: 10, cursor: "pointer" }}>Events</button>
+        <button
+          onClick={() => setShowTechnicalNotes((value) => !value)}
+          style={{ padding: "8px 10px", border: "1px solid #333", borderRadius: 10, cursor: "pointer" }}
+        >
+          {showTechnicalNotes ? "Hide Technical Notes" : "Show Technical Notes"}
+        </button>
       </div>
 
       {tab === "report" && (
         <div style={{ border: "1px solid #333", borderRadius: 10, padding: 12 }}>
-          {report ? <ReactMarkdown>{report}</ReactMarkdown> : <div>No report yet.</div>}
+          {reportForDisplay ? <ReactMarkdown>{reportForDisplay}</ReactMarkdown> : <div>No report yet.</div>}
         </div>
       )}
 

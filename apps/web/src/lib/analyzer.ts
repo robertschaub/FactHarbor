@@ -76,6 +76,7 @@ const LlmOutputSchema = z.object({
 const ResultVerdictSchema = z.object({
   scenarioId: z.string(),
   verdict: VerdictEnum,
+  verdictLabel: z.string(),
   confidence: z.number().min(0).max(1),
   confidenceRange: ConfidenceRangeSchema,
   uncertaintyFactors: z.array(z.string()),
@@ -90,6 +91,15 @@ const ResultSchema = z.object({
     inputType: z.enum(["text", "url"]),
     inputLength: z.number()
   }),
+  sources: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string().nullable(),
+      domain: z.string(),
+      sourceType: z.string().nullable(),
+      trackRecordScore: z.number().nullable()
+    })
+  ),
   claims: z.array(
     ClaimSchema.extend({
       scenarios: z.array(
@@ -99,7 +109,9 @@ const ResultSchema = z.object({
       )
     })
   ),
-  articleAnalysis: LlmOutputSchema.shape.articleAnalysis
+  articleAnalysis: LlmOutputSchema.shape.articleAnalysis.extend({
+    verdictLabel: z.string()
+  })
 });
 
 type AnalysisInput = {
@@ -118,7 +130,7 @@ function clampRange(range: z.infer<typeof ConfidenceRangeSchema>) {
   return { min: Math.min(min, max), max: Math.max(min, max) };
 }
 
-type QualitySummary = {
+type TechnicalNotesSummary = {
   totalClaims: number;
   factualClaims: number;
   opinionClaims: number;
@@ -129,9 +141,11 @@ type QualitySummary = {
   unknownEvidence: number;
   sourceCount: number;
   averageConfidence: number;
+  claimValidationFailedClaims: number;
+  verdictConfidenceFailedScenarios: number;
 };
 
-function buildQualitySummary(result: z.infer<typeof ResultSchema>, sources: SourceBundle): QualitySummary {
+function buildTechnicalNotes(result: z.infer<typeof ResultSchema>, sources: SourceBundle): TechnicalNotesSummary {
   const totalClaims = result.claims.length;
   let factualClaims = 0;
   let opinionClaims = 0;
@@ -141,6 +155,8 @@ function buildQualitySummary(result: z.infer<typeof ResultSchema>, sources: Sour
   let evidenceTotal = 0;
   let unknownEvidence = 0;
   let confidenceSum = 0;
+  let claimValidationFailedClaims = 0;
+  let verdictConfidenceFailedScenarios = 0;
 
   for (const claim of result.claims) {
     if (claim.claimType === "factual") factualClaims += 1;
@@ -148,9 +164,17 @@ function buildQualitySummary(result: z.infer<typeof ResultSchema>, sources: Sour
     else if (claim.claimType === "prediction") predictionClaims += 1;
     else ambiguousClaims += 1;
 
+    if (claim.claimType !== "factual") {
+      claimValidationFailedClaims += 1;
+      continue;
+    }
+
     scenariosTotal += claim.scenarios.length;
     for (const scenario of claim.scenarios) {
       confidenceSum += scenario.verdict.confidence;
+      if (scenario.verdict.uncertaintyFactors.some((f) => f.toLowerCase().includes("verdict-confidence"))) {
+        verdictConfidenceFailedScenarios += 1;
+      }
       for (const evidence of scenario.evidence) {
         evidenceTotal += 1;
         if (evidence.source.type === "unknown") unknownEvidence += 1;
@@ -170,7 +194,76 @@ function buildQualitySummary(result: z.infer<typeof ResultSchema>, sources: Sour
     evidenceTotal,
     unknownEvidence,
     sourceCount: sources.sources.length,
-    averageConfidence
+    averageConfidence,
+    claimValidationFailedClaims,
+    verdictConfidenceFailedScenarios
+  };
+}
+
+function mapVerdictLabel(verdict: z.infer<typeof VerdictEnum>): string {
+  switch (verdict) {
+    case "supported":
+      return "WELL-SUPPORTED";
+    case "mixed":
+      return "PARTIALLY SUPPORTED";
+    case "unclear":
+      return "UNCERTAIN";
+    case "refuted":
+      return "REFUTED";
+    case "misleading":
+      return "MISLEADING";
+    default:
+      return "UNCERTAIN";
+  }
+}
+
+function applyClaimValidation(claim: z.infer<typeof ClaimSchema>): z.infer<typeof ClaimSchema> {
+  if (claim.claimType === "factual") return claim;
+  return { ...claim, scenarios: [] };
+}
+
+type VerdictConfidenceResult = {
+  verdict: z.infer<typeof ResultVerdictSchema>;
+  failed: boolean;
+};
+
+function applyVerdictConfidence(
+  verdict: z.infer<typeof ResultVerdictSchema>,
+  evidence: z.infer<typeof EvidenceSchema>[]
+): VerdictConfidenceResult {
+  const sources = evidence.filter((e) => e.source.type !== "unknown");
+  const evidenceCount = sources.length;
+  const reliabilityScores = sources
+    .map((e) => e.source.reliability)
+    .filter((v): v is number => typeof v === "number");
+  const avgReliability =
+    reliabilityScores.length > 0
+      ? reliabilityScores.reduce((a, b) => a + b, 0) / reliabilityScores.length
+      : 0.5;
+  const supporting = evidence.filter((e) => e.kind === "evidence").length;
+  const opposing = evidence.filter((e) => e.kind === "counter_evidence").length;
+  const total = supporting + opposing;
+  const agreement = total > 0 ? supporting / total : 0;
+
+  const failed = evidenceCount < 2 || avgReliability < 0.6 || agreement < 0.6;
+  if (!failed) return { verdict, failed };
+
+  const uncertaintyFactors = [
+    ...verdict.uncertaintyFactors,
+    "verdict-confidence: insufficient evidence (min sources/quality/agreement not met)"
+  ];
+
+  return {
+    verdict: {
+      ...verdict,
+      verdict: "unclear",
+      verdictLabel: mapVerdictLabel("unclear"),
+      confidence: 0,
+      confidenceRange: { min: 0, max: 0 },
+      uncertaintyFactors,
+      rationale: `INSUFFICIENT_EVIDENCE (Verdict Confidence): ${verdict.rationale}`
+    },
+    failed
   };
 }
 
@@ -307,6 +400,29 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   await onEvent("Generating markdown report", 85);
 
+  const reliabilityByUrl = new Map(
+    sources.sources
+      .filter((s) => s.url)
+      .map((s) => [
+        s.url,
+        s.trackRecordScore === null || s.trackRecordScore === undefined ? null : s.trackRecordScore / 100
+      ])
+  );
+
+  const sourceEntities = sources.sources.map((source) => {
+    let domain = source.url;
+    try {
+      domain = new URL(source.url).hostname;
+    } catch {}
+    return {
+      id: source.id,
+      name: source.title ?? null,
+      domain,
+      sourceType: source.sourceType ?? null,
+      trackRecordScore: source.trackRecordScore ?? null
+    };
+  });
+
   const result = {
     meta: {
       generatedUtc: new Date().toISOString(),
@@ -315,25 +431,46 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       inputType: input.inputType,
       inputLength: text.length
     },
-    claims: out.output.claims.map((claim) => ({
-      ...claim,
-      scenarios: claim.scenarios.map((scenario) => ({
-        ...scenario,
-        verdict: {
-          ...scenario.verdict,
-          confidence: clampConfidence(scenario.verdict.confidence),
-          confidenceRange: clampRange(scenario.verdict.confidenceRange)
-        }
-      }))
-    })),
+    sources: sourceEntities,
+    claims: out.output.claims.map((claim: z.infer<typeof ClaimSchema>) => {
+      const gatedClaim = applyClaimValidation(claim);
+      return {
+        ...gatedClaim,
+        scenarios: gatedClaim.scenarios.map((scenario: z.infer<typeof ScenarioSchema>) => {
+          const enrichedEvidence = scenario.evidence.map((e) => ({
+            ...e,
+            source: {
+              ...e.source,
+              reliability:
+                e.source.url && reliabilityByUrl.has(e.source.url)
+                  ? reliabilityByUrl.get(e.source.url) ?? null
+                  : e.source.reliability ?? null
+            }
+          }));
+          const verdict = {
+            ...scenario.verdict,
+            verdictLabel: mapVerdictLabel(scenario.verdict.verdict),
+            confidence: clampConfidence(scenario.verdict.confidence),
+            confidenceRange: clampRange(scenario.verdict.confidenceRange)
+          };
+          const verdictConfidence = applyVerdictConfidence(verdict, enrichedEvidence);
+          return {
+            ...scenario,
+            evidence: enrichedEvidence,
+            verdict: verdictConfidence.verdict
+          };
+        })
+      };
+    }),
     articleAnalysis: {
       ...out.output.articleAnalysis,
+      verdictLabel: mapVerdictLabel(out.output.articleAnalysis.overallVerdict),
       confidence: clampConfidence(out.output.articleAnalysis.confidence),
       confidenceRange: clampRange(out.output.articleAnalysis.confidenceRange)
     }
   } satisfies z.infer<typeof ResultSchema>;
 
-  const qualitySummary = buildQualitySummary(result, sources);
+  const technicalNotes = buildTechnicalNotes(result, sources);
 
   const reportMarkdown =
     reportStyle === "rich"
@@ -343,9 +480,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           inputText: text,
           result,
           allowModelKnowledge,
-          qualitySummary
+          technicalNotes
         })
-      : renderReport(result);
+      : renderReport(result, technicalNotes);
 
   // What the .NET API stores
   return {
@@ -354,7 +491,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   };
 }
 
-function renderReport(result: z.infer<typeof ResultSchema>): string {
+function renderReport(result: z.infer<typeof ResultSchema>, technicalNotes?: TechnicalNotesSummary): string {
   const lines: string[] = [];
   lines.push(`# FactHarbor POC1 Analysis`);
   lines.push(``);
@@ -363,7 +500,7 @@ function renderReport(result: z.infer<typeof ResultSchema>): string {
   lines.push(`Input type: **${result.meta.inputType}**`);
   lines.push(``);
   lines.push(
-    `**Overall verdict:** ${result.articleAnalysis.overallVerdict} (confidence ${result.articleAnalysis.confidence}, range ${result.articleAnalysis.confidenceRange.min}-${result.articleAnalysis.confidenceRange.max})`
+    `**Overall verdict:** ${result.articleAnalysis.verdictLabel} (confidence ${result.articleAnalysis.confidence}, range ${result.articleAnalysis.confidenceRange.min}-${result.articleAnalysis.confidenceRange.max})`
   );
   lines.push(``);
   lines.push(result.articleAnalysis.reasoning);
@@ -376,6 +513,11 @@ function renderReport(result: z.infer<typeof ResultSchema>): string {
     lines.push(`## Claim: ${c.text}`);
     lines.push(`Type: **${c.claimType}** | Risk tier: **${c.riskTier}**`);
     lines.push(``);
+  if (c.claimType !== "factual") {
+      lines.push(`**Claim Validation:** Non-factual claim (no verdict generated).`);
+      lines.push(``);
+      continue;
+    }
     for (const s of c.scenarios) {
       lines.push(`### Scenario: ${s.title}`);
       lines.push(s.description);
@@ -389,7 +531,7 @@ function renderReport(result: z.infer<typeof ResultSchema>): string {
         lines.push(``);
       }
       lines.push(
-        `**Verdict:** ${s.verdict.verdict} (confidence ${s.verdict.confidence}, range ${s.verdict.confidenceRange.min}-${s.verdict.confidenceRange.max})`
+        `**Verdict:** ${s.verdict.verdictLabel} (confidence ${s.verdict.confidence}, range ${s.verdict.confidenceRange.min}-${s.verdict.confidenceRange.max})`
       );
       if (s.verdict.uncertaintyFactors.length) {
         lines.push(``);
@@ -400,6 +542,17 @@ function renderReport(result: z.infer<typeof ResultSchema>): string {
       lines.push(``);
     }
   }
+
+  if (technicalNotes) {
+    lines.push(`## Technical Notes`);
+    lines.push(``);
+    lines.push(`- Total claims: ${technicalNotes.totalClaims}`);
+    lines.push(`- Claim Validation failed: ${technicalNotes.claimValidationFailedClaims}`);
+    lines.push(`- Verdict Confidence failed: ${technicalNotes.verdictConfidenceFailedScenarios}`);
+    lines.push(`- Evidence items: ${technicalNotes.evidenceTotal}`);
+    lines.push(`- Sources used: ${technicalNotes.sourceCount}`);
+    lines.push(`- Avg confidence (scenarios): ${technicalNotes.averageConfidence.toFixed(2)}`);
+  }
   return lines.join("\n");
 }
 
@@ -409,7 +562,7 @@ async function renderReportWithLlm(opts: {
   inputText: string;
   result: z.infer<typeof ResultSchema>;
   allowModelKnowledge: boolean;
-  qualitySummary: QualitySummary;
+  technicalNotes: TechnicalNotesSummary;
 }): Promise<string> {
   const system = [
     "You are a report writer for FactHarbor.",
@@ -423,20 +576,23 @@ async function renderReportWithLlm(opts: {
     "Generate a markdown report with these sections:",
     "1) Title + short context line",
     "2) Executive Summary (3-6 bullets)",
-    "3) Analysis Overview (counts + quality summary)",
-    "4) Article-level Verdict (overall verdict + reasoning)",
-    "5) Claims and Scenarios (verdicts + confidence range + risk tier + uncertainty factors)",
-    "6) Evidence Summary (supporting vs counter, unknown evidence count)",
-    "7) Limitations & Open Questions",
-    "8) Analysis ID (simple, stable format)",
+    "3) Article-level Verdict (overall verdict + reasoning)",
+    "4) Claims and Scenarios (verdicts + confidence range + risk tier + uncertainty factors)",
+    "5) Evidence Summary (supporting vs counter, unknown evidence count)",
+    "6) Limitations & Open Questions (include only if truly unresolved; if none, omit the section entirely)",
+    "7) Analysis ID (simple, stable format)",
+    "8) Technical Notes (metrics, quality gates, and analysis overview) - put this at the very end",
     "",
     `Allow model knowledge: ${opts.allowModelKnowledge ? "yes" : "no"}`,
+    "Use verdict labels: supported->WELL-SUPPORTED, mixed->PARTIALLY SUPPORTED, unclear->UNCERTAIN, refuted->REFUTED, misleading->MISLEADING.",
+    "Do not put 'Analysis Overview' in the main report. If included, place it under Technical Notes only.",
+    "Avoid generic limitations. If limitations are listed, they must be tied to specific claims or scenarios and name the missing evidence. If you cannot do this, omit the section.",
     `Input type: ${opts.inputType}`,
     `Input text (for quoting only):`,
     opts.inputText,
     "",
-    "Quality summary (computed):",
-    JSON.stringify(opts.qualitySummary, null, 2),
+    "Technical notes summary (computed):",
+    JSON.stringify(opts.technicalNotes, null, 2),
     "",
     "Analysis JSON:",
     JSON.stringify(opts.result, null, 2)
