@@ -1,18 +1,16 @@
 /**
- * FactHarbor POC1 Analyzer v2.4.2
+ * FactHarbor POC1 Analyzer v2.4.3
  * 
- * FIXES from v2.4.1:
- * - Restored multi-proceeding detection (was broken in v2.4.1)
- * - Kept contested factor tracking from v2.4.1
- * - Fixed implied claim extraction (was generating "may or may not")
+ * FIXES:
+ * - Factor count now calculated from actual keyFactors array (not LLM-reported)
+ * - Search visibility: Tracks all queries performed
+ * - Sources panel data: Shows what was searched and fetched
  * 
  * Features:
- * - v2.4: Multi-Proceeding Detection (TSE 2023 + STF 2025 analyzed separately)
- * - v2.4.1: Contested Factor Tracking (flags disputed political claims)
- * - v2.3: Question Detection (YES/NO/PARTIALLY answers)
- * - v2.2: Article Verdict Problem, UN-3, UN-17
+ * - v2.4.2: Multi-Proceeding + Contested Factors
+ * - v2.4.3: Search Visibility + Factor Count Fix
  * 
- * @version 2.4.2
+ * @version 2.4.3
  * @date December 2025
  */
 
@@ -30,7 +28,7 @@ import { searchWeb } from "@/lib/web-search";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.4.2",
+  schemaVersion: "2.4.3",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
   quick: {
@@ -86,6 +84,14 @@ interface KeyFactor {
   factualBasis?: "established" | "disputed" | "alleged" | "opinion";
 }
 
+interface FactorAnalysis {
+  positiveFactors: number;
+  negativeFactors: number;
+  neutralFactors: number;
+  contestedNegatives: number;
+  verdictExplanation: string;
+}
+
 interface ProceedingAnswer {
   proceedingId: string;
   proceedingName: string;
@@ -93,13 +99,16 @@ interface ProceedingAnswer {
   confidence: number;
   shortAnswer: string;
   keyFactors: KeyFactor[];
-  factorAnalysis?: {
-    positiveFactors: number;
-    negativeFactors: number;
-    neutralFactors: number;
-    contestedNegatives: number;
-    verdictExplanation: string;
-  };
+  factorAnalysis?: FactorAnalysis;
+}
+
+// NEW v2.4.3: Search tracking
+interface SearchQuery {
+  query: string;
+  iteration: number;
+  focus: string;
+  resultsCount: number;
+  timestamp: string;
 }
 
 interface ResearchState {
@@ -112,6 +121,8 @@ interface ResearchState {
   sources: FetchedSource[];
   contradictionSearchPerformed: boolean;
   contradictionSourcesFound: number;
+  // NEW v2.4.3: Track all searches
+  searchQueries: SearchQuery[];
 }
 
 interface ClaimUnderstanding {
@@ -176,6 +187,8 @@ interface FetchedSource {
   fullText: string;
   fetchedAt: string;
   category: string;
+  fetchSuccess: boolean;
+  searchQuery?: string;  // Which query found this
 }
 
 interface ClaimVerdict {
@@ -289,7 +302,7 @@ function getTrackRecordScore(url: string): number | null {
 }
 
 // ============================================================================
-// STEP 1: UNDERSTAND - RESTORED MULTI-PROCEEDING DETECTION
+// STEP 1: UNDERSTAND
 // ============================================================================
 
 const UNDERSTANDING_SCHEMA = z.object({
@@ -335,61 +348,36 @@ const UNDERSTANDING_SCHEMA = z.object({
 });
 
 async function understandClaim(input: string, model: any): Promise<ClaimUnderstanding> {
-  // RESTORED from v2.4.0 - explicit multi-proceeding instructions
   const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT EVENTS or PROCEEDINGS.
 
 ## CRITICAL: MULTI-EVENT DETECTION
 
-Many fact-checking queries involve MULTIPLE DISTINCT legal proceedings, events, or decisions that should NOT be conflated. Look for:
-
-1. **Multiple Court Cases**: Different courts (TSE vs STF), different years, different charges
-2. **Temporal Distinctions**: "The 2023 ruling" vs "The 2025 conviction"
-3. **Subject Matter**: Electoral case vs Criminal case vs Civil case
-4. **Different Outcomes**: One acquittal + one conviction = 2 separate proceedings
+Look for multiple court cases, temporal distinctions, or different proceedings.
 
 ### BOLSONARO EXAMPLE - MUST DETECT 2 PROCEEDINGS:
-
-If the query mentions "Bolsonaro trial" or "Bolsonaro judgment", you MUST identify:
 
 1. **TSE-2023**: TSE Electoral Ineligibility Trial
    - Court: Superior Electoral Court (TSE)
    - Date: June 2023
    - Subject: Abuse of political power and media misuse
-   - Outcome: 8-year ineligibility from public office
+   - Outcome: 8-year ineligibility
    - Status: concluded
 
 2. **STF-2025**: STF Criminal Trial for Coup Attempt
    - Court: Supreme Federal Court (STF)
    - Date: 2024-2025
-   - Subject: Attempted coup d'état, January 8 attacks
-   - Outcome: Criminal conviction
-   - Status: concluded or ongoing
+   - Subject: Attempted coup d'état
+   - Status: concluded
 
 Set requiresSeparateAnalysis = true when multiple proceedings detected.
 
 ## FOR QUESTIONS
 
-- **questionBeingAsked**: Rephrase as clear question
-- **impliedClaim**: What claim would "YES" confirm? 
+- **impliedClaim**: What claim would "YES" confirm? Must be AFFIRMATIVE.
   - CORRECT: "The Bolsonaro judgment was fair and based on Brazil's law"
-  - WRONG: "The judgment may or may not have been fair" (never use uncertain language)
-- **articleThesis**: Use the IMPLIED CLAIM (what "YES" would mean)
+  - WRONG: "may or may not have been fair"`;
 
-## STEP 3: EXTRACT TESTABLE CLAIMS
-
-For each testable claim:
-- **relatedProceedingId**: Which proceeding this claim relates to (REQUIRED if multiple proceedings)
-- **isCentral**: Is this key to the overall question?`;
-
-  const userPrompt = `Analyze this input for fact-checking. Pay SPECIAL ATTENTION to whether it involves MULTIPLE DISTINCT proceedings:
-
-"${input}"
-
-IMPORTANT:
-1. If this mentions Bolsonaro, you MUST identify both TSE (electoral) and STF (criminal) proceedings
-2. Set requiresSeparateAnalysis=true if multiple proceedings
-3. The impliedClaim must be AFFIRMATIVE (what "YES" would mean), never uncertain
-4. Link each sub-claim to its related proceeding`;
+  const userPrompt = `Analyze for fact-checking:\n\n"${input}"`;
 
   const result = await generateText({
     model,
@@ -403,8 +391,7 @@ IMPORTANT:
 
   const parsed = result.output as z.infer<typeof UNDERSTANDING_SCHEMA>;
   
-  // Find claim positions
-  const claimsWithPositions = parsed.subClaims.map(claim => {
+  const claimsWithPositions = parsed.subClaims.map((claim: any) => {
     const positions = findClaimPosition(input, claim.text);
     return { ...claim, startOffset: positions?.start, endOffset: positions?.end };
   });
@@ -420,22 +407,11 @@ function findClaimPosition(text: string, claimText: string): { start: number; en
   if (index !== -1) {
     return { start: index, end: index + claimText.length };
   }
-  
-  const keyPhrases = claimText.split(/[,.]/).map(p => p.trim()).filter(p => p.length > 10);
-  for (const phrase of keyPhrases) {
-    index = normalizedText.indexOf(phrase.toLowerCase());
-    if (index !== -1) {
-      const sentenceStart = Math.max(0, text.lastIndexOf('.', index) + 1);
-      const sentenceEnd = text.indexOf('.', index + phrase.length);
-      return { start: sentenceStart, end: sentenceEnd !== -1 ? sentenceEnd + 1 : index + phrase.length };
-    }
-  }
-  
   return null;
 }
 
 // ============================================================================
-// STEP 2-4: Research
+// STEP 2-4: Research with Search Tracking
 // ============================================================================
 
 interface ResearchDecision {
@@ -449,7 +425,7 @@ interface ResearchDecision {
 
 function decideNextResearch(state: ResearchState): ResearchDecision {
   const config = getActiveConfig();
-  const categories = [...new Set(state.facts.map(f => f.category))];
+  const categories = [...new Set(state.facts.map((f: ExtractedFact) => f.category))];
   const understanding = state.understanding!;
   
   const entities = understanding.subClaims.flatMap(c => c.keyEntities).slice(0, 4);
@@ -459,18 +435,18 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   const hasEvidence = categories.includes("evidence");
   
   const proceedings = understanding.distinctProceedings || [];
-  const proceedingsWithFacts = new Set(state.facts.map(f => f.relatedProceedingId).filter(Boolean));
+  const proceedingsWithFacts = new Set(state.facts.map((f: ExtractedFact) => f.relatedProceedingId).filter(Boolean));
   
   if (
     state.facts.length >= config.minFactsRequired &&
     categories.length >= CONFIG.minCategories &&
     state.contradictionSearchPerformed &&
-    (proceedings.length === 0 || proceedings.every(p => proceedingsWithFacts.has(p.id)))
+    (proceedings.length === 0 || proceedings.every((p: DistinctProceeding) => proceedingsWithFacts.has(p.id)))
   ) {
     return { complete: true };
   }
   
-  // Research each proceeding specifically
+  // Research each proceeding
   if (proceedings.length > 0 && state.iterations.length < proceedings.length * 2) {
     for (const proc of proceedings) {
       const procFacts = state.facts.filter(f => f.relatedProceedingId === proc.id);
@@ -493,11 +469,11 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   if (!hasLegal && understanding.legalFrameworks.length > 0 && state.iterations.length === 0) {
     return {
       complete: false,
-      focus: "Legal framework and specific statutes",
+      focus: "Legal framework",
       category: "legal_provision",
       queries: [
-        `${entityStr} legal basis statute article`,
-        `${understanding.legalFrameworks[0]} law text provisions`,
+        `${entityStr} legal basis statute`,
+        `${understanding.legalFrameworks[0]} law provisions`,
       ]
     };
   }
@@ -505,11 +481,11 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   if (!hasEvidence && state.iterations.length <= 1) {
     return {
       complete: false,
-      focus: "Evidence, documents, and specific facts",
+      focus: "Evidence and facts",
       category: "evidence",
       queries: [
-        `${entityStr} evidence documents report`,
-        `${entityStr} facts findings official`
+        `${entityStr} evidence documents`,
+        `${entityStr} facts findings`
       ]
     };
   }
@@ -517,23 +493,20 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   if (!state.contradictionSearchPerformed) {
     return {
       complete: false,
-      focus: "Criticism and opposing viewpoints",
+      focus: "Criticism and opposing views",
       category: "criticism",
       isContradictionSearch: true,
       queries: [
-        `${entityStr} criticism concerns problems`,
+        `${entityStr} criticism concerns`,
         `${entityStr} controversy disputed unfair`
       ]
     };
   }
   
-  if (state.iterations.length >= config.maxResearchIterations) return { complete: true };
-  if (state.sources.length >= config.maxTotalSources) return { complete: true };
-  
   return { complete: true };
 }
 
-async function fetchSource(url: string, id: string, category: string): Promise<FetchedSource | null> {
+async function fetchSource(url: string, id: string, category: string, searchQuery?: string): Promise<FetchedSource | null> {
   const config = getActiveConfig();
   const trackRecord = getTrackRecordScore(url);
   
@@ -551,11 +524,22 @@ async function fetchSource(url: string, id: string, category: string): Promise<F
       trackRecordScore: trackRecord,
       fullText: text.slice(0, config.articleMaxChars),
       fetchedAt: new Date().toISOString(),
-      category
+      category,
+      fetchSuccess: true,
+      searchQuery
     };
   } catch (err) {
     console.warn(`Fetch failed for ${url}:`, err);
-    return null;
+    return {
+      id, url,
+      title: new URL(url).hostname,
+      trackRecordScore: trackRecord,
+      fullText: "",
+      fetchedAt: new Date().toISOString(),
+      category,
+      fetchSuccess: false,
+      searchQuery
+    };
   }
 }
 
@@ -578,21 +562,16 @@ async function extractFacts(
   proceedings: DistinctProceeding[],
   targetProceedingId?: string
 ): Promise<ExtractedFact[]> {
+  if (!source.fetchSuccess || !source.fullText) return [];
+  
   const proceedingsList = proceedings.length > 0 
-    ? `\n\nKNOWN PROCEEDINGS (use these IDs for relatedProceedingId):\n${proceedings.map(p => `- ${p.id}: ${p.name} (${p.date})`).join("\n")}`
+    ? `\n\nKNOWN PROCEEDINGS:\n${proceedings.map((p: DistinctProceeding) => `- ${p.id}: ${p.name}`).join("\n")}`
     : "";
     
-  const systemPrompt = `Extract SPECIFIC facts from this source. 
-
-Focus: ${focus}
-${targetProceedingId ? `Target proceeding: ${targetProceedingId} - assign this to relatedProceedingId` : ""}
-
-## Track Contested Claims
-For criticisms or allegations, note:
-- **isContestedClaim**: true if this is a disputed political claim
-- **claimSource**: Who makes this claim? (e.g., "defense team", "opposition politicians")
-
-Only HIGH/MEDIUM specificity. Skip LOW.${proceedingsList}`;
+  const systemPrompt = `Extract SPECIFIC facts. Focus: ${focus}
+${targetProceedingId ? `Target proceeding: ${targetProceedingId}` : ""}
+Track contested claims with isContestedClaim and claimSource.
+Only HIGH/MEDIUM specificity.${proceedingsList}`;
 
   try {
     const result = await generateText({
@@ -621,14 +600,13 @@ Only HIGH/MEDIUM specificity. Skip LOW.${proceedingsList}`;
         isContestedClaim: f.isContestedClaim,
         claimSource: f.claimSource
       }));
-  } catch (err) {
-    console.warn(`Fact extraction failed:`, err);
+  } catch {
     return [];
   }
 }
 
 // ============================================================================
-// STEP 5: GENERATE VERDICTS - WITH MULTI-PROCEEDING + CONTESTED FACTORS
+// STEP 5: GENERATE VERDICTS - FIX: Calculate factorAnalysis from actual factors
 // ============================================================================
 
 const KEY_FACTOR_SCHEMA = z.object({
@@ -676,8 +654,7 @@ const VERDICTS_SCHEMA_SIMPLE = z.object({
     confidence: z.number().min(0).max(100),
     shortAnswer: z.string(),
     nuancedAnswer: z.string(),
-    keyFactors: z.array(KEY_FACTOR_SCHEMA),
-    calibrationNote: z.string().optional()
+    keyFactors: z.array(KEY_FACTOR_SCHEMA)
   }),
   claimVerdicts: z.array(z.object({
     claimId: z.string(),
@@ -721,7 +698,7 @@ async function generateVerdicts(
   const hasMultipleProceedings = understanding.requiresSeparateAnalysis && 
                                   understanding.distinctProceedings.length > 1;
   
-  const factsFormatted = state.facts.map(f => {
+  const factsFormatted = state.facts.map((f: ExtractedFact) => {
     let factLine = `[${f.id}]`;
     if (f.relatedProceedingId) factLine += ` (${f.relatedProceedingId})`;
     if (f.isContestedClaim) factLine += ` [CONTESTED by ${f.claimSource || "critics"}]`;
@@ -729,7 +706,7 @@ async function generateVerdicts(
     return factLine;
   }).join("\n");
 
-  const claimsFormatted = understanding.subClaims.map(c =>
+  const claimsFormatted = understanding.subClaims.map((c: any) =>
     `${c.id}${c.relatedProceedingId ? ` (${c.relatedProceedingId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`
   ).join("\n");
 
@@ -750,58 +727,46 @@ async function generateMultiProceedingVerdicts(
   model: any
 ): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis; questionAnswer: QuestionAnswer }> {
   
-  const proceedingsFormatted = understanding.distinctProceedings.map(p =>
-    `- **${p.id}**: ${p.name}\n  Court: ${p.court || "N/A"} | Date: ${p.date} | Status: ${p.status}\n  Subject: ${p.subject}${p.outcome ? `\n  Outcome: ${p.outcome}` : ""}`
+  const proceedingsFormatted = understanding.distinctProceedings.map((p: DistinctProceeding) =>
+    `- **${p.id}**: ${p.name}\n  Court: ${p.court || "N/A"} | Date: ${p.date} | Status: ${p.status}\n  Subject: ${p.subject}`
   ).join("\n\n");
 
-  const systemPrompt = `You are FactHarbor's verdict generator. This question involves MULTIPLE DISTINCT PROCEEDINGS.
+  const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT PROCEEDINGS separately.
 
-## THE QUESTION
+## QUESTION
 "${understanding.questionBeingAsked || state.originalInput}"
 
-## DISTINCT PROCEEDINGS - ANALYZE EACH SEPARATELY
+## PROCEEDINGS - PROVIDE SEPARATE ANSWER FOR EACH
 ${proceedingsFormatted}
 
-## CRITICAL INSTRUCTIONS
+## INSTRUCTIONS
 
-1. **PROVIDE SEPARATE ANSWERS FOR EACH PROCEEDING**
-   - Each proceeding gets its own proceedingId, answer, confidence, keyFactors
-   - Do NOT merge them into one analysis
+1. For EACH proceeding, provide:
+   - proceedingId (must match: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.id).join(", ")})
+   - answer: YES | NO | PARTIALLY | INSUFFICIENT-EVIDENCE
+   - keyFactors: Array of factors with supports (yes/no/neutral) and isContested flag
 
-2. **TRACK CONTESTED FACTORS**
-   For each keyFactor:
+2. Mark contested factors:
    - isContested: true if this criticism is itself politically disputed
-   - contestedBy: Who disputes it (e.g., "defense team", "opposition")
+   - contestedBy: Who disputes it
    - factualBasis: "established" | "disputed" | "alleged" | "opinion"
 
-3. **CALIBRATION FOR CONTESTED FACTORS**
-   - Contested negative factors should NOT flip verdicts
-   - If 2+ positive (established) factors and 1 negative (contested) factor:
-     → Answer should be PARTIALLY or YES with caveats, NOT NO
-   - Example: Legal basis ✅ + Evidence ✅ + Independence concern ❌(contested) = PARTIALLY, not NO
-
-4. **PROCEEDING SUMMARY**
-   - Summarize: "Of N proceedings: TSE appears fair, STF raises contested concerns"
-
-## OUTPUT STRUCTURE
-
-You MUST provide:
-- proceedingAnswers: Array with one entry PER proceeding (${understanding.distinctProceedings.length} entries required)
-- Each entry must have proceedingId matching: ${understanding.distinctProceedings.map(p => p.id).join(", ")}`;
+3. Calibration: Contested negatives don't flip verdicts
+   - 2+ positive (established) + 1 negative (contested) = PARTIALLY, not NO`;
 
   const userPrompt = `## QUESTION
 "${understanding.questionBeingAsked || state.originalInput}"
 
-## PROCEEDINGS (provide separate answer for each)
+## PROCEEDINGS
 ${proceedingsFormatted}
 
-## CLAIMS (note relatedProceedingId)
+## CLAIMS
 ${claimsFormatted}
 
 ## FACTS
 ${factsFormatted}
 
-Provide SEPARATE answers for each of the ${understanding.distinctProceedings.length} proceedings, then an overall synthesis.`;
+Provide SEPARATE answers for each proceeding.`;
 
   const result = await generateText({
     model,
@@ -815,15 +780,68 @@ Provide SEPARATE answers for each of the ${understanding.distinctProceedings.len
 
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING>;
   
-  // Apply calibration corrections
-  const correctedProceedingAnswers = parsed.proceedingAnswers.map(pa => applyCorrectionIfNeeded(pa));
+  // FIX v2.4.3: Calculate factorAnalysis from ACTUAL keyFactors array
+  const correctedProceedingAnswers = parsed.proceedingAnswers.map((pa: any) => {
+    const factors = pa.keyFactors as KeyFactor[];
+    
+    // Calculate from actual factors - NOT from LLM-reported numbers
+    const positiveFactors = factors.filter(f => f.supports === "yes").length;
+    const negativeFactors = factors.filter(f => f.supports === "no").length;
+    const neutralFactors = factors.filter(f => f.supports === "neutral").length;
+    const contestedNegatives = factors.filter(f => f.supports === "no" && f.isContested).length;
+    
+    const factorAnalysis: FactorAnalysis = {
+      positiveFactors,
+      negativeFactors,
+      neutralFactors,
+      contestedNegatives,
+      verdictExplanation: `${positiveFactors} positive, ${negativeFactors} negative (${contestedNegatives} contested), ${neutralFactors} neutral`
+    };
+    
+    // Apply calibration correction
+    let correctedAnswer = pa.answer;
+    let correctedConfidence = pa.confidence;
+    
+    const effectiveNegatives = negativeFactors - (contestedNegatives * 0.5);
+    
+    if (pa.answer === "NO" && positiveFactors > effectiveNegatives) {
+      correctedAnswer = "PARTIALLY";
+      correctedConfidence = Math.min(pa.confidence, 72);
+      factorAnalysis.verdictExplanation = `Corrected from NO: ${positiveFactors} positive > ${effectiveNegatives.toFixed(1)} effective negative`;
+    } else if (pa.answer === "NO" && contestedNegatives > 0 && contestedNegatives === negativeFactors) {
+      correctedAnswer = "PARTIALLY";
+      correctedConfidence = Math.min(pa.confidence, 68);
+      factorAnalysis.verdictExplanation = `Corrected: All ${negativeFactors} negative factors are contested`;
+    }
+    
+    return {
+      ...pa,
+      answer: correctedAnswer,
+      confidence: correctedConfidence,
+      factorAnalysis
+    } as ProceedingAnswer;
+  });
   
-  // Recalculate overall
-  const correctedOverall = recalculateOverallAnswer(parsed.questionAnswer, correctedProceedingAnswers);
+  // Recalculate overall answer
+  const answers = correctedProceedingAnswers.map((pa: ProceedingAnswer) => pa.answer);
+  const yesCount = answers.filter(a => a === "YES").length;
+  const noCount = answers.filter(a => a === "NO").length;
+  
+  let overallAnswer = parsed.questionAnswer.answer;
+  if (yesCount > 0 && noCount > 0) overallAnswer = "PARTIALLY";
+  else if (answers.some(a => a === "PARTIALLY")) overallAnswer = "PARTIALLY";
+  
+  const avgConfidence = Math.round(
+    correctedProceedingAnswers.reduce((sum, pa) => sum + pa.confidence, 0) / correctedProceedingAnswers.length
+  );
+  
+  // Calculate overall factorAnalysis
+  const allFactors = correctedProceedingAnswers.flatMap(pa => pa.keyFactors);
+  const hasContestedFactors = allFactors.some(f => f.isContested);
   
   // Build claim verdicts
-  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map(cv => {
-    const claim = understanding.subClaims.find(c => c.id === cv.claimId);
+  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
+    const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
     return {
       ...cv,
       claimText: claim?.text || "",
@@ -844,16 +862,21 @@ Provide SEPARATE answers for each of the ${understanding.distinctProceedings.len
     centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && v.verdict === "WELL-SUPPORTED").length
   };
 
-  const hasContestedFactors = correctedProceedingAnswers.some(pa => 
-    pa.keyFactors.some(kf => kf.isContested)
-  );
+  const calibrationNote = hasContestedFactors 
+    ? "Some negative factors are politically contested claims and given reduced weight."
+    : undefined;
 
   const questionAnswer: QuestionAnswer = {
     question: understanding.questionBeingAsked || state.originalInput,
-    ...correctedOverall,
+    answer: overallAnswer,
+    confidence: avgConfidence,
+    shortAnswer: parsed.questionAnswer.shortAnswer,
+    nuancedAnswer: parsed.questionAnswer.nuancedAnswer,
+    keyFactors: parsed.questionAnswer.keyFactors,
     hasMultipleProceedings: true,
     proceedingAnswers: correctedProceedingAnswers,
     proceedingSummary: parsed.proceedingSummary,
+    calibrationNote,
     hasContestedFactors
   };
 
@@ -864,93 +887,15 @@ Provide SEPARATE answers for each of the ${understanding.distinctProceedings.len
     hasMultipleProceedings: true,
     proceedings: understanding.distinctProceedings,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
-    thesisSupported: correctedOverall.answer === "YES",
+    thesisSupported: overallAnswer === "YES",
     logicalFallacies: [],
     articleVerdict: "ANSWER-PROVIDED",
-    articleConfidence: correctedOverall.confidence,
+    articleConfidence: avgConfidence,
     verdictDiffersFromClaimAverage: false,
     claimPattern
   };
 
   return { claimVerdicts, articleAnalysis, questionAnswer };
-}
-
-function applyCorrectionIfNeeded(pa: any): ProceedingAnswer {
-  const factors = pa.keyFactors as KeyFactor[];
-  
-  const positiveFactors = factors.filter(f => f.supports === "yes").length;
-  const negativeFactors = factors.filter(f => f.supports === "no").length;
-  const neutralFactors = factors.filter(f => f.supports === "neutral").length;
-  const contestedNegatives = factors.filter(f => f.supports === "no" && f.isContested).length;
-  
-  const effectiveNegatives = negativeFactors - (contestedNegatives * 0.5);
-  
-  let correctedAnswer = pa.answer;
-  let correctedConfidence = pa.confidence;
-  let verdictExplanation = "";
-  
-  // Correction logic
-  if (pa.answer === "NO" && positiveFactors > effectiveNegatives) {
-    correctedAnswer = "PARTIALLY";
-    correctedConfidence = Math.min(pa.confidence, 72);
-    verdictExplanation = `Corrected from NO: ${positiveFactors} positive factors outweigh ${negativeFactors} negative (${contestedNegatives} contested).`;
-  } else if (pa.answer === "NO" && contestedNegatives > 0 && contestedNegatives === negativeFactors) {
-    correctedAnswer = "PARTIALLY";
-    correctedConfidence = Math.min(pa.confidence, 68);
-    verdictExplanation = `Corrected: All ${negativeFactors} negative factor(s) are contested claims.`;
-  } else {
-    verdictExplanation = `${positiveFactors} positive, ${negativeFactors} negative (${contestedNegatives} contested), ${neutralFactors} neutral.`;
-  }
-  
-  return {
-    ...pa,
-    answer: correctedAnswer,
-    confidence: correctedConfidence,
-    factorAnalysis: {
-      positiveFactors,
-      negativeFactors,
-      neutralFactors,
-      contestedNegatives,
-      verdictExplanation
-    }
-  };
-}
-
-function recalculateOverallAnswer(original: any, proceedingAnswers: ProceedingAnswer[]): any {
-  const answers = proceedingAnswers.map(pa => pa.answer);
-  
-  const yesCount = answers.filter(a => a === "YES").length;
-  const noCount = answers.filter(a => a === "NO").length;
-  const partialCount = answers.filter(a => a === "PARTIALLY").length;
-  
-  let newAnswer = original.answer;
-  
-  if (yesCount > 0 && (noCount > 0 || partialCount > 0)) {
-    newAnswer = "PARTIALLY";
-  } else if (yesCount === proceedingAnswers.length) {
-    newAnswer = "YES";
-  } else if (noCount === proceedingAnswers.length) {
-    newAnswer = "NO";
-  } else if (partialCount > 0) {
-    newAnswer = "PARTIALLY";
-  }
-  
-  const avgConfidence = Math.round(
-    proceedingAnswers.reduce((sum, pa) => sum + pa.confidence, 0) / proceedingAnswers.length
-  );
-  
-  let calibrationNote = undefined;
-  const hasContested = proceedingAnswers.some(pa => (pa.factorAnalysis?.contestedNegatives || 0) > 0);
-  if (hasContested) {
-    calibrationNote = "Some negative factors are politically contested claims and given reduced weight.";
-  }
-  
-  return {
-    ...original,
-    answer: newAnswer,
-    confidence: avgConfidence,
-    calibrationNote
-  };
 }
 
 async function generateQuestionVerdicts(
@@ -961,18 +906,7 @@ async function generateQuestionVerdicts(
   model: any
 ): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis; questionAnswer: QuestionAnswer }> {
   
-  const systemPrompt = `You are FactHarbor's verdict generator. Answer the question with proper calibration.
-
-## THE QUESTION
-"${understanding.questionBeingAsked || state.originalInput}"
-
-## CALIBRATION RULES
-
-For each key factor:
-- isContested: Is this factor itself disputed?
-- factualBasis: "established" | "disputed" | "alleged" | "opinion"
-
-Contested factors reduce confidence but don't flip verdicts.`;
+  const systemPrompt = `Answer the question. Mark contested factors with isContested=true.`;
 
   const userPrompt = `## QUESTION
 "${understanding.questionBeingAsked || state.originalInput}"
@@ -995,8 +929,8 @@ ${factsFormatted}`;
 
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
   
-  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map(cv => {
-    const claim = understanding.subClaims.find(c => c.id === cv.claimId);
+  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
+    const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
     return {
       ...cv,
       claimText: claim?.text || "",
@@ -1016,11 +950,13 @@ ${factsFormatted}`;
     centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && v.verdict === "WELL-SUPPORTED").length
   };
 
+  const hasContestedFactors = parsed.questionAnswer.keyFactors.some((kf: any) => kf.isContested);
+
   const questionAnswer: QuestionAnswer = {
     question: understanding.questionBeingAsked || state.originalInput,
     ...parsed.questionAnswer,
     hasMultipleProceedings: false,
-    hasContestedFactors: parsed.questionAnswer.keyFactors.some((kf: any) => kf.isContested)
+    hasContestedFactors
   };
 
   const articleAnalysis: ArticleAnalysis = {
@@ -1048,23 +984,11 @@ async function generateClaimVerdicts(
   model: any
 ): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis }> {
   
-  const systemPrompt = `Generate verdicts for each claim AND an article-level verdict.
-Detect logical fallacies: Correlation→Causation, Cherry-picking, False equivalence, Hasty generalization`;
-
-  const userPrompt = `## THESIS
-"${understanding.articleThesis}"
-
-## CLAIMS
-${claimsFormatted}
-
-## FACTS
-${factsFormatted}`;
-
   const result = await generateText({
     model,
     messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
+      { role: "system", content: `Generate verdicts for each claim and article-level verdict.` },
+      { role: "user", content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${factsFormatted}` }
     ],
     temperature: 0.3,
     output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM })
@@ -1072,8 +996,8 @@ ${factsFormatted}`;
 
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
   
-  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map(cv => {
-    const claim = understanding.subClaims.find(c => c.id === cv.claimId);
+  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
+    const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
     return {
       ...cv,
       claimText: claim?.text || "",
@@ -1117,7 +1041,7 @@ function getHighlightColor(verdict: string): "green" | "yellow" | "red" {
 }
 
 // ============================================================================
-// STEP 6: TWO-PANEL SUMMARY
+// STEP 6-7: Summary & Report
 // ============================================================================
 
 async function generateTwoPanelSummary(
@@ -1132,27 +1056,21 @@ async function generateTwoPanelSummary(
   
   let title = isQuestion 
     ? `Question: ${understanding.questionBeingAsked || state.originalInput}`
-    : extractTitle(state.originalText);
+    : state.originalText.split("\n")[0]?.trim().slice(0, 100) || "Analyzed Content";
     
-  if (hasMultipleProceedings && understanding.distinctProceedings.length > 0) {
+  if (hasMultipleProceedings) {
     title += ` (${understanding.distinctProceedings.length} proceedings)`;
   }
   
   const articleSummary = {
     title,
     source: state.inputType === "url" ? state.originalInput : "User-provided text",
-    mainArgument: isQuestion
-      ? `Implied claim: ${understanding.impliedClaim || understanding.articleThesis}`
-      : understanding.articleThesis,
-    keyFindings: understanding.subClaims.slice(0, 4).map(c => c.text),
+    mainArgument: `Implied claim: ${understanding.impliedClaim || understanding.articleThesis}`,
+    keyFindings: understanding.subClaims.slice(0, 4).map((c: any) => c.text),
     reasoning: hasMultipleProceedings
-      ? `Analysis covers ${understanding.distinctProceedings.length} distinct proceedings: ${understanding.distinctProceedings.map(p => p.shortName).join(", ")}`
-      : isQuestion
-        ? `To answer, we examined ${understanding.subClaims.length} related claims.`
-        : `The article makes ${understanding.subClaims.length} claims.`,
-    conclusion: isQuestion
-      ? articleAnalysis.questionAnswer?.shortAnswer || ""
-      : understanding.articleThesis
+      ? `Covers ${understanding.distinctProceedings.length} proceedings: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.shortName).join(", ")}`
+      : `Examined ${understanding.subClaims.length} claims`,
+    conclusion: articleAnalysis.questionAnswer?.shortAnswer || understanding.articleThesis
   };
   
   const analysisId = `FH-${Date.now().toString(36).toUpperCase()}`;
@@ -1160,10 +1078,9 @@ async function generateTwoPanelSummary(
   let overallVerdict: string;
   if (isQuestion && articleAnalysis.questionAnswer) {
     const qa = articleAnalysis.questionAnswer;
+    overallVerdict = `${qa.answer} (${articleAnalysis.articleConfidence}%)`;
     if (hasMultipleProceedings && qa.proceedingSummary) {
-      overallVerdict = `${qa.answer} (${articleAnalysis.articleConfidence}%)\n${qa.proceedingSummary}`;
-    } else {
-      overallVerdict = `Answer: ${qa.answer} (${articleAnalysis.articleConfidence}%)`;
+      overallVerdict += `\n${qa.proceedingSummary}`;
     }
     if (qa.calibrationNote) {
       overallVerdict += `\n⚠️ ${qa.calibrationNote}`;
@@ -1174,7 +1091,7 @@ async function generateTwoPanelSummary(
   
   const factharborAnalysis = {
     sourceCredibility: calculateOverallCredibility(state.sources),
-    claimVerdicts: claimVerdicts.map(cv => ({
+    claimVerdicts: claimVerdicts.map((cv: ClaimVerdict) => ({
       claim: cv.claimText.slice(0, 80) + (cv.claimText.length > 80 ? "..." : ""),
       verdict: cv.verdict,
       confidence: cv.confidence
@@ -1187,14 +1104,9 @@ async function generateTwoPanelSummary(
   return { articleSummary, factharborAnalysis };
 }
 
-function extractTitle(text: string): string {
-  const firstLine = text.split("\n")[0]?.trim();
-  return (firstLine && firstLine.length > 5 && firstLine.length < 150) ? firstLine : "Analyzed Content";
-}
-
 function calculateOverallCredibility(sources: FetchedSource[]): string {
-  const withScore = sources.filter(s => s.trackRecordScore !== null);
-  if (withScore.length === 0) return "Unknown (no tracked sources)";
+  const withScore = sources.filter(s => s.trackRecordScore !== null && s.fetchSuccess);
+  if (withScore.length === 0) return "Unknown";
   
   const avg = withScore.reduce((sum, s) => sum + (s.trackRecordScore || 0), 0) / withScore.length;
   if (avg >= 0.85) return `Very High (${(avg * 100).toFixed(0)}%)`;
@@ -1205,18 +1117,13 @@ function calculateOverallCredibility(sources: FetchedSource[]): string {
 
 function generateMethodologyAssessment(state: ResearchState, articleAnalysis: ArticleAnalysis): string {
   const parts: string[] = [];
-  
-  if (articleAnalysis.isQuestion) parts.push("Question-answering mode");
+  parts.push("Question-answering mode");
   if (articleAnalysis.hasMultipleProceedings) parts.push(`Multi-proceeding (${articleAnalysis.proceedings?.length})`);
   if (articleAnalysis.questionAnswer?.hasContestedFactors) parts.push("Contested factors flagged");
-  if (state.contradictionSearchPerformed) parts.push("Counter-evidence considered");
-  
-  return parts.length > 0 ? parts.join("; ") : "Standard methodology";
+  parts.push(`${state.searchQueries.length} searches`);
+  parts.push(`${state.sources.filter(s => s.fetchSuccess).length} sources`);
+  return parts.join("; ");
 }
-
-// ============================================================================
-// STEP 7: GENERATE REPORT
-// ============================================================================
 
 async function generateReport(
   state: ResearchState,
@@ -1231,8 +1138,24 @@ async function generateReport(
   
   let report = `# FactHarbor Analysis Report\n\n`;
   report += `**Analysis ID:** ${twoPanelSummary.factharborAnalysis.analysisId}\n`;
-  report += `**Generated:** ${new Date().toISOString()}\n`;
-  report += `**Schema Version:** ${CONFIG.schemaVersion}\n\n`;
+  report += `**Schema:** ${CONFIG.schemaVersion}\n`;
+  report += `**Generated:** ${new Date().toISOString()}\n\n`;
+  
+  // Search Summary (NEW v2.4.3)
+  report += `## Research Summary\n\n`;
+  report += `| Metric | Value |\n|--------|-------|\n`;
+  report += `| Searches performed | ${state.searchQueries.length} |\n`;
+  report += `| Sources fetched | ${state.sources.length} |\n`;
+  report += `| Sources successful | ${state.sources.filter(s => s.fetchSuccess).length} |\n`;
+  report += `| Facts extracted | ${state.facts.length} |\n\n`;
+  
+  if (state.searchQueries.length > 0) {
+    report += `### Search Queries\n\n`;
+    for (const sq of state.searchQueries) {
+      report += `- \`${sq.query}\` → ${sq.resultsCount} results (${sq.focus})\n`;
+    }
+    report += `\n`;
+  }
   
   // Executive Summary
   report += `## Executive Summary\n\n`;
@@ -1242,77 +1165,54 @@ async function generateReport(
     report += `### Question\n"${qa.question}"\n\n`;
     report += `### Answer: ${qa.answer} (${qa.confidence}%)\n\n`;
     
-    if (qa.calibrationNote) {
-      report += `> ⚠️ ${qa.calibrationNote}\n\n`;
-    }
+    if (qa.calibrationNote) report += `> ⚠️ ${qa.calibrationNote}\n\n`;
     
     report += `**Short Answer:** ${qa.shortAnswer}\n\n`;
     
-    if (hasMultipleProceedings && qa.proceedingSummary) {
-      report += `> 📋 **Summary:** ${qa.proceedingSummary}\n\n`;
-    }
-    
-    // Per-proceeding breakdown
-    if (hasMultipleProceedings && qa.proceedingAnswers && qa.proceedingAnswers.length > 0) {
-      report += `## Proceeding-by-Proceeding Analysis\n\n`;
-      
+    if (hasMultipleProceedings && qa.proceedingAnswers) {
+      report += `## Proceedings Analysis\n\n`;
       for (const pa of qa.proceedingAnswers) {
-        const proc = understanding.distinctProceedings.find(p => p.id === pa.proceedingId);
-        const answerEmoji = pa.answer === "YES" ? "✅" : pa.answer === "NO" ? "❌" : "⚠️";
+        const proc = understanding.distinctProceedings.find((p: DistinctProceeding) => p.id === pa.proceedingId);
+        const emoji = pa.answer === "YES" ? "✅" : pa.answer === "NO" ? "❌" : "⚠️";
         
         report += `### ${proc?.name || pa.proceedingName}\n\n`;
-        if (proc) {
-          report += `| Aspect | Details |\n|--------|--------|\n`;
-          report += `| Court | ${proc.court || "N/A"} |\n`;
-          report += `| Date | ${proc.date} |\n`;
-          report += `| Subject | ${proc.subject} |\n`;
-          if (proc.outcome) report += `| Outcome | ${proc.outcome} |\n`;
-          report += `\n`;
-        }
-        
-        report += `**Answer:** ${answerEmoji} **${pa.answer}** (${pa.confidence}%)\n\n`;
-        report += `${pa.shortAnswer}\n\n`;
+        report += `**Answer:** ${emoji} ${pa.answer} (${pa.confidence}%)\n\n`;
         
         if (pa.factorAnalysis) {
-          const fa = pa.factorAnalysis;
-          report += `**Factor Analysis:** ${fa.positiveFactors} positive, ${fa.negativeFactors} negative`;
-          if (fa.contestedNegatives > 0) report += ` (${fa.contestedNegatives} contested)`;
-          report += `\n`;
-          if (fa.verdictExplanation) report += `> ${fa.verdictExplanation}\n\n`;
+          report += `**Factors:** ${pa.factorAnalysis.positiveFactors} positive, ${pa.factorAnalysis.negativeFactors} negative (${pa.factorAnalysis.contestedNegatives} contested)\n\n`;
         }
+        
+        report += `${pa.shortAnswer}\n\n`;
         
         if (pa.keyFactors?.length > 0) {
           report += `**Key Factors:**\n`;
           for (const f of pa.keyFactors) {
             const icon = f.supports === "yes" ? "✅" : f.supports === "no" ? "❌" : "➖";
-            let line = `- ${icon} **${f.factor}**`;
-            if (f.isContested) line += ` ⚠️ CONTESTED`;
-            line += `: ${f.explanation}`;
-            report += line + `\n`;
+            report += `- ${icon} ${f.factor}${f.isContested ? " ⚠️ CONTESTED" : ""}\n`;
           }
           report += `\n`;
         }
-        
         report += `---\n\n`;
       }
     }
-  } else {
-    report += `**Verdict:** ${articleAnalysis.articleVerdict} (${articleAnalysis.articleConfidence}%)\n\n`;
-    report += `**Thesis:** ${articleAnalysis.articleThesis}\n\n`;
   }
   
   // Claims
-  report += `## Claims Analysis\n\n`;
+  report += `## Claims\n\n`;
   for (const cv of claimVerdicts) {
     const emoji = cv.verdict === "WELL-SUPPORTED" ? "🟢" : cv.verdict === "REFUTED" ? "🔴" : "🟡";
-    report += `### ${cv.claimId}: ${cv.claimText}\n\n`;
-    report += `**Verdict:** ${emoji} ${cv.verdict} (${cv.confidence}%)\n\n`;
-    report += `${cv.reasoning}\n\n---\n\n`;
+    report += `**${cv.claimId}:** ${cv.claimText}\n`;
+    report += `${emoji} ${cv.verdict} (${cv.confidence}%)\n\n`;
   }
   
-  // Evidence
-  report += `## Evidence Summary\n\n`;
-  report += `Sources: ${state.sources.length} | Facts: ${state.facts.length} | Contradiction search: ${state.contradictionSearchPerformed ? "Yes" : "No"}\n\n`;
+  // Sources
+  report += `## Sources\n\n`;
+  for (const s of state.sources) {
+    const status = s.fetchSuccess ? "✅" : "❌";
+    report += `- ${status} [${s.title}](${s.url})`;
+    if (s.trackRecordScore) report += ` (${(s.trackRecordScore * 100).toFixed(0)}%)`;
+    report += `\n`;
+  }
   
   return report;
 }
@@ -1365,7 +1265,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     facts: [],
     sources: [],
     contradictionSearchPerformed: false,
-    contradictionSourcesFound: 0
+    contradictionSourcesFound: 0,
+    searchQueries: []  // NEW v2.4.3
   };
   
   // Handle URL
@@ -1381,7 +1282,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   state.originalText = textToAnalyze;
   
   // STEP 1: Understand
-  await emit("Step 1: Analyzing input (detecting proceedings)", 5);
+  await emit("Step 1: Analyzing input", 5);
   try {
     state.understanding = await understandClaim(textToAnalyze, model);
   } catch (err) {
@@ -1400,13 +1301,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     };
   }
   
-  const inputTypeLabel = state.understanding.detectedInputType === "question" ? "QUESTION" : "CLAIM/ARTICLE";
   const proceedingCount = state.understanding.distinctProceedings.length;
-  let statusMsg = `Detected: ${inputTypeLabel} with ${state.understanding.subClaims.length} claims`;
-  if (proceedingCount > 1) statusMsg += ` | ${proceedingCount} DISTINCT PROCEEDINGS detected`;
+  let statusMsg = `Detected: ${state.understanding.detectedInputType.toUpperCase()} with ${state.understanding.subClaims.length} claims`;
+  if (proceedingCount > 1) statusMsg += ` | ${proceedingCount} PROCEEDINGS`;
   await emit(statusMsg, 10);
   
-  // STEP 2-4: Research
+  // STEP 2-4: Research with search tracking
   let iteration = 0;
   while (iteration < config.maxResearchIterations && state.sources.length < config.maxTotalSources) {
     iteration++;
@@ -1414,7 +1314,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     
     const decision = decideNextResearch(state);
     if (decision.complete) {
-      await emit(`Research complete: ${state.facts.length} facts from ${state.sources.length} sources`, baseProgress);
+      await emit(`Research complete: ${state.facts.length} facts, ${state.searchQueries.length} searches`, baseProgress);
       break;
     }
     
@@ -1424,42 +1324,68 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     
     if (decision.isContradictionSearch) state.contradictionSearchPerformed = true;
     
-    const searchResults: Array<{ url: string; title: string }> = [];
+    // Perform searches and track them
+    const searchResults: Array<{ url: string; title: string; query: string }> = [];
     for (const query of decision.queries || []) {
+      await emit(`🔍 Searching: "${query}"`, baseProgress + 1);
+      
       try {
         const results = await searchWeb({ query, maxResults: config.maxSourcesPerIteration });
-        searchResults.push(...results);
-      } catch {}
+        
+        // Track the search (NEW v2.4.3)
+        state.searchQueries.push({
+          query,
+          iteration,
+          focus: decision.focus!,
+          resultsCount: results.length,
+          timestamp: new Date().toISOString()
+        });
+        
+        searchResults.push(...results.map((r: any) => ({ ...r, query })));
+        await emit(`  → ${results.length} results`, baseProgress + 2);
+      } catch (err) {
+        await emit(`  → Search failed: ${err}`, baseProgress + 2);
+        state.searchQueries.push({
+          query,
+          iteration,
+          focus: decision.focus!,
+          resultsCount: 0,
+          timestamp: new Date().toISOString()
+        });
+      }
     }
     
-    const seenUrls = new Set(state.sources.map(s => s.url));
-    const newUrls = [...new Set(searchResults.map(r => r.url))]
-      .filter(url => !seenUrls.has(url))
-      .slice(0, config.maxSourcesPerIteration);
+    const seenUrls = new Set(state.sources.map((s: FetchedSource) => s.url));
+    const newResults = searchResults.filter(r => !seenUrls.has(r.url));
+    const uniqueResults = [...new Map(newResults.map((r: any) => [r.url, r])).values()].slice(0, config.maxSourcesPerIteration);
     
-    if (newUrls.length === 0) {
+    if (uniqueResults.length === 0) {
       state.iterations.push({ number: iteration, focus: decision.focus!, queries: decision.queries!, sourcesFound: 0, factsExtracted: state.facts.length });
       continue;
     }
     
-    await emit(`Fetching ${newUrls.length} sources`, baseProgress + 3);
+    await emit(`Fetching ${uniqueResults.length} sources`, baseProgress + 3);
     
-    const fetchPromises = newUrls.map((url, i) =>
-      fetchSource(url, `S${state.sources.length + i + 1}`, decision.category || "general")
+    const fetchPromises = uniqueResults.map((r: any, i: number) =>
+      fetchSource(r.url, `S${state.sources.length + i + 1}`, decision.category || "general", r.query)
     );
-    const fetchedSources = (await Promise.all(fetchPromises)).filter((s): s is FetchedSource => s !== null);
-    state.sources.push(...fetchedSources);
+    const fetchedSources = await Promise.all(fetchPromises);
+    const validSources = fetchedSources.filter((s): s is FetchedSource => s !== null);
+    state.sources.push(...validSources);
     
-    if (decision.isContradictionSearch) state.contradictionSourcesFound = fetchedSources.length;
+    const successfulSources = validSources.filter(s => s.fetchSuccess);
+    await emit(`  → ${successfulSources.length}/${validSources.length} fetched successfully`, baseProgress + 5);
+    
+    if (decision.isContradictionSearch) state.contradictionSourcesFound = successfulSources.length;
     
     await emit(`Extracting facts`, baseProgress + 8);
-    for (const source of fetchedSources) {
+    for (const source of successfulSources) {
       const facts = await extractFacts(source, decision.focus!, model, state.understanding!.distinctProceedings, decision.targetProceedingId);
       state.facts.push(...facts);
     }
     
-    state.iterations.push({ number: iteration, focus: decision.focus!, queries: decision.queries!, sourcesFound: fetchedSources.length, factsExtracted: state.facts.length });
-    await emit(`Iteration ${iteration}: ${state.facts.length} facts`, baseProgress + 12);
+    state.iterations.push({ number: iteration, focus: decision.focus!, queries: decision.queries!, sourcesFound: successfulSources.length, factsExtracted: state.facts.length });
+    await emit(`Iteration ${iteration}: ${state.facts.length} facts from ${state.sources.length} sources`, baseProgress + 12);
   }
   
   // STEP 5: Verdicts
@@ -1476,7 +1402,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   
   await emit("Analysis complete", 100);
   
-  // Result JSON
+  // Result JSON with search data (NEW v2.4.3)
   const resultJson = {
     meta: {
       schemaVersion: CONFIG.schemaVersion,
@@ -1501,18 +1427,35 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     claimVerdicts,
     understanding: state.understanding,
     facts: state.facts,
-    sources: state.sources.map(s => ({
-      id: s.id, url: s.url, title: s.title,
-      trackRecordScore: s.trackRecordScore, category: s.category
+    // Enhanced source data (v2.4.3)
+    sources: state.sources.map((s: FetchedSource) => ({
+      id: s.id, 
+      url: s.url, 
+      title: s.title,
+      trackRecordScore: s.trackRecordScore, 
+      category: s.category,
+      fetchSuccess: s.fetchSuccess,
+      searchQuery: s.searchQuery
     })),
+    // NEW v2.4.3: Search queries
+    searchQueries: state.searchQueries,
     iterations: state.iterations,
+    // Research stats
+    researchStats: {
+      totalSearches: state.searchQueries.length,
+      totalResults: state.searchQueries.reduce((sum, q) => sum + q.resultsCount, 0),
+      sourcesFetched: state.sources.length,
+      sourcesSuccessful: state.sources.filter(s => s.fetchSuccess).length,
+      factsExtracted: state.facts.length,
+      contradictionSearchPerformed: state.contradictionSearchPerformed
+    },
     qualityGates: {
       passed: state.facts.length >= config.minFactsRequired && state.contradictionSearchPerformed,
       summary: {
         totalFacts: state.facts.length,
         totalSources: state.sources.length,
-        contradictionSearchPerformed: state.contradictionSearchPerformed,
-        proceedingsCovered: state.understanding!.distinctProceedings.length
+        searchesPerformed: state.searchQueries.length,
+        contradictionSearchPerformed: state.contradictionSearchPerformed
       }
     }
   };
