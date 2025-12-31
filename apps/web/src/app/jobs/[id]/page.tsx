@@ -1,19 +1,20 @@
 /**
- * Job Results Page v2.4.3 - Search Visibility & Factor Count Fix
+ * Job Results Page v2.4.4
  * 
- * New in v2.4.3:
- * - Sources Tab: Shows all searches and fetched sources
- * - Factor count fix: Calculated from actual keyFactors array
- * - Search queries visibility
+ * Fixes:
+ * - Table rendering in Report (use remark-gfm)
+ * - Export/Print functionality
+ * - Better error display
  * 
- * @version 2.4.3
+ * @version 2.4.4
  */
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Job = {
   jobId: string;
@@ -38,13 +39,17 @@ export default function JobPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [tab, setTab] = useState<"summary" | "article" | "sources" | "report" | "json" | "events">("summary");
   const [err, setErr] = useState<string | null>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!jobId) return;
     let alive = true;
     const load = async () => {
       const res = await fetch(`/api/fh/jobs/${jobId}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`${res.status}: ${text}`);
+      }
       const data = (await res.json()) as Job;
       if (alive) setJob(data);
     };
@@ -65,6 +70,9 @@ export default function JobPage() {
         });
       } catch {}
     };
+    es.onerror = () => {
+      // Silently handle SSE errors
+    };
     return () => es.close();
   }, [jobId]);
 
@@ -82,11 +90,68 @@ export default function JobPage() {
   const hasMultipleProceedings = result?.meta?.hasMultipleProceedings;
   const proceedings = result?.proceedings || [];
   const hasContestedFactors = result?.meta?.hasContestedFactors;
-  
-  // NEW v2.4.3: Search data
   const searchQueries = result?.searchQueries || [];
   const sources = result?.sources || [];
   const researchStats = result?.researchStats;
+
+  // Export functions
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportHTML = () => {
+    const content = reportRef.current?.innerHTML || report;
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>FactHarbor Analysis - ${result?.meta?.analysisId || jobId}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f5f5f5; }
+    h1, h2, h3 { color: #333; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>FactHarbor Analysis Report</h1>
+  <p><strong>Analysis ID:</strong> ${result?.meta?.analysisId || 'N/A'}</p>
+  <p><strong>Generated:</strong> ${new Date().toISOString()}</p>
+  <hr>
+  ${content}
+</body>
+</html>`;
+    
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `factharbor-${result?.meta?.analysisId || jobId}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportJSON = () => {
+    const blob = new Blob([jsonText], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `factharbor-${result?.meta?.analysisId || jobId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportMarkdown = () => {
+    const blob = new Blob([report], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `factharbor-${result?.meta?.analysisId || jobId}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (!jobId) return <div style={{ padding: 20 }}>Loading job ID...</div>;
 
@@ -94,12 +159,16 @@ export default function JobPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <h1 style={{ margin: "8px 0 0" }}>FactHarbor Analysis</h1>
 
-      {err && <div style={{ color: "#f88", padding: 12, backgroundColor: "#2a1a1a", borderRadius: 8 }}>Error: {err}</div>}
+      {err && (
+        <div style={{ color: "#721c24", padding: 12, backgroundColor: "#f8d7da", borderRadius: 8, border: "1px solid #f5c6cb" }}>
+          <strong>Error:</strong> {err}
+        </div>
+      )}
 
       {job ? (
-        <div style={{ border: "1px solid #333", borderRadius: 10, padding: 12 }}>
+        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, backgroundColor: "#fff" }}>
           <div><b>ID:</b> <code>{job.jobId}</code></div>
-          <div><b>Status:</b> <code>{job.status}</code> ({job.progress}%)</div>
+          <div><b>Status:</b> <code style={{ color: job.status === "SUCCEEDED" ? "#28a745" : job.status === "FAILED" ? "#dc3545" : "#ffc107" }}>{job.status}</code> ({job.progress}%)</div>
           <div style={{ marginTop: 8 }}><b>Input:</b> <code>{job.inputType}</code> — {job.inputPreview ?? "—"}</div>
           {hasV22Data && (
             <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
@@ -108,17 +177,16 @@ export default function JobPage() {
               {isQuestion && <Badge bg="#e3f2fd" color="#1565c0">📝 QUESTION</Badge>}
               {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">⚖️ {proceedings.length} PROCEEDINGS</Badge>}
               {hasContestedFactors && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
-              {/* NEW v2.4.3: Search stats badge */}
               {researchStats && <Badge bg="#e8f5e9" color="#2e7d32">🔍 {researchStats.totalSearches} searches</Badge>}
             </div>
           )}
         </div>
       ) : (
-        <div>Loading…</div>
+        <div style={{ padding: 20, textAlign: "center", color: "#666" }}>Loading...</div>
       )}
 
-      {/* Tabs - Added Sources tab */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         {hasV22Data && (
           <>
             <button onClick={() => setTab("summary")} style={tabStyle(tab === "summary")}>📊 Summary</button>
@@ -129,11 +197,21 @@ export default function JobPage() {
         <button onClick={() => setTab("report")} style={tabStyle(tab === "report")}>📝 Report</button>
         <button onClick={() => setTab("json")} style={tabStyle(tab === "json")}>🔧 JSON</button>
         <button onClick={() => setTab("events")} style={tabStyle(tab === "events")}>📋 Events ({events.length})</button>
+        
+        {/* Export dropdown */}
+        {job?.status === "SUCCEEDED" && (
+          <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+            <button onClick={handlePrint} style={exportBtnStyle} title="Print">🖨️</button>
+            <button onClick={handleExportHTML} style={exportBtnStyle} title="Export HTML">📄</button>
+            <button onClick={handleExportMarkdown} style={exportBtnStyle} title="Export Markdown">📝</button>
+            <button onClick={handleExportJSON} style={exportBtnStyle} title="Export JSON">💾</button>
+          </div>
+        )}
       </div>
 
       {/* Summary Tab */}
       {tab === "summary" && hasV22Data && (
-        <div style={{ border: "1px solid #333", borderRadius: 10, padding: 16 }}>
+        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, backgroundColor: "#fff" }}>
           {isQuestion && questionAnswer && (
             hasMultipleProceedings 
               ? <MultiProceedingAnswerBanner questionAnswer={questionAnswer} proceedings={proceedings} />
@@ -165,37 +243,56 @@ export default function JobPage() {
         </div>
       )}
 
-      {/* Sources Tab (NEW v2.4.3) */}
+      {/* Sources Tab */}
       {tab === "sources" && hasV22Data && (
-        <div style={{ border: "1px solid #333", borderRadius: 10, padding: 16 }}>
+        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, backgroundColor: "#fff" }}>
           <SourcesPanel searchQueries={searchQueries} sources={sources} researchStats={researchStats} />
         </div>
       )}
 
       {/* Article View Tab */}
       {tab === "article" && hasV22Data && (
-        <div style={{ border: "1px solid #333", borderRadius: 10, padding: 16 }}>
+        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, backgroundColor: "#fff" }}>
           <ClaimHighlighter originalText={job?.inputValue || ""} claimVerdicts={claimVerdicts} />
         </div>
       )}
 
-      {/* Report Tab */}
+      {/* Report Tab - Fixed with remark-gfm for tables */}
       {tab === "report" && (
-        <div style={{ border: "1px solid #333", borderRadius: 10, padding: 12 }}>
-          {report ? <ReactMarkdown>{report}</ReactMarkdown> : <div>No report yet.</div>}
+        <div ref={reportRef} style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, backgroundColor: "#fff" }} className="markdown-body">
+          {report ? (
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                table: ({node, ...props}) => (
+                  <table style={{ borderCollapse: "collapse", width: "100%", margin: "16px 0" }} {...props} />
+                ),
+                th: ({node, ...props}) => (
+                  <th style={{ border: "1px solid #ddd", padding: "8px 12px", backgroundColor: "#f5f5f5", textAlign: "left" }} {...props} />
+                ),
+                td: ({node, ...props}) => (
+                  <td style={{ border: "1px solid #ddd", padding: "8px 12px" }} {...props} />
+                ),
+              }}
+            >
+              {report}
+            </ReactMarkdown>
+          ) : (
+            <div style={{ color: "#666", textAlign: "center", padding: 40 }}>No report yet.</div>
+          )}
         </div>
       )}
 
       {/* JSON Tab */}
       {tab === "json" && (
-        <pre style={{ border: "1px solid #333", borderRadius: 10, padding: 12, overflowX: "auto", fontSize: 11 }}>
+        <pre style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, overflowX: "auto", fontSize: 11, backgroundColor: "#f8f9fa" }}>
           {jsonText || "No result yet."}
         </pre>
       )}
 
       {/* Events Tab */}
       {tab === "events" && (
-        <div style={{ border: "1px solid #333", borderRadius: 10, padding: 12 }}>
+        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, backgroundColor: "#fff" }}>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
             {events.map((e) => (
               <li key={e.id} style={{ marginBottom: 4 }}>
@@ -203,7 +300,7 @@ export default function JobPage() {
                 <b style={{ color: getEventColor(e.level) }}>{e.level}</b> — {e.message}
               </li>
             ))}
-            {events.length === 0 && <li>No events yet.</li>}
+            {events.length === 0 && <li style={{ color: "#666" }}>No events yet.</li>}
           </ul>
         </div>
       )}
@@ -211,8 +308,26 @@ export default function JobPage() {
   );
 }
 
+// Helper function to decode HTML entities
+function decodeHtmlEntities(text: string): string {
+  if (typeof document === 'undefined') return text;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
+// Export button style
+const exportBtnStyle: React.CSSProperties = {
+  padding: "6px 10px",
+  border: "1px solid #ddd",
+  borderRadius: 6,
+  cursor: "pointer",
+  backgroundColor: "#f8f9fa",
+  fontSize: 14,
+};
+
 // ============================================================================
-// NEW v2.4.3: Sources Panel
+// Sources Panel
 // ============================================================================
 
 function SourcesPanel({ searchQueries, sources, researchStats }: { searchQueries: any[]; sources: any[]; researchStats: any }) {
@@ -220,7 +335,6 @@ function SourcesPanel({ searchQueries, sources, researchStats }: { searchQueries
     <div>
       <h3 style={{ margin: "0 0 16px" }}>🔍 Research Summary</h3>
       
-      {/* Stats */}
       {researchStats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 20 }}>
           <StatCard label="Searches" value={researchStats.totalSearches} icon="🔍" />
@@ -231,7 +345,6 @@ function SourcesPanel({ searchQueries, sources, researchStats }: { searchQueries
         </div>
       )}
       
-      {/* Search Queries */}
       <h4 style={{ margin: "16px 0 8px", color: "#666" }}>Search Queries Performed</h4>
       {searchQueries.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -267,11 +380,10 @@ function SourcesPanel({ searchQueries, sources, researchStats }: { searchQueries
         </div>
       ) : (
         <div style={{ padding: 16, backgroundColor: "#fff3cd", borderRadius: 8, color: "#856404" }}>
-          No search queries recorded. The analysis may have used cached data or failed to search.
+          No search queries recorded.
         </div>
       )}
       
-      {/* Sources */}
       <h4 style={{ margin: "24px 0 8px", color: "#666" }}>Sources Fetched</h4>
       {sources.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -288,7 +400,7 @@ function SourcesPanel({ searchQueries, sources, researchStats }: { searchQueries
               <span style={{ fontSize: 16 }}>{s.fetchSuccess ? "✅" : "❌"}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {s.title || "Unknown"}
+                  {decodeHtmlEntities(s.title || "Unknown")}
                 </div>
                 <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#007bff", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {s.url}
@@ -319,7 +431,7 @@ function SourcesPanel({ searchQueries, sources, researchStats }: { searchQueries
         </div>
       ) : (
         <div style={{ padding: 16, backgroundColor: "#f8d7da", borderRadius: 8, color: "#721c24" }}>
-          No sources were fetched. Check the Events tab for errors.
+          No sources were fetched.
         </div>
       )}
     </div>
@@ -351,12 +463,12 @@ function Badge({ children, bg, color }: { children: React.ReactNode; bg: string;
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     padding: "8px 14px",
-    border: "1px solid #333",
+    border: "1px solid #ddd",
     borderRadius: 10,
     cursor: "pointer",
     fontWeight: active ? 700 : 400,
-    backgroundColor: active ? "#007bff" : "transparent",
-    color: active ? "#fff" : "inherit",
+    backgroundColor: active ? "#007bff" : "#fff",
+    color: active ? "#fff" : "#333",
   };
 }
 
@@ -370,7 +482,7 @@ function getEventColor(level: string): string {
 }
 
 // ============================================================================
-// Multi-Proceeding Answer Banner (v2.4.3 - with fixed factor count)
+// Multi-Proceeding Answer Banner
 // ============================================================================
 
 function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { questionAnswer: any; proceedings: any[] }) {
@@ -385,7 +497,6 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
   
   return (
     <div style={{ marginBottom: 20 }}>
-      {/* Question Header */}
       <div style={{ padding: "12px 16px", backgroundColor: "#f0f7ff", borderRadius: "12px 12px 0 0", border: "1px solid #90caf9", borderBottom: "none" }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: "#0056b3", textTransform: "uppercase", marginBottom: 4 }}>
           📝 Question Asked
@@ -395,7 +506,6 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         </div>
       </div>
       
-      {/* Multi-Proceeding Notice */}
       <div style={{ padding: "10px 16px", backgroundColor: "#fff3e0", border: "1px solid #ffcc80", borderBottom: "none", display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 18 }}>⚖️</span>
         <span style={{ fontSize: 13, color: "#e65100", fontWeight: 600 }}>
@@ -406,7 +516,6 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         )}
       </div>
       
-      {/* Overall Answer */}
       <div style={{ padding: 16, border: `2px solid ${overallColor.border}`, backgroundColor: "#fff" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: "#666", textTransform: "uppercase" }}>Overall Answer</span>
@@ -433,7 +542,6 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         </div>
       </div>
       
-      {/* Per-Proceeding Cards */}
       {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <h4 style={{ margin: "0 0 12px", fontSize: 14, color: "#666", textTransform: "uppercase" }}>
@@ -448,7 +556,6 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         </div>
       )}
       
-      {/* Overall Key Factors */}
       {questionAnswer.keyFactors?.length > 0 && (
         <div style={{ marginTop: 16, padding: 12, backgroundColor: "#f8f9fa", borderRadius: 8 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 10 }}>Overall Key Factors</div>
@@ -463,7 +570,6 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
   );
 }
 
-// v2.4.3: Proceeding Card with FIXED factor count (from actual keyFactors)
 function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: any; proceeding: any }) {
   const answerColors: Record<string, { bg: string; text: string; border: string }> = {
     "YES": { bg: "#d4edda", text: "#155724", border: "#28a745" },
@@ -474,7 +580,6 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
   
   const color = answerColors[proceedingAnswer.answer] || answerColors["PARTIALLY"];
   
-  // FIX v2.4.3: Calculate from ACTUAL keyFactors array, not from factorAnalysis
   const factors = proceedingAnswer.keyFactors || [];
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
   const negativeCount = factors.filter((f: any) => f.supports === "no").length;
@@ -483,7 +588,6 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
   
   return (
     <div style={{ border: `2px solid ${color.border}`, borderRadius: 12, overflow: "hidden", backgroundColor: "#fff" }}>
-      {/* Header */}
       <div style={{ padding: "10px 14px", backgroundColor: "#f8f9fa", borderBottom: "1px solid #ddd" }}>
         <div style={{ fontWeight: 700, fontSize: 14, color: "#333" }}>
           {proceeding?.name || proceedingAnswer.proceedingName}
@@ -497,7 +601,6 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
         )}
       </div>
       
-      {/* Answer */}
       <div style={{ padding: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <span style={{ padding: "6px 12px", borderRadius: 6, fontSize: 14, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
@@ -506,7 +609,6 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
           <span style={{ fontSize: 12, color: "#666" }}>{proceedingAnswer.confidence}%</span>
         </div>
         
-        {/* FIX v2.4.3: Factor counts from actual array */}
         <div style={{ 
           display: "flex", 
           gap: 12, 
@@ -530,7 +632,6 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
           {proceedingAnswer.shortAnswer}
         </div>
         
-        {/* Key Factors */}
         {factors.length > 0 && (
           <div style={{ borderTop: "1px solid #eee", paddingTop: 10 }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: "#888", textTransform: "uppercase", marginBottom: 6 }}>Key Factors ({factors.length})</div>
@@ -691,9 +792,9 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
         </div>
         <div style={{ padding: 14 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Title</div>
-          <div style={{ fontSize: 13, marginBottom: 12 }}>{articleSummary.title}</div>
+          <div style={{ fontSize: 13, marginBottom: 12 }}>{decodeHtmlEntities(articleSummary.title)}</div>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Implied Claim</div>
-          <div style={{ fontSize: 13 }}>{articleSummary.mainArgument}</div>
+          <div style={{ fontSize: 13 }}>{decodeHtmlEntities(articleSummary.mainArgument)}</div>
         </div>
       </div>
       
@@ -732,7 +833,7 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
     <div>
       {Array.from(claimsByProc.entries()).map(([procId, claims]) => {
         if (claims.length === 0) return null;
-        const proc = proceedings.find(p => p.id === procId);
+        const proc = proceedings.find((p: any) => p.id === procId);
         return (
           <div key={procId} style={{ marginBottom: 20 }}>
             <h4 style={{ margin: "0 0 10px", padding: "8px 12px", backgroundColor: "#f0f7ff", borderRadius: 6, fontSize: 13, color: "#0056b3" }}>
@@ -747,11 +848,11 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
 }
 
 function ClaimCard({ claim }: { claim: any }) {
-  const colors: Record<string, { border: string }> = {
-    "WELL-SUPPORTED": { border: "#28a745" },
-    "PARTIALLY-SUPPORTED": { border: "#ffc107" },
-    "UNCERTAIN": { border: "#ffc107" },
-    "REFUTED": { border: "#dc3545" },
+  const colors: Record<string, { border: string; bg: string; text: string }> = {
+    "WELL-SUPPORTED": { border: "#28a745", bg: "#d4edda", text: "#155724" },
+    "PARTIALLY-SUPPORTED": { border: "#ffc107", bg: "#fff3cd", text: "#856404" },
+    "UNCERTAIN": { border: "#ffc107", bg: "#fff3cd", text: "#856404" },
+    "REFUTED": { border: "#dc3545", bg: "#f8d7da", text: "#721c24" },
   };
   const color = colors[claim.verdict] || colors["UNCERTAIN"];
   
@@ -760,7 +861,7 @@ function ClaimCard({ claim }: { claim: any }) {
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <span style={{ fontWeight: 600, color: "#666" }}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
-        <Badge bg={color.border === "#28a745" ? "#d4edda" : color.border === "#dc3545" ? "#f8d7da" : "#fff3cd"} color={color.border === "#28a745" ? "#155724" : color.border === "#dc3545" ? "#721c24" : "#856404"}>
+        <Badge bg={color.bg} color={color.text}>
           {claim.verdict} ({claim.confidence}%)
         </Badge>
       </div>
@@ -773,14 +874,22 @@ function ClaimCard({ claim }: { claim: any }) {
 function ClaimHighlighter({ originalText, claimVerdicts }: { originalText: string; claimVerdicts: any[] }) {
   return (
     <div>
-      <div style={{ padding: 16, border: "1px solid #ddd", borderRadius: 8, backgroundColor: "#fff", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
+      <div style={{ padding: 16, border: "1px solid #ddd", borderRadius: 8, backgroundColor: "#f8f9fa", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
         {originalText}
       </div>
       
       <div style={{ marginTop: 16 }}>
         <h4 style={{ margin: "0 0 8px" }}>Claims Found:</h4>
         {claimVerdicts.map((cv: any) => (
-          <div key={cv.claimId} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: 10, marginBottom: 6, backgroundColor: cv.highlightColor === "green" ? "#d4edda" : cv.highlightColor === "red" ? "#f8d7da" : "#fff3cd", borderRadius: 6 }}>
+          <div key={cv.claimId} style={{ 
+            display: "flex", 
+            alignItems: "flex-start", 
+            gap: 10, 
+            padding: 10, 
+            marginBottom: 6, 
+            backgroundColor: cv.highlightColor === "green" ? "#d4edda" : cv.highlightColor === "red" ? "#f8d7da" : "#fff3cd", 
+            borderRadius: 6 
+          }}>
             <span style={{ fontWeight: 600, minWidth: 50 }}>{cv.claimId}</span>
             <div>
               <div style={{ fontWeight: 500 }}>{cv.claimText}</div>

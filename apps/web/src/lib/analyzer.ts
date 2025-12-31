@@ -1,16 +1,16 @@
 /**
- * FactHarbor POC1 Analyzer v2.4.3
+ * FactHarbor POC1 Analyzer v2.4.4
  * 
  * FIXES:
- * - Factor count now calculated from actual keyFactors array (not LLM-reported)
- * - Search visibility: Tracks all queries performed
- * - Sources panel data: Shows what was searched and fetched
+ * - Table format in report (proper markdown tables)
+ * - HTML entity encoding in titles
  * 
  * Features:
  * - v2.4.2: Multi-Proceeding + Contested Factors
  * - v2.4.3: Search Visibility + Factor Count Fix
+ * - v2.4.4: Table rendering + HTML entities + Jobs page
  * 
- * @version 2.4.3
+ * @version 2.4.4
  * @date December 2025
  */
 
@@ -28,7 +28,7 @@ import { searchWeb } from "@/lib/web-search";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.4.3",
+  schemaVersion: "2.4.4",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
   quick: {
@@ -506,6 +506,35 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   return { complete: true };
 }
 
+// Helper to decode HTML entities in text
+function decodeHtmlEntities(text: string): string {
+  const entities: Record<string, string> = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&#x27;': "'",
+    '&#x2d;': '-',
+    '&#x2D;': '-',
+    '&nbsp;': ' ',
+    '&#160;': ' ',
+    '&ndash;': '–',
+    '&mdash;': '—',
+  };
+  
+  let result = text;
+  for (const [entity, char] of Object.entries(entities)) {
+    result = result.replace(new RegExp(entity, 'gi'), char);
+  }
+  // Also handle numeric entities like &#45;
+  result = result.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
+  // Handle hex entities like &#x2d;
+  result = result.replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
+  
+  return result;
+}
+
 async function fetchSource(url: string, id: string, category: string, searchQuery?: string): Promise<FetchedSource | null> {
   const config = getActiveConfig();
   const trackRecord = getTrackRecordScore(url);
@@ -518,9 +547,13 @@ async function fetchSource(url: string, id: string, category: string, searchQuer
       )
     ]);
     
+    // Decode HTML entities in title
+    const rawTitle = text.split("\n")[0]?.trim().slice(0, 100) || new URL(url).hostname;
+    const title = decodeHtmlEntities(rawTitle);
+    
     return {
       id, url,
-      title: text.split("\n")[0]?.trim().slice(0, 100) || new URL(url).hostname,
+      title,
       trackRecordScore: trackRecord,
       fullText: text.slice(0, config.articleMaxChars),
       fetchedAt: new Date().toISOString(),
@@ -1143,10 +1176,11 @@ async function generateReport(
   
   // Search Summary (NEW v2.4.3)
   report += `## Research Summary\n\n`;
-  report += `| Metric | Value |\n|--------|-------|\n`;
+  report += `| Metric | Value |\n`;
+  report += `| --- | --- |\n`;
   report += `| Searches performed | ${state.searchQueries.length} |\n`;
   report += `| Sources fetched | ${state.sources.length} |\n`;
-  report += `| Sources successful | ${state.sources.filter(s => s.fetchSuccess).length} |\n`;
+  report += `| Sources successful | ${state.sources.filter((s: FetchedSource) => s.fetchSuccess).length} |\n`;
   report += `| Facts extracted | ${state.facts.length} |\n\n`;
   
   if (state.searchQueries.length > 0) {
