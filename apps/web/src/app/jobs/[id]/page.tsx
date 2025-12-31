@@ -219,7 +219,10 @@ export default function JobPage() {
           )}
           
           {!isQuestion && articleAnalysis && (
-            <ArticleVerdictBanner articleAnalysis={articleAnalysis} />
+            <ArticleVerdictBanner 
+              articleAnalysis={articleAnalysis} 
+              fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
+            />
           )}
           
           {twoPanelSummary && (
@@ -754,15 +757,23 @@ function getAnswerEmoji(answer: string): string {
 // Article Verdict Banner
 // ============================================================================
 
-function ArticleVerdictBanner({ articleAnalysis }: { articleAnalysis: any }) {
+function ArticleVerdictBanner({ articleAnalysis, fallbackThesis }: { articleAnalysis: any; fallbackThesis?: string }) {
   const verdictColors: Record<string, { bg: string; text: string; border: string }> = {
     "CREDIBLE": { bg: "#d4edda", text: "#155724", border: "#28a745" },
+    "ANSWER-PROVIDED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3" },
     "MOSTLY-CREDIBLE": { bg: "#d1ecf1", text: "#0c5460", border: "#17a2b8" },
     "MISLEADING": { bg: "#fff3cd", text: "#856404", border: "#ffc107" },
     "FALSE": { bg: "#f8d7da", text: "#721c24", border: "#dc3545" },
   };
   
   const color = verdictColors[articleAnalysis.articleVerdict] || verdictColors["MISLEADING"];
+  
+  // Use fallback if thesis is unknown or empty
+  const thesis = (!articleAnalysis.articleThesis || 
+                  articleAnalysis.articleThesis === "<UNKNOWN>" || 
+                  articleAnalysis.articleThesis.toLowerCase().includes("unknown"))
+    ? (fallbackThesis || "—")
+    : articleAnalysis.articleThesis;
   
   return (
     <div style={{ border: `2px solid ${color.border}`, borderRadius: 12, marginBottom: 20, overflow: "hidden", backgroundColor: "#fff" }}>
@@ -773,7 +784,7 @@ function ArticleVerdictBanner({ articleAnalysis }: { articleAnalysis: any }) {
           </span>
           <span style={{ fontSize: 14, color: "#666" }}>{articleAnalysis.articleConfidence}%</span>
         </div>
-        <div><b>Thesis:</b> {articleAnalysis.articleThesis}</div>
+        <div><b>Thesis:</b> {thesis}</div>
       </div>
     </div>
   );
