@@ -28,7 +28,7 @@ import { searchWeb } from "@/lib/web-search";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.4.8",
+  schemaVersion: "2.4.9",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
   // Search provider detection
@@ -544,7 +544,7 @@ interface ClaimVerdict {
   claimId: string;
   claimText: string;
   isCentral: boolean;
-  verdict: "WELL-SUPPORTED" | "PARTIALLY-SUPPORTED" | "UNCERTAIN" | "REFUTED";
+  verdict: "WELL-SUPPORTED" | "PARTIALLY-SUPPORTED" | "UNCERTAIN" | "REFUTED" | "FALSE";
   confidence: number;
   riskTier: "A" | "B" | "C";
   reasoning: string;
@@ -553,6 +553,8 @@ interface ClaimVerdict {
   startOffset?: number;
   endOffset?: number;
   highlightColor: "green" | "yellow" | "red";
+  isPseudoscience?: boolean;
+  escalationReason?: string;
 }
 
 interface QuestionAnswer {
@@ -585,7 +587,7 @@ interface ArticleAnalysis {
     description: string;
     affectedClaims: string[];
   }>;
-  articleVerdict: "CREDIBLE" | "MOSTLY-CREDIBLE" | "MISLEADING" | "FALSE" | "ANSWER-PROVIDED";
+  articleVerdict: "CREDIBLE" | "MOSTLY-CREDIBLE" | "MISLEADING" | "FALSE" | "ANSWER-PROVIDED" | "REFUTED";
   articleConfidence: number;
   verdictDiffersFromClaimAverage: boolean;
   verdictDifferenceReason?: string;
@@ -597,6 +599,9 @@ interface ArticleAnalysis {
     centralClaimsSupported: number;
     centralClaimsTotal: number;
   };
+  // Pseudoscience detection (v2.4.6+)
+  isPseudoscience?: boolean;
+  pseudoscienceCategories?: string[];
 }
 
 interface TwoPanelSummary {
@@ -1506,7 +1511,7 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     
     return {
       ...cv,
-      verdict: finalVerdict,
+      verdict: finalVerdict as ClaimVerdict["verdict"],
       confidence: finalConfidence,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
@@ -1515,7 +1520,7 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       highlightColor: getHighlightColor(finalVerdict),
       isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
       escalationReason
-    };
+    } as ClaimVerdict;
   });
   
   // Calculate claim pattern
@@ -1529,14 +1534,14 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
   };
 
   // Determine article verdict with proper calibration
-  let articleVerdict = parsed.articleAnalysis.articleVerdict;
+  let articleVerdict: ArticleAnalysis["articleVerdict"] = parsed.articleAnalysis.articleVerdict;
   let articleConfidence = parsed.articleAnalysis.articleConfidence;
   let verdictReason: string | undefined;
   
   // CALIBRATION: FALSE requires 99%+ certainty
   // If LLM returned FALSE but confidence < 99%, downgrade to REFUTED
   if (articleVerdict === "FALSE" && articleConfidence < 99) {
-    articleVerdict = "REFUTED" as any;
+    articleVerdict = "REFUTED";
     verdictReason = "Downgraded from FALSE: requires 99%+ certainty for definitive falsehood";
   }
   
@@ -1548,7 +1553,7 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     
     // Use our calculated verdict for pseudoscience cases
     // This ensures proper calibration (REFUTED instead of FALSE)
-    articleVerdict = escalatedArticle.verdict as any;
+    articleVerdict = escalatedArticle.verdict as ArticleAnalysis["articleVerdict"];
     articleConfidence = Math.min(escalatedArticle.confidence, 95); // Cap at 95%
     verdictReason = escalatedArticle.reason;
   }
