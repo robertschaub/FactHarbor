@@ -1,12 +1,13 @@
 /**
- * Job Results Page v2.4.5
+ * Job Results Page v2.5.0
  * 
- * Fixes:
- * - Table rendering in Report (use remark-gfm)
- * - Export/Print functionality
- * - Better error display
+ * Features:
+ * - 7-Point Truth Scale (professional fact-checking standard)
+ * - TRUE/MOSTLY-TRUE/HALF-TRUE/MIXED/MOSTLY-FALSE/FALSE/PANTS-ON-FIRE
+ * - YES/MOSTLY-YES/LEANING-YES/MIXED/LEANING-NO/MOSTLY-NO/NO
+ * - Color-coded verdicts with semantic meaning
  * 
- * @version 2.4.4
+ * @version 2.5.0
  */
 
 "use client";
@@ -30,6 +31,111 @@ type Job = {
 };
 
 type EventItem = { id: number; tsUtc: string; level: string; message: string };
+
+// ============================================================================
+// 7-POINT TRUTH SCALE - Color & Display System
+// ============================================================================
+
+/**
+ * Colors for 7-point claim verdicts
+ */
+const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
+  // Positive (True side)
+  "TRUE": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
+  "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
+  "HALF-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
+  // Neutral
+  "MIXED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "⚖️" },
+  // Negative (False side)
+  "MOSTLY-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "✗" },
+  "FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "❌" },
+  "PANTS-ON-FIRE": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "🔥" },
+  // Legacy support
+  "WELL-SUPPORTED": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
+  "PARTIALLY-SUPPORTED": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
+  "UNCERTAIN": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
+  "REFUTED": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "❌" },
+};
+
+/**
+ * Colors for 7-point question answers
+ */
+const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
+  // Positive (Yes side)
+  "YES": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
+  "MOSTLY-YES": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
+  "LEANING-YES": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "↗" },
+  // Neutral
+  "MIXED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "⚖️" },
+  // Negative (No side)
+  "LEANING-NO": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "↘" },
+  "MOSTLY-NO": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
+  "NO": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "❌" },
+  // Legacy support
+  "PARTIALLY": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
+  "INSUFFICIENT-EVIDENCE": { bg: "#e9ecef", text: "#495057", border: "#6c757d", icon: "?" },
+};
+
+/**
+ * Colors for article-level verdicts
+ */
+const ARTICLE_VERDICT_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
+  // Positive
+  "TRUE": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
+  "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
+  "HALF-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
+  // Neutral
+  "MIXED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "⚖️" },
+  // Negative
+  "MOSTLY-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "✗" },
+  "FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "❌" },
+  "PANTS-ON-FIRE": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "🔥" },
+  // Legacy support
+  "CREDIBLE": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
+  "MOSTLY-CREDIBLE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
+  "MISLEADING": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "⚠️" },
+  "ANSWER-PROVIDED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "💬" },
+};
+
+/**
+ * Get human-readable label for verdict
+ */
+function getVerdictLabel(verdict: string): string {
+  const labels: Record<string, string> = {
+    "TRUE": "True",
+    "MOSTLY-TRUE": "Mostly True",
+    "HALF-TRUE": "Half True",
+    "MIXED": "Mixed",
+    "MOSTLY-FALSE": "Mostly False",
+    "FALSE": "False",
+    "PANTS-ON-FIRE": "Pants on Fire!",
+    // Legacy
+    "WELL-SUPPORTED": "Well Supported",
+    "PARTIALLY-SUPPORTED": "Partially Supported",
+    "UNCERTAIN": "Uncertain",
+    "REFUTED": "Refuted",
+  };
+  return labels[verdict] || verdict;
+}
+
+/**
+ * Get human-readable label for question answer
+ */
+function getAnswerLabel(answer: string): string {
+  const labels: Record<string, string> = {
+    "YES": "Yes",
+    "MOSTLY-YES": "Mostly Yes",
+    "LEANING-YES": "Leaning Yes",
+    "MIXED": "Mixed",
+    "LEANING-NO": "Leaning No",
+    "MOSTLY-NO": "Mostly No",
+    "NO": "No",
+    // Legacy
+    "PARTIALLY": "Partially",
+    "INSUFFICIENT-EVIDENCE": "Insufficient Evidence",
+  };
+  return labels[answer] || answer;
+}
 
 export default function JobPage() {
   const params = useParams();
@@ -514,14 +620,7 @@ function getEventColor(level: string): string {
 // ============================================================================
 
 function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { questionAnswer: any; proceedings: any[] }) {
-  const answerColors: Record<string, { bg: string; text: string; border: string }> = {
-    "YES": { bg: "#d4edda", text: "#155724", border: "#28a745" },
-    "NO": { bg: "#f8d7da", text: "#721c24", border: "#dc3545" },
-    "PARTIALLY": { bg: "#fff3cd", text: "#856404", border: "#ffc107" },
-    "INSUFFICIENT-EVIDENCE": { bg: "#e9ecef", text: "#495057", border: "#6c757d" },
-  };
-  
-  const overallColor = answerColors[questionAnswer.answer] || answerColors["PARTIALLY"];
+  const overallColor = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["MIXED"];
   
   return (
     <div style={{ marginBottom: 20 }}>
@@ -548,7 +647,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: "#666", textTransform: "uppercase" }}>Overall Answer</span>
           <span style={{ padding: "10px 20px", borderRadius: 8, fontSize: 20, fontWeight: 700, backgroundColor: overallColor.bg, color: overallColor.text }}>
-            {getAnswerEmoji(questionAnswer.answer)} {questionAnswer.answer}
+            {overallColor.icon} {getAnswerLabel(questionAnswer.answer)}
           </span>
           <span style={{ fontSize: 14, color: "#666" }}>{questionAnswer.confidence}% confidence</span>
         </div>
@@ -599,14 +698,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
 }
 
 function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: any; proceeding: any }) {
-  const answerColors: Record<string, { bg: string; text: string; border: string }> = {
-    "YES": { bg: "#d4edda", text: "#155724", border: "#28a745" },
-    "NO": { bg: "#f8d7da", text: "#721c24", border: "#dc3545" },
-    "PARTIALLY": { bg: "#fff3cd", text: "#856404", border: "#ffc107" },
-    "INSUFFICIENT-EVIDENCE": { bg: "#e9ecef", text: "#495057", border: "#6c757d" },
-  };
-  
-  const color = answerColors[proceedingAnswer.answer] || answerColors["PARTIALLY"];
+  const color = QUESTION_ANSWER_COLORS[proceedingAnswer.answer] || QUESTION_ANSWER_COLORS["MIXED"];
   
   const factors = proceedingAnswer.keyFactors || [];
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
@@ -632,7 +724,7 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
       <div style={{ padding: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <span style={{ padding: "6px 12px", borderRadius: 6, fontSize: 14, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
-            {getAnswerEmoji(proceedingAnswer.answer)} {proceedingAnswer.answer}
+            {color.icon} {getAnswerLabel(proceedingAnswer.answer)}
           </span>
           <span style={{ fontSize: 12, color: "#666" }}>{proceedingAnswer.confidence}%</span>
         </div>
@@ -728,14 +820,7 @@ function KeyFactorRow({ factor }: { factor: any }) {
 // ============================================================================
 
 function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
-  const answerColors: Record<string, { bg: string; text: string; border: string }> = {
-    "YES": { bg: "#d4edda", text: "#155724", border: "#28a745" },
-    "NO": { bg: "#f8d7da", text: "#721c24", border: "#dc3545" },
-    "PARTIALLY": { bg: "#fff3cd", text: "#856404", border: "#ffc107" },
-    "INSUFFICIENT-EVIDENCE": { bg: "#e9ecef", text: "#495057", border: "#6c757d" },
-  };
-  
-  const color = answerColors[questionAnswer.answer] || answerColors["PARTIALLY"];
+  const color = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["MIXED"];
   
   return (
     <div style={{ border: `2px solid ${color.border}`, borderRadius: 12, marginBottom: 20, overflow: "hidden", backgroundColor: "#fff" }}>
@@ -747,7 +832,7 @@ function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
       <div style={{ padding: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <span style={{ padding: "10px 20px", borderRadius: 8, fontSize: 20, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
-            {getAnswerEmoji(questionAnswer.answer)} {questionAnswer.answer}
+            {color.icon} {getAnswerLabel(questionAnswer.answer)}
           </span>
           <span style={{ fontSize: 14, color: "#666" }}>{questionAnswer.confidence}%</span>
         </div>
@@ -769,29 +854,12 @@ function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
   );
 }
 
-function getAnswerEmoji(answer: string): string {
-  switch (answer) {
-    case "YES": return "✅";
-    case "NO": return "❌";
-    case "PARTIALLY": return "⚠️";
-    default: return "❓";
-  }
-}
-
 // ============================================================================
 // Article Verdict Banner
 // ============================================================================
 
 function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
-  const verdictColors: Record<string, { bg: string; text: string; border: string }> = {
-    "CREDIBLE": { bg: "#d4edda", text: "#155724", border: "#28a745" },
-    "ANSWER-PROVIDED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3" },
-    "MOSTLY-CREDIBLE": { bg: "#d1ecf1", text: "#0c5460", border: "#17a2b8" },
-    "MISLEADING": { bg: "#fff3cd", text: "#856404", border: "#ffc107" },
-    "FALSE": { bg: "#f8d7da", text: "#721c24", border: "#dc3545" },
-  };
-  
-  const color = verdictColors[articleAnalysis.articleVerdict] || verdictColors["MISLEADING"];
+  const color = ARTICLE_VERDICT_COLORS[articleAnalysis.articleVerdict] || ARTICLE_VERDICT_COLORS["MIXED"];
   
   // Use fallback if thesis is unknown or empty
   const thesis = (!articleAnalysis.articleThesis || 
@@ -808,7 +876,7 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
       <div style={{ padding: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
           <span style={{ padding: "8px 16px", borderRadius: 6, fontSize: 18, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
-            {articleAnalysis.articleVerdict}
+            {color.icon} {getVerdictLabel(articleAnalysis.articleVerdict)}
           </span>
           <span style={{ fontSize: 14, color: "#666" }}>{articleAnalysis.articleConfidence}%</span>
           {isPseudo && (
@@ -925,14 +993,7 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
 }
 
 function ClaimCard({ claim }: { claim: any }) {
-  const colors: Record<string, { border: string; bg: string; text: string }> = {
-    "WELL-SUPPORTED": { border: "#28a745", bg: "#d4edda", text: "#155724" },
-    "PARTIALLY-SUPPORTED": { border: "#ffc107", bg: "#fff3cd", text: "#856404" },
-    "UNCERTAIN": { border: "#ffc107", bg: "#fff3cd", text: "#856404" },
-    "REFUTED": { border: "#dc3545", bg: "#f8d7da", text: "#721c24" },
-    "FALSE": { border: "#b71c1c", bg: "#ffcdd2", text: "#b71c1c" },
-  };
-  const color = colors[claim.verdict] || colors["UNCERTAIN"];
+  const color = CLAIM_VERDICT_COLORS[claim.verdict] || CLAIM_VERDICT_COLORS["MIXED"];
   
   return (
     <div style={{ padding: 14, border: "1px solid #ddd", borderLeft: `4px solid ${color.border}`, borderRadius: 8, backgroundColor: "#fff", marginBottom: 10 }}>
@@ -940,7 +1001,7 @@ function ClaimCard({ claim }: { claim: any }) {
         <span style={{ fontWeight: 600, color: "#666" }}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         <Badge bg={color.bg} color={color.text}>
-          {claim.verdict} ({claim.confidence}%)
+          {color.icon} {getVerdictLabel(claim.verdict)} ({claim.confidence}%)
         </Badge>
         {claim.isPseudoscience && (
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>

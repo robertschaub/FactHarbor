@@ -28,7 +28,7 @@ import { searchWeb } from "@/lib/web-search";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.4.9",
+  schemaVersion: "2.5.0",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
   // Search provider detection
@@ -403,6 +403,236 @@ function calculateArticleVerdictWithPseudoscience(
 }
 
 // ============================================================================
+// 7-POINT TRUTH SCALE (Professional Fact-Checking Standard)
+// ============================================================================
+
+/**
+ * 7-Point Claim Verdict Scale (for factual claims)
+ * Based on professional fact-checking standards (PolitiFact, Snopes, etc.)
+ */
+type ClaimVerdict7Point = 
+  | "TRUE"           // 95-100%: Completely accurate with full context
+  | "MOSTLY-TRUE"    // 75-94%:  Accurate but needs minor clarification
+  | "HALF-TRUE"      // 55-74%:  Contains truth but ignores critical facts
+  | "MIXED"          // 45-54%:  Balanced mix of accurate and inaccurate
+  | "MOSTLY-FALSE"   // 25-44%:  Some truth but fundamentally misleading
+  | "FALSE"          // 5-24%:   Inaccurate
+  | "PANTS-ON-FIRE"; // 0-4%:    Ridiculous or deliberately deceptive
+
+/**
+ * 7-Point Question Answer Scale (for yes/no questions)
+ */
+type QuestionAnswer7Point =
+  | "YES"            // 95-100%: Clear yes with high confidence
+  | "MOSTLY-YES"     // 75-94%:  Yes with minor caveats
+  | "LEANING-YES"    // 55-74%:  More yes than no, but significant caveats
+  | "MIXED"          // 45-54%:  Cannot determine, balanced factors
+  | "LEANING-NO"     // 25-44%:  More no than yes
+  | "MOSTLY-NO"      // 5-24%:   No with minor exceptions
+  | "NO";            // 0-4%:    Clear no
+
+/**
+ * Article-level verdict scale
+ */
+type ArticleVerdict7Point =
+  | "TRUE"           // 95-100%: Article is completely accurate
+  | "MOSTLY-TRUE"    // 75-94%:  Article is mostly accurate
+  | "HALF-TRUE"      // 55-74%:  Article has significant truth and falsehood
+  | "MIXED"          // 45-54%:  Cannot determine overall accuracy
+  | "MOSTLY-FALSE"   // 25-44%:  Article is mostly inaccurate
+  | "FALSE"          // 5-24%:   Article is inaccurate
+  | "PANTS-ON-FIRE"; // 0-4%:    Article is deliberately deceptive
+
+/**
+ * Map confidence percentage to 7-point claim verdict
+ */
+function calibrateClaimVerdict(llmVerdict: string, confidence: number): ClaimVerdict7Point {
+  // If LLM said REFUTED/FALSE, map to negative scale based on confidence
+  if (llmVerdict === "REFUTED" || llmVerdict === "FALSE") {
+    if (confidence >= 95) return "PANTS-ON-FIRE";
+    if (confidence >= 75) return "FALSE";
+    if (confidence >= 55) return "MOSTLY-FALSE";
+    return "MIXED";
+  }
+  
+  // If LLM said UNCERTAIN, it's MIXED
+  if (llmVerdict === "UNCERTAIN") {
+    return "MIXED";
+  }
+  
+  // If LLM said PARTIALLY-SUPPORTED, use confidence to determine level
+  if (llmVerdict === "PARTIALLY-SUPPORTED") {
+    if (confidence >= 75) return "MOSTLY-TRUE";
+    if (confidence >= 55) return "HALF-TRUE";
+    return "MIXED";
+  }
+  
+  // If LLM said WELL-SUPPORTED, use confidence for TRUE vs MOSTLY-TRUE
+  if (llmVerdict === "WELL-SUPPORTED") {
+    if (confidence >= 95) return "TRUE";
+    if (confidence >= 75) return "MOSTLY-TRUE";
+    return "HALF-TRUE";
+  }
+  
+  // Default: use confidence alone
+  if (confidence >= 95) return "TRUE";
+  if (confidence >= 75) return "MOSTLY-TRUE";
+  if (confidence >= 55) return "HALF-TRUE";
+  if (confidence >= 45) return "MIXED";
+  if (confidence >= 25) return "MOSTLY-FALSE";
+  if (confidence >= 5) return "FALSE";
+  return "PANTS-ON-FIRE";
+}
+
+/**
+ * Map confidence percentage to 7-point question answer
+ */
+function calibrateQuestionAnswer(llmAnswer: string, confidence: number): QuestionAnswer7Point {
+  // Determine base direction from LLM answer
+  const isPositive = llmAnswer === "YES";
+  const isNegative = llmAnswer === "NO";
+  const isPartial = llmAnswer === "PARTIALLY";
+  const isInsufficient = llmAnswer === "INSUFFICIENT-EVIDENCE";
+  
+  if (isInsufficient) {
+    return "MIXED";
+  }
+  
+  if (isPartial) {
+    // PARTIALLY with confidence determines where on scale
+    if (confidence >= 75) return "MOSTLY-YES";
+    if (confidence >= 55) return "LEANING-YES";
+    if (confidence >= 45) return "MIXED";
+    if (confidence >= 25) return "LEANING-NO";
+    return "MOSTLY-NO";
+  }
+  
+  if (isPositive) {
+    // YES direction - use confidence for granularity
+    if (confidence >= 95) return "YES";
+    if (confidence >= 75) return "MOSTLY-YES";
+    if (confidence >= 55) return "LEANING-YES";
+    return "MIXED";
+  }
+  
+  if (isNegative) {
+    // NO direction - use confidence for granularity
+    if (confidence >= 95) return "NO";
+    if (confidence >= 75) return "MOSTLY-NO";
+    if (confidence >= 55) return "LEANING-NO";
+    return "MIXED";
+  }
+  
+  // Default: confidence-only (assuming positive direction)
+  if (confidence >= 95) return "YES";
+  if (confidence >= 75) return "MOSTLY-YES";
+  if (confidence >= 55) return "LEANING-YES";
+  if (confidence >= 45) return "MIXED";
+  if (confidence >= 25) return "LEANING-NO";
+  if (confidence >= 5) return "MOSTLY-NO";
+  return "NO";
+}
+
+/**
+ * Map confidence to article verdict
+ */
+function calibrateArticleVerdict(llmVerdict: string, confidence: number): ArticleVerdict7Point {
+  // Handle negative verdicts
+  if (llmVerdict === "FALSE" || llmVerdict === "REFUTED" || llmVerdict === "PANTS-ON-FIRE") {
+    if (confidence >= 95) return "PANTS-ON-FIRE";
+    if (confidence >= 75) return "FALSE";
+    if (confidence >= 55) return "MOSTLY-FALSE";
+    return "MIXED";
+  }
+  
+  if (llmVerdict === "MISLEADING") {
+    if (confidence >= 75) return "MOSTLY-FALSE";
+    if (confidence >= 55) return "HALF-TRUE";
+    return "MIXED";
+  }
+  
+  if (llmVerdict === "MOSTLY-CREDIBLE") {
+    if (confidence >= 75) return "MOSTLY-TRUE";
+    return "HALF-TRUE";
+  }
+  
+  if (llmVerdict === "CREDIBLE") {
+    if (confidence >= 95) return "TRUE";
+    if (confidence >= 75) return "MOSTLY-TRUE";
+    return "HALF-TRUE";
+  }
+  
+  // Default
+  if (confidence >= 95) return "TRUE";
+  if (confidence >= 75) return "MOSTLY-TRUE";
+  if (confidence >= 55) return "HALF-TRUE";
+  if (confidence >= 45) return "MIXED";
+  if (confidence >= 25) return "MOSTLY-FALSE";
+  if (confidence >= 5) return "FALSE";
+  return "PANTS-ON-FIRE";
+}
+
+/**
+ * Get color for 7-point verdict display
+ */
+function getVerdictColor(verdict: string): { bg: string; text: string; border: string } {
+  switch (verdict) {
+    case "TRUE":
+    case "YES":
+      return { bg: "#d4edda", text: "#155724", border: "#28a745" }; // Green
+    case "MOSTLY-TRUE":
+    case "MOSTLY-YES":
+      return { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a" }; // Light green
+    case "HALF-TRUE":
+    case "LEANING-YES":
+      return { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b" }; // Yellow
+    case "MIXED":
+      return { bg: "#fff3e0", text: "#e65100", border: "#ff9800" }; // Orange
+    case "MOSTLY-FALSE":
+    case "LEANING-NO":
+      return { bg: "#ffccbc", text: "#bf360c", border: "#ff5722" }; // Dark orange
+    case "FALSE":
+    case "MOSTLY-NO":
+      return { bg: "#ffcdd2", text: "#c62828", border: "#f44336" }; // Red
+    case "PANTS-ON-FIRE":
+    case "NO":
+      return { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c" }; // Dark red
+    default:
+      return { bg: "#fff3e0", text: "#e65100", border: "#ff9800" }; // Orange default
+  }
+}
+
+/**
+ * Get highlight color class for 7-point scale
+ */
+function getHighlightColor7Point(verdict: string): "green" | "light-green" | "yellow" | "orange" | "dark-orange" | "red" | "dark-red" {
+  switch (verdict) {
+    case "TRUE":
+    case "YES":
+      return "green";
+    case "MOSTLY-TRUE":
+    case "MOSTLY-YES":
+      return "light-green";
+    case "HALF-TRUE":
+    case "LEANING-YES":
+      return "yellow";
+    case "MIXED":
+      return "orange";
+    case "MOSTLY-FALSE":
+    case "LEANING-NO":
+      return "dark-orange";
+    case "FALSE":
+    case "MOSTLY-NO":
+      return "red";
+    case "PANTS-ON-FIRE":
+    case "NO":
+      return "dark-red";
+    default:
+      return "orange";
+  }
+}
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -443,7 +673,10 @@ interface FactorAnalysis {
 interface ProceedingAnswer {
   proceedingId: string;
   proceedingName: string;
-  answer: "YES" | "NO" | "PARTIALLY" | "INSUFFICIENT-EVIDENCE";
+  // Original LLM answer (for debugging)
+  llmAnswer?: "YES" | "NO" | "PARTIALLY" | "INSUFFICIENT-EVIDENCE";
+  // Calibrated 7-point answer
+  answer: QuestionAnswer7Point;
   confidence: number;
   shortAnswer: string;
   keyFactors: KeyFactor[];
@@ -544,7 +777,10 @@ interface ClaimVerdict {
   claimId: string;
   claimText: string;
   isCentral: boolean;
-  verdict: "WELL-SUPPORTED" | "PARTIALLY-SUPPORTED" | "UNCERTAIN" | "REFUTED" | "FALSE";
+  // Original LLM verdict (for debugging)
+  llmVerdict: "WELL-SUPPORTED" | "PARTIALLY-SUPPORTED" | "UNCERTAIN" | "REFUTED";
+  // Calibrated 7-point verdict
+  verdict: ClaimVerdict7Point;
   confidence: number;
   riskTier: "A" | "B" | "C";
   reasoning: string;
@@ -552,14 +788,17 @@ interface ClaimVerdict {
   relatedProceedingId?: string;
   startOffset?: number;
   endOffset?: number;
-  highlightColor: "green" | "yellow" | "red";
+  highlightColor: "green" | "light-green" | "yellow" | "orange" | "dark-orange" | "red" | "dark-red";
   isPseudoscience?: boolean;
   escalationReason?: string;
 }
 
 interface QuestionAnswer {
   question: string;
-  answer: "YES" | "NO" | "PARTIALLY" | "INSUFFICIENT-EVIDENCE";
+  // Original LLM answer (for debugging)
+  llmAnswer: "YES" | "NO" | "PARTIALLY" | "INSUFFICIENT-EVIDENCE";
+  // Calibrated 7-point answer
+  answer: QuestionAnswer7Point;
   confidence: number;
   shortAnswer: string;
   nuancedAnswer: string;
@@ -587,7 +826,10 @@ interface ArticleAnalysis {
     description: string;
     affectedClaims: string[];
   }>;
-  articleVerdict: "CREDIBLE" | "MOSTLY-CREDIBLE" | "MISLEADING" | "FALSE" | "ANSWER-PROVIDED" | "REFUTED";
+  // Original LLM verdict (for debugging)
+  llmVerdict?: "CREDIBLE" | "MOSTLY-CREDIBLE" | "MISLEADING" | "FALSE";
+  // Calibrated 7-point verdict
+  articleVerdict: ArticleVerdict7Point;
   articleConfidence: number;
   verdictDiffersFromClaimAverage: boolean;
   verdictDifferenceReason?: string;
@@ -1256,6 +1498,7 @@ Provide SEPARATE answers for each proceeding.`;
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING>;
   
   // FIX v2.4.3: Calculate factorAnalysis from ACTUAL keyFactors array
+  // v2.5.0: Calibrate to 7-point scale
   const correctedProceedingAnswers = parsed.proceedingAnswers.map((pa: any) => {
     const factors = pa.keyFactors as KeyFactor[];
     
@@ -1273,38 +1516,45 @@ Provide SEPARATE answers for each proceeding.`;
       verdictExplanation: `${positiveFactors} positive, ${negativeFactors} negative (${contestedNegatives} contested), ${neutralFactors} neutral`
     };
     
-    // Apply calibration correction
-    let correctedAnswer = pa.answer;
+    // Apply calibration correction based on factors
+    let llmAnswer = pa.answer;
     let correctedConfidence = pa.confidence;
     
     const effectiveNegatives = negativeFactors - (contestedNegatives * 0.5);
     
     if (pa.answer === "NO" && positiveFactors > effectiveNegatives) {
-      correctedAnswer = "PARTIALLY";
+      llmAnswer = "PARTIALLY";
       correctedConfidence = Math.min(pa.confidence, 72);
       factorAnalysis.verdictExplanation = `Corrected from NO: ${positiveFactors} positive > ${effectiveNegatives.toFixed(1)} effective negative`;
     } else if (pa.answer === "NO" && contestedNegatives > 0 && contestedNegatives === negativeFactors) {
-      correctedAnswer = "PARTIALLY";
+      llmAnswer = "PARTIALLY";
       correctedConfidence = Math.min(pa.confidence, 68);
       factorAnalysis.verdictExplanation = `Corrected: All ${negativeFactors} negative factors are contested`;
     }
     
+    // Calibrate to 7-point scale
+    const calibratedAnswer = calibrateQuestionAnswer(llmAnswer, correctedConfidence);
+    
     return {
       ...pa,
-      answer: correctedAnswer,
+      llmAnswer: pa.answer, // Original LLM answer
+      answer: calibratedAnswer, // 7-point calibrated answer
       confidence: correctedConfidence,
       factorAnalysis
     } as ProceedingAnswer;
   });
   
-  // Recalculate overall answer
+  // Recalculate overall answer using calibrated answers
   const answers = correctedProceedingAnswers.map((pa: ProceedingAnswer) => pa.answer);
-  const yesCount = answers.filter(a => a === "YES").length;
-  const noCount = answers.filter(a => a === "NO").length;
+  const yesCount = answers.filter(a => a === "YES" || a === "MOSTLY-YES").length;
+  const noCount = answers.filter(a => a === "NO" || a === "MOSTLY-NO").length;
+  const leaningYesCount = answers.filter(a => a === "LEANING-YES").length;
+  const mixedCount = answers.filter(a => a === "MIXED" || a === "LEANING-NO").length;
   
-  let overallAnswer = parsed.questionAnswer.answer;
-  if (yesCount > 0 && noCount > 0) overallAnswer = "PARTIALLY";
-  else if (answers.some(a => a === "PARTIALLY")) overallAnswer = "PARTIALLY";
+  // Determine overall LLM-style answer for calibration
+  let overallLlmAnswer = parsed.questionAnswer.answer;
+  if (yesCount > 0 && noCount > 0) overallLlmAnswer = "PARTIALLY";
+  else if (mixedCount > 0 || leaningYesCount > 0) overallLlmAnswer = "PARTIALLY";
   
   const avgConfidence = Math.round(
     correctedProceedingAnswers.reduce((sum, pa) => sum + pa.confidence, 0) / correctedProceedingAnswers.length
@@ -1314,36 +1564,43 @@ Provide SEPARATE answers for each proceeding.`;
   const allFactors = correctedProceedingAnswers.flatMap(pa => pa.keyFactors);
   const hasContestedFactors = allFactors.some(f => f.isContested);
   
-  // Build claim verdicts
+  // Build claim verdicts with 7-point calibration
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
+    const calibratedVerdict = calibrateClaimVerdict(cv.verdict, cv.confidence);
     return {
       ...cv,
+      llmVerdict: cv.verdict,
+      verdict: calibratedVerdict,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
       relatedProceedingId: cv.relatedProceedingId || claim?.relatedProceedingId,
       startOffset: claim?.startOffset,
       endOffset: claim?.endOffset,
-      highlightColor: getHighlightColor(cv.verdict)
+      highlightColor: getHighlightColor7Point(calibratedVerdict)
     };
   });
   
   const claimPattern = {
     total: claimVerdicts.length,
-    supported: claimVerdicts.filter(v => v.verdict === "WELL-SUPPORTED").length,
-    uncertain: claimVerdicts.filter(v => v.verdict === "PARTIALLY-SUPPORTED" || v.verdict === "UNCERTAIN").length,
-    refuted: claimVerdicts.filter(v => v.verdict === "REFUTED").length,
+    supported: claimVerdicts.filter(v => v.verdict === "TRUE" || v.verdict === "MOSTLY-TRUE").length,
+    uncertain: claimVerdicts.filter(v => v.verdict === "HALF-TRUE" || v.verdict === "MIXED").length,
+    refuted: claimVerdicts.filter(v => v.verdict === "MOSTLY-FALSE" || v.verdict === "FALSE" || v.verdict === "PANTS-ON-FIRE").length,
     centralClaimsTotal: claimVerdicts.filter(v => v.isCentral).length,
-    centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && v.verdict === "WELL-SUPPORTED").length
+    centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && (v.verdict === "TRUE" || v.verdict === "MOSTLY-TRUE")).length
   };
 
   const calibrationNote = hasContestedFactors 
     ? "Some negative factors are politically contested claims and given reduced weight."
     : undefined;
 
+  // Calibrate overall answer to 7-point scale
+  const calibratedAnswer = calibrateQuestionAnswer(overallLlmAnswer, avgConfidence);
+  
   const questionAnswer: QuestionAnswer = {
     question: understanding.questionBeingAsked || state.originalInput,
-    answer: overallAnswer,
+    llmAnswer: overallLlmAnswer,
+    answer: calibratedAnswer,
     confidence: avgConfidence,
     shortAnswer: parsed.questionAnswer.shortAnswer,
     nuancedAnswer: parsed.questionAnswer.nuancedAnswer,
@@ -1355,6 +1612,9 @@ Provide SEPARATE answers for each proceeding.`;
     hasContestedFactors
   };
 
+  // Calibrate article verdict
+  const calibratedArticleVerdict = calibrateArticleVerdict("CREDIBLE", avgConfidence);
+  
   const articleAnalysis: ArticleAnalysis = {
     inputType: "question",
     isQuestion: true,
@@ -1362,9 +1622,10 @@ Provide SEPARATE answers for each proceeding.`;
     hasMultipleProceedings: true,
     proceedings: understanding.distinctProceedings,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
-    thesisSupported: overallAnswer === "YES",
+    thesisSupported: calibratedAnswer === "YES" || calibratedAnswer === "MOSTLY-YES",
     logicalFallacies: [],
-    articleVerdict: "ANSWER-PROVIDED",
+    llmVerdict: "CREDIBLE",
+    articleVerdict: calibratedArticleVerdict,
     articleConfidence: avgConfidence,
     verdictDiffersFromClaimAverage: false,
     claimPattern
@@ -1404,35 +1665,50 @@ ${factsFormatted}`;
 
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
   
+  // Build claim verdicts with 7-point calibration
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
+    const calibratedVerdict = calibrateClaimVerdict(cv.verdict, cv.confidence);
     return {
       ...cv,
+      llmVerdict: cv.verdict,
+      verdict: calibratedVerdict,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
       startOffset: claim?.startOffset,
       endOffset: claim?.endOffset,
-      highlightColor: getHighlightColor(cv.verdict)
+      highlightColor: getHighlightColor7Point(calibratedVerdict)
     };
   });
   
   const claimPattern = {
     total: claimVerdicts.length,
-    supported: claimVerdicts.filter(v => v.verdict === "WELL-SUPPORTED").length,
-    uncertain: claimVerdicts.filter(v => v.verdict === "PARTIALLY-SUPPORTED" || v.verdict === "UNCERTAIN").length,
-    refuted: claimVerdicts.filter(v => v.verdict === "REFUTED").length,
+    supported: claimVerdicts.filter(v => v.verdict === "TRUE" || v.verdict === "MOSTLY-TRUE").length,
+    uncertain: claimVerdicts.filter(v => v.verdict === "HALF-TRUE" || v.verdict === "MIXED").length,
+    refuted: claimVerdicts.filter(v => v.verdict === "MOSTLY-FALSE" || v.verdict === "FALSE" || v.verdict === "PANTS-ON-FIRE").length,
     centralClaimsTotal: claimVerdicts.filter(v => v.isCentral).length,
-    centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && v.verdict === "WELL-SUPPORTED").length
+    centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && (v.verdict === "TRUE" || v.verdict === "MOSTLY-TRUE")).length
   };
 
   const hasContestedFactors = parsed.questionAnswer.keyFactors.some((kf: any) => kf.isContested);
 
+  // Calibrate answer to 7-point scale
+  const calibratedAnswer = calibrateQuestionAnswer(parsed.questionAnswer.answer, parsed.questionAnswer.confidence);
+
   const questionAnswer: QuestionAnswer = {
     question: understanding.questionBeingAsked || state.originalInput,
-    ...parsed.questionAnswer,
+    llmAnswer: parsed.questionAnswer.answer,
+    answer: calibratedAnswer,
+    confidence: parsed.questionAnswer.confidence,
+    shortAnswer: parsed.questionAnswer.shortAnswer,
+    nuancedAnswer: parsed.questionAnswer.nuancedAnswer,
+    keyFactors: parsed.questionAnswer.keyFactors,
     hasMultipleProceedings: false,
     hasContestedFactors
   };
+
+  // Calibrate article verdict
+  const calibratedArticleVerdict = calibrateArticleVerdict("CREDIBLE", parsed.questionAnswer.confidence);
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: "question",
@@ -1440,9 +1716,10 @@ ${factsFormatted}`;
     questionAnswer,
     hasMultipleProceedings: false,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
-    thesisSupported: parsed.questionAnswer.answer === "YES",
+    thesisSupported: calibratedAnswer === "YES" || calibratedAnswer === "MOSTLY-YES",
     logicalFallacies: [],
-    articleVerdict: "ANSWER-PROVIDED",
+    llmVerdict: "CREDIBLE",
+    articleVerdict: calibratedArticleVerdict,
     articleConfidence: parsed.questionAnswer.confidence,
     verdictDiffersFromClaimAverage: false,
     claimPattern
@@ -1490,73 +1767,71 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
 
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
   
-  // Map and escalate verdicts if pseudoscience detected
+  // Map and escalate verdicts if pseudoscience detected, then calibrate to 7-point scale
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
     
-    let finalVerdict = cv.verdict;
+    let llmVerdict = cv.verdict;
     let finalConfidence = cv.confidence;
     let escalationReason: string | undefined;
     
-    // Apply pseudoscience escalation
+    // Apply pseudoscience escalation (adjusts LLM verdict before calibration)
     if (pseudoscienceAnalysis?.isPseudoscience) {
       const claimPseudo = detectPseudoscience(claim?.text || cv.claimId);
       if (claimPseudo.isPseudoscience || pseudoscienceAnalysis.confidence >= 0.5) {
         const escalation = escalatePseudoscienceVerdict(cv.verdict, cv.confidence, pseudoscienceAnalysis);
-        finalVerdict = escalation.verdict;
+        llmVerdict = escalation.verdict;
         finalConfidence = escalation.confidence;
         escalationReason = escalation.escalationReason;
       }
     }
     
+    // Calibrate to 7-point scale
+    const calibratedVerdict = calibrateClaimVerdict(llmVerdict, finalConfidence);
+    
     return {
       ...cv,
-      verdict: finalVerdict as ClaimVerdict["verdict"],
+      llmVerdict: cv.verdict, // Original LLM output
+      verdict: calibratedVerdict,
       confidence: finalConfidence,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
       startOffset: claim?.startOffset,
       endOffset: claim?.endOffset,
-      highlightColor: getHighlightColor(finalVerdict),
+      highlightColor: getHighlightColor7Point(calibratedVerdict),
       isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
       escalationReason
     } as ClaimVerdict;
   });
   
-  // Calculate claim pattern
+  // Calculate claim pattern with 7-point verdicts
   const claimPattern = {
     total: claimVerdicts.length,
-    supported: claimVerdicts.filter(v => v.verdict === "WELL-SUPPORTED").length,
-    uncertain: claimVerdicts.filter(v => v.verdict === "PARTIALLY-SUPPORTED" || v.verdict === "UNCERTAIN").length,
-    refuted: claimVerdicts.filter(v => v.verdict === "REFUTED" || v.verdict === "FALSE").length,
+    supported: claimVerdicts.filter(v => v.verdict === "TRUE" || v.verdict === "MOSTLY-TRUE").length,
+    uncertain: claimVerdicts.filter(v => v.verdict === "HALF-TRUE" || v.verdict === "MIXED").length,
+    refuted: claimVerdicts.filter(v => v.verdict === "MOSTLY-FALSE" || v.verdict === "FALSE" || v.verdict === "PANTS-ON-FIRE").length,
     centralClaimsTotal: claimVerdicts.filter(v => v.isCentral).length,
-    centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && v.verdict === "WELL-SUPPORTED").length
+    centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && (v.verdict === "TRUE" || v.verdict === "MOSTLY-TRUE")).length
   };
 
   // Determine article verdict with proper calibration
-  let articleVerdict: ArticleAnalysis["articleVerdict"] = parsed.articleAnalysis.articleVerdict;
+  let llmArticleVerdict = parsed.articleAnalysis.articleVerdict;
   let articleConfidence = parsed.articleAnalysis.articleConfidence;
   let verdictReason: string | undefined;
   
-  // CALIBRATION: FALSE requires 99%+ certainty
-  // If LLM returned FALSE but confidence < 99%, downgrade to REFUTED
-  if (articleVerdict === "FALSE" && articleConfidence < 99) {
-    articleVerdict = "REFUTED";
-    verdictReason = "Downgraded from FALSE: requires 99%+ certainty for definitive falsehood";
-  }
-  
+  // Handle pseudoscience escalation for article-level verdict
   if (pseudoscienceAnalysis?.isPseudoscience) {
     const escalatedArticle = calculateArticleVerdictWithPseudoscience(
-      claimVerdicts.map(v => ({ verdict: v.verdict, confidence: v.confidence })),
+      claimVerdicts.map(v => ({ verdict: v.llmVerdict || "UNCERTAIN", confidence: v.confidence })),
       pseudoscienceAnalysis
     );
-    
-    // Use our calculated verdict for pseudoscience cases
-    // This ensures proper calibration (REFUTED instead of FALSE)
-    articleVerdict = escalatedArticle.verdict as ArticleAnalysis["articleVerdict"];
-    articleConfidence = Math.min(escalatedArticle.confidence, 95); // Cap at 95%
+    llmArticleVerdict = escalatedArticle.verdict as any;
+    articleConfidence = Math.min(escalatedArticle.confidence, 95);
     verdictReason = escalatedArticle.reason;
   }
+  
+  // Calibrate article verdict to 7-point scale
+  const calibratedArticleVerdict = calibrateArticleVerdict(llmArticleVerdict, articleConfidence);
 
   return {
     claimVerdicts,
@@ -1567,7 +1842,8 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       articleThesis: understanding.articleThesis,
       thesisSupported: parsed.articleAnalysis.thesisSupported,
       logicalFallacies: parsed.articleAnalysis.logicalFallacies,
-      articleVerdict,
+      llmVerdict: llmArticleVerdict,
+      articleVerdict: calibratedArticleVerdict,
       articleConfidence,
       verdictDiffersFromClaimAverage: parsed.articleAnalysis.verdictDiffersFromClaimAverage,
       verdictDifferenceReason: verdictReason || parsed.articleAnalysis.verdictDifferenceReason,
@@ -1749,7 +2025,12 @@ async function generateReport(
   // Claims
   report += `## Claims\n\n`;
   for (const cv of claimVerdicts) {
-    const emoji = cv.verdict === "WELL-SUPPORTED" ? "🟢" : cv.verdict === "REFUTED" ? "🔴" : "🟡";
+    // 7-point scale emoji mapping
+    const emoji = 
+      cv.verdict === "TRUE" || cv.verdict === "MOSTLY-TRUE" ? "🟢" :
+      cv.verdict === "HALF-TRUE" || cv.verdict === "MIXED" ? "🟡" :
+      cv.verdict === "MOSTLY-FALSE" || cv.verdict === "FALSE" || cv.verdict === "PANTS-ON-FIRE" ? "🔴" :
+      "🟡"; // default
     report += `**${cv.claimId}:** ${cv.claimText}\n`;
     report += `${emoji} ${cv.verdict} (${cv.confidence}%)\n\n`;
   }
