@@ -1,5 +1,5 @@
 /**
- * Job Results Page v2.4.4
+ * Job Results Page v2.4.5
  * 
  * Fixes:
  * - Table rendering in Report (use remark-gfm)
@@ -177,7 +177,16 @@ export default function JobPage() {
               {isQuestion && <Badge bg="#e3f2fd" color="#1565c0">📝 QUESTION</Badge>}
               {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">⚖️ {proceedings.length} PROCEEDINGS</Badge>}
               {hasContestedFactors && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
-              {researchStats && <Badge bg="#e8f5e9" color="#2e7d32">🔍 {researchStats.totalSearches} searches</Badge>}
+              {result.meta.isPseudoscience && (
+                <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
+                  🔬 PSEUDOSCIENCE
+                </Badge>
+              )}
+              {researchStats && (
+                <Badge bg="#e8f5e9" color="#2e7d32" title={result.meta.searchProvider || "Web Search"}>
+                  🔍 {researchStats.totalSearches} searches
+                </Badge>
+              )}
             </div>
           )}
         </div>
@@ -222,6 +231,7 @@ export default function JobPage() {
             <ArticleVerdictBanner 
               articleAnalysis={articleAnalysis} 
               fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
+              pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
             />
           )}
           
@@ -249,7 +259,7 @@ export default function JobPage() {
       {/* Sources Tab */}
       {tab === "sources" && hasV22Data && (
         <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, backgroundColor: "#fff" }}>
-          <SourcesPanel searchQueries={searchQueries} sources={sources} researchStats={researchStats} />
+          <SourcesPanel searchQueries={searchQueries} sources={sources} researchStats={researchStats} searchProvider={result?.meta?.searchProvider} />
         </div>
       )}
 
@@ -333,10 +343,24 @@ const exportBtnStyle: React.CSSProperties = {
 // Sources Panel
 // ============================================================================
 
-function SourcesPanel({ searchQueries, sources, researchStats }: { searchQueries: any[]; sources: any[]; researchStats: any }) {
+function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }: { searchQueries: any[]; sources: any[]; researchStats: any; searchProvider?: string }) {
   return (
     <div>
-      <h3 style={{ margin: "0 0 16px" }}>🔍 Research Summary</h3>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <h3 style={{ margin: 0 }}>🔍 Research Summary</h3>
+        {searchProvider && (
+          <span style={{ 
+            padding: "4px 10px", 
+            backgroundColor: "#e3f2fd", 
+            color: "#1565c0", 
+            borderRadius: 4, 
+            fontSize: 12, 
+            fontWeight: 600 
+          }}>
+            via {searchProvider}
+          </span>
+        )}
+      </div>
       
       {researchStats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 20 }}>
@@ -366,6 +390,7 @@ function SourcesPanel({ searchQueries, sources, researchStats }: { searchQueries
                 <code style={{ fontSize: 13, color: "#333" }}>{sq.query}</code>
                 <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
                   Focus: {sq.focus} | Iteration: {sq.iteration}
+                  {sq.searchProvider && <> | Provider: {sq.searchProvider}</>}
                 </div>
               </div>
               <div style={{ 
@@ -455,9 +480,9 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
 // Utility Components
 // ============================================================================
 
-function Badge({ children, bg, color }: { children: React.ReactNode; bg: string; color: string }) {
+function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: string; color: string; title?: string }) {
   return (
-    <span style={{ padding: "2px 8px", backgroundColor: bg, color, borderRadius: 4, fontSize: 12, fontWeight: 600 }}>
+    <span style={{ padding: "2px 8px", backgroundColor: bg, color, borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: title ? "help" : "default" }} title={title}>
       {children}
     </span>
   );
@@ -757,7 +782,7 @@ function getAnswerEmoji(answer: string): string {
 // Article Verdict Banner
 // ============================================================================
 
-function ArticleVerdictBanner({ articleAnalysis, fallbackThesis }: { articleAnalysis: any; fallbackThesis?: string }) {
+function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
   const verdictColors: Record<string, { bg: string; text: string; border: string }> = {
     "CREDIBLE": { bg: "#d4edda", text: "#155724", border: "#28a745" },
     "ANSWER-PROVIDED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3" },
@@ -775,16 +800,57 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis }: { articleAnal
     ? (fallbackThesis || "—")
     : articleAnalysis.articleThesis;
   
+  const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis.isPseudoscience;
+  const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis.pseudoscienceCategories || [];
+  
   return (
     <div style={{ border: `2px solid ${color.border}`, borderRadius: 12, marginBottom: 20, overflow: "hidden", backgroundColor: "#fff" }}>
       <div style={{ padding: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
           <span style={{ padding: "8px 16px", borderRadius: 6, fontSize: 18, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
             {articleAnalysis.articleVerdict}
           </span>
           <span style={{ fontSize: 14, color: "#666" }}>{articleAnalysis.articleConfidence}%</span>
+          {isPseudo && (
+            <span style={{ 
+              padding: "4px 10px", 
+              borderRadius: 4, 
+              fontSize: 12, 
+              fontWeight: 600, 
+              backgroundColor: "#ffebee", 
+              color: "#c62828",
+              border: "1px solid #ef9a9a"
+            }}>
+              🔬 Pseudoscience Detected
+            </span>
+          )}
         </div>
         <div><b>Thesis:</b> {thesis}</div>
+        
+        {isPseudo && pseudoCategories.length > 0 && (
+          <div style={{ 
+            marginTop: 12, 
+            padding: 12, 
+            backgroundColor: "#fff8e1", 
+            borderRadius: 6,
+            border: "1px solid #ffecb3",
+            fontSize: 13
+          }}>
+            <div style={{ fontWeight: 600, color: "#e65100", marginBottom: 4 }}>
+              ⚠️ Scientific Credibility Warning
+            </div>
+            <div style={{ color: "#5d4037" }}>
+              This content contains claims based on <b>{pseudoCategories.map((c: string) => 
+                c.replace(/([A-Z])/g, ' $1').trim().toLowerCase()
+              ).join(", ")}</b> — concepts that contradict established scientific consensus.
+              {articleAnalysis.verdictDifferenceReason && (
+                <div style={{ marginTop: 8, fontStyle: "italic" }}>
+                  {articleAnalysis.verdictDifferenceReason}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -864,20 +930,37 @@ function ClaimCard({ claim }: { claim: any }) {
     "PARTIALLY-SUPPORTED": { border: "#ffc107", bg: "#fff3cd", text: "#856404" },
     "UNCERTAIN": { border: "#ffc107", bg: "#fff3cd", text: "#856404" },
     "REFUTED": { border: "#dc3545", bg: "#f8d7da", text: "#721c24" },
+    "FALSE": { border: "#b71c1c", bg: "#ffcdd2", text: "#b71c1c" },
   };
   const color = colors[claim.verdict] || colors["UNCERTAIN"];
   
   return (
     <div style={{ padding: 14, border: "1px solid #ddd", borderLeft: `4px solid ${color.border}`, borderRadius: 8, backgroundColor: "#fff", marginBottom: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
         <span style={{ fontWeight: 600, color: "#666" }}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         <Badge bg={color.bg} color={color.text}>
           {claim.verdict} ({claim.confidence}%)
         </Badge>
+        {claim.isPseudoscience && (
+          <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>
+        )}
       </div>
       <div style={{ fontSize: 14, fontStyle: "italic", color: "#333", marginBottom: 8 }}>"{claim.claimText}"</div>
       <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>{claim.reasoning}</div>
+      {claim.escalationReason && (
+        <div style={{ 
+          marginTop: 8, 
+          padding: 8, 
+          backgroundColor: "#fff8e1", 
+          borderRadius: 4, 
+          fontSize: 12, 
+          color: "#e65100",
+          borderLeft: "3px solid #ff9800"
+        }}>
+          ⚠️ {claim.escalationReason}
+        </div>
+      )}
     </div>
   );
 }

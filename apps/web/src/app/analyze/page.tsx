@@ -1,5 +1,5 @@
 /**
- * Analyze Page v2.4.4
+ * Analyze Page v2.4.8
  * 
  * Features:
  * - Auto URL detection (no radio button needed)

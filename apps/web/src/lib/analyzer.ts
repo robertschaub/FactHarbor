@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.4.4
+ * FactHarbor POC1 Analyzer v2.4.5
  * 
  * FIXES:
  * - Table format in report (proper markdown tables)
@@ -8,7 +8,7 @@
  * Features:
  * - v2.4.2: Multi-Proceeding + Contested Factors
  * - v2.4.3: Search Visibility + Factor Count Fix
- * - v2.4.4: Table rendering + HTML entities + Jobs page
+ * - v2.4.5: Table rendering + HTML entities + Jobs page
  * 
  * @version 2.4.4
  * @date December 2025
@@ -28,8 +28,11 @@ import { searchWeb } from "@/lib/web-search";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.4.4",
+  schemaVersion: "2.4.8",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
+  
+  // Search provider detection
+  searchProvider: detectSearchProvider(),
   
   quick: {
     maxResearchIterations: 2,
@@ -50,8 +53,353 @@ const CONFIG = {
   fetchTimeoutMs: 10000,
 };
 
+/**
+ * Detect which search provider is configured
+ */
+function detectSearchProvider(): string {
+  // Check for Google Custom Search
+  if (process.env.GOOGLE_CSE_API_KEY || process.env.GOOGLE_SEARCH_API_KEY || process.env.GOOGLE_API_KEY) {
+    return "Google Custom Search";
+  }
+  // Check for Bing
+  if (process.env.BING_API_KEY || process.env.AZURE_BING_KEY) {
+    return "Bing Search";
+  }
+  // Check for SerpAPI
+  if (process.env.SERPAPI_KEY || process.env.SERP_API_KEY) {
+    return "SerpAPI";
+  }
+  // Check for Tavily
+  if (process.env.TAVILY_API_KEY) {
+    return "Tavily";
+  }
+  // Check for Brave
+  if (process.env.BRAVE_API_KEY || process.env.BRAVE_SEARCH_KEY) {
+    return "Brave Search";
+  }
+  // Check for explicit config
+  if (process.env.SEARCH_PROVIDER) {
+    return process.env.SEARCH_PROVIDER;
+  }
+  // Default
+  return "Web Search";
+}
+
 function getActiveConfig() {
   return CONFIG.deepModeEnabled ? CONFIG.deep : CONFIG.quick;
+}
+
+// ============================================================================
+// PSEUDOSCIENCE DETECTION
+// ============================================================================
+
+/**
+ * Patterns that indicate pseudoscientific claims
+ * These are mechanisms that contradict established physics/chemistry/biology
+ */
+const PSEUDOSCIENCE_PATTERNS = {
+  // Water pseudoscience
+  waterMemory: [
+    /water\s*memory/i,
+    /information\s*water/i,
+    /informed\s*water/i,
+    /structured\s*water/i,
+    /hexagonal\s*water/i,
+    /water\s*structur(e|ing)/i,
+    /molecular\s*(re)?structur/i,
+    /water\s*cluster/i,
+    /energi[sz]ed\s*water/i,
+    /revitali[sz]ed\s*water/i,
+    /living\s*water/i,
+    /grander/i,
+    /emoto/i,  // Masaru Emoto's debunked water crystal claims
+  ],
+  
+  // Energy/vibration pseudoscience
+  energyFields: [
+    /life\s*force/i,
+    /vital\s*energy/i,
+    /bio[\s-]*energy/i,
+    /subtle\s*energy/i,
+    /energy\s*field/i,
+    /healing\s*frequencies/i,
+    /vibrational\s*(healing|medicine|therapy)/i,
+    /frequency\s*(healing|therapy)/i,
+    /chakra/i,
+    /aura\s*(reading|healing|cleansing)/i,
+  ],
+  
+  // Quantum misuse
+  quantumMisuse: [
+    /quantum\s*(healing|medicine|therapy|wellness)/i,
+    /quantum\s*consciousness/i,
+    /quantum\s*energy/i,
+  ],
+  
+  // Homeopathy
+  homeopathy: [
+    /homeopath/i,
+    /potenti[sz]ation/i,
+    /succussion/i,
+    /dilution.*memory/i,
+    /like\s*cures\s*like/i,
+  ],
+  
+  // Detox pseudoscience
+  detoxPseudo: [
+    /detox\s*(foot|ion|cleanse)/i,
+    /toxin\s*removal.*(?:crystal|magnet|ion)/i,
+    /ionic\s*cleanse/i,
+  ],
+  
+  // Other pseudoscience
+  other: [
+    /crystal\s*(healing|therapy|energy)/i,
+    /magnet\s*therapy/i,
+    /magnetic\s*healing/i,
+    /earthing\s*(therapy|healing)/i,
+    /grounding\s*(therapy|healing|mat)/i,
+    /orgone/i,
+    /scalar\s*(wave|energy)/i,
+    /tachyon/i,
+    /zero[\s-]*point\s*energy.*healing/i,
+  ]
+};
+
+/**
+ * Known pseudoscience products/brands
+ */
+const PSEUDOSCIENCE_BRANDS = [
+  /grander/i,
+  /pimag/i,
+  /kangen/i,
+  /enagic/i,
+  /alkaline\s*ionizer/i,
+  /structured\s*water\s*unit/i,
+];
+
+/**
+ * Scientific consensus statements that indicate a claim is debunked
+ */
+const DEBUNKED_INDICATORS = [
+  /no\s*(scientific\s*)?(evidence|proof|basis)/i,
+  /not\s*(scientifically\s*)?(proven|supported|verified)/i,
+  /lacks?\s*(scientific\s*)?(evidence|proof|basis|foundation)/i,
+  /contradict.*(?:physics|chemistry|biology|science)/i,
+  /violates?\s*(?:laws?\s*of\s*)?(?:physics|thermodynamics)/i,
+  /pseudoscien/i,
+  /debunked/i,
+  /disproven/i,
+  /no\s*plausible\s*mechanism/i,
+  /implausible/i,
+  /scientifically\s*impossible/i,
+];
+
+interface PseudoscienceAnalysis {
+  isPseudoscience: boolean;
+  confidence: number;  // 0-1
+  categories: string[];
+  matchedPatterns: string[];
+  debunkIndicatorsFound: string[];
+  recommendation: "REFUTED" | "FALSE" | "UNCERTAIN" | null;
+}
+
+/**
+ * Analyze text for pseudoscience patterns
+ */
+function detectPseudoscience(text: string, claimText?: string): PseudoscienceAnalysis {
+  const result: PseudoscienceAnalysis = {
+    isPseudoscience: false,
+    confidence: 0,
+    categories: [],
+    matchedPatterns: [],
+    debunkIndicatorsFound: [],
+    recommendation: null
+  };
+  
+  const combinedText = `${text} ${claimText || ""}`.toLowerCase();
+  
+  // Check each pseudoscience category
+  for (const [category, patterns] of Object.entries(PSEUDOSCIENCE_PATTERNS)) {
+    for (const pattern of patterns) {
+      if (pattern.test(combinedText)) {
+        if (!result.categories.includes(category)) {
+          result.categories.push(category);
+        }
+        result.matchedPatterns.push(pattern.toString());
+      }
+    }
+  }
+  
+  // Check for known pseudoscience brands
+  for (const brand of PSEUDOSCIENCE_BRANDS) {
+    if (brand.test(combinedText)) {
+      result.matchedPatterns.push(brand.toString());
+      if (!result.categories.includes("knownBrand")) {
+        result.categories.push("knownBrand");
+      }
+    }
+  }
+  
+  // Check for debunked indicators in sources
+  for (const indicator of DEBUNKED_INDICATORS) {
+    if (indicator.test(combinedText)) {
+      result.debunkIndicatorsFound.push(indicator.toString());
+    }
+  }
+  
+  // Calculate confidence
+  const patternScore = Math.min(result.matchedPatterns.length * 0.15, 0.6);
+  const categoryScore = Math.min(result.categories.length * 0.2, 0.4);
+  const debunkScore = Math.min(result.debunkIndicatorsFound.length * 0.2, 0.4);
+  
+  result.confidence = Math.min(patternScore + categoryScore + debunkScore, 1.0);
+  
+  // Determine if it's pseudoscience
+  if (result.categories.length >= 1 && result.confidence >= 0.3) {
+    result.isPseudoscience = true;
+    
+    // Recommend verdict based on confidence
+    // Note: We never recommend FALSE for pseudoscience - that requires 99%+ certainty
+    // REFUTED is appropriate for "strong evidence against, contradicts scientific consensus"
+    if (result.confidence >= 0.7 || result.debunkIndicatorsFound.length >= 2) {
+      result.recommendation = "REFUTED"; // Changed from FALSE
+    } else if (result.confidence >= 0.5 || result.debunkIndicatorsFound.length >= 1) {
+      result.recommendation = "REFUTED";
+    } else {
+      result.recommendation = "UNCERTAIN";
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Escalate verdict when pseudoscience is detected
+ */
+function escalatePseudoscienceVerdict(
+  originalVerdict: string,
+  originalConfidence: number,
+  pseudoAnalysis: PseudoscienceAnalysis
+): { verdict: string; confidence: number; escalationReason?: string } {
+  
+  if (!pseudoAnalysis.isPseudoscience) {
+    return { verdict: originalVerdict, confidence: originalConfidence };
+  }
+  
+  // Verdict calibration:
+  // - FALSE/TRUE: Only for 99%+ certainty (e.g., "2+2=5", definitively proven false)
+  // - REFUTED: Strong evidence against, scientific consensus disagrees (70-98%)
+  // - MISLEADING: Contains misleading elements, lacks support
+  // - UNCERTAIN: Not enough evidence either way
+  
+  const verdictStrength: Record<string, number> = {
+    "WELL-SUPPORTED": 4,
+    "PARTIALLY-SUPPORTED": 3,
+    "UNCERTAIN": 2,
+    "REFUTED": 1,
+    "FALSE": 0
+  };
+  
+  const currentStrength = verdictStrength[originalVerdict] ?? 2;
+  let newVerdict = originalVerdict;
+  let newConfidence = originalConfidence;
+  let escalationReason: string | undefined;
+  
+  // If claim is UNCERTAIN but pseudoscience detected with high confidence
+  // Escalate to REFUTED (not FALSE - that requires 99%+ certainty)
+  if (currentStrength >= 2 && pseudoAnalysis.confidence >= 0.5) {
+    if (pseudoAnalysis.debunkIndicatorsFound.length >= 2) {
+      // Strong debunking evidence -> REFUTED with high confidence
+      newVerdict = "REFUTED";
+      newConfidence = Math.min(Math.max(originalConfidence, 80), 95); // Cap at 95%, not 99%
+      escalationReason = `Claim contradicts scientific consensus (${pseudoAnalysis.categories.join(", ")}) - multiple debunk sources found`;
+    } else if (pseudoAnalysis.debunkIndicatorsFound.length >= 1) {
+      newVerdict = "REFUTED";
+      newConfidence = Math.min(Math.max(originalConfidence, 70), 90);
+      escalationReason = `Claim based on pseudoscience (${pseudoAnalysis.categories.join(", ")}) - contradicts established science`;
+    } else if (pseudoAnalysis.confidence >= 0.6) {
+      newVerdict = "REFUTED";
+      newConfidence = Math.min(Math.max(originalConfidence, 65), 85);
+      escalationReason = `Multiple pseudoscience patterns detected (${pseudoAnalysis.categories.join(", ")}) - no scientific basis`;
+    }
+  }
+  
+  // If claim is PARTIALLY-SUPPORTED but relies on pseudoscience mechanism
+  if (currentStrength === 3 && pseudoAnalysis.confidence >= 0.4) {
+    newVerdict = "UNCERTAIN";
+    newConfidence = Math.min(originalConfidence, 40);
+    escalationReason = `Claimed mechanism (${pseudoAnalysis.categories.join(", ")}) lacks scientific basis`;
+  }
+  
+  return { verdict: newVerdict, confidence: newConfidence, escalationReason };
+}
+
+/**
+ * Determine article-level verdict considering pseudoscience
+ * 
+ * Verdict Calibration:
+ * - FALSE: Only for 99%+ certainty (definitively proven false, e.g., "2+2=5")
+ * - REFUTED: Strong evidence against, scientific consensus disagrees (70-98%)
+ * - MISLEADING: Contains misleading elements, mixes true/false, lacks support
+ * - MOSTLY-CREDIBLE: Generally accurate with minor issues
+ * - CREDIBLE: Well-supported by evidence
+ */
+function calculateArticleVerdictWithPseudoscience(
+  claimVerdicts: Array<{ verdict: string; confidence: number; isPseudoscience?: boolean }>,
+  pseudoAnalysis: PseudoscienceAnalysis
+): { verdict: string; confidence: number; reason?: string } {
+  
+  const refutedCount = claimVerdicts.filter(v => v.verdict === "REFUTED" || v.verdict === "FALSE").length;
+  const uncertainCount = claimVerdicts.filter(v => v.verdict === "UNCERTAIN").length;
+  const supportedCount = claimVerdicts.filter(v => v.verdict === "WELL-SUPPORTED" || v.verdict === "PARTIALLY-SUPPORTED").length;
+  const total = claimVerdicts.length;
+  
+  // If pseudoscience detected at article level
+  if (pseudoAnalysis.isPseudoscience && pseudoAnalysis.confidence >= 0.5) {
+    // Pseudoscience -> REFUTED (not FALSE - that requires 99%+ certainty)
+    // We can't prove a negative with absolute certainty, but we can say claims lack scientific basis
+    if (uncertainCount >= total * 0.5 && pseudoAnalysis.debunkIndicatorsFound.length >= 1) {
+      return {
+        verdict: "REFUTED",
+        confidence: Math.min(85, 70 + pseudoAnalysis.debunkIndicatorsFound.length * 5), // Cap at 85%
+        reason: `Claims based on pseudoscience (${pseudoAnalysis.categories.join(", ")}) - contradicted by scientific consensus`
+      };
+    }
+    
+    // If any pseudoscience claims and debunk found
+    if (pseudoAnalysis.debunkIndicatorsFound.length >= 1) {
+      const avgConfidence = claimVerdicts.reduce((sum, v) => sum + v.confidence, 0) / total;
+      return {
+        verdict: "REFUTED",
+        confidence: Math.min(avgConfidence, 90), // Cap confidence
+        reason: `Contains pseudoscientific claims (${pseudoAnalysis.categories.join(", ")}) - no scientific basis`
+      };
+    }
+    
+    // Pseudoscience patterns but no explicit debunk found -> MISLEADING
+    return {
+      verdict: "MISLEADING",
+      confidence: 70,
+      reason: `Claims rely on unproven mechanisms (${pseudoAnalysis.categories.join(", ")})`
+    };
+  }
+  
+  // Standard verdict calculation (also updated for proper calibration)
+  if (refutedCount >= total * 0.8) {
+    // Only FALSE if nearly all claims are definitively refuted
+    return { verdict: "REFUTED", confidence: 85 }; // Changed from FALSE
+  }
+  if (refutedCount >= total * 0.5) {
+    return { verdict: "REFUTED", confidence: 80 };
+  }
+  if (refutedCount > 0 || uncertainCount >= total * 0.5) {
+    return { verdict: "MISLEADING", confidence: 70 };
+  }
+  if (supportedCount >= total * 0.7) {
+    return { verdict: "CREDIBLE", confidence: 80 };
+  }
+  return { verdict: "MOSTLY-CREDIBLE", confidence: 65 };
 }
 
 // ============================================================================
@@ -109,6 +457,7 @@ interface SearchQuery {
   focus: string;
   resultsCount: number;
   timestamp: string;
+  searchProvider?: string;
 }
 
 interface ResearchState {
@@ -535,6 +884,80 @@ function decodeHtmlEntities(text: string): string {
   return result;
 }
 
+/**
+ * Extract a readable title from URL path/filename
+ */
+function extractTitleFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    
+    // Get filename from path
+    const filename = pathname.split('/').pop() || '';
+    
+    if (filename) {
+      // Remove extension and clean up
+      let title = filename
+        .replace(/\.(pdf|html|htm|php|aspx?)$/i, '')
+        .replace(/[-_]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Capitalize first letter of each word
+      if (title.length > 3) {
+        title = title.split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+        return title.slice(0, 100);
+      }
+    }
+    
+    // Fallback to hostname
+    return urlObj.hostname.replace(/^www\./, '');
+  } catch {
+    return 'Unknown Source';
+  }
+}
+
+/**
+ * Extract title from document text with PDF header detection
+ */
+function extractTitle(text: string, url: string): string {
+  const firstLine = text.split("\n")[0]?.trim().slice(0, 150) || '';
+  
+  // Check for PDF header patterns - these indicate raw PDF bytes
+  const isPdfHeader = /^%PDF-\d+\.\d+/.test(firstLine) ||
+                      firstLine.includes('%���') ||
+                      firstLine.includes('\x00') ||
+                      /^[\x00-\x1f\x7f-\xff]{3,}/.test(firstLine);
+  
+  // Check for other binary/garbage patterns
+  const isGarbage = firstLine.length < 3 ||
+                    !/[a-zA-Z]{3,}/.test(firstLine) ||  // Must have some letters
+                    (firstLine.match(/[^\x20-\x7E]/g)?.length || 0) > firstLine.length * 0.3;  // >30% non-printable
+  
+  if (isPdfHeader || isGarbage) {
+    // Try to find a better title in the first few lines
+    const lines = text.split("\n").slice(0, 10);
+    for (const line of lines) {
+      const cleaned = line.trim();
+      // Look for a line that looks like a title (has letters, reasonable length)
+      if (cleaned.length >= 10 && 
+          cleaned.length <= 150 &&
+          /[a-zA-Z]{4,}/.test(cleaned) &&
+          !/^%PDF/.test(cleaned) &&
+          (cleaned.match(/[^\x20-\x7E]/g)?.length || 0) < cleaned.length * 0.1) {
+        return cleaned.slice(0, 100);
+      }
+    }
+    
+    // Fallback to URL-based title
+    return extractTitleFromUrl(url);
+  }
+  
+  return firstLine.slice(0, 100) || extractTitleFromUrl(url);
+}
+
 async function fetchSource(url: string, id: string, category: string, searchQuery?: string): Promise<FetchedSource | null> {
   const config = getActiveConfig();
   const trackRecord = getTrackRecordScore(url);
@@ -547,9 +970,9 @@ async function fetchSource(url: string, id: string, category: string, searchQuer
       )
     ]);
     
-    // Decode HTML entities in title
-    const rawTitle = text.split("\n")[0]?.trim().slice(0, 100) || new URL(url).hostname;
-    const title = decodeHtmlEntities(rawTitle);
+    // Extract title with fallbacks for PDFs and other edge cases
+    let title = extractTitle(text, url);
+    title = decodeHtmlEntities(title);
     
     return {
       id, url,
@@ -565,7 +988,7 @@ async function fetchSource(url: string, id: string, category: string, searchQuer
     console.warn(`Fetch failed for ${url}:`, err);
     return {
       id, url,
-      title: new URL(url).hostname,
+      title: extractTitleFromUrl(url),
       trackRecordScore: trackRecord,
       fullText: "",
       fetchedAt: new Date().toISOString(),
@@ -725,11 +1148,22 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
 async function generateVerdicts(
   state: ResearchState,
   model: any
-): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis; questionAnswer?: QuestionAnswer }> {
+): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis; questionAnswer?: QuestionAnswer; pseudoscienceAnalysis?: PseudoscienceAnalysis }> {
   const understanding = state.understanding!;
   const isQuestion = understanding.detectedInputType === "question";
   const hasMultipleProceedings = understanding.requiresSeparateAnalysis && 
                                   understanding.distinctProceedings.length > 1;
+  
+  // Detect pseudoscience in the input and facts
+  const allText = [
+    state.originalText,
+    understanding.articleThesis,
+    ...understanding.subClaims.map((c: any) => c.text),
+    ...state.facts.map((f: ExtractedFact) => f.fact),
+    ...state.sources.map((s: FetchedSource) => s.fullText)
+  ].join(" ");
+  
+  const pseudoscienceAnalysis = detectPseudoscience(allText);
   
   const factsFormatted = state.facts.map((f: ExtractedFact) => {
     let factLine = `[${f.id}]`;
@@ -744,11 +1178,14 @@ async function generateVerdicts(
   ).join("\n");
 
   if (isQuestion && hasMultipleProceedings) {
-    return await generateMultiProceedingVerdicts(state, understanding, factsFormatted, claimsFormatted, model);
+    const result = await generateMultiProceedingVerdicts(state, understanding, factsFormatted, claimsFormatted, model);
+    return { ...result, pseudoscienceAnalysis };
   } else if (isQuestion) {
-    return await generateQuestionVerdicts(state, understanding, factsFormatted, claimsFormatted, model);
+    const result = await generateQuestionVerdicts(state, understanding, factsFormatted, claimsFormatted, model);
+    return { ...result, pseudoscienceAnalysis };
   } else {
-    return await generateClaimVerdicts(state, understanding, factsFormatted, claimsFormatted, model);
+    const result = await generateClaimVerdicts(state, understanding, factsFormatted, claimsFormatted, model, pseudoscienceAnalysis);
+    return { ...result, pseudoscienceAnalysis };
   }
 }
 
@@ -1014,13 +1451,32 @@ async function generateClaimVerdicts(
   understanding: ClaimUnderstanding,
   factsFormatted: string,
   claimsFormatted: string,
-  model: any
+  model: any,
+  pseudoscienceAnalysis?: PseudoscienceAnalysis
 ): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis }> {
+  
+  // Add pseudoscience context and verdict calibration to prompt
+  let systemPrompt = `Generate verdicts for each claim and article-level verdict.
+
+VERDICT CALIBRATION (IMPORTANT):
+- WELL-SUPPORTED: Strong evidence supports the claim
+- PARTIALLY-SUPPORTED: Some evidence, but incomplete
+- UNCERTAIN: Insufficient evidence to determine
+- REFUTED: Strong evidence against, scientific consensus disagrees (use for 70-98% certainty)
+- FALSE: ONLY for claims that are definitively, conclusively false with 99%+ certainty (e.g., "2+2=5", "the earth is flat")
+
+For pseudoscience claims that lack scientific basis but can't be proven absolutely false, use REFUTED, not FALSE.`;
+
+  if (pseudoscienceAnalysis?.isPseudoscience) {
+    systemPrompt += `\n\nPSEUDOSCIENCE DETECTED: This content contains patterns associated with pseudoscience (${pseudoscienceAnalysis.categories.join(", ")}). 
+Claims relying on mechanisms that contradict established science (like "water memory", "molecular restructuring", etc.) should be marked as REFUTED, not UNCERTAIN.
+However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ certainty - we can't prove a negative absolutely.`;
+  }
   
   const result = await generateText({
     model,
     messages: [
-      { role: "system", content: `Generate verdicts for each claim and article-level verdict.` },
+      { role: "system", content: systemPrompt },
       { role: "user", content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${factsFormatted}` }
     ],
     temperature: 0.3,
@@ -1029,26 +1485,73 @@ async function generateClaimVerdicts(
 
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
   
+  // Map and escalate verdicts if pseudoscience detected
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
+    
+    let finalVerdict = cv.verdict;
+    let finalConfidence = cv.confidence;
+    let escalationReason: string | undefined;
+    
+    // Apply pseudoscience escalation
+    if (pseudoscienceAnalysis?.isPseudoscience) {
+      const claimPseudo = detectPseudoscience(claim?.text || cv.claimId);
+      if (claimPseudo.isPseudoscience || pseudoscienceAnalysis.confidence >= 0.5) {
+        const escalation = escalatePseudoscienceVerdict(cv.verdict, cv.confidence, pseudoscienceAnalysis);
+        finalVerdict = escalation.verdict;
+        finalConfidence = escalation.confidence;
+        escalationReason = escalation.escalationReason;
+      }
+    }
+    
     return {
       ...cv,
+      verdict: finalVerdict,
+      confidence: finalConfidence,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
       startOffset: claim?.startOffset,
       endOffset: claim?.endOffset,
-      highlightColor: getHighlightColor(cv.verdict)
+      highlightColor: getHighlightColor(finalVerdict),
+      isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
+      escalationReason
     };
   });
   
+  // Calculate claim pattern
   const claimPattern = {
     total: claimVerdicts.length,
     supported: claimVerdicts.filter(v => v.verdict === "WELL-SUPPORTED").length,
     uncertain: claimVerdicts.filter(v => v.verdict === "PARTIALLY-SUPPORTED" || v.verdict === "UNCERTAIN").length,
-    refuted: claimVerdicts.filter(v => v.verdict === "REFUTED").length,
+    refuted: claimVerdicts.filter(v => v.verdict === "REFUTED" || v.verdict === "FALSE").length,
     centralClaimsTotal: claimVerdicts.filter(v => v.isCentral).length,
     centralClaimsSupported: claimVerdicts.filter(v => v.isCentral && v.verdict === "WELL-SUPPORTED").length
   };
+
+  // Determine article verdict with proper calibration
+  let articleVerdict = parsed.articleAnalysis.articleVerdict;
+  let articleConfidence = parsed.articleAnalysis.articleConfidence;
+  let verdictReason: string | undefined;
+  
+  // CALIBRATION: FALSE requires 99%+ certainty
+  // If LLM returned FALSE but confidence < 99%, downgrade to REFUTED
+  if (articleVerdict === "FALSE" && articleConfidence < 99) {
+    articleVerdict = "REFUTED" as any;
+    verdictReason = "Downgraded from FALSE: requires 99%+ certainty for definitive falsehood";
+  }
+  
+  if (pseudoscienceAnalysis?.isPseudoscience) {
+    const escalatedArticle = calculateArticleVerdictWithPseudoscience(
+      claimVerdicts.map(v => ({ verdict: v.verdict, confidence: v.confidence })),
+      pseudoscienceAnalysis
+    );
+    
+    // Use our calculated verdict for pseudoscience cases
+    // This ensures proper calibration (REFUTED instead of FALSE)
+    articleVerdict = escalatedArticle.verdict as any;
+    articleConfidence = Math.min(escalatedArticle.confidence, 95); // Cap at 95%
+    verdictReason = escalatedArticle.reason;
+  }
 
   return {
     claimVerdicts,
@@ -1057,8 +1560,15 @@ async function generateClaimVerdicts(
       isQuestion: false,
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
-      ...parsed.articleAnalysis,
-      claimPattern
+      thesisSupported: parsed.articleAnalysis.thesisSupported,
+      logicalFallacies: parsed.articleAnalysis.logicalFallacies,
+      articleVerdict,
+      articleConfidence,
+      verdictDiffersFromClaimAverage: parsed.articleAnalysis.verdictDiffersFromClaimAverage,
+      verdictDifferenceReason: verdictReason || parsed.articleAnalysis.verdictDifferenceReason,
+      claimPattern,
+      isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
+      pseudoscienceCategories: pseudoscienceAnalysis?.categories
     }
   };
 }
@@ -1361,18 +1871,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Perform searches and track them
     const searchResults: Array<{ url: string; title: string; query: string }> = [];
     for (const query of decision.queries || []) {
-      await emit(`🔍 Searching: "${query}"`, baseProgress + 1);
+      await emit(`🔍 Searching [${CONFIG.searchProvider}]: "${query}"`, baseProgress + 1);
       
       try {
         const results = await searchWeb({ query, maxResults: config.maxSourcesPerIteration });
         
-        // Track the search (NEW v2.4.3)
+        // Track the search with provider info
         state.searchQueries.push({
           query,
           iteration,
           focus: decision.focus!,
           resultsCount: results.length,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          searchProvider: CONFIG.searchProvider
         });
         
         searchResults.push(...results.map((r: any) => ({ ...r, query })));
@@ -1384,7 +1895,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           iteration,
           focus: decision.focus!,
           resultsCount: 0,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          searchProvider: CONFIG.searchProvider
         });
       }
     }
@@ -1424,7 +1936,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   
   // STEP 5: Verdicts
   await emit("Step 3: Generating verdicts", 65);
-  const { claimVerdicts, articleAnalysis, questionAnswer } = await generateVerdicts(state, model);
+  const { claimVerdicts, articleAnalysis, questionAnswer, pseudoscienceAnalysis } = await generateVerdicts(state, model);
+  
+  if (pseudoscienceAnalysis?.isPseudoscience) {
+    await emit(`⚠️ Pseudoscience detected: ${pseudoscienceAnalysis.categories.join(", ")}`, 67);
+  }
   
   // STEP 6: Summary
   await emit("Step 4: Building summary", 75);
@@ -1444,12 +1960,17 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       analysisMode: mode,
       llmProvider: provider,
       llmModel: modelName,
+      searchProvider: CONFIG.searchProvider,
       inputType: input.inputType,
       detectedInputType: state.understanding!.detectedInputType,
       isQuestion: articleAnalysis.isQuestion,
       hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,
       proceedingCount: state.understanding!.distinctProceedings.length,
       hasContestedFactors: articleAnalysis.questionAnswer?.hasContestedFactors || false,
+      // NEW v2.4.5: Pseudoscience detection
+      isPseudoscience: pseudoscienceAnalysis?.isPseudoscience || false,
+      pseudoscienceCategories: pseudoscienceAnalysis?.categories || [],
+      pseudoscienceConfidence: pseudoscienceAnalysis?.confidence || 0,
       inputLength: textToAnalyze.length,
       analysisTimeMs: Date.now() - startTime,
       analysisId: twoPanelSummary.factharborAnalysis.analysisId
@@ -1483,6 +2004,14 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       factsExtracted: state.facts.length,
       contradictionSearchPerformed: state.contradictionSearchPerformed
     },
+    // NEW v2.4.5: Pseudoscience analysis
+    pseudoscienceAnalysis: pseudoscienceAnalysis ? {
+      isPseudoscience: pseudoscienceAnalysis.isPseudoscience,
+      confidence: pseudoscienceAnalysis.confidence,
+      categories: pseudoscienceAnalysis.categories,
+      recommendation: pseudoscienceAnalysis.recommendation,
+      debunkIndicatorsFound: pseudoscienceAnalysis.debunkIndicatorsFound.length
+    } : null,
     qualityGates: {
       passed: state.facts.length >= config.minFactsRequired && state.contradictionSearchPerformed,
       summary: {
