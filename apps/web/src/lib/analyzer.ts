@@ -1,17 +1,15 @@
 /**
- * FactHarbor POC1 Analyzer v2.4.5
- * 
- * FIXES:
- * - Table format in report (proper markdown tables)
- * - HTML entity encoding in titles
+ * FactHarbor POC1 Analyzer v2.6.15
  * 
  * Features:
- * - v2.4.2: Multi-Proceeding + Contested Factors
- * - v2.4.3: Search Visibility + Factor Count Fix
- * - v2.4.5: Table rendering + HTML entities + Jobs page
+ * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
+ * - Multi-Proceeding analysis with Contested Factors
+ * - Search tracking with LLM call counting
+ * - Configurable source reliability via FH_SOURCE_BUNDLE_PATH
+ * - Configurable search with FH_SEARCH_ENABLED and FH_SEARCH_DOMAIN_WHITELIST
  * 
- * @version 2.4.4
- * @date December 2025
+ * @version 2.6.15
+ * @date January 2026
  */
 
 import { z } from "zod";
@@ -22,17 +20,28 @@ import { mistral } from "@ai-sdk/mistral";
 import { generateText, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWeb } from "@/lib/web-search";
+import * as fs from "fs";
+import * as path from "path";
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.14",
+  schemaVersion: "2.6.15",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
-  // Search provider detection
+  // Search configuration (FH_ prefixed for consistency)
+  searchEnabled: (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true",
   searchProvider: detectSearchProvider(),
+  searchDomainWhitelist: parseWhitelist(process.env.FH_SEARCH_DOMAIN_WHITELIST),
+  
+  // Source reliability configuration
+  sourceBundlePath: process.env.FH_SOURCE_BUNDLE_PATH || null,
+  
+  // Report configuration
+  reportStyle: (process.env.FH_REPORT_STYLE ?? "standard").toLowerCase(),
+  allowModelKnowledge: (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true",
   
   quick: {
     maxResearchIterations: 2,
@@ -54,9 +63,21 @@ const CONFIG = {
 };
 
 /**
- * Detect which search provider is configured
+ * Parse comma-separated whitelist into array
+ */
+function parseWhitelist(whitelist: string | undefined): string[] | null {
+  if (!whitelist) return null;
+  return whitelist.split(",").map(d => d.trim().toLowerCase()).filter(d => d.length > 0);
+}
+
+/**
+ * Detect which search provider is configured (uses FH_ prefix first, then fallback)
  */
 function detectSearchProvider(): string {
+  // Check for explicit FH_ config first
+  if (process.env.FH_SEARCH_PROVIDER) {
+    return process.env.FH_SEARCH_PROVIDER;
+  }
   // Check for Google Custom Search
   if (process.env.GOOGLE_CSE_API_KEY || process.env.GOOGLE_SEARCH_API_KEY || process.env.GOOGLE_API_KEY) {
     return "Google Custom Search";
@@ -65,8 +86,8 @@ function detectSearchProvider(): string {
   if (process.env.BING_API_KEY || process.env.AZURE_BING_KEY) {
     return "Bing Search";
   }
-  // Check for SerpAPI
-  if (process.env.SERPAPI_KEY || process.env.SERP_API_KEY) {
+  // Check for SerpAPI (check both variants)
+  if (process.env.SERPAPI_API_KEY || process.env.SERPAPI_KEY || process.env.SERP_API_KEY) {
     return "SerpAPI";
   }
   // Check for Tavily
@@ -77,7 +98,7 @@ function detectSearchProvider(): string {
   if (process.env.BRAVE_API_KEY || process.env.BRAVE_SEARCH_KEY) {
     return "Brave Search";
   }
-  // Check for explicit config
+  // Legacy fallback
   if (process.env.SEARCH_PROVIDER) {
     return process.env.SEARCH_PROVIDER;
   }
@@ -931,30 +952,63 @@ interface TwoPanelSummary {
 }
 
 // ============================================================================
-// SOURCE TRACK RECORD
+// SOURCE TRACK RECORD (Configurable via FH_SOURCE_BUNDLE_PATH)
 // ============================================================================
 
-const SOURCE_TRACK_RECORDS: Record<string, number> = {
-  "stf.jus.br": 0.95, "tse.jus.br": 0.95, "planalto.gov.br": 0.92,
-  "supremecourt.gov": 0.95, "un.org": 0.92, "reuters.com": 0.90,
-  "apnews.com": 0.90, "afp.com": 0.88, "bbc.com": 0.85, "bbc.co.uk": 0.85,
-  "nytimes.com": 0.82, "washingtonpost.com": 0.82, "theguardian.com": 0.80,
-  "economist.com": 0.85, "ft.com": 0.83, "wsj.com": 0.82, "aljazeera.com": 0.78,
-  "dw.com": 0.78, "lawfaremedia.org": 0.85, "verfassungsblog.de": 0.82,
-  "conjur.com.br": 0.75, "cfr.org": 0.75, "brookings.edu": 0.75,
-  "hrw.org": 0.72, "amnesty.org": 0.72,
-};
+/**
+ * Source reliability scores loaded from FH_SOURCE_BUNDLE_PATH
+ * No hard-coded scores - all scores must come from the configured bundle.
+ * If no bundle is configured, all sources return null (unknown reliability).
+ */
+let SOURCE_TRACK_RECORDS: Record<string, number> = {};
 
+/**
+ * Load source reliability scores from external bundle if configured
+ */
+function loadSourceBundle(): void {
+  if (!CONFIG.sourceBundlePath) {
+    console.log(`[FactHarbor] No source bundle configured (FH_SOURCE_BUNDLE_PATH not set)`);
+    return;
+  }
+  
+  try {
+    const bundlePath = path.resolve(CONFIG.sourceBundlePath);
+    if (fs.existsSync(bundlePath)) {
+      const bundle = JSON.parse(fs.readFileSync(bundlePath, "utf-8"));
+      if (bundle.sources && typeof bundle.sources === "object") {
+        SOURCE_TRACK_RECORDS = bundle.sources;
+        console.log(`[FactHarbor] Loaded ${Object.keys(bundle.sources).length} source scores from bundle`);
+      }
+    } else {
+      console.warn(`[FactHarbor] Source bundle not found: ${bundlePath}`);
+    }
+  } catch (err) {
+    console.error(`[FactHarbor] Failed to load source bundle:`, err);
+  }
+}
+
+// Load source bundle at startup
+loadSourceBundle();
+
+/**
+ * Get track record score for a URL
+ * Returns score from bundle if available, otherwise null (unknown).
+ */
 function getTrackRecordScore(url: string): number | null {
   try {
     const hostname = new URL(url).hostname.replace(/^www\./, "");
-    if (SOURCE_TRACK_RECORDS[hostname] !== undefined) return SOURCE_TRACK_RECORDS[hostname];
+    
+    // Check exact match from bundle
+    if (SOURCE_TRACK_RECORDS[hostname] !== undefined) {
+      return SOURCE_TRACK_RECORDS[hostname];
+    }
+    
+    // Check subdomain match from bundle
     for (const [domain, score] of Object.entries(SOURCE_TRACK_RECORDS)) {
       if (hostname.endsWith("." + domain)) return score;
     }
-    if (hostname.endsWith(".gov") || hostname.endsWith(".gov.br")) return 0.80;
-    if (hostname.endsWith(".jus.br")) return 0.88;
-    if (hostname.endsWith(".edu")) return 0.75;
+    
+    // No default - unknown reliability
     return null;
   } catch { return null; }
 }
@@ -2108,25 +2162,7 @@ async function generateReport(
   report += `**Schema:** ${CONFIG.schemaVersion}\n`;
   report += `**Generated:** ${new Date().toISOString()}\n\n`;
   
-  // Search Summary (NEW v2.4.3, updated v2.6.7)
-  report += `## Research Summary\n\n`;
-  report += `| Metric | Value |\n`;
-  report += `| --- | --- |\n`;
-  report += `| Web searches | ${state.searchQueries.length} |\n`;
-  report += `| LLM calls | ${state.llmCalls} |\n`;
-  report += `| Sources fetched | ${state.sources.length} |\n`;
-  report += `| Sources successful | ${state.sources.filter((s: FetchedSource) => s.fetchSuccess).length} |\n`;
-  report += `| Facts extracted | ${state.facts.length} |\n\n`;
-  
-  if (state.searchQueries.length > 0) {
-    report += `### Web Search Queries\n\n`;
-    for (const sq of state.searchQueries) {
-      report += `- \`${sq.query}\` → ${sq.resultsCount} results (${sq.focus})\n`;
-    }
-    report += `\n`;
-  }
-  
-  // Executive Summary
+  // Executive Summary (moved to top - public-facing content first)
   report += `## Executive Summary\n\n`;
   
   if (isQuestion && articleAnalysis.questionAnswer) {
@@ -2184,6 +2220,28 @@ async function generateReport(
     const status = s.fetchSuccess ? "✅" : "❌";
     report += `- ${status} [${s.title}](${s.url})`;
     if (s.trackRecordScore) report += ` (${(s.trackRecordScore * 100).toFixed(0)}%)`;
+    report += `\n`;
+  }
+  
+  // Technical Notes (moved to bottom - development/technical info)
+  report += `\n---\n\n`;
+  report += `## Technical Notes\n\n`;
+  report += `### Research Summary\n\n`;
+  report += `| Metric | Value |\n`;
+  report += `| --- | --- |\n`;
+  report += `| Web searches | ${state.searchQueries.length} |\n`;
+  report += `| LLM calls | ${state.llmCalls} |\n`;
+  report += `| Sources fetched | ${state.sources.length} |\n`;
+  report += `| Sources successful | ${state.sources.filter((s: FetchedSource) => s.fetchSuccess).length} |\n`;
+  report += `| Facts extracted | ${state.facts.length} |\n`;
+  report += `| Search provider | ${CONFIG.searchProvider} |\n`;
+  report += `| Analysis mode | ${CONFIG.deepModeEnabled ? "deep" : "quick"} |\n\n`;
+  
+  if (state.searchQueries.length > 0) {
+    report += `### Web Search Queries\n\n`;
+    for (const sq of state.searchQueries) {
+      report += `- \`${sq.query}\` → ${sq.resultsCount} results (${sq.focus})\n`;
+    }
     report += `\n`;
   }
   
@@ -2299,13 +2357,43 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     
     if (decision.isContradictionSearch) state.contradictionSearchPerformed = true;
     
+    // Check if search is enabled
+    if (!CONFIG.searchEnabled) {
+      await emit(`⚠️ Search disabled (FH_SEARCH_ENABLED=false)`, baseProgress + 1);
+      state.searchQueries.push({
+        query: decision.queries?.[0] || "search disabled",
+        iteration,
+        focus: decision.focus!,
+        resultsCount: 0,
+        timestamp: new Date().toISOString(),
+        searchProvider: "Disabled"
+      });
+      continue;
+    }
+    
     // Perform searches and track them
     const searchResults: Array<{ url: string; title: string; query: string }> = [];
     for (const query of decision.queries || []) {
       await emit(`🔍 Searching [${CONFIG.searchProvider}]: "${query}"`, baseProgress + 1);
       
       try {
-        const results = await searchWeb({ query, maxResults: config.maxSourcesPerIteration });
+        let results = await searchWeb({ query, maxResults: config.maxSourcesPerIteration });
+        
+        // Apply domain whitelist if configured
+        if (CONFIG.searchDomainWhitelist && CONFIG.searchDomainWhitelist.length > 0) {
+          const beforeCount = results.length;
+          results = results.filter((r: any) => {
+            try {
+              const hostname = new URL(r.url).hostname.replace(/^www\./, "").toLowerCase();
+              return CONFIG.searchDomainWhitelist!.some(domain => 
+                hostname === domain || hostname.endsWith("." + domain)
+              );
+            } catch { return false; }
+          });
+          if (beforeCount > results.length) {
+            await emit(`  → Filtered ${beforeCount - results.length} results (domain whitelist)`, baseProgress + 1);
+          }
+        }
         
         // Track the search with provider info
         state.searchQueries.push({

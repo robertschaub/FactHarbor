@@ -1,5 +1,5 @@
 /**
- * Job Results Page v2.6.14
+ * Job Results Page v2.6.15
  * 
  * Features:
  * - 7-Level Truth Scale (Symmetric, neutral)
