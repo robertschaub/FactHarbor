@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.16
+ * FactHarbor POC1 Analyzer v2.6.17
  * 
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -8,8 +8,10 @@
  * - Configurable source reliability via FH_SOURCE_BUNDLE_PATH
  * - Configurable search with FH_SEARCH_ENABLED and FH_SEARCH_DOMAIN_WHITELIST
  * - Fixed AI SDK output handling for different versions (output vs experimental_output)
+ * - NEW: Claim dependency tracking (claimRole: attribution/source/timing/core)
+ * - NEW: Dependency propagation (if prerequisite false, dependent claims flagged)
  * 
- * @version 2.6.16
+ * @version 2.6.17
  * @date January 2026
  */
 
@@ -29,7 +31,7 @@ import * as path from "path";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.16",
+  schemaVersion: "2.6.17",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
   // Search configuration (FH_ prefixed for consistency)
@@ -849,6 +851,11 @@ interface ClaimVerdict {
   claimId: string;
   claimText: string;
   isCentral: boolean;
+  // NEW: Claim role and dependencies
+  claimRole?: "attribution" | "source" | "timing" | "core";
+  dependsOn?: string[];  // Claim IDs this depends on
+  dependencyFailed?: boolean;  // True if a prerequisite claim was false
+  failedDependencies?: string[];  // Which dependencies failed
   // Original LLM verdict (for debugging)
   llmVerdict: "WELL-SUPPORTED" | "PARTIALLY-SUPPORTED" | "UNCERTAIN" | "REFUTED";
   // Calibrated 7-point verdict
@@ -1045,6 +1052,15 @@ const UNDERSTANDING_SCHEMA = z.object({
     id: z.string(),
     text: z.string(),
     type: z.enum(["legal", "procedural", "factual", "evaluative"]),
+    // NEW: Claim role - distinguishes framing from core claims
+    claimRole: z.enum([
+      "attribution",    // WHO said it (person, position, authority)
+      "source",         // WHERE it was said (document, email, speech)  
+      "timing",         // WHEN it was said
+      "core"            // WHAT was actually claimed (the verifiable assertion)
+    ]).optional(),
+    // NEW: Dependencies - which claims must be true for this claim to matter
+    dependsOn: z.array(z.string()).optional(),  // List of claim IDs this depends on
     keyEntities: z.array(z.string()),
     isCentral: z.boolean(),
     relatedProceedingId: z.string().optional(),
@@ -1063,7 +1079,33 @@ const UNDERSTANDING_SCHEMA = z.object({
 async function understandClaim(input: string, model: any): Promise<ClaimUnderstanding> {
   const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT EVENTS or PROCEEDINGS.
 
-## CRITICAL: MULTI-EVENT DETECTION
+## CRITICAL: CLAIM STRUCTURE ANALYSIS
+
+When extracting claims, identify their ROLE and DEPENDENCIES:
+
+### Claim Roles:
+- **attribution**: WHO said it (person's identity, position, authority) - e.g., "Vinay Prasad is CBER director"
+- **source**: WHERE/HOW it was communicated (document type, channel) - e.g., "in an internal email"
+- **timing**: WHEN it happened - e.g., "in late November"
+- **core**: THE ACTUAL VERIFIABLE ASSERTION - e.g., "10 children died from COVID vaccines"
+
+### Claim Dependencies (dependsOn):
+Core claims often DEPEND on attribution/source/timing claims being true.
+
+EXAMPLE: "CBER director Prasad claimed in an internal memo that 10 children died from vaccines"
+- SC1 (attribution): "Vinay Prasad is CBER director" → claimRole: "attribution", dependsOn: []
+- SC2 (source): "Prasad sent an internal memo" → claimRole: "source", dependsOn: ["SC1"]
+- SC3 (core): "10 children died from COVID vaccines" → claimRole: "core", dependsOn: ["SC1", "SC2"], isCentral: true
+
+If SC1 is FALSE (Prasad is NOT the CBER director), then SC2 and SC3's framing collapses.
+
+### Rules:
+1. Mark "core" claims as isCentral: true
+2. Attribution/source/timing claims support the core - mark as isCentral: false
+3. List dependencies in dependsOn array (claim IDs that must be true for this claim to matter)
+4. Core claims typically depend on attribution claims
+
+## MULTI-EVENT DETECTION
 
 Look for multiple court cases, temporal distinctions, or different proceedings.
 
@@ -2196,6 +2238,8 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
         reasoning: "No verdict returned by LLM for this claim.",
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
+        claimRole: claim.claimRole || "core",
+        dependsOn: claim.dependsOn || [],
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point("Unverified")
@@ -2230,6 +2274,8 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       confidence: finalConfidence,
       claimText: claim.text || "",
       isCentral: claim.isCentral || false,
+      claimRole: claim.claimRole || "core",
+      dependsOn: claim.dependsOn || [],
       startOffset: claim.startOffset,
       endOffset: claim.endOffset,
       highlightColor: getHighlightColor7Point(calibratedVerdict),
@@ -2237,6 +2283,39 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       escalationReason
     } as ClaimVerdict;
   });
+  
+  // DEPENDENCY PROPAGATION: If a prerequisite claim is false, flag dependent claims
+  const verdictMap = new Map(claimVerdicts.map(v => [v.claimId, v]));
+  
+  for (const verdict of claimVerdicts) {
+    const claim = understanding.subClaims.find((c: any) => c.id === verdict.claimId);
+    const dependencies = claim?.dependsOn || [];
+    
+    if (dependencies.length > 0) {
+      // Check if any dependency is false (truthPercentage < 43%)
+      const failedDeps = dependencies.filter((depId: string) => {
+        const depVerdict = verdictMap.get(depId);
+        return depVerdict && depVerdict.truthPercentage < 43;
+      });
+      
+      if (failedDeps.length > 0) {
+        // Mark this claim as having failed prerequisites
+        verdict.dependencyFailed = true;
+        verdict.failedDependencies = failedDeps;
+        
+        // Add note to reasoning
+        const depNames = failedDeps.map((id: string) => {
+          const dv = verdictMap.get(id);
+          return dv ? `${id}: "${dv.claimText.slice(0, 50)}..."` : id;
+        }).join(", ");
+        
+        verdict.reasoning = `[PREREQUISITE FAILED: ${depNames}] ${verdict.reasoning || ""}`;
+        
+        // For display purposes, we keep the original verdict but flag it
+        // The UI can choose to show this differently
+      }
+    }
+  }
   
   // Calculate claim pattern using truth percentages
   const claimPattern = {
