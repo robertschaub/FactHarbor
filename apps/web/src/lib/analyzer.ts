@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.15
+ * FactHarbor POC1 Analyzer v2.6.16
  * 
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -7,8 +7,9 @@
  * - Search tracking with LLM call counting
  * - Configurable source reliability via FH_SOURCE_BUNDLE_PATH
  * - Configurable search with FH_SEARCH_ENABLED and FH_SEARCH_DOMAIN_WHITELIST
+ * - Fixed AI SDK output handling for different versions (output vs experimental_output)
  * 
- * @version 2.6.15
+ * @version 2.6.16
  * @date January 2026
  */
 
@@ -28,7 +29,7 @@ import * as path from "path";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.15",
+  schemaVersion: "2.6.16",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
   // Search configuration (FH_ prefixed for consistency)
@@ -1091,17 +1092,41 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 
   const userPrompt = `Analyze for fact-checking:\n\n"${input}"`;
 
-  const result = await generateText({
-    model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ],
-    temperature: 0.3,
-    output: Output.object({ schema: UNDERSTANDING_SCHEMA })
-  });
+  let result: any;
+  
+  try {
+    result = await generateText({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.3,
+      output: Output.object({ schema: UNDERSTANDING_SCHEMA })
+    });
+  } catch (err) {
+    console.error("[Analyzer] generateText failed in understandClaim:", err);
+    // Return a basic understanding if the structured output fails
+    throw new Error(`Failed to understand claim: ${err}`);
+  }
 
-  const parsed = result.output as z.infer<typeof UNDERSTANDING_SCHEMA>;
+  // Handle different AI SDK versions - some use 'output', some use 'experimental_output'
+  // @ts-ignore - experimental_output may exist in some SDK versions
+  const rawOutput = result.output ?? result.experimental_output?.value ?? result.experimental_output;
+  
+  if (!rawOutput) {
+    console.error("[Analyzer] No structured output from LLM. Result keys:", Object.keys(result));
+    console.error("[Analyzer] Full result:", JSON.stringify(result, null, 2).slice(0, 500));
+    throw new Error("LLM did not return structured output");
+  }
+  
+  const parsed = rawOutput as z.infer<typeof UNDERSTANDING_SCHEMA>;
+  
+  // Validate parsed has required fields
+  if (!parsed.subClaims || !Array.isArray(parsed.subClaims)) {
+    console.error("[Analyzer] Invalid parsed output - missing subClaims:", parsed);
+    throw new Error("LLM output missing required fields");
+  }
   
   const claimsWithPositions = parsed.subClaims.map((claim: any) => {
     const positions = findClaimPosition(input, claim.text);
@@ -1407,7 +1432,20 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
       output: Output.object({ schema: FACT_SCHEMA })
     });
 
-    const extraction = result.output as z.infer<typeof FACT_SCHEMA>;
+    // Handle different AI SDK versions
+    // @ts-ignore - experimental_output may exist in some SDK versions
+    const rawOutput = result.output ?? result.experimental_output?.value ?? result.experimental_output;
+    if (!rawOutput) {
+      console.warn(`[Analyzer] No structured output for fact extraction from ${source.id}`);
+      return [];
+    }
+    
+    const extraction = rawOutput as z.infer<typeof FACT_SCHEMA>;
+    if (!extraction.facts || !Array.isArray(extraction.facts)) {
+      console.warn(`[Analyzer] Invalid fact extraction from ${source.id}`);
+      return [];
+    }
+    
     return extraction.facts
       .filter(f => f.specificity !== "low" && f.sourceExcerpt?.length >= 20)
       .map((f, i) => ({
@@ -1605,18 +1643,87 @@ ${factsFormatted}
 
 Provide SEPARATE answers for each proceeding.`;
 
-  const result = await generateText({
-    model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ],
-    temperature: 0.3,
-    output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_PROCEEDING })
-  });
-  state.llmCalls++;  // Track LLM call
+  let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING> | null = null;
+  
+  try {
+    const result = await generateText({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.3,
+      output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_PROCEEDING })
+    });
+    state.llmCalls++;
 
-  const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING>;
+    // Handle different AI SDK versions
+    // @ts-ignore - experimental_output may exist in some SDK versions
+    const rawOutput = result.output ?? result.experimental_output?.value ?? result.experimental_output;
+    if (rawOutput) {
+      parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING>;
+    }
+  } catch (err) {
+    console.warn("[Analyzer] Structured output failed for multi-proceeding verdicts, using fallback:", err);
+    state.llmCalls++;
+  }
+  
+  // Fallback if structured output failed
+  if (!parsed || !parsed.proceedingAnswers) {
+    console.log("[Analyzer] Using fallback multi-proceeding verdict generation");
+    
+    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => ({
+      claimId: claim.id,
+      claimText: claim.text,
+      llmVerdict: "UNCERTAIN",
+      verdict: "Unverified" as const,
+      confidence: 50,
+      truthPercentage: 50,
+      riskTier: "B" as const,
+      reasoning: "Unable to generate verdict due to schema validation error.",
+      supportingFactIds: [],
+      isCentral: claim.isCentral || false,
+      highlightColor: getHighlightColor7Point("Unverified")
+    }));
+    
+    const questionAnswer: QuestionAnswer = {
+      question: understanding.questionBeingAsked || state.originalInput || "",
+      answer: "INSUFFICIENT-EVIDENCE",
+      confidence: 50,
+      truthPercentage: 50,
+      shortAnswer: "Unable to determine - analysis failed",
+      nuancedAnswer: "The structured output generation failed. Manual review recommended.",
+      keyFactors: [],
+      proceedingAnswers: understanding.distinctProceedings.map((p: DistinctProceeding) => ({
+        proceedingId: p.id,
+        proceedingName: p.name,
+        answer: "INSUFFICIENT-EVIDENCE",
+        truthPercentage: 50,
+        confidence: 50,
+        shortAnswer: "Analysis failed",
+        keyFactors: []
+      }))
+    };
+    
+    const articleAnalysis: ArticleAnalysis = {
+      inputType: "question",
+      isQuestion: true,
+      questionAnswer,
+      hasMultipleProceedings: true,
+      proceedings: understanding.distinctProceedings,
+      articleThesis: understanding.articleThesis,
+      logicalFallacies: [],
+      claimsAverageTruthPercentage: 50,
+      claimsAverageVerdict: "Unverified",
+      articleTruthPercentage: 50,
+      articleVerdict: "Unverified",
+      claimPattern: { total: fallbackVerdicts.length, supported: 0, uncertain: fallbackVerdicts.length, refuted: 0 }
+    };
+    
+    return { claimVerdicts: fallbackVerdicts, articleAnalysis, questionAnswer };
+  }
+  
+  // Normal flow with parsed output
   
   // FIX v2.4.3: Calculate factorAnalysis from ACTUAL keyFactors array
   // v2.5.0: Calibrate to 7-point scale
@@ -1790,20 +1897,79 @@ ${claimsFormatted}
 ## FACTS
 ${factsFormatted}`;
 
-  const result = await generateText({
-    model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ],
-    temperature: 0.3,
-    output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE })
-  });
-  state.llmCalls++;  // Track LLM call
-
-  const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
+  let parsed: z.infer<typeof VERDICTS_SCHEMA_SIMPLE> | null = null;
   
-  // Build claim verdicts with 7-point calibration
+  try {
+    const result = await generateText({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.3,
+      output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE })
+    });
+    state.llmCalls++;
+
+    // Handle different AI SDK versions
+    // @ts-ignore - experimental_output may exist in some SDK versions
+    const rawOutput = result.output ?? result.experimental_output?.value ?? result.experimental_output;
+    if (rawOutput) {
+      parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
+    }
+  } catch (err) {
+    console.warn("[Analyzer] Structured output failed for question verdicts, using fallback:", err);
+    state.llmCalls++;
+  }
+  
+  // Fallback if structured output failed
+  if (!parsed || !parsed.claimVerdicts) {
+    console.log("[Analyzer] Using fallback question verdict generation");
+    
+    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => ({
+      claimId: claim.id,
+      claimText: claim.text,
+      llmVerdict: "UNCERTAIN",
+      verdict: "Unverified" as const,
+      confidence: 50,
+      truthPercentage: 50,
+      riskTier: "B" as const,
+      reasoning: "Unable to generate verdict due to schema validation error.",
+      supportingFactIds: [],
+      isCentral: claim.isCentral || false,
+      startOffset: claim.startOffset,
+      endOffset: claim.endOffset,
+      highlightColor: getHighlightColor7Point("Unverified")
+    }));
+    
+    const questionAnswer: QuestionAnswer = {
+      question: understanding.questionBeingAsked || state.originalInput || "",
+      answer: "INSUFFICIENT-EVIDENCE",
+      confidence: 50,
+      truthPercentage: 50,
+      shortAnswer: "Unable to determine - analysis failed",
+      nuancedAnswer: "The structured output generation failed. Manual review recommended.",
+      keyFactors: []
+    };
+    
+    const articleAnalysis: ArticleAnalysis = {
+      inputType: "question",
+      isQuestion: true,
+      questionAnswer,
+      hasMultipleProceedings: false,
+      articleThesis: understanding.articleThesis,
+      logicalFallacies: [],
+      claimsAverageTruthPercentage: 50,
+      claimsAverageVerdict: "Unverified",
+      articleTruthPercentage: 50,
+      articleVerdict: "Unverified",
+      claimPattern: { total: fallbackVerdicts.length, supported: 0, uncertain: fallbackVerdicts.length, refuted: 0 }
+    };
+    
+    return { claimVerdicts: fallbackVerdicts, articleAnalysis, questionAnswer };
+  }
+  
+  // Normal flow with parsed output
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
     const calibratedVerdict = calibrateClaimVerdict(cv.verdict, cv.confidence);
@@ -1906,18 +2072,78 @@ Claims relying on mechanisms that contradict established science (like "water me
 However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ certainty - we can't prove a negative absolutely.`;
   }
   
-  const result = await generateText({
-    model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${factsFormatted}` }
-    ],
-    temperature: 0.3,
-    output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM })
-  });
-  state.llmCalls++;  // Track LLM call
+  let parsed: z.infer<typeof VERDICTS_SCHEMA_CLAIM> | null = null;
+  
+  try {
+    const result = await generateText({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${factsFormatted}` }
+      ],
+      temperature: 0.3,
+      output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM })
+    });
+    state.llmCalls++;
 
-  const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
+    // Handle different AI SDK versions
+    // @ts-ignore - experimental_output may exist in some SDK versions
+    const rawOutput = result.output ?? result.experimental_output?.value ?? result.experimental_output;
+    if (rawOutput) {
+      parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
+    }
+  } catch (err) {
+    console.warn("[Analyzer] Structured output failed for claim verdicts, using fallback:", err);
+    state.llmCalls++;
+  }
+  
+  // If structured output failed, create fallback verdicts
+  if (!parsed || !parsed.claimVerdicts) {
+    console.log("[Analyzer] Using fallback verdict generation");
+    
+    // Create default verdicts for each claim
+    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => {
+      const calibratedVerdict = "Unverified" as const;
+      return {
+        claimId: claim.id,
+        claimText: claim.text,
+        llmVerdict: "UNCERTAIN",
+        verdict: calibratedVerdict,
+        confidence: 50,
+        truthPercentage: 50,
+        riskTier: "B" as const,
+        reasoning: "Unable to generate verdict due to schema validation error. Manual review recommended.",
+        supportingFactIds: [],
+        isCentral: claim.isCentral || false,
+        startOffset: claim.startOffset,
+        endOffset: claim.endOffset,
+        highlightColor: getHighlightColor7Point(calibratedVerdict)
+      };
+    });
+    
+    const articleAnalysis: ArticleAnalysis = {
+      inputType: "article",
+      isQuestion: false,
+      hasMultipleProceedings: false,
+      articleThesis: understanding.articleThesis,
+      logicalFallacies: [],
+      claimsAverageTruthPercentage: 50,
+      claimsAverageVerdict: "Unverified",
+      articleTruthPercentage: 50,
+      articleVerdict: "Unverified",
+      articleVerdictReason: "Verdict generation failed - manual review recommended",
+      claimPattern: {
+        total: fallbackVerdicts.length,
+        supported: 0,
+        uncertain: fallbackVerdicts.length,
+        refuted: 0
+      }
+    };
+    
+    return { claimVerdicts: fallbackVerdicts, articleAnalysis };
+  }
+  
+  // Normal flow with parsed output
   
   // Map and escalate verdicts if pseudoscience detected, then calibrate to 7-point scale
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
