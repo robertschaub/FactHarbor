@@ -1970,21 +1970,49 @@ ${factsFormatted}`;
   }
   
   // Normal flow with parsed output
-  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
-    const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
-    const calibratedVerdict = calibrateClaimVerdict(cv.verdict, cv.confidence);
-    const truthPct = calculateTruthPercentage(calibratedVerdict, cv.confidence);
+  
+  // Map LLM verdicts by claim ID for quick lookup
+  const llmVerdictMap = new Map(
+    (parsed.claimVerdicts || []).map((cv: any) => [cv.claimId, cv])
+  );
+  
+  // Ensure ALL claims get a verdict
+  const claimVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => {
+    const cv = llmVerdictMap.get(claim.id);
+    
+    if (!cv) {
+      console.warn(`[Analyzer] Missing verdict for claim ${claim.id}, using default`);
+      return {
+        claimId: claim.id,
+        claimText: claim.text,
+        llmVerdict: "UNCERTAIN",
+        verdict: "Unverified" as const,
+        confidence: 50,
+        truthPercentage: 50,
+        riskTier: "B" as const,
+        reasoning: "No verdict returned by LLM for this claim.",
+        supportingFactIds: [],
+        isCentral: claim.isCentral || false,
+        startOffset: claim.startOffset,
+        endOffset: claim.endOffset,
+        highlightColor: getHighlightColor7Point("Unverified")
+      } as ClaimVerdict;
+    }
+    
+    const truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
+    const calibratedVerdict = percentageToClaimVerdict(truthPct);
     return {
       ...cv,
+      claimId: claim.id,
       llmVerdict: cv.verdict,
       verdict: calibratedVerdict,
       truthPercentage: truthPct,
-      claimText: claim?.text || "",
-      isCentral: claim?.isCentral || false,
-      startOffset: claim?.startOffset,
-      endOffset: claim?.endOffset,
+      claimText: claim.text || "",
+      isCentral: claim.isCentral || false,
+      startOffset: claim.startOffset,
+      endOffset: claim.endOffset,
       highlightColor: getHighlightColor7Point(calibratedVerdict)
-    };
+    } as ClaimVerdict;
   });
   
   const claimPattern = {
@@ -2145,9 +2173,34 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
   
   // Normal flow with parsed output
   
-  // Map and escalate verdicts if pseudoscience detected, then calibrate to 7-point scale
-  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
-    const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
+  // Map LLM verdicts by claim ID for quick lookup
+  const llmVerdictMap = new Map(
+    (parsed.claimVerdicts || []).map((cv: any) => [cv.claimId, cv])
+  );
+  
+  // Ensure ALL claims get a verdict (fill in missing ones)
+  const claimVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => {
+    const cv = llmVerdictMap.get(claim.id);
+    
+    // If LLM didn't return a verdict for this claim, create a default one
+    if (!cv) {
+      console.warn(`[Analyzer] Missing verdict for claim ${claim.id}, using default`);
+      return {
+        claimId: claim.id,
+        claimText: claim.text,
+        llmVerdict: "UNCERTAIN",
+        verdict: "Unverified" as const,
+        confidence: 50,
+        truthPercentage: 50,
+        riskTier: "B" as const,
+        reasoning: "No verdict returned by LLM for this claim.",
+        supportingFactIds: [],
+        isCentral: claim.isCentral || false,
+        startOffset: claim.startOffset,
+        endOffset: claim.endOffset,
+        highlightColor: getHighlightColor7Point("Unverified")
+      } as ClaimVerdict;
+    }
     
     let llmVerdict = cv.verdict;
     let finalConfidence = cv.confidence;
@@ -2155,7 +2208,7 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     
     // Apply pseudoscience escalation (adjusts LLM verdict before calibration)
     if (pseudoscienceAnalysis?.isPseudoscience) {
-      const claimPseudo = detectPseudoscience(claim?.text || cv.claimId);
+      const claimPseudo = detectPseudoscience(claim.text || cv.claimId);
       if (claimPseudo.isPseudoscience || pseudoscienceAnalysis.confidence >= 0.5) {
         const escalation = escalatePseudoscienceVerdict(cv.verdict, cv.confidence, pseudoscienceAnalysis);
         llmVerdict = escalation.verdict;
@@ -2165,19 +2218,20 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     }
     
     // Calibrate to 7-point scale
-    const calibratedVerdict = calibrateClaimVerdict(llmVerdict, finalConfidence);
-    const truthPct = calculateTruthPercentage(calibratedVerdict, finalConfidence);
+    const truthPct = calculateTruthPercentage(llmVerdict, finalConfidence);
+    const calibratedVerdict = percentageToClaimVerdict(truthPct);
     
     return {
       ...cv,
+      claimId: claim.id,
       llmVerdict: cv.verdict, // Original LLM output
       verdict: calibratedVerdict,
       truthPercentage: truthPct,
       confidence: finalConfidence,
-      claimText: claim?.text || "",
-      isCentral: claim?.isCentral || false,
-      startOffset: claim?.startOffset,
-      endOffset: claim?.endOffset,
+      claimText: claim.text || "",
+      isCentral: claim.isCentral || false,
+      startOffset: claim.startOffset,
+      endOffset: claim.endOffset,
       highlightColor: getHighlightColor7Point(calibratedVerdict),
       isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
       escalationReason
