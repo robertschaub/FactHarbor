@@ -1326,15 +1326,19 @@ async function fetchSource(url: string, id: string, category: string, searchQuer
   const trackRecord = getTrackRecordScore(url);
   
   try {
-    const text = await Promise.race([
+    const result = await Promise.race([
       extractTextFromUrl(url),
-      new Promise<string>((_, reject) =>
+      new Promise<{ text: string; title: string; contentType: string }>((_, reject) =>
         setTimeout(() => reject(new Error("timeout")), CONFIG.fetchTimeoutMs)
       )
     ]);
     
-    // Extract title with fallbacks for PDFs and other edge cases
-    let title = extractTitle(text, url);
+    // Handle both old (string) and new (object) return types for compatibility
+    const text = typeof result === "string" ? result : result.text;
+    const extractedTitle = typeof result === "string" ? null : result.title;
+    
+    // Use extracted title if available, otherwise fall back to extraction
+    let title = extractedTitle || extractTitle(text, url);
     title = decodeHtmlEntities(title);
     
     return {
@@ -2306,7 +2310,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   if (input.inputType === "url") {
     await emit("Fetching URL content", 3);
     try {
-      textToAnalyze = await extractTextFromUrl(input.inputValue);
+      const result = await extractTextFromUrl(input.inputValue);
+      // Handle both old (string) and new (object) return types
+      textToAnalyze = typeof result === "string" ? result : result.text;
     } catch (err) {
       throw new Error(`Failed to fetch URL: ${err}`);
     }
