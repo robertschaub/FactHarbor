@@ -1,5 +1,5 @@
 /**
- * Job Results Page v2.6.8
+ * Job Results Page v2.6.10
  * 
  * Features:
  * - 7-Level Truth Scale (Symmetric, neutral)
@@ -201,6 +201,60 @@ export default function JobPage() {
   const sources = result?.sources || [];
   const researchStats = result?.researchStats;
 
+  // Helper: Generate short name from title or input
+  const getShortName = (): string => {
+    // Try to get title from twoPanelSummary
+    const title = twoPanelSummary?.articleSummary?.title || 
+                  twoPanelSummary?.factharborAnalysis?.overallVerdict?.split('\n')[0] ||
+                  job?.inputValue || 
+                  "Analysis";
+    // Clean and truncate: remove special chars, limit to 40 chars
+    return title
+      .replace(/[^a-zA-Z0-9\s-]/g, '')
+      .replace(/\s+/g, '_')
+      .slice(0, 40)
+      .replace(/_+$/, ''); // Remove trailing underscores
+  };
+
+  // Helper: Format datetime for filename (local time with seconds)
+  const getDateTimeString = (): string => {
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  };
+
+  // Helper: Format datetime for display (local time with seconds)
+  const getDisplayDateTime = (): string => {
+    return new Date().toLocaleString('en-GB', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit',
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: false 
+    });
+  };
+
+  // Helper: Generate filename
+  const generateFilename = (type: string, ext: string): string => {
+    const shortName = getShortName();
+    const dateTime = getDateTimeString();
+    return `${shortName}_${type}_${dateTime}.${ext}`;
+  };
+
+  // Update page title for better Print-to-PDF filename
+  useEffect(() => {
+    if (job && twoPanelSummary) {
+      const shortName = getShortName();
+      const dateTime = getDateTimeString();
+      document.title = `${shortName}_Report_${dateTime}`;
+    } else if (job) {
+      document.title = `FactHarbor_${job.jobId.slice(0, 8)}`;
+    }
+    return () => { document.title = "FactHarbor POC1"; };
+  }, [job, twoPanelSummary]);
+
   // Export functions
   const handlePrint = () => {
     window.print();
@@ -208,11 +262,12 @@ export default function JobPage() {
 
   const handleExportHTML = () => {
     const content = reportRef.current?.innerHTML || report;
+    const generatedAt = getDisplayDateTime();
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>FactHarbor Analysis - ${result?.meta?.analysisId || jobId}</title>
+  <title>FactHarbor Analysis - ${getShortName()}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
     table { border-collapse: collapse; width: 100%; margin: 16px 0; }
@@ -225,7 +280,7 @@ export default function JobPage() {
 <body>
   <h1>FactHarbor Analysis Report</h1>
   <p><strong>Analysis ID:</strong> ${result?.meta?.analysisId || 'N/A'}</p>
-  <p><strong>Generated:</strong> ${new Date().toISOString()}</p>
+  <p><strong>Generated:</strong> ${generatedAt}</p>
   <hr>
   ${content}
 </body>
@@ -235,7 +290,7 @@ export default function JobPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `factharbor-${result?.meta?.analysisId || jobId}.html`;
+    a.download = generateFilename('Report', 'html');
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -245,7 +300,7 @@ export default function JobPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `factharbor-${result?.meta?.analysisId || jobId}.json`;
+    a.download = generateFilename('Data', 'json');
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -255,7 +310,7 @@ export default function JobPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `factharbor-${result?.meta?.analysisId || jobId}.md`;
+    a.download = generateFilename('Report', 'md');
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -276,6 +331,7 @@ export default function JobPage() {
         <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, backgroundColor: "#fff" }}>
           <div><b>ID:</b> <code>{job.jobId}</code></div>
           <div><b>Status:</b> <code style={{ color: job.status === "SUCCEEDED" ? "#28a745" : job.status === "FAILED" ? "#dc3545" : "#ffc107" }}>{job.status}</code> ({job.progress}%)</div>
+          <div style={{ marginTop: 4 }}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></div>
           <div style={{ marginTop: 8 }}><b>Input:</b> <code>{job.inputType}</code> — {job.inputPreview ?? "—"}</div>
           {hasV22Data && (
             <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
