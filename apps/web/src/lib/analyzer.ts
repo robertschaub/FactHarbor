@@ -28,7 +28,7 @@ import { searchWeb } from "@/lib/web-search";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.12",
+  schemaVersion: "2.6.14",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
   // Search provider detection

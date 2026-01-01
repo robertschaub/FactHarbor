@@ -1,5 +1,5 @@
 /**
- * Job Results Page v2.6.12
+ * Job Results Page v2.6.14
  * 
  * Features:
  * - 7-Level Truth Scale (Symmetric, neutral)
@@ -707,7 +707,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
           <span style={{ padding: "10px 20px", borderRadius: 8, fontSize: 20, fontWeight: 700, backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getAnswerLabel(questionAnswer.answer)}
           </span>
-          <span style={{ fontSize: 14, color: "#666" }}>{questionAnswer.truthPercentage ?? questionAnswer.confidence}%</span>
+          <span style={{ fontSize: 14, color: "#666" }}>{questionAnswer.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
         </div>
         
         {questionAnswer.calibrationNote && (
@@ -784,7 +784,7 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
           <span style={{ padding: "6px 12px", borderRadius: 6, fontSize: 14, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getAnswerLabel(proceedingAnswer.answer)}
           </span>
-          <span style={{ fontSize: 12, color: "#666" }}>{proceedingAnswer.truthPercentage ?? proceedingAnswer.confidence}%</span>
+          <span style={{ fontSize: 12, color: "#666" }}>{proceedingAnswer.truthPercentage}% <span style={{ fontSize: 11, color: "#999" }}>({proceedingAnswer.confidence}%  confidence)</span></span>
         </div>
         
         <div style={{ 
@@ -892,7 +892,7 @@ function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
           <span style={{ padding: "10px 20px", borderRadius: 8, fontSize: 20, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getAnswerLabel(questionAnswer.answer)}
           </span>
-          <span style={{ fontSize: 14, color: "#666" }}>{questionAnswer.truthPercentage ?? questionAnswer.confidence}%</span>
+          <span style={{ fontSize: 14, color: "#666" }}>{questionAnswer.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
         </div>
         
         <div style={{ padding: 14, backgroundColor: "#f8f9fa", borderRadius: 8, borderLeft: `4px solid ${color.border}` }}>
