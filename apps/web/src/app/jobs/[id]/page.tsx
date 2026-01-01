@@ -1,5 +1,5 @@
 /**
- * Job Results Page v2.6.6
+ * Job Results Page v2.6.8
  * 
  * Features:
  * - 7-Level Truth Scale (Symmetric, neutral)
@@ -470,8 +470,9 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
       </div>
       
       {researchStats && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 20 }}>
-          <StatCard label="Searches" value={researchStats.totalSearches} icon="🔍" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 20 }}>
+          <StatCard label="Web Searches" value={researchStats.totalSearches} icon="🔍" />
+          <StatCard label="LLM Calls" value={researchStats.llmCalls || "N/A"} icon="🤖" />
           <StatCard label="Results Found" value={researchStats.totalResults} icon="📋" />
           <StatCard label="Sources Fetched" value={researchStats.sourcesFetched} icon="🌐" />
           <StatCard label="Fetch Success" value={researchStats.sourcesSuccessful} icon="✅" />

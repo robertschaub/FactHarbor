@@ -28,7 +28,7 @@ import { searchWeb } from "@/lib/web-search";
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.6",
+  schemaVersion: "2.6.8",
   deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   
   // Search provider detection
@@ -1556,6 +1556,7 @@ Provide SEPARATE answers for each proceeding.`;
     temperature: 0.3,
     output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_PROCEEDING })
   });
+  state.llmCalls++;  // Track LLM call
 
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING>;
   
@@ -1740,6 +1741,7 @@ ${factsFormatted}`;
     temperature: 0.3,
     output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE })
   });
+  state.llmCalls++;  // Track LLM call
 
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
   
@@ -1855,6 +1857,7 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     temperature: 0.3,
     output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM })
   });
+  state.llmCalls++;  // Track LLM call
 
   const parsed = result.output as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
   
@@ -2105,17 +2108,18 @@ async function generateReport(
   report += `**Schema:** ${CONFIG.schemaVersion}\n`;
   report += `**Generated:** ${new Date().toISOString()}\n\n`;
   
-  // Search Summary (NEW v2.4.3)
+  // Search Summary (NEW v2.4.3, updated v2.6.7)
   report += `## Research Summary\n\n`;
   report += `| Metric | Value |\n`;
   report += `| --- | --- |\n`;
-  report += `| Searches performed | ${state.searchQueries.length} |\n`;
+  report += `| Web searches | ${state.searchQueries.length} |\n`;
+  report += `| LLM calls | ${state.llmCalls} |\n`;
   report += `| Sources fetched | ${state.sources.length} |\n`;
   report += `| Sources successful | ${state.sources.filter((s: FetchedSource) => s.fetchSuccess).length} |\n`;
   report += `| Facts extracted | ${state.facts.length} |\n\n`;
   
   if (state.searchQueries.length > 0) {
-    report += `### Search Queries\n\n`;
+    report += `### Web Search Queries\n\n`;
     for (const sq of state.searchQueries) {
       report += `- \`${sq.query}\` → ${sq.resultsCount} results (${sq.focus})\n`;
     }
@@ -2255,6 +2259,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   await emit("Step 1: Analyzing input", 5);
   try {
     state.understanding = await understandClaim(textToAnalyze, model);
+    state.llmCalls++;  // understandClaim uses 1 LLM call
   } catch (err) {
     console.error("Understanding failed:", err);
     state.understanding = {
@@ -2354,6 +2359,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     for (const source of successfulSources) {
       const facts = await extractFacts(source, decision.focus!, model, state.understanding!.distinctProceedings, decision.targetProceedingId);
       state.facts.push(...facts);
+      state.llmCalls++;  // Each extractFacts call is 1 LLM call
     }
     
     state.iterations.push({ number: iteration, focus: decision.focus!, queries: decision.queries!, sourcesFound: successfulSources.length, factsExtracted: state.facts.length });
@@ -2428,7 +2434,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       sourcesFetched: state.sources.length,
       sourcesSuccessful: state.sources.filter(s => s.fetchSuccess).length,
       factsExtracted: state.facts.length,
-      contradictionSearchPerformed: state.contradictionSearchPerformed
+      contradictionSearchPerformed: state.contradictionSearchPerformed,
+      llmCalls: state.llmCalls
     },
     // NEW v2.4.5: Pseudoscience analysis
     pseudoscienceAnalysis: pseudoscienceAnalysis ? {
