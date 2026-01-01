@@ -44,6 +44,26 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// Root route: redirect to Swagger in dev, return API info in prod
+app.MapGet("/", () =>
+{
+    var env = app.Environment;
+    if (env.IsDevelopment())
+    {
+        return Results.Redirect("/swagger");
+    }
+    return Results.Json(new
+    {
+        service = "FactHarbor API",
+        version = "0.1.0",
+        endpoints = new
+        {
+            health = "/health",
+            swagger = "/swagger"
+        }
+    });
+});
+
 app.MapControllers();
 
 app.Run();
