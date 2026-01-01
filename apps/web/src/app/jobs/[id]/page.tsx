@@ -1,13 +1,14 @@
 /**
- * Job Results Page v2.5.0
+ * Job Results Page v2.6.6
  * 
  * Features:
- * - 7-Point Truth Scale (professional fact-checking standard)
- * - TRUE/MOSTLY-TRUE/HALF-TRUE/MIXED/MOSTLY-FALSE/FALSE/PANTS-ON-FIRE
- * - YES/MOSTLY-YES/LEANING-YES/MIXED/LEANING-NO/MOSTLY-NO/NO
- * - Color-coded verdicts with semantic meaning
+ * - 7-Level Truth Scale (Symmetric, neutral)
+ * - truthPercentage (0-100%) as primary internal value
+ * - Verdict label derived from percentage
+ * - TRUE/MOSTLY-TRUE/LEANING-TRUE/UNVERIFIED/LEANING-FALSE/MOSTLY-FALSE/FALSE
+ * - YES/MOSTLY-YES/LEANING-YES/UNVERIFIED/LEANING-NO/MOSTLY-NO/NO
  * 
- * @version 2.5.0
+ * @version 2.6.0
  */
 
 "use client";
@@ -37,19 +38,19 @@ type EventItem = { id: number; tsUtc: string; level: string; message: string };
 // ============================================================================
 
 /**
- * Colors for 7-point claim verdicts
+ * Colors for 7-level claim verdicts
  */
 const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
   // Positive (True side)
   "TRUE": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
   "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
-  "HALF-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
+  "LEANING-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
   // Neutral
-  "MIXED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "⚖️" },
+  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
   // Negative (False side)
-  "MOSTLY-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "✗" },
-  "FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "❌" },
-  "PANTS-ON-FIRE": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "🔥" },
+  "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
+  "MOSTLY-FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
+  "FALSE": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "❌" },
   // Legacy support
   "WELL-SUPPORTED": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
   "PARTIALLY-SUPPORTED": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
@@ -58,7 +59,7 @@ const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: s
 };
 
 /**
- * Colors for 7-point question answers
+ * Colors for 7-level question answers
  */
 const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
   // Positive (Yes side)
@@ -66,7 +67,7 @@ const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border:
   "MOSTLY-YES": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
   "LEANING-YES": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "↗" },
   // Neutral
-  "MIXED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "⚖️" },
+  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
   // Negative (No side)
   "LEANING-NO": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "↘" },
   "MOSTLY-NO": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
@@ -83,13 +84,13 @@ const ARTICLE_VERDICT_COLORS: Record<string, { bg: string; text: string; border:
   // Positive
   "TRUE": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
   "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
-  "HALF-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
+  "LEANING-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
   // Neutral
-  "MIXED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "⚖️" },
+  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
   // Negative
-  "MOSTLY-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "✗" },
-  "FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "❌" },
-  "PANTS-ON-FIRE": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "🔥" },
+  "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
+  "MOSTLY-FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
+  "FALSE": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "❌" },
   // Legacy support
   "CREDIBLE": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
   "MOSTLY-CREDIBLE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
@@ -104,11 +105,11 @@ function getVerdictLabel(verdict: string): string {
   const labels: Record<string, string> = {
     "TRUE": "True",
     "MOSTLY-TRUE": "Mostly True",
-    "HALF-TRUE": "Half True",
-    "MIXED": "Mixed",
+    "LEANING-TRUE": "Leaning True",
+    "UNVERIFIED": "Unverified",
+    "LEANING-FALSE": "Leaning False",
     "MOSTLY-FALSE": "Mostly False",
     "FALSE": "False",
-    "PANTS-ON-FIRE": "Pants on Fire!",
     // Legacy
     "WELL-SUPPORTED": "Well Supported",
     "PARTIALLY-SUPPORTED": "Partially Supported",
@@ -126,7 +127,7 @@ function getAnswerLabel(answer: string): string {
     "YES": "Yes",
     "MOSTLY-YES": "Mostly Yes",
     "LEANING-YES": "Leaning Yes",
-    "MIXED": "Mixed",
+    "UNVERIFIED": "Unverified",
     "LEANING-NO": "Leaning No",
     "MOSTLY-NO": "Mostly No",
     "NO": "No",
@@ -620,7 +621,7 @@ function getEventColor(level: string): string {
 // ============================================================================
 
 function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { questionAnswer: any; proceedings: any[] }) {
-  const overallColor = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["MIXED"];
+  const overallColor = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
   
   return (
     <div style={{ marginBottom: 20 }}>
@@ -698,7 +699,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
 }
 
 function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: any; proceeding: any }) {
-  const color = QUESTION_ANSWER_COLORS[proceedingAnswer.answer] || QUESTION_ANSWER_COLORS["MIXED"];
+  const color = QUESTION_ANSWER_COLORS[proceedingAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
   
   const factors = proceedingAnswer.keyFactors || [];
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
@@ -820,7 +821,7 @@ function KeyFactorRow({ factor }: { factor: any }) {
 // ============================================================================
 
 function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
-  const color = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["MIXED"];
+  const color = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
   
   return (
     <div style={{ border: `2px solid ${color.border}`, borderRadius: 12, marginBottom: 20, overflow: "hidden", backgroundColor: "#fff" }}>
@@ -859,7 +860,7 @@ function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
 // ============================================================================
 
 function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
-  const color = ARTICLE_VERDICT_COLORS[articleAnalysis.articleVerdict] || ARTICLE_VERDICT_COLORS["MIXED"];
+  const color = ARTICLE_VERDICT_COLORS[articleAnalysis.articleVerdict] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
   
   // Use fallback if thesis is unknown or empty
   const thesis = (!articleAnalysis.articleThesis || 
@@ -871,6 +872,11 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
   const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis.isPseudoscience;
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis.pseudoscienceCategories || [];
   
+  // Check if article verdict differs from claims average
+  const claimsAvgPct = articleAnalysis.claimsAverageTruthPercentage;
+  const articlePct = articleAnalysis.articleTruthPercentage ?? articleAnalysis.truthPercentage;
+  const verdictDiffers = claimsAvgPct && Math.abs(articlePct - claimsAvgPct) > 10;
+  
   return (
     <div style={{ border: `2px solid ${color.border}`, borderRadius: 12, marginBottom: 20, overflow: "hidden", backgroundColor: "#fff" }}>
       <div style={{ padding: 16 }}>
@@ -878,7 +884,7 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
           <span style={{ padding: "8px 16px", borderRadius: 6, fontSize: 18, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(articleAnalysis.articleVerdict)}
           </span>
-          <span style={{ fontSize: 14, color: "#666" }}>{articleAnalysis.articleConfidence}%</span>
+          <span style={{ fontSize: 14, color: "#666" }}>{articlePct}%</span>
           {isPseudo && (
             <span style={{ 
               padding: "4px 10px", 
@@ -894,6 +900,27 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
           )}
         </div>
         <div><b>Thesis:</b> {thesis}</div>
+        
+        {/* Show claims average if it differs from article verdict */}
+        {verdictDiffers && claimsAvgPct && (
+          <div style={{ 
+            marginTop: 12, 
+            padding: 10, 
+            backgroundColor: "#f5f5f5", 
+            borderRadius: 6,
+            fontSize: 13,
+            color: "#666"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span>📊 Claims average: <b>{articleAnalysis.claimsAverageVerdict}</b> ({claimsAvgPct}%)</span>
+            </div>
+            {articleAnalysis.articleVerdictReason && (
+              <div style={{ marginTop: 4, fontStyle: "italic", fontSize: 12 }}>
+                {articleAnalysis.articleVerdictReason}
+              </div>
+            )}
+          </div>
+        )}
         
         {isPseudo && pseudoCategories.length > 0 && (
           <div style={{ 
@@ -911,9 +938,9 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
               This content contains claims based on <b>{pseudoCategories.map((c: string) => 
                 c.replace(/([A-Z])/g, ' $1').trim().toLowerCase()
               ).join(", ")}</b> — concepts that contradict established scientific consensus.
-              {articleAnalysis.verdictDifferenceReason && (
+              {articleAnalysis.articleVerdictReason && (
                 <div style={{ marginTop: 8, fontStyle: "italic" }}>
-                  {articleAnalysis.verdictDifferenceReason}
+                  {articleAnalysis.articleVerdictReason}
                 </div>
               )}
             </div>
@@ -949,7 +976,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
         </div>
         <div style={{ padding: 14 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Source Credibility</div>
-          <div style={{ fontSize: 13, marginBottom: 12 }}>{factharborAnalysis.sourceCredibility}</div>
+          <div style={{ fontSize: 13, marginBottom: 12, whiteSpace: "pre-line" }}>{factharborAnalysis.sourceCredibility}</div>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Methodology</div>
           <div style={{ fontSize: 13, marginBottom: 12 }}>{factharborAnalysis.methodologyAssessment}</div>
           <div style={{ textAlign: "center", padding: 12, backgroundColor: "#f0f7ff", borderRadius: 8 }}>
@@ -993,7 +1020,7 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
 }
 
 function ClaimCard({ claim }: { claim: any }) {
-  const color = CLAIM_VERDICT_COLORS[claim.verdict] || CLAIM_VERDICT_COLORS["MIXED"];
+  const color = CLAIM_VERDICT_COLORS[claim.verdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
   
   return (
     <div style={{ padding: 14, border: "1px solid #ddd", borderLeft: `4px solid ${color.border}`, borderRadius: 8, backgroundColor: "#fff", marginBottom: 10 }}>
@@ -1001,7 +1028,7 @@ function ClaimCard({ claim }: { claim: any }) {
         <span style={{ fontWeight: 600, color: "#666" }}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         <Badge bg={color.bg} color={color.text}>
-          {color.icon} {getVerdictLabel(claim.verdict)} ({claim.confidence}%)
+          {color.icon} {getVerdictLabel(claim.verdict)} ({claim.truthPercentage ?? claim.confidence}%)
         </Badge>
         {claim.isPseudoscience && (
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>
@@ -1035,23 +1062,36 @@ function ClaimHighlighter({ originalText, claimVerdicts }: { originalText: strin
       
       <div style={{ marginTop: 16 }}>
         <h4 style={{ margin: "0 0 8px" }}>Claims Found:</h4>
-        {claimVerdicts.map((cv: any) => (
-          <div key={cv.claimId} style={{ 
-            display: "flex", 
-            alignItems: "flex-start", 
-            gap: 10, 
-            padding: 10, 
-            marginBottom: 6, 
-            backgroundColor: cv.highlightColor === "green" ? "#d4edda" : cv.highlightColor === "red" ? "#f8d7da" : "#fff3cd", 
-            borderRadius: 6 
-          }}>
-            <span style={{ fontWeight: 600, minWidth: 50 }}>{cv.claimId}</span>
-            <div>
-              <div style={{ fontWeight: 500 }}>{cv.claimText}</div>
-              <div style={{ fontSize: 12, color: "#666" }}>{cv.verdict} ({cv.confidence}%)</div>
+        {claimVerdicts.map((cv: any) => {
+          // Map highlightColor to background color
+          const bgColor = 
+            cv.highlightColor === "green" ? "#d4edda" :
+            cv.highlightColor === "light-green" ? "#e8f5e9" :
+            cv.highlightColor === "yellow" ? "#fff9c4" :
+            cv.highlightColor === "orange" ? "#fff3e0" :
+            cv.highlightColor === "dark-orange" ? "#ffccbc" :
+            cv.highlightColor === "red" ? "#ffcdd2" :
+            cv.highlightColor === "dark-red" ? "#ffebee" :
+            "#fff3e0"; // default orange for unverified
+          
+          return (
+            <div key={cv.claimId} style={{ 
+              display: "flex", 
+              alignItems: "flex-start", 
+              gap: 10, 
+              padding: 10, 
+              marginBottom: 6, 
+              backgroundColor: bgColor, 
+              borderRadius: 6 
+            }}>
+              <span style={{ fontWeight: 600, minWidth: 50 }}>{cv.claimId}</span>
+              <div>
+                <div style={{ fontWeight: 500 }}>{cv.claimText}</div>
+                <div style={{ fontSize: 12, color: "#666" }}>{cv.verdict} ({cv.truthPercentage ?? cv.confidence}%)</div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
