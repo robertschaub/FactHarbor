@@ -52,3 +52,4 @@ apps/web/test-output/
 /POC_Spec.txt
 /DataModel.txt
 /AKEL.txt
+/.claude/settings.local.json
