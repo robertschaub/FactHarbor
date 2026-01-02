@@ -676,7 +676,8 @@ function calculateArticleTruthPercentage(
       return Math.round(58 + 27 * conf);
     case "MISLEADING":
       // MISLEADING = false-side (15-42% range)
-      return Math.round(15 + 27 * (1 - conf));
+      // Higher confidence = MORE false = LOWER truth %
+      return Math.round(42 - 27 * conf);
     case "MOSTLY-FALSE":
     case "LEANING-FALSE":
       return Math.round(15 + 14 * (1 - conf));

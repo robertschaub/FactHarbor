@@ -145,6 +145,8 @@
   font-weight: 700;
   color: #007bff;
   margin-top: 4px;
+  white-space: pre-line;
+  text-align: center;
 }
 
 .analysisIdBox {
