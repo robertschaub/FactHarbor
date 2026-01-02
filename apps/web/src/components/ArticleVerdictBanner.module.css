@@ -1,0 +1,213 @@
+.container {
+  border: 2px solid;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  background-color: #fff;
+}
+
+.mainSection {
+  padding: 20px;
+}
+
+.verdictRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.verdictLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.verdictBadge {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.confidence {
+  font-size: 14px;
+  color: #666;
+}
+
+.thesisRow {
+  margin-bottom: 8px;
+}
+
+.thesisLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-right: 8px;
+}
+
+.thesisText {
+  font-size: 15px;
+  color: #333;
+}
+
+.supportedRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.supportedLabel {
+  font-size: 13px;
+  color: #666;
+}
+
+.supportedYes {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.supportedNo {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.patternSection {
+  padding: 16px 20px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #eee;
+}
+
+.patternTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.patternGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.patternItem {
+  text-align: center;
+}
+
+.patternNumber {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+}
+
+.patternNumberSupported {
+  color: #28a745;
+}
+
+.patternNumberUncertain {
+  color: #ffc107;
+}
+
+.patternNumberRefuted {
+  color: #dc3545;
+}
+
+.patternLabel {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.centralClaimsRow {
+  font-size: 14px;
+  color: #555;
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid #ddd;
+}
+
+.warningBanner {
+  background-color: #fff8e1;
+  border-top: 1px solid #ffe082;
+  padding: 16px 20px;
+}
+
+.warningHeader {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f57c00;
+  margin-bottom: 12px;
+}
+
+.comparisonRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.averageValue {
+  font-weight: 600;
+}
+
+.verdictValue {
+  font-weight: 700;
+}
+
+.reasonBox {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid #ffe082;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.fallaciesSection {
+  background-color: #fff5f5;
+  border-top: 1px solid #feb2b2;
+  padding: 16px 20px;
+}
+
+.fallaciesHeader {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c53030;
+  margin-bottom: 12px;
+}
+
+.fallacyItem {
+  padding: 12px;
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid #feb2b2;
+  margin-bottom: 8px;
+}
+
+.fallacyType {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c53030;
+  margin-bottom: 4px;
+}
+
+.fallacyDescription {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.fallacyAffected {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Verdict-specific styles are now imported from common.module.css */

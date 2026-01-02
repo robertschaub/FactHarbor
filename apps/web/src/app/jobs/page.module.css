@@ -1,0 +1,267 @@
+/* Jobs List Page Styles */
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.headerTitle {
+  margin: 0;
+}
+
+.newAnalysisLink {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.newAnalysisLink:hover {
+  background-color: #0056b3;
+}
+
+.errorBox {
+  padding: 16px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.emptyTitle {
+  margin: 0 0 8px;
+  color: #333;
+}
+
+.emptyText {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.emptyButton {
+  padding: 12px 24px;
+  background-color: #007bff;
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.emptyButton:hover {
+  background-color: #0056b3;
+}
+
+.jobsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.jobLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.jobCard {
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+
+.jobCard:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-color: #007bff;
+}
+
+.statusIndicator {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statusIcon {
+  font-size: 24px;
+}
+
+.statusSuccess {
+  background-color: #d4edda;
+}
+
+.statusFailed {
+  background-color: #f8d7da;
+}
+
+.statusRunning {
+  background-color: #cce5ff;
+}
+
+.statusPending {
+  background-color: #fff3cd;
+}
+
+.jobInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.jobMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.jobIdCode {
+  font-size: 12px;
+  color: #666;
+}
+
+.statusBadge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.statusBadgeSuccess {
+  background-color: #d4edda;
+  color: #28a745;
+}
+
+.statusBadgeFailed {
+  background-color: #f8d7da;
+  color: #dc3545;
+}
+
+.statusBadgeRunning {
+  background-color: #cce5ff;
+  color: #007bff;
+}
+
+.statusBadgePending {
+  background-color: #fff3cd;
+  color: #ffc107;
+}
+
+.inputTypeBadge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.jobPreview {
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+.jobTimestamp {
+  font-size: 11px;
+  color: #888;
+}
+
+.jobProgress {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.progressPercent {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.progressPercentSuccess {
+  color: #28a745;
+}
+
+.progressPercentFailed {
+  color: #dc3545;
+}
+
+.progressPercentRunning {
+  color: #007bff;
+}
+
+.progressPercentPending {
+  color: #ffc107;
+}
+
+.progressPercentDefault {
+  color: #6c757d;
+}
+
+.progressBar {
+  width: 80px;
+  height: 6px;
+  background-color: #e9ecef;
+  border-radius: 3px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: #007bff;
+  transition: width 0.3s;
+}
+
+.jobArrow {
+  color: #ccc;
+  font-size: 20px;
+}
+
+.footer {
+  margin-top: 30px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}

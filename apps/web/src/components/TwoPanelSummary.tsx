@@ -10,6 +10,8 @@
  */
 
 import React from "react";
+import styles from "./TwoPanelSummary.module.css";
+import commonStyles from "../styles/common.module.css";
 
 interface TwoPanelSummaryProps {
   articleSummary: {
@@ -35,82 +37,82 @@ interface TwoPanelSummaryProps {
 
 export function TwoPanelSummary({ articleSummary, factharborAnalysis }: TwoPanelSummaryProps) {
   return (
-    <div style={styles.container}>
+    <div className={styles.container}>
       {/* Left Panel: Article Summary */}
-      <div style={styles.panel}>
-        <div style={styles.panelHeader}>
-          <span style={styles.panelIcon}>📄</span>
-          <h3 style={styles.panelTitle}>What the Article Claims</h3>
+      <div className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <span className={styles.panelIcon}>📄</span>
+          <h3 className={styles.panelTitle}>What the Article Claims</h3>
         </div>
-        
-        <div style={styles.panelContent}>
-          <div style={styles.field}>
-            <span style={styles.fieldLabel}>Title</span>
-            <span style={styles.fieldValue}>{articleSummary.title}</span>
+
+        <div className={styles.panelContent}>
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Title</span>
+            <span className={styles.fieldValue}>{articleSummary.title}</span>
           </div>
-          
-          <div style={styles.field}>
-            <span style={styles.fieldLabel}>Source</span>
-            <span style={styles.fieldValue}>{articleSummary.source}</span>
+
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Source</span>
+            <span className={styles.fieldValue}>{articleSummary.source}</span>
           </div>
-          
-          <div style={styles.field}>
-            <span style={styles.fieldLabel}>Main Argument</span>
-            <p style={styles.fieldValueBlock}>{articleSummary.mainArgument}</p>
+
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Main Argument</span>
+            <p className={styles.fieldValueBlock}>{articleSummary.mainArgument}</p>
           </div>
-          
-          <div style={styles.field}>
-            <span style={styles.fieldLabel}>Key Findings</span>
-            <ul style={styles.findingsList}>
+
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Key Findings</span>
+            <ul className={styles.findingsList}>
               {articleSummary.keyFindings.map((finding, i) => (
-                <li key={i} style={styles.findingItem}>{finding}</li>
+                <li key={i} className={styles.findingItem}>{finding}</li>
               ))}
             </ul>
           </div>
-          
-          <div style={styles.field}>
-            <span style={styles.fieldLabel}>Conclusion</span>
-            <p style={styles.fieldValueBlock}>{articleSummary.conclusion}</p>
+
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Conclusion</span>
+            <p className={styles.fieldValueBlock}>{articleSummary.conclusion}</p>
           </div>
         </div>
       </div>
-      
+
       {/* Right Panel: FactHarbor Analysis */}
-      <div style={{ ...styles.panel, ...styles.analysisPanelBorder }}>
-        <div style={styles.panelHeader}>
-          <span style={styles.panelIcon}>🔍</span>
-          <h3 style={styles.panelTitle}>FactHarbor Analysis</h3>
+      <div className={`${styles.panel} ${styles.analysisPanelBorder}`}>
+        <div className={styles.panelHeader}>
+          <span className={styles.panelIcon}>🔍</span>
+          <h3 className={styles.panelTitle}>FactHarbor Analysis</h3>
         </div>
-        
-        <div style={styles.panelContent}>
-          <div style={styles.field}>
-            <span style={styles.fieldLabel}>Source Credibility</span>
-            <span style={styles.credibilityBadge}>{factharborAnalysis.sourceCredibility}</span>
+
+        <div className={styles.panelContent}>
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Source Credibility</span>
+            <span className={styles.credibilityBadge}>{factharborAnalysis.sourceCredibility}</span>
           </div>
-          
-          <div style={styles.field}>
-            <span style={styles.fieldLabel}>Claim-by-Claim Verdicts</span>
-            <div style={styles.verdictsContainer}>
+
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Claim-by-Claim Verdicts</span>
+            <div className={styles.verdictsContainer}>
               {factharborAnalysis.claimVerdicts.map((cv, i) => (
-                <div key={i} style={styles.verdictRow}>
-                  <span style={styles.claimText}>{cv.claim}</span>
+                <div key={i} className={styles.verdictRow}>
+                  <span className={styles.claimText}>{cv.claim}</span>
                   <VerdictBadge verdict={cv.verdict} confidence={cv.confidence} />
                 </div>
               ))}
             </div>
           </div>
-          
-          <div style={styles.field}>
-            <span style={styles.fieldLabel}>Methodology</span>
-            <span style={styles.fieldValue}>{factharborAnalysis.methodologyAssessment}</span>
+
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Methodology</span>
+            <span className={styles.fieldValue}>{factharborAnalysis.methodologyAssessment}</span>
           </div>
-          
-          <div style={styles.overallVerdictBox}>
-            <span style={styles.overallLabel}>Overall Verdict</span>
-            <span style={styles.overallValue}>{factharborAnalysis.overallVerdict}</span>
+
+          <div className={styles.overallVerdictBox}>
+            <span className={styles.overallLabel}>Overall Verdict</span>
+            <span className={styles.overallValue}>{factharborAnalysis.overallVerdict}</span>
           </div>
-          
-          <div style={styles.analysisIdBox}>
+
+          <div className={styles.analysisIdBox}>
             Analysis ID: {factharborAnalysis.analysisId}
           </div>
         </div>
@@ -121,159 +123,26 @@ export function TwoPanelSummary({ articleSummary, factharborAnalysis }: TwoPanel
 
 // Verdict Badge Component
 function VerdictBadge({ verdict, confidence }: { verdict: string; confidence: number }) {
-  const color = getVerdictColor(verdict);
+  const verdictClass = getVerdictClass(verdict);
   return (
-    <span style={{ ...styles.verdictBadge, backgroundColor: color.bg, color: color.text }}>
+    <span className={`${styles.verdictBadge} ${verdictClass}`}>
       {verdict} ({confidence}%)
     </span>
   );
 }
 
-function getVerdictColor(verdict: string): { bg: string; text: string } {
+function getVerdictClass(verdict: string): string {
   switch (verdict) {
-    case "WELL-SUPPORTED": return { bg: "#d4edda", text: "#155724" };
-    case "PARTIALLY-SUPPORTED": return { bg: "#fff3cd", text: "#856404" };
-    case "UNCERTAIN": return { bg: "#fff3cd", text: "#856404" };
-    case "REFUTED": return { bg: "#f8d7da", text: "#721c24" };
-    case "CREDIBLE": return { bg: "#d4edda", text: "#155724" };
-    case "MOSTLY-CREDIBLE": return { bg: "#d1ecf1", text: "#0c5460" };
-    case "MISLEADING": return { bg: "#fff3cd", text: "#856404" };
-    case "FALSE": return { bg: "#f8d7da", text: "#721c24" };
-    default: return { bg: "#e9ecef", text: "#495057" };
+    case "WELL-SUPPORTED": return commonStyles.verdictWellSupported;
+    case "PARTIALLY-SUPPORTED": return commonStyles.verdictPartiallySupported;
+    case "UNCERTAIN": return commonStyles.verdictUncertain;
+    case "REFUTED": return commonStyles.verdictRefuted;
+    case "CREDIBLE": return commonStyles.verdictCredible;
+    case "MOSTLY-CREDIBLE": return commonStyles.verdictMostlyCredible;
+    case "MISLEADING": return commonStyles.verdictMisleading;
+    case "FALSE": return commonStyles.verdictFalse;
+    default: return commonStyles.verdictDefault;
   }
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "16px",
-    marginBottom: "24px",
-  },
-  panel: {
-    border: "1px solid #ddd",
-    borderRadius: "12px",
-    overflow: "hidden",
-    backgroundColor: "#fff",
-  },
-  analysisPanelBorder: {
-    borderColor: "#007bff",
-    borderWidth: "2px",
-  },
-  panelHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "12px 16px",
-    backgroundColor: "#f8f9fa",
-    borderBottom: "1px solid #ddd",
-  },
-  panelIcon: {
-    fontSize: "20px",
-  },
-  panelTitle: {
-    margin: 0,
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "#333",
-  },
-  panelContent: {
-    padding: "16px",
-  },
-  field: {
-    marginBottom: "16px",
-  },
-  fieldLabel: {
-    display: "block",
-    fontSize: "12px",
-    fontWeight: 600,
-    color: "#666",
-    textTransform: "uppercase",
-    marginBottom: "4px",
-  },
-  fieldValue: {
-    fontSize: "14px",
-    color: "#333",
-  },
-  fieldValueBlock: {
-    fontSize: "14px",
-    color: "#333",
-    margin: "4px 0 0 0",
-    lineHeight: 1.5,
-  },
-  findingsList: {
-    margin: "4px 0 0 0",
-    paddingLeft: "20px",
-  },
-  findingItem: {
-    fontSize: "14px",
-    color: "#333",
-    marginBottom: "4px",
-    lineHeight: 1.4,
-  },
-  credibilityBadge: {
-    display: "inline-block",
-    padding: "4px 10px",
-    backgroundColor: "#e9ecef",
-    borderRadius: "12px",
-    fontSize: "13px",
-    fontWeight: 500,
-  },
-  verdictsContainer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    marginTop: "8px",
-  },
-  verdictRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "8px",
-    padding: "8px",
-    backgroundColor: "#f8f9fa",
-    borderRadius: "6px",
-  },
-  claimText: {
-    fontSize: "13px",
-    color: "#333",
-    flex: 1,
-  },
-  verdictBadge: {
-    display: "inline-block",
-    padding: "4px 8px",
-    borderRadius: "4px",
-    fontSize: "11px",
-    fontWeight: 600,
-    whiteSpace: "nowrap",
-  },
-  overallVerdictBox: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: "16px",
-    backgroundColor: "#f0f7ff",
-    borderRadius: "8px",
-    marginTop: "16px",
-  },
-  overallLabel: {
-    fontSize: "12px",
-    fontWeight: 600,
-    color: "#666",
-    textTransform: "uppercase",
-  },
-  overallValue: {
-    fontSize: "18px",
-    fontWeight: 700,
-    color: "#007bff",
-    marginTop: "4px",
-  },
-  analysisIdBox: {
-    marginTop: "16px",
-    textAlign: "center",
-    fontSize: "11px",
-    color: "#888",
-  },
-};
 
 export default TwoPanelSummary;

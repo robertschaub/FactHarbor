@@ -1,0 +1,375 @@
+/* Common utility styles shared across the application */
+
+/* Container utilities */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.containerLarge {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Error boxes */
+.errorBox {
+  padding: 12px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #f5c6cb;
+}
+
+/* Badges */
+.badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* Button styles */
+.btnPrimary {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.btnPrimary:hover {
+  background-color: #0056b3;
+}
+
+.btnSecondary {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #f8f9fa;
+  font-size: 14px;
+}
+
+.btnSecondary:hover {
+  background-color: #e9ecef;
+}
+
+/* Common card/panel styles */
+.card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 16px;
+  background-color: #fff;
+}
+
+.panel {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+/* Text styles */
+.textMuted {
+  color: #666;
+}
+
+.textCenter {
+  text-align: center;
+}
+
+.code {
+  font-family: monospace;
+  background-color: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+/* Loading states */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+/* ============================================
+   FORM COMPONENTS
+   ============================================ */
+
+/* Page layout */
+.title {
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.inputContainer {
+  margin-bottom: 16px;
+}
+
+/* Text input */
+.textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.textarea:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Detected type indicators */
+.detectedTypeIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.detectedTypeUrl {
+  background-color: #e3f2fd;
+}
+
+.detectedTypeText {
+  background-color: #f3e5f5;
+}
+
+.detectedTypeIcon {
+  font-size: 16px;
+}
+
+.detectedTypeTextUrl {
+  color: #1565c0;
+}
+
+.detectedTypeTextText {
+  color: #7b1fa2;
+}
+
+/* Form buttons */
+.buttonContainer {
+  display: flex;
+  gap: 12px;
+}
+
+.submitButton {
+  flex: 1;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  transition: background-color 0.2s;
+}
+
+.submitButtonEnabled {
+  background-color: #007bff;
+  cursor: pointer;
+}
+
+.submitButtonEnabled:hover {
+  background-color: #0056b3;
+}
+
+.submitButtonDisabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.clearButton {
+  padding: 14px 20px;
+  font-size: 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+.clearButtonEnabled {
+  color: #333;
+  cursor: pointer;
+}
+
+.clearButtonEnabled:hover {
+  background-color: #e9ecef;
+}
+
+.clearButtonDisabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Examples section */
+.examplesSection {
+  margin-top: 32px;
+}
+
+.examplesTitle {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.examplesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exampleButton {
+  padding: 10px 14px;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+  transition: background-color 0.2s;
+}
+
+.exampleButton:hover {
+  background-color: #e9ecef;
+}
+
+/* How It Works section */
+.howItWorksSection {
+  margin-top: 32px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+}
+
+.howItWorksTitle {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+.stepsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stepItem {
+  text-align: center;
+}
+
+.stepIcon {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.stepTitle {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+}
+
+.stepDescription {
+  font-size: 11px;
+  color: #666;
+}
+
+/* ============================================
+   VERDICT COLORS
+   Standard verdict color scheme used across all components
+   ============================================ */
+
+/* Green verdicts - Well supported / Credible */
+.verdictWellSupported,
+.verdictCredible {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.borderCredible {
+  border-color: #28a745;
+}
+
+.colorCredible {
+  color: #155724;
+}
+
+/* Blue verdicts - Mostly credible */
+.verdictMostlyCredible {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.borderMostlyCredible {
+  border-color: #17a2b8;
+}
+
+.colorMostlyCredible {
+  color: #0c5460;
+}
+
+/* Yellow verdicts - Partially supported / Uncertain / Misleading */
+.verdictPartiallySupported,
+.verdictUncertain,
+.verdictMisleading {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.borderMisleading {
+  border-color: #ffc107;
+}
+
+.colorMisleading {
+  color: #856404;
+}
+
+/* Red verdicts - Refuted / False */
+.verdictRefuted,
+.verdictFalse {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.borderFalse {
+  border-color: #dc3545;
+}
+
+.colorFalse {
+  color: #721c24;
+}
+
+/* Default/Unknown verdict */
+.verdictDefault {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.borderDefault {
+  border-color: #6c757d;
+}
+
+.colorDefault {
+  color: #495057;
+}

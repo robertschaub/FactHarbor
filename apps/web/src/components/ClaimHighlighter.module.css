@@ -1,0 +1,180 @@
+/* ClaimHighlighter Component Styles */
+
+.container {
+  margin-bottom: 24px;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.checkbox {
+  cursor: pointer;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legendDotGreen {
+  background-color: #d4edda;
+}
+
+.legendDotYellow {
+  background-color: #fff3cd;
+}
+
+.legendDotRed {
+  background-color: #f8d7da;
+}
+
+.textContainer {
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fff;
+  line-height: 1.8;
+  font-size: 15px;
+  white-space: pre-wrap;
+}
+
+.highlight {
+  padding: 2px 4px;
+  border-radius: 3px;
+  border-bottom: 2px solid;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.highlightGreen {
+  background-color: #d4edda;
+  border-color: #28a745;
+}
+
+.highlightYellow {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+}
+
+.highlightRed {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+}
+
+.centralBadge {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  font-size: 10px;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 1000;
+  width: 300px;
+  padding: 16px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.tooltipHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.tooltipVerdict {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tooltipVerdictGreen {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.tooltipVerdictYellow {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.tooltipVerdictRed {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.tooltipConfidence {
+  font-size: 12px;
+  color: #666;
+}
+
+.centralIndicator {
+  padding: 4px 8px;
+  background-color: #e8f4fd;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #0056b3;
+  margin-bottom: 8px;
+}
+
+.tooltipClaim {
+  font-size: 14px;
+  font-style: italic;
+  color: #333;
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.tooltipReasoning {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.tooltipFooter {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #888;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}

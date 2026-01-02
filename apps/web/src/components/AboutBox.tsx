@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import styles from "./AboutBox.module.css";
 
 type WebVersion = {
   service: string;
@@ -67,14 +68,14 @@ export function AboutBox() {
   }, []);
 
   return (
-    <div style={{ border: "1px solid #333", borderRadius: 10, padding: 12, fontSize: 12, maxWidth: 980, margin: "0 auto" }}>
-      <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 260 }}>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Web</div>
+    <div className={styles.container}>
+      <div className={styles.content}>
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Web</div>
           {errWeb ? (
-            <div style={{ color: "#f88" }}>Error: {errWeb}</div>
+            <div className={styles.error}>Error: {errWeb}</div>
           ) : web ? (
-            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 4 }}>
+            <div className={styles.grid}>
               <div>Service</div><div><code>{web.service}</code></div>
               <div>Env</div><div><code>{web.node_env ?? "—"}</code></div>
               <div>LLM</div><div><code>{web.llm_provider ?? "—"}</code></div>
@@ -83,12 +84,12 @@ export function AboutBox() {
           ) : <div>Loading…</div>}
         </div>
 
-        <div style={{ minWidth: 320 }}>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>API</div>
+        <div className={`${styles.section} ${styles.sectionLarge}`}>
+          <div className={styles.sectionTitle}>API</div>
           {errApi ? (
-            <div style={{ color: "#f88" }}>Error: {errApi}</div>
+            <div className={styles.error}>Error: {errApi}</div>
           ) : api ? (
-            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 4 }}>
+            <div className={styles.grid}>
               <div>Service</div><div><code>{api.service}</code></div>
               <div>Env</div><div><code>{api.environment ?? "—"}</code></div>
               <div>DB</div><div><code>{api.db_provider ?? "—"}</code></div>
@@ -98,13 +99,13 @@ export function AboutBox() {
           ) : <div>Loading…</div>}
         </div>
 
-        <div style={{ minWidth: 220 }}>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Links</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <a href="/api/health" style={{ textDecoration: "underline" }}>Web health</a>
-            <a href="/api/fh/health" style={{ textDecoration: "underline" }}>API health</a>
-            <a href="/api/version" style={{ textDecoration: "underline" }}>Web version</a>
-            <a href="/api/fh/version" style={{ textDecoration: "underline" }}>API version</a>
+        <div className={`${styles.section} ${styles.sectionLinks}`}>
+          <div className={styles.sectionTitle}>Links</div>
+          <div className={styles.linksContainer}>
+            <a href="/api/health" className={styles.link}>Web health</a>
+            <a href="/api/fh/health" className={styles.link}>API health</a>
+            <a href="/api/version" className={styles.link}>Web version</a>
+            <a href="/api/fh/version" className={styles.link}>API version</a>
           </div>
         </div>
       </div>

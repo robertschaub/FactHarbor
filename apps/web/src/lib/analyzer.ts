@@ -137,13 +137,14 @@ function extractStructuredOutput(result: any): any {
     return result.output;
   }
 
-  // Handle experimental_output with optional chaining
-  if (result.experimental_output) {
-    if (result.experimental_output.value !== undefined) {
-      return result.experimental_output.value;
+  // Handle experimental_output safely (avoid "reading 'value' of undefined")
+  const experimental = result?.experimental_output;
+  if (experimental !== undefined && experimental !== null) {
+    if (experimental?.value !== undefined) {
+      return experimental.value;
     }
-    if (typeof result.experimental_output === 'object' && !Array.isArray(result.experimental_output)) {
-      return result.experimental_output;
+    if (typeof experimental === "object" && !Array.isArray(experimental)) {
+      return experimental;
     }
   }
 
@@ -848,6 +849,8 @@ interface ClaimUnderstanding {
     id: string;
     text: string;
     type: "legal" | "procedural" | "factual" | "evaluative";
+    claimRole?: "attribution" | "source" | "timing" | "core";
+    dependsOn?: string[];
     keyEntities: string[];
     isCentral: boolean;
     relatedProceedingId?: string;
@@ -1087,7 +1090,8 @@ function applyEvidenceWeighting(
   );
 
   return claimVerdicts.map((verdict) => {
-    const scores = verdict.supportingFactIds
+    const factIds = verdict.supportingFactIds ?? [];
+    const scores = factIds
       .map((id) => factScoreById.get(id))
       .filter((score): score is number => typeof score === "number");
 
@@ -1820,16 +1824,19 @@ Provide SEPARATE answers for each proceeding.`;
 
     const questionAnswer: QuestionAnswer = {
       question: understanding.questionBeingAsked || state.originalInput || "",
-      answer: "INSUFFICIENT-EVIDENCE",
+      llmAnswer: "INSUFFICIENT-EVIDENCE",
+      answer: "UNVERIFIED",
       confidence: 50,
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
       nuancedAnswer: "The structured output generation failed. Manual review recommended.",
       keyFactors: [],
+      hasMultipleProceedings: true,
       proceedingAnswers: understanding.distinctProceedings.map((p: DistinctProceeding) => ({
         proceedingId: p.id,
         proceedingName: p.name,
-        answer: "INSUFFICIENT-EVIDENCE",
+        llmAnswer: "INSUFFICIENT-EVIDENCE",
+        answer: "UNVERIFIED",
         truthPercentage: 50,
         confidence: 50,
         shortAnswer: "Analysis failed",
@@ -1837,6 +1844,8 @@ Provide SEPARATE answers for each proceeding.`;
       }))
     };
 
+    const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
+    const centralSupported = fallbackVerdicts.filter((v) => v.isCentral && v.truthPercentage >= 72).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "question",
       isQuestion: true,
@@ -1849,7 +1858,14 @@ Provide SEPARATE answers for each proceeding.`;
       claimsAverageVerdict: "UNVERIFIED",
       articleTruthPercentage: 50,
       articleVerdict: "UNVERIFIED",
-      claimPattern: { total: fallbackVerdicts.length, supported: 0, uncertain: fallbackVerdicts.length, refuted: 0 }
+      claimPattern: {
+        total: fallbackVerdicts.length,
+        supported: 0,
+        uncertain: fallbackVerdicts.length,
+        refuted: 0,
+        centralClaimsTotal: centralTotal,
+        centralClaimsSupported: centralSupported
+      }
     };
 
     return { claimVerdicts: fallbackVerdicts, articleAnalysis, questionAnswer };
@@ -2079,14 +2095,18 @@ ${factsFormatted}`;
 
     const questionAnswer: QuestionAnswer = {
       question: understanding.questionBeingAsked || state.originalInput || "",
-      answer: "INSUFFICIENT-EVIDENCE",
+      llmAnswer: "INSUFFICIENT-EVIDENCE",
+      answer: "UNVERIFIED",
       confidence: 50,
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
       nuancedAnswer: "The structured output generation failed. Manual review recommended.",
-      keyFactors: []
+      keyFactors: [],
+      hasMultipleProceedings: false
     };
 
+    const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
+    const centralSupported = fallbackVerdicts.filter((v) => v.isCentral && v.truthPercentage >= 72).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "question",
       isQuestion: true,
@@ -2098,7 +2118,14 @@ ${factsFormatted}`;
       claimsAverageVerdict: "UNVERIFIED",
       articleTruthPercentage: 50,
       articleVerdict: "UNVERIFIED",
-      claimPattern: { total: fallbackVerdicts.length, supported: 0, uncertain: fallbackVerdicts.length, refuted: 0 }
+      claimPattern: {
+        total: fallbackVerdicts.length,
+        supported: 0,
+        uncertain: fallbackVerdicts.length,
+        refuted: 0,
+        centralClaimsTotal: centralTotal,
+        centralClaimsSupported: centralSupported
+      }
     };
 
     return { claimVerdicts: fallbackVerdicts, articleAnalysis, questionAnswer };
@@ -2287,6 +2314,8 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       };
     });
 
+    const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
+    const centralSupported = fallbackVerdicts.filter((v) => v.isCentral && v.truthPercentage >= 72).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "article",
       isQuestion: false,
@@ -2302,7 +2331,9 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
         total: fallbackVerdicts.length,
         supported: 0,
         uncertain: fallbackVerdicts.length,
-        refuted: 0
+        refuted: 0,
+        centralClaimsTotal: centralTotal,
+        centralClaimsSupported: centralSupported
       }
     };
 

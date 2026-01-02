@@ -1,0 +1,1057 @@
+/* Job Details Page Styles */
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pageTitle {
+  margin: 8px 0 0;
+}
+
+.jobInfoCard {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  background-color: #fff;
+}
+
+.statusSuccess {
+  color: #28a745;
+}
+
+.statusFailed {
+  color: #dc3545;
+}
+
+.statusWarning {
+  color: #ffc107;
+}
+
+.metaRow {
+  margin-top: 4px;
+}
+
+.badgesRow {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Tabs */
+.tabsContainer {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tab {
+  padding: 8px 14px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 400;
+  background-color: #fff;
+  color: #333;
+}
+
+.tabActive {
+  font-weight: 700;
+  background-color: #007bff;
+  color: #fff;
+}
+
+.tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.exportButtons {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+/* Content containers */
+.contentCard {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 16px;
+  background-color: #fff;
+}
+
+.jsonContainer {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 11px;
+  background-color: #f8f9fa;
+}
+
+.eventsList {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.eventItem {
+  margin-bottom: 4px;
+}
+
+.eventTimestamp {
+  font-size: 10px;
+}
+
+.eventLevelInfo {
+  color: #17a2b8;
+}
+
+.eventLevelWarn {
+  color: #ffc107;
+}
+
+.eventLevelError {
+  color: #dc3545;
+}
+
+.eventLevelDefault {
+  color: #6c757d;
+}
+
+/* Sources Panel */
+.sourcesHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sourcesTitle {
+  margin: 0;
+}
+
+.providerBadge {
+  padding: 4px 10px;
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.statIcon {
+  font-size: 24px;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.sectionTitle {
+  margin: 16px 0 8px;
+  color: #666;
+}
+
+.searchQueriesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.searchQueryItem {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.searchQueryIcon {
+  font-size: 18px;
+}
+
+.searchQueryContent {
+  flex: 1;
+}
+
+.searchQueryText {
+  font-size: 13px;
+  color: #333;
+}
+
+.searchQueryMeta {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.searchResultsBadge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.searchResultsSuccess {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.searchResultsFailed {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.sourcesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sourceItem {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sourceItemSuccess {
+  background-color: #fff;
+  border-color: #ddd;
+}
+
+.sourceItemFailed {
+  background-color: #fff5f5;
+  border-color: #feb2b2;
+}
+
+.sourceIcon {
+  font-size: 16px;
+}
+
+.sourceContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.sourceTitle {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourceUrl {
+  font-size: 11px;
+  color: #007bff;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourceQuery {
+  font-size: 10px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.sourceMetadata {
+  text-align: right;
+}
+
+.trackRecordScore {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.trackRecordHigh {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.trackRecordMedium {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.trackRecordLow {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.sourceCategory {
+  font-size: 10px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.noDataWarning {
+  padding: 16px;
+  background-color: #fff3cd;
+  border-radius: 8px;
+  color: #856404;
+}
+
+.noDataError {
+  padding: 16px;
+  background-color: #f8d7da;
+  border-radius: 8px;
+  color: #721c24;
+}
+
+/* Multi-Proceeding Answer Banner */
+.multiProceedingBanner {
+  margin-bottom: 20px;
+}
+
+.questionHeader {
+  padding: 12px 16px;
+  background-color: #f0f7ff;
+  border-radius: 12px 12px 0 0;
+  border: 1px solid #90caf9;
+  border-bottom: none;
+}
+
+.questionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0056b3;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.questionText {
+  font-size: 16px;
+  color: #333;
+  font-style: italic;
+}
+
+.proceedingNotice {
+  padding: 10px 16px;
+  background-color: #fff3e0;
+  border: 1px solid #ffcc80;
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.proceedingIcon {
+  font-size: 18px;
+}
+
+.proceedingText {
+  font-size: 13px;
+  color: #e65100;
+  font-weight: 600;
+}
+
+.answerContent {
+  padding: 16px;
+  border: 2px solid;
+  background-color: #fff;
+}
+
+.answerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.answerLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.answerBadge {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.answerPercentage {
+  font-size: 14px;
+  color: #666;
+}
+
+.calibrationNote {
+  padding: 10px;
+  background-color: #fff8e1;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border: 1px solid #ffe082;
+}
+
+.calibrationText {
+  font-size: 13px;
+  color: #f57c00;
+}
+
+.proceedingSummary {
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border-left: 4px solid #6c757d;
+}
+
+.proceedingSummaryText {
+  font-size: 14px;
+  color: #333;
+}
+
+.shortAnswerBox {
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.shortAnswerText {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.proceedingsAnalysis {
+  margin-top: 16px;
+}
+
+.proceedingsHeader {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.proceedingsGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.proceedingsGrid1Col {
+  grid-template-columns: 1fr;
+}
+
+.proceedingsGrid2Col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.keyFactorsSection {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.keyFactorsHeader {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.keyFactorsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Proceeding Card */
+.proceedingCard {
+  border: 2px solid;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.proceedingCardHeader {
+  padding: 10px 14px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
+.proceedingCardTitle {
+  font-weight: 700;
+  font-size: 14px;
+  color: #333;
+}
+
+.proceedingCardMeta {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.proceedingCardContent {
+  padding: 14px;
+}
+
+.proceedingAnswerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.proceedingAnswerBadge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.proceedingPercentage {
+  font-size: 12px;
+  color: #666;
+}
+
+.factorsSummary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.factorsSummaryNormal {
+  background-color: #f8f9fa;
+}
+
+.factorsSummaryContested {
+  background-color: #fff8e1;
+}
+
+.factorsPositive {
+  color: #28a745;
+}
+
+.factorsNegative {
+  color: #dc3545;
+}
+
+.factorsNeutral {
+  color: #6c757d;
+}
+
+.factorsContested {
+  color: #c2185b;
+}
+
+.proceedingShortAnswer {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.factorsListSection {
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.factorsListHeader {
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.factorItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  margin-bottom: 4px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.factorItemNormal {
+  background-color: transparent;
+}
+
+.factorItemContested {
+  background-color: #fff8e1;
+}
+
+.factorIcon {
+  font-size: 11px;
+}
+
+.factorText {
+  color: #555;
+}
+
+.contestedLabel {
+  color: #c2185b;
+  font-size: 10px;
+}
+
+/* Key Factor Row */
+.keyFactorRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+.keyFactorRowNormal {
+  background-color: #fff;
+  border-color: #ddd;
+}
+
+.keyFactorRowContested {
+  background-color: #fff8e1;
+  border-color: #ffe082;
+}
+
+.keyFactorIcon {
+  font-size: 16px;
+}
+
+.keyFactorContent {
+  flex: 1;
+}
+
+.keyFactorHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.keyFactorTitle {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+}
+
+.keyFactorExplanation {
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.keyFactorContestation {
+  font-size: 11px;
+  color: #c2185b;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Question Answer Banner */
+.questionBanner {
+  border: 2px solid;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.questionBannerHeader {
+  padding: 12px 16px;
+  background-color: #f0f7ff;
+  border-bottom: 1px solid #ddd;
+}
+
+.questionBannerLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0056b3;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.questionBannerText {
+  font-size: 16px;
+  color: #333;
+  font-style: italic;
+}
+
+.questionBannerContent {
+  padding: 16px;
+}
+
+.questionBannerAnswerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.questionBannerAnswerBadge {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.questionBannerPercentage {
+  font-size: 14px;
+  color: #666;
+}
+
+.questionBannerShortAnswer {
+  padding: 14px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.questionBannerShortAnswerText {
+  font-size: 15px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.questionBannerKeyFactors {
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #eee;
+}
+
+.questionBannerKeyFactorsLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+/* Article Verdict Banner */
+.articleBanner {
+  border: 2px solid;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.articleBannerContent {
+  padding: 16px;
+}
+
+.articleVerdictRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.articleVerdictBadge {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.articlePercentage {
+  font-size: 14px;
+  color: #666;
+}
+
+.pseudoscienceBadge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.claimsAverageBox {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.claimsAverageRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.claimsAverageReason {
+  margin-top: 4px;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.pseudoscienceWarning {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #fff8e1;
+  border-radius: 6px;
+  border: 1px solid #ffecb3;
+  font-size: 13px;
+}
+
+.pseudoscienceWarningHeader {
+  font-weight: 600;
+  color: #e65100;
+  margin-bottom: 4px;
+}
+
+.pseudoscienceWarningText {
+  color: #5d4037;
+}
+
+.pseudoscienceWarningReason {
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Two Panel Summary */
+.twoPanelContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.twoPanelPanel {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.twoPanelPanelAnalysis {
+  border: 2px solid #007bff;
+}
+
+.twoPanelHeader {
+  padding: 10px 14px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
+.twoPanelHeaderBold {
+  font-weight: bold;
+}
+
+.twoPanelContent {
+  padding: 14px;
+}
+
+.twoPanelLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.twoPanelValue {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.twoPanelValueBlock {
+  font-size: 13px;
+  white-space: pre-line;
+}
+
+.twoPanelOverall {
+  text-align: center;
+  padding: 12px;
+  background-color: #f0f7ff;
+  border-radius: 8px;
+}
+
+.twoPanelOverallLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+}
+
+.twoPanelOverallValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: #007bff;
+  white-space: pre-line;
+}
+
+/* Claims */
+.claimsSection {
+  margin-top: 24px;
+}
+
+.claimsSectionTitle {
+  margin: 0 0 12px;
+}
+
+.proceedingGroup {
+  margin-bottom: 20px;
+}
+
+.proceedingGroupHeader {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  background-color: #f0f7ff;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #0056b3;
+}
+
+.claimCard {
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-left: 4px solid;
+  border-radius: 8px;
+  background-color: #fff;
+  margin-bottom: 10px;
+}
+
+.claimCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.claimId {
+  font-weight: 600;
+  color: #666;
+}
+
+.claimText {
+  font-size: 14px;
+  font-style: italic;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.claimReasoning {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.claimEscalation {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: #fff8e1;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #e65100;
+  border-left: 3px solid #ff9800;
+}
+
+/* Claim Highlighter */
+.highlighterTextContainer {
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.highlighterClaimsSection {
+  margin-top: 16px;
+}
+
+.highlighterClaimsTitle {
+  margin: 0 0 8px;
+}
+
+.highlighterClaimItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+}
+
+.highlighterClaimId {
+  font-weight: 600;
+  min-width: 50px;
+}
+
+.highlighterClaimText {
+  font-weight: 500;
+}
+
+.highlighterClaimVerdict {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Markdown table styles */
+.markdownTable {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.markdownTh {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  text-align: left;
+}
+
+.markdownTd {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+}
+
+.noReportYet {
+  color: #666;
+  text-align: center;
+  padding: 40px;
+}

@@ -1,0 +1,53 @@
+/* AboutBox Component Styles */
+
+.container {
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 12px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.content {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.section {
+  min-width: 260px;
+}
+
+.sectionLarge {
+  min-width: 320px;
+}
+
+.sectionLinks {
+  min-width: 220px;
+}
+
+.sectionTitle {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.error {
+  color: #f88;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 4px;
+}
+
+.linksContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.link {
+  text-decoration: underline;
+}

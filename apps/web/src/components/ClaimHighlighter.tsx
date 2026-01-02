@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useMemo } from "react";
+import styles from "./ClaimHighlighter.module.css";
 
 interface ClaimVerdict {
   claimId: string;
@@ -114,66 +115,62 @@ export function ClaimHighlighter({
   };
   
   return (
-    <div style={styles.container}>
+    <div className={styles.container}>
       {/* Toggle Controls */}
-      <div style={styles.controls}>
-        <label style={styles.toggleLabel}>
+      <div className={styles.controls}>
+        <label className={styles.toggleLabel}>
           <input
             type="checkbox"
             checked={highlightsEnabled}
             onChange={(e) => setHighlightsEnabled(e.target.checked)}
-            style={styles.checkbox}
+            className={styles.checkbox}
           />
           Show claim highlighting
         </label>
-        
+
         {highlightsEnabled && (
-          <div style={styles.legend}>
-            <span style={styles.legendItem}>
-              <span style={{ ...styles.legendDot, backgroundColor: COLORS.green.bg }}></span>
+          <div className={styles.legend}>
+            <span className={styles.legendItem}>
+              <span className={`${styles.legendDot} ${styles.legendDotGreen}`}></span>
               Well-supported
             </span>
-            <span style={styles.legendItem}>
-              <span style={{ ...styles.legendDot, backgroundColor: COLORS.yellow.bg }}></span>
+            <span className={styles.legendItem}>
+              <span className={`${styles.legendDot} ${styles.legendDotYellow}`}></span>
               Uncertain
             </span>
-            <span style={styles.legendItem}>
-              <span style={{ ...styles.legendDot, backgroundColor: COLORS.red.bg }}></span>
+            <span className={styles.legendItem}>
+              <span className={`${styles.legendDot} ${styles.legendDotRed}`}></span>
               Refuted
             </span>
           </div>
         )}
       </div>
-      
+
       {/* Article Text with Highlights */}
-      <div style={styles.textContainer}>
+      <div className={styles.textContainer}>
         {segments.map((segment, i) => {
           if (segment.type === "text") {
             return <span key={i}>{segment.content}</span>;
           }
-          
+
           const claim = segment.claim!;
-          const color = COLORS[claim.highlightColor];
-          
+          const highlightClass = getHighlightClass(claim.highlightColor);
+
           return (
             <span
               key={i}
-              style={{
-                ...styles.highlight,
-                backgroundColor: color.bg,
-                borderColor: color.border,
-              }}
+              className={`${styles.highlight} ${highlightClass}`}
               onMouseEnter={(e) => handleClaimHover(claim, e)}
               onMouseLeave={handleClaimLeave}
               onClick={(e) => handleClaimHover(claim, e)}
             >
               {segment.content}
-              {claim.isCentral && <span style={styles.centralBadge}>🔑</span>}
+              {claim.isCentral && <span className={styles.centralBadge}>🔑</span>}
             </span>
           );
         })}
       </div>
-      
+
       {/* Tooltip */}
       {tooltip && (
         <ClaimTooltip
@@ -187,51 +184,67 @@ export function ClaimHighlighter({
   );
 }
 
+function getHighlightClass(color: "green" | "yellow" | "red"): string {
+  switch (color) {
+    case "green": return styles.highlightGreen;
+    case "yellow": return styles.highlightYellow;
+    case "red": return styles.highlightRed;
+  }
+}
+
 // Tooltip Component
-function ClaimTooltip({ claim, x, y, onClose }: { 
-  claim: ClaimVerdict; 
-  x: number; 
+function ClaimTooltip({ claim, x, y, onClose }: {
+  claim: ClaimVerdict;
+  x: number;
   y: number;
   onClose: () => void;
 }) {
-  const color = COLORS[claim.highlightColor];
-  
+  const verdictClass = getTooltipVerdictClass(claim.highlightColor);
+
   return (
-    <div 
+    <div
+      className={styles.tooltip}
       style={{
-        ...styles.tooltip,
         left: Math.min(x + 10, window.innerWidth - 320),
         top: y + 10,
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div style={styles.tooltipHeader}>
-        <span style={{ ...styles.tooltipVerdict, backgroundColor: color.bg, color: color.text }}>
+      <div className={styles.tooltipHeader}>
+        <span className={`${styles.tooltipVerdict} ${verdictClass}`}>
           {getVerdictEmoji(claim.verdict)} {claim.verdict}
         </span>
-        <span style={styles.tooltipConfidence}>{claim.confidence}% confidence</span>
+        <span className={styles.tooltipConfidence}>{claim.confidence}% confidence</span>
       </div>
-      
+
       {claim.isCentral && (
-        <div style={styles.centralIndicator}>
+        <div className={styles.centralIndicator}>
           🔑 Central Claim
         </div>
       )}
-      
-      <div style={styles.tooltipClaim}>
+
+      <div className={styles.tooltipClaim}>
         "{claim.claimText}"
       </div>
-      
-      <div style={styles.tooltipReasoning}>
+
+      <div className={styles.tooltipReasoning}>
         {claim.reasoning}
       </div>
-      
-      <div style={styles.tooltipFooter}>
-        <span style={styles.riskTier}>Risk Tier: {claim.riskTier}</span>
-        <span style={styles.claimId}>{claim.claimId}</span>
+
+      <div className={styles.tooltipFooter}>
+        <span>Risk Tier: {claim.riskTier}</span>
+        <span>{claim.claimId}</span>
       </div>
     </div>
   );
+}
+
+function getTooltipVerdictClass(color: "green" | "yellow" | "red"): string {
+  switch (color) {
+    case "green": return styles.tooltipVerdictGreen;
+    case "yellow": return styles.tooltipVerdictYellow;
+    case "red": return styles.tooltipVerdictRed;
+  }
 }
 
 function getVerdictEmoji(verdict: string): string {
@@ -243,135 +256,5 @@ function getVerdictEmoji(verdict: string): string {
     default: return "⚪";
   }
 }
-
-const COLORS = {
-  green: { bg: "#d4edda", border: "#28a745", text: "#155724" },
-  yellow: { bg: "#fff3cd", border: "#ffc107", text: "#856404" },
-  red: { bg: "#f8d7da", border: "#dc3545", text: "#721c24" },
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    marginBottom: "24px",
-  },
-  controls: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "12px",
-    padding: "8px 12px",
-    backgroundColor: "#f8f9fa",
-    borderRadius: "8px",
-  },
-  toggleLabel: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    fontSize: "14px",
-    cursor: "pointer",
-  },
-  checkbox: {
-    cursor: "pointer",
-  },
-  legend: {
-    display: "flex",
-    gap: "16px",
-  },
-  legendItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "12px",
-    color: "#666",
-  },
-  legendDot: {
-    width: "12px",
-    height: "12px",
-    borderRadius: "50%",
-  },
-  textContainer: {
-    padding: "16px",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    backgroundColor: "#fff",
-    lineHeight: 1.8,
-    fontSize: "15px",
-    whiteSpace: "pre-wrap",
-  },
-  highlight: {
-    padding: "2px 4px",
-    borderRadius: "3px",
-    borderBottom: "2px solid",
-    cursor: "pointer",
-    position: "relative",
-    transition: "all 0.2s ease",
-  },
-  centralBadge: {
-    position: "absolute",
-    top: "-8px",
-    right: "-4px",
-    fontSize: "10px",
-  },
-  tooltip: {
-    position: "fixed",
-    zIndex: 1000,
-    width: "300px",
-    padding: "16px",
-    backgroundColor: "#fff",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-  },
-  tooltipHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "8px",
-  },
-  tooltipVerdict: {
-    padding: "4px 8px",
-    borderRadius: "4px",
-    fontSize: "12px",
-    fontWeight: 600,
-  },
-  tooltipConfidence: {
-    fontSize: "12px",
-    color: "#666",
-  },
-  centralIndicator: {
-    padding: "4px 8px",
-    backgroundColor: "#e8f4fd",
-    borderRadius: "4px",
-    fontSize: "12px",
-    fontWeight: 500,
-    color: "#0056b3",
-    marginBottom: "8px",
-  },
-  tooltipClaim: {
-    fontSize: "14px",
-    fontStyle: "italic",
-    color: "#333",
-    marginBottom: "8px",
-    padding: "8px",
-    backgroundColor: "#f8f9fa",
-    borderRadius: "4px",
-  },
-  tooltipReasoning: {
-    fontSize: "13px",
-    color: "#555",
-    lineHeight: 1.5,
-    marginBottom: "12px",
-  },
-  tooltipFooter: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: "11px",
-    color: "#888",
-    paddingTop: "8px",
-    borderTop: "1px solid #eee",
-  },
-  riskTier: {},
-  claimId: {},
-};
 
 export default ClaimHighlighter;

@@ -9,6 +9,8 @@
  */
 
 import React from "react";
+import css from "./ArticleVerdictBanner.module.css";
+import commonStyles from "../styles/common.module.css";
 
 interface ArticleAnalysis {
   articleThesis: string;
@@ -37,117 +39,117 @@ interface ArticleVerdictBannerProps {
 }
 
 export function ArticleVerdictBanner({ articleAnalysis }: ArticleVerdictBannerProps) {
-  const verdictStyle = getVerdictStyle(articleAnalysis.articleVerdict);
+  const verdictClasses = getVerdictClasses(articleAnalysis.articleVerdict);
   const { claimPattern } = articleAnalysis;
-  
+
   // Calculate simple average for comparison
   const simpleAveragePercent = claimPattern.total > 0
     ? Math.round((claimPattern.supported / claimPattern.total) * 100)
     : 0;
-  
+
   return (
-    <div style={{ ...styles.container, borderColor: verdictStyle.border }}>
+    <div className={`${css.container} ${verdictClasses.border}`}>
       {/* Main Verdict */}
-      <div style={styles.mainSection}>
-        <div style={styles.verdictRow}>
-          <span style={styles.verdictLabel}>Article Verdict</span>
-          <span style={{ ...styles.verdictBadge, ...verdictStyle }}>
+      <div className={css.mainSection}>
+        <div className={css.verdictRow}>
+          <span className={css.verdictLabel}>Article Verdict</span>
+          <span className={`${css.verdictBadge} ${verdictClasses.verdict}`}>
             {getVerdictEmoji(articleAnalysis.articleVerdict)} {articleAnalysis.articleVerdict}
           </span>
-          <span style={styles.confidence}>
+          <span className={css.confidence}>
             {articleAnalysis.articleConfidence}% confidence
           </span>
         </div>
-        
-        <div style={styles.thesisRow}>
-          <span style={styles.thesisLabel}>Main Thesis:</span>
-          <span style={styles.thesisText}>{articleAnalysis.articleThesis}</span>
+
+        <div className={css.thesisRow}>
+          <span className={css.thesisLabel}>Main Thesis:</span>
+          <span className={css.thesisText}>{articleAnalysis.articleThesis}</span>
         </div>
-        
-        <div style={styles.supportedRow}>
-          <span style={styles.supportedLabel}>Thesis Supported:</span>
-          <span style={articleAnalysis.thesisSupported ? styles.supportedYes : styles.supportedNo}>
+
+        <div className={css.supportedRow}>
+          <span className={css.supportedLabel}>Thesis Supported:</span>
+          <span className={articleAnalysis.thesisSupported ? css.supportedYes : css.supportedNo}>
             {articleAnalysis.thesisSupported ? "✓ Yes" : "✗ No"}
           </span>
         </div>
       </div>
-      
+
       {/* Claim Pattern Summary */}
-      <div style={styles.patternSection}>
-        <div style={styles.patternTitle}>Claim Analysis</div>
-        <div style={styles.patternGrid}>
-          <div style={styles.patternItem}>
-            <span style={styles.patternNumber}>{claimPattern.total}</span>
-            <span style={styles.patternLabel}>Total Claims</span>
+      <div className={css.patternSection}>
+        <div className={css.patternTitle}>Claim Analysis</div>
+        <div className={css.patternGrid}>
+          <div className={css.patternItem}>
+            <span className={css.patternNumber}>{claimPattern.total}</span>
+            <span className={css.patternLabel}>Total Claims</span>
           </div>
-          <div style={styles.patternItem}>
-            <span style={{ ...styles.patternNumber, color: "#28a745" }}>
+          <div className={css.patternItem}>
+            <span className={`${css.patternNumber} ${css.patternNumberSupported}`}>
               {claimPattern.supported}
             </span>
-            <span style={styles.patternLabel}>Supported</span>
+            <span className={css.patternLabel}>Supported</span>
           </div>
-          <div style={styles.patternItem}>
-            <span style={{ ...styles.patternNumber, color: "#ffc107" }}>
+          <div className={css.patternItem}>
+            <span className={`${css.patternNumber} ${css.patternNumberUncertain}`}>
               {claimPattern.uncertain}
             </span>
-            <span style={styles.patternLabel}>Uncertain</span>
+            <span className={css.patternLabel}>Uncertain</span>
           </div>
-          <div style={styles.patternItem}>
-            <span style={{ ...styles.patternNumber, color: "#dc3545" }}>
+          <div className={css.patternItem}>
+            <span className={`${css.patternNumber} ${css.patternNumberRefuted}`}>
               {claimPattern.refuted}
             </span>
-            <span style={styles.patternLabel}>Refuted</span>
+            <span className={css.patternLabel}>Refuted</span>
           </div>
         </div>
-        
+
         {/* Central Claims Highlight */}
-        <div style={styles.centralClaimsRow}>
+        <div className={css.centralClaimsRow}>
           <span>🔑 Central claims supported: </span>
           <strong>
             {claimPattern.centralClaimsSupported}/{claimPattern.centralClaimsTotal}
           </strong>
         </div>
       </div>
-      
+
       {/* Warning Banner: Verdict differs from average */}
       {articleAnalysis.verdictDiffersFromClaimAverage && (
-        <div style={styles.warningBanner}>
-          <div style={styles.warningHeader}>
+        <div className={css.warningBanner}>
+          <div className={css.warningHeader}>
             ⚠️ Article Verdict Differs from Claim Average
           </div>
-          <div style={styles.warningContent}>
-            <div style={styles.comparisonRow}>
+          <div>
+            <div className={css.comparisonRow}>
               <span>Simple claim average: </span>
-              <span style={styles.averageValue}>
+              <span className={css.averageValue}>
                 {simpleAveragePercent}% supported
               </span>
             </div>
-            <div style={styles.comparisonRow}>
+            <div className={css.comparisonRow}>
               <span>Article verdict: </span>
-              <span style={{ ...styles.verdictValue, color: verdictStyle.color }}>
+              <span className={`${css.verdictValue} ${verdictClasses.color}`}>
                 {articleAnalysis.articleVerdict}
               </span>
             </div>
             {articleAnalysis.verdictDifferenceReason && (
-              <div style={styles.reasonBox}>
+              <div className={css.reasonBox}>
                 <strong>Why?</strong> {articleAnalysis.verdictDifferenceReason}
               </div>
             )}
           </div>
         </div>
       )}
-      
+
       {/* Logical Fallacies */}
       {articleAnalysis.logicalFallacies.length > 0 && (
-        <div style={styles.fallaciesSection}>
-          <div style={styles.fallaciesHeader}>
+        <div className={css.fallaciesSection}>
+          <div className={css.fallaciesHeader}>
             🚨 Logical Issues Detected
           </div>
           {articleAnalysis.logicalFallacies.map((fallacy, i) => (
-            <div key={i} style={styles.fallacyItem}>
-              <div style={styles.fallacyType}>{fallacy.type}</div>
-              <div style={styles.fallacyDescription}>{fallacy.description}</div>
-              <div style={styles.fallacyAffected}>
+            <div key={i} className={css.fallacyItem}>
+              <div className={css.fallacyType}>{fallacy.type}</div>
+              <div className={css.fallacyDescription}>{fallacy.description}</div>
+              <div className={css.fallacyAffected}>
                 Affects: {fallacy.affectedClaims.join(", ")}
               </div>
             </div>
@@ -168,191 +170,19 @@ function getVerdictEmoji(verdict: string): string {
   }
 }
 
-function getVerdictStyle(verdict: string): React.CSSProperties & { border: string; color: string } {
+function getVerdictClasses(verdict: string): { verdict: string; border: string; color: string } {
   switch (verdict) {
     case "CREDIBLE":
-      return { backgroundColor: "#d4edda", color: "#155724", border: "#28a745" };
+      return { verdict: commonStyles.verdictCredible, border: commonStyles.borderCredible, color: commonStyles.colorCredible };
     case "MOSTLY-CREDIBLE":
-      return { backgroundColor: "#d1ecf1", color: "#0c5460", border: "#17a2b8" };
+      return { verdict: commonStyles.verdictMostlyCredible, border: commonStyles.borderMostlyCredible, color: commonStyles.colorMostlyCredible };
     case "MISLEADING":
-      return { backgroundColor: "#fff3cd", color: "#856404", border: "#ffc107" };
+      return { verdict: commonStyles.verdictMisleading, border: commonStyles.borderMisleading, color: commonStyles.colorMisleading };
     case "FALSE":
-      return { backgroundColor: "#f8d7da", color: "#721c24", border: "#dc3545" };
+      return { verdict: commonStyles.verdictFalse, border: commonStyles.borderFalse, color: commonStyles.colorFalse };
     default:
-      return { backgroundColor: "#e9ecef", color: "#495057", border: "#6c757d" };
+      return { verdict: commonStyles.verdictDefault, border: commonStyles.borderDefault, color: commonStyles.colorDefault };
   }
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    border: "2px solid",
-    borderRadius: "12px",
-    overflow: "hidden",
-    marginBottom: "24px",
-    backgroundColor: "#fff",
-  },
-  mainSection: {
-    padding: "20px",
-  },
-  verdictRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    marginBottom: "16px",
-  },
-  verdictLabel: {
-    fontSize: "14px",
-    fontWeight: 600,
-    color: "#666",
-    textTransform: "uppercase",
-  },
-  verdictBadge: {
-    padding: "8px 16px",
-    borderRadius: "6px",
-    fontSize: "18px",
-    fontWeight: 700,
-  },
-  confidence: {
-    fontSize: "14px",
-    color: "#666",
-  },
-  thesisRow: {
-    marginBottom: "8px",
-  },
-  thesisLabel: {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#666",
-    marginRight: "8px",
-  },
-  thesisText: {
-    fontSize: "15px",
-    color: "#333",
-  },
-  supportedRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  supportedLabel: {
-    fontSize: "13px",
-    color: "#666",
-  },
-  supportedYes: {
-    color: "#28a745",
-    fontWeight: 600,
-  },
-  supportedNo: {
-    color: "#dc3545",
-    fontWeight: 600,
-  },
-  patternSection: {
-    padding: "16px 20px",
-    backgroundColor: "#f8f9fa",
-    borderTop: "1px solid #eee",
-  },
-  patternTitle: {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#666",
-    textTransform: "uppercase",
-    marginBottom: "12px",
-  },
-  patternGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: "12px",
-    marginBottom: "12px",
-  },
-  patternItem: {
-    textAlign: "center",
-  },
-  patternNumber: {
-    display: "block",
-    fontSize: "24px",
-    fontWeight: 700,
-    color: "#333",
-  },
-  patternLabel: {
-    fontSize: "11px",
-    color: "#888",
-    textTransform: "uppercase",
-  },
-  centralClaimsRow: {
-    fontSize: "14px",
-    color: "#555",
-    textAlign: "center",
-    paddingTop: "8px",
-    borderTop: "1px solid #ddd",
-  },
-  warningBanner: {
-    backgroundColor: "#fff8e1",
-    borderTop: "1px solid #ffe082",
-    padding: "16px 20px",
-  },
-  warningHeader: {
-    fontSize: "14px",
-    fontWeight: 700,
-    color: "#f57c00",
-    marginBottom: "12px",
-  },
-  warningContent: {},
-  comparisonRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: "14px",
-    color: "#555",
-    marginBottom: "4px",
-  },
-  averageValue: {
-    fontWeight: 600,
-  },
-  verdictValue: {
-    fontWeight: 700,
-  },
-  reasonBox: {
-    marginTop: "12px",
-    padding: "12px",
-    backgroundColor: "#fff",
-    borderRadius: "6px",
-    border: "1px solid #ffe082",
-    fontSize: "14px",
-    color: "#333",
-    lineHeight: 1.5,
-  },
-  fallaciesSection: {
-    backgroundColor: "#fff5f5",
-    borderTop: "1px solid #feb2b2",
-    padding: "16px 20px",
-  },
-  fallaciesHeader: {
-    fontSize: "14px",
-    fontWeight: 700,
-    color: "#c53030",
-    marginBottom: "12px",
-  },
-  fallacyItem: {
-    padding: "12px",
-    backgroundColor: "#fff",
-    borderRadius: "6px",
-    border: "1px solid #feb2b2",
-    marginBottom: "8px",
-  },
-  fallacyType: {
-    fontSize: "13px",
-    fontWeight: 700,
-    color: "#c53030",
-    marginBottom: "4px",
-  },
-  fallacyDescription: {
-    fontSize: "14px",
-    color: "#333",
-    marginBottom: "4px",
-  },
-  fallacyAffected: {
-    fontSize: "12px",
-    color: "#888",
-  },
-};
 
 export default ArticleVerdictBanner;

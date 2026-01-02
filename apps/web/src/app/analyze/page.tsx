@@ -13,6 +13,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "../../styles/common.module.css";
 
 export default function AnalyzePage() {
   const router = useRouter();
@@ -84,85 +85,45 @@ export default function AnalyzePage() {
   const hasInput = input.trim().length > 0;
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: 20 }}>
-      <h1 style={{ marginBottom: 8 }}>FactHarbor Analysis</h1>
-      <p style={{ color: "#666", marginBottom: 24 }}>
+    <div className={styles.container}>
+      <h1 className={styles.title}>FactHarbor Analysis</h1>
+      <p className={styles.subtitle}>
         Enter a claim, question, article text, or URL to analyze
       </p>
 
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 16 }}>
+        <div className={styles.inputContainer}>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Examples:&#10;• Was the Bolsonaro judgment fair and based on Brazil's law?&#10;• Climate change is primarily caused by human activities&#10;• https://example.com/article-to-analyze"
-            style={{
-              width: "100%",
-              minHeight: 200,
-              padding: 16,
-              fontSize: 15,
-              lineHeight: 1.6,
-              border: "2px solid #ddd",
-              borderRadius: 12,
-              resize: "vertical",
-              fontFamily: "inherit",
-              transition: "border-color 0.2s",
-            }}
-            onFocus={(e) => e.target.style.borderColor = "#007bff"}
-            onBlur={(e) => e.target.style.borderColor = "#ddd"}
+            className={styles.textarea}
           />
         </div>
 
         {/* Auto-detected type indicator */}
         {hasInput && (
-          <div style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 8, 
-            marginBottom: 16,
-            padding: "8px 12px",
-            backgroundColor: detectedType === "url" ? "#e3f2fd" : "#f3e5f5",
-            borderRadius: 8,
-            fontSize: 13
-          }}>
-            <span style={{ fontSize: 16 }}>
+          <div className={`${styles.detectedTypeIndicator} ${detectedType === "url" ? styles.detectedTypeUrl : styles.detectedTypeText}`}>
+            <span className={styles.detectedTypeIcon}>
               {detectedType === "url" ? "🔗" : "📝"}
             </span>
-            <span style={{ color: detectedType === "url" ? "#1565c0" : "#7b1fa2" }}>
+            <span className={detectedType === "url" ? styles.detectedTypeTextUrl : styles.detectedTypeTextText}>
               Detected: <strong>{detectedType === "url" ? "URL - will fetch and analyze content" : "Text/Question - will analyze directly"}</strong>
             </span>
           </div>
         )}
 
         {error && (
-          <div style={{ 
-            padding: 12, 
-            backgroundColor: "#f8d7da", 
-            color: "#721c24", 
-            borderRadius: 8, 
-            marginBottom: 16,
-            border: "1px solid #f5c6cb"
-          }}>
+          <div className={styles.errorBox}>
             {error}
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 12 }}>
+        <div className={styles.buttonContainer}>
           <button
             type="submit"
             disabled={isSubmitting || !hasInput}
-            style={{
-              flex: 1,
-              padding: "14px 24px",
-              fontSize: 16,
-              fontWeight: 600,
-              backgroundColor: isSubmitting || !hasInput ? "#ccc" : "#007bff",
-              color: "#fff",
-              border: "none",
-              borderRadius: 10,
-              cursor: isSubmitting || !hasInput ? "not-allowed" : "pointer",
-              transition: "background-color 0.2s",
-            }}
+            className={`${styles.submitButton} ${isSubmitting || !hasInput ? styles.submitButtonDisabled : styles.submitButtonEnabled}`}
           >
             {isSubmitting ? (
               <>⏳ Starting Analysis...</>
@@ -170,20 +131,12 @@ export default function AnalyzePage() {
               <>🔍 Analyze</>
             )}
           </button>
-          
+
           <button
             type="button"
             onClick={() => setInput("")}
             disabled={!hasInput}
-            style={{
-              padding: "14px 20px",
-              fontSize: 16,
-              backgroundColor: "#f8f9fa",
-              color: hasInput ? "#333" : "#999",
-              border: "1px solid #ddd",
-              borderRadius: 10,
-              cursor: hasInput ? "pointer" : "not-allowed",
-            }}
+            className={`${styles.clearButton} ${hasInput ? styles.clearButtonEnabled : styles.clearButtonDisabled}`}
           >
             Clear
           </button>
@@ -191,9 +144,9 @@ export default function AnalyzePage() {
       </form>
 
       {/* Example queries */}
-      <div style={{ marginTop: 32 }}>
-        <h3 style={{ fontSize: 14, color: "#666", marginBottom: 12 }}>Try these examples:</h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className={styles.examplesSection}>
+        <h3 className={styles.examplesTitle}>Try these examples:</h3>
+        <div className={styles.examplesList}>
           {[
             "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?",
             "Is climate change primarily caused by human activities?",
@@ -202,19 +155,7 @@ export default function AnalyzePage() {
             <button
               key={i}
               onClick={() => setInput(example)}
-              style={{
-                padding: "10px 14px",
-                backgroundColor: "#f8f9fa",
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                textAlign: "left",
-                cursor: "pointer",
-                fontSize: 13,
-                color: "#333",
-                transition: "background-color 0.2s",
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e9ecef"}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#f8f9fa"}
+              className={styles.exampleButton}
             >
               📝 {example}
             </button>
@@ -223,25 +164,19 @@ export default function AnalyzePage() {
       </div>
 
       {/* How it works */}
-      <div style={{ 
-        marginTop: 32, 
-        padding: 20, 
-        backgroundColor: "#f8f9fa", 
-        borderRadius: 12,
-        border: "1px solid #ddd"
-      }}>
-        <h3 style={{ margin: "0 0 12px", fontSize: 14, color: "#666" }}>How FactHarbor Works</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+      <div className={styles.howItWorksSection}>
+        <h3 className={styles.howItWorksTitle}>How FactHarbor Works</h3>
+        <div className={styles.stepsGrid}>
           {[
             { icon: "🔍", title: "Research", desc: "Searches multiple sources" },
             { icon: "📊", title: "Extract", desc: "Identifies claims & facts" },
             { icon: "⚖️", title: "Analyze", desc: "Weighs evidence" },
             { icon: "📋", title: "Report", desc: "Transparent verdict" },
           ].map((step, i) => (
-            <div key={i} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 28, marginBottom: 4 }}>{step.icon}</div>
-              <div style={{ fontWeight: 600, fontSize: 13, color: "#333" }}>{step.title}</div>
-              <div style={{ fontSize: 11, color: "#666" }}>{step.desc}</div>
+            <div key={i} className={styles.stepItem}>
+              <div className={styles.stepIcon}>{step.icon}</div>
+              <div className={styles.stepTitle}>{step.title}</div>
+              <div className={styles.stepDescription}>{step.desc}</div>
             </div>
           ))}
         </div>

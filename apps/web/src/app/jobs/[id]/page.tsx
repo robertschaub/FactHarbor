@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import styles from "./page.module.css";
 
 type Job = {
   jobId: string;
@@ -138,6 +139,30 @@ function getAnswerLabel(answer: string): string {
   return labels[answer] || answer;
 }
 
+// Helper function to get status CSS class
+function getStatusClass(status: string): string {
+  if (status === "SUCCEEDED") return styles.statusSuccess;
+  if (status === "FAILED") return styles.statusFailed;
+  return styles.statusWarning;
+}
+
+// Helper function to get event level CSS class
+function getEventLevelClass(level: string): string {
+  switch (level.toLowerCase()) {
+    case "info": return styles.eventLevelInfo;
+    case "warn": return styles.eventLevelWarn;
+    case "error": return styles.eventLevelError;
+    default: return styles.eventLevelDefault;
+  }
+}
+
+// Helper function to get track record score CSS class
+function getTrackRecordClass(score: number): string {
+  if (score >= 0.8) return styles.trackRecordHigh;
+  if (score >= 0.6) return styles.trackRecordMedium;
+  return styles.trackRecordLow;
+}
+
 export default function JobPage() {
   const params = useParams();
   const jobId = params?.id as string;
@@ -145,6 +170,7 @@ export default function JobPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [tab, setTab] = useState<"summary" | "article" | "sources" | "report" | "json" | "events">("summary");
+  const [showTechnicalNotes, setShowTechnicalNotes] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
@@ -184,6 +210,17 @@ export default function JobPage() {
   }, [jobId]);
 
   const report = job?.reportMarkdown ?? "";
+  const reportSections = useMemo(() => {
+    const marker = "\n## Technical Notes";
+    const idx = report.indexOf(marker);
+    if (idx === -1) {
+      return { publicReport: report, technicalNotes: "" };
+    }
+    return {
+      publicReport: report.slice(0, idx),
+      technicalNotes: report.slice(idx)
+    };
+  }, [report]);
   const jsonText = useMemo(() => (job?.resultJson ? JSON.stringify(job.resultJson, null, 2) : ""), [job]);
   
   const result = job?.resultJson;
@@ -315,26 +352,26 @@ export default function JobPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (!jobId) return <div style={{ padding: 20 }}>Loading job ID...</div>;
+  if (!jobId) return <div className={styles.pageContainer}>Loading job ID...</div>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <h1 style={{ margin: "8px 0 0" }}>FactHarbor Analysis</h1>
+    <div className={styles.pageContainer}>
+      <h1 className={styles.pageTitle}>FactHarbor Analysis</h1>
 
       {err && (
-        <div style={{ color: "#721c24", padding: 12, backgroundColor: "#f8d7da", borderRadius: 8, border: "1px solid #f5c6cb" }}>
+        <div className={styles.noDataError}>
           <strong>Error:</strong> {err}
         </div>
       )}
 
       {job ? (
-        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, backgroundColor: "#fff" }}>
+        <div className={styles.jobInfoCard}>
           <div><b>ID:</b> <code>{job.jobId}</code></div>
-          <div><b>Status:</b> <code style={{ color: job.status === "SUCCEEDED" ? "#28a745" : job.status === "FAILED" ? "#dc3545" : "#ffc107" }}>{job.status}</code> ({job.progress}%)</div>
-          <div style={{ marginTop: 4 }}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></div>
-          <div style={{ marginTop: 8 }}><b>Input:</b> <code>{job.inputType}</code> — {job.inputPreview ?? "—"}</div>
+          <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
+          <div className={styles.metaRow}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></div>
+          <div className={styles.badgesRow}><b>Input:</b> <code>{job.inputType}</code> — {job.inputPreview ?? "—"}</div>
           {hasV22Data && (
-            <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            <div className={styles.badgesRow}>
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
               {isQuestion && <Badge bg="#e3f2fd" color="#1565c0">📝 QUESTION</Badge>}
@@ -354,61 +391,61 @@ export default function JobPage() {
           )}
         </div>
       ) : (
-        <div style={{ padding: 20, textAlign: "center", color: "#666" }}>Loading...</div>
+        <div className={styles.contentCard} style={{ textAlign: "center", color: "#666" }}>Loading...</div>
       )}
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      <div className={styles.tabsContainer}>
         {hasV22Data && (
           <>
-            <button onClick={() => setTab("summary")} style={tabStyle(tab === "summary")}>📊 Summary</button>
-            <button onClick={() => setTab("article")} style={tabStyle(tab === "article")} disabled={!claimVerdicts.length}>📖 Article</button>
-            <button onClick={() => setTab("sources")} style={tabStyle(tab === "sources")}>🔍 Sources ({sources.length})</button>
+            <button onClick={() => setTab("summary")} className={`${styles.tab} ${tab === "summary" ? styles.tabActive : ""}`}>📊 Summary</button>
+            <button onClick={() => setTab("article")} className={`${styles.tab} ${tab === "article" ? styles.tabActive : ""}`} disabled={!claimVerdicts.length}>📖 Article</button>
+            <button onClick={() => setTab("sources")} className={`${styles.tab} ${tab === "sources" ? styles.tabActive : ""}`}>🔍 Sources ({sources.length})</button>
           </>
         )}
-        <button onClick={() => setTab("report")} style={tabStyle(tab === "report")}>📝 Report</button>
-        <button onClick={() => setTab("json")} style={tabStyle(tab === "json")}>🔧 JSON</button>
-        <button onClick={() => setTab("events")} style={tabStyle(tab === "events")}>📋 Events ({events.length})</button>
-        
+        <button onClick={() => setTab("report")} className={`${styles.tab} ${tab === "report" ? styles.tabActive : ""}`}>📝 Report</button>
+        <button onClick={() => setTab("json")} className={`${styles.tab} ${tab === "json" ? styles.tabActive : ""}`}>🔧 JSON</button>
+        <button onClick={() => setTab("events")} className={`${styles.tab} ${tab === "events" ? styles.tabActive : ""}`}>📋 Events ({events.length})</button>
+
         {/* Export dropdown */}
         {job?.status === "SUCCEEDED" && (
-          <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-            <button onClick={handlePrint} style={exportBtnStyle} title="Print">🖨️</button>
-            <button onClick={handleExportHTML} style={exportBtnStyle} title="Export HTML">📄</button>
-            <button onClick={handleExportMarkdown} style={exportBtnStyle} title="Export Markdown">📝</button>
-            <button onClick={handleExportJSON} style={exportBtnStyle} title="Export JSON">💾</button>
+          <div className={styles.exportButtons}>
+            <button onClick={handlePrint} className={styles.tab} title="Print">🖨️</button>
+            <button onClick={handleExportHTML} className={styles.tab} title="Export HTML">📄</button>
+            <button onClick={handleExportMarkdown} className={styles.tab} title="Export Markdown">📝</button>
+            <button onClick={handleExportJSON} className={styles.tab} title="Export JSON">💾</button>
           </div>
         )}
       </div>
 
       {/* Summary Tab */}
       {tab === "summary" && hasV22Data && (
-        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, backgroundColor: "#fff" }}>
+        <div className={styles.contentCard}>
           {isQuestion && questionAnswer && (
-            hasMultipleProceedings 
+            hasMultipleProceedings
               ? <MultiProceedingAnswerBanner questionAnswer={questionAnswer} proceedings={proceedings} />
               : <QuestionAnswerBanner questionAnswer={questionAnswer} />
           )}
-          
+
           {!isQuestion && articleAnalysis && (
-            <ArticleVerdictBanner 
-              articleAnalysis={articleAnalysis} 
+            <ArticleVerdictBanner
+              articleAnalysis={articleAnalysis}
               fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
               pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
             />
           )}
-          
+
           {twoPanelSummary && (
-            <TwoPanelSummary 
+            <TwoPanelSummary
               articleSummary={twoPanelSummary.articleSummary}
               factharborAnalysis={twoPanelSummary.factharborAnalysis}
               isQuestion={isQuestion}
             />
           )}
-          
+
           {claimVerdicts.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <h3 style={{ margin: "0 0 12px" }}>{isQuestion ? "Supporting Analysis" : "Claims Analyzed"}</h3>
+            <div className={styles.claimsSection}>
+              <h3 className={styles.claimsSectionTitle}>{isQuestion ? "Supporting Analysis" : "Claims Analyzed"}</h3>
               {hasMultipleProceedings ? (
                 <ClaimsGroupedByProceeding claimVerdicts={claimVerdicts} proceedings={proceedings} />
               ) : (
@@ -421,59 +458,89 @@ export default function JobPage() {
 
       {/* Sources Tab */}
       {tab === "sources" && hasV22Data && (
-        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, backgroundColor: "#fff" }}>
+        <div className={styles.contentCard}>
           <SourcesPanel searchQueries={searchQueries} sources={sources} researchStats={researchStats} searchProvider={result?.meta?.searchProvider} />
         </div>
       )}
 
       {/* Article View Tab */}
       {tab === "article" && hasV22Data && (
-        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, backgroundColor: "#fff" }}>
+        <div className={styles.contentCard}>
           <ClaimHighlighter originalText={job?.inputValue || ""} claimVerdicts={claimVerdicts} />
         </div>
       )}
 
       {/* Report Tab - Fixed with remark-gfm for tables */}
       {tab === "report" && (
-        <div ref={reportRef} style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, backgroundColor: "#fff" }} className="markdown-body">
+        <div ref={reportRef} className={`${styles.contentCard} markdown-body`}>
           {report ? (
-            <ReactMarkdown 
-              remarkPlugins={[remarkGfm]}
-              components={{
-                table: ({node, ...props}) => (
-                  <table style={{ borderCollapse: "collapse", width: "100%", margin: "16px 0" }} {...props} />
-                ),
-                th: ({node, ...props}) => (
-                  <th style={{ border: "1px solid #ddd", padding: "8px 12px", backgroundColor: "#f5f5f5", textAlign: "left" }} {...props} />
-                ),
-                td: ({node, ...props}) => (
-                  <td style={{ border: "1px solid #ddd", padding: "8px 12px" }} {...props} />
-                ),
-              }}
-            >
-              {report}
-            </ReactMarkdown>
+            <>
+              {reportSections.technicalNotes && (
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+                  <button
+                    onClick={() => setShowTechnicalNotes((prev) => !prev)}
+                    className={`${styles.tab} ${showTechnicalNotes ? styles.tabActive : ""}`}
+                  >
+                    {showTechnicalNotes ? "Hide Technical Notes" : "Show Technical Notes"}
+                  </button>
+                </div>
+              )}
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  table: ({node, ...props}) => (
+                    <table className={styles.markdownTable} {...props} />
+                  ),
+                  th: ({node, ...props}) => (
+                    <th className={styles.markdownTh} {...props} />
+                  ),
+                  td: ({node, ...props}) => (
+                    <td className={styles.markdownTd} {...props} />
+                  ),
+                }}
+              >
+                {reportSections.publicReport}
+              </ReactMarkdown>
+              {showTechnicalNotes && reportSections.technicalNotes && (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    table: ({node, ...props}) => (
+                      <table className={styles.markdownTable} {...props} />
+                    ),
+                    th: ({node, ...props}) => (
+                      <th className={styles.markdownTh} {...props} />
+                    ),
+                    td: ({node, ...props}) => (
+                      <td className={styles.markdownTd} {...props} />
+                    ),
+                  }}
+                >
+                  {reportSections.technicalNotes}
+                </ReactMarkdown>
+              )}
+            </>
           ) : (
-            <div style={{ color: "#666", textAlign: "center", padding: 40 }}>No report yet.</div>
+            <div className={styles.noReportYet}>No report yet.</div>
           )}
         </div>
       )}
 
       {/* JSON Tab */}
       {tab === "json" && (
-        <pre style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, overflowX: "auto", fontSize: 11, backgroundColor: "#f8f9fa" }}>
+        <pre className={styles.jsonContainer}>
           {jsonText || "No result yet."}
         </pre>
       )}
 
       {/* Events Tab */}
       {tab === "events" && (
-        <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, backgroundColor: "#fff" }}>
-          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
+        <div className={styles.contentCard}>
+          <ul className={styles.eventsList}>
             {events.map((e) => (
-              <li key={e.id} style={{ marginBottom: 4 }}>
-                <code style={{ fontSize: 10 }}>{e.tsUtc}</code>{" "}
-                <b style={{ color: getEventColor(e.level) }}>{e.level}</b> — {e.message}
+              <li key={e.id} className={styles.eventItem}>
+                <code className={styles.eventTimestamp}>{e.tsUtc}</code>{" "}
+                <b className={getEventLevelClass(e.level)}>{e.level}</b> — {e.message}
               </li>
             ))}
             {events.length === 0 && <li style={{ color: "#666" }}>No events yet.</li>}
@@ -492,15 +559,6 @@ function decodeHtmlEntities(text: string): string {
   return textarea.value;
 }
 
-// Export button style
-const exportBtnStyle: React.CSSProperties = {
-  padding: "6px 10px",
-  border: "1px solid #ddd",
-  borderRadius: 6,
-  cursor: "pointer",
-  backgroundColor: "#f8f9fa",
-  fontSize: 14,
-};
 
 // ============================================================================
 // Sources Panel
@@ -509,24 +567,17 @@ const exportBtnStyle: React.CSSProperties = {
 function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }: { searchQueries: any[]; sources: any[]; researchStats: any; searchProvider?: string }) {
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <h3 style={{ margin: 0 }}>🔍 Research Summary</h3>
+      <div className={styles.sourcesHeader}>
+        <h3 className={styles.sourcesTitle}>🔍 Research Summary</h3>
         {searchProvider && (
-          <span style={{ 
-            padding: "4px 10px", 
-            backgroundColor: "#e3f2fd", 
-            color: "#1565c0", 
-            borderRadius: 4, 
-            fontSize: 12, 
-            fontWeight: 600 
-          }}>
+          <span className={styles.providerBadge}>
             via {searchProvider}
           </span>
         )}
       </div>
-      
+
       {researchStats && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 20 }}>
+        <div className={styles.statsGrid}>
           <StatCard label="Web Searches" value={researchStats.totalSearches} icon="🔍" />
           <StatCard label="LLM Calls" value={researchStats.llmCalls || "N/A"} icon="🤖" />
           <StatCard label="Results Found" value={researchStats.totalResults} icon="📋" />
@@ -535,94 +586,64 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
           <StatCard label="Facts Extracted" value={researchStats.factsExtracted} icon="📝" />
         </div>
       )}
-      
-      <h4 style={{ margin: "16px 0 8px", color: "#666" }}>Search Queries Performed</h4>
+
+      <h4 className={styles.sectionTitle}>Search Queries Performed</h4>
       {searchQueries.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className={styles.searchQueriesList}>
           {searchQueries.map((sq: any, i: number) => (
-            <div key={i} style={{ 
-              padding: 10, 
-              backgroundColor: "#f8f9fa", 
-              borderRadius: 6, 
-              border: "1px solid #ddd",
-              display: "flex",
-              alignItems: "center",
-              gap: 12
-            }}>
-              <span style={{ fontSize: 18 }}>🔍</span>
-              <div style={{ flex: 1 }}>
-                <code style={{ fontSize: 13, color: "#333" }}>{sq.query}</code>
-                <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+            <div key={i} className={styles.searchQueryItem}>
+              <span className={styles.searchQueryIcon}>🔍</span>
+              <div className={styles.searchQueryContent}>
+                <code className={styles.searchQueryText}>{sq.query}</code>
+                <div className={styles.searchQueryMeta}>
                   Focus: {sq.focus} | Iteration: {sq.iteration}
                   {sq.searchProvider && <> | Provider: {sq.searchProvider}</>}
                 </div>
               </div>
-              <div style={{ 
-                padding: "4px 10px", 
-                backgroundColor: sq.resultsCount > 0 ? "#d4edda" : "#f8d7da", 
-                borderRadius: 4,
-                fontSize: 12,
-                fontWeight: 600,
-                color: sq.resultsCount > 0 ? "#155724" : "#721c24"
-              }}>
+              <div className={`${styles.searchResultsBadge} ${sq.resultsCount > 0 ? styles.searchResultsSuccess : styles.searchResultsFailed}`}>
                 {sq.resultsCount} results
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div style={{ padding: 16, backgroundColor: "#fff3cd", borderRadius: 8, color: "#856404" }}>
+        <div className={styles.noDataWarning}>
           No search queries recorded.
         </div>
       )}
-      
-      <h4 style={{ margin: "24px 0 8px", color: "#666" }}>Sources Fetched</h4>
+
+      <h4 className={styles.sectionTitle} style={{ marginTop: 24 }}>Sources Fetched</h4>
       {sources.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className={styles.sourcesList}>
           {sources.map((s: any, i: number) => (
-            <div key={i} style={{ 
-              padding: 10, 
-              backgroundColor: s.fetchSuccess ? "#fff" : "#fff5f5", 
-              borderRadius: 6, 
-              border: `1px solid ${s.fetchSuccess ? "#ddd" : "#feb2b2"}`,
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 12
-            }}>
-              <span style={{ fontSize: 16 }}>{s.fetchSuccess ? "✅" : "❌"}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div key={i} className={`${styles.sourceItem} ${s.fetchSuccess ? styles.sourceItemSuccess : styles.sourceItemFailed}`}>
+              <span className={styles.sourceIcon}>{s.fetchSuccess ? "✅" : "❌"}</span>
+              <div className={styles.sourceContent}>
+                <div className={styles.sourceTitle}>
                   {decodeHtmlEntities(s.title || "Unknown")}
                 </div>
-                <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#007bff", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className={styles.sourceUrl}>
                   {s.url}
                 </a>
                 {s.searchQuery && (
-                  <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>
+                  <div className={styles.sourceQuery}>
                     Found via: "{s.searchQuery}"
                   </div>
                 )}
               </div>
-              <div style={{ textAlign: "right" }}>
+              <div className={styles.sourceMetadata}>
                 {s.trackRecordScore && (
-                  <div style={{ 
-                    padding: "2px 8px", 
-                    backgroundColor: s.trackRecordScore >= 0.8 ? "#d4edda" : s.trackRecordScore >= 0.6 ? "#fff3cd" : "#f8d7da",
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: s.trackRecordScore >= 0.8 ? "#155724" : s.trackRecordScore >= 0.6 ? "#856404" : "#721c24"
-                  }}>
+                  <div className={`${styles.trackRecordScore} ${getTrackRecordClass(s.trackRecordScore)}`}>
                     {(s.trackRecordScore * 100).toFixed(0)}%
                   </div>
                 )}
-                <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>{s.category}</div>
+                <div className={styles.sourceCategory}>{s.category}</div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div style={{ padding: 16, backgroundColor: "#f8d7da", borderRadius: 8, color: "#721c24" }}>
+        <div className={styles.noDataError}>
           No sources were fetched.
         </div>
       )}
@@ -632,10 +653,10 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
 
 function StatCard({ label, value, icon }: { label: string; value: number; icon: string }) {
   return (
-    <div style={{ padding: 12, backgroundColor: "#f8f9fa", borderRadius: 8, textAlign: "center", border: "1px solid #ddd" }}>
-      <div style={{ fontSize: 24 }}>{icon}</div>
-      <div style={{ fontSize: 24, fontWeight: 700, color: "#333" }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{label}</div>
+    <div className={styles.statCard}>
+      <div className={styles.statIcon}>{icon}</div>
+      <div className={styles.statValue}>{value}</div>
+      <div className={styles.statLabel}>{label}</div>
     </div>
   );
 }
@@ -652,87 +673,66 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
   );
 }
 
-function tabStyle(active: boolean): React.CSSProperties {
-  return {
-    padding: "8px 14px",
-    border: "1px solid #ddd",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontWeight: active ? 700 : 400,
-    backgroundColor: active ? "#007bff" : "#fff",
-    color: active ? "#fff" : "#333",
-  };
-}
-
-function getEventColor(level: string): string {
-  switch (level.toLowerCase()) {
-    case "info": return "#17a2b8";
-    case "warn": return "#ffc107";
-    case "error": return "#dc3545";
-    default: return "#6c757d";
-  }
-}
-
 // ============================================================================
 // Multi-Proceeding Answer Banner
 // ============================================================================
 
 function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { questionAnswer: any; proceedings: any[] }) {
   const overallColor = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
-  
+
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ padding: "12px 16px", backgroundColor: "#f0f7ff", borderRadius: "12px 12px 0 0", border: "1px solid #90caf9", borderBottom: "none" }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: "#0056b3", textTransform: "uppercase", marginBottom: 4 }}>
+    <div className={styles.multiProceedingBanner}>
+      <div className={styles.questionHeader}>
+        <div className={styles.questionLabel}>
           📝 Question Asked
         </div>
-        <div style={{ fontSize: 16, color: "#333", fontStyle: "italic" }}>
+        <div className={styles.questionText}>
           "{questionAnswer.question}"
         </div>
       </div>
-      
-      <div style={{ padding: "10px 16px", backgroundColor: "#fff3e0", border: "1px solid #ffcc80", borderBottom: "none", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 18 }}>⚖️</span>
-        <span style={{ fontSize: 13, color: "#e65100", fontWeight: 600 }}>
+
+      <div className={styles.proceedingNotice}>
+        <span className={styles.proceedingIcon}>⚖️</span>
+        <span className={styles.proceedingText}>
           {proceedings.length} distinct legal proceedings analyzed separately
         </span>
         {questionAnswer.hasContestedFactors && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
         )}
       </div>
-      
-      <div style={{ padding: 16, border: `2px solid ${overallColor.border}`, backgroundColor: "#fff" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#666", textTransform: "uppercase" }}>Overall Answer</span>
-          <span style={{ padding: "10px 20px", borderRadius: 8, fontSize: 20, fontWeight: 700, backgroundColor: overallColor.bg, color: overallColor.text }}>
+
+      <div className={styles.answerContent} style={{ borderColor: overallColor.border }}>
+        <div className={styles.answerRow}>
+          <span className={styles.answerLabel}>Overall Answer</span>
+          <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getAnswerLabel(questionAnswer.answer)}
           </span>
-          <span style={{ fontSize: 14, color: "#666" }}>{questionAnswer.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.answerPercentage}>{questionAnswer.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
         </div>
-        
+
         {questionAnswer.calibrationNote && (
-          <div style={{ padding: 10, backgroundColor: "#fff8e1", borderRadius: 6, marginBottom: 12, border: "1px solid #ffe082" }}>
-            <span style={{ fontSize: 13, color: "#f57c00" }}>⚠️ {questionAnswer.calibrationNote}</span>
+          <div className={styles.calibrationNote}>
+            <span className={styles.calibrationText}>⚠️ {questionAnswer.calibrationNote}</span>
           </div>
         )}
-        
+
         {questionAnswer.proceedingSummary && (
-          <div style={{ padding: 12, backgroundColor: "#f8f9fa", borderRadius: 8, marginBottom: 12, borderLeft: "4px solid #6c757d" }}>
-            <div style={{ fontSize: 14, color: "#333" }}>{questionAnswer.proceedingSummary}</div>
+          <div className={styles.proceedingSummary}>
+            <div className={styles.proceedingSummaryText}>{questionAnswer.proceedingSummary}</div>
           </div>
         )}
-        
-        <div style={{ padding: 12, backgroundColor: "#f8f9fa", borderRadius: 8, borderLeft: `4px solid ${overallColor.border}` }}>
-          <div style={{ fontSize: 14, color: "#333", lineHeight: 1.5 }}>{questionAnswer.shortAnswer}</div>
+
+        <div className={styles.shortAnswerBox} style={{ borderLeftColor: overallColor.border }}>
+          <div className={styles.shortAnswerText}>{questionAnswer.shortAnswer}</div>
         </div>
       </div>
-      
+
       {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <h4 style={{ margin: "0 0 12px", fontSize: 14, color: "#666", textTransform: "uppercase" }}>
+        <div className={styles.proceedingsAnalysis}>
+          <h4 className={styles.proceedingsHeader}>
             ⚖️ Proceeding-by-Proceeding Analysis
           </h4>
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(proceedings.length, 2)}, 1fr)`, gap: 12 }}>
+          <div className={`${styles.proceedingsGrid} ${proceedings.length === 1 ? styles.proceedingsGrid1Col : styles.proceedingsGrid2Col}`}>
             {questionAnswer.proceedingAnswers.map((pa: any) => {
               const proc = proceedings.find((p: any) => p.id === pa.proceedingId);
               return <ProceedingCard key={pa.proceedingId} proceedingAnswer={pa} proceeding={proc} />;
@@ -740,11 +740,11 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
           </div>
         </div>
       )}
-      
+
       {questionAnswer.keyFactors?.length > 0 && (
-        <div style={{ marginTop: 16, padding: 12, backgroundColor: "#f8f9fa", borderRadius: 8 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 10 }}>Overall Key Factors</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div className={styles.keyFactorsSection}>
+          <div className={styles.keyFactorsHeader}>Overall Key Factors</div>
+          <div className={styles.keyFactorsList}>
             {questionAnswer.keyFactors.map((factor: any, i: number) => (
               <KeyFactorRow key={i} factor={factor} />
             ))}
@@ -757,77 +757,60 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
 
 function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: any; proceeding: any }) {
   const color = QUESTION_ANSWER_COLORS[proceedingAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
-  
+
   const factors = proceedingAnswer.keyFactors || [];
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
   const negativeCount = factors.filter((f: any) => f.supports === "no").length;
   const neutralCount = factors.filter((f: any) => f.supports === "neutral").length;
   const contestedCount = factors.filter((f: any) => f.supports === "no" && f.isContested).length;
-  
+
   return (
-    <div style={{ border: `2px solid ${color.border}`, borderRadius: 12, overflow: "hidden", backgroundColor: "#fff" }}>
-      <div style={{ padding: "10px 14px", backgroundColor: "#f8f9fa", borderBottom: "1px solid #ddd" }}>
-        <div style={{ fontWeight: 700, fontSize: 14, color: "#333" }}>
+    <div className={styles.proceedingCard} style={{ borderColor: color.border }}>
+      <div className={styles.proceedingCardHeader}>
+        <div className={styles.proceedingCardTitle}>
           {proceeding?.name || proceedingAnswer.proceedingName}
         </div>
         {proceeding && (
-          <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+          <div className={styles.proceedingCardMeta}>
             {proceeding.court && <span>{proceeding.court} • </span>}
             <span>{proceeding.date}</span>
             {proceeding.status && <span> • {proceeding.status}</span>}
           </div>
         )}
       </div>
-      
-      <div style={{ padding: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-          <span style={{ padding: "6px 12px", borderRadius: 6, fontSize: 14, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
+
+      <div className={styles.proceedingCardContent}>
+        <div className={styles.proceedingAnswerRow}>
+          <span className={styles.proceedingAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getAnswerLabel(proceedingAnswer.answer)}
           </span>
-          <span style={{ fontSize: 12, color: "#666" }}>{proceedingAnswer.truthPercentage}% <span style={{ fontSize: 11, color: "#999" }}>({proceedingAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.proceedingPercentage}>{proceedingAnswer.truthPercentage}% <span style={{ fontSize: 11, color: "#999" }}>({proceedingAnswer.confidence}%  confidence)</span></span>
         </div>
-        
-        <div style={{ 
-          display: "flex", 
-          gap: 12, 
-          marginBottom: 10, 
-          padding: 8, 
-          backgroundColor: contestedCount > 0 ? "#fff8e1" : "#f8f9fa", 
-          borderRadius: 6,
-          fontSize: 11
-        }}>
-          <span style={{ color: "#28a745" }}>✅ {positiveCount} positive</span>
-          <span style={{ color: "#dc3545" }}>
+
+        <div className={`${styles.factorsSummary} ${contestedCount > 0 ? styles.factorsSummaryContested : styles.factorsSummaryNormal}`}>
+          <span className={styles.factorsPositive}>✅ {positiveCount} positive</span>
+          <span className={styles.factorsNegative}>
             ❌ {negativeCount} negative
             {contestedCount > 0 && (
-              <span style={{ color: "#c2185b" }}> ({contestedCount} contested)</span>
+              <span className={styles.factorsContested}> ({contestedCount} contested)</span>
             )}
           </span>
-          {neutralCount > 0 && <span style={{ color: "#6c757d" }}>➖ {neutralCount} neutral</span>}
+          {neutralCount > 0 && <span className={styles.factorsNeutral}>➖ {neutralCount} neutral</span>}
         </div>
-        
-        <div style={{ fontSize: 13, color: "#333", lineHeight: 1.5, marginBottom: 10 }}>
+
+        <div className={styles.proceedingShortAnswer}>
           {proceedingAnswer.shortAnswer}
         </div>
-        
+
         {factors.length > 0 && (
-          <div style={{ borderTop: "1px solid #eee", paddingTop: 10 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: "#888", textTransform: "uppercase", marginBottom: 6 }}>Key Factors ({factors.length})</div>
+          <div className={styles.factorsListSection}>
+            <div className={styles.factorsListHeader}>Key Factors ({factors.length})</div>
             {factors.map((f: any, i: number) => (
-              <div key={i} style={{ 
-                display: "flex", 
-                alignItems: "flex-start", 
-                gap: 6, 
-                fontSize: 12, 
-                marginBottom: 4,
-                padding: 4,
-                backgroundColor: f.isContested ? "#fff8e1" : "transparent",
-                borderRadius: 4
-              }}>
-                <span style={{ fontSize: 11 }}>{f.supports === "yes" ? "✅" : f.supports === "no" ? "❌" : "➖"}</span>
-                <span style={{ color: "#555" }}>
+              <div key={i} className={`${styles.factorItem} ${f.isContested ? styles.factorItemContested : styles.factorItemNormal}`}>
+                <span className={styles.factorIcon}>{f.supports === "yes" ? "✅" : f.supports === "no" ? "❌" : "➖"}</span>
+                <span className={styles.factorText}>
                   {f.factor}
-                  {f.isContested && <span style={{ color: "#c2185b", fontSize: 10 }}> ⚠️ CONTESTED</span>}
+                  {f.isContested && <span className={styles.contestedLabel}> ⚠️ CONTESTED</span>}
                 </span>
               </div>
             ))}
@@ -840,21 +823,13 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
 
 function KeyFactorRow({ factor }: { factor: any }) {
   const icon = factor.supports === "yes" ? "✅" : factor.supports === "no" ? "❌" : "➖";
-  
+
   return (
-    <div style={{ 
-      display: "flex", 
-      alignItems: "flex-start", 
-      gap: 8, 
-      padding: 10,
-      backgroundColor: factor.isContested ? "#fff8e1" : "#fff",
-      borderRadius: 6,
-      border: factor.isContested ? "1px solid #ffe082" : "1px solid #ddd"
-    }}>
-      <span style={{ fontSize: 16 }}>{icon}</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontWeight: 600, fontSize: 13, color: "#333" }}>{factor.factor}</span>
+    <div className={`${styles.keyFactorRow} ${factor.isContested ? styles.keyFactorRowContested : styles.keyFactorRowNormal}`}>
+      <span className={styles.keyFactorIcon}>{icon}</span>
+      <div className={styles.keyFactorContent}>
+        <div className={styles.keyFactorHeader}>
+          <span className={styles.keyFactorTitle}>{factor.factor}</span>
           {factor.isContested && (
             <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
           )}
@@ -862,9 +837,9 @@ function KeyFactorRow({ factor }: { factor: any }) {
             <Badge bg="#fff3e0" color="#e65100">{factor.factualBasis.toUpperCase()}</Badge>
           )}
         </div>
-        <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>{factor.explanation}</div>
+        <div className={styles.keyFactorExplanation}>{factor.explanation}</div>
         {factor.isContested && factor.contestedBy && (
-          <div style={{ fontSize: 11, color: "#c2185b", marginTop: 4, fontStyle: "italic" }}>
+          <div className={styles.keyFactorContestation}>
             Contested by: {factor.contestedBy}
           </div>
         )}
@@ -879,30 +854,30 @@ function KeyFactorRow({ factor }: { factor: any }) {
 
 function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
   const color = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
-  
+
   return (
-    <div style={{ border: `2px solid ${color.border}`, borderRadius: 12, marginBottom: 20, overflow: "hidden", backgroundColor: "#fff" }}>
-      <div style={{ padding: "12px 16px", backgroundColor: "#f0f7ff", borderBottom: "1px solid #ddd" }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: "#0056b3", textTransform: "uppercase", marginBottom: 4 }}>📝 Question</div>
-        <div style={{ fontSize: 16, color: "#333", fontStyle: "italic" }}>"{questionAnswer.question}"</div>
+    <div className={styles.questionBanner} style={{ borderColor: color.border }}>
+      <div className={styles.questionBannerHeader}>
+        <div className={styles.questionBannerLabel}>📝 Question</div>
+        <div className={styles.questionBannerText}>"{questionAnswer.question}"</div>
       </div>
-      
-      <div style={{ padding: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <span style={{ padding: "10px 20px", borderRadius: 8, fontSize: 20, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
+
+      <div className={styles.questionBannerContent}>
+        <div className={styles.questionBannerAnswerRow}>
+          <span className={styles.questionBannerAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getAnswerLabel(questionAnswer.answer)}
           </span>
-          <span style={{ fontSize: 14, color: "#666" }}>{questionAnswer.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.questionBannerPercentage}>{questionAnswer.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
         </div>
-        
-        <div style={{ padding: 14, backgroundColor: "#f8f9fa", borderRadius: 8, borderLeft: `4px solid ${color.border}` }}>
-          <div style={{ fontSize: 15, color: "#333", lineHeight: 1.5 }}>{questionAnswer.shortAnswer}</div>
+
+        <div className={styles.questionBannerShortAnswer} style={{ borderLeftColor: color.border }}>
+          <div className={styles.questionBannerShortAnswerText}>{questionAnswer.shortAnswer}</div>
         </div>
       </div>
-      
+
       {questionAnswer.keyFactors?.length > 0 && (
-        <div style={{ padding: "12px 16px", backgroundColor: "#f8f9fa", borderTop: "1px solid #eee" }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#666", marginBottom: 10 }}>KEY FACTORS</div>
+        <div className={styles.questionBannerKeyFactors}>
+          <div className={styles.questionBannerKeyFactorsLabel}>KEY FACTORS</div>
           {questionAnswer.keyFactors.map((factor: any, i: number) => (
             <KeyFactorRow key={i} factor={factor} />
           ))}
@@ -918,85 +893,63 @@ function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
 
 function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
   const color = ARTICLE_VERDICT_COLORS[articleAnalysis.articleVerdict] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
-  
+
   // Use fallback if thesis is unknown or empty
-  const thesis = (!articleAnalysis.articleThesis || 
-                  articleAnalysis.articleThesis === "<UNKNOWN>" || 
+  const thesis = (!articleAnalysis.articleThesis ||
+                  articleAnalysis.articleThesis === "<UNKNOWN>" ||
                   articleAnalysis.articleThesis.toLowerCase().includes("unknown"))
     ? (fallbackThesis || "—")
     : articleAnalysis.articleThesis;
-  
+
   const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis.isPseudoscience;
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis.pseudoscienceCategories || [];
-  
+
   // Check if article verdict differs from claims average
   const claimsAvgPct = articleAnalysis.claimsAverageTruthPercentage;
   const articlePct = articleAnalysis.articleTruthPercentage ?? articleAnalysis.truthPercentage;
   const verdictDiffers = claimsAvgPct && Math.abs(articlePct - claimsAvgPct) > 10;
-  
+
   return (
-    <div style={{ border: `2px solid ${color.border}`, borderRadius: 12, marginBottom: 20, overflow: "hidden", backgroundColor: "#fff" }}>
-      <div style={{ padding: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
-          <span style={{ padding: "8px 16px", borderRadius: 6, fontSize: 18, fontWeight: 700, backgroundColor: color.bg, color: color.text }}>
+    <div className={styles.articleBanner} style={{ borderColor: color.border }}>
+      <div className={styles.articleBannerContent}>
+        <div className={styles.articleVerdictRow}>
+          <span className={styles.articleVerdictBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(articleAnalysis.articleVerdict)}
           </span>
-          <span style={{ fontSize: 14, color: "#666" }}>{articlePct}%</span>
+          <span className={styles.articlePercentage}>{articlePct}%</span>
           {isPseudo && (
-            <span style={{ 
-              padding: "4px 10px", 
-              borderRadius: 4, 
-              fontSize: 12, 
-              fontWeight: 600, 
-              backgroundColor: "#ffebee", 
-              color: "#c62828",
-              border: "1px solid #ef9a9a"
-            }}>
+            <span className={styles.pseudoscienceBadge}>
               🔬 Pseudoscience Detected
             </span>
           )}
         </div>
         <div><b>Thesis:</b> {thesis}</div>
-        
+
         {/* Show claims average if it differs from article verdict */}
         {verdictDiffers && claimsAvgPct && (
-          <div style={{ 
-            marginTop: 12, 
-            padding: 10, 
-            backgroundColor: "#f5f5f5", 
-            borderRadius: 6,
-            fontSize: 13,
-            color: "#666"
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className={styles.claimsAverageBox}>
+            <div className={styles.claimsAverageRow}>
               <span>📊 Claims average: <b>{articleAnalysis.claimsAverageVerdict}</b> ({claimsAvgPct}%)</span>
             </div>
             {articleAnalysis.articleVerdictReason && (
-              <div style={{ marginTop: 4, fontStyle: "italic", fontSize: 12 }}>
+              <div className={styles.claimsAverageReason}>
                 {articleAnalysis.articleVerdictReason}
               </div>
             )}
           </div>
         )}
-        
+
         {isPseudo && pseudoCategories.length > 0 && (
-          <div style={{ 
-            marginTop: 12, 
-            padding: 12, 
-            backgroundColor: "#fff8e1", 
-            borderRadius: 6,
-            border: "1px solid #ffecb3",
-            fontSize: 13
-          }}>
-            <div style={{ fontWeight: 600, color: "#e65100", marginBottom: 4 }}>
+          <div className={styles.pseudoscienceWarning}>
+            <div className={styles.pseudoscienceWarningHeader}>
               ⚠️ Scientific Credibility Warning
             </div>
-            <div style={{ color: "#5d4037" }}>
-              This content contains claims based on <b>{pseudoCategories.map((c: string) => 
+            <div className={styles.pseudoscienceWarningText}>
+              This content contains claims based on <b>{pseudoCategories.map((c: string) =>
                 c.replace(/([A-Z])/g, ' $1').trim().toLowerCase()
               ).join(", ")}</b> — concepts that contradict established scientific consensus.
               {articleAnalysis.articleVerdictReason && (
-                <div style={{ marginTop: 8, fontStyle: "italic" }}>
+                <div className={styles.pseudoscienceWarningReason}>
                   {articleAnalysis.articleVerdictReason}
                 </div>
               )}
@@ -1014,31 +967,31 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
 
 function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { articleSummary: any; factharborAnalysis: any; isQuestion?: boolean }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, overflow: "hidden", backgroundColor: "#fff" }}>
-        <div style={{ padding: "10px 14px", backgroundColor: "#f8f9fa", borderBottom: "1px solid #ddd" }}>
+    <div className={styles.twoPanelContainer}>
+      <div className={styles.twoPanelPanel}>
+        <div className={styles.twoPanelHeader}>
           <b>{isQuestion ? "❓ The Question" : "📄 Article"}</b>
         </div>
-        <div style={{ padding: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Title</div>
-          <div style={{ fontSize: 13, marginBottom: 12 }}>{decodeHtmlEntities(articleSummary.title)}</div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Implied Claim</div>
-          <div style={{ fontSize: 13 }}>{decodeHtmlEntities(articleSummary.mainArgument)}</div>
+        <div className={styles.twoPanelContent}>
+          <div className={styles.twoPanelLabel}>Title</div>
+          <div className={styles.twoPanelValue}>{decodeHtmlEntities(articleSummary.title)}</div>
+          <div className={styles.twoPanelLabel}>Implied Claim</div>
+          <div className={styles.twoPanelValue}>{decodeHtmlEntities(articleSummary.mainArgument)}</div>
         </div>
       </div>
-      
-      <div style={{ border: "2px solid #007bff", borderRadius: 12, overflow: "hidden", backgroundColor: "#fff" }}>
-        <div style={{ padding: "10px 14px", backgroundColor: "#f8f9fa", borderBottom: "1px solid #ddd" }}>
+
+      <div className={`${styles.twoPanelPanel} ${styles.twoPanelPanelAnalysis}`}>
+        <div className={styles.twoPanelHeader}>
           <b>🔍 FactHarbor Analysis</b>
         </div>
-        <div style={{ padding: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Source Credibility</div>
-          <div style={{ fontSize: 13, marginBottom: 12, whiteSpace: "pre-line" }}>{factharborAnalysis.sourceCredibility}</div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Methodology</div>
-          <div style={{ fontSize: 13, marginBottom: 12 }}>{factharborAnalysis.methodologyAssessment}</div>
-          <div style={{ textAlign: "center", padding: 12, backgroundColor: "#f0f7ff", borderRadius: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>OVERALL</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#007bff", whiteSpace: "pre-line" }}>{factharborAnalysis.overallVerdict}</div>
+        <div className={styles.twoPanelContent}>
+          <div className={styles.twoPanelLabel}>Source Credibility</div>
+          <div className={styles.twoPanelValueBlock}>{factharborAnalysis.sourceCredibility}</div>
+          <div className={styles.twoPanelLabel}>Methodology</div>
+          <div className={styles.twoPanelValue}>{factharborAnalysis.methodologyAssessment}</div>
+          <div className={styles.twoPanelOverall}>
+            <div className={styles.twoPanelOverallLabel}>OVERALL</div>
+            <div className={styles.twoPanelOverallValue}>{factharborAnalysis.overallVerdict}</div>
           </div>
         </div>
       </div>
@@ -1057,15 +1010,15 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
     if (!claimsByProc.has(procId)) claimsByProc.set(procId, []);
     claimsByProc.get(procId)!.push(cv);
   }
-  
+
   return (
     <div>
       {Array.from(claimsByProc.entries()).map(([procId, claims]) => {
         if (claims.length === 0) return null;
         const proc = proceedings.find((p: any) => p.id === procId);
         return (
-          <div key={procId} style={{ marginBottom: 20 }}>
-            <h4 style={{ margin: "0 0 10px", padding: "8px 12px", backgroundColor: "#f0f7ff", borderRadius: 6, fontSize: 13, color: "#0056b3" }}>
+          <div key={procId} className={styles.proceedingGroup}>
+            <h4 className={styles.proceedingGroupHeader}>
               {proc ? `⚖️ ${proc.shortName}: ${proc.name}` : "General Claims"}
             </h4>
             {claims.map((cv: any) => <ClaimCard key={cv.claimId} claim={cv} />)}
@@ -1078,11 +1031,11 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
 
 function ClaimCard({ claim }: { claim: any }) {
   const color = CLAIM_VERDICT_COLORS[claim.verdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
-  
+
   return (
-    <div style={{ padding: 14, border: "1px solid #ddd", borderLeft: `4px solid ${color.border}`, borderRadius: 8, backgroundColor: "#fff", marginBottom: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-        <span style={{ fontWeight: 600, color: "#666" }}>{claim.claimId}</span>
+    <div className={styles.claimCard} style={{ borderLeftColor: color.border }}>
+      <div className={styles.claimCardHeader}>
+        <span className={styles.claimId}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         <Badge bg={color.bg} color={color.text}>
           {color.icon} {getVerdictLabel(claim.verdict)} ({claim.truthPercentage ?? claim.confidence}%)
@@ -1091,18 +1044,10 @@ function ClaimCard({ claim }: { claim: any }) {
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>
         )}
       </div>
-      <div style={{ fontSize: 14, fontStyle: "italic", color: "#333", marginBottom: 8 }}>"{claim.claimText}"</div>
-      <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>{claim.reasoning}</div>
+      <div className={styles.claimText}>"{claim.claimText}"</div>
+      <div className={styles.claimReasoning}>{claim.reasoning}</div>
       {claim.escalationReason && (
-        <div style={{ 
-          marginTop: 8, 
-          padding: 8, 
-          backgroundColor: "#fff8e1", 
-          borderRadius: 4, 
-          fontSize: 12, 
-          color: "#e65100",
-          borderLeft: "3px solid #ff9800"
-        }}>
+        <div className={styles.claimEscalation}>
           ⚠️ {claim.escalationReason}
         </div>
       )}
@@ -1113,15 +1058,15 @@ function ClaimCard({ claim }: { claim: any }) {
 function ClaimHighlighter({ originalText, claimVerdicts }: { originalText: string; claimVerdicts: any[] }) {
   return (
     <div>
-      <div style={{ padding: 16, border: "1px solid #ddd", borderRadius: 8, backgroundColor: "#f8f9fa", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
+      <div className={styles.highlighterTextContainer}>
         {originalText}
       </div>
-      
-      <div style={{ marginTop: 16 }}>
-        <h4 style={{ margin: "0 0 8px" }}>Claims Found:</h4>
+
+      <div className={styles.highlighterClaimsSection}>
+        <h4 className={styles.highlighterClaimsTitle}>Claims Found:</h4>
         {claimVerdicts.map((cv: any) => {
           // Map highlightColor to background color
-          const bgColor = 
+          const bgColor =
             cv.highlightColor === "green" ? "#d4edda" :
             cv.highlightColor === "light-green" ? "#e8f5e9" :
             cv.highlightColor === "yellow" ? "#fff9c4" :
@@ -1130,21 +1075,13 @@ function ClaimHighlighter({ originalText, claimVerdicts }: { originalText: strin
             cv.highlightColor === "red" ? "#ffcdd2" :
             cv.highlightColor === "dark-red" ? "#ffebee" :
             "#fff3e0"; // default orange for unverified
-          
+
           return (
-            <div key={cv.claimId} style={{ 
-              display: "flex", 
-              alignItems: "flex-start", 
-              gap: 10, 
-              padding: 10, 
-              marginBottom: 6, 
-              backgroundColor: bgColor, 
-              borderRadius: 6 
-            }}>
-              <span style={{ fontWeight: 600, minWidth: 50 }}>{cv.claimId}</span>
+            <div key={cv.claimId} className={styles.highlighterClaimItem} style={{ backgroundColor: bgColor }}>
+              <span className={styles.highlighterClaimId}>{cv.claimId}</span>
               <div>
-                <div style={{ fontWeight: 500 }}>{cv.claimText}</div>
-                <div style={{ fontSize: 12, color: "#666" }}>{cv.verdict} ({cv.truthPercentage ?? cv.confidence}%)</div>
+                <div className={styles.highlighterClaimText}>{cv.claimText}</div>
+                <div className={styles.highlighterClaimVerdict}>{cv.verdict} ({cv.truthPercentage ?? cv.confidence}%)</div>
               </div>
             </div>
           );
