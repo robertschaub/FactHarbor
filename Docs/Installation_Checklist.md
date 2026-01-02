@@ -1,8 +1,18 @@
 # Installation Checklist
 
-{{toc/}}
+## Table of Contents
+- [Purpose](#purpose)
+- [Phase 0 — Prerequisites](#phase-0--prerequisites)
+- [Phase 1 — Minimal POC1 Setup](#phase-1--minimal-poc1-setup)
+- [Phase 1 — Recommended Additions](#phase-1--recommended-additions)
+- [Phase 2 — Deferred](#phase-2--deferred-do-not-install-yet)
+- [Hints to Avoid Problems](#hints-to-avoid-problems)
+- [Verification](#verification)
+
+---
 
 ## Purpose
+
 This checklist ensures a predictable and low-friction setup.
 Follow the phases in order and stop once your current phase works.
 
@@ -71,7 +81,7 @@ Follow the phases in order and stop once your current phase works.
 
 Run once after installation:
 
-```
+```bash
 git --version
 node -v
 npm -v
