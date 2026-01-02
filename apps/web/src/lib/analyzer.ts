@@ -32,10 +32,12 @@ import * as path from "path";
 
 const CONFIG = {
   schemaVersion: "2.6.17",
-  deepModeEnabled: (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
+  deepModeEnabled:
+    (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
 
   // Search configuration (FH_ prefixed for consistency)
-  searchEnabled: (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true",
+  searchEnabled:
+    (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true",
   searchProvider: detectSearchProvider(),
   searchDomainWhitelist: parseWhitelist(process.env.FH_SEARCH_DOMAIN_WHITELIST),
 
@@ -44,7 +46,8 @@ const CONFIG = {
 
   // Report configuration
   reportStyle: (process.env.FH_REPORT_STYLE ?? "standard").toLowerCase(),
-  allowModelKnowledge: (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true",
+  allowModelKnowledge:
+    (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true",
 
   quick: {
     maxResearchIterations: 2,
@@ -70,7 +73,10 @@ const CONFIG = {
  */
 function parseWhitelist(whitelist: string | undefined): string[] | null {
   if (!whitelist) return null;
-  return whitelist.split(",").map(d => d.trim().toLowerCase()).filter(d => d.length > 0);
+  return whitelist
+    .split(",")
+    .map((d) => d.trim().toLowerCase())
+    .filter((d) => d.length > 0);
 }
 
 /**
@@ -82,7 +88,11 @@ function detectSearchProvider(): string {
     return process.env.FH_SEARCH_PROVIDER;
   }
   // Check for Google Custom Search
-  if (process.env.GOOGLE_CSE_API_KEY || process.env.GOOGLE_SEARCH_API_KEY || process.env.GOOGLE_API_KEY) {
+  if (
+    process.env.GOOGLE_CSE_API_KEY ||
+    process.env.GOOGLE_SEARCH_API_KEY ||
+    process.env.GOOGLE_API_KEY
+  ) {
     return "Google Custom Search";
   }
   // Check for Bing
@@ -90,7 +100,11 @@ function detectSearchProvider(): string {
     return "Bing Search";
   }
   // Check for SerpAPI (check both variants)
-  if (process.env.SERPAPI_API_KEY || process.env.SERPAPI_KEY || process.env.SERP_API_KEY) {
+  if (
+    process.env.SERPAPI_API_KEY ||
+    process.env.SERPAPI_KEY ||
+    process.env.SERP_API_KEY
+  ) {
     return "SerpAPI";
   }
   // Check for Tavily
@@ -154,10 +168,10 @@ function extractStructuredOutput(result: any): any {
   }
 
   // Last resort: return the result itself if it looks like structured data
-  if (typeof result === 'object' && !Array.isArray(result) && result !== null) {
+  if (typeof result === "object" && !Array.isArray(result) && result !== null) {
     // Check if it has properties that suggest it's the output object
     const keys = Object.keys(result);
-    if (keys.length > 0 && !keys.includes('text') && !keys.includes('usage')) {
+    if (keys.length > 0 && !keys.includes("text") && !keys.includes("usage")) {
       return result;
     }
   }
@@ -188,7 +202,7 @@ const PSEUDOSCIENCE_PATTERNS = {
     /revitali[sz]ed\s*water/i,
     /living\s*water/i,
     /grander/i,
-    /emoto/i,  // Masaru Emoto's debunked water crystal claims
+    /emoto/i, // Masaru Emoto's debunked water crystal claims
   ],
 
   // Energy/vibration pseudoscience
@@ -239,7 +253,7 @@ const PSEUDOSCIENCE_PATTERNS = {
     /scalar\s*(wave|energy)/i,
     /tachyon/i,
     /zero[\s-]*point\s*energy.*healing/i,
-  ]
+  ],
 };
 
 /**
@@ -273,7 +287,7 @@ const DEBUNKED_INDICATORS = [
 
 interface PseudoscienceAnalysis {
   isPseudoscience: boolean;
-  confidence: number;  // 0-1
+  confidence: number; // 0-1
   categories: string[];
   matchedPatterns: string[];
   debunkIndicatorsFound: string[];
@@ -283,14 +297,17 @@ interface PseudoscienceAnalysis {
 /**
  * Analyze text for pseudoscience patterns
  */
-function detectPseudoscience(text: string, claimText?: string): PseudoscienceAnalysis {
+function detectPseudoscience(
+  text: string,
+  claimText?: string,
+): PseudoscienceAnalysis {
   const result: PseudoscienceAnalysis = {
     isPseudoscience: false,
     confidence: 0,
     categories: [],
     matchedPatterns: [],
     debunkIndicatorsFound: [],
-    recommendation: null
+    recommendation: null,
   };
 
   const combinedText = `${text} ${claimText || ""}`.toLowerCase();
@@ -340,7 +357,10 @@ function detectPseudoscience(text: string, claimText?: string): PseudoscienceAna
     // REFUTED is appropriate for "strong evidence against, contradicts scientific consensus"
     if (result.confidence >= 0.7 || result.debunkIndicatorsFound.length >= 2) {
       result.recommendation = "REFUTED"; // Changed from FALSE
-    } else if (result.confidence >= 0.5 || result.debunkIndicatorsFound.length >= 1) {
+    } else if (
+      result.confidence >= 0.5 ||
+      result.debunkIndicatorsFound.length >= 1
+    ) {
       result.recommendation = "REFUTED";
     } else {
       result.recommendation = "UNCERTAIN";
@@ -356,9 +376,8 @@ function detectPseudoscience(text: string, claimText?: string): PseudoscienceAna
 function escalatePseudoscienceVerdict(
   originalVerdict: string,
   originalConfidence: number,
-  pseudoAnalysis: PseudoscienceAnalysis
+  pseudoAnalysis: PseudoscienceAnalysis,
 ): { verdict: string; confidence: number; escalationReason?: string } {
-
   if (!pseudoAnalysis.isPseudoscience) {
     return { verdict: originalVerdict, confidence: originalConfidence };
   }
@@ -372,9 +391,9 @@ function escalatePseudoscienceVerdict(
   const verdictStrength: Record<string, number> = {
     "WELL-SUPPORTED": 4,
     "PARTIALLY-SUPPORTED": 3,
-    "UNCERTAIN": 2,
-    "REFUTED": 1,
-    "FALSE": 0
+    UNCERTAIN: 2,
+    REFUTED: 1,
+    FALSE: 0,
   };
 
   const currentStrength = verdictStrength[originalVerdict] ?? 2;
@@ -422,34 +441,51 @@ function escalatePseudoscienceVerdict(
  * - CREDIBLE: Well-supported by evidence
  */
 function calculateArticleVerdictWithPseudoscience(
-  claimVerdicts: Array<{ verdict: string; confidence: number; isPseudoscience?: boolean }>,
-  pseudoAnalysis: PseudoscienceAnalysis
+  claimVerdicts: Array<{
+    verdict: string;
+    confidence: number;
+    isPseudoscience?: boolean;
+  }>,
+  pseudoAnalysis: PseudoscienceAnalysis,
 ): { verdict: string; confidence: number; reason?: string } {
-
-  const refutedCount = claimVerdicts.filter(v => v.verdict === "REFUTED" || v.verdict === "FALSE").length;
-  const uncertainCount = claimVerdicts.filter(v => v.verdict === "UNCERTAIN").length;
-  const supportedCount = claimVerdicts.filter(v => v.verdict === "WELL-SUPPORTED" || v.verdict === "PARTIALLY-SUPPORTED").length;
+  const refutedCount = claimVerdicts.filter(
+    (v) => v.verdict === "REFUTED" || v.verdict === "FALSE",
+  ).length;
+  const uncertainCount = claimVerdicts.filter(
+    (v) => v.verdict === "UNCERTAIN",
+  ).length;
+  const supportedCount = claimVerdicts.filter(
+    (v) =>
+      v.verdict === "WELL-SUPPORTED" || v.verdict === "PARTIALLY-SUPPORTED",
+  ).length;
   const total = claimVerdicts.length;
 
   // If pseudoscience detected at article level
   if (pseudoAnalysis.isPseudoscience && pseudoAnalysis.confidence >= 0.5) {
     // Pseudoscience -> REFUTED (not FALSE - that requires 99%+ certainty)
     // We can't prove a negative with absolute certainty, but we can say claims lack scientific basis
-    if (uncertainCount >= total * 0.5 && pseudoAnalysis.debunkIndicatorsFound.length >= 1) {
+    if (
+      uncertainCount >= total * 0.5 &&
+      pseudoAnalysis.debunkIndicatorsFound.length >= 1
+    ) {
       return {
         verdict: "REFUTED",
-        confidence: Math.min(85, 70 + pseudoAnalysis.debunkIndicatorsFound.length * 5), // Cap at 85%
-        reason: `Claims based on pseudoscience (${pseudoAnalysis.categories.join(", ")}) - contradicted by scientific consensus`
+        confidence: Math.min(
+          85,
+          70 + pseudoAnalysis.debunkIndicatorsFound.length * 5,
+        ), // Cap at 85%
+        reason: `Claims based on pseudoscience (${pseudoAnalysis.categories.join(", ")}) - contradicted by scientific consensus`,
       };
     }
 
     // If any pseudoscience claims and debunk found
     if (pseudoAnalysis.debunkIndicatorsFound.length >= 1) {
-      const avgConfidence = claimVerdicts.reduce((sum, v) => sum + v.confidence, 0) / total;
+      const avgConfidence =
+        claimVerdicts.reduce((sum, v) => sum + v.confidence, 0) / total;
       return {
         verdict: "REFUTED",
         confidence: Math.min(avgConfidence, 90), // Cap confidence
-        reason: `Contains pseudoscientific claims (${pseudoAnalysis.categories.join(", ")}) - no scientific basis`
+        reason: `Contains pseudoscientific claims (${pseudoAnalysis.categories.join(", ")}) - no scientific basis`,
       };
     }
 
@@ -457,7 +493,7 @@ function calculateArticleVerdictWithPseudoscience(
     return {
       verdict: "MISLEADING",
       confidence: 70,
-      reason: `Claims rely on unproven mechanisms (${pseudoAnalysis.categories.join(", ")})`
+      reason: `Claims rely on unproven mechanisms (${pseudoAnalysis.categories.join(", ")})`,
     };
   }
 
@@ -497,51 +533,54 @@ function calculateArticleVerdictWithPseudoscience(
  */
 
 type ClaimVerdict7Point =
-  | "TRUE"          // 86-100%, Score +3
-  | "MOSTLY-TRUE"   // 72-85%,  Score +2
-  | "LEANING-TRUE"  // 58-71%,  Score +1
-  | "UNVERIFIED"    // 43-57%,  Score  0
+  | "TRUE" // 86-100%, Score +3
+  | "MOSTLY-TRUE" // 72-85%,  Score +2
+  | "LEANING-TRUE" // 58-71%,  Score +1
+  | "UNVERIFIED" // 43-57%,  Score  0
   | "LEANING-FALSE" // 29-42%,  Score -1
-  | "MOSTLY-FALSE"  // 15-28%,  Score -2
-  | "FALSE";        // 0-14%,   Score -3
+  | "MOSTLY-FALSE" // 15-28%,  Score -2
+  | "FALSE"; // 0-14%,   Score -3
 
 type QuestionAnswer7Point =
-  | "YES"           // 86-100%, Score +3
-  | "MOSTLY-YES"    // 72-85%,  Score +2
-  | "LEANING-YES"   // 58-71%,  Score +1
-  | "UNVERIFIED"    // 43-57%,  Score  0
-  | "LEANING-NO"    // 29-42%,  Score -1
-  | "MOSTLY-NO"     // 15-28%,  Score -2
-  | "NO";           // 0-14%,   Score -3
+  | "YES" // 86-100%, Score +3
+  | "MOSTLY-YES" // 72-85%,  Score +2
+  | "LEANING-YES" // 58-71%,  Score +1
+  | "UNVERIFIED" // 43-57%,  Score  0
+  | "LEANING-NO" // 29-42%,  Score -1
+  | "MOSTLY-NO" // 15-28%,  Score -2
+  | "NO"; // 0-14%,   Score -3
 
 type ArticleVerdict7Point =
-  | "TRUE"          // 86-100%, Score +3
-  | "MOSTLY-TRUE"   // 72-85%,  Score +2
-  | "LEANING-TRUE"  // 58-71%,  Score +1
-  | "UNVERIFIED"    // 43-57%,  Score  0
+  | "TRUE" // 86-100%, Score +3
+  | "MOSTLY-TRUE" // 72-85%,  Score +2
+  | "LEANING-TRUE" // 58-71%,  Score +1
+  | "UNVERIFIED" // 43-57%,  Score  0
   | "LEANING-FALSE" // 29-42%,  Score -1
-  | "MOSTLY-FALSE"  // 15-28%,  Score -2
-  | "FALSE";        // 0-14%,   Score -3
+  | "MOSTLY-FALSE" // 15-28%,  Score -2
+  | "FALSE"; // 0-14%,   Score -3
 
 /**
  * Calculate truth percentage from LLM verdict + confidence
  * Returns 0-100% on symmetric scale
  */
-function calculateTruthPercentage(llmVerdict: string, llmConfidence: number): number {
+function calculateTruthPercentage(
+  llmVerdict: string,
+  llmConfidence: number,
+): number {
   const conf = Math.max(0, Math.min(100, llmConfidence)) / 100;
 
   switch (llmVerdict) {
     case "WELL-SUPPORTED":
       // Strong support → 72-100% (MOSTLY-TRUE to TRUE)
-      return Math.round(72 + (28 * conf));
+      return Math.round(72 + 28 * conf);
 
     case "PARTIALLY-SUPPORTED":
       // Partial → 50-85% (UNVERIFIED to MOSTLY-TRUE)
-      return Math.round(50 + (35 * conf));
+      return Math.round(50 + 35 * conf);
 
     case "UNCERTAIN":
       // Uncertain → 35-65% (around UNVERIFIED)
-      return Math.round(35 + (30 * conf));
+      return Math.round(35 + 30 * conf);
 
     case "REFUTED":
     case "FALSE":
@@ -556,14 +595,17 @@ function calculateTruthPercentage(llmVerdict: string, llmConfidence: number): nu
 /**
  * Calculate truth percentage for question answers
  */
-function calculateQuestionTruthPercentage(llmAnswer: string, llmConfidence: number): number {
+function calculateQuestionTruthPercentage(
+  llmAnswer: string,
+  llmConfidence: number,
+): number {
   const conf = Math.max(0, Math.min(100, llmConfidence)) / 100;
 
   switch (llmAnswer) {
     case "YES":
-      return Math.round(72 + (28 * conf));
+      return Math.round(72 + 28 * conf);
     case "PARTIALLY":
-      return Math.round(43 + (28 * conf));
+      return Math.round(43 + 28 * conf);
     case "NO":
       return Math.round(28 * (1 - conf));
     case "INSUFFICIENT-EVIDENCE":
@@ -589,7 +631,9 @@ function percentageToClaimVerdict(truthPercentage: number): ClaimVerdict7Point {
 /**
  * Map truth percentage to question answer
  */
-function percentageToQuestionAnswer(truthPercentage: number): QuestionAnswer7Point {
+function percentageToQuestionAnswer(
+  truthPercentage: number,
+): QuestionAnswer7Point {
   if (truthPercentage >= 86) return "YES";
   if (truthPercentage >= 72) return "MOSTLY-YES";
   if (truthPercentage >= 58) return "LEANING-YES";
@@ -602,7 +646,9 @@ function percentageToQuestionAnswer(truthPercentage: number): QuestionAnswer7Poi
 /**
  * Map truth percentage to article verdict
  */
-function percentageToArticleVerdict(truthPercentage: number): ArticleVerdict7Point {
+function percentageToArticleVerdict(
+  truthPercentage: number,
+): ArticleVerdict7Point {
   if (truthPercentage >= 86) return "TRUE";
   if (truthPercentage >= 72) return "MOSTLY-TRUE";
   if (truthPercentage >= 58) return "LEANING-TRUE";
@@ -615,22 +661,25 @@ function percentageToArticleVerdict(truthPercentage: number): ArticleVerdict7Poi
 /**
  * Calculate article truth percentage from LLM article verdict
  */
-function calculateArticleTruthPercentage(llmVerdict: string, llmConfidence: number): number {
+function calculateArticleTruthPercentage(
+  llmVerdict: string,
+  llmConfidence: number,
+): number {
   const conf = Math.max(0, Math.min(100, llmConfidence)) / 100;
 
   switch (llmVerdict) {
     case "CREDIBLE":
     case "TRUE":
-      return Math.round(72 + (28 * conf));
+      return Math.round(72 + 28 * conf);
     case "MOSTLY-CREDIBLE":
     case "MOSTLY-TRUE":
-      return Math.round(58 + (27 * conf));
+      return Math.round(58 + 27 * conf);
     case "MISLEADING":
       // MISLEADING = false-side (15-42% range)
-      return Math.round(15 + (27 * (1 - conf)));
+      return Math.round(15 + 27 * (1 - conf));
     case "MOSTLY-FALSE":
     case "LEANING-FALSE":
-      return Math.round(15 + (14 * (1 - conf)));
+      return Math.round(15 + 14 * (1 - conf));
     case "FALSE":
     case "REFUTED":
       return Math.round(14 * (1 - conf));
@@ -642,7 +691,10 @@ function calculateArticleTruthPercentage(llmVerdict: string, llmConfidence: numb
 /**
  * Legacy: Map confidence to claim verdict (for backward compatibility)
  */
-function calibrateClaimVerdict(llmVerdict: string, confidence: number): ClaimVerdict7Point {
+function calibrateClaimVerdict(
+  llmVerdict: string,
+  confidence: number,
+): ClaimVerdict7Point {
   const truthPct = calculateTruthPercentage(llmVerdict, confidence);
   return percentageToClaimVerdict(truthPct);
 }
@@ -650,7 +702,10 @@ function calibrateClaimVerdict(llmVerdict: string, confidence: number): ClaimVer
 /**
  * Legacy: Map confidence to question answer (for backward compatibility)
  */
-function calibrateQuestionAnswer(llmAnswer: string, confidence: number): QuestionAnswer7Point {
+function calibrateQuestionAnswer(
+  llmAnswer: string,
+  confidence: number,
+): QuestionAnswer7Point {
   const truthPct = calculateQuestionTruthPercentage(llmAnswer, confidence);
   return percentageToQuestionAnswer(truthPct);
 }
@@ -658,9 +713,16 @@ function calibrateQuestionAnswer(llmAnswer: string, confidence: number): Questio
 /**
  * Map confidence to article verdict
  */
-function calibrateArticleVerdict(llmVerdict: string, confidence: number): ArticleVerdict7Point {
+function calibrateArticleVerdict(
+  llmVerdict: string,
+  confidence: number,
+): ArticleVerdict7Point {
   // Handle negative verdicts
-  if (llmVerdict === "FALSE" || llmVerdict === "REFUTED" || llmVerdict === "FALSE") {
+  if (
+    llmVerdict === "FALSE" ||
+    llmVerdict === "REFUTED" ||
+    llmVerdict === "FALSE"
+  ) {
     if (confidence >= 95) return "FALSE";
     if (confidence >= 75) return "FALSE";
     if (confidence >= 55) return "MOSTLY-FALSE";
@@ -697,7 +759,11 @@ function calibrateArticleVerdict(llmVerdict: string, confidence: number): Articl
 /**
  * Get color for 7-level verdict display
  */
-function getVerdictColor(verdict: string): { bg: string; text: string; border: string } {
+function getVerdictColor(verdict: string): {
+  bg: string;
+  text: string;
+  border: string;
+} {
   switch (verdict) {
     case "TRUE":
     case "YES":
@@ -727,7 +793,16 @@ function getVerdictColor(verdict: string): { bg: string; text: string; border: s
 /**
  * Get highlight color class for 7-level scale
  */
-function getHighlightColor7Point(verdict: string): "green" | "light-green" | "yellow" | "orange" | "dark-orange" | "red" | "dark-red" {
+function getHighlightColor7Point(
+  verdict: string,
+):
+  | "green"
+  | "light-green"
+  | "yellow"
+  | "orange"
+  | "dark-orange"
+  | "red"
+  | "dark-red" {
   switch (verdict) {
     case "TRUE":
     case "YES":
@@ -878,7 +953,13 @@ interface ResearchIteration {
 interface ExtractedFact {
   id: string;
   fact: string;
-  category: "legal_provision" | "evidence" | "expert_quote" | "statistic" | "event" | "criticism";
+  category:
+    | "legal_provision"
+    | "evidence"
+    | "expert_quote"
+    | "statistic"
+    | "event"
+    | "criticism";
   specificity: "high" | "medium";
   sourceId: string;
   sourceUrl: string;
@@ -898,7 +979,7 @@ interface FetchedSource {
   fetchedAt: string;
   category: string;
   fetchSuccess: boolean;
-  searchQuery?: string;  // Which query found this
+  searchQuery?: string; // Which query found this
 }
 
 interface ClaimVerdict {
@@ -907,11 +988,15 @@ interface ClaimVerdict {
   isCentral: boolean;
   // NEW: Claim role and dependencies
   claimRole?: "attribution" | "source" | "timing" | "core";
-  dependsOn?: string[];  // Claim IDs this depends on
-  dependencyFailed?: boolean;  // True if a prerequisite claim was false
-  failedDependencies?: string[];  // Which dependencies failed
+  dependsOn?: string[]; // Claim IDs this depends on
+  dependencyFailed?: boolean; // True if a prerequisite claim was false
+  failedDependencies?: string[]; // Which dependencies failed
   // Original LLM verdict (for debugging)
-  llmVerdict: "WELL-SUPPORTED" | "PARTIALLY-SUPPORTED" | "UNCERTAIN" | "REFUTED";
+  llmVerdict:
+    | "WELL-SUPPORTED"
+    | "PARTIALLY-SUPPORTED"
+    | "UNCERTAIN"
+    | "REFUTED";
   // Calibrated 7-point verdict
   verdict: ClaimVerdict7Point;
   // LLM's confidence in the verdict (internal use)
@@ -926,7 +1011,14 @@ interface ClaimVerdict {
   relatedProceedingId?: string;
   startOffset?: number;
   endOffset?: number;
-  highlightColor: "green" | "light-green" | "yellow" | "orange" | "dark-orange" | "red" | "dark-red";
+  highlightColor:
+    | "green"
+    | "light-green"
+    | "yellow"
+    | "orange"
+    | "dark-orange"
+    | "red"
+    | "dark-red";
   isPseudoscience?: boolean;
   escalationReason?: string;
 }
@@ -1031,7 +1123,9 @@ let SOURCE_TRACK_RECORDS: Record<string, number> = {};
  */
 function loadSourceBundle(): void {
   if (!CONFIG.sourceBundlePath) {
-    console.log(`[FactHarbor] No source bundle configured (FH_SOURCE_BUNDLE_PATH not set)`);
+    console.log(
+      `[FactHarbor] No source bundle configured (FH_SOURCE_BUNDLE_PATH not set)`,
+    );
     return;
   }
 
@@ -1041,7 +1135,9 @@ function loadSourceBundle(): void {
       const bundle = JSON.parse(fs.readFileSync(bundlePath, "utf-8"));
       if (bundle.sources && typeof bundle.sources === "object") {
         SOURCE_TRACK_RECORDS = bundle.sources;
-        console.log(`[FactHarbor] Loaded ${Object.keys(bundle.sources).length} source scores from bundle`);
+        console.log(
+          `[FactHarbor] Loaded ${Object.keys(bundle.sources).length} source scores from bundle`,
+        );
       }
     } else {
       console.warn(`[FactHarbor] Source bundle not found: ${bundlePath}`);
@@ -1074,19 +1170,21 @@ function getTrackRecordScore(url: string): number | null {
 
     // No default - unknown reliability
     return null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
   facts: ExtractedFact[],
-  sources: FetchedSource[]
+  sources: FetchedSource[],
 ): ClaimVerdict[] {
   const sourceScoreById = new Map(
-    sources.map((s) => [s.id, s.trackRecordScore])
+    sources.map((s) => [s.id, s.trackRecordScore]),
   );
   const factScoreById = new Map(
-    facts.map((f) => [f.id, sourceScoreById.get(f.sourceId) ?? null])
+    facts.map((f) => [f.id, sourceScoreById.get(f.sourceId) ?? null]),
   );
 
   return claimVerdicts.map((verdict) => {
@@ -1108,7 +1206,7 @@ function applyEvidenceWeighting(
       truthPercentage: adjustedTruth,
       confidence: adjustedConfidence,
       verdict: adjustedVerdict,
-      highlightColor: getHighlightColor7Point(adjustedVerdict)
+      highlightColor: getHighlightColor7Point(adjustedVerdict),
     };
   });
 }
@@ -1119,56 +1217,69 @@ function applyEvidenceWeighting(
 
 const UNDERSTANDING_SCHEMA = z.object({
   detectedInputType: z.enum(["question", "claim", "article"]),
-  questionIntent: z.enum(["verification", "exploration", "comparison"]).optional(),
+  questionIntent: z
+    .enum(["verification", "exploration", "comparison"])
+    .optional(),
   questionBeingAsked: z.string().optional(),
   impliedClaim: z.string().optional(),
 
-  distinctProceedings: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    shortName: z.string(),
-    court: z.string().optional(),
-    jurisdiction: z.string().optional(),
-    date: z.string(),
-    subject: z.string(),
-    charges: z.array(z.string()).optional(),
-    outcome: z.string().optional(),
-    status: z.enum(["concluded", "ongoing", "pending", "unknown"])
-  })),
+  distinctProceedings: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      shortName: z.string(),
+      court: z.string().optional(),
+      jurisdiction: z.string().optional(),
+      date: z.string(),
+      subject: z.string(),
+      charges: z.array(z.string()).optional(),
+      outcome: z.string().optional(),
+      status: z.enum(["concluded", "ongoing", "pending", "unknown"]),
+    }),
+  ),
   requiresSeparateAnalysis: z.boolean(),
   proceedingContext: z.string().optional(),
 
   mainQuestion: z.string(),
   articleThesis: z.string(),
-  subClaims: z.array(z.object({
-    id: z.string(),
-    text: z.string(),
-    type: z.enum(["legal", "procedural", "factual", "evaluative"]),
-    // NEW: Claim role - distinguishes framing from core claims
-    claimRole: z.enum([
-      "attribution",    // WHO said it (person, position, authority)
-      "source",         // WHERE it was said (document, email, speech)
-      "timing",         // WHEN it was said
-      "core"            // WHAT was actually claimed (the verifiable assertion)
-    ]).optional(),
-    // NEW: Dependencies - which claims must be true for this claim to matter
-    dependsOn: z.array(z.string()).optional(),  // List of claim IDs this depends on
-    keyEntities: z.array(z.string()),
-    isCentral: z.boolean(),
-    relatedProceedingId: z.string().optional(),
-    approximatePosition: z.string().optional()
-  })),
-  distinctEvents: z.array(z.object({
-    name: z.string(),
-    date: z.string(),
-    description: z.string()
-  })),
+  subClaims: z.array(
+    z.object({
+      id: z.string(),
+      text: z.string(),
+      type: z.enum(["legal", "procedural", "factual", "evaluative"]),
+      // NEW: Claim role - distinguishes framing from core claims
+      claimRole: z
+        .enum([
+          "attribution", // WHO said it (person, position, authority)
+          "source", // WHERE it was said (document, email, speech)
+          "timing", // WHEN it was said
+          "core", // WHAT was actually claimed (the verifiable assertion)
+        ])
+        .optional(),
+      // NEW: Dependencies - which claims must be true for this claim to matter
+      dependsOn: z.array(z.string()).optional(), // List of claim IDs this depends on
+      keyEntities: z.array(z.string()),
+      isCentral: z.boolean(),
+      relatedProceedingId: z.string().optional(),
+      approximatePosition: z.string().optional(),
+    }),
+  ),
+  distinctEvents: z.array(
+    z.object({
+      name: z.string(),
+      date: z.string(),
+      description: z.string(),
+    }),
+  ),
   legalFrameworks: z.array(z.string()),
   researchQuestions: z.array(z.string()),
-  riskTier: z.enum(["A", "B", "C"])
+  riskTier: z.enum(["A", "B", "C"]),
 });
 
-async function understandClaim(input: string, model: any): Promise<ClaimUnderstanding> {
+async function understandClaim(
+  input: string,
+  model: any,
+): Promise<ClaimUnderstanding> {
   const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT EVENTS or PROCEEDINGS.
 
 ## CRITICAL: CLAIM STRUCTURE ANALYSIS
@@ -1233,10 +1344,10 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
       model,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
+        { role: "user", content: userPrompt },
       ],
       temperature: 0.3,
-      output: Output.object({ schema: UNDERSTANDING_SCHEMA })
+      output: Output.object({ schema: UNDERSTANDING_SCHEMA }),
     });
   } catch (err) {
     console.error("[Analyzer] generateText failed in understandClaim:", err);
@@ -1248,10 +1359,18 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
   const rawOutput = extractStructuredOutput(result);
 
   if (!rawOutput) {
-    console.error("[Analyzer] No structured output from LLM. Result type:", typeof result);
-    console.error("[Analyzer] Result keys:", result ? Object.keys(result) : 'result is null/undefined');
-    console.error("[Analyzer] Full result (first 1000 chars):",
-      result ? JSON.stringify(result, null, 2).slice(0, 1000) : 'null');
+    console.error(
+      "[Analyzer] No structured output from LLM. Result type:",
+      typeof result,
+    );
+    console.error(
+      "[Analyzer] Result keys:",
+      result ? Object.keys(result) : "result is null/undefined",
+    );
+    console.error(
+      "[Analyzer] Full result (first 1000 chars):",
+      result ? JSON.stringify(result, null, 2).slice(0, 1000) : "null",
+    );
     throw new Error("LLM did not return structured output");
   }
 
@@ -1259,19 +1378,29 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 
   // Validate parsed has required fields
   if (!parsed.subClaims || !Array.isArray(parsed.subClaims)) {
-    console.error("[Analyzer] Invalid parsed output - missing subClaims:", parsed);
+    console.error(
+      "[Analyzer] Invalid parsed output - missing subClaims:",
+      parsed,
+    );
     throw new Error("LLM output missing required fields");
   }
 
   const claimsWithPositions = parsed.subClaims.map((claim: any) => {
     const positions = findClaimPosition(input, claim.text);
-    return { ...claim, startOffset: positions?.start, endOffset: positions?.end };
+    return {
+      ...claim,
+      startOffset: positions?.start,
+      endOffset: positions?.end,
+    };
   });
 
   return { ...parsed, subClaims: claimsWithPositions };
 }
 
-function findClaimPosition(text: string, claimText: string): { start: number; end: number } | null {
+function findClaimPosition(
+  text: string,
+  claimText: string,
+): { start: number; end: number } | null {
   const normalizedText = text.toLowerCase();
   const normalizedClaim = claimText.toLowerCase();
 
@@ -1297,31 +1426,47 @@ interface ResearchDecision {
 
 function decideNextResearch(state: ResearchState): ResearchDecision {
   const config = getActiveConfig();
-  const categories = [...new Set(state.facts.map((f: ExtractedFact) => f.category))];
+  const categories = [
+    ...new Set(state.facts.map((f: ExtractedFact) => f.category)),
+  ];
   const understanding = state.understanding!;
 
-  const entities = understanding.subClaims.flatMap(c => c.keyEntities).slice(0, 4);
+  const entities = understanding.subClaims
+    .flatMap((c) => c.keyEntities)
+    .slice(0, 4);
   const entityStr = entities.join(" ");
 
   const hasLegal = categories.includes("legal_provision");
   const hasEvidence = categories.includes("evidence");
 
   const proceedings = understanding.distinctProceedings || [];
-  const proceedingsWithFacts = new Set(state.facts.map((f: ExtractedFact) => f.relatedProceedingId).filter(Boolean));
+  const proceedingsWithFacts = new Set(
+    state.facts
+      .map((f: ExtractedFact) => f.relatedProceedingId)
+      .filter(Boolean),
+  );
 
   if (
     state.facts.length >= config.minFactsRequired &&
     categories.length >= CONFIG.minCategories &&
     state.contradictionSearchPerformed &&
-    (proceedings.length === 0 || proceedings.every((p: DistinctProceeding) => proceedingsWithFacts.has(p.id)))
+    (proceedings.length === 0 ||
+      proceedings.every((p: DistinctProceeding) =>
+        proceedingsWithFacts.has(p.id),
+      ))
   ) {
     return { complete: true };
   }
 
   // Research each proceeding
-  if (proceedings.length > 0 && state.iterations.length < proceedings.length * 2) {
+  if (
+    proceedings.length > 0 &&
+    state.iterations.length < proceedings.length * 2
+  ) {
     for (const proc of proceedings) {
-      const procFacts = state.facts.filter(f => f.relatedProceedingId === proc.id);
+      const procFacts = state.facts.filter(
+        (f) => f.relatedProceedingId === proc.id,
+      );
       if (procFacts.length < 2) {
         return {
           complete: false,
@@ -1331,14 +1476,18 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
           queries: [
             `${proc.court || ""} ${proc.shortName} ${proc.subject}`.trim(),
             `${entityStr} ${proc.date} ${proc.jurisdiction || "ruling"}`.trim(),
-            `${proc.name} decision outcome ${proc.date}`
-          ]
+            `${proc.name} decision outcome ${proc.date}`,
+          ],
         };
       }
     }
   }
 
-  if (!hasLegal && understanding.legalFrameworks.length > 0 && state.iterations.length === 0) {
+  if (
+    !hasLegal &&
+    understanding.legalFrameworks.length > 0 &&
+    state.iterations.length === 0
+  ) {
     return {
       complete: false,
       focus: "Legal framework",
@@ -1346,7 +1495,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       queries: [
         `${entityStr} legal basis statute`,
         `${understanding.legalFrameworks[0]} law provisions`,
-      ]
+      ],
     };
   }
 
@@ -1357,8 +1506,8 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       category: "evidence",
       queries: [
         `${entityStr} evidence documents`,
-        `${entityStr} facts findings`
-      ]
+        `${entityStr} facts findings`,
+      ],
     };
   }
 
@@ -1370,8 +1519,8 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       isContradictionSearch: true,
       queries: [
         `${entityStr} criticism concerns`,
-        `${entityStr} controversy disputed unfair`
-      ]
+        `${entityStr} controversy disputed unfair`,
+      ],
     };
   }
 
@@ -1381,28 +1530,32 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
 // Helper to decode HTML entities in text
 function decodeHtmlEntities(text: string): string {
   const entities: Record<string, string> = {
-    '&amp;': '&',
-    '&lt;': '<',
-    '&gt;': '>',
-    '&quot;': '"',
-    '&#39;': "'",
-    '&#x27;': "'",
-    '&#x2d;': '-',
-    '&#x2D;': '-',
-    '&nbsp;': ' ',
-    '&#160;': ' ',
-    '&ndash;': '–',
-    '&mdash;': '—',
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&#x27;": "'",
+    "&#x2d;": "-",
+    "&#x2D;": "-",
+    "&nbsp;": " ",
+    "&#160;": " ",
+    "&ndash;": "–",
+    "&mdash;": "—",
   };
 
   let result = text;
   for (const [entity, char] of Object.entries(entities)) {
-    result = result.replace(new RegExp(entity, 'gi'), char);
+    result = result.replace(new RegExp(entity, "gi"), char);
   }
   // Also handle numeric entities like &#45;
-  result = result.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
+  result = result.replace(/&#(\d+);/g, (_, code) =>
+    String.fromCharCode(parseInt(code, 10)),
+  );
   // Handle hex entities like &#x2d;
-  result = result.replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
+  result = result.replace(/&#x([0-9a-fA-F]+);/g, (_, code) =>
+    String.fromCharCode(parseInt(code, 16)),
+  );
 
   return result;
 }
@@ -1416,29 +1569,33 @@ function extractTitleFromUrl(url: string): string {
     const pathname = urlObj.pathname;
 
     // Get filename from path
-    const filename = pathname.split('/').pop() || '';
+    const filename = pathname.split("/").pop() || "";
 
     if (filename) {
       // Remove extension and clean up
       let title = filename
-        .replace(/\.(pdf|html|htm|php|aspx?)$/i, '')
-        .replace(/[-_]/g, ' ')
-        .replace(/\s+/g, ' ')
+        .replace(/\.(pdf|html|htm|php|aspx?)$/i, "")
+        .replace(/[-_]/g, " ")
+        .replace(/\s+/g, " ")
         .trim();
 
       // Capitalize first letter of each word
       if (title.length > 3) {
-        title = title.split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(' ');
+        title = title
+          .split(" ")
+          .map(
+            (word) =>
+              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+          )
+          .join(" ");
         return title.slice(0, 100);
       }
     }
 
     // Fallback to hostname
-    return urlObj.hostname.replace(/^www\./, '');
+    return urlObj.hostname.replace(/^www\./, "");
   } catch {
-    return 'Unknown Source';
+    return "Unknown Source";
   }
 }
 
@@ -1446,18 +1603,20 @@ function extractTitleFromUrl(url: string): string {
  * Extract title from document text with PDF header detection
  */
 function extractTitle(text: string, url: string): string {
-  const firstLine = text.split("\n")[0]?.trim().slice(0, 150) || '';
+  const firstLine = text.split("\n")[0]?.trim().slice(0, 150) || "";
 
   // Check for PDF header patterns - these indicate raw PDF bytes
-  const isPdfHeader = /^%PDF-\d+\.\d+/.test(firstLine) ||
-                      firstLine.includes('%���') ||
-                      firstLine.includes('\x00') ||
-                      /^[\x00-\x1f\x7f-\xff]{3,}/.test(firstLine);
+  const isPdfHeader =
+    /^%PDF-\d+\.\d+/.test(firstLine) ||
+    firstLine.includes("%���") ||
+    firstLine.includes("\x00") ||
+    /^[\x00-\x1f\x7f-\xff]{3,}/.test(firstLine);
 
   // Check for other binary/garbage patterns
-  const isGarbage = firstLine.length < 3 ||
-                    !/[a-zA-Z]{3,}/.test(firstLine) ||  // Must have some letters
-                    (firstLine.match(/[^\x20-\x7E]/g)?.length || 0) > firstLine.length * 0.3;  // >30% non-printable
+  const isGarbage =
+    firstLine.length < 3 ||
+    !/[a-zA-Z]{3,}/.test(firstLine) || // Must have some letters
+    (firstLine.match(/[^\x20-\x7E]/g)?.length || 0) > firstLine.length * 0.3; // >30% non-printable
 
   if (isPdfHeader || isGarbage) {
     // Try to find a better title in the first few lines
@@ -1465,11 +1624,13 @@ function extractTitle(text: string, url: string): string {
     for (const line of lines) {
       const cleaned = line.trim();
       // Look for a line that looks like a title (has letters, reasonable length)
-      if (cleaned.length >= 10 &&
-          cleaned.length <= 150 &&
-          /[a-zA-Z]{4,}/.test(cleaned) &&
-          !/^%PDF/.test(cleaned) &&
-          (cleaned.match(/[^\x20-\x7E]/g)?.length || 0) < cleaned.length * 0.1) {
+      if (
+        cleaned.length >= 10 &&
+        cleaned.length <= 150 &&
+        /[a-zA-Z]{4,}/.test(cleaned) &&
+        !/^%PDF/.test(cleaned) &&
+        (cleaned.match(/[^\x20-\x7E]/g)?.length || 0) < cleaned.length * 0.1
+      ) {
         return cleaned.slice(0, 100);
       }
     }
@@ -1481,16 +1642,22 @@ function extractTitle(text: string, url: string): string {
   return firstLine.slice(0, 100) || extractTitleFromUrl(url);
 }
 
-async function fetchSource(url: string, id: string, category: string, searchQuery?: string): Promise<FetchedSource | null> {
+async function fetchSource(
+  url: string,
+  id: string,
+  category: string,
+  searchQuery?: string,
+): Promise<FetchedSource | null> {
   const config = getActiveConfig();
   const trackRecord = getTrackRecordScore(url);
 
   try {
     const result = await Promise.race([
       extractTextFromUrl(url),
-      new Promise<{ text: string; title: string; contentType: string }>((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), CONFIG.fetchTimeoutMs)
-      )
+      new Promise<{ text: string; title: string; contentType: string }>(
+        (_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), CONFIG.fetchTimeoutMs),
+      ),
     ]);
 
     // Handle both old (string) and new (object) return types for compatibility
@@ -1502,40 +1669,51 @@ async function fetchSource(url: string, id: string, category: string, searchQuer
     title = decodeHtmlEntities(title);
 
     return {
-      id, url,
+      id,
+      url,
       title,
       trackRecordScore: trackRecord,
       fullText: text.slice(0, config.articleMaxChars),
       fetchedAt: new Date().toISOString(),
       category,
       fetchSuccess: true,
-      searchQuery
+      searchQuery,
     };
   } catch (err) {
     console.warn(`Fetch failed for ${url}:`, err);
     return {
-      id, url,
+      id,
+      url,
       title: extractTitleFromUrl(url),
       trackRecordScore: trackRecord,
       fullText: "",
       fetchedAt: new Date().toISOString(),
       category,
       fetchSuccess: false,
-      searchQuery
+      searchQuery,
     };
   }
 }
 
 const FACT_SCHEMA = z.object({
-  facts: z.array(z.object({
-    fact: z.string(),
-    category: z.enum(["legal_provision", "evidence", "expert_quote", "statistic", "event", "criticism"]),
-    specificity: z.enum(["high", "medium", "low"]),
-    sourceExcerpt: z.string().min(20),
-    relatedProceedingId: z.string().optional(),
-    isContestedClaim: z.boolean().optional(),
-    claimSource: z.string().optional()
-  }))
+  facts: z.array(
+    z.object({
+      fact: z.string(),
+      category: z.enum([
+        "legal_provision",
+        "evidence",
+        "expert_quote",
+        "statistic",
+        "event",
+        "criticism",
+      ]),
+      specificity: z.enum(["high", "medium", "low"]),
+      sourceExcerpt: z.string().min(20),
+      relatedProceedingId: z.string().optional(),
+      isContestedClaim: z.boolean().optional(),
+      claimSource: z.string().optional(),
+    }),
+  ),
 });
 
 async function extractFacts(
@@ -1543,13 +1721,14 @@ async function extractFacts(
   focus: string,
   model: any,
   proceedings: DistinctProceeding[],
-  targetProceedingId?: string
+  targetProceedingId?: string,
 ): Promise<ExtractedFact[]> {
   if (!source.fetchSuccess || !source.fullText) return [];
 
-  const proceedingsList = proceedings.length > 0
-    ? `\n\nKNOWN PROCEEDINGS:\n${proceedings.map((p: DistinctProceeding) => `- ${p.id}: ${p.name}`).join("\n")}`
-    : "";
+  const proceedingsList =
+    proceedings.length > 0
+      ? `\n\nKNOWN PROCEEDINGS:\n${proceedings.map((p: DistinctProceeding) => `- ${p.id}: ${p.name}`).join("\n")}`
+      : "";
 
   const systemPrompt = `Extract SPECIFIC facts. Focus: ${focus}
 ${targetProceedingId ? `Target proceeding: ${targetProceedingId}` : ""}
@@ -1561,17 +1740,27 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
       model,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Source: ${source.title}\nURL: ${source.url}\n\n${source.fullText}` }
+        {
+          role: "user",
+          content: `Source: ${source.title}\nURL: ${source.url}\n\n${source.fullText}`,
+        },
       ],
       temperature: 0.2,
-      output: Output.object({ schema: FACT_SCHEMA })
+      output: Output.object({ schema: FACT_SCHEMA }),
     });
 
     // Handle different AI SDK versions - safely extract structured output
     const rawOutput = extractStructuredOutput(result);
     if (!rawOutput) {
-      console.warn(`[Analyzer] No structured output for fact extraction from ${source.id}`);
-      console.warn(`[Analyzer] Result type:`, typeof result, "Result keys:", result ? Object.keys(result) : 'null');
+      console.warn(
+        `[Analyzer] No structured output for fact extraction from ${source.id}`,
+      );
+      console.warn(
+        `[Analyzer] Result type:`,
+        typeof result,
+        "Result keys:",
+        result ? Object.keys(result) : "null",
+      );
       return [];
     }
 
@@ -1582,7 +1771,7 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
     }
 
     return extraction.facts
-      .filter(f => f.specificity !== "low" && f.sourceExcerpt?.length >= 20)
+      .filter((f) => f.specificity !== "low" && f.sourceExcerpt?.length >= 20)
       .map((f, i) => ({
         id: `${source.id}-F${i + 1}`,
         fact: f.fact,
@@ -1594,7 +1783,7 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
         sourceExcerpt: f.sourceExcerpt,
         relatedProceedingId: f.relatedProceedingId || targetProceedingId,
         isContestedClaim: f.isContestedClaim,
-        claimSource: f.claimSource
+        claimSource: f.claimSource,
       }));
   } catch {
     return [];
@@ -1612,7 +1801,9 @@ const KEY_FACTOR_SCHEMA = z.object({
   isContested: z.boolean().optional(),
   contestedBy: z.string().optional(),
   contestationReason: z.string().optional(),
-  factualBasis: z.enum(["established", "disputed", "alleged", "opinion"]).optional()
+  factualBasis: z
+    .enum(["established", "disputed", "alleged", "opinion"])
+    .optional(),
 });
 
 const VERDICTS_SCHEMA_MULTI_PROCEEDING = z.object({
@@ -1622,26 +1813,35 @@ const VERDICTS_SCHEMA_MULTI_PROCEEDING = z.object({
     shortAnswer: z.string(),
     nuancedAnswer: z.string(),
     keyFactors: z.array(KEY_FACTOR_SCHEMA),
-    calibrationNote: z.string().optional()
+    calibrationNote: z.string().optional(),
   }),
-  proceedingAnswers: z.array(z.object({
-    proceedingId: z.string(),
-    proceedingName: z.string(),
-    answer: z.enum(["YES", "NO", "PARTIALLY", "INSUFFICIENT-EVIDENCE"]),
-    confidence: z.number().min(0).max(100),
-    shortAnswer: z.string(),
-    keyFactors: z.array(KEY_FACTOR_SCHEMA)
-  })),
+  proceedingAnswers: z.array(
+    z.object({
+      proceedingId: z.string(),
+      proceedingName: z.string(),
+      answer: z.enum(["YES", "NO", "PARTIALLY", "INSUFFICIENT-EVIDENCE"]),
+      confidence: z.number().min(0).max(100),
+      shortAnswer: z.string(),
+      keyFactors: z.array(KEY_FACTOR_SCHEMA),
+    }),
+  ),
   proceedingSummary: z.string(),
-  claimVerdicts: z.array(z.object({
-    claimId: z.string(),
-    verdict: z.enum(["WELL-SUPPORTED", "PARTIALLY-SUPPORTED", "UNCERTAIN", "REFUTED"]),
-    confidence: z.number().min(0).max(100),
-    riskTier: z.enum(["A", "B", "C"]),
-    reasoning: z.string(),
-    supportingFactIds: z.array(z.string()),
-    relatedProceedingId: z.string().optional()
-  }))
+  claimVerdicts: z.array(
+    z.object({
+      claimId: z.string(),
+      verdict: z.enum([
+        "WELL-SUPPORTED",
+        "PARTIALLY-SUPPORTED",
+        "UNCERTAIN",
+        "REFUTED",
+      ]),
+      confidence: z.number().min(0).max(100),
+      riskTier: z.enum(["A", "B", "C"]),
+      reasoning: z.string(),
+      supportingFactIds: z.array(z.string()),
+      relatedProceedingId: z.string().optional(),
+    }),
+  ),
 });
 
 const VERDICTS_SCHEMA_SIMPLE = z.object({
@@ -1650,49 +1850,76 @@ const VERDICTS_SCHEMA_SIMPLE = z.object({
     confidence: z.number().min(0).max(100),
     shortAnswer: z.string(),
     nuancedAnswer: z.string(),
-    keyFactors: z.array(KEY_FACTOR_SCHEMA)
+    keyFactors: z.array(KEY_FACTOR_SCHEMA),
   }),
-  claimVerdicts: z.array(z.object({
-    claimId: z.string(),
-    verdict: z.enum(["WELL-SUPPORTED", "PARTIALLY-SUPPORTED", "UNCERTAIN", "REFUTED"]),
-    confidence: z.number().min(0).max(100),
-    riskTier: z.enum(["A", "B", "C"]),
-    reasoning: z.string(),
-    supportingFactIds: z.array(z.string())
-  }))
+  claimVerdicts: z.array(
+    z.object({
+      claimId: z.string(),
+      verdict: z.enum([
+        "WELL-SUPPORTED",
+        "PARTIALLY-SUPPORTED",
+        "UNCERTAIN",
+        "REFUTED",
+      ]),
+      confidence: z.number().min(0).max(100),
+      riskTier: z.enum(["A", "B", "C"]),
+      reasoning: z.string(),
+      supportingFactIds: z.array(z.string()),
+    }),
+  ),
 });
 
 const VERDICTS_SCHEMA_CLAIM = z.object({
-  claimVerdicts: z.array(z.object({
-    claimId: z.string(),
-    verdict: z.enum(["WELL-SUPPORTED", "PARTIALLY-SUPPORTED", "UNCERTAIN", "REFUTED"]),
-    confidence: z.number().min(0).max(100),
-    riskTier: z.enum(["A", "B", "C"]),
-    reasoning: z.string(),
-    supportingFactIds: z.array(z.string())
-  })),
+  claimVerdicts: z.array(
+    z.object({
+      claimId: z.string(),
+      verdict: z.enum([
+        "WELL-SUPPORTED",
+        "PARTIALLY-SUPPORTED",
+        "UNCERTAIN",
+        "REFUTED",
+      ]),
+      confidence: z.number().min(0).max(100),
+      riskTier: z.enum(["A", "B", "C"]),
+      reasoning: z.string(),
+      supportingFactIds: z.array(z.string()),
+    }),
+  ),
   articleAnalysis: z.object({
     thesisSupported: z.boolean(),
-    logicalFallacies: z.array(z.object({
-      type: z.string(),
-      description: z.string(),
-      affectedClaims: z.array(z.string())
-    })),
-    articleVerdict: z.enum(["CREDIBLE", "MOSTLY-CREDIBLE", "MISLEADING", "FALSE"]),
+    logicalFallacies: z.array(
+      z.object({
+        type: z.string(),
+        description: z.string(),
+        affectedClaims: z.array(z.string()),
+      }),
+    ),
+    articleVerdict: z.enum([
+      "CREDIBLE",
+      "MOSTLY-CREDIBLE",
+      "MISLEADING",
+      "FALSE",
+    ]),
     articleConfidence: z.number().min(0).max(100),
     verdictDiffersFromClaimAverage: z.boolean(),
-    verdictDifferenceReason: z.string().optional()
-  })
+    verdictDifferenceReason: z.string().optional(),
+  }),
 });
 
 async function generateVerdicts(
   state: ResearchState,
-  model: any
-): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis; questionAnswer?: QuestionAnswer; pseudoscienceAnalysis?: PseudoscienceAnalysis }> {
+  model: any,
+): Promise<{
+  claimVerdicts: ClaimVerdict[];
+  articleAnalysis: ArticleAnalysis;
+  questionAnswer?: QuestionAnswer;
+  pseudoscienceAnalysis?: PseudoscienceAnalysis;
+}> {
   const understanding = state.understanding!;
   const isQuestion = understanding.detectedInputType === "question";
-  const hasMultipleProceedings = understanding.requiresSeparateAnalysis &&
-                                  understanding.distinctProceedings.length > 1;
+  const hasMultipleProceedings =
+    understanding.requiresSeparateAnalysis &&
+    understanding.distinctProceedings.length > 1;
 
   // Detect pseudoscience in the input and facts
   const allText = [
@@ -1700,31 +1927,56 @@ async function generateVerdicts(
     understanding.articleThesis,
     ...understanding.subClaims.map((c: any) => c.text),
     ...state.facts.map((f: ExtractedFact) => f.fact),
-    ...state.sources.map((s: FetchedSource) => s.fullText)
+    ...state.sources.map((s: FetchedSource) => s.fullText),
   ].join(" ");
 
   const pseudoscienceAnalysis = detectPseudoscience(allText);
 
-  const factsFormatted = state.facts.map((f: ExtractedFact) => {
-    let factLine = `[${f.id}]`;
-    if (f.relatedProceedingId) factLine += ` (${f.relatedProceedingId})`;
-    if (f.isContestedClaim) factLine += ` [CONTESTED by ${f.claimSource || "critics"}]`;
-    factLine += ` ${f.fact} (Source: ${f.sourceTitle})`;
-    return factLine;
-  }).join("\n");
+  const factsFormatted = state.facts
+    .map((f: ExtractedFact) => {
+      let factLine = `[${f.id}]`;
+      if (f.relatedProceedingId) factLine += ` (${f.relatedProceedingId})`;
+      if (f.isContestedClaim)
+        factLine += ` [CONTESTED by ${f.claimSource || "critics"}]`;
+      factLine += ` ${f.fact} (Source: ${f.sourceTitle})`;
+      return factLine;
+    })
+    .join("\n");
 
-  const claimsFormatted = understanding.subClaims.map((c: any) =>
-    `${c.id}${c.relatedProceedingId ? ` (${c.relatedProceedingId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`
-  ).join("\n");
+  const claimsFormatted = understanding.subClaims
+    .map(
+      (c: any) =>
+        `${c.id}${c.relatedProceedingId ? ` (${c.relatedProceedingId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
+    )
+    .join("\n");
 
   if (isQuestion && hasMultipleProceedings) {
-    const result = await generateMultiProceedingVerdicts(state, understanding, factsFormatted, claimsFormatted, model);
+    const result = await generateMultiProceedingVerdicts(
+      state,
+      understanding,
+      factsFormatted,
+      claimsFormatted,
+      model,
+    );
     return { ...result, pseudoscienceAnalysis };
   } else if (isQuestion) {
-    const result = await generateQuestionVerdicts(state, understanding, factsFormatted, claimsFormatted, model);
+    const result = await generateQuestionVerdicts(
+      state,
+      understanding,
+      factsFormatted,
+      claimsFormatted,
+      model,
+    );
     return { ...result, pseudoscienceAnalysis };
   } else {
-    const result = await generateClaimVerdicts(state, understanding, factsFormatted, claimsFormatted, model, pseudoscienceAnalysis);
+    const result = await generateClaimVerdicts(
+      state,
+      understanding,
+      factsFormatted,
+      claimsFormatted,
+      model,
+      pseudoscienceAnalysis,
+    );
     return { ...result, pseudoscienceAnalysis };
   }
 }
@@ -1734,12 +1986,18 @@ async function generateMultiProceedingVerdicts(
   understanding: ClaimUnderstanding,
   factsFormatted: string,
   claimsFormatted: string,
-  model: any
-): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis; questionAnswer: QuestionAnswer }> {
-
-  const proceedingsFormatted = understanding.distinctProceedings.map((p: DistinctProceeding) =>
-    `- **${p.id}**: ${p.name}\n  Court: ${p.court || "N/A"} | Date: ${p.date} | Status: ${p.status}\n  Subject: ${p.subject}`
-  ).join("\n\n");
+  model: any,
+): Promise<{
+  claimVerdicts: ClaimVerdict[];
+  articleAnalysis: ArticleAnalysis;
+  questionAnswer: QuestionAnswer;
+}> {
+  const proceedingsFormatted = understanding.distinctProceedings
+    .map(
+      (p: DistinctProceeding) =>
+        `- **${p.id}**: ${p.name}\n  Court: ${p.court || "N/A"} | Date: ${p.date} | Status: ${p.status}\n  Subject: ${p.subject}`,
+    )
+    .join("\n\n");
 
   const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT PROCEEDINGS separately.
 
@@ -1787,10 +2045,10 @@ Provide SEPARATE answers for each proceeding.`;
       model,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
+        { role: "user", content: userPrompt },
       ],
       temperature: 0.3,
-      output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_PROCEEDING })
+      output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_PROCEEDING }),
     });
     state.llmCalls++;
 
@@ -1800,27 +2058,34 @@ Provide SEPARATE answers for each proceeding.`;
       parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING>;
     }
   } catch (err) {
-    console.warn("[Analyzer] Structured output failed for multi-proceeding verdicts, using fallback:", err);
+    console.warn(
+      "[Analyzer] Structured output failed for multi-proceeding verdicts, using fallback:",
+      err,
+    );
     state.llmCalls++;
   }
 
   // Fallback if structured output failed
   if (!parsed || !parsed.proceedingAnswers) {
-    console.log("[Analyzer] Using fallback multi-proceeding verdict generation");
+    console.log(
+      "[Analyzer] Using fallback multi-proceeding verdict generation",
+    );
 
-    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => ({
-      claimId: claim.id,
-      claimText: claim.text,
-      llmVerdict: "UNCERTAIN",
-      verdict: "UNVERIFIED" as const,
-      confidence: 50,
-      truthPercentage: 50,
-      riskTier: "B" as const,
-      reasoning: "Unable to generate verdict due to schema validation error.",
-      supportingFactIds: [],
-      isCentral: claim.isCentral || false,
-      highlightColor: getHighlightColor7Point("UNVERIFIED")
-    }));
+    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+      (claim: any) => ({
+        claimId: claim.id,
+        claimText: claim.text,
+        llmVerdict: "UNCERTAIN",
+        verdict: "UNVERIFIED" as const,
+        confidence: 50,
+        truthPercentage: 50,
+        riskTier: "B" as const,
+        reasoning: "Unable to generate verdict due to schema validation error.",
+        supportingFactIds: [],
+        isCentral: claim.isCentral || false,
+        highlightColor: getHighlightColor7Point("UNVERIFIED"),
+      }),
+    );
 
     const questionAnswer: QuestionAnswer = {
       question: understanding.questionBeingAsked || state.originalInput || "",
@@ -1829,23 +2094,28 @@ Provide SEPARATE answers for each proceeding.`;
       confidence: 50,
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
-      nuancedAnswer: "The structured output generation failed. Manual review recommended.",
+      nuancedAnswer:
+        "The structured output generation failed. Manual review recommended.",
       keyFactors: [],
       hasMultipleProceedings: true,
-      proceedingAnswers: understanding.distinctProceedings.map((p: DistinctProceeding) => ({
-        proceedingId: p.id,
-        proceedingName: p.name,
-        llmAnswer: "INSUFFICIENT-EVIDENCE",
-        answer: "UNVERIFIED",
-        truthPercentage: 50,
-        confidence: 50,
-        shortAnswer: "Analysis failed",
-        keyFactors: []
-      }))
+      proceedingAnswers: understanding.distinctProceedings.map(
+        (p: DistinctProceeding) => ({
+          proceedingId: p.id,
+          proceedingName: p.name,
+          llmAnswer: "INSUFFICIENT-EVIDENCE",
+          answer: "UNVERIFIED",
+          truthPercentage: 50,
+          confidence: 50,
+          shortAnswer: "Analysis failed",
+          keyFactors: [],
+        }),
+      ),
     };
 
     const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
-    const centralSupported = fallbackVerdicts.filter((v) => v.isCentral && v.truthPercentage >= 72).length;
+    const centralSupported = fallbackVerdicts.filter(
+      (v) => v.isCentral && v.truthPercentage >= 72,
+    ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "question",
       isQuestion: true,
@@ -1864,8 +2134,8 @@ Provide SEPARATE answers for each proceeding.`;
         uncertain: fallbackVerdicts.length,
         refuted: 0,
         centralClaimsTotal: centralTotal,
-        centralClaimsSupported: centralSupported
-      }
+        centralClaimsSupported: centralSupported,
+      },
     };
 
     return { claimVerdicts: fallbackVerdicts, articleAnalysis, questionAnswer };
@@ -1879,37 +2149,48 @@ Provide SEPARATE answers for each proceeding.`;
     const factors = pa.keyFactors as KeyFactor[];
 
     // Calculate from actual factors - NOT from LLM-reported numbers
-    const positiveFactors = factors.filter(f => f.supports === "yes").length;
-    const negativeFactors = factors.filter(f => f.supports === "no").length;
-    const neutralFactors = factors.filter(f => f.supports === "neutral").length;
-    const contestedNegatives = factors.filter(f => f.supports === "no" && f.isContested).length;
+    const positiveFactors = factors.filter((f) => f.supports === "yes").length;
+    const negativeFactors = factors.filter((f) => f.supports === "no").length;
+    const neutralFactors = factors.filter(
+      (f) => f.supports === "neutral",
+    ).length;
+    const contestedNegatives = factors.filter(
+      (f) => f.supports === "no" && f.isContested,
+    ).length;
 
     const factorAnalysis: FactorAnalysis = {
       positiveFactors,
       negativeFactors,
       neutralFactors,
       contestedNegatives,
-      verdictExplanation: `${positiveFactors} positive, ${negativeFactors} negative (${contestedNegatives} contested), ${neutralFactors} neutral`
+      verdictExplanation: `${positiveFactors} positive, ${negativeFactors} negative (${contestedNegatives} contested), ${neutralFactors} neutral`,
     };
 
     // Apply calibration correction based on factors
     let llmAnswer = pa.answer;
     let correctedConfidence = pa.confidence;
 
-    const effectiveNegatives = negativeFactors - (contestedNegatives * 0.5);
+    const effectiveNegatives = negativeFactors - contestedNegatives * 0.5;
 
     if (pa.answer === "NO" && positiveFactors > effectiveNegatives) {
       llmAnswer = "PARTIALLY";
       correctedConfidence = Math.min(pa.confidence, 72);
       factorAnalysis.verdictExplanation = `Corrected from NO: ${positiveFactors} positive > ${effectiveNegatives.toFixed(1)} effective negative`;
-    } else if (pa.answer === "NO" && contestedNegatives > 0 && contestedNegatives === negativeFactors) {
+    } else if (
+      pa.answer === "NO" &&
+      contestedNegatives > 0 &&
+      contestedNegatives === negativeFactors
+    ) {
       llmAnswer = "PARTIALLY";
       correctedConfidence = Math.min(pa.confidence, 68);
       factorAnalysis.verdictExplanation = `Corrected: All ${negativeFactors} negative factors are contested`;
     }
 
     // Calculate truth percentage and derive 7-point answer
-    const truthPct = calculateQuestionTruthPercentage(llmAnswer, correctedConfidence);
+    const truthPct = calculateQuestionTruthPercentage(
+      llmAnswer,
+      correctedConfidence,
+    );
     const calibratedAnswer = percentageToQuestionAnswer(truthPct);
 
     return {
@@ -1918,29 +2199,37 @@ Provide SEPARATE answers for each proceeding.`;
       answer: calibratedAnswer, // 7-point calibrated answer
       confidence: correctedConfidence,
       truthPercentage: truthPct,
-      factorAnalysis
+      factorAnalysis,
     } as ProceedingAnswer;
   });
 
   // Recalculate overall using truth percentages
   const avgTruthPct = Math.round(
-    correctedProceedingAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) / correctedProceedingAnswers.length
+    correctedProceedingAnswers.reduce(
+      (sum, pa) => sum + pa.truthPercentage,
+      0,
+    ) / correctedProceedingAnswers.length,
   );
 
   // Determine overall LLM-style answer for logging
-  const answers = correctedProceedingAnswers.map((pa: ProceedingAnswer) => pa.answer);
+  const answers = correctedProceedingAnswers.map(
+    (pa: ProceedingAnswer) => pa.answer,
+  );
   let overallLlmAnswer = parsed.questionAnswer.answer;
-  const yesCount = answers.filter(a => a === "YES" || a === "MOSTLY-YES").length;
-  const noCount = answers.filter(a => a === "NO" || a === "MOSTLY-NO").length;
+  const yesCount = answers.filter(
+    (a) => a === "YES" || a === "MOSTLY-YES",
+  ).length;
+  const noCount = answers.filter((a) => a === "NO" || a === "MOSTLY-NO").length;
   if (yesCount > 0 && noCount > 0) overallLlmAnswer = "PARTIALLY";
 
   const avgConfidence = Math.round(
-    correctedProceedingAnswers.reduce((sum, pa) => sum + pa.confidence, 0) / correctedProceedingAnswers.length
+    correctedProceedingAnswers.reduce((sum, pa) => sum + pa.confidence, 0) /
+      correctedProceedingAnswers.length,
   );
 
   // Calculate overall factorAnalysis
-  const allFactors = correctedProceedingAnswers.flatMap(pa => pa.keyFactors);
-  const hasContestedFactors = allFactors.some(f => f.isContested);
+  const allFactors = correctedProceedingAnswers.flatMap((pa) => pa.keyFactors);
+  const hasContestedFactors = allFactors.some((f) => f.isContested);
 
   // Build claim verdicts with 7-point calibration
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
@@ -1959,19 +2248,28 @@ Provide SEPARATE answers for each proceeding.`;
       relatedProceedingId: cv.relatedProceedingId || claim?.relatedProceedingId,
       startOffset: claim?.startOffset,
       endOffset: claim?.endOffset,
-      highlightColor: getHighlightColor7Point(calibratedVerdict)
+      highlightColor: getHighlightColor7Point(calibratedVerdict),
     };
   });
 
-  const weightedClaimVerdicts = applyEvidenceWeighting(claimVerdicts, state.facts, state.sources);
+  const weightedClaimVerdicts = applyEvidenceWeighting(
+    claimVerdicts,
+    state.facts,
+    state.sources,
+  );
 
   const claimPattern = {
     total: weightedClaimVerdicts.length,
-    supported: weightedClaimVerdicts.filter(v => v.truthPercentage >= 72).length,
-    uncertain: weightedClaimVerdicts.filter(v => v.truthPercentage >= 43 && v.truthPercentage < 72).length,
-    refuted: weightedClaimVerdicts.filter(v => v.truthPercentage < 43).length,
-    centralClaimsTotal: weightedClaimVerdicts.filter(v => v.isCentral).length,
-    centralClaimsSupported: weightedClaimVerdicts.filter(v => v.isCentral && v.truthPercentage >= 72).length
+    supported: weightedClaimVerdicts.filter((v) => v.truthPercentage >= 72)
+      .length,
+    uncertain: weightedClaimVerdicts.filter(
+      (v) => v.truthPercentage >= 43 && v.truthPercentage < 72,
+    ).length,
+    refuted: weightedClaimVerdicts.filter((v) => v.truthPercentage < 43).length,
+    centralClaimsTotal: weightedClaimVerdicts.filter((v) => v.isCentral).length,
+    centralClaimsSupported: weightedClaimVerdicts.filter(
+      (v) => v.isCentral && v.truthPercentage >= 72,
+    ).length,
   };
 
   const calibrationNote = hasContestedFactors
@@ -1994,12 +2292,13 @@ Provide SEPARATE answers for each proceeding.`;
     proceedingAnswers: correctedProceedingAnswers,
     proceedingSummary: parsed.proceedingSummary,
     calibrationNote,
-    hasContestedFactors
+    hasContestedFactors,
   };
 
   // Calculate claims average truth percentage
   const claimsAvgTruthPct = Math.round(
-    weightedClaimVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) / weightedClaimVerdicts.length
+    weightedClaimVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) /
+      weightedClaimVerdicts.length,
   );
 
   const articleAnalysis: ArticleAnalysis = {
@@ -2018,14 +2317,19 @@ Provide SEPARATE answers for each proceeding.`;
     // Article verdict (for questions = question answer)
     articleTruthPercentage: avgTruthPct,
     articleVerdict: percentageToArticleVerdict(avgTruthPct),
-    articleVerdictReason: Math.abs(avgTruthPct - claimsAvgTruthPct) > 15
-      ? `Claims avg: ${percentageToArticleVerdict(claimsAvgTruthPct)} (${claimsAvgTruthPct}%)`
-      : undefined,
+    articleVerdictReason:
+      Math.abs(avgTruthPct - claimsAvgTruthPct) > 15
+        ? `Claims avg: ${percentageToArticleVerdict(claimsAvgTruthPct)} (${claimsAvgTruthPct}%)`
+        : undefined,
 
-    claimPattern
+    claimPattern,
   };
 
-  return { claimVerdicts: weightedClaimVerdicts, articleAnalysis, questionAnswer };
+  return {
+    claimVerdicts: weightedClaimVerdicts,
+    articleAnalysis,
+    questionAnswer,
+  };
 }
 
 async function generateQuestionVerdicts(
@@ -2033,9 +2337,12 @@ async function generateQuestionVerdicts(
   understanding: ClaimUnderstanding,
   factsFormatted: string,
   claimsFormatted: string,
-  model: any
-): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis; questionAnswer: QuestionAnswer }> {
-
+  model: any,
+): Promise<{
+  claimVerdicts: ClaimVerdict[];
+  articleAnalysis: ArticleAnalysis;
+  questionAnswer: QuestionAnswer;
+}> {
   const systemPrompt = `Answer the question. Mark contested factors with isContested=true.
 
 ${getKnowledgeInstruction()}`;
@@ -2056,10 +2363,10 @@ ${factsFormatted}`;
       model,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
+        { role: "user", content: userPrompt },
       ],
       temperature: 0.3,
-      output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE })
+      output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE }),
     });
     state.llmCalls++;
 
@@ -2069,7 +2376,10 @@ ${factsFormatted}`;
       parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
     }
   } catch (err) {
-    console.warn("[Analyzer] Structured output failed for question verdicts, using fallback:", err);
+    console.warn(
+      "[Analyzer] Structured output failed for question verdicts, using fallback:",
+      err,
+    );
     state.llmCalls++;
   }
 
@@ -2077,21 +2387,23 @@ ${factsFormatted}`;
   if (!parsed || !parsed.claimVerdicts) {
     console.log("[Analyzer] Using fallback question verdict generation");
 
-    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => ({
-      claimId: claim.id,
-      claimText: claim.text,
-      llmVerdict: "UNCERTAIN",
-      verdict: "UNVERIFIED" as const,
-      confidence: 50,
-      truthPercentage: 50,
-      riskTier: "B" as const,
-      reasoning: "Unable to generate verdict due to schema validation error.",
-      supportingFactIds: [],
-      isCentral: claim.isCentral || false,
-      startOffset: claim.startOffset,
-      endOffset: claim.endOffset,
-      highlightColor: getHighlightColor7Point("UNVERIFIED")
-    }));
+    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+      (claim: any) => ({
+        claimId: claim.id,
+        claimText: claim.text,
+        llmVerdict: "UNCERTAIN",
+        verdict: "UNVERIFIED" as const,
+        confidence: 50,
+        truthPercentage: 50,
+        riskTier: "B" as const,
+        reasoning: "Unable to generate verdict due to schema validation error.",
+        supportingFactIds: [],
+        isCentral: claim.isCentral || false,
+        startOffset: claim.startOffset,
+        endOffset: claim.endOffset,
+        highlightColor: getHighlightColor7Point("UNVERIFIED"),
+      }),
+    );
 
     const questionAnswer: QuestionAnswer = {
       question: understanding.questionBeingAsked || state.originalInput || "",
@@ -2100,13 +2412,16 @@ ${factsFormatted}`;
       confidence: 50,
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
-      nuancedAnswer: "The structured output generation failed. Manual review recommended.",
+      nuancedAnswer:
+        "The structured output generation failed. Manual review recommended.",
       keyFactors: [],
-      hasMultipleProceedings: false
+      hasMultipleProceedings: false,
     };
 
     const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
-    const centralSupported = fallbackVerdicts.filter((v) => v.isCentral && v.truthPercentage >= 72).length;
+    const centralSupported = fallbackVerdicts.filter(
+      (v) => v.isCentral && v.truthPercentage >= 72,
+    ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "question",
       isQuestion: true,
@@ -2124,8 +2439,8 @@ ${factsFormatted}`;
         uncertain: fallbackVerdicts.length,
         refuted: 0,
         centralClaimsTotal: centralTotal,
-        centralClaimsSupported: centralSupported
-      }
+        centralClaimsSupported: centralSupported,
+      },
     };
 
     return { claimVerdicts: fallbackVerdicts, articleAnalysis, questionAnswer };
@@ -2135,63 +2450,81 @@ ${factsFormatted}`;
 
   // Map LLM verdicts by claim ID for quick lookup
   const llmVerdictMap = new Map(
-    (parsed.claimVerdicts || []).map((cv: any) => [cv.claimId, cv])
+    (parsed.claimVerdicts || []).map((cv: any) => [cv.claimId, cv]),
   );
 
   // Ensure ALL claims get a verdict
-  const claimVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => {
-    const cv = llmVerdictMap.get(claim.id);
+  const claimVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+    (claim: any) => {
+      const cv = llmVerdictMap.get(claim.id);
 
-    if (!cv) {
-      console.warn(`[Analyzer] Missing verdict for claim ${claim.id}, using default`);
+      if (!cv) {
+        console.warn(
+          `[Analyzer] Missing verdict for claim ${claim.id}, using default`,
+        );
+        return {
+          claimId: claim.id,
+          claimText: claim.text,
+          llmVerdict: "UNCERTAIN",
+          verdict: "UNVERIFIED" as const,
+          confidence: 50,
+          truthPercentage: 50,
+          riskTier: "B" as const,
+          reasoning: "No verdict returned by LLM for this claim.",
+          supportingFactIds: [],
+          isCentral: claim.isCentral || false,
+          startOffset: claim.startOffset,
+          endOffset: claim.endOffset,
+          highlightColor: getHighlightColor7Point("UNVERIFIED"),
+        } as ClaimVerdict;
+      }
+
+      const truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
+      const calibratedVerdict = percentageToClaimVerdict(truthPct);
       return {
+        ...cv,
         claimId: claim.id,
-        claimText: claim.text,
-        llmVerdict: "UNCERTAIN",
-        verdict: "UNVERIFIED" as const,
-        confidence: 50,
-        truthPercentage: 50,
-        riskTier: "B" as const,
-        reasoning: "No verdict returned by LLM for this claim.",
-        supportingFactIds: [],
+        llmVerdict: cv.verdict,
+        verdict: calibratedVerdict,
+        truthPercentage: truthPct,
+        claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
-        highlightColor: getHighlightColor7Point("UNVERIFIED")
+        highlightColor: getHighlightColor7Point(calibratedVerdict),
       } as ClaimVerdict;
-    }
+    },
+  );
 
-    const truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
-    const calibratedVerdict = percentageToClaimVerdict(truthPct);
-    return {
-      ...cv,
-      claimId: claim.id,
-      llmVerdict: cv.verdict,
-      verdict: calibratedVerdict,
-      truthPercentage: truthPct,
-      claimText: claim.text || "",
-      isCentral: claim.isCentral || false,
-      startOffset: claim.startOffset,
-      endOffset: claim.endOffset,
-      highlightColor: getHighlightColor7Point(calibratedVerdict)
-    } as ClaimVerdict;
-  });
-
-  const weightedClaimVerdicts = applyEvidenceWeighting(claimVerdicts, state.facts, state.sources);
+  const weightedClaimVerdicts = applyEvidenceWeighting(
+    claimVerdicts,
+    state.facts,
+    state.sources,
+  );
 
   const claimPattern = {
     total: weightedClaimVerdicts.length,
-    supported: weightedClaimVerdicts.filter(v => v.truthPercentage >= 72).length,
-    uncertain: weightedClaimVerdicts.filter(v => v.truthPercentage >= 43 && v.truthPercentage < 72).length,
-    refuted: weightedClaimVerdicts.filter(v => v.truthPercentage < 43).length,
-    centralClaimsTotal: weightedClaimVerdicts.filter(v => v.isCentral).length,
-    centralClaimsSupported: weightedClaimVerdicts.filter(v => v.isCentral && v.truthPercentage >= 72).length
+    supported: weightedClaimVerdicts.filter((v) => v.truthPercentage >= 72)
+      .length,
+    uncertain: weightedClaimVerdicts.filter(
+      (v) => v.truthPercentage >= 43 && v.truthPercentage < 72,
+    ).length,
+    refuted: weightedClaimVerdicts.filter((v) => v.truthPercentage < 43).length,
+    centralClaimsTotal: weightedClaimVerdicts.filter((v) => v.isCentral).length,
+    centralClaimsSupported: weightedClaimVerdicts.filter(
+      (v) => v.isCentral && v.truthPercentage >= 72,
+    ).length,
   };
 
-  const hasContestedFactors = parsed.questionAnswer.keyFactors.some((kf: any) => kf.isContested);
+  const hasContestedFactors = parsed.questionAnswer.keyFactors.some(
+    (kf: any) => kf.isContested,
+  );
 
   // Calculate truth percentage and derive answer
-  const answerTruthPct = calculateQuestionTruthPercentage(parsed.questionAnswer.answer, parsed.questionAnswer.confidence);
+  const answerTruthPct = calculateQuestionTruthPercentage(
+    parsed.questionAnswer.answer,
+    parsed.questionAnswer.confidence,
+  );
   const calibratedAnswer = percentageToQuestionAnswer(answerTruthPct);
 
   const questionAnswer: QuestionAnswer = {
@@ -2204,13 +2537,17 @@ ${factsFormatted}`;
     nuancedAnswer: parsed.questionAnswer.nuancedAnswer,
     keyFactors: parsed.questionAnswer.keyFactors,
     hasMultipleProceedings: false,
-    hasContestedFactors
+    hasContestedFactors,
   };
 
   // Calculate claims average truth percentage
-  const claimsAvgTruthPct = weightedClaimVerdicts.length > 0
-    ? Math.round(weightedClaimVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) / weightedClaimVerdicts.length)
-    : 50;
+  const claimsAvgTruthPct =
+    weightedClaimVerdicts.length > 0
+      ? Math.round(
+          weightedClaimVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) /
+            weightedClaimVerdicts.length,
+        )
+      : 50;
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: "question",
@@ -2227,14 +2564,19 @@ ${factsFormatted}`;
     // Article verdict (for questions = question answer)
     articleTruthPercentage: answerTruthPct,
     articleVerdict: percentageToArticleVerdict(answerTruthPct),
-    articleVerdictReason: Math.abs(answerTruthPct - claimsAvgTruthPct) > 15
-      ? `Claims avg: ${percentageToArticleVerdict(claimsAvgTruthPct)} (${claimsAvgTruthPct}%)`
-      : undefined,
+    articleVerdictReason:
+      Math.abs(answerTruthPct - claimsAvgTruthPct) > 15
+        ? `Claims avg: ${percentageToArticleVerdict(claimsAvgTruthPct)} (${claimsAvgTruthPct}%)`
+        : undefined,
 
-    claimPattern
+    claimPattern,
   };
 
-  return { claimVerdicts: weightedClaimVerdicts, articleAnalysis, questionAnswer };
+  return {
+    claimVerdicts: weightedClaimVerdicts,
+    articleAnalysis,
+    questionAnswer,
+  };
 }
 
 async function generateClaimVerdicts(
@@ -2243,9 +2585,11 @@ async function generateClaimVerdicts(
   factsFormatted: string,
   claimsFormatted: string,
   model: any,
-  pseudoscienceAnalysis?: PseudoscienceAnalysis
-): Promise<{ claimVerdicts: ClaimVerdict[]; articleAnalysis: ArticleAnalysis }> {
-
+  pseudoscienceAnalysis?: PseudoscienceAnalysis,
+): Promise<{
+  claimVerdicts: ClaimVerdict[];
+  articleAnalysis: ArticleAnalysis;
+}> {
   // Add pseudoscience context and verdict calibration to prompt
   let systemPrompt = `Generate verdicts for each claim and article-level verdict.
 
@@ -2273,10 +2617,13 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       model,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${factsFormatted}` }
+        {
+          role: "user",
+          content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${factsFormatted}`,
+        },
       ],
       temperature: 0.3,
-      output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM })
+      output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM }),
     });
     state.llmCalls++;
 
@@ -2286,7 +2633,10 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
     }
   } catch (err) {
-    console.warn("[Analyzer] Structured output failed for claim verdicts, using fallback:", err);
+    console.warn(
+      "[Analyzer] Structured output failed for claim verdicts, using fallback:",
+      err,
+    );
     state.llmCalls++;
   }
 
@@ -2295,27 +2645,32 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     console.log("[Analyzer] Using fallback verdict generation");
 
     // Create default verdicts for each claim
-    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => {
-      const calibratedVerdict = "UNVERIFIED" as const;
-      return {
-        claimId: claim.id,
-        claimText: claim.text,
-        llmVerdict: "UNCERTAIN",
-        verdict: calibratedVerdict,
-        confidence: 50,
-        truthPercentage: 50,
-        riskTier: "B" as const,
-        reasoning: "Unable to generate verdict due to schema validation error. Manual review recommended.",
-        supportingFactIds: [],
-        isCentral: claim.isCentral || false,
-        startOffset: claim.startOffset,
-        endOffset: claim.endOffset,
-        highlightColor: getHighlightColor7Point(calibratedVerdict)
-      };
-    });
+    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+      (claim: any) => {
+        const calibratedVerdict = "UNVERIFIED" as const;
+        return {
+          claimId: claim.id,
+          claimText: claim.text,
+          llmVerdict: "UNCERTAIN",
+          verdict: calibratedVerdict,
+          confidence: 50,
+          truthPercentage: 50,
+          riskTier: "B" as const,
+          reasoning:
+            "Unable to generate verdict due to schema validation error. Manual review recommended.",
+          supportingFactIds: [],
+          isCentral: claim.isCentral || false,
+          startOffset: claim.startOffset,
+          endOffset: claim.endOffset,
+          highlightColor: getHighlightColor7Point(calibratedVerdict),
+        };
+      },
+    );
 
     const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
-    const centralSupported = fallbackVerdicts.filter((v) => v.isCentral && v.truthPercentage >= 72).length;
+    const centralSupported = fallbackVerdicts.filter(
+      (v) => v.isCentral && v.truthPercentage >= 72,
+    ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "article",
       isQuestion: false,
@@ -2326,15 +2681,16 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       claimsAverageVerdict: "UNVERIFIED",
       articleTruthPercentage: 50,
       articleVerdict: "UNVERIFIED",
-      articleVerdictReason: "Verdict generation failed - manual review recommended",
+      articleVerdictReason:
+        "Verdict generation failed - manual review recommended",
       claimPattern: {
         total: fallbackVerdicts.length,
         supported: 0,
         uncertain: fallbackVerdicts.length,
         refuted: 0,
         centralClaimsTotal: centralTotal,
-        centralClaimsSupported: centralSupported
-      }
+        centralClaimsSupported: centralSupported,
+      },
     };
 
     return { claimVerdicts: fallbackVerdicts, articleAnalysis };
@@ -2344,80 +2700,97 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
 
   // Map LLM verdicts by claim ID for quick lookup
   const llmVerdictMap = new Map(
-    (parsed.claimVerdicts || []).map((cv: any) => [cv.claimId, cv])
+    (parsed.claimVerdicts || []).map((cv: any) => [cv.claimId, cv]),
   );
 
   // Ensure ALL claims get a verdict (fill in missing ones)
-  const claimVerdicts: ClaimVerdict[] = understanding.subClaims.map((claim: any) => {
-    const cv = llmVerdictMap.get(claim.id);
+  const claimVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+    (claim: any) => {
+      const cv = llmVerdictMap.get(claim.id);
 
-    // If LLM didn't return a verdict for this claim, create a default one
-    if (!cv) {
-      console.warn(`[Analyzer] Missing verdict for claim ${claim.id}, using default`);
+      // If LLM didn't return a verdict for this claim, create a default one
+      if (!cv) {
+        console.warn(
+          `[Analyzer] Missing verdict for claim ${claim.id}, using default`,
+        );
+        return {
+          claimId: claim.id,
+          claimText: claim.text,
+          llmVerdict: "UNCERTAIN",
+          verdict: "UNVERIFIED" as const,
+          confidence: 50,
+          truthPercentage: 50,
+          riskTier: "B" as const,
+          reasoning: "No verdict returned by LLM for this claim.",
+          supportingFactIds: [],
+          isCentral: claim.isCentral || false,
+          claimRole: claim.claimRole || "core",
+          dependsOn: claim.dependsOn || [],
+          startOffset: claim.startOffset,
+          endOffset: claim.endOffset,
+          highlightColor: getHighlightColor7Point("UNVERIFIED"),
+        } as ClaimVerdict;
+      }
+
+      let llmVerdict = cv.verdict;
+      let finalConfidence = cv.confidence;
+      let escalationReason: string | undefined;
+
+      // Apply pseudoscience escalation (adjusts LLM verdict before calibration)
+      if (pseudoscienceAnalysis?.isPseudoscience) {
+        const claimPseudo = detectPseudoscience(claim.text || cv.claimId);
+        if (
+          claimPseudo.isPseudoscience ||
+          pseudoscienceAnalysis.confidence >= 0.5
+        ) {
+          const escalation = escalatePseudoscienceVerdict(
+            cv.verdict,
+            cv.confidence,
+            pseudoscienceAnalysis,
+          );
+          llmVerdict = escalation.verdict;
+          finalConfidence = escalation.confidence;
+          escalationReason = escalation.escalationReason;
+        }
+      }
+
+      // Calibrate to 7-point scale
+      const truthPct = calculateTruthPercentage(llmVerdict, finalConfidence);
+      const calibratedVerdict = percentageToClaimVerdict(truthPct);
+
       return {
+        ...cv,
         claimId: claim.id,
-        claimText: claim.text,
-        llmVerdict: "UNCERTAIN",
-        verdict: "UNVERIFIED" as const,
-        confidence: 50,
-        truthPercentage: 50,
-        riskTier: "B" as const,
-        reasoning: "No verdict returned by LLM for this claim.",
-        supportingFactIds: [],
+        llmVerdict: cv.verdict, // Original LLM output
+        verdict: calibratedVerdict,
+        truthPercentage: truthPct,
+        confidence: finalConfidence,
+        claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         claimRole: claim.claimRole || "core",
         dependsOn: claim.dependsOn || [],
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
-        highlightColor: getHighlightColor7Point("UNVERIFIED")
+        highlightColor: getHighlightColor7Point(calibratedVerdict),
+        isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
+        escalationReason,
       } as ClaimVerdict;
-    }
+    },
+  );
 
-    let llmVerdict = cv.verdict;
-    let finalConfidence = cv.confidence;
-    let escalationReason: string | undefined;
-
-    // Apply pseudoscience escalation (adjusts LLM verdict before calibration)
-    if (pseudoscienceAnalysis?.isPseudoscience) {
-      const claimPseudo = detectPseudoscience(claim.text || cv.claimId);
-      if (claimPseudo.isPseudoscience || pseudoscienceAnalysis.confidence >= 0.5) {
-        const escalation = escalatePseudoscienceVerdict(cv.verdict, cv.confidence, pseudoscienceAnalysis);
-        llmVerdict = escalation.verdict;
-        finalConfidence = escalation.confidence;
-        escalationReason = escalation.escalationReason;
-      }
-    }
-
-    // Calibrate to 7-point scale
-    const truthPct = calculateTruthPercentage(llmVerdict, finalConfidence);
-    const calibratedVerdict = percentageToClaimVerdict(truthPct);
-
-    return {
-      ...cv,
-      claimId: claim.id,
-      llmVerdict: cv.verdict, // Original LLM output
-      verdict: calibratedVerdict,
-      truthPercentage: truthPct,
-      confidence: finalConfidence,
-      claimText: claim.text || "",
-      isCentral: claim.isCentral || false,
-      claimRole: claim.claimRole || "core",
-      dependsOn: claim.dependsOn || [],
-      startOffset: claim.startOffset,
-      endOffset: claim.endOffset,
-      highlightColor: getHighlightColor7Point(calibratedVerdict),
-      isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
-      escalationReason
-    } as ClaimVerdict;
-  });
-
-  const weightedClaimVerdicts = applyEvidenceWeighting(claimVerdicts, state.facts, state.sources);
+  const weightedClaimVerdicts = applyEvidenceWeighting(
+    claimVerdicts,
+    state.facts,
+    state.sources,
+  );
 
   // DEPENDENCY PROPAGATION: If a prerequisite claim is false, flag dependent claims
-  const verdictMap = new Map(weightedClaimVerdicts.map(v => [v.claimId, v]));
+  const verdictMap = new Map(weightedClaimVerdicts.map((v) => [v.claimId, v]));
 
   for (const verdict of weightedClaimVerdicts) {
-    const claim = understanding.subClaims.find((c: any) => c.id === verdict.claimId);
+    const claim = understanding.subClaims.find(
+      (c: any) => c.id === verdict.claimId,
+    );
     const dependencies = claim?.dependsOn || [];
 
     if (dependencies.length > 0) {
@@ -2433,10 +2806,12 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
         verdict.failedDependencies = failedDeps;
 
         // Add note to reasoning
-        const depNames = failedDeps.map((id: string) => {
-          const dv = verdictMap.get(id);
-          return dv ? `${id}: "${dv.claimText.slice(0, 50)}..."` : id;
-        }).join(", ");
+        const depNames = failedDeps
+          .map((id: string) => {
+            const dv = verdictMap.get(id);
+            return dv ? `${id}: "${dv.claimText.slice(0, 50)}..."` : id;
+          })
+          .join(", ");
 
         verdict.reasoning = `[PREREQUISITE FAILED: ${depNames}] ${verdict.reasoning || ""}`;
 
@@ -2449,22 +2824,31 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
   // Calculate claim pattern using truth percentages
   const claimPattern = {
     total: weightedClaimVerdicts.length,
-    supported: weightedClaimVerdicts.filter(v => v.truthPercentage >= 72).length,
-    uncertain: weightedClaimVerdicts.filter(v => v.truthPercentage >= 43 && v.truthPercentage < 72).length,
-    refuted: weightedClaimVerdicts.filter(v => v.truthPercentage < 43).length,
-    centralClaimsTotal: weightedClaimVerdicts.filter(v => v.isCentral).length,
-    centralClaimsSupported: weightedClaimVerdicts.filter(v => v.isCentral && v.truthPercentage >= 72).length
+    supported: weightedClaimVerdicts.filter((v) => v.truthPercentage >= 72)
+      .length,
+    uncertain: weightedClaimVerdicts.filter(
+      (v) => v.truthPercentage >= 43 && v.truthPercentage < 72,
+    ).length,
+    refuted: weightedClaimVerdicts.filter((v) => v.truthPercentage < 43).length,
+    centralClaimsTotal: weightedClaimVerdicts.filter((v) => v.isCentral).length,
+    centralClaimsSupported: weightedClaimVerdicts.filter(
+      (v) => v.isCentral && v.truthPercentage >= 72,
+    ).length,
   };
 
   // Calculate claims average truth percentage
-  const claimsAvgTruthPct = weightedClaimVerdicts.length > 0
-    ? Math.round(weightedClaimVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) / weightedClaimVerdicts.length)
-    : 50;
+  const claimsAvgTruthPct =
+    weightedClaimVerdicts.length > 0
+      ? Math.round(
+          weightedClaimVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) /
+            weightedClaimVerdicts.length,
+        )
+      : 50;
 
   // Calculate article truth percentage from LLM's article verdict
   let articleTruthPct = calculateArticleTruthPercentage(
     parsed.articleAnalysis.articleVerdict,
-    parsed.articleAnalysis.articleConfidence
+    parsed.articleAnalysis.articleConfidence,
   );
 
   // If LLM returned default/unknown verdict (50%), use claims average instead
@@ -2474,7 +2858,10 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
 
   // For pseudoscience: article verdict cannot be higher than claims average
   // (can't have a credible article with false claims)
-  if (pseudoscienceAnalysis?.isPseudoscience && articleTruthPct > claimsAvgTruthPct) {
+  if (
+    pseudoscienceAnalysis?.isPseudoscience &&
+    articleTruthPct > claimsAvgTruthPct
+  ) {
     articleTruthPct = Math.min(claimsAvgTruthPct, 28); // Cap at FALSE level for pseudoscience
   }
 
@@ -2498,9 +2885,9 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       articleTruthPercentage: articleTruthPct,
       articleVerdict: percentageToArticleVerdict(articleTruthPct),
       articleVerdictReason: verdictDiffers
-        ? (articleTruthPct < claimsAvgTruthPct
-            ? "Article uses facts misleadingly or draws unsupported conclusions"
-            : "Article's conclusion is better supported than individual claims suggest")
+        ? articleTruthPct < claimsAvgTruthPct
+          ? "Article uses facts misleadingly or draws unsupported conclusions"
+          : "Article's conclusion is better supported than individual claims suggest"
         : undefined,
 
       // LLM outputs for debugging
@@ -2509,18 +2896,22 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
 
       claimPattern,
       isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
-      pseudoscienceCategories: pseudoscienceAnalysis?.categories
-    }
+      pseudoscienceCategories: pseudoscienceAnalysis?.categories,
+    },
   };
 }
 
 function getHighlightColor(verdict: string): "green" | "yellow" | "red" {
   switch (verdict) {
-    case "WELL-SUPPORTED": return "green";
+    case "WELL-SUPPORTED":
+      return "green";
     case "PARTIALLY-SUPPORTED":
-    case "UNCERTAIN": return "yellow";
-    case "REFUTED": return "red";
-    default: return "yellow";
+    case "UNCERTAIN":
+      return "yellow";
+    case "REFUTED":
+      return "red";
+    default:
+      return "yellow";
   }
 }
 
@@ -2532,7 +2923,7 @@ async function generateTwoPanelSummary(
   state: ResearchState,
   claimVerdicts: ClaimVerdict[],
   articleAnalysis: ArticleAnalysis,
-  model: any
+  model: any,
 ): Promise<TwoPanelSummary> {
   const understanding = state.understanding!;
   const isQuestion = articleAnalysis.isQuestion;
@@ -2540,7 +2931,8 @@ async function generateTwoPanelSummary(
 
   let title = isQuestion
     ? `Question: ${understanding.questionBeingAsked || state.originalInput}`
-    : state.originalText.split("\n")[0]?.trim().slice(0, 100) || "Analyzed Content";
+    : state.originalText.split("\n")[0]?.trim().slice(0, 100) ||
+      "Analyzed Content";
 
   if (hasMultipleProceedings) {
     title += ` (${understanding.distinctProceedings.length} proceedings)`;
@@ -2548,13 +2940,16 @@ async function generateTwoPanelSummary(
 
   const articleSummary = {
     title,
-    source: state.inputType === "url" ? state.originalInput : "User-provided text",
+    source:
+      state.inputType === "url" ? state.originalInput : "User-provided text",
     mainArgument: `Implied claim: ${understanding.impliedClaim || understanding.articleThesis}`,
     keyFindings: understanding.subClaims.slice(0, 4).map((c: any) => c.text),
     reasoning: hasMultipleProceedings
       ? `Covers ${understanding.distinctProceedings.length} proceedings: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.shortName).join(", ")}`
       : `Examined ${understanding.subClaims.length} claims`,
-    conclusion: articleAnalysis.questionAnswer?.shortAnswer || understanding.articleThesis
+    conclusion:
+      articleAnalysis.questionAnswer?.shortAnswer ||
+      understanding.articleThesis,
   };
 
   const analysisId = `FH-${Date.now().toString(36).toUpperCase()}`;
@@ -2582,19 +2977,26 @@ async function generateTwoPanelSummary(
   const factharborAnalysis = {
     sourceCredibility: calculateOverallCredibility(state.sources, inputUrl),
     claimVerdicts: claimVerdicts.map((cv: ClaimVerdict) => ({
-      claim: cv.claimText.slice(0, 80) + (cv.claimText.length > 80 ? "..." : ""),
+      claim:
+        cv.claimText.slice(0, 80) + (cv.claimText.length > 80 ? "..." : ""),
       verdict: cv.verdict,
-      truthPercentage: cv.truthPercentage
+      truthPercentage: cv.truthPercentage,
     })),
-    methodologyAssessment: generateMethodologyAssessment(state, articleAnalysis),
+    methodologyAssessment: generateMethodologyAssessment(
+      state,
+      articleAnalysis,
+    ),
     overallVerdict,
-    analysisId
+    analysisId,
   };
 
   return { articleSummary, factharborAnalysis };
 }
 
-function calculateOverallCredibility(sources: FetchedSource[], inputUrl?: string): string {
+function calculateOverallCredibility(
+  sources: FetchedSource[],
+  inputUrl?: string,
+): string {
   // First, check input source credibility if URL provided
   let inputSourceInfo = "";
   if (inputUrl && inputUrl.startsWith("http")) {
@@ -2602,7 +3004,14 @@ function calculateOverallCredibility(sources: FetchedSource[], inputUrl?: string
       const hostname = new URL(inputUrl).hostname.replace(/^www\./, "");
       const inputScore = getTrackRecordScore(inputUrl);
       if (inputScore !== null) {
-        const level = inputScore >= 0.85 ? "Very High" : inputScore >= 0.70 ? "High" : inputScore >= 0.55 ? "Medium" : "Low";
+        const level =
+          inputScore >= 0.85
+            ? "Very High"
+            : inputScore >= 0.7
+              ? "High"
+              : inputScore >= 0.55
+                ? "Medium"
+                : "Low";
         inputSourceInfo = `${hostname}: ${level} (${(inputScore * 100).toFixed(0)}%)`;
       } else {
         inputSourceInfo = `${hostname}: Unknown`;
@@ -2613,13 +3022,24 @@ function calculateOverallCredibility(sources: FetchedSource[], inputUrl?: string
   }
 
   // Then check research sources
-  const withScore = sources.filter(s => s.trackRecordScore !== null && s.fetchSuccess);
+  const withScore = sources.filter(
+    (s) => s.trackRecordScore !== null && s.fetchSuccess,
+  );
   if (withScore.length === 0) {
     return inputSourceInfo || "Unknown";
   }
 
-  const avg = withScore.reduce((sum, s) => sum + (s.trackRecordScore || 0), 0) / withScore.length;
-  const researchLevel = avg >= 0.85 ? "Very High" : avg >= 0.70 ? "High" : avg >= 0.55 ? "Medium" : "Low";
+  const avg =
+    withScore.reduce((sum, s) => sum + (s.trackRecordScore || 0), 0) /
+    withScore.length;
+  const researchLevel =
+    avg >= 0.85
+      ? "Very High"
+      : avg >= 0.7
+        ? "High"
+        : avg >= 0.55
+          ? "Medium"
+          : "Low";
   const researchInfo = `Research sources: ${researchLevel} (${(avg * 100).toFixed(0)}%)`;
 
   if (inputSourceInfo) {
@@ -2628,13 +3048,18 @@ function calculateOverallCredibility(sources: FetchedSource[], inputUrl?: string
   return researchInfo;
 }
 
-function generateMethodologyAssessment(state: ResearchState, articleAnalysis: ArticleAnalysis): string {
+function generateMethodologyAssessment(
+  state: ResearchState,
+  articleAnalysis: ArticleAnalysis,
+): string {
   const parts: string[] = [];
   parts.push("Question-answering mode");
-  if (articleAnalysis.hasMultipleProceedings) parts.push(`Multi-proceeding (${articleAnalysis.proceedings?.length})`);
-  if (articleAnalysis.questionAnswer?.hasContestedFactors) parts.push("Contested factors flagged");
+  if (articleAnalysis.hasMultipleProceedings)
+    parts.push(`Multi-proceeding (${articleAnalysis.proceedings?.length})`);
+  if (articleAnalysis.questionAnswer?.hasContestedFactors)
+    parts.push("Contested factors flagged");
   parts.push(`${state.searchQueries.length} searches`);
-  parts.push(`${state.sources.filter(s => s.fetchSuccess).length} sources`);
+  parts.push(`${state.sources.filter((s) => s.fetchSuccess).length} sources`);
   return parts.join("; ");
 }
 
@@ -2643,18 +3068,18 @@ async function generateReport(
   claimVerdicts: ClaimVerdict[],
   articleAnalysis: ArticleAnalysis,
   twoPanelSummary: TwoPanelSummary,
-  model: any
+  model: any,
 ): Promise<string> {
   const understanding = state.understanding!;
   const isQuestion = articleAnalysis.isQuestion;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
   const useRich = CONFIG.reportStyle === "rich";
-  const iconPositive = useRich ? "??" : "";
-  const iconNegative = useRich ? "?" : "";
-  const iconNeutral = useRich ? "??" : "";
-  const iconWarning = useRich ? "??" : "";
-  const iconOk = useRich ? "?" : "";
-  const iconFail = useRich ? "?" : "";
+  const iconPositive = useRich ? "✅" : "";
+  const iconNegative = useRich ? "❌" : "";
+  const iconNeutral = useRich ? "❓" : "";
+  const iconWarning = useRich ? "⚠️" : "";
+  const iconOk = useRich ? "✅" : "";
+  const iconFail = useRich ? "❌" : "";
 
   let report = `# FactHarbor Analysis Report\n\n`;
   report += `**Analysis ID:** ${twoPanelSummary.factharborAnalysis.analysisId}\n`;
@@ -2669,15 +3094,23 @@ async function generateReport(
     report += `### Question\n"${qa.question}"\n\n`;
     report += `### Answer: ${qa.answer} (${qa.truthPercentage}%)\n\n`;
 
-    if (qa.calibrationNote) report += `> ${iconWarning} ${qa.calibrationNote}\n\n`;
+    if (qa.calibrationNote)
+      report += `> ${iconWarning} ${qa.calibrationNote}\n\n`;
 
     report += `**Short Answer:** ${qa.shortAnswer}\n\n`;
 
     if (hasMultipleProceedings && qa.proceedingAnswers) {
       report += `## Proceedings Analysis\n\n`;
       for (const pa of qa.proceedingAnswers) {
-        const proc = understanding.distinctProceedings.find((p: DistinctProceeding) => p.id === pa.proceedingId);
-        const emoji = pa.truthPercentage >= 72 ? iconPositive : pa.truthPercentage < 43 ? iconNegative : iconNeutral;
+        const proc = understanding.distinctProceedings.find(
+          (p: DistinctProceeding) => p.id === pa.proceedingId,
+        );
+        const emoji =
+          pa.truthPercentage >= 72
+            ? iconPositive
+            : pa.truthPercentage < 43
+              ? iconNegative
+              : iconNeutral;
 
         report += `### ${proc?.name || pa.proceedingName}\n\n`;
         report += `**Answer:** ${emoji} ${pa.answer} (${pa.truthPercentage}%)\n\n`;
@@ -2691,7 +3124,12 @@ async function generateReport(
         if (pa.keyFactors?.length > 0) {
           report += `**Key Factors:**\n`;
           for (const f of pa.keyFactors) {
-            const icon = f.supports === "yes" ? iconPositive : f.supports === "no" ? iconNegative : iconNeutral;
+            const icon =
+              f.supports === "yes"
+                ? iconPositive
+                : f.supports === "no"
+                  ? iconNegative
+                  : iconNeutral;
             report += `- ${icon} ${f.factor}${f.isContested ? ` ${iconWarning} CONTESTED` : ""}\n`;
           }
           report += `\n`;
@@ -2705,12 +3143,14 @@ async function generateReport(
   report += `## Claims\n\n`;
   for (const cv of claimVerdicts) {
     // 7-level scale emoji mapping based on truthPercentage
-    const emoji = cv.truthPercentage >= 72 ? iconPositive : cv.truthPercentage >= 43 ? iconNeutral : iconNegative;
+    const emoji =
+      cv.truthPercentage >= 72
+        ? iconPositive
+        : cv.truthPercentage >= 43
+          ? iconNeutral
+          : iconNegative;
 
-
-      "🔴";
-    report += `**${cv.claimId}:** ${cv.claimText}\n`;
-    report += `${emoji} ${cv.verdict} (${cv.truthPercentage}% truth)\n\n`;
+    report += `**${cv.claimId}:** ${cv.claimText} ${emoji} ${cv.verdict} (${cv.truthPercentage}% truth)\n\n`;
   }
 
   // Sources
@@ -2718,7 +3158,8 @@ async function generateReport(
   for (const s of state.sources) {
     const status = s.fetchSuccess ? iconOk : iconFail;
     report += `- ${status} [${s.title}](${s.url})`;
-    if (s.trackRecordScore) report += ` (${(s.trackRecordScore * 100).toFixed(0)}%)`;
+    if (s.trackRecordScore)
+      report += ` (${(s.trackRecordScore * 100).toFixed(0)}%)`;
     report += `\n`;
   }
 
@@ -2752,16 +3193,32 @@ async function generateReport(
 // ============================================================================
 
 function getModel(providerOverride?: string) {
-  const provider = (providerOverride ?? process.env.LLM_PROVIDER ?? "anthropic").toLowerCase();
+  const provider = (
+    providerOverride ??
+    process.env.LLM_PROVIDER ??
+    "anthropic"
+  ).toLowerCase();
 
   if (provider === "anthropic" || provider === "claude") {
-    return { provider: "anthropic", modelName: "claude-sonnet-4-20250514", model: anthropic("claude-sonnet-4-20250514") };
+    return {
+      provider: "anthropic",
+      modelName: "claude-sonnet-4-20250514",
+      model: anthropic("claude-sonnet-4-20250514"),
+    };
   }
   if (provider === "google" || provider === "gemini") {
-    return { provider: "google", modelName: "gemini-1.5-pro", model: google("gemini-1.5-pro") };
+    return {
+      provider: "google",
+      modelName: "gemini-1.5-pro",
+      model: google("gemini-1.5-pro"),
+    };
   }
   if (provider === "mistral") {
-    return { provider: "mistral", modelName: "mistral-large-latest", model: mistral("mistral-large-latest") };
+    return {
+      provider: "mistral",
+      modelName: "mistral-large-latest",
+      model: mistral("mistral-large-latest"),
+    };
   }
   return { provider: "openai", modelName: "gpt-4o", model: openai("gpt-4o") };
 }
@@ -2796,8 +3253,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     sources: [],
     contradictionSearchPerformed: false,
     contradictionSourcesFound: 0,
-    searchQueries: [],  // NEW v2.4.3
-    llmCalls: 0  // NEW v2.6.6
+    searchQueries: [], // NEW v2.4.3
+    llmCalls: 0, // NEW v2.6.6
   };
 
   // Handle URL
@@ -2818,7 +3275,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   await emit("Step 1: Analyzing input", 5);
   try {
     state.understanding = await understandClaim(textToAnalyze, model);
-    state.llmCalls++;  // understandClaim uses 1 LLM call
+    state.llmCalls++; // understandClaim uses 1 LLM call
   } catch (err) {
     console.error("Understanding failed:", err);
     state.understanding = {
@@ -2827,11 +3284,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       requiresSeparateAnalysis: false,
       mainQuestion: textToAnalyze.slice(0, 200),
       articleThesis: textToAnalyze.slice(0, 200),
-      subClaims: [{ id: "C1", text: textToAnalyze.slice(0, 200), type: "factual", keyEntities: [], isCentral: true }],
+      subClaims: [
+        {
+          id: "C1",
+          text: textToAnalyze.slice(0, 200),
+          type: "factual",
+          keyEntities: [],
+          isCentral: true,
+        },
+      ],
       distinctEvents: [],
       legalFrameworks: [],
       researchQuestions: [],
-      riskTier: "B"
+      riskTier: "B",
     };
   }
 
@@ -2842,57 +3307,86 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // STEP 2-4: Research with search tracking
   let iteration = 0;
-  while (iteration < config.maxResearchIterations && state.sources.length < config.maxTotalSources) {
+  while (
+    iteration < config.maxResearchIterations &&
+    state.sources.length < config.maxTotalSources
+  ) {
     iteration++;
     const baseProgress = 10 + (iteration / config.maxResearchIterations) * 50;
 
     const decision = decideNextResearch(state);
     if (decision.complete) {
-      await emit(`Research complete: ${state.facts.length} facts, ${state.searchQueries.length} searches`, baseProgress);
+      await emit(
+        `Research complete: ${state.facts.length} facts, ${state.searchQueries.length} searches`,
+        baseProgress,
+      );
       break;
     }
 
     let focusMsg = `Step 2.${iteration}: ${decision.focus}`;
-    if (decision.targetProceedingId) focusMsg += ` [${decision.targetProceedingId}]`;
+    if (decision.targetProceedingId)
+      focusMsg += ` [${decision.targetProceedingId}]`;
     await emit(focusMsg, baseProgress);
 
-    if (decision.isContradictionSearch) state.contradictionSearchPerformed = true;
+    if (decision.isContradictionSearch)
+      state.contradictionSearchPerformed = true;
 
     // Check if search is enabled
     if (!CONFIG.searchEnabled) {
-      await emit(`⚠️ Search disabled (FH_SEARCH_ENABLED=false)`, baseProgress + 1);
+      await emit(
+        `⚠️ Search disabled (FH_SEARCH_ENABLED=false)`,
+        baseProgress + 1,
+      );
       state.searchQueries.push({
         query: decision.queries?.[0] || "search disabled",
         iteration,
         focus: decision.focus!,
         resultsCount: 0,
         timestamp: new Date().toISOString(),
-        searchProvider: "Disabled"
+        searchProvider: "Disabled",
       });
       continue;
     }
 
     // Perform searches and track them
-    const searchResults: Array<{ url: string; title: string; query: string }> = [];
+    const searchResults: Array<{ url: string; title: string; query: string }> =
+      [];
     for (const query of decision.queries || []) {
-      await emit(`🔍 Searching [${CONFIG.searchProvider}]: "${query}"`, baseProgress + 1);
+      await emit(
+        `🔍 Searching [${CONFIG.searchProvider}]: "${query}"`,
+        baseProgress + 1,
+      );
 
       try {
-        let results = await searchWeb({ query, maxResults: config.maxSourcesPerIteration });
+        let results = await searchWeb({
+          query,
+          maxResults: config.maxSourcesPerIteration,
+        });
 
         // Apply domain whitelist if configured
-        if (CONFIG.searchDomainWhitelist && CONFIG.searchDomainWhitelist.length > 0) {
+        if (
+          CONFIG.searchDomainWhitelist &&
+          CONFIG.searchDomainWhitelist.length > 0
+        ) {
           const beforeCount = results.length;
           results = results.filter((r: any) => {
             try {
-              const hostname = new URL(r.url).hostname.replace(/^www\./, "").toLowerCase();
-              return CONFIG.searchDomainWhitelist!.some(domain =>
-                hostname === domain || hostname.endsWith("." + domain)
+              const hostname = new URL(r.url).hostname
+                .replace(/^www\./, "")
+                .toLowerCase();
+              return CONFIG.searchDomainWhitelist!.some(
+                (domain) =>
+                  hostname === domain || hostname.endsWith("." + domain),
               );
-            } catch { return false; }
+            } catch {
+              return false;
+            }
           });
           if (beforeCount > results.length) {
-            await emit(`  → Filtered ${beforeCount - results.length} results (domain whitelist)`, baseProgress + 1);
+            await emit(
+              `  → Filtered ${beforeCount - results.length} results (domain whitelist)`,
+              baseProgress + 1,
+            );
           }
         }
 
@@ -2903,7 +3397,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           focus: decision.focus!,
           resultsCount: results.length,
           timestamp: new Date().toISOString(),
-          searchProvider: CONFIG.searchProvider
+          searchProvider: CONFIG.searchProvider,
         });
 
         searchResults.push(...results.map((r: any) => ({ ...r, query })));
@@ -2916,60 +3410,113 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           focus: decision.focus!,
           resultsCount: 0,
           timestamp: new Date().toISOString(),
-          searchProvider: CONFIG.searchProvider
+          searchProvider: CONFIG.searchProvider,
         });
       }
     }
 
     const seenUrls = new Set(state.sources.map((s: FetchedSource) => s.url));
-    const newResults = searchResults.filter(r => !seenUrls.has(r.url));
-    const uniqueResults = [...new Map(newResults.map((r: any) => [r.url, r])).values()].slice(0, config.maxSourcesPerIteration);
+    const newResults = searchResults.filter((r) => !seenUrls.has(r.url));
+    const uniqueResults = [
+      ...new Map(newResults.map((r: any) => [r.url, r])).values(),
+    ].slice(0, config.maxSourcesPerIteration);
 
     if (uniqueResults.length === 0) {
-      state.iterations.push({ number: iteration, focus: decision.focus!, queries: decision.queries!, sourcesFound: 0, factsExtracted: state.facts.length });
+      state.iterations.push({
+        number: iteration,
+        focus: decision.focus!,
+        queries: decision.queries!,
+        sourcesFound: 0,
+        factsExtracted: state.facts.length,
+      });
       continue;
     }
 
     await emit(`Fetching ${uniqueResults.length} sources`, baseProgress + 3);
 
     const fetchPromises = uniqueResults.map((r: any, i: number) =>
-      fetchSource(r.url, `S${state.sources.length + i + 1}`, decision.category || "general", r.query)
+      fetchSource(
+        r.url,
+        `S${state.sources.length + i + 1}`,
+        decision.category || "general",
+        r.query,
+      ),
     );
     const fetchedSources = await Promise.all(fetchPromises);
-    const validSources = fetchedSources.filter((s): s is FetchedSource => s !== null);
+    const validSources = fetchedSources.filter(
+      (s): s is FetchedSource => s !== null,
+    );
     state.sources.push(...validSources);
 
-    const successfulSources = validSources.filter(s => s.fetchSuccess);
-    await emit(`  → ${successfulSources.length}/${validSources.length} fetched successfully`, baseProgress + 5);
+    const successfulSources = validSources.filter((s) => s.fetchSuccess);
+    await emit(
+      `  → ${successfulSources.length}/${validSources.length} fetched successfully`,
+      baseProgress + 5,
+    );
 
-    if (decision.isContradictionSearch) state.contradictionSourcesFound = successfulSources.length;
+    if (decision.isContradictionSearch)
+      state.contradictionSourcesFound = successfulSources.length;
 
     await emit(`Extracting facts`, baseProgress + 8);
     for (const source of successfulSources) {
-      const facts = await extractFacts(source, decision.focus!, model, state.understanding!.distinctProceedings, decision.targetProceedingId);
+      const facts = await extractFacts(
+        source,
+        decision.focus!,
+        model,
+        state.understanding!.distinctProceedings,
+        decision.targetProceedingId,
+      );
       state.facts.push(...facts);
-      state.llmCalls++;  // Each extractFacts call is 1 LLM call
+      state.llmCalls++; // Each extractFacts call is 1 LLM call
     }
 
-    state.iterations.push({ number: iteration, focus: decision.focus!, queries: decision.queries!, sourcesFound: successfulSources.length, factsExtracted: state.facts.length });
-    await emit(`Iteration ${iteration}: ${state.facts.length} facts from ${state.sources.length} sources`, baseProgress + 12);
+    state.iterations.push({
+      number: iteration,
+      focus: decision.focus!,
+      queries: decision.queries!,
+      sourcesFound: successfulSources.length,
+      factsExtracted: state.facts.length,
+    });
+    await emit(
+      `Iteration ${iteration}: ${state.facts.length} facts from ${state.sources.length} sources`,
+      baseProgress + 12,
+    );
   }
 
   // STEP 5: Verdicts
   await emit("Step 3: Generating verdicts", 65);
-  const { claimVerdicts, articleAnalysis, questionAnswer, pseudoscienceAnalysis } = await generateVerdicts(state, model);
+  const {
+    claimVerdicts,
+    articleAnalysis,
+    questionAnswer,
+    pseudoscienceAnalysis,
+  } = await generateVerdicts(state, model);
 
   if (pseudoscienceAnalysis?.isPseudoscience) {
-    await emit(`⚠️ Pseudoscience detected: ${pseudoscienceAnalysis.categories.join(", ")}`, 67);
+    await emit(
+      `⚠️ Pseudoscience detected: ${pseudoscienceAnalysis.categories.join(", ")}`,
+      67,
+    );
   }
 
   // STEP 6: Summary
   await emit("Step 4: Building summary", 75);
-  const twoPanelSummary = await generateTwoPanelSummary(state, claimVerdicts, articleAnalysis, model);
+  const twoPanelSummary = await generateTwoPanelSummary(
+    state,
+    claimVerdicts,
+    articleAnalysis,
+    model,
+  );
 
   // STEP 7: Report
   await emit("Step 5: Generating report", 85);
-  const reportMarkdown = await generateReport(state, claimVerdicts, articleAnalysis, twoPanelSummary, model);
+  const reportMarkdown = await generateReport(
+    state,
+    claimVerdicts,
+    articleAnalysis,
+    twoPanelSummary,
+    model,
+  );
 
   await emit("Analysis complete", 100);
 
@@ -2987,14 +3534,15 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       isQuestion: articleAnalysis.isQuestion,
       hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,
       proceedingCount: state.understanding!.distinctProceedings.length,
-      hasContestedFactors: articleAnalysis.questionAnswer?.hasContestedFactors || false,
+      hasContestedFactors:
+        articleAnalysis.questionAnswer?.hasContestedFactors || false,
       // NEW v2.4.5: Pseudoscience detection
       isPseudoscience: pseudoscienceAnalysis?.isPseudoscience || false,
       pseudoscienceCategories: pseudoscienceAnalysis?.categories || [],
       pseudoscienceConfidence: pseudoscienceAnalysis?.confidence || 0,
       inputLength: textToAnalyze.length,
       analysisTimeMs: Date.now() - startTime,
-      analysisId: twoPanelSummary.factharborAnalysis.analysisId
+      analysisId: twoPanelSummary.factharborAnalysis.analysisId,
     },
     questionAnswer: questionAnswer || null,
     proceedings: state.understanding!.distinctProceedings,
@@ -3011,7 +3559,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       trackRecordScore: s.trackRecordScore,
       category: s.category,
       fetchSuccess: s.fetchSuccess,
-      searchQuery: s.searchQuery
+      searchQuery: s.searchQuery,
     })),
     // NEW v2.4.3: Search queries
     searchQueries: state.searchQueries,
@@ -3019,30 +3567,38 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Research stats
     researchStats: {
       totalSearches: state.searchQueries.length,
-      totalResults: state.searchQueries.reduce((sum, q) => sum + q.resultsCount, 0),
+      totalResults: state.searchQueries.reduce(
+        (sum, q) => sum + q.resultsCount,
+        0,
+      ),
       sourcesFetched: state.sources.length,
-      sourcesSuccessful: state.sources.filter(s => s.fetchSuccess).length,
+      sourcesSuccessful: state.sources.filter((s) => s.fetchSuccess).length,
       factsExtracted: state.facts.length,
       contradictionSearchPerformed: state.contradictionSearchPerformed,
-      llmCalls: state.llmCalls
+      llmCalls: state.llmCalls,
     },
     // NEW v2.4.5: Pseudoscience analysis
-    pseudoscienceAnalysis: pseudoscienceAnalysis ? {
-      isPseudoscience: pseudoscienceAnalysis.isPseudoscience,
-      confidence: pseudoscienceAnalysis.confidence,
-      categories: pseudoscienceAnalysis.categories,
-      recommendation: pseudoscienceAnalysis.recommendation,
-      debunkIndicatorsFound: pseudoscienceAnalysis.debunkIndicatorsFound.length
-    } : null,
+    pseudoscienceAnalysis: pseudoscienceAnalysis
+      ? {
+          isPseudoscience: pseudoscienceAnalysis.isPseudoscience,
+          confidence: pseudoscienceAnalysis.confidence,
+          categories: pseudoscienceAnalysis.categories,
+          recommendation: pseudoscienceAnalysis.recommendation,
+          debunkIndicatorsFound:
+            pseudoscienceAnalysis.debunkIndicatorsFound.length,
+        }
+      : null,
     qualityGates: {
-      passed: state.facts.length >= config.minFactsRequired && state.contradictionSearchPerformed,
+      passed:
+        state.facts.length >= config.minFactsRequired &&
+        state.contradictionSearchPerformed,
       summary: {
         totalFacts: state.facts.length,
         totalSources: state.sources.length,
         searchesPerformed: state.searchQueries.length,
-        contradictionSearchPerformed: state.contradictionSearchPerformed
-      }
-    }
+        contradictionSearchPerformed: state.contradictionSearchPerformed,
+      },
+    },
   };
 
   return { resultJson, reportMarkdown };

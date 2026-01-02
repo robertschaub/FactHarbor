@@ -16,20 +16,36 @@ import * as cheerio from "cheerio";
  */
 async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
   try {
+    // Validate buffer before parsing
+    if (!buffer || buffer.length === 0) {
+      throw new Error("PDF buffer is empty");
+    }
+
+    // Check if buffer starts with PDF magic bytes (%PDF)
+    const pdfMagic = buffer.toString('ascii', 0, 4);
+    if (pdfMagic !== '%PDF') {
+      console.error("[Retrieval] Buffer does not contain valid PDF data. First 200 bytes:", buffer.toString('utf8', 0, Math.min(200, buffer.length)));
+      throw new Error(`Invalid PDF format. Content starts with: ${pdfMagic}`);
+    }
+
     // pdf-parse v1 is a simple function
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const pdfParse = require("pdf-parse");
-    
-    console.log("[Retrieval] Using pdf-parse v1 to extract text");
-    
+
+    console.log("[Retrieval] Using pdf-parse v1 to extract text from", buffer.length, "bytes");
+
     const data = await pdfParse(buffer);
-    
+
     console.log(`[Retrieval] PDF parsed: ${data.numpages} pages, ${data.text?.length || 0} chars`);
-    
+
     return data.text || "";
-  } catch (err) {
+  } catch (err: any) {
     console.error("[Retrieval] PDF parse error:", err);
-    throw new Error(`Failed to parse PDF: ${err}`);
+    // Provide more helpful error message
+    if (err.message && err.message.includes('ENOENT')) {
+      throw new Error(`PDF parsing failed: This appears to be a library test error. The PDF content may be corrupted or the server may have returned an error page instead of a PDF.`);
+    }
+    throw new Error(`Failed to parse PDF: ${err.message || err}`);
   }
 }
 
@@ -109,30 +125,44 @@ export async function extractTextFromUrl(
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   
   try {
+    console.log("[Retrieval] Fetching URL:", url);
+
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "FactHarbor/1.0 (fact-checking bot)",
-        "Accept": "text/html,application/xhtml+xml,application/pdf,*/*",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/pdf,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
       },
     });
-    
+
+    console.log("[Retrieval] Response status:", response.status, "Content-Type:", response.headers.get("content-type"));
+
     if (!response.ok) {
-      throw new Error(`Fetch failed: ${response.status}`);
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
     }
-    
+
     const contentType = response.headers.get("content-type") || "";
-    
+
     // Handle PDF
     if (isPdfUrl(url, contentType)) {
-      const buffer = Buffer.from(await response.arrayBuffer());
+      console.log("[Retrieval] Processing as PDF");
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      console.log("[Retrieval] Downloaded PDF buffer size:", buffer.length, "bytes");
+
       const text = await extractTextFromPdfBuffer(buffer);
-      
+
       // Extract title from URL (last path segment before .pdf)
       const urlPath = new URL(url).pathname;
       const filename = urlPath.split("/").pop() || "document";
       const title = filename.replace(/\.pdf$/i, "").replace(/[_-]/g, " ");
-      
+
+      console.log("[Retrieval] PDF extraction complete. Title:", title, "Text length:", text.length);
+
       return {
         text: text.slice(0, maxLength),
         title,

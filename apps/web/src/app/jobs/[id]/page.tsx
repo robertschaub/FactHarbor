@@ -369,7 +369,9 @@ export default function JobPage() {
           <div><b>ID:</b> <code>{job.jobId}</code></div>
           <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
           <div className={styles.metaRow}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></div>
-          <div className={styles.badgesRow}><b>Input:</b> <code>{job.inputType}</code> — {job.inputPreview ?? "—"}</div>
+          <div className={styles.inputRow}>
+            <b>Input:</b> <code>{job.inputType}</code> — <span className={styles.inputValue}>{job.inputValue || job.inputPreview || "—"}</span>
+          </div>
           {hasV22Data && (
             <div className={styles.badgesRow}>
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
