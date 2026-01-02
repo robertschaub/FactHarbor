@@ -554,9 +554,14 @@ export default function JobPage() {
 // Helper function to decode HTML entities
 function decodeHtmlEntities(text: string): string {
   if (typeof document === 'undefined') return text;
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = text;
-  return textarea.value;
+  try {
+    const textarea = document.createElement('textarea');
+    if (!textarea) return text;
+    textarea.innerHTML = text;
+    return textarea.value || text;
+  } catch (e) {
+    return text;
+  }
 }
 
 
