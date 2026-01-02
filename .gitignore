@@ -5,6 +5,11 @@
 **/appsettings.*.Development.json
 !**/.env.example
 
+# For Claude working on docs
+Docs/**/*extract*
+Docs/*ps1
+FactHarbor.xar
+
 # Node / Next.js
 node_modules/
 .next/
