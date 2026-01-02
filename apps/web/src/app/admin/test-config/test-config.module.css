@@ -1,0 +1,337 @@
+/* Admin Test Configuration Page Styles */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #1a1a1a;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Test Section */
+.testSection {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.testButton {
+  padding: 14px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.testButton:hover {
+  background-color: #0056b3;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.testButton:active {
+  transform: translateY(0);
+}
+
+.testButtonDisabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.testButtonDisabled:hover {
+  background-color: #ccc;
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.errorBox {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #c33;
+  text-align: left;
+}
+
+/* Summary Section */
+.summarySection {
+  margin-bottom: 40px;
+  padding: 24px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #1a1a1a;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.summaryCard {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.summaryCardSuccess {
+  border-left: 4px solid #28a745;
+}
+
+.summaryCardError {
+  border-left: 4px solid #dc3545;
+}
+
+.summaryCardWarning {
+  border-left: 4px solid #ffc107;
+}
+
+.summaryCardSkipped {
+  border-left: 4px solid #6c757d;
+}
+
+.summaryNumber {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.summaryLabel {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.timestamp {
+  text-align: center;
+  font-size: 14px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Results Section */
+.resultsSection {
+  margin-bottom: 40px;
+}
+
+.resultsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resultCard {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.resultCard:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.statusSuccess {
+  border-left: 4px solid #28a745;
+}
+
+.statusError {
+  border-left: 4px solid #dc3545;
+}
+
+.statusWarning {
+  border-left: 4px solid #ffc107;
+}
+
+.statusSkipped {
+  border-left: 4px solid #6c757d;
+}
+
+.resultHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.resultService {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.resultIcon {
+  font-size: 20px;
+}
+
+.resultName {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.resultStatus {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  background-color: #f0f0f0;
+  border-radius: 12px;
+  color: #666;
+}
+
+.resultMessage {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.resultDetails {
+  font-size: 13px;
+  color: #666;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+  font-family: "Monaco", "Courier New", monospace;
+  word-break: break-word;
+}
+
+.resultActions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.configLink {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.configLink:hover {
+  background-color: #0056b3;
+}
+
+/* Help Section */
+.helpSection {
+  padding: 24px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.helpContent {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.helpSubtitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 12px;
+  color: #1a1a1a;
+}
+
+.helpList {
+  list-style-type: disc;
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+
+.helpList li {
+  margin-bottom: 8px;
+}
+
+.code {
+  background-color: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "Monaco", "Courier New", monospace;
+  font-size: 13px;
+  color: #d63384;
+}
+
+.envVarList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.envVarCategory {
+  padding: 12px;
+  background-color: #fff;
+  border-radius: 6px;
+  border-left: 3px solid #007bff;
+}
+
+.envVarCategory code {
+  margin: 0 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .resultHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .resultStatus {
+    align-self: flex-start;
+  }
+}
