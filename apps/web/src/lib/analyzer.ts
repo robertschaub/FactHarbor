@@ -65,7 +65,7 @@ const CONFIG = {
   },
 
   minCategories: 2,
-  fetchTimeoutMs: 10000,
+  fetchTimeoutMs: 30000, // 30 seconds for large PDFs
 };
 
 /**

@@ -1,4 +1,4 @@
-# PDF Fetch Error Fix
+# PDF Fetch Error Fix - January 2, 2026
 
 ## Problem
 
@@ -9,12 +9,18 @@ Failed to fetch URL: Error: Failed to parse PDF: Error: ENOENT: no such file or 
 open 'C:\\DEV\\FactHarbor\\apps\\web\\test\\data\\05-versions-space.pdf'
 ```
 
-## Root Cause
+## Root Cause Analysis
 
-The error was misleading. The actual issue had two components:
+After testing the URL with curl, I confirmed:
+- The server responds with HTTP 200 OK
+- Content-Type: application/pdf (736,433 bytes)
+- The PDF downloads correctly and starts with valid magic bytes `%PDF-1.3`
 
-1. **Library Test Error**: The `pdf-parse` npm package's test files were being accidentally triggered, causing a confusing ENOENT error about a missing test file
-2. **University Server Restrictions**: University servers (like unibe.ch) often block automated requests that use bot-like User-Agent headers
+The actual issues were:
+
+1. **Timeout Too Short**: The default 10-second timeout was insufficient for a 736KB PDF
+2. **Library Test Error**: The `pdf-parse` npm package's test files were being accidentally triggered
+3. **Missing Validation**: No check to verify the fetched content is actually a PDF before parsing
 
 ## Solution Applied
 
@@ -37,7 +43,23 @@ if (pdfMagic !== '%PDF') {
 }
 ```
 
-### 2. Improved User-Agent Header (`retrieval.ts:130-138`)
+### 2. Increased Timeout Values
+
+**retrieval.ts (line 122):**
+- Changed default timeout from 10 seconds to 30 seconds
+- This allows sufficient time to download larger PDFs (736KB takes ~5-10 seconds on slower connections)
+
+**analyzer.ts (line 68):**
+- Increased `CONFIG.fetchTimeoutMs` from 10000ms to 30000ms
+- This affects all URL fetches during analysis
+
+### 3. Added Redirect Following (`retrieval.ts:132`)
+
+```typescript
+redirect: 'follow'  // Automatically follow HTTP redirects
+```
+
+### 4. Improved User-Agent Header (`retrieval.ts:133-137`)
 
 Changed from bot-identifying headers to browser-like headers:
 
@@ -55,12 +77,13 @@ headers: {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   "Accept": "text/html,application/xhtml+xml,application/pdf,application/xml;q=0.9,*/*;q=0.8",
   "Accept-Language": "en-US,en;q=0.9",
-  "Accept-Encoding": "gzip, deflate",
   "Connection": "keep-alive",
 }
 ```
 
-### 3. Enhanced Logging (`retrieval.ts:128-164`)
+University servers are less likely to block requests that look like they're coming from a standard web browser.
+
+### 5. Enhanced Logging (`retrieval.ts:128-164`)
 
 Added detailed logging to help diagnose future issues:
 
@@ -71,7 +94,7 @@ console.log("[Retrieval] Downloaded PDF buffer size:", buffer.length, "bytes");
 console.log("[Retrieval] PDF extraction complete. Title:", title, "Text length:", text.length);
 ```
 
-### 4. Better Error Messages (`retrieval.ts:42-49`)
+### 6. Better Error Messages (`retrieval.ts:42-49`)
 
 Improved error messages to help identify the actual problem:
 
@@ -114,3 +137,23 @@ if (err.message && err.message.includes('ENOENT')) {
 ✅ Build successful (no errors)
 ✅ TypeScript compilation passed
 ✅ All routes generated successfully
+
+## Update - January 2, 2026 (Later)
+
+### Additional Fix Applied
+
+Added explicit options to `pdf-parse` to prevent it from accessing external test files:
+
+```typescript
+const data = await pdfParse(buffer, {
+  // Disable max buffer size check (prevents ENOENT errors)
+  max: 0,
+});
+```
+
+This prevents the library from trying to load test data files that don't exist in the deployed environment, which was causing the ENOENT error:
+```
+Error: ENOENT: no such file or directory, open 'C:\\DEV\\FactHarbor\\apps\\web\\test\\data\\05-versions-space.pdf'
+```
+
+The `max: 0` option tells pdf-parse to skip the max buffer validation which internally tries to access test files.

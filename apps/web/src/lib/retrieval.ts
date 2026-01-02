@@ -1,18 +1,21 @@
 /**
  * FactHarbor URL Retrieval Module
- * 
+ *
  * Extracts text content from URLs, including:
  * - HTML pages (via cheerio)
- * - PDF documents (via pdf-parse v1)
- * 
- * @version 1.1.5 - Using pdf-parse v1 for Next.js compatibility
+ * - PDF documents (via pdf2json)
+ *
+ * @version 1.2.2 - Using pdf2json for reliable Node.js PDF parsing
  */
 
 import * as cheerio from "cheerio";
+import { promises as fs } from "fs";
+import * as os from "os";
+import * as path from "path";
 
 /**
- * Extract text from PDF buffer using pdf-parse v1
- * v1 API: pdf(buffer) returns Promise<{text, numpages, info}>
+ * Extract text from PDF buffer using pdf2json
+ * This library works reliably in Node.js/Next.js environments
  */
 async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
   try {
@@ -28,24 +31,88 @@ async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
       throw new Error(`Invalid PDF format. Content starts with: ${pdfMagic}`);
     }
 
-    // pdf-parse v1 is a simple function
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pdfParse = require("pdf-parse");
+    console.log("[Retrieval] Using pdf2json to extract text from", buffer.length, "bytes");
+    console.log("[Retrieval] PDF magic bytes verified:", pdfMagic);
 
-    console.log("[Retrieval] Using pdf-parse v1 to extract text from", buffer.length, "bytes");
+    // pdf2json requires a file path, so write buffer to temp file
+    const tmpDir = os.tmpdir();
+    const tmpFile = path.join(tmpDir, `pdf-${Date.now()}-${Math.random().toString(36).substring(7)}.pdf`);
 
-    const data = await pdfParse(buffer);
+    try {
+      await fs.writeFile(tmpFile, buffer);
+      console.log("[Retrieval] Wrote PDF to temp file:", tmpFile);
 
-    console.log(`[Retrieval] PDF parsed: ${data.numpages} pages, ${data.text?.length || 0} chars`);
+      // Use pdf2json to parse the PDF
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const PDFParser = require("pdf2json");
+      const pdfParser = new PDFParser();
 
-    return data.text || "";
-  } catch (err: any) {
-    console.error("[Retrieval] PDF parse error:", err);
-    // Provide more helpful error message
-    if (err.message && err.message.includes('ENOENT')) {
-      throw new Error(`PDF parsing failed: This appears to be a library test error. The PDF content may be corrupted or the server may have returned an error page instead of a PDF.`);
+      console.log("[Retrieval] Starting PDF extraction...");
+
+      // Parse the PDF
+      const parsePromise = new Promise<string>((resolve, reject) => {
+        pdfParser.on("pdfParser_dataError", (errData: any) => {
+          reject(new Error(errData.parserError || "PDF parsing failed"));
+        });
+
+        pdfParser.on("pdfParser_dataReady", (pdfData: any) => {
+          try {
+            let fullText = "";
+
+            // Extract text from all pages
+            if (pdfData.Pages && Array.isArray(pdfData.Pages)) {
+              for (const page of pdfData.Pages) {
+                if (page.Texts && Array.isArray(page.Texts)) {
+                  for (const text of page.Texts) {
+                    if (text.R && Array.isArray(text.R)) {
+                      for (const run of text.R) {
+                        if (run.T) {
+                          // Decode URI-encoded text, handle malformed URIs
+                          try {
+                            const decodedText = decodeURIComponent(run.T);
+                            fullText += decodedText + " ";
+                          } catch (decodeErr) {
+                            // If decoding fails, use the raw text
+                            fullText += run.T + " ";
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                fullText += "\n";
+              }
+            }
+
+            console.log("[Retrieval] PDF extraction completed successfully");
+            console.log(`[Retrieval] PDF has ${pdfData.Pages?.length || 0} pages`);
+            console.log(`[Retrieval] Extracted ${fullText.length} characters of text`);
+
+            resolve(fullText.trim());
+          } catch (err) {
+            reject(err);
+          }
+        });
+
+        pdfParser.loadPDF(tmpFile);
+      });
+
+      const text = await parsePromise;
+      return text;
+
+    } finally {
+      // Clean up temp file
+      try {
+        await fs.unlink(tmpFile);
+        console.log("[Retrieval] Cleaned up temp file");
+      } catch (cleanupErr) {
+        console.warn("[Retrieval] Failed to clean up temp file:", cleanupErr);
+      }
     }
-    throw new Error(`Failed to parse PDF: ${err.message || err}`);
+  } catch (err: any) {
+    console.error("[Retrieval] PDF extraction error:", err);
+    console.error("[Retrieval] Error stack:", err.stack);
+    throw new Error(`Failed to extract PDF text: ${err.message || err}`);
   }
 }
 
@@ -119,21 +186,21 @@ export async function extractTextFromUrl(
     maxLength?: number;
   } = {}
 ): Promise<{ text: string; title: string; contentType: string }> {
-  const { timeoutMs = 10000, maxLength = 50000 } = options;
-  
+  const { timeoutMs = 30000, maxLength = 50000 } = options;
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  
+
   try {
     console.log("[Retrieval] Fetching URL:", url);
 
     const response = await fetch(url, {
       signal: controller.signal,
+      redirect: 'follow',
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/pdf,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate",
         "Connection": "keep-alive",
       },
     });
