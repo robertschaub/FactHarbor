@@ -205,7 +205,7 @@ async function testOpenAI(shouldTest: boolean): Promise<TestResult> {
     const result = await generateText({
       model: openai("gpt-4o-mini"),
       prompt: "Reply with just the word 'OK'",
-      maxTokens: 10,
+      maxOutputTokens: 10,
     });
 
     return {
@@ -260,7 +260,7 @@ async function testAnthropic(shouldTest: boolean): Promise<TestResult> {
     const result = await generateText({
       model: anthropic("claude-3-5-haiku-20241022"),
       prompt: "Reply with just the word 'OK'",
-      maxTokens: 10,
+      maxOutputTokens: 10,
     });
 
     return {
@@ -315,7 +315,7 @@ async function testGoogle(shouldTest: boolean): Promise<TestResult> {
     const result = await generateText({
       model: google("gemini-1.5-flash"),
       prompt: "Reply with just the word 'OK'",
-      maxTokens: 10,
+      maxOutputTokens: 10,
     });
 
     return {
@@ -370,7 +370,7 @@ async function testMistral(shouldTest: boolean): Promise<TestResult> {
     const result = await generateText({
       model: mistral("mistral-small-latest"),
       prompt: "Reply with just the word 'OK'",
-      maxTokens: 10,
+      maxOutputTokens: 10,
     });
 
     return {
