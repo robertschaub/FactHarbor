@@ -1435,7 +1435,26 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   const entities = understanding.subClaims
     .flatMap((c) => c.keyEntities)
     .slice(0, 4);
-  const entityStr = entities.join(" ");
+
+  // Fallback: if keyEntities is empty, extract terms from claim text or thesis
+  let entityStr = entities.join(" ");
+  if (!entityStr.trim()) {
+    // Use articleThesis, impliedClaim, or first subClaim text as fallback
+    const fallbackText = understanding.impliedClaim
+      || understanding.articleThesis
+      || understanding.subClaims[0]?.text
+      || state.originalText?.slice(0, 150)
+      || "";
+    // Extract key terms: remove common words, keep meaningful terms
+    const stopWords = new Set(["the", "a", "an", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall", "can", "need", "dare", "ought", "used", "to", "of", "in", "for", "on", "with", "at", "by", "from", "as", "into", "through", "during", "before", "after", "above", "below", "between", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "just", "and", "but", "if", "or", "because", "until", "while", "although", "though", "whether", "this", "that", "these", "those", "it", "its", "what", "which", "who", "whom", "whose", "based"]);
+    entityStr = fallbackText
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ")
+      .split(/\s+/)
+      .filter(word => word.length > 2 && !stopWords.has(word))
+      .slice(0, 6)
+      .join(" ");
+  }
 
   const hasLegal = categories.includes("legal_provision");
   const hasEvidence = categories.includes("evidence");
@@ -2384,9 +2403,9 @@ ${factsFormatted}`;
     state.llmCalls++;
   }
 
-  // Fallback if structured output failed
-  if (!parsed || !parsed.claimVerdicts) {
-    console.log("[Analyzer] Using fallback question verdict generation");
+  // Fallback if structured output failed or questionAnswer is missing
+  if (!parsed || !parsed.claimVerdicts || !parsed.questionAnswer) {
+    console.log("[Analyzer] Using fallback question verdict generation (parsed:", !!parsed, ", claimVerdicts:", !!parsed?.claimVerdicts, ", questionAnswer:", !!parsed?.questionAnswer, ")");
 
     const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map(
       (claim: any) => ({
@@ -2517,7 +2536,8 @@ ${factsFormatted}`;
     ).length,
   };
 
-  const hasContestedFactors = parsed.questionAnswer.keyFactors.some(
+  const keyFactors = parsed.questionAnswer.keyFactors || [];
+  const hasContestedFactors = keyFactors.some(
     (kf: any) => kf.isContested,
   );
 
@@ -2534,9 +2554,9 @@ ${factsFormatted}`;
     answer: calibratedAnswer,
     confidence: parsed.questionAnswer.confidence,
     truthPercentage: answerTruthPct,
-    shortAnswer: parsed.questionAnswer.shortAnswer,
-    nuancedAnswer: parsed.questionAnswer.nuancedAnswer,
-    keyFactors: parsed.questionAnswer.keyFactors,
+    shortAnswer: parsed.questionAnswer.shortAnswer || "",
+    nuancedAnswer: parsed.questionAnswer.nuancedAnswer || "",
+    keyFactors,
     hasMultipleProceedings: false,
     hasContestedFactors,
   };
