@@ -997,7 +997,7 @@ interface ClaimUnderstanding {
     checkWorthiness: "high" | "medium" | "low"; // Is it a factual assertion a reader would question?
     harmPotential: "high" | "medium" | "low";   // Does it impact high-stakes areas?
     centrality: "high" | "medium" | "low";      // Is it pivotal to the author's argument?
-    isCentral: boolean; // Derived: true if any of the above is "high"
+    isCentral: boolean; // Derived: true only if harmPotential OR centrality is "high"
     relatedProceedingId: string;
     approximatePosition: string;
   }>;
@@ -1323,7 +1323,7 @@ const UNDERSTANDING_SCHEMA = z.object({
       checkWorthiness: z.enum(["high", "medium", "low"]),
       harmPotential: z.enum(["high", "medium", "low"]),
       centrality: z.enum(["high", "medium", "low"]),
-      isCentral: z.boolean(), // true if any attribute is "high"
+      isCentral: z.boolean(), // true only if harmPotential OR centrality is "high"
       relatedProceedingId: z.string(), // empty string if not applicable
       approximatePosition: z.string(), // empty string if not applicable
     }),
@@ -1384,31 +1384,75 @@ EXAMPLE: "CBER director Prasad claimed in an internal memo that 10 children died
 
 If SC2 is FALSE (no such memo exists), then SC3 has NO evidential basis from this source.
 
-### CENTRAL CLAIM RULES (isCentral: true):
+### THREE-ATTRIBUTE CLAIM ASSESSMENT
 
-A claim is CENTRAL if it has significant IMPACT - ask: "Would this warrant a professional fact-check?"
+For EACH claim, assess these three attributes (high/medium/low):
 
-**CENTRAL (isCentral: true) - High impact claims:**
-1. **Broad consequences**: Claims affecting many people (public health, policy, economy)
-2. **Challenges status quo**: Claims contradicting established knowledge or official positions
-3. **New revelations**: Claims introducing previously unknown information
-4. **Actionable implications**: Claims that could change behavior or decisions
-5. **Verifiable assertions**: Core factual claims that can be independently checked
+**1. checkWorthiness** - Is it a factual assertion a reader would question?
+- HIGH: Specific factual claim that can be verified, readers would want proof
+- MEDIUM: Somewhat verifiable but less likely to be questioned
+- LOW: Pure opinion with no factual component, or not independently verifiable
 
-**NOT CENTRAL (isCentral: false) - Supporting claims:**
-1. **Attribution**: WHO said something (identity, credentials, position)
-2. **Source/Channel**: WHERE/HOW it was communicated (email, report, interview)
-3. **Timing**: WHEN something happened
-4. **Context**: Background information that frames the core claim
+NOTE: Broad institutional claims ARE verifiable (checkWorthiness: HIGH):
+- "The FDA has acted on weak science" → Can check documented cases, GAO reports, expert analyses
+- "The government has lied about X" → Can check historical record, declassified documents
+- "Company X has a history of fraud" → Can check court records, SEC filings, news archives
+These are not opinions - they're historical assertions that can be fact-checked.
 
-**Impact assessment examples:**
-- "10 children died from vaccines" → isCentral: TRUE (health impact, challenges safety consensus)
-- "FDA will require randomized trials for all vaccines" → isCentral: TRUE (major policy change, broad consequences)
-- "Company X falsified clinical trial data" → isCentral: TRUE (fraud allegation, actionable)
-- "Climate models predict 3°C warming by 2100" → isCentral: TRUE (new data, broad implications)
-- "Prasad sent an internal email" → isCentral: FALSE (source attribution)
-- "Prasad is CBER director" → isCentral: FALSE (credential/attribution)
-- "The email was sent on November 28" → isCentral: FALSE (timing)
+**2. harmPotential** - Does it impact high-stakes areas?
+- HIGH: Public health, safety, democratic integrity, financial markets, legal outcomes
+- MEDIUM: Affects specific groups or has moderate societal impact
+- LOW: Limited impact, affects few people, low stakes
+
+**3. centrality** - Is it pivotal to the author's argument?
+- HIGH: Core assertion the argument depends on; removing it collapses the narrative
+- MEDIUM: Supports the main argument but not essential
+- LOW: Peripheral detail, context, or attribution
+
+**isCentral = true** ONLY if harmPotential OR centrality is "high"
+- checkWorthiness does NOT affect isCentral (a high checkWorthiness alone doesn't make it central)
+- However, if checkWorthiness is "low", the claim should NOT be investigated or displayed
+
+**FILTERING RULE**: Claims with checkWorthiness = "low" should be excluded from investigation
+
+**Examples:**
+
+"At least 10 children died because of COVID-19 vaccines"
+→ checkWorthiness: HIGH (specific factual claim, readers want proof)
+→ harmPotential: HIGH (public health, vaccine safety) ← HIGH
+→ centrality: HIGH (core assertion of the article) ← HIGH
+→ isCentral: TRUE (harmPotential OR centrality is HIGH)
+
+"FDA will require randomized trials for all vaccines"
+→ checkWorthiness: HIGH (policy claim that can be verified)
+→ harmPotential: HIGH (affects drug development, public health) ← HIGH
+→ centrality: HIGH (major policy change claim) ← HIGH
+→ isCentral: TRUE (harmPotential OR centrality is HIGH)
+
+"Prasad is CBER director"
+→ checkWorthiness: MEDIUM (verifiable but routine)
+→ harmPotential: LOW (credential, not harmful if wrong)
+→ centrality: LOW (attribution, not the main point)
+→ isCentral: FALSE (neither harmPotential nor centrality is HIGH)
+
+"The email was sent on November 28"
+→ checkWorthiness: LOW (timing detail) ← LOW = EXCLUDE FROM INVESTIGATION
+→ harmPotential: LOW (no significant impact)
+→ centrality: LOW (peripheral detail)
+→ isCentral: FALSE
+→ NOTE: This claim should NOT be investigated or displayed (checkWorthiness is LOW)
+
+"The FDA has acted on weak and misleading science in the past"
+→ checkWorthiness: HIGH (historical claim, verifiable via documented cases, GAO reports)
+→ harmPotential: HIGH (public health, regulatory trust) ← HIGH
+→ centrality: MEDIUM (supports main argument but not the core claim)
+→ isCentral: TRUE (harmPotential is HIGH)
+
+"Expert says the policy change is controversial"
+→ checkWorthiness: HIGH (verifiable who said what)
+→ harmPotential: MEDIUM (affects policy debate)
+→ centrality: MEDIUM (contextual, not core)
+→ isCentral: FALSE (neither harmPotential nor centrality is HIGH, even though checkWorthiness is HIGH)
 
 ### Dependencies:
 1. List dependencies in dependsOn array (claim IDs that must be true for this claim to matter)
@@ -1617,7 +1661,18 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
     };
   });
 
-  return { ...parsed, subClaims: claimsWithPositions };
+  // Filter out claims with low checkWorthiness - they should not be investigated or displayed
+  const filteredClaims = claimsWithPositions.filter((claim: any) => {
+    if (claim.checkWorthiness === "low") {
+      console.log(`[Analyzer] Excluding claim "${claim.id}" with low checkWorthiness: "${claim.text.slice(0, 50)}..."`);
+      return false;
+    }
+    return true;
+  });
+
+  console.log(`[Analyzer] Filtered ${claimsWithPositions.length - filteredClaims.length} claims with low checkWorthiness, ${filteredClaims.length} remaining`);
+
+  return { ...parsed, subClaims: filteredClaims };
 }
 
 function findClaimPosition(
@@ -3826,6 +3881,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           claimRole: "core",
           dependsOn: [],
           keyEntities: [],
+          checkWorthiness: "high",
+          harmPotential: "medium",
+          centrality: "high",
           isCentral: true,
           relatedProceedingId: "",
           approximatePosition: "",
