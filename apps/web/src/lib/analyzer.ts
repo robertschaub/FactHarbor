@@ -22,9 +22,43 @@ import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateText, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
-import { searchWeb } from "@/lib/web-search";
+import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
 import * as fs from "fs";
 import * as path from "path";
+
+// ============================================================================
+// DEBUG LOGGING - writes to file for easy checking
+// ============================================================================
+
+// Write debug log to a fixed location that's easy to find
+const DEBUG_LOG_PATH = "c:\\DEV\\FactHarbor\\apps\\web\\debug-analyzer.log";
+
+function debugLog(message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  let logLine = `[${timestamp}] ${message}`;
+  if (data !== undefined) {
+    logLine += ` | ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`;
+  }
+  logLine += "\n";
+
+  // Write to file (append)
+  try {
+    fs.appendFileSync(DEBUG_LOG_PATH, logLine);
+  } catch (err) {
+    // Silently ignore file write errors
+  }
+
+  // Also log to console
+  console.log(logLine.trim());
+}
+
+function clearDebugLog() {
+  try {
+    fs.writeFileSync(DEBUG_LOG_PATH, `=== FactHarbor Debug Log Started at ${new Date().toISOString()} ===\n`);
+  } catch (err) {
+    // Silently ignore
+  }
+}
 
 // ============================================================================
 // CONFIGURATION
@@ -142,8 +176,11 @@ function getKnowledgeInstruction(): string {
 function extractStructuredOutput(result: any): any {
   // Guard against null/undefined result
   if (!result) {
+    console.log("[Analyzer] extractStructuredOutput: result is null/undefined");
     return null;
   }
+
+  console.log("[Analyzer] extractStructuredOutput: Checking result with keys:", Object.keys(result));
 
   const safeGet = (getter: () => any) => {
     try {
@@ -154,14 +191,26 @@ function extractStructuredOutput(result: any): any {
   };
 
   // Try different possible locations for the output
-  // Priority: result.output > result.experimental_output?.value > result.experimental_output > result.object
+  // Priority: result.output > result._output > result.experimental_output?.value > result.experimental_output > result.object
+  // Note: AI SDK 6.x uses _output for structured output
   const output = safeGet(() => result.output);
+  console.log("[Analyzer] extractStructuredOutput: result.output =", output !== undefined ? "exists" : "undefined");
   if (output !== undefined && output !== null) {
     const outputValue = safeGet(() => output?.value);
     if (outputValue !== undefined) {
+      console.log("[Analyzer] extractStructuredOutput: Found in output.value");
       return outputValue;
     }
+    console.log("[Analyzer] extractStructuredOutput: Found in output directly");
     return output;
+  }
+
+  // AI SDK 6.x stores structured output in _output
+  const _output = safeGet(() => result._output);
+  console.log("[Analyzer] extractStructuredOutput: result._output =", _output !== undefined ? "exists" : "undefined");
+  if (_output !== undefined && _output !== null) {
+    console.log("[Analyzer] extractStructuredOutput: Found structured output in result._output");
+    return _output;
   }
 
   // Handle experimental_output safely (avoid "reading 'value' of undefined")
@@ -850,18 +899,19 @@ function getHighlightColor7Point(
 // ============================================================================
 
 type InputType = "question" | "claim" | "article";
-type QuestionIntent = "verification" | "exploration" | "comparison";
+type QuestionIntent = "verification" | "exploration" | "comparison" | "none";
+type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown";
 
 interface DistinctProceeding {
   id: string;
   name: string;
   shortName: string;
-  court?: string;
-  jurisdiction?: string;
+  court: string;
+  jurisdiction: string;
   date: string;
   subject: string;
-  charges?: string[];
-  outcome?: string;
+  charges: string[];
+  outcome: string;
   status: "concluded" | "ongoing" | "pending" | "unknown";
 }
 
@@ -869,10 +919,10 @@ interface KeyFactor {
   factor: string;
   supports: "yes" | "no" | "neutral";
   explanation: string;
-  isContested?: boolean;
-  contestedBy?: string;
-  contestationReason?: string;
-  factualBasis?: "established" | "disputed" | "alleged" | "opinion";
+  isContested: boolean;
+  contestedBy: string;
+  contestationReason: string;
+  factualBasis: "established" | "disputed" | "alleged" | "opinion" | "unknown";
 }
 
 interface FactorAnalysis {
@@ -926,13 +976,13 @@ interface ResearchState {
 
 interface ClaimUnderstanding {
   detectedInputType: InputType;
-  questionIntent?: QuestionIntent;
-  questionBeingAsked?: string;
-  impliedClaim?: string;
+  questionIntent: QuestionIntent;
+  questionBeingAsked: string;
+  impliedClaim: string;
 
   distinctProceedings: DistinctProceeding[];
   requiresSeparateAnalysis: boolean;
-  proceedingContext?: string;
+  proceedingContext: string;
 
   mainQuestion: string;
   articleThesis: string;
@@ -940,13 +990,16 @@ interface ClaimUnderstanding {
     id: string;
     text: string;
     type: "legal" | "procedural" | "factual" | "evaluative";
-    claimRole?: "attribution" | "source" | "timing" | "core";
-    dependsOn?: string[];
+    claimRole: ClaimRole;
+    dependsOn: string[];
     keyEntities: string[];
-    isCentral: boolean;
-    relatedProceedingId?: string;
-    startOffset?: number;
-    endOffset?: number;
+    // Three-attribute assessment for claim importance
+    checkWorthiness: "high" | "medium" | "low"; // Is it a factual assertion a reader would question?
+    harmPotential: "high" | "medium" | "low";   // Does it impact high-stakes areas?
+    centrality: "high" | "medium" | "low";      // Is it pivotal to the author's argument?
+    isCentral: boolean; // Derived: true if any of the above is "high"
+    relatedProceedingId: string;
+    approximatePosition: string;
   }>;
   distinctEvents: Array<{
     name: string;
@@ -1231,30 +1284,30 @@ function applyEvidenceWeighting(
 // STEP 1: UNDERSTAND
 // ============================================================================
 
+// NOTE: OpenAI structured output requires ALL properties to be in "required" array.
+// Using union types with explicit "unknown" or empty values instead of nullable/optional.
 const UNDERSTANDING_SCHEMA = z.object({
   detectedInputType: z.enum(["question", "claim", "article"]),
-  questionIntent: z
-    .enum(["verification", "exploration", "comparison"])
-    .optional(),
-  questionBeingAsked: z.string().optional(),
-  impliedClaim: z.string().optional(),
+  questionIntent: z.enum(["verification", "exploration", "comparison", "none"]),
+  questionBeingAsked: z.string(), // empty string if not applicable
+  impliedClaim: z.string(), // empty string if not applicable
 
   distinctProceedings: z.array(
     z.object({
       id: z.string(),
       name: z.string(),
       shortName: z.string(),
-      court: z.string().optional(),
-      jurisdiction: z.string().optional(),
+      court: z.string(), // "unknown" if not known
+      jurisdiction: z.string(), // "unknown" if not known
       date: z.string(),
       subject: z.string(),
-      charges: z.array(z.string()).optional(),
-      outcome: z.string().optional(),
+      charges: z.array(z.string()), // empty array if none
+      outcome: z.string(), // "pending" or "unknown" if not known
       status: z.enum(["concluded", "ongoing", "pending", "unknown"]),
     }),
   ),
   requiresSeparateAnalysis: z.boolean(),
-  proceedingContext: z.string().optional(),
+  proceedingContext: z.string(), // empty string if not applicable
 
   mainQuestion: z.string(),
   articleThesis: z.string(),
@@ -1263,21 +1316,16 @@ const UNDERSTANDING_SCHEMA = z.object({
       id: z.string(),
       text: z.string(),
       type: z.enum(["legal", "procedural", "factual", "evaluative"]),
-      // NEW: Claim role - distinguishes framing from core claims
-      claimRole: z
-        .enum([
-          "attribution", // WHO said it (person, position, authority)
-          "source", // WHERE it was said (document, email, speech)
-          "timing", // WHEN it was said
-          "core", // WHAT was actually claimed (the verifiable assertion)
-        ])
-        .optional(),
-      // NEW: Dependencies - which claims must be true for this claim to matter
-      dependsOn: z.array(z.string()).optional(), // List of claim IDs this depends on
+      claimRole: z.enum(["attribution", "source", "timing", "core", "unknown"]),
+      dependsOn: z.array(z.string()), // empty array if no dependencies
       keyEntities: z.array(z.string()),
-      isCentral: z.boolean(),
-      relatedProceedingId: z.string().optional(),
-      approximatePosition: z.string().optional(),
+      // Three-attribute assessment
+      checkWorthiness: z.enum(["high", "medium", "low"]),
+      harmPotential: z.enum(["high", "medium", "low"]),
+      centrality: z.enum(["high", "medium", "low"]),
+      isCentral: z.boolean(), // true if any attribute is "high"
+      relatedProceedingId: z.string(), // empty string if not applicable
+      approximatePosition: z.string(), // empty string if not applicable
     }),
   ),
   distinctEvents: z.array(
@@ -1298,6 +1346,14 @@ async function understandClaim(
 ): Promise<ClaimUnderstanding> {
   const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT EVENTS or PROCEEDINGS.
 
+## CRITICAL: ARTICLE THESIS (articleThesis)
+
+The articleThesis should NEUTRALLY SUMMARIZE what the article claims, covering ALL main points.
+- Include ALL major claims, not just one
+- Use neutral language ("claims that", "alleges that")
+- Keep the source attribution ("according to X", "allegedly from Y")
+- Example: "The article claims FDA official Prasad announced stricter vaccine regulations and alleges an internal review found child deaths linked to vaccines."
+
 ## CRITICAL: CLAIM STRUCTURE ANALYSIS
 
 When extracting claims, identify their ROLE and DEPENDENCIES:
@@ -1306,23 +1362,57 @@ When extracting claims, identify their ROLE and DEPENDENCIES:
 - **attribution**: WHO said it (person's identity, position, authority) - e.g., "Vinay Prasad is CBER director"
 - **source**: WHERE/HOW it was communicated (document type, channel) - e.g., "in an internal email"
 - **timing**: WHEN it happened - e.g., "in late November"
-- **core**: THE ACTUAL VERIFIABLE ASSERTION - e.g., "10 children died from COVID vaccines"
+- **core**: THE ACTUAL VERIFIABLE ASSERTION - MUST be isolated from source/attribution
+
+### CRITICAL: ISOLATING CORE CLAIMS
+
+Core claims must be PURE FACTUAL ASSERTIONS without embedded source/attribution:
+- WRONG: "An internal FDA review found that 10 children died from vaccines" (embeds source)
+- CORRECT: "At least 10 children died because of COVID-19 vaccines" (pure factual claim)
+
+The source attribution belongs in a SEPARATE claim:
+- SC1: "An internal FDA review exists" (source claim)
+- SC2: "At least 10 children died because of COVID-19 vaccines" (core claim, depends on SC1)
 
 ### Claim Dependencies (dependsOn):
 Core claims often DEPEND on attribution/source/timing claims being true.
 
 EXAMPLE: "CBER director Prasad claimed in an internal memo that 10 children died from vaccines"
 - SC1 (attribution): "Vinay Prasad is CBER director" → claimRole: "attribution", dependsOn: []
-- SC2 (source): "Prasad sent an internal memo" → claimRole: "source", dependsOn: ["SC1"]
-- SC3 (core): "10 children died from COVID vaccines" → claimRole: "core", dependsOn: ["SC1", "SC2"], isCentral: true
+- SC2 (source): "Prasad sent an internal memo making claims about child deaths" → claimRole: "source", dependsOn: ["SC1"]
+- SC3 (core): "At least 10 children died because of COVID-19 vaccines" → claimRole: "core", dependsOn: ["SC2"], isCentral: true
 
-If SC1 is FALSE (Prasad is NOT the CBER director), then SC2 and SC3's framing collapses.
+If SC2 is FALSE (no such memo exists), then SC3 has NO evidential basis from this source.
 
-### Rules:
-1. Mark "core" claims as isCentral: true
-2. Attribution/source/timing claims support the core - mark as isCentral: false
-3. List dependencies in dependsOn array (claim IDs that must be true for this claim to matter)
-4. Core claims typically depend on attribution claims
+### CENTRAL CLAIM RULES (isCentral: true):
+
+A claim is CENTRAL if it has significant IMPACT - ask: "Would this warrant a professional fact-check?"
+
+**CENTRAL (isCentral: true) - High impact claims:**
+1. **Broad consequences**: Claims affecting many people (public health, policy, economy)
+2. **Challenges status quo**: Claims contradicting established knowledge or official positions
+3. **New revelations**: Claims introducing previously unknown information
+4. **Actionable implications**: Claims that could change behavior or decisions
+5. **Verifiable assertions**: Core factual claims that can be independently checked
+
+**NOT CENTRAL (isCentral: false) - Supporting claims:**
+1. **Attribution**: WHO said something (identity, credentials, position)
+2. **Source/Channel**: WHERE/HOW it was communicated (email, report, interview)
+3. **Timing**: WHEN something happened
+4. **Context**: Background information that frames the core claim
+
+**Impact assessment examples:**
+- "10 children died from vaccines" → isCentral: TRUE (health impact, challenges safety consensus)
+- "FDA will require randomized trials for all vaccines" → isCentral: TRUE (major policy change, broad consequences)
+- "Company X falsified clinical trial data" → isCentral: TRUE (fraud allegation, actionable)
+- "Climate models predict 3°C warming by 2100" → isCentral: TRUE (new data, broad implications)
+- "Prasad sent an internal email" → isCentral: FALSE (source attribution)
+- "Prasad is CBER director" → isCentral: FALSE (credential/attribution)
+- "The email was sent on November 28" → isCentral: FALSE (timing)
+
+### Dependencies:
+1. List dependencies in dependsOn array (claim IDs that must be true for this claim to matter)
+2. Core claims typically depend on attribution claims
 
 ## MULTI-EVENT DETECTION
 
@@ -1349,7 +1439,28 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 
 - **impliedClaim**: What claim would "YES" confirm? Must be AFFIRMATIVE.
   - CORRECT: "The Bolsonaro judgment was fair and based on Brazil's law"
-  - WRONG: "may or may not have been fair"`;
+  - WRONG: "may or may not have been fair"
+
+- **subClaims**: Even for questions, generate sub-claims that need to be verified to answer the question.
+  - Break down the implied claim into verifiable components
+  - For each proceeding/event, generate at least 4-5 sub-claims covering:
+    - Correct application (were proper rules/standards/methods applied?)
+    - Process fairness (were proper procedures followed?)
+    - Evidence basis (were decisions based on evidence?)
+    - Decision-maker impartiality (were there any conflicts of interest?)
+    - Outcome proportionality (was the outcome proportionate compared to similar cases?)
+  - Example for "Was the Bolsonaro judgment fair?":
+    - SC1: "The TSE applied Brazilian electoral law correctly" (type: legal, isCentral: true)
+    - SC2: "The TSE followed proper due process procedures" (type: procedural, isCentral: true)
+    - SC3: "The ruling was based on documented evidence" (type: factual, isCentral: true)
+    - SC4: "The decision-makers had no conflicts of interest" (type: procedural, isCentral: true)
+    - SC5: "The outcome was proportionate to similar cases" (type: evaluative, isCentral: true)
+    - etc.
+
+- **researchQuestions**: Generate specific questions to research, including:
+  - Potential conflicts of interest for key decision-makers
+  - Comparisons to similar cases or precedents
+  - Criticisms and rebuttals from credible sources`;
 
   const userPrompt = `Analyze for fact-checking:\n\n"${input}"`;
 
@@ -1357,7 +1468,10 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 
   try {
     const startTime = Date.now();
-    console.log(`[Analyzer] understandClaim: Starting LLM call for input: "${input.substring(0, 100)}..."`);
+    debugLog("understandClaim: STARTING LLM CALL");
+    debugLog("understandClaim: Input (first 100 chars)", input.substring(0, 100));
+    debugLog("understandClaim: Model", String(model));
+
     result = await generateText({
       model,
       messages: [
@@ -1367,20 +1481,45 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
       temperature: 0.3,
       output: Output.object({ schema: UNDERSTANDING_SCHEMA }),
     });
+
     const elapsed = Date.now() - startTime;
-    console.log(`[Analyzer] understandClaim: LLM call completed in ${elapsed}ms`);
-    console.log(`[Analyzer] understandClaim: Result keys:`, result ? Object.keys(result) : "null");
-    if (result?.usage) {
-      console.log(`[Analyzer] understandClaim: Token usage:`, JSON.stringify(result.usage));
+    debugLog(`understandClaim: LLM CALL COMPLETED in ${elapsed}ms`);
+    debugLog("understandClaim: Result keys", result ? Object.keys(result) : "null");
+
+    // Debug: Log the actual result structure
+    if (result) {
+      debugLog("understandClaim: Has result.output", result.output !== undefined);
+      debugLog("understandClaim: Has result._output", result._output !== undefined);
+      if (result._output) {
+        debugLog("understandClaim: _output preview", JSON.stringify(result._output).substring(0, 500));
+      } else if (result.output) {
+        debugLog("understandClaim: output preview", JSON.stringify(result.output).substring(0, 500));
+      }
+    }
+
+    if (result?.usage || result?.totalUsage) {
+      debugLog("understandClaim: Token usage", result.usage || result.totalUsage);
     }
     if (elapsed < 1000) {
-      console.warn(`[Analyzer] understandClaim: WARNING - LLM responded suspiciously fast (${elapsed}ms). This may indicate caching or API issues.`);
-      console.warn(`[Analyzer] understandClaim: Result type: ${typeof result}, keys: ${result ? Object.keys(result).join(', ') : 'N/A'}`);
+      debugLog(`understandClaim: WARNING - LLM responded suspiciously fast (${elapsed}ms)`);
     }
-  } catch (err) {
-    console.error("[Analyzer] generateText failed in understandClaim:", err);
+  } catch (err: any) {
+    const errMsg = err?.message || String(err);
+    debugLog("understandClaim: FAILED", errMsg);
+    console.error("[Analyzer] generateText failed in understandClaim:", errMsg);
+
+    // Check for specific API errors
+    if (errMsg.includes("credit balance is too low") || errMsg.includes("insufficient_quota")) {
+      console.error("[Analyzer] ❌ ANTHROPIC API CREDITS EXHAUSTED - Please add credits at https://console.anthropic.com/settings/plans");
+      throw new Error("Anthropic API credits exhausted. Please add credits or switch to a different LLM provider (LLM_PROVIDER=openai)");
+    }
+    if (errMsg.includes("invalid_api_key") || errMsg.includes("401")) {
+      console.error("[Analyzer] ❌ INVALID API KEY - Check your ANTHROPIC_API_KEY or OPENAI_API_KEY");
+      throw new Error("Invalid API key. Please check your LLM provider API key.");
+    }
+
     // Return a basic understanding if the structured output fails
-    throw new Error(`Failed to understand claim: ${err}`);
+    throw new Error(`Failed to understand claim: ${errMsg}`);
   }
 
   // Handle different AI SDK versions - safely extract structured output
@@ -1415,6 +1554,29 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
     // Also set questionBeingAsked if not already set
     if (!parsed.questionBeingAsked) {
       parsed.questionBeingAsked = trimmedInput;
+    }
+  }
+
+  // Post-processing: Fix impliedClaim for questions - convert question to affirmative statement
+  if (parsed.detectedInputType === "question") {
+    // Check if impliedClaim is still a question (ends with ?) or is missing
+    if (!parsed.impliedClaim || parsed.impliedClaim.endsWith("?")) {
+      // Convert question to affirmative claim (what "YES" would confirm)
+      let affirmativeClaim = trimmedInput
+        .replace(/\?+$/, "") // Remove trailing question marks
+        .replace(/^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s+/i, "")
+        .trim();
+
+      // Capitalize first letter
+      affirmativeClaim = affirmativeClaim.charAt(0).toUpperCase() + affirmativeClaim.slice(1);
+
+      // Add a verb if missing (simple heuristic)
+      if (!/\b(is|are|was|were|has|have|had|will|would|can|could|should|may|might)\b/i.test(affirmativeClaim)) {
+        affirmativeClaim = "The " + affirmativeClaim.charAt(0).toLowerCase() + affirmativeClaim.slice(1) + " is true";
+      }
+
+      console.log(`[Analyzer] Fixed impliedClaim from question "${parsed.impliedClaim || trimmedInput}" to affirmative: "${affirmativeClaim}"`);
+      parsed.impliedClaim = affirmativeClaim;
     }
   }
 
@@ -1496,17 +1658,33 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     .flatMap((c) => c.keyEntities)
     .slice(0, 4);
 
-  // Fallback: if keyEntities is empty, extract terms from claim text or thesis
-  let entityStr = entities.join(" ");
+  // For questions, prioritize the implied claim for better search results
+  const isQuestion = understanding.detectedInputType === "question";
+  const stopWords = new Set(["the", "a", "an", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall", "can", "need", "dare", "ought", "used", "to", "of", "in", "for", "on", "with", "at", "by", "from", "as", "into", "through", "during", "before", "after", "above", "below", "between", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "just", "and", "but", "if", "or", "because", "until", "while", "although", "though", "whether", "this", "that", "these", "those", "it", "its", "what", "which", "who", "whom", "whose", "based"]);
+
+  let entityStr = "";
+
+  // For questions, always use the implied claim as primary search basis
+  if (isQuestion && understanding.impliedClaim) {
+    entityStr = understanding.impliedClaim
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ")
+      .split(/\s+/)
+      .filter(word => word.length > 2 && !stopWords.has(word))
+      .slice(0, 8)
+      .join(" ");
+  } else {
+    // For articles/claims, use keyEntities
+    entityStr = entities.join(" ");
+  }
+
+  // Fallback: if entityStr is empty, extract terms from claim text or thesis
   if (!entityStr.trim()) {
-    // Use articleThesis, impliedClaim, or first subClaim text as fallback
     const fallbackText = understanding.impliedClaim
       || understanding.articleThesis
       || understanding.subClaims[0]?.text
       || state.originalText?.slice(0, 150)
       || "";
-    // Extract key terms: remove common words, keep meaningful terms
-    const stopWords = new Set(["the", "a", "an", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall", "can", "need", "dare", "ought", "used", "to", "of", "in", "for", "on", "with", "at", "by", "from", "as", "into", "through", "during", "before", "after", "above", "below", "between", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "just", "and", "but", "if", "or", "because", "until", "while", "although", "though", "whether", "this", "that", "these", "those", "it", "its", "what", "which", "who", "whom", "whose", "based"]);
     entityStr = fallbackText
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
@@ -1775,6 +1953,8 @@ async function fetchSource(
   }
 }
 
+// NOTE: OpenAI structured output requires ALL properties to be in "required" array.
+// Using empty string "" instead of optional for string fields.
 const FACT_SCHEMA = z.object({
   facts: z.array(
     z.object({
@@ -1789,9 +1969,9 @@ const FACT_SCHEMA = z.object({
       ]),
       specificity: z.enum(["high", "medium", "low"]),
       sourceExcerpt: z.string().min(20),
-      relatedProceedingId: z.string().optional(),
-      isContestedClaim: z.boolean().optional(),
-      claimSource: z.string().optional(),
+      relatedProceedingId: z.string(), // empty string if not applicable
+      isContestedClaim: z.boolean(),
+      claimSource: z.string(), // empty string if not applicable
     }),
   ),
 });
@@ -1821,7 +2001,11 @@ ${targetProceedingId ? `Target proceeding: ${targetProceedingId}` : ""}
 Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.${proceedingsList}`;
 
-  console.log(`[Analyzer] extractFacts: Calling LLM for ${source.id} with ${source.fullText.length} chars of text`);
+  debugLog(`extractFacts: Calling LLM for ${source.id}`, {
+    textLength: source.fullText.length,
+    title: source.title?.substring(0, 50),
+    focus: focus.substring(0, 100),
+  });
 
   try {
     const startTime = Date.now();
@@ -1839,26 +2023,21 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
     });
     const elapsed = Date.now() - startTime;
 
-    console.log(`[Analyzer] extractFacts: LLM returned for ${source.id} in ${elapsed}ms`);
+    debugLog(`extractFacts: LLM returned for ${source.id} in ${elapsed}ms`);
+    debugLog(`extractFacts: Result keys`, result ? Object.keys(result) : "null");
+
     if (elapsed < 2000) {
-      console.warn(`[Analyzer] extractFacts: WARNING - LLM responded suspiciously fast (${elapsed}ms) for ${source.fullText.length} chars. Expected 10-30s for fact extraction.`);
+      debugLog(`extractFacts: WARNING - LLM responded suspiciously fast (${elapsed}ms) for ${source.fullText.length} chars`);
     }
 
     // Handle different AI SDK versions - safely extract structured output
     const rawOutput = extractStructuredOutput(result);
     if (!rawOutput) {
-      console.warn(
-        `[Analyzer] No structured output for fact extraction from ${source.id}`,
-      );
-      console.warn(
-        `[Analyzer] Result type:`,
-        typeof result,
-        "Result keys:",
-        result ? Object.keys(result) : "null",
-      );
-      if (result && typeof result === 'object') {
-        console.warn(`[Analyzer] Result content:`, JSON.stringify(result).substring(0, 500));
-      }
+      debugLog(`extractFacts: No structured output for ${source.id}`, {
+        resultType: typeof result,
+        resultKeys: result ? Object.keys(result) : "null",
+        resultPreview: result && typeof result === 'object' ? JSON.stringify(result).substring(0, 500) : "N/A",
+      });
       return [];
     }
 
@@ -1897,10 +2076,21 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
       }));
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`[Analyzer] extractFacts: ERROR for ${source.id}: ${errorMsg}`);
-    if (error instanceof Error && error.stack) {
-      console.error(`[Analyzer] extractFacts: Stack:`, error.stack.split('\n').slice(0, 3).join('\n'));
+    debugLog(`extractFacts: ERROR for ${source.id}`, {
+      error: errorMsg,
+      stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5).join('\n') : undefined,
+    });
+
+    // Check for specific API errors
+    if (errorMsg.includes("credit balance is too low") || errorMsg.includes("insufficient_quota")) {
+      debugLog("❌ ANTHROPIC API CREDITS EXHAUSTED");
     }
+
+    // Check for OpenAI schema validation errors
+    if (errorMsg.includes("Invalid schema") || errorMsg.includes("required")) {
+      debugLog("❌ OpenAI SCHEMA VALIDATION ERROR - check for .optional() fields in FACT_SCHEMA");
+    }
+
     return [];
   }
 }
@@ -1909,18 +2099,18 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
 // STEP 5: GENERATE VERDICTS - FIX: Calculate factorAnalysis from actual factors
 // ============================================================================
 
+// NOTE: OpenAI structured output requires ALL properties to be in "required" array.
 const KEY_FACTOR_SCHEMA = z.object({
   factor: z.string(),
   supports: z.enum(["yes", "no", "neutral"]),
   explanation: z.string(),
-  isContested: z.boolean().optional(),
-  contestedBy: z.string().optional(),
-  contestationReason: z.string().optional(),
-  factualBasis: z
-    .enum(["established", "disputed", "alleged", "opinion"])
-    .optional(),
+  isContested: z.boolean(),
+  contestedBy: z.string(), // empty string if not contested
+  contestationReason: z.string(), // empty string if not contested
+  factualBasis: z.enum(["established", "disputed", "alleged", "opinion", "unknown"]),
 });
 
+// NOTE: OpenAI structured output requires ALL properties to be in "required" array.
 const VERDICTS_SCHEMA_MULTI_PROCEEDING = z.object({
   questionAnswer: z.object({
     answer: z.enum(["YES", "NO", "PARTIALLY", "INSUFFICIENT-EVIDENCE"]),
@@ -1928,7 +2118,7 @@ const VERDICTS_SCHEMA_MULTI_PROCEEDING = z.object({
     shortAnswer: z.string(),
     nuancedAnswer: z.string(),
     keyFactors: z.array(KEY_FACTOR_SCHEMA),
-    calibrationNote: z.string().optional(),
+    calibrationNote: z.string(), // empty string if not applicable
   }),
   proceedingAnswers: z.array(
     z.object({
@@ -1954,7 +2144,7 @@ const VERDICTS_SCHEMA_MULTI_PROCEEDING = z.object({
       riskTier: z.enum(["A", "B", "C"]),
       reasoning: z.string(),
       supportingFactIds: z.array(z.string()),
-      relatedProceedingId: z.string().optional(),
+      relatedProceedingId: z.string(), // empty string if not applicable
     }),
   ),
 });
@@ -2017,7 +2207,7 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
     ]),
     articleConfidence: z.number().min(0).max(100),
     verdictDiffersFromClaimAverage: z.boolean(),
-    verdictDifferenceReason: z.string().optional(),
+    verdictDifferenceReason: z.string(), // empty string if not applicable
   }),
 });
 
@@ -2127,15 +2317,46 @@ ${proceedingsFormatted}
 1. For EACH proceeding, provide:
    - proceedingId (must match: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.id).join(", ")})
    - answer: YES | NO | PARTIALLY | INSUFFICIENT-EVIDENCE
-   - keyFactors: Array of factors with supports (yes/no/neutral) and isContested flag
+   - shortAnswer: A complete sentence summarizing the finding (e.g., "The trial followed proper procedures based on documented evidence.")
+     * MUST be a descriptive sentence, NOT just a verdict word like "PARTIALLY"
+   - keyFactors: Array of factors covering ALL these aspects:
+     * Correct application (were proper rules/standards/methods applied?)
+     * Process fairness (were proper procedures followed?)
+     * Evidence basis (were decisions based on documented evidence?)
+     * Decision-maker impartiality (were there any conflicts of interest?)
+     * Outcome proportionality (was the outcome proportionate to similar cases?)
 
-2. Mark contested factors:
-   - isContested: true if this criticism is itself politically disputed
+2. KEY FACTOR SCORING RULES - VERY IMPORTANT:
+   - supports="yes": Factor supports the claim WITH documented evidence
+   - supports="no": Factor refutes the claim WITH documented counter-evidence (NOT just disputed/contested)
+   - supports="neutral": Use when:
+     * No clear evidence either way
+     * The factor is disputed/contested WITHOUT substantive counter-evidence
+     * Political opposition claims without documented proof
+
+   CRITICAL: Being "contested" or "disputed" WITHOUT actual counter-evidence = supports="neutral", NOT supports="no"
+   Example: "Critics claim X was unfair" without documented violations = neutral, not "no"
+
+3. Mark contested factors:
+   - isContested: true if this claim is politically disputed
    - contestedBy: Who disputes it
-   - factualBasis: "established" | "disputed" | "alleged" | "opinion"
+   - factualBasis: "established" | "disputed" | "alleged" | "opinion" | "unknown"
 
-3. Calibration: Contested negatives don't flip verdicts
-   - 2+ positive (established) + 1 negative (contested) = PARTIALLY, not NO
+   If factualBasis is "opinion" or "alleged", supports should almost always be "neutral"
+
+4. Calibration: Neutral contested factors don't reduce verdicts
+   - Positive factors with evidence + Neutral contested factors = YES, not PARTIALLY
+   - Only actual negative factors with documented evidence can reduce verdict
+
+5. CLAIM VERDICT RULES (for claimVerdicts array):
+   - WELL-SUPPORTED: Use when there IS documented evidence supporting the claim AND no documented counter-evidence
+     * Example: "Proper procedures were followed" - if records show procedures were followed and no documented violations exist, this is WELL-SUPPORTED, not UNCERTAIN
+   - PARTIALLY-SUPPORTED: Mix of supporting and refuting evidence
+   - UNCERTAIN: Only when there genuinely is NO evidence either way (rare for proceedings with public records)
+   - REFUTED: Documented evidence contradicts the claim
+
+   CRITICAL: Political contestation ("critics say it was unfair") is NOT the same as counter-evidence.
+   A claim with documented evidence + only political opposition = WELL-SUPPORTED, not UNCERTAIN.
 
 ${getKnowledgeInstruction()}`;
 
@@ -2171,20 +2392,34 @@ Provide SEPARATE answers for each proceeding.`;
     const rawOutput = extractStructuredOutput(result);
     if (rawOutput) {
       parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING>;
+      debugLog("generateMultiProceedingVerdicts: SUCCESS", {
+        hasQuestionAnswer: !!parsed.questionAnswer,
+        proceedingAnswersCount: parsed.proceedingAnswers?.length,
+        claimVerdictsCount: parsed.claimVerdicts?.length,
+      });
+    } else {
+      debugLog("generateMultiProceedingVerdicts: No rawOutput returned");
     }
   } catch (err) {
-    console.warn(
-      "[Analyzer] Structured output failed for multi-proceeding verdicts, using fallback:",
-      err,
-    );
+    const errMsg = err instanceof Error ? err.message : String(err);
+    debugLog("generateMultiProceedingVerdicts: ERROR", {
+      error: errMsg,
+      stack: err instanceof Error ? err.stack?.split('\n').slice(0, 5).join('\n') : undefined,
+    });
+
+    // Check for OpenAI schema validation errors
+    if (errMsg.includes("Invalid schema") || errMsg.includes("required")) {
+      debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_PROCEEDING");
+    }
     state.llmCalls++;
   }
 
   // Fallback if structured output failed
   if (!parsed || !parsed.proceedingAnswers) {
-    console.log(
-      "[Analyzer] Using fallback multi-proceeding verdict generation",
-    );
+    debugLog("generateMultiProceedingVerdicts: Using FALLBACK (parsed failed)", {
+      hasParsed: !!parsed,
+      hasProceedingAnswers: !!parsed?.proceedingAnswers,
+    });
 
     const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map(
       (claim: any) => ({
@@ -2260,6 +2495,7 @@ Provide SEPARATE answers for each proceeding.`;
 
   // FIX v2.4.3: Calculate factorAnalysis from ACTUAL keyFactors array
   // v2.5.0: Calibrate to 7-point scale
+  // v2.5.1: Contested factors without evidence don't reduce rating
   const correctedProceedingAnswers = parsed.proceedingAnswers.map((pa: any) => {
     const factors = pa.keyFactors as KeyFactor[];
 
@@ -2269,25 +2505,74 @@ Provide SEPARATE answers for each proceeding.`;
     const neutralFactors = factors.filter(
       (f) => f.supports === "neutral",
     ).length;
+
+    // v2.5.1: Count negative factors that are contested without evidence
+    // Only count "no" factors with established factualBasis as true negatives
+    const evidencedNegatives = factors.filter(
+      (f) => f.supports === "no" && f.factualBasis === "established",
+    ).length;
     const contestedNegatives = factors.filter(
       (f) => f.supports === "no" && f.isContested,
     ).length;
+    // Contested neutrals (opinions without evidence) should not count negatively
+    const contestedNeutrals = factors.filter(
+      (f) => f.supports === "neutral" && f.isContested,
+    ).length;
+
+    // Debug: Log factor details for this proceeding
+    debugLog(`Factor analysis for ${pa.proceedingId}`, {
+      llmAnswer: pa.answer,
+      factorCounts: {
+        positive: positiveFactors,
+        negative: negativeFactors,
+        neutral: neutralFactors,
+        evidencedNegatives,
+        contestedNegatives,
+        contestedNeutrals,
+      },
+      factors: factors.map((f) => ({
+        factor: f.factor?.substring(0, 50),
+        supports: f.supports,
+        isContested: f.isContested,
+        factualBasis: f.factualBasis,
+      })),
+    });
 
     const factorAnalysis: FactorAnalysis = {
       positiveFactors,
       negativeFactors,
       neutralFactors,
       contestedNegatives,
-      verdictExplanation: `${positiveFactors} positive, ${negativeFactors} negative (${contestedNegatives} contested), ${neutralFactors} neutral`,
+      verdictExplanation: `${positiveFactors} positive, ${negativeFactors} negative (${evidencedNegatives} evidenced, ${contestedNegatives} contested), ${neutralFactors} neutral (${contestedNeutrals} disputed)`,
     };
 
     // Apply calibration correction based on factors
     let llmAnswer = pa.answer;
     let correctedConfidence = pa.confidence;
 
-    const effectiveNegatives = negativeFactors - contestedNegatives * 0.5;
+    // v2.5.1: Only evidenced negatives count at full weight
+    // Contested negatives without established basis count at 25%
+    // Neutral contested don't count negatively at all
+    const effectiveNegatives = evidencedNegatives + (negativeFactors - evidencedNegatives) * 0.25;
 
-    if (pa.answer === "NO" && positiveFactors > effectiveNegatives) {
+    // If there are positive factors and NO evidenced negatives, should lean YES
+    if (positiveFactors > 0 && evidencedNegatives === 0) {
+      if (pa.answer === "NO" || pa.answer === "PARTIALLY") {
+        llmAnswer = "YES";
+        correctedConfidence = Math.max(pa.confidence, 70);
+        factorAnalysis.verdictExplanation = `Corrected to YES: ${positiveFactors} positive, 0 evidenced negatives (${contestedNegatives} contested without evidence don't count)`;
+        debugLog(`Proceeding ${pa.proceedingId}: CORRECTED to YES`, {
+          from: pa.answer,
+          reason: `${positiveFactors} positive, 0 evidenced negatives`,
+        });
+      } else {
+        // Already YES, no change needed but log it
+        debugLog(`Proceeding ${pa.proceedingId}: Already positive (${pa.answer}), no correction needed`, {
+          positiveFactors,
+          evidencedNegatives,
+        });
+      }
+    } else if (pa.answer === "NO" && positiveFactors > effectiveNegatives) {
       llmAnswer = "PARTIALLY";
       correctedConfidence = Math.min(pa.confidence, 72);
       factorAnalysis.verdictExplanation = `Corrected from NO: ${positiveFactors} positive > ${effectiveNegatives.toFixed(1)} effective negative`;
@@ -2347,10 +2632,49 @@ Provide SEPARATE answers for each proceeding.`;
   const hasContestedFactors = allFactors.some((f) => f.isContested);
 
   // Build claim verdicts with 7-point calibration
+  // v2.5.1: Apply correction based on proceeding-level factor analysis
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
-    // Calculate truth percentage from LLM verdict
-    const truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
+    const proceedingId = cv.relatedProceedingId || claim?.relatedProceedingId || "";
+
+    // Find the corrected proceeding answer for this claim
+    const relatedProceeding = correctedProceedingAnswers.find(
+      (pa) => pa.proceedingId === proceedingId
+    );
+
+    // Calculate base truth percentage from LLM verdict
+    let truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
+    let correctedVerdict = cv.verdict;
+
+    // v2.5.2: If the proceeding has positive factors and no evidenced negatives,
+    // boost claims that are below 72% to WELL-SUPPORTED
+    if (relatedProceeding && relatedProceeding.factorAnalysis) {
+      const fa = relatedProceeding.factorAnalysis;
+      // Check if proceeding has positive factors and no evidenced negatives
+      const proceedingIsPositive =
+        fa.verdictExplanation?.includes("0 evidenced negatives") ||
+        fa.verdictExplanation?.includes("Corrected to YES") ||
+        fa.verdictExplanation?.includes("Already positive") ||
+        relatedProceeding.answer === "YES";
+
+      // If proceeding is positive and claim is below threshold, boost it
+      // This applies to UNCERTAIN, PARTIALLY-SUPPORTED, or any claim with low truth %
+      if (proceedingIsPositive && truthPct < 72) {
+        const originalVerdict = cv.verdict;
+        truthPct = 72; // Minimum for MOSTLY-TRUE
+        correctedVerdict = "WELL-SUPPORTED";
+        debugLog("claimVerdict: Corrected based on proceeding factors", {
+          claimId: cv.claimId,
+          proceedingId,
+          from: originalVerdict,
+          to: correctedVerdict,
+          truthPctBefore: calculateTruthPercentage(cv.verdict, cv.confidence),
+          truthPctAfter: truthPct,
+          reason: "Proceeding is positive with no evidenced negatives",
+        });
+      }
+    }
+
     // Derive 7-point verdict from percentage
     const calibratedVerdict = percentageToClaimVerdict(truthPct);
     return {
@@ -2360,9 +2684,7 @@ Provide SEPARATE answers for each proceeding.`;
       truthPercentage: truthPct,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
-      relatedProceedingId: cv.relatedProceedingId || claim?.relatedProceedingId,
-      startOffset: claim?.startOffset,
-      endOffset: claim?.endOffset,
+      relatedProceedingId: proceedingId,
       highlightColor: getHighlightColor7Point(calibratedVerdict),
     };
   });
@@ -2458,7 +2780,40 @@ async function generateQuestionVerdicts(
   articleAnalysis: ArticleAnalysis;
   questionAnswer: QuestionAnswer;
 }> {
-  const systemPrompt = `Answer the question. Mark contested factors with isContested=true.
+  const systemPrompt = `Answer the question based on documented evidence.
+
+## SHORT ANSWER GUIDANCE:
+- shortAnswer MUST be a complete descriptive sentence summarizing the finding
+- Example: "The evidence shows proper procedures were followed."
+- NEVER use just a verdict word like "YES" or "PARTIALLY" as the shortAnswer
+
+## KEY FACTOR SCORING RULES - VERY IMPORTANT:
+- supports="yes": Factor supports the claim WITH documented evidence
+- supports="no": Factor refutes the claim WITH documented counter-evidence (NOT just disputed/contested)
+- supports="neutral": Use when:
+  * No clear evidence either way
+  * The factor is disputed/contested WITHOUT substantive counter-evidence
+  * Political opposition claims without documented proof
+
+CRITICAL: Being "contested" or "disputed" WITHOUT actual counter-evidence = supports="neutral", NOT supports="no"
+Example: "Critics claim X was unfair" without documented violations = neutral, not "no"
+
+## Mark contested factors:
+- isContested: true if this claim is politically disputed
+- contestedBy: Who disputes it (empty string if not contested)
+- factualBasis: "established" | "disputed" | "alleged" | "opinion" | "unknown"
+
+If factualBasis is "opinion" or "alleged", supports should almost always be "neutral"
+
+## CLAIM VERDICT RULES:
+- WELL-SUPPORTED: There IS documented evidence supporting the claim AND no documented counter-evidence
+  * Example: "Proper procedures were followed" - if records show procedures were followed and no violations documented = WELL-SUPPORTED
+- PARTIALLY-SUPPORTED: Mix of supporting and refuting evidence
+- UNCERTAIN: Only when genuinely NO evidence either way (rare for proceedings with public records)
+- REFUTED: Documented evidence contradicts the claim
+
+CRITICAL: Political contestation ("critics say unfair") is NOT counter-evidence.
+Documented evidence + only political opposition = WELL-SUPPORTED, not UNCERTAIN.
 
 ${getKnowledgeInstruction()}`;
 
@@ -2514,8 +2869,6 @@ ${factsFormatted}`;
         reasoning: "Unable to generate verdict due to schema validation error.",
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
-        startOffset: claim.startOffset,
-        endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point("UNVERIFIED"),
       }),
     );
@@ -2636,10 +2989,35 @@ ${factsFormatted}`;
     (kf: any) => kf.isContested,
   );
 
+  // v2.5.1: Apply factor-based correction for single-proceeding questions
+  const positiveFactors = keyFactors.filter((f: KeyFactor) => f.supports === "yes").length;
+  const evidencedNegatives = keyFactors.filter(
+    (f: KeyFactor) => f.supports === "no" && f.factualBasis === "established",
+  ).length;
+  const contestedNegatives = keyFactors.filter(
+    (f: KeyFactor) => f.supports === "no" && f.isContested,
+  ).length;
+
+  let correctedLlmAnswer = parsed.questionAnswer.answer;
+  let correctedConfidence = parsed.questionAnswer.confidence;
+
+  // If there are positive factors and NO evidenced negatives, should lean YES
+  if (positiveFactors > 0 && evidencedNegatives === 0) {
+    if (correctedLlmAnswer === "NO" || correctedLlmAnswer === "PARTIALLY") {
+      correctedLlmAnswer = "YES";
+      correctedConfidence = Math.max(correctedConfidence, 70);
+      debugLog("generateQuestionVerdicts: Corrected answer", {
+        from: parsed.questionAnswer.answer,
+        to: correctedLlmAnswer,
+        reason: `${positiveFactors} positive, 0 evidenced negatives (${contestedNegatives} contested without evidence)`,
+      });
+    }
+  }
+
   // Calculate truth percentage and derive answer
   const answerTruthPct = calculateQuestionTruthPercentage(
-    parsed.questionAnswer.answer,
-    parsed.questionAnswer.confidence,
+    correctedLlmAnswer,
+    correctedConfidence,
   );
   const calibratedAnswer = percentageToQuestionAnswer(answerTruthPct);
 
@@ -2748,11 +3126,12 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     if (rawOutput) {
       parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
     }
-  } catch (err) {
-    console.warn(
-      "[Analyzer] Structured output failed for claim verdicts, using fallback:",
-      err,
+  } catch (err: any) {
+    console.error(
+      "[Analyzer] Structured output failed for claim verdicts:",
+      err?.message || err,
     );
+    console.error("[Analyzer] Full error:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2).slice(0, 2000));
     state.llmCalls++;
   }
 
@@ -3350,14 +3729,21 @@ type AnalysisInput = {
 };
 
 export async function runFactHarborAnalysis(input: AnalysisInput) {
+  // Clear debug log at start of each analysis
+  clearDebugLog();
+  debugLog("=== ANALYSIS STARTED ===");
+  debugLog("Input", { inputType: input.inputType, inputValue: input.inputValue.substring(0, 200) });
+
   const startTime = Date.now();
   const emit = input.onEvent ?? (() => {});
   const config = getActiveConfig();
   const mode = CONFIG.deepModeEnabled ? "deep" : "quick";
 
   const { provider, modelName, model } = getModel();
+  debugLog(`LLM Provider: ${provider}, Model: ${modelName}`);
+  console.log(`[Analyzer] Using LLM provider: ${provider}, model: ${modelName}`);
 
-  await emit(`Analysis mode: ${mode} (v${CONFIG.schemaVersion})`, 2);
+  await emit(`Analysis mode: ${mode} (v${CONFIG.schemaVersion}) | LLM: ${provider}/${modelName}`, 2);
 
   const state: ResearchState = {
     originalInput: input.inputValue,
@@ -3388,16 +3774,48 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   state.originalText = textToAnalyze;
 
   // STEP 1: Understand
-  await emit("Step 1: Analyzing input", 5);
+  debugLog("=== STEP 1: UNDERSTAND CLAIM ===");
+  debugLog("Text to analyze (first 300 chars)", textToAnalyze.substring(0, 300));
+  await emit(`Step 1: Analyzing input [LLM: ${provider}/${modelName}]`, 5);
+  const step1Start = Date.now();
   try {
+    debugLog("Calling understandClaim...");
     state.understanding = await understandClaim(textToAnalyze, model);
     state.llmCalls++; // understandClaim uses 1 LLM call
-  } catch (err) {
-    console.error("Understanding failed:", err);
+    const step1Elapsed = Date.now() - step1Start;
+    debugLog(`Step 1 completed in ${step1Elapsed}ms`);
+    debugLog("Understanding result", {
+      detectedInputType: state.understanding?.detectedInputType,
+      subClaimsCount: state.understanding?.subClaims?.length,
+      researchQuestionsCount: state.understanding?.researchQuestions?.length,
+    });
+    console.log(`[Analyzer] Step 1 completed in ${step1Elapsed}ms`);
+    if (step1Elapsed < 2000) {
+      debugLog(`WARNING: Step 1 completed too fast (${step1Elapsed}ms). LLM call may have failed silently.`);
+      console.warn(`[Analyzer] WARNING: Step 1 completed too fast (${step1Elapsed}ms). LLM call may have failed silently.`);
+    }
+  } catch (err: any) {
+    debugLog("!!! STEP 1 FAILED !!!", err?.message || String(err));
+    console.error(`\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+    console.error(`[Analyzer] STEP 1 FAILED - understandClaim threw an error!`);
+    console.error(`[Analyzer] Error message:`, err?.message || err);
+    console.error(`[Analyzer] Full error:`, err);
+    console.error(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n`);
+
+    // Re-throw if it's a critical API error so the user knows
+    const errMsg = err?.message || String(err);
+    if (errMsg.includes("credit balance") || errMsg.includes("insufficient_quota") || errMsg.includes("API")) {
+      throw err; // Don't swallow API errors
+    }
+
     state.understanding = {
       detectedInputType: "claim",
+      questionIntent: "none",
+      questionBeingAsked: "",
+      impliedClaim: "",
       distinctProceedings: [],
       requiresSeparateAnalysis: false,
+      proceedingContext: "",
       mainQuestion: textToAnalyze.slice(0, 200),
       articleThesis: textToAnalyze.slice(0, 200),
       subClaims: [
@@ -3405,8 +3823,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           id: "C1",
           text: textToAnalyze.slice(0, 200),
           type: "factual",
+          claimRole: "core",
+          dependsOn: [],
           keyEntities: [],
           isCentral: true,
+          relatedProceedingId: "",
+          approximatePosition: "",
         },
       ],
       distinctEvents: [],
@@ -3468,16 +3890,21 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const searchResults: Array<{ url: string; title: string; query: string }> =
       [];
     for (const query of decision.queries || []) {
+      // Get providers before search to show in event
+      const searchProviders = getActiveSearchProviders().join("+");
       await emit(
-        `🔍 Searching [${CONFIG.searchProvider}]: "${query}"`,
+        `🔍 Searching [${searchProviders}]: "${query}"`,
         baseProgress + 1,
       );
 
       try {
-        let results = await searchWeb({
+        const searchResponse = await searchWebWithProvider({
           query,
           maxResults: config.maxSourcesPerIteration,
         });
+        let results = searchResponse.results;
+        const actualProviders = searchResponse.providersUsed.join("+");
+        console.log(`[Analyzer] Search used: ${actualProviders}, returned ${results.length} results`);
 
         // Apply domain whitelist if configured
         if (
@@ -3573,7 +4000,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     if (decision.isContradictionSearch)
       state.contradictionSourcesFound = successfulSources.length;
 
-    await emit(`Extracting facts`, baseProgress + 8);
+    await emit(`Extracting facts [LLM: ${provider}/${modelName}]`, baseProgress + 8);
+    const extractStart = Date.now();
     for (const source of successfulSources) {
       const facts = await extractFacts(
         source,
@@ -3585,6 +4013,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       state.facts.push(...facts);
       state.llmCalls++; // Each extractFacts call is 1 LLM call
     }
+    const extractElapsed = Date.now() - extractStart;
+    console.log(`[Analyzer] Fact extraction for iteration ${iteration} completed in ${extractElapsed}ms for ${successfulSources.length} sources`);
 
     state.iterations.push({
       number: iteration,
@@ -3594,19 +4024,22 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       factsExtracted: state.facts.length,
     });
     await emit(
-      `Iteration ${iteration}: ${state.facts.length} facts from ${state.sources.length} sources`,
+      `Iteration ${iteration}: ${state.facts.length} facts from ${state.sources.length} sources (${extractElapsed}ms)`,
       baseProgress + 12,
     );
   }
 
   // STEP 5: Verdicts
-  await emit("Step 3: Generating verdicts", 65);
+  await emit(`Step 3: Generating verdicts [LLM: ${provider}/${modelName}]`, 65);
+  const verdictStart = Date.now();
   const {
     claimVerdicts,
     articleAnalysis,
     questionAnswer,
     pseudoscienceAnalysis,
   } = await generateVerdicts(state, model);
+  const verdictElapsed = Date.now() - verdictStart;
+  console.log(`[Analyzer] Verdict generation completed in ${verdictElapsed}ms`);
 
   if (pseudoscienceAnalysis?.isPseudoscience) {
     await emit(
