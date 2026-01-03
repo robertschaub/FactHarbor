@@ -1,6 +1,6 @@
 /**
  * Jobs List API Endpoint v2.4.4
- * 
+ *
  * GET /api/fh/jobs - Returns list of all analysis jobs
  * Proxies to the backend API at FH_API_BASE_URL
  */

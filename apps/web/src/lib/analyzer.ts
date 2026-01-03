@@ -145,17 +145,31 @@ function extractStructuredOutput(result: any): any {
     return null;
   }
 
+  const safeGet = (getter: () => any) => {
+    try {
+      return getter();
+    } catch {
+      return undefined;
+    }
+  };
+
   // Try different possible locations for the output
   // Priority: result.output > result.experimental_output?.value > result.experimental_output > result.object
-  if (result.output !== undefined && result.output !== null) {
-    return result.output;
+  const output = safeGet(() => result.output);
+  if (output !== undefined && output !== null) {
+    const outputValue = safeGet(() => output?.value);
+    if (outputValue !== undefined) {
+      return outputValue;
+    }
+    return output;
   }
 
   // Handle experimental_output safely (avoid "reading 'value' of undefined")
-  const experimental = result?.experimental_output;
+  const experimental = safeGet(() => result.experimental_output);
   if (experimental !== undefined && experimental !== null) {
-    if (experimental?.value !== undefined) {
-      return experimental.value;
+    const experimentalValue = safeGet(() => experimental?.value);
+    if (experimentalValue !== undefined) {
+      return experimentalValue;
     }
     if (typeof experimental === "object" && !Array.isArray(experimental)) {
       return experimental;
@@ -163,8 +177,9 @@ function extractStructuredOutput(result: any): any {
   }
 
   // Some SDK versions might put it directly in result.object
-  if (result.object !== undefined && result.object !== null) {
-    return result.object;
+  const objectOutput = safeGet(() => result.object);
+  if (objectOutput !== undefined && objectOutput !== null) {
+    return objectOutput;
   }
 
   // Last resort: return the result itself if it looks like structured data
@@ -1341,6 +1356,8 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
   let result: any;
 
   try {
+    const startTime = Date.now();
+    console.log(`[Analyzer] understandClaim: Starting LLM call for input: "${input.substring(0, 100)}..."`);
     result = await generateText({
       model,
       messages: [
@@ -1350,6 +1367,16 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
       temperature: 0.3,
       output: Output.object({ schema: UNDERSTANDING_SCHEMA }),
     });
+    const elapsed = Date.now() - startTime;
+    console.log(`[Analyzer] understandClaim: LLM call completed in ${elapsed}ms`);
+    console.log(`[Analyzer] understandClaim: Result keys:`, result ? Object.keys(result) : "null");
+    if (result?.usage) {
+      console.log(`[Analyzer] understandClaim: Token usage:`, JSON.stringify(result.usage));
+    }
+    if (elapsed < 1000) {
+      console.warn(`[Analyzer] understandClaim: WARNING - LLM responded suspiciously fast (${elapsed}ms). This may indicate caching or API issues.`);
+      console.warn(`[Analyzer] understandClaim: Result type: ${typeof result}, keys: ${result ? Object.keys(result).join(', ') : 'N/A'}`);
+    }
   } catch (err) {
     console.error("[Analyzer] generateText failed in understandClaim:", err);
     // Return a basic understanding if the structured output fails
@@ -1377,6 +1404,20 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 
   const parsed = rawOutput as z.infer<typeof UNDERSTANDING_SCHEMA>;
 
+  // Post-processing: Force question detection if input clearly looks like a question
+  const trimmedInput = input.trim();
+  const looksLikeQuestion = trimmedInput.endsWith("?") ||
+    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(trimmedInput);
+
+  if (looksLikeQuestion && parsed.detectedInputType !== "question") {
+    console.log(`[Analyzer] Overriding detectedInputType from "${parsed.detectedInputType}" to "question" (input ends with ? or starts with question word)`);
+    parsed.detectedInputType = "question";
+    // Also set questionBeingAsked if not already set
+    if (!parsed.questionBeingAsked) {
+      parsed.questionBeingAsked = trimmedInput;
+    }
+  }
+
   // Validate parsed has required fields
   if (!parsed.subClaims || !Array.isArray(parsed.subClaims)) {
     console.error(
@@ -1384,6 +1425,25 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
       parsed,
     );
     throw new Error("LLM output missing required fields");
+  }
+
+  // Post-processing: Ensure keyEntities are populated for each claim
+  for (const claim of parsed.subClaims) {
+    if (!claim.keyEntities || claim.keyEntities.length === 0) {
+      // Extract key terms from claim text
+      const stopWords = new Set(["the", "a", "an", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall", "can", "need", "to", "of", "in", "for", "on", "with", "at", "by", "from", "as", "into", "through", "during", "before", "after", "and", "but", "if", "or", "because", "this", "that", "these", "those", "it", "its", "what", "which", "who", "whom", "whose", "based"]);
+      const words = claim.text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, " ")
+        .split(/\s+/)
+        .filter((word: string) => word.length > 2 && !stopWords.has(word));
+      // Take unique words, prioritize capitalized words from original text
+      const capitalizedWords = claim.text
+        .match(/[A-Z][a-z]+/g) || [];
+      const uniqueTerms = [...new Set([...capitalizedWords, ...words])].slice(0, 5);
+      claim.keyEntities = uniqueTerms;
+      console.log(`[Analyzer] Auto-populated keyEntities for claim "${claim.id}": ${uniqueTerms.join(", ")}`);
+    }
   }
 
   const claimsWithPositions = parsed.subClaims.map((claim: any) => {
@@ -1743,7 +1803,13 @@ async function extractFacts(
   proceedings: DistinctProceeding[],
   targetProceedingId?: string,
 ): Promise<ExtractedFact[]> {
-  if (!source.fetchSuccess || !source.fullText) return [];
+  console.log(`[Analyzer] extractFacts called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
+  console.log(`[Analyzer] extractFacts: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
+
+  if (!source.fetchSuccess || !source.fullText) {
+    console.warn(`[Analyzer] extractFacts: Skipping ${source.id} - no content (fetchSuccess=${source.fetchSuccess}, hasText=${!!source.fullText})`);
+    return [];
+  }
 
   const proceedingsList =
     proceedings.length > 0
@@ -1755,7 +1821,10 @@ ${targetProceedingId ? `Target proceeding: ${targetProceedingId}` : ""}
 Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.${proceedingsList}`;
 
+  console.log(`[Analyzer] extractFacts: Calling LLM for ${source.id} with ${source.fullText.length} chars of text`);
+
   try {
+    const startTime = Date.now();
     const result = await generateText({
       model,
       messages: [
@@ -1768,6 +1837,12 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
       temperature: 0.2,
       output: Output.object({ schema: FACT_SCHEMA }),
     });
+    const elapsed = Date.now() - startTime;
+
+    console.log(`[Analyzer] extractFacts: LLM returned for ${source.id} in ${elapsed}ms`);
+    if (elapsed < 2000) {
+      console.warn(`[Analyzer] extractFacts: WARNING - LLM responded suspiciously fast (${elapsed}ms) for ${source.fullText.length} chars. Expected 10-30s for fact extraction.`);
+    }
 
     // Handle different AI SDK versions - safely extract structured output
     const rawOutput = extractStructuredOutput(result);
@@ -1781,18 +1856,33 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
         "Result keys:",
         result ? Object.keys(result) : "null",
       );
+      if (result && typeof result === 'object') {
+        console.warn(`[Analyzer] Result content:`, JSON.stringify(result).substring(0, 500));
+      }
       return [];
     }
 
     const extraction = rawOutput as z.infer<typeof FACT_SCHEMA>;
+    console.log(`[Analyzer] extractFacts: Raw extraction has ${extraction.facts?.length ?? 0} facts`);
+
     if (!extraction.facts || !Array.isArray(extraction.facts)) {
-      console.warn(`[Analyzer] Invalid fact extraction from ${source.id}`);
+      console.warn(`[Analyzer] Invalid fact extraction from ${source.id} - facts is not an array`);
       return [];
     }
 
-    return extraction.facts
-      .filter((f) => f.specificity !== "low" && f.sourceExcerpt?.length >= 20)
-      .map((f, i) => ({
+    const filteredFacts = extraction.facts
+      .filter((f) => f.specificity !== "low" && f.sourceExcerpt?.length >= 20);
+
+    console.log(`[Analyzer] extractFacts: After filtering (non-low specificity, excerpt >= 20 chars): ${filteredFacts.length} facts`);
+
+    if (filteredFacts.length === 0 && extraction.facts.length > 0) {
+      console.warn(`[Analyzer] extractFacts: All ${extraction.facts.length} facts were filtered out!`);
+      extraction.facts.forEach((f, i) => {
+        console.warn(`[Analyzer]   Fact ${i}: specificity="${f.specificity}", excerptLen=${f.sourceExcerpt?.length ?? 0}`);
+      });
+    }
+
+    return filteredFacts.map((f, i) => ({
         id: `${source.id}-F${i + 1}`,
         fact: f.fact,
         category: f.category,
@@ -1805,7 +1895,12 @@ Only HIGH/MEDIUM specificity.${proceedingsList}`;
         isContestedClaim: f.isContestedClaim,
         claimSource: f.claimSource,
       }));
-  } catch {
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[Analyzer] extractFacts: ERROR for ${source.id}: ${errorMsg}`);
+    if (error instanceof Error && error.stack) {
+      console.error(`[Analyzer] extractFacts: Stack:`, error.stack.split('\n').slice(0, 3).join('\n'));
+    }
     return [];
   }
 }

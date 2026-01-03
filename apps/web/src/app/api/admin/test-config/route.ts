@@ -205,7 +205,7 @@ async function testOpenAI(shouldTest: boolean): Promise<TestResult> {
     const result = await generateText({
       model: openai("gpt-4o-mini"),
       prompt: "Reply with just the word 'OK'",
-      maxOutputTokens: 10,
+      maxOutputTokens: 20,  // OpenAI minimum is 16
     });
 
     return {

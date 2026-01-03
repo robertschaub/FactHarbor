@@ -263,5 +263,85 @@
   border-radius: 8px;
   font-size: 12px;
   color: #666;
+}
+
+.footerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pageButton {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.pageButton:hover:not(:disabled) {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: #fff;
+}
+
+.pageButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-size: 12px;
+  color: #666;
+  min-width: 80px;
   text-align: center;
+}
+
+.pageSizeControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pageSizeControl label {
+  font-size: 12px;
+  color: #666;
+}
+
+.footerNote {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 11px;
+  color: #999;
+}
+
+.limitSelect {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.limitSelect:hover {
+  border-color: #007bff;
+}
+
+.limitSelect:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }

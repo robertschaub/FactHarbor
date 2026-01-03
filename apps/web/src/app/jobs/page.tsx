@@ -22,10 +22,14 @@ type JobSummary = {
   inputPreview: string | null;
 };
 
+const PAGE_SIZE_OPTIONS = [25, 50, 100];
+
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<JobSummary[]>([]);
+  const [allJobs, setAllJobs] = useState<JobSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pageSize, setPageSize] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -35,20 +39,33 @@ export default function JobsPage() {
           throw new Error(`Failed to load jobs: ${res.status}`);
         }
         const data = await res.json();
-        setJobs(data.jobs || []);
+        setAllJobs(data.jobs || []);
       } catch (err: any) {
         setError(err.message || "Failed to load jobs");
       } finally {
         setLoading(false);
       }
     };
-    
+
     loadJobs();
-    
+
     // Refresh every 5 seconds
     const interval = setInterval(loadJobs, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Calculate pagination
+  const totalJobs = allJobs.length;
+  const totalPages = Math.ceil(totalJobs / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalJobs);
+  const jobs = allJobs.slice(startIndex, endIndex);
+
+  // Reset to page 1 when page size changes
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
 
   const getStatusClass = (status: string): string => {
     switch (status) {
@@ -176,9 +193,54 @@ export default function JobsPage() {
         </div>
       )}
 
-      {/* Footer info */}
+      {/* Footer with pagination */}
       <div className={styles.footer}>
-        Showing {jobs.length} job{jobs.length !== 1 ? "s" : ""} • Auto-refreshes every 5 seconds
+        <div className={styles.footerRow}>
+          <span>
+            Showing {totalJobs === 0 ? 0 : startIndex + 1}-{endIndex} of {totalJobs} job{totalJobs !== 1 ? "s" : ""}
+          </span>
+          <div className={styles.pagination}>
+            <button
+              type="button"
+              className={styles.pageButton}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              disabled={currentPage <= 1}
+              aria-label="Previous page"
+            >
+              ← Prev
+            </button>
+            <span className={styles.pageInfo}>
+              Page {currentPage} of {totalPages || 1}
+            </span>
+            <button
+              type="button"
+              className={styles.pageButton}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              disabled={currentPage >= totalPages}
+              aria-label="Next page"
+            >
+              Next →
+            </button>
+          </div>
+          <div className={styles.pageSizeControl}>
+            <label htmlFor="pageSize">Per page:</label>
+            <select
+              id="pageSize"
+              className={styles.limitSelect}
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+            >
+              {PAGE_SIZE_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className={styles.footerNote}>
+          Auto-refreshes every 5 seconds
+        </div>
       </div>
     </div>
   );
