@@ -40,6 +40,25 @@ $webShells = Get-CimInstance Win32_Process | Where-Object {
 Stop-Gracefully -label "API" -cimProcesses $apiShells
 Stop-Gracefully -label "Web" -cimProcesses $webShells
 
+# Kill any process using port 3000
+Write-Host ""
+Write-Host "Checking for processes using port 3000..."
+$port3000 = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
+if ($port3000) {
+    foreach ($conn in $port3000) {
+        $procId = $conn.OwningProcess
+        try {
+            $proc = Get-Process -Id $procId -ErrorAction Stop
+            Write-Host "Killing process on port 3000: PID $procId ($($proc.ProcessName))" -ForegroundColor Yellow
+            Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+        } catch {
+            Write-Host "  Could not kill PID $procId : $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
+} else {
+    Write-Host "No process listening on port 3000."
+}
+
 Write-Host ""
 Write-Host "All services stopped."
 Write-Host ""
