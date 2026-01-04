@@ -72,7 +72,7 @@ export default function JobsPage() {
       case "SUCCEEDED": return styles.statusSuccess;
       case "FAILED": return styles.statusFailed;
       case "RUNNING": return styles.statusRunning;
-      case "PENDING": return styles.statusPending;
+      case "QUEUED": return styles.statusPending;
       default: return "";
     }
   };
@@ -82,7 +82,7 @@ export default function JobsPage() {
       case "SUCCEEDED": return styles.statusBadgeSuccess;
       case "FAILED": return styles.statusBadgeFailed;
       case "RUNNING": return styles.statusBadgeRunning;
-      case "PENDING": return styles.statusBadgePending;
+      case "QUEUED": return styles.statusBadgePending;
       default: return "";
     }
   };
@@ -92,7 +92,7 @@ export default function JobsPage() {
       case "SUCCEEDED": return styles.progressPercentSuccess;
       case "FAILED": return styles.progressPercentFailed;
       case "RUNNING": return styles.progressPercentRunning;
-      case "PENDING": return styles.progressPercentPending;
+      case "QUEUED": return styles.progressPercentPending;
       default: return styles.progressPercentDefault;
     }
   };
@@ -148,7 +148,7 @@ export default function JobsPage() {
                   {job.status === "SUCCEEDED" && <span className={styles.statusIcon}>✅</span>}
                   {job.status === "FAILED" && <span className={styles.statusIcon}>❌</span>}
                   {job.status === "RUNNING" && <span className={styles.statusIcon}>⏳</span>}
-                  {job.status === "PENDING" && <span className={styles.statusIcon}>🕐</span>}
+                  {job.status === "QUEUED" && <span className={styles.statusIcon}>🕐</span>}
                 </div>
 
                 {/* Job info */}
