@@ -1802,21 +1802,37 @@ The source attribution belongs in a SEPARATE claim:
 
 ### CRITICAL: SEPARATING ATTRIBUTION FROM EVALUATIVE CONTENT
 
-When someone CRITICIZES, CLAIMS, or ASSERTS something, separate:
-1. The FACT that they said/criticized it (attribution - verifiable)
-2. The CONTENT of what they said (the actual claim - may be opinion or factual)
+**THIS IS MANDATORY** - When someone CRITICIZES, CLAIMS, or ASSERTS something, YOU MUST create separate claims:
+1. The FACT that they said/criticized it (attribution - verifiable: did they say it?)
+2. The CONTENT of what they said (the actual claim to verify - is it TRUE?)
 
-WRONG: "Dr. Prasad criticized FDA processes as based on weak and misleading science"
-  → This conflates "he criticized" (verifiable) with "FDA processes are weak" (evaluative assertion)
+**NEVER CREATE CLAIMS LIKE THESE** (they conflate attribution with content):
+❌ WRONG: "Dr. Prasad criticized FDA processes as based on weak and misleading science"
+❌ WRONG: "Expert claims the treatment is dangerous"
+❌ WRONG: "Study found that X causes Y"
 
-CORRECT SEPARATION:
-- SC1: "Dr. Prasad has publicly criticized past FDA processes" (attribution, claimRole: "attribution", type: "factual")
-  → Verifies: Did Prasad criticize FDA? (YES/NO based on his statements)
-- SC2: "Past FDA processes were based on weak and misleading science" (core, claimRole: "core", type: "evaluative", dependsOn: ["SC1"])
-  → Verifies: Is this criticism ACCURATE? (requires examining FDA practices, studies, expert consensus)
+**ALWAYS SPLIT INTO TWO CLAIMS:**
 
-The verdict for SC1 might be TRUE (he did criticize), while SC2 might be UNCERTAIN or REFUTED.
-If we only verify SC1, we're fact-checking "did he say it" not "is what he said true."
+Example 1: "Dr. Prasad criticized FDA processes as based on weak science"
+✅ SC-A: "Dr. Prasad has publicly criticized past FDA processes"
+   → claimRole: "attribution", type: "factual", centrality: LOW
+   → Verifies: Did Prasad make critical statements about FDA?
+✅ SC-B: "Past FDA processes were based on weak and misleading science"
+   → claimRole: "core", type: "evaluative", centrality: HIGH, dependsOn: ["SC-A"]
+   → Verifies: Is this assessment ACCURATE based on evidence?
+
+Example 2: "An internal review found 10 children died from vaccines"
+✅ SC-A: "An internal FDA review exists making claims about child deaths"
+   → claimRole: "source", type: "factual", centrality: LOW
+✅ SC-B: "At least 10 children died because of COVID-19 vaccines"
+   → claimRole: "core", type: "factual", centrality: HIGH, dependsOn: ["SC-A"]
+   → This is THE claim readers care about - is it TRUE?
+
+**WHY THIS MATTERS:**
+- SC-A (attribution) might be TRUE (yes, he said it)
+- SC-B (content) might be FALSE (what he said is wrong)
+- If you only verify SC-A, you're NOT fact-checking the article's actual claims!
+- The article's credibility depends on SC-B, not SC-A.
 
 ### Claim Dependencies (dependsOn):
 Core claims often DEPEND on attribution/source/timing claims being true.
@@ -1862,6 +1878,21 @@ Claims with claimRole "source", "attribution", or "timing" should ALWAYS have ce
 Only CORE claims (claimRole: "core") can have centrality: HIGH
 - The existence of a document is not the argument - what the document SAYS is the argument
 - Who said something is not the argument - what they SAID is the argument
+
+**CRITICAL: Policy/Action claims that DEPEND on source claims are NOT central**
+If a policy claim depends on a source claim being true, it inherits LOW centrality:
+- "FDA will impose stricter regulations" (depends on email existing) → centrality: LOW
+- "Company will lay off 1000 workers" (depends on memo existing) → centrality: LOW
+These are CONDITIONAL claims - they're only meaningful IF the source exists.
+
+The CENTRAL claims are the **factual assertions about real-world impact**:
+- "10 children died from vaccines" → centrality: HIGH (factual impact claim)
+- "Past FDA processes were based on weak science" → centrality: HIGH (evaluative but verifiable)
+
+**RULE: When multiple claims compete for centrality, ask: "Which claim, if false, would completely undermine the article's credibility?"**
+- If "FDA will impose stricter regulations" is false → article is wrong about policy
+- If "10 children died from vaccines" is false → article is spreading dangerous misinformation
+The second is MORE CENTRAL because it has greater real-world harm potential.
 
 **isCentral = true** ONLY if harmPotential OR centrality is "high"
 - checkWorthiness does NOT affect isCentral (a high checkWorthiness alone doesn't make it central)
@@ -3636,9 +3667,10 @@ async function generateClaimVerdicts(
   articleAnalysis: ArticleAnalysis;
 }> {
   // Add pseudoscience context and verdict calibration to prompt
-  let systemPrompt = `Generate verdicts for each claim and article-level verdict.
+  // Also add Article Verdict Problem analysis per POC1 spec
+  let systemPrompt = `Generate verdicts for each claim AND an independent article-level verdict.
 
-VERDICT CALIBRATION (IMPORTANT):
+## CLAIM VERDICT CALIBRATION (IMPORTANT):
 - WELL-SUPPORTED: Strong evidence supports the claim
 - PARTIALLY-SUPPORTED: Some evidence, but incomplete
 - UNCERTAIN: Insufficient evidence to determine
@@ -3646,6 +3678,36 @@ VERDICT CALIBRATION (IMPORTANT):
 - FALSE: ONLY for claims that are definitively, conclusively false with 99%+ certainty (e.g., "2+2=5", "the earth is flat")
 
 For pseudoscience claims that lack scientific basis but can't be proven absolutely false, use REFUTED, not FALSE.
+
+## ARTICLE VERDICT ANALYSIS (CRITICAL - Article Verdict Problem)
+
+The article's overall credibility is NOT simply the average of individual claim verdicts!
+An article with mostly accurate facts can still be MISLEADING if:
+1. The main conclusion doesn't follow from the evidence
+2. There are logical fallacies (correlation ≠ causation, cherry-picking, etc.)
+3. The framing creates a false impression despite accurate individual facts
+
+AFTER analyzing individual claims, evaluate the article as a whole:
+
+1. What is the article's main argument or conclusion (thesis)?
+2. Does this conclusion LOGICALLY FOLLOW from the evidence presented?
+3. Are there LOGICAL FALLACIES?
+   - Correlation presented as causation
+   - Cherry-picking evidence
+   - False equivalence
+   - Appeal to authority without substance
+   - Hasty generalization
+4. Even if individual facts are accurate, is the article's framing MISLEADING?
+5. Are CENTRAL claims (marked [CENTRAL]) true? If central claims are FALSE but supporting claims are TRUE, the article is MISLEADING.
+
+ARTICLE VERDICT OPTIONS:
+- CREDIBLE: Main thesis is well-supported, no significant logical issues
+- MOSTLY-CREDIBLE: Some minor issues but overall sound reasoning
+- MISLEADING: Contains accurate facts BUT draws unsupported conclusions OR uses misleading framing
+- FALSE: Central claims are demonstrably false
+
+IMPORTANT: Set verdictDiffersFromClaimAverage=true if the article verdict differs from what a simple average would suggest.
+Example: If 3/4 claims are TRUE but the main conclusion is FALSE → article verdict = MISLEADING (not MOSTLY-CREDIBLE)
 
 ${getKnowledgeInstruction()}`;
 
@@ -3891,15 +3953,40 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
         )
       : 50;
 
+  // Article Verdict Problem: Check central claims specifically
+  // If central claims are refuted but supporting claims are true, article is MISLEADING
+  const centralClaims = weightedClaimVerdicts.filter((v) => v.isCentral);
+  const centralRefuted = centralClaims.filter((v) => v.truthPercentage < 43);
+  const centralSupported = centralClaims.filter((v) => v.truthPercentage >= 72);
+  const nonCentralClaims = weightedClaimVerdicts.filter((v) => !v.isCentral);
+  const nonCentralSupported = nonCentralClaims.filter((v) => v.truthPercentage >= 72);
+
+  // Detect Article Verdict Problem pattern: accurate supporting facts but false central claim
+  const hasMisleadingPattern =
+    centralRefuted.length > 0 &&
+    nonCentralSupported.length >= 2 &&
+    claimsAvgTruthPct >= 50; // Average looks OK but central claim is false
+
   // Calculate article truth percentage from LLM's article verdict
   let articleTruthPct = calculateArticleTruthPercentage(
     parsed.articleAnalysis.articleVerdict,
     parsed.articleAnalysis.articleConfidence,
   );
 
+  let articleVerdictOverrideReason: string | undefined;
+
   // If LLM returned default/unknown verdict (50%), use claims average instead
   if (articleTruthPct === 50 && claimsAvgTruthPct !== 50) {
     articleTruthPct = claimsAvgTruthPct;
+  }
+
+  // Article Verdict Problem Override: Central claim refuted = article MISLEADING
+  // This catches the "Coffee cures cancer" pattern where supporting facts are true
+  // but the main conclusion is false
+  if (hasMisleadingPattern && articleTruthPct > 35) {
+    console.log(`[Analyzer] Article Verdict Problem detected: ${centralRefuted.length} central claims refuted, ${nonCentralSupported.length} supporting claims true, but avg=${claimsAvgTruthPct}%. Overriding to MISLEADING.`);
+    articleTruthPct = 35; // MISLEADING range (29-42%)
+    articleVerdictOverrideReason = `Central claim(s) refuted despite ${nonCentralSupported.length} accurate supporting facts - article draws unsupported conclusions`;
   }
 
   // For pseudoscience: article verdict cannot be higher than claims average
@@ -3909,10 +3996,11 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     articleTruthPct > claimsAvgTruthPct
   ) {
     articleTruthPct = Math.min(claimsAvgTruthPct, 28); // Cap at FALSE level for pseudoscience
+    articleVerdictOverrideReason = `Pseudoscience detected - article verdict capped`;
   }
 
   // Check if article verdict differs significantly from claims average
-  const verdictDiffers = Math.abs(articleTruthPct - claimsAvgTruthPct) > 15;
+  const verdictDiffers = Math.abs(articleTruthPct - claimsAvgTruthPct) > 15 || hasMisleadingPattern;
 
   return {
     claimVerdicts: weightedClaimVerdicts,
@@ -3927,14 +4015,16 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       claimsAverageTruthPercentage: claimsAvgTruthPct,
       claimsAverageVerdict: percentageToArticleVerdict(claimsAvgTruthPct),
 
-      // Article verdict (LLM's independent assessment)
+      // Article verdict (LLM's independent assessment, with Article Verdict Problem override)
       articleTruthPercentage: articleTruthPct,
       articleVerdict: percentageToArticleVerdict(articleTruthPct),
-      articleVerdictReason: verdictDiffers
-        ? articleTruthPct < claimsAvgTruthPct
-          ? "Article uses facts misleadingly or draws unsupported conclusions"
-          : "Article's conclusion is better supported than individual claims suggest"
-        : undefined,
+      articleVerdictReason: articleVerdictOverrideReason
+        ? articleVerdictOverrideReason
+        : verdictDiffers
+          ? articleTruthPct < claimsAvgTruthPct
+            ? "Article uses facts misleadingly or draws unsupported conclusions"
+            : "Article's conclusion is better supported than individual claims suggest"
+          : undefined,
 
       // LLM outputs for debugging
       llmArticleVerdict: parsed.articleAnalysis.articleVerdict,
