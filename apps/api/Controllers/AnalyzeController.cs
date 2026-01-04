@@ -1,6 +1,5 @@
 using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace FactHarbor.Api.Controllers;
@@ -57,24 +56,26 @@ public sealed class AnalyzeController : ControllerBase
         {
             await jobs.UpdateStatusAsync(jobId, "QUEUED", 0, "info", "Triggering runner");
 
-            // One retry helps on local dev when the web runner is still starting up.
-            for (var attempt = 1; attempt <= 2; attempt++)
+            // RunnerClient now handles retries with exponential backoff internally
+            await runner.TriggerRunnerAsync(jobId);
+        }
+        catch (RunnerTriggerException ex)
+        {
+            // RunnerClient exhausted all retries
+            _log!.LogError(ex, "Runner trigger failed after {Attempts} attempts. JobId={JobId}", ex.Attempts, jobId);
+
+            try
             {
-                try
-                {
-                    await runner.TriggerRunnerAsync(jobId);
-                    return;
-                }
-                catch (Exception ex) when (attempt == 1)
-                {
-                    _log!.LogWarning(ex, "Runner trigger failed (attempt 1), retrying. JobId={JobId}", jobId);
-                    await Task.Delay(1500);
-                }
+                await jobs.UpdateStatusAsync(jobId, "FAILED", 100, "error", $"Runner trigger failed after {ex.Attempts} attempts: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (Exception ex2)
+            {
+                _log!.LogError(ex2, "Failed to write FAILED status for JobId={JobId}", jobId);
             }
         }
         catch (Exception ex)
         {
-            _log!.LogError(ex, "Runner trigger failed. JobId={JobId}", jobId);
+            _log!.LogError(ex, "Runner trigger failed unexpectedly. JobId={JobId}", jobId);
 
             try
             {

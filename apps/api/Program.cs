@@ -23,13 +23,15 @@ builder.Services.AddDbContext<FhDbContext>(opt =>
 });
 
 builder.Services.AddScoped<JobService>();
+
+// Configure HttpClient for RunnerClient with resilient settings
+var runnerTimeoutMinutes = builder.Configuration.GetValue("Runner:TimeoutMinutes", 5);
 builder.Services.AddHttpClient<RunnerClient>(client =>
 {
-    // IMPORTANT:
-    // The runner endpoint currently performs the full LLM workflow before responding.
-    // 15s is often too short (URL fetch + LLM call + status/result writes).
-    // Increase timeout for local/POC so the trigger request does not get canceled prematurely.
-    client.Timeout = TimeSpan.FromMinutes(5);
+    // The runner endpoint performs the full LLM workflow before responding.
+    // Timeout is configurable via Runner:TimeoutMinutes (default: 5 minutes).
+    // RetryClient handles transient failures with exponential backoff.
+    client.Timeout = TimeSpan.FromMinutes(runnerTimeoutMinutes);
 });
 
 var app = builder.Build();
