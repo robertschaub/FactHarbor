@@ -244,6 +244,432 @@ function extractStructuredOutput(result: any): any {
 }
 
 // ============================================================================
+// QUALITY GATES (POC1 Specification)
+// ============================================================================
+
+/**
+ * Gate 1: Claim Validation Result
+ * Determines if a claim is factual (verifiable) vs opinion/prediction
+ */
+interface ClaimValidationResult {
+  claimId: string;
+  isFactual: boolean;
+  opinionScore: number;        // 0-1 (higher = more opinion-like)
+  specificityScore: number;    // 0-1 (higher = more specific/concrete)
+  futureOriented: boolean;
+  claimType: "FACTUAL" | "OPINION" | "PREDICTION" | "AMBIGUOUS";
+  passed: boolean;
+  failureReason?: string;
+  validatedAt: Date;
+}
+
+/**
+ * Gate 4: Verdict Validation Result
+ * Determines if verdict has sufficient evidence confidence to publish
+ */
+interface VerdictValidationResult {
+  verdictId: string;
+  evidenceCount: number;
+  averageSourceQuality: number;     // 0-1
+  evidenceAgreement: number;        // 0-1 (% supporting vs contradicting)
+  uncertaintyFactors: number;       // Count of hedging statements
+  confidenceTier: "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
+  publishable: boolean;
+  failureReasons?: string[];
+  validatedAt: Date;
+}
+
+// Opinion/hedging markers that indicate non-factual claims
+const OPINION_MARKERS = [
+  /\bi\s+think\b/i,
+  /\bi\s+believe\b/i,
+  /\bin\s+my\s+(view|opinion)\b/i,
+  /\bprobably\b/i,
+  /\bpossibly\b/i,
+  /\bperhaps\b/i,
+  /\bmaybe\b/i,
+  /\bmight\b/i,
+  /\bcould\s+be\b/i,
+  /\bseems\s+to\b/i,
+  /\bappears\s+to\b/i,
+  /\blooks\s+like\b/i,
+  /\bbest\b/i,
+  /\bworst\b/i,
+  /\bshould\b/i,
+  /\bought\s+to\b/i,
+  /\bbeautiful\b/i,
+  /\bterrible\b/i,
+  /\bamazing\b/i,
+  /\bwonderful\b/i,
+  /\bhorrible\b/i,
+];
+
+// Future prediction markers
+const FUTURE_MARKERS = [
+  /\bwill\s+(be|have|become|happen|occur|result)\b/i,
+  /\bgoing\s+to\b/i,
+  /\bin\s+the\s+future\b/i,
+  /\bby\s+(2026|2027|2028|2029|2030|next\s+year|next\s+month)\b/i,
+  /\bwill\s+likely\b/i,
+  /\bpredicted\s+to\b/i,
+  /\bforecast/i,
+  /\bexpected\s+to\s+(increase|decrease|grow|rise|fall)\b/i,
+];
+
+// Specificity indicators (names, numbers, dates, locations)
+const SPECIFICITY_PATTERNS = [
+  /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/, // Dates
+  /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}/i,
+  /\b\d+\s*(percent|%)\b/i, // Percentages
+  /\b\d+\s*(million|billion|thousand)\b/i, // Large numbers
+  /\b\$\s*\d+/i, // Dollar amounts
+  /\b(Dr\.|Prof\.|President|CEO|Director)\s+[A-Z][a-z]+/i, // Named individuals
+  /\b[A-Z][a-z]+\s+(University|Institute|Hospital|Corporation|Inc\.|Ltd\.)/i, // Organizations
+  /\b(said|stated|announced|declared|confirmed)\s+(that|in)/i, // Attribution
+  /\bat\s+least\s+\d+/i, // Specific quantities
+  /\baccording\s+to\b/i, // Source attribution
+];
+
+// Uncertainty markers in verdict reasoning
+const UNCERTAINTY_MARKERS = [
+  /\bunclear\b/i,
+  /\bnot\s+(certain|sure|definitive)\b/i,
+  /\blimited\s+evidence\b/i,
+  /\binsufficient\s+data\b/i,
+  /\bconflicting\s+(reports|evidence|sources)\b/i,
+  /\bcannot\s+(confirm|verify|determine)\b/i,
+  /\bno\s+(reliable|credible)\s+sources?\b/i,
+  /\bmay\s+or\s+may\s+not\b/i,
+];
+
+/**
+ * Gate 1: Validate if a claim is factual (verifiable) vs opinion/prediction
+ *
+ * IMPORTANT: Central claims are ALWAYS passed through Gate 1, even if they
+ * technically fail validation. This ensures important claims aren't lost.
+ */
+function validateClaimGate1(
+  claimId: string,
+  claimText: string,
+  isCentral: boolean = false
+): ClaimValidationResult {
+  // 1. Calculate opinion score (0-1)
+  let opinionMatches = 0;
+  for (const pattern of OPINION_MARKERS) {
+    if (pattern.test(claimText)) {
+      opinionMatches++;
+    }
+  }
+  // Normalize: 0 matches = 0.0, 3+ matches = 1.0
+  const opinionScore = Math.min(opinionMatches / 3, 1);
+
+  // 2. Calculate specificity score (0-1)
+  let specificityMatches = 0;
+  for (const pattern of SPECIFICITY_PATTERNS) {
+    if (pattern.test(claimText)) {
+      specificityMatches++;
+    }
+  }
+  // Normalize: 0 matches = 0.0, 3+ matches = 1.0
+  const specificityScore = Math.min(specificityMatches / 3, 1);
+
+  // 3. Check for future predictions
+  let futureOriented = false;
+  for (const pattern of FUTURE_MARKERS) {
+    if (pattern.test(claimText)) {
+      futureOriented = true;
+      break;
+    }
+  }
+
+  // 4. Determine claim type
+  let claimType: "FACTUAL" | "OPINION" | "PREDICTION" | "AMBIGUOUS";
+  if (futureOriented) {
+    claimType = "PREDICTION";
+  } else if (opinionScore > 0.5) {
+    claimType = "OPINION";
+  } else if (specificityScore >= 0.3 && opinionScore <= 0.3) {
+    claimType = "FACTUAL";
+  } else {
+    claimType = "AMBIGUOUS";
+  }
+
+  // 5. Determine if it can be verified
+  const isFactual = claimType === "FACTUAL" || claimType === "AMBIGUOUS";
+
+  // 6. Pass criteria (spec: opinionScore <= 0.3, specificityScore >= 0.3, not future)
+  const wouldPass = isFactual &&
+                    opinionScore <= 0.3 &&
+                    specificityScore >= 0.3 &&
+                    !futureOriented;
+
+  // CRITICAL: Central claims always pass Gate 1 to prevent losing important claims
+  // They're flagged but not filtered out
+  const passed = wouldPass || isCentral;
+
+  // Generate failure reason if applicable
+  let failureReason: string | undefined;
+  if (!wouldPass) {
+    if (futureOriented) {
+      failureReason = "Future prediction (cannot be verified yet)";
+    } else if (opinionScore > 0.3) {
+      failureReason = "Contains opinion language";
+    } else if (specificityScore < 0.3) {
+      failureReason = "Lacks specific verifiable details";
+    }
+
+    // Add note if central claim is being passed despite failing
+    if (isCentral && failureReason) {
+      failureReason = `[CENTRAL CLAIM - kept for analysis] ${failureReason}`;
+    }
+  }
+
+  return {
+    claimId,
+    isFactual,
+    opinionScore,
+    specificityScore,
+    futureOriented,
+    claimType,
+    passed,
+    failureReason: passed && !isCentral ? undefined : failureReason,
+    validatedAt: new Date(),
+  };
+}
+
+/**
+ * Gate 4: Validate verdict confidence based on evidence quality
+ *
+ * Confidence Tiers:
+ * - HIGH (80-100%): ≥3 sources, ≥0.7 avg quality, ≥80% agreement
+ * - MEDIUM (50-79%): ≥2 sources, ≥0.6 avg quality, ≥60% agreement
+ * - LOW (0-49%): ≥2 sources but low quality/agreement
+ * - INSUFFICIENT: <2 sources → DO NOT PUBLISH
+ *
+ * Publication Rule: Minimum MEDIUM confidence required
+ */
+function validateVerdictGate4(
+  verdictId: string,
+  sources: Array<{url: string; trackRecordScore?: number | null}>,
+  supportingFactIds: string[],
+  contradictingFactCount: number,
+  verdictReasoning: string,
+  isCentral: boolean = false
+): VerdictValidationResult {
+  // 1. Count evidence sources
+  const evidenceCount = sources.length;
+
+  // 2. Calculate average source quality
+  // Default to 0.5 if no track record available
+  const qualityScores = sources.map(s =>
+    s.trackRecordScore != null ? s.trackRecordScore / 100 : 0.5
+  );
+  const averageSourceQuality = qualityScores.length > 0
+    ? qualityScores.reduce((a, b) => a + b, 0) / qualityScores.length
+    : 0;
+
+  // 3. Calculate evidence agreement
+  const totalEvidence = supportingFactIds.length + contradictingFactCount;
+  const evidenceAgreement = totalEvidence > 0
+    ? supportingFactIds.length / totalEvidence
+    : 0;
+
+  // 4. Count uncertainty factors in reasoning
+  let uncertaintyFactors = 0;
+  for (const pattern of UNCERTAINTY_MARKERS) {
+    if (pattern.test(verdictReasoning)) {
+      uncertaintyFactors++;
+    }
+  }
+
+  // 5. Determine confidence tier
+  let confidenceTier: "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
+
+  if (evidenceCount < 2) {
+    confidenceTier = "INSUFFICIENT";
+  } else if (evidenceCount >= 3 && averageSourceQuality >= 0.7 && evidenceAgreement >= 0.8) {
+    confidenceTier = "HIGH";
+  } else if (evidenceCount >= 2 && averageSourceQuality >= 0.6 && evidenceAgreement >= 0.6) {
+    confidenceTier = "MEDIUM";
+  } else {
+    confidenceTier = "LOW";
+  }
+
+  // 6. Publication decision
+  // CRITICAL: Central claims are always publishable (with appropriate caveats)
+  // to prevent losing important claims from the analysis
+  const wouldPublish = confidenceTier === "MEDIUM" || confidenceTier === "HIGH";
+  const publishable = wouldPublish || isCentral;
+
+  // 7. Generate failure reasons if not publishable
+  const failureReasons: string[] = [];
+  if (!wouldPublish) {
+    if (evidenceCount < 2) {
+      failureReasons.push(`Insufficient sources (${evidenceCount}, need ≥2)`);
+    }
+    if (averageSourceQuality < 0.6) {
+      failureReasons.push(`Low source quality (${(averageSourceQuality * 100).toFixed(0)}%, need ≥60%)`);
+    }
+    if (evidenceAgreement < 0.6) {
+      failureReasons.push(`Low evidence agreement (${(evidenceAgreement * 100).toFixed(0)}%, need ≥60%)`);
+    }
+
+    // Add note if central claim is being published despite failing
+    if (isCentral && failureReasons.length > 0) {
+      failureReasons.unshift("[CENTRAL CLAIM - published with caveats]");
+    }
+  }
+
+  return {
+    verdictId,
+    evidenceCount,
+    averageSourceQuality,
+    evidenceAgreement,
+    uncertaintyFactors,
+    confidenceTier,
+    publishable,
+    failureReasons: failureReasons.length > 0 ? failureReasons : undefined,
+    validatedAt: new Date(),
+  };
+}
+
+/**
+ * Apply Gate 1 validation to all claims and filter non-factual ones
+ * IMPORTANT: Central claims are never filtered, only flagged
+ * Uses generic type T to preserve the full claim structure
+ */
+function applyGate1ToClaims<T extends { id: string; text: string; isCentral: boolean }>(
+  claims: T[]
+): {
+  validatedClaims: (T & { gate1Validation?: ClaimValidationResult })[];
+  validationResults: ClaimValidationResult[];
+  stats: { total: number; passed: number; filtered: number; centralKept: number };
+} {
+  const validationResults: ClaimValidationResult[] = [];
+  const validatedClaims: (T & { gate1Validation?: ClaimValidationResult })[] = [];
+  let centralKept = 0;
+
+  for (const claim of claims) {
+    const validation = validateClaimGate1(claim.id, claim.text, claim.isCentral);
+    validationResults.push(validation);
+
+    if (validation.passed) {
+      validatedClaims.push({
+        ...claim,
+        gate1Validation: validation,
+      });
+
+      if (claim.isCentral && !validation.isFactual) {
+        centralKept++;
+      }
+    } else {
+      console.log(`[Gate1] Filtered claim ${claim.id}: ${validation.failureReason}`);
+    }
+  }
+
+  const stats = {
+    total: claims.length,
+    passed: validatedClaims.length,
+    filtered: claims.length - validatedClaims.length,
+    centralKept,
+  };
+
+  console.log(`[Gate1] Stats: ${stats.passed}/${stats.total} passed, ${stats.filtered} filtered, ${stats.centralKept} central claims kept despite issues`);
+
+  return { validatedClaims, validationResults, stats };
+}
+
+/**
+ * Apply Gate 4 validation to all verdicts
+ * Adds confidence tier and publication status to each verdict
+ */
+function applyGate4ToVerdicts(
+  verdicts: ClaimVerdict[],
+  sources: FetchedSource[],
+  facts: ExtractedFact[]
+): {
+  validatedVerdicts: (ClaimVerdict & { gate4Validation: VerdictValidationResult })[];
+  validationResults: VerdictValidationResult[];
+  stats: {
+    total: number;
+    publishable: number;
+    highConfidence: number;
+    mediumConfidence: number;
+    lowConfidence: number;
+    insufficient: number;
+    centralKept: number;
+  };
+} {
+  const validationResults: VerdictValidationResult[] = [];
+  const validatedVerdicts: (ClaimVerdict & { gate4Validation: VerdictValidationResult })[] = [];
+
+  let highConfidence = 0;
+  let mediumConfidence = 0;
+  let lowConfidence = 0;
+  let insufficient = 0;
+  let centralKept = 0;
+
+  for (const verdict of verdicts) {
+    // Find sources that support this verdict
+    const supportingSources = sources.filter(s =>
+      verdict.supportingFactIds.some(factId =>
+        facts.some(f => f.id === factId && f.sourceId === s.id)
+      )
+    );
+
+    // Count contradicting facts (estimate based on criticism category)
+    // "criticism" is the category used for opposing/contradicting evidence
+    const contradictingFactCount = facts.filter(f =>
+      !verdict.supportingFactIds.includes(f.id) &&
+      f.category === "criticism"
+    ).length;
+
+    const validation = validateVerdictGate4(
+      verdict.claimId,
+      supportingSources,
+      verdict.supportingFactIds,
+      contradictingFactCount,
+      verdict.reasoning,
+      verdict.isCentral
+    );
+
+    validationResults.push(validation);
+
+    // Track stats
+    switch (validation.confidenceTier) {
+      case "HIGH": highConfidence++; break;
+      case "MEDIUM": mediumConfidence++; break;
+      case "LOW": lowConfidence++; break;
+      case "INSUFFICIENT": insufficient++; break;
+    }
+
+    if (verdict.isCentral && !validation.publishable) {
+      centralKept++;
+    }
+
+    // Always include the verdict but with validation info
+    validatedVerdicts.push({
+      ...verdict,
+      gate4Validation: validation,
+    });
+  }
+
+  const stats = {
+    total: verdicts.length,
+    publishable: validatedVerdicts.filter(v => v.gate4Validation.publishable).length,
+    highConfidence,
+    mediumConfidence,
+    lowConfidence,
+    insufficient,
+    centralKept,
+  };
+
+  console.log(`[Gate4] Stats: ${stats.publishable}/${stats.total} publishable, HIGH=${stats.highConfidence}, MED=${stats.mediumConfidence}, LOW=${stats.lowConfidence}, INSUFF=${stats.insufficient}, central kept=${stats.centralKept}`);
+
+  return { validatedVerdicts, validationResults, stats };
+}
+
+// ============================================================================
 // PSEUDOSCIENCE DETECTION
 // ============================================================================
 
@@ -1374,6 +1800,24 @@ The source attribution belongs in a SEPARATE claim:
 - SC1: "An internal FDA review exists" (source claim)
 - SC2: "At least 10 children died because of COVID-19 vaccines" (core claim, depends on SC1)
 
+### CRITICAL: SEPARATING ATTRIBUTION FROM EVALUATIVE CONTENT
+
+When someone CRITICIZES, CLAIMS, or ASSERTS something, separate:
+1. The FACT that they said/criticized it (attribution - verifiable)
+2. The CONTENT of what they said (the actual claim - may be opinion or factual)
+
+WRONG: "Dr. Prasad criticized FDA processes as based on weak and misleading science"
+  → This conflates "he criticized" (verifiable) with "FDA processes are weak" (evaluative assertion)
+
+CORRECT SEPARATION:
+- SC1: "Dr. Prasad has publicly criticized past FDA processes" (attribution, claimRole: "attribution", type: "factual")
+  → Verifies: Did Prasad criticize FDA? (YES/NO based on his statements)
+- SC2: "Past FDA processes were based on weak and misleading science" (core, claimRole: "core", type: "evaluative", dependsOn: ["SC1"])
+  → Verifies: Is this criticism ACCURATE? (requires examining FDA practices, studies, expert consensus)
+
+The verdict for SC1 might be TRUE (he did criticize), while SC2 might be UNCERTAIN or REFUTED.
+If we only verify SC1, we're fact-checking "did he say it" not "is what he said true."
+
 ### Claim Dependencies (dependsOn):
 Core claims often DEPEND on attribution/source/timing claims being true.
 
@@ -1409,6 +1853,16 @@ These are not opinions - they're historical assertions that can be fact-checked.
 - MEDIUM: Supports the main argument but not essential
 - LOW: Peripheral detail, context, or attribution
 
+**CRITICAL: Source/Attribution claims are NEVER centrality HIGH**
+Claims with claimRole "source", "attribution", or "timing" should ALWAYS have centrality: LOW
+- "An internal email exists" → centrality: LOW (source claim, not the argument itself)
+- "Dr. X is director of Y" → centrality: LOW (attribution, establishes who said it)
+- "The statement was made in November" → centrality: LOW (timing detail)
+
+Only CORE claims (claimRole: "core") can have centrality: HIGH
+- The existence of a document is not the argument - what the document SAYS is the argument
+- Who said something is not the argument - what they SAID is the argument
+
 **isCentral = true** ONLY if harmPotential OR centrality is "high"
 - checkWorthiness does NOT affect isCentral (a high checkWorthiness alone doesn't make it central)
 - However, if checkWorthiness is "low", the claim should NOT be investigated or displayed
@@ -1430,10 +1884,20 @@ These are not opinions - they're historical assertions that can be fact-checked.
 → isCentral: TRUE (harmPotential OR centrality is HIGH)
 
 "Prasad is CBER director"
+→ claimRole: attribution
 → checkWorthiness: MEDIUM (verifiable but routine)
 → harmPotential: LOW (credential, not harmful if wrong)
 → centrality: LOW (attribution, not the main point)
 → isCentral: FALSE (neither harmPotential nor centrality is HIGH)
+
+"An internal email from Dr. Prasad exists stating the FDA will impose stricter regulations"
+→ claimRole: source (establishes document existence)
+→ checkWorthiness: HIGH (verifiable - does such email exist?)
+→ harmPotential: MEDIUM (affects credibility of subsequent claims)
+→ centrality: LOW ← MUST BE LOW - this is a source claim, not the core argument!
+→ isCentral: FALSE
+→ NOTE: Even though this claim is important as a prerequisite, it's NOT central to the ARGUMENT.
+→ The argument is about FDA policy, not about email existence.
 
 "The email was sent on November 28"
 → checkWorthiness: LOW (timing detail) ← LOW = EXCLUDE FROM INVESTIGATION
@@ -1453,6 +1917,33 @@ These are not opinions - they're historical assertions that can be fact-checked.
 → harmPotential: MEDIUM (affects policy debate)
 → centrality: MEDIUM (contextual, not core)
 → isCentral: FALSE (neither harmPotential nor centrality is HIGH, even though checkWorthiness is HIGH)
+
+### EXAMPLE: Attribution vs Evaluative Content Split
+
+Original text: "Dr. Prasad criticized FDA processes as based on weak science"
+
+CORRECT claim extraction (2 separate claims):
+
+SC5: "Dr. Prasad has publicly criticized past FDA processes"
+→ type: factual (did he criticize? YES/NO)
+→ claimRole: attribution
+→ checkWorthiness: MEDIUM (routine verification)
+→ harmPotential: LOW (just confirms he said something)
+→ centrality: LOW (attribution only)
+→ isCentral: FALSE
+→ dependsOn: []
+
+SC6: "Past FDA processes were based on weak and misleading science"
+→ type: evaluative (is this assessment accurate?)
+→ claimRole: core
+→ checkWorthiness: HIGH (historical claim about FDA, verifiable)
+→ harmPotential: HIGH (public health, regulatory trust)
+→ centrality: HIGH (core evaluative assertion)
+→ isCentral: TRUE
+→ dependsOn: ["SC5"] (claim originates from Prasad's criticism)
+
+NOTE: SC5 may be TRUE (he did criticize) while SC6 may be UNCERTAIN or PARTIALLY-SUPPORTED.
+The system must verify BOTH: (1) did he say it? AND (2) is what he said accurate?
 
 ### Dependencies:
 1. List dependencies in dependsOn array (claim IDs that must be true for this claim to matter)
@@ -1672,7 +2163,12 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 
   console.log(`[Analyzer] Filtered ${claimsWithPositions.length - filteredClaims.length} claims with low checkWorthiness, ${filteredClaims.length} remaining`);
 
-  return { ...parsed, subClaims: filteredClaims };
+  // Apply Gate 1: Claim Validation (filter opinions, predictions, low-specificity claims)
+  // CRITICAL: Central claims are NEVER filtered, only flagged for review
+  const { validatedClaims, stats: gate1Stats } = applyGate1ToClaims(filteredClaims);
+  console.log(`[Analyzer] Gate 1 applied: ${gate1Stats.passed}/${gate1Stats.total} claims passed, ${gate1Stats.centralKept} central claims kept despite issues`);
+
+  return { ...parsed, subClaims: validatedClaims };
 }
 
 function findClaimPosition(
@@ -4099,6 +4595,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const verdictElapsed = Date.now() - verdictStart;
   console.log(`[Analyzer] Verdict generation completed in ${verdictElapsed}ms`);
 
+  // Apply Gate 4: Verdict Confidence Assessment
+  // Adds confidence tier and publication status to each verdict
+  // CRITICAL: Central claims are ALWAYS kept publishable
+  const { validatedVerdicts, stats: gate4Stats } = applyGate4ToVerdicts(
+    claimVerdicts,
+    state.sources,
+    state.facts
+  );
+  console.log(`[Analyzer] Gate 4 applied: ${gate4Stats.publishable}/${gate4Stats.total} publishable, HIGH=${gate4Stats.highConfidence}, MED=${gate4Stats.mediumConfidence}, LOW=${gate4Stats.lowConfidence}, INSUFF=${gate4Stats.insufficient}`);
+
+  // Use validated verdicts going forward (includes gate4Validation metadata)
+  const finalClaimVerdicts = validatedVerdicts;
+
   if (pseudoscienceAnalysis?.isPseudoscience) {
     await emit(
       `⚠️ Pseudoscience detected: ${pseudoscienceAnalysis.categories.join(", ")}`,
@@ -4110,7 +4619,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   await emit("Step 4: Building summary", 75);
   const twoPanelSummary = await generateTwoPanelSummary(
     state,
-    claimVerdicts,
+    finalClaimVerdicts,
     articleAnalysis,
     model,
   );
@@ -4119,7 +4628,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   await emit("Step 5: Generating report", 85);
   const reportMarkdown = await generateReport(
     state,
-    claimVerdicts,
+    finalClaimVerdicts,
     articleAnalysis,
     twoPanelSummary,
     model,
@@ -4150,12 +4659,22 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       inputLength: textToAnalyze.length,
       analysisTimeMs: Date.now() - startTime,
       analysisId: twoPanelSummary.factharborAnalysis.analysisId,
+      // Gate statistics (POC1)
+      gate4Stats: {
+        publishable: gate4Stats.publishable,
+        total: gate4Stats.total,
+        highConfidence: gate4Stats.highConfidence,
+        mediumConfidence: gate4Stats.mediumConfidence,
+        lowConfidence: gate4Stats.lowConfidence,
+        insufficient: gate4Stats.insufficient,
+        centralKept: gate4Stats.centralKept,
+      },
     },
     questionAnswer: questionAnswer || null,
     proceedings: state.understanding!.distinctProceedings,
     twoPanelSummary,
     articleAnalysis,
-    claimVerdicts,
+    claimVerdicts: finalClaimVerdicts,
     understanding: state.understanding,
     facts: state.facts,
     // Enhanced source data (v2.4.3)
