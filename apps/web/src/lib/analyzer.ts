@@ -1435,6 +1435,13 @@ interface ClaimUnderstanding {
   legalFrameworks: string[];
   researchQuestions: string[];
   riskTier: "A" | "B" | "C";
+  // Gate 1 statistics (POC1 quality gate)
+  gate1Stats?: {
+    total: number;
+    passed: number;
+    filtered: number;
+    centralKept: number;
+  };
 }
 
 interface ResearchIteration {
@@ -2199,7 +2206,7 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
   const { validatedClaims, stats: gate1Stats } = applyGate1ToClaims(filteredClaims);
   console.log(`[Analyzer] Gate 1 applied: ${gate1Stats.passed}/${gate1Stats.total} claims passed, ${gate1Stats.centralKept} central claims kept despite issues`);
 
-  return { ...parsed, subClaims: validatedClaims };
+  return { ...parsed, subClaims: validatedClaims, gate1Stats };
 }
 
 function findClaimPosition(
@@ -4833,7 +4840,25 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     qualityGates: {
       passed:
         state.facts.length >= config.minFactsRequired &&
-        state.contradictionSearchPerformed,
+        state.contradictionSearchPerformed &&
+        gate4Stats.publishable > 0,
+      // Gate 1: Claim Validation (filters opinions, predictions, low-specificity claims)
+      gate1Stats: state.understanding?.gate1Stats || {
+        total: 0,
+        passed: 0,
+        filtered: 0,
+        centralKept: 0,
+      },
+      // Gate 4: Verdict Confidence Assessment (validates evidence quality)
+      gate4Stats: {
+        total: gate4Stats.total,
+        publishable: gate4Stats.publishable,
+        highConfidence: gate4Stats.highConfidence,
+        mediumConfidence: gate4Stats.mediumConfidence,
+        lowConfidence: gate4Stats.lowConfidence,
+        insufficient: gate4Stats.insufficient,
+        centralKept: gate4Stats.centralKept,
+      },
       summary: {
         totalFacts: state.facts.length,
         totalSources: state.sources.length,

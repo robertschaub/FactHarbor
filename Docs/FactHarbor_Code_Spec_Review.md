@@ -321,3 +321,57 @@ This appendix consolidates the earlier “quick pass” findings you pasted (job
 
 - **Add minimal tests**
   - **Recommendation:** add a small API test suite (create job, update status/result, fetch job, SSE emits events) and a web smoke test.
+
+---
+
+## Update Log (2026-01-05)
+
+### Items Completed Since Initial Review
+
+| Item | Status | Implementation Details |
+|------|--------|------------------------|
+| **Unify job status values** | ✅ DONE | `QUEUED` used consistently across API and UI. Fixed in `apps/web/src/app/jobs/page.tsx` |
+| **Add job lifecycle test** | ✅ DONE | Added `apps/web/src/lib/job-lifecycle.test.ts` with unit and integration tests. Run via `npm run test:jobs` |
+| **Make runner execution resilient** | ✅ DONE | Implemented exponential backoff retry with jitter in `RunnerClient.cs`. Configurable via `appsettings.json` (MaxRetries, InitialRetryDelayMs, MaxRetryDelayMs, TimeoutMinutes) |
+| **Surface Quality Gates in output** | ✅ DONE | Gate 1 (claim validation) and Gate 4 (verdict confidence) stats now included in result JSON under `qualityGates.gate1Stats` and `qualityGates.gate4Stats` |
+| **Modularize analyzer.ts** | ✅ PARTIAL | Created modules in `apps/web/src/lib/analyzer/`: types.ts, config.ts, quality-gates.ts, truth-scale.ts, pseudoscience.ts, source-reliability.ts, llm.ts, index.ts. Main analyzer.ts still exists but can now import from modules |
+
+### Updated Action List Status
+
+| Original Action | New Status | Notes |
+|-----------------|------------|-------|
+| Immediate: Make runner execution resilient | ✅ DONE | Retry with exponential backoff implemented |
+| Immediate: Add job-lifecycle test | ✅ DONE | Unit + integration tests added |
+| Immediate: Unify job status values | ✅ DONE | QUEUED standardized |
+| Soon: Surface Quality Gates | ✅ DONE | Gate stats in result JSON |
+| Soon: Modularize analyzer.ts | ⚠️ PARTIAL | Modules created, full migration pending |
+| Backlog: Add caching (separated architecture) | ⏳ DEFERRED | See assessment in `Separated_Architecture_Implementation_Guide.md` - recommend post-POC1 |
+
+### Files Modified/Created
+
+**New Files:**
+- `apps/web/src/lib/job-lifecycle.test.ts` - Job lifecycle tests
+- `apps/web/src/lib/analyzer/types.ts` - Type definitions
+- `apps/web/src/lib/analyzer/config.ts` - Configuration
+- `apps/web/src/lib/analyzer/quality-gates.ts` - Gate 1 & 4 implementation
+- `apps/web/src/lib/analyzer/truth-scale.ts` - Truth percentage calculations
+- `apps/web/src/lib/analyzer/pseudoscience.ts` - Pseudoscience detection
+- `apps/web/src/lib/analyzer/source-reliability.ts` - Source scoring
+- `apps/web/src/lib/analyzer/llm.ts` - LLM provider abstraction
+- `apps/web/src/lib/analyzer/index.ts` - Module re-exports
+
+**Modified Files:**
+- `apps/api/Services/RunnerClient.cs` - Added resilient retry logic
+- `apps/api/Controllers/AnalyzeController.cs` - Simplified to use new retry
+- `apps/api/Program.cs` - Configurable timeout from settings
+- `apps/api/appsettings.json` - Added Runner resilience settings
+- `apps/web/src/app/jobs/page.tsx` - Fixed PENDING → QUEUED
+- `apps/web/package.json` - Added test:jobs script
+- `apps/web/src/lib/analyzer.ts` - Added gate1Stats to ClaimUnderstanding and result JSON
+
+### Remaining High-Priority Items
+
+1. **Surface Quality Gates in UI** - Gate stats are in JSON but not displayed in report/UI
+2. **Complete analyzer modularization** - Main analyzer.ts needs to import from new modules
+3. **SSRF protections** - Still needed before public release
+4. **AuthN/AuthZ** - Still needed before public release
