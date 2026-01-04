@@ -4273,6 +4273,32 @@ async function generateReport(
         report += `---\n\n`;
       }
     }
+  } else {
+    // Article mode - show Article Verdict prominently
+    const verdictEmoji =
+      articleAnalysis.articleTruthPercentage >= 72
+        ? iconPositive
+        : articleAnalysis.articleTruthPercentage >= 43
+          ? iconNeutral
+          : iconNegative;
+
+    report += `### Article Verdict: ${verdictEmoji} ${articleAnalysis.articleVerdict} (${articleAnalysis.articleTruthPercentage}%)\n\n`;
+
+    if (articleAnalysis.articleVerdictReason) {
+      report += `> ${articleAnalysis.articleVerdictReason}\n\n`;
+    }
+
+    // Show if verdict differs from claims average
+    if (articleAnalysis.claimsAverageTruthPercentage &&
+        Math.abs(articleAnalysis.articleTruthPercentage - articleAnalysis.claimsAverageTruthPercentage) > 10) {
+      report += `${iconWarning} **Note:** Article verdict differs from claims average (${articleAnalysis.claimsAverageVerdict}, ${articleAnalysis.claimsAverageTruthPercentage}%)\n\n`;
+    }
+
+    if (articleAnalysis.articleThesis &&
+        articleAnalysis.articleThesis !== "<UNKNOWN>" &&
+        !articleAnalysis.articleThesis.toLowerCase().includes("unknown")) {
+      report += `**Implied Claim:** ${articleAnalysis.articleThesis}\n\n`;
+    }
   }
 
   // Claims

@@ -901,13 +901,6 @@ function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
 function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
   const color = ARTICLE_VERDICT_COLORS[articleAnalysis.articleVerdict] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
 
-  // Use fallback if thesis is unknown or empty
-  const thesis = (!articleAnalysis.articleThesis ||
-                  articleAnalysis.articleThesis === "<UNKNOWN>" ||
-                  articleAnalysis.articleThesis.toLowerCase().includes("unknown"))
-    ? (fallbackThesis || "—")
-    : articleAnalysis.articleThesis;
-
   const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis.isPseudoscience;
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis.pseudoscienceCategories || [];
 
@@ -916,9 +909,16 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
   const articlePct = articleAnalysis.articleTruthPercentage ?? articleAnalysis.truthPercentage;
   const verdictDiffers = claimsAvgPct && Math.abs(articlePct - claimsAvgPct) > 10;
 
+  // Get the verdict reason or generate a summary
+  const verdictReason = articleAnalysis.articleVerdictReason || articleAnalysis.verdictExplanation || "";
+
   return (
     <div className={styles.articleBanner} style={{ borderColor: color.border }}>
       <div className={styles.articleBannerContent}>
+        {/* ARTICLE VERDICT - Primary focus */}
+        <div className={styles.articleVerdictHeader}>
+          <span className={styles.articleVerdictLabel}>Article Verdict</span>
+        </div>
         <div className={styles.articleVerdictRow}>
           <span className={styles.articleVerdictBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(articleAnalysis.articleVerdict)}
@@ -930,7 +930,13 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
             </span>
           )}
         </div>
-        <div><b>Thesis:</b> {thesis}</div>
+
+        {/* Verdict Explanation */}
+        {verdictReason && (
+          <div className={styles.verdictReasonBox} style={{ borderLeftColor: color.border }}>
+            {verdictReason}
+          </div>
+        )}
 
         {/* Show claims average if it differs from article verdict */}
         {verdictDiffers && claimsAvgPct && (
@@ -938,11 +944,6 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
             <div className={styles.claimsAverageRow}>
               <span>📊 Claims average: <b>{articleAnalysis.claimsAverageVerdict}</b> ({claimsAvgPct}%)</span>
             </div>
-            {articleAnalysis.articleVerdictReason && (
-              <div className={styles.claimsAverageReason}>
-                {articleAnalysis.articleVerdictReason}
-              </div>
-            )}
           </div>
         )}
 
@@ -955,11 +956,6 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
               This content contains claims based on <b>{pseudoCategories.map((c: string) =>
                 c.replace(/([A-Z])/g, ' $1').trim().toLowerCase()
               ).join(", ")}</b> — concepts that contradict established scientific consensus.
-              {articleAnalysis.articleVerdictReason && (
-                <div className={styles.pseudoscienceWarningReason}>
-                  {articleAnalysis.articleVerdictReason}
-                </div>
-              )}
             </div>
           </div>
         )}

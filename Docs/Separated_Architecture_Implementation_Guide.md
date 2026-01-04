@@ -3,7 +3,7 @@
 **Document Version:** 1.0
 **Date:** 2026-01-02
 **Status:** Approved - Ready for Implementation
-**Reference:** FactHarbor.Roadmap.Architecture Analysis 1.Jan.26.WebHome
+**Reference:** FactHarbor Roadmap - Architecture Analysis (Jan 2026)
 
 ---
 
@@ -807,9 +807,9 @@ class TieredCacheService {
 
 ## References
 
-- Architecture Analysis Document: FactHarbor.Roadmap.Architecture Analysis 1.Jan.26.WebHome v2.6.17
-- POC1 Requirements: FactHarbor.Specification.POC.Requirements
-- AKEL Specification: FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL)
+- Architecture Analysis Document: FactHarbor Roadmap - Architecture Analysis (Jan 2026) v2.6.17
+- POC1 Requirements: FactHarbor Specification - POC Requirements
+- AKEL Specification: FactHarbor Specification - AI Knowledge Extraction Layer (AKEL)
 
 ---
 
