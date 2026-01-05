@@ -1,6 +1,8 @@
 # FactHarbor — POC1 (Next.js + .NET + SQLite)
 
-This repository is a minimal, runnable POC1 scaffold:
+> **[What is FactHarbor?](Docs/FactHarbor_OnePager.md)** — Vision, mission, and how it works.
+
+This repository currrently is a runnable POC scaffold:
 - **apps/api**: ASP.NET Core API (system of record: jobs, status, results, events)
 - **apps/web**: Next.js app (UI + AI orchestrator)
 

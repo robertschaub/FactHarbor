@@ -1849,7 +1849,7 @@ The articleThesis should NEUTRALLY SUMMARIZE what the article claims, covering A
 When extracting claims, identify their ROLE and DEPENDENCIES:
 
 ### Claim Roles:
-- **attribution**: WHO said it (person's identity, position, authority) - e.g., "Vinay Prasad is CBER director"
+- **attribution**: WHO said it (person's identity, role) - e.g., "Vinay Prasad is CBER director"
 - **source**: WHERE/HOW it was communicated (document type, channel) - e.g., "in an internal email"
 - **timing**: WHEN it happened - e.g., "in late November"
 - **core**: THE ACTUAL VERIFIABLE ASSERTION - MUST be isolated from source/attribution
@@ -2097,7 +2097,7 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 - **researchQuestions**: Generate specific questions to research, including:
   - Potential conflicts of interest for key decision-makers
   - Comparisons to similar cases or precedents
-  - Criticisms and rebuttals from credible sources`;
+  - Criticisms and rebuttals with documented evidence`;
 
   const userPrompt = `Analyze for fact-checking:\n\n"${input}"`;
 
@@ -3027,7 +3027,7 @@ ${proceedingsFormatted}
      * Process fairness (were proper procedures followed?)
      * Evidence basis (were decisions based on documented evidence?)
      * Decision-maker impartiality (were there any conflicts of interest?)
-     * Outcome proportionality (was the outcome proportionate to similar cases?)
+     * Outcome proportionality (was the outcome proportionate? Identify and analyze any significant consequences - compare to similar cases)
 
 2. KEY FACTOR SCORING RULES - VERY IMPORTANT:
    - supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge of widely-reported facts)
@@ -3042,12 +3042,19 @@ ${proceedingsFormatted}
    Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
 
 3. Mark contested factors:
-   - isContested: true if this claim is politically disputed
-   - contestedBy: Who disputes it
-   - factualBasis: "established" | "disputed" | "alleged" | "opinion" | "unknown"
+   - isContested: true if this factor is disputed
+   - contestedBy: Be SPECIFIC about who disputes it (e.g., "Bolsonaro supporters", "Trump administration")
+     * Do NOT use vague terms like "government supporters" - specify WHICH government/person
+   - factualBasis: Does the opposition have ACTUAL COUNTER-EVIDENCE?
+     * "established" = Opposition provides documented counter-evidence (data, documents, verifiable facts)
+     * "disputed" = Opposition has some counter-evidence but it's debatable
+     * "opinion" = Opposition has no counter-evidence (just claims, rhetoric, political statements, executive orders without factual basis)
+     * "unknown" = Cannot determine
 
-   Note: factualBasis describes the SOURCE of opposition, not the claim itself.
-   A claim can be "established" (you know it's true) even if contested by "opinion" or "alleged" claims.
+   CRITICAL: Who says something is IRRELEVANT. Only counter-evidence matters.
+   - Political statements, executive orders, or sanctions claiming something is "unfair" or "persecution" WITHOUT documented procedural violations = "opinion"
+   - Government decrees or executive orders are NOT counter-evidence unless they cite specific documented facts
+   - Providing documented counter-evidence (actual procedural violations, documented bias) = "established"
 
 4. Calibration: Neutral contested factors don't reduce verdicts
    - Positive factors with evidence + Neutral contested factors = YES, not PARTIALLY
@@ -3337,7 +3344,10 @@ Provide SEPARATE answers for each proceeding.`;
 
   // Calculate overall factorAnalysis
   const allFactors = correctedProceedingAnswers.flatMap((pa) => pa.keyFactors);
-  const hasContestedFactors = allFactors.some((f) => f.isContested);
+  // Only count as "contested" if there's actual counter-evidence (not just opinions)
+  const hasContestedFactors = allFactors.some(
+    (f) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
+  );
 
   // Build claim verdicts with 7-point calibration
   // v2.5.1: Apply correction based on proceeding-level factor analysis
@@ -3691,8 +3701,9 @@ ${factsFormatted}`;
   };
 
   const keyFactors = parsed.questionAnswer.keyFactors || [];
+  // Only count as "contested" if there's actual counter-evidence (not just opinions)
   const hasContestedFactors = keyFactors.some(
-    (kf: any) => kf.isContested,
+    (kf: any) => kf.isContested && (kf.factualBasis === "established" || kf.factualBasis === "disputed"),
   );
 
   // v2.5.1: Apply factor-based correction for single-proceeding questions

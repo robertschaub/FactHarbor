@@ -1,6 +1,42 @@
 # FactHarbor Source Reliability Bundle
 
+## Current Status: DISABLED
+
+> **Note**: The source bundle feature is currently **disabled** pending a reliable dynamic data source.
+>
+> **Why disabled?**
+> - The MBFC data sources (GitHub URLs) are not guaranteed to be stable or up-to-date
+> - No integrity verification (SHA-256 checksums) implemented yet
+> - Source credibility can change over time (e.g., a government source may lose credibility)
+> - Need a reliable, maintained API or dataset before enabling
+>
+> **For 1st release**: Source credibility scoring is not used. All sources are treated equally - only the evidence they provide matters, not who they are.
+
+---
+
+## Overview
+
 FactHarbor uses configurable source reliability scores to assess the credibility of sources during fact-checking. These scores come from [Media Bias/Fact Check (MBFC)](https://mediabiasfactcheck.com), a scientifically validated media bias database.
+
+## Design Principles
+
+### Evidence Over Authority
+
+**Important**: Source credibility is supplementary, not primary. The core principle is:
+
+- **Only evidence and counter-evidence matter** - not who says it
+- Authority or title (lawyer, government, expert) does NOT automatically give weight
+- Source credibility provides context but doesn't override factual analysis
+- A low-credibility source providing documented evidence should still be considered
+- A high-credibility source making claims without evidence should be questioned
+
+### Dynamic Credibility
+
+Source credibility is not static:
+- Organizations can gain or lose credibility over time
+- Political changes can affect government source reliability
+- Media outlets can change ownership, editorial standards, or bias
+- The bundle should be updated regularly to reflect current assessments
 
 ## Quick Start
 
@@ -37,8 +73,36 @@ echo FH_SOURCE_BUNDLE_PATH=./source-bundle.json >> apps\web\.env.local
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `FH_SOURCE_BUNDLE_PATH` | Path to source bundle JSON file | None (no scores) |
-| `RAPIDAPI_KEY` | RapidAPI key for MBFC loader | None |
+| `FH_SOURCE_BUNDLE_PATH` | Path to source bundle JSON file | None (disabled) |
+| `FH_SOURCE_BUNDLE_URLS` | Comma-separated URLs for dynamic fetch | None |
+| `FH_SOURCE_BUNDLE_FETCH` | Enable/disable URL fetching | `false` |
+| `FH_SOURCE_BUNDLE_SHA256` | SHA-256 checksum for integrity verification | None |
+| `FH_SOURCE_BUNDLE_MAX_SOURCES` | Max sources to include per analysis | `6` |
+| `FH_SOURCE_BUNDLE_EXCERPT_CHARS` | Max characters per source excerpt | `1200` |
+| `RAPIDAPI_KEY` | RapidAPI key for MBFC loader script | None |
+
+### .env.local Example (when enabled)
+
+```bash
+# Source bundle configuration (CURRENTLY DISABLED)
+# Uncomment when reliable data source is available
+
+# Path to local bundle file
+FH_SOURCE_BUNDLE_PATH=./source-bundle.json
+
+# Remote URLs for dynamic fetch (comma-separated, tried in order)
+# FH_SOURCE_BUNDLE_URLS=https://example.com/mbfc.json
+
+# Enable fetching from URLs (default: false)
+# FH_SOURCE_BUNDLE_FETCH=true
+
+# Optional: SHA-256 checksum for integrity verification
+# FH_SOURCE_BUNDLE_SHA256=abc123...
+
+# Optional: Limit sources per analysis
+# FH_SOURCE_BUNDLE_MAX_SOURCES=6
+# FH_SOURCE_BUNDLE_EXCERPT_CHARS=1200
+```
 
 ### Score Interpretation
 
@@ -112,6 +176,85 @@ npx ts-node apps\web\src\lib\mbfc-loader.ts ./source-bundle.json
 ```
 
 Consider scheduling this monthly to capture MBFC rating updates.
+
+## Source Code Reference
+
+The source reliability feature is implemented in the following files:
+
+### Types (`apps/web/src/lib/analyzer/types.ts`)
+
+```typescript
+// Source with reliability score
+interface FetchedSource {
+  id: string;
+  url: string;
+  title: string;
+  trackRecordScore: number | null;  // Reliability score (0-1), null if unknown
+  fullText: string;
+  fetchedAt: string;
+  category: string;
+  fetchSuccess: boolean;
+  searchQuery?: string;
+}
+```
+
+### Core Functions (`apps/web/src/lib/analyzer/source-reliability.ts`)
+
+| Function | Description |
+|----------|-------------|
+| `loadSourceBundle()` | Loads scores from `FH_SOURCE_BUNDLE_PATH` at startup |
+| `getTrackRecordScore(url)` | Returns score for a URL (or `null` if unknown) |
+| `applyEvidenceWeighting()` | Adjusts verdict confidence based on source scores |
+| `calculateOverallCredibility()` | Returns average score and credibility level for an analysis |
+
+### Bundle Loader (`apps/web/src/lib/mbfc-loader.ts`)
+
+TypeScript types for the bundle format:
+
+```typescript
+interface SourceBundle {
+  version: string;
+  generated: string;
+  sourceCount: number;
+  provider: string;
+  providerUrl: string;
+  sources: Record<string, number>;      // domain -> score (0-1)
+  metadata: Record<string, SourceMetadata>;
+}
+
+interface SourceMetadata {
+  name: string;
+  bias?: string;
+  factual?: string;
+  credibility?: string;
+  category?: string;
+  mbfcUrl?: string;
+}
+```
+
+## Future Work
+
+To enable this feature for production, the following needs to be resolved:
+
+### 1. Reliable Data Source
+- [ ] Evaluate MBFC RapidAPI for stability and update frequency
+- [ ] Consider alternative sources (NewsGuard, Ad Fontes Media)
+- [ ] Evaluate maintaining a curated FactHarbor-specific bundle
+
+### 2. Integrity Verification
+- [ ] Implement SHA-256 checksum verification for bundle files
+- [ ] Add signature verification for remote bundles
+- [ ] Version control for bundle updates
+
+### 3. Dynamic Updates
+- [ ] Scheduled refresh mechanism (monthly recommended)
+- [ ] Change detection and logging
+- [ ] Fallback handling if source becomes unavailable
+
+### 4. UI Integration
+- [ ] Show source credibility at claim level (not article level)
+- [ ] Display credibility context without implying authority = truth
+- [ ] Allow users to see why a source has a particular rating
 
 ## References
 

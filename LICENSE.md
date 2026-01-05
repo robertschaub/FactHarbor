@@ -1,0 +1,190 @@
+# License and Disclaimer
+
+## Overview
+
+FactHarbor is an **open-source nonprofit project** committed to transparency and accessibility. All resources are licensed under multiple open licenses to maximize reuse while protecting the project's transparency mission.
+
+**FactHarbor operates under a multi-license model:**
+
+- Documentation and specifications: CC BY-SA 4.0
+- Code: MIT (default) or AGPL-3.0 (core components)
+- Structured data: Open Database License (ODbL)
+
+## Licensing
+
+### Documentation
+
+All general **documentation** (organizational and technical) is licensed under:
+
+- **[Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)](http://creativecommons.org/licenses/by-sa/4.0/)**
+
+**You may:**
+- Use, share, and adapt the documentation (including commercially)
+
+**You must:**
+- Provide attribution to FactHarbor
+- Share derivative works under CC BY-SA 4.0
+
+**Exception:** Security-sensitive documentation may be published partially or kept internal.
+
+### Core Protocol & Data Model
+
+The **core protocol** and **data model** are licensed under:
+
+- **[Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)](http://creativecommons.org/licenses/by-sa/4.0/)**
+
+**You may:**
+- Use, implement, and modify the protocol/data model
+- Publish derivative specifications under CC BY-SA 4.0
+
+**You must:**
+- Attribute to FactHarbor
+- Use different branding (the "FactHarbor" name is trademark-protected)
+- State derivation from FactHarbor protocol
+- Share derivatives under CC BY-SA 4.0
+
+### Code
+
+**Default License:** **[MIT License](https://opensource.org/licenses/MIT)**
+
+**Core Components License:** **[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.en.html)** for:
+- Core verdict engine
+- AKEL reasoning logic
+- Scenario evaluation engine
+
+**Rationale:** AGPL-3.0 prevents black-box network services that contradict our transparency mission.
+
+### Structured Data
+
+Curated knowledge and datasets are licensed under:
+
+- **[Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/)**
+
+This ensures derivative databases remain open and prevents proprietary capture of community data.
+
+## Attribution
+
+When creating derivative works, attribute as follows:
+
+**Documentation/Specifications:**
+```
+This work, '[Your Work Name]', is a derivative of 'FactHarbor' by Robert Schaub
+and the FactHarbor community. Licensed under CC BY-SA 4.0 by [Your Name].
+```
+
+**Code (MIT):**
+```
+Based on FactHarbor by Robert Schaub and contributors
+Licensed under MIT License
+```
+
+**Code (AGPL):**
+```
+Based on FactHarbor Core Engine by Robert Schaub and contributors
+Licensed under GNU AGPL v3.0
+Source code available at: [repository URL]
+```
+
+**Databases (ODbL):**
+```
+Derived from FactHarbor data by Robert Schaub and the FactHarbor community.
+Licensed under ODbL by [Your Name].
+```
+
+## AI Models & Third-Party Components
+
+**AKEL (AI Knowledge Extraction Layer):**
+- Open-source models preferred
+- Proprietary models allowed but must be disclosed to users
+- AI-generated content marked with **AuthorType = AI**
+- Integration code remains open (MIT/AGPL)
+
+**Third-Party Libraries:**
+- Must be license-compatible with MIT/AGPL
+- Documented in LICENSE/NOTICE files
+
+## Organizational Transparency
+
+FactHarbor commits to publishing:
+
+**Annually:**
+- Financial statements
+- Income sources and expenses
+- Major funding relationships
+
+**Twice Yearly:**
+- Transparency reports
+- AKEL performance metrics
+- Content moderation statistics
+
+**Ongoing:**
+- Governance documents
+- Policy changes
+- Incident reports
+
+## Disclaimer
+
+### No Warranty
+
+FactHarbor is provided **"AS IS"** without warranty of any kind, including:
+- Merchantability
+- Fitness for purpose
+- Accuracy or completeness
+- Uninterrupted service
+
+### No Liability
+
+FactHarbor creators, contributors, and operators are **not liable** for:
+- Decisions made based on FactHarbor analyses
+- Errors, inaccuracies, or incompleteness
+- Any direct, indirect, incidental, or consequential damages
+
+### Educational Purpose Only
+
+FactHarbor analyses are for **educational and informational purposes**. They are not:
+- Professional advice (legal, medical, financial)
+- Definitive truth or final judgments
+- Replacements for independent verification
+
+**Users should:**
+- Verify information independently
+- Consult qualified professionals when appropriate
+- Apply critical thinking and judgment
+
+### Privacy
+
+User privacy is protected per applicable laws (Swiss FADP, EU GDPR).
+
+## Governing Law
+
+These terms are governed by **Swiss law** under Swiss jurisdiction.
+
+## Changes to Terms
+
+License terms may be updated with:
+- Clear versioning and documentation
+- Community announcement
+- Prospective application (existing content remains under original terms)
+
+## License Summary
+
+| **Content Type** | **License** | **Key Principle** |
+|---|---|---|
+| Documentation | CC BY-SA 4.0 | Share openly, attribute, share-alike |
+| Protocol & Data Model | CC BY-SA 4.0 | Open specs, trademark-protected brand |
+| Code (Default) | MIT | Maximum reuse |
+| Code (Core/AKEL) | AGPL-3.0 | Network transparency |
+| Structured Data | ODbL | Open data, share-alike |
+
+## Contact
+
+- **Project Website**: [https://factharbor.org](https://factharbor.org)
+- **Licensing Questions**: [To be established]
+
+---
+
+**© 2024-2025 by Robert Schaub and the FactHarbor Community**
+
+**FactHarbor** is a trademark. Use of the name and logo requires permission.
+
+**Core Values:** Non-profit | Open Source | Transparent | Accessible to All

@@ -71,26 +71,19 @@ FH_LLM_FALLBACKS=openai,anthropic,google,mistral
 
 If unset, the system tries the selected provider then falls back to the others in a default order.
 
-## Source Bundle (Retrieval Lite)
+## Source Bundle (DISABLED)
 
-To improve report quality without full web search, you can provide a curated list of sources that the analyzer will fetch and include in the prompt.
+> **Note**: The source bundle feature is currently disabled pending a reliable dynamic data source.
+> See `Docs/Source Reliability Bundle.md` for details and future plans.
 
-1) Create a JSON file based on `apps/web/test-config/source-bundle.example.json`
-2) Point the env var to it:
+When enabled, this feature provides source credibility scores from Media Bias/Fact Check (MBFC).
 
 ```env
-FH_SOURCE_BUNDLE_PATH=apps/web/test-config/source-bundle.example.json
-FH_SOURCE_BUNDLE_MAX_SOURCES=6
-FH_SOURCE_BUNDLE_EXCERPT_CHARS=1200
+# Currently disabled - uncomment when reliable source is available
+# FH_SOURCE_BUNDLE_PATH=./source-bundle.json
+# FH_SOURCE_BUNDLE_MAX_SOURCES=6
+# FH_SOURCE_BUNDLE_EXCERPT_CHARS=1200
 ```
-
-Sources are fetched using the existing SSRF-hardened fetcher. The analyzer will cite excerpts from these sources when generating evidence.
-
-Bundle fields:
-- `url` (required)
-- `title` (optional)
-- `sourceType` (optional): e.g. `NewsOutlet`, `AcademicJournal`, `GovernmentAgency`, `NGO`, `ThinkTank`, `Court`, `InternationalOrg`
-- `trackRecordScore` (optional, 0-100): general reliability hint per spec
 
 ## Web Search (SerpAPI or Google CSE)
 

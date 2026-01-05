@@ -238,6 +238,16 @@ export default function JobPage() {
   const sources = result?.sources || [];
   const researchStats = result?.researchStats;
 
+  // Determine if any contestations have actual counter-evidence (CONTESTED)
+  // Opinion-based contestations without evidence are not highlighted (almost anything can be doubted)
+  const allKeyFactors: any[] = [
+    ...(questionAnswer?.keyFactors || []),
+    ...(questionAnswer?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
+  ];
+  const hasEvidenceBasedContestations = allKeyFactors.some(
+    (f: any) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
+  );
+
   // Helper: Generate short name from title or input
   const getShortName = (): string => {
     // Try to get title from twoPanelSummary
@@ -378,7 +388,7 @@ export default function JobPage() {
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
               {isQuestion && <Badge bg="#e3f2fd" color="#1565c0">📝 QUESTION</Badge>}
               {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">⚖️ {proceedings.length} PROCEEDINGS</Badge>}
-              {hasContestedFactors && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
+              {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
               {result.meta.isPseudoscience && (
                 <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
                   🔬 PSEUDOSCIENCE
@@ -687,6 +697,16 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
 function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { questionAnswer: any; proceedings: any[] }) {
   const overallColor = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
 
+  // Determine if any contestations have actual counter-evidence (CONTESTED)
+  // Opinion-based contestations without evidence are not highlighted
+  const allKeyFactors: any[] = [
+    ...(questionAnswer?.keyFactors || []),
+    ...(questionAnswer?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
+  ];
+  const hasEvidenceBasedContestations = allKeyFactors.some(
+    (f: any) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
+  );
+
   return (
     <div className={styles.multiProceedingBanner}>
       <div className={styles.questionHeader}>
@@ -703,7 +723,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         <span className={styles.proceedingText}>
           {proceedings.length} distinct legal proceedings analyzed separately
         </span>
-        {questionAnswer.hasContestedFactors && (
+        {hasEvidenceBasedContestations && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
         )}
       </div>
@@ -812,15 +832,20 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
         {factors.length > 0 && (
           <div className={styles.factorsListSection}>
             <div className={styles.factorsListHeader}>Key Factors ({factors.length})</div>
-            {factors.map((f: any, i: number) => (
-              <div key={i} className={`${styles.factorItem} ${f.isContested ? styles.factorItemContested : styles.factorItemNormal}`}>
-                <span className={styles.factorIcon}>{f.supports === "yes" ? "✅" : f.supports === "no" ? "❌" : "➖"}</span>
-                <span className={styles.factorText}>
-                  {f.factor}
-                  {f.isContested && <span className={styles.contestedLabel}> ⚠️ CONTESTED</span>}
-                </span>
-              </div>
-            ))}
+            {factors.map((f: any, i: number) => {
+              // Only show CONTESTED label when opposition has actual counter-evidence
+              const hasEvidenceBasedContestation = f.isContested &&
+                (f.factualBasis === "established" || f.factualBasis === "disputed");
+              return (
+                <div key={i} className={`${styles.factorItem} ${hasEvidenceBasedContestation ? styles.factorItemContested : styles.factorItemNormal}`}>
+                  <span className={styles.factorIcon}>{f.supports === "yes" ? "✅" : f.supports === "no" ? "❌" : "➖"}</span>
+                  <span className={styles.factorText}>
+                    {f.factor}
+                    {hasEvidenceBasedContestation && <span className={styles.contestedLabel}> ⚠️ CONTESTED</span>}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -831,23 +856,25 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
 function KeyFactorRow({ factor }: { factor: any }) {
   const icon = factor.supports === "yes" ? "✅" : factor.supports === "no" ? "❌" : "➖";
 
+  // Only show CONTESTED when opposition has actual counter-evidence
+  // Opinion-based contestations without evidence are not highlighted (almost anything can be doubted)
+  const hasEvidenceBasedContestation = factor.isContested &&
+    (factor.factualBasis === "established" || factor.factualBasis === "disputed");
+
   return (
-    <div className={`${styles.keyFactorRow} ${factor.isContested ? styles.keyFactorRowContested : styles.keyFactorRowNormal}`}>
+    <div className={`${styles.keyFactorRow} ${hasEvidenceBasedContestation ? styles.keyFactorRowContested : styles.keyFactorRowNormal}`}>
       <span className={styles.keyFactorIcon}>{icon}</span>
       <div className={styles.keyFactorContent}>
         <div className={styles.keyFactorHeader}>
           <span className={styles.keyFactorTitle}>{factor.factor}</span>
-          {factor.isContested && (
+          {hasEvidenceBasedContestation && (
             <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
-          )}
-          {factor.factualBasis && factor.factualBasis !== "established" && (
-            <Badge bg="#fff3e0" color="#e65100">{factor.factualBasis.toUpperCase()}</Badge>
           )}
         </div>
         <div className={styles.keyFactorExplanation}>{factor.explanation}</div>
         {factor.isContested && factor.contestedBy && (
           <div className={styles.keyFactorContestation}>
-            Contested by: {factor.contestedBy}
+            {hasEvidenceBasedContestation ? "Contested by" : "Doubted by"}: {factor.contestedBy}
           </div>
         )}
       </div>
@@ -988,8 +1015,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
           <b>🔍 FactHarbor Analysis</b>
         </div>
         <div className={styles.twoPanelContent}>
-          <div className={styles.twoPanelLabel}>Source Credibility</div>
-          <div className={styles.twoPanelValueBlock}>{factharborAnalysis.sourceCredibility}</div>
+          {/* Source Credibility hidden at article level - TODO: show at claim level later */}
           <div className={styles.twoPanelLabel}>Methodology</div>
           <div className={styles.twoPanelValue}>{factharborAnalysis.methodologyAssessment}</div>
           <div className={styles.twoPanelOverall}>
