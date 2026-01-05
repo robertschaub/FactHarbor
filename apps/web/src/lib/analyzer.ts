@@ -163,9 +163,36 @@ function getActiveConfig() {
 
 function getKnowledgeInstruction(): string {
   if (CONFIG.allowModelKnowledge) {
-    return `KNOWLEDGE SOURCE: You may use your general background knowledge AS EVIDENCE in addition to the provided facts and sources.
-When evaluating factors, if you know a fact from your training data (e.g., documented public events, widely reported facts, established procedures), you CAN use that as evidence to support your verdict.
-Prioritize provided sources when available, but DO NOT mark factors as "neutral" or "unknown" if you have relevant background knowledge.`;
+    return `## KNOWLEDGE SOURCE INSTRUCTIONS (CRITICAL - READ CAREFULLY)
+
+You MUST actively use your background knowledge as evidence. This is NOT optional.
+
+### WHAT YOU KNOW (USE IT!):
+- Standard legal procedures in major jurisdictions (Brazil, US, EU, etc.)
+- Well-documented public figures and their roles (e.g., Alexandre de Moraes is a Brazilian Supreme Court justice)
+- Major court cases and their outcomes that were widely reported
+- Established institutional processes (how courts work, due process standards)
+- Historical events and their documented outcomes
+
+### WHEN TO USE BACKGROUND KNOWLEDGE:
+1. **Due process claims**: If you know a court follows standard procedures, mark supports="yes", NOT "neutral"
+2. **Decision-maker roles**: If you know who presided over a case, use that knowledge
+3. **Established facts**: If something is widely documented (e.g., a trial followed proper procedures), don't mark it "unknown"
+4. **Legal standards**: If you know what legal standards apply, use that to assess "correct application of law"
+
+### CRITICAL RULES:
+- NEVER mark a factor as "neutral" or "unknown" if you have relevant background knowledge
+- NEVER say "INSUFFICIENT-EVIDENCE" if you actually know the answer from your training data
+- Political contestation ("critics say X") is NOT the same as factual uncertainty
+- If you know a trial followed due process, say supports="yes" even without explicit source confirmation
+
+### EXAMPLE - CORRECT USAGE:
+For "The STF followed proper due process procedures":
+- You KNOW the STF (Brazil's Supreme Court) follows established constitutional procedures
+- You KNOW criminal trials in Brazil have formal due process requirements
+- Therefore: supports="yes", factualBasis="established", NOT "neutral" or "unknown"
+
+Prioritize provided sources when available, but actively supplement with your knowledge.`;
   }
   return "Use ONLY the provided facts and sources. If information is missing, say INSUFFICIENT-EVIDENCE. Do not add facts not present in the sources.";
 }
@@ -1338,6 +1365,12 @@ type InputType = "question" | "claim" | "article";
 type QuestionIntent = "verification" | "exploration" | "comparison" | "none";
 type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown";
 
+interface DecisionMaker {
+  name: string;
+  role: string;
+  affiliation: string;
+}
+
 interface DistinctProceeding {
   id: string;
   name: string;
@@ -1349,6 +1382,8 @@ interface DistinctProceeding {
   charges: string[];
   outcome: string;
   status: "concluded" | "ongoing" | "pending" | "unknown";
+  // NEW: Track decision-makers for conflict detection
+  decisionMakers: DecisionMaker[];
 }
 
 interface KeyFactor {
@@ -1408,6 +1443,10 @@ interface ResearchState {
   searchQueries: SearchQuery[];
   // NEW v2.6.6: Track LLM calls
   llmCalls: number;
+  // NEW v2.6.18: Track which research questions have been searched
+  researchQuestionsSearched: Set<number>;
+  // NEW v2.6.18: Track if decision-maker search was performed
+  decisionMakerSearchPerformed: boolean;
 }
 
 interface ClaimUnderstanding {
@@ -1747,6 +1786,14 @@ const UNDERSTANDING_SCHEMA = z.object({
       charges: z.array(z.string()), // empty array if none
       outcome: z.string(), // "pending" or "unknown" if not known
       status: z.enum(["concluded", "ongoing", "pending", "unknown"]),
+      // NEW: Track key decision-makers for conflict detection
+      decisionMakers: z.array(
+        z.object({
+          name: z.string(), // e.g., "Alexandre de Moraes"
+          role: z.string(), // e.g., "presiding judge", "rapporteur", "prosecutor"
+          affiliation: z.string(), // e.g., "TSE", "STF"
+        }),
+      ),
     }),
   ),
   requiresSeparateAnalysis: z.boolean(),
@@ -2009,12 +2056,19 @@ Look for multiple court cases, temporal distinctions, or different proceedings.
    - Subject: Abuse of political power and media misuse
    - Outcome: 8-year ineligibility
    - Status: concluded
+   - decisionMakers: [{ name: "Alexandre de Moraes", role: "presiding judge", affiliation: "TSE" }]
 
 2. **STF-2025**: STF Criminal Trial for Coup Attempt
    - Court: Supreme Federal Court (STF)
    - Date: 2024-2025
    - Subject: Attempted coup d'état
    - Status: concluded
+   - decisionMakers: [{ name: "Alexandre de Moraes", role: "rapporteur", affiliation: "STF" }]
+
+**CRITICAL: decisionMakers field is REQUIRED for each proceeding!**
+- Extract ALL key decision-makers (judges, prosecutors, rapporteurs) mentioned or known
+- Use your background knowledge to fill in known decision-makers for well-documented trials
+- This enables cross-proceeding conflict of interest detection
 
 Set requiresSeparateAnalysis = true when multiple proceedings detected.
 
@@ -2379,6 +2433,56 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         `${entityStr} controversy disputed unfair`,
       ],
     };
+  }
+
+  // NEW v2.6.18: Search for decision-makers and potential conflicts of interest
+  if (!state.decisionMakerSearchPerformed && proceedings.length > 0) {
+    // Extract decision-maker names from all proceedings
+    const decisionMakerNames = proceedings
+      .flatMap((p: DistinctProceeding) => p.decisionMakers?.map(dm => dm.name) || [])
+      .filter((name, index, arr) => arr.indexOf(name) === index); // unique names
+
+    if (decisionMakerNames.length > 0) {
+      return {
+        complete: false,
+        focus: "Decision-maker conflicts of interest",
+        category: "conflict_of_interest",
+        queries: [
+          `${decisionMakerNames[0]} conflict of interest ${entityStr}`,
+          `${decisionMakerNames[0]} impartiality bias ${proceedings[0]?.court || ""}`,
+          ...(decisionMakerNames.length > 1 ? [`${decisionMakerNames.slice(0, 2).join(" ")} role multiple trials`] : []),
+        ],
+      };
+    }
+  }
+
+  // NEW v2.6.18: Use generated research questions for additional searches
+  const researchQuestions = understanding.researchQuestions || [];
+  const nextQuestionIdx = Array.from({ length: researchQuestions.length }, (_, i) => i)
+    .find(i => !state.researchQuestionsSearched.has(i));
+
+  if (nextQuestionIdx !== undefined && state.iterations.length < config.maxResearchIterations) {
+    const question = researchQuestions[nextQuestionIdx];
+    // Convert research question to search query by extracting key terms
+    const queryTerms = question
+      .toLowerCase()
+      .replace(/[?.,!]/g, "")
+      .split(/\s+/)
+      .filter(word => word.length > 3 && !stopWords.has(word))
+      .slice(0, 6)
+      .join(" ");
+
+    if (queryTerms.trim()) {
+      return {
+        complete: false,
+        focus: `Research: ${question.slice(0, 50)}...`,
+        category: "research_question",
+        queries: [
+          queryTerms,
+          `${entityStr} ${queryTerms.split(" ").slice(0, 3).join(" ")}`,
+        ],
+      };
+    }
   }
 
   return { complete: true };
@@ -4447,6 +4551,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     contradictionSourcesFound: 0,
     searchQueries: [], // NEW v2.4.3
     llmCalls: 0, // NEW v2.6.6
+    researchQuestionsSearched: new Set(), // NEW v2.6.18
+    decisionMakerSearchPerformed: false, // NEW v2.6.18
   };
 
   // Handle URL
@@ -4561,6 +4667,23 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     if (decision.isContradictionSearch)
       state.contradictionSearchPerformed = true;
+
+    // NEW v2.6.18: Track decision-maker and research question searches
+    if (decision.category === "conflict_of_interest")
+      state.decisionMakerSearchPerformed = true;
+    if (decision.category === "research_question") {
+      // Mark all matching research questions as searched
+      const researchQuestions = state.understanding?.researchQuestions || [];
+      researchQuestions.forEach((q, idx) => {
+        if (decision.focus?.includes(q.slice(0, 30))) {
+          state.researchQuestionsSearched.add(idx);
+        }
+      });
+      // Also just mark the next one as searched to avoid infinite loops
+      const nextIdx = Array.from({ length: researchQuestions.length }, (_, i) => i)
+        .find(i => !state.researchQuestionsSearched.has(i));
+      if (nextIdx !== undefined) state.researchQuestionsSearched.add(nextIdx);
+    }
 
     // Check if search is enabled
     if (!CONFIG.searchEnabled) {
