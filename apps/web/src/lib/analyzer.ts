@@ -163,7 +163,9 @@ function getActiveConfig() {
 
 function getKnowledgeInstruction(): string {
   if (CONFIG.allowModelKnowledge) {
-    return "You may use general background knowledge, but prioritize the provided facts and sources.";
+    return `KNOWLEDGE SOURCE: You may use your general background knowledge AS EVIDENCE in addition to the provided facts and sources.
+When evaluating factors, if you know a fact from your training data (e.g., documented public events, widely reported facts, established procedures), you CAN use that as evidence to support your verdict.
+Prioritize provided sources when available, but DO NOT mark factors as "neutral" or "unknown" if you have relevant background knowledge.`;
   }
   return "Use ONLY the provided facts and sources. If information is missing, say INSUFFICIENT-EVIDENCE. Do not add facts not present in the sources.";
 }
@@ -1057,7 +1059,11 @@ function calculateTruthPercentage(
   llmVerdict: string,
   llmConfidence: number,
 ): number {
-  const conf = Math.max(0, Math.min(100, llmConfidence)) / 100;
+  // Normalize: if LLM returned decimal (0-1), convert to percentage (0-100)
+  const normalizedConfidence = llmConfidence <= 1 && llmConfidence > 0
+    ? llmConfidence * 100
+    : llmConfidence;
+  const conf = Math.max(0, Math.min(100, normalizedConfidence)) / 100;
 
   switch (llmVerdict) {
     case "WELL-SUPPORTED":
@@ -1089,7 +1095,11 @@ function calculateQuestionTruthPercentage(
   llmAnswer: string,
   llmConfidence: number,
 ): number {
-  const conf = Math.max(0, Math.min(100, llmConfidence)) / 100;
+  // Normalize: if LLM returned decimal (0-1), convert to percentage (0-100)
+  const normalizedConfidence = llmConfidence <= 1 && llmConfidence > 0
+    ? llmConfidence * 100
+    : llmConfidence;
+  const conf = Math.max(0, Math.min(100, normalizedConfidence)) / 100;
 
   switch (llmAnswer) {
     case "YES":
@@ -2916,36 +2926,38 @@ ${proceedingsFormatted}
      * Outcome proportionality (was the outcome proportionate to similar cases?)
 
 2. KEY FACTOR SCORING RULES - VERY IMPORTANT:
-   - supports="yes": Factor supports the claim WITH documented evidence
-   - supports="no": Factor refutes the claim WITH documented counter-evidence (NOT just disputed/contested)
-   - supports="neutral": Use when:
-     * No clear evidence either way
-     * The factor is disputed/contested WITHOUT substantive counter-evidence
-     * Political opposition claims without documented proof
+   - supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge of widely-reported facts)
+   - supports="no": Factor refutes the claim with counter-evidence (NOT just disputed/contested)
+   - supports="neutral": Use ONLY when you genuinely have no information about this factor
 
-   CRITICAL: Being "contested" or "disputed" WITHOUT actual counter-evidence = supports="neutral", NOT supports="no"
-   Example: "Critics claim X was unfair" without documented violations = neutral, not "no"
+   ${CONFIG.allowModelKnowledge ? `IMPORTANT: You MUST use your background knowledge! For well-known public events, established legal procedures, and widely-reported facts, you ALREADY KNOW the relevant information - use it!
+   DO NOT mark factors as "neutral" if you know the answer from your training data.
+   Example: If you know a trial followed standard procedures, mark it "yes" even if sources don't explicitly state it.` : "Use ONLY the provided facts and sources."}
+
+   CRITICAL: Being "contested" or "disputed" by political opponents = supports="yes" (if facts support it), NOT "neutral"
+   Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
 
 3. Mark contested factors:
    - isContested: true if this claim is politically disputed
    - contestedBy: Who disputes it
    - factualBasis: "established" | "disputed" | "alleged" | "opinion" | "unknown"
 
-   If factualBasis is "opinion" or "alleged", supports should almost always be "neutral"
+   Note: factualBasis describes the SOURCE of opposition, not the claim itself.
+   A claim can be "established" (you know it's true) even if contested by "opinion" or "alleged" claims.
 
 4. Calibration: Neutral contested factors don't reduce verdicts
    - Positive factors with evidence + Neutral contested factors = YES, not PARTIALLY
    - Only actual negative factors with documented evidence can reduce verdict
 
 5. CLAIM VERDICT RULES (for claimVerdicts array):
-   - WELL-SUPPORTED: Use when there IS documented evidence supporting the claim AND no documented counter-evidence
-     * Example: "Proper procedures were followed" - if records show procedures were followed and no documented violations exist, this is WELL-SUPPORTED, not UNCERTAIN
+   - WELL-SUPPORTED: Use when evidence supports the claim AND no actual counter-evidence exists
+     * Example: "Proper procedures were followed" - if you know procedures were followed and no documented violations exist, this is WELL-SUPPORTED, not UNCERTAIN
    - PARTIALLY-SUPPORTED: Mix of supporting and refuting evidence
-   - UNCERTAIN: Only when there genuinely is NO evidence either way (rare for proceedings with public records)
-   - REFUTED: Documented evidence contradicts the claim
+   - UNCERTAIN: Only when you genuinely have NO information either way (extremely rare - you usually know something!)
+   - REFUTED: Actual evidence contradicts the claim
 
    CRITICAL: Political contestation ("critics say it was unfair") is NOT the same as counter-evidence.
-   A claim with documented evidence + only political opposition = WELL-SUPPORTED, not UNCERTAIN.
+   Use WELL-SUPPORTED, not UNCERTAIN, if you know the facts support the claim despite political opposition.
 
 ${getKnowledgeInstruction()}`;
 
@@ -3137,7 +3149,10 @@ Provide SEPARATE answers for each proceeding.`;
 
     // Apply calibration correction based on factors
     let llmAnswer = pa.answer;
-    let correctedConfidence = pa.confidence;
+    // Normalize confidence: if LLM returned decimal (0-1), convert to percentage (0-100)
+    let correctedConfidence = pa.confidence <= 1 && pa.confidence > 0
+      ? Math.round(pa.confidence * 100)
+      : pa.confidence;
 
     // v2.5.1: Only evidenced negatives count at full weight
     // Contested negatives without established basis count at 25%
@@ -3377,32 +3392,30 @@ async function generateQuestionVerdicts(
 - NEVER use just a verdict word like "YES" or "PARTIALLY" as the shortAnswer
 
 ## KEY FACTOR SCORING RULES - VERY IMPORTANT:
-- supports="yes": Factor supports the claim WITH documented evidence
-- supports="no": Factor refutes the claim WITH documented counter-evidence (NOT just disputed/contested)
-- supports="neutral": Use when:
-  * No clear evidence either way
-  * The factor is disputed/contested WITHOUT substantive counter-evidence
-  * Political opposition claims without documented proof
+- supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge)
+- supports="no": Factor refutes the claim with counter-evidence (NOT just disputed/contested)
+- supports="neutral": Use ONLY when you genuinely have no information about this factor
 
-CRITICAL: Being "contested" or "disputed" WITHOUT actual counter-evidence = supports="neutral", NOT supports="no"
-Example: "Critics claim X was unfair" without documented violations = neutral, not "no"
+${CONFIG.allowModelKnowledge ? `IMPORTANT: You MUST use your background knowledge! For well-known public events and widely-reported facts, use what you know!
+DO NOT mark factors as "neutral" if you know the answer from your training data.` : "Use ONLY the provided facts and sources."}
+
+CRITICAL: Being "contested" by political opponents does NOT make something neutral.
+Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
 
 ## Mark contested factors:
 - isContested: true if this claim is politically disputed
 - contestedBy: Who disputes it (empty string if not contested)
 - factualBasis: "established" | "disputed" | "alleged" | "opinion" | "unknown"
 
-If factualBasis is "opinion" or "alleged", supports should almost always be "neutral"
-
 ## CLAIM VERDICT RULES:
-- WELL-SUPPORTED: There IS documented evidence supporting the claim AND no documented counter-evidence
-  * Example: "Proper procedures were followed" - if records show procedures were followed and no violations documented = WELL-SUPPORTED
+- WELL-SUPPORTED: Evidence supports the claim AND no actual counter-evidence exists
+  * Example: "Proper procedures were followed" - if you know procedures were followed = WELL-SUPPORTED
 - PARTIALLY-SUPPORTED: Mix of supporting and refuting evidence
-- UNCERTAIN: Only when genuinely NO evidence either way (rare for proceedings with public records)
-- REFUTED: Documented evidence contradicts the claim
+- UNCERTAIN: Only when you genuinely have NO information either way (extremely rare!)
+- REFUTED: Actual evidence contradicts the claim
 
-CRITICAL: Political contestation ("critics say unfair") is NOT counter-evidence.
-Documented evidence + only political opposition = WELL-SUPPORTED, not UNCERTAIN.
+CRITICAL: Political contestation is NOT counter-evidence.
+Use WELL-SUPPORTED if you know the facts support the claim despite political opposition.
 
 ${getKnowledgeInstruction()}`;
 
@@ -3588,7 +3601,10 @@ ${factsFormatted}`;
   ).length;
 
   let correctedLlmAnswer = parsed.questionAnswer.answer;
-  let correctedConfidence = parsed.questionAnswer.confidence;
+  // Normalize confidence: if LLM returned decimal (0-1), convert to percentage (0-100)
+  let correctedConfidence = parsed.questionAnswer.confidence <= 1 && parsed.questionAnswer.confidence > 0
+    ? Math.round(parsed.questionAnswer.confidence * 100)
+    : parsed.questionAnswer.confidence;
 
   // If there are positive factors and NO evidenced negatives, should lean YES
   if (positiveFactors > 0 && evidencedNegatives === 0) {
@@ -3614,7 +3630,7 @@ ${factsFormatted}`;
     question: understanding.questionBeingAsked || state.originalInput,
     llmAnswer: parsed.questionAnswer.answer,
     answer: calibratedAnswer,
-    confidence: parsed.questionAnswer.confidence,
+    confidence: correctedConfidence,
     truthPercentage: answerTruthPct,
     shortAnswer: parsed.questionAnswer.shortAnswer || "",
     nuancedAnswer: parsed.questionAnswer.nuancedAnswer || "",
