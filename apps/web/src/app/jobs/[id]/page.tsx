@@ -768,12 +768,13 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         </div>
       )}
 
-      {questionAnswer.keyFactors?.length > 0 && (
+      {/* Show overall key factors only when there are NO per-proceeding answers (single question without proceedings) */}
+      {(!questionAnswer.proceedingAnswers || questionAnswer.proceedingAnswers.length === 0) && questionAnswer.keyFactors?.length > 0 && (
         <div className={styles.keyFactorsSection}>
-          <div className={styles.keyFactorsHeader}>Overall Key Factors</div>
+          <div className={styles.keyFactorsHeader}>Key Factors</div>
           <div className={styles.keyFactorsList}>
             {questionAnswer.keyFactors.map((factor: any, i: number) => (
-              <KeyFactorRow key={i} factor={factor} />
+              <KeyFactorRow key={i} factor={factor} showContestation={true} />
             ))}
           </div>
         </div>
@@ -839,10 +840,17 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
               return (
                 <div key={i} className={`${styles.factorItem} ${hasEvidenceBasedContestation ? styles.factorItemContested : styles.factorItemNormal}`}>
                   <span className={styles.factorIcon}>{f.supports === "yes" ? "✅" : f.supports === "no" ? "❌" : "➖"}</span>
-                  <span className={styles.factorText}>
-                    {f.factor}
-                    {hasEvidenceBasedContestation && <span className={styles.contestedLabel}> ⚠️ CONTESTED</span>}
-                  </span>
+                  <div className={styles.factorTextWrapper}>
+                    <span className={styles.factorText}>
+                      {f.factor}
+                      {hasEvidenceBasedContestation && <span className={styles.contestedLabel}> ⚠️ CONTESTED</span>}
+                    </span>
+                    {f.isContested && f.contestedBy && (
+                      <span className={styles.factorContestation}>
+                        {hasEvidenceBasedContestation ? "Contested by" : "Doubted by"}: {f.contestedBy}
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -853,12 +861,12 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
   );
 }
 
-function KeyFactorRow({ factor }: { factor: any }) {
+function KeyFactorRow({ factor, showContestation = true }: { factor: any; showContestation?: boolean }) {
   const icon = factor.supports === "yes" ? "✅" : factor.supports === "no" ? "❌" : "➖";
 
   // Only show CONTESTED when opposition has actual counter-evidence
   // Opinion-based contestations without evidence are not highlighted (almost anything can be doubted)
-  const hasEvidenceBasedContestation = factor.isContested &&
+  const hasEvidenceBasedContestation = showContestation && factor.isContested &&
     (factor.factualBasis === "established" || factor.factualBasis === "disputed");
 
   return (
@@ -872,7 +880,7 @@ function KeyFactorRow({ factor }: { factor: any }) {
           )}
         </div>
         <div className={styles.keyFactorExplanation}>{factor.explanation}</div>
-        {factor.isContested && factor.contestedBy && (
+        {showContestation && factor.isContested && factor.contestedBy && (
           <div className={styles.keyFactorContestation}>
             {hasEvidenceBasedContestation ? "Contested by" : "Doubted by"}: {factor.contestedBy}
           </div>
@@ -1005,7 +1013,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
         <div className={styles.twoPanelContent}>
           <div className={styles.twoPanelLabel}>Title</div>
           <div className={styles.twoPanelValue}>{decodeHtmlEntities(articleSummary.title)}</div>
-          <div className={styles.twoPanelLabel}>Implied Claim</div>
+          <div className={styles.twoPanelLabel}>{isQuestion ? "Implied Claim" : "Main Thesis"}</div>
           <div className={styles.twoPanelValue}>{decodeHtmlEntities(articleSummary.mainArgument)}</div>
         </div>
       </div>
@@ -1061,20 +1069,32 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
 function ClaimCard({ claim }: { claim: any }) {
   const color = CLAIM_VERDICT_COLORS[claim.verdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
+  // Only show CONTESTED label when opposition has actual counter-evidence
+  const hasEvidenceBasedContestation = claim.isContested &&
+    (claim.factualBasis === "established" || claim.factualBasis === "disputed");
+
   return (
-    <div className={styles.claimCard} style={{ borderLeftColor: color.border }}>
+    <div className={`${styles.claimCard} ${hasEvidenceBasedContestation ? styles.claimCardContested : ""}`} style={{ borderLeftColor: color.border }}>
       <div className={styles.claimCardHeader}>
         <span className={styles.claimId}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         <Badge bg={color.bg} color={color.text}>
           {color.icon} {getVerdictLabel(claim.verdict)} ({claim.truthPercentage ?? claim.confidence}%)
         </Badge>
+        {hasEvidenceBasedContestation && (
+          <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
+        )}
         {claim.isPseudoscience && (
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>
         )}
       </div>
       <div className={styles.claimText}>"{claim.claimText}"</div>
       <div className={styles.claimReasoning}>{claim.reasoning}</div>
+      {claim.isContested && claim.contestedBy && (
+        <div className={styles.claimContestation}>
+          {hasEvidenceBasedContestation ? "Contested by" : "Doubted by"}: {claim.contestedBy}
+        </div>
+      )}
       {claim.escalationReason && (
         <div className={styles.claimEscalation}>
           ⚠️ {claim.escalationReason}

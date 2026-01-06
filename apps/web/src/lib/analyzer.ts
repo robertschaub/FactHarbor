@@ -190,7 +190,7 @@ You MUST actively use your background knowledge as evidence. This is NOT optiona
 For "The STF followed proper due process procedures":
 - You KNOW the STF (Brazil's Supreme Court) follows established constitutional procedures
 - You KNOW criminal trials in Brazil have formal due process requirements
-- Therefore: supports="yes", factualBasis="established", NOT "neutral" or "unknown"
+- Therefore: This claim is WELL-SUPPORTED, NOT "uncertain" or "unknown"
 
 Prioritize provided sources when available, but actively supplement with your knowledge.`;
   }
@@ -2891,6 +2891,10 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
       riskTier: z.enum(["A", "B", "C"]),
       reasoning: z.string(),
       supportingFactIds: z.array(z.string()),
+      // Contestation fields
+      isContested: z.boolean(),
+      contestedBy: z.string(), // empty string if not contested
+      factualBasis: z.enum(["established", "disputed", "alleged", "opinion", "unknown"]),
     }),
   ),
   articleAnalysis: z.object({
@@ -3045,16 +3049,22 @@ ${proceedingsFormatted}
    - isContested: true if this factor is disputed
    - contestedBy: Be SPECIFIC about who disputes it (e.g., "Bolsonaro supporters", "Trump administration")
      * Do NOT use vague terms like "government supporters" - specify WHICH government/person
-   - factualBasis: Does the opposition have ACTUAL COUNTER-EVIDENCE?
-     * "established" = Opposition provides documented counter-evidence (data, documents, verifiable facts)
-     * "disputed" = Opposition has some counter-evidence but it's debatable
-     * "opinion" = Opposition has no counter-evidence (just claims, rhetoric, political statements, executive orders without factual basis)
+   - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
+     * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., court transcripts showing bias, leaked documents proving misconduct)
+     * "disputed" = Opposition has some factual counter-evidence but it's debatable
+     * "opinion" = Opposition has NO factual counter-evidence - just claims, rhetoric, political actions
      * "unknown" = Cannot determine
 
-   CRITICAL: Who says something is IRRELEVANT. Only counter-evidence matters.
-   - Political statements, executive orders, or sanctions claiming something is "unfair" or "persecution" WITHOUT documented procedural violations = "opinion"
-   - Government decrees or executive orders are NOT counter-evidence unless they cite specific documented facts
-   - Providing documented counter-evidence (actual procedural violations, documented bias) = "established"
+   CRITICAL - factualBasis MUST be "opinion" for ALL of these:
+   - Executive orders, sanctions, or government decrees (political ACTIONS, not evidence)
+   - Statements by supporters, politicians, officials, or civil society groups (claims are not evidence)
+   - Calling something "unfair", "persecution", or "political" without citing specific documented violations
+   - Diplomatic protests, travel bans, or other political responses
+
+   factualBasis can ONLY be "established" or "disputed" when opposition provides:
+   - Specific court documents, transcripts, or records showing actual procedural violations
+   - Verifiable data or documents contradicting the findings
+   - Documented evidence of specific errors, bias, or misconduct (not just allegations)
 
 4. Calibration: Neutral contested factors don't reduce verdicts
    - Positive factors with evidence + Neutral contested factors = YES, not PARTIALLY
@@ -3146,6 +3156,9 @@ Provide SEPARATE answers for each proceeding.`;
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
         highlightColor: getHighlightColor7Point("UNVERIFIED"),
+        isContested: false,
+        contestedBy: "",
+        factualBasis: "unknown" as const,
       }),
     );
 
@@ -3519,7 +3532,16 @@ Example: "Critics claim X was unfair" but X followed proper procedures = "yes", 
 ## Mark contested factors:
 - isContested: true if this claim is politically disputed
 - contestedBy: Who disputes it (empty string if not contested)
-- factualBasis: "established" | "disputed" | "alleged" | "opinion" | "unknown"
+- factualBasis: Does opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
+  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (court records, leaked documents)
+  * "disputed" = Opposition has some factual counter-evidence but debatable
+  * "opinion" = NO factual counter-evidence (just claims, political statements, executive orders)
+  * "unknown" = Cannot determine
+
+CRITICAL - factualBasis MUST be "opinion" for:
+- Executive orders, sanctions, government decrees (political actions, not evidence)
+- Statements by supporters, politicians, officials (claims are not evidence)
+- Calling something "unfair" or "persecution" without documented violations
 
 ## CLAIM VERDICT RULES:
 - WELL-SUPPORTED: Evidence supports the claim AND no actual counter-evidence exists
@@ -3586,6 +3608,9 @@ ${factsFormatted}`;
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
         highlightColor: getHighlightColor7Point("UNVERIFIED"),
+        isContested: false,
+        contestedBy: "",
+        factualBasis: "unknown" as const,
       }),
     );
 
@@ -3817,6 +3842,20 @@ async function generateClaimVerdicts(
 
 For pseudoscience claims that lack scientific basis but can't be proven absolutely false, use REFUTED, not FALSE.
 
+## CLAIM CONTESTATION (for each claim):
+- isContested: true if this claim is politically disputed or challenged
+- contestedBy: Who disputes it (e.g., "climate skeptics", "vaccine opponents") - empty string if not contested
+- factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
+  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (studies, data, records)
+  * "disputed" = Opposition has some factual counter-evidence but debatable
+  * "opinion" = NO factual counter-evidence (just claims, political statements)
+  * "unknown" = Cannot determine
+
+CRITICAL - factualBasis MUST be "opinion" for:
+- Political statements or rhetoric without documented evidence
+- Ideological objections without factual basis
+- "Some people say" or "critics claim" without specific counter-evidence
+
 ## ARTICLE VERDICT ANALYSIS (CRITICAL - Article Verdict Problem)
 
 The article's overall credibility is NOT simply the average of individual claim verdicts!
@@ -3909,6 +3948,9 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
           startOffset: claim.startOffset,
           endOffset: claim.endOffset,
           highlightColor: getHighlightColor7Point(calibratedVerdict),
+          isContested: false,
+          contestedBy: "",
+          factualBasis: "unknown" as const,
         };
       },
     );
@@ -4212,18 +4254,27 @@ async function generateTwoPanelSummary(
     title += ` (${understanding.distinctProceedings.length} proceedings)`;
   }
 
+  // Get the implied claim, filtering out placeholder values
+  const impliedClaim = understanding.impliedClaim || understanding.articleThesis;
+  const isValidImpliedClaim = impliedClaim &&
+    !impliedClaim.toLowerCase().includes("unknown") &&
+    impliedClaim !== "<UNKNOWN>" &&
+    impliedClaim.length > 10;
+
   const articleSummary = {
     title,
     source:
       state.inputType === "url" ? state.originalInput : "User-provided text",
-    mainArgument: `Implied claim: ${understanding.impliedClaim || understanding.articleThesis}`,
+    mainArgument: isValidImpliedClaim
+      ? impliedClaim
+      : (understanding.subClaims[0]?.text || "Analysis of provided content"),
     keyFindings: understanding.subClaims.slice(0, 4).map((c: any) => c.text),
     reasoning: hasMultipleProceedings
       ? `Covers ${understanding.distinctProceedings.length} proceedings: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.shortName).join(", ")}`
       : `Examined ${understanding.subClaims.length} claims`,
     conclusion:
       articleAnalysis.questionAnswer?.shortAnswer ||
-      understanding.articleThesis,
+      (isValidImpliedClaim ? impliedClaim : understanding.subClaims[0]?.text || "See claims analysis"),
   };
 
   const analysisId = `FH-${Date.now().toString(36).toUpperCase()}`;
