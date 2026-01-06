@@ -1518,6 +1518,7 @@ interface ClaimUnderstanding {
     isCentral: boolean; // Derived: true only if harmPotential OR centrality is "high"
     relatedProceedingId: string;
     approximatePosition: string;
+    keyFactorId: string; // empty string if not mapped to any factor
   }>;
   distinctEvents: Array<{
     name: string;
@@ -1527,6 +1528,13 @@ interface ClaimUnderstanding {
   legalFrameworks: string[];
   researchQuestions: string[];
   riskTier: "A" | "B" | "C";
+  // NEW: KeyFactors discovered during understanding phase
+  keyFactors: Array<{
+    id: string;
+    question: string;
+    factor: string;
+    category: "procedural" | "evidential" | "methodological" | "factual" | "evaluative";
+  }>;
   // Gate 1 statistics (POC1 quality gate)
   gate1Stats?: {
     total: number;
@@ -1913,6 +1921,7 @@ const UNDERSTANDING_SCHEMA = z.object({
       isCentral: z.boolean(), // true only if harmPotential OR centrality is "high"
       relatedProceedingId: z.string(), // empty string if not applicable
       approximatePosition: z.string(), // empty string if not applicable
+      keyFactorId: z.string(), // empty string if not mapped to any factor
     }),
   ),
   distinctEvents: z.array(
@@ -1925,6 +1934,15 @@ const UNDERSTANDING_SCHEMA = z.object({
   legalFrameworks: z.array(z.string()),
   researchQuestions: z.array(z.string()),
   riskTier: z.enum(["A", "B", "C"]),
+  // NEW: KeyFactors discovered during understanding phase (emergent, not forced)
+  keyFactors: z.array(
+    z.object({
+      id: z.string(),
+      question: z.string(), // The decomposition question (e.g., "Was due process followed?")
+      factor: z.string(), // Short label (e.g., "Due Process")
+      category: z.enum(["procedural", "evidential", "methodological", "factual", "evaluative"]),
+    }),
+  ),
 });
 
 async function understandClaim(
@@ -2194,7 +2212,76 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 - **researchQuestions**: Generate specific questions to research, including:
   - Potential conflicts of interest for key decision-makers
   - Comparisons to similar cases or precedents
-  - Criticisms and rebuttals with documented evidence`;
+  - Criticisms and rebuttals with documented evidence
+
+## KEY FACTORS (Emergent Decomposition)
+
+**IMPORTANT**: KeyFactors are OPTIONAL and EMERGENT - only generate them if the thesis naturally decomposes into distinct evaluation dimensions.
+
+**WHEN TO GENERATE**: Create keyFactors array when the thesis involves:
+- Complex multi-dimensional evaluation (e.g., fairness, legitimacy, effectiveness)
+- Topics where truth depends on multiple independent criteria
+- Situations requiring structured assessment beyond simple yes/no
+
+**WHEN NOT TO GENERATE**: Leave keyFactors as empty array [] for:
+- Simple factual claims ("Did X happen?")
+- Single-dimension questions ("Is Y true?")
+- Straightforward verifications
+
+**HOW TO GENERATE**: Break down the thesis into 2-5 fundamental questions that must ALL be answered "yes" for the thesis to be true.
+
+**FORMAT**:
+- **id**: Unique identifier (KF1, KF2, etc.)
+- **question**: The decomposition question (e.g., "Was due process followed?")
+- **factor**: Short descriptive label (e.g., "Due Process")
+- **category**: Choose from: "procedural", "evidential", "methodological", "factual", "evaluative"
+
+**EXAMPLES**:
+
+For "Was the Bolsonaro trial fair?"
+[
+  {
+    "id": "KF1",
+    "question": "Were proper legal procedures and due process followed throughout the trial?",
+    "factor": "Procedural Fairness",
+    "category": "procedural"
+  },
+  {
+    "id": "KF2",
+    "question": "Were decisions based on documented evidence rather than assumptions or bias?",
+    "factor": "Evidence Basis",
+    "category": "evidential"
+  },
+  {
+    "id": "KF3",
+    "question": "Were the judges and decision-makers free from conflicts of interest?",
+    "factor": "Impartiality",
+    "category": "procedural"
+  }
+]
+
+For "Does this vaccine cause autism?"
+[
+  {
+    "id": "KF1",
+    "question": "Is there documented scientific evidence of a causal mechanism linking vaccines to autism?",
+    "factor": "Causal Mechanism",
+    "category": "factual"
+  },
+  {
+    "id": "KF2",
+    "question": "Do controlled studies and clinical trials support this causal relationship?",
+    "factor": "Clinical Evidence",
+    "category": "evidential"
+  },
+  {
+    "id": "KF3",
+    "question": "What does the scientific consensus and expert opinion conclude about this relationship?",
+    "factor": "Scientific Consensus",
+    "category": "evaluative"
+  }
+]
+**CLAIM-TO-FACTOR MAPPING**: If you generate keyFactors, map each claim to the most relevant factor using keyFactorId. Claims can only map to one factor. Use empty string "" for claims that don't address any specific factor.`;
 
   const userPrompt = `Analyze for fact-checking:\n\n"${input}"`;
 
@@ -2994,18 +3081,6 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
       factualBasis: z.enum(["established", "disputed", "alleged", "opinion", "unknown"]),
     }),
   ),
-  // NEW v2.6.18: Key Factors for procedural/legal topics (unified with question mode)
-  // This provides the same depth of analysis regardless of question vs statement format
-  keyFactors: z.array(
-    z.object({
-      factor: z.string(), // e.g., "Correct application of law", "Due process followed"
-      supports: z.enum(["yes", "no", "neutral"]), // Does evidence support this factor?
-      explanation: z.string(), // Brief explanation
-      isContested: z.boolean(), // Is this factor politically disputed?
-      contestedBy: z.string(), // Who contests it (empty if not contested)
-      factualBasis: z.enum(["established", "disputed", "opinion", "unknown"]), // Does opposition have evidence?
-    }),
-  ),
   articleAnalysis: z.object({
     thesisSupported: z.boolean(),
     logicalFallacies: z.array(
@@ -3525,6 +3600,7 @@ Provide SEPARATE answers for each proceeding.`;
       truthPercentage: truthPct,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
+      keyFactorId: claim?.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
       relatedProceedingId: proceedingId,
       highlightColor: getHighlightColor7Point(calibratedVerdict),
     };
@@ -4003,44 +4079,11 @@ Example: If 3/4 claims are TRUE but the main conclusion is FALSE → article ver
 ${getKnowledgeInstruction()}
 ${getProviderPromptHint()}`;
 
-  // Add Key Factors instructions for procedural/legal topics (unified with question mode)
-  if (isProceduralTopic) {
-    console.log("[Analyzer] Procedural topic detected - adding Key Factors to analysis");
-    systemPrompt += `
-
-## KEY FACTORS ANALYSIS (REQUIRED for this procedural/legal topic)
-
-In addition to individual claim verdicts, analyze the thesis using these KEY FACTORS.
-This provides structured assessment of procedural fairness regardless of input format.
-
-Generate keyFactors array with these aspects:
-1. **Correct application** - Were proper rules/standards/methods applied correctly?
-2. **Process fairness** - Were proper procedures followed? Was due process observed?
-3. **Evidence basis** - Were decisions based on documented evidence rather than assumptions?
-4. **Decision-maker impartiality** - Were there conflicts of interest? Any bias concerns?
-5. **Outcome proportionality** - Was the outcome proportionate to the situation/charges?
-
-For EACH key factor:
-- factor: Descriptive name (e.g., "Correct application of electoral law")
-- supports: "yes" if evidence supports this factor, "no" if evidence refutes it, "neutral" ONLY if no information
-- explanation: Brief explanation of your assessment
-- isContested: true if this factor is politically disputed
-- contestedBy: WHO disputes it specifically (e.g., "Bolsonaro supporters", "Trump administration") - empty string if not contested
-- factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS
-  * "disputed" = Opposition has some factual counter-evidence but debatable
-  * "opinion" = NO factual counter-evidence (just claims, rhetoric, political actions)
-  * "unknown" = Cannot determine
-
-CRITICAL: factualBasis MUST be "opinion" for political statements, executive orders, sanctions, or rhetoric without documented evidence.
-Only use "established" or "disputed" when opposition provides specific court documents, records, or verifiable data.`;
-  } else {
-    // For non-procedural topics, provide empty keyFactors array
-    systemPrompt += `
+  // KeyFactors are now generated in understanding phase, not verdict generation
+  systemPrompt += `
 
 ## KEY FACTORS
-For this non-procedural topic, provide an empty keyFactors array: []`;
-  }
+KeyFactors are handled in the understanding phase. Provide an empty keyFactors array: []`;
 
   if (pseudoscienceAnalysis?.isPseudoscience) {
     systemPrompt += `\n\nPSEUDOSCIENCE DETECTED: This content contains patterns associated with pseudoscience (${pseudoscienceAnalysis.categories.join(", ")}).
@@ -4168,6 +4211,7 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
           isCentral: claim.isCentral || false,
           claimRole: claim.claimRole || "core",
           dependsOn: claim.dependsOn || [],
+          keyFactorId: claim.keyFactorId || "", // Preserve KeyFactor mapping
           startOffset: claim.startOffset,
           endOffset: claim.endOffset,
           highlightColor: getHighlightColor7Point("UNVERIFIED"),
@@ -4211,6 +4255,7 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
         isCentral: claim.isCentral || false,
         claimRole: claim.claimRole || "core",
         dependsOn: claim.dependsOn || [],
+        keyFactorId: claim.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(calibratedVerdict),
@@ -4336,23 +4381,55 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
   // Check if article verdict differs significantly from claims average
   const verdictDiffers = Math.abs(articleTruthPct - claimsAvgTruthPct) > 15 || hasMisleadingPattern;
 
-  // Process Key Factors from LLM response (unified with question mode)
-  const keyFactors: KeyFactor[] = (parsed.keyFactors || []).map((kf: any) => ({
-    factor: kf.factor,
-    supports: kf.supports,
-    explanation: kf.explanation,
-    isContested: kf.isContested || false,
-    contestedBy: kf.contestedBy || "",
-    contestationReason: kf.explanation || "", // Use explanation as contestation reason
-    factualBasis: kf.factualBasis || "unknown",
-  }));
+  // Process Key Factors by aggregating claim verdicts (moved from verdict generation to understanding)
+  const keyFactors: KeyFactor[] = [];
+
+  // Only process KeyFactors if they were discovered during understanding
+  if (understanding.keyFactors && understanding.keyFactors.length > 0) {
+    for (const factor of understanding.keyFactors) {
+      // Find all claims mapped to this factor
+      const factorClaims = weightedClaimVerdicts.filter(v => v.keyFactorId === factor.id);
+
+      if (factorClaims.length > 0) {
+        // Aggregate verdicts for this factor
+        const factorAvgTruthPct = Math.round(
+          factorClaims.reduce((sum, v) => sum + v.truthPercentage, 0) / factorClaims.length
+        );
+
+        // Determine factor support based on average
+        let supports: "yes" | "no" | "neutral";
+        if (factorAvgTruthPct >= 72) {
+          supports = "yes";
+        } else if (factorAvgTruthPct < 43) {
+          supports = "no";
+        } else {
+          supports = "neutral";
+        }
+
+        // Create explanation from aggregated claim verdicts
+        const supportedCount = factorClaims.filter(v => v.truthPercentage >= 72).length;
+        const refutedCount = factorClaims.filter(v => v.truthPercentage < 43).length;
+        const explanation = `${supportedCount}/${factorClaims.length} claims support this factor, ${refutedCount} refute it. Average truth: ${factorAvgTruthPct}%.`;
+
+        keyFactors.push({
+          factor: factor.factor,
+          supports,
+          explanation,
+          isContested: false, // Will be determined by contestation analysis
+          contestedBy: "",
+          contestationReason: "",
+          factualBasis: "unknown",
+        });
+      }
+    }
+  }
 
   // Check if any factors are contested with evidence-based contestation
   const hasContestedFactors = keyFactors.some(
     (f) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
   );
 
-  console.log(`[Analyzer] Key Factors generated: ${keyFactors.length} factors, ${hasContestedFactors ? "has" : "no"} contested factors`);
+  console.log(`[Analyzer] Key Factors aggregated: ${keyFactors.length} factors from ${understanding.keyFactors?.length || 0} discovered, ${hasContestedFactors ? "has" : "no"} contested factors`);
 
   return {
     claimVerdicts: weightedClaimVerdicts,
@@ -4663,6 +4740,21 @@ async function generateReport(
         articleAnalysis.articleThesis !== "<UNKNOWN>" &&
         !articleAnalysis.articleThesis.toLowerCase().includes("unknown")) {
       report += `**Implied Claim:** ${articleAnalysis.articleThesis}\n\n`;
+    }
+
+    // NEW: KeyFactors display for article mode (unified with question mode)
+    if (articleAnalysis.keyFactors && articleAnalysis.keyFactors.length > 0) {
+      report += `**Key Factors:**\n`;
+      for (const f of articleAnalysis.keyFactors) {
+        const icon =
+          f.supports === "yes"
+            ? iconPositive
+            : f.supports === "no"
+              ? iconNegative
+              : iconNeutral;
+        report += `- ${icon} ${f.factor}${f.isContested ? ` ${iconWarning} CONTESTED` : ""}\n`;
+      }
+      report += `\n`;
     }
   }
 

@@ -196,6 +196,7 @@ export interface ClaimUnderstanding {
     isCentral: boolean;
     relatedProceedingId: string;
     approximatePosition: string;
+    keyFactorId: string; // empty string if not mapped to any factor
   }>;
   distinctEvents: Array<{
     name: string;
@@ -205,6 +206,13 @@ export interface ClaimUnderstanding {
   legalFrameworks: string[];
   researchQuestions: string[];
   riskTier: "A" | "B" | "C";
+  // NEW: KeyFactors discovered during understanding phase
+  keyFactors: Array<{
+    id: string;
+    question: string;
+    factor: string;
+    category: "procedural" | "evidential" | "methodological" | "factual" | "evaluative";
+  }>;
 }
 
 export interface ResearchIteration {
@@ -272,6 +280,7 @@ export interface ClaimVerdict {
   reasoning: string;
   supportingFactIds: string[];
   relatedProceedingId?: string;
+  keyFactorId?: string; // Maps claim to KeyFactor for aggregation
   startOffset?: number;
   endOffset?: number;
   highlightColor:
