@@ -1,6 +1,7 @@
 # FactHarbor POC1 Architecture Analysis
 
-**Version:** 2.6.17
+**Version:** 2.6.18
+**Schema Version:** 2.6.17
 **Analysis Date:** January 2026
 **Document Purpose:** Technical diagrams, gap analysis, and optimization recommendations
 
@@ -17,7 +18,7 @@ flowchart TB
 
     subgraph Retrieval["🔍 Content Retrieval"]
         FETCH[extractTextFromUrl]
-        PDF[PDF Parser<br/>pdf-parse v1]
+        PDF[PDF Parser<br/>pdf2json]
         HTML[HTML Parser<br/>cheerio]
     end
 
@@ -45,8 +46,12 @@ flowchart TB
             LLM3[("🤖 LLM Call #N+1<br/>Final synthesis")]
         end
 
-        subgraph Step4["Step 4: Report"]
-            REPORT[buildTwoPanelSummary<br/>━━━━━━━━━━━━━<br/>• Format results<br/>• Generate markdown]
+        subgraph Step4["Step 4: Summary"]
+            SUMMARY[generateTwoPanelSummary<br/>━━━━━━━━━━━━━<br/>• Format results<br/>• Build two-panel summary]
+        end
+
+        subgraph Step5["Step 5: Report"]
+            REPORT[generateReport<br/>━━━━━━━━━━━━━<br/>• Generate markdown]
         end
     end
 
@@ -74,7 +79,8 @@ flowchart TB
 
     DECIDE -->|"Research Complete"| VERDICT
     VERDICT --> LLM3
-    LLM3 --> REPORT
+    LLM3 --> SUMMARY
+    SUMMARY --> REPORT
 
     REPORT --> RESULT
     REPORT --> MARKDOWN
@@ -86,7 +92,7 @@ flowchart TB
 
     class LLM1,LLM2,LLM3 llm
     class SEARCH search
-    class UNDERSTAND,DECIDE,FETCHSRC,EXTRACT,VERDICT,REPORT step
+    class UNDERSTAND,DECIDE,FETCHSRC,EXTRACT,VERDICT,SUMMARY,REPORT step
 ```
 
 ---
@@ -122,7 +128,7 @@ erDiagram
         string_array pseudoscienceCategories "Categories if detected"
         int llmCalls "Total LLM API calls"
         json searchQueries "All search queries performed"
-        string schemaVersion "e.g. 2.6.17"
+        string schemaVersion "2.6.17 (meta.schemaVersion)"
     }
 
     CLAIM {
@@ -133,6 +139,7 @@ erDiagram
         string claimRole "attribution | source | timing | core"
         string_array dependsOn "IDs of prerequisite claims"
         string_array keyEntities "Named entities in claim"
+        string keyFactorId "Key factor mapping (empty if none)"
         boolean isCentral "Is this a central claim?"
         string relatedProceedingId "Linked proceeding if any"
         int startOffset "Position in original text"
@@ -147,11 +154,14 @@ erDiagram
         string verdict "True | Mostly True | Leaning True | Unverified | Leaning False | Mostly False | False"
         int confidence "0-100 LLM confidence"
         int truthPercentage "0-100 calibrated truth score"
+        float evidenceWeight "Evidence weighting based on source scores"
         string riskTier "A (high) | B (medium) | C (low)"
         string reasoning "Explanation of verdict"
         string_array supportingFactIds "Evidence IDs supporting this"
         boolean dependencyFailed "True if prerequisite failed"
         string_array failedDependencies "Which deps failed"
+        string keyFactorId "Key factor mapping (empty if none)"
+        string relatedProceedingId "Linked proceeding if any"
         string highlightColor "green | light-green | yellow | orange | dark-orange | red | dark-red"
         boolean isPseudoscience "Pseudoscience flag"
         string escalationReason "Why verdict was escalated"
@@ -240,6 +250,10 @@ erDiagram
 
     ANALYSIS_RESULT {
         string schemaVersion "2.6.17"
+        json meta "Providers, timing, gate stats, IDs"
+        json twoPanelSummary
+        json researchStats
+        json qualityGates
         string inputType "question|claim|article"
         boolean isQuestion
         string articleThesis
@@ -265,6 +279,7 @@ erDiagram
         string riskTier "A|B|C"
         string reasoning
         string_array supportingFactIds
+        string keyFactorId
         string highlightColor "green to dark-red"
     }
 
@@ -319,7 +334,7 @@ flowchart TB
         end
 
         subgraph Lib["Core Libraries"]
-            ANALYZER["analyzer.ts<br/>━━━━━━━━━━━━━<br/>AKEL Pipeline<br/>2918 lines"]
+            ANALYZER["analyzer.ts<br/>━━━━━━━━━━━━━<br/>AKEL Pipeline<br/>5348 lines"]
             RETRIEVAL["retrieval.ts<br/>━━━━━━━━━━━━━<br/>URL content extraction"]
             WEBSEARCH["web-search.ts<br/>━━━━━━━━━━━━━<br/>Search abstraction"]
             MBFC["mbfc-loader.ts<br/>━━━━━━━━━━━━━<br/>Source reliability"]
@@ -345,7 +360,7 @@ flowchart TB
 
     subgraph External["🌐 External Services"]
         LLM_PROVIDERS["LLM Providers<br/>━━━━━━━━━━━━━<br/>• Anthropic Claude<br/>• OpenAI GPT<br/>• Google Gemini<br/>• Mistral"]
-        SEARCH_PROVIDERS["Search Providers<br/>━━━━━━━━━━━━━<br/>• Google CSE<br/>• SerpAPI<br/>• Brave<br/>• Tavily"]
+        SEARCH_PROVIDERS["Search Providers<br/>━━━━━━━━━━━━━<br/>• Google CSE<br/>• SerpAPI"]
         WEB["Web Content<br/>━━━━━━━━━━━━━<br/>• News sites<br/>• PDFs<br/>• Academic sources"]
     end
 
@@ -417,8 +432,8 @@ flowchart TB
 | **Claim Classifier** | ⚠️ Partial | Risk tier (A/B/C) assigned, but no domain classification |
 | **Scenario Generator** | ❌ Missing | Claims evaluated without scenario extraction |
 | **Evidence Summarizer** | ✅ Implemented | `extractFacts()` function |
-| **Contradiction Detector** | ⚠️ Partial | `isContestedClaim` flag exists but no active contradiction search |
-| **Quality Gate Validator** | ❌ Missing | No source quality gates, no mandatory checks |
+| **Contradiction Detector** | ⚠️ Partial | Single contradiction-search pass plus `isContestedClaim` flag; no deep contradiction modeling |
+| **Quality Gate Validator** | ✅ Implemented | Gate 1 claim validation and Gate 4 verdict confidence checks |
 | **Audit Sampling Scheduler** | ❌ Missing | No audit system |
 | **Embedding Handler** | ❌ Missing | Not needed for POC |
 | **Federation Sync** | ❌ Missing | Not needed for POC |

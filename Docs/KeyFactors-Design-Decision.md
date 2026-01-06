@@ -224,6 +224,17 @@ const factors = await decomposeThesis(thesis);
 - Forcing irrelevant factors creates noise
 - LLM can identify what dimensions actually matter
 
+**Optional Hints (v2.6.18+)**:
+While KeyFactors remain emergent, you can optionally provide hints via `FH_KEYFACTOR_HINTS` environment variable. These are **suggestions only** - the LLM can consider them but is not required to use them. This allows domain-specific guidance without enforcing irrelevant factors.
+
+**Example Configuration**:
+```bash
+# In .env.local or environment
+FH_KEYFACTOR_HINTS='[{"question":"Was due process followed?","factor":"Due Process","category":"procedural"},{"question":"Was evidence properly considered?","factor":"Evidence Basis","category":"evidential"}]'
+```
+
+**Usage**: The hints appear in the prompt as optional suggestions. The LLM will only use them if they genuinely apply to the thesis being analyzed.
+
 ### Decision 2: KeyFactors are Discovered During Understanding
 
 **Rejected Approach**: Generate KeyFactors during verdict generation.
@@ -327,29 +338,42 @@ graph TD
 
 ## 6. Implementation Notes
 
-### Current State (v2.6.18)
+### Current State (v2.6.18 - Updated January 6, 2026)
 
-- KeyFactors generated for procedural/legal topics via `detectProceduralTopic()`
-- Fixed set of 5 factors in prompt template
-- KeyFactors stored in `ArticleAnalysis.keyFactors` and `QuestionAnswer.keyFactors`
+**✅ Completed:**
+- KeyFactors discovered in Understanding phase (schema includes `keyFactors` array)
+- Factors are emergent and optional (no forced template)
+- Claim-to-factor mapping exists (`keyFactorId` in claim schema)
+- KeyFactors aggregated from claim verdicts (aggregation logic exists)
+- KeyFactors displayed in question mode reports
+- KeyFactors displayed in article mode reports (added January 6, 2026)
+- **Optional KeyFactor hints** via `FH_KEYFACTOR_HINTS` environment variable (suggestions only, not enforced)
 
-### Future Improvements
+**✅ Fixed (January 6, 2026):**
+- **Issue**: `keyFactorId` from `understanding.subClaims` was not preserved when creating `ClaimVerdict` objects
+- **Impact**: Aggregation found 0 claims per factor (log showed "0 factors from 5 discovered")
+- **Fix Applied**: 
+  1. ✅ Added `keyFactorId?: string` to `ClaimVerdict` interface
+  2. ✅ Preserved `claim.keyFactorId` when mapping from `understanding.subClaims` to `claimVerdicts` (all 3 paths)
+  3. ✅ Aggregation logic should now work correctly
+- **Status**: Ready for end-to-end validation
 
-1. **Move KeyFactor discovery to Understanding phase**
-   - Add `keyFactors` to `ClaimUnderstanding` interface
-   - Map claims to factors via `claim.keyFactorId`
+**Removed/Deprecated:**
+- ~~Fixed set of 5 factors in prompt template~~ - Now emergent
+- ~~`detectProceduralTopic()` requirement~~ - Factors generated for any topic when appropriate
+- ~~KeyFactors only for procedural/legal topics~~ - Now optional for all topics
 
-2. **Make factors emergent**
-   - Remove fixed factor templates
-   - Let LLM decompose thesis into relevant dimensions
+### Implementation Status
 
-3. **Add factor-claim mapping**
-   - Each claim knows which factor(s) it addresses
-   - Factor verdict computed from mapped claim verdicts
-
-4. **Simplify schema**
-   - Remove `isProceduralTopic` check
-   - All analyses can have 0-N factors based on content
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Discovery in Understanding | ✅ Complete | Schema includes `keyFactors` array |
+| Emergent factors | ✅ Complete | No forced template |
+| Optional hints | ✅ Complete | `FH_KEYFACTOR_HINTS` env var provides suggestions (not enforced) |
+| Claim-to-factor mapping | ✅ Complete | `keyFactorId` preserved in `ClaimVerdict` (fixed 2026-01-06) |
+| Factor aggregation | ✅ Fixed | Aggregation logic should now find mapped claims (validation needed) |
+| Report display | ✅ Complete | Both question and article modes |
+| Contestation | ⚠️ Partial | Schema supports it but not fully implemented |
 
 ---
 
@@ -361,6 +385,7 @@ graph TD
 | **When discovered?** | During Understanding phase |
 | **Required?** | No - optional, 0-N per analysis |
 | **Fixed template?** | No - emergent from thesis |
+| **Optional hints?** | Yes - `FH_KEYFACTOR_HINTS` provides suggestions (not enforced) |
 | **Contestation?** | Attaches to KeyFactors |
 | **Scenario entity?** | Rejected - derivable from contestation |
 | **Relationship to Claims** | Parent-child (factor answered by claims) |

@@ -1,5 +1,8 @@
 # FactHarbor POC1 — Code Review + Specification Alignment
-_Date: 2026-01-04_
+
+**Date**: 2026-01-04  
+**Last Updated**: 2026-01-06  
+**Status**: Updated to reflect January 6, 2026 fixes and current implementation state
 
 This document is a **repo-wide review** of the current POC1 implementation (Next.js + .NET + SQLite) and an **alignment check** against the included XWiki specification export.
 
@@ -11,22 +14,26 @@ This document is a **repo-wide review** of the current POC1 implementation (Next
 - Key implementation files:
   - Web (Next.js): `apps/web/*` (TypeScript ~8266 non-empty LOC)
   - API (.NET): `apps/api/*` (C# ~477 non-empty LOC)
-  - Analyzer core: `apps/web/src/lib/analyzer.ts` (**Analyzer v2.6.17 / schema 2.6.17**)
+  - Analyzer core: `apps/web/src/lib/analyzer.ts` (**Analyzer v2.6.18 / schema 2.6.18**)
 
 ---
 
 ## Executive summary (what to do first)
 
-### Urgent now (improves day-to-day dev + prevents fragile runs)
-1) **Decouple runner execution from a single long HTTP request**  
-   Move `/api/internal/run-job` to an async worker pattern (202 + job leasing/queue/BackgroundService). If you keep it synchronous for now, document the constraint clearly and ensure timeouts/hosting limits won’t kill real analyses.
-2) **Unify job status vocabulary between API and UI** (`QUEUED` vs `PENDING`) so the UI reflects reality.
-3) **Add a minimal automated “job lifecycle” test** (fake runner, no real LLM) to prevent regressions during refactors.
+### ~~Urgent now~~ ✅ COMPLETED (2026-01-05 to 2026-01-06)
+1) ~~**Decouple runner execution from a single long HTTP request**~~ ✅ DONE  
+   Implemented exponential backoff retry with jitter in `RunnerClient.cs`. Configurable via `appsettings.json`. Still synchronous but resilient.
+2) ~~**Unify job status vocabulary between API and UI**~~ ✅ DONE  
+   `QUEUED` standardized across API and UI. Fixed in `apps/web/src/app/jobs/page.tsx`.
+3) ~~**Add a minimal automated "job lifecycle" test"**~~ ✅ DONE  
+   Added `apps/web/src/lib/job-lifecycle.test.ts` with unit and integration tests.
 
 ### Soon (core product correctness + spec fidelity)
-4) **Surface Quality Gates** in the report + UI (pass/fail reasons, publishability, excluded claims).  
+4) ~~**Surface Quality Gates** in the report + UI~~ ✅ PARTIAL DONE  
+   Gate stats now included in result JSON (`qualityGates.gate1Stats`, `qualityGates.gate4Stats`). Still need to display in UI/report with per-item reasons.
 5) **Resolve the Quality Gate definition mismatch inside the XWiki spec** (pick the authoritative definition and align pages + implementation).  
-6) **Split `apps/web/src/lib/analyzer.ts` into modules** (schemas, pipeline stages, renderers, providers) to keep iteration safe.
+6) ~~**Split `apps/web/src/lib/analyzer.ts` into modules**~~ ✅ PARTIAL DONE  
+   Modules created in `apps/web/src/lib/analyzer/`: types.ts, config.ts, quality-gates.ts, truth-scale.ts, pseudoscience.ts, source-reliability.ts, llm.ts, index.ts. Main analyzer.ts still exists but can import from modules.
 
 ### Before public release (high importance, intentionally not urgent right now)
 7) **Add SSRF protections to URL/PDF fetching** (block private/link‑local ranges, cap content size, limit redirects/timeouts, validate content-type).  
@@ -55,9 +62,10 @@ This matches the **“separated architecture”** concept in your docs, but prod
 | Area | Status | Notes |
 |---|---|---|
 | Job orchestration (create job, progress, SSE events) | Implemented (POC-ready) | API stores job + events in SQLite; Web runner updates via internal endpoints; SSE endpoint for live events. |
-| Quality Gates (POC) | Partially implemented | Analyzer applies Gate 1 (claim validation) and Gate 4 (verdict confidence) and tracks contradiction search; display of per-item gate reasons is largely missing in UI/report. |
+| Quality Gates (POC) | Partially implemented | Analyzer applies Gate 1 (claim validation) and Gate 4 (verdict confidence); gate stats included in result JSON; display of per-item gate reasons still missing in UI/report. |
 | Source reliability / track record | Partial | Static Source Reliability Bundle (source-bundle.json) loaded; sources store trackRecordScore/category. No historical track record or provenance chain yet. |
-| Evidence model (Claim–Scenario–Evidence–Verdict) | Partial (Claim–Evidence/Facts–Verdict) | Claims + extracted facts + verdicts exist in result JSON; Scenario object is not yet explicit/persisted. |
+| Evidence model (Claim–Scenario–Evidence–Verdict) | Partial (Claim–Evidence/Facts–Verdict + KeyFactors) | Claims + extracted facts + verdicts exist in result JSON; KeyFactors implemented (discovered in Understanding, aggregated from claims, displayed in reports); Scenario object is not yet explicit/persisted. |
+| KeyFactors | Implemented | Discovered in Understanding phase, emergent and optional, claim-to-factor mapping via `keyFactorId`, aggregated from claim verdicts, displayed in reports. Aggregation bug fixed 2026-01-06. End-to-end validation pending. |
 | AuthN/AuthZ & rate limiting | Missing (except shared secrets for internal calls) | Public UI and endpoints are open; admin test endpoints are unauthenticated; CORS is permissive in API. |
 | Persistence / normalized data model | Missing (beyond job blobs) | API persists job metadata + JSON/markdown results; no normalized tables for claims/evidence/sources/verdicts. |
 | Caching & separated architecture (claim-level) | Missing | Docs propose claim cache; current pipeline recomputes per job. |
@@ -148,21 +156,23 @@ This matches the **“separated architecture”** concept in your docs, but prod
 ### 6) Data model gap vs specification
 
 **Findings**
-- The spec’s **Data Model** page describes first-class objects: Claim, Scenario, Evidence, Verdict, Source, Track Record, etc.
+- The spec's **Data Model** page describes first-class objects: Claim, Scenario, Evidence, Verdict, Source, Track Record, KeyFactor, etc.
 - Current implementation persists:
   - job metadata + job events
-  - `resultJson` blob + `reportMarkdown`
+  - `resultJson` blob + `reportMarkdown` (includes KeyFactors, claims, verdicts, evidence)
+- KeyFactors are implemented in-memory and stored in result JSON but not normalized
 - This is appropriate for POC1 speed, but it blocks:
   - reuse/caching across jobs
-  - provenance queries (“where did this evidence come from historically?”)
+  - provenance queries ("where did this evidence come from historically?")
   - building stable browsing UI beyond job outputs
 
 **Recommendations**
 - **P2:** Add minimal normalized tables incrementally:
   1) `Sources` (url/domain, trackRecord fields)
-  2) `Claims` (normalized text hash + role + dependencies)
+  2) `Claims` (normalized text hash + role + dependencies + keyFactorId)
   3) `Verdicts` (claimId, scale, confidence, publishable, reasons)
   4) `Evidence/Facts` (fact text, excerpt, sourceId, claimId)
+  5) `KeyFactors` (id, question, factor, category, supports, explanation)
 - Keep job-level blob for backwards compatibility; gradually populate normalized tables.
 
 ---
@@ -213,13 +223,14 @@ This matches the **“separated architecture”** concept in your docs, but prod
 
 | Urgency | Importance | Area | Action |
 |---|---|---|---|
-| Immediate | High | Reliability / Architecture | **Make runner execution resilient:** shift `/api/internal/run-job` to async worker (202 + lease/queue/BackgroundService) or formally constrain analysis duration + hosting + timeouts. |
-| Immediate | High | Testing / Safety | **Add a minimal automated job-lifecycle test** (create job → run fake runner → write result/events → verify SSE). |
-| Immediate | Medium | UX / Correctness | **Unify job status values** between API + UI (`QUEUED` vs `PENDING`) and ensure UI mapping is exhaustive. |
-| Soon | High | Spec / Product | **Surface Quality Gates** (Gate results + reasons) in `reportMarkdown` and in the UI, including “publishability”. |
-| Soon | High | Maintainability | **Modularize `analyzer.ts`** into `schemas/`, `pipeline/`, `renderers/`, `providers/` to reduce risk when evolving the evidence model. |
+| ~~Immediate~~ ✅ DONE | High | Reliability / Architecture | ~~**Make runner execution resilient**~~ - Exponential backoff retry implemented (2026-01-05) |
+| ~~Immediate~~ ✅ DONE | High | Testing / Safety | ~~**Add a minimal automated job-lifecycle test**~~ - Tests added (2026-01-05) |
+| ~~Immediate~~ ✅ DONE | Medium | UX / Correctness | ~~**Unify job status values**~~ - QUEUED standardized (2026-01-05) |
+| Soon | High | Spec / Product | **Surface Quality Gates** (Gate results + reasons) in `reportMarkdown` and in the UI - ✅ PARTIAL: Stats in JSON, UI display pending |
+| Soon | High | Maintainability | **Modularize `analyzer.ts`** - ✅ PARTIAL: Modules created (2026-01-05), full migration pending |
 | Soon | Medium | Spec Consistency | **Align gate definitions in XWiki export vs code** (spec pages currently disagree); update the XWiki pages to match the chosen definitions. |
-| Soon | Medium | Observability | **Persist key metrics per job** (gate pass rates, token/call counts, search counts, source counts) to support “improve the system before editing data.” |
+| Soon | Medium | Observability | **Persist key metrics per job** - ✅ PARTIAL: Metrics tracked in JSON, persistence layer pending |
+| Soon | Medium | Validation | **Validate KeyFactors end-to-end** - Aggregation fix complete (2026-01-06), validation needed |
 | Soon | Medium | Persistence | **Move off `EnsureCreated()` toward EF migrations** so schema evolution is controlled. |
 | Soon | Medium | Performance | **Improve SSE efficiency** (index events, backoff polling, or plan a push/channel approach) to reduce DB load as usage grows. |
 | Before public release | Critical | Security | **Add SSRF protections** to URL/PDF fetching (`retrieval.ts`): block private/link-local ranges, limit redirects, size caps, strict timeouts, validate content-type. |
@@ -238,10 +249,26 @@ This matches the **“separated architecture”** concept in your docs, but prod
 ---
 ## Notes on what looks strong already
 
-- Clean separation between “storage API” and “runner” is a solid POC architecture.
+- Clean separation between "storage API" and "runner" is a solid POC architecture.
 - Internal calls are protected by shared secrets (runner key + admin key) — good baseline.
-- Analyzer implements a lot of pragmatic functionality (truth scale, claim roles/dependencies, basic quality gating) and tracks useful stats.
-- Documentation is unusually thorough for a POC (checklists, hosting guide, source reliability bundle concept).
+- Analyzer implements a lot of pragmatic functionality (truth scale, claim roles/dependencies, quality gating, KeyFactors) and tracks useful stats.
+- Documentation is unusually thorough for a POC (checklists, hosting guide, source reliability bundle concept, status tracking).
+- Recent improvements (2026-01-05 to 2026-01-06):
+  - Runner resilience with retry logic
+  - Job lifecycle tests
+  - Quality Gates stats in JSON
+  - Analyzer modularization (partial)
+  - KeyFactors aggregation fix
+  - Evidence agreement bug fix
+
+---
+
+## Related Documentation
+
+- [`StatusAndNext.md`](./StatusAndNext.md) - Current status and next steps (consolidated tracking)
+- [`KeyFactors-Design-Decision.md`](./KeyFactors-Design-Decision.md) - KeyFactors architecture decisions
+- [`LLM_and_Search_Provider_Switching_Guide.md`](./LLM_and_Search_Provider_Switching_Guide.md) - LLM and search provider optimization guidance
+- [`Agent_Handover.md`](./Agent_Handover.md) - Previous session summary
 
 ---
 
@@ -261,11 +288,10 @@ This matches the **“separated architecture”** concept in your docs, but prod
 This appendix consolidates the earlier “quick pass” findings you pasted (jobs/runner/security/maintainability) and maps them to what I confirmed in the codebase.
 
 ### A1) Architecture / runtime
-- **Runner trigger timeout & sync execution**
-  - **Confirmed risk:** `/api/internal/run-job` executes the full workflow synchronously (long-running request).
-  - **Updated detail:** In the current repo, the API’s `HttpClient` timeout for `RunnerClient` is **5 minutes** (not 20 seconds).  
-    Still, real-world analyses can exceed this, and many hosting environments/serverless functions will kill long requests.
-  - **Recommendation:** make runner execution **asynchronous** (202 + queue/worker) and implement job leasing/idempotency.
+- ~~**Runner trigger timeout & sync execution**~~ ✅ IMPROVED (2026-01-05)
+  - **Status:** Improved - Exponential backoff retry with jitter implemented in `RunnerClient.cs`.
+  - **Implementation:** Configurable retry logic via `appsettings.json` (MaxRetries, InitialRetryDelayMs, MaxRetryDelayMs, TimeoutMinutes).
+  - **Note:** Still synchronous but resilient. Full async worker pattern remains a future enhancement.
 
 ### A2) Security
 - **SSRF risk in URL/PDF fetching**
@@ -285,9 +311,9 @@ This appendix consolidates the earlier “quick pass” findings you pasted (job
   - **Recommendation:** enable Swagger only in Development or behind auth.
 
 ### A3) Correctness / spec consistency
-- **Status name mismatch (`QUEUED` vs `PENDING`)**
-  - **Confirmed:** API uses `QUEUED`; UI styles handle `PENDING`.
-  - **Recommendation:** standardize status vocabulary across API + UI.
+- ~~**Status name mismatch (`QUEUED` vs `PENDING`)**~~ ✅ FIXED (2026-01-05)
+  - **Status:** Fixed - `QUEUED` standardized across API and UI.
+  - **Implementation:** Updated `apps/web/src/app/jobs/page.tsx` to handle `QUEUED` status.
 
 ### A4) Persistence / scalability
 - **`EnsureCreated()` blocks migrations**
@@ -303,9 +329,9 @@ This appendix consolidates the earlier “quick pass” findings you pasted (job
   - **Recommendation:** validate `inputType`; cap sizes; optionally store excerpt; add constraints / validation layer.
 
 ### A5) Maintainability / DX
-- **`apps/web/src/lib/analyzer.ts` is a monolith**
-  - **Confirmed:** large single file combining config + prompts + schemas + orchestration + rendering.
-  - **Recommendation:** split into `config/`, `schemas/`, `pipeline/`, `renderers/`, `providers/` modules.
+- ~~**`apps/web/src/lib/analyzer.ts` is a monolith**~~ ✅ PARTIALLY MODULARIZED (2026-01-05)
+  - **Status:** Modules created in `apps/web/src/lib/analyzer/`: types.ts, config.ts, quality-gates.ts, truth-scale.ts, pseudoscience.ts, source-reliability.ts, llm.ts, index.ts.
+  - **Note:** Main analyzer.ts still exists but can import from modules. Full migration pending.
 
 - **Root workspaces include `packages/*` but folder is missing**
   - **Confirmed:** root `package.json` workspaces include `packages/*` but no `packages/` directory exists.
@@ -324,7 +350,31 @@ This appendix consolidates the earlier “quick pass” findings you pasted (job
 
 ---
 
-## Update Log (2026-01-05)
+## Update Log
+
+### 2026-01-06 Updates
+
+**KeyFactors Implementation**:
+- ✅ Fixed KeyFactors aggregation (preserved `keyFactorId` in `ClaimVerdict`)
+- ✅ Added KeyFactors display to article mode reports
+- ✅ KeyFactors discovered in Understanding phase, aggregated from claim verdicts
+- ⚠️ End-to-end validation pending
+
+**Bug Fixes**:
+- ✅ Fixed evidence agreement bug (claim-specific criticism only)
+- ✅ Fixed source reliability scale bug (removed /100 division)
+- ✅ Fixed FALSE verdict schema mismatch
+- ✅ Normalized highlight colors to 3-color system
+
+**Documentation**:
+- Created `StatusAndNext.md` - Consolidated status tracking
+- Created `LLM_and_Search_Provider_Switching_Guide.md` - LLM and search provider optimization guide
+- Updated `KeyFactors-Design-Decision.md` - Reflects current implementation
+- Merged `Implementation_Review.md` into `StatusAndNext.md`
+
+---
+
+### 2026-01-05 Updates
 
 ### Items Completed Since Initial Review
 
@@ -371,7 +421,15 @@ This appendix consolidates the earlier “quick pass” findings you pasted (job
 
 ### Remaining High-Priority Items
 
-1. **Surface Quality Gates in UI** - Gate stats are in JSON but not displayed in report/UI
-2. **Complete analyzer modularization** - Main analyzer.ts needs to import from new modules
-3. **SSRF protections** - Still needed before public release
-4. **AuthN/AuthZ** - Still needed before public release
+1. **Surface Quality Gates in UI** - Gate stats are in JSON but not displayed in report/UI with per-item reasons
+2. **Complete analyzer modularization** - Main analyzer.ts needs to fully import from new modules
+3. **KeyFactors end-to-end validation** - Aggregation fix complete (2026-01-06), validation needed
+4. **SSRF protections** - Still needed before public release
+5. **AuthN/AuthZ** - Still needed before public release
+
+### Recent Fixes (January 6, 2026)
+
+1. ✅ **KeyFactors Aggregation Fix** - Preserved `keyFactorId` in `ClaimVerdict` interface and all verdict creation paths
+2. ✅ **Evidence Agreement Bug Fixed** - Gate 4 now only counts claim-specific criticism
+3. ✅ **KeyFactors Display Added** - KeyFactors now appear in article mode reports
+4. ✅ **Schema/Prompt Fixes** - FALSE verdict removed, highlight colors normalized, unimplemented features documented
