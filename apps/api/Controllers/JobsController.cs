@@ -20,20 +20,48 @@ public sealed class JobsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> List()
+    public async Task<IActionResult> List(int? page = null, int? pageSize = null)
     {
-        var items = await _jobs.ListJobsAsync();
-        
-        // Wrap in { jobs: [...] } object for frontend compatibility
+        // If pagination parameters are provided, use server-side pagination
+        if (page.HasValue && pageSize.HasValue)
+        {
+            var totalCount = await _db.Jobs.CountAsync();
+            var items = await _jobs.ListJobsAsync((page.Value - 1) * pageSize.Value, pageSize.Value);
+
+            return Ok(new
+            {
+                jobs = items.Select(j => new
+                {
+                    jobId = j.JobId,
+                    status = j.Status,
+                    progress = j.Progress,
+                    createdUtc = j.CreatedUtc.ToString("o"),
+                    updatedUtc = j.UpdatedUtc.ToString("o"),
+                    inputType = j.InputType,
+                    inputPreview = j.InputPreview
+                }),
+                pagination = new
+                {
+                    page = page.Value,
+                    pageSize = pageSize.Value,
+                    totalCount = totalCount,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize.Value)
+                }
+            });
+        }
+
+        // Default behavior: return all jobs (or first 1000 for safety)
+        var allItems = await _jobs.ListJobsAsync(0, 1000);
+
         return Ok(new
         {
-            jobs = items.Select(j => new
+            jobs = allItems.Select(j => new
             {
                 jobId = j.JobId,
                 status = j.Status,
-                progress = j.Progress,           // Added
+                progress = j.Progress,
                 createdUtc = j.CreatedUtc.ToString("o"),
-                updatedUtc = j.UpdatedUtc.ToString("o"),  // Added
+                updatedUtc = j.UpdatedUtc.ToString("o"),
                 inputType = j.InputType,
                 inputPreview = j.InputPreview
             })

@@ -976,6 +976,38 @@
   white-space: pre-line;
 }
 
+/* Article Summary Box */
+.articleSummaryBox {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #fff;
+  margin-bottom: 20px;
+}
+
+.articleSummaryHeader {
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
+.articleSummaryContent {
+  padding: 16px;
+}
+
+.articleSummaryLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.articleSummaryValue {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
 /* Claims */
 .claimsSection {
   margin-top: 24px;

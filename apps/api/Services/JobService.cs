@@ -34,8 +34,8 @@ public sealed class JobService
     public async Task<JobEntity?> GetJobAsync(string jobId)
         => await _db.Jobs.FirstOrDefaultAsync(x => x.JobId == jobId);
 
-    public async Task<List<JobEntity>> ListJobsAsync(int take = 50)
-        => await _db.Jobs.OrderByDescending(x => x.CreatedUtc).Take(take).ToListAsync();
+    public async Task<List<JobEntity>> ListJobsAsync(int skip = 0, int take = 1000)
+        => await _db.Jobs.OrderByDescending(x => x.CreatedUtc).Skip(skip).Take(take).ToListAsync();
 
     public async Task AddEventAsync(string jobId, string level, string message)
     {

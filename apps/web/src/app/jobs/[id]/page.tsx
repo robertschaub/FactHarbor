@@ -416,11 +416,9 @@ export default function JobPage() {
         {hasV22Data && (
           <>
             <button onClick={() => setTab("summary")} className={`${styles.tab} ${tab === "summary" ? styles.tabActive : ""}`}>📊 Summary</button>
-            <button onClick={() => setTab("article")} className={`${styles.tab} ${tab === "article" ? styles.tabActive : ""}`} disabled={!claimVerdicts.length}>📖 Article</button>
             <button onClick={() => setTab("sources")} className={`${styles.tab} ${tab === "sources" ? styles.tabActive : ""}`}>🔍 Sources ({sources.length})</button>
           </>
         )}
-        <button onClick={() => setTab("report")} className={`${styles.tab} ${tab === "report" ? styles.tabActive : ""}`}>📝 Report</button>
         <button onClick={() => setTab("json")} className={`${styles.tab} ${tab === "json" ? styles.tabActive : ""}`}>🔧 JSON</button>
         <button onClick={() => setTab("events")} className={`${styles.tab} ${tab === "events" ? styles.tabActive : ""}`}>📋 Events ({events.length})</button>
 
@@ -444,19 +442,17 @@ export default function JobPage() {
               : <QuestionAnswerBanner questionAnswer={questionAnswer} />
           )}
 
+          {!isQuestion && twoPanelSummary && (
+            <ArticleSummaryBox
+              articleSummary={twoPanelSummary.articleSummary}
+            />
+          )}
+
           {!isQuestion && articleAnalysis && (
             <ArticleVerdictBanner
               articleAnalysis={articleAnalysis}
               fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
               pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
-            />
-          )}
-
-          {twoPanelSummary && (
-            <TwoPanelSummary
-              articleSummary={twoPanelSummary.articleSummary}
-              factharborAnalysis={twoPanelSummary.factharborAnalysis}
-              isQuestion={isQuestion}
             />
           )}
 
@@ -477,69 +473,6 @@ export default function JobPage() {
       {tab === "sources" && hasV22Data && (
         <div className={styles.contentCard}>
           <SourcesPanel searchQueries={searchQueries} sources={sources} researchStats={researchStats} searchProvider={result?.meta?.searchProvider} />
-        </div>
-      )}
-
-      {/* Article View Tab */}
-      {tab === "article" && hasV22Data && (
-        <div className={styles.contentCard}>
-          <ClaimHighlighter originalText={job?.inputValue || ""} claimVerdicts={claimVerdicts} />
-        </div>
-      )}
-
-      {/* Report Tab - Fixed with remark-gfm for tables */}
-      {tab === "report" && (
-        <div ref={reportRef} className={`${styles.contentCard} markdown-body`}>
-          {report ? (
-            <>
-              {reportSections.technicalNotes && (
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
-                  <button
-                    onClick={() => setShowTechnicalNotes((prev) => !prev)}
-                    className={`${styles.tab} ${showTechnicalNotes ? styles.tabActive : ""}`}
-                  >
-                    {showTechnicalNotes ? "Hide Technical Notes" : "Show Technical Notes"}
-                  </button>
-                </div>
-              )}
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  table: ({node, ...props}) => (
-                    <table className={styles.markdownTable} {...props} />
-                  ),
-                  th: ({node, ...props}) => (
-                    <th className={styles.markdownTh} {...props} />
-                  ),
-                  td: ({node, ...props}) => (
-                    <td className={styles.markdownTd} {...props} />
-                  ),
-                }}
-              >
-                {reportSections.publicReport}
-              </ReactMarkdown>
-              {showTechnicalNotes && reportSections.technicalNotes && (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    table: ({node, ...props}) => (
-                      <table className={styles.markdownTable} {...props} />
-                    ),
-                    th: ({node, ...props}) => (
-                      <th className={styles.markdownTh} {...props} />
-                    ),
-                    td: ({node, ...props}) => (
-                      <td className={styles.markdownTd} {...props} />
-                    ),
-                  }}
-                >
-                  {reportSections.technicalNotes}
-                </ReactMarkdown>
-              )}
-            </>
-          ) : (
-            <div className={styles.noReportYet}>No report yet.</div>
-          )}
         </div>
       )}
 
@@ -1019,6 +952,23 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Article Summary Box
+// ============================================================================
+
+function ArticleSummaryBox({ articleSummary }: { articleSummary: any }) {
+  return (
+    <div className={styles.articleSummaryBox}>
+      <div className={styles.articleSummaryHeader}>
+        <b>📄 Article Summary</b>
+      </div>
+      <div className={styles.articleSummaryContent}>
+        <div className={styles.articleSummaryValue}>{decodeHtmlEntities(articleSummary.mainArgument)}</div>
       </div>
     </div>
   );

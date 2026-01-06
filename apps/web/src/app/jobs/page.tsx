@@ -1,8 +1,8 @@
 /**
  * Jobs List Page v2.4.4
- * 
+ *
  * Lists all analysis jobs with status, progress, and links to results
- * 
+ *
  * @version 2.4.4
  */
 
@@ -22,24 +22,46 @@ type JobSummary = {
   inputPreview: string | null;
 };
 
+type PaginationInfo = {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
+
+type JobsResponse = {
+  jobs: JobSummary[];
+  pagination?: PaginationInfo;
+};
+
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
 export default function JobsPage() {
-  const [allJobs, setAllJobs] = useState<JobSummary[]>([]);
+  const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageSize, setPageSize] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        const res = await fetch("/api/fh/jobs", { cache: "no-store" });
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          pageSize: pageSize.toString()
+        });
+        const res = await fetch(`/api/fh/jobs?${params}`, { cache: "no-store" });
         if (!res.ok) {
           throw new Error(`Failed to load jobs: ${res.status}`);
         }
-        const data = await res.json();
-        setAllJobs(data.jobs || []);
+        const data: JobsResponse = await res.json();
+        setJobs(data.jobs || []);
+        if (data.pagination) {
+          setTotalCount(data.pagination.totalCount);
+          setTotalPages(data.pagination.totalPages);
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load jobs");
       } finally {
@@ -49,17 +71,10 @@ export default function JobsPage() {
 
     loadJobs();
 
-    // Refresh every 5 seconds
+    // Refresh current page every 5 seconds
     const interval = setInterval(loadJobs, 5000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Calculate pagination
-  const totalJobs = allJobs.length;
-  const totalPages = Math.ceil(totalJobs / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, totalJobs);
-  const jobs = allJobs.slice(startIndex, endIndex);
+  }, [currentPage, pageSize]);
 
   // Reset to page 1 when page size changes
   const handlePageSizeChange = (newSize: number) => {
@@ -197,7 +212,7 @@ export default function JobsPage() {
       <div className={styles.footer}>
         <div className={styles.footerRow}>
           <span>
-            Showing {totalJobs === 0 ? 0 : startIndex + 1}-{endIndex} of {totalJobs} job{totalJobs !== 1 ? "s" : ""}
+            Showing {totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount} job{totalCount !== 1 ? "s" : ""}
           </span>
           <div className={styles.pagination}>
             <button
