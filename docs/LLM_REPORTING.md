@@ -30,9 +30,10 @@ All variables are read by `apps/web/src/lib/analyzer.ts`.
   - Limited structure.
 
 - `FH_REPORT_STYLE=rich`
-  - Uses a second LLM call to generate the report.
-  - Produces headings, executive summary, and structured sections.
-  - Output varies by provider and temperature.
+  - **STATUS: NOT IMPLEMENTED** - This option is documented but not yet functional.
+  - Planned: Uses a second LLM call to generate the report.
+  - Planned: Produces headings, executive summary, and structured sections.
+  - Currently behaves the same as `structured` mode.
 
 ### Model Knowledge Toggle
 
@@ -62,6 +63,8 @@ If you see generic outputs, try:
 - Enabling `FH_ALLOW_MODEL_KNOWLEDGE=true` for richer summaries
 
 ## LLM Fallbacks
+
+> **STATUS: NOT IMPLEMENTED** - This feature is documented but not yet functional.
 
 You can configure a fallback order if a provider call fails:
 

@@ -139,5 +139,5 @@ export function extractStructuredOutput(result: unknown): unknown {
  * Clamp confidence value to valid range
  */
 export function clampConfidence(value: number): number {
-  return Math.max(0.1, Math.min(1, value));
+  return Math.max(0, Math.min(1, value));
 }

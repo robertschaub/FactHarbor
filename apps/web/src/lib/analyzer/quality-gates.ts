@@ -213,8 +213,9 @@ export function validateVerdictGate4(
   const evidenceCount = sources.length;
 
   // 2. Calculate average source quality
+  // Note: trackRecordScore is already 0-1 scale (see Source Reliability Bundle docs)
   const qualityScores = sources.map(s =>
-    s.trackRecordScore != null ? s.trackRecordScore / 100 : 0.5
+    s.trackRecordScore != null ? s.trackRecordScore : 0.5
   );
   const averageSourceQuality = qualityScores.length > 0
     ? qualityScores.reduce((a, b) => a + b, 0) / qualityScores.length

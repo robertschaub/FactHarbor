@@ -531,8 +531,9 @@ function validateVerdictGate4(
 
   // 2. Calculate average source quality
   // Default to 0.5 if no track record available
+  // Note: trackRecordScore is already 0-1 scale (see Source Reliability Bundle docs)
   const qualityScores = sources.map(s =>
-    s.trackRecordScore != null ? s.trackRecordScore / 100 : 0.5
+    s.trackRecordScore != null ? s.trackRecordScore : 0.5
   );
   const averageSourceQuality = qualityScores.length > 0
     ? qualityScores.reduce((a, b) => a + b, 0) / qualityScores.length
@@ -1360,41 +1361,42 @@ function getVerdictColor(verdict: string): {
 }
 
 /**
- * Get highlight color class for 7-level scale
+ * Get highlight color for verdicts
+ *
+ * Maps 7-point verdicts to 3-color UI system:
+ * - Green: TRUE, MOSTLY-TRUE, YES, MOSTLY-YES (well-supported)
+ * - Yellow: LEANING-TRUE, LEANING-YES, UNVERIFIED, LEANING-FALSE, LEANING-NO (uncertain)
+ * - Red: MOSTLY-FALSE, MOSTLY-NO, FALSE, NO (refuted)
  */
 function getHighlightColor7Point(
   verdict: string,
-):
-  | "green"
-  | "light-green"
-  | "yellow"
-  | "orange"
-  | "dark-orange"
-  | "red"
-  | "dark-red" {
+): "green" | "yellow" | "red" {
   switch (verdict) {
+    // Green: Well-supported
     case "TRUE":
     case "YES":
-      return "green";
     case "MOSTLY-TRUE":
     case "MOSTLY-YES":
-      return "light-green";
+    case "WELL-SUPPORTED":
+      return "green";
+    // Yellow: Uncertain/Partial
     case "LEANING-TRUE":
     case "LEANING-YES":
-      return "yellow";
     case "UNVERIFIED":
-      return "orange";
     case "LEANING-FALSE":
     case "LEANING-NO":
-      return "dark-orange";
+    case "PARTIALLY-SUPPORTED":
+    case "UNCERTAIN":
+      return "yellow";
+    // Red: Refuted
     case "MOSTLY-FALSE":
     case "MOSTLY-NO":
-      return "red";
     case "FALSE":
     case "NO":
-      return "dark-red";
+    case "REFUTED":
+      return "red";
     default:
-      return "orange";
+      return "yellow";
   }
 }
 
@@ -1603,14 +1605,7 @@ interface ClaimVerdict {
   relatedProceedingId?: string;
   startOffset?: number;
   endOffset?: number;
-  highlightColor:
-    | "green"
-    | "light-green"
-    | "yellow"
-    | "orange"
-    | "dark-orange"
-    | "red"
-    | "dark-red";
+  highlightColor: "green" | "yellow" | "red";
   isPseudoscience?: boolean;
   escalationReason?: string;
 }
@@ -3957,10 +3952,9 @@ async function generateClaimVerdicts(
 - WELL-SUPPORTED: Strong evidence supports the claim
 - PARTIALLY-SUPPORTED: Some evidence, but incomplete
 - UNCERTAIN: Insufficient evidence to determine
-- REFUTED: Strong evidence against, scientific consensus disagrees (use for 70-98% certainty)
-- FALSE: ONLY for claims that are definitively, conclusively false with 99%+ certainty (e.g., "2+2=5", "the earth is flat")
+- REFUTED: Strong evidence against the claim, including definitively false claims (e.g., "2+2=5")
 
-For pseudoscience claims that lack scientific basis but can't be proven absolutely false, use REFUTED, not FALSE.
+Use REFUTED for any claim that evidence contradicts, regardless of certainty level.
 
 ## CLAIM CONTESTATION (for each claim):
 - isContested: true if this claim is politically disputed or challenged
@@ -5255,5 +5249,5 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 }
 
 export function clampConfidence(value: number): number {
-  return Math.max(0.1, Math.min(1, value));
+  return Math.max(0, Math.min(1, value));
 }

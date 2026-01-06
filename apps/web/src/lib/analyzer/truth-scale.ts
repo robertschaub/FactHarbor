@@ -321,3 +321,28 @@ export function getHighlightColor(verdict: string): "green" | "yellow" | "red" {
       return "red";
   }
 }
+
+/**
+ * Normalize 7-point highlight color to 3-color UI system
+ * Maps: green, light-green -> green
+ *       yellow, orange -> yellow
+ *       dark-orange, red, dark-red -> red
+ */
+export function normalizeHighlightColor(
+  color: "green" | "light-green" | "yellow" | "orange" | "dark-orange" | "red" | "dark-red"
+): "green" | "yellow" | "red" {
+  switch (color) {
+    case "green":
+    case "light-green":
+      return "green";
+    case "yellow":
+    case "orange":
+      return "yellow";
+    case "dark-orange":
+    case "red":
+    case "dark-red":
+      return "red";
+    default:
+      return "yellow";
+  }
+}
