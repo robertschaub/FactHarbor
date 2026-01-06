@@ -1,6 +1,6 @@
 import "./globals.css";
 import styles from "./layout.module.css";
-import { AboutBox } from "@/components/AboutBox";
+import { ConditionalFooter } from "@/components/ConditionalFooter";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,9 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className={styles.main}>{children}</main>
         </div>
 
-        <footer className={styles.footer}>
-          <AboutBox />
-        </footer>
+        <ConditionalFooter />
       </body>
     </html>
   );

@@ -22,40 +22,16 @@ public sealed class JobsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> List(int? page = null, int? pageSize = null)
     {
-        // If pagination parameters are provided, use server-side pagination
-        if (page.HasValue && pageSize.HasValue)
-        {
-            var totalCount = await _db.Jobs.CountAsync();
-            var items = await _jobs.ListJobsAsync((page.Value - 1) * pageSize.Value, pageSize.Value);
+        // Default to page 1, pageSize 50 if not provided
+        var actualPage = page ?? 1;
+        var actualPageSize = pageSize ?? 50;
 
-            return Ok(new
-            {
-                jobs = items.Select(j => new
-                {
-                    jobId = j.JobId,
-                    status = j.Status,
-                    progress = j.Progress,
-                    createdUtc = j.CreatedUtc.ToString("o"),
-                    updatedUtc = j.UpdatedUtc.ToString("o"),
-                    inputType = j.InputType,
-                    inputPreview = j.InputPreview
-                }),
-                pagination = new
-                {
-                    page = page.Value,
-                    pageSize = pageSize.Value,
-                    totalCount = totalCount,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize.Value)
-                }
-            });
-        }
-
-        // Default behavior: return all jobs (or first 1000 for safety)
-        var allItems = await _jobs.ListJobsAsync(0, 1000);
+        var totalCount = await _db.Jobs.CountAsync();
+        var items = await _jobs.ListJobsAsync((actualPage - 1) * actualPageSize, actualPageSize);
 
         return Ok(new
         {
-            jobs = allItems.Select(j => new
+            jobs = items.Select(j => new
             {
                 jobId = j.JobId,
                 status = j.Status,
@@ -64,7 +40,14 @@ public sealed class JobsController : ControllerBase
                 updatedUtc = j.UpdatedUtc.ToString("o"),
                 inputType = j.InputType,
                 inputPreview = j.InputPreview
-            })
+            }),
+            pagination = new
+            {
+                page = actualPage,
+                pageSize = actualPageSize,
+                totalCount = totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)actualPageSize)
+            }
         });
     }
 
