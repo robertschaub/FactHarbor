@@ -240,9 +240,11 @@ export default function JobPage() {
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   // Opinion-based contestations without evidence are not highlighted (almost anything can be doubted)
+  // Include Key Factors from both question mode AND article mode (unified in v2.6.18)
   const allKeyFactors: any[] = [
     ...(questionAnswer?.keyFactors || []),
     ...(questionAnswer?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
+    ...(articleAnalysis?.keyFactors || []), // NEW v2.6.18: Article mode Key Factors
   ];
   const hasEvidenceBasedContestations = allKeyFactors.some(
     (f: any) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
@@ -991,6 +993,35 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
               This content contains claims based on <b>{pseudoCategories.map((c: string) =>
                 c.replace(/([A-Z])/g, ' $1').trim().toLowerCase()
               ).join(", ")}</b> — concepts that contradict established scientific consensus.
+            </div>
+          </div>
+        )}
+
+        {/* NEW v2.6.18: Key Factors for article mode (unified with question mode) */}
+        {articleAnalysis.keyFactors && articleAnalysis.keyFactors.length > 0 && (
+          <div className={styles.keyFactorsSection}>
+            <div className={styles.keyFactorsHeader}>Key Factors</div>
+            <div className={styles.keyFactorsList}>
+              {articleAnalysis.keyFactors.map((factor: any, i: number) => {
+                const hasEvidenceBasedContestation = factor.isContested &&
+                  (factor.factualBasis === "established" || factor.factualBasis === "disputed");
+                return (
+                  <div key={i} className={`${styles.keyFactor} ${hasEvidenceBasedContestation ? styles.keyFactorContested : ""}`}>
+                    <span className={styles.keyFactorIcon}>
+                      {factor.supports === "yes" ? "✅" : factor.supports === "no" ? "❌" : "⚪"}
+                    </span>
+                    <span className={styles.keyFactorText}>{factor.factor}</span>
+                    {hasEvidenceBasedContestation && (
+                      <span className={styles.contestedBadge}>⚠️ CONTESTED</span>
+                    )}
+                    {factor.isContested && factor.contestedBy && (
+                      <div className={styles.contestedByText}>
+                        {hasEvidenceBasedContestation ? "Contested by" : "Doubted by"}: {factor.contestedBy}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

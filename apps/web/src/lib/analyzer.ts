@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.17
+ * FactHarbor POC1 Analyzer v2.6.18
  *
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -8,10 +8,13 @@
  * - Configurable source reliability via FH_SOURCE_BUNDLE_PATH
  * - Configurable search with FH_SEARCH_ENABLED and FH_SEARCH_DOMAIN_WHITELIST
  * - Fixed AI SDK output handling for different versions (output vs experimental_output)
- * - NEW: Claim dependency tracking (claimRole: attribution/source/timing/core)
- * - NEW: Dependency propagation (if prerequisite false, dependent claims flagged)
+ * - Claim dependency tracking (claimRole: attribution/source/timing/core)
+ * - Dependency propagation (if prerequisite false, dependent claims flagged)
+ * - NEW: Unified analysis for questions and statements (same depth regardless of punctuation)
+ * - NEW: Key Factors generated for procedural/legal topics in both modes
+ * - NEW: Simplified schemas for better cross-provider compatibility
  *
- * @version 2.6.17
+ * @version 2.6.18
  * @date January 2026
  */
 
@@ -65,7 +68,7 @@ function clearDebugLog() {
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.17",
+  schemaVersion: "2.6.18",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
 
@@ -195,6 +198,44 @@ For "The STF followed proper due process procedures":
 Prioritize provided sources when available, but actively supplement with your knowledge.`;
   }
   return "Use ONLY the provided facts and sources. If information is missing, say INSUFFICIENT-EVIDENCE. Do not add facts not present in the sources.";
+}
+
+/**
+ * Get provider-specific prompt hints for better cross-provider compatibility
+ * Different LLMs have different strengths/weaknesses with structured output
+ */
+function getProviderPromptHint(): string {
+  const provider = (process.env.LLM_PROVIDER ?? "anthropic").toLowerCase();
+
+  if (provider === "openai" || provider === "gpt") {
+    return `
+## OUTPUT FORMAT (IMPORTANT)
+Return ONLY valid JSON matching the schema. All string fields must be non-empty (use descriptive text, not empty strings for required fields).
+For array fields, always include at least one item where appropriate.`;
+  }
+
+  if (provider === "google" || provider === "gemini") {
+    return `
+## OUTPUT FORMAT (CRITICAL)
+Return ONLY valid JSON. Do NOT include any explanation text outside the JSON.
+- All enum fields must use EXACT values from the allowed options
+- All boolean fields must be true or false (not strings)
+- All number fields must be numbers (not strings)
+- For empty arrays, use [] not null`;
+  }
+
+  if (provider === "mistral") {
+    return `
+## OUTPUT FORMAT (CRITICAL)
+Return ONLY valid JSON matching the exact schema structure.
+- Use the exact enum values specified (case-sensitive)
+- Do not omit any required fields
+- Use empty string "" for optional string fields with no value
+- Use empty array [] for optional array fields with no items`;
+  }
+
+  // Anthropic/Claude handles structured output well, minimal hints needed
+  return "";
 }
 
 /**
@@ -1634,6 +1675,10 @@ interface ArticleAnalysis {
   // Pseudoscience detection (v2.4.6+)
   isPseudoscience?: boolean;
   pseudoscienceCategories?: string[];
+  // NEW v2.6.18: Key Factors for article mode (unified with question mode)
+  // Generated when topic involves legal/procedural/institutional analysis
+  keyFactors?: KeyFactor[];
+  hasContestedFactors?: boolean;
 }
 
 interface TwoPanelSummary {
@@ -1760,6 +1805,63 @@ function applyEvidenceWeighting(
       highlightColor: getHighlightColor7Point(adjustedVerdict),
     };
   });
+}
+
+// ============================================================================
+// TOPIC DETECTION (for unified analysis)
+// ============================================================================
+
+/**
+ * Detect if the topic involves procedural/legal/institutional analysis
+ * This determines whether Key Factors should be generated (unified with question mode)
+ *
+ * Key Factors are appropriate for topics involving:
+ * - Legal proceedings (trials, court decisions, rulings)
+ * - Institutional processes (government actions, regulatory decisions)
+ * - Procedural fairness (due process, impartiality, evidence basis)
+ * - Political/governmental actions with legal implications
+ */
+function detectProceduralTopic(understanding: ClaimUnderstanding, originalText: string): boolean {
+  // Check 1: Has distinct proceedings detected
+  if (understanding.distinctProceedings && understanding.distinctProceedings.length > 0) {
+    return true;
+  }
+
+  // Check 2: Has legal frameworks identified
+  if (understanding.legalFrameworks && understanding.legalFrameworks.length > 0) {
+    return true;
+  }
+
+  // Check 3: Claims are predominantly legal/procedural type
+  const legalProceduralClaims = understanding.subClaims.filter(
+    (c: any) => c.type === "legal" || c.type === "procedural"
+  );
+  if (legalProceduralClaims.length >= understanding.subClaims.length * 0.4) {
+    return true;
+  }
+
+  // Check 4: Text contains procedural/legal keywords
+  const proceduralKeywords = [
+    /\b(trial|court|judge|ruling|verdict|sentence|conviction|acquittal)\b/i,
+    /\b(lawsuit|litigation|prosecution|defendant|plaintiff)\b/i,
+    /\b(due process|fair trial|impartial|jurisdiction)\b/i,
+    /\b(electoral|election|ballot|vote|ineligibility)\b/i,
+    /\b(investigation|indictment|charges|allegations)\b/i,
+    /\b(supreme court|federal court|tribunal|justice)\b/i,
+    /\b(constitutional|legislation|statute|law|legal)\b/i,
+    /\b(regulatory|agency|commission|board|authority)\b/i,
+    /\b(proceeding|hearing|testimony|evidence|witness)\b/i,
+  ];
+
+  const textToCheck = `${understanding.articleThesis} ${originalText}`.toLowerCase();
+  const keywordMatches = proceduralKeywords.filter(pattern => pattern.test(textToCheck));
+
+  // If 3+ procedural keywords found, it's a procedural topic
+  if (keywordMatches.length >= 3) {
+    return true;
+  }
+
+  return false;
 }
 
 // ============================================================================
@@ -2897,6 +2999,18 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
       factualBasis: z.enum(["established", "disputed", "alleged", "opinion", "unknown"]),
     }),
   ),
+  // NEW v2.6.18: Key Factors for procedural/legal topics (unified with question mode)
+  // This provides the same depth of analysis regardless of question vs statement format
+  keyFactors: z.array(
+    z.object({
+      factor: z.string(), // e.g., "Correct application of law", "Due process followed"
+      supports: z.enum(["yes", "no", "neutral"]), // Does evidence support this factor?
+      explanation: z.string(), // Brief explanation
+      isContested: z.boolean(), // Is this factor politically disputed?
+      contestedBy: z.string(), // Who contests it (empty if not contested)
+      factualBasis: z.enum(["established", "disputed", "opinion", "unknown"]), // Does opposition have evidence?
+    }),
+  ),
   articleAnalysis: z.object({
     thesisSupported: z.boolean(),
     logicalFallacies: z.array(
@@ -3080,7 +3194,8 @@ ${proceedingsFormatted}
    CRITICAL: Political contestation ("critics say it was unfair") is NOT the same as counter-evidence.
    Use WELL-SUPPORTED, not UNCERTAIN, if you know the facts support the claim despite political opposition.
 
-${getKnowledgeInstruction()}`;
+${getKnowledgeInstruction()}
+${getProviderPromptHint()}`;
 
   const userPrompt = `## QUESTION
 "${understanding.questionBeingAsked || state.originalInput}"
@@ -3553,7 +3668,8 @@ CRITICAL - factualBasis MUST be "opinion" for:
 CRITICAL: Political contestation is NOT counter-evidence.
 Use WELL-SUPPORTED if you know the facts support the claim despite political opposition.
 
-${getKnowledgeInstruction()}`;
+${getKnowledgeInstruction()}
+${getProviderPromptHint()}`;
 
   const userPrompt = `## QUESTION
 "${understanding.questionBeingAsked || state.originalInput}"
@@ -3829,6 +3945,10 @@ async function generateClaimVerdicts(
   claimVerdicts: ClaimVerdict[];
   articleAnalysis: ArticleAnalysis;
 }> {
+  // Detect if topic involves procedural/legal/institutional analysis
+  // This determines whether to generate Key Factors (unified with question mode)
+  const isProceduralTopic = detectProceduralTopic(understanding, state.originalText);
+
   // Add pseudoscience context and verdict calibration to prompt
   // Also add Article Verdict Problem analysis per POC1 spec
   let systemPrompt = `Generate verdicts for each claim AND an independent article-level verdict.
@@ -3886,7 +4006,47 @@ ARTICLE VERDICT OPTIONS:
 IMPORTANT: Set verdictDiffersFromClaimAverage=true if the article verdict differs from what a simple average would suggest.
 Example: If 3/4 claims are TRUE but the main conclusion is FALSE → article verdict = MISLEADING (not MOSTLY-CREDIBLE)
 
-${getKnowledgeInstruction()}`;
+${getKnowledgeInstruction()}
+${getProviderPromptHint()}`;
+
+  // Add Key Factors instructions for procedural/legal topics (unified with question mode)
+  if (isProceduralTopic) {
+    console.log("[Analyzer] Procedural topic detected - adding Key Factors to analysis");
+    systemPrompt += `
+
+## KEY FACTORS ANALYSIS (REQUIRED for this procedural/legal topic)
+
+In addition to individual claim verdicts, analyze the thesis using these KEY FACTORS.
+This provides structured assessment of procedural fairness regardless of input format.
+
+Generate keyFactors array with these aspects:
+1. **Correct application** - Were proper rules/standards/methods applied correctly?
+2. **Process fairness** - Were proper procedures followed? Was due process observed?
+3. **Evidence basis** - Were decisions based on documented evidence rather than assumptions?
+4. **Decision-maker impartiality** - Were there conflicts of interest? Any bias concerns?
+5. **Outcome proportionality** - Was the outcome proportionate to the situation/charges?
+
+For EACH key factor:
+- factor: Descriptive name (e.g., "Correct application of electoral law")
+- supports: "yes" if evidence supports this factor, "no" if evidence refutes it, "neutral" ONLY if no information
+- explanation: Brief explanation of your assessment
+- isContested: true if this factor is politically disputed
+- contestedBy: WHO disputes it specifically (e.g., "Bolsonaro supporters", "Trump administration") - empty string if not contested
+- factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
+  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS
+  * "disputed" = Opposition has some factual counter-evidence but debatable
+  * "opinion" = NO factual counter-evidence (just claims, rhetoric, political actions)
+  * "unknown" = Cannot determine
+
+CRITICAL: factualBasis MUST be "opinion" for political statements, executive orders, sanctions, or rhetoric without documented evidence.
+Only use "established" or "disputed" when opposition provides specific court documents, records, or verifiable data.`;
+  } else {
+    // For non-procedural topics, provide empty keyFactors array
+    systemPrompt += `
+
+## KEY FACTORS
+For this non-procedural topic, provide an empty keyFactors array: []`;
+  }
 
   if (pseudoscienceAnalysis?.isPseudoscience) {
     systemPrompt += `\n\nPSEUDOSCIENCE DETECTED: This content contains patterns associated with pseudoscience (${pseudoscienceAnalysis.categories.join(", ")}).
@@ -4182,6 +4342,24 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
   // Check if article verdict differs significantly from claims average
   const verdictDiffers = Math.abs(articleTruthPct - claimsAvgTruthPct) > 15 || hasMisleadingPattern;
 
+  // Process Key Factors from LLM response (unified with question mode)
+  const keyFactors: KeyFactor[] = (parsed.keyFactors || []).map((kf: any) => ({
+    factor: kf.factor,
+    supports: kf.supports,
+    explanation: kf.explanation,
+    isContested: kf.isContested || false,
+    contestedBy: kf.contestedBy || "",
+    contestationReason: kf.explanation || "", // Use explanation as contestation reason
+    factualBasis: kf.factualBasis || "unknown",
+  }));
+
+  // Check if any factors are contested with evidence-based contestation
+  const hasContestedFactors = keyFactors.some(
+    (f) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
+  );
+
+  console.log(`[Analyzer] Key Factors generated: ${keyFactors.length} factors, ${hasContestedFactors ? "has" : "no"} contested factors`);
+
   return {
     claimVerdicts: weightedClaimVerdicts,
     articleAnalysis: {
@@ -4213,6 +4391,10 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       claimPattern,
       isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
       pseudoscienceCategories: pseudoscienceAnalysis?.categories,
+
+      // NEW v2.6.18: Key Factors for article mode (unified with question mode)
+      keyFactors: keyFactors.length > 0 ? keyFactors : undefined,
+      hasContestedFactors: keyFactors.length > 0 ? hasContestedFactors : undefined,
     },
   };
 }
