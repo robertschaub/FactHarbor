@@ -86,6 +86,12 @@ const CONFIG = {
   allowModelKnowledge:
     (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true",
 
+  // KeyFactors configuration
+  // Optional hints for KeyFactors (suggestions only, not enforced)
+  // Format: JSON array of objects with {question, factor, category}
+  // Example: FH_KEYFACTOR_HINTS='[{"question":"Was due process followed?","factor":"Due Process","category":"procedural"}]'
+  keyFactorHints: parseKeyFactorHints(process.env.FH_KEYFACTOR_HINTS),
+
   quick: {
     maxResearchIterations: 2,
     maxSourcesPerIteration: 3,
@@ -114,6 +120,31 @@ function parseWhitelist(whitelist: string | undefined): string[] | null {
     .split(",")
     .map((d) => d.trim().toLowerCase())
     .filter((d) => d.length > 0);
+}
+
+/**
+ * Parse optional KeyFactor hints from environment variable
+ * Returns array of hint objects or null if not configured
+ * These are suggestions only - the LLM can use them but is not required to
+ */
+function parseKeyFactorHints(
+  hintsJson: string | undefined,
+): Array<{ question: string; factor: string; category: string }> | null {
+  if (!hintsJson) return null;
+  try {
+    const parsed = JSON.parse(hintsJson);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter(
+      (hint) =>
+        typeof hint === "object" &&
+        hint !== null &&
+        typeof hint.question === "string" &&
+        typeof hint.factor === "string" &&
+        typeof hint.category === "string",
+    ) as Array<{ question: string; factor: string; category: string }>;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -164,12 +195,69 @@ function getActiveConfig() {
   return CONFIG.deepModeEnabled ? CONFIG.deep : CONFIG.quick;
 }
 
-function getKnowledgeInstruction(): string {
+/**
+ * Detect if a topic likely requires recent data
+ * Returns true if dates, recent keywords, or temporal indicators suggest recency matters
+ */
+function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): boolean {
+  const lowerText = text.toLowerCase();
+
+  // Check for recent date mentions (within last 2 years from current date)
+  const currentYear = new Date().getFullYear();
+  const recentYears = [currentYear, currentYear - 1, currentYear - 2];
+  const yearPattern = /\b(20\d{2})\b/;
+  const yearMatch = text.match(yearPattern);
+  if (yearMatch) {
+    const mentionedYear = parseInt(yearMatch[1]);
+    if (recentYears.includes(mentionedYear)) {
+      return true;
+    }
+  }
+
+  // Check for recent temporal keywords
+  const recentKeywords = [
+    'recent', 'recently', 'latest', 'newest', 'current', 'now', 'today',
+    'this year', 'this month', 'last month', 'last week', 'yesterday',
+    'november 2025', 'december 2025', 'january 2026', '2025', '2026',
+    'announced', 'released', 'published', 'unveiled', 'revealed'
+  ];
+
+  if (recentKeywords.some(keyword => lowerText.includes(keyword))) {
+    return true;
+  }
+
+  // Check understanding for recent dates in proceedings
+  if (understanding?.distinctProceedings) {
+    for (const proc of understanding.distinctProceedings) {
+      if (proc.date && recentYears.some(year => proc.date.includes(String(year)))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function getKnowledgeInstruction(text?: string, understanding?: ClaimUnderstanding): string {
+  const recencyMatters = text ? isRecencySensitive(text, understanding) : false;
+
   if (CONFIG.allowModelKnowledge) {
+    const recencyGuidance = recencyMatters ? `
+### ⚠️ RECENT DATA DETECTED - PRIORITIZE WEB SEARCH RESULTS:
+
+This topic appears to involve recent events, dates, or announcements. For recent information:
+- **PRIORITIZE**: Web search results and fetched sources (these contain the most current data)
+- **USE CAUTIOUSLY**: Your training knowledge may be outdated for recent events
+- **WHEN TO USE KNOWLEDGE**: Only for established facts, standard procedures, or historical context that hasn't changed
+- **WHEN TO USE SEARCH**: For specific dates, recent announcements, current status, or events from the past 1-2 years
+
+Example: If sources say "November 2025" and your knowledge cutoff is earlier, TRUST THE SOURCES, not your training data.
+` : '';
+
     return `## KNOWLEDGE SOURCE INSTRUCTIONS (CRITICAL - READ CAREFULLY)
 
 You MUST actively use your background knowledge as evidence. This is NOT optional.
-
+${recencyGuidance}
 ### WHAT YOU KNOW (USE IT!):
 - Standard legal procedures in major jurisdictions (Brazil, US, EU, etc.)
 - Well-documented public figures and their roles (e.g., Alexandre de Moraes is a Brazilian Supreme Court justice)
@@ -1610,12 +1698,16 @@ interface ClaimVerdict {
   riskTier: "A" | "B" | "C";
   reasoning: string;
   supportingFactIds: string[];
+  keyFactorId?: string; // Maps claim to KeyFactor for aggregation
   relatedProceedingId?: string;
   startOffset?: number;
   endOffset?: number;
   highlightColor: "green" | "yellow" | "red";
   isPseudoscience?: boolean;
   escalationReason?: string;
+  isContested?: boolean;
+  contestedBy?: string;
+  factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";
 }
 
 interface QuestionAnswer {
@@ -1873,6 +1965,23 @@ function detectProceduralTopic(understanding: ClaimUnderstanding, originalText: 
 
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
 // Using union types with explicit "unknown" or empty values instead of nullable/optional.
+const SUBCLAIM_SCHEMA = z.object({
+  id: z.string(),
+  text: z.string(),
+  type: z.enum(["legal", "procedural", "factual", "evaluative"]),
+  claimRole: z.enum(["attribution", "source", "timing", "core", "unknown"]),
+  dependsOn: z.array(z.string()), // empty array if no dependencies
+  keyEntities: z.array(z.string()),
+  // Three-attribute assessment
+  checkWorthiness: z.enum(["high", "medium", "low"]),
+  harmPotential: z.enum(["high", "medium", "low"]),
+  centrality: z.enum(["high", "medium", "low"]),
+  isCentral: z.boolean(), // true only if harmPotential OR centrality is "high"
+  relatedProceedingId: z.string(), // empty string if not applicable
+  approximatePosition: z.string(), // empty string if not applicable
+  keyFactorId: z.string(), // empty string if not mapped to any factor
+});
+
 const UNDERSTANDING_SCHEMA = z.object({
   detectedInputType: z.enum(["question", "claim", "article"]),
   questionIntent: z.enum(["verification", "exploration", "comparison", "none"]),
@@ -1906,24 +2015,7 @@ const UNDERSTANDING_SCHEMA = z.object({
 
   mainQuestion: z.string(),
   articleThesis: z.string(),
-  subClaims: z.array(
-    z.object({
-      id: z.string(),
-      text: z.string(),
-      type: z.enum(["legal", "procedural", "factual", "evaluative"]),
-      claimRole: z.enum(["attribution", "source", "timing", "core", "unknown"]),
-      dependsOn: z.array(z.string()), // empty array if no dependencies
-      keyEntities: z.array(z.string()),
-      // Three-attribute assessment
-      checkWorthiness: z.enum(["high", "medium", "low"]),
-      harmPotential: z.enum(["high", "medium", "low"]),
-      centrality: z.enum(["high", "medium", "low"]),
-      isCentral: z.boolean(), // true only if harmPotential OR centrality is "high"
-      relatedProceedingId: z.string(), // empty string if not applicable
-      approximatePosition: z.string(), // empty string if not applicable
-      keyFactorId: z.string(), // empty string if not mapped to any factor
-    }),
-  ),
+  subClaims: z.array(SUBCLAIM_SCHEMA),
   distinctEvents: z.array(
     z.object({
       name: z.string(),
@@ -1945,11 +2037,53 @@ const UNDERSTANDING_SCHEMA = z.object({
   ),
 });
 
+const SUPPLEMENTAL_SUBCLAIMS_SCHEMA = z.object({
+  subClaims: z.array(SUBCLAIM_SCHEMA),
+});
+
+const MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING = 2;
+const MIN_TOTAL_CLAIMS_WITH_SINGLE_CENTRAL = 3;
+const SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS = 1;
+const SHORT_SIMPLE_INPUT_MAX_CHARS = 60;
+
 async function understandClaim(
   input: string,
   model: any,
 ): Promise<ClaimUnderstanding> {
+  // Get current date for temporal reasoning
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1; // 1-12
+  const currentDay = currentDate.getDate();
+  const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+  const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Detect recency sensitivity for this analysis
+  const recencyMatters = isRecencySensitive(input, undefined);
+
   const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT EVENTS or PROCEEDINGS.
+
+${recencyMatters ? `## ⚠️ RECENT DATA DETECTED
+
+This input appears to involve recent events, dates, or announcements. When generating research questions:
+- **PRIORITIZE**: Questions that will help find the most current information via web search
+- **INCLUDE**: Date-specific queries (e.g., "November 2025", "2025", "recent")
+- **FOCUS**: Recent developments, current status, latest announcements
+- **NOTE**: Web search will be used to find current sources - structure your research questions accordingly
+
+` : ''}## CRITICAL: TEMPORAL REASONING
+
+**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}).
+
+**DATE REASONING RULES**:
+- When evaluating dates mentioned in claims, compare them to the CURRENT DATE above
+- Do NOT assume dates are in the future without checking against the current date
+- A date like "November 2025" is in the PAST if the current date is January 2026 or later
+- Do NOT reject claims as "impossible" based on incorrect temporal assumptions
+- If a date seems inconsistent, verify it against the current date before making judgments
+- When in doubt about temporal relationships, use the evidence from sources rather than making assumptions
+
+**EXAMPLE**: If the current date is January 6, 2026, then "late November 2025" is in the PAST (approximately 6 weeks ago), not the future.
 
 ## CRITICAL: ARTICLE THESIS (articleThesis)
 
@@ -2195,7 +2329,12 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 
 - **subClaims**: Even for questions, generate sub-claims that need to be verified to answer the question.
   - Break down the implied claim into verifiable components
-  - For each proceeding/event, generate at least 4-5 sub-claims covering:
+  - For multi-proceeding cases, ensure meaningful coverage across all proceedings (set relatedProceedingId appropriately)
+  - **DECOMPOSE COMPOUND CLAIMS**: Split claims that combine multiple assertions into separate claims:
+    - Isolate the core factual assertion as the CENTRAL claim (isCentral: true, claimRole: "core")
+    - Separate source/attribution claims as non-central (isCentral: false, claimRole: "source" or "attribution")
+    - Use dependsOn to link claims to their prerequisites
+  - For each proceeding/event, consider claims covering:
     - Correct application (were proper rules/standards/methods applied?)
     - Process fairness (were proper procedures followed?)
     - Evidence basis (were decisions based on evidence?)
@@ -2217,6 +2356,12 @@ Set requiresSeparateAnalysis = true when multiple proceedings detected.
 ## KEY FACTORS (Emergent Decomposition)
 
 **IMPORTANT**: KeyFactors are OPTIONAL and EMERGENT - only generate them if the thesis naturally decomposes into distinct evaluation dimensions.
+
+${CONFIG.keyFactorHints && CONFIG.keyFactorHints.length > 0
+  ? `\n**OPTIONAL HINTS** (you may consider these, but are not required to use them):
+The following KeyFactor dimensions have been suggested as potentially relevant. Use them only if they genuinely apply to this thesis. If they don't fit, ignore them and generate factors that actually match the thesis:
+${CONFIG.keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "${hint.question}"`).join("\n")}`
+  : ""}
 
 **WHEN TO GENERATE**: Create keyFactors array when the thesis involves:
 - Complex multi-dimensional evaluation (e.g., fairness, legitimacy, effectiveness)
@@ -2410,6 +2555,29 @@ For "Does this vaccine cause autism?"
     throw new Error("LLM output missing required fields");
   }
 
+  const isShortSimpleNonQuestion =
+    parsed.detectedInputType !== "question" &&
+    input.trim().length > 0 &&
+    input.trim().length <= SHORT_SIMPLE_INPUT_MAX_CHARS &&
+    parsed.subClaims.length <= 1 &&
+    (parsed.keyFactors?.length ?? 0) <= 1;
+
+  // Post-processing: Re-prompt if coverage is thin (single attempt only)
+  // Skip for short, simple non-question inputs.
+  if (!isShortSimpleNonQuestion) {
+    for (let attempt = 0; attempt < SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS; attempt++) {
+      const supplementalClaims = await requestSupplementalSubClaims(
+        input,
+        model,
+        parsed
+      );
+      if (supplementalClaims.length === 0) break;
+      parsed.subClaims.push(...supplementalClaims);
+      console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance proceeding coverage`);
+      break;
+    }
+  }
+
   // Post-processing: Ensure keyEntities are populated for each claim
   for (const claim of parsed.subClaims) {
     if (!claim.keyEntities || claim.keyEntities.length === 0) {
@@ -2455,6 +2623,189 @@ For "Does this vaccine cause autism?"
   console.log(`[Analyzer] Gate 1 applied: ${gate1Stats.passed}/${gate1Stats.total} claims passed, ${gate1Stats.centralKept} central claims kept despite issues`);
 
   return { ...parsed, subClaims: validatedClaims, gate1Stats };
+}
+
+async function requestSupplementalSubClaims(
+  input: string,
+  model: any,
+  understanding: ClaimUnderstanding,
+): Promise<ClaimUnderstanding["subClaims"]> {
+  const proceedings = understanding.distinctProceedings || [];
+  const hasProceedings = proceedings.length > 0;
+  const isMultiProceeding = proceedings.length > 1;
+  const singleProceedingId = proceedings.length === 1 ? proceedings[0].id : "";
+
+  const normalizeText = (text: string) =>
+    text.toLowerCase().replace(/\s+/g, " ").trim();
+
+  const claimsByProc = new Map<string, ClaimUnderstanding["subClaims"]>();
+  const centralCoreCounts = new Map<string, number>();
+  const existingTextByProc = new Map<string, Set<string>>();
+  const existingTextGlobal = new Set<string>();
+
+  const coverageTargets = hasProceedings
+    ? proceedings.map((proc) => ({ id: proc.id, name: proc.name }))
+    : [{ id: "", name: "General" }];
+
+  for (const target of coverageTargets) {
+    claimsByProc.set(target.id, []);
+    existingTextByProc.set(target.id, new Set());
+    centralCoreCounts.set(target.id, 0);
+  }
+
+  for (const claim of understanding.subClaims) {
+    const normalized = normalizeText(claim.text || "");
+    if (normalized) {
+      existingTextGlobal.add(normalized);
+    }
+
+    let procId = claim.relatedProceedingId || "";
+    if (!isMultiProceeding) {
+      procId = procId || singleProceedingId;
+    }
+
+    if (isMultiProceeding && !procId) continue;
+    if (!claimsByProc.has(procId)) continue;
+
+    claimsByProc.get(procId)!.push(claim);
+    existingTextByProc.get(procId)!.add(normalized);
+    if (claim.isCentral && claim.claimRole === "core") {
+      centralCoreCounts.set(procId, (centralCoreCounts.get(procId) || 0) + 1);
+    }
+  }
+
+  const missingProceedings = coverageTargets
+    .map((target) => {
+      const totalClaims = claimsByProc.get(target.id)?.length ?? 0;
+      const centralCore = centralCoreCounts.get(target.id) || 0;
+      const needsCoverage =
+        centralCore < MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING &&
+        !(centralCore === 1 && totalClaims >= MIN_TOTAL_CLAIMS_WITH_SINGLE_CENTRAL);
+      return { target, totalClaims, centralCore, needsCoverage };
+    })
+    .filter((entry) => entry.needsCoverage);
+
+  if (missingProceedings.length === 0) return [];
+
+  const missingSummary = missingProceedings
+    .map(({ target, totalClaims, centralCore }) => {
+      const neededCentral = Math.max(0, MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING - centralCore);
+      const label = target.id ? `${target.id}: ${target.name}` : `${target.name}`;
+      return `- ${label} (total=${totalClaims}, central core=${centralCore}, need +${neededCentral} central core)`;
+    })
+    .join("\n");
+
+  const existingClaimsSummary = missingProceedings
+    .map(({ target }) => {
+      const claims = claimsByProc.get(target.id) || [];
+      const label = target.id ? `${target.id}` : `${target.name}`;
+      if (claims.length === 0) return `- ${label}: (no claims yet)`;
+      return `- ${label}:\n${claims
+        .map((claim) => `  - ${claim.id}: ${claim.text}`)
+        .join("\n")}`;
+    })
+    .join("\n");
+
+  const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed proceedings.
+- Return ONLY new claims (do not repeat existing ones).
+- Each claim must be tied to a single proceeding via relatedProceedingId.${hasProceedings ? "" : " Use an empty string if no proceedings are listed."}
+- Use claimRole="core", checkWorthiness="high", harmPotential="high", centrality="high", isCentral=true.
+- Use dependsOn=[] unless a dependency is truly required.
+- Ensure each listed proceeding reaches at least ${MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING} central core claims.`;
+
+  const userPrompt = `INPUT:\n"${input}"\n\nPROCEEDINGS NEEDING MORE CLAIMS:\n${missingSummary}\n\nEXISTING CLAIMS (DO NOT DUPLICATE):\n${existingClaimsSummary}`;
+
+  let supplemental: any;
+  try {
+    const result = await generateText({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.2,
+      output: Output.object({ schema: SUPPLEMENTAL_SUBCLAIMS_SCHEMA }),
+    });
+
+    supplemental = extractStructuredOutput(result);
+  } catch (err: any) {
+    debugLog("requestSupplementalSubClaims: FAILED", err?.message || String(err));
+    return [];
+  }
+
+  if (!supplemental?.subClaims || !Array.isArray(supplemental.subClaims)) {
+    debugLog("requestSupplementalSubClaims: No supplemental claims returned");
+    return [];
+  }
+
+  const allowedProcIds = new Set(missingProceedings.map((entry) => entry.target.id));
+  const existingIds = new Set(understanding.subClaims.map((c) => c.id));
+  const idRemap = new Map<string, string>();
+
+  let maxId = 0;
+  for (const claim of understanding.subClaims) {
+    const match = /^SC(\d+)$/i.exec(claim.id || "");
+    if (match) {
+      const num = Number(match[1]);
+      if (!Number.isNaN(num)) maxId = Math.max(maxId, num);
+    }
+  }
+
+  const nextId = () => {
+    let candidate = `SC${++maxId}`;
+    while (existingIds.has(candidate)) {
+      candidate = `SC${++maxId}`;
+    }
+    return candidate;
+  };
+
+  const supplementalClaims: ClaimUnderstanding["subClaims"] = [];
+  for (const claim of supplemental.subClaims) {
+    let procId = claim?.relatedProceedingId || "";
+    if (!isMultiProceeding) {
+      procId = procId || singleProceedingId;
+    }
+    if (isMultiProceeding && !procId) {
+      continue;
+    }
+    if (!allowedProcIds.has(procId)) {
+      continue;
+    }
+
+    const normalized = normalizeText(claim.text || "");
+    if (!normalized) continue;
+
+    if (existingTextGlobal.has(normalized)) continue;
+
+    const existingTexts = existingTextByProc.get(procId) || new Set();
+    if (existingTexts.has(normalized)) continue;
+
+    let newId = claim.id || "";
+    if (!newId || existingIds.has(newId)) {
+      newId = nextId();
+      if (claim.id) idRemap.set(claim.id, newId);
+    }
+
+    existingIds.add(newId);
+    existingTexts.add(normalized);
+
+    supplementalClaims.push({
+      ...claim,
+      id: newId,
+      relatedProceedingId: procId,
+      dependsOn: Array.isArray(claim.dependsOn) ? claim.dependsOn : [],
+      keyEntities: Array.isArray(claim.keyEntities) ? claim.keyEntities : [],
+    });
+  }
+
+  if (idRemap.size > 0) {
+    for (const claim of supplementalClaims) {
+      if (!Array.isArray(claim.dependsOn)) continue;
+      claim.dependsOn = claim.dependsOn.map((dep) => idRemap.get(dep) || dep);
+    }
+  }
+
+  return supplementalClaims;
 }
 
 function findClaimPosition(
@@ -2534,6 +2885,21 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   const hasLegal = categories.includes("legal_provision");
   const hasEvidence = categories.includes("evidence");
 
+  // Detect if this topic requires recent data
+  const recencyMatters = isRecencySensitive(
+    state.originalInput || understanding.articleThesis || understanding.questionBeingAsked || "",
+    understanding
+  );
+
+  // Get current year for date-specific queries
+  const currentYear = new Date().getFullYear();
+
+  if (recencyMatters && CONFIG.searchEnabled) {
+    debugLog("Research phase: Recency-sensitive topic detected - prioritizing web search", {
+      input: state.originalInput?.substring(0, 100),
+    });
+  }
+
   const proceedings = understanding.distinctProceedings || [];
   const proceedingsWithFacts = new Set(
     state.facts
@@ -2595,14 +2961,23 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   }
 
   if (!hasEvidence && state.iterations.length <= 1) {
+    // For recency-sensitive topics, add date-specific queries
+    const baseQueries = [
+      `${entityStr} evidence documents`,
+      `${entityStr} facts findings`,
+    ];
+
+    const queries = recencyMatters ? [
+      ...baseQueries,
+      `${entityStr} ${currentYear} ${currentYear - 1} latest news`,
+      `${entityStr} recent announcement update`,
+    ] : baseQueries;
+
     return {
       complete: false,
-      focus: "Evidence and facts",
+      focus: recencyMatters ? "Recent evidence and facts (prioritizing current data)" : "Evidence and facts",
       category: "evidence",
-      queries: [
-        `${entityStr} evidence documents`,
-        `${entityStr} facts findings`,
-      ],
+      queries,
     };
   }
 
@@ -2883,10 +3258,20 @@ async function extractFacts(
       ? `\n\nKNOWN PROCEEDINGS:\n${proceedings.map((p: DistinctProceeding) => `- ${p.id}: ${p.name}`).join("\n")}`
       : "";
 
+  // Get current date for temporal reasoning
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentDay = currentDate.getDate();
+  const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+  const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
   const systemPrompt = `Extract SPECIFIC facts. Focus: ${focus}
 ${targetProceedingId ? `Target proceeding: ${targetProceedingId}` : ""}
 Track contested claims with isContestedClaim and claimSource.
-Only HIGH/MEDIUM specificity.${proceedingsList}`;
+Only HIGH/MEDIUM specificity.
+
+**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${proceedingsList}`;
 
   debugLog(`extractFacts: Calling LLM for ${source.id}`, {
     textLength: source.fullText.length,
@@ -3117,14 +3502,15 @@ async function generateVerdicts(
     understanding.requiresSeparateAnalysis &&
     understanding.distinctProceedings.length > 1;
 
-  // Detect pseudoscience in the input and facts
+  // Detect pseudoscience based on the article/question content and extracted claims
   const allText = [
-    state.originalText,
     understanding.articleThesis,
+    understanding.questionBeingAsked,
+    understanding.impliedClaim,
     ...understanding.subClaims.map((c: any) => c.text),
-    ...state.facts.map((f: ExtractedFact) => f.fact),
-    ...state.sources.map((s: FetchedSource) => s.fullText),
-  ].join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const pseudoscienceAnalysis = detectPseudoscience(allText);
 
@@ -3195,7 +3581,27 @@ async function generateMultiProceedingVerdicts(
     )
     .join("\n\n");
 
+  // Get current date for temporal reasoning
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentDay = currentDate.getDate();
+  const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+  const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
   const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT PROCEEDINGS separately.
+
+## CRITICAL: TEMPORAL REASONING
+
+**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}).
+
+**DATE REASONING RULES**:
+- When evaluating dates mentioned in claims, compare them to the CURRENT DATE above
+- Do NOT assume dates are in the future without checking against the current date
+- A date like "November 2025" is in the PAST if the current date is January 2026 or later
+- Do NOT reject claims as "impossible" based on incorrect temporal assumptions
+- If a date seems inconsistent, verify it against the current date before making judgments
+- When in doubt about temporal relationships, use the evidence from sources rather than making assumptions
 
 ## QUESTION
 "${understanding.questionBeingAsked || state.originalInput}"
@@ -3255,6 +3661,10 @@ ${proceedingsFormatted}
    - Only actual negative factors with documented evidence can reduce verdict
 
 5. CLAIM VERDICT RULES (for claimVerdicts array):
+   **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Every claim must have a corresponding entry in claimVerdicts.
+
+   - For each proceeding, ensure ALL claims with that proceedingId (or claims that logically belong to that proceeding) have verdicts
+   - If a claim doesn't have a relatedProceedingId, assign it to the most relevant proceeding based on the claim content
    - WELL-SUPPORTED: Use when evidence supports the claim AND no actual counter-evidence exists
      * Example: "Proper procedures were followed" - if you know procedures were followed and no documented violations exist, this is WELL-SUPPORTED, not UNCERTAIN
    - PARTIALLY-SUPPORTED: Mix of supporting and refuting evidence
@@ -3264,7 +3674,7 @@ ${proceedingsFormatted}
    CRITICAL: Political contestation ("critics say it was unfair") is NOT the same as counter-evidence.
    Use WELL-SUPPORTED, not UNCERTAIN, if you know the facts support the claim despite political opposition.
 
-${getKnowledgeInstruction()}
+${getKnowledgeInstruction(state.originalInput, understanding)}
 ${getProviderPromptHint()}`;
 
   const userPrompt = `## QUESTION
@@ -3542,13 +3952,59 @@ Provide SEPARATE answers for each proceeding.`;
 
   // Calculate overall factorAnalysis
   const allFactors = correctedProceedingAnswers.flatMap((pa) => pa.keyFactors);
-  // Only count as "contested" if there's actual counter-evidence (not just opinions)
+  // Only flag contested negatives with evidence-based contestation
   const hasContestedFactors = allFactors.some(
-    (f) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
+    (f) =>
+      f.supports === "no" &&
+      f.isContested &&
+      (f.factualBasis === "established" || f.factualBasis === "disputed")
   );
 
   // Build claim verdicts with 7-point calibration
   // v2.5.1: Apply correction based on proceeding-level factor analysis
+
+  // v2.6.19: Ensure ALL claims have verdicts - add missing ones
+  const claimIdsWithVerdicts = new Set(parsed.claimVerdicts.map((cv: any) => cv.claimId));
+  const missingClaims = understanding.subClaims.filter(
+    (claim: any) => !claimIdsWithVerdicts.has(claim.id)
+  );
+
+  if (missingClaims.length > 0) {
+    debugLog(`generateMultiProceedingVerdicts: Missing verdicts for ${missingClaims.length} claims`, {
+      missingClaimIds: missingClaims.map((c: any) => c.id),
+      totalClaims: understanding.subClaims.length,
+      verdictsGenerated: parsed.claimVerdicts.length,
+    });
+
+    // Add fallback verdicts for missing claims
+    for (const claim of missingClaims) {
+      const proceedingId = claim.relatedProceedingId || "";
+      const relatedProceeding = correctedProceedingAnswers.find(
+        (pa) => pa.proceedingId === proceedingId
+      );
+
+      // Use proceeding-level answer as fallback
+      const fallbackVerdict = relatedProceeding?.answer === "YES" ? "WELL-SUPPORTED" : "UNCERTAIN";
+      const fallbackConfidence = relatedProceeding?.confidence || 50;
+
+      parsed.claimVerdicts.push({
+        claimId: claim.id,
+        verdict: fallbackVerdict,
+        confidence: fallbackConfidence,
+        riskTier: "B",
+        reasoning: `Fallback verdict based on proceeding-level analysis (${relatedProceeding?.proceedingId || "unknown"}). Original verdict generation did not include this claim.`,
+        supportingFactIds: [],
+        relatedProceedingId: proceedingId,
+      });
+
+      debugLog(`Added fallback verdict for claim ${claim.id}`, {
+        proceedingId,
+        verdict: fallbackVerdict,
+        reason: "Missing from LLM output",
+      });
+    }
+  }
+
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
     const proceedingId = cv.relatedProceedingId || claim?.relatedProceedingId || "";
@@ -3671,10 +4127,7 @@ Provide SEPARATE answers for each proceeding.`;
     // Article verdict (for questions = question answer)
     articleTruthPercentage: avgTruthPct,
     articleVerdict: percentageToArticleVerdict(avgTruthPct),
-    articleVerdictReason:
-      Math.abs(avgTruthPct - claimsAvgTruthPct) > 15
-        ? `Claims avg: ${percentageToArticleVerdict(claimsAvgTruthPct)} (${claimsAvgTruthPct}%)`
-        : undefined,
+    articleVerdictReason: undefined,
 
     claimPattern,
   };
@@ -3697,7 +4150,25 @@ async function generateQuestionVerdicts(
   articleAnalysis: ArticleAnalysis;
   questionAnswer: QuestionAnswer;
 }> {
+  // Get current date for temporal reasoning
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentDay = currentDate.getDate();
+  const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+  const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
   const systemPrompt = `Answer the question based on documented evidence.
+
+## CRITICAL: TEMPORAL REASONING
+
+**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}).
+
+**DATE REASONING RULES**:
+- When evaluating dates mentioned in claims, compare them to the CURRENT DATE above
+- Do NOT assume dates are in the future without checking against the current date
+- Do NOT reject claims as "impossible" based on incorrect temporal assumptions
+- If a date seems inconsistent, verify it against the current date before making judgments
 
 ## SHORT ANSWER GUIDANCE:
 - shortAnswer MUST be a complete descriptive sentence summarizing the finding
@@ -3739,7 +4210,7 @@ CRITICAL - factualBasis MUST be "opinion" for:
 CRITICAL: Political contestation is NOT counter-evidence.
 Use WELL-SUPPORTED if you know the facts support the claim despite political opposition.
 
-${getKnowledgeInstruction()}
+${getKnowledgeInstruction(state.originalInput, understanding)}
 ${getProviderPromptHint()}`;
 
   const userPrompt = `## QUESTION
@@ -3913,9 +4384,12 @@ ${factsFormatted}`;
   };
 
   const keyFactors = parsed.questionAnswer.keyFactors || [];
-  // Only count as "contested" if there's actual counter-evidence (not just opinions)
+  // Only flag contested negatives with evidence-based contestation
   const hasContestedFactors = keyFactors.some(
-    (kf: any) => kf.isContested && (kf.factualBasis === "established" || kf.factualBasis === "disputed"),
+    (kf: any) =>
+      kf.supports === "no" &&
+      kf.isContested &&
+      (kf.factualBasis === "established" || kf.factualBasis === "disputed"),
   );
 
   // v2.5.1: Apply factor-based correction for single-proceeding questions
@@ -4022,7 +4496,25 @@ async function generateClaimVerdicts(
 
   // Add pseudoscience context and verdict calibration to prompt
   // Also add Article Verdict Problem analysis per POC1 spec
+  // Get current date for temporal reasoning
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentDay = currentDate.getDate();
+  const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+  const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
   let systemPrompt = `Generate verdicts for each claim AND an independent article-level verdict.
+
+## CRITICAL: TEMPORAL REASONING
+
+**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}).
+
+**DATE REASONING RULES**:
+- When evaluating dates mentioned in claims, compare them to the CURRENT DATE above
+- Do NOT assume dates are in the future without checking against the current date
+- Do NOT reject claims as "impossible" based on incorrect temporal assumptions
+- If a date seems inconsistent, verify it against the current date before making judgments
 
 ## CLAIM VERDICT CALIBRATION (IMPORTANT):
 - WELL-SUPPORTED: Strong evidence supports the claim
@@ -4076,7 +4568,7 @@ ARTICLE VERDICT OPTIONS:
 IMPORTANT: Set verdictDiffersFromClaimAverage=true if the article verdict differs from what a simple average would suggest.
 Example: If 3/4 claims are TRUE but the main conclusion is FALSE → article verdict = MISLEADING (not MOSTLY-CREDIBLE)
 
-${getKnowledgeInstruction()}
+${getKnowledgeInstruction(state.originalInput, understanding)}
 ${getProviderPromptHint()}`;
 
   // KeyFactors are now generated in understanding phase, not verdict generation
@@ -4208,6 +4700,9 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
           riskTier: "B" as const,
           reasoning: "No verdict returned by LLM for this claim.",
           supportingFactIds: [],
+          isContested: false,
+          contestedBy: "",
+          factualBasis: "unknown",
           isCentral: claim.isCentral || false,
           claimRole: claim.claimRole || "core",
           dependsOn: claim.dependsOn || [],
@@ -4222,26 +4717,29 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
       let finalConfidence = cv.confidence;
       let escalationReason: string | undefined;
 
-      // Apply pseudoscience escalation (adjusts LLM verdict before calibration)
-      if (pseudoscienceAnalysis?.isPseudoscience) {
-        const claimPseudo = detectPseudoscience(claim.text || cv.claimId);
-        if (
-          claimPseudo.isPseudoscience ||
-          pseudoscienceAnalysis.confidence >= 0.5
-        ) {
-          const escalation = escalatePseudoscienceVerdict(
-            cv.verdict,
-            cv.confidence,
-            pseudoscienceAnalysis,
-          );
-          llmVerdict = escalation.verdict;
-          finalConfidence = escalation.confidence;
-          escalationReason = escalation.escalationReason;
-        }
+      const claimPseudo = detectPseudoscience(claim.text || cv.claimId);
+
+      // Apply pseudoscience escalation only when the claim itself matches pseudoscience patterns
+      if (claimPseudo.isPseudoscience) {
+        const escalation = escalatePseudoscienceVerdict(
+          cv.verdict,
+          cv.confidence,
+          claimPseudo,
+        );
+        llmVerdict = escalation.verdict;
+        finalConfidence = escalation.confidence;
+        escalationReason = escalation.escalationReason;
       }
 
       // Calibrate to 7-point scale
-      const truthPct = calculateTruthPercentage(llmVerdict, finalConfidence);
+      let truthPct = calculateTruthPercentage(llmVerdict, finalConfidence);
+      const evidenceBasedContestation =
+        cv.isContested &&
+        (cv.factualBasis === "established" || cv.factualBasis === "disputed");
+      if (evidenceBasedContestation) {
+        const penalty = cv.factualBasis === "established" ? 12 : 8;
+        truthPct = Math.max(0, truthPct - penalty);
+      }
       const calibratedVerdict = percentageToClaimVerdict(truthPct);
 
       return {
@@ -4259,7 +4757,7 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(calibratedVerdict),
-        isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
+        isPseudoscience: claimPseudo.isPseudoscience,
         escalationReason,
       } as ClaimVerdict;
     },
@@ -4308,36 +4806,43 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     }
   }
 
-  // Calculate claim pattern using truth percentages
+  // Filter out claims with failed dependencies for verdict calculations
+  // These claims are shown but don't contribute to the overall verdict to avoid double-counting
+  // (the failed prerequisite already contributes its false verdict)
+  const independentVerdicts = weightedClaimVerdicts.filter((v) => !v.dependencyFailed);
+
+  // Calculate claim pattern using truth percentages (only independent claims)
   const claimPattern = {
     total: weightedClaimVerdicts.length,
-    supported: weightedClaimVerdicts.filter((v) => v.truthPercentage >= 72)
+    supported: independentVerdicts.filter((v) => v.truthPercentage >= 72)
       .length,
-    uncertain: weightedClaimVerdicts.filter(
+    uncertain: independentVerdicts.filter(
       (v) => v.truthPercentage >= 43 && v.truthPercentage < 72,
     ).length,
-    refuted: weightedClaimVerdicts.filter((v) => v.truthPercentage < 43).length,
-    centralClaimsTotal: weightedClaimVerdicts.filter((v) => v.isCentral).length,
-    centralClaimsSupported: weightedClaimVerdicts.filter(
+    refuted: independentVerdicts.filter((v) => v.truthPercentage < 43).length,
+    centralClaimsTotal: independentVerdicts.filter((v) => v.isCentral).length,
+    centralClaimsSupported: independentVerdicts.filter(
       (v) => v.isCentral && v.truthPercentage >= 72,
     ).length,
+    // Track excluded claims for transparency
+    dependencyFailedCount: weightedClaimVerdicts.filter((v) => v.dependencyFailed).length,
   };
 
-  // Calculate claims average truth percentage
+  // Calculate claims average truth percentage (only independent claims)
   const claimsAvgTruthPct =
-    weightedClaimVerdicts.length > 0
+    independentVerdicts.length > 0
       ? Math.round(
-          weightedClaimVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) /
-            weightedClaimVerdicts.length,
+          independentVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) /
+            independentVerdicts.length,
         )
       : 50;
 
-  // Article Verdict Problem: Check central claims specifically
+  // Article Verdict Problem: Check central claims specifically (using independent verdicts only)
   // If central claims are refuted but supporting claims are true, article is MISLEADING
-  const centralClaims = weightedClaimVerdicts.filter((v) => v.isCentral);
+  const centralClaims = independentVerdicts.filter((v) => v.isCentral);
   const centralRefuted = centralClaims.filter((v) => v.truthPercentage < 43);
   const centralSupported = centralClaims.filter((v) => v.truthPercentage >= 72);
-  const nonCentralClaims = weightedClaimVerdicts.filter((v) => !v.isCentral);
+  const nonCentralClaims = independentVerdicts.filter((v) => !v.isCentral);
   const nonCentralSupported = nonCentralClaims.filter((v) => v.truthPercentage >= 72);
 
   // Detect Article Verdict Problem pattern: accurate supporting facts but false central claim
@@ -4368,10 +4873,13 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     articleVerdictOverrideReason = `Central claim(s) refuted despite ${nonCentralSupported.length} accurate supporting facts - article draws unsupported conclusions`;
   }
 
+  const hasPseudoscienceClaims = weightedClaimVerdicts.some((v) => v.isPseudoscience);
+
   // For pseudoscience: article verdict cannot be higher than claims average
   // (can't have a credible article with false claims)
   if (
     pseudoscienceAnalysis?.isPseudoscience &&
+    hasPseudoscienceClaims &&
     articleTruthPct > claimsAvgTruthPct
   ) {
     articleTruthPct = Math.min(claimsAvgTruthPct, 28); // Cap at FALSE level for pseudoscience
@@ -4424,9 +4932,12 @@ However, do NOT mark them as FALSE unless you can prove them wrong with 99%+ cer
     }
   }
 
-  // Check if any factors are contested with evidence-based contestation
+  // Check if any negative factors are contested with evidence-based contestation
   const hasContestedFactors = keyFactors.some(
-    (f) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
+    (f) =>
+      f.supports === "no" &&
+      f.isContested &&
+      (f.factualBasis === "established" || f.factualBasis === "disputed")
   );
 
   console.log(`[Analyzer] Key Factors aggregated: ${keyFactors.length} factors from ${understanding.keyFactors?.length || 0} discovered, ${hasContestedFactors ? "has" : "no"} contested factors`);
@@ -4544,10 +5055,6 @@ async function generateTwoPanelSummary(
     }
   } else {
     overallVerdict = `${articleAnalysis.articleVerdict} (${articleAnalysis.articleTruthPercentage}%)`;
-    // Show claims average if different
-    if (articleAnalysis.articleVerdictReason) {
-      overallVerdict += `\nClaims: ${articleAnalysis.claimsAverageVerdict} (${articleAnalysis.claimsAverageTruthPercentage}%)`;
-    }
   }
 
   const inputUrl = state.inputType === "url" ? state.originalInput : undefined;
@@ -4728,12 +5235,6 @@ async function generateReport(
 
     if (articleAnalysis.articleVerdictReason) {
       report += `> ${articleAnalysis.articleVerdictReason}\n\n`;
-    }
-
-    // Show if verdict differs from claims average
-    if (articleAnalysis.claimsAverageTruthPercentage &&
-        Math.abs(articleAnalysis.articleTruthPercentage - articleAnalysis.claimsAverageTruthPercentage) > 10) {
-      report += `${iconWarning} **Note:** Article verdict differs from claims average (${articleAnalysis.claimsAverageVerdict}, ${articleAnalysis.claimsAverageTruthPercentage}%)\n\n`;
     }
 
     if (articleAnalysis.articleThesis &&
@@ -4958,12 +5459,14 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           isCentral: true,
           relatedProceedingId: "",
           approximatePosition: "",
+          keyFactorId: "",
         },
       ],
       distinctEvents: [],
       legalFrameworks: [],
       researchQuestions: [],
       riskTier: "B",
+      keyFactors: [],
     };
   }
 

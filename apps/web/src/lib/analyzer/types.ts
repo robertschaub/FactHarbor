@@ -279,20 +279,16 @@ export interface ClaimVerdict {
   riskTier: "A" | "B" | "C";
   reasoning: string;
   supportingFactIds: string[];
-  relatedProceedingId?: string;
   keyFactorId?: string; // Maps claim to KeyFactor for aggregation
+  relatedProceedingId?: string;
   startOffset?: number;
   endOffset?: number;
-  highlightColor:
-    | "green"
-    | "light-green"
-    | "yellow"
-    | "orange"
-    | "dark-orange"
-    | "red"
-    | "dark-red";
+  highlightColor: "green" | "yellow" | "red"; // Normalized 3-color UI system
   isPseudoscience?: boolean;
   escalationReason?: string;
+  isContested?: boolean;
+  contestedBy?: string;
+  factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";
 }
 
 export interface QuestionAnswer {

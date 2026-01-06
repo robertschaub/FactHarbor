@@ -10,7 +10,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { CONFIG } from "./config";
-import { percentageToClaimVerdict, getHighlightColor7Point } from "./truth-scale";
+import { percentageToClaimVerdict, getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
 import type { ClaimVerdict, ExtractedFact, FetchedSource } from "./types";
 
 // ============================================================================
@@ -118,7 +118,7 @@ export function applyEvidenceWeighting(
       truthPercentage: adjustedTruth,
       confidence: adjustedConfidence,
       verdict: adjustedVerdict,
-      highlightColor: getHighlightColor7Point(adjustedVerdict),
+      highlightColor: normalizeHighlightColor(getHighlightColor7Point(adjustedVerdict)),
     };
   });
 }

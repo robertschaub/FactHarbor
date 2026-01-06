@@ -1,13 +1,13 @@
 /**
  * Job Results Page v2.6.15
- * 
+ *
  * Features:
  * - 7-Level Truth Scale (Symmetric, neutral)
  * - truthPercentage (0-100%) as primary internal value
  * - Verdict label derived from percentage
  * - TRUE/MOSTLY-TRUE/LEANING-TRUE/UNVERIFIED/LEANING-FALSE/MOSTLY-FALSE/FALSE
  * - YES/MOSTLY-YES/LEANING-YES/UNVERIFIED/LEANING-NO/MOSTLY-NO/NO
- * 
+ *
  * @version 2.6.0
  */
 
@@ -166,7 +166,7 @@ function getTrackRecordClass(score: number): string {
 export default function JobPage() {
   const params = useParams();
   const jobId = params?.id as string;
-  
+
   const [job, setJob] = useState<Job | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [tab, setTab] = useState<"summary" | "article" | "sources" | "report" | "json" | "events">("summary");
@@ -222,7 +222,7 @@ export default function JobPage() {
     };
   }, [report]);
   const jsonText = useMemo(() => (job?.resultJson ? JSON.stringify(job.resultJson, null, 2) : ""), [job]);
-  
+
   const result = job?.resultJson;
   const schemaVersion = result?.meta?.schemaVersion || "";
   const hasV22Data = schemaVersion.startsWith("2.");
@@ -247,15 +247,18 @@ export default function JobPage() {
     ...(articleAnalysis?.keyFactors || []), // NEW v2.6.18: Article mode Key Factors
   ];
   const hasEvidenceBasedContestations = allKeyFactors.some(
-    (f: any) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
+    (f: any) =>
+      f.supports === "no" &&
+      f.isContested &&
+      (f.factualBasis === "established" || f.factualBasis === "disputed")
   );
 
   // Helper: Generate short name from title or input
   const getShortName = (): string => {
     // Try to get title from twoPanelSummary
-    const title = twoPanelSummary?.articleSummary?.title || 
+    const title = twoPanelSummary?.articleSummary?.title ||
                   twoPanelSummary?.factharborAnalysis?.overallVerdict?.split('\n')[0] ||
-                  job?.inputValue || 
+                  job?.inputValue ||
                   "Analysis";
     // Clean and truncate: remove special chars, limit to 40 chars
     return title
@@ -274,14 +277,14 @@ export default function JobPage() {
 
   // Helper: Format datetime for display (local time with seconds)
   const getDisplayDateTime = (): string => {
-    return new Date().toLocaleString('en-GB', { 
-      year: 'numeric', 
-      month: '2-digit', 
+    return new Date().toLocaleString('en-GB', {
+      year: 'numeric',
+      month: '2-digit',
       day: '2-digit',
-      hour: '2-digit', 
-      minute: '2-digit', 
+      hour: '2-digit',
+      minute: '2-digit',
       second: '2-digit',
-      hour12: false 
+      hour12: false
     });
   };
 
@@ -334,7 +337,7 @@ export default function JobPage() {
   ${content}
 </body>
 </html>`;
-    
+
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -706,7 +709,10 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
     ...(questionAnswer?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
   ];
   const hasEvidenceBasedContestations = allKeyFactors.some(
-    (f: any) => f.isContested && (f.factualBasis === "established" || f.factualBasis === "disputed")
+    (f: any) =>
+      f.supports === "no" &&
+      f.isContested &&
+      (f.factualBasis === "established" || f.factualBasis === "disputed")
   );
 
   return (
@@ -941,10 +947,7 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
   const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis.isPseudoscience;
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis.pseudoscienceCategories || [];
 
-  // Check if article verdict differs from claims average
-  const claimsAvgPct = articleAnalysis.claimsAverageTruthPercentage;
   const articlePct = articleAnalysis.articleTruthPercentage ?? articleAnalysis.truthPercentage;
-  const verdictDiffers = claimsAvgPct && Math.abs(articlePct - claimsAvgPct) > 10;
 
   // Get the verdict reason or generate a summary
   const verdictReason = articleAnalysis.articleVerdictReason || articleAnalysis.verdictExplanation || "";
@@ -972,15 +975,6 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
         {verdictReason && (
           <div className={styles.verdictReasonBox} style={{ borderLeftColor: color.border }}>
             {verdictReason}
-          </div>
-        )}
-
-        {/* Show claims average if it differs from article verdict */}
-        {verdictDiffers && claimsAvgPct && (
-          <div className={styles.claimsAverageBox}>
-            <div className={styles.claimsAverageRow}>
-              <span>📊 Claims average: <b>{articleAnalysis.claimsAverageVerdict}</b> ({claimsAvgPct}%)</span>
-            </div>
           </div>
         )}
 
@@ -1073,31 +1067,87 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
 
 function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdicts: any[]; proceedings: any[] }) {
   const claimsByProc = new Map<string, any[]>();
+  const crossProceedingClaims: any[] = [];
+
   for (const cv of claimVerdicts) {
-    const procId = cv.relatedProceedingId || "general";
-    if (!claimsByProc.has(procId)) claimsByProc.set(procId, []);
-    claimsByProc.get(procId)!.push(cv);
+    if (!cv.relatedProceedingId) {
+      crossProceedingClaims.push(cv);
+      continue;
+    }
+    if (!claimsByProc.has(cv.relatedProceedingId)) claimsByProc.set(cv.relatedProceedingId, []);
+    claimsByProc.get(cv.relatedProceedingId)!.push(cv);
+  }
+
+  const proceedingIds = proceedings.map((p: any) => p.id);
+  const hasProceedings = proceedingIds.length > 0;
+  const groups: Array<{ id: string; title: string; claims: any[] }> = [];
+
+  if (hasProceedings) {
+    for (const proc of proceedings) {
+      const ownClaims = claimsByProc.get(proc.id) || [];
+      const combined = [...ownClaims];
+      for (const crossClaim of crossProceedingClaims) {
+        if (!combined.some((c) => c.claimId === crossClaim.claimId)) {
+          combined.push(crossClaim);
+        }
+      }
+      if (combined.length === 0) continue;
+      groups.push({
+        id: proc.id,
+        title: `⚖️ ${proc.shortName}: ${proc.name}`,
+        claims: combined,
+      });
+    }
+
+    for (const [procId, claims] of claimsByProc.entries()) {
+      if (proceedingIds.includes(procId)) continue;
+      if (claims.length === 0) continue;
+      groups.push({
+        id: procId,
+        title: `Proceeding ${procId}`,
+        claims,
+      });
+    }
+  } else {
+    const claimsByGroup = new Map<string, any[]>();
+    for (const cv of claimVerdicts) {
+      const procId = cv.relatedProceedingId || "general";
+      if (!claimsByGroup.has(procId)) claimsByGroup.set(procId, []);
+      claimsByGroup.get(procId)!.push(cv);
+    }
+
+    for (const [procId, claims] of claimsByGroup.entries()) {
+      if (claims.length === 0) continue;
+      const proc = proceedings.find((p: any) => p.id === procId);
+      groups.push({
+        id: procId,
+        title: proc ? `⚖️ ${proc.shortName}: ${proc.name}` : "General Claims",
+        claims,
+      });
+    }
   }
 
   return (
     <div>
-      {Array.from(claimsByProc.entries()).map(([procId, claims]) => {
-        if (claims.length === 0) return null;
-        const proc = proceedings.find((p: any) => p.id === procId);
-        return (
-          <div key={procId} className={styles.proceedingGroup}>
-            <h4 className={styles.proceedingGroupHeader}>
-              {proc ? `⚖️ ${proc.shortName}: ${proc.name}` : "General Claims"}
-            </h4>
-            {claims.map((cv: any) => <ClaimCard key={cv.claimId} claim={cv} />)}
-          </div>
-        );
-      })}
+      {groups.map((group) => (
+        <div key={group.id} className={styles.proceedingGroup}>
+          <h4 className={styles.proceedingGroupHeader}>
+            {group.title}
+          </h4>
+          {group.claims.map((cv: any) => (
+            <ClaimCard
+              key={`${group.id}:${cv.claimId}`}
+              claim={cv}
+              showCrossProceeding={hasProceedings && !cv.relatedProceedingId}
+            />
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
 
-function ClaimCard({ claim }: { claim: any }) {
+function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCrossProceeding?: boolean }) {
   const color = CLAIM_VERDICT_COLORS[claim.verdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
   // Only show CONTESTED label when opposition has actual counter-evidence
@@ -1114,6 +1164,9 @@ function ClaimCard({ claim }: { claim: any }) {
         </Badge>
         {hasEvidenceBasedContestation && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
+        )}
+        {showCrossProceeding && (
+          <Badge bg="#eef2ff" color="#1e3a8a">Cross-proceeding</Badge>
         )}
         {claim.isPseudoscience && (
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>

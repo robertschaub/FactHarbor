@@ -55,6 +55,30 @@ function parseWhitelist(whitelist: string | undefined): string[] | null {
 }
 
 /**
+ * Parse optional KeyFactor hints from environment variable
+ * Returns array of hint objects or null if not configured
+ */
+function parseKeyFactorHints(
+  hintsJson: string | undefined,
+): Array<{ question: string; factor: string; category: string }> | null {
+  if (!hintsJson) return null;
+  try {
+    const parsed = JSON.parse(hintsJson);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter(
+      (hint) =>
+        typeof hint === "object" &&
+        hint !== null &&
+        typeof hint.question === "string" &&
+        typeof hint.factor === "string" &&
+        typeof hint.category === "string",
+    ) as Array<{ question: string; factor: string; category: string }>;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Detect which search provider is configured
  */
 function detectSearchProvider(): string {
@@ -112,6 +136,12 @@ export const CONFIG = {
   reportStyle: (process.env.FH_REPORT_STYLE ?? "standard").toLowerCase(),
   allowModelKnowledge:
     (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true",
+
+  // KeyFactors configuration
+  // Optional hints for KeyFactors (suggestions only, not enforced)
+  // Format: JSON array of objects with {question, factor, category}
+  // Example: FH_KEYFACTOR_HINTS='[{"question":"Was due process followed?","factor":"Due Process","category":"procedural"}]'
+  keyFactorHints: parseKeyFactorHints(process.env.FH_KEYFACTOR_HINTS),
 
   quick: {
     maxResearchIterations: 2,

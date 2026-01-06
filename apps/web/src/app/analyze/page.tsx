@@ -1,11 +1,11 @@
 /**
  * Analyze Page v2.4.8
- * 
+ *
  * Features:
  * - Auto URL detection (no radio button needed)
  * - Single text input that handles both text and URLs
  * - Clean, simple interface
- * 
+ *
  * @version 2.4.4
  */
 
@@ -49,7 +49,7 @@ export default function AnalyzePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!input.trim()) {
       setError("Please enter text or a URL to analyze");
       return;
