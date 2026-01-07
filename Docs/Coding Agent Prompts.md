@@ -1,6 +1,16 @@
-Read Docs\Agent_Handover.md and Docs\Coding Agent Rules.md and analyze the current source code.
+Read Docs:
+Agent_Handover.md
+Coding Agent Rules.md 
 
-Then change verdict (ClaimVerdict.verdict) and truth values to be a number 0-100% everywhere, only map to the 7-scale name for the UI.
+KeyFactors-Design-Decision.md
+FactHarbor_Code_Spec_Review.md
+StatusAndNext.md
+
+And analyze the current source code.
+
+---
+
+Change verdict (ClaimVerdict.verdict) and truth values to be a number 0-100% everywhere, only map to the 7-scale name for the UI.
 Do not anymore use the 4-scale verdict: WELL-SUPPORTED,PARTIALLY-SUPPORTED,UNCERTAIN,REFUTED.
 But in the UI use the 7-scale verdict:
 TRUE (86-100%, Score +3)
