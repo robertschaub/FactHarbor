@@ -35,20 +35,35 @@ import * as path from "path";
 
 // Write debug log to a fixed location that's easy to find
 const DEBUG_LOG_PATH = "c:\\DEV\\FactHarbor\\apps\\web\\debug-analyzer.log";
+const DEBUG_LOG_FILE_ENABLED =
+  (process.env.FH_DEBUG_LOG_FILE ?? "true").toLowerCase() === "true";
+const DEBUG_LOG_MAX_DATA_CHARS = 8000;
 
 function debugLog(message: string, data?: any) {
   const timestamp = new Date().toISOString();
   let logLine = `[${timestamp}] ${message}`;
   if (data !== undefined) {
-    logLine += ` | ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`;
+    let payload: string;
+    try {
+      payload =
+        typeof data === "string"
+          ? data
+          : JSON.stringify(data, null, 2);
+    } catch {
+      payload = "[unserializable]";
+    }
+    if (payload.length > DEBUG_LOG_MAX_DATA_CHARS) {
+      payload = payload.slice(0, DEBUG_LOG_MAX_DATA_CHARS) + "…[truncated]";
+    }
+    logLine += ` | ${payload}`;
   }
   logLine += "\n";
 
-  // Write to file (append)
-  try {
-    fs.appendFileSync(DEBUG_LOG_PATH, logLine);
-  } catch (err) {
-    // Silently ignore file write errors
+  // Write to file (append) - async to avoid blocking the Node event loop during long analyses
+  if (DEBUG_LOG_FILE_ENABLED) {
+    fs.promises.appendFile(DEBUG_LOG_PATH, logLine).catch(() => {
+      // Silently ignore file write errors
+    });
   }
 
   // Also log to console
@@ -56,11 +71,15 @@ function debugLog(message: string, data?: any) {
 }
 
 function clearDebugLog() {
-  try {
-    fs.writeFileSync(DEBUG_LOG_PATH, `=== FactHarbor Debug Log Started at ${new Date().toISOString()} ===\n`);
-  } catch (err) {
-    // Silently ignore
-  }
+  if (!DEBUG_LOG_FILE_ENABLED) return;
+  fs.promises
+    .writeFile(
+      DEBUG_LOG_PATH,
+      `=== FactHarbor Debug Log Started at ${new Date().toISOString()} ===\n`,
+    )
+    .catch(() => {
+      // Silently ignore
+    });
 }
 
 // ============================================================================
@@ -1857,7 +1876,30 @@ const SUBCLAIM_SCHEMA = z.object({
   keyFactorId: z.string(), // empty string if not mapped to any factor
 });
 
-const UNDERSTANDING_SCHEMA = z.object({
+// Lenient subclaim schema for providers that invent extra labels (e.g. "evidential").
+// We normalize them back into the supported set so downstream code stays consistent.
+const SUBCLAIM_SCHEMA_LENIENT = z.object({
+  id: z.string(),
+  text: z.string(),
+  type: z
+    .enum(["legal", "procedural", "factual", "evaluative", "evidential", "methodological"])
+    .catch("factual")
+    .transform((t) => (t === "evidential" || t === "methodological" ? "factual" : t)),
+  claimRole: z.enum(["attribution", "source", "timing", "core", "unknown"]).catch("unknown"),
+  dependsOn: z.array(z.string()).default([]),
+  keyEntities: z.array(z.string()).default([]),
+  checkWorthiness: z.enum(["high", "medium", "low"]).catch("medium"),
+  harmPotential: z.enum(["high", "medium", "low"]).catch("medium"),
+  centrality: z.enum(["high", "medium", "low"]).catch("medium"),
+  isCentral: z.boolean().catch(false),
+  relatedProceedingId: z.string().default(""),
+  approximatePosition: z.string().default(""),
+  keyFactorId: z.string().default(""),
+});
+
+// NOTE: OpenAI structured output requires ALL properties to be in "required" array.
+// Some providers are more tolerant and benefit from a more lenient schema.
+const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   detectedInputType: z.enum(["question", "claim", "article"]),
   questionIntent: z.enum(["verification", "exploration", "comparison", "none"]),
   questionBeingAsked: z.string(), // empty string if not applicable
@@ -1914,6 +1956,71 @@ const UNDERSTANDING_SCHEMA = z.object({
 
 const SUPPLEMENTAL_SUBCLAIMS_SCHEMA = z.object({
   subClaims: z.array(SUBCLAIM_SCHEMA),
+});
+
+// Lenient variant for providers that sometimes omit arrays/fields; defaults prevent hard failures.
+const UNDERSTANDING_SCHEMA_LENIENT = z.object({
+  detectedInputType: z.enum(["question", "claim", "article"]).catch("claim"),
+  // Some models invent new labels (e.g. "evaluation"); coerce unknowns to "none" then post-process.
+  questionIntent: z.enum(["verification", "exploration", "comparison", "none"]).catch("none"),
+  questionBeingAsked: z.string().default(""),
+  impliedClaim: z.string().default(""),
+
+  distinctProceedings: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        shortName: z.string(),
+        court: z.string().default("unknown"),
+        jurisdiction: z.string().default("unknown"),
+        date: z.string().default(""),
+        subject: z.string().default(""),
+        charges: z.array(z.string()).default([]),
+        outcome: z.string().default("unknown"),
+        status: z.enum(["concluded", "ongoing", "pending", "unknown"]).catch("unknown"),
+        decisionMakers: z
+          .array(
+            z.object({
+              name: z.string(),
+              role: z.string(),
+              affiliation: z.string(),
+            }),
+          )
+          .default([]),
+      }),
+    )
+    .default([]),
+  requiresSeparateAnalysis: z.boolean().default(false),
+  proceedingContext: z.string().default(""),
+
+  mainQuestion: z.string().default(""),
+  articleThesis: z.string().default(""),
+  subClaims: z.array(SUBCLAIM_SCHEMA_LENIENT).default([]),
+  distinctEvents: z
+    .array(
+      z.object({
+        name: z.string(),
+        date: z.string(),
+        description: z.string(),
+      }),
+    )
+    .default([]),
+  legalFrameworks: z.array(z.string()).default([]),
+  researchQuestions: z.array(z.string()).default([]),
+  riskTier: z.enum(["A", "B", "C"]).catch("B"),
+  keyFactors: z
+    .array(
+      z.object({
+        id: z.string(),
+        question: z.string(),
+        factor: z.string(),
+        category: z
+          .enum(["procedural", "evidential", "methodological", "factual", "evaluative"])
+          .catch("evaluative"),
+      }),
+    )
+    .default([]),
 });
 
 const MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING = 2;
@@ -2299,51 +2406,128 @@ For "Does this vaccine cause autism?"
 
   const userPrompt = `Analyze for fact-checking:\n\n"${input}"`;
 
-  let result: any;
+  function extractFirstJsonObject(text: string): string | null {
+    const start = text.indexOf("{");
+    if (start < 0) return null;
+    let depth = 0;
+    for (let i = start; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === "{") depth++;
+      if (ch === "}") depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+    return null;
+  }
 
-  try {
+  const providerName = (process.env.LLM_PROVIDER ?? "anthropic").toLowerCase();
+  const isOpenAiProvider =
+    providerName === "openai" || providerName.startsWith("gpt") || providerName.includes("openai");
+  const understandingSchemaForProvider = isOpenAiProvider
+    ? UNDERSTANDING_SCHEMA_OPENAI
+    : UNDERSTANDING_SCHEMA_LENIENT;
+
+  const tryStructured = async (prompt: string, attemptLabel: string) => {
     const startTime = Date.now();
-    debugLog("understandClaim: STARTING LLM CALL");
+    debugLog(`understandClaim: STARTING LLM CALL (${attemptLabel})`);
     debugLog("understandClaim: Input (first 100 chars)", input.substring(0, 100));
     debugLog("understandClaim: Model", String(model));
 
-    result = await generateText({
+    const result = await generateText({
       model,
       messages: [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: prompt },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.3,
-      output: Output.object({ schema: UNDERSTANDING_SCHEMA }),
+      output: Output.object({ schema: understandingSchemaForProvider }),
     });
 
     const elapsed = Date.now() - startTime;
-    debugLog(`understandClaim: LLM CALL COMPLETED in ${elapsed}ms`);
+    debugLog(`understandClaim: LLM CALL COMPLETED (${attemptLabel}) in ${elapsed}ms`);
     debugLog("understandClaim: Result keys", result ? Object.keys(result) : "null");
 
-    // Debug: Log the actual result structure
-    if (result) {
-      debugLog("understandClaim: Has result.output", result.output !== undefined);
-      debugLog("understandClaim: Has result._output", result._output !== undefined);
-      if (result._output) {
-        debugLog("understandClaim: _output preview", JSON.stringify(result._output).substring(0, 500));
-      } else if (result.output) {
-        debugLog("understandClaim: output preview", JSON.stringify(result.output).substring(0, 500));
-      }
-    }
-
     if (result?.usage || result?.totalUsage) {
-      debugLog("understandClaim: Token usage", result.usage || result.totalUsage);
+      debugLog("understandClaim: Token usage", (result as any).usage || (result as any).totalUsage);
     }
     if (elapsed < 1000) {
       debugLog(`understandClaim: WARNING - LLM responded suspiciously fast (${elapsed}ms)`);
     }
-  } catch (err: any) {
-    const errMsg = err?.message || String(err);
-    debugLog("understandClaim: FAILED", errMsg);
-    console.error("[Analyzer] generateText failed in understandClaim:", errMsg);
 
-    // Check for specific API errors
+    const rawOutput = extractStructuredOutput(result);
+    if (!rawOutput) {
+      debugLog(`understandClaim: No structured output (${attemptLabel})`, {
+        resultType: typeof result,
+        resultKeys: result ? Object.keys(result) : "null",
+      });
+      return null;
+    }
+    return rawOutput as any;
+  };
+
+  const tryRecoverFromNoObjectGeneratedError = (err: any): ClaimUnderstanding | null => {
+    // ai-sdk throws AI_NoObjectGeneratedError with a cause stack containing:
+    // "Type validation failed: Value: {...json...}"
+    const causeStack = err?.cause?.stack ?? err?.cause?.message ?? "";
+    if (typeof causeStack !== "string") return null;
+    const idx = causeStack.indexOf("Value:");
+    if (idx < 0) return null;
+    const jsonStr = extractFirstJsonObject(causeStack.slice(idx));
+    if (!jsonStr) return null;
+    try {
+      const obj = JSON.parse(jsonStr);
+      const sp = UNDERSTANDING_SCHEMA_LENIENT.safeParse(obj);
+      if (!sp.success) {
+        debugLog("understandClaim: recovered Value failed lenient safeParse", {
+          issues: sp.error.issues?.slice(0, 10),
+        });
+        return null;
+      }
+      debugLog("understandClaim: recovered Value from schema-mismatch error", {
+        detectedInputType: sp.data.detectedInputType,
+        proceedings: sp.data.distinctProceedings?.length ?? 0,
+        requiresSeparateAnalysis: sp.data.requiresSeparateAnalysis,
+        subClaims: sp.data.subClaims?.length ?? 0,
+      });
+      return sp.data;
+    } catch (e: any) {
+      debugLog("understandClaim: failed to parse recovered Value JSON", e?.message || String(e));
+      return null;
+    }
+  };
+
+  const tryJsonTextFallback = async () => {
+    debugLog("understandClaim: FALLBACK JSON TEXT ATTEMPT");
+    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- questionIntent\n- questionBeingAsked\n- impliedClaim\n- distinctProceedings\n- requiresSeparateAnalysis\n- proceedingContext\n- mainQuestion\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQuestions\n- riskTier\n- keyFactors`;
+    const result = await generateText({
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
+      ],
+      temperature: 0.2,
+    });
+
+    const txt = (result as any)?.text as string | undefined;
+    if (!txt || typeof txt !== "string") return null;
+    const jsonStr = extractFirstJsonObject(txt);
+    if (!jsonStr) return null;
+    try {
+      const obj = JSON.parse(jsonStr);
+      const parsed = UNDERSTANDING_SCHEMA_LENIENT.safeParse(obj);
+      if (!parsed.success) {
+        debugLog("understandClaim: JSON fallback safeParse failed", {
+          issues: parsed.error.issues?.slice(0, 10),
+        });
+        return null;
+      }
+      return parsed.data;
+    } catch (e: any) {
+      debugLog("understandClaim: JSON fallback parse failed", e?.message || String(e));
+      return null;
+    }
+  };
+
+  const handleApiKeyOrQuota = (errMsg: string) => {
     if (errMsg.includes("credit balance is too low") || errMsg.includes("insufficient_quota")) {
       console.error("[Analyzer] ❌ ANTHROPIC API CREDITS EXHAUSTED - Please add credits at https://console.anthropic.com/settings/plans");
       throw new Error("Anthropic API credits exhausted. Please add credits or switch to a different LLM provider (LLM_PROVIDER=openai)");
@@ -2352,31 +2536,40 @@ For "Does this vaccine cause autism?"
       console.error("[Analyzer] ❌ INVALID API KEY - Check your ANTHROPIC_API_KEY or OPENAI_API_KEY");
       throw new Error("Invalid API key. Please check your LLM provider API key.");
     }
+  };
 
-    // Return a basic understanding if the structured output fails
-    throw new Error(`Failed to understand claim: ${errMsg}`);
+  let parsed: ClaimUnderstanding | null = null;
+  try {
+    parsed = await tryStructured(systemPrompt, "structured-1");
+  } catch (err: any) {
+    const errMsg = err?.message || String(err);
+    debugLog("understandClaim: FAILED (structured-1)", errMsg);
+    debugLog("understandClaim: FAILED (structured-1) details", JSON.stringify(err, Object.getOwnPropertyNames(err), 2).slice(0, 2000));
+    console.error("[Analyzer] generateText failed in understandClaim (structured-1):", errMsg);
+    handleApiKeyOrQuota(errMsg);
+    parsed = tryRecoverFromNoObjectGeneratedError(err);
   }
 
-  // Handle different AI SDK versions - safely extract structured output
-  const rawOutput = extractStructuredOutput(result);
-
-  if (!rawOutput) {
-    console.error(
-      "[Analyzer] No structured output from LLM. Result type:",
-      typeof result,
-    );
-    console.error(
-      "[Analyzer] Result keys:",
-      result ? Object.keys(result) : "result is null/undefined",
-    );
-    console.error(
-      "[Analyzer] Full result (first 1000 chars):",
-      result ? JSON.stringify(result, null, 2).slice(0, 1000) : "null",
-    );
-    throw new Error("LLM did not return structured output");
+  if (!parsed) {
+    // Retry once with a smaller, schema-focused prompt (providers sometimes fail on long prompts + strict schemas).
+    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-CONTEXT DETECTION\n- Detect whether the input mixes multiple distinct contexts/threads (e.g., different events, phases, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct contexts, put them in distinctProceedings (one per context) and set requiresSeparateAnalysis=true.\n- If there is only 1 context, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n\nENUM RULES\n- detectedInputType must be exactly one of: question | claim | article\n- questionIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
+    try {
+      parsed = await tryStructured(retryPrompt, "structured-2");
+    } catch (err: any) {
+      const errMsg = err?.message || String(err);
+      debugLog("understandClaim: FAILED (structured-2)", errMsg);
+      debugLog("understandClaim: FAILED (structured-2) details", JSON.stringify(err, Object.getOwnPropertyNames(err), 2).slice(0, 2000));
+      console.error("[Analyzer] generateText failed in understandClaim (structured-2):", errMsg);
+      handleApiKeyOrQuota(errMsg);
+      parsed = tryRecoverFromNoObjectGeneratedError(err);
+    }
   }
 
-  const parsed = rawOutput as z.infer<typeof UNDERSTANDING_SCHEMA>;
+  if (!parsed) {
+    parsed = await tryJsonTextFallback();
+  }
+
+  if (!parsed) throw new Error("Failed to understand claim: structured output did not match schema");
 
   // Post-processing: Force question detection if input clearly looks like a question
   const trimmedInput = input.trim();
@@ -4605,7 +4798,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         const penalty = cv.factualBasis === "established" ? 12 : 8;
         truthPct = Math.max(0, truthPct - penalty);
       }
-  
+
       return {
         ...cv,
         claimId: claim.id,
