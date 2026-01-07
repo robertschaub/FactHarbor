@@ -114,6 +114,29 @@ export const DEBUNKED_INDICATORS = [
   /scientifically\s*impossible/i,
 ];
 
+function normalizePercentage(value: number): number {
+  if (!Number.isFinite(value)) return 50;
+  const normalized = value >= 0 && value <= 1 ? value * 100 : value;
+  return Math.max(0, Math.min(100, Math.round(normalized)));
+}
+
+function truthFromBand(
+  band: "strong" | "partial" | "uncertain" | "refuted",
+  confidence: number,
+): number {
+  const conf = normalizePercentage(confidence) / 100;
+  switch (band) {
+    case "strong":
+      return Math.round(72 + 28 * conf);
+    case "partial":
+      return Math.round(50 + 35 * conf);
+    case "uncertain":
+      return Math.round(35 + 30 * conf);
+    case "refuted":
+      return Math.round(28 * (1 - conf));
+  }
+}
+
 // ============================================================================
 // DETECTION FUNCTION
 // ============================================================================
@@ -176,15 +199,18 @@ export function detectPseudoscience(
   if (result.categories.length >= 1 && result.confidence >= 0.3) {
     result.isPseudoscience = true;
 
+    const refutedRecommendation = 10;
+    const uncertainRecommendation = 50;
+
     if (result.confidence >= 0.7 || result.debunkIndicatorsFound.length >= 2) {
-      result.recommendation = "REFUTED";
+      result.recommendation = refutedRecommendation;
     } else if (
       result.confidence >= 0.5 ||
       result.debunkIndicatorsFound.length >= 1
     ) {
-      result.recommendation = "REFUTED";
+      result.recommendation = refutedRecommendation;
     } else {
-      result.recommendation = "UNCERTAIN";
+      result.recommendation = uncertainRecommendation;
     }
   }
 
@@ -199,50 +225,46 @@ export function detectPseudoscience(
  * Escalate verdict when pseudoscience is detected
  */
 export function escalatePseudoscienceVerdict(
-  originalVerdict: string,
+  originalTruthPercentage: number,
   originalConfidence: number,
   pseudoAnalysis: PseudoscienceAnalysis,
-): { verdict: string; confidence: number; escalationReason?: string } {
+): { truthPercentage: number; confidence: number; escalationReason?: string } {
+  const normalizedTruth = normalizePercentage(originalTruthPercentage);
+  const normalizedConfidence = normalizePercentage(originalConfidence);
+
   if (!pseudoAnalysis.isPseudoscience) {
-    return { verdict: originalVerdict, confidence: originalConfidence };
+    return { truthPercentage: normalizedTruth, confidence: normalizedConfidence };
   }
 
-  const verdictStrength: Record<string, number> = {
-    "WELL-SUPPORTED": 4,
-    "PARTIALLY-SUPPORTED": 3,
-    UNCERTAIN: 2,
-    REFUTED: 1,
-    FALSE: 0,
-  };
-
-  const currentStrength = verdictStrength[originalVerdict] ?? 2;
-  let newVerdict = originalVerdict;
-  let newConfidence = originalConfidence;
+  const currentStrength =
+    normalizedTruth >= 72 ? 4 : normalizedTruth >= 50 ? 3 : normalizedTruth >= 35 ? 2 : 1;
+  let newTruth = normalizedTruth;
+  let newConfidence = normalizedConfidence;
   let escalationReason: string | undefined;
 
   if (currentStrength >= 2 && pseudoAnalysis.confidence >= 0.5) {
     if (pseudoAnalysis.debunkIndicatorsFound.length >= 2) {
-      newVerdict = "REFUTED";
-      newConfidence = Math.min(Math.max(originalConfidence, 80), 95);
+      newConfidence = Math.min(Math.max(newConfidence, 80), 95);
+      newTruth = truthFromBand("refuted", newConfidence);
       escalationReason = `Claim contradicts scientific consensus (${pseudoAnalysis.categories.join(", ")}) - multiple debunk sources found`;
     } else if (pseudoAnalysis.debunkIndicatorsFound.length >= 1) {
-      newVerdict = "REFUTED";
-      newConfidence = Math.min(Math.max(originalConfidence, 70), 90);
+      newConfidence = Math.min(Math.max(newConfidence, 70), 90);
+      newTruth = truthFromBand("refuted", newConfidence);
       escalationReason = `Claim based on pseudoscience (${pseudoAnalysis.categories.join(", ")}) - contradicts established science`;
     } else if (pseudoAnalysis.confidence >= 0.6) {
-      newVerdict = "REFUTED";
-      newConfidence = Math.min(Math.max(originalConfidence, 65), 85);
+      newConfidence = Math.min(Math.max(newConfidence, 65), 85);
+      newTruth = truthFromBand("refuted", newConfidence);
       escalationReason = `Multiple pseudoscience patterns detected (${pseudoAnalysis.categories.join(", ")}) - no scientific basis`;
     }
   }
 
   if (currentStrength === 3 && pseudoAnalysis.confidence >= 0.4) {
-    newVerdict = "UNCERTAIN";
-    newConfidence = Math.min(originalConfidence, 40);
+    newConfidence = Math.min(newConfidence, 40);
+    newTruth = truthFromBand("uncertain", newConfidence);
     escalationReason = `Claimed mechanism (${pseudoAnalysis.categories.join(", ")}) lacks scientific basis`;
   }
 
-  return { verdict: newVerdict, confidence: newConfidence, escalationReason };
+  return { truthPercentage: newTruth, confidence: newConfidence, escalationReason };
 }
 
 // ============================================================================
@@ -254,22 +276,17 @@ export function escalatePseudoscienceVerdict(
  */
 export function calculateArticleVerdictWithPseudoscience(
   claimVerdicts: Array<{
-    verdict: string;
+    verdict: number;
     confidence: number;
     isPseudoscience?: boolean;
   }>,
   pseudoAnalysis: PseudoscienceAnalysis,
-): { verdict: string; confidence: number; reason?: string } {
-  const refutedCount = claimVerdicts.filter(
-    (v) => v.verdict === "REFUTED" || v.verdict === "FALSE",
-  ).length;
+): { verdict: number; confidence: number; reason?: string } {
+  const refutedCount = claimVerdicts.filter((v) => v.verdict < 43).length;
   const uncertainCount = claimVerdicts.filter(
-    (v) => v.verdict === "UNCERTAIN",
+    (v) => v.verdict >= 43 && v.verdict < 72,
   ).length;
-  const supportedCount = claimVerdicts.filter(
-    (v) =>
-      v.verdict === "WELL-SUPPORTED" || v.verdict === "PARTIALLY-SUPPORTED",
-  ).length;
+  const supportedCount = claimVerdicts.filter((v) => v.verdict >= 72).length;
   const total = claimVerdicts.length;
 
   // If pseudoscience detected at article level
@@ -279,7 +296,12 @@ export function calculateArticleVerdictWithPseudoscience(
       pseudoAnalysis.debunkIndicatorsFound.length >= 1
     ) {
       return {
-        verdict: "REFUTED",
+        verdict: truthFromBand(
+          "refuted",
+          Math.min(
+          85,
+          70 + pseudoAnalysis.debunkIndicatorsFound.length * 5,
+        )),
         confidence: Math.min(
           85,
           70 + pseudoAnalysis.debunkIndicatorsFound.length * 5,
@@ -292,14 +314,14 @@ export function calculateArticleVerdictWithPseudoscience(
       const avgConfidence =
         claimVerdicts.reduce((sum, v) => sum + v.confidence, 0) / total;
       return {
-        verdict: "REFUTED",
+        verdict: truthFromBand("refuted", Math.min(avgConfidence, 90)),
         confidence: Math.min(avgConfidence, 90),
         reason: `Contains pseudoscientific claims (${pseudoAnalysis.categories.join(", ")}) - no scientific basis`,
       };
     }
 
     return {
-      verdict: "MISLEADING",
+      verdict: Math.round(35),
       confidence: 70,
       reason: `Claims rely on unproven mechanisms (${pseudoAnalysis.categories.join(", ")})`,
     };
@@ -307,16 +329,20 @@ export function calculateArticleVerdictWithPseudoscience(
 
   // Standard verdict calculation
   if (refutedCount >= total * 0.8) {
-    return { verdict: "REFUTED", confidence: 85 };
+    const confidence = 85;
+    return { verdict: truthFromBand("refuted", confidence), confidence };
   }
   if (refutedCount >= total * 0.5) {
-    return { verdict: "REFUTED", confidence: 80 };
+    const confidence = 80;
+    return { verdict: truthFromBand("refuted", confidence), confidence };
   }
   if (refutedCount > 0 || uncertainCount >= total * 0.5) {
-    return { verdict: "MISLEADING", confidence: 70 };
+    return { verdict: Math.round(35), confidence: 70 };
   }
   if (supportedCount >= total * 0.7) {
-    return { verdict: "CREDIBLE", confidence: 80 };
+    const confidence = 80;
+    return { verdict: truthFromBand("strong", confidence), confidence };
   }
-  return { verdict: "MOSTLY-CREDIBLE", confidence: 65 };
+  const confidence = 65;
+  return { verdict: truthFromBand("partial", confidence), confidence };
 }

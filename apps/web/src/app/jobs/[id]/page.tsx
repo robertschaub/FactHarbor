@@ -17,6 +17,11 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  percentageToArticleVerdict,
+  percentageToClaimVerdict,
+  percentageToQuestionAnswer,
+} from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
 
 type Job = {
@@ -52,11 +57,6 @@ const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: s
   "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
   "MOSTLY-FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
   "FALSE": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "❌" },
-  // Legacy support
-  "WELL-SUPPORTED": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
-  "PARTIALLY-SUPPORTED": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
-  "UNCERTAIN": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
-  "REFUTED": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "❌" },
 };
 
 /**
@@ -73,9 +73,6 @@ const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border:
   "LEANING-NO": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "↘" },
   "MOSTLY-NO": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
   "NO": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "❌" },
-  // Legacy support
-  "PARTIALLY": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
-  "INSUFFICIENT-EVIDENCE": { bg: "#e9ecef", text: "#495057", border: "#6c757d", icon: "?" },
 };
 
 /**
@@ -92,12 +89,86 @@ const ARTICLE_VERDICT_COLORS: Record<string, { bg: string; text: string; border:
   "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
   "MOSTLY-FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
   "FALSE": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "❌" },
-  // Legacy support
-  "CREDIBLE": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
-  "MOSTLY-CREDIBLE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
-  "MISLEADING": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "⚠️" },
-  "ANSWER-PROVIDED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "💬" },
 };
+
+const CLAIM_VERDICT_MIDPOINTS: Record<string, number> = {
+  "TRUE": 93,
+  "MOSTLY-TRUE": 79,
+  "LEANING-TRUE": 64,
+  "UNVERIFIED": 50,
+  "LEANING-FALSE": 36,
+  "MOSTLY-FALSE": 22,
+  "FALSE": 7,
+};
+
+const QUESTION_ANSWER_MIDPOINTS: Record<string, number> = {
+  "YES": 93,
+  "MOSTLY-YES": 79,
+  "LEANING-YES": 64,
+  "UNVERIFIED": 50,
+  "LEANING-NO": 36,
+  "MOSTLY-NO": 22,
+  "NO": 7,
+};
+
+const ARTICLE_VERDICT_MIDPOINTS: Record<string, number> = {
+  "TRUE": 93,
+  "MOSTLY-TRUE": 79,
+  "LEANING-TRUE": 64,
+  "UNVERIFIED": 50,
+  "LEANING-FALSE": 36,
+  "MOSTLY-FALSE": 22,
+  "FALSE": 7,
+};
+
+function normalizePercentage(value: number): number {
+  if (!Number.isFinite(value)) return 50;
+  const normalized = value >= 0 && value <= 1 ? value * 100 : value;
+  return Math.max(0, Math.min(100, Math.round(normalized)));
+}
+
+function resolveTruthPercentage(
+  value: unknown,
+  midpoints: Record<string, number>,
+  fallback = 50,
+): number {
+  if (typeof value === "number") return normalizePercentage(value);
+  if (typeof value === "string" && midpoints[value] !== undefined) return midpoints[value];
+  return fallback;
+}
+
+function getClaimTruthPercentage(claim: any): number {
+  if (typeof claim?.truthPercentage === "number") {
+    return normalizePercentage(claim.truthPercentage);
+  }
+  if (typeof claim?.verdict === "number") {
+    return normalizePercentage(claim.verdict);
+  }
+  return resolveTruthPercentage(claim?.verdict, CLAIM_VERDICT_MIDPOINTS);
+}
+
+function getAnswerTruthPercentage(answer: any): number {
+  if (typeof answer?.truthPercentage === "number") {
+    return normalizePercentage(answer.truthPercentage);
+  }
+  if (typeof answer?.answer === "number") {
+    return normalizePercentage(answer.answer);
+  }
+  return resolveTruthPercentage(answer?.answer, QUESTION_ANSWER_MIDPOINTS);
+}
+
+function getArticleTruthPercentage(articleAnalysis: any): number {
+  if (typeof articleAnalysis?.articleTruthPercentage === "number") {
+    return normalizePercentage(articleAnalysis.articleTruthPercentage);
+  }
+  if (typeof articleAnalysis?.articleVerdict === "number") {
+    return normalizePercentage(articleAnalysis.articleVerdict);
+  }
+  if (typeof articleAnalysis?.truthPercentage === "number") {
+    return normalizePercentage(articleAnalysis.truthPercentage);
+  }
+  return resolveTruthPercentage(articleAnalysis?.articleVerdict, ARTICLE_VERDICT_MIDPOINTS);
+}
 
 /**
  * Get human-readable label for verdict
@@ -111,11 +182,6 @@ function getVerdictLabel(verdict: string): string {
     "LEANING-FALSE": "Leaning False",
     "MOSTLY-FALSE": "Mostly False",
     "FALSE": "False",
-    // Legacy
-    "WELL-SUPPORTED": "Well Supported",
-    "PARTIALLY-SUPPORTED": "Partially Supported",
-    "UNCERTAIN": "Uncertain",
-    "REFUTED": "Refuted",
   };
   return labels[verdict] || verdict;
 }
@@ -132,9 +198,6 @@ function getAnswerLabel(answer: string): string {
     "LEANING-NO": "Leaning No",
     "MOSTLY-NO": "Mostly No",
     "NO": "No",
-    // Legacy
-    "PARTIALLY": "Partially",
-    "INSUFFICIENT-EVIDENCE": "Insufficient Evidence",
   };
   return labels[answer] || answer;
 }
@@ -633,7 +696,9 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
 // ============================================================================
 
 function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { questionAnswer: any; proceedings: any[] }) {
-  const overallColor = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
+  const overallTruth = getAnswerTruthPercentage(questionAnswer);
+  const overallAnswer = percentageToQuestionAnswer(overallTruth);
+  const overallColor = QUESTION_ANSWER_COLORS[overallAnswer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   // Opinion-based contestations without evidence are not highlighted
@@ -673,9 +738,9 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         <div className={styles.answerRow}>
           <span className={styles.answerLabel}>Overall Answer</span>
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
-            {overallColor.icon} {getAnswerLabel(questionAnswer.answer)}
+            {overallColor.icon} {getAnswerLabel(overallAnswer)}
           </span>
-          <span className={styles.answerPercentage}>{questionAnswer.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.answerPercentage}>{overallTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
         </div>
 
         {questionAnswer.calibrationNote && (
@@ -725,7 +790,9 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
 }
 
 function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: any; proceeding: any }) {
-  const color = QUESTION_ANSWER_COLORS[proceedingAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
+  const proceedingTruth = getAnswerTruthPercentage(proceedingAnswer);
+  const proceedingAnswerLabel = percentageToQuestionAnswer(proceedingTruth);
+  const color = QUESTION_ANSWER_COLORS[proceedingAnswerLabel] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
 
   const factors = proceedingAnswer.keyFactors || [];
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
@@ -751,9 +818,9 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
       <div className={styles.proceedingCardContent}>
         <div className={styles.proceedingAnswerRow}>
           <span className={styles.proceedingAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
-            {color.icon} {getAnswerLabel(proceedingAnswer.answer)}
+            {color.icon} {getAnswerLabel(proceedingAnswerLabel)}
           </span>
-          <span className={styles.proceedingPercentage}>{proceedingAnswer.truthPercentage}% <span style={{ fontSize: 11, color: "#999" }}>({proceedingAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.proceedingPercentage}>{proceedingTruth}% <span style={{ fontSize: 11, color: "#999" }}>({proceedingAnswer.confidence}%  confidence)</span></span>
         </div>
 
         <div className={`${styles.factorsSummary} ${contestedCount > 0 ? styles.factorsSummaryContested : styles.factorsSummaryNormal}`}>
@@ -836,7 +903,9 @@ function KeyFactorRow({ factor, showContestation = true }: { factor: any; showCo
 // ============================================================================
 
 function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
-  const color = QUESTION_ANSWER_COLORS[questionAnswer.answer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
+  const answerTruth = getAnswerTruthPercentage(questionAnswer);
+  const answerLabel = percentageToQuestionAnswer(answerTruth);
+  const color = QUESTION_ANSWER_COLORS[answerLabel] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
 
   return (
     <div className={styles.questionBanner} style={{ borderColor: color.border }}>
@@ -848,9 +917,9 @@ function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
       <div className={styles.questionBannerContent}>
         <div className={styles.questionBannerAnswerRow}>
           <span className={styles.questionBannerAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
-            {color.icon} {getAnswerLabel(questionAnswer.answer)}
+            {color.icon} {getAnswerLabel(answerLabel)}
           </span>
-          <span className={styles.questionBannerPercentage}>{questionAnswer.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.questionBannerPercentage}>{answerTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
         </div>
 
         <div className={styles.questionBannerShortAnswer} style={{ borderLeftColor: color.border }}>
@@ -875,12 +944,14 @@ function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
 // ============================================================================
 
 function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
-  const color = ARTICLE_VERDICT_COLORS[articleAnalysis.articleVerdict] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
+  const articleTruth = getArticleTruthPercentage(articleAnalysis);
+  const articleVerdictLabel = percentageToArticleVerdict(articleTruth);
+  const color = ARTICLE_VERDICT_COLORS[articleVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
 
   const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis.isPseudoscience;
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis.pseudoscienceCategories || [];
 
-  const articlePct = articleAnalysis.articleTruthPercentage ?? articleAnalysis.truthPercentage;
+  const articlePct = articleTruth;
 
   // Get the verdict reason or generate a summary
   const verdictReason = articleAnalysis.articleVerdictReason || articleAnalysis.verdictExplanation || "";
@@ -894,7 +965,7 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
         </div>
         <div className={styles.articleVerdictRow}>
           <span className={styles.articleVerdictBadge} style={{ backgroundColor: color.bg, color: color.text }}>
-            {color.icon} {getVerdictLabel(articleAnalysis.articleVerdict)}
+            {color.icon} {getVerdictLabel(articleVerdictLabel)}
           </span>
           <span className={styles.articlePercentage}>{articlePct}%</span>
           {isPseudo && (
@@ -1098,7 +1169,9 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
 }
 
 function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCrossProceeding?: boolean }) {
-  const color = CLAIM_VERDICT_COLORS[claim.verdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+  const claimTruth = getClaimTruthPercentage(claim);
+  const claimVerdictLabel = percentageToClaimVerdict(claimTruth);
+  const color = CLAIM_VERDICT_COLORS[claimVerdictLabel] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
   // Only show CONTESTED label when opposition has actual counter-evidence
   const hasEvidenceBasedContestation = claim.isContested &&
@@ -1110,7 +1183,7 @@ function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCro
         <span className={styles.claimId}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         <Badge bg={color.bg} color={color.text}>
-          {color.icon} {getVerdictLabel(claim.verdict)} ({claim.truthPercentage ?? claim.confidence}%)
+          {color.icon} {getVerdictLabel(claimVerdictLabel)} ({claimTruth}%)
         </Badge>
         {hasEvidenceBasedContestation && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
@@ -1158,13 +1231,15 @@ function ClaimHighlighter({ originalText, claimVerdicts }: { originalText: strin
             cv.highlightColor === "red" ? "#ffcdd2" :
             cv.highlightColor === "dark-red" ? "#ffebee" :
             "#fff3e0"; // default orange for unverified
+          const claimTruth = getClaimTruthPercentage(cv);
+          const claimVerdictLabel = percentageToClaimVerdict(claimTruth);
 
           return (
             <div key={cv.claimId} className={styles.highlighterClaimItem} style={{ backgroundColor: bgColor }}>
               <span className={styles.highlighterClaimId}>{cv.claimId}</span>
               <div>
                 <div className={styles.highlighterClaimText}>{cv.claimText}</div>
-                <div className={styles.highlighterClaimVerdict}>{cv.verdict} ({cv.truthPercentage ?? cv.confidence}%)</div>
+                <div className={styles.highlighterClaimVerdict}>{getVerdictLabel(claimVerdictLabel)} ({claimTruth}%)</div>
               </div>
             </div>
           );

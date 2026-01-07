@@ -11,6 +11,7 @@
 import React from "react";
 import css from "./ArticleVerdictBanner.module.css";
 import commonStyles from "../styles/common.module.css";
+import { percentageToArticleVerdict } from "@/lib/analyzer/truth-scale";
 
 interface ArticleAnalysis {
   articleThesis: string;
@@ -20,8 +21,9 @@ interface ArticleAnalysis {
     description: string;
     affectedClaims: string[];
   }>;
-  articleVerdict: "CREDIBLE" | "MOSTLY-CREDIBLE" | "MISLEADING" | "FALSE";
-  articleConfidence: number;
+  articleVerdict: number;
+  articleTruthPercentage?: number;
+  articleConfidence?: number;
   verdictDiffersFromClaimAverage: boolean;
   verdictDifferenceReason?: string;
   claimPattern: {
@@ -39,7 +41,9 @@ interface ArticleVerdictBannerProps {
 }
 
 export function ArticleVerdictBanner({ articleAnalysis }: ArticleVerdictBannerProps) {
-  const verdictClasses = getVerdictClasses(articleAnalysis.articleVerdict);
+  const articleTruth = resolveArticleTruthPercentage(articleAnalysis);
+  const verdictLabel = percentageToArticleVerdict(articleTruth);
+  const verdictClasses = getVerdictClasses(verdictLabel);
   const { claimPattern } = articleAnalysis;
 
   // Calculate simple average for comparison
@@ -54,10 +58,12 @@ export function ArticleVerdictBanner({ articleAnalysis }: ArticleVerdictBannerPr
         <div className={css.verdictRow}>
           <span className={css.verdictLabel}>Article Verdict</span>
           <span className={`${css.verdictBadge} ${verdictClasses.verdict}`}>
-            {getVerdictEmoji(articleAnalysis.articleVerdict)} {articleAnalysis.articleVerdict}
+            {getVerdictEmoji(verdictLabel)} {verdictLabel}
           </span>
           <span className={css.confidence}>
-            {articleAnalysis.articleConfidence}% confidence
+            {typeof articleAnalysis.articleConfidence === "number"
+              ? `${articleAnalysis.articleConfidence}% confidence`
+              : `${articleTruth}% truth`}
           </span>
         </div>
 
@@ -127,7 +133,7 @@ export function ArticleVerdictBanner({ articleAnalysis }: ArticleVerdictBannerPr
             <div className={css.comparisonRow}>
               <span>Article verdict: </span>
               <span className={`${css.verdictValue} ${verdictClasses.color}`}>
-                {articleAnalysis.articleVerdict}
+                {verdictLabel}
               </span>
             </div>
             {articleAnalysis.verdictDifferenceReason && (
@@ -160,11 +166,30 @@ export function ArticleVerdictBanner({ articleAnalysis }: ArticleVerdictBannerPr
   );
 }
 
+function normalizePercentage(value: number): number {
+  if (!Number.isFinite(value)) return 50;
+  const normalized = value >= 0 && value <= 1 ? value * 100 : value;
+  return Math.max(0, Math.min(100, Math.round(normalized)));
+}
+
+function resolveArticleTruthPercentage(articleAnalysis: ArticleAnalysis): number {
+  if (typeof articleAnalysis.articleTruthPercentage === "number") {
+    return normalizePercentage(articleAnalysis.articleTruthPercentage);
+  }
+  if (typeof articleAnalysis.articleVerdict === "number") {
+    return normalizePercentage(articleAnalysis.articleVerdict);
+  }
+  return 50;
+}
+
 function getVerdictEmoji(verdict: string): string {
   switch (verdict) {
-    case "CREDIBLE": return "✅";
-    case "MOSTLY-CREDIBLE": return "🔵";
-    case "MISLEADING": return "⚠️";
+    case "TRUE": return "✅";
+    case "MOSTLY-TRUE": return "✓";
+    case "LEANING-TRUE": return "◐";
+    case "UNVERIFIED": return "?";
+    case "LEANING-FALSE": return "◔";
+    case "MOSTLY-FALSE": return "✗";
     case "FALSE": return "❌";
     default: return "❓";
   }
@@ -172,12 +197,15 @@ function getVerdictEmoji(verdict: string): string {
 
 function getVerdictClasses(verdict: string): { verdict: string; border: string; color: string } {
   switch (verdict) {
-    case "CREDIBLE":
+    case "TRUE":
       return { verdict: commonStyles.verdictCredible, border: commonStyles.borderCredible, color: commonStyles.colorCredible };
-    case "MOSTLY-CREDIBLE":
+    case "MOSTLY-TRUE":
       return { verdict: commonStyles.verdictMostlyCredible, border: commonStyles.borderMostlyCredible, color: commonStyles.colorMostlyCredible };
-    case "MISLEADING":
+    case "LEANING-TRUE":
+    case "UNVERIFIED":
+    case "LEANING-FALSE":
       return { verdict: commonStyles.verdictMisleading, border: commonStyles.borderMisleading, color: commonStyles.colorMisleading };
+    case "MOSTLY-FALSE":
     case "FALSE":
       return { verdict: commonStyles.verdictFalse, border: commonStyles.borderFalse, color: commonStyles.colorFalse };
     default:

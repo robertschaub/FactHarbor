@@ -170,5 +170,5 @@ export function getKnowledgeInstruction(): string {
   if (CONFIG.allowModelKnowledge) {
     return "You may use general background knowledge, but prioritize the provided facts and sources.";
   }
-  return "Use ONLY the provided facts and sources. If information is missing, say INSUFFICIENT-EVIDENCE. Do not add facts not present in the sources.";
+  return "Use ONLY the provided facts and sources. If information is missing, return a truth percentage in the UNVERIFIED range (43-57%). Do not add facts not present in the sources.";
 }

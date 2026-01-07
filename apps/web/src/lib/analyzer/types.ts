@@ -132,10 +132,8 @@ export interface FactorAnalysis {
 export interface ProceedingAnswer {
   proceedingId: string;
   proceedingName: string;
-  // Original LLM answer (for debugging)
-  llmAnswer?: "YES" | "NO" | "PARTIALLY" | "INSUFFICIENT-EVIDENCE";
-  // Calibrated 7-point answer
-  answer: QuestionAnswer7Point;
+  // Answer truth percentage (0-100)
+  answer: number;
   confidence: number;
   // Truth percentage for display (0-100%)
   truthPercentage: number;
@@ -267,23 +265,19 @@ export interface ClaimVerdict {
   dependsOn?: string[];
   dependencyFailed?: boolean;
   failedDependencies?: string[];
-  llmVerdict:
-    | "WELL-SUPPORTED"
-    | "PARTIALLY-SUPPORTED"
-    | "UNCERTAIN"
-    | "REFUTED";
-  verdict: ClaimVerdict7Point;
+  // Verdict truth percentage (0-100 where 100 = completely true)
+  verdict: number;
   confidence: number;
   truthPercentage: number;
   evidenceWeight?: number;
   riskTier: "A" | "B" | "C";
   reasoning: string;
   supportingFactIds: string[];
-  keyFactorId?: string; // Maps claim to KeyFactor for aggregation
+  keyFactorId?: string;
   relatedProceedingId?: string;
   startOffset?: number;
   endOffset?: number;
-  highlightColor: "green" | "yellow" | "red"; // Normalized 3-color UI system
+  highlightColor: "green" | "yellow" | "red";
   isPseudoscience?: boolean;
   escalationReason?: string;
   isContested?: boolean;
@@ -293,8 +287,8 @@ export interface ClaimVerdict {
 
 export interface QuestionAnswer {
   question: string;
-  llmAnswer: "YES" | "NO" | "PARTIALLY" | "INSUFFICIENT-EVIDENCE";
-  answer: QuestionAnswer7Point;
+  // Answer truth percentage (0-100)
+  answer: number;
   confidence: number;
   truthPercentage: number;
   shortAnswer: string;
@@ -324,14 +318,11 @@ export interface ArticleAnalysis {
   }>;
 
   claimsAverageTruthPercentage: number;
-  claimsAverageVerdict: ArticleVerdict7Point;
+  claimsAverageVerdict: number;
 
   articleTruthPercentage: number;
-  articleVerdict: ArticleVerdict7Point;
+  articleVerdict: number;
   articleVerdictReason?: string;
-
-  llmArticleVerdict?: string;
-  llmArticleConfidence?: number;
 
   claimPattern: {
     total: number;
@@ -358,7 +349,7 @@ export interface TwoPanelSummary {
     sourceCredibility: string;
     claimVerdicts: Array<{
       claim: string;
-      verdict: ClaimVerdict7Point;
+      verdict: number;
       truthPercentage: number;
     }>;
     methodologyAssessment: string;
@@ -377,7 +368,7 @@ export interface PseudoscienceAnalysis {
   categories: string[];
   matchedPatterns: string[];
   debunkIndicatorsFound: string[];
-  recommendation: "REFUTED" | "FALSE" | "UNCERTAIN" | null;
+  recommendation: number | null;
 }
 
 // ============================================================================

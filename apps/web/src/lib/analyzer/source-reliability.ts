@@ -10,7 +10,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { CONFIG } from "./config";
-import { percentageToClaimVerdict, getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
+import { getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
 import type { ClaimVerdict, ExtractedFact, FetchedSource } from "./types";
 
 // ============================================================================
@@ -110,15 +110,14 @@ export function applyEvidenceWeighting(
     const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
     const adjustedTruth = Math.round(50 + (verdict.truthPercentage - 50) * avg);
     const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avg / 2));
-    const adjustedVerdict = percentageToClaimVerdict(adjustedTruth);
 
     return {
       ...verdict,
       evidenceWeight: avg,
       truthPercentage: adjustedTruth,
       confidence: adjustedConfidence,
-      verdict: adjustedVerdict,
-      highlightColor: normalizeHighlightColor(getHighlightColor7Point(adjustedVerdict)),
+      verdict: adjustedTruth,
+      highlightColor: normalizeHighlightColor(getHighlightColor7Point(adjustedTruth)),
     };
   });
 }

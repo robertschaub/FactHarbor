@@ -3,9 +3,9 @@
  * 
  * Implements UN-17: In-Article Claim Highlighting
  * Shows original text with color-coded claim highlighting:
- * - 🟢 Green: Well-supported claims
- * - 🟡 Yellow: Uncertain/Partially-supported claims  
- * - 🔴 Red: Refuted claims
+ * - 🟢 Green: True-side claims
+ * - 🟡 Yellow: Unverified/Leaning claims
+ * - 🔴 Red: False-side claims
  * 
  * Hover/click on highlighted claims shows verdict details.
  * 
@@ -14,12 +14,14 @@
 
 import React, { useState, useMemo } from "react";
 import styles from "./ClaimHighlighter.module.css";
+import { percentageToClaimVerdict } from "@/lib/analyzer/truth-scale";
 
 interface ClaimVerdict {
   claimId: string;
   claimText: string;
   isCentral: boolean;
-  verdict: string;
+  verdict: number;
+  truthPercentage?: number;
   confidence: number;
   riskTier: string;
   reasoning: string;
@@ -38,6 +40,32 @@ interface TooltipData {
   claim: ClaimVerdict;
   x: number;
   y: number;
+}
+
+function normalizePercentage(value: number): number {
+  if (!Number.isFinite(value)) return 50;
+  const normalized = value >= 0 && value <= 1 ? value * 100 : value;
+  return Math.max(0, Math.min(100, Math.round(normalized)));
+}
+
+function getClaimTruthPercentage(claim: ClaimVerdict): number {
+  if (typeof claim.truthPercentage === "number") {
+    return normalizePercentage(claim.truthPercentage);
+  }
+  return normalizePercentage(claim.verdict);
+}
+
+function getVerdictLabel(verdict: string): string {
+  const labels: Record<string, string> = {
+    "TRUE": "True",
+    "MOSTLY-TRUE": "Mostly True",
+    "LEANING-TRUE": "Leaning True",
+    "UNVERIFIED": "Unverified",
+    "LEANING-FALSE": "Leaning False",
+    "MOSTLY-FALSE": "Mostly False",
+    "FALSE": "False",
+  };
+  return labels[verdict] || verdict;
 }
 
 export function ClaimHighlighter({ 
@@ -132,15 +160,15 @@ export function ClaimHighlighter({
           <div className={styles.legend}>
             <span className={styles.legendItem}>
               <span className={`${styles.legendDot} ${styles.legendDotGreen}`}></span>
-              Well-supported
+              True
             </span>
             <span className={styles.legendItem}>
               <span className={`${styles.legendDot} ${styles.legendDotYellow}`}></span>
-              Uncertain
+              Unverified
             </span>
             <span className={styles.legendItem}>
               <span className={`${styles.legendDot} ${styles.legendDotRed}`}></span>
-              Refuted
+              False
             </span>
           </div>
         )}
@@ -200,6 +228,8 @@ function ClaimTooltip({ claim, x, y, onClose }: {
   onClose: () => void;
 }) {
   const verdictClass = getTooltipVerdictClass(claim.highlightColor);
+  const truthPercentage = getClaimTruthPercentage(claim);
+  const verdictLabel = percentageToClaimVerdict(truthPercentage);
 
   return (
     <div
@@ -212,7 +242,7 @@ function ClaimTooltip({ claim, x, y, onClose }: {
     >
       <div className={styles.tooltipHeader}>
         <span className={`${styles.tooltipVerdict} ${verdictClass}`}>
-          {getVerdictEmoji(claim.verdict)} {claim.verdict}
+          {getVerdictEmoji(verdictLabel)} {getVerdictLabel(verdictLabel)}
         </span>
         <span className={styles.tooltipConfidence}>{claim.confidence}% confidence</span>
       </div>
@@ -249,10 +279,13 @@ function getTooltipVerdictClass(color: "green" | "yellow" | "red"): string {
 
 function getVerdictEmoji(verdict: string): string {
   switch (verdict) {
-    case "WELL-SUPPORTED": return "🟢";
-    case "PARTIALLY-SUPPORTED": return "🟡";
-    case "UNCERTAIN": return "🟡";
-    case "REFUTED": return "🔴";
+    case "TRUE": return "✅";
+    case "MOSTLY-TRUE": return "✓";
+    case "LEANING-TRUE": return "◐";
+    case "UNVERIFIED": return "?";
+    case "LEANING-FALSE": return "◔";
+    case "MOSTLY-FALSE": return "✗";
+    case "FALSE": return "❌";
     default: return "⚪";
   }
 }

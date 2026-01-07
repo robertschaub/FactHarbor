@@ -12,6 +12,7 @@
 import React from "react";
 import styles from "./TwoPanelSummary.module.css";
 import commonStyles from "../styles/common.module.css";
+import { percentageToClaimVerdict } from "@/lib/analyzer/truth-scale";
 
 interface TwoPanelSummaryProps {
   articleSummary: {
@@ -26,8 +27,8 @@ interface TwoPanelSummaryProps {
     sourceCredibility: string;
     claimVerdicts: Array<{
       claim: string;
-      verdict: string;
-      confidence: number;
+      verdict: number;
+      truthPercentage: number;
     }>;
     methodologyAssessment: string;
     overallVerdict: string;
@@ -96,7 +97,7 @@ export function TwoPanelSummary({ articleSummary, factharborAnalysis }: TwoPanel
               {factharborAnalysis.claimVerdicts.map((cv, i) => (
                 <div key={i} className={styles.verdictRow}>
                   <span className={styles.claimText}>{cv.claim}</span>
-                  <VerdictBadge verdict={cv.verdict} confidence={cv.confidence} />
+                  <VerdictBadge truthPercentage={cv.truthPercentage ?? cv.verdict} />
                 </div>
               ))}
             </div>
@@ -122,24 +123,24 @@ export function TwoPanelSummary({ articleSummary, factharborAnalysis }: TwoPanel
 }
 
 // Verdict Badge Component
-function VerdictBadge({ verdict, confidence }: { verdict: string; confidence: number }) {
-  const verdictClass = getVerdictClass(verdict);
+function VerdictBadge({ truthPercentage }: { truthPercentage: number }) {
+  const verdictLabel = percentageToClaimVerdict(truthPercentage);
+  const verdictClass = getVerdictClass(verdictLabel);
   return (
     <span className={`${styles.verdictBadge} ${verdictClass}`}>
-      {verdict} ({confidence}%)
+      {verdictLabel} ({truthPercentage}%)
     </span>
   );
 }
 
 function getVerdictClass(verdict: string): string {
   switch (verdict) {
-    case "WELL-SUPPORTED": return commonStyles.verdictWellSupported;
-    case "PARTIALLY-SUPPORTED": return commonStyles.verdictPartiallySupported;
-    case "UNCERTAIN": return commonStyles.verdictUncertain;
-    case "REFUTED": return commonStyles.verdictRefuted;
-    case "CREDIBLE": return commonStyles.verdictCredible;
-    case "MOSTLY-CREDIBLE": return commonStyles.verdictMostlyCredible;
-    case "MISLEADING": return commonStyles.verdictMisleading;
+    case "TRUE": return commonStyles.verdictCredible;
+    case "MOSTLY-TRUE": return commonStyles.verdictMostlyCredible;
+    case "LEANING-TRUE": return commonStyles.verdictUncertain;
+    case "UNVERIFIED": return commonStyles.verdictUncertain;
+    case "LEANING-FALSE": return commonStyles.verdictMisleading;
+    case "MOSTLY-FALSE": return commonStyles.verdictRefuted;
     case "FALSE": return commonStyles.verdictFalse;
     default: return commonStyles.verdictDefault;
   }

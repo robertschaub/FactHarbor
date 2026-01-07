@@ -26,86 +26,62 @@ import type {
 // PERCENTAGE CALCULATIONS
 // ============================================================================
 
+function normalizePercentage(value: number): number {
+  if (!Number.isFinite(value)) return 50;
+  const normalized = value >= 0 && value <= 1 ? value * 100 : value;
+  return Math.max(0, Math.min(100, Math.round(normalized)));
+}
+
+function truthFromBand(
+  band: "strong" | "partial" | "uncertain" | "refuted",
+  confidence: number,
+): number {
+  const conf = normalizePercentage(confidence) / 100;
+  switch (band) {
+    case "strong":
+      return Math.round(72 + 28 * conf);
+    case "partial":
+      return Math.round(50 + 35 * conf);
+    case "uncertain":
+      return Math.round(35 + 30 * conf);
+    case "refuted":
+      return Math.round(28 * (1 - conf));
+  }
+}
+
 /**
  * Calculate truth percentage from LLM verdict + confidence
  * Returns 0-100% on symmetric scale
  */
 export function calculateTruthPercentage(
-  llmVerdict: string,
-  llmConfidence: number,
+  verdictPercentage: number,
+  _confidence: number,
 ): number {
-  const conf = Math.max(0, Math.min(100, llmConfidence)) / 100;
-
-  switch (llmVerdict) {
-    case "WELL-SUPPORTED":
-      return Math.round(72 + 28 * conf);
-
-    case "PARTIALLY-SUPPORTED":
-      return Math.round(50 + 35 * conf);
-
-    case "UNCERTAIN":
-      return Math.round(35 + 30 * conf);
-
-    case "REFUTED":
-    case "FALSE":
-      return Math.round(28 * (1 - conf));
-
-    default:
-      return 50;
-  }
+  return normalizePercentage(verdictPercentage);
 }
+
 
 /**
  * Calculate truth percentage for question answers
  */
 export function calculateQuestionTruthPercentage(
-  llmAnswer: string,
-  llmConfidence: number,
+  answerPercentage: number,
+  _confidence: number,
 ): number {
-  const conf = Math.max(0, Math.min(100, llmConfidence)) / 100;
-
-  switch (llmAnswer) {
-    case "YES":
-      return Math.round(72 + 28 * conf);
-    case "PARTIALLY":
-      return Math.round(43 + 28 * conf);
-    case "NO":
-      return Math.round(28 * (1 - conf));
-    case "INSUFFICIENT-EVIDENCE":
-      return 50;
-    default:
-      return 50;
-  }
+  return normalizePercentage(answerPercentage);
 }
+
 
 /**
  * Calculate article truth percentage from LLM article verdict
  */
 export function calculateArticleTruthPercentage(
-  llmVerdict: string,
-  llmConfidence: number,
+  verdictPercentage: number,
+  _confidence: number,
 ): number {
-  const conf = Math.max(0, Math.min(100, llmConfidence)) / 100;
-
-  switch (llmVerdict) {
-    case "CREDIBLE":
-    case "TRUE":
-      return Math.round(72 + 28 * conf);
-    case "MOSTLY-CREDIBLE":
-    case "MOSTLY-TRUE":
-      return Math.round(58 + 27 * conf);
-    case "MISLEADING":
-      return Math.round(42 - 27 * conf);
-    case "MOSTLY-FALSE":
-    case "LEANING-FALSE":
-      return Math.round(15 + 14 * (1 - conf));
-    case "FALSE":
-    case "REFUTED":
-      return Math.round(14 * (1 - conf));
-    default:
-      return 50;
-  }
+  return normalizePercentage(verdictPercentage);
 }
+
 
 // ============================================================================
 // PERCENTAGE TO VERDICT MAPPING
@@ -162,66 +138,37 @@ export function percentageToArticleVerdict(
  * Map confidence to claim verdict (for backward compatibility)
  */
 export function calibrateClaimVerdict(
-  llmVerdict: string,
+  truthPercentage: number,
   confidence: number,
 ): ClaimVerdict7Point {
-  const truthPct = calculateTruthPercentage(llmVerdict, confidence);
+  const truthPct = calculateTruthPercentage(truthPercentage, confidence);
   return percentageToClaimVerdict(truthPct);
 }
+
 
 /**
  * Map confidence to question answer (for backward compatibility)
  */
 export function calibrateQuestionAnswer(
-  llmAnswer: string,
+  truthPercentage: number,
   confidence: number,
 ): QuestionAnswer7Point {
-  const truthPct = calculateQuestionTruthPercentage(llmAnswer, confidence);
+  const truthPct = calculateQuestionTruthPercentage(truthPercentage, confidence);
   return percentageToQuestionAnswer(truthPct);
 }
+
 
 /**
  * Map confidence to article verdict
  */
 export function calibrateArticleVerdict(
-  llmVerdict: string,
+  truthPercentage: number,
   confidence: number,
 ): ArticleVerdict7Point {
-  if (
-    llmVerdict === "FALSE" ||
-    llmVerdict === "REFUTED"
-  ) {
-    if (confidence >= 95) return "FALSE";
-    if (confidence >= 75) return "FALSE";
-    if (confidence >= 55) return "MOSTLY-FALSE";
-    return "UNVERIFIED";
-  }
-
-  if (llmVerdict === "MISLEADING") {
-    if (confidence >= 75) return "MOSTLY-FALSE";
-    if (confidence >= 55) return "LEANING-TRUE";
-    return "UNVERIFIED";
-  }
-
-  if (llmVerdict === "MOSTLY-CREDIBLE") {
-    if (confidence >= 75) return "MOSTLY-TRUE";
-    return "LEANING-TRUE";
-  }
-
-  if (llmVerdict === "CREDIBLE") {
-    if (confidence >= 95) return "TRUE";
-    if (confidence >= 75) return "MOSTLY-TRUE";
-    return "LEANING-TRUE";
-  }
-
-  if (confidence >= 95) return "TRUE";
-  if (confidence >= 75) return "MOSTLY-TRUE";
-  if (confidence >= 55) return "LEANING-TRUE";
-  if (confidence >= 45) return "UNVERIFIED";
-  if (confidence >= 25) return "MOSTLY-FALSE";
-  if (confidence >= 5) return "FALSE";
-  return "FALSE";
+  const truthPct = calculateArticleTruthPercentage(truthPercentage, confidence);
+  return percentageToArticleVerdict(truthPct);
 }
+
 
 // ============================================================================
 // COLOR UTILITIES
@@ -265,7 +212,7 @@ export function getVerdictColor(verdict: string): {
  * Get highlight color class for 7-level scale
  */
 export function getHighlightColor7Point(
-  verdict: string,
+  truthPercentage: number,
 ):
   | "green"
   | "light-green"
@@ -274,53 +221,27 @@ export function getHighlightColor7Point(
   | "dark-orange"
   | "red"
   | "dark-red" {
-  switch (verdict) {
-    case "TRUE":
-    case "YES":
-      return "green";
-    case "MOSTLY-TRUE":
-    case "MOSTLY-YES":
-      return "light-green";
-    case "LEANING-TRUE":
-    case "LEANING-YES":
-      return "yellow";
-    case "UNVERIFIED":
-      return "orange";
-    case "LEANING-FALSE":
-    case "LEANING-NO":
-      return "dark-orange";
-    case "MOSTLY-FALSE":
-    case "MOSTLY-NO":
-      return "red";
-    case "FALSE":
-    case "NO":
-      return "dark-red";
-    default:
-      return "orange";
-  }
+  const normalized = normalizePercentage(truthPercentage);
+  if (normalized >= 86) return "green";
+  if (normalized >= 72) return "light-green";
+  if (normalized >= 58) return "yellow";
+  if (normalized >= 43) return "orange";
+  if (normalized >= 29) return "dark-orange";
+  if (normalized >= 15) return "red";
+  return "dark-red";
 }
+
 
 /**
  * Simple 3-color highlight (legacy)
  */
-export function getHighlightColor(verdict: string): "green" | "yellow" | "red" {
-  switch (verdict) {
-    case "WELL-SUPPORTED":
-    case "TRUE":
-    case "MOSTLY-TRUE":
-      return "green";
-    case "UNCERTAIN":
-    case "LEANING-TRUE":
-    case "LEANING-FALSE":
-    case "UNVERIFIED":
-      return "yellow";
-    case "REFUTED":
-    case "MOSTLY-FALSE":
-    case "FALSE":
-    default:
-      return "red";
-  }
+export function getHighlightColor(truthPercentage: number): "green" | "yellow" | "red" {
+  const normalized = normalizePercentage(truthPercentage);
+  if (normalized >= 72) return "green";
+  if (normalized >= 43) return "yellow";
+  return "red";
 }
+
 
 /**
  * Normalize 7-point highlight color to 3-color UI system
