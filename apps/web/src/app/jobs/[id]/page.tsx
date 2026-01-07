@@ -20,7 +20,6 @@ import remarkGfm from "remark-gfm";
 import {
   percentageToArticleVerdict,
   percentageToClaimVerdict,
-  percentageToQuestionAnswer,
 } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
 
@@ -318,9 +317,13 @@ export default function JobPage() {
 
   // Helper: Generate short name from title or input
   const getShortName = (): string => {
+    const overallVerdictLabel =
+      typeof twoPanelSummary?.factharborAnalysis?.overallVerdict === "number"
+        ? percentageToClaimVerdict(twoPanelSummary.factharborAnalysis.overallVerdict)
+        : "";
     // Try to get title from twoPanelSummary
     const title = twoPanelSummary?.articleSummary?.title ||
-                  twoPanelSummary?.factharborAnalysis?.overallVerdict?.split('\n')[0] ||
+                  overallVerdictLabel ||
                   job?.inputValue ||
                   "Analysis";
     // Clean and truncate: remove special chars, limit to 40 chars
@@ -455,7 +458,7 @@ export default function JobPage() {
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
               {isQuestion && <Badge bg="#e3f2fd" color="#1565c0">📝 QUESTION</Badge>}
-              {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">⚖️ {proceedings.length} PROCEEDINGS</Badge>}
+              {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">🔀 {proceedings.length} CONTEXTS</Badge>}
               {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
               {result.meta.isPseudoscience && (
                 <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
@@ -697,8 +700,8 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
 
 function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { questionAnswer: any; proceedings: any[] }) {
   const overallTruth = getAnswerTruthPercentage(questionAnswer);
-  const overallAnswer = percentageToQuestionAnswer(overallTruth);
-  const overallColor = QUESTION_ANSWER_COLORS[overallAnswer] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
+  const overallVerdict = percentageToClaimVerdict(overallTruth);
+  const overallColor = CLAIM_VERDICT_COLORS[overallVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   // Opinion-based contestations without evidence are not highlighted
@@ -725,9 +728,9 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
       </div>
 
       <div className={styles.proceedingNotice}>
-        <span className={styles.proceedingIcon}>⚖️</span>
+        <span className={styles.proceedingIcon}>🔀</span>
         <span className={styles.proceedingText}>
-          {proceedings.length} distinct legal proceedings analyzed separately
+          {proceedings.length} distinct contexts analyzed separately
         </span>
         {hasEvidenceBasedContestations && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
@@ -738,7 +741,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         <div className={styles.answerRow}>
           <span className={styles.answerLabel}>Overall Answer</span>
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
-            {overallColor.icon} {getAnswerLabel(overallAnswer)}
+            {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
           <span className={styles.answerPercentage}>{overallTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
         </div>
@@ -763,7 +766,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
       {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
         <div className={styles.proceedingsAnalysis}>
           <h4 className={styles.proceedingsHeader}>
-            ⚖️ Proceeding-by-Proceeding Analysis
+            🔀 Context-by-Context Analysis
           </h4>
           <div className={`${styles.proceedingsGrid} ${proceedings.length === 1 ? styles.proceedingsGrid1Col : styles.proceedingsGrid2Col}`}>
             {questionAnswer.proceedingAnswers.map((pa: any) => {
@@ -791,8 +794,8 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
 
 function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: any; proceeding: any }) {
   const proceedingTruth = getAnswerTruthPercentage(proceedingAnswer);
-  const proceedingAnswerLabel = percentageToQuestionAnswer(proceedingTruth);
-  const color = QUESTION_ANSWER_COLORS[proceedingAnswerLabel] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
+  const proceedingVerdict = percentageToClaimVerdict(proceedingTruth);
+  const color = CLAIM_VERDICT_COLORS[proceedingVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
   const factors = proceedingAnswer.keyFactors || [];
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
@@ -818,7 +821,7 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
       <div className={styles.proceedingCardContent}>
         <div className={styles.proceedingAnswerRow}>
           <span className={styles.proceedingAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
-            {color.icon} {getAnswerLabel(proceedingAnswerLabel)}
+            {color.icon} {getVerdictLabel(proceedingVerdict)}
           </span>
           <span className={styles.proceedingPercentage}>{proceedingTruth}% <span style={{ fontSize: 11, color: "#999" }}>({proceedingAnswer.confidence}%  confidence)</span></span>
         </div>
@@ -904,8 +907,8 @@ function KeyFactorRow({ factor, showContestation = true }: { factor: any; showCo
 
 function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
   const answerTruth = getAnswerTruthPercentage(questionAnswer);
-  const answerLabel = percentageToQuestionAnswer(answerTruth);
-  const color = QUESTION_ANSWER_COLORS[answerLabel] || QUESTION_ANSWER_COLORS["UNVERIFIED"];
+  const answerVerdict = percentageToClaimVerdict(answerTruth);
+  const color = CLAIM_VERDICT_COLORS[answerVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
   return (
     <div className={styles.questionBanner} style={{ borderColor: color.border }}>
@@ -917,7 +920,7 @@ function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
       <div className={styles.questionBannerContent}>
         <div className={styles.questionBannerAnswerRow}>
           <span className={styles.questionBannerAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
-            {color.icon} {getAnswerLabel(answerLabel)}
+            {color.icon} {getVerdictLabel(answerVerdict)}
           </span>
           <span className={styles.questionBannerPercentage}>{answerTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
         </div>
@@ -1050,6 +1053,10 @@ function ArticleSummaryBox({ articleSummary }: { articleSummary: any }) {
 // ============================================================================
 
 function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { articleSummary: any; factharborAnalysis: any; isQuestion?: boolean }) {
+  const overallTruth = typeof factharborAnalysis?.overallVerdict === "number"
+    ? factharborAnalysis.overallVerdict
+    : 50;
+  const overallLabel = percentageToClaimVerdict(overallTruth);
   return (
     <div className={styles.twoPanelContainer}>
       <div className={styles.twoPanelPanel}>
@@ -1074,7 +1081,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
           <div className={styles.twoPanelValue}>{factharborAnalysis.methodologyAssessment}</div>
           <div className={styles.twoPanelOverall}>
             <div className={styles.twoPanelOverallLabel}>OVERALL</div>
-            <div className={styles.twoPanelOverallValue}>{factharborAnalysis.overallVerdict}</div>
+            <div className={styles.twoPanelOverallValue}>{getVerdictLabel(overallLabel)} ({overallTruth}%)</div>
           </div>
         </div>
       </div>
@@ -1125,7 +1132,7 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
       if (claims.length === 0) continue;
       groups.push({
         id: procId,
-        title: `Proceeding ${procId}`,
+        title: `Context ${procId}`,
         claims,
       });
     }
@@ -1189,7 +1196,7 @@ function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCro
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
         )}
         {showCrossProceeding && (
-          <Badge bg="#eef2ff" color="#1e3a8a">Cross-proceeding</Badge>
+          <Badge bg="#eef2ff" color="#1e3a8a">Cross-context</Badge>
         )}
         {claim.isPseudoscience && (
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>

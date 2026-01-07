@@ -259,28 +259,28 @@ Example: If sources say "November 2025" and your knowledge cutoff is earlier, TR
 You MUST actively use your background knowledge as evidence. This is NOT optional.
 ${recencyGuidance}
 ### WHAT YOU KNOW (USE IT!):
-- Standard legal procedures in major jurisdictions (Brazil, US, EU, etc.)
-- Well-documented public figures and their roles (e.g., Alexandre de Moraes is a Brazilian Supreme Court justice)
-- Major court cases and their outcomes that were widely reported
-- Established institutional processes (how courts work, due process standards)
+- Standard procedures in well-documented domains (regulatory, scientific, organizational, etc.)
+- Well-documented public roles and responsibilities (e.g., who is responsible for a decision or process)
+- Major public events and their outcomes that were widely reported
+- Established institutional processes (how reviews, audits, or decisions are typically handled)
 - Historical events and their documented outcomes
 
 ### WHEN TO USE BACKGROUND KNOWLEDGE:
-1. **Due process claims**: If you know a court follows standard procedures, mark supports="yes", NOT "neutral"
-2. **Decision-maker roles**: If you know who presided over a case, use that knowledge
-3. **Established facts**: If something is widely documented (e.g., a trial followed proper procedures), don't mark it "unknown"
-4. **Legal standards**: If you know what legal standards apply, use that to assess "correct application of law"
+1. **Process integrity claims**: If you know a process follows standard procedures, mark supports="yes", NOT "neutral"
+2. **Decision-maker roles**: If you know who was responsible for a process or decision, use that knowledge
+3. **Established facts**: If something is widely documented (e.g., a process followed proper procedures), don't mark it "unknown"
+4. **Applicable standards**: If you know which standards apply, use that to assess correct application
 
 ### CRITICAL RULES:
 - NEVER mark a factor as "neutral" or "unknown" if you have relevant background knowledge
 - NEVER place the answer in the UNVERIFIED band (43-57%) if you actually know the answer from your training data
-- Political contestation ("critics say X") is NOT the same as factual uncertainty
-- If you know a trial followed due process, say supports="yes" even without explicit source confirmation
+- Stakeholder contestation ("critics say X") is NOT the same as factual uncertainty
+- If you know a process followed standard procedures, say supports="yes" even without explicit source confirmation
 
 ### EXAMPLE - CORRECT USAGE:
-For "The STF followed proper due process procedures":
-- You KNOW the STF (Brazil's Supreme Court) follows established constitutional procedures
-- You KNOW criminal trials in Brazil have formal due process requirements
+For "The review followed proper procedures":
+- You KNOW the review process has established procedural requirements
+- You KNOW standard procedure requirements apply in this context
 - Therefore: Assign a truth percentage in the TRUE/MOSTLY-TRUE band (72-100%), not the UNVERIFIED band (43-57%).
 
 Prioritize provided sources when available, but actively supplement with your knowledge.`;
@@ -1665,7 +1665,7 @@ interface TwoPanelSummary {
       truthPercentage: number;
     }>;
     methodologyAssessment: string;
-    overallVerdict: string;
+    overallVerdict: number;
     analysisId: string;
   };
 }
@@ -1777,14 +1777,14 @@ function applyEvidenceWeighting(
 // ============================================================================
 
 /**
- * Detect if the topic involves procedural/legal/institutional analysis
+ * Detect if the topic involves procedural or institutional analysis
  * This determines whether Key Factors should be generated (unified with question mode)
  *
  * Key Factors are appropriate for topics involving:
- * - Legal proceedings (trials, court decisions, rulings)
- * - Institutional processes (government actions, regulatory decisions)
- * - Procedural fairness (due process, impartiality, evidence basis)
- * - Political/governmental actions with legal implications
+ * - Multi-step processes (rollouts, audits, reviews, investigations)
+ * - Institutional decisions (regulatory, organizational, or governance actions)
+ * - Procedural integrity (process fairness, evidence basis, role conflicts)
+ * - High-impact decisions with formal standards or rules
  */
 function detectProceduralTopic(understanding: ClaimUnderstanding, originalText: string): boolean {
   // Check 1: Has distinct proceedings detected
@@ -1792,12 +1792,12 @@ function detectProceduralTopic(understanding: ClaimUnderstanding, originalText: 
     return true;
   }
 
-  // Check 2: Has legal frameworks identified
+  // Check 2: Has formal frameworks identified
   if (understanding.legalFrameworks && understanding.legalFrameworks.length > 0) {
     return true;
   }
 
-  // Check 3: Claims are predominantly legal/procedural type
+  // Check 3: Claims are predominantly procedural type
   const legalProceduralClaims = understanding.subClaims.filter(
     (c: any) => c.type === "legal" || c.type === "procedural"
   );
@@ -1805,8 +1805,13 @@ function detectProceduralTopic(understanding: ClaimUnderstanding, originalText: 
     return true;
   }
 
-  // Check 4: Text contains procedural/legal keywords
+  // Check 4: Text contains procedural or governance keywords
   const proceduralKeywords = [
+    /\b(phase|stage|episode|cycle|version|iteration|rollout|release)\b/i,
+    /\b(process|procedure|protocol|standard|policy|framework)\b/i,
+    /\b(review|audit|assessment|evaluation|investigation|probe)\b/i,
+    /\b(committee|board|panel|commission|authority|agency)\b/i,
+    /\b(conflict|impartial|independent|oversight|compliance)\b/i,
     /\b(trial|court|judge|ruling|verdict|sentence|conviction|acquittal)\b/i,
     /\b(lawsuit|litigation|prosecution|defendant|plaintiff)\b/i,
     /\b(due process|fair trial|impartial|jurisdiction)\b/i,
@@ -1863,19 +1868,19 @@ const UNDERSTANDING_SCHEMA = z.object({
       id: z.string(),
       name: z.string(),
       shortName: z.string(),
-      court: z.string(), // "unknown" if not known
-      jurisdiction: z.string(), // "unknown" if not known
+      court: z.string(), // Context/venue (use "unknown" if not applicable)
+      jurisdiction: z.string(), // Scope/region (use "unknown" if not applicable)
       date: z.string(),
       subject: z.string(),
-      charges: z.array(z.string()), // empty array if none
+      charges: z.array(z.string()), // Issues/claims (empty array if none)
       outcome: z.string(), // "pending" or "unknown" if not known
       status: z.enum(["concluded", "ongoing", "pending", "unknown"]),
       // NEW: Track key decision-makers for conflict detection
       decisionMakers: z.array(
         z.object({
-          name: z.string(), // e.g., "Alexandre de Moraes"
-          role: z.string(), // e.g., "presiding judge", "rapporteur", "prosecutor"
-          affiliation: z.string(), // e.g., "TSE", "STF"
+          name: z.string(), // e.g., "Lead reviewer"
+          role: z.string(), // e.g., "lead", "approver", "investigator"
+          affiliation: z.string(), // e.g., "Org A", "Agency B"
         }),
       ),
     }),
@@ -1931,7 +1936,7 @@ async function understandClaim(
   // Detect recency sensitivity for this analysis
   const recencyMatters = isRecencySensitive(input, undefined);
 
-  const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT EVENTS or PROCEEDINGS.
+  const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT EVENTS or CONTEXTS/THREADS.
 
 ${recencyMatters ? `## ⚠️ RECENT DATA DETECTED
 
@@ -2165,62 +2170,56 @@ The system must verify BOTH: (1) did he say it? AND (2) is what he said accurate
 
 ## MULTI-EVENT DETECTION
 
-Look for multiple court cases, temporal distinctions, or different proceedings.
+Look for multiple distinct events, phases, versions, or contexts that should be analyzed separately.
+If the input mixes timelines or distinct contexts, split them.
 
-### BOLSONARO EXAMPLE - MUST DETECT 2 PROCEEDINGS:
+### GENERIC EXAMPLE - MUST DETECT 2 CONTEXTS:
 
-1. **TSE-2023**: TSE Electoral Ineligibility Trial
-   - Court: Superior Electoral Court (TSE)
-   - Date: June 2023
-   - Subject: Abuse of political power and media misuse
-   - Outcome: 8-year ineligibility
+1. **CTX-2023**: Initial rollout phase
+   - Context: Organization A
+   - Date: 2023
+   - Subject: Initial implementation
+   - Outcome: completed
    - Status: concluded
-   - decisionMakers: [{ name: "Alexandre de Moraes", role: "presiding judge", affiliation: "TSE" }]
+   - decisionMakers: [{ name: "Lead reviewer", role: "lead", affiliation: "Org A" }]
 
-2. **STF-2025**: STF Criminal Trial for Coup Attempt
-   - Court: Supreme Federal Court (STF)
-   - Date: 2024-2025
-   - Subject: Attempted coup d'état
+2. **CTX-2024**: Follow-up review phase
+   - Context: Organization A
+   - Date: 2024
+   - Subject: Post-implementation review
    - Status: concluded
-   - decisionMakers: [{ name: "Alexandre de Moraes", role: "rapporteur", affiliation: "STF" }]
+   - decisionMakers: [{ name: "Lead reviewer", role: "lead", affiliation: "Org A" }]
 
-**CRITICAL: decisionMakers field is REQUIRED for each proceeding!**
-- Extract ALL key decision-makers (judges, prosecutors, rapporteurs) mentioned or known
-- Use your background knowledge to fill in known decision-makers for well-documented trials
-- This enables cross-proceeding conflict of interest detection
+**CRITICAL: decisionMakers field is REQUIRED for each context!**
+- Extract ALL key decision-makers or primary actors mentioned or known
+- Use your background knowledge to fill in known decision-makers for well-documented cases
+- This enables cross-context conflict of interest detection
 
-Set requiresSeparateAnalysis = true when multiple proceedings detected.
+Set requiresSeparateAnalysis = true when multiple contexts are detected.
 
-## FOR QUESTIONS
+## FOR QUESTIONS OR STATEMENTS
 
 - **impliedClaim**: What claim would "YES" confirm? Must be AFFIRMATIVE.
-  - CORRECT: "The Bolsonaro judgment was fair and based on Brazil's law"
+  - CORRECT: "The process was fair and followed applicable standards"
   - WRONG: "may or may not have been fair"
 
 - **subClaims**: Even for questions, generate sub-claims that need to be verified to answer the question.
   - Break down the implied claim into verifiable components
-  - For multi-proceeding cases, ensure meaningful coverage across all proceedings (set relatedProceedingId appropriately)
+  - For multi-context cases, ensure meaningful coverage across all contexts (set relatedProceedingId appropriately)
   - **DECOMPOSE COMPOUND CLAIMS**: Split claims that combine multiple assertions into separate claims:
     - Isolate the core factual assertion as the CENTRAL claim (isCentral: true, claimRole: "core")
     - Separate source/attribution claims as non-central (isCentral: false, claimRole: "source" or "attribution")
     - Use dependsOn to link claims to their prerequisites
-  - For each proceeding/event, consider claims covering:
-    - Correct application (were proper rules/standards/methods applied?)
-    - Process fairness (were proper procedures followed?)
-    - Evidence basis (were decisions based on evidence?)
-    - Decision-maker impartiality (were there any conflicts of interest?)
-    - Outcome proportionality (was the outcome proportionate compared to similar cases?)
-  - Example for "Was the Bolsonaro judgment fair?":
-    - SC1: "The TSE applied Brazilian electoral law correctly" (type: legal, isCentral: true)
-    - SC2: "The TSE followed proper due process procedures" (type: procedural, isCentral: true)
-    - SC3: "The ruling was based on documented evidence" (type: factual, isCentral: true)
-    - SC4: "The decision-makers had no conflicts of interest" (type: procedural, isCentral: true)
-    - SC5: "The outcome was proportionate to similar cases" (type: evaluative, isCentral: true)
-    - etc.
+  - For each context/event, consider claims covering:
+    - Standards application (were relevant rules/standards/methods applied correctly?)
+    - Process integrity (were appropriate procedures followed?)
+    - Evidence basis (were conclusions based on evidence?)
+    - Decision-maker independence (any conflicts of interest?)
+    - Outcome proportionality/impact (was the outcome proportionate and consistent with similar situations?)
 
 - **researchQuestions**: Generate specific questions to research, including:
   - Potential conflicts of interest for key decision-makers
-  - Comparisons to similar cases or precedents
+  - Comparisons to similar cases, phases, or precedents
   - Criticisms and rebuttals with documented evidence
 
 ## KEY FACTORS (Emergent Decomposition)
@@ -2432,6 +2431,16 @@ For "Does this vaccine cause autism?"
     parsed.subClaims.length <= 1 &&
     (parsed.keyFactors?.length ?? 0) <= 1;
 
+  if (isShortSimpleNonQuestion && parsed.detectedInputType === "article") {
+    parsed.detectedInputType = "claim";
+    if (!parsed.questionBeingAsked) {
+      parsed.questionBeingAsked = trimmedInput;
+    }
+    if (!parsed.impliedClaim) {
+      parsed.impliedClaim = trimmedInput;
+    }
+  }
+
   // Post-processing: Re-prompt if coverage is thin (single attempt only)
   // Skip for short, simple non-question inputs.
   if (!isShortSimpleNonQuestion) {
@@ -2576,14 +2585,14 @@ async function requestSupplementalSubClaims(
     })
     .join("\n");
 
-  const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed proceedings.
-- Return ONLY new claims (do not repeat existing ones).
-- Each claim must be tied to a single proceeding via relatedProceedingId.${hasProceedings ? "" : " Use an empty string if no proceedings are listed."}
-- Use claimRole="core", checkWorthiness="high", harmPotential="high", centrality="high", isCentral=true.
-- Use dependsOn=[] unless a dependency is truly required.
-- Ensure each listed proceeding reaches at least ${MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING} central core claims.`;
+  const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
+ - Return ONLY new claims (do not repeat existing ones).
+ - Each claim must be tied to a single context via relatedProceedingId.${hasProceedings ? "" : " Use an empty string if no contexts are listed."}
+ - Use claimRole="core", checkWorthiness="high", harmPotential="high", centrality="high", isCentral=true.
+ - Use dependsOn=[] unless a dependency is truly required.
+ - Ensure each listed context reaches at least ${MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING} central core claims.`;
 
-  const userPrompt = `INPUT:\n"${input}"\n\nPROCEEDINGS NEEDING MORE CLAIMS:\n${missingSummary}\n\nEXISTING CLAIMS (DO NOT DUPLICATE):\n${existingClaimsSummary}`;
+  const userPrompt = `INPUT:\n"${input}"\n\nCONTEXTS NEEDING MORE CLAIMS:\n${missingSummary}\n\nEXISTING CLAIMS (DO NOT DUPLICATE):\n${existingClaimsSummary}`;
 
   let supplemental: any;
   try {
@@ -2692,6 +2701,27 @@ function findClaimPosition(
   return null;
 }
 
+function isQuestionLikeInput(understanding: ClaimUnderstanding): boolean {
+  return (
+    understanding.detectedInputType === "question" ||
+    understanding.detectedInputType === "claim"
+  );
+}
+
+function resolveAnalysisPromptInput(
+  understanding: ClaimUnderstanding,
+  state: ResearchState,
+): string {
+  return (
+    understanding.impliedClaim ||
+    understanding.questionBeingAsked ||
+    understanding.mainQuestion ||
+    state.originalInput ||
+    state.originalText ||
+    ""
+  );
+}
+
 // ============================================================================
 // STEP 2-4: Research with Search Tracking
 // ============================================================================
@@ -2716,14 +2746,14 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     .flatMap((c) => c.keyEntities)
     .slice(0, 4);
 
-  // For questions, prioritize the implied claim for better search results
-  const isQuestion = understanding.detectedInputType === "question";
+  // For question-like inputs, prioritize the implied claim for better search results
+  const isQuestionLike = isQuestionLikeInput(understanding);
   const stopWords = new Set(["the", "a", "an", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall", "can", "need", "dare", "ought", "used", "to", "of", "in", "for", "on", "with", "at", "by", "from", "as", "into", "through", "during", "before", "after", "above", "below", "between", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "just", "and", "but", "if", "or", "because", "until", "while", "although", "though", "whether", "this", "that", "these", "those", "it", "its", "what", "which", "who", "whom", "whose", "based"]);
 
   let entityStr = "";
 
-  // For questions, always use the implied claim as primary search basis
-  if (isQuestion && understanding.impliedClaim) {
+  // For question-like inputs, always use the implied claim as primary search basis
+  if (isQuestionLike && understanding.impliedClaim) {
     entityStr = understanding.impliedClaim
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
@@ -2821,7 +2851,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   ) {
     return {
       complete: false,
-      focus: "Legal framework",
+      focus: "Applicable framework",
       category: "legal_provision",
       queries: [
         `${entityStr} legal basis statute`,
@@ -3125,7 +3155,7 @@ async function extractFacts(
 
   const proceedingsList =
     proceedings.length > 0
-      ? `\n\nKNOWN PROCEEDINGS:\n${proceedings.map((p: DistinctProceeding) => `- ${p.id}: ${p.name}`).join("\n")}`
+      ? `\n\nKNOWN CONTEXTS:\n${proceedings.map((p: DistinctProceeding) => `- ${p.id}: ${p.name}`).join("\n")}`
       : "";
 
   // Get current date for temporal reasoning
@@ -3137,7 +3167,7 @@ async function extractFacts(
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   const systemPrompt = `Extract SPECIFIC facts. Focus: ${focus}
-${targetProceedingId ? `Target proceeding: ${targetProceedingId}` : ""}
+ ${targetProceedingId ? `Target context: ${targetProceedingId}` : ""}
 Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.
 
@@ -3347,7 +3377,7 @@ async function generateVerdicts(
   pseudoscienceAnalysis?: PseudoscienceAnalysis;
 }> {
   const understanding = state.understanding!;
-  const isQuestion = understanding.detectedInputType === "question";
+  const isQuestionLike = isQuestionLikeInput(understanding);
   const hasMultipleProceedings =
     understanding.requiresSeparateAnalysis &&
     understanding.distinctProceedings.length > 1;
@@ -3382,22 +3412,24 @@ async function generateVerdicts(
     )
     .join("\n");
 
-  if (isQuestion && hasMultipleProceedings) {
+  if (isQuestionLike && hasMultipleProceedings) {
     const result = await generateMultiProceedingVerdicts(
       state,
       understanding,
       factsFormatted,
       claimsFormatted,
       model,
+      understanding.detectedInputType,
     );
     return { ...result, pseudoscienceAnalysis };
-  } else if (isQuestion) {
+  } else if (isQuestionLike) {
     const result = await generateQuestionVerdicts(
       state,
       understanding,
       factsFormatted,
       claimsFormatted,
       model,
+      understanding.detectedInputType,
     );
     return { ...result, pseudoscienceAnalysis };
   } else {
@@ -3419,6 +3451,7 @@ async function generateMultiProceedingVerdicts(
   factsFormatted: string,
   claimsFormatted: string,
   model: any,
+  analysisInputType: InputType,
 ): Promise<{
   claimVerdicts: ClaimVerdict[];
   articleAnalysis: ArticleAnalysis;
@@ -3427,7 +3460,7 @@ async function generateMultiProceedingVerdicts(
   const proceedingsFormatted = understanding.distinctProceedings
     .map(
       (p: DistinctProceeding) =>
-        `- **${p.id}**: ${p.name}\n  Court: ${p.court || "N/A"} | Date: ${p.date} | Status: ${p.status}\n  Subject: ${p.subject}`,
+        `- **${p.id}**: ${p.name}\n  Context: ${p.court || "N/A"} | Date: ${p.date} | Status: ${p.status}\n  Subject: ${p.subject}`,
     )
     .join("\n\n");
 
@@ -3438,8 +3471,15 @@ async function generateMultiProceedingVerdicts(
   const currentDay = currentDate.getDate();
   const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const analysisInput = resolveAnalysisPromptInput(understanding, state);
+  const displayQuestion =
+    understanding.questionBeingAsked ||
+    understanding.mainQuestion ||
+    analysisInput;
+  const inputLabel = analysisInputType === "question" ? "QUESTION" : "INPUT";
+  const isQuestionLike = analysisInputType === "question" || analysisInputType === "claim";
 
-  const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT PROCEEDINGS separately.
+  const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS separately.
 
 ## CRITICAL: TEMPORAL REASONING
 
@@ -3453,56 +3493,56 @@ async function generateMultiProceedingVerdicts(
 - If a date seems inconsistent, verify it against the current date before making judgments
 - When in doubt about temporal relationships, use the evidence from sources rather than making assumptions
 
-## QUESTION
-"${understanding.questionBeingAsked || state.originalInput}"
+## ${inputLabel}
+"${analysisInput}"
 
-## PROCEEDINGS - PROVIDE SEPARATE ANSWER FOR EACH
+## CONTEXTS - PROVIDE SEPARATE ANSWER FOR EACH
 ${proceedingsFormatted}
 
 ## INSTRUCTIONS
 
-1. For EACH proceeding, provide:
+1. For EACH context/thread (use proceedingId in the schema), provide:
    - proceedingId (must match: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.id).join(", ")})
-   - answer: Truth percentage (0-100) reflecting how supported the proceeding's claim is
-   - shortAnswer: A complete sentence summarizing the finding (e.g., "The trial followed proper procedures based on documented evidence.")
+   - answer: Truth percentage (0-100) reflecting how supported the context/thread's claim is
+   - shortAnswer: A complete sentence summarizing the finding (e.g., "The process followed the stated standards based on documented evidence.")
      * MUST be a descriptive sentence, NOT just a percentage or scale label
    - keyFactors: Array of factors covering ALL these aspects:
-     * Correct application (were proper rules/standards/methods applied?)
-     * Process fairness (were proper procedures followed?)
-     * Evidence basis (were decisions based on documented evidence?)
-     * Decision-maker impartiality (were there any conflicts of interest?)
-     * Outcome proportionality (was the outcome proportionate? Identify and analyze any significant consequences - compare to similar cases)
+     * Standards application (were relevant rules/standards/methods applied correctly?)
+     * Process integrity (were appropriate procedures followed?)
+     * Evidence basis (were conclusions based on documented evidence?)
+     * Decision-maker independence (any conflicts of interest or role conflicts?)
+     * Outcome proportionality/impact (is the outcome proportional and consistent with similar situations?)
 
 2. KEY FACTOR SCORING RULES - VERY IMPORTANT:
    - supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge of widely-reported facts)
    - supports="no": Factor refutes the claim with counter-evidence (NOT just disputed/contested)
    - supports="neutral": Use ONLY when you genuinely have no information about this factor
 
-   ${CONFIG.allowModelKnowledge ? `IMPORTANT: You MUST use your background knowledge! For well-known public events, established legal procedures, and widely-reported facts, you ALREADY KNOW the relevant information - use it!
+   ${CONFIG.allowModelKnowledge ? `IMPORTANT: You MUST use your background knowledge! For well-known public events, established procedures/standards, and widely-reported facts, you ALREADY KNOW the relevant information - use it!
    DO NOT mark factors as "neutral" if you know the answer from your training data.
-   Example: If you know a trial followed standard procedures, mark it "yes" even if sources don't explicitly state it.` : "Use ONLY the provided facts and sources."}
+   Example: If you know a process followed standard procedures, mark it "yes" even if sources don't explicitly state it.` : "Use ONLY the provided facts and sources."}
 
-   CRITICAL: Being "contested" or "disputed" by political opponents = supports="yes" (if facts support it), NOT "neutral"
+   CRITICAL: Being "contested" or "disputed" by stakeholders = supports="yes" (if facts support it), NOT "neutral"
    Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
 
 3. Mark contested factors:
    - isContested: true if this factor is disputed
-   - contestedBy: Be SPECIFIC about who disputes it (e.g., "Bolsonaro supporters", "Trump administration")
-     * Do NOT use vague terms like "government supporters" - specify WHICH government/person
+   - contestedBy: Be SPECIFIC about who disputes it (e.g., "supplier group A", "regulator X", "employee union")
+     * Do NOT use vague terms like "some people" - specify WHICH group/organization
    - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-     * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., court transcripts showing bias, leaked documents proving misconduct)
+     * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., audits, logs, datasets, official reports)
      * "disputed" = Opposition has some factual counter-evidence but it's debatable
-     * "opinion" = Opposition has NO factual counter-evidence - just claims, rhetoric, political actions
+     * "opinion" = Opposition has NO factual counter-evidence - just claims, rhetoric, or actions
      * "unknown" = Cannot determine
 
    CRITICAL - factualBasis MUST be "opinion" for ALL of these:
-   - Executive orders, sanctions, or government decrees (political ACTIONS, not evidence)
-   - Statements by supporters, politicians, officials, or civil society groups (claims are not evidence)
+   - Policy announcements or institutional actions without evidence
+   - Statements by supporters, officials, or advocacy groups (claims are not evidence)
    - Calling something "unfair", "persecution", or "political" without citing specific documented violations
-   - Diplomatic protests, travel bans, or other political responses
+   - Public protests, position papers, or other responses without evidence
 
    factualBasis can ONLY be "established" or "disputed" when opposition provides:
-   - Specific court documents, transcripts, or records showing actual procedural violations
+   - Specific documents, records, logs, or audits showing actual procedural violations
    - Verifiable data or documents contradicting the findings
    - Documented evidence of specific errors, bias, or misconduct (not just allegations)
 
@@ -3513,8 +3553,8 @@ ${proceedingsFormatted}
 5. CLAIM VERDICT RULES (for claimVerdicts array):
    **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Every claim must have a corresponding entry in claimVerdicts.
 
-   - For each proceeding, ensure ALL claims with that proceedingId (or claims that logically belong to that proceeding) have verdicts
-   - If a claim doesn't have a relatedProceedingId, assign it to the most relevant proceeding based on the claim content
+   - For each context/thread, ensure ALL claims with that proceedingId (or claims that logically belong to that context) have verdicts
+   - If a claim doesn't have a relatedProceedingId, assign it to the most relevant context based on the claim content
    - Provide a truth percentage (0-100) for each claim.
    - Use these bands to calibrate:
      * 86-100: TRUE (strong support, no credible counter-evidence)
@@ -3525,16 +3565,16 @@ ${proceedingsFormatted}
      * 15-28: MOSTLY-FALSE (strong counter-evidence)
      * 0-14: FALSE (direct contradiction)
 
-   CRITICAL: Political contestation ("critics say it was unfair") is NOT the same as counter-evidence.
-   Use the TRUE/MOSTLY-TRUE band (>=72%), not the UNVERIFIED band (43-57%), if you know the facts support the claim despite political opposition.
+   CRITICAL: Stakeholder contestation ("critics say it was unfair") is NOT the same as counter-evidence.
+   Use the TRUE/MOSTLY-TRUE band (>=72%), not the UNVERIFIED band (43-57%), if you know the facts support the claim despite stakeholder opposition.
 
 ${getKnowledgeInstruction(state.originalInput, understanding)}
 ${getProviderPromptHint()}`;
 
-  const userPrompt = `## QUESTION
-"${understanding.questionBeingAsked || state.originalInput}"
+  const userPrompt = `## ${inputLabel}
+"${analysisInput}"
 
-## PROCEEDINGS
+## CONTEXTS
 ${proceedingsFormatted}
 
 ## CLAIMS
@@ -3543,7 +3583,7 @@ ${claimsFormatted}
 ## FACTS
 ${factsFormatted}
 
-Provide SEPARATE answers for each proceeding.`;
+Provide SEPARATE answers for each context/thread.`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING> | null = null;
 
@@ -3614,7 +3654,7 @@ Provide SEPARATE answers for each proceeding.`;
     );
 
     const questionAnswer: QuestionAnswer = {
-      question: understanding.questionBeingAsked || state.originalInput || "",
+      question: displayQuestion,
       answer: 50,
       confidence: 50,
       truthPercentage: 50,
@@ -3641,8 +3681,8 @@ Provide SEPARATE answers for each proceeding.`;
       (v) => v.isCentral && v.truthPercentage >= 72,
     ).length;
     const articleAnalysis: ArticleAnalysis = {
-      inputType: "question",
-      isQuestion: true,
+      inputType: analysisInputType,
+      isQuestion: isQuestionLike,
       questionAnswer,
       hasMultipleProceedings: true,
       proceedings: understanding.distinctProceedings,
@@ -3917,7 +3957,7 @@ Provide SEPARATE answers for each proceeding.`;
     : undefined;
 
   const questionAnswer: QuestionAnswer = {
-    question: understanding.questionBeingAsked || state.originalInput,
+    question: displayQuestion,
     answer: avgTruthPct,
     confidence: avgConfidence,
     truthPercentage: avgTruthPct,
@@ -3938,8 +3978,8 @@ Provide SEPARATE answers for each proceeding.`;
   );
 
   const articleAnalysis: ArticleAnalysis = {
-    inputType: "question",
-    isQuestion: true,
+    inputType: analysisInputType,
+    isQuestion: isQuestionLike,
     questionAnswer,
     hasMultipleProceedings: true,
     proceedings: understanding.distinctProceedings,
@@ -3971,6 +4011,7 @@ async function generateQuestionVerdicts(
   factsFormatted: string,
   claimsFormatted: string,
   model: any,
+  analysisInputType: InputType,
 ): Promise<{
   claimVerdicts: ClaimVerdict[];
   articleAnalysis: ArticleAnalysis;
@@ -3983,8 +4024,15 @@ async function generateQuestionVerdicts(
   const currentDay = currentDate.getDate();
   const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const analysisInput = resolveAnalysisPromptInput(understanding, state);
+  const displayQuestion =
+    understanding.questionBeingAsked ||
+    understanding.mainQuestion ||
+    analysisInput;
+  const inputLabel = analysisInputType === "question" ? "QUESTION" : "INPUT";
+  const isQuestionLike = analysisInputType === "question" || analysisInputType === "claim";
 
-  const systemPrompt = `Answer the question based on documented evidence.
+  const systemPrompt = `Answer the input based on documented evidence.
 
 ## CRITICAL: TEMPORAL REASONING
 
@@ -4009,21 +4057,21 @@ async function generateQuestionVerdicts(
 ${CONFIG.allowModelKnowledge ? `IMPORTANT: You MUST use your background knowledge! For well-known public events and widely-reported facts, use what you know!
 DO NOT mark factors as "neutral" if you know the answer from your training data.` : "Use ONLY the provided facts and sources."}
 
-CRITICAL: Being "contested" by political opponents does NOT make something neutral.
+CRITICAL: Being "contested" by stakeholders does NOT make something neutral.
 Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
 
 ## Mark contested factors:
 - isContested: true if this claim is politically disputed
 - contestedBy: Who disputes it (empty string if not contested)
 - factualBasis: Does opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (court records, leaked documents)
+  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (audits, logs, datasets)
   * "disputed" = Opposition has some factual counter-evidence but debatable
   * "opinion" = NO factual counter-evidence (just claims, political statements, executive orders)
   * "unknown" = Cannot determine
 
 CRITICAL - factualBasis MUST be "opinion" for:
-- Executive orders, sanctions, government decrees (political actions, not evidence)
-- Statements by supporters, politicians, officials (claims are not evidence)
+- Policy announcements or institutional actions without evidence
+- Statements by supporters, officials, or advocacy groups (claims are not evidence)
 - Calling something "unfair" or "persecution" without documented violations
 
 ## CLAIM VERDICT RULES:
@@ -4037,14 +4085,14 @@ CRITICAL - factualBasis MUST be "opinion" for:
   * 15-28: MOSTLY-FALSE (strong counter-evidence)
   * 0-14: FALSE (direct contradiction)
 
-CRITICAL: Political contestation is NOT counter-evidence.
-Use the TRUE/MOSTLY-TRUE band (>=72%) if you know the facts support the claim despite political opposition.
+CRITICAL: Stakeholder contestation is NOT counter-evidence.
+Use the TRUE/MOSTLY-TRUE band (>=72%) if you know the facts support the claim despite stakeholder opposition.
 
 ${getKnowledgeInstruction(state.originalInput, understanding)}
 ${getProviderPromptHint()}`;
 
-  const userPrompt = `## QUESTION
-"${understanding.questionBeingAsked || state.originalInput}"
+  const userPrompt = `## ${inputLabel}
+"${analysisInput}"
 
 ## CLAIMS
 ${claimsFormatted}
@@ -4102,7 +4150,7 @@ ${factsFormatted}`;
     );
 
     const questionAnswer: QuestionAnswer = {
-      question: understanding.questionBeingAsked || state.originalInput || "",
+      question: displayQuestion,
       answer: 50,
       confidence: 50,
       truthPercentage: 50,
@@ -4118,8 +4166,8 @@ ${factsFormatted}`;
       (v) => v.isCentral && v.truthPercentage >= 72,
     ).length;
     const articleAnalysis: ArticleAnalysis = {
-      inputType: "question",
-      isQuestion: true,
+      inputType: analysisInputType,
+      isQuestion: isQuestionLike,
       questionAnswer,
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
@@ -4243,7 +4291,7 @@ ${factsFormatted}`;
   }
 
   const questionAnswer: QuestionAnswer = {
-    question: understanding.questionBeingAsked || state.originalInput,
+    question: displayQuestion,
     answer: answerTruthPct,
     confidence: correctedConfidence,
     truthPercentage: answerTruthPct,
@@ -4264,8 +4312,8 @@ ${factsFormatted}`;
       : 50;
 
   const articleAnalysis: ArticleAnalysis = {
-    inputType: "question",
-    isQuestion: true,
+    inputType: analysisInputType,
+    isQuestion: isQuestionLike,
     questionAnswer,
     hasMultipleProceedings: false,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
@@ -4347,13 +4395,13 @@ Use the MOSTLY-FALSE/FALSE bands (0-28%) for any claim that evidence contradicts
 - isContested: true if this claim is politically disputed or challenged
 - contestedBy: Who disputes it (e.g., "climate skeptics", "vaccine opponents") - empty string if not contested
 - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (studies, data, records)
+  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (studies, data, records, audits)
   * "disputed" = Opposition has some factual counter-evidence but debatable
   * "opinion" = NO factual counter-evidence (just claims, political statements)
   * "unknown" = Cannot determine
 
 CRITICAL - factualBasis MUST be "opinion" for:
-- Political statements or rhetoric without documented evidence
+- Public statements or rhetoric without documented evidence
 - Ideological objections without factual basis
 - "Some people say" or "critics claim" without specific counter-evidence
 
@@ -4820,7 +4868,7 @@ async function generateTwoPanelSummary(
       "Analyzed Content";
 
   if (hasMultipleProceedings) {
-    title += ` (${understanding.distinctProceedings.length} proceedings)`;
+    title += ` (${understanding.distinctProceedings.length} contexts)`;
   }
 
   // Get the implied claim, filtering out placeholder values
@@ -4839,7 +4887,7 @@ async function generateTwoPanelSummary(
       : (understanding.subClaims[0]?.text || "Analysis of provided content"),
     keyFindings: understanding.subClaims.slice(0, 4).map((c: any) => c.text),
     reasoning: hasMultipleProceedings
-      ? `Covers ${understanding.distinctProceedings.length} proceedings: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.shortName).join(", ")}`
+      ? `Covers ${understanding.distinctProceedings.length} contexts: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.shortName).join(", ")}`
       : `Examined ${understanding.subClaims.length} claims`,
     conclusion:
       articleAnalysis.questionAnswer?.shortAnswer ||
@@ -4848,18 +4896,11 @@ async function generateTwoPanelSummary(
 
   const analysisId = `FH-${Date.now().toString(36).toUpperCase()}`;
 
-  let overallVerdict: string;
+  let overallVerdict = 50;
   if (isQuestion && articleAnalysis.questionAnswer) {
-    const qa = articleAnalysis.questionAnswer;
-    overallVerdict = `${percentageToQuestionAnswer(qa.truthPercentage)} (${qa.truthPercentage}%)`;
-    if (hasMultipleProceedings && qa.proceedingSummary) {
-      overallVerdict += `\n${qa.proceedingSummary}`;
-    }
-    if (qa.calibrationNote) {
-      overallVerdict += `\n⚠️ ${qa.calibrationNote}`;
-    }
+    overallVerdict = normalizePercentage(articleAnalysis.questionAnswer.truthPercentage);
   } else {
-    overallVerdict = `${percentageToArticleVerdict(articleAnalysis.articleTruthPercentage)} (${articleAnalysis.articleTruthPercentage}%)`;
+    overallVerdict = normalizePercentage(articleAnalysis.articleTruthPercentage);
   }
 
   const inputUrl = state.inputType === "url" ? state.originalInput : undefined;
@@ -4945,7 +4986,7 @@ function generateMethodologyAssessment(
   const parts: string[] = [];
   parts.push("Question-answering mode");
   if (articleAnalysis.hasMultipleProceedings)
-    parts.push(`Multi-proceeding (${articleAnalysis.proceedings?.length})`);
+    parts.push(`Multi-context (${articleAnalysis.proceedings?.length})`);
   if (articleAnalysis.questionAnswer?.hasContestedFactors)
     parts.push("Contested factors flagged");
   parts.push(`${state.searchQueries.length} searches`);
@@ -4982,7 +5023,7 @@ async function generateReport(
   if (isQuestion && articleAnalysis.questionAnswer) {
     const qa = articleAnalysis.questionAnswer;
     report += `### Question\n"${qa.question}"\n\n`;
-    report += `### Answer: ${percentageToQuestionAnswer(qa.truthPercentage)} (${qa.truthPercentage}%)\n\n`;
+    report += `### Answer: ${percentageToClaimVerdict(qa.truthPercentage)} (${qa.truthPercentage}%)\n\n`;
 
     if (qa.calibrationNote)
       report += `> ${iconWarning} ${qa.calibrationNote}\n\n`;
@@ -4990,7 +5031,7 @@ async function generateReport(
     report += `**Short Answer:** ${qa.shortAnswer}\n\n`;
 
     if (hasMultipleProceedings && qa.proceedingAnswers) {
-      report += `## Proceedings Analysis\n\n`;
+      report += `## Context Analysis\n\n`;
       for (const pa of qa.proceedingAnswers) {
         const proc = understanding.distinctProceedings.find(
           (p: DistinctProceeding) => p.id === pa.proceedingId,
@@ -5003,7 +5044,7 @@ async function generateReport(
               : iconNeutral;
 
         report += `### ${proc?.name || pa.proceedingName}\n\n`;
-        report += `**Answer:** ${emoji} ${percentageToQuestionAnswer(pa.truthPercentage)} (${pa.truthPercentage}%)\n\n`;
+        report += `**Answer:** ${emoji} ${percentageToClaimVerdict(pa.truthPercentage)} (${pa.truthPercentage}%)\n\n`;
 
         if (pa.factorAnalysis) {
           report += `**Factors:** ${pa.factorAnalysis.positiveFactors} positive, ${pa.factorAnalysis.negativeFactors} negative (${pa.factorAnalysis.contestedNegatives} contested)\n\n`;
@@ -5277,7 +5318,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   const proceedingCount = state.understanding.distinctProceedings.length;
   let statusMsg = `Detected: ${state.understanding.detectedInputType.toUpperCase()} with ${state.understanding.subClaims.length} claims`;
-  if (proceedingCount > 1) statusMsg += ` | ${proceedingCount} PROCEEDINGS`;
+  if (proceedingCount > 1) statusMsg += ` | ${proceedingCount} CONTEXTS`;
   await emit(statusMsg, 10);
 
   // STEP 2-4: Research with search tracking

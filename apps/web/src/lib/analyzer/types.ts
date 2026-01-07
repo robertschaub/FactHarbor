@@ -353,7 +353,7 @@ export interface TwoPanelSummary {
       truthPercentage: number;
     }>;
     methodologyAssessment: string;
-    overallVerdict: string;
+    overallVerdict: number;
     analysisId: string;
   };
 }

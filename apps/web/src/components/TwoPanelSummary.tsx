@@ -31,12 +31,14 @@ interface TwoPanelSummaryProps {
       truthPercentage: number;
     }>;
     methodologyAssessment: string;
-    overallVerdict: string;
+    overallVerdict: number;
     analysisId: string;
   };
 }
 
 export function TwoPanelSummary({ articleSummary, factharborAnalysis }: TwoPanelSummaryProps) {
+  const overallTruth = factharborAnalysis.overallVerdict;
+  const overallLabel = percentageToClaimVerdict(overallTruth);
   return (
     <div className={styles.container}>
       {/* Left Panel: Article Summary */}
@@ -110,7 +112,7 @@ export function TwoPanelSummary({ articleSummary, factharborAnalysis }: TwoPanel
 
           <div className={styles.overallVerdictBox}>
             <span className={styles.overallLabel}>Overall Verdict</span>
-            <span className={styles.overallValue}>{factharborAnalysis.overallVerdict}</span>
+            <span className={styles.overallValue}>{overallLabel} ({overallTruth}%)</span>
           </div>
 
           <div className={styles.analysisIdBox}>
