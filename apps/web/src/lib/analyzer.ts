@@ -37,6 +37,8 @@ import * as path from "path";
 const DEBUG_LOG_PATH = "c:\\DEV\\FactHarbor\\apps\\web\\debug-analyzer.log";
 const DEBUG_LOG_FILE_ENABLED =
   (process.env.FH_DEBUG_LOG_FILE ?? "true").toLowerCase() === "true";
+const DEBUG_LOG_CLEAR_ON_START =
+  (process.env.FH_DEBUG_LOG_CLEAR_ON_START ?? "false").toLowerCase() === "true";
 const DEBUG_LOG_MAX_DATA_CHARS = 8000;
 
 function debugLog(message: string, data?: any) {
@@ -72,6 +74,7 @@ function debugLog(message: string, data?: any) {
 
 function clearDebugLog() {
   if (!DEBUG_LOG_FILE_ENABLED) return;
+  if (!DEBUG_LOG_CLEAR_ON_START) return;
   fs.promises
     .writeFile(
       DEBUG_LOG_PATH,
@@ -99,6 +102,13 @@ const CONFIG = {
     (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true",
   searchProvider: detectSearchProvider(),
   searchDomainWhitelist: parseWhitelist(process.env.FH_SEARCH_DOMAIN_WHITELIST),
+  // Optional global recency bias for search results.
+  // If set to y|m|w, applies to ALL searches. If unset, date filtering is only applied when recency is detected.
+  searchDateRestrict: (() => {
+    const v = (process.env.FH_SEARCH_DATE_RESTRICT ?? "").toLowerCase().trim();
+    if (v === "y" || v === "m" || v === "w") return v as "y" | "m" | "w";
+    return null;
+  })(),
 
   // Source reliability configuration
   sourceBundlePath: process.env.FH_SOURCE_BUNDLE_PATH || null,
@@ -2817,8 +2827,11 @@ For "Does this vaccine cause autism?"
 
   // Post-processing: Force question detection if input clearly looks like a question
   const trimmedInput = input.trim();
-  const looksLikeQuestion = trimmedInput.endsWith("?") ||
-    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(trimmedInput);
+  const looksLikeQuestion =
+    trimmedInput.endsWith("?") ||
+    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(
+      trimmedInput,
+    );
 
   if (looksLikeQuestion && parsed.detectedInputType !== "question") {
     console.log(`[Analyzer] Overriding detectedInputType from "${parsed.detectedInputType}" to "question" (input ends with ? or starts with question word)`);
@@ -2828,6 +2841,9 @@ For "Does this vaccine cause autism?"
       parsed.questionBeingAsked = trimmedInput;
     }
   }
+
+  // Stabilize question vs. statement decomposition: provide an implied-statement hint to the supplemental
+  // context detection path (handled below). This is generic and avoids domain-specific heuristics.
 
   // Post-processing: Fix impliedClaim for questions - convert question to affirmative statement
   if (parsed.detectedInputType === "question") {
@@ -2871,15 +2887,26 @@ For "Does this vaccine cause autism?"
   // - IDs are stable (P1/P2/...) instead of model-invented IDs
   // - downstream research queries don't drift because the model changed labels/dates
   parsed = canonicalizeProceedings(input, parsed);
+  debugLog("understandClaim: proceedings after canonicalize", {
+    detectedInputType: parsed.detectedInputType,
+    requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
+    count: parsed.distinctProceedings?.length ?? 0,
+    ids: (parsed.distinctProceedings || []).map((p: any) => p.id),
+  });
 
   // If the model under-split contexts for a statement-like claim, do a single best-effort retry
   // focused ONLY on context/thread detection. This helps keep "question vs statement" runs aligned.
   if (
     CONFIG.deterministic &&
-    parsed.detectedInputType === "claim" &&
+    (parsed.detectedInputType === "claim" || parsed.detectedInputType === "question") &&
     (parsed.distinctProceedings?.length ?? 0) <= 1
   ) {
-    const supplemental = await requestSupplementalProceedings(input, model, parsed);
+    // For questions, retry context detection on the implied statement form to reduce sensitivity to punctuation.
+    const supplementalInput =
+      parsed.detectedInputType === "question"
+        ? normalizeYesNoQuestionToStatement(trimmedInput)
+        : input;
+    const supplemental = await requestSupplementalProceedings(supplementalInput, model, parsed);
     if (supplemental?.distinctProceedings && supplemental.distinctProceedings.length > 1) {
       parsed = {
         ...parsed,
@@ -2887,6 +2914,12 @@ For "Does this vaccine cause autism?"
         distinctProceedings: supplemental.distinctProceedings,
       };
       parsed = canonicalizeProceedings(input, parsed);
+      debugLog("understandClaim: supplemental proceedings applied", {
+        detectedInputType: parsed.detectedInputType,
+        requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
+        count: parsed.distinctProceedings?.length ?? 0,
+        ids: (parsed.distinctProceedings || []).map((p: any) => p.id),
+      });
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:supplementalProceedingsApplied',message:'Applied supplemental proceedings after under-split claim',data:{finalCount:parsed.distinctProceedings?.length ?? 0,ids:(parsed.distinctProceedings||[]).map((p:any)=>p.id)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
       // #endregion
@@ -3598,6 +3631,19 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         ],
       };
     }
+
+    // Fallback when the model didn't populate decisionMakers: still search generically for conflicts/independence.
+    // This keeps question vs. statement runs aligned without hardcoding any domain/person names.
+    return {
+      complete: false,
+      focus: "Decision-maker conflicts of interest",
+      category: "conflict_of_interest",
+      queries: [
+        `${entityStr} conflict of interest decision maker`.trim(),
+        `${entityStr} impartiality bias`.trim(),
+        `${entityStr} recusal ethics`.trim(),
+      ],
+    };
   }
 
   // NEW v2.6.18: Use generated research questions for additional searches
@@ -3778,6 +3824,15 @@ async function fetchSource(
     let title = extractedTitle || extractTitle(text, url);
     title = decodeHtmlEntities(title);
 
+    // #region agent log
+    // Log small, non-sensitive hints to debug whether numeric duration outcomes appear in fetched content.
+    const preview = text.slice(0, Math.min(4000, text.length)).toLowerCase();
+    const hasNumericDuration = /\b\d{1,3}\s*(year|years|month|months|day|days)\b/i.test(preview);
+    if (hasNumericDuration) {
+      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:fetchSource:numericDuration',message:'Fetched source contains numeric duration pattern (preview)',data:{id,url:url.slice(0,200),trackRecordScore:trackRecord,searchQuery:(searchQuery||'').slice(0,160),title:title.slice(0,120)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'F'})}).catch(()=>{});
+    }
+    // #endregion
+
     return {
       id,
       url,
@@ -3860,6 +3915,8 @@ async function extractFacts(
  ${targetProceedingId ? `Target context: ${targetProceedingId}` : ""}
 Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.
+If the source contains facts relevant to MULTIPLE known contexts, include them (do not restrict to only the target),
+and set relatedProceedingId accordingly. Do not omit key numeric outcomes (durations, amounts, counts) when present.
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${proceedingsList}`;
 
@@ -3911,14 +3968,26 @@ Only HIGH/MEDIUM specificity.
       return [];
     }
 
+    // #region agent log
+    const rawFactsPreview = extraction.facts
+      .slice(0, 30)
+      .map((f) => String(f.fact || "").slice(0, 140));
+    const rawHasDuration = extraction.facts.some((f) =>
+      /\b\d{1,3}\s*(year|years|month|months|day|days)\b/i.test(`${f.fact} ${f.sourceExcerpt}`),
+    );
+    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:extractFacts:rawSummary',message:'Raw extracted facts summary',data:{sourceId:source.id,trackRecordScore:source.trackRecordScore ?? null,rawCount:extraction.facts.length,rawHasDuration,rawFactsPreview},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'G'})}).catch(()=>{});
+    // #endregion
+
     let filteredFacts = extraction.facts
       .filter((f) => f.specificity !== "low" && f.sourceExcerpt?.length >= 20);
 
     // Conservative safeguard: avoid treating high-impact outcomes (sentencing/conviction/prison terms)
     // as "facts" when they come from low/unknown-reliability sources.
     // These claims are easy to get wrong and can dominate the analysis.
-    const track = typeof source.trackRecordScore === "number" ? source.trackRecordScore : 0;
-    if (track < 0.6) {
+    const track = typeof source.trackRecordScore === "number" ? source.trackRecordScore : null;
+    // Only apply this safeguard when we have an explicit reliability score.
+    // If no source bundle is configured, trackRecordScore is null (unknown) and we should NOT discard facts.
+    if (typeof track === "number" && track < 0.6) {
       const before = filteredFacts.length;
       filteredFacts = filteredFacts.filter((f) => {
         const hay = `${f.fact}\n${f.sourceExcerpt}`.toLowerCase();
@@ -3937,6 +4006,13 @@ Only HIGH/MEDIUM specificity.
         );
       }
     }
+
+    // #region agent log
+    const filteredHasDuration = filteredFacts.some((f) =>
+      /\b\d{1,3}\s*(year|years|month|months|day|days)\b/i.test(`${f.fact} ${f.sourceExcerpt}`),
+    );
+    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:extractFacts:filteredSummary',message:'Filtered facts summary',data:{sourceId:source.id,filteredCount:filteredFacts.length,filteredHasDuration},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'G'})}).catch(()=>{});
+    // #endregion
 
     console.log(`[Analyzer] extractFacts: After filtering (non-low specificity, excerpt >= 20 chars): ${filteredFacts.length} facts`);
 
@@ -5916,13 +5992,18 @@ type AnalysisInput = {
   inputType: "text" | "url";
   inputValue: string;
   onEvent?: (message: string, progress: number) => void;
+  jobId?: string;
 };
 
 export async function runFactHarborAnalysis(input: AnalysisInput) {
   // Clear debug log at start of each analysis
   clearDebugLog();
   debugLog("=== ANALYSIS STARTED ===");
-  debugLog("Input", { inputType: input.inputType, inputValue: input.inputValue.substring(0, 200) });
+  debugLog("Input", {
+    jobId: input.jobId || "",
+    inputType: input.inputType,
+    inputValue: input.inputValue.substring(0, 200),
+  });
 
   const startTime = Date.now();
   const emit = input.onEvent ?? (() => {});
@@ -6104,12 +6185,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const searchResults: Array<{ url: string; title: string; query: string }> =
       [];
     for (const query of decision.queries || []) {
-      // Detect if this query needs recent results
+      // Detect if this query needs recent results (or is configured globally).
       const recencyMatters = isRecencySensitive(query, state.understanding || undefined);
-      const dateRestrict: "y" | "m" | "w" | undefined = recencyMatters ? "y" : undefined; // Use past year for recent topics
+      const dateRestrict: "y" | "m" | "w" | undefined =
+        CONFIG.searchDateRestrict || (recencyMatters ? "y" : undefined);
 
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:searchWithDateFilter',message:'Search with date filter',data:{query:query.substring(0,100),recencyMatters,dateRestrict},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'D'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:searchWithDateFilter',message:'Search with date filter',data:{query:query.substring(0,100),recencyMatters,forcedByEnv:!!CONFIG.searchDateRestrict,dateRestrict},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'D'})}).catch(()=>{});
       // #endregion
 
       // Get providers before search to show in event
@@ -6185,10 +6267,18 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     const seenUrls = new Set(state.sources.map((s: FetchedSource) => s.url));
     const newResults = searchResults.filter((r) => !seenUrls.has(r.url));
-    // Determinism: stable ordering across runs, independent of provider result ordering.
-    const uniqueResults = [...new Map(newResults.map((r: any) => [r.url, r])).values()]
-      .sort((a: any, b: any) => String(a.url).localeCompare(String(b.url)))
-      .slice(0, config.maxSourcesPerIteration);
+    // Preserve provider relevance ordering (avoid sorting by URL, which can discard top results).
+    // De-dupe by URL while keeping first occurrence.
+    const uniqueResults: Array<{ url: string; title: string; snippet?: string | null; query: string }> = [];
+    const used = new Set<string>();
+    for (const r of newResults as any[]) {
+      const url = String(r?.url || "");
+      if (!url) continue;
+      if (used.has(url)) continue;
+      used.add(url);
+      uniqueResults.push(r);
+      if (uniqueResults.length >= config.maxSourcesPerIteration) break;
+    }
 
     if (uniqueResults.length === 0) {
       state.iterations.push({

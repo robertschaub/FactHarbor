@@ -180,7 +180,12 @@ export async function POST(req: Request) {
 
     await emit("info", "Preparing input", 5);
 
-    const result = await runFactHarborAnalysis({ inputType, inputValue, onEvent: async (m, p) => emit("info", m, p) });
+    const result = await runFactHarborAnalysis({
+      jobId,
+      inputType,
+      inputValue,
+      onEvent: async (m, p) => emit("info", m, p),
+    });
 
     await emit("info", "Storing result", 95);
     await apiPutInternal(`/internal/v1/jobs/${jobId}/result`, result);

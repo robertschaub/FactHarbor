@@ -31,6 +31,10 @@ fetch('http://127.0.0.1:7242
 With recent changes responsiveness somtimes is slow. Especiall with job queing, there should not be such long waits.
 
 When there are about 3 or 4 jobs already running, the analyze button is disabled for a while =>fix
+---
+Regardin multi proceedings (a.k.a. multi-events): There could be more then two, therefore:
+-Make it possible that more than two could be found.
+-Change the layout for multi proceedings that they are not anymore side-by-side (in columns), but in rows instead.
 
 ---
 Please document in a new  docs\Calculations.md file, and maybe we still need to improve?:
