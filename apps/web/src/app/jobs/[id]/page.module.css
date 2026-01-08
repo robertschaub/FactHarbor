@@ -381,6 +381,25 @@
   font-style: italic;
 }
 
+.impliedClaimRow {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(21, 101, 192, 0.18);
+}
+
+.impliedClaimLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1565c0;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.impliedClaimText {
+  font-size: 14px;
+  color: #333;
+}
+
 .proceedingNotice {
   padding: 10px 16px;
   background-color: #fff3e0;
@@ -564,6 +583,43 @@
 .proceedingPercentage {
   font-size: 12px;
   color: #666;
+}
+
+.proceedingAboutBox {
+  margin: 10px 0 10px;
+  padding: 10px;
+  border: 1px solid #e6e6e6;
+  background-color: #fcfcfd;
+  border-radius: 8px;
+}
+
+.proceedingAboutHeader {
+  font-size: 10px;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.proceedingAboutRow {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.45;
+  margin-bottom: 4px;
+}
+
+.proceedingAboutLabel {
+  font-weight: 700;
+  color: #555;
+}
+
+.proceedingAboutText {
+  color: #333;
+}
+
+.proceedingAssessmentLabel {
+  font-weight: 700;
+  color: #555;
 }
 
 .factorsSummary {

@@ -37,6 +37,14 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
     num: String(Math.min(options.maxResults, 10))
   });
 
+  // Add date restriction if specified (Google CSE uses dateRestrict parameter)
+  // dateRestrict=y[1] = past year, m[1] = past month, w[1] = past week
+  if (options.dateRestrict) {
+    const dateRestrictMap: Record<string, string> = { y: "y[1]", m: "m[1]", w: "w[1]" };
+    params.set("dateRestrict", dateRestrictMap[options.dateRestrict]);
+    console.log(`[Search] Google CSE: Applying date restriction: ${options.dateRestrict} (dateRestrict=${dateRestrictMap[options.dateRestrict]})`);
+  }
+
   const urlForLog = `${GOOGLE_CSE_BASE}?key=***&cx=${cx}&q=${encodeURIComponent(options.query)}&num=${Math.min(options.maxResults, 10)}`;
   console.log(`[Search] Google CSE: Fetching URL: ${urlForLog}`);
 

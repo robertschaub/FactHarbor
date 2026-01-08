@@ -11,7 +11,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../../styles/common.module.css";
 
@@ -20,6 +20,28 @@ export default function AnalyzePage() {
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // When navigating back from /jobs/[id], browsers can restore this page from bfcache
+  // with stale React state (e.g. isSubmitting=true), which would keep the button disabled.
+  // Reset the submit state whenever the page is shown/visible again.
+  useEffect(() => {
+    const reset = () => setIsSubmitting(false);
+
+    // Fires on normal show and bfcache restore (event.persisted === true).
+    const onPageShow = () => reset();
+    window.addEventListener("pageshow", onPageShow);
+
+    // Also handle tab switching / backgrounding.
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") reset();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   // Auto-detect if input is a URL
   const isUrl = (text: string): boolean => {
@@ -62,11 +84,18 @@ export default function AnalyzePage() {
       const inputType = getInputType();
       const inputValue = inputType === "url" ? normalizeUrl(input) : input.trim();
 
+      // Guard against the UI getting stuck disabled if the server is under load.
+      // If the request doesn't return promptly, abort and allow the user to retry.
+      const controller = new AbortController();
+      const timeoutMs = 15000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
       const res = await fetch("/api/fh/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ inputType, inputValue }),
-      });
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeoutId));
 
       if (!res.ok) {
         const text = await res.text();
@@ -76,7 +105,12 @@ export default function AnalyzePage() {
       const data = await res.json();
       router.push(`/jobs/${data.jobId}`);
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      const msg =
+        err?.name === "AbortError"
+          ? "Request timed out while starting analysis (server busy). Please try again."
+          : err?.message || "An error occurred";
+      setError(msg);
+    } finally {
       setIsSubmitting(false);
     }
   };

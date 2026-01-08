@@ -35,6 +35,14 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
     api_key: apiKey
   });
 
+  // Add date restriction if specified (SerpAPI uses tbs parameter)
+  // tbs=qdr:y = past year, qdr:m = past month, qdr:w = past week
+  if (options.dateRestrict) {
+    const tbsMap: Record<string, string> = { y: "qdr:y", m: "qdr:m", w: "qdr:w" };
+    params.set("tbs", tbsMap[options.dateRestrict]);
+    console.log(`[Search] SerpAPI: Applying date restriction: ${options.dateRestrict} (tbs=${tbsMap[options.dateRestrict]})`);
+  }
+
   const url = `${SERPAPI_BASE}?${params.toString().replace(apiKey, "***")}`;
   console.log(`[Search] SerpAPI: Fetching URL: ${url}`);
 

@@ -90,6 +90,9 @@ const CONFIG = {
   schemaVersion: "2.6.18",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
+  // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
+  deterministic:
+    (process.env.FH_DETERMINISTIC ?? "true").toLowerCase() === "true",
 
   // Search configuration (FH_ prefixed for consistency)
   searchEnabled:
@@ -214,6 +217,247 @@ function getActiveConfig() {
   return CONFIG.deepModeEnabled ? CONFIG.deep : CONFIG.quick;
 }
 
+function getDeterministicTemperature(defaultTemp: number): number {
+  return CONFIG.deterministic ? 0 : defaultTemp;
+}
+
+function extractParenAcronym(text: string): string {
+  const m = text.match(/\(([A-Z]{2,10})\)/);
+  return m?.[1] ?? "";
+}
+
+function extractAllCapsToken(text: string): string {
+  // Prefer explicit parenthetical acronyms, otherwise look for standalone ALLCAPS tokens.
+  const paren = extractParenAcronym(text);
+  if (paren) return paren;
+  const m = text.match(/\b([A-Z]{2,6})\b/);
+  return m?.[1] ?? "";
+}
+
+function inferProceedingTypeLabel(p: any): string {
+  const hay = [
+    p?.name,
+    p?.shortName,
+    p?.court,
+    p?.subject,
+    ...(Array.isArray(p?.charges) ? p.charges : []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (/(election|electoral|ballot|campaign|ineligib|tse)\b/.test(hay)) return "Electoral";
+  if (/(criminal|prosecut|indict|investigat|police|coup|stf|supreme)\b/.test(hay))
+    return "Criminal";
+  if (/\bcivil\b/.test(hay)) return "Civil";
+  if (/(regulator|administrat|agency|licens|compliance)\b/.test(hay)) return "Regulatory";
+  return "Context";
+}
+
+function proceedingTypeRank(label: string): number {
+  // Stable ordering across runs: electoral first, then criminal, then others.
+  switch (label) {
+    case "Electoral":
+      return 1;
+    case "Criminal":
+      return 2;
+    case "Civil":
+      return 3;
+    case "Regulatory":
+      return 4;
+    default:
+      return 9;
+  }
+}
+
+function sanitizeProceedingShortAnswer(shortAnswer: string, proceedingStatus: string): string {
+  if (!shortAnswer) return shortAnswer;
+  if ((proceedingStatus || "").toLowerCase() !== "unknown") return shortAnswer;
+
+  let out = shortAnswer;
+  // If we don't have an anchored procedural status, avoid asserting it in the narrative.
+  out = out.replace(/\b(remains\s+ongoing)\b/gi, "status is unclear");
+  out = out.replace(/\b(remains\s+in\s+progress)\b/gi, "status is unclear");
+  out = out.replace(/\bongoing\b/gi, "unresolved");
+  out = out.replace(/\bconcluded\b/gi, "reported concluded");
+  out = out.replace(/\bpending\b/gi, "unresolved");
+  return out;
+}
+
+function detectInstitutionCode(p: any): string {
+  const fromCourt = extractAllCapsToken(String(p?.court || ""));
+  if (fromCourt) return fromCourt;
+  const fromShort = extractAllCapsToken(String(p?.shortName || ""));
+  if (fromShort) return fromShort;
+  const fromName = extractAllCapsToken(String(p?.name || ""));
+  if (fromName) return fromName;
+  const dms = Array.isArray(p?.decisionMakers) ? p.decisionMakers : [];
+  for (const dm of dms) {
+    const code = extractAllCapsToken(String(dm?.affiliation || "")) || extractAllCapsToken(String(dm?.role || ""));
+    if (code) return code;
+  }
+  return "";
+}
+
+function canonicalizeProceedings(
+  input: string,
+  understanding: ClaimUnderstanding,
+): ClaimUnderstanding {
+  const procs = Array.isArray(understanding.distinctProceedings)
+    ? understanding.distinctProceedings
+    : [];
+  if (procs.length === 0) return understanding;
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeProceedings:entry',message:'canonicalizeProceedings entry',data:{inputPreview:String(input).slice(0,200),count:procs.length,ids:procs.map((p:any)=>p?.id).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
+
+  // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
+  // Use a lightweight, mostly-provider-invariant key: inferred type + institution code + court string.
+  const sorted = [...procs].sort((a: any, b: any) => {
+    const al = inferProceedingTypeLabel(a);
+    const bl = inferProceedingTypeLabel(b);
+    const ar = proceedingTypeRank(al);
+    const br = proceedingTypeRank(bl);
+    if (ar !== br) return ar - br;
+
+    const ak = `${detectInstitutionCode(a)}|${String(a.court || "").toLowerCase()}|${String(a.name || "").toLowerCase()}`;
+    const bk = `${detectInstitutionCode(b)}|${String(b.court || "").toLowerCase()}|${String(b.name || "").toLowerCase()}`;
+    return ak.localeCompare(bk);
+  });
+
+  const idRemap = new Map<string, string>();
+  const usedIds = new Set<string>();
+  const hasExplicitYear = /\b(19|20)\d{2}\b/.test(input);
+  const inputLower = input.toLowerCase();
+  const hasExplicitStatusAnchor =
+    /\b(sentenced|convicted|acquitted|indicted|charged|ongoing|pending|concluded)\b/.test(
+      inputLower,
+    );
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeProceedings:anchors',message:'canonicalizeProceedings anchors',data:{hasExplicitYear,hasExplicitStatusAnchor},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
+
+  const canonicalProceedings = sorted.map((p: any, idx: number) => {
+    const typeLabel = inferProceedingTypeLabel(p);
+    const inst = detectInstitutionCode(p);
+    let newId = inst ? `CTX_${inst}` : `CTX_${idx + 1}`;
+    if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
+    usedIds.add(newId);
+    idRemap.set(p.id, newId);
+    const shortName = inst || p.shortName || `CTX${idx + 1}`;
+    return {
+      ...p,
+      id: newId,
+      // Make the primary display label stable and human-friendly across runs.
+      name: inst ? `${typeLabel} proceeding (${inst})` : `${typeLabel} proceeding`,
+      shortName,
+      // Avoid presenting unanchored specifics as facts.
+      date: hasExplicitYear ? p.date : "",
+      status: hasExplicitStatusAnchor ? p.status : "unknown",
+    };
+  });
+
+  const remappedClaims = (understanding.subClaims || []).map((c: any) => {
+    const rp = c.relatedProceedingId;
+    return {
+      ...c,
+      relatedProceedingId: rp && idRemap.has(rp) ? idRemap.get(rp) : rp,
+    };
+  });
+
+  return {
+    ...understanding,
+    distinctProceedings: canonicalProceedings,
+    subClaims: remappedClaims,
+  };
+}
+
+function normalizeYesNoQuestionToStatement(input: string): string {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:entry',message:'normalizeYesNoQuestionToStatement entry',data:{input: String(input).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  const trimmed = input.trim().replace(/\?+$/, "");
+
+  // Handle the common yes/no forms in a way that is stable and avoids bad grammar.
+  // Goal: "Was the X fair and based on Y?" -> "The X was fair and based on Y"
+  const m = trimmed.match(/^(was|were|is|are)\s+(.+)$/i);
+  if (!m) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:no-match',message:'normalizeYesNoQuestionToStatement no-match',data:{trimmed: String(trimmed).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    return trimmed;
+  }
+
+  const aux = m[1].toLowerCase(); // was|were|is|are
+  const rest = m[2].trim();
+  if (!rest) return trimmed;
+
+  // Prefer splitting on a clear subject boundary (parentheses / comma) when present.
+  const lastParen = rest.lastIndexOf(")");
+  if (lastParen > 0 && lastParen < rest.length - 1) {
+    const subject = rest.slice(0, lastParen + 1).trim();
+    const predicate = rest.slice(lastParen + 1).trim();
+    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
+    const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:paren-split',message:'normalizeYesNoQuestionToStatement paren-split',data:{aux,subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    return out;
+  }
+
+  const commaIdx = rest.indexOf(",");
+  if (commaIdx > 0 && commaIdx < rest.length - 1) {
+    const subject = rest.slice(0, commaIdx).trim();
+    const predicate = rest.slice(commaIdx + 1).trim();
+    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
+    const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:comma-split',message:'normalizeYesNoQuestionToStatement comma-split',data:{aux,subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    return out;
+  }
+
+  // Heuristic: split before common predicate starters (covers lots of "Was X fair/true/based..." questions).
+  const predicateStarters = [
+    "fair",
+    "true",
+    "false",
+    "accurate",
+    "correct",
+    "legitimate",
+    "legal",
+    "valid",
+    "based",
+    "justified",
+    "reasonable",
+    "biased",
+  ];
+  const starterRe = new RegExp(`\\b(${predicateStarters.join("|")})\\b`, "i");
+  const starterMatch = rest.match(starterRe);
+  if (starterMatch && typeof starterMatch.index === "number" && starterMatch.index > 0) {
+    const subject = rest.slice(0, starterMatch.index).trim();
+    const predicate = rest.slice(starterMatch.index).trim();
+    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
+    if (subject && predicate) {
+      const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:starter-split',message:'normalizeYesNoQuestionToStatement starter-split',data:{aux,starter:starterMatch[0],subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      return out;
+    }
+  }
+
+  // Fallback: don't guess a subject/predicate split; keep the remainder intact and use "It <aux> the case that …"
+  // This is grammatical and stable, though not identical to a hand-written statement.
+  const out = `It ${aux} the case that ${rest}`.replace(/\s+/g, " ").trim();
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:fallback',message:'normalizeYesNoQuestionToStatement fallback',data:{aux,rest:rest.slice(0,200),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  return out;
+}
+
 /**
  * Detect if a topic likely requires recent data
  * Returns true if dates, recent keywords, or temporal indicators suggest recency matters
@@ -221,9 +465,9 @@ function getActiveConfig() {
 function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): boolean {
   const lowerText = text.toLowerCase();
 
-  // Check for recent date mentions (within last 2 years from current date)
+  // Check for recent date mentions (within last 3 years from current date - extended for better coverage)
   const currentYear = new Date().getFullYear();
-  const recentYears = [currentYear, currentYear - 1, currentYear - 2];
+  const recentYears = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
   const yearPattern = /\b(20\d{2})\b/;
   const yearMatch = text.match(yearPattern);
   if (yearMatch) {
@@ -1958,6 +2202,29 @@ const SUPPLEMENTAL_SUBCLAIMS_SCHEMA = z.object({
   subClaims: z.array(SUBCLAIM_SCHEMA),
 });
 
+// Lenient proceeding schema for providers that omit fields; defaults prevent hard failures.
+const DISTINCT_PROCEEDING_SCHEMA_LENIENT = z.object({
+  id: z.string(),
+  name: z.string(),
+  shortName: z.string(),
+  court: z.string().default("unknown"),
+  jurisdiction: z.string().default("unknown"),
+  date: z.string().default(""),
+  subject: z.string().default(""),
+  charges: z.array(z.string()).default([]),
+  outcome: z.string().default("unknown"),
+  status: z.enum(["concluded", "ongoing", "pending", "unknown"]).catch("unknown"),
+  decisionMakers: z
+    .array(
+      z.object({
+        name: z.string(),
+        role: z.string(),
+        affiliation: z.string(),
+      }),
+    )
+    .default([]),
+});
+
 // Lenient variant for providers that sometimes omit arrays/fields; defaults prevent hard failures.
 const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   detectedInputType: z.enum(["question", "claim", "article"]).catch("claim"),
@@ -1966,31 +2233,7 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   questionBeingAsked: z.string().default(""),
   impliedClaim: z.string().default(""),
 
-  distinctProceedings: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        shortName: z.string(),
-        court: z.string().default("unknown"),
-        jurisdiction: z.string().default("unknown"),
-        date: z.string().default(""),
-        subject: z.string().default(""),
-        charges: z.array(z.string()).default([]),
-        outcome: z.string().default("unknown"),
-        status: z.enum(["concluded", "ongoing", "pending", "unknown"]).catch("unknown"),
-        decisionMakers: z
-          .array(
-            z.object({
-              name: z.string(),
-              role: z.string(),
-              affiliation: z.string(),
-            }),
-          )
-          .default([]),
-      }),
-    )
-    .default([]),
+  distinctProceedings: z.array(DISTINCT_PROCEEDING_SCHEMA_LENIENT).default([]),
   requiresSeparateAnalysis: z.boolean().default(false),
   proceedingContext: z.string().default(""),
 
@@ -2323,6 +2566,7 @@ Set requiresSeparateAnalysis = true when multiple contexts are detected.
     - Evidence basis (were conclusions based on evidence?)
     - Decision-maker independence (any conflicts of interest?)
     - Outcome proportionality/impact (was the outcome proportionate and consistent with similar situations?)
+  - **CRITICAL: DECOMPOSE SPECIFIC OUTCOMES**: When specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban, ineligibility duration), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate for the context.
 
 - **researchQuestions**: Generate specific questions to research, including:
   - Potential conflicts of interest for key decision-makers
@@ -2438,7 +2682,7 @@ For "Does this vaccine cause autism?"
         { role: "system", content: prompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.3,
+      temperature: getDeterministicTemperature(0.3),
       output: Output.object({ schema: understandingSchemaForProvider }),
     });
 
@@ -2504,7 +2748,7 @@ For "Does this vaccine cause autism?"
         { role: "system", content: system },
         { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
       ],
-      temperature: 0.2,
+      temperature: getDeterministicTemperature(0.2),
     });
 
     const txt = (result as any)?.text as string | undefined;
@@ -2587,24 +2831,30 @@ For "Does this vaccine cause autism?"
 
   // Post-processing: Fix impliedClaim for questions - convert question to affirmative statement
   if (parsed.detectedInputType === "question") {
-    // Check if impliedClaim is still a question (ends with ?) or is missing
-    if (!parsed.impliedClaim || parsed.impliedClaim.endsWith("?")) {
-      // Convert question to affirmative claim (what "YES" would confirm)
-      let affirmativeClaim = trimmedInput
-        .replace(/\?+$/, "") // Remove trailing question marks
-        .replace(/^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s+/i, "")
-        .trim();
+    const statement = normalizeYesNoQuestionToStatement(trimmedInput);
+    // In deterministic mode, always override to the normalized statement to avoid LLM drift.
+    // Otherwise, only fill/repair if missing or still phrased as a question.
+    const shouldOverride =
+      CONFIG.deterministic ||
+      !parsed.impliedClaim ||
+      parsed.impliedClaim.endsWith("?");
+    if (shouldOverride) {
+      console.log(
+        `[Analyzer] Normalized impliedClaim from question "${parsed.impliedClaim || trimmedInput}" to statement: "${statement}"`,
+      );
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:impliedClaim',message:'understandClaim impliedClaim normalization',data:{detectedInputType:parsed.detectedInputType,shouldOverride,from:String(parsed.impliedClaim||'').slice(0,200),to:String(statement).slice(0,200),deterministic:CONFIG.deterministic},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      parsed.impliedClaim = statement;
+    }
+  }
 
-      // Capitalize first letter
-      affirmativeClaim = affirmativeClaim.charAt(0).toUpperCase() + affirmativeClaim.slice(1);
-
-      // Add a verb if missing (simple heuristic)
-      if (!/\b(is|are|was|were|has|have|had|will|would|can|could|should|may|might)\b/i.test(affirmativeClaim)) {
-        affirmativeClaim = "The " + affirmativeClaim.charAt(0).toLowerCase() + affirmativeClaim.slice(1) + " is true";
-      }
-
-      console.log(`[Analyzer] Fixed impliedClaim from question "${parsed.impliedClaim || trimmedInput}" to affirmative: "${affirmativeClaim}"`);
-      parsed.impliedClaim = affirmativeClaim;
+  // Determinism + convergence: for claim-like inputs, ensure impliedClaim is populated from the raw input.
+  // This prevents "question vs statement" from diverging just because the model left impliedClaim empty or paraphrased it.
+  if (parsed.detectedInputType === "claim") {
+    const fallback = trimmedInput.replace(/\s+/g, " ").trim();
+    if (CONFIG.deterministic || !parsed.impliedClaim?.trim()) {
+      parsed.impliedClaim = fallback;
     }
   }
 
@@ -2615,6 +2865,32 @@ For "Does this vaccine cause autism?"
       parsed,
     );
     throw new Error("LLM output missing required fields");
+  }
+
+  // Canonicalize proceedings early so:
+  // - IDs are stable (P1/P2/...) instead of model-invented IDs
+  // - downstream research queries don't drift because the model changed labels/dates
+  parsed = canonicalizeProceedings(input, parsed);
+
+  // If the model under-split contexts for a statement-like claim, do a single best-effort retry
+  // focused ONLY on context/thread detection. This helps keep "question vs statement" runs aligned.
+  if (
+    CONFIG.deterministic &&
+    parsed.detectedInputType === "claim" &&
+    (parsed.distinctProceedings?.length ?? 0) <= 1
+  ) {
+    const supplemental = await requestSupplementalProceedings(input, model, parsed);
+    if (supplemental?.distinctProceedings && supplemental.distinctProceedings.length > 1) {
+      parsed = {
+        ...parsed,
+        requiresSeparateAnalysis: true,
+        distinctProceedings: supplemental.distinctProceedings,
+      };
+      parsed = canonicalizeProceedings(input, parsed);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:supplementalProceedingsApplied',message:'Applied supplemental proceedings after under-split claim',data:{finalCount:parsed.distinctProceedings?.length ?? 0,ids:(parsed.distinctProceedings||[]).map((p:any)=>p.id)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+    }
   }
 
   const isShortSimpleNonQuestion =
@@ -2637,6 +2913,9 @@ For "Does this vaccine cause autism?"
   // Post-processing: Re-prompt if coverage is thin (single attempt only)
   // Skip for short, simple non-question inputs.
   if (!isShortSimpleNonQuestion) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:beforeSupplemental',message:'Before supplemental claims check',data:{inputPreview:input.substring(0,200),subClaimsCount:parsed.subClaims.length,subClaims:parsed.subClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),isCentral:c.isCentral,claimRole:c.claimRole})),hasOutcomeClaims:parsed.subClaims.some((c:any)=>/\b(sentence|penalty|fine|ban|ineligible|outcome|punishment|sanction)\b/i.test(c.text))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     for (let attempt = 0; attempt < SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS; attempt++) {
       const supplementalClaims = await requestSupplementalSubClaims(
         input,
@@ -2646,8 +2925,14 @@ For "Does this vaccine cause autism?"
       if (supplementalClaims.length === 0) break;
       parsed.subClaims.push(...supplementalClaims);
       console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance proceeding coverage`);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:afterSupplemental',message:'After supplemental claims',data:{supplementalCount:supplementalClaims.length,supplementalClaims:supplementalClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100)}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       break;
     }
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:finalClaims',message:'Final claims after all processing',data:{totalClaims:parsed.subClaims.length,claims:parsed.subClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,150),isCentral:c.isCentral,claimRole:c.claimRole,relatedProceedingId:c.relatedProceedingId})),hasOutcomeClaims:parsed.subClaims.some((c:any)=>/\b(sentence|penalty|fine|ban|ineligible|outcome|punishment|sanction)\b/i.test(c.text))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
   }
 
   // Post-processing: Ensure keyEntities are populated for each claim
@@ -2783,7 +3068,8 @@ async function requestSupplementalSubClaims(
  - Each claim must be tied to a single context via relatedProceedingId.${hasProceedings ? "" : " Use an empty string if no contexts are listed."}
  - Use claimRole="core", checkWorthiness="high", harmPotential="high", centrality="high", isCentral=true.
  - Use dependsOn=[] unless a dependency is truly required.
- - Ensure each listed context reaches at least ${MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING} central core claims.`;
+ - Ensure each listed context reaches at least ${MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING} central core claims.
+ - **CRITICAL**: If specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.`;
 
   const userPrompt = `INPUT:\n"${input}"\n\nCONTEXTS NEEDING MORE CLAIMS:\n${missingSummary}\n\nEXISTING CLAIMS (DO NOT DUPLICATE):\n${existingClaimsSummary}`;
 
@@ -2795,7 +3081,7 @@ async function requestSupplementalSubClaims(
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.2,
+      temperature: getDeterministicTemperature(0.2),
       output: Output.object({ schema: SUPPLEMENTAL_SUBCLAIMS_SCHEMA }),
     });
 
@@ -2878,6 +3164,207 @@ async function requestSupplementalSubClaims(
   }
 
   return supplementalClaims;
+}
+
+/**
+ * Best-effort: ask the model to (re)consider whether there are multiple distinct contexts/threads.
+ * This is intentionally generic and only applied when the initial understanding appears under-split.
+ */
+async function requestSupplementalProceedings(
+  input: string,
+  model: any,
+  understanding: ClaimUnderstanding,
+): Promise<Pick<ClaimUnderstanding, "distinctProceedings" | "requiresSeparateAnalysis"> | null> {
+  const currentCount = Array.isArray(understanding.distinctProceedings)
+    ? understanding.distinctProceedings.length
+    : 0;
+  if (currentCount > 1) return null;
+
+  const systemPrompt = `You are a fact-checking assistant.
+
+Return ONLY a single JSON object with keys:
+- distinctProceedings: array
+- requiresSeparateAnalysis: boolean
+
+CRITICAL:
+- Detect whether the input mixes 2+ distinct contexts/threads (e.g., different events, phases, institutions, jurisdictions, timelines, or processes).
+- Only split when there are clearly 2+ distinct contexts that would benefit from separate analysis.
+- If there is only 1 context, return an empty array or a 1-item array and set requiresSeparateAnalysis=false.
+
+SCHEMA:
+distinctProceedings items must include:
+- id (string)
+- name (string)
+- shortName (string)
+- court (string)
+- date (string)
+- status (string)
+- subject (string)
+- charges (array of strings)
+- outcome (string)
+- decisionMakers (array of { name, role, affiliation })
+
+Use empty strings "" and empty arrays [] when unknown.`;
+
+  const userPrompt = `INPUT:\n"${input}"\n\nCURRENT distinctProceedings COUNT: ${currentCount}\nReturn JSON only.`;
+
+  const schema = z.object({
+    requiresSeparateAnalysis: z.boolean(),
+    distinctProceedings: z.array(DISTINCT_PROCEEDING_SCHEMA_LENIENT),
+  });
+
+  try {
+    const result = await generateText({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: getDeterministicTemperature(0.2),
+      output: Output.object({ schema }),
+    });
+    const raw = extractStructuredOutput(result) as any;
+    if (!raw) return null;
+    const sp = schema.safeParse(raw);
+    if (!sp.success) return null;
+
+    // Only accept if it meaningfully improves multi-context detection.
+    const nextCount = sp.data.distinctProceedings?.length ?? 0;
+    if (nextCount <= 1 || !sp.data.requiresSeparateAnalysis) return null;
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:requestSupplementalProceedings',message:'Supplemental proceedings accepted',data:{prevCount:currentCount,nextCount,ids:(sp.data.distinctProceedings||[]).map((p:any)=>p.id).slice(0,6)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+
+    return {
+      requiresSeparateAnalysis: sp.data.requiresSeparateAnalysis,
+      distinctProceedings: sp.data.distinctProceedings,
+    };
+  } catch (err: any) {
+    debugLog("requestSupplementalProceedings: FAILED", err?.message || String(err));
+    return null;
+  }
+}
+
+/**
+ * Extract outcome-related claims from facts discovered during research.
+ * This addresses cases where specific outcomes (e.g., an N-year term) are mentioned
+ * in research but weren't in the original input, so no claim was created initially.
+ */
+async function extractOutcomeClaimsFromFacts(
+  state: ResearchState,
+  model: any,
+): Promise<ClaimUnderstanding["subClaims"]> {
+  if (!state.understanding || state.facts.length === 0) return [];
+
+  const understanding = state.understanding;
+  const proceedings = understanding.distinctProceedings || [];
+  const existingClaims = understanding.subClaims || [];
+  const existingClaimTexts = new Set(existingClaims.map((c) => c.text.toLowerCase().trim()));
+
+  // Extract facts text for LLM analysis
+  const factsText = state.facts
+    .slice(0, 50) // Limit to first 50 facts to avoid token limits
+    .map((f, idx) => `F${idx + 1}: ${f.fact}`)
+    .join("\n");
+
+  if (!factsText || factsText.length < 100) return [];
+
+  // Check if any facts mention outcomes (quick heuristic check before LLM call)
+  const outcomeKeywords = /\b(\d+\s*(?:year|month|day)\s*(?:sentence|prison|jail|ban|ineligible|suspended|fine|penalty|sanction)|sentenced|convicted|acquitted|fined|banned|ineligible)\b/i;
+  if (!outcomeKeywords.test(factsText)) {
+    return [];
+  }
+
+  const systemPrompt = `You are a fact-checking assistant. Extract specific outcomes, penalties, or consequences mentioned in the facts that should be evaluated as separate claims.
+
+Return ONLY a JSON object with an "outcomes" array. Each outcome should have:
+- "outcome": The specific outcome mentioned (e.g., "27-year prison sentence", "8-year ineligibility", "$1M fine")
+- "relatedProceedingId": The proceeding ID this outcome relates to (or empty string if unclear)
+- "claimText": A claim evaluating whether this outcome was fair/proportionate (e.g., "The 27-year prison sentence was proportionate to the crimes committed")
+
+Only extract outcomes that:
+1. Are specific and quantifiable (e.g., "27-year sentence", not just "sentenced")
+2. Are NOT already covered by existing claims
+3. Are relevant to evaluating fairness/proportionality
+
+Return empty array if no such outcomes are found.`;
+
+  const userPrompt = `FACTS DISCOVERED DURING RESEARCH:
+${factsText}
+
+EXISTING CLAIMS (DO NOT DUPLICATE):
+${existingClaims.map((c) => `- ${c.id}: ${c.text}`).join("\n")}
+
+PROCEEDINGS:
+${proceedings.map((p) => `- ${p.id}: ${p.name}`).join("\n")}
+
+Extract outcomes that need separate evaluation claims.`;
+
+  const OUTCOME_SCHEMA = z.object({
+    outcomes: z.array(
+      z.object({
+        outcome: z.string(),
+        relatedProceedingId: z.string(),
+        claimText: z.string(),
+      })
+    ),
+  });
+
+  try {
+    const result = await generateText({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: getDeterministicTemperature(0.2),
+      output: Output.object({ schema: OUTCOME_SCHEMA }),
+    });
+
+    const extracted = extractStructuredOutput(result);
+    if (!extracted?.outcomes || !Array.isArray(extracted.outcomes)) return [];
+
+    // Generate claim IDs and create claim objects
+    let maxId = 0;
+    for (const claim of existingClaims) {
+      const match = /^SC(\d+)$/i.exec(claim.id || "");
+      if (match) {
+        const num = Number(match[1]);
+        if (!Number.isNaN(num)) maxId = Math.max(maxId, num);
+      }
+    }
+
+    const outcomeClaims: ClaimUnderstanding["subClaims"] = [];
+    for (const outcome of extracted.outcomes) {
+      // Skip if claim text is too similar to existing claims
+      const normalized = outcome.claimText.toLowerCase().trim();
+      if (existingClaimTexts.has(normalized)) continue;
+
+      const newId = `SC${++maxId}`;
+      outcomeClaims.push({
+        id: newId,
+        text: outcome.claimText,
+        type: "evaluative",
+        claimRole: "core",
+        dependsOn: [],
+        keyEntities: [],
+        checkWorthiness: "high",
+        harmPotential: "high",
+        centrality: "high",
+        isCentral: true,
+        relatedProceedingId: outcome.relatedProceedingId || "",
+        approximatePosition: "",
+        keyFactorId: "",
+      });
+      existingClaimTexts.add(normalized);
+    }
+
+    return outcomeClaims;
+  } catch (err: any) {
+    debugLog("extractOutcomeClaimsFromFacts: FAILED", err?.message || String(err));
+    return [];
+  }
 }
 
 function findClaimPosition(
@@ -3022,15 +3509,20 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         (f) => f.relatedProceedingId === proc.id,
       );
       if (procFacts.length < 2) {
+        const procKey = [proc.court, proc.shortName, proc.name]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
         return {
           complete: false,
-          focus: `${proc.name} - ${proc.subject}`,
+          focus: `${proc.name} - ${procKey || "context"}`,
           targetProceedingId: proc.id,
           category: "evidence",
           queries: [
-            `${proc.court || ""} ${proc.shortName} ${proc.subject}`.trim(),
-            `${entityStr} ${proc.date} ${proc.jurisdiction || "ruling"}`.trim(),
-            `${proc.name} decision outcome ${proc.date}`,
+            `${entityStr} ${procKey}`.trim(),
+            `${entityStr} ${proc.court || ""} official decision documents`.trim(),
+            `${entityStr} ${proc.shortName || proc.name} evidence procedure`.trim(),
+            `${entityStr} ${procKey} outcome`.trim(),
           ],
         };
       }
@@ -3109,6 +3601,10 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   }
 
   // NEW v2.6.18: Use generated research questions for additional searches
+  // Determinism: skip this step because researchQuestions come from the model and can cause run-to-run drift.
+  if (CONFIG.deterministic) {
+    // no-op
+  } else {
   const researchQuestions = understanding.researchQuestions || [];
   const nextQuestionIdx = Array.from({ length: researchQuestions.length }, (_, i) => i)
     .find(i => !state.researchQuestionsSearched.has(i));
@@ -3135,6 +3631,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         ],
       };
     }
+  }
   }
 
   return { complete: true };
@@ -3383,7 +3880,7 @@ Only HIGH/MEDIUM specificity.
           content: `Source: ${source.title}\nURL: ${source.url}\n\n${source.fullText}`,
         },
       ],
-      temperature: 0.2,
+      temperature: getDeterministicTemperature(0.2),
       output: Output.object({ schema: FACT_SCHEMA }),
     });
     const elapsed = Date.now() - startTime;
@@ -3414,8 +3911,32 @@ Only HIGH/MEDIUM specificity.
       return [];
     }
 
-    const filteredFacts = extraction.facts
+    let filteredFacts = extraction.facts
       .filter((f) => f.specificity !== "low" && f.sourceExcerpt?.length >= 20);
+
+    // Conservative safeguard: avoid treating high-impact outcomes (sentencing/conviction/prison terms)
+    // as "facts" when they come from low/unknown-reliability sources.
+    // These claims are easy to get wrong and can dominate the analysis.
+    const track = typeof source.trackRecordScore === "number" ? source.trackRecordScore : 0;
+    if (track < 0.6) {
+      const before = filteredFacts.length;
+      filteredFacts = filteredFacts.filter((f) => {
+        const hay = `${f.fact}\n${f.sourceExcerpt}`.toLowerCase();
+        const isHighImpactOutcome =
+          hay.includes("sentenced") ||
+          hay.includes("convicted") ||
+          hay.includes("years in prison") ||
+          hay.includes("year prison") ||
+          hay.includes("months in prison") ||
+          (hay.includes("prison") && hay.includes("year"));
+        return !isHighImpactOutcome;
+      });
+      if (before !== filteredFacts.length) {
+        console.warn(
+          `[Analyzer] extractFacts: filtered ${before - filteredFacts.length} high-impact outcome facts from low/unknown trackRecord source ${source.id} (track=${track})`,
+        );
+      }
+    }
 
     console.log(`[Analyzer] extractFacts: After filtering (non-low specificity, excerpt >= 20 chars): ${filteredFacts.length} facts`);
 
@@ -3787,7 +4308,7 @@ Provide SEPARATE answers for each context/thread.`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.3,
+      temperature: getDeterministicTemperature(0.3),
       output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_PROCEEDING }),
     });
     state.llmCalls++;
@@ -3905,6 +4426,10 @@ Provide SEPARATE answers for each context/thread.`;
   // v2.5.1: Contested factors without evidence don't reduce rating
   const correctedProceedingAnswers = parsed.proceedingAnswers.map((pa: any) => {
     const factors = pa.keyFactors as KeyFactor[];
+    const procMeta = understanding.distinctProceedings.find(
+      (p: any) => p.id === pa.proceedingId,
+    );
+    const procStatus = (procMeta?.status || "unknown") as string;
 
     // Calculate from actual factors - NOT from LLM-reported numbers
     const positiveFactors = factors.filter((f) => f.supports === "yes").length;
@@ -3998,6 +4523,7 @@ Provide SEPARATE answers for each context/thread.`;
       answer: answerTruthPct,
       confidence: correctedConfidence,
       truthPercentage: answerTruthPct,
+      shortAnswer: sanitizeProceedingShortAnswer(String(pa.shortAnswer || ""), procStatus),
       factorAnalysis,
     } as ProceedingAnswer;
   });
@@ -4302,7 +4828,7 @@ ${factsFormatted}`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.3,
+      temperature: getDeterministicTemperature(0.3),
       output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE }),
     });
     state.llmCalls++;
@@ -4660,7 +5186,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
           content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${factsFormatted}`,
         },
       ],
-      temperature: 0.3,
+      temperature: getDeterministicTemperature(0.3),
       output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM }),
     });
     state.llmCalls++;
@@ -5578,10 +6104,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const searchResults: Array<{ url: string; title: string; query: string }> =
       [];
     for (const query of decision.queries || []) {
+      // Detect if this query needs recent results
+      const recencyMatters = isRecencySensitive(query, state.understanding || undefined);
+      const dateRestrict: "y" | "m" | "w" | undefined = recencyMatters ? "y" : undefined; // Use past year for recent topics
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:searchWithDateFilter',message:'Search with date filter',data:{query:query.substring(0,100),recencyMatters,dateRestrict},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+
       // Get providers before search to show in event
       const searchProviders = getActiveSearchProviders().join("+");
+      const dateFilterMsg = dateRestrict ? ` [filtering: past ${dateRestrict === "y" ? "year" : dateRestrict === "m" ? "month" : "week"}]` : "";
       await emit(
-        `🔍 Searching [${searchProviders}]: "${query}"`,
+        `🔍 Searching [${searchProviders}]${dateFilterMsg}: "${query}"`,
         baseProgress + 1,
       );
 
@@ -5589,6 +6124,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         const searchResponse = await searchWebWithProvider({
           query,
           maxResults: config.maxSourcesPerIteration,
+          dateRestrict,
+          domainWhitelist: CONFIG.searchDomainWhitelist || undefined,
         });
         let results = searchResponse.results;
         const actualProviders = searchResponse.providersUsed.join("+");
@@ -5648,9 +6185,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     const seenUrls = new Set(state.sources.map((s: FetchedSource) => s.url));
     const newResults = searchResults.filter((r) => !seenUrls.has(r.url));
-    const uniqueResults = [
-      ...new Map(newResults.map((r: any) => [r.url, r])).values(),
-    ].slice(0, config.maxSourcesPerIteration);
+    // Determinism: stable ordering across runs, independent of provider result ordering.
+    const uniqueResults = [...new Map(newResults.map((r: any) => [r.url, r])).values()]
+      .sort((a: any, b: any) => String(a.url).localeCompare(String(b.url)))
+      .slice(0, config.maxSourcesPerIteration);
 
     if (uniqueResults.length === 0) {
       state.iterations.push({
@@ -5715,6 +6253,18 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       `Iteration ${iteration}: ${state.facts.length} facts from ${state.sources.length} sources (${extractElapsed}ms)`,
       baseProgress + 12,
     );
+  }
+
+  // STEP 4.5: Post-research outcome extraction - extract outcomes from facts and create claims
+  await emit(`Extracting outcomes from research [LLM: ${provider}/${modelName}]`, 62);
+  const outcomeClaims = await extractOutcomeClaimsFromFacts(state, model);
+  if (outcomeClaims.length > 0) {
+    state.understanding!.subClaims.push(...outcomeClaims);
+    console.log(`[Analyzer] Added ${outcomeClaims.length} outcome-related claims from research`);
+    await emit(`Added ${outcomeClaims.length} outcome-related claims`, 63);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:postResearchOutcomeExtraction',message:'Post-research outcome extraction',data:{outcomeClaimsCount:outcomeClaims.length,outcomeClaims:outcomeClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),relatedProceedingId:c.relatedProceedingId}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
   }
 
   // STEP 5: Verdicts

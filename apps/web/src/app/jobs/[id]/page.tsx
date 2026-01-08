@@ -295,6 +295,7 @@ export default function JobPage() {
   const isQuestion = result?.meta?.isQuestion || articleAnalysis?.isQuestion;
   const hasMultipleProceedings = result?.meta?.hasMultipleProceedings;
   const proceedings = result?.proceedings || [];
+  const impliedClaim: string = (result?.understanding?.impliedClaim || "").trim();
   const hasContestedFactors = result?.meta?.hasContestedFactors;
   const searchQueries = result?.searchQueries || [];
   const sources = result?.sources || [];
@@ -504,14 +505,22 @@ export default function JobPage() {
         <div className={styles.contentCard}>
           {isQuestion && questionAnswer && (
             hasMultipleProceedings
-              ? <MultiProceedingAnswerBanner questionAnswer={questionAnswer} proceedings={proceedings} />
-              : <QuestionAnswerBanner questionAnswer={questionAnswer} />
+              ? <MultiProceedingAnswerBanner questionAnswer={questionAnswer} proceedings={proceedings} impliedClaim={impliedClaim} />
+              : <QuestionAnswerBanner questionAnswer={questionAnswer} impliedClaim={impliedClaim} />
           )}
 
           {!isQuestion && twoPanelSummary && (
-            <ArticleSummaryBox
-              articleSummary={twoPanelSummary.articleSummary}
-            />
+            <>
+              {impliedClaim && (
+                <div className={styles.impliedClaimBox}>
+                  <span className={styles.impliedClaimLabel}>Implied claim:</span>{" "}
+                  <span className={styles.impliedClaimText}>"{impliedClaim}"</span>
+                </div>
+              )}
+              <ArticleSummaryBox
+                articleSummary={twoPanelSummary.articleSummary}
+              />
+            </>
           )}
 
           {!isQuestion && articleAnalysis && (
@@ -698,10 +707,14 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
 // Multi-Proceeding Answer Banner
 // ============================================================================
 
-function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { questionAnswer: any; proceedings: any[] }) {
+function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim }: { questionAnswer: any; proceedings: any[]; impliedClaim?: string }) {
   const overallTruth = getAnswerTruthPercentage(questionAnswer);
   const overallVerdict = percentageToClaimVerdict(overallTruth);
   const overallColor = CLAIM_VERDICT_COLORS[overallVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+  const showImpliedClaim =
+    !!impliedClaim &&
+    impliedClaim.trim().length > 0 &&
+    String(questionAnswer?.question || "").trim() !== impliedClaim.trim();
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   // Opinion-based contestations without evidence are not highlighted
@@ -725,6 +738,12 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings }: { question
         <div className={styles.questionText}>
           "{questionAnswer.question}"
         </div>
+        {showImpliedClaim && (
+          <div className={styles.impliedClaimRow}>
+            <div className={styles.impliedClaimLabel}>Implied claim</div>
+            <div className={styles.impliedClaimText}>"{impliedClaim}"</div>
+          </div>
+        )}
       </div>
 
       <div className={styles.proceedingNotice}>
@@ -803,6 +822,11 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
   const neutralCount = factors.filter((f: any) => f.supports === "neutral").length;
   const contestedCount = factors.filter((f: any) => f.supports === "no" && f.isContested).length;
 
+  const subject = (proceeding?.subject || "").trim();
+  const outcome = (proceeding?.outcome || "").trim();
+  const charges: string[] = Array.isArray(proceeding?.charges) ? proceeding.charges : [];
+  const showAbout = !!subject || (charges.length > 0) || (!!outcome && outcome !== "unknown");
+
   return (
     <div className={styles.proceedingCard} style={{ borderColor: color.border }}>
       <div className={styles.proceedingCardHeader}>
@@ -812,8 +836,8 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
         {proceeding && (
           <div className={styles.proceedingCardMeta}>
             {proceeding.court && <span>{proceeding.court} • </span>}
-            <span>{proceeding.date}</span>
-            {proceeding.status && <span> • {proceeding.status}</span>}
+            {proceeding.date && <span>{proceeding.date}</span>}
+            {proceeding.status && proceeding.status !== "unknown" && <span> • {proceeding.status}</span>}
           </div>
         )}
       </div>
@@ -837,9 +861,36 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
           {neutralCount > 0 && <span className={styles.factorsNeutral}>➖ {neutralCount} neutral</span>}
         </div>
 
-        <div className={styles.proceedingShortAnswer}>
-          {proceedingAnswer.shortAnswer}
-        </div>
+        {showAbout && (
+          <div className={styles.proceedingAboutBox}>
+            <div className={styles.proceedingAboutHeader}>About this context</div>
+            {subject && (
+              <div className={styles.proceedingAboutRow}>
+                <span className={styles.proceedingAboutLabel}>Subject:</span>{" "}
+                <span className={styles.proceedingAboutText}>{subject}</span>
+              </div>
+            )}
+            {charges.length > 0 && (
+              <div className={styles.proceedingAboutRow}>
+                <span className={styles.proceedingAboutLabel}>Key allegations/charges:</span>{" "}
+                <span className={styles.proceedingAboutText}>{charges.slice(0, 3).join("; ")}{charges.length > 3 ? "…" : ""}</span>
+              </div>
+            )}
+            {outcome && outcome !== "unknown" && (
+              <div className={styles.proceedingAboutRow}>
+                <span className={styles.proceedingAboutLabel}>Outcome:</span>{" "}
+                <span className={styles.proceedingAboutText}>{outcome}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {proceedingAnswer.shortAnswer && (
+          <div className={styles.proceedingShortAnswer}>
+            <span className={styles.proceedingAssessmentLabel}>Assessment:</span>{" "}
+            {proceedingAnswer.shortAnswer}
+          </div>
+        )}
 
         {factors.length > 0 && (
           <div className={styles.factorsListSection}>
@@ -905,16 +956,26 @@ function KeyFactorRow({ factor, showContestation = true }: { factor: any; showCo
 // Single Question Answer Banner
 // ============================================================================
 
-function QuestionAnswerBanner({ questionAnswer }: { questionAnswer: any }) {
+function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer: any; impliedClaim?: string }) {
   const answerTruth = getAnswerTruthPercentage(questionAnswer);
   const answerVerdict = percentageToClaimVerdict(answerTruth);
   const color = CLAIM_VERDICT_COLORS[answerVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+  const showImpliedClaim =
+    !!impliedClaim &&
+    impliedClaim.trim().length > 0 &&
+    String(questionAnswer?.question || "").trim() !== impliedClaim.trim();
 
   return (
     <div className={styles.questionBanner} style={{ borderColor: color.border }}>
       <div className={styles.questionBannerHeader}>
         <div className={styles.questionBannerLabel}>📝 Question</div>
         <div className={styles.questionBannerText}>"{questionAnswer.question}"</div>
+        {showImpliedClaim && (
+          <div className={styles.impliedClaimRow}>
+            <div className={styles.impliedClaimLabel}>Implied claim</div>
+            <div className={styles.impliedClaimText}>"{impliedClaim}"</div>
+          </div>
+        )}
       </div>
 
       <div className={styles.questionBannerContent}>

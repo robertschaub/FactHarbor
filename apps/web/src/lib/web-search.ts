@@ -8,6 +8,8 @@ export type WebSearchOptions = {
   query: string;
   maxResults: number;
   domainWhitelist?: string[];
+  /** Date restriction: "y" (past year), "m" (past month), "w" (past week), or undefined (no restriction) */
+  dateRestrict?: "y" | "m" | "w";
 };
 
 export type WebSearchResponse = {

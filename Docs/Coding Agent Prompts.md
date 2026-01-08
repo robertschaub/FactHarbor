@@ -8,6 +8,31 @@ StatusAndNext.md
 And analyze the current source code.
 
 ---
+
+Now, with your latest change, jobs with non question article "The Bolsonaro judgment (trial) was fair and based on Brazil's law" give bad results, especially no multi preceeding is detected.
+And both ways formulated as qustion or not (with "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?" and with "The Bolsonaro judgment (trial) was fair and based on Brazil's law") the 27 year sentence is not found.
+Again, I am sure a web search would find this, but it seems LLM call's often don't (I gues becauise not yet trained with recent data).
+
+Avoid such very specifc code and promts, make it more generic:
+'trial', 'judgment', 'sentence', 'conviction', 'case', 'proceeding', 'coup', 'election', 'court', 'judge', 'ruling', 'verdict', 'bolsonaro', 'putin', 'trump' // Known recent political figures with ongoing cases
+specific outcome was fair, proportionate, or appropriate. Example: If "27-year prison sentence" is mentioned, generate a claim like "The 27-year prison sentence was proportionate to the crimes committed and consistent with similar cases."
+specific outcomes, penalties, or consequences are mentioned (e.g., "27-year sentence", "fined $X", "banned for Y years"), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.`;
+const isHighImpactOutcome =
+    hay.includes("sentenced") ||
+    hay.includes("convicted") ||
+    hay.includes("years in prison") ||
+    hay.includes("year prison") ||
+    hay.includes("months in prison") ||
+    (hay.includes("prison") && hay.includes("year"));
+
+Make sure such debugging code is only active used in local environment and it matches the specific execution:
+fetch('http://127.0.0.1:7242 
+
+With recent changes responsiveness somtimes is slow. Especiall with job queing, there should not be such long waits.
+
+When there are about 3 or 4 jobs already running, the analyze button is disabled for a while =>fix
+
+---
 Please document in a new  docs\Calculations.md file, and maybe we still need to improve?:
 -Check if counter-evidence is distinguished from evidence and correctly influences verdict calculation (positive vs. negative).
 -article-keyfactor-claim verdict calculation: how is a verdict determined respectively calculated from lower level verdicts?

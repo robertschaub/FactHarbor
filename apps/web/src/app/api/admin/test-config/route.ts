@@ -10,6 +10,9 @@ import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateText } from "ai";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 type TestResult = {
   service: string;
   status: "success" | "error" | "not_configured" | "skipped";
