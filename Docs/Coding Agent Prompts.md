@@ -9,10 +9,12 @@ And analyze the current source code.
 ---
 OPEN Requests:
 ---
-Almost all claims are marked as central - please investigate
+Any use of court and jurisdiction violate the rules not to use domain specific terms (Exception: in comments) ->fix
 ---
 
 DONE Requests (all below):
+---
+Almost all claims are marked as central - please investigate
 ---
 Analyze the current source-code an show me where it does not follow the "Coding Agent Rules.md, 
 So then I can decide what to change.
