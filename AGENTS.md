@@ -28,8 +28,9 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 - **Quality gates**: Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 
 ### Scope Detection
-- **Scope is used as a Summary term also for Context and Preceeding**: Scope, Context, Preceeding are synonyms (analytical frame/boundaries)
-- **Detect distinct scopes**: Identify and separate different scopes
+- **Scope** = A bounded analytical frame with defined boundaries, methodology, temporal period, and subject
+- **Unified terminology**: "Scope" replaces and unifies "Context", "Proceeding", "Event" throughout the codebase
+- **Detect distinct scopes**: Identify and separate different scopes (legal, methodological, temporal, regulatory)
 - **NOT distinct**: Different perspectives on same event (e.g., "US view" vs "Brazil view")
 
 ---
@@ -48,7 +49,7 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │  src/lib/analyzer.ts - Main analysis engine         │   │
 │  │  - understandClaim() → Research → generateVerdicts()│   │
-│  │  - Multi-proceeding detection & canonicalization    │   │
+│  │  - Multi-scope detection & canonicalization         │   │
 │  │  - LLM calls via AI SDK (OpenAI/Anthropic/etc)      │   │
 │  └─────────────────────────────────────────────────────┘   │
 │  ┌─────────────────────────────────────────────────────┐   │
