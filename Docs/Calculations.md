@@ -4,31 +4,45 @@
 
 This document explains how FactHarbor calculates verdicts, handles counter-evidence, aggregates results across different levels, and manages confidence scores.
 
-## 1. Verdict Scale (7-Point System)
+## 1. Verdict Scale (7-Point System with BALANCED/UNVERIFIED Distinction)
 
-FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%:
+FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%. The 43-57% range distinguishes between **BALANCED** (high confidence, evidence on both sides) and **UNVERIFIED** (low confidence, insufficient evidence):
 
-| Verdict | Range | Description |
-|---------|-------|-------------|
-| **TRUE** | 86-100% | Strong support, no credible counter-evidence |
-| **MOSTLY-TRUE** | 72-85% | Mostly supported, minor gaps |
-| **LEANING-TRUE** | 58-71% | Mixed evidence, leans positive |
-| **UNVERIFIED** | 43-57% | Insufficient evidence or balanced |
-| **LEANING-FALSE** | 29-42% | More counter-evidence than support |
-| **MOSTLY-FALSE** | 15-28% | Strong counter-evidence |
-| **FALSE** | 0-14% | Direct contradiction |
+| Verdict | Range | Confidence | Description |
+|---------|-------|------------|-------------|
+| **TRUE** | 86-100% | - | Strong support, no credible counter-evidence |
+| **MOSTLY-TRUE** | 72-85% | - | Mostly supported, minor gaps |
+| **LEANING-TRUE** | 58-71% | - | Mixed evidence, leans positive |
+| **BALANCED** | 43-57% | >= 60% | Evidence on both sides, roughly equal |
+| **UNVERIFIED** | 43-57% | < 60% | Insufficient evidence to judge |
+| **LEANING-FALSE** | 29-42% | - | More counter-evidence than support |
+| **MOSTLY-FALSE** | 15-28% | - | Strong counter-evidence |
+| **FALSE** | 0-14% | - | Direct contradiction |
+
+### BALANCED vs UNVERIFIED
+
+- **BALANCED** (blue in UI): We have substantial evidence, but it's roughly equal on both sides. High confidence in the balanced state.
+- **UNVERIFIED** (orange in UI): We don't have enough evidence to make any judgment. Low confidence due to insufficient information.
 
 ### Implementation
 
 **File**: `apps/web/src/lib/analyzer.ts`
 
-**Function**: `percentageToClaimVerdict` (line ~1511)
+**Function**: `percentageToClaimVerdict` (line ~1544)
 ```typescript
-function percentageToClaimVerdict(truthPercentage: number): ClaimVerdict7Point {
+// Confidence threshold to distinguish BALANCED from UNVERIFIED
+const BALANCED_CONFIDENCE_THRESHOLD = 60;
+
+function percentageToClaimVerdict(truthPercentage: number, confidence?: number): ClaimVerdict7Point {
   if (truthPercentage >= 86) return "TRUE";
   if (truthPercentage >= 72) return "MOSTLY-TRUE";
   if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) return "UNVERIFIED";
+  if (truthPercentage >= 43) {
+    // Distinguish BALANCED (high confidence, evidence on both sides) 
+    // from UNVERIFIED (low confidence, insufficient evidence)
+    const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
+    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+  }
   if (truthPercentage >= 29) return "LEANING-FALSE";
   if (truthPercentage >= 15) return "MOSTLY-FALSE";
   return "FALSE";
@@ -51,7 +65,69 @@ function truthFromBand(band: "strong" | "partial" | "uncertain" | "refuted", con
 }
 ```
 
-## 2. Counter-Evidence Handling
+## 2. Scope (Bounded Analytical Frame)
+
+A **Scope** is the unified term for a bounded analytical frame. It replaces and unifies the previous terminology of "proceeding", "context", and "event".
+
+### Definition
+
+A Scope is defined by:
+- **Boundaries**: What's included/excluded (e.g., "vehicle-only", "full lifecycle")
+- **Methodology**: Standards used (e.g., "ISO 14040", "WTW analysis")
+- **Temporal**: Time period (e.g., "2020-2025", "January 2023")
+- **Subject**: What's being analyzed (e.g., "TSE case", "efficiency comparison")
+- **Institution**: Court, agency, or organization (optional)
+- **Jurisdiction**: Geographic/legal jurisdiction (optional)
+
+### Scope Types
+
+| Type | Examples |
+|------|----------|
+| **Legal** | TSE electoral case, STF criminal proceeding |
+| **Methodological** | WTW, TTW, LCA analysis |
+| **Regulatory** | EU regulations, US EPA standards |
+| **Temporal** | 2023 rollout vs 2024 review |
+
+### Multi-Scope Detection
+
+The system detects multiple scopes when an input requires separate analyses:
+
+```typescript
+interface Scope {
+  id: string;              // e.g., "SCOPE_TSE", "SCOPE_WTW"
+  name: string;            // Human-readable name
+  shortName: string;       // Abbreviation
+  institution?: string;    // Court, agency, organization
+  methodology?: string;    // Standard/method used
+  boundaries?: string;     // What's included/excluded
+  temporal?: string;       // Time period
+  subject: string;         // What's being analyzed
+  criteria?: string[];     // Evaluation criteria
+  outcome?: string;        // Result if known
+  status: "concluded" | "ongoing" | "pending" | "unknown";
+  decisionMakers?: DecisionMaker[];
+}
+```
+
+### Scope Sources
+
+Scopes are determined from:
+1. **Input analysis** (understandClaim phase): Explicit or implied scopes in user query
+2. **Evidence extraction** (extractFacts phase): Sources may define their own scope via `sourceScope`
+3. **Claim decomposition**: Claims tagged with `relatedProceedingId` (legacy) or `relatedScopeId`
+
+### Scope Mismatch Handling
+
+When evidence defines a scope that differs from the analysis scope (e.g., WTW data applied to TTW analysis), this is flagged in verdict reasoning.
+
+### Design Decision: sourceScope Kept Separate
+
+The `sourceScope` field on facts is intentionally kept separate from top-level scopes. This enables:
+- **Provenance tracking**: Distinguishes scope detected from input vs scope defined by evidence
+- **Mismatch detection**: Identifies when evidence scope differs from analysis scope
+- **Verdict enrichment**: Notes scope context without modifying detected scopes
+
+## 3. Counter-Evidence Handling
 
 Counter-evidence is distinguished from mere contestation and influences verdict calculations.
 
@@ -118,7 +194,7 @@ if (evidenceBasedContestation) {
 - **"disputed"** counter-evidence: -8 points
 - **"opinion"** contestation: No penalty (just rhetoric)
 
-## 3. Aggregation Hierarchy
+## 4. Aggregation Hierarchy
 
 ```mermaid
 graph TD
@@ -195,7 +271,7 @@ const avgTruthPct = Math.round(
 );
 ```
 
-## 4. Confidence Usage
+## 5. Confidence Usage
 
 ### LLM Confidence (0-100%)
 
@@ -250,7 +326,7 @@ function clampConfidence(value: number): number {
 
 Ensures confidence stays in valid range [0.0, 1.0].
 
-## 5. Near-Duplicate Claim Handling
+## 6. Near-Duplicate Claim Handling
 
 ### Problem
 
@@ -303,7 +379,7 @@ De-duplication is applied at multiple levels:
 
 **All claims are still displayed** in the UI. De-duplication only affects aggregation calculations, not visibility.
 
-## 6. Dependency Handling
+## 7. Dependency Handling
 
 **File**: `apps/web/src/lib/analyzer.ts` (line ~5512)
 
@@ -324,7 +400,7 @@ if (failedDeps.length > 0) {
 
 **Independent verdicts** (line ~5550): Claims with failed dependencies are excluded from aggregation to avoid double-counting the false prerequisite.
 
-## 7. Pseudoscience Escalation
+## 8. Pseudoscience Escalation
 
 **File**: `apps/web/src/lib/analyzer.ts` (line ~1108)
 
@@ -338,7 +414,7 @@ if (claimPseudo.isPseudoscience) {
 }
 ```
 
-## 8. Benchmark Guard (Proportionality Claims)
+## 9. Benchmark Guard (Proportionality Claims)
 
 **File**: `apps/web/src/lib/analyzer.ts` (line ~4879)
 

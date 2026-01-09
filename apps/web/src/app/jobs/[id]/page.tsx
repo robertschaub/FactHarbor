@@ -51,7 +51,8 @@ const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: s
   "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
   "LEANING-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
   // Neutral
-  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
+  "BALANCED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident balance (evidence on both sides)
+  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
   // Negative (False side)
   "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
   "MOSTLY-FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
@@ -67,7 +68,8 @@ const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border:
   "MOSTLY-YES": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
   "LEANING-YES": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "↗" },
   // Neutral
-  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
+  "BALANCED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident balance
+  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
   // Negative (No side)
   "LEANING-NO": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "↘" },
   "MOSTLY-NO": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
@@ -83,7 +85,8 @@ const ARTICLE_VERDICT_COLORS: Record<string, { bg: string; text: string; border:
   "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
   "LEANING-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
   // Neutral
-  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
+  "BALANCED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident balance
+  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
   // Negative
   "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
   "MOSTLY-FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
@@ -294,7 +297,8 @@ export default function JobPage() {
   const questionAnswer = result?.questionAnswer;
   const isQuestion = result?.meta?.isQuestion || articleAnalysis?.isQuestion;
   const hasMultipleProceedings = result?.meta?.hasMultipleProceedings;
-  const proceedings = result?.proceedings || [];
+  // Prefer "scopes" (new unified terminology), fall back to "proceedings" for backward compatibility
+  const proceedings = result?.scopes || result?.proceedings || [];
   const impliedClaim: string = (result?.understanding?.impliedClaim || "").trim();
   const hasContestedFactors = result?.meta?.hasContestedFactors;
   const searchQueries = result?.searchQueries || [];
@@ -709,7 +713,8 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
 
 function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim }: { questionAnswer: any; proceedings: any[]; impliedClaim?: string }) {
   const overallTruth = getAnswerTruthPercentage(questionAnswer);
-  const overallVerdict = percentageToClaimVerdict(overallTruth);
+  const overallConfidence = questionAnswer?.confidence ?? 0;
+  const overallVerdict = percentageToClaimVerdict(overallTruth, overallConfidence);
   const overallColor = CLAIM_VERDICT_COLORS[overallVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
   const showImpliedClaim =
     !!impliedClaim &&
@@ -749,7 +754,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim
       <div className={styles.proceedingNotice}>
         <span className={styles.proceedingIcon}>🔀</span>
         <span className={styles.proceedingText}>
-          {proceedings.length} distinct contexts analyzed separately
+          {proceedings.length} distinct scopes analyzed separately
         </span>
         {hasEvidenceBasedContestations && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
@@ -785,7 +790,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim
       {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
         <div className={styles.proceedingsAnalysis}>
           <h4 className={styles.proceedingsHeader}>
-            🔀 Context-by-Context Analysis
+            🔀 Scope-by-Scope Analysis
           </h4>
           <div className={styles.proceedingsStack}>
             {questionAnswer.proceedingAnswers.map((pa: any) => {
@@ -813,7 +818,8 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim
 
 function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: any; proceeding: any }) {
   const proceedingTruth = getAnswerTruthPercentage(proceedingAnswer);
-  const proceedingVerdict = percentageToClaimVerdict(proceedingTruth);
+  const proceedingConfidence = proceedingAnswer?.confidence ?? 0;
+  const proceedingVerdict = percentageToClaimVerdict(proceedingTruth, proceedingConfidence);
   const color = CLAIM_VERDICT_COLORS[proceedingVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
   const factors = proceedingAnswer.keyFactors || [];
@@ -953,7 +959,8 @@ function KeyFactorRow({ factor, showContestation = true }: { factor: any; showCo
 
 function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer: any; impliedClaim?: string }) {
   const answerTruth = getAnswerTruthPercentage(questionAnswer);
-  const answerVerdict = percentageToClaimVerdict(answerTruth);
+  const answerConfidence = questionAnswer?.confidence ?? 0;
+  const answerVerdict = percentageToClaimVerdict(answerTruth, answerConfidence);
   const color = CLAIM_VERDICT_COLORS[answerVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
   const showImpliedClaim =
     !!impliedClaim &&
@@ -1188,7 +1195,7 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
       if (claims.length === 0) continue;
       groups.push({
         id: procId,
-        title: `Context ${procId}`,
+        title: `Scope ${procId}`,
         claims,
       });
     }
@@ -1233,7 +1240,8 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
 
 function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCrossProceeding?: boolean }) {
   const claimTruth = getClaimTruthPercentage(claim);
-  const claimVerdictLabel = percentageToClaimVerdict(claimTruth);
+  const claimConfidence = claim?.confidence ?? 0;
+  const claimVerdictLabel = percentageToClaimVerdict(claimTruth, claimConfidence);
   const color = CLAIM_VERDICT_COLORS[claimVerdictLabel] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
   // Only show CONTESTED label when opposition has actual counter-evidence
@@ -1252,7 +1260,7 @@ function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCro
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
         )}
         {showCrossProceeding && (
-          <Badge bg="#eef2ff" color="#1e3a8a">Cross-context</Badge>
+          <Badge bg="#eef2ff" color="#1e3a8a">Cross-scope</Badge>
         )}
         {claim.isPseudoscience && (
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>
@@ -1295,7 +1303,8 @@ function ClaimHighlighter({ originalText, claimVerdicts }: { originalText: strin
             cv.highlightColor === "dark-red" ? "#ffebee" :
             "#fff3e0"; // default orange for unverified
           const claimTruth = getClaimTruthPercentage(cv);
-          const claimVerdictLabel = percentageToClaimVerdict(claimTruth);
+          const cvConfidence = cv?.confidence ?? 0;
+          const claimVerdictLabel = percentageToClaimVerdict(claimTruth, cvConfidence);
 
           return (
             <div key={cv.claimId} className={styles.highlighterClaimItem} style={{ backgroundColor: bgColor }}>

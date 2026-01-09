@@ -282,11 +282,13 @@ function inferProceedingTypeLabel(p: any): string {
     return "Criminal";
   if (/\bcivil\b/.test(hay)) return "Civil";
   if (/(regulator|administrat|agency|licens|compliance)\b/.test(hay)) return "Regulatory";
-  return "Context";
+  if (/(wtw|ttw|wtt|lifecycle|lca|iso\s*\d|methodology)\b/i.test(hay)) return "Methodological";
+  if (/(efficien|performance|measure|benchmark|comparison)\b/i.test(hay)) return "Analytical";
+  return "General";
 }
 
-function proceedingTypeRank(label: string): number {
-  // Stable ordering across runs: electoral first, then criminal, then others.
+function scopeTypeRank(label: string): number {
+  // Stable ordering across runs: legal scopes first, then analytical, then general.
   switch (label) {
     case "Electoral":
       return 1;
@@ -296,10 +298,19 @@ function proceedingTypeRank(label: string): number {
       return 3;
     case "Regulatory":
       return 4;
+    case "Methodological":
+      return 5;
+    case "Analytical":
+      return 6;
+    case "General":
+      return 7;
     default:
       return 9;
   }
 }
+
+// Backward compatibility alias
+const proceedingTypeRank = scopeTypeRank;
 
 function sanitizeProceedingShortAnswer(shortAnswer: string, proceedingStatus: string): string {
   if (!shortAnswer) return shortAnswer;
@@ -520,10 +531,11 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
     return true;
   }
 
-  // Check understanding for recent dates in proceedings
+  // Check understanding for recent dates in scopes
   if (understanding?.distinctProceedings) {
     for (const proc of understanding.distinctProceedings) {
-      if (proc.date && recentYears.some(year => proc.date.includes(String(year)))) {
+      const dateStr = proc.date || proc.temporal || "";
+      if (dateStr && recentYears.some(year => dateStr.includes(String(year)))) {
         return true;
       }
     }
@@ -1457,7 +1469,8 @@ type ClaimVerdict7Point =
   | "TRUE" // 86-100%, Score +3
   | "MOSTLY-TRUE" // 72-85%,  Score +2
   | "LEANING-TRUE" // 58-71%,  Score +1
-  | "UNVERIFIED" // 43-57%,  Score  0
+  | "BALANCED" // 43-57%,  Score  0, high confidence (evidence on both sides)
+  | "UNVERIFIED" // 43-57%,  Score  0, low confidence (insufficient evidence)
   | "LEANING-FALSE" // 29-42%,  Score -1
   | "MOSTLY-FALSE" // 15-28%,  Score -2
   | "FALSE"; // 0-14%,   Score -3
@@ -1466,7 +1479,8 @@ type QuestionAnswer7Point =
   | "YES" // 86-100%, Score +3
   | "MOSTLY-YES" // 72-85%,  Score +2
   | "LEANING-YES" // 58-71%,  Score +1
-  | "UNVERIFIED" // 43-57%,  Score  0
+  | "BALANCED" // 43-57%,  Score  0, high confidence
+  | "UNVERIFIED" // 43-57%,  Score  0, low confidence
   | "LEANING-NO" // 29-42%,  Score -1
   | "MOSTLY-NO" // 15-28%,  Score -2
   | "NO"; // 0-14%,   Score -3
@@ -1475,10 +1489,14 @@ type ArticleVerdict7Point =
   | "TRUE" // 86-100%, Score +3
   | "MOSTLY-TRUE" // 72-85%,  Score +2
   | "LEANING-TRUE" // 58-71%,  Score +1
-  | "UNVERIFIED" // 43-57%,  Score  0
+  | "BALANCED" // 43-57%,  Score  0, high confidence (evidence on both sides)
+  | "UNVERIFIED" // 43-57%,  Score  0, low confidence (insufficient evidence)
   | "LEANING-FALSE" // 29-42%,  Score -1
   | "MOSTLY-FALSE" // 15-28%,  Score -2
   | "FALSE"; // 0-14%,   Score -3
+
+// Confidence threshold to distinguish BALANCED from UNVERIFIED
+const BALANCED_CONFIDENCE_THRESHOLD = 60;
 
 /**
  * Normalize truth percentage values (0-100)
@@ -1528,12 +1546,18 @@ function calculateQuestionTruthPercentage(
 
 /**
  * Map truth percentage to 7-point claim verdict
+ * @param truthPercentage - The truth percentage (0-100)
+ * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
  */
-function percentageToClaimVerdict(truthPercentage: number): ClaimVerdict7Point {
+function percentageToClaimVerdict(truthPercentage: number, confidence?: number): ClaimVerdict7Point {
   if (truthPercentage >= 86) return "TRUE";
   if (truthPercentage >= 72) return "MOSTLY-TRUE";
   if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) return "UNVERIFIED";
+  if (truthPercentage >= 43) {
+    // Distinguish BALANCED (high confidence, evidence on both sides) from UNVERIFIED (low confidence, insufficient evidence)
+    const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
+    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+  }
   if (truthPercentage >= 29) return "LEANING-FALSE";
   if (truthPercentage >= 15) return "MOSTLY-FALSE";
   return "FALSE";
@@ -1541,14 +1565,20 @@ function percentageToClaimVerdict(truthPercentage: number): ClaimVerdict7Point {
 
 /**
  * Map truth percentage to question answer
+ * @param truthPercentage - The truth percentage (0-100)
+ * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
  */
 function percentageToQuestionAnswer(
   truthPercentage: number,
+  confidence?: number,
 ): QuestionAnswer7Point {
   if (truthPercentage >= 86) return "YES";
   if (truthPercentage >= 72) return "MOSTLY-YES";
   if (truthPercentage >= 58) return "LEANING-YES";
-  if (truthPercentage >= 43) return "UNVERIFIED";
+  if (truthPercentage >= 43) {
+    const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
+    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+  }
   if (truthPercentage >= 29) return "LEANING-NO";
   if (truthPercentage >= 15) return "MOSTLY-NO";
   return "NO";
@@ -1556,14 +1586,20 @@ function percentageToQuestionAnswer(
 
 /**
  * Map truth percentage to article verdict
+ * @param truthPercentage - The truth percentage (0-100)
+ * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
  */
 function percentageToArticleVerdict(
   truthPercentage: number,
+  confidence?: number,
 ): ArticleVerdict7Point {
   if (truthPercentage >= 86) return "TRUE";
   if (truthPercentage >= 72) return "MOSTLY-TRUE";
   if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) return "UNVERIFIED";
+  if (truthPercentage >= 43) {
+    const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
+    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+  }
   if (truthPercentage >= 29) return "LEANING-FALSE";
   if (truthPercentage >= 15) return "MOSTLY-FALSE";
   return "FALSE";
@@ -1682,20 +1718,34 @@ interface DecisionMaker {
   affiliation: string;
 }
 
-interface DistinctProceeding {
-  id: string;
-  name: string;
-  shortName: string;
-  court: string;
-  jurisdiction: string;
-  date: string;
-  subject: string;
-  charges: string[];
-  outcome: string;
+// Scope = A bounded analytical frame (unifies: legal proceedings, scientific methodologies, regulatory contexts)
+// Replaces: DistinctProceeding, Context
+interface Scope {
+  id: string;                // e.g., "SCOPE_TSE", "SCOPE_WTW"
+  name: string;              // Human-readable name
+  shortName: string;         // Abbreviation
+
+  // Unified fields (generic across domains)
+  institution?: string;      // Court, agency, organization (was: court)
+  jurisdiction?: string;     // Geographic/legal jurisdiction
+  methodology?: string;      // Standard/method used (e.g., "ISO 14040", "WTW")
+  boundaries?: string;       // What's included/excluded
+  temporal?: string;         // Time period (was: date)
+  subject: string;           // What's being analyzed
+  criteria?: string[];       // Evaluation criteria (was: charges)
+  outcome?: string;          // Result if known
   status: "concluded" | "ongoing" | "pending" | "unknown";
-  // NEW: Track decision-makers for conflict detection
-  decisionMakers: DecisionMaker[];
+
+  // Legacy field mappings for backward compatibility
+  court?: string;            // Alias for institution (legal domain)
+  date?: string;             // Alias for temporal
+  charges?: string[];        // Alias for criteria (legal domain)
+
+  decisionMakers?: DecisionMaker[];
 }
+
+// Backward compatibility alias
+type DistinctProceeding = Scope;
 
 interface KeyFactor {
   factor: string;
@@ -2668,52 +2718,53 @@ The system must verify BOTH: (1) did he say it? AND (2) is what he said accurate
 1. List dependencies in dependsOn array (claim IDs that must be true for this claim to matter)
 2. Core claims typically depend on attribution claims
 
-## MULTI-EVENT/SCOPE DETECTION
+## MULTI-SCOPE DETECTION
 
-Look for multiple distinct events, phases, versions, scopes, or contexts that should be analyzed separately.
-**Note**: "Scope" and "context" are synonyms in this system. Both refer to a bounded analytical frame.
+Look for multiple distinct scopes that should be analyzed separately.
+**Definition**: A "Scope" is a bounded analytical frame with defined boundaries, methodology, temporal period, and subject matter.
 
-If the input mixes timelines, distinct contexts, or different analytical scopes, split them.
+If the input mixes timelines, distinct scopes, or different analytical frames, split them.
 
-### IMPORTANT: What is a VALID distinct context/scope
+### IMPORTANT: What is a VALID distinct scope
 - Separate formal proceedings (e.g., TSE electoral case vs STF criminal case)
 - Distinct temporal events (e.g., 2023 rollout vs 2024 review)
 - Different jurisdictional processes (e.g., state court vs federal court)
 - Different analytical methodologies (e.g., WTW vs TTW vs WTT efficiency analysis)
 - Different measurement boundaries (e.g., vehicle-only vs full-lifecycle)
+- Different regulatory frameworks (e.g., EU vs US regulations)
 
-### IMPORTANT: What is NOT a distinct context/scope
+### IMPORTANT: What is NOT a distinct scope
 - Different national/political perspectives on the SAME event (e.g., "Venezuela's view" vs "US view")
 - Different stakeholder viewpoints on a single topic
 - Contested interpretations of the same event
 - Pro vs con arguments about the same topic
 - Claims and counter-claims about one event
 
-**Only create separate contexts/scopes for GENUINELY DISTINCT events, proceedings, or analytical frames - not for different perspectives on the same event.**
+**Only create separate scopes for GENUINELY DISTINCT events, proceedings, or analytical frames - not for different perspectives on the same event.**
 
-### GENERIC EXAMPLE - MUST DETECT 2 CONTEXTS:
+### GENERIC EXAMPLE - MUST DETECT 2 SCOPES:
 
-1. **CTX-2023**: Initial rollout phase
-   - Context: Organization A
-   - Date: 2023
+1. **SCOPE_2023**: Initial rollout phase
+   - Institution: Organization A
+   - Temporal: 2023
    - Subject: Initial implementation
    - Outcome: completed
    - Status: concluded
    - decisionMakers: [{ name: "Lead reviewer", role: "lead", affiliation: "Org A" }]
 
-2. **CTX-2024**: Follow-up review phase
-   - Context: Organization A
-   - Date: 2024
+2. **SCOPE_2024**: Follow-up review phase
+   - Institution: Organization A
+   - Temporal: 2024
    - Subject: Post-implementation review
    - Status: concluded
    - decisionMakers: [{ name: "Lead reviewer", role: "lead", affiliation: "Org A" }]
 
-**CRITICAL: decisionMakers field is REQUIRED for each context!**
+**CRITICAL: decisionMakers field is REQUIRED for each scope!**
 - Extract ALL key decision-makers or primary actors mentioned or known
 - Use your background knowledge to fill in known decision-makers for well-documented cases
-- This enables cross-context conflict of interest detection
+- This enables cross-scope conflict of interest detection
 
-Set requiresSeparateAnalysis = true when multiple contexts are detected.
+Set requiresSeparateAnalysis = true when multiple scopes are detected.
 
 ## FOR QUESTIONS OR STATEMENTS
 
@@ -2728,7 +2779,7 @@ Set requiresSeparateAnalysis = true when multiple contexts are detected.
     - Isolate the core factual assertion as the CENTRAL claim (isCentral: true, claimRole: "core")
     - Separate source/attribution claims as non-central (isCentral: false, claimRole: "source" or "attribution")
     - Use dependsOn to link claims to their prerequisites
-  - For each context/event, consider claims covering:
+  - For each scope, consider claims covering:
     - Standards application (were relevant rules/standards/methods applied correctly?)
     - Process integrity (were appropriate procedures followed?)
     - Evidence basis (were conclusions based on evidence?)
@@ -2972,7 +3023,7 @@ For "Does this vaccine cause autism?"
 
   if (!parsed) {
     // Retry once with a smaller, schema-focused prompt (providers sometimes fail on long prompts + strict schemas).
-    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-CONTEXT DETECTION\n- Detect whether the input mixes multiple distinct contexts/threads (e.g., different events, phases, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct contexts, put them in distinctProceedings (one per context) and set requiresSeparateAnalysis=true.\n- If there is only 1 context, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n\nENUM RULES\n- detectedInputType must be exactly one of: question | claim | article\n- questionIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
+    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-SCOPE DETECTION\n- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.\n- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n\nENUM RULES\n- detectedInputType must be exactly one of: question | claim | article\n- questionIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
     try {
       parsed = await tryStructured(retryPrompt, "structured-2");
     } catch (err: any) {
@@ -3060,8 +3111,8 @@ For "Does this vaccine cause autism?"
     ids: (parsed.distinctProceedings || []).map((p: any) => p.id),
   });
 
-  // If the model under-split contexts for a statement-like claim, do a single best-effort retry
-  // focused ONLY on context/thread detection. This helps keep "question vs statement" runs aligned.
+  // If the model under-split scopes for a statement-like claim, do a single best-effort retry
+  // focused ONLY on scope detection. This helps keep "question vs statement" runs aligned.
   if (
     CONFIG.deterministic &&
     (parsed.detectedInputType === "claim" || parsed.detectedInputType === "question") &&
@@ -3262,7 +3313,7 @@ async function requestSupplementalSubClaims(
 
   const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
  - Return ONLY new claims (do not repeat existing ones).
- - Each claim must be tied to a single context via relatedProceedingId.${hasProceedings ? "" : " Use an empty string if no contexts are listed."}
+ - Each claim must be tied to a single scope via relatedProceedingId.${hasProceedings ? "" : " Use an empty string if no scopes are listed."}
  - Use claimRole="core", checkWorthiness="high", harmPotential="high", centrality="high", isCentral=true.
  - Use dependsOn=[] unless a dependency is truly required.
  - Ensure each listed context reaches at least ${MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING} central core claims.
@@ -3706,13 +3757,13 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         (f) => f.relatedProceedingId === proc.id,
       );
       if (procFacts.length < 2) {
-        const procKey = [proc.court, proc.shortName, proc.name]
+        const procKey = [proc.institution || proc.court, proc.shortName, proc.name]
           .filter(Boolean)
           .join(" ")
           .trim();
         return {
           complete: false,
-          focus: `${proc.name} - ${procKey || "context"}`,
+          focus: `${proc.name} - ${procKey || "scope"}`,
           targetProceedingId: proc.id,
           category: "evidence",
           queries: [
@@ -4489,14 +4540,14 @@ Evidence may come from sources with DIFFERENT analytical scopes (e.g., WTW vs TT
 ## ${inputLabel}
 "${analysisInput}"
 
-## CONTEXTS - PROVIDE SEPARATE ANSWER FOR EACH
+## SCOPES - PROVIDE SEPARATE ANSWER FOR EACH
 ${proceedingsFormatted}
 
 ## INSTRUCTIONS
 
-1. For EACH context/thread (use proceedingId in the schema), provide:
-   - proceedingId (must match: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.id).join(", ")})
-   - answer: Truth percentage (0-100) reflecting how supported the context/thread's claim is
+1. For EACH scope (use proceedingId in the schema), provide:
+   - proceedingId (must match: ${understanding.distinctProceedings.map((p: Scope) => p.id).join(", ")})
+   - answer: Truth percentage (0-100) reflecting how supported this scope's analysis is
    - shortAnswer: A complete sentence summarizing the finding (e.g., "The process followed the stated standards based on documented evidence.")
      * MUST be a descriptive sentence, NOT just a percentage or scale label
    - keyFactors: Array of factors covering ALL these aspects:
@@ -4546,8 +4597,8 @@ ${proceedingsFormatted}
 5. CLAIM VERDICT RULES (for claimVerdicts array):
    **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Every claim must have a corresponding entry in claimVerdicts.
 
-   - For each context/thread, ensure ALL claims with that proceedingId (or claims that logically belong to that context) have verdicts
-   - If a claim doesn't have a relatedProceedingId, assign it to the most relevant context based on the claim content
+   - For each scope, ensure ALL claims with that proceedingId (or claims that logically belong to that scope) have verdicts
+   - If a claim doesn't have a relatedProceedingId, assign it to the most relevant scope based on the claim content
    - Provide a truth percentage (0-100) for each claim.
    - Use these bands to calibrate:
      * 86-100: TRUE (strong support, no credible counter-evidence)
@@ -4567,7 +4618,7 @@ ${getProviderPromptHint()}`;
   const userPrompt = `## ${inputLabel}
 "${analysisInput}"
 
-## CONTEXTS
+## SCOPES
 ${proceedingsFormatted}
 
 ## CLAIMS
@@ -4576,7 +4627,7 @@ ${claimsFormatted}
 ## FACTS
 ${factsFormatted}
 
-Provide SEPARATE answers for each context/thread.`;
+Provide SEPARATE answers for each scope.`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING> | null = null;
 
@@ -6652,7 +6703,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       detectedInputType: state.understanding!.detectedInputType,
       isQuestion: articleAnalysis.isQuestion,
       hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,
+      hasMultipleScopes: articleAnalysis.hasMultipleProceedings,  // Alias
       proceedingCount: state.understanding!.distinctProceedings.length,
+      scopeCount: state.understanding!.distinctProceedings.length,  // Alias
       hasContestedFactors:
         articleAnalysis.questionAnswer?.hasContestedFactors || false,
       // NEW v2.4.5: Pseudoscience detection
@@ -6674,6 +6727,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       },
     },
     questionAnswer: questionAnswer || null,
+    // Primary: "scopes" (unified terminology for bounded analytical frames)
+    scopes: state.understanding!.distinctProceedings,
+    // Backward compatibility alias
     proceedings: state.understanding!.distinctProceedings,
     twoPanelSummary,
     articleAnalysis,

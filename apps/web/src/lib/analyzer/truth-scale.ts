@@ -3,15 +3,20 @@
  *
  * SYMMETRIC 7-LEVEL SCALE (centered on 50%):
  *
- * | Range    | Verdict       | Score |
- * |----------|---------------|-------|
- * | 86-100%  | True          | +3    |
- * | 72-85%   | Mostly True   | +2    |
- * | 58-71%   | Leaning True  | +1    |
- * | 43-57%   | Unverified    |  0    |
- * | 29-42%   | Leaning False | -1    |
- * | 15-28%   | Mostly False  | -2    |
- * | 0-14%    | False         | -3    |
+ * | Range    | Verdict       | Score | Confidence |
+ * |----------|---------------|-------|------------|
+ * | 86-100%  | True          | +3    |            |
+ * | 72-85%   | Mostly True   | +2    |            |
+ * | 58-71%   | Leaning True  | +1    |            |
+ * | 43-57%   | Balanced      |  0    | >= 60%     |
+ * | 43-57%   | Unverified    |  0    | < 60%      |
+ * | 29-42%   | Leaning False | -1    |            |
+ * | 15-28%   | Mostly False  | -2    |            |
+ * | 0-14%    | False         | -3    |            |
+ *
+ * Note: BALANCED vs UNVERIFIED distinguished by confidence:
+ * - BALANCED: Evidence exists on both sides (high confidence in balanced state)
+ * - UNVERIFIED: Insufficient evidence to judge (low confidence)
  *
  * @module analyzer/truth-scale
  */
@@ -87,14 +92,23 @@ export function calculateArticleTruthPercentage(
 // PERCENTAGE TO VERDICT MAPPING
 // ============================================================================
 
+// Confidence threshold to distinguish BALANCED from UNVERIFIED
+const BALANCED_CONFIDENCE_THRESHOLD = 60;
+
 /**
  * Map truth percentage to 7-point claim verdict
+ * @param truthPercentage - The truth percentage (0-100)
+ * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
  */
-export function percentageToClaimVerdict(truthPercentage: number): ClaimVerdict7Point {
+export function percentageToClaimVerdict(truthPercentage: number, confidence?: number): ClaimVerdict7Point {
   if (truthPercentage >= 86) return "TRUE";
   if (truthPercentage >= 72) return "MOSTLY-TRUE";
   if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) return "UNVERIFIED";
+  if (truthPercentage >= 43) {
+    // Distinguish BALANCED (high confidence, evidence on both sides) from UNVERIFIED (low confidence, insufficient evidence)
+    const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
+    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+  }
   if (truthPercentage >= 29) return "LEANING-FALSE";
   if (truthPercentage >= 15) return "MOSTLY-FALSE";
   return "FALSE";
@@ -102,14 +116,20 @@ export function percentageToClaimVerdict(truthPercentage: number): ClaimVerdict7
 
 /**
  * Map truth percentage to question answer
+ * @param truthPercentage - The truth percentage (0-100)
+ * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
  */
 export function percentageToQuestionAnswer(
   truthPercentage: number,
+  confidence?: number,
 ): QuestionAnswer7Point {
   if (truthPercentage >= 86) return "YES";
   if (truthPercentage >= 72) return "MOSTLY-YES";
   if (truthPercentage >= 58) return "LEANING-YES";
-  if (truthPercentage >= 43) return "UNVERIFIED";
+  if (truthPercentage >= 43) {
+    const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
+    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+  }
   if (truthPercentage >= 29) return "LEANING-NO";
   if (truthPercentage >= 15) return "MOSTLY-NO";
   return "NO";
@@ -117,14 +137,20 @@ export function percentageToQuestionAnswer(
 
 /**
  * Map truth percentage to article verdict
+ * @param truthPercentage - The truth percentage (0-100)
+ * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
  */
 export function percentageToArticleVerdict(
   truthPercentage: number,
+  confidence?: number,
 ): ArticleVerdict7Point {
   if (truthPercentage >= 86) return "TRUE";
   if (truthPercentage >= 72) return "MOSTLY-TRUE";
   if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) return "UNVERIFIED";
+  if (truthPercentage >= 43) {
+    const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
+    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+  }
   if (truthPercentage >= 29) return "LEANING-FALSE";
   if (truthPercentage >= 15) return "MOSTLY-FALSE";
   return "FALSE";
@@ -136,37 +162,40 @@ export function percentageToArticleVerdict(
 
 /**
  * Map confidence to claim verdict (for backward compatibility)
+ * Now passes confidence to distinguish BALANCED from UNVERIFIED
  */
 export function calibrateClaimVerdict(
   truthPercentage: number,
   confidence: number,
 ): ClaimVerdict7Point {
   const truthPct = calculateTruthPercentage(truthPercentage, confidence);
-  return percentageToClaimVerdict(truthPct);
+  return percentageToClaimVerdict(truthPct, confidence);
 }
 
 
 /**
  * Map confidence to question answer (for backward compatibility)
+ * Now passes confidence to distinguish BALANCED from UNVERIFIED
  */
 export function calibrateQuestionAnswer(
   truthPercentage: number,
   confidence: number,
 ): QuestionAnswer7Point {
   const truthPct = calculateQuestionTruthPercentage(truthPercentage, confidence);
-  return percentageToQuestionAnswer(truthPct);
+  return percentageToQuestionAnswer(truthPct, confidence);
 }
 
 
 /**
  * Map confidence to article verdict
+ * Now passes confidence to distinguish BALANCED from UNVERIFIED
  */
 export function calibrateArticleVerdict(
   truthPercentage: number,
   confidence: number,
 ): ArticleVerdict7Point {
   const truthPct = calculateArticleTruthPercentage(truthPercentage, confidence);
-  return percentageToArticleVerdict(truthPct);
+  return percentageToArticleVerdict(truthPct, confidence);
 }
 
 
@@ -192,6 +221,9 @@ export function getVerdictColor(verdict: string): {
     case "LEANING-TRUE":
     case "LEANING-YES":
       return { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b" };
+    case "BALANCED":
+      // Blue-ish color to indicate confident balance (distinct from UNVERIFIED)
+      return { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3" };
     case "UNVERIFIED":
       return { bg: "#fff3e0", text: "#e65100", border: "#ff9800" };
     case "LEANING-FALSE":

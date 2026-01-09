@@ -21,21 +21,27 @@ export type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown"
 /**
  * SYMMETRIC 7-LEVEL SCALE (centered on 50%):
  *
- * | Range    | Verdict       | Score |
- * |----------|---------------|-------|
- * | 86-100%  | True          | +3    |
- * | 72-85%   | Mostly True   | +2    |
- * | 58-71%   | Leaning True  | +1    |
- * | 43-57%   | Unverified    |  0    |
- * | 29-42%   | Leaning False | -1    |
- * | 15-28%   | Mostly False  | -2    |
- * | 0-14%    | False         | -3    |
+ * | Range    | Verdict       | Score | Confidence |
+ * |----------|---------------|-------|------------|
+ * | 86-100%  | True          | +3    |            |
+ * | 72-85%   | Mostly True   | +2    |            |
+ * | 58-71%   | Leaning True  | +1    |            |
+ * | 43-57%   | Balanced      |  0    | >= 60%     |
+ * | 43-57%   | Unverified    |  0    | < 60%      |
+ * | 29-42%   | Leaning False | -1    |            |
+ * | 15-28%   | Mostly False  | -2    |            |
+ * | 0-14%    | False         | -3    |            |
+ *
+ * Note: BALANCED vs UNVERIFIED are distinguished by confidence level:
+ * - BALANCED: 43-57% truth with HIGH confidence (evidence on both sides)
+ * - UNVERIFIED: 43-57% truth with LOW confidence (insufficient evidence)
  */
 export type ClaimVerdict7Point =
   | "TRUE"          // 86-100%, Score +3
   | "MOSTLY-TRUE"   // 72-85%,  Score +2
   | "LEANING-TRUE"  // 58-71%,  Score +1
-  | "UNVERIFIED"    // 43-57%,  Score  0
+  | "BALANCED"      // 43-57%,  Score  0, high confidence (evidence on both sides)
+  | "UNVERIFIED"    // 43-57%,  Score  0, low confidence (insufficient evidence)
   | "LEANING-FALSE" // 29-42%,  Score -1
   | "MOSTLY-FALSE"  // 15-28%,  Score -2
   | "FALSE";        // 0-14%,   Score -3
@@ -44,7 +50,8 @@ export type QuestionAnswer7Point =
   | "YES"           // 86-100%, Score +3
   | "MOSTLY-YES"    // 72-85%,  Score +2
   | "LEANING-YES"   // 58-71%,  Score +1
-  | "UNVERIFIED"    // 43-57%,  Score  0
+  | "BALANCED"      // 43-57%,  Score  0, high confidence
+  | "UNVERIFIED"    // 43-57%,  Score  0, low confidence
   | "LEANING-NO"    // 29-42%,  Score -1
   | "MOSTLY-NO"     // 15-28%,  Score -2
   | "NO";           // 0-14%,   Score -3
@@ -53,7 +60,8 @@ export type ArticleVerdict7Point =
   | "TRUE"          // 86-100%, Score +3
   | "MOSTLY-TRUE"   // 72-85%,  Score +2
   | "LEANING-TRUE"  // 58-71%,  Score +1
-  | "UNVERIFIED"    // 43-57%,  Score  0
+  | "BALANCED"      // 43-57%,  Score  0, high confidence (evidence on both sides)
+  | "UNVERIFIED"    // 43-57%,  Score  0, low confidence (insufficient evidence)
   | "LEANING-FALSE" // 29-42%,  Score -1
   | "MOSTLY-FALSE"  // 15-28%,  Score -2
   | "FALSE";        // 0-14%,   Score -3
