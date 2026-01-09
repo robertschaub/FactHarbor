@@ -1,22 +1,30 @@
 # FactHarbor Status and Next Steps
 
-**Date**: January 6, 2026  
-**Last Updated**: January 6, 2026  
-**Status**: KeyFactors aggregation fixed - Ready for end-to-end validation
+**Date**: January 9, 2026  
+**Last Updated**: January 9, 2026  
+**Status**: Scope/context extraction implemented - Input neutrality fix applied
 
 ---
 
 ## Executive Summary
 
-**Current State**: KeyFactors feature is implemented and aggregation bug is fixed. Ready for validation testing.
+**Current State**: Scope/context extraction from sources implemented. Question vs statement verdict divergence fixed.
 
-**Key Accomplishments** (January 6, 2026):
+**Key Accomplishments** (January 9, 2026):
+- **Scope/Context Extraction**: Added `sourceScope` field to ExtractedFact for capturing analytical context (WTW/TTW, methodology, boundaries, geographic, temporal)
+- **Input Neutrality Fix**: Standardized verdict prompts to use neutral "STATEMENT" label instead of "QUESTION"/"INPUT" which was causing LLM verdict drift
+- **Schema Version**: Updated to 2.6.21
+
+**Key Accomplishments** (January 6-8, 2026):
 - Fixed KeyFactors aggregation (preserved `keyFactorId` in `ClaimVerdict`)
 - Added KeyFactors display to article mode reports
 - Fixed evidence agreement bug (claim-specific criticism only)
 - Fixed multiple schema/prompt mismatches
+- Multi-proceeding detection fixes (supplemental context detection for statements)
+- Temporal reasoning improvements (current date awareness)
+- Claim deduplication for fair verdict aggregation
 
-**Next Priority**: Validate KeyFactors end-to-end with complete analysis run.
+**Next Priority**: Validate input neutrality fix with fresh analysis runs.
 
 ---
 

@@ -33,6 +33,27 @@ import * as path from "path";
 // DEBUG LOGGING - writes to file for easy checking
 // ============================================================================
 
+// Agent debug logging - only runs on local development machine
+const IS_LOCAL_DEV = process.env.NODE_ENV === "development" &&
+  (process.env.HOSTNAME === "localhost" || !process.env.VERCEL);
+
+function agentLog(location: string, message: string, data: any, hypothesisId: string) {
+  if (!IS_LOCAL_DEV) return;
+  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      location,
+      message,
+      data,
+      timestamp: Date.now(),
+      sessionId: 'debug-session',
+      runId: 'pre-fix',
+      hypothesisId
+    })
+  }).catch(() => {});
+}
+
 // Write debug log to a fixed location that's easy to find
 const DEBUG_LOG_PATH = "c:\\DEV\\FactHarbor\\apps\\web\\debug-analyzer.log";
 const DEBUG_LOG_FILE_ENABLED =
@@ -90,7 +111,7 @@ function clearDebugLog() {
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.18",
+  schemaVersion: "2.6.21",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
@@ -319,7 +340,7 @@ function canonicalizeProceedings(
   if (procs.length === 0) return understanding;
 
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeProceedings:entry',message:'canonicalizeProceedings entry',data:{inputPreview:String(input).slice(0,200),count:procs.length,ids:procs.map((p:any)=>p?.id).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeProceedings:entry',message:'canonicalizeProceedings entry',data:{inputPreview:String(input).slice(0,200),count:procs.length,ids:procs.map((p:any)=>p?.id).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
   // #endregion
 
   // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
@@ -346,7 +367,7 @@ function canonicalizeProceedings(
     );
 
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeProceedings:anchors',message:'canonicalizeProceedings anchors',data:{hasExplicitYear,hasExplicitStatusAnchor},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeProceedings:anchors',message:'canonicalizeProceedings anchors',data:{hasExplicitYear,hasExplicitStatusAnchor},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
   // #endregion
 
   const canonicalProceedings = sorted.map((p: any, idx: number) => {
@@ -386,7 +407,7 @@ function canonicalizeProceedings(
 
 function normalizeYesNoQuestionToStatement(input: string): string {
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:entry',message:'normalizeYesNoQuestionToStatement entry',data:{input: String(input).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:entry',message:'normalizeYesNoQuestionToStatement entry',data:{input: String(input).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
   // #endregion
   const trimmed = input.trim().replace(/\?+$/, "");
 
@@ -395,7 +416,7 @@ function normalizeYesNoQuestionToStatement(input: string): string {
   const m = trimmed.match(/^(was|were|is|are)\s+(.+)$/i);
   if (!m) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:no-match',message:'normalizeYesNoQuestionToStatement no-match',data:{trimmed: String(trimmed).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:no-match',message:'normalizeYesNoQuestionToStatement no-match',data:{trimmed: String(trimmed).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
     return trimmed;
   }
@@ -412,7 +433,7 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
     const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:paren-split',message:'normalizeYesNoQuestionToStatement paren-split',data:{aux,subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:paren-split',message:'normalizeYesNoQuestionToStatement paren-split',data:{aux,subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
     return out;
   }
@@ -424,7 +445,7 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
     const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:comma-split',message:'normalizeYesNoQuestionToStatement comma-split',data:{aux,subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:comma-split',message:'normalizeYesNoQuestionToStatement comma-split',data:{aux,subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
     return out;
   }
@@ -453,7 +474,7 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     if (subject && predicate) {
       const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:starter-split',message:'normalizeYesNoQuestionToStatement starter-split',data:{aux,starter:starterMatch[0],subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:starter-split',message:'normalizeYesNoQuestionToStatement starter-split',data:{aux,starter:starterMatch[0],subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
       return out;
     }
@@ -463,7 +484,7 @@ function normalizeYesNoQuestionToStatement(input: string): string {
   // This is grammatical and stable, though not identical to a hand-written statement.
   const out = `It ${aux} the case that ${rest}`.replace(/\s+/g, " ").trim();
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:fallback',message:'normalizeYesNoQuestionToStatement fallback',data:{aux,rest:rest.slice(0,200),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:fallback',message:'normalizeYesNoQuestionToStatement fallback',data:{aux,rest:rest.slice(0,200),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
   // #endregion
   return out;
 }
@@ -1815,6 +1836,14 @@ interface ExtractedFact {
   relatedProceedingId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
+  // NEW: Scope/context under which the evidence was produced
+  sourceScope?: {
+    name: string;           // Short label (e.g., "WTW", "TTW", "EU-LCA", "US jurisdiction")
+    methodology?: string;   // Standard/method referenced (e.g., "ISO 14040", "EU RED II")
+    boundaries?: string;    // What's included/excluded (e.g., "Primary energy to vehicle motion")
+    geographic?: string;    // Geographic scope (e.g., "European Union", "California")
+    temporal?: string;      // Time period (e.g., "2020-2025", "FY2024")
+  };
 }
 
 interface FetchedSource {
@@ -2011,6 +2040,76 @@ function getTrackRecordScore(url: string): number | null {
   }
 }
 
+/**
+ * Calculate de-duplicated weighted average truth percentage
+ * Clusters near-duplicate claims and down-weights them so each semantic cluster
+ * contributes approximately 1 unit to the average (prevents double-counting)
+ */
+function dedupeWeightedAverageTruth(verdicts: ClaimVerdict[]): number {
+  if (verdicts.length === 0) return 50;
+  if (verdicts.length === 1) return Math.round(verdicts[0].truthPercentage);
+
+  // Simple token-based similarity clustering
+  const tokenize = (text: string): Set<string> => {
+    return new Set(
+      text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, " ")
+        .split(/\s+/)
+        .filter((t) => t.length > 3) // Ignore short words
+    );
+  };
+
+  const jaccardSimilarity = (setA: Set<string>, setB: Set<string>): number => {
+    const intersection = new Set([...setA].filter((x) => setB.has(x)));
+    const union = new Set([...setA, ...setB]);
+    return union.size === 0 ? 0 : intersection.size / union.size;
+  };
+
+  // Cluster claims by similarity (threshold 0.6)
+  const clusters: ClaimVerdict[][] = [];
+  for (const verdict of verdicts) {
+    const tokens = tokenize(verdict.claimText);
+    let addedToCluster = false;
+
+    for (const cluster of clusters) {
+      const clusterTokens = tokenize(cluster[0].claimText);
+      if (jaccardSimilarity(tokens, clusterTokens) >= 0.6) {
+        cluster.push(verdict);
+        addedToCluster = true;
+        break;
+      }
+    }
+
+    if (!addedToCluster) {
+      clusters.push([verdict]);
+    }
+  }
+
+  // Calculate weighted average: each cluster contributes ~1 unit
+  let totalWeight = 0;
+  let weightedSum = 0;
+
+  for (const cluster of clusters) {
+    // Primary claim gets weight 1.0, duplicates share remaining weight
+    const primaryWeight = 1.0;
+    const duplicateWeight = cluster.length > 1 ? 0.5 / (cluster.length - 1) : 0;
+
+    // Sort by truthPercentage descending to pick primary
+    const sorted = [...cluster].sort((a, b) => b.truthPercentage - a.truthPercentage);
+
+    weightedSum += sorted[0].truthPercentage * primaryWeight;
+    totalWeight += primaryWeight;
+
+    for (let i = 1; i < sorted.length; i++) {
+      weightedSum += sorted[i].truthPercentage * duplicateWeight;
+      totalWeight += duplicateWeight;
+    }
+  }
+
+  return Math.round(weightedSum / totalWeight);
+}
+
 function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
   facts: ExtractedFact[],
@@ -2043,6 +2142,44 @@ function applyEvidenceWeighting(
       highlightColor: getHighlightColor7Point(adjustedTruth),
     };
   });
+}
+
+/**
+ * Sanitize temporal error phrases from LLM-generated reasoning
+ * Removes false "temporal error", "in the future", "date discrepancy" comments
+ * that occur when LLM incorrectly assumes dates are impossible
+ */
+function sanitizeTemporalErrors(reasoning: string, currentDate: Date): string {
+  const temporalErrorPatterns = [
+    /temporal\s+error/gi,
+    /in\s+the\s+future\s+from\s+the\s+current\s+date/gi,
+    /date\s+discrepancy/gi,
+    /(?:claim|statement|event)\s+(?:is|was)\s+(?:in\s+the\s+)?future/gi,
+    /(?:occurred|happened)\s+in\s+the\s+future/gi,
+    /cannot\s+have\s+occurred\s+yet/gi,
+    /has\s+not\s+yet\s+happened/gi,
+    /impossible\s+(?:date|timing)/gi,
+  ];
+
+  let sanitized = reasoning;
+  let hasTemporalError = false;
+
+  for (const pattern of temporalErrorPatterns) {
+    if (pattern.test(sanitized)) {
+      hasTemporalError = true;
+      // Replace with neutral phrasing
+      sanitized = sanitized.replace(pattern, "[date evaluated]");
+    }
+  }
+
+  if (hasTemporalError) {
+    debugLog("sanitizeTemporalErrors: Cleaned temporal error text", {
+      before: reasoning.substring(0, 150),
+      after: sanitized.substring(0, 150),
+    });
+  }
+
+  return sanitized;
 }
 
 // ============================================================================
@@ -2124,7 +2261,7 @@ const SUBCLAIM_SCHEMA = z.object({
   checkWorthiness: z.enum(["high", "medium", "low"]),
   harmPotential: z.enum(["high", "medium", "low"]),
   centrality: z.enum(["high", "medium", "low"]),
-  isCentral: z.boolean(), // true only if harmPotential OR centrality is "high"
+  isCentral: z.boolean(), // true only if BOTH harmPotential AND centrality are "high"
   relatedProceedingId: z.string(), // empty string if not applicable
   approximatePosition: z.string(), // empty string if not applicable
   keyFactorId: z.string(), // empty string if not mapped to any factor
@@ -2198,11 +2335,12 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   researchQuestions: z.array(z.string()),
   riskTier: z.enum(["A", "B", "C"]),
   // NEW: KeyFactors discovered during understanding phase (emergent, not forced)
+  // factor MUST be abstract label (2-5 words), NOT specific claims or quotes
   keyFactors: z.array(
     z.object({
       id: z.string(),
       question: z.string(), // The decomposition question (e.g., "Was due process followed?")
-      factor: z.string(), // Short label (e.g., "Due Process")
+      factor: z.string(), // ABSTRACT label only (2-5 words, e.g., "Due Process", "Expert Consensus")
       category: z.enum(["procedural", "evidential", "methodological", "factual", "evaluative"]),
     }),
   ),
@@ -2442,9 +2580,11 @@ The CENTRAL claims are the **factual assertions about real-world impact**:
 - If "10 children died from vaccines" is false → article is spreading dangerous misinformation
 The second is MORE CENTRAL because it has greater real-world harm potential.
 
-**isCentral = true** ONLY if harmPotential OR centrality is "high"
+**isCentral = true** ONLY if BOTH harmPotential AND centrality are "high"
 - checkWorthiness does NOT affect isCentral (a high checkWorthiness alone doesn't make it central)
 - However, if checkWorthiness is "low", the claim should NOT be investigated or displayed
+- Attribution, source, and timing claims should typically have centrality = "low" (not central to the argument)
+- Only core evaluative claims that are the main thesis should have centrality = "high"
 
 **FILTERING RULE**: Claims with checkWorthiness = "low" should be excluded from investigation
 
@@ -2454,20 +2594,20 @@ The second is MORE CENTRAL because it has greater real-world harm potential.
 → checkWorthiness: HIGH (specific factual claim, readers want proof)
 → harmPotential: HIGH (public health, vaccine safety) ← HIGH
 → centrality: HIGH (core assertion of the article) ← HIGH
-→ isCentral: TRUE (harmPotential OR centrality is HIGH)
+→ isCentral: TRUE (BOTH harmPotential AND centrality are HIGH)
 
 "FDA will require randomized trials for all vaccines"
 → checkWorthiness: HIGH (policy claim that can be verified)
 → harmPotential: HIGH (affects drug development, public health) ← HIGH
 → centrality: HIGH (major policy change claim) ← HIGH
-→ isCentral: TRUE (harmPotential OR centrality is HIGH)
+→ isCentral: TRUE (BOTH harmPotential AND centrality are HIGH)
 
 "Prasad is CBER director"
 → claimRole: attribution
 → checkWorthiness: MEDIUM (verifiable but routine)
 → harmPotential: LOW (credential, not harmful if wrong)
 → centrality: LOW (attribution, not the main point)
-→ isCentral: FALSE (neither harmPotential nor centrality is HIGH)
+→ isCentral: FALSE (centrality is not HIGH)
 
 "An internal email from Dr. Prasad exists stating the FDA will impose stricter regulations"
 → claimRole: source (establishes document existence)
@@ -2489,13 +2629,13 @@ The second is MORE CENTRAL because it has greater real-world harm potential.
 → checkWorthiness: HIGH (historical claim, verifiable via documented cases, GAO reports)
 → harmPotential: HIGH (public health, regulatory trust) ← HIGH
 → centrality: MEDIUM (supports main argument but not the core claim)
-→ isCentral: TRUE (harmPotential is HIGH)
+→ isCentral: FALSE (centrality is not HIGH, even though harmPotential is HIGH)
 
 "Expert says the policy change is controversial"
 → checkWorthiness: HIGH (verifiable who said what)
 → harmPotential: MEDIUM (affects policy debate)
 → centrality: MEDIUM (contextual, not core)
-→ isCentral: FALSE (neither harmPotential nor centrality is HIGH, even though checkWorthiness is HIGH)
+→ isCentral: FALSE (neither harmPotential nor centrality is HIGH)
 
 ### EXAMPLE: Attribution vs Evaluative Content Split
 
@@ -2528,10 +2668,28 @@ The system must verify BOTH: (1) did he say it? AND (2) is what he said accurate
 1. List dependencies in dependsOn array (claim IDs that must be true for this claim to matter)
 2. Core claims typically depend on attribution claims
 
-## MULTI-EVENT DETECTION
+## MULTI-EVENT/SCOPE DETECTION
 
-Look for multiple distinct events, phases, versions, or contexts that should be analyzed separately.
-If the input mixes timelines or distinct contexts, split them.
+Look for multiple distinct events, phases, versions, scopes, or contexts that should be analyzed separately.
+**Note**: "Scope" and "context" are synonyms in this system. Both refer to a bounded analytical frame.
+
+If the input mixes timelines, distinct contexts, or different analytical scopes, split them.
+
+### IMPORTANT: What is a VALID distinct context/scope
+- Separate formal proceedings (e.g., TSE electoral case vs STF criminal case)
+- Distinct temporal events (e.g., 2023 rollout vs 2024 review)
+- Different jurisdictional processes (e.g., state court vs federal court)
+- Different analytical methodologies (e.g., WTW vs TTW vs WTT efficiency analysis)
+- Different measurement boundaries (e.g., vehicle-only vs full-lifecycle)
+
+### IMPORTANT: What is NOT a distinct context/scope
+- Different national/political perspectives on the SAME event (e.g., "Venezuela's view" vs "US view")
+- Different stakeholder viewpoints on a single topic
+- Contested interpretations of the same event
+- Pro vs con arguments about the same topic
+- Claims and counter-claims about one event
+
+**Only create separate contexts/scopes for GENUINELY DISTINCT events, proceedings, or analytical frames - not for different perspectives on the same event.**
 
 ### GENERIC EXAMPLE - MUST DETECT 2 CONTEXTS:
 
@@ -2608,8 +2766,16 @@ ${CONFIG.keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "
 **FORMAT**:
 - **id**: Unique identifier (KF1, KF2, etc.)
 - **question**: The decomposition question (e.g., "Was due process followed?")
-- **factor**: Short descriptive label (e.g., "Due Process")
+- **factor**: SHORT ABSTRACT LABEL (2-5 words ONLY, e.g., "Due Process", "Expert Consensus", "Energy Efficiency")
 - **category**: Choose from: "procedural", "evidential", "methodological", "factual", "evaluative"
+
+**CRITICAL: factor MUST be abstract, NOT claim text**:
+- GOOD: "Energy efficiency comparison", "Expert consensus", "Procedural fairness"
+- BAD: "Professor David Cebon states hydrogen cars need 3x more electricity" (TOO SPECIFIC)
+- BAD: "Multiple industry experts say BEVs are more efficient" (CONTAINS ATTRIBUTION)
+- BAD: "The well-to-wheel efficiency of hydrogen exceeds electric" (THIS IS A CLAIM)
+
+KeyFactors are CATEGORIES for evaluation, NOT the claims themselves. Specific claims belong in subClaims array.
 
 **EXAMPLES**:
 
@@ -2859,7 +3025,7 @@ For "Does this vaccine cause autism?"
         `[Analyzer] Normalized impliedClaim from question "${parsed.impliedClaim || trimmedInput}" to statement: "${statement}"`,
       );
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:impliedClaim',message:'understandClaim impliedClaim normalization',data:{detectedInputType:parsed.detectedInputType,shouldOverride,from:String(parsed.impliedClaim||'').slice(0,200),to:String(statement).slice(0,200),deterministic:CONFIG.deterministic},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:impliedClaim',message:'understandClaim impliedClaim normalization',data:{detectedInputType:parsed.detectedInputType,shouldOverride,from:String(parsed.impliedClaim||'').slice(0,200),to:String(statement).slice(0,200),deterministic:CONFIG.deterministic},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
       // #endregion
       parsed.impliedClaim = statement;
     }
@@ -2901,11 +3067,9 @@ For "Does this vaccine cause autism?"
     (parsed.detectedInputType === "claim" || parsed.detectedInputType === "question") &&
     (parsed.distinctProceedings?.length ?? 0) <= 1
   ) {
-    // For questions, retry context detection on the implied statement form to reduce sensitivity to punctuation.
-    const supplementalInput =
-      parsed.detectedInputType === "question"
-        ? normalizeYesNoQuestionToStatement(trimmedInput)
-        : input;
+    // v2.6.21: Use original input for both questions and statements to ensure consistent context detection
+    // Previously, we normalized questions to statements, but this caused inconsistent context detection
+    const supplementalInput = trimmedInput;
     const supplemental = await requestSupplementalProceedings(supplementalInput, model, parsed);
     if (supplemental?.distinctProceedings && supplemental.distinctProceedings.length > 1) {
       parsed = {
@@ -2921,7 +3085,7 @@ For "Does this vaccine cause autism?"
         ids: (parsed.distinctProceedings || []).map((p: any) => p.id),
       });
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:supplementalProceedingsApplied',message:'Applied supplemental proceedings after under-split claim',data:{finalCount:parsed.distinctProceedings?.length ?? 0,ids:(parsed.distinctProceedings||[]).map((p:any)=>p.id)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:supplementalProceedingsApplied',message:'Applied supplemental proceedings after under-split claim',data:{finalCount:parsed.distinctProceedings?.length ?? 0,ids:(parsed.distinctProceedings||[]).map((p:any)=>p.id)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
       // #endregion
     }
   }
@@ -2947,7 +3111,7 @@ For "Does this vaccine cause autism?"
   // Skip for short, simple non-question inputs.
   if (!isShortSimpleNonQuestion) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:beforeSupplemental',message:'Before supplemental claims check',data:{inputPreview:input.substring(0,200),subClaimsCount:parsed.subClaims.length,subClaims:parsed.subClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),isCentral:c.isCentral,claimRole:c.claimRole})),hasOutcomeClaims:parsed.subClaims.some((c:any)=>/\b(sentence|penalty|fine|ban|ineligible|outcome|punishment|sanction)\b/i.test(c.text))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:beforeSupplemental',message:'Before supplemental claims check',data:{inputPreview:input.substring(0,200),subClaimsCount:parsed.subClaims.length,subClaims:parsed.subClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),isCentral:c.isCentral,claimRole:c.claimRole})),hasOutcomeClaims:parsed.subClaims.some((c:any)=>/\b(sentence|penalty|fine|ban|ineligible|outcome|punishment|sanction)\b/i.test(c.text))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
     for (let attempt = 0; attempt < SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS; attempt++) {
       const supplementalClaims = await requestSupplementalSubClaims(
@@ -2959,12 +3123,12 @@ For "Does this vaccine cause autism?"
       parsed.subClaims.push(...supplementalClaims);
       console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance proceeding coverage`);
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:afterSupplemental',message:'After supplemental claims',data:{supplementalCount:supplementalClaims.length,supplementalClaims:supplementalClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100)}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:afterSupplemental',message:'After supplemental claims',data:{supplementalCount:supplementalClaims.length,supplementalClaims:supplementalClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100)}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
       break;
     }
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:finalClaims',message:'Final claims after all processing',data:{totalClaims:parsed.subClaims.length,claims:parsed.subClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,150),isCentral:c.isCentral,claimRole:c.claimRole,relatedProceedingId:c.relatedProceedingId})),hasOutcomeClaims:parsed.subClaims.some((c:any)=>/\b(sentence|penalty|fine|ban|ineligible|outcome|punishment|sanction)\b/i.test(c.text))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:finalClaims',message:'Final claims after all processing',data:{totalClaims:parsed.subClaims.length,claims:parsed.subClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,150),isCentral:c.isCentral,claimRole:c.claimRole,relatedProceedingId:c.relatedProceedingId})),hasOutcomeClaims:parsed.subClaims.some((c:any)=>/\b(sentence|penalty|fine|ban|ineligible|outcome|punishment|sanction)\b/i.test(c.text))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
   }
 
@@ -3266,7 +3430,7 @@ Use empty strings "" and empty arrays [] when unknown.`;
     if (nextCount <= 1 || !sp.data.requiresSeparateAnalysis) return null;
 
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:requestSupplementalProceedings',message:'Supplemental proceedings accepted',data:{prevCount:currentCount,nextCount,ids:(sp.data.distinctProceedings||[]).map((p:any)=>p.id).slice(0,6)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:requestSupplementalProceedings',message:'Supplemental proceedings accepted',data:{prevCount:currentCount,nextCount,ids:(sp.data.distinctProceedings||[]).map((p:any)=>p.id).slice(0,6)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
     // #endregion
 
     return {
@@ -3826,10 +3990,12 @@ async function fetchSource(
 
     // #region agent log
     // Log small, non-sensitive hints to debug whether numeric duration outcomes appear in fetched content.
-    const preview = text.slice(0, Math.min(4000, text.length)).toLowerCase();
-    const hasNumericDuration = /\b\d{1,3}\s*(year|years|month|months|day|days)\b/i.test(preview);
-    if (hasNumericDuration) {
-      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:fetchSource:numericDuration',message:'Fetched source contains numeric duration pattern (preview)',data:{id,url:url.slice(0,200),trackRecordScore:trackRecord,searchQuery:(searchQuery||'').slice(0,160),title:title.slice(0,120)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'F'})}).catch(()=>{});
+    if (IS_LOCAL_DEV) {
+      const preview = text.slice(0, Math.min(4000, text.length)).toLowerCase();
+      const hasNumericDuration = /\b\d{1,3}\s*(year|years|month|months|day|days)\b/i.test(preview);
+      if (hasNumericDuration) {
+        fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:fetchSource:numericDuration',message:'Fetched source contains numeric duration pattern (preview)',data:{id,url:url.slice(0,200),trackRecordScore:trackRecord,searchQuery:(searchQuery||'').slice(0,160),title:title.slice(0,120)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'F'})}).catch(()=>{});
+      }
     }
     // #endregion
 
@@ -3879,6 +4045,14 @@ const FACT_SCHEMA = z.object({
       relatedProceedingId: z.string(), // empty string if not applicable
       isContestedClaim: z.boolean(),
       claimSource: z.string(), // empty string if not applicable
+      // NEW: Scope/context under which the evidence was produced (if defined by source)
+      sourceScope: z.object({
+        name: z.string(),           // Short label (e.g., "WTW", "TTW", "EU-LCA")
+        methodology: z.string(),    // Standard/method (empty string if not applicable)
+        boundaries: z.string(),     // What's included/excluded (empty string if not applicable)
+        geographic: z.string(),     // Geographic scope (empty string if not applicable)
+        temporal: z.string(),       // Time period (empty string if not applicable)
+      }).optional(),
     }),
   ),
 });
@@ -3918,7 +4092,26 @@ Only HIGH/MEDIUM specificity.
 If the source contains facts relevant to MULTIPLE known contexts, include them (do not restrict to only the target),
 and set relatedProceedingId accordingly. Do not omit key numeric outcomes (durations, amounts, counts) when present.
 
-**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${proceedingsList}`;
+**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.
+
+## SCOPE/CONTEXT EXTRACTION
+
+Evidence documentation typically defines its scope/context. Extract this when present:
+
+**Look for explicit scope definitions**:
+- Methodology: "This study uses Well-to-Wheel analysis", "Based on ISO 14040 LCA"
+- Boundaries: "From primary energy to vehicle motion", "Excluding manufacturing"
+- Geographic: "EU market", "California regulations", "US jurisdiction"
+- Temporal: "2020-2025 data", "FY2024", "as of March 2024"
+
+**Set sourceScope when the source defines its analytical frame**:
+- name: Short label (e.g., "WTW", "TTW", "EU-LCA", "US-DOE")
+- methodology: Standard referenced (empty string if none)
+- boundaries: What's included/excluded (empty string if not specified)
+- geographic: Geographic scope (empty string if not specified)
+- temporal: Time period (empty string if not specified)
+
+**IMPORTANT**: Different sources may use different scopes. A "40% efficiency" from a WTW study is NOT comparable to one from a TTW study. Capturing scope enables accurate comparisons.${proceedingsList}`;
 
   debugLog(`extractFacts: Calling LLM for ${source.id}`, {
     textLength: source.fullText.length,
@@ -4266,10 +4459,12 @@ async function generateMultiProceedingVerdicts(
     understanding.questionBeingAsked ||
     understanding.mainQuestion ||
     analysisInput;
-  const inputLabel = analysisInputType === "question" ? "QUESTION" : "INPUT";
+  // v2.6.21: Use neutral label to ensure input-neutral verdicts
+  // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
+  const inputLabel = "STATEMENT";
   const isQuestionLike = analysisInputType === "question" || analysisInputType === "claim";
 
-  const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS separately.
+  const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS (also called SCOPES) separately.
 
 ## CRITICAL: TEMPORAL REASONING
 
@@ -4282,6 +4477,14 @@ async function generateMultiProceedingVerdicts(
 - Do NOT reject claims as "impossible" based on incorrect temporal assumptions
 - If a date seems inconsistent, verify it against the current date before making judgments
 - When in doubt about temporal relationships, use the evidence from sources rather than making assumptions
+
+## SCOPE/CONTEXT-AWARE EVALUATION
+
+Evidence may come from sources with DIFFERENT analytical scopes (e.g., WTW vs TTW, EU vs US methodology).
+
+- **Check scope alignment**: Are facts being compared from compatible scopes?
+- **Flag scope mismatches**: Different scopes are NOT directly comparable
+- **Note in reasoning**: When scope affects interpretation, mention it (e.g., "Under WTW analysis...")
 
 ## ${inputLabel}
 "${analysisInput}"
@@ -4563,24 +4766,17 @@ Provide SEPARATE answers for each context/thread.`;
     // Neutral contested don't count negatively at all
     const effectiveNegatives = evidencedNegatives + (negativeFactors - evidencedNegatives) * 0.25;
 
-    // If there are positive factors and NO evidenced negatives, should lean >=72
-    if (positiveFactors > 0 && evidencedNegatives === 0) {
-      if (answerTruthPct < 72) {
-        correctedConfidence = Math.max(correctedConfidence, 70);
-        answerTruthPct = truthFromBand("strong", correctedConfidence);
-        factorAnalysis.verdictExplanation = `Corrected to >=72: ${positiveFactors} positive, 0 evidenced negatives (${contestedNegatives} contested without evidence don't count)`;
-        debugLog(`Proceeding ${pa.proceedingId}: CORRECTED to >=72`, {
-          from: pa.answer,
-          to: answerTruthPct,
-          reason: `${positiveFactors} positive, 0 evidenced negatives`,
-        });
-      } else {
-        debugLog(`Proceeding ${pa.proceedingId}: Already >=72 (${answerTruthPct})`, {
-          positiveFactors,
-          evidencedNegatives,
-        });
-      }
-    } else if (answerTruthPct < 43 && positiveFactors > effectiveNegatives) {
+    // v2.6.20: Removed factor-based boost to ensure input neutrality
+    // The boost was causing inconsistent verdicts for identical inputs
+    // Verdicts are now purely claim-based for transparency and consistency
+    debugLog(`Proceeding ${pa.proceedingId}: No factor-based boost applied`, {
+      answerTruthPct,
+      positiveFactors,
+      evidencedNegatives,
+      contestedNegatives,
+    });
+
+    if (answerTruthPct < 43 && positiveFactors > effectiveNegatives) {
       correctedConfidence = Math.min(correctedConfidence, 72);
       answerTruthPct = truthFromBand("partial", correctedConfidence);
       factorAnalysis.verdictExplanation = `Corrected from <43: ${positiveFactors} positive > ${effectiveNegatives.toFixed(1)} effective negative`;
@@ -4687,6 +4883,9 @@ Provide SEPARATE answers for each context/thread.`;
       (pa) => pa.proceedingId === proceedingId
     );
 
+    // Sanitize temporal errors from reasoning
+    const sanitizedReasoning = sanitizeTemporalErrors(cv.reasoning || "", new Date());
+
     // Calculate base truth percentage from LLM verdict
     let truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
 
@@ -4719,6 +4918,7 @@ Provide SEPARATE answers for each context/thread.`;
       ...cv,
       verdict: truthPct,
       truthPercentage: truthPct,
+      reasoning: sanitizedReasoning,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
       keyFactorId: claim?.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
@@ -4824,7 +5024,9 @@ async function generateQuestionVerdicts(
     understanding.questionBeingAsked ||
     understanding.mainQuestion ||
     analysisInput;
-  const inputLabel = analysisInputType === "question" ? "QUESTION" : "INPUT";
+  // v2.6.21: Use neutral label to ensure input-neutral verdicts
+  // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
+  const inputLabel = "STATEMENT";
   const isQuestionLike = analysisInputType === "question" || analysisInputType === "claim";
 
   const systemPrompt = `Answer the input based on documented evidence.
@@ -4838,6 +5040,14 @@ async function generateQuestionVerdicts(
 - Do NOT assume dates are in the future without checking against the current date
 - Do NOT reject claims as "impossible" based on incorrect temporal assumptions
 - If a date seems inconsistent, verify it against the current date before making judgments
+
+## SCOPE/CONTEXT-AWARE EVALUATION
+
+Evidence may come from sources with DIFFERENT analytical scopes (e.g., WTW vs TTW, EU vs US methodology).
+
+- **Check scope alignment**: Are facts being compared from compatible scopes?
+- **Flag scope mismatches**: Different scopes are NOT directly comparable
+- **Note in reasoning**: When scope affects interpretation, mention it
 
 ## SHORT ANSWER GUIDANCE:
 - shortAnswer MUST be a complete descriptive sentence summarizing the finding
@@ -5016,12 +5226,16 @@ ${factsFormatted}`;
         } as ClaimVerdict;
       }
 
+      // Sanitize temporal errors from reasoning
+      const sanitizedReasoning = sanitizeTemporalErrors(cv.reasoning || "", new Date());
+
       const truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
         return {
         ...cv,
         claimId: claim.id,
           verdict: truthPct,
         truthPercentage: truthPct,
+        reasoning: sanitizedReasoning,
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         startOffset: claim.startOffset,
@@ -5072,18 +5286,13 @@ ${factsFormatted}`;
   let answerTruthPct = normalizePercentage(parsed.questionAnswer.answer);
   let correctedConfidence = normalizePercentage(parsed.questionAnswer.confidence);
 
-  // If there are positive factors and NO evidenced negatives, should lean >=72
-  if (positiveFactors > 0 && evidencedNegatives === 0) {
-    if (answerTruthPct < 72) {
-      correctedConfidence = Math.max(correctedConfidence, 70);
-      answerTruthPct = truthFromBand("strong", correctedConfidence);
-      debugLog("generateQuestionVerdicts: Corrected answer", {
-        from: parsed.questionAnswer.answer,
-        to: answerTruthPct,
-        reason: `${positiveFactors} positive, 0 evidenced negatives (${contestedNegatives} contested without evidence)`,
-      });
-    }
-  }
+  // v2.6.20: Removed factor-based boost to ensure input neutrality
+  debugLog("generateQuestionVerdicts: No factor-based boost applied", {
+    answerTruthPct,
+    positiveFactors,
+    evidencedNegatives,
+    contestedNegatives,
+  });
 
   const questionAnswer: QuestionAnswer = {
     question: displayQuestion,
@@ -5199,6 +5408,22 @@ CRITICAL - factualBasis MUST be "opinion" for:
 - Public statements or rhetoric without documented evidence
 - Ideological objections without factual basis
 - "Some people say" or "critics claim" without specific counter-evidence
+
+## SCOPE/CONTEXT-AWARE EVALUATION
+
+Evidence may come from sources with DIFFERENT analytical scopes (e.g., WTW vs TTW, EU vs US methodology).
+
+**When evaluating claims with scope-specific evidence**:
+1. **Check scope alignment**: Are facts being compared from compatible scopes?
+2. **Flag scope mismatches**: If Source A uses WTW and Source B uses TTW, these are NOT directly comparable
+3. **Note in reasoning**: When scope affects interpretation, mention it (e.g., "Under WTW analysis...")
+4. **Don't treat scope differences as contradictions**: "40% efficient (WTW)" and "60% efficient (TTW)" are BOTH correct for different scopes
+
+**Example scope mismatch to flag**:
+- Claim: "Hydrogen cars are more efficient than EVs"
+- Source A (TTW scope): "Hydrogen 60% efficient"
+- Source B (WTW scope): "EVs 80% efficient"
+→ These use different scopes - NOT a valid comparison. Note in reasoning.
 
 ## ARTICLE VERDICT ANALYSIS (CRITICAL - Article Verdict Problem)
 
@@ -5375,6 +5600,9 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         } as ClaimVerdict;
       }
 
+      // Sanitize temporal errors from reasoning
+      const sanitizedReasoning = sanitizeTemporalErrors(cv.reasoning || "", new Date());
+
       let truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
       let finalConfidence = normalizePercentage(cv.confidence);
       let escalationReason: string | undefined;
@@ -5407,6 +5635,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         verdict: truthPct,
         truthPercentage: truthPct,
         confidence: finalConfidence,
+        reasoning: sanitizedReasoning,
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         claimRole: claim.claimRole || "core",
@@ -6191,7 +6420,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         CONFIG.searchDateRestrict || (recencyMatters ? "y" : undefined);
 
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:searchWithDateFilter',message:'Search with date filter',data:{query:query.substring(0,100),recencyMatters,forcedByEnv:!!CONFIG.searchDateRestrict,dateRestrict},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'D'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:searchWithDateFilter',message:'Search with date filter',data:{query:query.substring(0,100),recencyMatters,forcedByEnv:!!CONFIG.searchDateRestrict,dateRestrict},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'D'})}).catch(()=>{});
       // #endregion
 
       // Get providers before search to show in event
@@ -6353,7 +6582,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     console.log(`[Analyzer] Added ${outcomeClaims.length} outcome-related claims from research`);
     await emit(`Added ${outcomeClaims.length} outcome-related claims`, 63);
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:postResearchOutcomeExtraction',message:'Post-research outcome extraction',data:{outcomeClaimsCount:outcomeClaims.length,outcomeClaims:outcomeClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),relatedProceedingId:c.relatedProceedingId}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:postResearchOutcomeExtraction',message:'Post-research outcome extraction',data:{outcomeClaimsCount:outcomeClaims.length,outcomeClaims:outcomeClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),relatedProceedingId:c.relatedProceedingId}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
   }
 

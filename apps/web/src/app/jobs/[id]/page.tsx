@@ -787,7 +787,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim
           <h4 className={styles.proceedingsHeader}>
             🔀 Context-by-Context Analysis
           </h4>
-          <div className={`${styles.proceedingsGrid} ${proceedings.length === 1 ? styles.proceedingsGrid1Col : styles.proceedingsGrid2Col}`}>
+          <div className={styles.proceedingsStack}>
             {questionAnswer.proceedingAnswers.map((pa: any) => {
               const proc = proceedings.find((p: any) => p.id === pa.proceedingId);
               return <ProceedingCard key={pa.proceedingId} proceedingAnswer={pa} proceeding={proc} />;
@@ -840,6 +840,25 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
             {proceeding.status && proceeding.status !== "unknown" && <span> • {proceeding.status}</span>}
           </div>
         )}
+        {showAbout && (
+          <div className={styles.proceedingAboutInline}>
+            {subject && (
+              <span className={styles.proceedingAboutItem}>
+                <span className={styles.proceedingAboutLabel}>Subject:</span> {subject}
+              </span>
+            )}
+            {charges.length > 0 && (
+              <span className={styles.proceedingAboutItem}>
+                <span className={styles.proceedingAboutLabel}>Charges:</span> {charges.slice(0, 3).join("; ")}{charges.length > 3 ? "…" : ""}
+              </span>
+            )}
+            {outcome && outcome !== "unknown" && (
+              <span className={styles.proceedingAboutItem}>
+                <span className={styles.proceedingAboutLabel}>Outcome:</span> {outcome}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className={styles.proceedingCardContent}>
@@ -860,30 +879,6 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
           </span>
           {neutralCount > 0 && <span className={styles.factorsNeutral}>➖ {neutralCount} neutral</span>}
         </div>
-
-        {showAbout && (
-          <div className={styles.proceedingAboutBox}>
-            <div className={styles.proceedingAboutHeader}>About this context</div>
-            {subject && (
-              <div className={styles.proceedingAboutRow}>
-                <span className={styles.proceedingAboutLabel}>Subject:</span>{" "}
-                <span className={styles.proceedingAboutText}>{subject}</span>
-              </div>
-            )}
-            {charges.length > 0 && (
-              <div className={styles.proceedingAboutRow}>
-                <span className={styles.proceedingAboutLabel}>Key allegations/charges:</span>{" "}
-                <span className={styles.proceedingAboutText}>{charges.slice(0, 3).join("; ")}{charges.length > 3 ? "…" : ""}</span>
-              </div>
-            )}
-            {outcome && outcome !== "unknown" && (
-              <div className={styles.proceedingAboutRow}>
-                <span className={styles.proceedingAboutLabel}>Outcome:</span>{" "}
-                <span className={styles.proceedingAboutText}>{outcome}</span>
-              </div>
-            )}
-          </div>
-        )}
 
         {proceedingAnswer.shortAnswer && (
           <div className={styles.proceedingShortAnswer}>
@@ -1251,7 +1246,7 @@ function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCro
         <span className={styles.claimId}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         <Badge bg={color.bg} color={color.text}>
-          {color.icon} {getVerdictLabel(claimVerdictLabel)} ({claimTruth}%)
+          {color.icon} {getVerdictLabel(claimVerdictLabel)} {claimTruth}% ({claim.confidence}% confidence)
         </Badge>
         {hasEvidenceBasedContestation && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
