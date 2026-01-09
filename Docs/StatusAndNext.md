@@ -1,19 +1,26 @@
 # FactHarbor Status and Next Steps
 
-**Date**: January 9, 2026  
-**Last Updated**: January 9, 2026  
-**Status**: Scope/context extraction implemented - Input neutrality fix applied
+**Date**: January 10, 2026  
+**Last Updated**: January 10, 2026  
+**Status**: Generic AnalysisContext & EvidenceScope implemented - POC1 Gaps addressed
 
 ---
 
 ## Executive Summary
 
-**Current State**: Scope/context extraction from sources implemented. Question vs statement verdict divergence fixed.
+**Current State**: Generic domain-agnostic architecture implemented. Quality Gates reviewed. UI enhancements complete.
+
+**Key Accomplishments** (January 10, 2026):
+- **Generic AnalysisContext**: Replaced legal-specific `DistinctProceeding` with domain-agnostic `AnalysisContext` using flexible metadata
+- **EvidenceScope**: Renamed `sourceScope` to `EvidenceScope` for capturing study methodology/boundaries
+- **UI Enhancements**: Added contested badge and factor counts to single-scope question displays
+- **Centrality Logic**: Enhanced prompt guidance with critical heuristic for identifying truly central claims
+- **Quality Gates**: Reviewed thresholds (balanced, not too restrictive)
+- **Schema Version**: Updated to 2.6.21
 
 **Key Accomplishments** (January 9, 2026):
 - **Scope/Context Extraction**: Added `sourceScope` field to ExtractedFact for capturing analytical context (WTW/TTW, methodology, boundaries, geographic, temporal)
 - **Input Neutrality Fix**: Standardized verdict prompts to use neutral "STATEMENT" label instead of "QUESTION"/"INPUT" which was causing LLM verdict drift
-- **Schema Version**: Updated to 2.6.21
 
 **Key Accomplishments** (January 6-8, 2026):
 - Fixed KeyFactors aggregation (preserved `keyFactorId` in `ClaimVerdict`)
@@ -24,11 +31,47 @@
 - Temporal reasoning improvements (current date awareness)
 - Claim deduplication for fair verdict aggregation
 
-**Next Priority**: Validate input neutrality fix with fresh analysis runs.
+**Next Priority**: Implement metrics tracking and error pattern tracking (Phase 3).
 
 ---
 
 ## Completed Work
+
+### Generic Architecture & Interface Redesign (January 10, 2026)
+
+**AnalysisContext Interface**:
+- Replaced legal-specific `DistinctProceeding` with domain-agnostic `AnalysisContext`
+- Moved domain-specific fields (`court`, `jurisdiction`, `charges`) into flexible `metadata` object
+- Works across all domains: legal, scientific, regulatory, temporal, geographic
+- Updated all helper functions: `inferScopeTypeLabel()`, `detectInstitutionCode()`, `canonicalizeScopes()`
+- Updated schemas: `ANALYSIS_CONTEXT_SCHEMA`, `UNDERSTANDING_SCHEMA_OPENAI`, `UNDERSTANDING_SCHEMA_LENIENT`
+- Kept `DistinctProceeding` as deprecated type alias for backward compatibility
+
+**EvidenceScope Interface**:
+- Renamed `sourceScope` to `EvidenceScope` for clarity
+- Captures methodology/boundaries of source documents (e.g., WTW vs TTW, EU vs US standards)
+- Added to `ExtractedFact` interface as `evidenceScope` field
+- Updated `FACT_SCHEMA` and extraction prompts
+
+**Generic Prompts**:
+- Updated multi-scope examples to cover legal, scientific, and regulatory domains
+- Removed hardcoded domain-specific terminology (except in comments/metadata)
+- Enhanced clarity on what constitutes a distinct scope vs. different perspectives
+
+**UI Enhancements**:
+- Added contested badge to `QuestionAnswerBanner` (single-scope questions)
+- Added factor summary counts (positive/negative/neutral) to single-scope displays
+- Aligned single-scope and multi-scope UI features
+
+**Centrality Logic**:
+- Enhanced prompt with "CRITICAL HEURISTIC": "If only ONE claim could be investigated, which would readers most want verified?"
+- Clarified that centrality = "high" requires claim to be PRIMARY thesis AND would completely invalidate conclusion if false
+- Excluded supporting evidence, attribution, source verification, and background context from "high" centrality
+
+**Quality Gates**:
+- Reviewed Gate 1 thresholds: Opinion ≤30%, Specificity ≥30% (appropriate)
+- Reviewed Gate 4 thresholds: MEDIUM requires ≥2 sources, ≥60% quality/agreement (balanced)
+- Confirmed central claims always pass gates (correct behavior)
 
 ### KeyFactors Implementation
 
@@ -79,7 +122,19 @@
 
 ### High Priority
 
-#### 1. KeyFactors End-to-End Validation READY FOR TESTING
+#### 1. Metrics Tracking and Error Pattern Tracking (Phase 3)
+
+**Status**: Requires database schema changes (C# backend).
+
+**Required Changes**:
+- Add `QualityMetric` table to track claim extraction rate, Gate 1/4 pass rates, LLM calls, processing time
+- Add `ErrorPattern` table to track error categories, root causes, frequency
+- Create API endpoints: `/api/quality-metrics` and `/api/error-patterns`
+- Create admin dashboards: `/admin/quality` and `/admin/errors`
+
+**Estimated Time**: 3-4 hours
+
+#### 2. KeyFactors End-to-End Validation READY FOR TESTING
 
 **Status**: Aggregation fix complete, validation needed to confirm it works.
 
@@ -263,10 +318,17 @@
 
 | Component | Status | Next Action |
 |-----------|--------|-------------|
+| Generic AnalysisContext | ✅ Complete | None |
+| EvidenceScope | ✅ Complete | None |
+| UI Enhancements (badges, counts) | ✅ Complete | None |
+| Centrality Logic | ✅ Enhanced | None |
+| Quality Gates | ✅ Reviewed | None |
 | KeyFactors Discovery | Working | None |
 | KeyFactors Aggregation | Fixed | **VALIDATE end-to-end** |
 | KeyFactors Display | Working | Validate in reports |
 | Evidence Agreement | Fixed | None |
+| Metrics Tracking | ⏳ Pending | Implement Phase 3 |
+| Error Pattern Tracking | ⏳ Pending | Implement Phase 3 |
 | Contestation | Partial | Defer until validated (Decision 1) |
 | Knowledge Toggle | Not Respected | Low priority fix (see LLM_and_Search_Provider_Switching_Guide.md) |
 | Provider Optimization | Not Implemented | Future enhancement (see LLM_and_Search_Provider_Switching_Guide.md) |

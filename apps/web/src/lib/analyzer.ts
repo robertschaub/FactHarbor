@@ -2629,6 +2629,21 @@ The second is MORE CENTRAL because it has greater real-world harm potential.
 - Attribution, source, and timing claims should typically have centrality = "low" (not central to the argument)
 - Only core evaluative claims that are the main thesis should have centrality = "high"
 
+**CRITICAL HEURISTIC for centrality = "high"**:
+Ask yourself: "If only ONE claim could be investigated, which would readers most want verified?"
+→ That's the central claim. Others are supporting.
+
+Only assign centrality: "high" when the claim is:
+1. The PRIMARY thesis of the article/argument, AND
+2. If false, would COMPLETELY invalidate the main conclusion
+
+NOT "high" for:
+- Supporting evidence (even if important)
+- Attribution claims (who said what)
+- Source verification (does document exist)
+- Background context
+- Peripheral details
+
 **FILTERING RULE**: Claims with checkWorthiness = "low" should be excluded from investigation
 
 **Examples:**
