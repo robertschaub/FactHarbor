@@ -3141,9 +3141,11 @@ For "Does this vaccine cause autism?"
     (parsed.detectedInputType === "claim" || parsed.detectedInputType === "question") &&
     (parsed.distinctProceedings?.length ?? 0) <= 1
   ) {
-    // v2.6.21: Use original input for both questions and statements to ensure consistent context detection
-    // Previously, we normalized questions to statements, but this caused inconsistent context detection
-    const supplementalInput = trimmedInput;
+    // v2.6.21: Use normalized impliedClaim (statement form) for scope detection to maintain input neutrality.
+    // When deterministic mode is enabled, questions are normalized to statements earlier (lines 3088-3106).
+    // Using the same normalized form here ensures scope detection aligns with claim analysis,
+    // preventing scope-to-statement misalignment and maintaining input neutrality.
+    const supplementalInput = parsed.impliedClaim || trimmedInput;
     const supplemental = await requestSupplementalScopes(supplementalInput, model, parsed);
     if (supplemental?.distinctProceedings && supplemental.distinctProceedings.length > 1) {
       parsed = {
@@ -6191,7 +6193,8 @@ async function generateReport(
   if (isQuestion && articleAnalysis.questionAnswer) {
     const qa = articleAnalysis.questionAnswer;
     report += `### Question\n"${qa.question}"\n\n`;
-    report += `### Answer: ${percentageToClaimVerdict(qa.truthPercentage)} (${qa.truthPercentage}%)\n\n`;
+    const qaConfidence = qa.confidence ?? 0;
+    report += `### Answer: ${percentageToClaimVerdict(qa.truthPercentage, qaConfidence)} (${qa.truthPercentage}%)\n\n`;
 
     if (qa.calibrationNote)
       report += `> ${iconWarning} ${qa.calibrationNote}\n\n`;
@@ -6212,7 +6215,8 @@ async function generateReport(
               : iconNeutral;
 
         report += `### ${proc?.name || pa.proceedingName}\n\n`;
-        report += `**Answer:** ${emoji} ${percentageToClaimVerdict(pa.truthPercentage)} (${pa.truthPercentage}%)\n\n`;
+        const paConfidence = pa.confidence ?? 0;
+        report += `**Answer:** ${emoji} ${percentageToClaimVerdict(pa.truthPercentage, paConfidence)} (${pa.truthPercentage}%)\n\n`;
 
         if (pa.factorAnalysis) {
           report += `**Factors:** ${pa.factorAnalysis.positiveFactors} positive, ${pa.factorAnalysis.negativeFactors} negative (${pa.factorAnalysis.contestedNegatives} contested)\n\n`;
@@ -6284,7 +6288,8 @@ async function generateReport(
           ? iconNeutral
           : iconNegative;
 
-    report += `**${cv.claimId}:** ${cv.claimText} ${emoji} ${percentageToClaimVerdict(cv.truthPercentage)} (${cv.truthPercentage}% truth)\n\n`;
+    const cvConfidence = cv.confidence ?? 0;
+    report += `**${cv.claimId}:** ${cv.claimText} ${emoji} ${percentageToClaimVerdict(cv.truthPercentage, cvConfidence)} (${cv.truthPercentage}% truth)\n\n`;
   }
 
   // Sources

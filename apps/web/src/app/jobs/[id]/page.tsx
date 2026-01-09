@@ -322,9 +322,11 @@ export default function JobPage() {
 
   // Helper: Generate short name from title or input
   const getShortName = (): string => {
+    const overallVerdict = twoPanelSummary?.factharborAnalysis?.overallVerdict;
+    const overallConfidence = twoPanelSummary?.factharborAnalysis?.confidence ?? 0;
     const overallVerdictLabel =
-      typeof twoPanelSummary?.factharborAnalysis?.overallVerdict === "number"
-        ? percentageToClaimVerdict(twoPanelSummary.factharborAnalysis.overallVerdict)
+      typeof overallVerdict === "number"
+        ? percentageToClaimVerdict(overallVerdict, overallConfidence)
         : "";
     // Try to get title from twoPanelSummary
     const title = twoPanelSummary?.articleSummary?.title ||
@@ -1044,7 +1046,8 @@ function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer
 
 function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
   const articleTruth = getArticleTruthPercentage(articleAnalysis);
-  const articleVerdictLabel = percentageToArticleVerdict(articleTruth);
+  const articleConfidence = articleAnalysis?.confidence ?? articleAnalysis?.articleConfidence ?? 0;
+  const articleVerdictLabel = percentageToArticleVerdict(articleTruth, articleConfidence);
   const color = ARTICLE_VERDICT_COLORS[articleVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
 
   const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis.isPseudoscience;
@@ -1152,7 +1155,8 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
   const overallTruth = typeof factharborAnalysis?.overallVerdict === "number"
     ? factharborAnalysis.overallVerdict
     : 50;
-  const overallLabel = percentageToClaimVerdict(overallTruth);
+  const overallConfidence = factharborAnalysis?.confidence ?? 0;
+  const overallLabel = percentageToClaimVerdict(overallTruth, overallConfidence);
   return (
     <div className={styles.twoPanelContainer}>
       <div className={styles.twoPanelPanel}>
