@@ -9,12 +9,10 @@ And analyze the current source code.
 ---
 OPEN Requests:
 ---
-Any use of court and jurisdiction violate the rules not to use domain specific terms (Exception: in comments) ->fix
+Almost all claims are marked as central - please investigate
 ---
 
 DONE Requests (all below):
----
-Almost all claims are marked as central - please investigate
 ---
 Analyze the current source-code an show me where it does not follow the "Coding Agent Rules.md, 
 So then I can decide what to change.
@@ -48,7 +46,7 @@ fetch('http://127.0.0.1:7242
 With recent changes responsiveness somtimes is slow. Especiall with job queing, there should not be such long waits.
 When there are about 3 or 4 jobs already running, the analyze button is disabled for a while =>fix
 ---
-Regardin multi proceedings (a.k.a. multi-events): There could be more then two, therefore:
+Regarding multi proceedings (a.k.a. multi-events): There could be more then two, therefore:
 -Make it possible that more than two could be found.
 -Change the layout for multi proceedings that they are not anymore side-by-side (in columns), but in rows instead.
 ---
