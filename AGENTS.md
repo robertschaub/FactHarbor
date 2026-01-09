@@ -1,36 +1,154 @@
 # AGENTS.md
 
 ## Purpose
-This file defines how coding agents should operate in this repository.
+
+This file defines how AI coding agents should operate in the FactHarbor repository.
 
 ## Scope
+
 - Applies to all paths under this repo unless a closer AGENTS.md overrides it.
 
-## Priorities
-- Prefer small, focused changes that are easy to review.
-- Preserve existing style and conventions.
-- Avoid refactors unless explicitly requested.
+---
+
+## Fundamental Rules
+
+### Generic by Design
+- **No domain-specific hardcoding**: Code, prompts, and logic must work for ANY topic
+- **No hardcoded keywords**: Avoid lists like `['bolsonaro', 'trump', 'vaccine']`
+- **Parameterize, don't specialize**: Use configuration over conditionals
+
+### Input Neutrality
+- **Question ≈ Statement**: "Was X fair?" must yield same analysis as "X was fair"
+- **Format independence**: Input phrasing must NOT affect analysis depth or structure
+- **Tolerance**: Verdict difference between formats should be <5%
+
+### Pipeline Integrity
+- **No stage skipping**: Understand → Research → Verdict (all required)
+- **Evidence transparency**: Every verdict must cite supporting or opposing facts
+- **Quality gates**: Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
+
+### Scope Detection
+- **Scope is used as a Summary term also for Context and Preceeding**: Scope, Context, Preceeding are synonyms (analytical frame/boundaries)
+- **Detect distinct scopes**: Identify and separate different scopes
+- **NOT distinct**: Different perspectives on same event (e.g., "US view" vs "Brazil view")
+
+---
+
+## Architecture Quick Reference
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        USER INPUT                           │
+│              (question / statement / URL)                   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  apps/web (Next.js)                         │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  src/lib/analyzer.ts - Main analysis engine         │   │
+│  │  - understandClaim() → Research → generateVerdicts()│   │
+│  │  - Multi-proceeding detection & canonicalization    │   │
+│  │  - LLM calls via AI SDK (OpenAI/Anthropic/etc)      │   │
+│  └─────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  src/app/api/fh/* - API routes                      │   │
+│  │  src/app/jobs/[id]/page.tsx - Results display       │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ HTTP
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  apps/api (ASP.NET Core)                    │
+│  - Job persistence (SQLite: factharbor.db)                  │
+│  - Controllers: Jobs, Analyze, Health, Version              │
+│  - Swagger: http://localhost:5000/swagger                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `apps/web/src/lib/analyzer.ts` | Core analysis engine (6700+ lines) |
+| `apps/web/src/app/jobs/[id]/page.tsx` | Job results UI |
+| `apps/api/Controllers/JobsController.cs` | Job CRUD API |
+| `apps/api/Data/FhDbContext.cs` | Database context |
+| `Docs/Calculations.md` | Verdict calculation documentation |
+
+---
 
 ## Workflow
-- Read relevant files before editing.
-- Use existing scripts and tooling; avoid inventing new workflows.
-- If a required command is unknown, ask or leave a TODO note.
+
+1. Read relevant files before editing
+2. Use existing scripts and tooling; avoid inventing new workflows
+3. If a required command is unknown, ask or leave a TODO note
+4. Prefer small, focused changes that are easy to review
+5. Preserve existing style and conventions
+6. Avoid refactors unless explicitly requested
+
+---
 
 ## Commands
-- Quick start: `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1`
-- Web dev server: `cd apps/web; npm run dev`
-- API dev server: `cd apps/api; dotnet watch run`
-- Tests: `npm test` (currently prints placeholder)
-- Lint: `npm run lint` (currently prints placeholder)
+
+| Action | Command |
+|--------|---------|
+| Quick start | `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1` |
+| Restart services | `.\scripts\restart-clean.ps1` |
+| Stop services | `.\scripts\stop-services.ps1` |
+| Web dev server | `cd apps/web; npm run dev` |
+| API dev server | `cd apps/api; dotnet watch run` |
+| Build web | `cd apps/web; npm run build` |
+| Tests | `npm test` (placeholder) |
+| Lint | `npm run lint` (placeholder) |
+
+---
 
 ## Safety
-- Do not access production systems or real customer data.
-- Do not change secrets/credentials or commit them.
-- Do not modify generated files or dependencies (e.g., `node_modules`) unless requested.
-- Avoid destructive git commands unless explicitly asked.
-- Do not overwrite `apps/api/factharbor.db` unless asked.
+
+- Do not access production systems or real customer data
+- Do not change secrets/credentials or commit them
+- Do not modify generated files or dependencies (e.g., `node_modules`) unless requested
+- Avoid destructive git commands unless explicitly asked
+- Do not overwrite `apps/api/factharbor.db` unless asked
+
+---
+
+## Authentication
+
+| Key | Environment Variable | Purpose |
+|-----|---------------------|---------|
+| Admin Key | `FH_ADMIN_KEY` | Admin endpoints |
+| Runner Key | `FH_INTERNAL_RUNNER_KEY` | Internal job execution |
+
+Default placeholders in `appsettings.Development.json` - replace for security.
+
+---
+
+## Current State (v2.6.21)
+
+### Working Features
+- ✅ Multi-proceeding detection and display
+- ✅ Input neutrality (question ≈ statement within ±5%)
+- ✅ Scope/context extraction from sources
+- ✅ Temporal reasoning (current date awareness)
+- ✅ Claim deduplication for fair aggregation
+- ✅ KeyFactors aggregation
+
+### Key Environment Variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `FH_DETERMINISTIC` | `true` | Zero temperature for reproducibility |
+| `FH_RUNNER_MAX_CONCURRENCY` | `3` | Max parallel analysis jobs |
+| `FH_SEARCH_ENABLED` | `true` | Enable web search |
+| `FH_SEARCH_DATE_RESTRICT` | - | Limit search to recent results (y/m/w) |
+| `LLM_PROVIDER` | `anthropic` | LLM provider selection |
+
+---
 
 ## Output
-- Summarize changes and list files touched.
-- Note any assumptions or follow-up steps.
-- If tests were not run, say why.
+
+- Summarize changes and list files touched
+- Note any assumptions or follow-up steps
+- If tests were not run, say why
