@@ -103,21 +103,79 @@ export interface VerdictValidationResult {
 }
 
 // ============================================================================
-// PROCEEDING & FACTOR TYPES
+// ANALYSIS CONTEXT & EVIDENCE SCOPE TYPES
 // ============================================================================
 
-export interface DistinctProceeding {
-  id: string;
-  name: string;
-  shortName: string;
-  court: string;
-  jurisdiction: string;
-  date: string;
-  subject: string;
-  charges: string[];
-  outcome: string;
+/**
+ * AnalysisContext: A bounded analytical frame requiring separate analysis
+ * 
+ * This is a GENERIC interface that works across ALL domains (legal, scientific, regulatory, etc.)
+ * Domain-specific details are stored in the flexible `metadata` object.
+ * 
+ * Examples:
+ * - Legal: Different cases/proceedings (TSE Electoral vs STF Criminal)
+ * - Scientific: Different methodologies (WTW vs TTW analysis)
+ * - Regulatory: Different jurisdictions (US EPA vs EU REACH)
+ * - Temporal: Different time periods (2020 study vs 2024 study)
+ * - Geographic: Different regions (California vs Texas laws)
+ */
+export interface AnalysisContext {
+  id: string;                    // Stable ID (e.g., "CTX_TSE", "CTX_WTW", "CTX_US")
+  name: string;                  // Full name (e.g., "Electoral proceeding (TSE)", "WTW Analysis")
+  shortName: string;             // Short label (e.g., "TSE Electoral", "WTW")
+  
+  // Generic fields (applicable to ALL domains)
+  subject: string;               // What's being analyzed
+  temporal: string;              // Time period or date
   status: "concluded" | "ongoing" | "pending" | "unknown";
+  outcome: string;               // Result/conclusion/finding
+  
+  // Flexible metadata (domain-specific details stored as key-value)
+  metadata: {
+    // Legal domain examples:
+    institution?: string;        // e.g., "Superior Electoral Court"
+    court?: string;              // Legacy field, use institution instead
+    jurisdiction?: string;       // e.g., "Federal", "State"
+    charges?: string[];          // e.g., ["Electoral fraud", "Coup attempt"]
+    decisionMakers?: Array<{ name: string; role: string; }>;
+    
+    // Scientific domain examples:
+    methodology?: string;        // e.g., "Well-to-Wheel", "ISO 14040"
+    boundaries?: string;         // e.g., "Primary energy to vehicle motion"
+    geographic?: string;         // e.g., "European Union", "California"
+    dataSource?: string;         // e.g., "GREET model 2024"
+    
+    // Regulatory domain examples:
+    regulatoryBody?: string;     // e.g., "EPA", "European Commission"
+    standardApplied?: string;    // e.g., "EU RED II", "California LCFS"
+    
+    // Any other domain-specific fields
+    [key: string]: any;
+  };
 }
+
+/**
+ * EvidenceScope: The analytical frame/scope defined BY a source document
+ * 
+ * Describes the methodology, boundaries, geography, and timeframe that a source
+ * document used when producing evidence. Critical for comparing apples-to-apples.
+ * 
+ * Example: A study saying "hydrogen car efficiency is 40%" using WTW methodology
+ * cannot be directly compared to a TTW study (different calculation boundaries).
+ */
+export interface EvidenceScope {
+  name: string;           // Short label (e.g., "WTW", "TTW", "EU-LCA", "US jurisdiction")
+  methodology?: string;   // Standard referenced (e.g., "ISO 14040", "EU RED II")
+  boundaries?: string;    // What's included/excluded (e.g., "Primary energy to wheel")
+  geographic?: string;    // Geographic scope (e.g., "European Union", "California")
+  temporal?: string;      // Time period (e.g., "2020-2025", "FY2024")
+}
+
+/**
+ * @deprecated Use AnalysisContext instead
+ * Kept for backward compatibility only
+ */
+export type DistinctProceeding = AnalysisContext;
 
 export interface KeyFactor {
   factor: string;
@@ -183,7 +241,8 @@ export interface ClaimUnderstanding {
   questionBeingAsked: string;
   impliedClaim: string;
 
-  distinctProceedings: DistinctProceeding[];
+  // Analysis contexts detected from input (e.g., multiple legal cases, different methodologies)
+  distinctProceedings: AnalysisContext[];  // Field name kept for backward compatibility
   requiresSeparateAnalysis: boolean;
   proceedingContext: string;
 
@@ -247,6 +306,9 @@ export interface ExtractedFact {
   relatedProceedingId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
+  // EvidenceScope: Captures the methodology/boundaries of the source document
+  // (e.g., WTW vs TTW, EU vs US standards, different time periods)
+  evidenceScope?: EvidenceScope;
 }
 
 export interface FetchedSource {
@@ -316,7 +378,7 @@ export interface ArticleAnalysis {
   questionAnswer?: QuestionAnswer;
 
   hasMultipleProceedings: boolean;
-  proceedings?: DistinctProceeding[];
+  proceedings?: AnalysisContext[];  // Field name kept for backward compatibility
 
   articleThesis: string;
   logicalFallacies: Array<{

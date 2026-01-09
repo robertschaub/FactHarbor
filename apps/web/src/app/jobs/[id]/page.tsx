@@ -975,6 +975,20 @@ function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer
     impliedClaim.trim().length > 0 &&
     String(questionAnswer?.question || "").trim() !== impliedClaim.trim();
 
+  // Check for contested factors (evidence-based only)
+  const allKeyFactors = questionAnswer?.keyFactors || [];
+  const hasEvidenceBasedContestations = allKeyFactors.some(
+    (f: any) =>
+      f.supports === "no" &&
+      f.isContested &&
+      (f.factualBasis === "established" || f.factualBasis === "disputed")
+  );
+
+  // Calculate factor counts
+  const positiveFactors = allKeyFactors.filter((f: any) => f.supports === "yes").length;
+  const negativeFactors = allKeyFactors.filter((f: any) => f.supports === "no").length;
+  const neutralFactors = allKeyFactors.filter((f: any) => f.supports === "neutral").length;
+
   return (
     <div className={styles.questionBanner} style={{ borderColor: color.border }}>
       <div className={styles.questionBannerHeader}>
@@ -994,7 +1008,18 @@ function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer
             {color.icon} {getVerdictLabel(answerVerdict)}
           </span>
           <span className={styles.questionBannerPercentage}>{answerTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
+          {hasEvidenceBasedContestations && (
+            <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
+          )}
         </div>
+
+        {allKeyFactors.length > 0 && (
+          <div style={{ marginTop: 8, fontSize: 13, color: "#666" }}>
+            <span style={{ marginRight: 12 }}>✅ {positiveFactors} positive</span>
+            <span style={{ marginRight: 12 }}>❌ {negativeFactors} negative</span>
+            <span>⚪ {neutralFactors} neutral</span>
+          </div>
+        )}
 
         <div className={styles.questionBannerShortAnswer} style={{ borderLeftColor: color.border }}>
           <div className={styles.questionBannerShortAnswerText}>{questionAnswer.shortAnswer}</div>

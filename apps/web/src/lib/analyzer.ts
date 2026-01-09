@@ -269,9 +269,10 @@ function inferScopeTypeLabel(p: any): string {
   const hay = [
     p?.name,
     p?.shortName,
-    p?.court,
+    p?.metadata?.court,
+    p?.metadata?.institution,
     p?.subject,
-    ...(Array.isArray(p?.charges) ? p.charges : []),
+    ...(Array.isArray(p?.metadata?.charges) ? p.metadata.charges : []),
   ]
     .filter(Boolean)
     .join(" ")
@@ -327,13 +328,15 @@ function sanitizeScopeShortAnswer(shortAnswer: string, proceedingStatus: string)
 }
 
 function detectInstitutionCode(p: any): string {
-  const fromCourt = extractAllCapsToken(String(p?.court || ""));
+  const fromCourt = extractAllCapsToken(String(p?.metadata?.court || ""));
   if (fromCourt) return fromCourt;
+  const fromInstitution = extractAllCapsToken(String(p?.metadata?.institution || ""));
+  if (fromInstitution) return fromInstitution;
   const fromShort = extractAllCapsToken(String(p?.shortName || ""));
   if (fromShort) return fromShort;
   const fromName = extractAllCapsToken(String(p?.name || ""));
   if (fromName) return fromName;
-  const dms = Array.isArray(p?.decisionMakers) ? p.decisionMakers : [];
+  const dms = Array.isArray(p?.metadata?.decisionMakers) ? p.metadata.decisionMakers : [];
   for (const dm of dms) {
     const code = extractAllCapsToken(String(dm?.affiliation || "")) || extractAllCapsToken(String(dm?.role || ""));
     if (code) return code;
@@ -363,8 +366,8 @@ function canonicalizeScopes(
     const br = proceedingTypeRank(bl);
     if (ar !== br) return ar - br;
 
-    const ak = `${detectInstitutionCode(a)}|${String(a.court || "").toLowerCase()}|${String(a.name || "").toLowerCase()}`;
-    const bk = `${detectInstitutionCode(b)}|${String(b.court || "").toLowerCase()}|${String(b.name || "").toLowerCase()}`;
+    const ak = `${detectInstitutionCode(a)}|${String(a.metadata?.court || a.metadata?.institution || "").toLowerCase()}|${String(a.name || "").toLowerCase()}`;
+    const bk = `${detectInstitutionCode(b)}|${String(b.metadata?.court || b.metadata?.institution || "").toLowerCase()}|${String(b.name || "").toLowerCase()}`;
     return ak.localeCompare(bk);
   });
 
@@ -1886,8 +1889,8 @@ interface ExtractedFact {
   relatedProceedingId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
-  // NEW: Scope/context under which the evidence was produced
-  sourceScope?: {
+  // EvidenceScope: Captures the methodology/boundaries of the source document
+  evidenceScope?: {
     name: string;           // Short label (e.g., "WTW", "TTW", "EU-LCA", "US jurisdiction")
     methodology?: string;   // Standard/method referenced (e.g., "ISO 14040", "EU RED II")
     boundaries?: string;    // What's included/excluded (e.g., "Primary energy to vehicle motion")
@@ -2338,6 +2341,40 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   keyFactorId: z.string().default(""),
 });
 
+// Generic AnalysisContext schema (replaces legal-specific DISTINCT_PROCEEDING_SCHEMA)
+// Domain-specific fields (court, jurisdiction, charges, etc.) are now in metadata
+const ANALYSIS_CONTEXT_SCHEMA = z.object({
+  id: z.string(),
+  name: z.string(),
+  shortName: z.string(),
+  subject: z.string().default(""),
+  temporal: z.string().default(""),
+  status: z.enum(["concluded", "ongoing", "pending", "unknown"]).catch("unknown"),
+  outcome: z.string().default("unknown"),
+  metadata: z.object({
+    // Legal domain (backward compatibility)
+    institution: z.string().optional(),
+    court: z.string().optional(),
+    jurisdiction: z.string().optional(),
+    charges: z.array(z.string()).optional(),
+    decisionMakers: z.array(z.object({
+      name: z.string(),
+      role: z.string(),
+      affiliation: z.string().optional(),
+    })).optional(),
+
+    // Scientific domain
+    methodology: z.string().optional(),
+    boundaries: z.string().optional(),
+    geographic: z.string().optional(),
+    dataSource: z.string().optional(),
+
+    // Regulatory domain
+    regulatoryBody: z.string().optional(),
+    standardApplied: z.string().optional(),
+  }).passthrough().default({}),  // passthrough allows any additional fields
+});
+
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
 // Some providers are more tolerant and benefit from a more lenient schema.
 const UNDERSTANDING_SCHEMA_OPENAI = z.object({
@@ -2346,28 +2383,7 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   questionBeingAsked: z.string(), // empty string if not applicable
   impliedClaim: z.string(), // empty string if not applicable
 
-  distinctProceedings: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      shortName: z.string(),
-      court: z.string(), // Context/venue (use "unknown" if not applicable)
-      jurisdiction: z.string(), // Scope/region (use "unknown" if not applicable)
-      date: z.string(),
-      subject: z.string(),
-      charges: z.array(z.string()), // Issues/claims (empty array if none)
-      outcome: z.string(), // "pending" or "unknown" if not known
-      status: z.enum(["concluded", "ongoing", "pending", "unknown"]),
-      // NEW: Track key decision-makers for conflict detection
-      decisionMakers: z.array(
-        z.object({
-          name: z.string(), // e.g., "Lead reviewer"
-          role: z.string(), // e.g., "lead", "approver", "investigator"
-          affiliation: z.string(), // e.g., "Org A", "Agency B"
-        }),
-      ),
-    }),
-  ),
+  distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA),
   requiresSeparateAnalysis: z.boolean(),
   proceedingContext: z.string(), // empty string if not applicable
 
@@ -2400,29 +2416,6 @@ const SUPPLEMENTAL_SUBCLAIMS_SCHEMA = z.object({
   subClaims: z.array(SUBCLAIM_SCHEMA),
 });
 
-// Lenient proceeding schema for providers that omit fields; defaults prevent hard failures.
-const DISTINCT_PROCEEDING_SCHEMA_LENIENT = z.object({
-  id: z.string(),
-  name: z.string(),
-  shortName: z.string(),
-  court: z.string().default("unknown"),
-  jurisdiction: z.string().default("unknown"),
-  date: z.string().default(""),
-  subject: z.string().default(""),
-  charges: z.array(z.string()).default([]),
-  outcome: z.string().default("unknown"),
-  status: z.enum(["concluded", "ongoing", "pending", "unknown"]).catch("unknown"),
-  decisionMakers: z
-    .array(
-      z.object({
-        name: z.string(),
-        role: z.string(),
-        affiliation: z.string(),
-      }),
-    )
-    .default([]),
-});
-
 // Lenient variant for providers that sometimes omit arrays/fields; defaults prevent hard failures.
 const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   detectedInputType: z.enum(["question", "claim", "article"]).catch("claim"),
@@ -2431,7 +2424,7 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   questionBeingAsked: z.string().default(""),
   impliedClaim: z.string().default(""),
 
-  distinctProceedings: z.array(DISTINCT_PROCEEDING_SCHEMA_LENIENT).default([]),
+  distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA).default([]),
   requiresSeparateAnalysis: z.boolean().default(false),
   proceedingContext: z.string().default(""),
 
@@ -2742,24 +2735,39 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
 
 **Only create separate scopes for GENUINELY DISTINCT events, proceedings, or analytical frames - not for different perspectives on the same event.**
 
-### GENERIC EXAMPLE - MUST DETECT 2 SCOPES:
+### GENERIC EXAMPLES - MUST DETECT MULTIPLE SCOPES:
 
-1. **SCOPE_2023**: Initial rollout phase
-   - Institution: Organization A
-   - Temporal: 2023
-   - Subject: Initial implementation
-   - Outcome: completed
-   - Status: concluded
-   - decisionMakers: [{ name: "Lead reviewer", role: "lead", affiliation: "Org A" }]
+**Legal Domain:**
+1. **CTX_TSE**: Electoral proceeding
+   - subject: Electoral fraud allegations
+   - temporal: 2024
+   - status: concluded
+   - outcome: Ineligibility ruling
+   - metadata: { institution: "Superior Electoral Court", charges: ["Electoral fraud"], decisionMakers: [...] }
 
-2. **SCOPE_2024**: Follow-up review phase
-   - Institution: Organization A
-   - Temporal: 2024
-   - Subject: Post-implementation review
-   - Status: concluded
-   - decisionMakers: [{ name: "Lead reviewer", role: "lead", affiliation: "Org A" }]
+2. **CTX_STF**: Criminal proceeding
+   - subject: Coup attempt charges
+   - temporal: 2024
+   - status: concluded
+   - outcome: Prison sentence
+   - metadata: { institution: "Supreme Federal Court", charges: ["Coup attempt"], decisionMakers: [...] }
 
-**CRITICAL: decisionMakers field is REQUIRED for each scope!**
+**Scientific Domain:**
+1. **CTX_WTW**: Well-to-Wheel analysis
+   - subject: Full energy chain efficiency
+   - temporal: 2024
+   - status: concluded
+   - outcome: 40% efficiency
+   - metadata: { methodology: "ISO 14040", boundaries: "Primary energy to wheel", geographic: "EU" }
+
+2. **CTX_TTW**: Tank-to-Wheel analysis
+   - subject: Vehicle-only efficiency
+   - temporal: 2024
+   - status: concluded
+   - outcome: 85% efficiency
+   - metadata: { methodology: "SAE J1711", boundaries: "Stored energy to wheel" }
+
+**CRITICAL: metadata.decisionMakers field is IMPORTANT for legal/regulatory contexts!**
 - Extract ALL key decision-makers or primary actors mentioned or known
 - Use your background knowledge to fill in known decision-makers for well-documented cases
 - This enables cross-scope conflict of interest detection
@@ -3458,7 +3466,7 @@ Use empty strings "" and empty arrays [] when unknown.`;
 
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),
-    distinctProceedings: z.array(DISTINCT_PROCEEDING_SCHEMA_LENIENT),
+    distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA),
   });
 
   try {
@@ -4165,8 +4173,9 @@ const FACT_SCHEMA = z.object({
       relatedProceedingId: z.string(), // empty string if not applicable
       isContestedClaim: z.boolean(),
       claimSource: z.string(), // empty string if not applicable
-      // NEW: Scope/context under which the evidence was produced (if defined by source)
-      sourceScope: z.object({
+      // EvidenceScope: Captures the methodology/boundaries of the source document
+      // (e.g., WTW vs TTW, EU vs US standards, different time periods)
+      evidenceScope: z.object({
         name: z.string(),           // Short label (e.g., "WTW", "TTW", "EU-LCA")
         methodology: z.string(),    // Standard/method (empty string if not applicable)
         boundaries: z.string(),     // What's included/excluded (empty string if not applicable)
@@ -4224,7 +4233,7 @@ Evidence documentation typically defines its scope/context. Extract this when pr
 - Geographic: "EU market", "California regulations", "US jurisdiction"
 - Temporal: "2020-2025 data", "FY2024", "as of March 2024"
 
-**Set sourceScope when the source defines its analytical frame**:
+**Set evidenceScope when the source defines its analytical frame**:
 - name: Short label (e.g., "WTW", "TTW", "EU-LCA", "US-DOE")
 - methodology: Standard referenced (empty string if none)
 - boundaries: What's included/excluded (empty string if not specified)
