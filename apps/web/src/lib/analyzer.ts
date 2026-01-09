@@ -1836,6 +1836,8 @@ interface ResearchState {
   researchQuestionsSearched: Set<number>;
   // NEW v2.6.18: Track if decision-maker search was performed
   decisionMakerSearchPerformed: boolean;
+  // NEW v2.6.22: Track if claim-level recency search was performed
+  recentClaimsSearched: boolean;
 }
 
 interface ClaimUnderstanding {
@@ -2501,8 +2503,34 @@ async function understandClaim(
   const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  // Detect recency sensitivity for this analysis
-  const recencyMatters = isRecencySensitive(input, undefined);
+  // =========================================================================
+  // EARLY INPUT NORMALIZATION: Convert questions to statements BEFORE LLM call
+  // This ensures both "Was X fair?" and "X was fair" take the same analysis path
+  // =========================================================================
+  const trimmedInputRaw = input.trim();
+  const looksLikeQuestionEarly =
+    trimmedInputRaw.endsWith("?") ||
+    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(
+      trimmedInputRaw,
+    );
+
+  // Preserve original input for UI display, but normalize for analysis
+  const originalQuestionInput = looksLikeQuestionEarly ? trimmedInputRaw : null;
+  const normalizedInput = looksLikeQuestionEarly
+    ? normalizeYesNoQuestionToStatement(trimmedInputRaw)
+    : trimmedInputRaw;
+
+  if (looksLikeQuestionEarly) {
+    console.log(`[Analyzer] Input Neutrality: Normalized question to statement BEFORE LLM call`);
+    console.log(`[Analyzer]   Original: "${trimmedInputRaw.substring(0, 100)}..."`);
+    console.log(`[Analyzer]   Normalized: "${normalizedInput.substring(0, 100)}..."`);
+  }
+
+  // Use normalizedInput for all analysis from this point forward
+  const analysisInput = normalizedInput;
+
+  // Detect recency sensitivity for this analysis (using normalized input)
+  const recencyMatters = isRecencySensitive(analysisInput, undefined);
 
   const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT EVENTS or CONTEXTS/THREADS.
 
@@ -2925,7 +2953,8 @@ For "Does this vaccine cause autism?"
 ]
 **CLAIM-TO-FACTOR MAPPING**: If you generate keyFactors, map each claim to the most relevant factor using keyFactorId. Claims can only map to one factor. Use empty string "" for claims that don't address any specific factor.`;
 
-  const userPrompt = `Analyze for fact-checking:\n\n"${input}"`;
+  // Use normalized analysisInput (question→statement) for consistent LLM analysis
+  const userPrompt = `Analyze for fact-checking:\n\n"${analysisInput}"`;
 
   function extractFirstJsonObject(text: string): string | null {
     const start = text.indexOf("{");
@@ -3092,53 +3121,44 @@ For "Does this vaccine cause autism?"
 
   if (!parsed) throw new Error("Failed to understand claim: structured output did not match schema");
 
-  // Post-processing: Force question detection if input clearly looks like a question
+  // =========================================================================
+  // POST-PROCESSING: Use early-normalized input for input neutrality
+  // Since we normalized questions to statements BEFORE the LLM call (lines 2504-2528),
+  // both paths now converge. We use:
+  // - originalQuestionInput (from line 2516): for UI display (questionBeingAsked)
+  // - analysisInput (from line 2528): for analysis (impliedClaim)
+  // =========================================================================
   const trimmedInput = input.trim();
-  const looksLikeQuestion =
-    trimmedInput.endsWith("?") ||
-    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(
-      trimmedInput,
-    );
 
-  if (looksLikeQuestion && parsed.detectedInputType !== "question") {
-    console.log(`[Analyzer] Overriding detectedInputType from "${parsed.detectedInputType}" to "question" (input ends with ? or starts with question word)`);
+  // If input was originally a question, mark it as such for UI purposes
+  if (originalQuestionInput && parsed.detectedInputType !== "question") {
+    console.log(`[Analyzer] Input Neutrality: Marking as question for UI (original was "${originalQuestionInput.substring(0, 60)}...")`);
     parsed.detectedInputType = "question";
-    // Also set questionBeingAsked if not already set
-    if (!parsed.questionBeingAsked) {
-      parsed.questionBeingAsked = trimmedInput;
-    }
   }
 
-  // Stabilize question vs. statement decomposition: provide an implied-statement hint to the supplemental
-  // context detection path (handled below). This is generic and avoids domain-specific heuristics.
-
-  // Post-processing: Fix impliedClaim for questions - convert question to affirmative statement
-  if (parsed.detectedInputType === "question") {
-    const statement = normalizeYesNoQuestionToStatement(trimmedInput);
-    // In deterministic mode, always override to the normalized statement to avoid LLM drift.
-    // Otherwise, only fill/repair if missing or still phrased as a question.
-    const shouldOverride =
-      CONFIG.deterministic ||
-      !parsed.impliedClaim ||
-      parsed.impliedClaim.endsWith("?");
-    if (shouldOverride) {
-      console.log(
-        `[Analyzer] Normalized impliedClaim from question "${parsed.impliedClaim || trimmedInput}" to statement: "${statement}"`,
-      );
-      // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:impliedClaim',message:'understandClaim impliedClaim normalization',data:{detectedInputType:parsed.detectedInputType,shouldOverride,from:String(parsed.impliedClaim||'').slice(0,200),to:String(statement).slice(0,200),deterministic:CONFIG.deterministic},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
-      parsed.impliedClaim = statement;
-    }
+  // Set questionBeingAsked to the ORIGINAL question (for UI display)
+  if (originalQuestionInput) {
+    parsed.questionBeingAsked = originalQuestionInput;
+    console.log(`[Analyzer] Input Neutrality: questionBeingAsked set to original question for UI`);
+  } else if (!parsed.questionBeingAsked) {
+    // For statements, use the input as-is
+    parsed.questionBeingAsked = trimmedInput;
   }
 
-  // Determinism + convergence: for claim-like inputs, ensure impliedClaim is populated from the raw input.
-  // This prevents "question vs statement" from diverging just because the model left impliedClaim empty or paraphrased it.
-  if (parsed.detectedInputType === "claim") {
-    const fallback = trimmedInput.replace(/\s+/g, " ").trim();
-    if (CONFIG.deterministic || !parsed.impliedClaim?.trim()) {
-      parsed.impliedClaim = fallback;
-    }
+  // Set impliedClaim to the NORMALIZED statement (for analysis consistency)
+  // This ensures both "Was X fair?" and "X was fair" use the same impliedClaim
+  const shouldSetImpliedClaim =
+    CONFIG.deterministic ||
+    !parsed.impliedClaim?.trim() ||
+    parsed.impliedClaim.endsWith("?");
+
+  if (shouldSetImpliedClaim) {
+    // Use analysisInput which is already normalized (question→statement)
+    parsed.impliedClaim = analysisInput;
+    console.log(`[Analyzer] Input Neutrality: impliedClaim set to normalized statement: "${analysisInput.substring(0, 80)}..."`);
+    // #region agent log
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:impliedClaim',message:'understandClaim impliedClaim normalization (input neutrality)',data:{detectedInputType:parsed.detectedInputType,wasQuestion:!!originalQuestionInput,from:String(parsed.impliedClaim||'').slice(0,200),to:String(analysisInput).slice(0,200),deterministic:CONFIG.deterministic},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
   }
 
   // Validate parsed has required fields
@@ -3217,8 +3237,9 @@ For "Does this vaccine cause autism?"
   if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:beforeSupplemental',message:'Before supplemental claims check',data:{inputPreview:input.substring(0,200),subClaimsCount:parsed.subClaims.length,subClaims:parsed.subClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),isCentral:c.isCentral,claimRole:c.claimRole})),hasOutcomeClaims:parsed.subClaims.some((c:any)=>/\b(sentence|penalty|fine|ban|ineligible|outcome|punishment|sanction)\b/i.test(c.text))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
     for (let attempt = 0; attempt < SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS; attempt++) {
+      // Use analysisInput (normalized statement) for input neutrality
       const supplementalClaims = await requestSupplementalSubClaims(
-        input,
+        analysisInput,
         model,
         parsed
       );
@@ -3867,6 +3888,73 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         scopesWithFacts.has(p.id),
       ))
   ) {
+    // =========================================================================
+    // CLAIM-LEVEL RECENCY CHECK (v2.6.22)
+    // Before marking complete, check if any claims appear to be about recent events
+    // but have zero supporting facts. This catches cases like DOGE (Jan-May 2025)
+    // where the thesis-level recency check passed but individual claims need facts.
+    // =========================================================================
+    const claimsWithoutFacts = understanding.subClaims.filter((claim: any) => {
+      // Check if this claim appears to be about recent events
+      const claimText = claim.text || "";
+      const isRecentClaim = isRecencySensitive(claimText, undefined);
+
+      // Check if this claim has any supporting facts
+      // Facts are linked via relatedClaimId or by matching claim text/entities
+      const claimEntities = (claim.keyEntities || []).map((e: string) => e.toLowerCase());
+      const hasFacts = state.facts.some((f: ExtractedFact) => {
+        // Direct match via claim text in fact
+        const factLower = f.fact.toLowerCase();
+        const claimLower = claimText.toLowerCase();
+
+        // Check if any key entity from the claim appears in the fact
+        const hasEntityOverlap = claimEntities.some((entity: string) =>
+          entity.length > 3 && factLower.includes(entity)
+        );
+
+        // Check for significant word overlap (at least 2 meaningful words)
+        const claimWords = claimLower.split(/\s+/).filter((w: string) => w.length > 4);
+        const wordOverlap = claimWords.filter((w: string) => factLower.includes(w)).length;
+
+        return hasEntityOverlap || wordOverlap >= 2;
+      });
+
+      return isRecentClaim && !hasFacts;
+    });
+
+    // If there are recent claims without facts, don't mark complete yet - search for them
+    if (claimsWithoutFacts.length > 0 && !state.recentClaimsSearched) {
+      const claimToSearch = claimsWithoutFacts[0]; // Search for first ungrounded recent claim
+      const claimEntities = (claimToSearch.keyEntities || []).slice(0, 4).join(" ");
+      const claimTerms = (claimToSearch.text || "")
+        .toLowerCase()
+        .replace(/[^\w\s]/g, " ")
+        .split(/\s+/)
+        .filter((w: string) => w.length > 3)
+        .slice(0, 5)
+        .join(" ");
+
+      debugLog("Claim-level recency check: Found ungrounded recent claims", {
+        count: claimsWithoutFacts.length,
+        firstClaim: claimToSearch.text?.substring(0, 100),
+        entities: claimEntities,
+      });
+
+      const queries = [
+        `${claimEntities} ${currentYear}`.trim(),
+        `${claimTerms} ${currentYear} latest`.trim(),
+        `${claimEntities} recent news`.trim(),
+      ].filter(q => q.length > 5);
+
+      return {
+        complete: false,
+        focus: `Recent claim: ${claimToSearch.text?.substring(0, 50)}...`,
+        category: "evidence",
+        queries,
+        recencyMatters: true,
+      };
+    }
+
     return { complete: true };
   }
 
@@ -6480,6 +6568,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     llmCalls: 0, // NEW v2.6.6
     researchQuestionsSearched: new Set(), // NEW v2.6.18
     decisionMakerSearchPerformed: false, // NEW v2.6.18
+    recentClaimsSearched: false, // NEW v2.6.22
   };
 
   // Handle URL
@@ -6600,6 +6689,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // NEW v2.6.18: Track decision-maker and research question searches
     if (decision.category === "conflict_of_interest")
       state.decisionMakerSearchPerformed = true;
+    // NEW v2.6.22: Track claim-level recency searches
+    if (decision.focus?.startsWith("Recent claim:"))
+      state.recentClaimsSearched = true;
     if (decision.category === "research_question") {
       // Mark all matching research questions as searched
       const researchQuestions = state.understanding?.researchQuestions || [];
