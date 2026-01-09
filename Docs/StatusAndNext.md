@@ -1,22 +1,29 @@
 # FactHarbor Status and Next Steps
 
-**Date**: January 10, 2026  
-**Last Updated**: January 10, 2026  
-**Status**: Generic AnalysisContext & EvidenceScope implemented - POC1 Gaps addressed
+**Date**: January 10, 2026
+**Last Updated**: January 10, 2026
+**Status**: Enhanced recency detection and optional Gemini grounded search implemented
 
 ---
 
 ## Executive Summary
 
-**Current State**: Generic domain-agnostic architecture implemented. Quality Gates reviewed. UI enhancements complete.
+**Current State**: Recency-sensitive search improvements implemented. Optional Gemini grounded search mode added. Schema v2.6.22.
 
-**Key Accomplishments** (January 10, 2026):
+**Key Accomplishments** (January 10, 2026 - Session 2):
+- **Enhanced Recency Detection**: Improved `isRecencySensitive()` with news-related keywords (trial, verdict, sentence, election, etc.)
+- **Date-Aware Query Variants**: ALL search types now get date-specific queries when recency matters (not just evidence search)
+- **ResearchDecision Enhancement**: Added `recencyMatters` flag to ensure consistent date filtering across all queries in a topic
+- **Optional Gemini Grounded Search**: New `FH_SEARCH_MODE=grounded` option for using Gemini's built-in Google Search (when LLM_PROVIDER=gemini)
+- **New Module**: Created `search-gemini-grounded.ts` for Gemini search integration
+- **Schema Version**: Updated to 2.6.22
+
+**Key Accomplishments** (January 10, 2026 - Session 1):
 - **Generic AnalysisContext**: Replaced legal-specific `DistinctProceeding` with domain-agnostic `AnalysisContext` using flexible metadata
 - **EvidenceScope**: Renamed `sourceScope` to `EvidenceScope` for capturing study methodology/boundaries
 - **UI Enhancements**: Added contested badge and factor counts to single-scope question displays
 - **Centrality Logic**: Enhanced prompt guidance with critical heuristic for identifying truly central claims
 - **Quality Gates**: Reviewed thresholds (balanced, not too restrictive)
-- **Schema Version**: Updated to 2.6.21
 
 **Key Accomplishments** (January 9, 2026):
 - **Scope/Context Extraction**: Added `sourceScope` field to ExtractedFact for capturing analytical context (WTW/TTW, methodology, boundaries, geographic, temporal)
@@ -323,6 +330,9 @@
 | UI Enhancements (badges, counts) | ✅ Complete | None |
 | Centrality Logic | ✅ Enhanced | None |
 | Quality Gates | ✅ Reviewed | None |
+| **Recency Detection** | ✅ Enhanced (v2.6.22) | Test with recent events |
+| **Date-Aware Queries** | ✅ Complete (v2.6.22) | Test with Bolsonaro case |
+| **Gemini Grounded Search** | ✅ Implemented (v2.6.22) | Test when LLM_PROVIDER=gemini |
 | KeyFactors Discovery | Working | None |
 | KeyFactors Aggregation | Fixed | **VALIDATE end-to-end** |
 | KeyFactors Display | Working | Validate in reports |
@@ -336,6 +346,35 @@
 ---
 
 ## Implementation Notes
+
+### Recency Detection & Date-Aware Queries (v2.6.22)
+
+**Problem**: LLM was not finding very recent information (e.g., "Bolsonaro trial sentence was 27 years").
+
+**Solution Applied**:
+1. **Enhanced `isRecencySensitive()`** (line 510-567):
+   - Added news-related keywords: trial, verdict, sentence, election, investigation, etc.
+   - Detects legal/court outcomes, political events, announcements, investigations
+   - Now triggers on any topic likely to have recent developments
+
+2. **Date-Aware Query Variants** (throughout `decideNextResearch()`):
+   - ALL search types now get date-specific queries when recency matters
+   - Added `recencyMatters` flag to `ResearchDecision` interface
+   - Consistent date filtering across all queries in a topic
+
+3. **Search Execution Enhancement** (line 6613):
+   - Uses `decision.recencyMatters` OR per-query detection
+   - Ensures date filtering is consistent for the entire research session
+
+**New Environment Variable**:
+- `FH_SEARCH_MODE=grounded` - Use Gemini's built-in Google Search (when LLM_PROVIDER=gemini)
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer.ts` - Enhanced recency detection and query generation
+- `apps/web/src/lib/search-gemini-grounded.ts` - New module for Gemini grounded search
+- `apps/web/src/lib/analyzer/config.ts` - Added `searchMode` config
+
+---
 
 ### KeyFactors Aggregation Fix
 
@@ -355,6 +394,19 @@
 ---
 
 ## Testing Checklist
+
+**Recency Detection Validation (v2.6.22)**:
+- [ ] Run analysis on "Bolsonaro trial sentence" - verify 27-year sentence is found
+- [ ] Check logs for `[Search]` entries showing date-filtered queries (past year)
+- [ ] Verify queries include current year (e.g., "bolsonaro sentence 2026 latest")
+- [ ] Test with other recent events (elections, court rulings, announcements)
+- [ ] Verify `recencyMatters` flag is set in research decisions for news topics
+
+**Gemini Grounded Search Validation** (when LLM_PROVIDER=gemini):
+- [ ] Set `FH_SEARCH_MODE=grounded` and `LLM_PROVIDER=gemini`
+- [ ] Run analysis and verify "Gemini Grounded Search" appears in logs
+- [ ] Verify sources are extracted from grounding metadata
+- [ ] Compare results with standard search mode
 
 **KeyFactors Validation**:
 - [ ] Run analysis with procedural topic - verify KeyFactors appear in report

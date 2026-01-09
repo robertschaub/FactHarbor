@@ -119,7 +119,7 @@ function detectSearchProvider(): string {
 // ============================================================================
 
 export const CONFIG = {
-  schemaVersion: "2.6.17",
+  schemaVersion: "2.6.22",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
 
@@ -128,6 +128,13 @@ export const CONFIG = {
     (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true",
   searchProvider: detectSearchProvider(),
   searchDomainWhitelist: parseWhitelist(process.env.FH_SEARCH_DOMAIN_WHITELIST),
+
+  // Search mode: "standard" (default) or "grounded" (uses Gemini's built-in Google Search)
+  // Note: "grounded" mode only works when LLM_PROVIDER=gemini
+  searchMode: (process.env.FH_SEARCH_MODE ?? "standard").toLowerCase() as "standard" | "grounded",
+
+  // Optional date restriction for searches: "y" (year), "m" (month), "w" (week), or undefined
+  searchDateRestrict: (process.env.FH_SEARCH_DATE_RESTRICT || undefined) as "y" | "m" | "w" | undefined,
 
   // Source reliability configuration
   sourceBundlePath: process.env.FH_SOURCE_BUNDLE_PATH || null,

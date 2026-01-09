@@ -6,10 +6,25 @@ FactHarbor_Code_Spec_Review.md
 StatusAndNext.md
 
 And analyze the current source code.
+
 ---
 OPEN Requests:
 ---
+Articles formulated as a question yield different results vs. the same article formulated as a question - please find the reasin and fix. 
+---
+
+DONE recently - to be tested:
+---
+LLM is not aware about the current date
+Resulting in information like "Temporal error"
+---
 Almost all claims are marked as central - please investigate
+---
+LLM does not find very recent information e.g. that Blosonaro trial sentenca was 27 years.
+ENHANCED (v2.6.22): Improved recency detection with news keywords (trial, verdict, sentence, election, etc.)
+                   Added date-aware query variants to ALL search types
+                   Added optional Gemini grounded search mode (FH_SEARCH_MODE=grounded)
+                   See StatusAndNext.md Testing Checklist for validation steps
 ---
 
 DONE Requests (all below):

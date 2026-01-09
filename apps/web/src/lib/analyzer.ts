@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.18
+ * FactHarbor POC1 Analyzer v2.6.22
  *
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -10,11 +10,14 @@
  * - Fixed AI SDK output handling for different versions (output vs experimental_output)
  * - Claim dependency tracking (claimRole: attribution/source/timing/core)
  * - Dependency propagation (if prerequisite false, dependent claims flagged)
- * - NEW: Unified analysis for questions and statements (same depth regardless of punctuation)
- * - NEW: Key Factors generated for procedural/legal topics in both modes
- * - NEW: Simplified schemas for better cross-provider compatibility
+ * - Unified analysis for questions and statements (same depth regardless of punctuation)
+ * - Key Factors generated for procedural/legal topics in both modes
+ * - Simplified schemas for better cross-provider compatibility
+ * - NEW v2.6.22: Enhanced recency detection with news-related keywords
+ * - NEW v2.6.22: Date-aware query variants for ALL search types
+ * - NEW v2.6.22: Optional Gemini Grounded Search mode (FH_SEARCH_MODE=grounded)
  *
- * @version 2.6.18
+ * @version 2.6.22
  * @date January 2026
  */
 
@@ -26,6 +29,7 @@ import { mistral } from "@ai-sdk/mistral";
 import { generateText, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
+import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -111,7 +115,7 @@ function clearDebugLog() {
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.21",
+  schemaVersion: "2.6.22",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
@@ -123,6 +127,9 @@ const CONFIG = {
     (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true",
   searchProvider: detectSearchProvider(),
   searchDomainWhitelist: parseWhitelist(process.env.FH_SEARCH_DOMAIN_WHITELIST),
+  // Search mode: "standard" (default) or "grounded" (uses Gemini's built-in Google Search)
+  // Note: "grounded" mode only works when LLM_PROVIDER=gemini
+  searchMode: (process.env.FH_SEARCH_MODE ?? "standard").toLowerCase() as "standard" | "grounded",
   // Optional global recency bias for search results.
   // If set to y|m|w, applies to ALL searches. If unset, date filtering is only applied when recency is detected.
   searchDateRestrict: (() => {
@@ -531,6 +538,26 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
   ];
 
   if (recentKeywords.some(keyword => lowerText.includes(keyword))) {
+    return true;
+  }
+
+  // NEW: Check for news-related keywords that typically involve recent events
+  // These topics often have ongoing developments that require fresh search results
+  const newsIndicatorKeywords = [
+    // Legal/court outcomes (often have recent rulings)
+    'trial', 'verdict', 'sentence', 'sentenced', 'ruling', 'ruled', 'convicted', 'acquitted',
+    'indicted', 'charged', 'plea', 'appeal', 'court', 'judge', 'judgment',
+    // Political events
+    'election', 'elected', 'voted', 'vote', 'poll', 'campaign', 'inauguration',
+    // Announcements and decisions
+    'decision', 'announced', 'confirmed', 'approved', 'rejected', 'signed',
+    // Investigations and proceedings
+    'investigation', 'hearing', 'testimony', 'inquiry', 'probe',
+    // Breaking news indicators
+    'breaking', 'update', 'developing', 'just', 'new'
+  ];
+
+  if (newsIndicatorKeywords.some(keyword => lowerText.includes(keyword))) {
     return true;
   }
 
@@ -3755,6 +3782,8 @@ interface ResearchDecision {
   category?: string;
   isContradictionSearch?: boolean;
   targetProceedingId?: string;
+  /** If true, search should use date filtering for recency */
+  recencyMatters?: boolean;
 }
 
 function decideNextResearch(state: ResearchState): ResearchDecision {
@@ -3855,17 +3884,25 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
           .filter(Boolean)
           .join(" ")
           .trim();
+        // Build base queries
+        const baseQueries = [
+          `${entityStr} ${scopeKey}`.trim(),
+          `${entityStr} ${scope.court || ""} official decision documents`.trim(),
+          `${entityStr} ${scope.shortName || scope.name} evidence procedure`.trim(),
+          `${entityStr} ${scopeKey} outcome`.trim(),
+        ];
+        // Add date-variant queries for recency-sensitive topics
+        const queries = recencyMatters ? [
+          ...baseQueries,
+          `${entityStr} ${scopeKey} ${currentYear} latest`.trim(),
+        ] : baseQueries;
         return {
           complete: false,
           focus: `${scope.name} - ${scopeKey || "scope"}`,
           targetProceedingId: scope.id,
           category: "evidence",
-          queries: [
-            `${entityStr} ${scopeKey}`.trim(),
-            `${entityStr} ${scope.court || ""} official decision documents`.trim(),
-            `${entityStr} ${scope.shortName || scope.name} evidence procedure`.trim(),
-            `${entityStr} ${scopeKey} outcome`.trim(),
-          ],
+          queries,
+          recencyMatters,
         };
       }
     }
@@ -3876,14 +3913,21 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     understanding.legalFrameworks.length > 0 &&
     state.iterations.length === 0
   ) {
+    const baseQueries = [
+      `${entityStr} legal basis statute`,
+      `${understanding.legalFrameworks[0]} law provisions`,
+    ];
+    // Add date-variant for recency-sensitive legal topics
+    const queries = recencyMatters ? [
+      ...baseQueries,
+      `${entityStr} ${understanding.legalFrameworks[0]} ${currentYear} ruling decision`,
+    ] : baseQueries;
     return {
       complete: false,
       focus: "Applicable framework",
       category: "legal_provision",
-      queries: [
-        `${entityStr} legal basis statute`,
-        `${understanding.legalFrameworks[0]} law provisions`,
-      ],
+      queries,
+      recencyMatters,
     };
   }
 
@@ -3905,19 +3949,27 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       focus: recencyMatters ? "Recent evidence and facts (prioritizing current data)" : "Evidence and facts",
       category: "evidence",
       queries,
+      recencyMatters,
     };
   }
 
   if (!state.contradictionSearchPerformed) {
+    const baseQueries = [
+      `${entityStr} criticism concerns`,
+      `${entityStr} controversy disputed unfair`,
+    ];
+    // Add date-variant for recent controversies/criticism
+    const queries = recencyMatters ? [
+      ...baseQueries,
+      `${entityStr} criticism ${currentYear}`,
+    ] : baseQueries;
     return {
       complete: false,
       focus: "Criticism and opposing views",
       category: "criticism",
       isContradictionSearch: true,
-      queries: [
-        `${entityStr} criticism concerns`,
-        `${entityStr} controversy disputed unfair`,
-      ],
+      queries,
+      recencyMatters,
     };
   }
 
@@ -3929,29 +3981,42 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       .filter((name, index, arr) => arr.indexOf(name) === index); // unique names
 
     if (decisionMakerNames.length > 0) {
+      const baseQueries = [
+        `${decisionMakerNames[0]} conflict of interest ${entityStr}`,
+        `${decisionMakerNames[0]} impartiality bias ${scopes[0]?.court || ""}`,
+        ...(decisionMakerNames.length > 1 ? [`${decisionMakerNames.slice(0, 2).join(" ")} role multiple trials`] : []),
+      ];
+      // Add date-variant for recency-sensitive conflict searches
+      const queries = recencyMatters ? [
+        ...baseQueries,
+        `${decisionMakerNames[0]} ${currentYear} conflict bias`,
+      ] : baseQueries;
       return {
         complete: false,
         focus: "Decision-maker conflicts of interest",
         category: "conflict_of_interest",
-        queries: [
-          `${decisionMakerNames[0]} conflict of interest ${entityStr}`,
-          `${decisionMakerNames[0]} impartiality bias ${scopes[0]?.court || ""}`,
-          ...(decisionMakerNames.length > 1 ? [`${decisionMakerNames.slice(0, 2).join(" ")} role multiple trials`] : []),
-        ],
+        queries,
+        recencyMatters,
       };
     }
 
     // Fallback when the model didn't populate decisionMakers: still search generically for conflicts/independence.
     // This keeps question vs. statement runs aligned without hardcoding any domain/person names.
+    const fallbackBaseQueries = [
+      `${entityStr} conflict of interest decision maker`.trim(),
+      `${entityStr} impartiality bias`.trim(),
+      `${entityStr} recusal ethics`.trim(),
+    ];
+    const fallbackQueries = recencyMatters ? [
+      ...fallbackBaseQueries,
+      `${entityStr} conflict ${currentYear}`.trim(),
+    ] : fallbackBaseQueries;
     return {
       complete: false,
       focus: "Decision-maker conflicts of interest",
       category: "conflict_of_interest",
-      queries: [
-        `${entityStr} conflict of interest decision maker`.trim(),
-        `${entityStr} impartiality bias`.trim(),
-        `${entityStr} recusal ethics`.trim(),
-      ],
+      queries: fallbackQueries,
+      recencyMatters,
     };
   }
 
@@ -3976,14 +4041,21 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       .join(" ");
 
     if (queryTerms.trim()) {
+      const baseQueries = [
+        queryTerms,
+        `${entityStr} ${queryTerms.split(" ").slice(0, 3).join(" ")}`,
+      ];
+      // Add date-variant for recency-sensitive research questions
+      const queries = recencyMatters ? [
+        ...baseQueries,
+        `${queryTerms} ${currentYear}`,
+      ] : baseQueries;
       return {
         complete: false,
         focus: `Research: ${question.slice(0, 50)}...`,
         category: "research_question",
-        queries: [
-          queryTerms,
-          `${entityStr} ${queryTerms.split(" ").slice(0, 3).join(" ")}`,
-        ],
+        queries,
+        recencyMatters,
       };
     }
   }
@@ -6559,12 +6631,94 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       continue;
     }
 
+    // =========================================================================
+    // GROUNDED SEARCH MODE: Use Gemini's built-in Google Search
+    // =========================================================================
+    if (CONFIG.searchMode === "grounded" && isGroundedSearchAvailable()) {
+      await emit(
+        `🔍 Using Gemini Grounded Search for: "${decision.focus}"`,
+        baseProgress + 1,
+      );
+
+      const groundedResult = await searchWithGrounding({
+        prompt: `Find recent, factual information about: ${decision.focus}`,
+        context: state.originalInput || state.originalText || "",
+      });
+
+      if (groundedResult.groundingUsed && groundedResult.sources.length > 0) {
+        console.log(`[Analyzer] Grounded search found ${groundedResult.sources.length} sources`);
+
+        // Convert grounded sources to FetchedSource format and add to state
+        const groundedSources = convertToFetchedSources(groundedResult, state.sources.length + 1);
+        for (const source of groundedSources) {
+          state.sources.push(source as FetchedSource);
+        }
+
+        // Track the search
+        state.searchQueries.push({
+          query: groundedResult.searchQueries[0] || decision.focus!,
+          iteration,
+          focus: decision.focus!,
+          resultsCount: groundedResult.sources.length,
+          timestamp: new Date().toISOString(),
+          searchProvider: "Gemini-Grounded",
+        });
+
+        // Extract facts from the grounded response
+        if (groundedResult.groundedResponse) {
+          await emit(`📊 Extracting facts from grounded response...`, baseProgress + 2);
+          // Create a synthetic source for the grounded response
+          const syntheticSource: FetchedSource = {
+            id: `S${state.sources.length + 1}`,
+            url: "gemini-grounded-search",
+            title: `Grounded Search: ${decision.focus}`,
+            fullText: groundedResult.groundedResponse,
+            trackRecordScore: 60, // Moderate trust for AI-synthesized content
+            fetchedAt: new Date().toISOString(),
+            category: "grounded_search",
+            fetchSuccess: true,
+            searchQuery: decision.focus,
+          };
+
+          const extractedFacts = await extractFacts(
+            syntheticSource,
+            decision.focus!,
+            model,
+            state.understanding?.distinctProceedings || []
+          );
+
+          if (extractedFacts && extractedFacts.length > 0) {
+            state.facts.push(...extractedFacts);
+            console.log(`[Analyzer] Extracted ${extractedFacts.length} facts from grounded search`);
+          }
+        }
+
+        // Continue to next iteration (skip standard search)
+        state.iterations.push({
+          number: iteration,
+          focus: decision.focus!,
+          queries: groundedResult.searchQueries,
+          sourcesFound: groundedResult.sources.length,
+          factsExtracted: state.facts.length,
+        });
+        continue;
+      } else {
+        console.log(`[Analyzer] Grounded search did not return results, falling back to standard search`);
+        await emit(`⚠️ Grounded search unavailable, using standard search`, baseProgress + 1);
+      }
+    }
+
+    // =========================================================================
+    // STANDARD SEARCH MODE: Use SerpAPI / Google CSE
+    // =========================================================================
+
     // Perform searches and track them
     const searchResults: Array<{ url: string; title: string; query: string }> =
       [];
     for (const query of decision.queries || []) {
-      // Detect if this query needs recent results (or is configured globally).
-      const recencyMatters = isRecencySensitive(query, state.understanding || undefined);
+      // Use decision-level recencyMatters (based on original input) OR per-query detection
+      // This ensures date filtering is consistent across all queries in a recency-sensitive topic
+      const recencyMatters = decision.recencyMatters || isRecencySensitive(query, state.understanding || undefined);
       const dateRestrict: "y" | "m" | "w" | undefined =
         CONFIG.searchDateRestrict || (recencyMatters ? "y" : undefined);
 
