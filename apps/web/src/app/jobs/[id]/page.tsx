@@ -298,7 +298,7 @@ export default function JobPage() {
   const isQuestion = result?.meta?.isQuestion || articleAnalysis?.isQuestion;
   const hasMultipleProceedings = result?.meta?.hasMultipleProceedings;
   // Prefer "scopes" (new unified terminology), fall back to "proceedings" for backward compatibility
-  const proceedings = result?.scopes || result?.proceedings || [];
+  const scopes = result?.scopes || result?.proceedings || [];
   const impliedClaim: string = (result?.understanding?.impliedClaim || "").trim();
   const hasContestedFactors = result?.meta?.hasContestedFactors;
   const searchQueries = result?.searchQueries || [];
@@ -463,7 +463,7 @@ export default function JobPage() {
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
               {isQuestion && <Badge bg="#e3f2fd" color="#1565c0">📝 QUESTION</Badge>}
-              {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">🔀 {proceedings.length} CONTEXTS</Badge>}
+              {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">🔀 {scopes.length} SCOPES</Badge>}
               {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
               {result.meta.isPseudoscience && (
                 <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
@@ -509,7 +509,7 @@ export default function JobPage() {
         <div className={styles.contentCard}>
           {isQuestion && questionAnswer && (
             hasMultipleProceedings
-              ? <MultiProceedingAnswerBanner questionAnswer={questionAnswer} proceedings={proceedings} impliedClaim={impliedClaim} />
+              ? <MultiScopeAnswerBanner questionAnswer={questionAnswer} scopes={scopes} impliedClaim={impliedClaim} />
               : <QuestionAnswerBanner questionAnswer={questionAnswer} impliedClaim={impliedClaim} />
           )}
 
@@ -539,7 +539,7 @@ export default function JobPage() {
             <div className={styles.claimsSection}>
               <h3 className={styles.claimsSectionTitle}>{isQuestion ? "Supporting Analysis" : "Claims Analyzed"}</h3>
               {hasMultipleProceedings ? (
-                <ClaimsGroupedByProceeding claimVerdicts={claimVerdicts} proceedings={proceedings} />
+                <ClaimsGroupedByScope claimVerdicts={claimVerdicts} scopes={scopes} />
               ) : (
                 claimVerdicts.map((cv: any) => <ClaimCard key={cv.claimId} claim={cv} />)
               )}
@@ -708,10 +708,10 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
 }
 
 // ============================================================================
-// Multi-Proceeding Answer Banner
+// Multi-Scope Answer Banner
 // ============================================================================
 
-function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim }: { questionAnswer: any; proceedings: any[]; impliedClaim?: string }) {
+function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { questionAnswer: any; scopes: any[]; impliedClaim?: string }) {
   const overallTruth = getAnswerTruthPercentage(questionAnswer);
   const overallConfidence = questionAnswer?.confidence ?? 0;
   const overallVerdict = percentageToClaimVerdict(overallTruth, overallConfidence);
@@ -754,7 +754,7 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim
       <div className={styles.proceedingNotice}>
         <span className={styles.proceedingIcon}>🔀</span>
         <span className={styles.proceedingText}>
-          {proceedings.length} distinct scopes analyzed separately
+          {scopes.length} distinct scopes analyzed separately
         </span>
         {hasEvidenceBasedContestations && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
@@ -794,8 +794,8 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim
           </h4>
           <div className={styles.proceedingsStack}>
             {questionAnswer.proceedingAnswers.map((pa: any) => {
-              const proc = proceedings.find((p: any) => p.id === pa.proceedingId);
-              return <ProceedingCard key={pa.proceedingId} proceedingAnswer={pa} proceeding={proc} />;
+              const scope = scopes.find((s: any) => s.id === pa.proceedingId);
+              return <ScopeCard key={pa.proceedingId} scopeAnswer={pa} scope={scope} />;
             })}
           </div>
         </div>
@@ -816,34 +816,42 @@ function MultiProceedingAnswerBanner({ questionAnswer, proceedings, impliedClaim
   );
 }
 
-function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: any; proceeding: any }) {
-  const proceedingTruth = getAnswerTruthPercentage(proceedingAnswer);
-  const proceedingConfidence = proceedingAnswer?.confidence ?? 0;
-  const proceedingVerdict = percentageToClaimVerdict(proceedingTruth, proceedingConfidence);
-  const color = CLAIM_VERDICT_COLORS[proceedingVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
+  const scopeTruth = getAnswerTruthPercentage(scopeAnswer);
+  const scopeConfidence = scopeAnswer?.confidence ?? 0;
+  const scopeVerdict = percentageToClaimVerdict(scopeTruth, scopeConfidence);
+  const color = CLAIM_VERDICT_COLORS[scopeVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
-  const factors = proceedingAnswer.keyFactors || [];
+  const factors = scopeAnswer.keyFactors || [];
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
   const negativeCount = factors.filter((f: any) => f.supports === "no").length;
   const neutralCount = factors.filter((f: any) => f.supports === "neutral").length;
   const contestedCount = factors.filter((f: any) => f.supports === "no" && f.isContested).length;
 
-  const subject = (proceeding?.subject || "").trim();
-  const outcome = (proceeding?.outcome || "").trim();
-  const charges: string[] = Array.isArray(proceeding?.charges) ? proceeding.charges : [];
-  const showAbout = !!subject || (charges.length > 0) || (!!outcome && outcome !== "unknown");
+  const subject = (scope?.subject || "").trim();
+  const rawOutcome = (scope?.outcome || "").trim().toLowerCase();
+  // Don't display vague outcomes - only show if we have a concrete outcome
+  const isVagueOutcome = !rawOutcome || 
+    rawOutcome === "unknown" || 
+    rawOutcome === "pending" || 
+    rawOutcome.includes("investigation") ||
+    rawOutcome.includes("ongoing") ||
+    rawOutcome.includes("not yet");
+  const outcome = isVagueOutcome ? "" : scope?.outcome?.trim() || "";
+  const charges: string[] = Array.isArray(scope?.charges) ? scope.charges : [];
+  const showAbout = !!subject || (charges.length > 0) || !!outcome;
 
   return (
     <div className={styles.proceedingCard} style={{ borderColor: color.border }}>
       <div className={styles.proceedingCardHeader}>
         <div className={styles.proceedingCardTitle}>
-          {proceeding?.name || proceedingAnswer.proceedingName}
+          {scope?.name || scopeAnswer.proceedingName}
         </div>
-        {proceeding && (
+        {scope && (
           <div className={styles.proceedingCardMeta}>
-            {proceeding.court && <span>{proceeding.court} • </span>}
-            {proceeding.date && <span>{proceeding.date}</span>}
-            {proceeding.status && proceeding.status !== "unknown" && <span> • {proceeding.status}</span>}
+            {scope.court && <span>{scope.court} • </span>}
+            {scope.date && <span>{scope.date}</span>}
+            {scope.status && scope.status !== "unknown" && <span> • {scope.status}</span>}
           </div>
         )}
         {showAbout && (
@@ -858,7 +866,7 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
                 <span className={styles.proceedingAboutLabel}>Charges:</span> {charges.slice(0, 3).join("; ")}{charges.length > 3 ? "…" : ""}
               </span>
             )}
-            {outcome && outcome !== "unknown" && (
+            {outcome && (
               <span className={styles.proceedingAboutItem}>
                 <span className={styles.proceedingAboutLabel}>Outcome:</span> {outcome}
               </span>
@@ -870,9 +878,9 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
       <div className={styles.proceedingCardContent}>
         <div className={styles.proceedingAnswerRow}>
           <span className={styles.proceedingAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
-            {color.icon} {getVerdictLabel(proceedingVerdict)}
+            {color.icon} {getVerdictLabel(scopeVerdict)}
           </span>
-          <span className={styles.proceedingPercentage}>{proceedingTruth}% <span style={{ fontSize: 11, color: "#999" }}>({proceedingAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.proceedingPercentage}>{scopeTruth}% <span style={{ fontSize: 11, color: "#999" }}>({scopeAnswer.confidence}%  confidence)</span></span>
         </div>
 
         <div className={`${styles.factorsSummary} ${contestedCount > 0 ? styles.factorsSummaryContested : styles.factorsSummaryNormal}`}>
@@ -886,10 +894,10 @@ function ProceedingCard({ proceedingAnswer, proceeding }: { proceedingAnswer: an
           {neutralCount > 0 && <span className={styles.factorsNeutral}>➖ {neutralCount} neutral</span>}
         </div>
 
-        {proceedingAnswer.shortAnswer && (
+        {scopeAnswer.shortAnswer && (
           <div className={styles.proceedingShortAnswer}>
             <span className={styles.proceedingAssessmentLabel}>Assessment:</span>{" "}
-            {proceedingAnswer.shortAnswer}
+            {scopeAnswer.shortAnswer}
           </div>
         )}
 
@@ -1156,63 +1164,63 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
 // Claims Components
 // ============================================================================
 
-function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdicts: any[]; proceedings: any[] }) {
-  const claimsByProc = new Map<string, any[]>();
-  const crossProceedingClaims: any[] = [];
+function ClaimsGroupedByScope({ claimVerdicts, scopes }: { claimVerdicts: any[]; scopes: any[] }) {
+  const claimsByScope = new Map<string, any[]>();
+  const crossScopeClaims: any[] = [];
 
   for (const cv of claimVerdicts) {
     if (!cv.relatedProceedingId) {
-      crossProceedingClaims.push(cv);
+      crossScopeClaims.push(cv);
       continue;
     }
-    if (!claimsByProc.has(cv.relatedProceedingId)) claimsByProc.set(cv.relatedProceedingId, []);
-    claimsByProc.get(cv.relatedProceedingId)!.push(cv);
+    if (!claimsByScope.has(cv.relatedProceedingId)) claimsByScope.set(cv.relatedProceedingId, []);
+    claimsByScope.get(cv.relatedProceedingId)!.push(cv);
   }
 
-  const proceedingIds = proceedings.map((p: any) => p.id);
-  const hasProceedings = proceedingIds.length > 0;
+  const scopeIds = scopes.map((s: any) => s.id);
+  const hasScopes = scopeIds.length > 0;
   const groups: Array<{ id: string; title: string; claims: any[] }> = [];
 
-  if (hasProceedings) {
-    for (const proc of proceedings) {
-      const ownClaims = claimsByProc.get(proc.id) || [];
+  if (hasScopes) {
+    for (const scope of scopes) {
+      const ownClaims = claimsByScope.get(scope.id) || [];
       const combined = [...ownClaims];
-      for (const crossClaim of crossProceedingClaims) {
+      for (const crossClaim of crossScopeClaims) {
         if (!combined.some((c) => c.claimId === crossClaim.claimId)) {
           combined.push(crossClaim);
         }
       }
       if (combined.length === 0) continue;
       groups.push({
-        id: proc.id,
-        title: `⚖️ ${proc.shortName}: ${proc.name}`,
+        id: scope.id,
+        title: `⚖️ ${scope.shortName}: ${scope.name}`,
         claims: combined,
       });
     }
 
-    for (const [procId, claims] of claimsByProc.entries()) {
-      if (proceedingIds.includes(procId)) continue;
+    for (const [scopeId, claims] of claimsByScope.entries()) {
+      if (scopeIds.includes(scopeId)) continue;
       if (claims.length === 0) continue;
       groups.push({
-        id: procId,
-        title: `Scope ${procId}`,
+        id: scopeId,
+        title: `Scope ${scopeId}`,
         claims,
       });
     }
   } else {
     const claimsByGroup = new Map<string, any[]>();
     for (const cv of claimVerdicts) {
-      const procId = cv.relatedProceedingId || "general";
-      if (!claimsByGroup.has(procId)) claimsByGroup.set(procId, []);
-      claimsByGroup.get(procId)!.push(cv);
+      const scopeId = cv.relatedProceedingId || "general";
+      if (!claimsByGroup.has(scopeId)) claimsByGroup.set(scopeId, []);
+      claimsByGroup.get(scopeId)!.push(cv);
     }
 
-    for (const [procId, claims] of claimsByGroup.entries()) {
+    for (const [scopeId, claims] of claimsByGroup.entries()) {
       if (claims.length === 0) continue;
-      const proc = proceedings.find((p: any) => p.id === procId);
+      const scope = scopes.find((s: any) => s.id === scopeId);
       groups.push({
-        id: procId,
-        title: proc ? `⚖️ ${proc.shortName}: ${proc.name}` : "General Claims",
+        id: scopeId,
+        title: scope ? `⚖️ ${scope.shortName}: ${scope.name}` : "General Claims",
         claims,
       });
     }
@@ -1229,7 +1237,7 @@ function ClaimsGroupedByProceeding({ claimVerdicts, proceedings }: { claimVerdic
             <ClaimCard
               key={`${group.id}:${cv.claimId}`}
               claim={cv}
-              showCrossProceeding={hasProceedings && !cv.relatedProceedingId}
+              showCrossProceeding={hasScopes && !cv.relatedProceedingId}
             />
           ))}
         </div>

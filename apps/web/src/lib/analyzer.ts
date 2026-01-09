@@ -265,7 +265,7 @@ function extractAllCapsToken(text: string): string {
   return m?.[1] ?? "";
 }
 
-function inferProceedingTypeLabel(p: any): string {
+function inferScopeTypeLabel(p: any): string {
   const hay = [
     p?.name,
     p?.shortName,
@@ -312,7 +312,7 @@ function scopeTypeRank(label: string): number {
 // Backward compatibility alias
 const proceedingTypeRank = scopeTypeRank;
 
-function sanitizeProceedingShortAnswer(shortAnswer: string, proceedingStatus: string): string {
+function sanitizeScopeShortAnswer(shortAnswer: string, proceedingStatus: string): string {
   if (!shortAnswer) return shortAnswer;
   if ((proceedingStatus || "").toLowerCase() !== "unknown") return shortAnswer;
 
@@ -341,7 +341,7 @@ function detectInstitutionCode(p: any): string {
   return "";
 }
 
-function canonicalizeProceedings(
+function canonicalizeScopes(
   input: string,
   understanding: ClaimUnderstanding,
 ): ClaimUnderstanding {
@@ -351,14 +351,14 @@ function canonicalizeProceedings(
   if (procs.length === 0) return understanding;
 
   // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeProceedings:entry',message:'canonicalizeProceedings entry',data:{inputPreview:String(input).slice(0,200),count:procs.length,ids:procs.map((p:any)=>p?.id).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeScopes:entry',message:'canonicalizeScopes entry',data:{inputPreview:String(input).slice(0,200),count:procs.length,ids:procs.map((p:any)=>p?.id).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
   // #endregion
 
   // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
   // Use a lightweight, mostly-provider-invariant key: inferred type + institution code + court string.
   const sorted = [...procs].sort((a: any, b: any) => {
-    const al = inferProceedingTypeLabel(a);
-    const bl = inferProceedingTypeLabel(b);
+    const al = inferScopeTypeLabel(a);
+    const bl = inferScopeTypeLabel(b);
     const ar = proceedingTypeRank(al);
     const br = proceedingTypeRank(bl);
     if (ar !== br) return ar - br;
@@ -378,11 +378,11 @@ function canonicalizeProceedings(
     );
 
   // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeProceedings:anchors',message:'canonicalizeProceedings anchors',data:{hasExplicitYear,hasExplicitStatusAnchor},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeScopes:anchors',message:'canonicalizeScopes anchors',data:{hasExplicitYear,hasExplicitStatusAnchor},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
   // #endregion
 
   const canonicalProceedings = sorted.map((p: any, idx: number) => {
-    const typeLabel = inferProceedingTypeLabel(p);
+    const typeLabel = inferScopeTypeLabel(p);
     const inst = detectInstitutionCode(p);
     let newId = inst ? `CTX_${inst}` : `CTX_${idx + 1}`;
     if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
@@ -533,8 +533,8 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
 
   // Check understanding for recent dates in scopes
   if (understanding?.distinctProceedings) {
-    for (const proc of understanding.distinctProceedings) {
-      const dateStr = proc.date || proc.temporal || "";
+    for (const scope of understanding.distinctProceedings) {
+      const dateStr = scope.date || scope.temporal || "";
       if (dateStr && recentYears.some(year => dateStr.includes(String(year)))) {
         return true;
       }
@@ -3103,8 +3103,8 @@ For "Does this vaccine cause autism?"
   // Canonicalize proceedings early so:
   // - IDs are stable (P1/P2/...) instead of model-invented IDs
   // - downstream research queries don't drift because the model changed labels/dates
-  parsed = canonicalizeProceedings(input, parsed);
-  debugLog("understandClaim: proceedings after canonicalize", {
+  parsed = canonicalizeScopes(input, parsed);
+  debugLog("understandClaim: scopes after canonicalize", {
     detectedInputType: parsed.detectedInputType,
     requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
     count: parsed.distinctProceedings?.length ?? 0,
@@ -3121,15 +3121,15 @@ For "Does this vaccine cause autism?"
     // v2.6.21: Use original input for both questions and statements to ensure consistent context detection
     // Previously, we normalized questions to statements, but this caused inconsistent context detection
     const supplementalInput = trimmedInput;
-    const supplemental = await requestSupplementalProceedings(supplementalInput, model, parsed);
+    const supplemental = await requestSupplementalScopes(supplementalInput, model, parsed);
     if (supplemental?.distinctProceedings && supplemental.distinctProceedings.length > 1) {
       parsed = {
         ...parsed,
         requiresSeparateAnalysis: true,
         distinctProceedings: supplemental.distinctProceedings,
       };
-      parsed = canonicalizeProceedings(input, parsed);
-      debugLog("understandClaim: supplemental proceedings applied", {
+      parsed = canonicalizeScopes(input, parsed);
+      debugLog("understandClaim: supplemental scopes applied", {
         detectedInputType: parsed.detectedInputType,
         requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
         count: parsed.distinctProceedings?.length ?? 0,
@@ -3172,7 +3172,7 @@ For "Does this vaccine cause autism?"
       );
       if (supplementalClaims.length === 0) break;
       parsed.subClaims.push(...supplementalClaims);
-      console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance proceeding coverage`);
+      console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance scope coverage`);
       // #region agent log
   if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:afterSupplemental',message:'After supplemental claims',data:{supplementalCount:supplementalClaims.length,supplementalClaims:supplementalClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100)}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
@@ -3235,10 +3235,10 @@ async function requestSupplementalSubClaims(
   model: any,
   understanding: ClaimUnderstanding,
 ): Promise<ClaimUnderstanding["subClaims"]> {
-  const proceedings = understanding.distinctProceedings || [];
-  const hasProceedings = proceedings.length > 0;
-  const isMultiProceeding = proceedings.length > 1;
-  const singleProceedingId = proceedings.length === 1 ? proceedings[0].id : "";
+  const scopes = understanding.distinctProceedings || [];
+  const hasScopes = scopes.length > 0;
+  const isMultiScope = scopes.length > 1;
+  const singleScopeId = scopes.length === 1 ? scopes[0].id : "";
 
   const normalizeText = (text: string) =>
     text.toLowerCase().replace(/\s+/g, " ").trim();
@@ -3248,8 +3248,8 @@ async function requestSupplementalSubClaims(
   const existingTextByProc = new Map<string, Set<string>>();
   const existingTextGlobal = new Set<string>();
 
-  const coverageTargets = hasProceedings
-    ? proceedings.map((proc) => ({ id: proc.id, name: proc.name }))
+  const coverageTargets = hasScopes
+    ? scopes.map((s) => ({ id: s.id, name: s.name }))
     : [{ id: "", name: "General" }];
 
   for (const target of coverageTargets) {
@@ -3265,11 +3265,11 @@ async function requestSupplementalSubClaims(
     }
 
     let procId = claim.relatedProceedingId || "";
-    if (!isMultiProceeding) {
-      procId = procId || singleProceedingId;
+    if (!isMultiScope) {
+      procId = procId || singleScopeId;
     }
 
-    if (isMultiProceeding && !procId) continue;
+    if (isMultiScope && !procId) continue;
     if (!claimsByProc.has(procId)) continue;
 
     claimsByProc.get(procId)!.push(claim);
@@ -3313,7 +3313,7 @@ async function requestSupplementalSubClaims(
 
   const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
  - Return ONLY new claims (do not repeat existing ones).
- - Each claim must be tied to a single scope via relatedProceedingId.${hasProceedings ? "" : " Use an empty string if no scopes are listed."}
+ - Each claim must be tied to a single scope via relatedProceedingId.${hasScopes ? "" : " Use an empty string if no scopes are listed."}
  - Use claimRole="core", checkWorthiness="high", harmPotential="high", centrality="high", isCentral=true.
  - Use dependsOn=[] unless a dependency is truly required.
  - Ensure each listed context reaches at least ${MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING} central core claims.
@@ -3368,10 +3368,10 @@ async function requestSupplementalSubClaims(
   const supplementalClaims: ClaimUnderstanding["subClaims"] = [];
   for (const claim of supplemental.subClaims) {
     let procId = claim?.relatedProceedingId || "";
-    if (!isMultiProceeding) {
-      procId = procId || singleProceedingId;
+    if (!isMultiScope) {
+      procId = procId || singleScopeId;
     }
-    if (isMultiProceeding && !procId) {
+    if (isMultiScope && !procId) {
       continue;
     }
     if (!allowedProcIds.has(procId)) {
@@ -3418,7 +3418,7 @@ async function requestSupplementalSubClaims(
  * Best-effort: ask the model to (re)consider whether there are multiple distinct contexts/threads.
  * This is intentionally generic and only applied when the initial understanding appears under-split.
  */
-async function requestSupplementalProceedings(
+async function requestSupplementalScopes(
   input: string,
   model: any,
   understanding: ClaimUnderstanding,
@@ -3481,7 +3481,7 @@ Use empty strings "" and empty arrays [] when unknown.`;
     if (nextCount <= 1 || !sp.data.requiresSeparateAnalysis) return null;
 
     // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:requestSupplementalProceedings',message:'Supplemental proceedings accepted',data:{prevCount:currentCount,nextCount,ids:(sp.data.distinctProceedings||[]).map((p:any)=>p.id).slice(0,6)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:requestSupplementalScopes',message:'Supplemental proceedings accepted',data:{prevCount:currentCount,nextCount,ids:(sp.data.distinctProceedings||[]).map((p:any)=>p.id).slice(0,6)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
     // #endregion
 
     return {
@@ -3489,7 +3489,7 @@ Use empty strings "" and empty arrays [] when unknown.`;
       distinctProceedings: sp.data.distinctProceedings,
     };
   } catch (err: any) {
-    debugLog("requestSupplementalProceedings: FAILED", err?.message || String(err));
+    debugLog("requestSupplementalScopes: FAILED", err?.message || String(err));
     return null;
   }
 }
@@ -3506,7 +3506,7 @@ async function extractOutcomeClaimsFromFacts(
   if (!state.understanding || state.facts.length === 0) return [];
 
   const understanding = state.understanding;
-  const proceedings = understanding.distinctProceedings || [];
+  const scopes = understanding.distinctProceedings || [];
   const existingClaims = understanding.subClaims || [];
   const existingClaimTexts = new Set(existingClaims.map((c) => c.text.toLowerCase().trim()));
 
@@ -3544,8 +3544,8 @@ ${factsText}
 EXISTING CLAIMS (DO NOT DUPLICATE):
 ${existingClaims.map((c) => `- ${c.id}: ${c.text}`).join("\n")}
 
-PROCEEDINGS:
-${proceedings.map((p) => `- ${p.id}: ${p.name}`).join("\n")}
+SCOPES:
+${scopes.map((s) => `- ${s.id}: ${s.name}`).join("\n")}
 
 Extract outcomes that need separate evaluation claims.`;
 
@@ -3612,6 +3612,75 @@ Extract outcomes that need separate evaluation claims.`;
   } catch (err: any) {
     debugLog("extractOutcomeClaimsFromFacts: FAILED", err?.message || String(err));
     return [];
+  }
+}
+
+/**
+ * Enrich proceedings/scopes with outcomes discovered in the extracted facts.
+ * Uses LLM to extract outcomes generically (no hardcoded domain-specific patterns).
+ * This addresses the issue where outcome is shown as "pending" or "unknown" in the UI
+ * even though the actual outcome was found in the evidence.
+ */
+async function enrichScopesWithOutcomes(state: ResearchState, model: any): Promise<void> {
+  if (!state.understanding?.distinctProceedings?.length) return;
+
+  const facts = state.facts || [];
+  if (facts.length === 0) return;
+
+  for (const proc of state.understanding.distinctProceedings) {
+    // Skip if already has a specific outcome (not vague placeholders)
+    const currentOutcome = (proc.outcome || "").toLowerCase().trim();
+    const isVagueOutcome = !currentOutcome ||
+      currentOutcome === "unknown" ||
+      currentOutcome === "pending" ||
+      currentOutcome.includes("investigation") ||
+      currentOutcome.includes("ongoing") ||
+      currentOutcome.includes("not yet") ||
+      currentOutcome.includes("to be determined");
+
+    if (!isVagueOutcome) continue;
+
+    // Get facts related to this scope
+    const relevantFacts = facts.filter(f =>
+      !f.relatedProceedingId || f.relatedProceedingId === proc.id
+    );
+
+    if (relevantFacts.length === 0) continue;
+
+    const factsText = relevantFacts.map(f => `- ${f.fact}`).join("\n").slice(0, 4000);
+
+    try {
+      // Use LLM to extract outcome - generic, not domain-specific
+      const result = await generateText({
+        model,
+        temperature: CONFIG.deterministic ? 0 : undefined,
+        messages: [
+          { role: "system", content: "You extract specific outcomes from evidence. Return ONLY the outcome phrase, nothing else." },
+          { role: "user", content: `Given these facts about "${proc.name}" (${proc.subject || ""}):
+
+${factsText}
+
+What is the specific, concrete outcome or result mentioned?
+- Return ONLY the outcome in a short phrase (e.g., "8-year penalty", "approved", "rejected", "settled for $X")
+- If no specific outcome is mentioned, return exactly: NONE
+- Do NOT return vague terms like "pending", "ongoing", "under investigation"` },
+        ],
+      });
+      const text = result.text;
+
+      const outcome = text.trim();
+      if (outcome && outcome !== "NONE" && outcome.length < 100) {
+        console.log(`[Analyzer] Enriched scope "${proc.name}" outcome: "${proc.outcome}" → "${outcome}"`);
+        proc.outcome = outcome;
+        // Update status if we found a concrete outcome
+        if (proc.status === "pending" || proc.status === "ongoing" || proc.status === "unknown") {
+          proc.status = "concluded";
+        }
+      }
+    } catch (err: any) {
+      debugLog("enrichScopesWithOutcomes: LLM call failed", err?.message || String(err));
+      // Continue with other proceedings
+    }
   }
 }
 
@@ -3728,8 +3797,8 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     });
   }
 
-  const proceedings = understanding.distinctProceedings || [];
-  const proceedingsWithFacts = new Set(
+  const scopes = understanding.distinctProceedings || [];
+  const scopesWithFacts = new Set(
     state.facts
       .map((f: ExtractedFact) => f.relatedProceedingId)
       .filter(Boolean),
@@ -3739,38 +3808,38 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     state.facts.length >= config.minFactsRequired &&
     categories.length >= CONFIG.minCategories &&
     state.contradictionSearchPerformed &&
-    (proceedings.length === 0 ||
-      proceedings.every((p: DistinctProceeding) =>
-        proceedingsWithFacts.has(p.id),
+    (scopes.length === 0 ||
+      scopes.every((p: Scope) =>
+        scopesWithFacts.has(p.id),
       ))
   ) {
     return { complete: true };
   }
 
-  // Research each proceeding
+  // Research each scope
   if (
-    proceedings.length > 0 &&
-    state.iterations.length < proceedings.length * 2
+    scopes.length > 0 &&
+    state.iterations.length < scopes.length * 2
   ) {
-    for (const proc of proceedings) {
-      const procFacts = state.facts.filter(
-        (f) => f.relatedProceedingId === proc.id,
+    for (const scope of scopes) {
+      const scopeFacts = state.facts.filter(
+        (f) => f.relatedProceedingId === scope.id,
       );
-      if (procFacts.length < 2) {
-        const procKey = [proc.institution || proc.court, proc.shortName, proc.name]
+      if (scopeFacts.length < 2) {
+        const scopeKey = [scope.institution || scope.court, scope.shortName, scope.name]
           .filter(Boolean)
           .join(" ")
           .trim();
         return {
           complete: false,
-          focus: `${proc.name} - ${procKey || "scope"}`,
-          targetProceedingId: proc.id,
+          focus: `${scope.name} - ${scopeKey || "scope"}`,
+          targetProceedingId: scope.id,
           category: "evidence",
           queries: [
-            `${entityStr} ${procKey}`.trim(),
-            `${entityStr} ${proc.court || ""} official decision documents`.trim(),
-            `${entityStr} ${proc.shortName || proc.name} evidence procedure`.trim(),
-            `${entityStr} ${procKey} outcome`.trim(),
+            `${entityStr} ${scopeKey}`.trim(),
+            `${entityStr} ${scope.court || ""} official decision documents`.trim(),
+            `${entityStr} ${scope.shortName || scope.name} evidence procedure`.trim(),
+            `${entityStr} ${scopeKey} outcome`.trim(),
           ],
         };
       }
@@ -3828,10 +3897,10 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   }
 
   // NEW v2.6.18: Search for decision-makers and potential conflicts of interest
-  if (!state.decisionMakerSearchPerformed && proceedings.length > 0) {
-    // Extract decision-maker names from all proceedings
-    const decisionMakerNames = proceedings
-      .flatMap((p: DistinctProceeding) => p.decisionMakers?.map(dm => dm.name) || [])
+  if (!state.decisionMakerSearchPerformed && scopes.length > 0) {
+    // Extract decision-maker names from all scopes
+    const decisionMakerNames = scopes
+      .flatMap((s: Scope) => s.decisionMakers?.map(dm => dm.name) || [])
       .filter((name, index, arr) => arr.indexOf(name) === index); // unique names
 
     if (decisionMakerNames.length > 0) {
@@ -3841,7 +3910,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         category: "conflict_of_interest",
         queries: [
           `${decisionMakerNames[0]} conflict of interest ${entityStr}`,
-          `${decisionMakerNames[0]} impartiality bias ${proceedings[0]?.court || ""}`,
+          `${decisionMakerNames[0]} impartiality bias ${scopes[0]?.court || ""}`,
           ...(decisionMakerNames.length > 1 ? [`${decisionMakerNames.slice(0, 2).join(" ")} role multiple trials`] : []),
         ],
       };
@@ -4112,7 +4181,7 @@ async function extractFacts(
   source: FetchedSource,
   focus: string,
   model: any,
-  proceedings: DistinctProceeding[],
+  scopes: Scope[],
   targetProceedingId?: string,
 ): Promise<ExtractedFact[]> {
   console.log(`[Analyzer] extractFacts called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
@@ -4123,9 +4192,9 @@ async function extractFacts(
     return [];
   }
 
-  const proceedingsList =
-    proceedings.length > 0
-      ? `\n\nKNOWN CONTEXTS:\n${proceedings.map((p: DistinctProceeding) => `- ${p.id}: ${p.name}`).join("\n")}`
+  const scopesList =
+    scopes.length > 0
+      ? `\n\nKNOWN CONTEXTS:\n${scopes.map((p: Scope) => `- ${p.id}: ${p.name}`).join("\n")}`
       : "";
 
   // Get current date for temporal reasoning
@@ -4162,7 +4231,7 @@ Evidence documentation typically defines its scope/context. Extract this when pr
 - geographic: Geographic scope (empty string if not specified)
 - temporal: Time period (empty string if not specified)
 
-**IMPORTANT**: Different sources may use different scopes. A "40% efficiency" from a WTW study is NOT comparable to one from a TTW study. Capturing scope enables accurate comparisons.${proceedingsList}`;
+**IMPORTANT**: Different sources may use different scopes. A "40% efficiency" from a WTW study is NOT comparable to one from a TTW study. Capturing scope enables accurate comparisons.${scopesList}`;
 
   debugLog(`extractFacts: Calling LLM for ${source.id}`, {
     textLength: source.fullText.length,
@@ -4447,7 +4516,7 @@ async function generateVerdicts(
     .join("\n");
 
   if (isQuestionLike && hasMultipleProceedings) {
-    const result = await generateMultiProceedingVerdicts(
+    const result = await generateMultiScopeVerdicts(
       state,
       understanding,
       factsFormatted,
@@ -4479,7 +4548,7 @@ async function generateVerdicts(
   }
 }
 
-async function generateMultiProceedingVerdicts(
+async function generateMultiScopeVerdicts(
   state: ResearchState,
   understanding: ClaimUnderstanding,
   factsFormatted: string,
@@ -4491,10 +4560,10 @@ async function generateMultiProceedingVerdicts(
   articleAnalysis: ArticleAnalysis;
   questionAnswer: QuestionAnswer;
 }> {
-  const proceedingsFormatted = understanding.distinctProceedings
+  const scopesFormatted = understanding.distinctProceedings
     .map(
-      (p: DistinctProceeding) =>
-        `- **${p.id}**: ${p.name}\n  Context: ${p.court || "N/A"} | Date: ${p.date} | Status: ${p.status}\n  Subject: ${p.subject}`,
+      (s: Scope) =>
+        `- **${s.id}**: ${s.name}\n  Institution: ${s.institution || s.court || "N/A"} | Date: ${s.temporal || s.date || "N/A"} | Status: ${s.status}\n  Subject: ${s.subject}`,
     )
     .join("\n\n");
 
@@ -4541,7 +4610,7 @@ Evidence may come from sources with DIFFERENT analytical scopes (e.g., WTW vs TT
 "${analysisInput}"
 
 ## SCOPES - PROVIDE SEPARATE ANSWER FOR EACH
-${proceedingsFormatted}
+${scopesFormatted}
 
 ## INSTRUCTIONS
 
@@ -4619,7 +4688,7 @@ ${getProviderPromptHint()}`;
 "${analysisInput}"
 
 ## SCOPES
-${proceedingsFormatted}
+${scopesFormatted}
 
 ## CLAIMS
 ${claimsFormatted}
@@ -4647,31 +4716,31 @@ Provide SEPARATE answers for each scope.`;
     const rawOutput = extractStructuredOutput(result);
     if (rawOutput) {
       parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING>;
-      debugLog("generateMultiProceedingVerdicts: SUCCESS", {
+      debugLog("generateMultiScopeVerdicts: SUCCESS", {
         hasQuestionAnswer: !!parsed.questionAnswer,
         proceedingAnswersCount: parsed.proceedingAnswers?.length,
         claimVerdictsCount: parsed.claimVerdicts?.length,
       });
     } else {
-      debugLog("generateMultiProceedingVerdicts: No rawOutput returned");
+      debugLog("generateMultiScopeVerdicts: No rawOutput returned");
     }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    debugLog("generateMultiProceedingVerdicts: ERROR", {
+    debugLog("generateMultiScopeVerdicts: ERROR", {
       error: errMsg,
       stack: err instanceof Error ? err.stack?.split('\n').slice(0, 5).join('\n') : undefined,
     });
 
     // Check for OpenAI schema validation errors
     if (errMsg.includes("Invalid schema") || errMsg.includes("required")) {
-      debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_PROCEEDING");
+      debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_SCOPE");
     }
     state.llmCalls++;
   }
 
   // Fallback if structured output failed
   if (!parsed || !parsed.proceedingAnswers) {
-    debugLog("generateMultiProceedingVerdicts: Using FALLBACK (parsed failed)", {
+    debugLog("generateMultiScopeVerdicts: Using FALLBACK (parsed failed)", {
       hasParsed: !!parsed,
       hasProceedingAnswers: !!parsed?.proceedingAnswers,
     });
@@ -4781,8 +4850,8 @@ Provide SEPARATE answers for each scope.`;
       (f) => f.supports === "neutral" && f.isContested,
     ).length;
 
-    // Debug: Log factor details for this proceeding
-    debugLog(`Factor analysis for ${pa.proceedingId}`, {
+    // Debug: Log factor details for this scope
+    debugLog(`Factor analysis for scope ${pa.proceedingId}`, {
       answerTruthPct: pa.answer,
       factorCounts: {
         positive: positiveFactors,
@@ -4820,7 +4889,7 @@ Provide SEPARATE answers for each scope.`;
     // v2.6.20: Removed factor-based boost to ensure input neutrality
     // The boost was causing inconsistent verdicts for identical inputs
     // Verdicts are now purely claim-based for transparency and consistency
-    debugLog(`Proceeding ${pa.proceedingId}: No factor-based boost applied`, {
+    debugLog(`Scope ${pa.proceedingId}: No factor-based boost applied`, {
       answerTruthPct,
       positiveFactors,
       evidencedNegatives,
@@ -4846,7 +4915,7 @@ Provide SEPARATE answers for each scope.`;
       answer: answerTruthPct,
       confidence: correctedConfidence,
       truthPercentage: answerTruthPct,
-      shortAnswer: sanitizeProceedingShortAnswer(String(pa.shortAnswer || ""), procStatus),
+      shortAnswer: sanitizeScopeShortAnswer(String(pa.shortAnswer || ""), procStatus),
       factorAnalysis,
     } as ProceedingAnswer;
   });
@@ -4886,7 +4955,7 @@ Provide SEPARATE answers for each scope.`;
   );
 
   if (missingClaims.length > 0) {
-    debugLog(`generateMultiProceedingVerdicts: Missing verdicts for ${missingClaims.length} claims`, {
+    debugLog(`generateMultiScopeVerdicts: Missing verdicts for ${missingClaims.length} claims`, {
       missingClaimIds: missingClaims.map((c: any) => c.id),
       totalClaims: understanding.subClaims.length,
       verdictsGenerated: parsed.claimVerdicts.length,
@@ -4952,14 +5021,14 @@ Provide SEPARATE answers for each scope.`;
       if (proceedingIsPositive && truthPct < 72) {
         const originalTruth = truthPct;
         truthPct = 72; // Minimum for MOSTLY-TRUE
-        debugLog("claimVerdict: Corrected based on proceeding factors", {
+        debugLog("claimVerdict: Corrected based on scope factors", {
           claimId: cv.claimId,
-          proceedingId,
+          scopeId: proceedingId,
           from: originalTruth,
           to: truthPct,
           truthPctBefore: originalTruth,
           truthPctAfter: truthPct,
-          reason: "Proceeding is positive with no evidenced negatives",
+          reason: "Scope is positive with no evidenced negatives",
         });
       }
     }
@@ -6636,6 +6705,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:postResearchOutcomeExtraction',message:'Post-research outcome extraction',data:{outcomeClaimsCount:outcomeClaims.length,outcomeClaims:outcomeClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),relatedProceedingId:c.relatedProceedingId}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
   }
+
+  // STEP 4.6: Enrich scopes with outcomes discovered in evidence (generic LLM-based)
+  // This updates "pending"/"unknown" outcomes with actual outcomes found in facts
+  await emit(`Enriching scopes with discovered outcomes [LLM: ${provider}/${modelName}]`, 64);
+  await enrichScopesWithOutcomes(state, model);
 
   // STEP 5: Verdicts
   await emit(`Step 3: Generating verdicts [LLM: ${provider}/${modelName}]`, 65);
