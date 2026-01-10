@@ -1,14 +1,21 @@
 # FactHarbor Status and Next Steps
 
 **Date**: January 10, 2026
-**Last Updated**: January 10, 2026
-**Status**: Enhanced recency detection and optional Gemini grounded search implemented
+**Last Updated**: January 10, 2026 (Evening - v2.6.23 Input Neutrality Fix)
+**Status**: Critical bug fix complete - Input neutrality resolved
 
 ---
 
 ## Executive Summary
 
-**Current State**: Recency-sensitive search improvements implemented. Optional Gemini grounded search mode added. Schema v2.6.22.
+**Current State**: v2.6.23 - Input neutrality bug FIXED. Question and statement forms now use identical normalized input for scope detection and research queries.
+
+**Key Accomplishments** (January 10, 2026 - Session 3 - Evening):
+- **🔥 CRITICAL FIX**: Input neutrality - `canonicalizeScopes()` now uses `analysisInput` (normalized statement) instead of original input
+- **🔥 CRITICAL FIX**: Supplemental scope detection uses `analysisInput` throughout
+- **✨ ENHANCEMENT**: Strengthened centrality heuristic with explicit NON-central examples and "0-2 central claims maximum" rule
+- **✅ COMPLIANCE**: Removed domain-specific person names from recency detection (Generic by Design)
+- **Schema Version**: Updated to 2.6.23
 
 **Key Accomplishments** (January 10, 2026 - Session 2):
 - **Enhanced Recency Detection**: Improved `isRecencySensitive()` with news-related keywords (trial, verdict, sentence, election, etc.)
@@ -129,7 +136,33 @@
 
 ### High Priority
 
-#### 1. Metrics Tracking and Error Pattern Tracking (Phase 3)
+#### 1. Input Neutrality Validation ⏳ TESTING REQUIRED (v2.6.23)
+
+**Status**: Fix complete in v2.6.23, validation required.
+
+**What Was Fixed**:
+- `canonicalizeScopes()` now uses `analysisInput` (normalized statement) instead of original input (lines 3176, 3203)
+- Supplemental scope detection fallback uses `analysisInput` instead of `trimmedInput` (line 3195)
+- Centrality heuristic strengthened with explicit NON-central examples
+- Domain-specific person names removed from recency detection
+
+**Expected Impact**:
+- Question vs statement verdict divergence: 4% → < 2%
+- Central claims per analysis: ~5-8 → 1-2
+- Recency detection: Still works via generic keywords (trial, sentence, etc.)
+
+**Validation Required**:
+1. Run both: "Was the Bolsonaro judgment fair?" and "The Bolsonaro judgment was fair"
+2. Verify < 2% divergence in verdicts
+3. Verify same scope IDs and research queries
+4. Verify ≤ 2 claims marked as `isCentral: true`
+5. Verify 27-year sentence still found
+
+**See**: [`Docs/input-neutrality-fix-v2.6.23.md`](input-neutrality-fix-v2.6.23.md) for detailed fix documentation
+
+---
+
+#### 2. Metrics Tracking and Error Pattern Tracking (Phase 3)
 
 **Status**: Requires database schema changes (C# backend).
 
@@ -330,7 +363,9 @@
 | UI Enhancements (badges, counts) | ✅ Complete | None |
 | Centrality Logic | ✅ Enhanced | None |
 | Quality Gates | ✅ Reviewed | None |
-| **Recency Detection** | ✅ Enhanced (v2.6.22) | Test with recent events |
+| **Input Neutrality** | ✅ Fixed (v2.6.23) | Test with question/statement pairs |
+| **Centrality Logic** | ✅ Enhanced (v2.6.23) | Validate ≤2 central claims per analysis |
+| **Recency Detection** | ✅ Enhanced (v2.6.22), Genericized (v2.6.23) | Test with recent events |
 | **Date-Aware Queries** | ✅ Complete (v2.6.22) | Test with Bolsonaro case |
 | **Gemini Grounded Search** | ✅ Implemented (v2.6.22) | Test when LLM_PROVIDER=gemini |
 | KeyFactors Discovery | Working | None |
