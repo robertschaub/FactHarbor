@@ -517,7 +517,10 @@ export default function JobPage() {
 
           {!isQuestion && twoPanelSummary && (
             <>
-              {impliedClaim && (
+              {/* Hide implied claim if it duplicates the article summary */}
+              {impliedClaim && 
+               impliedClaim.trim().toLowerCase() !== 
+                 twoPanelSummary.articleSummary?.mainArgument?.trim()?.toLowerCase() && (
                 <div className={styles.impliedClaimBox}>
                   <span className={styles.impliedClaimLabel}>Implied claim:</span>{" "}
                   <span className={styles.impliedClaimText}>"{impliedClaim}"</span>
@@ -534,6 +537,15 @@ export default function JobPage() {
               articleAnalysis={articleAnalysis}
               fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
               pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
+            />
+          )}
+
+          {/* Multi-scope statements: show Scope-by-Scope analysis */}
+          {!isQuestion && hasMultipleProceedings && questionAnswer?.proceedingAnswers && (
+            <MultiScopeStatementBanner 
+              questionAnswer={questionAnswer} 
+              scopes={scopes}
+              articleThesis={twoPanelSummary?.articleSummary?.mainArgument}
             />
           )}
 
@@ -818,6 +830,85 @@ function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { ques
   );
 }
 
+// ============================================================================
+// Multi-Scope Statement Banner (for statements with multiple scopes)
+// ============================================================================
+
+function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis }: { questionAnswer: any; scopes: any[]; articleThesis?: string }) {
+  const overallTruth = getAnswerTruthPercentage(questionAnswer);
+  const overallConfidence = questionAnswer?.confidence ?? 0;
+  const overallVerdict = percentageToClaimVerdict(overallTruth, overallConfidence);
+  const overallColor = CLAIM_VERDICT_COLORS[overallVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+
+  // Determine if any contestations have actual counter-evidence (CONTESTED)
+  const allKeyFactors: any[] = [
+    ...(questionAnswer?.keyFactors || []),
+    ...(questionAnswer?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
+  ];
+  const hasEvidenceBasedContestations = allKeyFactors.some(
+    (f: any) =>
+      f.supports === "no" &&
+      f.isContested &&
+      (f.factualBasis === "established" || f.factualBasis === "disputed")
+  );
+
+  return (
+    <div className={styles.multiProceedingBanner}>
+      <div className={styles.proceedingNotice}>
+        <span className={styles.proceedingIcon}>🔀</span>
+        <span className={styles.proceedingText}>
+          {scopes.length} distinct scopes analyzed separately
+        </span>
+        {hasEvidenceBasedContestations && (
+          <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
+        )}
+      </div>
+
+      <div className={styles.answerContent} style={{ borderColor: overallColor.border }}>
+        <div className={styles.answerRow}>
+          <span className={styles.answerLabel}>Overall Verdict</span>
+          <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
+            {overallColor.icon} {getVerdictLabel(overallVerdict)}
+          </span>
+          <span className={styles.answerPercentage}>{overallTruth}% <span style={{ fontSize: 12, color: "#999" }}>({overallConfidence}% confidence)</span></span>
+        </div>
+
+        {questionAnswer.calibrationNote && (
+          <div className={styles.calibrationNote}>
+            <span className={styles.calibrationText}>⚠️ {questionAnswer.calibrationNote}</span>
+          </div>
+        )}
+
+        {questionAnswer.proceedingSummary && (
+          <div className={styles.proceedingSummary}>
+            <div className={styles.proceedingSummaryText}>{questionAnswer.proceedingSummary}</div>
+          </div>
+        )}
+
+        {questionAnswer.shortAnswer && (
+          <div className={styles.shortAnswerBox} style={{ borderLeftColor: overallColor.border }}>
+            <div className={styles.shortAnswerText}>{questionAnswer.shortAnswer}</div>
+          </div>
+        )}
+      </div>
+
+      {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
+        <div className={styles.proceedingsAnalysis}>
+          <h4 className={styles.proceedingsHeader}>
+            🔀 Scope-by-Scope Analysis
+          </h4>
+          <div className={styles.proceedingsStack}>
+            {questionAnswer.proceedingAnswers.map((pa: any) => {
+              const scope = scopes.find((s: any) => s.id === pa.proceedingId);
+              return <ScopeCard key={pa.proceedingId} scopeAnswer={pa} scope={scope} />;
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
   const scopeTruth = getAnswerTruthPercentage(scopeAnswer);
   const scopeConfidence = scopeAnswer?.confidence ?? 0;
@@ -1069,7 +1160,12 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
           <span className={styles.articleVerdictBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(articleVerdictLabel)}
           </span>
-          <span className={styles.articlePercentage}>{articlePct}%</span>
+          <span className={styles.articlePercentage}>
+            {articlePct}%{" "}
+            {articleConfidence > 0 && (
+              <span style={{ fontSize: 12, color: "#999" }}>({articleConfidence}% confidence)</span>
+            )}
+          </span>
           {isPseudo && (
             <span className={styles.pseudoscienceBadge}>
               🔬 Pseudoscience Detected
