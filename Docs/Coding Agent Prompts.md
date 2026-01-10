@@ -12,11 +12,9 @@ OPEN Requests:
 ---
 Articles formulated as a question yield different results vs. the same article formulated as a question - please find the reasin and fix. 
 ---
-
-DONE recently - to be tested:
----
 LLM is not aware about the current date
 Resulting in information like "Temporal error"
+Please detect when a verdict or claim comment statement does not recognize the current date and makes false comments like "temporal error" and "in the future from the current date" or "date discrepancy"
 ---
 Almost all claims are marked as central - please investigate
 ---
@@ -33,8 +31,6 @@ Analyze the current source-code an show me where it does not follow the "Coding 
 So then I can decide what to change.
 ---
 in the past we had shown confidence number at the right of verdict, please re-add.
----
-Please detect when a verdict or claim comment statement does not recognize the current date and makes false comments like "temporal error" and "in the future from the current date" or "date discrepancy"
 ---
 At page "FactHarbor Jobs" pagination prev/next does nothing
 Please make sure that at the jobs page we can really page back - currently it seem that noch all data from the database is available

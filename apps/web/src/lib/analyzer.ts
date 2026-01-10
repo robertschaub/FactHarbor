@@ -118,7 +118,7 @@ function clearDebugLog() {
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.23",
+  schemaVersion: "2.6.24",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
@@ -1849,6 +1849,7 @@ interface ClaimUnderstanding {
   questionIntent: QuestionIntent;
   questionBeingAsked: string;
   impliedClaim: string;
+  wasOriginallyQuestion: boolean; // v2.6.24: Track if input was actually a question (not just LLM interpretation)
 
   distinctProceedings: DistinctProceeding[];
   requiresSeparateAnalysis: boolean;
@@ -2662,6 +2663,9 @@ Claims with claimRole "source", "attribution", or "timing" should ALWAYS have ce
 - "An internal email exists" → centrality: LOW (source claim, not the argument itself)
 - "Dr. X is director of Y" → centrality: LOW (attribution, establishes who said it)
 - "The statement was made in November" → centrality: LOW (timing detail)
+- "The methodology used is scientifically valid" → centrality: LOW (meta-claim about analysis, not the subject)
+- "The study followed ISO standards" → centrality: LOW (methodology validation, not the main claim)
+- "The data collection methods were appropriate" → centrality: LOW (methodological, not substantive)
 
 Only CORE claims (claimRole: "core") can have centrality: HIGH
 - The existence of a document is not the argument - what the document SAYS is the argument
@@ -3150,6 +3154,10 @@ For "Does this vaccine cause autism?"
   // - analysisInput (from line 2528): for analysis (impliedClaim)
   // =========================================================================
   const trimmedInput = input.trim();
+
+  // v2.6.24: Track if input was originally a question for UI display
+  // This prevents statements ending with "?" from being labeled as "Question"
+  (parsed as any).wasOriginallyQuestion = !!originalQuestionInput;
 
   // If input was originally a question, mark it as such for UI purposes
   if (originalQuestionInput && parsed.detectedInputType !== "question") {
@@ -4792,7 +4800,10 @@ async function generateMultiScopeVerdicts(
   // v2.6.21: Use neutral label to ensure input-neutral verdicts
   // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
   const inputLabel = "STATEMENT";
-  const isQuestionLike = analysisInputType === "question" || analysisInputType === "claim";
+  // v2.6.24: Use wasOriginallyQuestion to determine if this was truly a question input
+  // This prevents statements ending with "?" from showing "Question:" label
+  const isQuestionLike = (understanding as any).wasOriginallyQuestion ||
+    (analysisInputType === "question" && understanding.questionIntent !== "none");
 
   const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS (also called SCOPES) separately.
 
@@ -4816,8 +4827,16 @@ Evidence may come from sources with DIFFERENT analytical scopes (e.g., WTW vs TT
 - **Flag scope mismatches**: Different scopes are NOT directly comparable
 - **Note in reasoning**: When scope affects interpretation, mention it (e.g., "Under WTW analysis...")
 
-## ${inputLabel}
+## CRITICAL: RATING DIRECTION
+
+**ORIGINAL ${inputLabel} TO RATE**:
 "${analysisInput}"
+
+**YOUR TASK**: Rate the ORIGINAL ${inputLabel} above AS STATED by the user.
+- If the user claims "X is better than Y" and evidence shows Y is better, rate as FALSE/LOW percentage
+- If the user claims "X increased" and evidence shows X decreased, rate as FALSE/LOW percentage
+- Preserve the directional/comparative aspect of the original claim
+- DO NOT rate your analysis conclusion - rate whether the USER'S CLAIM matches the evidence
 
 ## SCOPES - PROVIDE SEPARATE ANSWER FOR EACH
 ${scopesFormatted}
@@ -5357,7 +5376,10 @@ async function generateQuestionVerdicts(
   // v2.6.21: Use neutral label to ensure input-neutral verdicts
   // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
   const inputLabel = "STATEMENT";
-  const isQuestionLike = analysisInputType === "question" || analysisInputType === "claim";
+  // v2.6.24: Use wasOriginallyQuestion to determine if this was truly a question input
+  // This prevents statements ending with "?" from showing "Question:" label
+  const isQuestionLike = (understanding as any).wasOriginallyQuestion ||
+    (analysisInputType === "question" && understanding.questionIntent !== "none");
 
   const systemPrompt = `Answer the input based on documented evidence.
 
@@ -5370,6 +5392,14 @@ async function generateQuestionVerdicts(
 - Do NOT assume dates are in the future without checking against the current date
 - Do NOT reject claims as "impossible" based on incorrect temporal assumptions
 - If a date seems inconsistent, verify it against the current date before making judgments
+
+## CRITICAL: RATING DIRECTION
+
+**YOUR TASK**: Rate the ORIGINAL ${inputLabel} AS STATED by the user (shown below in the user prompt).
+- If the user claims "X is better than Y" and evidence shows Y is better, rate as FALSE/LOW percentage
+- If the user claims "X increased" and evidence shows X decreased, rate as FALSE/LOW percentage
+- Preserve the directional/comparative aspect of the original claim
+- DO NOT rate your analysis conclusion - rate whether the USER'S CLAIM matches the evidence
 
 ## SCOPE/CONTEXT-AWARE EVALUATION
 
@@ -6226,18 +6256,20 @@ async function generateTwoPanelSummary(
   }
 
   // Get the implied claim, filtering out placeholder values
-  const impliedClaim = understanding.impliedClaim || understanding.articleThesis;
-  const isValidImpliedClaim = impliedClaim &&
-    !impliedClaim.toLowerCase().includes("unknown") &&
-    impliedClaim !== "<UNKNOWN>" &&
-    impliedClaim.length > 10;
+  // v2.6.24: Use articleThesis for display (LLM-extracted summary)
+  // impliedClaim is now the normalized input (for analysis consistency), not for display
+  const displaySummary = understanding.articleThesis || understanding.impliedClaim;
+  const isValidDisplaySummary = displaySummary &&
+    !displaySummary.toLowerCase().includes("unknown") &&
+    displaySummary !== "<UNKNOWN>" &&
+    displaySummary.length > 10;
 
   const articleSummary = {
     title,
     source:
       state.inputType === "url" ? state.originalInput : "User-provided text",
-    mainArgument: isValidImpliedClaim
-      ? impliedClaim
+    mainArgument: isValidDisplaySummary
+      ? displaySummary
       : (understanding.subClaims[0]?.text || "Analysis of provided content"),
     keyFindings: understanding.subClaims.slice(0, 4).map((c: any) => c.text),
     reasoning: hasMultipleProceedings
