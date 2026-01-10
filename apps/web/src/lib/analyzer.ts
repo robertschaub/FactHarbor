@@ -4845,8 +4845,11 @@ ${scopesFormatted}
 
 1. For EACH scope (use proceedingId in the schema), provide:
    - proceedingId (must match: ${understanding.distinctProceedings.map((p: Scope) => p.id).join(", ")})
-   - answer: Truth percentage (0-100) reflecting how supported this scope's analysis is
-   - shortAnswer: A complete sentence summarizing the finding (e.g., "The process followed the stated standards based on documented evidence.")
+   - answer: Truth percentage (0-100) rating THE ORIGINAL USER CLAIM shown above
+     * CRITICAL: Rate whether the USER'S CLAIM is true, NOT whether your analysis is correct
+     * If user claims "X is MORE efficient" and evidence shows "X is LESS efficient", answer should be 0-28% (FALSE/MOSTLY FALSE)
+     * Preserve the direction/comparative aspect of the original claim
+   - shortAnswer: A complete sentence summarizing what the evidence shows (e.g., "Evidence indicates the methodology was scientifically valid.")
      * MUST be a descriptive sentence, NOT just a percentage or scale label
    - keyFactors: Array of factors covering ALL these aspects:
      * Standards application (were relevant rules/standards/methods applied correctly?)
@@ -6277,7 +6280,7 @@ async function generateTwoPanelSummary(
       : `Examined ${understanding.subClaims.length} claims`,
     conclusion:
       articleAnalysis.questionAnswer?.shortAnswer ||
-      (isValidImpliedClaim ? impliedClaim : understanding.subClaims[0]?.text || "See claims analysis"),
+      (isValidDisplaySummary ? displaySummary : understanding.subClaims[0]?.text || "See claims analysis"),
   };
 
   const analysisId = `FH-${Date.now().toString(36).toUpperCase()}`;
