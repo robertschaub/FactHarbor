@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.22
+ * FactHarbor POC1 Analyzer v2.6.23
  *
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -13,11 +13,14 @@
  * - Unified analysis for questions and statements (same depth regardless of punctuation)
  * - Key Factors generated for procedural/legal topics in both modes
  * - Simplified schemas for better cross-provider compatibility
- * - NEW v2.6.22: Enhanced recency detection with news-related keywords
- * - NEW v2.6.22: Date-aware query variants for ALL search types
- * - NEW v2.6.22: Optional Gemini Grounded Search mode (FH_SEARCH_MODE=grounded)
+ * - Enhanced recency detection with news-related keywords (v2.6.22)
+ * - Date-aware query variants for ALL search types (v2.6.22)
+ * - Optional Gemini Grounded Search mode (v2.6.22)
+ * - NEW v2.6.23: Fixed input neutrality - canonicalizeScopes uses normalized input
+ * - NEW v2.6.23: Strengthened centrality heuristic with explicit examples
+ * - NEW v2.6.23: Generic recency detection (removed person names)
  *
- * @version 2.6.22
+ * @version 2.6.23
  * @date January 2026
  */
 
@@ -115,7 +118,7 @@ function clearDebugLog() {
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.22",
+  schemaVersion: "2.6.23",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
@@ -513,6 +516,7 @@ function normalizeYesNoQuestionToStatement(input: string): string {
 /**
  * Detect if a topic likely requires recent data
  * Returns true if dates, recent keywords, or temporal indicators suggest recency matters
+ * v2.6.23: Removed domain-specific person names to comply with Generic by Design principle
  */
 function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): boolean {
   const lowerText = text.toLowerCase();
@@ -541,7 +545,7 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
     return true;
   }
 
-  // NEW: Check for news-related keywords that typically involve recent events
+  // Check for news-related keywords that typically involve recent events (GENERIC - no person names)
   // These topics often have ongoing developments that require fresh search results
   const newsIndicatorKeywords = [
     // Legal/court outcomes (often have recent rulings)
@@ -2688,9 +2692,26 @@ The second is MORE CENTRAL because it has greater real-world harm potential.
 Ask yourself: "If only ONE claim could be investigated, which would readers most want verified?"
 → That's the central claim. Others are supporting.
 
+**EXPECT 0-2 CENTRAL CLAIMS MAXIMUM** in most analyses. More than 2 central claims indicates over-marking.
+
 Only assign centrality: "high" when the claim is:
 1. The PRIMARY thesis of the article/argument, AND
 2. If false, would COMPLETELY invalidate the main conclusion
+
+**Examples of NON-central claims (centrality = "low" or "medium")**:
+- ❌ "Source X stated Y" (attribution - NOT central)
+- ❌ "Event happened on date Z" (timing/background - NOT central)
+- ❌ "Document was published by institution W" (source verification - NOT central)
+- ❌ "Person A has credentials B" (background context - NOT central)
+- ❌ "Study used methodology M" (methodological detail - NOT central unless methodology IS the main claim)
+- ❌ Supporting evidence for the main thesis (evidence - NOT central, only the thesis itself is central)
+
+**Examples of CENTRAL claims (centrality = "high")**:
+- ✓ "The trial was fair and impartial" (PRIMARY evaluative thesis)
+- ✓ "The vaccine causes serious side effects" (PRIMARY factual thesis)
+- ✓ "The policy violated constitutional rights" (PRIMARY legal thesis)
+
+**Rule of thumb**: In an analysis of "Was X fair?", only the fairness conclusion itself is central. All supporting facts, sources, dates, and background are NOT central.
 
 NOT "high" for:
 - Supporting evidence (even if important)
@@ -3173,7 +3194,9 @@ For "Does this vaccine cause autism?"
   // Canonicalize proceedings early so:
   // - IDs are stable (P1/P2/...) instead of model-invented IDs
   // - downstream research queries don't drift because the model changed labels/dates
-  parsed = canonicalizeScopes(input, parsed);
+  // v2.6.23: Use analysisInput (normalized statement) for consistent scope canonicalization
+  // This ensures questions and statements yield identical scope detection and research queries
+  parsed = canonicalizeScopes(analysisInput, parsed);
   debugLog("understandClaim: scopes after canonicalize", {
     detectedInputType: parsed.detectedInputType,
     requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
@@ -3188,11 +3211,11 @@ For "Does this vaccine cause autism?"
     (parsed.detectedInputType === "claim" || parsed.detectedInputType === "question") &&
     (parsed.distinctProceedings?.length ?? 0) <= 1
   ) {
-    // v2.6.21: Use normalized impliedClaim (statement form) for scope detection to maintain input neutrality.
-    // When deterministic mode is enabled, questions are normalized to statements earlier (lines 3088-3106).
+    // v2.6.23: Use normalized analysisInput for scope detection to maintain input neutrality.
+    // When deterministic mode is enabled, questions are normalized to statements earlier (lines 2507-2528).
     // Using the same normalized form here ensures scope detection aligns with claim analysis,
     // preventing scope-to-statement misalignment and maintaining input neutrality.
-    const supplementalInput = parsed.impliedClaim || trimmedInput;
+    const supplementalInput = parsed.impliedClaim || analysisInput;
     const supplemental = await requestSupplementalScopes(supplementalInput, model, parsed);
     if (supplemental?.distinctProceedings && supplemental.distinctProceedings.length > 1) {
       parsed = {
@@ -3200,7 +3223,8 @@ For "Does this vaccine cause autism?"
         requiresSeparateAnalysis: true,
         distinctProceedings: supplemental.distinctProceedings,
       };
-      parsed = canonicalizeScopes(input, parsed);
+      // v2.6.23: Use analysisInput (normalized statement) for consistent scope canonicalization
+      parsed = canonicalizeScopes(analysisInput, parsed);
       debugLog("understandClaim: supplemental scopes applied", {
         detectedInputType: parsed.detectedInputType,
         requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
