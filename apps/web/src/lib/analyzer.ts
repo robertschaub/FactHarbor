@@ -92,7 +92,7 @@ function debugLog(message: string, data?: any) {
   // Write to file (append) - async to avoid blocking the Node event loop during long analyses
   if (DEBUG_LOG_FILE_ENABLED) {
     fs.promises.appendFile(DEBUG_LOG_PATH, logLine).catch(() => {
-      // Silently ignore file write errors
+    // Silently ignore file write errors
     });
   }
 
@@ -109,7 +109,7 @@ function clearDebugLog() {
       `=== FactHarbor Debug Log Started at ${new Date().toISOString()} ===\n`,
     )
     .catch(() => {
-      // Silently ignore
+    // Silently ignore
     });
 }
 
@@ -1849,7 +1849,7 @@ interface ClaimUnderstanding {
   questionIntent: QuestionIntent;
   questionBeingAsked: string;
   impliedClaim: string;
-  wasOriginallyQuestion: boolean; // v2.6.24: Track if input was actually a question (not just LLM interpretation)
+  wasOriginallyQuestion?: boolean; // v2.6.24: Track if input was actually a question (not just LLM interpretation)
 
   distinctProceedings: DistinctProceeding[];
   requiresSeparateAnalysis: boolean;
@@ -3180,7 +3180,7 @@ For "Does this vaccine cause autism?"
     console.log(`[Analyzer] Input Neutrality: questionBeingAsked set to original question for UI`);
   } else if (!parsed.questionBeingAsked) {
     // For statements, use the input as-is
-    parsed.questionBeingAsked = trimmedInput;
+      parsed.questionBeingAsked = trimmedInput;
   }
 
   // Set impliedClaim to the NORMALIZED statement (for analysis consistency)
@@ -4187,7 +4187,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         recencyMatters,
       };
     }
-  }
+    }
   }
 
   return { complete: true };
@@ -5132,10 +5132,10 @@ Provide SEPARATE answers for each scope.`;
     // Verdicts are now purely claim-based for transparency and consistency
     debugLog(`Scope ${pa.proceedingId}: No factor-based boost applied`, {
       answerTruthPct,
-      positiveFactors,
-      evidencedNegatives,
+          positiveFactors,
+          evidencedNegatives,
       contestedNegatives,
-    });
+        });
 
     if (answerTruthPct < 43 && positiveFactors > effectiveNegatives) {
       correctedConfidence = Math.min(correctedConfidence, 72);
@@ -6000,7 +6000,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         const penalty = cv.factualBasis === "established" ? 12 : 8;
         truthPct = Math.max(0, truthPct - penalty);
       }
-
+  
       return {
         ...cv,
         claimId: claim.id,

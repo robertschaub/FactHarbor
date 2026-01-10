@@ -518,8 +518,8 @@ export default function JobPage() {
           {!isQuestion && twoPanelSummary && (
             <>
               {/* Hide implied claim if it duplicates the article summary */}
-              {impliedClaim && 
-               impliedClaim.trim().toLowerCase() !== 
+              {impliedClaim &&
+               impliedClaim.trim().toLowerCase() !==
                  twoPanelSummary.articleSummary?.mainArgument?.trim()?.toLowerCase() && (
                 <div className={styles.impliedClaimBox}>
                   <span className={styles.impliedClaimLabel}>Implied claim:</span>{" "}
@@ -542,8 +542,8 @@ export default function JobPage() {
 
           {/* Multi-scope statements: show Scope-by-Scope analysis */}
           {!isQuestion && hasMultipleProceedings && questionAnswer?.proceedingAnswers && (
-            <MultiScopeStatementBanner 
-              questionAnswer={questionAnswer} 
+            <MultiScopeStatementBanner
+              questionAnswer={questionAnswer}
               scopes={scopes}
               articleThesis={twoPanelSummary?.articleSummary?.mainArgument}
             />
@@ -924,9 +924,9 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
   const subject = (scope?.subject || "").trim();
   const rawOutcome = (scope?.outcome || "").trim().toLowerCase();
   // Don't display vague outcomes - only show if we have a concrete outcome
-  const isVagueOutcome = !rawOutcome || 
-    rawOutcome === "unknown" || 
-    rawOutcome === "pending" || 
+  const isVagueOutcome = !rawOutcome ||
+    rawOutcome === "unknown" ||
+    rawOutcome === "pending" ||
     rawOutcome.includes("investigation") ||
     rawOutcome.includes("ongoing") ||
     rawOutcome.includes("not yet");
