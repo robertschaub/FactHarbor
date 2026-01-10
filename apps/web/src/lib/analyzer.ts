@@ -2708,7 +2708,16 @@ Only assign centrality: "high" when the claim is:
 - ❌ "Document was published by institution W" (source verification - NOT central)
 - ❌ "Person A has credentials B" (background context - NOT central)
 - ❌ "Study used methodology M" (methodological detail - NOT central unless methodology IS the main claim)
+- ❌ "The TTW methodology is valid" (methodology validation - NOT central, the claim is about efficiency, not methodology)
+- ❌ "The study framework is appropriate" (meta-analysis about methods - NOT central)
+- ❌ "The analysis excludes/includes factor X" (methodological scope - NOT central)
 - ❌ Supporting evidence for the main thesis (evidence - NOT central, only the thesis itself is central)
+
+**CRITICAL FOR COMPARATIVE CLAIMS**: If the main claim is "X is better/more/faster than Y", then:
+- ✓ CENTRAL: "X performs better than Y" or direct comparisons
+- ❌ NOT CENTRAL: "The methodology for comparing X and Y is valid"
+- ❌ NOT CENTRAL: "The analysis framework is appropriate"
+- ❌ NOT CENTRAL: "The comparison includes/excludes certain factors"
 
 **Examples of CENTRAL claims (centrality = "high")**:
 - ✓ "The trial was fair and impartial" (PRIMARY evaluative thesis)
