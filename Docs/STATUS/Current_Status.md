@@ -58,6 +58,8 @@
 10. **LLM Fallback**: Config documented but not implemented
 11. **Rich Report Mode**: `FH_REPORT_STYLE=rich` documented but not implemented
 
+**Backlog**: See `Docs/STATUS/Backlog.md` for the canonical prioritized task list.
+
 ---
 
 ## Current Priorities
@@ -91,6 +93,14 @@
    - Display Quality Gate decisions with reasons in UI
    - Complete contestation detection for KeyFactors
    - Add multi-language support
+
+### Open Topics / Task List (Jan 2026)
+
+- [ ] **Inverse-input symmetry hardening**: Keep `scripts/inverse-scope-regression.ps1` green; add 2-3 more inverse pairs and explicitly define which pairs require *strict* scope symmetry vs *best-effort* symmetry (to avoid overfitting to a single example).
+- [ ] **Evidence-driven scope refinement guardrails**: Add lightweight metrics/logging so we can tell how often scope refinement is applied vs rejected, and why (avoid over-splitting into “dimensions” that are not bounded scopes).
+- [ ] **Central-claim evidence coverage**: When a central claim has zero supporting/counter facts, do a bounded “missing-evidence” retrieval pass per claim (best-effort; must respect search limits and avoid infinite loops).
+- [ ] **Scope guidelines**: Document (in a short developer note) what qualifies as a distinct “Scope” vs a “dimension” so future prompt tweaks remain consistent with `AGENTS.md`.
+- [ ] **Analyzer modularization (defer unless needed)**: `apps/web/src/lib/analyzer.ts` is still monolithic; any split should be planned and done incrementally to minimize risk.
 
 ---
 
