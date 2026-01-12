@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.25
+ * FactHarbor POC1 Analyzer v2.6.26
  *
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -19,12 +19,13 @@
  * - v2.6.23: Fixed input neutrality - canonicalizeScopes uses normalized input
  * - v2.6.23: Strengthened centrality heuristic with explicit examples
  * - v2.6.23: Generic recency detection (removed person names)
- * - NEW v2.6.25: Complete input neutrality fix - removed questionBeingAsked from analysis pipeline
- * - NEW v2.6.25: resolveAnalysisPromptInput no longer falls back to question format
- * - NEW v2.6.25: isRecencySensitive uses impliedClaim (normalized) for consistency
- * - NEW v2.6.25: Pseudoscience detection uses only normalized forms
+ * - v2.6.25: Removed questionBeingAsked from analysis pipeline
+ * - v2.6.25: resolveAnalysisPromptInput no longer falls back to question format
+ * - v2.6.25: isRecencySensitive uses impliedClaim (normalized) for consistency
+ * - NEW v2.6.26: Force impliedClaim to normalized statement unconditionally
+ * - NEW v2.6.26: Show article summary for both questions and statements
  *
- * @version 2.6.25
+ * @version 2.6.26
  * @date January 2026
  */
 
@@ -122,7 +123,7 @@ function clearDebugLog() {
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.25",
+  schemaVersion: "2.6.26",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
@@ -3187,17 +3188,17 @@ For "Does this vaccine cause autism?"
       parsed.questionBeingAsked = trimmedInput;
   }
 
-  // v2.6.25: ALWAYS set impliedClaim to the NORMALIZED statement for input neutrality
-  // This ensures questions and statements produce identical analysis results
-  // Previously this was conditional on CONFIG.deterministic, but it must ALWAYS happen
-  if (!parsed.impliedClaim?.trim() || parsed.impliedClaim.endsWith("?")) {
-    // Use analysisInput which is already normalized (question→statement)
-    parsed.impliedClaim = analysisInput;
-    console.log(`[Analyzer] Input Neutrality: impliedClaim set to normalized statement: "${analysisInput.substring(0, 80)}..."`);
-    // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:impliedClaim',message:'understandClaim impliedClaim normalization (input neutrality)',data:{detectedInputType:parsed.detectedInputType,wasQuestion:!!originalQuestionInput,from:String(parsed.impliedClaim||'').slice(0,200),to:String(analysisInput).slice(0,200),deterministic:CONFIG.deterministic},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-  }
+  // v2.6.26: ALWAYS force impliedClaim to normalized statement for input neutrality
+  // Regardless of what LLM returns, use analysisInput to ensure questions and statements
+  // produce identical analysis results. This is unconditional - no checking LLM output.
+  const llmImpliedClaim = parsed.impliedClaim;
+  parsed.impliedClaim = analysisInput;
+  console.log(`[Analyzer] Input Neutrality: impliedClaim forced to normalized statement`);
+  console.log(`[Analyzer]   LLM returned: "${(llmImpliedClaim || '').substring(0, 80)}..."`);
+  console.log(`[Analyzer]   Using: "${analysisInput.substring(0, 80)}..."`);
+  // #region agent log
+  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:impliedClaim',message:'understandClaim impliedClaim forced (v2.6.26 input neutrality)',data:{detectedInputType:parsed.detectedInputType,wasQuestion:!!originalQuestionInput,llmReturned:String(llmImpliedClaim||'').slice(0,200),forcedTo:String(analysisInput).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'v2.6.26',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
 
   // Validate parsed has required fields
   if (!parsed.subClaims || !Array.isArray(parsed.subClaims)) {

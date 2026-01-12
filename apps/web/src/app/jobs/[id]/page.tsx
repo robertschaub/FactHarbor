@@ -515,13 +515,11 @@ export default function JobPage() {
               : <QuestionAnswerBanner questionAnswer={questionAnswer} impliedClaim={impliedClaim} />
           )}
 
-          {!isQuestion && twoPanelSummary && (
-            <>
-              {/* v2.6.25: Removed implied claim display for input neutrality */}
-              <ArticleSummaryBox
-                articleSummary={twoPanelSummary.articleSummary}
-              />
-            </>
+          {/* v2.6.26: Show article summary for both questions and statements */}
+          {twoPanelSummary && (
+            <ArticleSummaryBox
+              articleSummary={twoPanelSummary.articleSummary}
+            />
           )}
 
           {/* Multi-scope statements: show MultiScopeStatementBanner which includes verdict */}
