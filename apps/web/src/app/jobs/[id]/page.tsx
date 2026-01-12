@@ -294,8 +294,8 @@ export default function JobPage() {
   const twoPanelSummary = result?.twoPanelSummary;
   const articleAnalysis = result?.articleAnalysis;
   const claimVerdicts = result?.claimVerdicts || [];
-  const questionAnswer = result?.questionAnswer;
-  const isQuestion = result?.meta?.isQuestion || articleAnalysis?.isQuestion;
+  const questionAnswer = result?.verdictSummary;
+  const isQuestion = result?.meta?.wasQuestionInput || articleAnalysis?.wasQuestionInput;
   const hasMultipleProceedings = result?.meta?.hasMultipleProceedings;
   // Prefer "scopes" (new unified terminology), fall back to "proceedings" for backward compatibility
   const scopes = result?.scopes || result?.proceedings || [];
@@ -726,7 +726,7 @@ function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { ques
   const showImpliedClaim =
     !!impliedClaim &&
     impliedClaim.trim().length > 0 &&
-    String(questionAnswer?.question || "").trim() !== impliedClaim.trim();
+    String(questionAnswer?.displayText || "").trim() !== impliedClaim.trim();
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   // Opinion-based contestations without evidence are not highlighted
@@ -1071,7 +1071,7 @@ function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer
   const showImpliedClaim =
     !!impliedClaim &&
     impliedClaim.trim().length > 0 &&
-    String(questionAnswer?.question || "").trim() !== impliedClaim.trim();
+    String(questionAnswer?.displayText || "").trim() !== impliedClaim.trim();
 
   // Check for contested factors (evidence-based only)
   const allKeyFactors = questionAnswer?.keyFactors || [];

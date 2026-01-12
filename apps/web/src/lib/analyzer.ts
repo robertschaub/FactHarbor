@@ -19,7 +19,7 @@
  * - v2.6.23: Fixed input neutrality - canonicalizeScopes uses normalized input
  * - v2.6.23: Strengthened centrality heuristic with explicit examples
  * - v2.6.23: Generic recency detection (removed person names)
- * - v2.6.25: Removed questionBeingAsked from analysis pipeline
+ * - v2.6.25: Removed originalInputDisplay from analysis pipeline
  * - v2.6.25: resolveAnalysisPromptInput no longer falls back to question format
  * - v2.6.25: isRecencySensitive uses impliedClaim (normalized) for consistency
  * - NEW v2.6.26: Force impliedClaim to normalized statement unconditionally
@@ -123,7 +123,7 @@ function clearDebugLog() {
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.26",
+  schemaVersion: "2.6.27",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
@@ -156,8 +156,8 @@ const CONFIG = {
 
   // KeyFactors configuration
   // Optional hints for KeyFactors (suggestions only, not enforced)
-  // Format: JSON array of objects with {question, factor, category}
-  // Example: FH_KEYFACTOR_HINTS='[{"question":"Was due process followed?","factor":"Due Process","category":"procedural"}]'
+  // Format: JSON array of objects with {evaluationCriteria, factor, category}
+  // Example: FH_KEYFACTOR_HINTS='[{"evaluationCriteria":"Was due process followed?","factor":"Due Process","category":"procedural"}]'
   keyFactorHints: parseKeyFactorHints(process.env.FH_KEYFACTOR_HINTS),
 
   quick: {
@@ -195,9 +195,10 @@ function parseWhitelist(whitelist: string | undefined): string[] | null {
  * Returns array of hint objects or null if not configured
  * These are suggestions only - the LLM can use them but is not required to
  */
+// v2.6.27: Renamed 'question' to 'evaluationCriteria' for input neutrality
 function parseKeyFactorHints(
   hintsJson: string | undefined,
-): Array<{ question: string; factor: string; category: string }> | null {
+): Array<{ evaluationCriteria: string; factor: string; category: string }> | null {
   if (!hintsJson) return null;
   try {
     const parsed = JSON.parse(hintsJson);
@@ -206,10 +207,10 @@ function parseKeyFactorHints(
       (hint) =>
         typeof hint === "object" &&
         hint !== null &&
-        typeof hint.question === "string" &&
+        typeof hint.evaluationCriteria === "string" &&
         typeof hint.factor === "string" &&
         typeof hint.category === "string",
-    ) as Array<{ question: string; factor: string; category: string }>;
+    ) as Array<{ evaluationCriteria: string; factor: string; category: string }>;
   } catch {
     return null;
   }
@@ -368,10 +369,6 @@ function canonicalizeScopes(
     : [];
   if (procs.length === 0) return understanding;
 
-  // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeScopes:entry',message:'canonicalizeScopes entry',data:{inputPreview:String(input).slice(0,200),count:procs.length,ids:procs.map((p:any)=>p?.id).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
-
   // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
   // Use a lightweight, mostly-provider-invariant key: inferred type + institution code + court string.
   const sorted = [...procs].sort((a: any, b: any) => {
@@ -394,10 +391,6 @@ function canonicalizeScopes(
     /\b(sentenced|convicted|acquitted|indicted|charged|ongoing|pending|concluded)\b/.test(
       inputLower,
     );
-
-  // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:canonicalizeScopes:anchors',message:'canonicalizeScopes anchors',data:{hasExplicitYear,hasExplicitStatusAnchor},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
 
   const canonicalProceedings = sorted.map((p: any, idx: number) => {
     const typeLabel = inferScopeTypeLabel(p);
@@ -435,18 +428,12 @@ function canonicalizeScopes(
 }
 
 function normalizeYesNoQuestionToStatement(input: string): string {
-  // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:entry',message:'normalizeYesNoQuestionToStatement entry',data:{input: String(input).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   const trimmed = input.trim().replace(/\?+$/, "");
 
   // Handle the common yes/no forms in a way that is stable and avoids bad grammar.
   // Goal: "Was the X fair and based on Y?" -> "The X was fair and based on Y"
   const m = trimmed.match(/^(was|were|is|are)\s+(.+)$/i);
   if (!m) {
-    // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:no-match',message:'normalizeYesNoQuestionToStatement no-match',data:{trimmed: String(trimmed).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     return trimmed;
   }
 
@@ -461,9 +448,6 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     const predicate = rest.slice(lastParen + 1).trim();
     const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
     const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-    // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:paren-split',message:'normalizeYesNoQuestionToStatement paren-split',data:{aux,subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     return out;
   }
 
@@ -473,9 +457,6 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     const predicate = rest.slice(commaIdx + 1).trim();
     const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
     const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-    // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:comma-split',message:'normalizeYesNoQuestionToStatement comma-split',data:{aux,subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     return out;
   }
 
@@ -502,9 +483,6 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
     if (subject && predicate) {
       const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-      // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:starter-split',message:'normalizeYesNoQuestionToStatement starter-split',data:{aux,starter:starterMatch[0],subject:subject.slice(0,120),predicate:predicate.slice(0,120),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       return out;
     }
   }
@@ -512,9 +490,6 @@ function normalizeYesNoQuestionToStatement(input: string): string {
   // Fallback: don't guess a subject/predicate split; keep the remainder intact and use "It <aux> the case that …"
   // This is grammatical and stable, though not identical to a hand-written statement.
   const out = `It ${aux} the case that ${rest}`.replace(/\s+/g, " ").trim();
-  // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:normalizeYesNoQuestionToStatement:fallback',message:'normalizeYesNoQuestionToStatement fallback',data:{aux,rest:rest.slice(0,200),out:out.slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   return out;
 }
 
@@ -1514,7 +1489,7 @@ type ClaimVerdict7Point =
   | "MOSTLY-FALSE" // 15-28%,  Score -2
   | "FALSE"; // 0-14%,   Score -3
 
-type QuestionAnswer7Point =
+type VerdictSummary7Point =
   | "YES" // 86-100%, Score +3
   | "MOSTLY-YES" // 72-85%,  Score +2
   | "LEANING-YES" // 58-71%,  Score +1
@@ -1607,10 +1582,10 @@ function percentageToClaimVerdict(truthPercentage: number, confidence?: number):
  * @param truthPercentage - The truth percentage (0-100)
  * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
  */
-function percentageToQuestionAnswer(
+function percentageToVerdictSummary(
   truthPercentage: number,
   confidence?: number,
-): QuestionAnswer7Point {
+): VerdictSummary7Point {
   if (truthPercentage >= 86) return "YES";
   if (truthPercentage >= 72) return "MOSTLY-YES";
   if (truthPercentage >= 58) return "LEANING-YES";
@@ -1670,12 +1645,12 @@ function calibrateClaimVerdict(
 /**
  * Legacy: Map confidence to question answer (for backward compatibility)
  */
-function calibrateQuestionAnswer(
+function calibrateVerdictSummary(
   truthPercentage: number,
   confidence: number,
-): QuestionAnswer7Point {
+): VerdictSummary7Point {
   const truthPct = calculateQuestionTruthPercentage(truthPercentage, confidence);
-  return percentageToQuestionAnswer(truthPct);
+  return percentageToVerdictSummary(truthPct);
 }
 
 
@@ -1748,7 +1723,8 @@ function getHighlightColor7Point(
 // ============================================================================
 
 type InputType = "question" | "claim" | "article";
-type QuestionIntent = "verification" | "exploration" | "comparison" | "none";
+// v2.6.27: Renamed from AnalysisIntent for input neutrality
+type AnalysisIntent = "verification" | "exploration" | "comparison" | "none";
 type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown";
 
 interface DecisionMaker {
@@ -1842,7 +1818,7 @@ interface ResearchState {
   // NEW v2.6.6: Track LLM calls
   llmCalls: number;
   // NEW v2.6.18: Track which research questions have been searched
-  researchQuestionsSearched: Set<number>;
+  researchQueriesSearched: Set<number>;
   // NEW v2.6.18: Track if decision-maker search was performed
   decisionMakerSearchPerformed: boolean;
   // NEW v2.6.22: Track if claim-level recency search was performed
@@ -1851,16 +1827,16 @@ interface ResearchState {
 
 interface ClaimUnderstanding {
   detectedInputType: InputType;
-  questionIntent: QuestionIntent;
-  questionBeingAsked: string;
+  analysisIntent: AnalysisIntent;
+  originalInputDisplay: string;
   impliedClaim: string;
-  wasOriginallyQuestion?: boolean; // v2.6.24: Track if input was actually a question (not just LLM interpretation)
+  wasOriginallyQuestionFormat?: boolean; // v2.6.24: Track if input was actually a question (not just LLM interpretation)
 
   distinctProceedings: DistinctProceeding[];
   requiresSeparateAnalysis: boolean;
   proceedingContext: string;
 
-  mainQuestion: string;
+  mainThesis: string;
   articleThesis: string;
   subClaims: Array<{
     id: string;
@@ -1884,12 +1860,13 @@ interface ClaimUnderstanding {
     description: string;
   }>;
   legalFrameworks: string[];
-  researchQuestions: string[];
+  researchQueries: string[];
   riskTier: "A" | "B" | "C";
   // NEW: KeyFactors discovered during understanding phase
+  // v2.6.27: Renamed 'question' to 'evaluationCriteria' for input neutrality
   keyFactors: Array<{
     id: string;
-    question: string;
+    evaluationCriteria: string;
     factor: string;
     category: "procedural" | "evidential" | "methodological" | "factual" | "evaluative";
   }>;
@@ -1982,8 +1959,9 @@ interface ClaimVerdict {
   factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";
 }
 
-interface QuestionAnswer {
-  question: string;
+// v2.6.27: Renamed from VerdictSummary for input neutrality
+interface VerdictSummary {
+  displayText: string; // v2.6.27: Renamed from 'question' for neutrality
   // Answer truth percentage (0-100)
   answer: number;
   confidence: number;
@@ -2002,8 +1980,8 @@ interface QuestionAnswer {
 
 interface ArticleAnalysis {
   inputType: InputType;
-  isQuestion: boolean;
-  questionAnswer?: QuestionAnswer;
+  wasQuestionInput: boolean; // v2.6.27: Renamed from isQuestion for clarity (UI only)
+  verdictSummary?: VerdictSummary;
 
   hasMultipleProceedings: boolean;
   proceedings?: DistinctProceeding[];
@@ -2418,15 +2396,15 @@ const ANALYSIS_CONTEXT_SCHEMA = z.object({
 // Some providers are more tolerant and benefit from a more lenient schema.
 const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   detectedInputType: z.enum(["question", "claim", "article"]),
-  questionIntent: z.enum(["verification", "exploration", "comparison", "none"]),
-  questionBeingAsked: z.string(), // empty string if not applicable
+  analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]),
+  originalInputDisplay: z.string(), // empty string if not applicable
   impliedClaim: z.string(), // empty string if not applicable
 
   distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA),
   requiresSeparateAnalysis: z.boolean(),
   proceedingContext: z.string(), // empty string if not applicable
 
-  mainQuestion: z.string(),
+  mainThesis: z.string(),
   articleThesis: z.string(),
   subClaims: z.array(SUBCLAIM_SCHEMA),
   distinctEvents: z.array(
@@ -2437,14 +2415,15 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
     }),
   ),
   legalFrameworks: z.array(z.string()),
-  researchQuestions: z.array(z.string()),
+  researchQueries: z.array(z.string()),
   riskTier: z.enum(["A", "B", "C"]),
   // NEW: KeyFactors discovered during understanding phase (emergent, not forced)
   // factor MUST be abstract label (2-5 words), NOT specific claims or quotes
+  // v2.6.27: Renamed 'question' to 'evaluationCriteria' for input neutrality
   keyFactors: z.array(
     z.object({
       id: z.string(),
-      question: z.string(), // The decomposition question (e.g., "Was due process followed?")
+      evaluationCriteria: z.string(), // The evaluation criteria (e.g., "Was due process followed?")
       factor: z.string(), // ABSTRACT label only (2-5 words, e.g., "Due Process", "Expert Consensus")
       category: z.enum(["procedural", "evidential", "methodological", "factual", "evaluative"]),
     }),
@@ -2459,15 +2438,15 @@ const SUPPLEMENTAL_SUBCLAIMS_SCHEMA = z.object({
 const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   detectedInputType: z.enum(["question", "claim", "article"]).catch("claim"),
   // Some models invent new labels (e.g. "evaluation"); coerce unknowns to "none" then post-process.
-  questionIntent: z.enum(["verification", "exploration", "comparison", "none"]).catch("none"),
-  questionBeingAsked: z.string().default(""),
+  analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]).catch("none"),
+  originalInputDisplay: z.string().default(""),
   impliedClaim: z.string().default(""),
 
   distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA).default([]),
   requiresSeparateAnalysis: z.boolean().default(false),
   proceedingContext: z.string().default(""),
 
-  mainQuestion: z.string().default(""),
+  mainThesis: z.string().default(""),
   articleThesis: z.string().default(""),
   subClaims: z.array(SUBCLAIM_SCHEMA_LENIENT).default([]),
   distinctEvents: z
@@ -2480,13 +2459,13 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
     )
     .default([]),
   legalFrameworks: z.array(z.string()).default([]),
-  researchQuestions: z.array(z.string()).default([]),
+  researchQueries: z.array(z.string()).default([]),
   riskTier: z.enum(["A", "B", "C"]).catch("B"),
   keyFactors: z
     .array(
       z.object({
         id: z.string(),
-        question: z.string(),
+        evaluationCriteria: z.string(),
         factor: z.string(),
         category: z
           .enum(["procedural", "evidential", "methodological", "factual", "evaluative"])
@@ -2518,19 +2497,19 @@ async function understandClaim(
   // This ensures both "Was X fair?" and "X was fair" take the same analysis path
   // =========================================================================
   const trimmedInputRaw = input.trim();
-  const looksLikeQuestionEarly =
+  const needsNormalization =
     trimmedInputRaw.endsWith("?") ||
     /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(
       trimmedInputRaw,
     );
 
   // Preserve original input for UI display, but normalize for analysis
-  const originalQuestionInput = looksLikeQuestionEarly ? trimmedInputRaw : null;
-  const normalizedInput = looksLikeQuestionEarly
+  const originalFormatInput = needsNormalization ? trimmedInputRaw : null;
+  const normalizedInput = needsNormalization
     ? normalizeYesNoQuestionToStatement(trimmedInputRaw)
     : trimmedInputRaw;
 
-  if (looksLikeQuestionEarly) {
+  if (needsNormalization) {
     console.log(`[Analyzer] Input Neutrality: Normalized question to statement BEFORE LLM call`);
     console.log(`[Analyzer]   Original: "${trimmedInputRaw.substring(0, 100)}..."`);
     console.log(`[Analyzer]   Normalized: "${normalizedInput.substring(0, 100)}..."`);
@@ -2904,7 +2883,7 @@ Set requiresSeparateAnalysis = true when multiple scopes are detected.
     - Outcome proportionality/impact (was the outcome proportionate and consistent with similar situations?)
   - **CRITICAL: DECOMPOSE SPECIFIC OUTCOMES**: When specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban, ineligibility duration), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate for the context.
 
-- **researchQuestions**: Generate specific questions to research, including:
+- **researchQueries**: Generate specific questions to research, including:
   - Potential conflicts of interest for key decision-makers
   - Comparisons to similar cases, phases, or precedents
   - Criticisms and rebuttals with documented evidence
@@ -2916,7 +2895,7 @@ Set requiresSeparateAnalysis = true when multiple scopes are detected.
 ${CONFIG.keyFactorHints && CONFIG.keyFactorHints.length > 0
   ? `\n**OPTIONAL HINTS** (you may consider these, but are not required to use them):
 The following KeyFactor dimensions have been suggested as potentially relevant. Use them only if they genuinely apply to this thesis. If they don't fit, ignore them and generate factors that actually match the thesis:
-${CONFIG.keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "${hint.question}"`).join("\n")}`
+${CONFIG.keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "${hint.evaluationCriteria}"`).join("\n")}`
   : ""}
 
 **WHEN TO GENERATE**: Create keyFactors array when the thesis involves:
@@ -2933,7 +2912,7 @@ ${CONFIG.keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "
 
 **FORMAT**:
 - **id**: Unique identifier (KF1, KF2, etc.)
-- **question**: The decomposition question (e.g., "Was due process followed?")
+- **evaluationCriteria**: The evaluation criteria (e.g., "Was due process followed?")
 - **factor**: SHORT ABSTRACT LABEL (2-5 words ONLY, e.g., "Due Process", "Expert Consensus", "Energy Efficiency")
 - **category**: Choose from: "procedural", "evidential", "methodological", "factual", "evaluative"
 
@@ -2947,45 +2926,45 @@ KeyFactors are CATEGORIES for evaluation, NOT the claims themselves. Specific cl
 
 **EXAMPLES**:
 
-For "Was the Bolsonaro trial fair?"
+For "The Bolsonaro trial was fair."
 [
   {
     "id": "KF1",
-    "question": "Were proper legal procedures and due process followed throughout the trial?",
+    "evaluationCriteria": "Were proper legal procedures and due process followed throughout the trial?",
     "factor": "Procedural Fairness",
     "category": "procedural"
   },
   {
     "id": "KF2",
-    "question": "Were decisions based on documented evidence rather than assumptions or bias?",
+    "evaluationCriteria": "Were decisions based on documented evidence rather than assumptions or bias?",
     "factor": "Evidence Basis",
     "category": "evidential"
   },
   {
     "id": "KF3",
-    "question": "Were the judges and decision-makers free from conflicts of interest?",
+    "evaluationCriteria": "Were the judges and decision-makers free from conflicts of interest?",
     "factor": "Impartiality",
     "category": "procedural"
   }
 ]
 
-For "Does this vaccine cause autism?"
+For "This vaccine causes autism."
 [
   {
     "id": "KF1",
-    "question": "Is there documented scientific evidence of a causal mechanism linking vaccines to autism?",
+    "evaluationCriteria": "Is there documented scientific evidence of a causal mechanism linking vaccines to autism?",
     "factor": "Causal Mechanism",
     "category": "factual"
   },
   {
     "id": "KF2",
-    "question": "Do controlled studies and clinical trials support this causal relationship?",
+    "evaluationCriteria": "Do controlled studies and clinical trials support this causal relationship?",
     "factor": "Clinical Evidence",
     "category": "evidential"
   },
   {
     "id": "KF3",
-    "question": "What does the scientific consensus and expert opinion conclude about this relationship?",
+    "evaluationCriteria": "What does the scientific consensus and expert opinion conclude about this relationship?",
     "factor": "Scientific Consensus",
     "category": "evaluative"
   }
@@ -3086,7 +3065,7 @@ For "Does this vaccine cause autism?"
 
   const tryJsonTextFallback = async () => {
     debugLog("understandClaim: FALLBACK JSON TEXT ATTEMPT");
-    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- questionIntent\n- questionBeingAsked\n- impliedClaim\n- distinctProceedings\n- requiresSeparateAnalysis\n- proceedingContext\n- mainQuestion\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQuestions\n- riskTier\n- keyFactors`;
+    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- distinctProceedings\n- requiresSeparateAnalysis\n- proceedingContext\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
     const result = await generateText({
       model,
       messages: [
@@ -3141,7 +3120,7 @@ For "Does this vaccine cause autism?"
 
   if (!parsed) {
     // Retry once with a smaller, schema-focused prompt (providers sometimes fail on long prompts + strict schemas).
-    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-SCOPE DETECTION\n- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.\n- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n\nENUM RULES\n- detectedInputType must be exactly one of: question | claim | article\n- questionIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
+    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-SCOPE DETECTION\n- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.\n- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n\nENUM RULES\n- detectedInputType must be exactly one of: question | claim | article\n- analysisIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
     try {
       parsed = await tryStructured(retryPrompt, "structured-2");
     } catch (err: any) {
@@ -3164,28 +3143,28 @@ For "Does this vaccine cause autism?"
   // POST-PROCESSING: Use early-normalized input for input neutrality
   // Since we normalized questions to statements BEFORE the LLM call (lines 2504-2528),
   // both paths now converge. We use:
-  // - originalQuestionInput (from line 2516): for UI display (questionBeingAsked)
+  // - originalFormatInput (from line 2516): for UI display (originalInputDisplay)
   // - analysisInput (from line 2528): for analysis (impliedClaim)
   // =========================================================================
   const trimmedInput = input.trim();
 
   // v2.6.24: Track if input was originally a question for UI display
   // This prevents statements ending with "?" from being labeled as "Question"
-  (parsed as any).wasOriginallyQuestion = !!originalQuestionInput;
+  (parsed as any).wasOriginallyQuestionFormat = !!originalFormatInput;
 
   // If input was originally a question, mark it as such for UI purposes
-  if (originalQuestionInput && parsed.detectedInputType !== "question") {
-    console.log(`[Analyzer] Input Neutrality: Marking as question for UI (original was "${originalQuestionInput.substring(0, 60)}...")`);
+  if (originalFormatInput && parsed.detectedInputType !== "question") {
+    console.log(`[Analyzer] Input Neutrality: Marking as question for UI (original was "${originalFormatInput.substring(0, 60)}...")`);
     parsed.detectedInputType = "question";
   }
 
-  // Set questionBeingAsked to the ORIGINAL question (for UI display)
-  if (originalQuestionInput) {
-    parsed.questionBeingAsked = originalQuestionInput;
-    console.log(`[Analyzer] Input Neutrality: questionBeingAsked set to original question for UI`);
-  } else if (!parsed.questionBeingAsked) {
+  // Set originalInputDisplay to the ORIGINAL question (for UI display)
+  if (originalFormatInput) {
+    parsed.originalInputDisplay = originalFormatInput;
+    console.log(`[Analyzer] Input Neutrality: originalInputDisplay set to original question for UI`);
+  } else if (!parsed.originalInputDisplay) {
     // For statements, use the input as-is
-      parsed.questionBeingAsked = trimmedInput;
+      parsed.originalInputDisplay = trimmedInput;
   }
 
   // v2.6.26: ALWAYS force impliedClaim to normalized statement for input neutrality
@@ -3196,10 +3175,6 @@ For "Does this vaccine cause autism?"
   console.log(`[Analyzer] Input Neutrality: impliedClaim forced to normalized statement`);
   console.log(`[Analyzer]   LLM returned: "${(llmImpliedClaim || '').substring(0, 80)}..."`);
   console.log(`[Analyzer]   Using: "${analysisInput.substring(0, 80)}..."`);
-  // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:impliedClaim',message:'understandClaim impliedClaim forced (v2.6.26 input neutrality)',data:{detectedInputType:parsed.detectedInputType,wasQuestion:!!originalQuestionInput,llmReturned:String(llmImpliedClaim||'').slice(0,200),forcedTo:String(analysisInput).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'v2.6.26',hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
-
   // Validate parsed has required fields
   if (!parsed.subClaims || !Array.isArray(parsed.subClaims)) {
     console.error(
@@ -3249,9 +3224,6 @@ For "Does this vaccine cause autism?"
         count: parsed.distinctProceedings?.length ?? 0,
         ids: (parsed.distinctProceedings || []).map((p: any) => p.id),
       });
-      // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:supplementalProceedingsApplied',message:'Applied supplemental proceedings after under-split claim',data:{finalCount:parsed.distinctProceedings?.length ?? 0,ids:(parsed.distinctProceedings||[]).map((p:any)=>p.id)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
     }
   }
 
@@ -3264,8 +3236,8 @@ For "Does this vaccine cause autism?"
 
   if (isShortSimpleNonQuestion && parsed.detectedInputType === "article") {
     parsed.detectedInputType = "claim";
-    if (!parsed.questionBeingAsked) {
-      parsed.questionBeingAsked = trimmedInput;
+    if (!parsed.originalInputDisplay) {
+      parsed.originalInputDisplay = trimmedInput;
     }
     if (!parsed.impliedClaim) {
       parsed.impliedClaim = trimmedInput;
@@ -3275,9 +3247,6 @@ For "Does this vaccine cause autism?"
   // Post-processing: Re-prompt if coverage is thin (single attempt only)
   // Skip for short, simple non-question inputs.
   if (!isShortSimpleNonQuestion) {
-    // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:beforeSupplemental',message:'Before supplemental claims check',data:{inputPreview:input.substring(0,200),subClaimsCount:parsed.subClaims.length,subClaims:parsed.subClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),isCentral:c.isCentral,claimRole:c.claimRole})),hasOutcomeClaims:parsed.subClaims.some((c:any)=>/\b(sentence|penalty|fine|ban|ineligible|outcome|punishment|sanction)\b/i.test(c.text))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     for (let attempt = 0; attempt < SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS; attempt++) {
       // Use analysisInput (normalized statement) for input neutrality
       const supplementalClaims = await requestSupplementalSubClaims(
@@ -3288,14 +3257,8 @@ For "Does this vaccine cause autism?"
       if (supplementalClaims.length === 0) break;
       parsed.subClaims.push(...supplementalClaims);
       console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance scope coverage`);
-      // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:afterSupplemental',message:'After supplemental claims',data:{supplementalCount:supplementalClaims.length,supplementalClaims:supplementalClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100)}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       break;
     }
-    // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:understandClaim:finalClaims',message:'Final claims after all processing',data:{totalClaims:parsed.subClaims.length,claims:parsed.subClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,150),isCentral:c.isCentral,claimRole:c.claimRole,relatedProceedingId:c.relatedProceedingId})),hasOutcomeClaims:parsed.subClaims.some((c:any)=>/\b(sentence|penalty|fine|ban|ineligible|outcome|punishment|sanction)\b/i.test(c.text))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
   }
 
   // Post-processing: Ensure keyEntities are populated for each claim
@@ -3595,10 +3558,6 @@ Use empty strings "" and empty arrays [] when unknown.`;
     const nextCount = sp.data.distinctProceedings?.length ?? 0;
     if (nextCount <= 1 || !sp.data.requiresSeparateAnalysis) return null;
 
-    // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:requestSupplementalScopes',message:'Supplemental proceedings accepted',data:{prevCount:currentCount,nextCount,ids:(sp.data.distinctProceedings||[]).map((p:any)=>p.id).slice(0,6)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
-
     return {
       requiresSeparateAnalysis: sp.data.requiresSeparateAnalysis,
       distinctProceedings: sp.data.distinctProceedings,
@@ -3824,12 +3783,12 @@ function resolveAnalysisPromptInput(
   understanding: ClaimUnderstanding,
   state: ResearchState,
 ): string {
-  // v2.6.25: Never use questionBeingAsked for analysis - it's display-only
+  // v2.6.25: Never use originalInputDisplay for analysis - it's display-only
   // This ensures questions and statements produce identical analysis results
   return (
     understanding.impliedClaim ||
     understanding.articleThesis ||
-    understanding.mainQuestion ||
+    understanding.mainThesis ||
     state.originalInput ||
     state.originalText ||
     ""
@@ -4154,16 +4113,16 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   }
 
   // NEW v2.6.18: Use generated research questions for additional searches
-  // Determinism: skip this step because researchQuestions come from the model and can cause run-to-run drift.
+  // Determinism: skip this step because researchQueries come from the model and can cause run-to-run drift.
   if (CONFIG.deterministic) {
     // no-op
   } else {
-  const researchQuestions = understanding.researchQuestions || [];
-  const nextQuestionIdx = Array.from({ length: researchQuestions.length }, (_, i) => i)
-    .find(i => !state.researchQuestionsSearched.has(i));
+  const researchQueries = understanding.researchQueries || [];
+  const nextQuestionIdx = Array.from({ length: researchQueries.length }, (_, i) => i)
+    .find(i => !state.researchQueriesSearched.has(i));
 
   if (nextQuestionIdx !== undefined && state.iterations.length < config.maxResearchIterations) {
-    const question = researchQuestions[nextQuestionIdx];
+    const question = researchQueries[nextQuestionIdx];
     // Convert research question to search query by extracting key terms
     const queryTerms = question
       .toLowerCase()
@@ -4338,17 +4297,6 @@ async function fetchSource(
     let title = extractedTitle || extractTitle(text, url);
     title = decodeHtmlEntities(title);
 
-    // #region agent log
-    // Log small, non-sensitive hints to debug whether numeric duration outcomes appear in fetched content.
-    if (IS_LOCAL_DEV) {
-      const preview = text.slice(0, Math.min(4000, text.length)).toLowerCase();
-      const hasNumericDuration = /\b\d{1,3}\s*(year|years|month|months|day|days)\b/i.test(preview);
-      if (hasNumericDuration) {
-        fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:fetchSource:numericDuration',message:'Fetched source contains numeric duration pattern (preview)',data:{id,url:url.slice(0,200),trackRecordScore:trackRecord,searchQuery:(searchQuery||'').slice(0,160),title:title.slice(0,120)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'F'})}).catch(()=>{});
-      }
-    }
-    // #endregion
-
     return {
       id,
       url,
@@ -4512,16 +4460,6 @@ Evidence documentation typically defines its scope/context. Extract this when pr
       return [];
     }
 
-    // #region agent log
-    const rawFactsPreview = extraction.facts
-      .slice(0, 30)
-      .map((f) => String(f.fact || "").slice(0, 140));
-    const rawHasDuration = extraction.facts.some((f) =>
-      /\b\d{1,3}\s*(year|years|month|months|day|days)\b/i.test(`${f.fact} ${f.sourceExcerpt}`),
-    );
-    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:extractFacts:rawSummary',message:'Raw extracted facts summary',data:{sourceId:source.id,trackRecordScore:source.trackRecordScore ?? null,rawCount:extraction.facts.length,rawHasDuration,rawFactsPreview},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'G'})}).catch(()=>{});
-    // #endregion
-
     let filteredFacts = extraction.facts
       .filter((f) => f.specificity !== "low" && f.sourceExcerpt?.length >= 20);
 
@@ -4550,13 +4488,6 @@ Evidence documentation typically defines its scope/context. Extract this when pr
         );
       }
     }
-
-    // #region agent log
-    const filteredHasDuration = filteredFacts.some((f) =>
-      /\b\d{1,3}\s*(year|years|month|months|day|days)\b/i.test(`${f.fact} ${f.sourceExcerpt}`),
-    );
-    fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:extractFacts:filteredSummary',message:'Filtered facts summary',data:{sourceId:source.id,filteredCount:filteredFacts.length,filteredHasDuration},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'G'})}).catch(()=>{});
-    // #endregion
 
     console.log(`[Analyzer] extractFacts: After filtering (non-low specificity, excerpt >= 20 chars): ${filteredFacts.length} facts`);
 
@@ -4618,7 +4549,7 @@ const KEY_FACTOR_SCHEMA = z.object({
 
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
 const VERDICTS_SCHEMA_MULTI_PROCEEDING = z.object({
-  questionAnswer: z.object({
+  verdictSummary: z.object({
     answer: z.number().min(0).max(100),
     confidence: z.number().min(0).max(100),
     shortAnswer: z.string(),
@@ -4651,7 +4582,7 @@ const VERDICTS_SCHEMA_MULTI_PROCEEDING = z.object({
 });
 
 const VERDICTS_SCHEMA_SIMPLE = z.object({
-  questionAnswer: z.object({
+  verdictSummary: z.object({
     answer: z.number().min(0).max(100),
     confidence: z.number().min(0).max(100),
     shortAnswer: z.string(),
@@ -4707,7 +4638,7 @@ async function generateVerdicts(
 ): Promise<{
   claimVerdicts: ClaimVerdict[];
   articleAnalysis: ArticleAnalysis;
-  questionAnswer?: QuestionAnswer;
+  verdictSummary?: VerdictSummary;
   pseudoscienceAnalysis?: PseudoscienceAnalysis;
 }> {
   const understanding = state.understanding!;
@@ -4789,7 +4720,7 @@ async function generateMultiScopeVerdicts(
 ): Promise<{
   claimVerdicts: ClaimVerdict[];
   articleAnalysis: ArticleAnalysis;
-  questionAnswer: QuestionAnswer;
+  verdictSummary: VerdictSummary;
 }> {
   const scopesFormatted = understanding.distinctProceedings
     .map(
@@ -4807,16 +4738,16 @@ async function generateMultiScopeVerdicts(
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const analysisInput = resolveAnalysisPromptInput(understanding, state);
   const displayQuestion =
-    understanding.questionBeingAsked ||
-    understanding.mainQuestion ||
+    understanding.originalInputDisplay ||
+    understanding.mainThesis ||
     analysisInput;
   // v2.6.21: Use neutral label to ensure input-neutral verdicts
   // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
   const inputLabel = "STATEMENT";
-  // v2.6.24: Use wasOriginallyQuestion to determine if this was truly a question input
-  // This prevents statements ending with "?" from showing "Question:" label
-  const isQuestionLike = (understanding as any).wasOriginallyQuestion ||
-    (analysisInputType === "question" && understanding.questionIntent !== "none");
+  // v2.6.27: Input neutrality fix - isQuestionLike is ALWAYS false for analysis
+  // Since we normalize all inputs to statements at entry point, the LLM should
+  // always analyze as a statement. wasOriginallyQuestionFormat is only for UI display.
+  const isQuestionLike = false;
 
   const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS (also called SCOPES) separately.
 
@@ -4962,7 +4893,7 @@ Provide SEPARATE answers for each scope.`;
     if (rawOutput) {
       parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_MULTI_PROCEEDING>;
       debugLog("generateMultiScopeVerdicts: SUCCESS", {
-        hasQuestionAnswer: !!parsed.questionAnswer,
+        hasVerdictSummary: !!parsed.verdictSummary,
         proceedingAnswersCount: parsed.proceedingAnswers?.length,
         claimVerdictsCount: parsed.claimVerdicts?.length,
       });
@@ -5011,8 +4942,8 @@ Provide SEPARATE answers for each scope.`;
       }),
     );
 
-    const questionAnswer: QuestionAnswer = {
-      question: displayQuestion,
+    const verdictSummary: VerdictSummary = {
+      displayText: displayQuestion,
       answer: 50,
       confidence: 50,
       truthPercentage: 50,
@@ -5040,8 +4971,8 @@ Provide SEPARATE answers for each scope.`;
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: analysisInputType,
-      isQuestion: isQuestionLike,
-      questionAnswer,
+      wasQuestionInput: isQuestionLike,
+      verdictSummary,
       hasMultipleProceedings: true,
       proceedings: understanding.distinctProceedings,
       articleThesis: understanding.articleThesis,
@@ -5060,7 +4991,7 @@ Provide SEPARATE answers for each scope.`;
       },
     };
 
-    return { claimVerdicts: fallbackVerdicts, articleAnalysis, questionAnswer };
+    return { claimVerdicts: fallbackVerdicts, articleAnalysis, verdictSummary };
   }
 
   // Normal flow with parsed output
@@ -5316,14 +5247,14 @@ Provide SEPARATE answers for each scope.`;
     ? "Some negative factors are politically contested claims and given reduced weight."
     : undefined;
 
-  const questionAnswer: QuestionAnswer = {
-    question: displayQuestion,
+  const verdictSummary: VerdictSummary = {
+    displayText: displayQuestion,
     answer: avgTruthPct,
     confidence: avgConfidence,
     truthPercentage: avgTruthPct,
-    shortAnswer: parsed.questionAnswer.shortAnswer,
-    nuancedAnswer: parsed.questionAnswer.nuancedAnswer,
-    keyFactors: parsed.questionAnswer.keyFactors,
+    shortAnswer: parsed.verdictSummary.shortAnswer,
+    nuancedAnswer: parsed.verdictSummary.nuancedAnswer,
+    keyFactors: parsed.verdictSummary.keyFactors,
     hasMultipleProceedings: true,
     proceedingAnswers: correctedProceedingAnswers,
     proceedingSummary: parsed.proceedingSummary,
@@ -5339,8 +5270,8 @@ Provide SEPARATE answers for each scope.`;
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
-    isQuestion: isQuestionLike,
-    questionAnswer,
+    wasQuestionInput: isQuestionLike,
+    verdictSummary,
     hasMultipleProceedings: true,
     proceedings: understanding.distinctProceedings,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
@@ -5361,7 +5292,7 @@ Provide SEPARATE answers for each scope.`;
   return {
     claimVerdicts: weightedClaimVerdicts,
     articleAnalysis,
-    questionAnswer,
+    verdictSummary,
   };
 }
 
@@ -5375,7 +5306,7 @@ async function generateQuestionVerdicts(
 ): Promise<{
   claimVerdicts: ClaimVerdict[];
   articleAnalysis: ArticleAnalysis;
-  questionAnswer: QuestionAnswer;
+  verdictSummary: VerdictSummary;
 }> {
   // Get current date for temporal reasoning
   const currentDate = new Date();
@@ -5386,16 +5317,16 @@ async function generateQuestionVerdicts(
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const analysisInput = resolveAnalysisPromptInput(understanding, state);
   const displayQuestion =
-    understanding.questionBeingAsked ||
-    understanding.mainQuestion ||
+    understanding.originalInputDisplay ||
+    understanding.mainThesis ||
     analysisInput;
   // v2.6.21: Use neutral label to ensure input-neutral verdicts
   // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
   const inputLabel = "STATEMENT";
-  // v2.6.24: Use wasOriginallyQuestion to determine if this was truly a question input
-  // This prevents statements ending with "?" from showing "Question:" label
-  const isQuestionLike = (understanding as any).wasOriginallyQuestion ||
-    (analysisInputType === "question" && understanding.questionIntent !== "none");
+  // v2.6.27: Input neutrality fix - isQuestionLike is ALWAYS false for analysis
+  // Since we normalize all inputs to statements at entry point, the LLM should
+  // always analyze as a statement. wasOriginallyQuestionFormat is only for UI display.
+  const isQuestionLike = false;
 
   const systemPrompt = `Answer the input based on documented evidence.
 
@@ -5508,9 +5439,9 @@ ${factsFormatted}`;
     state.llmCalls++;
   }
 
-  // Fallback if structured output failed or questionAnswer is missing
-  if (!parsed || !parsed.claimVerdicts || !parsed.questionAnswer) {
-    console.log("[Analyzer] Using fallback question verdict generation (parsed:", !!parsed, ", claimVerdicts:", !!parsed?.claimVerdicts, ", questionAnswer:", !!parsed?.questionAnswer, ")");
+  // Fallback if structured output failed or verdictSummary is missing
+  if (!parsed || !parsed.claimVerdicts || !parsed.verdictSummary) {
+    console.log("[Analyzer] Using fallback verdict generation (parsed:", !!parsed, ", claimVerdicts:", !!parsed?.claimVerdicts, ", verdictSummary:", !!parsed?.verdictSummary, ")");
 
     const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map(
       (claim: any) => ({
@@ -5530,8 +5461,8 @@ ${factsFormatted}`;
       }),
     );
 
-    const questionAnswer: QuestionAnswer = {
-      question: displayQuestion,
+    const verdictSummary: VerdictSummary = {
+      displayText: displayQuestion,
       answer: 50,
       confidence: 50,
       truthPercentage: 50,
@@ -5548,8 +5479,8 @@ ${factsFormatted}`;
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: analysisInputType,
-      isQuestion: isQuestionLike,
-      questionAnswer,
+      wasQuestionInput: isQuestionLike,
+      verdictSummary,
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
@@ -5567,7 +5498,7 @@ ${factsFormatted}`;
       },
     };
 
-    return { claimVerdicts: fallbackVerdicts, articleAnalysis, questionAnswer };
+    return { claimVerdicts: fallbackVerdicts, articleAnalysis, verdictSummary };
   }
 
   // Normal flow with parsed output
@@ -5641,7 +5572,7 @@ ${factsFormatted}`;
     ).length,
   };
 
-  const keyFactors = parsed.questionAnswer.keyFactors || [];
+  const keyFactors = parsed.verdictSummary.keyFactors || [];
   // Only flag contested negatives with evidence-based contestation
   const hasContestedFactors = keyFactors.some(
     (kf: any) =>
@@ -5659,8 +5590,8 @@ ${factsFormatted}`;
     (f: KeyFactor) => f.supports === "no" && f.isContested,
   ).length;
 
-  let answerTruthPct = normalizePercentage(parsed.questionAnswer.answer);
-  let correctedConfidence = normalizePercentage(parsed.questionAnswer.confidence);
+  let answerTruthPct = normalizePercentage(parsed.verdictSummary.answer);
+  let correctedConfidence = normalizePercentage(parsed.verdictSummary.confidence);
 
   // v2.6.20: Removed factor-based boost to ensure input neutrality
   debugLog("generateQuestionVerdicts: No factor-based boost applied", {
@@ -5670,13 +5601,13 @@ ${factsFormatted}`;
     contestedNegatives,
   });
 
-  const questionAnswer: QuestionAnswer = {
-    question: displayQuestion,
+  const verdictSummary: VerdictSummary = {
+    displayText: displayQuestion,
     answer: answerTruthPct,
     confidence: correctedConfidence,
     truthPercentage: answerTruthPct,
-    shortAnswer: parsed.questionAnswer.shortAnswer || "",
-    nuancedAnswer: parsed.questionAnswer.nuancedAnswer || "",
+    shortAnswer: parsed.verdictSummary.shortAnswer || "",
+    nuancedAnswer: parsed.verdictSummary.nuancedAnswer || "",
     keyFactors,
     hasMultipleProceedings: false,
     hasContestedFactors,
@@ -5693,8 +5624,8 @@ ${factsFormatted}`;
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
-    isQuestion: isQuestionLike,
-    questionAnswer,
+    wasQuestionInput: isQuestionLike,
+    verdictSummary,
     hasMultipleProceedings: false,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
     logicalFallacies: [],
@@ -5717,7 +5648,7 @@ ${factsFormatted}`;
   return {
     claimVerdicts: weightedClaimVerdicts,
     articleAnalysis,
-    questionAnswer,
+    verdictSummary,
   };
 }
 
@@ -5914,7 +5845,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "article",
-      isQuestion: false,
+      wasQuestionInput: false,
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
@@ -6004,7 +5935,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         const penalty = cv.factualBasis === "established" ? 12 : 8;
         truthPct = Math.max(0, truthPct - penalty);
       }
-  
+
       return {
         ...cv,
         claimId: claim.id,
@@ -6209,7 +6140,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     claimVerdicts: weightedClaimVerdicts,
     articleAnalysis: {
       inputType: understanding.detectedInputType,
-      isQuestion: false,
+      wasQuestionInput: false,
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: parsed.articleAnalysis.logicalFallacies,
@@ -6259,11 +6190,11 @@ async function generateTwoPanelSummary(
   model: any,
 ): Promise<TwoPanelSummary> {
   const understanding = state.understanding!;
-  const isQuestion = articleAnalysis.isQuestion;
+  const isQuestion = articleAnalysis.wasQuestionInput;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
 
   let title = isQuestion
-    ? `Question: ${understanding.questionBeingAsked || state.originalInput}`
+    ? `Question: ${understanding.originalInputDisplay || state.originalInput}`
     : state.originalText.split("\n")[0]?.trim().slice(0, 100) ||
       "Analyzed Content";
 
@@ -6292,15 +6223,15 @@ async function generateTwoPanelSummary(
       ? `Covers ${understanding.distinctProceedings.length} contexts: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.shortName).join(", ")}`
       : `Examined ${understanding.subClaims.length} claims`,
     conclusion:
-      articleAnalysis.questionAnswer?.shortAnswer ||
+      articleAnalysis.verdictSummary?.shortAnswer ||
       (isValidDisplaySummary ? displaySummary : understanding.subClaims[0]?.text || "See claims analysis"),
   };
 
   const analysisId = `FH-${Date.now().toString(36).toUpperCase()}`;
 
   let overallVerdict = 50;
-  if (isQuestion && articleAnalysis.questionAnswer) {
-    overallVerdict = normalizePercentage(articleAnalysis.questionAnswer.truthPercentage);
+  if (isQuestion && articleAnalysis.verdictSummary) {
+    overallVerdict = normalizePercentage(articleAnalysis.verdictSummary.truthPercentage);
   } else {
     overallVerdict = normalizePercentage(articleAnalysis.articleTruthPercentage);
   }
@@ -6389,7 +6320,7 @@ function generateMethodologyAssessment(
   parts.push("Question-answering mode");
   if (articleAnalysis.hasMultipleProceedings)
     parts.push(`Multi-context (${articleAnalysis.proceedings?.length})`);
-  if (articleAnalysis.questionAnswer?.hasContestedFactors)
+  if (articleAnalysis.verdictSummary?.hasContestedFactors)
     parts.push("Contested factors flagged");
   parts.push(`${state.searchQueries.length} searches`);
   parts.push(`${state.sources.filter((s) => s.fetchSuccess).length} sources`);
@@ -6404,7 +6335,7 @@ async function generateReport(
   model: any,
 ): Promise<string> {
   const understanding = state.understanding!;
-  const isQuestion = articleAnalysis.isQuestion;
+  const isQuestion = articleAnalysis.wasQuestionInput;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
   const useRich = CONFIG.reportStyle === "rich";
   const iconPositive = useRich ? "✅" : "";
@@ -6422,9 +6353,9 @@ async function generateReport(
   // Executive Summary (moved to top - public-facing content first)
   report += `## Executive Summary\n\n`;
 
-  if (isQuestion && articleAnalysis.questionAnswer) {
-    const qa = articleAnalysis.questionAnswer;
-    report += `### Question\n"${qa.question}"\n\n`;
+  if (isQuestion && articleAnalysis.verdictSummary) {
+    const qa = articleAnalysis.verdictSummary;
+    report += `### Input\n"${qa.displayText}"\n\n`;
     const qaConfidence = qa.confidence ?? 0;
     report += `### Answer: ${percentageToClaimVerdict(qa.truthPercentage, qaConfidence)} (${qa.truthPercentage}%)\n\n`;
 
@@ -6629,26 +6560,26 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // ==========================================================================
   // v2.6.26: EARLY INPUT NORMALIZATION at entry point for complete input neutrality
   // Normalize questions to statements BEFORE any analysis begins
-  // The original question is preserved only for UI display (questionBeingAsked)
+  // The original question is preserved only for UI display (originalInputDisplay)
   // ==========================================================================
   const rawInputValue = input.inputValue.trim();
   const looksLikeQuestion =
     rawInputValue.endsWith("?") ||
     /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(rawInputValue);
-  
+
   // Normalize to statement form for ALL analysis
   // Also strip trailing period from statements to ensure identical text for both question and statement
   let normalizedInputValue = looksLikeQuestion
     ? normalizeYesNoQuestionToStatement(rawInputValue)
     : rawInputValue;
-  
+
   // CRITICAL: Remove trailing period from ALL inputs for exact text matching
   // This ensures "Was X fair?" -> "X was fair" matches "X was fair." -> "X was fair"
   normalizedInputValue = normalizedInputValue.replace(/\.+$/, "").trim();
-  
-  // Store original question for UI display (will be set in understanding.questionBeingAsked)
+
+  // Store original question for UI display (will be set in understanding.originalInputDisplay)
   const originalQuestionForDisplay = looksLikeQuestion ? rawInputValue : null;
-  
+
   console.log(`[Analyzer] v2.6.26 Input Neutrality: Entry point normalization`);
   console.log(`[Analyzer]   Original: "${rawInputValue.substring(0, 100)}"`);
   console.log(`[Analyzer]   Normalized: "${normalizedInputValue.substring(0, 100)}"`);
@@ -6666,7 +6597,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     contradictionSourcesFound: 0,
     searchQueries: [], // NEW v2.4.3
     llmCalls: 0, // NEW v2.6.6
-    researchQuestionsSearched: new Set(), // NEW v2.6.18
+    researchQueriesSearched: new Set(), // NEW v2.6.18
     decisionMakerSearchPerformed: false, // NEW v2.6.18
     recentClaimsSearched: false, // NEW v2.6.22
   };
@@ -6694,22 +6625,22 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     debugLog("Calling understandClaim...");
     state.understanding = await understandClaim(textToAnalyze, model);
     state.llmCalls++; // understandClaim uses 1 LLM call
-    
+
     // v2.6.26: Set UI-only fields from entry-point normalization
-    // This ensures questionBeingAsked shows original question for display
+    // This ensures originalInputDisplay shows original question for display
     if (originalQuestionForDisplay) {
-      state.understanding.questionBeingAsked = originalQuestionForDisplay;
-      (state.understanding as any).wasOriginallyQuestion = true;
+      state.understanding.originalInputDisplay = originalQuestionForDisplay;
+      (state.understanding as any).wasOriginallyQuestionFormat = true;
       state.understanding.detectedInputType = "question";  // For UI badge
-      console.log(`[Analyzer] v2.6.26: Set questionBeingAsked for UI display`);
+      console.log(`[Analyzer] v2.6.26: Set originalInputDisplay for UI display`);
     }
-    
+
     const step1Elapsed = Date.now() - step1Start;
     debugLog(`Step 1 completed in ${step1Elapsed}ms`);
     debugLog("Understanding result", {
       detectedInputType: state.understanding?.detectedInputType,
       subClaimsCount: state.understanding?.subClaims?.length,
-      researchQuestionsCount: state.understanding?.researchQuestions?.length,
+      researchQueriesCount: state.understanding?.researchQueries?.length,
     });
     console.log(`[Analyzer] Step 1 completed in ${step1Elapsed}ms`);
     if (step1Elapsed < 2000) {
@@ -6732,13 +6663,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     state.understanding = {
       detectedInputType: "claim",
-      questionIntent: "none",
-      questionBeingAsked: "",
+      analysisIntent: "none",
+      originalInputDisplay: "",
       impliedClaim: "",
       distinctProceedings: [],
       requiresSeparateAnalysis: false,
       proceedingContext: "",
-      mainQuestion: textToAnalyze.slice(0, 200),
+      mainThesis: textToAnalyze.slice(0, 200),
       articleThesis: textToAnalyze.slice(0, 200),
       subClaims: [
         {
@@ -6759,7 +6690,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       ],
       distinctEvents: [],
       legalFrameworks: [],
-      researchQuestions: [],
+      researchQueries: [],
       riskTier: "B",
       keyFactors: [],
     };
@@ -6804,16 +6735,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       state.recentClaimsSearched = true;
     if (decision.category === "research_question") {
       // Mark all matching research questions as searched
-      const researchQuestions = state.understanding?.researchQuestions || [];
-      researchQuestions.forEach((q, idx) => {
+      const researchQueries = state.understanding?.researchQueries || [];
+      researchQueries.forEach((q, idx) => {
         if (decision.focus?.includes(q.slice(0, 30))) {
-          state.researchQuestionsSearched.add(idx);
+          state.researchQueriesSearched.add(idx);
         }
       });
       // Also just mark the next one as searched to avoid infinite loops
-      const nextIdx = Array.from({ length: researchQuestions.length }, (_, i) => i)
-        .find(i => !state.researchQuestionsSearched.has(i));
-      if (nextIdx !== undefined) state.researchQuestionsSearched.add(nextIdx);
+      const nextIdx = Array.from({ length: researchQueries.length }, (_, i) => i)
+        .find(i => !state.researchQueriesSearched.has(i));
+      if (nextIdx !== undefined) state.researchQueriesSearched.add(nextIdx);
     }
 
     // Check if search is enabled
@@ -6923,10 +6854,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       const recencyMatters = decision.recencyMatters || isRecencySensitive(query, state.understanding || undefined);
       const dateRestrict: "y" | "m" | "w" | undefined =
         CONFIG.searchDateRestrict || (recencyMatters ? "y" : undefined);
-
-      // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:searchWithDateFilter',message:'Search with date filter',data:{query:query.substring(0,100),recencyMatters,forcedByEnv:!!CONFIG.searchDateRestrict,dateRestrict},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
 
       // Get providers before search to show in event
       const searchProviders = getActiveSearchProviders().join("+");
@@ -7086,9 +7013,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     state.understanding!.subClaims.push(...outcomeClaims);
     console.log(`[Analyzer] Added ${outcomeClaims.length} outcome-related claims from research`);
     await emit(`Added ${outcomeClaims.length} outcome-related claims`, 63);
-    // #region agent log
-  if (IS_LOCAL_DEV) fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'apps/web/src/lib/analyzer.ts:postResearchOutcomeExtraction',message:'Post-research outcome extraction',data:{outcomeClaimsCount:outcomeClaims.length,outcomeClaims:outcomeClaims.map((c:any)=>({id:c.id,text:c.text.substring(0,100),relatedProceedingId:c.relatedProceedingId}))},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
   }
 
   // STEP 4.6: Enrich scopes with outcomes discovered in evidence (generic LLM-based)
@@ -7102,7 +7026,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const {
     claimVerdicts,
     articleAnalysis,
-    questionAnswer,
+    verdictSummary,
     pseudoscienceAnalysis,
   } = await generateVerdicts(state, model);
   const verdictElapsed = Date.now() - verdictStart;
@@ -7160,13 +7084,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       searchProvider: CONFIG.searchProvider,
       inputType: input.inputType,
       detectedInputType: state.understanding!.detectedInputType,
-      isQuestion: articleAnalysis.isQuestion,
+      wasQuestionInput: articleAnalysis.wasQuestionInput,
       hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,
       hasMultipleScopes: articleAnalysis.hasMultipleProceedings,  // Alias
       proceedingCount: state.understanding!.distinctProceedings.length,
       scopeCount: state.understanding!.distinctProceedings.length,  // Alias
       hasContestedFactors:
-        articleAnalysis.questionAnswer?.hasContestedFactors || false,
+        articleAnalysis.verdictSummary?.hasContestedFactors || false,
       // NEW v2.4.5: Pseudoscience detection
       isPseudoscience: pseudoscienceAnalysis?.isPseudoscience || false,
       pseudoscienceCategories: pseudoscienceAnalysis?.categories || [],
@@ -7185,7 +7109,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         centralKept: gate4Stats.centralKept,
       },
     },
-    questionAnswer: questionAnswer || null,
+    verdictSummary: verdictSummary || null,
     // Primary: "scopes" (unified terminology for bounded analytical frames)
     scopes: state.understanding!.distinctProceedings,
     // Backward compatibility alias

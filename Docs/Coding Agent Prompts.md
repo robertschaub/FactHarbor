@@ -27,6 +27,8 @@ And analyze the current source code.
 
 ## Tasks Pending:
 ---
+- Improve url detection: e.g. this input is not an url:  https://www.gazetadopovo.com.br/ is a reliable news source that provides news based on facts and evidence
+---
 - Some claims talk about methodologies used and if these are valid to be used to verify the claims from the input - such claims are clearly not central and not even worth mentioning.
 --
 - Make sure that verdicts and key factors correctly influence (positive or negatively) the overall verdict, because sometimes lower-level key factors and claims have inverted logic vs the original article as it is (was?) the case with the article "hydrogen for cars is more efficient than using electricity", e.g. the lower-level claim "Hydrogen fuel cell vehicles have higher well-to-wheel energy efficiency than battery electric vehicles" inverts the comparison. The inversion logic shall be done when overall article verdict values are calculated.
@@ -41,32 +43,38 @@ Article Confidence:
 
 ## Tasks in Progress:
 ---
-Reports of question vs. equal statement differ:
+Handling when input is a question: 
+ - When an Input is a question, a statement with exactly the same meaning shall be derived from the question. 
+ - The statement shall be used for analysis, not the question, the question shall not be used further on for anything else than for display!
+ =>Fix this first
+---
+ArticleSummary data:
+ - Make sure we have ArticleSummary data
+ - if the input is an url, the article at the url page shall be summarized into ArticleSummary.
+ - If the Input is text and text length is shorter than 300 characters, the ArticleSummary shall be a copy of the input.
+ - Else: ArticleSummary shall be a summarize the article input.
+---
+Reports of question vs. equal statement differ. Fix:
 - There are still differences between the two "Bolsonaro Judgement" reports for input as question vs. equal statement.
-- Rule to implement: 
-    - When an Input is a question, a statement with exactly the same meaning shall be derived from the question. 
-    - The statement shall be used for analysis, not the question, the question shall not be used further on for anything else than for display!
-=>Please fix this completely! Multiple attempts made by other LLM's have failed on this, so doo a deep analysis and before you do it.
+- See "Handling when input is a question" - I assume then this is fixed, there should not anymore be a difference.
 ---
 Layout improvements in the "Summary" page:
- - Allways show Article Summary. Make sure we have and use the underlying ArticleSummary data: It shall concisely summarize the article input.
+ - Article box shall contain all properties of an article: Summary, Verdict, Key Factors, Assesment
+ - Allways show "Article Summary", containig the ArticleSummary data (as described earlier).
  - Never show "Implied Claim"
- - At article verdict: Confidence should allways be after verdict value like e.g. ✓ Mostly True 82% (80% confidence)
- - Do not show Implied claim when it's the same as the article or when it's the same as the Article Summary.
- - Please make sure item titles and item content are aligned
- - Make sure displayed labels are aligned with the underlying data and are formatted for readybility (e.g. show label "Article Context" for ArticleContext data).
+ - Never show "Question asked"
+ - At any verdict (also at Article Verdict): Confidence should allways be after verdict value like e.g. ✓ Mostly True 82% (80% confidence)
+ - Please make sure styles of item titles and item labels and content are unified
+ - Make sure displayed labels are aligned with the underlying data and are formatted for readybility (e.g. show label "Context" for ArticleContext data).
+ - Rename "ArticleContext-by-ArticleContext Analysis" to "Contexts"
+ - Further unify layout variants. E.g. at article it sometimes it sais "Overall Verdict", and sometimes it sais "Article verdict", instead it should just show "Verdict"
 
-Further unify layouts and labels: 
- - e.g. At article sometimes it sais "Overall Verdict", and sometimes it sais "Article verdict"
- - All title styles should be aligned
+## Tasks done
 ---
 LLM sometimes not aware about current time and recent information:
 - LLM is sometimes not aware about the current date. Resulting in information like "Temporal error". 
 Please detect when a verdict or claim comment statement does not recognize the current date and makes false comments like "temporal error" and "in the future from the current date" or "date discrepancy".
 - LLM often did not find very recent information e.g. that Blosonaro trial sentenca was 27 years. Make sure this problem is covered well.
----
-
-## Tasks done
 ---
 - We had renamed in code the article related terms previously used: Scope and Proceeding to ArticleContext. Important note: do not confuse with the EvidenceScope. Make sure tis is cconsistantly done. 
 ---
