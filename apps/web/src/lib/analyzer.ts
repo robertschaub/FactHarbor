@@ -39,6 +39,7 @@ import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
 import { applyGate1ToClaims, applyGate4ToVerdicts } from "./analyzer/quality-gates";
+import { normalizeSubClaimsImportance } from "./claim-importance";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -2434,8 +2435,10 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
     .default([]),
 });
 
-const MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING = 2;
-const MIN_TOTAL_CLAIMS_WITH_SINGLE_CENTRAL = 3;
+// Supplemental claim backfill should ensure each scope has at least one substantive/core claim,
+// but MUST NOT force “central” marking. Centrality is determined by the LLM + guardrails.
+const MIN_CORE_CLAIMS_PER_PROCEEDING = 1;
+const MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE = 2;
 const SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS = 1;
 const SHORT_SIMPLE_INPUT_MAX_CHARS = 60;
 
@@ -2608,6 +2611,11 @@ These are not opinions - they're historical assertions that can be fact-checked.
 - MEDIUM: Affects specific groups or has moderate societal impact
 - LOW: Limited impact, affects few people, low stakes
 
+IMPORTANT: harmPotential is CLAIM-LEVEL, not topic-level.
+- Do NOT set harmPotential=HIGH just because the overall topic is “high risk” or because other claims are high-stakes.
+- Attribution/source/timing/background claims are usually NOT harmPotential=HIGH even in high-stakes topics.
+- Reserve harmPotential=HIGH for claims where being wrong could plausibly cause material real-world harm (directly, not just “credibility harm”).
+
 **3. centrality** - Is it pivotal to the author's argument?
 - HIGH: Core assertion the argument depends on; removing it collapses the narrative
 - MEDIUM: Supports the main argument but not essential
@@ -2646,6 +2654,10 @@ The second is MORE CENTRAL because it has greater real-world harm potential.
 - However, if checkWorthiness is "low", the claim should NOT be investigated or displayed
 - Attribution, source, and timing claims should typically have centrality = "low" (not central to the argument)
 - Only core evaluative claims that are the main thesis should have centrality = "high"
+
+IMPORTANT: riskTier is ANALYSIS-LEVEL only.
+- riskTier must NOT be used as a shortcut to set claim-level harmPotential/centrality.
+- You may set riskTier based on the overall analysis, but claim-level harmPotential/centrality must be justified by each claim's content.
 
 **CRITICAL HEURISTIC for centrality = "high"**:
 Ask yourself: "If only ONE claim could be investigated, which would readers most want verified?"
@@ -3234,6 +3246,10 @@ For "This vaccine causes autism."
     }
   }
 
+  // Deterministic normalization of importance labels.
+  // This enforces role-based invariants and derives isCentral consistently.
+  normalizeSubClaimsImportance(parsed.subClaims as any);
+
   // Post-processing: Ensure keyEntities are populated for each claim
   for (const claim of parsed.subClaims) {
     if (!claim.keyEntities || claim.keyEntities.length === 0) {
@@ -3295,7 +3311,7 @@ async function requestSupplementalSubClaims(
     text.toLowerCase().replace(/\s+/g, " ").trim();
 
   const claimsByProc = new Map<string, ClaimUnderstanding["subClaims"]>();
-  const centralCoreCounts = new Map<string, number>();
+  const coreCounts = new Map<string, number>();
   const existingTextByProc = new Map<string, Set<string>>();
   const existingTextGlobal = new Set<string>();
 
@@ -3306,7 +3322,7 @@ async function requestSupplementalSubClaims(
   for (const target of coverageTargets) {
     claimsByProc.set(target.id, []);
     existingTextByProc.set(target.id, new Set());
-    centralCoreCounts.set(target.id, 0);
+    coreCounts.set(target.id, 0);
   }
 
   for (const claim of understanding.subClaims) {
@@ -3324,29 +3340,29 @@ async function requestSupplementalSubClaims(
 
     claimsByProc.get(procId)!.push(claim);
     existingTextByProc.get(procId)!.add(normalized);
-    if (claim.isCentral && claim.claimRole === "core") {
-      centralCoreCounts.set(procId, (centralCoreCounts.get(procId) || 0) + 1);
+    if (claim.claimRole === "core") {
+      coreCounts.set(procId, (coreCounts.get(procId) || 0) + 1);
     }
   }
 
   const missingProceedings = coverageTargets
     .map((target) => {
       const totalClaims = claimsByProc.get(target.id)?.length ?? 0;
-      const centralCore = centralCoreCounts.get(target.id) || 0;
+      const core = coreCounts.get(target.id) || 0;
       const needsCoverage =
-        centralCore < MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING &&
-        !(centralCore === 1 && totalClaims >= MIN_TOTAL_CLAIMS_WITH_SINGLE_CENTRAL);
-      return { target, totalClaims, centralCore, needsCoverage };
+        core < MIN_CORE_CLAIMS_PER_PROCEEDING &&
+        !(core === 1 && totalClaims >= MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE);
+      return { target, totalClaims, core, needsCoverage };
     })
     .filter((entry) => entry.needsCoverage);
 
   if (missingProceedings.length === 0) return [];
 
   const missingSummary = missingProceedings
-    .map(({ target, totalClaims, centralCore }) => {
-      const neededCentral = Math.max(0, MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING - centralCore);
+    .map(({ target, totalClaims, core }) => {
+      const neededCore = Math.max(0, MIN_CORE_CLAIMS_PER_PROCEEDING - core);
       const label = target.id ? `${target.id}: ${target.name}` : `${target.name}`;
-      return `- ${label} (total=${totalClaims}, central core=${centralCore}, need +${neededCentral} central core)`;
+      return `- ${label} (total=${totalClaims}, core=${core}, need +${neededCore} core)`;
     })
     .join("\n");
 
@@ -3364,9 +3380,11 @@ async function requestSupplementalSubClaims(
   const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
  - Return ONLY new claims (do not repeat existing ones).
  - Each claim must be tied to a single scope via relatedProceedingId.${hasScopes ? "" : " Use an empty string if no scopes are listed."}
- - Use claimRole="core", checkWorthiness="high", harmPotential="high", centrality="high", isCentral=true.
+ - Use claimRole="core" and checkWorthiness="high".
+ - Set harmPotential and centrality realistically. Default centrality to "medium" unless the claim is truly the primary thesis of that scope.
+ - Set isCentral=true ONLY if (harmPotential==="high" AND centrality==="high").
  - Use dependsOn=[] unless a dependency is truly required.
- - Ensure each listed context reaches at least ${MIN_CENTRAL_CORE_CLAIMS_PER_PROCEEDING} central core claims.
+ - Ensure each listed context reaches at least ${MIN_CORE_CLAIMS_PER_PROCEEDING} core claims.
  - **CRITICAL**: If specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.`;
 
   const userPrompt = `INPUT:\n"${input}"\n\nCONTEXTS NEEDING MORE CLAIMS:\n${missingSummary}\n\nEXISTING CLAIMS (DO NOT DUPLICATE):\n${existingClaimsSummary}`;
@@ -3642,8 +3660,10 @@ Extract outcomes that need separate evaluation claims.`;
         keyEntities: [],
         checkWorthiness: "high",
         harmPotential: "high",
-        centrality: "high",
-        isCentral: true,
+        // Outcome fairness claims are often important but not always the *primary thesis*.
+        // Let centrality/isCentral be determined by the main UNDERSTAND rubric + guardrails.
+        centrality: "medium",
+        isCentral: false,
         relatedProceedingId: outcome.relatedProceedingId || "",
         approximatePosition: "",
         keyFactorId: "",
@@ -7071,6 +7091,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const outcomeClaims = await extractOutcomeClaimsFromFacts(state, model);
   if (outcomeClaims.length > 0) {
     state.understanding!.subClaims.push(...outcomeClaims);
+    normalizeSubClaimsImportance(state.understanding!.subClaims as any);
     console.log(`[Analyzer] Added ${outcomeClaims.length} outcome-related claims from research`);
     await emit(`Added ${outcomeClaims.length} outcome-related claims`, 63);
   }
