@@ -33,7 +33,7 @@ const hasSpecificOutcome = extractNumericClaims(text);
 
 **Instead**:
 - Use parameterization and configuration
-- Detect patterns generically (e.g., "legal domain", "temporal claim")
+- Detect patterns generically
 - Let the LLM identify domain-specific elements dynamically
 
 ### 2. Input Neutrality
@@ -45,7 +45,7 @@ const hasSpecificOutcome = extractNumericClaims(text);
 - Normalize questions to statements at entry point
 - Use normalized form for ALL analysis
 - Preserve original format only for UI display
-- Verdict difference between formats should be <5%
+- Verdict difference between formats should be <1%
 
 **Implementation**:
 - Convert questions to statements early in pipeline
@@ -179,7 +179,7 @@ const counterEvidence = facts.filter(f =>
 
 **Requirements**:
 - "Article Summary" → Must contain actual article summary
-- "Verdict" → Must be the verdict value (not description)
+- "Verdict" → Must show verdict name (according to Scale Mapping) and verdict value 
 - "Confidence" → Must be confidence in the verdict (0-100%)
 - Labels should be human-readable (not code identifiers)
 
@@ -204,7 +204,7 @@ Truth: 82%
 
 **Never Show These**:
 - "Implied Claim" (redundant with summary)
-- "Question asked" (use normalized statement)
+- "Question asked" (redundant with Input)
 - Methodology validation claims (low value)
 
 **Unified Naming**:
@@ -243,25 +243,24 @@ Truth: 82%
 
 ### Centrality Detection
 
-**Rule**: Expect 0-2 central claims maximum.
 
-**Central Claims** (rare):
+**Central Claims**:
 - Core factual assertion that article depends on
 - Removing it would invalidate the article's thesis
-- Examples: "X happened on date Y", "Study found Z"
 
-**NOT Central Claims** (common):
+**NOT Central Claims**:
 - Attribution claims ("Source S said X")
-- Methodology validation claims ("Study used valid methods")
-- Supporting evidence claims
 - Background context claims
+
+**Irrelevant Claims** (do not use at all):
+- Claims that validate Validation Methodology (e.g. "methodology provides an accurate framework for")
 
 ### Claim Deduplication
 
 **Rule**: Near-duplicate claims should not fully influence verdict multiple times.
 
 **Detection**:
-- Detect extremely similar claims (>90% semantic overlap)
+- Detect extremely similar claims (>80% semantic overlap)
 - Flag as duplicates
 - Weight duplicates proportionally in aggregation
 
@@ -275,7 +274,7 @@ Truth: 82%
 
 ### Current Date Handling
 
-**Rule**: LLM must be aware of current date (2026-01-12 as of this document).
+**Rule**: LLM must be aware of current date.
 
 **Requirements**:
 - Inject current date into all prompts
@@ -307,10 +306,10 @@ function sanitizeTemporalErrors(text: string): string {
 - Describe patterns, not specific instances
 - Let LLM identify domain dynamically
 
-**Don't**:
-- Include specific person names (Bolsonaro, Trump, etc.)
-- Include specific event types (trials, elections, etc.)
-- Include specific outcomes ("27-year sentence", etc.)
+**Don't hardcode in prompts or source code**:
+- specific person names (Bolsonaro, Trump, etc.)
+- specific event types (trials, elections, etc.)
+- specific outcomes ("27-year sentence", etc.)
 
 ### Prompt Structure
 
@@ -364,7 +363,7 @@ function sanitizeTemporalErrors(text: string): string {
 
 **Optional**:
 - Feature flags (FH_SEARCH_ENABLED, FH_DETERMINISTIC)
-- Limits (FH_SEARCH_MAX_RESULTS, FH_RUNNER_MAX_CONCURRENCY)
+- Limits (FH_RUNNER_MAX_CONCURRENCY)
 - Domain whitelist (FH_SEARCH_DOMAIN_WHITELIST)
 
 **Security**:

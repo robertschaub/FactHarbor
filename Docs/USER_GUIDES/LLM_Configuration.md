@@ -24,20 +24,21 @@ FactHarbor supports multiple LLM (Large Language Model) providers and search pro
 
 | Provider | Models | Best For | Status |
 |----------|--------|----------|--------|
-| **Anthropic Claude** | Sonnet 4.5, Haiku 4 | Complex reasoning, analysis | ✅ Recommended |
-| **OpenAI** | GPT-4, GPT-4 Turbo | General purpose | ✅ Fully supported |
-| **Google Gemini** | Gemini 1.5 Pro | Multimodal, long context | ✅ Fully supported |
-| **Mistral AI** | Mistral Large | Cost-effective | ✅ Fully supported |
+| **Anthropic** | `claude-sonnet-4-20250514` | Complex reasoning, analysis | ✅ Supported |
+| **OpenAI** | `gpt-4o` | General purpose | ✅ Supported |
+| **Google** | `gemini-1.5-pro` | Long context | ✅ Supported |
+| **Mistral** | `mistral-large-latest` | Cost-effective | ✅ Supported |
 
 ### Search Providers
 
 | Provider | API | Best For | Status |
 |----------|-----|----------|--------|
-| **Google Custom Search** | Free tier available | General web search | ✅ Fully supported |
-| **SerpAPI** | Pay-per-use | Reliable Google results | ✅ Fully supported |
-| **Gemini Grounded Search** | Built-in | When using Gemini | ✅ Experimental |
-| **Brave Search** | API required | Privacy-focused | ⏳ Planned |
-| **Tavily** | API required | AI-optimized | ⏳ Planned |
+| **Google Custom Search (CSE)** | Free tier available | General web search | ✅ Supported |
+| **SerpAPI** | Pay-per-use | Reliable Google results | ✅ Supported |
+| **Gemini Grounded Search** | Built-in | When using Gemini | ✅ Supported (requires `LLM_PROVIDER=gemini` + `FH_SEARCH_MODE=grounded`) |
+| **Brave Search** | API required | Privacy-focused | ❌ Not implemented (no adapter in code) |
+| **Tavily** | API required | AI-optimized | ❌ Not implemented (no adapter in code) |
+| **Bing Search** | API required | General web search | ❌ Not implemented (no adapter in code) |
 
 ---
 
@@ -49,7 +50,7 @@ Configure via environment variable in `apps/web/.env.local`:
 
 ```bash
 # Choose ONE provider
-LLM_PROVIDER=anthropic  # Options: openai | anthropic | google | mistral
+LLM_PROVIDER=anthropic  # Options: openai | anthropic | google | gemini | mistral | claude
 ```
 
 ### Provider API Keys
@@ -59,7 +60,7 @@ LLM_PROVIDER=anthropic  # Options: openai | anthropic | google | mistral
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 - Get key: https://console.anthropic.com/settings/keys
-- Models: claude-sonnet-4.5, claude-haiku-4
+- Current default model (in code): `claude-sonnet-4-20250514`
 - Best for: Complex analysis, high-quality reasoning
 
 **OpenAI**:
@@ -67,7 +68,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 ```
 - Get key: https://platform.openai.com/api-keys
-- Models: gpt-4, gpt-4-turbo
+- Current default model (in code): `gpt-4o`
 - Best for: General purpose, established ecosystem
 
 **Google Gemini**:
@@ -75,7 +76,7 @@ OPENAI_API_KEY=sk-...
 GOOGLE_GENERATIVE_AI_API_KEY=AIza...
 ```
 - Get key: https://aistudio.google.com/app/apikey
-- Models: gemini-1.5-pro
+- Current default model (in code): `gemini-1.5-pro`
 - Best for: Long context, multimodal inputs
 
 **Mistral AI**:
@@ -83,7 +84,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=AIza...
 MISTRAL_API_KEY=...
 ```
 - Get key: https://console.mistral.ai/api-keys
-- Models: mistral-large
+- Current default model (in code): `mistral-large-latest`
 - Best for: Cost-conscious deployments
 
 ---
@@ -105,7 +106,6 @@ ANTHROPIC_API_KEY=sk-ant-your-key-here
 # Search Provider
 FH_SEARCH_ENABLED=true
 FH_SEARCH_PROVIDER=auto  # Options: auto | serpapi | google-cse
-FH_SEARCH_MAX_RESULTS=6
 
 # Search API Keys
 SERPAPI_API_KEY=your-serpapi-key
@@ -238,12 +238,20 @@ Use cheaper models for simple tasks, premium models for complex reasoning:
 
 > **Note**: Tiered model routing is **not yet implemented**. All tasks currently use the same model specified in `LLM_PROVIDER`.
 
+### Tuning analysis depth (implemented)
+
+FactHarbor’s primary “cost vs quality” knob today is **analysis mode**, not per-step model routing:
+
+```bash
+# Options: quick (default) | deep
+FH_ANALYSIS_MODE=quick
+```
+
+This affects limits like max iterations and max total sources (see `apps/web/src/lib/analyzer/config.ts`).
+
 ### Cost Control Settings
 
 ```bash
-# Limit search results to reduce API calls
-FH_SEARCH_MAX_RESULTS=6
-
 # Use deterministic mode to avoid redundant retries
 FH_DETERMINISTIC=true
 
@@ -355,7 +363,7 @@ curl https://api.openai.com/v1/chat/completions \
 
 ### Custom Model Selection
 
-Override default models (when multi-tier routing is implemented):
+> **Not implemented**: These environment variables are not currently read by the codebase. Keep this section as a future design note.
 
 ```bash
 FH_MODEL_UNDERSTANDING=claude-sonnet-4.5

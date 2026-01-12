@@ -1,15 +1,23 @@
-# Separated Architecture Implementation Guide
+# Claim Caching (Separated Claim/Article Verdicts) — Implementation Guide (Planned)
 
 **Document Version:** 1.0
 **Date:** 2026-01-02
-**Status:** Approved - Ready for Implementation
+**Status:** Planned — **NOT implemented in the current codebase**
 **Reference:** FactHarbor Roadmap - Architecture Analysis (Jan 2026)
 
 ---
 
+## Important Note (Read First)
+
+This document describes a **future** architecture for **claim-level verdict caching** (separating cached claim verdict generation from non-cached article verdict synthesis).
+
+- The current FactHarbor POC1 already has a **separated services architecture** (Next.js web/runner + ASP.NET API).
+- This document is **not** about deployment, and it is **not** describing current behavior.
+- See `Docs/ARCHITECTURE/Overview.md` for the current implemented architecture.
+
 ## Executive Summary
 
-This guide provides step-by-step instructions for implementing the **Separated Architecture** for FactHarbor POC1. This architecture separates claim verdict generation from article verdict generation, enabling **40-70% cost reduction** and **50%+ faster analysis** through intelligent caching.
+This guide provides step-by-step instructions for implementing **claim-level verdict caching** for FactHarbor POC1. This architecture separates claim verdict generation from article verdict generation, enabling **40-70% cost reduction** and **50%+ faster analysis** through intelligent caching.
 
 **Key Benefits:**
 - 40-70% reduction in LLM costs for repeated claims

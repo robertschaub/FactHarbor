@@ -202,7 +202,6 @@ FH_INTERNAL_RUNNER_KEY=your-secure-runner-key
 # Analysis Configuration
 FH_DETERMINISTIC=true  # Use temperature=0 for reproducibility
 FH_ALLOW_MODEL_KNOWLEDGE=false  # Require evidence-based analysis only
-FH_SEARCH_MAX_RESULTS=6  # Max search results per query
 FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 
 # Optional Features

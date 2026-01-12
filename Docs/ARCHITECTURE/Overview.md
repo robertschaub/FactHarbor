@@ -23,7 +23,7 @@ This document provides a comprehensive technical overview of FactHarbor's POC1 a
 
 ### Component Overview
 
-**FactHarbor POC1** uses a **separated architecture** with two main components:
+**FactHarbor POC1** uses a **separated services architecture** with two main components:
 
 1. **.NET API (apps/api)** - Job persistence, status tracking, SSE events
    - Technology: ASP.NET Core 8.0
@@ -34,6 +34,10 @@ This document provides a comprehensive technical overview of FactHarbor's POC1 a
    - Technology: Next.js 14+ (TypeScript, React, Tailwind CSS)
    - Core: `analyzer.ts` (~6700 lines) implements AKEL pipeline
    - Responsibilities: User interface, analysis execution, report generation
+
+> Note on terminology: FactHarbor also has a **planned** “separation” for **claim caching** (caching claim verdict generation while keeping article verdict synthesis dynamic). That is **not implemented** in the current codebase. See:
+> - `Docs/ARCHITECTURE/Claim_Caching_Overview.md`
+> - `Docs/ARCHITECTURE/Separated_Architecture_Guide.md`
 
 ### Internal Security Model
 
@@ -564,7 +568,7 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 - Estimated savings: 30-50% on repeat claims
 
 **Search Optimization:**
-- Limit search results (`FH_SEARCH_MAX_RESULTS=6`)
+- Limit sources by using `FH_ANALYSIS_MODE=quick` (default) vs `FH_ANALYSIS_MODE=deep` (more sources/iterations). Limits live in `apps/web/src/lib/analyzer/config.ts`.
 - Use domain whitelist to improve relevance
 - Use date restriction for recent topics (`FH_SEARCH_DATE_RESTRICT`)
 
@@ -636,7 +640,6 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 | `FH_DETERMINISTIC` | `true` | Zero temperature for reproducibility |
 | `FH_RUNNER_MAX_CONCURRENCY` | `3` | Max parallel analysis jobs |
 | `FH_SEARCH_ENABLED` | `true` | Enable web search |
-| `FH_SEARCH_MAX_RESULTS` | `6` | Max search results per query |
 | `FH_ALLOW_MODEL_KNOWLEDGE` | `false` | Require evidence-based analysis only |
 | `FH_ADMIN_KEY` | - | Admin endpoints authentication |
 | `FH_INTERNAL_RUNNER_KEY` | - | Internal job execution authentication |
