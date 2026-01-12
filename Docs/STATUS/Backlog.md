@@ -6,6 +6,8 @@
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
+**POC note**: While FactHarbor is a local POC, **security/cost-control items are tracked as low urgency** (but often **high importance**). Reclassify to **high urgency** before any production/public exposure.
+
 | Description | Domain | Urgency | Importance |
 |---|---|---|---|
 | Inverse-input symmetry hardening: keep `scripts/inverse-scope-regression.ps1` green; add 2–3 more inverse pairs; define “strict symmetry” vs “best-effort” per test. | Analyzer | med | high |
