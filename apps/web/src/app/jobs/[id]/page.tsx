@@ -781,6 +781,18 @@ function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { ques
             <div className={styles.shortAnswerText}>{questionAnswer.shortAnswer}</div>
           </div>
         )}
+
+        {/* v2.6.28: Show overall KEY FACTORS inside verdict box when no per-scope breakdown */}
+        {(!questionAnswer.proceedingAnswers || questionAnswer.proceedingAnswers.length === 0) && questionAnswer.keyFactors?.length > 0 && (
+          <div className={styles.keyFactorsSection}>
+            <div className={styles.keyFactorsHeader}>KEY FACTORS</div>
+            <div className={styles.keyFactorsList}>
+              {questionAnswer.keyFactors.map((factor: any, i: number) => (
+                <KeyFactorRow key={i} factor={factor} showContestation={true} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
@@ -793,18 +805,6 @@ function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { ques
               const scope = scopes.find((s: any) => s.id === pa.proceedingId);
               return <ScopeCard key={pa.proceedingId} scopeAnswer={pa} scope={scope} />;
             })}
-          </div>
-        </div>
-      )}
-
-      {/* Show overall key factors only when there are NO per-proceeding answers (single question without proceedings) */}
-      {(!questionAnswer.proceedingAnswers || questionAnswer.proceedingAnswers.length === 0) && questionAnswer.keyFactors?.length > 0 && (
-        <div className={styles.keyFactorsSection}>
-          <div className={styles.keyFactorsHeader}>Key Factors</div>
-          <div className={styles.keyFactorsList}>
-            {questionAnswer.keyFactors.map((factor: any, i: number) => (
-              <KeyFactorRow key={i} factor={factor} showContestation={true} />
-            ))}
           </div>
         </div>
       )}
@@ -892,6 +892,18 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis, arti
               This content contains claims based on <b>{pseudoCategories.map((c: string) =>
                 c.replace(/([A-Z])/g, ' $1').trim().toLowerCase()
               ).join(", ")}</b> — concepts that contradict established scientific consensus.
+            </div>
+          </div>
+        )}
+
+        {/* v2.6.28: Show overall KEY FACTORS inside verdict box when no per-scope breakdown */}
+        {(!questionAnswer.proceedingAnswers || questionAnswer.proceedingAnswers.length === 0) && questionAnswer.keyFactors?.length > 0 && (
+          <div className={styles.keyFactorsSection}>
+            <div className={styles.keyFactorsHeader}>KEY FACTORS</div>
+            <div className={styles.keyFactorsList}>
+              {questionAnswer.keyFactors.map((factor: any, i: number) => (
+                <KeyFactorRow key={i} factor={factor} showContestation={true} />
+              ))}
             </div>
           </div>
         )}
@@ -1089,40 +1101,45 @@ function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer
 
   return (
     <div className={styles.questionBanner} style={{ borderColor: color.border }}>
-      {/* v2.6.25: Removed "Question" header for input neutrality */}
-
       <div className={styles.questionBannerContent}>
+        {/* v2.6.28: Unified VERDICT label like other banners */}
+        <div className={styles.articleVerdictHeader}>
+          <span className={styles.articleVerdictLabel}>VERDICT</span>
+        </div>
         <div className={styles.questionBannerAnswerRow}>
           <span className={styles.questionBannerAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(answerVerdict)}
           </span>
-          <span className={styles.questionBannerPercentage}>{answerTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.questionBannerPercentage}>{answerTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}% confidence)</span></span>
           {hasEvidenceBasedContestations && (
             <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
           )}
         </div>
 
-        {allKeyFactors.length > 0 && (
-          <div style={{ marginTop: 8, fontSize: 13, color: "#666" }}>
-            <span style={{ marginRight: 12 }}>✅ {positiveFactors} positive</span>
-            <span style={{ marginRight: 12 }}>❌ {negativeFactors} negative</span>
-            <span>⚪ {neutralFactors} neutral</span>
+        {/* Short answer / assessment */}
+        {questionAnswer.shortAnswer && (
+          <div className={styles.questionBannerShortAnswer} style={{ borderLeftColor: color.border }}>
+            <div className={styles.questionBannerShortAnswerText}>{questionAnswer.shortAnswer}</div>
           </div>
         )}
 
-        <div className={styles.questionBannerShortAnswer} style={{ borderLeftColor: color.border }}>
-          <div className={styles.questionBannerShortAnswerText}>{questionAnswer.shortAnswer}</div>
-        </div>
+        {/* Key factors section inside the verdict box */}
+        {questionAnswer.keyFactors?.length > 0 && (
+          <div className={styles.keyFactorsSection}>
+            <div className={styles.keyFactorsHeader}>
+              KEY FACTORS
+              <span style={{ marginLeft: 12, fontSize: 13, color: "#666", fontWeight: "normal" }}>
+                ✅ {positiveFactors} positive · ❌ {negativeFactors} negative{neutralFactors > 0 ? ` · ⚪ ${neutralFactors} neutral` : ""}
+              </span>
+            </div>
+            <div className={styles.keyFactorsList}>
+              {questionAnswer.keyFactors.map((factor: any, i: number) => (
+                <KeyFactorRow key={i} factor={factor} showContestation={true} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-
-      {questionAnswer.keyFactors?.length > 0 && (
-        <div className={styles.questionBannerKeyFactors}>
-          <div className={styles.questionBannerKeyFactorsLabel}>KEY FACTORS</div>
-          {questionAnswer.keyFactors.map((factor: any, i: number) => (
-            <KeyFactorRow key={i} factor={factor} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
