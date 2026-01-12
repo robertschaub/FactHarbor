@@ -38,6 +38,7 @@ import { generateText, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
+import { applyGate1ToClaims, applyGate4ToVerdicts } from "./analyzer/quality-gates";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -66,8 +67,11 @@ function agentLog(location: string, message: string, data: any, hypothesisId: st
   }).catch(() => {});
 }
 
-// Write debug log to a fixed location that's easy to find
-const DEBUG_LOG_PATH = "c:\\DEV\\FactHarbor\\apps\\web\\debug-analyzer.log";
+// Write debug log to a fixed location that's easy to find.
+// Additive override: FH_DEBUG_LOG_PATH can point elsewhere (e.g., non-Windows paths).
+const DEBUG_LOG_PATH =
+  process.env.FH_DEBUG_LOG_PATH ||
+  "c:\\DEV\\FactHarbor\\apps\\web\\debug-analyzer.log";
 const DEBUG_LOG_FILE_ENABLED =
   (process.env.FH_DEBUG_LOG_FILE ?? "true").toLowerCase() === "true";
 const DEBUG_LOG_CLEAR_ON_START =
@@ -427,6 +431,343 @@ function canonicalizeScopes(
   };
 }
 
+function canonicalizeScopesWithRemap(
+  input: string,
+  understanding: ClaimUnderstanding,
+): { understanding: ClaimUnderstanding; idRemap: Map<string, string> } {
+  const procs = Array.isArray(understanding.distinctProceedings)
+    ? understanding.distinctProceedings
+    : [];
+  if (procs.length === 0) return { understanding, idRemap: new Map() };
+
+  // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
+  const sorted = [...procs].sort((a: any, b: any) => {
+    const al = inferScopeTypeLabel(a);
+    const bl = inferScopeTypeLabel(b);
+    const ar = proceedingTypeRank(al);
+    const br = proceedingTypeRank(bl);
+    if (ar !== br) return ar - br;
+
+    const ak = `${detectInstitutionCode(a)}|${String(a.metadata?.court || a.metadata?.institution || "").toLowerCase()}|${String(a.name || "").toLowerCase()}`;
+    const bk = `${detectInstitutionCode(b)}|${String(b.metadata?.court || b.metadata?.institution || "").toLowerCase()}|${String(b.name || "").toLowerCase()}`;
+    return ak.localeCompare(bk);
+  });
+
+  const idRemap = new Map<string, string>();
+  const usedIds = new Set<string>();
+  const hasExplicitYear = /\b(19|20)\d{2}\b/.test(input);
+  const inputLower = input.toLowerCase();
+  const hasExplicitStatusAnchor =
+    /\b(sentenced|convicted|acquitted|indicted|charged|ongoing|pending|concluded)\b/.test(
+      inputLower,
+    );
+
+  const canonicalProceedings = sorted.map((p: any, idx: number) => {
+    const typeLabel = inferScopeTypeLabel(p);
+    const inst = detectInstitutionCode(p);
+    let newId = inst ? `CTX_${inst}` : `CTX_${idx + 1}`;
+    if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
+    usedIds.add(newId);
+    idRemap.set(p.id, newId);
+    const shortName = inst || p.shortName || `CTX${idx + 1}`;
+    return {
+      ...p,
+      id: newId,
+      name: inst ? `${typeLabel} proceeding (${inst})` : `${typeLabel} proceeding`,
+      shortName,
+      date: hasExplicitYear ? p.date : "",
+      status: hasExplicitStatusAnchor ? p.status : "unknown",
+    };
+  });
+
+  const remappedClaims = (understanding.subClaims || []).map((c: any) => {
+    const rp = c.relatedProceedingId;
+    return {
+      ...c,
+      relatedProceedingId: rp && idRemap.has(rp) ? idRemap.get(rp) : rp,
+    };
+  });
+
+  return {
+    understanding: {
+      ...understanding,
+      distinctProceedings: canonicalProceedings,
+      subClaims: remappedClaims,
+    },
+    idRemap,
+  };
+}
+
+function ensureAtLeastOneScope(understanding: ClaimUnderstanding): ClaimUnderstanding {
+  const procs = Array.isArray(understanding.distinctProceedings)
+    ? understanding.distinctProceedings
+    : [];
+  if (procs.length > 0) return understanding;
+  return {
+    ...understanding,
+    distinctProceedings: [
+      {
+        id: "CTX_1",
+        name: "General proceeding",
+        shortName: "GEN",
+        subject: "",
+        temporal: "",
+        status: "unknown",
+        outcome: "unknown",
+        metadata: {},
+      },
+    ],
+    requiresSeparateAnalysis: false,
+  };
+}
+
+async function refineScopesFromEvidence(
+  state: ResearchState,
+  model: any,
+): Promise<{ updated: boolean; llmCalls: number }> {
+  if (!state.understanding) return { updated: false, llmCalls: 0 };
+
+  const currentScopes = state.understanding.distinctProceedings || [];
+
+  const facts = state.facts || [];
+  // If we don't have enough evidence, skip refinement (avoid hallucinated scopes).
+  if (facts.length < 8) return { updated: false, llmCalls: 0 };
+
+  const analysisInput =
+    state.understanding.impliedClaim ||
+    state.originalInput ||
+    state.originalText ||
+    "";
+
+  const factsText = facts
+    .slice(0, 40)
+    .map((f) => {
+      const es = (f as any).evidenceScope;
+      const esBits: string[] = [];
+      if (es?.methodology) esBits.push(`method=${es.methodology}`);
+      if (es?.boundaries) esBits.push(`boundaries=${es.boundaries}`);
+      if (es?.geographic) esBits.push(`geo=${es.geographic}`);
+      if (es?.temporal) esBits.push(`time=${es.temporal}`);
+      const esStr = esBits.length > 0 ? ` | EvidenceScope: ${esBits.join("; ")}` : "";
+      return `[${f.id}] ${f.fact} (Source: ${f.sourceTitle})${esStr}`;
+    })
+    .join("\n");
+
+  const claimsText = (state.understanding.subClaims || [])
+    .slice(0, 12)
+    .map((c: any) => `${c.id}: ${c.text}`)
+    .join("\n");
+
+  const schema = z.object({
+    requiresSeparateAnalysis: z.boolean(),
+    distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA),
+    factScopeAssignments: z
+      .array(z.object({ factId: z.string(), proceedingId: z.string() }))
+      .default([]),
+    claimScopeAssignments: z
+      .array(z.object({ claimId: z.string(), proceedingId: z.string() }))
+      .default([]),
+  });
+
+  const systemPrompt = `You are FactHarbor's scope refinement engine.
+
+Your job is to identify DISTINCT SCOPES (bounded analytical frames) that are actually present in the EVIDENCE provided.
+
+CRITICAL RULES:
+- Evidence-grounded only: every scope MUST be supported by at least one factId from the list.
+- Do NOT invent scopes based on guesswork or background knowledge.
+- Split into multiple scopes when the evidence indicates different boundaries, methods, time periods, institutions, jurisdictions, datasets, or processes that should be analyzed separately.
+- Also split when evidence clearly covers different phases/components/metrics that are not directly comparable (e.g., upstream vs downstream phases, production vs use-phase, system-wide vs component-level metrics, different denominators/normalizations).
+- Do NOT split into scopes just because there are pro vs con viewpoints. Viewpoints are not scopes.
+- If the evidence does not clearly support multiple scopes, return exactly ONE scope.
+- Use neutral, generic labels for scope names (no domain-specific hardcoding).
+- Different evidence reports may define DIFFERENT scopes. A single evidence report may contain MULTIPLE scopes. Do not restrict scopes to one-per-source.
+- Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
+
+Return JSON only matching the schema.`;
+
+  const userPrompt = `INPUT (normalized):
+"${analysisInput}"
+
+FACTS (evidence):
+${factsText}
+
+CURRENT CLAIMS (may be incomplete):
+${claimsText || "(none)"}
+
+Return:
+- requiresSeparateAnalysis
+- distinctProceedings (1..N)
+- factScopeAssignments: map each factId to exactly one proceedingId (use proceedingId from your distinctProceedings)
+- claimScopeAssignments: (optional) map any claimIds that clearly belong to a specific proceedingId
+`;
+
+  let refined: any;
+  try {
+    const result = await generateText({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: getDeterministicTemperature(0.2),
+      output: Output.object({ schema }),
+    });
+    refined = extractStructuredOutput(result);
+  } catch (err: any) {
+    debugLog("refineScopesFromEvidence: FAILED", err?.message || String(err));
+    return { updated: false, llmCalls: 0 };
+  }
+
+  const sp = schema.safeParse(refined);
+  if (!sp.success) {
+    debugLog("refineScopesFromEvidence: safeParse failed", {
+      issues: sp.error.issues?.slice(0, 10),
+    });
+    return { updated: false, llmCalls: 1 };
+  }
+
+  const next = sp.data;
+  if (!Array.isArray(next.distinctProceedings) || next.distinctProceedings.length === 0) {
+    return { updated: false, llmCalls: 1 };
+  }
+
+  // Validate coverage: we need assignments for most facts, and at least one fact per scope.
+  const assignmentCount = (next.factScopeAssignments || []).length;
+  if (assignmentCount < Math.floor(facts.length * 0.7)) {
+    debugLog("refineScopesFromEvidence: rejected (insufficient fact assignments)", {
+      facts: facts.length,
+      assignments: assignmentCount,
+    });
+    return { updated: false, llmCalls: 1 };
+  }
+
+  // Apply refined scopes.
+  state.understanding = {
+    ...state.understanding,
+    distinctProceedings: next.distinctProceedings,
+    requiresSeparateAnalysis: !!next.requiresSeparateAnalysis && next.distinctProceedings.length > 1,
+  };
+
+  // Canonicalize IDs and keep a remap so we can remap fact/claim assignments.
+  const canon = canonicalizeScopesWithRemap(analysisInput, state.understanding);
+  state.understanding = canon.understanding;
+
+  const remapId = (id: string) => (id && canon.idRemap.has(id) ? canon.idRemap.get(id)! : id);
+  const allowedProcIds = new Set((state.understanding.distinctProceedings || []).map((p: any) => p.id));
+
+  const factAssignments = new Map<string, string>();
+  for (const a of next.factScopeAssignments || []) {
+    const pid = remapId(a.proceedingId || "");
+    if (!a.factId || !pid) continue;
+    if (!allowedProcIds.has(pid)) continue;
+    factAssignments.set(a.factId, pid);
+  }
+  for (const f of state.facts) {
+    const pid = factAssignments.get(f.id);
+    if (pid) f.relatedProceedingId = pid;
+  }
+
+  const factsPerScope = new Map<string, number>();
+  for (const f of state.facts) {
+    const pid = String(f.relatedProceedingId || "");
+    if (!pid) continue;
+    factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
+  }
+  for (const s of state.understanding.distinctProceedings || []) {
+    const c = factsPerScope.get(s.id) || 0;
+    if (c < 1) {
+      debugLog("refineScopesFromEvidence: rejected (scope with zero evidence)", {
+        scopeId: s.id,
+        scopeName: s.name,
+      });
+      return { updated: false, llmCalls: 1 };
+    }
+  }
+
+  // Avoid over-splitting into “dimension scopes” (e.g., cost vs infrastructure) unless the
+  // evidence indicates genuinely distinct analytical frames (methodology/boundaries/geography/temporal).
+  if ((state.understanding.distinctProceedings?.length ?? 0) > 1) {
+    const scopesNow = state.understanding.distinctProceedings || [];
+
+    const scopeFrameKeys = new Set<string>();
+    for (const s of scopesNow as any[]) {
+      const m = String(s?.metadata?.methodology || "").trim();
+      const b = String(s?.metadata?.boundaries || "").trim();
+      const g = String(s?.metadata?.geographic || "").trim();
+      const t = String(s?.metadata?.temporal || s?.temporal || "").trim();
+      const key = [m, b, g, t].filter(Boolean).join("|");
+      if (key) scopeFrameKeys.add(key);
+    }
+
+    const evidenceScopeKeysByScope = new Map<string, Set<string>>();
+    for (const f of state.facts as any[]) {
+      const pid = String(f?.relatedProceedingId || "");
+      if (!pid) continue;
+      const es = f?.evidenceScope;
+      if (!es) continue;
+      const mk = String(es?.methodology || "").trim();
+      const bk = String(es?.boundaries || "").trim();
+      const gk = String(es?.geographic || "").trim();
+      const tk = String(es?.temporal || "").trim();
+      const nk = String(es?.name || "").trim();
+      const key = [nk, mk, bk, gk, tk].filter(Boolean).join("|");
+      if (!key) continue;
+      if (!evidenceScopeKeysByScope.has(pid)) evidenceScopeKeysByScope.set(pid, new Set());
+      evidenceScopeKeysByScope.get(pid)!.add(key);
+    }
+
+    const distinctEvidenceScopeKeys = new Set<string>();
+    for (const set of evidenceScopeKeysByScope.values()) {
+      for (const k of set) distinctEvidenceScopeKeys.add(k);
+    }
+    const scopesWithEvidenceScope = Array.from(evidenceScopeKeysByScope.entries()).filter(
+      ([, set]) => set.size > 0,
+    ).length;
+
+    const hasStrongFrameSignal =
+      scopeFrameKeys.size >= 2 ||
+      (distinctEvidenceScopeKeys.size >= 2 && scopesWithEvidenceScope >= 2);
+
+    if (!hasStrongFrameSignal) {
+      debugLog("refineScopesFromEvidence: rejected (likely dimension split, weak frame signals)", {
+        scopeCount: scopesNow.length,
+        scopeFrameKeyCount: scopeFrameKeys.size,
+        distinctEvidenceScopeKeys: distinctEvidenceScopeKeys.size,
+        scopesWithEvidenceScope,
+      });
+      return { updated: false, llmCalls: 1 };
+    }
+  }
+
+  const claimAssignments = new Map<string, string>();
+  for (const a of next.claimScopeAssignments || []) {
+    const pid = remapId(a.proceedingId || "");
+    if (!a.claimId || !pid) continue;
+    if (!allowedProcIds.has(pid)) continue;
+    claimAssignments.set(a.claimId, pid);
+  }
+  for (const c of state.understanding.subClaims || []) {
+    const pid = claimAssignments.get(c.id);
+    if (pid) c.relatedProceedingId = pid;
+  }
+
+  // Ensure we never end up with zero scopes.
+  state.understanding = ensureAtLeastOneScope(state.understanding);
+
+  // If we introduced multi-scope but claim coverage is thin, add minimal per-scope central claims.
+  // (This is generic decomposition; it does not “hunt” for named scenarios.)
+  if (state.understanding.distinctProceedings.length > 1 && state.understanding.subClaims.length <= 1) {
+    const added = await requestSupplementalSubClaims(analysisInput, model, state.understanding);
+    if (added.length > 0) {
+      state.understanding.subClaims.push(...added);
+    }
+    return { updated: true, llmCalls: 2 };
+  }
+
+  return { updated: true, llmCalls: 1 };
+}
+
 function normalizeYesNoQuestionToStatement(input: string): string {
   const trimmed = input.trim().replace(/\?+$/, "");
 
@@ -756,397 +1097,9 @@ interface VerdictValidationResult {
   failureReasons?: string[];
   validatedAt: Date;
 }
-
-// Opinion/hedging markers that indicate non-factual claims
-const OPINION_MARKERS = [
-  /\bi\s+think\b/i,
-  /\bi\s+believe\b/i,
-  /\bin\s+my\s+(view|opinion)\b/i,
-  /\bprobably\b/i,
-  /\bpossibly\b/i,
-  /\bperhaps\b/i,
-  /\bmaybe\b/i,
-  /\bmight\b/i,
-  /\bcould\s+be\b/i,
-  /\bseems\s+to\b/i,
-  /\bappears\s+to\b/i,
-  /\blooks\s+like\b/i,
-  /\bbest\b/i,
-  /\bworst\b/i,
-  /\bshould\b/i,
-  /\bought\s+to\b/i,
-  /\bbeautiful\b/i,
-  /\bterrible\b/i,
-  /\bamazing\b/i,
-  /\bwonderful\b/i,
-  /\bhorrible\b/i,
-];
-
-// Future prediction markers
-const FUTURE_MARKERS = [
-  /\bwill\s+(be|have|become|happen|occur|result)\b/i,
-  /\bgoing\s+to\b/i,
-  /\bin\s+the\s+future\b/i,
-  /\bby\s+(2026|2027|2028|2029|2030|next\s+year|next\s+month)\b/i,
-  /\bwill\s+likely\b/i,
-  /\bpredicted\s+to\b/i,
-  /\bforecast/i,
-  /\bexpected\s+to\s+(increase|decrease|grow|rise|fall)\b/i,
-];
-
-// Specificity indicators (names, numbers, dates, locations)
-const SPECIFICITY_PATTERNS = [
-  /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/, // Dates
-  /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}/i,
-  /\b\d+\s*(percent|%)\b/i, // Percentages
-  /\b\d+\s*(million|billion|thousand)\b/i, // Large numbers
-  /\b\$\s*\d+/i, // Dollar amounts
-  /\b(Dr\.|Prof\.|President|CEO|Director)\s+[A-Z][a-z]+/i, // Named individuals
-  /\b[A-Z][a-z]+\s+(University|Institute|Hospital|Corporation|Inc\.|Ltd\.)/i, // Organizations
-  /\b(said|stated|announced|declared|confirmed)\s+(that|in)/i, // Attribution
-  /\bat\s+least\s+\d+/i, // Specific quantities
-  /\baccording\s+to\b/i, // Source attribution
-];
-
-// Uncertainty markers in verdict reasoning
-const UNCERTAINTY_MARKERS = [
-  /\bunclear\b/i,
-  /\bnot\s+(certain|sure|definitive)\b/i,
-  /\blimited\s+evidence\b/i,
-  /\binsufficient\s+data\b/i,
-  /\bconflicting\s+(reports|evidence|sources)\b/i,
-  /\bcannot\s+(confirm|verify|determine)\b/i,
-  /\bno\s+(reliable|credible)\s+sources?\b/i,
-  /\bmay\s+or\s+may\s+not\b/i,
-];
-
-/**
- * Gate 1: Validate if a claim is factual (verifiable) vs opinion/prediction
- *
- * IMPORTANT: Central claims are ALWAYS passed through Gate 1, even if they
- * technically fail validation. This ensures important claims aren't lost.
- */
-function validateClaimGate1(
-  claimId: string,
-  claimText: string,
-  isCentral: boolean = false
-): ClaimValidationResult {
-  // 1. Calculate opinion score (0-1)
-  let opinionMatches = 0;
-  for (const pattern of OPINION_MARKERS) {
-    if (pattern.test(claimText)) {
-      opinionMatches++;
-    }
-  }
-  // Normalize: 0 matches = 0.0, 3+ matches = 1.0
-  const opinionScore = Math.min(opinionMatches / 3, 1);
-
-  // 2. Calculate specificity score (0-1)
-  let specificityMatches = 0;
-  for (const pattern of SPECIFICITY_PATTERNS) {
-    if (pattern.test(claimText)) {
-      specificityMatches++;
-    }
-  }
-  // Normalize: 0 matches = 0.0, 3+ matches = 1.0
-  const specificityScore = Math.min(specificityMatches / 3, 1);
-
-  // 3. Check for future predictions
-  let futureOriented = false;
-  for (const pattern of FUTURE_MARKERS) {
-    if (pattern.test(claimText)) {
-      futureOriented = true;
-      break;
-    }
-  }
-
-  // 4. Determine claim type
-  let claimType: "FACTUAL" | "OPINION" | "PREDICTION" | "AMBIGUOUS";
-  if (futureOriented) {
-    claimType = "PREDICTION";
-  } else if (opinionScore > 0.5) {
-    claimType = "OPINION";
-  } else if (specificityScore >= 0.3 && opinionScore <= 0.3) {
-    claimType = "FACTUAL";
-  } else {
-    claimType = "AMBIGUOUS";
-  }
-
-  // 5. Determine if it can be verified
-  const isFactual = claimType === "FACTUAL" || claimType === "AMBIGUOUS";
-
-  // 6. Pass criteria (spec: opinionScore <= 0.3, specificityScore >= 0.3, not future)
-  const wouldPass = isFactual &&
-                    opinionScore <= 0.3 &&
-                    specificityScore >= 0.3 &&
-                    !futureOriented;
-
-  // CRITICAL: Central claims always pass Gate 1 to prevent losing important claims
-  // They're flagged but not filtered out
-  const passed = wouldPass || isCentral;
-
-  // Generate failure reason if applicable
-  let failureReason: string | undefined;
-  if (!wouldPass) {
-    if (futureOriented) {
-      failureReason = "Future prediction (cannot be verified yet)";
-    } else if (opinionScore > 0.3) {
-      failureReason = "Contains opinion language";
-    } else if (specificityScore < 0.3) {
-      failureReason = "Lacks specific verifiable details";
-    }
-
-    // Add note if central claim is being passed despite failing
-    if (isCentral && failureReason) {
-      failureReason = `[CENTRAL CLAIM - kept for analysis] ${failureReason}`;
-    }
-  }
-
-  return {
-    claimId,
-    isFactual,
-    opinionScore,
-    specificityScore,
-    futureOriented,
-    claimType,
-    passed,
-    failureReason: passed && !isCentral ? undefined : failureReason,
-    validatedAt: new Date(),
-  };
-}
-
-/**
- * Gate 4: Validate verdict confidence based on evidence quality
- *
- * Confidence Tiers:
- * - HIGH (80-100%): ≥3 sources, ≥0.7 avg quality, ≥80% agreement
- * - MEDIUM (50-79%): ≥2 sources, ≥0.6 avg quality, ≥60% agreement
- * - LOW (0-49%): ≥2 sources but low quality/agreement
- * - INSUFFICIENT: <2 sources → DO NOT PUBLISH
- *
- * Publication Rule: Minimum MEDIUM confidence required
- */
-function validateVerdictGate4(
-  verdictId: string,
-  sources: Array<{url: string; trackRecordScore?: number | null}>,
-  supportingFactIds: string[],
-  contradictingFactCount: number,
-  verdictReasoning: string,
-  isCentral: boolean = false
-): VerdictValidationResult {
-  // 1. Count evidence sources
-  const evidenceCount = sources.length;
-
-  // 2. Calculate average source quality
-  // Default to 0.5 if no track record available
-  // Note: trackRecordScore is already 0-1 scale (see Source Reliability Bundle docs)
-  const qualityScores = sources.map(s =>
-    s.trackRecordScore != null ? s.trackRecordScore : 0.5
-  );
-  const averageSourceQuality = qualityScores.length > 0
-    ? qualityScores.reduce((a, b) => a + b, 0) / qualityScores.length
-    : 0;
-
-  // 3. Calculate evidence agreement
-  const totalEvidence = supportingFactIds.length + contradictingFactCount;
-  const evidenceAgreement = totalEvidence > 0
-    ? supportingFactIds.length / totalEvidence
-    : 0;
-
-  // 4. Count uncertainty factors in reasoning
-  let uncertaintyFactors = 0;
-  for (const pattern of UNCERTAINTY_MARKERS) {
-    if (pattern.test(verdictReasoning)) {
-      uncertaintyFactors++;
-    }
-  }
-
-  // 5. Determine confidence tier
-  let confidenceTier: "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
-
-  if (evidenceCount < 2) {
-    confidenceTier = "INSUFFICIENT";
-  } else if (evidenceCount >= 3 && averageSourceQuality >= 0.7 && evidenceAgreement >= 0.8) {
-    confidenceTier = "HIGH";
-  } else if (evidenceCount >= 2 && averageSourceQuality >= 0.6 && evidenceAgreement >= 0.6) {
-    confidenceTier = "MEDIUM";
-  } else {
-    confidenceTier = "LOW";
-  }
-
-  // 6. Publication decision
-  // CRITICAL: Central claims are always publishable (with appropriate caveats)
-  // to prevent losing important claims from the analysis
-  const wouldPublish = confidenceTier === "MEDIUM" || confidenceTier === "HIGH";
-  const publishable = wouldPublish || isCentral;
-
-  // 7. Generate failure reasons if not publishable
-  const failureReasons: string[] = [];
-  if (!wouldPublish) {
-    if (evidenceCount < 2) {
-      failureReasons.push(`Insufficient sources (${evidenceCount}, need ≥2)`);
-    }
-    if (averageSourceQuality < 0.6) {
-      failureReasons.push(`Low source quality (${(averageSourceQuality * 100).toFixed(0)}%, need ≥60%)`);
-    }
-    if (evidenceAgreement < 0.6) {
-      failureReasons.push(`Low evidence agreement (${(evidenceAgreement * 100).toFixed(0)}%, need ≥60%)`);
-    }
-
-    // Add note if central claim is being published despite failing
-    if (isCentral && failureReasons.length > 0) {
-      failureReasons.unshift("[CENTRAL CLAIM - published with caveats]");
-    }
-  }
-
-  return {
-    verdictId,
-    evidenceCount,
-    averageSourceQuality,
-    evidenceAgreement,
-    uncertaintyFactors,
-    confidenceTier,
-    publishable,
-    failureReasons: failureReasons.length > 0 ? failureReasons : undefined,
-    validatedAt: new Date(),
-  };
-}
-
-/**
- * Apply Gate 1 validation to all claims and filter non-factual ones
- * IMPORTANT: Central claims are never filtered, only flagged
- * Uses generic type T to preserve the full claim structure
- */
-function applyGate1ToClaims<T extends { id: string; text: string; isCentral: boolean }>(
-  claims: T[]
-): {
-  validatedClaims: (T & { gate1Validation?: ClaimValidationResult })[];
-  validationResults: ClaimValidationResult[];
-  stats: { total: number; passed: number; filtered: number; centralKept: number };
-} {
-  const validationResults: ClaimValidationResult[] = [];
-  const validatedClaims: (T & { gate1Validation?: ClaimValidationResult })[] = [];
-  let centralKept = 0;
-
-  for (const claim of claims) {
-    const validation = validateClaimGate1(claim.id, claim.text, claim.isCentral);
-    validationResults.push(validation);
-
-    if (validation.passed) {
-      validatedClaims.push({
-        ...claim,
-        gate1Validation: validation,
-      });
-
-      if (claim.isCentral && !validation.isFactual) {
-        centralKept++;
-      }
-    } else {
-      console.log(`[Gate1] Filtered claim ${claim.id}: ${validation.failureReason}`);
-    }
-  }
-
-  const stats = {
-    total: claims.length,
-    passed: validatedClaims.length,
-    filtered: claims.length - validatedClaims.length,
-    centralKept,
-  };
-
-  console.log(`[Gate1] Stats: ${stats.passed}/${stats.total} passed, ${stats.filtered} filtered, ${stats.centralKept} central claims kept despite issues`);
-
-  return { validatedClaims, validationResults, stats };
-}
-
-/**
- * Apply Gate 4 validation to all verdicts
- * Adds confidence tier and publication status to each verdict
- */
-function applyGate4ToVerdicts(
-  verdicts: ClaimVerdict[],
-  sources: FetchedSource[],
-  facts: ExtractedFact[]
-): {
-  validatedVerdicts: (ClaimVerdict & { gate4Validation: VerdictValidationResult })[];
-  validationResults: VerdictValidationResult[];
-  stats: {
-    total: number;
-    publishable: number;
-    highConfidence: number;
-    mediumConfidence: number;
-    lowConfidence: number;
-    insufficient: number;
-    centralKept: number;
-  };
-} {
-  const validationResults: VerdictValidationResult[] = [];
-  const validatedVerdicts: (ClaimVerdict & { gate4Validation: VerdictValidationResult })[] = [];
-
-  let highConfidence = 0;
-  let mediumConfidence = 0;
-  let lowConfidence = 0;
-  let insufficient = 0;
-  let centralKept = 0;
-
-  for (const verdict of verdicts) {
-    // Find sources that support this verdict
-    const supportingSources = sources.filter(s =>
-      verdict.supportingFactIds.some(factId =>
-        facts.some(f => f.id === factId && f.sourceId === s.id)
-      )
-    );
-
-    // Count contradicting facts (estimate based on criticism category)
-    // "criticism" is the category used for opposing/contradicting evidence
-    const contradictingFactCount = facts.filter(f =>
-      !verdict.supportingFactIds.includes(f.id) &&
-      f.category === "criticism"
-    ).length;
-
-    const validation = validateVerdictGate4(
-      verdict.claimId,
-      supportingSources,
-      verdict.supportingFactIds,
-      contradictingFactCount,
-      verdict.reasoning,
-      verdict.isCentral
-    );
-
-    validationResults.push(validation);
-
-    // Track stats
-    switch (validation.confidenceTier) {
-      case "HIGH": highConfidence++; break;
-      case "MEDIUM": mediumConfidence++; break;
-      case "LOW": lowConfidence++; break;
-      case "INSUFFICIENT": insufficient++; break;
-    }
-
-    if (verdict.isCentral && !validation.publishable) {
-      centralKept++;
-    }
-
-    // Always include the verdict but with validation info
-    validatedVerdicts.push({
-      ...verdict,
-      gate4Validation: validation,
-    });
-  }
-
-  const stats = {
-    total: verdicts.length,
-    publishable: validatedVerdicts.filter(v => v.gate4Validation.publishable).length,
-    highConfidence,
-    mediumConfidence,
-    lowConfidence,
-    insufficient,
-    centralKept,
-  };
-
-  console.log(`[Gate4] Stats: ${stats.publishable}/${stats.total} publishable, HIGH=${stats.highConfidence}, MED=${stats.mediumConfidence}, LOW=${stats.lowConfidence}, INSUFF=${stats.insufficient}, central kept=${stats.centralKept}`);
-
-  return { validatedVerdicts, validationResults, stats };
-}
+// NOTE: Gate 1/4 implementations live in `apps/web/src/lib/analyzer/quality-gates.ts`.
+// This file imports `applyGate1ToClaims` and `applyGate4ToVerdicts` so there is a single
+// source of truth (reduces logic drift between the monolith and the modular analyzer).
 
 // ============================================================================
 // PSEUDOSCIENCE DETECTION
@@ -1751,6 +1704,9 @@ interface Scope {
   outcome?: string;          // Result if known
   status: "concluded" | "ongoing" | "pending" | "unknown";
 
+  // Extensible domain metadata (legal/scientific/regulatory fields, etc.)
+  metadata?: Record<string, any>;
+
   // Legacy field mappings for backward compatibility
   court?: string;            // Alias for institution (legal domain)
   date?: string;             // Alias for temporal
@@ -1823,6 +1779,9 @@ interface ResearchState {
   decisionMakerSearchPerformed: boolean;
   // NEW v2.6.22: Track if claim-level recency search was performed
   recentClaimsSearched: boolean;
+  // NEW: Track if we've already done a targeted search for a specific central claim
+  // that has no evidence/counter-evidence yet.
+  centralClaimsSearched: Set<string>;
 }
 
 interface ClaimUnderstanding {
@@ -2480,6 +2439,18 @@ const MIN_TOTAL_CLAIMS_WITH_SINGLE_CENTRAL = 3;
 const SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS = 1;
 const SHORT_SIMPLE_INPUT_MAX_CHARS = 60;
 
+function isComparativeLikeText(text: string): boolean {
+  const t = (text || "").toLowerCase().replace(/\s+/g, " ").trim();
+  if (!t.includes(" than ")) return false;
+  const before = t.split(" than ")[0] || "";
+  const window = before.split(/\s+/).slice(-6).join(" ");
+  // Generic comparative cues (topic-agnostic; no domain keywords).
+  if (/\b(more|less|better|worse|higher|lower|fewer|greater|smaller)\b/.test(window)) return true;
+  // Heuristic: common comparative adjective/adverb form (e.g., "faster", "cheaper") near "than".
+  if (/\b[a-z]{3,}er\b/.test(window)) return true;
+  return false;
+}
+
 async function understandClaim(
   input: string,
   model: any,
@@ -2810,7 +2781,7 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
 - Separate formal proceedings (e.g., TSE electoral case vs STF criminal case)
 - Distinct temporal events (e.g., 2023 rollout vs 2024 review)
 - Different jurisdictional processes (e.g., state court vs federal court)
-- Different analytical methodologies (e.g., WTW vs TTW vs WTT efficiency analysis)
+- Different analytical methodologies or boundaries (e.g., broad-boundary vs narrow-boundary vs mid-boundary efficiency analysis)
 - Different measurement boundaries (e.g., vehicle-only vs full-lifecycle)
 - Different regulatory frameworks (e.g., EU vs US regulations)
 
@@ -2841,19 +2812,19 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - metadata: { institution: "Supreme Federal Court", charges: ["Coup attempt"], decisionMakers: [...] }
 
 **Scientific Domain:**
-1. **CTX_WTW**: Well-to-Wheel analysis
-   - subject: Full energy chain efficiency
+1. **CTX_BOUNDARY_A**: Narrow boundary analysis
+   - subject: Performance/efficiency within a limited boundary
    - temporal: 2024
    - status: concluded
-   - outcome: 40% efficiency
-   - metadata: { methodology: "ISO 14040", boundaries: "Primary energy to wheel", geographic: "EU" }
+   - outcome: Example numeric estimate
+   - metadata: { methodology: "Standard X", boundaries: "Narrow boundary", geographic: "Region A" }
 
-2. **CTX_TTW**: Tank-to-Wheel analysis
-   - subject: Vehicle-only efficiency
+2. **CTX_BOUNDARY_B**: Broad boundary analysis
+   - subject: Performance/efficiency across a broader boundary
    - temporal: 2024
    - status: concluded
-   - outcome: 85% efficiency
-   - metadata: { methodology: "SAE J1711", boundaries: "Stored energy to wheel" }
+   - outcome: Example numeric estimate
+   - metadata: { methodology: "Standard Y", boundaries: "Broad boundary", geographic: "Region A" }
 
 **CRITICAL: metadata.decisionMakers field is IMPORTANT for legal/regulatory contexts!**
 - Extract ALL key decision-makers or primary actors mentioned or known
@@ -3232,7 +3203,9 @@ For "This vaccine causes autism."
     input.trim().length > 0 &&
     input.trim().length <= SHORT_SIMPLE_INPUT_MAX_CHARS &&
     parsed.subClaims.length <= 1 &&
-    (parsed.keyFactors?.length ?? 0) <= 1;
+    (parsed.keyFactors?.length ?? 0) <= 1 &&
+    // Comparative statements are short but need decomposition; don't skip expansion.
+    !isComparativeLikeText(analysisInput);
 
   if (isShortSimpleNonQuestion && parsed.detectedInputType === "article") {
     parsed.detectedInputType = "claim";
@@ -3342,10 +3315,9 @@ async function requestSupplementalSubClaims(
       existingTextGlobal.add(normalized);
     }
 
-    let procId = claim.relatedProceedingId || "";
-    if (!isMultiScope) {
-      procId = procId || singleScopeId;
-    }
+    // For single-scope (or no-scope) runs, treat all claims as belonging to the
+    // single/default scope to avoid brittle ID mismatches.
+    const procId = isMultiScope ? (claim.relatedProceedingId || "") : (singleScopeId || "");
 
     if (isMultiScope && !procId) continue;
     if (!claimsByProc.has(procId)) continue;
@@ -3445,10 +3417,9 @@ async function requestSupplementalSubClaims(
 
   const supplementalClaims: ClaimUnderstanding["subClaims"] = [];
   for (const claim of supplemental.subClaims) {
-    let procId = claim?.relatedProceedingId || "";
-    if (!isMultiScope) {
-      procId = procId || singleScopeId;
-    }
+    // For single-scope/no-scope runs, force all supplemental claims onto the default scope.
+    // This avoids dropping good claims due to model-invented IDs.
+    let procId = isMultiScope ? (claim?.relatedProceedingId || "") : (singleScopeId || "");
     if (isMultiScope && !procId) {
       continue;
     }
@@ -3522,13 +3493,11 @@ distinctProceedings items must include:
 - id (string)
 - name (string)
 - shortName (string)
-- court (string)
-- date (string)
-- status (string)
 - subject (string)
-- charges (array of strings)
+- temporal (string)
+- status (concluded|ongoing|pending|unknown)
 - outcome (string)
-- decisionMakers (array of { name, role, affiliation })
+- metadata (object, may include domain-specific fields like court/institution/jurisdiction/charges/decisionMakers/methodology/boundaries/geographic/standardApplied)
 
 Use empty strings "" and empty arrays [] when unknown.`;
 
@@ -3806,6 +3775,7 @@ interface ResearchDecision {
   category?: string;
   isContradictionSearch?: boolean;
   targetProceedingId?: string;
+  targetClaimId?: string;
   /** If true, search should use date filtering for recency */
   recencyMatters?: boolean;
 }
@@ -3892,6 +3862,73 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         scopesWithFacts.has(p.id),
       ))
   ) {
+    // =========================================================================
+    // CENTRAL CLAIM EVIDENCE COVERAGE (NEW)
+    // For each CENTRAL core claim, try to obtain at least one evidence or counter-evidence fact.
+    // This is best-effort and bounded: at most 1 targeted search per central claim.
+    // =========================================================================
+    const normalizeText = (text: string) =>
+      text.toLowerCase().replace(/\s+/g, " ").trim();
+
+    const hasAnyEvidenceForClaim = (claim: any): boolean => {
+      const claimText = String(claim?.text || "");
+      const claimEntities = (claim?.keyEntities || []).map((e: string) =>
+        String(e || "").toLowerCase(),
+      );
+      const claimLower = claimText.toLowerCase();
+      const claimWords = claimLower.split(/\s+/).filter((w: string) => w.length > 4);
+      const claimProc = String(claim?.relatedProceedingId || "");
+
+      return state.facts.some((f: ExtractedFact) => {
+        // If we have proceeding context, prefer matching within that scope.
+        if (claimProc && f.relatedProceedingId && f.relatedProceedingId !== claimProc) return false;
+        const factLower = String(f.fact || "").toLowerCase();
+        // Entity overlap
+        const hasEntityOverlap = claimEntities.some((entity: string) =>
+          entity.length > 3 && factLower.includes(entity),
+        );
+        // Word overlap (at least 2 meaningful words)
+        const wordOverlap = claimWords.filter((w: string) => factLower.includes(w)).length;
+        return hasEntityOverlap || wordOverlap >= 2;
+      });
+    };
+
+    const centralCoreClaims = (understanding.subClaims || []).filter(
+      (c: any) => c?.isCentral === true && c?.claimRole === "core",
+    );
+
+    for (const c of centralCoreClaims) {
+      if (!c?.id) continue;
+      if (state.centralClaimsSearched.has(c.id)) continue;
+      if (hasAnyEvidenceForClaim(c)) continue;
+
+      const basis = String(c.text || understanding.impliedClaim || state.originalInput || "").trim();
+      if (!basis) continue;
+
+      const entityHints = Array.isArray(c.keyEntities) ? c.keyEntities.slice(0, 4).join(" ") : "";
+      const qBase = entityHints ? `${basis} ${entityHints}`.trim() : basis;
+
+      debugLog("Central-claim evidence coverage: scheduling targeted search", {
+        claimId: c.id,
+        claimText: basis.slice(0, 140),
+        relatedProceedingId: c.relatedProceedingId || "",
+      });
+
+      return {
+        complete: false,
+        category: "central_claim",
+        targetClaimId: c.id,
+        targetProceedingId: c.relatedProceedingId || undefined,
+        focus: `Central claim evidence: ${basis.slice(0, 80)}`,
+        queries: [
+          `${qBase} evidence`,
+          `${qBase} study`,
+          `${qBase} criticism`,
+        ],
+        recencyMatters: isRecencySensitive(basis, understanding),
+      };
+    }
+
     // =========================================================================
     // CLAIM-LEVEL RECENCY CHECK (v2.6.22)
     // Before marking complete, check if any claims appear to be about recent events
@@ -4398,19 +4435,19 @@ and set relatedProceedingId accordingly. Do not omit key numeric outcomes (durat
 Evidence documentation typically defines its scope/context. Extract this when present:
 
 **Look for explicit scope definitions**:
-- Methodology: "This study uses Well-to-Wheel analysis", "Based on ISO 14040 LCA"
+- Methodology: "This study uses a specific analysis method", "Based on ISO 14040 LCA"
 - Boundaries: "From primary energy to vehicle motion", "Excluding manufacturing"
 - Geographic: "EU market", "California regulations", "US jurisdiction"
 - Temporal: "2020-2025 data", "FY2024", "as of March 2024"
 
 **Set evidenceScope when the source defines its analytical frame**:
-- name: Short label (e.g., "WTW", "TTW", "EU-LCA", "US-DOE")
+- name: Short label (e.g., "Broad boundary", "Narrow boundary", "EU-LCA", "Agency report")
 - methodology: Standard referenced (empty string if none)
 - boundaries: What's included/excluded (empty string if not specified)
 - geographic: Geographic scope (empty string if not specified)
 - temporal: Time period (empty string if not specified)
 
-**IMPORTANT**: Different sources may use different scopes. A "40% efficiency" from a WTW study is NOT comparable to one from a TTW study. Capturing scope enables accurate comparisons.${scopesList}`;
+**IMPORTANT**: Different sources may use different scopes. A "40% efficiency" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing scope enables accurate comparisons.${scopesList}`;
 
   debugLog(`extractFacts: Calling LLM for ${source.id}`, {
     textLength: source.fullText.length,
@@ -4765,11 +4802,11 @@ async function generateMultiScopeVerdicts(
 
 ## SCOPE/CONTEXT-AWARE EVALUATION
 
-Evidence may come from sources with DIFFERENT analytical scopes (e.g., WTW vs TTW, EU vs US methodology).
+Evidence may come from sources with DIFFERENT analytical scopes (e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
 - **Check scope alignment**: Are facts being compared from compatible scopes?
 - **Flag scope mismatches**: Different scopes are NOT directly comparable
-- **Note in reasoning**: When scope affects interpretation, mention it (e.g., "Under WTW analysis...")
+- **Note in reasoning**: When scope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
 
 ## CRITICAL: RATING DIRECTION
 
@@ -5350,7 +5387,7 @@ async function generateQuestionVerdicts(
 
 ## SCOPE/CONTEXT-AWARE EVALUATION
 
-Evidence may come from sources with DIFFERENT analytical scopes (e.g., WTW vs TTW, EU vs US methodology).
+Evidence may come from sources with DIFFERENT analytical scopes (e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
 - **Check scope alignment**: Are facts being compared from compatible scopes?
 - **Flag scope mismatches**: Different scopes are NOT directly comparable
@@ -5718,18 +5755,18 @@ CRITICAL - factualBasis MUST be "opinion" for:
 
 ## SCOPE/CONTEXT-AWARE EVALUATION
 
-Evidence may come from sources with DIFFERENT analytical scopes (e.g., WTW vs TTW, EU vs US methodology).
+Evidence may come from sources with DIFFERENT analytical scopes (e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
 **When evaluating claims with scope-specific evidence**:
 1. **Check scope alignment**: Are facts being compared from compatible scopes?
-2. **Flag scope mismatches**: If Source A uses WTW and Source B uses TTW, these are NOT directly comparable
-3. **Note in reasoning**: When scope affects interpretation, mention it (e.g., "Under WTW analysis...")
-4. **Don't treat scope differences as contradictions**: "40% efficient (WTW)" and "60% efficient (TTW)" are BOTH correct for different scopes
+2. **Flag scope mismatches**: If Source A uses a broad boundary and Source B uses a narrow boundary, these are NOT directly comparable
+3. **Note in reasoning**: When scope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
+4. **Don't treat scope differences as contradictions**: "40% efficient (broad boundary)" and "60% efficient (narrow boundary)" can BOTH be correct for different scopes
 
 **Example scope mismatch to flag**:
 - Claim: "Hydrogen cars are more efficient than EVs"
-- Source A (TTW scope): "Hydrogen 60% efficient"
-- Source B (WTW scope): "EVs 80% efficient"
+- Source A (narrow boundary): "X is 60% efficient"
+- Source B (broad boundary): "Y is 80% efficient"
 → These use different scopes - NOT a valid comparison. Note in reasoning.
 
 ## ARTICLE VERDICT ANALYSIS (CRITICAL - Article Verdict Problem)
@@ -6600,6 +6637,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     researchQueriesSearched: new Set(), // NEW v2.6.18
     decisionMakerSearchPerformed: false, // NEW v2.6.18
     recentClaimsSearched: false, // NEW v2.6.22
+    centralClaimsSearched: new Set(),
   };
 
   // Handle URL
@@ -6733,6 +6771,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // NEW v2.6.22: Track claim-level recency searches
     if (decision.focus?.startsWith("Recent claim:"))
       state.recentClaimsSearched = true;
+    // NEW: Track central-claim targeted searches
+    if (decision.category === "central_claim" && decision.targetClaimId) {
+      state.centralClaimsSearched.add(decision.targetClaimId);
+    }
     if (decision.category === "research_question") {
       // Mark all matching research questions as searched
       const researchQueries = state.understanding?.researchQueries || [];
@@ -7005,6 +7047,24 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       baseProgress + 12,
     );
   }
+
+  // STEP 4.4: Evidence-driven scope refinement (fixes under-split / asymmetric scope detection)
+  await emit(`Refining scopes from evidence [LLM: ${provider}/${modelName}]`, 60);
+  const scopeRefineStart = Date.now();
+  const scopeRefine = await refineScopesFromEvidence(state, model);
+  state.llmCalls += scopeRefine.llmCalls;
+  if (scopeRefine.updated) {
+    debugLog("refineScopesFromEvidence: applied", {
+      scopeCount: state.understanding?.distinctProceedings?.length ?? 0,
+      scopeIds: (state.understanding?.distinctProceedings || []).map((p: any) => p.id),
+      requiresSeparateAnalysis: state.understanding?.requiresSeparateAnalysis,
+      subClaimsCount: state.understanding?.subClaims?.length ?? 0,
+    });
+  }
+  debugLog(`refineScopesFromEvidence: completed in ${Date.now() - scopeRefineStart}ms`, {
+    updated: scopeRefine.updated,
+    llmCalls: scopeRefine.llmCalls,
+  });
 
   // STEP 4.5: Post-research outcome extraction - extract outcomes from facts and create claims
   await emit(`Extracting outcomes from research [LLM: ${provider}/${modelName}]`, 62);

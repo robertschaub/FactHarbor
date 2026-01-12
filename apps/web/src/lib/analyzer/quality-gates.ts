@@ -75,6 +75,11 @@ const SPECIFICITY_PATTERNS = [
   /\b(said|stated|announced|declared|confirmed)\s+(that|in)/i,
   /\bat\s+least\s+\d+/i,
   /\baccording\s+to\b/i,
+  // Comparative claims are often verifiable even without explicit numbers/dates.
+  // Treat clear comparison structure as a specificity signal (topic-agnostic).
+  /\b(more|less|higher|lower|better|worse|fewer|greater|smaller)\b[\w\s,]{0,80}\bthan\b/i,
+  /\bcompared\s+to\b/i,
+  /\bversus\b|\bvs\.?\b/i,
 ];
 
 /**
@@ -90,6 +95,16 @@ const UNCERTAINTY_MARKERS = [
   /\bno\s+(reliable|credible)\s+sources?\b/i,
   /\bmay\s+or\s+may\s+not\b/i,
 ];
+
+/**
+ * Common English stopwords for lightweight content-word counting.
+ * (Generic; used to avoid over-filtering verifiable claims that lack numbers/dates.)
+ */
+const STOPWORDS = new Set([
+  "the","a","an","and","or","but","if","then","than","to","of","in","on","for","with","at","by","from","as","into","through","during","before","after",
+  "is","was","were","are","be","been","being","have","has","had","do","does","did","will","would","could","should","may","might","must","can",
+  "this","that","these","those","it","its","they","them","their","we","our","you","your","i","me","my",
+]);
 
 // ============================================================================
 // GATE 1: CLAIM VALIDATION
@@ -124,6 +139,16 @@ export function validateClaimGate1(
   }
   const specificityScore = Math.min(specificityMatches / 3, 1);
 
+  // 2b. Lightweight content-word count: helps keep verifiable, mechanism-style claims
+  // that don't necessarily include numbers/dates (common in comparative decompositions).
+  const contentWordCount = claimText
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length >= 4 && !STOPWORDS.has(w))
+    .length;
+  const hasEnoughContent = contentWordCount >= 5;
+
   // 3. Check for future predictions
   let futureOriented = false;
   for (const pattern of FUTURE_MARKERS) {
@@ -149,10 +174,21 @@ export function validateClaimGate1(
   const isFactual = claimType === "FACTUAL" || claimType === "AMBIGUOUS";
 
   // 6. Pass criteria
-  const wouldPass = isFactual &&
-                    opinionScore <= 0.3 &&
-                    specificityScore >= 0.3 &&
-                    !futureOriented;
+  //
+  // Gate 1 is intended to filter *non-verifiable* outputs (pure opinion/prediction), not to
+  // aggressively drop verifiable-but-non-numeric claims. In practice, many legitimate
+  // decompositions (especially comparative/mechanism claims) are AMBIGUOUS yet still verifiable.
+  //
+  // Therefore:
+  // - Always filter predictions
+  // - Filter strong opinions
+  // - Keep factual + ambiguous claims unless they are extremely content-poor
+  const isContentPoor = contentWordCount < 3 && specificityScore < 0.3;
+  const wouldPass =
+    !futureOriented &&
+    opinionScore <= 0.5 &&
+    isFactual &&
+    !isContentPoor;
 
   // CRITICAL: Central claims always pass Gate 1
   const passed = wouldPass || isCentral;
