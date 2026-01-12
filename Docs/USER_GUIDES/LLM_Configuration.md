@@ -1,0 +1,435 @@
+# LLM Configuration Guide
+
+## Overview
+
+FactHarbor supports multiple LLM (Large Language Model) providers and search providers. This guide explains how to configure, optimize, and switch between providers to balance cost, performance, and quality.
+
+---
+
+## Table of Contents
+
+- [Supported Providers](#supported-providers)
+- [Provider Selection](#provider-selection)
+- [Environment Configuration](#environment-configuration)
+- [Provider-Specific Optimization](#provider-specific-optimization)
+- [Search Provider Configuration](#search-provider-configuration)
+- [Cost Optimization](#cost-optimization)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+## Supported Providers
+
+### LLM Providers
+
+| Provider | Models | Best For | Status |
+|----------|--------|----------|--------|
+| **Anthropic Claude** | Sonnet 4.5, Haiku 4 | Complex reasoning, analysis | ✅ Recommended |
+| **OpenAI** | GPT-4, GPT-4 Turbo | General purpose | ✅ Fully supported |
+| **Google Gemini** | Gemini 1.5 Pro | Multimodal, long context | ✅ Fully supported |
+| **Mistral AI** | Mistral Large | Cost-effective | ✅ Fully supported |
+
+### Search Providers
+
+| Provider | API | Best For | Status |
+|----------|-----|----------|--------|
+| **Google Custom Search** | Free tier available | General web search | ✅ Fully supported |
+| **SerpAPI** | Pay-per-use | Reliable Google results | ✅ Fully supported |
+| **Gemini Grounded Search** | Built-in | When using Gemini | ✅ Experimental |
+| **Brave Search** | API required | Privacy-focused | ⏳ Planned |
+| **Tavily** | API required | AI-optimized | ⏳ Planned |
+
+---
+
+## Provider Selection
+
+### Setting the LLM Provider
+
+Configure via environment variable in `apps/web/.env.local`:
+
+```bash
+# Choose ONE provider
+LLM_PROVIDER=anthropic  # Options: openai | anthropic | google | mistral
+```
+
+### Provider API Keys
+
+**Anthropic Claude** (Recommended):
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
+- Get key: https://console.anthropic.com/settings/keys
+- Models: claude-sonnet-4.5, claude-haiku-4
+- Best for: Complex analysis, high-quality reasoning
+
+**OpenAI**:
+```bash
+OPENAI_API_KEY=sk-...
+```
+- Get key: https://platform.openai.com/api-keys
+- Models: gpt-4, gpt-4-turbo
+- Best for: General purpose, established ecosystem
+
+**Google Gemini**:
+```bash
+GOOGLE_GENERATIVE_AI_API_KEY=AIza...
+```
+- Get key: https://aistudio.google.com/app/apikey
+- Models: gemini-1.5-pro
+- Best for: Long context, multimodal inputs
+
+**Mistral AI**:
+```bash
+MISTRAL_API_KEY=...
+```
+- Get key: https://console.mistral.ai/api-keys
+- Models: mistral-large
+- Best for: Cost-conscious deployments
+
+---
+
+## Environment Configuration
+
+### Complete `.env.local` Example
+
+```bash
+# LLM Provider Selection
+LLM_PROVIDER=anthropic
+
+# API Keys (only configure the one you're using)
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+# OPENAI_API_KEY=sk-your-key-here
+# GOOGLE_GENERATIVE_AI_API_KEY=AIza-your-key-here
+# MISTRAL_API_KEY=your-key-here
+
+# Search Provider
+FH_SEARCH_ENABLED=true
+FH_SEARCH_PROVIDER=auto  # Options: auto | serpapi | google-cse
+FH_SEARCH_MAX_RESULTS=6
+
+# Search API Keys
+SERPAPI_API_KEY=your-serpapi-key
+# Or Google Custom Search:
+# GOOGLE_CSE_API_KEY=your-cse-key
+# GOOGLE_CSE_ID=your-cse-id
+
+# Optional: Domain whitelist for trusted sources
+FH_SEARCH_DOMAIN_WHITELIST=who.int,cdc.gov,nih.gov,justice.gov
+
+# Analysis Configuration
+FH_DETERMINISTIC=true  # Use temperature=0 for reproducible results
+FH_ALLOW_MODEL_KNOWLEDGE=false  # Require evidence-based analysis only
+
+# Experimental Features
+FH_SEARCH_MODE=standard  # Options: standard | grounded (Gemini only)
+```
+
+### Configuration Validation
+
+Test your configuration at: http://localhost:3000/admin/test-config
+
+This admin interface will:
+- ✅ Validate all API keys
+- ✅ Test LLM provider connectivity
+- ✅ Test search provider connectivity
+- ✅ Show which services are active
+
+---
+
+## Provider-Specific Optimization
+
+### General Optimization Principles
+
+1. **Shorter prompts for Gemini/Mistral**
+   - Avoid long, legal-heavy system prompts
+   - Use bullet points and clear structure
+   - Focus on essential instructions
+
+2. **Strict JSON framing for all providers**
+   - Reduces stray text in responses
+   - Uses explicit schema examples
+   - Includes validation instructions
+
+3. **Temperature settings**
+   - Use `FH_DETERMINISTIC=true` for reproducible results
+   - Override per-provider if needed
+
+### Current Limitations
+
+> **Note**: Provider-specific optimization features are documented but **not yet fully implemented**. Current behavior:
+> - Same prompts used for all providers
+> - Same temperature/token settings across providers
+> - No provider-specific prompt variants
+
+**Planned Enhancements**:
+- Provider-specific prompt templates
+- Automatic prompt adaptation based on provider capabilities
+- Provider performance benchmarking
+
+---
+
+## Search Provider Configuration
+
+### Google Custom Search (Free Tier)
+
+1. **Get API Key**: https://developers.google.com/custom-search/v1/introduction
+2. **Create Custom Search Engine**: https://cse.google.com/cse/
+3. **Configure**:
+   ```bash
+   FH_SEARCH_PROVIDER=google-cse
+   GOOGLE_CSE_API_KEY=your-api-key
+   GOOGLE_CSE_ID=your-cse-id
+   ```
+
+**Limits**: 100 queries/day (free tier)
+
+### SerpAPI (Pay-per-use)
+
+1. **Sign up**: https://serpapi.com
+2. **Get API Key**: https://serpapi.com/manage-api-key
+3. **Configure**:
+   ```bash
+   FH_SEARCH_PROVIDER=serpapi
+   SERPAPI_API_KEY=your-api-key
+   ```
+
+**Pricing**: ~$0.002 per search
+
+### Auto Mode (Recommended)
+
+Let FactHarbor choose the best available provider:
+
+```bash
+FH_SEARCH_PROVIDER=auto
+```
+
+**Behavior**:
+- Tries Google CSE first (if configured)
+- Falls back to SerpAPI for remaining slots
+- Uses Gemini Grounded Search when `LLM_PROVIDER=gemini` and `FH_SEARCH_MODE=grounded`
+
+### Domain Whitelist
+
+Restrict searches to trusted domains:
+
+```bash
+FH_SEARCH_DOMAIN_WHITELIST=who.int,cdc.gov,nih.gov,nature.com,science.org
+```
+
+This improves:
+- Source reliability
+- Result relevance
+- Analysis quality
+
+---
+
+## Cost Optimization
+
+### Multi-Tier Model Strategy
+
+Use cheaper models for simple tasks, premium models for complex reasoning:
+
+| Task | Recommended Model | Cost Saving |
+|------|------------------|-------------|
+| Claim extraction | Claude Haiku | 70% cheaper |
+| Fact extraction | Claude Haiku | 70% cheaper |
+| Understanding | Claude Sonnet | Baseline |
+| Verdict generation | Claude Sonnet | Baseline |
+
+> **Note**: Tiered model routing is **not yet implemented**. All tasks currently use the same model specified in `LLM_PROVIDER`.
+
+### Cost Control Settings
+
+```bash
+# Limit search results to reduce API calls
+FH_SEARCH_MAX_RESULTS=6
+
+# Use deterministic mode to avoid redundant retries
+FH_DETERMINISTIC=true
+
+# Restrict to documented evidence only
+FH_ALLOW_MODEL_KNOWLEDGE=false
+
+# Optional: Limit search to recent results
+FH_SEARCH_DATE_RESTRICT=y  # Options: y (year) | m (month) | w (week)
+```
+
+### Cost Monitoring
+
+Track costs via the admin dashboard (when implemented):
+- LLM token usage
+- Search API calls
+- Estimated monthly spend
+
+---
+
+## Troubleshooting
+
+### LLM Provider Issues
+
+**"Invalid API key" error:**
+1. Verify key format:
+   - Anthropic: starts with `sk-ant-`
+   - OpenAI: starts with `sk-`
+   - Google: starts with `AIza`
+2. Test key at provider's console
+3. Check for spaces/quotes in `.env.local`
+4. Restart web server after changes
+
+**"Rate limit exceeded":**
+- Check your API plan limits
+- Wait for rate limit reset
+- Consider upgrading to paid tier
+
+**"Model not found":**
+- Verify model name matches provider's API
+- Check if you have access to the model
+- Some models require special access approval
+
+### Search Provider Issues
+
+**"No search results":**
+1. Verify `FH_SEARCH_ENABLED=true`
+2. Check search provider API key is valid
+3. Verify domain whitelist isn't too restrictive
+4. Check search provider status page
+
+**"Quota exceeded" (Google CSE):**
+- Free tier: 100 queries/day
+- Upgrade to paid tier or switch to SerpAPI
+- Use `FH_SEARCH_PROVIDER=auto` for automatic fallback
+
+**"Search provider timeout":**
+- Network connectivity issues
+- Provider service disruption
+- Try alternative provider
+
+### Configuration Validation
+
+**Test configuration without running analysis:**
+
+Visit: http://localhost:3000/admin/test-config
+
+**Manual API test:**
+
+```bash
+# Test Anthropic
+curl https://api.anthropic.com/v1/messages \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -d '{"model":"claude-sonnet-4","max_tokens":10,"messages":[{"role":"user","content":"Hi"}]}'
+
+# Test OpenAI
+curl https://api.openai.com/v1/chat/completions \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4","messages":[{"role":"user","content":"Hi"}],"max_tokens":10}'
+```
+
+---
+
+## Provider Comparison
+
+### Quality vs Cost Trade-offs
+
+| Provider | Quality | Speed | Cost | Best Use Case |
+|----------|---------|-------|------|---------------|
+| **Claude Sonnet** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | $$$ | Production, complex analysis |
+| **Claude Haiku** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | $ | Simple extraction tasks |
+| **GPT-4** | ⭐⭐⭐⭐ | ⭐⭐⭐ | $$$$ | High-quality general purpose |
+| **Gemini Pro** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | $$ | Long context, multimodal |
+| **Mistral Large** | ⭐⭐⭐ | ⭐⭐⭐⭐ | $$ | Cost-conscious deployments |
+
+### Recommended Provider by Use Case
+
+- **Production fact-checking**: Anthropic Claude Sonnet
+- **Development/testing**: Claude Haiku or Mistral
+- **Long articles (>10k words)**: Google Gemini
+- **Tight budget**: Mistral Large
+- **Maximum accuracy**: GPT-4 or Claude Sonnet
+
+---
+
+## Advanced Configuration
+
+### Custom Model Selection
+
+Override default models (when multi-tier routing is implemented):
+
+```bash
+FH_MODEL_UNDERSTANDING=claude-sonnet-4.5
+FH_MODEL_EXTRACTION=claude-haiku-4
+FH_MODEL_VERDICT=claude-sonnet-4.5
+```
+
+### Fallback Configuration
+
+> **Note**: Fallback configuration is **not yet implemented**.
+
+Planned feature for automatic failover:
+
+```bash
+FH_LLM_FALLBACKS=anthropic,openai,google,mistral
+```
+
+When implemented, this will retry failed requests with alternative providers.
+
+### Knowledge Toggle
+
+Control whether the LLM can use background knowledge:
+
+```bash
+FH_ALLOW_MODEL_KNOWLEDGE=false  # Strict evidence-only mode (recommended)
+FH_ALLOW_MODEL_KNOWLEDGE=true   # Allow broader context
+```
+
+> **Known Issue**: This toggle is **not fully respected** in all analysis phases. The Understanding step currently allows model knowledge regardless of this setting.
+
+---
+
+## Testing Recommendations
+
+When switching providers or configurations:
+
+1. **Run test analysis with known inputs**
+   - Compare output quality
+   - Check for parsing errors
+   - Verify consistency
+
+2. **Test edge cases**
+   - Long articles
+   - Complex claims
+   - Multi-language content
+
+3. **Monitor costs**
+   - Track token usage
+   - Compare pricing across providers
+   - Optimize based on actual usage
+
+4. **Measure performance**
+   - Response times
+   - Success rates
+   - Error frequency
+
+---
+
+## Getting Help
+
+### Resources
+
+- **Anthropic Docs**: https://docs.anthropic.com
+- **OpenAI Docs**: https://platform.openai.com/docs
+- **Google AI Docs**: https://ai.google.dev/docs
+- **Mistral Docs**: https://docs.mistral.ai
+
+### Support
+
+- Check `apps/web/debug-analyzer.log` for detailed logs
+- Use admin test config to validate setup
+- Review provider status pages for outages
+- Search GitHub issues for similar problems
+
+---
+
+**Last Updated**: January 2026

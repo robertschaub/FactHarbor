@@ -536,6 +536,7 @@ export default function JobPage() {
             !isQuestion && articleAnalysis && (
               <ArticleVerdictBanner
                 articleAnalysis={articleAnalysis}
+                verdictSummary={questionAnswer}
                 fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
                 pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
               />
@@ -1110,7 +1111,7 @@ function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer
           <span className={styles.questionBannerAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(answerVerdict)}
           </span>
-          <span className={styles.questionBannerPercentage}>{answerTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}% confidence)</span></span>
+          <span className={styles.questionBannerPercentage}>{answerTruth}% <span style={{ fontSize: 12, color: "#999" }}>({answerConfidence}% confidence)</span></span>
           {hasEvidenceBasedContestations && (
             <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
           )}
@@ -1148,9 +1149,10 @@ function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer
 // Article Verdict Banner
 // ============================================================================
 
-function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
+function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; verdictSummary?: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
   const articleTruth = getArticleTruthPercentage(articleAnalysis);
-  const articleConfidence = articleAnalysis?.confidence ?? articleAnalysis?.articleConfidence ?? 0;
+  // v2.6.28: Use verdictSummary confidence as fallback when articleAnalysis confidence is missing
+  const articleConfidence = articleAnalysis?.confidence ?? articleAnalysis?.articleConfidence ?? verdictSummary?.confidence ?? 0;
   const articleVerdictLabel = percentageToArticleVerdict(articleTruth, articleConfidence);
   const color = ARTICLE_VERDICT_COLORS[articleVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
 
@@ -1159,8 +1161,16 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
 
   const articlePct = articleTruth;
 
-  // Get the verdict reason or generate a summary
-  const verdictReason = articleAnalysis.articleVerdictReason || articleAnalysis.verdictExplanation || "";
+  // Get the verdict reason - try multiple sources
+  const verdictReason = articleAnalysis.articleVerdictReason || articleAnalysis.verdictExplanation || verdictSummary?.nuancedAnswer || "";
+  
+  // Get short answer from verdictSummary as assessment
+  const shortAnswer = verdictSummary?.shortAnswer || "";
+  
+  // Get key factors - prefer articleAnalysis, fallback to verdictSummary
+  const keyFactors = (articleAnalysis.keyFactors && articleAnalysis.keyFactors.length > 0) 
+    ? articleAnalysis.keyFactors 
+    : (verdictSummary?.keyFactors || []);
 
   return (
     <div className={styles.articleBanner} style={{ borderColor: color.border }}>
@@ -1174,10 +1184,7 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
             {color.icon} {getVerdictLabel(articleVerdictLabel)}
           </span>
           <span className={styles.articlePercentage}>
-            {articlePct}%{" "}
-            {articleConfidence > 0 && (
-              <span style={{ fontSize: 12, color: "#999" }}>({articleConfidence}% confidence)</span>
-            )}
+            {articlePct}% <span style={{ fontSize: 12, color: "#999" }}>({articleConfidence}% confidence)</span>
           </span>
           {isPseudo && (
             <span className={styles.pseudoscienceBadge}>
@@ -1190,6 +1197,13 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
         {verdictReason && (
           <div className={styles.verdictReasonBox} style={{ borderLeftColor: color.border }}>
             {verdictReason}
+          </div>
+        )}
+
+        {/* Short Answer / Assessment */}
+        {shortAnswer && (
+          <div className={styles.shortAnswerBox} style={{ borderLeftColor: color.border }}>
+            <div className={styles.shortAnswerText}>{shortAnswer}</div>
           </div>
         )}
 
@@ -1206,31 +1220,14 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
           </div>
         )}
 
-        {/* NEW v2.6.18: Key Factors for article mode (unified with question mode) */}
-        {articleAnalysis.keyFactors && articleAnalysis.keyFactors.length > 0 && (
+        {/* v2.6.28: Key Factors - unified from articleAnalysis or verdictSummary */}
+        {keyFactors.length > 0 && (
           <div className={styles.keyFactorsSection}>
-            <div className={styles.keyFactorsHeader}>Key Factors</div>
+            <div className={styles.keyFactorsHeader}>KEY FACTORS</div>
             <div className={styles.keyFactorsList}>
-              {articleAnalysis.keyFactors.map((factor: any, i: number) => {
-                const hasEvidenceBasedContestation = factor.isContested &&
-                  (factor.factualBasis === "established" || factor.factualBasis === "disputed");
-                return (
-                  <div key={i} className={`${styles.keyFactor} ${hasEvidenceBasedContestation ? styles.keyFactorContested : ""}`}>
-                    <span className={styles.keyFactorIcon}>
-                      {factor.supports === "yes" ? "✅" : factor.supports === "no" ? "❌" : "⚪"}
-                    </span>
-                    <span className={styles.keyFactorText}>{factor.factor}</span>
-                    {hasEvidenceBasedContestation && (
-                      <span className={styles.contestedBadge}>⚠️ CONTESTED</span>
-                    )}
-                    {factor.isContested && factor.contestedBy && (
-                      <div className={styles.contestedByText}>
-                        {hasEvidenceBasedContestation ? "Contested by" : "Doubted by"}: {factor.contestedBy}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {keyFactors.map((factor: any, i: number) => (
+                <KeyFactorRow key={i} factor={factor} showContestation={true} />
+              ))}
             </div>
           </div>
         )}
