@@ -286,6 +286,16 @@ function extractAllCapsToken(text: string): string {
   return m?.[1] ?? "";
 }
 
+function inferToAcronym(text: string): string {
+  // Generic acronym inference for phrases like "Cradle-to-Grave", "Well-to-Wheel(s)", etc.
+  // This is intentionally topic-agnostic: it just compresses "<A>-to-<B>" into "ATB".
+  const m = String(text || "").match(/\b([A-Za-z]{3,})\s*-\s*to\s*-\s*([A-Za-z]{3,})\b/);
+  if (!m) return "";
+  const a = m[1]?.[0]?.toUpperCase() ?? "";
+  const b = m[2]?.[0]?.toUpperCase() ?? "";
+  return a && b ? `${a}T${b}` : "";
+}
+
 function inferScopeTypeLabel(p: any): string {
   const hay = [
     p?.name,
@@ -404,12 +414,38 @@ function canonicalizeScopes(
     if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
     usedIds.add(newId);
     idRemap.set(p.id, newId);
-    const shortName = inst || p.shortName || `CTX${idx + 1}`;
+    const rawName = String(p?.name || "").trim();
+    const rawShort = String(p?.shortName || "").trim();
+    const inferredShortFromName = extractAllCapsToken(rawName);
+    const toAcronym = inferToAcronym(rawName);
+
+    // Preserve meaningful scope names from the model/evidence. Only synthesize a fallback
+    // when the name is missing or obviously generic.
+    const isGenericName =
+      rawName.length === 0 ||
+      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context|scope)$/i.test(
+        rawName,
+      ) ||
+      /^general$/i.test(rawName);
+
+    const subj = String(p?.subject || "").trim();
+    const fallbackName = subj
+      ? subj.substring(0, 120)
+      : inst
+        ? `${typeLabel} context (${inst})`
+        : `${typeLabel} context`;
+    const name = isGenericName ? fallbackName : rawName;
+
+    // Prefer institution codes for legal scopes; otherwise infer an acronym from the name.
+    const shortName =
+      (rawShort && rawShort.length <= 12 ? rawShort : "") ||
+      (inst ? inst : toAcronym || inferredShortFromName) ||
+      `CTX${idx + 1}`;
     return {
       ...p,
       id: newId,
-      // Make the primary display label stable and human-friendly across runs.
-      name: inst ? `${typeLabel} proceeding (${inst})` : `${typeLabel} proceeding`,
+      // Keep human-friendly labels, but avoid overwriting meaningful model-provided names.
+      name,
       shortName,
       // Avoid presenting unanchored specifics as facts.
       date: hasExplicitYear ? p.date : "",
@@ -470,11 +506,31 @@ function canonicalizeScopesWithRemap(
     if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
     usedIds.add(newId);
     idRemap.set(p.id, newId);
-    const shortName = inst || p.shortName || `CTX${idx + 1}`;
+    const rawName = String(p?.name || "").trim();
+    const rawShort = String(p?.shortName || "").trim();
+    const inferredShortFromName = extractAllCapsToken(rawName);
+    const toAcronym = inferToAcronym(rawName);
+    const isGenericName =
+      rawName.length === 0 ||
+      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context|scope)$/i.test(
+        rawName,
+      ) ||
+      /^general$/i.test(rawName);
+    const subj = String(p?.subject || "").trim();
+    const fallbackName = subj
+      ? subj.substring(0, 120)
+      : inst
+        ? `${typeLabel} context (${inst})`
+        : `${typeLabel} context`;
+    const name = isGenericName ? fallbackName : rawName;
+    const shortName =
+      (rawShort && rawShort.length <= 12 ? rawShort : "") ||
+      (inst ? inst : toAcronym || inferredShortFromName) ||
+      `CTX${idx + 1}`;
     return {
       ...p,
       id: newId,
-      name: inst ? `${typeLabel} proceeding (${inst})` : `${typeLabel} proceeding`,
+      name,
       shortName,
       date: hasExplicitYear ? p.date : "",
       status: hasExplicitStatusAnchor ? p.status : "unknown",
@@ -509,9 +565,11 @@ function ensureAtLeastOneScope(understanding: ClaimUnderstanding): ClaimUndersta
     distinctProceedings: [
       {
         id: "CTX_1",
-        name: "General proceeding",
+        name: understanding.impliedClaim
+          ? understanding.impliedClaim.substring(0, 100)
+          : "General context",
         shortName: "GEN",
-        subject: "",
+        subject: understanding.impliedClaim || "",
         temporal: "",
         status: "unknown",
         outcome: "unknown",
@@ -580,6 +638,8 @@ CRITICAL RULES:
 - Split into multiple scopes when the evidence indicates different boundaries, methods, time periods, institutions, jurisdictions, datasets, or processes that should be analyzed separately.
 - Also split when evidence clearly covers different phases/components/metrics that are not directly comparable (e.g., upstream vs downstream phases, production vs use-phase, system-wide vs component-level metrics, different denominators/normalizations).
 - Do NOT split into scopes just because there are pro vs con viewpoints. Viewpoints are not scopes.
+- Do NOT split into scopes purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting). Those are source types, not bounded analytical frames.
+- If you split, prefer frames that reflect methodology/boundaries/process-chain segmentation present in the evidence (e.g., end-to-end vs component-level; upstream vs downstream; production vs use-phase).
 - If the evidence does not clearly support multiple scopes, return exactly ONE scope.
 - Use neutral, generic labels for scope names (no domain-specific hardcoding).
 - Different evidence reports may define DIFFERENT scopes. A single evidence report may contain MULTIPLE scopes. Do not restrict scopes to one-per-source.
@@ -611,7 +671,7 @@ Return:
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: getDeterministicTemperature(0.2),
+      temperature: getDeterministicTemperature(0.1),
       output: Output.object({ schema }),
     });
     refined = extractStructuredOutput(result);
@@ -7151,6 +7211,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     twoPanelSummary,
     model,
   );
+
+  // Safety: ensure we never emit a result with zero scopes, even if scope refinement was
+  // skipped/rejected and the initial understanding produced no scopes.
+  state.understanding = ensureAtLeastOneScope(state.understanding!);
 
   await emit("Analysis complete", 100);
 
