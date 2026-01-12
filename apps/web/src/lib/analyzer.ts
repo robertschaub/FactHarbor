@@ -6626,8 +6626,36 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   await emit(`Analysis mode: ${mode} (v${CONFIG.schemaVersion}) | LLM: ${provider}/${modelName}`, 2);
 
+  // ==========================================================================
+  // v2.6.26: EARLY INPUT NORMALIZATION at entry point for complete input neutrality
+  // Normalize questions to statements BEFORE any analysis begins
+  // The original question is preserved only for UI display (questionBeingAsked)
+  // ==========================================================================
+  const rawInputValue = input.inputValue.trim();
+  const looksLikeQuestion =
+    rawInputValue.endsWith("?") ||
+    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(rawInputValue);
+  
+  // Normalize to statement form for ALL analysis
+  // Also strip trailing period from statements to ensure identical text for both question and statement
+  let normalizedInputValue = looksLikeQuestion
+    ? normalizeYesNoQuestionToStatement(rawInputValue)
+    : rawInputValue;
+  
+  // CRITICAL: Remove trailing period from ALL inputs for exact text matching
+  // This ensures "Was X fair?" -> "X was fair" matches "X was fair." -> "X was fair"
+  normalizedInputValue = normalizedInputValue.replace(/\.+$/, "").trim();
+  
+  // Store original question for UI display (will be set in understanding.questionBeingAsked)
+  const originalQuestionForDisplay = looksLikeQuestion ? rawInputValue : null;
+  
+  console.log(`[Analyzer] v2.6.26 Input Neutrality: Entry point normalization`);
+  console.log(`[Analyzer]   Original: "${rawInputValue.substring(0, 100)}"`);
+  console.log(`[Analyzer]   Normalized: "${normalizedInputValue.substring(0, 100)}"`);
+  console.log(`[Analyzer]   Was question: ${looksLikeQuestion}`);
+
   const state: ResearchState = {
-    originalInput: input.inputValue,
+    originalInput: normalizedInputValue,  // v2.6.26: Use NORMALIZED input everywhere
     originalText: "",
     inputType: input.inputType,
     understanding: null,
@@ -6644,7 +6672,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   };
 
   // Handle URL
-  let textToAnalyze = input.inputValue;
+  let textToAnalyze = normalizedInputValue;  // v2.6.26: Use normalized input
   if (input.inputType === "url") {
     await emit("Fetching URL content", 3);
     try {
@@ -6666,6 +6694,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     debugLog("Calling understandClaim...");
     state.understanding = await understandClaim(textToAnalyze, model);
     state.llmCalls++; // understandClaim uses 1 LLM call
+    
+    // v2.6.26: Set UI-only fields from entry-point normalization
+    // This ensures questionBeingAsked shows original question for display
+    if (originalQuestionForDisplay) {
+      state.understanding.questionBeingAsked = originalQuestionForDisplay;
+      (state.understanding as any).wasOriginallyQuestion = true;
+      state.understanding.detectedInputType = "question";  // For UI badge
+      console.log(`[Analyzer] v2.6.26: Set questionBeingAsked for UI display`);
+    }
+    
     const step1Elapsed = Date.now() - step1Start;
     debugLog(`Step 1 completed in ${step1Elapsed}ms`);
     debugLog("Understanding result", {
