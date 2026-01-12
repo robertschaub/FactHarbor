@@ -517,36 +517,31 @@ export default function JobPage() {
 
           {!isQuestion && twoPanelSummary && (
             <>
-              {/* Hide implied claim if it duplicates the article summary */}
-              {impliedClaim &&
-               impliedClaim.trim().toLowerCase() !==
-                 twoPanelSummary.articleSummary?.mainArgument?.trim()?.toLowerCase() && (
-                <div className={styles.impliedClaimBox}>
-                  <span className={styles.impliedClaimLabel}>Implied claim:</span>{" "}
-                  <span className={styles.impliedClaimText}>"{impliedClaim}"</span>
-                </div>
-              )}
+              {/* v2.6.25: Removed implied claim display for input neutrality */}
               <ArticleSummaryBox
                 articleSummary={twoPanelSummary.articleSummary}
               />
             </>
           )}
 
-          {!isQuestion && articleAnalysis && (
-            <ArticleVerdictBanner
-              articleAnalysis={articleAnalysis}
-              fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
-              pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
-            />
-          )}
-
-          {/* Multi-scope statements: show Scope-by-Scope analysis */}
-          {!isQuestion && hasMultipleProceedings && questionAnswer?.proceedingAnswers && (
+          {/* Multi-scope statements: show MultiScopeStatementBanner which includes verdict */}
+          {!isQuestion && hasMultipleProceedings && questionAnswer?.proceedingAnswers ? (
             <MultiScopeStatementBanner
               questionAnswer={questionAnswer}
               scopes={scopes}
               articleThesis={twoPanelSummary?.articleSummary?.mainArgument}
+              articleAnalysis={articleAnalysis}
+              pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
             />
+          ) : (
+            /* Single-scope statements: show ArticleVerdictBanner */
+            !isQuestion && articleAnalysis && (
+              <ArticleVerdictBanner
+                articleAnalysis={articleAnalysis}
+                fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
+                pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
+              />
+            )
           )}
 
           {claimVerdicts.length > 0 && (
@@ -750,20 +745,7 @@ function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { ques
 
   return (
     <div className={styles.multiProceedingBanner}>
-      <div className={styles.questionHeader}>
-        <div className={styles.questionLabel}>
-          📝 Question Asked
-        </div>
-        <div className={styles.questionText}>
-          "{questionAnswer.question}"
-        </div>
-        {showImpliedClaim && (
-          <div className={styles.impliedClaimRow}>
-            <div className={styles.impliedClaimLabel}>Implied claim</div>
-            <div className={styles.impliedClaimText}>"{impliedClaim}"</div>
-          </div>
-        )}
-      </div>
+      {/* v2.6.25: Removed "Question Asked" header for input neutrality */}
 
       <div className={styles.proceedingNotice}>
         <span className={styles.proceedingIcon}>🔀</span>
@@ -777,11 +759,11 @@ function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { ques
 
       <div className={styles.answerContent} style={{ borderColor: overallColor.border }}>
         <div className={styles.answerRow}>
-          <span className={styles.answerLabel}>Overall Answer</span>
+          <span className={styles.answerLabel}>VERDICT</span>
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
-          <span className={styles.answerPercentage}>{overallTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.answerPercentage}>{overallTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}% confidence)</span></span>
         </div>
 
         {questionAnswer.calibrationNote && (
@@ -790,21 +772,23 @@ function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { ques
           </div>
         )}
 
-        {questionAnswer.proceedingSummary && (
+        {questionAnswer.nuancedAnswer && (
           <div className={styles.proceedingSummary}>
-            <div className={styles.proceedingSummaryText}>{questionAnswer.proceedingSummary}</div>
+            <div className={styles.proceedingSummaryText}>{questionAnswer.nuancedAnswer}</div>
           </div>
         )}
 
-        <div className={styles.shortAnswerBox} style={{ borderLeftColor: overallColor.border }}>
-          <div className={styles.shortAnswerText}>{questionAnswer.shortAnswer}</div>
-        </div>
+        {questionAnswer.shortAnswer && (
+          <div className={styles.shortAnswerBox} style={{ borderLeftColor: overallColor.border }}>
+            <div className={styles.shortAnswerText}>{questionAnswer.shortAnswer}</div>
+          </div>
+        )}
       </div>
 
       {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
         <div className={styles.proceedingsAnalysis}>
           <h4 className={styles.proceedingsHeader}>
-            🔀 Scope-by-Scope Analysis
+            📑 Contexts
           </h4>
           <div className={styles.proceedingsStack}>
             {questionAnswer.proceedingAnswers.map((pa: any) => {
@@ -834,7 +818,7 @@ function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { ques
 // Multi-Scope Statement Banner (for statements with multiple scopes)
 // ============================================================================
 
-function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis }: { questionAnswer: any; scopes: any[]; articleThesis?: string }) {
+function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis, articleAnalysis, pseudoscienceAnalysis }: { questionAnswer: any; scopes: any[]; articleThesis?: string; articleAnalysis?: any; pseudoscienceAnalysis?: any }) {
   const overallTruth = getAnswerTruthPercentage(questionAnswer);
   const overallConfidence = questionAnswer?.confidence ?? 0;
   const overallVerdict = percentageToClaimVerdict(overallTruth, overallConfidence);
@@ -852,6 +836,13 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis }: { 
       (f.factualBasis === "established" || f.factualBasis === "disputed")
   );
 
+  // Pseudoscience detection
+  const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis?.isPseudoscience;
+  const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis?.pseudoscienceCategories || [];
+
+  // Get the verdict reason
+  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || questionAnswer?.proceedingSummary || "";
+
   return (
     <div className={styles.multiProceedingBanner}>
       <div className={styles.proceedingNotice}>
@@ -862,11 +853,14 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis }: { 
         {hasEvidenceBasedContestations && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
         )}
+        {isPseudo && (
+          <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience Detected</Badge>
+        )}
       </div>
 
       <div className={styles.answerContent} style={{ borderColor: overallColor.border }}>
         <div className={styles.answerRow}>
-          <span className={styles.answerLabel}>Overall Verdict</span>
+          <span className={styles.answerLabel}>VERDICT</span>
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
@@ -879,9 +873,9 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis }: { 
           </div>
         )}
 
-        {questionAnswer.proceedingSummary && (
+        {verdictReason && (
           <div className={styles.proceedingSummary}>
-            <div className={styles.proceedingSummaryText}>{questionAnswer.proceedingSummary}</div>
+            <div className={styles.proceedingSummaryText}>{verdictReason}</div>
           </div>
         )}
 
@@ -890,12 +884,25 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis }: { 
             <div className={styles.shortAnswerText}>{questionAnswer.shortAnswer}</div>
           </div>
         )}
+
+        {isPseudo && pseudoCategories.length > 0 && (
+          <div className={styles.pseudoscienceWarning}>
+            <div className={styles.pseudoscienceWarningHeader}>
+              ⚠️ Scientific Credibility Warning
+            </div>
+            <div className={styles.pseudoscienceWarningText}>
+              This content contains claims based on <b>{pseudoCategories.map((c: string) =>
+                c.replace(/([A-Z])/g, ' $1').trim().toLowerCase()
+              ).join(", ")}</b> — concepts that contradict established scientific consensus.
+            </div>
+          </div>
+        )}
       </div>
 
       {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
         <div className={styles.proceedingsAnalysis}>
           <h4 className={styles.proceedingsHeader}>
-            🔀 Scope-by-Scope Analysis
+            📑 Contexts
           </h4>
           <div className={styles.proceedingsStack}>
             {questionAnswer.proceedingAnswers.map((pa: any) => {
@@ -1084,16 +1091,7 @@ function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer
 
   return (
     <div className={styles.questionBanner} style={{ borderColor: color.border }}>
-      <div className={styles.questionBannerHeader}>
-        <div className={styles.questionBannerLabel}>📝 Question</div>
-        <div className={styles.questionBannerText}>"{questionAnswer.question}"</div>
-        {showImpliedClaim && (
-          <div className={styles.impliedClaimRow}>
-            <div className={styles.impliedClaimLabel}>Implied claim</div>
-            <div className={styles.impliedClaimText}>"{impliedClaim}"</div>
-          </div>
-        )}
-      </div>
+      {/* v2.6.25: Removed "Question" header for input neutrality */}
 
       <div className={styles.questionBannerContent}>
         <div className={styles.questionBannerAnswerRow}>
@@ -1152,9 +1150,9 @@ function ArticleVerdictBanner({ articleAnalysis, fallbackThesis, pseudoscienceAn
   return (
     <div className={styles.articleBanner} style={{ borderColor: color.border }}>
       <div className={styles.articleBannerContent}>
-        {/* ARTICLE VERDICT - Primary focus */}
+        {/* v2.6.25: Unified verdict label */}
         <div className={styles.articleVerdictHeader}>
-          <span className={styles.articleVerdictLabel}>Article Verdict</span>
+          <span className={styles.articleVerdictLabel}>VERDICT</span>
         </div>
         <div className={styles.articleVerdictRow}>
           <span className={styles.articleVerdictBadge} style={{ backgroundColor: color.bg, color: color.text }}>

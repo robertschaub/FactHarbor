@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.23
+ * FactHarbor POC1 Analyzer v2.6.25
  *
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -16,11 +16,15 @@
  * - Enhanced recency detection with news-related keywords (v2.6.22)
  * - Date-aware query variants for ALL search types (v2.6.22)
  * - Optional Gemini Grounded Search mode (v2.6.22)
- * - NEW v2.6.23: Fixed input neutrality - canonicalizeScopes uses normalized input
- * - NEW v2.6.23: Strengthened centrality heuristic with explicit examples
- * - NEW v2.6.23: Generic recency detection (removed person names)
+ * - v2.6.23: Fixed input neutrality - canonicalizeScopes uses normalized input
+ * - v2.6.23: Strengthened centrality heuristic with explicit examples
+ * - v2.6.23: Generic recency detection (removed person names)
+ * - NEW v2.6.25: Complete input neutrality fix - removed questionBeingAsked from analysis pipeline
+ * - NEW v2.6.25: resolveAnalysisPromptInput no longer falls back to question format
+ * - NEW v2.6.25: isRecencySensitive uses impliedClaim (normalized) for consistency
+ * - NEW v2.6.25: Pseudoscience detection uses only normalized forms
  *
- * @version 2.6.23
+ * @version 2.6.25
  * @date January 2026
  */
 
@@ -118,7 +122,7 @@ function clearDebugLog() {
 // ============================================================================
 
 const CONFIG = {
-  schemaVersion: "2.6.24",
+  schemaVersion: "2.6.25",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
@@ -3183,14 +3187,10 @@ For "Does this vaccine cause autism?"
       parsed.questionBeingAsked = trimmedInput;
   }
 
-  // Set impliedClaim to the NORMALIZED statement (for analysis consistency)
-  // This ensures both "Was X fair?" and "X was fair" use the same impliedClaim
-  const shouldSetImpliedClaim =
-    CONFIG.deterministic ||
-    !parsed.impliedClaim?.trim() ||
-    parsed.impliedClaim.endsWith("?");
-
-  if (shouldSetImpliedClaim) {
+  // v2.6.25: ALWAYS set impliedClaim to the NORMALIZED statement for input neutrality
+  // This ensures questions and statements produce identical analysis results
+  // Previously this was conditional on CONFIG.deterministic, but it must ALWAYS happen
+  if (!parsed.impliedClaim?.trim() || parsed.impliedClaim.endsWith("?")) {
     // Use analysisInput which is already normalized (question→statement)
     parsed.impliedClaim = analysisInput;
     console.log(`[Analyzer] Input Neutrality: impliedClaim set to normalized statement: "${analysisInput.substring(0, 80)}..."`);
@@ -3823,9 +3823,11 @@ function resolveAnalysisPromptInput(
   understanding: ClaimUnderstanding,
   state: ResearchState,
 ): string {
+  // v2.6.25: Never use questionBeingAsked for analysis - it's display-only
+  // This ensures questions and statements produce identical analysis results
   return (
     understanding.impliedClaim ||
-    understanding.questionBeingAsked ||
+    understanding.articleThesis ||
     understanding.mainQuestion ||
     state.originalInput ||
     state.originalText ||
@@ -3899,8 +3901,9 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   const hasEvidence = categories.includes("evidence");
 
   // Detect if this topic requires recent data
+  // v2.6.25: Use impliedClaim (normalized) for consistent recency detection across questions/statements
   const recencyMatters = isRecencySensitive(
-    state.originalInput || understanding.articleThesis || understanding.questionBeingAsked || "",
+    understanding.impliedClaim || understanding.articleThesis || state.originalInput || "",
     understanding
   );
 
@@ -4713,9 +4716,9 @@ async function generateVerdicts(
     understanding.distinctProceedings.length > 1;
 
   // Detect pseudoscience based on the article/question content and extracted claims
+  // v2.6.25: Only use normalized forms for consistent detection across questions/statements
   const allText = [
     understanding.articleThesis,
-    understanding.questionBeingAsked,
     understanding.impliedClaim,
     ...understanding.subClaims.map((c: any) => c.text),
   ]
