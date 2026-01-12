@@ -43,20 +43,11 @@ Article Confidence:
 
 ## Tasks in Progress:
 ---
-Handling when input is a question: 
- - When an Input is a question, a statement with exactly the same meaning shall be derived from the question. 
- - The statement shall be used for analysis, not the question, the question shall not be used further on for anything else than for display!
- =>Fix this first
----
 ArticleSummary data:
  - Make sure we have ArticleSummary data
  - if the input is an url, the article at the url page shall be summarized into ArticleSummary.
  - If the Input is text and text length is shorter than 300 characters, the ArticleSummary shall be a copy of the input.
  - Else: ArticleSummary shall be a summarize the article input.
----
-Reports of question vs. equal statement differ. Fix:
-- There are still differences between the two "Bolsonaro Judgement" reports for input as question vs. equal statement.
-- See "Handling when input is a question" - I assume then this is fixed, there should not anymore be a difference.
 ---
 Layout improvements in the "Summary" page:
  - Article box shall contain all properties of an article: Summary, Verdict, Key Factors, Assesment
@@ -70,6 +61,13 @@ Layout improvements in the "Summary" page:
  - Further unify layout variants. E.g. at article it sometimes it sais "Overall Verdict", and sometimes it sais "Article verdict", instead it should just show "Verdict"
 
 ## Tasks done
+---
+Input neutrality (v2.6.27): Question vs. statement handling fixed
+- When input is a question, it's normalized to an equivalent statement at entry point
+- The normalized statement is used for ALL analysis (not the question)
+- Original question is preserved only for UI display
+- Renamed all "Question" types/fields to neutral terms (VerdictSummary, analysisIntent, etc.)
+- Test result: 1% verdict difference (within LLM tolerance)
 ---
 LLM sometimes not aware about current time and recent information:
 - LLM is sometimes not aware about the current date. Resulting in information like "Temporal error". 
