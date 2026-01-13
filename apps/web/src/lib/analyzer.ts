@@ -1776,6 +1776,45 @@ function calculateArticleTruthPercentage(
   return normalizePercentage(verdictPercentage);
 }
 
+// ============================================================================
+// WEIGHTED VERDICT CALCULATION (v2.6.30)
+// ============================================================================
+
+/**
+ * Calculate claim weight based on centrality and confidence.
+ * Higher centrality claims with higher confidence have more influence on the overall verdict.
+ * 
+ * Weight = centralityMultiplier × (confidence / 100)
+ * where centralityMultiplier: high=3.0, medium=2.0, low=1.0
+ */
+function getClaimWeight(claim: { centrality?: "high" | "medium" | "low"; confidence?: number }): number {
+  const centralityMultiplier = 
+    claim.centrality === "high" ? 3.0 :
+    claim.centrality === "medium" ? 2.0 : 1.0;
+  const confidenceNormalized = (claim.confidence ?? 50) / 100;
+  return centralityMultiplier * confidenceNormalized;
+}
+
+/**
+ * Calculate weighted average of claim verdicts.
+ * Central claims with high confidence have more influence than peripheral low-confidence claims.
+ * 
+ * Formula: Σ(truthPercentage × weight) / Σ(weight)
+ */
+function calculateWeightedVerdictAverage(claims: Array<{ truthPercentage: number; centrality?: "high" | "medium" | "low"; confidence?: number }>): number {
+  if (claims.length === 0) return 50;
+  
+  let totalWeightedTruth = 0;
+  let totalWeight = 0;
+  
+  for (const claim of claims) {
+    const weight = getClaimWeight(claim);
+    totalWeightedTruth += claim.truthPercentage * weight;
+    totalWeight += weight;
+  }
+  
+  return totalWeight > 0 ? Math.round(totalWeightedTruth / totalWeight) : 50;
+}
 
 /**
  * Legacy: Map confidence to claim verdict (for backward compatibility)
@@ -2094,6 +2133,8 @@ interface ClaimVerdict {
   claimId: string;
   claimText: string;
   isCentral: boolean;
+  // NEW v2.6.30: Centrality level for weighted verdict calculation
+  centrality?: "high" | "medium" | "low";
   // NEW: Claim role and dependencies
   claimRole?: "attribution" | "source" | "timing" | "core";
   dependsOn?: string[]; // Claim IDs this depends on
@@ -5246,6 +5287,7 @@ Provide SEPARATE answers for each scope.`;
           "Unable to generate verdict due to schema validation error. Manual review recommended.",
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
+        centrality: claim.centrality || "medium",
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(50),
@@ -5530,6 +5572,7 @@ Provide SEPARATE answers for each scope.`;
       reasoning: sanitizedReasoning,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
+      centrality: claim?.centrality || "medium",
       keyFactorId: claim?.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
       relatedProceedingId: proceedingId,
       highlightColor: getHighlightColor7Point(truthPct),
@@ -5575,11 +5618,8 @@ Provide SEPARATE answers for each scope.`;
     hasContestedFactors,
   };
 
-  // Calculate claims average truth percentage
-  const claimsAvgTruthPct = Math.round(
-    weightedClaimVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) /
-      weightedClaimVerdicts.length,
-  );
+  // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence)
+  const claimsAvgTruthPct = calculateWeightedVerdictAverage(weightedClaimVerdicts);
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
@@ -5774,6 +5814,7 @@ ${factsFormatted}`;
         reasoning: "Unable to generate verdict due to schema validation error.",
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
+        centrality: claim.centrality || "medium",
         highlightColor: getHighlightColor7Point(50),
         isContested: false,
         contestedBy: "",
@@ -5847,6 +5888,7 @@ ${factsFormatted}`;
           reasoning: "No verdict returned by LLM for this claim.",
           supportingFactIds: [],
           isCentral: claim.isCentral || false,
+          centrality: claim.centrality || "medium",
           startOffset: claim.startOffset,
           endOffset: claim.endOffset,
           highlightColor: getHighlightColor7Point(50),
@@ -5865,6 +5907,7 @@ ${factsFormatted}`;
         reasoning: sanitizedReasoning,
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
+        centrality: claim.centrality || "medium",
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(truthPct),
@@ -5933,14 +5976,8 @@ ${factsFormatted}`;
     hasContestedFactors,
   };
 
-  // Calculate claims average truth percentage
-  const claimsAvgTruthPct =
-    weightedClaimVerdicts.length > 0
-      ? Math.round(
-          weightedClaimVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) /
-            weightedClaimVerdicts.length,
-        )
-      : 50;
+  // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence)
+  const claimsAvgTruthPct = calculateWeightedVerdictAverage(weightedClaimVerdicts);
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
@@ -6150,6 +6187,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
           "Unable to generate verdict due to schema validation error. Manual review recommended.",
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
+        centrality: claim.centrality || "medium",
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(50),
@@ -6218,6 +6256,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
           contestedBy: "",
           factualBasis: "unknown",
           isCentral: claim.isCentral || false,
+          centrality: claim.centrality || "medium",
           claimRole: claim.claimRole || "core",
           dependsOn: claim.dependsOn || [],
           keyFactorId: claim.keyFactorId || "", // Preserve KeyFactor mapping
@@ -6265,6 +6304,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         reasoning: sanitizedReasoning,
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
+        centrality: claim.centrality || "medium",
         claimRole: claim.claimRole || "core",
         dependsOn: claim.dependsOn || [],
         keyFactorId: claim.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
@@ -6342,14 +6382,8 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     dependencyFailedCount: weightedClaimVerdicts.filter((v) => v.dependencyFailed).length,
   };
 
-  // Calculate claims average truth percentage (only independent claims)
-  const claimsAvgTruthPct =
-    independentVerdicts.length > 0
-      ? Math.round(
-          independentVerdicts.reduce((sum, v) => sum + v.truthPercentage, 0) /
-            independentVerdicts.length,
-        )
-      : 50;
+  // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence, only independent claims)
+  const claimsAvgTruthPct = calculateWeightedVerdictAverage(independentVerdicts);
 
   // Article Verdict Problem: Check central claims specifically (using independent verdicts only)
   // If central claims are refuted but supporting claims are true, article is MISLEADING
