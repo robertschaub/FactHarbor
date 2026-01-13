@@ -2419,6 +2419,7 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]),
   originalInputDisplay: z.string(), // empty string if not applicable
   impliedClaim: z.string(), // empty string if not applicable
+  wasOriginallyQuestionFormat: z.boolean().optional(),
 
   distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA),
   requiresSeparateAnalysis: z.boolean(),
