@@ -2310,7 +2310,8 @@ function getHighlightColor7Point(
 // TYPES
 // ============================================================================
 
-type InputType = "question" | "claim" | "article";
+// v2.6.30: Removed "question" - questions are normalized to claims at entry point
+type InputType = "claim" | "article";
 // v2.6.27: Renamed from AnalysisIntent for input neutrality
 type AnalysisIntent = "verification" | "exploration" | "comparison" | "none";
 type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown";
@@ -3002,7 +3003,8 @@ const ANALYSIS_CONTEXT_SCHEMA = z.object({
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
 // Some providers are more tolerant and benefit from a more lenient schema.
 const UNDERSTANDING_SCHEMA_OPENAI = z.object({
-  detectedInputType: z.enum(["question", "claim", "article"]),
+  // v2.6.30: Removed "question" - questions are normalized to claims at entry point
+  detectedInputType: z.enum(["claim", "article"]),
   analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]),
   originalInputDisplay: z.string(), // empty string if not applicable
   impliedClaim: z.string(), // empty string if not applicable
@@ -3043,7 +3045,8 @@ const SUPPLEMENTAL_SUBCLAIMS_SCHEMA = z.object({
 
 // Lenient variant for providers that sometimes omit arrays/fields; defaults prevent hard failures.
 const UNDERSTANDING_SCHEMA_LENIENT = z.object({
-  detectedInputType: z.enum(["question", "claim", "article"]).catch("claim"),
+  // v2.6.30: Removed "question" - questions are normalized to claims at entry point
+  detectedInputType: z.enum(["claim", "article"]).catch("claim"),
   // Some models invent new labels (e.g. "evaluation"); coerce unknowns to "none" then post-process.
   analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]).catch("none"),
   originalInputDisplay: z.string().default(""),
@@ -3795,7 +3798,8 @@ For "This vaccine causes autism."
 
   if (!parsed) {
     // Retry once with a smaller, schema-focused prompt (providers sometimes fail on long prompts + strict schemas).
-    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-SCOPE DETECTION\n- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.\n- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n\nENUM RULES\n- detectedInputType must be exactly one of: question | claim | article\n- analysisIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
+    // v2.6.30: Changed detectedInputType to "claim | article" - questions are normalized to claims at entry point
+    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-SCOPE DETECTION\n- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.\n- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n\nENUM RULES\n- detectedInputType must be exactly one of: claim | article\n- analysisIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
     try {
       parsed = await tryStructured(retryPrompt, "structured-2");
     } catch (err: any) {
@@ -3916,11 +3920,11 @@ For "This vaccine causes autism."
     ids: (parsed.distinctProceedings || []).map((p: any) => p.id),
   });
 
-  // If the model under-split scopes for a statement-like claim, do a single best-effort retry
-  // focused ONLY on scope detection. This helps keep "question vs statement" runs aligned.
+  // If the model under-split scopes for a claim, do a single best-effort retry
+  // focused ONLY on scope detection. v2.6.30: Simplified - no "question" type exists anymore
   if (
     CONFIG.deterministic &&
-    (parsed.detectedInputType === "claim" || parsed.detectedInputType === "question") &&
+    parsed.detectedInputType === "claim" &&
     (parsed.distinctProceedings?.length ?? 0) <= 1
   ) {
     // v2.6.23: Use normalized analysisInput for scope detection to maintain input neutrality.
@@ -4502,14 +4506,10 @@ function findClaimPosition(
   return null;
 }
 
-// v2.6.30: Renamed from isClaimInput for clarity
-// Returns true for both questions and claims (i.e., NOT articles)
-// This is input-neutral: questions are normalized to claims at entry point
+// v2.6.30: Simplified - returns true for claims (NOT articles)
+// Questions are normalized to claims at entry point, so "question" type no longer exists
 function isClaimInput(understanding: ClaimUnderstanding): boolean {
-  return (
-    understanding.detectedInputType === "question" ||
-    understanding.detectedInputType === "claim"
-  );
+  return understanding.detectedInputType === "claim";
 }
 
 function resolveAnalysisPromptInput(
