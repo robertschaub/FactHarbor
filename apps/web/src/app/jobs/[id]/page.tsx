@@ -51,7 +51,7 @@ const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: s
   "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
   "LEANING-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
   // Neutral
-  "BALANCED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident balance (evidence on both sides)
+  "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident mix (evidence on both sides)
   "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
   // Negative (False side)
   "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
@@ -68,7 +68,7 @@ const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border:
   "MOSTLY-YES": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
   "LEANING-YES": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "↗" },
   // Neutral
-  "BALANCED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident balance
+  "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident mix
   "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
   // Negative (No side)
   "LEANING-NO": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "↘" },
@@ -85,7 +85,7 @@ const ARTICLE_VERDICT_COLORS: Record<string, { bg: string; text: string; border:
   "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
   "LEANING-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
   // Neutral
-  "BALANCED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident balance
+  "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident mix
   "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
   // Negative
   "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
@@ -304,6 +304,7 @@ export default function JobPage() {
   const searchQueries = result?.searchQueries || [];
   const sources = result?.sources || [];
   const researchStats = result?.researchStats;
+  const facts = result?.facts || []; // NEW v2.6.29: Access extracted facts for counter-evidence display
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   // Opinion-based contestations without evidence are not highlighted (almost anything can be doubted)
@@ -560,6 +561,8 @@ export default function JobPage() {
       {tab === "sources" && hasV22Data && (
         <div className={styles.contentCard}>
           <SourcesPanel searchQueries={searchQueries} sources={sources} researchStats={researchStats} searchProvider={result?.meta?.searchProvider} />
+          {/* NEW v2.6.29: Display facts with counter-evidence marking */}
+          {facts.length > 0 && <FactsPanel facts={facts} />}
         </div>
       )}
 
@@ -687,6 +690,123 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
       ) : (
         <div className={styles.noDataError}>
           No sources were fetched.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Facts Panel - NEW v2.6.29: Display facts with counter-evidence marking
+// ============================================================================
+
+function FactsPanel({ facts }: { facts: any[] }) {
+  if (!facts || facts.length === 0) return null;
+
+  // Group facts by claim direction and source type
+  const supportingFacts = facts.filter((f: any) => f.claimDirection === "supports" && !f.fromOppositeClaimSearch);
+  const contradictingFacts = facts.filter((f: any) => f.claimDirection === "contradicts" && !f.fromOppositeClaimSearch);
+  // NEW v2.6.29: Facts from opposite claim search - evidence that supports the inverse claim
+  const oppositeClaimFacts = facts.filter((f: any) => f.fromOppositeClaimSearch === true);
+  const neutralFacts = facts.filter((f: any) => 
+    (f.claimDirection === "neutral" || !f.claimDirection) && !f.fromOppositeClaimSearch
+  );
+
+  return (
+    <div className={styles.factsPanel}>
+      <h3 className={styles.factsPanelTitle}>📊 Evidence Analysis</h3>
+
+      <div className={styles.factsStats}>
+        <span className={styles.factStatSupporting}>✅ {supportingFacts.length} supporting</span>
+        <span className={styles.factStatContradicting}>❌ {contradictingFacts.length} contradicting</span>
+        <span className={styles.factStatOpposite}>🔄 {oppositeClaimFacts.length} opposite claim</span>
+        <span className={styles.factStatNeutral}>➖ {neutralFacts.length} neutral</span>
+      </div>
+
+      {/* NEW v2.6.29: Opposite Claim Evidence - displayed prominently */}
+      {oppositeClaimFacts.length > 0 && (
+        <div className={styles.factsSection}>
+          <h4 className={styles.factsSectionTitle} style={{ color: '#1565c0' }}>
+            🔄 Evidence for Opposite Claim ({oppositeClaimFacts.length})
+          </h4>
+          <p className={styles.oppositeClaimNote}>
+            These facts were found by searching for the opposite of the user's claim.
+            They support the inverse position and count against the original claim.
+          </p>
+          <div className={styles.factsList}>
+            {oppositeClaimFacts.map((f: any, i: number) => (
+              <div key={i} className={`${styles.factItem} ${styles.factItemOpposite}`}>
+                <div className={styles.factText}>{f.fact}</div>
+                <div className={styles.factMeta}>
+                  <span className={styles.factCategory}>{f.category}</span>
+                  <span className={styles.factSource}>{decodeHtmlEntities(f.sourceTitle || 'Unknown')}</span>
+                  <span className={styles.factOppositeTag}>OPPOSITE CLAIM</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {contradictingFacts.length > 0 && (
+        <div className={styles.factsSection}>
+          <h4 className={styles.factsSectionTitle} style={{ color: '#c62828' }}>
+            ⚠️ Counter-Evidence ({contradictingFacts.length})
+          </h4>
+          <div className={styles.factsList}>
+            {contradictingFacts.map((f: any, i: number) => (
+              <div key={i} className={`${styles.factItem} ${styles.factItemContradicting}`}>
+                <div className={styles.factText}>{f.fact}</div>
+                <div className={styles.factMeta}>
+                  <span className={styles.factCategory}>{f.category}</span>
+                  <span className={styles.factSource}>{decodeHtmlEntities(f.sourceTitle || 'Unknown')}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {supportingFacts.length > 0 && (
+        <div className={styles.factsSection}>
+          <h4 className={styles.factsSectionTitle} style={{ color: '#2e7d32' }}>
+            ✓ Supporting Evidence ({supportingFacts.length})
+          </h4>
+          <div className={styles.factsList}>
+            {supportingFacts.map((f: any, i: number) => (
+              <div key={i} className={`${styles.factItem} ${styles.factItemSupporting}`}>
+                <div className={styles.factText}>{f.fact}</div>
+                <div className={styles.factMeta}>
+                  <span className={styles.factCategory}>{f.category}</span>
+                  <span className={styles.factSource}>{decodeHtmlEntities(f.sourceTitle || 'Unknown')}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {neutralFacts.length > 0 && (
+        <div className={styles.factsSection}>
+          <h4 className={styles.factsSectionTitle} style={{ color: '#757575' }}>
+            Context ({neutralFacts.length})
+          </h4>
+          <div className={styles.factsList}>
+            {neutralFacts.slice(0, 5).map((f: any, i: number) => (
+              <div key={i} className={`${styles.factItem} ${styles.factItemNeutral}`}>
+                <div className={styles.factText}>{f.fact}</div>
+                <div className={styles.factMeta}>
+                  <span className={styles.factCategory}>{f.category}</span>
+                  <span className={styles.factSource}>{decodeHtmlEntities(f.sourceTitle || 'Unknown')}</span>
+                </div>
+              </div>
+            ))}
+            {neutralFacts.length > 5 && (
+              <div className={styles.factMoreIndicator}>
+                + {neutralFacts.length - 5} more contextual facts
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -1267,12 +1387,12 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
     <div className={styles.twoPanelContainer}>
       <div className={styles.twoPanelPanel}>
         <div className={styles.twoPanelHeader}>
-          <b>{isQuestion ? "❓ The Question" : "📄 Article"}</b>
+          <b>📄 Article</b>
         </div>
         <div className={styles.twoPanelContent}>
           <div className={styles.twoPanelLabel}>Title</div>
           <div className={styles.twoPanelValue}>{decodeHtmlEntities(articleSummary.title)}</div>
-          <div className={styles.twoPanelLabel}>{isQuestion ? "Implied Claim" : "Main Thesis"}</div>
+          <div className={styles.twoPanelLabel}>Main Thesis</div>
           <div className={styles.twoPanelValue}>{decodeHtmlEntities(articleSummary.mainArgument)}</div>
         </div>
       </div>
@@ -1409,6 +1529,7 @@ function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCro
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>
         )}
       </div>
+      <div className={styles.claimLabel}>Claim Being Evaluated:</div>
       <div className={styles.claimText}>"{claim.claimText}"</div>
       <div className={styles.claimReasoning}>{claim.reasoning}</div>
       {claim.isContested && claim.contestedBy && (

@@ -1114,6 +1114,14 @@
   color: #666;
 }
 
+.claimLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
 .claimText {
   font-size: 14px;
   font-style: italic;
@@ -1212,4 +1220,148 @@
   color: #666;
   text-align: center;
   padding: 40px;
+}
+
+/* ============================================================================
+   Facts Panel - NEW v2.6.29: Counter-evidence display
+   ============================================================================ */
+
+.factsPanel {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #ddd;
+}
+
+.factsPanelTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #333;
+}
+
+.factsStats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.factStatSupporting {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.factStatContradicting {
+  color: #c62828;
+  font-weight: 500;
+}
+
+.factStatNeutral {
+  color: #757575;
+  font-weight: 500;
+}
+
+.factsSection {
+  margin-bottom: 20px;
+}
+
+.factsSectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
+
+.factsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.factItem {
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+}
+
+.factItemContradicting {
+  border-left-color: #c62828;
+  background-color: #ffebee;
+}
+
+.factItemSupporting {
+  border-left-color: #2e7d32;
+  background-color: #e8f5e9;
+}
+
+.factItemNeutral {
+  border-left-color: #9e9e9e;
+  background-color: #f5f5f5;
+}
+
+/* NEW v2.6.29: Opposite claim evidence styling */
+.factItemOpposite {
+  border-left-color: #1565c0;
+  background-color: #e3f2fd;
+}
+
+.factStatOpposite {
+  color: #1565c0;
+  font-weight: 500;
+}
+
+.oppositeClaimNote {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  margin-bottom: 12px;
+  padding: 8px;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  border-left: 3px solid #1565c0;
+}
+
+.factOppositeTag {
+  background-color: #1565c0;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+.factText {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.factMeta {
+  margin-top: 8px;
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.factCategory {
+  background-color: #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.factSource {
+  font-style: italic;
+  color: #888;
+}
+
+.factMoreIndicator {
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+  padding: 8px;
 }
