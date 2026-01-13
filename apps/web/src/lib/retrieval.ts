@@ -5,7 +5,7 @@
  * - HTML pages (via cheerio)
  * - PDF documents (via pdf2json)
  *
- * @version 1.2.2 - Using pdf2json for reliable Node.js PDF parsing
+ * @version 1.2.3 - Added timeout to PDF parsing to prevent hangs
  */
 
 import * as cheerio from "cheerio";
@@ -13,11 +13,17 @@ import { promises as fs } from "fs";
 import * as os from "os";
 import * as path from "path";
 
+// Default timeout for PDF parsing (ms) - can be overridden via environment variable
+const PDF_PARSE_TIMEOUT_MS = parseInt(process.env.FH_PDF_PARSE_TIMEOUT_MS || "60000", 10);
+
 /**
  * Extract text from PDF buffer using pdf2json
  * This library works reliably in Node.js/Next.js environments
+ * 
+ * @param buffer - PDF file buffer
+ * @param timeoutMs - Parsing timeout in ms (default: 60 seconds)
  */
-async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
+async function extractTextFromPdfBuffer(buffer: Buffer, timeoutMs: number = PDF_PARSE_TIMEOUT_MS): Promise<string> {
   try {
     // Validate buffer before parsing
     if (!buffer || buffer.length === 0) {
@@ -47,9 +53,9 @@ async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
       const PDFParser = require("pdf2json");
       const pdfParser = new PDFParser();
 
-      console.log("[Retrieval] Starting PDF extraction...");
+      console.log("[Retrieval] Starting PDF extraction (timeout:", timeoutMs, "ms)...");
 
-      // Parse the PDF
+      // Parse the PDF with timeout to prevent hangs on malformed PDFs
       const parsePromise = new Promise<string>((resolve, reject) => {
         pdfParser.on("pdfParser_dataError", (errData: any) => {
           reject(new Error(errData.parserError || "PDF parsing failed"));
@@ -97,7 +103,15 @@ async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
         pdfParser.loadPDF(tmpFile);
       });
 
-      const text = await parsePromise;
+      // Timeout promise to prevent hangs
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`PDF parsing timeout after ${timeoutMs}ms - PDF may be malformed or too large`));
+        }, timeoutMs);
+      });
+
+      // Race between parsing and timeout
+      const text = await Promise.race([parsePromise, timeoutPromise]);
       return text;
 
     } finally {
@@ -184,9 +198,10 @@ export async function extractTextFromUrl(
   options: {
     timeoutMs?: number;
     maxLength?: number;
+    pdfParseTimeoutMs?: number;
   } = {}
 ): Promise<{ text: string; title: string; contentType: string }> {
-  const { timeoutMs = 30000, maxLength = 50000 } = options;
+  const { timeoutMs = 30000, maxLength = 50000, pdfParseTimeoutMs = PDF_PARSE_TIMEOUT_MS } = options;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -221,7 +236,7 @@ export async function extractTextFromUrl(
 
       console.log("[Retrieval] Downloaded PDF buffer size:", buffer.length, "bytes");
 
-      const text = await extractTextFromPdfBuffer(buffer);
+      const text = await extractTextFromPdfBuffer(buffer, pdfParseTimeoutMs);
 
       // Extract title from URL (last path segment before .pdf)
       const urlPath = new URL(url).pathname;
