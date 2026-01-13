@@ -976,12 +976,12 @@ function calculateTextSimilarity(text1: string, text2: string): number {
   const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
   const words1 = new Set(normalize(text1));
   const words2 = new Set(normalize(text2));
-  
+
   if (words1.size === 0 || words2.size === 0) return 0;
-  
+
   const intersection = new Set([...words1].filter(w => words2.has(w)));
   const union = new Set([...words1, ...words2]);
-  
+
   return intersection.size / union.size;
 }
 
@@ -991,22 +991,22 @@ function calculateTextSimilarity(text1: string, text2: string): number {
  */
 function isDuplicateFact(newFact: ExtractedFact, existingFacts: ExtractedFact[], threshold: number = 0.85): boolean {
   const newFactLower = newFact.fact.toLowerCase().trim();
-  
+
   for (const existing of existingFacts) {
     const existingLower = existing.fact.toLowerCase().trim();
-    
+
     // Exact match
     if (newFactLower === existingLower) {
       return true;
     }
-    
+
     // Near-duplicate based on text similarity
     const similarity = calculateTextSimilarity(newFact.fact, existing.fact);
     if (similarity >= threshold) {
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -1016,7 +1016,7 @@ function isDuplicateFact(newFact: ExtractedFact, existingFacts: ExtractedFact[],
  */
 function deduplicateFacts(newFacts: ExtractedFact[], existingFacts: ExtractedFact[]): ExtractedFact[] {
   const result: ExtractedFact[] = [];
-  
+
   for (const fact of newFacts) {
     if (!isDuplicateFact(fact, existingFacts) && !isDuplicateFact(fact, result)) {
       result.push(fact);
@@ -1025,7 +1025,7 @@ function deduplicateFacts(newFacts: ExtractedFact[], existingFacts: ExtractedFac
       console.log(`[Analyzer] Deduplication: Skipping near-duplicate fact: "${fact.fact.substring(0, 60)}..."`);
     }
   }
-  
+
   return result;
 }
 
@@ -2004,7 +2004,7 @@ interface ClaimUnderstanding {
     checkWorthiness: "high" | "medium" | "low"; // Is it a factual assertion a reader would question?
     harmPotential: "high" | "medium" | "low";   // Does it impact high-stakes areas?
     centrality: "high" | "medium" | "low";      // Is it pivotal to the author's argument?
-    isCentral: boolean; // Derived: true only if harmPotential OR centrality is "high"
+    isCentral: boolean; // Derived: true if centrality is "high"
     relatedProceedingId: string;
     approximatePosition: string;
     keyFactorId: string; // empty string if not mapped to any factor
@@ -2495,7 +2495,7 @@ const SUBCLAIM_SCHEMA = z.object({
   checkWorthiness: z.enum(["high", "medium", "low"]),
   harmPotential: z.enum(["high", "medium", "low"]),
   centrality: z.enum(["high", "medium", "low"]),
-  isCentral: z.boolean(), // true only if BOTH harmPotential AND centrality are "high"
+  isCentral: z.boolean(), // true if centrality is "high" (harmPotential affects risk tier, not centrality)
   relatedProceedingId: z.string(), // empty string if not applicable
   approximatePosition: z.string(), // empty string if not applicable
   keyFactorId: z.string(), // empty string if not mapped to any factor
@@ -2853,7 +2853,8 @@ The CENTRAL claims are the **factual assertions about real-world impact**:
 - If "10 children died from vaccines" is false → article is spreading dangerous misinformation
 The second is MORE CENTRAL because it has greater real-world harm potential.
 
-**isCentral = true** ONLY if BOTH harmPotential AND centrality are "high"
+**isCentral = true** if centrality is "high"
+- harmPotential affects risk tier and warning display, NOT centrality
 - checkWorthiness does NOT affect isCentral (a high checkWorthiness alone doesn't make it central)
 - However, if checkWorthiness is "low", the claim should NOT be investigated or displayed
 - Attribution, source, and timing claims should typically have centrality = "low" (not central to the argument)
@@ -2864,14 +2865,17 @@ IMPORTANT: riskTier is ANALYSIS-LEVEL only.
 - You may set riskTier based on the overall analysis, but claim-level harmPotential/centrality must be justified by each claim's content.
 
 **CRITICAL HEURISTIC for centrality = "high"**:
-Ask yourself: "If only ONE claim could be investigated, which would readers most want verified?"
-→ That's the central claim. Others are supporting.
+Ask yourself: "Does this claim DIRECTLY address the user's question or primary thesis?"
+→ If yes, it's central. If it's supporting evidence or background, it's not.
 
-**EXPECT 0-2 CENTRAL CLAIMS MAXIMUM** in most analyses. More than 2 central claims indicates over-marking.
+**EXPECT 1-4 CENTRAL CLAIMS** in most analyses. The number depends on the question type:
+- Simple factual claim: 1-2 central claims
+- Comparative claim ("X vs Y"): 2-4 central claims (one per major aspect of comparison)
+- Multi-faceted question: 2-4 central claims (one per facet)
 
-Only assign centrality: "high" when the claim is:
-1. The PRIMARY thesis of the article/argument, AND
-2. If false, would COMPLETELY invalidate the main conclusion
+Only assign centrality: "high" when the claim:
+1. DIRECTLY addresses the user's question/thesis, AND
+2. Represents a distinct aspect that needs independent verification
 
 **Examples of NON-central claims (centrality = "low" or "medium")**:
 - ❌ "Source X stated Y" (attribution - NOT central)
@@ -2885,10 +2889,14 @@ Only assign centrality: "high" when the claim is:
 - ❌ Supporting evidence for the main thesis (evidence - NOT central, only the thesis itself is central)
 
 **CRITICAL FOR COMPARATIVE CLAIMS**: If the main claim is "X is better/more/faster than Y", then:
-- ✓ CENTRAL: "X performs better than Y" or direct comparisons of X vs Y
-- ❌ NOT CENTRAL: "The methodology for comparing X and Y is valid"
-- ❌ NOT CENTRAL: "The analysis framework is appropriate"
-- ❌ NOT CENTRAL: "The comparison includes/excludes certain factors"
+- ✓ CENTRAL: "X performs better than Y in aspect A" (direct comparison)
+- ✓ CENTRAL: "X performs better than Y in aspect B" (another direct comparison)
+- ✓ CENTRAL: "Expert consensus supports X over Y" (direct evaluative claim)
+- ❌ NOT CENTRAL: "The methodology for comparing X and Y is valid" (meta-analysis)
+- ❌ NOT CENTRAL: "The analysis framework is appropriate" (meta-analysis)
+- ❌ NOT CENTRAL: "The comparison includes/excludes certain factors" (methodological scope)
+
+**IMPORTANT**: For comparative claims, EACH distinct aspect of the comparison that directly addresses the question should have centrality="high". For "hydrogen vs electricity efficiency", claims about well-to-wheel efficiency, production efficiency, AND expert consensus are ALL central because they each address the efficiency question from different angles.
 
 **Examples of CENTRAL claims (centrality = "high")**:
 - ✓ "The trial was fair and impartial" (PRIMARY evaluative thesis)
@@ -2910,15 +2918,15 @@ NOT "high" for:
 
 "At least 10 children died because of COVID-19 vaccines"
 → checkWorthiness: HIGH (specific factual claim, readers want proof)
-→ harmPotential: HIGH (public health, vaccine safety) ← HIGH
+→ harmPotential: HIGH (public health, vaccine safety)
 → centrality: HIGH (core assertion of the article) ← HIGH
-→ isCentral: TRUE (BOTH harmPotential AND centrality are HIGH)
+→ isCentral: TRUE (centrality is HIGH)
 
 "FDA will require randomized trials for all vaccines"
 → checkWorthiness: HIGH (policy claim that can be verified)
-→ harmPotential: HIGH (affects drug development, public health) ← HIGH
+→ harmPotential: HIGH (affects drug development, public health)
 → centrality: HIGH (major policy change claim) ← HIGH
-→ isCentral: TRUE (BOTH harmPotential AND centrality are HIGH)
+→ isCentral: TRUE (centrality is HIGH)
 
 "Prasad is CBER director"
 → claimRole: attribution
@@ -2947,7 +2955,7 @@ NOT "high" for:
 → checkWorthiness: HIGH (historical claim, verifiable via documented cases, GAO reports)
 → harmPotential: HIGH (public health, regulatory trust) ← HIGH
 → centrality: MEDIUM (supports main argument but not the core claim)
-→ isCentral: FALSE (centrality is not HIGH, even though harmPotential is HIGH)
+→ isCentral: FALSE (centrality is not HIGH - supporting evidence, not the core thesis)
 
 "Expert says the policy change is controversial"
 → checkWorthiness: HIGH (verifiable who said what)
@@ -3586,7 +3594,7 @@ async function requestSupplementalSubClaims(
  - Each claim must be tied to a single scope via relatedProceedingId.${hasScopes ? "" : " Use an empty string if no scopes are listed."}
  - Use claimRole="core" and checkWorthiness="high".
  - Set harmPotential and centrality realistically. Default centrality to "medium" unless the claim is truly the primary thesis of that scope.
- - Set isCentral=true ONLY if (harmPotential==="high" AND centrality==="high").
+ - Set isCentral=true if centrality==="high" (harmPotential affects risk tier, not centrality).
  - Use dependsOn=[] unless a dependency is truly required.
  - Ensure each listed context reaches at least ${MIN_CORE_CLAIMS_PER_PROCEEDING} core claims.
  - **CRITICAL**: If specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.`;

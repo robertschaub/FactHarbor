@@ -48,8 +48,9 @@ export function normalizeSubClaimImportance<T extends SubClaimImportance>(claim:
     claim.centrality = "low";
   }
 
-  // Consistent central flag derivation (central only when both high).
-  claim.isCentral = claim.harmPotential === "high" && claim.centrality === "high";
+  // Consistent central flag derivation: based on centrality alone.
+  // harmPotential affects risk tier/warnings, not centrality.
+  claim.isCentral = claim.centrality === "high";
   return claim;
 }
 
