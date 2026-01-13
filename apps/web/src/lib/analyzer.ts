@@ -69,10 +69,10 @@ function agentLog(location: string, message: string, data: any, hypothesisId: st
 }
 
 // Write debug log to a fixed location that's easy to find.
-// Additive override: FH_DEBUG_LOG_PATH can point elsewhere (e.g., non-Windows paths).
+// Additive override: FH_DEBUG_LOG_PATH can point elsewhere (e.g., custom paths).
 const DEBUG_LOG_PATH =
   process.env.FH_DEBUG_LOG_PATH ||
-  "c:\\DEV\\FactHarbor\\apps\\web\\debug-analyzer.log";
+  path.join(process.cwd(), "apps", "web", "debug-analyzer.log");
 const DEBUG_LOG_FILE_ENABLED =
   (process.env.FH_DEBUG_LOG_FILE ?? "true").toLowerCase() === "true";
 const DEBUG_LOG_CLEAR_ON_START =
@@ -896,6 +896,140 @@ function normalizeYesNoQuestionToStatement(input: string): string {
 }
 
 /**
+ * NEW v2.6.29: Generate an inverse claim query for counter-evidence search
+ * For comparative claims like "X is better than Y", generates "Y is better than X"
+ * For efficiency claims, generates the opposite ("inefficient", "less efficient", etc.)
+ * Returns null if no meaningful inverse can be generated
+ */
+function generateInverseClaimQuery(claim: string): string | null {
+  if (!claim || claim.length < 10) return null;
+
+  const lowerClaim = claim.toLowerCase();
+
+  // Pattern 1a: "Using X for Y is more Z than [using] W" - swap X and W
+  // Example: "Using hydrogen for cars is more efficient than using electricity"
+  // -> "Using electricity for cars is more efficient than hydrogen"
+  const usingPattern = /using\s+(\w+(?:\s+\w+)?)\s+(?:for\s+\w+\s+)?(?:is|are)\s+(?:more\s+)?(\w+)\s+than\s+(?:using\s+)?(\w+(?:\s+\w+)?)/i;
+  const usingMatch = claim.match(usingPattern);
+  if (usingMatch) {
+    const [, subjectA, adjective, subjectB] = usingMatch;
+    // Generate proper inverse: swap subjects
+    return `${subjectB.trim()} is more ${adjective} than ${subjectA.trim()}`;
+  }
+
+  // Pattern 1b: General comparative "X is/are [more] Z than Y" - swap X and Y
+  const comparativePattern = /^(.+?)\s+(?:is|are)\s+(?:more\s+)?(\w+)\s+than\s+(.+)$/i;
+  const compMatch = claim.match(comparativePattern);
+  if (compMatch) {
+    const [, subjectA, adjective, subjectB] = compMatch;
+    // Clean up subjects (remove "using" prefix if present)
+    const cleanA = subjectA.replace(/^using\s+/i, '').trim();
+    const cleanB = subjectB.replace(/^using\s+/i, '').trim();
+    // Generate inverse: "B is more [adjective] than A"
+    return `${cleanB} is more ${adjective} than ${cleanA}`;
+  }
+
+  // Pattern 2: Efficiency/performance claims without explicit comparison
+  // Look for key adjectives and generate opposite search
+  const efficiencyWords = ['efficient', 'effective', 'better', 'superior', 'faster', 'cheaper', 'safer'];
+  const oppositeMappings: Record<string, string> = {
+    'efficient': 'inefficient',
+    'effective': 'ineffective',
+    'better': 'worse',
+    'superior': 'inferior',
+    'faster': 'slower',
+    'cheaper': 'more expensive',
+    'safer': 'more dangerous',
+  };
+
+  for (const word of efficiencyWords) {
+    if (lowerClaim.includes(word)) {
+      const opposite = oppositeMappings[word] || `not ${word}`;
+      // Extract the main subject (first noun phrase)
+      const subjectMatch = claim.match(/(?:using\s+)?(\w+(?:\s+\w+){0,2})/i);
+      if (subjectMatch) {
+        return `${subjectMatch[1]} ${opposite} evidence study`;
+      }
+    }
+  }
+
+  // Pattern 3: Simple negation for factual claims
+  // For claims starting with "The X is/was/has", search for contradicting evidence
+  const factualPattern = /^(?:the\s+)?(.+?)\s+(?:is|was|has|have|are|were)\s+(.+)/i;
+  const factMatch = claim.match(factualPattern);
+  if (factMatch) {
+    const [, subject, predicate] = factMatch;
+    // Search for evidence that contradicts
+    return `${subject.trim()} not ${predicate.trim().split(' ').slice(0, 3).join(' ')}`;
+  }
+
+  // Fallback: extract key terms and add contradiction modifiers
+  const words = claim.split(/\s+/).filter(w => w.length > 3).slice(0, 4).join(' ');
+  return `${words} false incorrect evidence against`;
+}
+
+/**
+ * NEW v2.6.29: Calculate similarity between two strings (Jaccard similarity on words)
+ * Returns a value between 0 (completely different) and 1 (identical)
+ */
+function calculateTextSimilarity(text1: string, text2: string): number {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+  const words1 = new Set(normalize(text1));
+  const words2 = new Set(normalize(text2));
+  
+  if (words1.size === 0 || words2.size === 0) return 0;
+  
+  const intersection = new Set([...words1].filter(w => words2.has(w)));
+  const union = new Set([...words1, ...words2]);
+  
+  return intersection.size / union.size;
+}
+
+/**
+ * NEW v2.6.29: Check if a fact is a duplicate or near-duplicate of existing facts
+ * Returns true if the fact should be skipped (is duplicate)
+ */
+function isDuplicateFact(newFact: ExtractedFact, existingFacts: ExtractedFact[], threshold: number = 0.85): boolean {
+  const newFactLower = newFact.fact.toLowerCase().trim();
+  
+  for (const existing of existingFacts) {
+    const existingLower = existing.fact.toLowerCase().trim();
+    
+    // Exact match
+    if (newFactLower === existingLower) {
+      return true;
+    }
+    
+    // Near-duplicate based on text similarity
+    const similarity = calculateTextSimilarity(newFact.fact, existing.fact);
+    if (similarity >= threshold) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * NEW v2.6.29: Filter out duplicate facts from a list, keeping the first occurrence
+ * Optionally merges fromOppositeClaimSearch flag if duplicate found from opposite search
+ */
+function deduplicateFacts(newFacts: ExtractedFact[], existingFacts: ExtractedFact[]): ExtractedFact[] {
+  const result: ExtractedFact[] = [];
+  
+  for (const fact of newFacts) {
+    if (!isDuplicateFact(fact, existingFacts) && !isDuplicateFact(fact, result)) {
+      result.push(fact);
+    } else {
+      // Log deduplication for debugging
+      console.log(`[Analyzer] Deduplication: Skipping near-duplicate fact: "${fact.fact.substring(0, 60)}..."`);
+    }
+  }
+  
+  return result;
+}
+
+/**
  * Detect if a topic likely requires recent data
  * Returns true if dates, recent keywords, or temporal indicators suggest recency matters
  * v2.6.23: Removed domain-specific person names to comply with Generic by Design principle
@@ -919,7 +1053,6 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
   const recentKeywords = [
     'recent', 'recently', 'latest', 'newest', 'current', 'now', 'today',
     'this year', 'this month', 'last month', 'last week', 'yesterday',
-    'november 2025', 'december 2025', 'january 2026', '2025', '2026',
     'announced', 'released', 'published', 'unveiled', 'revealed'
   ];
 
@@ -1497,7 +1630,7 @@ type ClaimVerdict7Point =
   | "TRUE" // 86-100%, Score +3
   | "MOSTLY-TRUE" // 72-85%,  Score +2
   | "LEANING-TRUE" // 58-71%,  Score +1
-  | "BALANCED" // 43-57%,  Score  0, high confidence (evidence on both sides)
+  | "MIXED" // 43-57%,  Score  0, high confidence (evidence on both sides)
   | "UNVERIFIED" // 43-57%,  Score  0, low confidence (insufficient evidence)
   | "LEANING-FALSE" // 29-42%,  Score -1
   | "MOSTLY-FALSE" // 15-28%,  Score -2
@@ -1507,7 +1640,7 @@ type VerdictSummary7Point =
   | "YES" // 86-100%, Score +3
   | "MOSTLY-YES" // 72-85%,  Score +2
   | "LEANING-YES" // 58-71%,  Score +1
-  | "BALANCED" // 43-57%,  Score  0, high confidence
+  | "MIXED" // 43-57%,  Score  0, high confidence
   | "UNVERIFIED" // 43-57%,  Score  0, low confidence
   | "LEANING-NO" // 29-42%,  Score -1
   | "MOSTLY-NO" // 15-28%,  Score -2
@@ -1517,14 +1650,14 @@ type ArticleVerdict7Point =
   | "TRUE" // 86-100%, Score +3
   | "MOSTLY-TRUE" // 72-85%,  Score +2
   | "LEANING-TRUE" // 58-71%,  Score +1
-  | "BALANCED" // 43-57%,  Score  0, high confidence (evidence on both sides)
+  | "MIXED" // 43-57%,  Score  0, high confidence (evidence on both sides)
   | "UNVERIFIED" // 43-57%,  Score  0, low confidence (insufficient evidence)
   | "LEANING-FALSE" // 29-42%,  Score -1
   | "MOSTLY-FALSE" // 15-28%,  Score -2
   | "FALSE"; // 0-14%,   Score -3
 
-// Confidence threshold to distinguish BALANCED from UNVERIFIED
-const BALANCED_CONFIDENCE_THRESHOLD = 60;
+// Confidence threshold to distinguish MIXED from UNVERIFIED
+const MIXED_CONFIDENCE_THRESHOLD = 60;
 
 /**
  * Normalize truth percentage values (0-100)
@@ -1575,16 +1708,16 @@ function calculateQuestionTruthPercentage(
 /**
  * Map truth percentage to 7-point claim verdict
  * @param truthPercentage - The truth percentage (0-100)
- * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
+ * @param confidence - Optional confidence score (0-100). Used to distinguish MIXED from UNVERIFIED in 43-57% range.
  */
 function percentageToClaimVerdict(truthPercentage: number, confidence?: number): ClaimVerdict7Point {
   if (truthPercentage >= 86) return "TRUE";
   if (truthPercentage >= 72) return "MOSTLY-TRUE";
   if (truthPercentage >= 58) return "LEANING-TRUE";
   if (truthPercentage >= 43) {
-    // Distinguish BALANCED (high confidence, evidence on both sides) from UNVERIFIED (low confidence, insufficient evidence)
+    // Distinguish MIXED (high confidence, evidence on both sides) from UNVERIFIED (low confidence, insufficient evidence)
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
-    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+    return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
   }
   if (truthPercentage >= 29) return "LEANING-FALSE";
   if (truthPercentage >= 15) return "MOSTLY-FALSE";
@@ -1594,7 +1727,7 @@ function percentageToClaimVerdict(truthPercentage: number, confidence?: number):
 /**
  * Map truth percentage to question answer
  * @param truthPercentage - The truth percentage (0-100)
- * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
+ * @param confidence - Optional confidence score (0-100). Used to distinguish MIXED from UNVERIFIED in 43-57% range.
  */
 function percentageToVerdictSummary(
   truthPercentage: number,
@@ -1605,7 +1738,7 @@ function percentageToVerdictSummary(
   if (truthPercentage >= 58) return "LEANING-YES";
   if (truthPercentage >= 43) {
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
-    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+    return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
   }
   if (truthPercentage >= 29) return "LEANING-NO";
   if (truthPercentage >= 15) return "MOSTLY-NO";
@@ -1615,7 +1748,7 @@ function percentageToVerdictSummary(
 /**
  * Map truth percentage to article verdict
  * @param truthPercentage - The truth percentage (0-100)
- * @param confidence - Optional confidence score (0-100). Used to distinguish BALANCED from UNVERIFIED in 43-57% range.
+ * @param confidence - Optional confidence score (0-100). Used to distinguish MIXED from UNVERIFIED in 43-57% range.
  */
 function percentageToArticleVerdict(
   truthPercentage: number,
@@ -1626,7 +1759,7 @@ function percentageToArticleVerdict(
   if (truthPercentage >= 58) return "LEANING-TRUE";
   if (truthPercentage >= 43) {
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
-    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+    return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
   }
   if (truthPercentage >= 29) return "LEANING-FALSE";
   if (truthPercentage >= 15) return "MOSTLY-FALSE";
@@ -1843,6 +1976,8 @@ interface ResearchState {
   // NEW: Track if we've already done a targeted search for a specific central claim
   // that has no evidence/counter-evidence yet.
   centralClaimsSearched: Set<string>;
+  // NEW v2.6.29: Track if inverse claim search has been performed
+  inverseClaimSearchPerformed: boolean;
 }
 
 interface ClaimUnderstanding {
@@ -1925,6 +2060,14 @@ interface ExtractedFact {
   relatedProceedingId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
+  // NEW v2.6.29: Claim direction - does this fact support or contradict the ORIGINAL user claim?
+  // "supports" = fact supports the user's claim being true
+  // "contradicts" = fact contradicts the user's claim (supports the OPPOSITE)
+  // "neutral" = fact is contextual/background, doesn't directly support or contradict
+  claimDirection?: "supports" | "contradicts" | "neutral";
+  // NEW v2.6.29: True if this fact was found from searching for the OPPOSITE claim
+  // (e.g., if user claimed "X > Y", this fact came from searching "Y > X")
+  fromOppositeClaimSearch?: boolean;
   // EvidenceScope: Captures the methodology/boundaries of the source document
   evidenceScope?: {
     name: string;           // Short label (e.g., "WTW", "TTW", "EU-LCA", "US jurisdiction")
@@ -2000,7 +2143,7 @@ interface VerdictSummary {
 
 interface ArticleAnalysis {
   inputType: InputType;
-  wasQuestionInput: boolean; // v2.6.27: Renamed from isQuestion for clarity (UI only)
+  // wasQuestionInput removed - Input Neutrality: no question-specific properties in analysis
   verdictSummary?: VerdictSummary;
 
   hasMultipleProceedings: boolean;
@@ -2058,6 +2201,7 @@ interface TwoPanelSummary {
     }>;
     methodologyAssessment: string;
     overallVerdict: number;
+    confidence: number; // v2.6.28: Added missing confidence property
     analysisId: string;
   };
 }
@@ -3937,6 +4081,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     state.facts.length >= config.minFactsRequired &&
     categories.length >= CONFIG.minCategories &&
     state.contradictionSearchPerformed &&
+    state.inverseClaimSearchPerformed && // v2.6.29: Also require inverse claim search
     (scopes.length === 0 ||
       scopes.every((p: Scope) =>
         scopesWithFacts.has(p.id),
@@ -4180,6 +4325,31 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       queries,
       recencyMatters,
     };
+  }
+
+  // NEW v2.6.29: Search for INVERSE claim evidence (counter-evidence)
+  // For claims like "X is better than Y", explicitly search for evidence that "Y is better than X"
+  if (!state.inverseClaimSearchPerformed) {
+    const impliedClaim = understanding.impliedClaim || state.originalInput || "";
+    const inverseClaim = generateInverseClaimQuery(impliedClaim);
+
+    if (inverseClaim) {
+      const inverseQueries = [
+        `${inverseClaim} evidence study`,
+        `${inverseClaim} research data`,
+        ...(recencyMatters ? [`${inverseClaim} ${currentYear}`] : []),
+      ];
+      return {
+        complete: false,
+        focus: "Counter-evidence search (inverse claim)",
+        category: "counter_evidence",
+        isContradictionSearch: true,  // Mark as contradiction for tracking
+        queries: inverseQueries,
+        recencyMatters,
+      };
+    }
+    // If no inverse claim could be generated, mark as done
+    state.inverseClaimSearchPerformed = true;
   }
 
   // NEW v2.6.18: Search for decision-makers and potential conflicts of interest
@@ -4460,6 +4630,8 @@ const FACT_SCHEMA = z.object({
       relatedProceedingId: z.string(), // empty string if not applicable
       isContestedClaim: z.boolean(),
       claimSource: z.string(), // empty string if not applicable
+      // NEW v2.6.29: Does this fact support or contradict the ORIGINAL user claim?
+      claimDirection: z.enum(["supports", "contradicts", "neutral"]),
       // EvidenceScope: Captures the methodology/boundaries of the source document
       // (e.g., WTW vs TTW, EU vs US standards, different time periods)
       evidenceScope: z.object({
@@ -4479,6 +4651,8 @@ async function extractFacts(
   model: any,
   scopes: Scope[],
   targetProceedingId?: string,
+  originalClaim?: string,
+  fromOppositeClaimSearch?: boolean,
 ): Promise<ExtractedFact[]> {
   console.log(`[Analyzer] extractFacts called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
   console.log(`[Analyzer] extractFacts: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
@@ -4501,6 +4675,19 @@ async function extractFacts(
   const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
+  // v2.6.29: Include original claim for counter-evidence identification
+  const originalClaimSection = originalClaim
+    ? `\n\n## ORIGINAL USER CLAIM (for claimDirection evaluation)
+The user's original claim is: "${originalClaim}"
+
+For EVERY extracted fact, evaluate claimDirection:
+- **"supports"**: This fact provides evidence that SUPPORTS the user's claim being TRUE
+- **"contradicts"**: This fact provides evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
+- **"neutral"**: This fact is contextual/background information that doesn't directly support or contradict the claim
+
+CRITICAL: Be precise about direction! If the user claims "X is better than Y" and the source says "Y is better than X", that is CONTRADICTING evidence, not supporting evidence.`
+    : "";
+
   const systemPrompt = `Extract SPECIFIC facts. Focus: ${focus}
  ${targetProceedingId ? `Target context: ${targetProceedingId}` : ""}
 Track contested claims with isContestedClaim and claimSource.
@@ -4508,7 +4695,7 @@ Only HIGH/MEDIUM specificity.
 If the source contains facts relevant to MULTIPLE known contexts, include them (do not restrict to only the target),
 and set relatedProceedingId accordingly. Do not omit key numeric outcomes (durations, amounts, counts) when present.
 
-**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.
+**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${originalClaimSection}
 
 ## SCOPE/CONTEXT EXTRACTION
 
@@ -4627,6 +4814,8 @@ Evidence documentation typically defines its scope/context. Extract this when pr
         relatedProceedingId: f.relatedProceedingId || targetProceedingId,
         isContestedClaim: f.isContestedClaim,
         claimSource: f.claimSource,
+        claimDirection: f.claimDirection,
+        fromOppositeClaimSearch: fromOppositeClaimSearch || false,
       }));
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -4861,9 +5050,8 @@ async function generateMultiScopeVerdicts(
   // v2.6.21: Use neutral label to ensure input-neutral verdicts
   // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
   const inputLabel = "STATEMENT";
-  // v2.6.27: Input neutrality fix - isQuestionLike is ALWAYS false for analysis
-  // Since we normalize all inputs to statements at entry point, the LLM should
-  // always analyze as a statement. wasOriginallyQuestionFormat is only for UI display.
+  // v2.6.28: Input Neutrality - ALL inputs normalized to statements at entry point (line ~6690)
+  // Analysis functions have NO question-specific logic. isQuestionLike always false for prompts.
   const isQuestionLike = false;
 
   const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS (also called SCOPES) separately.
@@ -4912,12 +5100,12 @@ ${scopesFormatted}
      * Preserve the direction/comparative aspect of the original claim
    - shortAnswer: A complete sentence summarizing what the evidence shows (e.g., "Evidence indicates the methodology was scientifically valid.")
      * MUST be a descriptive sentence, NOT just a percentage or scale label
-   - keyFactors: Array of factors covering ALL these aspects:
-     * Standards application (were relevant rules/standards/methods applied correctly?)
-     * Process integrity (were appropriate procedures followed?)
-     * Evidence basis (were conclusions based on documented evidence?)
-     * Decision-maker independence (any conflicts of interest or role conflicts?)
-     * Outcome proportionality/impact (is the outcome proportional and consistent with similar situations?)
+   - keyFactors: Array of factors that address the SUBSTANCE of the original claim:
+     * CRITICAL: Key factors must evaluate whether THE USER'S CLAIM is true, NOT whether your analysis is correct
+     * For comparative claims ("X is better than Y"), factors should evaluate the actual comparison
+     * For factual claims, factors should cover the main evidence points that support or refute the claim
+     * For procedural/legal claims, include: standards application, process integrity, evidence basis, decision-maker independence
+     * DO NOT generate meta-methodology factors like "Was the analysis done correctly?" - focus on the CLAIM ITSELF
 
 2. KEY FACTOR SCORING RULES - VERY IMPORTANT:
    - supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge of widely-reported facts)
@@ -5088,7 +5276,7 @@ Provide SEPARATE answers for each scope.`;
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: analysisInputType,
-      wasQuestionInput: isQuestionLike,
+      // wasQuestionInput removed - Input Neutrality: no question-specific properties
       verdictSummary,
       hasMultipleProceedings: true,
       proceedings: understanding.distinctProceedings,
@@ -5387,7 +5575,7 @@ Provide SEPARATE answers for each scope.`;
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
-    wasQuestionInput: isQuestionLike,
+    // wasQuestionInput removed - Input Neutrality: no question-specific properties
     verdictSummary,
     hasMultipleProceedings: true,
     proceedings: understanding.distinctProceedings,
@@ -5440,9 +5628,8 @@ async function generateQuestionVerdicts(
   // v2.6.21: Use neutral label to ensure input-neutral verdicts
   // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
   const inputLabel = "STATEMENT";
-  // v2.6.27: Input neutrality fix - isQuestionLike is ALWAYS false for analysis
-  // Since we normalize all inputs to statements at entry point, the LLM should
-  // always analyze as a statement. wasOriginallyQuestionFormat is only for UI display.
+  // v2.6.28: Input Neutrality - ALL inputs normalized to statements at entry point (line ~6690)
+  // Analysis functions have NO question-specific logic. isQuestionLike always false for prompts.
   const isQuestionLike = false;
 
   const systemPrompt = `Answer the input based on documented evidence.
@@ -5477,6 +5664,14 @@ Evidence may come from sources with DIFFERENT analytical scopes (e.g., broad-bou
 - shortAnswer MUST be a complete descriptive sentence summarizing the finding
 - Example: "The evidence shows proper procedures were followed."
 - NEVER use just a percentage value or scale label as the shortAnswer
+
+## KEY FACTORS - CRITICAL GUIDANCE:
+Key factors must address the SUBSTANCE of the original claim:
+- CRITICAL: Key factors must evaluate whether THE USER'S CLAIM is true, NOT whether your analysis is correct
+- For comparative claims ("X is better than Y"), factors should evaluate the actual comparison
+- For factual claims, factors should cover the main evidence points that support or refute the claim
+- For procedural/legal claims, include: standards application, process integrity, evidence basis
+- DO NOT generate meta-methodology factors like "Was the analysis done correctly?" - focus on the CLAIM ITSELF
 
 ## KEY FACTOR SCORING RULES - VERY IMPORTANT:
 - supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge)
@@ -5596,7 +5791,7 @@ ${factsFormatted}`;
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: analysisInputType,
-      wasQuestionInput: isQuestionLike,
+      // wasQuestionInput removed - Input Neutrality: no question-specific properties
       verdictSummary,
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
@@ -5741,7 +5936,7 @@ ${factsFormatted}`;
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
-    wasQuestionInput: isQuestionLike,
+    // wasQuestionInput removed - Input Neutrality: no question-specific properties
     verdictSummary,
     hasMultipleProceedings: false,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
@@ -5962,7 +6157,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "article",
-      wasQuestionInput: false,
+      // wasQuestionInput removed - Input Neutrality: no question-specific properties
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
@@ -6257,7 +6452,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     claimVerdicts: weightedClaimVerdicts,
     articleAnalysis: {
       inputType: understanding.detectedInputType,
-      wasQuestionInput: false,
+      // wasQuestionInput removed - Input Neutrality: no question-specific properties
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: parsed.articleAnalysis.logicalFallacies,
@@ -6307,7 +6502,8 @@ async function generateTwoPanelSummary(
   model: any,
 ): Promise<TwoPanelSummary> {
   const understanding = state.understanding!;
-  const isQuestion = articleAnalysis.wasQuestionInput;
+  // Input Neutrality: Get original format from UI metadata, not analysis layer
+  const isQuestion = (understanding as any).wasOriginallyQuestionFormat || false;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
 
   let title = isQuestion
@@ -6355,6 +6551,16 @@ async function generateTwoPanelSummary(
 
   const inputUrl = state.inputType === "url" ? state.originalInput : undefined;
 
+  // v2.6.28: Calculate confidence from verdictSummary or claims average
+  let overallConfidence = 50; // Default fallback
+  if (articleAnalysis.verdictSummary?.confidence != null) {
+    overallConfidence = normalizePercentage(articleAnalysis.verdictSummary.confidence);
+  } else if (claimVerdicts.length > 0) {
+    // Fallback: average confidence from claims
+    const avgClaimConfidence = claimVerdicts.reduce((sum, cv) => sum + (cv.confidence ?? 50), 0) / claimVerdicts.length;
+    overallConfidence = Math.round(avgClaimConfidence);
+  }
+
   const factharborAnalysis = {
     sourceCredibility: calculateOverallCredibility(state.sources, inputUrl),
     claimVerdicts: claimVerdicts.map((cv: ClaimVerdict) => ({
@@ -6368,6 +6574,7 @@ async function generateTwoPanelSummary(
       articleAnalysis,
     ),
     overallVerdict,
+    confidence: overallConfidence, // v2.6.28: Added missing confidence property
     analysisId,
   };
 
@@ -6452,7 +6659,8 @@ async function generateReport(
   model: any,
 ): Promise<string> {
   const understanding = state.understanding!;
-  const isQuestion = articleAnalysis.wasQuestionInput;
+  // Input Neutrality: Get original format from UI metadata, not analysis layer
+  const isQuestion = (understanding as any).wasOriginallyQuestionFormat || false;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
   const useRich = CONFIG.reportStyle === "rich";
   const iconPositive = useRich ? "✅" : "";
@@ -6718,6 +6926,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     decisionMakerSearchPerformed: false, // NEW v2.6.18
     recentClaimsSearched: false, // NEW v2.6.22
     centralClaimsSearched: new Set(),
+    inverseClaimSearchPerformed: false, // NEW v2.6.29
   };
 
   // Handle URL
@@ -6845,6 +7054,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     if (decision.isContradictionSearch)
       state.contradictionSearchPerformed = true;
 
+    // NEW v2.6.29: Track inverse claim search (counter-evidence)
+    if (decision.category === "counter_evidence")
+      state.inverseClaimSearchPerformed = true;
+
     // NEW v2.6.18: Track decision-maker and research question searches
     if (decision.category === "conflict_of_interest")
       state.decisionMakerSearchPerformed = true;
@@ -6939,12 +7152,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             syntheticSource,
             decision.focus!,
             model,
-            state.understanding?.distinctProceedings || []
+            state.understanding?.distinctProceedings || [],
+            undefined,
+            state.understanding?.impliedClaim || state.originalInput
           );
 
           if (extractedFacts && extractedFacts.length > 0) {
-            state.facts.push(...extractedFacts);
-            console.log(`[Analyzer] Extracted ${extractedFacts.length} facts from grounded search`);
+            // v2.6.29: Deduplicate facts before adding
+            const uniqueFacts = deduplicateFacts(extractedFacts, state.facts);
+            state.facts.push(...uniqueFacts);
+            console.log(`[Analyzer] Extracted ${extractedFacts.length} facts from grounded search (${uniqueFacts.length} unique after dedup)`);
           }
         }
 
@@ -7101,6 +7318,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     await emit(`Extracting facts [LLM: ${provider}/${modelName}]`, baseProgress + 8);
     const extractStart = Date.now();
+    // v2.6.29: Mark facts from counter_evidence category as fromOppositeClaimSearch
+    const isOppositeClaimSearch = decision.category === "counter_evidence";
     for (const source of successfulSources) {
       const facts = await extractFacts(
         source,
@@ -7108,8 +7327,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         model,
         state.understanding!.distinctProceedings,
         decision.targetProceedingId,
+        state.understanding?.impliedClaim || state.originalInput,
+        isOppositeClaimSearch,
       );
-      state.facts.push(...facts);
+      // v2.6.29: Deduplicate facts before adding to avoid near-duplicates
+      const uniqueFacts = deduplicateFacts(facts, state.facts);
+      state.facts.push(...uniqueFacts);
       state.llmCalls++; // Each extractFacts call is 1 LLM call
     }
     const extractElapsed = Date.now() - extractStart;
@@ -7229,7 +7452,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       searchProvider: CONFIG.searchProvider,
       inputType: input.inputType,
       detectedInputType: state.understanding!.detectedInputType,
-      wasQuestionInput: articleAnalysis.wasQuestionInput,
+      wasQuestionInput: (state.understanding as any).wasOriginallyQuestionFormat || false, // UI-only metadata from entry normalization
       hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,
       hasMultipleScopes: articleAnalysis.hasMultipleProceedings,  // Alias
       proceedingCount: state.understanding!.distinctProceedings.length,
