@@ -12,7 +12,7 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 
-const API_BASE_URL = process.env.API_URL || "http://localhost:5000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // Skip these tests if API is not available
 const apiAvailable = async (): Promise<boolean> => {
