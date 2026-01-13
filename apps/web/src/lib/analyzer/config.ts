@@ -7,12 +7,13 @@
  */
 
 import * as fs from "fs";
+import * as path from "path";
 
 // ============================================================================
 // DEBUG LOGGING
 // ============================================================================
 
-const DEBUG_LOG_PATH = "c:\\DEV\\FactHarbor\\apps\\web\\debug-analyzer.log";
+const DEBUG_LOG_PATH = path.join(process.cwd(), "apps", "web", "debug-analyzer.log");
 
 export function debugLog(message: string, data?: unknown): void {
   const timestamp = new Date().toISOString();
