@@ -225,7 +225,7 @@ erDiagram
         string id PK "Same as claim ID"
         string claimId FK "Reference to claim"
         string llmVerdict "WELL-SUPPORTED | PARTIALLY-SUPPORTED | UNCERTAIN | REFUTED"
-        string verdict "TRUE | MOSTLY-TRUE | LEANING-TRUE | BALANCED | UNVERIFIED | LEANING-FALSE | MOSTLY-FALSE | FALSE"
+        string verdict "TRUE | MOSTLY-TRUE | LEANING-TRUE | MIXED | UNVERIFIED | LEANING-FALSE | MOSTLY-FALSE | FALSE"
         int confidence "0-100 LLM confidence"
         int truthPercentage "0-100 calibrated truth score"
         float evidenceWeight "Evidence weighting based on source scores"
@@ -467,7 +467,7 @@ flowchart TB
 - ✅ Dependency tracking and propagation
 - ✅ Pseudoscience detection and escalation
 - ✅ 7-point verdict scale (TRUE to FALSE)
-- ✅ BALANCED vs UNVERIFIED distinction (confidence-based)
+- ✅ MIXED vs UNVERIFIED distinction (confidence-based)
 
 **Infrastructure:**
 - ✅ Job lifecycle management (QUEUED → RUNNING → SUCCEEDED/FAILED)
@@ -548,7 +548,7 @@ flowchart TB
 
 See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodology, including:
 - 7-point scale mapping
-- BALANCED vs UNVERIFIED distinction
+- MIXED vs UNVERIFIED distinction
 - Counter-evidence handling
 - Aggregation hierarchy (Facts → Claims → KeyFactors → Scopes → Overall)
 - Dependency handling

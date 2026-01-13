@@ -18,7 +18,7 @@
 - Web search integration (Google CSE, SerpAPI)
 - Evidence extraction from multiple sources
 - 7-point verdict scale (TRUE to FALSE)
-- BALANCED vs UNVERIFIED distinction (confidence-based)
+- MIXED vs UNVERIFIED distinction (confidence-based)
 - Pseudoscience detection and escalation
 - KeyFactors discovery and aggregation
 - Quality Gates (Gate 1: Claim Validation, Gate 4: Verdict Confidence)

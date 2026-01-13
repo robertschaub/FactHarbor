@@ -4,24 +4,24 @@
 
 This document explains how FactHarbor calculates verdicts, handles counter-evidence, aggregates results across different levels, and manages confidence scores.
 
-## 1. Verdict Scale (7-Point System with BALANCED/UNVERIFIED Distinction)
+## 1. Verdict Scale (7-Point System with MIXED/UNVERIFIED Distinction)
 
-FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%. The 43-57% range distinguishes between **BALANCED** (high confidence, evidence on both sides) and **UNVERIFIED** (low confidence, insufficient evidence):
+FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%. The 43-57% range distinguishes between **MIXED** (high confidence, evidence on both sides) and **UNVERIFIED** (low confidence, insufficient evidence):
 
 | Verdict | Range | Confidence | Description |
 |---------|-------|------------|-------------|
 | **TRUE** | 86-100% | - | Strong support, no credible counter-evidence |
 | **MOSTLY-TRUE** | 72-85% | - | Mostly supported, minor gaps |
 | **LEANING-TRUE** | 58-71% | - | Mixed evidence, leans positive |
-| **BALANCED** | 43-57% | >= 60% | Evidence on both sides, roughly equal |
+| **MIXED** | 43-57% | >= 60% | Evidence on both sides, roughly equal |
 | **UNVERIFIED** | 43-57% | < 60% | Insufficient evidence to judge |
 | **LEANING-FALSE** | 29-42% | - | More counter-evidence than support |
 | **MOSTLY-FALSE** | 15-28% | - | Strong counter-evidence |
 | **FALSE** | 0-14% | - | Direct contradiction |
 
-### BALANCED vs UNVERIFIED
+### MIXED vs UNVERIFIED
 
-- **BALANCED** (blue in UI): We have substantial evidence, but it's roughly equal on both sides. High confidence in the balanced state.
+- **MIXED** (blue in UI): We have substantial evidence, but it's roughly equal on both sides. High confidence in the mixed state.
 - **UNVERIFIED** (orange in UI): We don't have enough evidence to make any judgment. Low confidence due to insufficient information.
 
 ### Implementation
@@ -30,18 +30,18 @@ FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%. Th
 
 **Function**: `percentageToClaimVerdict` (line ~1544)
 ```typescript
-// Confidence threshold to distinguish BALANCED from UNVERIFIED
-const BALANCED_CONFIDENCE_THRESHOLD = 60;
+// Confidence threshold to distinguish MIXED from UNVERIFIED
+const MIXED_CONFIDENCE_THRESHOLD = 60;
 
 function percentageToClaimVerdict(truthPercentage: number, confidence?: number): ClaimVerdict7Point {
   if (truthPercentage >= 86) return "TRUE";
   if (truthPercentage >= 72) return "MOSTLY-TRUE";
   if (truthPercentage >= 58) return "LEANING-TRUE";
   if (truthPercentage >= 43) {
-    // Distinguish BALANCED (high confidence, evidence on both sides) 
+    // Distinguish MIXED (high confidence, evidence on both sides) 
     // from UNVERIFIED (low confidence, insufficient evidence)
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
-    return conf >= BALANCED_CONFIDENCE_THRESHOLD ? "BALANCED" : "UNVERIFIED";
+    return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
   }
   if (truthPercentage >= 29) return "LEANING-FALSE";
   if (truthPercentage >= 15) return "MOSTLY-FALSE";

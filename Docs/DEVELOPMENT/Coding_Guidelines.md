@@ -233,7 +233,7 @@ Truth: 82%
 - **TRUE**: 86-100% (Score +3)
 - **MOSTLY-TRUE**: 72-85% (Score +2)
 - **LEANING-TRUE**: 58-71% (Score +1)
-- **BALANCED**: 43-57% with confidence ≥60% (Score 0)
+- **MIXED**: 43-57% with confidence ≥60% (Score 0)
 - **UNVERIFIED**: 43-57% with confidence <60% (Score 0)
 - **LEANING-FALSE**: 29-42% (Score -1)
 - **MOSTLY-FALSE**: 15-28% (Score -2)
