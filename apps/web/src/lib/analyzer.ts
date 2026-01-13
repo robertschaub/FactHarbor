@@ -2461,6 +2461,7 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]).catch("none"),
   originalInputDisplay: z.string().default(""),
   impliedClaim: z.string().default(""),
+  wasOriginallyQuestionFormat: z.boolean().optional(),
 
   distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA).default([]),
   requiresSeparateAnalysis: z.boolean().default(false),
