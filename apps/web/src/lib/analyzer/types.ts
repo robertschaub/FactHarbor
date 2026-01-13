@@ -26,21 +26,21 @@ export type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown"
  * | 86-100%  | True          | +3    |            |
  * | 72-85%   | Mostly True   | +2    |            |
  * | 58-71%   | Leaning True  | +1    |            |
- * | 43-57%   | Balanced      |  0    | >= 60%     |
+ * | 43-57%   | Mixed         |  0    | >= 60%     |
  * | 43-57%   | Unverified    |  0    | < 60%      |
  * | 29-42%   | Leaning False | -1    |            |
  * | 15-28%   | Mostly False  | -2    |            |
  * | 0-14%    | False         | -3    |            |
  *
- * Note: BALANCED vs UNVERIFIED are distinguished by confidence level:
- * - BALANCED: 43-57% truth with HIGH confidence (evidence on both sides)
+ * Note: MIXED vs UNVERIFIED are distinguished by confidence level:
+ * - MIXED: 43-57% truth with HIGH confidence (evidence on both sides)
  * - UNVERIFIED: 43-57% truth with LOW confidence (insufficient evidence)
  */
 export type ClaimVerdict7Point =
   | "TRUE"          // 86-100%, Score +3
   | "MOSTLY-TRUE"   // 72-85%,  Score +2
   | "LEANING-TRUE"  // 58-71%,  Score +1
-  | "BALANCED"      // 43-57%,  Score  0, high confidence (evidence on both sides)
+  | "MIXED"      // 43-57%,  Score  0, high confidence (evidence on both sides)
   | "UNVERIFIED"    // 43-57%,  Score  0, low confidence (insufficient evidence)
   | "LEANING-FALSE" // 29-42%,  Score -1
   | "MOSTLY-FALSE"  // 15-28%,  Score -2
@@ -50,7 +50,7 @@ export type QuestionAnswer7Point =
   | "YES"           // 86-100%, Score +3
   | "MOSTLY-YES"    // 72-85%,  Score +2
   | "LEANING-YES"   // 58-71%,  Score +1
-  | "BALANCED"      // 43-57%,  Score  0, high confidence
+  | "MIXED"      // 43-57%,  Score  0, high confidence
   | "UNVERIFIED"    // 43-57%,  Score  0, low confidence
   | "LEANING-NO"    // 29-42%,  Score -1
   | "MOSTLY-NO"     // 15-28%,  Score -2
@@ -60,7 +60,7 @@ export type ArticleVerdict7Point =
   | "TRUE"          // 86-100%, Score +3
   | "MOSTLY-TRUE"   // 72-85%,  Score +2
   | "LEANING-TRUE"  // 58-71%,  Score +1
-  | "BALANCED"      // 43-57%,  Score  0, high confidence (evidence on both sides)
+  | "MIXED"      // 43-57%,  Score  0, high confidence (evidence on both sides)
   | "UNVERIFIED"    // 43-57%,  Score  0, low confidence (insufficient evidence)
   | "LEANING-FALSE" // 29-42%,  Score -1
   | "MOSTLY-FALSE"  // 15-28%,  Score -2
@@ -306,6 +306,14 @@ export interface ExtractedFact {
   relatedProceedingId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
+  // NEW v2.6.29: Claim direction - does this fact support or contradict the ORIGINAL user claim?
+  // "supports" = fact supports the user's claim being true
+  // "contradicts" = fact contradicts the user's claim (supports the OPPOSITE)
+  // "neutral" = fact is contextual/background, doesn't directly support or contradict
+  claimDirection?: "supports" | "contradicts" | "neutral";
+  // NEW v2.6.29: True if this fact was found from searching for the OPPOSITE claim
+  // (e.g., if user claimed "X > Y", this fact came from searching "Y > X")
+  fromOppositeClaimSearch?: boolean;
   // EvidenceScope: Captures the methodology/boundaries of the source document
   // (e.g., WTW vs TTW, EU vs US standards, different time periods)
   evidenceScope?: EvidenceScope;
@@ -424,6 +432,7 @@ export interface TwoPanelSummary {
     }>;
     methodologyAssessment: string;
     overallVerdict: number;
+    confidence: number; // v2.6.28: Added missing confidence property
     analysisId: string;
   };
 }
