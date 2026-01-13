@@ -45,6 +45,25 @@ Stop-Gracefully -label "API" -cimProcesses $apiShells
 Stop-Gracefully -label "Web" -cimProcesses $webShells
 Write-Host ""
 
+# Ensure nothing is still holding the Next.js dev port (node.exe can outlive the shell).
+Write-Host "Checking for processes using port 3000..."
+$port3000 = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
+if ($port3000) {
+    foreach ($conn in $port3000) {
+        $procId = $conn.OwningProcess
+        try {
+            $proc = Get-Process -Id $procId -ErrorAction Stop
+            Write-Host "Killing process on port 3000: PID $procId ($($proc.ProcessName))" -ForegroundColor Yellow
+            Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+        } catch {
+            Write-Host "  Could not kill PID $procId : $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
+} else {
+    Write-Host "No process listening on port 3000."
+}
+Write-Host ""
+
 Write-Host "Starting API and Web services..."
 
 # Start API in new terminal (creates DB on startup if missing)
@@ -55,12 +74,31 @@ Start-Process -FilePath "powershell.exe" -ArgumentList @(
   "cd `"$PSScriptRoot\..\apps\api`"; `$env:ASPNETCORE_ENVIRONMENT='Development'; dotnet watch run"
 )
 
+# Propagate select env vars into the spawned Web dev-server shell explicitly.
+# (On Windows, relying on inherited environment across Start-Process can be unreliable in some setups.)
+# Also source apps/web/.env.local if present so settings are deterministic.
+$webEnvPrefix = ""
+$envLocalPath = Join-Path $PSScriptRoot "..\apps\web\.env.local"
+if (Test-Path $envLocalPath) {
+    Get-Content $envLocalPath | ForEach-Object {
+        if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$') {
+            $key = $matches[1]
+            $val = $matches[2].Trim('"', "'", ' ')
+            $webEnvPrefix += "`$env:$key='$val'; "
+        }
+    }
+}
+# Allow explicit shell env to override .env.local
+if ($env:FH_RUNNER_MAX_CONCURRENCY) {
+    $webEnvPrefix += "`$env:FH_RUNNER_MAX_CONCURRENCY='$($env:FH_RUNNER_MAX_CONCURRENCY)'; "
+}
+
 # Start Web in new terminal
 Write-Host "Starting Web..."
 Start-Process -FilePath "powershell.exe" -ArgumentList @(
   "-NoExit",
   "-Command",
-  "cd `"$PSScriptRoot\..\apps\web`"; npm run dev"
+  "cd `"$PSScriptRoot\..\apps\web`"; $webEnvPrefix npm run dev"
 )
 
 Write-Host ""
