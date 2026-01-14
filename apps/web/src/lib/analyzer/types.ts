@@ -100,27 +100,27 @@ export interface VerdictValidationResult {
  * TERMINOLOGY (CRITICAL - read before modifying this file):
  * ============================================================================
  *
- * "Context" / "AnalysisContext"
+ * "AnalysisContext" (top-level bounded analytical frame)
  *   = A bounded analytical frame that should be analyzed separately.
  *   = Formerly called "Proceeding" in the codebase.
  *   = Stored in `distinctProceedings` field (name kept for backward compatibility).
  *   = Shown in UI as "Contexts".
  *
- * "ArticleContext"
+ * "ArticleFrame"
  *   = Narrative/background framing of the input article.
  *   = NOT a reason to split into separate AnalysisContexts.
  *   = Stored in `proceedingContext` field (name kept for backward compatibility).
  *
- * "Scope" / "EvidenceScope"
+ * "EvidenceScope" (per-fact source scope)
  *   = Methodology/boundaries defined BY a source document.
  *   = Attached to individual facts as `fact.evidenceScope`.
- *   = Different from AnalysisContext! A fact's evidenceScope describes how
- *     the SOURCE computed its data (e.g., WTW methodology).
+ *   = Different from AnalysisContext! A fact's EvidenceScope describes how
+ *     the SOURCE computed its data (e.g., a specific methodology/boundary).
  *
  * SUMMARY:
- *   - "Context" in code = AnalysisContext (bounded analytical frame)
- *   - "Scope" in code = EvidenceScope (per-fact source methodology)
- *   - "ArticleContext" = narrative background (not a reason to split)
+ *   - Top-level split unit = AnalysisContext
+ *   - "EvidenceScope" in code = per-fact source methodology/boundaries
+ *   - "ArticleFrame" = narrative background (not a reason to split)
  *
  * JSON field names like `distinctProceedings`, `proceedingContext`, `relatedProceedingId`
  * MUST NOT be renamed (backward compatibility with persisted data).
@@ -128,9 +128,9 @@ export interface VerdictValidationResult {
  */
 
 /**
- * AnalysisContext: A bounded analytical frame requiring separate analysis
+ * AnalysisContext: A bounded analytical frame requiring separate analysis.
  *
- * Formerly called "Proceeding" - now unified under "Context" terminology.
+ * Formerly called "Proceeding".
  * This is a GENERIC interface that works across ALL domains (legal, scientific, regulatory, etc.)
  * Domain-specific details are stored in the flexible `metadata` object.
  *
@@ -141,7 +141,7 @@ export interface VerdictValidationResult {
  * - Temporal: Different time periods (2020 study vs 2024 study)
  * - Geographic: Different regions (California vs Texas laws)
  *
- * Note: Shown in UI as "Contexts". The word "Scope" is reserved for EvidenceScope.
+ * Note: Shown in UI as "Contexts".
  * @see EvidenceScope for per-fact source-defined scope metadata (different concept!)
  */
 export interface AnalysisContext {
@@ -225,7 +225,7 @@ export interface FactorAnalysis {
 }
 
 /**
- * ContextAnswer: The verdict/answer for a single AnalysisContext
+ * The verdict/answer for a single AnalysisContext (top-level bounded analytical frame)
  *
  * Note: Field names `proceedingId` and `proceedingName` are kept for
  * backward compatibility with persisted JSON data.
@@ -281,7 +281,7 @@ export interface ClaimUnderstanding {
 
   /**
    * AnalysisContexts: Bounded analytical frames detected from input.
-   * Each context is analyzed separately (e.g., TSE Electoral vs STF Criminal).
+   * Each context is analyzed separately.
    *
    * JSON field name "distinctProceedings" kept for backward compatibility.
    * @see AnalysisContext
@@ -290,7 +290,7 @@ export interface ClaimUnderstanding {
   requiresSeparateAnalysis: boolean;
 
   /**
-   * ArticleContext: Narrative/background framing of the input.
+   * ArticleFrame: Narrative/background framing of the input.
    * This is NOT an AnalysisContext - it's just background information.
    * NOT a reason to split into separate analysis contexts.
    *
@@ -425,7 +425,7 @@ export interface ArticleAnalysis {
   inputType: InputType;
 
   /**
-   * Multi-context indicator and contexts array.
+   * Multi-context indicator and per-context metadata array.
    * JSON field names kept for backward compatibility.
    */
   hasMultipleProceedings: boolean;

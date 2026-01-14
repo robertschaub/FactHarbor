@@ -65,15 +65,15 @@ function truthFromBand(band: "strong" | "partial" | "uncertain" | "refuted", con
 }
 ```
 
-## 2. Context (Bounded Analytical Frame)
+## 2. AnalysisContext (Bounded Analytical Frame)
 
-A **Context** (AnalysisContext) is a bounded analytical frame that should be analyzed separately. It replaces the previous terminology of "proceeding".
+A **AnalysisContext** is a bounded analytical frame that should be analyzed separately. It replaces the previous terminology of "proceeding".
 
-Note: "Scope" is reserved for **EvidenceScope** (per-fact source methodology/boundaries).
+Note: **EvidenceScope** is the *per-fact* source methodology/boundaries (`ExtractedFact.evidenceScope`). This section’s AnalysisContext refers to the *top-level* bounded analytical frame.
 
 ### Definition
 
-A Context is defined by:
+An AnalysisContext is defined by:
 - **Boundaries**: What's included/excluded (e.g., "vehicle-only", "full lifecycle")
 - **Methodology**: Standards used (e.g., "ISO 14040", "WTW analysis")
 - **Temporal**: Time period (e.g., "2020-2025", "January 2023")
@@ -81,7 +81,7 @@ A Context is defined by:
 - **Institution**: Court, agency, or organization (optional)
 - **Jurisdiction**: Geographic/legal jurisdiction (optional)
 
-### Context Types
+### AnalysisContext Types
 
 | Type | Examples |
 |------|----------|
@@ -92,7 +92,7 @@ A Context is defined by:
 
 ### Multi-Context Detection
 
-The system detects multiple contexts when an input requires separate analyses:
+The system detects multiple analysis contexts when an input requires separate analyses:
 
 ```typescript
 interface AnalysisContext {
@@ -111,10 +111,10 @@ interface AnalysisContext {
 }
 ```
 
-### Context Sources
+### AnalysisContext Sources
 
-Contexts are determined from:
-1. **Input analysis** (understandClaim phase): Explicit or implied contexts in user query
+Analysis contexts are determined from:
+1. **Input analysis** (understandClaim phase): Explicit or implied analysis contexts in user query
 2. **Evidence extraction** (extractFacts phase): Sources may define their own EvidenceScope via `evidenceScope`
 3. **Claim decomposition**: Claims tagged with `relatedProceedingId` (legacy field name)
 
@@ -124,10 +124,10 @@ When evidence defines an EvidenceScope that differs from the AnalysisContext (e.
 
 ### Design Decision: evidenceScope Kept Separate
 
-The `evidenceScope` field on facts is intentionally kept separate from top-level contexts. This enables:
-- **Provenance tracking**: Distinguishes context detected from input vs scope defined by evidence
-- **Mismatch detection**: Identifies when evidence scope differs from analysis context
-- **Verdict enrichment**: Notes scope metadata without modifying detected contexts
+The `evidenceScope` field on facts is intentionally kept separate from top-level analysis contexts. This enables:
+- **Provenance tracking**: Distinguishes analysis context detected from input vs EvidenceScope defined by evidence
+- **Mismatch detection**: Identifies when EvidenceScope differs from the analysis context
+- **Verdict enrichment**: Notes EvidenceScope metadata without modifying detected analysis contexts
 
 ## 3. Counter-Evidence Handling
 
@@ -159,7 +159,7 @@ interface ExtractedFact {
 
 **Function**: `applyGate4ToVerdicts` (line ~1018)
 
-Counter-evidence is scoped to relevant contexts:
+Counter-evidence is scoped to relevant analysis contexts:
 
 ```typescript
 // Count contradicting facts (criticism category)
@@ -173,7 +173,7 @@ const contradictingFactCount = facts.filter(f =>
 ).length;
 ```
 
-This prevents criticism of one context from penalizing claims about a different context.
+This prevents criticism of one analysis context from penalizing claims about a different analysis context.
 
 ### Evidence-Based Contestation
 
@@ -203,7 +203,7 @@ graph TD
     Facts[Extracted Facts] --> ClaimVerdicts[Claim Verdicts]
     ClaimVerdicts --> KeyFactors[Key Factor Verdicts]
     KeyFactors --> ContextAnswers[Context Answers]
-    ContextAnswers --> OverallAnswer[Overall Question Answer]
+    ContextAnswers --> OverallAnswer[Overall Answer]
     
     ClaimVerdicts --> ArticleVerdict[Article Verdict]
 ```
@@ -245,7 +245,7 @@ else supports = "neutral";
 
 **File**: `apps/web/src/lib/analyzer.ts` (line ~4700)
 
-Contexts aggregate key factors with contestation correction:
+Analysis contexts aggregate key factors with contestation correction:
 
 ```typescript
 // Calculate effective negatives (contested negatives are down-weighted)
@@ -264,7 +264,7 @@ if (answerTruthPct >= 72 && positiveFactors > effectiveNegatives) {
 
 **File**: `apps/web/src/lib/analyzer.ts` (line ~4796)
 
-Overall answer averages context answers (de-duplicated):
+Overall answer averages analysis-context answers (de-duplicated):
 
 ```typescript
 const avgTruthPct = Math.round(
@@ -441,7 +441,7 @@ FactHarbor's calculation system:
 
 1. **Scales verdicts** using a symmetric 7-point system (0-100%)
 2. **Distinguishes counter-evidence** from contestation and applies penalties
-3. **Aggregates hierarchically** from facts → claims → factors → contexts → overall
+3. **Aggregates hierarchically** from facts → claims → factors → analysis contexts → overall
 4. **Modulates by confidence** using truth bands
 5. **De-duplicates near-identical claims** to prevent double-counting
 6. **Handles dependencies** to avoid cascading false prerequisites

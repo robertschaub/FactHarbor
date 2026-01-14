@@ -14,11 +14,38 @@ import * as path from "path";
 // CONFIGURATION
 // ============================================================================
 
-// Write debug log to a fixed location that's easy to find.
+function findRepoRoot(startDir: string): string {
+  // We want a stable repo-root-relative debug log path regardless of the runtime CWD.
+  // In local dev, the Next.js dev server often runs with CWD=apps/web, while scripts/tests
+  // may run with CWD=repo root. Using process.cwd() directly can accidentally point to
+  // "apps/web/apps/web/debug-analyzer.log" and silently drop logs.
+  let dir = startDir;
+  for (let i = 0; i < 10; i++) {
+    try {
+      const hasAgents = fs.existsSync(path.join(dir, "AGENTS.md"));
+      const hasSln = fs.existsSync(path.join(dir, "FactHarbor.sln"));
+      // Use repo-root-specific markers (package.json exists in workspaces too).
+      if (hasAgents || hasSln) return dir;
+    } catch {
+      // ignore
+    }
+    const parent = path.dirname(dir);
+    if (!parent || parent === dir) break;
+    dir = parent;
+  }
+  return startDir;
+}
+
+// Exposed for unit tests (no production usage).
+export function __internalFindRepoRoot(startDir: string): string {
+  return findRepoRoot(startDir);
+}
+
+// Write debug log to a stable location that's easy to find (repo-root relative).
 // Additive override: FH_DEBUG_LOG_PATH can point elsewhere (e.g., custom paths).
 const DEBUG_LOG_PATH =
   process.env.FH_DEBUG_LOG_PATH ||
-  path.join(process.cwd(), "apps", "web", "debug-analyzer.log");
+  path.join(findRepoRoot(process.cwd()), "apps", "web", "debug-analyzer.log");
 
 const DEBUG_LOG_FILE_ENABLED =
   (process.env.FH_DEBUG_LOG_FILE ?? "true").toLowerCase() === "true";

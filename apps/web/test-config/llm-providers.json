@@ -1,7 +1,7 @@
 {
   "enabled": true,
   "inputType": "text",
-  "inputValue": "Bolsonaro judgment (trial) was fair and based on Brazil's law.",
+  "inputValue": "The court judgment was fair and based on applicable law.",
   "providers": [
     "openai",
     "claude",

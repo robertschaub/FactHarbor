@@ -69,8 +69,8 @@ Layout improvements in the "Summary" page:
  - Never show "Question asked"
  - At any verdict (also at Article Verdict): Confidence should allways be after verdict value like e.g. ✓ Mostly True 82% (80% confidence)
  - Please make sure styles of item titles and item labels and content are unified
- - Make sure displayed labels are aligned with the underlying data and are formatted for readybility (e.g. show label "Context" for ArticleContext data).
- - Rename "ArticleContext-by-ArticleContext Analysis" to "Contexts"
+ - Make sure displayed labels are aligned with the underlying data and are formatted for readability (e.g. show label "Frame" for ArticleFrame data).
+ - Rename "ArticleFrame-by-ArticleFrame Analysis" to "Contexts"
  - Further unify layout variants. E.g. at article it sometimes it sais "Overall Verdict", and sometimes it sais "Article verdict", instead it should just show "Verdict"
 ---
 ArticleSummary data:
@@ -94,7 +94,7 @@ LLM sometimes not aware about current time and recent information:
 Please detect when a verdict or claim comment statement does not recognize the current date and makes false comments like "temporal error" and "in the future from the current date" or "date discrepancy".
 - LLM often did not find very recent information e.g. that Blosonaro trial sentenca was 27 years. Make sure this problem is covered well.
 ---
-- We had renamed in code the article related terms previously used: Scope and Proceeding to ArticleContext. Important note: do not confuse with the EvidenceScope. Make sure tis is cconsistantly done. 
+- We use ArticleFrame for article narrative/background framing. Important note: do not confuse ArticleFrame with EvidenceScope (per-fact source scope). Make sure this is consistently done.
 ---
 - With single scope report, the layout is different than with multi scope report. Please generalize the layout, so that for single scope report, the same layout is used as with multi scope, but in the single scope case, omit the layout elements that are not needed for single scope.
 ---

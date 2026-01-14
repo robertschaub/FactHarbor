@@ -429,7 +429,7 @@ async function analyzeArticle(
     const articleVerdict = await akelService.synthesizeArticleVerdict({
         articleUrl,
         claims: claimVerdicts,
-        articleContext: await akelService.extractArticleContext(articleUrl)
+        articleFrame: await akelService.extractArticleFrame(articleUrl)
     });
 
     return articleVerdict;

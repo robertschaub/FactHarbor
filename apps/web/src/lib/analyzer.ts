@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.31
+ * FactHarbor POC1 Analyzer v2.6.32
  *
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -27,8 +27,9 @@
  * - v2.6.30: Complete Input Neutrality - removed detectedInputType override
  * - v2.6.30: Inputs now follow IDENTICAL analysis paths
  * - v2.6.31: Modularized - extracted debug, config modules
+ * - v2.6.32: Verdict structured-output resilience (recover from NoObjectGeneratedError + JSON-text fallback)
  *
- * @version 2.6.31
+ * @version 2.6.32
  * @date January 2026
  */
 
@@ -37,7 +38,7 @@ import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
-import { generateText, Output } from "ai";
+import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
@@ -48,6 +49,7 @@ import * as path from "path";
 
 // Modular imports
 import { debugLog, clearDebugLog, agentLog } from "./analyzer/debug";
+import { tryParseFirstJsonObject } from "./analyzer/json";
 import {
   CONFIG,
   getActiveConfig,
@@ -133,35 +135,35 @@ async function refineScopesFromEvidence(
       .default([]),
   });
 
-  const systemPrompt = `You are FactHarbor's EvidenceScope refinement engine.
+  const systemPrompt = `You are FactHarbor's AnalysisContext refinement engine.
 
 Terminology (critical):
-- ArticleContext: narrative/background framing of the article or input. ArticleContext is NOT a reason to split.
-- EvidenceScope (analysis scope): a bounded analytical frame that should be analyzed separately. You will output these as distinctProceedings.
-- Per-fact evidenceScope (source scope): methodology/boundaries/geography/temporal fields attached to individual facts.
+- ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
+- AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as distinctProceedings.
+- EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts (ExtractedFact.evidenceScope). This is NOT the same as AnalysisContext.
 
 Prompt synonyms:
-- You may use the words scope / bounded context / boundary as synonyms for EvidenceScope (analysis scope).
-- Avoid using the bare word "context" unless you explicitly mean ArticleContext or "bounded context" (EvidenceScope).
+- You may use the words scope / bounded context / boundary as synonyms for AnalysisContext.
+- Avoid using the bare word "context" unless you explicitly mean ArticleFrame or "bounded context" (AnalysisContext).
 
-Your job is to identify DISTINCT EVIDENCE SCOPES (bounded analytical frames) that are actually present in the EVIDENCE provided.
+Your job is to identify DISTINCT ANALYSIS CONTEXTS (bounded analytical frames) that are actually present in the EVIDENCE provided.
 
 CRITICAL RULES:
-- Scope relevance: every EvidenceScope MUST be directly relevant to the input's specific topic. Do not keep marginally related scopes.
+- Scope relevance: every AnalysisContext MUST be directly relevant to the input's specific topic. Do not keep marginally related contexts.
 - When in doubt, use fewer scopes rather than including marginally relevant ones.
-- Evidence-grounded only: every EvidenceScope MUST be supported by at least one factId from the list.
+- Evidence-grounded only: every AnalysisContext MUST be supported by at least one factId from the list.
 - Do NOT invent scopes based on guesswork or background knowledge.
 - Split into multiple scopes when the evidence indicates different boundaries, methods, time periods, institutions, jurisdictions, datasets, or processes that should be analyzed separately.
-- Do NOT split into multiple EvidenceScopes solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different jurisdictions/regulatory regimes, different datasets/studies, different measurement windows).
+- Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different jurisdictions/regulatory regimes, different datasets/studies, different measurement windows).
 - Also split when evidence clearly covers different phases/components/metrics that are not directly comparable (e.g., upstream vs downstream phases, production vs use-phase, system-wide vs component-level metrics, different denominators/normalizations).
 - Do NOT split into scopes just because there are pro vs con viewpoints. Viewpoints are not scopes.
 - Do NOT split into scopes purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting). Those are source types, not bounded analytical frames.
 - If you split, prefer frames that reflect methodology/boundaries/process-chain segmentation present in the evidence (e.g., end-to-end vs component-level; upstream vs downstream; production vs use-phase).
 - If the evidence does not clearly support multiple scopes, return exactly ONE scope.
-- Use neutral, generic labels (no domain-specific hardcoding), BUT ensure each EvidenceScope name reflects 1–3 specific identifying details found in the evidence (per-fact evidenceScope fields and/or the EvidenceScope metadata).
+- Use neutral, generic labels (no domain-specific hardcoding), BUT ensure each AnalysisContext name reflects 1–3 specific identifying details found in the evidence (per-fact EvidenceScope fields and/or the AnalysisContext metadata).
 - Different evidence reports may define DIFFERENT scopes. A single evidence report may contain MULTIPLE scopes. Do not restrict scopes to one-per-source.
 - Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
-- Non-example: do NOT create separate EvidenceScopes from ArticleContext narrative background (e.g., \"political context\", \"media discourse\") unless the evidence itself defines distinct analytical frames.
+- Non-example: do NOT create separate AnalysisContexts from ArticleFrame narrative background (e.g., \"political frame\", \"media discourse\") unless the evidence itself defines distinct analytical frames.
 - A scope with zero relevant claims/evidence should NOT exist.
 
 Return JSON only matching the schema.`;
@@ -627,8 +629,8 @@ function generateInverseClaimQuery(claim: string): string | null {
   const lowerClaim = claim.toLowerCase();
 
   // Pattern 1a: "Using X for Y is more Z than [using] W" - swap X and W
-  // Example: "Using hydrogen for cars is more efficient than using electricity"
-  // -> "Using electricity for cars is more efficient than hydrogen"
+  // Example: "Using Technology A for transport is more efficient than using Technology B"
+  // -> "Using Technology B for transport is more efficient than Technology A"
   const usingPattern = /using\s+(\w+(?:\s+\w+)?)\s+(?:for\s+\w+\s+)?(?:is|are)\s+(?:more\s+)?(\w+)\s+than\s+(?:using\s+)?(\w+(?:\s+\w+)?)/i;
   const usingMatch = claim.match(usingPattern);
   if (usingMatch) {
@@ -2072,10 +2074,10 @@ interface ExtractedFact {
   fromOppositeClaimSearch?: boolean;
   // EvidenceScope: Captures the methodology/boundaries of the source document
   evidenceScope?: {
-    name: string;           // Short label (e.g., "WTW", "TTW", "EU-LCA", "US jurisdiction")
-    methodology?: string;   // Standard/method referenced (e.g., "ISO 14040", "EU RED II")
+    name: string;           // Short label (e.g., "WTW", "TTW", "Lifecycle-A", "National jurisdiction")
+    methodology?: string;   // Standard/method referenced (e.g., "ISO 14040", "Standard XYZ")
     boundaries?: string;    // What's included/excluded (e.g., "Primary energy to vehicle motion")
-    geographic?: string;    // Geographic scope (e.g., "European Union", "California")
+    geographic?: string;    // Geographic scope (e.g., "Region A", "Region B")
     temporal?: string;      // Time period (e.g., "2020-2025", "FY2024")
   };
 }
@@ -2870,11 +2872,12 @@ async function understandClaim(
   const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT SCOPES (bounded analytical frames).
 
 SCOPE TERMINOLOGY (critical):
-- ArticleContext: narrative/background framing of the article or input. ArticleContext is NOT a reason to split.
-- EvidenceScope (analysis scope): a bounded analytical frame that should be analyzed separately. You will output these as distinctProceedings.
+- ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
+- AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as distinctProceedings.
+- EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts later in the pipeline. NOT the same as AnalysisContext.
 
 NOT DISTINCT SCOPES:
-- Different perspectives on the same event (e.g., "US view" vs "Brazil view") are NOT separate scopes by themselves.
+- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
 - Pro vs con viewpoints are NOT scopes.
 
 SCOPE RELEVANCE REQUIREMENT (CRITICAL):
@@ -2914,14 +2917,14 @@ The articleThesis should NEUTRALLY SUMMARIZE what the article claims, covering A
 - Include ALL major claims, not just one
 - Use neutral language ("claims that", "alleges that")
 - Keep the source attribution ("according to X", "allegedly from Y")
-- Example: "The article claims FDA official Prasad announced stricter vaccine regulations and alleges an internal review found child deaths linked to vaccines."
+- Example: "The article claims a regulator announced stricter rules and alleges an internal review found harms linked to a product."
 
 ## CRITICAL: CLAIM STRUCTURE ANALYSIS
 
 When extracting claims, identify their ROLE and DEPENDENCIES:
 
 ### Claim Roles:
-- **attribution**: WHO said it (person's identity, role) - e.g., "Vinay Prasad is CBER director"
+- **attribution**: WHO said it (person's identity, role) - e.g., "Person X is the agency director"
 - **source**: WHERE/HOW it was communicated (document type, channel) - e.g., "in an internal email"
 - **timing**: WHEN it happened - e.g., "in late November"
 - **core**: THE ACTUAL VERIFIABLE ASSERTION - MUST be isolated from source/attribution
@@ -2929,12 +2932,12 @@ When extracting claims, identify their ROLE and DEPENDENCIES:
 ### CRITICAL: ISOLATING CORE CLAIMS
 
 Core claims must be PURE FACTUAL ASSERTIONS without embedded source/attribution:
-- WRONG: "An internal FDA review found that 10 children died from vaccines" (embeds source)
-- CORRECT: "At least 10 children died because of COVID-19 vaccines" (pure factual claim)
+- WRONG: "An internal review found that 10 people were harmed by Product X" (embeds source)
+- CORRECT: "At least 10 people were harmed by Product X" (pure factual claim)
 
 The source attribution belongs in a SEPARATE claim:
-- SC1: "An internal FDA review exists" (source claim)
-- SC2: "At least 10 children died because of COVID-19 vaccines" (core claim, depends on SC1)
+- SC1: "An internal review exists" (source claim)
+- SC2: "At least 10 people were harmed by Product X" (core claim, depends on SC1)
 
 ### CRITICAL: SEPARATING ATTRIBUTION FROM EVALUATIVE CONTENT
 
@@ -2943,24 +2946,24 @@ The source attribution belongs in a SEPARATE claim:
 2. The CONTENT of what they said (the actual claim to verify - is it TRUE?)
 
 **NEVER CREATE CLAIMS LIKE THESE** (they conflate attribution with content):
-❌ WRONG: "Dr. Prasad criticized FDA processes as based on weak and misleading science"
+❌ WRONG: "A spokesperson criticized an agency's processes as based on weak and misleading evidence"
 ❌ WRONG: "Expert claims the treatment is dangerous"
 ❌ WRONG: "Study found that X causes Y"
 
 **ALWAYS SPLIT INTO TWO CLAIMS:**
 
-Example 1: "Dr. Prasad criticized FDA processes as based on weak science"
-✅ SC-A: "Dr. Prasad has publicly criticized past FDA processes"
+Example 1: "A spokesperson criticized an agency's processes as based on weak evidence"
+✅ SC-A: "A spokesperson has publicly criticized past agency processes"
    → claimRole: "attribution", type: "factual", centrality: LOW
-   → Verifies: Did Prasad make critical statements about FDA?
-✅ SC-B: "Past FDA processes were based on weak and misleading science"
+   → Verifies: Did the spokesperson make critical statements about the agency?
+✅ SC-B: "Past agency processes were based on weak and misleading evidence"
    → claimRole: "core", type: "evaluative", centrality: HIGH, dependsOn: ["SC-A"]
    → Verifies: Is this assessment ACCURATE based on evidence?
 
-Example 2: "An internal review found 10 children died from vaccines"
-✅ SC-A: "An internal FDA review exists making claims about child deaths"
+Example 2: "An internal review found 10 people were harmed by Product X"
+✅ SC-A: "An internal review exists making claims about harms"
    → claimRole: "source", type: "factual", centrality: LOW
-✅ SC-B: "At least 10 children died because of COVID-19 vaccines"
+✅ SC-B: "At least 10 people were harmed by Product X"
    → claimRole: "core", type: "factual", centrality: HIGH, dependsOn: ["SC-A"]
    → This is THE claim readers care about - is it TRUE?
 
@@ -2973,10 +2976,10 @@ Example 2: "An internal review found 10 children died from vaccines"
 ### Claim Dependencies (dependsOn):
 Core claims often DEPEND on attribution/source/timing claims being true.
 
-EXAMPLE: "CBER director Prasad claimed in an internal memo that 10 children died from vaccines"
-- SC1 (attribution): "Vinay Prasad is CBER director" → claimRole: "attribution", dependsOn: []
-- SC2 (source): "Prasad sent an internal memo making claims about child deaths" → claimRole: "source", dependsOn: ["SC1"]
-- SC3 (core): "At least 10 children died because of COVID-19 vaccines" → claimRole: "core", dependsOn: ["SC2"], isCentral: true
+EXAMPLE: "An agency director claimed in an internal memo that 10 people were harmed by Product X"
+- SC1 (attribution): "Person X is agency director" → claimRole: "attribution", dependsOn: []
+- SC2 (source): "An internal memo exists making claims about harms" → claimRole: "source", dependsOn: ["SC1"]
+- SC3 (core): "At least 10 people were harmed by Product X" → claimRole: "core", dependsOn: ["SC2"], isCentral: true
 
 If SC2 is FALSE (no such memo exists), then SC3 has NO evidential basis from this source.
 
@@ -2990,7 +2993,7 @@ For EACH claim, assess these three attributes (high/medium/low):
 - LOW: Pure opinion with no factual component, or not independently verifiable
 
 NOTE: Broad institutional claims ARE verifiable (checkWorthiness: HIGH):
-- "The FDA has acted on weak science" → Can check documented cases, GAO reports, expert analyses
+- "The regulator has acted on weak evidence in the past" → Can check documented cases, audits, expert analyses
 - "The government has lied about X" → Can check historical record, declassified documents
 - "Company X has a history of fraud" → Can check court records, SEC filings, news archives
 These are not opinions - they're historical assertions that can be fact-checked.
@@ -3025,17 +3028,17 @@ Only CORE claims (claimRole: "core") can have centrality: HIGH
 
 **CRITICAL: Policy/Action claims that DEPEND on source claims are NOT central**
 If a policy claim depends on a source claim being true, it inherits LOW centrality:
-- "FDA will impose stricter regulations" (depends on email existing) → centrality: LOW
+- "The regulator will impose stricter rules" (depends on memo/email existing) → centrality: LOW
 - "Company will lay off 1000 workers" (depends on memo existing) → centrality: LOW
 These are CONDITIONAL claims - they're only meaningful IF the source exists.
 
 The CENTRAL claims are the **factual assertions about real-world impact**:
-- "10 children died from vaccines" → centrality: HIGH (factual impact claim)
-- "Past FDA processes were based on weak science" → centrality: HIGH (evaluative but verifiable)
+- "At least 10 people were harmed by Product X" → centrality: HIGH (factual impact claim)
+- "Past agency processes were based on weak evidence" → centrality: HIGH (evaluative but verifiable)
 
 **RULE: When multiple claims compete for centrality, ask: "Which claim, if false, would completely undermine the article's credibility?"**
-- If "FDA will impose stricter regulations" is false → article is wrong about policy
-- If "10 children died from vaccines" is false → article is spreading dangerous misinformation
+- If "The regulator will impose stricter rules" is false → article is wrong about policy
+- If "At least 10 people were harmed by Product X" is false → article is spreading serious misinformation
 The second is MORE CENTRAL because it has greater real-world harm potential.
 
 **isCentral = true** if centrality is "high"
@@ -3081,11 +3084,11 @@ Only assign centrality: "high" when the claim:
 - ❌ NOT CENTRAL: "The analysis framework is appropriate" (meta-analysis)
 - ❌ NOT CENTRAL: "The comparison includes/excludes certain factors" (methodological scope)
 
-**IMPORTANT**: For comparative claims, EACH distinct aspect of the comparison that directly addresses the thesis should have centrality="high". For "hydrogen vs electricity efficiency", claims about well-to-wheel efficiency, production efficiency, AND expert consensus are ALL central because they each address the efficiency thesis from different angles.
+**IMPORTANT**: For comparative claims, EACH distinct aspect of the comparison that directly addresses the thesis should have centrality="high". For "Technology A vs Technology B efficiency", claims about end-to-end efficiency, production efficiency, AND expert consensus can all be central because they address the thesis from different angles.
 
 **Examples of CENTRAL claims (centrality = "high")**:
 - ✓ "The trial was fair and impartial" (PRIMARY evaluative thesis)
-- ✓ "The vaccine causes serious side effects" (PRIMARY factual thesis)
+- ✓ "The product causes serious side effects" (PRIMARY factual thesis)
 - ✓ "The policy violated constitutional rights" (PRIMARY legal thesis)
 
 **Rule of thumb**: In an analysis of "Was X fair?", only the fairness conclusion itself is central. All supporting facts, sources, dates, and background are NOT central.
@@ -3112,20 +3115,20 @@ NOT "high" for:
 
 **CRITICAL DISTINCTION**:
 - "Was the trial fair?" → claims about the trial's fairness = "direct"
-- "Was the trial fair?" → claims about US reactions/sanctions to the trial = "tangential"
+- "Was the trial fair?" → claims about foreign reactions/sanctions to the trial = "tangential"
 - The thesis is about the TRIAL, not about how others REACTED to it
 
-**Examples for input "The Bolsonaro judgment was fair and based on Brazil's law"**:
+**Examples for input "The court judgment was fair and based on applicable law"**:
 
 ✓ thesisRelevance="direct" (evaluates the THESIS):
 - "The trial followed due process" → directly tests fairness
 - "The evidence was properly evaluated" → directly tests fairness
-- "Brazilian legal standards were applied" → directly tests legal basis
+- "Applicable legal standards were applied" → directly tests legal basis
 
 ✗ thesisRelevance="tangential" (does NOT evaluate the thesis):
-- "US tariffs were proportionate" → US reaction, not the trial itself
-- "US sanctions were justified" → US reaction, not the trial itself
-- "Brazil's foreign relations deteriorated" → consequence, not the trial itself
+- "Foreign trade restrictions were proportionate" → reaction, not the judgment itself
+- "Foreign sanctions were justified" → reaction, not the judgment itself
+- "International relations deteriorated" → consequence, not the judgment itself
 
 **Rule**: If you can rephrase the claim as "The thesis is true/false BECAUSE [claim]" = direct
           If the claim is "BECAUSE the thesis is true/false, [consequence]" = tangential
@@ -3134,33 +3137,33 @@ NOT "high" for:
 
 **Examples:**
 
-"At least 10 children died because of COVID-19 vaccines"
+"At least 10 people were harmed by Product X"
 → checkWorthiness: HIGH (specific factual claim, readers want proof)
-→ harmPotential: HIGH (public health, vaccine safety)
+→ harmPotential: HIGH (public safety)
 → centrality: HIGH (core assertion of the article) ← HIGH
 → isCentral: TRUE (centrality is HIGH)
 
-"FDA will require randomized trials for all vaccines"
+"The regulator will require stricter testing for all products"
 → checkWorthiness: HIGH (policy claim that can be verified)
-→ harmPotential: HIGH (affects drug development, public health)
+→ harmPotential: HIGH (affects safety/compliance, public impact)
 → centrality: HIGH (major policy change claim) ← HIGH
 → isCentral: TRUE (centrality is HIGH)
 
-"Prasad is CBER director"
+"Person X is the agency director"
 → claimRole: attribution
 → checkWorthiness: MEDIUM (verifiable but routine)
 → harmPotential: LOW (credential, not harmful if wrong)
 → centrality: LOW (attribution, not the main point)
 → isCentral: FALSE (centrality is not HIGH)
 
-"An internal email from Dr. Prasad exists stating the FDA will impose stricter regulations"
+"An internal memo exists stating the regulator will impose stricter rules"
 → claimRole: source (establishes document existence)
 → checkWorthiness: HIGH (verifiable - does such email exist?)
 → harmPotential: MEDIUM (affects credibility of subsequent claims)
 → centrality: LOW ← MUST BE LOW - this is a source claim, not the core argument!
 → isCentral: FALSE
 → NOTE: Even though this claim is important as a prerequisite, it's NOT central to the ARGUMENT.
-→ The argument is about FDA policy, not about email existence.
+→ The argument is about the policy change, not about memo existence.
 
 "The email was sent on November 28"
 → checkWorthiness: LOW (timing detail) ← LOW = EXCLUDE FROM INVESTIGATION
@@ -3169,9 +3172,9 @@ NOT "high" for:
 → isCentral: FALSE
 → NOTE: This claim should NOT be investigated or displayed (checkWorthiness is LOW)
 
-"The FDA has acted on weak and misleading science in the past"
-→ checkWorthiness: HIGH (historical claim, verifiable via documented cases, GAO reports)
-→ harmPotential: HIGH (public health, regulatory trust) ← HIGH
+"The regulator has acted on weak and misleading evidence in the past"
+→ checkWorthiness: HIGH (historical claim, verifiable via documented cases, audits, expert analyses)
+→ harmPotential: HIGH (public safety, regulatory trust) ← HIGH
 → centrality: MEDIUM (supports main argument but not the core claim)
 → isCentral: FALSE (centrality is not HIGH - supporting evidence, not the core thesis)
 
@@ -3183,11 +3186,11 @@ NOT "high" for:
 
 ### EXAMPLE: Attribution vs Evaluative Content Split
 
-Original text: "Dr. Prasad criticized FDA processes as based on weak science"
+Original text: "A spokesperson criticized agency processes as based on weak evidence"
 
 CORRECT claim extraction (2 separate claims):
 
-SC5: "Dr. Prasad has publicly criticized past FDA processes"
+SC5: "A spokesperson has publicly criticized past agency processes"
 → type: factual (did he criticize? YES/NO)
 → claimRole: attribution
 → checkWorthiness: MEDIUM (routine verification)
@@ -3196,14 +3199,14 @@ SC5: "Dr. Prasad has publicly criticized past FDA processes"
 → isCentral: FALSE
 → dependsOn: []
 
-SC6: "Past FDA processes were based on weak and misleading science"
+SC6: "Past agency processes were based on weak and misleading evidence"
 → type: evaluative (is this assessment accurate?)
 → claimRole: core
-→ checkWorthiness: HIGH (historical claim about FDA, verifiable)
+→ checkWorthiness: HIGH (historical claim about the agency, verifiable)
 → harmPotential: HIGH (public health, regulatory trust)
 → centrality: HIGH (core evaluative assertion)
 → isCentral: TRUE
-→ dependsOn: ["SC5"] (claim originates from Prasad's criticism)
+→ dependsOn: ["SC5"] (claim originates from the spokesperson's criticism)
 
 NOTE: SC5 may be TRUE (he did criticize) while SC6 may fall in the UNVERIFIED or LEANING-TRUE bands (43-71%).
 The system must verify BOTH: (1) did he say it? AND (2) is what he said accurate?
@@ -3225,10 +3228,10 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
 - Different jurisdictional processes (e.g., state court vs federal court)
 - Different analytical methodologies or boundaries (e.g., broad-boundary vs narrow-boundary vs mid-boundary efficiency analysis)
 - Different measurement boundaries (e.g., vehicle-only vs full-lifecycle)
-- Different regulatory frameworks (e.g., EU vs US regulations)
+- Different regulatory frameworks (e.g., Jurisdiction A vs Jurisdiction B regulations)
 
 ### IMPORTANT: What is NOT a distinct scope
-- Different national/political perspectives on the SAME event (e.g., "Venezuela's view" vs "US view")
+- Different national/political perspectives on the SAME event (e.g., "Country A view" vs "Country B view")
 - Different stakeholder viewpoints on a single topic
 - Contested interpretations of the same event
 - Pro vs con arguments about the same topic
@@ -3239,19 +3242,19 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
 ### GENERIC EXAMPLES - MUST DETECT MULTIPLE SCOPES:
 
 **Legal Domain:**
-1. **CTX_TSE**: Electoral proceeding
-   - subject: Electoral fraud allegations
+1. **SCOPE_COURT_A**: Legal proceeding A
+   - subject: Case A allegations
    - temporal: 2024
    - status: concluded
-   - outcome: Ineligibility ruling
-   - metadata: { institution: "Superior Electoral Court", charges: ["Electoral fraud"], decisionMakers: [...] }
+   - outcome: Ruling issued
+   - metadata: { institution: "Court A", charges: [...], decisionMakers: [...] }
 
-2. **CTX_STF**: Criminal proceeding
-   - subject: Coup attempt charges
+2. **SCOPE_COURT_B**: Legal proceeding B
+   - subject: Case B allegations
    - temporal: 2024
-   - status: concluded
-   - outcome: Prison sentence
-   - metadata: { institution: "Supreme Federal Court", charges: ["Coup attempt"], decisionMakers: [...] }
+   - status: ongoing
+   - outcome: Unresolved
+   - metadata: { institution: "Court B", charges: [...], decisionMakers: [...] }
 
 **Scientific Domain:**
 1. **CTX_BOUNDARY_A**: Narrow boundary analysis
@@ -3268,10 +3271,9 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - outcome: Example numeric estimate
    - metadata: { methodology: "Standard Y", boundaries: "Broad boundary", geographic: "Region A" }
 
-**CRITICAL: metadata.decisionMakers field is IMPORTANT for legal/regulatory contexts!**
-- Extract ALL key decision-makers or primary actors mentioned or known
-- Use your background knowledge to fill in known decision-makers for well-documented cases
-- This enables cross-scope conflict of interest detection
+**CRITICAL: metadata.decisionMakers field**
+- Extract key decision-makers or primary actors only when they are explicitly mentioned in the input or evidence.
+- Do NOT rely on background knowledge for names/roles (avoid hallucination).
 
 Set requiresSeparateAnalysis = true when multiple scopes are detected.
 
@@ -3331,15 +3333,15 @@ ${CONFIG.keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "
 
 **CRITICAL: factor MUST be abstract, NOT claim text**:
 - GOOD: "Energy efficiency comparison", "Expert consensus", "Procedural fairness"
-- BAD: "Professor David Cebon states hydrogen cars need 3x more electricity" (TOO SPECIFIC)
-- BAD: "Multiple industry experts say BEVs are more efficient" (CONTAINS ATTRIBUTION)
-- BAD: "The well-to-wheel efficiency of hydrogen exceeds electric" (THIS IS A CLAIM)
+- BAD: "A professor claims Technology A needs 3x more input than Technology B" (TOO SPECIFIC)
+- BAD: "Multiple experts say Option A is more efficient" (CONTAINS ATTRIBUTION)
+- BAD: "Technology A is more efficient than Technology B" (THIS IS A CLAIM)
 
 KeyFactors are CATEGORIES for evaluation, NOT the claims themselves. Specific claims belong in subClaims array.
 
 **EXAMPLES**:
 
-For "The Bolsonaro trial was fair."
+For "The trial was fair."
 [
   {
     "id": "KF1",
@@ -3361,24 +3363,24 @@ For "The Bolsonaro trial was fair."
   }
 ]
 
-For "This vaccine causes autism."
+For "This product causes a specific harm."
 [
   {
     "id": "KF1",
-    "evaluationCriteria": "Is there documented scientific evidence of a causal mechanism linking vaccines to autism?",
+    "evaluationCriteria": "Is there documented evidence of a plausible causal mechanism linking the product to the claimed harm?",
     "factor": "Causal Mechanism",
     "category": "factual"
   },
   {
     "id": "KF2",
-    "evaluationCriteria": "Do controlled studies and clinical trials support this causal relationship?",
-    "factor": "Clinical Evidence",
+    "evaluationCriteria": "Do controlled studies and high-quality analyses support this causal relationship?",
+    "factor": "Controlled Evidence",
     "category": "evidential"
   },
   {
     "id": "KF3",
-    "evaluationCriteria": "What does the scientific consensus and expert opinion conclude about this relationship?",
-    "factor": "Scientific Consensus",
+    "evaluationCriteria": "What does the relevant expert community conclude about this relationship?",
+    "factor": "Expert Consensus",
     "category": "evaluative"
   }
 ]
@@ -3488,7 +3490,7 @@ For "This vaccine causes autism."
 
   const tryJsonTextFallback = async () => {
     debugLog("understandClaim: FALLBACK JSON TEXT ATTEMPT");
-    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- ArticleContext is narrative background; do NOT create separate scopes from perspectives.\n- distinctProceedings represents EvidenceScopes (analysis scopes).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- distinctProceedings\n- requiresSeparateAnalysis\n- proceedingContext\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
+    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- ArticleFrame is narrative background; do NOT create separate AnalysisContexts from framing/perspectives.\n- distinctProceedings represents AnalysisContexts (top-level bounded analytical frames).\n- EvidenceScope is per-fact source-defined scope metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- distinctProceedings\n- requiresSeparateAnalysis\n- proceedingContext\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
     const llmTimeoutMsRaw = parseInt(process.env.FH_UNDERSTAND_LLM_TIMEOUT_MS || "600000", 10);
     const llmTimeoutMs = Number.isFinite(llmTimeoutMsRaw)
       ? Math.max(60000, Math.min(3600000, llmTimeoutMsRaw))
@@ -3567,7 +3569,7 @@ CRITICAL: MULTI-SCOPE DETECTION
 - If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.
 
 NOT DISTINCT SCOPES:
-- Different perspectives on the same event (e.g., "US view" vs "Brazil view") are NOT separate scopes by themselves.
+- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
 - Pro vs con viewpoints are NOT scopes.
 
 SCOPE RELEVANCE REQUIREMENT (CRITICAL):
@@ -4009,7 +4011,7 @@ async function requestSupplementalSubClaims(
 }
 
 /**
- * Best-effort: ask the model to (re)consider whether there are multiple distinct contexts/threads.
+ * Best-effort: ask the model to (re)consider whether there are multiple distinct AnalysisContexts.
  * This is intentionally generic and only applied when the initial understanding appears under-split.
  */
 async function requestSupplementalScopes(
@@ -4029,12 +4031,12 @@ Return ONLY a single JSON object with keys:
 - requiresSeparateAnalysis: boolean
 
 CRITICAL:
-- Detect whether the input mixes 2+ distinct contexts/threads (e.g., different events, phases, institutions, jurisdictions, timelines, or processes).
-- Only split when there are clearly 2+ distinct contexts that would benefit from separate analysis.
-- If there is only 1 context, return an empty array or a 1-item array and set requiresSeparateAnalysis=false.
+- Detect whether the input mixes 2+ distinct AnalysisContexts (e.g., different events, phases, institutions, jurisdictions, timelines, or processes).
+- Only split when there are clearly 2+ distinct scopes that would benefit from separate analysis.
+- If there is only 1 scope, return an empty array or a 1-item array and set requiresSeparateAnalysis=false.
 
 NOT DISTINCT SCOPES:
-- Different perspectives on the same event (e.g., "US view" vs "Brazil view") are NOT separate contexts/scopes by themselves.
+- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
 - Pro vs con viewpoints are NOT scopes.
 
 SCOPE RELEVANCE REQUIREMENT (CRITICAL):
@@ -4971,9 +4973,9 @@ const FACT_SCHEMA = z.object({
       // NEW v2.6.29: Does this fact support or contradict the ORIGINAL user claim?
       claimDirection: z.enum(["supports", "contradicts", "neutral"]),
       // EvidenceScope: Captures the methodology/boundaries of the source document
-      // (e.g., WTW vs TTW, EU vs US standards, different time periods)
+      // (e.g., WTW vs TTW, Jurisdiction A vs Jurisdiction B standards, different time periods)
       evidenceScope: z.object({
-        name: z.string(),           // Short label (e.g., "WTW", "TTW", "EU-LCA")
+        name: z.string(),           // Short label (e.g., "WTW", "TTW", "Lifecycle-A")
         methodology: z.string(),    // Standard/method (empty string if not applicable)
         boundaries: z.string(),     // What's included/excluded (empty string if not applicable)
         geographic: z.string(),     // Geographic scope (empty string if not applicable)
@@ -5035,14 +5037,14 @@ and set relatedProceedingId accordingly. Do not omit key numeric outcomes (durat
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${originalClaimSection}
 
-## SCOPE/CONTEXT EXTRACTION
+## EVIDENCE SCOPE EXTRACTION (per-fact EvidenceScope)
 
-Evidence documentation typically defines its scope/context. Extract this when present:
+Evidence documents often define their EvidenceScope (methodology/boundaries/geography/temporal). Extract this when present:
 
 **Look for explicit scope definitions**:
 - Methodology: "This study uses a specific analysis method", "Based on ISO 14040 LCA"
 - Boundaries: "From primary energy to vehicle motion", "Excluding manufacturing"
-- Geographic: "EU market", "California regulations", "US jurisdiction"
+- Geographic: "Region A market", "Region B regulations", "national jurisdiction"
 - Temporal: "2020-2025 data", "FY2024", "as of March 2024"
 
 **Set evidenceScope when the source defines its analytical frame**:
@@ -5235,6 +5237,108 @@ const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
   ),
 });
 
+// Lenient schemas used ONLY for recovery/parsing when the SDK throws NoObjectGeneratedError.
+// Important: use `.catch()` instead of `.optional()` to keep OpenAI JSON schema generation happy.
+const DEFAULT_KEY_FACTOR_LENIENT: KeyFactor = {
+  factor: "",
+  supports: "neutral",
+  explanation: "",
+  isContested: false,
+  contestedBy: "",
+  contestationReason: "",
+  factualBasis: "unknown",
+};
+
+const KEY_FACTOR_SCHEMA_LENIENT = z
+  .object({
+    factor: z.string().catch(""),
+    supports: z.enum(["yes", "no", "neutral"]).catch("neutral"),
+    explanation: z.string().catch(""),
+    isContested: z.boolean().catch(false),
+    contestedBy: z.string().catch(""),
+    contestationReason: z.string().catch(""),
+    factualBasis: z
+      .enum(["established", "disputed", "alleged", "opinion", "unknown"])
+      .catch("unknown"),
+  })
+  .catch(DEFAULT_KEY_FACTOR_LENIENT);
+
+const DEFAULT_VERDICT_SUMMARY_LENIENT = {
+  answer: 50,
+  confidence: 50,
+  shortAnswer: "",
+  nuancedAnswer: "",
+  keyFactors: [] as KeyFactor[],
+  calibrationNote: "",
+};
+
+const VERDICT_SUMMARY_SCHEMA_LENIENT = z
+  .object({
+    answer: z.number().min(0).max(100).catch(50),
+    confidence: z.number().min(0).max(100).catch(50),
+    shortAnswer: z.string().catch(""),
+    nuancedAnswer: z.string().catch(""),
+    keyFactors: z.array(KEY_FACTOR_SCHEMA_LENIENT).catch([]),
+    calibrationNote: z.string().catch(""),
+  })
+  .catch(DEFAULT_VERDICT_SUMMARY_LENIENT);
+
+const DEFAULT_PROCEEDING_ANSWER_LENIENT = {
+  proceedingId: "",
+  proceedingName: "",
+  answer: 50,
+  confidence: 50,
+  shortAnswer: "",
+  keyFactors: [] as KeyFactor[],
+};
+
+const PROCEEDING_ANSWER_SCHEMA_LENIENT = z
+  .object({
+    proceedingId: z.string().catch(""),
+    proceedingName: z.string().catch(""),
+    answer: z.number().min(0).max(100).catch(50),
+    confidence: z.number().min(0).max(100).catch(50),
+    shortAnswer: z.string().catch(""),
+    keyFactors: z.array(KEY_FACTOR_SCHEMA_LENIENT).catch([]),
+  })
+  .catch(DEFAULT_PROCEEDING_ANSWER_LENIENT);
+
+const DEFAULT_CLAIM_VERDICT_MULTI_SCOPE_LENIENT = {
+  claimId: "",
+  verdict: 50,
+  confidence: 50,
+  riskTier: "B" as const,
+  reasoning: "",
+  supportingFactIds: [] as string[],
+  relatedProceedingId: "",
+};
+
+const CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT = z
+  .object({
+    claimId: z.string().catch(""),
+    verdict: z.number().min(0).max(100).catch(50),
+    confidence: z.number().min(0).max(100).catch(50),
+    riskTier: z.enum(["A", "B", "C"]).catch("B"),
+    reasoning: z.string().catch(""),
+    supportingFactIds: z.array(z.string()).catch([]),
+    relatedProceedingId: z.string().catch(""),
+  })
+  .catch(DEFAULT_CLAIM_VERDICT_MULTI_SCOPE_LENIENT);
+
+const VERDICTS_SCHEMA_MULTI_SCOPE_LENIENT = z
+  .object({
+    verdictSummary: VERDICT_SUMMARY_SCHEMA_LENIENT,
+    proceedingAnswers: z.array(PROCEEDING_ANSWER_SCHEMA_LENIENT).catch([]),
+    proceedingSummary: z.string().catch(""),
+    claimVerdicts: z.array(CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT).catch([]),
+  })
+  .catch({
+    verdictSummary: DEFAULT_VERDICT_SUMMARY_LENIENT,
+    proceedingAnswers: [],
+    proceedingSummary: "",
+    claimVerdicts: [],
+  });
+
 const VERDICTS_SCHEMA_SIMPLE = z.object({
   verdictSummary: z.object({
     answer: z.number().min(0).max(100),
@@ -5410,7 +5514,7 @@ async function generateMultiScopeVerdicts(
   );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
-  const systemPromptBase = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS (also called SCOPES) separately.
+  const systemPromptBase = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT AnalysisContexts separately when provided.
 
 ## CRITICAL: TEMPORAL REASONING
 
@@ -5424,13 +5528,13 @@ async function generateMultiScopeVerdicts(
 - If a date seems inconsistent, verify it against the current date before making judgments
 - When in doubt about temporal relationships, use the evidence from sources rather than making assumptions
 
-## SCOPE/CONTEXT-AWARE EVALUATION
+## EVIDENCE-SCOPE-AWARE EVALUATION
 
-Evidence may come from sources with DIFFERENT analytical scopes (e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
+Evidence may come from sources with DIFFERENT EvidenceScopes (per-fact source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
-- **Check scope alignment**: Are facts being compared from compatible scopes?
-- **Flag scope mismatches**: Different scopes are NOT directly comparable
-- **Note in reasoning**: When scope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
+- **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?
+- **Flag EvidenceScope mismatches**: Different EvidenceScopes are NOT directly comparable
+- **Note in reasoning**: When EvidenceScope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
 
 ## CRITICAL: RATING DIRECTION
 
@@ -5587,8 +5691,129 @@ Provide SEPARATE answers for each scope.`;
     },
   ];
 
+  const recoverFromNoObjectGeneratedError = (
+    err: any,
+    attemptLabel: string,
+  ): z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE> | null => {
+    if (!NoObjectGeneratedError.isInstance(err)) return null;
+
+    const cause = (err as any)?.cause as any;
+    const candidates: string[] = [];
+    if (typeof err.text === "string" && err.text.trim()) candidates.push(err.text);
+    if (typeof cause?.stack === "string" && cause.stack.trim())
+      candidates.push(cause.stack);
+    if (typeof cause?.message === "string" && cause.message.trim())
+      candidates.push(cause.message);
+
+    for (const c of candidates) {
+      const obj = tryParseFirstJsonObject(c);
+      if (!obj) continue;
+
+      // Try strict first; if it still fails, accept a leniently-normalized version.
+      const strict = VERDICTS_SCHEMA_MULTI_SCOPE.safeParse(obj);
+      if (strict.success) {
+        debugLog("generateMultiScopeVerdicts: RECOVERED strict object from NoObjectGeneratedError", {
+          attempt: attemptLabel,
+          finishReason: err.finishReason,
+          hadText: !!err.text,
+        });
+        return strict.data;
+      }
+
+      const lenient = VERDICTS_SCHEMA_MULTI_SCOPE_LENIENT.safeParse(obj);
+      if (lenient.success) {
+        debugLog("generateMultiScopeVerdicts: RECOVERED lenient object from NoObjectGeneratedError", {
+          attempt: attemptLabel,
+          finishReason: err.finishReason,
+          hadText: !!err.text,
+        });
+        return lenient.data as any;
+      }
+
+      debugLog("generateMultiScopeVerdicts: Recovered JSON but schema parse failed", {
+        attempt: attemptLabel,
+        finishReason: err.finishReason,
+        strictIssues: strict.success ? [] : strict.error.issues?.slice(0, 10),
+        lenientIssues: lenient.success ? [] : lenient.error.issues?.slice(0, 10),
+      });
+    }
+
+    return null;
+  };
+
+  const tryJsonTextFallback = async (): Promise<
+    z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE> | null
+  > => {
+    debugLog("generateMultiScopeVerdicts: FALLBACK JSON TEXT ATTEMPT");
+    const system =
+      systemPrompt +
+      `
+
+## OUTPUT FORMAT (CRITICAL)
+Return ONLY a single JSON object. Do NOT include markdown. Do NOT include any text outside JSON.
+
+The JSON object MUST include these top-level keys:
+- verdictSummary
+- proceedingAnswers
+- proceedingSummary
+- claimVerdicts`;
+
+    try {
+      const result: any = await generateText({
+        model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
+        ],
+        temperature: getDeterministicTemperature(0.3),
+        maxOutputTokens: 4096,
+      });
+      state.llmCalls++;
+
+      const txt = result?.text as string | undefined;
+      if (!txt || typeof txt !== "string") {
+        debugLog("generateMultiScopeVerdicts: JSON fallback missing text", {
+          resultKeys: result ? Object.keys(result) : [],
+        });
+        return null;
+      }
+
+      const obj = tryParseFirstJsonObject(txt);
+      if (!obj) {
+        debugLog("generateMultiScopeVerdicts: JSON fallback could not find JSON object", {
+          textSnippet: txt.slice(0, 800),
+        });
+        return null;
+      }
+
+      const strict = VERDICTS_SCHEMA_MULTI_SCOPE.safeParse(obj);
+      if (strict.success) return strict.data;
+
+      const lenient = VERDICTS_SCHEMA_MULTI_SCOPE_LENIENT.safeParse(obj);
+      if (lenient.success) return lenient.data as any;
+
+      debugLog("generateMultiScopeVerdicts: JSON fallback safeParse failed", {
+        strictIssues: strict.error.issues?.slice(0, 10),
+        lenientIssues: lenient.error.issues?.slice(0, 10),
+      });
+      return null;
+    } catch (err: any) {
+      const errMsg = err?.message || String(err);
+      debugLog("generateMultiScopeVerdicts: JSON fallback ERROR", {
+        error: errMsg,
+        stack: err instanceof Error ? err.stack?.split("\n").slice(0, 8).join("\n") : undefined,
+      });
+      state.llmCalls++;
+      return null;
+    }
+  };
+
   for (const attempt of attempts) {
-    if (parsed?.proceedingAnswers) break;
+    if (
+      Array.isArray(parsed?.proceedingAnswers) &&
+      parsed.proceedingAnswers.length > 0
+    )
+      break;
 
     try {
       const result = await generateText({
@@ -5622,10 +5847,24 @@ Provide SEPARATE answers for each scope.`;
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
+      const isNoObj = NoObjectGeneratedError.isInstance(err);
       debugLog("generateMultiScopeVerdicts: ERROR", {
         attempt: attempt.label,
         error: errMsg,
-        stack: err instanceof Error ? err.stack?.split("\n").slice(0, 8).join("\n") : undefined,
+        name: err instanceof Error ? err.name : typeof err,
+        finishReason: isNoObj ? (err as any).finishReason : undefined,
+        hasText: isNoObj ? !!(err as any).text : undefined,
+        textSnippet: isNoObj ? String((err as any).text || "").slice(0, 1200) : undefined,
+        cause: (err as any)?.cause
+          ? {
+              name: String((err as any).cause?.name || ""),
+              message: String((err as any).cause?.message || "").slice(0, 800),
+            }
+          : undefined,
+        stack:
+          err instanceof Error
+            ? err.stack?.split("\n").slice(0, 8).join("\n")
+            : undefined,
       });
 
       // Check for OpenAI schema validation errors
@@ -5633,11 +5872,45 @@ Provide SEPARATE answers for each scope.`;
         debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_SCOPE");
       }
       state.llmCalls++;
+
+      // Attempt recovery from the SDK error payload (often contains the raw JSON/text).
+      const recovered = recoverFromNoObjectGeneratedError(err, attempt.label);
+      if (
+        recovered &&
+        Array.isArray(recovered.proceedingAnswers) &&
+        recovered.proceedingAnswers.length > 0
+      ) {
+        parsed = recovered;
+      }
+    }
+  }
+
+  // If structured output failed, try a last-ditch "JSON text" call and parse ourselves.
+  if (
+    !parsed ||
+    !Array.isArray(parsed.proceedingAnswers) ||
+    parsed.proceedingAnswers.length === 0
+  ) {
+    const fallbackParsed = await tryJsonTextFallback();
+    if (
+      fallbackParsed &&
+      Array.isArray(fallbackParsed.proceedingAnswers) &&
+      fallbackParsed.proceedingAnswers.length > 0
+    ) {
+      parsed = fallbackParsed;
+      debugLog("generateMultiScopeVerdicts: JSON text fallback SUCCESS", {
+        proceedingAnswersCount: parsed.proceedingAnswers?.length,
+        claimVerdictsCount: parsed.claimVerdicts?.length,
+      });
     }
   }
 
   // Fallback if structured output failed
-  if (!parsed || !parsed.proceedingAnswers) {
+  if (
+    !parsed ||
+    !Array.isArray(parsed.proceedingAnswers) ||
+    parsed.proceedingAnswers.length === 0
+  ) {
     debugLog("generateMultiScopeVerdicts: Using FALLBACK (parsed failed)", {
       hasParsed: !!parsed,
       hasProceedingAnswers: !!parsed?.proceedingAnswers,
@@ -5950,13 +6223,13 @@ Provide SEPARATE answers for each scope.`;
     }
 
     // v2.6.31: Detect if this is a counter-claim (evaluates opposite of user's thesis)
-    const claimFacts = state.facts.filter(f =>
-      cv.supportingFactIds?.includes(f.id) || f.relatedProceedingId === ctxId
-    );
+    // NOTE: `supportingFactIds` may include refuting evidence; counter-claim detection uses truth% as a guard.
+    const claimFacts = state.facts.filter((f) => cv.supportingFactIds?.includes(f.id));
     const isCounterClaim = detectCounterClaim(
       claim?.text || cv.claimId || "",
       understanding.impliedClaim || understanding.articleThesis || "",
-      claimFacts
+      truthPct,
+      claimFacts,
     );
 
     // v2.5.2: If the context has positive factors and no evidenced negatives,
@@ -6133,13 +6406,13 @@ Facts in the FACTS section are labeled with their relationship to the user's cla
 - If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
 - Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
 
-## SCOPE/CONTEXT-AWARE EVALUATION
+## EVIDENCE-SCOPE-AWARE EVALUATION
 
-Evidence may come from sources with DIFFERENT analytical scopes (e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
+Evidence may come from sources with DIFFERENT EvidenceScopes (per-fact source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
-- **Check scope alignment**: Are facts being compared from compatible scopes?
-- **Flag scope mismatches**: Different scopes are NOT directly comparable
-- **Note in reasoning**: When scope affects interpretation, mention it
+- **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?
+- **Flag EvidenceScope mismatches**: Different EvidenceScopes are NOT directly comparable
+- **Note in reasoning**: When EvidenceScope affects interpretation, mention it
 
 ## SHORT ANSWER GUIDANCE:
 - shortAnswer MUST be a complete descriptive sentence summarizing the finding
@@ -6361,7 +6634,8 @@ ${factsFormatted}`;
       const isCounterClaim = detectCounterClaim(
         claim.text || cv.claimId || "",
         understanding.impliedClaim || understanding.articleThesis || "",
-        claimFacts
+        truthPct,
+        claimFacts,
       );
 
         return {
@@ -6551,7 +6825,7 @@ Facts in the FACTS section are labeled with their relationship to the user's cla
 
 ## CLAIM CONTESTATION (for each claim):
 - isContested: true if this claim is politically disputed or challenged
-- contestedBy: Who disputes it (e.g., "climate skeptics", "vaccine opponents") - empty string if not contested
+- contestedBy: Who disputes it (e.g., "critics", "opponents") - empty string if not contested
 - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
   * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (studies, data, records, audits)
   * "disputed" = Opposition has some factual counter-evidence but debatable
@@ -6563,21 +6837,21 @@ CRITICAL - factualBasis MUST be "opinion" for:
 - Ideological objections without factual basis
 - "Some people say" or "critics claim" without specific counter-evidence
 
-## SCOPE/CONTEXT-AWARE EVALUATION
+## EVIDENCE-SCOPE-AWARE EVALUATION
 
-Evidence may come from sources with DIFFERENT analytical scopes (e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
+Evidence may come from sources with DIFFERENT EvidenceScopes (per-fact source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
-**When evaluating claims with scope-specific evidence**:
-1. **Check scope alignment**: Are facts being compared from compatible scopes?
-2. **Flag scope mismatches**: If Source A uses a broad boundary and Source B uses a narrow boundary, these are NOT directly comparable
-3. **Note in reasoning**: When scope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
-4. **Don't treat scope differences as contradictions**: "40% efficient (broad boundary)" and "60% efficient (narrow boundary)" can BOTH be correct for different scopes
+**When evaluating claims with EvidenceScope-specific evidence**:
+1. **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?
+2. **Flag EvidenceScope mismatches**: If Source A uses a broad boundary and Source B uses a narrow boundary, these are NOT directly comparable
+3. **Note in reasoning**: When EvidenceScope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
+4. **Don't treat EvidenceScope differences as contradictions**: "40% efficient (broad boundary)" and "60% efficient (narrow boundary)" can BOTH be correct under different EvidenceScopes
 
-**Example scope mismatch to flag**:
-- Claim: "Hydrogen cars are more efficient than EVs"
-- Source A (narrow boundary): "X is 60% efficient"
-- Source B (broad boundary): "Y is 80% efficient"
-→ These use different scopes - NOT a valid comparison. Note in reasoning.
+**Example EvidenceScope mismatch to flag**:
+- Claim: "Method A is more efficient than Method B"
+- Source A (narrow boundary): "A is 60% efficient (use-phase only)"
+- Source B (broad boundary): "B is 80% efficient (full lifecycle)"
+→ These use different EvidenceScopes - NOT a valid comparison. Note in reasoning.
 
 ## ARTICLE VERDICT ANALYSIS (CRITICAL - Article Verdict Problem)
 
@@ -6782,7 +7056,8 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
       const isCounterClaim = detectCounterClaim(
         claim.text || cv.claimId || "",
         understanding.impliedClaim || understanding.articleThesis || "",
-        claimFacts
+        truthPct,
+        claimFacts,
       );
 
       const claimPseudo = detectPseudoscience(claim.text || cv.claimId);

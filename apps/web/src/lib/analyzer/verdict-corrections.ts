@@ -142,47 +142,177 @@ export function detectAndCorrectVerdictInversion(
 export function detectCounterClaim(
   claimText: string,
   userThesis: string,
+  claimTruthPercentage?: number,
   claimFacts?: ExtractedFact[],
 ): boolean {
-  // Check if claim is primarily supported by counter-evidence facts
-  if (claimFacts && claimFacts.length > 0) {
-    const counterEvidenceFacts = claimFacts.filter(
-      (f) => f.claimDirection === "contradicts" || f.fromOppositeClaimSearch,
-    );
-    // If majority of supporting facts are counter-evidence, this is likely a counter-claim
-    if (counterEvidenceFacts.length > claimFacts.length / 2) {
-      return true;
-    }
-  }
-
-  // Check for linguistic indicators of opposing position
   const claimLower = claimText.toLowerCase();
   const thesisLower = userThesis.toLowerCase();
 
+  // =========================================================================
+  // Text-based detection (preferred): compare claim text vs thesis text
+  // =========================================================================
+
+  const STOP_WORDS = new Set([
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "but",
+    "of",
+    "to",
+    "in",
+    "on",
+    "for",
+    "with",
+    "at",
+    "by",
+    "from",
+    "as",
+    "into",
+    "than",
+    "over",
+    "under",
+    "using",
+    "use",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+  ]);
+
+  function tokenizePhrase(text: string): string[] {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ")
+      .split(/\s+/)
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .filter((t) => t.length > 2 && !STOP_WORDS.has(t));
+  }
+
+  function overlapRatio(a: string, b: string): number {
+    const aTokens = tokenizePhrase(a);
+    const bTokens = tokenizePhrase(b);
+    if (aTokens.length === 0 || bTokens.length === 0) return 0;
+    const aSet = new Set(aTokens);
+    const bSet = new Set(bTokens);
+    let inter = 0;
+    for (const t of aSet) if (bSet.has(t)) inter++;
+    const denom = Math.min(aSet.size, bSet.size);
+    return denom > 0 ? inter / denom : 0;
+  }
+
+  function phrasesMatch(a: string, b: string): boolean {
+    // Containment-style match is more forgiving for short vs expanded phrases
+    // (e.g., "Technology A" vs "Technology A-based vehicles")
+    return overlapRatio(a, b) >= 0.75;
+  }
+
+  type ComparativeFrame =
+    | { kind: "than"; left: string; comp: string; adj: string; right: string }
+    | { kind: "over"; left: string; right: string }
+    | null;
+
+  function extractComparativeFrame(text: string): ComparativeFrame {
+    const cleaned = text
+      .replace(/["']/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Pattern A: "Using X ... is more/less/higher/... <adj> than (using) Y"
+    const usingRe =
+      /using\s+(.+?)\s+(?:for\s+.+?\s+)?(?:is|are|was|were)\s+(more|less|higher|lower|better|worse|greater|smaller)\s+(\w+)\s+than\s+(?:using\s+)?(.+?)(?:[.?!,;]|$)/i;
+    const usingMatch = cleaned.match(usingRe);
+    if (usingMatch) {
+      const [, left, comp, adj, right] = usingMatch;
+      return {
+        kind: "than",
+        left: left.trim(),
+        comp: comp.trim().toLowerCase(),
+        adj: adj.trim().toLowerCase(),
+        right: right.trim(),
+      };
+    }
+
+    // Pattern B: General: "X is more/less/... <adj> than Y"
+    const thanRe =
+      /^(.+?)\s+(?:is|are|was|were)\s+(more|less|higher|lower|better|worse|greater|smaller)\s+(\w+)\s+than\s+(.+?)(?:[.?!,;]|$)/i;
+    const thanMatch = cleaned.match(thanRe);
+    if (thanMatch) {
+      const [, left, comp, adj, right] = thanMatch;
+      return {
+        kind: "than",
+        left: left.trim(),
+        comp: comp.trim().toLowerCase(),
+        adj: adj.trim().toLowerCase(),
+        right: right.trim(),
+      };
+    }
+
+    // Pattern C: Preference-style: "favor/prefer X over Y"
+    const overRe =
+      /\b(favor|favour|prefer|prioritize|prioritise)\b\s+(.+?)\s+over\s+(.+?)(?:[.?!,;]|$)/i;
+    const overMatch = cleaned.match(overRe);
+    if (overMatch) {
+      const [, , left, right] = overMatch;
+      return { kind: "over", left: left.trim(), right: right.trim() };
+    }
+
+    return null;
+  }
+
   // Pattern: Claim is testing the opposite direction of a comparative
   // User thesis: "X is more efficient than Y" → Counter-claim: "Y is more efficient than X"
-  const comparativePattern =
-    /\b(more|less|higher|lower|better|worse|greater|smaller)\s+(\w+)\s+than\b/i;
-  const thesisMatch = thesisLower.match(comparativePattern);
-  const claimMatch = claimLower.match(comparativePattern);
+  const thesisFrame = extractComparativeFrame(thesisLower);
+  const claimFrame = extractComparativeFrame(claimLower);
+  if (thesisFrame && claimFrame) {
+    if (thesisFrame.kind === "than" && claimFrame.kind === "than") {
+      const oppositeComparatives: Record<string, string> = {
+        more: "less",
+        less: "more",
+        higher: "lower",
+        lower: "higher",
+        better: "worse",
+        worse: "better",
+        greater: "smaller",
+        smaller: "greater",
+      };
 
-  if (thesisMatch && claimMatch) {
-    // If both have comparatives but in opposite directions
-    const oppositeComparatives: Record<string, string> = {
-      more: "less",
-      less: "more",
-      higher: "lower",
-      lower: "higher",
-      better: "worse",
-      worse: "better",
-      greater: "smaller",
-      smaller: "greater",
-    };
-    if (
-      oppositeComparatives[thesisMatch[1].toLowerCase()] ===
-      claimMatch[1].toLowerCase()
-    ) {
-      return true;
+      const sameAdj = thesisFrame.adj === claimFrame.adj;
+
+      // Opposite comparator ("more" vs "less") with same subject ordering
+      if (
+        sameAdj &&
+        oppositeComparatives[thesisFrame.comp] === claimFrame.comp &&
+        phrasesMatch(thesisFrame.left, claimFrame.left) &&
+        phrasesMatch(thesisFrame.right, claimFrame.right)
+      ) {
+        return true;
+      }
+
+      // Swapped subjects (Y ... than X) with same comparator
+      if (
+        sameAdj &&
+        thesisFrame.comp === claimFrame.comp &&
+        phrasesMatch(thesisFrame.left, claimFrame.right) &&
+        phrasesMatch(thesisFrame.right, claimFrame.left)
+      ) {
+        return true;
+      }
+    }
+
+    if (thesisFrame.kind === "over" && claimFrame.kind === "over") {
+      // "favor X over Y" → counter-claim: "favor Y over X"
+      if (
+        phrasesMatch(thesisFrame.left, claimFrame.right) &&
+        phrasesMatch(thesisFrame.right, claimFrame.left)
+      ) {
+        return true;
+      }
     }
   }
 
@@ -254,6 +384,34 @@ export function detectCounterClaim(
     const cp = claimPolarity[term];
     if (!tp || !cp) continue;
     if (tp !== cp) return true;
+  }
+
+  // =========================================================================
+  // Evidence-based fallback (guarded):
+  // Only use evidence direction when the claim itself is clearly true-ish or clearly false-ish.
+  //
+  // Rationale: `supportingFactIds` for a claim can include refuting evidence.
+  // If the user's thesis is false, many refutations will be labeled "contradicts" relative
+  // to the thesis, which MUST NOT automatically make same-direction (thesis-aligned) claims
+  // look like counter-claims.
+  // =========================================================================
+  if (claimFacts && claimFacts.length > 0 && typeof claimTruthPercentage === "number") {
+    const truthPct = claimTruthPercentage;
+    const contradictCount = claimFacts.filter(
+      (f) => f.claimDirection === "contradicts" || f.fromOppositeClaimSearch,
+    ).length;
+    const supportCount = claimFacts.filter((f) => f.claimDirection === "supports").length;
+
+    const majorityContradicts = contradictCount > claimFacts.length / 2;
+    const majoritySupports = supportCount > claimFacts.length / 2;
+
+    // If claim is (leaning) true and its evidence contradicts the user's thesis,
+    // it's likely evaluating the opposite position.
+    if (truthPct >= 58 && majorityContradicts) return true;
+
+    // If claim is (leaning) false and its evidence supports the user's thesis,
+    // it's likely a counter-claim that was refuted.
+    if (truthPct <= 42 && majoritySupports) return true;
   }
 
   return false;

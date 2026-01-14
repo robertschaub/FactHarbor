@@ -25,6 +25,29 @@ This document tracks version history, bug fixes, and feature enhancements for Fa
 
 ---
 
+## v2.6.32 (January 2026)
+
+### Critical Fixes
+- **🔥 Multi-context verdict fallback fixed**: Deep multi-context (multi-AnalysisContext) analyses could degrade to **Unverified 50% / “analysis failed”** when the AI SDK raised `NoObjectGeneratedError` ("response did not match schema").
+  - Added recovery from `NoObjectGeneratedError` by salvaging JSON from error payloads.
+  - Added a last-ditch “JSON text” retry (no `Output.object`) and Zod-parse recovery.
+  - Added richer debug logging for finishReason/text/cause to speed future diagnosis.
+
+### Diagnostics
+- Debug log path now resolves to **repo root** even when the Next.js server runs with `cwd=apps/web` (prevents silent log writes to `apps/web/apps/web/...`).
+
+### Terminology
+- Prompts/docs/types now consistently use **ArticleFrame** (narrative background), **AnalysisContext** (top-level bounded frame; stored in `distinctProceedings`), and **EvidenceScope** (per-fact source scope metadata).
+
+### Files Modified
+- `apps/web/src/lib/analyzer.ts`
+- `apps/web/src/lib/analyzer/config.ts`
+- `apps/web/src/lib/analyzer/debug.ts`
+- `apps/web/src/lib/analyzer/json.ts`
+- `apps/web/src/lib/analyzer/json.test.ts`
+
+---
+
 ## v2.6.24 (January 10, 2026)
 
 ### Critical Fixes
