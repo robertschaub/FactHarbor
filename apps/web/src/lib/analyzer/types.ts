@@ -228,9 +228,12 @@ export interface ClaimUnderstanding {
   detectedInputType: InputType;
   impliedClaim: string;
 
-  // Analysis contexts detected from input (e.g., multiple legal cases, different methodologies)
-  distinctProceedings: AnalysisContext[];  // Field name kept for backward compatibility
+  // EvidenceScopes (bounded analytical frames) detected from input.
+  // Field name kept for backward compatibility.
+  distinctProceedings: AnalysisContext[];
   requiresSeparateAnalysis: boolean;
+  // ArticleContext: narrative/background framing of the input. Not a reason to split into scopes.
+  // Field name kept for backward compatibility.
   proceedingContext: string;
 
   articleThesis: string;

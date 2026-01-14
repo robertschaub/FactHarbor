@@ -6974,7 +6974,7 @@ async function generateTwoPanelSummary(
     "Analyzed Content";
 
   if (hasMultipleProceedings) {
-    title += ` (${understanding.distinctProceedings.length} contexts)`;
+    title += ` (${understanding.distinctProceedings.length} scopes)`;
   }
 
   // Get the implied claim, filtering out placeholder values
@@ -6997,7 +6997,7 @@ async function generateTwoPanelSummary(
       : (understanding.subClaims[0]?.text || "Analysis of provided content"),
     keyFindings: understanding.subClaims.slice(0, 4).map((c: any) => c.text),
     reasoning: hasMultipleProceedings
-      ? `Covers ${understanding.distinctProceedings.length} contexts: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.shortName).join(", ")}`
+      ? `Covers ${understanding.distinctProceedings.length} scopes: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.shortName).join(", ")}`
       : `Examined ${understanding.subClaims.length} claims`,
     conclusion:
       articleAnalysis.verdictSummary?.shortAnswer ||
@@ -7106,7 +7106,7 @@ function generateMethodologyAssessment(
   const parts: string[] = [];
   parts.push("Unified analysis mode");
   if (articleAnalysis.hasMultipleProceedings)
-    parts.push(`Multi-context (${articleAnalysis.proceedings?.length})`);
+    parts.push(`Multi-scope (${articleAnalysis.proceedings?.length})`);
   if (articleAnalysis.verdictSummary?.hasContestedFactors)
     parts.push("Contested factors flagged");
   parts.push(`${state.searchQueries.length} searches`);

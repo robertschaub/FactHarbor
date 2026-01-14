@@ -210,7 +210,7 @@ Truth: 82%
 
 **Unified Naming**:
 - Use "Verdict" everywhere (not "Overall Verdict" or "Article Verdict")
-- Use "Contexts" instead of "Context-by-Context Analysis"
+- Use "Scopes" (EvidenceScopes) instead of "Context-by-Context Analysis"
 - Use "Confidence" (not "Conf" or "Certainty")
 
 ### Multi-Scope Display
