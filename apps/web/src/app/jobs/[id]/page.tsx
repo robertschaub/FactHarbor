@@ -97,30 +97,30 @@ const CLAIM_VERDICT_MIDPOINTS: Record<string, number> = {
   "TRUE": 93,
   "MOSTLY-TRUE": 79,
   "LEANING-TRUE": 64,
+  "MIXED": 50,
   "UNVERIFIED": 50,
   "LEANING-FALSE": 36,
   "MOSTLY-FALSE": 22,
   "FALSE": 7,
-};
-
-const QUESTION_ANSWER_MIDPOINTS: Record<string, number> = {
-  "YES": 93,
-  "MOSTLY-YES": 79,
-  "LEANING-YES": 64,
-  "UNVERIFIED": 50,
-  "LEANING-NO": 36,
-  "MOSTLY-NO": 22,
-  "NO": 7,
 };
 
 const ARTICLE_VERDICT_MIDPOINTS: Record<string, number> = {
+  // Statement verdicts
   "TRUE": 93,
   "MOSTLY-TRUE": 79,
   "LEANING-TRUE": 64,
+  "MIXED": 50,
   "UNVERIFIED": 50,
   "LEANING-FALSE": 36,
   "MOSTLY-FALSE": 22,
   "FALSE": 7,
+  // v2.6.31: Legacy question-based verdicts (for backward compatibility with pre-neutrality jobs)
+  "YES": 93,
+  "MOSTLY-YES": 79,
+  "LEANING-YES": 64,
+  "LEANING-NO": 36,
+  "MOSTLY-NO": 22,
+  "NO": 7,
 };
 
 function normalizePercentage(value: number): number {
@@ -149,14 +149,17 @@ function getClaimTruthPercentage(claim: any): number {
   return resolveTruthPercentage(claim?.verdict, CLAIM_VERDICT_MIDPOINTS);
 }
 
-function getAnswerTruthPercentage(answer: any): number {
-  if (typeof answer?.truthPercentage === "number") {
-    return normalizePercentage(answer.truthPercentage);
+function getVerdictTruthPercentage(summary: any): number {
+  if (typeof summary?.truthPercentage === "number") {
+    return normalizePercentage(summary.truthPercentage);
   }
-  if (typeof answer?.answer === "number") {
-    return normalizePercentage(answer.answer);
+  if (typeof summary?.answer === "number") {
+    return normalizePercentage(summary.answer);
   }
-  return resolveTruthPercentage(answer?.answer, QUESTION_ANSWER_MIDPOINTS);
+  if (typeof summary?.verdict === "number") {
+    return normalizePercentage(summary.verdict);
+  }
+  return resolveTruthPercentage(summary?.answer ?? summary?.verdict, ARTICLE_VERDICT_MIDPOINTS);
 }
 
 function getArticleTruthPercentage(articleAnalysis: any): number {
@@ -294,8 +297,7 @@ export default function JobPage() {
   const twoPanelSummary = result?.twoPanelSummary;
   const articleAnalysis = result?.articleAnalysis;
   const claimVerdicts = result?.claimVerdicts || [];
-  const questionAnswer = result?.verdictSummary;
-  const isQuestion = result?.meta?.wasQuestionInput || articleAnalysis?.wasQuestionInput;
+  const verdictSummary = result?.verdictSummary;
   const hasMultipleProceedings = result?.meta?.hasMultipleProceedings;
   // Prefer "scopes" (new unified terminology), fall back to "proceedings" for backward compatibility
   const scopes = result?.scopes || result?.proceedings || [];
@@ -310,8 +312,8 @@ export default function JobPage() {
   // Opinion-based contestations without evidence are not highlighted (almost anything can be doubted)
   // Include Key Factors from both question mode AND article mode (unified in v2.6.18)
   const allKeyFactors: any[] = [
-    ...(questionAnswer?.keyFactors || []),
-    ...(questionAnswer?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
+    ...(verdictSummary?.keyFactors || []),
+    ...(verdictSummary?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
     ...(articleAnalysis?.keyFactors || []), // NEW v2.6.18: Article mode Key Factors
   ];
   const hasEvidenceBasedContestations = allKeyFactors.some(
@@ -465,7 +467,7 @@ export default function JobPage() {
             <div className={styles.badgesRow}>
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
-              {isQuestion && <Badge bg="#e3f2fd" color="#1565c0">📝 QUESTION</Badge>}
+              {/* v2.6.31: Removed QUESTION badge - Input Neutrality: no separate paths for questions */}
               {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">🔀 {scopes.length} SCOPES</Badge>}
               {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
               {result.meta.isPseudoscience && (
@@ -510,43 +512,41 @@ export default function JobPage() {
       {/* Summary Tab */}
       {tab === "summary" && hasV22Data && (
         <div className={styles.contentCard}>
-          {isQuestion && questionAnswer && (
-            hasMultipleProceedings
-              ? <MultiScopeAnswerBanner questionAnswer={questionAnswer} scopes={scopes} impliedClaim={impliedClaim} />
-              : <QuestionAnswerBanner questionAnswer={questionAnswer} impliedClaim={impliedClaim} />
-          )}
-
-          {/* v2.6.26: Show article summary for both questions and statements */}
+          {/* v2.6.31: Show article summary FIRST (Input Neutrality: same layout for all inputs) */}
           {twoPanelSummary && (
             <ArticleSummaryBox
               articleSummary={twoPanelSummary.articleSummary}
             />
           )}
 
-          {/* Multi-scope statements: show MultiScopeStatementBanner which includes verdict */}
-          {!isQuestion && hasMultipleProceedings && questionAnswer?.proceedingAnswers ? (
+          {/* Input neutrality: same banner for all input styles */}
+          {/* v2.6.31: Handle edge case where hasMultipleProceedings is true but proceedingAnswers is missing */}
+          {hasMultipleProceedings && verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 ? (
             <MultiScopeStatementBanner
-              questionAnswer={questionAnswer}
+              verdictSummary={verdictSummary}
               scopes={scopes}
               articleThesis={twoPanelSummary?.articleSummary?.mainArgument}
               articleAnalysis={articleAnalysis}
               pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
+              fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
             />
           ) : (
-            /* Single-scope statements: show ArticleVerdictBanner */
-            !isQuestion && articleAnalysis && (
+            /* Single-scope OR multi-scope with missing proceedingAnswers: show ArticleVerdictBanner as fallback */
+            (articleAnalysis || verdictSummary) && (
               <ArticleVerdictBanner
                 articleAnalysis={articleAnalysis}
-                verdictSummary={questionAnswer}
+                verdictSummary={verdictSummary}
                 fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
                 pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
+                fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
               />
             )
           )}
 
           {claimVerdicts.length > 0 && (
             <div className={styles.claimsSection}>
-              <h3 className={styles.claimsSectionTitle}>{isQuestion ? "Supporting Analysis" : "Claims Analyzed"}</h3>
+              {/* v2.6.31: Input Neutrality - same label for all inputs */}
+              <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
               {hasMultipleProceedings ? (
                 <ClaimsGroupedByScope claimVerdicts={claimVerdicts} scopes={scopes} />
               ) : (
@@ -708,7 +708,7 @@ function FactsPanel({ facts }: { facts: any[] }) {
   const contradictingFacts = facts.filter((f: any) => f.claimDirection === "contradicts" && !f.fromOppositeClaimSearch);
   // NEW v2.6.29: Facts from opposite claim search - evidence that supports the inverse claim
   const oppositeClaimFacts = facts.filter((f: any) => f.fromOppositeClaimSearch === true);
-  const neutralFacts = facts.filter((f: any) => 
+  const neutralFacts = facts.filter((f: any) =>
     (f.claimDirection === "neutral" || !f.claimDirection) && !f.fromOppositeClaimSearch
   );
 
@@ -836,117 +836,20 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
 }
 
 // ============================================================================
-// Multi-Scope Answer Banner
+// Multi-Scope Verdict Banner (for statements with multiple scopes)
 // ============================================================================
 
-function MultiScopeAnswerBanner({ questionAnswer, scopes, impliedClaim }: { questionAnswer: any; scopes: any[]; impliedClaim?: string }) {
-  const overallTruth = getAnswerTruthPercentage(questionAnswer);
-  const overallConfidence = questionAnswer?.confidence ?? 0;
-  const overallVerdict = percentageToClaimVerdict(overallTruth, overallConfidence);
-  const overallColor = CLAIM_VERDICT_COLORS[overallVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
-  const showImpliedClaim =
-    !!impliedClaim &&
-    impliedClaim.trim().length > 0 &&
-    String(questionAnswer?.displayText || "").trim() !== impliedClaim.trim();
-
-  // Determine if any contestations have actual counter-evidence (CONTESTED)
-  // Opinion-based contestations without evidence are not highlighted
-  const allKeyFactors: any[] = [
-    ...(questionAnswer?.keyFactors || []),
-    ...(questionAnswer?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
-  ];
-  const hasEvidenceBasedContestations = allKeyFactors.some(
-    (f: any) =>
-      f.supports === "no" &&
-      f.isContested &&
-      (f.factualBasis === "established" || f.factualBasis === "disputed")
-  );
-
-  return (
-    <div className={styles.multiProceedingBanner}>
-      {/* v2.6.25: Removed "Question Asked" header for input neutrality */}
-
-      <div className={styles.proceedingNotice}>
-        <span className={styles.proceedingIcon}>🔀</span>
-        <span className={styles.proceedingText}>
-          {scopes.length} distinct scopes analyzed separately
-        </span>
-        {hasEvidenceBasedContestations && (
-          <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
-        )}
-      </div>
-
-      <div className={styles.answerContent} style={{ borderColor: overallColor.border }}>
-        <div className={styles.answerRow}>
-          <span className={styles.answerLabel}>VERDICT</span>
-          <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
-            {overallColor.icon} {getVerdictLabel(overallVerdict)}
-          </span>
-          <span className={styles.answerPercentage}>{overallTruth}% <span style={{ fontSize: 12, color: "#999" }}>({questionAnswer.confidence}% confidence)</span></span>
-        </div>
-
-        {questionAnswer.calibrationNote && (
-          <div className={styles.calibrationNote}>
-            <span className={styles.calibrationText}>⚠️ {questionAnswer.calibrationNote}</span>
-          </div>
-        )}
-
-        {questionAnswer.nuancedAnswer && (
-          <div className={styles.proceedingSummary}>
-            <div className={styles.proceedingSummaryText}>{questionAnswer.nuancedAnswer}</div>
-          </div>
-        )}
-
-        {questionAnswer.shortAnswer && (
-          <div className={styles.shortAnswerBox} style={{ borderLeftColor: overallColor.border }}>
-            <div className={styles.shortAnswerText}>{questionAnswer.shortAnswer}</div>
-          </div>
-        )}
-
-        {/* v2.6.28: Show overall KEY FACTORS inside verdict box when no per-scope breakdown */}
-        {(!questionAnswer.proceedingAnswers || questionAnswer.proceedingAnswers.length === 0) && questionAnswer.keyFactors?.length > 0 && (
-          <div className={styles.keyFactorsSection}>
-            <div className={styles.keyFactorsHeader}>KEY FACTORS</div>
-            <div className={styles.keyFactorsList}>
-              {questionAnswer.keyFactors.map((factor: any, i: number) => (
-                <KeyFactorRow key={i} factor={factor} showContestation={true} />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
-        <div className={styles.proceedingsAnalysis}>
-          <h4 className={styles.proceedingsHeader}>
-            📑 Contexts
-          </h4>
-          <div className={styles.proceedingsStack}>
-            {questionAnswer.proceedingAnswers.map((pa: any) => {
-              const scope = scopes.find((s: any) => s.id === pa.proceedingId);
-              return <ScopeCard key={pa.proceedingId} scopeAnswer={pa} scope={scope} />;
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================================================================
-// Multi-Scope Statement Banner (for statements with multiple scopes)
-// ============================================================================
-
-function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis, articleAnalysis, pseudoscienceAnalysis }: { questionAnswer: any; scopes: any[]; articleThesis?: string; articleAnalysis?: any; pseudoscienceAnalysis?: any }) {
-  const overallTruth = getAnswerTruthPercentage(questionAnswer);
-  const overallConfidence = questionAnswer?.confidence ?? 0;
+function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, articleAnalysis, pseudoscienceAnalysis, fallbackConfidence }: { verdictSummary: any; scopes: any[]; articleThesis?: string; articleAnalysis?: any; pseudoscienceAnalysis?: any; fallbackConfidence?: number }) {
+  const overallTruth = getVerdictTruthPercentage(verdictSummary);
+  // v2.6.31: Also check twoPanelSummary.factharborAnalysis.confidence via fallbackConfidence prop
+  const overallConfidence = verdictSummary?.confidence ?? fallbackConfidence ?? 0;
   const overallVerdict = percentageToClaimVerdict(overallTruth, overallConfidence);
   const overallColor = CLAIM_VERDICT_COLORS[overallVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   const allKeyFactors: any[] = [
-    ...(questionAnswer?.keyFactors || []),
-    ...(questionAnswer?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
+    ...(verdictSummary?.keyFactors || []),
+    ...(verdictSummary?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
   ];
   const hasEvidenceBasedContestations = allKeyFactors.some(
     (f: any) =>
@@ -960,7 +863,7 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis, arti
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis?.pseudoscienceCategories || [];
 
   // Get the verdict reason
-  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || questionAnswer?.proceedingSummary || "";
+  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.proceedingSummary || "";
 
   return (
     <div className={styles.multiProceedingBanner}>
@@ -979,16 +882,16 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis, arti
 
       <div className={styles.answerContent} style={{ borderColor: overallColor.border }}>
         <div className={styles.answerRow}>
-          <span className={styles.answerLabel}>VERDICT</span>
+          <span className={styles.answerLabel} title="Overall verdict is assessed holistically. Claims average may differ due to evidence discovery and weighting.">VERDICT</span>
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
           <span className={styles.answerPercentage}>{overallTruth}% <span style={{ fontSize: 12, color: "#999" }}>({overallConfidence}% confidence)</span></span>
         </div>
 
-        {questionAnswer.calibrationNote && (
+        {verdictSummary?.calibrationNote && (
           <div className={styles.calibrationNote}>
-            <span className={styles.calibrationText}>⚠️ {questionAnswer.calibrationNote}</span>
+            <span className={styles.calibrationText}>⚠️ {verdictSummary.calibrationNote}</span>
           </div>
         )}
 
@@ -998,9 +901,9 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis, arti
           </div>
         )}
 
-        {questionAnswer.shortAnswer && (
+        {verdictSummary?.shortAnswer && (
           <div className={styles.shortAnswerBox} style={{ borderLeftColor: overallColor.border }}>
-            <div className={styles.shortAnswerText}>{questionAnswer.shortAnswer}</div>
+            <div className={styles.shortAnswerText}>{verdictSummary.shortAnswer}</div>
           </div>
         )}
 
@@ -1018,11 +921,11 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis, arti
         )}
 
         {/* v2.6.28: Show overall KEY FACTORS inside verdict box when no per-scope breakdown */}
-        {(!questionAnswer.proceedingAnswers || questionAnswer.proceedingAnswers.length === 0) && questionAnswer.keyFactors?.length > 0 && (
+        {(!verdictSummary?.proceedingAnswers || verdictSummary.proceedingAnswers.length === 0) && verdictSummary?.keyFactors?.length > 0 && (
           <div className={styles.keyFactorsSection}>
             <div className={styles.keyFactorsHeader}>KEY FACTORS</div>
             <div className={styles.keyFactorsList}>
-              {questionAnswer.keyFactors.map((factor: any, i: number) => (
+              {verdictSummary.keyFactors.map((factor: any, i: number) => (
                 <KeyFactorRow key={i} factor={factor} showContestation={true} />
               ))}
             </div>
@@ -1030,13 +933,13 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis, arti
         )}
       </div>
 
-      {questionAnswer.proceedingAnswers && questionAnswer.proceedingAnswers.length > 0 && (
+      {verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 && (
         <div className={styles.proceedingsAnalysis}>
           <h4 className={styles.proceedingsHeader}>
             📑 Contexts
           </h4>
           <div className={styles.proceedingsStack}>
-            {questionAnswer.proceedingAnswers.map((pa: any) => {
+            {verdictSummary.proceedingAnswers.map((pa: any) => {
               const scope = scopes.find((s: any) => s.id === pa.proceedingId);
               return <ScopeCard key={pa.proceedingId} scopeAnswer={pa} scope={scope} />;
             })}
@@ -1048,7 +951,7 @@ function MultiScopeStatementBanner({ questionAnswer, scopes, articleThesis, arti
 }
 
 function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
-  const scopeTruth = getAnswerTruthPercentage(scopeAnswer);
+  const scopeTruth = getVerdictTruthPercentage(scopeAnswer);
   const scopeConfidence = scopeAnswer?.confidence ?? 0;
   const scopeVerdict = percentageToClaimVerdict(scopeTruth, scopeConfidence);
   const color = CLAIM_VERDICT_COLORS[scopeVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
@@ -1193,103 +1096,31 @@ function KeyFactorRow({ factor, showContestation = true }: { factor: any; showCo
 }
 
 // ============================================================================
-// Single Question Answer Banner
-// ============================================================================
-
-function QuestionAnswerBanner({ questionAnswer, impliedClaim }: { questionAnswer: any; impliedClaim?: string }) {
-  const answerTruth = getAnswerTruthPercentage(questionAnswer);
-  const answerConfidence = questionAnswer?.confidence ?? 0;
-  const answerVerdict = percentageToClaimVerdict(answerTruth, answerConfidence);
-  const color = CLAIM_VERDICT_COLORS[answerVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
-  const showImpliedClaim =
-    !!impliedClaim &&
-    impliedClaim.trim().length > 0 &&
-    String(questionAnswer?.displayText || "").trim() !== impliedClaim.trim();
-
-  // Check for contested factors (evidence-based only)
-  const allKeyFactors = questionAnswer?.keyFactors || [];
-  const hasEvidenceBasedContestations = allKeyFactors.some(
-    (f: any) =>
-      f.supports === "no" &&
-      f.isContested &&
-      (f.factualBasis === "established" || f.factualBasis === "disputed")
-  );
-
-  // Calculate factor counts
-  const positiveFactors = allKeyFactors.filter((f: any) => f.supports === "yes").length;
-  const negativeFactors = allKeyFactors.filter((f: any) => f.supports === "no").length;
-  const neutralFactors = allKeyFactors.filter((f: any) => f.supports === "neutral").length;
-
-  return (
-    <div className={styles.questionBanner} style={{ borderColor: color.border }}>
-      <div className={styles.questionBannerContent}>
-        {/* v2.6.28: Unified VERDICT label like other banners */}
-        <div className={styles.articleVerdictHeader}>
-          <span className={styles.articleVerdictLabel}>VERDICT</span>
-        </div>
-        <div className={styles.questionBannerAnswerRow}>
-          <span className={styles.questionBannerAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
-            {color.icon} {getVerdictLabel(answerVerdict)}
-          </span>
-          <span className={styles.questionBannerPercentage}>{answerTruth}% <span style={{ fontSize: 12, color: "#999" }}>({answerConfidence}% confidence)</span></span>
-          {hasEvidenceBasedContestations && (
-            <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
-          )}
-        </div>
-
-        {/* Short answer / assessment */}
-        {questionAnswer.shortAnswer && (
-          <div className={styles.questionBannerShortAnswer} style={{ borderLeftColor: color.border }}>
-            <div className={styles.questionBannerShortAnswerText}>{questionAnswer.shortAnswer}</div>
-          </div>
-        )}
-
-        {/* Key factors section inside the verdict box */}
-        {questionAnswer.keyFactors?.length > 0 && (
-          <div className={styles.keyFactorsSection}>
-            <div className={styles.keyFactorsHeader}>
-              KEY FACTORS
-              <span style={{ marginLeft: 12, fontSize: 13, color: "#666", fontWeight: "normal" }}>
-                ✅ {positiveFactors} positive · ❌ {negativeFactors} negative{neutralFactors > 0 ? ` · ⚪ ${neutralFactors} neutral` : ""}
-              </span>
-            </div>
-            <div className={styles.keyFactorsList}>
-              {questionAnswer.keyFactors.map((factor: any, i: number) => (
-                <KeyFactorRow key={i} factor={factor} showContestation={true} />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
 // Article Verdict Banner
 // ============================================================================
 
-function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis, pseudoscienceAnalysis }: { articleAnalysis: any; verdictSummary?: any; fallbackThesis?: string; pseudoscienceAnalysis?: any }) {
+function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis, pseudoscienceAnalysis, fallbackConfidence }: { articleAnalysis: any; verdictSummary?: any; fallbackThesis?: string; pseudoscienceAnalysis?: any; fallbackConfidence?: number }) {
   const articleTruth = getArticleTruthPercentage(articleAnalysis);
   // v2.6.28: Use verdictSummary confidence as fallback when articleAnalysis confidence is missing
-  const articleConfidence = articleAnalysis?.confidence ?? articleAnalysis?.articleConfidence ?? verdictSummary?.confidence ?? 0;
+  // v2.6.31: Also check twoPanelSummary.factharborAnalysis.confidence via fallbackConfidence prop
+  const articleConfidence = articleAnalysis?.confidence ?? articleAnalysis?.articleConfidence ?? verdictSummary?.confidence ?? fallbackConfidence ?? 0;
   const articleVerdictLabel = percentageToArticleVerdict(articleTruth, articleConfidence);
   const color = ARTICLE_VERDICT_COLORS[articleVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
 
-  const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis.isPseudoscience;
-  const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis.pseudoscienceCategories || [];
+  const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis?.isPseudoscience;
+  const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis?.pseudoscienceCategories || [];
 
   const articlePct = articleTruth;
 
   // Get the verdict reason - try multiple sources
-  const verdictReason = articleAnalysis.articleVerdictReason || articleAnalysis.verdictExplanation || verdictSummary?.nuancedAnswer || "";
-  
+  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.nuancedAnswer || "";
+
   // Get short answer from verdictSummary as assessment
   const shortAnswer = verdictSummary?.shortAnswer || "";
-  
+
   // Get key factors - prefer articleAnalysis, fallback to verdictSummary
-  const keyFactors = (articleAnalysis.keyFactors && articleAnalysis.keyFactors.length > 0) 
-    ? articleAnalysis.keyFactors 
+  const keyFactors = (articleAnalysis?.keyFactors && articleAnalysis.keyFactors.length > 0)
+    ? articleAnalysis.keyFactors
     : (verdictSummary?.keyFactors || []);
 
   return (
@@ -1297,7 +1128,7 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
       <div className={styles.articleBannerContent}>
         {/* v2.6.25: Unified verdict label */}
         <div className={styles.articleVerdictHeader}>
-          <span className={styles.articleVerdictLabel}>VERDICT</span>
+          <span className={styles.articleVerdictLabel} title="Overall verdict is assessed holistically. Claims average may differ due to evidence discovery and weighting.">VERDICT</span>
         </div>
         <div className={styles.articleVerdictRow}>
           <span className={styles.articleVerdictBadge} style={{ backgroundColor: color.bg, color: color.text }}>
@@ -1357,14 +1188,14 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
 }
 
 // ============================================================================
-// Article Summary Box
+// Input Summary Box
 // ============================================================================
 
 function ArticleSummaryBox({ articleSummary }: { articleSummary: any }) {
   return (
     <div className={styles.articleSummaryBox}>
       <div className={styles.articleSummaryHeader}>
-        <b>📄 Article Summary</b>
+        <b>📄 Input Summary</b>
       </div>
       <div className={styles.articleSummaryContent}>
         <div className={styles.articleSummaryValue}>{decodeHtmlEntities(articleSummary.mainArgument)}</div>
@@ -1377,7 +1208,7 @@ function ArticleSummaryBox({ articleSummary }: { articleSummary: any }) {
 // Two-Panel Summary
 // ============================================================================
 
-function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { articleSummary: any; factharborAnalysis: any; isQuestion?: boolean }) {
+function TwoPanelSummary({ articleSummary, factharborAnalysis }: { articleSummary: any; factharborAnalysis: any }) {
   const overallTruth = typeof factharborAnalysis?.overallVerdict === "number"
     ? factharborAnalysis.overallVerdict
     : 50;
@@ -1387,7 +1218,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis, isQuestion }: { a
     <div className={styles.twoPanelContainer}>
       <div className={styles.twoPanelPanel}>
         <div className={styles.twoPanelHeader}>
-          <b>📄 Article</b>
+          <b>📄 Input</b>
         </div>
         <div className={styles.twoPanelContent}>
           <div className={styles.twoPanelLabel}>Title</div>

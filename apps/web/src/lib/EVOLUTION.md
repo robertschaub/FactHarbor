@@ -11,7 +11,7 @@
 Version 2.2 addresses three critical requirements:
 
 1. **Article Verdict Problem**: Article credibility ≠ simple average of claim verdicts
-2. **UN-3**: Two-Panel Summary (Article Summary + FactHarbor Analysis)
+2. **UN-3**: Two-Panel Summary (Input Summary + FactHarbor Analysis)
 3. **UN-17**: In-Article Claim Highlighting with color-coded verdicts
 
 ### What's New in v2.2

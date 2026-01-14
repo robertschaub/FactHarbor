@@ -1,7 +1,7 @@
 /**
  * TwoPanelSummary Component
  * 
- * Implements UN-3: Article Summary with FactHarbor Analysis Summary
+ * Implements UN-3: Input Summary with FactHarbor Analysis Summary
  * Shows side-by-side comparison of:
  * - Left: What the article claims
  * - Right: FactHarbor's assessment
@@ -41,7 +41,7 @@ export function TwoPanelSummary({ articleSummary, factharborAnalysis }: TwoPanel
   const overallLabel = percentageToClaimVerdict(overallTruth);
   return (
     <div className={styles.container}>
-      {/* Left Panel: Article Summary */}
+      {/* Left Panel: Input Summary */}
       <div className={styles.panel}>
         <div className={styles.panelHeader}>
           <span className={styles.panelIcon}>📄</span>
