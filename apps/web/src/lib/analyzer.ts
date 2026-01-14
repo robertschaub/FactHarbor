@@ -515,12 +515,16 @@ function normalizeYesNoQuestionToStatement(input: string): string {
 
   // Handle the common yes/no forms in a way that is stable and avoids bad grammar.
   // Goal: "Was the X fair and based on Y?" -> "The X was fair and based on Y"
-  const m = trimmed.match(/^(was|were|is|are)\s+(.+)$/i);
+  // NOTE: needsNormalizationEntry (entry point) checks a broader set of auxiliaries (did/do/does/has/have/had/can/...),
+  // so this function must also handle those; otherwise question vs statement inputs can diverge.
+  const m = trimmed.match(
+    /^(was|were|is|are|did|do|does|has|have|had|can|could|will|would|should|may|might)\s+(.+)$/i,
+  );
   if (!m) {
     return trimmed;
   }
 
-  const aux = m[1].toLowerCase(); // was|were|is|are
+  const aux = m[1].toLowerCase(); // was|were|is|are|did|do|does|has|have|had|can|could|will|would|should|may|might
   const rest = m[2].trim();
   if (!rest) return trimmed;
 
@@ -543,7 +547,10 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     return out;
   }
 
-  // Heuristic: split before common predicate starters (covers many "Was X fair/true/based..." forms).
+  // Heuristic: split before common predicate starters.
+  // Keep this generic (no domain-specific terms) but broad enough to handle common yes/no question shapes:
+  // - evaluation adjectives ("fair", "true", ...)
+  // - common verbs ("cause", "increase", ...)
   const predicateStarters = [
     "fair",
     "true",
@@ -557,6 +564,31 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     "justified",
     "reasonable",
     "biased",
+    // generic verb starters (helps convert "Did/Does/Can X cause Y?" -> "X did/does/can cause Y")
+    "cause",
+    "causes",
+    "caused",
+    "increase",
+    "increases",
+    "increased",
+    "decrease",
+    "decreases",
+    "decreased",
+    "improve",
+    "improves",
+    "improved",
+    "reduce",
+    "reduces",
+    "reduced",
+    "prevent",
+    "prevents",
+    "prevented",
+    "lead",
+    "leads",
+    "led",
+    "result",
+    "results",
+    "resulted",
   ];
   const starterRe = new RegExp(`\\b(${predicateStarters.join("|")})\\b`, "i");
   const starterMatch = rest.match(starterRe);
@@ -570,10 +602,17 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     }
   }
 
-  // Fallback: don't guess a subject/predicate split; keep the remainder intact and use "It <aux> the case that …"
-  // This is grammatical and stable, though not identical to a hand-written statement.
-  const out = `It ${aux} the case that ${rest}`.replace(/\s+/g, " ").trim();
-  return out;
+  // Fallback: don't guess a subject/predicate split; keep the remainder intact and use a stable grammatical form.
+  // For copulas (is/are/was/were), "It <aux> the case that …" is grammatical.
+  // For other auxiliaries, avoid "It do/has/can the case that …" and instead keep meaning with "It is the case that …".
+  const copulas = new Set(["is", "are", "was", "were"]);
+  const out = copulas.has(aux)
+    ? `It ${aux} the case that ${rest}`
+    : `It is the case that ${rest}`;
+  // Preserve modality/tense as much as possible by not dropping content; we only normalize the question form.
+  // (We intentionally do NOT attempt complex verb conjugation.)
+  const normalized = out.replace(/\s+/g, " ").trim();
+  return normalized;
 }
 
 /**
@@ -1097,6 +1136,17 @@ Return ONLY valid JSON matching the schema. All string fields must be non-empty 
 For array fields, always include at least one item where appropriate.`;
   }
 
+  if (provider === "anthropic" || provider === "claude") {
+    return `
+## OUTPUT FORMAT (CRITICAL)
+Return ONLY valid JSON. Do NOT include any explanation text outside the JSON.
+- All enum fields must use EXACT values from the allowed options (case-sensitive)
+- All boolean fields must be true or false (not strings)
+- All number fields must be numbers (not strings)
+- Do not omit any required fields
+- For empty arrays, use [] not null`;
+  }
+
   if (provider === "google" || provider === "gemini") {
     return `
 ## OUTPUT FORMAT (CRITICAL)
@@ -1117,7 +1167,6 @@ Return ONLY valid JSON matching the exact schema structure.
 - Use empty array [] for optional array fields with no items`;
   }
 
-  // Anthropic/Claude handles structured output well, minimal hints needed
   return "";
 }
 
@@ -3674,11 +3723,19 @@ Now analyze the input and output JSON only.`;
   }
 
   // v2.6.30: Input Neutrality: all inputs must be treated identically
+  // v2.6.32: IMPORTANT drift reducer
+  // Do NOT branch on model output (e.g., parsed.subClaims length). That can cause meaning-equivalent inputs
+  // to take different paths depending on what the model happened to return, which amplifies drift in:
+  // - scope splitting
+  // - claim decomposition
+  // - research query generation
+  //
+  // Instead, decide "short/simple" purely from the input string (canonical analysisInput).
   const isShortSimpleInput =
-    input.trim().length > 0 &&
-    input.trim().length <= SHORT_SIMPLE_INPUT_MAX_CHARS &&
-    parsed.subClaims.length <= 1 &&
-    (parsed.keyFactors?.length ?? 0) <= 1 &&
+    analysisInput.trim().length > 0 &&
+    analysisInput.trim().length <= SHORT_SIMPLE_INPUT_MAX_CHARS &&
+    !analysisInput.includes("\n") &&
+    analysisInput.split(/\s+/).filter(Boolean).length <= 12 &&
     // Comparative statements are short but need decomposition; don't skip expansion.
     !isComparativeLikeText(analysisInput);
 
@@ -5353,7 +5410,7 @@ async function generateMultiScopeVerdicts(
   );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
-  const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS (also called SCOPES) separately.
+  const systemPromptBase = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS (also called SCOPES) separately.
 
 ## CRITICAL: TEMPORAL REASONING
 
@@ -5485,6 +5542,19 @@ ${scopesFormatted}
 ${getKnowledgeInstruction(state.originalInput, understanding)}
 ${getProviderPromptHint()}`;
 
+  // Prevent structured-output truncation (common cause of JSON/schema parse failures).
+  // Keep outputs concise so they fit within typical provider output token limits.
+  const brevityRules = `
+## OUTPUT BREVITY (CRITICAL)
+- Be concise. Avoid long paragraphs.
+- keyFactors: provide 3–5 items max (overall + per scope).
+- keyFactors.factor: <= 12 words. keyFactors.explanation: <= 1 sentence.
+- claimVerdicts.reasoning: <= 2 short sentences.
+- supportingFactIds: include up to 5 IDs per claim (or [] if unclear).
+- calibrationNote: keep very short (or "" if not applicable).`;
+
+  const systemPrompt = systemPromptBase + brevityRules;
+
   const userPrompt = `## ${inputLabel}
 "${analysisInput}"
 
@@ -5501,42 +5571,69 @@ Provide SEPARATE answers for each scope.`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE> | null = null;
 
-  try {
-    const result = await generateText({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: getDeterministicTemperature(0.3),
-      output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_SCOPE }),
-    });
-    state.llmCalls++;
+  // Retry once in "extreme compact" mode to reduce the chance of truncated JSON output.
+  // This is especially important when many facts/claims exist (deep mode).
+  const attempts: Array<{ label: string; extraSystem: string }> = [
+    { label: "primary", extraSystem: "" },
+    {
+      label: "retry-compact",
+      extraSystem: `
 
-    // Handle different AI SDK versions - safely extract structured output
-    const rawOutput = extractStructuredOutput(result);
-    if (rawOutput) {
-      parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE>;
-      debugLog("generateMultiScopeVerdicts: SUCCESS", {
-        hasVerdictSummary: !!parsed.verdictSummary,
-        proceedingAnswersCount: parsed.proceedingAnswers?.length,
-        claimVerdictsCount: parsed.claimVerdicts?.length,
+## EXTREME COMPACT MODE (RETRY)
+- keyFactors: provide 3 items max (overall + per scope).
+- keyFactors.explanation: <= 12 words.
+- claimVerdicts.reasoning: <= 12 words.
+- If unsure, prefer short, conservative wording over long explanations.`,
+    },
+  ];
+
+  for (const attempt of attempts) {
+    if (parsed?.proceedingAnswers) break;
+
+    try {
+      const result = await generateText({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt + attempt.extraSystem },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: getDeterministicTemperature(0.3),
+        // Explicit maxOutputTokens avoids relying on SDK/provider defaults (which can be too low for multi-scope verdicts).
+        maxOutputTokens: 4096,
+        output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_SCOPE }),
       });
-    } else {
-      debugLog("generateMultiScopeVerdicts: No rawOutput returned");
-    }
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    debugLog("generateMultiScopeVerdicts: ERROR", {
-      error: errMsg,
-      stack: err instanceof Error ? err.stack?.split('\n').slice(0, 5).join('\n') : undefined,
-    });
+      state.llmCalls++;
 
-    // Check for OpenAI schema validation errors
-    if (errMsg.includes("Invalid schema") || errMsg.includes("required")) {
-      debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_SCOPE");
+      // Handle different AI SDK versions - safely extract structured output
+      const rawOutput = extractStructuredOutput(result);
+      if (rawOutput) {
+        parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE>;
+        debugLog("generateMultiScopeVerdicts: SUCCESS", {
+          attempt: attempt.label,
+          hasVerdictSummary: !!parsed.verdictSummary,
+          proceedingAnswersCount: parsed.proceedingAnswers?.length,
+          claimVerdictsCount: parsed.claimVerdicts?.length,
+        });
+      } else {
+        debugLog("generateMultiScopeVerdicts: No rawOutput returned", {
+          attempt: attempt.label,
+          resultKeys: result ? Object.keys(result) : [],
+        });
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      debugLog("generateMultiScopeVerdicts: ERROR", {
+        attempt: attempt.label,
+        error: errMsg,
+        stack: err instanceof Error ? err.stack?.split("\n").slice(0, 8).join("\n") : undefined,
+      });
+
+      // Check for OpenAI schema validation errors
+      if (errMsg.includes("Invalid schema") || errMsg.includes("required")) {
+        debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_SCOPE");
+      }
+      state.llmCalls++;
     }
-    state.llmCalls++;
   }
 
   // Fallback if structured output failed
@@ -5555,7 +5652,7 @@ Provide SEPARATE answers for each scope.`;
         truthPercentage: 50,
         riskTier: "B" as const,
         reasoning:
-          "Unable to generate verdict due to schema validation error. Manual review recommended.",
+          "Unable to generate verdict due to structured-output failure. Manual review recommended.",
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
@@ -5576,7 +5673,7 @@ Provide SEPARATE answers for each scope.`;
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
       nuancedAnswer:
-        "The structured output generation failed. Manual review recommended.",
+        "Verdict generation failed due to a structured-output error (often caused by truncated JSON). Manual review recommended.",
       keyFactors: [],
       hasMultipleProceedings: true,
       proceedingAnswers: understanding.distinctProceedings.map(
@@ -6127,6 +6224,7 @@ ${factsFormatted}`;
         { role: "user", content: userPrompt },
       ],
       temperature: getDeterministicTemperature(0.3),
+      maxOutputTokens: 4096,
       output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE }),
     });
     state.llmCalls++;
@@ -6156,7 +6254,7 @@ ${factsFormatted}`;
         confidence: 50,
         truthPercentage: 50,
         riskTier: "B" as const,
-        reasoning: "Unable to generate verdict due to schema validation error.",
+        reasoning: "Unable to generate verdict due to structured-output failure.",
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
@@ -6175,7 +6273,7 @@ ${factsFormatted}`;
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
       nuancedAnswer:
-        "The structured output generation failed. Manual review recommended.",
+        "Verdict generation failed due to a structured-output error (often caused by truncated JSON). Manual review recommended.",
       keyFactors: [],
       hasMultipleProceedings: false,
     };
@@ -6544,6 +6642,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         },
       ],
       temperature: getDeterministicTemperature(0.3),
+      maxOutputTokens: 4096,
       output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM }),
     });
     state.llmCalls++;
@@ -6576,7 +6675,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         truthPercentage: 50,
         riskTier: "B" as const,
         reasoning:
-          "Unable to generate verdict due to schema validation error. Manual review recommended.",
+          "Unable to generate verdict due to structured-output failure. Manual review recommended.",
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
