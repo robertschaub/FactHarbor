@@ -1149,6 +1149,16 @@
   background-color: #fff8e1;
 }
 
+.claimCardTangential {
+  background-color: #fafafa;
+  opacity: 0.85;
+  border-left-color: #9e9e9e !important;
+}
+
+.claimCardTangential .claimText {
+  color: #757575;
+}
+
 .claimContestation {
   margin-top: 8px;
   font-size: 12px;

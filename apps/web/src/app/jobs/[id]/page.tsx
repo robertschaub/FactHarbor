@@ -1342,14 +1342,21 @@ function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCro
   const hasEvidenceBasedContestation = claim.isContested &&
     (claim.factualBasis === "established" || claim.factualBasis === "disputed");
 
+  const isTangential = claim.thesisRelevance === "tangential";
+
   return (
-    <div className={`${styles.claimCard} ${hasEvidenceBasedContestation ? styles.claimCardContested : ""}`} style={{ borderLeftColor: color.border }}>
+    <div className={`${styles.claimCard} ${hasEvidenceBasedContestation ? styles.claimCardContested : ""} ${isTangential ? styles.claimCardTangential : ""}`} style={{ borderLeftColor: isTangential ? "#9e9e9e" : color.border }}>
       <div className={styles.claimCardHeader}>
         <span className={styles.claimId}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
+        {isTangential && <Badge bg="#f5f5f5" color="#616161">📎 Tangential</Badge>}
+        {claim.isCounterClaim && <Badge bg="#fff3e0" color="#e65100">↔️ Counter</Badge>}
         <Badge bg={color.bg} color={color.text}>
           {color.icon} {getVerdictLabel(claimVerdictLabel)} {claimTruth}% ({claim.confidence}% confidence)
         </Badge>
+        {isTangential && (
+          <Badge bg="#eeeeee" color="#757575">Not in verdict</Badge>
+        )}
         {hasEvidenceBasedContestation && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
         )}
