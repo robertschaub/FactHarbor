@@ -354,8 +354,8 @@
   color: #721c24;
 }
 
-/* Multi-Proceeding Answer Banner */
-.multiProceedingBanner {
+/* Multi-Scope Answer Banner */
+.multiScopeBanner {
   margin-bottom: 20px;
 }
 
@@ -400,7 +400,7 @@
   color: #333;
 }
 
-.proceedingNotice {
+.scopeNotice {
   padding: 10px 16px;
   background-color: #fff3e0;
   border: 1px solid #ffcc80;
@@ -410,11 +410,11 @@
   gap: 8px;
 }
 
-.proceedingIcon {
+.scopeIcon {
   font-size: 18px;
 }
 
-.proceedingText {
+.scopeText {
   font-size: 13px;
   color: #e65100;
   font-weight: 600;
@@ -465,7 +465,7 @@
   color: #f57c00;
 }
 
-.proceedingSummary {
+.scopeSummary {
   padding: 12px;
   background-color: #f8f9fa;
   border-radius: 8px;
@@ -473,7 +473,7 @@
   border-left: 4px solid #6c757d;
 }
 
-.proceedingSummaryText {
+.scopeSummaryText {
   font-size: 14px;
   color: #333;
 }
@@ -491,18 +491,18 @@
   line-height: 1.5;
 }
 
-.proceedingsAnalysis {
+.scopesAnalysis {
   margin-top: 16px;
 }
 
-.proceedingsHeader {
+.scopesHeader {
   margin: 0 0 12px;
   font-size: 14px;
   color: #666;
   text-transform: uppercase;
 }
 
-.proceedingsStack {
+.scopesStack {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -529,56 +529,56 @@
   gap: 6px;
 }
 
-/* Proceeding Card */
-.proceedingCard {
+/* Scope Card */
+.scopeCard {
   border: 2px solid;
   border-radius: 12px;
   overflow: hidden;
   background-color: #fff;
 }
 
-.proceedingCardHeader {
+.scopeCardHeader {
   padding: 10px 14px;
   background-color: #f8f9fa;
   border-bottom: 1px solid #ddd;
 }
 
-.proceedingCardTitle {
+.scopeCardTitle {
   font-weight: 700;
   font-size: 14px;
   color: #333;
 }
 
-.proceedingCardMeta {
+.scopeCardMeta {
   font-size: 11px;
   color: #666;
   margin-top: 4px;
 }
 
-.proceedingCardContent {
+.scopeCardContent {
   padding: 14px;
 }
 
-.proceedingAnswerRow {
+.scopeAnswerRow {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
 }
 
-.proceedingAnswerBadge {
+.scopeAnswerBadge {
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 700;
 }
 
-.proceedingPercentage {
+.scopePercentage {
   font-size: 12px;
   color: #666;
 }
 
-.proceedingAboutBox {
+.scopeAboutBox {
   margin: 10px 0 10px;
   padding: 10px;
   border: 1px solid #e6e6e6;
@@ -586,7 +586,7 @@
   border-radius: 8px;
 }
 
-.proceedingAboutHeader {
+.scopeAboutHeader {
   font-size: 10px;
   font-weight: 700;
   color: #666;
@@ -594,23 +594,23 @@
   margin-bottom: 6px;
 }
 
-.proceedingAboutRow {
+.scopeAboutRow {
   font-size: 12px;
   color: #333;
   line-height: 1.45;
   margin-bottom: 4px;
 }
 
-.proceedingAboutLabel {
+.scopeAboutLabel {
   font-weight: 700;
   color: #555;
 }
 
-.proceedingAboutText {
+.scopeAboutText {
   color: #333;
 }
 
-.proceedingAboutInline {
+.scopeAboutInline {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
@@ -619,11 +619,11 @@
   color: #555;
 }
 
-.proceedingAboutItem {
+.scopeAboutItem {
   display: inline;
 }
 
-.proceedingAssessmentLabel {
+.scopeAssessmentLabel {
   font-weight: 700;
   color: #555;
 }
@@ -661,7 +661,7 @@
   color: #c2185b;
 }
 
-.proceedingShortAnswer {
+.scopeShortAnswer {
   font-size: 13px;
   color: #333;
   line-height: 1.5;
@@ -1079,11 +1079,11 @@
   margin: 0 0 12px;
 }
 
-.proceedingGroup {
+.scopeGroup {
   margin-bottom: 20px;
 }
 
-.proceedingGroupHeader {
+.scopeGroupHeader {
   margin: 0 0 10px;
   padding: 8px 12px;
   background-color: #f0f7ff;

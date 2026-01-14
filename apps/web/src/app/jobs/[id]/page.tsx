@@ -890,11 +890,11 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
   const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.proceedingSummary || "";
 
   return (
-    <div className={styles.multiProceedingBanner}>
-      <div className={styles.proceedingNotice}>
-        <span className={styles.proceedingIcon}>🔀</span>
+    <div className={styles.multiScopeBanner}>
+      <div className={styles.scopeNotice}>
+        <span className={styles.scopeIcon}>🔀</span>
         <span
-          className={styles.proceedingText}
+          className={styles.scopeText}
           title='A "scope" is a bounded analytical frame (EvidenceScope) that should be analyzed separately.'
         >
           {scopes.length} distinct scopes analyzed separately
@@ -923,8 +923,8 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
         )}
 
         {verdictReason && (
-          <div className={styles.proceedingSummary}>
-            <div className={styles.proceedingSummaryText}>{verdictReason}</div>
+          <div className={styles.scopeSummary}>
+            <div className={styles.scopeSummaryText}>{verdictReason}</div>
           </div>
         )}
 
@@ -961,11 +961,11 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
       </div>
 
       {verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 && (
-        <div className={styles.proceedingsAnalysis}>
-          <h4 className={styles.proceedingsHeader}>
+        <div className={styles.scopesAnalysis}>
+          <h4 className={styles.scopesHeader}>
             📑 Scopes
           </h4>
-          <div className={styles.proceedingsStack}>
+          <div className={styles.scopesStack}>
             {verdictSummary.proceedingAnswers.map((pa: any) => {
               const scope = scopes.find((s: any) => s.id === pa.proceedingId);
               return <ScopeCard key={pa.proceedingId} scopeAnswer={pa} scope={scope} />;
@@ -1003,45 +1003,45 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
   const showAbout = !!subject || (charges.length > 0) || !!outcome;
 
   return (
-    <div className={styles.proceedingCard} style={{ borderColor: color.border }}>
-      <div className={styles.proceedingCardHeader}>
-        <div className={styles.proceedingCardTitle}>
+    <div className={styles.scopeCard} style={{ borderColor: color.border }}>
+      <div className={styles.scopeCardHeader}>
+        <div className={styles.scopeCardTitle}>
           {scope?.name || scopeAnswer.proceedingName}
         </div>
         {scope && (
-          <div className={styles.proceedingCardMeta}>
+          <div className={styles.scopeCardMeta}>
             {scope.court && <span>{scope.court} • </span>}
             {scope.date && <span>{scope.date}</span>}
             {scope.status && scope.status !== "unknown" && <span> • {scope.status}</span>}
           </div>
         )}
         {showAbout && (
-          <div className={styles.proceedingAboutInline}>
+          <div className={styles.scopeAboutInline}>
             {subject && (
-              <span className={styles.proceedingAboutItem}>
-                <span className={styles.proceedingAboutLabel}>Subject:</span> {subject}
+              <span className={styles.scopeAboutItem}>
+                <span className={styles.scopeAboutLabel}>Subject:</span> {subject}
               </span>
             )}
             {charges.length > 0 && (
-              <span className={styles.proceedingAboutItem}>
-                <span className={styles.proceedingAboutLabel}>Charges:</span> {charges.slice(0, 3).join("; ")}{charges.length > 3 ? "…" : ""}
+              <span className={styles.scopeAboutItem}>
+                <span className={styles.scopeAboutLabel}>Charges:</span> {charges.slice(0, 3).join("; ")}{charges.length > 3 ? "…" : ""}
               </span>
             )}
             {outcome && (
-              <span className={styles.proceedingAboutItem}>
-                <span className={styles.proceedingAboutLabel}>Outcome:</span> {outcome}
+              <span className={styles.scopeAboutItem}>
+                <span className={styles.scopeAboutLabel}>Outcome:</span> {outcome}
               </span>
             )}
           </div>
         )}
       </div>
 
-      <div className={styles.proceedingCardContent}>
-        <div className={styles.proceedingAnswerRow}>
-          <span className={styles.proceedingAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
+      <div className={styles.scopeCardContent}>
+        <div className={styles.scopeAnswerRow}>
+          <span className={styles.scopeAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(scopeVerdict)}
           </span>
-          <span className={styles.proceedingPercentage}>{scopeTruth}% <span style={{ fontSize: 11, color: "#999" }}>({scopeAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.scopePercentage}>{scopeTruth}% <span style={{ fontSize: 11, color: "#999" }}>({scopeAnswer.confidence}%  confidence)</span></span>
         </div>
 
         <div className={`${styles.factorsSummary} ${contestedCount > 0 ? styles.factorsSummaryContested : styles.factorsSummaryNormal}`}>
@@ -1056,8 +1056,8 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
         </div>
 
         {scopeAnswer.shortAnswer && (
-          <div className={styles.proceedingShortAnswer}>
-            <span className={styles.proceedingAssessmentLabel}>Assessment:</span>{" "}
+          <div className={styles.scopeShortAnswer}>
+            <span className={styles.scopeAssessmentLabel}>Assessment:</span>{" "}
             {scopeAnswer.shortAnswer}
           </div>
         )}
@@ -1387,15 +1387,15 @@ function ClaimsGroupedByScope({
   return (
     <div>
       {groups.map((group) => (
-        <div key={group.id} className={styles.proceedingGroup}>
-          <h4 className={styles.proceedingGroupHeader}>
+        <div key={group.id} className={styles.scopeGroup}>
+          <h4 className={styles.scopeGroupHeader}>
             {group.title}
           </h4>
           {group.claims.map((cv: any) => (
             <ClaimCard
               key={`${group.id}:${cv.claimId}`}
               claim={cv}
-              showCrossProceeding={hasScopes && (!cv.relatedProceedingId || group.id === "general")}
+              showCrossScope={hasScopes && (!cv.relatedProceedingId || group.id === "general")}
             />
           ))}
 
@@ -1419,7 +1419,7 @@ function ClaimsGroupedByScope({
   );
 }
 
-function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCrossProceeding?: boolean }) {
+function ClaimCard({ claim, showCrossScope = false }: { claim: any; showCrossScope?: boolean }) {
   const claimTruth = getClaimTruthPercentage(claim);
   const claimConfidence = claim?.confidence ?? 0;
   const claimVerdictLabel = percentageToClaimVerdict(claimTruth, claimConfidence);
@@ -1447,7 +1447,7 @@ function ClaimCard({ claim, showCrossProceeding = false }: { claim: any; showCro
         {hasEvidenceBasedContestation && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
         )}
-        {showCrossProceeding && (
+        {showCrossScope && (
           <Badge bg="#eef2ff" color="#1e3a8a">Cross-scope</Badge>
         )}
         {claim.isPseudoscience && (

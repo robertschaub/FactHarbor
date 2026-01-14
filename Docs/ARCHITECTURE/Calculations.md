@@ -157,13 +157,13 @@ interface ExtractedFact {
 
 **Function**: `applyGate4ToVerdicts` (line ~1018)
 
-Counter-evidence is scoped to relevant proceedings:
+Counter-evidence is scoped to relevant scopes:
 
 ```typescript
 // Count contradicting facts (criticism category)
 // Only count criticism facts that are:
-// 1. In the same proceeding as the verdict, OR
-// 2. Not scoped to any specific proceeding (general criticism)
+// 1. In the same scope as the verdict, OR
+// 2. Not scoped to any specific scope (general criticism)
 const contradictingFactCount = facts.filter(f =>
   !verdict.supportingFactIds.includes(f.id) &&
   f.category === "criticism" &&
@@ -171,7 +171,7 @@ const contradictingFactCount = facts.filter(f =>
 ).length;
 ```
 
-This prevents criticism of one proceeding from penalizing claims about a different proceeding.
+This prevents criticism of one scope from penalizing claims about a different scope.
 
 ### Evidence-Based Contestation
 
@@ -200,8 +200,8 @@ if (evidenceBasedContestation) {
 graph TD
     Facts[Extracted Facts] --> ClaimVerdicts[Claim Verdicts]
     ClaimVerdicts --> KeyFactors[Key Factor Verdicts]
-    KeyFactors --> ProceedingAnswers[Proceeding Answers]
-    ProceedingAnswers --> OverallAnswer[Overall Question Answer]
+    KeyFactors --> ScopeAnswers[Scope Answers]
+    ScopeAnswers --> OverallAnswer[Overall Question Answer]
     
     ClaimVerdicts --> ArticleVerdict[Article Verdict]
 ```
@@ -239,11 +239,11 @@ else if (factorAvgTruthPct < 43) supports = "no";
 else supports = "neutral";
 ```
 
-### Level 3: Proceeding Answers
+### Level 3: Scope Answers
 
 **File**: `apps/web/src/lib/analyzer.ts` (line ~4700)
 
-Proceedings aggregate key factors with contestation correction:
+Scopes aggregate key factors with contestation correction:
 
 ```typescript
 // Calculate effective negatives (contested negatives are down-weighted)
@@ -262,12 +262,12 @@ if (answerTruthPct >= 72 && positiveFactors > effectiveNegatives) {
 
 **File**: `apps/web/src/lib/analyzer.ts` (line ~4796)
 
-Overall answer averages proceeding answers (de-duplicated):
+Overall answer averages scope answers (de-duplicated):
 
 ```typescript
 const avgTruthPct = Math.round(
-  correctedProceedingAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) /
-    correctedProceedingAnswers.length
+  correctedScopeAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) /
+    correctedScopeAnswers.length
 );
 ```
 
@@ -439,7 +439,7 @@ FactHarbor's calculation system:
 
 1. **Scales verdicts** using a symmetric 7-point system (0-100%)
 2. **Distinguishes counter-evidence** from contestation and applies penalties
-3. **Aggregates hierarchically** from facts → claims → factors → proceedings → overall
+3. **Aggregates hierarchically** from facts → claims → factors → scopes → overall
 4. **Modulates by confidence** using truth bands
 5. **De-duplicates near-identical claims** to prevent double-counting
 6. **Handles dependencies** to avoid cascading false prerequisites
