@@ -2572,6 +2572,10 @@ function pruneScopesByCoverage(
     ? ((understanding as any).distinctProceedings as any[])
     : [];
   if (scopes.length === 0) return understanding;
+  // Single-scope runs often leave relatedProceedingId empty on facts/claims (because there is no
+  // scope choice to make). Never prune the only scope in that case; doing so would lose metadata
+  // and fragment the analysis.
+  if (scopes.length === 1) return understanding;
 
   const factsPerScope = new Map<string, number>();
   for (const f of facts || []) {

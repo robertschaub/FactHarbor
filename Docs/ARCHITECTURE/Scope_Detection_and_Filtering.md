@@ -40,6 +40,12 @@ FactHarbor enforces this in two layers:
 - **Prompt constraints**: Scope-producing prompts explicitly include the Scope Relevance Requirement.
 - **Deterministic backstop**: Scopes with **zero claims and zero facts** are pruned before verdict generation, and `requiresSeparateAnalysis` is recomputed.
 
+Additionally, when analysis is already in **multi-scope** mode and some claims cannot be assigned to a specific scope, FactHarbor creates a special scope:
+
+- **`CTX_UNSCOPED`**: “Unscoped claims (no specific EvidenceScope identified)”
+
+This keeps evidence transparent (“unassigned” is explicit) without guessing the best scope.
+
 ## Claim relevance: `thesisRelevance` (Policy B)
 
 `thesisRelevance` answers: “Does this claim affect whether the thesis is true/false?”
