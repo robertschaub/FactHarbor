@@ -2668,6 +2668,15 @@ NOT DISTINCT SCOPES:
 - Different perspectives on the same event (e.g., "US view" vs "Brazil view") are NOT separate scopes by themselves.
 - Pro vs con viewpoints are NOT scopes.
 
+SCOPE RELEVANCE REQUIREMENT (CRITICAL):
+- Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include scopes from unrelated domains just because they share a general category
+- Example: If input is about "solar panel efficiency", do NOT include scopes about nuclear power regulations or wind farm subsidies - even though all are "energy-related"
+- Example: If input is about "coffee consumption effects", do NOT include scopes about alcohol studies or tobacco research - even though all are "substance consumption"
+- Each scope must have a clear, direct connection to the input's subject matter
+- When in doubt, use fewer scopes rather than including marginally relevant ones
+- A scope with zero relevant claims/evidence should NOT exist
+
 ${recencyMatters ? `## ⚠️ RECENT DATA DETECTED
 
 This input appears to involve recent events, dates, or announcements. When generating research queries:
@@ -3199,13 +3208,13 @@ For "This vaccine causes autism."
 
     const result: any = await Promise.race([
       generateText({
-        model,
-        messages: [
-          { role: "system", content: prompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: getDeterministicTemperature(0.3),
-        output: Output.object({ schema: understandingSchemaForProvider }),
+      model,
+      messages: [
+        { role: "system", content: prompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: getDeterministicTemperature(0.3),
+      output: Output.object({ schema: understandingSchemaForProvider }),
       }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`understandClaim LLM timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
@@ -3275,12 +3284,12 @@ For "This vaccine causes autism."
 
     const result: any = await Promise.race([
       generateText({
-        model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
-        ],
-        temperature: getDeterministicTemperature(0.2),
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
+      ],
+      temperature: getDeterministicTemperature(0.2),
       }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`understandClaim JSON fallback timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
@@ -3333,7 +3342,7 @@ For "This vaccine causes autism."
   if (!parsed) {
     // Retry once with a smaller, schema-focused prompt (providers sometimes fail on long prompts + strict schemas).
     // v2.6.30: Changed detectedInputType to "claim | article" - yes/no inputs are normalized to claims at entry point
-    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-SCOPE DETECTION\n- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.\n- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n\nENUM RULES\n- detectedInputType must be exactly one of: claim | article\n- analysisIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
+    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-SCOPE DETECTION\n- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.\n- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n- Scopes must be DIRECTLY relevant to the input topic - do not include scopes from unrelated domains that merely share a general category.\n\nENUM RULES\n- detectedInputType must be exactly one of: claim | article\n- analysisIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
     try {
       parsed = await tryStructured(retryPrompt, "structured-2");
     } catch (err: any) {
@@ -3447,10 +3456,10 @@ For "This vaccine causes autism."
     parsed.detectedInputType === "claim" &&
     (parsed.distinctProceedings?.length ?? 0) <= 1
   ) {
-      // v2.6.23: Use normalized analysisInput for scope detection to maintain input neutrality.
+    // v2.6.23: Use normalized analysisInput for scope detection to maintain input neutrality.
       // When deterministic mode is enabled, yes/no forms are normalized to statements earlier (lines 2507-2528).
-      // Using the same normalized form here ensures scope detection aligns with claim analysis,
-      // preventing scope-to-statement misalignment and maintaining input neutrality.
+    // Using the same normalized form here ensures scope detection aligns with claim analysis,
+    // preventing scope-to-statement misalignment and maintaining input neutrality.
     const supplementalInput = parsed.impliedClaim || analysisInput;
     const supplemental = await requestSupplementalScopes(supplementalInput, model, parsed);
     if (supplemental?.distinctProceedings && supplemental.distinctProceedings.length > 1) {
@@ -4481,7 +4490,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       .join(" ");
 
     if (queryTerms.trim()) {
-    const baseQueries = [
+      const baseQueries = [
         queryTerms,
         `${entityStr} ${queryTerms.split(" ").slice(0, 3).join(" ")}`,
       ];
@@ -4792,16 +4801,16 @@ Evidence documentation typically defines its scope/context. Extract this when pr
 
     const result: any = await Promise.race([
       generateText({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Source: ${source.title}\nURL: ${source.url}\n\n${source.fullText}`,
-          },
-        ],
-        temperature: getDeterministicTemperature(0.2),
-        output: Output.object({ schema: FACT_SCHEMA }),
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Source: ${source.title}\nURL: ${source.url}\n\n${source.fullText}`,
+        },
+      ],
+      temperature: getDeterministicTemperature(0.2),
+      output: Output.object({ schema: FACT_SCHEMA }),
       }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`extractFacts LLM timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
@@ -6732,7 +6741,7 @@ async function generateTwoPanelSummary(
     understanding.articleThesis ||
     understanding.impliedClaim ||
     state.originalText.split("\n")[0]?.trim().slice(0, 100) ||
-    "Analyzed Content";
+      "Analyzed Content";
 
   if (hasMultipleProceedings) {
     title += ` (${understanding.distinctProceedings.length} contexts)`;
@@ -6899,37 +6908,37 @@ async function generateReport(
   report += `## Executive Summary\n\n`;
 
   // Unified summary for all inputs (input neutrality)
-  const verdictEmoji =
-    articleAnalysis.articleTruthPercentage >= 72
-      ? iconPositive
-      : articleAnalysis.articleTruthPercentage >= 43
-        ? iconNeutral
-        : iconNegative;
+    const verdictEmoji =
+      articleAnalysis.articleTruthPercentage >= 72
+        ? iconPositive
+        : articleAnalysis.articleTruthPercentage >= 43
+          ? iconNeutral
+          : iconNegative;
 
-  report += `### Article Verdict: ${verdictEmoji} ${percentageToArticleVerdict(articleAnalysis.articleTruthPercentage)} (${articleAnalysis.articleTruthPercentage}%)\n\n`;
+    report += `### Article Verdict: ${verdictEmoji} ${percentageToArticleVerdict(articleAnalysis.articleTruthPercentage)} (${articleAnalysis.articleTruthPercentage}%)\n\n`;
 
-  if (articleAnalysis.articleVerdictReason) {
-    report += `> ${articleAnalysis.articleVerdictReason}\n\n`;
-  }
-
-  if (articleAnalysis.articleThesis &&
-      articleAnalysis.articleThesis !== "<UNKNOWN>" &&
-      !articleAnalysis.articleThesis.toLowerCase().includes("unknown")) {
-    report += `**Implied Claim:** ${articleAnalysis.articleThesis}\n\n`;
-  }
-
-  if (articleAnalysis.keyFactors && articleAnalysis.keyFactors.length > 0) {
-    report += `**Key Factors:**\n`;
-    for (const f of articleAnalysis.keyFactors) {
-      const icon =
-        f.supports === "yes"
-          ? iconPositive
-          : f.supports === "no"
-            ? iconNegative
-            : iconNeutral;
-      report += `- ${icon} ${f.factor}${f.isContested ? ` ${iconWarning} CONTESTED` : ""}\n`;
+    if (articleAnalysis.articleVerdictReason) {
+      report += `> ${articleAnalysis.articleVerdictReason}\n\n`;
     }
-    report += `\n`;
+
+    if (articleAnalysis.articleThesis &&
+        articleAnalysis.articleThesis !== "<UNKNOWN>" &&
+        !articleAnalysis.articleThesis.toLowerCase().includes("unknown")) {
+      report += `**Implied Claim:** ${articleAnalysis.articleThesis}\n\n`;
+    }
+
+    if (articleAnalysis.keyFactors && articleAnalysis.keyFactors.length > 0) {
+      report += `**Key Factors:**\n`;
+      for (const f of articleAnalysis.keyFactors) {
+        const icon =
+          f.supports === "yes"
+            ? iconPositive
+            : f.supports === "no"
+              ? iconNegative
+              : iconNeutral;
+        report += `- ${icon} ${f.factor}${f.isContested ? ` ${iconWarning} CONTESTED` : ""}\n`;
+      }
+      report += `\n`;
   }
 
   // Claims
