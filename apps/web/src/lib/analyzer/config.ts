@@ -258,7 +258,7 @@ export function scopeTypeRank(label: string): number {
 }
 
 // Backward compatibility alias
-export const proceedingTypeRank = scopeTypeRank;
+export const contextTypeRank = scopeTypeRank;
 
 /**
  * Detect institution code from proceeding data

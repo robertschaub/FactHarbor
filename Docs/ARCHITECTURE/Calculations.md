@@ -65,13 +65,15 @@ function truthFromBand(band: "strong" | "partial" | "uncertain" | "refuted", con
 }
 ```
 
-## 2. Scope (Bounded Analytical Frame)
+## 2. Context (Bounded Analytical Frame)
 
-A **Scope** is the unified term for a bounded analytical frame. It replaces and unifies the previous terminology of "proceeding", "context", and "event".
+A **Context** (AnalysisContext) is a bounded analytical frame that should be analyzed separately. It replaces the previous terminology of "proceeding".
+
+Note: "Scope" is reserved for **EvidenceScope** (per-fact source methodology/boundaries).
 
 ### Definition
 
-A Scope is defined by:
+A Context is defined by:
 - **Boundaries**: What's included/excluded (e.g., "vehicle-only", "full lifecycle")
 - **Methodology**: Standards used (e.g., "ISO 14040", "WTW analysis")
 - **Temporal**: Time period (e.g., "2020-2025", "January 2023")
@@ -79,7 +81,7 @@ A Scope is defined by:
 - **Institution**: Court, agency, or organization (optional)
 - **Jurisdiction**: Geographic/legal jurisdiction (optional)
 
-### Scope Types
+### Context Types
 
 | Type | Examples |
 |------|----------|
@@ -88,13 +90,13 @@ A Scope is defined by:
 | **Regulatory** | EU regulations, US EPA standards |
 | **Temporal** | 2023 rollout vs 2024 review |
 
-### Multi-Scope Detection
+### Multi-Context Detection
 
-The system detects multiple scopes when an input requires separate analyses:
+The system detects multiple contexts when an input requires separate analyses:
 
 ```typescript
-interface Scope {
-  id: string;              // e.g., "SCOPE_TSE", "SCOPE_WTW"
+interface AnalysisContext {
+  id: string;              // e.g., "CTX_TSE", "CTX_WTW"
   name: string;            // Human-readable name
   shortName: string;       // Abbreviation
   institution?: string;    // Court, agency, organization
@@ -109,23 +111,23 @@ interface Scope {
 }
 ```
 
-### Scope Sources
+### Context Sources
 
-Scopes are determined from:
-1. **Input analysis** (understandClaim phase): Explicit or implied scopes in user query
-2. **Evidence extraction** (extractFacts phase): Sources may define their own scope via `sourceScope`
-3. **Claim decomposition**: Claims tagged with `relatedProceedingId` (legacy) or `relatedScopeId`
+Contexts are determined from:
+1. **Input analysis** (understandClaim phase): Explicit or implied contexts in user query
+2. **Evidence extraction** (extractFacts phase): Sources may define their own EvidenceScope via `evidenceScope`
+3. **Claim decomposition**: Claims tagged with `relatedProceedingId` (legacy field name)
 
-### Scope Mismatch Handling
+### EvidenceScope vs AnalysisContext
 
-When evidence defines a scope that differs from the analysis scope (e.g., WTW data applied to TTW analysis), this is flagged in verdict reasoning.
+When evidence defines an EvidenceScope that differs from the AnalysisContext (e.g., WTW data applied to TTW analysis), this is flagged in verdict reasoning.
 
-### Design Decision: sourceScope Kept Separate
+### Design Decision: evidenceScope Kept Separate
 
-The `sourceScope` field on facts is intentionally kept separate from top-level scopes. This enables:
-- **Provenance tracking**: Distinguishes scope detected from input vs scope defined by evidence
-- **Mismatch detection**: Identifies when evidence scope differs from analysis scope
-- **Verdict enrichment**: Notes scope context without modifying detected scopes
+The `evidenceScope` field on facts is intentionally kept separate from top-level contexts. This enables:
+- **Provenance tracking**: Distinguishes context detected from input vs scope defined by evidence
+- **Mismatch detection**: Identifies when evidence scope differs from analysis context
+- **Verdict enrichment**: Notes scope metadata without modifying detected contexts
 
 ## 3. Counter-Evidence Handling
 
@@ -157,13 +159,13 @@ interface ExtractedFact {
 
 **Function**: `applyGate4ToVerdicts` (line ~1018)
 
-Counter-evidence is scoped to relevant scopes:
+Counter-evidence is scoped to relevant contexts:
 
 ```typescript
 // Count contradicting facts (criticism category)
 // Only count criticism facts that are:
-// 1. In the same scope as the verdict, OR
-// 2. Not scoped to any specific scope (general criticism)
+// 1. In the same context as the verdict, OR
+// 2. Not scoped to any specific context (general criticism)
 const contradictingFactCount = facts.filter(f =>
   !verdict.supportingFactIds.includes(f.id) &&
   f.category === "criticism" &&
@@ -171,7 +173,7 @@ const contradictingFactCount = facts.filter(f =>
 ).length;
 ```
 
-This prevents criticism of one scope from penalizing claims about a different scope.
+This prevents criticism of one context from penalizing claims about a different context.
 
 ### Evidence-Based Contestation
 
@@ -200,8 +202,8 @@ if (evidenceBasedContestation) {
 graph TD
     Facts[Extracted Facts] --> ClaimVerdicts[Claim Verdicts]
     ClaimVerdicts --> KeyFactors[Key Factor Verdicts]
-    KeyFactors --> ScopeAnswers[Scope Answers]
-    ScopeAnswers --> OverallAnswer[Overall Question Answer]
+    KeyFactors --> ContextAnswers[Context Answers]
+    ContextAnswers --> OverallAnswer[Overall Question Answer]
     
     ClaimVerdicts --> ArticleVerdict[Article Verdict]
 ```
@@ -239,11 +241,11 @@ else if (factorAvgTruthPct < 43) supports = "no";
 else supports = "neutral";
 ```
 
-### Level 3: Scope Answers
+### Level 3: Context Answers
 
 **File**: `apps/web/src/lib/analyzer.ts` (line ~4700)
 
-Scopes aggregate key factors with contestation correction:
+Contexts aggregate key factors with contestation correction:
 
 ```typescript
 // Calculate effective negatives (contested negatives are down-weighted)
@@ -262,12 +264,12 @@ if (answerTruthPct >= 72 && positiveFactors > effectiveNegatives) {
 
 **File**: `apps/web/src/lib/analyzer.ts` (line ~4796)
 
-Overall answer averages scope answers (de-duplicated):
+Overall answer averages context answers (de-duplicated):
 
 ```typescript
 const avgTruthPct = Math.round(
-  correctedScopeAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) /
-    correctedScopeAnswers.length
+  correctedContextAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) /
+    correctedContextAnswers.length
 );
 ```
 
@@ -439,7 +441,7 @@ FactHarbor's calculation system:
 
 1. **Scales verdicts** using a symmetric 7-point system (0-100%)
 2. **Distinguishes counter-evidence** from contestation and applies penalties
-3. **Aggregates hierarchically** from facts → claims → factors → scopes → overall
+3. **Aggregates hierarchically** from facts → claims → factors → contexts → overall
 4. **Modulates by confidence** using truth bands
 5. **De-duplicates near-identical claims** to prevent double-counting
 6. **Handles dependencies** to avoid cascading false prerequisites

@@ -472,7 +472,7 @@ export default function JobPage() {
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
               {/* v2.6.31: Removed QUESTION badge - Input Neutrality: no separate paths for questions */}
-              {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">🔀 {scopes.length} SCOPES</Badge>}
+              {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">🔀 {scopes.length} CONTEXTS</Badge>}
               {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
               {result.meta.isPseudoscience && (
                 <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
@@ -895,9 +895,9 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
         <span className={styles.scopeIcon}>🔀</span>
         <span
           className={styles.scopeText}
-          title='A "scope" is a bounded analytical frame (EvidenceScope) that should be analyzed separately.'
+          title='A "context" is a bounded analytical frame (AnalysisContext) that should be analyzed separately.'
         >
-          {scopes.length} distinct scopes analyzed separately
+          {scopes.length} distinct contexts analyzed separately
         </span>
         {hasEvidenceBasedContestations && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
@@ -963,7 +963,7 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
       {verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 && (
         <div className={styles.scopesAnalysis}>
           <h4 className={styles.scopesHeader}>
-            📑 Scopes
+            📑 Contexts
           </h4>
           <div className={styles.scopesStack}>
             {verdictSummary.proceedingAnswers.map((pa: any) => {
@@ -1345,7 +1345,7 @@ function ClaimsGroupedByScope({
       if (claims.length === 0 && tangential.length === 0) continue;
       groups.push({
         id: key,
-        title: `Scope ${key}`,
+        title: `Context ${key}`,
         claims,
         tangential,
       });

@@ -96,17 +96,53 @@ export interface VerdictValidationResult {
 // ============================================================================
 
 /**
+ * ============================================================================
+ * TERMINOLOGY (CRITICAL - read before modifying this file):
+ * ============================================================================
+ *
+ * "Context" / "AnalysisContext"
+ *   = A bounded analytical frame that should be analyzed separately.
+ *   = Formerly called "Proceeding" in the codebase.
+ *   = Stored in `distinctProceedings` field (name kept for backward compatibility).
+ *   = Shown in UI as "Contexts".
+ *
+ * "ArticleContext"
+ *   = Narrative/background framing of the input article.
+ *   = NOT a reason to split into separate AnalysisContexts.
+ *   = Stored in `proceedingContext` field (name kept for backward compatibility).
+ *
+ * "Scope" / "EvidenceScope"
+ *   = Methodology/boundaries defined BY a source document.
+ *   = Attached to individual facts as `fact.evidenceScope`.
+ *   = Different from AnalysisContext! A fact's evidenceScope describes how
+ *     the SOURCE computed its data (e.g., WTW methodology).
+ *
+ * SUMMARY:
+ *   - "Context" in code = AnalysisContext (bounded analytical frame)
+ *   - "Scope" in code = EvidenceScope (per-fact source methodology)
+ *   - "ArticleContext" = narrative background (not a reason to split)
+ *
+ * JSON field names like `distinctProceedings`, `proceedingContext`, `relatedProceedingId`
+ * MUST NOT be renamed (backward compatibility with persisted data).
+ * ============================================================================
+ */
+
+/**
  * AnalysisContext: A bounded analytical frame requiring separate analysis
  *
+ * Formerly called "Proceeding" - now unified under "Context" terminology.
  * This is a GENERIC interface that works across ALL domains (legal, scientific, regulatory, etc.)
  * Domain-specific details are stored in the flexible `metadata` object.
  *
  * Examples:
- * - Legal: Different cases/proceedings (TSE Electoral vs STF Criminal)
+ * - Legal: Different cases (TSE Electoral vs STF Criminal)
  * - Scientific: Different methodologies (WTW vs TTW analysis)
  * - Regulatory: Different jurisdictions (US EPA vs EU REACH)
  * - Temporal: Different time periods (2020 study vs 2024 study)
  * - Geographic: Different regions (California vs Texas laws)
+ *
+ * Note: Shown in UI as "Contexts". The word "Scope" is reserved for EvidenceScope.
+ * @see EvidenceScope for per-fact source-defined scope metadata (different concept!)
  */
 export interface AnalysisContext {
   id: string;                    // Stable ID (e.g., "CTX_TSE", "CTX_WTW", "CTX_US")
@@ -146,11 +182,15 @@ export interface AnalysisContext {
 /**
  * EvidenceScope: The analytical frame/scope defined BY a source document
  *
- * Describes the methodology, boundaries, geography, and timeframe that a source
- * document used when producing evidence. Critical for comparing apples-to-apples.
+ * This is DIFFERENT from AnalysisContext! EvidenceScope describes the methodology,
+ * boundaries, geography, and timeframe that a SOURCE DOCUMENT used when producing
+ * its evidence. It's attached to individual facts as `fact.evidenceScope`.
  *
+ * Critical for comparing apples-to-apples:
  * Example: A study saying "hydrogen car efficiency is 40%" using WTW methodology
  * cannot be directly compared to a TTW study (different calculation boundaries).
+ *
+ * @see AnalysisContext for top-level analysis contexts (different concept!)
  */
 export interface EvidenceScope {
   name: string;           // Short label (e.g., "WTW", "TTW", "EU-LCA", "US jurisdiction")
@@ -184,9 +224,15 @@ export interface FactorAnalysis {
   verdictExplanation: string;
 }
 
-export interface ProceedingAnswer {
-  proceedingId: string;
-  proceedingName: string;
+/**
+ * ContextAnswer: The verdict/answer for a single AnalysisContext
+ *
+ * Note: Field names `proceedingId` and `proceedingName` are kept for
+ * backward compatibility with persisted JSON data.
+ */
+export interface ContextAnswer {
+  proceedingId: string;      // Context ID (field name kept for backward compat)
+  proceedingName: string;    // Context name (field name kept for backward compat)
   // Answer truth percentage (0-100)
   answer: number;
   confidence: number;
@@ -196,6 +242,11 @@ export interface ProceedingAnswer {
   keyFactors: KeyFactor[];
   factorAnalysis?: FactorAnalysis;
 }
+
+/**
+ * @deprecated Use ContextAnswer instead
+ */
+export type ProceedingAnswer = ContextAnswer;
 
 // ============================================================================
 // SEARCH & RESEARCH TYPES
@@ -228,12 +279,23 @@ export interface ClaimUnderstanding {
   detectedInputType: InputType;
   impliedClaim: string;
 
-  // EvidenceScopes (bounded analytical frames) detected from input.
-  // Field name kept for backward compatibility.
+  /**
+   * AnalysisContexts: Bounded analytical frames detected from input.
+   * Each context is analyzed separately (e.g., TSE Electoral vs STF Criminal).
+   *
+   * JSON field name "distinctProceedings" kept for backward compatibility.
+   * @see AnalysisContext
+   */
   distinctProceedings: AnalysisContext[];
   requiresSeparateAnalysis: boolean;
-  // ArticleContext: narrative/background framing of the input. Not a reason to split into scopes.
-  // Field name kept for backward compatibility.
+
+  /**
+   * ArticleContext: Narrative/background framing of the input.
+   * This is NOT an AnalysisContext - it's just background information.
+   * NOT a reason to split into separate analysis contexts.
+   *
+   * JSON field name "proceedingContext" kept for backward compatibility.
+   */
   proceedingContext: string;
 
   articleThesis: string;
@@ -362,8 +424,12 @@ export interface ClaimVerdict {
 export interface ArticleAnalysis {
   inputType: InputType;
 
+  /**
+   * Multi-context indicator and contexts array.
+   * JSON field names kept for backward compatibility.
+   */
   hasMultipleProceedings: boolean;
-  proceedings?: AnalysisContext[];  // Field name kept for backward compatibility
+  proceedings?: AnalysisContext[];  // AnalysisContexts (field name kept for backward compat)
 
   articleThesis: string;
   logicalFallacies: Array<{
@@ -437,6 +503,10 @@ export interface ResearchDecision {
   queries?: string[];
   category?: string;
   isContradictionSearch?: boolean;
+  /**
+   * Target context ID for focused research.
+   * JSON field name "targetProceedingId" kept for backward compatibility.
+   */
   targetProceedingId?: string;
 }
 

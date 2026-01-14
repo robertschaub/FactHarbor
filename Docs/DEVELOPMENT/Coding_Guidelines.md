@@ -210,17 +210,17 @@ Truth: 82%
 
 **Unified Naming**:
 - Use "Verdict" everywhere (not "Overall Verdict" or "Article Verdict")
-- Use "Scopes" (EvidenceScopes) instead of "Context-by-Context Analysis"
+- Use "Contexts" (AnalysisContexts) instead of "Context-by-Context Analysis" or "Scope-by-Scope Analysis"
 - Use "Confidence" (not "Conf" or "Certainty")
 
-### Multi-Scope Display
+### Multi-Context Display
 
-**Rule**: Use same layout for single-scope and multi-scope reports.
+**Rule**: Use same layout for single-context and multi-context reports.
 
 **Implementation**:
-- Multi-scope: Show scopes in rows (not columns)
-- Single-scope: Use same structure, omit scope headers
-- Support 2+ scopes (not just 2)
+- Multi-context: Show contexts in rows (not columns)
+- Single-context: Use same structure, omit context headers
+- Support 2+ contexts (not just 2)
 
 ---
 

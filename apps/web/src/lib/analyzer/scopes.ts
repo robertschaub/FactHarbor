@@ -11,7 +11,7 @@ import {
   extractAllCapsToken,
   inferScopeTypeLabel,
   inferToAcronym,
-  proceedingTypeRank,
+  contextTypeRank,
 } from "./config";
 
 export function canonicalizeScopes(
@@ -29,8 +29,8 @@ export function canonicalizeScopes(
   const sorted = [...procs].sort((a: any, b: any) => {
     const al = inferScopeTypeLabel(a);
     const bl = inferScopeTypeLabel(b);
-    const ar = proceedingTypeRank(al);
-    const br = proceedingTypeRank(bl);
+    const ar = contextTypeRank(al);
+    const br = contextTypeRank(bl);
     if (ar !== br) return ar - br;
 
     const ak = `${detectInstitutionCode(a)}|${String(a.metadata?.court || a.metadata?.institution || "").toLowerCase()}|${String(a.name || "").toLowerCase()}`;
@@ -122,8 +122,8 @@ export function canonicalizeScopesWithRemap(
   const sorted = [...procs].sort((a: any, b: any) => {
     const al = inferScopeTypeLabel(a);
     const bl = inferScopeTypeLabel(b);
-    const ar = proceedingTypeRank(al);
-    const br = proceedingTypeRank(bl);
+    const ar = contextTypeRank(al);
+    const br = contextTypeRank(bl);
     if (ar !== br) return ar - br;
 
     const ak = `${detectInstitutionCode(a)}|${String(a.metadata?.court || a.metadata?.institution || "").toLowerCase()}|${String(a.name || "").toLowerCase()}`;
