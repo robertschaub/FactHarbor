@@ -10,8 +10,7 @@
 // INPUT TYPES
 // ============================================================================
 
-export type InputType = "question" | "claim" | "article";
-export type QuestionIntent = "verification" | "exploration" | "comparison" | "none";
+export type InputType = "claim" | "article";
 export type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown";
 
 // ============================================================================
@@ -45,16 +44,6 @@ export type ClaimVerdict7Point =
   | "LEANING-FALSE" // 29-42%,  Score -1
   | "MOSTLY-FALSE"  // 15-28%,  Score -2
   | "FALSE";        // 0-14%,   Score -3
-
-export type QuestionAnswer7Point =
-  | "YES"           // 86-100%, Score +3
-  | "MOSTLY-YES"    // 72-85%,  Score +2
-  | "LEANING-YES"   // 58-71%,  Score +1
-  | "MIXED"      // 43-57%,  Score  0, high confidence
-  | "UNVERIFIED"    // 43-57%,  Score  0, low confidence
-  | "LEANING-NO"    // 29-42%,  Score -1
-  | "MOSTLY-NO"     // 15-28%,  Score -2
-  | "NO";           // 0-14%,   Score -3
 
 export type ArticleVerdict7Point =
   | "TRUE"          // 86-100%, Score +3
@@ -108,10 +97,10 @@ export interface VerdictValidationResult {
 
 /**
  * AnalysisContext: A bounded analytical frame requiring separate analysis
- * 
+ *
  * This is a GENERIC interface that works across ALL domains (legal, scientific, regulatory, etc.)
  * Domain-specific details are stored in the flexible `metadata` object.
- * 
+ *
  * Examples:
  * - Legal: Different cases/proceedings (TSE Electoral vs STF Criminal)
  * - Scientific: Different methodologies (WTW vs TTW analysis)
@@ -123,13 +112,13 @@ export interface AnalysisContext {
   id: string;                    // Stable ID (e.g., "CTX_TSE", "CTX_WTW", "CTX_US")
   name: string;                  // Full name (e.g., "Electoral proceeding (TSE)", "WTW Analysis")
   shortName: string;             // Short label (e.g., "TSE Electoral", "WTW")
-  
+
   // Generic fields (applicable to ALL domains)
   subject: string;               // What's being analyzed
   temporal: string;              // Time period or date
   status: "concluded" | "ongoing" | "pending" | "unknown";
   outcome: string;               // Result/conclusion/finding
-  
+
   // Flexible metadata (domain-specific details stored as key-value)
   metadata: {
     // Legal domain examples:
@@ -138,17 +127,17 @@ export interface AnalysisContext {
     jurisdiction?: string;       // e.g., "Federal", "State"
     charges?: string[];          // e.g., ["Electoral fraud", "Coup attempt"]
     decisionMakers?: Array<{ name: string; role: string; }>;
-    
+
     // Scientific domain examples:
     methodology?: string;        // e.g., "Well-to-Wheel", "ISO 14040"
     boundaries?: string;         // e.g., "Primary energy to vehicle motion"
     geographic?: string;         // e.g., "European Union", "California"
     dataSource?: string;         // e.g., "GREET model 2024"
-    
+
     // Regulatory domain examples:
     regulatoryBody?: string;     // e.g., "EPA", "European Commission"
     standardApplied?: string;    // e.g., "EU RED II", "California LCFS"
-    
+
     // Any other domain-specific fields
     [key: string]: any;
   };
@@ -156,10 +145,10 @@ export interface AnalysisContext {
 
 /**
  * EvidenceScope: The analytical frame/scope defined BY a source document
- * 
+ *
  * Describes the methodology, boundaries, geography, and timeframe that a source
  * document used when producing evidence. Critical for comparing apples-to-apples.
- * 
+ *
  * Example: A study saying "hydrogen car efficiency is 40%" using WTW methodology
  * cannot be directly compared to a TTW study (different calculation boundaries).
  */
@@ -237,8 +226,6 @@ export interface ResearchState {
 
 export interface ClaimUnderstanding {
   detectedInputType: InputType;
-  questionIntent: QuestionIntent;
-  questionBeingAsked: string;
   impliedClaim: string;
 
   // Analysis contexts detected from input (e.g., multiple legal cases, different methodologies)
@@ -246,7 +233,6 @@ export interface ClaimUnderstanding {
   requiresSeparateAnalysis: boolean;
   proceedingContext: string;
 
-  mainQuestion: string;
   articleThesis: string;
   subClaims: Array<{
     id: string;
@@ -361,29 +347,13 @@ export interface ClaimVerdict {
   isContested?: boolean;
   contestedBy?: string;
   factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";
-}
-
-export interface QuestionAnswer {
-  question: string;
-  // Answer truth percentage (0-100)
-  answer: number;
-  confidence: number;
-  truthPercentage: number;
-  shortAnswer: string;
-  nuancedAnswer: string;
-  keyFactors: KeyFactor[];
-
-  hasMultipleProceedings: boolean;
-  proceedingAnswers?: ProceedingAnswer[];
-  proceedingSummary?: string;
-  calibrationNote?: string;
-  hasContestedFactors?: boolean;
+  // v2.6.31: Counter-claim tracking - true if this claim evaluates the OPPOSITE of the user's thesis
+  // When aggregating, counter-claim verdicts should be inverted (TRUE 85% → contributes as FALSE 15%)
+  isCounterClaim?: boolean;
 }
 
 export interface ArticleAnalysis {
   inputType: InputType;
-  isQuestion: boolean;
-  questionAnswer?: QuestionAnswer;
 
   hasMultipleProceedings: boolean;
   proceedings?: AnalysisContext[];  // Field name kept for backward compatibility

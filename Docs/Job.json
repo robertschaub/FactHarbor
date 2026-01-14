@@ -354,7 +354,6 @@
   "understanding": {
     "detectedInputType": "article",
     "questionIntent": "none",
-    "questionBeingAsked": "",
     "impliedClaim": "",
     "distinctProceedings": [],
     "requiresSeparateAnalysis": false,

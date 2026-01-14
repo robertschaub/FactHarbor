@@ -38,20 +38,21 @@ const hasSpecificOutcome = extractNumericClaims(text);
 
 ### 2. Input Neutrality
 
-**Rule**: Question format vs. statement format must NOT affect analysis depth or verdict.
+**Rule**: Input phrasing must NOT affect analysis depth, research, or verdict. A yes/no phrased input (“Was X…?”) must behave the same as the equivalent statement (“X was …”).
 
-**Requirements**:
-- "Was X fair?" must yield same analysis as "X was fair"
-- Normalize questions to statements at entry point
-- Use normalized form for ALL analysis
-- Preserve original format only for UI display
-- Verdict difference between formats should be <1%
+**Hard requirements**:
+- **No separate analysis paths**: There must be **zero branching** in analysis logic based on whether the user wrote a question or a statement.
+- **Entry-point normalization**: If input is yes/no phrasing (including trailing `?`), convert to an **affirmative statement** **before any analysis stage runs**.
+- **Single canonical analysis string**: All analysis steps (scope detection, research, fact extraction, verdict generation, weighting, quality gates, inversion correction) must use the **normalized statement** only.
+- **Raw input is UI-only**: Preserve the original input (question or statement) **only for display**. It must not influence LLM prompts, research queries, scope splitting, or scoring.
+- **No question-specific metadata**: Do not emit or persist flags/fields such as `wasQuestionInput`, `questionBeingAsked`, `questionIntent`, `QuestionAnswer`, `calculateQuestionTruthPercentage`, etc.
+- **UI neutrality**: UI must not show question badges/labels or question-specific layouts. The same components and result fields must be used regardless of phrasing.
+- **Equivalence guarantee**: For meaning-equivalent inputs, verdict and reasoning must be effectively identical; any drift should be **<1%** and treated as a regression.
 
-**Implementation**:
-- Convert questions to statements early in pipeline
-- Store both original and normalized input
-- Use `analysisInput` (normalized) for all LLM calls
-- Use `originalInput` only for display
+**Implementation guidance**:
+- Normalize to statements **at the earliest entry point** to guarantee full neutrality.
+- Use a single variable (e.g., `analysisInput`) as the canonical input for all downstream logic and LLM calls.
+- Store the original input in a dedicated display-only field (e.g., `originalInputDisplay`) for UI rendering.
 
 ### 3. Pipeline Integrity
 

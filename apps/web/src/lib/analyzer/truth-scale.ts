@@ -21,11 +21,7 @@
  * @module analyzer/truth-scale
  */
 
-import type {
-  ClaimVerdict7Point,
-  QuestionAnswer7Point,
-  ArticleVerdict7Point,
-} from "./types";
+import type { ClaimVerdict7Point, ArticleVerdict7Point } from "./types";
 
 // ============================================================================
 // PERCENTAGE CALCULATIONS
@@ -67,17 +63,6 @@ export function calculateTruthPercentage(
 
 
 /**
- * Calculate truth percentage for question answers
- */
-export function calculateQuestionTruthPercentage(
-  answerPercentage: number,
-  _confidence: number,
-): number {
-  return normalizePercentage(answerPercentage);
-}
-
-
-/**
  * Calculate article truth percentage from LLM article verdict
  */
 export function calculateArticleTruthPercentage(
@@ -114,32 +99,6 @@ export function percentageToClaimVerdict(truthPercentage: number, confidence?: n
   return "FALSE";
 }
 
-/**
- * Map truth percentage to question answer
- * @param truthPercentage - The truth percentage (0-100)
- * @param confidence - Optional confidence score (0-100). Used to distinguish MIXED from UNVERIFIED in 43-57% range.
- */
-export function percentageToQuestionAnswer(
-  truthPercentage: number,
-  confidence?: number,
-): QuestionAnswer7Point {
-  if (truthPercentage >= 86) return "YES";
-  if (truthPercentage >= 72) return "MOSTLY-YES";
-  if (truthPercentage >= 58) return "LEANING-YES";
-  if (truthPercentage >= 43) {
-    const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
-    return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
-  }
-  if (truthPercentage >= 29) return "LEANING-NO";
-  if (truthPercentage >= 15) return "MOSTLY-NO";
-  return "NO";
-}
-
-/**
- * Map truth percentage to article verdict
- * @param truthPercentage - The truth percentage (0-100)
- * @param confidence - Optional confidence score (0-100). Used to distinguish MIXED from UNVERIFIED in 43-57% range.
- */
 export function percentageToArticleVerdict(
   truthPercentage: number,
   confidence?: number,
@@ -174,19 +133,6 @@ export function calibrateClaimVerdict(
 
 
 /**
- * Map confidence to question answer (for backward compatibility)
- * Now passes confidence to distinguish MIXED from UNVERIFIED
- */
-export function calibrateQuestionAnswer(
-  truthPercentage: number,
-  confidence: number,
-): QuestionAnswer7Point {
-  const truthPct = calculateQuestionTruthPercentage(truthPercentage, confidence);
-  return percentageToQuestionAnswer(truthPct, confidence);
-}
-
-
-/**
  * Map confidence to article verdict
  * Now passes confidence to distinguish MIXED from UNVERIFIED
  */
@@ -213,13 +159,10 @@ export function getVerdictColor(verdict: string): {
 } {
   switch (verdict) {
     case "TRUE":
-    case "YES":
       return { bg: "#d4edda", text: "#155724", border: "#28a745" };
     case "MOSTLY-TRUE":
-    case "MOSTLY-YES":
       return { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a" };
     case "LEANING-TRUE":
-    case "LEANING-YES":
       return { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b" };
     case "MIXED":
       // Blue-ish color to indicate confident mix (distinct from UNVERIFIED)
@@ -227,13 +170,10 @@ export function getVerdictColor(verdict: string): {
     case "UNVERIFIED":
       return { bg: "#fff3e0", text: "#e65100", border: "#ff9800" };
     case "LEANING-FALSE":
-    case "LEANING-NO":
       return { bg: "#ffccbc", text: "#bf360c", border: "#ff5722" };
     case "MOSTLY-FALSE":
-    case "MOSTLY-NO":
       return { bg: "#ffcdd2", text: "#c62828", border: "#f44336" };
     case "FALSE":
-    case "NO":
       return { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c" };
     default:
       return { bg: "#fff3e0", text: "#e65100", border: "#ff9800" };

@@ -15,13 +15,11 @@
 export type {
   // Input types
   InputType,
-  QuestionIntent,
   ClaimRole,
   AnalysisInput,
 
   // 7-point scale types
   ClaimVerdict7Point,
-  QuestionAnswer7Point,
   ArticleVerdict7Point,
 
   // Quality gate types
@@ -40,7 +38,6 @@ export type {
   ExtractedFact,
   FetchedSource,
   ClaimVerdict,
-  QuestionAnswer,
   ArticleAnalysis,
   TwoPanelSummary,
   PseudoscienceAnalysis,
@@ -70,13 +67,10 @@ export {
 
 export {
   calculateTruthPercentage,
-  calculateQuestionTruthPercentage,
   calculateArticleTruthPercentage,
   percentageToClaimVerdict,
-  percentageToQuestionAnswer,
   percentageToArticleVerdict,
   calibrateClaimVerdict,
-  calibrateQuestionAnswer,
   calibrateArticleVerdict,
   getVerdictColor,
   getHighlightColor7Point,
