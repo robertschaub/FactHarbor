@@ -151,7 +151,7 @@ async function extractTextFromPdfBuffer(buffer: Buffer, timeoutMs: number = PDF_
           }
           reject(
             new Error(
-              \`PDF parsing timeout after \${timeoutMs}ms - PDF may be malformed, too large, or very slow to parse\`,
+              `PDF parsing timeout after ${timeoutMs}ms - PDF may be malformed, too large, or very slow to parse`,
             ),
           );
         }, timeoutMs);
