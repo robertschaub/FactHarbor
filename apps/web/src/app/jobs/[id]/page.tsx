@@ -1362,9 +1362,10 @@ function ClaimsGroupedByScope({
       const tangential = tangentialByScope.get(scopeId) || [];
       if (claims.length === 0 && tangential.length === 0) continue;
       const scope = scopes.find((s: any) => s.id === scopeId);
+      const fallbackTitle = scopeId === "general" ? "General" : `Context ${scopeId}`;
       groups.push({
         id: scopeId,
-        title: scope ? formatScopeTitle(scope) : "General",
+        title: scope ? formatScopeTitle(scope) : fallbackTitle,
         claims,
         tangential,
       });
