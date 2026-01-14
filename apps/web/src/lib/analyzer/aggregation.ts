@@ -16,10 +16,10 @@
 export function getClaimWeight(claim: {
   centrality?: "high" | "medium" | "low";
   confidence?: number;
-  thesisRelevance?: "direct" | "tangential";
+  thesisRelevance?: "direct" | "tangential" | "irrelevant";
 }): number {
-  // Tangential claims have zero weight - they don't contribute to the verdict
-  if (claim.thesisRelevance === "tangential") return 0;
+  // Only direct claims contribute to the verdict
+  if (claim.thesisRelevance && claim.thesisRelevance !== "direct") return 0;
 
   const centralityMultiplier =
     claim.centrality === "high"
@@ -47,12 +47,12 @@ export function calculateWeightedVerdictAverage(
     truthPercentage: number;
     centrality?: "high" | "medium" | "low";
     confidence?: number;
-    thesisRelevance?: "direct" | "tangential";
+    thesisRelevance?: "direct" | "tangential" | "irrelevant";
     isCounterClaim?: boolean;
   }>,
 ): number {
-  // Filter out tangential claims - they don't contribute to the verdict
-  const directClaims = claims.filter((c) => c.thesisRelevance !== "tangential");
+  // Only direct claims contribute to the verdict
+  const directClaims = claims.filter((c) => !c.thesisRelevance || c.thesisRelevance === "direct");
   if (directClaims.length === 0) return 50;
 
   let totalWeightedTruth = 0;

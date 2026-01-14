@@ -328,7 +328,7 @@ export interface ClaimVerdict {
   // v2.6.31: Centrality level for weighted verdict aggregation (high=3x, medium=2x, low=1x weight)
   centrality?: "high" | "medium" | "low";
   // v2.6.31: Thesis relevance - tangential claims are excluded from verdict aggregation
-  thesisRelevance?: "direct" | "tangential";
+  thesisRelevance?: "direct" | "tangential" | "irrelevant";
   claimRole?: "attribution" | "source" | "timing" | "core";
   dependsOn?: string[];
   dependencyFailed?: boolean;

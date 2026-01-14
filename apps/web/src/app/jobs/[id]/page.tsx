@@ -307,6 +307,10 @@ export default function JobPage() {
   const sources = result?.sources || [];
   const researchStats = result?.researchStats;
   const facts = result?.facts || []; // NEW v2.6.29: Access extracted facts for counter-evidence display
+  const subClaims = result?.understanding?.subClaims || [];
+  const tangentialSubClaims = Array.isArray(subClaims)
+    ? subClaims.filter((c: any) => c?.thesisRelevance === "tangential")
+    : [];
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   // Opinion-based contestations without evidence are not highlighted (almost anything can be doubted)
@@ -543,14 +547,34 @@ export default function JobPage() {
             )
           )}
 
-          {claimVerdicts.length > 0 && (
+          {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
             <div className={styles.claimsSection}>
               {/* v2.6.31: Input Neutrality - same label for all inputs */}
               <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
               {hasMultipleProceedings ? (
-                <ClaimsGroupedByScope claimVerdicts={claimVerdicts} scopes={scopes} />
+                <ClaimsGroupedByScope
+                  claimVerdicts={claimVerdicts}
+                  scopes={scopes}
+                  tangentialClaims={tangentialSubClaims}
+                />
               ) : (
-                claimVerdicts.map((cv: any) => <ClaimCard key={cv.claimId} claim={cv} />)
+                <>
+                  {claimVerdicts.map((cv: any) => <ClaimCard key={cv.claimId} claim={cv} />)}
+                  {tangentialSubClaims.length > 0 && (
+                    <details className={styles.tangentialDetails}>
+                      <summary className={styles.tangentialSummary}>
+                        📎 Related context (excluded from verdict) ({tangentialSubClaims.length})
+                      </summary>
+                      <ul className={styles.tangentialList}>
+                        {tangentialSubClaims.map((c: any) => (
+                          <li key={c.id} className={styles.tangentialItem}>
+                            <code className={styles.tangentialClaimId}>{c.id}</code> {c.text}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -1250,9 +1274,18 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: { articleSummar
 // Claims Components
 // ============================================================================
 
-function ClaimsGroupedByScope({ claimVerdicts, scopes }: { claimVerdicts: any[]; scopes: any[] }) {
+function ClaimsGroupedByScope({
+  claimVerdicts,
+  scopes,
+  tangentialClaims,
+}: {
+  claimVerdicts: any[];
+  scopes: any[];
+  tangentialClaims: any[];
+}) {
   const claimsByScope = new Map<string, any[]>();
   const crossScopeClaims: any[] = [];
+  const tangentialByScope = new Map<string, any[]>();
 
   for (const cv of claimVerdicts) {
     if (!cv.relatedProceedingId) {
@@ -1263,9 +1296,15 @@ function ClaimsGroupedByScope({ claimVerdicts, scopes }: { claimVerdicts: any[];
     claimsByScope.get(cv.relatedProceedingId)!.push(cv);
   }
 
+  for (const c of tangentialClaims || []) {
+    const pid = c?.relatedProceedingId || "general";
+    if (!tangentialByScope.has(pid)) tangentialByScope.set(pid, []);
+    tangentialByScope.get(pid)!.push(c);
+  }
+
   const scopeIds = scopes.map((s: any) => s.id);
   const hasScopes = scopeIds.length > 0;
-  const groups: Array<{ id: string; title: string; claims: any[] }> = [];
+  const groups: Array<{ id: string; title: string; claims: any[]; tangential: any[] }> = [];
 
   if (hasScopes) {
     for (const scope of scopes) {
@@ -1281,6 +1320,7 @@ function ClaimsGroupedByScope({ claimVerdicts, scopes }: { claimVerdicts: any[];
         id: scope.id,
         title: `⚖️ ${scope.shortName}: ${scope.name}`,
         claims: combined,
+        tangential: tangentialByScope.get(scope.id) || [],
       });
     }
 
@@ -1291,6 +1331,7 @@ function ClaimsGroupedByScope({ claimVerdicts, scopes }: { claimVerdicts: any[];
         id: scopeId,
         title: `Scope ${scopeId}`,
         claims,
+        tangential: tangentialByScope.get(scopeId) || [],
       });
     }
   } else {
@@ -1308,8 +1349,21 @@ function ClaimsGroupedByScope({ claimVerdicts, scopes }: { claimVerdicts: any[];
         id: scopeId,
         title: scope ? `⚖️ ${scope.shortName}: ${scope.name}` : "General Claims",
         claims,
+        tangential: tangentialByScope.get(scopeId) || [],
       });
     }
+  }
+
+  // If we have tangential claims that don’t map to an existing group, show them under General.
+  const hasGeneral = groups.some((g) => g.id === "general");
+  const generalTangential = tangentialByScope.get("general") || [];
+  if (generalTangential.length > 0 && !hasGeneral) {
+    groups.push({
+      id: "general",
+      title: "General",
+      claims: [],
+      tangential: generalTangential,
+    });
   }
 
   return (
@@ -1326,6 +1380,21 @@ function ClaimsGroupedByScope({ claimVerdicts, scopes }: { claimVerdicts: any[];
               showCrossProceeding={hasScopes && !cv.relatedProceedingId}
             />
           ))}
+
+          {group.tangential.length > 0 && (
+            <details className={styles.tangentialDetails}>
+              <summary className={styles.tangentialSummary}>
+                📎 Related context (excluded from verdict) ({group.tangential.length})
+              </summary>
+              <ul className={styles.tangentialList}>
+                {group.tangential.map((c: any) => (
+                  <li key={c.id} className={styles.tangentialItem}>
+                    <code className={styles.tangentialClaimId}>{c.id}</code> {c.text}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </div>
       ))}
     </div>

@@ -117,6 +117,7 @@ async function refineScopesFromEvidence(
     }).join("\n");
 
   const claimsText = (state.understanding.subClaims || [])
+    .filter((c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct")
     .slice(0, 12)
     .map((c: any) => `${c.id}: ${c.text}`)
     .join("\n");
@@ -146,6 +147,8 @@ Prompt synonyms:
 Your job is to identify DISTINCT EVIDENCE SCOPES (bounded analytical frames) that are actually present in the EVIDENCE provided.
 
 CRITICAL RULES:
+- Scope relevance: every EvidenceScope MUST be directly relevant to the input's specific topic. Do not keep marginally related scopes.
+- When in doubt, use fewer scopes rather than including marginally relevant ones.
 - Evidence-grounded only: every EvidenceScope MUST be supported by at least one factId from the list.
 - Do NOT invent scopes based on guesswork or background knowledge.
 - Split into multiple scopes when the evidence indicates different boundaries, methods, time periods, institutions, jurisdictions, datasets, or processes that should be analyzed separately.
@@ -159,6 +162,7 @@ CRITICAL RULES:
 - Different evidence reports may define DIFFERENT scopes. A single evidence report may contain MULTIPLE scopes. Do not restrict scopes to one-per-source.
 - Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
 - Non-example: do NOT create separate EvidenceScopes from ArticleContext narrative background (e.g., \"political context\", \"media discourse\") unless the evidence itself defines distinct analytical frames.
+- A scope with zero relevant claims/evidence should NOT exist.
 
 Return JSON only matching the schema.`;
 
@@ -1949,7 +1953,7 @@ interface ClaimUnderstanding {
     centrality: "high" | "medium" | "low";      // Is it pivotal to the author's argument?
     isCentral: boolean; // Derived: true if centrality is "high"
     // v2.6.31: Thesis relevance - does this claim DIRECTLY test the main thesis?
-    thesisRelevance: "direct" | "tangential";
+    thesisRelevance: "direct" | "tangential" | "irrelevant";
     relatedProceedingId: string;
     approximatePosition: string;
     keyFactorId: string; // empty string if not mapped to any factor
@@ -2041,8 +2045,8 @@ interface ClaimVerdict {
   // NEW v2.6.30: Centrality level for weighted verdict calculation
   centrality?: "high" | "medium" | "low";
   // NEW v2.6.31: Thesis relevance - does this claim directly test the thesis?
-  // "direct" = contributes to verdict, "tangential" = excluded from verdict calculation
-  thesisRelevance?: "direct" | "tangential";
+  // "direct" = contributes to verdict, "tangential" = on-topic but excluded, "irrelevant" = off-topic noise
+  thesisRelevance?: "direct" | "tangential" | "irrelevant";
   // NEW: Claim role and dependencies
   claimRole?: "attribution" | "source" | "timing" | "core";
   dependsOn?: string[]; // Claim IDs this depends on
@@ -2445,7 +2449,8 @@ const SUBCLAIM_SCHEMA = z.object({
   // v2.6.31: Thesis relevance - does this claim DIRECTLY test the main thesis?
   // "direct" = directly evaluates whether the thesis is true (should contribute to verdict)
   // "tangential" = related context but doesn't test the thesis (e.g., reactions to an event)
-  thesisRelevance: z.enum(["direct", "tangential"]),
+  // "irrelevant" = off-topic noise that should not be evaluated or shown
+  thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]),
   relatedProceedingId: z.string(), // empty string if not applicable
   approximatePosition: z.string(), // empty string if not applicable
   keyFactorId: z.string(), // empty string if not mapped to any factor
@@ -2467,11 +2472,102 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   harmPotential: z.enum(["high", "medium", "low"]).catch("medium"),
   centrality: z.enum(["high", "medium", "low"]).catch("medium"),
   isCentral: z.boolean().catch(false),
-  thesisRelevance: z.enum(["direct", "tangential"]).catch("direct"), // Default to direct for backward compat
+  thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).catch("direct"), // Default to direct for backward compat
   relatedProceedingId: z.string().default(""),
   approximatePosition: z.string().default(""),
   keyFactorId: z.string().default(""),
 });
+
+function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; centrality?: any; isCentral?: any }>(
+  claims: T[],
+): T[] {
+  for (const claim of claims as any[]) {
+    const raw = String(claim?.thesisRelevance || "direct").trim();
+    const thesisRelevance =
+      raw === "direct" || raw === "tangential" || raw === "irrelevant" ? raw : "direct";
+    const isMarkedCentral = claim?.isCentral === true || claim?.centrality === "high";
+
+    // Invariant: central claims must be direct (by definition, they test the thesis).
+    claim.thesisRelevance = isMarkedCentral ? "direct" : thesisRelevance;
+
+    // Invariant: non-direct claims must never be treated as central/weighted.
+    if (claim.thesisRelevance !== "direct") {
+      claim.centrality = "low";
+      claim.isCentral = false;
+    }
+  }
+  return claims;
+}
+
+function applyThesisRelevancePolicyBToSubClaims<T extends { id?: any; dependsOn?: any; thesisRelevance?: any }>(
+  claims: T[],
+): T[] {
+  // Policy B:
+  // - "irrelevant": drop entirely (never shown, never researched, never verdicted)
+  // - "tangential": keep for display, but exclude from research/verdict (handled elsewhere)
+  const kept = (claims as any[]).filter((c) => String(c?.thesisRelevance || "direct") !== "irrelevant");
+  const keptIds = new Set(kept.map((c) => String(c?.id || "")).filter(Boolean));
+
+  for (const c of kept) {
+    const deps = Array.isArray((c as any).dependsOn) ? (c as any).dependsOn : [];
+    (c as any).dependsOn = deps.filter((dep: any) => keptIds.has(String(dep)));
+  }
+  return kept as any;
+}
+
+function pruneScopesByCoverage(
+  understanding: ClaimUnderstanding,
+  facts: ExtractedFact[],
+): ClaimUnderstanding {
+  const scopes = Array.isArray((understanding as any).distinctProceedings)
+    ? ((understanding as any).distinctProceedings as any[])
+    : [];
+  if (scopes.length === 0) return understanding;
+
+  const factsPerScope = new Map<string, number>();
+  for (const f of facts || []) {
+    const pid = String((f as any)?.relatedProceedingId || "").trim();
+    if (!pid) continue;
+    factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
+  }
+
+  const directClaims = Array.isArray((understanding as any).subClaims)
+    ? ((understanding as any).subClaims as any[]).filter(
+        (c) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+      )
+    : [];
+  const directClaimsPerScope = new Map<string, number>();
+  for (const c of directClaims) {
+    const pid = String((c as any)?.relatedProceedingId || "").trim();
+    if (!pid) continue;
+    directClaimsPerScope.set(pid, (directClaimsPerScope.get(pid) || 0) + 1);
+  }
+
+  const keep: any[] = [];
+  const removed = new Set<string>();
+  for (const s of scopes) {
+    const id = String(s?.id || "").trim();
+    if (!id) continue;
+    const hasFacts = (factsPerScope.get(id) || 0) > 0;
+    const hasDirectClaims = (directClaimsPerScope.get(id) || 0) > 0;
+    if (hasFacts || hasDirectClaims) keep.push(s);
+    else removed.add(id);
+  }
+
+  if (removed.size === 0) return understanding;
+
+  // Clear orphaned claim assignments to removed scopes (typically tangential-only scopes).
+  if (Array.isArray((understanding as any).subClaims)) {
+    for (const c of (understanding as any).subClaims as any[]) {
+      const pid = String(c?.relatedProceedingId || "").trim();
+      if (pid && removed.has(pid)) c.relatedProceedingId = "";
+    }
+  }
+
+  (understanding as any).distinctProceedings = keep;
+  (understanding as any).requiresSeparateAnalysis = keep.length > 1;
+  return understanding;
+}
 
 // Generic AnalysisContext schema (replaces legal-specific DISTINCT_PROCEEDING_SCHEMA)
 // Domain-specific fields (court, jurisdiction, charges, etc.) are now in metadata
@@ -2897,6 +2993,9 @@ NOT "high" for:
 
 - **"tangential"**: Related context but does NOT test the thesis
   → These claims are displayed but EXCLUDED from verdict calculation
+
+- **"irrelevant"**: Not meaningfully about the input’s specific topic (noise)
+  → These claims should be dropped and not shown
 
 **CRITICAL DISTINCTION**:
 - "Was the trial fair?" → claims about the trial's fairness = "direct"
@@ -3342,7 +3441,38 @@ For "This vaccine causes autism."
   if (!parsed) {
     // Retry once with a smaller, schema-focused prompt (providers sometimes fail on long prompts + strict schemas).
     // v2.6.30: Changed detectedInputType to "claim | article" - yes/no inputs are normalized to claims at entry point
-    const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-SCOPE DETECTION\n- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.\n- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n- Scopes must be DIRECTLY relevant to the input topic - do not include scopes from unrelated domains that merely share a general category.\n\nENUM RULES\n- detectedInputType must be exactly one of: claim | article\n- analysisIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
+    const retryPrompt = `You are a fact-checking analyst.
+
+Return ONLY a single JSON object that EXACTLY matches the expected schema.
+- No markdown, no prose, no code fences.
+- Every required field must exist.
+- Use empty strings "" and empty arrays [] when unknown.
+
+CRITICAL: MULTI-SCOPE DETECTION
+- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).
+- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.
+- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.
+
+NOT DISTINCT SCOPES:
+- Different perspectives on the same event (e.g., "US view" vs "Brazil view") are NOT separate scopes by themselves.
+- Pro vs con viewpoints are NOT scopes.
+
+SCOPE RELEVANCE REQUIREMENT (CRITICAL):
+- Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include scopes from unrelated domains just because they share a general category
+- When in doubt, use fewer scopes rather than including marginally relevant ones
+- A scope with zero relevant claims/evidence should NOT exist
+
+ENUM RULES
+- detectedInputType must be exactly one of: claim | article
+- analysisIntent must be exactly one of: verification | exploration | comparison | none
+- riskTier must be exactly one of: A | B | C
+
+CLAIMS
+- Populate subClaims with 3–8 verifiable sub-claims when possible.
+- Every subClaim must include ALL required fields and use allowed enum values.
+
+Now analyze the input and output JSON only.`;
     try {
       parsed = await tryStructured(retryPrompt, "structured-2");
     } catch (err: any) {
@@ -3567,7 +3697,9 @@ For "This vaccine causes autism."
   const { validatedClaims, stats: gate1Stats } = applyGate1ToClaims(filteredClaims);
   console.log(`[Analyzer] Gate 1 applied: ${gate1Stats.passed}/${gate1Stats.total} claims passed, ${gate1Stats.centralKept} central claims kept despite issues`);
 
-  return { ...parsed, subClaims: validatedClaims, gate1Stats };
+  const claimsWithThesisRelevanceInvariant = enforceThesisRelevanceInvariants(validatedClaims as any);
+  const claimsPolicyB = applyThesisRelevancePolicyBToSubClaims(claimsWithThesisRelevanceInvariant as any);
+  return { ...parsed, subClaims: claimsPolicyB, gate1Stats };
 }
 
 async function requestSupplementalSubClaims(
@@ -3778,6 +3910,16 @@ CRITICAL:
 - Detect whether the input mixes 2+ distinct contexts/threads (e.g., different events, phases, institutions, jurisdictions, timelines, or processes).
 - Only split when there are clearly 2+ distinct contexts that would benefit from separate analysis.
 - If there is only 1 context, return an empty array or a 1-item array and set requiresSeparateAnalysis=false.
+
+NOT DISTINCT SCOPES:
+- Different perspectives on the same event (e.g., "US view" vs "Brazil view") are NOT separate contexts/scopes by themselves.
+- Pro vs con viewpoints are NOT scopes.
+
+SCOPE RELEVANCE REQUIREMENT (CRITICAL):
+- Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include scopes from unrelated domains just because they share a general category
+- When in doubt, use fewer scopes rather than including marginally relevant ones
+- A scope with zero relevant claims/evidence should NOT exist
 
 SCHEMA:
 distinctProceedings items must include:
@@ -4080,8 +4222,12 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   ];
   const understanding = state.understanding!;
 
-  const entities = understanding.subClaims
-    .flatMap((c) => c.keyEntities)
+  const directClaimsForResearch = (understanding.subClaims || []).filter(
+    (c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+  );
+
+  const entities = directClaimsForResearch
+    .flatMap((c: any) => c.keyEntities)
     .slice(0, 4);
 
   // For claim inputs (normalized), prioritize the implied claim for better search results
@@ -4108,7 +4254,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   if (!entityStr.trim()) {
     const fallbackText = understanding.impliedClaim
       || understanding.articleThesis
-      || understanding.subClaims[0]?.text
+      || directClaimsForResearch[0]?.text
       || state.originalText?.slice(0, 150)
       || "";
     entityStr = fallbackText
@@ -4191,7 +4337,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       });
     };
 
-    const centralCoreClaims = (understanding.subClaims || []).filter(
+    const centralCoreClaims = directClaimsForResearch.filter(
       (c: any) => c?.isCentral === true && c?.claimRole === "core",
     );
 
@@ -4233,7 +4379,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     // but have zero supporting facts. This catches cases like DOGE (Jan-May 2025)
     // where the thesis-level recency check passed but individual claims need facts.
     // =========================================================================
-    const claimsWithoutFacts = understanding.subClaims.filter((claim: any) => {
+    const claimsWithoutFacts = directClaimsForResearch.filter((claim: any) => {
       // Check if this claim appears to be about recent events
       const claimText = claim.text || "";
       const isRecentClaim = isRecencySensitive(claimText, undefined);
@@ -5045,6 +5191,10 @@ async function generateVerdicts(
 
   const pseudoscienceAnalysis = detectPseudoscience(allText);
 
+  const directClaimsForVerdicts = (understanding.subClaims || []).filter(
+    (c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+  );
+
   const factsFormatted = state.facts
     .map((f: ExtractedFact) => {
       let factLine = `[${f.id}]`;
@@ -5062,7 +5212,7 @@ async function generateVerdicts(
     })
     .join("\n");
 
-  const claimsFormatted = understanding.subClaims
+  const claimsFormatted = directClaimsForVerdicts
     .map(
       (c: any) =>
         `${c.id}${c.relatedProceedingId ? ` (${c.relatedProceedingId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
@@ -5133,6 +5283,9 @@ async function generateMultiScopeVerdicts(
     understanding.originalInputDisplay ||
     understanding.mainThesis ||
     analysisInput;
+  const directClaimsForVerdicts = (understanding.subClaims || []).filter(
+    (c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+  );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
   const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS (also called SCOPES) separately.
@@ -5238,7 +5391,7 @@ ${scopesFormatted}
    - Only actual negative factors with documented evidence can reduce verdict
 
 5. CLAIM VERDICT RULES (for claimVerdicts array):
-   **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Every claim must have a corresponding entry in claimVerdicts.
+   **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Those are the DIRECT thesis-relevant claims. Every listed claim must have a corresponding entry in claimVerdicts. Do NOT add verdicts for tangential/irrelevant claims that are not listed.
 
    - For each scope, ensure ALL claims with that proceedingId (or claims that logically belong to that scope) have verdicts
    - If a claim doesn't have a relatedProceedingId, assign it to the most relevant scope based on the claim content
@@ -5328,7 +5481,7 @@ Provide SEPARATE answers for each scope.`;
       hasProceedingAnswers: !!parsed?.proceedingAnswers,
     });
 
-    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+    const fallbackVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
       (claim: any) => ({
         claimId: claim.id,
         claimText: claim.text,
@@ -5555,14 +5708,14 @@ Provide SEPARATE answers for each scope.`;
 
   // v2.6.19: Ensure ALL claims have verdicts - add missing ones
   const claimIdsWithVerdicts = new Set(parsed.claimVerdicts.map((cv: any) => cv.claimId));
-  const missingClaims = understanding.subClaims.filter(
+  const missingClaims = directClaimsForVerdicts.filter(
     (claim: any) => !claimIdsWithVerdicts.has(claim.id)
   );
 
   if (missingClaims.length > 0) {
     debugLog(`generateMultiScopeVerdicts: Missing verdicts for ${missingClaims.length} claims`, {
       missingClaimIds: missingClaims.map((c: any) => c.id),
-      totalClaims: understanding.subClaims.length,
+      totalClaims: directClaimsForVerdicts.length,
       verdictsGenerated: parsed.claimVerdicts.length,
     });
 
@@ -5780,6 +5933,9 @@ async function generateSingleScopeVerdicts(
     understanding.originalInputDisplay ||
     understanding.mainThesis ||
     analysisInput;
+  const directClaimsForVerdicts = (understanding.subClaims || []).filter(
+    (c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+  );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
 
@@ -5927,7 +6083,7 @@ ${factsFormatted}`;
   if (!parsed || !parsed.claimVerdicts || !parsed.verdictSummary) {
     console.log("[Analyzer] Using fallback verdict generation (parsed:", !!parsed, ", claimVerdicts:", !!parsed?.claimVerdicts, ", verdictSummary:", !!parsed?.verdictSummary, ")");
 
-    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+    const fallbackVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
       (claim: any) => ({
         claimId: claim.id,
         claimText: claim.text,
@@ -5994,7 +6150,7 @@ ${factsFormatted}`;
   );
 
   // Ensure ALL claims get a verdict
-  const claimVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+  const claimVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
     (claim: any) => {
       const cv = llmVerdictMap.get(claim.id);
 
@@ -6170,6 +6326,9 @@ async function generateClaimVerdicts(
   // Detect if topic involves procedural/legal/institutional analysis
   // This determines whether to generate Key Factors (unified analysis mode)
   const isProceduralTopic = detectProceduralTopic(understanding, state.originalText);
+  const directClaimsForVerdicts = (understanding.subClaims || []).filter(
+    (c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+  );
 
   // Add pseudoscience context and verdict calibration to prompt
   // Also add Article Verdict Problem analysis per POC1 spec
@@ -6343,7 +6502,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     console.log("[Analyzer] Using fallback verdict generation");
 
     // Create default verdicts for each claim
-    const fallbackVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+    const fallbackVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
       (claim: any) => ({
         claimId: claim.id,
         claimText: claim.text,
@@ -6402,7 +6561,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
   );
 
   // Ensure ALL claims get a verdict (fill in missing ones)
-  const claimVerdicts: ClaimVerdict[] = understanding.subClaims.map(
+  const claimVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
     (claim: any) => {
       const cv = llmVerdictMap.get(claim.id);
 
@@ -6736,12 +6895,23 @@ async function generateTwoPanelSummary(
   const understanding = state.understanding!;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
 
-  // Input neutrality: always use the normalized statement form for display
+  const rawInputDisplay = String(
+    understanding.originalInputDisplay || state.originalInput || "",
+  ).trim();
+  const isShortSimpleInput =
+    !!rawInputDisplay &&
+    state.inputType !== "url" &&
+    rawInputDisplay.length <= 220 &&
+    !rawInputDisplay.includes("\n") &&
+    rawInputDisplay.split(/\s+/).filter(Boolean).length <= 35;
+
+  // Display: do not paraphrase short/simple inputs; show verbatim.
   let title =
+    (isShortSimpleInput ? rawInputDisplay : "") ||
     understanding.articleThesis ||
     understanding.impliedClaim ||
     state.originalText.split("\n")[0]?.trim().slice(0, 100) ||
-      "Analyzed Content";
+    "Analyzed Content";
 
   if (hasMultipleProceedings) {
     title += ` (${understanding.distinctProceedings.length} contexts)`;
@@ -6750,7 +6920,9 @@ async function generateTwoPanelSummary(
   // Get the implied claim, filtering out placeholder values
   // v2.6.24: Use articleThesis for display (LLM-extracted summary)
   // impliedClaim is now the normalized input (for analysis consistency), not for display
-  const displaySummary = understanding.articleThesis || understanding.impliedClaim;
+  const displaySummary = isShortSimpleInput
+    ? rawInputDisplay
+    : (understanding.articleThesis || understanding.impliedClaim);
   const isValidDisplaySummary = displaySummary &&
     !displaySummary.toLowerCase().includes("unknown") &&
     displaySummary !== "<UNKNOWN>" &&
@@ -7546,6 +7718,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   if (outcomeClaims.length > 0) {
     state.understanding!.subClaims.push(...outcomeClaims);
     normalizeSubClaimsImportance(state.understanding!.subClaims as any);
+    state.understanding!.subClaims = applyThesisRelevancePolicyBToSubClaims(
+      enforceThesisRelevanceInvariants(state.understanding!.subClaims as any) as any,
+    ) as any;
     console.log(`[Analyzer] Added ${outcomeClaims.length} outcome-related claims from research`);
     await emit(`Added ${outcomeClaims.length} outcome-related claims`, 63);
   }
@@ -7554,6 +7729,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // This updates "pending"/"unknown" outcomes with actual outcomes found in facts
   await emit(`Enriching scopes with discovered outcomes [LLM: ${provider}/${modelName}]`, 64);
   await enrichScopesWithOutcomes(state, model);
+
+  // Deterministic backstop for the Scope Relevance Requirement:
+  // prune scopes that have zero direct claims AND zero facts, and recompute requiresSeparateAnalysis.
+  state.understanding = pruneScopesByCoverage(state.understanding!, state.facts);
+  state.understanding = ensureAtLeastOneScope(state.understanding!);
 
   // STEP 5: Verdicts
   await emit(`Step 3: Generating verdicts [LLM: ${provider}/${modelName}]`, 65);
