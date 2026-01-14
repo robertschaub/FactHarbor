@@ -60,6 +60,8 @@
 
 **Backlog**: See `Docs/STATUS/Backlog.md` for the canonical prioritized task list.
 
+**Improvement Recommendations**: See `Docs/STATUS/Improvement_Recommendations.md` for comprehensive analysis of potential enhancements with cost/benefit analysis and implementation roadmap.
+
 ---
 
 ## Current Priorities
@@ -351,11 +353,35 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 See `Docs/STATUS/CHANGELOG.md` for detailed version history and `Docs/ARCHITECTURE/Overview.md` for planned enhancements.
 
+**Comprehensive Improvement Analysis**: See `Docs/STATUS/Improvement_Recommendations.md` for detailed recommendations including:
+- Cost optimization (70-85% potential savings)
+- Performance improvements (50-80% speed gains)
+- Security hardening (SSRF, auth, rate limiting) - *LOW urgency while POC/local*
+- User experience enhancements
+- Technical debt reduction
+
 **Priority Order:**
-1. Security hardening (SSRF, auth, rate limiting)
-2. Metrics and monitoring (Phase 3)
-3. Performance optimization (tiered models, caching)
-4. Feature enhancements (UI improvements, contestation)
+1. **Quick Wins** (6-9 days):
+   - Parallel verdict generation (50-80% faster)
+   - Quality Gate UI display (transparency)
+   - Cost quotas (financial safety) - *LOW urgency for POC*
+   - Admin authentication - *LOW urgency for POC*
+
+2. **High-Value Performance** (7-13 days):
+   - Tiered LLM routing (50-70% cost savings)
+   - Claim-level caching (30-50% savings on repeats)
+   - Observability dashboard
+
+3. **Security Hardening** (before production):
+   - SSRF protections
+   - Rate limiting
+   - Admin endpoint security
+   - *Note: LOW urgency while local POC, HIGH urgency before public deployment*
+
+4. **Feature Enhancements** (ongoing):
+   - Analysis templates
+   - Interactive refinement
+   - Comparative analysis mode
 
 ---
 

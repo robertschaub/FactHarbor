@@ -52,6 +52,8 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 ### Status
 - **[Current Status](Docs/STATUS/Current_Status.md)** - What works, known issues, priorities
 - **[CHANGELOG](Docs/STATUS/CHANGELOG.md)** - Version history and bug fixes
+- **[Backlog](Docs/STATUS/Backlog.md)** - Prioritized task list
+- **[Improvement Recommendations](Docs/STATUS/Improvement_Recommendations.md)** - Comprehensive analysis of potential enhancements
 
 ### Project Documentation
 - **[AGENTS.md](AGENTS.md)** - Rules for AI coding assistants (at project root)
