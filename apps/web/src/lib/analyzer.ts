@@ -2531,16 +2531,14 @@ function pruneScopesByCoverage(
     factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
   }
 
-  const directClaims = Array.isArray((understanding as any).subClaims)
-    ? ((understanding as any).subClaims as any[]).filter(
-        (c) => !c?.thesisRelevance || c.thesisRelevance === "direct",
-      )
+  const claims = Array.isArray((understanding as any).subClaims)
+    ? ((understanding as any).subClaims as any[])
     : [];
-  const directClaimsPerScope = new Map<string, number>();
-  for (const c of directClaims) {
+  const claimsPerScope = new Map<string, number>();
+  for (const c of claims) {
     const pid = String((c as any)?.relatedProceedingId || "").trim();
     if (!pid) continue;
-    directClaimsPerScope.set(pid, (directClaimsPerScope.get(pid) || 0) + 1);
+    claimsPerScope.set(pid, (claimsPerScope.get(pid) || 0) + 1);
   }
 
   const keep: any[] = [];
@@ -2549,14 +2547,19 @@ function pruneScopesByCoverage(
     const id = String(s?.id || "").trim();
     if (!id) continue;
     const hasFacts = (factsPerScope.get(id) || 0) > 0;
-    const hasDirectClaims = (directClaimsPerScope.get(id) || 0) > 0;
-    if (hasFacts || hasDirectClaims) keep.push(s);
+    const hasAnyClaims = (claimsPerScope.get(id) || 0) > 0;
+
+    // Keep a scope if it has ANY claims (direct or tangential) or ANY facts.
+    // Tangential claims are displayed (Policy B), so a scope that contains only tangential
+    // claims is not "empty" and must remain to preserve scoped display context.
+    if (hasFacts || hasAnyClaims) keep.push(s);
     else removed.add(id);
   }
 
   if (removed.size === 0) return understanding;
 
-  // Clear orphaned claim assignments to removed scopes (typically tangential-only scopes).
+  // Clear orphaned claim assignments to removed scopes.
+  // (These scopes should be truly empty: no facts and no claims.)
   if (Array.isArray((understanding as any).subClaims)) {
     for (const c of (understanding as any).subClaims as any[]) {
       const pid = String(c?.relatedProceedingId || "").trim();
