@@ -48,7 +48,13 @@ export type {
 // CONFIG EXPORTS
 // ============================================================================
 
-export { CONFIG, getActiveConfig, getKnowledgeInstruction, debugLog, clearDebugLog } from "./config";
+export { CONFIG, getActiveConfig } from "./config";
+
+// ============================================================================
+// DEBUG EXPORTS
+// ============================================================================
+
+export { debugLog, clearDebugLog, agentLog } from "./debug";
 
 // ============================================================================
 // QUALITY GATE EXPORTS

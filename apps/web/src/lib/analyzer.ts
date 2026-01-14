@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.30
+ * FactHarbor POC1 Analyzer v2.6.31
  *
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -20,14 +20,15 @@
  * - v2.6.23: Strengthened centrality heuristic with explicit examples
  * - v2.6.23: Generic recency detection (removed person names)
  * - v2.6.25: Removed originalInputDisplay from analysis pipeline
-* - v2.6.25: resolveAnalysisPromptInput no longer falls back to yes/no format
+ * - v2.6.25: resolveAnalysisPromptInput no longer falls back to yes/no format
  * - v2.6.25: isRecencySensitive uses impliedClaim (normalized) for consistency
  * - v2.6.26: Force impliedClaim to normalized statement unconditionally
  * - v2.6.26: Show article summary for all input styles
  * - v2.6.30: Complete Input Neutrality - removed detectedInputType override
  * - v2.6.30: Inputs now follow IDENTICAL analysis paths
+ * - v2.6.31: Modularized - extracted debug, config modules
  *
- * @version 2.6.30
+ * @version 2.6.31
  * @date January 2026
  */
 
@@ -45,541 +46,35 @@ import { normalizeSubClaimsImportance } from "./claim-importance";
 import * as fs from "fs";
 import * as path from "path";
 
-// ============================================================================
-// DEBUG LOGGING - writes to file for easy checking
-// ============================================================================
+// Modular imports
+import { debugLog, clearDebugLog, agentLog } from "./analyzer/debug";
+import {
+  CONFIG,
+  getActiveConfig,
+  getDeterministicTemperature,
+  extractParenAcronym,
+  extractAllCapsToken,
+  inferToAcronym,
+  inferScopeTypeLabel,
+  scopeTypeRank,
+  proceedingTypeRank,
+  detectInstitutionCode,
+  sanitizeScopeShortAnswer,
+} from "./analyzer/config";
+import { calculateWeightedVerdictAverage } from "./analyzer/aggregation";
+import {
+  detectAndCorrectVerdictInversion,
+  detectCounterClaim,
+} from "./analyzer/verdict-corrections";
+import {
+  canonicalizeScopes,
+  canonicalizeScopesWithRemap,
+  ensureAtLeastOneScope,
+} from "./analyzer/scopes";
 
-// Agent debug logging - only runs on local development machine
-const IS_LOCAL_DEV = process.env.NODE_ENV === "development" &&
-  (process.env.HOSTNAME === "localhost" || !process.env.VERCEL);
+// Configuration, helpers, and debug utilities imported from modular files above
 
-function agentLog(location: string, message: string, data: any, hypothesisId: string) {
-  if (!IS_LOCAL_DEV) return;
-  fetch('http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-      sessionId: 'debug-session',
-      runId: 'pre-fix',
-      hypothesisId
-    })
-  }).catch(() => {});
-}
-
-// Write debug log to a fixed location that's easy to find.
-// Additive override: FH_DEBUG_LOG_PATH can point elsewhere (e.g., custom paths).
-const DEBUG_LOG_PATH =
-  process.env.FH_DEBUG_LOG_PATH ||
-  path.join(process.cwd(), "apps", "web", "debug-analyzer.log");
-const DEBUG_LOG_FILE_ENABLED =
-  (process.env.FH_DEBUG_LOG_FILE ?? "true").toLowerCase() === "true";
-const DEBUG_LOG_CLEAR_ON_START =
-  (process.env.FH_DEBUG_LOG_CLEAR_ON_START ?? "false").toLowerCase() === "true";
-const DEBUG_LOG_MAX_DATA_CHARS = 8000;
-
-function debugLog(message: string, data?: any) {
-  const timestamp = new Date().toISOString();
-  let logLine = `[${timestamp}] ${message}`;
-  if (data !== undefined) {
-    let payload: string;
-    try {
-      payload =
-        typeof data === "string"
-          ? data
-          : JSON.stringify(data, null, 2);
-    } catch {
-      payload = "[unserializable]";
-    }
-    if (payload.length > DEBUG_LOG_MAX_DATA_CHARS) {
-      payload = payload.slice(0, DEBUG_LOG_MAX_DATA_CHARS) + "…[truncated]";
-    }
-    logLine += ` | ${payload}`;
-  }
-  logLine += "\n";
-
-  // Write to file (append) - async to avoid blocking the Node event loop during long analyses
-  if (DEBUG_LOG_FILE_ENABLED) {
-    fs.promises.appendFile(DEBUG_LOG_PATH, logLine).catch(() => {
-    // Silently ignore file write errors
-    });
-  }
-
-  // Also log to console
-  console.log(logLine.trim());
-}
-
-function clearDebugLog() {
-  if (!DEBUG_LOG_FILE_ENABLED) return;
-  if (!DEBUG_LOG_CLEAR_ON_START) return;
-  fs.promises
-    .writeFile(
-      DEBUG_LOG_PATH,
-      `=== FactHarbor Debug Log Started at ${new Date().toISOString()} ===\n`,
-    )
-    .catch(() => {
-    // Silently ignore
-    });
-}
-
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
-const CONFIG = {
-  schemaVersion: "2.6.28",
-  deepModeEnabled:
-    (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
-  // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
-  deterministic:
-    (process.env.FH_DETERMINISTIC ?? "true").toLowerCase() === "true",
-
-  // Search configuration (FH_ prefixed for consistency)
-  searchEnabled:
-    (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true",
-  searchProvider: detectSearchProvider(),
-  searchDomainWhitelist: parseWhitelist(process.env.FH_SEARCH_DOMAIN_WHITELIST),
-  // Search mode: "standard" (default) or "grounded" (uses Gemini's built-in Google Search)
-  // Note: "grounded" mode only works when LLM_PROVIDER=gemini
-  searchMode: (process.env.FH_SEARCH_MODE ?? "standard").toLowerCase() as "standard" | "grounded",
-  // Optional global recency bias for search results.
-  // If set to y|m|w, applies to ALL searches. If unset, date filtering is only applied when recency is detected.
-  searchDateRestrict: (() => {
-    const v = (process.env.FH_SEARCH_DATE_RESTRICT ?? "").toLowerCase().trim();
-    if (v === "y" || v === "m" || v === "w") return v as "y" | "m" | "w";
-    return null;
-  })(),
-
-  // Source reliability configuration
-  sourceBundlePath: process.env.FH_SOURCE_BUNDLE_PATH || null,
-
-  // Report configuration
-  reportStyle: (process.env.FH_REPORT_STYLE ?? "standard").toLowerCase(),
-  allowModelKnowledge:
-    (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true",
-
-  // KeyFactors configuration
-  // Optional hints for KeyFactors (suggestions only, not enforced)
-  // Format: JSON array of objects with {evaluationCriteria, factor, category}
-  // Example: FH_KEYFACTOR_HINTS='[{"evaluationCriteria":"Was due process followed?","factor":"Due Process","category":"procedural"}]'
-  keyFactorHints: parseKeyFactorHints(process.env.FH_KEYFACTOR_HINTS),
-
-  quick: {
-    maxResearchIterations: 2,
-    maxSourcesPerIteration: 3,
-    maxTotalSources: 8,
-    articleMaxChars: 4000,
-    minFactsRequired: 6,
-  },
-  deep: {
-    maxResearchIterations: 5,
-    maxSourcesPerIteration: 4,
-    maxTotalSources: 20,
-    articleMaxChars: 8000,
-    minFactsRequired: 12,
-  },
-
-  minCategories: 2,
-  fetchTimeoutMs: 30000, // 30 seconds for large PDFs
-};
-
-/**
- * Parse comma-separated whitelist into array
- */
-function parseWhitelist(whitelist: string | undefined): string[] | null {
-  if (!whitelist) return null;
-  return whitelist
-    .split(",")
-    .map((d) => d.trim().toLowerCase())
-    .filter((d) => d.length > 0);
-}
-
-/**
- * Parse optional KeyFactor hints from environment variable
- * Returns array of hint objects or null if not configured
- * These are suggestions only - the LLM can use them but is not required to
- */
-function parseKeyFactorHints(
-  hintsJson: string | undefined,
-): Array<{ evaluationCriteria: string; factor: string; category: string }> | null {
-  if (!hintsJson) return null;
-  try {
-    const parsed = JSON.parse(hintsJson);
-    if (!Array.isArray(parsed)) return null;
-    return parsed.filter(
-      (hint) =>
-        typeof hint === "object" &&
-        hint !== null &&
-        typeof hint.evaluationCriteria === "string" &&
-        typeof hint.factor === "string" &&
-        typeof hint.category === "string",
-    ) as Array<{ evaluationCriteria: string; factor: string; category: string }>;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Detect which search provider is configured (uses FH_ prefix first, then fallback)
- */
-function detectSearchProvider(): string {
-  // Check for explicit FH_ config first
-  if (process.env.FH_SEARCH_PROVIDER) {
-    return process.env.FH_SEARCH_PROVIDER;
-  }
-  // Check for Google Custom Search
-  if (
-    process.env.GOOGLE_CSE_API_KEY ||
-    process.env.GOOGLE_SEARCH_API_KEY ||
-    process.env.GOOGLE_API_KEY
-  ) {
-    return "Google Custom Search";
-  }
-  // Check for Bing
-  if (process.env.BING_API_KEY || process.env.AZURE_BING_KEY) {
-    return "Bing Search";
-  }
-  // Check for SerpAPI (check both variants)
-  if (
-    process.env.SERPAPI_API_KEY ||
-    process.env.SERPAPI_KEY ||
-    process.env.SERP_API_KEY
-  ) {
-    return "SerpAPI";
-  }
-  // Check for Tavily
-  if (process.env.TAVILY_API_KEY) {
-    return "Tavily";
-  }
-  // Check for Brave
-  if (process.env.BRAVE_API_KEY || process.env.BRAVE_SEARCH_KEY) {
-    return "Brave Search";
-  }
-  // Legacy fallback
-  if (process.env.SEARCH_PROVIDER) {
-    return process.env.SEARCH_PROVIDER;
-  }
-  // Default
-  return "Web Search";
-}
-
-function getActiveConfig() {
-  return CONFIG.deepModeEnabled ? CONFIG.deep : CONFIG.quick;
-}
-
-function getDeterministicTemperature(defaultTemp: number): number {
-  return CONFIG.deterministic ? 0 : defaultTemp;
-}
-
-function extractParenAcronym(text: string): string {
-  const m = text.match(/\(([A-Z]{2,10})\)/);
-  return m?.[1] ?? "";
-}
-
-function extractAllCapsToken(text: string): string {
-  // Prefer explicit parenthetical acronyms, otherwise look for standalone ALLCAPS tokens.
-  const paren = extractParenAcronym(text);
-  if (paren) return paren;
-  const m = text.match(/\b([A-Z]{2,6})\b/);
-  return m?.[1] ?? "";
-}
-
-function inferToAcronym(text: string): string {
-  // Generic acronym inference for phrases like "Cradle-to-Grave", "Well-to-Wheel(s)", etc.
-  // This is intentionally topic-agnostic: it just compresses "<A>-to-<B>" into "ATB".
-  const m = String(text || "").match(/\b([A-Za-z]{3,})\s*-\s*to\s*-\s*([A-Za-z]{3,})\b/);
-  if (!m) return "";
-  const a = m[1]?.[0]?.toUpperCase() ?? "";
-  const b = m[2]?.[0]?.toUpperCase() ?? "";
-  return a && b ? `${a}T${b}` : "";
-}
-
-function inferScopeTypeLabel(p: any): string {
-  const hay = [
-    p?.name,
-    p?.shortName,
-    p?.metadata?.court,
-    p?.metadata?.institution,
-    p?.subject,
-    ...(Array.isArray(p?.metadata?.charges) ? p.metadata.charges : []),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-  if (/(election|electoral|ballot|campaign|ineligib|tse)\b/.test(hay)) return "Electoral";
-  if (/(criminal|prosecut|indict|investigat|police|coup|stf|supreme)\b/.test(hay))
-    return "Criminal";
-  if (/\bcivil\b/.test(hay)) return "Civil";
-  if (/(regulator|administrat|agency|licens|compliance)\b/.test(hay)) return "Regulatory";
-  if (/(wtw|ttw|wtt|lifecycle|lca|iso\s*\d|methodology)\b/i.test(hay)) return "Methodological";
-  if (/(efficien|performance|measure|benchmark|comparison)\b/i.test(hay)) return "Analytical";
-  return "General";
-}
-
-function scopeTypeRank(label: string): number {
-  // Stable ordering across runs: legal scopes first, then analytical, then general.
-  switch (label) {
-    case "Electoral":
-      return 1;
-    case "Criminal":
-      return 2;
-    case "Civil":
-      return 3;
-    case "Regulatory":
-      return 4;
-    case "Methodological":
-      return 5;
-    case "Analytical":
-      return 6;
-    case "General":
-      return 7;
-    default:
-      return 9;
-  }
-}
-
-// Backward compatibility alias
-const proceedingTypeRank = scopeTypeRank;
-
-function sanitizeScopeShortAnswer(shortAnswer: string, proceedingStatus: string): string {
-  if (!shortAnswer) return shortAnswer;
-  if ((proceedingStatus || "").toLowerCase() !== "unknown") return shortAnswer;
-
-  let out = shortAnswer;
-  // If we don't have an anchored procedural status, avoid asserting it in the narrative.
-  out = out.replace(/\b(remains\s+ongoing)\b/gi, "status is unclear");
-  out = out.replace(/\b(remains\s+in\s+progress)\b/gi, "status is unclear");
-  out = out.replace(/\bongoing\b/gi, "unresolved");
-  out = out.replace(/\bconcluded\b/gi, "reported concluded");
-  out = out.replace(/\bpending\b/gi, "unresolved");
-  return out;
-}
-
-function detectInstitutionCode(p: any): string {
-  const fromCourt = extractAllCapsToken(String(p?.metadata?.court || ""));
-  if (fromCourt) return fromCourt;
-  const fromInstitution = extractAllCapsToken(String(p?.metadata?.institution || ""));
-  if (fromInstitution) return fromInstitution;
-  const fromShort = extractAllCapsToken(String(p?.shortName || ""));
-  if (fromShort) return fromShort;
-  const fromName = extractAllCapsToken(String(p?.name || ""));
-  if (fromName) return fromName;
-  const dms = Array.isArray(p?.metadata?.decisionMakers) ? p.metadata.decisionMakers : [];
-  for (const dm of dms) {
-    const code = extractAllCapsToken(String(dm?.affiliation || "")) || extractAllCapsToken(String(dm?.role || ""));
-    if (code) return code;
-  }
-  return "";
-}
-
-function canonicalizeScopes(
-  input: string,
-  understanding: ClaimUnderstanding,
-): ClaimUnderstanding {
-  const procs = Array.isArray(understanding.distinctProceedings)
-    ? understanding.distinctProceedings
-    : [];
-  if (procs.length === 0) return understanding;
-
-  // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
-  // Use a lightweight, mostly-provider-invariant key: inferred type + institution code + court string.
-  const sorted = [...procs].sort((a: any, b: any) => {
-    const al = inferScopeTypeLabel(a);
-    const bl = inferScopeTypeLabel(b);
-    const ar = proceedingTypeRank(al);
-    const br = proceedingTypeRank(bl);
-    if (ar !== br) return ar - br;
-
-    const ak = `${detectInstitutionCode(a)}|${String(a.metadata?.court || a.metadata?.institution || "").toLowerCase()}|${String(a.name || "").toLowerCase()}`;
-    const bk = `${detectInstitutionCode(b)}|${String(b.metadata?.court || b.metadata?.institution || "").toLowerCase()}|${String(b.name || "").toLowerCase()}`;
-    return ak.localeCompare(bk);
-  });
-
-  const idRemap = new Map<string, string>();
-  const usedIds = new Set<string>();
-  const hasExplicitYear = /\b(19|20)\d{2}\b/.test(input);
-  const inputLower = input.toLowerCase();
-  const hasExplicitStatusAnchor =
-    /\b(sentenced|convicted|acquitted|indicted|charged|ongoing|pending|concluded)\b/.test(
-      inputLower,
-    );
-
-  const canonicalProceedings = sorted.map((p: any, idx: number) => {
-    const typeLabel = inferScopeTypeLabel(p);
-    const inst = detectInstitutionCode(p);
-    let newId = inst ? `CTX_${inst}` : `CTX_${idx + 1}`;
-    if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
-    usedIds.add(newId);
-    idRemap.set(p.id, newId);
-    const rawName = String(p?.name || "").trim();
-    const rawShort = String(p?.shortName || "").trim();
-    const inferredShortFromName = extractAllCapsToken(rawName);
-    const toAcronym = inferToAcronym(rawName);
-
-    // Preserve meaningful scope names from the model/evidence. Only synthesize a fallback
-    // when the name is missing or obviously generic.
-    const isGenericName =
-      rawName.length === 0 ||
-      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context|scope)$/i.test(
-        rawName,
-      ) ||
-      /^general$/i.test(rawName);
-
-    const subj = String(p?.subject || "").trim();
-    const fallbackName = subj
-      ? subj.substring(0, 120)
-      : inst
-        ? `${typeLabel} context (${inst})`
-        : `${typeLabel} context`;
-    const name = isGenericName ? fallbackName : rawName;
-
-    // Prefer institution codes for legal scopes; otherwise infer an acronym from the name.
-    const shortName =
-      (rawShort && rawShort.length <= 12 ? rawShort : "") ||
-      (inst ? inst : toAcronym || inferredShortFromName) ||
-      `CTX${idx + 1}`;
-    return {
-      ...p,
-      id: newId,
-      // Keep human-friendly labels, but avoid overwriting meaningful model-provided names.
-      name,
-      shortName,
-      // Avoid presenting unanchored specifics as facts.
-      date: hasExplicitYear ? p.date : "",
-      status: hasExplicitStatusAnchor ? p.status : "unknown",
-    };
-  });
-
-  const remappedClaims = (understanding.subClaims || []).map((c: any) => {
-    const rp = c.relatedProceedingId;
-    return {
-      ...c,
-      relatedProceedingId: rp && idRemap.has(rp) ? idRemap.get(rp) : rp,
-    };
-  });
-
-  return {
-    ...understanding,
-    distinctProceedings: canonicalProceedings,
-    subClaims: remappedClaims,
-  };
-}
-
-function canonicalizeScopesWithRemap(
-  input: string,
-  understanding: ClaimUnderstanding,
-): { understanding: ClaimUnderstanding; idRemap: Map<string, string> } {
-  const procs = Array.isArray(understanding.distinctProceedings)
-    ? understanding.distinctProceedings
-    : [];
-  if (procs.length === 0) return { understanding, idRemap: new Map() };
-
-  // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
-  const sorted = [...procs].sort((a: any, b: any) => {
-    const al = inferScopeTypeLabel(a);
-    const bl = inferScopeTypeLabel(b);
-    const ar = proceedingTypeRank(al);
-    const br = proceedingTypeRank(bl);
-    if (ar !== br) return ar - br;
-
-    const ak = `${detectInstitutionCode(a)}|${String(a.metadata?.court || a.metadata?.institution || "").toLowerCase()}|${String(a.name || "").toLowerCase()}`;
-    const bk = `${detectInstitutionCode(b)}|${String(b.metadata?.court || b.metadata?.institution || "").toLowerCase()}|${String(b.name || "").toLowerCase()}`;
-    return ak.localeCompare(bk);
-  });
-
-  const idRemap = new Map<string, string>();
-  const usedIds = new Set<string>();
-  const hasExplicitYear = /\b(19|20)\d{2}\b/.test(input);
-  const inputLower = input.toLowerCase();
-  const hasExplicitStatusAnchor =
-    /\b(sentenced|convicted|acquitted|indicted|charged|ongoing|pending|concluded)\b/.test(
-      inputLower,
-    );
-
-  const canonicalProceedings = sorted.map((p: any, idx: number) => {
-    const typeLabel = inferScopeTypeLabel(p);
-    const inst = detectInstitutionCode(p);
-    let newId = inst ? `CTX_${inst}` : `CTX_${idx + 1}`;
-    if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
-    usedIds.add(newId);
-    idRemap.set(p.id, newId);
-    const rawName = String(p?.name || "").trim();
-    const rawShort = String(p?.shortName || "").trim();
-    const inferredShortFromName = extractAllCapsToken(rawName);
-    const toAcronym = inferToAcronym(rawName);
-    const isGenericName =
-      rawName.length === 0 ||
-      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context|scope)$/i.test(
-        rawName,
-      ) ||
-      /^general$/i.test(rawName);
-    const subj = String(p?.subject || "").trim();
-    const fallbackName = subj
-      ? subj.substring(0, 120)
-      : inst
-        ? `${typeLabel} context (${inst})`
-        : `${typeLabel} context`;
-    const name = isGenericName ? fallbackName : rawName;
-    const shortName =
-      (rawShort && rawShort.length <= 12 ? rawShort : "") ||
-      (inst ? inst : toAcronym || inferredShortFromName) ||
-      `CTX${idx + 1}`;
-    return {
-      ...p,
-      id: newId,
-      name,
-      shortName,
-      date: hasExplicitYear ? p.date : "",
-      status: hasExplicitStatusAnchor ? p.status : "unknown",
-    };
-  });
-
-  const remappedClaims = (understanding.subClaims || []).map((c: any) => {
-    const rp = c.relatedProceedingId;
-    return {
-      ...c,
-      relatedProceedingId: rp && idRemap.has(rp) ? idRemap.get(rp) : rp,
-    };
-  });
-
-  return {
-    understanding: {
-      ...understanding,
-      distinctProceedings: canonicalProceedings,
-      subClaims: remappedClaims,
-    },
-    idRemap,
-  };
-}
-
-function ensureAtLeastOneScope(understanding: ClaimUnderstanding): ClaimUnderstanding {
-  const procs = Array.isArray(understanding.distinctProceedings)
-    ? understanding.distinctProceedings
-    : [];
-  if (procs.length > 0) return understanding;
-  return {
-    ...understanding,
-    distinctProceedings: [
-      {
-        id: "CTX_1",
-        name: understanding.impliedClaim
-          ? understanding.impliedClaim.substring(0, 100)
-          : "General context",
-        shortName: "GEN",
-        subject: understanding.impliedClaim || "",
-        temporal: "",
-        status: "unknown",
-        outcome: "unknown",
-        metadata: {},
-      },
-    ],
-    requiresSeparateAnalysis: false,
-  };
-}
+// NOTE: scope canonicalization helpers extracted to ./analyzer/scopes
 
 async function refineScopesFromEvidence(
   state: ResearchState,
@@ -726,13 +221,13 @@ Return:
 
   // Apply refined scopes.
   state.understanding = {
-    ...state.understanding,
+    ...state.understanding!,
     distinctProceedings: next.distinctProceedings,
     requiresSeparateAnalysis: !!next.requiresSeparateAnalysis && next.distinctProceedings.length > 1,
   };
 
   // Canonicalize IDs and keep a remap so we can remap fact/claim assignments.
-  const canon = canonicalizeScopesWithRemap(analysisInput, state.understanding);
+  const canon = canonicalizeScopesWithRemap(analysisInput, state.understanding!);
   state.understanding = canon.understanding;
 
   const remapId = (id: string) => (id && canon.idRemap.has(id) ? canon.idRemap.get(id)! : id);
@@ -743,7 +238,7 @@ Return:
     const rp = String((f as any).relatedProceedingId || "");
     if (rp) (f as any).relatedProceedingId = remapId(rp);
   }
-  for (const c of state.understanding.subClaims || []) {
+  for (const c of state.understanding!.subClaims || []) {
     const rp = String((c as any).relatedProceedingId || "");
     if (rp) (c as any).relatedProceedingId = remapId(rp);
   }
@@ -754,9 +249,9 @@ Return:
   if (process.env.FH_ENABLE_SCOPE_DEDUP !== "false") {
     const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
-    const dedup = deduplicateScopes(state.understanding.distinctProceedings || [], threshold);
+    const dedup = deduplicateScopes(state.understanding!.distinctProceedings || [], threshold);
     dedupMerged = dedup.merged;
-    state.understanding.distinctProceedings = dedup.scopes;
+    state.understanding!.distinctProceedings = dedup.scopes;
 
     // Remap any pre-existing fact/claim assignments (from earlier phases) to merged IDs.
     for (const f of state.facts || []) {
@@ -764,7 +259,7 @@ Return:
       if (!rp) continue;
       if (dedupMerged.has(rp)) (f as any).relatedProceedingId = dedupMerged.get(rp)!;
     }
-    for (const c of state.understanding.subClaims || []) {
+    for (const c of state.understanding!.subClaims || []) {
       const rp = String((c as any).relatedProceedingId || "");
       if (!rp) continue;
       if (dedupMerged.has(rp)) (c as any).relatedProceedingId = dedupMerged.get(rp)!;
@@ -800,7 +295,7 @@ Return:
 
   // Determine default scope for facts not included in promptFacts
   // Use the first/primary scope as the default (most analyses have one dominant scope)
-  const defaultScopeId = (state.understanding.distinctProceedings || [])[0]?.id || "";
+  const defaultScopeId = (state.understanding!.distinctProceedings || [])[0]?.id || "";
 
   for (const f of state.facts) {
     const pid = factAssignments.get(f.id);
@@ -894,7 +389,7 @@ Return:
     if (!pid) continue;
     factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
   }
-  for (const s of state.understanding.distinctProceedings || []) {
+  for (const s of state.understanding!.distinctProceedings || []) {
     const c = factsPerScope.get(s.id) || 0;
     if (c < 1) {
       debugLog("refineScopesFromEvidence: rejected (scope with zero evidence)", {
@@ -909,8 +404,8 @@ Return:
   if (process.env.FH_ENABLE_SCOPE_NAME_ALIGNMENT !== "false") {
     const thr = parseFloat(process.env.FH_SCOPE_NAME_ALIGNMENT_THRESHOLD || "0.3");
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.3;
-    state.understanding.distinctProceedings = validateAndFixScopeNameAlignment(
-      state.understanding.distinctProceedings || [],
+    state.understanding!.distinctProceedings = validateAndFixScopeNameAlignment(
+      state.understanding!.distinctProceedings || [],
       state.facts || [],
       threshold,
     );
@@ -918,8 +413,8 @@ Return:
 
   // Avoid over-splitting into “dimension scopes” (e.g., cost vs infrastructure) unless the
   // evidence indicates genuinely distinct analytical frames (methodology/boundaries/geography/temporal).
-  if ((state.understanding.distinctProceedings?.length ?? 0) > 1) {
-    const scopesNow = state.understanding.distinctProceedings || [];
+  if ((state.understanding!.distinctProceedings?.length ?? 0) > 1) {
+    const scopesNow = state.understanding!.distinctProceedings || [];
 
     const scopeFrameKeys = new Set<string>();
     for (const s of scopesNow as any[]) {
@@ -990,20 +485,20 @@ Return:
     if (!a.claimId || !pid) continue;
     claimAssignments.set(a.claimId, pid);
   }
-  for (const c of state.understanding.subClaims || []) {
+  for (const c of state.understanding!.subClaims || []) {
     const pid = claimAssignments.get(c.id);
     if (pid) c.relatedProceedingId = pid;
   }
 
   // Ensure we never end up with zero scopes.
-  state.understanding = ensureAtLeastOneScope(state.understanding);
+  state.understanding = ensureAtLeastOneScope(state.understanding!);
 
   // If we introduced multi-scope but claim coverage is thin, add minimal per-scope central claims.
   // (This is generic decomposition; it does not “hunt” for named scenarios.)
-  if (state.understanding.distinctProceedings.length > 1 && state.understanding.subClaims.length <= 1) {
-    const added = await requestSupplementalSubClaims(analysisInput, model, state.understanding);
+  if (state.understanding!.distinctProceedings.length > 1 && state.understanding!.subClaims.length <= 1) {
+    const added = await requestSupplementalSubClaims(analysisInput, model, state.understanding!);
     if (added.length > 0) {
-      state.understanding.subClaims.push(...added);
+      state.understanding!.subClaims.push(...added);
     }
     return { updated: true, llmCalls: 2 };
   }
@@ -2216,231 +1711,15 @@ function calculateArticleTruthPercentage(
 // ============================================================================
 
 /**
- * v2.6.31: Detect and correct inverted verdicts.
- * The LLM sometimes rates "how correct is my analysis" (high) instead of "is the claim true" (low).
- * This function detects when reasoning contradicts the verdict and corrects it.
- *
- * @returns corrected truth percentage, or original if no inversion detected
- */
-function detectAndCorrectVerdictInversion(
-  claimText: string,
-  reasoning: string,
-  verdictPct: number
-): { correctedPct: number; wasInverted: boolean; inversionReason?: string } {
-  // Only check verdicts that are in the "true" range (>=50%)
-  if (verdictPct < 50) {
-    return { correctedPct: verdictPct, wasInverted: false };
-  }
-
-  // DEBUG: Log inputs to debug file
-  debugLog("[INVERSION DEBUG] Input values", {
-    claimText: claimText?.slice(0, 100),
-    reasoning: reasoning?.slice(0, 150),
-    verdictPct,
-  });
-
-  const claimLower = claimText.toLowerCase();
-  const reasoningLower = reasoning.toLowerCase();
-
-  // Pattern 1: Claim says "X was proportionate/justified/fair" but reasoning says "NOT proportionate/justified/fair"
-  // Allow optional articles/words between verb and adjective: "were a proportionate", "was not a fair"
-  const positiveClaimPatterns = [
-    /\b(was|were|is|are)\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\b/i,
-    /\b(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\s+(response|action|decision|measure|and\s+justified)\b/i,
-    // v2.6.31: Additional positive assertion patterns
-    // Comparative positive assertions
-    /\b(more|higher|better|superior|greater)\s+(efficient|effective|accurate|reliable)\b/i,
-    // Positive state assertions
-    /\b(has|have|had)\s+(sufficient|adequate|strong|solid)\s+(evidence|basis|support)\b/i,
-    /\b(supports?|justifies?|warrants?|establishes?)\s+(the\s+)?(claim|assertion|conclusion)\b/i,
-  ];
-
-  const negativeReasoningPatterns = [
-    // "were NOT proportionate", "was NOT a fair response"
-    /\b(was|were|is|are)\s+not\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\b/i,
-    // "NOT proportionate to", "not a proportionate response"
-    /\bnot\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)/i,
-    // Negative adjectives
-    /\b(disproportionate|unjustified|unfair|inappropriate|unreasonable|invalid|incorrect|improper)\b/i,
-    // Legal/ethical violations
-    /\bviolates?\s+(principles?|norms?|standards?|law|rights?)\b/i,
-    /\blacks?\s+(factual\s+)?basis\b/i,
-    /\brepresents?\s+(economic\s+)?retaliation\b/i,
-    /\b(inappropriate|improper)\s+(interference|intervention)\b/i,
-    // Interference patterns
-    /\binterfere\s+with\b/i,
-    /\bmaking\s+them\s+(disproportionate|inappropriate)\b/i,
-    // Excessive patterns
-    /\b(excessive|unwarranted|undue)\s+(economic\s+)?(punishment|pressure|retaliation)\b/i,
-    // v2.6.31: Additional denial patterns
-    // Insufficiency patterns
-    /\b(lacks?|lacking)\s+(sufficient\s+)?(evidence|basis|support|justification)\b/i,
-    /\b(insufficient|inadequate)\s+(evidence|basis|support|justification)\b/i,
-    /\bdoes\s+not\s+(support|justify|warrant|establish)\b/i,
-    /\bfails?\s+to\s+(support|justify|demonstrate|establish|show)\b/i,
-    // Contradiction patterns
-    /\b(contradicts?|contradicted|contradicting)\s+(the\s+)?(claim|assertion|thesis)\b/i,
-    /\bevidence\s+(shows?|indicates?|suggests?|demonstrates?)\s+(the\s+)?opposite\b/i,
-    /\b(contrary|opposite)\s+to\s+(what|the\s+claim)\b/i,
-    // Falsification patterns
-    /\b(refutes?|refuted|disproves?|disproved|negates?|negated)\b/i,
-    /\b(false|untrue|inaccurate|incorrect|wrong|erroneous)\s+(based\s+on|according\s+to)?\s*(the\s+)?evidence\b/i,
-    // Efficiency/comparison denial for comparative claims
-    /\b(less|lower|worse|inferior|reduced)\s+(efficient|effective|productive|performance)\b/i,
-    /\bnot\s+(more|higher|better|superior)\s+(efficient|effective)\b/i,
-  ];
-
-  // Check if claim asserts something positive
-  const claimAssertsPositive = positiveClaimPatterns.some(p => p.test(claimLower));
-
-  // Check if reasoning negates it
-  const reasoningNegates = negativeReasoningPatterns.some(p => p.test(reasoningLower));
-
-  // DEBUG: Log pattern matching results
-  debugLog("[INVERSION DEBUG] Pattern matching results", {
-    claimAssertsPositive,
-    reasoningNegates,
-    shouldInvert: claimAssertsPositive && reasoningNegates && verdictPct >= 50,
-  });
-
-  debugLog("detectAndCorrectVerdictInversion: CHECK", {
-    claimText: claimText.slice(0, 80),
-    reasoningSnippet: reasoningLower.slice(0, 120),
-    verdictPct,
-    claimAssertsPositive,
-    reasoningNegates,
-  });
-
-  if (claimAssertsPositive && reasoningNegates && verdictPct >= 50) {
-    // Invert the verdict: 72% → 28%, 85% → 15%, etc.
-    const correctedPct = 100 - verdictPct;
-    debugLog("detectAndCorrectVerdictInversion: INVERTED", {
-      claimText: claimText.slice(0, 100),
-      originalPct: verdictPct,
-      correctedPct,
-      reason: "Reasoning contradicts claim assertion",
-    });
-    return {
-      correctedPct,
-      wasInverted: true,
-      inversionReason: "Reasoning indicates claim is false but verdict was high - inverted",
-    };
-  }
-
-  return { correctedPct: verdictPct, wasInverted: false };
-}
-
-/**
  * Calculate claim weight based on centrality and confidence.
  * Higher centrality claims with higher confidence have more influence on the overall verdict.
  *
  * Weight = centralityMultiplier × (confidence / 100)
  * where centralityMultiplier: high=3.0, medium=2.0, low=1.0
  */
-function getClaimWeight(claim: { centrality?: "high" | "medium" | "low"; confidence?: number; thesisRelevance?: "direct" | "tangential" }): number {
-  // v2.6.31: Tangential claims have zero weight - they don't contribute to the verdict
-  if (claim.thesisRelevance === "tangential") return 0;
+// NOTE: weighted aggregation helpers extracted to ./analyzer/aggregation
 
-  const centralityMultiplier =
-    claim.centrality === "high" ? 3.0 :
-    claim.centrality === "medium" ? 2.0 : 1.0;
-  const confidenceNormalized = (claim.confidence ?? 50) / 100;
-  return centralityMultiplier * confidenceNormalized;
-}
-
-/**
- * Calculate weighted average of claim verdicts.
- * Central claims with high confidence have more influence than peripheral low-confidence claims.
- * v2.6.31: Tangential claims (thesisRelevance="tangential") are excluded from the calculation.
- * v2.6.31: Counter-claims (isCounterClaim=true) have their verdicts INVERTED before aggregation.
- *          If a counter-claim is TRUE (85%), it means the OPPOSITE of the user's thesis is true,
- *          so it contributes as FALSE (15%) to the overall verdict.
- *
- * Formula: Σ(effectiveTruthPercentage × weight) / Σ(weight)
- */
-function calculateWeightedVerdictAverage(claims: Array<{ truthPercentage: number; centrality?: "high" | "medium" | "low"; confidence?: number; thesisRelevance?: "direct" | "tangential"; isCounterClaim?: boolean }>): number {
-  // v2.6.31: Filter out tangential claims - they don't contribute to the verdict
-  const directClaims = claims.filter(c => c.thesisRelevance !== "tangential");
-  if (directClaims.length === 0) return 50;
-
-  let totalWeightedTruth = 0;
-  let totalWeight = 0;
-
-  for (const claim of directClaims) {
-    const weight = getClaimWeight(claim);
-    // v2.6.31: Counter-claims evaluate the opposite position - invert their contribution
-    // If counter-claim is TRUE (85%), it means user's thesis is FALSE (15%)
-    const effectiveTruthPct = claim.isCounterClaim
-      ? 100 - claim.truthPercentage
-      : claim.truthPercentage;
-    totalWeightedTruth += effectiveTruthPct * weight;
-    totalWeight += weight;
-  }
-
-  return totalWeight > 0 ? Math.round(totalWeightedTruth / totalWeight) : 50;
-}
-
-/**
- * v2.6.31: Detect if a sub-claim is a counter-claim (evaluates the opposite of the user's thesis).
- * Counter-claims are generated when the LLM creates sub-claims that test opposing positions,
- * or when claims are derived from counter-evidence search results.
- *
- * @param claimText - The text of the sub-claim
- * @param userThesis - The user's original thesis/claim (normalized)
- * @param claimFacts - Facts supporting this claim (check if from counter-evidence search)
- * @returns true if this is a counter-claim
- */
-function detectCounterClaim(
-  claimText: string,
-  userThesis: string,
-  claimFacts?: ExtractedFact[]
-): boolean {
-  // Check if claim is primarily supported by counter-evidence facts
-  if (claimFacts && claimFacts.length > 0) {
-    const counterEvidenceFacts = claimFacts.filter(
-      f => f.claimDirection === "contradicts" || f.fromOppositeClaimSearch
-    );
-    // If majority of supporting facts are counter-evidence, this is likely a counter-claim
-    if (counterEvidenceFacts.length > claimFacts.length / 2) {
-      return true;
-    }
-  }
-
-  // Check for linguistic indicators of opposing position
-  const claimLower = claimText.toLowerCase();
-  const thesisLower = userThesis.toLowerCase();
-
-  // Pattern: Claim is testing the opposite direction of a comparative
-  // User thesis: "X is more efficient than Y" → Counter-claim: "Y is more efficient than X"
-  const comparativePattern = /\b(more|less|higher|lower|better|worse|greater|smaller)\s+(\w+)\s+than\b/i;
-  const thesisMatch = thesisLower.match(comparativePattern);
-  const claimMatch = claimLower.match(comparativePattern);
-
-  if (thesisMatch && claimMatch) {
-    // If both have comparatives but in opposite directions
-    const oppositeComparatives: Record<string, string> = {
-      "more": "less", "less": "more",
-      "higher": "lower", "lower": "higher",
-      "better": "worse", "worse": "better",
-      "greater": "smaller", "smaller": "greater",
-    };
-    if (oppositeComparatives[thesisMatch[1].toLowerCase()] === claimMatch[1].toLowerCase()) {
-      return true;
-    }
-  }
-
-  // Pattern: Claim explicitly states the opposite of the thesis
-  // Look for negation of key thesis terms
-  const negationPatterns = [
-    /\bnot\s+(proportionate|justified|fair|efficient|effective|true|valid)\b/i,
-    /\b(disproportionate|unjustified|unfair|inefficient|ineffective|false|invalid)\b/i,
-  ];
-
-  // If thesis asserts positive and claim uses negation, it might be a counter-claim
-  // But this needs more context - for now, rely primarily on fact direction
-
-  return false;
-}
+// NOTE: verdict correction helpers extracted to ./analyzer/verdict-corrections
 
 /**
  * Legacy: Map confidence to claim verdict (for backward compatibility)
@@ -4039,7 +3318,7 @@ For "This vaccine causes autism."
     }
   };
 
-  let parsed: ClaimUnderstanding | null = null;
+  let parsed: any = null;
   try {
     parsed = await tryStructured(systemPrompt, "structured-1");
   } catch (err: any) {
