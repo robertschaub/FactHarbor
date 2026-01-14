@@ -71,7 +71,8 @@ async function run() {
                 }
               }
             }
-            fullText += "\\n";
+            // Append a real newline between pages (avoid escape-sequence ambiguity in embedded worker code).
+            fullText += String.fromCharCode(10);
           }
         }
         resolve(fullText.trim());
