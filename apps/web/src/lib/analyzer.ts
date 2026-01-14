@@ -2526,9 +2526,9 @@ function ensureUnscopedClaimsScope(
     : [];
   if (scopes.length === 0 || claims.length === 0) return understanding;
 
-  // Only introduce the special scope when we're already in multi-scope mode.
+  // Only introduce the special scope when there are already 2+ scopes.
   // (This avoids turning a single-scope run into an artificial multi-scope run.)
-  if (!(understanding as any).requiresSeparateAnalysis || scopes.length <= 1) return understanding;
+  if (scopes.length <= 1) return understanding;
 
   const UNSCOPED_ID = "CTX_UNSCOPED";
 
@@ -2554,6 +2554,8 @@ function ensureUnscopedClaimsScope(
     });
     (understanding as any).distinctProceedings = scopes;
   }
+  // If there are multiple scopes, keep requiresSeparateAnalysis consistent with the scope list.
+  (understanding as any).requiresSeparateAnalysis = scopes.length > 1;
 
   for (const c of claims) {
     const tr = String(c?.thesisRelevance || "direct");
@@ -3843,6 +3845,7 @@ async function requestSupplementalSubClaims(
  - Return ONLY new claims (do not repeat existing ones).
  - Each claim must be tied to a single scope via relatedProceedingId.${hasScopes ? "" : " Use an empty string if no scopes are listed."}
  - Use claimRole="core" and checkWorthiness="high".
+ - Set thesisRelevance="direct" for ALL supplemental claims you generate.
  - Set harmPotential and centrality realistically. Default centrality to "medium" unless the claim is truly the primary thesis of that scope.
  - Set isCentral=true if centrality==="high" (harmPotential affects risk tier, not centrality).
  - Use dependsOn=[] unless a dependency is truly required.

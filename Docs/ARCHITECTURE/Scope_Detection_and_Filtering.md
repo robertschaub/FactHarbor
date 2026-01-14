@@ -40,7 +40,7 @@ FactHarbor enforces this in two layers:
 - **Prompt constraints**: Scope-producing prompts explicitly include the Scope Relevance Requirement.
 - **Deterministic backstop**: Scopes with **zero claims and zero facts** are pruned before verdict generation, and `requiresSeparateAnalysis` is recomputed.
 
-Additionally, when analysis is already in **multi-scope** mode and some claims cannot be assigned to a specific scope, FactHarbor creates a special scope:
+Additionally, when analysis has **2+ scopes** and some claims cannot be assigned to a specific scope, FactHarbor creates a special scope:
 
 - **`CTX_UNSCOPED`**: **General** (unassigned claims; no specific EvidenceScope identified)
 
