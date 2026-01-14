@@ -1307,6 +1307,16 @@ function ClaimsGroupedByScope({
   const hasScopes = scopeIds.length > 0;
   const groups: Array<{ id: string; title: string; claims: any[]; tangential: any[] }> = [];
 
+  const formatScopeTitle = (scope: any): string => {
+    const shortName = String(scope?.shortName || "").trim();
+    const name = String(scope?.name || "").trim();
+    if (!shortName && !name) return "General";
+    if (!shortName) return `⚖️ ${name}`;
+    if (!name) return `⚖️ ${shortName}`;
+    if (shortName.toLowerCase() === name.toLowerCase()) return `⚖️ ${name}`;
+    return `⚖️ ${shortName}: ${name}`;
+  };
+
   if (hasScopes) {
     for (const scope of scopes) {
       const claims = claimsByScope.get(scope.id) || [];
@@ -1314,7 +1324,7 @@ function ClaimsGroupedByScope({
       if (claims.length === 0 && tangential.length === 0) continue;
       groups.push({
         id: scope.id,
-        title: `⚖️ ${scope.shortName}: ${scope.name}`,
+        title: formatScopeTitle(scope),
         claims,
         tangential,
       });
@@ -1351,7 +1361,7 @@ function ClaimsGroupedByScope({
       const scope = scopes.find((s: any) => s.id === scopeId);
       groups.push({
         id: scopeId,
-        title: scope ? `⚖️ ${scope.shortName}: ${scope.name}` : "General Claims",
+        title: scope ? formatScopeTitle(scope) : "General",
         claims,
         tangential,
       });
