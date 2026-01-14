@@ -239,12 +239,12 @@ Return:
   // Remap any pre-existing fact/claim assignments across canonicalization (important when we don't
   // necessarily reassign every fact/claim during refinement).
   for (const f of state.facts || []) {
-    const rp = String((f as any).relatedContextId || "");
-    if (rp) (f as any).relatedContextId = remapId(rp);
+    const rp = String((f as any).relatedProceedingId || "");
+    if (rp) (f as any).relatedProceedingId = remapId(rp);
   }
   for (const c of state.understanding!.subClaims || []) {
-    const rp = String((c as any).relatedContextId || "");
-    if (rp) (c as any).relatedContextId = remapId(rp);
+    const rp = String((c as any).relatedProceedingId || "");
+    if (rp) (c as any).relatedProceedingId = remapId(rp);
   }
 
   // Optional: merge near-duplicate EvidenceScopes deterministically and remap assignments.
@@ -259,21 +259,21 @@ Return:
 
     // Remap any pre-existing fact/claim assignments (from earlier phases) to merged IDs.
     for (const f of state.facts || []) {
-      const rp = String((f as any).relatedContextId || "");
+      const rp = String((f as any).relatedProceedingId || "");
       if (!rp) continue;
-      if (dedupMerged.has(rp)) (f as any).relatedContextId = dedupMerged.get(rp)!;
+      if (dedupMerged.has(rp)) (f as any).relatedProceedingId = dedupMerged.get(rp)!;
     }
     for (const c of state.understanding!.subClaims || []) {
-      const rp = String((c as any).relatedContextId || "");
+      const rp = String((c as any).relatedProceedingId || "");
       if (!rp) continue;
-      if (dedupMerged.has(rp)) (c as any).relatedContextId = dedupMerged.get(rp)!;
+      if (dedupMerged.has(rp)) (c as any).relatedProceedingId = dedupMerged.get(rp)!;
     }
   }
 
   // IMPORTANT: finalize any context ID coming from the refinement output by applying both:
   // - canonicalization remap (remapId)
   // - scope dedup merge remap (dedupMerged), transitively (in case of chained merges)
-  const finalizeProceedingId = (rawId: string): string => {
+  const finalizeContextId = (rawId: string): string => {
     let pid = remapId(rawId || "");
     if (!pid) return "";
     if (dedupMerged) {
@@ -289,7 +289,7 @@ Return:
 
   const factAssignments = new Map<string, string>();
   for (const a of next.factScopeAssignments || []) {
-    const pid = finalizeProceedingId(a.proceedingId || "");
+    const pid = finalizeContextId(a.proceedingId || "");
     if (!a.factId || !pid) continue;
     factAssignments.set(a.factId, pid);
   }
@@ -305,11 +305,11 @@ Return:
     const pid = factAssignments.get(f.id);
     if (pid) {
       // Fact was in promptFacts and got an assignment from LLM
-      f.relatedContextId = pid;
-    } else if (!promptFactIds.has(f.id) && defaultScopeId && !f.relatedContextId) {
+      f.relatedProceedingId = pid;
+    } else if (!promptFactIds.has(f.id) && defaultScopeId && !f.relatedProceedingId) {
       // Fact was NOT in promptFacts (excluded due to max limit) and has no assignment
       // Assign to default scope to prevent orphaning
-      f.relatedContextId = defaultScopeId;
+      f.relatedProceedingId = defaultScopeId;
       debugLog("refineScopesFromEvidence: assigned excluded fact to default scope", {
         factId: f.id,
         defaultScopeId,
@@ -337,11 +337,11 @@ Return:
 
     const referenced = new Set<string>();
     for (const f of state.facts || []) {
-      const rp = String((f as any)?.relatedContextId || "").trim();
+      const rp = String((f as any)?.relatedProceedingId || "").trim();
       if (rp) referenced.add(rp);
     }
     for (const c of state.understanding?.subClaims || []) {
-      const rp = String((c as any)?.relatedContextId || "").trim();
+      const rp = String((c as any)?.relatedProceedingId || "").trim();
       if (rp) referenced.add(rp);
     }
 
@@ -363,10 +363,10 @@ Return:
       } else {
         // We can't restore it; clear downstream references so UI/state stays consistent.
         for (const f of state.facts || []) {
-          if (String((f as any)?.relatedContextId || "") === rp) (f as any).relatedContextId = "";
+          if (String((f as any)?.relatedProceedingId || "") === rp) (f as any).relatedProceedingId = "";
         }
         for (const c of state.understanding?.subClaims || []) {
-          if (String((c as any)?.relatedContextId || "") === rp) (c as any).relatedContextId = "";
+          if (String((c as any)?.relatedProceedingId || "") === rp) (c as any).relatedProceedingId = "";
         }
         cleared.push(rp);
       }
@@ -389,7 +389,7 @@ Return:
 
   const factsPerScope = new Map<string, number>();
   for (const f of state.facts) {
-    const pid = String(f.relatedContextId || "");
+    const pid = String(f.relatedProceedingId || "");
     if (!pid) continue;
     factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
   }
@@ -432,7 +432,7 @@ Return:
 
     const evidenceScopeKeysByScope = new Map<string, Set<string>>();
     for (const f of state.facts as any[]) {
-      const pid = String(f?.relatedContextId || "");
+      const pid = String(f?.relatedProceedingId || "");
       if (!pid) continue;
       const es = f?.evidenceScope;
       if (!es) continue;
@@ -485,13 +485,13 @@ Return:
 
   const claimAssignments = new Map<string, string>();
   for (const a of next.claimScopeAssignments || []) {
-    const pid = finalizeProceedingId(a.proceedingId || "");
+    const pid = finalizeContextId(a.proceedingId || "");
     if (!a.claimId || !pid) continue;
     claimAssignments.set(a.claimId, pid);
   }
   for (const c of state.understanding!.subClaims || []) {
     const pid = claimAssignments.get(c.id);
-    if (pid) c.relatedContextId = pid;
+    if (pid) c.relatedProceedingId = pid;
   }
 
   // Ensure we never end up with zero scopes.
@@ -833,7 +833,7 @@ function validateAndFixScopeNameAlignment(
 
   const factsByScope = new Map<string, ExtractedFact[]>();
   for (const f of facts) {
-    const pid = String((f as any)?.relatedContextId || "").trim();
+    const pid = String((f as any)?.relatedProceedingId || "").trim();
     if (!pid) continue;
     if (!factsByScope.has(pid)) factsByScope.set(pid, []);
     factsByScope.get(pid)!.push(f);
@@ -1959,7 +1959,7 @@ interface ClaimUnderstanding {
     isCentral: boolean; // Derived: true if centrality is "high"
     // v2.6.31: Thesis relevance - does this claim DIRECTLY test the main thesis?
     thesisRelevance: "direct" | "tangential" | "irrelevant";
-    relatedContextId: string;
+    relatedProceedingId: string;
     approximatePosition: string;
     keyFactorId: string; // empty string if not mapped to any factor
   }>;
@@ -2010,7 +2010,7 @@ interface ExtractedFact {
   sourceUrl: string;
   sourceTitle: string;
   sourceExcerpt: string;
-  relatedContextId?: string;
+  relatedProceedingId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
   // NEW v2.6.29: Claim direction - does this fact support or contradict the ORIGINAL user claim?
@@ -2069,7 +2069,7 @@ interface ClaimVerdict {
   reasoning: string;
   supportingFactIds: string[];
   keyFactorId?: string; // Maps claim to KeyFactor for aggregation
-  relatedContextId?: string;
+  relatedProceedingId?: string;
   startOffset?: number;
   endOffset?: number;
   highlightColor: "green" | "yellow" | "red";
@@ -2456,7 +2456,7 @@ const SUBCLAIM_SCHEMA = z.object({
   // "tangential" = related context but doesn't test the thesis (e.g., reactions to an event)
   // "irrelevant" = off-topic noise that should not be evaluated or shown
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]),
-  relatedContextId: z.string(), // empty string if not applicable
+  relatedProceedingId: z.string(), // empty string if not applicable
   approximatePosition: z.string(), // empty string if not applicable
   keyFactorId: z.string(), // empty string if not mapped to any factor
 });
@@ -2478,7 +2478,7 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   centrality: z.enum(["high", "medium", "low"]).catch("medium"),
   isCentral: z.boolean().catch(false),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).catch("direct"), // Default to direct for backward compat
-  relatedContextId: z.string().default(""),
+  relatedProceedingId: z.string().default(""),
   approximatePosition: z.string().default(""),
   keyFactorId: z.string().default(""),
 });
@@ -2539,7 +2539,7 @@ function ensureUnscopedClaimsScope(
 
   const hasUnscopedClaims = claims.some((c) => {
     const tr = String(c?.thesisRelevance || "direct");
-    const pid = String(c?.relatedContextId || "").trim();
+    const pid = String(c?.relatedProceedingId || "").trim();
     return tr !== "irrelevant" && !pid;
   });
   if (!hasUnscopedClaims) return understanding;
@@ -2565,8 +2565,8 @@ function ensureUnscopedClaimsScope(
   for (const c of claims) {
     const tr = String(c?.thesisRelevance || "direct");
     if (tr === "irrelevant") continue;
-    const pid = String(c?.relatedContextId || "").trim();
-    if (!pid) c.relatedContextId = UNSCOPED_ID;
+    const pid = String(c?.relatedProceedingId || "").trim();
+    if (!pid) c.relatedProceedingId = UNSCOPED_ID;
   }
 
   return understanding;
@@ -2580,14 +2580,14 @@ function pruneScopesByCoverage(
     ? ((understanding as any).distinctProceedings as any[])
     : [];
   if (scopes.length === 0) return understanding;
-  // Single-scope runs often leave relatedContextId empty on facts/claims (because there is no
+  // Single-scope runs often leave relatedProceedingId empty on facts/claims (because there is no
   // scope choice to make). Never prune the only scope in that case; doing so would lose metadata
   // and fragment the analysis.
   if (scopes.length === 1) return understanding;
 
   const factsPerScope = new Map<string, number>();
   for (const f of facts || []) {
-    const pid = String((f as any)?.relatedContextId || "").trim();
+    const pid = String((f as any)?.relatedProceedingId || "").trim();
     if (!pid) continue;
     factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
   }
@@ -2597,7 +2597,7 @@ function pruneScopesByCoverage(
     : [];
   const claimsPerScope = new Map<string, number>();
   for (const c of claims) {
-    const pid = String((c as any)?.relatedContextId || "").trim();
+    const pid = String((c as any)?.relatedProceedingId || "").trim();
     if (!pid) continue;
     claimsPerScope.set(pid, (claimsPerScope.get(pid) || 0) + 1);
   }
@@ -2623,8 +2623,8 @@ function pruneScopesByCoverage(
   // (These scopes should be truly empty: no facts and no claims.)
   if (Array.isArray((understanding as any).subClaims)) {
     for (const c of (understanding as any).subClaims as any[]) {
-      const pid = String(c?.relatedContextId || "").trim();
-      if (pid && removed.has(pid)) c.relatedContextId = "";
+      const pid = String(c?.relatedProceedingId || "").trim();
+      if (pid && removed.has(pid)) c.relatedProceedingId = "";
     }
   }
 
@@ -3234,7 +3234,7 @@ Set requiresSeparateAnalysis = true when multiple scopes are detected.
 
 - **subClaims**: Generate sub-claims that need to be verified to address the thesis.
   - Break down the implied claim into verifiable components
-  - For multi-context cases, ensure meaningful coverage across all contexts (set relatedContextId appropriately)
+  - For multi-context cases, ensure meaningful coverage across all contexts (set relatedProceedingId appropriately)
   - **DECOMPOSE COMPOUND CLAIMS**: Split claims that combine multiple assertions into separate claims:
     - Isolate the core factual assertion as the CENTRAL claim (isCentral: true, claimRole: "core")
     - Separate source/attribution claims as non-central (isCentral: false, claimRole: "source" or "attribution")
@@ -3555,7 +3555,7 @@ Now analyze the input and output JSON only.`;
 
   if (!parsed) throw new Error("Failed to understand claim: structured output did not match schema");
 
-  // Ensure no orphaned scope assignments: if any subClaim uses relatedContextId, that ID must
+  // Ensure no orphaned scope assignments: if any subClaim uses relatedProceedingId, that ID must
   // exist in distinctProceedings. Some providers may emit claim assignments that reference IDs
   // they didn't include in distinctProceedings; we reconcile deterministically.
   const reconcileScopesWithClaimAssignments = (u: ClaimUnderstanding) => {
@@ -3565,13 +3565,13 @@ Now analyze the input and output JSON only.`;
 
     const missing = new Set<string>();
     for (const c of claims as any[]) {
-      const rp = String(c?.relatedContextId || "").trim();
+      const rp = String(c?.relatedProceedingId || "").trim();
       if (rp && !scopeIds.has(rp)) missing.add(rp);
     }
     if (missing.size === 0) return u;
 
     for (const id of Array.from(missing)) {
-      const exemplar = (claims as any[]).find((c) => String(c?.relatedContextId || "").trim() === id);
+      const exemplar = (claims as any[]).find((c) => String(c?.relatedProceedingId || "").trim() === id);
       const rawName = String(exemplar?.text || "").trim();
       const name = rawName ? rawName.slice(0, 120) : `${id} scope`;
       const shortName = id.replace(/^CTX_/, "").slice(0, 12) || "SCOPE";
@@ -3590,8 +3590,8 @@ Now analyze the input and output JSON only.`;
 
     // If any claim still references a non-existent ID (shouldn't happen), clear it.
     for (const c of claims as any[]) {
-      const rp = String(c?.relatedContextId || "").trim();
-      if (rp && !scopeIds.has(rp)) c.relatedContextId = "";
+      const rp = String(c?.relatedProceedingId || "").trim();
+      if (rp && !scopeIds.has(rp)) c.relatedProceedingId = "";
     }
 
     (u as any).distinctProceedings = scopes;
@@ -3705,7 +3705,7 @@ Now analyze the input and output JSON only.`;
       if (supplementalClaims.length === 0) break;
       parsed.subClaims.push(...supplementalClaims);
       console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance scope coverage`);
-      // Supplemental claims may introduce new relatedContextId values. Ensure distinctProceedings
+      // Supplemental claims may introduce new relatedProceedingId values. Ensure distinctProceedings
       // covers all referenced scope IDs, then re-canonicalize for stable IDs.
       parsed = reconcileScopesWithClaimAssignments(parsed);
       parsed = canonicalizeScopes(analysisInput, parsed);
@@ -3802,7 +3802,7 @@ async function requestSupplementalSubClaims(
 
     // For single-scope (or no-scope) runs, treat all claims as belonging to the
     // single/default scope to avoid brittle ID mismatches.
-    const procId = isMultiScope ? (claim.relatedContextId || "") : (singleScopeId || "");
+    const procId = isMultiScope ? (claim.relatedProceedingId || "") : (singleScopeId || "");
 
     if (isMultiScope && !procId) continue;
     if (!claimsByProc.has(procId)) continue;
@@ -3848,7 +3848,7 @@ async function requestSupplementalSubClaims(
 
   const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
  - Return ONLY new claims (do not repeat existing ones).
- - Each claim must be tied to a single scope via relatedContextId.${hasScopes ? "" : " Use an empty string if no scopes are listed."}
+ - Each claim must be tied to a single scope via relatedProceedingId.${hasScopes ? "" : " Use an empty string if no scopes are listed."}
  - Use claimRole="core" and checkWorthiness="high".
  - Set thesisRelevance="direct" for ALL supplemental claims you generate.
  - Set harmPotential and centrality realistically. Default centrality to "medium" unless the claim is truly the primary thesis of that scope.
@@ -3907,7 +3907,7 @@ async function requestSupplementalSubClaims(
   for (const claim of supplemental.subClaims) {
     // For single-scope/no-scope runs, force all supplemental claims onto the default scope.
     // This avoids dropping good claims due to model-invented IDs.
-    let procId = isMultiScope ? (claim?.relatedContextId || "") : (singleScopeId || "");
+    let procId = isMultiScope ? (claim?.relatedProceedingId || "") : (singleScopeId || "");
     if (isMultiScope && !procId) {
       continue;
     }
@@ -3935,7 +3935,7 @@ async function requestSupplementalSubClaims(
     supplementalClaims.push({
       ...claim,
       id: newId,
-      relatedContextId: procId,
+      relatedProceedingId: procId,
       dependsOn: Array.isArray(claim.dependsOn) ? claim.dependsOn : [],
       keyEntities: Array.isArray(claim.keyEntities) ? claim.keyEntities : [],
     });
@@ -4069,7 +4069,7 @@ async function extractOutcomeClaimsFromFacts(
 
 Return ONLY a JSON object with an "outcomes" array. Each outcome should have:
 - "outcome": The specific outcome mentioned (e.g., "27-year prison sentence", "8-year ineligibility", "$1M fine")
-- "relatedContextId": The proceeding ID this outcome relates to (or empty string if unclear)
+- "relatedProceedingId": The proceeding ID this outcome relates to (or empty string if unclear)
 - "claimText": A claim evaluating whether this outcome was fair/proportionate (e.g., "The 27-year prison sentence was proportionate to the crimes committed")
 
 Only extract outcomes that:
@@ -4094,7 +4094,7 @@ Extract outcomes that need separate evaluation claims.`;
     outcomes: z.array(
       z.object({
         outcome: z.string(),
-        relatedContextId: z.string(),
+        relatedProceedingId: z.string(),
         claimText: z.string(),
       })
     ),
@@ -4145,7 +4145,7 @@ Extract outcomes that need separate evaluation claims.`;
         centrality: "medium",
         isCentral: false,
         thesisRelevance: "direct", // Outcome claims are direct evaluations
-        relatedContextId: outcome.relatedContextId || "",
+        relatedProceedingId: outcome.relatedProceedingId || "",
         approximatePosition: "",
         keyFactorId: "",
       });
@@ -4186,7 +4186,7 @@ async function enrichScopesWithOutcomes(state: ResearchState, model: any): Promi
 
     // Get facts related to this scope
     const relevantFacts = facts.filter(f =>
-      !f.relatedContextId || f.relatedContextId === proc.id
+      !f.relatedProceedingId || f.relatedProceedingId === proc.id
     );
 
     if (relevantFacts.length === 0) continue;
@@ -4353,7 +4353,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   const scopes = understanding.distinctProceedings || [];
   const scopesWithFacts = new Set(
     state.facts
-      .map((f: ExtractedFact) => f.relatedContextId)
+      .map((f: ExtractedFact) => f.relatedProceedingId)
       .filter(Boolean),
   );
   const inverseClaimCandidate = generateInverseClaimQuery(
@@ -4386,11 +4386,11 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       );
       const claimLower = claimText.toLowerCase();
       const claimWords = claimLower.split(/\s+/).filter((w: string) => w.length > 4);
-      const claimProc = String(claim?.relatedContextId || "");
+      const claimProc = String(claim?.relatedProceedingId || "");
 
       return state.facts.some((f: ExtractedFact) => {
         // If we have proceeding context, prefer matching within that scope.
-        if (claimProc && f.relatedContextId && f.relatedContextId !== claimProc) return false;
+        if (claimProc && f.relatedProceedingId && f.relatedProceedingId !== claimProc) return false;
         const factLower = String(f.fact || "").toLowerCase();
         // Entity overlap
         const hasEntityOverlap = claimEntities.some((entity: string) =>
@@ -4420,14 +4420,14 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       debugLog("Central-claim evidence coverage: scheduling targeted search", {
         claimId: c.id,
         claimText: basis.slice(0, 140),
-        relatedContextId: c.relatedContextId || "",
+        relatedProceedingId: c.relatedProceedingId || "",
       });
 
       return {
         complete: false,
         category: "central_claim",
         targetClaimId: c.id,
-        targetProceedingId: c.relatedContextId || undefined,
+        targetProceedingId: c.relatedProceedingId || undefined,
         focus: `Central claim evidence: ${basis.slice(0, 80)}`,
         queries: [
           `${qBase} evidence`,
@@ -4515,7 +4515,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   ) {
     for (const scope of scopes) {
       const scopeFacts = state.facts.filter(
-        (f) => f.relatedContextId === scope.id,
+        (f) => f.relatedProceedingId === scope.id,
       );
       if (scopeFacts.length < 2) {
         const scopeKey = [scope.institution || scope.court, scope.shortName, scope.name]
@@ -4908,7 +4908,7 @@ const FACT_SCHEMA = z.object({
       ]),
       specificity: z.enum(["high", "medium", "low"]),
       sourceExcerpt: z.string().min(20),
-      relatedContextId: z.string(), // empty string if not applicable
+      relatedProceedingId: z.string(), // empty string if not applicable
       isContestedClaim: z.boolean(),
       claimSource: z.string(), // empty string if not applicable
       // NEW v2.6.29: Does this fact support or contradict the ORIGINAL user claim?
@@ -4974,7 +4974,7 @@ CRITICAL: Be precise about direction! If the user claims "X is better than Y" an
 Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.
 If the source contains facts relevant to MULTIPLE known contexts, include them (do not restrict to only the target),
-and set relatedContextId accordingly. Do not omit key numeric outcomes (durations, amounts, counts) when present.
+and set relatedProceedingId accordingly. Do not omit key numeric outcomes (durations, amounts, counts) when present.
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${originalClaimSection}
 
@@ -5102,7 +5102,7 @@ Evidence documentation typically defines its scope/context. Extract this when pr
         sourceUrl: source.url,
         sourceTitle: source.title,
         sourceExcerpt: f.sourceExcerpt,
-        relatedContextId: f.relatedContextId || targetProceedingId,
+        relatedProceedingId: f.relatedProceedingId || targetProceedingId,
         isContestedClaim: f.isContestedClaim,
         claimSource: f.claimSource,
         claimDirection: f.claimDirection,
@@ -5173,7 +5173,7 @@ const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
       riskTier: z.enum(["A", "B", "C"]),
       reasoning: z.string(),
       supportingFactIds: z.array(z.string()),
-      relatedContextId: z.string(), // empty string if not applicable
+      relatedProceedingId: z.string(), // empty string if not applicable
     }),
   ),
 });
@@ -5263,7 +5263,7 @@ async function generateVerdicts(
   const factsFormatted = state.facts
     .map((f: ExtractedFact) => {
       let factLine = `[${f.id}]`;
-      if (f.relatedContextId) factLine += ` (${f.relatedContextId})`;
+      if (f.relatedProceedingId) factLine += ` (${f.relatedProceedingId})`;
       // v2.6.31: Add direction labels so LLM knows which facts support vs contradict the claim
       if (f.claimDirection === "contradicts" || f.fromOppositeClaimSearch) {
         factLine += ` [COUNTER-EVIDENCE]`;
@@ -5280,7 +5280,7 @@ async function generateVerdicts(
   const claimsFormatted = directClaimsForVerdicts
     .map(
       (c: any) =>
-        `${c.id}${c.relatedContextId ? ` (${c.relatedContextId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
+        `${c.id}${c.relatedProceedingId ? ` (${c.relatedProceedingId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
     )
     .join("\n");
 
@@ -5459,7 +5459,7 @@ ${scopesFormatted}
    **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Those are the DIRECT thesis-relevant claims. Every listed claim must have a corresponding entry in claimVerdicts. Do NOT add verdicts for tangential/irrelevant claims that are not listed.
 
    - For each scope, ensure ALL claims with that proceedingId (or claims that logically belong to that scope) have verdicts
-   - If a claim doesn't have a relatedContextId, assign it to the most relevant scope based on the claim content
+   - If a claim doesn't have a relatedProceedingId, assign it to the most relevant scope based on the claim content
 
    **CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
    - The verdict MUST rate whether THE CLAIM AS STATED is true
@@ -5786,12 +5786,12 @@ Provide SEPARATE answers for each scope.`;
 
     // Add fallback verdicts for missing claims
     for (const claim of missingClaims) {
-      const proceedingId = claim.relatedContextId || "";
+      const ctxId = claim.relatedProceedingId || "";
       const relatedContext = correctedContextAnswers.find(
-        (pa) => pa.proceedingId === proceedingId
+        (pa) => pa.proceedingId === ctxId
       );
 
-      // Use scope-level answer as fallback
+      // Use context-level answer as fallback
       const fallbackConfidence = relatedContext?.confidence || 50;
       const fallbackVerdict = relatedContext
         ? (relatedContext.answer >= 72
@@ -5811,7 +5811,7 @@ Provide SEPARATE answers for each scope.`;
         riskTier: "B",
         reasoning: `Fallback verdict based on context-level analysis (${relatedContext?.proceedingId || "unknown"}). Original verdict generation did not include this claim.`,
         supportingFactIds: [],
-        relatedContextId: proceedingId,
+        relatedProceedingId: ctxId,
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
         thesisRelevance: claim.thesisRelevance || "direct",
@@ -5819,7 +5819,7 @@ Provide SEPARATE answers for each scope.`;
       });
 
       debugLog(`Added fallback verdict for claim ${claim.id}`, {
-        proceedingId,
+        contextId: ctxId,
         verdict: fallbackVerdict,
         reason: "Missing from LLM output",
       });
@@ -5828,11 +5828,11 @@ Provide SEPARATE answers for each scope.`;
 
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
-    const proceedingId = cv.relatedContextId || claim?.relatedContextId || "";
+    const ctxId = cv.relatedProceedingId || claim?.relatedProceedingId || "";
 
-    // Find the corrected proceeding answer for this claim
+    // Find the corrected context answer for this claim
     const relatedContext = correctedContextAnswers.find(
-      (pa) => pa.proceedingId === proceedingId
+      (pa) => pa.proceedingId === ctxId
     );
 
     // Sanitize temporal errors from reasoning
@@ -5854,7 +5854,7 @@ Provide SEPARATE answers for each scope.`;
 
     // v2.6.31: Detect if this is a counter-claim (evaluates opposite of user's thesis)
     const claimFacts = state.facts.filter(f =>
-      cv.supportingFactIds?.includes(f.id) || f.relatedContextId === proceedingId
+      cv.supportingFactIds?.includes(f.id) || f.relatedProceedingId === ctxId
     );
     const isCounterClaim = detectCounterClaim(
       claim?.text || cv.claimId || "",
@@ -5862,7 +5862,7 @@ Provide SEPARATE answers for each scope.`;
       claimFacts
     );
 
-    // v2.5.2: If the proceeding has positive factors and no evidenced negatives,
+    // v2.5.2: If the context has positive factors and no evidenced negatives,
     // boost claims below 72% into the >=72 band
     // v2.6.31: SKIP boost if verdict was inverted (reasoning contradicts claim)
     // v2.6.31: SKIP boost for counter-claims (they evaluate the opposite position)
@@ -5876,14 +5876,14 @@ Provide SEPARATE answers for each scope.`;
       if (contextIsPositive && truthPct < 72) {
         const originalTruth = truthPct;
         truthPct = 72; // Minimum for MOSTLY-TRUE
-        debugLog("claimVerdict: Corrected based on scope factors", {
+        debugLog("claimVerdict: Corrected based on context factors", {
           claimId: cv.claimId,
-          scopeId: proceedingId,
+          contextId: ctxId,
           from: originalTruth,
           to: truthPct,
           truthPctBefore: originalTruth,
           truthPctAfter: truthPct,
-          reason: "Scope is positive with no evidenced negatives",
+          reason: "Context is positive with no evidenced negatives",
         });
       }
     }
@@ -5899,7 +5899,7 @@ Provide SEPARATE answers for each scope.`;
       centrality: claim?.centrality || "medium",
       thesisRelevance: claim?.thesisRelevance || "direct",
       keyFactorId: claim?.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
-      relatedContextId: proceedingId,
+      relatedProceedingId: ctxId,
       highlightColor: getHighlightColor7Point(truthPct),
       isCounterClaim,
     };
@@ -7418,7 +7418,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           centrality: "high",
           isCentral: true,
           thesisRelevance: "direct",
-          relatedContextId: "",
+          relatedProceedingId: "",
           approximatePosition: "",
           keyFactorId: "",
         },
