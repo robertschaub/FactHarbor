@@ -2543,8 +2543,9 @@ function ensureUnscopedClaimsScope(
   if (!exists) {
     scopes.push({
       id: UNSCOPED_ID,
-      name: "Unscoped claims (no specific EvidenceScope identified)",
-      shortName: "UNSCOPED",
+      // Display as "General" in the UI (keeps the ID stable for debugging/traceability).
+      name: "General",
+      shortName: "General",
       subject: "",
       temporal: "",
       status: "unknown",

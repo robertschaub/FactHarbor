@@ -42,7 +42,7 @@ FactHarbor enforces this in two layers:
 
 Additionally, when analysis is already in **multi-scope** mode and some claims cannot be assigned to a specific scope, FactHarbor creates a special scope:
 
-- **`CTX_UNSCOPED`**: “Unscoped claims (no specific EvidenceScope identified)”
+- **`CTX_UNSCOPED`**: **General** (unassigned claims; no specific EvidenceScope identified)
 
 This keeps evidence transparent (“unassigned” is explicit) without guessing the best scope.
 
