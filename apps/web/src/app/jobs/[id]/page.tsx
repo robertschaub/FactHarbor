@@ -563,7 +563,7 @@ export default function JobPage() {
                   {tangentialSubClaims.length > 0 && (
                     <details className={styles.tangentialDetails}>
                       <summary className={styles.tangentialSummary}>
-                        📎 Related context (excluded from verdict) ({tangentialSubClaims.length})
+                        📎 Related context (tangential; excluded from verdict) ({tangentialSubClaims.length})
                       </summary>
                       <ul className={styles.tangentialList}>
                         {tangentialSubClaims.map((c: any) => (
@@ -813,7 +813,7 @@ function FactsPanel({ facts }: { facts: any[] }) {
       {neutralFacts.length > 0 && (
         <div className={styles.factsSection}>
           <h4 className={styles.factsSectionTitle} style={{ color: '#757575' }}>
-            Context ({neutralFacts.length})
+            Background context ({neutralFacts.length})
           </h4>
           <div className={styles.factsList}>
             {neutralFacts.slice(0, 5).map((f: any, i: number) => (
@@ -827,7 +827,7 @@ function FactsPanel({ facts }: { facts: any[] }) {
             ))}
             {neutralFacts.length > 5 && (
               <div className={styles.factMoreIndicator}>
-                + {neutralFacts.length - 5} more contextual facts
+                + {neutralFacts.length - 5} more background facts
               </div>
             )}
           </div>
@@ -893,7 +893,10 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
     <div className={styles.multiProceedingBanner}>
       <div className={styles.proceedingNotice}>
         <span className={styles.proceedingIcon}>🔀</span>
-        <span className={styles.proceedingText}>
+        <span
+          className={styles.proceedingText}
+          title='A "scope" is a bounded analytical frame (EvidenceScope) that should be analyzed separately.'
+        >
           {scopes.length} distinct scopes analyzed separately
         </span>
         {hasEvidenceBasedContestations && (
@@ -960,7 +963,7 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
       {verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 && (
         <div className={styles.proceedingsAnalysis}>
           <h4 className={styles.proceedingsHeader}>
-            📑 Contexts
+            📑 Scopes
           </h4>
           <div className={styles.proceedingsStack}>
             {verdictSummary.proceedingAnswers.map((pa: any) => {
@@ -1399,7 +1402,7 @@ function ClaimsGroupedByScope({
           {group.tangential.length > 0 && (
             <details className={styles.tangentialDetails}>
               <summary className={styles.tangentialSummary}>
-                📎 Related context (excluded from verdict) ({group.tangential.length})
+                📎 Related context (tangential; excluded from verdict) ({group.tangential.length})
               </summary>
               <ul className={styles.tangentialList}>
                 {group.tangential.map((c: any) => (
