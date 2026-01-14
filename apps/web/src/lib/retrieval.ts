@@ -12,9 +12,91 @@ import * as cheerio from "cheerio";
 import { promises as fs } from "fs";
 import * as os from "os";
 import * as path from "path";
+import { Worker } from "worker_threads";
 
 // Default timeout for PDF parsing (ms) - can be overridden via environment variable
 const PDF_PARSE_TIMEOUT_MS = parseInt(process.env.FH_PDF_PARSE_TIMEOUT_MS || "60000", 10);
+
+const PDF2JSON_WORKER_CODE = `
+/* eslint-disable */
+const { parentPort, workerData } = require("worker_threads");
+
+// Reduce noisy pdf.js warnings that can flood logs and make dev servers appear hung.
+// Keep other warnings intact.
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  try {
+    const msg = args && args.length ? String(args[0]) : "";
+    if (
+      msg.startsWith("Warning: TT:") ||
+      msg.includes("Unsupported: field.type of Link") ||
+      msg.includes("NOT valid form element") ||
+      msg.includes("complementing a missing function tail")
+    ) {
+      return;
+    }
+  } catch {}
+  return originalWarn(...args);
+};
+
+async function run() {
+  const tmpFile = workerData && workerData.tmpFile;
+  if (!tmpFile) throw new Error("Missing tmpFile");
+
+  const PDFParser = require("pdf2json");
+  const pdfParser = new PDFParser();
+
+  const text = await new Promise((resolve, reject) => {
+    pdfParser.on("pdfParser_dataError", (errData) => {
+      reject(new Error((errData && errData.parserError) || "PDF parsing failed"));
+    });
+
+    pdfParser.on("pdfParser_dataReady", (pdfData) => {
+      try {
+        let fullText = "";
+        if (pdfData && pdfData.Pages && Array.isArray(pdfData.Pages)) {
+          for (const page of pdfData.Pages) {
+            if (page && page.Texts && Array.isArray(page.Texts)) {
+              for (const text of page.Texts) {
+                if (text && text.R && Array.isArray(text.R)) {
+                  for (const run of text.R) {
+                    if (run && run.T) {
+                      try {
+                        fullText += decodeURIComponent(run.T) + " ";
+                      } catch {
+                        fullText += String(run.T) + " ";
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            fullText += "\\n";
+          }
+        }
+        resolve(fullText.trim());
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    pdfParser.loadPDF(tmpFile);
+  });
+
+  return text;
+}
+
+run()
+  .then((text) => {
+    parentPort.postMessage({ ok: true, text });
+  })
+  .catch((err) => {
+    parentPort.postMessage({ ok: false, error: (err && err.message) ? err.message : String(err) });
+  })
+  .finally(() => {
+    try { parentPort.close(); } catch {}
+  });
+`;
 
 /**
  * Extract text from PDF buffer using pdf2json
@@ -48,70 +130,73 @@ async function extractTextFromPdfBuffer(buffer: Buffer, timeoutMs: number = PDF_
       await fs.writeFile(tmpFile, buffer);
       console.log("[Retrieval] Wrote PDF to temp file:", tmpFile);
 
-      // Use pdf2json to parse the PDF
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const PDFParser = require("pdf2json");
-      const pdfParser = new PDFParser();
-
       console.log("[Retrieval] Starting PDF extraction (timeout:", timeoutMs, "ms)...");
 
-      // Parse the PDF with timeout to prevent hangs on malformed PDFs
-      const parsePromise = new Promise<string>((resolve, reject) => {
-        pdfParser.on("pdfParser_dataError", (errData: any) => {
-          reject(new Error(errData.parserError || "PDF parsing failed"));
+      // IMPORTANT: pdf2json parsing can continue running even after a Promise.race timeout rejects.
+      // To make timeouts actually stop CPU/log spam, we run pdf2json in a Worker thread and terminate it on timeout.
+      const text = await new Promise<string>((resolve, reject) => {
+        const worker = new Worker(PDF2JSON_WORKER_CODE, {
+          eval: true,
+          workerData: { tmpFile },
         });
 
-        pdfParser.on("pdfParser_dataReady", (pdfData: any) => {
+        let finished = false;
+        const timeout = setTimeout(async () => {
+          if (finished) return;
+          finished = true;
           try {
-            let fullText = "";
-
-            // Extract text from all pages
-            if (pdfData.Pages && Array.isArray(pdfData.Pages)) {
-              for (const page of pdfData.Pages) {
-                if (page.Texts && Array.isArray(page.Texts)) {
-                  for (const text of page.Texts) {
-                    if (text.R && Array.isArray(text.R)) {
-                      for (const run of text.R) {
-                        if (run.T) {
-                          // Decode URI-encoded text, handle malformed URIs
-                          try {
-                            const decodedText = decodeURIComponent(run.T);
-                            fullText += decodedText + " ";
-                          } catch (decodeErr) {
-                            // If decoding fails, use the raw text
-                            fullText += run.T + " ";
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-                fullText += "\n";
-              }
-            }
-
-            console.log("[Retrieval] PDF extraction completed successfully");
-            console.log(`[Retrieval] PDF has ${pdfData.Pages?.length || 0} pages`);
-            console.log(`[Retrieval] Extracted ${fullText.length} characters of text`);
-
-            resolve(fullText.trim());
-          } catch (err) {
-            reject(err);
+            await worker.terminate();
+          } catch {
+            // ignore
           }
+          reject(
+            new Error(
+              \`PDF parsing timeout after \${timeoutMs}ms - PDF may be malformed, too large, or very slow to parse\`,
+            ),
+          );
+        }, timeoutMs);
+
+        worker.once("message", async (msg: any) => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timeout);
+
+          try {
+            await worker.terminate();
+          } catch {
+            // ignore
+          }
+
+          if (msg?.ok) {
+            console.log("[Retrieval] PDF extraction completed successfully");
+            console.log(`[Retrieval] Extracted ${String(msg.text || "").length} characters of text`);
+            resolve(String(msg.text || ""));
+            return;
+          }
+          reject(new Error(msg?.error || "PDF parsing failed"));
         });
 
-        pdfParser.loadPDF(tmpFile);
+        worker.once("error", async (err: any) => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timeout);
+          try {
+            await worker.terminate();
+          } catch {
+            // ignore
+          }
+          reject(err);
+        });
+
+        worker.once("exit", (code) => {
+          // If the worker exits before sending a message, treat it as an error.
+          if (finished) return;
+          finished = true;
+          clearTimeout(timeout);
+          reject(new Error(`PDF parsing worker exited unexpectedly (code ${code})`));
+        });
       });
 
-      // Timeout promise to prevent hangs
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`PDF parsing timeout after ${timeoutMs}ms - PDF may be malformed or too large`));
-        }, timeoutMs);
-      });
-
-      // Race between parsing and timeout
-      const text = await Promise.race([parsePromise, timeoutPromise]);
       return text;
 
     } finally {

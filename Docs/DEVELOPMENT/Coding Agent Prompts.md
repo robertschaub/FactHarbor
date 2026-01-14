@@ -17,7 +17,8 @@ And analyze the current source code.
 
 - After each bigger step, run automated test without my participation.
 - Re-test the recent analyses inputs (Especially the two Bolsonaro inputs, the Hydrogen vs Electric Cars input, the one with the .pdf article and the Venezuela article).
-- Use Swagger to investigate, and look into `apps\web\debug-analyzer.log`.
+- Look into `apps\web\debug-analyzer.log`.
+- If you are clearly missing information you can also use Swagger to investigate, 
 - Analyze the reports, investigate if the current step is done respectively fixed.
 - And check if earlier issues are not re-introduced.
 - Search for other issues, flaws and inconsistencies.
@@ -35,6 +36,11 @@ Article Confidence:
 ---
 
 ## Tasks in Progress:
+---
+Tangential claim handling:
+- make sure that tangential source value is retreived in a meaningful way (from LLM i guess).
+- make sure tangential claims verdicts are not calculated into upper level verdicts.
+- make sure tangential claims are marked as such in the GUI
 ---
 Verdict direction:
 For Claims where the verdict at the core is a denyal of the claim, 
