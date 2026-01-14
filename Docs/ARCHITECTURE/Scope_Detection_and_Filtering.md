@@ -38,7 +38,7 @@ Practical implications:
 FactHarbor enforces this in two layers:
 
 - **Prompt constraints**: Scope-producing prompts explicitly include the Scope Relevance Requirement.
-- **Deterministic backstop**: Scopes with **zero direct claims and zero facts** are pruned before verdict generation, and `requiresSeparateAnalysis` is recomputed.
+- **Deterministic backstop**: Scopes with **zero claims and zero facts** are pruned before verdict generation, and `requiresSeparateAnalysis` is recomputed.
 
 ## Claim relevance: `thesisRelevance` (Policy B)
 

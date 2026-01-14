@@ -2515,6 +2515,55 @@ function applyThesisRelevancePolicyBToSubClaims<T extends { id?: any; dependsOn?
   return kept as any;
 }
 
+function ensureUnscopedClaimsScope(
+  understanding: ClaimUnderstanding,
+): ClaimUnderstanding {
+  const scopes = Array.isArray((understanding as any).distinctProceedings)
+    ? ((understanding as any).distinctProceedings as any[])
+    : [];
+  const claims = Array.isArray((understanding as any).subClaims)
+    ? ((understanding as any).subClaims as any[])
+    : [];
+  if (scopes.length === 0 || claims.length === 0) return understanding;
+
+  // Only introduce the special scope when we're already in multi-scope mode.
+  // (This avoids turning a single-scope run into an artificial multi-scope run.)
+  if (!(understanding as any).requiresSeparateAnalysis || scopes.length <= 1) return understanding;
+
+  const UNSCOPED_ID = "CTX_UNSCOPED";
+
+  const hasUnscopedClaims = claims.some((c) => {
+    const tr = String(c?.thesisRelevance || "direct");
+    const pid = String(c?.relatedProceedingId || "").trim();
+    return tr !== "irrelevant" && !pid;
+  });
+  if (!hasUnscopedClaims) return understanding;
+
+  const exists = scopes.some((s) => String(s?.id || "") === UNSCOPED_ID);
+  if (!exists) {
+    scopes.push({
+      id: UNSCOPED_ID,
+      name: "Unscoped claims (no specific EvidenceScope identified)",
+      shortName: "UNSCOPED",
+      subject: "",
+      temporal: "",
+      status: "unknown",
+      outcome: "unknown",
+      metadata: { kind: "unscoped_claims" },
+    });
+    (understanding as any).distinctProceedings = scopes;
+  }
+
+  for (const c of claims) {
+    const tr = String(c?.thesisRelevance || "direct");
+    if (tr === "irrelevant") continue;
+    const pid = String(c?.relatedProceedingId || "").trim();
+    if (!pid) c.relatedProceedingId = UNSCOPED_ID;
+  }
+
+  return understanding;
+}
+
 function pruneScopesByCoverage(
   understanding: ClaimUnderstanding,
   facts: ExtractedFact[],
@@ -7734,7 +7783,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   await enrichScopesWithOutcomes(state, model);
 
   // Deterministic backstop for the Scope Relevance Requirement:
-  // prune scopes that have zero direct claims AND zero facts, and recompute requiresSeparateAnalysis.
+  // 1) if we're already in multi-scope mode, place any unassigned (direct/tangential) claims into a special UNSCOPED scope
+  // 2) prune scopes that have zero claims AND zero facts, and recompute requiresSeparateAnalysis.
+  state.understanding = ensureUnscopedClaimsScope(state.understanding!);
   state.understanding = pruneScopesByCoverage(state.understanding!, state.facts);
   state.understanding = ensureAtLeastOneScope(state.understanding!);
 

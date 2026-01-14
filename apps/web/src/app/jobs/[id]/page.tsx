@@ -1315,23 +1315,38 @@ function ClaimsGroupedByScope({
           combined.push(crossClaim);
         }
       }
-      if (combined.length === 0) continue;
+      const tangential = tangentialByScope.get(scope.id) || [];
+      if (combined.length === 0 && tangential.length === 0) continue;
       groups.push({
         id: scope.id,
         title: `⚖️ ${scope.shortName}: ${scope.name}`,
         claims: combined,
-        tangential: tangentialByScope.get(scope.id) || [],
+        tangential,
       });
     }
 
     for (const [scopeId, claims] of claimsByScope.entries()) {
       if (scopeIds.includes(scopeId)) continue;
-      if (claims.length === 0) continue;
+      const tangential = tangentialByScope.get(scopeId) || [];
+      if (claims.length === 0 && tangential.length === 0) continue;
       groups.push({
         id: scopeId,
         title: `Scope ${scopeId}`,
         claims,
-        tangential: tangentialByScope.get(scopeId) || [],
+        tangential,
+      });
+    }
+
+    // Add tangential-only scopes that have no direct claimVerdicts.
+    for (const [scopeId, tangential] of tangentialByScope.entries()) {
+      if (!scopeId || scopeId === "general") continue;
+      if (groups.some((g) => g.id === scopeId)) continue;
+      if (scopeIds.includes(scopeId)) continue; // should have been handled in the main scopes loop
+      groups.push({
+        id: scopeId,
+        title: `Scope ${scopeId}`,
+        claims: [],
+        tangential,
       });
     }
   } else {
@@ -1343,13 +1358,14 @@ function ClaimsGroupedByScope({
     }
 
     for (const [scopeId, claims] of claimsByGroup.entries()) {
-      if (claims.length === 0) continue;
+      const tangential = tangentialByScope.get(scopeId) || [];
+      if (claims.length === 0 && tangential.length === 0) continue;
       const scope = scopes.find((s: any) => s.id === scopeId);
       groups.push({
         id: scopeId,
         title: scope ? `⚖️ ${scope.shortName}: ${scope.name}` : "General Claims",
         claims,
-        tangential: tangentialByScope.get(scopeId) || [],
+        tangential,
       });
     }
   }
