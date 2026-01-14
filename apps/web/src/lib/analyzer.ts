@@ -10,7 +10,7 @@
  * - Fixed AI SDK output handling for different versions (output vs experimental_output)
  * - Claim dependency tracking (claimRole: attribution/source/timing/core)
  * - Dependency propagation (if prerequisite false, dependent claims flagged)
- * - Unified analysis for questions and statements (same depth regardless of punctuation)
+ * - Unified analysis depth regardless of punctuation
  * - Key Factors generated for procedural/legal topics in both modes
  * - Simplified schemas for better cross-provider compatibility
  * - Enhanced recency detection with news-related keywords (v2.6.22)
@@ -20,13 +20,12 @@
  * - v2.6.23: Strengthened centrality heuristic with explicit examples
  * - v2.6.23: Generic recency detection (removed person names)
  * - v2.6.25: Removed originalInputDisplay from analysis pipeline
- * - v2.6.25: resolveAnalysisPromptInput no longer falls back to question format
+* - v2.6.25: resolveAnalysisPromptInput no longer falls back to yes/no format
  * - v2.6.25: isRecencySensitive uses impliedClaim (normalized) for consistency
  * - v2.6.26: Force impliedClaim to normalized statement unconditionally
- * - v2.6.26: Show article summary for both questions and statements
- * - v2.6.30: Complete Input Neutrality - removed detectedInputType="question" override
- * - v2.6.30: Renamed question-specific functions/variables for neutrality
- * - v2.6.30: Questions and statements now follow IDENTICAL analysis paths
+ * - v2.6.26: Show article summary for all input styles
+ * - v2.6.30: Complete Input Neutrality - removed detectedInputType override
+ * - v2.6.30: Inputs now follow IDENTICAL analysis paths
  *
  * @version 2.6.30
  * @date January 2026
@@ -203,7 +202,6 @@ function parseWhitelist(whitelist: string | undefined): string[] | null {
  * Returns array of hint objects or null if not configured
  * These are suggestions only - the LLM can use them but is not required to
  */
-// v2.6.27: Renamed 'question' to 'evaluationCriteria' for input neutrality
 function parseKeyFactorHints(
   hintsJson: string | undefined,
 ): Array<{ evaluationCriteria: string; factor: string; category: string }> | null {
@@ -588,9 +586,8 @@ async function refineScopesFromEvidence(
   model: any,
 ): Promise<{ updated: boolean; llmCalls: number }> {
   if (!state.understanding) return { updated: false, llmCalls: 0 };
-  const understanding = state.understanding;
 
-  const currentScopes = understanding.distinctProceedings || [];
+  const preRefineScopes = state.understanding.distinctProceedings || [];
 
   const facts = state.facts || [];
   // If we don't have enough evidence, skip refinement (avoid hallucinated scopes).
@@ -739,7 +736,6 @@ Return:
   state.understanding = canon.understanding;
 
   const remapId = (id: string) => (id && canon.idRemap.has(id) ? canon.idRemap.get(id)! : id);
-  const allowedProcIds = new Set((understanding.distinctProceedings || []).map((p: any) => p.id));
 
   // Remap any pre-existing fact/claim assignments across canonicalization (important when we don't
   // necessarily reassign every fact/claim during refinement).
@@ -747,21 +743,82 @@ Return:
     const rp = String((f as any).relatedProceedingId || "");
     if (rp) (f as any).relatedProceedingId = remapId(rp);
   }
-  for (const c of understanding.subClaims || []) {
+  for (const c of state.understanding.subClaims || []) {
     const rp = String((c as any).relatedProceedingId || "");
     if (rp) (c as any).relatedProceedingId = remapId(rp);
   }
 
+  // Optional: merge near-duplicate EvidenceScopes deterministically and remap assignments.
+  // NOTE: Do this BEFORE applying factScopeAssignments/claimScopeAssignments so both are mapped consistently.
+  let dedupMerged: Map<string, string> | null = null;
+  if (process.env.FH_ENABLE_SCOPE_DEDUP !== "false") {
+    const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
+    const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
+    const dedup = deduplicateScopes(state.understanding.distinctProceedings || [], threshold);
+    dedupMerged = dedup.merged;
+    state.understanding.distinctProceedings = dedup.scopes;
+
+    // Remap any pre-existing fact/claim assignments (from earlier phases) to merged IDs.
+    for (const f of state.facts || []) {
+      const rp = String((f as any).relatedProceedingId || "");
+      if (!rp) continue;
+      if (dedupMerged.has(rp)) (f as any).relatedProceedingId = dedupMerged.get(rp)!;
+    }
+    for (const c of state.understanding.subClaims || []) {
+      const rp = String((c as any).relatedProceedingId || "");
+      if (!rp) continue;
+      if (dedupMerged.has(rp)) (c as any).relatedProceedingId = dedupMerged.get(rp)!;
+    }
+  }
+
+  // IMPORTANT: finalize any proceedingId coming from the refinement output by applying both:
+  // - canonicalization remap (remapId)
+  // - scope dedup merge remap (dedupMerged), transitively (in case of chained merges)
+  const finalizeProceedingId = (rawId: string): string => {
+    let pid = remapId(rawId || "");
+    if (!pid) return "";
+    if (dedupMerged) {
+      // Chase merges transitively to a stable representative ID.
+      const seen = new Set<string>();
+      while (pid && dedupMerged.has(pid) && !seen.has(pid)) {
+        seen.add(pid);
+        pid = dedupMerged.get(pid)!;
+      }
+    }
+    return pid;
+  };
+
   const factAssignments = new Map<string, string>();
   for (const a of next.factScopeAssignments || []) {
-    const pid = remapId(a.proceedingId || "");
+    const pid = finalizeProceedingId(a.proceedingId || "");
     if (!a.factId || !pid) continue;
-    if (!allowedProcIds.has(pid)) continue;
     factAssignments.set(a.factId, pid);
   }
+
+  // v2.6.31: Identify facts that were in promptFacts (sent to LLM) vs excluded facts
+  const promptFactIds = new Set(promptFacts.map((f) => f.id));
+
+  // Determine default scope for facts not included in promptFacts
+  // Use the first/primary scope as the default (most analyses have one dominant scope)
+  const defaultScopeId = (state.understanding.distinctProceedings || [])[0]?.id || "";
+
   for (const f of state.facts) {
     const pid = factAssignments.get(f.id);
-    if (pid) f.relatedProceedingId = pid;
+    if (pid) {
+      // Fact was in promptFacts and got an assignment from LLM
+      f.relatedProceedingId = pid;
+    } else if (!promptFactIds.has(f.id) && defaultScopeId && !f.relatedProceedingId) {
+      // Fact was NOT in promptFacts (excluded due to max limit) and has no assignment
+      // Assign to default scope to prevent orphaning
+      f.relatedProceedingId = defaultScopeId;
+      debugLog("refineScopesFromEvidence: assigned excluded fact to default scope", {
+        factId: f.id,
+        defaultScopeId,
+        reason: "fact excluded from promptFacts due to max limit",
+      });
+    }
+    // Facts that were in promptFacts but got no assignment are left alone
+    // (they may have pre-existing assignments or will be reconciled by ensureScopesCoverAssignments)
   }
 
   // IMPORTANT: ensure we never end up with orphaned assignments (facts/claims referencing a
@@ -775,7 +832,7 @@ Return:
   // - Otherwise, clear the orphaned assignment to keep the state consistent.
   const ensureScopesCoverAssignments = () => {
     const prevById = new Map<string, any>();
-    for (const s of currentScopes as any[]) {
+    for (const s of preRefineScopes as any[]) {
       if (s?.id) prevById.set(String(s.id), s);
     }
 
@@ -789,7 +846,7 @@ Return:
       if (rp) referenced.add(rp);
     }
 
-    const scopesNow = understanding.distinctProceedings || [];
+    const scopesNow = state.understanding!.distinctProceedings || [];
     const scopeById = new Map<string, any>();
     for (const s of scopesNow as any[]) {
       if (s?.id) scopeById.set(String(s.id), s);
@@ -817,9 +874,11 @@ Return:
     }
 
     if (restored.length > 0 || cleared.length > 0) {
-      understanding.distinctProceedings = scopesNow;
-      understanding.requiresSeparateAnalysis =
-        !!understanding.requiresSeparateAnalysis && scopesNow.length > 1;
+      state.understanding!.distinctProceedings = scopesNow;
+      // v2.6.31: Fix - use simple check instead of AND logic
+      // If we have multiple scopes after restoration, enable separate analysis
+      // (the AND logic incorrectly kept requiresSeparateAnalysis=false when scopes were restored)
+      state.understanding!.requiresSeparateAnalysis = scopesNow.length > 1;
       debugLog("refineScopesFromEvidence: reconciled orphaned scope assignments", {
         restored: restored.slice(0, 8),
         cleared: cleared.slice(0, 8),
@@ -855,29 +914,6 @@ Return:
       state.facts || [],
       threshold,
     );
-  }
-
-  // Optional: merge near-duplicate EvidenceScopes deterministically and remap assignments.
-  let dedupMerged: Map<string, string> | null = null;
-  if (process.env.FH_ENABLE_SCOPE_DEDUP !== "false") {
-    const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
-    const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
-    const dedup = deduplicateScopes(state.understanding.distinctProceedings || [], threshold);
-    dedupMerged = dedup.merged;
-    state.understanding.distinctProceedings = dedup.scopes;
-
-    // Remap fact assignments
-    for (const f of state.facts || []) {
-      const rp = String((f as any).relatedProceedingId || "");
-      if (!rp) continue;
-      if (dedupMerged.has(rp)) (f as any).relatedProceedingId = dedupMerged.get(rp)!;
-    }
-    // Remap claim assignments
-    for (const c of state.understanding.subClaims || []) {
-      const rp = String((c as any).relatedProceedingId || "");
-      if (!rp) continue;
-      if (dedupMerged.has(rp)) (c as any).relatedProceedingId = dedupMerged.get(rp)!;
-    }
   }
 
   // Avoid over-splitting into “dimension scopes” (e.g., cost vs infrastructure) unless the
@@ -950,11 +986,9 @@ Return:
 
   const claimAssignments = new Map<string, string>();
   for (const a of next.claimScopeAssignments || []) {
-    const pid = remapId(a.proceedingId || "");
+    const pid = finalizeProceedingId(a.proceedingId || "");
     if (!a.claimId || !pid) continue;
-    const pid2 = dedupMerged && dedupMerged.has(pid) ? dedupMerged.get(pid)! : pid;
-    if (!allowedProcIds.has(pid2)) continue;
-    claimAssignments.set(a.claimId, pid2);
+    claimAssignments.set(a.claimId, pid);
   }
   for (const c of state.understanding.subClaims || []) {
     const pid = claimAssignments.get(c.id);
@@ -1010,7 +1044,7 @@ function normalizeYesNoQuestionToStatement(input: string): string {
     return out;
   }
 
-  // Heuristic: split before common predicate starters (covers lots of "Was X fair/true/based..." questions).
+  // Heuristic: split before common predicate starters (covers many "Was X fair/true/based..." forms).
   const predicateStarters = [
     "fair",
     "true",
@@ -2182,13 +2216,131 @@ function calculateArticleTruthPercentage(
 // ============================================================================
 
 /**
+ * v2.6.31: Detect and correct inverted verdicts.
+ * The LLM sometimes rates "how correct is my analysis" (high) instead of "is the claim true" (low).
+ * This function detects when reasoning contradicts the verdict and corrects it.
+ *
+ * @returns corrected truth percentage, or original if no inversion detected
+ */
+function detectAndCorrectVerdictInversion(
+  claimText: string,
+  reasoning: string,
+  verdictPct: number
+): { correctedPct: number; wasInverted: boolean; inversionReason?: string } {
+  // Only check verdicts that are in the "true" range (>=50%)
+  if (verdictPct < 50) {
+    return { correctedPct: verdictPct, wasInverted: false };
+  }
+
+  // DEBUG: Log inputs to debug file
+  debugLog("[INVERSION DEBUG] Input values", {
+    claimText: claimText?.slice(0, 100),
+    reasoning: reasoning?.slice(0, 150),
+    verdictPct,
+  });
+
+  const claimLower = claimText.toLowerCase();
+  const reasoningLower = reasoning.toLowerCase();
+
+  // Pattern 1: Claim says "X was proportionate/justified/fair" but reasoning says "NOT proportionate/justified/fair"
+  // Allow optional articles/words between verb and adjective: "were a proportionate", "was not a fair"
+  const positiveClaimPatterns = [
+    /\b(was|were|is|are)\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\b/i,
+    /\b(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\s+(response|action|decision|measure|and\s+justified)\b/i,
+    // v2.6.31: Additional positive assertion patterns
+    // Comparative positive assertions
+    /\b(more|higher|better|superior|greater)\s+(efficient|effective|accurate|reliable)\b/i,
+    // Positive state assertions
+    /\b(has|have|had)\s+(sufficient|adequate|strong|solid)\s+(evidence|basis|support)\b/i,
+    /\b(supports?|justifies?|warrants?|establishes?)\s+(the\s+)?(claim|assertion|conclusion)\b/i,
+  ];
+
+  const negativeReasoningPatterns = [
+    // "were NOT proportionate", "was NOT a fair response"
+    /\b(was|were|is|are)\s+not\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\b/i,
+    // "NOT proportionate to", "not a proportionate response"
+    /\bnot\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)/i,
+    // Negative adjectives
+    /\b(disproportionate|unjustified|unfair|inappropriate|unreasonable|invalid|incorrect|improper)\b/i,
+    // Legal/ethical violations
+    /\bviolates?\s+(principles?|norms?|standards?|law|rights?)\b/i,
+    /\blacks?\s+(factual\s+)?basis\b/i,
+    /\brepresents?\s+(economic\s+)?retaliation\b/i,
+    /\b(inappropriate|improper)\s+(interference|intervention)\b/i,
+    // Interference patterns
+    /\binterfere\s+with\b/i,
+    /\bmaking\s+them\s+(disproportionate|inappropriate)\b/i,
+    // Excessive patterns
+    /\b(excessive|unwarranted|undue)\s+(economic\s+)?(punishment|pressure|retaliation)\b/i,
+    // v2.6.31: Additional denial patterns
+    // Insufficiency patterns
+    /\b(lacks?|lacking)\s+(sufficient\s+)?(evidence|basis|support|justification)\b/i,
+    /\b(insufficient|inadequate)\s+(evidence|basis|support|justification)\b/i,
+    /\bdoes\s+not\s+(support|justify|warrant|establish)\b/i,
+    /\bfails?\s+to\s+(support|justify|demonstrate|establish|show)\b/i,
+    // Contradiction patterns
+    /\b(contradicts?|contradicted|contradicting)\s+(the\s+)?(claim|assertion|thesis)\b/i,
+    /\bevidence\s+(shows?|indicates?|suggests?|demonstrates?)\s+(the\s+)?opposite\b/i,
+    /\b(contrary|opposite)\s+to\s+(what|the\s+claim)\b/i,
+    // Falsification patterns
+    /\b(refutes?|refuted|disproves?|disproved|negates?|negated)\b/i,
+    /\b(false|untrue|inaccurate|incorrect|wrong|erroneous)\s+(based\s+on|according\s+to)?\s*(the\s+)?evidence\b/i,
+    // Efficiency/comparison denial for comparative claims
+    /\b(less|lower|worse|inferior|reduced)\s+(efficient|effective|productive|performance)\b/i,
+    /\bnot\s+(more|higher|better|superior)\s+(efficient|effective)\b/i,
+  ];
+
+  // Check if claim asserts something positive
+  const claimAssertsPositive = positiveClaimPatterns.some(p => p.test(claimLower));
+
+  // Check if reasoning negates it
+  const reasoningNegates = negativeReasoningPatterns.some(p => p.test(reasoningLower));
+
+  // DEBUG: Log pattern matching results
+  debugLog("[INVERSION DEBUG] Pattern matching results", {
+    claimAssertsPositive,
+    reasoningNegates,
+    shouldInvert: claimAssertsPositive && reasoningNegates && verdictPct >= 50,
+  });
+
+  debugLog("detectAndCorrectVerdictInversion: CHECK", {
+    claimText: claimText.slice(0, 80),
+    reasoningSnippet: reasoningLower.slice(0, 120),
+    verdictPct,
+    claimAssertsPositive,
+    reasoningNegates,
+  });
+
+  if (claimAssertsPositive && reasoningNegates && verdictPct >= 50) {
+    // Invert the verdict: 72% → 28%, 85% → 15%, etc.
+    const correctedPct = 100 - verdictPct;
+    debugLog("detectAndCorrectVerdictInversion: INVERTED", {
+      claimText: claimText.slice(0, 100),
+      originalPct: verdictPct,
+      correctedPct,
+      reason: "Reasoning contradicts claim assertion",
+    });
+    return {
+      correctedPct,
+      wasInverted: true,
+      inversionReason: "Reasoning indicates claim is false but verdict was high - inverted",
+    };
+  }
+
+  return { correctedPct: verdictPct, wasInverted: false };
+}
+
+/**
  * Calculate claim weight based on centrality and confidence.
  * Higher centrality claims with higher confidence have more influence on the overall verdict.
  *
  * Weight = centralityMultiplier × (confidence / 100)
  * where centralityMultiplier: high=3.0, medium=2.0, low=1.0
  */
-function getClaimWeight(claim: { centrality?: "high" | "medium" | "low"; confidence?: number }): number {
+function getClaimWeight(claim: { centrality?: "high" | "medium" | "low"; confidence?: number; thesisRelevance?: "direct" | "tangential" }): number {
+  // v2.6.31: Tangential claims have zero weight - they don't contribute to the verdict
+  if (claim.thesisRelevance === "tangential") return 0;
+
   const centralityMultiplier =
     claim.centrality === "high" ? 3.0 :
     claim.centrality === "medium" ? 2.0 : 1.0;
@@ -2199,22 +2351,95 @@ function getClaimWeight(claim: { centrality?: "high" | "medium" | "low"; confide
 /**
  * Calculate weighted average of claim verdicts.
  * Central claims with high confidence have more influence than peripheral low-confidence claims.
+ * v2.6.31: Tangential claims (thesisRelevance="tangential") are excluded from the calculation.
+ * v2.6.31: Counter-claims (isCounterClaim=true) have their verdicts INVERTED before aggregation.
+ *          If a counter-claim is TRUE (85%), it means the OPPOSITE of the user's thesis is true,
+ *          so it contributes as FALSE (15%) to the overall verdict.
  *
- * Formula: Σ(truthPercentage × weight) / Σ(weight)
+ * Formula: Σ(effectiveTruthPercentage × weight) / Σ(weight)
  */
-function calculateWeightedVerdictAverage(claims: Array<{ truthPercentage: number; centrality?: "high" | "medium" | "low"; confidence?: number }>): number {
-  if (claims.length === 0) return 50;
+function calculateWeightedVerdictAverage(claims: Array<{ truthPercentage: number; centrality?: "high" | "medium" | "low"; confidence?: number; thesisRelevance?: "direct" | "tangential"; isCounterClaim?: boolean }>): number {
+  // v2.6.31: Filter out tangential claims - they don't contribute to the verdict
+  const directClaims = claims.filter(c => c.thesisRelevance !== "tangential");
+  if (directClaims.length === 0) return 50;
 
   let totalWeightedTruth = 0;
   let totalWeight = 0;
 
-  for (const claim of claims) {
+  for (const claim of directClaims) {
     const weight = getClaimWeight(claim);
-    totalWeightedTruth += claim.truthPercentage * weight;
+    // v2.6.31: Counter-claims evaluate the opposite position - invert their contribution
+    // If counter-claim is TRUE (85%), it means user's thesis is FALSE (15%)
+    const effectiveTruthPct = claim.isCounterClaim
+      ? 100 - claim.truthPercentage
+      : claim.truthPercentage;
+    totalWeightedTruth += effectiveTruthPct * weight;
     totalWeight += weight;
   }
 
   return totalWeight > 0 ? Math.round(totalWeightedTruth / totalWeight) : 50;
+}
+
+/**
+ * v2.6.31: Detect if a sub-claim is a counter-claim (evaluates the opposite of the user's thesis).
+ * Counter-claims are generated when the LLM creates sub-claims that test opposing positions,
+ * or when claims are derived from counter-evidence search results.
+ *
+ * @param claimText - The text of the sub-claim
+ * @param userThesis - The user's original thesis/claim (normalized)
+ * @param claimFacts - Facts supporting this claim (check if from counter-evidence search)
+ * @returns true if this is a counter-claim
+ */
+function detectCounterClaim(
+  claimText: string,
+  userThesis: string,
+  claimFacts?: ExtractedFact[]
+): boolean {
+  // Check if claim is primarily supported by counter-evidence facts
+  if (claimFacts && claimFacts.length > 0) {
+    const counterEvidenceFacts = claimFacts.filter(
+      f => f.claimDirection === "contradicts" || f.fromOppositeClaimSearch
+    );
+    // If majority of supporting facts are counter-evidence, this is likely a counter-claim
+    if (counterEvidenceFacts.length > claimFacts.length / 2) {
+      return true;
+    }
+  }
+
+  // Check for linguistic indicators of opposing position
+  const claimLower = claimText.toLowerCase();
+  const thesisLower = userThesis.toLowerCase();
+
+  // Pattern: Claim is testing the opposite direction of a comparative
+  // User thesis: "X is more efficient than Y" → Counter-claim: "Y is more efficient than X"
+  const comparativePattern = /\b(more|less|higher|lower|better|worse|greater|smaller)\s+(\w+)\s+than\b/i;
+  const thesisMatch = thesisLower.match(comparativePattern);
+  const claimMatch = claimLower.match(comparativePattern);
+
+  if (thesisMatch && claimMatch) {
+    // If both have comparatives but in opposite directions
+    const oppositeComparatives: Record<string, string> = {
+      "more": "less", "less": "more",
+      "higher": "lower", "lower": "higher",
+      "better": "worse", "worse": "better",
+      "greater": "smaller", "smaller": "greater",
+    };
+    if (oppositeComparatives[thesisMatch[1].toLowerCase()] === claimMatch[1].toLowerCase()) {
+      return true;
+    }
+  }
+
+  // Pattern: Claim explicitly states the opposite of the thesis
+  // Look for negation of key thesis terms
+  const negationPatterns = [
+    /\bnot\s+(proportionate|justified|fair|efficient|effective|true|valid)\b/i,
+    /\b(disproportionate|unjustified|unfair|inefficient|ineffective|false|invalid)\b/i,
+  ];
+
+  // If thesis asserts positive and claim uses negation, it might be a counter-claim
+  // But this needs more context - for now, rely primarily on fact direction
+
+  return false;
 }
 
 /**
@@ -2310,7 +2535,6 @@ function getHighlightColor7Point(
 // TYPES
 // ============================================================================
 
-// v2.6.30: Removed "question" - questions are normalized to claims at entry point
 type InputType = "claim" | "article";
 // v2.6.27: Renamed from AnalysisIntent for input neutrality
 type AnalysisIntent = "verification" | "exploration" | "comparison" | "none";
@@ -2409,7 +2633,6 @@ interface ResearchState {
   searchQueries: SearchQuery[];
   // NEW v2.6.6: Track LLM calls
   llmCalls: number;
-  // NEW v2.6.18: Track which research questions have been searched
   researchQueriesSearched: Set<number>;
   // NEW v2.6.18: Track if decision-maker search was performed
   decisionMakerSearchPerformed: boolean;
@@ -2427,7 +2650,6 @@ interface ClaimUnderstanding {
   analysisIntent: AnalysisIntent;
   originalInputDisplay: string;
   impliedClaim: string;
-  wasOriginallyQuestionFormat?: boolean; // v2.6.24: Track if input was actually a question (not just LLM interpretation)
 
   distinctProceedings: DistinctProceeding[];
   requiresSeparateAnalysis: boolean;
@@ -2443,10 +2665,12 @@ interface ClaimUnderstanding {
     dependsOn: string[];
     keyEntities: string[];
     // Three-attribute assessment for claim importance
-    checkWorthiness: "high" | "medium" | "low"; // Is it a factual assertion a reader would question?
+    checkWorthiness: "high" | "medium" | "low";
     harmPotential: "high" | "medium" | "low";   // Does it impact high-stakes areas?
     centrality: "high" | "medium" | "low";      // Is it pivotal to the author's argument?
     isCentral: boolean; // Derived: true if centrality is "high"
+    // v2.6.31: Thesis relevance - does this claim DIRECTLY test the main thesis?
+    thesisRelevance: "direct" | "tangential";
     relatedProceedingId: string;
     approximatePosition: string;
     keyFactorId: string; // empty string if not mapped to any factor
@@ -2460,7 +2684,6 @@ interface ClaimUnderstanding {
   researchQueries: string[];
   riskTier: "A" | "B" | "C";
   // NEW: KeyFactors discovered during understanding phase
-  // v2.6.27: Renamed 'question' to 'evaluationCriteria' for input neutrality
   keyFactors: Array<{
     id: string;
     evaluationCriteria: string;
@@ -2538,6 +2761,9 @@ interface ClaimVerdict {
   isCentral: boolean;
   // NEW v2.6.30: Centrality level for weighted verdict calculation
   centrality?: "high" | "medium" | "low";
+  // NEW v2.6.31: Thesis relevance - does this claim directly test the thesis?
+  // "direct" = contributes to verdict, "tangential" = excluded from verdict calculation
+  thesisRelevance?: "direct" | "tangential";
   // NEW: Claim role and dependencies
   claimRole?: "attribution" | "source" | "timing" | "core";
   dependsOn?: string[]; // Claim IDs this depends on
@@ -2568,7 +2794,7 @@ interface ClaimVerdict {
 
 // v2.6.27: Renamed from VerdictSummary for input neutrality
 interface VerdictSummary {
-  displayText: string; // v2.6.27: Renamed from 'question' for neutrality
+  displayText: string;
   // Answer truth percentage (0-100)
   answer: number;
   confidence: number;
@@ -2587,7 +2813,6 @@ interface VerdictSummary {
 
 interface ArticleAnalysis {
   inputType: InputType;
-  // wasQuestionInput removed - Input Neutrality: no question-specific properties in analysis
   verdictSummary?: VerdictSummary;
 
   hasMultipleProceedings: boolean;
@@ -2621,8 +2846,6 @@ interface ArticleAnalysis {
   // Pseudoscience detection (v2.4.6+)
   isPseudoscience?: boolean;
   pseudoscienceCategories?: string[];
-  // NEW v2.6.18: Key Factors for article mode (unified with question mode)
-  // Generated when topic involves legal/procedural/institutional analysis
   keyFactors?: KeyFactor[];
   hasContestedFactors?: boolean;
 }
@@ -2866,7 +3089,7 @@ function sanitizeTemporalErrors(reasoning: string, currentDate: Date): string {
 
 /**
  * Detect if the topic involves procedural or institutional analysis
- * This determines whether Key Factors should be generated (unified with question mode)
+ * This determines whether Key Factors should be generated
  *
  * Key Factors are appropriate for topics involving:
  * - Multi-step processes (rollouts, audits, reviews, investigations)
@@ -2940,6 +3163,10 @@ const SUBCLAIM_SCHEMA = z.object({
   harmPotential: z.enum(["high", "medium", "low"]),
   centrality: z.enum(["high", "medium", "low"]),
   isCentral: z.boolean(), // true if centrality is "high" (harmPotential affects risk tier, not centrality)
+  // v2.6.31: Thesis relevance - does this claim DIRECTLY test the main thesis?
+  // "direct" = directly evaluates whether the thesis is true (should contribute to verdict)
+  // "tangential" = related context but doesn't test the thesis (e.g., reactions to an event)
+  thesisRelevance: z.enum(["direct", "tangential"]),
   relatedProceedingId: z.string(), // empty string if not applicable
   approximatePosition: z.string(), // empty string if not applicable
   keyFactorId: z.string(), // empty string if not mapped to any factor
@@ -2961,6 +3188,7 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   harmPotential: z.enum(["high", "medium", "low"]).catch("medium"),
   centrality: z.enum(["high", "medium", "low"]).catch("medium"),
   isCentral: z.boolean().catch(false),
+  thesisRelevance: z.enum(["direct", "tangential"]).catch("direct"), // Default to direct for backward compat
   relatedProceedingId: z.string().default(""),
   approximatePosition: z.string().default(""),
   keyFactorId: z.string().default(""),
@@ -3003,7 +3231,6 @@ const ANALYSIS_CONTEXT_SCHEMA = z.object({
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
 // Some providers are more tolerant and benefit from a more lenient schema.
 const UNDERSTANDING_SCHEMA_OPENAI = z.object({
-  // v2.6.30: Removed "question" - questions are normalized to claims at entry point
   detectedInputType: z.enum(["claim", "article"]),
   analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]),
   originalInputDisplay: z.string(), // empty string if not applicable
@@ -3028,7 +3255,6 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   riskTier: z.enum(["A", "B", "C"]),
   // NEW: KeyFactors discovered during understanding phase (emergent, not forced)
   // factor MUST be abstract label (2-5 words), NOT specific claims or quotes
-  // v2.6.27: Renamed 'question' to 'evaluationCriteria' for input neutrality
   keyFactors: z.array(
     z.object({
       id: z.string(),
@@ -3045,7 +3271,6 @@ const SUPPLEMENTAL_SUBCLAIMS_SCHEMA = z.object({
 
 // Lenient variant for providers that sometimes omit arrays/fields; defaults prevent hard failures.
 const UNDERSTANDING_SCHEMA_LENIENT = z.object({
-  // v2.6.30: Removed "question" - questions are normalized to claims at entry point
   detectedInputType: z.enum(["claim", "article"]).catch("claim"),
   // Some models invent new labels (e.g. "evaluation"); coerce unknowns to "none" then post-process.
   analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]).catch("none"),
@@ -3117,8 +3342,8 @@ async function understandClaim(
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   // =========================================================================
-  // EARLY INPUT NORMALIZATION: Convert questions to statements BEFORE LLM call
-  // This ensures both "Was X fair?" and "X was fair" take the same analysis path
+  // EARLY INPUT NORMALIZATION: Normalize yes/no phrasing to a statement BEFORE LLM call
+  // This ensures equivalent phrasings follow the same analysis path
   // =========================================================================
   const trimmedInputRaw = input.trim();
   const needsNormalization =
@@ -3127,14 +3352,14 @@ async function understandClaim(
       trimmedInputRaw,
     );
 
-  // Preserve original input for UI display, but normalize for analysis
-  const originalFormatInput = needsNormalization ? trimmedInputRaw : null;
+  // Preserve original input for UI display, normalize for analysis
+  const originalInputDisplay = trimmedInputRaw;
   const normalizedInput = needsNormalization
     ? normalizeYesNoQuestionToStatement(trimmedInputRaw)
     : trimmedInputRaw;
 
   if (needsNormalization) {
-    console.log(`[Analyzer] Input Neutrality: Normalized question to statement BEFORE LLM call`);
+    console.log(`[Analyzer] Input Neutrality: normalized to statement BEFORE LLM call`);
     console.log(`[Analyzer]   Original: "${trimmedInputRaw.substring(0, 100)}..."`);
     console.log(`[Analyzer]   Normalized: "${normalizedInput.substring(0, 100)}..."`);
   }
@@ -3166,11 +3391,11 @@ NOT DISTINCT SCOPES:
 
 ${recencyMatters ? `## ⚠️ RECENT DATA DETECTED
 
-This input appears to involve recent events, dates, or announcements. When generating research questions:
-- **PRIORITIZE**: Questions that will help find the most current information via web search
+This input appears to involve recent events, dates, or announcements. When generating research queries:
+- **PRIORITIZE**: Queries that will help find the most current information via web search
 - **INCLUDE**: Date-specific queries (e.g., "November 2025", "2025", "recent")
 - **FOCUS**: Recent developments, current status, latest announcements
-- **NOTE**: Web search will be used to find current sources - structure your research questions accordingly
+- **NOTE**: Web search will be used to find current sources - structure your research queries accordingly
 
 ` : ''}## CRITICAL: TEMPORAL REASONING
 
@@ -3262,9 +3487,9 @@ If SC2 is FALSE (no such memo exists), then SC3 has NO evidential basis from thi
 
 For EACH claim, assess these three attributes (high/medium/low):
 
-**1. checkWorthiness** - Is it a factual assertion a reader would question?
+**1. checkWorthiness** - Is it a factual assertion a reader would challenge?
 - HIGH: Specific factual claim that can be verified, readers would want proof
-- MEDIUM: Somewhat verifiable but less likely to be questioned
+- MEDIUM: Somewhat verifiable but less likely to be challenged
 - LOW: Pure opinion with no factual component, or not independently verifiable
 
 NOTE: Broad institutional claims ARE verifiable (checkWorthiness: HIGH):
@@ -3328,16 +3553,16 @@ IMPORTANT: riskTier is ANALYSIS-LEVEL only.
 - You may set riskTier based on the overall analysis, but claim-level harmPotential/centrality must be justified by each claim's content.
 
 **CRITICAL HEURISTIC for centrality = "high"**:
-Ask yourself: "Does this claim DIRECTLY address the user's question or primary thesis?"
+Ask yourself: "Does this claim DIRECTLY address the user's primary thesis?"
 → If yes, it's central. If it's supporting evidence or background, it's not.
 
-**EXPECT 1-4 CENTRAL CLAIMS** in most analyses. The number depends on the question type:
+**EXPECT 1-4 CENTRAL CLAIMS** in most analyses. The number depends on the thesis type:
 - Simple factual claim: 1-2 central claims
 - Comparative claim ("X vs Y"): 2-4 central claims (one per major aspect of comparison)
-- Multi-faceted question: 2-4 central claims (one per facet)
+- Multi-faceted thesis: 2-4 central claims (one per facet)
 
 Only assign centrality: "high" when the claim:
-1. DIRECTLY addresses the user's question/thesis, AND
+1. DIRECTLY addresses the user's thesis, AND
 2. Represents a distinct aspect that needs independent verification
 
 **Examples of NON-central claims (centrality = "low" or "medium")**:
@@ -3359,7 +3584,7 @@ Only assign centrality: "high" when the claim:
 - ❌ NOT CENTRAL: "The analysis framework is appropriate" (meta-analysis)
 - ❌ NOT CENTRAL: "The comparison includes/excludes certain factors" (methodological scope)
 
-**IMPORTANT**: For comparative claims, EACH distinct aspect of the comparison that directly addresses the question should have centrality="high". For "hydrogen vs electricity efficiency", claims about well-to-wheel efficiency, production efficiency, AND expert consensus are ALL central because they each address the efficiency question from different angles.
+**IMPORTANT**: For comparative claims, EACH distinct aspect of the comparison that directly addresses the thesis should have centrality="high". For "hydrogen vs electricity efficiency", claims about well-to-wheel efficiency, production efficiency, AND expert consensus are ALL central because they each address the efficiency thesis from different angles.
 
 **Examples of CENTRAL claims (centrality = "high")**:
 - ✓ "The trial was fair and impartial" (PRIMARY evaluative thesis)
@@ -3374,6 +3599,36 @@ NOT "high" for:
 - Source verification (does document exist)
 - Background context
 - Peripheral details
+
+## THESIS RELEVANCE (thesisRelevance field) - NEW v2.6.31
+
+**thesisRelevance** determines whether a claim should CONTRIBUTE to the overall verdict:
+
+- **"direct"**: The claim DIRECTLY tests part of the main thesis
+  → These claims contribute to the verdict calculation
+
+- **"tangential"**: Related context but does NOT test the thesis
+  → These claims are displayed but EXCLUDED from verdict calculation
+
+**CRITICAL DISTINCTION**:
+- "Was the trial fair?" → claims about the trial's fairness = "direct"
+- "Was the trial fair?" → claims about US reactions/sanctions to the trial = "tangential"
+- The thesis is about the TRIAL, not about how others REACTED to it
+
+**Examples for input "The Bolsonaro judgment was fair and based on Brazil's law"**:
+
+✓ thesisRelevance="direct" (evaluates the THESIS):
+- "The trial followed due process" → directly tests fairness
+- "The evidence was properly evaluated" → directly tests fairness
+- "Brazilian legal standards were applied" → directly tests legal basis
+
+✗ thesisRelevance="tangential" (does NOT evaluate the thesis):
+- "US tariffs were proportionate" → US reaction, not the trial itself
+- "US sanctions were justified" → US reaction, not the trial itself
+- "Brazil's foreign relations deteriorated" → consequence, not the trial itself
+
+**Rule**: If you can rephrase the claim as "The thesis is true/false BECAUSE [claim]" = direct
+          If the claim is "BECAUSE the thesis is true/false, [consequence]" = tangential
 
 **FILTERING RULE**: Claims with checkWorthiness = "low" should be excluded from investigation
 
@@ -3520,13 +3775,13 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
 
 Set requiresSeparateAnalysis = true when multiple scopes are detected.
 
-## FOR QUESTIONS OR STATEMENTS
+## FOR ANY INPUT STYLE
 
 - **impliedClaim**: What claim would "YES" confirm? Must be AFFIRMATIVE.
   - CORRECT: "The process was fair and followed applicable standards"
   - WRONG: "may or may not have been fair"
 
-- **subClaims**: Even for questions, generate sub-claims that need to be verified to answer the question.
+- **subClaims**: Generate sub-claims that need to be verified to address the thesis.
   - Break down the implied claim into verifiable components
   - For multi-context cases, ensure meaningful coverage across all contexts (set relatedProceedingId appropriately)
   - **DECOMPOSE COMPOUND CLAIMS**: Split claims that combine multiple assertions into separate claims:
@@ -3541,7 +3796,7 @@ Set requiresSeparateAnalysis = true when multiple scopes are detected.
     - Outcome proportionality/impact (was the outcome proportionate and consistent with similar situations?)
   - **CRITICAL: DECOMPOSE SPECIFIC OUTCOMES**: When specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban, ineligibility duration), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate for the context.
 
-- **researchQueries**: Generate specific questions to research, including:
+- **researchQueries**: Generate specific queries to research, including:
   - Potential conflicts of interest for key decision-makers
   - Comparisons to similar cases, phases, or precedents
   - Criticisms and rebuttals with documented evidence
@@ -3563,10 +3818,10 @@ ${CONFIG.keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "
 
 **WHEN NOT TO GENERATE**: Leave keyFactors as empty array [] for:
 - Simple factual claims ("Did X happen?")
-- Single-dimension questions ("Is Y true?")
+- Single-dimension claims ("Is Y true?")
 - Straightforward verifications
 
-**HOW TO GENERATE**: Break down the thesis into 2-5 fundamental questions that must ALL be answered "yes" for the thesis to be true.
+**HOW TO GENERATE**: Break down the thesis into 2-5 fundamental queries that must ALL be answered "yes" for the thesis to be true.
 
 **FORMAT**:
 - **id**: Unique identifier (KF1, KF2, etc.)
@@ -3629,7 +3884,7 @@ For "This vaccine causes autism."
 ]
 **CLAIM-TO-FACTOR MAPPING**: If you generate keyFactors, map each claim to the most relevant factor using keyFactorId. Claims can only map to one factor. Use empty string "" for claims that don't address any specific factor.`;
 
-  // Use normalized analysisInput (question→statement) for consistent LLM analysis
+// Use normalized analysisInput (yes/no→statement) for consistent LLM analysis
   const userPrompt = `Analyze for fact-checking:\n\n"${analysisInputForLLM}"`;
 
   function extractFirstJsonObject(text: string): string | null {
@@ -3798,7 +4053,7 @@ For "This vaccine causes autism."
 
   if (!parsed) {
     // Retry once with a smaller, schema-focused prompt (providers sometimes fail on long prompts + strict schemas).
-    // v2.6.30: Changed detectedInputType to "claim | article" - questions are normalized to claims at entry point
+    // v2.6.30: Changed detectedInputType to "claim | article" - yes/no inputs are normalized to claims at entry point
     const retryPrompt = `You are a fact-checking analyst.\n\nReturn ONLY a single JSON object that EXACTLY matches the expected schema.\n- No markdown, no prose, no code fences.\n- Every required field must exist.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nCRITICAL: MULTI-SCOPE DETECTION\n- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).\n- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.\n- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.\n\nENUM RULES\n- detectedInputType must be exactly one of: claim | article\n- analysisIntent must be exactly one of: verification | exploration | comparison | none\n- riskTier must be exactly one of: A | B | C\n\nCLAIMS\n- Populate subClaims with 3–8 verifiable sub-claims when possible.\n- Every subClaim must include ALL required fields and use allowed enum values.\n\nNow analyze the input and output JSON only.`;
     try {
       parsed = await tryStructured(retryPrompt, "structured-2");
@@ -3866,33 +4121,19 @@ For "This vaccine causes autism."
 
   // =========================================================================
   // POST-PROCESSING: Use early-normalized input for input neutrality
-  // Since we normalized questions to statements BEFORE the LLM call (lines 2504-2528),
+  // Since we normalized to statements BEFORE the LLM call (lines 2504-2528),
   // both paths now converge. We use:
-  // - originalFormatInput (from line 2516): for UI display (originalInputDisplay)
+  // - originalInputDisplay (raw input): for UI display
   // - analysisInput (from line 2528): for analysis (impliedClaim)
   // =========================================================================
   const trimmedInput = input.trim();
 
-  // v2.6.24: Track if input was originally a question for UI display ONLY
-  // This is UI metadata - does NOT affect analysis logic
-  (parsed as any).wasOriginallyQuestionFormat = !!originalFormatInput;
-
-  // v2.6.30: REMOVED detectedInputType override - it was causing different analysis paths
-  // for questions vs statements, violating Input Neutrality. The wasOriginallyQuestionFormat
-  // flag is sufficient for UI purposes. Analysis must treat all inputs identically.
-
-  // Set originalInputDisplay to the ORIGINAL question (for UI display ONLY)
-  if (originalFormatInput) {
-    parsed.originalInputDisplay = originalFormatInput;
-    console.log(`[Analyzer] Input Neutrality: originalInputDisplay set to original question for UI`);
-  } else if (!parsed.originalInputDisplay) {
-    // For statements, use the input as-is
-      parsed.originalInputDisplay = trimmedInput;
-  }
+  // UI display: prefer the original raw input; otherwise use trimmed input
+  parsed.originalInputDisplay = originalInputDisplay || parsed.originalInputDisplay || trimmedInput;
 
   // v2.6.26: ALWAYS force impliedClaim to normalized statement for input neutrality
-  // Regardless of what LLM returns, use analysisInput to ensure questions and statements
-  // produce identical analysis results. This is unconditional - no checking LLM output.
+  // Regardless of what LLM returns, use analysisInput to ensure any input style
+  // produces identical analysis results. This is unconditional - no checking LLM output.
   const llmImpliedClaim = parsed.impliedClaim;
   parsed.impliedClaim = analysisInput;
   console.log(`[Analyzer] Input Neutrality: impliedClaim forced to normalized statement`);
@@ -3911,7 +4152,7 @@ For "This vaccine causes autism."
   // - IDs are stable (P1/P2/...) instead of model-invented IDs
   // - downstream research queries don't drift because the model changed labels/dates
   // v2.6.23: Use analysisInput (normalized statement) for consistent scope canonicalization
-  // This ensures questions and statements yield identical scope detection and research queries
+  // This ensures any input phrasing yields identical scope detection and research queries
   parsed = canonicalizeScopes(analysisInput, parsed);
   debugLog("understandClaim: scopes after canonicalize", {
     detectedInputType: parsed.detectedInputType,
@@ -3921,16 +4162,16 @@ For "This vaccine causes autism."
   });
 
   // If the model under-split scopes for a claim, do a single best-effort retry
-  // focused ONLY on scope detection. v2.6.30: Simplified - no "question" type exists anymore
+  // focused ONLY on scope detection. v2.6.30: Simplified - single input type after normalization
   if (
     CONFIG.deterministic &&
     parsed.detectedInputType === "claim" &&
     (parsed.distinctProceedings?.length ?? 0) <= 1
   ) {
-    // v2.6.23: Use normalized analysisInput for scope detection to maintain input neutrality.
-    // When deterministic mode is enabled, questions are normalized to statements earlier (lines 2507-2528).
-    // Using the same normalized form here ensures scope detection aligns with claim analysis,
-    // preventing scope-to-statement misalignment and maintaining input neutrality.
+      // v2.6.23: Use normalized analysisInput for scope detection to maintain input neutrality.
+      // When deterministic mode is enabled, yes/no forms are normalized to statements earlier (lines 2507-2528).
+      // Using the same normalized form here ensures scope detection aligns with claim analysis,
+      // preventing scope-to-statement misalignment and maintaining input neutrality.
     const supplementalInput = parsed.impliedClaim || analysisInput;
     const supplemental = await requestSupplementalScopes(supplementalInput, model, parsed);
     if (supplemental?.distinctProceedings && supplemental.distinctProceedings.length > 1) {
@@ -3950,8 +4191,7 @@ For "This vaccine causes autism."
     }
   }
 
-  // v2.6.30: Renamed from isShortSimpleNonQuestion - removed question-specific check
-  // Input Neutrality: questions and statements must be treated identically
+  // v2.6.30: Input Neutrality: all inputs must be treated identically
   const isShortSimpleInput =
     input.trim().length > 0 &&
     input.trim().length <= SHORT_SIMPLE_INPUT_MAX_CHARS &&
@@ -4409,6 +4649,7 @@ Extract outcomes that need separate evaluation claims.`;
         // Let centrality/isCentral be determined by the main UNDERSTAND rubric + guardrails.
         centrality: "medium",
         isCentral: false,
+        thesisRelevance: "direct", // Outcome claims are direct evaluations
         relatedProceedingId: outcome.relatedProceedingId || "",
         approximatePosition: "",
         keyFactorId: "",
@@ -4507,7 +4748,7 @@ function findClaimPosition(
 }
 
 // v2.6.30: Simplified - returns true for claims (NOT articles)
-// Questions are normalized to claims at entry point, so "question" type no longer exists
+// Yes/no phrasing is normalized to claims at entry point, so no separate type exists
 function isClaimInput(understanding: ClaimUnderstanding): boolean {
   return understanding.detectedInputType === "claim";
 }
@@ -4517,7 +4758,7 @@ function resolveAnalysisPromptInput(
   state: ResearchState,
 ): string {
   // v2.6.25: Never use originalInputDisplay for analysis - it's display-only
-  // This ensures questions and statements produce identical analysis results
+  // This ensures all inputs produce identical analysis results
   return (
     understanding.impliedClaim ||
     understanding.articleThesis ||
@@ -4555,7 +4796,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     .flatMap((c) => c.keyEntities)
     .slice(0, 4);
 
-  // For claim inputs (questions normalized to claims), prioritize the implied claim for better search results
+  // For claim inputs (normalized), prioritize the implied claim for better search results
   const isClaimLike = isClaimInput(understanding);
   const stopWords = new Set(["the", "a", "an", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall", "can", "need", "dare", "ought", "used", "to", "of", "in", "for", "on", "with", "at", "by", "from", "as", "into", "through", "during", "before", "after", "above", "below", "between", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "just", "and", "but", "if", "or", "because", "until", "while", "although", "though", "whether", "this", "that", "these", "those", "it", "its", "what", "which", "who", "whom", "whose", "based"]);
 
@@ -4595,7 +4836,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   const hasEvidence = categories.includes("evidence");
 
   // Detect if this topic requires recent data
-  // v2.6.25: Use impliedClaim (normalized) for consistent recency detection across questions/statements
+  // v2.6.25: Use impliedClaim (normalized) for consistent recency detection across input styles
   const recencyMatters = isRecencySensitive(
     understanding.impliedClaim || understanding.articleThesis || state.originalInput || "",
     understanding
@@ -4616,12 +4857,16 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       .map((f: ExtractedFact) => f.relatedProceedingId)
       .filter(Boolean),
   );
+  const inverseClaimCandidate = generateInverseClaimQuery(
+    understanding.impliedClaim || state.originalInput || "",
+  );
+  const inverseClaimSearchRequired = !!inverseClaimCandidate;
 
   if (
     state.facts.length >= config.minFactsRequired &&
     categories.length >= CONFIG.minCategories &&
     state.contradictionSearchPerformed &&
-    state.inverseClaimSearchPerformed && // v2.6.29: Also require inverse claim search
+    (!inverseClaimSearchRequired || state.inverseClaimSearchPerformed) &&
     (scopes.length === 0 ||
       scopes.every((p: Scope) =>
         scopesWithFacts.has(p.id),
@@ -4870,8 +5115,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   // NEW v2.6.29: Search for INVERSE claim evidence (counter-evidence)
   // For claims like "X is better than Y", explicitly search for evidence that "Y is better than X"
   if (!state.inverseClaimSearchPerformed) {
-    const impliedClaim = understanding.impliedClaim || state.originalInput || "";
-    const inverseClaim = generateInverseClaimQuery(impliedClaim);
+    const inverseClaim = inverseClaimCandidate;
 
     if (inverseClaim) {
       const inverseQueries = [
@@ -4888,8 +5132,6 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         recencyMatters,
       };
     }
-    // If no inverse claim could be generated, mark as done
-    state.inverseClaimSearchPerformed = true;
   }
 
   // NEW v2.6.18: Search for decision-makers and potential conflicts of interest
@@ -4920,7 +5162,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     }
 
     // Fallback when the model didn't populate decisionMakers: still search generically for conflicts/independence.
-    // This keeps question vs. statement runs aligned without hardcoding any domain/person names.
+    // This keeps runs aligned regardless of phrasing, without hardcoding any domain/person names.
     const fallbackBaseQueries = [
       `${entityStr} conflict of interest decision maker`.trim(),
       `${entityStr} impartiality bias`.trim(),
@@ -4939,19 +5181,19 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     };
   }
 
-  // NEW v2.6.18: Use generated research questions for additional searches
+  // NEW v2.6.18: Use generated research queries for additional searches
   // Determinism: skip this step because researchQueries come from the model and can cause run-to-run drift.
   if (CONFIG.deterministic) {
     // no-op
   } else {
   const researchQueries = understanding.researchQueries || [];
-  const nextQuestionIdx = Array.from({ length: researchQueries.length }, (_, i) => i)
+  const nextQueryIdx = Array.from({ length: researchQueries.length }, (_, i) => i)
     .find(i => !state.researchQueriesSearched.has(i));
 
-  if (nextQuestionIdx !== undefined && state.iterations.length < config.maxResearchIterations) {
-    const question = researchQueries[nextQuestionIdx];
-    // Convert research question to search query by extracting key terms
-    const queryTerms = question
+  if (nextQueryIdx !== undefined && state.iterations.length < config.maxResearchIterations) {
+    const researchQuery = researchQueries[nextQueryIdx];
+    // Convert research query to search query by extracting key terms
+    const queryTerms = researchQuery
       .toLowerCase()
       .replace(/[?.,!]/g, "")
       .split(/\s+/)
@@ -4960,19 +5202,19 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       .join(" ");
 
     if (queryTerms.trim()) {
-      const baseQueries = [
+    const baseQueries = [
         queryTerms,
         `${entityStr} ${queryTerms.split(" ").slice(0, 3).join(" ")}`,
       ];
-      // Add date-variant for recency-sensitive research questions
+      // Add date-variant for recency-sensitive research queries
       const queries = recencyMatters ? [
         ...baseQueries,
         `${queryTerms} ${currentYear}`,
       ] : baseQueries;
       return {
         complete: false,
-        focus: `Research: ${question.slice(0, 50)}...`,
-        category: "research_question",
+        focus: `Research: ${researchQuery.slice(0, 50)}...`,
+        category: "research_query",
         queries,
         recencyMatters,
       };
@@ -5264,18 +5506,28 @@ Evidence documentation typically defines its scope/context. Extract this when pr
 
   try {
     const startTime = Date.now();
-    const result = await generateText({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `Source: ${source.title}\nURL: ${source.url}\n\n${source.fullText}`,
-        },
-      ],
-      temperature: getDeterministicTemperature(0.2),
-      output: Output.object({ schema: FACT_SCHEMA }),
-    });
+    const llmTimeoutMsRaw = parseInt(process.env.FH_EXTRACT_FACTS_LLM_TIMEOUT_MS || "300000", 10);
+    const llmTimeoutMs = Number.isFinite(llmTimeoutMsRaw)
+      ? Math.max(60000, Math.min(3600000, llmTimeoutMsRaw))
+      : 300000;
+
+    const result: any = await Promise.race([
+      generateText({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `Source: ${source.title}\nURL: ${source.url}\n\n${source.fullText}`,
+          },
+        ],
+        temperature: getDeterministicTemperature(0.2),
+        output: Output.object({ schema: FACT_SCHEMA }),
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`extractFacts LLM timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
+      ),
+    ]);
     const elapsed = Date.now() - startTime;
 
     debugLog(`extractFacts: LLM returned for ${source.id} in ${elapsed}ms`);
@@ -5488,13 +5740,13 @@ async function generateVerdicts(
   pseudoscienceAnalysis?: PseudoscienceAnalysis;
 }> {
   const understanding = state.understanding!;
-  const isClaimLike = isClaimInput(understanding);
+  const inputIsClaim = isClaimInput(understanding);
   const hasMultipleProceedings =
     understanding.requiresSeparateAnalysis &&
     understanding.distinctProceedings.length > 1;
 
-  // Detect pseudoscience based on the article/question content and extracted claims
-  // v2.6.25: Only use normalized forms for consistent detection across questions/statements
+  // Detect pseudoscience based on the input content and extracted claims
+  // v2.6.25: Only use normalized forms for consistent detection across input styles
   const allText = [
     understanding.articleThesis,
     understanding.impliedClaim,
@@ -5509,6 +5761,12 @@ async function generateVerdicts(
     .map((f: ExtractedFact) => {
       let factLine = `[${f.id}]`;
       if (f.relatedProceedingId) factLine += ` (${f.relatedProceedingId})`;
+      // v2.6.31: Add direction labels so LLM knows which facts support vs contradict the claim
+      if (f.claimDirection === "contradicts" || f.fromOppositeClaimSearch) {
+        factLine += ` [COUNTER-EVIDENCE]`;
+      } else if (f.claimDirection === "supports") {
+        factLine += ` [SUPPORTING]`;
+      }
       if (f.isContestedClaim)
         factLine += ` [CONTESTED by ${f.claimSource || "critics"}]`;
       factLine += ` ${f.fact} (Source: ${f.sourceTitle})`;
@@ -5523,7 +5781,7 @@ async function generateVerdicts(
     )
     .join("\n");
 
-  if (isClaimLike && hasMultipleProceedings) {
+  if (inputIsClaim && hasMultipleProceedings) {
     const result = await generateMultiScopeVerdicts(
       state,
       understanding,
@@ -5533,7 +5791,7 @@ async function generateVerdicts(
       understanding.detectedInputType,
     );
     return { ...result, pseudoscienceAnalysis };
-  } else if (isClaimLike) {
+  } else if (inputIsClaim) {
     const result = await generateSingleScopeVerdicts(
       state,
       understanding,
@@ -5587,14 +5845,8 @@ async function generateMultiScopeVerdicts(
     understanding.originalInputDisplay ||
     understanding.mainThesis ||
     analysisInput;
-  // v2.6.21: Use neutral label to ensure input-neutral verdicts
-  // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
+  // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
-  // v2.6.30: Input Neutrality - ALL inputs normalized to statements at entry point
-  // Analysis functions have NO question-specific logic
-  // This variable is kept for backward compatibility but always false
-  const _isQuestionLike = false; // eslint-disable-line @typescript-eslint/no-unused-vars
-
   const systemPrompt = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT CONTEXTS/THREADS (also called SCOPES) separately.
 
 ## CRITICAL: TEMPORAL REASONING
@@ -5627,6 +5879,18 @@ Evidence may come from sources with DIFFERENT analytical scopes (e.g., broad-bou
 - If the user claims "X increased" and evidence shows X decreased, rate as FALSE/LOW percentage
 - Preserve the directional/comparative aspect of the original claim
 - DO NOT rate your analysis conclusion - rate whether the USER'S CLAIM matches the evidence
+
+## COUNTER-EVIDENCE HANDLING
+
+Facts in the FACTS section are labeled with their relationship to the user's claim:
+- **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
+- **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
+- Unlabeled facts are neutral/contextual
+
+**How to use these labels:**
+- If most facts are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
+- If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
+- Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
 
 ## SCOPES - PROVIDE SEPARATE ANSWER FOR EACH
 ${scopesFormatted}
@@ -5690,6 +5954,15 @@ ${scopesFormatted}
 
    - For each scope, ensure ALL claims with that proceedingId (or claims that logically belong to that scope) have verdicts
    - If a claim doesn't have a relatedProceedingId, assign it to the most relevant scope based on the claim content
+
+   **CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
+   - The verdict MUST rate whether THE CLAIM AS STATED is true
+   - If the claim says "X was proportionate" but evidence shows X was NOT proportionate → verdict should be LOW (15-28%)
+   - If the claim says "X was justified" but evidence shows X was NOT justified → verdict should be LOW (15-28%)
+   - DO NOT rate whether your analysis reasoning is correct - rate whether THE CLAIM TEXT matches the evidence
+   - The reasoning field explains why the verdict is high or low - the verdict percentage MUST match the reasoning's conclusion
+   - Example: If reasoning says "tariffs were NOT proportionate", the verdict for a claim stating "tariffs were proportionate" MUST be LOW
+
    - Provide a truth percentage (0-100) for each claim.
    - Use these bands to calibrate:
      * 86-100: TRUE (strong support, no credible counter-evidence)
@@ -5780,6 +6053,7 @@ Provide SEPARATE answers for each scope.`;
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
+        thesisRelevance: claim.thesisRelevance || "direct",
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(50),
@@ -5818,7 +6092,6 @@ Provide SEPARATE answers for each scope.`;
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: analysisInputType,
-      // wasQuestionInput removed - Input Neutrality: no question-specific properties
       verdictSummary,
       hasMultipleProceedings: true,
       proceedings: understanding.distinctProceedings,
@@ -5846,6 +6119,9 @@ Provide SEPARATE answers for each scope.`;
   // FIX v2.4.3: Calculate factorAnalysis from ACTUAL keyFactors array
   // v2.5.0: Calibrate to 7-point scale
   // v2.5.1: Contested factors without evidence don't reduce rating
+  // v2.6.31: Inversion detection for proceeding answers must reference the substantive claim being evaluated
+  // (the normalized analysis input), not the proceeding name/id.
+  const proceedingVerdictClaimText = resolveAnalysisPromptInput(understanding, state);
   const correctedProceedingAnswers = parsed.proceedingAnswers.map((pa: any) => {
     const factors = pa.keyFactors as KeyFactor[];
     const procMeta = understanding.distinctProceedings.find(
@@ -5903,6 +6179,24 @@ Provide SEPARATE answers for each scope.`;
     // Apply calibration correction based on factors
     let answerTruthPct = normalizePercentage(pa.answer);
     let correctedConfidence = normalizePercentage(pa.confidence);
+
+    // v2.6.31: Apply inversion detection to proceeding-level answers
+    // Check shortAnswer for negation patterns - the LLM often correctly identifies
+    // something is NOT fair/proportionate but still rates it high
+    const proceedingInversion = detectAndCorrectVerdictInversion(
+      proceedingVerdictClaimText,
+      pa.shortAnswer || "",
+      answerTruthPct
+    );
+    if (proceedingInversion.wasInverted) {
+      answerTruthPct = proceedingInversion.correctedPct;
+      debugLog("Proceeding answer inversion detected", {
+        proceedingId: pa.proceedingId,
+        originalPct: normalizePercentage(pa.answer),
+        correctedPct: answerTruthPct,
+        shortAnswer: (pa.shortAnswer || "").slice(0, 100),
+      });
+    }
 
     // v2.5.1: Only evidenced negatives count at full weight
     // Contested negatives without established basis count at 25%
@@ -5999,14 +6293,23 @@ Provide SEPARATE answers for each scope.`;
           : truthFromBand("uncertain", fallbackConfidence))
         : 50;
 
-      parsed.claimVerdicts.push({
+      // v2.6.31: Include all fields required by ClaimVerdict interface for weighted calculation
+      // Cast to any since parsed.claimVerdicts has a narrower schema type; full ClaimVerdict fields are added here
+      // and will be properly typed after the mapping step at line ~6180.
+      (parsed.claimVerdicts as any[]).push({
         claimId: claim.id,
+        claimText: claim.text || "",
         verdict: fallbackVerdict,
         confidence: fallbackConfidence,
+        truthPercentage: fallbackVerdict,
         riskTier: "B",
         reasoning: `Fallback verdict based on proceeding-level analysis (${relatedProceeding?.proceedingId || "unknown"}). Original verdict generation did not include this claim.`,
         supportingFactIds: [],
         relatedProceedingId: proceedingId,
+        isCentral: claim.isCentral || false,
+        centrality: claim.centrality || "medium",
+        thesisRelevance: claim.thesisRelevance || "direct",
+        highlightColor: getHighlightColor7Point(fallbackVerdict),
       });
 
       debugLog(`Added fallback verdict for claim ${claim.id}`, {
@@ -6032,9 +6335,32 @@ Provide SEPARATE answers for each scope.`;
     // Calculate base truth percentage from LLM verdict
     let truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
 
+    // v2.6.31: Detect and correct inverted verdicts
+    // LLM sometimes rates "is my analysis correct" instead of "is the claim true"
+    const inversionCheck = detectAndCorrectVerdictInversion(
+      claim?.text || cv.claimId || "",
+      sanitizedReasoning,
+      truthPct
+    );
+    if (inversionCheck.wasInverted) {
+      truthPct = inversionCheck.correctedPct;
+    }
+
+    // v2.6.31: Detect if this is a counter-claim (evaluates opposite of user's thesis)
+    const claimFacts = state.facts.filter(f =>
+      cv.supportingFactIds?.includes(f.id) || f.relatedProceedingId === proceedingId
+    );
+    const isCounterClaim = detectCounterClaim(
+      claim?.text || cv.claimId || "",
+      understanding.impliedClaim || understanding.articleThesis || "",
+      claimFacts
+    );
+
     // v2.5.2: If the proceeding has positive factors and no evidenced negatives,
     // boost claims below 72% into the >=72 band
-    if (relatedProceeding && relatedProceeding.factorAnalysis) {
+    // v2.6.31: SKIP boost if verdict was inverted (reasoning contradicts claim)
+    // v2.6.31: SKIP boost for counter-claims (they evaluate the opposite position)
+    if (!inversionCheck.wasInverted && !isCounterClaim && relatedProceeding && relatedProceeding.factorAnalysis) {
       const fa = relatedProceeding.factorAnalysis;
       // Check if proceeding has positive factors and no evidenced negatives
       const proceedingIsPositive = relatedProceeding?.answer >= 72;
@@ -6065,9 +6391,11 @@ Provide SEPARATE answers for each scope.`;
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
       centrality: claim?.centrality || "medium",
+      thesisRelevance: claim?.thesisRelevance || "direct",
       keyFactorId: claim?.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
       relatedProceedingId: proceedingId,
       highlightColor: getHighlightColor7Point(truthPct),
+      isCounterClaim,
     };
   });
 
@@ -6115,7 +6443,6 @@ Provide SEPARATE answers for each scope.`;
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
-    // wasQuestionInput removed - Input Neutrality: no question-specific properties
     verdictSummary,
     hasMultipleProceedings: true,
     proceedings: understanding.distinctProceedings,
@@ -6126,7 +6453,7 @@ Provide SEPARATE answers for each scope.`;
     claimsAverageTruthPercentage: claimsAvgTruthPct,
     claimsAverageVerdict: claimsAvgTruthPct,
 
-    // Article verdict (for questions = question answer)
+  // Article verdict
     articleTruthPercentage: avgTruthPct,
     articleVerdict: avgTruthPct,
     articleVerdictReason: undefined,
@@ -6165,13 +6492,8 @@ async function generateSingleScopeVerdicts(
     understanding.originalInputDisplay ||
     understanding.mainThesis ||
     analysisInput;
-  // v2.6.21: Use neutral label to ensure input-neutral verdicts
-  // Previously "QUESTION" vs "INPUT" caused LLM verdict drift
+  // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
-  // v2.6.30: Input Neutrality - ALL inputs normalized to statements at entry point
-  // Analysis functions have NO question-specific logic
-  // This variable is kept for backward compatibility but always false
-  const _isQuestionLike = false; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const systemPrompt = `Answer the input based on documented evidence.
 
@@ -6192,6 +6514,18 @@ async function generateSingleScopeVerdicts(
 - If the user claims "X increased" and evidence shows X decreased, rate as FALSE/LOW percentage
 - Preserve the directional/comparative aspect of the original claim
 - DO NOT rate your analysis conclusion - rate whether the USER'S CLAIM matches the evidence
+
+## COUNTER-EVIDENCE HANDLING
+
+Facts in the FACTS section are labeled with their relationship to the user's claim:
+- **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
+- **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
+- Unlabeled facts are neutral/contextual
+
+**How to use these labels:**
+- If most facts are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
+- If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
+- Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
 
 ## SCOPE/CONTEXT-AWARE EVALUATION
 
@@ -6240,6 +6574,15 @@ CRITICAL - factualBasis MUST be "opinion" for:
 - Calling something "unfair" or "persecution" without documented violations
 
 ## CLAIM VERDICT RULES:
+
+**CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
+- The verdict MUST rate whether THE CLAIM AS STATED is true
+- If the claim says "X was proportionate" but evidence shows X was NOT proportionate → verdict should be LOW (15-28%)
+- If the claim says "X was justified" but evidence shows X was NOT justified → verdict should be LOW (15-28%)
+- DO NOT rate whether your analysis reasoning is correct - rate whether THE CLAIM TEXT matches the evidence
+- The reasoning field explains why the verdict is high or low - the verdict percentage MUST match the reasoning's conclusion
+- Example: If reasoning says "tariffs were NOT proportionate", the verdict for a claim stating "tariffs were proportionate" MUST be LOW
+
 - Provide a truth percentage (0-100) for each claim.
 - Use these bands to calibrate:
   * 86-100: TRUE (strong support, no credible counter-evidence)
@@ -6286,7 +6629,7 @@ ${factsFormatted}`;
     }
   } catch (err) {
     console.warn(
-      "[Analyzer] Structured output failed for question verdicts, using fallback:",
+      "[Analyzer] Structured output failed for verdicts, using fallback:",
       err,
     );
     state.llmCalls++;
@@ -6308,6 +6651,7 @@ ${factsFormatted}`;
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
+        thesisRelevance: claim.thesisRelevance || "direct",
         highlightColor: getHighlightColor7Point(50),
         isContested: false,
         contestedBy: "",
@@ -6333,7 +6677,6 @@ ${factsFormatted}`;
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: analysisInputType,
-      // wasQuestionInput removed - Input Neutrality: no question-specific properties
       verdictSummary,
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
@@ -6382,6 +6725,7 @@ ${factsFormatted}`;
           supportingFactIds: [],
           isCentral: claim.isCentral || false,
           centrality: claim.centrality || "medium",
+          thesisRelevance: claim.thesisRelevance || "direct",
           startOffset: claim.startOffset,
           endOffset: claim.endOffset,
           highlightColor: getHighlightColor7Point(50),
@@ -6391,7 +6735,28 @@ ${factsFormatted}`;
       // Sanitize temporal errors from reasoning
       const sanitizedReasoning = sanitizeTemporalErrors(cv.reasoning || "", new Date());
 
-      const truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
+      let truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
+
+      // v2.6.31: Detect and correct inverted verdicts
+      const inversionCheck = detectAndCorrectVerdictInversion(
+        claim.text || cv.claimId || "",
+        sanitizedReasoning,
+        truthPct
+      );
+      if (inversionCheck.wasInverted) {
+        truthPct = inversionCheck.correctedPct;
+      }
+
+      // v2.6.31: Detect if this is a counter-claim
+      const claimFacts = state.facts.filter(f =>
+        cv.supportingFactIds?.includes(f.id)
+      );
+      const isCounterClaim = detectCounterClaim(
+        claim.text || cv.claimId || "",
+        understanding.impliedClaim || understanding.articleThesis || "",
+        claimFacts
+      );
+
         return {
         ...cv,
         claimId: claim.id,
@@ -6401,9 +6766,11 @@ ${factsFormatted}`;
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
+        thesisRelevance: claim.thesisRelevance || "direct",
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(truthPct),
+        isCounterClaim,
       } as ClaimVerdict;
     },
   );
@@ -6437,7 +6804,7 @@ ${factsFormatted}`;
       (kf.factualBasis === "established" || kf.factualBasis === "disputed"),
   );
 
-  // v2.5.1: Apply factor-based correction for single-proceeding questions
+  // v2.5.1: Apply factor-based correction for single-proceeding cases
   const positiveFactors = keyFactors.filter((f: KeyFactor) => f.supports === "yes").length;
   const evidencedNegatives = keyFactors.filter(
     (f: KeyFactor) => f.supports === "no" && f.factualBasis === "established",
@@ -6474,7 +6841,6 @@ ${factsFormatted}`;
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
-    // wasQuestionInput removed - Input Neutrality: no question-specific properties
     verdictSummary,
     hasMultipleProceedings: false,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
@@ -6484,7 +6850,7 @@ ${factsFormatted}`;
     claimsAverageTruthPercentage: claimsAvgTruthPct,
     claimsAverageVerdict: claimsAvgTruthPct,
 
-    // Article verdict (for questions = question answer)
+  // Article verdict
     articleTruthPercentage: answerTruthPct,
     articleVerdict: answerTruthPct,
     articleVerdictReason:
@@ -6514,7 +6880,7 @@ async function generateClaimVerdicts(
   articleAnalysis: ArticleAnalysis;
 }> {
   // Detect if topic involves procedural/legal/institutional analysis
-  // This determines whether to generate Key Factors (unified with question mode)
+  // This determines whether to generate Key Factors (unified analysis mode)
   const isProceduralTopic = detectProceduralTopic(understanding, state.originalText);
 
   // Add pseudoscience context and verdict calibration to prompt
@@ -6540,6 +6906,15 @@ async function generateClaimVerdicts(
 - If a date seems inconsistent, verify it against the current date before making judgments
 
 ## CLAIM VERDICT CALIBRATION (IMPORTANT):
+
+**CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
+- The verdict MUST rate whether THE CLAIM AS STATED is true
+- If the claim says "X was proportionate" but evidence shows X was NOT proportionate → verdict should be LOW (15-28%)
+- If the claim says "X was justified" but evidence shows X was NOT justified → verdict should be LOW (15-28%)
+- DO NOT rate whether your analysis reasoning is correct - rate whether THE CLAIM TEXT matches the evidence
+- The reasoning field explains why the verdict is high or low - the verdict percentage MUST match the reasoning's conclusion
+- Example: If reasoning says "tariffs were NOT proportionate", the verdict for a claim stating "tariffs were proportionate" MUST be LOW
+
 - Provide a truth percentage (0-100) for each claim.
 - Use these bands to calibrate:
   * 86-100: TRUE (strong support, no credible counter-evidence)
@@ -6551,6 +6926,18 @@ async function generateClaimVerdicts(
   * 0-14: FALSE (direct contradiction)
 
 Use the MOSTLY-FALSE/FALSE bands (0-28%) for any claim that evidence contradicts, regardless of certainty level.
+
+## COUNTER-EVIDENCE HANDLING
+
+Facts in the FACTS section are labeled with their relationship to the user's claim:
+- **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
+- **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
+- Unlabeled facts are neutral/contextual
+
+**How to use these labels:**
+- If most facts are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
+- If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
+- Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
 
 ## CLAIM CONTESTATION (for each claim):
 - isContested: true if this claim is politically disputed or challenged
@@ -6681,6 +7068,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         supportingFactIds: [],
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
+        thesisRelevance: claim.thesisRelevance || "direct",
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(50),
@@ -6696,7 +7084,6 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "article",
-      // wasQuestionInput removed - Input Neutrality: no question-specific properties
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
@@ -6750,6 +7137,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
           factualBasis: "unknown",
           isCentral: claim.isCentral || false,
           centrality: claim.centrality || "medium",
+          thesisRelevance: claim.thesisRelevance || "direct",
           claimRole: claim.claimRole || "core",
           dependsOn: claim.dependsOn || [],
           keyFactorId: claim.keyFactorId || "", // Preserve KeyFactor mapping
@@ -6765,6 +7153,26 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
       let truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
       let finalConfidence = normalizePercentage(cv.confidence);
       let escalationReason: string | undefined;
+
+      // v2.6.31: Detect and correct inverted verdicts
+      const inversionCheck = detectAndCorrectVerdictInversion(
+        claim.text || cv.claimId || "",
+        sanitizedReasoning,
+        truthPct
+      );
+      if (inversionCheck.wasInverted) {
+        truthPct = inversionCheck.correctedPct;
+      }
+
+      // v2.6.31: Detect if this is a counter-claim
+      const claimFacts = state.facts.filter(f =>
+        cv.supportingFactIds?.includes(f.id)
+      );
+      const isCounterClaim = detectCounterClaim(
+        claim.text || cv.claimId || "",
+        understanding.impliedClaim || understanding.articleThesis || "",
+        claimFacts
+      );
 
       const claimPseudo = detectPseudoscience(claim.text || cv.claimId);
 
@@ -6798,6 +7206,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
+        thesisRelevance: claim.thesisRelevance || "direct",
         claimRole: claim.claimRole || "core",
         dependsOn: claim.dependsOn || [],
         keyFactorId: claim.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
@@ -6806,6 +7215,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         highlightColor: getHighlightColor7Point(truthPct),
         isPseudoscience: claimPseudo.isPseudoscience,
         escalationReason,
+        isCounterClaim,
       } as ClaimVerdict;
     },
   );
@@ -6987,7 +7397,6 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     claimVerdicts: weightedClaimVerdicts,
     articleAnalysis: {
       inputType: understanding.detectedInputType,
-      // wasQuestionInput removed - Input Neutrality: no question-specific properties
       hasMultipleProceedings: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: parsed.articleAnalysis.logicalFallacies,
@@ -7011,7 +7420,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
       isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
       pseudoscienceCategories: pseudoscienceAnalysis?.categories,
 
-      // NEW v2.6.18: Key Factors for article mode (unified with question mode)
+  // NEW v2.6.18: Key Factors for article mode (unified analysis mode)
       keyFactors: keyFactors.length > 0 ? keyFactors : undefined,
       hasContestedFactors: keyFactors.length > 0 ? hasContestedFactors : undefined,
     },
@@ -7037,14 +7446,14 @@ async function generateTwoPanelSummary(
   model: any,
 ): Promise<TwoPanelSummary> {
   const understanding = state.understanding!;
-  // Input Neutrality: Get original format from UI metadata, not analysis layer
-  const isQuestion = (understanding as any).wasOriginallyQuestionFormat || false;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
 
-  let title = isQuestion
-    ? `Question: ${understanding.originalInputDisplay || state.originalInput}`
-    : state.originalText.split("\n")[0]?.trim().slice(0, 100) ||
-      "Analyzed Content";
+  // Input neutrality: always use the normalized statement form for display
+  let title =
+    understanding.articleThesis ||
+    understanding.impliedClaim ||
+    state.originalText.split("\n")[0]?.trim().slice(0, 100) ||
+    "Analyzed Content";
 
   if (hasMultipleProceedings) {
     title += ` (${understanding.distinctProceedings.length} contexts)`;
@@ -7077,12 +7486,11 @@ async function generateTwoPanelSummary(
 
   const analysisId = `FH-${Date.now().toString(36).toUpperCase()}`;
 
-  let overallVerdict = 50;
-  if (isQuestion && articleAnalysis.verdictSummary) {
-    overallVerdict = normalizePercentage(articleAnalysis.verdictSummary.truthPercentage);
-  } else {
-    overallVerdict = normalizePercentage(articleAnalysis.articleTruthPercentage);
-  }
+  const overallVerdict = normalizePercentage(
+    articleAnalysis.articleTruthPercentage ??
+    articleAnalysis.verdictSummary?.truthPercentage ??
+    50,
+  );
 
   const inputUrl = state.inputType === "url" ? state.originalInput : undefined;
 
@@ -7176,7 +7584,7 @@ function generateMethodologyAssessment(
   articleAnalysis: ArticleAnalysis,
 ): string {
   const parts: string[] = [];
-  parts.push("Question-answering mode");
+  parts.push("Unified analysis mode");
   if (articleAnalysis.hasMultipleProceedings)
     parts.push(`Multi-context (${articleAnalysis.proceedings?.length})`);
   if (articleAnalysis.verdictSummary?.hasContestedFactors)
@@ -7194,8 +7602,6 @@ async function generateReport(
   model: any,
 ): Promise<string> {
   const understanding = state.understanding!;
-  // Input Neutrality: Get original format from UI metadata, not analysis layer
-  const isQuestion = (understanding as any).wasOriginallyQuestionFormat || false;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
   const useRich = CONFIG.reportStyle === "rich";
   const iconPositive = useRich ? "✅" : "";
@@ -7213,91 +7619,38 @@ async function generateReport(
   // Executive Summary (moved to top - public-facing content first)
   report += `## Executive Summary\n\n`;
 
-  if (isQuestion && articleAnalysis.verdictSummary) {
-    const qa = articleAnalysis.verdictSummary;
-    report += `### Input\n"${qa.displayText}"\n\n`;
-    const qaConfidence = qa.confidence ?? 0;
-    report += `### Answer: ${percentageToClaimVerdict(qa.truthPercentage, qaConfidence)} (${qa.truthPercentage}%)\n\n`;
+  // Unified summary for all inputs (input neutrality)
+  const verdictEmoji =
+    articleAnalysis.articleTruthPercentage >= 72
+      ? iconPositive
+      : articleAnalysis.articleTruthPercentage >= 43
+        ? iconNeutral
+        : iconNegative;
 
-    if (qa.calibrationNote)
-      report += `> ${iconWarning} ${qa.calibrationNote}\n\n`;
+  report += `### Article Verdict: ${verdictEmoji} ${percentageToArticleVerdict(articleAnalysis.articleTruthPercentage)} (${articleAnalysis.articleTruthPercentage}%)\n\n`;
 
-    report += `**Short Answer:** ${qa.shortAnswer}\n\n`;
+  if (articleAnalysis.articleVerdictReason) {
+    report += `> ${articleAnalysis.articleVerdictReason}\n\n`;
+  }
 
-    if (hasMultipleProceedings && qa.proceedingAnswers) {
-      report += `## Context Analysis\n\n`;
-      for (const pa of qa.proceedingAnswers) {
-        const proc = understanding.distinctProceedings.find(
-          (p: DistinctProceeding) => p.id === pa.proceedingId,
-        );
-        const emoji =
-          pa.truthPercentage >= 72
-            ? iconPositive
-            : pa.truthPercentage < 43
-              ? iconNegative
-              : iconNeutral;
+  if (articleAnalysis.articleThesis &&
+      articleAnalysis.articleThesis !== "<UNKNOWN>" &&
+      !articleAnalysis.articleThesis.toLowerCase().includes("unknown")) {
+    report += `**Implied Claim:** ${articleAnalysis.articleThesis}\n\n`;
+  }
 
-        report += `### ${proc?.name || pa.proceedingName}\n\n`;
-        const paConfidence = pa.confidence ?? 0;
-        report += `**Answer:** ${emoji} ${percentageToClaimVerdict(pa.truthPercentage, paConfidence)} (${pa.truthPercentage}%)\n\n`;
-
-        if (pa.factorAnalysis) {
-          report += `**Factors:** ${pa.factorAnalysis.positiveFactors} positive, ${pa.factorAnalysis.negativeFactors} negative (${pa.factorAnalysis.contestedNegatives} contested)\n\n`;
-        }
-
-        report += `${pa.shortAnswer}\n\n`;
-
-        if (pa.keyFactors?.length > 0) {
-          report += `**Key Factors:**\n`;
-          for (const f of pa.keyFactors) {
-            const icon =
-              f.supports === "yes"
-                ? iconPositive
-                : f.supports === "no"
-                  ? iconNegative
-                  : iconNeutral;
-            report += `- ${icon} ${f.factor}${f.isContested ? ` ${iconWarning} CONTESTED` : ""}\n`;
-          }
-          report += `\n`;
-        }
-        report += `---\n\n`;
-      }
+  if (articleAnalysis.keyFactors && articleAnalysis.keyFactors.length > 0) {
+    report += `**Key Factors:**\n`;
+    for (const f of articleAnalysis.keyFactors) {
+      const icon =
+        f.supports === "yes"
+          ? iconPositive
+          : f.supports === "no"
+            ? iconNegative
+            : iconNeutral;
+      report += `- ${icon} ${f.factor}${f.isContested ? ` ${iconWarning} CONTESTED` : ""}\n`;
     }
-  } else {
-    // Article mode - show Article Verdict prominently
-    const verdictEmoji =
-      articleAnalysis.articleTruthPercentage >= 72
-        ? iconPositive
-        : articleAnalysis.articleTruthPercentage >= 43
-          ? iconNeutral
-          : iconNegative;
-
-    report += `### Article Verdict: ${verdictEmoji} ${percentageToArticleVerdict(articleAnalysis.articleTruthPercentage)} (${articleAnalysis.articleTruthPercentage}%)\n\n`;
-
-    if (articleAnalysis.articleVerdictReason) {
-      report += `> ${articleAnalysis.articleVerdictReason}\n\n`;
-    }
-
-    if (articleAnalysis.articleThesis &&
-        articleAnalysis.articleThesis !== "<UNKNOWN>" &&
-        !articleAnalysis.articleThesis.toLowerCase().includes("unknown")) {
-      report += `**Implied Claim:** ${articleAnalysis.articleThesis}\n\n`;
-    }
-
-    // NEW: KeyFactors display for article mode (unified with question mode)
-    if (articleAnalysis.keyFactors && articleAnalysis.keyFactors.length > 0) {
-      report += `**Key Factors:**\n`;
-      for (const f of articleAnalysis.keyFactors) {
-        const icon =
-          f.supports === "yes"
-            ? iconPositive
-            : f.supports === "no"
-              ? iconNegative
-              : iconNeutral;
-        report += `- ${icon} ${f.factor}${f.isContested ? ` ${iconWarning} CONTESTED` : ""}\n`;
-      }
-      report += `\n`;
-    }
+    report += `\n`;
   }
 
   // Claims
@@ -7419,17 +7772,17 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // ==========================================================================
   // v2.6.26: EARLY INPUT NORMALIZATION at entry point for complete input neutrality
-  // Normalize questions to statements BEFORE any analysis begins
-  // The original question is preserved only for UI display (originalInputDisplay)
+  // Normalize yes/no phrasing to statements BEFORE any analysis begins
+  // The original input is preserved only for UI display (originalInputDisplay)
   // ==========================================================================
   const rawInputValue = input.inputValue.trim();
-  const looksLikeQuestion =
+  const needsNormalizationEntry =
     rawInputValue.endsWith("?") ||
     /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(rawInputValue);
 
   // Normalize to statement form for ALL analysis
-  // Also strip trailing period from statements to ensure identical text for both question and statement
-  let normalizedInputValue = looksLikeQuestion
+  // Also strip trailing period from statements to ensure identical text for both input phrasings
+  let normalizedInputValue = needsNormalizationEntry
     ? normalizeYesNoQuestionToStatement(rawInputValue)
     : rawInputValue;
 
@@ -7437,13 +7790,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // This ensures "Was X fair?" -> "X was fair" matches "X was fair." -> "X was fair"
   normalizedInputValue = normalizedInputValue.replace(/\.+$/, "").trim();
 
-  // Store original question for UI display (will be set in understanding.originalInputDisplay)
-  const originalQuestionForDisplay = looksLikeQuestion ? rawInputValue : null;
+  // Store original input for UI display (will be set in understanding.originalInputDisplay)
+  const originalInputDisplay = rawInputValue;
 
   console.log(`[Analyzer] v2.6.26 Input Neutrality: Entry point normalization`);
   console.log(`[Analyzer]   Original: "${rawInputValue.substring(0, 100)}"`);
   console.log(`[Analyzer]   Normalized: "${normalizedInputValue.substring(0, 100)}"`);
-  console.log(`[Analyzer]   Was question: ${looksLikeQuestion}`);
+  // normalizedInputValue is now the canonical form for all analysis paths
 
   const state: ResearchState = {
     originalInput: normalizedInputValue,  // v2.6.26: Use NORMALIZED input everywhere
@@ -7488,17 +7841,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     state.understanding = await understandClaim(textToAnalyze, model);
     state.llmCalls++; // understandClaim uses 1 LLM call
 
-    // v2.6.30: Set UI-only fields from entry-point normalization
-    // This ensures originalInputDisplay shows original question for display
-    // CRITICAL: Do NOT set detectedInputType here - it affects analysis paths!
-    // wasOriginallyQuestionFormat is sufficient for UI badge display
-    if (originalQuestionForDisplay) {
-      state.understanding.originalInputDisplay = originalQuestionForDisplay;
-      (state.understanding as any).wasOriginallyQuestionFormat = true;
-      // v2.6.30: REMOVED detectedInputType override - violates Input Neutrality
-      // The UI layer should use wasOriginallyQuestionFormat for display purposes
-      console.log(`[Analyzer] v2.6.30: Set originalInputDisplay for UI display (wasOriginallyQuestionFormat=true)`);
-    }
+    // UI-only: preserve original input text for display; analysis uses normalized statement
+    state.understanding.originalInputDisplay = originalInputDisplay;
 
     const step1Elapsed = Date.now() - step1Start;
     debugLog(`Step 1 completed in ${step1Elapsed}ms`);
@@ -7548,6 +7892,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           harmPotential: "medium",
           centrality: "high",
           isCentral: true,
+          thesisRelevance: "direct",
           relatedProceedingId: "",
           approximatePosition: "",
           keyFactorId: "",
@@ -7596,7 +7941,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     if (decision.category === "counter_evidence")
       state.inverseClaimSearchPerformed = true;
 
-    // NEW v2.6.18: Track decision-maker and research question searches
+    // NEW v2.6.18: Track decision-maker and research query searches
     if (decision.category === "conflict_of_interest")
       state.decisionMakerSearchPerformed = true;
     // NEW v2.6.22: Track claim-level recency searches
@@ -7606,8 +7951,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     if (decision.category === "central_claim" && decision.targetClaimId) {
       state.centralClaimsSearched.add(decision.targetClaimId);
     }
-    if (decision.category === "research_question") {
-      // Mark all matching research questions as searched
+    if (decision.category === "research_query") {
+      // Mark all matching research queries as searched
       const researchQueries = state.understanding?.researchQueries || [];
       researchQueries.forEach((q, idx) => {
         if (decision.focus?.includes(q.slice(0, 30))) {
@@ -7990,7 +8335,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       searchProvider: CONFIG.searchProvider,
       inputType: input.inputType,
       detectedInputType: state.understanding!.detectedInputType,
-      wasQuestionInput: (state.understanding as any).wasOriginallyQuestionFormat || false, // UI-only metadata from entry normalization
       hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,
       hasMultipleScopes: articleAnalysis.hasMultipleProceedings,  // Alias
       proceedingCount: state.understanding!.distinctProceedings.length,
