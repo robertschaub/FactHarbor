@@ -27,36 +27,34 @@ And analyze the current source code.
 
 ## Tasks Pending:
 ---
+Input url detection:
 - Improve url detection: e.g. this input is not an url:  https://www.gazetadopovo.com.br/ is a reliable news source that provides news based on facts and evidence
 ---
-- Some claims talk about methodologies used and if these are valid to be used to verify the claims from the input - such claims are clearly not central and not even worth mentioning.
---
-- Make sure that verdicts and key factors correctly influence (positive or negatively) the overall verdict, because sometimes lower-level key factors and claims have inverted logic vs the original article as it is (was?) the case with the article "hydrogen for cars is more efficient than using electricity", e.g. the lower-level claim "Hydrogen fuel cell vehicles have higher well-to-wheel energy efficiency than battery electric vehicles" inverts the comparison. The inversion logic shall be done when overall article verdict values are calculated.
----
-- Make sure titles, and labels really match with underlying content! (e.g. “Article Summary" shall really contain Article Summary etc.)
----
-- Too many claims are often marked as central.
----
 Article Confidence:
-- Article verdict and Article confidence belong together! Confidence is about how confident we are that the verdict is correct (thats the same principle at every level: Claim/Context/Article)! Both the article verdict and the article confidence must relate to the original article input (no matter if it was a question or not)! 
+- Article verdict and Article confidence belong together, confidence is about how confident we are that the verdict is correct (thats the same principle at every level: Claim/Context/Article). Please check if this is implemented correctly.
 ---
 
 ## Tasks in Progress:
 ---
-Handling when input is a question: 
- - When an Input is a question, a statement with exactly the same meaning shall be derived from the question. 
- - The statement shall be used for analysis, not the question, the question shall not be used further on for anything else than for display!
- =>Fix this first
+Verdict direction:
+For Claims where the verdict at the core is a denyal of the claim, 
+and for Claims that are counter-claims (from counter-evidence);
+Make sure that the rating is correct, in the right direction. 
+And make sure that the influence into the upper-level verdict is in the right direction.
 ---
-ArticleSummary data:
- - Make sure we have ArticleSummary data
- - if the input is an url, the article at the url page shall be summarized into ArticleSummary.
- - If the Input is text and text length is shorter than 300 characters, the ArticleSummary shall be a copy of the input.
- - Else: ArticleSummary shall be a summarize the article input.
+- Check if  verdicts and key factors correctly influence (positive or negatively) the overall verdict, because sometimes lower-level key factors and claims have inverted logic vs the original article as it is (was?) the case with the article "hydrogen for cars is more efficient than using electricity", e.g. the lower-level claim "Hydrogen fuel cell vehicles have higher well-to-wheel energy efficiency than battery electric vehicles" inverts the comparison. The inversion logic shall be done when overall article verdict values are calculated.
 ---
-Reports of question vs. equal statement differ. Fix:
-- There are still differences between the two "Bolsonaro Judgement" reports for input as question vs. equal statement.
-- See "Handling when input is a question" - I assume then this is fixed, there should not anymore be a difference.
+- Check if all titles, and labels really match with underlying content! (e.g. “Article Summary" shall really contain Article Summary etc.)
+---
+- Some claims talk about methodologies used and if these are valid to be used to verify the claims from the input - such claims are clearly not central and not even worth mentioning.
+---
+- Job progress is often slow. Find solutions.
+---
+- Analyze the current source-code to find where it does not follow the "Coding Agent Rules.md
+---
+
+
+## Tasks done
 ---
 Layout improvements in the "Summary" page:
  - Article box shall contain all properties of an article: Summary, Verdict, Key Factors, Assesment
@@ -68,8 +66,22 @@ Layout improvements in the "Summary" page:
  - Make sure displayed labels are aligned with the underlying data and are formatted for readybility (e.g. show label "Context" for ArticleContext data).
  - Rename "ArticleContext-by-ArticleContext Analysis" to "Contexts"
  - Further unify layout variants. E.g. at article it sometimes it sais "Overall Verdict", and sometimes it sais "Article verdict", instead it should just show "Verdict"
-
-## Tasks done
+---
+ArticleSummary data:
+ - Make sure we have ArticleSummary data
+ - if the input is an url, the article at the url page shall be summarized into ArticleSummary.
+ - If the Input is text and text length is shorter than 300 characters, the ArticleSummary shall be a copy of the input.
+ - Else: ArticleSummary shall be a summarize the article input.
+---
+Reports of question vs. equal statement differ. Fix:
+- There are still differences between the two "Bolsonaro Judgement" reports for input as question vs. equal statement.
+- See "Handling when input is a question" - I assume then this is fixed, there should not anymore be a difference.
+---
+Handling when input is a question: 
+ - When an Input is a question, a statement with exactly the same meaning shall be derived from the question. 
+ - The statement shall be used for analysis, not the question, the question shall not be used further on for anything else than for display!
+---
+- Too many claims are often marked as central.
 ---
 LLM sometimes not aware about current time and recent information:
 - LLM is sometimes not aware about the current date. Resulting in information like "Temporal error". 
@@ -78,32 +90,18 @@ Please detect when a verdict or claim comment statement does not recognize the c
 ---
 - We had renamed in code the article related terms previously used: Scope and Proceeding to ArticleContext. Important note: do not confuse with the EvidenceScope. Make sure tis is cconsistantly done. 
 ---
-- Analyze the current source-code to find  me where it does not follow the "Coding Agent Rules.md, then please fix where it does not.
 - With single scope report, the layout is different than with multi scope report. Please generalize the layout, so that for single scope report, the same layout is used as with multi scope, but in the single scope case, omit the layout elements that are not needed for single scope.
 ---
 - At page "FactHarbor Jobs" pagination prev/next does nothing. Please make sure that at the jobs page we can really page back - currently it seem that noch all data from the database is available.
 ---
 - Now, with your latest change, jobs with non question article "The Bolsonaro judgment (trial) was fair and based on Brazil's law" give bad results, especially no multi preceeding is detected. And both ways formulated as qustion or not (with "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?" and with "The Bolsonaro judgment (trial) was fair and based on Brazil's law") the 27 year sentence is not found. Again, I am sure a web search would find this, but it seems LLM call's often don't (I gues becauise not yet trained with recent data).
 ---
-- in the past we had shown confidence number at the right of verdict, please re-add.
----
 - Avoid such very specifc code and promts, make it more generic:
-```
-'trial', 'judgment', 'sentence', 'conviction', 'case', 'proceeding', 'coup', 'election', 'court', 'judge', 'ruling', 'verdict', 'bolsonaro', 'putin', 'trump' // Known recent political figures with ongoing cases
-specific outcome was fair, proportionate, or appropriate. Example: If "27-year prison sentence" is mentioned, generate a claim like "The 27-year prison sentence was proportionate to the crimes committed and consistent with similar cases."
-specific outcomes, penalties, or consequences are mentioned (e.g., "27-year sentence", "fined $X", "banned for Y years"), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.`;
-const isHighImpactOutcome =
-    hay.includes("sentenced") ||
-    hay.includes("convicted") ||
-    hay.includes("years in prison") ||
-    hay.includes("year prison") ||
-    hay.includes("months in prison") ||
-    (hay.includes("prison") && hay.includes("year"));
-```
+words like: 'trial', 'judgment', 'sentence', 'prison', 'conviction', 'case', 'proceeding', 'coup', 'election', 'court', 'judge', 'ruling', 'verdict', 'bolsonaro', 'putin', 'trump'
+specific outcomes, penalties, or consequences: e.g. "27-year sentence", "fined $X", "banned for Y years"
 ---
 - Make sure such debugging code is only active used in local environment and it matches the specific execution: fetch('http://127.0.0.1:7242
 ---
-- With recent changes responsiveness somtimes is slow. Especiall with job queing, there should not be such long waits. When there are about 3 or 4 jobs already running, the analyze button is disabled for a while =>fix
 - Regarding multi proceedings (a.k.a. multi-events): There could be more then two, therefore:
   - Make it possible that more than two could be found.
   - Change the layout for multi proceedings that they are not anymore side-by-side (in columns), but in rows instead.
@@ -121,12 +119,6 @@ const isHighImpactOutcome =
   - LEANING-FALSE (29-42%, Score -1)
   - MOSTLY-FALSE (15-28%, Score -2)
   - FALSE (0-14%, Score -3))
----
-- make multi-proceeding detection (prompt and display etc.) generic not only for legal cases and questions
----
-- The "Report" page contains only redundant information - except the "Implied claim" but that's just the same as the article summary, just a bit rephrased - right? If so we can remove the "Report" page. What makes more sense to make visible - the Article Summary, or the "Implied claim"? If both are important, then have both at the Summary page inside one box.
----
-- Move the Article box above Article Verdict, rename the "Article" box to "Article Summary", inside remove the "Title" (label and content), and remove the "Summary" label - so that the text in the boy is only the Article summary.
 ---
 - The summary page is intended as the main page for the end-user.
 ---
