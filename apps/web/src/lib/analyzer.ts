@@ -718,21 +718,28 @@ function selectFactsForScopeRefinementPrompt(
   if (facts.length <= maxFacts) return facts;
 
   const mustKeepIds = new Set<string>();
+  const bestByScope = new Map<string, { fact: ExtractedFact; score: number }>();
+  const input = (analysisInput || "").trim();
   for (const f of facts) {
     if (!f?.id) continue;
     if (f.category === "criticism") mustKeepIds.add(f.id);
     if (f.claimDirection === "contradicts") mustKeepIds.add(f.id);
     if (f.fromOppositeClaimSearch) mustKeepIds.add(f.id);
     if (f.evidenceScope) mustKeepIds.add(f.id);
+    if (f.relatedProceedingId) {
+      const score = input ? calculateTextSimilarity(input, f.fact || "") : 0;
+      const existing = bestByScope.get(f.relatedProceedingId);
+      if (!existing || score > existing.score) {
+        bestByScope.set(f.relatedProceedingId, { fact: f, score });
+      }
+    }
   }
 
   const chosen: ExtractedFact[] = [];
   for (const f of facts) {
     if (f?.id && mustKeepIds.has(f.id)) chosen.push(f);
   }
-  if (chosen.length >= maxFacts) return chosen.slice(0, maxFacts);
 
-  const input = (analysisInput || "").trim();
   const scored = facts
     .filter((f) => f?.id && !mustKeepIds.has(f.id))
     .map((f) => {
@@ -744,11 +751,19 @@ function selectFactsForScopeRefinementPrompt(
       return String(a.f.id).localeCompare(String(b.f.id));
     });
 
+  // Ensure at least one representative fact per scope (if any exist)
+  for (const { fact } of bestByScope.values()) {
+    if (chosen.length >= maxFacts) break;
+    if (fact?.id && !chosen.some((c) => c.id === fact.id)) {
+      chosen.push(fact);
+    }
+  }
+
   for (const s of scored) {
     if (chosen.length >= maxFacts) break;
     chosen.push(s.f);
   }
-  return chosen;
+  return chosen.slice(0, maxFacts);
 }
 
 function calculateScopeSimilarity(a: Scope, b: Scope): number {
