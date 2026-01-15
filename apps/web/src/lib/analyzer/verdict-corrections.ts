@@ -134,6 +134,10 @@ export function detectAndCorrectVerdictInversion(
  * Counter-claims are generated when the LLM creates sub-claims that test opposing positions,
  * or when claims are derived from counter-evidence search results.
  *
+ * CRITICAL: A claim that semantically SUPPORTS the thesis should NEVER be marked as a
+ * counter-claim, regardless of fact directions. Only claims that test the OPPOSITE
+ * position (e.g., "was unfair" when thesis says "was fair") are counter-claims.
+ *
  * @param claimText - The text of the sub-claim
  * @param userThesis - The user's original thesis/claim (normalized)
  * @param claimFacts - Facts supporting this claim (check if from counter-evidence search)
@@ -147,6 +151,109 @@ export function detectCounterClaim(
 ): boolean {
   const claimLower = claimText.toLowerCase();
   const thesisLower = userThesis.toLowerCase();
+
+  // =========================================================================
+  // EARLY EXIT: Check if claim semantically SUPPORTS the thesis
+  // If the claim is thesis-aligned, it cannot be a counter-claim.
+  // =========================================================================
+
+  // Common evaluative terms and their synonyms for alignment detection
+  const POSITIVE_EVAL_SYNONYMS: Record<string, string[]> = {
+    fair: ["fair", "just", "equitable", "impartial", "unbiased"],
+    proportionate: ["proportionate", "proportional", "appropriate", "reasonable", "fitting"],
+    justified: ["justified", "warranted", "legitimate", "valid", "well-founded"],
+    proper: ["proper", "correct", "appropriate", "due", "right"],
+    lawful: ["lawful", "legal", "legitimate", "constitutional", "valid"],
+    true: ["true", "accurate", "correct", "valid", "factual"],
+    efficient: ["efficient", "effective", "productive", "optimal"],
+  };
+
+  // Check if claim and thesis share aligned evaluative framing
+  function hasAlignedEvalTerms(claim: string, thesis: string): boolean {
+    for (const [, synonyms] of Object.entries(POSITIVE_EVAL_SYNONYMS)) {
+      const claimHasTerm = synonyms.some((s) => claim.includes(s));
+      const thesisHasTerm = synonyms.some((s) => thesis.includes(s));
+      // If both contain terms from the same synonym group (both positive), they're aligned
+      if (claimHasTerm && thesisHasTerm) {
+        // Make sure neither is negated
+        const claimNegated = synonyms.some((s) => {
+          const idx = claim.indexOf(s);
+          if (idx === -1) return false;
+          const before = claim.slice(Math.max(0, idx - 10), idx);
+          return /\bnot\b|\bno\b|\bun|\bin/.test(before);
+        });
+        const thesisNegated = synonyms.some((s) => {
+          const idx = thesis.indexOf(s);
+          if (idx === -1) return false;
+          const before = thesis.slice(Math.max(0, idx - 10), idx);
+          return /\bnot\b|\bno\b|\bun|\bin/.test(before);
+        });
+        // Both positive (neither negated) = aligned
+        if (!claimNegated && !thesisNegated) return true;
+        // Both negative = aligned (both saying "not fair")
+        if (claimNegated && thesisNegated) return true;
+      }
+    }
+    return false;
+  }
+
+  // Check if claim is about a supporting aspect of the thesis
+  // e.g., thesis: "trial was fair" → claim: "due process was followed" (supports fairness)
+  function isClaimAboutSupportingAspect(claim: string, thesis: string): boolean {
+    // If thesis is about fairness/justice/propriety, and claim is about procedural/evidential
+    // aspects that would SUPPORT such a conclusion, they're aligned
+    const fairnessThesis =
+      /\b(fair|just|equitable|impartial|proper|lawful|legal|constitutional)\b/.test(thesis);
+    const supportingClaimPatterns = [
+      /\b(due process|proper process|procedure|procedural)\b.*\b(follow|met|comply|observed)\b/,
+      /\b(follow|met|comply|observed)\b.*\b(due process|proper process|procedure)\b/,
+      /\b(evidence|evidentiary|proof)\b.*\b(proper|sufficient|adequate|considered|reviewed)\b/,
+      /\b(proper|sufficient|adequate)\b.*\b(evidence|evidentiary|proof)\b/,
+      /\b(based on|pursuant to|according to)\b.*\b(law|legal|statute|constitution)\b/,
+      /\b(law|legal|statute|constitution)\b.*\b(applied|followed|observed|respected)\b/,
+      /\b(charges|indictment|prosecution)\b.*\b(based on|supported by|grounded in)\b.*\b(law|evidence)\b/,
+      /\b(constitutional|legal)\b.*\b(jurisdiction|authority|basis|foundation)\b/,
+      /\b(sentence|penalty|punishment|fine)\b.*\b(proportionate|appropriate|justified|fair)\b/,
+      /\b(proportionate|appropriate|justified|fair)\b.*\b(sentence|penalty|punishment|fine)\b/,
+      /\b(judicial|judge|court)\b.*\b(independence|impartial|unbiased|free from)\b/,
+    ];
+    if (fairnessThesis) {
+      for (const pattern of supportingClaimPatterns) {
+        if (pattern.test(claim)) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Check if a claim semantically supports/aligns with the thesis.
+   * If aligned, the claim cannot be a counter-claim regardless of fact directions.
+   */
+  function isClaimAlignedWithThesis(claim: string, thesis: string): boolean {
+    // Check 1: Both use the same positive evaluative framing
+    if (hasAlignedEvalTerms(claim, thesis)) {
+      debugLog("detectCounterClaim: Thesis-aligned (same eval terms)", {
+        claim: claim.slice(0, 80),
+        thesis: thesis.slice(0, 80),
+      });
+      return true;
+    }
+
+    // Check 2: Claim is about an aspect that SUPPORTS the thesis conclusion
+    if (isClaimAboutSupportingAspect(claim, thesis)) {
+      debugLog("detectCounterClaim: Thesis-aligned (supporting aspect)", {
+        claim: claim.slice(0, 80),
+        thesis: thesis.slice(0, 80),
+      });
+      return true;
+    }
+
+    return false;
+  }
+
+  if (isClaimAlignedWithThesis(claimLower, thesisLower)) {
+    return false;
+  }
 
   // =========================================================================
   // Text-based detection (preferred): compare claim text vs thesis text

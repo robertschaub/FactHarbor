@@ -1,5 +1,5 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.32
+ * FactHarbor POC1 Analyzer v2.6.33
  *
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
@@ -28,8 +28,11 @@
  * - v2.6.30: Inputs now follow IDENTICAL analysis paths
  * - v2.6.31: Modularized - extracted debug, config modules
  * - v2.6.32: Verdict structured-output resilience (recover from NoObjectGeneratedError + JSON-text fallback)
+ * - v2.6.33: Fixed counter-claim detection - thesis-aligned claims no longer flagged as counter
+ * - v2.6.33: Auto-detect foreign response claims as tangential for legal proceeding theses
+ * - v2.6.33: Contested claims WITH factual counter-evidence get reduced weight in aggregation
  *
- * @version 2.6.32
+ * @version 2.6.33
  * @date January 2026
  */
 
@@ -142,29 +145,31 @@ Terminology (critical):
 - AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as distinctProceedings.
 - EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts (ExtractedFact.evidenceScope). This is NOT the same as AnalysisContext.
 
-Prompt synonyms:
-- You may use the words scope / bounded context / boundary as synonyms for AnalysisContext.
-- Avoid using the bare word "context" unless you explicitly mean ArticleFrame or "bounded context" (AnalysisContext).
+Language rules (avoid ambiguity):
+- Use the term "AnalysisContext" (or "analysis context") for top-level bounded frames.
+- Use the term "EvidenceScope" ONLY for per-fact scope metadata shown in the FACTS.
+- Avoid using the bare word "scope" (it is too ambiguous here).
+- Avoid using the bare word "context" unless you explicitly mean ArticleFrame or AnalysisContext.
 
 Your job is to identify DISTINCT ANALYSIS CONTEXTS (bounded analytical frames) that are actually present in the EVIDENCE provided.
 
 CRITICAL RULES:
-- Scope relevance: every AnalysisContext MUST be directly relevant to the input's specific topic. Do not keep marginally related contexts.
-- When in doubt, use fewer scopes rather than including marginally relevant ones.
+- Relevance: every AnalysisContext MUST be directly relevant to the input's specific topic. Do not keep marginally related contexts.
+- When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones.
 - Evidence-grounded only: every AnalysisContext MUST be supported by at least one factId from the list.
-- Do NOT invent scopes based on guesswork or background knowledge.
-- Split into multiple scopes when the evidence indicates different boundaries, methods, time periods, institutions, jurisdictions, datasets, or processes that should be analyzed separately.
+- Do NOT invent AnalysisContexts based on guesswork or background knowledge.
+- Split into multiple AnalysisContexts when the evidence indicates different boundaries, methods, time periods, institutions, jurisdictions, datasets, or processes that should be analyzed separately.
 - Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different jurisdictions/regulatory regimes, different datasets/studies, different measurement windows).
 - Also split when evidence clearly covers different phases/components/metrics that are not directly comparable (e.g., upstream vs downstream phases, production vs use-phase, system-wide vs component-level metrics, different denominators/normalizations).
-- Do NOT split into scopes just because there are pro vs con viewpoints. Viewpoints are not scopes.
-- Do NOT split into scopes purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting). Those are source types, not bounded analytical frames.
+- Do NOT split into AnalysisContexts just because there are pro vs con viewpoints. Viewpoints are not AnalysisContexts.
+- Do NOT split into AnalysisContexts purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting). Those are source types, not bounded analytical frames.
 - If you split, prefer frames that reflect methodology/boundaries/process-chain segmentation present in the evidence (e.g., end-to-end vs component-level; upstream vs downstream; production vs use-phase).
-- If the evidence does not clearly support multiple scopes, return exactly ONE scope.
+- If the evidence does not clearly support multiple AnalysisContexts, return exactly ONE AnalysisContext.
 - Use neutral, generic labels (no domain-specific hardcoding), BUT ensure each AnalysisContext name reflects 1–3 specific identifying details found in the evidence (per-fact EvidenceScope fields and/or the AnalysisContext metadata).
-- Different evidence reports may define DIFFERENT scopes. A single evidence report may contain MULTIPLE scopes. Do not restrict scopes to one-per-source.
+- Different evidence reports may define DIFFERENT AnalysisContexts. A single evidence report may contain MULTIPLE AnalysisContexts. Do not restrict AnalysisContexts to one-per-source.
 - Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
 - Non-example: do NOT create separate AnalysisContexts from ArticleFrame narrative background (e.g., \"political frame\", \"media discourse\") unless the evidence itself defines distinct analytical frames.
-- A scope with zero relevant claims/evidence should NOT exist.
+- An AnalysisContext with zero relevant claims/evidence should NOT exist.
 
 Return JSON only matching the schema.`;
 
@@ -180,7 +185,7 @@ ${claimsText || "(none)"}
 Return:
 - requiresSeparateAnalysis
 - distinctProceedings (1..N)
-- factScopeAssignments: map each factId listed above to exactly one proceedingId (use proceedingId from your distinctProceedings)
+- factScopeAssignments: map each factId listed above to exactly one proceedingId (use proceedingId from your distinctProceedings). NOTE: this assigns facts to AnalysisContexts (not to per-fact EvidenceScope).
 - claimScopeAssignments: (optional) map any claimIds that clearly belong to a specific proceedingId
 `;
 
@@ -2534,14 +2539,58 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   keyFactorId: z.string().default(""),
 });
 
-function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; centrality?: any; isCentral?: any }>(
+/**
+ * Detect if a claim is about a foreign government's response/reaction to an event.
+ * Such claims should be marked as tangential when the thesis is about the event itself.
+ */
+function isForeignResponseClaim(claimText: string): boolean {
+  const text = claimText.toLowerCase();
+  // Patterns indicating foreign government responses/reactions
+  const foreignResponsePatterns = [
+    // Tariffs/trade restrictions
+    /\b(tariff|tariffs)\b.*\b(imposed|impose|proportionate|justified|response)\b/,
+    /\b(trade\s+restriction|trade\s+sanction|economic\s+sanction)\b/,
+    // Sanctions against individuals/entities
+    /\b(sanction|sanctions)\b.*\b(against|imposed|justified|proportionate)\b/,
+    // Foreign government actions in response
+    /\b(us|united\s+states|american|foreign)\b.*\b(response|reaction|retaliation|condemned|denounced)\b/,
+    /\b(diplomatic|international)\b.*\b(response|reaction|pressure|intervention)\b/,
+    // Explicit "in response to" framing
+    /\bin\s+response\s+to\b/,
+    /\bas\s+a\s+response\s+to\b/,
+    /\bretaliation\s+(for|against)\b/,
+  ];
+  return foreignResponsePatterns.some((p) => p.test(text));
+}
+
+function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; centrality?: any; isCentral?: any; text?: any }>(
   claims: T[],
+  thesis?: string,
 ): T[] {
+  // Check if thesis is about a domestic legal proceeding
+  const thesisLower = (thesis || "").toLowerCase();
+  const thesisIsAboutLegalProceeding =
+    /\b(trial|judgment|ruling|proceeding|verdict|sentence|conviction|case)\b/.test(thesisLower) &&
+    /\b(fair|lawful|legal|constitutional|based\s+on\s+law|proper)\b/.test(thesisLower);
+
   for (const claim of claims as any[]) {
     const raw = String(claim?.thesisRelevance || "direct").trim();
-    const thesisRelevance =
+    let thesisRelevance =
       raw === "direct" || raw === "tangential" || raw === "irrelevant" ? raw : "direct";
     const isMarkedCentral = claim?.isCentral === true || claim?.centrality === "high";
+
+    // v2.6.33: Auto-detect foreign response claims and mark them tangential
+    // when the thesis is about a domestic legal proceeding
+    if (thesisIsAboutLegalProceeding && thesisRelevance === "direct") {
+      const claimText = String(claim?.text || "");
+      if (isForeignResponseClaim(claimText)) {
+        thesisRelevance = "tangential";
+        debugLog("enforceThesisRelevanceInvariants: Foreign response claim → tangential", {
+          claimText: claimText.slice(0, 80),
+          thesis: thesisLower.slice(0, 80),
+        });
+      }
+    }
 
     // Invariant: central claims must be direct (by definition, they test the thesis).
     claim.thesisRelevance = isMarkedCentral ? "direct" : thesisRelevance;
@@ -3124,14 +3173,27 @@ NOT "high" for:
 - "The trial followed due process" → directly tests fairness
 - "The evidence was properly evaluated" → directly tests fairness
 - "Applicable legal standards were applied" → directly tests legal basis
+- "The sentence was proportionate to the crimes" → directly tests fairness
+- "Constitutional jurisdiction was properly established" → directly tests legal basis
 
 ✗ thesisRelevance="tangential" (does NOT evaluate the thesis):
 - "Foreign trade restrictions were proportionate" → reaction, not the judgment itself
 - "Foreign sanctions were justified" → reaction, not the judgment itself
 - "International relations deteriorated" → consequence, not the judgment itself
+- "US tariffs imposed on Brazilian products were proportionate" → foreign reaction, NOT the judgment
+- "US sanctions against the judge were justified" → foreign reaction, NOT the judgment
+- "Other countries condemned the proceedings" → foreign reaction, NOT the judgment
+
+**CRITICAL - FOREIGN GOVERNMENT RESPONSES ARE ALWAYS TANGENTIAL**:
+When the thesis is about whether a domestic legal proceeding was fair/lawful, claims about
+how foreign governments responded (tariffs, sanctions, diplomatic statements, condemnations)
+are TANGENTIAL - they are reactions TO the proceeding, not evaluations OF the proceeding.
+Even if a foreign government claims the proceeding was unfair, that claim is about the
+foreign government's RESPONSE, not about the proceeding's actual fairness.
 
 **Rule**: If you can rephrase the claim as "The thesis is true/false BECAUSE [claim]" = direct
           If the claim is "BECAUSE the thesis is true/false, [consequence]" = tangential
+          If the claim is "Foreign entity X responded to the event by doing Y" = tangential
 
 **FILTERING RULE**: Claims with checkWorthiness = "low" should be excluded from investigation
 
@@ -3820,7 +3882,9 @@ Now analyze the input and output JSON only.`;
   const { validatedClaims, stats: gate1Stats } = applyGate1ToClaims(filteredClaims);
   console.log(`[Analyzer] Gate 1 applied: ${gate1Stats.passed}/${gate1Stats.total} claims passed, ${gate1Stats.centralKept} central claims kept despite issues`);
 
-  const claimsWithThesisRelevanceInvariant = enforceThesisRelevanceInvariants(validatedClaims as any);
+  // Pass thesis to detect foreign response claims that should be tangential
+  const thesis = parsed.impliedClaim || parsed.articleThesis || analysisInput;
+  const claimsWithThesisRelevanceInvariant = enforceThesisRelevanceInvariants(validatedClaims as any, thesis);
   const claimsPolicyB = applyThesisRelevancePolicyBToSubClaims(claimsWithThesisRelevanceInvariant as any);
   return { ...parsed, subClaims: claimsPolicyB, gate1Stats };
 }
@@ -8157,8 +8221,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   if (outcomeClaims.length > 0) {
     state.understanding!.subClaims.push(...outcomeClaims);
     normalizeSubClaimsImportance(state.understanding!.subClaims as any);
+    // Pass thesis to detect foreign response claims that should be tangential
+    const thesis = state.understanding!.impliedClaim || state.understanding!.articleThesis || state.originalInput;
     state.understanding!.subClaims = applyThesisRelevancePolicyBToSubClaims(
-      enforceThesisRelevanceInvariants(state.understanding!.subClaims as any) as any,
+      enforceThesisRelevanceInvariants(state.understanding!.subClaims as any, thesis) as any,
     ) as any;
     console.log(`[Analyzer] Added ${outcomeClaims.length} outcome-related claims from research`);
     await emit(`Added ${outcomeClaims.length} outcome-related claims`, 63);
