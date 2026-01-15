@@ -11,6 +11,10 @@ Docs/*ps1
 FactHarbor.xar
 test-output
 
+# xWiki export (local-only extraction of Docs/*.xar)
+# Keep the .xar committed; keep the extracted pages out of git.
+Docs/xwiki-extract/
+
 # Node / Next.js
 node_modules/
 .next/
