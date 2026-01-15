@@ -1,6 +1,8 @@
 # FactHarbor Bias / Partisanship Smell Audit (2026-01-12)
 
-This document inventories **source-code** and **documentation** (including the `Docs/xwiki-extract/` export) that could reasonably be perceived as **biased** or **partisan**, even when the intent is explanatory or illustrative.
+This document inventories **source-code** and **documentation** (including the xWiki export, locally extracted to `Docs/xwiki-extract/`) that could reasonably be perceived as **biased** or **partisan**, even when the intent is explanatory or illustrative.
+
+**Note on xWiki extraction**: `Docs/xwiki-extract/` is **generated locally** from the committed `.xar` file (`Docs/FactHarbor Spec and Impl 1.Jan.26.xar`) and is **gitignored** (not committed). See `Docs/Readme.txt` for extraction steps.
 
 It is **not** a claim that the repository is politically biased overall—many hits are clearly test fixtures, examples, or archived material—but these are still “smells” that can undermine trust, violate “Generic by Design”, or unintentionally anchor model outputs.
 
