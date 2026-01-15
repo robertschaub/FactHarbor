@@ -251,7 +251,7 @@ This document tracks version history, bug fixes, and feature enhancements for Fa
 - Two-panel summary format
 
 **Architecture:**
-- Next.js web app (TypeScript, React, Tailwind CSS)
+- Next.js web app (TypeScript, React, CSS Modules)
 - .NET API (ASP.NET Core 8.0, C#)
 - SQLite database (local development)
 - Separated architecture (API for persistence, Web for analysis)

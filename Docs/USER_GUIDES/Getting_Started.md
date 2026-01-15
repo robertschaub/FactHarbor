@@ -196,22 +196,18 @@ Ensure these match exactly:
 
 ## Database Initialization
 
-Initialize the SQLite database:
+**POC behavior:** The API creates the SQLite database automatically on startup (no `dotnet ef` step required).
 
-```bash
+**Expected result on first run:**
+- ✅ `apps/api/factharbor.db` file is created automatically
+- ✅ API starts without errors
+
+If you already have a corrupted DB and want to reset it (local dev only):
+
+```powershell
 cd apps/api
-dotnet ef database update
+del factharbor.db
 ```
-
-**Expected result:**
-- ✅ `factharbor.db` file is created in `apps/api/`
-- ✅ No errors reported
-- ✅ Message: "Done."
-
-If you see errors, check that:
-- .NET SDK 8.x is installed
-- You're in the `apps/api` directory
-- No previous database file exists
 
 ---
 
@@ -227,9 +223,8 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 
 This script will:
 1. Install npm dependencies
-2. Apply database migrations
-3. Start the API server (port 5000)
-4. Start the Web UI (port 3000)
+2. Start the API server (port 5000) (creates the SQLite DB automatically if missing)
+3. Start the Web UI (port 3000)
 
 ### Option 2: Manual Setup
 
@@ -322,7 +317,7 @@ Your setup is successful when:
 | **Job stuck in QUEUED** | Runner key mismatch | Check `FH_INTERNAL_RUNNER_KEY` matches `Runner:RunnerKey` |
 | **Job fails immediately** | Missing LLM API key | Add `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` to `.env.local` |
 | **No progress updates** | Admin key mismatch | Check `FH_ADMIN_KEY` matches `Admin:Key` |
-| **API not starting** | Database not initialized | Run `dotnet ef database update` in `apps/api` |
+| **API not starting** | Database error | The DB is auto-created on startup; check API logs, then (local dev) delete `apps/api/factharbor.db` and restart |
 | **Port already in use** | Previous instance running | Stop services with `scripts/stop-services.ps1` |
 
 ### Health Check Fails
@@ -359,8 +354,7 @@ npm run dev
 cd apps/api
 # Delete old database if corrupted
 del factharbor.db
-# Recreate database
-dotnet ef database update
+# Restart API to recreate the DB automatically
 ```
 
 ### Port Conflicts

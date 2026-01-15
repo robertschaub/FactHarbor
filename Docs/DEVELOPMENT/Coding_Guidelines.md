@@ -18,7 +18,7 @@ This document provides guidelines for developers working on FactHarbor. These pr
 **Example violations to avoid**:
 ```typescript
 // BAD - Domain-specific keywords
-const keywords = ['trial', 'judgment', 'bolsonaro', 'putin', 'trump'];
+const keywords = ['trial', 'judgment', 'PERSON_A', 'PERSON_B', 'PERSON_C'];
 
 // BAD - Specific outcome detection
 const isHighImpactOutcome =

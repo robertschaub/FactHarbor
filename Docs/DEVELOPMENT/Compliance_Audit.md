@@ -1,7 +1,7 @@
 # FactHarbor Compliance and Quality Audit
 
 **Date**: January 12, 2026  
-**Version Audited**: v2.6.28 *(note: `apps/web/src/lib/analyzer.ts` header still says v2.6.26; runtime `schemaVersion` in results is 2.6.28)*  
+**Version Audited**: v2.6.28 *(this audit reflects the codebase at that time; later versions may differ — current `CONFIG.schemaVersion` can be newer)*  
 **Auditor**: AI Agent (Comprehensive automated audit)  
 **Scope**: Complete codebase, documentation, and runtime behavior analysis
 

@@ -5,6 +5,8 @@
 **Status:** Approved - Ready for Implementation
 **Target:** Pre-release beta with logged-in users, $0-5/month budget
 
+> Note: FactHarbor is currently in **local POC development**. This guide is a **future deployment plan** and is not required for the current phase.
+
 ---
 
 ## Executive Summary

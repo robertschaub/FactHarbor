@@ -8,6 +8,13 @@ The FactHarbor Admin GUI provides a web-based interface for administrators to te
 
 Navigate to: `http://localhost:3000/admin/test-config`
 
+## Security (POC note)
+
+The admin test UI calls `GET /api/admin/test-config`, which (currently) **does not require authentication** and can trigger **paid LLM/search API calls** if keys are configured.
+
+- Keep this endpoint **local-only** during POC development.
+- Before any public exposure, protect it with `FH_ADMIN_KEY` (and add rate limiting/cost quotas).
+
 ## Configuration Test Dashboard
 
 The Configuration Test Dashboard allows you to verify that all required API keys and services are working correctly.

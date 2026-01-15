@@ -1,6 +1,6 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.21  
+**Version**: 2.6.32  
 **Last Updated**: January 2026  
 **Status**: POC1 Operational - Core features working, optimizations pending
 
@@ -344,7 +344,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 | Job stuck in QUEUED | Check `FH_INTERNAL_RUNNER_KEY` matches `Runner:RunnerKey` |
 | Job fails immediately | Check LLM API key is valid |
 | No progress updates | Check `FH_ADMIN_KEY` matches `Admin:Key` |
-| API not starting | Run `dotnet ef database update` |
+| API not starting | DB is auto-created on startup; check API console for DB errors, and (local dev) delete `apps/api/factharbor.db` to recreate |
 | Search not working | Verify `FH_SEARCH_ENABLED=true` and search API key |
 
 ---

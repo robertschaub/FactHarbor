@@ -1,5 +1,7 @@
 # PDF Fetch Error Fix - January 2, 2026
 
+> Note (2026-01-15): This is an archived fix note. The current implementation in `apps/web/src/lib/retrieval.ts` uses **pdf2json** in a Worker thread (not `pdf-parse`), but the high-level lessons (timeouts, validation, headers) still apply.
+
 ## Problem
 
 The analysis was failing when trying to fetch PDF files from university websites (e.g., unibe.ch) with the error:

@@ -1,4 +1,4 @@
-# Compliance Audit Summary - FactHarbor v2.6.28
+# Compliance Audit Summary - FactHarbor v2.6.28 (point-in-time)
 
 **Date**: January 12, 2026  
 **Overall Score**: 85/100 (B+) ✅ **GOOD**

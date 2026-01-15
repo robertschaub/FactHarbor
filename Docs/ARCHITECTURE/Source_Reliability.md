@@ -1,22 +1,20 @@
 # FactHarbor Source Reliability Bundle
 
-## Current Status: DISABLED
+## Current Status: OPTIONAL (disabled by default)
 
-> **Note**: The source bundle feature is currently **disabled** pending a reliable dynamic data source.
+> **Note**: Source reliability scoring is **disabled by default** and only becomes active if you explicitly configure a local bundle via `FH_SOURCE_BUNDLE_PATH`.
 >
-> **Why disabled?**
-> - The MBFC data sources (GitHub URLs) are not guaranteed to be stable or up-to-date
-> - No integrity verification (SHA-256 checksums) implemented yet
-> - Source credibility can change over time (e.g., a government source may lose credibility)
-> - Need a reliable, maintained API or dataset before enabling
+> **Current implementation reality (v2.6.32)**:
+> - **Local file only**: the code loads a bundle from `FH_SOURCE_BUNDLE_PATH` if present.
+> - **No remote bundle fetch / integrity verification** is implemented yet.
 >
-> **For 1st release**: Source credibility scoring is not used. All sources are treated equally - only the evidence they provide matters, not who they are.
+> **POC stance**: Treat this as optional metadata. The primary driver remains evidence/counter-evidence, not authority.
 
 ---
 
 ## Overview
 
-FactHarbor uses configurable source reliability scores to assess the credibility of sources during fact-checking. These scores come from [Media Bias/Fact Check (MBFC)](https://mediabiasfactcheck.com), a scientifically validated media bias database.
+FactHarbor can use configurable source reliability scores to add context to sources during fact-checking. One possible data source is [Media Bias/Fact Check (MBFC)](https://mediabiasfactcheck.com), but the system is designed to accept user-supplied bundles (no hardcoded defaults).
 
 ## Design Principles
 

@@ -1,7 +1,7 @@
 # FactHarbor POC1 Architecture Overview
 
-**Version:** 2.6.21  
-**Schema Version:** 2.6.18  
+**Version:** 2.6.32  
+**Schema Version:** 2.6.32  
 **Last Updated:** January 2026
 
 This document provides a comprehensive technical overview of FactHarbor's POC1 architecture, including system flows, data models, component interactions, and current implementation status.
@@ -27,11 +27,11 @@ This document provides a comprehensive technical overview of FactHarbor's POC1 a
 
 1. **.NET API (apps/api)** - Job persistence, status tracking, SSE events
    - Technology: ASP.NET Core 8.0
-   - Database: SQLite (local), PostgreSQL (production)
+   - Database: SQLite (POC/local). PostgreSQL is planned but not enabled in the current scaffold.
    - Responsibilities: Job CRUD, status updates, event streaming
 
 2. **Next.js Web App (apps/web)** - UI and analysis engine
-   - Technology: Next.js 14+ (TypeScript, React, Tailwind CSS)
+   - Technology: Next.js 14+ (TypeScript, React, CSS Modules)
    - Core: `analyzer.ts` (~6700 lines) implements AKEL pipeline
    - Responsibilities: User interface, analysis execution, report generation
 
@@ -42,7 +42,7 @@ This document provides a comprehensive technical overview of FactHarbor's POC1 a
 ### Internal Security Model
 
 **Runner Route Protection:**
-- Runner route `/api/internal/run-job` requires `x-runner-key` header
+- Runner route `/api/internal/run-job` requires `x-runner-key` when `FH_INTERNAL_RUNNER_KEY` is set (and is required in production)
 - Must match `FH_INTERNAL_RUNNER_KEY` environment variable
 
 **API Internal Endpoints:**
@@ -344,7 +344,7 @@ erDiagram
 flowchart TB
     subgraph Client["🖥️ Client Layer"]
         BROWSER[Web Browser]
-        ANALYZE_PAGE["/analyze page<br/>React + TailwindCSS"]
+        ANALYZE_PAGE["/analyze page (React)"]
         JOBS_PAGE["/jobs page<br/>Job history & status"]
     end
 

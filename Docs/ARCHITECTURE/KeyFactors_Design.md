@@ -289,7 +289,7 @@ interface KeyFactor {
 
   // Contestation
   isContested: boolean;
-  contestedBy: string;           // "Bolsonaro supporters", "Trump administration"
+  contestedBy: string;           // e.g. "stakeholder group", "opposition coalition", "industry association"
   factualBasis: "established" | "disputed" | "opinion" | "unknown";
 }
 ```
