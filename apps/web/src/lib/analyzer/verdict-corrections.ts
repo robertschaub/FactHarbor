@@ -209,6 +209,8 @@ export function detectCounterClaim(
       /\b(follow|met|comply|observed)\b.*\b(due process|proper process|procedure)\b/,
       /\b(evidence|evidentiary|proof)\b.*\b(proper|sufficient|adequate|considered|reviewed)\b/,
       /\b(proper|sufficient|adequate)\b.*\b(evidence|evidentiary|proof)\b/,
+      /\b(evidence|record|proof)\b.*\b(meets|meet|met|satisfies|satisfied|complies|complied)\b.*\b(legal\s+)?standards?\b/,
+      /\b(meets|meet|met|satisfies|satisfied|complies|complied)\b.*\b(legal\s+)?standards?\b.*\b(evidence|record|proof)\b/,
       /\b(based on|pursuant to|according to)\b.*\b(law|legal|statute|constitution)\b/,
       /\b(law|legal|statute|constitution)\b.*\b(applied|followed|observed|respected)\b/,
       /\b(charges|indictment|prosecution)\b.*\b(based on|supported by|grounded in)\b.*\b(law|evidence)\b/,
@@ -504,9 +506,8 @@ export function detectCounterClaim(
   // =========================================================================
   if (claimFacts && claimFacts.length > 0 && typeof claimTruthPercentage === "number") {
     const truthPct = claimTruthPercentage;
-    const contradictCount = claimFacts.filter(
-      (f) => f.claimDirection === "contradicts" || f.fromOppositeClaimSearch,
-    ).length;
+    // Provenance (fromOppositeClaimSearch) is metadata, not evidence direction.
+    const contradictCount = claimFacts.filter((f) => f.claimDirection === "contradicts").length;
     const supportCount = claimFacts.filter((f) => f.claimDirection === "supports").length;
 
     const majorityContradicts = contradictCount > claimFacts.length / 2;

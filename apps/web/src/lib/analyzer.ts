@@ -2552,6 +2552,9 @@ function isForeignResponseClaim(claimText: string): boolean {
     /\b(trade\s+restriction|trade\s+sanction|economic\s+sanction)\b/,
     // Sanctions against individuals/entities
     /\b(sanction|sanctions)\b.*\b(against|imposed|justified|proportionate)\b/,
+    // Visa / travel retaliation against officials
+    /\b(visa|visas|travel\s+ban|travel\s+bans|visa\s+revocation|visa\s+revoked)\b/,
+    /\b(revoke|revoked|revocation)\b.*\bvisa\b/,
     // Foreign government actions in response
     /\b(us|united\s+states|american|foreign)\b.*\b(response|reaction|retaliation|condemned|denounced)\b/,
     /\b(diplomatic|international)\b.*\b(response|reaction|pressure|intervention)\b/,
@@ -5490,10 +5493,13 @@ async function generateVerdicts(
       let factLine = `[${f.id}]`;
       if (f.relatedProceedingId) factLine += ` (${f.relatedProceedingId})`;
       // v2.6.31: Add direction labels so LLM knows which facts support vs contradict the claim
-      if (f.claimDirection === "contradicts" || f.fromOppositeClaimSearch) {
+      if (f.claimDirection === "contradicts") {
         factLine += ` [COUNTER-EVIDENCE]`;
       } else if (f.claimDirection === "supports") {
         factLine += ` [SUPPORTING]`;
+      } else if (f.fromOppositeClaimSearch) {
+        // Provenance metadata (not evidence direction)
+        factLine += ` [OPPOSITE-SEARCH]`;
       }
       if (f.isContestedClaim)
         factLine += ` [CONTESTED by ${f.claimSource || "critics"}]`;

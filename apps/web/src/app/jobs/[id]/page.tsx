@@ -916,6 +916,18 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
           <span className={styles.answerPercentage}>{overallTruth}% <span style={{ fontSize: 12, color: "#999" }}>({overallConfidence}% confidence)</span></span>
         </div>
 
+        {articleAnalysis?.claimsAverageTruthPercentage !== undefined && (
+          <div className={styles.claimsAverageRow}>
+            <span
+              className={styles.claimsAverageLabel}
+              title="Weighted average of direct claim verdicts (centrality × confidence); counter-claims are inverted; tangential claims are excluded."
+            >
+              Claims average
+            </span>
+            <span className={styles.claimsAverageValue}>{articleAnalysis.claimsAverageTruthPercentage}%</span>
+          </div>
+        )}
+
         {verdictSummary?.calibrationNote && (
           <div className={styles.calibrationNote}>
             <span className={styles.calibrationText}>⚠️ {verdictSummary.calibrationNote}</span>
@@ -1170,6 +1182,18 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
             </span>
           )}
         </div>
+
+        {articleAnalysis?.claimsAverageTruthPercentage !== undefined && (
+          <div className={styles.claimsAverageRow}>
+            <span
+              className={styles.claimsAverageLabel}
+              title="Weighted average of direct claim verdicts (centrality × confidence); counter-claims are inverted; tangential claims are excluded."
+            >
+              Claims average
+            </span>
+            <span className={styles.claimsAverageValue}>{articleAnalysis.claimsAverageTruthPercentage}%</span>
+          </div>
+        )}
 
         {/* Verdict Explanation */}
         {verdictReason && (
