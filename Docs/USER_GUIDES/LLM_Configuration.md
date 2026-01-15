@@ -60,7 +60,7 @@ LLM_PROVIDER=anthropic  # Options: openai | anthropic | google | gemini | mistra
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 - Get key: https://console.anthropic.com/settings/keys
-- Current default model (in code): `claude-sonnet-4-20250514`
+- Legacy default model (tiering off): `claude-sonnet-4-20250514`
 - Best for: Complex analysis, high-quality reasoning
 
 **OpenAI**:
@@ -68,7 +68,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 ```
 - Get key: https://platform.openai.com/api-keys
-- Current default model (in code): `gpt-4o`
+- Legacy default model (tiering off): `gpt-4o`
 - Best for: General purpose, established ecosystem
 
 **Google Gemini**:
@@ -76,7 +76,7 @@ OPENAI_API_KEY=sk-...
 GOOGLE_GENERATIVE_AI_API_KEY=AIza...
 ```
 - Get key: https://aistudio.google.com/app/apikey
-- Current default model (in code): `gemini-1.5-pro`
+- Legacy default model (tiering off): `gemini-1.5-pro`
 - Best for: Long context, multimodal inputs
 
 **Mistral AI**:
@@ -84,7 +84,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=AIza...
 MISTRAL_API_KEY=...
 ```
 - Get key: https://console.mistral.ai/api-keys
-- Current default model (in code): `mistral-large-latest`
+- Legacy default model (tiering off): `mistral-large-latest`
 - Best for: Cost-conscious deployments
 
 ---
@@ -233,14 +233,45 @@ Use cheaper models for simple tasks, premium models for complex reasoning:
 |------|------------------|-------------|
 | Claim extraction | Claude Haiku | 70% cheaper |
 | Fact extraction | Claude Haiku | 70% cheaper |
-| Understanding | Claude Sonnet | Baseline |
+| Understanding | Claude Haiku | 70% cheaper |
 | Verdict generation | Claude Sonnet | Baseline |
 
-> **Note**: Tiered model routing is **not yet implemented**. All tasks currently use the same model specified in `LLM_PROVIDER`.
+Tiered model routing is **implemented** but **off by default** to preserve legacy behavior.
+
+Enable it with:
+
+```bash
+FH_LLM_TIERING=on
+```
+
+When enabled, FactHarbor routes models per pipeline task:
+- **Understand**: cheaper/faster model (provider default)
+- **Extract facts**: cheaper/faster model (provider default)
+- **Verdict**: higher-quality model (provider default)
+
+Default per-provider routing when `FH_LLM_TIERING=on` (unless overridden):
+- **Anthropic**: understand/extract → `claude-3-5-haiku-20241022`, verdict → `claude-sonnet-4-20250514`
+- **OpenAI**: understand/extract → `gpt-4o-mini`, verdict → `gpt-4o`
+- **Google**: understand/extract → `gemini-1.5-flash`, verdict → `gemini-1.5-pro`
+- **Mistral**: understand/extract → `mistral-small-latest`, verdict → `mistral-large-latest`
+
+#### Per-task model overrides (optional)
+
+You can override the model names per task (within the selected `LLM_PROVIDER`):
+
+```bash
+# Turn on tiered routing
+FH_LLM_TIERING=on
+
+# Optional overrides (model names are provider-specific)
+FH_MODEL_UNDERSTAND=claude-3-5-haiku-20241022
+FH_MODEL_EXTRACT_FACTS=claude-3-5-haiku-20241022
+FH_MODEL_VERDICT=claude-sonnet-4-20250514
+```
 
 ### Tuning analysis depth (implemented)
 
-FactHarbor’s primary “cost vs quality” knob today is **analysis mode**, not per-step model routing:
+FactHarbor’s primary “cost vs quality” knob is still **analysis mode**; tiered model routing is optional and can further reduce cost by using cheaper models for extraction-style steps:
 
 ```bash
 # Options: quick (default) | deep
@@ -363,12 +394,17 @@ curl https://api.openai.com/v1/chat/completions \
 
 ### Custom Model Selection
 
-> **Not implemented**: These environment variables are not currently read by the codebase. Keep this section as a future design note.
+FactHarbor supports task-tiered model routing (off by default). The supported environment variables are:
 
 ```bash
-FH_MODEL_UNDERSTANDING=claude-sonnet-4.5
-FH_MODEL_EXTRACTION=claude-haiku-4
-FH_MODEL_VERDICT=claude-sonnet-4.5
+# Enable/disable tiered routing (default: off)
+FH_LLM_TIERING=on
+
+# Per-task model name overrides (optional)
+FH_MODEL_UNDERSTAND=...
+FH_MODEL_EXTRACT_FACTS=...
+FH_MODEL_VERDICT=...
+FH_MODEL_REPORT=...  # reserved for future use
 ```
 
 ### Fallback Configuration

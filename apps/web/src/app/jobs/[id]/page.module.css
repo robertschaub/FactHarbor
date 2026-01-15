@@ -935,6 +935,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background-color: #f6f7f9;
+  color: #4a4a4a;
+  width: fit-content;
+  cursor: help;
+}
+
+.claimsAverageLabel {
+  font-weight: 600;
+}
+
+.claimsAverageValue {
+  font-variant-numeric: tabular-nums;
 }
 
 .claimsAverageReason {

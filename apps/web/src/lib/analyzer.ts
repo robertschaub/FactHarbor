@@ -37,10 +37,6 @@
  */
 
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
 import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
@@ -67,6 +63,7 @@ import {
   sanitizeScopeShortAnswer,
 } from "./analyzer/config";
 import { calculateWeightedVerdictAverage } from "./analyzer/aggregation";
+import { getModelForTask } from "./analyzer/llm";
 import {
   detectAndCorrectVerdictInversion,
   detectCounterClaim,
@@ -6804,10 +6801,8 @@ ${factsFormatted}`;
   // Article verdict
     articleTruthPercentage: answerTruthPct,
     articleVerdict: answerTruthPct,
-    articleVerdictReason:
-      Math.abs(answerTruthPct - claimsAvgTruthPct) > 15
-        ? `Claims avg: ${percentageToArticleVerdict(claimsAvgTruthPct)} (${claimsAvgTruthPct}%)`
-        : undefined,
+    // Avoid duplicating claims average in the UI; we show it as a dedicated row.
+    articleVerdictReason: undefined,
 
     claimPattern,
   };
@@ -7673,41 +7668,6 @@ async function generateReport(
 }
 
 // ============================================================================
-// MODEL SELECTION
-// ============================================================================
-
-function getModel(providerOverride?: string) {
-  const provider = (
-    providerOverride ??
-    process.env.LLM_PROVIDER ??
-    "anthropic"
-  ).toLowerCase();
-
-  if (provider === "anthropic" || provider === "claude") {
-    return {
-      provider: "anthropic",
-      modelName: "claude-sonnet-4-20250514",
-      model: anthropic("claude-sonnet-4-20250514"),
-    };
-  }
-  if (provider === "google" || provider === "gemini") {
-    return {
-      provider: "google",
-      modelName: "gemini-1.5-pro",
-      model: google("gemini-1.5-pro"),
-    };
-  }
-  if (provider === "mistral") {
-    return {
-      provider: "mistral",
-      modelName: "mistral-large-latest",
-      model: mistral("mistral-large-latest"),
-    };
-  }
-  return { provider: "openai", modelName: "gpt-4o", model: openai("gpt-4o") };
-}
-
-// ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
 
@@ -7733,11 +7693,30 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const config = getActiveConfig();
   const mode = CONFIG.deepModeEnabled ? "deep" : "quick";
 
-  const { provider, modelName, model } = getModel();
-  debugLog(`LLM Provider: ${provider}, Model: ${modelName}`);
-  console.log(`[Analyzer] Using LLM provider: ${provider}, model: ${modelName}`);
+  const tieringRaw = (process.env.FH_LLM_TIERING ?? "off").toLowerCase().trim();
+  const tieringEnabled =
+    tieringRaw === "on" || tieringRaw === "true" || tieringRaw === "1" || tieringRaw === "enabled";
 
-  await emit(`Analysis mode: ${mode} (v${CONFIG.schemaVersion}) | LLM: ${provider}/${modelName}`, 2);
+  const understandModelInfo = getModelForTask("understand");
+  const extractFactsModelInfo = getModelForTask("extract_facts");
+  const verdictModelInfo = getModelForTask("verdict");
+
+  const provider = verdictModelInfo.provider;
+  const modelName = verdictModelInfo.modelName;
+  const model = verdictModelInfo.model;
+
+  debugLog(
+    `LLM Provider: ${provider}; Models: understand=${understandModelInfo.modelName}, extract=${extractFactsModelInfo.modelName}, verdict=${verdictModelInfo.modelName}`,
+  );
+  console.log(
+    `[Analyzer] Using LLM provider: ${provider}; understand=${understandModelInfo.modelName}, extract=${extractFactsModelInfo.modelName}, verdict=${verdictModelInfo.modelName}`,
+  );
+
+  const llmLabel = tieringEnabled
+    ? `${provider} (understand=${understandModelInfo.modelName}, extract=${extractFactsModelInfo.modelName}, verdict=${verdictModelInfo.modelName})`
+    : `${provider}/${modelName}`;
+
+  await emit(`Analysis mode: ${mode} (v${CONFIG.schemaVersion}) | LLM: ${llmLabel}`, 2);
 
   // ==========================================================================
   // v2.6.26: EARLY INPUT NORMALIZATION at entry point for complete input neutrality
@@ -7803,11 +7782,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // STEP 1: Understand
   debugLog("=== STEP 1: UNDERSTAND CLAIM ===");
   debugLog("Text to analyze (first 300 chars)", textToAnalyze.substring(0, 300));
-  await emit(`Step 1: Analyzing input [LLM: ${provider}/${modelName}]`, 5);
+  await emit(`Step 1: Analyzing input [LLM: ${understandModelInfo.provider}/${understandModelInfo.modelName}]`, 5);
   const step1Start = Date.now();
   try {
     debugLog("Calling understandClaim...");
-    state.understanding = await understandClaim(textToAnalyze, model);
+    state.understanding = await understandClaim(textToAnalyze, understandModelInfo.model);
     state.llmCalls++; // understandClaim uses 1 LLM call
 
     // UI-only: preserve original input text for display; analysis uses normalized statement
@@ -8003,7 +7982,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           const extractedFacts = await extractFacts(
             syntheticSource,
             decision.focus!,
-            model,
+            extractFactsModelInfo.model,
             state.understanding?.distinctProceedings || [],
             undefined,
             state.understanding?.impliedClaim || state.originalInput
@@ -8168,7 +8147,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     if (decision.isContradictionSearch)
       state.contradictionSourcesFound = successfulSources.length;
 
-    await emit(`Extracting facts [LLM: ${provider}/${modelName}]`, baseProgress + 8);
+    await emit(
+      `Extracting facts [LLM: ${extractFactsModelInfo.provider}/${extractFactsModelInfo.modelName}]`,
+      baseProgress + 8,
+    );
     const extractStart = Date.now();
     // v2.6.29: Mark facts from counter_evidence category as fromOppositeClaimSearch
     const isOppositeClaimSearch = decision.category === "counter_evidence";
@@ -8176,7 +8158,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       const facts = await extractFacts(
         source,
         decision.focus!,
-        model,
+        extractFactsModelInfo.model,
         state.understanding!.distinctProceedings,
         decision.targetProceedingId,
         state.understanding?.impliedClaim || state.originalInput,
@@ -8204,9 +8186,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   }
 
   // STEP 4.4: Evidence-driven scope refinement (fixes under-split / asymmetric scope detection)
-  await emit(`Refining scopes from evidence [LLM: ${provider}/${modelName}]`, 60);
+  await emit(
+    `Refining scopes from evidence [LLM: ${extractFactsModelInfo.provider}/${extractFactsModelInfo.modelName}]`,
+    60,
+  );
   const scopeRefineStart = Date.now();
-  const scopeRefine = await refineScopesFromEvidence(state, model);
+  const scopeRefine = await refineScopesFromEvidence(state, extractFactsModelInfo.model);
   state.llmCalls += scopeRefine.llmCalls;
   if (scopeRefine.updated) {
     debugLog("refineScopesFromEvidence: applied", {
@@ -8222,8 +8207,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   });
 
   // STEP 4.5: Post-research outcome extraction - extract outcomes from facts and create claims
-  await emit(`Extracting outcomes from research [LLM: ${provider}/${modelName}]`, 62);
-  const outcomeClaims = await extractOutcomeClaimsFromFacts(state, model);
+  await emit(
+    `Extracting outcomes from research [LLM: ${extractFactsModelInfo.provider}/${extractFactsModelInfo.modelName}]`,
+    62,
+  );
+  const outcomeClaims = await extractOutcomeClaimsFromFacts(state, extractFactsModelInfo.model);
   if (outcomeClaims.length > 0) {
     state.understanding!.subClaims.push(...outcomeClaims);
     normalizeSubClaimsImportance(state.understanding!.subClaims as any);
@@ -8238,8 +8226,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // STEP 4.6: Enrich scopes with outcomes discovered in evidence (generic LLM-based)
   // This updates "pending"/"unknown" outcomes with actual outcomes found in facts
-  await emit(`Enriching scopes with discovered outcomes [LLM: ${provider}/${modelName}]`, 64);
-  await enrichScopesWithOutcomes(state, model);
+  await emit(
+    `Enriching scopes with discovered outcomes [LLM: ${extractFactsModelInfo.provider}/${extractFactsModelInfo.modelName}]`,
+    64,
+  );
+  await enrichScopesWithOutcomes(state, extractFactsModelInfo.model);
 
   // Deterministic backstop for the Scope Relevance Requirement:
   // 1) if we're already in multi-scope mode, place any unassigned (direct/tangential) claims into a special UNSCOPED scope

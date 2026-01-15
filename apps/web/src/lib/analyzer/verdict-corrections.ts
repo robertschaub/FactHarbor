@@ -79,6 +79,10 @@ export function detectAndCorrectVerdictInversion(
     // Falsification patterns
     /\b(refutes?|refuted|disproves?|disproved|negates?|negated)\b/i,
     /\b(false|untrue|inaccurate|incorrect|wrong|erroneous)\s+(based\s+on|according\s+to)?\s*(the\s+)?evidence\b/i,
+    // Impartiality/conflict patterns
+    /\b(conflict\s+of\s+interest|appearance\s+of\s+conflict)\b/i,
+    /\b(acting\s+impartially|impartiality)\b.*\b(undermined|questioned|challenged)\b/i,
+    /\b(biased|partial|conflicted)\b/i,
     // Efficiency/comparison denial for comparative claims
     /\b(less|lower|worse|inferior|reduced)\s+(efficient|effective|productive|performance)\b/i,
     /\bnot\s+(more|higher|better|superior)\s+(efficient|effective)\b/i,
@@ -211,6 +215,8 @@ export function detectCounterClaim(
       /\b(proper|sufficient|adequate)\b.*\b(evidence|evidentiary|proof)\b/,
       /\b(evidence|record|proof)\b.*\b(meets|meet|met|satisfies|satisfied|complies|complied)\b.*\b(legal\s+)?standards?\b/,
       /\b(meets|meet|met|satisfies|satisfied|complies|complied)\b.*\b(legal\s+)?standards?\b.*\b(evidence|record|proof)\b/,
+      /\b(evidence|record|proof)\b.*\b(supports?|supporting|corroborates?)\b.*\b(charges?|case|allegations?)\b/,
+      /\b(charges?|case|allegations?)\b.*\b(are\s+)?\b(supported|corroborated)\b.*\b(evidence|record|proof)\b/,
       /\b(based on|pursuant to|according to)\b.*\b(law|legal|statute|constitution)\b/,
       /\b(law|legal|statute|constitution)\b.*\b(applied|followed|observed|respected)\b/,
       /\b(charges|indictment|prosecution)\b.*\b(based on|supported by|grounded in)\b.*\b(law|evidence)\b/,
@@ -232,6 +238,61 @@ export function detectCounterClaim(
    * If aligned, the claim cannot be a counter-claim regardless of fact directions.
    */
   function isClaimAlignedWithThesis(claim: string, thesis: string): boolean {
+    // IMPORTANT: Don't treat swapped/reversed comparatives as "aligned" just because they share
+    // a positive evaluative adjective (e.g., "efficient"). These are often counter-claims:
+    // thesis: "X is more efficient than Y" vs claim: "Y is more efficient than X".
+    const thesisFrame = extractComparativeFrame(thesis);
+    const claimFrame = extractComparativeFrame(claim);
+    if (thesisFrame && claimFrame) {
+      const norm = (s: string) =>
+        s
+          .toLowerCase()
+          .replace(/["']/g, "")
+          .replace(/[^\w\s]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      if (thesisFrame.kind === "than" && claimFrame.kind === "than") {
+        const oppositeComparatives: Record<string, string> = {
+          more: "less",
+          less: "more",
+          higher: "lower",
+          lower: "higher",
+          better: "worse",
+          worse: "better",
+          greater: "smaller",
+          smaller: "greater",
+        };
+
+        const sameAdj = thesisFrame.adj === claimFrame.adj;
+        const tLeft = norm(thesisFrame.left);
+        const tRight = norm(thesisFrame.right);
+        const cLeft = norm(claimFrame.left);
+        const cRight = norm(claimFrame.right);
+
+        // Opposite direction: swapped subjects OR inverted comparator (with same subjects)
+        if (
+          sameAdj &&
+          ((thesisFrame.comp === claimFrame.comp && tLeft === cRight && tRight === cLeft) ||
+            (oppositeComparatives[thesisFrame.comp] === claimFrame.comp &&
+              tLeft === cLeft &&
+              tRight === cRight))
+        ) {
+          return false;
+        }
+      }
+
+      if (thesisFrame.kind === "over" && claimFrame.kind === "over") {
+        const tLeft = norm(thesisFrame.left);
+        const tRight = norm(thesisFrame.right);
+        const cLeft = norm(claimFrame.left);
+        const cRight = norm(claimFrame.right);
+        if (tLeft === cRight && tRight === cLeft) {
+          return false;
+        }
+      }
+    }
+
     // Check 1: Both use the same positive evaluative framing
     if (hasAlignedEvalTerms(claim, thesis)) {
       debugLog("detectCounterClaim: Thesis-aligned (same eval terms)", {

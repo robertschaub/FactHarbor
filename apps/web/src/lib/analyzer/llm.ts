@@ -21,38 +21,99 @@ export interface ModelInfo {
   model: ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google> | ReturnType<typeof mistral>;
 }
 
+export type ModelTask = "understand" | "extract_facts" | "verdict" | "report";
+
+function normalizeProvider(raw: string): "anthropic" | "google" | "mistral" | "openai" {
+  const p = (raw || "").toLowerCase().trim();
+  if (p === "anthropic" || p === "claude") return "anthropic";
+  if (p === "google" || p === "gemini") return "google";
+  if (p === "mistral") return "mistral";
+  return "openai";
+}
+
+function isTieringEnabled(): boolean {
+  const v = (process.env.FH_LLM_TIERING ?? "off").toLowerCase().trim();
+  return v === "on" || v === "true" || v === "1" || v === "enabled";
+}
+
+function envModelOverrideForTask(task: ModelTask): string | null {
+  const key =
+    task === "understand"
+      ? "FH_MODEL_UNDERSTAND"
+      : task === "extract_facts"
+        ? "FH_MODEL_EXTRACT_FACTS"
+        : task === "verdict"
+          ? "FH_MODEL_VERDICT"
+          : "FH_MODEL_REPORT";
+  const v = process.env[key];
+  return v && v.trim() ? v.trim() : null;
+}
+
+function defaultModelNameForTask(provider: "anthropic" | "google" | "mistral" | "openai", task: ModelTask): string {
+  // Defaults are task-tiered (cheap/fast for extraction-ish steps, higher-quality for synthesis).
+  // They can be overridden per task via env vars.
+  switch (provider) {
+    case "anthropic":
+      return task === "verdict" || task === "report" ? "claude-sonnet-4-20250514" : "claude-3-5-haiku-20241022";
+    case "google":
+      return task === "verdict" || task === "report" ? "gemini-1.5-pro" : "gemini-1.5-flash";
+    case "mistral":
+      return task === "verdict" || task === "report" ? "mistral-large-latest" : "mistral-small-latest";
+    case "openai":
+    default:
+      return task === "verdict" || task === "report" ? "gpt-4o" : "gpt-4o-mini";
+  }
+}
+
+function buildModelInfo(provider: "anthropic" | "google" | "mistral" | "openai", modelName: string): ModelInfo {
+  if (provider === "anthropic") {
+    return { provider, modelName, model: anthropic(modelName) };
+  }
+  if (provider === "google") {
+    return { provider, modelName, model: google(modelName) };
+  }
+  if (provider === "mistral") {
+    return { provider, modelName, model: mistral(modelName) };
+  }
+  return { provider: "openai", modelName, model: openai(modelName) };
+}
+
 /**
  * Get the LLM model based on configuration
  */
 export function getModel(providerOverride?: string): ModelInfo {
-  const provider = (
-    providerOverride ??
-    process.env.LLM_PROVIDER ??
-    "anthropic"
-  ).toLowerCase();
+  const provider = normalizeProvider(providerOverride ?? process.env.LLM_PROVIDER ?? "anthropic");
+  // Preserve legacy single-model defaults.
+  const modelName =
+    provider === "anthropic"
+      ? "claude-sonnet-4-20250514"
+      : provider === "google"
+        ? "gemini-1.5-pro"
+        : provider === "mistral"
+          ? "mistral-large-latest"
+          : "gpt-4o";
+  return buildModelInfo(provider, modelName);
+}
 
-  if (provider === "anthropic" || provider === "claude") {
-    return {
-      provider: "anthropic",
-      modelName: "claude-sonnet-4-20250514",
-      model: anthropic("claude-sonnet-4-20250514"),
-    };
+/**
+ * Get an LLM model for a specific pipeline task.
+ *
+ * By default, tiering is OFF and this returns the same model as `getModel()`.
+ * Enable by setting `FH_LLM_TIERING=on` and optionally override per-task models:
+ * - `FH_MODEL_UNDERSTAND`
+ * - `FH_MODEL_EXTRACT_FACTS`
+ * - `FH_MODEL_VERDICT`
+ * - `FH_MODEL_REPORT` (reserved for future use)
+ */
+export function getModelForTask(task: ModelTask, providerOverride?: string): ModelInfo {
+  if (!isTieringEnabled()) {
+    return getModel(providerOverride);
   }
-  if (provider === "google" || provider === "gemini") {
-    return {
-      provider: "google",
-      modelName: "gemini-1.5-pro",
-      model: google("gemini-1.5-pro"),
-    };
-  }
-  if (provider === "mistral") {
-    return {
-      provider: "mistral",
-      modelName: "mistral-large-latest",
-      model: mistral("mistral-large-latest"),
-    };
-  }
-  return { provider: "openai", modelName: "gpt-4o", model: openai("gpt-4o") };
+
+  const provider = normalizeProvider(providerOverride ?? process.env.LLM_PROVIDER ?? "anthropic");
+  const overrideName = envModelOverrideForTask(task);
+  const modelName = overrideName ?? defaultModelNameForTask(provider, task);
+  return buildModelInfo(provider, modelName);
 }
 
 // ============================================================================

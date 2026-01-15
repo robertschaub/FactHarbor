@@ -917,7 +917,10 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
         </div>
 
         {articleAnalysis?.claimsAverageTruthPercentage !== undefined && (
-          <div className={styles.claimsAverageRow}>
+          <div
+            className={styles.claimsAverageRow}
+            title="Weighted average of direct claim verdicts (centrality × confidence); counter-claims are inverted; tangential claims are excluded."
+          >
             <span
               className={styles.claimsAverageLabel}
               title="Weighted average of direct claim verdicts (centrality × confidence); counter-claims are inverted; tangential claims are excluded."
@@ -1184,7 +1187,10 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
         </div>
 
         {articleAnalysis?.claimsAverageTruthPercentage !== undefined && (
-          <div className={styles.claimsAverageRow}>
+          <div
+            className={styles.claimsAverageRow}
+            title="Weighted average of direct claim verdicts (centrality × confidence); counter-claims are inverted; tangential claims are excluded."
+          >
             <span
               className={styles.claimsAverageLabel}
               title="Weighted average of direct claim verdicts (centrality × confidence); counter-claims are inverted; tangential claims are excluded."
