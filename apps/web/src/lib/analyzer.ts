@@ -64,6 +64,7 @@ import {
 } from "./analyzer/config";
 import { calculateWeightedVerdictAverage } from "./analyzer/aggregation";
 import { getModelForTask } from "./analyzer/llm";
+import { normalizeInputAtEntryPoint } from "./input-neutrality";
 import {
   detectAndCorrectVerdictInversion,
   detectCounterClaim,
@@ -512,111 +513,6 @@ Return:
   }
 
   return { updated: true, llmCalls: 1 };
-}
-
-function normalizeYesNoQuestionToStatement(input: string): string {
-  const trimmed = input.trim().replace(/\?+$/, "");
-
-  // Handle the common yes/no forms in a way that is stable and avoids bad grammar.
-  // Goal: "Was the X fair and based on Y?" -> "The X was fair and based on Y"
-  // NOTE: needsNormalizationEntry (entry point) checks a broader set of auxiliaries (did/do/does/has/have/had/can/...),
-  // so this function must also handle those; otherwise question vs statement inputs can diverge.
-  const m = trimmed.match(
-    /^(was|were|is|are|did|do|does|has|have|had|can|could|will|would|should|may|might)\s+(.+)$/i,
-  );
-  if (!m) {
-    return trimmed;
-  }
-
-  const aux = m[1].toLowerCase(); // was|were|is|are|did|do|does|has|have|had|can|could|will|would|should|may|might
-  const rest = m[2].trim();
-  if (!rest) return trimmed;
-
-  // Prefer splitting on a clear subject boundary (parentheses / comma) when present.
-  const lastParen = rest.lastIndexOf(")");
-  if (lastParen > 0 && lastParen < rest.length - 1) {
-    const subject = rest.slice(0, lastParen + 1).trim();
-    const predicate = rest.slice(lastParen + 1).trim();
-    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
-    const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-    return out;
-  }
-
-  const commaIdx = rest.indexOf(",");
-  if (commaIdx > 0 && commaIdx < rest.length - 1) {
-    const subject = rest.slice(0, commaIdx).trim();
-    const predicate = rest.slice(commaIdx + 1).trim();
-    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
-    const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-    return out;
-  }
-
-  // Heuristic: split before common predicate starters.
-  // Keep this generic (no domain-specific terms) but broad enough to handle common yes/no question shapes:
-  // - evaluation adjectives ("fair", "true", ...)
-  // - common verbs ("cause", "increase", ...)
-  const predicateStarters = [
-    "fair",
-    "true",
-    "false",
-    "accurate",
-    "correct",
-    "legitimate",
-    "legal",
-    "valid",
-    "based",
-    "justified",
-    "reasonable",
-    "biased",
-    // generic verb starters (helps convert "Did/Does/Can X cause Y?" -> "X did/does/can cause Y")
-    "cause",
-    "causes",
-    "caused",
-    "increase",
-    "increases",
-    "increased",
-    "decrease",
-    "decreases",
-    "decreased",
-    "improve",
-    "improves",
-    "improved",
-    "reduce",
-    "reduces",
-    "reduced",
-    "prevent",
-    "prevents",
-    "prevented",
-    "lead",
-    "leads",
-    "led",
-    "result",
-    "results",
-    "resulted",
-  ];
-  const starterRe = new RegExp(`\\b(${predicateStarters.join("|")})\\b`, "i");
-  const starterMatch = rest.match(starterRe);
-  if (starterMatch && typeof starterMatch.index === "number" && starterMatch.index > 0) {
-    const subject = rest.slice(0, starterMatch.index).trim();
-    const predicate = rest.slice(starterMatch.index).trim();
-    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
-    if (subject && predicate) {
-      const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-      return out;
-    }
-  }
-
-  // Fallback: don't guess a subject/predicate split; keep the remainder intact and use a stable grammatical form.
-  // For copulas (is/are/was/were), "It <aux> the case that …" is grammatical.
-  // For other auxiliaries, avoid "It do/has/can the case that …" and instead keep meaning with "It is the case that …".
-  const copulas = new Set(["is", "are", "was", "were"]);
-  const out = copulas.has(aux)
-    ? `It ${aux} the case that ${rest}`
-    : `It is the case that ${rest}`;
-  // Preserve modality/tense as much as possible by not dropping content; we only normalize the question form.
-  // (We intentionally do NOT attempt complex verb conjugation.)
-  const normalized = out.replace(/\s+/g, " ").trim();
-  return normalized;
 }
 
 /**
@@ -2884,27 +2780,16 @@ async function understandClaim(
   // EARLY INPUT NORMALIZATION: Normalize yes/no phrasing to a statement BEFORE LLM call
   // This ensures equivalent phrasings follow the same analysis path
   // =========================================================================
-  const trimmedInputRaw = input.trim();
-  const needsNormalization =
-    trimmedInputRaw.endsWith("?") ||
-    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(
-      trimmedInputRaw,
-    );
-
-  // Preserve original input for UI display, normalize for analysis
-  const originalInputDisplay = trimmedInputRaw;
-  const normalizedInput = needsNormalization
-    ? normalizeYesNoQuestionToStatement(trimmedInputRaw)
-    : trimmedInputRaw;
+  const { originalInputDisplay, normalizedInputValue, needsNormalization } = normalizeInputAtEntryPoint(input);
 
   if (needsNormalization) {
     console.log(`[Analyzer] Input Neutrality: normalized to statement BEFORE LLM call`);
-    console.log(`[Analyzer]   Original: "${trimmedInputRaw.substring(0, 100)}..."`);
-    console.log(`[Analyzer]   Normalized: "${normalizedInput.substring(0, 100)}..."`);
+    console.log(`[Analyzer]   Original: "${originalInputDisplay.substring(0, 100)}..."`);
+    console.log(`[Analyzer]   Normalized: "${normalizedInputValue.substring(0, 100)}..."`);
   }
 
   // Use normalizedInput for all analysis from this point forward
-  const analysisInput = normalizedInput;
+  const analysisInput = normalizedInputValue;
 
   // Safety: extremely long article/PDF inputs can cause provider hangs or excessive prompt sizes.
   // We keep analysis logic consistent, but cap what we send to the Step 1 LLM call.
@@ -7723,26 +7608,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // Normalize yes/no phrasing to statements BEFORE any analysis begins
   // The original input is preserved only for UI display (originalInputDisplay)
   // ==========================================================================
-  const rawInputValue = input.inputValue.trim();
-  const needsNormalizationEntry =
-    rawInputValue.endsWith("?") ||
-    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(rawInputValue);
-
-  // Normalize to statement form for ALL analysis
-  // Also strip trailing period from statements to ensure identical text for both input phrasings
-  let normalizedInputValue = needsNormalizationEntry
-    ? normalizeYesNoQuestionToStatement(rawInputValue)
-    : rawInputValue;
-
-  // CRITICAL: Remove trailing period from ALL inputs for exact text matching
-  // This ensures "Was X fair?" -> "X was fair" matches "X was fair." -> "X was fair"
-  normalizedInputValue = normalizedInputValue.replace(/\.+$/, "").trim();
-
-  // Store original input for UI display (will be set in understanding.originalInputDisplay)
-  const originalInputDisplay = rawInputValue;
+  const { originalInputDisplay, normalizedInputValue } = normalizeInputAtEntryPoint(input.inputValue);
 
   console.log(`[Analyzer] v2.6.26 Input Neutrality: Entry point normalization`);
-  console.log(`[Analyzer]   Original: "${rawInputValue.substring(0, 100)}"`);
+  console.log(`[Analyzer]   Original: "${originalInputDisplay.substring(0, 100)}"`);
   console.log(`[Analyzer]   Normalized: "${normalizedInputValue.substring(0, 100)}"`);
   // normalizedInputValue is now the canonical form for all analysis paths
 
