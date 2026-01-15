@@ -2587,6 +2587,59 @@ function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; cen
   const thesisIsAboutLegalProceeding =
     /\b(trial|judgment|ruling|proceeding|verdict|sentence|conviction|case)\b/.test(thesisLower) &&
     /\b(fair|lawful|legal|constitutional|based\s+on\s+law|proper)\b/.test(thesisLower);
+  const STOP_WORDS = new Set([
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "but",
+    "of",
+    "to",
+    "in",
+    "on",
+    "for",
+    "with",
+    "at",
+    "by",
+    "from",
+    "as",
+    "into",
+    "than",
+    "over",
+    "under",
+    "using",
+    "use",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "this",
+    "that",
+    "these",
+    "those",
+  ]);
+  const tokenize = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ")
+      .split(/\s+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 3 && !STOP_WORDS.has(t));
+  const overlapRatio = (a: string, b: string): number => {
+    const aTokens = tokenize(a);
+    const bTokens = tokenize(b);
+    if (aTokens.length === 0 || bTokens.length === 0) return 0;
+    const aSet = new Set(aTokens);
+    const bSet = new Set(bTokens);
+    let inter = 0;
+    for (const t of aSet) if (bSet.has(t)) inter++;
+    const denom = Math.min(aSet.size, bSet.size);
+    return denom > 0 ? inter / denom : 0;
+  };
 
   for (const claim of claims as any[]) {
     const raw = String(claim?.thesisRelevance || "direct").trim();
@@ -2603,6 +2656,20 @@ function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; cen
         debugLog("enforceThesisRelevanceInvariants: Foreign response claim → tangential", {
           claimText: claimText.slice(0, 80),
           thesis: thesisLower.slice(0, 80),
+        });
+      }
+    }
+
+    // If a claim substantially overlaps the thesis text, it should be direct (not tangential).
+    if (thesisRelevance === "tangential") {
+      const claimText = String(claim?.text || "");
+      const overlap = overlapRatio(claimText, thesisLower);
+      if (overlap >= 0.5) {
+        thesisRelevance = "direct";
+        debugLog("enforceThesisRelevanceInvariants: High overlap → direct", {
+          claimText: claimText.slice(0, 80),
+          thesis: thesisLower.slice(0, 80),
+          overlap,
         });
       }
     }
