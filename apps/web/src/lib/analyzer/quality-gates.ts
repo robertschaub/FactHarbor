@@ -324,6 +324,76 @@ export function validateVerdictGate4(
 // ============================================================================
 
 /**
+ * Apply Gate 1 Lite (minimal pre-filter) to claims BEFORE research.
+ *
+ * Only filters EXTREME cases that are obviously non-factual:
+ * - Future predictions ("will happen", "going to")
+ * - Strong opinion language ("I think", "I believe")
+ * - checkWorthiness="low"
+ *
+ * This preserves supplemental claims coverage detection while preventing
+ * wasted research on obvious non-factual content.
+ *
+ * Full Gate 1 validation is applied POST-research for final verdict filtering.
+ *
+ * IMPORTANT: Central claims are NEVER filtered
+ */
+export function applyGate1Lite<T extends { id: string; text: string; checkWorthiness: string; isCentral: boolean }>(
+  claims: T[]
+): {
+  filteredClaims: T[];
+  stats: { total: number; passed: number; filtered: number; centralKept: number };
+} {
+  const filteredClaims: T[] = [];
+  let centralKept = 0;
+
+  for (const claim of claims) {
+    // Central claims always pass
+    if (claim.isCentral) {
+      filteredClaims.push(claim);
+      continue;
+    }
+
+    // Filter low checkWorthiness
+    if (claim.checkWorthiness === "low") {
+      console.log(`[Gate1-Lite] Filtered low checkWorthiness: "${claim.id}"`);
+      continue;
+    }
+
+    // Filter obvious future predictions
+    if (FUTURE_MARKERS.some(pattern => pattern.test(claim.text))) {
+      console.log(`[Gate1-Lite] Filtered future prediction: "${claim.id}"`);
+      continue;
+    }
+
+    // Filter obvious strong opinions
+    const strongOpinionPatterns = [
+      /\bi\s+think\b/i,
+      /\bi\s+believe\b/i,
+      /\bin\s+my\s+(view|opinion)\b/i,
+    ];
+    if (strongOpinionPatterns.some(pattern => pattern.test(claim.text))) {
+      console.log(`[Gate1-Lite] Filtered strong opinion: "${claim.id}"`);
+      continue;
+    }
+
+    // Pass everything else
+    filteredClaims.push(claim);
+  }
+
+  const stats = {
+    total: claims.length,
+    passed: filteredClaims.length,
+    filtered: claims.length - filteredClaims.length,
+    centralKept,
+  };
+
+  console.log(`[Gate1-Lite] Minimal pre-filter: ${stats.passed}/${stats.total} passed, ${stats.filtered} filtered`);
+
+  return { filteredClaims, stats };
+}
+
+/**
  * Apply Gate 1 validation to all claims and filter non-factual ones
  * IMPORTANT: Central claims are never filtered, only flagged
  */

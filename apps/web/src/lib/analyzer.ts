@@ -41,7 +41,7 @@ import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
-import { applyGate1ToClaims, applyGate4ToVerdicts } from "./analyzer/quality-gates";
+import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts } from "./analyzer/quality-gates";
 import { normalizeSubClaimsImportance } from "./claim-importance";
 import * as fs from "fs";
 import * as path from "path";
@@ -3951,27 +3951,22 @@ Now analyze the input and output JSON only.`;
     };
   });
 
-  // Filter out claims with low checkWorthiness - they should not be investigated or displayed
-  const filteredClaims = claimsWithPositions.filter((claim: any) => {
-    if (claim.checkWorthiness === "low") {
-      console.log(`[Analyzer] Excluding claim "${claim.id}" with low checkWorthiness: "${claim.text.slice(0, 50)}..."`);
-      return false;
-    }
-    return true;
-  });
+  // Apply Gate 1 Lite: Minimal pre-filter BEFORE research (PR 4-lite: Pipeline Redesign)
+  // Only filters extreme non-factual cases (predictions, strong opinions, low checkWorthiness)
+  // Preserves supplemental claims coverage detection by keeping realistic claim counts
+  // Full Gate 1 validation is applied POST-research for final verdict filtering
+  const { filteredClaims: gate1LiteClaims, stats: gate1LiteStats } = applyGate1Lite(claimsWithPositions);
+  console.log(`[Analyzer] Gate 1 Lite (pre-research): ${gate1LiteStats.passed}/${gate1LiteStats.total} claims passed minimal filter, ${gate1LiteStats.filtered} extreme cases filtered`);
 
-  console.log(`[Analyzer] Filtered ${claimsWithPositions.length - filteredClaims.length} claims with low checkWorthiness, ${filteredClaims.length} remaining`);
-
-  // Apply Gate 1: Claim Validation (filter opinions, predictions, low-specificity claims)
-  // CRITICAL: Central claims are NEVER filtered, only flagged for review
-  const { validatedClaims, stats: gate1Stats } = applyGate1ToClaims(filteredClaims);
-  console.log(`[Analyzer] Gate 1 applied: ${gate1Stats.passed}/${gate1Stats.total} claims passed, ${gate1Stats.centralKept} central claims kept despite issues`);
+  // Note: Full Gate 1 validation happens POST-research, before verdict generation
+  // This ensures supplemental claims logic sees realistic counts (not over-filtered)
+  const validatedClaims = gate1LiteClaims;
 
   // Pass thesis to detect foreign response claims that should be tangential
   const thesis = parsed.impliedClaim || parsed.articleThesis || analysisInput;
   const claimsWithThesisRelevanceInvariant = enforceThesisRelevanceInvariants(validatedClaims as any, thesis);
   const claimsPolicyB = applyThesisRelevancePolicyBToSubClaims(claimsWithThesisRelevanceInvariant as any);
-  return { ...parsed, subClaims: claimsPolicyB, gate1Stats };
+  return { ...parsed, subClaims: claimsPolicyB, gate1Stats: gate1LiteStats };
 }
 
 async function requestSupplementalSubClaims(
