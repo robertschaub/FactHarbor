@@ -42,6 +42,7 @@ import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
 import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts } from "./analyzer/quality-gates";
+import { filterFactsByProvenance } from "./analyzer/provenance-validation";
 import { normalizeSubClaimsImportance } from "./claim-importance";
 import * as fs from "fs";
 import * as path from "path";
@@ -2969,6 +2970,9 @@ async function understandClaim(
   // =========================================================================
   const trimmedInputRaw = input.trim();
 
+  // Store original input for UI display (before any normalization)
+  const originalInputDisplay = trimmedInputRaw;
+
   // CONTRACT ASSERTION: Input should already be normalized by caller.
   // In development/test mode, warn if input looks like a question (indicates contract violation).
   if (process.env.NODE_ENV !== "production") {
@@ -5296,7 +5300,8 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       });
     }
 
-    return filteredFacts.map((f, i) => ({
+    // Map facts with provenance metadata
+    const factsWithProvenance = filteredFacts.map((f, i) => ({
         id: `${source.id}-F${i + 1}`,
         fact: f.fact,
         category: f.category,
@@ -5311,6 +5316,18 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
         claimDirection: f.claimDirection,
         fromOppositeClaimSearch: fromOppositeClaimSearch || false,
       }));
+
+    // Apply Ground Realism gate (PR 5): Facts must have real sources, not LLM synthesis
+    // Only validate if enabled via environment flag (default: enabled)
+    const provenanceValidationEnabled = process.env.FH_PROVENANCE_VALIDATION_ENABLED !== "false";
+
+    if (provenanceValidationEnabled && factsWithProvenance.length > 0) {
+      const { validFacts, stats } = filterFactsByProvenance(factsWithProvenance);
+      console.log(`[Analyzer] Provenance validation for ${source.id}: ${stats.valid}/${stats.total} facts have valid provenance, ${stats.invalid} rejected`);
+      return validFacts;
+    }
+
+    return factsWithProvenance;
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     debugLog(`extractFacts: ERROR for ${source.id}`, {
