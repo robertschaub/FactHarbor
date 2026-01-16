@@ -202,7 +202,7 @@ export function convertToFetchedSources(
     url: source.url,
     title: source.title,
     fullText: source.snippet || result.groundedResponse, // Use snippet or full response as context
-    trackRecordScore: 50, // Default score - will be overridden by source reliability bundle
+    trackRecordScore: 0.5, // Default score (0-1 scale) - will be overridden by source reliability bundle
     fetchedAt: new Date().toISOString(),
     category: "grounded_search",
     fetchSuccess: true,

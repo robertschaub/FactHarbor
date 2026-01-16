@@ -1721,6 +1721,62 @@ function calculateTruthPercentage(
 
 
 /**
+ * Normalize trackRecordScore to 0-1 range (PR-C: fix for Blocker C)
+ *
+ * Handles both 0-1 and 0-100 scales defensively.
+ * CRITICAL FIX: Grounded search was setting scores as 50/60 (0-100 scale)
+ * but analyzer expects 0-1 scale, causing invalid math (5000% truth values).
+ *
+ * @param score - Track record score in either 0-1 or 0-100 scale
+ * @returns Normalized score in 0-1 range
+ */
+function normalizeTrackRecordScore(score: number): number {
+  // Handle invalid values
+  if (!Number.isFinite(score)) {
+    console.warn(`[Analyzer] Invalid trackRecordScore: ${score}, defaulting to 0.5`);
+    return 0.5;
+  }
+
+  // If score > 1, assume it's on 0-100 scale and convert
+  if (score > 1) {
+    console.warn(
+      `[Analyzer] trackRecordScore > 1 detected (${score}), converting from 0-100 scale to 0-1`
+    );
+    score = score / 100;
+  }
+
+  // Clamp to [0, 1] range
+  return Math.max(0, Math.min(1, score));
+}
+
+
+/**
+ * Clamp truth percentage to valid [0, 100] range (PR-C: defensive safety)
+ *
+ * Prevents mathematically invalid verdict outputs that can occur from
+ * incorrect trackRecordScore scaling or weighting calculations.
+ *
+ * @param value - Calculated truth percentage
+ * @returns Clamped value in [0, 100] range
+ */
+function clampTruthPercentage(value: number): number {
+  if (!Number.isFinite(value)) {
+    console.error(`[Analyzer] Non-finite truthPercentage: ${value}, clamping to 50`);
+    return 50;
+  }
+
+  if (value < 0 || value > 100) {
+    console.error(
+      `[Analyzer] truthPercentage out of bounds: ${value}, clamping to [0, 100]`
+    );
+    return Math.max(0, Math.min(100, value));
+  }
+
+  return value;
+}
+
+
+/**
  * Map truth percentage to 7-point claim verdict
  * @param truthPercentage - The truth percentage (0-100)
  * @param confidence - Optional confidence score (0-100). Used to distinguish MIXED from UNVERIFIED in 43-57% range.
@@ -8115,7 +8171,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             url: "gemini-grounded-search",
             title: `Grounded Search: ${decision.focus}`,
             fullText: groundedResult.groundedResponse,
-            trackRecordScore: 60, // Moderate trust for AI-synthesized content
+            trackRecordScore: 0.6, // Moderate trust (0-1 scale) for AI-synthesized content
             fetchedAt: new Date().toISOString(),
             category: "grounded_search",
             fetchSuccess: true,
