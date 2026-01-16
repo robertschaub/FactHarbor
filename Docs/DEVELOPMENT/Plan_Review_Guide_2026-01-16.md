@@ -14,7 +14,27 @@ This plan addresses **critical bugs** in the FactHarbor analysis pipeline that c
 3. **Reduced claim generation**: 4-6 claims vs 10-12 in earlier runs
 4. **Verdict inconsistency**: Identical inputs produce different results between runs
 
-The root cause is **excessive pipeline complexity** (15+ LLM calls, fragile state management). The plan proposes a **4-phase migration** to a simplified architecture with 57% cost reduction and 56% latency improvement.
+The root cause is **excessive pipeline complexity** (15+ LLM calls, fragile state management). The plan proposes a **5-phase migration** (Phase 1-5) to a simplified architecture with ~57% cost reduction and ~56% latency improvement.
+
+> **Note on code references**: This document (and the plan) mention line numbers as a convenience, but they can drift quickly as `analyzer.ts` evolves. Reviewers should prefer searching by **function name** (e.g., `runFactHarborAnalysis`, `understandClaim`, `selectFactsForScopeRefinementPrompt`, `canonicalizeScopes`, `pruneScopesByCoverage`) and confirm behavior in the current `main` branch.
+
+## Second/Third Reviewer Protocol (recommended)
+
+If you are running a subsequent review (e.g., using GPT-4 or another agent), keep it **independent** and **evidence-based**:
+
+1.  **Role**: Act as a **skeptical auditor**. Assume the proposed "Unified" architecture will break evidence integrity until proven otherwise.
+2.  **Independence**: Do an initial pass *without* reading the first reviewer’s notes. Only reconcile at the end.
+3.  **Focus Areas for GPT-4**:
+    - **Tool-calling realism**: Can a single prompt reliably manage recursive search without losing structured data?
+    - **Budgeting**: Is the proposed cost model realistic for high-traffic scenarios?
+    - **Invariants**: Will the "Monolithic" call preserve the "Understand -> Research -> Verdict" sequence required by `AGENTS.md`?
+4.  **Verification**:
+    - Validate root causes with code inspection (function-name anchored).
+    - Check for "hallucinated" cost savings—are we trading LLM calls for much more expensive input tokens?
+5.  **Deliverable format**: Provide a short report with:
+    - **Top 5 risks** (ranked)
+    - **Top 5 proposed fixes** (actionable, with rationale)
+    - **Go/No-Go criteria** for Phase 4 (unified orchestration)
 
 ---
 
@@ -65,7 +85,7 @@ The plan is organized into 9 parts:
 3. **Desired Architecture** (Part 3): 3 options with trade-offs
 4. **Complexity Audit** (Part 4): Identify removable code (~1800 LOC)
 5. **Performance & Cost** (Part 5): Current vs optimized metrics
-6. **Migration Plan** (Part 6): 4 phases with testing criteria
+6. **Migration Plan** (Part 6): Phases 1-5 with testing criteria
 7. **Risk Assessment** (Part 7): Current vs desired architecture risks
 8. **Provider-Agnostic Design** (Part 8): Abstraction layer for multi-LLM support
 9. **Success Metrics** (Part 9): Measurable targets for each phase
@@ -73,6 +93,18 @@ The plan is organized into 9 parts:
 ---
 
 ## Key Technical Decisions to Review
+
+### Decision 0: Rewrite vs. Evolution Strategy
+
+**Proposed**: **Evolve the existing pipeline** for Phase 1–3, and **rewrite selectively** behind adapters/flags when components are small, interface-bound, and testable.
+
+- **Why**: The core pipeline is tightly coupled to repo invariants (pipeline integrity, input neutrality, scope semantics, Gate 1 + Gate 4). Large rewrites tend to regress these invariants.
+- **What to selectively rewrite** (good candidates):
+  - deterministic scope IDs (replace similarity → canonicalized hash)
+  - a deterministic regression harness (neutrality/scope/claim stability metrics)
+  - provider/tool search adapters (with strict budgets/caps and fallbacks)
+
+**Review Question**: Do we agree to avoid a full rewrite and instead use a “strangler” approach (parallel run + feature flags + regression harness) for any rewritten components?
 
 ### Decision 1: Architecture Option Selection
 
@@ -86,19 +118,19 @@ The plan is organized into 9 parts:
 - Option B (Hybrid Pipeline): Simplified 3-stage with optional LLM search
 - Option C (Minimal Changes): Fix bugs, keep existing architecture
 
-**Review Question**: Is the 57% cost/speed improvement worth the risk of provider lock-in? (Mitigated by fallback to Option B)
+**Review Question**: Is the 57% cost/speed improvement worth the risk of **capability dependence** (tool calling / structured output / native search availability)? (Mitigated by a hard fallback to Option B.)
 
 ### Decision 2: Scope Detection Preservation
 
 **Proposed**: Guarantee ≥1 fact per pre-assigned scope in refinement prompt
-- Current fix at lines 754-760 of `analyzer.ts` is good
+- Current fix in `selectFactsForScopeRefinementPrompt` is directionally good
 - Prevents TSE/STF contexts from disappearing during fact sampling
 
 **Review Question**: Is this sufficient, or do we need additional backstops?
 
 ### Decision 3: Gate1 Timing
 
-**Proposed**: Move Gate1 from pre-research (line 3874) to post-research (line 8296)
+**Proposed**: Move Gate1 from pre-research to post-research
 - Don't filter claims before searching for evidence
 - Apply Gate1 after facts extracted
 
@@ -106,7 +138,7 @@ The plan is organized into 9 parts:
 
 ### Decision 4: Scope ID Stabilization
 
-**Proposed**: Replace text similarity (lines 769-836) with deterministic hash
+**Proposed**: Replace scope text similarity with deterministic hash
 - `hash(name + subject + temporal)` instead of Jaccard similarity
 - Stable IDs across question/statement inputs
 
@@ -294,6 +326,19 @@ The plan is organized into 9 parts:
 
 **Why not chosen**: Too risky, plan offers incremental path with rollback
 
+### Alternative 4: Selective Rewrites Only (No Unified Pipeline)
+
+**Pros**:
+- Lower risk than a full rewrite
+- Targets known failure points (determinism, sampling, query drift)
+- Keeps existing observability and safety gates
+
+**Cons**:
+- May not achieve the full cost/latency improvements of Option A
+- Some complexity remains in the orchestration layer
+
+**Why not chosen**: Selected as a **tactic** within Phase 1–3 (selective rewrites behind flags), but not sufficient alone to reach long-term maintainability targets.
+
 ### Alternative 3: Focus Only on Critical Bugs
 
 **Pros**:
@@ -312,13 +357,20 @@ The plan is organized into 9 parts:
 
 ## Success Criteria for Plan Approval
 
-1. **Input Neutrality**: Achieve < 5% verdict divergence (currently 7-39%)
-2. **Scope Detection**: Detect 95%+ of distinct contexts (currently ~80%)
-3. **Cost**: Reduce to < $0.50 per analysis (currently $1.50-2.50)
-4. **Latency**: Achieve p95 < 45s (currently ~70s)
+1. **Input Neutrality**: Achieve < 5 points average absolute divergence between question/statement paired inputs (and define p95 target)
+2. **Scope Detection**: Detect 95%+ of distinct contexts (with an explicit definition of “context recall” and an evaluation set)
+3. **Cost**: Reduce to < $0.50 per analysis (with a documented cost model + measured call/token counts)
+4. **Latency**: Achieve p95 < 45s
 5. **Quality**: Maintain or improve verdict accuracy (no regression)
 
 **Review Question**: Are these the right metrics? What else should we measure?
+
+### Metric Definitions (recommended to adopt before Phase 1 testing)
+
+- **Input neutrality divergence**: For each question/statement pair, compute the absolute difference in final article truth percentage. Report avg/median/p95 across the suite.
+- **Scope stability**: Compare scope count and scope type distribution; track “scope dropped after refinement/pruning” events.
+- **Claim stability**: Jaccard overlap on normalized claim texts (or embedding match if available); report avg/median/p95.
+- **Cost**: Report `state.llmCalls`, token usage (if available), and estimated cost by provider price table.
 
 ---
 
@@ -352,7 +404,7 @@ The plan is organized into 9 parts:
 ### Critical Questions
 
 1. **Input Neutrality**: Is < 5% divergence sufficient, or should we target < 3%?
-2. **Migration Strategy**: Phase all 4 steps, or can we skip Phase 2/3 and go straight to Phase 4?
+2. **Migration Strategy**: Execute all phases (1-5), or can we skip Phase 2/3 and go straight to Phase 4?
 3. **Provider Strategy**: Should we support Gemini-only initially, or maintain multi-provider from day 1?
 4. **Rollback Plan**: Is feature flag sufficient, or do we need database versioning?
 
@@ -378,8 +430,8 @@ The plan is organized into 9 parts:
 
 | File | Lines | Key Sections |
 |------|-------|--------------|
-| `analyzer.ts` | 8500 | Entry normalization (7808-7821), Understand (2969-3950), Research (4488-4700), Verdict (5400-5700) |
-| `verdict-corrections.ts` | 589 | Counter-claim detection (155-220), Verdict inversion (82-150) |
+| `analyzer.ts` | ~8500 | `runFactHarborAnalysis` (entry normalization + orchestration), `understandClaim`, research loop, verdict generation |
+| `verdict-corrections.ts` | ~589 | `detectCounterClaim`, `detectAndCorrectVerdictInversion` |
 | `aggregation.ts` | - | Weighted averaging, de-duplication |
 | `scopes.ts` | - | Canonicalization (lines referenced in plan) |
 
@@ -389,7 +441,7 @@ The plan is organized into 9 parts:
 |----------|---------|----------|
 | `FH_USE_UNIFIED_PIPELINE` | - | `false` (Phase 4 flag) |
 | `FH_FORCE_EXTERNAL_SEARCH` | - | `false` (Phase 3 override) |
-| `LLM_PROVIDER` | `anthropic` | `google` (for Phase 3 grounded search) |
+| `LLM_PROVIDER` | `anthropic` | `google` (only if enabling Gemini grounded search in Phase 3; otherwise unchanged) |
 
 ---
 

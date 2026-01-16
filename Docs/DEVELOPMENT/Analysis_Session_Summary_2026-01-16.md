@@ -19,11 +19,13 @@ Investigated reported issues with the FactHarbor analysis pipeline:
 - Verdict inconsistency between runs
 
 **Root Causes Identified**:
-1. **Triple normalization cascade**: Entry (line 7816) → Understand (line 2979) → Canonicalize (line 3833)
+1. **Triple normalization cascade**: Entry normalization → secondary normalization in `understandClaim` → downstream canonicalization
 2. **Non-deterministic scope IDs**: Text similarity causes drift
 3. **Fact sampling loses contexts**: Top-40 sampling may exclude entire scopes
 4. **Gate1 pre-filters claims**: Reduces research targets before evidence collection
 5. **LLM-dependent queries**: Research depends on variable `impliedClaim`
+
+> **Note**: Line numbers drift quickly as `analyzer.ts` evolves. Prefer searching by function name (e.g., `runFactHarborAnalysis`, `understandClaim`, `canonicalizeScopes`, `selectFactsForScopeRefinementPrompt`).
 
 ### 2. Documentation Review
 
@@ -40,7 +42,7 @@ Investigated reported issues with the FactHarbor analysis pipeline:
 - Current architecture uses 5-stage pipeline (Understand → Research → Verdict → Summary → Report)
 - 15-25 LLM calls per analysis
 - Multi-provider support (Anthropic, OpenAI, Google, Mistral)
-- Input neutrality is a documented requirement (< 5% divergence target)
+- Input neutrality is a documented requirement (target: < 5 points average absolute divergence for question/statement pairs; define p95)
 - Scope detection critical for multi-context analyses (legal proceedings, methodologies)
 
 ### 3. Architectural Analysis
@@ -96,18 +98,20 @@ Input → Normalize (1×) → Unified LLM (with tool calling for search) → Out
 - Deterministic scope IDs
 - Scope preservation verification
 - Gate1 post-research
-- **Testing**: 20 Q/S pairs, target < 5% divergence
+- Add a deterministic regression harness (neutrality divergence, scope stability, claim stability, cost/latency)
+- **Testing**: 20 Q/S pairs + known multi-scope regressions; target avg divergence < 5 points (define p95)
 
 **Phase 2** (Week 3-4): Simplification
 - Merge understand + supplemental
-- Remove scope pruning
-- Simplify deduplication
+- Replace scope pruning with deterministic pruning (only prune scopes with zero assigned claims AND zero assigned facts)
+- Make scope deduplication type-aware/evidence-aware (avoid cross-type merges)
 - **Testing**: 50 diverse inputs, claim count validation
 
 **Phase 3** (Week 5-6): LLM-native search
 - Implement Gemini Grounded Search
 - Add Perplexity support
 - Fallback to external search
+- Add explicit guardrails/budgets for tool-assisted search to prevent runaway behavior
 - **Testing**: A/B test 100 analyses
 
 **Phase 4** (Week 7-10): Unified architecture
@@ -115,6 +119,7 @@ Input → Normalize (1×) → Unified LLM (with tool calling for search) → Out
 - Implement orchestrator
 - Parallel pipelines
 - Gradual rollout (10% → 50% → 100%)
+- Add a clear go/no-go gate before rollout (neutrality + scope stability targets met)
 - **Testing**: Regression suite 100 inputs
 
 **Phase 5** (Week 11-12): Deprecation
@@ -168,7 +173,7 @@ async function runUnifiedAnalysis(
 
 | Metric | Current | Phase 1 | Phase 4 | Target |
 |--------|---------|---------|---------|--------|
-| **Input Neutrality** | 7-39% | < 10% | < 3% | < 5% |
+| **Input Neutrality (avg abs diff, points)** | 7-39 | < 10 | < 3 | < 5 |
 | **Scope Recall** | ~80% | > 90% | > 95% | > 95% |
 | **Cost** (GPT-4) | $2.00 | $1.50 | $0.86 | < $0.50 |
 | **Latency** (p95) | 70s | 60s | 40s | < 45s |
@@ -181,38 +186,15 @@ async function runUnifiedAnalysis(
 ### 1. Plan Document
 **File**: `Docs/DEVELOPMENT/Pipeline_Redesign_Plan_2026-01-16.md`
 
-**Sections**:
-- Part 1: Root Cause Analysis (5 issues with code citations)
-- Part 2: Input Type Taxonomy (requirements matrix)
-- Part 3: Desired Architecture (3 options with trade-offs)
-- Part 4: Complexity Audit (removable code identification)
-- Part 5: Performance & Cost Optimization
-- Part 6: Migration Plan (4 phases with testing)
-- Part 7: Risk Assessment
-- Part 8: Provider-Agnostic Design
-- Part 9: Success Metrics
-
-**TODOs**: 15 todos across 4 phases with dependencies
-
 ### 2. Reviewer Guide
 **File**: `Docs/DEVELOPMENT/Plan_Review_Guide_2026-01-16.md`
+- **Updated**: Added a specialized "Skeptical Auditor" protocol for subsequent reviewers (e.g., GPT-4).
 
-**Sections**:
-- Executive Summary
-- Background Context
-- Plan Structure Overview
-- Key Technical Decisions
-- Migration Risk Assessment
-- Critical Review Points
-- Testing Strategy Review
-- Estimated Timeline
-- Alternatives Not Chosen
-- Success Criteria
-- Reviewer Action Items
-- Questions for Reviewers
-- Appendix (code locations, env vars)
+### 3. Deep Review Report (Skeptical Analysis)
+**File**: `Docs/DEVELOPMENT/Pipeline_Redesign_Deep_Review_Report_2026-01-16.md`
+- **New Section**: "Skeptical Second Review" documenting Top 5 Risks (Evidence Loss, Runaway Research, Context Leakage, Progress Tracking Blindness, Provider Capability Drift), Top 5 Fixes (Atomic Tooling, Budget-Aware Wrappers, etc.), and strict Phase 4 Go/No-Go criteria.
 
-### 3. Session Summary (This Document)
+### 4. Session Summary (This Document)
 **File**: `Docs/DEVELOPMENT/Analysis_Session_Summary_2026-01-16.md`
 
 ---
@@ -222,7 +204,7 @@ async function runUnifiedAnalysis(
 ### Agent Context Retained
 
 1. **Issue History**: All reported job IDs with specific verdicts documented
-2. **Code Analysis**: Line numbers for critical sections (normalization, scope detection, verdict)
+2. **Code Analysis**: Key function-name anchors for critical sections (normalization, scope detection, verdict) with approximate line references
 3. **Architecture Understanding**: AKEL pipeline, data models, aggregation hierarchy
 4. **Documentation State**: All key docs reviewed and incorporated
 5. **Testing Context**: Previous test results (v2.6.23-v2.6.25 input neutrality fixes)
@@ -253,7 +235,7 @@ async function runUnifiedAnalysis(
 2. ✅ Reviewer guide created
 3. ✅ Session summary created
 4. ✅ All documentation reviewed
-5. ✅ TODOs completed
+5. ✅ TODOs defined (execution pending)
 
 ### After Review Approval
 
@@ -280,15 +262,16 @@ async function runUnifiedAnalysis(
 **Branch**: `main`
 
 **Commits Applied** (ready for use):
-- `50a41ac`: fix(scopes): keep per-context facts in refinement prompt
-- `46f01b9`: fix(thesis): keep overlapping claims direct
+- Existing fixes already on `main` that align with Phase 1 goals include:
+  - fix(scopes): keep per-context facts in refinement prompt
+  - fix(thesis): keep overlapping claims direct
 
 **Files Modified** (in plan creation, not code changes):
 - `Docs/DEVELOPMENT/Pipeline_Redesign_Plan_2026-01-16.md` (new)
 - `Docs/DEVELOPMENT/Plan_Review_Guide_2026-01-16.md` (new)
 - `Docs/DEVELOPMENT/Analysis_Session_Summary_2026-01-16.md` (new)
 
-**No code changes were made** - this was a planning and analysis session only.
+**No new code changes were made during this analysis session** (beyond documentation). The session referenced existing fixes already present on `main`.
 
 ---
 
@@ -297,7 +280,7 @@ async function runUnifiedAnalysis(
 Before approving the plan, reviewers should:
 
 - [ ] Verify reported job IDs and verdicts in database
-- [ ] Check code line numbers in current `main` branch
+- [ ] Confirm behavior in current `main` branch (prefer function-name anchors; line numbers may drift)
 - [ ] Validate cost/time calculations
 - [ ] Assess risk ratings (LOW/MEDIUM/HIGH)
 - [ ] Review testing strategy (is 100-input suite sufficient?)
@@ -309,7 +292,7 @@ Before approving the plan, reviewers should:
 
 ## Questions to Resolve
 
-1. **Migration Strategy**: Execute all 4 phases, or skip Phase 2/3 and go straight to unified?
+1. **Migration Strategy**: Execute all 5 phases, or skip Phase 2/3 and go straight to unified?
 2. **Provider Priority**: Gemini-only initially, or maintain multi-provider from day 1?
 3. **Testing Scope**: Is 100-input regression suite sufficient, or need 500+?
 4. **Rollback Strategy**: Feature flag sufficient, or need database versioning?

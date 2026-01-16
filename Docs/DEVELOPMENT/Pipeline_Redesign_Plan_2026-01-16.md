@@ -3,16 +3,19 @@ name: FactHarbor Analysis Pipeline Redesign
 overview: Comprehensive investigation of input transformation, scope detection, and verdict calculation issues, followed by architectural redesign proposal with migration path, risk assessment, and optimization strategy.
 todos:
   - id: phase1-normalization
-    content: Remove duplicate normalizations, keep only entry point (analyzer.ts 7808-7821)
+    content: Remove duplicate normalizations; keep a single normalization point at analysis entry (runFactHarborAnalysis) and ensure all downstream steps use the normalized input.
     status: pending
   - id: phase1-scope-ids
-    content: Replace scope text similarity with deterministic hash (analyzer/scopes.ts)
+    content: Replace scope ID text similarity with deterministic hashing (in analyzer/scopes.ts), using a documented canonicalization + hashing scheme.
     status: pending
   - id: phase1-scope-preservation
-    content: Verify selectFactsForScopeRefinementPrompt guarantees ≥1 fact per scope
-    status: pending
+    content: Ensure selectFactsForScopeRefinementPrompt guarantees ≥1 representative fact per pre-assigned scope; verify on known multi-scope regressions.
+    status: in_progress
   - id: phase1-gate1-move
     content: Move Gate1 filtering from pre-research to post-research
+    status: pending
+  - id: phase1-metrics-harness
+    content: Add a deterministic regression harness for Q/S pairs and multi-scope cases (neutrality divergence, scope stability, claim stability, cost/latency).
     status: pending
   - id: phase1-testing
     content: Test 20 Q/S pairs, measure verdict divergence (target < 5%)
@@ -21,14 +24,15 @@ todos:
       - phase1-normalization
       - phase1-scope-ids
       - phase1-gate1-move
+      - phase1-metrics-harness
   - id: phase2-merge-understand
     content: Merge understand + supplemental claims into single pass
     status: pending
   - id: phase2-remove-pruning
-    content: Remove scope coverage pruning (pruneScopesByCoverage)
+    content: Replace scope coverage pruning with a deterministic rule (only prune scopes with zero assigned claims AND zero assigned facts).
     status: pending
   - id: phase2-simplify-dedup
-    content: Simplify scope deduplication (increase threshold to 0.92)
+    content: Make scope deduplication type-aware/evidence-aware; increase similarity threshold and avoid merging across scope types (legal vs methodological, etc).
     status: pending
   - id: phase2-testing
     content: Compare claim counts and scope retention on 50 diverse inputs
@@ -64,6 +68,27 @@ todos:
     status: pending
     dependencies:
       - phase4-parallel-run
+  - id: phase5-archive-legacy
+    content: Archive legacy pipeline code under analyzer/legacy/ (keep it buildable, but out of the hot path).
+    status: pending
+    dependencies:
+      - phase4-gradual-rollout
+  - id: phase5-update-architecture-docs
+    content: Update architecture documentation (Docs/ARCHITECTURE/Overview.md and related) to reflect the new pipeline and flags.
+    status: pending
+    dependencies:
+      - phase5-archive-legacy
+  - id: phase5-benchmarks-regression-suite
+    content: Create a benchmarks/regression suite artifact (inputs + harness + baseline outputs) to prevent neutrality/scope regressions.
+    status: pending
+    dependencies:
+      - phase1-metrics-harness
+      - phase4-parallel-run
+  - id: phase5-cleanup-flags
+    content: Deprecate/remove legacy-only flags and dead code paths once rollout is stable (keep rollback path documented until fully sunset).
+    status: pending
+    dependencies:
+      - phase5-update-architecture-docs
 ---
 
 # FactHarbor Analysis Pipeline Redesign
@@ -71,6 +96,17 @@ todos:
 ## Executive Summary
 
 Investigation reveals **five critical architectural issues** causing inconsistent verdicts between question/statement inputs, missing scope detection, and reduced claim generation. The root cause is **excessive pipeline complexity with 15+ LLM calls and fragile state management**. This plan proposes a **simplified, provider-agnostic architecture** leveraging native LLM capabilities (tool calling, grounded search) while maintaining quality.
+
+> **Note on code references**: This plan mentions line numbers as a convenience, but they drift quickly as `analyzer.ts` evolves. Treat line numbers as approximate and prefer searching by **function name** (e.g., `runFactHarborAnalysis`, `understandClaim`, `selectFactsForScopeRefinementPrompt`, `canonicalizeScopes`, `pruneScopesByCoverage`).
+
+### Non‑negotiable Invariants (from `AGENTS.md`)
+
+Any redesign MUST preserve:
+- **Pipeline integrity**: Understand → Research → Verdict (no stage skipping)
+- **Input neutrality**: question vs statement divergence target < 5 points
+- **Scope detection**: maintain multi-scope detection and unified “Scope” terminology
+- **Quality gates**: Gate 1 and Gate 4 are mandatory
+- **Generic by design**: no domain-specific keyword lists or special-casing
 
 ---
 
@@ -242,6 +278,12 @@ graph LR
 
 **Critical Invariant:** Question ↔ Statement must produce **identical** `impliedClaim`, `distinctProceedings`, `subClaims`, `researchQueries`
 
+**Recommended interpretation (more testable):** Question ↔ Statement must produce **stable outputs**:
+- Same normalized input string
+- Same scope count and scope type distribution
+- High claim-set overlap (define threshold; e.g., Jaccard ≥ 0.85 on normalized claim texts)
+- Verdict divergence avg < 5 points (and define p95 target)
+
 ---
 
 ## Part 3: Desired Architecture
@@ -375,9 +417,45 @@ graph TD
 - **Weighted aggregation**: Centrality × confidence
 - **Quality gates**: Filter hallucinations (Gate1), low-confidence verdicts (Gate4)
 
+### Rewrite vs. Evolution Strategy (Recommended)
+
+This plan intentionally avoids a “rewrite everything” approach. Instead:
+
+- **Evolve the core pipeline incrementally** (Phase 1–2), because it is tightly coupled to repo invariants:
+  - pipeline integrity (Understand → Research → Verdict)
+  - input neutrality
+  - scope detection semantics
+  - Gate 1 + Gate 4 enforcement
+
+- **Rewrite selectively** when the component is:
+  - small and interface-bound (clear inputs/outputs)
+  - independently testable with deterministic fixtures
+  - high-bug-density or inherently non-deterministic today
+  - replaceable behind a feature flag / adapter
+
+Examples of good “selective rewrite” candidates:
+- **Deterministic scope IDs** in `analyzer/scopes.ts` (replace similarity-based ID logic with documented canonicalization + hash).
+- A **Phase 1 regression harness** (inputs → metrics report) to make neutrality/scope regressions measurable and repeatable.
+- A dedicated **LLM/tool-assisted search adapter** (Phase 3) that can be swapped between providers and guarded with budgets/caps.
+
+Examples where “evolution” is safer than rewrite:
+- The orchestration in `runFactHarborAnalysis` (too many invariants; safest via phased changes + parallel run).
+- The quality gates (must remain enforceable and transparent).
+
 ---
 
 ## Part 5: Performance & Cost Optimization
+
+### Cost Model (make assumptions explicit)
+
+All cost numbers in this plan should be validated against:
+- observed `state.llmCalls` and (if available) per-call token usage
+- provider price table (input/output token pricing)
+
+Use a consistent formula:
+\[
+\text{cost}=\sum_{calls}(\text{inTokens}\times price_{in} + \text{outTokens}\times price_{out})
+\]
 
 ### Current Costs (per analysis)
 
@@ -422,25 +500,26 @@ graph TD
 
 **Goal:** Stabilize current architecture, fix input neutrality
 
-1. **Single normalization point** ([`analyzer.ts`](apps/web/src/lib/analyzer.ts) lines 7808-7821)
-   - Remove normalization at lines 2969-2986 (understandClaim)
-   - Ensure `impliedClaim` generated from normalized input
+1. **Single normalization point** (`runFactHarborAnalysis` entry)
+   - Remove any secondary normalization inside `understandClaim`
+   - Ensure `impliedClaim` and downstream query generation is based on the normalized input
+   - Add a regression check: Q/S inputs must lead to stable scope/claim outputs (see metrics harness)
    
 2. **Deterministic scope IDs** ([`analyzer/scopes.ts`](apps/web/src/lib/analyzer/scopes.ts))
    - Replace text similarity with hash: `hash(name + subject + temporal)`
    - Preserve order (P1, P2, P3)
    
-3. **Scope preservation** ([`analyzer.ts`](apps/web/src/lib/analyzer.ts) lines 712-767)
-   - Guarantee ≥1 fact per pre-assigned scope in refinement prompt
-   - Current fix (lines 754-760) is good, verify it's applied
+3. **Scope preservation** (`selectFactsForScopeRefinementPrompt`)
+   - Guarantee ≥1 representative fact per pre-assigned scope in the refinement prompt
+   - Treat “implemented fix” and “verification” separately: ensure the logic is present AND validated on known regressions
    
-4. **Move Gate1 post-research** (lines 3874-3900 → 8296)
+4. **Move Gate1 post-research**
    - Don't filter claims before searching for evidence
    - Apply Gate1 after facts extracted
 
 **Testing:**
-- Run 20 question/statement pairs, measure divergence
-- Target: < 5% verdict difference, identical scope count
+- Run 20 question/statement pairs (plus a small set of known multi-scope regressions)
+- Target: avg divergence < 5 points; define p95 target; no scope loss events in the regression set
 
 ### Phase 2: Pipeline Simplification (Week 3-4)
 
@@ -450,13 +529,13 @@ graph TD
    - Generate all claims in one pass (no backfill)
    - Include outcome claims in initial understanding
    
-2. **Remove scope pruning** (lines 2690-2748)
-   - Keep all detected scopes (trust LLM detection)
-   - Only prune if zero facts after research
+2. **Replace scope pruning with deterministic pruning**
+   - Only prune scopes with zero assigned claims AND zero assigned facts
+   - Log every prune decision (reason + counts) so regressions are diagnosable
    
-3. **Simplify deduplication** (lines 837-920)
-   - Increase threshold to 0.92 (less aggressive)
-   - Preserve context type distinctions (legal ≠ scientific)
+3. **Simplify deduplication safely**
+   - Use a higher threshold (e.g. 0.92) BUT make it type-aware/evidence-aware
+   - Never merge across scope types (legal ≠ scientific; jurisdiction ≠ methodology)
 
 **Testing:**
 - Compare claim counts (expect +20-30%)
@@ -470,9 +549,10 @@ graph TD
    - Detect if provider supports native search
    - Fallback to external search if not
    
-2. **Refactor research loop** (lines 8100-8268)
-   - If LLM supports tools, pass search as tool
-   - Let LLM decide when to search (autonomous)
+2. **Refactor research loop with guardrails**
+   - If LLM supports tools, allow tool-assisted search, but keep the orchestrator in control
+   - Enforce caps (max searches, max tool calls, max sources, max facts) to prevent runaway behavior
+   - The model can recommend searches; the system chooses which to execute (budget + diversity)
    
 3. **Cost tracking** (lines 7955-7975)
    - Track native search costs separately
@@ -504,6 +584,11 @@ graph TD
 - Regression suite: 100 diverse inputs
 - Metrics: verdict accuracy, input neutrality, scope detection recall
 - Rollout: 10% → 50% → 100% over 2 weeks
+
+**Go/No-Go gate before Phase 4** (recommended):
+- Neutrality suite meets targets (avg < 5 points; p95 defined and met)
+- Scope-loss regressions reduced to ~0 in the tracked set
+- Deterministic scope IDs shipped and verified
 
 ### Phase 5: Deprecation (Week 11-12)
 
