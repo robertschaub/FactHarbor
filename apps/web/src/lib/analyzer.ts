@@ -43,6 +43,18 @@ import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-searc
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
 import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts } from "./analyzer/quality-gates";
 import { filterFactsByProvenance } from "./analyzer/provenance-validation";
+import {
+  getBudgetConfig,
+  createBudgetTracker,
+  checkTokenBudget,
+  checkScopeIterationBudget,
+  recordIteration,
+  recordLLMCall,
+  markBudgetExceeded,
+  getBudgetStats,
+  type ResearchBudget,
+  type BudgetTracker,
+} from "./analyzer/budgets";
 import { normalizeSubClaimsImportance } from "./claim-importance";
 import * as fs from "fs";
 import * as path from "path";
@@ -2001,6 +2013,9 @@ interface ResearchState {
   centralClaimsSearched: Set<string>;
   // NEW v2.6.29: Track if inverse claim search has been performed
   inverseClaimSearchPerformed: boolean;
+  // NEW PR 6: Budget tracking for p95 hardening
+  budget: ResearchBudget;
+  budgetTracker: BudgetTracker;
 }
 
 interface ClaimUnderstanding {
@@ -7843,6 +7858,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   console.log(`[Analyzer]   Normalized: "${normalizedInputValue.substring(0, 100)}"`);
   // normalizedInputValue is now the canonical form for all analysis paths
 
+  // Initialize budget tracker (PR 6: p95 Hardening)
+  const budget = getBudgetConfig();
+  const budgetTracker = createBudgetTracker();
+  console.log(`[Budget] Initialized: maxIterationsPerScope=${budget.maxIterationsPerScope}, maxTotalIterations=${budget.maxTotalIterations}, maxTotalTokens=${budget.maxTotalTokens}`);
+
   const state: ResearchState = {
     originalInput: normalizedInputValue,  // v2.6.26: Use NORMALIZED input everywhere
     originalText: "",
@@ -7860,6 +7880,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     recentClaimsSearched: false, // NEW v2.6.22
     centralClaimsSearched: new Set(),
     inverseClaimSearchPerformed: false, // NEW v2.6.29
+    budget, // NEW PR 6: p95 hardening
+    budgetTracker, // NEW PR 6: p95 hardening
   };
 
   // Handle URL
@@ -8427,6 +8449,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         insufficient: gate4Stats.insufficient,
         centralKept: gate4Stats.centralKept,
       },
+      // Budget statistics (PR 6: p95 Hardening)
+      budgetStats: (() => {
+        const stats = getBudgetStats(state.budgetTracker, state.budget);
+        return {
+          tokensUsed: stats.tokensUsed,
+          tokensPercent: stats.tokensPercent,
+          totalIterations: stats.totalIterations,
+          iterationsPercent: stats.iterationsPercent,
+          llmCalls: stats.llmCalls,
+          budgetExceeded: stats.budgetExceeded,
+          exceedReason: state.budgetTracker.exceedReason,
+        };
+      })(),
     },
     verdictSummary: verdictSummary || null,
     // Primary: "scopes" (unified terminology for bounded analytical frames)
