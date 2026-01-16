@@ -201,10 +201,10 @@ export function convertToFetchedSources(
     id: `S${startId + index}`,
     url: source.url,
     title: source.title,
-    fullText: source.snippet || result.groundedResponse, // Use snippet or full response as context
+    fullText: source.snippet || "", // PR-B: Ground Realism - only use snippet if available, no synthetic content
     trackRecordScore: 0.5, // Default score (0-1 scale) - will be overridden by source reliability bundle
     fetchedAt: new Date().toISOString(),
-    category: "grounded_search",
+    category: "grounded_search_candidate", // PR-B: Mark as candidate (URL should be fetched via pipeline)
     fetchSuccess: true,
     searchQuery: result.searchQueries[0] || undefined,
   }));

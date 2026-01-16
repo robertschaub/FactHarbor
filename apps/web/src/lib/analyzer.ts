@@ -8144,66 +8144,82 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       });
 
       if (groundedResult.groundingUsed && groundedResult.sources.length > 0) {
-        console.log(`[Analyzer] Grounded search found ${groundedResult.sources.length} sources`);
+        console.log(`[Analyzer] Grounded search found ${groundedResult.sources.length} URL candidates`);
 
-        // Convert grounded sources to FetchedSource format and add to state
-        const groundedSources = convertToFetchedSources(groundedResult, state.sources.length + 1);
-        for (const source of groundedSources) {
-          state.sources.push(source as FetchedSource);
-        }
+        // PR-B: Ground Realism hardening
+        // Fetch the URLs provided by grounded search (don't use synthetic content)
+        await emit(`Fetching ${groundedResult.sources.length} grounded sources`, baseProgress + 2);
 
-        // Track the search
-        state.searchQueries.push({
-          query: groundedResult.searchQueries[0] || decision.focus!,
-          iteration,
-          focus: decision.focus!,
-          resultsCount: groundedResult.sources.length,
-          timestamp: new Date().toISOString(),
-          searchProvider: "Gemini-Grounded",
-        });
+        const groundedUrlCandidates = groundedResult.sources
+          .filter(s => s.url && s.url.trim().length > 0)
+          .slice(0, config.maxSourcesPerIteration);
 
-        // Extract facts from the grounded response
-        if (groundedResult.groundedResponse) {
-          await emit(`📊 Extracting facts from grounded response...`, baseProgress + 2);
-          // Create a synthetic source for the grounded response
-          const syntheticSource: FetchedSource = {
-            id: `S${state.sources.length + 1}`,
-            url: "gemini-grounded-search",
-            title: `Grounded Search: ${decision.focus}`,
-            fullText: groundedResult.groundedResponse,
-            trackRecordScore: 0.6, // Moderate trust (0-1 scale) for AI-synthesized content
-            fetchedAt: new Date().toISOString(),
-            category: "grounded_search",
-            fetchSuccess: true,
-            searchQuery: decision.focus,
-          };
+        if (groundedUrlCandidates.length === 0) {
+          console.warn(`[Analyzer] Grounded search returned no valid URLs - falling back to standard search`);
+          // Fall through to standard search
+        } else {
+          // Fetch URLs just like standard search sources
+          const fetchPromises = groundedUrlCandidates.map((candidate, i) =>
+            fetchSource(
+              candidate.url,
+              `S${state.sources.length + i + 1}`,
+              "grounded_search",
+              decision.focus!,
+            ),
+          );
+          const fetchedSources = await Promise.all(fetchPromises);
+          const validSources = fetchedSources.filter(
+            (s): s is FetchedSource => s !== null,
+          );
+          state.sources.push(...validSources);
 
-          const extractedFacts = await extractFacts(
-            syntheticSource,
-            decision.focus!,
-            extractFactsModelInfo.model,
-            state.understanding?.distinctProceedings || [],
-            undefined,
-            state.understanding?.impliedClaim || state.originalInput
+          const successfulSources = validSources.filter((s) => s.fetchSuccess);
+          await emit(
+            `  → ${successfulSources.length}/${validSources.length} grounded sources fetched successfully`,
+            baseProgress + 4,
           );
 
-          if (extractedFacts && extractedFacts.length > 0) {
-            // v2.6.29: Deduplicate facts before adding
-            const uniqueFacts = deduplicateFacts(extractedFacts, state.facts);
-            state.facts.push(...uniqueFacts);
-            console.log(`[Analyzer] Extracted ${extractedFacts.length} facts from grounded search (${uniqueFacts.length} unique after dedup)`);
-          }
-        }
+          // Track the search
+          state.searchQueries.push({
+            query: groundedResult.searchQueries[0] || decision.focus!,
+            iteration,
+            focus: decision.focus!,
+            resultsCount: successfulSources.length,
+            timestamp: new Date().toISOString(),
+            searchProvider: "Gemini-Grounded",
+          });
 
-        // Continue to next iteration (skip standard search)
-        state.iterations.push({
-          number: iteration,
-          focus: decision.focus!,
-          queries: groundedResult.searchQueries,
-          sourcesFound: groundedResult.sources.length,
-          factsExtracted: state.facts.length,
-        });
-        continue;
+          // Extract facts from successfully fetched grounded sources
+          if (successfulSources.length > 0) {
+            await emit(
+              `Extracting facts from ${successfulSources.length} grounded sources`,
+              baseProgress + 6,
+            );
+            for (const source of successfulSources) {
+              const facts = await extractFacts(
+                source,
+                decision.focus!,
+                extractFactsModelInfo.model,
+                state.understanding!.distinctProceedings,
+                decision.targetProceedingId,
+                state.understanding?.impliedClaim || state.originalInput,
+              );
+              const uniqueFacts = deduplicateFacts(facts, state.facts);
+              state.facts.push(...uniqueFacts);
+            }
+            console.log(`[Analyzer] Extracted facts from ${successfulSources.length} grounded sources`);
+          }
+
+          // Continue to next iteration (skip standard search)
+          state.iterations.push({
+            number: iteration,
+            focus: decision.focus!,
+            queries: groundedResult.searchQueries,
+            sourcesFound: successfulSources.length,
+            factsExtracted: state.facts.length,
+          });
+          continue;
+        }
       } else {
         console.log(`[Analyzer] Grounded search did not return results, falling back to standard search`);
         await emit(`⚠️ Grounded search unavailable, using standard search`, baseProgress + 1);
