@@ -52,6 +52,23 @@ This section documents a **Principal Architect** review based on direct inspecti
 - **Option A (recommended)**: Treat grounded mode as **URL discovery only**: convert grounded citations → fetch those URLs via existing fetch pipeline → extract facts from real fetched pages only. Do not create a synthetic “grounded response” source used for evidence.
 - **Option B**: If you keep “grounded response” text, it must be **explicitly non-evidentiary** (never enters evidence/fact extraction), and grounded mode must fall back to standard search when provenance is missing.
 
+**Additional critical finding** (provider “future‑ware” risk):
+- `apps/web/src/lib/search-gemini-grounded.ts` explicitly notes that true search grounding (`useSearchGrounding`) is **not enabled yet** (“Full grounding support will be available when the SDK is upgraded.”).
+- That means the current grounded-search implementation can degrade to **model knowledge + a prompt** rather than guaranteed grounded retrieval, which undermines the “Ground Realism” intent.
+
+**Additional critical finding** (safety bug: `trackRecordScore` scale mismatch):
+- `convertToFetchedSources(...)` uses `trackRecordScore: 50` and the grounded synthetic source uses `trackRecordScore: 60`.
+- In the analyzer, `trackRecordScore` is treated as a **0–1** multiplier (it is multiplied by 100 for display, compared to `0.6`, and used as a direct weight in `applyEvidenceWeighting`).
+- If any grounded-search-derived fact becomes a supporting fact, `applyEvidenceWeighting` can push `truthPercentage` far outside 0–100 (mathematically catastrophic).
+
+**Additional critical finding** (grounded “snippets” can masquerade as provenance):
+- `convertToFetchedSources(...)` sets `fullText` to `source.snippet || result.groundedResponse`. This is **not fetched page text**.
+- The current provenance gate validates that a fact has a **real URL** + a **non-obviously-synthetic excerpt**, but it does **not** verify that the excerpt was actually obtained from the referenced URL.
+- Therefore, a snippet or model-generated summary can be extracted into facts and appear “provenanced” by URL while still being **synthetic evidence by indirection**.
+
+**Required fix to proceed**:
+- Standardize `trackRecordScore` to **0–1 everywhere** (e.g., 0.5 not 50), and add a type/guard that clamps or rejects out-of-range scores.
+
 #### 2) Gate1-lite is applied after supplemental-claims generation (ordering mismatch)
 
 **Observed in `understandClaim` flow**:
@@ -78,6 +95,7 @@ This section documents a **Principal Architect** review based on direct inspecti
 **Required fix to proceed**:
 - Add explicit aggregation exclusion for `CTX_UNSCOPED` (overall + per-scope).
 - Add tests that prove **overallTruthPercentage and per-scope truth** do not change when unscoped facts are added.
+- Ensure `CTX_UNSCOPED` is **display-only**: it can be shown to the user but must not influence overall verdict math.
 
 #### 4) “FH_FORCE_EXTERNAL_SEARCH” is referenced in docs but not present in code
 
@@ -106,6 +124,15 @@ The review guide and implementation report mention `FH_FORCE_EXTERNAL_SEARCH`, b
 - Reconcile docs with reality (iteration enforcement is the primary guard today).
 - Fix budget enforcement to match intended semantics: enforce **maxTotalIterations** globally and **maxIterationsPerScope** per proceeding/scope (not against a single global bucket).
 - If token caps are required for production governance, implement complete token recording or adjust the budget model accordingly.
+
+### Go/No‑Go gating (Principal Architect)
+
+**NO‑GO to production** until all of the following are true:
+- [ ] **Grounded search cannot introduce synthetic evidence** (URL discovery only, or non-evidentiary + deterministic fallback).
+- [ ] **Grounded path track scores are normalized (0–1) and cannot break weighting math**.
+- [ ] **Gate1-lite ordering matches the feasibility rationale** (coverage counting uses Gate1-lite view).
+- [ ] **`CTX_UNSCOPED` is provably display-only** (excluded from aggregation; tests enforce).
+- [ ] **Budget defaults enforce the intended caps** (12 total, 3 per scope), not accidental early termination.
 
 ### Continue instructions (implementation next steps, in priority order)
 
