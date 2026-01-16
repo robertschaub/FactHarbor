@@ -5651,11 +5651,21 @@ async function generateVerdicts(
 
   const pseudoscienceAnalysis = detectPseudoscience(allText);
 
+  // PR-F: Exclude CTX_UNSCOPED claims from verdict calculations (fixes Blocker F)
+  // Only include direct claims that are NOT unscoped (unscoped is display-only)
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
-    (c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+    (c: any) =>
+      (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
+      c?.relatedProceedingId !== UNSCOPED_ID
   );
 
-  const factsFormatted = state.facts
+  // PR-F: Exclude CTX_UNSCOPED facts from verdict calculations (fixes Blocker F)
+  // UNSCOPED facts are display-only and should NOT affect overall verdict
+  const factsForVerdicts = state.facts.filter(
+    (f: ExtractedFact) => f.relatedProceedingId !== UNSCOPED_ID
+  );
+
+  const factsFormatted = factsForVerdicts
     .map((f: ExtractedFact) => {
       let factLine = `[${f.id}]`;
       if (f.relatedProceedingId) factLine += ` (${f.relatedProceedingId})`;
@@ -5746,8 +5756,12 @@ async function generateMultiScopeVerdicts(
     understanding.originalInputDisplay ||
     understanding.mainThesis ||
     analysisInput;
+  // PR-F: Exclude CTX_UNSCOPED claims from verdict calculations (fixes Blocker F)
+  // Only include direct claims that are NOT unscoped (unscoped is display-only)
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
-    (c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+    (c: any) =>
+      (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
+      c?.relatedProceedingId !== UNSCOPED_ID
   );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
@@ -6607,8 +6621,12 @@ async function generateSingleScopeVerdicts(
     understanding.originalInputDisplay ||
     understanding.mainThesis ||
     analysisInput;
+  // PR-F: Exclude CTX_UNSCOPED claims from verdict calculations (fixes Blocker F)
+  // Only include direct claims that are NOT unscoped (unscoped is display-only)
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
-    (c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+    (c: any) =>
+      (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
+      c?.relatedProceedingId !== UNSCOPED_ID
   );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
@@ -7001,8 +7019,12 @@ async function generateClaimVerdicts(
   // Detect if topic involves procedural/legal/institutional analysis
   // This determines whether to generate Key Factors (unified analysis mode)
   const isProceduralTopic = detectProceduralTopic(understanding, state.originalText);
+  // PR-F: Exclude CTX_UNSCOPED claims from verdict calculations (fixes Blocker F)
+  // Only include direct claims that are NOT unscoped (unscoped is display-only)
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
-    (c: any) => !c?.thesisRelevance || c.thesisRelevance === "direct",
+    (c: any) =>
+      (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
+      c?.relatedProceedingId !== UNSCOPED_ID
   );
 
   // Add pseudoscience context and verdict calibration to prompt
