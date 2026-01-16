@@ -22,6 +22,102 @@
 
 ---
 
+## Principal Architect Review (Thorough Findings + Continue Instructions)
+
+This section documents a **Principal Architect** review based on direct inspection of the implementation artifacts referenced in this guide (not just the narrative claims). It is intended to answer two questions:
+- **Is the implementation actually aligned with the redesign invariants and feasibility constraints?**
+- **What must be done next to safely proceed (staging → production)?**
+
+### What I verified in code (high confidence)
+
+- **Budgets (iteration cap) are enforced inside the research loop**: `apps/web/src/lib/analyzer.ts` calls `checkScopeIterationBudget(...)` and breaks when exceeded, and records iterations via `recordIteration(...)`.
+- **Provenance validation is enforced at fact extraction** (when enabled): `apps/web/src/lib/analyzer.ts` maps facts with `sourceUrl` + `sourceExcerpt` and runs `filterFactsByProvenance(...)` from `apps/web/src/lib/analyzer/provenance-validation.ts`.
+- **Gate1-lite exists and central-claim protection exists**: `apps/web/src/lib/analyzer/quality-gates.ts` implements `applyGate1Lite(...)` that always passes `isCentral === true`.
+- **Input normalization at entry point is real** (question → statement canonicalization), and the original input is preserved for UI display only.
+
+### Major gaps / correctness risks (must address before “production-ready” sign-off)
+
+#### 1) Grounded search path currently injects a synthetic “source” and skips standard search
+
+**Observed behavior** (in `apps/web/src/lib/analyzer.ts` grounded-search branch):
+- Grounded mode creates a `syntheticSource` with `url: "gemini-grounded-search"` and `fullText: groundedResult.groundedResponse`.
+- It then calls `extractFacts(syntheticSource, ...)`.
+
+**Why this is a problem**:
+- With provenance validation enabled, facts from that synthetic source are rejected because `sourceUrl` is not a valid HTTP(S) URL (fails the “real URL” requirement). This is good (fail-closed), but…
+- The code still **continues to the next iteration** and **skips standard search for that iteration**, meaning grounded mode can produce **sources but zero usable facts**, harming recall and potentially elongating loops.
+- The synthetic source is also pushed into `state.sources`, which is conceptually dangerous even if it yields zero facts (it can confuse reviewers and UI consumers into thinking it is a fetched evidentiary source).
+
+**Required fix to proceed** (choose one):
+- **Option A (recommended)**: Treat grounded mode as **URL discovery only**: convert grounded citations → fetch those URLs via existing fetch pipeline → extract facts from real fetched pages only. Do not create a synthetic “grounded response” source used for evidence.
+- **Option B**: If you keep “grounded response” text, it must be **explicitly non-evidentiary** (never enters evidence/fact extraction), and grounded mode must fall back to standard search when provenance is missing.
+
+#### 2) Gate1-lite is applied after supplemental-claims generation (ordering mismatch)
+
+**Observed in `understandClaim` flow**:
+- Supplemental claim generation (`requestSupplementalSubClaims(...)`) happens before `applyGate1Lite(...)`.
+- The inline comment says Gate1-lite “preserves supplemental claims coverage detection,” but **the current order means supplemental coverage counting still sees unfiltered claims**.
+
+**Why this matters**:
+- The feasibility audit concern was: if “full Gate1 post-research” filters claims later, supplemental-claims logic may make the wrong decision due to inflated counts earlier.
+- Current ordering does not fix that class of failure; it only filters what reaches research, not what supplemental logic uses to decide whether to add claims.
+
+**Required fix to proceed**:
+- Either move the Gate1-lite filter earlier (before supplemental coverage decisions), **or**
+- Change the supplemental coverage calculation to use a Gate1-lite-filtered view (while keeping the original set for display/debug).
+
+#### 3) CTX_UNSCOPED (“display-only”) is not proven to be excluded from aggregation
+
+**What exists**:
+- `CTX_UNSCOPED` is created/ensured, and missing claim proceeding IDs are assigned to it.
+
+**What is not demonstrated**:
+- There is no explicit evidence in the implementation artifacts reviewed that `CTX_UNSCOPED` facts/claims are **excluded from overall truth aggregation**.
+- The adversarial test suite currently inspects **fact assignment** but does not prove that the **final verdict math** ignores unscoped items.
+
+**Required fix to proceed**:
+- Add explicit aggregation exclusion for `CTX_UNSCOPED` (overall + per-scope).
+- Add tests that prove **overallTruthPercentage and per-scope truth** do not change when unscoped facts are added.
+
+#### 4) “FH_FORCE_EXTERNAL_SEARCH” is referenced in docs but not present in code
+
+The review guide and implementation report mention `FH_FORCE_EXTERNAL_SEARCH`, but repo-wide search does not show it implemented.
+
+**Required fix to proceed**:
+- Either implement it (and document exact behavior), or remove/replace the variable references in docs to avoid operational confusion.
+
+#### 5) Provenance heuristic patterns can generate false positives (risk: evidence starvation)
+
+`SYNTHETIC_CONTENT_PATTERNS` includes phrases like “It appears that” and “This suggests that,” which can occur in real sources (e.g., editorials, analysis pieces, even some official reports).
+
+**Required follow-up**:
+- Measure false-positive rate in logs (rejected facts count) and refine patterns or severity (warning vs hard reject) based on observed failures.
+
+#### 6) Budgeting is iteration-based in the research loop; token budgeting is partial
+
+**What is true**:
+- Iteration budget is enforced and will stop runaway loops.
+
+**What remains incomplete**:
+- Token accounting is partial (not all calls are recorded), and token budget enforcement is not clearly applied at the point where token usage is known.
+- **Iteration semantics appear mismatched to the documented intent**: the research loop calls `checkScopeIterationBudget(...)` with a constant scope ID (`"GLOBAL_RESEARCH"`). With defaults (`maxIterationsPerScope=3`, `maxTotalIterations=12`), the **effective total iteration cap becomes 3**, not 12.
+
+**Required follow-up**:
+- Reconcile docs with reality (iteration enforcement is the primary guard today).
+- Fix budget enforcement to match intended semantics: enforce **maxTotalIterations** globally and **maxIterationsPerScope** per proceeding/scope (not against a single global bucket).
+- If token caps are required for production governance, implement complete token recording or adjust the budget model accordingly.
+
+### Continue instructions (implementation next steps, in priority order)
+
+1. **Fix grounded-search behavior** so grounded mode can never introduce synthetic evidence and can never “skip standard search but produce zero usable facts.”
+2. **Fix Gate1-lite vs supplemental ordering** (or coverage counting) so the feasibility-audit rationale is actually enforced by code.
+3. **Fix budget iteration semantics** so defaults match the documented intent (12 total iterations, 3 per scope) rather than accidentally capping total iterations at 3.
+4. **Implement and test CTX_UNSCOPED exclusion from verdict aggregation** (display-only guarantee).
+5. **Resolve doc/code drift** for environment variables (e.g., `FH_FORCE_EXTERNAL_SEARCH`) and any other operational toggles.
+6. **Run the full regression suite with real API keys** at least once in CI/staging; decide whether these tests are “required gates” or “optional smoke tests,” and encode that policy explicitly.
+
+---
+
 ## Review Strategy
 
 ### 30-Minute Review (Executive Summary)
