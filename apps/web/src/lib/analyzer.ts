@@ -72,6 +72,7 @@ import {
   canonicalizeScopes,
   canonicalizeScopesWithRemap,
   ensureAtLeastOneScope,
+  UNSCOPED_ID,
 } from "./analyzer/scopes";
 
 // Configuration, helpers, and debug utilities imported from modular files above
@@ -514,7 +515,7 @@ Return:
   return { updated: true, llmCalls: 1 };
 }
 
-function normalizeYesNoQuestionToStatement(input: string): string {
+export function normalizeYesNoQuestionToStatement(input: string): string {
   const trimmed = input.trim().replace(/\?+$/, "");
 
   // Handle the common yes/no forms in a way that is stable and avoids bad grammar.
@@ -2717,7 +2718,7 @@ function ensureUnscopedClaimsScope(
   // (This avoids turning a single-scope run into an artificial multi-scope run.)
   if (scopes.length <= 1) return understanding;
 
-  const UNSCOPED_ID = "CTX_UNSCOPED";
+  // UNSCOPED_ID is now imported from ./analyzer/scopes
 
   const hasUnscopedClaims = claims.some((c) => {
     const tr = String(c?.thesisRelevance || "direct");
@@ -2963,30 +2964,30 @@ async function understandClaim(
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   // =========================================================================
-  // EARLY INPUT NORMALIZATION: Normalize yes/no phrasing to a statement BEFORE LLM call
-  // This ensures equivalent phrasings follow the same analysis path
+  // INPUT CONTRACT: Caller (runFactHarborAnalysis) MUST normalize input before calling.
+  // This function receives already-normalized statement-form input.
   // =========================================================================
   const trimmedInputRaw = input.trim();
-  const needsNormalization =
-    trimmedInputRaw.endsWith("?") ||
-    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(
-      trimmedInputRaw,
-    );
 
-  // Preserve original input for UI display, normalize for analysis
-  const originalInputDisplay = trimmedInputRaw;
-  const normalizedInput = needsNormalization
-    ? normalizeYesNoQuestionToStatement(trimmedInputRaw)
-    : trimmedInputRaw;
-
-  if (needsNormalization) {
-    console.log(`[Analyzer] Input Neutrality: normalized to statement BEFORE LLM call`);
-    console.log(`[Analyzer]   Original: "${trimmedInputRaw.substring(0, 100)}..."`);
-    console.log(`[Analyzer]   Normalized: "${normalizedInput.substring(0, 100)}..."`);
+  // CONTRACT ASSERTION: Input should already be normalized by caller.
+  // In development/test mode, warn if input looks like a question (indicates contract violation).
+  if (process.env.NODE_ENV !== "production") {
+    const looksLikeQuestion =
+      trimmedInputRaw.endsWith("?") ||
+      /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(
+        trimmedInputRaw,
+      );
+    if (looksLikeQuestion) {
+      console.warn(
+        "[Analyzer] CONTRACT VIOLATION: understandClaim received question-form input. " +
+        "Caller should normalize via normalizeYesNoQuestionToStatement() before calling."
+      );
+      console.warn(`[Analyzer]   Input: "${trimmedInputRaw.substring(0, 100)}..."`);
+    }
   }
 
-  // Use normalizedInput for all analysis from this point forward
-  const analysisInput = normalizedInput;
+  // Use input directly - it should already be normalized by caller
+  const analysisInput = trimmedInputRaw;
 
   // Safety: extremely long article/PDF inputs can cause provider hangs or excessive prompt sizes.
   // We keep analysis logic consistent, but cap what we send to the Step 1 LLM call.
@@ -3769,7 +3770,9 @@ Now analyze the input and output JSON only.`;
       const exemplar = (claims as any[]).find((c) => String(c?.relatedProceedingId || "").trim() === id);
       const rawName = String(exemplar?.text || "").trim();
       const name = rawName ? rawName.slice(0, 120) : `${id} scope`;
-      const shortName = id.replace(/^CTX_/, "").slice(0, 12) || "SCOPE";
+      // Extract short name: remove CTX_ prefix if present, or use ID as-is
+      const withoutPrefix = id.replace(/^CTX_/, "").trim();
+      const shortName = (withoutPrefix || id).slice(0, 12) || "SCOPE";
       scopes.push({
         id,
         name,
