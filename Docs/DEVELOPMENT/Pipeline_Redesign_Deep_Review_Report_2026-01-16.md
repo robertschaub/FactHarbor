@@ -36,13 +36,13 @@ The plan identifies the typical failure mode: if scope-specific facts are not re
 
 **Recommendation**: guarantee ≥1 representative fact per pre-assigned scope during refinement prompts and log scope-loss events explicitly.
 
-### 3) Option A (monolithic LLM + tools) is viable but needs stronger guardrails
-Option A can reduce calls and state fragmentation, but without guardrails it introduces new failure modes:
-- runaway tool loops
-- poor debuggability
-- schema failures leading to silent drift
+### 3) Option A (monolithic LLM + tools) should be treated as **deferred** (future work)
+Option A can reduce call count, but it is not the safe default for production rollout because it amplifies known failure modes:
+- token-trap / history reinjection risk (quadratic growth under tool loops)
+- scope contamination (cross-scope evidence leakage)
+- poor debuggability under tail latency
 
-**Recommendation**: only proceed to Phase 4 after Phase 1–3 metrics are green, and implement strict budgets/caps plus deterministic fallback to the hybrid path.
+**Recommendation**: keep the orchestrator in TypeScript (Option D), and only revisit Option A if/when tool-chaining + grounding are provably stable under adversarial tests and p95 budgets.
 
 ### 4) Cost and performance claims need a single, consistent model
 The docs previously mixed multiple “current cost” ranges. The plan is strongest when cost is computed from:
@@ -72,7 +72,7 @@ Replace “must produce identical impliedClaim/researchQueries” with measurabl
 - same normalized input string
 - same scope count and scope type distribution
 - claim stability via Jaccard overlap (or embeddings, if available)
-- verdict divergence avg < 5 points and defined p95 target
+- verdict divergence avg ≤ 4 points and defined p95 target
 
 ### C) Add a deterministic regression harness
 Before Phase 1 testing, create a harness that runs:
@@ -87,6 +87,12 @@ Outputs should include:
 
 ### D) Add Phase 4 Go/No-Go criteria
 Phase 4 must be gated on Phase 1–2 meeting neutrality and scope stability targets and Phase 1 deterministic scope IDs being shipped and verified.
+
+### E) Add a Phase 0 “Ground Realism” gate for Native Research
+The redesign assumes “native/grounded research” provides real evidence. The implementation must enforce:
+- provenance (facts used in verdicts must come from fetched sources with real URLs/excerpts)
+- fail-closed behavior (if grounding metadata/citations are absent, fall back to standard search; do not treat model synthesis as evidence)
+- explicit p95 budgets (timeouts/caps) for multi-scope workloads
 
 ---
 
@@ -126,23 +132,42 @@ Phase 4 must be gated on Phase 1–2 meeting neutrality and scope stability targ
 4.  **Progress Tracking Blindness:** A single-call architecture creates a "black box" period of 20-40s where the UI cannot show progress, degrading UX compared to the current iterative display.
 5.  **Provider Capability Drift:** Coupling the orchestrator to tool-calling signatures creates a new form of provider lock-in, as Gemini, Perplexity, and OpenAI search APIs behave differently.
 
+### New Kill-Switch Risk (Ground Realism)
+6.  **Synthetic Evidence Path:** If “grounded search” returns an LLM synthesis and the pipeline extracts facts from that synthesis (rather than from fetched sources), the system can appear grounded while violating evidence transparency. This is rollout-blocking unless fail-closed provenance rules are enforced.
+
 ### Top 5 Fixes (Proposed)
 
 1.  **"Atomic" Tooling (Hybrid Orchestration):** Do not give the LLM a generic "analyze" tool. Give it three explicit tools: `search_web(query)`, `extract_facts_from_source(text, scopeId)`, and `submit_final_verdicts(data)`. Keep the orchestrator logic in the code.
 2.  **Deterministic ID Anchoring:** Replace index-based IDs (`CTX_1`) with content-addressed hashes: `hash(normalizedInput + scopeName)`.
 3.  **Budget-Aware Provider Wrapper:** Implement a `BudgetedLLM` class to track `totalTokens` and `searchCount` per JobID, throwing `BudgetExceededError` for partial results.
-4.  **Shadow-Mode Parallelism:** Use a `FH_SHADOW_PIPELINE` flag to run the Unified Pipeline in the background and log divergence without showing it to the user.
+4.  **Shadow-Mode Parallelism:** Use a `FH_SHADOW_PIPELINE` flag to run the hardened Option D pipeline in the background and log divergence without showing it to the user.
 5.  **Fact-First Prompting:** Enforce a "Fact Buffer" output before the model generates verdicts to ensure grounding.
 
 ### Go/No-Go Criteria for Phase 4
 
 | Gate | Criterion | Metric |
 | :--- | :--- | :--- |
-| **Neutrality** | Q/S Divergence | Average absolute difference < 3% across 100 test pairs. |
-| **Integrity** | Schema Validation | 100% of Unified outputs pass the `AnalysisResult` Zod schema. |
+| **Neutrality** | Q/S Divergence | Average absolute difference ≤ 4% across 100 test pairs. |
+| **Integrity** | Validation | 100% of Option D outputs pass schema + semantic validation (provenance + scope mapping). |
 | **Recall** | Scope Retention | 100% of "Legal" and "Regulatory" scopes in regression suite retained. |
 | **Efficiency** | Cost/Latency | Cost < $0.50 (GPT-4 tier) and p95 Latency < 45s. |
 | **Stability** | ID Invariance | 100% stable `CTX_` and Claim IDs across 5 identical runs. |
+
+---
+
+## Third Review: Adversarial Logical Audit (o1-preview)
+
+**Date**: 2026-01-16
+**Method**: Deep Chain-of-Thought simulation of multi-scope inputs.
+
+### The "Kill Switch" Findings:
+
+1.  **The Token Trap (Quadratic Growth)**: Option A (Monolithic) suffers from re-entrant history injection. Each tool turn re-sends prior search results, leading to quadratic token cost scaling. **Plan modified to Option D (Code-Orchestrated Native Research)** to enforce linear scaling.
+2.  **Attention Sink (Scope Contamination)**: A single prompt jumbles evidence for 3+ legal bodies (e.g., TSE vs SCOTUS). Isolation is better achieved via stage-gated scoped calls.
+3.  **Monolithic Black Box**: UX suffers a "hang" state for 30-40s. Orchestrator must remain in TypeScript to provide telemetry.
+
+### Refined Phase 4 Stress Test:
+A multi-court case (TSE vs. SCOTUS vs. ECJ) must be processed with 100% scope isolation and < 20% token overhead compared to simple queries.
 
 ---
 
@@ -166,7 +191,7 @@ Phase 4 must be gated on Phase 1–2 meeting neutrality and scope stability targ
 - [ ] Implement tool-assisted search with explicit budgets/caps
 - [ ] A/B harness: external vs tool-assisted search (cost, latency, relevance metrics)
 
-### Phase 4 (Unified orchestrator)
+### Phase 4 (Option D production hardening)
 - [ ] Implement only after go/no-go is green
 - [ ] Enforce strict budgets + schema validation + automatic fallback
 - [ ] Parallel run + gradual rollout

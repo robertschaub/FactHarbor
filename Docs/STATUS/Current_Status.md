@@ -246,8 +246,8 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ### v2.6.22 (January 2026)
 - Enhanced recency detection for news topics
 - Date-aware query variants for recent information
-- Gemini Grounded Search support added
-- Optional `FH_SEARCH_MODE=grounded` configuration
+- Gemini Grounded Search mode added (experimental; grounding metadata/citations may vary by provider/SDK)
+- Optional `FH_SEARCH_MODE=grounded` configuration (Gemini only; treat as best-effort until a provenance gate is enforced)
 
 ### v2.6.18-v2.6.21 (January 2026)
 - Runner resilience with exponential backoff

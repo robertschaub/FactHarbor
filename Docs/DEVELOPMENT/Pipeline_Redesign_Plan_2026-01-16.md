@@ -2,6 +2,9 @@
 name: FactHarbor Analysis Pipeline Redesign
 overview: Comprehensive investigation of input transformation, scope detection, and verdict calculation issues, followed by architectural redesign proposal with migration path, risk assessment, and optimization strategy.
 todos:
+  - id: phase0-grounding-reality-gate
+    content: Add a Phase 0 "Ground Realism" gate: grounded search must produce real, fetchable sources with provenance; never treat LLM synthesis as evidence.
+    status: pending
   - id: phase1-normalization
     content: Remove duplicate normalizations; keep a single normalization point at analysis entry (runFactHarborAnalysis) and ensure all downstream steps use the normalized input.
     status: pending
@@ -12,13 +15,13 @@ todos:
     content: Ensure selectFactsForScopeRefinementPrompt guarantees ≥1 representative fact per pre-assigned scope; verify on known multi-scope regressions.
     status: in_progress
   - id: phase1-gate1-move
-    content: Move Gate1 filtering from pre-research to post-research
+    content: Do NOT move Gate1 fully post-research until supplemental-claims coverage logic is refactored (use Gate1-lite or defer; see Implementation_Feasibility_Audit_Report).
     status: pending
   - id: phase1-metrics-harness
     content: Add a deterministic regression harness for Q/S pairs and multi-scope cases (neutrality divergence, scope stability, claim stability, cost/latency).
     status: pending
   - id: phase1-testing
-    content: Test 20 Q/S pairs, measure verdict divergence (target < 5%)
+    content: Test 20 Q/S pairs, measure verdict divergence (target ≤ 4 points avg absolute)
     status: pending
     dependencies:
       - phase1-normalization
@@ -41,7 +44,7 @@ todos:
       - phase2-merge-understand
       - phase2-remove-pruning
   - id: phase3-llm-search
-    content: Implement LLM-native search delegation (Gemini Grounded, Perplexity)
+    content: Implement LLM-native search delegation with provenance (Gemini grounded search only if it returns grounding metadata + real URLs; otherwise fallback to external search)
     status: pending
   - id: phase3-research-refactor
     content: Refactor research loop to use LLM tool calling for search
@@ -52,19 +55,17 @@ todos:
     dependencies:
       - phase3-llm-search
       - phase3-research-refactor
-  - id: phase4-unified-prompt
-    content: Design unified system prompt for monolithic LLM analysis
+  - id: phase4-budgeted-research
+    content: Add explicit budgets/caps (latency, retries, sources, extraction calls) and bounded parallelism for multi-scope research to prevent p95 blowups.
     status: pending
-  - id: phase4-orchestrator
-    content: Implement unified orchestrator with tool calling and fallback
+  - id: phase4-semantic-validation
+    content: Add semantic validation for the Structured Fact Buffer (provenance, scope mapping) so schema-valid but wrong outputs can't silently drift.
     status: pending
   - id: phase4-parallel-run
-    content: Run both pipelines in parallel, compare outputs on regression suite
+    content: Run baseline vs Option D (budgeted research + validation) in parallel, compare outputs on regression suite.
     status: pending
-    dependencies:
-      - phase4-orchestrator
   - id: phase4-gradual-rollout
-    content: "Gradual traffic shift: 10% → 50% → 100% with monitoring"
+    content: "Gradual traffic shift for Option D: 10% → 50% → 100% with monitoring and rollback."
     status: pending
     dependencies:
       - phase4-parallel-run
@@ -97,16 +98,20 @@ todos:
 
 Investigation reveals **five critical architectural issues** causing inconsistent verdicts between question/statement inputs, missing scope detection, and reduced claim generation. The root cause is **excessive pipeline complexity with 15+ LLM calls and fragile state management**. This plan proposes a **simplified, provider-agnostic architecture** leveraging native LLM capabilities (tool calling, grounded search) while maintaining quality.
 
+**Implementation entry**: `Docs/DEVELOPMENT/Start_Pipeline_Redesign_Implementation.md`
+
 > **Note on code references**: This plan mentions line numbers as a convenience, but they drift quickly as `analyzer.ts` evolves. Treat line numbers as approximate and prefer searching by **function name** (e.g., `runFactHarborAnalysis`, `understandClaim`, `selectFactsForScopeRefinementPrompt`, `canonicalizeScopes`, `pruneScopesByCoverage`).
 
 ### Non‑negotiable Invariants (from `AGENTS.md`)
 
 Any redesign MUST preserve:
 - **Pipeline integrity**: Understand → Research → Verdict (no stage skipping)
-- **Input neutrality**: question vs statement divergence target < 5 points
+- **Input neutrality**: question vs statement divergence target ≤ 4 points (percentage points, avg absolute)
 - **Scope detection**: maintain multi-scope detection and unified “Scope” terminology
 - **Quality gates**: Gate 1 and Gate 4 are mandatory
 - **Generic by design**: no domain-specific keyword lists or special-casing
+
+**Governance note:** If the team wants to relax any of the above, treat it as an explicit policy change by updating `AGENTS.md` first, then re-deriving the acceptance tests and go/no-go gates.
 
 ---
 
@@ -276,62 +281,21 @@ graph LR
 | **Article** | Extract thesis | Multi-scope if distinct | 8-15 claims | Iterative deepening |
 | **Multi-Context** | Identify proceedings | Multi-scope (forced) | 3-5 claims per scope | Scope-targeted search |
 
-**Critical Invariant:** Question ↔ Statement must produce **identical** `impliedClaim`, `distinctProceedings`, `subClaims`, `researchQueries`
-
-**Recommended interpretation (more testable):** Question ↔ Statement must produce **stable outputs**:
+**Input Neutrality Contract (recommended):** Question ↔ Statement must produce **stable outputs** (not necessarily byte-identical intermediate fields):
 - Same normalized input string
 - Same scope count and scope type distribution
 - High claim-set overlap (define threshold; e.g., Jaccard ≥ 0.85 on normalized claim texts)
-- Verdict divergence avg < 5 points (and define p95 target)
+- Verdict divergence avg ≤ 4 points (and define p95 target)
 
 ---
 
 ## Part 3: Desired Architecture
 
-### Option A: Monolithic LLM-Driven (Recommended)
+### Option D: Code-Orchestrated Native Research (NEW - Recommended)
 
-**Concept:** Single LLM call with tool calling for search, minimizing state fragmentation
+Based on the `o1` Adversarial Audit, a pure Monolithic approach (Option A) contains fatal risks regarding token-bloat and attention drift. Option D provides the cost savings of native search while preserving the stability of the current orchestrator.
 
-```mermaid
-graph TD
-    Input[User Input] --> Normalize[Simple Normalization<br/>question → statement]
-    Normalize --> LLM[Single LLM Call<br/>with Tool Calling]
-    
-    LLM --> Tools{Tools Available}
-    Tools -->|web_search| Search[Native LLM Search<br/>Perplexity, Gemini Grounded]
-    Tools -->|analyze_claim| SubAnalysis[Recursive Analysis<br/>for sub-claims]
-    
-    Search --> Evidence[Evidence]
-    SubAnalysis --> Evidence
-    Evidence --> LLM
-    
-    LLM --> Output[Structured Output<br/>Contexts + Claims + Verdicts]
-    
-    style LLM fill:#d4edda
-    style Search fill:#d4edda
-```
-
-**Advantages:**
-- **Consistency**: Single prompt ensures question/statement treated identically
-- **Efficiency**: 1-3 LLM calls vs. current 15-25
-- **Provider-agnostic**: Works with any tool-calling LLM (GPT-4, Claude, Gemini)
-- **Cost**: ~70% reduction (fewer LLM calls, native search cheaper than external API)
-
-**Disadvantages:**
-- **Provider lock-in risk**: Requires tool calling (not all providers support)
-- **Less control**: LLM decides when to search, harder to debug
-- **Context limits**: Large articles may exceed single-call context
-
-**Providers Supporting This:**
-- ✅ OpenAI GPT-4 (tools, no native search yet)
-- ✅ Anthropic Claude 3.5 (tools, no native search)
-- ✅ Google Gemini 2.0 (tools + grounded search)
-- ✅ Perplexity (native search built-in)
-- ❌ Mistral (limited tool support)
-
-### Option B: Hybrid Pipeline (Fallback-Safe)
-
-**Concept:** Simplified 3-stage pipeline with optional LLM search delegation
+**Concept:** Keep the "Brain" in TypeScript, but replace the 15+ "Hand" calls (Extraction) with a single "Native Research" tool call.
 
 ```mermaid
 graph TD
@@ -340,56 +304,50 @@ graph TD
     Stage1 --> Claims[Claims]
     Stage1 --> Queries[Research Queries]
     
-    Queries --> SearchMode{Search Mode}
-    SearchMode -->|LLM Native| LLMSearch[LLM Grounded Search<br/>1 call per query]
-    SearchMode -->|External API| ExtSearch[External Search API<br/>Brave/Google]
+    Queries --> LLMSearch[LLM Grounded Search Tool<br/>1 call per scope]
     
-    LLMSearch --> Facts[Facts]
-    ExtSearch --> Fetch[Fetch + Extract<br/>N LLM calls]
-    Fetch --> Facts
+    LLMSearch --> Facts[Structured Fact Buffer]
     
-    Contexts --> Stage2[Stage 2: VERDICT<br/>1 LLM call per context]
-    Claims --> Stage2
-    Facts --> Stage2
+    Facts --> Stage2[Stage 2: VERDICT<br/>1 LLM call per context]
     
     Stage2 --> Output[Final Verdict]
     
     style Stage1 fill:#cfe2ff
-    style Stage2 fill:#cfe2ff
     style LLMSearch fill:#d4edda
+    style Stage2 fill:#cfe2ff
 ```
 
 **Advantages:**
-- **Backward compatible**: Falls back to external search if LLM doesn't support native
-- **Debuggable**: Clear stage boundaries, can inspect intermediate state
-- **Provider flexibility**: Works with any LLM (tool calling optional)
-
-**Disadvantages:**
-- **Still complex**: 3 stages, state management between stages
-- **Moderate efficiency**: ~40% reduction vs. current (5-10 LLM calls vs. 15-25)
-
-### Option C: Current Architecture (Minimal Changes)
-
-**Keep existing** 5-stage pipeline, fix only critical bugs
-
-**Changes:**
-1. Remove duplicate normalizations (keep only entry point)
-2. Fix `selectFactsForScopeRefinementPrompt` to guarantee scope representation
-3. Stabilize scope IDs (use hash of name+subject, not text similarity)
-4. Gate1 after research (not before)
-
-**Advantages:**
-- **Low risk**: Minimal code changes
-- **Proven**: Architecture battle-tested over 30+ versions
-
-**Disadvantages:**
-- **Still fragile**: 15+ LLM calls, many failure points
-- **Expensive**: ~$0.10-0.50 per analysis
-- **Slow**: 45-90 seconds per analysis
+- **Linear Cost Scaling**: Avoids the quadratic token growth of a long-running monolithic conversation.
+- **UI Responsiveness**: Maintains the ability to emit "Step X" events for each search/scope.
+- **Schema Integrity**: Facts are extracted into a "Buffer" before the verdict, preventing the LLM from "summarizing away" critical metadata.
+- **Scope Isolation**: By running search/verdict in separate, scoped calls, we prevent "Attention Sink" contamination between jurisdictions (e.g., TSE vs. SCOTUS).
 
 ---
 
-## Part 4: Complexity Audit
+## Part 3.1: Ground Realism Gate (NEW - REQUIRED BEFORE PHASE 3/4)
+
+Option D only works in production if the "Native Research" stage is **actually grounded** and **provenance-safe**.
+
+**Non-negotiable rule (Pipeline Integrity):** Facts used for verdicts must come from **fetched sources** (real URLs / documents) with `sourceUrl` + `sourceExcerpt`. Do **not** treat an LLM's synthesized “grounded response” as evidence.
+
+**Reality check:** Gemini “grounded search” support in the repo depends on provider metadata being present. If grounding metadata is missing, the system must **fall back** to standard search providers rather than pretending research happened.
+
+---
+
+## Part 4: Adversarial Audit Result (o1-preview)
+
+The following "Kill Switch" issues were identified during a deep simulation audit:
+
+1.  **Context Window Bloat / Token Trap**: In Option A, re-entrant tool calls re-inject the entire history. This leads to **quadratic token growth**, potentially making the "simplified" pipeline *more expensive* than the legacy one.
+2.  **Attention Sink / Scope Contamination**: In a monolithic prompt, LLMs struggle to isolate evidence for 3+ distinct legal bodies (e.g., TSE, STF, SCOTUS). Facts from one court "leak" into the verdict of another.
+3.  **Black Box UX**: A 40-second monolithic call prevents the iterative UI feedback users expect, leading to a perceived "system hang."
+
+**Fix**: Pivot to **Option D**, maintaining stage boundaries while leveraging high-tier LLM "Grounded Search" tools for the evidence collection stage.
+
+---
+
+## Part 5: Complexity Audit
 
 ### Unnecessary Complexity (Can Remove)
 
@@ -468,15 +426,16 @@ Use a consistent formula:
 | Verdict | 3-8 | 20K in, 3K out | $1.20 | $0.48 | 15s |
 | **Total** | **10-27** | **~200K** | **$2.00** | **$0.80** | **52s** |
 
-### Optimized Costs (Option A)
+### Optimized Costs (Option D) (estimate; must be validated with measurements)
 
 | Stage | LLM Calls | Tokens (avg) | Cost (GPT-4) | Cost (Claude) | Time |
 |-------|-----------|--------------|--------------|---------------|------|
-| Unified Analysis | 1 | 40K in, 10K out | $0.70 | $0.28 | 15s |
-| LLM Grounded Search | 2-4 | 8K in, 4K out | $0.16 | $0.06 | 8s |
-| **Total** | **3-5** | **~70K** | **$0.86** | **$0.34** | **23s** |
+| Understand | 1 | 8K in, 4K out | $0.12 | $0.05 | 8s |
+| Research (budgeted + grounded/external search) | 2-4 | varies | varies | varies | varies |
+| Verdict (per-scope) | 1-3 | 20K in, 3K out | $0.40 | $0.16 | 10s |
+| **Total** | **4-8** | **workload-dependent** | **must measure** | **must measure** | **p95-driven** |
 
-**Savings:** 57% cost, 56% time, 70% LLM calls
+**Potential savings:** TBD (must be measured on the regression suite; p95-driven)
 
 ### Optimization Strategies (All Options)
 
@@ -490,7 +449,7 @@ Use a consistent formula:
 **Target SLOs (without quality loss):**
 - **Latency**: p50 < 20s, p95 < 45s
 - **Cost**: < $0.50 per analysis (GPT-4), < $0.20 (Claude)
-- **Accuracy**: Input neutrality divergence < 5%, verdict stability > 90%
+- **Accuracy**: Input neutrality divergence avg ≤ 4 points (Q/S), verdict stability > 90%
 
 ---
 
@@ -513,13 +472,13 @@ Use a consistent formula:
    - Guarantee ≥1 representative fact per pre-assigned scope in the refinement prompt
    - Treat “implemented fix” and “verification” separately: ensure the logic is present AND validated on known regressions
    
-4. **Move Gate1 post-research**
-   - Don't filter claims before searching for evidence
-   - Apply Gate1 after facts extracted
+4. **Gate1 timing (defer or Gate1-lite first)**
+   - **Do not** move Gate1 fully post-research until supplemental claims logic is refactored.
+   - Safe interim: keep Gate1 pre-research (status quo) **or** add a minimal “Gate1-lite” pre-filter for extreme non-factual claims, then apply full Gate1 post-research for verdicting.
 
 **Testing:**
 - Run 20 question/statement pairs (plus a small set of known multi-scope regressions)
-- Target: avg divergence < 5 points; define p95 target; no scope loss events in the regression set
+- Target: avg divergence ≤ 4 points; define p95 target; no scope loss events in the regression set
 
 ### Phase 2: Pipeline Simplification (Week 3-4)
 
@@ -543,11 +502,11 @@ Use a consistent formula:
 
 ### Phase 3: LLM-Native Search Integration (Week 5-6)
 
-**Goal:** Add support for Gemini Grounded Search, Perplexity
+**Goal:** Add *verifiable* grounded research (only when provenance is real), with deterministic fallback to external search
 
 1. **Implement search delegation** (new file: [`analyzer/llm-search.ts`](apps/web/src/lib/analyzer/llm-search.ts))
-   - Detect if provider supports native search
-   - Fallback to external search if not
+   - Detect if provider supports native search *and* returns grounding metadata with real sources
+   - **Fallback to external search** if grounding metadata is absent/unreliable
    
 2. **Refactor research loop with guardrails**
    - If LLM supports tools, allow tool-assisted search, but keep the orchestrator in control
@@ -562,32 +521,33 @@ Use a consistent formula:
 - A/B test: LLM search vs. external search
 - Measure: cost, latency, fact relevance, verdict quality
 
-### Phase 4: Unified Architecture (Week 7-10)
+### Phase 4: Option D Production Hardening (Week 7-10)
 
-**Goal:** Implement Option A (monolithic LLM-driven)
+**Goal:** Make Option D safe under tail latency and adversarial multi-scope inputs
 
-1. **Design unified prompt** (new file: [`analyzer/unified-prompt.ts`](apps/web/src/lib/analyzer/unified-prompt.ts))
-   - Single system prompt covering all stages
-   - Structured output: contexts, claims, verdicts
-   - Tool definitions: web_search, analyze_sub_claim
-   
-2. **Implement orchestrator** (refactor [`analyzer.ts`](apps/web/src/lib/analyzer.ts))
-   - Replace 5-stage pipeline with single LLM call
-   - Handle tool calls iteratively (search → analyze)
-   - Fallback to hybrid if tool calling unavailable
-   
-3. **Migration flag** (`FH_USE_UNIFIED_PIPELINE=true`)
-   - Run both pipelines in parallel
-   - Compare outputs, gradually shift traffic
+1. **Budget + p95 controls**
+   - Add explicit **latency budgets**, caps, retries, and bounded parallelism across scopes
+   - Fail “slow scope” gracefully with explicit confidence reduction (Gate 4)
+
+2. **Semantic validation for Structured Fact Buffer**
+   - Enforce provenance (real URLs, excerpts)
+   - Enforce scope mapping (`relatedProceedingId` must map to known scopes or `CTX_UNSCOPED`)
+
+3. **Migration flags**
+   - `FH_SHADOW_PIPELINE=true` (run hardened Option D in shadow-mode; compare without user impact)
+   - `FH_FORCE_EXTERNAL_SEARCH=true` (override grounded mode for safety)
+   - Gradual rollout of hardened Option D once metrics are green
 
 **Testing:**
-- Regression suite: 100 diverse inputs
-- Metrics: verdict accuracy, input neutrality, scope detection recall
-- Rollout: 10% → 50% → 100% over 2 weeks
+- Regression suite: 100+ diverse inputs (must include adversarial multi-scope)
+- Metrics: input neutrality, scope retention, cross-scope leak rate, cost, **p95 latency**
+- Rollout: 10% → 50% → 100% with automated rollback
 
-**Go/No-Go gate before Phase 4** (recommended):
-- Neutrality suite meets targets (avg < 5 points; p95 defined and met)
+**Go/No-Go gate (before production rollout):**
+- Grounding/provenance gate is green (no synthetic-evidence path)
+- Neutrality suite meets targets (avg ≤ 4 points; p95 defined and met)
 - Scope-loss regressions reduced to ~0 in the tracked set
+- Cross-scope leak test passes (adversarial input)
 - Deterministic scope IDs shipped and verified
 
 ### Phase 5: Deprecation (Week 11-12)
@@ -612,23 +572,23 @@ Use a consistent formula:
 | **Cost overruns** | LOW | MEDIUM | Model tiering |
 | **Provider coupling** | LOW | LOW | Already multi-provider |
 
-### Desired Architecture Risks (Option A)
+### Desired Architecture Risks (Option D)
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| **Tool calling unavailable** | MEDIUM | HIGH | Hybrid fallback (Option B) |
-| **LLM search quality** | MEDIUM | MEDIUM | A/B testing, external search fallback |
-| **Single-call context limits** | LOW | MEDIUM | Chunk large articles |
-| **Debugging difficulty** | MEDIUM | MEDIUM | Verbose logging, intermediate outputs |
-| **Regression during migration** | MEDIUM | HIGH | Parallel pipelines, gradual rollout |
+| **Grounding future-ware** | HIGH | HIGH | Phase 0 reality gate; fail closed to external search |
+| **p95 latency blowups** | MEDIUM | HIGH | budgets/caps + bounded parallelism + timeouts |
+| **Schema-valid but wrong metadata** | MEDIUM | HIGH | semantic validation + provenance rules |
+| **Provider coupling** | MEDIUM | MEDIUM | adapter + deterministic fallback |
+| **Regression during migration** | MEDIUM | HIGH | shadow mode + gradual rollout + rollback |
 
 ### Mitigation Strategy
 
-1. **Feature flags**: `FH_USE_UNIFIED_PIPELINE`, `FH_FORCE_EXTERNAL_SEARCH`
-2. **Parallel execution**: Run both pipelines, compare outputs
+1. **Feature flags**: `FH_SEARCH_MODE` (standard|grounded), `FH_FORCE_EXTERNAL_SEARCH`, `FH_SHADOW_PIPELINE`
+2. **Parallel execution**: Run baseline vs hardened Option D in parallel (shadow-mode), compare outputs
 3. **Rollback plan**: Single env var change reverts to legacy
 4. **Monitoring**: Log verdict divergence, scope count, cost per input type
-5. **Circuit breaker**: Auto-fallback if unified pipeline error rate > 5%
+5. **Circuit breaker**: Auto-fallback to external search/baseline path if Option D error rate > threshold
 
 ---
 
@@ -685,22 +645,22 @@ async function runUnifiedAnalysis(
 |----------|--------------|---------------|-------------------|---------------|
 | **OpenAI GPT-4** | ✅ | ❌ (planned) | ✅ | 128K |
 | **Anthropic Claude** | ✅ | ❌ | ✅ | 200K |
-| **Google Gemini 2.0** | ✅ | ✅ (grounded) | ✅ | 1M |
-| **Perplexity** | ⚠️ (limited) | ✅ (built-in) | ❌ | 127K |
+| **Google Gemini (AI SDK)** | ✅ | ⚠️ (grounded; experimental — only counts when grounding metadata/citations are returned) | ✅ | large |
+| **Perplexity** | ⚠️ (limited) | ✅ (built-in; not yet integrated in this repo) | ❌ | 127K |
 | **Mistral** | ⚠️ (basic) | ❌ | ⚠️ | 32K |
 
-**Recommendation:** Primary=Gemini 2.0 (native search), Fallback=Claude 3.5 (quality)
+**Recommendation:** Keep multi-provider support. Treat grounded/native research as **experimental** until Phase 0 provenance gates are enforced; always maintain deterministic fallback to external search.
 
 ---
 
 ## Part 9: Success Metrics
 
 ### Input Neutrality
-- **Target:** < 5% verdict divergence between question/statement
+- **Target:** ≤ 4 points (percentage points) average absolute divergence between question/statement
 - **Measure:** Run 50 Q/S pairs, calculate avg absolute difference
 - **Current:** 7-39% (FAILING)
 - **Phase 1 goal:** < 10%
-- **Phase 4 goal:** < 3%
+- **Phase 4 goal:** < 4%
 
 ### Scope Detection Recall
 - **Target:** Detect 95%+ of distinct legal proceedings, methodologies
@@ -728,19 +688,16 @@ async function runUnifiedAnalysis(
 
 ---
 
-## Recommendation
+## Recommendation (UPDATED)
 
-**Adopt Option A (Unified LLM-Driven)** with **Phase 1-2 as prerequisites**:
+**Adopt Option D (Code-Orchestrated Native Research)** with an explicit **Phase 0 Ground Realism Gate**:
 
 1. **Immediate** (Week 1-2): Fix critical input neutrality bugs (Phase 1)
 2. **Short-term** (Week 3-4): Simplify pipeline, stabilize scope detection (Phase 2)
-3. **Medium-term** (Week 5-10): Implement unified architecture with Gemini native search (Phase 3-4)
-4. **Long-term** (ongoing): Monitor, optimize, extend to other providers
+3. **Medium-term** (Week 5-10): Add provenance-safe grounded research + p95 guardrails (Phase 3-4)
+4. **Long-term** (ongoing): Measure cost/latency at p95, expand provider adapters, and only consider Option A again if tool-chain and grounding are provably stable.
 
-**Why Option A:**
-- **Highest ROI**: 57% cost reduction, 56% latency improvement
-- **Best consistency**: Single prompt eliminates input drift
-- **Future-proof**: Leverages emerging LLM capabilities (native search becoming standard)
-- **Maintainable**: 3K LOC vs. current 8.5K LOC in analyzer.ts
-
-**Risk mitigation:** Parallel pipelines during migration, fallback to Option B if quality degrades
+**Why Option D:**
+- Preserves **Pipeline Integrity** with explicit stage boundaries and provenance.
+- Avoids the known **token trap** risks of monolithic tool loops.
+- Keeps UI telemetry and isolation per scope.

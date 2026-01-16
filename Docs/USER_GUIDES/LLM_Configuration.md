@@ -35,7 +35,7 @@ FactHarbor supports multiple LLM (Large Language Model) providers and search pro
 |----------|-----|----------|--------|
 | **Google Custom Search (CSE)** | Free tier available | General web search | ✅ Supported |
 | **SerpAPI** | Pay-per-use | Reliable Google results | ✅ Supported |
-| **Gemini Grounded Search** | Built-in | When using Gemini | ✅ Supported (requires `LLM_PROVIDER=gemini` + `FH_SEARCH_MODE=grounded`) |
+| **Gemini Grounded Search** | Built-in | When using Gemini | ⚠️ Experimental (requires `LLM_PROVIDER=gemini` + `FH_SEARCH_MODE=grounded`; only counts as “grounded” when the provider returns grounding metadata/citations) |
 | **Brave Search** | API required | Privacy-focused | ❌ Not implemented (no adapter in code) |
 | **Tavily** | API required | AI-optimized | ❌ Not implemented (no adapter in code) |
 | **Bing Search** | API required | General web search | ❌ Not implemented (no adapter in code) |
@@ -121,7 +121,7 @@ FH_DETERMINISTIC=true  # Use temperature=0 for reproducible results
 FH_ALLOW_MODEL_KNOWLEDGE=false  # Require evidence-based analysis only
 
 # Experimental Features
-FH_SEARCH_MODE=standard  # Options: standard | grounded (Gemini only)
+FH_SEARCH_MODE=standard  # Options: standard | grounded (Gemini only; experimental)
 ```
 
 ### Configuration Validation
@@ -206,7 +206,7 @@ FH_SEARCH_PROVIDER=auto
 **Behavior**:
 - Tries Google CSE first (if configured)
 - Falls back to SerpAPI for remaining slots
-- Uses Gemini Grounded Search when `LLM_PROVIDER=gemini` and `FH_SEARCH_MODE=grounded`
+- Uses Gemini Grounded Search when `LLM_PROVIDER=gemini` and `FH_SEARCH_MODE=grounded` (experimental). If grounding metadata/citations are missing, FactHarbor should fall back to standard search rather than treating model synthesis as evidence.
 
 ### Domain Whitelist
 

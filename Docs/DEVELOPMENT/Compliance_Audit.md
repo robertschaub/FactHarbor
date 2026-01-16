@@ -107,7 +107,7 @@ This comprehensive audit reviews the FactHarbor codebase against [AGENTS.md](../
 
 ### 1.2 Input Neutrality ✅ **COMPLIANT** (98/100)
 
-**Rule**: "Was X fair?" must yield same analysis as "X was fair" (<5% divergence)
+**Rule**: "Was X fair?" must yield same analysis as "X was fair" (≤4% divergence)
 
 #### ✅ Excellent Implementation
 
@@ -142,7 +142,7 @@ This comprehensive audit reviews the FactHarbor codebase against [AGENTS.md](../
    ```
    question=77 statement=76 divergence=1
    ```
-   **Status**: ✅ **1% divergence** - Well within <5% tolerance
+   **Status**: ✅ **1% divergence** - Well within ≤4% tolerance
 
 #### ⚠️ Minor Edge Case
 
@@ -768,7 +768,7 @@ False                (empty)
 **Input Neutrality**:
 - Bolsonaro Question: 77% truth, 81% confidence
 - Bolsonaro Statement: 76% truth (see `test-output/regressions/20260112-191850/summary.txt`)
-- **Divergence**: 1% ✅ (target: <5%)
+- **Divergence**: 1% ✅ (target: ≤4%)
 
 **Analysis Time**:
 - Bolsonaro Question: 243,756ms (4min 4sec)

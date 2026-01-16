@@ -42,7 +42,7 @@ Investigated reported issues with the FactHarbor analysis pipeline:
 - Current architecture uses 5-stage pipeline (Understand → Research → Verdict → Summary → Report)
 - 15-25 LLM calls per analysis
 - Multi-provider support (Anthropic, OpenAI, Google, Mistral)
-- Input neutrality is a documented requirement (target: < 5 points average absolute divergence for question/statement pairs; define p95)
+- Input neutrality is a documented requirement (target: ≤ 4 points average absolute divergence for question/statement pairs; define p95)
 - Scope detection critical for multi-context analyses (legal proceedings, methodologies)
 
 ### 3. Architectural Analysis
@@ -53,12 +53,11 @@ Input → Normalize (3×) → Understand (1 LLM) → Research (10-20 LLMs) →
 Refine Scopes (1 LLM) → Verdict (3-8 LLMs) → Summary → Report
 ```
 
-**Proposed Architecture (Option A)**:
+**Proposed Architecture (Option D - Recommended)**:
 ```
-Input → Normalize (1×) → Unified LLM (with tool calling for search) → Output
+Input → Normalize (1×) → Understand (1 LLM) → Native Research Tool (1-3 calls) → Verdict (1 call/scope)
 ```
-
-**Reduction**: 15-25 LLM calls → 3-5 LLM calls (70% reduction)
+*Note: This hybrid approach was chosen over a pure monolithic approach (Option A) following an adversarial audit that identified quadratic token cost risks. It also requires a “Ground Realism” gate: native/grounded research must yield real sources with provenance; LLM synthesis must not be treated as evidence.*
 
 ### 4. Complexity Audit
 
@@ -89,7 +88,7 @@ Input → Normalize (1×) → Unified LLM (with tool calling for search) → Out
 - Cost (Claude): $0.34
 - Time: 23s avg
 
-**Savings**: 57% cost, 56% time
+**Projected savings**: must be validated via the regression harness (record call counts, token usage if available, provider/search costs, and p95 latency). Do not treat any headline % as committed until measured.
 
 ### 6. Migration Plan
 
@@ -99,7 +98,7 @@ Input → Normalize (1×) → Unified LLM (with tool calling for search) → Out
 - Scope preservation verification
 - Gate1 post-research
 - Add a deterministic regression harness (neutrality divergence, scope stability, claim stability, cost/latency)
-- **Testing**: 20 Q/S pairs + known multi-scope regressions; target avg divergence < 5 points (define p95)
+- **Testing**: 20 Q/S pairs + known multi-scope regressions; target avg divergence ≤ 4 points (define p95)
 
 **Phase 2** (Week 3-4): Simplification
 - Merge understand + supplemental
@@ -108,19 +107,18 @@ Input → Normalize (1×) → Unified LLM (with tool calling for search) → Out
 - **Testing**: 50 diverse inputs, claim count validation
 
 **Phase 3** (Week 5-6): LLM-native search
-- Implement Gemini Grounded Search
+- Implement provenance-safe Gemini grounded search (fail closed to external search if grounding metadata/citations are absent)
 - Add Perplexity support
 - Fallback to external search
 - Add explicit guardrails/budgets for tool-assisted search to prevent runaway behavior
 - **Testing**: A/B test 100 analyses
 
-**Phase 4** (Week 7-10): Unified architecture
-- Design unified prompt
-- Implement orchestrator
-- Parallel pipelines
-- Gradual rollout (10% → 50% → 100%)
-- Add a clear go/no-go gate before rollout (neutrality + scope stability targets met)
-- **Testing**: Regression suite 100 inputs
+**Phase 4** (Week 7-10): Option D production hardening
+- Add explicit budgets/caps + bounded parallelism to control p95 latency on multi-scope workloads
+- Add semantic validation (provenance + scope mapping) to prevent schema-valid but wrong buffers
+- Shadow-mode parallel run + gradual rollout (10% → 50% → 100%)
+- Add a clear go/no-go gate before rollout (neutrality + scope stability + adversarial scope leak test)
+- **Testing**: Regression suite 100+ inputs
 
 **Phase 5** (Week 11-12): Deprecation
 - Archive legacy code
@@ -173,7 +171,7 @@ async function runUnifiedAnalysis(
 
 | Metric | Current | Phase 1 | Phase 4 | Target |
 |--------|---------|---------|---------|--------|
-| **Input Neutrality (avg abs diff, points)** | 7-39 | < 10 | < 3 | < 5 |
+| **Input Neutrality (avg abs diff, points)** | 7-39 | < 10 | < 4 | ≤ 4 |
 | **Scope Recall** | ~80% | > 90% | > 95% | > 95% |
 | **Cost** (GPT-4) | $2.00 | $1.50 | $0.86 | < $0.50 |
 | **Latency** (p95) | 70s | 60s | 40s | < 45s |
@@ -251,8 +249,9 @@ async function runUnifiedAnalysis(
    - Secure resources for testing
 
 3. **Environment Setup**:
-   - Add `FH_USE_UNIFIED_PIPELINE` flag
+   - Add `FH_SHADOW_PIPELINE` flag (run hardened Option D in parallel without user impact)
    - Add `FH_FORCE_EXTERNAL_SEARCH` flag
+   - Confirm `FH_SEARCH_MODE=standard|grounded` semantics (grounded is experimental and must fail closed)
    - Update configuration docs
 
 ---

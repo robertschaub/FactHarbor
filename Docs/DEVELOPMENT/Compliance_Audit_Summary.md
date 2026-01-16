@@ -28,7 +28,7 @@
 ### Excellent AGENTS.md Compliance
 
 1. **Input Neutrality**: ✅ 98/100
-   - Question vs Statement divergence: **1%** (target: <5%)
+   - Question vs Statement divergence: **1%** (target: ≤4%)
    - Latest regression: question=77% vs statement=76% (`test-output/regressions/20260112-191850/bolsonaro-divergence.txt`)
 
 2. **Generic by Design**: ✅ 95/100

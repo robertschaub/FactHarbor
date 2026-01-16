@@ -20,7 +20,7 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 ### Input Neutrality
 - **Question ≈ Statement**: "Was X fair?" must yield same analysis as "X was fair"
 - **Format independence**: Input phrasing must NOT affect analysis depth or structure
-- **Tolerance**: Verdict difference between formats should be <5%
+- **Tolerance**: Verdict difference between formats should be ≤4%
 
 ### Pipeline Integrity
 - **No stage skipping**: Understand → Research → Verdict (all required)

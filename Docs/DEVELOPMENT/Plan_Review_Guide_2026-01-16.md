@@ -2,6 +2,7 @@
 
 **Date**: January 16, 2026  
 **Plan Document**: `Docs/DEVELOPMENT/Pipeline_Redesign_Plan_2026-01-16.md`  
+**Implementation Entry**: `Docs/DEVELOPMENT/Start_Pipeline_Redesign_Implementation.md`  
 **Status**: Ready for Review
 
 ---
@@ -9,38 +10,63 @@
 ## Executive Summary for Reviewers
 
 This plan addresses **critical bugs** in the FactHarbor analysis pipeline that cause:
-1. **Input neutrality failures**: Question vs statement inputs diverge by 7-39% (target < 5%)
+1. **Input neutrality failures**: Question vs statement inputs diverge by ~7–39 points (target ≤ 4 points avg absolute)
 2. **Missing scope detection**: TSE/STF contexts disappear intermittently
 3. **Reduced claim generation**: 4-6 claims vs 10-12 in earlier runs
 4. **Verdict inconsistency**: Identical inputs produce different results between runs
 
-The root cause is **excessive pipeline complexity** (15+ LLM calls, fragile state management). The plan proposes a **5-phase migration** (Phase 1-5) to a simplified architecture with ~57% cost reduction and ~56% latency improvement.
+The root cause is **excessive pipeline complexity** (15+ LLM calls, fragile state management). The plan proposes a **5-phase migration** (Phase 1-5) to a simplified architecture with **measured** cost/latency reductions (p95-driven) and explicit go/no-go gates.
 
 > **Note on code references**: This document (and the plan) mention line numbers as a convenience, but they can drift quickly as `analyzer.ts` evolves. Reviewers should prefer searching by **function name** (e.g., `runFactHarborAnalysis`, `understandClaim`, `selectFactsForScopeRefinementPrompt`, `canonicalizeScopes`, `pruneScopesByCoverage`) and confirm behavior in the current `main` branch.
+
+## Final Review Checklist (sign-off)
+
+Use this as the minimum sign-off checklist. **Further checks are welcome** wherever the reviewer thinks it makes sense (add items, request extra evidence, or propose alternative gates).
+
+- [ ] **Architecture coherence**: Option D (Code-Orchestrated Native Research) is the selected target; Option A is explicitly deferred; no contradictory recommendations remain.
+- [ ] **AGENTS.md invariants**: Pipeline Integrity (Understand → Research → Verdict), multi-scope detection/“Scope” terminology, and Gate 1 + Gate 4 are reaffirmed as hard constraints (or an explicit `AGENTS.md` amendment is proposed).
+- [ ] **Input neutrality target**: Q/S divergence target is **≤ 4 percentage points** (avg absolute), with a defined p95 target.
+- [ ] **Phase 0 Ground Realism Gate**: No “LLM synthesis as evidence”; grounded/native research must yield real sources with provenance or fail closed to standard search.
+- [ ] **p95 safety**: Research budgets/caps + bounded parallelism are specified for multi-scope workloads; timeouts and “partial results” behavior are explicit.
+- [ ] **Semantic validation**: Structured outputs are validated beyond schema (provenance + scope mapping) before verdicting.
+- [ ] **Rollout/rollback**: Shadow-mode/parallel run, gradual rollout, and deterministic fallback are documented with clear go/no-go triggers.
+- [ ] **Implementation on-ramp**: `Start_Pipeline_Redesign_Implementation.md` is sufficient to start PR 1 without guesswork.
+
+## Invariants governance (AGENTS.md)
+
+`AGENTS.md` defines repo-level **non‑negotiable invariants** for this project. If we want to relax any of these (Pipeline Integrity, multi-scope detection/terminology, Gate 1 & Gate 4), that is a **governance change**: it requires explicitly updating `AGENTS.md` and re-deriving acceptance tests.
+
+**Invariants to reaffirm (or explicitly amend)**:
+- **Pipeline Integrity (Understand → Research → Verdict)**: without this, the system can “skip research” and still output a verdict, which breaks evidence transparency and makes regressions unauditable.
+- **Scope detection (“Scope” terminology + multi-scope support)**: without multi-scope isolation, multi-jurisdiction inputs become a cross-contamination risk (facts leak between scopes).
+- **Quality gates (Gate 1 + Gate 4)**: without these, you lose deterministic guardrails against hallucinations/low-confidence outputs and you weaken rollback criteria.
+- **Input Neutrality**: `AGENTS.md` now targets **≤4 percentage points** divergence between question/statement forms; this is a rollout gate, not just “nice to have.”
+
+**Review prompt**: Do we reaffirm these invariants as hard constraints? If not, what exact amendments to `AGENTS.md` are being proposed, and what new safety/quality gates replace the removed ones?
 
 ## Second/Third Reviewer Protocol (recommended)
 
 If you are running a subsequent review (e.g., using GPT-4 or another agent), keep it **independent** and **evidence-based**:
 
-1.  **Role**: Act as a **skeptical auditor**. Assume the proposed "Unified" architecture will break evidence integrity until proven otherwise.
+1.  **Role**: Act as a **skeptical auditor**. Assume “native research / grounding” will fail closed unless proven otherwise (no synthetic evidence).
 2.  **Independence**: Do an initial pass *without* reading the first reviewer’s notes. Only reconcile at the end.
 3.  **Focus Areas for GPT-4**:
-    - **Tool-calling realism**: Can a single prompt reliably manage recursive search without losing structured data?
-    - **Budgeting**: Is the proposed cost model realistic for high-traffic scenarios?
-    - **Invariants**: Will the "Monolithic" call preserve the "Understand -> Research -> Verdict" sequence required by `AGENTS.md`?
+   - **Grounded research realism**: Does “grounded” actually return real sources with provenance, or is it model synthesis?
+   - **p95 budgeting**: Are tail-latency caps and bounded parallelism explicit for multi-scope workloads?
+   - **Invariants**: Does the design preserve Understand → Research → Verdict and evidence transparency required by `AGENTS.md`?
 4.  **Verification**:
     - Validate root causes with code inspection (function-name anchored).
     - Check for "hallucinated" cost savings—are we trading LLM calls for much more expensive input tokens?
 5.  **Deliverable format**: Provide a short report with:
     - **Top 5 risks** (ranked)
     - **Top 5 proposed fixes** (actionable, with rationale)
-    - **Go/No-Go criteria** for Phase 4 (unified orchestration)
+    - **Go/No-Go criteria** for Phase 4 (Option D production hardening)
 
 ---
 
 ## Background Context
 
-### Current System Status (v2.6.32)
+### Current System Status (v2.6.33)
 
 **Working Features:**
 - Multi-scope detection (legal proceedings, methodologies)
@@ -66,7 +92,7 @@ The analysis incorporated:
    - Scope_Detection_and_Filtering.md: AnalysisContext vs EvidenceScope distinction
    
 2. **Status docs** (`Docs/STATUS/`):
-   - Current_Status.md: v2.6.32 features and known gaps
+   - Current_Status.md: current features and known gaps
    - CHANGELOG.md: Recent fixes (v2.6.18-v2.6.25)
    
 3. **Codebase** (`apps/web/src/lib/`):
@@ -92,6 +118,29 @@ The plan is organized into 9 parts:
 
 ---
 
+## Architecture & Design Deltas (what changes in code)
+
+This is the reviewer-oriented “diff” from the current pipeline to the redesigned Option D plan.
+
+### Delta A: Phase 0 “Ground Realism Gate” (NEW)
+- **Rule**: Facts used for verdicts must come from **fetched sources** (real URLs/documents) with provenance (URL + excerpt).
+- **Ban**: No “LLM synthesis as evidence” paths (including any “grounded response” text treated as a source).
+- **Fail closed**: If grounded/native research does not yield grounding metadata/citations, fall back to standard search providers.
+
+### Delta B: p95-first budgets + bounded parallelism (NEW)
+- Add explicit budgets/caps (timeouts, max sources, max extractions, max retries) and bounded concurrency for multi-scope workloads so p95 does not explode on 3+ scopes.
+
+### Delta C: Semantic validation of the Structured Fact Buffer (NEW)
+- Parsing JSON is not enough: add deterministic semantic validators (provenance, scope mapping) before verdict generation to prevent schema-valid but wrong data from silently drifting.
+
+### Delta D: Generic-by-design enforcement (NEW)
+- Remove/replace any domain-specific keyword heuristics used for scope labeling/classification; prefer provider-agnostic metadata + deterministic normalization and/or configuration.
+
+### Delta E: EvidenceScope persistence (FIX)
+- If per-fact `evidenceScope` is extracted, ensure it is actually persisted in the returned fact objects so scope isolation and transparency can use it.
+
+---
+
 ## Key Technical Decisions to Review
 
 ### Decision 0: Rewrite vs. Evolution Strategy
@@ -108,17 +157,38 @@ The plan is organized into 9 parts:
 
 ### Decision 1: Architecture Option Selection
 
-**Proposed**: Option A (Monolithic LLM-Driven)
-- Single LLM call with tool calling for search
-- 3-5 LLM calls vs current 15-25
-- 57% cost reduction, 56% latency improvement
-- **Risk**: Requires tool calling (not all providers support)
+**Proposed**: Option D (Code-Orchestrated Native Research)
+- Keep orchestration in TypeScript (telemetry + deterministic controls)
+- Use grounded/native research only when it yields **real sources** with provenance
+- **Risk**: Grounding capability and tail latency must be proven (Phase 0 reality gate)
 
 **Alternatives**:
+- Option A (Monolithic LLM-Driven): deferred due to token-trap and scope contamination risks unless tool-chains are proven stable
 - Option B (Hybrid Pipeline): Simplified 3-stage with optional LLM search
 - Option C (Minimal Changes): Fix bugs, keep existing architecture
 
-**Review Question**: Is the 57% cost/speed improvement worth the risk of **capability dependence** (tool calling / structured output / native search availability)? (Mitigated by a hard fallback to Option B.)
+**Review Question**: Is capability dependence (native search/grounding, structured output) acceptable **given** a strict “fail-closed” provenance gate and deterministic fallback to external search?
+
+### Decision 1.1: Phase 0 “Ground Realism Gate” (NEW - rollout blocking)
+
+**Proposed**: Add an explicit Phase 0 gate before Phase 3/4 work:
+- Grounded/native research only “counts” when it yields **real sources** with provenance (URLs + excerpts)
+- **No synthetic evidence**: do not treat any LLM synthesis text as a fetchable source used for verdicting
+- **Fail closed**: if grounding metadata/citations are absent, fall back to standard search providers
+
+**Review Question**: Are we comfortable making “provenance or fallback” a hard gate (even if it reduces apparent recall in some cases)?
+
+### Decision 1.2: p95-first research budgets + bounded parallelism (NEW - design change)
+
+**Proposed**: Implement explicit budgets/caps and bounded concurrency for multi-scope research to prevent p95 latency blowups.
+
+**Review Question**: What is the production p95 target (e.g., 60s) and what is the acceptable behavior on budget exhaustion (partial results with Gate 4 confidence reduction vs. retry)?
+
+### Decision 1.3: Semantic validation (NEW - design change)
+
+**Proposed**: Add semantic validators for the “Structured Fact Buffer” (provenance, scope mapping) so schema-valid but wrong data cannot silently drift.
+
+**Review Question**: What should be the fail-closed behavior on semantic validation failure (skip verdicting vs. “insufficient evidence” verdict)?
 
 ### Decision 2: Scope Detection Preservation
 
@@ -130,9 +200,7 @@ The plan is organized into 9 parts:
 
 ### Decision 3: Gate1 Timing
 
-**Proposed**: Move Gate1 from pre-research to post-research
-- Don't filter claims before searching for evidence
-- Apply Gate1 after facts extracted
+**Proposed (updated per feasibility audit)**: **Do not** move Gate1 fully post-research until supplemental-claims coverage logic is refactored.\n+\n+Rationale (execution blocker): `requestSupplementalSubClaims` currently uses claim counts **after** Gate1 filtering to detect coverage gaps. If Gate1 is moved post-research without refactoring, opinion/prediction claims will mask factual coverage gaps, reducing supplemental claim generation and silently degrading research coverage.\n+\n+Two safe options:\n+- **Option 1 (defer)**: keep Gate1 pre-research (status quo) until supplemental claims are redesigned/removed.\n+- **Option 2 (Gate1-lite)**: keep a minimal pre-filter (“Gate1-lite”) for extreme non-factual claims to preserve coverage accounting, then apply the full Gate1 post-research for verdicting.
 
 **Review Question**: Will this increase LLM costs significantly? (Answer: ~5-10% more extraction calls, but better quality)
 
@@ -156,7 +224,7 @@ The plan is organized into 9 parts:
 - Scope preservation: Already implemented, verify effectiveness
 - Gate1 timing: Simple code move
 
-**Testing**: 20 question/statement pairs, target < 5% divergence
+**Testing**: 20 question/statement pairs, target ≤ 4 points avg absolute divergence (define p95 target)
 
 ### Phase 2 Risks (Simplification)
 
@@ -169,19 +237,18 @@ The plan is organized into 9 parts:
 
 ### Phase 3 Risks (LLM-Native Search)
 
-**MEDIUM RISK** - Provider availability:
-- Gemini Grounded Search: Available
-- Perplexity: Available
-- OpenAI/Anthropic: Not yet (planned)
+**MEDIUM→HIGH RISK** - Grounding realism + provider variance:
+- “Gemini grounded search” is only safe if it yields grounding metadata and real sources; otherwise it is not evidence.
+- Providers differ in tool surfaces and latency tails; treat this as capability dependence.
 
-**Mitigation**: Fallback to external search if unavailable
+**Mitigation**: Phase 0 “Ground Realism Gate” + deterministic fallback to external search if grounding metadata is absent/unreliable
 
-### Phase 4 Risks (Unified Architecture)
+### Phase 4 Risks (Option D Production Hardening)
 
-**HIGH RISK** - Major architectural change:
-- Single LLM call may hit context limits
-- Tool calling may not match quality
-- Debugging complexity increases
+**HIGH RISK** - Production hardening for Option D:
+- p95 latency blowups on multi-scope workloads without budgets/caps
+- schema-valid but semantically wrong “structured buffers” without semantic validation
+- cross-scope evidence leakage if provenance/scope mapping is not enforced deterministically
 
 **Mitigation**: 
 - Parallel pipelines during migration
@@ -213,16 +280,14 @@ The plan is organized into 9 parts:
 
 **Review**: Compare fact sampling in both jobs, verify TSE facts exist but weren't sampled
 
-### 3. Cost Reduction Claims
+### 3. Cost/Latency Claims
 
-**Claim**: "57% cost reduction with unified architecture"
+**Claim (updated)**: Cost and latency improvements are expected from reducing call count and enforcing bounded research, but **must be measured** (p95-driven). Avoid “headline % savings” until token usage and search/provider costs are recorded on a representative suite.
 
-**Calculation**:
-- Current: 10-27 LLM calls × avg $0.08/call = $0.80-$2.16
-- Proposed: 3-5 LLM calls × avg $0.17/call = $0.51-$0.85
-- **Savings: 57% at midpoint**
-
-**Review**: Verify LLM call counts from job logs, validate cost assumptions
+**Review**:
+- Verify call counts (`state.llmCalls`) on baseline and Option D
+- If token usage is available, compute cost via a single, documented price table
+- Report avg/median/p95 latency; do not use averages as the rollout gate
 
 ### 4. Complexity Removal Claims
 
@@ -246,7 +311,7 @@ The plan is organized into 9 parts:
 
 **Regression Suite**:
 - 20 question/statement pairs (10 topics × 2 phrasings)
-- Measure: verdict divergence (target < 5%)
+- Measure: verdict divergence (target ≤ 4 points avg absolute)
 - Measure: scope count consistency
 - Measure: claim count consistency
 
@@ -269,14 +334,14 @@ The plan is organized into 9 parts:
 
 **Review Question**: How do we quantify "fact relevance"?
 
-### Phase 4 Testing (Unified)
+### Phase 4 Testing (Option D Hardening)
 
 **Regression Suite**:
 - 100 diverse inputs
 - Run both pipelines in parallel
 - Compare: verdict accuracy, scope detection recall, input neutrality
 
-**Review Question**: What's our acceptance criteria for rolling out unified pipeline?
+**Review Question**: What's our acceptance criteria for rolling out hardened Option D?
 
 ---
 
@@ -287,7 +352,7 @@ The plan is organized into 9 parts:
 | **Phase 1** (Critical Fixes) | Week 1-2 | 3-4 days | LOW |
 | **Phase 2** (Simplification) | Week 3-4 | 3-4 days | MEDIUM |
 | **Phase 3** (LLM Search) | Week 5-6 | 4-5 days | MEDIUM |
-| **Phase 4** (Unified) | Week 7-10 | 8-10 days | HIGH |
+| **Phase 4** (Option D hardening) | Week 7-10 | 8-10 days | HIGH |
 | **Phase 5** (Deprecation) | Week 11-12 | 2-3 days | LOW |
 | **Total** | **12 weeks** | **20-26 days** | - |
 
@@ -326,7 +391,7 @@ The plan is organized into 9 parts:
 
 **Why not chosen**: Too risky, plan offers incremental path with rollback
 
-### Alternative 4: Selective Rewrites Only (No Unified Pipeline)
+### Alternative 4: Selective Rewrites Only (No Native/Tool-Assisted Research)
 
 **Pros**:
 - Lower risk than a full rewrite
@@ -334,7 +399,7 @@ The plan is organized into 9 parts:
 - Keeps existing observability and safety gates
 
 **Cons**:
-- May not achieve the full cost/latency improvements of Option A
+- May not achieve the full cost/latency improvements possible with a provenance-safe native/grounded research adapter
 - Some complexity remains in the orchestration layer
 
 **Why not chosen**: Selected as a **tactic** within Phase 1–3 (selective rewrites behind flags), but not sufficient alone to reach long-term maintainability targets.
@@ -355,9 +420,27 @@ The plan is organized into 9 parts:
 
 ---
 
+## Phase 4 Go/No-Go Stress Test (Adversarial Scope Leak)
+
+Before approving production rollout, the system must pass this **multi-scope leak test** (also referenced in `Docs/DEVELOPMENT/Start_Pipeline_Redesign_Implementation.md`):
+
+1.  **Input** (run as both question + statement forms):
+    - Two legal scopes share confusing identifiers.
+    - Scope A: Supreme Court of Country A, Case 2024-017, about whether Policy P violates Statute S.
+    - Scope B: Supreme Court of Country B, Case 2024-017, about whether Policy P complies with Statute S.
+    - Some articles abbreviate both courts as “SC” and merge the stories.
+    - Task: Analyze Scope A and Scope B separately. For each scope, list the controlling decision, date, holding, and only the evidence that belongs to that scope. If evidence is ambiguous, place it in CTX_UNSCOPED/General and do not let it affect either scope’s verdict.
+2.  **Success Criteria**:
+    - **Scope Isolation**: No Scope A verdict cites Scope B facts (and vice versa). Ambiguous evidence must be assigned to `CTX_UNSCOPED` and excluded from aggregation.
+    - **Provenance**: Every cited fact has a real `sourceUrl` and an excerpt; no “LLM synthesis as evidence.”
+    - **Progress Update**: The UI must emit at least 3 distinct "Search" or "Processing" events before the final result.
+    - **p95 Safety**: Under the multi-scope workload, p95 stays within the target (define and enforce time budgets).
+
+---
+
 ## Success Criteria for Plan Approval
 
-1. **Input Neutrality**: Achieve < 5 points average absolute divergence between question/statement paired inputs (and define p95 target)
+1. **Input Neutrality**: Achieve ≤ 4 points average absolute divergence between question/statement paired inputs (and define p95 target)
 2. **Scope Detection**: Detect 95%+ of distinct contexts (with an explicit definition of “context recall” and an evaluation set)
 3. **Cost**: Reduce to < $0.50 per analysis (with a documented cost model + measured call/token counts)
 4. **Latency**: Achieve p95 < 45s
@@ -385,14 +468,14 @@ The plan is organized into 9 parts:
 
 ### For Architectural Review
 
-1. **Evaluate Option A** (Monolithic LLM-Driven) vs Option B (Hybrid)
+1. **Evaluate Option D** (Code-Orchestrated Native Research) vs Option B (Hybrid)
 2. **Assess provider coupling**: Is Gemini dependency acceptable?
 3. **Review abstraction layer**: Will it handle all providers?
 4. **Consider future extensions**: Does architecture support planned features?
 
 ### For Business Review
 
-1. **Validate cost/benefit**: Is 57% savings worth 12-week effort?
+1. **Validate cost/benefit**: Is the expected reduction in LLM calls and improved p95 latency worth the 12-week effort, given that cost savings must be measured (not assumed)?
 2. **Assess risk tolerance**: Is HIGH risk phase acceptable?
 3. **Review timeline**: Is 12 weeks aligned with roadmap?
 4. **Evaluate alternatives**: Should we consider other options?
@@ -403,7 +486,7 @@ The plan is organized into 9 parts:
 
 ### Critical Questions
 
-1. **Input Neutrality**: Is < 5% divergence sufficient, or should we target < 3%?
+1. **Input Neutrality**: Is ≤ 4 points (percentage points) the right target, or should we use a tighter/looser avg + p95 pair?
 2. **Migration Strategy**: Execute all phases (1-5), or can we skip Phase 2/3 and go straight to Phase 4?
 3. **Provider Strategy**: Should we support Gemini-only initially, or maintain multi-provider from day 1?
 4. **Rollback Plan**: Is feature flag sufficient, or do we need database versioning?
@@ -439,9 +522,11 @@ The plan is organized into 9 parts:
 
 | Variable | Current | Proposed |
 |----------|---------|----------|
-| `FH_USE_UNIFIED_PIPELINE` | - | `false` (Phase 4 flag) |
-| `FH_FORCE_EXTERNAL_SEARCH` | - | `false` (Phase 3 override) |
-| `LLM_PROVIDER` | `anthropic` | `google` (only if enabling Gemini grounded search in Phase 3; otherwise unchanged) |
+| `FH_SEARCH_MODE` | `standard` | `standard` (default) or `grounded` (experimental; must pass Phase 0 gate) |
+| `FH_FORCE_EXTERNAL_SEARCH` | - | `false` (override to force standard search for safety) |
+| `FH_SHADOW_PIPELINE` | - | `true/false` (run hardened Option D in parallel without user impact) |
+| `FH_SEARCH_ENABLED` | `true` | `true` (deterministic fallback path) |
+| `LLM_PROVIDER` | `anthropic` | keep multi-provider; do not require Gemini-only for rollout |
 
 ---
 
