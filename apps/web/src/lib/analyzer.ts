@@ -3973,27 +3973,6 @@ Now analyze the input and output JSON only.`;
     }
   }
 
-  // Post-processing: Re-prompt if coverage is thin (single attempt only)
-  // Skip for short, simple inputs.
-  if (!isShortSimpleInput) {
-    for (let attempt = 0; attempt < SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS; attempt++) {
-      // Use analysisInput (normalized statement) for input neutrality
-      const supplementalClaims = await requestSupplementalSubClaims(
-        analysisInput,
-        model,
-        parsed
-      );
-      if (supplementalClaims.length === 0) break;
-      parsed.subClaims.push(...supplementalClaims);
-      console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance scope coverage`);
-      // Supplemental claims may introduce new relatedProceedingId values. Ensure distinctProceedings
-      // covers all referenced scope IDs, then re-canonicalize for stable IDs.
-      parsed = reconcileScopesWithClaimAssignments(parsed);
-      parsed = canonicalizeScopes(analysisInput, parsed);
-      break;
-    }
-  }
-
   // Deterministic normalization of importance labels.
   // This enforces role-based invariants and derives isCentral consistently.
   normalizeSubClaimsImportance(parsed.subClaims as any);
@@ -4026,16 +4005,39 @@ Now analyze the input and output JSON only.`;
     };
   });
 
-  // Apply Gate 1 Lite: Minimal pre-filter BEFORE research (PR 4-lite: Pipeline Redesign)
-  // Only filters extreme non-factual cases (predictions, strong opinions, low checkWorthiness)
-  // Preserves supplemental claims coverage detection by keeping realistic claim counts
-  // Full Gate 1 validation is applied POST-research for final verdict filtering
+  // PR-E: Apply Gate 1 Lite BEFORE supplemental claims (fixes Blocker E)
+  // This ensures supplemental coverage decisions are based on the FILTERED claim set
+  // (not inflated by non-factual claims that will be filtered anyway)
   const { filteredClaims: gate1LiteClaims, stats: gate1LiteStats } = applyGate1Lite(claimsWithPositions);
   console.log(`[Analyzer] Gate 1 Lite (pre-research): ${gate1LiteStats.passed}/${gate1LiteStats.total} claims passed minimal filter, ${gate1LiteStats.filtered} extreme cases filtered`);
 
+  // Update parsed with filtered claims for supplemental logic
+  parsed.subClaims = gate1LiteClaims as any;
+
+  // Post-processing: Re-prompt if coverage is thin (single attempt only)
+  // Skip for short, simple inputs.
+  // PR-E: Now operates on Gate1-lite FILTERED claims (fixes Blocker E ordering)
+  if (!isShortSimpleInput) {
+    for (let attempt = 0; attempt < SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS; attempt++) {
+      // Use analysisInput (normalized statement) for input neutrality
+      const supplementalClaims = await requestSupplementalSubClaims(
+        analysisInput,
+        model,
+        parsed
+      );
+      if (supplementalClaims.length === 0) break;
+      parsed.subClaims.push(...supplementalClaims);
+      console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance scope coverage`);
+      // Supplemental claims may introduce new relatedProceedingId values. Ensure distinctProceedings
+      // covers all referenced scope IDs, then re-canonicalize for stable IDs.
+      parsed = reconcileScopesWithClaimAssignments(parsed);
+      parsed = canonicalizeScopes(analysisInput, parsed);
+      break;
+    }
+  }
+
   // Note: Full Gate 1 validation happens POST-research, before verdict generation
-  // This ensures supplemental claims logic sees realistic counts (not over-filtered)
-  const validatedClaims = gate1LiteClaims;
+  const validatedClaims = parsed.subClaims;
 
   // Pass thesis to detect foreign response claims that should be tangential
   const thesis = parsed.impliedClaim || parsed.articleThesis || analysisInput;
