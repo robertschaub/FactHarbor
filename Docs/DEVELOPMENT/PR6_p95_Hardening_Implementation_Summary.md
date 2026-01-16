@@ -16,7 +16,8 @@ Implementing resource budgets and caps to prevent runaway costs on complex multi
 - ✅ Comprehensive tests (20 tests, all passing)
 - ✅ Basic integration into analyzer (state + result JSON)
 - ✅ LLM call token recording (partial - 4/9 call sites)
-- ⏳ Budget enforcement in research loop pending
+- ✅ Budget enforcement in research loop (complete)
+- ⏳ Integration testing pending
 
 ---
 

@@ -7989,6 +7989,25 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     state.sources.length < config.maxTotalSources
   ) {
     iteration++;
+
+    // PR 6: Budget enforcement - check total iteration limit
+    const iterationCheck = checkScopeIterationBudget(
+      state.budgetTracker,
+      state.budget,
+      "GLOBAL_RESEARCH"
+    );
+    if (!iterationCheck.allowed) {
+      const reason = `Research budget exceeded: ${iterationCheck.reason}`;
+      console.warn(`[Budget] ${reason}`);
+      markBudgetExceeded(state.budgetTracker, reason);
+      await emit(
+        `⚠️ Budget limit reached: ${state.budgetTracker.totalIterations}/${state.budget.maxTotalIterations} iterations`,
+        10 + (iteration / config.maxResearchIterations) * 50,
+      );
+      break;
+    }
+    recordIteration(state.budgetTracker, "GLOBAL_RESEARCH");
+
     const baseProgress = 10 + (iteration / config.maxResearchIterations) * 50;
 
     const decision = decideNextResearch(state);
@@ -8416,6 +8435,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // Safety: ensure we never emit a result with zero scopes, even if scope refinement was
   // skipped/rejected and the initial understanding produced no scopes.
   state.understanding = ensureAtLeastOneScope(state.understanding!);
+
+  // PR 6: Log budget stats and warn if exceeded
+  const budgetStats = getBudgetStats(state.budgetTracker, state.budget);
+  console.log(
+    `[Budget] Usage: ${budgetStats.tokensUsed} tokens (${budgetStats.tokensPercent}%), ` +
+    `${budgetStats.totalIterations} iterations (${budgetStats.iterationsPercent}%), ` +
+    `${budgetStats.llmCalls} LLM calls`
+  );
+  if (state.budgetTracker.budgetExceeded) {
+    console.warn(
+      `[Budget] ⚠️ Analysis terminated early due to budget limits: ${state.budgetTracker.exceedReason}`
+    );
+  }
 
   await emit("Analysis complete", 100);
 
