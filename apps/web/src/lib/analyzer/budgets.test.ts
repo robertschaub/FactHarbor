@@ -335,4 +335,53 @@ describe("Budget Integration Scenarios", () => {
     expect(check.allowed).toBe(false);
     expect(check.reason).toContain("Total iterations reached max");
   });
+
+  it("allows >3 global iterations across multiple scopes (PR-D fix)", () => {
+    // This test proves the fix for Blocker D (budget semantics mismatch)
+    // BEFORE FIX: Using "GLOBAL_RESEARCH" constant caused 3-iteration cap
+    // AFTER FIX: Global limit (12) enforced independently of per-scope limit (3)
+    const budget = { ...DEFAULT_BUDGET, maxIterationsPerScope: 3, maxTotalIterations: 12 };
+    const tracker = createBudgetTracker();
+
+    // Simulate 4 scopes, 3 iterations each = 12 total
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 3; j++) {
+        recordIteration(tracker, `SCOPE_${i}`);
+      }
+    }
+
+    expect(tracker.totalIterations).toBe(12);
+    expect(tracker.iterationsByScope.get("SCOPE_0")).toBe(3);
+    expect(tracker.iterationsByScope.get("SCOPE_1")).toBe(3);
+    expect(tracker.iterationsByScope.get("SCOPE_2")).toBe(3);
+    expect(tracker.iterationsByScope.get("SCOPE_3")).toBe(3);
+
+    // All scopes should be at their per-scope limit
+    for (let i = 0; i < 4; i++) {
+      const check = checkScopeIterationBudget(tracker, budget, `SCOPE_${i}`);
+      expect(check.allowed).toBe(false); // At per-scope limit
+      expect(check.reason).toContain("reached max iterations");
+    }
+  });
+
+  it("enforces global limit even when per-scope limits not reached", () => {
+    // Prove global limit is independent of per-scope limits
+    const budget = { ...DEFAULT_BUDGET, maxIterationsPerScope: 10, maxTotalIterations: 5 };
+    const tracker = createBudgetTracker();
+
+    // 5 different scopes, 1 iteration each = 5 total (global limit)
+    for (let i = 0; i < 5; i++) {
+      recordIteration(tracker, `SCOPE_${i}`);
+    }
+
+    expect(tracker.totalIterations).toBe(5);
+
+    // Per-scope limits NOT reached (only 1/10 per scope)
+    expect(tracker.iterationsByScope.get("SCOPE_0")).toBe(1);
+
+    // But global limit IS reached
+    const check = checkScopeIterationBudget(tracker, budget, "SCOPE_5");
+    expect(check.allowed).toBe(false);
+    expect(check.reason).toContain("Total iterations reached max");
+  });
 });

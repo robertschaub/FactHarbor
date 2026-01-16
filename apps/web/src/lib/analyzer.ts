@@ -7990,23 +7990,24 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   ) {
     iteration++;
 
-    // PR 6: Budget enforcement - check total iteration limit
-    const iterationCheck = checkScopeIterationBudget(
-      state.budgetTracker,
-      state.budget,
-      "GLOBAL_RESEARCH"
-    );
-    if (!iterationCheck.allowed) {
-      const reason = `Research budget exceeded: ${iterationCheck.reason}`;
+    // PR 6: Budget enforcement - check GLOBAL total iteration limit
+    // CRITICAL FIX: Check global limit directly (not per-scope check with constant)
+    // Previous bug: used checkScopeIterationBudget with "GLOBAL_RESEARCH" constant,
+    // which applied maxIterationsPerScope (3) to entire research, causing premature termination
+    if (state.budgetTracker.totalIterations >= state.budget.maxTotalIterations) {
+      const reason = `Total iterations reached max: ${state.budgetTracker.totalIterations}/${state.budget.maxTotalIterations}`;
       console.warn(`[Budget] ${reason}`);
       markBudgetExceeded(state.budgetTracker, reason);
       await emit(
-        `⚠️ Budget limit reached: ${state.budgetTracker.totalIterations}/${state.budget.maxTotalIterations} iterations`,
+        `⚠️ Budget limit reached: ${reason}`,
         10 + (iteration / config.maxResearchIterations) * 50,
       );
       break;
     }
-    recordIteration(state.budgetTracker, "GLOBAL_RESEARCH");
+
+    // Record this iteration (increments totalIterations counter)
+    // Note: Per-scope limits enforced separately when researching specific scopes
+    recordIteration(state.budgetTracker, `ITER_${iteration}`);
 
     const baseProgress = 10 + (iteration / config.maxResearchIterations) * 50;
 
