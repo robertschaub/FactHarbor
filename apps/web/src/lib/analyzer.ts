@@ -5948,6 +5948,7 @@ The JSON object MUST include these top-level keys:
         maxOutputTokens: 4096,
       });
       state.llmCalls++;
+      recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
 
       const txt = result?.text as string | undefined;
       if (!txt || typeof txt !== "string") {
@@ -6007,6 +6008,7 @@ The JSON object MUST include these top-level keys:
         output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_SCOPE }),
       });
       state.llmCalls++;
+      recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
 
       // Handle different AI SDK versions - safely extract structured output
       const rawOutput = extractStructuredOutput(result);
@@ -6680,6 +6682,7 @@ ${factsFormatted}`;
       output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE }),
     });
     state.llmCalls++;
+    recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
 
     // Handle different AI SDK versions - safely extract structured output
     const rawOutput = extractStructuredOutput(result);
@@ -7097,6 +7100,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
       output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM }),
     });
     state.llmCalls++;
+    recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
 
     // Handle different AI SDK versions - safely extract structured output
     const rawOutput = extractStructuredOutput(result);
