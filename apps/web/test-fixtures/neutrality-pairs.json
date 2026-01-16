@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Test pairs for Input Neutrality verification. Each pair contains a question and equivalent statement form that should produce verdicts within ≤4 percentage points.",
+  "pairs": [
+    {
+      "id": "court-judgment",
+      "question": "Was the court judgment fair?",
+      "statement": "The court judgment was fair.",
+      "category": "legal"
+    },
+    {
+      "id": "revenue-increase",
+      "question": "Did Tesla's Q3 2024 revenue increase?",
+      "statement": "Tesla's Q3 2024 revenue increased.",
+      "category": "business"
+    },
+    {
+      "id": "climate-change",
+      "question": "Is climate change caused by humans?",
+      "statement": "Climate change is caused by humans.",
+      "category": "science"
+    },
+    {
+      "id": "election-results",
+      "question": "Were the 2020 US election results accurate?",
+      "statement": "The 2020 US election results were accurate.",
+      "category": "politics"
+    },
+    {
+      "id": "vaccine-effective",
+      "question": "Has the COVID-19 vaccine been proven effective?",
+      "statement": "The COVID-19 vaccine has been proven effective.",
+      "category": "health"
+    },
+    {
+      "id": "solar-power",
+      "question": "Can solar power replace fossil fuels by 2050?",
+      "statement": "Solar power can replace fossil fuels by 2050.",
+      "category": "energy"
+    },
+    {
+      "id": "company-fraud",
+      "question": "Did Enron commit accounting fraud?",
+      "statement": "Enron committed accounting fraud.",
+      "category": "business"
+    },
+    {
+      "id": "minimum-wage",
+      "question": "Is the US federal minimum wage sufficient for basic living?",
+      "statement": "The US federal minimum wage is sufficient for basic living.",
+      "category": "economics"
+    },
+    {
+      "id": "remote-work",
+      "question": "Does remote work improve employee productivity?",
+      "statement": "Remote work improves employee productivity.",
+      "category": "workplace"
+    },
+    {
+      "id": "ev-emissions",
+      "question": "Are electric vehicles better for the environment than gasoline cars?",
+      "statement": "Electric vehicles are better for the environment than gasoline cars.",
+      "category": "environment"
+    }
+  ]
+}
