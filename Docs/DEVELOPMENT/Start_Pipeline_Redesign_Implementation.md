@@ -2,29 +2,22 @@
 
 **Document**: `Docs/DEVELOPMENT/Start_Pipeline_Redesign_Implementation.md`
 **Scope**: Implementation entry instructions for the Pipeline Redesign (Option D: Code-Orchestrated Native Research)
-**Status**: ✅ IMPLEMENTATION COMPLETE (2026-01-16)
+**Status**: 🔧 In progress — implemented components exist, but **production readiness is gated** by remaining blockers (see below)
 **Primary Plan**: `Docs/DEVELOPMENT/Pipeline_Redesign_Plan_2026-01-16.md`
 **Reviewer Guide**: `Docs/DEVELOPMENT/Plan_Review_Guide_2026-01-16.md`
 
 ---
 
-## 🎉 IMPLEMENTATION COMPLETE
+## Implementation status (read first)
 
-**All planned PRs (0-6) have been implemented and tested.**
+Several planned components (tests, budgets, provenance validation, deterministic scope IDs, Gate1-lite) exist in code. However, a Principal Architect review identified **blocking safety/correctness gaps** (grounded search realism, score scaling, budget semantics, and CTX_UNSCOPED aggregation governance).
 
-**See completion documentation:**
-- **[Implementation Report](Pipeline_Redesign_Implementation_Report.md)** - Comprehensive implementation details, design decisions, and risk assessment
-- **[Review Guide](Pipeline_Redesign_Review_Guide.md)** - Guided review for Principal Architect and Lead Developers
-- **[Handover Document](Handover_Pipeline_Redesign_Implementation.md)** - Updated with completion status
+**Authoritative next-step docs:**
+- **Implementation plan (what to do next)**: `Docs/DEVELOPMENT/Pipeline_Redesign_Implementation_Plan.md`
+- **Principal Architect review (why it’s gated)**: `Docs/DEVELOPMENT/Pipeline_Redesign_Principal_Architect_Review_2026-01-16.md`
+- **Review guide (how to review)**: `Docs/DEVELOPMENT/Pipeline_Redesign_Review_Guide.md`
 
-**Summary:**
-- 13 commits pushed to main branch
-- 80+ tests passing (all green)
-- ~4,000 lines of code added
-- Risk reduced by 70% (8.5/10 → 2.5/10)
-- Performance impact <3%
-
-**Next Step:** Stakeholder review and deployment to staging environment.
+**Next Step:** Implement the gated fixes in `Pipeline_Redesign_Implementation_Plan.md`, then re-run the regression suite and proceed to staging only after Go/No-Go gates are satisfied.
 
 ---
 

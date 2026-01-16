@@ -1,37 +1,23 @@
 # Pipeline Redesign Implementation Handover (for Claude Code)
 
 **Date:** 2026-01-16
-**Last Updated:** 2026-01-16 (Implementation Complete)
+**Last Updated:** 2026-01-16
 **Audience:** Claude Code (implementation agent) + maintainers
 **Target:** Option D — Code-Orchestrated Native Research (Phase 0 → Phase 4 hardening)
 
 ---
 
-## 🎉 IMPLEMENTATION STATUS: COMPLETE
+## Implementation status (read first)
 
-**All PRs (0-6) have been implemented and committed.**
+The repo includes significant implementation work (tests, budgets, provenance validation, deterministic scope IDs, Gate1-lite). However, **production readiness is gated** by remaining blockers identified in the Principal Architect review (grounded-search realism, provenance indirection risk, score scale safety, budget semantics, and CTX_UNSCOPED aggregation governance).
 
-**Quick Links to Completion Documentation:**
-- **[Implementation Report](Pipeline_Redesign_Implementation_Report.md)** - Comprehensive report of what was built, design decisions, alternatives, and risk assessment
-- **[Review Guide](Pipeline_Redesign_Review_Guide.md)** - Guided review document for Principal Architect and Lead Developers
+**Quick Links (authoritative):**
+- **Implementation plan (what to implement next)**: `Docs/DEVELOPMENT/Pipeline_Redesign_Implementation_Plan.md`
+- **Principal Architect review (why it’s gated)**: `Docs/DEVELOPMENT/Pipeline_Redesign_Principal_Architect_Review_2026-01-16.md`
+- **Review guide (how to review)**: `Docs/DEVELOPMENT/Pipeline_Redesign_Review_Guide.md`
+- **Implementation report (narrative summary)**: `Docs/DEVELOPMENT/Pipeline_Redesign_Implementation_Report.md`
 
-**Completion Summary:**
-- ✅ **PR 0**: Regression test harness (80+ tests, all passing)
-- ✅ **PR 1**: Normalization cleanup (single normalization point)
-- ✅ **PR 2**: Scope preservation verification
-- ✅ **PR 3**: Deterministic scope IDs (hash-based)
-- ✅ **PR 4-lite**: Gate1-lite (hybrid two-stage filtering)
-- ✅ **PR 5**: Provenance validation (Ground Realism gate)
-- ✅ **PR 6**: p95 hardening (budgets & caps)
-
-**Metrics:**
-- 13 commits pushed to main
-- ~4,000 lines of code added
-- 80+ tests passing
-- Risk reduced by 70% (8.5/10 → 2.5/10)
-- <3% performance impact
-
-**Status:** Ready for stakeholder review and deployment to staging.
+**Status:** Safe to review; **NOT** yet “production-ready” until the Go/No-Go gates are met.
 
 ---
 

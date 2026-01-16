@@ -1,9 +1,13 @@
 # Pipeline Redesign Implementation Report
 
 **Date**: 2026-01-16
-**Status**: ✅ Complete (Core PRs 0-6)
+**Status**: ✅ Implemented components exist; **production readiness is gated** by remaining blockers
 **Version**: 2.0
 **Implementation Period**: 2026-01-16
+
+**Important**:
+- For **blocking issues and Go/No-Go gates**, see: `Docs/DEVELOPMENT/Pipeline_Redesign_Principal_Architect_Review_2026-01-16.md`
+- For the **next steps plan (with decision proposals)**, see: `Docs/DEVELOPMENT/Pipeline_Redesign_Implementation_Plan.md`
 
 ---
 
