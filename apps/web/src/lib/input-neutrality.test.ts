@@ -89,17 +89,17 @@ function loadNeutralityPairs(): NeutralityPair[] {
  */
 function extractVerdictResult(result: Awaited<ReturnType<typeof runFactHarborAnalysis>>): VerdictResult {
   // Try to get from verdictSummary first
-  const verdictSummary = (result as any).verdictSummary;
+  const verdictSummary = result.resultJson.verdictSummary;
   if (verdictSummary?.overallTruthPercentage !== undefined) {
     return {
       truthPercentage: verdictSummary.overallTruthPercentage,
-      claimCount: result.claimVerdicts?.length || 0,
-      scopeCount: result.understanding?.distinctProceedings?.length || 1,
+      claimCount: result.resultJson.claimVerdicts?.length || 0,
+      scopeCount: result.resultJson.understanding?.distinctProceedings?.length || 1,
     };
   }
 
   // Fall back to averaging claim verdicts
-  const verdicts = result.claimVerdicts || [];
+  const verdicts = result.resultJson.claimVerdicts || [];
   if (verdicts.length === 0) {
     return { truthPercentage: 50, claimCount: 0, scopeCount: 1 }; // Default to neutral
   }
@@ -108,7 +108,7 @@ function extractVerdictResult(result: Awaited<ReturnType<typeof runFactHarborAna
   return {
     truthPercentage: sum / verdicts.length,
     claimCount: verdicts.length,
-    scopeCount: result.understanding?.distinctProceedings?.length || 1,
+    scopeCount: result.resultJson.understanding?.distinctProceedings?.length || 1,
   };
 }
 

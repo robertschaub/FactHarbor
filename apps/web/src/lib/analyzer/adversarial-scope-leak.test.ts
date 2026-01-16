@@ -109,8 +109,8 @@ interface ScopeLeakAnalysis {
 function analyzeScopeLeak(
   result: Awaited<ReturnType<typeof runFactHarborAnalysis>>
 ): ScopeLeakAnalysis {
-  const scopes = result.understanding?.distinctProceedings || [];
-  const facts = result.facts || [];
+  const scopes = result.resultJson.understanding?.distinctProceedings || [];
+  const facts = result.resultJson.facts || [];
 
   // Find Scope A and Scope B by looking for "Country A" and "Country B" in names
   const scopeA = scopes.find(
@@ -290,11 +290,11 @@ describe("Adversarial Scope Leak", () => {
             {
               input: ADVERSARIAL_INPUT_STATEMENT,
               analysis,
-              scopes: result.understanding?.distinctProceedings?.map((s) => ({
+              scopes: result.resultJson.understanding?.distinctProceedings?.map((s) => ({
                 id: s.id,
                 name: s.name,
               })),
-              totalFacts: result.facts?.length || 0,
+              totalFacts: result.resultJson.facts?.length || 0,
               timestamp: new Date().toISOString(),
             },
             null,
@@ -339,11 +339,11 @@ describe("Adversarial Scope Leak", () => {
             {
               input: ADVERSARIAL_INPUT_QUESTION,
               analysis,
-              scopes: result.understanding?.distinctProceedings?.map((s) => ({
+              scopes: result.resultJson.understanding?.distinctProceedings?.map((s) => ({
                 id: s.id,
                 name: s.name,
               })),
-              totalFacts: result.facts?.length || 0,
+              totalFacts: result.resultJson.facts?.length || 0,
               timestamp: new Date().toISOString(),
             },
             null,

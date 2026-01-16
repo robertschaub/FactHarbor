@@ -130,8 +130,8 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const scopes = result.understanding?.distinctProceedings || [];
-        const facts = result.facts || [];
+        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const facts = result.resultJson.facts || [];
 
         console.log(`  Detected ${scopes.length} scopes:`);
         scopes.forEach((s) => console.log(`    - ${s.id}: ${s.name}`));
@@ -189,7 +189,7 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const scopes = result.understanding?.distinctProceedings || [];
+        const scopes = result.resultJson.understanding?.distinctProceedings || [];
         console.log(`  Detected ${scopes.length} scopes:`);
         scopes.forEach((s) => console.log(`    - ${s.id}: ${s.name}`));
 
@@ -228,7 +228,7 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const scopes = result.understanding?.distinctProceedings || [];
+        const scopes = result.resultJson.understanding?.distinctProceedings || [];
         console.log(`  Detected ${scopes.length} scopes:`);
         scopes.forEach((s) => console.log(`    - ${s.id}: ${s.name}`));
 
@@ -269,8 +269,8 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const scopes = result.understanding?.distinctProceedings || [];
-        const verdicts = result.claimVerdicts || [];
+        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const verdicts = result.resultJson.claimVerdicts || [];
 
         // Get all scope IDs referenced in verdicts (via claims' relatedProceedingId)
         const claims = result.understanding?.subClaims || [];
@@ -320,10 +320,10 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const ids1 = (run1.understanding?.distinctProceedings || [])
+        const ids1 = (run1.resultJson.understanding?.distinctProceedings || [])
           .map((s) => s.id)
           .sort();
-        const ids2 = (run2.understanding?.distinctProceedings || [])
+        const ids2 = (run2.resultJson.understanding?.distinctProceedings || [])
           .map((s) => s.id)
           .sort();
 
@@ -392,8 +392,8 @@ have significant operations.
           inputType: "claim",
         });
 
-        const scopes = result.understanding?.distinctProceedings || [];
-        const facts = result.facts || [];
+        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const facts = result.resultJson.facts || [];
 
         console.log(`  Detected ${scopes.length} scopes:`);
         scopes.forEach((s) => console.log(`    - ${s.id}: ${s.name}`));
@@ -449,8 +449,8 @@ have significant operations.
           inputType: "claim",
         });
 
-        const scopes = result.understanding?.distinctProceedings || [];
-        const facts = result.facts || [];
+        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const facts = result.resultJson.facts || [];
 
         // Calculate distribution
         const distribution: Record<string, number> = {};
@@ -517,7 +517,7 @@ have significant operations.
           inputType: "claim",
         });
 
-        const scopes = result.understanding?.distinctProceedings || [];
+        const scopes = result.resultJson.understanding?.distinctProceedings || [];
 
         // Scope names should contain meaningful identifiers
         const scopeNames = scopes.map((s) => s.name.toLowerCase());
