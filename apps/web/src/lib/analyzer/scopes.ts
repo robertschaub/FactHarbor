@@ -14,6 +14,80 @@ import {
   contextTypeRank,
 } from "./config";
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/**
+ * Reserved scope ID for facts that don't map to any detected scope.
+ * Exported for use in tests and other modules.
+ */
+export const UNSCOPED_ID = "CTX_UNSCOPED";
+
+// ============================================================================
+// DETERMINISTIC SCOPE ID GENERATION
+// ============================================================================
+
+/**
+ * Simple deterministic hash function for scope IDs.
+ * Returns a consistent 8-character hex string for the same input.
+ *
+ * @param str - Input string to hash
+ * @returns 8-character hex hash
+ */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  // Convert to positive hex string
+  const hexHash = (hash >>> 0).toString(16).padStart(8, '0');
+  return hexHash;
+}
+
+/**
+ * Generate a deterministic scope ID from scope properties.
+ * Format: {INST}_{hash} or SCOPE_{hash}
+ *
+ * Examples:
+ * - TSE_a3f2 (has institution code)
+ * - WTW_d9e8 (methodology acronym)
+ * - SCOPE_f7a29b3c (no clear institution)
+ *
+ * @param scope - Scope object with name, description, metadata
+ * @param inst - Institution code (if detected)
+ * @param idx - Index for fallback (only used if no other identifier available)
+ * @returns Deterministic scope ID
+ */
+function generateDeterministicScopeId(
+  scope: any,
+  inst: string | null,
+  idx: number
+): string {
+  // Create stable input for hashing
+  const hashInput = JSON.stringify({
+    name: String(scope.name || "").toLowerCase().trim(),
+    description: String(scope.description || "").toLowerCase().trim().slice(0, 100),
+    court: String(scope.metadata?.court || "").toLowerCase().trim(),
+    institution: String(scope.metadata?.institution || "").toLowerCase().trim(),
+    subject: String(scope.subject || "").toLowerCase().trim().slice(0, 100),
+  });
+
+  // Generate 8-char hash
+  const fullHash = simpleHash(hashInput);
+  const shortHash = fullHash.slice(0, 4); // Use first 4 chars for readability
+
+  // Return hybrid format: preserve institution code + short hash for uniqueness
+  if (inst && inst.length > 0) {
+    return `${inst}_${shortHash}`;
+  }
+
+  // Fallback: SCOPE_{hash}
+  return `SCOPE_${fullHash}`;
+}
+
 export function canonicalizeScopes(
   input: string,
   understanding: any,
@@ -50,7 +124,9 @@ export function canonicalizeScopes(
   const canonicalProceedings = sorted.map((p: any, idx: number) => {
     const typeLabel = inferScopeTypeLabel(p);
     const inst = detectInstitutionCode(p);
-    let newId = inst ? `CTX_${inst}` : `CTX_${idx + 1}`;
+    // Generate deterministic ID (PR 3: Pipeline Redesign)
+    let newId = generateDeterministicScopeId(p, inst, idx);
+    // Handle collisions (extremely rare with hash-based IDs)
     if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
     usedIds.add(newId);
     idRemap.set(p.id, newId);
@@ -143,7 +219,9 @@ export function canonicalizeScopesWithRemap(
   const canonicalProceedings = sorted.map((p: any, idx: number) => {
     const typeLabel = inferScopeTypeLabel(p);
     const inst = detectInstitutionCode(p);
-    let newId = inst ? `CTX_${inst}` : `CTX_${idx + 1}`;
+    // Generate deterministic ID (PR 3: Pipeline Redesign)
+    let newId = generateDeterministicScopeId(p, inst, idx);
+    // Handle collisions (extremely rare with hash-based IDs)
     if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
     usedIds.add(newId);
     idRemap.set(p.id, newId);
@@ -204,20 +282,25 @@ export function ensureAtLeastOneScope(
     ? understanding.distinctProceedings
     : [];
   if (procs.length > 0) return understanding;
+  // Generate a deterministic ID even for the fallback scope
+  const fallbackScope = {
+    name: understanding.impliedClaim
+      ? understanding.impliedClaim.substring(0, 100)
+      : "General context",
+    shortName: "GEN",
+    subject: understanding.impliedClaim || "",
+    temporal: "",
+    status: "unknown",
+    outcome: "unknown",
+    metadata: {},
+  };
+
   return {
     ...understanding,
     distinctProceedings: [
       {
-        id: "CTX_1",
-        name: understanding.impliedClaim
-          ? understanding.impliedClaim.substring(0, 100)
-          : "General context",
-        shortName: "GEN",
-        subject: understanding.impliedClaim || "",
-        temporal: "",
-        status: "unknown",
-        outcome: "unknown",
-        metadata: {},
+        ...fallbackScope,
+        id: generateDeterministicScopeId(fallbackScope, null, 0),
       },
     ],
     requiresSeparateAnalysis: false,
