@@ -34,6 +34,18 @@ function loadEnvFile(filePath: string) {
   }
 }
 
+function hasProviderCredentials(providerRaw: string): boolean {
+  const p = (providerRaw || "").toLowerCase().trim();
+  if (p === "openai") return Boolean(process.env.OPENAI_API_KEY);
+  if (p === "claude" || p === "anthropic") return Boolean(process.env.ANTHROPIC_API_KEY);
+  if (p === "mistral") return Boolean(process.env.MISTRAL_API_KEY);
+  if (p === "google" || p === "gemini") {
+    return Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_API_KEY);
+  }
+  // Unknown providers are treated as not-configured in CI.
+  return false;
+}
+
 describe.sequential("llm integration", () => {
   it("generates markdown reports per provider from config", async () => {
     const webRoot = path.resolve(__dirname, "../..");
@@ -52,11 +64,29 @@ describe.sequential("llm integration", () => {
       return;
     }
 
-    const outputDir = path.join(webRoot, config.outputDir ?? "test-output");
-    fs.mkdirSync(outputDir, { recursive: true });
-    const runId = new Date().toISOString().replace(/[:.]/g, "-");
+    // Keep this integration test hermetic by default: only run providers when credentials are available.
+    const runnableProviders = (config.providers || []).filter(hasProviderCredentials);
+    if (runnableProviders.length === 0) {
+      // No secrets in CI/local by default; treat as a skip-with-success.
+      return;
+    }
 
-    for (const provider of config.providers) {
+    // Avoid depending on web-search API keys during LLM-only integration checks.
+    process.env.FH_SEARCH_ENABLED = "false";
+    process.env.FH_ALLOW_MODEL_KNOWLEDGE = "true";
+    process.env.FH_DETERMINISTIC = "true";
+
+    const shouldWriteOutput =
+      (process.env.FH_LLM_INTEGRATION_WRITE_OUTPUT ?? "").toLowerCase().trim() === "true" ||
+      (process.env.FH_LLM_INTEGRATION_WRITE_OUTPUT ?? "").toLowerCase().trim() === "1";
+
+    const outputDir = path.join(webRoot, config.outputDir ?? "test-output");
+    const runId = new Date().toISOString().replace(/[:.]/g, "-");
+    if (shouldWriteOutput) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    for (const provider of runnableProviders) {
       process.env.LLM_PROVIDER = provider;
 
       const result = await runFactHarborAnalysis({
@@ -66,9 +96,11 @@ describe.sequential("llm integration", () => {
 
       expect(result.reportMarkdown.length).toBeGreaterThan(0);
 
-      const safeProvider = provider.replace(/[^a-z0-9_-]/gi, "_").toLowerCase();
-      const outPath = path.join(outputDir, `${safeProvider}-${runId}.md`);
-      fs.writeFileSync(outPath, result.reportMarkdown, "utf-8");
+      if (shouldWriteOutput) {
+        const safeProvider = provider.replace(/[^a-z0-9_-]/gi, "_").toLowerCase();
+        const outPath = path.join(outputDir, `${safeProvider}-${runId}.md`);
+        fs.writeFileSync(outPath, result.reportMarkdown, "utf-8");
+      }
     }
   }, 10 * 60 * 1000);
 });
