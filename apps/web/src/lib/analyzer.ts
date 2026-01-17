@@ -6920,7 +6920,7 @@ ${factsFormatted}`;
         thesisRelevance: claim.thesisRelevance || "direct",
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
-        highlightColor: getHighlightColor7Point(truthPct),
+        highlightColor: getHighlightColor7Point(clampedTruthPct),
         isCounterClaim,
       } as ClaimVerdict;
     },
@@ -7375,7 +7375,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         keyFactorId: claim.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
-        highlightColor: getHighlightColor7Point(truthPct),
+        highlightColor: getHighlightColor7Point(clampedTruthPct),
         isPseudoscience: claimPseudo.isPseudoscience,
         escalationReason,
         isCounterClaim,
