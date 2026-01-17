@@ -510,4 +510,4 @@ See `.github/workflows/pipeline-tests.yml` above for a production-ready example 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [GitLab CI/CD Documentation](https://docs.gitlab.com/ee/ci/)
 - [Vitest CI Integration](https://vitest.dev/guide/ci.html)
-- [Test Results Summary](Pipeline_Redesign_PR0-PR2_Implementation_Summary.md)
+- Pipeline Redesign history: `Docs/DEVELOPMENT/Pipeline_Redesign_History.md`
