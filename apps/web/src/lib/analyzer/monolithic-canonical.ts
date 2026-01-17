@@ -293,7 +293,7 @@ export async function runMonolithicCanonical(
   // State tracking
   const facts: ExtractedFact[] = [];
   const sources: FetchedSource[] = [];
-  const searchQueries: string[] = [];
+  const searchQueriesWithResults: Array<{ query: string; resultsCount: number }> = [];
   let searchCount = 0;
   let fetchCount = 0;
 
@@ -336,7 +336,7 @@ export async function runMonolithicCanonical(
       claimType: claimData.claimType,
       facts: [],
       sources: [],
-      searchQueries: [],
+      searchQueriesWithResults: [],
       verdict: 50,
       confidence: 20,
       reasoning: `This appears to be ${claimData.claimType === "opinion" ? "an opinion" : "a prediction"} rather than a verifiable factual claim. Fact-checking is limited to verifiable factual statements.`,
@@ -374,10 +374,9 @@ export async function runMonolithicCanonical(
     for (const query of queriesToRun) {
       if (searchCount >= MONOLITHIC_BUDGET.maxSearches) break;
       // Skip if we've already searched this exact query
-      if (searchQueries.includes(query)) continue;
+      if (searchQueriesWithResults.some((q) => q.query === query)) continue;
 
       searchCount++;
-      searchQueries.push(query);
 
       if (input.onEvent) {
         await input.onEvent(`Searching: "${query.slice(0, 40)}..."`, 15 + iteration * 10);
@@ -390,6 +389,8 @@ export async function runMonolithicCanonical(
           domainWhitelist: CONFIG.searchDomainWhitelist ?? undefined,
           dateRestrict: CONFIG.searchDateRestrict ?? undefined,
         });
+        // Track query with actual results count
+        searchQueriesWithResults.push({ query, resultsCount: response.results.length });
         searchResults.push(
           ...response.results.map((r) => ({
             url: r.url,
@@ -398,6 +399,8 @@ export async function runMonolithicCanonical(
           }))
         );
       } catch (err) {
+        // Track failed query with 0 results
+        searchQueriesWithResults.push({ query, resultsCount: 0 });
         console.error(`Search failed for "${query}":`, err);
       }
     }
@@ -505,7 +508,7 @@ export async function runMonolithicCanonical(
     claimType: claimData.claimType,
     facts,
     sources,
-    searchQueries,
+    searchQueriesWithResults,
     verdict: verdictData.verdict,
     confidence: verdictData.confidence,
     reasoning: verdictData.reasoning,
@@ -536,7 +539,7 @@ function buildResultJson(params: {
   claimType: string;
   facts: ExtractedFact[];
   sources: FetchedSource[];
-  searchQueries: string[];
+  searchQueriesWithResults: Array<{ query: string; resultsCount: number }>;
   verdict: number;
   confidence: number;
   reasoning: string;
@@ -553,7 +556,7 @@ function buildResultJson(params: {
     claimType,
     facts,
     sources,
-    searchQueries,
+    searchQueriesWithResults,
     verdict,
     confidence,
     reasoning,
@@ -586,7 +589,7 @@ function buildResultJson(params: {
       analysisTimeMs,
       analysisId: input.jobId || `mono-${Date.now()}`,
       monolithicStats: {
-        searches: searchQueries.length,
+        searches: searchQueriesWithResults.length,
         maxSearches: MONOLITHIC_BUDGET.maxSearches,
         fetches: sources.length,
         maxFetches: MONOLITHIC_BUDGET.maxFetches,
@@ -667,10 +670,10 @@ function buildResultJson(params: {
         claimDirection: f.claimDirection,
       }));
     })(),
-    searchQueries: searchQueries.map((q, i) => ({
+    searchQueries: searchQueriesWithResults.map((q, i) => ({
       id: `Q${i + 1}`,
-      query: q,
-      resultsCount: 4,
+      query: q.query,
+      resultsCount: q.resultsCount,
     })),
   };
 }
