@@ -10,7 +10,7 @@ public sealed class JobService
 
     public JobService(FhDbContext db) { _db = db; }
 
-    public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue)
+    public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "orchestrated")
     {
         var job = new JobEntity
         {
@@ -20,6 +20,7 @@ public sealed class JobService
             InputType = inputType,
             InputValue = inputValue,
             InputPreview = MakePreview(inputType, inputValue),
+            PipelineVariant = pipelineVariant,
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
         };

@@ -20,6 +20,9 @@ export default function AnalyzePage() {
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pipelineVariant, setPipelineVariant] = useState<
+    "orchestrated" | "monolithic_canonical" | "monolithic_dynamic"
+  >("orchestrated");
 
   // When navigating back from /jobs/[id], browsers can restore this page from bfcache
   // with stale React state (e.g. isSubmitting=true), which would keep the button disabled.
@@ -93,7 +96,7 @@ export default function AnalyzePage() {
       const res = await fetch("/api/fh/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputType, inputValue }),
+        body: JSON.stringify({ inputType, inputValue, pipelineVariant }),
         signal: controller.signal,
       }).finally(() => clearTimeout(timeoutId));
 
@@ -146,6 +149,25 @@ export default function AnalyzePage() {
             </span>
           </div>
         )}
+
+        {/* Pipeline variant selector */}
+        <div className={styles.variantSelector}>
+          <label className={styles.variantLabel}>Pipeline:</label>
+          <select
+            value={pipelineVariant}
+            onChange={(e) => setPipelineVariant(e.target.value as typeof pipelineVariant)}
+            className={styles.variantSelect}
+          >
+            <option value="orchestrated">Orchestrated (Default)</option>
+            <option value="monolithic_canonical">Monolithic - Canonical Schema</option>
+            <option value="monolithic_dynamic">Monolithic - Dynamic (Experimental)</option>
+          </select>
+          {pipelineVariant !== "orchestrated" && (
+            <span className={styles.variantWarning}>
+              {pipelineVariant === "monolithic_dynamic" ? "Experimental" : "Beta"}
+            </span>
+          )}
+        </div>
 
         {error && (
           <div className={styles.errorBox}>

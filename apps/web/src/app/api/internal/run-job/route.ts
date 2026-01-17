@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { runFactHarborAnalysis } from "@/lib/analyzer";
+import { runMonolithicCanonical } from "@/lib/analyzer/monolithic-canonical";
+import { runMonolithicDynamic } from "@/lib/analyzer/monolithic-dynamic";
+
+type PipelineVariant = "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
 
 export const runtime = "nodejs";
 
@@ -139,15 +143,83 @@ async function runJobBackground(jobId: string) {
     const job = await apiGet(apiBase, `/v1/jobs/${jobId}`);
     const inputType = job.inputType as "text" | "url";
     const inputValue = job.inputValue as string;
+    const pipelineVariant = (job.pipelineVariant || "orchestrated") as PipelineVariant;
 
-    await emit("info", "Preparing input", 5);
+    await emit("info", `Preparing input (pipeline: ${pipelineVariant})`, 5);
 
-    const result = await runFactHarborAnalysis({
-      jobId,
-      inputType,
-      inputValue,
-      onEvent: async (m, p) => emit("info", m, p),
-    });
+    let result: any;
+    let usedFallback = false;
+    let fallbackReason: string | undefined;
+
+    if (pipelineVariant === "orchestrated") {
+      // Default orchestrated pipeline
+      result = await runFactHarborAnalysis({
+        jobId,
+        inputType,
+        inputValue,
+        onEvent: async (m, p) => emit("info", m, p),
+      });
+    } else if (pipelineVariant === "monolithic_canonical") {
+      // Monolithic tool loop with canonical schema output
+      try {
+        result = await runMonolithicCanonical({
+          jobId,
+          inputType,
+          inputValue,
+          onEvent: async (m, p) => emit("info", m, p),
+        });
+      } catch (monolithicError: any) {
+        // Fallback to orchestrated on failure
+        await emit("warn", `Monolithic canonical failed, falling back to orchestrated: ${monolithicError?.message}`, 10);
+        usedFallback = true;
+        fallbackReason = monolithicError?.message || "Unknown error";
+        result = await runFactHarborAnalysis({
+          jobId,
+          inputType,
+          inputValue,
+          onEvent: async (m, p) => emit("info", m, p),
+        });
+      }
+    } else if (pipelineVariant === "monolithic_dynamic") {
+      // Monolithic tool loop with dynamic schema output
+      try {
+        result = await runMonolithicDynamic({
+          jobId,
+          inputType,
+          inputValue,
+          onEvent: async (m, p) => emit("info", m, p),
+        });
+      } catch (monolithicError: any) {
+        // Fallback to orchestrated on failure
+        await emit("warn", `Monolithic dynamic failed, falling back to orchestrated: ${monolithicError?.message}`, 10);
+        usedFallback = true;
+        fallbackReason = monolithicError?.message || "Unknown error";
+        result = await runFactHarborAnalysis({
+          jobId,
+          inputType,
+          inputValue,
+          onEvent: async (m, p) => emit("info", m, p),
+        });
+      }
+    } else {
+      // Unknown variant - fall back to orchestrated
+      await emit("warn", `Unknown pipeline variant '${pipelineVariant}', using orchestrated`, 5);
+      result = await runFactHarborAnalysis({
+        jobId,
+        inputType,
+        inputValue,
+        onEvent: async (m, p) => emit("info", m, p),
+      });
+    }
+
+    // Record pipeline metadata in result
+    if (result?.resultJson?.meta) {
+      result.resultJson.meta.pipelineVariant = pipelineVariant;
+      result.resultJson.meta.pipelineFallback = usedFallback;
+      if (fallbackReason) {
+        result.resultJson.meta.fallbackReason = fallbackReason;
+      }
+    }
 
     await emit("info", "Storing result", 95);
     await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/result`, result);

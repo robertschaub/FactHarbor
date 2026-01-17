@@ -4,7 +4,11 @@ using Microsoft.Extensions.Logging;
 
 namespace FactHarbor.Api.Controllers;
 
-public sealed record CreateJobRequest(string inputType, string inputValue);
+public sealed record CreateJobRequest(
+    string inputType,
+    string inputValue,
+    string? pipelineVariant = "orchestrated"  // "orchestrated", "monolithic_canonical", or "monolithic_dynamic"
+);
 public sealed record CreateJobResponse(string jobId, string status);
 
 [ApiController]
@@ -28,7 +32,7 @@ public sealed class AnalyzeController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CreateJobResponse>> Create([FromBody] CreateJobRequest req, CancellationToken ct)
     {
-        var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue);
+        var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue, req.pipelineVariant ?? "orchestrated");
 
         // If we have scope factory + logger, do best-effort async trigger (POC-friendly).
         if (_scopeFactory is not null && _log is not null)
