@@ -552,6 +552,54 @@ export async function runMonolithicCanonical(
 }
 
 // ============================================================================
+// SCOPE INFERENCE
+// ============================================================================
+
+/**
+ * Infers which scope a fact belongs to based on content matching.
+ * Returns the most relevant scope ID, or the first scope as default.
+ */
+function inferScopeForFact(
+  fact: ExtractedFact,
+  scopes: Array<{ id: string; name: string; subject: string }>
+): string {
+  if (scopes.length <= 1) {
+    return scopes[0]?.id || "CTX_MAIN";
+  }
+
+  // Combine fact content for matching
+  const factContent = `${fact.fact} ${fact.sourceTitle || ""} ${fact.sourceExcerpt || ""}`.toLowerCase();
+
+  // Score each scope by keyword matches
+  let bestScope = scopes[0];
+  let bestScore = 0;
+
+  for (const scope of scopes) {
+    let score = 0;
+
+    // Extract keywords from scope name and subject
+    const scopeKeywords = `${scope.name} ${scope.subject}`.toLowerCase().split(/\s+/);
+
+    for (const keyword of scopeKeywords) {
+      // Skip common words
+      if (keyword.length < 3 || ["the", "and", "for", "with", "from"].includes(keyword)) {
+        continue;
+      }
+      if (factContent.includes(keyword)) {
+        score += keyword.length; // Weight by keyword length
+      }
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestScope = scope;
+    }
+  }
+
+  return bestScope.id;
+}
+
+// ============================================================================
 // RESULT BUILDING
 // ============================================================================
 
@@ -679,6 +727,7 @@ function buildResultJson(params: {
       {
         claimId: "C1",
         claimText: claim,
+        relatedProceedingId: finalScopes[0]?.id || "CTX_MAIN",
         isCentral: true,
         centrality: "high",
         verdict,
@@ -699,6 +748,7 @@ function buildResultJson(params: {
       fetchedAt: s.fetchedAt,
     })),
     // Create lookup after sources are defined (using closure over sources array)
+    // Associate facts with scopes using content-based matching
     facts: facts.map((f) => ({
       id: f.id,
       fact: f.fact,
@@ -709,6 +759,7 @@ function buildResultJson(params: {
       sourceTitle: f.sourceTitle,
       sourceExcerpt: f.sourceExcerpt,
       claimDirection: f.claimDirection,
+      relatedProceedingId: inferScopeForFact(f, finalScopes),
     })),
     searchQueries: searchQueriesWithResults.map((q, i) => ({
       id: `Q${i + 1}`,

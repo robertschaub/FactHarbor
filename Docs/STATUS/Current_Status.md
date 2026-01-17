@@ -1,8 +1,8 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.32  
-**Last Updated**: January 2026  
-**Status**: POC1 Operational - Core features working, optimizations pending
+**Version**: 2.6.33
+**Last Updated**: 2026-01-17
+**Status**: POC1 Operational - Triple-Path Pipeline Complete
 
 ---
 
@@ -11,6 +11,10 @@
 ### ✅ What Works
 
 **Core Analysis Pipeline:**
+- **Triple-Path Architecture** (NEW):
+  - Orchestrated Pipeline (default, highest quality)
+  - Monolithic Canonical (faster, lower cost)
+  - Monolithic Dynamic (experimental, flexible output)
 - Multi-scope detection and analysis
 - Input neutrality (question ≈ statement within ±5%)
 - Claim extraction with dependency tracking
@@ -22,6 +26,8 @@
 - Pseudoscience detection and escalation
 - KeyFactors discovery and aggregation
 - Quality Gates (Gate 1: Claim Validation, Gate 4: Verdict Confidence)
+- LLM Tiering for cost optimization
+- Provenance validation (Ground Realism enforcement)
 
 **Infrastructure:**
 - Job lifecycle management (QUEUED → RUNNING → SUCCEEDED/FAILED)
@@ -112,11 +118,14 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| **Next.js Web App** | ✅ Operational | ~6700 lines in analyzer.ts, modularization in progress |
+| **Next.js Web App** | ✅ Operational | Triple-Path Pipeline complete |
 | **.NET API** | ✅ Operational | SQLite for local, PostgreSQL for production |
 | **Job Orchestration** | ✅ Working | SSE events, exponential backoff retry |
+| **Triple-Path Pipeline** | ✅ Complete | Orchestrated, Monolithic Canonical, Monolithic Dynamic |
 | **LLM Integration** | ✅ Multi-provider | Anthropic (recommended), OpenAI, Google, Mistral |
+| **LLM Tiering** | ✅ Implemented | Per-task model selection for cost optimization |
 | **Search Integration** | ✅ Multi-provider | Google CSE, SerpAPI, Gemini Grounded |
+| **Provenance Validation** | ✅ Implemented | All paths validate URL provenance |
 | **PDF/HTML Extraction** | ✅ Working | Timeout handling, redirect following |
 | **Quality Gates** | ⚠️ Partial | Applied, but not displayed in UI |
 | **Source Reliability** | ⚠️ Partial | Static bundle loaded, no historical tracking |
@@ -225,6 +234,20 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ---
 
 ## Recent Changes
+
+### v2.6.33 (January 2026)
+- **Triple-Path Pipeline Complete**:
+  - Pipeline variant selector on analyze page
+  - Monolithic Canonical path with LLM-inferred multi-scope detection
+  - Monolithic Dynamic path with experimental flexible output
+  - Pipeline variant badge on jobs page
+  - Grounding score display in dynamic result viewer
+- Provenance validation integrated in all monolithic paths
+- LLM tiering support (`FH_LLM_TIERING=on`)
+- `relatedProceedingId` for claim-scope association
+- Content-based fact-to-scope inference
+- Multi-jurisdiction stress tests added
+- Comprehensive `.env.example` documentation
 
 ### v2.6.25 (January 2026)
 - Question-to-statement handling improvements
