@@ -358,19 +358,23 @@ export async function runMonolithicCanonical(
   ) {
     iteration++;
 
-    // Get queries for this iteration
+    // Get queries for this iteration, avoiding duplicates
+    // Track query offset to prevent re-searching previously used queries
+    const queryOffset = iteration === 1 ? 0 : 3 + (iteration - 2); // iter1: 0-2, iter2: 3, iter3: 4, etc.
     const queriesToRun =
       iteration === 1
         ? claimData.searchQueries.slice(0, 3)
-        : facts.length > 0 && facts[facts.length - 1]
-          ? [claimData.searchQueries[iteration] || `${claimData.mainClaim} evidence`]
-          : claimData.searchQueries.slice(0, 2);
+        : claimData.searchQueries[queryOffset]
+          ? [claimData.searchQueries[queryOffset]]
+          : [`${claimData.mainClaim} ${iteration > 2 ? "contradicting" : "supporting"} evidence`];
 
     // Run searches
     const searchResults: Array<{ url: string; title: string; snippet: string }> = [];
 
     for (const query of queriesToRun) {
       if (searchCount >= MONOLITHIC_BUDGET.maxSearches) break;
+      // Skip if we've already searched this exact query
+      if (searchQueries.includes(query)) continue;
 
       searchCount++;
       searchQueries.push(query);
@@ -410,8 +414,16 @@ export async function runMonolithicCanonical(
 
       fetchCount++;
 
+      // Safely parse hostname for display, fallback to URL on parse error
+      let displayHost = result.url;
+      try {
+        displayHost = new URL(result.url).hostname;
+      } catch {
+        // Malformed URL - use raw URL for display, will likely fail fetch below
+      }
+
       if (input.onEvent) {
-        await input.onEvent(`Fetching: ${new URL(result.url).hostname}`, 25 + iteration * 10);
+        await input.onEvent(`Fetching: ${displayHost}`, 25 + iteration * 10);
       }
 
       try {
