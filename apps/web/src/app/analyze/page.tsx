@@ -169,6 +169,57 @@ export default function AnalyzePage() {
           )}
         </div>
 
+        {/* Pipeline comparison cards */}
+        <div className={styles.pipelineInfo}>
+          <div className={styles.pipelineInfoGrid}>
+            <div
+              className={`${styles.pipelineInfoCard} ${pipelineVariant === "orchestrated" ? styles.pipelineInfoCardSelected : ""}`}
+              onClick={() => setPipelineVariant("orchestrated")}
+            >
+              <div className={styles.pipelineInfoHeader}>
+                <span>🎯</span>
+                <strong>Orchestrated</strong>
+                <span className={styles.pipelineInfoBadge}>Default</span>
+              </div>
+              <div className={styles.pipelineInfoStats}>
+                <span title="Quality">⭐⭐⭐⭐⭐</span>
+                <span title="Speed">2-5 min</span>
+                <span title="Cost">$0.50-$2</span>
+              </div>
+            </div>
+            <div
+              className={`${styles.pipelineInfoCard} ${pipelineVariant === "monolithic_canonical" ? styles.pipelineInfoCardSelected : ""}`}
+              onClick={() => setPipelineVariant("monolithic_canonical")}
+            >
+              <div className={styles.pipelineInfoHeader}>
+                <span>🔬</span>
+                <strong>Canonical</strong>
+                <span className={styles.pipelineInfoBadgeBeta}>Beta</span>
+              </div>
+              <div className={styles.pipelineInfoStats}>
+                <span title="Quality">⭐⭐⭐⭐</span>
+                <span title="Speed">30-90s</span>
+                <span title="Cost">$0.15-$0.60</span>
+              </div>
+            </div>
+            <div
+              className={`${styles.pipelineInfoCard} ${pipelineVariant === "monolithic_dynamic" ? styles.pipelineInfoCardSelected : ""}`}
+              onClick={() => setPipelineVariant("monolithic_dynamic")}
+            >
+              <div className={styles.pipelineInfoHeader}>
+                <span>⚗️</span>
+                <strong>Dynamic</strong>
+                <span className={styles.pipelineInfoBadgeExp}>Exp.</span>
+              </div>
+              <div className={styles.pipelineInfoStats}>
+                <span title="Quality">⭐⭐⭐</span>
+                <span title="Speed">20-60s</span>
+                <span title="Cost">$0.10-$0.40</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {error && (
           <div className={styles.errorBox}>
             {error}

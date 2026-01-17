@@ -145,7 +145,7 @@ export default function TestConfigPage() {
         </div>
         <div className={styles.pipelineNote}>
           <strong>Note:</strong> Pipeline variant is selected per-analysis on the{" "}
-          <a href="/analyze" className={styles.configLink}>Analyze page</a>.
+          <a href="/analyze">Analyze page</a>.
         </div>
       </div>
 

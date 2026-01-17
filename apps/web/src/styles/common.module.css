@@ -416,3 +416,87 @@
 .colorDefault {
   color: #495057;
 }
+
+/* ============================================
+   PIPELINE INFO CARDS (Analyze Page)
+   ============================================ */
+
+.pipelineInfo {
+  margin-bottom: 16px;
+}
+
+.pipelineInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.pipelineInfoCard {
+  padding: 12px;
+  background-color: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pipelineInfoCard:hover {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+}
+
+.pipelineInfoCardSelected {
+  border-color: #007bff;
+  background-color: #e3f2fd;
+}
+
+.pipelineInfoHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.pipelineInfoBadge {
+  margin-left: auto;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background-color: #28a745;
+  color: #fff;
+  border-radius: 3px;
+}
+
+.pipelineInfoBadgeBeta {
+  margin-left: auto;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background-color: #ffc107;
+  color: #333;
+  border-radius: 3px;
+}
+
+.pipelineInfoBadgeExp {
+  margin-left: auto;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background-color: #e65100;
+  color: #fff;
+  border-radius: 3px;
+}
+
+.pipelineInfoStats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #666;
+}
+
+@media (max-width: 600px) {
+  .pipelineInfoGrid {
+    grid-template-columns: 1fr;
+  }
+}
