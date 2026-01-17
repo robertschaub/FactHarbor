@@ -18,6 +18,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { runFactHarborAnalysis } from "../analyzer";
 import { UNSCOPED_ID } from "./scopes";
+import { loadEnvFile } from "./test-helpers";
 
 // ============================================================================
 // CONFIGURATION
@@ -25,32 +26,6 @@ import { UNSCOPED_ID } from "./scopes";
 
 const TEST_TIMEOUT_MS = 300_000; // 5 minutes per test (these are complex)
 const FULL_SUITE_TIMEOUT_MS = 900_000; // 15 minutes for full adversarial suite
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-function loadEnvFile(filePath: string): void {
-  if (!fs.existsSync(filePath)) return;
-  const raw = fs.readFileSync(filePath, "utf-8");
-  for (const line of raw.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq <= 0) continue;
-    const key = trimmed.slice(0, eq).trim();
-    let value = trimmed.slice(eq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    if (!Object.prototype.hasOwnProperty.call(process.env, key)) {
-      process.env[key] = value;
-    }
-  }
-}
 
 // ============================================================================
 // TEST DATA (from Handover document)
