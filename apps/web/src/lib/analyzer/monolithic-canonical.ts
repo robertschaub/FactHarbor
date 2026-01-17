@@ -622,7 +622,7 @@ function buildResultJson(params: {
       factharborAnalysis: {
         analysisId: input.jobId || `mono-${Date.now()}`,
         version: CONFIG.schemaVersion,
-        verdictConfidence: confidence,
+        confidence,
         centralClaimSummary: claim,
         factCheckSummary: reasoning,
         keyFindings: facts.slice(0, 5).map((f) => f.fact),
@@ -644,17 +644,7 @@ function buildResultJson(params: {
         highlightColor,
       },
     ],
-    facts: facts.map((f) => ({
-      id: f.id,
-      fact: f.fact,
-      category: f.category,
-      specificity: "medium",
-      sourceId: f.sourceUrl,
-      sourceUrl: f.sourceUrl,
-      sourceTitle: f.sourceTitle,
-      sourceExcerpt: f.sourceExcerpt,
-      claimDirection: f.claimDirection,
-    })),
+    // Build URL-to-ID mapping for proper fact-source relationships
     sources: sources.map((s, i) => ({
       id: `S${i + 1}`,
       url: s.url,
@@ -662,6 +652,21 @@ function buildResultJson(params: {
       snippet: s.snippet,
       fetchedAt: s.fetchedAt,
     })),
+    // Create lookup after sources are defined (using closure over sources array)
+    facts: (() => {
+      const urlToSourceId = new Map(sources.map((s, i) => [s.url, `S${i + 1}`]));
+      return facts.map((f) => ({
+        id: f.id,
+        fact: f.fact,
+        category: f.category,
+        specificity: "medium",
+        sourceId: urlToSourceId.get(f.sourceUrl) || `S-${f.id}`,
+        sourceUrl: f.sourceUrl,
+        sourceTitle: f.sourceTitle,
+        sourceExcerpt: f.sourceExcerpt,
+        claimDirection: f.claimDirection,
+      }));
+    })(),
     searchQueries: searchQueries.map((q, i) => ({
       id: `Q${i + 1}`,
       query: q,
