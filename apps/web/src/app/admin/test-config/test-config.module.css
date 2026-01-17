@@ -326,12 +326,29 @@
   margin-bottom: 16px;
 }
 
+.pipelineSubtitle {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
 .pipelineCard {
   padding: 20px;
   background-color: #fff;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 2px solid #e0e0e0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.pipelineCard:hover {
+  border-color: #007bff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pipelineCardSelected {
+  border-color: #007bff;
+  background-color: #e3f2fd;
 }
 
 .pipelineHeader {

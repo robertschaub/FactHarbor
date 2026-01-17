@@ -15,14 +15,23 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../../styles/common.module.css";
 
+type PipelineVariant = "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
+const PIPELINE_STORAGE_KEY = "fh_default_pipeline";
+
 export default function AnalyzePage() {
   const router = useRouter();
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pipelineVariant, setPipelineVariant] = useState<
-    "orchestrated" | "monolithic_canonical" | "monolithic_dynamic"
-  >("orchestrated");
+  const [pipelineVariant, setPipelineVariant] = useState<PipelineVariant>("orchestrated");
+
+  // Load default pipeline from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(PIPELINE_STORAGE_KEY);
+    if (saved && ["orchestrated", "monolithic_canonical", "monolithic_dynamic"].includes(saved)) {
+      setPipelineVariant(saved as PipelineVariant);
+    }
+  }, []);
 
   // When navigating back from /jobs/[id], browsers can restore this page from bfcache
   // with stale React state (e.g. isSubmitting=true), which would keep the button disabled.
@@ -170,18 +179,25 @@ export default function AnalyzePage() {
         </div>
 
         {/* Pipeline comparison cards */}
-        <div className={styles.pipelineInfo}>
-          <div className={styles.pipelineInfoGrid}>
+        <div className={styles.pipelineInfo} style={{ marginBottom: 16 }}>
+          <div className={styles.pipelineInfoGrid} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             <div
               className={`${styles.pipelineInfoCard} ${pipelineVariant === "orchestrated" ? styles.pipelineInfoCardSelected : ""}`}
               onClick={() => setPipelineVariant("orchestrated")}
+              style={{
+                padding: 12,
+                backgroundColor: pipelineVariant === "orchestrated" ? "#e3f2fd" : "#fff",
+                border: `2px solid ${pipelineVariant === "orchestrated" ? "#007bff" : "#e0e0e0"}`,
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
             >
-              <div className={styles.pipelineInfoHeader}>
+              <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
                 <span>🎯</span>
                 <strong>Orchestrated</strong>
-                <span className={styles.pipelineInfoBadge}>Default</span>
+                <span className={styles.pipelineInfoBadge} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#28a745", color: "#fff", borderRadius: 3 }}>Default</span>
               </div>
-              <div className={styles.pipelineInfoStats}>
+              <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
                 <span title="Quality">⭐⭐⭐⭐⭐</span>
                 <span title="Speed">2-5 min</span>
                 <span title="Cost">$0.50-$2</span>
@@ -190,13 +206,20 @@ export default function AnalyzePage() {
             <div
               className={`${styles.pipelineInfoCard} ${pipelineVariant === "monolithic_canonical" ? styles.pipelineInfoCardSelected : ""}`}
               onClick={() => setPipelineVariant("monolithic_canonical")}
+              style={{
+                padding: 12,
+                backgroundColor: pipelineVariant === "monolithic_canonical" ? "#e3f2fd" : "#fff",
+                border: `2px solid ${pipelineVariant === "monolithic_canonical" ? "#007bff" : "#e0e0e0"}`,
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
             >
-              <div className={styles.pipelineInfoHeader}>
+              <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
                 <span>🔬</span>
                 <strong>Canonical</strong>
-                <span className={styles.pipelineInfoBadgeBeta}>Beta</span>
+                <span className={styles.pipelineInfoBadgeBeta} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#ffc107", color: "#333", borderRadius: 3 }}>Beta</span>
               </div>
-              <div className={styles.pipelineInfoStats}>
+              <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
                 <span title="Quality">⭐⭐⭐⭐</span>
                 <span title="Speed">30-90s</span>
                 <span title="Cost">$0.15-$0.60</span>
@@ -205,13 +228,20 @@ export default function AnalyzePage() {
             <div
               className={`${styles.pipelineInfoCard} ${pipelineVariant === "monolithic_dynamic" ? styles.pipelineInfoCardSelected : ""}`}
               onClick={() => setPipelineVariant("monolithic_dynamic")}
+              style={{
+                padding: 12,
+                backgroundColor: pipelineVariant === "monolithic_dynamic" ? "#e3f2fd" : "#fff",
+                border: `2px solid ${pipelineVariant === "monolithic_dynamic" ? "#007bff" : "#e0e0e0"}`,
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
             >
-              <div className={styles.pipelineInfoHeader}>
+              <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
                 <span>⚗️</span>
                 <strong>Dynamic</strong>
-                <span className={styles.pipelineInfoBadgeExp}>Exp.</span>
+                <span className={styles.pipelineInfoBadgeExp} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#e65100", color: "#fff", borderRadius: 3 }}>Exp.</span>
               </div>
-              <div className={styles.pipelineInfoStats}>
+              <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
                 <span title="Quality">⭐⭐⭐</span>
                 <span title="Speed">20-60s</span>
                 <span title="Cost">$0.10-$0.40</span>

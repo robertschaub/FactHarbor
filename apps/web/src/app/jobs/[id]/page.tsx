@@ -532,7 +532,7 @@ export default function JobPage() {
           ) : (
             <>
               {/* v2.6.31: Show article summary FIRST (Input Neutrality: same layout for all inputs) */}
-              {twoPanelSummary && (
+              {twoPanelSummary?.articleSummary && (
                 <ArticleSummaryBox
                   articleSummary={twoPanelSummary.articleSummary}
                 />
@@ -1274,6 +1274,7 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
 // ============================================================================
 
 function ArticleSummaryBox({ articleSummary }: { articleSummary: any }) {
+  if (!articleSummary?.mainArgument) return null;
   return (
     <div className={styles.articleSummaryBox}>
       <div className={styles.articleSummaryHeader}>
