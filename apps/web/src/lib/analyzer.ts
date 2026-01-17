@@ -1863,42 +1863,6 @@ function calculateArticleTruthPercentage(
 
 // NOTE: verdict correction helpers extracted to ./analyzer/verdict-corrections
 
-/**
- * Legacy: Map confidence to claim verdict (for backward compatibility)
- */
-function calibrateClaimVerdict(
-  truthPercentage: number,
-  confidence: number,
-): ClaimVerdict7Point {
-  const truthPct = calculateTruthPercentage(truthPercentage, confidence);
-  return percentageToClaimVerdict(truthPct);
-}
-
-
-/**
- * Legacy: Map confidence to verdict answer (for backward compatibility)
- * v2.6.30: Updated comment for input neutrality
- */
-function calibrateVerdictSummary(
-  truthPercentage: number,
-  confidence: number,
-): VerdictSummary7Point {
-  const truthPct = calculateTruthPercentage(truthPercentage, confidence);
-  return percentageToVerdictSummary(truthPct);
-}
-
-
-/**
- * Map confidence to article verdict
- */
-function calibrateArticleVerdict(
-  truthPercentage: number,
-  confidence: number,
-): ArticleVerdict7Point {
-  const truthPct = calculateArticleTruthPercentage(truthPercentage, confidence);
-  return percentageToArticleVerdict(truthPct);
-}
-
 
 /**
  * Get color for 7-level verdict display
@@ -7590,13 +7554,6 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
   };
 }
 
-function getHighlightColor(truthPercentage: number): "green" | "yellow" | "red" {
-  const normalized = normalizePercentage(truthPercentage);
-  if (normalized >= 72) return "green";
-  if (normalized >= 43) return "yellow";
-  return "red";
-}
-
 
 // ============================================================================
 // STEP 6-7: Summary & Report
@@ -8692,8 +8649,4 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   };
 
   return { resultJson, reportMarkdown };
-}
-
-export function clampConfidence(value: number): number {
-  return Math.max(0, Math.min(1, value));
 }
