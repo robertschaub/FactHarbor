@@ -17,8 +17,10 @@
 
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { getModel } from "./llm";
+import { getModel, getModelForTask } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
+import { filterFactsByProvenance } from "./provenance-validation";
+import type { ExtractedFact } from "./types";
 import {
   createBudgetTracker,
   getBudgetConfig,
@@ -150,7 +152,7 @@ export async function runMonolithicDynamic(
   input: MonolithicAnalysisInput
 ): Promise<{ resultJson: any; reportMarkdown: string }> {
   const startTime = Date.now();
-  const { model, provider, modelName } = getModel();
+  // We use tiered models below instead of a single getModel()
   const budgetConfig = getBudgetConfig();
   const budgetTracker = createBudgetTracker();
 
@@ -194,8 +196,9 @@ export async function runMonolithicDynamic(
     await input.onEvent("Analyzing input and planning research", 15);
   }
 
+  const understandModel = getModelForTask("understand");
   const planResult = await generateText({
-    model,
+    model: understandModel.model,
     messages: [
       {
         role: "system",
@@ -291,8 +294,9 @@ Be creative - include queries that might find contradicting evidence.`,
           .join("\n\n---\n\n")
       : "No external sources were successfully retrieved.";
 
+  const verdictModel = getModelForTask("verdict");
   const analysisResult = await generateText({
-    model,
+    model: verdictModel.model,
     messages: [
       {
         role: "system",
@@ -330,6 +334,29 @@ Provide your dynamic analysis.`,
     throw new Error("Failed to generate analysis. Falling back to orchestrated pipeline.");
   }
 
+  // Step 4: Harden with Provenance Validation
+  const citationsAsFacts: ExtractedFact[] = citations.map((c, i) => ({
+    id: `C${i + 1}`,
+    fact: c.excerpt,
+    sourceId: `S${i + 1}`,
+    sourceUrl: c.url,
+    sourceTitle: c.title,
+    sourceExcerpt: c.excerpt,
+    category: "evidence",
+    specificity: "medium",
+    claimDirection: "neutral",
+  }));
+
+  // Validate citations have valid provenance (real URLs)
+  const provenanceResult = filterFactsByProvenance(citationsAsFacts);
+
+  const finalCitations: Citation[] = provenanceResult.validFacts.map((f) => ({
+    url: f.sourceUrl,
+    title: f.sourceTitle,
+    excerpt: f.sourceExcerpt,
+    accessedAt: new Date().toISOString(),
+  }));
+
   // Build result with safety contract
   const analysisTimeMs = Date.now() - startTime;
   const budgetStats = getBudgetStats(budgetTracker, budgetConfig);
@@ -341,8 +368,8 @@ Provide your dynamic analysis.`,
       analysisMode: "dynamic",
       pipelineVariant: "monolithic_dynamic",
       isExperimental: true,
-      llmProvider: provider,
-      llmModel: modelName,
+      llmProvider: verdictModel.provider,
+      llmModel: verdictModel.modelName,
       searchProvider: CONFIG.searchProvider,
       inputType: input.inputType,
       inputLength: input.inputValue.length,
@@ -353,7 +380,7 @@ Provide your dynamic analysis.`,
         maxSearches: DYNAMIC_BUDGET.maxSearches,
         fetches: fetchCount,
         maxFetches: DYNAMIC_BUDGET.maxFetches,
-        citationsCollected: citations.length,
+        citationsCollected: finalCitations.length,
       },
       budgetStats: {
         tokensUsed: budgetStats.tokensUsed,
@@ -364,7 +391,7 @@ Provide your dynamic analysis.`,
     },
 
     // Safety contract: always include citations and rawJson
-    citations,
+    citations: finalCitations,
     rawJson: analysis,
 
     // Dynamic analysis fields

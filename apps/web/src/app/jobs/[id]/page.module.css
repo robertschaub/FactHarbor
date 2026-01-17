@@ -1421,3 +1421,201 @@
   font-style: italic;
   padding: 8px;
 }
+
+/* Dynamic Result Viewer - NEW v2.6.35 */
+.dynamicViewer {
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 12px;
+}
+
+.experimentalWarning {
+  padding: 12px;
+  background-color: #fff3e0;
+  border: 1px solid #ffcc80;
+  border-radius: 8px;
+  color: #e65100;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.groundingScoreBadge {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  border: 1px solid #a5d6a7;
+}
+
+.tooltip {
+  cursor: help;
+  color: #888;
+  font-weight: normal;
+  margin-left: 4px;
+}
+
+.narrativeSection {
+  margin-bottom: 24px;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.citationsSection {
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.citationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.citationItem {
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.citationExcerpt {
+  font-style: italic;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.citationMeta {
+  font-size: 12px;
+  color: #888;
+}
+
+.citationTitle {
+  font-weight: 600;
+  color: #333;
+}
+
+.citationUrl {
+  color: #007bff;
+  text-decoration: none;
+}
+
+/* Grounding Score quality indicators */
+.groundingScoreBadge[data-quality="good"] {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+
+.groundingScoreBadge[data-quality="moderate"] {
+  background-color: #fff3e0;
+  color: #e65100;
+  border-color: #ffcc80;
+}
+
+.groundingScoreBadge[data-quality="low"] {
+  background-color: #ffebee;
+  color: #c62828;
+  border-color: #ef9a9a;
+}
+
+.groundingTooltip {
+  cursor: help;
+  color: #888;
+  font-weight: normal;
+  margin-left: 4px;
+}
+
+/* Dynamic Verdict Section */
+.dynamicVerdict {
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.verdictLabel {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1565c0;
+  margin-bottom: 8px;
+}
+
+.verdictScore,
+.verdictConfidence {
+  font-size: 14px;
+  color: #666;
+  display: inline-block;
+  margin-right: 16px;
+}
+
+.verdictReasoning {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.5;
+  border-top: 1px solid #ddd;
+  padding-top: 12px;
+}
+
+/* Findings Section */
+.findingsSection {
+  margin-bottom: 24px;
+}
+
+.findingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.findingItem {
+  padding: 10px 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.findingSupport {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.findingPoint {
+  font-size: 14px;
+  color: #333;
+}
+
+.findingNotes {
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Limitations Section */
+.limitationsSection {
+  margin-bottom: 24px;
+  padding: 12px;
+  background-color: #fff8e1;
+  border-radius: 8px;
+  border: 1px solid #ffe082;
+}
+
+.limitationsList {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #666;
+}
+
+.limitationsList li {
+  margin-bottom: 4px;
+}

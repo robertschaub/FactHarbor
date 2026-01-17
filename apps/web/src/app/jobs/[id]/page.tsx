@@ -527,67 +527,73 @@ export default function JobPage() {
       {/* Summary Tab */}
       {tab === "summary" && hasV22Data && (
         <div className={styles.contentCard}>
-          {/* v2.6.31: Show article summary FIRST (Input Neutrality: same layout for all inputs) */}
-          {twoPanelSummary && (
-            <ArticleSummaryBox
-              articleSummary={twoPanelSummary.articleSummary}
-            />
-          )}
-
-          {/* Input neutrality: same banner for all input styles */}
-          {/* v2.6.31: Handle edge case where hasMultipleProceedings is true but proceedingAnswers is missing */}
-          {hasMultipleProceedings && verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 ? (
-            <MultiScopeStatementBanner
-              verdictSummary={verdictSummary}
-              scopes={scopes}
-              articleThesis={twoPanelSummary?.articleSummary?.mainArgument}
-              articleAnalysis={articleAnalysis}
-              pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
-              fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
-            />
+          {pipelineVariant === "monolithic_dynamic" ? (
+            <DynamicResultViewer result={result} />
           ) : (
-            /* Single-scope OR multi-scope with missing proceedingAnswers: show ArticleVerdictBanner as fallback */
-            (articleAnalysis || verdictSummary) && (
-              <ArticleVerdictBanner
-                articleAnalysis={articleAnalysis}
-                verdictSummary={verdictSummary}
-                fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
-                pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
-                fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
-              />
-            )
-          )}
+            <>
+              {/* v2.6.31: Show article summary FIRST (Input Neutrality: same layout for all inputs) */}
+              {twoPanelSummary && (
+                <ArticleSummaryBox
+                  articleSummary={twoPanelSummary.articleSummary}
+                />
+              )}
 
-          {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
-            <div className={styles.claimsSection}>
-              {/* v2.6.31: Input Neutrality - same label for all inputs */}
-              <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
-              {hasMultipleProceedings ? (
-                <ClaimsGroupedByScope
-                  claimVerdicts={claimVerdicts}
+              {/* Input neutrality: same banner for all input styles */}
+              {/* v2.6.31: Handle edge case where hasMultipleProceedings is true but proceedingAnswers is missing */}
+              {hasMultipleProceedings && verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 ? (
+                <MultiScopeStatementBanner
+                  verdictSummary={verdictSummary}
                   scopes={scopes}
-                  tangentialClaims={tangentialSubClaims}
+                  articleThesis={twoPanelSummary?.articleSummary?.mainArgument}
+                  articleAnalysis={articleAnalysis}
+                  pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
+                  fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
                 />
               ) : (
-                <>
-                  {claimVerdicts.map((cv: any) => <ClaimCard key={cv.claimId} claim={cv} />)}
-                  {tangentialSubClaims.length > 0 && (
-                    <details className={styles.tangentialDetails}>
-                      <summary className={styles.tangentialSummary}>
-                        📎 Related context (tangential; excluded from verdict) ({tangentialSubClaims.length})
-                      </summary>
-                      <ul className={styles.tangentialList}>
-                        {tangentialSubClaims.map((c: any) => (
-                          <li key={c.id} className={styles.tangentialItem}>
-                            <code className={styles.tangentialClaimId}>{c.id}</code> {c.text}
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                </>
+                /* Single-scope OR multi-scope with missing proceedingAnswers: show ArticleVerdictBanner as fallback */
+                (articleAnalysis || verdictSummary) && (
+                  <ArticleVerdictBanner
+                    articleAnalysis={articleAnalysis}
+                    verdictSummary={verdictSummary}
+                    fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
+                    pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
+                    fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
+                  />
+                )
               )}
-            </div>
+
+              {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
+                <div className={styles.claimsSection}>
+                  {/* v2.6.31: Input Neutrality - same label for all inputs */}
+                  <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
+                  {hasMultipleProceedings ? (
+                    <ClaimsGroupedByScope
+                      claimVerdicts={claimVerdicts}
+                      scopes={scopes}
+                      tangentialClaims={tangentialSubClaims}
+                    />
+                  ) : (
+                    <>
+                      {claimVerdicts.map((cv: any) => <ClaimCard key={cv.claimId} claim={cv} />)}
+                      {tangentialSubClaims.length > 0 && (
+                        <details className={styles.tangentialDetails}>
+                          <summary className={styles.tangentialSummary}>
+                            📎 Related context (tangential; excluded from verdict) ({tangentialSubClaims.length})
+                          </summary>
+                          <ul className={styles.tangentialList}>
+                            {tangentialSubClaims.map((c: any) => (
+                              <li key={c.id} className={styles.tangentialItem}>
+                                <code className={styles.tangentialClaimId}>{c.id}</code> {c.text}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -1548,6 +1554,108 @@ function ClaimHighlighter({ originalText, claimVerdicts }: { originalText: strin
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Dynamic Result Viewer - NEW v2.6.35
+// ============================================================================
+
+function DynamicResultViewer({ result }: { result: any }) {
+  const citationsCount = result.citations?.length || 0;
+  // Estimate sentence count from summary (dynamic pipeline uses summary, not narrativeMarkdown)
+  const narrativeText = result.summary || result.narrativeMarkdown || "";
+  const sentencesCount = narrativeText.split(/[.!?]+/).filter(Boolean).length || 1;
+  const groundingRatio = (citationsCount / sentencesCount).toFixed(2);
+  const groundingQuality = parseFloat(groundingRatio) >= 0.5 ? "good" : parseFloat(groundingRatio) >= 0.25 ? "moderate" : "low";
+
+  return (
+    <div className={styles.dynamicViewer}>
+      <div className={styles.experimentalWarning}>
+        ⚠️ <strong>Experimental Agentic Result</strong> — This analysis was generated using a flexible tool-loop and has not been structured into the canonical FactHarbor schema.
+      </div>
+
+      <div className={styles.groundingScoreBadge} data-quality={groundingQuality}>
+        📊 Grounding Score: <strong>{groundingRatio}</strong>
+        <span className={styles.groundingTooltip} title={`${citationsCount} citations / ${sentencesCount} narrative sentences. Higher = better sourced.`}> (?)</span>
+      </div>
+
+      {/* Verdict display */}
+      {result.verdict && (
+        <div className={styles.dynamicVerdict}>
+          <div className={styles.verdictLabel}>{result.verdict.label}</div>
+          {result.verdict.score !== undefined && (
+            <div className={styles.verdictScore}>Score: {result.verdict.score}%</div>
+          )}
+          {result.verdict.confidence !== undefined && (
+            <div className={styles.verdictConfidence}>Confidence: {result.verdict.confidence}%</div>
+          )}
+          {result.verdict.reasoning && (
+            <div className={styles.verdictReasoning}>{result.verdict.reasoning}</div>
+          )}
+        </div>
+      )}
+
+      {/* Summary */}
+      {result.summary && (
+        <div className={styles.narrativeSection}>
+          <h3 className={styles.sectionTitle}>📝 Summary</h3>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {result.summary}
+          </ReactMarkdown>
+        </div>
+      )}
+
+      {/* Findings */}
+      {result.findings && result.findings.length > 0 && (
+        <div className={styles.findingsSection}>
+          <h3 className={styles.sectionTitle}>🔍 Key Findings</h3>
+          <div className={styles.findingsList}>
+            {result.findings.map((f: any, i: number) => (
+              <div key={i} className={styles.findingItem} data-support={f.support}>
+                <span className={styles.findingSupport}>
+                  {f.support === "strong" ? "🟢" : f.support === "moderate" ? "🟡" : f.support === "weak" ? "🟠" : "🔴"}
+                </span>
+                <span className={styles.findingPoint}>{f.point}</span>
+                {f.notes && <span className={styles.findingNotes}> — {f.notes}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Limitations */}
+      {result.limitations && result.limitations.length > 0 && (
+        <div className={styles.limitationsSection}>
+          <h3 className={styles.sectionTitle}>⚠️ Limitations</h3>
+          <ul className={styles.limitationsList}>
+            {result.limitations.map((l: string, i: number) => (
+              <li key={i}>{l}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Citations */}
+      {result.citations && result.citations.length > 0 && (
+        <div className={styles.citationsSection}>
+          <h3 className={styles.sectionTitle}>📚 Citations & Evidence ({citationsCount})</h3>
+          <div className={styles.citationsList}>
+            {result.citations.map((c: any, i: number) => (
+              <div key={i} className={styles.citationItem}>
+                <div className={styles.citationExcerpt}>"{c.excerpt}"</div>
+                <div className={styles.citationMeta}>
+                  {c.title && <span className={styles.citationTitle}>{c.title} — </span>}
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" className={styles.citationUrl}>
+                    {c.url}
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

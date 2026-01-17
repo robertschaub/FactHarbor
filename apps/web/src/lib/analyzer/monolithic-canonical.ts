@@ -16,7 +16,7 @@
 
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { getModel } from "./llm";
+import { getModel, getModelForTask } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
 import {
   createBudgetTracker,
@@ -27,6 +27,8 @@ import {
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
 import { percentageToClaimVerdict, getHighlightColor } from "./truth-scale";
+import { filterFactsByProvenance } from "./provenance-validation";
+import type { ExtractedFact } from "./types";
 
 // ============================================================================
 // TYPES
@@ -47,22 +49,14 @@ interface MonolithicBudget {
   timeoutMs: number;
 }
 
-/** Fact collected during research */
-interface ExtractedFact {
+// Local helper types for internal processing (not extending FetchedSource to avoid required field conflicts)
+interface MonolithicSource {
   id: string;
-  fact: string;
-  sourceUrl: string;
-  sourceTitle: string;
-  sourceExcerpt: string;
-  category: string;
-  claimDirection: "supports" | "contradicts" | "neutral";
-}
-
-/** Source fetched during research */
-interface FetchedSource {
   url: string;
   title: string;
   snippet: string;
+  content: string;
+  fetchSuccess: boolean;
   fetchedAt: string;
   contentLength: number;
 }
@@ -121,6 +115,17 @@ const VerdictSchema = z.object({
   reasoning: z.string().describe("Detailed reasoning for the verdict (2-4 sentences)"),
   summary: z.string().describe("One-sentence summary"),
   keyFactIds: z.array(z.string()).describe("IDs of most important facts"),
+  detectedScopes: z
+    .array(
+      z.object({
+        id: z.string().describe("Unique short ID, e.g., 'CTX_TSE'"),
+        name: z.string().describe("Human-readable name, e.g., 'TSE Electoral Case'"),
+        subject: z.string().describe("The specific subject of this scope"),
+        type: z.enum(["legal", "scientific", "methodological", "general"]),
+      })
+    )
+    .optional()
+    .describe("List of distinct analytical frames detected"),
 });
 
 // ============================================================================
@@ -237,7 +242,7 @@ async function generateVerdict(
   const factsSummary = facts
     .map(
       (f) =>
-        `[${f.id}] ${f.claimDirection.toUpperCase()}: ${f.fact}\n   Category: ${f.category}\n   Source: ${f.sourceTitle}`
+        `[${f.id}] ${(f.claimDirection || "neutral").toUpperCase()}: ${f.fact}\n   Category: ${f.category}\n   Source: ${f.sourceTitle}`
     )
     .join("\n\n");
 
@@ -259,6 +264,10 @@ Confidence should reflect:
 - Quality and reliability of sources
 - Consistency of evidence
 - Any gaps in verification
+
+Multi-Scope Detection:
+Analyze if the evidence belongs to distinct analytical frames (e.g., separate legal proceedings, different scientific studies, or distinct geographical jurisdictions). 
+If so, return them in the 'detectedScopes' array and ensure each claim/fact is logically associated with one.
 
 Reference specific fact IDs in your reasoning.`,
       },
@@ -286,13 +295,13 @@ export async function runMonolithicCanonical(
   input: MonolithicAnalysisInput
 ): Promise<{ resultJson: any; reportMarkdown: string }> {
   const startTime = Date.now();
-  const { model, provider, modelName } = getModel();
+  // We use tiered models below instead of a single getModel()
   const budgetConfig = getBudgetConfig();
   const budgetTracker = createBudgetTracker();
 
   // State tracking
   const facts: ExtractedFact[] = [];
-  const sources: FetchedSource[] = [];
+  const sources: MonolithicSource[] = [];
   const searchQueriesWithResults: Array<{ query: string; resultsCount: number }> = [];
   let searchCount = 0;
   let fetchCount = 0;
@@ -319,7 +328,8 @@ export async function runMonolithicCanonical(
   }
 
   // Step 1: Extract claim and generate search queries
-  const claimData = await extractClaim(model, textToAnalyze, input.onEvent);
+  const understandModel = getModelForTask("understand");
+  const claimData = await extractClaim(understandModel.model, textToAnalyze, input.onEvent);
   recordLLMCall(budgetTracker, 2000); // Estimate
 
   // Handle opinion/prediction claims
@@ -328,8 +338,8 @@ export async function runMonolithicCanonical(
     const resultJson = buildResultJson({
       input,
       startTime,
-      provider,
-      modelName,
+      provider: understandModel.provider,
+      modelName: understandModel.modelName,
       budgetTracker,
       budgetConfig,
       claim: claimData.mainClaim,
@@ -349,6 +359,7 @@ export async function runMonolithicCanonical(
   // Step 2: Research loop
   let iteration = 0;
   let needsMoreResearch = true;
+  const extractFactsModel = getModelForTask("extract_facts");
 
   while (
     needsMoreResearch &&
@@ -436,9 +447,12 @@ export async function runMonolithicCanonical(
         });
 
         sources.push({
+          id: `S${sources.length + 1}`,
           url: result.url,
           title: content.title || result.title,
           snippet: result.snippet,
+          content: content.text,
+          fetchSuccess: true,
           fetchedAt: new Date().toISOString(),
           contentLength: content.text.length,
         });
@@ -457,7 +471,7 @@ export async function runMonolithicCanonical(
     if (fetchedContents.length > 0) {
       try {
         const extraction = await extractFacts(
-          model,
+          extractFactsModel.model,
           claimData.mainClaim,
           fetchedContents,
           facts.length,
@@ -466,15 +480,18 @@ export async function runMonolithicCanonical(
         recordLLMCall(budgetTracker, 3000); // Estimate
 
         // Add new facts with IDs
+        const urlToSourceId = new Map(sources.map((s) => [s.url, s.id]));
         for (const f of extraction.facts) {
           facts.push({
             id: `F${facts.length + 1}`,
             fact: f.fact,
+            sourceId: urlToSourceId.get(f.sourceUrl) || `S-${f.sourceUrl.substring(0, 10)}`,
             sourceUrl: f.sourceUrl,
             sourceTitle: f.sourceTitle,
             sourceExcerpt: f.excerpt,
             category: f.category,
             claimDirection: f.direction,
+            specificity: "medium",
           });
         }
 
@@ -493,26 +510,36 @@ export async function runMonolithicCanonical(
     throw new Error("No facts could be extracted. Falling back to orchestrated pipeline.");
   }
 
-  const verdictData = await generateVerdict(model, claimData.mainClaim, facts, input.onEvent);
+  // Harden with Provenance Validation
+  const provenanceResult = filterFactsByProvenance(facts);
+  const validatedFacts = provenanceResult.validFacts;
+
+  if (validatedFacts.length === 0) {
+    throw new Error("Facts failed provenance validation. Falling back to orchestrated pipeline.");
+  }
+
+  const verdictModel = getModelForTask("verdict");
+  const verdictData = await generateVerdict(verdictModel.model, claimData.mainClaim, validatedFacts, input.onEvent);
   recordLLMCall(budgetTracker, 2000); // Estimate
 
   // Build result
   const resultJson = buildResultJson({
     input,
     startTime,
-    provider,
-    modelName,
+    provider: verdictModel.provider,
+    modelName: verdictModel.modelName,
     budgetTracker,
     budgetConfig,
     claim: claimData.mainClaim,
     claimType: claimData.claimType,
-    facts,
+    facts: validatedFacts,
     sources,
     searchQueriesWithResults,
     verdict: verdictData.verdict,
     confidence: verdictData.confidence,
     reasoning: verdictData.reasoning,
     summary: verdictData.summary,
+    verdictData, // Pass the LLM response to include detectedScopes
   });
 
   const reportMarkdown = generateReportMarkdown(resultJson, verdictData);
@@ -538,12 +565,13 @@ function buildResultJson(params: {
   claim: string;
   claimType: string;
   facts: ExtractedFact[];
-  sources: FetchedSource[];
+  sources: MonolithicSource[];
   searchQueriesWithResults: Array<{ query: string; resultsCount: number }>;
   verdict: number;
   confidence: number;
   reasoning: string;
   summary: string;
+  verdictData?: any;
 }): any {
   const {
     input,
@@ -569,6 +597,32 @@ function buildResultJson(params: {
   const verdictLabel = percentageToClaimVerdict(verdict, confidence);
   const highlightColor = getHighlightColor(verdict);
 
+  // Map LLM-detected scopes if available, otherwise fallback to CTX_MAIN
+  const finalScopes =
+    params.verdictData?.detectedScopes && params.verdictData.detectedScopes.length > 0
+      ? params.verdictData.detectedScopes.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          shortName: s.name.substring(0, 10),
+          subject: s.subject,
+          temporal: "",
+          status: "concluded",
+          outcome: summary,
+          metadata: { claimType, type: s.type },
+        }))
+      : [
+          {
+            id: "CTX_MAIN",
+            name: "Main Analysis",
+            shortName: "Main",
+            subject: claim,
+            temporal: "",
+            status: "concluded",
+            outcome: summary,
+            metadata: { claimType },
+          },
+        ];
+
   return {
     meta: {
       schemaVersion: CONFIG.schemaVersion,
@@ -580,10 +634,10 @@ function buildResultJson(params: {
       searchProvider: CONFIG.searchProvider,
       inputType: input.inputType,
       detectedInputType: input.inputType,
-      hasMultipleProceedings: false,
-      hasMultipleScopes: false,
-      proceedingCount: 1,
-      scopeCount: 1,
+      hasMultipleProceedings: finalScopes.length > 1,
+      hasMultipleScopes: finalScopes.length > 1,
+      proceedingCount: finalScopes.length,
+      scopeCount: finalScopes.length,
       isPseudoscience: false,
       inputLength: input.inputValue.length,
       analysisTimeMs,
@@ -609,18 +663,7 @@ function buildResultJson(params: {
       summary,
       hasContestedFactors: false,
     },
-    scopes: [
-      {
-        id: "CTX_MAIN",
-        name: "Main Analysis",
-        shortName: "Main",
-        subject: claim,
-        temporal: "",
-        status: "concluded",
-        outcome: summary,
-        metadata: { claimType },
-      },
-    ],
+    scopes: finalScopes,
     twoPanelSummary: {
       factharborAnalysis: {
         analysisId: input.jobId || `mono-${Date.now()}`,
@@ -648,28 +691,25 @@ function buildResultJson(params: {
       },
     ],
     // Build URL-to-ID mapping for proper fact-source relationships
-    sources: sources.map((s, i) => ({
-      id: `S${i + 1}`,
+    sources: sources.map((s) => ({
+      id: s.id,
       url: s.url,
       title: s.title,
       snippet: s.snippet,
       fetchedAt: s.fetchedAt,
     })),
     // Create lookup after sources are defined (using closure over sources array)
-    facts: (() => {
-      const urlToSourceId = new Map(sources.map((s, i) => [s.url, `S${i + 1}`]));
-      return facts.map((f) => ({
-        id: f.id,
-        fact: f.fact,
-        category: f.category,
-        specificity: "medium",
-        sourceId: urlToSourceId.get(f.sourceUrl) || `S-${f.id}`,
-        sourceUrl: f.sourceUrl,
-        sourceTitle: f.sourceTitle,
-        sourceExcerpt: f.sourceExcerpt,
-        claimDirection: f.claimDirection,
-      }));
-    })(),
+    facts: facts.map((f) => ({
+      id: f.id,
+      fact: f.fact,
+      category: f.category,
+      specificity: f.specificity,
+      sourceId: f.sourceId,
+      sourceUrl: f.sourceUrl,
+      sourceTitle: f.sourceTitle,
+      sourceExcerpt: f.sourceExcerpt,
+      claimDirection: f.claimDirection,
+    })),
     searchQueries: searchQueriesWithResults.map((q, i) => ({
       id: `Q${i + 1}`,
       query: q.query,
