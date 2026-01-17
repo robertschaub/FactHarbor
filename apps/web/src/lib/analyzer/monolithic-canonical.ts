@@ -26,6 +26,7 @@ import {
 } from "./budgets";
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
+import { percentageToClaimVerdict, getHighlightColor } from "./truth-scale";
 
 // ============================================================================
 // TYPES
@@ -549,7 +550,9 @@ function buildResultJson(params: {
 
   const analysisTimeMs = Date.now() - startTime;
   const budgetStats = getBudgetStats(budgetTracker, budgetConfig);
-  const highlightColor = verdict >= 70 ? "green" : verdict >= 40 ? "yellow" : "red";
+  // Use canonical truth scale for consistent verdicts across pipelines
+  const verdictLabel = percentageToClaimVerdict(verdict, confidence);
+  const highlightColor = getHighlightColor(verdict);
 
   return {
     meta: {
@@ -587,16 +590,7 @@ function buildResultJson(params: {
     verdictSummary: {
       overallVerdict: verdict,
       overallConfidence: confidence,
-      verdictLabel:
-        verdict >= 80
-          ? "True"
-          : verdict >= 60
-            ? "Mostly True"
-            : verdict >= 40
-              ? "Mixed"
-              : verdict >= 20
-                ? "Mostly False"
-                : "False",
+      verdictLabel,
       summary,
       hasContestedFactors: false,
     },
