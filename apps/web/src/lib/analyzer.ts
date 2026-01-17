@@ -1730,7 +1730,7 @@ function calculateTruthPercentage(
  * @param score - Track record score in either 0-1 or 0-100 scale
  * @returns Normalized score in 0-1 range
  */
-function normalizeTrackRecordScore(score: number): number {
+export function normalizeTrackRecordScore(score: number): number {
   // Handle invalid values
   if (!Number.isFinite(score)) {
     console.warn(`[Analyzer] Invalid trackRecordScore: ${score}, defaulting to 0.5`);
@@ -1759,7 +1759,7 @@ function normalizeTrackRecordScore(score: number): number {
  * @param value - Calculated truth percentage
  * @returns Clamped value in [0, 100] range
  */
-function clampTruthPercentage(value: number): number {
+export function clampTruthPercentage(value: number): number {
   if (!Number.isFinite(value)) {
     console.error(`[Analyzer] Non-finite truthPercentage: ${value}, clamping to 50`);
     return 50;
@@ -2445,8 +2445,9 @@ function applyEvidenceWeighting(
   facts: ExtractedFact[],
   sources: FetchedSource[],
 ): ClaimVerdict[] {
+  // PR-C: Normalize all trackRecordScores to 0-1 scale defensively
   const sourceScoreById = new Map(
-    sources.map((s) => [s.id, s.trackRecordScore]),
+    sources.map((s) => [s.id, s.trackRecordScore !== null ? normalizeTrackRecordScore(s.trackRecordScore) : null]),
   );
   const factScoreById = new Map(
     facts.map((f) => [f.id, sourceScoreById.get(f.sourceId) ?? null]),
@@ -2463,13 +2464,15 @@ function applyEvidenceWeighting(
     const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
     const adjustedTruth = Math.round(50 + (verdict.truthPercentage - 50) * avg);
     const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avg / 2));
+    // PR-C: Clamp truth percentage to valid range
+    const clampedTruth = clampTruthPercentage(adjustedTruth);
     return {
       ...verdict,
       evidenceWeight: avg,
-      truthPercentage: adjustedTruth,
+      truthPercentage: clampedTruth,
       confidence: adjustedConfidence,
-      verdict: adjustedTruth,
-      highlightColor: getHighlightColor7Point(adjustedTruth),
+      verdict: clampedTruth,
+      highlightColor: getHighlightColor7Point(clampedTruth),
     };
   });
 }
@@ -5341,7 +5344,8 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
     // Conservative safeguard: avoid treating high-impact outcomes (sentencing/conviction/prison terms)
     // as "facts" when they come from low/unknown-reliability sources.
     // These claims are easy to get wrong and can dominate the analysis.
-    const track = typeof source.trackRecordScore === "number" ? source.trackRecordScore : null;
+    // PR-C: Normalize trackRecordScore to 0-1 scale before using in comparison
+    const track = typeof source.trackRecordScore === "number" ? normalizeTrackRecordScore(source.trackRecordScore) : null;
     // Only apply this safeguard when we have an explicit reliability score.
     // If no source bundle is configured, trackRecordScore is null (unknown) and we should NOT discard facts.
     if (typeof track === "number" && track < 0.6) {
@@ -6356,11 +6360,13 @@ The JSON object MUST include these top-level keys:
       factorAnalysis.verdictExplanation = `Corrected: All ${negativeFactors} negative factors are contested`;
     }
 
+    // PR-C: Clamp truth percentage to valid range
+    const clampedTruthPct = clampTruthPercentage(answerTruthPct);
     return {
       ...pa,
-      answer: answerTruthPct,
+      answer: clampedTruthPct,
       confidence: correctedConfidence,
-      truthPercentage: answerTruthPct,
+      truthPercentage: clampedTruthPct,
       shortAnswer: sanitizeScopeShortAnswer(String(pa.shortAnswer || ""), ctxStatus),
       factorAnalysis,
     } as ProceedingAnswer;
@@ -6512,10 +6518,12 @@ The JSON object MUST include these top-level keys:
     }
 
     // Derive 7-point verdict from percentage
+    // PR-C: Clamp truth percentage to valid range
+    const clampedTruthPct = clampTruthPercentage(truthPct);
     return {
       ...cv,
-      verdict: truthPct,
-      truthPercentage: truthPct,
+      verdict: clampedTruthPct,
+      truthPercentage: clampedTruthPct,
       reasoning: sanitizedReasoning,
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
@@ -6523,7 +6531,7 @@ The JSON object MUST include these top-level keys:
       thesisRelevance: claim?.thesisRelevance || "direct",
       keyFactorId: claim?.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
       relatedProceedingId: ctxId,
-      highlightColor: getHighlightColor7Point(truthPct),
+      highlightColor: getHighlightColor7Point(clampedTruthPct),
       isCounterClaim,
     };
   });
@@ -6552,11 +6560,13 @@ The JSON object MUST include these top-level keys:
     ? "Some negative factors are politically contested claims and given reduced weight."
     : undefined;
 
+  // PR-C: Clamp truth percentage to valid range (defensive)
+  const clampedAvgTruthPct = clampTruthPercentage(avgTruthPct);
   const verdictSummary: VerdictSummary = {
     displayText: displayText,
-    answer: avgTruthPct,
+    answer: clampedAvgTruthPct,
     confidence: avgConfidence,
-    truthPercentage: avgTruthPct,
+    truthPercentage: clampedAvgTruthPct,
     shortAnswer: parsed.verdictSummary.shortAnswer,
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer,
     keyFactors: parsed.verdictSummary.keyFactors,
@@ -6896,11 +6906,13 @@ ${factsFormatted}`;
         claimFacts,
       );
 
+        // PR-C: Clamp truth percentage to valid range
+        const clampedTruthPct = clampTruthPercentage(truthPct);
         return {
         ...cv,
         claimId: claim.id,
-          verdict: truthPct,
-        truthPercentage: truthPct,
+          verdict: clampedTruthPct,
+        truthPercentage: clampedTruthPct,
         reasoning: sanitizedReasoning,
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
@@ -6963,11 +6975,13 @@ ${factsFormatted}`;
     contestedNegatives,
   });
 
+  // PR-C: Clamp truth percentage to valid range (defensive)
+  const clampedAnswerTruthPct = clampTruthPercentage(answerTruthPct);
   const verdictSummary: VerdictSummary = {
     displayText: displayText,
-    answer: answerTruthPct,
+    answer: clampedAnswerTruthPct,
     confidence: correctedConfidence,
-    truthPercentage: answerTruthPct,
+    truthPercentage: clampedAnswerTruthPct,
     shortAnswer: parsed.verdictSummary.shortAnswer || "",
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer || "",
     keyFactors,
@@ -7343,11 +7357,13 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         truthPct = Math.max(0, truthPct - penalty);
       }
 
+      // PR-C: Clamp truth percentage to valid range
+      const clampedTruthPct = clampTruthPercentage(truthPct);
       return {
         ...cv,
         claimId: claim.id,
-        verdict: truthPct,
-        truthPercentage: truthPct,
+        verdict: clampedTruthPct,
+        truthPercentage: clampedTruthPct,
         confidence: finalConfidence,
         reasoning: sanitizedReasoning,
         claimText: claim.text || "",
@@ -7720,8 +7736,9 @@ function calculateOverallCredibility(
     return inputSourceInfo || "Unknown";
   }
 
+  // PR-C: Normalize trackRecordScores before averaging
   const avg =
-    withScore.reduce((sum, s) => sum + (s.trackRecordScore || 0), 0) /
+    withScore.reduce((sum, s) => sum + normalizeTrackRecordScore(s.trackRecordScore || 0), 0) /
     withScore.length;
   const researchLevel =
     avg >= 0.85
