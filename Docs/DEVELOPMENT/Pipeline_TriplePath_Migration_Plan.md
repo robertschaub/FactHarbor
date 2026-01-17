@@ -19,7 +19,7 @@ Companion architecture doc:
 - `OrchestratedPipeline` behavior stays unchanged except for low-risk shared wrappers.
 - Budgets are enforced for monolithic variants (maxSteps, maxSources, timeouts).
 - Provenance rules are enforced (no synthetic evidence).
-- `CTX_UNSCOPED` remains display-only and excluded from overall verdict aggregation [[memory:13420326]].
+- `CTX_UNSCOPED` remains display-only and excluded from overall verdict aggregation.
 
 ### Quality metrics (evaluation)
 - Input neutrality divergence (Q vs S): **≤ 4 points avg absolute** on the fixed suite.

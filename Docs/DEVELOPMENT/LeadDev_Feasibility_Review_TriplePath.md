@@ -40,7 +40,7 @@ The goal is to add this without destabilizing the current orchestrated path.
 Confirm how each variant preserves:
 - Understand → Research → Verdict ordering
 - Gate1 and Gate4 presence
-- `CTX_UNSCOPED` display-only (no aggregation influence) [[memory:13420326]]
+- `CTX_UNSCOPED` display-only (no aggregation influence)
 - neutrality target ≤4 points avg abs on the suite
 - provenance fail-closed behavior
 
