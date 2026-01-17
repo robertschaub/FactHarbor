@@ -93,6 +93,62 @@ export default function TestConfigPage() {
         </p>
       </div>
 
+      {/* Pipeline Configuration Section */}
+      <div className={styles.pipelineSection}>
+        <h2 className={styles.sectionTitle}>Analysis Pipeline Configuration</h2>
+        <div className={styles.pipelineGrid}>
+          <div className={styles.pipelineCard}>
+            <div className={styles.pipelineHeader}>
+              <span className={styles.pipelineIcon}>🎯</span>
+              <span className={styles.pipelineName}>Orchestrated</span>
+              <span className={styles.pipelineBadge}>Default</span>
+            </div>
+            <p className={styles.pipelineDesc}>
+              Multi-stage pipeline with highest quality. Best for complex claims and multi-scope analysis.
+            </p>
+            <div className={styles.pipelineStats}>
+              <span>Quality: ⭐⭐⭐⭐⭐</span>
+              <span>Speed: 2-5 min</span>
+              <span>Cost: $0.50-$2.00</span>
+            </div>
+          </div>
+          <div className={styles.pipelineCard}>
+            <div className={styles.pipelineHeader}>
+              <span className={styles.pipelineIcon}>🔬</span>
+              <span className={styles.pipelineName}>Monolithic Canonical</span>
+              <span className={styles.pipelineBadgeBeta}>Beta</span>
+            </div>
+            <p className={styles.pipelineDesc}>
+              Faster single-context analysis with canonical output. Good balance of speed and quality.
+            </p>
+            <div className={styles.pipelineStats}>
+              <span>Quality: ⭐⭐⭐⭐</span>
+              <span>Speed: 30-90 sec</span>
+              <span>Cost: $0.15-$0.60</span>
+            </div>
+          </div>
+          <div className={styles.pipelineCard}>
+            <div className={styles.pipelineHeader}>
+              <span className={styles.pipelineIcon}>⚗️</span>
+              <span className={styles.pipelineName}>Monolithic Dynamic</span>
+              <span className={styles.pipelineBadgeExp}>Experimental</span>
+            </div>
+            <p className={styles.pipelineDesc}>
+              Flexible output structure for quick estimates and exploration. Lowest cost option.
+            </p>
+            <div className={styles.pipelineStats}>
+              <span>Quality: ⭐⭐⭐</span>
+              <span>Speed: 20-60 sec</span>
+              <span>Cost: $0.10-$0.40</span>
+            </div>
+          </div>
+        </div>
+        <div className={styles.pipelineNote}>
+          <strong>Note:</strong> Pipeline variant is selected per-analysis on the{" "}
+          <a href="/analyze" className={styles.configLink}>Analyze page</a>.
+        </div>
+      </div>
+
       <div className={styles.testSection}>
         <button
           onClick={runTests}
