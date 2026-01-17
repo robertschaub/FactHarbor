@@ -335,6 +335,12 @@ Provide your dynamic analysis.`,
   }
 
   // Step 4: Harden with Provenance Validation
+  // Preserve original accessedAt timestamps (Bug fix: don't lose fetch times)
+  const citationTimestamps = new Map<string, string>();
+  for (const c of citations) {
+    citationTimestamps.set(c.url, c.accessedAt);
+  }
+
   const citationsAsFacts: ExtractedFact[] = citations.map((c, i) => ({
     id: `C${i + 1}`,
     fact: c.excerpt,
@@ -354,7 +360,7 @@ Provide your dynamic analysis.`,
     url: f.sourceUrl,
     title: f.sourceTitle,
     excerpt: f.sourceExcerpt,
-    accessedAt: new Date().toISOString(),
+    accessedAt: citationTimestamps.get(f.sourceUrl) || new Date().toISOString(),
   }));
 
   // Build result with safety contract

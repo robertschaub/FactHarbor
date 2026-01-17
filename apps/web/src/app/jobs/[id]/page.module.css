@@ -1619,3 +1619,65 @@
 .limitationsList li {
   margin-bottom: 4px;
 }
+
+/* ============================================================================
+   Transformed Input Box (v2.6.33)
+   ============================================================================ */
+
+.transformedInputBox {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  border-left: 3px solid #6c757d;
+}
+
+.transformedInputHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.transformedInputHint {
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.transformedInputContent {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #495057;
+}
+
+/* Collapsible Text Component */
+.collapsibleText {
+  display: inline;
+}
+
+.collapsibleLabel {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.collapsibleContent {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.showMoreBtn {
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0 4px;
+  margin-left: 4px;
+}
+
+.showMoreBtn:hover {
+  text-decoration: underline;
+}

@@ -538,6 +538,14 @@ export default function JobPage() {
                 />
               )}
 
+              {/* v2.6.33: Show transformed input if different from original */}
+              {impliedClaim && (
+                <TransformedInputBox
+                  originalInput={job?.inputValue || ""}
+                  transformedInput={impliedClaim}
+                />
+              )}
+
               {/* Input neutrality: same banner for all input styles */}
               {/* v2.6.31: Handle edge case where hasMultipleProceedings is true but proceedingAnswers is missing */}
               {hasMultipleProceedings && verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 ? (
@@ -1273,6 +1281,75 @@ function ArticleSummaryBox({ articleSummary }: { articleSummary: any }) {
       </div>
       <div className={styles.articleSummaryContent}>
         <div className={styles.articleSummaryValue}>{decodeHtmlEntities(articleSummary.mainArgument)}</div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Collapsible Text Component
+// ============================================================================
+
+function CollapsibleText({
+  text,
+  maxLength = 200,
+  label
+}: {
+  text: string;
+  maxLength?: number;
+  label?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const needsTruncation = text.length > maxLength;
+
+  const displayText = expanded || !needsTruncation
+    ? text
+    : text.slice(0, maxLength).trim() + "...";
+
+  return (
+    <span className={styles.collapsibleText}>
+      {label && <span className={styles.collapsibleLabel}>{label}</span>}
+      <span className={styles.collapsibleContent}>{displayText}</span>
+      {needsTruncation && (
+        <button
+          className={styles.showMoreBtn}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </span>
+  );
+}
+
+// ============================================================================
+// Transformed Input Display
+// ============================================================================
+
+function TransformedInputBox({
+  originalInput,
+  transformedInput
+}: {
+  originalInput: string;
+  transformedInput: string;
+}) {
+  // Only show if transformation is meaningfully different from original
+  const normalizedOriginal = originalInput.trim().toLowerCase().replace(/[?!.]+$/, "");
+  const normalizedTransformed = transformedInput.trim().toLowerCase().replace(/[?!.]+$/, "");
+  const isTransformed = normalizedOriginal !== normalizedTransformed;
+
+  if (!isTransformed || !transformedInput) return null;
+
+  return (
+    <div className={styles.transformedInputBox}>
+      <div className={styles.transformedInputHeader}>
+        <b>🔄 Analyzed As</b>
+        <span className={styles.transformedInputHint}>
+          (normalized for consistent analysis)
+        </span>
+      </div>
+      <div className={styles.transformedInputContent}>
+        <CollapsibleText text={transformedInput} maxLength={250} />
       </div>
     </div>
   );
