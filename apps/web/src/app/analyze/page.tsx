@@ -184,13 +184,6 @@ export default function AnalyzePage() {
             <div
               className={`${styles.pipelineInfoCard} ${pipelineVariant === "orchestrated" ? styles.pipelineInfoCardSelected : ""}`}
               onClick={() => setPipelineVariant("orchestrated")}
-              style={{
-                padding: 12,
-                backgroundColor: pipelineVariant === "orchestrated" ? "#e3f2fd" : "#fff",
-                border: `2px solid ${pipelineVariant === "orchestrated" ? "#007bff" : "#e0e0e0"}`,
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
             >
               <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
                 <span>🎯</span>
@@ -206,13 +199,6 @@ export default function AnalyzePage() {
             <div
               className={`${styles.pipelineInfoCard} ${pipelineVariant === "monolithic_canonical" ? styles.pipelineInfoCardSelected : ""}`}
               onClick={() => setPipelineVariant("monolithic_canonical")}
-              style={{
-                padding: 12,
-                backgroundColor: pipelineVariant === "monolithic_canonical" ? "#e3f2fd" : "#fff",
-                border: `2px solid ${pipelineVariant === "monolithic_canonical" ? "#007bff" : "#e0e0e0"}`,
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
             >
               <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
                 <span>🔬</span>
@@ -228,13 +214,6 @@ export default function AnalyzePage() {
             <div
               className={`${styles.pipelineInfoCard} ${pipelineVariant === "monolithic_dynamic" ? styles.pipelineInfoCardSelected : ""}`}
               onClick={() => setPipelineVariant("monolithic_dynamic")}
-              style={{
-                padding: 12,
-                backgroundColor: pipelineVariant === "monolithic_dynamic" ? "#e3f2fd" : "#fff",
-                border: `2px solid ${pipelineVariant === "monolithic_dynamic" ? "#007bff" : "#e0e0e0"}`,
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
             >
               <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
                 <span>⚗️</span>
