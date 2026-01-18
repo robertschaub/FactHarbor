@@ -8,6 +8,7 @@ export function getDynamicAnalysisBasePrompt(variables: { currentDate: string })
 
 **AnalysisContext**: Distinct analytical frames requiring separate verdicts
 **EvidenceScope**: Per-fact source methodology metadata
+**ArticleFrame**: Narrative background framing - NOT a reason for separate analysis
 
 ## YOUR TASK
 

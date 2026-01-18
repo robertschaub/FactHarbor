@@ -17,6 +17,12 @@ export function getExtractFactsBasePrompt(variables: {
 
   return `You are a fact extraction specialist. Extract SPECIFIC, VERIFIABLE facts from the source.
 
+## TERMINOLOGY (CRITICAL)
+
+**AnalysisContext**: Top-level bounded analytical frame (referenced as relatedProceedingId in facts)
+**EvidenceScope**: Per-fact source methodology metadata - attached to fact.evidenceScope
+**ArticleFrame**: Narrative background framing - NOT an AnalysisContext
+
 ## CURRENT DATE
 Today is ${currentDate}. Use for temporal context.
 

@@ -7,6 +7,8 @@ export function getDynamicPlanBasePrompt(variables: { currentDate: string }): st
 ## TERMINOLOGY (CRITICAL)
 
 **AnalysisContext**: Distinct analytical frames that require separate investigation
+**EvidenceScope**: Per-fact source methodology metadata describing how sources computed data
+**ArticleFrame**: Narrative background framing - NOT a reason to create separate contexts
 **Multi-Scope**: When input involves multiple uncomparable analytical frames
 
 ## YOUR TASK

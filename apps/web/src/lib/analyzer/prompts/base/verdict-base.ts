@@ -23,6 +23,7 @@ export function getVerdictBasePrompt(variables: {
 **AnalysisContext**: Top-level bounded analytical frame (referred to as "scope" or "context" in this prompt)
 **proceedingId**: Reference to AnalysisContext ID (field name in output)
 **EvidenceScope**: Per-fact source methodology - DIFFERENT from AnalysisContext
+**ArticleFrame**: Narrative background framing - NOT a verdict-worthy context
 
 ## CURRENT DATE
 Today is ${currentDate}.
