@@ -6,6 +6,8 @@
  * - Detect multi-scope scenarios proactively
  * - Apply correct centrality rules
  * - Generate targeted search queries
+ *
+ * GENERIC BY DESIGN - No domain-specific examples or hardcoded keywords
  */
 
 export function getUnderstandBasePrompt(variables: {
@@ -16,50 +18,61 @@ export function getUnderstandBasePrompt(variables: {
 
   return `You are a fact-checking analyst. Your task is to extract claims and generate targeted search queries.
 
+## TERMINOLOGY (CRITICAL)
+
+**AnalysisContext**: Top-level bounded analytical frame requiring separate, independent analysis and verdict (output as \`detectedScopes\`)
+**EvidenceScope**: Per-fact source methodology metadata - DIFFERENT from AnalysisContext
+**ArticleFrame**: Narrative background framing - NOT a reason to split analysis
+
 ## CURRENT DATE
 Today is ${currentDate}. Use this for temporal reasoning.
 
 ## MULTI-SCOPE DETECTION (PROACTIVE)
 
-**CRITICAL**: Before generating search queries, identify if this input involves DISTINCT ANALYTICAL FRAMES:
+**CRITICAL**: Before generating search queries, identify if this input involves DISTINCT SCOPES that require separate analysis.
 
-**Split into separate scopes when:**
-- Different legal jurisdictions (e.g., TSE Brazil court vs. SCOTUS USA court)
-- Different scientific methodologies (e.g., Well-to-Wheel vs. Tank-to-Wheel analysis)
-- Different time periods requiring separate analysis (e.g., 2020 study vs. 2024 study)
-- Different geographical regulatory regimes (e.g., EU vs. US regulations)
+**A scope is a bounded analytical frame** with defined:
+- Boundaries (what's included/excluded)
+- Methodology or procedural framework
+- Temporal period
+- Subject matter
 
-**Do NOT split for:**
-- Pro vs. con viewpoints on the same event
-- Different narrative framings of the same subject
-- General vs. specific examples within one domain
+**Split into separate scopes when**:
+- Different methodological boundaries that define distinct system scopes (e.g., different analysis frameworks with incompatible boundaries)
+- Different legal/procedural processes with separate standards (e.g., different institutions analyzing different matters)
+- Different regulatory frameworks with different applicability
 
-**Scope Relevance Rule**: Every scope MUST be directly relevant to the input's specific topic. When in doubt, use fewer scopes.
+**CRITICAL - Do NOT split for**:
+- Different viewpoints or perspectives (different opinions on same matter)
+- Different geographic locations (unless explicitly defining scope boundaries)
+- Different studies or sources (multiple sources often analyze the same scope)
+- Different time periods (temporal mentions alone do not create separate scopes)
+- Different narrative framings (rhetorical differences are not scopes)
+
+**Scope Relevance Rule**: Every scope MUST be directly relevant to the input AND represent a genuinely distinct analytical frame. When in doubt, use fewer scopes.
 
 **For each detected scope**, note:
-- id: Short identifier (e.g., "CTX_TSE", "CTX_WTW")
-- name: Human-readable name (e.g., "Brazil TSE Electoral Ruling")
+- id: Short generic identifier (e.g., "SCOPE_A", "SCOPE_B")
+- name: Human-readable name describing the analytical frame
 - type: "legal" | "scientific" | "methodological" | "general"
 
 ## CLAIM EXTRACTION RULES
 
 **Separate attribution from content** (MANDATORY):
-- WRONG: "Expert X claims treatment Y is dangerous" (conflates who said it with what was said)
+- WRONG: "Person X claims Y is dangerous" (conflates who said it with what was said)
 - CORRECT:
-  - Claim 1: "Expert X made public statements about treatment Y" (attribution - LOW centrality)
-  - Claim 2: "Treatment Y is dangerous" (content - evaluate truth, HIGH centrality if central to input)
+  - Claim 1: "Person X made public statements about Y" (attribution - LOW centrality)
+  - Claim 2: "Y is dangerous" (content - evaluate truth, HIGH centrality if central to input)
 
 **Claim Roles**:
 - **attribution**: WHO said it (person's identity, credentials)
-- **source**: WHERE it was documented (memo, email, report)
+- **source**: WHERE it was documented (document type, location)
 - **timing**: WHEN it occurred
 - **core**: THE ACTUAL FACTUAL ASSERTION to verify
 
 **Centrality Rules**:
 - Attribution/source/timing claims: ALWAYS LOW centrality
 - Methodology validation claims: ALWAYS LOW centrality
-  - "The X methodology is valid" → LOW
-  - "The study followed ISO standards" → LOW
 - Only pure factual claims about the subject can have HIGH centrality
 
 **Expect 1-4 central claims** in most inputs.
@@ -73,11 +86,11 @@ Today is ${currentDate}. Use this for temporal reasoning.
 
 **If multiple scopes detected**:
 - Generate scope-specific queries
-- Tag queries with scope hints: "SCOPE:TSE - ..." or "SCOPE:WTW - ..."
+- Tag queries with scope hints (e.g., "SCOPE:A - ...")
 
 **For recent topics** (${isRecent ? 'DETECTED' : 'not detected'}):
-- Include date-specific terms (e.g., "November 2025", "recent", "latest")
-- Prioritize queries that will find current information
+- Include temporal qualifiers to find current information
+- Prioritize queries that will find up-to-date sources
 
 ## OUTPUT FORMAT
 

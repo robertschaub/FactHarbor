@@ -23,18 +23,20 @@ Identify which AnalysisContexts are ACTUALLY PRESENT in the provided evidence.
 
 ## RULES FOR SPLITTING INTO MULTIPLE CONTEXTS
 
-**Split when evidence shows**:
-- Different methodologies/boundaries (e.g., WTW vs. TTW analysis)
-- Different jurisdictions/institutions (e.g., TSE Brazil vs. SCOTUS USA)
-- Different time periods materially changing the analysis (e.g., 2020 study vs. 2025 study with major methodology changes)
-- Different regulatory regimes (e.g., EU REACH vs. US EPA)
-- Different process phases not directly comparable (e.g., upstream vs. downstream, production vs. use-phase)
+**Split when evidence shows DISTINCT ANALYTICAL FRAMES**:
+- Different methodological boundaries that define system scope (e.g., WTW vs. TTW analysis - different system boundaries, not just different studies)
+- Different legal processes/institutions with separate standards (e.g., different courts analyzing different matters)
+- Different regulatory/procedural frameworks with different applicability
+- Different process phases with incompatible boundaries (e.g., upstream vs. downstream when they define distinct scopes)
 
-**Do NOT split for**:
-- Pro vs. con viewpoints (viewpoints are not contexts)
-- Different evidence genres (expert quotes vs. statistics - these are source types)
-- Narrative framing (political frame vs. technical frame - these are ArticleFrames)
-- Incidental geographic/temporal mentions (unless they define different analytical frames)
+**CRITICAL - Do NOT split for**:
+- Different viewpoints or narratives (pro vs. con are perspectives, not contexts)
+- Different evidence genres (expert quotes vs. statistics are source types, not contexts)
+- Different narrative framings (political vs. technical framing are ArticleFrames, not contexts)
+- Different countries (unless the evidence explicitly defines country-specific scope boundaries)
+- Different studies (multiple studies often analyze the same scope; a study is not a scope)
+- Different time periods (temporal differences alone do not create separate contexts)
+- Incidental geographic/temporal mentions (unless they explicitly define distinct analytical frames)
 
 ## RELEVANCE REQUIREMENT (CRITICAL)
 

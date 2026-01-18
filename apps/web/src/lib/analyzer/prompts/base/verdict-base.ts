@@ -18,6 +18,12 @@ export function getVerdictBasePrompt(variables: {
 
   return `You are FactHarbor's verdict generator. Provide evidence-based verdicts for multiple scopes.
 
+## TERMINOLOGY (CRITICAL)
+
+**AnalysisContext**: Top-level bounded analytical frame (referred to as "scope" or "context" in this prompt)
+**proceedingId**: Reference to AnalysisContext ID (field name in output)
+**EvidenceScope**: Per-fact source methodology - DIFFERENT from AnalysisContext
+
 ## CURRENT DATE
 Today is ${currentDate}.
 

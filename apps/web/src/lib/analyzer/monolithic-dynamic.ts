@@ -29,6 +29,7 @@ import {
 } from "./budgets";
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
+import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 
 // ============================================================================
 // TYPES
@@ -197,18 +198,26 @@ export async function runMonolithicDynamic(
   }
 
   const understandModel = getModelForTask("understand");
+  const planPrompt = buildPrompt({
+    task: 'dynamic_plan',
+    provider: detectProvider(understandModel.modelName || ''),
+    modelName: understandModel.modelName || '',
+    config: {
+      allowModelKnowledge: CONFIG.allowModelKnowledge,
+      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      isBudgetModel: isBudgetModel(understandModel.modelName || ''),
+    },
+    variables: {
+      currentDate: new Date().toISOString().split('T')[0],
+    },
+  });
+
   const planResult = await generateText({
     model: understandModel.model,
     messages: [
       {
         role: "system",
-        content: `You are an experimental fact-checking assistant. Analyze the input and determine:
-1. What are the key claims or questions to investigate?
-2. What search queries would help verify or contextualize this information?
-3. What type of analysis approach is most appropriate?
-
-Generate 3-5 search queries that will help investigate this from multiple angles.
-Be creative - include queries that might find contradicting evidence.`,
+        content: planPrompt,
       },
       { role: "user", content: textToAnalyze },
     ],
@@ -295,22 +304,28 @@ Be creative - include queries that might find contradicting evidence.`,
       : "No external sources were successfully retrieved.";
 
   const verdictModel = getModelForTask("verdict");
+  const dynamicAnalysisPrompt = buildPrompt({
+    task: 'dynamic_analysis',
+    provider: detectProvider(verdictModel.modelName || ''),
+    modelName: verdictModel.modelName || '',
+    config: {
+      allowModelKnowledge: CONFIG.allowModelKnowledge,
+      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      isBudgetModel: isBudgetModel(verdictModel.modelName || ''),
+    },
+    variables: {
+      currentDate: new Date().toISOString().split('T')[0],
+      textToAnalyze,
+      sourceSummary,
+    },
+  });
+
   const analysisResult = await generateText({
     model: verdictModel.model,
     messages: [
       {
         role: "system",
-        content: `You are an experimental fact-checking assistant. Provide a comprehensive, flexible analysis.
-
-Your analysis should:
-1. Summarize what you found
-2. Provide a verdict if appropriate (or explain why one isn't possible)
-3. List key findings with their level of evidence support
-4. Note any methodology or limitations
-5. Reference specific sources by their URL
-
-Be honest about uncertainty. If something can't be verified, say so.
-This is an experimental analysis mode - prioritize insight over rigid structure.`,
+        content: dynamicAnalysisPrompt,
       },
       {
         role: "user",

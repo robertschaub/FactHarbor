@@ -29,6 +29,7 @@ import { extractTextFromUrl } from "../retrieval";
 import { percentageToClaimVerdict, getHighlightColor } from "./truth-scale";
 import { filterFactsByProvenance } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
+import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 
 // ============================================================================
 // TYPES
@@ -158,28 +159,39 @@ async function extractClaim(
 ): Promise<z.infer<typeof ClaimExtractionSchema>> {
   if (onEvent) await onEvent("Analyzing claim", 10);
 
+  const understandPrompt = buildPrompt({
+    task: 'understand',
+    provider: detectProvider(model.modelId || ''),
+    modelName: model.modelId || '',
+    config: {
+      allowModelKnowledge: CONFIG.allowModelKnowledge,
+      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      isBudgetModel: isBudgetModel(model.modelId || ''),
+    },
+    variables: {
+      currentDate: new Date().toISOString().split('T')[0],
+      isRecent: false, // TODO: Add recency detection
+    },
+  });
+
+  // @ts-expect-error - Deep type inference issue with AI SDK Output.object()
+  const outputConfig = Output.object({ schema: ClaimExtractionSchema });
+
   const result = await generateText({
     model,
     messages: [
       {
         role: "system",
-        content: `You are a fact-checking assistant. Extract the main factual claim from the input and generate search queries to verify it.
-
-Generate search queries that:
-1. Look for sources that might SUPPORT the claim
-2. Look for sources that might CONTRADICT the claim
-3. Look for neutral/context information
-
-Return a JSON object with mainClaim, claimType, and searchQueries array.`,
+        content: understandPrompt,
       },
       { role: "user", content: text },
     ],
     temperature: getDeterministicTemperature(0.1),
-    output: Output.object({ schema: ClaimExtractionSchema }),
+    output: outputConfig as any,
   });
 
   const output = extractStructuredOutput(result);
-  return ClaimExtractionSchema.parse(output);
+  return ClaimExtractionSchema.parse(output) as z.infer<typeof ClaimExtractionSchema>;
 }
 
 /**
@@ -198,34 +210,43 @@ async function extractFacts(
     .map((s, i) => `[Source ${i + 1}] ${s.title}\nURL: ${s.url}\n\n${s.content.slice(0, 5000)}`)
     .join("\n\n---\n\n");
 
+  const extractFactsPrompt = buildPrompt({
+    task: 'extract_facts',
+    provider: detectProvider(model.modelId || ''),
+    modelName: model.modelId || '',
+    config: {
+      allowModelKnowledge: CONFIG.allowModelKnowledge,
+      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      isBudgetModel: isBudgetModel(model.modelId || ''),
+    },
+    variables: {
+      currentDate: new Date().toISOString().split('T')[0],
+      originalClaim: claim,
+      scopesList: 'No scopes defined yet',
+    },
+  });
+
+  // @ts-expect-error - Deep type inference issue with AI SDK Output.object()
+  const outputConfig = Output.object({ schema: FactExtractionSchema });
+
   const result = await generateText({
     model,
     messages: [
       {
         role: "system",
-        content: `You are a fact-checking assistant. Extract relevant facts from sources that relate to verifying a claim.
-
-For each fact:
-- State the fact clearly and specifically
-- Include the source URL and title
-- Provide a brief excerpt (50-200 chars) that contains the fact
-- Categorize it (evidence, expert_quote, statistic, event, legal_provision, criticism)
-- Indicate if it supports, contradicts, or is neutral to the claim
-
-Extract 3-8 facts. Focus on the most relevant and authoritative information.
-If you have ${existingFactCount} facts already and more research would help, set needsMoreResearch=true.`,
+        content: extractFactsPrompt,
       },
       {
         role: "user",
-        content: `CLAIM TO VERIFY: ${claim}\n\nSOURCES:\n${sourceSummary}`,
+        content: `CLAIM TO VERIFY: ${claim}\n\nSOURCES:\n${sourceSummary}\n\nExisting fact count: ${existingFactCount}. If more research would help, set needsMoreResearch=true.`,
       },
     ],
     temperature: getDeterministicTemperature(0.1),
-    output: Output.object({ schema: FactExtractionSchema }),
+    output: outputConfig as any,
   });
 
   const output = extractStructuredOutput(result);
-  return FactExtractionSchema.parse(output);
+  return FactExtractionSchema.parse(output) as z.infer<typeof FactExtractionSchema>;
 }
 
 /**
@@ -246,30 +267,31 @@ async function generateVerdict(
     )
     .join("\n\n");
 
+  const verdictPrompt = buildPrompt({
+    task: 'verdict',
+    provider: detectProvider(model.modelId || ''),
+    modelName: model.modelId || '',
+    config: {
+      allowModelKnowledge: CONFIG.allowModelKnowledge,
+      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      isBudgetModel: isBudgetModel(model.modelId || ''),
+    },
+    variables: {
+      currentDate: new Date().toISOString().split('T')[0],
+      originalClaim: claim,
+      scopesList: 'Single scope analysis',
+    },
+  });
+
+  // @ts-expect-error - Deep type inference issue with AI SDK Output.object()
+  const outputConfig = Output.object({ schema: VerdictSchema });
+
   const result = await generateText({
     model,
     messages: [
       {
         role: "system",
-        content: `You are a fact-checking assistant. Based on the collected evidence, provide a verdict on the claim.
-
-Verdict scale:
-- 0-20: False/Mostly False
-- 20-40: Mostly False with some truth
-- 40-60: Mixed/Uncertain/Contested
-- 60-80: Mostly True with caveats
-- 80-100: True/Mostly True
-
-Confidence should reflect:
-- Quality and reliability of sources
-- Consistency of evidence
-- Any gaps in verification
-
-Multi-Scope Detection:
-Analyze if the evidence belongs to distinct analytical frames (e.g., separate legal proceedings, different scientific studies, or distinct geographical jurisdictions). 
-If so, return them in the 'detectedScopes' array and ensure each claim/fact is logically associated with one.
-
-Reference specific fact IDs in your reasoning.`,
+        content: verdictPrompt,
       },
       {
         role: "user",
@@ -277,11 +299,11 @@ Reference specific fact IDs in your reasoning.`,
       },
     ],
     temperature: getDeterministicTemperature(0.1),
-    output: Output.object({ schema: VerdictSchema }),
+    output: outputConfig as any,
   });
 
   const output = extractStructuredOutput(result);
-  return VerdictSchema.parse(output);
+  return VerdictSchema.parse(output) as z.infer<typeof VerdictSchema>;
 }
 
 // ============================================================================
