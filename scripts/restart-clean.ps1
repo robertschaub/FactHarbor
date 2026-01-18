@@ -1,5 +1,13 @@
 $ErrorActionPreference = "Stop"
 
+param(
+    [string]$ApiUrls = "https://localhost:5001;http://localhost:5000",
+    [int]$WebPort = 3000,
+    [string]$ApiDbPath = "",
+    [string]$RunnerBaseUrl = "",
+    [string]$ApiBaseUrl = ""
+)
+
 Write-Host "== FactHarbor POC1 Clean Restart =="
 Write-Host ""
 
@@ -46,21 +54,21 @@ Stop-Gracefully -label "Web" -cimProcesses $webShells
 Write-Host ""
 
 # Ensure nothing is still holding the Next.js dev port (node.exe can outlive the shell).
-Write-Host "Checking for processes using port 3000..."
-$port3000 = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
-if ($port3000) {
-    foreach ($conn in $port3000) {
+Write-Host "Checking for processes using port $WebPort..."
+$webPortConnections = Get-NetTCPConnection -LocalPort $WebPort -State Listen -ErrorAction SilentlyContinue
+if ($webPortConnections) {
+    foreach ($conn in $webPortConnections) {
         $procId = $conn.OwningProcess
         try {
             $proc = Get-Process -Id $procId -ErrorAction Stop
-            Write-Host "Killing process on port 3000: PID $procId ($($proc.ProcessName))" -ForegroundColor Yellow
+            Write-Host "Killing process on port $WebPort: PID $procId ($($proc.ProcessName))" -ForegroundColor Yellow
             Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
         } catch {
             Write-Host "  Could not kill PID $procId : $($_.Exception.Message)" -ForegroundColor Red
         }
     }
 } else {
-    Write-Host "No process listening on port 3000."
+    Write-Host "No process listening on port $WebPort."
 }
 Write-Host ""
 
@@ -68,10 +76,18 @@ Write-Host "Starting API and Web services..."
 
 # Start API in new terminal (creates DB on startup if missing)
 Write-Host "Starting API..."
+$apiEnvPrefix = "`$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='$ApiUrls'; "
+if (-not $RunnerBaseUrl) {
+    $RunnerBaseUrl = "http://localhost:$WebPort"
+}
+$apiEnvPrefix += "`$env:Runner__BaseUrl='$RunnerBaseUrl'; "
+if ($ApiDbPath) {
+    $apiEnvPrefix += "`$env:ConnectionStrings__FhDbSqlite='Data Source=$ApiDbPath'; "
+}
 Start-Process -FilePath "powershell.exe" -ArgumentList @(
   "-NoExit",
   "-Command",
-  "cd `"$PSScriptRoot\..\apps\api`"; `$env:ASPNETCORE_ENVIRONMENT='Development'; dotnet watch run"
+  "cd `"$PSScriptRoot\..\apps\api`"; $apiEnvPrefix dotnet watch run"
 )
 
 # Propagate select env vars into the spawned Web dev-server shell explicitly.
@@ -92,6 +108,21 @@ if (Test-Path $envLocalPath) {
 if ($env:FH_RUNNER_MAX_CONCURRENCY) {
     $webEnvPrefix += "`$env:FH_RUNNER_MAX_CONCURRENCY='$($env:FH_RUNNER_MAX_CONCURRENCY)'; "
 }
+$selectedApiUrl = ""
+if ($ApiUrls) {
+    $selectedApiUrl = $ApiUrls.Split(';') | Where-Object { $_ -match '^http://' } | Select-Object -First 1
+    if (-not $selectedApiUrl) {
+        $selectedApiUrl = $ApiUrls.Split(';') | Where-Object { $_ -match '^https?://' } | Select-Object -First 1
+    }
+}
+if (-not $ApiBaseUrl) {
+    $ApiBaseUrl = $selectedApiUrl
+}
+if (-not $ApiBaseUrl) {
+    $ApiBaseUrl = "http://localhost:5000"
+}
+$ApiBaseUrl = $ApiBaseUrl.TrimEnd('/')
+$webEnvPrefix += "`$env:FH_API_BASE_URL='$ApiBaseUrl'; `$env:PORT='$WebPort'; "
 
 # Start Web in new terminal
 Write-Host "Starting Web..."
@@ -104,8 +135,8 @@ Start-Process -FilePath "powershell.exe" -ArgumentList @(
 Write-Host ""
 Write-Host "Services started!"
 Write-Host ""
-Write-Host "Web:    http://localhost:3000  (use HTTP, not HTTPS)"
-Write-Host "API:    http://localhost:5000"
-Write-Host "Swagger:http://localhost:5000/swagger"
+Write-Host "Web:    http://localhost:$WebPort  (use HTTP, not HTTPS)"
+Write-Host "API:    $ApiBaseUrl"
+Write-Host "Swagger:$ApiBaseUrl/swagger"
 Write-Host ""
 Write-Host "Note: Make sure apps/web/.env.local exists with required environment variables."
