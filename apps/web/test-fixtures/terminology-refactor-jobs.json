@@ -1,0 +1,44 @@
+{
+  "jobs": [
+    {
+      "inputType": "text",
+      "inputValue": "Compare emissions impact using Method A (full lifecycle) versus Method B (operational only)."
+    },
+    {
+      "inputType": "text",
+      "inputValue": "Was Policy X compliant under Regulatory Framework Alpha and Regulatory Framework Beta?"
+    },
+    {
+      "inputType": "text",
+      "inputValue": "The article frames the issue as a controversy. Assess whether Claim 1 is supported by the provided sources."
+    },
+    {
+      "inputType": "text",
+      "inputValue": "Evaluate the claim using Dataset 2020-2022 and also Dataset 2023-2024 as separate analytical frames."
+    },
+    {
+      "inputType": "text",
+      "inputValue": "Is the reported efficiency figure accurate according to Study Group One and Study Group Two?"
+    },
+    {
+      "inputType": "text",
+      "inputValue": "Assess the statement across Jurisdiction A and Jurisdiction B, which have different legal standards."
+    },
+    {
+      "inputType": "text",
+      "inputValue": "Determine if the conclusion holds when using Model X versus Model Y."
+    },
+    {
+      "inputType": "text",
+      "inputValue": "Check whether the headline claim is accurate; the piece is written as an opinion column."
+    },
+    {
+      "inputType": "text",
+      "inputValue": "Analyze if the result changes when considering a short-term window (last 12 months) versus a long-term window (last 10 years)."
+    },
+    {
+      "inputType": "text",
+      "inputValue": "Verify whether the summary aligns with the cited evidence and identify any missing counterpoints."
+    }
+  ]
+}
