@@ -9,5 +9,9 @@
     "lint": "echo \"(add lint later)\"",
     "test": "npm -w apps/web test",
     "test:llm": "npm -w apps/web run test:llm"
+  },
+  "dependencies": {
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   }
 }
