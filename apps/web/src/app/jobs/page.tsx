@@ -20,6 +20,7 @@ type JobSummary = {
   updatedUtc: string;
   inputType: string;
   inputPreview: string | null;
+  pipelineVariant?: string;
 };
 
 type PaginationInfo = {
@@ -121,6 +122,18 @@ export default function JobsPage() {
     }
   };
 
+  const getPipelineBadge = (variant?: string): { icon: string; label: string; className: string } => {
+    switch (variant) {
+      case "monolithic_canonical":
+        return { icon: "🔬", label: "Canonical", className: styles.pipelineBadgeBeta };
+      case "monolithic_dynamic":
+        return { icon: "⚗️", label: "Dynamic", className: styles.pipelineBadgeExp };
+      case "orchestrated":
+      default:
+        return { icon: "🎯", label: "Orchestrated", className: styles.pipelineBadgeDefault };
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -170,6 +183,14 @@ export default function JobsPage() {
                 <div className={styles.jobInfo}>
                   <div className={styles.jobMeta}>
                     <code className={styles.jobIdCode}>{job.jobId.slice(0, 8)}...</code>
+                    {(() => {
+                      const badge = getPipelineBadge(job.pipelineVariant);
+                      return (
+                        <span className={`${styles.pipelineBadge} ${badge.className}`} title={`Pipeline: ${badge.label}`}>
+                          {badge.icon} {badge.label}
+                        </span>
+                      );
+                    })()}
                     <span className={`${styles.statusBadge} ${getStatusBadgeClass(job.status)}`}>
                       {job.status}
                     </span>

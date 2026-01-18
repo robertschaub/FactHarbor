@@ -308,7 +308,6 @@ export default function JobPage() {
   const researchStats = result?.researchStats;
   const facts = result?.facts || []; // NEW v2.6.29: Access extracted facts for counter-evidence display
   const pipelineVariant = result?.meta?.pipelineVariant || "orchestrated";
-  const isMonolithicPipeline = pipelineVariant.startsWith("monolithic_");
   const subClaims = result?.understanding?.subClaims || [];
   const tangentialSubClaims = Array.isArray(subClaims)
     ? subClaims.filter((c: any) => c?.thesisRelevance === "tangential")
@@ -463,7 +462,16 @@ export default function JobPage() {
 
       {job ? (
         <div className={styles.jobInfoCard}>
-          <div><b>ID:</b> <code>{job.jobId}</code></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span><b>ID:</b> <code>{job.jobId}</code></span>
+            <Badge
+              bg={pipelineVariant === "monolithic_dynamic" ? "#fce4ec" : pipelineVariant === "monolithic_canonical" ? "#fff3e0" : "#e3f2fd"}
+              color={pipelineVariant === "monolithic_dynamic" ? "#c2185b" : pipelineVariant === "monolithic_canonical" ? "#e65100" : "#1565c0"}
+              title={`Pipeline: ${pipelineVariant || "orchestrated"}`}
+            >
+              {pipelineVariant === "monolithic_dynamic" ? "⚗️ Dynamic" : pipelineVariant === "monolithic_canonical" ? "🔬 Canonical" : "🎯 Orchestrated"}
+            </Badge>
+          </div>
           <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
           <div className={styles.metaRow}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></div>
           <div className={styles.inputRow}>
@@ -484,15 +492,6 @@ export default function JobPage() {
               {researchStats && (
                 <Badge bg="#e8f5e9" color="#2e7d32" title={result.meta.searchProvider || "Web Search"}>
                   🔍 {researchStats.totalSearches} searches
-                </Badge>
-              )}
-              {isMonolithicPipeline && (
-                <Badge
-                  bg={pipelineVariant === "monolithic_dynamic" ? "#fff3e0" : "#e3f2fd"}
-                  color={pipelineVariant === "monolithic_dynamic" ? "#e65100" : "#1565c0"}
-                  title={`Pipeline: ${pipelineVariant}`}
-                >
-                  {pipelineVariant === "monolithic_dynamic" ? "⚗️ Experimental" : "🔬 Monolithic"}
                 </Badge>
               )}
             </div>
