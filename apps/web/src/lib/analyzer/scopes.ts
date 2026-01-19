@@ -116,13 +116,12 @@ export function canonicalizeInputForScopeDetection(input: string): string {
   const fillers = /\b(really|actually|truly|basically|essentially|simply|just|very|quite|rather)\b/gi;
   text = text.replace(fillers, ' ').replace(/\s+/g, ' ').trim();
 
-  // 4. Normalize case for consistency (lowercase for comparison)
-  // But preserve proper nouns by keeping original for display
-  const scopeKey = text.toLowerCase();
-
-  // 5. Extract core semantic entities for scope matching
-  // This creates a "semantic fingerprint" for the input
+  // 4. Extract core semantic entities BEFORE lowercasing
+  // This preserves proper nouns for entity detection
   const coreEntities = extractCoreEntities(text);
+
+  // 5. Normalize case for consistency (lowercase for comparison)
+  const scopeKey = text.toLowerCase();
 
   console.log(`[Scope Canonicalization] Input: "${input.substring(0, 60)}..."`);
   console.log(`[Scope Canonicalization] Canonical: "${scopeKey.substring(0, 60)}..."`);
@@ -135,28 +134,25 @@ export function canonicalizeInputForScopeDetection(input: string): string {
  * Extract core semantic entities from text for scope matching.
  * These are the key nouns/proper nouns that define what the input is about.
  *
- * Note: This function must work with both original-case and lowercase input
- * since it's called from both canonicalizeInputForScopeDetection (before lowercase)
- * and generateScopeDetectionHint (after lowercase).
+ * CRITICAL: This function MUST receive the original-case text (before lowercasing)
+ * to properly detect proper nouns via capitalization patterns.
+ *
+ * Generic by Design: Uses regex patterns, not hardcoded keyword lists.
  */
 function extractCoreEntities(text: string): string[] {
   const entities: string[] = [];
 
-  // Look for proper nouns (capitalized words) - only works with original case
+  // Look for proper nouns (capitalized words that aren't sentence-start)
+  // Matches single words (Einstein) and multi-word names (Angela Merkel)
   const properNouns = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/g) || [];
   entities.push(...properNouns.map(n => n.toLowerCase()));
-
-  // Look for known proper names (case-insensitive) - works with lowercase input
-  // This catches common political figures, institutions, etc. that may be lowercased
-  const knownNames = text.match(/\b(bolsonaro|trump|biden|lula|netanyahu|putin|zelensky|modi|macron|scholz|sunak)\b/gi) || [];
-  entities.push(...knownNames.map(n => n.toLowerCase()));
 
   // Look for legal/institutional terms (case-insensitive)
   const legalTerms = text.match(/\b(court|trial|judgment|ruling|verdict|sentence|conviction|case|proceeding|tribunal|commission|appeal|hearing|indictment)\b/gi) || [];
   entities.push(...legalTerms.map(t => t.toLowerCase()));
 
   // Look for country/jurisdiction indicators (case-insensitive)
-  const jurisdictions = text.match(/\b(brazil|brazilian|eu|european|uk|british|federal|supreme|electoral|constitutional|stf|tse|tst|cnj)\b/gi) || [];
+  const jurisdictions = text.match(/\b(brazil|brazilian|eu|european|uk|british|us|usa|american|federal|supreme|electoral|constitutional|stf|tse|tst|cnj)\b/gi) || [];
   entities.push(...jurisdictions.map(j => j.toLowerCase()));
 
   // Deduplicate
@@ -164,11 +160,13 @@ function extractCoreEntities(text: string): string[] {
 }
 
 /**
- * Generate a scope detection hint based on canonical input.
+ * Generate a scope detection hint based on the original input text.
  * This helps guide the LLM to detect consistent scopes regardless of phrasing.
+ *
+ * IMPORTANT: Pass the ORIGINAL text (not lowercased) so proper nouns are detected.
  */
-export function generateScopeDetectionHint(canonicalInput: string): string {
-  const entities = extractCoreEntities(canonicalInput);
+export function generateScopeDetectionHint(originalInput: string): string {
+  const entities = extractCoreEntities(originalInput);
 
   if (entities.length === 0) {
     return '';

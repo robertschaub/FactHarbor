@@ -86,7 +86,6 @@ import {
   canonicalizeScopesWithRemap,
   ensureAtLeastOneScope,
   UNSCOPED_ID,
-  canonicalizeInputForScopeDetection,
   generateScopeDetectionHint,
 } from "./analyzer/scopes";
 
@@ -3082,8 +3081,8 @@ async function understandClaim(
   const recencyMatters = isRecencySensitive(analysisInput, undefined);
 
   // v2.8.2: Generate scope detection hint for input neutrality
-  const canonicalInputForScopes = canonicalizeInputForScopeDetection(analysisInput);
-  const scopeDetectionHint = generateScopeDetectionHint(canonicalInputForScopes);
+  // CRITICAL: Pass ORIGINAL input (not canonical) so proper nouns are detected
+  const scopeDetectionHint = generateScopeDetectionHint(analysisInput);
 
   const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT SCOPES (bounded analytical frames).
 
