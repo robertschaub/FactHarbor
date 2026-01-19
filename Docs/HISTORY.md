@@ -334,14 +334,199 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 
 ### Triple-Path Pipeline Architecture (v2.6.33)
 
-**Decision**: Implemented three analysis modes:
-1. **Orchestrated Pipeline** (default): Highest quality, explicit multi-scope detection
-2. **Monolithic Canonical**: Faster, lower cost, LLM-inferred multi-scope detection
-3. **Monolithic Dynamic**: Experimental, flexible output
+**Context**: Different use cases require different trade-offs between quality, speed, and cost.
 
-**Rationale**: Different use cases require different trade-offs between quality, speed, and cost.
+**Decision**: Implemented three user-selectable analysis modes:
+
+1. **Orchestrated Pipeline** (default, PR 1 & 2):
+   - TypeScript-orchestrated staged pipeline (Understand → Research → Verdict)
+   - Highest quality, explicit multi-scope detection
+   - Produces canonical result schema
+   - Full budget control
+
+2. **Monolithic Canonical** (PR 3):
+   - LLM tool-loop with search/fetch tools
+   - Faster, lower cost
+   - LLM-inferred multi-scope detection
+   - Produces canonical schema (same UI as orchestrated)
+   - Strict budgets with fail-closed behavior
+
+3. **Monolithic Dynamic** (PR 4):
+   - Experimental LLM tool-loop
+   - Flexible, LLM-defined output structure
+   - Separate dynamic result viewer
+   - Minimum safety contract (citations required)
+
+**Architecture Principles**:
+- Shared primitives: Normalization, budgets, search/fetch, provenance validation
+- Isolated orchestration: Each pipeline has separate logic to prevent cross-contamination
+- Result envelope: Common metadata (variant, budgets, warnings, providerInfo)
+- Per-job variant persistence: Reproducible results
+
+**Risk Mitigations**:
+- Budget caps (maxSteps, maxSources, maxTokens)
+- Provenance validation (Ground Realism enforcement)
+- Fallback behavior on validation failures
+- Contract tests to prevent regressions
 
 **Status**: Implemented and operational. Pipeline variant selector available on analyze page.
+
+**Files**:
+- Architecture: `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md`
+- Implementation: `apps/web/src/lib/analyzer.ts` (dispatcher + orchestrated)
+- Monolithic: Separate modules for canonical/dynamic paths
+
+**Git Commits**:
+- `0481272` - Triple-Path Pipeline Architecture
+- `19e2fd8` - Migration plan and lead-dev review guide
+- `1494d25` - Senior Architect Review
+- `958e80a` - Variant selection (PR 1 & 2)
+- `c0f4350` - Monolithic dynamic pipeline (PR 4)
+- `7e39cb8` - Hardening improvements and UI enhancements
+
+---
+
+### Configuration Tuning for Better Analysis (v2.8.2)
+
+**Context**: January quality regression showed budget constraints were limiting research quality.
+
+**Changes Implemented**:
+
+**Quick Mode Enhancements** (v2.8.2):
+- `maxResearchIterations`: 2 → 4 (100% increase)
+- `maxSourcesPerIteration`: 3 → 4 (33% increase)  
+- `maxTotalSources`: 8 → 12 (50% increase)
+- `articleMaxChars`: Kept at 4000
+- `minFactsRequired`: Kept at 6
+
+**Deep Mode** (existing):
+- `maxResearchIterations`: 5
+- `maxSourcesPerIteration`: 4
+- `maxTotalSources`: 20
+- `articleMaxChars`: 8000
+- `minFactsRequired`: 12
+
+**Budget System** (PR 6):
+- Per-scope iteration limits
+- Total iteration caps
+- Token budget tracking
+- Hard enforcement mode (configurable)
+- Budget stats in result envelope
+
+**Environment Variables**:
+- `FH_ANALYSIS_MODE`: `"quick"` (default) | `"deep"`
+- `FH_MAX_TOTAL_ITERATIONS`: Override total cap
+- `FH_MAX_ITERATIONS_PER_SCOPE`: Override per-scope cap
+- `FH_ENFORCE_BUDGETS`: `true` | `false`
+
+**Rationale**: Balance between cost control and research thoroughness. Quality regression showed that too-strict limits harm evidence collection.
+
+**Impact**: Improved research depth without excessive cost. Quick mode now provides better quality while remaining cost-effective.
+
+**Status**: Active configuration in `apps/web/src/lib/analyzer/config.ts` and `budgets.ts`
+
+**Git Commits**:
+- `1b0327d` - Add p95 hardening budget tracking (PR 6 foundation)
+- `8c41e56` - Update web .env.example defaults
+
+---
+
+### LLM Prompting Improvements (Multiple Phases)
+
+**v2.8.0 - Provider-Specific Optimization** (January 19, 2026):
+
+**Decision**: Optimize prompts per LLM provider instead of one-size-fits-all.
+
+**Provider-Specific Adaptations**:
+
+1. **Claude (Anthropic)**:
+   - XML structure tags (`<claude_optimization>`)
+   - Thinking blocks for reasoning
+   - Prefill hints for reliable JSON start
+   - Example: `getClaudePrefill()` returns `"{\n  \""`
+
+2. **GPT (OpenAI)**:
+   - Comprehensive few-shot examples
+   - Calibration tables for confidence
+   - Explicit field lists
+   - JSON mode hints
+
+3. **Gemini (Google)**:
+   - Strict length limits (word/character tables)
+   - Numbered processes (1., 2., 3.)
+   - Schema checklists
+   - Concise formatting
+
+4. **Mistral**:
+   - Step-by-step numbered instructions
+   - Validation checklists
+   - Field templates
+   - Explicit output format
+
+**Budget Model Optimization**:
+- Simplified prompts for budget models (Haiku, Flash, Mini)
+- ~40% claimed token reduction (unvalidated)
+- Ultra-compact when `FH_LLM_TIERING=on`
+- Minimal provider hints
+
+**Structured Output Hardening**:
+- Schema retry prompts with error-specific fixes
+- `NoObjectGeneratedError` recovery
+- JSON extraction from error payloads
+- Error-to-fix mapping
+
+**Task-Specific Prompts**:
+- `orchestrated-understand.ts`: Main analysis prompts
+- `orchestrated-supplemental.ts`: Claims/scopes generation
+- Task types: `orchestrated_understand`, `supplemental_claims`, `supplemental_scopes`
+- Exported via `prompt-builder.ts`
+
+**Testing**:
+- 83 new prompt optimization tests
+- All 4 providers validated
+- Budget model detection tests
+- Token estimation utilities
+- **⚠️ CRITICAL**: Tests only validate syntax, not actual LLM behavior
+
+**Status**: ❌ NEVER VALIDATED - No A/B testing performed, no real API calls to measure actual token reduction or quality impact.
+
+**Files**:
+- `apps/web/src/lib/analyzer/prompts/providers/*.ts`
+- `apps/web/src/lib/analyzer/prompts/base/orchestrated-*.ts`
+- `apps/web/src/lib/analyzer/prompts/config-adaptations/*.ts`
+- `Docs/REFERENCE/Provider_Prompt_Guidelines.md`
+
+**Git Commits**:
+- `048efa4` - Implement v2.8 provider-specific LLM optimization
+- `05de7aa` - Prompting improvements and Metrics
+- `5837ebb` - Budget models respect FH_ALLOW_MODEL_KNOWLEDGE
+
+**Earlier Prompting Improvements**:
+
+**v2.6.x - Orchestrated Pipeline Prompts**:
+- Explicit pipeline stage instructions
+- Verdict rating direction clarification (rate original claim, not analysis)
+- Centrality heuristic improvements (0-2 central claims expected)
+- Input neutrality enforcement in prompts
+
+**v2.2.0 - Article Verdict Problem** (December 2025):
+- Two-panel summary structure (UN-3)
+- Central vs supporting claim classification
+- Logical fallacy detection (6 types)
+- Article-level verdict vs claim aggregation
+
+**Legacy - Initial AKEL Prompts**:
+- Understand → Research → Verdict pipeline
+- Quality gate instructions (Gate 1, Gate 4)
+- Evidence extraction with excerpts
+- Pseudoscience detection patterns
+
+**Key Prompt Principles** (from Provider Guidelines):
+- Evidence-based analysis (no model knowledge when `FH_ALLOW_MODEL_KNOWLEDGE=false`)
+- Provenance validation (URL + excerpt required)
+- Scope detection with generic terminology
+- Input neutrality (question ≈ statement)
+- Fail closed on ambiguity
 
 ---
 

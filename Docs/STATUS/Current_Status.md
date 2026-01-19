@@ -273,31 +273,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 - Removed detectedInputType override
 - Modularized debug and config modules
 
-### v2.6.25-26 (January 2026)
-- Question-to-statement handling improvements
-- Input normalization forced to statement format
-- ArticleSummary data generation enhanced
-- UI layout improvements
-
-### v2.6.23-24 (January 2026)
-- Input neutrality fixed (4% → 1% divergence)
-- Rating direction corrected (rate original claim, not analysis conclusion)
-- Centrality over-marking fixed (methodology claims excluded)
-- Generic recency detection (removed hardcoded names)
-
-### v2.6.18-22 (January 2026)
-- KeyFactors aggregation fixed
-- PDF fetch error handling improved
-- Runner resilience with exponential backoff
-- Enhanced recency detection with date-aware queries
-- Gemini Grounded Search mode added (experimental)
-
-### v2.7.0 Terminology Refactor (January 2026)
-- Schema field alignment: analysisContexts, contextId, analysisContext
-- Runtime validation for context references
-- Legacy field support for backward compatibility
-
-**See**: [Complete version history](../HISTORY.md)
+**See**: [Complete version history with technical details](../HISTORY.md)
 
 ---
 

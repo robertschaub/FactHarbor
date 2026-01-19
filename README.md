@@ -53,7 +53,7 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 ### Status
 - **[Current Status](Docs/STATUS/Current_Status.md)** - What works, known issues, priorities
 - **[Known Issues](Docs/STATUS/KNOWN_ISSUES.md)** - Complete list of bugs and limitations
-- **[Development History](Docs/HISTORY.md)** - Complete version history and architectural decisions
+- **[Development History](Docs/HISTORY.md)** - Version history, architectural decisions, and investigations
 - **[Backlog](Docs/STATUS/Backlog.md)** - Prioritized task list
 - **[Improvement Recommendations](Docs/STATUS/Improvement_Recommendations.md)** - Comprehensive analysis of potential enhancements
 
