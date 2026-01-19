@@ -1,127 +1,260 @@
 /**
  * OpenAI GPT-specific prompt optimizations
  *
- * Optimizations for GPT (GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo):
- * - Use concrete examples (GPT benefits from them)
+ * Optimizations for GPT (GPT-4o, GPT-4o-mini, GPT-4 Turbo):
+ * - Few-shot examples (GPT excels when shown patterns)
+ * - Explicit field enumeration for schema compliance
+ * - Bullet lists over paragraphs
  * - Compensate for tendency to be overly balanced
- * - Add calibration guidance
- * - Ensure schema compliance
+ * - JSON mode hints for structured output
+ *
+ * @version 2.8.0 - Enhanced with comprehensive few-shot examples
  */
 
 export function getOpenAIUnderstandVariant(): string {
   return `
+## GPT OPTIMIZATION
 
-## GPT-SPECIFIC GUIDANCE
+### FEW-SHOT EXAMPLES (Follow these patterns exactly)
 
-**Strengths to leverage**:
-- Fast structured output generation
-- Good at following enumerated lists and examples
-- Efficient token usage
-
-**Compensate for**:
-- Tendency to create too many claims - be selective
-- May mark too many claims as central - apply strict filter
-- Can miss implicit scope boundaries - look carefully for jurisdiction/methodology differences
-
-**Concrete examples** (GPT benefits from examples):
-
-Example 1 - Separating attribution from content:
-Input: "Dr. Smith claims the vaccine is unsafe"
+**Example 1 - Attribution Separation:**
+Input: "The WHO spokesperson stated that the new variant is more transmissible"
 Output:
-  - Claim 1: "Dr. Smith has made public statements about the vaccine" (attribution, LOW centrality)
-  - Claim 2: "The vaccine is unsafe" (core, HIGH centrality - this is what needs verification)
+{
+  "subClaims": [
+    {
+      "id": "SC1",
+      "text": "A WHO spokesperson made a public statement about variant transmissibility",
+      "claimRole": "attribution",
+      "centrality": "low",
+      "isCentral": false,
+      "checkWorthiness": "low",
+      "harmPotential": "low",
+      "dependsOn": []
+    },
+    {
+      "id": "SC2",
+      "text": "The new variant is more transmissible than previous variants",
+      "claimRole": "core",
+      "centrality": "high",
+      "isCentral": true,
+      "checkWorthiness": "high",
+      "harmPotential": "medium",
+      "dependsOn": ["SC1"]
+    }
+  ],
+  "detectedScopes": [],
+  "requiresSeparateAnalysis": false
+}
 
-Example 2 - Multi-scope detection:
-Input: "The TSE court in Brazil ruled one way, while the SCOTUS court in USA ruled differently"
+**Example 2 - Multi-Scope Detection:**
+Input: "The TSE court in Brazil ruled he was ineligible, while SCOTUS in the US ruled differently on ballot access"
 Output:
-  - detectedScopes: [
-      {id: "CTX_TSE", name: "Brazil TSE Electoral Ruling", type: "legal"},
-      {id: "CTX_SCOTUS", name: "USA SCOTUS Constitutional Ruling", type: "legal"}
-    ]
-  - requiresSeparateAnalysis: true`;
+{
+  "detectedScopes": [
+    {"id": "CTX_TSE", "name": "Brazil TSE Electoral Ruling", "type": "legal"},
+    {"id": "CTX_SCOTUS", "name": "USA SCOTUS Ballot Access Ruling", "type": "legal"}
+  ],
+  "requiresSeparateAnalysis": true
+}
+
+### REQUIRED OUTPUT FIELDS (All must be present)
+- impliedClaim: string (neutral summary)
+- articleThesis: string (what input asserts)
+- analysisContext: string (ArticleFrame or "")
+- subClaims: array with id, text, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn
+- researchQueries: array of 4-6 distinct search strings
+- detectedScopes: array (can be empty)
+- requiresSeparateAnalysis: boolean
+
+### RULES TO FOLLOW
+1. Separate WHO SAID from WHAT THEY SAID (attribution vs core)
+2. Only 1-4 claims should have "high" centrality
+3. Generate 4-6 DISTINCT search queries (no redundancy)
+4. Look for jurisdiction/methodology differences for scope detection
+5. Use "" for empty strings, never null
+
+Now analyze the input following these exact patterns.`;
 }
 
 export function getOpenAIExtractFactsVariant(): string {
   return `
+## GPT OPTIMIZATION - FACT EXTRACTION
 
-## GPT-SPECIFIC GUIDANCE
+### FEW-SHOT EXAMPLE (Follow this pattern)
 
-**Work with GPT's characteristics**:
-- Fast processing - good for bulk extraction
-- May extract too many similar facts - prioritize diversity
-- Ensure evidenceScope fields are populated when info is available
-
-**Concrete examples**:
-
-Example fact with evidenceScope:
+**Example - Fact with Full EvidenceScope:**
 {
-  "fact": "Hydrogen fuel cell vehicles achieve 40% well-to-wheel efficiency",
-  "category": "statistic",
-  "specificity": "high",
-  "sourceExcerpt": "...WTW efficiency of hydrogen FCEVs is approximately 40%...",
-  "claimDirection": "contradicts", // if user claimed higher efficiency
-  "contextId": "CTX_WTW",
-  "evidenceScope": {
-    "name": "WTW",
-    "methodology": "Well-to-Wheel analysis",
-    "boundaries": "Primary energy production through vehicle operation",
-    "geographic": "European Union",
-    "temporal": "2024"
-  }
+  "facts": [
+    {
+      "id": "F1",
+      "fact": "Hydrogen fuel cell vehicles achieve 40% well-to-wheel efficiency",
+      "category": "statistic",
+      "specificity": "high",
+      "sourceExcerpt": "The WTW efficiency of hydrogen FCEVs is approximately 40%",
+      "claimDirection": "contradicts",
+      "contextId": "CTX_WTW",
+      "evidenceScope": {
+        "name": "WTW",
+        "methodology": "Well-to-Wheel analysis",
+        "boundaries": "Primary energy production through vehicle operation",
+        "geographic": "European Union",
+        "temporal": "2024"
+      }
+    },
+    {
+      "id": "F2",
+      "fact": "Battery electric vehicles achieve 77% well-to-wheel efficiency",
+      "category": "statistic",
+      "specificity": "high",
+      "sourceExcerpt": "BEVs demonstrate WTW efficiency of approximately 77%",
+      "claimDirection": "supports",
+      "contextId": "CTX_WTW",
+      "evidenceScope": {
+        "name": "WTW",
+        "methodology": "Well-to-Wheel analysis",
+        "boundaries": "Primary energy production through vehicle operation",
+        "geographic": "European Union",
+        "temporal": "2024"
+      }
+    }
+  ]
 }
 
-**Output format strictness**:
-- Ensure all required fields present (GPT sometimes omits optional fields that should be empty strings)
-- Use "" for empty strings, not null`;
+### REQUIRED FIELDS PER FACT
+- id: string (F1, F2, etc.)
+- fact: string (one sentence, under 100 chars preferred)
+- category: "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
+- specificity: "high" | "medium" (never "low")
+- sourceExcerpt: string (50-200 chars, verbatim from source)
+- claimDirection: "supports" | "contradicts" | "neutral"
+- contextId: string (scope ID or "")
+- evidenceScope: object with name, methodology, boundaries, geographic, temporal (or null if not defined)
+
+### CLAIM DIRECTION RULES
+- User claims "X is better than Y" + Source says "Y outperforms X" → "contradicts"
+- User claims "X is better than Y" + Source says "X exceeds Y" → "supports"
+- Source provides background only → "neutral"
+
+### OUTPUT FORMAT
+- Use "" for empty strings, NEVER null for string fields
+- evidenceScope: Include full object when source defines analytical frame, null otherwise
+- Extract 4-6 high-quality facts (quality over quantity)
+- Each fact must be independently verifiable`;
 }
 
 export function getOpenAIVerdictVariant(): string {
   return `
+## GPT OPTIMIZATION - VERDICT GENERATION
 
-## GPT-4o GUIDANCE
+### CRITICAL: RATING DIRECTION EXAMPLES
 
-**Work with GPT's characteristics**:
-- Tendency to be overly balanced - don't artificially center verdicts at 50%
-- May over-apply "neutral" to factors - use your knowledge when appropriate
-- Good at structured output - ensure schema compliance
+**Example 1 - Correct Rating:**
+- User claim: "Hydrogen cars are MORE efficient than electric cars"
+- Evidence shows: Electric cars are 77% efficient, Hydrogen is 40% efficient
+- CORRECT verdict: 5-15% (FALSE) - the user's claim is wrong
+- WRONG verdict: 85-95% - this would rate analysis quality, not claim truth
 
-**Compensate for known issues**:
-- **Rating direction**: Double-check you're rating THE CLAIM, not your analysis
-  - User claim: "X is better" + Evidence: "Y is better" = LOW verdict (0-28%)
-- **Scope isolation**: Ensure facts from Scope A don't leak into Scope B verdict
-- **Contestation**: Distinguish "disputed" (political disagreement) from "established counter-evidence" (documented violations)
+**Example 2 - Correct Rating:**
+- User claim: "The trial followed proper procedures"
+- Evidence shows: Multiple procedural violations documented
+- CORRECT verdict: 10-25% (MOSTLY FALSE) - claim contradicts evidence
+- WRONG verdict: 75-90% - this would confuse "we found evidence" with "claim is true"
 
-**Calibration guidance**:
-- If 3+ supporting facts, 0 counter-evidence → Use 80-95% (TRUE/MOSTLY TRUE)
-- If 3+ counter-evidence facts, 0-1 supporting → Use 5-25% (FALSE/MOSTLY FALSE)
-- If balanced evidence → Use 40-60% (MIXED/UNVERIFIED based on confidence)
+### VERDICT CALIBRATION TABLE
+| Evidence Pattern | Verdict Range |
+|-----------------|---------------|
+| 3+ supporting, 0 counter-evidence | 80-95% (TRUE/MOSTLY TRUE) |
+| 2-3 supporting, 1 counter-evidence | 65-79% (LEANING TRUE) |
+| Balanced evidence | 43-57% (MIXED) |
+| 1 supporting, 2-3 counter-evidence | 21-35% (LEANING FALSE) |
+| 0-1 supporting, 3+ counter-evidence | 5-20% (FALSE/MOSTLY FALSE) |
 
-**Schema strictness**:
-- All keyFactors must have: factor, explanation, supports, isContested, contestedBy, factualBasis
-- Use "" for empty strings, not null
-- supportingFactIds must be array (even if empty)`;
+Do NOT artificially center at 50%. If evidence is clear, be decisive.
+
+### REQUIRED FIELDS PER VERDICT
+- contextId: string (must match scope ID from list)
+- answer: number 0-100 (truth percentage of USER'S CLAIM)
+- confidence: number 0-100
+- shortAnswer: string (complete sentence)
+- keyFactors: array of 3-5 objects with:
+  - factor: string (max 12 words)
+  - explanation: string (max 20 words)
+  - supports: "yes" | "no" | "neutral"
+  - isContested: boolean
+  - contestedBy: string (specific group or "")
+  - factualBasis: "established" | "disputed" | "opinion" | "unknown"
+
+### SCHEMA COMPLIANCE
+- Use "" for empty strings, NEVER null
+- supportingFactIds must be array (even if empty: [])
+- Ensure contextId matches one from scopesList
+- factualBasis = "established" ONLY if documented counter-evidence exists`;
 }
 
 export function getOpenAIScopeRefinementVariant(): string {
   return `
+## GPT OPTIMIZATION - SCOPE REFINEMENT
 
-## GPT-SPECIFIC GUIDANCE
+### FEW-SHOT EXAMPLE
 
-**Characteristics**:
-- May over-split contexts - apply strict relevance filter
-- Good at structured output with clear examples
-- Ensure factScopeAssignments covers all facts
+**Input:** Facts about hydrogen vs electric vehicle efficiency from multiple studies
+**Output:**
+{
+  "requiresSeparateAnalysis": true,
+  "analysisContexts": [
+    {
+      "id": "CTX_WTW",
+      "name": "Well-to-Wheel Efficiency Analysis",
+      "shortName": "WTW",
+      "subject": "Full energy chain efficiency comparison",
+      "temporal": "2020-2024",
+      "status": "concluded",
+      "outcome": "Studies show efficiency differences",
+      "metadata": {
+        "methodology": "Well-to-Wheel",
+        "boundaries": "Primary energy to vehicle motion",
+        "geographic": "EU"
+      }
+    },
+    {
+      "id": "CTX_TTW",
+      "name": "Tank-to-Wheel Efficiency Analysis",
+      "shortName": "TTW",
+      "subject": "Vehicle operation efficiency comparison",
+      "temporal": "2020-2024",
+      "status": "concluded",
+      "outcome": "Studies show efficiency differences",
+      "metadata": {
+        "methodology": "Tank-to-Wheel",
+        "boundaries": "Fuel tank to vehicle motion",
+        "geographic": "EU"
+      }
+    }
+  ],
+  "factScopeAssignments": [
+    {"factId": "F1", "contextId": "CTX_WTW"},
+    {"factId": "F2", "contextId": "CTX_TTW"}
+  ]
+}
 
-**Prevent over-splitting**:
-Ask for each proposed context:
-1. Is this directly relevant to the input's specific topic?
-2. Is this supported by actual evidence facts?
-3. Does this represent a distinct analytical frame (not just a perspective)?
-4. If removed, would analysis materially change?
+### PREVENT OVER-SPLITTING CHECKLIST
+For EACH proposed context, verify:
+1. [ ] Directly relevant to input's specific topic?
+2. [ ] Supported by ≥1 actual fact?
+3. [ ] Represents distinct analytical frame (not just perspective)?
+4. [ ] If removed, would analysis materially change?
 
-If answer to any is "no", don't create the context.
+If ANY answer is "no" → Don't create that context.
 
-**Fact assignment coverage**:
-- Ensure factScopeAssignments has ≥70% of facts assigned
-- Each context should have ≥1 fact assigned`;
+### REQUIRED FIELDS
+- requiresSeparateAnalysis: boolean
+- analysisContexts: array with id, name, shortName, subject, temporal, status, outcome, metadata
+- factScopeAssignments: array of {factId, contextId} covering ≥70% of facts
+- Each context must have ≥1 fact assigned
+
+### OUTPUT FORMAT
+- Use "" for unknown metadata fields, NEVER null
+- metadata must be object (can be empty {})
+- shortName: max 12 characters`;
 }

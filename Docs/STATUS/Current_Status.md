@@ -1,8 +1,8 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.33
-**Last Updated**: 2026-01-17
-**Status**: POC1 Operational - Triple-Path Pipeline Complete
+**Version**: 2.8.0
+**Last Updated**: 2026-01-19
+**Status**: POC1 Operational - Triple-Path Pipeline Complete + Provider-Optimized Prompts
 
 ---
 
@@ -57,7 +57,7 @@
 5. **Metrics Tracking**: LLM token usage, search API calls, cost estimation not persisted
 6. **Error Pattern Tracking**: No database schema for error patterns
 7. **Model Knowledge Toggle**: `FH_ALLOW_MODEL_KNOWLEDGE=false` not fully respected in Understanding phase
-8. **Provider-Specific Optimization**: Same prompts used for all LLM providers (no per-provider tuning)
+8. ~~**Provider-Specific Optimization**: Same prompts used for all LLM providers (no per-provider tuning)~~ ✅ FIXED in v2.8
 
 **Low Priority:**
 9. **URL Highlighting**: URL string highlighted instead of fetched content
@@ -93,9 +93,9 @@
    - Create admin dashboards for metrics and errors
 
 4. **Performance Optimization**
-   - Implement tiered LLM model routing (cheap models for extraction, premium for reasoning)
+   - ✅ Implement tiered LLM model routing (cheap models for extraction, premium for reasoning) - COMPLETE
    - Implement claim-level caching (separated architecture)
-   - Add provider-specific prompt optimization
+   - ✅ Add provider-specific prompt optimization - COMPLETE (v2.8)
 
 5. **Feature Enhancements**
    - Display Quality Gate decisions with reasons in UI
@@ -234,6 +234,34 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ---
 
 ## Recent Changes
+
+### v2.8.0 (January 19, 2026)
+- **Provider-Specific Prompt Optimization**:
+  - Claude (Anthropic): XML structure tags, thinking blocks, prefill hints
+  - GPT (OpenAI): Few-shot examples, calibration tables, explicit field lists
+  - Gemini (Google): Strict length limits, numbered processes, schema checklists
+  - Mistral: Step-by-step numbered instructions, validation checklists
+- **Budget Model Optimization**:
+  - Simplified prompts for Haiku/Flash/Mini (~40% token reduction)
+  - Ultra-compact prompts when `FH_LLM_TIERING=on`
+  - Minimal provider hints instead of full variants
+- **Structured Output Hardening**:
+  - Provider-specific JSON output guidance
+  - Schema retry prompts for validation failures
+  - Claude prefill strings for reliable JSON
+  - Error-to-fix mapping for common issues
+- **Orchestrated Pipeline Prompts**:
+  - New `orchestrated-understand.ts` with provider optimization
+  - New `orchestrated-supplemental.ts` for claims/scopes
+  - Exported via `prompt-builder.ts` for analyzer use
+- **Comprehensive Test Suite**:
+  - 83 new prompt optimization tests
+  - All 4 providers validated for all task types
+  - Budget model detection tests
+  - Token estimation utilities
+- **New Documentation**:
+  - Updated `LLM_Prompt_Improvements.md` to v2.8
+  - Created `Provider_Prompt_Guidelines.md`
 
 ### v2.6.33 (January 2026)
 - **Triple-Path Pipeline Complete**:

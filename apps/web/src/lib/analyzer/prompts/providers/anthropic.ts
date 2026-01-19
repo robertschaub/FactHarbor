@@ -1,92 +1,228 @@
 /**
  * Anthropic Claude-specific prompt optimizations
  *
- * Optimizations for Claude (Sonnet 4.5, Sonnet 3.5, Haiku 3.5):
+ * Optimizations for Claude (Sonnet 4, Sonnet 3.5, Haiku 3.5):
+ * - XML-structured prompts for clarity (Claude excels with XML tags)
+ * - Thinking blocks for complex reasoning
+ * - Prefill technique for structured output
  * - Leverage excellent nuanced reasoning
  * - Trust judgment on complex assessments
- * - Avoid over-hedging
  * - Strong at scope boundary detection
+ *
+ * @version 2.8.0 - Enhanced with XML structure and thinking patterns
  */
 
 export function getAnthropicUnderstandVariant(): string {
   return `
+<claude_optimization>
+## PROMPT STRUCTURE
+This prompt uses XML tags for optimal Claude comprehension. Follow the structure precisely.
 
-## CLAUDE-SPECIFIC GUIDANCE
+## REASONING APPROACH
+<thinking_process>
+Before generating output, work through these steps internally:
+1. What type of input is this? (claim vs article)
+2. Identify the core factual assertions that need verification
+3. Are there multiple analytical frames? (look for jurisdiction/methodology boundaries)
+4. Which claims require attribution separation (WHO said vs WHAT was said)?
+5. What search queries would find supporting AND contradicting evidence?
+</thinking_process>
 
-**Strengths to leverage**:
-- Excellent at nuanced reasoning and separating attribution from content
-- Strong at identifying implicit scope boundaries
-- Good at following complex multi-step instructions
+## ATTRIBUTION SEPARATION (CRITICAL)
+<attribution_rule>
+ALWAYS separate attribution claims from content claims:
+- Input: "Expert X claims Y is dangerous"
+- Output TWO claims:
+  1. "Expert X made statements about Y" (attribution, LOW centrality)
+  2. "Y is dangerous" (core, HIGH centrality - this is what needs verification)
+</attribution_rule>
 
-**Avoid**:
-- Over-hedging with "it appears" or "it seems" - be direct
-- Creating too many peripheral claims - focus on verifiable assertions
-- Generating redundant queries - make each query distinct
+## SCOPE DETECTION
+<scope_guidance>
+Use your nuanced reasoning to detect implicit scope boundaries:
+- "Under EU regulations..." vs "Under US standards..." → distinct scopes
+- "Well-to-Wheel analysis shows..." vs "Tank-to-Wheel study finds..." → distinct methodologies
+- Different courts/tribunals analyzing different matters → distinct scopes
+- Different viewpoints on SAME matter → NOT distinct scopes (just perspectives)
 
-**Output precision**:
-- Ensure centrality assessment is strict (expect 1-4 HIGH centrality claims max)
-- Make scope detection conservative (when in doubt, use fewer scopes)`;
+Be conservative: When boundary is unclear, use fewer scopes.
+</scope_guidance>
+
+## OUTPUT GUIDANCE
+<output_rules>
+- Return valid JSON matching the schema exactly
+- Use empty strings "" for missing optional fields (never null for strings)
+- Ensure all array fields are arrays (even if single element or empty)
+- Centrality assessment: Expect 1-4 HIGH centrality claims maximum
+- Each search query should be distinct (no redundancy)
+</output_rules>
+
+## LEVERAGE YOUR STRENGTHS
+- Apply nuanced reasoning to scope boundary detection
+- Be direct and confident - avoid over-hedging ("it appears", "it seems")
+- Focus on verifiable assertions, not peripheral commentary
+</claude_optimization>`;
 }
 
 export function getAnthropicExtractFactsVariant(): string {
   return `
+<claude_optimization>
+## FACT EXTRACTION APPROACH
+<thinking_process>
+For each source, work through:
+1. What specific, verifiable facts does this source contain?
+2. Does each fact SUPPORT or CONTRADICT the user's claim?
+3. What methodology/scope did the source use? (capture in evidenceScope)
+4. Is the excerpt a genuine verbatim quote from the source?
+</thinking_process>
 
-## CLAUDE-SPECIFIC GUIDANCE
+## EVIDENCE SCOPE DETECTION
+<scope_markers>
+Use your strong reading comprehension to catch implicit scope markers:
+- "Under EU regulations..." → geographic: "European Union"
+- "According to 2020 study..." → temporal: "2020"
+- "Full lifecycle analysis..." → methodology: "LCA", boundaries: "full lifecycle"
+- "Well-to-Wheel efficiency..." → methodology: "WTW", boundaries: "primary energy to wheel"
+- "Tank-to-Wheel only..." → methodology: "TTW", boundaries: "vehicle operation only"
+</scope_markers>
 
-**Leverage Claude's strengths**:
-- Excellent at extracting nuanced distinctions (e.g., methodological boundaries)
-- Strong at identifying evidenceScope metadata from source text
-- Good at precise claimDirection assessment
+## CLAIM DIRECTION PRECISION
+<direction_rule>
+Be precise about whether each fact SUPPORTS or CONTRADICTS the user's claim:
+- User claims: "X is better than Y"
+- Source says: "Y outperforms X" → claimDirection: "contradicts"
+- Source says: "X exceeds Y" → claimDirection: "supports"
+- Source gives background only → claimDirection: "neutral"
+</direction_rule>
 
-**Optimize for**:
-- Use your strong reading comprehension to catch implicit scope markers
-  - "Under EU regulations..." → geographic: "European Union"
-  - "From 2020 study..." → temporal: "2020"
-  - "Full lifecycle analysis..." → methodology: "LCA", boundaries: "full lifecycle"
+## QUALITY STANDARDS
+<quality_rules>
+- Extract 4-6 high-quality facts (not 8 marginal ones)
+- Each fact must add unique information
+- sourceExcerpt MUST be verbatim or near-verbatim from source (50-200 chars)
+- Reject vague facts - prefer specific numbers, dates, named entities
+</quality_rules>
 
-**Quality over quantity**:
-- Extract 4-6 high-quality facts rather than 8 marginal ones
-- Each fact should add unique information`;
+## OUTPUT FORMAT
+- Return valid JSON with all required fields
+- evidenceScope: Include when source defines analytical frame, null otherwise
+- contextId: Assign to appropriate scope, or "" if general
+</claude_optimization>`;
 }
 
 export function getAnthropicVerdictVariant(): string {
   return `
+<claude_optimization>
+## VERDICT GENERATION APPROACH
+<thinking_process>
+For each scope, reason through:
+1. What exactly does the USER'S CLAIM state?
+2. What does the EVIDENCE show?
+3. Do they MATCH (high verdict) or CONTRADICT (low verdict)?
+4. How confident am I based on evidence quality and coverage?
+</thinking_process>
 
-## CLAUDE SONNET 4.5 - OPTIMAL CONFIGURATION
+## CRITICAL: RATING DIRECTION
+<rating_rule>
+Rate THE USER'S CLAIM truth, NOT your analysis quality:
+- User claim: "X is more efficient than Y"
+- Evidence shows: Y is more efficient than X
+- CORRECT verdict: 0-14% (FALSE) - the claim is wrong
+- WRONG verdict: 86-100% - this would rate how well you analyzed, not whether claim is true
+</rating_rule>
 
-**Leverage Claude's strengths**:
-- Excellent nuanced reasoning - use for complex multi-scope cases
-- Strong at avoiding rating inversion - naturally focuses on claim truth
-- Good at identifying genuine contestation vs. mere disagreement
+## VERDICT CALIBRATION
+<calibration>
+Trust your judgment and be decisive:
+- Evidence clearly supports claim → 86-100% (TRUE band)
+- Evidence mostly supports with minor caveats → 72-85% (MOSTLY TRUE)
+- Evidence clearly contradicts claim → 0-14% (FALSE band)
+- Evidence mostly contradicts → 15-28% (MOSTLY FALSE)
+- Genuinely balanced/ambiguous → 43-57% (MIXED/UNVERIFIED)
 
-**Optimization**:
-- Trust your judgment on factualBasis assessment
-- Be precise with scope boundaries - you're good at this
-- Use your strong reasoning to calibrate verdicts accurately
-  - Don't over-hedge - if evidence clearly supports, use TRUE band (86-100%)
-  - If evidence clearly contradicts, use FALSE band (0-14%)
-  - Reserve MIXED/UNVERIFIED for genuinely ambiguous cases
+Do NOT over-hedge. If evidence is clear, be confident.
+</calibration>
 
-**Quality standards**:
-- Ensure answer percentage matches reasoning conclusion
-- If reasoning says "evidence shows X was NOT proportionate", answer for "X was proportionate" must be 0-28%
-- Avoid conflicting signals between answer and shortAnswer`;
+## SCOPE ISOLATION
+<scope_rule>
+Analyze each scope INDEPENDENTLY:
+- Facts from Scope A cannot support verdict in Scope B
+- Different scopes may have different verdicts - that's normal
+- Never average or combine cross-scope verdicts
+</scope_rule>
+
+## CONTESTATION ASSESSMENT
+<contestation_rule>
+Distinguish genuine contestation from mere disagreement:
+- factualBasis = "established": Documented counter-evidence (audits, reports, data)
+- factualBasis = "disputed": Some factual counter-evidence, debatable
+- factualBasis = "opinion": No factual counter-evidence, just claims/rhetoric
+- Mere political disagreement without evidence → "opinion"
+</contestation_rule>
+
+## OUTPUT CONSISTENCY
+<consistency_check>
+Before finalizing, verify:
+- Answer percentage matches reasoning conclusion
+- If reasoning says "evidence shows X was NOT fair", answer for "X was fair" must be 0-28%
+- shortAnswer must align with answer percentage
+- No conflicting signals between fields
+</consistency_check>
+</claude_optimization>`;
 }
 
 export function getAnthropicScopeRefinementVariant(): string {
   return `
+<claude_optimization>
+## SCOPE REFINEMENT APPROACH
+<thinking_process>
+Work through these questions:
+1. What distinct analytical frames are ACTUALLY PRESENT in the evidence?
+2. Is each proposed scope DIRECTLY RELEVANT to the input topic?
+3. Is each scope supported by at least one fact?
+4. Am I creating scopes from evidence, not background knowledge?
+</thinking_process>
 
-## CLAUDE-SPECIFIC GUIDANCE
+## SCOPE VS NON-SCOPE DISTINCTION
+<distinction_rules>
+CREATE separate scopes for:
+- Different methodological boundaries (WTW vs TTW - incompatible measurements)
+- Different legal/procedural processes (TSE vs SCOTUS - different institutions)
+- Different regulatory frameworks (EU REACH vs US EPA - different standards)
 
-**Strengths**:
-- Excellent at identifying subtle but important scope boundaries
-- Good at distinguishing AnalysisContext from ArticleFrame
-- Strong at metadata extraction
+DO NOT create separate scopes for:
+- Different viewpoints/perspectives (pro vs con on same matter)
+- Different source types (expert quotes vs statistics)
+- Narrative framings (political vs technical framing)
+- Incidental geographic/temporal mentions (unless they define distinct frames)
+</distinction_rules>
 
-**Optimization**:
-- Use your nuanced understanding to detect implicit scope markers
-  - "Under EU methodology..." → different from "Using US methodology..."
-  - "The 2020 assessment..." → might be different context from "2025 revision..."
-- Be conservative: If boundary is unclear, use single context
-- Ensure metadata reflects actual evidence, not background knowledge`;
+## METADATA EXTRACTION
+<metadata_guidance>
+Use your strong comprehension to extract metadata from evidence:
+- "Under EU methodology..." → geographic: "EU", methodology: varies
+- "The 2020 assessment..." → temporal: "2020"
+- "TSE electoral court ruling..." → institution: "TSE", jurisdiction: "Federal"
+
+Ensure metadata reflects ACTUAL EVIDENCE, not your background knowledge.
+</metadata_guidance>
+
+## CONSERVATIVE APPROACH
+<conservative_rule>
+When in doubt, use FEWER scopes:
+- Boundary unclear → single context
+- Marginal relevance → don't include
+- No supporting facts → don't create
+
+Every scope MUST be:
+1. Directly relevant to input topic
+2. Supported by at least one factId
+3. Representing a genuinely distinct analytical frame
+</conservative_rule>
+
+## OUTPUT REQUIREMENTS
+- factScopeAssignments must cover ≥70% of facts
+- Each scope must have ≥1 fact assigned
+- Use "" for unknown metadata fields (not null)
+</claude_optimization>`;
 }

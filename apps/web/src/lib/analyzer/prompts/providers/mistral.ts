@@ -1,134 +1,276 @@
 /**
  * Mistral-specific prompt optimizations
  *
- * Optimizations for Mistral (Mistral Large, Mistral Medium):
- * - Clear, explicit instructions work best
- * - Strong at following enumerated rules
- * - Explicit checklists and step-by-step processes
+ * Optimizations for Mistral (Mistral Large, Mistral Small):
+ * - Step-by-step numbered processes (Mistral excels at these)
+ * - Explicit checklists for validation
+ * - Template-based field completion
+ * - Clear, direct instructions
  * - Fast structured output
+ *
+ * @version 2.8.0 - Enhanced with comprehensive step-by-step processes
  */
 
 export function getMistralUnderstandVariant(): string {
   return `
+## MISTRAL OPTIMIZATION
 
-## MISTRAL-SPECIFIC GUIDANCE
+### STEP-BY-STEP PROCESS (Follow exactly)
 
-**Optimize for Mistral**:
-- Direct, explicit instructions work best
-- Good at following enumerated rules
-- Fast structured output
+**Step 1:** Read input completely
 
-**Explicit enumeration** (Mistral benefits from this):
+**Step 2:** Identify input type
+- Statement about facts → "claim"
+- News article/long text → "article"
 
-Centrality = LOW (examples):
-- "Dr. X is the director" (attribution)
+**Step 3:** Extract claims using this template
+For each claim found:
+- id: SC{n} (SC1, SC2, etc.)
+- text: [the claim statement]
+- claimRole: [pick one]
+  - "attribution" → WHO said it (person/org identity)
+  - "source" → WHERE documented (memo, report)
+  - "timing" → WHEN it happened
+  - "core" → THE ACTUAL ASSERTION to verify
+- centrality: [pick one]
+  - "low" → attribution/source/timing/methodology claims
+  - "medium" → supporting context
+  - "high" → core verifiable assertions (expect 1-4 max)
+- isCentral: true if centrality="high", else false
+- dependsOn: [array of claim IDs this depends on, or []]
+
+**Step 4:** Detect scope boundaries
+Look for:
+- Different jurisdictions (courts, countries)
+- Different methodologies (WTW vs TTW)
+- Different regulatory frameworks (EU vs US)
+If found: Create detectedScopes array
+If not: Leave detectedScopes empty
+
+**Step 5:** Generate 4-6 search queries
+- 2 queries to find supporting evidence
+- 2 queries to find contradicting evidence
+- 1-2 queries for context/background
+
+**Step 6:** Output JSON
+
+### CENTRALITY EXAMPLES
+
+Centrality = LOW:
+- "Dr. X is the agency director" (attribution)
 - "An internal memo exists" (source)
 - "The event occurred in November" (timing)
-- "The methodology is ISO 14040" (methodology validation)
 
-Centrality = HIGH (examples):
+Centrality = HIGH:
 - "10 people were harmed by Product X" (factual impact)
-- "The process violated due process standards" (legal/procedural violation)
-- "Hydrogen cars are more efficient than electric" (comparative factual claim)`;
+- "The process violated due process" (procedural violation)
+- "Hydrogen is more efficient than electric" (comparative claim)
+
+### VALIDATION CHECKLIST
+Before output, verify:
+[ ] All claims have unique IDs (SC1, SC2, etc.)
+[ ] Core claims separated from attribution
+[ ] Only 1-4 claims marked as "high" centrality
+[ ] 4-6 search queries included
+[ ] JSON is valid`;
 }
 
 export function getMistralExtractFactsVariant(): string {
   return `
+## MISTRAL OPTIMIZATION - FACT EXTRACTION
 
-## MISTRAL-SPECIFIC GUIDANCE
+### STEP-BY-STEP PROCESS
 
-**Optimize for Mistral**:
-- Direct, explicit instructions work best
-- Good at following enumerated rules
-- Fast structured output
+**Step 1:** Read source content completely
 
-**Explicit rule checklist**:
+**Step 2:** Identify extractable facts
+- Look for: numbers, dates, names, specific events
+- Minimum: 3 facts
+- Maximum: 8 facts
 
-For EACH fact extracted:
-1. Fact text: One sentence, under 100 chars
-2. Category: Pick ONE from: evidence, expert_quote, statistic, event, legal_provision, criticism
-3. Specificity: HIGH or MEDIUM only (reject LOW)
-4. sourceExcerpt: Copy 50-200 chars directly from source
-5. claimDirection:
-   - If supports user's claim → "supports"
-   - If contradicts user's claim → "contradicts"
-   - If neither → "neutral"
-6. contextId: Which scope? (or "" if general)
-7. evidenceScope: Does source define its analytical frame?
-   - If YES: Fill name, methodology, boundaries, geographic, temporal (use "" for unknown)
-   - If NO: Set to null
+**Step 3:** For EACH fact, fill this template
+{
+  "id": "F{n}",
+  "fact": "[one sentence, ≤100 chars]",
+  "category": "[pick one: evidence | expert_quote | statistic | event | legal_provision | criticism]",
+  "specificity": "[high | medium]",
+  "sourceExcerpt": "[copy 50-200 chars verbatim from source]",
+  "claimDirection": "[pick one: supports | contradicts | neutral]",
+  "contextId": "[scope ID or empty string]",
+  "evidenceScope": [object or null]
+}
 
-**Quality threshold**:
-- Minimum 3 facts, maximum 8 facts
-- Each fact must be independently verifiable
-- Avoid duplicate information across facts`;
+**Step 4:** Determine claimDirection
+- Read user's original claim
+- Does this fact support the claim being TRUE? → "supports"
+- Does this fact support the claim being FALSE? → "contradicts"
+- Neither, just context? → "neutral"
+
+**Step 5:** Extract evidenceScope (if applicable)
+Does the source define its analytical frame?
+- YES → Fill: {name, methodology, boundaries, geographic, temporal}
+- NO → Set to null
+
+**Step 6:** Output JSON
+
+### EVIDENCESCOPE TEMPLATE
+{
+  "name": "[short label, e.g., WTW]",
+  "methodology": "[standard used, e.g., ISO 14040]",
+  "boundaries": "[what included/excluded]",
+  "geographic": "[region, e.g., EU]",
+  "temporal": "[time period, e.g., 2024]"
+}
+Use "" for unknown fields, not null.
+
+### VALIDATION CHECKLIST
+[ ] 3-8 facts extracted
+[ ] Each fact ≤100 characters
+[ ] Each sourceExcerpt is 50-200 chars
+[ ] Each sourceExcerpt is verbatim from source
+[ ] No duplicate information across facts
+[ ] claimDirection matches evidence relationship to user's claim
+[ ] JSON is valid`;
 }
 
 export function getMistralVerdictVariant(): string {
   return `
+## MISTRAL OPTIMIZATION - VERDICT GENERATION
 
-## MISTRAL LARGE GUIDANCE
+### STEP-BY-STEP VERDICT PROCESS
 
-**Optimize for Mistral**:
-- Clear, explicit instructions work best
-- Strong at following rules systematically
-- Fast structured output
+**Step 1:** Read user's original claim
+Write it down: "[claim]"
 
-**Systematic verdict process** (step-by-step):
+**Step 2:** For each scope, process separately:
 
-For each scope:
-1. Read user's original claim
-2. Read facts for this scope only
-3. Count [SUPPORTING] facts
-4. Count [COUNTER-EVIDENCE] facts
-5. Determine which direction evidence points
-6. Assign truth percentage:
-   - More supporting → 72-100%
-   - Balanced → 43-57%
-   - More counter-evidence → 0-28%
-7. Verify: Does percentage match evidence direction?
+**Step 2a:** List facts for this scope only
+- Count SUPPORTING facts: ___
+- Count COUNTER-EVIDENCE facts: ___
 
-**Checklist for each verdict**:
-- [ ] contextId matches scope ID from list
-- [ ] answer is 0-100 integer
-- [ ] answer matches reasoning (if reasoning says "false", answer should be 0-28)
-- [ ] shortAnswer is complete sentence
-- [ ] keyFactors: 3-5 items
-- [ ] Each keyFactor has all required fields
-- [ ] factualBasis is correct: "established" only if DOCUMENTED counter-evidence
+**Step 2b:** Determine evidence direction
+- More supporting → claim is TRUE → 72-100%
+- Balanced → MIXED → 43-57%
+- More counter-evidence → claim is FALSE → 0-28%
 
-**Common errors to avoid**:
-- Rating analysis quality instead of claim truth → Re-read rating direction section
-- Conflating scopes → Check that facts match contextId
-- Over-using "neutral" in supports field → Use your knowledge`;
+**Step 2c:** Fill verdict template
+{
+  "contextId": "[scope ID]",
+  "answer": [0-100 integer],
+  "confidence": [0-100 integer],
+  "shortAnswer": "[complete sentence, ≤25 words]",
+  "keyFactors": [array of 3-5 items]
+}
+
+**Step 2d:** Fill keyFactor template (3-5 times)
+{
+  "factor": "[≤12 words]",
+  "explanation": "[≤20 words]",
+  "supports": "[yes | no | neutral]",
+  "isContested": [true | false],
+  "contestedBy": "[specific group or empty string]",
+  "factualBasis": "[established | disputed | opinion | unknown]"
+}
+
+**Step 3:** Verify answer matches evidence direction
+- If reasoning says "claim is false" → answer must be 0-28%
+- If reasoning says "claim is true" → answer must be 72-100%
+
+### RATING DIRECTION RULE (CRITICAL)
+You are rating THE USER'S CLAIM, not your analysis quality.
+
+Example:
+- User claim: "X is better than Y"
+- Evidence shows: Y is better than X
+- Correct answer: 5-15% (claim is FALSE)
+- Wrong answer: 85-95% (this rates analysis, not claim)
+
+### VALIDATION CHECKLIST
+For each verdict:
+[ ] contextId matches scope ID from list
+[ ] answer is 0-100 integer
+[ ] answer matches evidence direction
+[ ] shortAnswer is complete sentence
+[ ] 3-5 keyFactors included
+[ ] Each keyFactor has all 6 fields
+[ ] factualBasis = "established" ONLY if documented counter-evidence exists
+[ ] Use "" for empty contestedBy, not null
+
+### FACTUAL BASIS GUIDE
+- "established": Documented counter-evidence (audits, reports, data)
+- "disputed": Some factual counter-evidence, debatable
+- "opinion": No factual counter-evidence, just rhetoric
+- "unknown": Cannot determine`;
 }
 
 export function getMistralScopeRefinementVariant(): string {
   return `
+## MISTRAL OPTIMIZATION - SCOPE REFINEMENT
 
-## MISTRAL-SPECIFIC GUIDANCE
+### STEP-BY-STEP PROCESS
 
-**Systematic process**:
+**Step 1:** Read all facts and identify potential boundaries
 
-Step 1: Read all facts and identify potential boundaries
-- Look for methodology markers (e.g., "WTW", "TTW", "LCA")
-- Look for jurisdiction markers (e.g., court names, country names)
-- Look for temporal markers (e.g., "2020 study", "2025 revision")
+Look for these markers:
+| Marker Type | Examples |
+|-------------|----------|
+| Methodology | "WTW", "TTW", "LCA", "ISO 14040" |
+| Jurisdiction | Court names, country names, agencies |
+| Temporal | "2020 study", "2025 revision", "FY2024" |
 
-Step 2: For each potential boundary, verify:
-- [ ] Directly relevant to input topic?
-- [ ] Supported by ≥1 fact?
-- [ ] Represents distinct analytical frame?
+**Step 2:** For each potential boundary, answer these questions
 
-Step 3: Create contexts only if Step 2 checks pass
+Boundary: ____________
+[ ] Directly relevant to input's specific topic?
+[ ] Supported by ≥1 fact from the evidence?
+[ ] Represents distinct analytical frame (not just perspective)?
 
-Step 4: Assign ALL facts to contexts
+If ALL boxes checked → Create scope
+If ANY unchecked → Skip this boundary
+
+**Step 3:** Create scope using template
+
+{
+  "id": "CTX_[SHORT_CODE]",
+  "name": "[descriptive name, ≤60 chars]",
+  "shortName": "[≤12 chars]",
+  "subject": "[what's being analyzed]",
+  "temporal": "[time period]",
+  "status": "[concluded | ongoing | pending | unknown]",
+  "outcome": "[result or empty string]",
+  "metadata": {
+    // Legal domain:
+    "institution": "[court/agency name]",
+    "jurisdiction": "[Federal/State/National]",
+    "charges": ["array of charges"],
+    
+    // OR Scientific domain:
+    "methodology": "[WTW/TTW/LCA]",
+    "boundaries": "[what included/excluded]",
+    "geographic": "[region]",
+    "dataSource": "[dataset used]"
+  }
+}
+
+**Step 4:** Assign ALL facts to contexts
+
+For each fact:
+- factId: "[F1, F2, etc.]"
+- contextId: "[CTX_XXX]"
+
+Ensure:
 - Each fact → exactly one contextId
-- Verify coverage: All facts in input → All assignments in output
+- ≥70% of facts assigned
+- Each context has ≥1 fact
 
-**Metadata population**:
-- Fill fields when evidence provides info
-- Use empty string ("") when not specified, not null
-- Example legal metadata: {institution: "TSE", jurisdiction: "Federal", charges: ["Electoral fraud"]}
-- Example scientific metadata: {methodology: "WTW", boundaries: "Primary energy to wheel", geographic: "EU"}`;
+**Step 5:** Output JSON
+
+### VALIDATION CHECKLIST
+[ ] requiresSeparateAnalysis matches context count (true if >1)
+[ ] Each context has all required fields
+[ ] shortName ≤12 characters
+[ ] metadata uses "" for unknown fields (not null)
+[ ] factScopeAssignments covers ≥70% of facts
+[ ] Each context has ≥1 fact assigned
+[ ] JSON is valid`;
 }

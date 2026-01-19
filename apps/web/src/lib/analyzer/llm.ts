@@ -1,15 +1,23 @@
 /**
  * FactHarbor Analyzer - LLM Provider Selection
  *
- * Handles model selection and AI SDK output extraction.
+ * Handles model selection, AI SDK output extraction, and schema retry logic.
  *
  * @module analyzer/llm
+ * @version 2.8.0 - Added structured output retry support
  */
 
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
+import {
+  getStructuredOutputGuidance,
+  getEnhancedRetryPrompt,
+  getClaudePrefill,
+  getOpenAIJsonModeHint,
+  type ProviderType,
+} from "./prompts/config-adaptations/structured-output";
 
 // ============================================================================
 // MODEL SELECTION
@@ -193,6 +201,124 @@ export function extractStructuredOutput(result: unknown): unknown {
 }
 
 // ============================================================================
+// STRUCTURED OUTPUT UTILITIES
+// ============================================================================
+
+/**
+ * Enhance a prompt with provider-specific structured output guidance
+ */
+export function enhancePromptForStructuredOutput(
+  prompt: string,
+  provider: ProviderType
+): string {
+  const guidance = getStructuredOutputGuidance(provider);
+
+  if (provider === 'openai') {
+    return prompt + guidance + getOpenAIJsonModeHint();
+  }
+
+  return prompt + guidance;
+}
+
+/**
+ * Get a prefill string for Claude to improve JSON output reliability
+ * Pass this as the first part of the assistant message
+ */
+export function getAssistantPrefill(
+  provider: ProviderType,
+  taskType: string
+): string | null {
+  if (provider === 'anthropic') {
+    return getClaudePrefill(taskType);
+  }
+  return null;
+}
+
+/**
+ * Get a retry prompt when schema validation fails
+ */
+export function getSchemaValidationRetryPrompt(
+  provider: ProviderType,
+  schemaErrors: string[],
+  originalOutput: string
+): string {
+  return getEnhancedRetryPrompt(provider, schemaErrors, originalOutput);
+}
+
+/**
+ * Extract schema validation errors from a ZodError
+ */
+export function extractSchemaErrors(zodError: unknown): string[] {
+  if (!zodError || typeof zodError !== 'object') {
+    return ['Unknown schema validation error'];
+  }
+
+  const err = zodError as Record<string, unknown>;
+
+  // Handle Zod error format
+  if (err.errors && Array.isArray(err.errors)) {
+    return err.errors.map((e: any) => {
+      const path = e.path?.join('.') || 'root';
+      const message = e.message || 'Invalid value';
+      return `${path}: ${message}`;
+    });
+  }
+
+  // Handle issues array (alternative Zod format)
+  if (err.issues && Array.isArray(err.issues)) {
+    return err.issues.map((issue: any) => {
+      const path = issue.path?.join('.') || 'root';
+      const message = issue.message || 'Invalid value';
+      return `${path}: ${message}`;
+    });
+  }
+
+  // Fallback to string conversion
+  if (err.message && typeof err.message === 'string') {
+    return [err.message];
+  }
+
+  return ['Unknown schema validation error'];
+}
+
+/**
+ * Detect if an error is a schema validation error
+ */
+export function isSchemaValidationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  const err = error as Record<string, unknown>;
+
+  // Check for ZodError markers
+  if (err.name === 'ZodError') return true;
+  if (err.errors && Array.isArray(err.errors)) return true;
+  if (err.issues && Array.isArray(err.issues)) return true;
+
+  // Check error message
+  if (typeof err.message === 'string') {
+    const msg = err.message.toLowerCase();
+    if (msg.includes('schema') || msg.includes('validation') ||
+        msg.includes('expected') || msg.includes('required')) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Get the provider type from model info
+ */
+export function getProviderType(modelInfo: ModelInfo): ProviderType {
+  const provider = modelInfo.provider.toLowerCase();
+  if (provider.includes('anthropic') || provider.includes('claude')) return 'anthropic';
+  if (provider.includes('openai') || provider.includes('gpt')) return 'openai';
+  if (provider.includes('google') || provider.includes('gemini')) return 'google';
+  if (provider.includes('mistral')) return 'mistral';
+  return 'anthropic'; // Default fallback
+}
+
+// ============================================================================
 // UTILITY
 // ============================================================================
 
@@ -202,3 +328,9 @@ export function extractStructuredOutput(result: unknown): unknown {
 export function clampConfidence(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
+
+// Re-export structured output types and utilities
+export {
+  type ProviderType,
+  getStructuredOutputGuidance,
+} from "./prompts/config-adaptations/structured-output";

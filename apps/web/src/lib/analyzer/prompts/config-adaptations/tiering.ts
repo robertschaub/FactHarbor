@@ -1,83 +1,149 @@
 /**
  * Budget mode adaptations for LLM tiering configuration
  *
- * When FH_LLM_TIERING=on with cheaper models for extraction tasks:
- * - Simplify instructions for fast models
- * - Use clear examples instead of abstract rules
- * - Minimize reasoning steps
- * - Emphasize schema compliance
+ * When FH_LLM_TIERING=on with cheaper/faster models (Haiku, Flash, Mini):
+ * - Ultra-simplified instructions (minimize token count)
+ * - Single concrete example per task
+ * - Direct field mapping, no verbose explanations
+ * - Skip complex reasoning in favor of pattern matching
+ *
+ * @version 2.8.0 - Optimized for ~40% token reduction vs full prompts
  */
 
 export function getTieringUnderstandAdaptation(): string {
   return `
+## FAST MODE
 
-## BUDGET MODE OPTIMIZATION
+**Task**: Extract claims, generate queries. Skip complex reasoning.
 
-**Simplified instructions** (optimized for fast models):
-- Focus on extraction accuracy over nuance
-- Use clear examples instead of abstract rules
-- Minimize reasoning steps
+**Example**:
+Input: "Expert X says Y is harmful"
+Output: 2 claims
+1. {id: "SC1", text: "Expert X made statements about Y", claimRole: "attribution", centrality: "low"}
+2. {id: "SC2", text: "Y is harmful", claimRole: "core", centrality: "high"}
 
-**Output format**:
-- Be strict with schema compliance
-- Use enumerated values exactly as specified
-- Avoid optional fields when possible
-
-**Example-driven extraction** (fast models benefit):
-
-Example 1: Attribution separation
-Input: "Dr. Jane Smith, a Harvard professor, claims hydroxychloroquine cures COVID"
-Output:
-- Claim 1: {text: "Dr. Jane Smith is a Harvard professor", role: "attribution", centrality: "low"}
-- Claim 2: {text: "Hydroxychloroquine cures COVID-19", role: "core", centrality: "high"}
-
-Example 2: Methodology claim recognition
-Input: "Using the Well-to-Wheel methodology shows hydrogen is 40% efficient"
-Output:
-- Claim 1: {text: "Well-to-Wheel methodology is used", role: "source", centrality: "low"}
-- Claim 2: {text: "Hydrogen achieves 40% efficiency in Well-to-Wheel analysis", role: "core", centrality: "high"}`;
+**Rules**:
+- Separate WHO SAID from WHAT THEY SAID
+- Only 1-2 claims = "high" centrality
+- Generate 4 queries (2 supporting, 2 contradicting)
+- Output valid JSON`;
 }
 
 export function getTieringExtractFactsAdaptation(): string {
   return `
+## FAST MODE
 
-## BUDGET MODE - EXTRACT FACTS ONLY
+**Task**: Extract 4-6 facts from source. Simple rules.
 
-**Simplified task**:
-1. Read source text
-2. Extract 3-8 specific, verifiable facts
-3. For each fact: statement, category, excerpt, direction
+**Per fact**:
+- fact: one sentence, ≤100 chars
+- category: evidence|expert_quote|statistic|event|legal_provision|criticism
+- specificity: high (has numbers/dates) or medium
+- sourceExcerpt: 50-200 chars verbatim
+- claimDirection: supports|contradicts|neutral
+- contextId: scope ID or ""
+- evidenceScope: null (skip unless obvious)
 
-**No complex reasoning**:
-- Don't overthink evidenceScope - fill if obvious, leave empty otherwise
-- claimDirection: Does this support or contradict user claim? Simple binary.
-- Specificity: If it has numbers/dates/names → HIGH, otherwise → MEDIUM
-
-**Fast schema**:
-Return JSON with facts array. Each fact needs:
-- fact: string (one sentence)
-- category: pick from list
-- specificity: "high" or "medium"
-- sourceExcerpt: copy 50-200 chars
-- claimDirection: "supports" | "contradicts" | "neutral"`;
+**Direction rule**:
+- Fact agrees with user claim → "supports"
+- Fact disagrees with user claim → "contradicts"
+- Just context → "neutral"`;
 }
 
 export function getTieringVerdictAdaptation(): string {
   return `
+## FAST MODE
 
-## BUDGET MODE - SIMPLIFIED VERDICT
-
-**Streamlined process**:
+**Process**:
 1. Count supporting facts
 2. Count contradicting facts
-3. Assign verdict:
-   - Majority supporting → 72-100%
-   - Equal → 43-57%
-   - Majority contradicting → 0-28%
+3. Pick verdict band:
+   - More supporting → 72-100%
+   - Balanced → 43-57%
+   - More contradicting → 0-28%
 4. Write 1-2 sentence reasoning
 
-**No complex analysis**:
-- Skip nuanced factualBasis assessment
-- Use straightforward support scoring
-- Keep keyFactors simple and direct`;
+**Critical**: Rate THE CLAIM truth, not analysis quality.
+- Claim: "X is better" + Evidence: "Y is better" → 0-28% (claim is FALSE)
+
+**Output**:
+- answer: 0-100 integer
+- shortAnswer: 1 sentence
+- keyFactors: 3 simple items
+- Use "" for empty strings`;
+}
+
+/**
+ * Get simplified base prompt for budget models
+ * Strips verbose sections from full prompts for faster processing
+ */
+export function getBudgetUnderstandPrompt(currentDate: string): string {
+  return `You are a fact-checker. Extract claims and generate search queries.
+
+Date: ${currentDate}
+
+## TASK
+1. Extract claims from input
+2. Separate WHO SAID (attribution) from WHAT THEY SAID (core)
+3. Mark 1-2 claims as "high" centrality (the main verifiable assertions)
+4. Generate 4-6 search queries
+
+## OUTPUT (JSON)
+{
+  "impliedClaim": "neutral summary of input",
+  "articleThesis": "what input asserts",
+  "subClaims": [{"id": "SC1", "text": "...", "claimRole": "core|attribution|source|timing", "centrality": "high|medium|low", "isCentral": true/false, "dependsOn": []}],
+  "researchQueries": ["query1", "query2", ...],
+  "detectedScopes": [],
+  "requiresSeparateAnalysis": false
+}`;
+}
+
+export function getBudgetExtractFactsPrompt(currentDate: string, originalClaim: string): string {
+  return `You extract facts from sources. Date: ${currentDate}
+
+CLAIM TO VERIFY: ${originalClaim}
+
+## TASK
+Extract 4-6 specific, verifiable facts from the source.
+
+## PER FACT
+- fact: one sentence (≤100 chars)
+- category: evidence|expert_quote|statistic|event|legal_provision|criticism
+- specificity: high|medium
+- sourceExcerpt: verbatim quote (50-200 chars)
+- claimDirection: supports|contradicts|neutral (relative to user's claim)
+- contextId: "" (or scope ID if known)
+- evidenceScope: null
+
+## OUTPUT (JSON)
+{"facts": [{...}, {...}]}`;
+}
+
+export function getBudgetVerdictPrompt(currentDate: string, originalClaim: string): string {
+  return `You generate verdicts. Date: ${currentDate}
+
+CLAIM: ${originalClaim}
+
+## CRITICAL RULE
+Rate THE CLAIM truth (not your analysis quality).
+- Claim says X, evidence shows opposite → LOW verdict (0-28%)
+- Claim says X, evidence confirms → HIGH verdict (72-100%)
+
+## PROCESS
+1. Count supporting facts
+2. Count contradicting facts  
+3. Assign percentage:
+   - More support → 72-100%
+   - Balanced → 43-57%
+   - More contradict → 0-28%
+
+## OUTPUT (JSON)
+{
+  "contextId": "CTX_MAIN",
+  "answer": 0-100,
+  "confidence": 0-100,
+  "shortAnswer": "one sentence",
+  "keyFactors": [{"factor": "...", "explanation": "...", "supports": "yes|no|neutral", "isContested": false, "contestedBy": "", "factualBasis": "established|disputed|opinion|unknown"}]
+}`;
 }

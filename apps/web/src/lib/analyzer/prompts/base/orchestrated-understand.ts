@@ -1,0 +1,246 @@
+/**
+ * Base prompt template for ORCHESTRATED UNDERSTAND phase
+ *
+ * This is an enhanced version of understand-base.ts specifically for the
+ * orchestrated (multi-stage) pipeline with:
+ * - Comprehensive claim structure analysis
+ * - Dependency tracking
+ * - KeyFactors discovery
+ * - Thesis relevance classification
+ *
+ * @version 2.8.0 - Extracted from analyzer.ts inline prompts
+ */
+
+export interface OrchestratedUnderstandVariables {
+  currentDate: string;
+  currentDateReadable: string;
+  isRecent: boolean;
+  keyFactorHints?: Array<{ factor: string; category: string; evaluationCriteria: string }>;
+}
+
+export function getOrchestratedUnderstandBasePrompt(variables: OrchestratedUnderstandVariables): string {
+  const { currentDate, currentDateReadable, isRecent, keyFactorHints } = variables;
+
+  const recencySection = isRecent ? `
+## RECENT DATA DETECTED
+
+This input appears to involve recent events, dates, or announcements. When generating research queries:
+- **PRIORITIZE**: Queries that will help find the most current information via web search
+- **INCLUDE**: Date-specific queries (e.g., "November 2025", "2025", "recent")
+- **FOCUS**: Recent developments, current status, latest announcements
+- **NOTE**: Web search will be used to find current sources - structure your research queries accordingly
+
+` : '';
+
+  const keyFactorHintsSection = keyFactorHints && keyFactorHints.length > 0
+    ? `
+**OPTIONAL HINTS** (you may consider these, but are not required to use them):
+The following KeyFactor dimensions have been suggested as potentially relevant. Use them only if they genuinely apply to this thesis. If they don't fit, ignore them and generate factors that actually match the thesis:
+${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.evaluationCriteria}"`).join("\n")}`
+    : "";
+
+  return `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT SCOPES (bounded analytical frames).
+
+## TERMINOLOGY (CRITICAL)
+
+- **ArticleFrame**: Narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
+- **AnalysisContext**: A bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
+- **EvidenceScope**: Per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts later in the pipeline. NOT the same as AnalysisContext.
+
+## NOT DISTINCT SCOPES
+- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
+- Pro vs con viewpoints are NOT scopes.
+
+## SCOPE RELEVANCE REQUIREMENT (CRITICAL)
+- Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include scopes from unrelated domains just because they share a general category
+- Each scope must have a clear, direct connection to the input's subject matter
+- When in doubt, use fewer scopes rather than including marginally relevant ones
+- A scope with zero relevant claims/evidence should NOT exist
+
+${recencySection}## TEMPORAL REASONING
+
+**CURRENT DATE**: Today is ${currentDateReadable} (${currentDate}).
+
+**DATE REASONING RULES**:
+- When evaluating dates mentioned in claims, compare them to the CURRENT DATE above
+- Do NOT assume dates are in the future without checking against the current date
+- If a date seems inconsistent, verify it against the current date before making judgments
+
+## ARTICLE THESIS (articleThesis)
+
+The articleThesis should NEUTRALLY SUMMARIZE what the article claims, covering ALL main points.
+- Include ALL major claims, not just one
+- Use neutral language ("claims that", "alleges that")
+- Keep the source attribution ("according to X", "allegedly from Y")
+
+## CLAIM STRUCTURE ANALYSIS
+
+When extracting claims, identify their ROLE and DEPENDENCIES:
+
+### Claim Roles:
+- **attribution**: WHO said it (person's identity, role)
+- **source**: WHERE/HOW it was communicated (document type, channel)
+- **timing**: WHEN it happened
+- **core**: THE ACTUAL VERIFIABLE ASSERTION - MUST be isolated from source/attribution
+
+### CRITICAL: ISOLATING CORE CLAIMS
+
+Core claims must be PURE FACTUAL ASSERTIONS without embedded source/attribution:
+- WRONG: "An internal review found that 10 people were harmed by Product X" (embeds source)
+- CORRECT: "At least 10 people were harmed by Product X" (pure factual claim)
+
+The source attribution belongs in a SEPARATE claim:
+- SC1: "An internal review exists" (source claim)
+- SC2: "At least 10 people were harmed by Product X" (core claim, depends on SC1)
+
+### SEPARATING ATTRIBUTION FROM EVALUATIVE CONTENT (MANDATORY)
+
+When someone CRITICIZES, CLAIMS, or ASSERTS something, YOU MUST create separate claims:
+1. The FACT that they said/criticized it (attribution - verifiable: did they say it?)
+2. The CONTENT of what they said (the actual claim to verify - is it TRUE?)
+
+**Example**:
+"A spokesperson criticized agency processes as based on weak evidence"
+- SC-A: "A spokesperson has publicly criticized past agency processes" (attribution, LOW centrality)
+- SC-B: "Past agency processes were based on weak and misleading evidence" (core, HIGH centrality, dependsOn: ["SC-A"])
+
+### Claim Dependencies (dependsOn):
+Core claims often DEPEND on attribution/source/timing claims being true.
+List dependencies in dependsOn array (claim IDs that must be true for this claim to matter).
+
+## THREE-ATTRIBUTE CLAIM ASSESSMENT
+
+For EACH claim, assess these three attributes (high/medium/low):
+
+**1. checkWorthiness** - Is it a factual assertion a reader would challenge?
+- HIGH: Specific factual claim that can be verified, readers would want proof
+- MEDIUM: Somewhat verifiable but less likely to be challenged
+- LOW: Pure opinion with no factual component, or not independently verifiable
+
+**2. harmPotential** - Does it impact high-stakes areas?
+- HIGH: Public health, safety, democratic integrity, financial markets, legal outcomes
+- MEDIUM: Affects specific groups or has moderate societal impact
+- LOW: Limited impact, affects few people, low stakes
+
+**3. centrality** - Is it pivotal to the author's argument?
+- HIGH: Core assertion the argument depends on; removing it collapses the narrative
+- MEDIUM: Supports the main argument but not essential
+- LOW: Peripheral detail, context, or attribution
+
+**CRITICAL: Source/Attribution claims are NEVER centrality HIGH**
+Claims with claimRole "source", "attribution", or "timing" should ALWAYS have centrality: LOW
+
+**EXPECT 1-4 CENTRAL CLAIMS** in most analyses.
+
+## THESIS RELEVANCE (thesisRelevance field)
+
+**thesisRelevance** determines whether a claim should CONTRIBUTE to the overall verdict:
+- **"direct"**: The claim DIRECTLY tests part of the main thesis → contributes to verdict
+- **"tangential"**: Related context but does NOT test the thesis → displayed but excluded from verdict
+- **"irrelevant"**: Not meaningfully about the input's specific topic → dropped
+
+**CRITICAL**: Foreign government responses to domestic proceedings are ALWAYS tangential.
+
+## MULTI-SCOPE DETECTION
+
+Look for multiple distinct scopes that should be analyzed separately.
+
+### What IS a valid distinct scope:
+- Separate formal proceedings (e.g., TSE electoral case vs STF criminal case)
+- Distinct temporal events (e.g., 2023 rollout vs 2024 review)
+- Different jurisdictional processes (e.g., state court vs federal court)
+- Different analytical methodologies or boundaries (e.g., WTW vs TTW analysis)
+- Different regulatory frameworks (e.g., EU vs US regulations)
+
+### What is NOT a distinct scope:
+- Different national/political perspectives on the SAME event
+- Different stakeholder viewpoints on a single topic
+- Pro vs con arguments about the same topic
+
+Set requiresSeparateAnalysis = true when multiple scopes are detected.
+
+## KEY FACTORS (Emergent Decomposition)
+
+**IMPORTANT**: KeyFactors are OPTIONAL and EMERGENT - only generate them if the thesis naturally decomposes into distinct evaluation dimensions.
+${keyFactorHintsSection}
+
+**WHEN TO GENERATE**: Create keyFactors array when the thesis involves complex multi-dimensional evaluation.
+
+**WHEN NOT TO GENERATE**: Leave keyFactors as empty array [] for simple factual claims.
+
+**FORMAT**:
+- **id**: Unique identifier (KF1, KF2, etc.)
+- **evaluationCriteria**: The evaluation criteria (e.g., "Was due process followed?")
+- **factor**: SHORT ABSTRACT LABEL (2-5 words ONLY, e.g., "Due Process", "Expert Consensus")
+- **category**: Choose from: "procedural", "evidential", "methodological", "factual", "evaluative"
+
+**CRITICAL: factor MUST be abstract, NOT claim text**
+
+## OUTPUT FORMAT
+
+Return JSON with:
+- impliedClaim: What claim would "YES" confirm? Must be AFFIRMATIVE.
+- articleThesis: Neutral summary of what the article claims
+- analysisContext: ArticleFrame (narrative background) or empty string
+- subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, contextId, keyFactorId
+- analysisContexts: Array of detected scopes (if any)
+- requiresSeparateAnalysis: boolean
+- researchQueries: 4-6 specific search queries
+- keyFactors: Array of KeyFactors (or empty array)
+- riskTier: "A" | "B" | "C"`;
+}
+
+/**
+ * Get orchestrated understand prompt with provider optimizations
+ */
+export function getOrchestratedUnderstandPrompt(
+  variables: OrchestratedUnderstandVariables,
+  provider: 'anthropic' | 'openai' | 'google' | 'mistral'
+): string {
+  const basePrompt = getOrchestratedUnderstandBasePrompt(variables);
+
+  // Add provider-specific optimizations
+  switch (provider) {
+    case 'anthropic':
+      return basePrompt + `
+
+<claude_optimization>
+## CLAUDE-SPECIFIC GUIDANCE
+- Use nuanced reasoning for scope boundary detection
+- Be direct and confident in centrality assessments
+- Apply careful judgment to thesisRelevance classification
+- Expect 1-4 HIGH centrality claims maximum
+</claude_optimization>`;
+
+    case 'openai':
+      return basePrompt + `
+
+## GPT-SPECIFIC GUIDANCE
+- Follow the claim role patterns exactly as shown in examples
+- Ensure all required fields are present in output
+- Use "" for empty strings, never null
+- Generate exactly 4-6 search queries`;
+
+    case 'google':
+      return basePrompt + `
+
+## GEMINI-SPECIFIC GUIDANCE
+- Keep claim text under 150 characters
+- Keep articleThesis under 200 characters
+- Ensure schema compliance for all arrays
+- Avoid verbose explanations`;
+
+    case 'mistral':
+      return basePrompt + `
+
+## MISTRAL-SPECIFIC GUIDANCE
+- Follow the step-by-step claim extraction process
+- Use the checklist to validate output
+- Ensure all claims have unique IDs
+- Output valid JSON`;
+
+    default:
+      return basePrompt;
+  }
+}

@@ -4,16 +4,71 @@ This document tracks version history, bug fixes, and feature enhancements for Fa
 
 ---
 
-## v2.8.0 (January 2026)
+## v2.8.0 (January 19, 2026)
 
-### UI Transparency
+### Provider-Specific Prompt Optimization
+- **Claude (Anthropic)**: Added XML structure tags (`<claude_optimization>`), thinking blocks, prefill hints for reliable JSON output.
+- **GPT (OpenAI)**: Added comprehensive few-shot examples with exact JSON patterns, calibration tables, explicit field lists.
+- **Gemini (Google)**: Added strict length limits (word/character tables), numbered processes, schema checklists.
+- **Mistral**: Added step-by-step numbered instructions, validation checklists, field templates.
+
+### Budget Model Optimization
+- Simplified prompts for Haiku/Flash/Mini with ~40% token reduction.
+- New `getBudgetUnderstandPrompt()`, `getBudgetExtractFactsPrompt()`, `getBudgetVerdictPrompt()` functions.
+- Ultra-compact prompts when `FH_LLM_TIERING=on` and budget model detected.
+- Minimal provider hints instead of full provider variants for budget models.
+
+### Structured Output Hardening
+- New `structured-output.ts` module with provider-specific JSON output guidance.
+- Schema retry prompts for validation failures with error-specific fix suggestions.
+- Claude prefill strings (`getClaudePrefill()`) for reliable JSON start.
+- OpenAI JSON mode hints for structured output.
+- Error-to-fix mapping for common schema issues (null vs "", missing fields, enum values).
+
+### Orchestrated Pipeline Integration
+- New `orchestrated-understand.ts` with provider-optimized prompts for main analysis.
+- New `orchestrated-supplemental.ts` for supplemental claims/scopes generation.
+- New task types: `orchestrated_understand`, `supplemental_claims`, `supplemental_scopes`.
+- Exported via `prompt-builder.ts` for direct use by `analyzer.ts`.
+
+### Testing & Validation
+- 83 new prompt optimization tests in `prompt-optimization.test.ts`.
+- Tests cover all 4 providers (Claude, GPT, Gemini, Mistral) and all task types.
+- Budget model detection tests for all budget model variants.
+- Token estimation utilities for A/B testing (`estimateTokenCount()`, `compareTokenCounts()`).
+- Standard test cases for attribution separation, multi-scope detection, methodology scopes, rating direction.
+- `PromptMetricsCollector` class for tracking schema compliance and quality metrics.
+
+### Documentation
+- Updated `Docs/DEVELOPMENT/LLM_Prompt_Improvements.md` to v2.8.
+- Created `Docs/REFERENCE/Provider_Prompt_Guidelines.md` (new).
+- Updated `Docs/STATUS/Current_Status.md` with v2.8 changes.
+
+### UI Transparency (pre-v2.8)
 - EvidenceScope tooltips added for orchestrated and canonical facts.
 - Methodology sub-grouping added when 3+ methodologies are detected.
 - Methodology icons now map to evidence metadata presence (methodology/name/general).
 - ArticleFrame banner displayed when available (dynamic uses `rawJson.articleFrame`).
 
-### Prompts
-- Added ArticleFrame guidance in understand and dynamic planning prompts.
+### Files Added
+- `apps/web/src/lib/analyzer/prompts/base/orchestrated-understand.ts`
+- `apps/web/src/lib/analyzer/prompts/base/orchestrated-supplemental.ts`
+- `apps/web/src/lib/analyzer/prompts/config-adaptations/structured-output.ts`
+- `apps/web/src/lib/analyzer/prompts/prompt-testing.ts`
+- `apps/web/src/lib/analyzer/prompts/prompt-optimization.test.ts`
+- `Docs/REFERENCE/Provider_Prompt_Guidelines.md`
+
+### Files Modified
+- `apps/web/src/lib/analyzer/prompts/providers/anthropic.ts`
+- `apps/web/src/lib/analyzer/prompts/providers/openai.ts`
+- `apps/web/src/lib/analyzer/prompts/providers/google.ts`
+- `apps/web/src/lib/analyzer/prompts/providers/mistral.ts`
+- `apps/web/src/lib/analyzer/prompts/config-adaptations/tiering.ts`
+- `apps/web/src/lib/analyzer/prompts/prompt-builder.ts`
+- `apps/web/src/lib/analyzer/llm.ts`
+- `Docs/DEVELOPMENT/LLM_Prompt_Improvements.md`
+- `Docs/STATUS/Current_Status.md`
+- `Docs/STATUS/CHANGELOG.md`
 
 ---
 
