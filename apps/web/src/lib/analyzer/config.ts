@@ -134,9 +134,9 @@ export const CONFIG = {
   keyFactorHints: parseKeyFactorHints(process.env.FH_KEYFACTOR_HINTS),
 
   quick: {
-    maxResearchIterations: 2,
-    maxSourcesPerIteration: 3,
-    maxTotalSources: 8,
+    maxResearchIterations: 4, // v2.8.2: was 2 - increased for better quality
+    maxSourcesPerIteration: 4, // v2.8.2: was 3
+    maxTotalSources: 12, // v2.8.2: was 8
     articleMaxChars: 4000,
     minFactsRequired: 6,
   },

@@ -86,6 +86,8 @@ import {
   canonicalizeScopesWithRemap,
   ensureAtLeastOneScope,
   UNSCOPED_ID,
+  canonicalizeInputForScopeDetection,
+  generateScopeDetectionHint,
 } from "./analyzer/scopes";
 
 // Configuration, helpers, and debug utilities imported from modular files above
@@ -3079,6 +3081,10 @@ async function understandClaim(
   // Detect recency sensitivity for this analysis (using normalized input)
   const recencyMatters = isRecencySensitive(analysisInput, undefined);
 
+  // v2.8.2: Generate scope detection hint for input neutrality
+  const canonicalInputForScopes = canonicalizeInputForScopeDetection(analysisInput);
+  const scopeDetectionHint = generateScopeDetectionHint(canonicalInputForScopes);
+
   const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT SCOPES (bounded analytical frames).
 
 SCOPE TERMINOLOGY (critical):
@@ -3089,7 +3095,9 @@ SCOPE TERMINOLOGY (critical):
 NOT DISTINCT SCOPES:
 - Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
 - Pro vs con viewpoints are NOT scopes.
-
+- "Public perception", "trust", or "confidence in institutions" scopes - AVOID unless explicitly the main topic.
+- Meta-level commentary scopes (how people feel about the topic) - AVOID, focus on factual scopes.
+${scopeDetectionHint}
 SCOPE RELEVANCE REQUIREMENT (CRITICAL):
 - Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
 - Do NOT include scopes from unrelated domains just because they share a general category
@@ -3912,6 +3920,17 @@ Now analyze the input and output JSON only.`;
   // v2.6.23: Use analysisInput (normalized statement) for consistent scope canonicalization
   // This ensures any input phrasing yields identical scope detection and research queries
   parsed = canonicalizeScopes(analysisInput, parsed);
+  
+  // v2.8.2: Force detectedInputType to "claim" for input neutrality
+  // The LLM sometimes returns "question" even after normalization, causing
+  // different analysis paths for semantically identical inputs.
+  // CRITICAL FIX: This addresses the input neutrality regression where
+  // "Was X fair?" and "X was fair" produced different results.
+  if (parsed.detectedInputType !== "claim" && parsed.detectedInputType !== "article") {
+    console.warn(`[INPUT NEUTRALITY FIX] Forcing detectedInputType from "${parsed.detectedInputType}" to "claim"`);
+    parsed.detectedInputType = "claim";
+  }
+  
   debugLog("understandClaim: scopes after canonicalize", {
     detectedInputType: parsed.detectedInputType,
     requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,

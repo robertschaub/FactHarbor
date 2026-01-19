@@ -59,13 +59,17 @@ export interface BudgetTracker {
  * Default budgets calibrated for p95 coverage:
  * - 95% of analyses complete within these limits
  * - 5% may hit budgets and terminate early with partial results
+ * 
+ * v2.8.2: Increased limits to address quality degradation.
+ * Previous limits (3 per scope, 12 total) were causing premature
+ * termination with fewer searches and lower quality.
  */
 export const DEFAULT_BUDGET: ResearchBudget = {
-  maxIterationsPerScope: 3, // p95: most scopes need ≤3 iterations
-  maxTotalIterations: 12, // p95: most analyses need ≤12 total iterations
-  maxTotalTokens: 500_000, // ~$1.50 max cost at Claude rates
+  maxIterationsPerScope: 5, // v2.8.2: was 3 - increased for better research depth
+  maxTotalIterations: 20, // v2.8.2: was 12 - increased for multi-scope analyses
+  maxTotalTokens: 750_000, // v2.8.2: was 500_000 - ~$2.25 max cost at Claude rates
   maxTokensPerCall: 100_000, // Prevent single runaway calls
-  enforceHard: true,
+  enforceHard: false, // v2.8.2: was true - warn but don't hard-stop
 };
 
 // ============================================================================

@@ -25,6 +25,109 @@ import {
 export const UNSCOPED_ID = "CTX_UNSCOPED";
 
 // ============================================================================
+// INPUT CANONICALIZATION FOR SCOPE DETECTION (v2.8.2)
+// ============================================================================
+
+/**
+ * Canonicalize input text for scope detection to ensure consistent scope
+ * identification regardless of input phrasing (question vs statement).
+ * 
+ * This addresses the input neutrality issue where:
+ * - "Was the Bolsonaro judgment fair?" detected 3 scopes
+ * - "The Bolsonaro judgment was fair" detected 4 scopes
+ * 
+ * The function normalizes both phrasings to the same canonical form for
+ * scope detection purposes.
+ * 
+ * @param input - Raw or pre-normalized input text
+ * @returns Canonical form for scope detection
+ */
+export function canonicalizeInputForScopeDetection(input: string): string {
+  let text = input.trim();
+  
+  // 1. Remove question marks and trailing punctuation
+  text = text.replace(/[?!.]+$/, '').trim();
+  
+  // 2. Normalize auxiliary verb questions to statements
+  // "Was X fair?" → "X was fair"
+  // "Is X correct?" → "X is correct"
+  const auxMatch = text.match(
+    /^(was|were|is|are|did|do|does|has|have|had|can|could|will|would|should|may|might)\s+(.+)$/i
+  );
+  if (auxMatch) {
+    const aux = auxMatch[1].toLowerCase();
+    const rest = auxMatch[2];
+    // Reconstruct as statement: "the X aux Y"
+    text = `${rest} ${aux}`;
+  }
+  
+  // 3. Remove filler words that don't affect scope detection
+  const fillers = /\b(really|actually|truly|basically|essentially|simply|just|very|quite|rather)\b/gi;
+  text = text.replace(fillers, ' ').replace(/\s+/g, ' ').trim();
+  
+  // 4. Normalize case for consistency (lowercase for comparison)
+  // But preserve proper nouns by keeping original for display
+  const scopeKey = text.toLowerCase();
+  
+  // 5. Extract core semantic entities for scope matching
+  // This creates a "semantic fingerprint" for the input
+  const coreEntities = extractCoreEntities(text);
+  
+  console.log(`[Scope Canonicalization] Input: "${input.substring(0, 60)}..."`);
+  console.log(`[Scope Canonicalization] Canonical: "${scopeKey.substring(0, 60)}..."`);
+  console.log(`[Scope Canonicalization] Core entities: ${coreEntities.join(', ')}`);
+  
+  return scopeKey;
+}
+
+/**
+ * Extract core semantic entities from text for scope matching.
+ * These are the key nouns/proper nouns that define what the input is about.
+ */
+function extractCoreEntities(text: string): string[] {
+  const entities: string[] = [];
+  
+  // Look for proper nouns (capitalized words)
+  const properNouns = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/g) || [];
+  entities.push(...properNouns.map(n => n.toLowerCase()));
+  
+  // Look for legal/institutional terms
+  const legalTerms = text.match(/\b(court|trial|judgment|ruling|verdict|sentence|conviction|case|proceeding|tribunal|commission)\b/gi) || [];
+  entities.push(...legalTerms.map(t => t.toLowerCase()));
+  
+  // Look for country/jurisdiction indicators
+  const jurisdictions = text.match(/\b(brazil|brazilian|us|american|eu|european|uk|british|federal|supreme|electoral|constitutional)\b/gi) || [];
+  entities.push(...jurisdictions.map(j => j.toLowerCase()));
+  
+  // Deduplicate
+  return [...new Set(entities)];
+}
+
+/**
+ * Generate a scope detection hint based on canonical input.
+ * This helps guide the LLM to detect consistent scopes regardless of phrasing.
+ */
+export function generateScopeDetectionHint(canonicalInput: string): string {
+  const entities = extractCoreEntities(canonicalInput);
+  
+  if (entities.length === 0) {
+    return '';
+  }
+  
+  // Build a hint that emphasizes what scopes to look for
+  const hint = `
+SCOPE DETECTION HINT (for input neutrality):
+Focus on detecting scopes related to these core entities: ${entities.join(', ')}.
+Do NOT detect scopes based on:
+- Whether the input is phrased as a question or statement
+- Public perception/opinion scopes (unless explicitly mentioned in input)
+- Meta-level scopes about "trust" or "confidence" in institutions (unless core topic)
+Focus on concrete, factual scopes (legal proceedings, regulatory reviews, methodological frameworks).
+`;
+  return hint;
+}
+
+// ============================================================================
 // DETERMINISTIC SCOPE ID GENERATION
 // ============================================================================
 
