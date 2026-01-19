@@ -10,7 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <header className={styles.header}>
             <div className={styles.logo}>FactHarbor POC1</div>
             <nav className={styles.nav}>
-              <a href="/" className={styles.navLink}>Analyze</a>
+              <a href="/analyze" className={styles.navLink}>Analyze</a>
               <a href="/jobs" className={styles.navLink}>Jobs</a>
               <a href="/admin" className={styles.navLink}>Admin</a>
             </nav>

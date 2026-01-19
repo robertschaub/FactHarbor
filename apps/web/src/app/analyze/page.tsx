@@ -14,9 +14,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../../styles/common.module.css";
-
-type PipelineVariant = "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
-const PIPELINE_STORAGE_KEY = "fh_default_pipeline";
+import type { PipelineVariant } from "@/lib/pipeline-variant";
+import { readDefaultPipelineVariant } from "@/lib/pipeline-variant";
 
 export default function AnalyzePage() {
   const router = useRouter();
@@ -24,13 +23,13 @@ export default function AnalyzePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pipelineVariant, setPipelineVariant] = useState<PipelineVariant>("orchestrated");
+  const [pipelineLoaded, setPipelineLoaded] = useState(false);
 
-  // Load default pipeline from localStorage on mount
+  // Load default pipeline from localStorage on mount.
+  // This is intentionally done in an effect to avoid SSR/localStorage access.
   useEffect(() => {
-    const saved = localStorage.getItem(PIPELINE_STORAGE_KEY);
-    if (saved && ["orchestrated", "monolithic_canonical", "monolithic_dynamic"].includes(saved)) {
-      setPipelineVariant(saved as PipelineVariant);
-    }
+    setPipelineVariant(readDefaultPipelineVariant());
+    setPipelineLoaded(true);
   }, []);
 
   // When navigating back from /jobs/[id], browsers can restore this page from bfcache
@@ -95,6 +94,9 @@ export default function AnalyzePage() {
     try {
       const inputType = getInputType();
       const inputValue = inputType === "url" ? normalizeUrl(input) : input.trim();
+      // If the user submits immediately after a hard refresh, React state can still be the SSR default.
+      // In that case, fall back to the browser-local default from storage.
+      const pipelineToSend = pipelineLoaded ? pipelineVariant : readDefaultPipelineVariant();
 
       // Guard against the UI getting stuck disabled if the server is under load.
       // If the request doesn't return promptly, abort and allow the user to retry.
@@ -105,7 +107,7 @@ export default function AnalyzePage() {
       const res = await fetch("/api/fh/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputType, inputValue, pipelineVariant }),
+        body: JSON.stringify({ inputType, inputValue, pipelineVariant: pipelineToSend }),
         signal: controller.signal,
       }).finally(() => clearTimeout(timeoutId));
 
