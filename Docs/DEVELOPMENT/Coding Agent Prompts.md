@@ -116,6 +116,8 @@ Please detect when a verdict or claim comment statement does not recognize the c
 words like: 'trial', 'judgment', 'sentence', 'prison', 'conviction', 'case', 'proceeding', 'coup', 'election', 'court', 'judge', 'ruling', 'verdict', 'bolsonaro', 'putin', 'trump'
 specific outcomes, penalties, or consequences: e.g. "27-year sentence", "fined $X", "banned for Y years"
 ---
+- **CRITICAL**: Prompt examples must NOT include terms, phrases, or patterns from known test cases or verification inputs. Use abstract placeholders only (e.g., "Entity A did X", "Event E occurred") to avoid teaching to the test.
+---
 - Make sure such debugging code is only active used in local environment and it matches the specific execution: fetch('http://127.0.0.1:7242
 ---
 - Regarding multi proceedings (a.k.a. multi-events): There could be more then two, therefore:

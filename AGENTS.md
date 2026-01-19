@@ -16,6 +16,7 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 - **No domain-specific hardcoding**: Code, prompts, and logic must work for ANY topic
 - **No hardcoded keywords**: Avoid lists like `['bolsonaro', 'trump', 'vaccine']`
 - **Parameterize, don't specialize**: Use configuration over conditionals
+- **No test-case terms in prompts**: LLM prompt examples must NOT contain terms, phrases, or patterns from known test cases or verification inputs. Examples must be abstract/generic (e.g., "Entity A did X" not "Country built industry"). This prevents "teaching to the test" and ensures genuine generalization.
 
 ### Input Neutrality
 - **Question ≈ Statement**: "Was X fair?" must yield same analysis as "X was fair"

@@ -306,11 +306,26 @@ function sanitizeTemporalErrors(text: string): string {
 - Use examples from diverse domains
 - Describe patterns, not specific instances
 - Let LLM identify domain dynamically
+- Use abstract placeholders in examples (e.g., "Entity A did X", "Event E occurred")
 
 **Don't hardcode in prompts or source code**:
 - specific person names (Bolsonaro, Trump, etc.)
 - specific event types (trials, elections, etc.)
 - specific outcomes ("27-year sentence", etc.)
+
+**CRITICAL: No Test-Case Terms in Prompt Examples**
+
+Prompt examples must NEVER contain terms, phrases, or patterns from known test cases or verification inputs. This prevents "teaching to the test" and ensures genuine generalization.
+
+**Forbidden**:
+- Using words/phrases from regression test inputs in prompt examples
+- Creating examples that mirror specific verification scenarios
+- Adding domain-specific terms that match test cases (e.g., "built the industry", "stole through force", "trial was fair")
+
+**Required**:
+- Use abstract variables: "Entity A", "Event E", "Action X", "Characterization Y"
+- Describe structural patterns, not content patterns
+- If concrete examples are needed, use completely unrelated domains from the test suite
 
 ### Prompt Structure
 
