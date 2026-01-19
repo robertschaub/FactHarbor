@@ -199,6 +199,8 @@ async function extractClaim(
 async function extractFacts(
   model: any,
   claim: string,
+  claimType: string | null,
+  limitationNote: string | null,
   sourceContents: Array<{ url: string; title: string; content: string }>,
   existingFactCount: number,
   onEvent?: (msg: string, progress: number) => void | Promise<void>
@@ -236,7 +238,7 @@ async function extractFacts(
       },
       {
         role: "user",
-        content: `CLAIM TO VERIFY: ${claim}\n\nSOURCES:\n${sourceSummary}\n\nExisting fact count: ${existingFactCount}. If more research would help, set needsMoreResearch=true.`,
+        content: `CLAIM TO VERIFY: ${claim}\nCLAIM TYPE: ${claimType ?? "unknown"}\n${limitationNote ? `\n${limitationNote}\n` : "\n"}\nSOURCES:\n${sourceSummary}\n\nExisting fact count: ${existingFactCount}.\n\nIf the claim is evaluative/predictive, focus on extracting verifiable factual statements that bear on the evaluation, and clearly mark direction as supports/contradicts/neutral.\nIf more research would help, set needsMoreResearch=true.`,
       },
     ],
     temperature: getDeterministicTemperature(0.1),
@@ -253,6 +255,8 @@ async function extractFacts(
 async function generateVerdict(
   model: any,
   claim: string,
+  claimType: string | null,
+  limitationNote: string | null,
   facts: ExtractedFact[],
   onEvent?: (msg: string, progress: number) => void | Promise<void>
 ): Promise<z.infer<typeof VerdictSchema>> {
@@ -292,7 +296,7 @@ async function generateVerdict(
       },
       {
         role: "user",
-        content: `CLAIM: ${claim}\n\nEVIDENCE (${facts.length} facts):\n${factsSummary}`,
+        content: `CLAIM: ${claim}\nCLAIM TYPE: ${claimType ?? "unknown"}\n${limitationNote ? `\n${limitationNote}\n` : "\n"}\nEVIDENCE (${facts.length} facts):\n${factsSummary}\n\nIf the claim is evaluative/predictive, keep confidence low unless the evidence is unusually strong and directly tied to the evaluation.`,
       },
     ],
     temperature: getDeterministicTemperature(0.1),
@@ -351,29 +355,21 @@ export async function runMonolithicCanonical(
   const claimData = await extractClaim(understandModel.model, textToAnalyze, input.onEvent);
   recordLLMCall(budgetTracker, 2000); // Estimate
 
-  // Handle opinion/prediction claims
-  if (claimData.claimType === "opinion" || claimData.claimType === "prediction") {
-    // Return early with appropriate verdict
-    const resultJson = buildResultJson({
-      input,
-      startTime,
-      provider: understandModel.provider,
-      modelName: understandModel.modelName,
-      budgetTracker,
-      budgetConfig,
-      claim: claimData.mainClaim,
-      claimType: claimData.claimType,
-      facts: [],
-      sources: [],
-      searchQueriesWithResults: [],
-      verdict: 50,
-      confidence: 20,
-      reasoning: `This appears to be ${claimData.claimType === "opinion" ? "an opinion" : "a prediction"} rather than a verifiable factual claim. Fact-checking is limited to verifiable factual statements.`,
-      summary: `Cannot fact-check: ${claimData.claimType}`,
-    });
-    const reportMarkdown = generateReportMarkdown(resultJson, null);
-    return { resultJson, reportMarkdown };
-  }
+  // IMPORTANT: Do NOT hard-stop on opinion/prediction inputs.
+  // Many user inputs are evaluative or predictive but still have verifiable components
+  // (timelines, procedures, quoted statements, what the law says, what courts ruled, etc.).
+  // We proceed with research, but we:
+  // - attach an explicit limitation note
+  // - cap confidence later to avoid overclaiming
+  const originalClaimType = claimData.claimType;
+  const limitationNote =
+    originalClaimType === "opinion" || originalClaimType === "prediction"
+      ? `Limitation: the input is ${originalClaimType === "opinion" ? "evaluative/opinion-based" : "predictive"}; FactHarbor can only verify factual components and provide context.`
+      : null;
+  const effectiveClaimType =
+    originalClaimType === "opinion" || originalClaimType === "prediction"
+      ? "mixed"
+      : originalClaimType;
 
   // Step 2: Research loop
   let iteration = 0;
@@ -492,6 +488,8 @@ export async function runMonolithicCanonical(
         const extraction = await extractFacts(
           extractFactsModel.model,
           claimData.mainClaim,
+          effectiveClaimType,
+          limitationNote,
           fetchedContents,
           facts.length,
           input.onEvent
@@ -526,7 +524,27 @@ export async function runMonolithicCanonical(
 
   // Step 3: Generate verdict
   if (facts.length === 0) {
-    throw new Error("No facts could be extracted. Falling back to orchestrated pipeline.");
+    // For evaluative/predictive inputs, avoid failing the entire pipeline; return a safe, low-confidence result.
+    // (Runner fallback is still available, but this keeps canonical output consistent and debuggable.)
+    const resultJson = buildResultJson({
+      input,
+      startTime,
+      provider: understandModel.provider,
+      modelName: understandModel.modelName,
+      budgetTracker,
+      budgetConfig,
+      claim: claimData.mainClaim,
+      claimType: effectiveClaimType,
+      facts: [],
+      sources,
+      searchQueriesWithResults,
+      verdict: 50,
+      confidence: limitationNote ? 20 : 30,
+      reasoning: `${limitationNote ? `${limitationNote}\n\n` : ""}No verifiable facts could be extracted from sources within budget.`,
+      summary: limitationNote ? "Contextual assessment: insufficient verifiable evidence" : "Insufficient verifiable evidence",
+    });
+    const reportMarkdown = generateReportMarkdown(resultJson, null);
+    return { resultJson, reportMarkdown };
   }
 
   // Harden with Provenance Validation
@@ -538,8 +556,26 @@ export async function runMonolithicCanonical(
   }
 
   const verdictModel = getModelForTask("verdict");
-  const verdictData = await generateVerdict(verdictModel.model, claimData.mainClaim, validatedFacts, input.onEvent);
+  const verdictData = await generateVerdict(
+    verdictModel.model,
+    claimData.mainClaim,
+    effectiveClaimType,
+    limitationNote,
+    validatedFacts,
+    input.onEvent
+  );
   recordLLMCall(budgetTracker, 2000); // Estimate
+
+  // Apply conservative confidence capping for evaluative/predictive inputs.
+  const cappedConfidence =
+    limitationNote ? Math.min(verdictData.confidence ?? 0, 30) : (verdictData.confidence ?? 0);
+  const finalReasoning = limitationNote
+    ? `${limitationNote}\n\n${verdictData.reasoning || ""}`.trim()
+    : verdictData.reasoning || "";
+  const finalSummary =
+    limitationNote && verdictData.summary
+      ? `${verdictData.summary} (contextual assessment)`
+      : verdictData.summary;
 
   // Build result
   const resultJson = buildResultJson({
@@ -550,14 +586,14 @@ export async function runMonolithicCanonical(
     budgetTracker,
     budgetConfig,
     claim: claimData.mainClaim,
-    claimType: claimData.claimType,
+    claimType: effectiveClaimType,
     facts: validatedFacts,
     sources,
     searchQueriesWithResults,
     verdict: verdictData.verdict,
-    confidence: verdictData.confidence,
-    reasoning: verdictData.reasoning,
-    summary: verdictData.summary,
+    confidence: cappedConfidence,
+    reasoning: finalReasoning,
+    summary: finalSummary,
     verdictData, // Pass the LLM response to include detectedScopes
   });
 
