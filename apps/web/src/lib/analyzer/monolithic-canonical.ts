@@ -46,6 +46,63 @@ function normalizeForLooseContainsMatch(text: string): string {
     .trim();
 }
 
+function normalizeClaimText(text: string): string {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function deriveCandidateClaimTexts(input: string): string[] {
+  const rawLines = String(input || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const candidates: string[] = [];
+  for (const line of rawLines) {
+    if (line.endsWith(":")) continue;
+    const colonIndex = line.indexOf(":");
+    if (colonIndex > 0 && colonIndex < line.length - 1) {
+      const after = line.slice(colonIndex + 1).trim();
+      if (after.length >= 25) {
+        candidates.push(after);
+        continue;
+      }
+    }
+    candidates.push(line);
+  }
+
+  const sentenceCandidates: string[] = [];
+  for (const c of candidates) {
+    const parts = c.split(/[.!?]\s+/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length <= 1) {
+      sentenceCandidates.push(c);
+    } else {
+      sentenceCandidates.push(...parts);
+    }
+  }
+
+  const finalCandidates = sentenceCandidates
+    .flatMap((c) => c.split(";").map((p) => p.trim()))
+    .filter((c) => c.length >= 25)
+    .map((c) => c.replace(/\s+/g, " ").trim());
+
+  return [...new Set(finalCandidates)];
+}
+
+function buildHeuristicSubClaims(
+  input: string,
+  existingTexts: Set<string>,
+  maxClaims = 4,
+): Array<{ text: string }> {
+  const candidates = deriveCandidateClaimTexts(input)
+    .filter((c) => !existingTexts.has(normalizeClaimText(c)))
+    .slice(0, maxClaims);
+
+  return candidates.map((text) => ({ text }));
+}
+
 function excerptAppearsInContent(excerpt: string, content: string): boolean {
   const ex = String(excerpt || "").trim();
   if (ex.length < 24) return false; // too short to validate reliably
@@ -101,10 +158,19 @@ const MONOLITHIC_BUDGET: MonolithicBudget = {
   maxFetches: 10,
   timeoutMs: 180_000, // 3 minutes
 };
+const MAX_CLAIMS_FOR_VERDICTS = 4;
 
 // ============================================================================
 // SCHEMAS
 // ============================================================================
+
+const SubClaimSchema = z.object({
+  id: z.string().optional(),
+  text: z.string(),
+  claimRole: z.enum(["attribution", "source", "timing", "core", "unknown"]).optional(),
+  centrality: z.enum(["high", "medium", "low"]).optional(),
+  thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).optional(),
+});
 
 const ClaimExtractionSchema = z.object({
   mainClaim: z.string().describe("The primary factual claim to verify"),
@@ -114,6 +180,7 @@ const ClaimExtractionSchema = z.object({
     .min(2)
     .max(5)
     .describe("Search queries to find evidence (include both supporting and contradicting)"),
+  subClaims: z.array(SubClaimSchema).optional(),
 });
 
 const FactExtractionSchema = z.object({
@@ -386,6 +453,67 @@ export async function runMonolithicCanonical(
   const claimData = await extractClaim(understandModel.model, textToAnalyze, input.onEvent);
   recordLLMCall(budgetTracker, 2000); // Estimate
 
+  const normalizedSeen = new Set<string>();
+  const claimEntries: Array<{
+    id: string;
+    text: string;
+    claimRole: "core" | "attribution" | "source" | "timing" | "unknown";
+    centrality: "high" | "medium" | "low";
+    thesisRelevance: "direct" | "tangential" | "irrelevant";
+    isCentral: boolean;
+  }> = [];
+
+  const mainClaimText = String(claimData.mainClaim || "").trim();
+  if (mainClaimText) {
+    claimEntries.push({
+      id: "C1",
+      text: mainClaimText,
+      claimRole: "core",
+      centrality: "high",
+      thesisRelevance: "direct",
+      isCentral: true,
+    });
+    normalizedSeen.add(normalizeClaimText(mainClaimText));
+  }
+
+  const rawSubClaims = Array.isArray(claimData.subClaims) ? claimData.subClaims : [];
+  const heuristicSubClaims =
+    rawSubClaims.length >= 2
+      ? []
+      : buildHeuristicSubClaims(textToAnalyze, normalizedSeen, MAX_CLAIMS_FOR_VERDICTS);
+
+  const combinedSubClaims = rawSubClaims.map((c) => ({
+    text: String(c.text || "").trim(),
+    claimRole: c.claimRole || "core",
+    centrality: c.centrality || "medium",
+    thesisRelevance: c.thesisRelevance || "direct",
+  }));
+  combinedSubClaims.push(...heuristicSubClaims.map((c) => ({
+    text: c.text,
+    claimRole: "core" as const,
+    centrality: "medium" as const,
+    thesisRelevance: "direct" as const,
+  })));
+
+  let subClaimIndex = 1;
+  for (const sub of combinedSubClaims) {
+    if (!sub.text) continue;
+    const normalized = normalizeClaimText(sub.text);
+    if (!normalized || normalizedSeen.has(normalized)) continue;
+    const id = `C${++subClaimIndex}`;
+    claimEntries.push({
+      id,
+      text: sub.text,
+      claimRole: sub.claimRole as any,
+      centrality: sub.centrality as any,
+      thesisRelevance: sub.thesisRelevance as any,
+      isCentral: sub.centrality === "high",
+    });
+    normalizedSeen.add(normalized);
+  }
+
+  const claimsForVerdicts = claimEntries.slice(0, MAX_CLAIMS_FOR_VERDICTS);
+
   // IMPORTANT: Do NOT hard-stop on opinion/prediction inputs.
   // Many user inputs are evaluative or predictive but still have verifiable components
   // (timelines, procedures, quoted statements, what the law says, what courts ruled, etc.).
@@ -558,6 +686,20 @@ export async function runMonolithicCanonical(
   if (facts.length === 0) {
     // Avoid failing the entire pipeline; return a safe, low-confidence result.
     // (Runner fallback is still available, but this keeps canonical output consistent and debuggable.)
+    const fallbackClaimVerdicts = claimsForVerdicts.map((claim) => ({
+      claimId: claim.id,
+      claimText: claim.text,
+      contextId: "CTX_MAIN",
+      isCentral: claim.isCentral,
+      centrality: claim.centrality,
+      verdict: 50,
+      truthPercentage: 50,
+      confidence: 30,
+      riskTier: "C",
+      reasoning: "Insufficient verifiable evidence to assess this claim.",
+      supportingFactIds: [],
+      highlightColor: getHighlightColor(50),
+    }));
     const resultJson = buildResultJson({
       input,
       startTime,
@@ -574,6 +716,7 @@ export async function runMonolithicCanonical(
       confidence: 30,
       reasoning: "No verifiable facts could be extracted from sources within budget.",
       summary: "Insufficient verifiable evidence",
+      claimVerdicts: fallbackClaimVerdicts,
     });
     const reportMarkdown = generateReportMarkdown(resultJson, null);
     return { resultJson, reportMarkdown };
@@ -588,17 +731,48 @@ export async function runMonolithicCanonical(
   }
 
   const verdictModel = getModelForTask("verdict");
-  const verdictData = await generateVerdict(
-    verdictModel.model,
-    claimData.mainClaim,
-    claimType,
-    limitationNote,
-    validatedFacts,
-    input.onEvent
-  );
-  recordLLMCall(budgetTracker, 2000); // Estimate
+  const verdictResults: Array<{
+    entry: typeof claimsForVerdicts[number];
+    verdictData: z.infer<typeof VerdictSchema>;
+  }> = [];
+
+  for (const entry of claimsForVerdicts) {
+    const verdictData = await generateVerdict(
+      verdictModel.model,
+      entry.text,
+      claimType,
+      limitationNote,
+      validatedFacts,
+      input.onEvent
+    );
+    verdictResults.push({ entry, verdictData });
+    recordLLMCall(budgetTracker, 2000); // Estimate
+  }
+
+  const verdictData = verdictResults[0]?.verdictData;
+  if (!verdictData) {
+    throw new Error("Failed to generate verdict for primary claim.");
+  }
 
   // Build result
+  const claimVerdicts = verdictResults.map((result) => {
+    const v = result.verdictData;
+    return {
+      claimId: result.entry.id,
+      claimText: result.entry.text,
+      contextId: "CTX_MAIN",
+      isCentral: result.entry.isCentral,
+      centrality: result.entry.centrality,
+      verdict: v.verdict,
+      truthPercentage: v.verdict,
+      confidence: v.confidence,
+      riskTier: v.confidence >= 70 ? "A" : v.confidence >= 40 ? "B" : "C",
+      reasoning: v.reasoning,
+      supportingFactIds: validatedFacts.map((f) => f.id),
+      highlightColor: getHighlightColor(v.verdict),
+    };
+  });
+
   const resultJson = buildResultJson({
     input,
     startTime,
@@ -616,6 +790,7 @@ export async function runMonolithicCanonical(
     reasoning: verdictData.reasoning,
     summary: verdictData.summary,
     verdictData, // Pass the LLM response to include detectedScopes
+    claimVerdicts,
   });
 
   const reportMarkdown = generateReportMarkdown(resultJson, verdictData);
@@ -696,6 +871,20 @@ function buildResultJson(params: {
   reasoning: string;
   summary: string;
   verdictData?: any;
+  claimVerdicts?: Array<{
+    claimId: string;
+    claimText: string;
+    contextId: string;
+    isCentral: boolean;
+    centrality: string;
+    verdict: number;
+    truthPercentage: number;
+    confidence: number;
+    riskTier: string;
+    reasoning: string;
+    supportingFactIds: string[];
+    highlightColor: string;
+  }>;
 }): any {
   const {
     input,
@@ -744,6 +933,26 @@ function buildResultJson(params: {
             status: "concluded",
             outcome: summary,
             metadata: { claimType },
+          },
+        ];
+
+  const claimsOutput =
+    params.claimVerdicts && params.claimVerdicts.length > 0
+      ? params.claimVerdicts
+      : [
+          {
+            claimId: "C1",
+            claimText: claim,
+            contextId: finalScopes[0]?.id || "CTX_MAIN",
+            isCentral: true,
+            centrality: "high",
+            verdict,
+            truthPercentage: verdict,
+            confidence,
+            riskTier: confidence >= 70 ? "A" : confidence >= 40 ? "B" : "C",
+            reasoning,
+            supportingFactIds: facts.map((f) => f.id),
+            highlightColor,
           },
         ];
 
@@ -808,22 +1017,7 @@ function buildResultJson(params: {
         overallVerdict: verdict,
       },
     },
-    claimVerdicts: [
-      {
-        claimId: "C1",
-        claimText: claim,
-        contextId: finalScopes[0]?.id || "CTX_MAIN",
-        isCentral: true,
-        centrality: "high",
-        verdict,
-        truthPercentage: verdict,
-        confidence,
-        riskTier: confidence >= 70 ? "A" : confidence >= 40 ? "B" : "C",
-        reasoning,
-        supportingFactIds: facts.map((f) => f.id),
-        highlightColor,
-      },
-    ],
+    claimVerdicts: claimsOutput,
     // Build URL-to-ID mapping for proper fact-source relationships
     sources: sources.map((s) => ({
       id: s.id,

@@ -1684,9 +1684,25 @@ const MIXED_CONFIDENCE_THRESHOLD = 60;
 
 /**
  * Normalize truth percentage values (0-100)
+ * CRITICAL: Handles string inputs that LLMs sometimes return (e.g., "65" instead of 65)
  */
-function normalizePercentage(value: number): number {
-  if (!Number.isFinite(value)) return 50;
+function normalizePercentage(value: number | string | undefined | null): number {
+  // Handle string inputs (LLM sometimes returns "65" instead of 65)
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value.replace('%', '').trim());
+    if (Number.isFinite(parsed)) {
+      value = parsed;
+    } else {
+      console.warn(`[normalizePercentage] Could not parse string value: "${value}", defaulting to 50`);
+      return 50;
+    }
+  }
+  
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    console.warn(`[normalizePercentage] Invalid value: ${value} (type: ${typeof value}), defaulting to 50`);
+    return 50;
+  }
+  
   const normalized = value >= 0 && value <= 1 ? value * 100 : value;
   return Math.max(0, Math.min(100, Math.round(normalized)));
 }
@@ -2745,6 +2761,48 @@ function applyThesisRelevancePolicyBToSubClaims<T extends { id?: any; dependsOn?
   return kept as any;
 }
 
+function enforceMinimumDirectClaimsPerScope(
+  understanding: ClaimUnderstanding,
+  analysisInput: string,
+): ClaimUnderstanding {
+  const claims = Array.isArray(understanding.subClaims) ? understanding.subClaims : [];
+  const scopes = Array.isArray(understanding.analysisContexts) ? understanding.analysisContexts : [];
+  if (claims.length === 0) return understanding;
+
+  const isCompound = isCompoundLikeText(analysisInput) || analysisInput.includes("\n");
+  if (!isCompound) return understanding;
+
+  const scopeIds = scopes.length > 0 ? scopes.map((s) => s.id) : [""];
+  const byScope = new Map<string, ClaimUnderstanding["subClaims"]>();
+  for (const scopeId of scopeIds) byScope.set(scopeId, []);
+
+  for (const claim of claims) {
+    const scopeId = scopeIds.length === 1 ? scopeIds[0] : (claim.contextId || "");
+    if (!byScope.has(scopeId)) continue;
+    byScope.get(scopeId)!.push(claim);
+  }
+
+  for (const [scopeId, scopeClaims] of byScope.entries()) {
+    const direct = scopeClaims.filter((c) => c.thesisRelevance === "direct");
+    if (direct.length >= MIN_DIRECT_CLAIMS_PER_SCOPE) continue;
+
+    const eligible = scopeClaims.filter((c) => {
+      if (c.thesisRelevance === "direct") return false;
+      if (c.claimRole === "attribution" || c.claimRole === "source" || c.claimRole === "timing") return false;
+      if (c.checkWorthiness === "low") return false;
+      return true;
+    });
+
+    const needed = Math.max(0, MIN_DIRECT_CLAIMS_PER_SCOPE - direct.length);
+    const toPromote = eligible.slice(0, needed);
+    for (const claim of toPromote) {
+      claim.thesisRelevance = "direct";
+    }
+  }
+
+  return understanding;
+}
+
 function ensureUnscopedClaimsScope(
   understanding: ClaimUnderstanding,
 ): ClaimUnderstanding {
@@ -2967,6 +3025,28 @@ const SUPPLEMENTAL_SUBCLAIMS_SCHEMA = z.object({
   subClaims: z.array(SUBCLAIM_SCHEMA),
 });
 
+// Lite schema for supplemental claims to reduce structured-output failures.
+// We fill defaults after parsing to meet SUBCLAIM_SCHEMA requirements.
+const SUPPLEMENTAL_SUBCLAIM_LITE_SCHEMA = z.object({
+  text: z.string(),
+  contextId: z.string().optional(),
+  type: z.enum(["legal", "procedural", "factual", "evaluative"]).optional(),
+  claimRole: z.enum(["attribution", "source", "timing", "core", "unknown"]).optional(),
+  dependsOn: z.array(z.string()).optional(),
+  keyEntities: z.array(z.string()).optional(),
+  checkWorthiness: z.enum(["high", "medium", "low"]).optional(),
+  harmPotential: z.enum(["high", "medium", "low"]).optional(),
+  centrality: z.enum(["high", "medium", "low"]).optional(),
+  isCentral: z.boolean().optional(),
+  thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).optional(),
+  approximatePosition: z.string().optional(),
+  keyFactorId: z.string().optional(),
+});
+
+const SUPPLEMENTAL_SUBCLAIMS_SCHEMA_LITE = z.object({
+  subClaims: z.array(SUPPLEMENTAL_SUBCLAIM_LITE_SCHEMA),
+});
+
 // Lenient variant for providers that sometimes omit arrays/fields; defaults prevent hard failures.
 const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   detectedInputType: z.enum(["claim", "article"]).catch("claim"),
@@ -3010,10 +3090,30 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
 
 // Supplemental claim backfill should ensure each scope has at least one substantive/core claim,
 // but MUST NOT force “central” marking. Centrality is determined by the LLM + guardrails.
-const MIN_CORE_CLAIMS_PER_PROCEEDING = 1;
-const MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE = 2;
-const SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS = 1;
+// Raise minimums to avoid collapsing compound inputs into a single claim.
+const MIN_CORE_CLAIMS_PER_PROCEEDING = 2;
+const MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE = 3;
+const SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS = 2;
 const SHORT_SIMPLE_INPUT_MAX_CHARS = 60;
+const MIN_DIRECT_CLAIMS_PER_SCOPE = 2;
+
+function expandClaimsForVerdicts(
+  understanding: ClaimUnderstanding,
+  directClaims: ClaimUnderstanding["subClaims"],
+): ClaimUnderstanding["subClaims"] {
+  if (directClaims.length >= MIN_DIRECT_CLAIMS_PER_SCOPE) return directClaims;
+
+  const extraClaims = (understanding.subClaims || []).filter((c: any) => {
+    if (directClaims.some((d) => d.id === c.id)) return false;
+    if (c?.thesisRelevance === "irrelevant") return false;
+    if (c?.claimRole === "attribution" || c?.claimRole === "source" || c?.claimRole === "timing") return false;
+    if (c?.checkWorthiness === "low") return false;
+    return true;
+  });
+
+  const needed = Math.max(0, MIN_DIRECT_CLAIMS_PER_SCOPE - directClaims.length);
+  return directClaims.concat(extraClaims.slice(0, needed));
+}
 
 function isComparativeLikeText(text: string): boolean {
   const t = (text || "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -3025,6 +3125,86 @@ function isComparativeLikeText(text: string): boolean {
   // Heuristic: common comparative adjective/adverb form (e.g., "faster", "cheaper") near "than".
   if (/\b[a-z]{3,}er\b/.test(window)) return true;
   return false;
+}
+
+function isCompoundLikeText(text: string): boolean {
+  const t = (text || "").toLowerCase();
+  if (!t) return false;
+  if (/[;,]/.test(t)) return true;
+  if (/\b(and|or|but|while|which|that)\b/.test(t)) return true;
+  // Simple enumeration cue: multiple numerals or roman numerals separated by commas.
+  if (/\b[ivxlcdm]+\b/.test(t) && t.includes(",")) return true;
+  return false;
+}
+
+function deriveCandidateClaimTexts(input: string): string[] {
+  const rawLines = (input || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const candidates: string[] = [];
+  for (const line of rawLines) {
+    if (line.endsWith(":")) continue;
+    const colonIndex = line.indexOf(":");
+    if (colonIndex > 0 && colonIndex < line.length - 1) {
+      const after = line.slice(colonIndex + 1).trim();
+      if (after.length >= 25) {
+        candidates.push(after);
+        continue;
+      }
+    }
+    candidates.push(line);
+  }
+
+  const sentenceCandidates: string[] = [];
+  for (const c of candidates) {
+    const parts = c.split(/[.!?]\s+/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length <= 1) {
+      sentenceCandidates.push(c);
+    } else {
+      sentenceCandidates.push(...parts);
+    }
+  }
+
+  const finalCandidates = sentenceCandidates
+    .flatMap((c) => c.split(";").map((p) => p.trim()))
+    .filter((c) => c.length >= 25)
+    .map((c) => c.replace(/\s+/g, " ").trim());
+
+  return [...new Set(finalCandidates)];
+}
+
+function buildHeuristicSubClaims(
+  input: string,
+  existingClaims: ClaimUnderstanding["subClaims"],
+  contextId: string,
+  maxClaims = 6,
+): ClaimUnderstanding["subClaims"] {
+  const normalize = (text: string) =>
+    (text || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const existing = new Set(existingClaims.map((c) => normalize(c.text || "")).filter(Boolean));
+  const candidates = deriveCandidateClaimTexts(input)
+    .filter((c) => !existing.has(normalize(c)))
+    .slice(0, maxClaims);
+
+  let idx = 0;
+  return candidates.map((text) => ({
+    id: `HC${++idx}`,
+    text,
+    type: "factual" as const,
+    claimRole: "core" as const,
+    dependsOn: [],
+    keyEntities: [],
+    checkWorthiness: "high" as const,
+    harmPotential: "medium" as const,
+    centrality: "medium" as const,
+    isCentral: false,
+    thesisRelevance: "direct" as const,
+    contextId,
+    approximatePosition: "",
+    keyFactorId: "",
+  }));
 }
 
 async function understandClaim(
@@ -3273,10 +3453,34 @@ IMPORTANT: riskTier is ANALYSIS-LEVEL only.
 Ask yourself: "Does this claim DIRECTLY address the user's primary thesis?"
 → If yes, it's central. If it's supporting evidence or background, it's not.
 
-**EXPECT 1-4 CENTRAL CLAIMS** in most analyses. The number depends on the thesis type:
-- Simple factual claim: 1-2 central claims
-- Comparative claim ("X vs Y"): 2-4 central claims (one per major aspect of comparison)
-- Multi-faceted thesis: 2-4 central claims (one per facet)
+**EXPECT 3-6 CLAIMS** in most analyses. The number depends on the thesis type:
+- Simple factual claim: 2-3 central claims (break down into testable parts)
+- Comparative claim ("X vs Y"): 3-5 central claims (one per major aspect of comparison)
+- Compound statement: 4-6 central claims (each atomic assertion separately)
+- Multi-faceted thesis: 3-5 central claims (one per facet)
+
+**CRITICAL: BREAK DOWN COMPOUND STATEMENTS INTO ATOMIC CLAIMS**
+
+⛔ **FORBIDDEN**: Do NOT synthesize or combine multiple assertions into a single claim
+⛔ **FORBIDDEN**: Do NOT create claims with "and", "which", or multiple verbs
+⛔ **FORBIDDEN**: Do NOT paraphrase the entire input as one claim
+
+Each atomic claim should make ONE testable assertion that can be verified independently.
+
+**DECOMPOSITION RULES** (apply to ANY compound input):
+1. Count the number of distinct verbs/assertions in the input
+2. Each verb/assertion becomes its OWN claim
+3. Characterizations (adjectives like "unfair", "illegal", "largest") become separate claims
+4. Magnitude/superlative claims ("biggest", "first", "most") become separate claims
+
+**Pattern Recognition**:
+- "X did A and B" → 2 claims (one for A, one for B)
+- "X did Y through method Z" → 2 claims (action vs method characterization)
+- "Event E happened and was [adjective]" → 2 claims (event vs characterization)
+- "This was the [superlative] example of category C" → 2 claims (event vs magnitude)
+- Clauses joined by "and", "which", "that", "while" → separate claims
+
+**Minimum Output**: For inputs with 3+ distinct assertions, generate 3+ separate claims.
 
 Only assign centrality: "high" when the claim:
 1. DIRECTLY addresses the user's thesis, AND
@@ -3514,10 +3718,17 @@ Set requiresSeparateAnalysis = true when multiple scopes are detected.
   - WRONG: "may or may not have been fair"
 
 - **subClaims**: Generate sub-claims that need to be verified to address the thesis.
-  - Break down the implied claim into verifiable components
+  
+  ⚠️ **MINIMUM CLAIM COUNT**: Generate AT LEAST 3-4 separate claims for any non-trivial input
+  ⚠️ **IF YOU GENERATE ONLY 1 CLAIM, YOU ARE DOING IT WRONG** - go back and decompose!
+  
+  - **MANDATORY: Break compound statements into ATOMIC claims** (each testing ONE assertion)
+  - Each atomic claim must be independently verifiable with its own evidence
+  - **ALL core atomic claims should have thesisRelevance="direct"** since they each test part of the input
   - For multi-context cases, ensure meaningful coverage across all contexts (set contextId appropriately)
   - **DECOMPOSE COMPOUND CLAIMS**: Split claims that combine multiple assertions into separate claims:
-    - Isolate the core factual assertion as the CENTRAL claim (isCentral: true, claimRole: "core")
+    - Each distinct factual assertion becomes a separate claim with claimRole="core"
+    - Multiple core claims can have isCentral=true if they test different parts of the thesis
     - Separate source/attribution claims as non-central (isCentral: false, claimRole: "source" or "attribution")
     - Use dependsOn to link claims to their prerequisites
   - For each scope, consider claims covering:
@@ -3527,6 +3738,7 @@ Set requiresSeparateAnalysis = true when multiple scopes are detected.
     - Decision-maker independence (any conflicts of interest?)
     - Outcome proportionality/impact (was the outcome proportionate and consistent with similar situations?)
   - **CRITICAL: DECOMPOSE SPECIFIC OUTCOMES**: When specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban, ineligibility duration), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate for the context.
+  - **CRITICAL: DO NOT SYNTHESIZE MULTIPLE CLAIMS INTO ONE** - each distinct assertion should remain separate for independent verification
 
 - **researchQueries**: Generate specific queries to research, including:
   - Potential conflicts of interest for key decision-makers
@@ -3982,7 +4194,9 @@ Now analyze the input and output JSON only.`;
     !analysisInput.includes("\n") &&
     analysisInput.split(/\s+/).filter(Boolean).length <= 12 &&
     // Comparative statements are short but need decomposition; don't skip expansion.
-    !isComparativeLikeText(analysisInput);
+    !isComparativeLikeText(analysisInput) &&
+    // Compound statements are short but still need decomposition.
+    !isCompoundLikeText(analysisInput);
 
   if (isShortSimpleInput && parsed.detectedInputType === "article") {
     parsed.detectedInputType = "claim";
@@ -4057,6 +4271,32 @@ Now analyze the input and output JSON only.`;
     }
   }
 
+  // Heuristic fallback: if we still have too few claims for non-trivial inputs, derive atomic claims
+  // directly from the input text to avoid collapsing complex statements into a single claim.
+  if (!isShortSimpleInput && (parsed.subClaims?.length || 0) < MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE) {
+    const scopes = parsed.analysisContexts || [];
+    const singleScopeId = scopes.length === 1 ? scopes[0].id : "";
+    const candidateSources = [
+      parsed.originalInputDisplay,
+      analysisInput,
+      parsed.articleThesis,
+      parsed.impliedClaim,
+    ]
+      .filter((value) => typeof value === "string" && value.trim().length > 0)
+      .map((value) => value.trim());
+    const sourceText =
+      candidateSources.sort((a, b) => b.length - a.length)[0] || analysisInput;
+    const heuristicClaims = buildHeuristicSubClaims(
+      sourceText,
+      parsed.subClaims as any,
+      singleScopeId,
+    );
+    if (heuristicClaims.length > 0) {
+      parsed.subClaims.push(...heuristicClaims);
+      console.log(`[Analyzer] Added ${heuristicClaims.length} heuristic claims from input text`);
+    }
+  }
+
   // Note: Full Gate 1 validation exists (apps/web/src/lib/analyzer/quality-gates.ts) but the orchestrated
   // pipeline currently treats Gate 1 as characterization/telemetry rather than a hard filter.
   const validatedClaims = parsed.subClaims;
@@ -4065,7 +4305,11 @@ Now analyze the input and output JSON only.`;
   const thesis = parsed.impliedClaim || parsed.articleThesis || analysisInput;
   const claimsWithThesisRelevanceInvariant = enforceThesisRelevanceInvariants(validatedClaims as any, thesis);
   const claimsPolicyB = applyThesisRelevancePolicyBToSubClaims(claimsWithThesisRelevanceInvariant as any);
-  return { ...parsed, subClaims: claimsPolicyB, gate1Stats: gate1LiteStats };
+  const withMinimumDirect = enforceMinimumDirectClaimsPerScope(
+    { ...parsed, subClaims: claimsPolicyB } as ClaimUnderstanding,
+    analysisInput,
+  );
+  return { ...parsed, subClaims: withMinimumDirect.subClaims, gate1Stats: gate1LiteStats };
 }
 
 async function requestSupplementalSubClaims(
@@ -4129,6 +4373,11 @@ async function requestSupplementalSubClaims(
 
   if (missingProceedings.length === 0) return [];
 
+  const minNewClaimsTotal = missingProceedings.reduce((acc, entry) => {
+    const neededCore = Math.max(0, MIN_CORE_CLAIMS_PER_PROCEEDING - entry.core);
+    return acc + Math.max(1, neededCore);
+  }, 0);
+
   const missingSummary = missingProceedings
     .map(({ target, totalClaims, core }) => {
       const neededCore = Math.max(0, MIN_CORE_CLAIMS_PER_PROCEEDING - core);
@@ -4156,10 +4405,19 @@ async function requestSupplementalSubClaims(
  - Set harmPotential and centrality realistically. Default centrality to "medium" unless the claim is truly the primary thesis of that scope.
  - Set isCentral=true if centrality==="high" (harmPotential affects risk tier, not centrality).
  - Use dependsOn=[] unless a dependency is truly required.
+ - **CRITICAL**: If the input contains multiple assertions, decompose into ATOMIC claims (one assertion per claim).
+ - **CRITICAL**: Do NOT create claims that combine multiple assertions with "and", "which", or "that".
+ - **CRITICAL**: Return at least ${minNewClaimsTotal} new claims in total across all listed contexts.
  - Ensure each listed context reaches at least ${MIN_CORE_CLAIMS_PER_PROCEEDING} core claims.
  - **CRITICAL**: If specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.`;
 
   const userPrompt = `INPUT:\n"${input}"\n\nCONTEXTS NEEDING MORE CLAIMS:\n${missingSummary}\n\nEXISTING CLAIMS (DO NOT DUPLICATE):\n${existingClaimsSummary}`;
+
+  debugLog("requestSupplementalSubClaims: START", {
+    contextsNeedingCoverage: missingProceedings.length,
+    minNewClaimsTotal,
+    missingSummary,
+  });
 
   let supplemental: any;
   try {
@@ -4170,7 +4428,7 @@ async function requestSupplementalSubClaims(
         { role: "user", content: userPrompt },
       ],
       temperature: getDeterministicTemperature(0.2),
-      output: Output.object({ schema: SUPPLEMENTAL_SUBCLAIMS_SCHEMA }),
+      output: Output.object({ schema: SUPPLEMENTAL_SUBCLAIMS_SCHEMA_LITE }),
     });
 
     supplemental = extractStructuredOutput(result);
@@ -4234,12 +4492,26 @@ async function requestSupplementalSubClaims(
     existingIds.add(newId);
     existingTexts.add(normalized);
 
+    const claimRole = claim.claimRole || "core";
+    const centrality = claim.centrality || "medium";
+    const isCentral =
+      typeof claim.isCentral === "boolean" ? claim.isCentral : centrality === "high";
+
     supplementalClaims.push({
-      ...claim,
       id: newId,
-      contextId: procId,
+      text: claim.text,
+      type: claim.type || "factual",
+      claimRole,
       dependsOn: Array.isArray(claim.dependsOn) ? claim.dependsOn : [],
       keyEntities: Array.isArray(claim.keyEntities) ? claim.keyEntities : [],
+      checkWorthiness: claim.checkWorthiness || "high",
+      harmPotential: claim.harmPotential || "medium",
+      centrality,
+      isCentral,
+      thesisRelevance: claim.thesisRelevance || "direct",
+      contextId: procId,
+      approximatePosition: claim.approximatePosition || "",
+      keyFactorId: claim.keyFactorId || "",
     });
   }
 
@@ -4249,6 +4521,11 @@ async function requestSupplementalSubClaims(
       claim.dependsOn = claim.dependsOn.map((dep) => idRemap.get(dep) || dep);
     }
   }
+
+  debugLog("requestSupplementalSubClaims: COMPLETE", {
+    returned: supplemental.subClaims.length,
+    accepted: supplementalClaims.length,
+  });
 
   return supplementalClaims;
 }
@@ -5681,6 +5958,10 @@ async function generateVerdicts(
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
       c?.contextId !== UNSCOPED_ID
   );
+  const claimsForVerdicts = expandClaimsForVerdicts(
+    understanding,
+    directClaimsForVerdicts,
+  );
 
   // PR-F: Exclude CTX_UNSCOPED facts from verdict calculations (fixes Blocker F)
   // UNSCOPED facts are display-only and should NOT affect overall verdict
@@ -5708,7 +5989,7 @@ async function generateVerdicts(
     })
     .join("\n");
 
-  const claimsFormatted = directClaimsForVerdicts
+  const claimsFormatted = claimsForVerdicts
     .map(
       (c: any) =>
         `${c.id}${c.contextId ? ` (${c.contextId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
@@ -5786,9 +6067,31 @@ async function generateMultiScopeVerdicts(
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
       c?.contextId !== UNSCOPED_ID
   );
+  const claimsForVerdicts = expandClaimsForVerdicts(
+    understanding,
+    directClaimsForVerdicts,
+  );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
   const systemPromptBase = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT AnalysisContexts separately when provided.
+
+## CRITICAL: OUTPUT STRUCTURE - verdictSummary
+
+You MUST provide a complete verdictSummary with:
+- **answer**: A NUMBER from 0-100 representing the overall truth percentage of the ${inputLabel}
+  * 86-100 = TRUE (strong evidence supports the claim)
+  * 72-85 = MOSTLY-TRUE (mostly supported)
+  * 58-71 = LEANING-TRUE (some support)
+  * 43-57 = UNVERIFIED (insufficient evidence)
+  * 29-42 = LEANING-FALSE (some counter-evidence)
+  * 15-28 = MOSTLY-FALSE (strong counter-evidence)
+  * 0-14 = FALSE (direct contradiction)
+- **confidence**: A NUMBER from 0-100 indicating how confident you are in the verdict
+- **shortAnswer**: A descriptive sentence summarizing the finding
+- **nuancedAnswer**: A longer explanation of the verdict
+- **keyFactors**: Array of key factors evaluated
+
+CRITICAL: The "answer" field must be a NUMBER (not a string), and must reflect the weighted assessment of the claim based on evidence. Do NOT default to 50 - actively evaluate the evidence!
 
 ## CRITICAL: TEMPORAL REASONING
 
@@ -5968,13 +6271,71 @@ Provide SEPARATE answers for each scope.`;
 
   const normalizeMultiScopeOutput = (obj: any) => {
     if (!obj || typeof obj !== "object") return obj;
-    if (
-      Array.isArray((obj as any).contextAnswers) &&
-      !Array.isArray((obj as any).proceedingAnswers)
-    ) {
-      return { ...obj, proceedingAnswers: (obj as any).contextAnswers };
+    
+    // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
+    // The LLM sometimes returns {"$PARAMETER_NAME": {actual data}} instead of {actual data}
+    let result = obj;
+    if (result.$PARAMETER_NAME && typeof result.$PARAMETER_NAME === 'object') {
+      console.log("[normalizeMultiScopeOutput] Unwrapping $PARAMETER_NAME wrapper");
+      result = result.$PARAMETER_NAME;
     }
-    return obj;
+    
+    // Also check for other common wrapper patterns
+    const wrapperKeys = ['$PARAMETER_NAME', 'data', 'result', 'output', 'response'];
+    for (const key of wrapperKeys) {
+      if (result[key] && typeof result[key] === 'object' && 
+          (result[key].verdictSummary || result[key].proceedingAnswers || result[key].claimVerdicts)) {
+        console.log(`[normalizeMultiScopeOutput] Unwrapping ${key} wrapper`);
+        result = result[key];
+        break;
+      }
+    }
+    
+    // Normalize field names (contextAnswers -> proceedingAnswers)
+    if (
+      Array.isArray((result as any).contextAnswers) &&
+      !Array.isArray((result as any).proceedingAnswers)
+    ) {
+      result = { ...result, proceedingAnswers: (result as any).contextAnswers };
+    }
+    
+    // CRITICAL FIX: Coerce string values to numbers (LLM sometimes returns "65" instead of 65)
+    const coerceToNumber = (val: any): number | any => {
+      if (typeof val === 'string') {
+        const parsed = parseFloat(val.replace('%', '').trim());
+        return Number.isFinite(parsed) ? parsed : val;
+      }
+      return val;
+    };
+    
+    // Coerce verdictSummary numeric fields
+    if (result.verdictSummary) {
+      result.verdictSummary = {
+        ...result.verdictSummary,
+        answer: coerceToNumber(result.verdictSummary.answer),
+        confidence: coerceToNumber(result.verdictSummary.confidence),
+      };
+    }
+    
+    // Coerce proceedingAnswers numeric fields
+    if (Array.isArray(result.proceedingAnswers)) {
+      result.proceedingAnswers = result.proceedingAnswers.map((pa: any) => ({
+        ...pa,
+        answer: coerceToNumber(pa.answer),
+        confidence: coerceToNumber(pa.confidence),
+      }));
+    }
+    
+    // Coerce claimVerdicts numeric fields
+    if (Array.isArray(result.claimVerdicts)) {
+      result.claimVerdicts = result.claimVerdicts.map((cv: any) => ({
+        ...cv,
+        verdict: coerceToNumber(cv.verdict),
+        confidence: coerceToNumber(cv.confidence),
+      }));
+    }
+    
+    return result;
   };
 
   const recoverFromNoObjectGeneratedError = (
@@ -6204,7 +6565,7 @@ The JSON object MUST include these top-level keys:
       hasProceedingAnswers: !!parsed?.proceedingAnswers,
     });
 
-    const fallbackVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
+    const fallbackVerdicts: ClaimVerdict[] = claimsForVerdicts.map(
       (claim: any) => ({
         claimId: claim.id,
         claimText: claim.text,
@@ -6685,10 +7046,32 @@ async function generateSingleScopeVerdicts(
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
       c?.contextId !== UNSCOPED_ID
   );
+  const claimsForVerdicts = expandClaimsForVerdicts(
+    understanding,
+    directClaimsForVerdicts,
+  );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
 
   const systemPrompt = `Answer the input based on documented evidence.
+
+## CRITICAL: OUTPUT STRUCTURE - verdictSummary
+
+You MUST provide a complete verdictSummary with:
+- **answer**: A NUMBER from 0-100 representing the overall truth percentage of the ${inputLabel}
+  * 86-100 = TRUE (strong evidence supports the claim)
+  * 72-85 = MOSTLY-TRUE (mostly supported)
+  * 58-71 = LEANING-TRUE (some support)
+  * 43-57 = UNVERIFIED (insufficient evidence)
+  * 29-42 = LEANING-FALSE (some counter-evidence)
+  * 15-28 = MOSTLY-FALSE (strong counter-evidence)
+  * 0-14 = FALSE (direct contradiction)
+- **confidence**: A NUMBER from 0-100 indicating how confident you are in the verdict
+- **shortAnswer**: A descriptive sentence summarizing the finding
+- **nuancedAnswer**: A longer explanation of the verdict
+- **keyFactors**: Array of key factors evaluated
+
+CRITICAL: The "answer" field must be a NUMBER (not a string), and must reflect the weighted assessment of the claim based on evidence. Do NOT default to 50 - actively evaluate the evidence!
 
 ## CRITICAL: TEMPORAL REASONING
 
@@ -6818,9 +7201,50 @@ ${factsFormatted}`;
     recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
 
     // Handle different AI SDK versions - safely extract structured output
-    const rawOutput = extractStructuredOutput(result);
+    let rawOutput = extractStructuredOutput(result);
     if (rawOutput) {
-      parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
+      // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
+      // The LLM sometimes returns {"$PARAMETER_NAME": {actual data}} instead of {actual data}
+      if (rawOutput.$PARAMETER_NAME && typeof rawOutput.$PARAMETER_NAME === 'object') {
+        console.log("[generateSingleScopeVerdicts] Unwrapping $PARAMETER_NAME wrapper");
+        rawOutput = rawOutput.$PARAMETER_NAME;
+      }
+      // Also check for other common wrapper patterns
+      const wrapperKeys = ['data', 'result', 'output', 'response'];
+      for (const key of wrapperKeys) {
+        if (rawOutput[key] && typeof rawOutput[key] === 'object' && 
+            (rawOutput[key].verdictSummary || rawOutput[key].claimVerdicts)) {
+          console.log(`[generateSingleScopeVerdicts] Unwrapping ${key} wrapper`);
+          rawOutput = rawOutput[key];
+          break;
+        }
+      }
+      
+      // CRITICAL FIX: Validate against schema with coercion for numeric fields
+      // The LLM sometimes returns answer/confidence as strings like "65" instead of 65
+      const coercedOutput = {
+        ...rawOutput,
+        verdictSummary: rawOutput.verdictSummary ? {
+          ...rawOutput.verdictSummary,
+          answer: typeof rawOutput.verdictSummary.answer === 'string' 
+            ? parseFloat(rawOutput.verdictSummary.answer) 
+            : rawOutput.verdictSummary.answer,
+          confidence: typeof rawOutput.verdictSummary.confidence === 'string'
+            ? parseFloat(rawOutput.verdictSummary.confidence)
+            : rawOutput.verdictSummary.confidence,
+        } : rawOutput.verdictSummary,
+        claimVerdicts: (rawOutput.claimVerdicts || []).map((cv: any) => ({
+          ...cv,
+          verdict: typeof cv.verdict === 'string' ? parseFloat(cv.verdict) : cv.verdict,
+          confidence: typeof cv.confidence === 'string' ? parseFloat(cv.confidence) : cv.confidence,
+        })),
+      };
+      
+      // Debug: Log what we received vs what we're using
+      console.log("[Analyzer] generateSingleScopeVerdicts: Raw verdictSummary.answer =", rawOutput.verdictSummary?.answer, "type =", typeof rawOutput.verdictSummary?.answer);
+      console.log("[Analyzer] generateSingleScopeVerdicts: Coerced verdictSummary.answer =", coercedOutput.verdictSummary?.answer);
+      
+      parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
     }
   } catch (err) {
     console.warn(
@@ -6831,10 +7255,15 @@ ${factsFormatted}`;
   }
 
   // Fallback if structured output failed or verdictSummary is missing
-  if (!parsed || !parsed.claimVerdicts || !parsed.verdictSummary) {
-    console.log("[Analyzer] Using fallback verdict generation (parsed:", !!parsed, ", claimVerdicts:", !!parsed?.claimVerdicts, ", verdictSummary:", !!parsed?.verdictSummary, ")");
+  // CRITICAL: Also check that answer is a valid number (not NaN, undefined, or non-numeric)
+  const hasValidVerdictSummary = parsed?.verdictSummary && 
+    typeof parsed.verdictSummary.answer === 'number' && 
+    Number.isFinite(parsed.verdictSummary.answer);
+  
+  if (!parsed || !parsed.claimVerdicts || !hasValidVerdictSummary) {
+    console.log("[Analyzer] Using fallback verdict generation (parsed:", !!parsed, ", claimVerdicts:", !!parsed?.claimVerdicts, ", verdictSummary:", !!parsed?.verdictSummary, ", hasValidAnswer:", hasValidVerdictSummary, ")");
 
-    const fallbackVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
+    const fallbackVerdicts: ClaimVerdict[] = claimsForVerdicts.map(
       (claim: any) => ({
         claimId: claim.id,
         claimText: claim.text,
@@ -6903,7 +7332,7 @@ ${factsFormatted}`;
   );
 
   // Ensure ALL claims get a verdict
-  const claimVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
+  const claimVerdicts: ClaimVerdict[] = claimsForVerdicts.map(
     (claim: any) => {
       const cv = llmVerdictMap.get(claim.id);
 
@@ -7013,8 +7442,16 @@ ${factsFormatted}`;
     (f: KeyFactor) => f.supports === "no" && f.isContested,
   ).length;
 
+  // DEBUG: Log raw values from LLM before normalization
+  console.log("[generateSingleScopeVerdicts] Raw verdictSummary.answer =", parsed.verdictSummary.answer, "type =", typeof parsed.verdictSummary.answer);
+  console.log("[generateSingleScopeVerdicts] Raw verdictSummary.confidence =", parsed.verdictSummary.confidence, "type =", typeof parsed.verdictSummary.confidence);
+  
   let answerTruthPct = normalizePercentage(parsed.verdictSummary.answer);
   let correctedConfidence = normalizePercentage(parsed.verdictSummary.confidence);
+
+  // DEBUG: Log normalized values
+  console.log("[generateSingleScopeVerdicts] Normalized answerTruthPct =", answerTruthPct);
+  console.log("[generateSingleScopeVerdicts] Normalized correctedConfidence =", correctedConfidence);
 
   // v2.6.20: Removed factor-based boost to ensure input neutrality
   debugLog("generateSingleScopeVerdicts: No factor-based boost applied", {
@@ -7026,6 +7463,7 @@ ${factsFormatted}`;
 
   // PR-C: Clamp truth percentage to valid range (defensive)
   const clampedAnswerTruthPct = clampTruthPercentage(answerTruthPct);
+  console.log("[generateSingleScopeVerdicts] Final clampedAnswerTruthPct =", clampedAnswerTruthPct);
   const verdictSummary: VerdictSummary = {
     displayText: displayText,
     answer: clampedAnswerTruthPct,
@@ -7054,9 +7492,9 @@ ${factsFormatted}`;
     claimsAverageTruthPercentage: claimsAvgTruthPct,
     claimsAverageVerdict: claimsAvgTruthPct,
 
-  // Article verdict
-    articleTruthPercentage: answerTruthPct,
-    articleVerdict: answerTruthPct,
+  // Article verdict - CRITICAL: Use clamped value for consistency with verdictSummary
+    articleTruthPercentage: clampedAnswerTruthPct,
+    articleVerdict: clampedAnswerTruthPct,
     // Avoid duplicating claims average in the UI; we show it as a dedicated row.
     articleVerdictReason: undefined,
 
@@ -7090,6 +7528,10 @@ async function generateClaimVerdicts(
     (c: any) =>
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
       c?.contextId !== UNSCOPED_ID
+  );
+  const claimsForVerdicts = expandClaimsForVerdicts(
+    understanding,
+    directClaimsForVerdicts,
   );
 
   // Add pseudoscience context and verdict calibration to prompt
@@ -7248,9 +7690,48 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
 
     // Handle different AI SDK versions - safely extract structured output
-    const rawOutput = extractStructuredOutput(result);
+    let rawOutput = extractStructuredOutput(result);
     if (rawOutput) {
-      parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
+      // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
+      if (rawOutput.$PARAMETER_NAME && typeof rawOutput.$PARAMETER_NAME === 'object') {
+        console.log("[generateClaimVerdicts] Unwrapping $PARAMETER_NAME wrapper");
+        rawOutput = rawOutput.$PARAMETER_NAME;
+      }
+      // Also check for other common wrapper patterns
+      const wrapperKeys = ['data', 'result', 'output', 'response'];
+      for (const key of wrapperKeys) {
+        if (rawOutput[key] && typeof rawOutput[key] === 'object' && 
+            (rawOutput[key].articleAnalysis || rawOutput[key].claimVerdicts)) {
+          console.log(`[generateClaimVerdicts] Unwrapping ${key} wrapper`);
+          rawOutput = rawOutput[key];
+          break;
+        }
+      }
+      
+      // CRITICAL FIX: Coerce string values to numbers (LLM sometimes returns "65" instead of 65)
+      const coerceToNumber = (val: any): number | any => {
+        if (typeof val === 'string') {
+          const parsed = parseFloat(val.replace('%', '').trim());
+          return Number.isFinite(parsed) ? parsed : val;
+        }
+        return val;
+      };
+      
+      const coercedOutput = {
+        ...rawOutput,
+        articleAnalysis: rawOutput.articleAnalysis ? {
+          ...rawOutput.articleAnalysis,
+          articleVerdict: coerceToNumber(rawOutput.articleAnalysis.articleVerdict),
+          articleConfidence: coerceToNumber(rawOutput.articleAnalysis.articleConfidence),
+        } : rawOutput.articleAnalysis,
+        claimVerdicts: (rawOutput.claimVerdicts || []).map((cv: any) => ({
+          ...cv,
+          verdict: coerceToNumber(cv.verdict),
+          confidence: coerceToNumber(cv.confidence),
+        })),
+      };
+      
+      parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
     }
   } catch (err: any) {
     console.error(
@@ -7266,7 +7747,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     console.log("[Analyzer] Using fallback verdict generation");
 
     // Create default verdicts for each claim
-    const fallbackVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
+    const fallbackVerdicts: ClaimVerdict[] = claimsForVerdicts.map(
       (claim: any) => ({
         claimId: claim.id,
         claimText: claim.text,
@@ -7326,7 +7807,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
   );
 
   // Ensure ALL claims get a verdict (fill in missing ones)
-  const claimVerdicts: ClaimVerdict[] = directClaimsForVerdicts.map(
+  const claimVerdicts: ClaimVerdict[] = claimsForVerdicts.map(
     (claim: any) => {
       const cv = llmVerdictMap.get(claim.id);
 

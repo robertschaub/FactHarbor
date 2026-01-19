@@ -161,27 +161,9 @@ export default function AnalyzePage() {
           </div>
         )}
 
-        {/* Pipeline variant selector */}
-        <div className={styles.variantSelector}>
-          <label className={styles.variantLabel}>Pipeline:</label>
-          <select
-            value={pipelineVariant}
-            onChange={(e) => setPipelineVariant(e.target.value as typeof pipelineVariant)}
-            className={styles.variantSelect}
-          >
-            <option value="orchestrated">Orchestrated (Default)</option>
-            <option value="monolithic_canonical">Monolithic - Canonical Schema</option>
-            <option value="monolithic_dynamic">Monolithic - Dynamic (Experimental)</option>
-          </select>
-          {pipelineVariant !== "orchestrated" && (
-            <span className={styles.variantWarning}>
-              {pipelineVariant === "monolithic_dynamic" ? "Experimental" : "Beta"}
-            </span>
-          )}
-        </div>
-
-        {/* Pipeline comparison cards */}
+        {/* Pipeline selection cards */}
         <div className={styles.pipelineInfo} style={{ marginBottom: 16 }}>
+          <label className={styles.variantLabel} style={{ display: "block", marginBottom: 8 }}>Pipeline:</label>
           <div className={styles.pipelineInfoGrid} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             <div
               className={`${styles.pipelineInfoCard} ${pipelineVariant === "orchestrated" ? styles.pipelineInfoCardSelected : ""}`}

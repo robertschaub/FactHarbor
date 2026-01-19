@@ -63,7 +63,31 @@ Today is ${currentDate}. Use this for temporal reasoning.
 
 ## CLAIM EXTRACTION RULES
 
-**Separate attribution from content** (MANDATORY):
+### CRITICAL: Break Down Compound Claims (MANDATORY)
+
+**Compound statements MUST be broken into separate atomic claims**, each independently verifiable.
+
+**Decomposition Rules**:
+1. Count distinct verbs/assertions in the input - each becomes its own claim
+2. Characterizations (adjectives like "unfair", "illegal", "largest") become separate claims
+3. Magnitude/superlative claims ("biggest", "first", "most") become separate claims
+
+**Each atomic claim should**:
+- Make ONE testable assertion
+- Be verifiable independently of other claims
+- Have its own truth value (one claim being true doesn't make another true)
+
+**Common compound patterns to split**:
+- "A and B" → split into claim about A, claim about B
+- "X did Y by doing Z" → split into "X did Y" and "the method was Z"
+- "Event E happened and was [adjective]" → split event from characterization
+- "This was the [superlative] example" → split event from magnitude claim
+- Clauses joined by "and", "which", "that", "while" → separate claims
+
+**Minimum Output**: For inputs with 3+ distinct assertions, generate 3+ separate claims.
+
+### Separate Attribution from Content (MANDATORY)
+
 - WRONG: "Person X claims Y is dangerous" (conflates who said it with what was said)
 - CORRECT:
   - Claim 1: "Person X made public statements about Y" (attribution - LOW centrality)
@@ -78,9 +102,9 @@ Today is ${currentDate}. Use this for temporal reasoning.
 **Centrality Rules**:
 - Attribution/source/timing claims: ALWAYS LOW centrality
 - Methodology validation claims: ALWAYS LOW centrality
-- Only pure factual claims about the subject can have HIGH centrality
+- Core factual claims about the subject: HIGH or MEDIUM centrality based on importance
 
-**Expect 1-4 central claims** in most inputs.
+**Expect 3-6 claims** from typical inputs (more for complex compound statements).
 
 ## SEARCH QUERY GENERATION
 
@@ -104,9 +128,19 @@ Return JSON with:
 - articleThesis: What the article/input asserts (neutral language)
 - analysisContext: Optional ArticleFrame (empty string if none)
 - subClaims: Array of claims with:
-  - id, text, claimRole, centrality (HIGH/MEDIUM/LOW), isCentral (boolean)
+  - id: Unique identifier (e.g., "C1", "C2")
+  - text: The atomic claim text
+  - claimRole: "attribution" | "source" | "timing" | "core"
+  - centrality: "high" | "medium" | "low"
+  - isCentral: boolean (true if centrality is "high")
+  - thesisRelevance: "direct" | "tangential" | "irrelevant"
+    - "direct": Claim directly tests part of the main thesis (MOST claims should be direct)
+    - "tangential": Related but doesn't test the thesis (e.g., reactions to events)
+    - "irrelevant": Off-topic noise
   - checkWorthiness, harmPotential, dependsOn (claim IDs)
 - researchQueries: Array with query text and optional scopeHint
 - detectedScopes: Array of preliminary scopes (if multi-scope detected)
-- requiresSeparateAnalysis: boolean (true if multiple scopes)`;
+- requiresSeparateAnalysis: boolean (true if multiple scopes)
+
+**CRITICAL**: All core claims that test any part of the input statement should have thesisRelevance="direct". Only mark as "tangential" claims about reactions, responses, or commentary that don't directly evaluate the truth of the input.`;
 }

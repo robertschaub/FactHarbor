@@ -1429,16 +1429,6 @@
   border-radius: 12px;
 }
 
-.experimentalWarning {
-  padding: 12px;
-  background-color: #fff3e0;
-  border: 1px solid #ffcc80;
-  border-radius: 8px;
-  color: #e65100;
-  font-size: 13px;
-  margin-bottom: 20px;
-}
-
 .groundingScoreBadge {
   display: inline-block;
   padding: 6px 12px;

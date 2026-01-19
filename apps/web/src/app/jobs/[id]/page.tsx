@@ -39,6 +39,7 @@ type Job = {
   inputPreview: string | null;
   resultJson: any | null;
   reportMarkdown: string | null;
+  pipelineVariant?: string;
 };
 
 type EventItem = { id: number; tsUtc: string; level: string; message: string };
@@ -313,7 +314,8 @@ export default function JobPage() {
   const sources = result?.sources || [];
   const researchStats = result?.researchStats;
   const facts = result?.facts || []; // NEW v2.6.29: Access extracted facts for counter-evidence display
-  const pipelineVariant = result?.meta?.pipelineVariant || "orchestrated";
+  // Prefer job.pipelineVariant (available immediately) over result meta (only after completion)
+  const pipelineVariant = job?.pipelineVariant || result?.meta?.pipelineVariant || "orchestrated";
   const subClaims = result?.understanding?.subClaims || [];
   const tangentialSubClaims = Array.isArray(subClaims)
     ? subClaims.filter((c: any) => c?.thesisRelevance === "tangential")
@@ -943,8 +945,8 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
   const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis?.isPseudoscience;
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis?.pseudoscienceCategories || [];
 
-  // Get the verdict reason
-  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.proceedingSummary || "";
+  // Get the verdict reason (include summary as fallback)
+  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.proceedingSummary || verdictSummary?.summary || "";
 
   return (
     <div className={styles.multiScopeBanner}>
@@ -1000,9 +1002,11 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
           </div>
         )}
 
-        {verdictSummary?.shortAnswer && (
+        {/* Only show shortAnswer if it's different from verdictReason to avoid duplication */}
+        {(verdictSummary?.shortAnswer || verdictSummary?.summary) && 
+         (verdictSummary?.shortAnswer || verdictSummary?.summary) !== verdictReason && (
           <div className={styles.shortAnswerBox} style={{ borderLeftColor: overallColor.border }}>
-            <div className={styles.shortAnswerText}>{verdictSummary.shortAnswer}</div>
+            <div className={styles.shortAnswerText}>{verdictSummary.shortAnswer || verdictSummary.summary}</div>
           </div>
         )}
 
@@ -1201,7 +1205,11 @@ function KeyFactorRow({ factor, showContestation = true }: { factor: any; showCo
 // ============================================================================
 
 function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis, pseudoscienceAnalysis, fallbackConfidence }: { articleAnalysis: any; verdictSummary?: any; fallbackThesis?: string; pseudoscienceAnalysis?: any; fallbackConfidence?: number }) {
-  const articleTruth = getArticleTruthPercentage(articleAnalysis);
+  // CRITICAL FIX: Use verdictSummary as fallback when articleAnalysis is missing
+  // The verdictSummary contains the correct truth percentage from the analyzer
+  const articleTruth = articleAnalysis 
+    ? getArticleTruthPercentage(articleAnalysis) 
+    : getVerdictTruthPercentage(verdictSummary);
   // v2.6.28: Use verdictSummary confidence as fallback when articleAnalysis confidence is missing
   // v2.6.31: Also check twoPanelSummary.factharborAnalysis.confidence via fallbackConfidence prop
   const articleConfidence = articleAnalysis?.confidence ?? articleAnalysis?.articleConfidence ?? verdictSummary?.confidence ?? fallbackConfidence ?? 0;
@@ -1213,11 +1221,13 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
 
   const articlePct = articleTruth;
 
-  // Get the verdict reason - try multiple sources
-  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.nuancedAnswer || "";
+  // Get the verdict reason - try multiple sources (include summary as fallback)
+  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.nuancedAnswer || verdictSummary?.summary || "";
 
   // Get short answer from verdictSummary as assessment
-  const shortAnswer = verdictSummary?.shortAnswer || "";
+  // CRITICAL: Only use summary as fallback if it's different from verdictReason to avoid duplication
+  const rawShortAnswer = verdictSummary?.shortAnswer || verdictSummary?.summary || "";
+  const shortAnswer = rawShortAnswer === verdictReason ? "" : rawShortAnswer;
 
   // Get key factors - prefer articleAnalysis, fallback to verdictSummary
   const keyFactors = (articleAnalysis?.keyFactors && articleAnalysis.keyFactors.length > 0)
@@ -1532,27 +1542,28 @@ function DynamicResultViewer({ result }: { result: any }) {
   // Estimate sentence count from summary (dynamic pipeline uses summary, not narrativeMarkdown)
   const narrativeText = result.summary || result.narrativeMarkdown || "";
   const sentencesCount = narrativeText.split(/[.!?]+/).filter(Boolean).length || 1;
-  const groundingRatio = (citationsCount / sentencesCount).toFixed(2);
-  const groundingQuality = parseFloat(groundingRatio) >= 0.5 ? "good" : parseFloat(groundingRatio) >= 0.25 ? "moderate" : "low";
+  // Normalize grounding to 0-100%: 1+ citation per sentence = 100%, scale linearly below
+  const groundingRatio = citationsCount / sentencesCount;
+  const groundingPercent = Math.min(100, Math.round(groundingRatio * 100));
+  const groundingQuality = groundingPercent >= 75 ? "good" : groundingPercent >= 40 ? "moderate" : "low";
+  const groundingLabel = groundingPercent >= 75 ? "Well Sourced" : groundingPercent >= 40 ? "Partially Sourced" : "Limited Sources";
 
   return (
     <div className={styles.dynamicViewer}>
-      <div className={styles.experimentalWarning}>
-        ⚠️ <strong>Experimental Agentic Result</strong> — This analysis was generated using a flexible tool-loop and has not been structured into the canonical FactHarbor schema.
-      </div>
-
       <div className={styles.groundingScoreBadge} data-quality={groundingQuality}>
-        📊 Grounding Score: <strong>{groundingRatio}</strong>
-        <span className={styles.groundingTooltip} title={`${citationsCount} citations / ${sentencesCount} narrative sentences. Higher = better sourced.`}> (?)</span>
+        📊 Source Coverage: <strong>{groundingPercent}%</strong> ({groundingLabel})
+        <span className={styles.groundingTooltip} title={`${citationsCount} citations for ${sentencesCount} statements. Measures how well claims are backed by sources (separate from truth verdict).`}> ℹ️</span>
       </div>
 
       {/* Verdict display */}
       {result.verdict && (
         <div className={styles.dynamicVerdict}>
-          <div className={styles.verdictLabel}>{result.verdict.label}</div>
-          {result.verdict.score !== undefined && (
-            <div className={styles.verdictScore}>Score: {result.verdict.score}%</div>
-          )}
+          <div className={styles.verdictLabel}>
+            {result.verdict.label}
+            {result.verdict.score !== undefined && (
+              <strong style={{ marginLeft: 8 }}>{result.verdict.score}%</strong>
+            )}
+          </div>
           {result.verdict.confidence !== undefined && (
             <div className={styles.verdictConfidence}>Confidence: {result.verdict.confidence}%</div>
           )}

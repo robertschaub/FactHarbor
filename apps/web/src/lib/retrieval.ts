@@ -17,6 +17,46 @@ import { Worker } from "worker_threads";
 // Default timeout for PDF parsing (ms) - can be overridden via environment variable
 const PDF_PARSE_TIMEOUT_MS = parseInt(process.env.FH_PDF_PARSE_TIMEOUT_MS || "60000", 10);
 
+/**
+ * Clean up PDF-extracted text that has spurious spaces from character-level extraction.
+ * Fixes issues like "so cial m edia" -> "social media"
+ */
+function cleanupPdfText(text: string): string {
+  if (!text) return text;
+  
+  // Step 1: Fix single-letter words that should be joined (e.g., "so cial" -> "social")
+  // Pattern: lowercase letter, space, lowercase letter(s) where the result would be a word
+  // We do this iteratively to handle cases like "m e d i a"
+  let cleaned = text;
+  let prev = "";
+  
+  // Iterate up to 10 times to handle severely fragmented text
+  for (let i = 0; i < 10 && cleaned !== prev; i++) {
+    prev = cleaned;
+    // Join single lowercase letter followed by space and more lowercase letters
+    // This handles "so cial" -> "social", "m edia" -> "media"
+    cleaned = cleaned.replace(/\b([a-zäöüß])\s+([a-zäöüß]+)\b/gi, (match, p1, p2) => {
+      // Only join if it looks like a fragmented word (both parts are short or p1 is single char)
+      if (p1.length === 1 && p2.length <= 10) {
+        return p1 + p2;
+      }
+      return match;
+    });
+  }
+  
+  // Step 2: Collapse multiple spaces into single space
+  cleaned = cleaned.replace(/\s{2,}/g, " ");
+  
+  // Step 3: Fix spacing around punctuation
+  cleaned = cleaned.replace(/\s+([.,;:!?)])/g, "$1");
+  cleaned = cleaned.replace(/([(\[])\s+/g, "$1");
+  
+  // Step 4: Fix common patterns like "– " at start becoming " – "
+  cleaned = cleaned.replace(/\s+([-–—])\s+/g, " $1 ");
+  
+  return cleaned.trim();
+}
+
 const PDF2JSON_WORKER_CODE = `
 /* eslint-disable */
 const { parentPort, workerData } = require("worker_threads");
@@ -170,8 +210,10 @@ async function extractTextFromPdfBuffer(buffer: Buffer, timeoutMs: number = PDF_
 
           if (msg?.ok) {
             console.log("[Retrieval] PDF extraction completed successfully");
-            console.log(`[Retrieval] Extracted ${String(msg.text || "").length} characters of text`);
-            resolve(String(msg.text || ""));
+            const rawText = String(msg.text || "");
+            const cleanedText = cleanupPdfText(rawText);
+            console.log(`[Retrieval] Extracted ${rawText.length} chars, cleaned to ${cleanedText.length} chars`);
+            resolve(cleanedText);
             return;
           }
           reject(new Error(msg?.error || "PDF parsing failed"));

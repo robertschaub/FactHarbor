@@ -101,8 +101,8 @@ const DynamicAnalysisSchema = z.object({
   verdict: z
     .object({
       label: z.string().describe("Verdict label (e.g., 'Mostly True', 'Unverifiable', 'Context Needed')"),
-      score: z.number().min(0).max(100).optional().describe("Optional truth score 0-100"),
-      confidence: z.number().min(0).max(100).optional().describe("Optional confidence level"),
+      score: z.number().min(0).max(100).describe("REQUIRED: Truth score 0-100 (0=False, 50=Unverified, 100=True)"),
+      confidence: z.number().min(0).max(100).describe("REQUIRED: Confidence level 0-100"),
       reasoning: z.string().optional().describe("Brief reasoning for the verdict"),
     })
     .optional(),
@@ -418,7 +418,12 @@ Provide your dynamic analysis.`,
 
     // Dynamic analysis fields
     summary: analysis.summary || "Analysis completed",
-    verdict: analysis.verdict || null,
+    verdict: analysis.verdict ? {
+      ...analysis.verdict,
+      // Ensure score and confidence always exist
+      score: analysis.verdict.score ?? 50,
+      confidence: analysis.verdict.confidence ?? 50,
+    } : null,
     findings: analysis.findings || [],
     methodology: analysis.methodology || plan?.analysisApproach || "Dynamic experimental analysis",
     limitations: analysis.limitations || [
