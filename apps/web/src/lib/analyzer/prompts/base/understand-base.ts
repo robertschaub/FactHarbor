@@ -24,6 +24,11 @@ export function getUnderstandBasePrompt(variables: {
 **EvidenceScope**: Per-fact source methodology metadata - DIFFERENT from AnalysisContext
 **ArticleFrame**: Narrative background framing - NOT a reason to split analysis
 
+**ArticleFrame guidance**:
+- If the input has a clear narrative or thematic frame, capture it as a short phrase.
+- Do NOT create separate AnalysisContexts from framing.
+- If no clear frame, return an empty string.
+
 ## CURRENT DATE
 Today is ${currentDate}. Use this for temporal reasoning.
 
@@ -97,6 +102,7 @@ Today is ${currentDate}. Use this for temporal reasoning.
 Return JSON with:
 - impliedClaim: Neutral summary of what input claims (not your judgment)
 - articleThesis: What the article/input asserts (neutral language)
+- analysisContext: Optional ArticleFrame (empty string if none)
 - subClaims: Array of claims with:
   - id, text, claimRole, centrality (HIGH/MEDIUM/LOW), isCentral (boolean)
   - checkWorthiness, harmPotential, dependsOn (claim IDs)
