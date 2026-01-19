@@ -4009,8 +4009,8 @@ Now analyze the input and output JSON only.`;
   });
 
   // PR-E: Apply Gate 1 Lite BEFORE supplemental claims (fixes Blocker E)
-  // This ensures supplemental coverage decisions are based on the FILTERED claim set
-  // (not inflated by non-factual claims that will be filtered anyway)
+  // Gate1-lite is intended as a minimal, budget-protection pre-filter.
+  // It should NOT remove claims simply for being evaluative/opinion-like; those are still analyzable.
   const { filteredClaims: gate1LiteClaims, stats: gate1LiteStats } = applyGate1Lite(claimsWithPositions);
   console.log(`[Analyzer] Gate 1 Lite (pre-research): ${gate1LiteStats.passed}/${gate1LiteStats.total} claims passed minimal filter, ${gate1LiteStats.filtered} extreme cases filtered`);
 
@@ -4039,7 +4039,8 @@ Now analyze the input and output JSON only.`;
     }
   }
 
-  // Note: Full Gate 1 validation happens POST-research, before verdict generation
+  // Note: Full Gate 1 validation exists (apps/web/src/lib/analyzer/quality-gates.ts) but the orchestrated
+  // pipeline currently treats Gate 1 as characterization/telemetry rather than a hard filter.
   const validatedClaims = parsed.subClaims;
 
   // Pass thesis to detect foreign response claims that should be tangential
@@ -8697,7 +8698,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         state.facts.length >= config.minFactsRequired &&
         state.contradictionSearchPerformed &&
         gate4Stats.publishable > 0,
-      // Gate 1: Claim Validation (filters opinions, predictions, low-specificity claims)
+      // Gate 1: Claim Validation (characterization / telemetry; should not hard-filter opinion/prediction claims)
       gate1Stats: state.understanding?.gate1Stats || {
         total: 0,
         passed: 0,

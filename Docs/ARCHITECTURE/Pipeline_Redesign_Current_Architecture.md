@@ -37,7 +37,7 @@ graph TD
 **Key design points**:
 - Input normalization is performed once at the analysis entry point for neutrality.
 - Multi-scope detection is preserved; scopes are canonicalized.
-- Gate1-lite is applied as a minimal pre-filter (protects central claims).
+- Gate1-lite is applied as a minimal **budget-protection** pre-filter (protects central claims; should not remove claims just because they are evaluative/opinion-like).
 
 ### 2.2 Research
 **Goal**: Gather evidence under strict budgets with deterministic fallbacks.
