@@ -21,7 +21,7 @@ export function getVerdictBasePrompt(variables: {
 ## TERMINOLOGY (CRITICAL)
 
 **AnalysisContext**: Top-level bounded analytical frame (referred to as "scope" or "context" in this prompt)
-**proceedingId**: Reference to AnalysisContext ID (field name in output)
+**contextId**: Reference to AnalysisContext ID (field name in output)
 **EvidenceScope**: Per-fact source methodology - DIFFERENT from AnalysisContext
 **ArticleFrame**: Narrative background framing - NOT a verdict-worthy context
 
@@ -159,7 +159,7 @@ Only documented violations/data → "established" or "disputed"
 ## OUTPUT FORMAT
 
 For EACH scope:
-- proceedingId: Must match scope ID
+- contextId: Must match scope ID
 - answer: Truth percentage 0-100 rating THE USER'S CLAIM
 - shortAnswer: Complete sentence about what evidence shows
 - keyFactors: 3-5 factors (factor, explanation, supports, isContested, contestedBy, factualBasis)

@@ -55,7 +55,7 @@ export function getGeminiExtractFactsVariant(): string {
 - [ ] specificity: "high" or "medium" (no "low")
 - [ ] sourceExcerpt: 50-200 characters
 - [ ] claimDirection: "supports" | "contradicts" | "neutral"
-- [ ] relatedProceedingId: string (scope ID or "")
+- [ ] contextId: string (scope ID or "")
 - [ ] evidenceScope: object or null (not missing)`;
 }
 
@@ -88,7 +88,7 @@ Before finalizing each verdict, ask yourself:
 4. Verdict = how much they match (not how well we analyzed)
 
 **Schema validation**:
-- Verify proceedingId matches one from scopesList
+- Verify contextId matches one from scopesList
 - Verify claimId matches claim from claimslist
 - Ensure all enum values are exact matches`;
 }
@@ -108,8 +108,8 @@ export function getGeminiScopeRefinementVariant(): string {
 - Ensure factScopeAssignments array has valid factIds from input
 
 **Schema compliance**:
-- distinctProceedings: Array of objects with all required fields
-- Each proceeding must have: id, name, shortName, subject, temporal, status, outcome, metadata
+- analysisContexts: Array of objects with all required fields
+- Each context must have: id, name, shortName, subject, temporal, status, outcome, metadata
 - metadata can have flexible structure but must be object
-- factScopeAssignments: Array of {factId: string, proceedingId: string}`;
+- factScopeAssignments: Array of {factId: string, contextId: string}`;
 }

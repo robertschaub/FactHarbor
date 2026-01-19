@@ -19,7 +19,7 @@ export function getExtractFactsBasePrompt(variables: {
 
 ## TERMINOLOGY (CRITICAL)
 
-**AnalysisContext**: Top-level bounded analytical frame (referenced as relatedProceedingId in facts)
+**AnalysisContext**: Top-level bounded analytical frame (referenced as contextId in facts)
 **EvidenceScope**: Per-fact source methodology metadata - attached to fact.evidenceScope
 **ArticleFrame**: Narrative background framing - NOT an AnalysisContext
 
@@ -29,15 +29,15 @@ Today is ${currentDate}. Use for temporal context.
 ## SCOPE-AWARE EXTRACTION (CRITICAL)
 
 **Identify which scope each fact belongs to**:
-- If the source mentions "the TSE court ruled..." → relatedProceedingId: "CTX_TSE"
-- If the source describes "Well-to-Wheel analysis shows..." → relatedProceedingId: "CTX_WTW"
-- If the fact applies generally across scopes → relatedProceedingId: "CTX_GENERAL" or empty
+- If the source mentions "the TSE court ruled..." → contextId: "CTX_TSE"
+- If the source describes "Well-to-Wheel analysis shows..." → contextId: "CTX_WTW"
+- If the fact applies generally across scopes → contextId: "CTX_GENERAL" or empty
 
 **Prevent scope bleeding**:
 - Do NOT conflate facts from different jurisdictions
 - If a fact mentions "the court ruled..." - identify WHICH court
 - If citing a study, note the SPECIFIC methodology/boundaries
-- Facts from different analytical frames should have different relatedProceedingId values
+- Facts from different analytical frames should have different contextId values
 
 ## EVIDENCE SCOPE METADATA (per-fact)
 

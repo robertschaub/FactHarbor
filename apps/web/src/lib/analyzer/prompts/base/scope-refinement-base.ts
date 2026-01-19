@@ -13,7 +13,7 @@ export function getScopeRefinementBasePrompt(): string {
 
 ## TERMINOLOGY (CRITICAL)
 
-- **AnalysisContext**: Bounded analytical frame requiring separate analysis (output as distinctProceedings)
+- **AnalysisContext**: Bounded analytical frame requiring separate analysis (output as analysisContexts)
 - **ArticleFrame**: Narrative background framing - NOT a reason to split
 - **EvidenceScope**: Per-fact source methodology/boundaries - DIFFERENT from AnalysisContext
 
@@ -55,18 +55,18 @@ Identify which AnalysisContexts are ACTUALLY PRESENT in the provided evidence.
 
 ## FACT AND CLAIM ASSIGNMENTS
 
-**factScopeAssignments**: Map EACH factId to exactly ONE proceedingId
-- Use proceedingId from your distinctProceedings output
+**factScopeAssignments**: Map EACH factId to exactly ONE contextId
+- Use contextId from your analysisContexts output
 - Assign based on which context the fact belongs to
 - Every fact listed must be assigned
 
-**claimScopeAssignments** (optional): Map claimIds to proceedingId when clear
+**claimScopeAssignments** (optional): Map claimIds to contextId when clear
 
 ## OUTPUT FORMAT
 
 Return JSON with:
 - requiresSeparateAnalysis: boolean (true only if genuinely multiple distinct contexts)
-- distinctProceedings: Array of contexts (1 to N):
+- analysisContexts: Array of contexts (1 to N):
   - id: Will be canonicalized later, use descriptive ID
   - name: Specific name reflecting 1-3 identifying details from evidence
   - shortName: Short label (≤12 chars)
@@ -75,8 +75,8 @@ Return JSON with:
   - status: "concluded" | "ongoing" | "pending" | "unknown"
   - outcome: Result/conclusion
   - metadata: Domain-specific details (institution, methodology, boundaries, geographic, etc.)
-- factScopeAssignments: Array of {factId, proceedingId}
-- claimScopeAssignments: Array of {claimId, proceedingId} (optional)
+- factScopeAssignments: Array of {factId, contextId}
+- claimScopeAssignments: Array of {claimId, contextId} (optional)
 
 ## METADATA FIELDS (Domain-Specific)
 

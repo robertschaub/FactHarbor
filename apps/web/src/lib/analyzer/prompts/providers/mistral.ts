@@ -53,7 +53,7 @@ For EACH fact extracted:
    - If supports user's claim → "supports"
    - If contradicts user's claim → "contradicts"
    - If neither → "neutral"
-6. relatedProceedingId: Which scope? (or "" if general)
+6. contextId: Which scope? (or "" if general)
 7. evidenceScope: Does source define its analytical frame?
    - If YES: Fill name, methodology, boundaries, geographic, temporal (use "" for unknown)
    - If NO: Set to null
@@ -89,7 +89,7 @@ For each scope:
 7. Verify: Does percentage match evidence direction?
 
 **Checklist for each verdict**:
-- [ ] proceedingId matches scope ID from list
+- [ ] contextId matches scope ID from list
 - [ ] answer is 0-100 integer
 - [ ] answer matches reasoning (if reasoning says "false", answer should be 0-28)
 - [ ] shortAnswer is complete sentence
@@ -99,7 +99,7 @@ For each scope:
 
 **Common errors to avoid**:
 - Rating analysis quality instead of claim truth → Re-read rating direction section
-- Conflating scopes → Check that facts match proceedingId
+- Conflating scopes → Check that facts match contextId
 - Over-using "neutral" in supports field → Use your knowledge`;
 }
 
@@ -123,7 +123,7 @@ Step 2: For each potential boundary, verify:
 Step 3: Create contexts only if Step 2 checks pass
 
 Step 4: Assign ALL facts to contexts
-- Each fact → exactly one proceedingId
+- Each fact → exactly one contextId
 - Verify coverage: All facts in input → All assignments in output
 
 **Metadata population**:

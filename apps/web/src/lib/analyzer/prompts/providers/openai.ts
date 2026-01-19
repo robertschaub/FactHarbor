@@ -60,7 +60,7 @@ Example fact with evidenceScope:
   "specificity": "high",
   "sourceExcerpt": "...WTW efficiency of hydrogen FCEVs is approximately 40%...",
   "claimDirection": "contradicts", // if user claimed higher efficiency
-  "relatedProceedingId": "CTX_WTW",
+  "contextId": "CTX_WTW",
   "evidenceScope": {
     "name": "WTW",
     "methodology": "Well-to-Wheel analysis",
