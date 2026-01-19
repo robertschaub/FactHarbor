@@ -144,7 +144,7 @@ export function buildPrompt(context: PromptContext): string {
  * Used when FH_LLM_TIERING=on and model is Haiku/Flash/Mini
  */
 function getBudgetPrompt(context: PromptContext): string {
-  const { task, provider, variables } = context;
+  const { task, provider, variables, config } = context;
   const currentDate = variables.currentDate || new Date().toISOString().split('T')[0];
 
   let basePrompt: string;
@@ -157,7 +157,7 @@ function getBudgetPrompt(context: PromptContext): string {
       basePrompt = getBudgetExtractFactsPrompt(currentDate, variables.originalClaim || '');
       break;
     case 'verdict':
-      basePrompt = getBudgetVerdictPrompt(currentDate, variables.originalClaim || '');
+      basePrompt = getBudgetVerdictPrompt(currentDate, variables.originalClaim || '', config.allowModelKnowledge);
       break;
     default:
       // Fall back to normal prompt composition for other tasks

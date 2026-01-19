@@ -120,10 +120,21 @@ Extract 4-6 specific, verifiable facts from the source.
 {"facts": [{...}, {...}]}`;
 }
 
-export function getBudgetVerdictPrompt(currentDate: string, originalClaim: string): string {
+export function getBudgetVerdictPrompt(currentDate: string, originalClaim: string, allowModelKnowledge: boolean): string {
+  const knowledgeMode = allowModelKnowledge
+    ? `
+## KNOWLEDGE MODE: Use your training data
+- If you know facts from training data, use them
+- Don't mark as "neutral" if you know the answer`
+    : `
+## EVIDENCE-ONLY MODE: Use ONLY provided facts
+- Do NOT use your training data
+- If not in provided facts → mark "neutral"`;
+
   return `You generate verdicts. Date: ${currentDate}
 
 CLAIM: ${originalClaim}
+${knowledgeMode}
 
 ## CRITICAL RULE
 Rate THE CLAIM truth (not your analysis quality).
