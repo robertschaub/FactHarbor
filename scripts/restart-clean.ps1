@@ -1,5 +1,3 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [string]$ApiUrls = "https://localhost:5001;http://localhost:5000",
     [int]$WebPort = 3000,
@@ -7,6 +5,8 @@ param(
     [string]$RunnerBaseUrl = "",
     [string]$ApiBaseUrl = ""
 )
+
+$ErrorActionPreference = "Stop"
 
 Write-Host "== FactHarbor POC1 Clean Restart =="
 Write-Host ""
@@ -61,7 +61,7 @@ if ($webPortConnections) {
         $procId = $conn.OwningProcess
         try {
             $proc = Get-Process -Id $procId -ErrorAction Stop
-            Write-Host "Killing process on port $WebPort: PID $procId ($($proc.ProcessName))" -ForegroundColor Yellow
+            Write-Host ("Killing process on port {0}: PID {1} ({2})" -f $WebPort, $procId, $proc.ProcessName) -ForegroundColor Yellow
             Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
         } catch {
             Write-Host "  Could not kill PID $procId : $($_.Exception.Message)" -ForegroundColor Red
