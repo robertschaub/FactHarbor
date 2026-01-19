@@ -26,6 +26,13 @@ function runTests() {
   const noChange = { verdicts: [{ contextId: "CTX_A" }] };
   const noChangeResult = transformResultJson(noChange);
   assert.equal(noChangeResult.changed, false);
+
+  const collision = {
+    verdicts: [{ proceedingId: "CTX_OLD", contextId: "CTX_NEW" }]
+  };
+  const collisionResult = transformResultJson(collision);
+  assert.equal((collisionResult.result as any).verdicts[0].contextId, "CTX_NEW");
+  assert.equal((collisionResult.result as any).verdicts[0].proceedingId, undefined);
 }
 
 try {

@@ -39,6 +39,9 @@ function renameKeysDeep(value: unknown): { value: unknown; changed: boolean } {
 
     for (const [key, entry] of Object.entries(record)) {
       const targetKey = KEY_RENAMES[key] || key;
+      const isLegacyKey = targetKey !== key;
+      const hasTargetKeyInRecord =
+        isLegacyKey && Object.prototype.hasOwnProperty.call(record, targetKey);
       const nested = renameKeysDeep(entry);
       if (targetKey !== key) {
         changed = true;
@@ -46,14 +49,20 @@ function renameKeysDeep(value: unknown): { value: unknown; changed: boolean } {
       if (nested.changed) {
         changed = true;
       }
-      if (Object.prototype.hasOwnProperty.call(next, targetKey)) {
-        // Prefer the already-present new key over legacy duplicates.
-        if (!Object.prototype.hasOwnProperty.call(record, targetKey) && targetKey !== key) {
-          next[targetKey] = nested.value;
-          changed = true;
-        }
-      } else {
+
+      // Prefer the already-present new key over legacy duplicates.
+      if (isLegacyKey && hasTargetKeyInRecord) {
+        continue;
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(next, targetKey)) {
         next[targetKey] = nested.value;
+        continue;
+      }
+
+      if (!isLegacyKey) {
+        next[targetKey] = nested.value;
+        changed = true;
       }
     }
 
@@ -132,13 +141,20 @@ async function migrateDatabase(dbPath: string) {
   return { migratedCount, skippedCount, errorCount };
 }
 
-const dbPath = process.env.DB_PATH || "./apps/api/factharbor.db";
-migrateDatabase(dbPath)
-  .then((result) => {
-    console.log("Migration successful:", result);
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error("Migration failed:", error);
-    process.exit(1);
-  });
+const isMain =
+  typeof require !== "undefined" &&
+  typeof module !== "undefined" &&
+  require.main === module;
+
+if (isMain) {
+  const dbPath = process.env.DB_PATH || "./apps/api/factharbor.db";
+  migrateDatabase(dbPath)
+    .then((result) => {
+      console.log("Migration successful:", result);
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error("Migration failed:", error);
+      process.exit(1);
+    });
+}
