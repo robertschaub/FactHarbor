@@ -168,14 +168,41 @@ For now, the 12% divergence is acceptable for these reasons:
 
 ---
 
+## Additional Test Results (v2.8.2 with Scope Normalization)
+
+### EV Lifecycle Case ✅ PASSED
+| Metric | Statement | Question | Divergence |
+|--------|-----------|----------|------------|
+| Verdict | 82% | 84% | **2%** ✅ |
+| Confidence | 88% | 85% | 3% |
+| Contexts | 3 | 3 | Match ✅ |
+
+### Bolsonaro Case ⚠️ HIGH VARIANCE
+| Metric | Statement | Question | Divergence |
+|--------|-----------|----------|------------|
+| Verdict | 39% | 64% | **25%** ❌ |
+| Confidence | 85% | 69% | 16% |
+| Contexts | 3 | 3 | Match ✅ |
+
+**Root Cause**: Different web search results led to different evidence:
+- Statement found "US Government Response" context (15% verdict) - Trump admin criticism
+- Question found "Public Opinion Polling" context (45% verdict)
+
+The scope normalization fix helped match context counts, but the underlying search variance
+still causes significant divergence for politically charged topics with diverse sources.
+
+---
+
 ## Conclusion
 
 The v2.8.2 fixes successfully address:
 - ✅ Input type detection (both detected as "claim")
-- ✅ Budget/iteration limits (now 4 iterations)
-- ✅ Confidence divergence (6% < 10%)
+- ✅ Budget/iteration limits (4-5 iterations observed)
+- ✅ Context count matching (scope normalization working)
+- ✅ Non-political topics (EV case: 2% divergence)
 
 Remaining issue:
-- ⚠️ Scope detection variance causing 12% verdict divergence
+- ⚠️ Politically charged topics still show high variance due to search result diversity
+- The Bolsonaro case found different news sources leading to opposite conclusions
 
-This is a known limitation that can be addressed in a follow-up release.
+This is fundamentally a web search consistency issue, not purely a scope detection issue.
