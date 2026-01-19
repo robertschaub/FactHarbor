@@ -31,74 +31,134 @@ export const UNSCOPED_ID = "CTX_UNSCOPED";
 /**
  * Canonicalize input text for scope detection to ensure consistent scope
  * identification regardless of input phrasing (question vs statement).
- * 
+ *
  * This addresses the input neutrality issue where:
  * - "Was the Bolsonaro judgment fair?" detected 3 scopes
  * - "The Bolsonaro judgment was fair" detected 4 scopes
- * 
+ *
  * The function normalizes both phrasings to the same canonical form for
  * scope detection purposes.
- * 
+ *
  * @param input - Raw or pre-normalized input text
  * @returns Canonical form for scope detection
  */
 export function canonicalizeInputForScopeDetection(input: string): string {
   let text = input.trim();
-  
+
   // 1. Remove question marks and trailing punctuation
   text = text.replace(/[?!.]+$/, '').trim();
-  
+
   // 2. Normalize auxiliary verb questions to statements
-  // "Was X fair?" → "X was fair"
-  // "Is X correct?" → "X is correct"
+  // Uses the same robust approach as normalizeYesNoQuestionToStatement in analyzer.ts
   const auxMatch = text.match(
     /^(was|were|is|are|did|do|does|has|have|had|can|could|will|would|should|may|might)\s+(.+)$/i
   );
   if (auxMatch) {
     const aux = auxMatch[1].toLowerCase();
-    const rest = auxMatch[2];
-    // Reconstruct as statement: "the X aux Y"
-    text = `${rest} ${aux}`;
+    const rest = auxMatch[2].trim();
+
+    if (rest) {
+      // Try to split on clear subject boundaries first (parentheses, comma)
+      const lastParen = rest.lastIndexOf(")");
+      if (lastParen > 0 && lastParen < rest.length - 1) {
+        const subject = rest.slice(0, lastParen + 1).trim();
+        const predicate = rest.slice(lastParen + 1).trim();
+        text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
+      } else {
+        const commaIdx = rest.indexOf(",");
+        if (commaIdx > 0 && commaIdx < rest.length - 1) {
+          const subject = rest.slice(0, commaIdx).trim();
+          const predicate = rest.slice(commaIdx + 1).trim();
+          text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
+        } else {
+          // Heuristic: split before common predicate starters (adjectives, verbs)
+          const predicateStarters = [
+            // Evaluation adjectives
+            "fair", "true", "false", "accurate", "correct", "legitimate", "legal",
+            "valid", "based", "justified", "reasonable", "biased", "efficient",
+            "effective", "successful", "proper", "appropriate", "proportionate",
+            "consistent", "compliant", "constitutional", "lawful", "unlawful",
+            // Past participles (for "Were X applied/followed?" patterns)
+            "applied", "followed", "implemented", "enforced", "violated", "upheld",
+            "overturned", "dismissed", "granted", "denied", "approved", "rejected",
+            // Common verbs for "Did X verb Y?" patterns
+            "cause", "causes", "caused", "increase", "increases", "increased",
+            "decrease", "decreases", "decreased", "improve", "improves", "improved",
+            "reduce", "reduces", "reduced", "prevent", "prevents", "prevented",
+            "lead", "leads", "led", "result", "results", "resulted",
+            "follow", "follows", "produce", "produces", "produced",
+            "affect", "affects", "affected", "create", "creates", "created",
+            "apply", "applies", "implement", "implements", "violate", "violates",
+          ];
+          const starterRe = new RegExp(`\\b(${predicateStarters.join("|")})\\b`, "i");
+          const starterMatch = rest.match(starterRe);
+          
+          if (starterMatch && typeof starterMatch.index === "number" && starterMatch.index > 0) {
+            const subject = rest.slice(0, starterMatch.index).trim();
+            const predicate = rest.slice(starterMatch.index).trim();
+            if (subject && predicate) {
+              text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
+            }
+          } else {
+            // Safe fallback: use grammatical form that preserves meaning
+            // "Did the court follow procedures?" → "It is the case that the court follow procedures"
+            const copulas = new Set(["is", "are", "was", "were"]);
+            text = copulas.has(aux)
+              ? `it ${aux} the case that ${rest}`
+              : `it is the case that ${rest}`;
+          }
+        }
+      }
+    }
   }
-  
+
   // 3. Remove filler words that don't affect scope detection
   const fillers = /\b(really|actually|truly|basically|essentially|simply|just|very|quite|rather)\b/gi;
   text = text.replace(fillers, ' ').replace(/\s+/g, ' ').trim();
-  
+
   // 4. Normalize case for consistency (lowercase for comparison)
   // But preserve proper nouns by keeping original for display
   const scopeKey = text.toLowerCase();
-  
+
   // 5. Extract core semantic entities for scope matching
   // This creates a "semantic fingerprint" for the input
   const coreEntities = extractCoreEntities(text);
-  
+
   console.log(`[Scope Canonicalization] Input: "${input.substring(0, 60)}..."`);
   console.log(`[Scope Canonicalization] Canonical: "${scopeKey.substring(0, 60)}..."`);
   console.log(`[Scope Canonicalization] Core entities: ${coreEntities.join(', ')}`);
-  
+
   return scopeKey;
 }
 
 /**
  * Extract core semantic entities from text for scope matching.
  * These are the key nouns/proper nouns that define what the input is about.
+ *
+ * Note: This function must work with both original-case and lowercase input
+ * since it's called from both canonicalizeInputForScopeDetection (before lowercase)
+ * and generateScopeDetectionHint (after lowercase).
  */
 function extractCoreEntities(text: string): string[] {
   const entities: string[] = [];
-  
-  // Look for proper nouns (capitalized words)
+
+  // Look for proper nouns (capitalized words) - only works with original case
   const properNouns = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/g) || [];
   entities.push(...properNouns.map(n => n.toLowerCase()));
-  
-  // Look for legal/institutional terms
-  const legalTerms = text.match(/\b(court|trial|judgment|ruling|verdict|sentence|conviction|case|proceeding|tribunal|commission)\b/gi) || [];
+
+  // Look for known proper names (case-insensitive) - works with lowercase input
+  // This catches common political figures, institutions, etc. that may be lowercased
+  const knownNames = text.match(/\b(bolsonaro|trump|biden|lula|netanyahu|putin|zelensky|modi|macron|scholz|sunak)\b/gi) || [];
+  entities.push(...knownNames.map(n => n.toLowerCase()));
+
+  // Look for legal/institutional terms (case-insensitive)
+  const legalTerms = text.match(/\b(court|trial|judgment|ruling|verdict|sentence|conviction|case|proceeding|tribunal|commission|appeal|hearing|indictment)\b/gi) || [];
   entities.push(...legalTerms.map(t => t.toLowerCase()));
-  
-  // Look for country/jurisdiction indicators
-  const jurisdictions = text.match(/\b(brazil|brazilian|us|american|eu|european|uk|british|federal|supreme|electoral|constitutional)\b/gi) || [];
+
+  // Look for country/jurisdiction indicators (case-insensitive)
+  const jurisdictions = text.match(/\b(brazil|brazilian|eu|european|uk|british|federal|supreme|electoral|constitutional|stf|tse|tst|cnj)\b/gi) || [];
   entities.push(...jurisdictions.map(j => j.toLowerCase()));
-  
+
   // Deduplicate
   return [...new Set(entities)];
 }
@@ -109,11 +169,11 @@ function extractCoreEntities(text: string): string[] {
  */
 export function generateScopeDetectionHint(canonicalInput: string): string {
   const entities = extractCoreEntities(canonicalInput);
-  
+
   if (entities.length === 0) {
     return '';
   }
-  
+
   // Build a hint that emphasizes what scopes to look for
   const hint = `
 SCOPE DETECTION HINT (for input neutrality):
