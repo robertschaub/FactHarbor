@@ -4,6 +4,19 @@ This document tracks version history, bug fixes, and feature enhancements for Fa
 
 ---
 
+## v2.8.0 (January 2026)
+
+### UI Transparency
+- EvidenceScope tooltips added for orchestrated and canonical facts.
+- Methodology sub-grouping added when 3+ methodologies are detected.
+- Methodology icons now map to evidence metadata presence (methodology/name/general).
+- ArticleFrame banner displayed when available (dynamic uses `rawJson.articleFrame`).
+
+### Prompts
+- Added ArticleFrame guidance in understand and dynamic planning prompts.
+
+---
+
 ## v2.7.0 (January 2026)
 
 ### Terminology Refactor

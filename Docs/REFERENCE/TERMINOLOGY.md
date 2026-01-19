@@ -28,6 +28,52 @@ This document provides the **authoritative glossary** for FactHarbor's scope/con
 
 ---
 
+## Field Hierarchy: Understanding the Layers
+
+FactHarbor uses multiple "framing" concepts that work together hierarchically:
+
+### Level 1: ArticleFrame (Optional Context)
+- **What:** Broader topic or narrative setting of the article
+- **When:** Only for articles with clear thematic frame (can be empty)
+- **Display:** Optional banner in UI showing general topic area
+- **Example:** "Climate policy and decarbonization", "Brazilian democratic crisis 2023-2024"
+- **JSON field:** `analysisContext` (singular) - *Note: confusing name, consider renaming to `articleFrame` in v3.0*
+
+### Level 2: ArticleThesis (Main Claim)
+- **What:** What the article/input specifically asserts
+- **When:** Always present (the claim being fact-checked)
+- **Display:** Prominent display in summary section
+- **Example:** "Hydrogen is more efficient than electric", "Bolsonaro trials were politically motivated"
+- **JSON field:** `articleThesis`
+
+### Level 3: AnalysisContexts (Verdict Spaces)
+- **What:** Distinct analytical frames requiring separate, independent verdicts
+- **When:** 1+ contexts detected (typically 1-3 per input)
+- **Display:** Primary grouping in UI - each context gets its own verdict section
+- **Example:** [TSE electoral case, STF criminal case], [WTW methodology, TTW methodology]
+- **JSON field:** `analysisContexts` (plural array)
+
+### Level 4: Facts (Supporting Evidence)
+- **What:** Individual pieces of evidence extracted from sources
+- **When:** Found during research phase
+- **Display:** Listed under each AnalysisContext with supporting/opposing indicators
+- **Assigned to:** One AnalysisContext via `contextId`
+
+### Level 5: EvidenceScope (Source Methodology - NOT Currently Displayed)
+- **What:** The analytical frame/methodology used BY THE SOURCE when producing evidence
+- **When:** Optional per-fact metadata (not all facts have this)
+- **Display:** *Should be shown via tooltips or sub-grouping (currently hidden)*
+- **Example:** "ISO 14040 LCA", "GREET Model", "Brazilian Electoral Law", "Journalistic reporting"
+- **JSON field:** `fact.evidenceScope` (optional object)
+
+**Key Distinction:**
+- **AnalysisContext** = "WHAT we're analyzing" (user's question: "Was TSE fair?")
+- **EvidenceScope** = "HOW sources analyzed it" (source metadata: "Using electoral law framework")
+
+**UI Grouping Rule:** Always group by AnalysisContext (uncomparable verdict spaces), then show EvidenceScope as metadata within each context.
+
+---
+
 ## Core Concepts
 
 ### 1. AnalysisContext (Top-Level Analytical Frame)

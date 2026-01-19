@@ -15,6 +15,7 @@ This document defines the improved prompt engineering architecture for FactHarbo
 - ✅ **Generic by Design**: Removed all domain-specific examples (TSE, Bolsonaro, Hydrogen) to prevent bias.
 - ✅ **Rating Inversion Fix**: Explicitly instructed LLMs to rate the *claim*, not the *analysis quality*.
 - ✅ **Scope Isolation**: Integrated multi-jurisdiction isolation rules to prevent evidence contamination.
+- ✅ **ArticleFrame Guidance (v2.8)**: Added explicit guidance for when and how to populate ArticleFrame.
 
 ---
 
