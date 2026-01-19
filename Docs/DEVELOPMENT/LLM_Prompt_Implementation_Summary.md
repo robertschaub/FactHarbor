@@ -2,7 +2,7 @@
 
 **Date**: 2026-01-18
 **Status**: ✅ Complete
-**Version**: 1.0.0
+**Version**: 2.7.0
 
 ## Overview
 
@@ -41,7 +41,7 @@ Example:
 
 ✅ **No Hardcoded Keywords**: Uses parameterized, configuration-driven approach
 
-✅ **Consistent Terminology**: Uses "Scope" consistently (not "Context", "Proceeding")
+✅ **Consistent Terminology**: Uses "AnalysisContext" and `contextId` consistently
 
 ✅ **Input Neutrality**: Question ≈ Statement (prompts don't vary by input format)
 

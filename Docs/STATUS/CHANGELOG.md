@@ -4,6 +4,22 @@ This document tracks version history, bug fixes, and feature enhancements for Fa
 
 ---
 
+## v2.7.0 (January 2026)
+
+### Terminology Refactor
+- **Schema field alignment**: `analysisContexts`, `contextId`, `analysisContext` are now the primary field names (legacy fields remain supported for older jobs).
+- **Runtime validation**: context reference checks added to reduce mismatched IDs.
+- **Result metadata**: `_schemaVersion: "2.7.0"` added to result builders.
+
+### Prompt and UI Alignment
+- Base prompts and provider variants updated to emit `analysisContexts`/`contextId`.
+- Jobs UI reads v2.7 fields with legacy fallbacks for backward compatibility.
+
+### Tooling
+- Migration script hardened (collision-safe key renames; guarded execution).
+
+---
+
 ## v2.6.25 (January 2026)
 
 ### Features
@@ -37,7 +53,7 @@ This document tracks version history, bug fixes, and feature enhancements for Fa
 - Debug log path now resolves to **repo root** even when the Next.js server runs with `cwd=apps/web` (prevents silent log writes to `apps/web/apps/web/...`).
 
 ### Terminology
-- Prompts/docs/types now consistently use **ArticleFrame** (narrative background), **AnalysisContext** (top-level bounded frame; stored in `distinctProceedings`), and **EvidenceScope** (per-fact source scope metadata).
+- Prompts/docs/types now consistently use **ArticleFrame** (narrative background), **AnalysisContext** (top-level bounded frame; stored in `analysisContexts`), and **EvidenceScope** (per-fact source scope metadata).
 
 ### Files Modified
 - `apps/web/src/lib/analyzer.ts`

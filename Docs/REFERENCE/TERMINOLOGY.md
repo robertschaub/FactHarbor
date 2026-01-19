@@ -1,9 +1,9 @@
 # FactHarbor Terminology Reference
 
-**Version**: 2.0  
+**Version**: 2.7.0  
 **Date**: 2026-01-18  
 **Audience**: Developers, Prompt Engineers, LLM Systems  
-**Status**: Pre-Refactoring (Field mappings show CURRENT → TARGET)
+**Status**: Post-Refactoring (v2.7.0 field names active; legacy names preserved for backward compatibility)
 
 ---
 
@@ -13,18 +13,18 @@ This document provides the **authoritative glossary** for FactHarbor's scope/con
 
 ---
 
-## Field Mapping Table (CURRENT → TARGET)
+## Field Mapping Table (v2.7 → Legacy)
 
 **Breaking Changes Approved**: See [ADR_001](../ARCHITECTURE/ADR_001_Scope_Context_Terminology_Refactoring.md)
 
-| Concept | TypeScript Type | JSON Field (CURRENT) | JSON Field (TARGET) | Code Reference (CURRENT) | Code Reference (TARGET) | Prompt Term |
+| Concept | TypeScript Type | JSON Field (v2.7) | JSON Field (Legacy) | Code Reference (v2.7) | Code Reference (Legacy) | Prompt Term |
 |---------|----------------|---------------------|--------------------|-----------------------|----------------------|-------------|
-| Top-level context | `AnalysisContext` | `distinctProceedings` | `analysisContexts` | `relatedProceedingId` | `contextId` | AnalysisContext |
+| Top-level context | `AnalysisContext` | `analysisContexts` | `distinctProceedings` | `contextId` | `relatedProceedingId` | AnalysisContext |
 | Per-fact metadata | `EvidenceScope` | `evidenceScope` | `evidenceScope` | `evidenceScope` | `evidenceScope` | EvidenceScope |
-| Context answer | `ContextAnswer` | (embedded) | (embedded) | `proceedingId` | `contextId` | (internal) |
-| Narrative frame | `ArticleFrame` | `proceedingContext` | `analysisContext` | `proceedingContext` | `analysisContext` | ArticleFrame |
+| Context answer | `ContextAnswer` | (embedded) | (embedded) | `contextId` | `proceedingId` | (internal) |
+| Narrative frame | `ArticleFrame` | `analysisContext` | `proceedingContext` | `analysisContext` | `proceedingContext` | ArticleFrame |
 
-**Migration Status**: 🔴 Not yet applied (planned for v2.7.0)
+**Migration Status**: ✅ Applied in v2.7.0 (legacy field names accepted for backward compatibility)
 
 ---
 
@@ -53,10 +53,10 @@ export interface AnalysisContext {
 }
 ```
 
-**JSON field name** (legacy):
+**JSON field name** (v2.7):
 ```json
 {
-  "distinctProceedings": [
+  "analysisContexts": [
     { "id": "CTX_TSE", "name": "TSE Electoral Ruling" },
     { "id": "CTX_SCOTUS", "name": "SCOTUS Colorado Case" }
   ]
@@ -150,15 +150,15 @@ export interface ExtractedFact {
 ```typescript
 // No dedicated interface, stored as string
 export interface ClaimUnderstanding {
-  proceedingContext: string; // ⚠️ LEGACY NAME - actually stores ArticleFrame
+  analysisContext: string; // Narrative ArticleFrame
   // ...
 }
 ```
 
-**JSON field name** (misleading!):
+**JSON field name**:
 ```json
 {
-  "proceedingContext": "Article frames case as political persecution"
+  "analysisContext": "Article frames case as political persecution"
 }
 ```
 
@@ -180,17 +180,17 @@ export interface ClaimUnderstanding {
 
 | Concept | TypeScript Name | JSON Field | Prompt Term | UI Label | Database Column |
 |---------|-----------------|------------|-------------|----------|-----------------|
-| Top-level analytical frame | `AnalysisContext` | `distinctProceedings` | "AnalysisContext" | "Contexts" | `ResultJson.distinctProceedings` |
+| Top-level analytical frame | `AnalysisContext` | `analysisContexts` | "AnalysisContext" | "Contexts" | `ResultJson.analysisContexts` |
 | Per-fact source metadata | `EvidenceScope` | `evidenceScope` | "evidenceScope" | (not displayed separately) | `ResultJson.facts[].evidenceScope` |
-| Narrative background | (no interface) | `proceedingContext` | "ArticleFrame" | "Article Context" | `ResultJson.understanding.proceedingContext` |
+| Narrative background | (no interface) | `analysisContext` | "ArticleFrame" | "Article Context" | `ResultJson.understanding.analysisContext` |
 
 ### Table 2: Reference Fields
 
 | Field Purpose | TypeScript Field | JSON Field | Prompt Term | Valid Values |
 |---------------|------------------|------------|-------------|--------------|
-| Fact → AnalysisContext | `relatedProceedingId?: string` | `relatedProceedingId` | "proceedingId" or "scopeId" | Must match `AnalysisContext.id` |
-| Claim → AnalysisContext | `relatedProceedingId?: string` | `relatedProceedingId` | "proceedingId" | Must match `AnalysisContext.id` |
-| Verdict → AnalysisContext | `proceedingId: string` | `proceedingId` | "proceedingId" | Must match `AnalysisContext.id` |
+| Fact → AnalysisContext | `contextId?: string` | `contextId` | "contextId" | Must match `AnalysisContext.id` |
+| Claim → AnalysisContext | `contextId?: string` | `contextId` | "contextId" | Must match `AnalysisContext.id` |
+| Verdict → AnalysisContext | `contextId: string` | `contextId` | "contextId" | Must match `AnalysisContext.id` |
 
 ### Table 3: Special Constants
 
@@ -225,11 +225,11 @@ function processProceedings(procs: DistinctProceeding[]) {
 ```typescript
 // ✅ CORRECT (matches persisted format)
 const schema = z.object({
-  distinctProceedings: z.array(AnalysisContextSchema),
-  proceedingContext: z.string(),
+  analysisContexts: z.array(AnalysisContextSchema),
+  analysisContext: z.string(),
 });
 
-// ⚠️ NOTE: Field names are legacy but must match database
+// ✅ v2.7.0 field names; legacy names are accepted for backward compatibility
 ```
 
 ### In LLM Prompts
@@ -239,9 +239,9 @@ const schema = z.object({
 const prompt = `
 ## TERMINOLOGY
 
-**AnalysisContext**: Top-level bounded analytical frame (stored as distinctProceedings)
+**AnalysisContext**: Top-level bounded analytical frame (stored as analysisContexts)
 **EvidenceScope**: Per-fact source metadata (stored as fact.evidenceScope)
-**ArticleFrame**: Narrative background (stored as proceedingContext)
+**ArticleFrame**: Narrative background (stored as analysisContext)
 
 Your task: Identify AnalysisContexts from evidence...
 `;
@@ -333,7 +333,7 @@ function getEvidenceScope(fact: ExtractedFact): EvidenceScope | null { ... }
 **Problem**:
 ```json
 {
-  "distinctProceedings": [
+  "analysisContexts": [
     { "name": "Article frames as conspiracy theory" }
   ]
 }
@@ -342,8 +342,8 @@ function getEvidenceScope(fact: ExtractedFact): EvidenceScope | null { ... }
 **Solution**:
 ```json
 {
-  "proceedingContext": "Article frames as conspiracy theory",
-  "distinctProceedings": [
+  "analysisContext": "Article frames as conspiracy theory",
+  "analysisContexts": [
     { "name": "Central Bank Policy Proceeding" }
   ]
 }
@@ -354,14 +354,14 @@ function getEvidenceScope(fact: ExtractedFact): EvidenceScope | null { ... }
 **Problem**:
 ```typescript
 // No check that ID exists
-fact.relatedProceedingId = "CTX_FAKE";
+fact.contextId = "CTX_FAKE";
 ```
 
 **Solution**:
 ```typescript
 const validIds = new Set(contexts.map(c => c.id));
-if (fact.relatedProceedingId && !validIds.has(fact.relatedProceedingId)) {
-  throw new Error(`Invalid context reference: ${fact.relatedProceedingId}`);
+if (fact.contextId && !validIds.has(fact.contextId)) {
+  throw new Error(`Invalid context reference: ${fact.contextId}`);
 }
 ```
 
@@ -370,12 +370,12 @@ if (fact.relatedProceedingId && !validIds.has(fact.relatedProceedingId)) {
 **Problem**:
 ```typescript
 // LLM fails to return scopes, code silently uses default
-const scopes = llmOutput.detectedScopes || [{ id: "CTX_MAIN" }];
+const scopes = llmOutput.analysisContexts || [{ id: "CTX_MAIN" }];
 ```
 
 **Solution**:
 ```typescript
-const scopes = llmOutput.detectedScopes;
+const scopes = llmOutput.analysisContexts;
 if (!scopes || scopes.length === 0) {
   agentLog("WARN", "LLM did not detect scopes, using fallback CTX_MAIN");
   return [{ id: "CTX_MAIN", name: "General Analysis" }];
@@ -400,7 +400,7 @@ const finalScopes = params.verdictData?.detectedScopes?.map((s: any) => ({
 // Each fact references its AnalysisContext
 facts.map(f => ({
   ...f,
-  relatedProceedingId: inferScopeForFact(f, finalScopes), // Maps to AnalysisContext.id
+  contextId: inferScopeForFact(f, finalScopes), // Maps to AnalysisContext.id
 }));
 ```
 
@@ -453,19 +453,19 @@ Use this checklist when reviewing code that involves scopes/contexts:
 **Recent Fixes**:
 - **2026-01-18**: Eliminated "framework" terminology confusion in prompts. The term "framework" is now only used in descriptive English phrases (e.g., "regulatory frameworks", "procedural framework") and never as a reference to `AnalysisContext`. All architectural references now correctly use "context".
 
-**Future State (Target v2.7.0)**: Aggressive refactoring with breaking changes (see [ADR_001](../ARCHITECTURE/ADR_001_Scope_Context_Terminology_Refactoring.md)). All legacy field names will be replaced in a single migration.
+**Current State (v2.7.0)**: Refactor applied. New field names are active, with legacy names accepted for backward compatibility.
 
 **For New Code**:
 - Use `AnalysisContext` type in TypeScript
-- Await migration completion before implementing new features requiring schema changes
-- Follow established field names until migration is complete
+- Use v2.7.0 field names in new work
+- Preserve backward compatibility for legacy records and older jobs
 - Add glossary to any new prompt files
 - Use "context" (not "framework") when referring to `AnalysisContext` in prompts
 
 **For Legacy Code**:
-- Understand that `distinctProceedings` = array of `AnalysisContext`
-- Don't rename fields without coordination with migration plan
-- Add comments explaining field name discrepancy
+- Understand that `analysisContexts` = array of `AnalysisContext`
+- Keep legacy-field fallbacks when reading older data
+- Add comments explaining backward compatibility when needed
 
 ---
 
@@ -473,7 +473,7 @@ Use this checklist when reviewing code that involves scopes/contexts:
 
 **Q: Why are TypeScript names different from JSON field names?**
 
-A: Backward compatibility. The codebase evolved from "Proceeding" terminology to "AnalysisContext", but changing JSON field names would break existing database records. An aggressive refactoring migration is approved and planned for v2.7.0 (see [ADR_001](../ARCHITECTURE/ADR_001_Scope_Context_Terminology_Refactoring.md)).
+A: Backward compatibility. The codebase evolved from "Proceeding" terminology to "AnalysisContext", so v2.7.0 introduced new JSON field names while still accepting legacy records (see [ADR_001](../ARCHITECTURE/ADR_001_Scope_Context_Terminology_Refactoring.md)).
 
 **Q: When should I use EvidenceScope vs AnalysisContext?**
 
@@ -485,7 +485,7 @@ A: `CTX_UNSCOPED` means the fact doesn't map to any detected scope (background i
 
 **Q: Can a fact have BOTH relatedProceedingId AND evidenceScope?**
 
-A: Yes! `relatedProceedingId` says **which AnalysisContext the fact supports**, while `evidenceScope` says **how the source computed the data**. They're orthogonal concepts.
+A: Yes! `contextId` says **which AnalysisContext the fact supports**, while `evidenceScope` says **how the source computed the data**. They're orthogonal concepts.
 
 **Q: Should prompts say "AnalysisContext", "Context", or "Framework"?**
 

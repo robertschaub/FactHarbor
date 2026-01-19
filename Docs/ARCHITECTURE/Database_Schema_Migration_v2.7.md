@@ -2,6 +2,7 @@
 
 **Date**: 2026-01-18  
 **Type**: Breaking Change - JSON Schema Update  
+**Status**: Executed (v2.7.0) — legacy fields accepted for backward compatibility  
 **Target**: SQLite database (`apps/api/factharbor.db`)  
 **Estimated Downtime**: < 5 minutes  
 

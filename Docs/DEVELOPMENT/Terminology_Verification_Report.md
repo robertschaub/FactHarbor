@@ -1,16 +1,16 @@
 # Terminology Verification Report - Current State Assessment
 
 **Date**: 2026-01-18  
-**Version**: Pre-v2.7.0 Baseline  
-**Status**: 🟡 Partially Complete - Migration Pending  
+**Version**: v2.7.0 Verification  
+**Status**: ✅ Migration Applied - Backward Compatibility Preserved  
 
 ---
 
 ## Executive Summary
 
-This report documents the **current state** of FactHarbor's terminology system across all layers, identifying what's working, what's inconsistent, and what's ready for migration.
+This report documents the **current state** of FactHarbor's terminology system across all layers after the v2.7.0 refactor, identifying what is aligned and where legacy compatibility remains.
 
-**Overall Status**: ✅ Conceptually sound, ⚠️ Implementation inconsistent, 🔴 Breaking changes required
+**Overall Status**: ✅ Conceptually sound, ✅ Implementation aligned, 🟡 Legacy compatibility in place
 
 ---
 
@@ -25,44 +25,43 @@ This report documents the **current state** of FactHarbor's terminology system a
 ✅ JSDoc comments present  
 
 ### What's Inconsistent
-⚠️ Variable names use legacy terms (`proceedingId`, `relatedProceedingId`)  
-⚠️ Some functions use "context", others use "proceeding"  
+🟡 Legacy compatibility aliases remain (`proceedingId`, `relatedProceedingId`) for older jobs  
 
 ### Files Audited
 - ✅ `apps/web/src/lib/analyzer/types.ts` - Core types defined
 - ✅ `apps/web/src/lib/analyzer/scopes.ts` - Scope logic
-- ✅ `apps/web/src/lib/analyzer/analyzer.ts` - Main pipeline (uses old field names)
-- ✅ `apps/web/src/lib/analyzer/monolithic-canonical.ts` - Uses old field names
-- ✅ `apps/web/src/lib/analyzer/monolithic-dynamic.ts` - Uses old field names
+- ✅ `apps/web/src/lib/analyzer/analyzer.ts` - Main pipeline (v2.7 field names + legacy fallbacks)
+- ✅ `apps/web/src/lib/analyzer/monolithic-canonical.ts` - v2.7 field names + legacy aliases
+- ✅ `apps/web/src/lib/analyzer/monolithic-dynamic.ts` - v2.7 metadata
 
 ---
 
-## Layer 2: JSON Schema 🔴
+## Layer 2: JSON Schema ✅
 
-**Status**: INCONSISTENT - Field names don't match types
+**Status**: ALIGNED - v2.7 field names active with legacy fallbacks
 
 ### What's Working
 ✅ JSON is valid and parseable  
 ✅ Nested structures are correct  
 ✅ No data corruption  
 
-### What's Broken
-🔴 `distinctProceedings` ≠ `AnalysisContext` (field name mismatch)  
-🔴 `relatedProceedingId` ≠ `contextId` (concept name mismatch)  
-🔴 `proceedingId` in verdicts ≠ `contextId`  
+### Legacy Compatibility
+🟡 `distinctProceedings` accepted for older jobs  
+🟡 `relatedProceedingId` accepted for older facts/claims  
+🟡 `proceedingId` accepted in older verdicts  
 
-### Sample Current JSON
+### Sample v2.7 JSON
 ```json
 {
-  "distinctProceedings": [...],  // Should be: analysisContexts
+  "analysisContexts": [...],
   "facts": [
     {
-      "relatedProceedingId": "CTX_TSE"  // Should be: contextId
+      "contextId": "CTX_TSE"
     }
   ],
   "verdicts": [
     {
-      "proceedingId": "CTX_TSE"  // Should be: contextId
+      "contextId": "CTX_TSE"
     }
   ]
 }
@@ -70,9 +69,9 @@ This report documents the **current state** of FactHarbor's terminology system a
 
 ---
 
-## Layer 3: Database 🔴
+## Layer 3: Database 🟡
 
-**Status**: NEEDS MIGRATION - JSON blob contains old field names
+**Status**: MIGRATION APPLIED - Legacy records still exist
 
 ### Current Schema
 ```sql
@@ -85,9 +84,9 @@ CREATE TABLE Jobs (
 ```
 
 ### What Needs Migration
-🔴 All `ResultJson` values with `distinctProceedings`  
-🔴 All facts with `relatedProceedingId`  
-🔴 All verdicts with `proceedingId`  
+🟡 Legacy `ResultJson` values with `distinctProceedings`  
+🟡 Legacy facts with `relatedProceedingId`  
+🟡 Legacy verdicts with `proceedingId`  
 
 ### Database Statistics (as of 2026-01-18)
 - Total jobs: ~50-100 (estimated)
@@ -107,8 +106,7 @@ CREATE TABLE Jobs (
 ✅ **Framework terminology fixed** (2026-01-18)  
 
 ### What Needs Updating
-⚠️ Orchestrated pipeline prompts still reference old field names  
-⚠️ Some provider variants use "Proceeding" terminology  
+🟡 Continue monitoring provider variants for drift (ensure `contextId`, `analysisContexts`)
 
 ### Files Audited
 - ✅ `apps/web/src/lib/analyzer/prompts/base/understand-base.ts` - Uses "AnalysisContext"
@@ -132,7 +130,7 @@ CREATE TABLE Jobs (
 
 ---
 
-## Layer 6: UI Components ⚠️
+## Layer 6: UI Components ✅
 
 **Status**: MOSTLY GOOD - Uses data as provided
 
@@ -141,7 +139,7 @@ CREATE TABLE Jobs (
 ✅ No hardcoded field names in rendering logic  
 
 ### What Needs Updating
-⚠️ Variable names in `apps/web/src/app/jobs/[id]/page.tsx` use legacy terms
+🟡 Legacy fallback support should remain for older jobs
 
 ---
 
@@ -152,10 +150,12 @@ CREATE TABLE Jobs (
 | `AnalysisContext` | TypeScript types, prompts | ✅ GOOD | Keep |
 | `EvidenceScope` | TypeScript types, prompts | ✅ GOOD | Keep |
 | `ArticleFrame` | Prompts (internal) | ✅ GOOD | Keep |
-| `distinctProceedings` | JSON schema | 🔴 BAD | Rename to `analysisContexts` |
-| `relatedProceedingId` | Code, JSON | 🔴 BAD | Rename to `contextId` |
-| `proceedingId` | Code, JSON | 🔴 BAD | Rename to `contextId` |
-| `proceedingContext` | Variable names | ⚠️ INCONSISTENT | Rename to `analysisContext` |
+| `analysisContexts` | JSON schema | ✅ GOOD | Active field name |
+| `contextId` | Code, JSON | ✅ GOOD | Active field name |
+| `analysisContext` | Understanding | ✅ GOOD | Active field name |
+| Legacy `distinctProceedings` | JSON schema | 🟡 LEGACY | Supported for older jobs |
+| Legacy `relatedProceedingId` | Code, JSON | 🟡 LEGACY | Supported for older jobs |
+| Legacy `proceedingId` | Code, JSON | 🟡 LEGACY | Supported for older jobs |
 | "framework" (arch) | Prompts | ✅ FIXED | Was causing confusion, now resolved |
 
 ---
@@ -165,11 +165,11 @@ CREATE TABLE Jobs (
 ### Unit Tests
 ✅ Core types have tests  
 ✅ Scope detection has tests  
-⚠️ Tests use old field names (will break after migration)  
+✅ Tests updated to accept v2.7 fields with legacy fallbacks  
 
 ### Integration Tests
 ✅ Multi-jurisdiction test exists  
-⚠️ Needs updating for new field names  
+✅ Updated to v2.7 field names  
 
 ### Regression Tests
 ✅ Test suite exists (`run-regression.ps1`)  
@@ -183,8 +183,8 @@ CREATE TABLE Jobs (
 |----------|--------|--------------|
 | README.md | ✅ GOOD | Minimal |
 | AGENTS.md | ✅ GOOD | Review for field name references |
-| TERMINOLOGY.md | ✅ UPDATED | ✅ Done (v2.0) |
-| LLM_Schema_Mapping.md | ✅ NEW | ✅ Created (2026-01-18) |
+| TERMINOLOGY.md | ✅ UPDATED | ✅ Done (v2.7.0) |
+| LLM_Schema_Mapping.md | ✅ UPDATED | ✅ v2.7.0 alignment |
 | Calculations.md | ⚠️ UNKNOWN | Needs review |
 | Getting_Started.md | ⚠️ UNKNOWN | Needs review |
 | ADR_001 | ✅ NEW | ✅ Created (2026-01-18) |
@@ -194,7 +194,7 @@ CREATE TABLE Jobs (
 ## Critical Findings
 
 ### 🔴 Critical Issues (Block Migration)
-1. **No issues blocking migration** - All prerequisites met
+1. **None** - Migration already applied
 
 ### ⚠️ Important Issues (Fix During Migration)
 1. Variable names inconsistent with concept names

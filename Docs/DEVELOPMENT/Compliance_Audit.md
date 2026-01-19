@@ -240,9 +240,9 @@ This comprehensive audit reviews the FactHarbor codebase against [AGENTS.md](../
 
 1. **Generic Scope Schema** (Line 2270):
    ```typescript
-   distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA)
+   analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA)
    ```
-   **Name Changed**: v2.6.18+ uses "Scopes/Contexts" instead of "Proceedings"
+   **Name Changed**: v2.7.0 uses `analysisContexts` (legacy `distinctProceedings` accepted)
    **Status**: ✅ Terminology unified
 
 2. **Multi-Scope Analysis** (Line 2850):

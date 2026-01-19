@@ -244,7 +244,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - Grounding score display in dynamic result viewer
 - Provenance validation integrated in all monolithic paths
 - LLM tiering support (`FH_LLM_TIERING=on`)
-- `relatedProceedingId` for claim-scope association
+- `contextId` for claim-scope association
 - Content-based fact-to-scope inference
 - Multi-jurisdiction stress tests added
 - Comprehensive `.env.example` documentation

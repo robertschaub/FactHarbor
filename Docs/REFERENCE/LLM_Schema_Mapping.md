@@ -1,6 +1,6 @@
 # LLM Schema Mapping Reference
 
-**Version**: 1.0  
+**Version**: 2.7.0  
 **Date**: 2026-01-18  
 **Purpose**: Complete mapping of TypeScript → LLM Prompts → JSON Schemas  
 **Audience**: Prompt Engineers, LLM System Developers  
@@ -15,9 +15,9 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 ## Master Mapping Table
 
-| TypeScript Type | Prompt Term | LLM Output Field (CURRENT) | LLM Output Field (TARGET) | Zod Schema |
+| TypeScript Type | Prompt Term | LLM Output Field (v2.7) | LLM Output Field (Legacy) | Zod Schema |
 |----------------|-------------|---------------------------|--------------------------|------------|
-| `AnalysisContext` | "AnalysisContext" or "Scope" | `distinctProceedings` | `analysisContexts` | `AnalysisContextSchema` |
+| `AnalysisContext` | "AnalysisContext" or "Scope" | `analysisContexts` | `distinctProceedings` | `AnalysisContextSchema` |
 | `EvidenceScope` | "EvidenceScope" | `evidenceScope` | `evidenceScope` | `EvidenceScopeSchema` |
 | `ExtractedFact` | "Fact" | `facts` | `facts` | `ExtractedFactSchema` |
 | `ContextAnswer` | "Verdict" | (embedded in result) | (embedded in result) | `ContextAnswerSchema` |
@@ -44,7 +44,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 - "Multi-Scope Detection" for identifying distinct frames
 - "Claim Extraction" for factual assertions
 
-**LLM Output Schema (CURRENT)**:
+**LLM Output Schema (v2.7)**:
 ```json
 {
   "impliedClaim": "string",
@@ -59,7 +59,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
     }
   ],
   "researchQueries": ["string"],
-  "detectedScopes": [
+  "analysisContexts": [
     {
       "id": "string",
       "name": "string",
@@ -73,7 +73,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 **Zod Validation**: `UnderstandingSchema` (in `analyzer.ts`)
 
 **Key Mappings**:
-- Prompt: "AnalysisContext" → Output: `detectedScopes` array
+- Prompt: "AnalysisContext" → Output: `analysisContexts` array
 - Prompt: "requiresSeparateAnalysis" → Output: `requiresSeparateAnalysis` boolean
 
 ---
@@ -93,10 +93,10 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 **Prompt Terms Used**:
 - "EvidenceScope" for per-fact methodology metadata
-- "relatedProceedingId" (CURRENT) / "contextId" (TARGET) for scope assignment
+- "contextId" for scope assignment
 - "claimDirection" for support/contradict/neutral assessment
 
-**LLM Output Schema (CURRENT)**:
+**LLM Output Schema (v2.7)**:
 ```json
 {
   "facts": [
@@ -107,7 +107,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
       "specificity": "high" | "medium",
       "sourceExcerpt": "string (50-200 chars)",
       "claimDirection": "supports" | "contradicts" | "neutral",
-      "relatedProceedingId": "string (e.g., CTX_TSE)",
+      "contextId": "string (e.g., CTX_TSE)",
       "evidenceScope": {
         "name": "string",
         "methodology": "string?",
@@ -120,14 +120,14 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 }
 ```
 
-**Target Schema** (v2.7.0):
-- Change: `relatedProceedingId` → `contextId`
+**Legacy Compatibility**:
+- Legacy field `relatedProceedingId` is still accepted when reading older jobs.
 
 **Zod Validation**: `ExtractedFactSchema` (in `types.ts`)
 
 **Key Mappings**:
 - Prompt: "EvidenceScope" → Output: `evidenceScope` object (nullable)
-- Prompt: "relatedProceedingId" → Output: `relatedProceedingId` (CURRENT) / `contextId` (TARGET)
+- Prompt: "contextId" → Output: `contextId` (legacy: `relatedProceedingId`)
 
 ---
 
@@ -147,13 +147,13 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 - "AnalysisContext" (primary term)
 - "ArticleFrame" (what NOT to split on)
 - "EvidenceScope" (distinguished from AnalysisContext)
-- "distinctProceedings" (output field name - CURRENT)
+- "analysisContexts" (output field name)
 
-**LLM Output Schema (CURRENT)**:
+**LLM Output Schema (v2.7)**:
 ```json
 {
   "requiresSeparateAnalysis": boolean,
-  "distinctProceedings": [
+  "analysisContexts": [
     {
       "id": "string",
       "name": "string",
@@ -175,20 +175,19 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
   "factScopeAssignments": [
     {
       "factId": "string",
-      "proceedingId": "string"
+      "contextId": "string"
     }
   ]
 }
 ```
 
-**Target Schema** (v2.7.0):
-- Change: `distinctProceedings` → `analysisContexts`
-- Change: `proceedingId` → `contextId` in assignments
+**Legacy Compatibility**:
+- Legacy fields `distinctProceedings` and `proceedingId` are still accepted when reading older jobs.
 
 **Zod Validation**: `ScopeRefinementSchema` (in `analyzer.ts`)
 
 **Key Mappings**:
-- Prompt: "AnalysisContext" → Output: `distinctProceedings` (CURRENT) / `analysisContexts` (TARGET)
+- Prompt: "AnalysisContext" → Output: `analysisContexts` (legacy: `distinctProceedings`)
 - Prompt: "ArticleFrame" → (explicitly NOT included in output)
 - Prompt: "EvidenceScope" → (per-fact metadata, not top-level context)
 
@@ -210,17 +209,17 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 ```
 
 **Prompt Terms Used**:
-- "proceedingId" (CURRENT) / "contextId" (TARGET) for verdict assignment
+- "contextId" for verdict assignment
 - "answer" for truth percentage (0-100)
 - "keyFactors" for evidence summary
 
-**LLM Output Schema (CURRENT)**:
+**LLM Output Schema (v2.7)**:
 ```json
 {
   "verdicts": [
     {
-      "proceedingId": "string",
-      "proceedingName": "string",
+      "contextId": "string",
+      "contextName": "string",
       "claimId": "string",
       "answer": number (0-100),
       "confidence": number (0-100),
@@ -239,9 +238,8 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 }
 ```
 
-**Target Schema** (v2.7.0):
-- Change: `proceedingId` → `contextId`
-- Change: `proceedingName` → `contextName`
+**Legacy Compatibility**:
+- Legacy fields `proceedingId`/`proceedingName` are still accepted when reading older jobs.
 
 **Zod Validation**: `VerdictSchema` (in `analyzer.ts`)
 
@@ -254,8 +252,8 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 | Layer | Term | Notes |
 |-------|------|-------|
 | Prompt | "AnalysisContext" or "Scope" | Primary prompt term |
-| LLM Output (CURRENT) | `distinctProceedings` | JSON field name |
-| LLM Output (TARGET) | `analysisContexts` | Post-refactoring field name |
+| LLM Output (v2.7) | `analysisContexts` | JSON field name |
+| LLM Output (Legacy) | `distinctProceedings` | Backward compatibility |
 | TypeScript | `AnalysisContext` | Interface name |
 | Database | (embedded in ResultJson) | Stored as JSON blob |
 

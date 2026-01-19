@@ -116,7 +116,7 @@ interface AnalysisContext {
 Analysis contexts are determined from:
 1. **Input analysis** (understandClaim phase): Explicit or implied analysis contexts in user query
 2. **Evidence extraction** (extractFacts phase): Sources may define their own EvidenceScope via `evidenceScope`
-3. **Claim decomposition**: Claims tagged with `relatedProceedingId` (legacy field name)
+3. **Claim decomposition**: Claims tagged with `contextId` (legacy: `relatedProceedingId`)
 
 ### EvidenceScope vs AnalysisContext
 
@@ -169,7 +169,7 @@ Counter-evidence is scoped to relevant analysis contexts:
 const contradictingFactCount = facts.filter(f =>
   !verdict.supportingFactIds.includes(f.id) &&
   f.category === "criticism" &&
-  (!f.relatedProceedingId || f.relatedProceedingId === verdict.relatedProceedingId)
+  (!f.contextId || f.contextId === verdict.contextId)
 ).length;
 ```
 

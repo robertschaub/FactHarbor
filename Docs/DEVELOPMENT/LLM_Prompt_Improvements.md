@@ -25,10 +25,9 @@ Following the `AGENTS.md` mandate, all prompts now adhere to these fundamental r
 1.  **No Domain Hardcoding**: Prompts must work for any topic (legal, scientific, political).
 2.  **Parameterization**: Use placeholders like `{originalClaim}` and `{currentDate}`.
 3.  **Input Neutrality**: Instructions ensure that "Is X true?" and "X is true" produce identical analytical depth.
-4.  **Terminology Flexibility**: The system now recognizes synonyms for analytical frames:
-    - **Scope**: Range, extent, domain, framework, breadth.
-    - **Context**: Perspective, lens, framework, viewpoint, analytical frame.
-    - **Boundaries**: Parameters, perimeter, study limits, constraints.
+4.  **Terminology Precision**: Prompts use **AnalysisContext** and `contextId` explicitly.
+    - Avoid "framework" for architectural concepts (reserved for descriptive phrases).
+    - Use "scope" only when a glossary defines it as AnalysisContext.
 
 ---
 
@@ -97,8 +96,8 @@ graph TD
 ### ⚠️ Critical Gaps (The "Red Zone")
 1.  **Live Execution (NOT TESTED)**: No actual LLM calls have been made with these new prompts.
 2.  **Cost Impact**: Actual token usage increase is unknown (estimated +15%).
-3.  **Orchestrated Pipeline**: The main `analyzer.ts` (6700 lines) **has not been updated**. It still uses old, hardcoded prompts.
-4.  **UI Alignment**: The UI (`page.tsx`) might not yet display the new "Grounding Score" or multi-scope metadata correctly.
+3.  **Orchestrated Pipeline**: The main `analyzer.ts` is now updated to match v2.7 terminology.
+4.  **UI Alignment**: The UI (`page.tsx`) should display multi-context metadata; verify in current build.
 
 ---
 

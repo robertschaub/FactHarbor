@@ -85,7 +85,7 @@ Quick links to start each phase:
 
 | Phase | Days | Start Task | Primary Document Section |
 |-------|------|------------|-------------------------|
-| **Phase 1**: Preparation | 1-2 | Create feature branch & backup | Roadmap lines 20-53 |
+| **Phase 1**: Preparation | 1-2 | Confirm main branch & backup | Roadmap lines 20-53 |
 | **Phase 2**: Code Layer | 3-7 | Update types.ts | Roadmap lines 55-116 |
 | **Phase 3**: Database | 8-9 | Run migration script | Migration Script + Roadmap 118-160 |
 | **Phase 4**: Prompts | 10-12 | Update base prompts | Roadmap lines 162-220 |
@@ -111,7 +111,7 @@ Before starting Day 1:
 ## 🔴 Critical First Day Actions
 
 **Day 1 Morning** (2 hours):
-1. Create feature branch: `git checkout -b feature/terminology-refactoring-v2.7`
+1. Confirm main branch: `git checkout main`
 2. Backup database:
    ```powershell
    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -188,7 +188,7 @@ Docs/
 # Read all documentation first, then start Day 1
 
 # Option 2: Jump straight to Day 1 (if already familiar)
-git checkout -b feature/terminology-refactoring-v2.7
+git checkout main
 # Then follow Roadmap Day 1 tasks
 ```
 

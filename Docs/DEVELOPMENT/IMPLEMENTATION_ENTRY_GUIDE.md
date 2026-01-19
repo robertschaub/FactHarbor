@@ -10,7 +10,7 @@
 
 **You are here**: All architecture review cycles complete. Ready to begin Phase 1.
 
-**Next action**: Create feature branch `feature/terminology-refactoring-v2.7` and begin Day 1 tasks.
+**Next action**: Confirm `main` branch and begin Day 1 tasks.
 
 ---
 
@@ -99,9 +99,9 @@ For context on how we got here (not required for implementation):
    Copy-Item apps\api\factharbor.db "apps\api\factharbor-pre-v2.7-$timestamp.db"
    ```
 
-2. **Create Feature Branch**
+2. **Confirm Main Branch**
    ```bash
-   git checkout -b feature/terminology-refactoring-v2.7
+   git checkout main
    ```
 
 3. **Stop Services**
@@ -109,9 +109,9 @@ For context on how we got here (not required for implementation):
    .\scripts\stop-services.ps1
    ```
 
-### ⚠️ Key Transformations (Memorize These)
+### ⚠️ Key Transformations (Legacy → v2.7)
 
-| Old Name | New Name | Where |
+| Legacy Name | v2.7 Name | Where |
 |----------|----------|-------|
 | `distinctProceedings` | `analysisContexts` | JSON top-level |
 | `relatedProceedingId` | `contextId` | Facts, claims |
@@ -194,14 +194,12 @@ Use these at checkpoints:
 
 ```bash
 # Code layer verification (Day 6)
-grep -rn "distinctProceedings" apps/web/src/lib/analyzer/ | grep -v "test" | grep -v ".md"
-grep -rn "relatedProceedingId" apps/web/src/lib/analyzer/ | grep -v "test" | grep -v ".md"
+rg "distinctProceedings|relatedProceedingId|proceedingId|proceedingContext" apps/web/src/lib/analyzer/
 
 # Prompt layer verification (Day 12)
-grep -rn "distinctProceedings" apps/web/src/lib/analyzer/prompts/
-grep -rn "relatedProceedingId" apps/web/src/lib/analyzer/prompts/
+rg "distinctProceedings|relatedProceedingId|proceedingId|proceedingContext" apps/web/src/lib/analyzer/prompts/
 
-# Expected result: Zero occurrences (or only in comments explaining legacy)
+# Expected result: Zero occurrences (or only in legacy-compat comments)
 ```
 
 ---

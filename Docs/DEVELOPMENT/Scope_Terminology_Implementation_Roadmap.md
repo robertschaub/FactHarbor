@@ -24,14 +24,14 @@ Week 3.5: Buffer + Final Review (Days 18-19)
 ## Phase 1: Preparation & Planning (Days 1-2)
 
 ### Objectives
-✅ Create migration branch  
+✅ Confirm main branch  
 ✅ Backup production database  
 ✅ Set up test environment  
 
 ### Tasks
 
 **Day 1 Morning**:
-- [ ] Create feature branch: `feature/terminology-refactoring-v2.7`
+- [ ] Confirm main branch: `main`
 - [ ] Backup database: `factharbor-pre-v2.7-$(date).db`
 - [ ] Copy database for testing: `factharbor-test.db`
 - [ ] Review all documentation (ADR, mappings, this roadmap)
@@ -49,7 +49,7 @@ Week 3.5: Buffer + Final Review (Days 18-19)
 - [ ] Get team sign-off to proceed
 
 **Deliverables**:
-- ✅ Feature branch created
+- ✅ Main branch confirmed
 - ✅ Database backed up
 - ✅ Migration script tested
 - ✅ Baseline metrics documented
@@ -114,9 +114,7 @@ Week 3.5: Buffer + Final Review (Days 18-19)
   - Update variable names
 - [ ] Search entire codebase for remaining references:
   ```bash
-  grep -r "distinctProceedings" apps/web/src
-  grep -r "relatedProceedingId" apps/web/src
-  grep -r "proceedingId" apps/web/src
+  rg "distinctProceedings|relatedProceedingId|proceedingId|proceedingContext" apps/web/src
   ```
 - [ ] Fix all findings
 
@@ -161,7 +159,7 @@ Week 3.5: Buffer + Final Review (Days 18-19)
 - [ ] Sample 20 random jobs manually
 - [ ] Check for:
   - `analysisContexts` present
-  - `distinctProceedings` absent
+  - legacy fields (`distinctProceedings`, `relatedProceedingId`, `proceedingId`) absent in migrated records
   - `contextId` in verdicts
   - No broken JSON
 
@@ -203,9 +201,7 @@ Week 3.5: Buffer + Final Review (Days 18-19)
   - [ ] Replace all `proceedingId` → `contextId` in prompt strings
 - [ ] Run grep verification:
   ```bash
-  grep -n "distinctProceedings" apps/web/src/lib/analyzer/analyzer.ts
-  grep -n "relatedProceedingId" apps/web/src/lib/analyzer/analyzer.ts
-  grep -n "proceedingId" apps/web/src/lib/analyzer/analyzer.ts
+  rg "distinctProceedings|relatedProceedingId|proceedingId|proceedingContext" apps/web/src/lib/analyzer/analyzer.ts
   ```
 - [ ] Verify: Zero occurrences of old terms in prompt strings
 
@@ -221,9 +217,7 @@ Week 3.5: Buffer + Final Review (Days 18-19)
 - [ ] Verify output schema compliance
 - [ ] **Final verification**: Run grep across all prompt files
   ```bash
-  grep -r "distinctProceedings" apps/web/src/lib/analyzer/prompts/
-  grep -r "relatedProceedingId" apps/web/src/lib/analyzer/prompts/
-  grep -r "proceedingId" apps/web/src/lib/analyzer/prompts/
+  rg "distinctProceedings|relatedProceedingId|proceedingId|proceedingContext" apps/web/src/lib/analyzer/prompts/
   ```
 - [ ] Document: Zero occurrences expected (or only in comments explaining legacy)
 

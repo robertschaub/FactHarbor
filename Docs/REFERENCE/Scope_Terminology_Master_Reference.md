@@ -1,6 +1,6 @@
 # Scope/Context Terminology - Master Quick Reference
 
-**Version**: 2.0 (Pre-v2.7.0)  
+**Version**: 2.7.0  
 **Purpose**: Single-page quick lookup for developers  
 **Print This**: Keep handy during development  
 
@@ -19,12 +19,12 @@
 
 ## 📊 Quick Lookup Table
 
-| Concept | TypeScript Type | JSON Field (CURRENT) | JSON Field (TARGET v2.7) | Prompt Term |
+| Concept | TypeScript Type | JSON Field (v2.7) | JSON Field (Legacy) | Prompt Term |
 |---------|----------------|---------------------|-------------------------|-------------|
-| Top-level context | `AnalysisContext` | `distinctProceedings` | `analysisContexts` | "AnalysisContext" |
+| Top-level context | `AnalysisContext` | `analysisContexts` | `distinctProceedings` | "AnalysisContext" |
 | Per-fact metadata | `EvidenceScope` | `evidenceScope` | `evidenceScope` | "EvidenceScope" |
-| Context reference | `string` | `relatedProceedingId` | `contextId` | "contextId" |
-| Verdict reference | `string` | `proceedingId` | `contextId` | "contextId" |
+| Context reference | `string` | `contextId` | `relatedProceedingId` | "contextId" |
+| Verdict reference | `string` | `contextId` | `proceedingId` | "contextId" |
 
 ---
 
@@ -137,15 +137,15 @@ FactHarbor Analysis Result
 ### Search for Legacy Terms (Pre-v2.7)
 ```bash
 # Find old field names
-grep -r "distinctProceedings" apps/web/src
-grep -r "relatedProceedingId" apps/web/src
-grep -r "proceedingId" apps/web/src | grep -v "// legacy"
+rg "distinctProceedings" apps/web/src
+rg "relatedProceedingId" apps/web/src
+rg "proceedingId" apps/web/src
 ```
 
 ### Validate New Schema (Post-v2.7)
 ```bash
 # Ensure no legacy terms remain
-grep -r "distinctProceedings" apps/web/src && echo "FOUND LEGACY TERMS!" || echo "Clean!"
+rg "distinctProceedings" apps/web/src && echo "FOUND LEGACY TERMS!" || echo "Clean!"
 ```
 
 ---

@@ -1,14 +1,14 @@
-# Scope/Context Terminology & Architecture Analysis
+# Scope/Context Terminology & Architecture Analysis (Pre-v2.7.0)
 
 **Date**: 2026-01-18
 **Author**: AI Assistant (Lead Developer & LLM Expert Role)
-**Status**: Analysis Complete - Awaiting Implementation Decisions
+**Status**: Archived Reference - v2.7.0 Implemented
 
 ---
 
 ## Executive Summary
 
-This document provides a comprehensive audit of FactHarbor's **Scope/Context** terminology system across three critical layers: code objects, code-to-prompt mappings, and LLM-to-schema mappings. The investigation reveals **systematic inconsistencies** stemming from a "backward compatibility trap" where legacy field names (`distinctProceedings`, `proceedingContext`) persist despite semantic evolution toward clearer terminology (`AnalysisContext`, `ArticleFrame`).
+This document provides a comprehensive audit of FactHarbor's **Scope/Context** terminology system across three critical layers: code objects, code-to-prompt mappings, and LLM-to-schema mappings. It reflects the **pre-v2.7.0 state** and documents inconsistencies that have since been addressed. For current terminology, see `Docs/REFERENCE/TERMINOLOGY.md` and `Docs/REFERENCE/LLM_Schema_Mapping.md`.
 
 ### Critical Findings
 

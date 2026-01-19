@@ -1,7 +1,7 @@
 # ADR 001: Scope/Context Terminology Refactoring with Breaking Changes
 
 **Date**: 2026-01-18  
-**Status**: Approved  
+**Status**: Implemented (v2.7.0)  
 **Decision Makers**: Project Lead  
 **Architects**: Lead Developer, LLM Expert  
 
@@ -122,7 +122,7 @@ We will:
 
 ### Phase 1: Preparation (Week 1)
 - **Backup database**: `factharbor-backup-$(date).db`
-- **Create migration branch**: `feature/terminology-refactoring-v2.7`
+- **Confirm main branch**: work directly on `main`
 - **Document current schema**: Snapshot before changes
 
 ### Phase 2: Code Layer (Week 1-2)

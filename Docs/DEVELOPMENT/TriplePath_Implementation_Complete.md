@@ -70,11 +70,11 @@ The Triple-Path Pipeline architecture has been fully implemented, enabling users
 - Color-coded quality indicator (good/moderate/low)
 
 ### 4. Claim-Scope Association ✅ FIXED
-**Problem**: `relatedProceedingId` missing from claim verdicts.
+**Problem**: `contextId` missing from claim verdicts.
 
 **Solution**:
-- Added `relatedProceedingId` field to `claimVerdicts` in `buildResultJson`
-- Facts now have `relatedProceedingId` via content-based scope inference
+- Added `contextId` field to `claimVerdicts` in `buildResultJson`
+- Facts now have `contextId` via content-based scope inference
 - Multi-scope display in UI now works correctly
 
 ### 5. LLM Tiering ✅ IMPLEMENTED
@@ -239,9 +239,9 @@ When `FH_LLM_TIERING=on`:
 
 ### Core Pipeline
 - `apps/web/src/lib/analyzer/monolithic-canonical.ts`
-  - Added `VerdictSchema.detectedScopes` for multi-scope detection
+  - Added `VerdictSchema.detectedScopes` for multi-scope detection (legacy naming)
   - Added `inferScopeForFact()` for fact-scope association
-  - Added `relatedProceedingId` to claim verdicts
+  - Added `contextId` to claim verdicts
   - Integrated provenance validation via `filterFactsByProvenance()`
   - Uses `getModelForTask()` for LLM tiering
 

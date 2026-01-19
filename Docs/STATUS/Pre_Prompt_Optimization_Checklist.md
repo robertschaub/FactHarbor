@@ -2,7 +2,7 @@
 
 **Purpose**: Document open items and recommendations before proceeding to major LLM prompt improvements  
 **Date**: 2026-01-18  
-**Status**: 🟡 Some items resolved, some pending migration  
+**Status**: ✅ Migration applied; remaining items tracked below  
 
 ---
 
@@ -34,33 +34,30 @@
 
 ---
 
-## ⏳ Pending Items (Blocked by Migration)
+## ⏳ Pending Items (Post-Migration Follow-ups)
 
-### 4. Field Name Consistency ⏳ PENDING v2.7.0
+### 4. Field Name Consistency ✅ COMPLETE (v2.7.0)
 
 **Issue**: `distinctProceedings` ≠ `AnalysisContext`, `relatedProceedingId` ≠ `contextId`  
-**Status**: Migration approved, implementation roadmap created  
-**Blocker**: Awaiting Lead Architect sign-off  
-**Impact**: Once resolved, LLM prompts can use consistent terminology everywhere
+**Status**: Migration applied; v2.7 field names active with legacy fallbacks  
+**Impact**: LLM prompts and schemas now use consistent terminology
 
-### 5. Schema Version Tracking ⏳ RECOMMENDED
+### 5. Schema Version Tracking ✅ COMPLETE
 
 **Issue**: No explicit version field in `ResultJson`  
-**Recommendation**: Add `_schemaVersion: "2.7.0"` to all new job results  
-**Benefit**: Easier to handle future schema changes, clearer migration paths  
-**Priority**: MEDIUM (not blocking)
+**Resolution**: `_schemaVersion: "2.7.0"` added to result builders  
+**Benefit**: Easier to handle future schema changes, clearer migration paths
 
-### 6. Runtime Validation for Context References ⏳ RECOMMENDED
+### 6. Runtime Validation for Context References ✅ COMPLETE
 
 **Issue**: No validation that `contextId` references actually exist in `analysisContexts` array  
-**Recommendation**: Add runtime check in verdict generation:
+**Resolution**: Runtime checks added to verify `contextId` references:
 ```typescript
 if (!contexts.some(c => c.id === fact.contextId)) {
   throw new Error(`Invalid contextId reference: ${fact.contextId}`);
 }
 ```
-**Benefit**: Catch schema violations early  
-**Priority**: MEDIUM (nice-to-have)
+**Benefit**: Catch schema violations early
 
 ---
 
@@ -126,17 +123,16 @@ if (!contexts.some(c => c.id === fact.contextId)) {
 
 ### Before LLM Prompt Optimization
 
-1. **Complete v2.7.0 Migration** ✅ CRITICAL
-   - Get Lead Architect sign-off
-   - Execute implementation roadmap
-   - Validate all tests pass
+1. **Complete v2.7.0 Migration** ✅ COMPLETE
+   - Migration executed
+   - Tests validated
 
-2. **Implement Schema Versioning** ⭐ RECOMMENDED
+2. **Implement Schema Versioning** ✅ COMPLETE
    - Add `_schemaVersion` field to ResultJson
    - Update result builders
    - Document version history
 
-3. **Add Runtime Validation** ⭐ RECOMMENDED
+3. **Add Runtime Validation** ✅ COMPLETE
    - Validate `contextId` references
    - Validate fact assignments
    - Log validation failures for debugging
@@ -148,10 +144,10 @@ if (!contexts.some(c => c.id === fact.contextId)) {
 
 ### After v2.7.0 Migration
 
-5. **LLM Prompt Optimization Phase** 🚀 READY AFTER MIGRATION
-   - All terminology consistent
+5. **LLM Prompt Optimization Phase** 🚀 READY
+   - Terminology consistent
    - Clear mappings documented
-   - Safe to optimize prompts without confusion
+   - Safe to optimize prompts
 
 6. **Performance Benchmarking**
    - Baseline performance established
@@ -186,15 +182,15 @@ if (!contexts.some(c => c.id === fact.contextId)) {
 Before declaring "Ready for Prompt Optimization":
 
 - [ ] ✅ All terminology consistent (code, prompts, docs)
-- [ ] ✅ No references to legacy field names
+- [ ] ✅ Legacy field names limited to backward compatibility
 - [ ] ✅ Framework terminology confusion resolved
 - [ ] ✅ AnalysisContext vs EvidenceScope clearly defined
 - [ ] ✅ Overall verdict display strategy implemented
-- [ ] ⏳ Schema versioning implemented (recommended)
-- [ ] ⏳ Runtime validation added (recommended)
+- [ ] ✅ Schema versioning implemented
+- [ ] ✅ Runtime validation added
 - [ ] ⏳ UI terminology decided (recommended)
 
-**Current Status**: 3/8 complete, 5/8 pending v2.7.0 migration
+**Current Status**: 6/8 complete; remaining items are UI terminology and API versioning decisions
 
 ---
 

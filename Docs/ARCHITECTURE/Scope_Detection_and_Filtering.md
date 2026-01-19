@@ -6,8 +6,8 @@ This document explains how FactHarbor detects and manages **AnalysisContexts** (
 
 | Term | Meaning | Code Location |
 |------|---------|---------------|
-| **AnalysisContext** | A bounded analytical frame that should be analyzed separately. Shown in UI as "Contexts". | `distinctProceedings` field (name kept for backward compat) |
-| **ArticleFrame** | Narrative/background framing of the input. NOT a reason to split. | `proceedingContext` field (name kept for backward compat) |
+| **AnalysisContext** | A bounded analytical frame that should be analyzed separately. Shown in UI as "Contexts". | `analysisContexts` field (legacy: `distinctProceedings`) |
+| **ArticleFrame** | Narrative/background framing of the input. NOT a reason to split. | `analysisContext` field (legacy: `proceedingContext`) |
 | **EvidenceScope** | Per-fact source methodology/boundaries. Attached to individual facts. | `ExtractedFact.evidenceScope` |
 
 ### Key distinctions
@@ -24,7 +24,7 @@ In prompts, you may use **scope / bounded context / boundary** as synonyms for *
 
 At a high level:
 
-1. **Step 1 (Understand)**: The model proposes initial `distinctProceedings` (AnalysisContexts) and assigns `relatedProceedingId` to sub-claims when applicable.
+1. **Step 1 (Understand)**: The model proposes initial `analysisContexts` (AnalysisContexts) and assigns `contextId` to sub-claims when applicable.
 2. **Supplemental pass (optional)**: If the initial understanding under-splits, a best-effort prompt may propose additional analysis contexts.
 3. **Evidence-driven refinement**: After research produces facts, the system may refine analysis contexts using facts (and per-fact `evidenceScope`) and remap assignments.
 
