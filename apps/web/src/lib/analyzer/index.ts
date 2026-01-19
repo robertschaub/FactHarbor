@@ -27,9 +27,11 @@ export type {
   VerdictValidationResult,
 
   // Data types
+  AnalysisContext,
   DistinctProceeding,
   KeyFactor,
   FactorAnalysis,
+  ContextAnswer,
   ProceedingAnswer,
   SearchQuery,
   ResearchState,

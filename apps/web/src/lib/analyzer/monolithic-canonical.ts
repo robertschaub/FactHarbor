@@ -174,7 +174,6 @@ async function extractClaim(
     },
   });
 
-  // @ts-expect-error - Deep type inference issue with AI SDK Output.object()
   const outputConfig = Output.object({ schema: ClaimExtractionSchema });
 
   const result = await generateText({
@@ -226,7 +225,6 @@ async function extractFacts(
     },
   });
 
-  // @ts-expect-error - Deep type inference issue with AI SDK Output.object()
   const outputConfig = Output.object({ schema: FactExtractionSchema });
 
   const result = await generateText({
@@ -283,7 +281,6 @@ async function generateVerdict(
     },
   });
 
-  // @ts-expect-error - Deep type inference issue with AI SDK Output.object()
   const outputConfig = Output.object({ schema: VerdictSchema });
 
   const result = await generateText({
@@ -694,6 +691,7 @@ function buildResultJson(params: {
         ];
 
   return {
+    _schemaVersion: "2.7.0",
     meta: {
       schemaVersion: CONFIG.schemaVersion,
       generatedUtc: new Date().toISOString(),
@@ -705,8 +703,10 @@ function buildResultJson(params: {
       inputType: input.inputType,
       detectedInputType: input.inputType,
       hasMultipleProceedings: finalScopes.length > 1,
+      hasMultipleContexts: finalScopes.length > 1,
       hasMultipleScopes: finalScopes.length > 1,
       proceedingCount: finalScopes.length,
+      contextCount: finalScopes.length,
       scopeCount: finalScopes.length,
       isPseudoscience: false,
       inputLength: input.inputValue.length,
@@ -733,6 +733,7 @@ function buildResultJson(params: {
       summary,
       hasContestedFactors: false,
     },
+    analysisContexts: finalScopes,
     scopes: finalScopes,
     twoPanelSummary: {
       factharborAnalysis: {
@@ -749,7 +750,7 @@ function buildResultJson(params: {
       {
         claimId: "C1",
         claimText: claim,
-        relatedProceedingId: finalScopes[0]?.id || "CTX_MAIN",
+        contextId: finalScopes[0]?.id || "CTX_MAIN",
         isCentral: true,
         centrality: "high",
         verdict,
@@ -781,7 +782,7 @@ function buildResultJson(params: {
       sourceTitle: f.sourceTitle,
       sourceExcerpt: f.sourceExcerpt,
       claimDirection: f.claimDirection,
-      relatedProceedingId: inferScopeForFact(f, finalScopes),
+      contextId: inferScopeForFact(f, finalScopes),
     })),
     searchQueries: searchQueriesWithResults.map((q, i) => ({
       id: `Q${i + 1}`,

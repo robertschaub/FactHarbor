@@ -475,7 +475,7 @@ export function applyGate4ToVerdicts(
       )
     );
 
-    // Count contradicting facts - only those related to this specific claim/proceeding
+    // Count contradicting facts - only those related to this specific claim/context
     // Fix: Previously counted ALL criticism facts globally, which unfairly penalized verdicts
     // Now we only count criticism that is actually relevant to the claim being evaluated
     const contradictingFactCount = facts.filter(f => {
@@ -483,10 +483,10 @@ export function applyGate4ToVerdicts(
       if (f.category !== "criticism") return false;
       // Must not be a supporting fact for this verdict
       if (verdict.supportingFactIds.includes(f.id)) return false;
-      // Must be related to the same proceeding as the verdict (if both have proceeding IDs)
-      // If verdict has no proceeding ID, only count criticism from same sources
-      if (verdict.relatedProceedingId && f.relatedProceedingId) {
-        return f.relatedProceedingId === verdict.relatedProceedingId;
+    // Must be related to the same context as the verdict (if both have context IDs)
+    // If verdict has no context ID, only count criticism from same sources
+    if (verdict.contextId && f.contextId) {
+      return f.contextId === verdict.contextId;
       }
       // If no proceeding context, only count criticism from sources that also support this verdict
       // This indicates internal contradiction within the same source

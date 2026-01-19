@@ -298,9 +298,10 @@ export default function JobPage() {
   const articleAnalysis = result?.articleAnalysis;
   const claimVerdicts = result?.claimVerdicts || [];
   const verdictSummary = result?.verdictSummary;
-  const hasMultipleProceedings = result?.meta?.hasMultipleProceedings;
-  // Prefer "scopes" (new unified terminology), fall back to "proceedings" for backward compatibility
-  const scopes = result?.scopes || result?.proceedings || [];
+  const hasMultipleContexts =
+    result?.meta?.hasMultipleContexts ?? result?.meta?.hasMultipleProceedings;
+  // Prefer "analysisContexts" (v2.7), fall back to legacy fields for compatibility
+  const scopes = result?.analysisContexts || result?.scopes || result?.proceedings || [];
   const impliedClaim: string = (result?.understanding?.impliedClaim || "").trim();
   const hasContestedFactors = result?.meta?.hasContestedFactors;
   const searchQueries = result?.searchQueries || [];
@@ -316,9 +317,11 @@ export default function JobPage() {
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   // Opinion-based contestations without evidence are not highlighted (almost anything can be doubted)
   // Include Key Factors from both question mode AND article mode (unified in v2.6.18)
+  const contextAnswers =
+    verdictSummary?.contextAnswers || verdictSummary?.proceedingAnswers || [];
   const allKeyFactors: any[] = [
     ...(verdictSummary?.keyFactors || []),
-    ...(verdictSummary?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
+    ...(contextAnswers.flatMap((p: any) => p.keyFactors || []) || []),
     ...(articleAnalysis?.keyFactors || []), // NEW v2.6.18: Article mode Key Factors
   ];
   const hasEvidenceBasedContestations = allKeyFactors.some(
@@ -482,7 +485,7 @@ export default function JobPage() {
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
               {/* v2.6.31: Removed QUESTION badge - Input Neutrality: no separate paths for questions */}
-              {hasMultipleProceedings && <Badge bg="#fff3e0" color="#e65100">🔀 {scopes.length} CONTEXTS</Badge>}
+              {hasMultipleContexts && <Badge bg="#fff3e0" color="#e65100">🔀 {scopes.length} CONTEXTS</Badge>}
               {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
               {result.meta.isPseudoscience && (
                 <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
@@ -546,8 +549,8 @@ export default function JobPage() {
               )}
 
               {/* Input neutrality: same banner for all input styles */}
-              {/* v2.6.31: Handle edge case where hasMultipleProceedings is true but proceedingAnswers is missing */}
-              {hasMultipleProceedings && verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 ? (
+              {/* v2.6.31: Handle edge case where hasMultipleContexts is true but context answers are missing */}
+              {hasMultipleContexts && contextAnswers.length > 0 ? (
                 <MultiScopeStatementBanner
                   verdictSummary={verdictSummary}
                   scopes={scopes}
@@ -557,7 +560,7 @@ export default function JobPage() {
                   fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
                 />
               ) : (
-                /* Single-scope OR multi-scope with missing proceedingAnswers: show ArticleVerdictBanner as fallback */
+                /* Single-scope OR multi-scope with missing context answers: show ArticleVerdictBanner as fallback */
                 (articleAnalysis || verdictSummary) && (
                   <ArticleVerdictBanner
                     articleAnalysis={articleAnalysis}
@@ -573,7 +576,7 @@ export default function JobPage() {
                 <div className={styles.claimsSection}>
                   {/* v2.6.31: Input Neutrality - same label for all inputs */}
                   <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
-                  {hasMultipleProceedings ? (
+                  {hasMultipleContexts ? (
                     <ClaimsGroupedByScope
                       claimVerdicts={claimVerdicts}
                       scopes={scopes}
@@ -895,9 +898,11 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
   const overallColor = CLAIM_VERDICT_COLORS[overallVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
+  const contextAnswers =
+    verdictSummary?.contextAnswers || verdictSummary?.proceedingAnswers || [];
   const allKeyFactors: any[] = [
     ...(verdictSummary?.keyFactors || []),
-    ...(verdictSummary?.proceedingAnswers?.flatMap((p: any) => p.keyFactors || []) || []),
+    ...(contextAnswers.flatMap((p: any) => p.keyFactors || []) || []),
   ];
   const hasEvidenceBasedContestations = allKeyFactors.some(
     (f: any) =>
@@ -987,7 +992,7 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
         )}
 
         {/* v2.6.28: Show overall KEY FACTORS inside verdict box when no per-scope breakdown */}
-        {(!verdictSummary?.proceedingAnswers || verdictSummary.proceedingAnswers.length === 0) && verdictSummary?.keyFactors?.length > 0 && (
+        {contextAnswers.length === 0 && verdictSummary?.keyFactors?.length > 0 && (
           <div className={styles.keyFactorsSection}>
             <div className={styles.keyFactorsHeader}>KEY FACTORS</div>
             <div className={styles.keyFactorsList}>
@@ -999,15 +1004,17 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
         )}
       </div>
 
-      {verdictSummary?.proceedingAnswers && verdictSummary.proceedingAnswers.length > 0 && (
+        {contextAnswers.length > 0 && (
         <div className={styles.scopesAnalysis}>
           <h4 className={styles.scopesHeader}>
             📑 Contexts
           </h4>
           <div className={styles.scopesStack}>
-            {verdictSummary.proceedingAnswers.map((pa: any) => {
-              const scope = scopes.find((s: any) => s.id === pa.proceedingId);
-              return <ScopeCard key={pa.proceedingId} scopeAnswer={pa} scope={scope} />;
+            {contextAnswers.map((pa: any) => {
+              const scopeId = pa.contextId ?? pa.proceedingId;
+              const scope = scopes.find((s: any) => s.id === scopeId);
+              const key = scopeId || pa.contextName || pa.proceedingName || scope?.id || "context";
+              return <ScopeCard key={key} scopeAnswer={pa} scope={scope} />;
             })}
           </div>
         </div>
@@ -1045,7 +1052,7 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
     <div className={styles.scopeCard} style={{ borderColor: color.border }}>
       <div className={styles.scopeCardHeader}>
         <div className={styles.scopeCardTitle}>
-          {scope?.name || scopeAnswer.proceedingName}
+          {scope?.name || scopeAnswer.contextName || scopeAnswer.proceedingName}
         </div>
         {scope && (
           <div className={styles.scopeCardMeta}>
@@ -1419,13 +1426,13 @@ function ClaimsGroupedByScope({
   };
 
   for (const cv of claimVerdicts) {
-    const key = normalizeScopeKey(cv.relatedProceedingId);
+    const key = normalizeScopeKey(cv.contextId ?? cv.relatedProceedingId);
     if (!claimsByScope.has(key)) claimsByScope.set(key, []);
     claimsByScope.get(key)!.push(cv);
   }
 
   for (const c of tangentialClaims || []) {
-    const key = normalizeScopeKey(c?.relatedProceedingId);
+    const key = normalizeScopeKey(c?.contextId ?? c?.relatedProceedingId);
     if (!tangentialByScope.has(key)) tangentialByScope.set(key, []);
     tangentialByScope.get(key)!.push(c);
   }
@@ -1477,7 +1484,7 @@ function ClaimsGroupedByScope({
   } else {
     const claimsByGroup = new Map<string, any[]>();
     for (const cv of claimVerdicts) {
-      const scopeId = normalizeScopeKey(cv.relatedProceedingId);
+      const scopeId = normalizeScopeKey(cv.contextId ?? cv.relatedProceedingId);
       if (!claimsByGroup.has(scopeId)) claimsByGroup.set(scopeId, []);
       claimsByGroup.get(scopeId)!.push(cv);
     }
@@ -1520,7 +1527,7 @@ function ClaimsGroupedByScope({
             <ClaimCard
               key={`${group.id}:${cv.claimId}`}
               claim={cv}
-              showCrossScope={hasScopes && (!cv.relatedProceedingId || group.id === "general")}
+              showCrossScope={hasScopes && ((!cv.contextId && !cv.relatedProceedingId) || group.id === "general")}
             />
           ))}
 

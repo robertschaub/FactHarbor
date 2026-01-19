@@ -103,13 +103,13 @@ export interface VerdictValidationResult {
  * "AnalysisContext" (top-level bounded analytical frame)
  *   = A bounded analytical frame that should be analyzed separately.
  *   = Formerly called "Proceeding" in the codebase.
- *   = Stored in `distinctProceedings` field (name kept for backward compatibility).
+ *   = Stored in `analysisContexts` field.
  *   = Shown in UI as "Contexts".
  *
  * "ArticleFrame"
  *   = Narrative/background framing of the input article.
  *   = NOT a reason to split into separate AnalysisContexts.
- *   = Stored in `proceedingContext` field (name kept for backward compatibility).
+ *   = Stored in `analysisContext` field.
  *
  * "EvidenceScope" (per-fact source scope)
  *   = Methodology/boundaries defined BY a source document.
@@ -122,8 +122,7 @@ export interface VerdictValidationResult {
  *   - "EvidenceScope" in code = per-fact source methodology/boundaries
  *   - "ArticleFrame" = narrative background (not a reason to split)
  *
- * JSON field names like `distinctProceedings`, `proceedingContext`, `relatedProceedingId`
- * MUST NOT be renamed (backward compatibility with persisted data).
+ * JSON field names use v2.7 terminology (`analysisContexts`, `analysisContext`, `contextId`).
  * ============================================================================
  */
 
@@ -227,12 +226,11 @@ export interface FactorAnalysis {
 /**
  * The verdict/answer for a single AnalysisContext (top-level bounded analytical frame)
  *
- * Note: Field names `proceedingId` and `proceedingName` are kept for
- * backward compatibility with persisted JSON data.
+ * Note: Field names use v2.7 terminology.
  */
 export interface ContextAnswer {
-  proceedingId: string;      // Context ID (field name kept for backward compat)
-  proceedingName: string;    // Context name (field name kept for backward compat)
+  contextId: string;      // Context ID
+  contextName: string;    // Context name
   // Answer truth percentage (0-100)
   answer: number;
   confidence: number;
@@ -283,10 +281,10 @@ export interface ClaimUnderstanding {
    * AnalysisContexts: Bounded analytical frames detected from input.
    * Each context is analyzed separately.
    *
-   * JSON field name "distinctProceedings" kept for backward compatibility.
+   * JSON field name "analysisContexts".
    * @see AnalysisContext
    */
-  distinctProceedings: AnalysisContext[];
+  analysisContexts: AnalysisContext[];
   requiresSeparateAnalysis: boolean;
 
   /**
@@ -294,9 +292,9 @@ export interface ClaimUnderstanding {
    * This is NOT an AnalysisContext - it's just background information.
    * NOT a reason to split into separate analysis contexts.
    *
-   * JSON field name "proceedingContext" kept for backward compatibility.
+   * JSON field name "analysisContext".
    */
-  proceedingContext: string;
+  analysisContext: string;
 
   articleThesis: string;
   subClaims: Array<{
@@ -310,7 +308,7 @@ export interface ClaimUnderstanding {
     harmPotential: "high" | "medium" | "low";
     centrality: "high" | "medium" | "low";
     isCentral: boolean;
-    relatedProceedingId: string;
+    contextId: string;
     approximatePosition: string;
     keyFactorId: string; // empty string if not mapped to any factor
   }>;
@@ -354,7 +352,7 @@ export interface ExtractedFact {
   sourceUrl: string;
   sourceTitle: string;
   sourceExcerpt: string;
-  relatedProceedingId?: string;
+  contextId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
   // NEW v2.6.29: Claim direction - does this fact support or contradict the ORIGINAL user claim?
@@ -407,7 +405,7 @@ export interface ClaimVerdict {
   reasoning: string;
   supportingFactIds: string[];
   keyFactorId?: string;
-  relatedProceedingId?: string;
+  contextId?: string;
   startOffset?: number;
   endOffset?: number;
   highlightColor: "green" | "yellow" | "red";

@@ -105,7 +105,10 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const scopes =
+          result.resultJson.understanding?.analysisContexts ||
+          result.resultJson.understanding?.distinctProceedings ||
+          [];
         const facts = result.resultJson.facts || [];
 
         console.log(`  Detected ${scopes.length} scopes:`);
@@ -117,7 +120,7 @@ describe("Scope Preservation", () => {
 
         // Each scope should have at least 1 fact
         for (const scope of scopes) {
-          const scopeFacts = facts.filter((f) => f.relatedProceedingId === scope.id);
+          const scopeFacts = facts.filter((f) => (f.contextId ?? f.relatedProceedingId) === scope.id);
           console.log(`    Scope ${scope.id}: ${scopeFacts.length} facts`);
 
           // Allow CTX_UNSCOPED or general scopes to have 0 facts
@@ -137,7 +140,7 @@ describe("Scope Preservation", () => {
               factCount: facts.length,
               factsPerScope: scopes.map((s) => ({
                 scopeId: s.id,
-                factCount: facts.filter((f) => f.relatedProceedingId === s.id).length,
+                factCount: facts.filter((f) => (f.contextId ?? f.relatedProceedingId) === s.id).length,
               })),
               timestamp: new Date().toISOString(),
             },
@@ -164,7 +167,10 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const scopes =
+          result.resultJson.understanding?.analysisContexts ||
+          result.resultJson.understanding?.distinctProceedings ||
+          [];
         console.log(`  Detected ${scopes.length} scopes:`);
         scopes.forEach((s) => console.log(`    - ${s.id}: ${s.name}`));
 
@@ -203,7 +209,10 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const scopes =
+          result.resultJson.understanding?.analysisContexts ||
+          result.resultJson.understanding?.distinctProceedings ||
+          [];
         console.log(`  Detected ${scopes.length} scopes:`);
         scopes.forEach((s) => console.log(`    - ${s.id}: ${s.name}`));
 
@@ -244,13 +253,16 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const scopes =
+          result.resultJson.understanding?.analysisContexts ||
+          result.resultJson.understanding?.distinctProceedings ||
+          [];
         const verdicts = result.resultJson.claimVerdicts || [];
 
         // Get all scope IDs referenced in verdicts (via claims' relatedProceedingId)
         const claims = result.understanding?.subClaims || [];
         const scopeIdsInClaims = new Set(
-          claims.map((c) => c.relatedProceedingId).filter(Boolean)
+          claims.map((c) => c.contextId ?? c.relatedProceedingId).filter(Boolean)
         );
 
         console.log(`  Scopes detected: ${scopes.length}`);
@@ -295,10 +307,10 @@ describe("Scope Preservation", () => {
           inputType: "claim",
         });
 
-        const ids1 = (run1.resultJson.understanding?.distinctProceedings || [])
+        const ids1 = (run1.resultJson.understanding?.analysisContexts || run1.resultJson.understanding?.distinctProceedings || [])
           .map((s) => s.id)
           .sort();
-        const ids2 = (run2.resultJson.understanding?.distinctProceedings || [])
+        const ids2 = (run2.resultJson.understanding?.analysisContexts || run2.resultJson.understanding?.distinctProceedings || [])
           .map((s) => s.id)
           .sort();
 
@@ -367,7 +379,10 @@ have significant operations.
           inputType: "claim",
         });
 
-        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const scopes =
+          result.resultJson.understanding?.analysisContexts ||
+          result.resultJson.understanding?.distinctProceedings ||
+          [];
         const facts = result.resultJson.facts || [];
 
         console.log(`  Detected ${scopes.length} scopes:`);
@@ -380,7 +395,7 @@ have significant operations.
         const scopeFactCounts = scopes.map((s) => ({
           id: s.id,
           name: s.name,
-          factCount: facts.filter((f) => f.relatedProceedingId === s.id).length,
+          factCount: facts.filter((f) => (f.contextId ?? f.relatedProceedingId) === s.id).length,
         }));
 
         console.log("  Facts per scope:");
@@ -424,13 +439,16 @@ have significant operations.
           inputType: "claim",
         });
 
-        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const scopes =
+          result.resultJson.understanding?.analysisContexts ||
+          result.resultJson.understanding?.distinctProceedings ||
+          [];
         const facts = result.resultJson.facts || [];
 
         // Calculate distribution
         const distribution: Record<string, number> = {};
         for (const fact of facts) {
-          const scopeId = fact.relatedProceedingId || UNSCOPED_ID;
+          const scopeId = fact.contextId ?? fact.relatedProceedingId ?? UNSCOPED_ID;
           distribution[scopeId] = (distribution[scopeId] || 0) + 1;
         }
 
@@ -492,7 +510,10 @@ have significant operations.
           inputType: "claim",
         });
 
-        const scopes = result.resultJson.understanding?.distinctProceedings || [];
+        const scopes =
+          result.resultJson.understanding?.analysisContexts ||
+          result.resultJson.understanding?.distinctProceedings ||
+          [];
 
         // Scope names should contain meaningful identifiers
         const scopeNames = scopes.map((s) => s.name.toLowerCase());

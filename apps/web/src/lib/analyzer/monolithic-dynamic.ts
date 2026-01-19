@@ -383,6 +383,7 @@ Provide your dynamic analysis.`,
   const budgetStats = getBudgetStats(budgetTracker, budgetConfig);
 
   const resultJson = {
+    _schemaVersion: "2.7.0",
     meta: {
       schemaVersion: CONFIG.schemaVersion,
       generatedUtc: new Date().toISOString(),

@@ -48,7 +48,7 @@ describe("Multi-Jurisdiction Stress Test (Monolithic Canonical)", () => {
         inputType: "text",
       });
 
-      const scopes = result.resultJson.scopes || [];
+      const scopes = result.resultJson.analysisContexts || result.resultJson.scopes || [];
 
       // Pass Criteria 1: At least two distinct scopes detected
       expect(scopes.length).toBeGreaterThanOrEqual(2);
@@ -74,7 +74,7 @@ describe("Multi-Jurisdiction Stress Test (Monolithic Canonical)", () => {
       const usScope = scopes.find((s: any) => s.name.toLowerCase().includes("supreme court") || s.name.toLowerCase().includes("us"));
 
       if (brazilScope && usScope) {
-        // In the actual implementation, facts might not have relatedProceedingId yet in buildResultJson
+        // In the actual implementation, facts might not have contextId yet in buildResultJson
         // but they should be identifiable by content or IDs assigned during extraction.
         const brazilFacts = facts.filter((f: any) =>
           f.fact.toLowerCase().includes("tse") ||
@@ -129,8 +129,8 @@ describe("Multi-Jurisdiction Stress Test (Monolithic Canonical)", () => {
       expect(divergence).toBeLessThanOrEqual(15);
 
       // Both should detect at least 2 scopes
-      expect(result1.resultJson.scopes?.length).toBeGreaterThanOrEqual(2);
-      expect(result2.resultJson.scopes?.length).toBeGreaterThanOrEqual(2);
+      expect(result1.resultJson.analysisContexts?.length ?? result1.resultJson.scopes?.length).toBeGreaterThanOrEqual(2);
+      expect(result2.resultJson.analysisContexts?.length ?? result2.resultJson.scopes?.length).toBeGreaterThanOrEqual(2);
     },
     TEST_TIMEOUT_MS * 2 // Double timeout for parallel runs
   );
@@ -153,7 +153,7 @@ describe("Multi-Jurisdiction Stress Test (Monolithic Canonical)", () => {
 
       const singleTokens = singleResult.resultJson.meta?.budgetStats?.tokensUsed || 0;
       const multiTokens = multiResult.resultJson.meta?.budgetStats?.tokensUsed || 0;
-      const multiScopes = multiResult.resultJson.scopes?.length || 1;
+      const multiScopes = multiResult.resultJson.analysisContexts?.length ?? multiResult.resultJson.scopes?.length || 1;
 
       // Multi-scope should not use more than 2.5x the tokens of single-scope
       // (per Architect Review section 4 - tokens < 2.5x orchestrated path)

@@ -93,14 +93,14 @@ export function canonicalizeScopes(
   understanding: any,
 ): any {
   if (!understanding) return understanding;
-  const procs = Array.isArray(understanding.distinctProceedings)
-    ? understanding.distinctProceedings
+  const contexts = Array.isArray(understanding.analysisContexts)
+    ? understanding.analysisContexts
     : [];
-  if (procs.length === 0) return understanding;
+  if (contexts.length === 0) return understanding;
 
   // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
   // Use a lightweight, mostly-provider-invariant key: inferred type + institution code + court string.
-  const sorted = [...procs].sort((a: any, b: any) => {
+  const sorted = [...contexts].sort((a: any, b: any) => {
     const al = inferScopeTypeLabel(a);
     const bl = inferScopeTypeLabel(b);
     const ar = contextTypeRank(al);
@@ -121,7 +121,7 @@ export function canonicalizeScopes(
       inputLower,
     );
 
-  const canonicalProceedings = sorted.map((p: any, idx: number) => {
+  const canonicalContexts = sorted.map((p: any, idx: number) => {
     const typeLabel = inferScopeTypeLabel(p);
     const inst = detectInstitutionCode(p);
     // Generate deterministic ID (PR 3: Pipeline Redesign)
@@ -170,16 +170,16 @@ export function canonicalizeScopes(
   });
 
   const remappedClaims = (understanding.subClaims || []).map((c: any) => {
-    const rp = c.relatedProceedingId;
+    const rp = c.contextId;
     return {
       ...c,
-      relatedProceedingId: rp && idRemap.has(rp) ? idRemap.get(rp) : rp,
+      contextId: rp && idRemap.has(rp) ? idRemap.get(rp) : rp,
     };
   });
 
   return {
     ...understanding,
-    distinctProceedings: canonicalProceedings,
+    analysisContexts: canonicalContexts,
     subClaims: remappedClaims,
   };
 }
@@ -189,13 +189,13 @@ export function canonicalizeScopesWithRemap(
   understanding: any,
 ): { understanding: any; idRemap: Map<string, string> } {
   if (!understanding) return { understanding, idRemap: new Map() };
-  const procs = Array.isArray(understanding.distinctProceedings)
-    ? understanding.distinctProceedings
+  const contexts = Array.isArray(understanding.analysisContexts)
+    ? understanding.analysisContexts
     : [];
-  if (procs.length === 0) return { understanding, idRemap: new Map() };
+  if (contexts.length === 0) return { understanding, idRemap: new Map() };
 
   // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
-  const sorted = [...procs].sort((a: any, b: any) => {
+  const sorted = [...contexts].sort((a: any, b: any) => {
     const al = inferScopeTypeLabel(a);
     const bl = inferScopeTypeLabel(b);
     const ar = contextTypeRank(al);
@@ -216,7 +216,7 @@ export function canonicalizeScopesWithRemap(
       inputLower,
     );
 
-  const canonicalProceedings = sorted.map((p: any, idx: number) => {
+  const canonicalContexts = sorted.map((p: any, idx: number) => {
     const typeLabel = inferScopeTypeLabel(p);
     const inst = detectInstitutionCode(p);
     // Generate deterministic ID (PR 3: Pipeline Redesign)
@@ -257,17 +257,17 @@ export function canonicalizeScopesWithRemap(
   });
 
   const remappedClaims = (understanding.subClaims || []).map((c: any) => {
-    const rp = c.relatedProceedingId;
+    const rp = c.contextId;
     return {
       ...c,
-      relatedProceedingId: rp && idRemap.has(rp) ? idRemap.get(rp) : rp,
+      contextId: rp && idRemap.has(rp) ? idRemap.get(rp) : rp,
     };
   });
 
   return {
     understanding: {
       ...understanding,
-      distinctProceedings: canonicalProceedings,
+      analysisContexts: canonicalContexts,
       subClaims: remappedClaims,
     },
     idRemap,
@@ -278,10 +278,10 @@ export function ensureAtLeastOneScope(
   understanding: any,
 ): any {
   if (!understanding) return understanding;
-  const procs = Array.isArray(understanding.distinctProceedings)
-    ? understanding.distinctProceedings
+  const contexts = Array.isArray(understanding.analysisContexts)
+    ? understanding.analysisContexts
     : [];
-  if (procs.length > 0) return understanding;
+  if (contexts.length > 0) return understanding;
   // Generate a deterministic ID even for the fallback scope
   const fallbackScope = {
     name: understanding.impliedClaim
@@ -297,7 +297,7 @@ export function ensureAtLeastOneScope(
 
   return {
     ...understanding,
-    distinctProceedings: [
+    analysisContexts: [
       {
         ...fallbackScope,
         id: generateDeterministicScopeId(fallbackScope, null, 0),

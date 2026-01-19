@@ -84,7 +84,7 @@ interface ScopeLeakAnalysis {
 function analyzeScopeLeak(
   result: Awaited<ReturnType<typeof runFactHarborAnalysis>>
 ): ScopeLeakAnalysis {
-  const scopes = result.resultJson.understanding?.distinctProceedings || [];
+  const scopes = result.resultJson.understanding?.analysisContexts || result.resultJson.understanding?.distinctProceedings || [];
   const facts = result.resultJson.facts || [];
 
   // Find Scope A and Scope B by looking for "Country A" and "Country B" in names
@@ -103,17 +103,18 @@ function analyzeScopeLeak(
 
   // Get facts for each scope
   const scopeAFacts = scopeA
-    ? facts.filter((f) => f.relatedProceedingId === scopeA.id)
+    ? facts.filter((f) => (f.contextId ?? f.relatedProceedingId) === scopeA.id)
     : [];
   const scopeBFacts = scopeB
-    ? facts.filter((f) => f.relatedProceedingId === scopeB.id)
+    ? facts.filter((f) => (f.contextId ?? f.relatedProceedingId) === scopeB.id)
     : [];
   const unscopedFacts = facts.filter(
     (f) =>
-      !f.relatedProceedingId ||
+      (!f.contextId && !f.relatedProceedingId) ||
+      f.contextId === UNSCOPED_ID ||
       f.relatedProceedingId === UNSCOPED_ID ||
-      f.relatedProceedingId.toLowerCase().includes("unscoped") ||
-      f.relatedProceedingId.toLowerCase().includes("general")
+      (f.contextId || f.relatedProceedingId || "").toLowerCase().includes("unscoped") ||
+      (f.contextId || f.relatedProceedingId || "").toLowerCase().includes("general")
   );
 
   // Check for cross-scope citations
@@ -265,7 +266,7 @@ describe("Adversarial Scope Leak", () => {
             {
               input: ADVERSARIAL_INPUT_STATEMENT,
               analysis,
-              scopes: result.resultJson.understanding?.distinctProceedings?.map((s) => ({
+              scopes: (result.resultJson.understanding?.analysisContexts || result.resultJson.understanding?.distinctProceedings || []).map((s) => ({
                 id: s.id,
                 name: s.name,
               })),
@@ -314,7 +315,7 @@ describe("Adversarial Scope Leak", () => {
             {
               input: ADVERSARIAL_INPUT_QUESTION,
               analysis,
-              scopes: result.resultJson.understanding?.distinctProceedings?.map((s) => ({
+              scopes: (result.resultJson.understanding?.analysisContexts || result.resultJson.understanding?.distinctProceedings || []).map((s) => ({
                 id: s.id,
                 name: s.name,
               })),
@@ -369,15 +370,16 @@ describe("Adversarial Scope Leak", () => {
 
         // Check if ambiguous facts are properly categorized as unscoped
         for (const fact of ambiguousFacts) {
+          const scopeId = fact.contextId ?? fact.relatedProceedingId;
           const isUnscoped =
-            !fact.relatedProceedingId ||
-            fact.relatedProceedingId === "CTX_UNSCOPED" ||
-            fact.relatedProceedingId.toLowerCase().includes("unscoped") ||
-            fact.relatedProceedingId.toLowerCase().includes("general");
+            !scopeId ||
+            scopeId === "CTX_UNSCOPED" ||
+            scopeId.toLowerCase().includes("unscoped") ||
+            scopeId.toLowerCase().includes("general");
 
           if (!isUnscoped) {
             console.log(
-              `  ⚠️ Ambiguous fact incorrectly scoped: ${fact.id} -> ${fact.relatedProceedingId}`
+              `  ⚠️ Ambiguous fact incorrectly scoped: ${fact.id} -> ${scopeId}`
             );
           }
         }
@@ -391,7 +393,7 @@ describe("Adversarial Scope Leak", () => {
               ambiguousFacts: ambiguousFacts.map((f) => ({
                 id: f.id,
                 fact: f.fact.substring(0, 150),
-                relatedProceedingId: f.relatedProceedingId,
+                contextId: f.contextId ?? f.relatedProceedingId,
               })),
               timestamp: new Date().toISOString(),
             },

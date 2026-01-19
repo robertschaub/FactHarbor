@@ -98,7 +98,7 @@ async function refineScopesFromEvidence(
 ): Promise<{ updated: boolean; llmCalls: number }> {
   if (!state.understanding) return { updated: false, llmCalls: 0 };
 
-  const preRefineScopes = state.understanding.distinctProceedings || [];
+  const preRefineScopes = state.understanding.analysisContexts || [];
 
   const facts = state.facts || [];
   // If we don't have enough evidence, skip refinement (avoid hallucinated scopes).
@@ -140,12 +140,12 @@ async function refineScopesFromEvidence(
 
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),
-    distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA),
+    analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA),
     factScopeAssignments: z
-      .array(z.object({ factId: z.string(), proceedingId: z.string() }))
+      .array(z.object({ factId: z.string(), contextId: z.string() }))
       .default([]),
     claimScopeAssignments: z
-      .array(z.object({ claimId: z.string(), proceedingId: z.string() }))
+      .array(z.object({ claimId: z.string(), contextId: z.string() }))
       .default([]),
   });
 
@@ -153,7 +153,7 @@ async function refineScopesFromEvidence(
 
 Terminology (critical):
 - ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
-- AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as distinctProceedings.
+- AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
 - EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts (ExtractedFact.evidenceScope). This is NOT the same as AnalysisContext.
 
 Language rules (avoid ambiguity):
@@ -195,9 +195,9 @@ ${claimsText || "(none)"}
 
 Return:
 - requiresSeparateAnalysis
-- distinctProceedings (1..N)
-- factScopeAssignments: map each factId listed above to exactly one proceedingId (use proceedingId from your distinctProceedings). NOTE: this assigns facts to AnalysisContexts (not to per-fact EvidenceScope).
-- claimScopeAssignments: (optional) map any claimIds that clearly belong to a specific proceedingId
+- analysisContexts (1..N)
+- factScopeAssignments: map each factId listed above to exactly one contextId (use contextId from your analysisContexts). NOTE: this assigns facts to AnalysisContexts (not to per-fact EvidenceScope).
+- claimScopeAssignments: (optional) map any claimIds that clearly belong to a specific contextId
 `;
 
   let refined: any;
@@ -226,7 +226,7 @@ Return:
   }
 
   const next = sp.data;
-  if (!Array.isArray(next.distinctProceedings) || next.distinctProceedings.length === 0) {
+  if (!Array.isArray(next.analysisContexts) || next.analysisContexts.length === 0) {
     return { updated: false, llmCalls: 1 };
   }
 
@@ -244,8 +244,8 @@ Return:
   // Apply refined scopes.
   state.understanding = {
     ...state.understanding!,
-    distinctProceedings: next.distinctProceedings,
-    requiresSeparateAnalysis: !!next.requiresSeparateAnalysis && next.distinctProceedings.length > 1,
+    analysisContexts: next.analysisContexts,
+    requiresSeparateAnalysis: !!next.requiresSeparateAnalysis && next.analysisContexts.length > 1,
   };
 
   // Canonicalize IDs and keep a remap so we can remap fact/claim assignments.
@@ -257,12 +257,12 @@ Return:
   // Remap any pre-existing fact/claim assignments across canonicalization (important when we don't
   // necessarily reassign every fact/claim during refinement).
   for (const f of state.facts || []) {
-    const rp = String((f as any).relatedProceedingId || "");
-    if (rp) (f as any).relatedProceedingId = remapId(rp);
+    const rp = String((f as any).contextId || "");
+    if (rp) (f as any).contextId = remapId(rp);
   }
   for (const c of state.understanding!.subClaims || []) {
-    const rp = String((c as any).relatedProceedingId || "");
-    if (rp) (c as any).relatedProceedingId = remapId(rp);
+    const rp = String((c as any).contextId || "");
+    if (rp) (c as any).contextId = remapId(rp);
   }
 
   // Optional: merge near-duplicate EvidenceScopes deterministically and remap assignments.
@@ -271,20 +271,20 @@ Return:
   if (process.env.FH_ENABLE_SCOPE_DEDUP !== "false") {
     const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
-    const dedup = deduplicateScopes(state.understanding!.distinctProceedings || [], threshold);
+    const dedup = deduplicateScopes(state.understanding!.analysisContexts || [], threshold);
     dedupMerged = dedup.merged;
-    state.understanding!.distinctProceedings = dedup.scopes;
+    state.understanding!.analysisContexts = dedup.scopes;
 
     // Remap any pre-existing fact/claim assignments (from earlier phases) to merged IDs.
     for (const f of state.facts || []) {
-      const rp = String((f as any).relatedProceedingId || "");
+      const rp = String((f as any).contextId || "");
       if (!rp) continue;
-      if (dedupMerged.has(rp)) (f as any).relatedProceedingId = dedupMerged.get(rp)!;
+      if (dedupMerged.has(rp)) (f as any).contextId = dedupMerged.get(rp)!;
     }
     for (const c of state.understanding!.subClaims || []) {
-      const rp = String((c as any).relatedProceedingId || "");
+      const rp = String((c as any).contextId || "");
       if (!rp) continue;
-      if (dedupMerged.has(rp)) (c as any).relatedProceedingId = dedupMerged.get(rp)!;
+      if (dedupMerged.has(rp)) (c as any).contextId = dedupMerged.get(rp)!;
     }
   }
 
@@ -307,7 +307,7 @@ Return:
 
   const factAssignments = new Map<string, string>();
   for (const a of next.factScopeAssignments || []) {
-    const pid = finalizeContextId(a.proceedingId || "");
+    const pid = finalizeContextId(a.contextId || "");
     if (!a.factId || !pid) continue;
     factAssignments.set(a.factId, pid);
   }
@@ -317,17 +317,17 @@ Return:
 
   // Determine default scope for facts not included in promptFacts
   // Use the first/primary scope as the default (most analyses have one dominant scope)
-  const defaultScopeId = (state.understanding!.distinctProceedings || [])[0]?.id || "";
+  const defaultScopeId = (state.understanding!.analysisContexts || [])[0]?.id || "";
 
   for (const f of state.facts) {
     const pid = factAssignments.get(f.id);
     if (pid) {
       // Fact was in promptFacts and got an assignment from LLM
-      f.relatedProceedingId = pid;
-    } else if (!promptFactIds.has(f.id) && defaultScopeId && !f.relatedProceedingId) {
+      f.contextId = pid;
+    } else if (!promptFactIds.has(f.id) && defaultScopeId && !f.contextId) {
       // Fact was NOT in promptFacts (excluded due to max limit) and has no assignment
       // Assign to default scope to prevent orphaning
-      f.relatedProceedingId = defaultScopeId;
+      f.contextId = defaultScopeId;
       debugLog("refineScopesFromEvidence: assigned excluded fact to default scope", {
         factId: f.id,
         defaultScopeId,
@@ -339,9 +339,9 @@ Return:
   }
 
   // IMPORTANT: ensure we never end up with orphaned assignments (facts/claims referencing a
-  // scope ID that does not exist in distinctProceedings). This can happen because:
+  // scope ID that does not exist in analysisContexts). This can happen because:
   // - understandClaim/extractFacts may assign IDs from the initial scope list
-  // - refineScopesFromEvidence may overwrite distinctProceedings with a refined list that omits
+  // - refineScopesFromEvidence may overwrite analysisContexts with a refined list that omits
   //   some previously-referenced scope IDs (claimScopeAssignments are optional)
   //
   // Strategy (generic):
@@ -355,15 +355,15 @@ Return:
 
     const referenced = new Set<string>();
     for (const f of state.facts || []) {
-      const rp = String((f as any)?.relatedProceedingId || "").trim();
+      const rp = String((f as any)?.contextId || "").trim();
       if (rp) referenced.add(rp);
     }
     for (const c of state.understanding?.subClaims || []) {
-      const rp = String((c as any)?.relatedProceedingId || "").trim();
+      const rp = String((c as any)?.contextId || "").trim();
       if (rp) referenced.add(rp);
     }
 
-    const scopesNow = state.understanding!.distinctProceedings || [];
+    const scopesNow = state.understanding!.analysisContexts || [];
     const scopeById = new Map<string, any>();
     for (const s of scopesNow as any[]) {
       if (s?.id) scopeById.set(String(s.id), s);
@@ -381,17 +381,17 @@ Return:
       } else {
         // We can't restore it; clear downstream references so UI/state stays consistent.
         for (const f of state.facts || []) {
-          if (String((f as any)?.relatedProceedingId || "") === rp) (f as any).relatedProceedingId = "";
+          if (String((f as any)?.contextId || "") === rp) (f as any).contextId = "";
         }
         for (const c of state.understanding?.subClaims || []) {
-          if (String((c as any)?.relatedProceedingId || "") === rp) (c as any).relatedProceedingId = "";
+          if (String((c as any)?.contextId || "") === rp) (c as any).contextId = "";
         }
         cleared.push(rp);
       }
     }
 
     if (restored.length > 0 || cleared.length > 0) {
-      state.understanding!.distinctProceedings = scopesNow;
+      state.understanding!.analysisContexts = scopesNow;
       // v2.6.31: Fix - use simple check instead of AND logic
       // If we have multiple scopes after restoration, enable separate analysis
       // (the AND logic incorrectly kept requiresSeparateAnalysis=false when scopes were restored)
@@ -407,11 +407,11 @@ Return:
 
   const factsPerScope = new Map<string, number>();
   for (const f of state.facts) {
-    const pid = String(f.relatedProceedingId || "");
+    const pid = String(f.contextId || "");
     if (!pid) continue;
     factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
   }
-  for (const s of state.understanding!.distinctProceedings || []) {
+  for (const s of state.understanding!.analysisContexts || []) {
     const c = factsPerScope.get(s.id) || 0;
     if (c < 1) {
       debugLog("refineScopesFromEvidence: rejected (scope with zero evidence)", {
@@ -426,8 +426,8 @@ Return:
   if (process.env.FH_ENABLE_SCOPE_NAME_ALIGNMENT !== "false") {
     const thr = parseFloat(process.env.FH_SCOPE_NAME_ALIGNMENT_THRESHOLD || "0.3");
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.3;
-    state.understanding!.distinctProceedings = validateAndFixScopeNameAlignment(
-      state.understanding!.distinctProceedings || [],
+    state.understanding!.analysisContexts = validateAndFixScopeNameAlignment(
+      state.understanding!.analysisContexts || [],
       state.facts || [],
       threshold,
     );
@@ -435,8 +435,8 @@ Return:
 
   // Avoid over-splitting into “dimension scopes” (e.g., cost vs infrastructure) unless the
   // evidence indicates genuinely distinct analytical frames (methodology/boundaries/geography/temporal).
-  if ((state.understanding!.distinctProceedings?.length ?? 0) > 1) {
-    const scopesNow = state.understanding!.distinctProceedings || [];
+  if ((state.understanding!.analysisContexts?.length ?? 0) > 1) {
+    const scopesNow = state.understanding!.analysisContexts || [];
 
     const scopeFrameKeys = new Set<string>();
     for (const s of scopesNow as any[]) {
@@ -450,7 +450,7 @@ Return:
 
     const evidenceScopeKeysByScope = new Map<string, Set<string>>();
     for (const f of state.facts as any[]) {
-      const pid = String(f?.relatedProceedingId || "");
+      const pid = String(f?.contextId || "");
       if (!pid) continue;
       const es = f?.evidenceScope;
       if (!es) continue;
@@ -503,13 +503,13 @@ Return:
 
   const claimAssignments = new Map<string, string>();
   for (const a of next.claimScopeAssignments || []) {
-    const pid = finalizeContextId(a.proceedingId || "");
+    const pid = finalizeContextId(a.contextId || "");
     if (!a.claimId || !pid) continue;
     claimAssignments.set(a.claimId, pid);
   }
   for (const c of state.understanding!.subClaims || []) {
     const pid = claimAssignments.get(c.id);
-    if (pid) c.relatedProceedingId = pid;
+    if (pid) c.contextId = pid;
   }
 
   // Ensure we never end up with zero scopes.
@@ -517,7 +517,7 @@ Return:
 
   // If we introduced multi-scope but claim coverage is thin, add minimal per-scope central claims.
   // (This is generic decomposition; it does not “hunt” for named scenarios.)
-  if (state.understanding!.distinctProceedings.length > 1 && state.understanding!.subClaims.length <= 1) {
+  if (state.understanding!.analysisContexts.length > 1 && state.understanding!.subClaims.length <= 1) {
     const added = await requestSupplementalSubClaims(analysisInput, model, state.understanding!);
     if (added.length > 0) {
       state.understanding!.subClaims.push(...added);
@@ -740,11 +740,11 @@ function selectFactsForScopeRefinementPrompt(
     if (f.claimDirection === "contradicts") mustKeepIds.add(f.id);
     if (f.fromOppositeClaimSearch) mustKeepIds.add(f.id);
     if (f.evidenceScope) mustKeepIds.add(f.id);
-    if (f.relatedProceedingId) {
+    if (f.contextId) {
       const score = input ? calculateTextSimilarity(input, f.fact || "") : 0;
-      const existing = bestByScope.get(f.relatedProceedingId);
+      const existing = bestByScope.get(f.contextId);
       if (!existing || score > existing.score) {
-        bestByScope.set(f.relatedProceedingId, { fact: f, score });
+        bestByScope.set(f.contextId, { fact: f, score });
       }
     }
   }
@@ -905,7 +905,7 @@ function validateAndFixScopeNameAlignment(
 
   const factsByScope = new Map<string, ExtractedFact[]>();
   for (const f of facts) {
-    const pid = String((f as any)?.relatedProceedingId || "").trim();
+    const pid = String((f as any)?.contextId || "").trim();
     if (!pid) continue;
     if (!factsByScope.has(pid)) factsByScope.set(pid, []);
     factsByScope.get(pid)!.push(f);
@@ -1093,8 +1093,8 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
   }
 
   // Check understanding for recent dates in scopes
-  if (understanding?.distinctProceedings) {
-    for (const scope of understanding.distinctProceedings) {
+  if (understanding?.analysisContexts) {
+    for (const scope of understanding.analysisContexts) {
       const dateStr = scope.date || scope.temporal || "";
       if (dateStr && recentYears.some(year => dateStr.includes(String(year)))) {
         return true;
@@ -1983,10 +1983,9 @@ interface FactorAnalysis {
 }
 
 // ContextAnswer: verdict for a single AnalysisContext
-// Note: JSON field names proceedingId/proceedingName kept for backward compat
 interface ContextAnswer {
-  proceedingId: string;      // Context ID (field name kept for backward compat)
-  proceedingName: string;    // Context name (field name kept for backward compat)
+  contextId: string;      // Context ID
+  contextName: string;    // Context name
   // Answer truth percentage (0-100)
   answer: number;
   confidence: number;
@@ -2044,9 +2043,9 @@ interface ClaimUnderstanding {
   originalInputDisplay: string;
   impliedClaim: string;
 
-  distinctProceedings: DistinctProceeding[];
+  analysisContexts: DistinctProceeding[];
   requiresSeparateAnalysis: boolean;
-  proceedingContext: string;
+  analysisContext: string;
 
   mainThesis: string;
   articleThesis: string;
@@ -2064,7 +2063,7 @@ interface ClaimUnderstanding {
     isCentral: boolean; // Derived: true if centrality is "high"
     // v2.6.31: Thesis relevance - does this claim DIRECTLY test the main thesis?
     thesisRelevance: "direct" | "tangential" | "irrelevant";
-    relatedProceedingId: string;
+    contextId: string;
     approximatePosition: string;
     keyFactorId: string; // empty string if not mapped to any factor
   }>;
@@ -2115,7 +2114,7 @@ interface ExtractedFact {
   sourceUrl: string;
   sourceTitle: string;
   sourceExcerpt: string;
-  relatedProceedingId?: string;
+  contextId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
   // NEW v2.6.29: Claim direction - does this fact support or contradict the ORIGINAL user claim?
@@ -2174,7 +2173,7 @@ interface ClaimVerdict {
   reasoning: string;
   supportingFactIds: string[];
   keyFactorId?: string; // Maps claim to KeyFactor for aggregation
-  relatedProceedingId?: string;
+  contextId?: string;
   startOffset?: number;
   endOffset?: number;
   highlightColor: "green" | "yellow" | "red";
@@ -2198,7 +2197,9 @@ interface VerdictSummary {
   keyFactors: KeyFactor[];
 
   hasMultipleProceedings: boolean;
-  proceedingAnswers?: ProceedingAnswer[];
+  hasMultipleContexts?: boolean;
+  contextAnswers?: ContextAnswer[];
+  proceedingAnswers?: ContextAnswer[];
   proceedingSummary?: string;
   calibrationNote?: string;
   hasContestedFactors?: boolean;
@@ -2209,6 +2210,7 @@ interface ArticleAnalysis {
   verdictSummary?: VerdictSummary;
 
   hasMultipleProceedings: boolean;
+  hasMultipleContexts?: boolean;
   proceedings?: DistinctProceeding[];
 
   articleThesis: string;
@@ -2495,7 +2497,7 @@ function sanitizeTemporalErrors(reasoning: string, currentDate: Date): string {
  */
 function detectProceduralTopic(understanding: ClaimUnderstanding, originalText: string): boolean {
   // Check 1: Has distinct contexts detected
-  if (understanding.distinctProceedings && understanding.distinctProceedings.length > 0) {
+  if (understanding.analysisContexts && understanding.analysisContexts.length > 0) {
     return true;
   }
 
@@ -2564,7 +2566,7 @@ const SUBCLAIM_SCHEMA = z.object({
   // "tangential" = related context but doesn't test the thesis (e.g., reactions to an event)
   // "irrelevant" = off-topic noise that should not be evaluated or shown
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]),
-  relatedProceedingId: z.string(), // empty string if not applicable
+  contextId: z.string(), // empty string if not applicable
   approximatePosition: z.string(), // empty string if not applicable
   keyFactorId: z.string(), // empty string if not mapped to any factor
 });
@@ -2586,7 +2588,7 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   centrality: z.enum(["high", "medium", "low"]).catch("medium"),
   isCentral: z.boolean().catch(false),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).catch("direct"), // Default to direct for backward compat
-  relatedProceedingId: z.string().default(""),
+  contextId: z.string().default(""),
   approximatePosition: z.string().default(""),
   keyFactorId: z.string().default(""),
 });
@@ -2745,8 +2747,8 @@ function applyThesisRelevancePolicyBToSubClaims<T extends { id?: any; dependsOn?
 function ensureUnscopedClaimsScope(
   understanding: ClaimUnderstanding,
 ): ClaimUnderstanding {
-  const scopes = Array.isArray((understanding as any).distinctProceedings)
-    ? ((understanding as any).distinctProceedings as any[])
+  const scopes = Array.isArray((understanding as any).analysisContexts)
+    ? ((understanding as any).analysisContexts as any[])
     : [];
   const claims = Array.isArray((understanding as any).subClaims)
     ? ((understanding as any).subClaims as any[])
@@ -2761,7 +2763,7 @@ function ensureUnscopedClaimsScope(
 
   const hasUnscopedClaims = claims.some((c) => {
     const tr = String(c?.thesisRelevance || "direct");
-    const pid = String(c?.relatedProceedingId || "").trim();
+    const pid = String(c?.contextId || "").trim();
     return tr !== "irrelevant" && !pid;
   });
   if (!hasUnscopedClaims) return understanding;
@@ -2779,7 +2781,7 @@ function ensureUnscopedClaimsScope(
       outcome: "unknown",
       metadata: { kind: "unscoped_claims" },
     });
-    (understanding as any).distinctProceedings = scopes;
+    (understanding as any).analysisContexts = scopes;
   }
   // If there are multiple scopes, keep requiresSeparateAnalysis consistent with the scope list.
   (understanding as any).requiresSeparateAnalysis = scopes.length > 1;
@@ -2787,8 +2789,8 @@ function ensureUnscopedClaimsScope(
   for (const c of claims) {
     const tr = String(c?.thesisRelevance || "direct");
     if (tr === "irrelevant") continue;
-    const pid = String(c?.relatedProceedingId || "").trim();
-    if (!pid) c.relatedProceedingId = UNSCOPED_ID;
+    const pid = String(c?.contextId || "").trim();
+    if (!pid) c.contextId = UNSCOPED_ID;
   }
 
   return understanding;
@@ -2798,18 +2800,18 @@ function pruneScopesByCoverage(
   understanding: ClaimUnderstanding,
   facts: ExtractedFact[],
 ): ClaimUnderstanding {
-  const scopes = Array.isArray((understanding as any).distinctProceedings)
-    ? ((understanding as any).distinctProceedings as any[])
+  const scopes = Array.isArray((understanding as any).analysisContexts)
+    ? ((understanding as any).analysisContexts as any[])
     : [];
   if (scopes.length === 0) return understanding;
-  // Single-scope runs often leave relatedProceedingId empty on facts/claims (because there is no
+  // Single-scope runs often leave contextId empty on facts/claims (because there is no
   // scope choice to make). Never prune the only scope in that case; doing so would lose metadata
   // and fragment the analysis.
   if (scopes.length === 1) return understanding;
 
   const factsPerScope = new Map<string, number>();
   for (const f of facts || []) {
-    const pid = String((f as any)?.relatedProceedingId || "").trim();
+    const pid = String((f as any)?.contextId || "").trim();
     if (!pid) continue;
     factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
   }
@@ -2819,7 +2821,7 @@ function pruneScopesByCoverage(
     : [];
   const claimsPerScope = new Map<string, number>();
   for (const c of claims) {
-    const pid = String((c as any)?.relatedProceedingId || "").trim();
+    const pid = String((c as any)?.contextId || "").trim();
     if (!pid) continue;
     claimsPerScope.set(pid, (claimsPerScope.get(pid) || 0) + 1);
   }
@@ -2845,14 +2847,48 @@ function pruneScopesByCoverage(
   // (These scopes should be truly empty: no facts and no claims.)
   if (Array.isArray((understanding as any).subClaims)) {
     for (const c of (understanding as any).subClaims as any[]) {
-      const pid = String(c?.relatedProceedingId || "").trim();
-      if (pid && removed.has(pid)) c.relatedProceedingId = "";
+      const pid = String(c?.contextId || "").trim();
+      if (pid && removed.has(pid)) c.contextId = "";
     }
   }
 
-  (understanding as any).distinctProceedings = keep;
+  (understanding as any).analysisContexts = keep;
   (understanding as any).requiresSeparateAnalysis = keep.length > 1;
   return understanding;
+}
+
+function validateContextReferences(
+  understanding: ClaimUnderstanding,
+  facts: ExtractedFact[],
+): void {
+  const contexts = understanding.analysisContexts || [];
+  const validIds = new Set(contexts.map((c: any) => String(c?.id || "")).filter(Boolean));
+  if (validIds.size === 0) return;
+
+  const invalidFacts = (facts || []).filter(
+    (f) => f.contextId && !validIds.has(String(f.contextId)),
+  );
+  const invalidClaims = (understanding.subClaims || []).filter(
+    (c: any) => c.contextId && !validIds.has(String(c.contextId)),
+  );
+
+  if (invalidFacts.length === 0 && invalidClaims.length === 0) return;
+
+  debugLog("validateContextReferences: invalid contextId references", {
+    invalidFactRefs: invalidFacts.slice(0, 8).map((f) => ({
+      id: f.id,
+      contextId: f.contextId,
+    })),
+    invalidClaimRefs: invalidClaims.slice(0, 8).map((c: any) => ({
+      id: c.id,
+      contextId: c.contextId,
+    })),
+    totalInvalidFacts: invalidFacts.length,
+    totalInvalidClaims: invalidClaims.length,
+  });
+  console.warn(
+    `[Analyzer] WARN: Invalid contextId references found (facts=${invalidFacts.length}, claims=${invalidClaims.length}).`,
+  );
 }
 
 // Generic AnalysisContext schema (replaces legal-specific DISTINCT_PROCEEDING_SCHEMA)
@@ -2897,9 +2933,9 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   originalInputDisplay: z.string(), // empty string if not applicable
   impliedClaim: z.string(), // empty string if not applicable
 
-  distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA),
+  analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA),
   requiresSeparateAnalysis: z.boolean(),
-  proceedingContext: z.string(), // empty string if not applicable
+  analysisContext: z.string(), // empty string if not applicable
 
   mainThesis: z.string(),
   articleThesis: z.string(),
@@ -2938,9 +2974,9 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   originalInputDisplay: z.string().default(""),
   impliedClaim: z.string().default(""),
 
-  distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA).default([]),
+  analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA).default([]),
   requiresSeparateAnalysis: z.boolean().default(false),
-  proceedingContext: z.string().default(""),
+  analysisContext: z.string().default(""),
 
   mainThesis: z.string().default(""),
   articleThesis: z.string().default(""),
@@ -3047,7 +3083,7 @@ async function understandClaim(
 
 SCOPE TERMINOLOGY (critical):
 - ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
-- AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as distinctProceedings.
+- AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
 - EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts later in the pipeline. NOT the same as AnalysisContext.
 
 NOT DISTINCT SCOPES:
@@ -3472,7 +3508,7 @@ Set requiresSeparateAnalysis = true when multiple scopes are detected.
 
 - **subClaims**: Generate sub-claims that need to be verified to address the thesis.
   - Break down the implied claim into verifiable components
-  - For multi-context cases, ensure meaningful coverage across all contexts (set relatedProceedingId appropriately)
+  - For multi-context cases, ensure meaningful coverage across all contexts (set contextId appropriately)
   - **DECOMPOSE COMPOUND CLAIMS**: Split claims that combine multiple assertions into separate claims:
     - Isolate the core factual assertion as the CENTRAL claim (isCentral: true, claimRole: "core")
     - Separate source/attribution claims as non-central (isCentral: false, claimRole: "source" or "attribution")
@@ -3664,7 +3700,7 @@ For "This product causes a specific harm."
       }
       debugLog("understandClaim: recovered Value from schema-mismatch error", {
         detectedInputType: sp.data.detectedInputType,
-        proceedings: sp.data.distinctProceedings?.length ?? 0,
+        proceedings: sp.data.analysisContexts?.length ?? 0,
         requiresSeparateAnalysis: sp.data.requiresSeparateAnalysis,
         subClaims: sp.data.subClaims?.length ?? 0,
       });
@@ -3677,7 +3713,7 @@ For "This product causes a specific harm."
 
   const tryJsonTextFallback = async () => {
     debugLog("understandClaim: FALLBACK JSON TEXT ATTEMPT");
-    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- ArticleFrame is narrative background; do NOT create separate AnalysisContexts from framing/perspectives.\n- distinctProceedings represents AnalysisContexts (top-level bounded analytical frames).\n- EvidenceScope is per-fact source-defined scope metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- distinctProceedings\n- requiresSeparateAnalysis\n- proceedingContext\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
+    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- ArticleFrame is narrative background; do NOT create separate AnalysisContexts from framing/perspectives.\n- analysisContexts represents AnalysisContexts (top-level bounded analytical frames).\n- EvidenceScope is per-fact source-defined scope metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- analysisContexts\n- requiresSeparateAnalysis\n- analysisContext\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
     const llmTimeoutMsRaw = parseInt(process.env.FH_UNDERSTAND_LLM_TIMEOUT_MS || "600000", 10);
     const llmTimeoutMs = Number.isFinite(llmTimeoutMsRaw)
       ? Math.max(60000, Math.min(3600000, llmTimeoutMsRaw))
@@ -3752,8 +3788,8 @@ Return ONLY a single JSON object that EXACTLY matches the expected schema.
 
 CRITICAL: MULTI-SCOPE DETECTION
 - Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).
-- If there are 2+ distinct scopes, put them in distinctProceedings (one per scope) and set requiresSeparateAnalysis=true.
-- If there is only 1 scope, distinctProceedings may contain 0 or 1 item, and requiresSeparateAnalysis=false.
+- If there are 2+ distinct scopes, put them in analysisContexts (one per scope) and set requiresSeparateAnalysis=true.
+- If there is only 1 scope, analysisContexts may contain 0 or 1 item, and requiresSeparateAnalysis=false.
 
 NOT DISTINCT SCOPES:
 - Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
@@ -3793,23 +3829,23 @@ Now analyze the input and output JSON only.`;
 
   if (!parsed) throw new Error("Failed to understand claim: structured output did not match schema");
 
-  // Ensure no orphaned scope assignments: if any subClaim uses relatedProceedingId, that ID must
-  // exist in distinctProceedings. Some providers may emit claim assignments that reference IDs
-  // they didn't include in distinctProceedings; we reconcile deterministically.
+  // Ensure no orphaned scope assignments: if any subClaim uses contextId, that ID must
+  // exist in analysisContexts. Some providers may emit claim assignments that reference IDs
+  // they didn't include in analysisContexts; we reconcile deterministically.
   const reconcileScopesWithClaimAssignments = (u: ClaimUnderstanding) => {
-    const scopes = Array.isArray((u as any).distinctProceedings) ? (u as any).distinctProceedings : [];
+    const scopes = Array.isArray((u as any).analysisContexts) ? (u as any).analysisContexts : [];
     const scopeIds = new Set(scopes.map((s: any) => String(s?.id || "")).filter(Boolean));
     const claims = Array.isArray((u as any).subClaims) ? (u as any).subClaims : [];
 
     const missing = new Set<string>();
     for (const c of claims as any[]) {
-      const rp = String(c?.relatedProceedingId || "").trim();
+      const rp = String(c?.contextId || "").trim();
       if (rp && !scopeIds.has(rp)) missing.add(rp);
     }
     if (missing.size === 0) return u;
 
     for (const id of Array.from(missing)) {
-      const exemplar = (claims as any[]).find((c) => String(c?.relatedProceedingId || "").trim() === id);
+      const exemplar = (claims as any[]).find((c) => String(c?.contextId || "").trim() === id);
       const rawName = String(exemplar?.text || "").trim();
       const name = rawName ? rawName.slice(0, 120) : `${id} scope`;
       // Extract short name: remove CTX_ prefix if present, or use ID as-is
@@ -3830,11 +3866,11 @@ Now analyze the input and output JSON only.`;
 
     // If any claim still references a non-existent ID (shouldn't happen), clear it.
     for (const c of claims as any[]) {
-      const rp = String(c?.relatedProceedingId || "").trim();
-      if (rp && !scopeIds.has(rp)) c.relatedProceedingId = "";
+      const rp = String(c?.contextId || "").trim();
+      if (rp && !scopeIds.has(rp)) c.contextId = "";
     }
 
-    (u as any).distinctProceedings = scopes;
+    (u as any).analysisContexts = scopes;
     (u as any).requiresSeparateAnalysis = scopes.length > 1;
     return u;
   };
@@ -3879,8 +3915,8 @@ Now analyze the input and output JSON only.`;
   debugLog("understandClaim: scopes after canonicalize", {
     detectedInputType: parsed.detectedInputType,
     requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
-    count: parsed.distinctProceedings?.length ?? 0,
-    ids: (parsed.distinctProceedings || []).map((p: any) => p.id),
+    count: parsed.analysisContexts?.length ?? 0,
+    ids: (parsed.analysisContexts || []).map((p: any) => p.id),
   });
 
   // If the model under-split scopes for a claim, do a single best-effort retry
@@ -3888,7 +3924,7 @@ Now analyze the input and output JSON only.`;
   if (
     CONFIG.deterministic &&
     parsed.detectedInputType === "claim" &&
-    (parsed.distinctProceedings?.length ?? 0) <= 1
+    (parsed.analysisContexts?.length ?? 0) <= 1
   ) {
     // v2.6.23: Use normalized analysisInput for scope detection to maintain input neutrality.
       // When deterministic mode is enabled, yes/no forms are normalized to statements earlier (lines 2507-2528).
@@ -3896,19 +3932,19 @@ Now analyze the input and output JSON only.`;
     // preventing scope-to-statement misalignment and maintaining input neutrality.
     const supplementalInput = parsed.impliedClaim || analysisInput;
     const supplemental = await requestSupplementalScopes(supplementalInput, model, parsed);
-    if (supplemental?.distinctProceedings && supplemental.distinctProceedings.length > 1) {
+    if (supplemental?.analysisContexts && supplemental.analysisContexts.length > 1) {
       parsed = {
         ...parsed,
         requiresSeparateAnalysis: true,
-        distinctProceedings: supplemental.distinctProceedings,
+        analysisContexts: supplemental.analysisContexts,
       };
       // v2.6.23: Use analysisInput (normalized statement) for consistent scope canonicalization
       parsed = canonicalizeScopes(analysisInput, parsed);
       debugLog("understandClaim: supplemental scopes applied", {
         detectedInputType: parsed.detectedInputType,
         requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
-        count: parsed.distinctProceedings?.length ?? 0,
-        ids: (parsed.distinctProceedings || []).map((p: any) => p.id),
+        count: parsed.analysisContexts?.length ?? 0,
+        ids: (parsed.analysisContexts || []).map((p: any) => p.id),
       });
     }
   }
@@ -3995,7 +4031,7 @@ Now analyze the input and output JSON only.`;
       if (supplementalClaims.length === 0) break;
       parsed.subClaims.push(...supplementalClaims);
       console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance scope coverage`);
-      // Supplemental claims may introduce new relatedProceedingId values. Ensure distinctProceedings
+      // Supplemental claims may introduce new contextId values. Ensure analysisContexts
       // covers all referenced scope IDs, then re-canonicalize for stable IDs.
       parsed = reconcileScopesWithClaimAssignments(parsed);
       parsed = canonicalizeScopes(analysisInput, parsed);
@@ -4018,7 +4054,7 @@ async function requestSupplementalSubClaims(
   model: any,
   understanding: ClaimUnderstanding,
 ): Promise<ClaimUnderstanding["subClaims"]> {
-  const scopes = understanding.distinctProceedings || [];
+  const scopes = understanding.analysisContexts || [];
   const hasScopes = scopes.length > 0;
   const isMultiScope = scopes.length > 1;
   const singleScopeId = scopes.length === 1 ? scopes[0].id : "";
@@ -4049,7 +4085,7 @@ async function requestSupplementalSubClaims(
 
     // For single-scope (or no-scope) runs, treat all claims as belonging to the
     // single/default scope to avoid brittle ID mismatches.
-    const procId = isMultiScope ? (claim.relatedProceedingId || "") : (singleScopeId || "");
+    const procId = isMultiScope ? (claim.contextId || "") : (singleScopeId || "");
 
     if (isMultiScope && !procId) continue;
     if (!claimsByProc.has(procId)) continue;
@@ -4095,7 +4131,7 @@ async function requestSupplementalSubClaims(
 
   const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
  - Return ONLY new claims (do not repeat existing ones).
- - Each claim must be tied to a single scope via relatedProceedingId.${hasScopes ? "" : " Use an empty string if no scopes are listed."}
+- Each claim must be tied to a single scope via contextId.${hasScopes ? "" : " Use an empty string if no scopes are listed."}
  - Use claimRole="core" and checkWorthiness="high".
  - Set thesisRelevance="direct" for ALL supplemental claims you generate.
  - Set harmPotential and centrality realistically. Default centrality to "medium" unless the claim is truly the primary thesis of that scope.
@@ -4154,7 +4190,7 @@ async function requestSupplementalSubClaims(
   for (const claim of supplemental.subClaims) {
     // For single-scope/no-scope runs, force all supplemental claims onto the default scope.
     // This avoids dropping good claims due to model-invented IDs.
-    let procId = isMultiScope ? (claim?.relatedProceedingId || "") : (singleScopeId || "");
+    let procId = isMultiScope ? (claim?.contextId || "") : (singleScopeId || "");
     if (isMultiScope && !procId) {
       continue;
     }
@@ -4182,7 +4218,7 @@ async function requestSupplementalSubClaims(
     supplementalClaims.push({
       ...claim,
       id: newId,
-      relatedProceedingId: procId,
+      contextId: procId,
       dependsOn: Array.isArray(claim.dependsOn) ? claim.dependsOn : [],
       keyEntities: Array.isArray(claim.keyEntities) ? claim.keyEntities : [],
     });
@@ -4206,16 +4242,16 @@ async function requestSupplementalScopes(
   input: string,
   model: any,
   understanding: ClaimUnderstanding,
-): Promise<Pick<ClaimUnderstanding, "distinctProceedings" | "requiresSeparateAnalysis"> | null> {
-  const currentCount = Array.isArray(understanding.distinctProceedings)
-    ? understanding.distinctProceedings.length
+): Promise<Pick<ClaimUnderstanding, "analysisContexts" | "requiresSeparateAnalysis"> | null> {
+  const currentCount = Array.isArray(understanding.analysisContexts)
+    ? understanding.analysisContexts.length
     : 0;
   if (currentCount > 1) return null;
 
   const systemPrompt = `You are a fact-checking assistant.
 
 Return ONLY a single JSON object with keys:
-- distinctProceedings: array
+- analysisContexts: array
 - requiresSeparateAnalysis: boolean
 
 CRITICAL:
@@ -4234,7 +4270,7 @@ SCOPE RELEVANCE REQUIREMENT (CRITICAL):
 - A scope with zero relevant claims/evidence should NOT exist
 
 SCHEMA:
-distinctProceedings items must include:
+analysisContexts items must include:
 - id (string)
 - name (string)
 - shortName (string)
@@ -4246,11 +4282,11 @@ distinctProceedings items must include:
 
 Use empty strings "" and empty arrays [] when unknown.`;
 
-  const userPrompt = `INPUT:\n"${input}"\n\nCURRENT distinctProceedings COUNT: ${currentCount}\nReturn JSON only.`;
+  const userPrompt = `INPUT:\n"${input}"\n\nCURRENT analysisContexts COUNT: ${currentCount}\nReturn JSON only.`;
 
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),
-    distinctProceedings: z.array(ANALYSIS_CONTEXT_SCHEMA),
+    analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA),
   });
 
   try {
@@ -4269,12 +4305,12 @@ Use empty strings "" and empty arrays [] when unknown.`;
     if (!sp.success) return null;
 
     // Only accept if it meaningfully improves multi-context detection.
-    const nextCount = sp.data.distinctProceedings?.length ?? 0;
+    const nextCount = sp.data.analysisContexts?.length ?? 0;
     if (nextCount <= 1 || !sp.data.requiresSeparateAnalysis) return null;
 
     return {
       requiresSeparateAnalysis: sp.data.requiresSeparateAnalysis,
-      distinctProceedings: sp.data.distinctProceedings,
+      analysisContexts: sp.data.analysisContexts,
     };
   } catch (err: any) {
     debugLog("requestSupplementalScopes: FAILED", err?.message || String(err));
@@ -4294,7 +4330,7 @@ async function extractOutcomeClaimsFromFacts(
   if (!state.understanding || state.facts.length === 0) return [];
 
   const understanding = state.understanding;
-  const scopes = understanding.distinctProceedings || [];
+  const scopes = understanding.analysisContexts || [];
   const existingClaims = understanding.subClaims || [];
   const existingClaimTexts = new Set(existingClaims.map((c) => c.text.toLowerCase().trim()));
 
@@ -4316,7 +4352,7 @@ async function extractOutcomeClaimsFromFacts(
 
 Return ONLY a JSON object with an "outcomes" array. Each outcome should have:
 - "outcome": The specific outcome mentioned (e.g., "27-year prison sentence", "8-year ineligibility", "$1M fine")
-- "relatedProceedingId": The proceeding ID this outcome relates to (or empty string if unclear)
+- "contextId": The context ID this outcome relates to (or empty string if unclear)
 - "claimText": A claim evaluating whether this outcome was fair/proportionate (e.g., "The 27-year prison sentence was proportionate to the crimes committed")
 
 Only extract outcomes that:
@@ -4341,7 +4377,7 @@ Extract outcomes that need separate evaluation claims.`;
     outcomes: z.array(
       z.object({
         outcome: z.string(),
-        relatedProceedingId: z.string(),
+        contextId: z.string(),
         claimText: z.string(),
       })
     ),
@@ -4392,7 +4428,7 @@ Extract outcomes that need separate evaluation claims.`;
         centrality: "medium",
         isCentral: false,
         thesisRelevance: "direct", // Outcome claims are direct evaluations
-        relatedProceedingId: outcome.relatedProceedingId || "",
+        contextId: outcome.contextId || "",
         approximatePosition: "",
         keyFactorId: "",
       });
@@ -4413,12 +4449,12 @@ Extract outcomes that need separate evaluation claims.`;
  * even though the actual outcome was found in the evidence.
  */
 async function enrichScopesWithOutcomes(state: ResearchState, model: any): Promise<void> {
-  if (!state.understanding?.distinctProceedings?.length) return;
+  if (!state.understanding?.analysisContexts?.length) return;
 
   const facts = state.facts || [];
   if (facts.length === 0) return;
 
-  for (const proc of state.understanding.distinctProceedings) {
+  for (const proc of state.understanding.analysisContexts) {
     // Skip if already has a specific outcome (not vague placeholders)
     const currentOutcome = (proc.outcome || "").toLowerCase().trim();
     const isVagueOutcome = !currentOutcome ||
@@ -4433,7 +4469,7 @@ async function enrichScopesWithOutcomes(state: ResearchState, model: any): Promi
 
     // Get facts related to this scope
     const relevantFacts = facts.filter(f =>
-      !f.relatedProceedingId || f.relatedProceedingId === proc.id
+      !f.contextId || f.contextId === proc.id
     );
 
     if (relevantFacts.length === 0) continue;
@@ -4597,10 +4633,10 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     });
   }
 
-  const scopes = understanding.distinctProceedings || [];
+  const scopes = understanding.analysisContexts || [];
   const scopesWithFacts = new Set(
     state.facts
-      .map((f: ExtractedFact) => f.relatedProceedingId)
+      .map((f: ExtractedFact) => f.contextId)
       .filter(Boolean),
   );
   const inverseClaimCandidate = generateInverseClaimQuery(
@@ -4633,11 +4669,11 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       );
       const claimLower = claimText.toLowerCase();
       const claimWords = claimLower.split(/\s+/).filter((w: string) => w.length > 4);
-      const claimProc = String(claim?.relatedProceedingId || "");
+      const claimProc = String(claim?.contextId || "");
 
       return state.facts.some((f: ExtractedFact) => {
         // If we have proceeding context, prefer matching within that scope.
-        if (claimProc && f.relatedProceedingId && f.relatedProceedingId !== claimProc) return false;
+        if (claimProc && f.contextId && f.contextId !== claimProc) return false;
         const factLower = String(f.fact || "").toLowerCase();
         // Entity overlap
         const hasEntityOverlap = claimEntities.some((entity: string) =>
@@ -4667,14 +4703,14 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       debugLog("Central-claim evidence coverage: scheduling targeted search", {
         claimId: c.id,
         claimText: basis.slice(0, 140),
-        relatedProceedingId: c.relatedProceedingId || "",
+        contextId: c.contextId || "",
       });
 
       return {
         complete: false,
         category: "central_claim",
         targetClaimId: c.id,
-        targetProceedingId: c.relatedProceedingId || undefined,
+        targetProceedingId: c.contextId || undefined,
         focus: `Central claim evidence: ${basis.slice(0, 80)}`,
         queries: [
           `${qBase} evidence`,
@@ -4762,7 +4798,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   ) {
     for (const scope of scopes) {
       const scopeFacts = state.facts.filter(
-        (f) => f.relatedProceedingId === scope.id,
+        (f) => f.contextId === scope.id,
       );
       if (scopeFacts.length < 2) {
         const scopeKey = [scope.institution || scope.court, scope.shortName, scope.name]
@@ -5155,7 +5191,7 @@ const FACT_SCHEMA = z.object({
       ]),
       specificity: z.enum(["high", "medium", "low"]),
       sourceExcerpt: z.string().min(20),
-      relatedProceedingId: z.string(), // empty string if not applicable
+      contextId: z.string(), // empty string if not applicable
       isContestedClaim: z.boolean(),
       claimSource: z.string(), // empty string if not applicable
       // NEW v2.6.29: Does this fact support or contradict the ORIGINAL user claim?
@@ -5221,7 +5257,7 @@ CRITICAL: Be precise about direction! If the user claims "X is better than Y" an
 Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.
 If the source contains facts relevant to MULTIPLE known contexts, include them (do not restrict to only the target),
-and set relatedProceedingId accordingly. Do not omit key numeric outcomes (durations, amounts, counts) when present.
+and set contextId accordingly. Do not omit key numeric outcomes (durations, amounts, counts) when present.
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${originalClaimSection}
 
@@ -5351,7 +5387,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
         sourceUrl: source.url,
         sourceTitle: source.title,
         sourceExcerpt: f.sourceExcerpt,
-        relatedProceedingId: f.relatedProceedingId || targetProceedingId,
+        contextId: f.contextId || targetProceedingId,
         isContestedClaim: f.isContestedClaim,
         claimSource: f.claimSource,
         claimDirection: f.claimDirection,
@@ -5417,8 +5453,8 @@ const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
   }),
   proceedingAnswers: z.array(
     z.object({
-      proceedingId: z.string(),
-      proceedingName: z.string(),
+      contextId: z.string(),
+      contextName: z.string(),
       answer: z.number().min(0).max(100),
       confidence: z.number().min(0).max(100),
       shortAnswer: z.string(),
@@ -5434,7 +5470,7 @@ const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
       riskTier: z.enum(["A", "B", "C"]),
       reasoning: z.string(),
       supportingFactIds: z.array(z.string()),
-      relatedProceedingId: z.string(), // empty string if not applicable
+      contextId: z.string(), // empty string if not applicable
     }),
   ),
 });
@@ -5486,8 +5522,8 @@ const VERDICT_SUMMARY_SCHEMA_LENIENT = z
   .catch(DEFAULT_VERDICT_SUMMARY_LENIENT);
 
 const DEFAULT_PROCEEDING_ANSWER_LENIENT = {
-  proceedingId: "",
-  proceedingName: "",
+  contextId: "",
+  contextName: "",
   answer: 50,
   confidence: 50,
   shortAnswer: "",
@@ -5496,8 +5532,8 @@ const DEFAULT_PROCEEDING_ANSWER_LENIENT = {
 
 const PROCEEDING_ANSWER_SCHEMA_LENIENT = z
   .object({
-    proceedingId: z.string().catch(""),
-    proceedingName: z.string().catch(""),
+    contextId: z.string().catch(""),
+    contextName: z.string().catch(""),
     answer: z.number().min(0).max(100).catch(50),
     confidence: z.number().min(0).max(100).catch(50),
     shortAnswer: z.string().catch(""),
@@ -5512,7 +5548,7 @@ const DEFAULT_CLAIM_VERDICT_MULTI_SCOPE_LENIENT = {
   riskTier: "B" as const,
   reasoning: "",
   supportingFactIds: [] as string[],
-  relatedProceedingId: "",
+  contextId: "",
 };
 
 const CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT = z
@@ -5523,7 +5559,7 @@ const CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT = z
     riskTier: z.enum(["A", "B", "C"]).catch("B"),
     reasoning: z.string().catch(""),
     supportingFactIds: z.array(z.string()).catch([]),
-    relatedProceedingId: z.string().catch(""),
+    contextId: z.string().catch(""),
   })
   .catch(DEFAULT_CLAIM_VERDICT_MULTI_SCOPE_LENIENT);
 
@@ -5605,7 +5641,7 @@ async function generateVerdicts(
   const inputIsClaim = isClaimInput(understanding);
   const hasMultipleProceedings =
     understanding.requiresSeparateAnalysis &&
-    understanding.distinctProceedings.length > 1;
+    understanding.analysisContexts.length > 1;
 
   // Detect pseudoscience based on the input content and extracted claims
   // v2.6.25: Only use normalized forms for consistent detection across input styles
@@ -5624,19 +5660,19 @@ async function generateVerdicts(
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
     (c: any) =>
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
-      c?.relatedProceedingId !== UNSCOPED_ID
+      c?.contextId !== UNSCOPED_ID
   );
 
   // PR-F: Exclude CTX_UNSCOPED facts from verdict calculations (fixes Blocker F)
   // UNSCOPED facts are display-only and should NOT affect overall verdict
   const factsForVerdicts = state.facts.filter(
-    (f: ExtractedFact) => f.relatedProceedingId !== UNSCOPED_ID
+    (f: ExtractedFact) => f.contextId !== UNSCOPED_ID
   );
 
   const factsFormatted = factsForVerdicts
     .map((f: ExtractedFact) => {
       let factLine = `[${f.id}]`;
-      if (f.relatedProceedingId) factLine += ` (${f.relatedProceedingId})`;
+      if (f.contextId) factLine += ` (${f.contextId})`;
       // v2.6.31: Add direction labels so LLM knows which facts support vs contradict the claim
       if (f.claimDirection === "contradicts") {
         factLine += ` [COUNTER-EVIDENCE]`;
@@ -5656,7 +5692,7 @@ async function generateVerdicts(
   const claimsFormatted = directClaimsForVerdicts
     .map(
       (c: any) =>
-        `${c.id}${c.relatedProceedingId ? ` (${c.relatedProceedingId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
+        `${c.id}${c.contextId ? ` (${c.contextId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
     )
     .join("\n");
 
@@ -5705,7 +5741,7 @@ async function generateMultiScopeVerdicts(
   articleAnalysis: ArticleAnalysis;
   verdictSummary: VerdictSummary;
 }> {
-  const scopesFormatted = understanding.distinctProceedings
+  const scopesFormatted = understanding.analysisContexts
     .map(
       (s: Scope) =>
         `- **${s.id}**: ${s.name}\n  Institution: ${s.institution || s.court || "N/A"} | Date: ${s.temporal || s.date || "N/A"} | Status: ${s.status}\n  Subject: ${s.subject}`,
@@ -5729,7 +5765,7 @@ async function generateMultiScopeVerdicts(
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
     (c: any) =>
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
-      c?.relatedProceedingId !== UNSCOPED_ID
+      c?.contextId !== UNSCOPED_ID
   );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
@@ -5783,8 +5819,9 @@ ${scopesFormatted}
 
 ## INSTRUCTIONS
 
-1. For EACH scope (use proceedingId in the schema), provide:
-   - proceedingId (must match: ${understanding.distinctProceedings.map((p: Scope) => p.id).join(", ")})
+1. For EACH scope (use contextId/contextName in the schema), provide:
+   - contextId (must match: ${understanding.analysisContexts.map((p: Scope) => p.id).join(", ")})
+   - contextName (use the scope name)
    - answer: Truth percentage (0-100) rating THE ORIGINAL USER CLAIM shown above
      * CRITICAL: Rate whether the USER'S CLAIM is true, NOT whether your analysis is correct
      * If user claims "X is MORE efficient" and evidence shows "X is LESS efficient", answer should be 0-28% (FALSE/MOSTLY FALSE)
@@ -5838,8 +5875,8 @@ ${scopesFormatted}
 5. CLAIM VERDICT RULES (for claimVerdicts array):
    **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Those are the DIRECT thesis-relevant claims. Every listed claim must have a corresponding entry in claimVerdicts. Do NOT add verdicts for tangential/irrelevant claims that are not listed.
 
-   - For each scope, ensure ALL claims with that proceedingId (or claims that logically belong to that scope) have verdicts
-   - If a claim doesn't have a relatedProceedingId, assign it to the most relevant scope based on the claim content
+   - For each scope, ensure ALL claims with that contextId (or claims that logically belong to that scope) have verdicts
+   - If a claim doesn't have a contextId, assign it to the most relevant scope based on the claim content
 
    **CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
    - The verdict MUST rate whether THE CLAIM AS STATED is true
@@ -5910,6 +5947,17 @@ Provide SEPARATE answers for each scope.`;
     },
   ];
 
+  const normalizeMultiScopeOutput = (obj: any) => {
+    if (!obj || typeof obj !== "object") return obj;
+    if (
+      Array.isArray((obj as any).contextAnswers) &&
+      !Array.isArray((obj as any).proceedingAnswers)
+    ) {
+      return { ...obj, proceedingAnswers: (obj as any).contextAnswers };
+    }
+    return obj;
+  };
+
   const recoverFromNoObjectGeneratedError = (
     err: any,
     attemptLabel: string,
@@ -5925,7 +5973,7 @@ Provide SEPARATE answers for each scope.`;
       candidates.push(cause.message);
 
     for (const c of candidates) {
-      const obj = tryParseFirstJsonObject(c);
+      const obj = normalizeMultiScopeOutput(tryParseFirstJsonObject(c));
       if (!obj) continue;
 
       // Try strict first; if it still fails, accept a leniently-normalized version.
@@ -5973,7 +6021,7 @@ Return ONLY a single JSON object. Do NOT include markdown. Do NOT include any te
 
 The JSON object MUST include these top-level keys:
 - verdictSummary
-- proceedingAnswers
+- contextAnswers (preferred) or proceedingAnswers
 - proceedingSummary
 - claimVerdicts`;
 
@@ -5998,7 +6046,7 @@ The JSON object MUST include these top-level keys:
         return null;
       }
 
-      const obj = tryParseFirstJsonObject(txt);
+      const obj = normalizeMultiScopeOutput(tryParseFirstJsonObject(txt));
       if (!obj) {
         debugLog("generateMultiScopeVerdicts: JSON fallback could not find JSON object", {
           textSnippet: txt.slice(0, 800),
@@ -6053,7 +6101,7 @@ The JSON object MUST include these top-level keys:
       // Handle different AI SDK versions - safely extract structured output
       const rawOutput = extractStructuredOutput(result);
       if (rawOutput) {
-        parsed = rawOutput as z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE>;
+        parsed = normalizeMultiScopeOutput(rawOutput) as z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE>;
         debugLog("generateMultiScopeVerdicts: SUCCESS", {
           attempt: attempt.label,
           hasVerdictSummary: !!parsed.verdictSummary,
@@ -6170,10 +6218,22 @@ The JSON object MUST include these top-level keys:
         "Verdict generation failed due to a structured-output error (often caused by truncated JSON). Manual review recommended.",
       keyFactors: [],
       hasMultipleProceedings: true,
-      proceedingAnswers: understanding.distinctProceedings.map(
+      hasMultipleContexts: true,
+      proceedingAnswers: understanding.analysisContexts.map(
         (p: DistinctProceeding) => ({
-          proceedingId: p.id,
-          proceedingName: p.name,
+          contextId: p.id,
+          contextName: p.name,
+          answer: 50,
+          truthPercentage: 50,
+          confidence: 50,
+          shortAnswer: "Analysis failed",
+          keyFactors: [],
+        }),
+      ),
+      contextAnswers: understanding.analysisContexts.map(
+        (p: DistinctProceeding) => ({
+          contextId: p.id,
+          contextName: p.name,
           answer: 50,
           truthPercentage: 50,
           confidence: 50,
@@ -6191,7 +6251,8 @@ The JSON object MUST include these top-level keys:
       inputType: analysisInputType,
       verdictSummary,
       hasMultipleProceedings: true,
-      proceedings: understanding.distinctProceedings,
+      hasMultipleContexts: true,
+      proceedings: understanding.analysisContexts,
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
       claimsAverageTruthPercentage: 50,
@@ -6221,8 +6282,8 @@ The JSON object MUST include these top-level keys:
   const contextVerdictClaimText = resolveAnalysisPromptInput(understanding, state);
   const correctedContextAnswers = parsed.proceedingAnswers.map((pa: any) => {
     const factors = pa.keyFactors as KeyFactor[];
-    const ctxMeta = understanding.distinctProceedings.find(
-      (p: any) => p.id === pa.proceedingId,
+    const ctxMeta = understanding.analysisContexts.find(
+      (p: any) => p.id === pa.contextId,
     );
     const ctxStatus = (ctxMeta?.status || "unknown") as string;
 
@@ -6247,7 +6308,7 @@ The JSON object MUST include these top-level keys:
     ).length;
 
     // Debug: Log factor details for this scope
-    debugLog(`Factor analysis for scope ${pa.proceedingId}`, {
+    debugLog(`Factor analysis for scope ${pa.contextId}`, {
       answerTruthPct: pa.answer,
       factorCounts: {
         positive: positiveFactors,
@@ -6288,7 +6349,7 @@ The JSON object MUST include these top-level keys:
     if (contextInversion.wasInverted) {
       answerTruthPct = contextInversion.correctedPct;
       debugLog("Context answer inversion detected", {
-        proceedingId: pa.proceedingId,
+        contextId: pa.contextId,
         originalPct: normalizePercentage(pa.answer),
         correctedPct: answerTruthPct,
         shortAnswer: (pa.shortAnswer || "").slice(0, 100),
@@ -6303,7 +6364,7 @@ The JSON object MUST include these top-level keys:
     // v2.6.20: Removed factor-based boost to ensure input neutrality
     // The boost was causing inconsistent verdicts for identical inputs
     // Verdicts are now purely claim-based for transparency and consistency
-    debugLog(`Scope ${pa.proceedingId}: No factor-based boost applied`, {
+    debugLog(`Scope ${pa.contextId}: No factor-based boost applied`, {
       answerTruthPct,
           positiveFactors,
           evidencedNegatives,
@@ -6333,7 +6394,7 @@ The JSON object MUST include these top-level keys:
       truthPercentage: clampedTruthPct,
       shortAnswer: sanitizeScopeShortAnswer(String(pa.shortAnswer || ""), ctxStatus),
       factorAnalysis,
-    } as ProceedingAnswer;
+    } as ContextAnswer;
   });
 
 
@@ -6379,9 +6440,9 @@ The JSON object MUST include these top-level keys:
 
     // Add fallback verdicts for missing claims
     for (const claim of missingClaims) {
-      const ctxId = claim.relatedProceedingId || "";
+      const ctxId = claim.contextId || "";
       const relatedContext = correctedContextAnswers.find(
-        (pa) => pa.proceedingId === ctxId
+        (pa) => pa.contextId === ctxId
       );
 
       // Use context-level answer as fallback
@@ -6402,9 +6463,9 @@ The JSON object MUST include these top-level keys:
         confidence: fallbackConfidence,
         truthPercentage: fallbackVerdict,
         riskTier: "B",
-        reasoning: `Fallback verdict based on context-level analysis (${relatedContext?.proceedingId || "unknown"}). Original verdict generation did not include this claim.`,
+        reasoning: `Fallback verdict based on context-level analysis (${relatedContext?.contextId || "unknown"}). Original verdict generation did not include this claim.`,
         supportingFactIds: [],
-        relatedProceedingId: ctxId,
+        contextId: ctxId,
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
         thesisRelevance: claim.thesisRelevance || "direct",
@@ -6421,11 +6482,11 @@ The JSON object MUST include these top-level keys:
 
   const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
-    const ctxId = cv.relatedProceedingId || claim?.relatedProceedingId || "";
+    const ctxId = cv.contextId || claim?.contextId || "";
 
     // Find the corrected context answer for this claim
     const relatedContext = correctedContextAnswers.find(
-      (pa) => pa.proceedingId === ctxId
+      (pa) => pa.contextId === ctxId
     );
 
     // Sanitize temporal errors from reasoning
@@ -6494,7 +6555,7 @@ The JSON object MUST include these top-level keys:
       centrality: claim?.centrality || "medium",
       thesisRelevance: claim?.thesisRelevance || "direct",
       keyFactorId: claim?.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
-      relatedProceedingId: ctxId,
+      contextId: ctxId,
       highlightColor: getHighlightColor7Point(clampedTruthPct),
       isCounterClaim,
     };
@@ -6535,7 +6596,9 @@ The JSON object MUST include these top-level keys:
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer,
     keyFactors: parsed.verdictSummary.keyFactors,
     hasMultipleProceedings: true,
+    hasMultipleContexts: true,
     proceedingAnswers: correctedContextAnswers,
+    contextAnswers: correctedContextAnswers,
     proceedingSummary: parsed.proceedingSummary,
     calibrationNote,
     hasContestedFactors,
@@ -6548,7 +6611,8 @@ The JSON object MUST include these top-level keys:
     inputType: analysisInputType,
     verdictSummary,
     hasMultipleProceedings: true,
-    proceedings: understanding.distinctProceedings,
+    hasMultipleContexts: true,
+    proceedings: understanding.analysisContexts,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
     logicalFallacies: [],
 
@@ -6600,7 +6664,7 @@ async function generateSingleScopeVerdicts(
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
     (c: any) =>
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
-      c?.relatedProceedingId !== UNSCOPED_ID
+      c?.contextId !== UNSCOPED_ID
   );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
@@ -6781,6 +6845,7 @@ ${factsFormatted}`;
         "Verdict generation failed due to a structured-output error (often caused by truncated JSON). Manual review recommended.",
       keyFactors: [],
       hasMultipleProceedings: false,
+      hasMultipleContexts: false,
     };
 
     const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
@@ -6791,6 +6856,7 @@ ${factsFormatted}`;
       inputType: analysisInputType,
       verdictSummary,
       hasMultipleProceedings: false,
+      hasMultipleContexts: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
       claimsAverageTruthPercentage: 50,
@@ -6950,6 +7016,7 @@ ${factsFormatted}`;
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer || "",
     keyFactors,
     hasMultipleProceedings: false,
+    hasMultipleContexts: false,
     hasContestedFactors,
   };
 
@@ -6960,6 +7027,7 @@ ${factsFormatted}`;
     inputType: analysisInputType,
     verdictSummary,
     hasMultipleProceedings: false,
+    hasMultipleContexts: false,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
     logicalFallacies: [],
 
@@ -7002,7 +7070,7 @@ async function generateClaimVerdicts(
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
     (c: any) =>
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
-      c?.relatedProceedingId !== UNSCOPED_ID
+      c?.contextId !== UNSCOPED_ID
   );
 
   // Add pseudoscience context and verdict calibration to prompt
@@ -7209,6 +7277,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     const articleAnalysis: ArticleAnalysis = {
       inputType: "article",
       hasMultipleProceedings: false,
+      hasMultipleContexts: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
       claimsAverageTruthPercentage: 50,
@@ -7525,6 +7594,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     articleAnalysis: {
       inputType: understanding.detectedInputType,
       hasMultipleProceedings: false,
+      hasMultipleContexts: false,
       articleThesis: understanding.articleThesis,
       logicalFallacies: parsed.articleAnalysis.logicalFallacies,
 
@@ -7587,7 +7657,7 @@ async function generateTwoPanelSummary(
     "Analyzed Content";
 
   if (hasMultipleProceedings) {
-    title += ` (${understanding.distinctProceedings.length} contexts)`;
+    title += ` (${understanding.analysisContexts.length} contexts)`;
   }
 
   // Get the implied claim, filtering out placeholder values
@@ -7610,7 +7680,7 @@ async function generateTwoPanelSummary(
       : (understanding.subClaims[0]?.text || "Analysis of provided content"),
     keyFindings: understanding.subClaims.slice(0, 4).map((c: any) => c.text),
     reasoning: hasMultipleProceedings
-      ? `Covers ${understanding.distinctProceedings.length} contexts: ${understanding.distinctProceedings.map((p: DistinctProceeding) => p.shortName).join(", ")}`
+      ? `Covers ${understanding.analysisContexts.length} contexts: ${understanding.analysisContexts.map((p: DistinctProceeding) => p.shortName).join(", ")}`
       : `Examined ${understanding.subClaims.length} claims`,
     conclusion:
       articleAnalysis.verdictSummary?.shortAnswer ||
@@ -8000,9 +8070,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       analysisIntent: "none",
       originalInputDisplay: "",
       impliedClaim: "",
-      distinctProceedings: [],
+      analysisContexts: [],
       requiresSeparateAnalysis: false,
-      proceedingContext: "",
+      analysisContext: "",
       mainThesis: textToAnalyze.slice(0, 200),
       articleThesis: textToAnalyze.slice(0, 200),
       subClaims: [
@@ -8018,7 +8088,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           centrality: "high",
           isCentral: true,
           thesisRelevance: "direct",
-          relatedProceedingId: "",
+          contextId: "",
           approximatePosition: "",
           keyFactorId: "",
         },
@@ -8031,7 +8101,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     };
   }
 
-  const contextCount = state.understanding.distinctProceedings.length;
+  const contextCount = state.understanding.analysisContexts.length;
   let statusMsg = `Detected: ${state.understanding.detectedInputType.toUpperCase()} with ${state.understanding.subClaims.length} claims`;
   if (contextCount > 1) statusMsg += ` | ${contextCount} CONTEXTS`;
   await emit(statusMsg, 10);
@@ -8198,7 +8268,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
                 source,
                 decision.focus!,
                 extractFactsModelInfo.model,
-                state.understanding!.distinctProceedings,
+                state.understanding!.analysisContexts,
                 decision.targetProceedingId,
                 state.understanding?.impliedClaim || state.originalInput,
               );
@@ -8372,7 +8442,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         source,
         decision.focus!,
         extractFactsModelInfo.model,
-        state.understanding!.distinctProceedings,
+        state.understanding!.analysisContexts,
         decision.targetProceedingId,
         state.understanding?.impliedClaim || state.originalInput,
         isOppositeClaimSearch,
@@ -8408,8 +8478,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   state.llmCalls += scopeRefine.llmCalls;
   if (scopeRefine.updated) {
     debugLog("refineScopesFromEvidence: applied", {
-      scopeCount: state.understanding?.distinctProceedings?.length ?? 0,
-      scopeIds: (state.understanding?.distinctProceedings || []).map((p: any) => p.id),
+      scopeCount: state.understanding?.analysisContexts?.length ?? 0,
+      scopeIds: (state.understanding?.analysisContexts || []).map((p: any) => p.id),
       requiresSeparateAnalysis: state.understanding?.requiresSeparateAnalysis,
       subClaimsCount: state.understanding?.subClaims?.length ?? 0,
     });
@@ -8451,6 +8521,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   state.understanding = ensureUnscopedClaimsScope(state.understanding!);
   state.understanding = pruneScopesByCoverage(state.understanding!, state.facts);
   state.understanding = ensureAtLeastOneScope(state.understanding!);
+  validateContextReferences(state.understanding!, state.facts);
 
   // STEP 5: Verdicts
   await emit(`Step 3: Generating verdicts [LLM: ${provider}/${modelName}]`, 65);
@@ -8524,6 +8595,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // Result JSON with search data (NEW v2.4.3)
   const resultJson = {
+    _schemaVersion: "2.7.0",
     meta: {
       schemaVersion: CONFIG.schemaVersion,
       generatedUtc: new Date().toISOString(),
@@ -8534,9 +8606,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       inputType: input.inputType,
       detectedInputType: state.understanding!.detectedInputType,
       hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,
+      hasMultipleContexts: articleAnalysis.hasMultipleProceedings,
       hasMultipleScopes: articleAnalysis.hasMultipleProceedings,  // Alias
-      proceedingCount: state.understanding!.distinctProceedings.length,
-      scopeCount: state.understanding!.distinctProceedings.length,  // Alias
+      proceedingCount: state.understanding!.analysisContexts.length,
+      contextCount: state.understanding!.analysisContexts.length,
+      scopeCount: state.understanding!.analysisContexts.length,  // Alias
       hasContestedFactors:
         articleAnalysis.verdictSummary?.hasContestedFactors || false,
       // NEW v2.4.5: Pseudoscience detection
@@ -8572,9 +8646,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     },
     verdictSummary: verdictSummary || null,
     // Primary: "scopes" (unified terminology for bounded analytical frames)
-    scopes: state.understanding!.distinctProceedings,
+    analysisContexts: state.understanding!.analysisContexts,
+    scopes: state.understanding!.analysisContexts,
     // Backward compatibility alias
-    proceedings: state.understanding!.distinctProceedings,
+    proceedings: state.understanding!.analysisContexts,
     twoPanelSummary,
     articleAnalysis,
     claimVerdicts: finalClaimVerdicts,

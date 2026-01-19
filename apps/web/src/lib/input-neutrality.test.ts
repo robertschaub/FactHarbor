@@ -94,7 +94,9 @@ function extractVerdictResult(result: Awaited<ReturnType<typeof runFactHarborAna
     return {
       truthPercentage: verdictSummary.overallTruthPercentage,
       claimCount: result.resultJson.claimVerdicts?.length || 0,
-      scopeCount: result.resultJson.understanding?.distinctProceedings?.length || 1,
+      scopeCount: result.resultJson.understanding?.analysisContexts?.length ??
+        result.resultJson.understanding?.distinctProceedings?.length ||
+        1,
     };
   }
 
@@ -108,7 +110,9 @@ function extractVerdictResult(result: Awaited<ReturnType<typeof runFactHarborAna
   return {
     truthPercentage: sum / verdicts.length,
     claimCount: verdicts.length,
-    scopeCount: result.resultJson.understanding?.distinctProceedings?.length || 1,
+    scopeCount: result.resultJson.understanding?.analysisContexts?.length ??
+      result.resultJson.understanding?.distinctProceedings?.length ||
+      1,
   };
 }
 

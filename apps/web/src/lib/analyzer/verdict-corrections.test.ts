@@ -13,7 +13,7 @@ function makeFact(overrides: Partial<ExtractedFact>): ExtractedFact {
     sourceUrl: overrides.sourceUrl ?? "https://example.com",
     sourceTitle: overrides.sourceTitle ?? "Example Source",
     sourceExcerpt: overrides.sourceExcerpt ?? "Example excerpt",
-    relatedProceedingId: overrides.relatedProceedingId,
+    contextId: overrides.contextId,
     isContestedClaim: overrides.isContestedClaim,
     claimSource: overrides.claimSource,
     claimDirection: overrides.claimDirection,
