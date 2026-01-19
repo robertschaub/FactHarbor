@@ -56,7 +56,8 @@ function excerptAppearsInContent(excerpt: string, content: string): boolean {
   if (nEx && nC.includes(nEx)) return true;
   const lEx = normalizeForLooseContainsMatch(ex);
   const lC = normalizeForLooseContainsMatch(c);
-  return lEx && lC.includes(lEx);
+  if (!lEx) return false;
+  return lC.includes(lEx);
 }
 
 // ============================================================================
