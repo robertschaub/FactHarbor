@@ -126,15 +126,16 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 
 ---
 
-## Current State (v2.6.21)
+## Current State (v2.6.33)
 
 ### Working Features
-- ✅ Multi-proceeding detection and display
+- ✅ Multi-scope detection and display
 - ✅ Input neutrality (question ≈ statement within ±5%)
 - ✅ Scope/context extraction from sources
 - ✅ Temporal reasoning (current date awareness)
 - ✅ Claim deduplication for fair aggregation
 - ✅ KeyFactors aggregation
+- ✅ Triple-path pipeline (Orchestrated, Monolithic Canonical, Monolithic Dynamic)
 
 ### Key Environment Variables
 

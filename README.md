@@ -1,5 +1,7 @@
 # FactHarbor — POC1 (Next.js + .NET + SQLite)
 
+**Version**: 2.6.33 | **Schema**: 2.7.0 | **Status**: Operational POC
+
 > **[What is FactHarbor?](ONEPAGER.md)** — Vision, mission, and how it works.
 
 This repository is a runnable POC scaffold:
@@ -39,8 +41,7 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 - **[Calculations](Docs/ARCHITECTURE/Calculations.md)** - Verdict calculation methodology
 - **[KeyFactors Design](Docs/ARCHITECTURE/KeyFactors_Design.md)** - KeyFactors implementation details
 - **[Source Reliability](Docs/ARCHITECTURE/Source_Reliability.md)** - Source scoring system
-- **[Claim Caching Overview (Planned)](Docs/ARCHITECTURE/Claim_Caching_Overview.md)** - Proposed claim-level caching (not implemented)
-- **[Separated Architecture Guide (Planned)](Docs/ARCHITECTURE/Separated_Architecture_Guide.md)** - Detailed planned claim-caching implementation (not implemented)
+- **[Pipeline Architecture](Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md)** - Triple-path pipeline design
 
 ### Development
 - **[Coding Guidelines](Docs/DEVELOPMENT/Coding_Guidelines.md)** - Code quality standards and principles
@@ -51,35 +52,56 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 
 ### Status
 - **[Current Status](Docs/STATUS/Current_Status.md)** - What works, known issues, priorities
-- **[CHANGELOG](Docs/STATUS/CHANGELOG.md)** - Version history and bug fixes
+- **[Known Issues](Docs/STATUS/KNOWN_ISSUES.md)** - Complete list of bugs and limitations
+- **[Development History](Docs/HISTORY.md)** - Complete version history and architectural decisions
 - **[Backlog](Docs/STATUS/Backlog.md)** - Prioritized task list
 - **[Improvement Recommendations](Docs/STATUS/Improvement_Recommendations.md)** - Comprehensive analysis of potential enhancements
 
 ### Project Documentation
-- **[AGENTS.md](AGENTS.md)** - Rules for AI coding assistants (at project root)
+- **[AGENTS.md](AGENTS.md)** - Rules for AI coding assistants
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick setup guide for metrics & testing
+- **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** - Deployment verification checklist
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute
 - **[SECURITY.md](SECURITY.md)** - Security policy and reporting
 - **[LICENSE.md](LICENSE.md)** - Open source license
 
 ## Key Features
 
+### Implemented & Operational
 - **Multi-LLM Support**: Anthropic, OpenAI, Google, Mistral
 - **Multi-Search Support**: Google CSE, SerpAPI, Gemini Grounded
 - **7-Point Verdict Scale**: TRUE to FALSE with confidence
-- **Scope Detection**: Analyze multiple contexts independently
-- **Quality Gates**: Claim validation and verdict confidence assessment
-- **Dependency Tracking**: Claims can depend on other claims
-- **Pseudoscience Detection**: Escalates problematic claims
+- **MIXED vs UNVERIFIED**: Distinguishes contested evidence from insufficient evidence
+- **Multi-Scope Detection**: Analyzes multiple contexts independently (legal, methodological, temporal)
+- **Quality Gates**: Claim validation (Gate 1) and verdict confidence (Gate 4)
+- **Dependency Tracking**: Claims can depend on other claims with automatic propagation
+- **Pseudoscience Detection**: Escalates debunked claims automatically
+- **KeyFactors**: Emergent decomposition questions for complex analyses
+- **Input Neutrality**: Question and statement forms yield equivalent results
 - **Real-Time Progress**: Server-Sent Events for live updates
 - **PDF/HTML Support**: Extract and analyze content from URLs
+- **Triple-Path Pipeline**: Orchestrated, Monolithic Canonical, Monolithic Dynamic modes
+
+### Built But Not Integrated
+- **Metrics Collection**: Complete observability infrastructure (database + dashboard)
+- **Testing Framework**: Baseline test suite (30 cases) + A/B testing
+- **Performance Optimizations**: Parallel verdicts (50-80% faster), Tiered LLM routing (50-70% cost savings)
+
+### Known Limitations
+- Metrics infrastructure not connected to analyzer
+- v2.8 prompt optimizations never validated with real API calls
+- Quality gate decisions not displayed in UI (data exists in JSON)
+- No claim caching (recomputes every analysis)
+- Security hardening needed before public deployment (SSRF, rate limiting, auth)
 
 ## Architecture Notes
 
-- POC uses **SQLite** by default (file `apps/api/factharbor.db`)
-- PostgreSQL for production deployments
-- The API creates jobs and triggers the Next runner (`/api/internal/run-job`)
-- Runner writes progress + results back to API via internal endpoints
-- Separated architecture: API for persistence, Web for analysis
+- **Version**: 2.6.33 (code) | 2.7.0 (schema output)
+- **Database**: SQLite by default (`apps/api/factharbor.db`), PostgreSQL for production
+- **Job Flow**: API creates jobs → triggers Next runner (`/api/internal/run-job`) → runner writes progress/results back
+- **Separated Architecture**: API for persistence, Web for analysis
+- **Main Engine**: `apps/web/src/lib/analyzer.ts` (~6700 lines)
+- **Analysis Modes**: Quick (4 iterations, 12 sources) vs Deep (5 iterations, 20 sources)
 
 ## Environment Variables
 
@@ -114,10 +136,13 @@ See [LLM Configuration Guide](Docs/USER_GUIDES/LLM_Configuration.md) for complet
 
 ## Getting Help
 
+- **Quick Start**: See [QUICKSTART.md](QUICKSTART.md) for rapid setup
+- **Current Issues**: See [Known Issues](Docs/STATUS/KNOWN_ISSUES.md) for complete bug list
+- **Development History**: See [HISTORY.md](Docs/HISTORY.md) for architectural decisions and investigations
 - **Documentation**: See `Docs/` folder structure above
-- **Issues**: Report bugs via GitHub Issues
 - **Logs**: Check `apps/web/debug-analyzer.log` for analysis details
 - **Admin UI**: http://localhost:3000/admin/test-config for configuration testing
+- **Metrics Dashboard**: http://localhost:3000/admin/metrics (built but needs metrics integration)
 - **API Docs**: http://localhost:5000/swagger for API exploration
 
 ## License

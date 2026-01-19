@@ -1,0 +1,648 @@
+# FactHarbor Development History
+
+**Last Updated**: January 19, 2026  
+**Current Version**: 2.6.33  
+**Schema Version**: 2.7.0
+
+---
+
+## Table of Contents
+
+- [Project Genesis](#project-genesis)
+- [Version History](#version-history)
+- [Architectural Decisions](#architectural-decisions)
+- [Major Investigations & Fixes](#major-investigations--fixes)
+- [Technical Debt & Known Issues](#technical-debt--known-issues)
+
+---
+
+## Project Genesis
+
+### Vision
+
+A world where decisions and public debate are grounded in evidence, so people can move forward with clarity and confidence.
+
+### Mission
+
+FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+
+### Initial Architecture Decisions
+
+**Separated Services Architecture**:
+- **.NET API** (ASP.NET Core 8.0): Job persistence, status tracking, SSE events
+- **Next.js Web App**: UI and analysis engine
+
+**Core Principles** (from AGENTS.md):
+1. **Generic by Design**: No domain-specific hardcoding
+2. **Input Neutrality**: Question ≈ Statement (within ±5%)
+3. **Pipeline Integrity**: No stage skipping (Understand → Research → Verdict)
+4. **Evidence Transparency**: Every verdict cites supporting facts
+5. **Scope Detection**: Identify and analyze distinct bounded analytical frames
+
+---
+
+## Version History
+
+### v2.6.33 (January 2026)
+
+**Focus**: Counter-claim detection improvements
+
+**Changes**:
+- Fixed counter-claim detection - thesis-aligned claims no longer flagged as counter
+- Auto-detect foreign response claims as tangential for legal proceeding theses
+- Contested claims WITH factual counter-evidence get reduced weight in aggregation
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer.ts`
+- `apps/web/src/lib/analyzer/verdict-corrections.ts`
+
+---
+
+### v2.6.32 (January 2026)
+
+**Focus**: Verdict structured-output resilience
+
+**Critical Fixes**:
+- **🔥 Multi-context verdict fallback fixed**: Deep multi-context analyses could degrade to Unverified 50% when AI SDK raised `NoObjectGeneratedError`
+- Added recovery from `NoObjectGeneratedError` by salvaging JSON from error payloads
+- Added last-ditch "JSON text" retry (no `Output.object`) and Zod-parse recovery
+- Added richer debug logging for finishReason/text/cause
+
+**Diagnostics**:
+- Debug log path now resolves to repo root even when Next.js server runs with `cwd=apps/web`
+
+**Terminology**:
+- Prompts/docs/types now consistently use **ArticleFrame** (narrative background), **AnalysisContext** (top-level bounded frame), and **EvidenceScope** (per-fact source scope metadata)
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer.ts`
+- `apps/web/src/lib/analyzer/config.ts`
+- `apps/web/src/lib/analyzer/debug.ts`
+- `apps/web/src/lib/analyzer/json.ts`
+- `apps/web/src/lib/analyzer/json.test.ts`
+
+---
+
+### v2.6.31 (January 2026)
+
+**Focus**: Modularization
+
+**Changes**:
+- Extracted debug module (`analyzer/debug.ts`)
+- Extracted config module (`analyzer/config.ts`)
+- Improved code organization and maintainability
+
+---
+
+### v2.6.30 (January 2026)
+
+**Focus**: Complete input neutrality
+
+**Changes**:
+- Removed `detectedInputType` override
+- Inputs now follow IDENTICAL analysis paths regardless of phrasing
+- Question vs statement divergence eliminated at pipeline level
+
+---
+
+### v2.6.26 (January 2026)
+
+**Focus**: Input normalization
+
+**Changes**:
+- Force `impliedClaim` to normalized statement unconditionally
+- Show article summary for all input styles
+- Improved consistency between question and statement handling
+
+---
+
+### v2.6.25 (January 2026)
+
+**Focus**: Question-to-statement handling improvements
+
+**Changes**:
+- Removed `originalInputDisplay` from analysis pipeline
+- `resolveAnalysisPromptInput` no longer falls back to yes/no format
+- `isRecencySensitive` uses `impliedClaim` (normalized) for consistency
+- ArticleSummary data generation logic enhanced
+- UI layout improvements for summary page
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer.ts`
+- `apps/web/src/app/jobs/[id]/page.tsx`
+
+---
+
+### v2.6.24 (January 10, 2026)
+
+**Critical Fixes**:
+- **🔥 Rating Inversion Fixed**: Verdicts now rate the ORIGINAL user claim AS STATED (not the analysis conclusion)
+- **🔥 Centrality Over-Marking Fixed**: Methodology validation claims excluded from central marking
+- **🔥 Critical Bug Fixed**: `isValidImpliedClaim is not defined` error
+
+**Enhancements**:
+- Article Summary Display uses LLM-synthesized `articleThesis` instead of raw input verbatim
+- Question label fix: Only shown for actual questions (not statements ending with "?")
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer.ts`
+
+**Schema Changes**:
+- Schema version: 2.6.24
+- Added `wasOriginallyQuestion` to `ClaimUnderstanding` interface
+
+---
+
+### v2.6.23 (January 10, 2026)
+
+**Critical Fixes**:
+- **🔥 Input Neutrality Fixed**: Question vs statement divergence reduced from 4% to 1%
+- Fixed `canonicalizeScopes()` to use `analysisInput` instead of original input
+- Fixed supplemental scope detection to use normalized input consistently
+
+**Enhancements**:
+- Centrality logic enhanced with explicit NON-central examples
+- Generic recency detection (removed domain-specific person names: 'bolsonaro', 'putin', 'trump')
+
+**Test Results**:
+- ✅ Bolsonaro trial: 1% divergence (statement: 76%, question: 72%)
+- ✅ Centrality reduction validated
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer.ts`
+
+**Schema Changes**:
+- Schema version: 2.6.23
+
+---
+
+### v2.6.22 (January 10, 2026)
+
+**Features**:
+- Enhanced recency detection with news-related keywords (trial, verdict, sentence, election, investigation, court, ruling)
+- Date-aware query variants for ALL search types when recency matters
+- Gemini Grounded Search mode (experimental)
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer.ts`
+- `apps/web/src/lib/search-gemini-grounded.ts` (new)
+- `apps/web/src/lib/analyzer/config.ts`
+
+**Schema Changes**:
+- Schema version: 2.6.22
+- Added `recencyMatters` to `ResearchDecision` interface
+
+---
+
+### v2.6.21 (January 10, 2026)
+
+**Features**:
+- **Generic AnalysisContext**: Replaced legal-specific `DistinctProceeding` with domain-agnostic `AnalysisContext`
+- **EvidenceScope**: Renamed `sourceScope` to `EvidenceScope` for clarity
+
+**Enhancements**:
+- UI improvements: contested badge, factor summary counts
+- Centrality logic: "If only ONE claim could be investigated, which would readers most want verified?"
+- Quality Gates review: Confirmed appropriate thresholds
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer.ts`
+- `apps/web/src/lib/analyzer/types.ts`
+
+**Schema Changes**:
+- Replaced `DistinctProceeding` with `AnalysisContext` (kept alias for compatibility)
+- Renamed `sourceScope` to `evidenceScope`
+
+---
+
+### v2.6.18-v2.6.20 (January 6-9, 2026)
+
+**Critical Fixes**:
+- **KeyFactors Aggregation Fixed** (January 6): Added `keyFactorId` preservation in all 3 verdict creation paths
+- **Evidence Agreement Bug Fixed** (January 6): Gate 4 now only counts claim-specific criticism
+- **PDF Fetch Errors Fixed**: Enhanced buffer validation, increased timeout, added redirect following
+
+**Features**:
+- KeyFactors display added to article mode reports
+- Temporal error sanitization
+- Input neutrality foundation with standardized verdict prompts
+
+**Infrastructure**:
+- Runner resilience with exponential backoff retry
+- Job lifecycle tests added
+- Analyzer modularization started
+
+**Schema Fixes**:
+- FALSE verdict prompt/schema mismatch fixed
+- Highlight colors normalized to 3-color UI system
+- Source reliability scale bug fixed
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer/types.ts`
+- `apps/web/src/lib/analyzer.ts`
+- `apps/web/src/lib/analyzer/quality-gates.ts`
+- `apps/web/src/lib/retrieval.ts`
+- `apps/api/Services/RunnerClient.cs`
+
+---
+
+### v2.7.0 (January 2026)
+
+**Terminology Refactor**:
+- **Schema field alignment**: `analysisContexts`, `contextId`, `analysisContext` are now primary field names
+- **Runtime validation**: Context reference checks added
+- **Result metadata**: `_schemaVersion: "2.7.0"` added to result builders
+
+**Prompt and UI Alignment**:
+- Base prompts and provider variants updated to emit `analysisContexts`/`contextId`
+- Jobs UI reads v2.7 fields with legacy fallbacks
+
+**Tooling**:
+- Migration script hardened (collision-safe key renames)
+
+---
+
+### v2.2.0 (December 30, 2025)
+
+**Major Features**: Article Verdict Problem Implementation
+
+**Implements**:
+1. **Article Verdict Problem**: Article credibility ≠ simple average of claim verdicts
+2. **UN-3**: Two-Panel Summary (Input Summary + FactHarbor Analysis)
+3. **UN-17**: In-Article Claim Highlighting with color-coded verdicts
+
+**Key Changes**:
+- Central vs Supporting Claims classification
+- Logical Fallacy Detection (6 types)
+- Two-panel summary structure
+- Claim positions for highlighting (startOffset/endOffset)
+
+**New Fallacies Detected**:
+- Correlation→Causation
+- Cherry-picking
+- False equivalence
+- Hasty generalization
+- Appeal to authority
+- Straw man
+
+**Schema Changes**:
+- Added `isCentral` to claims
+- Added `startOffset/endOffset` for claim positions
+- Added `twoPanelSummary` structure
+- Added `articleAnalysis` with fallacy detection
+
+---
+
+### Earlier Versions (Pre-v2.2.0)
+
+**Initial POC1 Implementation** included:
+- AKEL pipeline (Understand → Research → Verdict)
+- Multi-LLM provider support (Anthropic, OpenAI, Google, Mistral)
+- Multi-search provider support (Google CSE, SerpAPI)
+- 7-point verdict scale (TRUE to FALSE)
+- Dependency tracking between claims
+- Pseudoscience detection and escalation
+- Quality Gates (Gate 1: Claim Validation, Gate 4: Verdict Confidence)
+- Source reliability scoring (static bundle)
+- Job lifecycle management
+- Server-Sent Events (SSE) for real-time progress
+- PDF and HTML content extraction
+- Markdown report generation
+- Two-panel summary format
+
+---
+
+## Architectural Decisions
+
+### ADR-001: Scope/Context Terminology Refactoring (v2.7.0)
+
+**Context**: The codebase used multiple overlapping terms: "context", "proceeding", "scope", "event", creating confusion.
+
+**Decision**: Unified terminology around three concepts:
+1. **ArticleFrame**: Narrative background/overview (article-level context)
+2. **AnalysisContext**: Top-level bounded analytical frame with defined boundaries, methodology, temporal period, subject
+3. **EvidenceScope**: Per-fact source scope metadata (methodology/boundaries of individual sources)
+
+**Rationale**:
+- Clear separation of concerns
+- Distinct scopes = different legal cases, methodologies, temporal periods, regulatory frameworks
+- NOT distinct = different perspectives on same event
+
+**Impact**: Major refactor of schema, prompts, and UI. Legacy field names kept for backward compatibility.
+
+---
+
+### Triple-Path Pipeline Architecture (v2.6.33)
+
+**Decision**: Implemented three analysis modes:
+1. **Orchestrated Pipeline** (default): Highest quality, explicit multi-scope detection
+2. **Monolithic Canonical**: Faster, lower cost, LLM-inferred multi-scope detection
+3. **Monolithic Dynamic**: Experimental, flexible output
+
+**Rationale**: Different use cases require different trade-offs between quality, speed, and cost.
+
+**Status**: Implemented and operational. Pipeline variant selector available on analyze page.
+
+---
+
+### Quality Gates Design (v2.6.18+)
+
+**Decision**: Implemented two mandatory quality gates:
+- **Gate 1** (Claim Validation): Filters opinions, predictions, low-specificity claims before research
+- **Gate 4** (Verdict Confidence): Requires minimum sources, quality, and agreement
+
+**Rationale**: Prevent wasted research on unanalyzable claims, ensure minimum evidence standards for verdicts.
+
+**Thresholds**:
+- Gate 1: Opinion ≤30%, Specificity ≥30%
+- Gate 4: MEDIUM requires ≥2 sources, ≥60% quality/agreement
+
+**Status**: Implemented, stats tracked in JSON, but per-item reasons not displayed in UI yet.
+
+---
+
+### KeyFactors Implementation (v2.6.18+)
+
+**Decision**: Implement emergent, optional KeyFactors discovered during Understanding phase.
+
+**Structure**:
+- KeyFactors are decomposition questions (e.g., "Was due process followed?")
+- Claims map to KeyFactors via `keyFactorId`
+- KeyFactor verdicts aggregate from mapped claim verdicts
+- Scope answers aggregate from KeyFactor verdicts
+
+**Rationale**: Provides structured breakdown of complex topics without prescriptive templates.
+
+**Status**: Implemented, aggregation fixed (v2.6.18), displayed in reports.
+
+---
+
+## Major Investigations & Fixes
+
+### Quality Regression (January 13-19, 2026)
+
+**Problem Identified**: Reports from January 19 showed significant quality degradation compared to January 13:
+- Confidence: 77% → 50% (-37%)
+- Searches: 16 → 9 (-44%)
+- Claims: 12 → 7 (-42%)
+- Input neutrality broken (28% divergence between question and statement)
+
+**Root Causes Identified**:
+
+1. **Budget Constraints Limiting Research** (HIGH IMPACT)
+   - PR 6 added budget enforcement with `maxTotalIterations: 12`, `maxIterationsPerScope: 3`
+   - For 2-scope analysis: 3 × 2 = 6 iterations max vs 16 searches before
+   - **Fix**: Increased limits in v2.8.2
+
+2. **Input Normalization Not Reaching LLM** (HIGH IMPACT)
+   - Normalization converted text but LLM still classified differently (`detectedInputType: "question"` vs `"claim"`)
+   - Different classification led to different research paths
+   - **Fix**: Forced `detectedInputType` to always be "claim" (v2.6.30)
+
+3. **Quick vs Deep Mode** (CONFIGURATION)
+   - Quick mode: Only 2 research iterations (later increased to 4 in v2.8.2)
+   - Deep mode: 5 research iterations
+   - **Fix**: Enhanced quick mode limits
+
+4. **Gate 1 Changes** (MEDIUM IMPACT)
+   - Commit `aac7602` changed Gate 1 to pass opinions/predictions through
+   - More low-quality claims → diluted confidence
+   - **Fix**: Stricter Gate 1 filtering restored
+
+5. **v2.8 Prompt Changes** (UNVALIDATED)
+   - Large prompt optimization work deployed without A/B testing
+   - Impact unknown - may have degraded quality
+   - **Status**: Testing infrastructure built but not executed
+
+**Fixes Applied**:
+- Input neutrality enforcement (v2.6.30)
+- Increased budget limits (v2.8.2: quick mode 2→4 iterations, 8→12 total sources)
+- Enhanced quick mode configuration
+- Forced `detectedInputType` to "claim" unconditionally
+
+**Validation Results**:
+- Input neutrality restored (within acceptable variance)
+- Search counts improved
+- Confidence scores stabilized
+
+**Lessons Learned**:
+1. Never deploy unvalidated optimizations
+2. Measure everything before and after changes
+3. Input neutrality is fragile and requires continuous validation
+4. Budget constraints have non-obvious quality impacts
+
+---
+
+### Input Neutrality Issues (v2.6.23 - v2.6.30)
+
+**Problem**: Question vs statement phrasing yielded different verdicts, violating core requirement.
+
+**Investigation Timeline**:
+- v2.6.23: Fixed canonicalization to use normalized input (4% → 1% divergence)
+- v2.6.26: Forced `impliedClaim` to normalized statement
+- v2.6.30: Removed `detectedInputType` override, enforced identical paths
+
+**Technical Issues Fixed**:
+- Scope canonicalization using wrong input variable
+- LLM still classifying normalized input differently
+- Different classification triggering different research patterns
+
+**Status**: ✅ RESOLVED. Current implementation forces identical pipeline paths.
+
+---
+
+### Scope Detection Hardcoded Names (January 19, 2026)
+
+**Problem**: Recency detection used hardcoded political figure names (`['bolsonaro', 'putin', 'trump']`), violating "Generic by Design" principle.
+
+**Impact**: 
+- Recency detection only worked for hardcoded names
+- Failed for other newsworthy figures (Einstein, Merkel, etc.)
+
+**Fix**: Replaced with generic temporal and news indicators:
+- Removed: Person name lists
+- Added: Generic keywords (trial, verdict, sentence, election, investigation, ruling)
+- Added: Proper noun detection using word capitalization
+
+**Status**: ✅ FIXED in v2.6.23
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer.ts`
+
+---
+
+### Prompt Optimization Validation (Pending)
+
+**Background**: v2.8 included extensive prompt optimization work:
+- Provider-specific formatting (Claude XML, GPT few-shot, Gemini format, Mistral step-by-step)
+- Budget model optimization (~40% claimed token reduction)
+- 83 new tests added
+
+**Problem**: 
+- All tests validate syntax only, not LLM behavior
+- No A/B testing performed
+- No real API calls to validate claims
+- Optimizations deployed without proof of effectiveness
+
+**Status**: ❌ NEVER VALIDATED
+
+**Impact**: Unknown whether v2.8 improvements actually work or degrade quality
+
+**Infrastructure Built**:
+- ✅ Baseline test suite (30 test cases)
+- ✅ A/B testing framework
+- ✅ Metrics collection system
+- ⏸️ Tests not executed (awaiting budget approval: $20-50 baseline, $100-200 A/B)
+
+**Next Steps**: Run baseline test, then A/B test to validate v2.8 optimizations.
+
+---
+
+## Measurements & Testing Infrastructure (v2.8.1)
+
+**Note**: Documentation incorrectly labeled current version as v2.8.1. Actual code version is v2.6.33, schema version 2.7.0.
+
+**Built But Not Integrated**:
+1. **Metrics Collection System**: `apps/web/src/lib/analyzer/metrics.ts` (400 lines)
+2. **Observability Dashboard**: `/admin/metrics` route (built, deployable)
+3. **Baseline Test Suite**: 30 diverse test cases across 7 categories
+4. **A/B Testing Framework**: Compare old vs optimized prompts
+5. **Schema Retry Logic**: Automatic recovery from validation failures
+6. **Parallel Verdict Generation**: 50-80% speed improvement (not integrated)
+7. **Tiered LLM Routing**: 50-70% cost reduction (not integrated)
+
+**Status**: Infrastructure complete, database migration ready, but:
+- Metrics not integrated into analyzer.ts
+- Tests not executed (require $20-200 API budget)
+- Optimizations not deployed to production code
+
+---
+
+## Technical Debt & Known Issues
+
+### Critical Issues
+
+**1. v2.8 Prompts Never Validated** (CRITICAL)
+- **Impact**: Unknown quality impact of large optimization work
+- **Solution**: Run baseline + A/B tests
+- **Cost**: $120-250 in API calls
+- **Status**: Infrastructure ready, awaiting execution
+
+**2. Metrics Not Integrated** (HIGH)
+- **Impact**: No observability into analysis quality/performance
+- **Solution**: Add metrics hooks to analyzer.ts (15-30 minutes)
+- **Status**: Integration helpers provided but not used
+
+**3. SSRF Protection Missing** (SECURITY)
+- **Impact**: URL fetching vulnerable to attacks
+- **Solution**: IP range blocking, size limits, redirect caps
+- **Priority**: LOW for local POC, HIGH before public deployment
+
+**4. Admin Endpoint Security** (SECURITY)
+- **Impact**: `/admin/test-config` publicly accessible, can trigger paid API calls
+- **Solution**: Implement authentication
+- **Priority**: LOW for local POC, HIGH before public deployment
+
+**5. Rate Limiting Missing** (SECURITY)
+- **Impact**: No per-IP or per-user quotas
+- **Solution**: Implement rate limiting middleware
+- **Priority**: LOW for local POC, HIGH before public deployment
+
+---
+
+### High Priority
+
+**6. Quality Gate Display** (UX)
+- **Impact**: Gate decisions exist in JSON but not shown in UI with reasons
+- **Solution**: Display gate stats with per-item explanations
+- **Status**: Data exists, UI implementation needed
+
+**7. Model Knowledge Toggle** (QUALITY)
+- **Impact**: `FH_ALLOW_MODEL_KNOWLEDGE=false` not fully respected in Understanding phase
+- **Solution**: Enforce evidence-only analysis throughout pipeline
+- **Status**: Partially implemented
+
+---
+
+### Medium Priority
+
+**8. Claim Caching** (PERFORMANCE)
+- **Impact**: Recomputes every analysis, wastes API calls on duplicate claims
+- **Solution**: Implement claim-level caching (documented but not implemented)
+- **Savings**: 30-50% on repeat claims
+- **Status**: Architecture designed, not implemented
+
+**9. Normalized Data Model** (ARCHITECTURE)
+- **Impact**: All data stored as JSON blobs, no relational queries possible
+- **Solution**: Create normalized tables for claims/evidence/sources/verdicts
+- **Status**: Documented but not implemented
+
+**10. Error Pattern Tracking** (OBSERVABILITY)
+- **Impact**: No systematic tracking of error types/frequencies
+- **Solution**: Add error pattern database schema
+- **Status**: Not implemented
+
+---
+
+### Low Priority
+
+**11. URL Highlighting** (UX)
+- **Impact**: URL string highlighted instead of fetched content
+- **Solution**: Highlight extracted text instead of URL
+- **Status**: Minor UX issue
+
+**12. LLM Fallback** (RESILIENCE)
+- **Impact**: No automatic fallback to secondary LLM if primary fails
+- **Solution**: Implement fallback chain
+- **Status**: Config documented but not implemented
+
+**13. Rich Report Mode** (UX)
+- **Impact**: `FH_REPORT_STYLE=rich` documented but not implemented
+- **Solution**: Implement rich formatting
+- **Status**: Not implemented
+
+---
+
+### Unimplemented Planned Features
+
+**Documented but Not Built**:
+- Claim-level caching architecture (extensive documentation in `Docs/ARCHITECTURE/`)
+- Separated architecture for claim reuse
+- Historical source track record
+- Provenance chain tracking
+- Multi-language support
+- Interactive refinement
+- Comparative analysis mode
+- Analysis templates
+
+**Status**: Moved to backlog. Documentation exists but should be marked as "PLANNED" not "IMPLEMENTED".
+
+---
+
+## Breaking Changes
+
+### v2.6.21
+- `DistinctProceeding` → `AnalysisContext` (deprecated alias kept)
+- `sourceScope` → `evidenceScope` (field renamed)
+
+### v2.6.23
+- Scope canonicalization uses `analysisInput` instead of original input
+
+### v2.6.24
+- Rating direction: Verdicts rate original claim direction (may change comparative claim values)
+
+### v2.7.0
+- Schema version bump to 2.7.0
+- Primary field names changed to `analysisContexts`/`contextId` (legacy fields supported)
+
+---
+
+## Contributors
+
+This history reflects work by the FactHarbor development team and AI coding assistants following AGENTS.md guidelines.
+
+---
+
+**Document Status**: Comprehensive history compiled from 45+ source documents  
+**Consolidation Date**: January 19, 2026  
+**Source Documents**: CHANGELOG.md, EVOLUTION.md, investigation reports, bug fix reports, implementation summaries, architecture reviews

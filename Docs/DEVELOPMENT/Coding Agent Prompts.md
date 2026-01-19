@@ -35,6 +35,16 @@ Article Confidence:
 - Article verdict and Article confidence belong together, confidence is about how confident we are that the verdict is correct (thats the same principle at every level: Claim/Context/Article). Please check if this is implemented correctly.
 ---
 
+## Tasks Reoccurring
+---
+Cleanup and reorganize documentation:
+- Update HISTORY.md consolidating all important historical information found in other documents
+- Update STATUS documents with important information found anywhere and that still apply to current implementation 
+- Reorganize Docs/ structure and update cross-references
+- Update README.md to reflect accurate current state
+- Delete obsolete documentation files
+---
+
 ## Tasks in Progress:
 ---
 Tangential claim handling:

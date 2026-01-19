@@ -1,8 +1,10 @@
 # FactHarbor Current Status
 
-**Version**: 2.8.1 (Metrics & Testing Infrastructure)
-**Last Updated**: 2026-01-19
-**Status**: POC1 Operational - Measurement Infrastructure Complete
+**Version**: 2.6.33 (Code) | 2.7.0 (Schema Output)  
+**Last Updated**: 2026-01-19  
+**Status**: POC1 Operational
+
+> **Note**: Previous documentation incorrectly referenced v2.8.1. Actual code version is 2.6.33.
 
 ---
 
@@ -38,14 +40,14 @@
 - SQLite database for local development
 - Automated retry with exponential backoff
 
-**Metrics & Testing (NEW in v2.8.1):**
-- ✅ **Metrics Collection System**: Tracks performance, quality, costs
-- ✅ **Observability Dashboard**: Real-time metrics at `/admin/metrics`
-- ✅ **Baseline Test Suite**: 30 diverse test cases across 7 categories
-- ✅ **A/B Testing Framework**: Compare prompt variants with real LLM calls
-- ✅ **Schema Retry Logic**: Automatic recovery from validation failures
-- ✅ **Parallel Verdict Generation**: 50-80% speed improvement
-- ✅ **Tiered LLM Routing**: 50-70% cost reduction
+**Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
+- ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
+- ⚠️ **Observability Dashboard**: Built at `/admin/metrics` but no data collection yet
+- ⚠️ **Baseline Test Suite**: Ready (30 diverse test cases) but not executed (requires $20-50)
+- ⚠️ **A/B Testing Framework**: Built but not executed (requires $100-200)
+- ⚠️ **Schema Retry Logic**: Implemented in separate module, not integrated
+- ⚠️ **Parallel Verdict Generation**: Built (50-80% speed improvement) but not integrated
+- ⚠️ **Tiered LLM Routing**: Built (50-70% cost reduction) but not integrated
 
 **UI/UX:**
 - Analysis submission interface
@@ -57,71 +59,71 @@
 
 ### ⚠️ Known Issues
 
-**High Priority:**
-1. **SSRF Protection**: URL fetching needs IP range blocking, size limits, redirect caps
-2. **Admin Endpoint Security**: `/admin/test-config` publicly accessible, can trigger paid API calls
-3. **Rate Limiting**: No per-IP or per-user rate limits
-4. **Quality Gate Display**: Gate stats exist in JSON but not shown in UI with per-item reasons
+**CRITICAL**:
+1. **v2.8 Prompt Optimizations Never Validated**: Large optimization work deployed without A/B testing. Unknown quality impact.
+2. **Metrics Infrastructure Not Integrated**: Built but not connected to analyzer.ts. No observability.
 
-**Medium Priority:**
-5. ~~**Metrics Tracking**: LLM token usage, search API calls, cost estimation not persisted~~ ✅ FIXED in v2.8.1
-6. **Error Pattern Tracking**: No database schema for error patterns
-7. **Model Knowledge Toggle**: `FH_ALLOW_MODEL_KNOWLEDGE=false` not fully respected in Understanding phase
-8. ~~**Provider-Specific Optimization**: Same prompts used for all LLM providers~~ ✅ FIXED in v2.8
-9. **Metrics Integration**: Collection system ready but not yet connected to analyzer.ts
+**HIGH**:
+3. **Quality Gate Display**: Gate stats exist in JSON but not shown in UI with per-item reasons
+4. **Input Neutrality Scope Variance**: Question vs statement can yield different scope counts in some cases
+5. **Model Knowledge Toggle**: `FH_ALLOW_MODEL_KNOWLEDGE=false` not fully respected in Understanding phase
 
-**Low Priority:**
-10. **URL Highlighting**: URL string highlighted instead of fetched content
-11. **LLM Fallback**: Config documented but not implemented
-12. **Rich Report Mode**: `FH_REPORT_STYLE=rich` documented but not implemented
+**MEDIUM**:
+6. **Budget Constraints**: May be too strict, could limit research quality
+7. **No Claim Caching**: Recomputes every analysis, wastes API calls on duplicates
+8. **No Normalized Data Model**: All data stored as JSON blobs, no relational queries
+9. **Error Pattern Tracking**: No systematic tracking of error types/frequencies
 
-**Backlog**: See `Docs/STATUS/Backlog.md` for the canonical prioritized task list.
+**SECURITY** (LOW for POC, HIGH before public deployment):
+10. **SSRF Protection**: URL fetching needs IP blocking, size limits, redirect caps
+11. **Admin Endpoint Security**: `/admin/test-config` publicly accessible
+12. **Rate Limiting**: No per-IP or per-user rate limits
 
-**Improvement Recommendations**: See `Docs/STATUS/Improvement_Recommendations.md` for comprehensive analysis of potential enhancements with cost/benefit analysis and implementation roadmap.
+**See**: [Complete issue list with workarounds](KNOWN_ISSUES.md)
 
 ---
 
 ## Current Priorities
 
-### Immediate
+### Immediate (USER ACTION REQUIRED)
 
-1. **Deploy Metrics Infrastructure** (NEW - v2.8.1)
-   - Run database migration for AnalysisMetrics table
-   - Verify `/admin/metrics` dashboard
-   - Optionally integrate metrics collection into analyzer.ts
-   - See: `QUICKSTART.md` for setup instructions
+1. **Validate v2.8 Prompt Optimizations**
+   - ⏸️ Run baseline test suite (30 cases, $20-50)
+   - ⏸️ Run A/B test comparing old vs optimized prompts ($100-200)
+   - ⏸️ Measure actual token reduction and quality impact
+   - **Status**: Infrastructure ready, awaiting budget approval
 
-2. **Establish Quality Baseline** (PENDING APPROVAL)
-   - Run baseline test suite (30 cases)
-   - Analyze metrics and identify actual quality issues
-   - Cost: $20-50 in API calls
-   - Command: `npm run test:baseline`
+2. **Integrate Metrics Collection**
+   - ⏸️ Add metrics hooks to analyzer.ts (15-30 minute task)
+   - ⏸️ Verify dashboard shows data
+   - **Status**: Integration helpers provided, needs implementation
+   - **See**: `apps/web/src/lib/analyzer/metrics-integration.ts`
 
-3. **Validate v2.8 Optimizations** (PENDING APPROVAL)
-   - Run A/B test comparing old vs optimized prompts
-   - Measure actual token reduction and quality impact
-   - Cost: $100-200 in API calls
-   - Command: `npm run test:ab`
+### Short-Term (PERFORMANCE & QUALITY)
 
-### Next Steps
+3. **Deploy Performance Optimizations**
+   - ⏸️ Enable parallel verdict generation (50-80% faster)
+   - ⏸️ Enable tiered LLM routing (50-70% cost savings)
+   - **Status**: Code ready, needs integration into analyzer.ts
 
-4. **Security Hardening** (Pre-Release)
-   - Implement SSRF protections
-   - Secure admin endpoints with authentication
-   - Add rate limiting
+4. **Fix Quality Regression Issues**
+   - ⏸️ Review and adjust budget constraints
+   - ⏸️ Validate input neutrality with more test cases
+   - ⏸️ Display quality gate decisions in UI
+   - **Status**: Root causes identified, fixes planned
 
-5. **Performance Optimization** (READY TO DEPLOY)
-   - Enable parallel verdict generation (feature complete)
-   - Enable tiered LLM routing (feature complete)
-   - Validate improvements with baseline comparison
+### Medium-Term (BEFORE PUBLIC DEPLOYMENT)
 
-6. **Quality Improvements** (DATA-DEPENDENT)
-   - Address specific issues found in baseline test
-   - Implement targeted fixes
-   - Re-test with regression suite
-   - Display Quality Gate decisions with reasons in UI
-   - Complete contestation detection for KeyFactors
-   - Add multi-language support
+5. **Security Hardening**
+   - SSRF protections (IP blocking, size limits)
+   - Admin endpoint authentication
+   - Rate limiting implementation
+   - **Priority**: LOW for local POC, HIGH before public release
+
+6. **UI Enhancements**
+   - Display Quality Gate decisions with reasons
+   - Show metrics dashboard with real data
+   - Improve error messaging
 
 ### Open Topics / Task List (Jan 2026)
 
@@ -256,78 +258,46 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ## Recent Changes
 
-### v2.8.0 (January 19, 2026)
-- **Provider-Specific Prompt Optimization**:
-  - Claude (Anthropic): XML structure tags, thinking blocks, prefill hints
-  - GPT (OpenAI): Few-shot examples, calibration tables, explicit field lists
-  - Gemini (Google): Strict length limits, numbered processes, schema checklists
-  - Mistral: Step-by-step numbered instructions, validation checklists
-- **Budget Model Optimization**:
-  - Simplified prompts for Haiku/Flash/Mini (~40% token reduction)
-  - Ultra-compact prompts when `FH_LLM_TIERING=on`
-  - Minimal provider hints instead of full variants
-- **Structured Output Hardening**:
-  - Provider-specific JSON output guidance
-  - Schema retry prompts for validation failures
-  - Claude prefill strings for reliable JSON
-  - Error-to-fix mapping for common issues
-- **Orchestrated Pipeline Prompts**:
-  - New `orchestrated-understand.ts` with provider optimization
-  - New `orchestrated-supplemental.ts` for claims/scopes
-  - Exported via `prompt-builder.ts` for analyzer use
-- **Comprehensive Test Suite**:
-  - 83 new prompt optimization tests
-  - All 4 providers validated for all task types
-  - Budget model detection tests
-  - Token estimation utilities
-- **New Documentation**:
-  - Updated `LLM_Prompt_Improvements.md` to v2.8
-  - Created `Provider_Prompt_Guidelines.md`
-
 ### v2.6.33 (January 2026)
-- **Triple-Path Pipeline Complete**:
-  - Pipeline variant selector on analyze page
-  - Monolithic Canonical path with LLM-inferred multi-scope detection
-  - Monolithic Dynamic path with experimental flexible output
-  - Pipeline variant badge on jobs page
-  - Grounding score display in dynamic result viewer
-- Provenance validation integrated in all monolithic paths
-- LLM tiering support (`FH_LLM_TIERING=on`)
-- `contextId` for claim-scope association
-- Content-based fact-to-scope inference
-- Multi-jurisdiction stress tests added
-- Comprehensive `.env.example` documentation
+- Fixed counter-claim detection - thesis-aligned claims no longer flagged as counter
+- Auto-detect foreign response claims as tangential for legal proceeding theses
+- Contested claims WITH factual counter-evidence get reduced weight in aggregation
 
-### v2.6.25 (January 2026)
+### v2.6.32 (January 2026)
+- **Multi-context verdict fallback fixed**: Recovery from NoObjectGeneratedError
+- Debug log path resolution fixed
+- Terminology consistency: ArticleFrame, AnalysisContext, EvidenceScope
+
+### v2.6.30-31 (January 2026)
+- Complete input neutrality implementation
+- Removed detectedInputType override
+- Modularized debug and config modules
+
+### v2.6.25-26 (January 2026)
 - Question-to-statement handling improvements
-- ArticleSummary data generation logic
-- UI layout improvements for summary page
+- Input normalization forced to statement format
+- ArticleSummary data generation enhanced
+- UI layout improvements
 
-### v2.6.24 (January 2026)
-- Fixed critical `isValidImpliedClaim` bug
-- Rating direction instructions strengthened (rate original claim, not analysis)
-- Centrality over-marking reduced (methodology claims excluded)
-- Question label misapplication fixed
-
-### v2.6.23 (January 2026)
-- Input neutrality divergence fixed (4% → 1%)
-- Canonicalization scope detection corrected
+### v2.6.23-24 (January 2026)
+- Input neutrality fixed (4% → 1% divergence)
+- Rating direction corrected (rate original claim, not analysis conclusion)
+- Centrality over-marking fixed (methodology claims excluded)
 - Generic recency detection (removed hardcoded names)
-- Centrality heuristic enhanced (0-2 central claims expected)
 
-### v2.6.22 (January 2026)
-- Enhanced recency detection for news topics
-- Date-aware query variants for recent information
-- Gemini Grounded Search mode added (experimental; grounding metadata/citations may vary by provider/SDK)
-- Optional `FH_SEARCH_MODE=grounded` configuration (Gemini only; treat as best-effort until a provenance gate is enforced)
-
-### v2.6.18-v2.6.21 (January 2026)
-- Runner resilience with exponential backoff
-- Job lifecycle tests added
-- Analyzer modularization started
+### v2.6.18-22 (January 2026)
 - KeyFactors aggregation fixed
 - PDF fetch error handling improved
-- Generic AnalysisContext (replaced DistinctProceeding)
+- Runner resilience with exponential backoff
+- Enhanced recency detection with date-aware queries
+- Gemini Grounded Search mode added (experimental)
+
+### v2.7.0 Terminology Refactor (January 2026)
+- Schema field alignment: analysisContexts, contextId, analysisContext
+- Runtime validation for context references
+- Legacy field support for backward compatibility
+
+**See**: [Complete version history](../HISTORY.md)
 
 ---
 
@@ -391,7 +361,9 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ### Resources
 
-- **Documentation**: `Docs/` folder (newly reorganized)
+- **Complete Issue List**: `Docs/STATUS/KNOWN_ISSUES.md` - All known bugs with workarounds
+- **Development History**: `Docs/HISTORY.md` - Full version history and architectural decisions
+- **Documentation**: `Docs/` folder (organized by category)
 - **Architecture**: `Docs/ARCHITECTURE/Overview.md`
 - **Calculations**: `Docs/ARCHITECTURE/Calculations.md`
 - **Getting Started**: `Docs/USER_GUIDES/Getting_Started.md`
@@ -423,12 +395,21 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ## What's Next
 
-See `Docs/STATUS/CHANGELOG.md` for detailed version history and `Docs/ARCHITECTURE/Overview.md` for planned enhancements.
+**Immediate Actions** (User decisions required):
+1. Run baseline test to establish quality metrics ($20-50)
+2. Integrate metrics collection into analyzer.ts (15-30 min)
+3. Deploy performance optimizations (parallel verdicts + tiered routing)
 
-**Comprehensive Improvement Analysis**: See `Docs/STATUS/Improvement_Recommendations.md` for detailed recommendations including:
+**See**: 
+- [Known Issues](KNOWN_ISSUES.md) for complete bug list
+- [Development History](../HISTORY.md) for architectural decisions
+- [Backlog](Backlog.md) for prioritized task list
+- [Improvement Recommendations](Improvement_Recommendations.md) for detailed enhancement analysis
+
+**Comprehensive Improvement Analysis**: `Docs/STATUS/Improvement_Recommendations.md` includes:
 - Cost optimization (70-85% potential savings)
 - Performance improvements (50-80% speed gains)
-- Security hardening (SSRF, auth, rate limiting) - *LOW urgency while POC/local*
+- Security hardening (SSRF, auth, rate limiting) - *LOW urgency for POC*
 - User experience enhancements
 - Technical debt reduction
 
@@ -457,5 +438,6 @@ See `Docs/STATUS/CHANGELOG.md` for detailed version history and `Docs/ARCHITECTU
 
 ---
 
-**Last Updated**: January 2026  
-**Document Status**: Living document - reflects current POC1 state
+**Last Updated**: January 19, 2026  
+**Actual Version**: 2.6.33 (Code) | 2.7.0 (Schema)  
+**Document Status**: Corrected to reflect actual implementation state
