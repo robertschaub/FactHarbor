@@ -1,0 +1,310 @@
+# Testing Strategy
+
+## Overview
+
+FactHarbor's testing strategy focuses on measurement-driven quality improvement:
+
+1. **Baseline Establishment**: 30 diverse test cases covering all critical scenarios
+2. **A/B Testing**: Compare old vs optimized prompts with real LLM calls
+3. **Regression Prevention**: Automated checks ensure improvements don't degrade quality
+4. **Continuous Validation**: Metrics tracking for every analysis
+
+## Test Case Suite
+
+### Coverage (30 cases total)
+
+- **Simple Factual** (5 cases): Basic well-established facts
+- **Multi-Scope** (5 cases): Distinct analytical frames requiring separation
+- **Comparative** (5 cases): Comparisons with rating direction challenges
+- **Attribution Separation** (5 cases): WHO said vs WHAT was said
+- **Temporal** (5 cases): Recent claims requiring current data
+- **Pseudoscience** (3 cases): Debunked claims requiring detection
+- **Methodology** (2 cases): Methodology-specific scopes
+
+### Difficulty Distribution
+
+- **Easy** (10 cases): Well-established facts, obvious outcomes
+- **Medium** (15 cases): Requires analysis, multiple scopes, attribution
+- **Hard** (5 cases): Recent data, complex comparisons, methodology detection
+
+## Baseline Execution
+
+### Process
+
+1. **Setup**: Configure environment with production settings
+2. **Execution**: Run all 30 test cases with current system
+3. **Collection**: Record metrics for each run
+4. **Analysis**: Calculate baseline performance
+
+### Metrics Collected
+
+**Per Test Case:**
+- Verdict accuracy (truth percentage vs expected range)
+- Token usage (prompt + completion)
+- Duration (total ms)
+- Cost (estimated $)
+- Schema compliance (boolean)
+- Gate 1 pass rate (%)
+- Gate 4 confidence distribution
+
+**Summary Statistics:**
+- Average duration
+- Average cost
+- Average tokens
+- Schema compliance rate (target: >95%)
+- Verdict accuracy rate (target: >80% within expected range)
+
+### Baseline Script
+
+```bash
+# Run baseline test suite
+npm run test:baseline
+
+# Output: baseline-results-{date}.json
+```
+
+## A/B Testing
+
+### Configuration
+
+```typescript
+const abConfig = {
+  testCases: BASELINE_TEST_CASES,
+  variants: ['inline-prompts', 'optimized-prompts'],
+  providers: ['anthropic', 'openai', 'google'],
+  runsPerVariant: 3, // For statistical significance
+};
+```
+
+### Execution
+
+```bash
+# Run A/B test (WARNING: Expensive!)
+npm run test:ab
+
+# Quick test (10 cases, 1 provider, 2 runs)
+npm run test:ab:quick
+```
+
+### Comparison Metrics
+
+**Per Test Case:**
+- Token reduction (%)
+- Speed improvement (%)
+- Cost reduction (%)
+- Schema compliance change (percentage points)
+- Verdict accuracy change (percentage points)
+
+**Overall:**
+- Average token reduction (target: 30-40%)
+- Average speed improvement (target: may vary)
+- Average cost reduction (target: follows token reduction)
+- Schema improvement rate (% of tests with better compliance)
+- Verdict accuracy maintained (within ±5%)
+
+### Success Criteria
+
+✅ **Pass**:
+- Token reduction ≥30%
+- Schema compliance maintained or improved
+- Verdict accuracy within ±5% of baseline
+- No catastrophic failures
+
+❌ **Fail**:
+- Token reduction <20%
+- Schema compliance degrades >10%
+- Verdict accuracy degrades >5%
+- >10% failure rate
+
+## Regression Testing
+
+### Automated Checks
+
+After every significant change:
+
+1. **Smoke Test**: Run 5 representative cases
+2. **Quality Check**: Compare to baseline thresholds
+3. **Alert on Degradation**: >5% drop in any metric
+
+### Regression Suite
+
+The baseline test cases become the permanent regression suite:
+
+```typescript
+// Run before merging any PR
+npm test:regression
+
+// Checks:
+// - All cases produce valid output
+// - Verdicts within ±10% of baseline
+// - Schema compliance ≥baseline rate
+```
+
+## Integration Tests
+
+### Real LLM Calls (E2E)
+
+```typescript
+describe('End-to-End Analysis', () => {
+  it('should analyze simple factual claim', async () => {
+    const result = await analyze({
+      inputType: 'text',
+      inputValue: 'The Earth orbits the Sun',
+    });
+    
+    expect(result.articleTruthPercentage).toBeGreaterThan(85);
+    expect(result.articleVerdict).toBe('TRUE');
+  }, 60000); // 60s timeout
+});
+```
+
+### Cost Guards
+
+```typescript
+// Prevent runaway costs
+beforeAll(() => {
+  process.env.TEST_MODE = 'true';
+  process.env.MAX_TEST_COST = '5.00'; // $5 limit
+});
+```
+
+## Performance Testing
+
+### Load Testing
+
+Not applicable for POC (single-user local deployment).
+
+For production: Use k6 or Artillery to test:
+- Concurrent analyses
+- Database query performance
+- API rate limits
+
+### Benchmark Tests
+
+```typescript
+describe('Performance Benchmarks', () => {
+  it('should complete 10-claim analysis in <60s', async () => {
+    const start = Date.now();
+    await analyze({ /* 10 claims */ });
+    const duration = Date.now() - start;
+    expect(duration).toBeLessThan(60000);
+  });
+});
+```
+
+## Test Environments
+
+### Local Development
+- SQLite database
+- Mock LLM calls (unit tests)
+- Real LLM calls (integration tests - mark with `@e2e`)
+
+### CI/CD
+- Unit tests only (no LLM calls)
+- Fast feedback (<2 minutes)
+
+### Manual Testing
+- Baseline execution (manual trigger)
+- A/B testing (manual trigger + approval)
+- Requires API budget allocation
+
+## Cost Management
+
+### Test Budget
+
+| Test Type | Estimated Cost |
+|-----------|---------------|
+| Baseline (30 cases) | $20-50 |
+| A/B Test (full) | $100-200 |
+| A/B Test (quick) | $10-20 |
+| Regression (5 cases) | $3-8 |
+
+### Cost Control
+
+1. **Budget Approval Required**: All expensive tests require explicit approval
+2. **Cost Tracking**: Log estimated cost before execution
+3. **Abort on Threshold**: Stop if cost exceeds budget
+4. **Use Budget Models**: For non-critical test validation
+
+## Continuous Monitoring
+
+### Production Metrics
+
+Every production analysis automatically records:
+- Duration, cost, tokens
+- Schema compliance
+- Quality gate statistics
+- Verdict distribution
+
+### Alerts
+
+Configure alerts for:
+- Schema compliance <90%
+- Average cost >2x baseline
+- Average duration >2x baseline
+- Gate 1 pass rate <50%
+
+## Test Data
+
+### Synthetic vs Real
+
+**Synthetic** (30 baseline cases):
+- Controlled, reproducible
+- Cover edge cases
+- Enable regression detection
+
+**Real** (production analyses):
+- Uncontrolled, varied
+- True user scenarios
+- Enable drift detection
+
+### Privacy
+
+Test cases must NOT include:
+- Real user data
+- Sensitive information
+- Copyrighted material
+
+## Reporting
+
+### Baseline Report
+
+```markdown
+# Baseline Results - {date}
+
+## Summary
+- Total cases: 30
+- Completed: 29
+- Failed: 1
+- Avg duration: 42s
+- Avg cost: $0.18
+- Schema compliance: 96.5%
+
+## By Category
+- Simple Factual: 5/5 ✅
+- Multi-Scope: 4/5 ⚠️
+- Comparative: 5/5 ✅
+...
+```
+
+### A/B Report
+
+```markdown
+# A/B Test Results - {date}
+
+## Overall Improvements
+- Token reduction: 38%
+- Speed improvement: 12%
+- Cost reduction: 38%
+- Schema compliance: +2.5%
+- Verdict accuracy: -1.2% ✅
+
+## Recommendation
+✅ APPROVE - Optimized prompts show significant improvements
+```
+
+## Related Documentation
+
+- [Metrics Schema](./METRICS_SCHEMA.md)
+- [Baseline Results](./BASELINE_RESULTS.md)
+- [A/B Test Results](./AB_TEST_RESULTS.md)
