@@ -171,24 +171,18 @@ export function validateClaimGate1(
   }
 
   // 5. Determine if it can be verified
+  //
+  // NOTE: "Opinion" / "Prediction" are still claims that can often be analyzed by
+  // grounding their *factual components* (timelines, procedures, quoted statements, laws, etc.).
+  // We keep this classification for downstream UI/prompting, but we DO NOT use it to hard-filter.
   const isFactual = claimType === "FACTUAL" || claimType === "AMBIGUOUS";
 
   // 6. Pass criteria
   //
-  // Gate 1 is intended to filter *non-verifiable* outputs (pure opinion/prediction), not to
-  // aggressively drop verifiable-but-non-numeric claims. In practice, many legitimate
-  // decompositions (especially comparative/mechanism claims) are AMBIGUOUS yet still verifiable.
-  //
-  // Therefore:
-  // - Always filter predictions
-  // - Filter strong opinions
-  // - Keep factual + ambiguous claims unless they are extremely content-poor
+  // We only filter extremely content-poor claims (noise), not opinions/predictions.
+  // Central claims are still always kept.
   const isContentPoor = contentWordCount < 3 && specificityScore < 0.3;
-  const wouldPass =
-    !futureOriented &&
-    opinionScore <= 0.5 &&
-    isFactual &&
-    !isContentPoor;
+  const wouldPass = !isContentPoor;
 
   // CRITICAL: Central claims always pass Gate 1
   const passed = wouldPass || isCentral;
@@ -196,15 +190,8 @@ export function validateClaimGate1(
   // Generate failure reason if applicable
   let failureReason: string | undefined;
   if (!wouldPass) {
-    if (futureOriented) {
-      failureReason = "Future prediction (cannot be verified yet)";
-    } else if (opinionScore > 0.3) {
-      failureReason = "Contains opinion language";
-    } else if (specificityScore < 0.3) {
-      failureReason = "Lacks specific verifiable details";
-    }
-
-    if (isCentral && failureReason) {
+    failureReason = "Too vague / content-poor to analyze reliably";
+    if (isCentral) {
       failureReason = `[CENTRAL CLAIM - kept for analysis] ${failureReason}`;
     }
   }
@@ -354,26 +341,9 @@ export function applyGate1Lite<T extends { id: string; text: string; checkWorthi
       continue;
     }
 
-    // Filter low checkWorthiness
+    // Filter low checkWorthiness (still worth skipping for pre-research budget protection)
     if (claim.checkWorthiness === "low") {
       console.log(`[Gate1-Lite] Filtered low checkWorthiness: "${claim.id}"`);
-      continue;
-    }
-
-    // Filter obvious future predictions
-    if (FUTURE_MARKERS.some(pattern => pattern.test(claim.text))) {
-      console.log(`[Gate1-Lite] Filtered future prediction: "${claim.id}"`);
-      continue;
-    }
-
-    // Filter obvious strong opinions
-    const strongOpinionPatterns = [
-      /\bi\s+think\b/i,
-      /\bi\s+believe\b/i,
-      /\bin\s+my\s+(view|opinion)\b/i,
-    ];
-    if (strongOpinionPatterns.some(pattern => pattern.test(claim.text))) {
-      console.log(`[Gate1-Lite] Filtered strong opinion: "${claim.id}"`);
       continue;
     }
 

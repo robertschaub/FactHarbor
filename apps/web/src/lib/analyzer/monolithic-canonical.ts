@@ -361,15 +361,8 @@ export async function runMonolithicCanonical(
   // We proceed with research, but we:
   // - attach an explicit limitation note
   // - cap confidence later to avoid overclaiming
-  const originalClaimType = claimData.claimType;
-  const limitationNote =
-    originalClaimType === "opinion" || originalClaimType === "prediction"
-      ? `Limitation: the input is ${originalClaimType === "opinion" ? "evaluative/opinion-based" : "predictive"}; FactHarbor can only verify factual components and provide context.`
-      : null;
-  const effectiveClaimType =
-    originalClaimType === "opinion" || originalClaimType === "prediction"
-      ? "mixed"
-      : originalClaimType;
+  const claimType = claimData.claimType;
+  const limitationNote: string | null = null;
 
   // Step 2: Research loop
   let iteration = 0;
@@ -488,7 +481,7 @@ export async function runMonolithicCanonical(
         const extraction = await extractFacts(
           extractFactsModel.model,
           claimData.mainClaim,
-          effectiveClaimType,
+          claimType,
           limitationNote,
           fetchedContents,
           facts.length,
@@ -524,7 +517,7 @@ export async function runMonolithicCanonical(
 
   // Step 3: Generate verdict
   if (facts.length === 0) {
-    // For evaluative/predictive inputs, avoid failing the entire pipeline; return a safe, low-confidence result.
+    // Avoid failing the entire pipeline; return a safe, low-confidence result.
     // (Runner fallback is still available, but this keeps canonical output consistent and debuggable.)
     const resultJson = buildResultJson({
       input,
@@ -534,14 +527,14 @@ export async function runMonolithicCanonical(
       budgetTracker,
       budgetConfig,
       claim: claimData.mainClaim,
-      claimType: effectiveClaimType,
+      claimType,
       facts: [],
       sources,
       searchQueriesWithResults,
       verdict: 50,
-      confidence: limitationNote ? 20 : 30,
-      reasoning: `${limitationNote ? `${limitationNote}\n\n` : ""}No verifiable facts could be extracted from sources within budget.`,
-      summary: limitationNote ? "Contextual assessment: insufficient verifiable evidence" : "Insufficient verifiable evidence",
+      confidence: 30,
+      reasoning: "No verifiable facts could be extracted from sources within budget.",
+      summary: "Insufficient verifiable evidence",
     });
     const reportMarkdown = generateReportMarkdown(resultJson, null);
     return { resultJson, reportMarkdown };
@@ -559,23 +552,12 @@ export async function runMonolithicCanonical(
   const verdictData = await generateVerdict(
     verdictModel.model,
     claimData.mainClaim,
-    effectiveClaimType,
+    claimType,
     limitationNote,
     validatedFacts,
     input.onEvent
   );
   recordLLMCall(budgetTracker, 2000); // Estimate
-
-  // Apply conservative confidence capping for evaluative/predictive inputs.
-  const cappedConfidence =
-    limitationNote ? Math.min(verdictData.confidence ?? 0, 30) : (verdictData.confidence ?? 0);
-  const finalReasoning = limitationNote
-    ? `${limitationNote}\n\n${verdictData.reasoning || ""}`.trim()
-    : verdictData.reasoning || "";
-  const finalSummary =
-    limitationNote && verdictData.summary
-      ? `${verdictData.summary} (contextual assessment)`
-      : verdictData.summary;
 
   // Build result
   const resultJson = buildResultJson({
@@ -586,14 +568,14 @@ export async function runMonolithicCanonical(
     budgetTracker,
     budgetConfig,
     claim: claimData.mainClaim,
-    claimType: effectiveClaimType,
+    claimType,
     facts: validatedFacts,
     sources,
     searchQueriesWithResults,
     verdict: verdictData.verdict,
-    confidence: cappedConfidence,
-    reasoning: finalReasoning,
-    summary: finalSummary,
+    confidence: verdictData.confidence,
+    reasoning: verdictData.reasoning,
+    summary: verdictData.summary,
     verdictData, // Pass the LLM response to include detectedScopes
   });
 
