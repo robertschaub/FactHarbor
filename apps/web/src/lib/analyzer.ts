@@ -2991,6 +2991,7 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]),
   originalInputDisplay: z.string(), // empty string if not applicable
   impliedClaim: z.string(), // empty string if not applicable
+  wasOriginallyQuestionFormat: z.boolean().optional(),
 
   analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA),
   requiresSeparateAnalysis: z.boolean(),
@@ -3054,6 +3055,7 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]).catch("none"),
   originalInputDisplay: z.string().default(""),
   impliedClaim: z.string().default(""),
+  wasOriginallyQuestionFormat: z.boolean().optional(),
 
   analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA).default([]),
   requiresSeparateAnalysis: z.boolean().default(false),
