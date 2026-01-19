@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -22,6 +22,11 @@ import {
   percentageToClaimVerdict,
 } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
+import { ClaimsGroupedByScope } from "./components/ClaimsGroupedByScope";
+import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
+import { MethodologySubGroup } from "./components/MethodologySubGroup";
+import { ArticleFrameBanner } from "./components/ArticleFrameBanner";
+import { groupFactsByMethodology } from "./utils/methodologyGrouping";
 
 type Job = {
   jobId: string;
@@ -540,6 +545,16 @@ export default function JobPage() {
                 />
               )}
 
+              {(() => {
+                const articleFrame =
+                  pipelineVariant === "monolithic_dynamic"
+                    ? result?.rawJson?.articleFrame
+                    : result?.understanding?.analysisContext;
+                return articleFrame ? (
+                  <ArticleFrameBanner articleFrame={articleFrame} />
+                ) : null;
+              })()}
+
               {/* v2.6.33: Show transformed input if different from original */}
               {impliedClaim && (
                 <TransformedInputBox
@@ -581,6 +596,9 @@ export default function JobPage() {
                       claimVerdicts={claimVerdicts}
                       scopes={scopes}
                       tangentialClaims={tangentialSubClaims}
+                      renderClaim={(claim, showCrossScope) => (
+                        <ClaimCard claim={claim} showCrossScope={showCrossScope} />
+                      )}
                     />
                   ) : (
                     <>
@@ -613,7 +631,12 @@ export default function JobPage() {
         <div className={styles.contentCard}>
           <SourcesPanel searchQueries={searchQueries} sources={sources} researchStats={researchStats} searchProvider={result?.meta?.searchProvider} />
           {/* NEW v2.6.29: Display facts with counter-evidence marking */}
-          {facts.length > 0 && <FactsPanel facts={facts} />}
+          {facts.length > 0 && (
+            <FactsPanel
+              facts={facts}
+              disableGrouping={pipelineVariant === "monolithic_dynamic"}
+            />
+          )}
         </div>
       )}
 
@@ -751,7 +774,7 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
 // Facts Panel - NEW v2.6.29: Display facts with counter-evidence marking
 // ============================================================================
 
-function FactsPanel({ facts }: { facts: any[] }) {
+function FactsPanel({ facts, disableGrouping = false }: { facts: any[]; disableGrouping?: boolean }) {
   if (!facts || facts.length === 0) return null;
 
   // Group facts by claim direction and source type
@@ -762,6 +785,42 @@ function FactsPanel({ facts }: { facts: any[] }) {
   const neutralFacts = facts.filter((f: any) =>
     (f.claimDirection === "neutral" || !f.claimDirection) && !f.fromOppositeClaimSearch
   );
+
+  const renderFactCard = (fact: any, className: string, extraMeta?: ReactNode) => (
+    <div key={fact.id || fact.fact} className={`${styles.factItem} ${className}`}>
+      <div className={styles.factText}>
+        {fact.fact}
+        {fact.evidenceScope && (
+          <EvidenceScopeTooltip evidenceScope={fact.evidenceScope} />
+        )}
+      </div>
+      <div className={styles.factMeta}>
+        <span className={styles.factCategory}>{fact.category}</span>
+        <span className={styles.factSource}>{decodeHtmlEntities(fact.sourceTitle || 'Unknown')}</span>
+        {extraMeta}
+      </div>
+    </div>
+  );
+
+  const renderFactList = (factList: any[], className: string, extraMeta?: (fact: any) => ReactNode) => {
+    if (factList.length === 0) return null;
+    if (disableGrouping) {
+      return factList.map((fact: any) => renderFactCard(fact, className, extraMeta?.(fact)));
+    }
+
+    const groups = groupFactsByMethodology(factList);
+    if (!groups) {
+      return factList.map((fact: any) => renderFactCard(fact, className, extraMeta?.(fact)));
+    }
+
+    return groups.map((group) => (
+      <MethodologySubGroup
+        key={group.key}
+        group={group}
+        renderFact={(fact) => renderFactCard(fact, className, extraMeta?.(fact))}
+      />
+    ));
+  };
 
   return (
     <div className={styles.factsPanel}>
@@ -785,15 +844,8 @@ function FactsPanel({ facts }: { facts: any[] }) {
             They support the inverse position and count against the original claim.
           </p>
           <div className={styles.factsList}>
-            {oppositeClaimFacts.map((f: any, i: number) => (
-              <div key={i} className={`${styles.factItem} ${styles.factItemOpposite}`}>
-                <div className={styles.factText}>{f.fact}</div>
-                <div className={styles.factMeta}>
-                  <span className={styles.factCategory}>{f.category}</span>
-                  <span className={styles.factSource}>{decodeHtmlEntities(f.sourceTitle || 'Unknown')}</span>
-                  <span className={styles.factOppositeTag}>OPPOSITE CLAIM</span>
-                </div>
-              </div>
+            {renderFactList(oppositeClaimFacts, styles.factItemOpposite, () => (
+              <span className={styles.factOppositeTag}>OPPOSITE CLAIM</span>
             ))}
           </div>
         </div>
@@ -805,15 +857,7 @@ function FactsPanel({ facts }: { facts: any[] }) {
             ⚠️ Counter-Evidence ({contradictingFacts.length})
           </h4>
           <div className={styles.factsList}>
-            {contradictingFacts.map((f: any, i: number) => (
-              <div key={i} className={`${styles.factItem} ${styles.factItemContradicting}`}>
-                <div className={styles.factText}>{f.fact}</div>
-                <div className={styles.factMeta}>
-                  <span className={styles.factCategory}>{f.category}</span>
-                  <span className={styles.factSource}>{decodeHtmlEntities(f.sourceTitle || 'Unknown')}</span>
-                </div>
-              </div>
-            ))}
+            {renderFactList(contradictingFacts, styles.factItemContradicting)}
           </div>
         </div>
       )}
@@ -824,15 +868,7 @@ function FactsPanel({ facts }: { facts: any[] }) {
             ✓ Supporting Evidence ({supportingFacts.length})
           </h4>
           <div className={styles.factsList}>
-            {supportingFacts.map((f: any, i: number) => (
-              <div key={i} className={`${styles.factItem} ${styles.factItemSupporting}`}>
-                <div className={styles.factText}>{f.fact}</div>
-                <div className={styles.factMeta}>
-                  <span className={styles.factCategory}>{f.category}</span>
-                  <span className={styles.factSource}>{decodeHtmlEntities(f.sourceTitle || 'Unknown')}</span>
-                </div>
-              </div>
-            ))}
+            {renderFactList(supportingFacts, styles.factItemSupporting)}
           </div>
         </div>
       )}
@@ -843,15 +879,7 @@ function FactsPanel({ facts }: { facts: any[] }) {
             Background context ({neutralFacts.length})
           </h4>
           <div className={styles.factsList}>
-            {neutralFacts.slice(0, 5).map((f: any, i: number) => (
-              <div key={i} className={`${styles.factItem} ${styles.factItemNeutral}`}>
-                <div className={styles.factText}>{f.fact}</div>
-                <div className={styles.factMeta}>
-                  <span className={styles.factCategory}>{f.category}</span>
-                  <span className={styles.factSource}>{decodeHtmlEntities(f.sourceTitle || 'Unknown')}</span>
-                </div>
-              </div>
-            ))}
+            {renderFactList(neutralFacts.slice(0, 5), styles.factItemNeutral)}
             {neutralFacts.length > 5 && (
               <div className={styles.factMoreIndicator}>
                 + {neutralFacts.length - 5} more background facts
@@ -1400,153 +1428,6 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: { articleSummar
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// Claims Components
-// ============================================================================
-
-function ClaimsGroupedByScope({
-  claimVerdicts,
-  scopes,
-  tangentialClaims,
-}: {
-  claimVerdicts: any[];
-  scopes: any[];
-  tangentialClaims: any[];
-}) {
-  const claimsByScope = new Map<string, any[]>();
-  const tangentialByScope = new Map<string, any[]>();
-
-  const normalizeScopeKey = (id: any): string => {
-    const raw = String(id || "").trim();
-    return raw ? raw : "general";
-  };
-
-  for (const cv of claimVerdicts) {
-    const key = normalizeScopeKey(cv.contextId ?? cv.relatedProceedingId);
-    if (!claimsByScope.has(key)) claimsByScope.set(key, []);
-    claimsByScope.get(key)!.push(cv);
-  }
-
-  for (const c of tangentialClaims || []) {
-    const key = normalizeScopeKey(c?.contextId ?? c?.relatedProceedingId);
-    if (!tangentialByScope.has(key)) tangentialByScope.set(key, []);
-    tangentialByScope.get(key)!.push(c);
-  }
-
-  const scopeIds = scopes.map((s: any) => s.id);
-  const hasScopes = scopeIds.length > 0;
-  const groups: Array<{ id: string; title: string; claims: any[]; tangential: any[] }> = [];
-
-  const formatScopeTitle = (scope: any): string => {
-    const shortName = String(scope?.shortName || "").trim();
-    const name = String(scope?.name || "").trim();
-    if (!shortName && !name) return "General";
-    if (!shortName) return `⚖️ ${name}`;
-    if (!name) return `⚖️ ${shortName}`;
-    if (shortName.toLowerCase() === name.toLowerCase()) return `⚖️ ${name}`;
-    return `⚖️ ${shortName}: ${name}`;
-  };
-
-  if (hasScopes) {
-    for (const scope of scopes) {
-      const claims = claimsByScope.get(scope.id) || [];
-      const tangential = tangentialByScope.get(scope.id) || [];
-      if (claims.length === 0 && tangential.length === 0) continue;
-      groups.push({
-        id: scope.id,
-        title: formatScopeTitle(scope),
-        claims,
-        tangential,
-      });
-    }
-
-    // Add any scope IDs that appear in claims/tangentials but are not in the scopes list.
-    const extraKeys = new Set<string>();
-    for (const k of claimsByScope.keys()) extraKeys.add(k);
-    for (const k of tangentialByScope.keys()) extraKeys.add(k);
-    for (const key of Array.from(extraKeys)) {
-      if (key === "general") continue;
-      if (scopeIds.includes(key)) continue;
-      const claims = claimsByScope.get(key) || [];
-      const tangential = tangentialByScope.get(key) || [];
-      if (claims.length === 0 && tangential.length === 0) continue;
-      groups.push({
-        id: key,
-        title: `Context ${key}`,
-        claims,
-        tangential,
-      });
-    }
-  } else {
-    const claimsByGroup = new Map<string, any[]>();
-    for (const cv of claimVerdicts) {
-      const scopeId = normalizeScopeKey(cv.contextId ?? cv.relatedProceedingId);
-      if (!claimsByGroup.has(scopeId)) claimsByGroup.set(scopeId, []);
-      claimsByGroup.get(scopeId)!.push(cv);
-    }
-
-    for (const [scopeId, claims] of claimsByGroup.entries()) {
-      const tangential = tangentialByScope.get(scopeId) || [];
-      if (claims.length === 0 && tangential.length === 0) continue;
-      const scope = scopes.find((s: any) => s.id === scopeId);
-      const fallbackTitle = scopeId === "general" ? "General" : `Context ${scopeId}`;
-      groups.push({
-        id: scopeId,
-        title: scope ? formatScopeTitle(scope) : fallbackTitle,
-        claims,
-        tangential,
-      });
-    }
-  }
-
-  // Ensure a unified General group exists when there are any unscoped claims (direct or tangential).
-  const hasGeneral = groups.some((g) => g.id === "general");
-  const generalClaims = claimsByScope.get("general") || [];
-  const generalTangential = tangentialByScope.get("general") || [];
-  if ((generalClaims.length > 0 || generalTangential.length > 0) && !hasGeneral) {
-    groups.push({
-      id: "general",
-      title: "General",
-      claims: generalClaims,
-      tangential: generalTangential,
-    });
-  }
-
-  return (
-    <div>
-      {groups.map((group) => (
-        <div key={group.id} className={styles.scopeGroup}>
-          <h4 className={styles.scopeGroupHeader}>
-            {group.title}
-          </h4>
-          {group.claims.map((cv: any) => (
-            <ClaimCard
-              key={`${group.id}:${cv.claimId}`}
-              claim={cv}
-              showCrossScope={hasScopes && ((!cv.contextId && !cv.relatedProceedingId) || group.id === "general")}
-            />
-          ))}
-
-          {group.tangential.length > 0 && (
-            <details className={styles.tangentialDetails}>
-              <summary className={styles.tangentialSummary}>
-                📎 Related context (tangential; excluded from verdict) ({group.tangential.length})
-              </summary>
-              <ul className={styles.tangentialList}>
-                {group.tangential.map((c: any) => (
-                  <li key={c.id} className={styles.tangentialItem}>
-                    <code className={styles.tangentialClaimId}>{c.id}</code> {c.text}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-        </div>
-      ))}
     </div>
   );
 }
