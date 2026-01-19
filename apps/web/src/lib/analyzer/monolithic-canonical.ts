@@ -31,6 +31,34 @@ import { filterFactsByProvenance } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 
+function normalizeForContainsMatch(text: string): string {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeForLooseContainsMatch(text: string): string {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function excerptAppearsInContent(excerpt: string, content: string): boolean {
+  const ex = String(excerpt || "").trim();
+  if (ex.length < 24) return false; // too short to validate reliably
+  const c = String(content || "");
+  if (!c) return false;
+  const nEx = normalizeForContainsMatch(ex);
+  const nC = normalizeForContainsMatch(c);
+  if (nEx && nC.includes(nEx)) return true;
+  const lEx = normalizeForLooseContainsMatch(ex);
+  const lC = normalizeForLooseContainsMatch(c);
+  return lEx && lC.includes(lEx);
+}
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -238,7 +266,7 @@ async function extractFacts(
       },
       {
         role: "user",
-        content: `CLAIM TO VERIFY: ${claim}\nCLAIM TYPE: ${claimType ?? "unknown"}\n${limitationNote ? `\n${limitationNote}\n` : "\n"}\nSOURCES:\n${sourceSummary}\n\nExisting fact count: ${existingFactCount}.\n\nIf the claim is evaluative/predictive, focus on extracting verifiable factual statements that bear on the evaluation, and clearly mark direction as supports/contradicts/neutral.\nIf more research would help, set needsMoreResearch=true.`,
+        content: `CLAIM TO VERIFY: ${claim}\n\nSOURCES:\n${sourceSummary}\n\nExisting fact count: ${existingFactCount}.\n\nRules:\n- Extract ONLY factual statements that are supported by the source text.\n- The excerpt MUST be a verbatim quote (or near-verbatim) from the source content.\n- If you cannot quote the source, do NOT include that fact.\n- If more research would help, set needsMoreResearch=true.`,
       },
     ],
     temperature: getDeterministicTemperature(0.1),
@@ -274,7 +302,9 @@ async function generateVerdict(
     provider: detectProvider(model.modelId || ''),
     modelName: model.modelId || '',
     config: {
-      allowModelKnowledge: CONFIG.allowModelKnowledge,
+      // Monolithic canonical is intended to be evidence-grounded; do not allow
+      // training-data assertions to substitute for provenance.
+      allowModelKnowledge: false,
       isLLMTiering: process.env.FH_LLM_TIERING === 'on',
       isBudgetModel: isBudgetModel(model.modelId || ''),
     },
@@ -296,7 +326,7 @@ async function generateVerdict(
       },
       {
         role: "user",
-        content: `CLAIM: ${claim}\nCLAIM TYPE: ${claimType ?? "unknown"}\n${limitationNote ? `\n${limitationNote}\n` : "\n"}\nEVIDENCE (${facts.length} facts):\n${factsSummary}\n\nIf the claim is evaluative/predictive, keep confidence low unless the evidence is unusually strong and directly tied to the evaluation.`,
+        content: `CLAIM: ${claim}\n\nEVIDENCE (${facts.length} facts):\n${factsSummary}\n\nRules:\n- Use ONLY the evidence facts above.\n- Do NOT introduce new facts, institutions, outcomes, or dates not present in the evidence list.\n- If evidence is insufficient or conflicting, keep confidence low and explain the gap.`,
       },
     ],
     temperature: getDeterministicTemperature(0.1),
@@ -491,7 +521,15 @@ export async function runMonolithicCanonical(
 
         // Add new facts with IDs
         const urlToSourceId = new Map(sources.map((s) => [s.url, s.id]));
+        const urlToContent = new Map(sources.map((s) => [s.url, s.content]));
         for (const f of extraction.facts) {
+          const content = urlToContent.get(f.sourceUrl) || "";
+          if (!excerptAppearsInContent(f.excerpt, content)) {
+            console.warn(
+              `[MonolithicCanonical] Dropping fact with non-verifiable excerpt (not found in fetched content): ${f.sourceUrl}`,
+            );
+            continue;
+          }
           facts.push({
             id: `F${facts.length + 1}`,
             fact: f.fact,
@@ -745,6 +783,11 @@ function buildResultJson(params: {
       },
     },
     verdictSummary: {
+      // Orchestrated/UI-compatible fields (preferred)
+      answer: verdict,
+      confidence,
+      truthPercentage: verdict,
+      // Backward/alternate naming still used in some places/tests
       overallVerdict: verdict,
       overallConfidence: confidence,
       verdictLabel,
