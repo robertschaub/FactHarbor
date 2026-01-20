@@ -1,6 +1,6 @@
 # FactHarbor Calculations Documentation
 
-**Version**: 2.8.0  
+**Version**: 2.6.33  
 **Last Updated**: 2026-01-20
 
 ## Overview

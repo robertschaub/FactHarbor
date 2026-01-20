@@ -1,6 +1,6 @@
 # FactHarbor Current Status
 
-**Version**: 2.8.0 (Code) | 2.7.0 (Schema Output)  
+**Version**: 2.6.33 (Code) | 2.7.0 (Schema Output)  
 **Last Updated**: 2026-01-20  
 **Status**: POC1 Operational
 
@@ -16,7 +16,7 @@
   - Monolithic Canonical (faster, lower cost)
   - Monolithic Dynamic (experimental, flexible output)
 - Multi-scope detection and analysis
-- **Heuristic Scope Pre-Detection** (v2.8): Code-level pattern detection for comparison, legal, and environmental claims
+- **Heuristic Scope Pre-Detection**: Code-level pattern detection for comparison, legal, and environmental claims
 - Input neutrality (question ≈ statement within ±5%)
 - Claim extraction with dependency tracking
 - Temporal reasoning with current date awareness
@@ -26,13 +26,13 @@
 - MIXED vs UNVERIFIED distinction (confidence-based)
 - Pseudoscience detection and escalation
 - KeyFactors discovery and aggregation
-- **Doubted vs Contested Distinction** (v2.8): Proper handling of evidence-based vs opinion-based contestation
+- **Doubted vs Contested Distinction**: Proper handling of evidence-based vs opinion-based contestation
 - Quality Gates (Gate 1: Claim Validation, Gate 4: Verdict Confidence)
 - LLM Tiering for cost optimization
 - Provenance validation (Ground Realism enforcement)
-- **Harm Potential Detection** (v2.8): Shared heuristic for death/injury/fraud claims
+- **Harm Potential Detection**: Shared heuristic for death/injury/fraud claims
 
-**Shared Module Architecture (v2.8):**
+**Shared Module Architecture:**
 - `scopes.ts`: Scope detection (`detectScopes()`, `formatDetectedScopesHint()`)
 - `aggregation.ts`: Verdict weighting (`validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()`)
 - `claim-decomposition.ts`: Claim parsing utilities
@@ -67,7 +67,7 @@
 ### ⚠️ Known Issues
 
 **CRITICAL**:
-1. **v2.8 Prompt Optimizations Never Validated**: Large optimization work deployed without A/B testing. Unknown quality impact.
+1. **Prompt Optimizations Never Validated**: Large optimization work deployed without A/B testing. Unknown quality impact.
 2. **Metrics Infrastructure Not Integrated**: Built but not connected to analyzer.ts. No observability.
 
 **HIGH**:
@@ -94,7 +94,7 @@
 
 ### Immediate (USER ACTION REQUIRED)
 
-1. **Validate v2.8 Prompt Optimizations**
+1. **Validate Prompt Optimizations**
    - ⏸️ Run baseline test suite (30 cases, $20-50)
    - ⏸️ Run A/B test comparing old vs optimized prompts ($100-200)
    - ⏸️ Measure actual token reduction and quality impact

@@ -1,6 +1,6 @@
 # LLM Schema Mapping Reference
 
-**Version**: 2.8.0  
+**Version**: 2.6.33  
 **Date**: 2026-01-20  
 **Purpose**: Complete mapping of TypeScript → LLM Prompts → JSON Schemas  
 **Audience**: Prompt Engineers, LLM System Developers  
@@ -403,10 +403,10 @@ When updating prompts or schemas:
 - [TERMINOLOGY.md](./TERMINOLOGY.md) - Core definitions
 - [Prompt_Engineering_Standards.md](./Prompt_Engineering_Standards.md) - How to write prompts
 - [types.ts](../../apps/web/src/lib/analyzer/types.ts) - TypeScript interfaces
-- [ADR_001](../ARCHITECTURE/ADR_001_Scope_Context_Terminology_Refactoring.md) - Migration decision
+- Migration decision documented in `types.ts` comments and `TERMINOLOGY.md`
 
 ---
 
 **Maintainer**: LLM Expert, Prompt Engineering Team  
 **Last Updated**: 2026-01-20  
-**Next Review**: After v2.8.0 stabilization
+**Next Review**: After next major version

@@ -1,6 +1,6 @@
 # Prompt Architecture
 
-**Version**: 2.7.0  
+**Version**: 2.6.33  
 **Last Updated**: January 2026  
 **Audience**: Developers, Prompt Engineers  
 **Purpose**: Document the modular prompt composition system used across all pipelines

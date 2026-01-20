@@ -153,7 +153,7 @@ Store metrics for an analysis job.
 ```json
 {
   "jobId": "uuid",
-  "schemaVersion": "2.8.0",
+  "schemaVersion": "2.6.33",
   "totalDurationMs": 45000,
   ...
 }

@@ -141,7 +141,7 @@ export class MetricsCollector {
     this.metrics = {
       jobId,
       pipelineVariant,
-      schemaVersion: '2.8.0',
+      schemaVersion: '2.6.33',
       timestamp: new Date(),
       llmCalls: [],
       searchQueries: [],

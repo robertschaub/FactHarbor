@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
 **Last Updated**: January 20, 2026  
-**Current Version**: 2.8.0  
+**Current Version**: 2.6.33  
 **Schema Version**: 2.7.0
 
 ---

@@ -96,7 +96,7 @@ function detectSearchProvider(): string {
 // ============================================================================
 
 export const CONFIG = {
-  schemaVersion: "2.6.32",
+  schemaVersion: "2.6.33",
   deepModeEnabled:
     (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
   // Reduce run-to-run drift by removing sampling noise and stabilizing selection.

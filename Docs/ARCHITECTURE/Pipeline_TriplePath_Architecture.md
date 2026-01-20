@@ -1,7 +1,7 @@
 # FactHarbor Analysis — Triple-Path Pipeline Architecture (Desired)
 
 **Last Updated**: 2026-01-20  
-**Version**: 2.8.0  
+**Version**: 2.6.33  
 **Audience**: Senior Architects, Lead Developers, Reviewers  
 **Purpose**: Define the **desired end-state architecture** supporting **three user-selectable analysis variants** with maximum reuse of stable primitives and minimal added complexity/risk to the current path.
 

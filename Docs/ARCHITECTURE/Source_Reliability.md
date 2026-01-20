@@ -4,7 +4,7 @@
 
 > **Note**: Source reliability scoring is **disabled by default** and only becomes active if you explicitly configure a local bundle via `FH_SOURCE_BUNDLE_PATH`.
 >
-> **Current implementation reality (v2.6.32)**:
+> **Current implementation reality (v2.6.33)**:
 > - **Local file only**: the code loads a bundle from `FH_SOURCE_BUNDLE_PATH` if present.
 > - **No remote bundle fetch / integrity verification** is implemented yet.
 >

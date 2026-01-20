@@ -1,6 +1,6 @@
 # Provider-Specific Prompt Guidelines
 
-**Version**: 2.8.0
+**Version**: 2.6.33
 **Last Updated**: 2026-01-19
 **Status**: Implementation Complete
 

@@ -1,9 +1,9 @@
 # FactHarbor Terminology Reference
 
-**Version**: 2.8.0  
+**Version**: 2.6.33  
 **Date**: 2026-01-20  
 **Audience**: Developers, Prompt Engineers, LLM Systems  
-**Status**: Post-Refactoring (v2.8.0 shared modules; v2.7.0 field names; legacy names preserved for backward compatibility)
+**Status**: Post-Refactoring (shared modules; v2.7.0 output field names; legacy names preserved for backward compatibility)
 
 ---
 
@@ -15,7 +15,7 @@ This document provides the **authoritative glossary** for FactHarbor's scope/con
 
 ## Field Mapping Table (v2.7 → Legacy)
 
-**Breaking Changes Approved**: See [ADR_001](../ARCHITECTURE/ADR_001_Scope_Context_Terminology_Refactoring.md)
+**Breaking Changes Approved**: Documented in code comments (types.ts) - legacy JSON field names preserved for backward compatibility
 
 | Concept | TypeScript Type | JSON Field (v2.7) | JSON Field (Legacy) | Code Reference (v2.7) | Code Reference (Legacy) | Prompt Term |
 |---------|----------------|---------------------|--------------------|-----------------------|----------------------|-------------|
@@ -572,7 +572,7 @@ Use this checklist when reviewing code that involves scopes/contexts:
 
 **Q: Why are TypeScript names different from JSON field names?**
 
-A: Backward compatibility. The codebase evolved from "Proceeding" terminology to "AnalysisContext", so v2.7.0 introduced new JSON field names while still accepting legacy records (see [ADR_001](../ARCHITECTURE/ADR_001_Scope_Context_Terminology_Refactoring.md)).
+A: Backward compatibility. The codebase evolved from "Proceeding" terminology to "AnalysisContext", so v2.7.0 introduced new JSON field names while still accepting legacy records (documented in types.ts comments).
 
 **Q: When should I use EvidenceScope vs AnalysisContext?**
 

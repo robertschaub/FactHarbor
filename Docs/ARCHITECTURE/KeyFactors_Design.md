@@ -1,7 +1,7 @@
 # KeyFactors Design Decision
 
 **Date**: January 2026
-**Version**: 2.8.0
+**Version**: 2.6.33
 **Status**: Design Decision Document
 
 ## Executive Summary
