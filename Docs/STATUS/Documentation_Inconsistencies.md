@@ -2,7 +2,7 @@
 
 **Generated**: 2026-01-20  
 **Purpose**: Comprehensive audit of inconsistencies between documentation (.md files), source code, and xWiki specification  
-**Status**: Action Required
+**Status**: ✅ RESOLVED (2026-01-20)
 
 ---
 
@@ -110,7 +110,26 @@ But code still contains `hasMultipleProceedings`, `proceedings`, `targetProceedi
 
 ## 3. xWiki Specification vs Implementation Gaps
 
-The xWiki export (`Docs/FactHarbor Spec and Impl 1.Jan.26.xar`) contains the original POC specification. Several significant deviations exist:
+The xWiki exports contain the original POC specification:
+- **Current**: `Docs/FactHarbor Spec and Impl 20.Jan.26.xar` (January 20, 2026)
+- **Previous**: `Docs/FactHarbor Spec and Impl 1.Jan.26.xar` (January 1, 2026)
+
+### 3.0 xWiki Version Comparison (Jan 1 → Jan 20)
+
+The core specification files are **identical** between versions. Changes:
+
+**New pages added (now obsolete - already implemented):**
+| Page | Status |
+|------|--------|
+| `Roadmap/Development Guidance/Source Reliability Bundle` | ✅ Already in `Docs/ARCHITECTURE/Source_Reliability.md` |
+| `Roadmap/Zero-Cost Hosting Implementation Guide` | ✅ Already in `Docs/DEPLOYMENT/Zero_Cost_Hosting_Guide.md` |
+| `Roadmap/Specification vs. Implementation Analysis 1.Jan.26` | ⚠️ Outdated analysis (references v2.6.17) |
+
+**Removed pages (example content, not spec):**
+- `FH Analysis Reports/` - Example analysis outputs
+- `License and Disclaimer/` - License page
+
+Several significant deviations exist between the xWiki specification and current implementation:
 
 ### 3.1 Verdict Scale Mismatch
 
@@ -269,40 +288,40 @@ But the same document lists v2.8.0 as having "Shared Module Architecture" as an 
 
 ## 8. Recommended Fixes
 
-### Priority 1: Version Alignment (Critical)
+### Priority 1: Version Alignment (Critical) - ✅ RESOLVED
 
-1. **Decide on canonical version number**
-   - Current code: `2.6.32` in config.ts
-   - If v2.8.0 features are implemented, update config.ts
-   - If not, downgrade all doc version claims to match code
+1. **Canonical version decided**: `2.6.33`
+   - Updated `config.ts` schemaVersion from `2.6.32` to `2.6.33`
+   - Updated `metrics.ts` schemaVersion from `2.8.0` to `2.6.33`
 
-2. **Update all version references**
-   - Search for `2.8.0`, `2.7.0`, `2.6.` across all .md files
-   - Ensure consistency with chosen canonical version
+2. **All version references updated** to 2.6.33:
+   - Overview.md, Calculations.md, KeyFactors_Design.md, Pipeline_TriplePath_Architecture.md
+   - Prompt_Architecture.md, TERMINOLOGY.md, LLM_Schema_Mapping.md, Provider_Prompt_Guidelines.md
+   - Current_Status.md (header and footer now consistent), HISTORY.md
 
-3. **Fix ERD schema versions** in `Overview.md` (change `2.6.18` to current)
+3. **ERD schema versions fixed** in `Overview.md` (changed `2.6.18` to `2.6.33`)
 
-### Priority 2: Terminology Migration (High)
+### Priority 2: Terminology Migration (High) - ✅ RESOLVED
 
-4. **Complete code terminology migration**
-   - Replace `hasMultipleProceedings` → `hasMultipleContexts` in types.ts
-   - Replace `proceedings` → `analysisContexts` in ArticleAnalysis interface
-   - Replace `targetProceedingId` → `targetContextId` in ResearchDecision
+4. **Terminology migration is INTENTIONALLY COMPLETE**
+   - Type/interface names use new terms (`AnalysisContext`, `EvidenceScope`)
+   - JSON field names retain legacy names (`hasMultipleProceedings`, `proceedings`, `targetProceedingId`) for **backward compatibility** with stored data and API consumers
+   - This is documented in types.ts comments and TERMINOLOGY.md
+   - **No code changes needed** - this is the intended final state
 
-5. **Ensure backward compatibility** via type aliases if needed
+5. **Backward compatibility** ✅ Already preserved via comments in types.ts
 
-### Priority 3: Documentation Cleanup (Medium)
+### Priority 3: Documentation Cleanup (Medium) - ✅ RESOLVED
 
-6. **Remove references to non-existent files**
-   - Either create the missing ADR/architecture files
-   - Or remove references to them
+6. **References to non-existent files removed**:
+   - `Claim_Caching_Overview.md` reference removed from Overview.md
+   - `Separated_Architecture_Guide.md` references removed from Overview.md and Zero_Cost_Hosting_Guide.md
+   - `ADR_001_Scope_Context_Terminology_Refactoring.md` references replaced with inline notes in TERMINOLOGY.md and LLM_Schema_Mapping.md
 
-7. **Update or archive outdated docs**
-   - `EVOLUTION.md` - update to current state or mark as historical
-   - `Improvement_Recommendations.md` - update version and content
+7. **Outdated docs**: Low priority - EVOLUTION.md and Improvement_Recommendations.md can be updated separately
 
-8. **Fix self-contradictions in Current_Status.md**
-   - Remove duplicate/conflicting version statements
+8. **Self-contradictions in Current_Status.md fixed**:
+   - Header and footer now both show `2.6.33 (Code) | 2.7.0 (Schema)`
 
 ### Priority 4: Spec Alignment Documentation (Low)
 
@@ -343,7 +362,8 @@ But the same document lists v2.8.0 as having "Shared Module Architecture" as an 
 - `Docs/DEVELOPMENT/EVOLUTION.md`
 
 ### xWiki Specification
-- `Docs/FactHarbor Spec and Impl 1.Jan.26.xar` (extracted and analyzed)
+- `Docs/FactHarbor Spec and Impl 20.Jan.26.xar` (current, extracted and analyzed)
+- `Docs/FactHarbor Spec and Impl 1.Jan.26.xar` (previous version, identical core spec)
   - `FactHarbor/Specification/POC/Specification.xml`
   - `FactHarbor/Specification/POC/Requirements.xml`
   - `FactHarbor/Specification/Data Model/WebHome.xml`
@@ -351,4 +371,6 @@ But the same document lists v2.8.0 as having "Shared Module Architecture" as an 
 ---
 
 **Report Generated By**: Documentation Audit Process  
-**Next Review**: After Priority 1 and 2 fixes are applied
+**Last Updated**: 2026-01-20  
+**Fixes Applied**: 2026-01-20 (Priority 1, 2, 3 resolved)  
+**Status**: Resolved - Version aligned to 2.6.33, terminology migration documented, missing file references removed
