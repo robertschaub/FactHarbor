@@ -46,10 +46,10 @@ Today is ${currentDate}. Use this for temporal reasoning.
 - Different methodological boundaries that define distinct system scopes (e.g., different analysis frameworks with incompatible boundaries)
 - Different legal/procedural processes with separate standards (e.g., different institutions analyzing different matters)
 - Different regulatory frameworks with different applicability
-- Different system boundary definitions in efficiency/lifecycle analysis:
-  - "Well-to-Tank" (WTT) vs "Tank-to-Wheel" (TTW) vs "Well-to-Wheel" (WTW)
-  - "Cradle-to-Gate" vs "Cradle-to-Grave" vs "Gate-to-Gate"
-  - Production phase vs Usage phase vs End-of-life phase
+- Different system boundary definitions where results depend on where you draw the line:
+  - Upstream vs downstream analysis (different parts of a process chain)
+  - Partial vs complete lifecycle boundaries
+  - Different phases measured independently (input phase vs output phase vs combined)
 
 **CRITICAL - Do NOT split for**:
 - Different viewpoints or perspectives (different opinions on same matter)
