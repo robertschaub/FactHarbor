@@ -15,6 +15,17 @@ import {
 } from "./config";
 
 // ============================================================================
+// TYPES
+// ============================================================================
+
+export interface DetectedScope {
+  id: string;
+  name: string;
+  type: string;
+  metadata?: Record<string, any>;
+}
+
+// ============================================================================
 // CONSTANTS
 // ============================================================================
 
@@ -23,6 +34,117 @@ import {
  * Exported for use in tests and other modules.
  */
 export const UNSCOPED_ID = "CTX_UNSCOPED";
+
+// ============================================================================
+// HEURISTIC SCOPE PRE-DETECTION (v2.8)
+// ============================================================================
+
+/**
+ * Detect potential analysis contexts from input text using heuristic patterns.
+ * Returns suggested scopes to guide LLM, or null if no patterns match.
+ * 
+ * v2.8: Code-level scope pre-detection for comparison claims, legal/trial fairness, etc.
+ * 
+ * This function is GENERIC BY DESIGN - it uses abstract patterns, not domain-specific keywords.
+ * 
+ * @param text - Input text to analyze for scope patterns
+ * @returns Array of detected scopes or null if no patterns match
+ */
+export function detectScopes(text: string): DetectedScope[] | null {
+  const scopes: DetectedScope[] = [];
+  
+  // Pattern 1: Comparison claims (efficiency, performance, impact)
+  const comparisonPattern = /\b(more|less|better|worse|superior|inferior|higher|lower|greater|smaller)\b.*\bthan\b|\bvs\.?\b|\bversus\b/i;
+  const efficiencyKeywords = /\b(efficien|performance|impact|effect|output|consumption|energy|resource|cost|speed)\b/i;
+  
+  if (comparisonPattern.test(text) && efficiencyKeywords.test(text)) {
+    scopes.push(
+      {
+        id: "SCOPE_PRODUCTION",
+        name: "Production/Creation Phase Analysis",
+        type: "methodological",
+        metadata: { phase: "production", boundaries: "upstream" }
+      },
+      {
+        id: "SCOPE_USAGE",
+        name: "Usage/Operation Phase Analysis",
+        type: "methodological",
+        metadata: { phase: "usage", boundaries: "downstream" }
+      }
+    );
+  }
+  
+  // Pattern 2: Legal/trial fairness claims
+  const legalFairnessPattern = /\b(trial|judgment|proceeding|conviction|ruling|hearing|case)\b.*\b(fair|just|legal|law|proper|appropriate|legitimate|valid)\b/i;
+  const legalProcessKeywords = /\b(trial|judgment|court|legal|law|procedure|process|due process|judicial)\b/i;
+  
+  if (legalFairnessPattern.test(text) || (legalProcessKeywords.test(text) && /\b(fair|unfair|appropriate|proper|just|legitimate)\b/i.test(text))) {
+    scopes.push(
+      {
+        id: "SCOPE_LEGAL_PROC",
+        name: "Legal Procedures and Compliance",
+        type: "legal",
+        metadata: { focus: "procedural compliance" }
+      },
+      {
+        id: "SCOPE_INTL_PERSPECTIVE",
+        name: "International Perspectives and Criticism",
+        type: "general",
+        metadata: { focus: "external assessment" }
+      },
+      {
+        id: "SCOPE_OUTCOMES",
+        name: "Outcomes and Consequences",
+        type: "general",
+        metadata: { focus: "results and impact" }
+      }
+    );
+  }
+  
+  // Pattern 3: Environmental/health comparisons
+  const envHealthPattern = /\b(environment|health|safety|pollution|emission|contamination|toxicity|hazard)\b/i;
+  if (comparisonPattern.test(text) && envHealthPattern.test(text)) {
+    scopes.push(
+      {
+        id: "SCOPE_DIRECT",
+        name: "Direct/Immediate Effects",
+        type: "scientific",
+        metadata: { timeframe: "immediate" }
+      },
+      {
+        id: "SCOPE_LIFECYCLE",
+        name: "Full Lifecycle Assessment",
+        type: "scientific",
+        metadata: { timeframe: "complete" }
+      }
+    );
+  }
+  
+  return scopes.length > 0 ? scopes : null;
+}
+
+/**
+ * Format detected scopes as a hint string for LLM prompts.
+ * 
+ * @param scopes - Array of detected scopes
+ * @param detailed - If true, include metadata and MUST instruction
+ * @returns Formatted string for prompt injection (empty string if no scopes)
+ */
+export function formatDetectedScopesHint(scopes: DetectedScope[] | null, detailed: boolean = false): string {
+  if (!scopes || scopes.length === 0) return '';
+  
+  const lines = scopes.map(s => 
+    detailed 
+      ? `- ${s.name} (${s.type}): ${JSON.stringify(s.metadata || {})}`
+      : `- ${s.name} (${s.type})`
+  );
+  
+  const instruction = detailed
+    ? `\n\nIMPORTANT: These are SEED scopes detected by heuristic patterns. You MUST output at least these scopes in your analysisContexts array, but you may refine their names or add additional scopes if the evidence warrants it.`
+    : '';
+  
+  return `\n\nPRE-DETECTED SCOPES (use as seed${detailed ? ' AnalysisContexts' : ''}, refine based on evidence):\n${lines.join('\n')}${instruction}`;
+}
 
 // ============================================================================
 // INPUT CANONICALIZATION FOR SCOPE DETECTION (v2.8.2)
