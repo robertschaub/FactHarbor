@@ -93,11 +93,12 @@ TERMINOLOGY.md now documents that:
 
 ---
 
-## 3. xWiki Specification vs Implementation Gaps
+## 3. xWiki Specification vs Implementation Gaps - ✅ DOCUMENTED
 
-The xWiki exports contain the original POC specification:
+The xWiki exports contain the original POC specification with **implementation status notes**:
 - **Current**: `Docs/FactHarbor_Spec_and_Impl_20.Jan.26.xar` (January 20, 2026)
-- **Previous**: Deleted (was `FactHarbor Spec and Impl 1.Jan.26.xar`)
+
+**Status**: The xWiki spec correctly maintains the original specification design with `{{warning}}` blocks documenting where current implementation differs. This is intentional - the spec serves as both historical reference and target architecture for future versions.
 
 ### 3.0 xWiki Version Comparison (Jan 1 → Jan 20)
 
@@ -201,7 +202,7 @@ All broken references have been removed:
 
 ---
 
-## 5. Feature Status Contradictions
+## 5. Feature Status Contradictions - ⚠️ ACKNOWLEDGED
 
 ### 5.1 Built But Not Integrated
 
@@ -214,7 +215,7 @@ All broken references have been removed:
 - Parallel Verdict Generation
 - Tiered LLM Routing
 
-However, `Docs/STATUS/HISTORY.md` section "v2.8.0" describes these as implemented major changes.
+`Docs/STATUS/HISTORY.md` section "v2.8.0" describes these as planned/future major changes. **Note**: v2.8.x in HISTORY.md represents planned future work, not current implementation (current: v2.6.33).
 
 ### 5.2 Working Features Section Outdated - ✅ RESOLVED
 
