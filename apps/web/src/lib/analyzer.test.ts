@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { clampConfidence } from "./analyzer";
+import { clampConfidence } from "./analyzer/llm";
 
 describe("clampConfidence", () => {
   it("clamps values above 1 to 1", () => {

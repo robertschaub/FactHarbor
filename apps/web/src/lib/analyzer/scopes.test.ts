@@ -4,10 +4,17 @@
  * Tests the fixes for:
  * - Bug 1: Removed hardcoded political figure names
  * - Bug 2: Fixed proper noun detection by extracting entities before lowercasing
+ * 
+ * v2.8: Added tests for detectScopes and formatDetectedScopesHint
  */
 
 import { describe, it, expect } from 'vitest';
-import { generateScopeDetectionHint } from './scopes';
+import { 
+  generateScopeDetectionHint, 
+  detectScopes, 
+  formatDetectedScopesHint,
+  UNSCOPED_ID 
+} from './scopes';
 
 describe('Scope Detection - Generic by Design', () => {
   describe('Proper Noun Detection', () => {
@@ -170,5 +177,166 @@ describe('Scope Detection - Generic by Design', () => {
       expect(hint).toContain('concrete, factual scopes');
       expect(hint).toContain('legal proceedings');
     });
+  });
+});
+
+// ============================================================================
+// v2.8: detectScopes tests
+// ============================================================================
+describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
+  describe('Comparison Claims', () => {
+    it('detects production/usage scopes for efficiency comparisons with "than"', () => {
+      // Pattern requires BOTH comparison words (more/less/than) AND efficiency keywords
+      // The word 'energy' is in efficiencyKeywords pattern
+      const scopes = detectScopes('Hydrogen cars use more energy than electric cars');
+      
+      expect(scopes).not.toBeNull();
+      expect(scopes!.length).toBeGreaterThanOrEqual(2);
+      
+      const scopeIds = scopes!.map(s => s.id);
+      expect(scopeIds).toContain('SCOPE_PRODUCTION');
+      expect(scopeIds).toContain('SCOPE_USAGE');
+    });
+
+    it('detects scopes for performance comparisons', () => {
+      const scopes = detectScopes('Technology A has better performance than Technology B');
+      
+      expect(scopes).not.toBeNull();
+      expect(scopes!.some(s => s.id === 'SCOPE_PRODUCTION')).toBe(true);
+      expect(scopes!.some(s => s.id === 'SCOPE_USAGE')).toBe(true);
+    });
+
+    it('detects scopes for "vs" comparisons with efficiency keywords', () => {
+      const scopes = detectScopes('Solar energy consumption vs wind energy consumption');
+      
+      expect(scopes).not.toBeNull();
+      expect(scopes!.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('returns null for non-comparison efficiency claims', () => {
+      const scopes = detectScopes('The system is efficient');
+      
+      // No comparison pattern, no scopes detected
+      expect(scopes).toBeNull();
+    });
+  });
+
+  describe('Legal/Trial Fairness Claims', () => {
+    it('detects scopes for trial fairness claims', () => {
+      const scopes = detectScopes('The trial was fair and based on law');
+      
+      expect(scopes).not.toBeNull();
+      expect(scopes!.some(s => s.id === 'SCOPE_LEGAL_PROC')).toBe(true);
+      expect(scopes!.some(s => s.id === 'SCOPE_INTL_PERSPECTIVE')).toBe(true);
+      expect(scopes!.some(s => s.id === 'SCOPE_OUTCOMES')).toBe(true);
+    });
+
+    it('detects scopes for judgment/ruling claims', () => {
+      const scopes = detectScopes('Was the judgment fair and legitimate?');
+      
+      expect(scopes).not.toBeNull();
+      expect(scopes!.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('detects scopes for court procedure claims', () => {
+      const scopes = detectScopes('The court followed proper legal procedures');
+      
+      expect(scopes).not.toBeNull();
+      expect(scopes!.some(s => s.type === 'legal')).toBe(true);
+    });
+  });
+
+  describe('Environmental/Health Comparisons', () => {
+    it('detects direct/lifecycle scopes for pollution comparisons', () => {
+      // Pattern requires BOTH comparison (than/vs) AND env/health keyword (pollution/emission/etc)
+      const scopes = detectScopes('Factory A causes less pollution than Factory B');
+      
+      expect(scopes).not.toBeNull();
+      expect(scopes!.some(s => s.id === 'SCOPE_DIRECT')).toBe(true);
+      expect(scopes!.some(s => s.id === 'SCOPE_LIFECYCLE')).toBe(true);
+    });
+
+    it('detects scopes for environmental impact comparisons', () => {
+      const scopes = detectScopes('Solar has lower environmental impact than coal');
+      
+      expect(scopes).not.toBeNull();
+      expect(scopes!.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('detects scopes for safety hazard comparisons', () => {
+      const scopes = detectScopes('Process A poses more hazard than Process B');
+      
+      expect(scopes).not.toBeNull();
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('returns null for unstructured text', () => {
+      const scopes = detectScopes('Hello world, this is a test');
+      expect(scopes).toBeNull();
+    });
+
+    it('handles empty input', () => {
+      const scopes = detectScopes('');
+      expect(scopes).toBeNull();
+    });
+
+    it('detects multiple scope types when patterns overlap', () => {
+      // This has both comparison AND legal fairness patterns
+      const scopes = detectScopes('The trial outcome was more fair than the previous ruling');
+      
+      expect(scopes).not.toBeNull();
+      // Should detect both legal and comparison scopes
+      expect(scopes!.length).toBeGreaterThan(2);
+    });
+  });
+});
+
+// ============================================================================
+// v2.8: formatDetectedScopesHint tests
+// ============================================================================
+describe('formatDetectedScopesHint (v2.8)', () => {
+  it('returns empty string for null scopes', () => {
+    expect(formatDetectedScopesHint(null)).toBe('');
+  });
+
+  it('returns empty string for empty array', () => {
+    expect(formatDetectedScopesHint([])).toBe('');
+  });
+
+  it('formats scopes as list (simple mode)', () => {
+    const scopes = [
+      { id: 'SCOPE_A', name: 'Scope A', type: 'legal' },
+      { id: 'SCOPE_B', name: 'Scope B', type: 'methodological' }
+    ];
+    
+    const hint = formatDetectedScopesHint(scopes, false);
+    
+    expect(hint).toContain('PRE-DETECTED SCOPES');
+    expect(hint).toContain('Scope A (legal)');
+    expect(hint).toContain('Scope B (methodological)');
+    expect(hint).not.toContain('MUST output');
+  });
+
+  it('includes detailed instructions when detailed=true', () => {
+    const scopes = [
+      { id: 'SCOPE_A', name: 'Scope A', type: 'legal', metadata: { focus: 'compliance' } }
+    ];
+    
+    const hint = formatDetectedScopesHint(scopes, true);
+    
+    expect(hint).toContain('PRE-DETECTED SCOPES');
+    expect(hint).toContain('MUST output at least these scopes');
+    expect(hint).toContain('AnalysisContexts');
+    expect(hint).toContain('"focus":"compliance"');
+  });
+});
+
+// ============================================================================
+// Constants tests
+// ============================================================================
+describe('Scope Constants', () => {
+  it('exports UNSCOPED_ID constant', () => {
+    expect(UNSCOPED_ID).toBe('CTX_UNSCOPED');
   });
 });
