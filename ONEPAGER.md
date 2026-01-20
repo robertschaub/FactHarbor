@@ -48,8 +48,6 @@ FactHarbor combines structured methodology with AI assistance and human oversigh
 6. **Quality Validation** — Mandatory checks ensure contradictory evidence was considered
 7. **Publication** — The Evidence Model is published for exploration and reuse
 
-Everything is versioned. When new evidence emerges, models are updated and changes are tracked.
-
 ---
 
 ## Our Foundation
