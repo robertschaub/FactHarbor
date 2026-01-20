@@ -629,6 +629,8 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 - **Calculations**: `Docs/ARCHITECTURE/Calculations.md` - Verdict calculation methodology
 - **KeyFactors Design**: `Docs/ARCHITECTURE/KeyFactors_Design.md` - KeyFactors implementation details
 - **Source Reliability**: `Docs/ARCHITECTURE/Source_Reliability.md` - Source scoring system
+- **Prompt Architecture**: `Docs/ARCHITECTURE/Prompt_Architecture.md` - Modular prompt composition system
+- **Pipeline Architecture**: `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md` - Triple-path pipeline design
 - **Getting Started**: `Docs/USER_GUIDES/Getting_Started.md` - Setup and installation
 - **LLM Configuration**: `Docs/USER_GUIDES/LLM_Configuration.md` - Provider configuration
 
