@@ -75,7 +75,8 @@ import {
   detectInstitutionCode,
   sanitizeScopeShortAnswer,
 } from "./config";
-import { calculateWeightedVerdictAverage } from "./aggregation";
+import { calculateWeightedVerdictAverage, validateContestation, detectHarmPotential } from "./aggregation";
+import { detectScopes, formatDetectedScopesHint } from "./scopes";
 import { getModelForTask } from "./llm";
 import {
   detectAndCorrectVerdictInversion,
@@ -3223,6 +3224,10 @@ async function understandClaim(
   // Detect recency sensitivity for this analysis (using normalized input)
   const recencyMatters = isRecencySensitive(analysisInput, undefined);
 
+  // v2.8: Pre-detect scopes using heuristics (shared implementation from scopes.ts)
+  const preDetectedScopes = detectScopes(analysisInput);
+  const scopeHint = formatDetectedScopesHint(preDetectedScopes, true);
+
   // v2.8.2: Generate scope detection hint for input neutrality
   // CRITICAL: Pass ORIGINAL input (not canonical) so proper nouns are detected
   const scopeDetectionHint = generateScopeDetectionHint(analysisInput);
@@ -3239,7 +3244,7 @@ NOT DISTINCT SCOPES:
 - Pro vs con viewpoints are NOT scopes.
 - "Public perception", "trust", or "confidence in institutions" scopes - AVOID unless explicitly the main topic.
 - Meta-level commentary scopes (how people feel about the topic) - AVOID, focus on factual scopes.
-${scopeDetectionHint}
+${scopeHint}${scopeDetectionHint}
 SCOPE RELEVANCE REQUIREMENT (CRITICAL):
 - Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
 - Do NOT include scopes from unrelated domains just because they share a general category
@@ -4468,7 +4473,8 @@ async function requestSupplementalSubClaims(
       dependsOn: Array.isArray(claim.dependsOn) ? claim.dependsOn : [],
       keyEntities: Array.isArray(claim.keyEntities) ? claim.keyEntities : [],
       checkWorthiness: claim.checkWorthiness || "high",
-      harmPotential: claim.harmPotential || "medium",
+      // v2.8: Use detectHarmPotential as fallback for death/injury claims LLM might miss
+      harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
       centrality,
       isCentral,
       thesisRelevance: claim.thesisRelevance || "direct",
@@ -6137,10 +6143,20 @@ ${scopesFormatted}
    - contestedBy: Be SPECIFIC about who disputes it (e.g., "supplier group A", "regulator X", "employee union")
      * Do NOT use vague terms like "some people" - specify WHICH group/organization
    - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-     * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., audits, logs, datasets, official reports)
-     * "disputed" = Opposition has some factual counter-evidence but it's debatable
-     * "opinion" = Opposition has NO factual counter-evidence - just claims, rhetoric, or actions
+     * **CRITICAL: factualBasis classification determines weight in aggregation**
+     * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., audits showing violations, logs contradicting timeline, datasets contradicting measurements, official reports documenting non-compliance)
+     * "disputed" = Opposition has some factual counter-evidence but it's debatable or incomplete
+     * "opinion" = Opposition has NO factual counter-evidence - just claims, rhetoric, political statements, or actions without documentation
+       - **Use "opinion" for**: Political criticism without specifics, "says it was unfair" without citing violated procedures, "claims bias" without evidence
+       - **Do NOT use "opinion" for**: Documented violations, measured discrepancies, recorded non-compliance
      * "unknown" = Cannot determine
+     
+   **EXAMPLES of factualBasis classification**:
+   - "US government says trial was unfair" → "opinion" (no specific violation cited)
+   - "Critics claim procedure violated" → "opinion" (no specific procedure number/statute cited)
+   - "Audit found violation of Regulation 47(b)" → "established" (specific documented violation)
+   - "Study measured 38% efficiency vs claimed 55%" → "established" (documented measurement contradiction)
+   - "Defense presented conflicting expert testimony" → "disputed" (some counter-evidence but debatable)
 
    CRITICAL - factualBasis MUST be "opinion" for ALL of these:
    - Policy announcements or institutional actions without evidence
@@ -6623,7 +6639,7 @@ The JSON object MUST include these top-level keys:
   // v2.6.31: Inversion detection for context answers must reference the substantive claim being evaluated
   // (the normalized analysis input), not the context name/id.
   const contextVerdictClaimText = resolveAnalysisPromptInput(understanding, state);
-  const correctedContextAnswers = parsed.proceedingAnswers.map((pa: any) => {
+  let correctedContextAnswers = parsed.proceedingAnswers.map((pa: any) => {
     const factors = pa.keyFactors as KeyFactor[];
     const ctxMeta = understanding.analysisContexts.find(
       (p: any) => p.id === pa.contextId,
@@ -6757,8 +6773,22 @@ The JSON object MUST include these top-level keys:
 
   // Calculate overall factorAnalysis
   const allFactors = correctedContextAnswers.flatMap((pa) => pa.keyFactors);
+  
+  // v2.8: Validate contestation classification for all factors across contexts
+  const validatedAllFactors = validateContestation(allFactors);
+  
+  // Update correctedContextAnswers with validated keyFactors
+  correctedContextAnswers = correctedContextAnswers.map((pa, idx) => {
+    const startIdx = correctedContextAnswers.slice(0, idx).reduce((sum, p) => sum + p.keyFactors.length, 0);
+    const endIdx = startIdx + pa.keyFactors.length;
+    return {
+      ...pa,
+      keyFactors: validatedAllFactors.slice(startIdx, endIdx)
+    };
+  });
+  
   // Only flag contested negatives with evidence-based contestation
-  const hasContestedFactors = allFactors.some(
+  const hasContestedFactors = validatedAllFactors.some(
     (f) =>
       f.supports === "no" &&
       f.isContested &&
@@ -6931,6 +6961,10 @@ The JSON object MUST include these top-level keys:
 
   // PR-C: Clamp truth percentage to valid range (defensive)
   const clampedAvgTruthPct = clampTruthPercentage(avgTruthPct);
+  
+  // v2.8: Validate verdictSummary keyFactors
+  const validatedSummaryKeyFactors = validateContestation(parsed.verdictSummary.keyFactors || []);
+  
   const verdictSummary: VerdictSummary = {
     displayText: displayText,
     answer: clampedAvgTruthPct,
@@ -6938,7 +6972,7 @@ The JSON object MUST include these top-level keys:
     truthPercentage: clampedAvgTruthPct,
     shortAnswer: parsed.verdictSummary.shortAnswer,
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer,
-    keyFactors: parsed.verdictSummary.keyFactors,
+    keyFactors: validatedSummaryKeyFactors, // v2.8: Use validated keyFactors
     hasMultipleProceedings: true,
     hasMultipleContexts: true,
     proceedingAnswers: correctedContextAnswers,
@@ -7315,7 +7349,8 @@ ${factsFormatted}`;
           supportingFactIds: [],
           isCentral: claim.isCentral || false,
           centrality: claim.centrality || "medium",
-          harmPotential: claim.harmPotential || "medium", // v2.7.0: For weighted aggregation
+          // v2.8: Use detectHarmPotential as fallback for death/injury claims
+          harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
           thesisRelevance: claim.thesisRelevance || "direct",
           startOffset: claim.startOffset,
           endOffset: claim.endOffset,
@@ -7360,7 +7395,8 @@ ${factsFormatted}`;
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
-        harmPotential: claim.harmPotential || "medium", // v2.7.0: For weighted aggregation
+        // v2.8: Use detectHarmPotential as fallback for death/injury claims
+        harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
         thesisRelevance: claim.thesisRelevance || "direct",
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
@@ -7391,8 +7427,12 @@ ${factsFormatted}`;
   };
 
   const keyFactors = parsed.verdictSummary.keyFactors || [];
+  
+  // v2.8: Validate contestation classification - downgrade political criticism without evidence to "opinion"
+  const validatedKeyFactors = validateContestation(keyFactors);
+  
   // Only flag contested negatives with evidence-based contestation
-  const hasContestedFactors = keyFactors.some(
+  const hasContestedFactors = validatedKeyFactors.some(
     (kf: any) =>
       kf.supports === "no" &&
       kf.isContested &&
@@ -7400,11 +7440,11 @@ ${factsFormatted}`;
   );
 
   // v2.5.1: Apply factor-based correction for single-proceeding cases
-  const positiveFactors = keyFactors.filter((f: KeyFactor) => f.supports === "yes").length;
-  const evidencedNegatives = keyFactors.filter(
+  const positiveFactors = validatedKeyFactors.filter((f: KeyFactor) => f.supports === "yes").length;
+  const evidencedNegatives = validatedKeyFactors.filter(
     (f: KeyFactor) => f.supports === "no" && f.factualBasis === "established",
   ).length;
-  const contestedNegatives = keyFactors.filter(
+  const contestedNegatives = validatedKeyFactors.filter(
     (f: KeyFactor) => f.supports === "no" && f.isContested,
   ).length;
 
@@ -7437,7 +7477,7 @@ ${factsFormatted}`;
     truthPercentage: clampedAnswerTruthPct,
     shortAnswer: parsed.verdictSummary.shortAnswer || "",
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer || "",
-    keyFactors,
+    keyFactors: validatedKeyFactors, // v2.8: Use validated keyFactors
     hasMultipleProceedings: false,
     hasMultipleContexts: false,
     hasContestedFactors,
@@ -7560,10 +7600,20 @@ Facts in the FACTS section are labeled with their relationship to the user's cla
 - isContested: true if this claim is politically disputed or challenged
 - contestedBy: Who disputes it (e.g., "critics", "opponents") - empty string if not contested
 - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (studies, data, records, audits)
-  * "disputed" = Opposition has some factual counter-evidence but debatable
-  * "opinion" = NO factual counter-evidence (just claims, political statements)
+  * **CRITICAL: factualBasis classification determines weight in aggregation**
+  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., audits showing violations, logs contradicting timeline, datasets contradicting measurements, official reports documenting non-compliance)
+  * "disputed" = Opposition has some factual counter-evidence but it's debatable or incomplete
+  * "opinion" = Opposition has NO factual counter-evidence - just claims, rhetoric, political statements, or actions without documentation
+    - **Use "opinion" for**: Political criticism without specifics, "says it was unfair" without citing violated procedures, "claims bias" without evidence
+    - **Do NOT use "opinion" for**: Documented violations, measured discrepancies, recorded non-compliance
   * "unknown" = Cannot determine
+  
+**EXAMPLES of factualBasis classification**:
+- "US government says trial was unfair" → "opinion" (no specific violation cited)
+- "Critics claim procedure violated" → "opinion" (no specific procedure number/statute cited)
+- "Audit found violation of Regulation 47(b)" → "established" (specific documented violation)
+- "Study measured 38% efficiency vs claimed 55%" → "established" (documented measurement contradiction)
+- "Defense presented conflicting expert testimony" → "disputed" (some counter-evidence but debatable)
 
 CRITICAL - factualBasis MUST be "opinion" for:
 - Public statements or rhetoric without documented evidence
@@ -7796,7 +7846,8 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
           factualBasis: "unknown",
           isCentral: claim.isCentral || false,
           centrality: claim.centrality || "medium",
-          harmPotential: claim.harmPotential || "medium", // v2.7.0: For weighted aggregation
+          // v2.8: Use detectHarmPotential as fallback for death/injury claims
+          harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
           thesisRelevance: claim.thesisRelevance || "direct",
           claimRole: claim.claimRole || "core",
           dependsOn: claim.dependsOn || [],
@@ -7869,7 +7920,8 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
-        harmPotential: claim.harmPotential || "medium", // v2.7.0: For weighted aggregation
+        // v2.8: Use detectHarmPotential as fallback for death/injury claims
+        harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
         thesisRelevance: claim.thesisRelevance || "direct",
         claimRole: claim.claimRole || "core",
         dependsOn: claim.dependsOn || [],
