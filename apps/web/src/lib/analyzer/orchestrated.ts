@@ -88,6 +88,7 @@ import {
   UNSCOPED_ID,
   generateScopeDetectionHint,
 } from "./scopes";
+import { deriveCandidateClaimTexts } from "./claim-decomposition";
 
 // Configuration, helpers, and debug utilities imported from modular files above
 
@@ -3135,44 +3136,6 @@ function isCompoundLikeText(text: string): boolean {
   // Simple enumeration cue: multiple numerals or roman numerals separated by commas.
   if (/\b[ivxlcdm]+\b/.test(t) && t.includes(",")) return true;
   return false;
-}
-
-function deriveCandidateClaimTexts(input: string): string[] {
-  const rawLines = (input || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  const candidates: string[] = [];
-  for (const line of rawLines) {
-    if (line.endsWith(":")) continue;
-    const colonIndex = line.indexOf(":");
-    if (colonIndex > 0 && colonIndex < line.length - 1) {
-      const after = line.slice(colonIndex + 1).trim();
-      if (after.length >= 25) {
-        candidates.push(after);
-        continue;
-      }
-    }
-    candidates.push(line);
-  }
-
-  const sentenceCandidates: string[] = [];
-  for (const c of candidates) {
-    const parts = c.split(/[.!?]\s+/).map((p) => p.trim()).filter(Boolean);
-    if (parts.length <= 1) {
-      sentenceCandidates.push(c);
-    } else {
-      sentenceCandidates.push(...parts);
-    }
-  }
-
-  const finalCandidates = sentenceCandidates
-    .flatMap((c) => c.split(";").map((p) => p.trim()))
-    .filter((c) => c.length >= 25)
-    .map((c) => c.replace(/\s+/g, " ").trim());
-
-  return [...new Set(finalCandidates)];
 }
 
 function buildHeuristicSubClaims(

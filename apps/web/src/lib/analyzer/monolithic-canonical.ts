@@ -30,6 +30,7 @@ import { percentageToClaimVerdict, getHighlightColor } from "./truth-scale";
 import { filterFactsByProvenance } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
+import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
 
 function normalizeForContainsMatch(text: string): string {
   return String(text || "")
@@ -44,51 +45,6 @@ function normalizeForLooseContainsMatch(text: string): string {
     .replace(/[^\w\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function normalizeClaimText(text: string): string {
-  return String(text || "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function deriveCandidateClaimTexts(input: string): string[] {
-  const rawLines = String(input || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  const candidates: string[] = [];
-  for (const line of rawLines) {
-    if (line.endsWith(":")) continue;
-    const colonIndex = line.indexOf(":");
-    if (colonIndex > 0 && colonIndex < line.length - 1) {
-      const after = line.slice(colonIndex + 1).trim();
-      if (after.length >= 25) {
-        candidates.push(after);
-        continue;
-      }
-    }
-    candidates.push(line);
-  }
-
-  const sentenceCandidates: string[] = [];
-  for (const c of candidates) {
-    const parts = c.split(/[.!?]\s+/).map((p) => p.trim()).filter(Boolean);
-    if (parts.length <= 1) {
-      sentenceCandidates.push(c);
-    } else {
-      sentenceCandidates.push(...parts);
-    }
-  }
-
-  const finalCandidates = sentenceCandidates
-    .flatMap((c) => c.split(";").map((p) => p.trim()))
-    .filter((c) => c.length >= 25)
-    .map((c) => c.replace(/\s+/g, " ").trim());
-
-  return [...new Set(finalCandidates)];
 }
 
 function buildHeuristicSubClaims(
