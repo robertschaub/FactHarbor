@@ -31,6 +31,7 @@ import { filterFactsByProvenance } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
+import { calculateWeightedVerdictAverage } from "./aggregation";
 
 function normalizeForContainsMatch(text: string): string {
   return String(text || "")
@@ -740,6 +741,34 @@ export async function runMonolithicCanonical(
     };
   });
 
+  // Calculate aggregated verdict using weighted average of all claims
+  // Central claims (high centrality) have more influence than peripheral claims
+  const aggregatedVerdict = calculateWeightedVerdictAverage(
+    claimVerdicts.map((cv) => ({
+      truthPercentage: cv.verdict,
+      centrality: cv.centrality as "high" | "medium" | "low",
+      confidence: cv.confidence,
+      thesisRelevance: "direct" as const, // All canonical claims are direct
+    }))
+  );
+
+  // Aggregated confidence: weighted average of claim confidences
+  const totalConfidenceWeight = claimVerdicts.reduce((sum, cv) => {
+    const centralityWeight = cv.centrality === "high" ? 3 : cv.centrality === "medium" ? 2 : 1;
+    return sum + centralityWeight;
+  }, 0);
+  const aggregatedConfidence = totalConfidenceWeight > 0
+    ? Math.round(
+        claimVerdicts.reduce((sum, cv) => {
+          const centralityWeight = cv.centrality === "high" ? 3 : cv.centrality === "medium" ? 2 : 1;
+          return sum + cv.confidence * centralityWeight;
+        }, 0) / totalConfidenceWeight
+      )
+    : verdictData.confidence;
+
+  // Use most central claim's reasoning/summary for the overall summary
+  const primaryClaimVerdict = claimVerdicts.find((cv) => cv.centrality === "high") || claimVerdicts[0];
+
   const resultJson = buildResultJson({
     input,
     startTime,
@@ -752,9 +781,9 @@ export async function runMonolithicCanonical(
     facts: validatedFacts,
     sources,
     searchQueriesWithResults,
-    verdict: verdictData.verdict,
-    confidence: verdictData.confidence,
-    reasoning: verdictData.reasoning,
+    verdict: aggregatedVerdict,
+    confidence: aggregatedConfidence,
+    reasoning: primaryClaimVerdict?.reasoning || verdictData.reasoning,
     summary: verdictData.summary,
     verdictData, // Pass the LLM response to include detectedScopes
     claimVerdicts,

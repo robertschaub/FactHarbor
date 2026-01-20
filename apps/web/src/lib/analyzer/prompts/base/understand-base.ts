@@ -46,6 +46,10 @@ Today is ${currentDate}. Use this for temporal reasoning.
 - Different methodological boundaries that define distinct system scopes (e.g., different analysis frameworks with incompatible boundaries)
 - Different legal/procedural processes with separate standards (e.g., different institutions analyzing different matters)
 - Different regulatory frameworks with different applicability
+- Different system boundary definitions in efficiency/lifecycle analysis:
+  - "Well-to-Tank" (WTT) vs "Tank-to-Wheel" (TTW) vs "Well-to-Wheel" (WTW)
+  - "Cradle-to-Gate" vs "Cradle-to-Grave" vs "Gate-to-Gate"
+  - Production phase vs Usage phase vs End-of-life phase
 
 **CRITICAL - Do NOT split for**:
 - Different viewpoints or perspectives (different opinions on same matter)
@@ -103,6 +107,26 @@ Today is ${currentDate}. Use this for temporal reasoning.
 - Attribution/source/timing claims: ALWAYS LOW centrality
 - Methodology validation claims: ALWAYS LOW centrality
 - Core factual claims about the subject: HIGH or MEDIUM centrality based on importance
+
+**HIGH Centrality (most influential on verdict)**:
+- Specific quantified assertions (numbers, statistics, counts)
+- Claims about specific events with named outcomes
+- Claims that can be definitively verified as true/false
+- The most specific, testable factual assertion in the input
+
+**MEDIUM Centrality**:
+- General characterizations that support the main thesis
+- Background context that affects interpretation
+
+**LOW Centrality**:
+- Who said something (attribution)
+- Where/when documented (source/timing)
+- Meta-claims about methodology or process
+
+**Example**: Input about "FDA official announced 10 children died from vaccines"
+- "10 children died from vaccines" = HIGH centrality (specific quantified factual assertion)
+- "FDA will change approval standards" = MEDIUM centrality (policy claim)
+- "Person X is an FDA official" = LOW centrality (attribution)
 
 **Expect 3-6 claims** from typical inputs (more for complex compound statements).
 
