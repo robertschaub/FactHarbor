@@ -1,5 +1,8 @@
 # FactHarbor Calculations Documentation
 
+**Version**: 2.8.0  
+**Last Updated**: 2026-01-20
+
 ## Overview
 
 This document explains how FactHarbor calculates verdicts, handles counter-evidence, aggregates results across different levels, and manages confidence scores.
@@ -133,6 +136,40 @@ The `evidenceScope` field on facts is intentionally kept separate from top-level
 
 Counter-evidence is distinguished from mere contestation and influences verdict calculations.
 
+### Doubted vs Contested (v2.8)
+
+```mermaid
+flowchart TD
+    subgraph Input["Opposition/Criticism"]
+        OPP[Someone opposes or criticizes the claim]
+    end
+    
+    OPP --> CHECK{Has documented<br/>counter-evidence?}
+    
+    CHECK -->|No evidence| DOUBTED[DOUBTED<br/>factualBasis: opinion/alleged]
+    CHECK -->|Some evidence| DISPUTED[CONTESTED<br/>factualBasis: disputed]
+    CHECK -->|Strong evidence| ESTABLISHED[CONTESTED<br/>factualBasis: established]
+    
+    DOUBTED --> W1[Weight: 1.0x<br/>Full weight]
+    DISPUTED --> W2[Weight: 0.5x<br/>Reduced]
+    ESTABLISHED --> W3[Weight: 0.3x<br/>Heavily reduced]
+    
+    style DOUBTED fill:#fff3e0
+    style DISPUTED fill:#ffecb3
+    style ESTABLISHED fill:#ffcdd2
+    style W1 fill:#c8e6c9
+    style W2 fill:#fff9c4
+    style W3 fill:#ffcdd2
+```
+
+**Key Distinction:**
+- **DOUBTED** = Political criticism, rhetoric, accusations WITHOUT documented evidence → Full weight (claim remains credible)
+- **CONTESTED** = Has actual documented counter-evidence → Reduced weight (genuine uncertainty)
+
+**Implementation (v2.8):**
+- `validateContestation()` in `aggregation.ts`: KeyFactor-level validation (orchestrated pipeline)
+- `detectClaimContestation()` in `aggregation.ts`: Claim-level heuristic (canonical pipeline)
+
 ### Fact Categorization
 
 **File**: `apps/web/src/lib/analyzer.ts` (ExtractedFact interface, line ~1800)
@@ -201,11 +238,39 @@ if (evidenceBasedContestation) {
 ```mermaid
 graph TD
     Facts[Extracted Facts] --> ClaimVerdicts[Claim Verdicts]
-    ClaimVerdicts --> KeyFactors[Key Factor Verdicts]
+    ClaimVerdicts --> WeightCalc[Weight Calculation<br/>━━━━━━━━━━━━━<br/>• centrality: 2.0x<br/>• harmPotential: 1.5x<br/>• contested: 0.3-0.5x]
+    WeightCalc --> KeyFactors[Key Factor Verdicts]
     KeyFactors --> ContextAnswers[Context Answers]
     ContextAnswers --> OverallAnswer[Overall Answer]
     
     ClaimVerdicts --> ArticleVerdict[Article Verdict]
+    
+    style WeightCalc fill:#e3f2fd
+```
+
+### Weight Calculation (v2.8)
+
+**Function**: `getClaimWeight()` in `aggregation.ts`
+
+```typescript
+function getClaimWeight(claim: WeightedClaim): number {
+  let weight = 1.0;
+  
+  // Centrality boost
+  if (claim.centrality === "central") weight *= 2.0;
+  
+  // Harm potential boost
+  if (claim.harmPotential === "high") weight *= 1.5;
+  
+  // Contestation reduction (only for documented counter-evidence)
+  if (claim.isContested) {
+    if (claim.factualBasis === "established") weight *= 0.3;
+    else if (claim.factualBasis === "disputed") weight *= 0.5;
+    // "opinion"/"alleged"/"unknown" = full weight (just doubted)
+  }
+  
+  return weight;
+}
 ```
 
 ### Level 1: Claim Verdicts

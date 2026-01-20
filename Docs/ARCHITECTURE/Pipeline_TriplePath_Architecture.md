@@ -1,6 +1,7 @@
 # FactHarbor Analysis — Triple-Path Pipeline Architecture (Desired)
 
-**Last Updated**: 2026-01-17  
+**Last Updated**: 2026-01-20  
+**Version**: 2.8.0  
 **Audience**: Senior Architects, Lead Developers, Reviewers  
 **Purpose**: Define the **desired end-state architecture** supporting **three user-selectable analysis variants** with maximum reuse of stable primitives and minimal added complexity/risk to the current path.
 
@@ -57,7 +58,39 @@ All three variants reuse:
 - **Provenance validation**: shared provenance requirements and filtering
 - **Result envelope metadata**: uniform metadata captured for auditability and evaluation
 
-### 3.3 Isolated components (do not unify)
+### 3.3 Shared Analyzer Modules (v2.8)
+
+```mermaid
+flowchart TD
+    subgraph SharedModules["📦 Shared Modules (apps/web/src/lib/analyzer/)"]
+        SCOPES[scopes.ts<br/>━━━━━━━━━━━━━<br/>• detectScopes<br/>• formatDetectedScopesHint<br/>• canonicalizeScopes]
+        AGG[aggregation.ts<br/>━━━━━━━━━━━━━<br/>• calculateWeightedVerdictAverage<br/>• validateContestation<br/>• detectClaimContestation<br/>• detectHarmPotential]
+        CLAIM[claim-decomposition.ts<br/>━━━━━━━━━━━━━<br/>• normalizeClaimText<br/>• deriveCandidateClaimTexts]
+    end
+
+    subgraph Pipelines["🔄 Pipeline Implementations"]
+        ORCH[orchestrated.ts]
+        CANON[monolithic-canonical.ts]
+        DYN[monolithic-dynamic.ts]
+    end
+
+    SCOPES --> ORCH
+    SCOPES --> CANON
+    AGG --> ORCH
+    AGG --> CANON
+    CLAIM --> ORCH
+    CLAIM --> CANON
+```
+
+**Module Responsibilities:**
+
+| Module | Canonical | Orchestrated | Purpose |
+|--------|-----------|--------------|---------|
+| `scopes.ts` | ✅ | ✅ | Heuristic scope pre-detection before LLM |
+| `aggregation.ts` | ✅ | ✅ | Verdict weighting, contestation validation |
+| `claim-decomposition.ts` | ✅ | ✅ | Claim text parsing and normalization |
+
+### 3.4 Isolated components (do not unify)
 Keep separate to avoid coupling:
 - Orchestrated pipeline orchestration logic (existing `apps/web/src/lib/analyzer.ts`)
 - Monolithic tool-loop orchestration logic (new module)

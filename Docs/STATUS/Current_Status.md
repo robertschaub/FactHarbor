@@ -1,10 +1,8 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.33 (Code) | 2.7.0 (Schema Output)  
-**Last Updated**: 2026-01-19  
+**Version**: 2.8.0 (Code) | 2.7.0 (Schema Output)  
+**Last Updated**: 2026-01-20  
 **Status**: POC1 Operational
-
-> **Note**: Previous documentation incorrectly referenced v2.8.1. Actual code version is 2.6.33.
 
 ---
 
@@ -18,6 +16,7 @@
   - Monolithic Canonical (faster, lower cost)
   - Monolithic Dynamic (experimental, flexible output)
 - Multi-scope detection and analysis
+- **Heuristic Scope Pre-Detection** (v2.8): Code-level pattern detection for comparison, legal, and environmental claims
 - Input neutrality (question ≈ statement within ±5%)
 - Claim extraction with dependency tracking
 - Temporal reasoning with current date awareness
@@ -27,9 +26,17 @@
 - MIXED vs UNVERIFIED distinction (confidence-based)
 - Pseudoscience detection and escalation
 - KeyFactors discovery and aggregation
+- **Doubted vs Contested Distinction** (v2.8): Proper handling of evidence-based vs opinion-based contestation
 - Quality Gates (Gate 1: Claim Validation, Gate 4: Verdict Confidence)
 - LLM Tiering for cost optimization
 - Provenance validation (Ground Realism enforcement)
+- **Harm Potential Detection** (v2.8): Shared heuristic for death/injury/fraud claims
+
+**Shared Module Architecture (v2.8):**
+- `scopes.ts`: Scope detection (`detectScopes()`, `formatDetectedScopesHint()`)
+- `aggregation.ts`: Verdict weighting (`validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()`)
+- `claim-decomposition.ts`: Claim parsing utilities
+- Consistent behavior across canonical and orchestrated pipelines
 
 **Infrastructure:**
 - Job lifecycle management (QUEUED → RUNNING → SUCCEEDED/FAILED)

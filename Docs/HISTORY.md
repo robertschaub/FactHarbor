@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
-**Last Updated**: January 19, 2026  
-**Current Version**: 2.6.33  
+**Last Updated**: January 20, 2026  
+**Current Version**: 2.8.0  
 **Schema Version**: 2.7.0
 
 ---
@@ -42,6 +42,53 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 ---
 
 ## Version History
+
+### v2.8.0 (January 2026)
+
+**Focus**: Shared Module Architecture & Contestation Logic
+
+**Major Changes**:
+
+1. **Shared Module Architecture**: Consolidated duplicate code across pipelines
+   - `scopes.ts`: Scope detection and formatting (`detectScopes()`, `formatDetectedScopesHint()`)
+   - `aggregation.ts`: Verdict weighting functions (`validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()`)
+
+2. **Heuristic Scope Pre-Detection**: Code-level pattern detection before LLM analysis
+   - Comparison claims (efficiency, performance) → Production/Usage phase scopes
+   - Legal/trial fairness claims → Legal/International/Outcomes scopes
+   - Environmental/health comparisons → Direct/Lifecycle scopes
+
+3. **Doubted vs Contested Distinction**: Proper handling of evidence-based vs opinion-based contestation
+   - **DOUBTED** (factualBasis: "opinion"): Political criticism without documented evidence → FULL weight (1.0x)
+   - **CONTESTED** (factualBasis: "established"/"disputed"): Has documented counter-evidence → REDUCED weight (0.3x/0.5x)
+   - `validateContestation()` (orchestrated): KeyFactor-level validation
+   - `detectClaimContestation()` (canonical): Claim-level heuristic detection
+
+4. **Harm Potential Detection**: Shared `detectHarmPotential()` function
+   - Detects death/injury/safety/fraud claims
+   - Applied as fallback when LLM doesn't detect high harm
+   - Ensures severe claims get proper weight (1.5x multiplier)
+
+5. **Prompt Enhancements**: Improved `factualBasis` classification guidance
+   - Clear examples of opinion vs established counter-evidence
+   - Explicit instructions for political criticism classification
+
+**Pipeline Consistency**:
+| Feature | Canonical | Orchestrated |
+|---------|-----------|--------------|
+| Scope pre-detection | ✅ `detectScopes()` | ✅ `detectScopes()` |
+| Harm potential | ✅ `detectHarmPotential()` | ✅ `detectHarmPotential()` |
+| Contestation | ✅ `detectClaimContestation()` | ✅ `validateContestation()` |
+| Weight calculation | ✅ `calculateWeightedVerdictAverage()` | ✅ `calculateWeightedVerdictAverage()` |
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer/aggregation.ts` (new exports)
+- `apps/web/src/lib/analyzer/scopes.ts` (new exports)
+- `apps/web/src/lib/analyzer/monolithic-canonical.ts` (use shared modules)
+- `apps/web/src/lib/analyzer/orchestrated.ts` (use shared modules)
+- `apps/web/src/lib/analyzer/prompts/base/understand-base.ts` (prompt improvements)
+
+---
 
 ### v2.6.33 (January 2026)
 

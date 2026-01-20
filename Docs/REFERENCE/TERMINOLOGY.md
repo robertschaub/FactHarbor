@@ -1,9 +1,9 @@
 # FactHarbor Terminology Reference
 
-**Version**: 2.7.0  
-**Date**: 2026-01-18  
+**Version**: 2.8.0  
+**Date**: 2026-01-20  
 **Audience**: Developers, Prompt Engineers, LLM Systems  
-**Status**: Post-Refactoring (v2.7.0 field names active; legacy names preserved for backward compatibility)
+**Status**: Post-Refactoring (v2.8.0 shared modules; v2.7.0 field names; legacy names preserved for backward compatibility)
 
 ---
 
@@ -217,6 +217,59 @@ export interface ClaimUnderstanding {
 - ❌ NOT an AnalysisContext (not a reason to split analysis)
 - ❌ Does NOT get its own verdict
 - ✅ IS purely descriptive/informational
+
+---
+
+### 4. Doubted vs Contested (Contestation Classification) - v2.8
+
+**What it is**: A distinction between two types of opposition to a claim, which affects how the opposition impacts the verdict weight.
+
+**Why it matters**: Not all criticism is equal. Political statements without evidence shouldn't reduce a claim's weight as much as documented counter-evidence. This ensures:
+- **Evidence-based contestation** appropriately reduces certainty
+- **Opinion-based doubt** doesn't unfairly penalize well-evidenced claims
+
+**Two Categories**:
+
+| Category | factualBasis | Weight Multiplier | Example |
+|----------|--------------|-------------------|---------|
+| **DOUBTED** | `"opinion"` | 1.0x (full) | "Government says trial was unfair" (no specifics) |
+| **DOUBTED** | `"alleged"` | 1.0x (full) | "Critics claim bias" (no evidence cited) |
+| **CONTESTED** | `"disputed"` | 0.5x (reduced) | "Defense presented conflicting expert testimony" |
+| **CONTESTED** | `"established"` | 0.3x (heavily reduced) | "Audit found violation of Regulation 47(b)" |
+
+**Code implementation** (v2.8):
+
+```typescript
+// In aggregation.ts
+
+// Orchestrated: KeyFactor-level validation
+export function validateContestation(keyFactors: KeyFactor[]): KeyFactor[];
+
+// Canonical: Claim-level heuristic detection  
+export function detectClaimContestation(claimText: string, reasoning?: string): ClaimContestationResult;
+```
+
+**Weight calculation** (in `getClaimWeight()`):
+```typescript
+if (claim.isContested) {
+  if (basis === "established") weight *= 0.3;  // Strong counter-evidence
+  else if (basis === "disputed") weight *= 0.5; // Some counter-evidence
+  // "opinion"/"alleged"/"unknown" → full weight (just doubted)
+}
+```
+
+**Prompt guidance** (in verdict prompts):
+```
+- factualBasis: "opinion" for political criticism without specifics
+- factualBasis: "established" for documented violations with specific citations
+- factualBasis: "disputed" for counter-evidence that is debatable
+```
+
+**Common confusion**:
+- ❌ "contested" does NOT mean "disputed politically" (that's "doubted")
+- ✅ "contested" means there IS documented counter-evidence
+- ❌ Political statements alone do NOT reduce claim weight
+- ✅ Only factual counter-evidence reduces claim weight
 
 ---
 

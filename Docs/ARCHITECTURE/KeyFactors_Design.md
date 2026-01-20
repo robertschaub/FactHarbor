@@ -1,7 +1,7 @@
 # KeyFactors Design Decision
 
 **Date**: January 2026
-**Version**: 2.6.18
+**Version**: 2.8.0
 **Status**: Design Decision Document
 
 ## Executive Summary
@@ -294,13 +294,21 @@ interface KeyFactor {
 }
 ```
 
-**factualBasis Rules**:
-| Value | Meaning | Example |
-|-------|---------|---------|
-| `established` | Opposition has documented counter-evidence | Court transcripts showing bias |
-| `disputed` | Some factual counter-evidence, debatable | Conflicting expert opinions |
-| `opinion` | No factual counter-evidence, just rhetoric | "Critics say it was unfair" |
-| `unknown` | Cannot determine | Insufficient information |
+**factualBasis Rules (v2.8 - Affects Weight Calculation):**
+
+| Value | Meaning | Weight | Example |
+|-------|---------|--------|---------|
+| `established` | Strong documented counter-evidence | 0.3x | Court transcripts showing bias |
+| `disputed` | Some factual counter-evidence | 0.5x | Conflicting expert opinions |
+| `opinion` | No factual counter-evidence (DOUBTED) | 1.0x | "Critics say it was unfair" |
+| `alleged` | Accusation without evidence (DOUBTED) | 1.0x | Political statements |
+| `unknown` | Cannot determine | 1.0x | Insufficient information |
+
+**Key Distinction (v2.8):**
+- **DOUBTED** (`opinion`/`alleged`/`unknown`): Political rhetoric without evidence → Full weight
+- **CONTESTED** (`established`/`disputed`): Has documented counter-evidence → Reduced weight
+
+See `Docs/REFERENCE/TERMINOLOGY.md` for detailed explanation.
 
 ---
 

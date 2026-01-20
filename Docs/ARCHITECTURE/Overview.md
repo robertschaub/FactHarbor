@@ -1,7 +1,7 @@
 # FactHarbor POC1 Architecture Overview
 
-**Version:** 2.6.32  
-**Schema Version:** 2.6.32  
+**Version:** 2.8.0  
+**Schema Version:** 2.7.0  
 **Last Updated:** January 2026
 
 This document provides a comprehensive technical overview of FactHarbor's POC1 architecture, including system flows, data models, component interactions, and current implementation status.
@@ -40,6 +40,39 @@ This document provides a comprehensive technical overview of FactHarbor's POC1 a
 > - `Docs/ARCHITECTURE/Separated_Architecture_Guide.md`
 
 ### Internal Security Model
+
+**Shared Analyzer Modules (v2.8):**
+
+The analyzer pipeline uses shared modules to ensure consistency across pipelines:
+
+```mermaid
+flowchart LR
+    subgraph Shared["📦 Shared Modules"]
+        SCOPES[scopes.ts]
+        AGG[aggregation.ts]
+        CLAIM[claim-decomposition.ts]
+    end
+
+    subgraph Pipelines["🔄 Pipelines"]
+        ORCH[Orchestrated]
+        CANON[Canonical]
+    end
+
+    SCOPES --> ORCH
+    SCOPES --> CANON
+    AGG --> ORCH
+    AGG --> CANON
+    CLAIM --> ORCH
+    CLAIM --> CANON
+```
+
+| Module | Key Exports | Purpose |
+|--------|-------------|---------|
+| `scopes.ts` | `detectScopes()`, `formatDetectedScopesHint()` | Heuristic scope pre-detection |
+| `aggregation.ts` | `validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()` | Verdict weighting and contestation |
+| `claim-decomposition.ts` | `normalizeClaimText()`, `deriveCandidateClaimTexts()` | Claim text parsing |
+
+See `Docs/REFERENCE/TERMINOLOGY.md` for "Doubted vs Contested" distinction.
 
 **Runner Route Protection:**
 - Runner route `/api/internal/run-job` requires `x-runner-key` when `FH_INTERNAL_RUNNER_KEY` is set (and is required in production)

@@ -1,7 +1,7 @@
 # LLM Schema Mapping Reference
 
-**Version**: 2.7.0  
-**Date**: 2026-01-18  
+**Version**: 2.8.0  
+**Date**: 2026-01-20  
 **Purpose**: Complete mapping of TypeScript → LLM Prompts → JSON Schemas  
 **Audience**: Prompt Engineers, LLM System Developers  
 
@@ -230,13 +230,26 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
           "factor": "string",
           "explanation": "string",
           "supports": "strongly_supports" | "supports" | "neutral" | "contradicts" | "strongly_contradicts",
-          "weight": "high" | "medium" | "low"
+          "weight": "high" | "medium" | "low",
+          "isContested": boolean,
+          "contestedBy": "string?",
+          "factualBasis": "established" | "disputed" | "opinion" | "alleged" | "unknown"
         }
       ]
     }
   ]
 }
 ```
+
+**Contestation Fields (v2.8):**
+- `isContested`: Whether there is opposition to this factor
+- `contestedBy`: Who opposes (e.g., "opposition party", "industry group")
+- `factualBasis`: Type of opposition evidence
+  - `established` = Strong documented counter-evidence (weight: 0.3x)
+  - `disputed` = Some factual counter-evidence (weight: 0.5x)
+  - `opinion`/`alleged`/`unknown` = DOUBTED, no evidence (weight: 1.0x)
+
+See `Docs/REFERENCE/TERMINOLOGY.md` for "Doubted vs Contested" distinction.
 
 **Legacy Compatibility**:
 - Legacy fields `proceedingId`/`proceedingName` are still accepted when reading older jobs.
@@ -395,5 +408,5 @@ When updating prompts or schemas:
 ---
 
 **Maintainer**: LLM Expert, Prompt Engineering Team  
-**Last Updated**: 2026-01-18  
-**Next Review**: After v2.7.0 migration complete
+**Last Updated**: 2026-01-20  
+**Next Review**: After v2.8.0 stabilization
