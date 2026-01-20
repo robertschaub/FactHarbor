@@ -6896,6 +6896,7 @@ The JSON object MUST include these top-level keys:
       claimText: claim?.text || "",
       isCentral: claim?.isCentral || false,
       centrality: claim?.centrality || "medium",
+      harmPotential: claim?.harmPotential || "medium", // v2.7.0: Pass through for weighted aggregation
       thesisRelevance: claim?.thesisRelevance || "direct",
       keyFactorId: claim?.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
       contextId: ctxId,
@@ -7314,6 +7315,7 @@ ${factsFormatted}`;
           supportingFactIds: [],
           isCentral: claim.isCentral || false,
           centrality: claim.centrality || "medium",
+          harmPotential: claim.harmPotential || "medium", // v2.7.0: For weighted aggregation
           thesisRelevance: claim.thesisRelevance || "direct",
           startOffset: claim.startOffset,
           endOffset: claim.endOffset,
@@ -7358,6 +7360,7 @@ ${factsFormatted}`;
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
+        harmPotential: claim.harmPotential || "medium", // v2.7.0: For weighted aggregation
         thesisRelevance: claim.thesisRelevance || "direct",
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
@@ -7793,6 +7796,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
           factualBasis: "unknown",
           isCentral: claim.isCentral || false,
           centrality: claim.centrality || "medium",
+          harmPotential: claim.harmPotential || "medium", // v2.7.0: For weighted aggregation
           thesisRelevance: claim.thesisRelevance || "direct",
           claimRole: claim.claimRole || "core",
           dependsOn: claim.dependsOn || [],
@@ -7865,6 +7869,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
+        harmPotential: claim.harmPotential || "medium", // v2.7.0: For weighted aggregation
         thesisRelevance: claim.thesisRelevance || "direct",
         claimRole: claim.claimRole || "core",
         dependsOn: claim.dependsOn || [],
