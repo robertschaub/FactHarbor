@@ -16,6 +16,13 @@ test-output
 # Keep the .xar committed; keep the extracted pages out of git.
 Docs/xwiki-extract/
 
+# xWiki-work intermediate files (Cursor workflow)
+# Track .xar files, ignore extraction artifacts
+Docs/xWiki-work/*_fulltree.json
+Docs/xWiki-work/*_fulltree_pages/
+Docs/xWiki-work/*.xml
+!Docs/xWiki-work/.gitkeep
+
 # Node / Next.js
 node_modules/
 .next/
@@ -63,3 +70,5 @@ apps/web/test-output/
 /nul
 
 /job-*.json
+
+/Docs/FactHarbor Spec and Impl 20.Jan.26.xar.backup
