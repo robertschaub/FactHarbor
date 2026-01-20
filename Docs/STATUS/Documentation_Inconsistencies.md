@@ -1,0 +1,354 @@
+# FactHarbor Documentation Inconsistency Report
+
+**Generated**: 2026-01-20  
+**Purpose**: Comprehensive audit of inconsistencies between documentation (.md files), source code, and xWiki specification  
+**Status**: Action Required
+
+---
+
+## Table of Contents
+
+- [1. Critical Version Inconsistencies](#1-critical-version-inconsistencies)
+- [2. Terminology Inconsistencies](#2-terminology-inconsistencies)
+- [3. xWiki Specification vs Implementation Gaps](#3-xwiki-specification-vs-implementation-gaps)
+- [4. Missing Referenced Files](#4-missing-referenced-files)
+- [5. Feature Status Contradictions](#5-feature-status-contradictions)
+- [6. Self-Contradictions Within Documents](#6-self-contradictions-within-documents)
+- [7. Outdated Documentation Files](#7-outdated-documentation-files)
+- [8. Recommended Fixes](#8-recommended-fixes)
+
+---
+
+## 1. Critical Version Inconsistencies
+
+### 1.1 Schema Version Chaos
+
+The codebase and documentation claim multiple conflicting version numbers:
+
+| Source | Version Claimed | File Path |
+|--------|-----------------|-----------|
+| **Actual Code** | `"2.6.32"` | `apps/web/src/lib/analyzer/config.ts:99` |
+| orchestrated.ts header | `@version 2.6.33` | `apps/web/src/lib/analyzer/orchestrated.ts:35` |
+| analyzer.ts header | `@version 2.7.0` | `apps/web/src/lib/analyzer.ts:9` |
+| metrics.ts hardcoded | `'2.8.0'` | `apps/web/src/lib/analyzer/metrics.ts:144` |
+| AGENTS.md | v2.6.33 | `AGENTS.md:130` |
+| Current_Status.md header | v2.8.0 (Code) \| 2.7.0 (Schema) | `Docs/STATUS/Current_Status.md:3` |
+| Current_Status.md footer | v2.6.33 (Code) \| 2.7.0 (Schema) | `Docs/STATUS/Current_Status.md:425` |
+| HISTORY.md | v2.8.0 | `Docs/HISTORY.md:4` |
+| Overview.md | v2.8.0 / Schema v2.7.0 | `Docs/ARCHITECTURE/Overview.md:3-4` |
+| Calculations.md | v2.8.0 | `Docs/ARCHITECTURE/Calculations.md:3` |
+| KeyFactors_Design.md | v2.8.0 | `Docs/ARCHITECTURE/KeyFactors_Design.md:4` |
+| TERMINOLOGY.md | v2.8.0 | `Docs/REFERENCE/TERMINOLOGY.md:3` |
+| Pipeline_TriplePath_Architecture.md | v2.8.0 | `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md:4` |
+| Prompt_Architecture.md | v2.7.0 | `Docs/ARCHITECTURE/Prompt_Architecture.md:3` |
+| KNOWN_ISSUES.md | v2.6.33 | `Docs/STATUS/KNOWN_ISSUES.md:4` |
+| Improvement_Recommendations.md | v2.6.21 | `Docs/STATUS/Improvement_Recommendations.md:3` |
+| EVOLUTION.md | v2.2.0 | `Docs/DEVELOPMENT/EVOLUTION.md:3` |
+
+**Root Issue**: The actual `CONFIG.schemaVersion` in code is `"2.6.32"`, but most documentation claims v2.8.0.
+
+### 1.2 ERD Schema Version Outdated
+
+`Docs/ARCHITECTURE/Overview.md` contains Entity-Relationship diagrams showing:
+
+```
+ARTICLE {
+    ...
+    string schemaVersion "2.6.18"
+}
+
+ANALYSIS_RESULT {
+    string schemaVersion "2.6.18"
+    ...
+}
+```
+
+This is significantly outdated (referencing v2.6.18 when current is v2.6.32+).
+
+### 1.3 v2.8.2 Configuration References
+
+`Docs/HISTORY.md` describes "Configuration Tuning for Better Analysis (v2.8.2)" with specific changes:
+- `maxResearchIterations`: 2 → 4
+- `maxTotalSources`: 8 → 12
+
+However, no v2.8.2 exists in code - `config.ts` has `schemaVersion: "2.6.32"`.
+
+---
+
+## 2. Terminology Inconsistencies
+
+### 2.1 Mixed Legacy/New Field Names in Code
+
+The terminology migration from "Proceeding" to "Context"/"Scope" is incomplete:
+
+| Concept | v2.7 Term (per Docs) | Legacy Term Still in Code | Location |
+|---------|----------------------|---------------------------|----------|
+| Multi-context flag | `hasMultipleContexts` | `hasMultipleProceedings` | `types.ts:431` |
+| Context array | `analysisContexts` | `proceedings` | `types.ts:432` (ArticleAnalysis) |
+| Target context ref | `contextId` | `targetProceedingId` | `types.ts:509-510` (ResearchDecision) |
+
+### 2.2 Scope vs Context vs Proceeding
+
+Different documents use different primary terms:
+
+| Document | Primary Term Used |
+|----------|-------------------|
+| AGENTS.md | "Scope" |
+| TERMINOLOGY.md | "AnalysisContext" (with "Scope" as alias) |
+| types.ts interfaces | `AnalysisContext` type name |
+| types.ts fields | Mixed: `contextId`, `relatedProceedingId`, `targetProceedingId` |
+
+### 2.3 TERMINOLOGY.md Internal Contradiction
+
+TERMINOLOGY.md states:
+- Line 33: "Scope" replaces "Proceeding" throughout the codebase
+- Line 559: v2.7.0 field names are active
+
+But code still contains `hasMultipleProceedings`, `proceedings`, `targetProceedingId`.
+
+---
+
+## 3. xWiki Specification vs Implementation Gaps
+
+The xWiki export (`Docs/FactHarbor Spec and Impl 1.Jan.26.xar`) contains the original POC specification. Several significant deviations exist:
+
+### 3.1 Verdict Scale Mismatch
+
+**xWiki Specification (POC Requirements)**:
+```
+WELL-SUPPORTED / PARTIALLY SUPPORTED / UNCERTAIN / REFUTED
+```
+
+**Actual Implementation** (types.ts):
+```typescript
+"TRUE" | "MOSTLY-TRUE" | "LEANING-TRUE" | "MIXED" | "UNVERIFIED" | 
+"LEANING-FALSE" | "MOSTLY-FALSE" | "FALSE"
+```
+
+The 4-point scale was expanded to a 7-point symmetric scale with MIXED/UNVERIFIED distinction.
+
+### 3.2 Scenario Entity Rejected
+
+**xWiki Specification**: Defines detailed `Scenario` entity with fields:
+- `id`, `claim_id`, `description`, `assumptions`, `extracted_from`, `created_at`, `updated_at`
+- One-to-many relationship with Claims
+
+**Implementation Reality**: `KeyFactors_Design.md` explicitly states:
+> "Scenario was rejected as a first-class entity (derivable from existing data)"
+
+KeyFactors replaced Scenarios as the decomposition mechanism.
+
+### 3.3 Quality Gates Numbering Mismatch
+
+**xWiki Specification**:
+| Gate | Purpose |
+|------|---------|
+| Gate 1 | Source Quality |
+| Gate 2 | Contradiction Search |
+| Gate 3 | Uncertainty Quantification |
+| Gate 4 | Structural Integrity |
+
+**Current Implementation**:
+| Gate | Purpose |
+|------|---------|
+| Gate 1 | Claim Validation (filters opinions/predictions) |
+| Gate 4 | Verdict Confidence Assessment |
+| Gates 2-3 | Not implemented |
+
+The gates have different purposes and Gates 2-3 are missing.
+
+### 3.4 Data Model Not Normalized
+
+**xWiki Specification**: Describes normalized PostgreSQL tables for:
+- `Claim`, `Evidence`, `Source`, `Scenario`, `Verdict`, `User`, `Edit`, `Flag`, `QualityMetric`, `ErrorPattern`
+
+**Current_Status.md** (line 163):
+> "Normalized Data Model: ❌ Not implemented - All data stored as JSON blobs"
+
+### 3.5 Cache Architecture Not Implemented
+
+**xWiki Specification**: Describes Redis cache design:
+- Key format: `claim:v1norm1:{language}:{sha256(canonical_claim)}`
+- TTL: 90 days
+- Canonicalization algorithm
+
+**Current_Status.md** (line 162):
+> "Claim Caching: ❌ Not implemented"
+
+### 3.6 Input Type Definition
+
+**types.ts**:
+```typescript
+export type InputType = "claim" | "article";
+```
+
+**xWiki and Documentation**: Mention detecting `question | statement | article` as input types.
+
+The `question` type exists conceptually but not in the TypeScript type definition.
+
+---
+
+## 4. Missing Referenced Files
+
+Documentation references files that do not exist in the repository:
+
+| Referenced File | Referenced From |
+|-----------------|-----------------|
+| `Docs/ARCHITECTURE/Claim_Caching_Overview.md` | `Docs/ARCHITECTURE/Overview.md:38-39` |
+| `Docs/ARCHITECTURE/Separated_Architecture_Guide.md` | `Docs/ARCHITECTURE/Overview.md:40` |
+| `Docs/ARCHITECTURE/ADR_001_Scope_Context_Terminology_Refactoring.md` | `Docs/REFERENCE/TERMINOLOGY.md:18`, `Docs/REFERENCE/LLM_Schema_Mapping.md:406` |
+
+---
+
+## 5. Feature Status Contradictions
+
+### 5.1 Built But Not Integrated
+
+`Current_Status.md` lists these as "BUILT BUT NOT INTEGRATED":
+- Metrics Collection System
+- Observability Dashboard (`/admin/metrics`)
+- Baseline Test Suite
+- A/B Testing Framework
+- Schema Retry Logic
+- Parallel Verdict Generation
+- Tiered LLM Routing
+
+However, `HISTORY.md` section "v2.8.0" describes these as implemented major changes.
+
+### 5.2 Working Features Section Outdated
+
+`Overview.md` has section titled "Working Features (v2.6.21)" at line 491, but the document header claims version 2.8.0.
+
+### 5.3 Prompt Optimization Validation Status
+
+`HISTORY.md` line 538:
+> "Status: ❌ NEVER VALIDATED - No A/B testing performed"
+
+But the same document lists v2.8.0 as having "Shared Module Architecture" as an implemented major change.
+
+---
+
+## 6. Self-Contradictions Within Documents
+
+### 6.1 Current_Status.md Version Conflict
+
+**Header** (line 3):
+```
+**Version**: 2.8.0 (Code) | 2.7.0 (Schema Output)
+```
+
+**Footer** (line 425):
+```
+**Actual Version**: 2.6.33 (Code) | 2.7.0 (Schema)
+```
+
+### 6.2 Analyzer Line Count
+
+**AGENTS.md** (line 75):
+> "Core analysis engine (6700+ lines)"
+
+**Reality**: Analyzer is now modularized across multiple files:
+- `orchestrated.ts` (~9000+ lines)
+- `monolithic-canonical.ts` (1139 lines)
+- `aggregation.ts` (291 lines)
+- `scopes.ts` (593 lines)
+- `types.ts` (522 lines)
+- Plus additional modules
+
+---
+
+## 7. Outdated Documentation Files
+
+| File | Version | Status |
+|------|---------|--------|
+| `Docs/DEVELOPMENT/EVOLUTION.md` | v2.2.0 (December 2025) | Very outdated - 6+ minor versions behind |
+| `Docs/STATUS/Improvement_Recommendations.md` | v2.6.21 | Outdated - does not reflect recent changes |
+| `Docs/METRICS_SCHEMA.md` | References v2.8.0 | Inconsistent with actual code version |
+
+---
+
+## 8. Recommended Fixes
+
+### Priority 1: Version Alignment (Critical)
+
+1. **Decide on canonical version number**
+   - Current code: `2.6.32` in config.ts
+   - If v2.8.0 features are implemented, update config.ts
+   - If not, downgrade all doc version claims to match code
+
+2. **Update all version references**
+   - Search for `2.8.0`, `2.7.0`, `2.6.` across all .md files
+   - Ensure consistency with chosen canonical version
+
+3. **Fix ERD schema versions** in `Overview.md` (change `2.6.18` to current)
+
+### Priority 2: Terminology Migration (High)
+
+4. **Complete code terminology migration**
+   - Replace `hasMultipleProceedings` → `hasMultipleContexts` in types.ts
+   - Replace `proceedings` → `analysisContexts` in ArticleAnalysis interface
+   - Replace `targetProceedingId` → `targetContextId` in ResearchDecision
+
+5. **Ensure backward compatibility** via type aliases if needed
+
+### Priority 3: Documentation Cleanup (Medium)
+
+6. **Remove references to non-existent files**
+   - Either create the missing ADR/architecture files
+   - Or remove references to them
+
+7. **Update or archive outdated docs**
+   - `EVOLUTION.md` - update to current state or mark as historical
+   - `Improvement_Recommendations.md` - update version and content
+
+8. **Fix self-contradictions in Current_Status.md**
+   - Remove duplicate/conflicting version statements
+
+### Priority 4: Spec Alignment Documentation (Low)
+
+9. **Document spec deviations officially**
+   - Create ADR explaining Scenario → KeyFactors decision
+   - Document Quality Gate renumbering rationale
+   - Note verdict scale expansion (4-point → 7-point)
+
+10. **Update xWiki spec** or mark sections as superseded
+
+---
+
+## Appendix: Files Analyzed
+
+### Source Code
+- `apps/web/src/lib/analyzer/config.ts`
+- `apps/web/src/lib/analyzer/types.ts`
+- `apps/web/src/lib/analyzer/orchestrated.ts`
+- `apps/web/src/lib/analyzer/monolithic-canonical.ts`
+- `apps/web/src/lib/analyzer/aggregation.ts`
+- `apps/web/src/lib/analyzer/scopes.ts`
+- `apps/web/src/lib/analyzer/metrics.ts`
+
+### Documentation
+- `AGENTS.md`
+- `Docs/ARCHITECTURE/Overview.md`
+- `Docs/ARCHITECTURE/Calculations.md`
+- `Docs/ARCHITECTURE/KeyFactors_Design.md`
+- `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md`
+- `Docs/ARCHITECTURE/Prompt_Architecture.md`
+- `Docs/ARCHITECTURE/Source_Reliability.md`
+- `Docs/REFERENCE/TERMINOLOGY.md`
+- `Docs/REFERENCE/LLM_Schema_Mapping.md`
+- `Docs/STATUS/Current_Status.md`
+- `Docs/STATUS/KNOWN_ISSUES.md`
+- `Docs/STATUS/Improvement_Recommendations.md`
+- `Docs/HISTORY.md`
+- `Docs/DEVELOPMENT/EVOLUTION.md`
+
+### xWiki Specification
+- `Docs/FactHarbor Spec and Impl 1.Jan.26.xar` (extracted and analyzed)
+  - `FactHarbor/Specification/POC/Specification.xml`
+  - `FactHarbor/Specification/POC/Requirements.xml`
+  - `FactHarbor/Specification/Data Model/WebHome.xml`
+
+---
+
+**Report Generated By**: Documentation Audit Process  
+**Next Review**: After Priority 1 and 2 fixes are applied
