@@ -8,6 +8,7 @@
 # For Agents working on docs
 Docs/**/*extract*
 Docs/*ps1
+Docs/xar*
 FactHarbor.xar
 test-output
 
