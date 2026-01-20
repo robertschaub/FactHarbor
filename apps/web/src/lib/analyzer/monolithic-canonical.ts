@@ -125,6 +125,7 @@ const SubClaimSchema = z.object({
   id: z.string().optional(),
   text: z.string(),
   claimRole: z.enum(["attribution", "source", "timing", "core", "unknown"]).optional(),
+  harmPotential: z.enum(["high", "medium", "low"]).optional().describe("High for death/injury/safety claims"),
   centrality: z.enum(["high", "medium", "low"]).optional(),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).optional(),
 });
@@ -424,8 +425,22 @@ export async function runMonolithicCanonical(
     claimRole: "core" | "attribution" | "source" | "timing" | "unknown";
     centrality: "high" | "medium" | "low";
     thesisRelevance: "direct" | "tangential" | "irrelevant";
+    harmPotential: "high" | "medium" | "low";
     isCentral: boolean;
   }> = [];
+
+  // Helper to detect high harm potential from claim text
+  const detectHarmPotential = (text: string): "high" | "medium" | "low" => {
+    const lowered = text.toLowerCase();
+    // Death/injury claims are ALWAYS high harm potential
+    if (/\b(die[ds]?|death[s]?|dead|kill[eds]*|fatal|fatalit)/i.test(lowered)) return "high";
+    if (/\b(injur[yies]*|harm[eds]*|damage[ds]*|victim[s]?)/i.test(lowered)) return "high";
+    // Safety/health risk claims
+    if (/\b(danger|unsafe|risk|threat|hazard)/i.test(lowered)) return "high";
+    // Fraud/crime accusations
+    if (/\b(fraud|crime|corrupt|illegal|stolen|theft)/i.test(lowered)) return "high";
+    return "medium";
+  };
 
   const mainClaimText = String(claimData.mainClaim || "").trim();
   if (mainClaimText) {
@@ -435,6 +450,7 @@ export async function runMonolithicCanonical(
       claimRole: "core",
       centrality: "high",
       thesisRelevance: "direct",
+      harmPotential: detectHarmPotential(mainClaimText),
       isCentral: true,
     });
     normalizedSeen.add(normalizeClaimText(mainClaimText));
@@ -451,12 +467,14 @@ export async function runMonolithicCanonical(
     claimRole: c.claimRole || "core",
     centrality: c.centrality || "medium",
     thesisRelevance: c.thesisRelevance || "direct",
+    harmPotential: c.harmPotential || "medium",
   }));
   combinedSubClaims.push(...heuristicSubClaims.map((c) => ({
     text: c.text,
     claimRole: "core" as const,
     centrality: "medium" as const,
     thesisRelevance: "direct" as const,
+    harmPotential: detectHarmPotential(c.text),
   })));
 
   let subClaimIndex = 1;
@@ -465,13 +483,16 @@ export async function runMonolithicCanonical(
     const normalized = normalizeClaimText(sub.text);
     if (!normalized || normalizedSeen.has(normalized)) continue;
     const id = `C${++subClaimIndex}`;
+    // If harm potential is high, also ensure centrality is high
+    const effectiveCentrality = sub.harmPotential === "high" ? "high" : sub.centrality;
     claimEntries.push({
       id,
       text: sub.text,
       claimRole: sub.claimRole as any,
-      centrality: sub.centrality as any,
+      centrality: effectiveCentrality as any,
       thesisRelevance: sub.thesisRelevance as any,
-      isCentral: sub.centrality === "high",
+      harmPotential: sub.harmPotential as any,
+      isCentral: effectiveCentrality === "high",
     });
     normalizedSeen.add(normalized);
   }
@@ -731,6 +752,7 @@ export async function runMonolithicCanonical(
       contextId: "CTX_MAIN",
       isCentral: result.entry.isCentral,
       centrality: result.entry.centrality,
+      harmPotential: result.entry.harmPotential,
       verdict: v.verdict,
       truthPercentage: v.verdict,
       confidence: v.confidence,
@@ -742,12 +764,13 @@ export async function runMonolithicCanonical(
   });
 
   // Calculate aggregated verdict using weighted average of all claims
-  // Central claims (high centrality) have more influence than peripheral claims
+  // Central claims (high centrality) and high harm potential claims have more influence
   const aggregatedVerdict = calculateWeightedVerdictAverage(
     claimVerdicts.map((cv) => ({
       truthPercentage: cv.verdict,
       centrality: cv.centrality as "high" | "medium" | "low",
       confidence: cv.confidence,
+      harmPotential: cv.harmPotential as "high" | "medium" | "low",
       thesisRelevance: "direct" as const, // All canonical claims are direct
     }))
   );

@@ -7,11 +7,18 @@
  */
 
 /**
- * Calculate claim weight based on centrality, confidence, and contestation status.
+ * Calculate claim weight based on centrality, confidence, harm potential, and contestation status.
  * Higher centrality claims with higher confidence have more influence on the overall verdict.
  *
- * Base Weight = centralityMultiplier × (confidence / 100)
- * where centralityMultiplier: high=3.0, medium=2.0, low=1.0
+ * Base Weight = centralityMultiplier × harmMultiplier × (confidence / 100)
+ * where:
+ *   centralityMultiplier: high=3.0, medium=2.0, low=1.0
+ *   harmMultiplier: high=1.5, medium=1.0, low=1.0
+ *
+ * HIGH HARM POTENTIAL (v2.7.0):
+ * - Death claims, injury claims, safety claims get 1.5x additional weight
+ * - These are severe accusations that must be carefully verified
+ * - Getting them wrong (either direction) causes significant real-world harm
  *
  * CONTESTED vs DOUBTED (v2.6.33):
  * - "Doubted" = someone disputes the claim but has NO factual counter-evidence (just opinion)
@@ -28,6 +35,7 @@ export function getClaimWeight(claim: {
   centrality?: "high" | "medium" | "low";
   confidence?: number;
   thesisRelevance?: "direct" | "tangential" | "irrelevant";
+  harmPotential?: "high" | "medium" | "low";
   isContested?: boolean;
   factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";
 }): number {
@@ -40,10 +48,15 @@ export function getClaimWeight(claim: {
       : claim.centrality === "medium"
         ? 2.0
         : 1.0;
+
+  // v2.7.0: High harm potential claims (death, injury, safety) get extra weight
+  // These are severe accusations that MUST be verified carefully
+  const harmMultiplier = claim.harmPotential === "high" ? 1.5 : 1.0;
+
   const confidenceNormalized = (claim.confidence ?? 50) / 100;
 
-  // Base weight
-  let weight = centralityMultiplier * confidenceNormalized;
+  // Base weight with harm multiplier
+  let weight = centralityMultiplier * harmMultiplier * confidenceNormalized;
 
   // v2.6.33: Reduce weight for CONTESTED claims (those with actual counter-evidence)
   // "Doubted" claims (opinion-based, no counter-evidence) keep normal weight.
@@ -81,6 +94,7 @@ export function calculateWeightedVerdictAverage(
     centrality?: "high" | "medium" | "low";
     confidence?: number;
     thesisRelevance?: "direct" | "tangential" | "irrelevant";
+    harmPotential?: "high" | "medium" | "low";
     isCounterClaim?: boolean;
     isContested?: boolean;
     factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";

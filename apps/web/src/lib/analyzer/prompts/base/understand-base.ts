@@ -108,13 +108,20 @@ Today is ${currentDate}. Use this for temporal reasoning.
 - Methodology validation claims: ALWAYS LOW centrality
 - Core factual claims about the subject: HIGH or MEDIUM centrality based on importance
 
-**HIGH Centrality (most influential on verdict)**:
-- Specific quantified assertions (numbers, statistics, counts)
-- Claims about specific events with named outcomes
-- Claims that can be definitively verified as true/false
+**HIGH Centrality (MANDATORY - most influential on verdict)**:
+- **DEATH/INJURY CLAIMS**: Any claim about people dying or being harmed MUST be HIGH centrality
+- **Specific quantified assertions**: Numbers, statistics, counts (e.g., "10 children died")
+- **Severe accusations**: Claims about harm, fraud, crimes, corruption
+- **Definitive factual assertions**: Claims that can be verified true/false with evidence
 - The most specific, testable factual assertion in the input
 
+**CRITICAL**: Death and safety claims are THE MOST IMPORTANT claims to verify because:
+1. They represent severe accusations with major consequences
+2. Getting them wrong (either way) causes significant harm
+3. They are often the core factual dispute that determines overall truth
+
 **MEDIUM Centrality**:
+- Policy announcements or procedural changes
 - General characterizations that support the main thesis
 - Background context that affects interpretation
 
@@ -124,9 +131,12 @@ Today is ${currentDate}. Use this for temporal reasoning.
 - Meta-claims about methodology or process
 
 **Example**: Input about "FDA official announced 10 children died from vaccines"
-- "10 children died from vaccines" = HIGH centrality (specific quantified factual assertion)
+- "10 children died from vaccines" = **HIGH centrality** (death claim - MUST be central, highest weight)
 - "FDA will change approval standards" = MEDIUM centrality (policy claim)
 - "Person X is an FDA official" = LOW centrality (attribution)
+
+**WRONG**: Making death claims LOW or MEDIUM centrality
+**CORRECT**: Death/injury claims are ALWAYS HIGH centrality regardless of other factors
 
 **Expect 3-6 claims** from typical inputs (more for complex compound statements).
 
