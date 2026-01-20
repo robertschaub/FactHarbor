@@ -60,6 +60,11 @@ When input compares two things (X vs Y, X is better/more efficient than Y):
   - What's included in "the system" changes the comparison result
   - Different measurement points yield different rankings
 
+**MANDATORY for efficiency/performance comparisons**: If the claim compares efficiency, performance, or environmental impact:
+- ALWAYS check if results differ by measurement phase
+- If evidence could show X>Y in one phase but Y>X in another phase → MUST split into scopes
+- Output at least 2 scopes: one for each major measurement boundary commonly used in that domain
+
 **CRITICAL - Do NOT split for**:
 - Different viewpoints or perspectives (different opinions on same matter)
 - Different geographic locations (unless explicitly defining scope boundaries)
@@ -164,6 +169,12 @@ For evaluative claims (involving quality, fairness, appropriateness, correctness
 - NOT: "[subject] [evaluative-adjective]" (yields opinions instead of verifiable facts)
 
 This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was appropriate", "Z was correct")
+
+**Query transformation examples** (pattern, NOT domain-specific):
+- Evaluative input → Search for process/procedure/standards
+- "Was X fair?" → Search for: "X process", "X procedures followed", "X standards"
+- "Was Y appropriate?" → Search for: "Y methodology", "Y guidelines", "Y compliance"
+- Never include the evaluative word itself in the query
 
 **If multiple scopes detected**:
 - Generate scope-specific queries

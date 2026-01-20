@@ -795,7 +795,7 @@ export async function runMonolithicCanonical(
 
   // Use most critical claim's reasoning for the overall summary
   // Priority: HIGH harmPotential + FALSE verdict (most critical to address) > HIGH harmPotential > HIGH centrality > first
-  const primaryClaimVerdict = 
+  const primaryClaimVerdict =
     claimVerdicts.find((cv) => cv.harmPotential === "high" && cv.centrality === "high" && cv.verdict < 43) ||
     claimVerdicts.find((cv) => cv.harmPotential === "high" && cv.centrality === "high") ||
     claimVerdicts.find((cv) => cv.centrality === "high") ||
