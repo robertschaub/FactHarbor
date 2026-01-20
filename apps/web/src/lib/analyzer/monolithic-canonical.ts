@@ -793,8 +793,13 @@ export async function runMonolithicCanonical(
       )
     : verdictData.confidence;
 
-  // Use most central claim's reasoning/summary for the overall summary
-  const primaryClaimVerdict = claimVerdicts.find((cv) => cv.centrality === "high") || claimVerdicts[0];
+  // Use most critical claim's reasoning for the overall summary
+  // Priority: HIGH harmPotential + FALSE verdict (most critical to address) > HIGH harmPotential > HIGH centrality > first
+  const primaryClaimVerdict = 
+    claimVerdicts.find((cv) => cv.harmPotential === "high" && cv.centrality === "high" && cv.verdict < 43) ||
+    claimVerdicts.find((cv) => cv.harmPotential === "high" && cv.centrality === "high") ||
+    claimVerdicts.find((cv) => cv.centrality === "high") ||
+    claimVerdicts[0];
 
   const resultJson = buildResultJson({
     input,
@@ -900,6 +905,7 @@ function buildResultJson(params: {
     contextId: string;
     isCentral: boolean;
     centrality: string;
+    harmPotential?: string;
     verdict: number;
     truthPercentage: number;
     confidence: number;
@@ -969,6 +975,7 @@ function buildResultJson(params: {
             contextId: finalScopes[0]?.id || "CTX_MAIN",
             isCentral: true,
             centrality: "high",
+            harmPotential: "medium",
             verdict,
             truthPercentage: verdict,
             confidence,

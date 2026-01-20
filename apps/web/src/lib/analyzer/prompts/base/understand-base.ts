@@ -51,6 +51,15 @@ Today is ${currentDate}. Use this for temporal reasoning.
   - Partial vs complete lifecycle boundaries
   - Different phases measured independently (input phase vs output phase vs combined)
 
+**COMPARISON CLAIMS - Check for Measurement Scope Sensitivity**:
+When input compares two things (X vs Y, X is better/more efficient than Y):
+- Ask: "Does the answer depend on WHERE you measure in the system?"
+- If yes: Create separate scopes for each measurement boundary
+- Common patterns requiring scope split:
+  - Production/creation phase vs usage/consumption phase vs complete system
+  - What's included in "the system" changes the comparison result
+  - Different measurement points yield different rankings
+
 **CRITICAL - Do NOT split for**:
 - Different viewpoints or perspectives (different opinions on same matter)
 - Different geographic locations (unless explicitly defining scope boundaries)
@@ -146,6 +155,15 @@ Today is ${currentDate}. Use this for temporal reasoning.
 1. **Direct verification** queries (find primary sources)
 2. **Contextual** queries (background, definitions, standards)
 3. **Counter-evidence** queries (opposing viewpoints, contradictions)
+
+**CRITICAL - Objective vs Subjective Queries**:
+For evaluative claims (involving quality, fairness, appropriateness, correctness):
+- Search for WHAT HAPPENED: documented actions, procedures followed, outcomes recorded
+- Avoid SUBJECTIVE TERMS: "fair/unfair", "good/bad", "appropriate/wrong" (yield opinions, not facts)
+- Structure: "[subject] [action/procedure/process] [documented/evidence/record]"
+- NOT: "[subject] [evaluative-adjective]" (yields opinions instead of verifiable facts)
+
+This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was appropriate", "Z was correct")
 
 **If multiple scopes detected**:
 - Generate scope-specific queries

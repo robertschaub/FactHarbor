@@ -1459,6 +1459,7 @@ function ClaimCard({ claim, showCrossScope = false }: { claim: any; showCrossSco
       <div className={styles.claimCardHeader}>
         <span className={styles.claimId}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
+        {claim.harmPotential === "high" && <Badge bg="#ffebee" color="#c62828">⚠️ High Harm</Badge>}
         {isTangential && <Badge bg="#f5f5f5" color="#616161">📎 Tangential</Badge>}
         {claim.isCounterClaim && <Badge bg="#fff3e0" color="#e65100">↔️ Counter</Badge>}
         <Badge bg={color.bg} color={color.text}>
