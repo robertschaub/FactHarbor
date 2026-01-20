@@ -27,43 +27,29 @@ The codebase and documentation claim multiple conflicting version numbers:
 
 | Source | Version Claimed | File Path |
 |--------|-----------------|-----------|
-| **Actual Code** | `"2.6.32"` | `apps/web/src/lib/analyzer/config.ts:99` |
+| **Actual Code** | `"2.6.33"` | `apps/web/src/lib/analyzer/config.ts:99` |
 | orchestrated.ts header | `@version 2.6.33` | `apps/web/src/lib/analyzer/orchestrated.ts:35` |
 | analyzer.ts header | `@version 2.7.0` | `apps/web/src/lib/analyzer.ts:9` |
-| metrics.ts hardcoded | `'2.8.0'` | `apps/web/src/lib/analyzer/metrics.ts:144` |
+| metrics.ts hardcoded | `'2.6.33'` | `apps/web/src/lib/analyzer/metrics.ts:144` |
 | AGENTS.md | v2.6.33 | `AGENTS.md:130` |
-| Current_Status.md header | v2.8.0 (Code) \| 2.7.0 (Schema) | `Docs/STATUS/Current_Status.md:3` |
+| Current_Status.md header | v2.6.33 (Code) \| 2.7.0 (Schema) | `Docs/STATUS/Current_Status.md:3` |
 | Current_Status.md footer | v2.6.33 (Code) \| 2.7.0 (Schema) | `Docs/STATUS/Current_Status.md:425` |
-| HISTORY.md | v2.8.0 | `Docs/STATUS/HISTORY.md:4` |
-| Overview.md | v2.8.0 / Schema v2.7.0 | `Docs/ARCHITECTURE/Overview.md:3-4` |
-| Calculations.md | v2.8.0 | `Docs/ARCHITECTURE/Calculations.md:3` |
-| KeyFactors_Design.md | v2.8.0 | `Docs/ARCHITECTURE/KeyFactors_Design.md:4` |
-| TERMINOLOGY.md | v2.8.0 | `Docs/REFERENCE/TERMINOLOGY.md:3` |
-| Pipeline_TriplePath_Architecture.md | v2.8.0 | `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md:4` |
-| Prompt_Architecture.md | v2.7.0 | `Docs/ARCHITECTURE/Prompt_Architecture.md:3` |
+| HISTORY.md | v2.6.33 | `Docs/STATUS/HISTORY.md:4` |
+| Overview.md | v2.6.33 / Schema v2.7.0 | `Docs/ARCHITECTURE/Overview.md:3-4` |
+| Calculations.md | v2.6.33 | `Docs/ARCHITECTURE/Calculations.md:3` |
+| KeyFactors_Design.md | v2.6.33 | `Docs/ARCHITECTURE/KeyFactors_Design.md:4` |
+| TERMINOLOGY.md | v2.6.33 | `Docs/REFERENCE/TERMINOLOGY.md:3` |
+| Pipeline_TriplePath_Architecture.md | v2.6.33 | `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md:4` |
+| Prompt_Architecture.md | v2.6.33 | `Docs/ARCHITECTURE/Prompt_Architecture.md:3` |
 | KNOWN_ISSUES.md | v2.6.33 | `Docs/STATUS/KNOWN_ISSUES.md:4` |
 | Improvement_Recommendations.md | v2.6.21 | `Docs/STATUS/Improvement_Recommendations.md:3` |
 | EVOLUTION.md | v2.2.0 | `Docs/DEVELOPMENT/EVOLUTION.md:3` |
 
-**Root Issue**: The actual `CONFIG.schemaVersion` in code is `"2.6.32"`, but most documentation claims v2.8.0.
+**Root Issue**: ✅ RESOLVED - All versions now aligned to `2.6.33`.
 
-### 1.2 ERD Schema Version Outdated
+### 1.2 ERD Schema Version Outdated - ✅ RESOLVED
 
-`Docs/ARCHITECTURE/Overview.md` contains Entity-Relationship diagrams showing:
-
-```
-ARTICLE {
-    ...
-    string schemaVersion "2.6.18"
-}
-
-ANALYSIS_RESULT {
-    string schemaVersion "2.6.18"
-    ...
-}
-```
-
-This is significantly outdated (referencing v2.6.18 when current is v2.6.32+).
+`Docs/ARCHITECTURE/Overview.md` ERD diagrams now show `schemaVersion "2.6.33"`.
 
 ### 1.3 v2.8.2 Configuration References
 
@@ -71,15 +57,15 @@ This is significantly outdated (referencing v2.6.18 when current is v2.6.32+).
 - `maxResearchIterations`: 2 → 4
 - `maxTotalSources`: 8 → 12
 
-However, no v2.8.2 exists in code - `config.ts` has `schemaVersion: "2.6.32"`.
+Note: v2.8.x references in HISTORY.md describe planned/future features, not current implementation. Current code version is `2.6.33`.
 
 ---
 
-## 2. Terminology Inconsistencies
+## 2. Terminology Inconsistencies - ✅ BY DESIGN
 
 ### 2.1 Mixed Legacy/New Field Names in Code
 
-The terminology migration from "Proceeding" to "Context"/"Scope" is incomplete:
+The terminology uses new names for types/interfaces but legacy names for JSON fields (for backward compatibility):
 
 | Concept | v2.7 Term (per Docs) | Legacy Term Still in Code | Location |
 |---------|----------------------|---------------------------|----------|
@@ -98,21 +84,20 @@ Different documents use different primary terms:
 | types.ts interfaces | `AnalysisContext` type name |
 | types.ts fields | Mixed: `contextId`, `relatedProceedingId`, `targetProceedingId` |
 
-### 2.3 TERMINOLOGY.md Internal Contradiction
+### 2.3 TERMINOLOGY.md Clarification - ✅ RESOLVED
 
-TERMINOLOGY.md states:
-- Line 33: "Scope" replaces "Proceeding" throughout the codebase
-- Line 559: v2.7.0 field names are active
-
-But code still contains `hasMultipleProceedings`, `proceedings`, `targetProceedingId`.
+TERMINOLOGY.md now documents that:
+- Type/interface names use new terms (`AnalysisContext`, `EvidenceScope`)
+- JSON field names retain legacy names for **backward compatibility** with stored data
+- This is intentional design, not incomplete migration
 
 ---
 
 ## 3. xWiki Specification vs Implementation Gaps
 
 The xWiki exports contain the original POC specification:
-- **Current**: `Docs/FactHarbor Spec and Impl 20.Jan.26.xar` (January 20, 2026)
-- **Previous**: `Docs/FactHarbor Spec and Impl 1.Jan.26.xar` (January 1, 2026)
+- **Current**: `Docs/FactHarbor_Spec_and_Impl_20.Jan.26.xar` (January 20, 2026)
+- **Previous**: Deleted (was `FactHarbor Spec and Impl 1.Jan.26.xar`)
 
 ### 3.0 xWiki Version Comparison (Jan 1 → Jan 20)
 
@@ -207,15 +192,12 @@ The `question` type exists conceptually but not in the TypeScript type definitio
 
 ---
 
-## 4. Missing Referenced Files
+## 4. Missing Referenced Files - ✅ RESOLVED
 
-Documentation references files that do not exist in the repository:
-
-| Referenced File | Referenced From |
-|-----------------|-----------------|
-| `Docs/ARCHITECTURE/Claim_Caching_Overview.md` | `Docs/ARCHITECTURE/Overview.md:38-39` |
-| `Docs/ARCHITECTURE/Separated_Architecture_Guide.md` | `Docs/ARCHITECTURE/Overview.md:40` |
-| `Docs/ARCHITECTURE/ADR_001_Scope_Context_Terminology_Refactoring.md` | `Docs/REFERENCE/TERMINOLOGY.md:18`, `Docs/REFERENCE/LLM_Schema_Mapping.md:406` |
+All broken references have been removed:
+- `Claim_Caching_Overview.md` reference removed from Overview.md
+- `Separated_Architecture_Guide.md` references removed
+- `ADR_001` references replaced with inline documentation notes
 
 ---
 
@@ -234,9 +216,9 @@ Documentation references files that do not exist in the repository:
 
 However, `Docs/STATUS/HISTORY.md` section "v2.8.0" describes these as implemented major changes.
 
-### 5.2 Working Features Section Outdated
+### 5.2 Working Features Section Outdated - ✅ RESOLVED
 
-`Overview.md` has section titled "Working Features (v2.6.21)" at line 491, but the document header claims version 2.8.0.
+`Overview.md` Working Features section now shows "(v2.6.33)" matching the document header.
 
 ### 5.3 Prompt Optimization Validation Status
 
@@ -249,30 +231,18 @@ But the same document lists v2.8.0 as having "Shared Module Architecture" as an 
 
 ## 6. Self-Contradictions Within Documents
 
-### 6.1 Current_Status.md Version Conflict
+### 6.1 Current_Status.md Version Conflict - ✅ RESOLVED
 
-**Header** (line 3):
-```
-**Version**: 2.8.0 (Code) | 2.7.0 (Schema Output)
-```
+Header and footer now both show `2.6.33 (Code) | 2.7.0 (Schema Output)`.
 
-**Footer** (line 425):
-```
-**Actual Version**: 2.6.33 (Code) | 2.7.0 (Schema)
-```
+### 6.2 Analyzer Line Count - ✅ RESOLVED
 
-### 6.2 Analyzer Line Count
-
-**AGENTS.md** (line 75):
-> "Core analysis engine (6700+ lines)"
-
-**Reality**: Analyzer is now modularized across multiple files:
-- `orchestrated.ts` (~9000+ lines)
-- `monolithic-canonical.ts` (1139 lines)
-- `aggregation.ts` (291 lines)
-- `scopes.ts` (593 lines)
-- `types.ts` (522 lines)
-- Plus additional modules
+AGENTS.md Key Files table now lists modular analyzer structure:
+- `orchestrated.ts` (~9000 lines)
+- `monolithic-canonical.ts`
+- `types.ts`
+- `aggregation.ts`
+- `scopes.ts`
 
 ---
 
@@ -280,9 +250,9 @@ But the same document lists v2.8.0 as having "Shared Module Architecture" as an 
 
 | File | Version | Status |
 |------|---------|--------|
-| `Docs/DEVELOPMENT/EVOLUTION.md` | v2.2.0 (December 2025) | Very outdated - 6+ minor versions behind |
-| `Docs/STATUS/Improvement_Recommendations.md` | v2.6.21 | Outdated - does not reflect recent changes |
-| `Docs/REFERENCE/METRICS_SCHEMA.md` | References v2.8.0 | Inconsistent with actual code version |
+| `Docs/DEVELOPMENT/EVOLUTION.md` | v2.2.0 (December 2025) | Historical document - intentionally frozen at v2.2.0 (describes that release) |
+| `Docs/STATUS/Improvement_Recommendations.md` | v2.6.21 | Recommendations still valid; version indicates analysis baseline |
+| `Docs/REFERENCE/METRICS_SCHEMA.md` | v2.6.33 | ✅ Updated |
 
 ---
 
@@ -362,8 +332,8 @@ But the same document lists v2.8.0 as having "Shared Module Architecture" as an 
 - `Docs/DEVELOPMENT/EVOLUTION.md`
 
 ### xWiki Specification
-- `Docs/FactHarbor Spec and Impl 20.Jan.26.xar` (current, extracted and analyzed)
-- `Docs/FactHarbor Spec and Impl 1.Jan.26.xar` (previous version, identical core spec)
+- `Docs/FactHarbor_Spec_and_Impl_20.Jan.26.xar` (current)
+- `Docs/FactHarbor_Organisation_20.Jan.26.xar` (organisation subtree, separate)
   - `FactHarbor/Specification/POC/Specification.xml`
   - `FactHarbor/Specification/POC/Requirements.xml`
   - `FactHarbor/Specification/Data Model/WebHome.xml`
