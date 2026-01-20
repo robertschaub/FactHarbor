@@ -72,11 +72,14 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 
 | File | Purpose |
 |------|---------|
-| `apps/web/src/lib/analyzer.ts` | Core analysis engine (6700+ lines) |
+| `apps/web/src/lib/analyzer/orchestrated.ts` | Main orchestrated pipeline (~9000 lines) |
+| `apps/web/src/lib/analyzer/monolithic-canonical.ts` | Monolithic canonical pipeline |
+| `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
+| `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation logic |
+| `apps/web/src/lib/analyzer/scopes.ts` | Scope detection and handling |
 | `apps/web/src/app/jobs/[id]/page.tsx` | Job results UI |
 | `apps/api/Controllers/JobsController.cs` | Job CRUD API |
-| `apps/api/Data/FhDbContext.cs` | Database context |
-| `Docs/Calculations.md` | Verdict calculation documentation |
+| `Docs/ARCHITECTURE/Calculations.md` | Verdict calculation documentation |
 
 ---
 

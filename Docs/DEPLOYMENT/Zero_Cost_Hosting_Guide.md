@@ -468,7 +468,7 @@ const result = await anthropic.messages.create({
 
 #### 5.4 Claim Caching (70% Cost Savings)
 
-See `Docs/ARCHITECTURE/Separated_Architecture_Guide.md` for full details (planned; not implemented in current code).
+This feature is planned but not implemented in current code.
 
 ```typescript
 // Quick example:

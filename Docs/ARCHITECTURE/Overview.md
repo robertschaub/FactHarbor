@@ -1,6 +1,6 @@
 # FactHarbor POC1 Architecture Overview
 
-**Version:** 2.8.0  
+**Version:** 2.6.33  
 **Schema Version:** 2.7.0  
 **Last Updated:** January 2026
 
@@ -32,16 +32,14 @@ This document provides a comprehensive technical overview of FactHarbor's POC1 a
 
 2. **Next.js Web App (apps/web)** - UI and analysis engine
    - Technology: Next.js 14+ (TypeScript, React, CSS Modules)
-   - Core: `analyzer.ts` (~6700 lines) implements AKEL pipeline
+   - Core: Modular analyzer in `src/lib/analyzer/` (orchestrated.ts, monolithic-canonical.ts, etc.)
    - Responsibilities: User interface, analysis execution, report generation
 
-> Note on terminology: FactHarbor also has a **planned** “separation” for **claim caching** (caching claim verdict generation while keeping article verdict synthesis dynamic). That is **not implemented** in the current codebase. See:
-> - `Docs/ARCHITECTURE/Claim_Caching_Overview.md`
-> - `Docs/ARCHITECTURE/Separated_Architecture_Guide.md`
+> Note on terminology: FactHarbor also has a **planned** “separation” for **claim caching** (caching claim verdict generation while keeping article verdict synthesis dynamic). This is **planned but not implemented** in the current codebase.
 
 ### Internal Security Model
 
-**Shared Analyzer Modules (v2.8):**
+**Shared Analyzer Modules:**
 
 The analyzer pipeline uses shared modules to ensure consistency across pipelines:
 
@@ -235,7 +233,7 @@ erDiagram
         string_array pseudoscienceCategories "Categories if detected"
         int llmCalls "Total LLM API calls"
         json searchQueries "All search queries performed"
-        string schemaVersion "2.6.18"
+        string schemaVersion "2.6.33"
     }
 
     CLAIM {
@@ -350,7 +348,7 @@ erDiagram
     }
 
     ANALYSIS_RESULT {
-        string schemaVersion "2.6.18"
+        string schemaVersion "2.6.33"
         json meta "Providers, timing, gate stats, IDs"
         json twoPanelSummary
         json researchStats
@@ -488,7 +486,7 @@ flowchart TB
 | **Caching & separated architecture** | ❌ Missing | Docs propose claim cache; current pipeline recomputes per job |
 | **Testing** | ⚠️ Partial | Web has unit/integration tests for analyzer; API has no tests; CI only builds |
 
-### Working Features (v2.6.21)
+### Working Features (v2.6.33)
 
 **Core Analysis:**
 - ✅ Multi-scope detection and display
