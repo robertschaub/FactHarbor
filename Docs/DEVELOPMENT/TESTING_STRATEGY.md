@@ -305,6 +305,6 @@ Test cases must NOT include:
 
 ## Related Documentation
 
-- [Metrics Schema](./METRICS_SCHEMA.md)
+- [Metrics Schema](../REFERENCE/METRICS_SCHEMA.md)
 - [Baseline Results](./BASELINE_RESULTS.md)
 - [A/B Test Results](./AB_TEST_RESULTS.md)

@@ -210,8 +210,8 @@ FH_MAX_CONCURRENCY=5            # Parallel verdict limit
 
 ## 📚 Documentation
 
-- **Metrics Schema**: `Docs/METRICS_SCHEMA.md`
-- **Testing Strategy**: `Docs/TESTING_STRATEGY.md`
+- **Metrics Schema**: `Docs/REFERENCE/METRICS_SCHEMA.md`
+- **Testing Strategy**: `Docs/DEVELOPMENT/TESTING_STRATEGY.md`
 - **Implementation Summary**: `Docs/IMPLEMENTATION_SUMMARY.md`
 - **Investigation Report**: `Docs/INVESTIGATION/Report_Quality_Investigation.md`
 - **Current Status**: `Docs/STATUS/Implementation_Status_2026-01-19.md`

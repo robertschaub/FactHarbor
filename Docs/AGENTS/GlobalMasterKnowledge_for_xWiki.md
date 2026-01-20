@@ -230,7 +230,7 @@ This document overrides any default AI behaviors regarding formatting, file gene
 ### Cursor IDE Workflow Rules
 
 **GLOBAL-R-034 – Cursor xar-to-xar workflow**
-- User provides .xar file in `Docs/xWiki-work/` folder.
+- User provides .xar file in `Docs/` folder.
 - Agent extracts to JSON internally using conversion scripts.
 - Agent edits JSON content directly.
 - On "Export" command, agent rebuilds .xar in same folder with version suffix.

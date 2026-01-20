@@ -34,7 +34,7 @@ The codebase and documentation claim multiple conflicting version numbers:
 | AGENTS.md | v2.6.33 | `AGENTS.md:130` |
 | Current_Status.md header | v2.8.0 (Code) \| 2.7.0 (Schema) | `Docs/STATUS/Current_Status.md:3` |
 | Current_Status.md footer | v2.6.33 (Code) \| 2.7.0 (Schema) | `Docs/STATUS/Current_Status.md:425` |
-| HISTORY.md | v2.8.0 | `Docs/HISTORY.md:4` |
+| HISTORY.md | v2.8.0 | `Docs/STATUS/HISTORY.md:4` |
 | Overview.md | v2.8.0 / Schema v2.7.0 | `Docs/ARCHITECTURE/Overview.md:3-4` |
 | Calculations.md | v2.8.0 | `Docs/ARCHITECTURE/Calculations.md:3` |
 | KeyFactors_Design.md | v2.8.0 | `Docs/ARCHITECTURE/KeyFactors_Design.md:4` |
@@ -67,7 +67,7 @@ This is significantly outdated (referencing v2.6.18 when current is v2.6.32+).
 
 ### 1.3 v2.8.2 Configuration References
 
-`Docs/HISTORY.md` describes "Configuration Tuning for Better Analysis (v2.8.2)" with specific changes:
+`Docs/STATUS/HISTORY.md` describes "Configuration Tuning for Better Analysis (v2.8.2)" with specific changes:
 - `maxResearchIterations`: 2 → 4
 - `maxTotalSources`: 8 → 12
 
@@ -232,7 +232,7 @@ Documentation references files that do not exist in the repository:
 - Parallel Verdict Generation
 - Tiered LLM Routing
 
-However, `HISTORY.md` section "v2.8.0" describes these as implemented major changes.
+However, `Docs/STATUS/HISTORY.md` section "v2.8.0" describes these as implemented major changes.
 
 ### 5.2 Working Features Section Outdated
 
@@ -282,7 +282,7 @@ But the same document lists v2.8.0 as having "Shared Module Architecture" as an 
 |------|---------|--------|
 | `Docs/DEVELOPMENT/EVOLUTION.md` | v2.2.0 (December 2025) | Very outdated - 6+ minor versions behind |
 | `Docs/STATUS/Improvement_Recommendations.md` | v2.6.21 | Outdated - does not reflect recent changes |
-| `Docs/METRICS_SCHEMA.md` | References v2.8.0 | Inconsistent with actual code version |
+| `Docs/REFERENCE/METRICS_SCHEMA.md` | References v2.8.0 | Inconsistent with actual code version |
 
 ---
 
@@ -358,7 +358,7 @@ But the same document lists v2.8.0 as having "Shared Module Architecture" as an 
 - `Docs/STATUS/Current_Status.md`
 - `Docs/STATUS/KNOWN_ISSUES.md`
 - `Docs/STATUS/Improvement_Recommendations.md`
-- `Docs/HISTORY.md`
+- `Docs/STATUS/HISTORY.md`
 - `Docs/DEVELOPMENT/EVOLUTION.md`
 
 ### xWiki Specification

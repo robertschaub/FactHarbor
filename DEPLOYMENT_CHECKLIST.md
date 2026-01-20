@@ -295,8 +295,8 @@ npm run test:ab
 |----------|---------|
 | **QUICKSTART.md** | 5-minute setup guide |
 | **FINAL_DELIVERY_REPORT.md** | Complete implementation summary |
-| **METRICS_SCHEMA.md** | Metrics API documentation |
-| **TESTING_STRATEGY.md** | Testing approach & cost management |
+| **Docs/REFERENCE/METRICS_SCHEMA.md** | Metrics API documentation |
+| **Docs/DEVELOPMENT/TESTING_STRATEGY.md** | Testing approach & cost management |
 | **BUILD_FIXES_2026-01-19.md** | Build issue resolutions |
 
 ---

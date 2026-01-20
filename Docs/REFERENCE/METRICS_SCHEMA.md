@@ -307,6 +307,6 @@ Costs are estimated based on token usage and provider pricing:
 
 ## Related Documentation
 
-- [Testing Strategy](./TESTING_STRATEGY.md)
+- [Testing Strategy](../DEVELOPMENT/TESTING_STRATEGY.md)
 - [Baseline Results](./BASELINE_RESULTS.md)
 - [A/B Test Results](./AB_TEST_RESULTS.md)

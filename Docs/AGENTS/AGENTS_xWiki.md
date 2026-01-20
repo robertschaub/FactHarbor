@@ -25,7 +25,7 @@ Before working on xWiki content, agents MUST read and follow:
 
 ## Cursor Workflow (xar-to-xar)
 
-1. User drops .xar in `Docs/xWiki-work/`
+1. User drops .xar in `Docs/`
 2. Agent extracts internally (to JSON)
 3. Agent makes requested edits to JSON content
 4. User says "Export" → Agent saves versioned .xar in same folder
@@ -85,6 +85,6 @@ Do NOT use `{{code language="mermaid"}}` – it doesn't work.
 
 | Path | Purpose |
 |------|---------|
-| `Docs/xWiki-work/` | Input/output folder for .xar files |
+| `Docs/` | Input/output folder for .xar files |
 | `scripts xWiki/xwiki_xar_to_fulltree_generic.py` | xar → JSON |
 | `scripts xWiki/xwiki_fulltree_to_xar_ROBUST.py` | JSON → xar |

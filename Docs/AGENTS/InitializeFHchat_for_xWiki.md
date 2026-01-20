@@ -31,7 +31,7 @@ This document initializes a **new AI assistant chat session** to safely work on 
 When using **Cursor** instead of Claude Projects, a simpler xar-based workflow is used:
 
 ### Workflow
-1. **You provide:** Drop .xar file in `Docs/xWiki-work/` folder
+1. **You provide:** Drop .xar file in `Docs/` folder
 2. **Agent works:** Extracts internally, edits JSON content
 3. **You request:** "Export" (or "Export delta", "Export full")
 4. **Agent delivers:** New .xar file with version suffix in same folder

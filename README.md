@@ -53,7 +53,7 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 ### Status
 - **[Current Status](Docs/STATUS/Current_Status.md)** - What works, known issues, priorities
 - **[Known Issues](Docs/STATUS/KNOWN_ISSUES.md)** - Complete list of bugs and limitations
-- **[Development History](Docs/HISTORY.md)** - Version history, architectural decisions, and investigations
+- **[Development History](Docs/STATUS/HISTORY.md)** - Version history, architectural decisions, and investigations
 - **[Backlog](Docs/STATUS/Backlog.md)** - Prioritized task list
 - **[Improvement Recommendations](Docs/STATUS/Improvement_Recommendations.md)** - Comprehensive analysis of potential enhancements
 
@@ -138,7 +138,7 @@ See [LLM Configuration Guide](Docs/USER_GUIDES/LLM_Configuration.md) for complet
 
 - **Quick Start**: See [QUICKSTART.md](QUICKSTART.md) for rapid setup
 - **Current Issues**: See [Known Issues](Docs/STATUS/KNOWN_ISSUES.md) for complete bug list
-- **Development History**: See [HISTORY.md](Docs/HISTORY.md) for architectural decisions and investigations
+- **Development History**: See [HISTORY.md](Docs/STATUS/HISTORY.md) for architectural decisions and investigations
 - **Documentation**: See `Docs/` folder structure above
 - **Logs**: Check `apps/web/debug-analyzer.log` for analysis details
 - **Admin UI**: http://localhost:3000/admin/test-config for configuration testing

@@ -280,7 +280,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 - Removed detectedInputType override
 - Modularized debug and config modules
 
-**See**: [Complete version history with technical details](../HISTORY.md)
+**See**: [Complete version history with technical details](HISTORY.md)
 
 ---
 
@@ -345,7 +345,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ### Resources
 
 - **Complete Issue List**: `Docs/STATUS/KNOWN_ISSUES.md` - All known bugs with workarounds
-- **Development History**: `Docs/HISTORY.md` - Full version history and architectural decisions
+- **Development History**: `Docs/STATUS/HISTORY.md` - Full version history and architectural decisions
 - **Documentation**: `Docs/` folder (organized by category)
 - **Architecture**: `Docs/ARCHITECTURE/Overview.md`
 - **Calculations**: `Docs/ARCHITECTURE/Calculations.md`
@@ -385,7 +385,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 **See**: 
 - [Known Issues](KNOWN_ISSUES.md) for complete bug list
-- [Development History](../HISTORY.md) for architectural decisions
+- [Development History](HISTORY.md) for architectural decisions
 - [Backlog](Backlog.md) for prioritized task list
 - [Improvement Recommendations](Improvement_Recommendations.md) for detailed enhancement analysis
 

@@ -109,7 +109,7 @@ await finalizeMetrics();
 
 **References**:
 - Integration guide: `apps/web/src/lib/analyzer/metrics-integration.ts`
-- Schema docs: `Docs/METRICS_SCHEMA.md`
+- Schema docs: `Docs/REFERENCE/METRICS_SCHEMA.md`
 
 ---
 
@@ -495,7 +495,7 @@ Model tiering system exists (budget models for extraction, premium for reasoning
 
 ## References
 
-- [Development History](../HISTORY.md) - Full version history and investigations
+- [Development History](HISTORY.md) - Full version history and investigations
 - [Current Status](Current_Status.md) - Overall system status
 - [Backlog](Backlog.md) - Prioritized task list
 - [Improvement Recommendations](Improvement_Recommendations.md) - Detailed enhancement analysis
