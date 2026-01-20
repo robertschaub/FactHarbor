@@ -31,7 +31,8 @@ import { filterFactsByProvenance } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
-import { calculateWeightedVerdictAverage } from "./aggregation";
+import { calculateWeightedVerdictAverage, detectHarmPotential, detectClaimContestation } from "./aggregation";
+import { detectScopes, formatDetectedScopesHint } from "./scopes";
 
 function normalizeForContainsMatch(text: string): string {
   return String(text || "")
@@ -220,7 +221,10 @@ async function extractClaim(
 ): Promise<z.infer<typeof ClaimExtractionSchema>> {
   if (onEvent) await onEvent("Analyzing claim", 10);
 
-  const understandPrompt = buildPrompt({
+  // v2.8: Pre-detect scopes using heuristics (shared implementation from scopes.ts)
+  const preDetectedScopes = detectScopes(text);
+  
+  let understandPrompt = buildPrompt({
     task: 'understand',
     provider: detectProvider(model.modelId || ''),
     modelName: model.modelId || '',
@@ -234,6 +238,9 @@ async function extractClaim(
       isRecent: false, // TODO: Add recency detection
     },
   });
+  
+  // v2.8: Append pre-detected scopes hint to prompt (using shared formatter)
+  understandPrompt += formatDetectedScopesHint(preDetectedScopes);
 
   const outputConfig = Output.object({ schema: ClaimExtractionSchema });
 
@@ -429,19 +436,7 @@ export async function runMonolithicCanonical(
     isCentral: boolean;
   }> = [];
 
-  // Helper to detect high harm potential from claim text
-  const detectHarmPotential = (text: string): "high" | "medium" | "low" => {
-    const lowered = text.toLowerCase();
-    // Death/injury claims are ALWAYS high harm potential
-    if (/\b(die[ds]?|death[s]?|dead|kill[eds]*|fatal|fatalit)/i.test(lowered)) return "high";
-    if (/\b(injur[yies]*|harm[eds]*|damage[ds]*|victim[s]?)/i.test(lowered)) return "high";
-    // Safety/health risk claims
-    if (/\b(danger|unsafe|risk|threat|hazard)/i.test(lowered)) return "high";
-    // Fraud/crime accusations
-    if (/\b(fraud|crime|corrupt|illegal|stolen|theft)/i.test(lowered)) return "high";
-    return "medium";
-  };
-
+  // v2.8: Use shared detectHarmPotential from aggregation.ts
   const mainClaimText = String(claimData.mainClaim || "").trim();
   if (mainClaimText) {
     claimEntries.push({
@@ -685,6 +680,7 @@ export async function runMonolithicCanonical(
       contextId: "CTX_MAIN",
       isCentral: claim.isCentral,
       centrality: claim.centrality,
+      harmPotential: claim.harmPotential,
       verdict: 50,
       truthPercentage: 50,
       confidence: 30,
@@ -692,6 +688,9 @@ export async function runMonolithicCanonical(
       reasoning: "Insufficient verifiable evidence to assess this claim.",
       supportingFactIds: [],
       highlightColor: getHighlightColor(50),
+      // v2.8: No contestation detected for fallback (insufficient evidence)
+      isContested: false,
+      factualBasis: "unknown" as const,
     }));
     const resultJson = buildResultJson({
       input,
@@ -750,6 +749,8 @@ export async function runMonolithicCanonical(
   // Build result
   const claimVerdicts = verdictResults.map((result) => {
     const v = result.verdictData;
+    // v2.8: Detect contestation at claim level (heuristic approach for canonical pipeline)
+    const contestation = detectClaimContestation(result.entry.text, v.reasoning);
     return {
       claimId: result.entry.id,
       claimText: result.entry.text,
@@ -764,11 +765,15 @@ export async function runMonolithicCanonical(
       reasoning: v.reasoning,
       supportingFactIds: validatedFacts.map((f) => f.id),
       highlightColor: getHighlightColor(v.verdict),
+      // v2.8: Contestation info for weighted aggregation
+      isContested: contestation.isContested,
+      factualBasis: contestation.factualBasis,
     };
   });
 
   // Calculate aggregated verdict using weighted average of all claims
   // Central claims (high centrality) and high harm potential claims have more influence
+  // v2.8: Contested claims with factual counter-evidence get reduced weight
   const aggregatedVerdict = calculateWeightedVerdictAverage(
     claimVerdicts.map((cv) => ({
       truthPercentage: cv.verdict,
@@ -776,6 +781,8 @@ export async function runMonolithicCanonical(
       confidence: cv.confidence,
       harmPotential: cv.harmPotential as "high" | "medium" | "low",
       thesisRelevance: "direct" as const, // All canonical claims are direct
+      isContested: cv.isContested,
+      factualBasis: cv.factualBasis,
     }))
   );
 
@@ -983,6 +990,9 @@ function buildResultJson(params: {
             reasoning,
             supportingFactIds: facts.map((f) => f.id),
             highlightColor,
+            // v2.8: Default contestation for fallback
+            isContested: false,
+            factualBasis: "unknown",
           },
         ];
 
