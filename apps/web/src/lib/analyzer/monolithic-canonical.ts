@@ -181,6 +181,13 @@ const ClaimExtractionSchema = z.object({
     .max(5)
     .describe("Search queries to find evidence (include both supporting and contradicting)"),
   subClaims: z.array(SubClaimSchema).optional(),
+  // Multi-scope detection fields
+  detectedScopes: z.array(z.object({
+    id: z.string().describe("Short ID like 'SCOPE_A', 'SCOPE_B'"),
+    name: z.string().describe("Human-readable name"),
+    type: z.enum(["legal", "scientific", "methodological", "general"]),
+  })).optional().describe("Distinct analytical frames detected (e.g., multiple trials, different proceedings)"),
+  requiresSeparateAnalysis: z.boolean().optional().describe("True if input involves multiple distinct proceedings/trials that should be analyzed separately"),
 });
 
 const FactExtractionSchema = z.object({
@@ -514,6 +521,10 @@ export async function runMonolithicCanonical(
 
   const claimsForVerdicts = claimEntries.slice(0, MAX_CLAIMS_FOR_VERDICTS);
 
+  // Use LLM-generated search queries directly
+  // The LLM prompt already instructs it to generate scope-aware queries when needed
+  const allSearchQueries = claimData.searchQueries;
+
   // IMPORTANT: Do NOT hard-stop on opinion/prediction inputs.
   // Many user inputs are evaluative or predictive but still have verifiable components
   // (timelines, procedures, quoted statements, what the law says, what courts ruled, etc.).
@@ -541,9 +552,9 @@ export async function runMonolithicCanonical(
     const queryOffset = iteration === 1 ? 0 : 3 + (iteration - 2); // iter1: 0-2, iter2: 3, iter3: 4, etc.
     const queriesToRun =
       iteration === 1
-        ? claimData.searchQueries.slice(0, 3)
-        : claimData.searchQueries[queryOffset]
-          ? [claimData.searchQueries[queryOffset]]
+        ? allSearchQueries.slice(0, 3)
+        : allSearchQueries[queryOffset]
+          ? [allSearchQueries[queryOffset]]
           : [`${claimData.mainClaim} ${iteration > 2 ? "contradicting" : "supporting"} evidence`];
 
     // Run searches
