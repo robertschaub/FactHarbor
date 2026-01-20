@@ -462,13 +462,17 @@ export async function runMonolithicCanonical(
       ? []
       : buildHeuristicSubClaims(textToAnalyze, normalizedSeen, MAX_CLAIMS_FOR_VERDICTS);
 
-  const combinedSubClaims = rawSubClaims.map((c) => ({
-    text: String(c.text || "").trim(),
-    claimRole: c.claimRole || "core",
-    centrality: c.centrality || "medium",
-    thesisRelevance: c.thesisRelevance || "direct",
-    harmPotential: c.harmPotential || "medium",
-  }));
+  const combinedSubClaims = rawSubClaims.map((c) => {
+    const claimText = String(c.text || "").trim();
+    return {
+      text: claimText,
+      claimRole: c.claimRole || "core",
+      centrality: c.centrality || "medium",
+      thesisRelevance: c.thesisRelevance || "direct",
+      // v2.7.0: Use detectHarmPotential as fallback to catch death/injury claims LLM missed
+      harmPotential: c.harmPotential || detectHarmPotential(claimText),
+    };
+  });
   combinedSubClaims.push(...heuristicSubClaims.map((c) => ({
     text: c.text,
     claimRole: "core" as const,
