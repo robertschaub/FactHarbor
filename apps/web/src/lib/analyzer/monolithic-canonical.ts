@@ -33,6 +33,14 @@ import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-bui
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
 import { calculateWeightedVerdictAverage, detectHarmPotential, detectClaimContestation } from "./aggregation";
 import { detectScopes, formatDetectedScopesHint } from "./scopes";
+import {
+  prefetchSourceReliability,
+  getTrackRecordData,
+  clearPrefetchedScores,
+  calculateEffectiveWeight,
+  DEFAULT_UNKNOWN_SOURCE_SCORE,
+  SR_CONFIG,
+} from "./source-reliability";
 
 function normalizeForContainsMatch(text: string): string {
   return String(text || "")
@@ -104,6 +112,10 @@ interface MonolithicSource {
   fetchSuccess: boolean;
   fetchedAt: string;
   contentLength: number;
+  // v2.6.35: Source Reliability
+  trackRecordScore: number | null;
+  trackRecordConfidence: number | null;
+  trackRecordConsensus: boolean | null;
 }
 
 // ============================================================================
@@ -392,6 +404,9 @@ export async function runMonolithicCanonical(
   const budgetConfig = getBudgetConfig();
   const budgetTracker = createBudgetTracker();
 
+  // v2.6.35: Clear source reliability cache at start of analysis
+  clearPrefetchedScores();
+
   // State tracking
   const facts: ExtractedFact[] = [];
   const sources: MonolithicSource[] = [];
@@ -576,6 +591,22 @@ export async function runMonolithicCanonical(
       .filter((r) => !sources.some((s) => s.url === r.url))
       .slice(0, 3);
 
+    // v2.6.35: Prefetch source reliability scores before fetching
+    if (SR_CONFIG.enabled && urlsToFetch.length > 0) {
+      const urlsForReliability = urlsToFetch.map((r) => r.url);
+      if (input.onEvent) {
+        const domains = urlsForReliability.map((u) => {
+          try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; }
+        });
+        const uniqueDomains = [...new Set(domains)];
+        const preview = uniqueDomains.length <= 3
+          ? uniqueDomains.join(", ")
+          : `${uniqueDomains.slice(0, 3).join(", ")} +${uniqueDomains.length - 3} more`;
+        await input.onEvent(`📊 Checking source reliability: ${preview}`, 22 + iteration * 10);
+      }
+      await prefetchSourceReliability(urlsForReliability);
+    }
+
     const fetchedContents: Array<{ url: string; title: string; content: string }> = [];
 
     for (const result of urlsToFetch) {
@@ -601,6 +632,9 @@ export async function runMonolithicCanonical(
           maxLength: 20000,
         });
 
+        // v2.6.35: Get source reliability data
+        const reliabilityData = getTrackRecordData(result.url);
+
         sources.push({
           id: `S${sources.length + 1}`,
           url: result.url,
@@ -610,6 +644,9 @@ export async function runMonolithicCanonical(
           fetchSuccess: true,
           fetchedAt: new Date().toISOString(),
           contentLength: content.text.length,
+          trackRecordScore: reliabilityData?.score ?? null,
+          trackRecordConfidence: reliabilityData?.confidence ?? null,
+          trackRecordConsensus: reliabilityData?.consensusAchieved ?? null,
         });
 
         fetchedContents.push({
@@ -747,10 +784,43 @@ export async function runMonolithicCanonical(
   }
 
   // Build result
+  // v2.6.35: Calculate average source reliability weight for evidence weighting
+  let avgSourceReliabilityWeight = DEFAULT_UNKNOWN_SOURCE_SCORE; // Default for unknown sources
+  if (SR_CONFIG.enabled && sources.length > 0) {
+    const reliabilityWeights = sources.map((s) => {
+      if (s.trackRecordScore !== null) {
+        return calculateEffectiveWeight({
+          score: s.trackRecordScore,
+          confidence: s.trackRecordConfidence ?? 0.7,
+          consensusAchieved: s.trackRecordConsensus ?? false,
+        });
+      }
+      // Unknown source: use default with low confidence
+      return calculateEffectiveWeight({
+        score: DEFAULT_UNKNOWN_SOURCE_SCORE,
+        confidence: 0.5,
+        consensusAchieved: false,
+      });
+    });
+    avgSourceReliabilityWeight = reliabilityWeights.reduce((a, b) => a + b, 0) / reliabilityWeights.length;
+    console.log(`[MonolithicCanonical] Source reliability avg weight: ${(avgSourceReliabilityWeight * 100).toFixed(1)}% from ${sources.length} sources`);
+  }
+
   const claimVerdicts = verdictResults.map((result) => {
     const v = result.verdictData;
     // v2.8: Detect contestation at claim level (heuristic approach for canonical pipeline)
     const contestation = detectClaimContestation(result.entry.text, v.reasoning);
+
+    // v2.6.35: Apply source reliability weighting to verdict
+    let adjustedVerdict = v.verdict;
+    let adjustedConfidence = v.confidence;
+    if (SR_CONFIG.enabled) {
+      // Pull verdict toward neutral (50) based on source reliability
+      adjustedVerdict = Math.round(50 + (v.verdict - 50) * avgSourceReliabilityWeight);
+      // Scale confidence by reliability
+      adjustedConfidence = Math.round(v.confidence * (0.5 + avgSourceReliabilityWeight / 2));
+    }
+
     return {
       claimId: result.entry.id,
       claimText: result.entry.text,
@@ -758,16 +828,18 @@ export async function runMonolithicCanonical(
       isCentral: result.entry.isCentral,
       centrality: result.entry.centrality,
       harmPotential: result.entry.harmPotential,
-      verdict: v.verdict,
-      truthPercentage: v.verdict,
-      confidence: v.confidence,
-      riskTier: v.confidence >= 70 ? "A" : v.confidence >= 40 ? "B" : "C",
+      verdict: adjustedVerdict,
+      truthPercentage: adjustedVerdict,
+      confidence: adjustedConfidence,
+      riskTier: adjustedConfidence >= 70 ? "A" : adjustedConfidence >= 40 ? "B" : "C",
       reasoning: v.reasoning,
       supportingFactIds: validatedFacts.map((f) => f.id),
-      highlightColor: getHighlightColor(v.verdict),
+      highlightColor: getHighlightColor(adjustedVerdict),
       // v2.8: Contestation info for weighted aggregation
       isContested: contestation.isContested,
       factualBasis: contestation.factualBasis,
+      // v2.6.35: Source reliability metadata
+      evidenceWeight: avgSourceReliabilityWeight,
     };
   });
 

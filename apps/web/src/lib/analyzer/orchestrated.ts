@@ -2161,6 +2161,8 @@ interface FetchedSource {
   url: string;
   title: string;
   trackRecordScore: number | null;
+  trackRecordConfidence?: number | null; // v2.6.35: LLM confidence in the score
+  trackRecordConsensus?: boolean | null; // v2.6.35: Whether multiple models agreed
   fullText: string;
   fetchedAt: string;
   category: string;
@@ -8848,8 +8850,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         } else {
           // Prefetch source reliability scores for grounded URLs
           const groundedUrls = groundedUrlCandidates.map(c => c.url);
-          await emit(`📊 Checking source reliability (${groundedUrls.length} domains)`, baseProgress + 3);
-          await prefetchSourceReliability(groundedUrls);
+          const groundedDomains = groundedUrls.map(u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } });
+          const uniqueGroundedDomains = [...new Set(groundedDomains)];
+          const domainPreview = uniqueGroundedDomains.length <= 3 
+            ? uniqueGroundedDomains.join(', ') 
+            : `${uniqueGroundedDomains.slice(0, 3).join(', ')} +${uniqueGroundedDomains.length - 3} more`;
+          await emit(`📊 Checking source reliability (${uniqueGroundedDomains.length}): ${domainPreview}`, baseProgress + 3);
+          const srResult = await prefetchSourceReliability(groundedUrls);
+          if (srResult.alreadyPrefetched > 0) {
+            console.log(`[SR] Skipped ${srResult.alreadyPrefetched} already-checked domains`);
+          }
 
           // Fetch URLs just like standard search sources
           const fetchPromises = groundedUrlCandidates.map((candidate, i) =>
@@ -9034,8 +9044,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     // Prefetch source reliability scores (async batch operation)
     const urlsToFetch = uniqueResults.map((r: any) => r.url);
-    await emit(`📊 Checking source reliability (${urlsToFetch.length} domains)`, baseProgress + 4);
-    await prefetchSourceReliability(urlsToFetch);
+    const domainsToFetch = urlsToFetch.map((u: string) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } });
+    const uniqueDomainsToFetch = [...new Set(domainsToFetch)];
+    const domainPreview2 = uniqueDomainsToFetch.length <= 3 
+      ? uniqueDomainsToFetch.join(', ') 
+      : `${uniqueDomainsToFetch.slice(0, 3).join(', ')} +${uniqueDomainsToFetch.length - 3} more`;
+    await emit(`📊 Checking source reliability (${uniqueDomainsToFetch.length}): ${domainPreview2}`, baseProgress + 4);
+    const srResult2 = await prefetchSourceReliability(urlsToFetch);
+    if (srResult2.alreadyPrefetched > 0) {
+      console.log(`[SR] Skipped ${srResult2.alreadyPrefetched} already-checked domains`);
+    }
 
     const fetchPromises = uniqueResults.map((r: any, i: number) =>
       fetchSource(

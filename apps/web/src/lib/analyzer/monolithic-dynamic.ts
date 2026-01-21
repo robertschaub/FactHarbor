@@ -30,6 +30,15 @@ import {
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
+import {
+  prefetchSourceReliability,
+  getTrackRecordData,
+  clearPrefetchedScores,
+  calculateEffectiveWeight,
+  DEFAULT_UNKNOWN_SOURCE_SCORE,
+  SR_CONFIG,
+  type CachedReliabilityData,
+} from "./source-reliability";
 
 // ============================================================================
 // TYPES
@@ -48,6 +57,10 @@ interface Citation {
   title: string;
   excerpt: string;
   accessedAt: string;
+  // v2.6.35: Source Reliability
+  trackRecordScore?: number | null;
+  trackRecordConfidence?: number | null;
+  trackRecordConsensus?: boolean | null;
 }
 
 /** Dynamic analysis result - flexible structure */
@@ -157,11 +170,16 @@ export async function runMonolithicDynamic(
   const budgetConfig = getBudgetConfig();
   const budgetTracker = createBudgetTracker();
 
+  // v2.6.35: Clear source reliability cache at start of analysis
+  clearPrefetchedScores();
+
   // Collected citations (safety contract)
   const citations: Citation[] = [];
   const searchQueries: string[] = [];
   let searchCount = 0;
   let fetchCount = 0;
+  // v2.6.35: Track URLs for source reliability prefetch
+  const urlsForReliability: string[] = [];
 
   if (input.onEvent) {
     await input.onEvent("Starting experimental dynamic analysis", 5);
@@ -257,6 +275,27 @@ export async function runMonolithicDynamic(
         dateRestrict: CONFIG.searchDateRestrict ?? undefined,
       });
 
+      // v2.6.35: Collect URLs for source reliability prefetch
+      const urlsToFetch = response.results
+        .slice(0, 2)
+        .filter((r) => !citations.some((c) => c.url === r.url))
+        .map((r) => r.url);
+      
+      // Prefetch source reliability before fetching
+      if (SR_CONFIG.enabled && urlsToFetch.length > 0) {
+        const domains = urlsToFetch.map((u) => {
+          try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; }
+        });
+        const uniqueDomains = [...new Set(domains)];
+        if (input.onEvent) {
+          const preview = uniqueDomains.length <= 3
+            ? uniqueDomains.join(", ")
+            : `${uniqueDomains.slice(0, 3).join(", ")} +${uniqueDomains.length - 3} more`;
+          await input.onEvent(`📊 Checking source reliability: ${preview}`, 25 + searchCount * 8);
+        }
+        await prefetchSourceReliability(urlsToFetch);
+      }
+
       // Fetch top results
       for (const result of response.results.slice(0, 2)) {
         if (fetchCount >= DYNAMIC_BUDGET.maxFetches) break;
@@ -270,11 +309,17 @@ export async function runMonolithicDynamic(
             maxLength: 15000,
           });
 
+          // v2.6.35: Get source reliability data
+          const reliabilityData = getTrackRecordData(result.url);
+
           citations.push({
             url: result.url,
             title: content.title || result.title,
             excerpt: content.text.slice(0, 300),
             accessedAt: new Date().toISOString(),
+            trackRecordScore: reliabilityData?.score ?? null,
+            trackRecordConfidence: reliabilityData?.confidence ?? null,
+            trackRecordConsensus: reliabilityData?.consensusAchieved ?? null,
           });
 
           sourceContents.push({
@@ -371,12 +416,62 @@ Provide your dynamic analysis.`,
   // Validate citations have valid provenance (real URLs)
   const provenanceResult = filterFactsByProvenance(citationsAsFacts);
 
-  const finalCitations: Citation[] = provenanceResult.validFacts.map((f) => ({
-    url: f.sourceUrl,
-    title: f.sourceTitle,
-    excerpt: f.sourceExcerpt,
-    accessedAt: citationTimestamps.get(f.sourceUrl) || new Date().toISOString(),
-  }));
+  // Preserve source reliability data from original citations
+  const citationReliability = new Map<string, { score: number | null; confidence: number | null; consensus: boolean | null }>();
+  for (const c of citations) {
+    citationReliability.set(c.url, {
+      score: c.trackRecordScore ?? null,
+      confidence: c.trackRecordConfidence ?? null,
+      consensus: c.trackRecordConsensus ?? null,
+    });
+  }
+
+  const finalCitations: Citation[] = provenanceResult.validFacts.map((f) => {
+    const reliability = citationReliability.get(f.sourceUrl);
+    return {
+      url: f.sourceUrl,
+      title: f.sourceTitle,
+      excerpt: f.sourceExcerpt,
+      accessedAt: citationTimestamps.get(f.sourceUrl) || new Date().toISOString(),
+      trackRecordScore: reliability?.score ?? null,
+      trackRecordConfidence: reliability?.confidence ?? null,
+      trackRecordConsensus: reliability?.consensus ?? null,
+    };
+  });
+
+  // v2.6.35: Apply source reliability weighting to verdict
+  let avgSourceReliabilityWeight = DEFAULT_UNKNOWN_SOURCE_SCORE;
+  if (SR_CONFIG.enabled && finalCitations.length > 0) {
+    const reliabilityWeights = finalCitations.map((c) => {
+      if (c.trackRecordScore !== null && c.trackRecordScore !== undefined) {
+        return calculateEffectiveWeight({
+          score: c.trackRecordScore,
+          confidence: c.trackRecordConfidence ?? 0.7,
+          consensusAchieved: c.trackRecordConsensus ?? false,
+        });
+      }
+      // Unknown source: use default with low confidence
+      return calculateEffectiveWeight({
+        score: DEFAULT_UNKNOWN_SOURCE_SCORE,
+        confidence: 0.5,
+        consensusAchieved: false,
+      });
+    });
+    avgSourceReliabilityWeight = reliabilityWeights.reduce((a, b) => a + b, 0) / reliabilityWeights.length;
+    console.log(`[MonolithicDynamic] Source reliability avg weight: ${(avgSourceReliabilityWeight * 100).toFixed(1)}% from ${finalCitations.length} citations`);
+  }
+
+  // Apply weighting to verdict if present
+  let adjustedVerdictScore = analysis.verdict?.score ?? 50;
+  let adjustedVerdictConfidence = analysis.verdict?.confidence ?? 50;
+  if (SR_CONFIG.enabled && analysis.verdict) {
+    const originalScore = analysis.verdict.score ?? 50;
+    const originalConfidence = analysis.verdict.confidence ?? 50;
+    // Pull verdict toward neutral (50) based on source reliability
+    adjustedVerdictScore = Math.round(50 + (originalScore - 50) * avgSourceReliabilityWeight);
+    // Scale confidence by reliability
+    adjustedVerdictConfidence = Math.round(originalConfidence * (0.5 + avgSourceReliabilityWeight / 2));
+  }
 
   // Build result with safety contract
   const analysisTimeMs = Date.now() - startTime;
@@ -420,9 +515,12 @@ Provide your dynamic analysis.`,
     summary: analysis.summary || "Analysis completed",
     verdict: analysis.verdict ? {
       ...analysis.verdict,
-      // Ensure score and confidence always exist
-      score: analysis.verdict.score ?? 50,
-      confidence: analysis.verdict.confidence ?? 50,
+      // v2.6.35: Use source reliability adjusted scores
+      score: adjustedVerdictScore,
+      confidence: adjustedVerdictConfidence,
+      // Preserve original for transparency
+      originalScore: analysis.verdict.score ?? 50,
+      originalConfidence: analysis.verdict.confidence ?? 50,
     } : null,
     findings: analysis.findings || [],
     methodology: analysis.methodology || plan?.analysisApproach || "Dynamic experimental analysis",
@@ -432,15 +530,26 @@ Provide your dynamic analysis.`,
     ],
     searchQueries: searchQueries,
 
+    // v2.6.35: Source reliability metadata
+    sourceReliability: {
+      enabled: SR_CONFIG.enabled,
+      avgWeight: avgSourceReliabilityWeight,
+      knownSources: finalCitations.filter((c) => c.trackRecordScore !== null).length,
+      unknownSources: finalCitations.filter((c) => c.trackRecordScore === null).length,
+    },
+
     // Compatibility layer for UI (minimal canonical fields)
     verdictSummary: analysis.verdict
       ? {
-          overallVerdict: analysis.verdict.score ?? 50,
-          overallConfidence: analysis.verdict.confidence ?? 40,
+          // v2.6.35: Use adjusted scores
+          overallVerdict: adjustedVerdictScore,
+          overallConfidence: adjustedVerdictConfidence,
           verdictLabel: analysis.verdict.label,
           summary: analysis.summary,
           hasContestedFactors: false,
           isExperimental: true,
+          // v2.6.35: Include source reliability weight
+          sourceReliabilityWeight: avgSourceReliabilityWeight,
         }
       : {
           overallVerdict: 50,
@@ -449,6 +558,7 @@ Provide your dynamic analysis.`,
           summary: analysis.summary,
           hasContestedFactors: false,
           isExperimental: true,
+          sourceReliabilityWeight: avgSourceReliabilityWeight,
         },
   };
 
