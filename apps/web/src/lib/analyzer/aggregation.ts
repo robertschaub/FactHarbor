@@ -43,44 +43,29 @@ export function validateContestation<T extends ContestableKeyFactor>(keyFactors:
     // Skip if already opinion or not contesting
     if (kf.factualBasis === "opinion" || kf.supports !== "no") return kf;
     
-    // Sources that are NOT documented evidence - just opinions/advocacy/media
-    // These should be "opinion" (doubted) not "established"/"disputed" (contested)
-    // Use word boundaries (\b) to avoid matching substrings (e.g., "some" in "someone")
-    const opinionBasedTerms = [
-      // Political/government sources
-      'government', 'diplomatic', 'political', 'administration', 'official', 'state',
-      'foreign ministry', 'embassy', 'department of', 'secretary of', 'ministry of',
-      'envoy', 'ambassador',
-      // Media sources
-      'media', 'news', 'journalist', 'reporter', 'outlet', 'publication',
-      // Vague stakeholder groups (require word boundaries to avoid "someone", "awesome", etc.)
-      'stakeholder', 'various', 'some\\b', 'many\\b', 'several', 'multiple', 'numerous',
-      // Advocacy/interest groups
-      'advocate', 'advocacy', 'lobby', 'lobbyist', 'industry group', 'trade association',
-      'interest group', 'pressure group', 'activist',
-      // General critics
-      'critic', 'opponent', 'skeptic', 'detractor', 'challenger',
-    ];
-    const opinionBasedSource = new RegExp('\\b(' + opinionBasedTerms.join('|') + ')', 'i');
+    // Skip if not claiming to have evidence-based contestation
+    if (kf.factualBasis !== "established" && kf.factualBasis !== "disputed") return kf;
     
-    const hasOpinionSource = opinionBasedSource.test(kf.contestedBy || "");
+    // Check if contestation actually cites SPECIFIC documented evidence
+    // The SOURCE doesn't matter - what matters is whether there's DOCUMENTED counter-evidence
+    // Must include specific references: measurements, audits, reports, legal citations, etc.
+    const documentedEvidencePattern = /\b(data|measurement|study|record|document|report|investigation|audit|log|dataset|finding|determination|ruling|documentation|violation|breach|non-?compliance|procedure\s+\d+|article\s+\d+|section\s+\d+|protocol\s+\d+|rule\s+\d+|regulation\s+\d+|statute|precedent|\d+%|\d+\s*(kg|g|kwh|mwh|efficiency|percent))\b/i;
     
-    // Check if contestation cites SPECIFIC documented evidence
-    // Must include specific references: statute numbers, procedure names, documented violations, measurements, etc.
-    const specificEvidence = /\b(data|measurement|study|record|document|report|investigation|standard|precedent|statute|regulation|evidence|violation|breach|procedure\s+\d+|article\s+\d+|section\s+\d+|protocol\s+\d+|rule\s+\d+|finding|determination|ruling|documentation|audit|log|dataset)\b/i;
-    const hasSpecificEvidence = specificEvidence.test(
-      (kf.contestationReason || "") + " " + (kf.explanation || "")
-    );
+    const textToCheck = [
+      kf.contestationReason || "",
+      kf.explanation || "",
+      kf.factor || ""
+    ].join(" ");
     
-    // Downgrade opinion-based contestation without specific evidence to "opinion"
-    // This keeps FULL weight (baseless doubt doesn't reduce verdict)
-    if (hasOpinionSource && 
-        (kf.factualBasis === "established" || kf.factualBasis === "disputed") && 
-        !hasSpecificEvidence) {
+    const hasDocumentedEvidence = documentedEvidencePattern.test(textToCheck);
+    
+    // If claimed as "established"/"disputed" but no documented evidence found → downgrade to "opinion"
+    // This ensures only REAL counter-evidence reduces verdict weight
+    if (!hasDocumentedEvidence) {
       return {
         ...kf,
         factualBasis: "opinion" as const,
-        contestationReason: `Opinion/advocacy without documented counter-evidence: ${kf.contestationReason || kf.explanation || "general disagreement"}`
+        contestationReason: `No documented counter-evidence cited: ${kf.contestationReason || kf.explanation || "general disagreement"}`
       } as T;
     }
     
