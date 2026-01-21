@@ -150,8 +150,8 @@ def _parse_xwikidoc(xml_bytes: bytes, file_path_in_xar: str, include_objects: bo
                 number = 0
 
             props: Dict[str, str] = {}
-            prop_container = obj.find("property")
-            if prop_container is not None:
+            # Iterate through ALL property elements (export creates one <property> per property)
+            for prop_container in obj.findall("property"):
                 for child in list(prop_container):
                     # Store tag -> full inner text (including nested text) without stripping.
                     props[child.tag] = _itertext_preserve(child)
