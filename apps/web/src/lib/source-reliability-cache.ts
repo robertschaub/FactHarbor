@@ -114,8 +114,18 @@ export async function getCachedScore(domain: string): Promise<CachedScore | null
 }
 
 /**
+ * Full cached reliability data for a domain.
+ */
+export interface CachedReliabilityDataFromCache {
+  score: number;
+  confidence: number;
+  consensusAchieved: boolean;
+}
+
+/**
  * Batch get cached scores for multiple domains
  * Returns a Map of domain -> score (only for valid, non-expired entries)
+ * @deprecated Use batchGetCachedData for full reliability data
  */
 export async function batchGetCachedScores(
   domains: string[]
@@ -135,6 +145,37 @@ export async function batchGetCachedScores(
   const result = new Map<string, number>();
   for (const row of rows) {
     result.set(row.domain, row.score);
+  }
+
+  return result;
+}
+
+/**
+ * Batch lookup for multiple domains - returns full reliability data.
+ * Returns a Map of domain -> CachedReliabilityDataFromCache (only for valid, non-expired entries)
+ */
+export async function batchGetCachedData(
+  domains: string[]
+): Promise<Map<string, CachedReliabilityDataFromCache>> {
+  if (domains.length === 0) return new Map();
+
+  const database = await getDb();
+  const now = new Date().toISOString();
+  const placeholders = domains.map(() => "?").join(",");
+
+  const rows = await database.all<ScoreRow[]>(
+    `SELECT domain, score, confidence, consensus_achieved FROM source_reliability 
+     WHERE domain IN (${placeholders}) AND expires_at > ?`,
+    [...domains, now]
+  );
+
+  const result = new Map<string, CachedReliabilityDataFromCache>();
+  for (const row of rows) {
+    result.set(row.domain, {
+      score: row.score,
+      confidence: row.confidence,
+      consensusAchieved: row.consensus_achieved === 1,
+    });
   }
 
   return result;

@@ -373,6 +373,8 @@ export interface FetchedSource {
   url: string;
   title: string;
   trackRecordScore: number | null;
+  trackRecordConfidence?: number | null; // v2.6.35: LLM confidence in the score
+  trackRecordConsensus?: boolean | null; // v2.6.35: Whether multiple models agreed
   fullText: string;
   fetchedAt: string;
   category: string;

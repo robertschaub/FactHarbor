@@ -106,6 +106,7 @@ export {
   // Core functions
   prefetchSourceReliability,
   getTrackRecordScore,
+  getTrackRecordData,
   clearPrefetchedScores,
   
   // Verdict weighting
@@ -117,13 +118,17 @@ export {
   isImportantSource,
   normalizeTrackRecordScore,
   clampTruthPercentage,
+  calculateEffectiveWeight,
   
   // Configuration
   SR_CONFIG,
+  DEFAULT_UNKNOWN_SOURCE_SCORE,
   
   // Legacy (deprecated)
   loadSourceBundle,
 } from "./source-reliability";
+
+export type { PrefetchResult, CachedReliabilityData, SourceReliabilityData } from "./source-reliability";
 
 // ============================================================================
 // LLM EXPORTS

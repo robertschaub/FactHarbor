@@ -12,7 +12,7 @@
 import { CONFIG } from "./config";
 import { getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
 import type { ClaimVerdict, ExtractedFact, FetchedSource } from "./types";
-import { batchGetCachedScores, setCachedScore } from "../source-reliability-cache";
+import { batchGetCachedData, setCachedScore, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
 
 // ============================================================================
 // CONFIGURATION
@@ -50,13 +50,23 @@ export const SR_CONFIG = {
 // IN-MEMORY MAP (populated by prefetch, read by sync lookup)
 // ============================================================================
 
-let prefetchedScores: Map<string, number | null> = new Map();
+/**
+ * Cached reliability data for a domain.
+ * Stores all evaluation properties, not just score.
+ */
+export interface CachedReliabilityData {
+  score: number;
+  confidence: number;
+  consensusAchieved: boolean;
+}
+
+let prefetchedData: Map<string, CachedReliabilityData | null> = new Map();
 
 /**
  * Clear the prefetched scores map (for testing or reset)
  */
 export function clearPrefetchedScores(): void {
-  prefetchedScores = new Map();
+  prefetchedData = new Map();
 }
 
 // ============================================================================
@@ -111,11 +121,21 @@ export function isImportantSource(domain: string): boolean {
  * This is the ONLY async operation - called once before analysis.
  *
  * Populates the in-memory `prefetchedScores` map for sync lookups.
+ * Returns info about what was prefetched for logging.
  */
-export async function prefetchSourceReliability(urls: string[]): Promise<void> {
+export interface PrefetchResult {
+  domains: string[];
+  alreadyPrefetched: number;
+  cacheHits: number;
+  evaluated: number;
+}
+
+export async function prefetchSourceReliability(urls: string[]): Promise<PrefetchResult> {
+  const result: PrefetchResult = { domains: [], alreadyPrefetched: 0, cacheHits: 0, evaluated: 0 };
+  
   if (!SR_CONFIG.enabled) {
     console.log("[SR] Source reliability disabled");
-    return;
+    return result;
   }
 
   // Extract unique domains
@@ -126,59 +146,80 @@ export async function prefetchSourceReliability(urls: string[]): Promise<void> {
 
   if (uniqueDomains.length === 0) {
     console.log("[SR] No domains to prefetch");
-    return;
+    return result;
   }
 
-  console.log(`[SR] Prefetching ${uniqueDomains.length} unique domains`);
+  // Filter out domains already prefetched in this analysis run
+  const newDomains = uniqueDomains.filter(d => !prefetchedData.has(d));
+  result.alreadyPrefetched = uniqueDomains.length - newDomains.length;
+  result.domains = newDomains;
+  
+  if (newDomains.length === 0) {
+    console.log(`[SR] All ${uniqueDomains.length} domains already prefetched`);
+    return result;
+  }
 
-  // Batch cache lookup
-  const cached = await batchGetCachedScores(uniqueDomains);
-  console.log(`[SR] Cache hits: ${cached.size}/${uniqueDomains.length}`);
+  console.log(`[SR] Prefetching ${newDomains.length} new domains (${result.alreadyPrefetched} already done)`);
 
-  // Populate map with cached values
-  for (const [domain, score] of cached) {
-    prefetchedScores.set(domain, score);
+  // Batch cache lookup - now returns full data
+  const cached = await batchGetCachedData(newDomains);
+  result.cacheHits = cached.size;
+  console.log(`[SR] Cache hits: ${cached.size}/${newDomains.length}`);
+
+  // Populate map with cached values (full data)
+  for (const [domain, data] of cached) {
+    prefetchedData.set(domain, {
+      score: data.score,
+      confidence: data.confidence,
+      consensusAchieved: data.consensusAchieved,
+    });
   }
 
   // Find cache misses that need evaluation
-  const misses = uniqueDomains.filter((d) => !cached.has(d));
+  const misses = newDomains.filter((d) => !cached.has(d));
 
   for (const domain of misses) {
     // Apply importance filter
     if (!isImportantSource(domain)) {
       console.log(`[SR] Skipping unimportant source: ${domain}`);
-      prefetchedScores.set(domain, null);
+      prefetchedData.set(domain, null);
       continue;
     }
 
     // Evaluate via internal API
     try {
-      const result = await evaluateSourceInternal(domain);
-      if (result) {
-        prefetchedScores.set(domain, result.score);
+      const evalResult = await evaluateSourceInternal(domain);
+      if (evalResult) {
+        prefetchedData.set(domain, {
+          score: evalResult.score,
+          confidence: evalResult.confidence,
+          consensusAchieved: evalResult.consensusAchieved,
+        });
+        result.evaluated++;
         // Cache the result
         await setCachedScore(
           domain,
-          result.score,
-          result.confidence,
-          result.modelPrimary,
-          result.modelSecondary,
-          result.consensusAchieved
+          evalResult.score,
+          evalResult.confidence,
+          evalResult.modelPrimary,
+          evalResult.modelSecondary,
+          evalResult.consensusAchieved
         );
         console.log(
-          `[SR] Evaluated ${domain}: score=${result.score.toFixed(2)}, confidence=${result.confidence.toFixed(2)}`
+          `[SR] Evaluated ${domain}: score=${evalResult.score.toFixed(2)}, confidence=${evalResult.confidence.toFixed(2)}, consensus=${evalResult.consensusAchieved}`
         );
       } else {
-        prefetchedScores.set(domain, null);
+        prefetchedData.set(domain, null);
         console.log(`[SR] No consensus for ${domain}`);
       }
     } catch (err) {
       console.error(`[SR] Error evaluating ${domain}:`, err);
-      prefetchedScores.set(domain, null);
+      prefetchedData.set(domain, null);
     }
   }
 
-  console.log(`[SR] Prefetch complete: ${prefetchedScores.size} domains`);
+  console.log(`[SR] Prefetch complete: ${prefetchedData.size} domains total`);
+  return result;
 }
 
 // ============================================================================
@@ -198,8 +239,25 @@ export function getTrackRecordScore(url: string): number | null {
   if (!domain) return null;
 
   // Sync lookup from prefetched map
-  const score = prefetchedScores.get(domain);
-  return score ?? null;
+  const data = prefetchedData.get(domain);
+  return data?.score ?? null;
+}
+
+/**
+ * Get full track record data for a URL (SYNC - no await).
+ * Returns score, confidence, and consensus data.
+ *
+ * Call prefetchSourceReliability() first to populate the map.
+ */
+export function getTrackRecordData(url: string): CachedReliabilityData | null {
+  if (!SR_CONFIG.enabled) return null;
+
+  const domain = extractDomain(url);
+  if (!domain) return null;
+
+  // Sync lookup from prefetched map
+  const data = prefetchedData.get(domain);
+  return data ?? null;
 }
 
 // ============================================================================
@@ -294,51 +352,130 @@ export function clampTruthPercentage(value: number): number {
 // ============================================================================
 
 /**
- * Apply evidence weighting based on source track record scores
+ * Default score for unknown sources (sources without reliability data).
+ * 
+ * Set to 0.65 (65%) which represents "cautiously neutral" - slightly below
+ * the "Mostly Factual" threshold of 0.70. This means:
+ * - Unknown sources are treated with appropriate skepticism
+ * - They're not penalized as heavily as known unreliable sources
+ * - Known reliable sources (0.80+) get better treatment than unknown
+ * 
+ * Configurable via FH_SR_DEFAULT_SCORE environment variable.
+ */
+export const DEFAULT_UNKNOWN_SOURCE_SCORE = parseFloat(
+  process.env.FH_SR_DEFAULT_SCORE || "0.65"
+);
+
+/**
+ * Extended source reliability data for verdict calculation.
+ * Includes confidence and consensus in addition to score.
+ */
+export interface SourceReliabilityData {
+  score: number;
+  confidence: number;
+  consensusAchieved: boolean;
+}
+
+/**
+ * Calculate effective reliability weight combining score, confidence, and consensus.
+ * 
+ * Formula: effectiveWeight = score × confidenceMultiplier × consensusBonus
+ * 
+ * - confidenceMultiplier: Scales impact based on how confident the evaluation was
+ *   Low confidence (0.5) → 0.75 multiplier, High confidence (1.0) → 1.0 multiplier
+ * 
+ * - consensusBonus: Multi-model agreement boosts trust slightly
+ *   No consensus → 1.0, Consensus achieved → 1.05 (5% boost, capped at 1.0 final)
+ */
+export function calculateEffectiveWeight(data: SourceReliabilityData): number {
+  const { score, confidence, consensusAchieved } = data;
+  
+  // Confidence multiplier: range [0.75, 1.0] based on confidence
+  // Low confidence (0.5) = 0.75, High confidence (1.0) = 1.0
+  const confidenceMultiplier = 0.75 + (confidence * 0.25);
+  
+  // Consensus bonus: slight boost when models agree
+  const consensusBonus = consensusAchieved ? 1.05 : 1.0;
+  
+  // Calculate effective weight, cap at 1.0
+  const effectiveWeight = Math.min(1.0, score * confidenceMultiplier * consensusBonus);
+  
+  return effectiveWeight;
+}
+
+/**
+ * Apply evidence weighting based on source track record scores.
  * 
  * This adjusts verdict truth percentages based on source reliability:
  * - High reliability sources (0.8-1.0): Verdicts move further from neutral
  * - Low reliability sources (0.0-0.5): Verdicts move closer to neutral
+ * - Unknown sources: Use DEFAULT_UNKNOWN_SOURCE_SCORE (0.65)
  * 
- * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgSourceScore
+ * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
+ * 
+ * The effective weight now incorporates:
+ * - Score: Base reliability rating
+ * - Confidence: How confident the LLM was in its evaluation  
+ * - Consensus: Whether multiple models agreed
  */
 export function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
   facts: ExtractedFact[],
   sources: FetchedSource[]
 ): ClaimVerdict[] {
-  // Build source score map with normalization
-  const sourceScoreById = new Map(
+  // Build source reliability data map
+  const sourceDataById = new Map<string, SourceReliabilityData | null>(
     sources.map((s) => [
       s.id,
       s.trackRecordScore !== null
-        ? normalizeTrackRecordScore(s.trackRecordScore)
+        ? {
+            score: normalizeTrackRecordScore(s.trackRecordScore),
+            confidence: s.trackRecordConfidence ?? 0.7, // Default confidence if not available
+            consensusAchieved: s.trackRecordConsensus ?? false,
+          }
         : null,
     ])
   );
 
-  // Map facts to their source scores
-  const factScoreById = new Map(
-    facts.map((f) => [f.id, sourceScoreById.get(f.sourceId) ?? null])
+  // Map facts to their source reliability data
+  const factDataById = new Map(
+    facts.map((f) => [f.id, sourceDataById.get(f.sourceId) ?? null])
   );
 
   return claimVerdicts.map((verdict) => {
     const factIds = verdict.supportingFactIds ?? [];
-    const scores = factIds
-      .map((id) => factScoreById.get(id))
-      .filter((score): score is number => typeof score === "number");
+    const reliabilityData = factIds
+      .map((id) => factDataById.get(id))
+      .filter((data): data is SourceReliabilityData | null => true);
 
-    // If no source scores available, return verdict unchanged
-    if (scores.length === 0) return verdict;
+    // Calculate effective weights for each source
+    const weights = reliabilityData.map((data) => {
+      if (data === null) {
+        // Unknown source: use default score with moderate confidence, no consensus
+        return calculateEffectiveWeight({
+          score: DEFAULT_UNKNOWN_SOURCE_SCORE,
+          confidence: 0.5, // Low confidence for unknown sources
+          consensusAchieved: false,
+        });
+      }
+      return calculateEffectiveWeight(data);
+    });
 
-    // Calculate average source reliability
-    const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    // If no facts/sources, return verdict unchanged
+    if (weights.length === 0) return verdict;
+
+    // Calculate average effective weight
+    const avgWeight = weights.reduce((sum, w) => sum + w, 0) / weights.length;
+
+    // Count known vs unknown sources for transparency
+    const knownCount = reliabilityData.filter((d) => d !== null).length;
+    const unknownCount = reliabilityData.filter((d) => d === null).length;
 
     // Adjust truth: pull toward/away from neutral (50) based on source reliability
-    const adjustedTruth = Math.round(50 + (verdict.truthPercentage - 50) * avg);
+    const adjustedTruth = Math.round(50 + (verdict.truthPercentage - 50) * avgWeight);
     
     // Adjust confidence: scale by reliability
-    const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avg / 2));
+    const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avgWeight / 2));
 
     // Clamp to valid ranges
     const clampedTruth = clampTruthPercentage(adjustedTruth);
@@ -346,7 +483,12 @@ export function applyEvidenceWeighting(
 
     return {
       ...verdict,
-      evidenceWeight: avg,
+      evidenceWeight: avgWeight,
+      sourceReliabilityMeta: {
+        knownSources: knownCount,
+        unknownSources: unknownCount,
+        avgWeight,
+      },
       truthPercentage: clampedTruth,
       confidence: clampedConfidence,
       verdict: clampedTruth,
