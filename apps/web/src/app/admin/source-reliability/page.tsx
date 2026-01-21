@@ -276,12 +276,16 @@ export default function SourceReliabilityPage() {
   /**
    * Calculate effective weight used in verdict calculations.
    * This shows how much the source's evidence is weighted.
-   * Formula: score × confidenceMultiplier × consensusBonus
+   * Formula: blend toward default based on confidence, then apply consensus bonus
+   * - High confidence → use actual score
+   * - Low confidence → blend toward default (0.65)
    */
+  const DEFAULT_SCORE = 0.65; // Must match DEFAULT_UNKNOWN_SOURCE_SCORE in source-reliability.ts
   const calculateEffectiveWeight = (score: number, confidence: number, consensus: boolean): number => {
-    const confidenceMultiplier = 0.75 + (confidence * 0.25);
+    // Blend score toward default based on confidence
+    const blendedScore = score * confidence + DEFAULT_SCORE * (1 - confidence);
     const consensusBonus = consensus ? 1.05 : 1.0;
-    return Math.min(1.0, score * confidenceMultiplier * consensusBonus);
+    return Math.min(1.0, blendedScore * consensusBonus);
   };
 
   const getEffectiveWeightColor = (weight: number): string => {

@@ -516,31 +516,38 @@ Source reliability scores influence verdict calculations by adjusting truth perc
 
 ### Effective Weight Formula
 
-The system calculates an **effective weight** that combines three components:
+The system calculates an **effective weight** by blending the score toward the default based on confidence:
 
 ```typescript
 function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  const confidenceMultiplier = 0.75 + (data.confidence * 0.25);
+  // Blend score toward default (0.65) based on confidence:
+  // - High confidence (1.0) → use actual score
+  // - Low confidence (0.0) → use default score
+  const blendedScore = score * confidence + DEFAULT_UNKNOWN_SOURCE_SCORE * (1 - confidence);
   const consensusBonus = data.consensusAchieved ? 1.05 : 1.0;
-  return Math.min(1.0, data.score * confidenceMultiplier * consensusBonus);
+  return Math.min(1.0, blendedScore * consensusBonus);
 }
 ```
 
-| Component | Range | Purpose |
-|-----------|-------|---------|
-| **Score** | 0.0-1.0 | LLM-evaluated factual reliability |
-| **Confidence Multiplier** | 0.75-1.0 | Higher LLM confidence → higher weight |
-| **Consensus Bonus** | 1.0 or 1.05 | +5% when Claude and GPT-4 agreed |
+| Component | Purpose |
+|-----------|---------|
+| **Score** | LLM-evaluated factual reliability (0.0-1.0) |
+| **Confidence Blending** | Low confidence pulls score toward default (0.65) |
+| **Consensus Bonus** | +5% when Claude and GPT-4 agreed |
+
+**Key Insight**: Low confidence pulls scores toward the neutral default:
+- Uncertain low scores are pulled UP (less harsh penalty)
+- Uncertain high scores are pulled DOWN (less generous credit)
 
 ### Effective Weight Examples
 
-| Source | Score | Confidence | Consensus | Effective Weight |
-|--------|-------|------------|-----------|------------------|
-| Reuters | 95% | 95% | Yes | `0.95 × 0.99 × 1.05 = 98.7%` |
-| bag.admin.ch | 93% | 90% | Yes | `0.93 × 0.98 × 1.05 = 95.7%` |
-| Generic news | 70% | 80% | No | `0.70 × 0.95 × 1.0 = 66.5%` |
-| Reddit | 53% | 80% | No | `0.53 × 0.95 × 1.0 = 50.4%` |
-| Unknown source | 65%* | 50%* | No | `0.65 × 0.625 × 1.0 = 40.6%` |
+| Source | Score | Confidence | Consensus | Calculation | Effective Weight |
+|--------|-------|------------|-----------|-------------|------------------|
+| Reuters | 95% | 95% | Yes | `(0.95×0.95 + 0.65×0.05) × 1.05` | **98.2%** |
+| bag.admin.ch | 93% | 90% | Yes | `(0.93×0.90 + 0.65×0.10) × 1.05` | **94.8%** |
+| Generic news | 70% | 80% | No | `(0.70×0.80 + 0.65×0.20) × 1.0` | **69.0%** |
+| Reddit | 55% | 63% | Yes | `(0.55×0.63 + 0.65×0.37) × 1.05` | **61.6%** |
+| Unknown source | 65%* | 50%* | No | `(0.65×0.50 + 0.65×0.50) × 1.0` | **65.0%** |
 
 *Unknown sources use configurable defaults: `FH_SR_DEFAULT_SCORE=0.65`, confidence=0.5
 
@@ -559,25 +566,25 @@ adjustedConfidence = Math.round(originalConfidence * (0.5 + avgWeight / 2));
 
 ### Impact Examples
 
-**High Reliability Source (Reuters, 98.7% effective weight)**
+**High Reliability Source (Reuters, 98.2% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.987 = 84.5% → 85% (MOSTLY-TRUE)
+Adjusted: 50 + (85 - 50) × 0.982 = 84.4% → 84% (MOSTLY-TRUE)
 Impact: Minimal change, verdict preserved
 ```
 
-**Unknown Source (40.6% effective weight)**
+**Unknown Source (65.0% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.406 = 64.2% → 64% (LEANING-TRUE)
-Impact: Strong pull toward neutral (appropriate skepticism)
+Adjusted: 50 + (85 - 50) × 0.65 = 72.8% → 73% (MOSTLY-TRUE)
+Impact: Moderate pull toward neutral (appropriate skepticism)
 ```
 
-**Low Reliability Source (Reddit, 50.4% effective weight)**
+**Mixed Source (Reddit 55% score, 63% conf → 61.6% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.504 = 67.6% → 68% (LEANING-TRUE)
-Impact: Moderate pull toward neutral
+Adjusted: 50 + (85 - 50) × 0.616 = 71.6% → 72% (MOSTLY-TRUE)
+Impact: Low score + low confidence → blended toward default, less harsh
 ```
 
 ### Multi-Source Averaging

@@ -536,26 +536,33 @@ const adjustedConfidence = Math.round(v.confidence * (0.5 + avgSourceReliability
 
 ### Effective Weight Calculation
 
-The monolithic pipelines use a more comprehensive weighting formula that combines score, confidence, and consensus:
+The system calculates effective weight by blending the score toward the default based on confidence:
 
 ```typescript
 function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  const confidenceMultiplier = 0.75 + (data.confidence * 0.25);
+  // Blend score toward default (0.65) based on confidence:
+  // - High confidence (1.0) → use actual score
+  // - Low confidence (0.0) → use default score
+  const blendedScore = score * confidence + DEFAULT_UNKNOWN_SOURCE_SCORE * (1 - confidence);
   const consensusBonus = data.consensusAchieved ? 1.05 : 1.0;
-  return Math.min(1.0, data.score * confidenceMultiplier * consensusBonus);
+  return Math.min(1.0, blendedScore * consensusBonus);
 }
 ```
 
-| Component | Range | Effect |
-|-----------|-------|--------|
-| **Score** | 0.0-1.0 | Base reliability from LLM |
-| **Confidence Multiplier** | 0.75-1.0 | Higher LLM confidence → higher weight |
-| **Consensus Bonus** | 1.0 or 1.05 | +5% when multiple models agreed |
+| Component | Effect |
+|-----------|--------|
+| **Score** | Base reliability from LLM (0.0-1.0) |
+| **Confidence Blending** | Low confidence pulls score toward default (0.65) |
+| **Consensus Bonus** | +5% when multiple models agreed |
+
+**Key Insight**: Low confidence pulls scores toward the neutral default:
+- Uncertain low scores are pulled UP (less harsh penalty)
+- Uncertain high scores are pulled DOWN (less generous credit)
 
 **Examples:**
-- High-rated source (93% score, 95% conf, consensus): `0.93 × 0.99 × 1.05 = 96.7%` effective
-- Mixed source (53% score, 80% conf, no consensus): `0.53 × 0.95 × 1.0 = 50.4%` effective
-- Unknown source (65% default, 50% conf, no consensus): `0.65 × 0.625 × 1.0 = 40.6%` effective
+- High-rated source (93% score, 95% conf, consensus): `(0.93×0.95 + 0.65×0.05) × 1.05 = 98.2%` effective
+- Mixed source (55% score, 63% conf, consensus): `(0.55×0.63 + 0.65×0.37) × 1.05 = 61.6%` effective
+- Unknown source (65% default, 50% conf, no consensus): `(0.65×0.50 + 0.65×0.50) × 1.0 = 65.0%` effective
 
 ### Unknown Source Handling
 

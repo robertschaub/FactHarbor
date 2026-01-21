@@ -390,15 +390,17 @@ export interface SourceReliabilityData {
 export function calculateEffectiveWeight(data: SourceReliabilityData): number {
   const { score, confidence, consensusAchieved } = data;
   
-  // Confidence multiplier: range [0.75, 1.0] based on confidence
-  // Low confidence (0.5) = 0.75, High confidence (1.0) = 1.0
-  const confidenceMultiplier = 0.75 + (confidence * 0.25);
+  // Blend score toward default based on confidence:
+  // - High confidence (1.0) → use actual score
+  // - Low confidence (0.0) → use default score
+  // This means uncertain low scores are pulled UP, uncertain high scores are pulled DOWN
+  const blendedScore = score * confidence + DEFAULT_UNKNOWN_SOURCE_SCORE * (1 - confidence);
   
   // Consensus bonus: slight boost when models agree
   const consensusBonus = consensusAchieved ? 1.05 : 1.0;
   
   // Calculate effective weight, cap at 1.0
-  const effectiveWeight = Math.min(1.0, score * confidenceMultiplier * consensusBonus);
+  const effectiveWeight = Math.min(1.0, blendedScore * consensusBonus);
   
   return effectiveWeight;
 }
