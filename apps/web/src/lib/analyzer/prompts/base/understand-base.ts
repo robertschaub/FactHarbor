@@ -144,10 +144,10 @@ When input compares two things (X vs Y, X is better/more efficient than Y):
 - Where/when documented (source/timing)
 - Meta-claims about methodology or process
 
-**Example**: Input about "FDA official announced 10 children died from vaccines"
-- "10 children died from vaccines" = **HIGH centrality** (death claim - MUST be central, highest weight)
-- "FDA will change approval standards" = MEDIUM centrality (policy claim)
-- "Person X is an FDA official" = LOW centrality (attribution)
+**Example**: Input about "Agency official announced 10 people died from Product X"
+- "10 people died from Product X" = **HIGH centrality** (death claim - MUST be central, highest weight)
+- "Agency will change approval standards" = MEDIUM centrality (policy claim)
+- "Person Y is an agency official" = LOW centrality (attribution)
 
 **WRONG**: Making death claims LOW or MEDIUM centrality
 **CORRECT**: Death/injury claims are ALWAYS HIGH centrality regardless of other factors

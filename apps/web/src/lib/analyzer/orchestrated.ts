@@ -3192,6 +3192,7 @@ function buildHeuristicSubClaims(
     centrality: "medium" as const,
     isCentral: false,
     thesisRelevance: "direct" as const,
+    isCounterClaim: false, // Heuristic claims default to thesis-aligned
     contextId,
     approximatePosition: "",
     keyFactorId: "",
@@ -4523,6 +4524,8 @@ async function requestSupplementalSubClaims(
       centrality,
       isCentral,
       thesisRelevance: claim.thesisRelevance || "direct",
+      // v2.8.4: Use LLM-provided isCounterClaim or default to false
+      isCounterClaim: claim.isCounterClaim ?? false,
       contextId: procId,
       approximatePosition: claim.approximatePosition || "",
       keyFactorId: claim.keyFactorId || "",
@@ -4738,6 +4741,7 @@ Extract outcomes that need separate evaluation claims.`;
         centrality: "medium",
         isCentral: false,
         thesisRelevance: "direct", // Outcome claims are direct evaluations
+        isCounterClaim: false, // Outcome claims default to thesis-aligned
         contextId: outcome.contextId || "",
         approximatePosition: "",
         keyFactorId: "",
@@ -8746,6 +8750,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           centrality: "high",
           isCentral: true,
           thesisRelevance: "direct",
+          isCounterClaim: false, // Fallback claims are thesis-aligned
           contextId: "",
           approximatePosition: "",
           keyFactorId: "",
