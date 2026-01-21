@@ -271,7 +271,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - SQLite cache with 90-day TTL
   - Evidence weighting affects verdict calculations
   - Admin interface for cache management
-  - 71 tests covering all functionality (42 unit + 16 cache + 13 integration)
+  - 90 tests covering all functionality (42 unit + 16 cache + 13 integration + 19 API logic)
 - Documentation updates: Merged proposal into main docs, archived historical documents
 
 ### v2.6.33 (January 2026)

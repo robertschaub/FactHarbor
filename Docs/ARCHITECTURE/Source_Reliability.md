@@ -545,13 +545,15 @@ The Source Reliability system has comprehensive test coverage:
 | `source-reliability.test.ts` | 42 | Domain extraction, importance filter, evidence weighting |
 | `source-reliability-cache.test.ts` | 16 | SQLite operations, pagination, expiration |
 | `source-reliability.integration.test.ts` | 13 | End-to-end pipeline flow |
-| **Total** | **71** | |
+| `evaluate-source.test.ts` | 19 | Rate limiting, consensus calculation |
+| **Total** | **90** | |
 
 Run tests:
 ```bash
 cd apps/web && npm test -- src/lib/analyzer/source-reliability.test.ts
 cd apps/web && npm test -- src/lib/source-reliability-cache.test.ts
 cd apps/web && npm test -- src/lib/analyzer/source-reliability.integration.test.ts
+cd apps/web && npm test -- src/app/api/internal/evaluate-source/evaluate-source.test.ts
 ```
 
 ---

@@ -67,10 +67,11 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
    - Browse cached scores with pagination/sorting
    - Cleanup expired entries
 
-4. **Test Coverage**: 71 tests for Source Reliability
+4. **Test Coverage**: 90 tests for Source Reliability
    - `source-reliability.test.ts`: 42 tests (domain extraction, filter, weighting)
    - `source-reliability-cache.test.ts`: 16 tests (SQLite operations)
    - `source-reliability.integration.test.ts`: 13 tests (end-to-end pipeline flow)
+   - `evaluate-source.test.ts`: 19 tests (rate limiting, consensus calculation)
 
 **Key Files Created/Modified**:
 - `apps/web/src/lib/analyzer/source-reliability.ts` (enhanced with evidence weighting)
