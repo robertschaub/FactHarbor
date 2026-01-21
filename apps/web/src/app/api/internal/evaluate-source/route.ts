@@ -18,6 +18,18 @@ export const runtime = "nodejs";
 export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
 
 // ============================================================================
+// CONFIGURATION DIAGNOSTICS (logs once on module load)
+// ============================================================================
+
+const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.startsWith("PASTE_");
+const hasOpenAIKey = !!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.startsWith("PASTE_");
+
+console.log(`[SR-Eval] Configuration check:`);
+console.log(`  - ANTHROPIC_API_KEY: ${hasAnthropicKey ? "✓ configured" : "✗ MISSING or placeholder"}`);
+console.log(`  - OPENAI_API_KEY: ${hasOpenAIKey ? "✓ configured" : "✗ MISSING or placeholder"}`);
+console.log(`  - Multi-model consensus: ${hasAnthropicKey && hasOpenAIKey ? "✓ available" : "⚠ unavailable (need both keys)"}`);
+
+// ============================================================================
 // TYPES & SCHEMAS
 // ============================================================================
 
@@ -143,12 +155,28 @@ async function evaluateWithModel(
   domain: string,
   modelProvider: "anthropic" | "openai"
 ): Promise<{ result: EvaluationResult; modelName: string } | null> {
+  // Check API key availability
+  const apiKeyEnvVar = modelProvider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
+  const apiKey = process.env[apiKeyEnvVar];
+  
+  if (!apiKey) {
+    console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED: ${apiKeyEnvVar} not set in environment`);
+    return null;
+  }
+  
+  if (apiKey.startsWith("PASTE_") || apiKey === "sk-...") {
+    console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED: ${apiKeyEnvVar} appears to be a placeholder value`);
+    return null;
+  }
+
   const prompt = EVALUATION_PROMPT.replace("{DOMAIN}", domain);
   const temperature = getDeterministicTemperature(0.3);
 
   const modelName = modelProvider === "anthropic" 
     ? "claude-3-5-haiku-20241022" 
     : "gpt-4o-mini";
+  
+  console.log(`[SR-Eval] Calling ${modelProvider} (${modelName}) for ${domain}...`);
   
   const model = modelProvider === "anthropic"
     ? anthropic(modelName)
@@ -166,14 +194,33 @@ async function evaluateWithModel(
     const output = (response as any).output ?? (response as any)._output ?? (response as any).experimental_output;
     
     if (!output) {
-      console.error(`[SR-Eval] No structured output from ${modelProvider}`);
+      console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED: No structured output returned`);
       return null;
     }
 
     const result = EvaluationResultSchema.parse(output);
+    console.log(`[SR-Eval] ${modelProvider.toUpperCase()} SUCCESS: score=${result.score.toFixed(2)}, confidence=${result.confidence.toFixed(2)}`);
     return { result, modelName };
-  } catch (err) {
-    console.error(`[SR-Eval] Error with ${modelProvider}:`, err);
+  } catch (err: any) {
+    // Detailed error logging
+    const errorMessage = err?.message || String(err);
+    const errorCode = err?.code || err?.status || "unknown";
+    
+    console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED for ${domain}:`);
+    console.error(`  - Error code: ${errorCode}`);
+    console.error(`  - Message: ${errorMessage}`);
+    
+    // Check for common error types
+    if (errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("invalid_api_key")) {
+      console.error(`  - DIAGNOSIS: API key is invalid or expired. Check ${apiKeyEnvVar}`);
+    } else if (errorMessage.includes("429") || errorMessage.includes("rate_limit")) {
+      console.error(`  - DIAGNOSIS: Rate limit exceeded. Wait and retry.`);
+    } else if (errorMessage.includes("500") || errorMessage.includes("503")) {
+      console.error(`  - DIAGNOSIS: Provider service error. Try again later.`);
+    } else if (errorMessage.includes("timeout") || errorMessage.includes("ETIMEDOUT")) {
+      console.error(`  - DIAGNOSIS: Request timed out. Network issue or slow response.`);
+    }
+    
     return null;
   }
 }
