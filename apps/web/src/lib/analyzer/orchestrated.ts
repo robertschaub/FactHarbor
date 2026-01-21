@@ -8848,7 +8848,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         } else {
           // Prefetch source reliability scores for grounded URLs
           const groundedUrls = groundedUrlCandidates.map(c => c.url);
-          await emit(`📊 Checking source reliability (${groundedUrls.length} domains)`, baseProgress + 1);
+          await emit(`📊 Checking source reliability (${groundedUrls.length} domains)`, baseProgress + 3);
           await prefetchSourceReliability(groundedUrls);
 
           // Fetch URLs just like standard search sources
@@ -9034,7 +9034,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     // Prefetch source reliability scores (async batch operation)
     const urlsToFetch = uniqueResults.map((r: any) => r.url);
-    await emit(`📊 Checking source reliability (${urlsToFetch.length} domains)`, baseProgress + 3);
+    await emit(`📊 Checking source reliability (${urlsToFetch.length} domains)`, baseProgress + 4);
     await prefetchSourceReliability(urlsToFetch);
 
     const fetchPromises = uniqueResults.map((r: any, i: number) =>
