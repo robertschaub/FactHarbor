@@ -42,8 +42,12 @@ export function detectAndCorrectVerdictInversion(
     /\b(was|were|is|are)\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\b/i,
     /\b(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\s+(response|action|decision|measure|and\s+justified)\b/i,
     // Additional positive assertion patterns
-    // Comparative positive assertions
+    // Comparative positive assertions - direct adjacency
     /\b(more|higher|better|superior|greater)\s+(efficient|effective|accurate|reliable)\b/i,
+    // Comparative positive assertions - with words between (e.g., "higher energy conversion efficiency")
+    /\b(more|higher|better|superior|greater)\s+\w+(\s+\w+){0,3}\s+(efficiency|effectiveness|accuracy|reliability|performance)\b/i,
+    // "have/has/had higher X" patterns
+    /\b(has|have|had)\s+(higher|greater|better|more|superior)\s+/i,
     // Positive state assertions
     /\b(has|have|had)\s+(sufficient|adequate|strong|solid)\s+(evidence|basis|support)\b/i,
     /\b(supports?|justifies?|warrants?|establishes?)\s+(the\s+)?(claim|assertion|conclusion)\b/i,
@@ -67,6 +71,9 @@ export function detectAndCorrectVerdictInversion(
     // Excessive patterns
     /\b(excessive|unwarranted|undue)\s+(economic\s+)?(punishment|pressure|retaliation)\b/i,
     // Additional denial patterns
+    // No evidence patterns - critical for catching "No evidence supports/provided supports"
+    /\bno\s+(evidence|data|proof|support)\b/i,
+    /\bno\s+\w+\s+(evidence|data|support)\s+(supports?|shows?|indicates?|suggests?)\b/i,
     // Insufficiency patterns
     /\b(lacks?|lacking)\s+(sufficient\s+)?(evidence|basis|support|justification)\b/i,
     /\b(insufficient|inadequate)\s+(evidence|basis|support|justification)\b/i,
