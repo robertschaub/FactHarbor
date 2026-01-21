@@ -17,6 +17,9 @@ import {
   getTrackRecordScore,
   clearPrefetchedScores,
   SR_CONFIG,
+  applyEvidenceWeighting,
+  normalizeTrackRecordScore,
+  clampTruthPercentage,
 } from "./source-reliability";
 
 describe("extractDomain", () => {
@@ -266,6 +269,92 @@ describe("Integration: Domain extraction + Importance filter", () => {
       expect(domain).not.toBeNull();
       expect(isImportantSource(domain!)).toBe(false);
     }
+  });
+});
+
+describe("applyEvidenceWeighting", () => {
+  it("returns verdicts unchanged when no source scores", () => {
+    const verdicts = [
+      { id: "v1", truthPercentage: 75, confidence: 80, supportingFactIds: ["f1"] },
+    ];
+    const facts = [{ id: "f1", sourceId: "s1" }];
+    const sources = [{ id: "s1", trackRecordScore: null }]; // No score
+
+    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    expect(result[0].truthPercentage).toBe(75); // Unchanged
+  });
+
+  it("adjusts truth percentage based on high reliability source", () => {
+    const verdicts = [
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1"] },
+    ];
+    const facts = [{ id: "f1", sourceId: "s1" }];
+    const sources = [{ id: "s1", trackRecordScore: 0.95 }]; // High reliability
+
+    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    // Truth should stay high (80 is 30 above neutral)
+    // Formula: 50 + (80-50) * 0.95 = 50 + 28.5 = 78.5 ≈ 79
+    expect(result[0].truthPercentage).toBeCloseTo(79, 0);
+    expect(result[0].evidenceWeight).toBe(0.95);
+  });
+
+  it("pulls truth toward neutral for low reliability source", () => {
+    const verdicts = [
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1"] },
+    ];
+    const facts = [{ id: "f1", sourceId: "s1" }];
+    const sources = [{ id: "s1", trackRecordScore: 0.3 }]; // Low reliability
+
+    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    // Truth should be pulled toward neutral
+    // Formula: 50 + (80-50) * 0.3 = 50 + 9 = 59
+    expect(result[0].truthPercentage).toBe(59);
+  });
+
+  it("averages scores from multiple supporting facts", () => {
+    const verdicts = [
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1", "f2"] },
+    ];
+    const facts = [
+      { id: "f1", sourceId: "s1" },
+      { id: "f2", sourceId: "s2" },
+    ];
+    const sources = [
+      { id: "s1", trackRecordScore: 0.9 },
+      { id: "s2", trackRecordScore: 0.5 },
+    ];
+
+    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    // Average score: (0.9 + 0.5) / 2 = 0.7
+    // Formula: 50 + (80-50) * 0.7 = 50 + 21 = 71
+    expect(result[0].truthPercentage).toBe(71);
+    expect(result[0].evidenceWeight).toBe(0.7);
+  });
+
+  it("clamps truth percentage to valid range", () => {
+    // Test with extreme values
+    expect(clampTruthPercentage(150)).toBe(100);
+    expect(clampTruthPercentage(-50)).toBe(0);
+    expect(clampTruthPercentage(NaN)).toBe(50);
+    expect(clampTruthPercentage(Infinity)).toBe(50);
+  });
+
+  it("normalizes 0-100 scale scores to 0-1", () => {
+    expect(normalizeTrackRecordScore(50)).toBe(0.5);
+    expect(normalizeTrackRecordScore(100)).toBe(1.0);
+    expect(normalizeTrackRecordScore(0.75)).toBe(0.75); // Already 0-1
+  });
+
+  it("adjusts confidence based on source reliability", () => {
+    const verdicts = [
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1"] },
+    ];
+    const facts = [{ id: "f1", sourceId: "s1" }];
+    const sources = [{ id: "s1", trackRecordScore: 0.9 }];
+
+    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    // Confidence formula: confidence * (0.5 + score/2) = 80 * (0.5 + 0.45) = 80 * 0.95 = 76
+    expect(result[0].confidence).toBe(76);
   });
 });
 

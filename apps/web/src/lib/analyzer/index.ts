@@ -103,10 +103,26 @@ export {
 // ============================================================================
 
 export {
-  loadSourceBundle,
+  // Core functions
+  prefetchSourceReliability,
   getTrackRecordScore,
+  clearPrefetchedScores,
+  
+  // Verdict weighting
   applyEvidenceWeighting,
   calculateOverallCredibility,
+  
+  // Utility functions
+  extractDomain,
+  isImportantSource,
+  normalizeTrackRecordScore,
+  clampTruthPercentage,
+  
+  // Configuration
+  SR_CONFIG,
+  
+  // Legacy (deprecated)
+  loadSourceBundle,
 } from "./source-reliability";
 
 // ============================================================================

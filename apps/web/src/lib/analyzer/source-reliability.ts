@@ -255,20 +255,69 @@ async function evaluateSourceInternal(
 }
 
 // ============================================================================
+// SCORE NORMALIZATION (Defensive)
+// ============================================================================
+
+/**
+ * Normalize trackRecordScore to 0-1 range
+ * Handles both 0-1 and 0-100 scales defensively.
+ */
+export function normalizeTrackRecordScore(score: number): number {
+  // Handle invalid values
+  if (!Number.isFinite(score)) {
+    console.warn(`[SR] Invalid trackRecordScore: ${score}, defaulting to 0.5`);
+    return 0.5;
+  }
+
+  // If score > 1, assume it's on 0-100 scale and convert
+  if (score > 1) {
+    console.warn(`[SR] trackRecordScore > 1 detected (${score}), converting from 0-100 scale`);
+    score = score / 100;
+  }
+
+  // Clamp to valid range
+  return Math.max(0, Math.min(1, score));
+}
+
+/**
+ * Clamp truth percentage to valid [0, 100] range
+ */
+export function clampTruthPercentage(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 50; // Default to neutral if invalid
+  }
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+// ============================================================================
 // EVIDENCE WEIGHTING
 // ============================================================================
 
 /**
  * Apply evidence weighting based on source track record scores
+ * 
+ * This adjusts verdict truth percentages based on source reliability:
+ * - High reliability sources (0.8-1.0): Verdicts move further from neutral
+ * - Low reliability sources (0.0-0.5): Verdicts move closer to neutral
+ * 
+ * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgSourceScore
  */
 export function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
   facts: ExtractedFact[],
   sources: FetchedSource[]
 ): ClaimVerdict[] {
+  // Build source score map with normalization
   const sourceScoreById = new Map(
-    sources.map((s) => [s.id, s.trackRecordScore])
+    sources.map((s) => [
+      s.id,
+      s.trackRecordScore !== null
+        ? normalizeTrackRecordScore(s.trackRecordScore)
+        : null,
+    ])
   );
+
+  // Map facts to their source scores
   const factScoreById = new Map(
     facts.map((f) => [f.id, sourceScoreById.get(f.sourceId) ?? null])
   );
@@ -279,20 +328,30 @@ export function applyEvidenceWeighting(
       .map((id) => factScoreById.get(id))
       .filter((score): score is number => typeof score === "number");
 
+    // If no source scores available, return verdict unchanged
     if (scores.length === 0) return verdict;
 
+    // Calculate average source reliability
     const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+
+    // Adjust truth: pull toward/away from neutral (50) based on source reliability
     const adjustedTruth = Math.round(50 + (verdict.truthPercentage - 50) * avg);
+    
+    // Adjust confidence: scale by reliability
     const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avg / 2));
+
+    // Clamp to valid ranges
+    const clampedTruth = clampTruthPercentage(adjustedTruth);
+    const clampedConfidence = Math.max(0, Math.min(100, adjustedConfidence));
 
     return {
       ...verdict,
       evidenceWeight: avg,
-      truthPercentage: adjustedTruth,
-      confidence: adjustedConfidence,
-      verdict: adjustedTruth,
+      truthPercentage: clampedTruth,
+      confidence: clampedConfidence,
+      verdict: clampedTruth,
       highlightColor: normalizeHighlightColor(
-        getHighlightColor7Point(adjustedTruth)
+        getHighlightColor7Point(clampedTruth)
       ),
     };
   });
