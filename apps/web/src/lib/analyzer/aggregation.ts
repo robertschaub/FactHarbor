@@ -144,15 +144,13 @@ export function detectClaimContestation(claimText: string, reasoning?: string): 
     return { isContested: false, factualBasis: "unknown" };
   }
   
-  // Detect political/diplomatic contestation (typically opinion-based)
-  const politicalContestors = /(government|administration|official|diplomat|ambassador|ministry|state department|white house|kremlin|foreign (office|ministry)|political)/i;
-  const hasPoliticalContestor = politicalContestors.test(combined);
-  
-  // Detect if there's specific documented evidence cited in the contestation
-  const documentedEvidence = /\b(audit|study|report|investigation|finding|data|measurement|record|document|statistic|evidence shows|according to records|documented|violation of|breach of|article \d+|section \d+|regulation \d+)/i;
+  // Evidence-based approach: the SOURCE doesn't matter, only whether there's DOCUMENTED counter-evidence
+  // If no documented evidence → "opinion" (keeps full weight)
+  // If documented evidence → "established" or "disputed" (reduces weight)
+  const documentedEvidence = /\b(audit|study|report|investigation|finding|data|measurement|record|document|statistic|evidence shows|according to records|documented|violation of|breach of|non-?compliance|article \d+|section \d+|regulation \d+|procedure \d+|\d+%|\d+\s*(kg|g|kwh|mwh|efficiency|percent))/i;
   const hasDocumentedEvidence = documentedEvidence.test(combined);
   
-  // Determine factual basis
+  // Determine factual basis purely on evidence, not source
   let factualBasis: "established" | "disputed" | "opinion" | "unknown";
   let contestedBy: string | undefined;
   
@@ -160,14 +158,10 @@ export function detectClaimContestation(claimText: string, reasoning?: string): 
     // There's specific documented counter-evidence
     factualBasis = "established";
     contestedBy = "documented counter-evidence";
-  } else if (hasPoliticalContestor) {
-    // Political criticism without documented evidence = opinion (full weight)
-    factualBasis = "opinion";
-    contestedBy = "political/diplomatic sources";
   } else {
-    // General contestation without clear evidence
-    factualBasis = "disputed";
-    contestedBy = "critics";
+    // No documented evidence cited → opinion (keeps full weight)
+    factualBasis = "opinion";
+    contestedBy = "critics (no documented evidence)";
   }
   
   return {

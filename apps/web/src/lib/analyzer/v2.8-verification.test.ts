@@ -69,19 +69,19 @@ describe("v2.8 Verification - Unit Tests", () => {
   });
 
   // ============================================================================
-  // TEST 2: Bolsonaro - Political Criticism as Opinion
+  // TEST 2: Contestation Classification - Evidence-based approach
   // ============================================================================
-  describe("Bolsonaro Trial - Contestation Classification", () => {
-    it("should classify political criticism without evidence as opinion (DOUBTED)", () => {
+  describe("Contestation Classification - Evidence-based", () => {
+    it("should classify contestation without documented evidence as opinion (DOUBTED)", () => {
       const keyFactors = [
         {
           factor: "Trial Fairness",
           supports: "no" as const,
-          explanation: "US government criticized the trial as politically motivated",
+          explanation: "Critics claimed the trial was politically motivated",
           isContested: true,
-          contestedBy: "US State Department",
-          factualBasis: "established" as const,  // Incorrectly marked
-          contestationReason: "Political persecution claims"
+          contestedBy: "critics",
+          factualBasis: "established" as const,  // Incorrectly marked - no documented evidence
+          contestationReason: "Unfairness claims without specific evidence"
         }
       ];
 
@@ -112,15 +112,15 @@ describe("v2.8 Verification - Unit Tests", () => {
       expect(validated[0].factualBasis).toBe("established");
     });
 
-    it("claim-level contestation detects political criticism as opinion", () => {
+    it("claim-level contestation detects no evidence as opinion", () => {
       const result = detectClaimContestation(
         "The trial was fair and followed legal procedures",
-        "The government administration disputed the trial as politically motivated"
+        "Critics disputed the trial as politically motivated"
       );
       
       console.log("[v2.8 Unit Test] Claim contestation:", result);
       
-      // PASS CRITERIA: Political criticism = opinion
+      // PASS CRITERIA: No documented evidence = opinion
       expect(result.isContested).toBe(true);
       expect(result.factualBasis).toBe("opinion");
     });
@@ -409,16 +409,20 @@ describe("v2.8 Verification - Integration Tests", () => {
         );
 
         // PASS CRITERIA: If there are contested claims, verify factualBasis classification
+        // Any contestation marked "established" must cite documented evidence
         if (contestedClaims.length > 0) {
-          const establishedWithoutEvidence = contestedClaims.filter((cv: any) => {
-            const reason = (cv.contestationReason || "").toLowerCase();
-            const text = (cv.claimText || "").toLowerCase();
-            const isPolitical = reason.includes("political") || reason.includes("government") ||
-                               text.includes("persecution") || text.includes("administration");
-            return cv.factualBasis === "established" && isPolitical;
+          const establishedClaims = contestedClaims.filter((cv: any) => 
+            cv.factualBasis === "established"
+          );
+          
+          // Established contestations should have evidence patterns in their reasons
+          const evidencePattern = /\b(audit|study|report|investigation|data|measurement|document|violation|breach|\d+%)/i;
+          const establishedWithoutEvidence = establishedClaims.filter((cv: any) => {
+            const reason = (cv.contestationReason || "") + " " + (cv.explanation || "");
+            return !evidencePattern.test(reason);
           });
           
-          // Should NOT have political criticism marked as "established"
+          // Should NOT have contestation marked "established" without documented evidence
           expect(establishedWithoutEvidence.length).toBe(0);
         }
 

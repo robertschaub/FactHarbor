@@ -23,23 +23,23 @@ describe('Aggregation Module (v2.8)', () => {
   // validateContestation tests
   // ============================================================================
   describe('validateContestation', () => {
-    it('downgrades political criticism without evidence from "established" to "opinion"', () => {
+    it('downgrades contestation without documented evidence from "established" to "opinion"', () => {
       const keyFactors = [
         {
           factor: 'Fairness',
           supports: 'no' as const,
-          explanation: 'The government criticized the trial',
+          explanation: 'Critics criticized the trial',
           isContested: true,
-          contestedBy: 'US State Department',
+          contestedBy: 'critics',
           factualBasis: 'established' as const,
-          contestationReason: 'Political persecution claims'
+          contestationReason: 'Unfairness claims without specific evidence'
         }
       ];
 
       const validated = validateContestation(keyFactors);
       
       expect(validated[0].factualBasis).toBe('opinion');
-      expect(validated[0].contestationReason).toContain('Political criticism without documented counter-evidence');
+      expect(validated[0].contestationReason).toContain('No documented counter-evidence cited');
     });
 
     it('keeps "established" when specific documented evidence is cited', () => {
@@ -149,15 +149,15 @@ describe('Aggregation Module (v2.8)', () => {
       expect(result.factualBasis).toBe('unknown');
     });
 
-    it('detects political contestation as "opinion" (DOUBTED)', () => {
+    it('detects contestation without documented evidence as "opinion" (DOUBTED)', () => {
       const result = detectClaimContestation(
         'The trial was fair',
-        'The government administration disputed the fairness of the trial'
+        'Critics disputed the fairness of the trial'
       );
       
       expect(result.isContested).toBe(true);
       expect(result.factualBasis).toBe('opinion');
-      expect(result.contestedBy).toBe('political/diplomatic sources');
+      expect(result.contestedBy).toBe('critics (no documented evidence)');
     });
 
     it('detects documented contestation as "established" (CONTESTED)', () => {
@@ -171,15 +171,15 @@ describe('Aggregation Module (v2.8)', () => {
       expect(result.contestedBy).toBe('documented counter-evidence');
     });
 
-    it('detects general contestation as "disputed"', () => {
+    it('detects contestation with measurements as "established"', () => {
       const result = detectClaimContestation(
-        'The claim is accurate',
-        'Critics have disputed this interpretation'
+        'The efficiency is 80%',
+        'Critics disputed this - study found only 45% efficiency'
       );
       
       expect(result.isContested).toBe(true);
-      expect(result.factualBasis).toBe('disputed');
-      expect(result.contestedBy).toBe('critics');
+      expect(result.factualBasis).toBe('established');
+      expect(result.contestedBy).toBe('documented counter-evidence');
     });
   });
 
