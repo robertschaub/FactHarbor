@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import styles from "./source-reliability.module.css";
 
@@ -30,6 +30,20 @@ interface CacheData {
   stats: CacheStats;
 }
 
+// Get admin key from sessionStorage or environment
+function getAdminKey(): string | null {
+  if (typeof window !== "undefined") {
+    return sessionStorage.getItem("fh_admin_key");
+  }
+  return null;
+}
+
+function setAdminKey(key: string): void {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("fh_admin_key", key);
+  }
+}
+
 export default function SourceReliabilityPage() {
   const [data, setData] = useState<CacheData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,13 +51,21 @@ export default function SourceReliabilityPage() {
   const [page, setPage] = useState(0);
   const [sortBy, setSortBy] = useState("evaluated_at");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [adminKeyInput, setAdminKeyInput] = useState("");
   const pageSize = 25;
 
-  useEffect(() => {
-    fetchData();
-  }, [page, sortBy, sortOrder]);
+  // Helper to build fetch headers with admin key
+  const getHeaders = useCallback((): HeadersInit => {
+    const headers: HeadersInit = {};
+    const adminKey = getAdminKey();
+    if (adminKey) {
+      headers["x-admin-key"] = adminKey;
+    }
+    return headers;
+  }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -55,14 +77,18 @@ export default function SourceReliabilityPage() {
         sortOrder,
       });
 
-      const response = await fetch(`/api/admin/source-reliability?${params}`);
+      const response = await fetch(`/api/admin/source-reliability?${params}`, {
+        headers: getHeaders(),
+      });
       if (!response.ok) {
         if (response.status === 401) {
+          setNeedsAuth(true);
           throw new Error("Unauthorized - admin key required");
         }
         throw new Error(`Failed to fetch: ${response.statusText}`);
       }
 
+      setNeedsAuth(false);
       const result = await response.json();
       setData(result);
     } catch (err) {
@@ -70,14 +96,36 @@ export default function SourceReliabilityPage() {
     } finally {
       setLoading(false);
     }
+  }, [page, sortBy, sortOrder, getHeaders]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleAuthSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminKeyInput.trim()) {
+      setAdminKey(adminKeyInput.trim());
+      setNeedsAuth(false);
+      setError(null);
+      fetchData();
+    }
   };
 
   const handleCleanup = async () => {
     if (!confirm("Remove all expired entries from the cache?")) return;
 
     try {
-      const response = await fetch("/api/admin/source-reliability?action=cleanup");
-      if (!response.ok) throw new Error("Cleanup failed");
+      const response = await fetch("/api/admin/source-reliability?action=cleanup", {
+        headers: getHeaders(),
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          setNeedsAuth(true);
+          throw new Error("Unauthorized");
+        }
+        throw new Error("Cleanup failed");
+      }
       const result = await response.json();
       alert(`Deleted ${result.deleted} expired entries`);
       fetchData();
@@ -126,6 +174,39 @@ export default function SourceReliabilityPage() {
       <div className={styles.container}>
         <h1>Source Reliability Cache</h1>
         <div className={styles.loading}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (needsAuth) {
+    return (
+      <div className={styles.container}>
+        <h1>Source Reliability Cache</h1>
+        <div className={styles.error}>
+          Authentication required. Enter your admin key to access this page.
+        </div>
+        <form onSubmit={handleAuthSubmit} style={{ marginTop: "16px", marginBottom: "16px" }}>
+          <input
+            type="password"
+            value={adminKeyInput}
+            onChange={(e) => setAdminKeyInput(e.target.value)}
+            placeholder="Enter FH_ADMIN_KEY"
+            style={{
+              padding: "8px 12px",
+              fontSize: "14px",
+              border: "1px solid #e2e8f0",
+              borderRadius: "6px",
+              marginRight: "8px",
+              width: "250px",
+            }}
+          />
+          <button type="submit" className={styles.button}>
+            Authenticate
+          </button>
+        </form>
+        <Link href="/admin" className={styles.backLink}>
+          ← Back to Admin
+        </Link>
       </div>
     );
   }
