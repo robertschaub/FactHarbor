@@ -72,3 +72,7 @@ apps/web/test-output/
 /job-*.json
 
 /Docs/FactHarbor Spec and Impl 20.Jan.26.xar.backup
+
+# Source Reliability cache
+apps/web/*.db
+source-reliability.db
