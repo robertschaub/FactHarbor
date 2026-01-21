@@ -224,6 +224,63 @@ export async function getCacheStats(): Promise<{
 }
 
 /**
+ * Get all cached scores with pagination (for admin view)
+ */
+export async function getAllCachedScores(options: {
+  limit: number;
+  offset: number;
+  sortBy: string;
+  sortOrder: string;
+}): Promise<{
+  entries: CachedScore[];
+  total: number;
+  limit: number;
+  offset: number;
+}> {
+  const database = await getDb();
+  const now = new Date().toISOString();
+
+  // Validate sort column to prevent SQL injection
+  const validSortColumns = ["domain", "score", "confidence", "evaluated_at", "expires_at"];
+  const sortColumn = validSortColumns.includes(options.sortBy) ? options.sortBy : "evaluated_at";
+  const sortDir = options.sortOrder === "asc" ? "ASC" : "DESC";
+
+  // Get total count
+  const countResult = await database.get<{ count: number }>(
+    `SELECT COUNT(*) as count FROM source_reliability WHERE expires_at > ?`,
+    [now]
+  );
+  const total = countResult?.count ?? 0;
+
+  // Get paginated results
+  const rows = await database.all<ScoreRow[]>(
+    `SELECT * FROM source_reliability 
+     WHERE expires_at > ?
+     ORDER BY ${sortColumn} ${sortDir}
+     LIMIT ? OFFSET ?`,
+    [now, options.limit, options.offset]
+  );
+
+  const entries: CachedScore[] = rows.map((row) => ({
+    domain: row.domain,
+    score: row.score,
+    confidence: row.confidence,
+    evaluatedAt: row.evaluated_at,
+    expiresAt: row.expires_at,
+    modelPrimary: row.model_primary,
+    modelSecondary: row.model_secondary,
+    consensusAchieved: row.consensus_achieved === 1,
+  }));
+
+  return {
+    entries,
+    total,
+    limit: options.limit,
+    offset: options.offset,
+  };
+}
+
+/**
  * Close the database connection
  */
 export async function closeDb(): Promise<void> {

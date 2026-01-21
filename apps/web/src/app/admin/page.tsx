@@ -133,10 +133,17 @@ export default function AdminPage() {
       </div>
 
       <div style={{ display: "grid", gap: "16px", maxWidth: "600px" }}>
+        <Link href="/admin/source-reliability" className={styles.btnPrimary}>
+          📊 Source Reliability Cache
+        </Link>
+        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          View and manage cached source reliability scores
+        </p>
+
         <Link href="/admin/test-config" className={styles.btnPrimary}>
           🔧 Configuration Test Dashboard
         </Link>
-        <p style={{ fontSize: "14px", color: "#666" }}>
+        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
           Test and validate API keys and service configurations
         </p>
       </div>
