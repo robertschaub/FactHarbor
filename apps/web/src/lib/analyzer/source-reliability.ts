@@ -387,14 +387,18 @@ export interface SourceReliabilityData {
  * - consensusBonus: Multi-model agreement boosts trust slightly
  *   No consensus → 1.0, Consensus achieved → 1.05 (5% boost, capped at 1.0 final)
  */
+// Fixed blend center for mathematical stability (NOT configurable)
+// 0.5 = "we don't know" - the neutral point for uncertain scores
+const BLEND_CENTER = 0.5;
+
 export function calculateEffectiveWeight(data: SourceReliabilityData): number {
   const { score, confidence, consensusAchieved } = data;
   
-  // Blend score toward default based on confidence:
+  // Blend score toward neutral (0.5) based on confidence:
   // - High confidence (1.0) → use actual score
-  // - Low confidence (0.0) → use default score
-  // This means uncertain low scores are pulled UP, uncertain high scores are pulled DOWN
-  const blendedScore = score * confidence + DEFAULT_UNKNOWN_SOURCE_SCORE * (1 - confidence);
+  // - Low confidence (0.0) → use neutral (0.5)
+  // This creates a stable formula where uncertainty pulls toward "we don't know"
+  const blendedScore = score * confidence + BLEND_CENTER * (1 - confidence);
   
   // Consensus bonus: slight boost when models agree
   const consensusBonus = consensusAchieved ? 1.05 : 1.0;

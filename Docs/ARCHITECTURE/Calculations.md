@@ -516,14 +516,16 @@ Source reliability scores influence verdict calculations by adjusting truth perc
 
 ### Effective Weight Formula
 
-The system calculates an **effective weight** by blending the score toward the default based on confidence:
+The system calculates an **effective weight** by blending the score toward a **fixed neutral center (0.5)** based on confidence:
 
 ```typescript
+const BLEND_CENTER = 0.5; // Fixed: mathematical neutral, NOT configurable
+
 function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  // Blend score toward default (0.65) based on confidence:
+  // Blend score toward neutral (0.5) based on confidence:
   // - High confidence (1.0) → use actual score
-  // - Low confidence (0.0) → use default score
-  const blendedScore = score * confidence + DEFAULT_UNKNOWN_SOURCE_SCORE * (1 - confidence);
+  // - Low confidence (0.0) → use neutral (0.5 = "we don't know")
+  const blendedScore = score * confidence + BLEND_CENTER * (1 - confidence);
   const consensusBonus = data.consensusAchieved ? 1.05 : 1.0;
   return Math.min(1.0, blendedScore * consensusBonus);
 }
@@ -532,24 +534,26 @@ function calculateEffectiveWeight(data: SourceReliabilityData): number {
 | Component | Purpose |
 |-----------|---------|
 | **Score** | LLM-evaluated factual reliability (0.0-1.0) |
-| **Confidence Blending** | Low confidence pulls score toward default (0.65) |
+| **Confidence Blending** | Low confidence pulls score toward neutral (0.5) |
 | **Consensus Bonus** | +5% when Claude and GPT-4 agreed |
 
-**Key Insight**: Low confidence pulls scores toward the neutral default:
-- Uncertain low scores are pulled UP (less harsh penalty)
-- Uncertain high scores are pulled DOWN (less generous credit)
+**Key Design Decision**: The blend center is **fixed at 0.5**, not the configurable default:
+- 0.5 = mathematical neutral = "we don't know"
+- Creates a stable formula independent of policy settings
+- `FH_SR_DEFAULT_SCORE` only affects the initial score assigned to unknown sources
 
 ### Effective Weight Examples
 
 | Source | Score | Confidence | Consensus | Calculation | Effective Weight |
 |--------|-------|------------|-----------|-------------|------------------|
-| Reuters | 95% | 95% | Yes | `(0.95×0.95 + 0.65×0.05) × 1.05` | **98.2%** |
-| bag.admin.ch | 93% | 90% | Yes | `(0.93×0.90 + 0.65×0.10) × 1.05` | **94.8%** |
-| Generic news | 70% | 80% | No | `(0.70×0.80 + 0.65×0.20) × 1.0` | **69.0%** |
-| Reddit | 55% | 63% | Yes | `(0.55×0.63 + 0.65×0.37) × 1.05` | **61.6%** |
-| Unknown source | 65%* | 50%* | No | `(0.65×0.50 + 0.65×0.50) × 1.0` | **65.0%** |
+| Reuters | 95% | 95% | Yes | `(0.95×0.95 + 0.5×0.05) × 1.05` | **97%** |
+| bag.admin.ch | 93% | 90% | Yes | `(0.93×0.90 + 0.5×0.10) × 1.05` | **94%** |
+| Generic news | 70% | 80% | No | `(0.70×0.80 + 0.5×0.20) × 1.0` | **66%** |
+| Reddit | 55% | 63% | Yes | `(0.55×0.63 + 0.5×0.37) × 1.05` | **56%** |
+| Low quality | 40% | 70% | No | `(0.40×0.70 + 0.5×0.30) × 1.0` | **43%** |
+| Unknown source | 65%* | 50%* | No | `(0.65×0.50 + 0.5×0.50) × 1.0` | **57.5%** |
 
-*Unknown sources use configurable defaults: `FH_SR_DEFAULT_SCORE=0.65`, confidence=0.5
+*Unknown sources use configurable `FH_SR_DEFAULT_SCORE=0.65` as initial score, confidence=0.5
 
 ### Verdict Adjustment Formula
 
@@ -566,25 +570,32 @@ adjustedConfidence = Math.round(originalConfidence * (0.5 + avgWeight / 2));
 
 ### Impact Examples
 
-**High Reliability Source (Reuters, 98.2% effective weight)**
+**High Reliability Source (Reuters, 97% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.982 = 84.4% → 84% (MOSTLY-TRUE)
+Adjusted: 50 + (85 - 50) × 0.97 = 83.9% → 84% (MOSTLY-TRUE)
 Impact: Minimal change, verdict preserved
 ```
 
-**Unknown Source (65.0% effective weight)**
+**Unknown Source (57.5% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.65 = 72.8% → 73% (MOSTLY-TRUE)
+Adjusted: 50 + (85 - 50) × 0.575 = 70.1% → 70% (LEANING-TRUE)
 Impact: Moderate pull toward neutral (appropriate skepticism)
 ```
 
-**Mixed Source (Reddit 55% score, 63% conf → 61.6% effective weight)**
+**Mixed Source (Reddit 55% score, 63% conf → 56% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.616 = 71.6% → 72% (MOSTLY-TRUE)
-Impact: Low score + low confidence → blended toward default, less harsh
+Adjusted: 50 + (85 - 50) × 0.56 = 69.6% → 70% (LEANING-TRUE)
+Impact: Low score + low confidence → pulled toward neutral
+```
+
+**Low Quality Source (40% score, 70% conf → 43% effective weight)**
+```
+Original verdict: 85% (MOSTLY-TRUE)
+Adjusted: 50 + (85 - 50) × 0.43 = 65.1% → 65% (LEANING-TRUE)
+Impact: Strong pull toward neutral (significant skepticism)
 ```
 
 ### Multi-Source Averaging
