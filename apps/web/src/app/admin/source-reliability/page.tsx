@@ -154,10 +154,11 @@ export default function SourceReliabilityPage() {
   };
 
   const getScoreColor = (score: number): string => {
-    if (score >= 0.8) return "#10b981"; // green
-    if (score >= 0.6) return "#f59e0b"; // amber
-    if (score >= 0.4) return "#f97316"; // orange
-    return "#ef4444"; // red
+    if (score >= 0.8) return "#10b981"; // green - High/Very High
+    if (score >= 0.7) return "#84cc16"; // lime - Mostly Factual
+    if (score >= 0.5) return "#f59e0b"; // amber - Mixed
+    if (score >= 0.3) return "#f97316"; // orange - Low
+    return "#ef4444"; // red - Very Low
   };
 
   const getScoreLabel = (score: number): string => {
@@ -373,9 +374,10 @@ export default function SourceReliabilityPage() {
         <h3>Score Legend</h3>
         <div className={styles.legendItems}>
           <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> 80-100%: High/Very High</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 60-79%: Mostly Factual</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> 40-59%: Mixed</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-39%: Low/Very Low</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> 70-79%: Mostly Factual</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 50-69%: Mixed</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> 30-49%: Low</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-29%: Very Low</span>
         </div>
       </div>
     </div>
