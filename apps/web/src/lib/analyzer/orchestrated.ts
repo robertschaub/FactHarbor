@@ -6203,6 +6203,9 @@ ${scopesFormatted}
    - isContested: true if this factor is disputed
    - contestedBy: Be SPECIFIC about who disputes it (e.g., "supplier group A", "regulator X", "employee union")
      * Do NOT use vague terms like "some people" - specify WHICH group/organization
+     * **NO CIRCULAR CONTESTATION**: The entity making a decision CANNOT contest its own decision
+       - WRONG: "Due process adherence" contested by "Brazilian judiciary" (they conducted it!)
+       - RIGHT: "Due process adherence" contested by "international observers" or "defense counsel"
    - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
      * **CRITICAL: factualBasis classification determines weight in aggregation**
      * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., audits showing violations, logs contradicting timeline, datasets contradicting measurements, official reports documenting non-compliance)
@@ -7226,6 +7229,8 @@ Example: "Critics claim X was unfair" but X followed proper procedures = "yes", 
 ## Mark contested factors:
 - isContested: true if this claim is politically disputed
 - contestedBy: Who disputes it (empty string if not contested)
+  * **NO CIRCULAR CONTESTATION**: The entity that made the decision CANNOT contest it
+  * Example: If evaluating "Was Court X's trial fair?", contestedBy CANNOT be "Court X" or "Court X judiciary"
 - factualBasis: Does opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
   * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (audits, logs, datasets)
   * "disputed" = Opposition has some factual counter-evidence but debatable
@@ -7706,6 +7711,7 @@ Facts in the FACTS section are labeled with their relationship to the user's cla
 ## CLAIM CONTESTATION (for each claim):
 - isContested: true if this claim is politically disputed or challenged
 - contestedBy: Who disputes it (e.g., "critics", "opponents") - empty string if not contested
+  * **NO CIRCULAR CONTESTATION**: The entity that made the decision CANNOT contest its own decision
 - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
   * **CRITICAL: factualBasis classification determines weight in aggregation**
   * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., audits showing violations, logs contradicting timeline, datasets contradicting measurements, official reports documenting non-compliance)

@@ -1065,7 +1065,12 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
   const negativeCount = factors.filter((f: any) => f.supports === "no").length;
   const neutralCount = factors.filter((f: any) => f.supports === "neutral").length;
-  const contestedCount = factors.filter((f: any) => f.supports === "no" && f.isContested).length;
+  // Only count as "contested" factors with actual counter-evidence (not mere opinions/doubts)
+  const contestedCount = factors.filter((f: any) => 
+    f.supports === "no" && 
+    f.isContested && 
+    (f.factualBasis === "established" || f.factualBasis === "disputed")
+  ).length;
 
   const subject = (scope?.subject || "").trim();
   const rawOutcome = (scope?.outcome || "").trim().toLowerCase();

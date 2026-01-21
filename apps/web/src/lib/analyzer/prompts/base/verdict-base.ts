@@ -150,6 +150,13 @@ Do NOT rely on training data for factual assertions.`
   - "opinion": No factual counter-evidence, just claims/rhetoric
   - "unknown": Cannot determine
 
+**CRITICAL - NO CIRCULAR CONTESTATION**:
+- The entity making a decision CANNOT be listed as contesting its own decision
+- Example: If evaluating "Was Court X's trial fair?", do NOT set contestedBy to "Court X" or "Court X judiciary"
+- The subject of evaluation cannot simultaneously be the contesting party
+- WRONG: "Due process adherence" Doubted by: "Brazilian judiciary" (they conducted the proceedings!)
+- RIGHT: "Due process adherence" Doubted by: "international observers" or "defense attorneys"
+
 **CRITICAL**: Mere opposition/disagreement = factualBasis "opinion"
 - Policy announcements without evidence → "opinion"
 - Statements by groups/officials → "opinion"
