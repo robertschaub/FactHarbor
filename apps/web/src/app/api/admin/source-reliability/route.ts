@@ -75,23 +75,60 @@ export async function DELETE(req: Request) {
     const url = new URL(req.url);
     const domain = url.searchParams.get("domain");
 
-    if (!domain) {
-      return NextResponse.json(
-        { error: "Missing 'domain' parameter" },
-        { status: 400 }
-      );
+    // Single domain deletion via query param
+    if (domain) {
+      const deleted = await deleteCachedScore(domain);
+      
+      if (deleted) {
+        return NextResponse.json({ success: true, domain });
+      } else {
+        return NextResponse.json(
+          { error: "Domain not found in cache" },
+          { status: 404 }
+        );
+      }
     }
 
-    const deleted = await deleteCachedScore(domain);
-    
-    if (deleted) {
-      return NextResponse.json({ success: true, domain });
-    } else {
-      return NextResponse.json(
-        { error: "Domain not found in cache" },
-        { status: 404 }
-      );
+    // Batch deletion via JSON body
+    const contentType = req.headers.get("content-type");
+    if (contentType?.includes("application/json")) {
+      const body = await req.json();
+      const domains: string[] = body.domains;
+
+      if (!Array.isArray(domains) || domains.length === 0) {
+        return NextResponse.json(
+          { error: "Missing 'domains' array in request body" },
+          { status: 400 }
+        );
+      }
+
+      // Limit batch size for safety
+      if (domains.length > 500) {
+        return NextResponse.json(
+          { error: "Batch size exceeds limit of 500" },
+          { status: 400 }
+        );
+      }
+
+      let deletedCount = 0;
+      for (const d of domains) {
+        if (typeof d === "string" && d.trim()) {
+          const deleted = await deleteCachedScore(d.trim());
+          if (deleted) deletedCount++;
+        }
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        deleted: deletedCount, 
+        requested: domains.length 
+      });
     }
+
+    return NextResponse.json(
+      { error: "Missing 'domain' parameter or JSON body with 'domains' array" },
+      { status: 400 }
+    );
   } catch (err) {
     console.error("[Admin SR] Delete error:", err);
     return NextResponse.json(

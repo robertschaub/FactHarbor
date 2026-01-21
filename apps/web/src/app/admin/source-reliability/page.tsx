@@ -53,6 +53,8 @@ export default function SourceReliabilityPage() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [needsAuth, setNeedsAuth] = useState(false);
   const [adminKeyInput, setAdminKeyInput] = useState("");
+  const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const pageSize = 25;
 
   // Helper to build fetch headers with admin key
@@ -152,11 +154,88 @@ export default function SourceReliabilityPage() {
         }
         throw new Error("Delete failed");
       }
+      setSelectedDomains(prev => {
+        const next = new Set(prev);
+        next.delete(domain);
+        return next;
+      });
       fetchData();
     } catch (err) {
       alert("Delete failed: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
+
+  const handleDeleteSelected = async () => {
+    if (selectedDomains.size === 0) return;
+    
+    const count = selectedDomains.size;
+    if (!confirm(`Delete ${count} selected cached score${count > 1 ? 's' : ''}?\n\nThese will be re-evaluated on next analysis.`)) return;
+
+    setDeleting(true);
+    try {
+      const domains = Array.from(selectedDomains);
+      const response = await fetch('/api/admin/source-reliability', {
+        method: "DELETE",
+        headers: {
+          ...getHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ domains }),
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          setNeedsAuth(true);
+          throw new Error("Unauthorized");
+        }
+        throw new Error("Delete failed");
+      }
+      const result = await response.json();
+      setSelectedDomains(new Set());
+      alert(`Deleted ${result.deleted} of ${count} entries`);
+      fetchData();
+    } catch (err) {
+      alert("Delete failed: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const toggleSelect = (domain: string) => {
+    setSelectedDomains(prev => {
+      const next = new Set(prev);
+      if (next.has(domain)) {
+        next.delete(domain);
+      } else {
+        next.add(domain);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (!data) return;
+    const currentPageDomains = data.entries.map(e => e.domain);
+    const allSelected = currentPageDomains.every(d => selectedDomains.has(d));
+    
+    if (allSelected) {
+      // Deselect all on current page
+      setSelectedDomains(prev => {
+        const next = new Set(prev);
+        currentPageDomains.forEach(d => next.delete(d));
+        return next;
+      });
+    } else {
+      // Select all on current page
+      setSelectedDomains(prev => {
+        const next = new Set(prev);
+        currentPageDomains.forEach(d => next.add(d));
+        return next;
+      });
+    }
+  };
+
+  const isAllSelected = data && data.entries.length > 0 && 
+    data.entries.every(e => selectedDomains.has(e.domain));
 
   const handleSort = (column: string) => {
     if (sortBy === column) {
@@ -192,6 +271,25 @@ export default function SourceReliabilityPage() {
     if (score >= 0.5) return "Mixed";
     if (score >= 0.3) return "Low";
     return "Very Low";
+  };
+
+  /**
+   * Calculate effective weight used in verdict calculations.
+   * This shows how much the source's evidence is weighted.
+   * Formula: score × confidenceMultiplier × consensusBonus
+   */
+  const calculateEffectiveWeight = (score: number, confidence: number, consensus: boolean): number => {
+    const confidenceMultiplier = 0.75 + (confidence * 0.25);
+    const consensusBonus = consensus ? 1.05 : 1.0;
+    return Math.min(1.0, score * confidenceMultiplier * consensusBonus);
+  };
+
+  const getEffectiveWeightColor = (weight: number): string => {
+    if (weight >= 0.85) return "#10b981"; // green
+    if (weight >= 0.70) return "#84cc16"; // lime
+    if (weight >= 0.55) return "#f59e0b"; // amber
+    if (weight >= 0.40) return "#f97316"; // orange
+    return "#ef4444"; // red
   };
 
   if (loading && !data) {
@@ -263,6 +361,15 @@ export default function SourceReliabilityPage() {
           </p>
         </div>
         <div className={styles.actions}>
+          {selectedDomains.size > 0 && (
+            <button 
+              onClick={handleDeleteSelected} 
+              className={styles.buttonDanger}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : `Delete Selected (${selectedDomains.size})`}
+            </button>
+          )}
           <button onClick={fetchData} className={styles.button} disabled={loading}>
             {loading ? "Loading..." : "Refresh"}
           </button>
@@ -304,6 +411,14 @@ export default function SourceReliabilityPage() {
             <table className={styles.table}>
               <thead>
                 <tr>
+                  <th className={styles.checkboxCol}>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected || false}
+                      onChange={toggleSelectAll}
+                      title="Select all on this page"
+                    />
+                  </th>
                   <th onClick={() => handleSort("domain")} className={styles.sortable}>
                     Domain {sortBy === "domain" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
@@ -315,6 +430,9 @@ export default function SourceReliabilityPage() {
                   </th>
                   <th>Models</th>
                   <th>Consensus</th>
+                  <th title="Effective Weight = Score × Confidence × Consensus. This is the actual weight used in verdict calculations.">
+                    Eff. Weight
+                  </th>
                   <th onClick={() => handleSort("evaluated_at")} className={styles.sortable}>
                     Evaluated {sortBy === "evaluated_at" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
@@ -325,8 +443,21 @@ export default function SourceReliabilityPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.entries.map((entry) => (
-                  <tr key={entry.domain}>
+                {data.entries.map((entry) => {
+                  const effectiveWeight = calculateEffectiveWeight(
+                    entry.score,
+                    entry.confidence,
+                    entry.consensusAchieved
+                  );
+                  return (
+                  <tr key={entry.domain} className={selectedDomains.has(entry.domain) ? styles.selectedRow : ""}>
+                    <td className={styles.checkboxCol}>
+                      <input
+                        type="checkbox"
+                        checked={selectedDomains.has(entry.domain)}
+                        onChange={() => toggleSelect(entry.domain)}
+                      />
+                    </td>
                     <td className={styles.domain}>{entry.domain}</td>
                     <td>
                       <span
@@ -338,7 +469,10 @@ export default function SourceReliabilityPage() {
                       </span>
                     </td>
                     <td>
-                      <span className={styles.confidence}>
+                      <span 
+                        className={styles.confidence}
+                        title={`LLM confidence: ${entry.confidence >= 0.8 ? 'High' : entry.confidence >= 0.6 ? 'Medium' : 'Low'}`}
+                      >
                         {formatScore(entry.confidence)}
                       </span>
                     </td>
@@ -353,10 +487,19 @@ export default function SourceReliabilityPage() {
                     </td>
                     <td>
                       {entry.consensusAchieved ? (
-                        <span className={styles.consensusYes}>✓</span>
+                        <span className={styles.consensusYes} title="Multi-model consensus achieved (+5% bonus)">✓</span>
                       ) : (
-                        <span className={styles.consensusNo}>✗</span>
+                        <span className={styles.consensusNo} title="No consensus (single model only)">✗</span>
                       )}
+                    </td>
+                    <td>
+                      <span
+                        className={styles.scoreBadge}
+                        style={{ backgroundColor: getEffectiveWeightColor(effectiveWeight) }}
+                        title={`Effective weight used in verdict calculations\n= Score × (0.75 + Confidence×0.25) × Consensus bonus`}
+                      >
+                        {formatScore(effectiveWeight)}
+                      </span>
                     </td>
                     <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
                     <td className={styles.date}>{formatDate(entry.expiresAt)}</td>
@@ -370,7 +513,8 @@ export default function SourceReliabilityPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -412,6 +556,21 @@ export default function SourceReliabilityPage() {
           <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 50-69%: Mixed</span>
           <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> 30-49%: Low</span>
           <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-29%: Very Low</span>
+        </div>
+        
+        <h3 style={{ marginTop: "16px" }}>How Verdict Weighting Works</h3>
+        <div className={styles.legendItems} style={{ flexDirection: "column", gap: "8px" }}>
+          <span><strong>Effective Weight</strong> = Score × Confidence Multiplier × Consensus Bonus</span>
+          <span>• <strong>Confidence Multiplier</strong>: Range [0.75, 1.0] based on LLM confidence</span>
+          <span>• <strong>Consensus Bonus</strong>: +5% when multiple models agree (capped at 1.0)</span>
+          <span>• <strong>Unknown Sources</strong>: Default 65% score with low confidence (≈49% effective weight)</span>
+        </div>
+        
+        <h3 style={{ marginTop: "16px" }}>Examples</h3>
+        <div className={styles.legendItems} style={{ flexDirection: "column", gap: "4px", fontSize: "12px" }}>
+          <span>bag.admin.ch (93%, 95% conf, consensus): 93% × 0.99 × 1.05 = <strong>96.7%</strong> effective</span>
+          <span>reddit.com (53%, 80% conf, no consensus): 53% × 0.95 × 1.0 = <strong>50.4%</strong> effective</span>
+          <span>Unknown source: 65% × 0.625 × 1.0 = <strong>~40.6%</strong> effective (skeptical default)</span>
         </div>
       </div>
     </div>

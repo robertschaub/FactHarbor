@@ -299,3 +299,48 @@
   background: #fef2f2;
   border-color: #fca5a5;
 }
+
+/* Danger button for bulk delete */
+.buttonDanger {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #ef4444;
+  color: white;
+  border: 1px solid #dc2626;
+}
+
+.buttonDanger:hover {
+  background: #dc2626;
+}
+
+.buttonDanger:disabled {
+  background: #fca5a5;
+  border-color: #fca5a5;
+  cursor: not-allowed;
+}
+
+/* Checkbox column */
+.checkboxCol {
+  width: 40px;
+  text-align: center;
+  padding: 8px !important;
+}
+
+.checkboxCol input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Selected row highlight */
+.selectedRow {
+  background-color: #eff6ff !important;
+}
+
+.selectedRow:hover {
+  background-color: #dbeafe !important;
+}
