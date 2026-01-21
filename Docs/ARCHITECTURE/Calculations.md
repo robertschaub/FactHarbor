@@ -1,11 +1,11 @@
 # FactHarbor Calculations Documentation
 
-**Version**: 2.6.33  
-**Last Updated**: 2026-01-20
+**Version**: 2.6.35  
+**Last Updated**: 2026-01-21
 
 ## Overview
 
-This document explains how FactHarbor calculates verdicts, handles counter-evidence, aggregates results across different levels, and manages confidence scores.
+This document explains how FactHarbor calculates verdicts, handles counter-evidence, aggregates results across different levels, manages confidence scores, and applies source reliability weighting.
 
 ## 1. Verdict Scale (7-Point System with MIXED/UNVERIFIED Distinction)
 
@@ -275,20 +275,27 @@ function getClaimWeight(claim: WeightedClaim): number {
 
 ### Level 1: Claim Verdicts
 
-**Source**: LLM verdict generation + evidence weighting
+**Source**: LLM verdict generation + source reliability weighting
 
-**Function**: `applyEvidenceWeighting` (line ~2014)
+**Function**: `applyEvidenceWeighting` in `source-reliability.ts`
+
+Source reliability weighting adjusts verdicts based on the credibility of evidence sources. See [Source Reliability Weighting](#10-source-reliability-weighting) for full details.
 
 ```typescript
-// Adjust truth based on source track record scores
-const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-const adjustedTruth = Math.round(50 + (verdict.truthPercentage - 50) * avg);
-const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avg / 2));
+// Calculate effective weight from source reliability data
+const effectiveWeight = calculateEffectiveWeight(sourceData);
+
+// Adjust truth toward neutral (50) based on effective weight
+const adjustedTruth = Math.round(50 + (verdict.truthPercentage - 50) * avgEffectiveWeight);
+const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avgEffectiveWeight / 2));
 ```
 
-- High-reliability sources (score > 0.8): Boost verdict
-- Low-reliability sources (score < 0.4): Reduce verdict
-- Unknown reliability: No adjustment
+| Source Quality | Effective Weight | Verdict Impact |
+|----------------|------------------|----------------|
+| High reliability (93% score, consensus) | ~97% | Minimal adjustment |
+| Medium reliability (70% score) | ~68% | Moderate pull toward neutral |
+| Unknown source (default) | ~41% | Strong pull toward neutral |
+| Low reliability (40% score) | ~39% | Strong pull toward neutral |
 
 ### Level 2: Key Factor Verdicts
 
@@ -500,6 +507,123 @@ if (isEvaluativeOutcome && !hasBenchmarkEvidence) {
 
 This prevents unsupported judgments like "27-year sentence was proportionate" without benchmark data.
 
+## 10. Source Reliability Weighting
+
+**Version**: v2.6.35+  
+**Files**: `source-reliability.ts`, `monolithic-canonical.ts`, `monolithic-dynamic.ts`
+
+Source reliability scores influence verdict calculations by adjusting truth percentages based on the credibility of evidence sources. This applies across **all three analysis pipelines**.
+
+### Effective Weight Formula
+
+The system calculates an **effective weight** that combines three components:
+
+```typescript
+function calculateEffectiveWeight(data: SourceReliabilityData): number {
+  const confidenceMultiplier = 0.75 + (data.confidence * 0.25);
+  const consensusBonus = data.consensusAchieved ? 1.05 : 1.0;
+  return Math.min(1.0, data.score * confidenceMultiplier * consensusBonus);
+}
+```
+
+| Component | Range | Purpose |
+|-----------|-------|---------|
+| **Score** | 0.0-1.0 | LLM-evaluated factual reliability |
+| **Confidence Multiplier** | 0.75-1.0 | Higher LLM confidence → higher weight |
+| **Consensus Bonus** | 1.0 or 1.05 | +5% when Claude and GPT-4 agreed |
+
+### Effective Weight Examples
+
+| Source | Score | Confidence | Consensus | Effective Weight |
+|--------|-------|------------|-----------|------------------|
+| Reuters | 95% | 95% | Yes | `0.95 × 0.99 × 1.05 = 98.7%` |
+| bag.admin.ch | 93% | 90% | Yes | `0.93 × 0.98 × 1.05 = 95.7%` |
+| Generic news | 70% | 80% | No | `0.70 × 0.95 × 1.0 = 66.5%` |
+| Reddit | 53% | 80% | No | `0.53 × 0.95 × 1.0 = 50.4%` |
+| Unknown source | 65%* | 50%* | No | `0.65 × 0.625 × 1.0 = 40.6%` |
+
+*Unknown sources use configurable defaults: `FH_SR_DEFAULT_SCORE=0.65`, confidence=0.5
+
+### Verdict Adjustment Formula
+
+```typescript
+// Average effective weight across all sources for a verdict
+const avgWeight = sources.map(s => calculateEffectiveWeight(s)).reduce((a,b) => a+b) / sources.length;
+
+// Pull verdict toward neutral (50) based on reliability
+adjustedTruth = Math.round(50 + (originalTruth - 50) * avgWeight);
+
+// Scale confidence by reliability
+adjustedConfidence = Math.round(originalConfidence * (0.5 + avgWeight / 2));
+```
+
+### Impact Examples
+
+**High Reliability Source (Reuters, 98.7% effective weight)**
+```
+Original verdict: 85% (MOSTLY-TRUE)
+Adjusted: 50 + (85 - 50) × 0.987 = 84.5% → 85% (MOSTLY-TRUE)
+Impact: Minimal change, verdict preserved
+```
+
+**Unknown Source (40.6% effective weight)**
+```
+Original verdict: 85% (MOSTLY-TRUE)
+Adjusted: 50 + (85 - 50) × 0.406 = 64.2% → 64% (LEANING-TRUE)
+Impact: Strong pull toward neutral (appropriate skepticism)
+```
+
+**Low Reliability Source (Reddit, 50.4% effective weight)**
+```
+Original verdict: 85% (MOSTLY-TRUE)
+Adjusted: 50 + (85 - 50) × 0.504 = 67.6% → 68% (LEANING-TRUE)
+Impact: Moderate pull toward neutral
+```
+
+### Multi-Source Averaging
+
+When a verdict uses multiple sources, their effective weights are averaged:
+
+```
+Verdict evidence from:
+  - reuters.com: 98.7% effective
+  - reddit.com: 50.4% effective
+  - unknown-blog.xyz: 40.6% effective
+
+Average weight: (98.7 + 50.4 + 40.6) / 3 = 63.2%
+
+Original: 85% → Adjusted: 50 + (85 - 50) × 0.632 = 72.1% (LEANING-TRUE)
+```
+
+### Unknown Source Handling
+
+Sources not in the reliability cache are assigned defaults:
+
+| Property | Default Value | Rationale |
+|----------|---------------|-----------|
+| Score | 0.65 (`FH_SR_DEFAULT_SCORE`) | Neutral-skeptical starting point |
+| Confidence | 0.5 | Low confidence (no evaluation) |
+| Consensus | false | No multi-model agreement |
+
+This results in ~41% effective weight, applying appropriate skepticism without completely discounting evidence.
+
+### Pipeline Integration
+
+Source reliability weighting is applied in all three pipelines:
+
+| Pipeline | Implementation |
+|----------|----------------|
+| **Orchestrated** | `applyEvidenceWeighting()` function |
+| **Monolithic Canonical** | Inline calculation in verdict building |
+| **Monolithic Dynamic** | Inline calculation with `adjustedVerdictScore` |
+
+### Design Rationale
+
+1. **Evidence Over Authority**: Source reliability is supplementary—strong evidence from weak sources still matters
+2. **Appropriate Skepticism**: Unknown sources receive ~41% weight, not 0% or 100%
+3. **Consensus Bonus**: Multi-model agreement slightly boosts confidence
+4. **Transparency**: All adjustments logged and available in verdict metadata
+
 ## Summary
 
 FactHarbor's calculation system:
@@ -512,5 +636,10 @@ FactHarbor's calculation system:
 6. **Handles dependencies** to avoid cascading false prerequisites
 7. **Applies quality gates** (Gate 1, Gate 4) for evidence sufficiency
 8. **Guards against unsupported judgments** (pseudoscience, proportionality without benchmarks)
+9. **Applies source reliability weighting** to adjust verdicts based on source credibility (v2.6.35+)
 
 All calculations are designed to be **transparent**, **traceable**, and **deterministic** (when `FH_DETERMINISTIC=true`).
+
+---
+
+*See also: [Source_Reliability.md](Source_Reliability.md) for full Source Reliability system documentation.*

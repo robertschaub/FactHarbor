@@ -31,7 +31,8 @@ FactHarbor evaluates source reliability dynamically using LLM-powered assessment
 |--------|----------------|
 | **Evaluation** | Multi-model LLM consensus (Claude + GPT-4) |
 | **Storage** | SQLite cache (`source-reliability.db`) |
-| **Integration** | Batch prefetch + sync lookup |
+| **Integration** | Batch prefetch + sync lookup (all 3 pipelines) |
+| **Pipelines** | Orchestrated ✅, Canonical ✅, Dynamic ✅ |
 | **Cost Control** | Importance filter + rate limiting |
 | **Verdict Impact** | Evidence weighting adjusts truth percentages |
 
@@ -275,8 +276,9 @@ All configuration is via environment variables (`apps/web/.env.local`):
 |----------|---------|-------------|
 | `FH_SR_ENABLED` | `true` | Enable/disable source reliability |
 | `FH_SR_MULTI_MODEL` | `true` | Use multi-model consensus |
-| `FH_SR_CONFIDENCE_THRESHOLD` | `0.8` | Min LLM confidence to accept score |
+| `FH_SR_CONFIDENCE_THRESHOLD` | `0.65` | Min LLM confidence to accept score |
 | `FH_SR_CONSENSUS_THRESHOLD` | `0.15` | Max score difference between models |
+| `FH_SR_DEFAULT_SCORE` | `0.65` | Default score for unknown sources (0.0-1.0) |
 
 ### Cache Settings
 
@@ -414,10 +416,23 @@ Per review feedback, the system avoids categorical assumptions:
 
 ```typescript
 // Phase 1: Call ONCE before analysis (async)
-export async function prefetchSourceReliability(urls: string[]): Promise<void>;
+export async function prefetchSourceReliability(urls: string[]): Promise<PrefetchResult>;
+interface PrefetchResult {
+  prefetched: number;
+  alreadyPrefetched: number;
+  cacheHits: number;
+  evaluated: number;
+  skipped: number;
+}
 
 // Phase 2: Call MANY times during analysis (sync, instant)
 export function getTrackRecordScore(url: string): number | null;
+export function getTrackRecordData(url: string): CachedReliabilityData | null;
+interface CachedReliabilityData {
+  score: number;
+  confidence: number;
+  consensusAchieved: boolean;
+}
 
 // Phase 3: Apply to verdicts (sync)
 export function applyEvidenceWeighting(
@@ -426,15 +441,43 @@ export function applyEvidenceWeighting(
   sources: FetchedSource[]
 ): ClaimVerdict[];
 
+// Effective weight calculation (used by monolithic pipelines)
+export function calculateEffectiveWeight(data: SourceReliabilityData): number;
+interface SourceReliabilityData {
+  score: number;
+  confidence: number;
+  consensusAchieved: boolean;
+}
+
 // Utilities
 export function extractDomain(url: string): string | null;
 export function isImportantSource(domain: string): boolean;
 export function normalizeTrackRecordScore(score: number): number;
 export function clampTruthPercentage(value: number): number;
 export function clearPrefetchedScores(): void;
+
+// Configuration
+export const DEFAULT_UNKNOWN_SOURCE_SCORE: number; // 0.65 by default
+export const SR_CONFIG: SourceReliabilityConfig;
 ```
 
-### Integration Points in Orchestrated Pipeline
+### Pipeline Integration
+
+Source Reliability is integrated into all three FactHarbor analysis pipelines:
+
+| Pipeline | File | Status | Implementation |
+|----------|------|--------|----------------|
+| **Orchestrated** | `orchestrated.ts` | ✅ Full | Prefetch + lookup + evidence weighting |
+| **Monolithic Canonical** | `monolithic-canonical.ts` | ✅ Full | Prefetch + lookup + verdict adjustment |
+| **Monolithic Dynamic** | `monolithic-dynamic.ts` | ✅ Full | Prefetch + lookup + verdict adjustment |
+
+All pipelines follow the same pattern:
+1. **Clear** prefetched scores at analysis start
+2. **Prefetch** source reliability before fetching URLs
+3. **Lookup** scores synchronously when creating sources
+4. **Apply** weighting to verdicts
+
+### Integration Points: Orchestrated Pipeline
 
 ```typescript
 // In orchestrated.ts - runFactHarborAnalysis()
@@ -460,6 +503,74 @@ const weightedVerdicts = applyEvidenceWeighting(
   state.sources
 );
 ```
+
+### Integration Points: Monolithic Pipelines
+
+Both `monolithic-canonical.ts` and `monolithic-dynamic.ts` use the same integration pattern with slight differences:
+
+```typescript
+// In monolithic-canonical.ts / monolithic-dynamic.ts
+
+// 1. Clear at start of analysis
+clearPrefetchedScores();
+
+// 2. Before each fetch batch, prefetch reliability
+if (SR_CONFIG.enabled && urlsToFetch.length > 0) {
+  await prefetchSourceReliability(urlsToFetch.map(r => r.url));
+}
+
+// 3. When creating source objects, include reliability data
+const reliabilityData = getTrackRecordData(result.url);
+sources.push({
+  // ...
+  trackRecordScore: reliabilityData?.score ?? null,
+  trackRecordConfidence: reliabilityData?.confidence ?? null,
+  trackRecordConsensus: reliabilityData?.consensusAchieved ?? null,
+});
+
+// 4. Calculate effective weight and apply to verdicts
+const avgSourceReliabilityWeight = calculateEffectiveWeight(...);
+const adjustedVerdict = Math.round(50 + (v.verdict - 50) * avgSourceReliabilityWeight);
+const adjustedConfidence = Math.round(v.confidence * (0.5 + avgSourceReliabilityWeight / 2));
+```
+
+### Effective Weight Calculation
+
+The monolithic pipelines use a more comprehensive weighting formula that combines score, confidence, and consensus:
+
+```typescript
+function calculateEffectiveWeight(data: SourceReliabilityData): number {
+  const confidenceMultiplier = 0.75 + (data.confidence * 0.25);
+  const consensusBonus = data.consensusAchieved ? 1.05 : 1.0;
+  return Math.min(1.0, data.score * confidenceMultiplier * consensusBonus);
+}
+```
+
+| Component | Range | Effect |
+|-----------|-------|--------|
+| **Score** | 0.0-1.0 | Base reliability from LLM |
+| **Confidence Multiplier** | 0.75-1.0 | Higher LLM confidence → higher weight |
+| **Consensus Bonus** | 1.0 or 1.05 | +5% when multiple models agreed |
+
+**Examples:**
+- High-rated source (93% score, 95% conf, consensus): `0.93 × 0.99 × 1.05 = 96.7%` effective
+- Mixed source (53% score, 80% conf, no consensus): `0.53 × 0.95 × 1.0 = 50.4%` effective
+- Unknown source (65% default, 50% conf, no consensus): `0.65 × 0.625 × 1.0 = 40.6%` effective
+
+### Unknown Source Handling
+
+Sources not in the cache are assigned a configurable default score:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `FH_SR_DEFAULT_SCORE` | `0.65` | Score assigned to unknown sources |
+
+Unknown sources use:
+- Default score (0.65)
+- Low confidence (0.5)
+- No consensus bonus
+
+This results in an effective weight of ~40%, applying appropriate skepticism to unverified sources while not completely discounting their evidence.
 
 ### Multi-Model Consensus
 
