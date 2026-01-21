@@ -47,6 +47,11 @@ Identify which AnalysisContexts are ACTUALLY PRESENT in the provided evidence.
 
 **When in doubt**: Use FEWER contexts rather than including marginally relevant ones.
 
+**SAME SUBJECT/ENTITY RULE**: 
+- Contexts MUST be about the SAME SUBJECT as the thesis
+- If thesis is about "Person A's trial", do NOT include contexts about Person B, C, etc.
+- Different cases involving DIFFERENT PEOPLE are NOT relevant contexts, even if they share the same court, jurisdiction, or legal issue
+
 ## EVIDENCE-GROUNDED ONLY
 
 - Do NOT invent contexts based on background knowledge

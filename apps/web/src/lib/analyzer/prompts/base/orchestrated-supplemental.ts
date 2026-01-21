@@ -93,6 +93,11 @@ Return ONLY a single JSON object with keys:
 - When in doubt, use fewer scopes rather than including marginally relevant ones
 - A scope with zero relevant claims/evidence should NOT exist
 
+**SAME SUBJECT/ENTITY RULE**: 
+- Scopes MUST be about the SAME SUBJECT as the thesis
+- If thesis is about "Person A's trial", do NOT include scopes about Person B, C, etc.
+- Different cases involving DIFFERENT PEOPLE are NOT relevant scopes
+
 ## SCHEMA
 Each analysisContexts item must include:
 - id (string): CTX_SHORTCODE format
