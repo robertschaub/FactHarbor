@@ -278,7 +278,7 @@ All configuration is via environment variables (`apps/web/.env.local`):
 | `FH_SR_MULTI_MODEL` | `true` | Use multi-model consensus |
 | `FH_SR_CONFIDENCE_THRESHOLD` | `0.65` | Min LLM confidence to accept score |
 | `FH_SR_CONSENSUS_THRESHOLD` | `0.15` | Max score difference between models |
-| `FH_SR_DEFAULT_SCORE` | `0.65` | Default score for unknown sources (0.0-1.0) |
+| `FH_SR_DEFAULT_SCORE` | `0.5` | Default score for unknown sources (0.5 = neutral center) |
 
 ### Cache Settings
 
@@ -326,14 +326,22 @@ FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
 
 ## Score Interpretation
 
-| Score | Rating | Examples |
-|-------|--------|----------|
-| 0.90-0.99 | Very High | Reuters, AP, FactCheck.org |
-| 0.80-0.89 | High | BBC, NPR, Economist |
-| 0.70-0.79 | Mostly Factual | Generally reliable with occasional issues |
-| 0.50-0.69 | Mixed | Verify claims independently |
-| 0.30-0.49 | Low | Frequently misleading |
-| 0.05-0.29 | Very Low | Conspiracy, fake news |
+**Symmetric scale centered at 0.5 (neutral)**
+
+| Score | Rating | Meaning |
+|-------|--------|---------|
+| 0.85-1.00 | Very High | Exceptional factual accuracy |
+| 0.70-0.84 | High | Strong editorial standards |
+| 0.55-0.69 | Mostly Factual | Generally accurate with minor issues |
+| 0.45-0.54 | Mixed | Neutral center - uncertain reliability |
+| 0.30-0.44 | Low | Frequently misleading |
+| 0.15-0.29 | Very Low | Consistently unreliable |
+| 0.00-0.14 | Unreliable | Extreme cases only |
+
+**Impact on verdicts:**
+- Score > 0.5: Preserves original verdict (trusted source)
+- Score = 0.5: Maximum pull toward neutral (unknown/uncertain)
+- Score < 0.5: Pulls verdict toward neutral (skepticism)
 
 ---
 
@@ -391,11 +399,23 @@ Per review feedback, the system avoids categorical assumptions:
 
 ### Score Scale Contract
 
-**Canonical scale: 0.0-1.0 everywhere**
+**Canonical scale: 0.0-1.0, symmetric around 0.5**
 
+| Score Range | Rating | Meaning |
+|-------------|--------|---------|
+| 0.85-1.00 | very_high | Exceptional factual accuracy |
+| 0.70-0.84 | high | Strong editorial standards |
+| 0.55-0.69 | mostly_factual | Generally accurate |
+| 0.45-0.54 | mixed | Neutral center point |
+| 0.30-0.44 | low | Frequently misleading |
+| 0.15-0.29 | very_low | Consistently unreliable |
+| 0.00-0.14 | unreliable | Extreme cases only |
+
+**Key properties:**
+- **0.5 = neutral center** - no impact on verdict weighting
+- Above 0.5 = positive boost to verdict preservation
+- Below 0.5 = pulls verdict toward neutral (skepticism)
 - All stored scores use decimal 0.0-1.0
-- API responses use 0.0-1.0
-- In-memory caches use 0.0-1.0
 - Defensive normalization handles 0-100 scale inputs
 
 ---
@@ -457,7 +477,7 @@ export function clampTruthPercentage(value: number): number;
 export function clearPrefetchedScores(): void;
 
 // Configuration
-export const DEFAULT_UNKNOWN_SOURCE_SCORE: number; // 0.65 by default
+export const DEFAULT_UNKNOWN_SOURCE_SCORE: number; // 0.5 by default (neutral center)
 export const SR_CONFIG: SourceReliabilityConfig;
 ```
 
@@ -536,36 +556,44 @@ const adjustedConfidence = Math.round(v.confidence * (0.5 + avgSourceReliability
 
 ### Effective Weight Calculation
 
-The system calculates effective weight by blending the score toward a **fixed neutral center (0.5)** based on confidence:
+The system uses **amplified deviation** from a fixed neutral center (0.5) to create meaningful spread:
 
 ```typescript
-const BLEND_CENTER = 0.5; // Fixed: mathematical neutral, NOT configurable
+const BLEND_CENTER = 0.5;           // Fixed: mathematical neutral
+const SPREAD_MULTIPLIER = 1.5;      // Amplifies differences (configurable)
+const CONSENSUS_SPREAD_MULTIPLIER = 1.15;  // Extra spread when models agree
 
 function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  // Blend score toward neutral (0.5) based on confidence:
-  // - High confidence (1.0) → use actual score
-  // - Low confidence (0.0) → use neutral (0.5 = "we don't know")
-  const blendedScore = score * confidence + BLEND_CENTER * (1 - confidence);
-  const consensusBonus = data.consensusAchieved ? 1.05 : 1.0;
-  return Math.min(1.0, blendedScore * consensusBonus);
+  // Calculate deviation from neutral
+  const deviation = score - BLEND_CENTER;
+  
+  // Consensus multiplies spread (agreement = more impact)
+  const consensusFactor = consensusAchieved ? CONSENSUS_SPREAD_MULTIPLIER : 1.0;
+  const amplifiedDeviation = deviation * SPREAD_MULTIPLIER * confidence * consensusFactor;
+  
+  // Clamp to [0, 1]
+  return Math.max(0, Math.min(1.0, BLEND_CENTER + amplifiedDeviation));
 }
 ```
 
 | Component | Effect |
 |-----------|--------|
 | **Score** | Base reliability from LLM (0.0-1.0) |
-| **Confidence Blending** | Low confidence pulls score toward neutral (0.5) |
-| **Consensus Bonus** | +5% when multiple models agreed |
+| **Spread Multiplier** | 1.5x amplifies deviation from neutral (configurable) |
+| **Consensus Spread Multiplier** | 1.15x extra spread when models agreed (configurable) |
+| **Blend Center** | Fixed at 0.5 (mathematical neutral) |
 
-**Key Design Decision**: The blend center is **fixed at 0.5** (not the configurable default score):
-- 0.5 = mathematical neutral = "we don't know"
-- Creates a stable formula independent of policy settings
-- `FH_SR_DEFAULT_SCORE` only affects the initial score for unknown sources
+**Key Design Decisions**:
+- Consensus multiplies **spread**, giving more impact to agreed-upon scores
+- Spread multiplier creates meaningful differentiation between sources
+- Blend center is **fixed at 0.5** for formula stability
+- Cap at [0, 1] prevents "extra credit" or negative weights
 
 **Examples:**
-- High-rated source (93% score, 95% conf, consensus): `(0.93×0.95 + 0.5×0.05) × 1.05 = 95.5%` effective
-- Mixed source (55% score, 63% conf, consensus): `(0.55×0.63 + 0.5×0.37) × 1.05 = 56%` effective
-- Unknown source (65% score, 50% conf, no consensus): `(0.65×0.50 + 0.5×0.50) × 1.0 = 57.5%` effective
+- High-rated source (95% score, 95% conf, consensus): `0.5 + (0.45 × 1.5 × 1.0) = 100%` (capped)
+- Mixed source (55% score, 63% conf, consensus): `0.5 + (0.05 × 1.5 × 0.72) = 55%` effective
+- Low quality (40% score, 70% conf, no consensus): `0.5 + (-0.10 × 1.5 × 0.70) = 40%` effective
+- Unknown source (50% score, 50% conf, no consensus): `0.5 + (0.0 × 1.5 × 0.50) = 50%` effective (neutral)
 
 ### Unknown Source Handling
 
@@ -573,10 +601,10 @@ Sources not in the cache are assigned a configurable default score:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `FH_SR_DEFAULT_SCORE` | `0.65` | Score assigned to unknown sources |
+| `FH_SR_DEFAULT_SCORE` | `0.5` | Score assigned to unknown sources (neutral center) |
 
 Unknown sources use:
-- Default score (0.65)
+- Default score (0.5 = neutral)
 - Low confidence (0.5)
 - No consensus bonus
 

@@ -57,10 +57,15 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
    - Rate limiting for cost control
 
 2. **Evidence Weighting**: Source reliability now affects verdict calculations
-   - Formula: `adjustedTruth = 50 + (originalTruth - 50) × avgSourceScore`
-   - High reliability (0.9): Verdicts stay near original
-   - Low reliability (0.3): Verdicts pulled toward neutral
-   - Defensive normalization handles 0-100 scale inputs
+   - **Effective Weight Formula** (amplified deviation):
+     ```
+     effectiveWeight = 0.5 + (score - 0.5) × spreadMultiplier × confidence × consensusFactor
+     ```
+   - Configurable: `FH_SR_SPREAD_MULTIPLIER` (default 1.5), `FH_SR_CONSENSUS_SPREAD_MULTIPLIER` (default 1.15)
+   - **Symmetric score scale** centered at 0.5:
+     - 0.85-1.0: very_high | 0.70-0.84: high | 0.55-0.69: mostly_factual
+     - 0.45-0.54: mixed (neutral) | 0.30-0.44: low | 0.15-0.29: very_low
+   - Unknown sources default to 0.5 (truly neutral, no verdict bias)
 
 3. **Admin Interface**: New admin page for cache management
    - View cache statistics
@@ -89,6 +94,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 - `FH_SR_ENABLED`, `FH_SR_MULTI_MODEL`, `FH_SR_CONFIDENCE_THRESHOLD`
 - `FH_SR_CONSENSUS_THRESHOLD`, `FH_SR_CACHE_TTL_DAYS`, `FH_SR_FILTER_ENABLED`
 - `FH_SR_SKIP_PLATFORMS`, `FH_SR_SKIP_TLDS`, `FH_SR_RATE_LIMIT_PER_IP`
+- `FH_SR_SPREAD_MULTIPLIER`, `FH_SR_CONSENSUS_SPREAD_MULTIPLIER`, `FH_SR_DEFAULT_SCORE`
 
 ---
 

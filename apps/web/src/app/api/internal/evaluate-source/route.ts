@@ -134,21 +134,22 @@ IMPORTANT GUIDELINES:
 5. If you don't have sufficient information about this source, say so
 6. For government sources, consider current administration's transparency and accuracy record
 
-RATING SCALE (factualRating):
-- "very_high": Wire services, major fact-checkers (AP, Reuters, FactCheck.org)
-- "high": Quality journalism with strong fact-checking (BBC, NPR, Economist)
-- "mostly_factual": Generally reliable with occasional issues
-- "mixed": Inconsistent accuracy, verify claims independently
+RATING SCALE (factualRating) - symmetric around 0.5:
+- "very_high": Exceptional factual accuracy, rigorous fact-checking
+- "high": Strong editorial standards, reliable reporting
+- "mostly_factual": Generally accurate with minor issues
+- "mixed": Inconsistent accuracy, neutral/uncertain (center point)
 - "low": Frequently misleading or inaccurate
-- "very_low": Conspiracy theories, fake news, pseudoscience
+- "very_low": Consistently unreliable, misinformation
 
-SCORE SCALE (0.0 to 1.0):
-- 0.90-0.99: very_high factual rating
-- 0.80-0.89: high factual rating
-- 0.70-0.79: mostly_factual rating
-- 0.50-0.69: mixed rating
-- 0.30-0.49: low rating
-- 0.05-0.29: very_low rating
+SCORE SCALE (0.0 to 1.0) - symmetric around 0.5:
+- 0.85-1.00: very_high factual rating
+- 0.70-0.84: high factual rating
+- 0.55-0.69: mostly_factual rating
+- 0.45-0.54: mixed rating (neutral center)
+- 0.30-0.44: low rating
+- 0.15-0.29: very_low rating
+- 0.00-0.14: unreliable (extreme cases only)
 
 CONFIDENCE (0.0 to 1.0):
 - 0.9+: Well-known major source with documented track record

@@ -9,6 +9,16 @@ import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore } 
 
 export const runtime = "nodejs";
 
+// Get effective weight calculation config (read from env, matching source-reliability.ts)
+function getConfig() {
+  return {
+    blendCenter: 0.5, // Fixed: mathematical neutral
+    spreadMultiplier: parseFloat(process.env.FH_SR_SPREAD_MULTIPLIER || "1.5"),
+    consensusSpreadMultiplier: parseFloat(process.env.FH_SR_CONSENSUS_SPREAD_MULTIPLIER || "1.15"),
+    defaultScore: parseFloat(process.env.FH_SR_DEFAULT_SCORE || "0.5"),
+  };
+}
+
 function getEnv(name: string): string | null {
   const v = process.env[name];
   return v && v.trim() ? v : null;
@@ -52,10 +62,12 @@ export async function GET(req: Request) {
 
     const data = await getAllCachedScores({ limit, offset, sortBy, sortOrder });
     const stats = await getCacheStats();
+    const config = getConfig();
 
     return NextResponse.json({
       ...data,
       stats,
+      config,
     });
   } catch (err) {
     console.error("[Admin SR] Error:", err);

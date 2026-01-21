@@ -363,7 +363,7 @@ export function clampTruthPercentage(value: number): number {
  * Configurable via FH_SR_DEFAULT_SCORE environment variable.
  */
 export const DEFAULT_UNKNOWN_SOURCE_SCORE = parseFloat(
-  process.env.FH_SR_DEFAULT_SCORE || "0.65"
+  process.env.FH_SR_DEFAULT_SCORE || "0.5"
 );
 
 /**
@@ -391,20 +391,24 @@ export interface SourceReliabilityData {
 // 0.5 = "we don't know" - the neutral point for uncertain scores
 const BLEND_CENTER = 0.5;
 
+// Spread multiplier: amplifies deviation from neutral (configurable via env)
+const SPREAD_MULTIPLIER = parseFloat(process.env.FH_SR_SPREAD_MULTIPLIER || "1.5");
+
+// Consensus spread multiplier: extra spread when models agree (configurable via env)
+const CONSENSUS_SPREAD_MULTIPLIER = parseFloat(process.env.FH_SR_CONSENSUS_SPREAD_MULTIPLIER || "1.15");
+
 export function calculateEffectiveWeight(data: SourceReliabilityData): number {
   const { score, confidence, consensusAchieved } = data;
   
-  // Blend score toward neutral (0.5) based on confidence:
-  // - High confidence (1.0) → use actual score
-  // - Low confidence (0.0) → use neutral (0.5)
-  // This creates a stable formula where uncertainty pulls toward "we don't know"
-  const blendedScore = score * confidence + BLEND_CENTER * (1 - confidence);
+  // Calculate deviation from neutral
+  const deviation = score - BLEND_CENTER;
   
-  // Consensus bonus: slight boost when models agree
-  const consensusBonus = consensusAchieved ? 1.05 : 1.0;
+  // Consensus multiplies spread (agreement = more impact from score deviation)
+  const consensusFactor = consensusAchieved ? CONSENSUS_SPREAD_MULTIPLIER : 1.0;
+  const amplifiedDeviation = deviation * SPREAD_MULTIPLIER * confidence * consensusFactor;
   
-  // Calculate effective weight, cap at 1.0
-  const effectiveWeight = Math.min(1.0, blendedScore * consensusBonus);
+  // Calculate effective weight, clamped to [0, 1]
+  const effectiveWeight = Math.max(0, Math.min(1.0, BLEND_CENTER + amplifiedDeviation));
   
   return effectiveWeight;
 }

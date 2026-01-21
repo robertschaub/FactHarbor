@@ -516,44 +516,53 @@ Source reliability scores influence verdict calculations by adjusting truth perc
 
 ### Effective Weight Formula
 
-The system calculates an **effective weight** by blending the score toward a **fixed neutral center (0.5)** based on confidence:
+The system uses **amplified deviation** from a fixed neutral center (0.5) to create meaningful spread:
 
 ```typescript
-const BLEND_CENTER = 0.5; // Fixed: mathematical neutral, NOT configurable
+const BLEND_CENTER = 0.5;           // Fixed: mathematical neutral
+const SPREAD_MULTIPLIER = 1.5;      // Amplifies differences (FH_SR_SPREAD_MULTIPLIER)
+const CONSENSUS_SPREAD_MULTIPLIER = 1.15;  // Extra spread when models agree
 
 function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  // Blend score toward neutral (0.5) based on confidence:
-  // - High confidence (1.0) → use actual score
-  // - Low confidence (0.0) → use neutral (0.5 = "we don't know")
-  const blendedScore = score * confidence + BLEND_CENTER * (1 - confidence);
-  const consensusBonus = data.consensusAchieved ? 1.05 : 1.0;
-  return Math.min(1.0, blendedScore * consensusBonus);
+  // Calculate deviation from neutral
+  const deviation = score - BLEND_CENTER;
+  
+  // Consensus multiplies spread (agreement = more impact)
+  const consensusFactor = consensusAchieved ? CONSENSUS_SPREAD_MULTIPLIER : 1.0;
+  const amplifiedDeviation = deviation * SPREAD_MULTIPLIER * confidence * consensusFactor;
+  
+  // Clamp to [0, 1]
+  return Math.max(0, Math.min(1.0, BLEND_CENTER + amplifiedDeviation));
 }
 ```
 
 | Component | Purpose |
 |-----------|---------|
 | **Score** | LLM-evaluated factual reliability (0.0-1.0) |
-| **Confidence Blending** | Low confidence pulls score toward neutral (0.5) |
-| **Consensus Bonus** | +5% when Claude and GPT-4 agreed |
+| **Spread Multiplier** | 1.5x amplifies deviation from neutral (configurable) |
+| **Consensus Spread Multiplier** | 1.15x extra spread when Claude and GPT-4 agreed (configurable) |
+| **Blend Center** | Fixed at 0.5 (mathematical neutral, NOT configurable) |
 
-**Key Design Decision**: The blend center is **fixed at 0.5**, not the configurable default:
-- 0.5 = mathematical neutral = "we don't know"
-- Creates a stable formula independent of policy settings
-- `FH_SR_DEFAULT_SCORE` only affects the initial score assigned to unknown sources
+**Key Design Decisions**:
+- Consensus multiplies **spread**, giving more impact to agreed-upon scores
+- Spread multiplier creates meaningful differentiation (39% to 100% range)
+- Blend center is **fixed at 0.5** for formula stability
+- `FH_SR_DEFAULT_SCORE` only affects initial score for unknown sources
 
 ### Effective Weight Examples
 
-| Source | Score | Confidence | Consensus | Calculation | Effective Weight |
-|--------|-------|------------|-----------|-------------|------------------|
-| Reuters | 95% | 95% | Yes | `(0.95×0.95 + 0.5×0.05) × 1.05` | **97%** |
-| bag.admin.ch | 93% | 90% | Yes | `(0.93×0.90 + 0.5×0.10) × 1.05` | **94%** |
-| Generic news | 70% | 80% | No | `(0.70×0.80 + 0.5×0.20) × 1.0` | **66%** |
-| Reddit | 55% | 63% | Yes | `(0.55×0.63 + 0.5×0.37) × 1.05` | **56%** |
-| Low quality | 40% | 70% | No | `(0.40×0.70 + 0.5×0.30) × 1.0` | **43%** |
-| Unknown source | 65%* | 50%* | No | `(0.65×0.50 + 0.5×0.50) × 1.0` | **57.5%** |
+| Source | Score | Confidence | Consensus | Effective Weight |
+|--------|-------|------------|-----------|------------------|
+| Reuters | 95% | 95% | Yes | **100%** (capped) |
+| bag.admin.ch | 93% | 90% | Yes | **100%** (capped) |
+| Generic news | 70% | 80% | No | **74%** |
+| Reddit | 55% | 63% | Yes | **56%** |
+| Low quality | 40% | 70% | No | **39%** |
+| Unknown source | 50%* | 50% | No | **50%** (neutral) |
 
-*Unknown sources use configurable `FH_SR_DEFAULT_SCORE=0.65` as initial score, confidence=0.5
+*Unknown sources use configurable `FH_SR_DEFAULT_SCORE=0.5` as initial score (symmetric scale center), confidence=0.5
+
+**Spread: 40% to 100% = 60 points** (good differentiation)
 
 ### Verdict Adjustment Formula
 
@@ -570,31 +579,31 @@ adjustedConfidence = Math.round(originalConfidence * (0.5 + avgWeight / 2));
 
 ### Impact Examples
 
-**High Reliability Source (Reuters, 97% effective weight)**
+**High Reliability Source (Reuters, 100% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.97 = 83.9% → 84% (MOSTLY-TRUE)
-Impact: Minimal change, verdict preserved
+Adjusted: 50 + (85 - 50) × 1.0 = 85% (MOSTLY-TRUE)
+Impact: No change, verdict fully preserved
 ```
 
-**Unknown Source (57.5% effective weight)**
+**Unknown Source (50% effective weight - neutral)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.575 = 70.1% → 70% (LEANING-TRUE)
-Impact: Moderate pull toward neutral (appropriate skepticism)
+Adjusted: 50 + (85 - 50) × 0.50 = 67.5% → 68% (LEANING-TRUE)
+Impact: Strong pull toward neutral (maximum skepticism for unknown)
 ```
 
-**Mixed Source (Reddit 55% score, 63% conf → 56% effective weight)**
+**Mixed Source (Reddit 55% score, 63% conf → 55% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.56 = 69.6% → 70% (LEANING-TRUE)
-Impact: Low score + low confidence → pulled toward neutral
+Adjusted: 50 + (85 - 50) × 0.55 = 69.3% → 69% (LEANING-TRUE)
+Impact: Low score pulls verdict toward neutral
 ```
 
-**Low Quality Source (40% score, 70% conf → 43% effective weight)**
+**Low Quality Source (40% score, 70% conf → 40% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.43 = 65.1% → 65% (LEANING-TRUE)
+Adjusted: 50 + (85 - 50) × 0.40 = 64% (LEANING-TRUE)
 Impact: Strong pull toward neutral (significant skepticism)
 ```
 
@@ -619,7 +628,7 @@ Sources not in the reliability cache are assigned defaults:
 
 | Property | Default Value | Rationale |
 |----------|---------------|-----------|
-| Score | 0.65 (`FH_SR_DEFAULT_SCORE`) | Neutral-skeptical starting point |
+| Score | 0.5 (`FH_SR_DEFAULT_SCORE`) | Neutral center (symmetric scale) |
 | Confidence | 0.5 | Low confidence (no evaluation) |
 | Consensus | false | No multi-model agreement |
 
