@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { getCacheStats, getAllCachedScores, cleanupExpired } from "@/lib/source-reliability-cache";
+import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore } from "@/lib/source-reliability-cache";
 
 export const runtime = "nodejs";
 
@@ -61,6 +61,41 @@ export async function GET(req: Request) {
     console.error("[Admin SR] Error:", err);
     return NextResponse.json(
       { error: "Failed to fetch source reliability data" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  if (!checkAuth(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const url = new URL(req.url);
+    const domain = url.searchParams.get("domain");
+
+    if (!domain) {
+      return NextResponse.json(
+        { error: "Missing 'domain' parameter" },
+        { status: 400 }
+      );
+    }
+
+    const deleted = await deleteCachedScore(domain);
+    
+    if (deleted) {
+      return NextResponse.json({ success: true, domain });
+    } else {
+      return NextResponse.json(
+        { error: "Domain not found in cache" },
+        { status: 404 }
+      );
+    }
+  } catch (err) {
+    console.error("[Admin SR] Delete error:", err);
+    return NextResponse.json(
+      { error: "Failed to delete entry" },
       { status: 500 }
     );
   }

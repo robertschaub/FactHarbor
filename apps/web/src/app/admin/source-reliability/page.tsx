@@ -134,6 +134,30 @@ export default function SourceReliabilityPage() {
     }
   };
 
+  const handleDelete = async (domain: string) => {
+    if (!confirm(`Delete cached score for "${domain}"?\n\nThis will be re-evaluated on next analysis.`)) return;
+
+    try {
+      const response = await fetch(`/api/admin/source-reliability?domain=${encodeURIComponent(domain)}`, {
+        method: "DELETE",
+        headers: getHeaders(),
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          setNeedsAuth(true);
+          throw new Error("Unauthorized");
+        }
+        if (response.status === 404) {
+          throw new Error("Domain not found");
+        }
+        throw new Error("Delete failed");
+      }
+      fetchData();
+    } catch (err) {
+      alert("Delete failed: " + (err instanceof Error ? err.message : "Unknown error"));
+    }
+  };
+
   const handleSort = (column: string) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -297,6 +321,7 @@ export default function SourceReliabilityPage() {
                   <th onClick={() => handleSort("expires_at")} className={styles.sortable}>
                     Expires {sortBy === "expires_at" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -335,6 +360,15 @@ export default function SourceReliabilityPage() {
                     </td>
                     <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
                     <td className={styles.date}>{formatDate(entry.expiresAt)}</td>
+                    <td>
+                      <button
+                        onClick={() => handleDelete(entry.domain)}
+                        className={styles.deleteButton}
+                        title="Delete this entry"
+                      >
+                        🗑
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

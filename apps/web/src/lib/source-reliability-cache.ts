@@ -190,6 +190,20 @@ export async function cleanupExpired(): Promise<number> {
 }
 
 /**
+ * Delete a specific domain from the cache
+ */
+export async function deleteCachedScore(domain: string): Promise<boolean> {
+  const database = await getDb();
+
+  const result = await database.run(
+    `DELETE FROM source_reliability WHERE domain = ?`,
+    [domain]
+  );
+
+  return (result.changes ?? 0) > 0;
+}
+
+/**
  * Get cache statistics
  */
 export async function getCacheStats(): Promise<{
