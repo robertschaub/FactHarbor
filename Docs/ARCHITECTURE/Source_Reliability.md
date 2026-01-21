@@ -1,20 +1,39 @@
-# FactHarbor Source Reliability Bundle
+# FactHarbor Source Reliability
 
-## Current Status: OPTIONAL (disabled by default)
+## Current Status: APPROVED FOR IMPLEMENTATION
 
-> **Note**: Source reliability scoring is **disabled by default** and only becomes active if you explicitly configure a local bundle via `FH_SOURCE_BUNDLE_PATH`.
+> **New Architecture**: The Source Reliability system has been redesigned. See [Source_Reliability_Service_Proposal.md](Source_Reliability_Service_Proposal.md) for the approved implementation plan.
 >
-> **Current implementation reality (v2.6.33)**:
-> - **Local file only**: the code loads a bundle from `FH_SOURCE_BUNDLE_PATH` if present.
-> - **No remote bundle fetch / integrity verification** is implemented yet.
->
-> **POC stance**: Treat this as optional metadata. The primary driver remains evidence/counter-evidence, not authority.
+> **Implementation**: Option A (Pure LLM + Cache) - no pre-seeded data, all sources evaluated by LLM with multi-model consensus.
 
 ---
 
 ## Overview
 
-FactHarbor can use configurable source reliability scores to add context to sources during fact-checking. One possible data source is [Media Bias/Fact Check (MBFC)](https://mediabiasfactcheck.com), but the system is designed to accept user-supplied bundles (no hardcoded defaults).
+FactHarbor evaluates source reliability dynamically using LLM-powered assessment with multi-model consensus. This replaces the previous static bundle approach.
+
+### New Approach (Approved)
+
+| Aspect | Implementation |
+|--------|----------------|
+| **Evaluation Method** | Multi-model LLM consensus (Claude + GPT-4) |
+| **Data Storage** | SQLite cache with 90-day TTL |
+| **Integration** | Batch prefetch + sync lookup (no async in hot path) |
+| **Cost Control** | Importance filter + rate limiting |
+| **Configuration** | All parameters via environment variables |
+
+See [Source_Reliability_Service_Proposal.md](Source_Reliability_Service_Proposal.md) for full architecture.
+
+---
+
+## Legacy: Static Bundle Approach (Deprecated)
+
+> **Note**: The static bundle approach below is **deprecated** and will be removed. It is retained here for reference during migration.
+>
+> The bundle-based approach had issues with:
+> - Data quality/bias concerns with external rating sources
+> - No dynamic evaluation of new sources
+> - Attribution/manipulation concerns
 
 ## Design Principles
 

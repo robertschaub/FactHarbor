@@ -2,10 +2,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | READY FOR TEAM DECISION |
+| **Status** | **APPROVED - READY FOR IMPLEMENTATION** |
 | **Author** | Architecture Team |
 | **Created** | 2026-01-21 |
-| **Version** | 1.8 |
+| **Version** | 2.2 (FINAL) |
 | **Related** | [Source_Reliability.md](Source_Reliability.md) |
 
 ---
@@ -14,36 +14,48 @@
 
 - [x] Lead Developer Review - 2026-01-21
 - [x] Senior Architect Review - 2026-01-21
-- [x] Security Review - 2026-01-21 ([Full Review](Source_Reliability_Service_Security_Review.md))
-- [x] Project Lead Review - 2026-01-21 ([Full Review](Source_Reliability_Service_Project_Lead_Review.md))
+- [x] Security Review - 2026-01-21 ([Full Review](../ARCHIVE/Source_Reliability_Service_Security_Review.md))
+- [x] Project Lead Review - 2026-01-21 ([Full Review](../ARCHIVE/Source_Reliability_Service_Project_Lead_Review.md))
 - [x] Security Advisor Final Review - 2026-01-21 (**Conditional Approval**)
-- [ ] Team Confirmation - Pending
+- [x] Team Confirmation - 2026-01-21 (**Option A Chosen**)
+- [x] **Final Approval - 2026-01-21** ✅
+
+### Final Assessment
+
+| Aspect | Rating | Notes |
+|--------|--------|-------|
+| **Security Posture** | 🟢 HIGH confidence | All security conditions addressed |
+| **Risk Level** | 🟢 LOW | Acceptable for POC implementation |
+| **Production Readiness** | 🟡 MEDIUM | Needs hardening if moving beyond POC |
+
+> **✅ APPROVED FOR IMPLEMENTATION**
+> 
+> This document is ready to guide the implementation team through secure deployment of Option A.
 
 ### Review Summary
 
 | Reviewer | Status | Key Feedback |
 |----------|--------|--------------|
-| Lead Developer | Approved with Revisions | Avoid sync→async ripple, use batch prefetch, stricter auth |
-| Senior Architect | Approved with Revisions | Remove categorical bias, add editorial independence, multi-model consensus |
-| Security Advisor | **Conditional Approval** | See conditions below |
-| Project Lead | **Recommends Option A** | Admin workload concern resolved; Option A balances coverage, cost, simplicity |
+| Lead Developer | ✅ Approved | Avoid sync→async ripple, use batch prefetch, stricter auth |
+| Senior Architect | ✅ Approved | Remove categorical bias, add editorial independence, multi-model consensus |
+| Security Advisor | ✅ Approved | All conditions met (see below) |
+| Project Lead | ✅ Approved | Option A balances coverage, cost, simplicity |
+| **Team** | ✅ **APPROVED** | Ready for implementation |
 
-### Security Advisor Conditions for Option A Approval
-
-The Security Advisor has given **conditional approval** to implement Option A with these requirements:
+### Security Advisor Conditions (All Met)
 
 | # | Condition | Status |
 |---|-----------|--------|
-| 1 | **Evaluation must be internal-only** or strictly rate-limited | ✅ Addressed: Internal API + rate limiting |
-| 2 | **Batch prefetch + sync lookup** (no async in hot paths) | ✅ Addressed: Two-phase architecture |
-| 3 | **Importance filter must be configurable** (not hardcoded) | ✅ Addressed: `FH_SR_SKIP_PLATFORMS`, `FH_SR_SKIP_TLDS` env vars |
-| 4 | **Score scale locked to 0.0-1.0** with defensive normalization | ✅ Already documented |
+| 1 | **Evaluation must be internal-only** or strictly rate-limited | ✅ Internal API + rate limiting |
+| 2 | **Batch prefetch + sync lookup** (no async in hot paths) | ✅ Two-phase architecture |
+| 3 | **Importance filter must be configurable** (not hardcoded) | ✅ `FH_SR_SKIP_PLATFORMS`, `FH_SR_SKIP_TLDS` env vars |
+| 4 | **Score scale locked to 0.0-1.0** with defensive normalization | ✅ Documented |
 
-**Reservations addressed:**
-- Rate limiting is now included in Option A (was incorrectly "Option C only")
-- Skip lists are now configurable via environment variables
-- Sync/async pattern clarified as batch prefetch + sync lookup
-- Multi-model consensus is explicitly part of Option A (not "Option C only")
+**All reservations addressed:**
+- Rate limiting included in Option A
+- Skip lists configurable via environment variables
+- Sync/async pattern clarified (batch prefetch + sync lookup)
+- Multi-model consensus explicitly part of Option A
 
 ---
 
@@ -51,29 +63,25 @@ The Security Advisor has given **conditional approval** to implement Option A wi
 
 **Problem**: Source reliability scoring is currently disabled. External rating services don't meet our quality/neutrality requirements.
 
-### Project Leader's Preferred Choice: Option A (Pure LLM + Cache)
+### Chosen Implementation: Option A (Pure LLM + Cache)
 
-After reviewing all options, the **Project Leader recommends Option A: Pure LLM + Cache** - no pre-seeded data, all sources evaluated identically by LLM.
+**Option A has been selected** with conditional approval from the Security Advisor. Implementation can begin.
 
-| Option | Complexity | Admin Time/Week | Time to Ship | Status |
-|--------|------------|-----------------|--------------|--------|
-| **Option A: Pure LLM** | 250 LOC | 15 min | 2 days | **⭐ RECOMMENDED** (multi-model consensus) |
-| Option B: Zero Admin | 150 LOC | 0 min | 2 days | If zero-admin is mandatory |
-| Option C: Full Proposal | 1,800 LOC | 180-240 min | 2-3 weeks | Deferred (enterprise scale) |
+| Metric | Value |
+|--------|-------|
+| **Complexity** | ~250 LOC |
+| **Time to Ship** | 2 days |
+| **Admin Time/Week** | ~15 min (spot-check) |
+| **LLM Cost/Month** | $40-60 |
 
-**Team Decision Required**: Confirm Option A or select alternative before implementation begins.
+**Key Features**:
+- Multi-model consensus (Claude + GPT-4) - reduces hallucination risk
+- Configurable importance filter - saves ~60% LLM cost
+- Batch prefetch + sync lookup - no async in analyzer hot path
+- Rate limiting - prevents cost runaway
+- No pre-seeded data - all sources evaluated equally by LLM
 
-### Full Proposal Features (Option C)
-
-If the team decides to implement the full proposal, it combines:
-
-1. LLM-powered evaluation with **multi-model consensus**
-2. Persistent SQLite cache with TTL-based expiration
-3. Human override capability for corrections
-4. **Editorial independence tracking** to prevent categorical bias
-
-**Full Proposal Trade-offs**:
-- Pro: Dynamic, auditable, controllable
+**Alternative options** (B: Zero Admin, C: Full Proposal) are documented in the appendix for future reference.
 - Con: Requires 3-4 hrs/week dedicated admin time
 - Con: 1,800 LOC complexity
 
@@ -169,39 +177,133 @@ Per Security Advisor review, Option A MUST include rate limiting to prevent cost
 
 ### Architecture (Option A: Pure LLM + Cache)
 
-**Integration Pattern: Batch Prefetch + Sync Lookup** (per Security Advisor)
+**Integration Pattern: Batch Prefetch + Sync Lookup**
 
-To avoid async in the analyzer hot path, Option A uses a two-phase approach:
+#### The Problem
 
-1. **Prefetch Phase** (async, before analysis): Batch lookup all source URLs, trigger LLM evaluations for cache misses
-2. **Lookup Phase** (sync, during analysis): Read from in-memory map populated by prefetch
+The FactHarbor analyzer (`orchestrated.ts`) is a complex synchronous pipeline. Adding `await` calls mid-pipeline for source reliability lookups would:
+- Require major refactoring (ripple async throughout call chain)
+- Complicate error handling and control flow
+- Risk introducing race conditions
+
+#### The Solution: Two-Phase Pattern
+
+Separate the async work (cache lookup, LLM calls) from the sync analysis:
+
+| Phase | When | Nature | What It Does |
+|-------|------|--------|--------------|
+| **Phase 1: Prefetch** | Before analysis starts | Async | Batch lookup all source URLs, populate in-memory map |
+| **Phase 2: Lookup** | During analysis | Sync | Read from pre-populated map (instant, no I/O) |
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Analyzer
+    participant Prefetch as prefetchSourceReliability()
+    participant Cache as SQLite Cache
+    participant LLM as LLM Endpoint
+    participant Map as In-Memory Map
+    participant Lookup as getTrackRecordScore()
+    
+    Note over User,Lookup: PHASE 1: Async Prefetch (before analysis)
+    User->>Analyzer: Submit claim for analysis
+    Analyzer->>Analyzer: Extract source URLs from research
+    Analyzer->>Prefetch: await prefetchSourceReliability(urls)
+    
+    loop For each unique domain
+        Prefetch->>Cache: Batch lookup
+        alt Cache Hit
+            Cache-->>Prefetch: Return cached score
+            Prefetch->>Map: Store score
+        else Cache Miss + Important Source
+            Prefetch->>LLM: Evaluate source (internal API)
+            LLM-->>Prefetch: Score + confidence
+            Prefetch->>Cache: Save (TTL: 90 days)
+            Prefetch->>Map: Store score
+        else Cache Miss + Unimportant Source
+            Prefetch->>Map: Store null
+        end
+    end
+    
+    Prefetch-->>Analyzer: Done
+    
+    Note over User,Lookup: PHASE 2: Sync Lookup (during analysis)
+    loop For each evidence source
+        Analyzer->>Lookup: getTrackRecordScore(url)
+        Lookup->>Map: Read from map
+        Map-->>Lookup: Score or null
+        Lookup-->>Analyzer: Return immediately (no I/O)
+    end
+    
+    Analyzer-->>User: Analysis complete
+```
+
+#### Code Interface
+
+```typescript
+// Phase 1: Call ONCE before analysis (async)
+export async function prefetchSourceReliability(urls: string[]): Promise<void>;
+
+// Phase 2: Call MANY times during analysis (sync, instant)
+export function getTrackRecordScore(url: string): number | null;
+```
+
+**Integration Point** (in analyzer):
+
+```typescript
+// In orchestrated.ts or monolithic-canonical.ts
+async function analyzeClaimPipeline(input: AnalysisInput): Promise<AnalysisResult> {
+  // ... research phase collects sources ...
+  
+  // PHASE 1: Prefetch all source scores (one await, batched)
+  const sourceUrls = research.sources.map(s => s.url);
+  await prefetchSourceReliability(sourceUrls);
+  
+  // ... continue with synchronous analysis ...
+  
+  // PHASE 2: Lookup is now instant (sync)
+  for (const source of research.sources) {
+    const reliability = getTrackRecordScore(source.url);  // No await!
+    // Use reliability in verdict calculation...
+  }
+}
+```
+
+#### Why This Pattern Works
+
+| Concern | How Pattern Addresses It |
+|---------|-------------------------|
+| **No async ripple** | Only ONE `await` at pipeline boundary, rest stays sync |
+| **Batch efficiency** | Single batch cache lookup instead of N individual calls |
+| **LLM cost control** | Filter + rate limit applied during prefetch |
+| **Graceful degradation** | Unknown sources get `null`, analysis continues |
+| **No blocking** | Sync lookups are instant map reads |
+
+#### Phase 1 Detail: Prefetch Flow
 
 ```mermaid
 flowchart TD
     subgraph prefetch [Phase 1: Async Prefetch]
-        URLS[Extract Source URLs] --> BATCH[Batch Cache Lookup]
-        BATCH --> MISS{Cache Misses?}
-        MISS -->|Yes| RATE{Rate Limit OK?}
-        RATE -->|No| SKIP[Skip - Return null]
+        URLS[Extract Source URLs] --> DEDUP[Deduplicate Domains]
+        DEDUP --> BATCH[Batch Cache Lookup]
+        BATCH --> LOOP{For Each Domain}
+        LOOP --> HIT{Cache Hit?}
+        HIT -->|Yes| MAP[Add to In-Memory Map]
+        HIT -->|No| RATE{Rate Limit OK?}
+        RATE -->|No| SKIP[Store null in Map]
         RATE -->|Yes| FILTER{isImportantSource?}
         FILTER -->|Blog/Spam TLD| SKIP
         FILTER -->|Legitimate| LLM[Multi-Model LLM<br/>Internal API Only]
-        LLM --> CONS{Consensus?}
+        LLM --> CONF{Confidence ≥ threshold?}
+        CONF -->|No| SKIP
+        CONF -->|Yes| CONS{Models Agree?}
         CONS -->|No| SKIP
-        CONS -->|Yes| SAVE[Cache & Add to Map]
-        MISS -->|No| MAP[Add to In-Memory Map]
-        SAVE --> MAP
-    end
-    
-    subgraph lookup [Phase 2: Sync Lookup]
-        REQ[getTrackRecordScore] --> MEM{In Map?}
-        MEM -->|Yes| RETURN[Return Score]
-        MEM -->|No| NULL[Return null]
+        CONS -->|Yes| SAVE[Cache + Add to Map]
     end
     
     style RATE fill:#f99
     style FILTER fill:#ff9
-    style NULL fill:#ddd
+    style SKIP fill:#ddd
 ```
 
 **Security Requirements** (per Security Advisor):
@@ -489,193 +591,14 @@ If Option A doesn't work out:
 
 ---
 
-## Implementation Options (All Options Reference)
+## Alternative Options (Appendix)
 
-> **Note**: Option A is the Project Leader's recommended choice. The sections below document all options for reference and future consideration.
+> **Option A has been chosen.** The alternatives below are documented for reference only.
 
-The Project Lead review raised concerns about admin workload and over-engineering. Three implementation options are available:
-
-### Option A: Pure LLM + Cache - **RECOMMENDED**
-
-See [Detailed Implementation Plan](#option-a-detailed-implementation-plan-project-leaders-choice) above for full details.
-
-**Summary**: Multi-model LLM evaluation with importance filter (skips blogs/spam). No pre-seeded data.
-
----
-
-### Option B: Simplified Automatic (Zero Admin)
-
-**Scope**: Single-model LLM evaluation on cache miss, fully automatic, no importance filter.
-
-```mermaid
-flowchart LR
-    AN[Analyzer] --> SR[getTrackRecordScore]
-    SR --> CACHE[(Cache)]
-    CACHE -->|Hit| SCORE[Return Score]
-    CACHE -->|Miss| LLM[Single LLM<br/>High Threshold]
-    LLM -->|Conf >= 0.9| SAVE[Save & Return]
-    LLM -->|Conf < 0.9| NULL[Return null]
-```
-
-**Implementation**:
-
-```typescript
-// ~150 lines of code total (simpler than Option A - no filter, single model)
-export async function getTrackRecordScore(url: string): Promise<number | null> {
-  const domain = extractDomain(url);
-  
-  // Check cache first
-  const cached = await cache.get(domain);
-  if (cached) return cached.score;
-  
-  // Automatic LLM evaluation (single model, high threshold)
-  try {
-    const result = await evaluateSourceAuto(domain);
-    if (result.confidence >= 0.9) {
-      await cache.set(domain, result.score, { ttl: '90d' });
-      return result.score;
-    }
-  } catch (err) {
-    // Silent failure - return unknown
-  }
-  
-  return null;
-}
-```
-
-| Metric | Value |
-|--------|-------|
-| **Lines of Code** | ~150 |
-| **Time to Ship** | 2 days |
-| **Admin Time/Week** | 0 min |
-| **LLM Cost/Month** | $20-50 (higher - no filter) |
-| **Source Coverage** | Full dynamic (evaluates everything) |
-
-**When to Choose**:
-- Admin time is constrained (zero tolerance for manual work)
-- Accept some hallucination risk
-- Budget allows $20-50/month LLM costs
-
-**Trade-offs**:
-- Pro: Zero ongoing admin work
-- Con: No human oversight of LLM evaluations
-- Con: Hallucination risk (mitigated by 0.9 confidence threshold)
-
----
-
-### Option A: Pure LLM + Cache - **RECOMMENDED**
-
-**See [Detailed Implementation Plan](#option-a-detailed-implementation-plan-project-leaders-choice) above for full architecture, code, and configuration.**
-
-| Metric | Value |
-|--------|-------|
-| **Lines of Code** | ~250 |
-| **Time to Ship** | 2 days |
-| **Admin Time/Week** | ~15 min |
-| **LLM Cost/Month** | $40-60 |
-
-**Key Features**: Multi-model consensus, importance filter (skips blogs/spam), configurable thresholds.
-- Balance between automation and neutrality
-
-**Trade-offs**:
-- Pro: Lower LLM costs than Option B (skips junk sources)
-- Pro: More coverage than Option A (fills important gaps)
-- Pro: Simple "importance" heuristics are transparent
-- Con: Needs definition of "important source" (but transparent)
-- Con: Some admin oversight recommended (but minimal)
-
-**"Important Source" Heuristics** (customizable):
-
-| Rule | Rationale |
-|------|-----------|
-| Skip `blogspot.*`, `wordpress.com` | Personal blogs rarely need scoring |
-| Skip `medium.com`, `substack.com` | Individual authors, not outlets |
-| Skip exotic TLDs (`.xyz`, `.blog`) | Unlikely to be major news sources |
-| Allow `.com`, `.org`, `.net`, `.edu`, `.gov` | Standard news outlet TLDs |
-| Allow country TLDs (`.uk`, `.de`, `.fr`) | International news outlets |
-
----
-
-### Option C: Full Proposal (Detailed Below)
-
-**Scope**: Complete implementation with multi-model consensus, admin workflows, monitoring.
-
-```mermaid
-flowchart TB
-    subgraph cache [Cache Layer]
-        EVAL[LLM Evaluations] --> DB[(SQLite)]
-    end
-    
-    subgraph runtime [Runtime]
-        AN[Analyzer] --> BATCH[Batch Prefetch]
-        BATCH --> API[Source Reliability API]
-        API --> DB
-    end
-    
-    subgraph admin [Admin Workflows]
-        EVAL[Manual Evaluation Trigger]
-        REVIEW[Review Queue]
-        OVERRIDE[Override/Lock]
-        MONITOR[Bias Monitoring]
-    end
-    
-    admin -.-> DB
-```
-
-| Metric | Value |
-|--------|-------|
-| **Lines of Code** | ~1,800 |
-| **Time to Ship** | 2-3 weeks |
-| **Admin Time/Week** | 180-240 min |
-| **LLM Cost/Month** | $1-44 |
-| **Source Coverage** | Dynamic + human oversight |
-
-**When to Choose**:
-- Team has 5+ people
-- Can dedicate 3-4 hrs/week to source reliability admin
-- Source reliability is core differentiator
-- Regulatory/compliance requires audit trail
-
-**Prerequisites** (per Project Lead):
-- [ ] Assign dedicated owner (3-4 hrs/week commitment)
-- [ ] Set LLM budget ($100/month safety limit)
-- [ ] Create admin runbook
-- [ ] Plan quarterly review (is this worth the effort?)
-
----
-
-### Comparison Matrix
-
-| Aspect | Option A (Pure LLM) | Option B (Zero Admin) | Option C (Full) |
-|--------|---------------------|----------------------|-----------------|
-| **Complexity** | ~250 LOC | ~150 LOC | ~1,800 LOC |
-| **Admin Burden** | 15 min/week | None | 3-4 hrs/week |
-| **Coverage** | Selective dynamic | Full dynamic | Dynamic + oversight |
-| **Hallucination Risk** | Low (multi-model) | Medium (single-model) | Low (multi-model + review) |
-| **Cost (Monthly)** | $40-60 | $20-50 | $40-60 |
-| **Audit Trail** | Basic | Basic | Comprehensive |
-| **Recommended For** | **Small teams** | Zero-admin | Enterprise |
-
-### Decision Framework
-
-```mermaid
-flowchart TD
-    START[Start] --> Q1{Team size?}
-    Q1 -->|1-3 people| Q2{Admin time<br/>available?}
-    Q1 -->|4+ people| Q3{Source reliability<br/>core differentiator?}
-    
-    Q2 -->|None| OPTB[Option B: Auto LLM]
-    Q2 -->|15 min/week| OPTA[Option A: Pure LLM]
-    
-    Q3 -->|Yes| OPTC[Option C: Full Proposal]
-    Q3 -->|No| Q2
-    
-    style OPTA fill:#9f9,stroke:#ff9,stroke-width:3px
-    style OPTB fill:#ff9
-    style OPTC fill:#f99
-```
-
-**Recommendation**: For most teams, **Option A (Pure LLM + Cache)** offers the best balance of neutrality, coverage, and cost.
+| Option | When to Consider | Config Change |
+|--------|------------------|---------------|
+| **Option B: Zero Admin** | If 15 min/week admin time becomes burdensome | `FH_SR_MULTI_MODEL=false`, `FH_SR_FILTER_ENABLED=false` |
+| **Option C: Full Proposal** | If team grows to 5+ and source reliability becomes core differentiator | Requires significant additional development |
 
 ---
 
@@ -2224,4 +2147,7 @@ Per lead developer, architect, and security reviews:
 | 1.5 | 2026-01-21 | Architecture Team | Removed Bootstrap Only option entirely due to manipulation concerns. |
 | 1.6 | 2026-01-21 | Architecture Team | Renamed Option A+B to Option A. Now: Option A (Pure LLM), Option B (Zero Admin), Option C (Full Proposal). |
 | 1.7 | 2026-01-21 | Architecture Team | Consistency cleanup: Fixed comparison matrix, LOC counts, metrics tables, implementation timelines. |
-| 1.8 | 2026-01-21 | Architecture Team | **Security Advisor conditional approval**: (1) Added rate limiting to Option A (`FH_SR_RATE_LIMIT_PER_IP`, `FH_SR_RATE_LIMIT_DOMAIN_COOLDOWN`). (2) Made skip lists configurable via env vars (`FH_SR_SKIP_PLATFORMS`, `FH_SR_SKIP_TLDS`). (3) Clarified batch prefetch + sync lookup pattern to avoid async in analyzer hot paths. (4) Updated architecture diagram to show two-phase approach. (5) Added Security Advisor conditions checklist to Review Status. |
+| 1.8 | 2026-01-21 | Architecture Team | Security Advisor conditional approval: Rate limiting, configurable skip lists, batch prefetch + sync lookup pattern. |
+| 2.0 | 2026-01-21 | Architecture Team | **APPROVED FOR IMPLEMENTATION**. Option A chosen. Removed detailed Option B/C sections (moved to appendix). |
+| 2.1 | 2026-01-21 | Architecture Team | Expanded "Batch Prefetch + Sync Lookup" pattern documentation. |
+| 2.2 | 2026-01-21 | Architecture Team | **FINAL APPROVAL**. Team approved Option A for implementation. Security: HIGH confidence, Risk: LOW, Production readiness: MEDIUM (needs hardening beyond POC). |
