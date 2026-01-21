@@ -1,6 +1,6 @@
 ---
 title: "Global MasterKnowledge for FactHarbor xWiki Work – Core Rules & Document Handling"
-version: 0.6
+version: 0.7
 status: draft
 owner: "Robert Schaub"
 primary_systems:
@@ -10,7 +10,7 @@ core_protocols:
   - FMCP
   - TCP
   - Global Text Rules v1.1
-  - Global Diagram Rules v1.1
+  - Global Diagram Rules v1.2
 core_keywords:
   - AddYourKnowledgeOnly
   - MergeIntoYourKnowledge
@@ -26,6 +26,14 @@ subjects:
     title: "Subject: Multi-Chat & FMCP Behaviour"
     status: "partial (see Section 8)"
 changelog:
+- version: 0.7
+  date: "2026-01-21"
+  changes:
+    - "Added DOC-R-029: Mermaid ERD Property Names (CRITICAL) - no spaces allowed in property definitions (Mermaid v11.12.2+)."
+    - "Added DOC-R-030: XAR File Structure and Handling - comprehensive guide to XAR extraction, modification, and recompression."
+    - "Added DOC-R-031: Systematic XAR Validation and Fixing - process for validating and fixing Mermaid diagrams in XARs."
+    - "Added DOC-R-032: Version Control for XAR Files - naming conventions, delta vs full XAR strategy, documentation requirements."
+    - "Updated Global Diagram Rules to v1.2 (added XAR handling and Mermaid syntax validation)."
 - version: 0.6
   date: "2026-01-20"
   changes:
@@ -373,6 +381,59 @@ Before doing any work after the user attached files, the assistant must:
 - Special characters in labels: wrap in quotes `A["Step 1: Init"]`.
 - Edge labels with special chars: use quotes `A -->|"O(1)"|B`.
 
+**DOC-R-029 – Mermaid ERD Property Names (CRITICAL)**
+- **Problem:** Mermaid v11.12.2+ does NOT allow spaces in ERD property definitions.
+- **Rule:** Property names and their descriptors MUST be connected with underscores, NO SPACES.
+- **Examples:**
+  - ❌ WRONG: `number score 0_to_100` (space before descriptor)
+  - ✅ CORRECT: `number score_0_to_100` (underscore connects all parts)
+  - ❌ WRONG: `string id PK` (space before constraint)
+  - ✅ CORRECT: `string id_PK` (underscore connects)
+  - ❌ WRONG: `string articleId FK` (space before foreign key marker)
+  - ✅ CORRECT: `string articleId_FK` (underscore connects)
+- **Pattern:** `TYPE propertyName_descriptor_or_constraint`
+- **Validation:** Before creating/editing ERD diagrams, verify NO spaces exist between property name and any descriptor/constraint.
+- **Error Symptom:** If Mermaid shows "Syntax error in text" on ERD diagrams, check for spaces in property definitions.
+
+**DOC-R-030 – XAR File Structure and Handling**
+- **Format:** XAR files are ZIP archives containing XML files representing XWiki pages.
+- **Structure:**
+  - Root level: `package.xml` (metadata about pages in the archive)
+  - Pages: `SpaceName/PageName/WebHome.xml` (one XML file per page)
+  - Preserves: page hierarchy, metadata, attachments, objects
+- **Extraction:** Use standard ZIP tools (Expand-Archive in PowerShell, unzip in bash).
+- **Modification Workflow:**
+  1. Extract XAR to temporary directory
+  2. Modify XML files (preserve XML structure and namespaces)
+  3. Recompress modified files to new XAR
+  4. Version the output filename: `<basename>_Fixed.xar` or `<basename>_v<version>.xar`
+- **Delta XARs:** Can create minimal XARs with only changed pages + package.xml for targeted updates.
+- **Critical:** Preserve XML structure exactly - XWiki is sensitive to malformed XML.
+
+**DOC-R-031 – Systematic XAR Validation and Fixing**
+- **When to validate:** Before creating any XAR file for XWiki import.
+- **Mermaid-specific checks:**
+  1. Find all files with `erDiagram` content
+  2. Check entity definitions (between `ENTITY_NAME {` and `}`)
+  3. Verify property lines match pattern: `TYPE propertyName_descriptor` (underscores, no spaces)
+  4. Fix any spaces between property parts with underscores
+- **Process:**
+  - Extract XAR → Parse XML line-by-line → Detect Mermaid sections → Apply fixes → Recompress
+  - Use state machine: track `inErDiagram`, `inEntity` flags to target fixes precisely
+  - Preserve all other content exactly (don't use greedy regex that might break XML)
+- **Testing:** After fixing, verify at least one problematic diagram in sample output before creating full XAR.
+
+**DOC-R-032 – Version Control for XAR Files**
+- **Naming Convention:** Include date and version in XAR filename for traceability.
+  - Pattern: `<ProjectName>_<ContentType>_<Date>.xar`
+  - Example: `FactHarbor_Spec_and_Impl_21.Jan.26.xar`
+  - Fixed version: `FactHarbor_Spec_and_Impl_21.Jan.26_Fixed.xar`
+- **Delta vs Full:**
+  - Delta XAR: Only changed pages, smaller file (~20KB), quick import
+  - Full XAR: All pages, complete snapshot (~340KB), definitive version
+- **Workflow:** Create delta first for user verification, then create full after confirmation.
+- **Documentation:** Always create a summary document listing what changed and why.
+
 **DOC-R-024 – Single source of truth for priority/importance**
 - Priority/Importance/Urgency values must appear ONLY in the Requirements Priority Matrix table.
 - Requirement definitions in the main Requirements page must NOT contain priority mentions.
@@ -476,4 +537,42 @@ Before doing any work after the user attached files, the assistant must:
 
 ---
 
-_End of Global MasterKnowledge v0.6_
+## 7. Troubleshooting Guide: Common XWiki & Mermaid Issues
+
+**Issue: Mermaid diagram shows "Syntax error in text" after import**
+- **Root Cause:** Spaces in ERD property definitions (Mermaid v11.12.2+ syntax requirement).
+- **Fix:** See DOC-R-029 - replace spaces with underscores in property names.
+- **Example:** Change `number score 0_to_100` to `number score_0_to_100`.
+- **Detection:** Extract XAR, search for `erDiagram`, check entity property lines for spaces.
+- **Prevention:** Validate all ERD diagrams before creating XAR.
+
+**Issue: XAR import fails or pages appear empty**
+- **Root Cause:** Malformed XML structure (broken tags, invalid characters, encoding issues).
+- **Fix:** Ensure XML structure is preserved exactly during modifications.
+- **Prevention:** Use line-by-line parsing instead of greedy regex when modifying XAR XML files.
+- **Tool:** Validate XML structure with `[xml]$content = Get-Content file.xml` in PowerShell.
+
+**Issue: Mermaid diagram doesn't render at all in XWiki**
+- **Root Cause:** Missing empty lines around `{{mermaid}}` macro.
+- **Fix:** Ensure blank line BEFORE `{{mermaid}}` and AFTER `{{/mermaid}}`.
+- **Prevention:** When creating/converting Mermaid diagrams, always add empty line padding.
+
+**Issue: Changes to XAR lost or not visible after import**
+- **Root Cause:** Delta XAR missing pages, or full XAR overwriting with old content.
+- **Fix:** Verify XAR contents before import - list files in ZIP archive.
+- **Prevention:** After modifications, verify at least one changed file in the XAR before declaring success.
+
+**Issue: Unable to extract XAR file**
+- **Root Cause:** XAR is not a valid ZIP archive.
+- **Fix:** Check file is actually a XAR (ZIP) file - try with `Expand-Archive` or `unzip -l`.
+- **Prevention:** When creating XARs, use standard ZIP compression tools (Compress-Archive, zip).
+
+**Issue: Special characters broken after XAR modification**
+- **Root Cause:** Encoding mismatch (not using UTF-8).
+- **Fix:** Always use UTF-8 encoding when reading/writing XML files in XARs.
+- **PowerShell:** `Get-Content -Encoding UTF8`, `Set-Content -Encoding UTF8`
+- **Prevention:** Explicitly specify UTF-8 in all file operations.
+
+---
+
+_End of Global MasterKnowledge v0.7_

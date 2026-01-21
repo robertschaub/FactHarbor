@@ -69,6 +69,8 @@ Text after diagram.
 
 Do NOT use `{{code language="mermaid"}}` – it doesn't work.
 
+**ERD Diagrams:** See **[Mermaid_ERD_Quick_Reference.md](Mermaid_ERD_Quick_Reference.md)** for critical syntax rules (no spaces in property definitions).
+
 ---
 
 ## Key Rules Summary
