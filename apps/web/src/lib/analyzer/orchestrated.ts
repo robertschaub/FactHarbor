@@ -5,7 +5,7 @@
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
  * - Multi-Scope analysis with Contested Factors
  * - Search tracking with LLM call counting
- * - Configurable source reliability via FH_SOURCE_BUNDLE_PATH
+ * - Source reliability via LLM evaluation with caching (FH_SR_* config)
  * - Configurable search with FH_SEARCH_ENABLED and FH_SEARCH_DOMAIN_WHITELIST
  * - Fixed AI SDK output handling for different versions (output vs experimental_output)
  * - Claim dependency tracking (claimRole: attribution/source/timing/core)
@@ -2290,7 +2290,7 @@ interface TwoPanelSummary {
 }
 
 // ============================================================================
-// SOURCE TRACK RECORD (Configurable via FH_SOURCE_BUNDLE_PATH)
+// SOURCE RELIABILITY (v2.2 - LLM + Cache)
 // ============================================================================
 
 // ============================================================================

@@ -119,8 +119,8 @@ export const CONFIG = {
     return null;
   })(),
 
-  // Source reliability configuration
-  sourceBundlePath: process.env.FH_SOURCE_BUNDLE_PATH || null,
+  // Source reliability configuration (v2.2 - see FH_SR_* env vars)
+  // Legacy: sourceBundlePath is no longer used - see source-reliability.ts
 
   // Report configuration
   reportStyle: (process.env.FH_REPORT_STYLE ?? "standard").toLowerCase(),

@@ -1,280 +1,205 @@
 # FactHarbor Source Reliability
 
-## Current Status: APPROVED FOR IMPLEMENTATION
-
-> **New Architecture**: The Source Reliability system has been redesigned. See [Source_Reliability_Service_Proposal.md](Source_Reliability_Service_Proposal.md) for the approved implementation plan.
->
-> **Implementation**: Option A (Pure LLM + Cache) - no pre-seeded data, all sources evaluated by LLM with multi-model consensus.
-
----
-
 ## Overview
 
-FactHarbor evaluates source reliability dynamically using LLM-powered assessment with multi-model consensus. This replaces the previous static bundle approach.
-
-### New Approach (Approved)
+FactHarbor evaluates source reliability dynamically using LLM-powered assessment with multi-model consensus. Sources are evaluated on-demand and cached for 90 days.
 
 | Aspect | Implementation |
 |--------|----------------|
-| **Evaluation Method** | Multi-model LLM consensus (Claude + GPT-4) |
-| **Data Storage** | SQLite cache with 90-day TTL |
-| **Integration** | Batch prefetch + sync lookup (no async in hot path) |
+| **Evaluation** | Multi-model LLM consensus (Claude + GPT-4) |
+| **Storage** | SQLite cache (`source-reliability.db`) |
+| **Integration** | Batch prefetch + sync lookup |
 | **Cost Control** | Importance filter + rate limiting |
-| **Configuration** | All parameters via environment variables |
-
-See [Source_Reliability_Service_Proposal.md](Source_Reliability_Service_Proposal.md) for full architecture.
 
 ---
 
-## Legacy: Static Bundle Approach (Deprecated)
+## Quick Start
 
-> **Note**: The static bundle approach below is **deprecated** and will be removed. It is retained here for reference during migration.
->
-> The bundle-based approach had issues with:
-> - Data quality/bias concerns with external rating sources
-> - No dynamic evaluation of new sources
-> - Attribution/manipulation concerns
+### Prerequisites
+
+```powershell
+# In apps/web/.env.local
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+FH_INTERNAL_RUNNER_KEY=your-secret-key-here
+```
+
+### That's It
+
+The service is **enabled by default**. It will automatically:
+- Prefetch source reliability before analyzing sources
+- Use multi-model consensus (Claude + GPT-4)
+- Cache results for 90 days
+- Skip blog platforms and spam TLDs
+
+### Verify It's Working
+
+Run an analysis and check the logs for:
+```
+[SR] Prefetching 5 unique domains
+[SR] Cache hits: 0/5
+[SR] Evaluated reuters.com: score=0.95, confidence=0.92
+```
+
+---
+
+## Configuration
+
+All configuration is via environment variables (`apps/web/.env.local`):
+
+### Core Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FH_SR_ENABLED` | `true` | Enable/disable source reliability |
+| `FH_SR_MULTI_MODEL` | `true` | Use multi-model consensus |
+| `FH_SR_CONFIDENCE_THRESHOLD` | `0.8` | Min LLM confidence to accept score |
+| `FH_SR_CONSENSUS_THRESHOLD` | `0.15` | Max score difference between models |
+
+### Cache Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FH_SR_CACHE_PATH` | `./source-reliability.db` | SQLite database location |
+| `FH_SR_CACHE_TTL_DAYS` | `90` | Cache expiration in days |
+
+### Rate Limiting
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FH_SR_RATE_LIMIT_PER_IP` | `10` | Max evaluations per minute per IP |
+| `FH_SR_RATE_LIMIT_DOMAIN_COOLDOWN` | `60` | Seconds between same-domain evals |
+
+### Importance Filter
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FH_SR_FILTER_ENABLED` | `true` | Enable importance filter |
+| `FH_SR_SKIP_PLATFORMS` | (see below) | Platforms to skip (comma-separated) |
+| `FH_SR_SKIP_TLDS` | (see below) | TLDs to skip (comma-separated) |
+
+**Default skip platforms**: `blogspot.,wordpress.com,medium.com,substack.com,tumblr.com,wix.com,weebly.com,squarespace.com,ghost.io,blogger.com,sites.google.com,github.io,netlify.app,vercel.app,herokuapp.com`
+
+**Default skip TLDs**: `xyz,top,club,icu,buzz,tk,ml,ga,cf,gq,work,click,link,win,download,stream`
+
+### Example Configuration
+
+```bash
+# Disable multi-model (faster, cheaper)
+FH_SR_MULTI_MODEL=false
+
+# Lower confidence threshold
+FH_SR_CONFIDENCE_THRESHOLD=0.7
+
+# Evaluate ALL sources (disable filter)
+FH_SR_FILTER_ENABLED=false
+```
+
+---
+
+## Score Interpretation
+
+| Score | Rating | Examples |
+|-------|--------|----------|
+| 0.90-0.99 | Very High | Reuters, AP, FactCheck.org |
+| 0.80-0.89 | High | BBC, NPR, Economist |
+| 0.70-0.79 | Mostly Factual | Generally reliable with occasional issues |
+| 0.50-0.69 | Mixed | Verify claims independently |
+| 0.30-0.49 | Low | Frequently misleading |
+| 0.05-0.29 | Very Low | Conspiracy, fake news |
+
+---
+
+## Cost Estimates
+
+| Mode | Monthly Cost |
+|------|--------------|
+| Multi-model (default) | $40-60 |
+| Single-model | $20-30 |
+
+The importance filter saves ~60% of LLM costs by skipping blog platforms and spam domains.
+
+---
+
+## Admin Tasks (~15 min/week)
+
+1. **Spot-check cache**: Review cached scores for accuracy
+2. **Monitor logs**: Check for consensus failures
+3. **Optional cleanup**: Expired entries are automatically ignored
+
+---
 
 ## Design Principles
 
 ### Evidence Over Authority
 
-**Important**: Source credibility is supplementary, not primary. The core principle is:
+Source credibility is **supplementary**, not primary:
 
-- **Only evidence and counter-evidence matter** - not who says it
-- Authority or title (lawyer, government, expert) does NOT automatically give weight
-- Source credibility provides context but doesn't override factual analysis
-- A low-credibility source providing documented evidence should still be considered
-- A high-credibility source making claims without evidence should be questioned
+- Only evidence and counter-evidence matter - not who says it
+- Authority does NOT automatically give weight
+- A low-credibility source with documented evidence should be considered
+- A high-credibility source making unsupported claims should be questioned
 
-### Dynamic Credibility
+### No Pre-seeded Data
 
-Source credibility is not static:
-- Organizations can gain or lose credibility over time
-- Political changes can affect government source reliability
-- Media outlets can change ownership, editorial standards, or bias
-- The bundle should be updated regularly to reflect current assessments
+All sources are evaluated identically by LLM:
+- No hardcoded scores or external rating databases
+- No manipulation concerns from third-party data
+- Full transparency - every score comes from LLM evaluation
 
-## Quick Start
+### Dynamic Assessment
 
-### Option 1: Use Sample Bundle (50 sources)
+- Sources can gain or lose credibility over time
+- Cache expires after 90 days (configurable)
+- Re-evaluation happens automatically on cache miss
 
-A sample bundle with 50 common sources is included:
+---
 
-```powershell
-# Copy sample bundle to project root
-copy source-bundle-sample.json source-bundle.json
+## Troubleshooting
 
-# Add to .env.local
-echo FH_SOURCE_BUNDLE_PATH=./source-bundle.json >> apps\web\.env.local
+| Issue | Solution |
+|-------|----------|
+| "Unauthorized" from evaluate endpoint | Set `FH_INTERNAL_RUNNER_KEY` in `.env.local` |
+| No scores appearing | Verify `FH_SR_ENABLED=true` (default) |
+| All sources returning null | Check API keys, lower `FH_SR_CONFIDENCE_THRESHOLD` |
+| High LLM costs | Enable filter, use single model (`FH_SR_MULTI_MODEL=false`) |
+| Consensus failures | Lower `FH_SR_CONSENSUS_THRESHOLD` (default 0.15) |
+
+---
+
+## Architecture
+
+See [Source_Reliability_Service_Proposal.md](Source_Reliability_Service_Proposal.md) for detailed architecture documentation.
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `apps/web/src/lib/analyzer/source-reliability.ts` | Prefetch + sync lookup |
+| `apps/web/src/lib/source-reliability-cache.ts` | SQLite cache |
+| `apps/web/src/app/api/internal/evaluate-source/route.ts` | LLM evaluation endpoint |
+
+### Integration Pattern
+
 ```
+┌─────────────────────────────────────────────────────────┐
+│ Phase 1: Async Prefetch (before analysis)              │
+│ ┌─────────────┐    ┌─────────┐    ┌─────────────────┐  │
+│ │ Extract URLs│───▶│ Cache   │───▶│ LLM Evaluation  │  │
+│ └─────────────┘    │ Lookup  │    │ (cache misses)  │  │
+│                    └─────────┘    └─────────────────┘  │
+│                          │                  │          │
+│                          ▼                  ▼          │
+│                    ┌─────────────────────────────┐     │
+│                    │    In-Memory Map            │     │
+│                    └─────────────────────────────┘     │
+└─────────────────────────────────────────────────────────┘
 
-### Option 2: Full MBFC Database (9,500+ sources)
-
-For comprehensive coverage, fetch the full MBFC database via RapidAPI:
-
-```powershell
-# 1. Get RapidAPI key from https://rapidapi.com/mbfcnews/api/media-bias-fact-check-ratings-api2
-
-# 2. Set environment variable and run loader
-set RAPIDAPI_KEY=your_key_here
-npx ts-node apps\web\src\lib\mbfc-loader.ts ./source-bundle.json
-
-# 3. Configure FactHarbor to use the bundle
-echo FH_SOURCE_BUNDLE_PATH=./source-bundle.json >> apps\web\.env.local
+┌─────────────────────────────────────────────────────────┐
+│ Phase 2: Sync Lookup (during analysis)                 │
+│ ┌─────────────┐    ┌─────────────────────────────┐     │
+│ │ getTrack    │───▶│    In-Memory Map            │     │
+│ │ RecordScore │    │    (instant read)           │     │
+│ └─────────────┘    └─────────────────────────────┘     │
+└─────────────────────────────────────────────────────────┘
 ```
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `FH_SOURCE_BUNDLE_PATH` | Path to source bundle JSON file | None (disabled) |
-| `FH_SOURCE_BUNDLE_URLS` | Comma-separated URLs for dynamic fetch | None |
-| `FH_SOURCE_BUNDLE_FETCH` | Enable/disable URL fetching | `false` |
-| `FH_SOURCE_BUNDLE_SHA256` | SHA-256 checksum for integrity verification | None |
-| `FH_SOURCE_BUNDLE_MAX_SOURCES` | Max sources to include per analysis | `6` |
-| `FH_SOURCE_BUNDLE_EXCERPT_CHARS` | Max characters per source excerpt | `1200` |
-| `RAPIDAPI_KEY` | RapidAPI key for MBFC loader script | None |
-
-### .env.local Example (when enabled)
-
-```bash
-# Source bundle configuration (CURRENTLY DISABLED)
-# Uncomment when reliable data source is available
-
-# Path to local bundle file
-FH_SOURCE_BUNDLE_PATH=./source-bundle.json
-
-# Remote URLs for dynamic fetch (comma-separated, tried in order)
-# FH_SOURCE_BUNDLE_URLS=https://example.com/mbfc.json
-
-# Enable fetching from URLs (default: false)
-# FH_SOURCE_BUNDLE_FETCH=true
-
-# Optional: SHA-256 checksum for integrity verification
-# FH_SOURCE_BUNDLE_SHA256=abc123...
-
-# Optional: Limit sources per analysis
-# FH_SOURCE_BUNDLE_MAX_SOURCES=6
-# FH_SOURCE_BUNDLE_EXCERPT_CHARS=1200
-```
-
-### Score Interpretation
-
-| Score Range | MBFC Rating | Interpretation |
-|-------------|-------------|----------------|
-| 0.90 - 0.99 | Very High | Wire services, fact-checkers (Reuters, AP, FactCheck.org) |
-| 0.80 - 0.89 | High | Quality journalism (BBC, NPR, Economist) |
-| 0.70 - 0.79 | Mostly Factual | Generally reliable with some issues |
-| 0.50 - 0.69 | Mixed | Verify claims independently |
-| 0.30 - 0.49 | Low | Unreliable, often misleading |
-| 0.05 - 0.29 | Very Low | Conspiracy, fake news, pseudoscience |
-
-## Bundle Format
-
-The source bundle is a JSON file with this structure:
-
-```json
-{
-  "version": "1.0.0",
-  "generated": "2026-01-01T00:00:00.000Z",
-  "sourceCount": 50,
-  "provider": "Media Bias/Fact Check",
-  "providerUrl": "https://mediabiasfactcheck.com",
-  "sources": {
-    "reuters.com": 0.95,
-    "apnews.com": 0.95,
-    "bbc.com": 0.85,
-    "foxnews.com": 0.30
-  },
-  "metadata": {
-    "reuters.com": {
-      "name": "Reuters",
-      "factual": "very high",
-      "bias": "least biased"
-    }
-  }
-}
-```
-
-## Why MBFC?
-
-Media Bias/Fact Check was chosen because:
-
-1. **Scientifically Validated**: Studies show "almost perfect" inter-rater reliability when compared to independent fact-checking datasets
-2. **Comprehensive**: 9,500+ sources rated
-3. **Transparent Methodology**: Clear criteria for bias and factual reporting ratings
-4. **API Available**: Programmatic access via RapidAPI
-5. **Regularly Updated**: Ratings are reviewed and updated
-
-## Design Decisions
-
-### No Hard-coded Defaults
-
-FactHarbor does **not** include hard-coded source reliability scores. All scores must come from the configured bundle. This ensures:
-
-- **Transparency**: All scoring is traceable to the bundle
-- **Configurability**: Organizations can use their own ratings
-- **No Hidden Bias**: No implicit assumptions about source reliability
-
-### Sources Without Scores
-
-If a source is not in the bundle, it returns `null` (unknown reliability). The analyzer will still use the source but won't apply a reliability weight.
-
-## Updating the Bundle
-
-To refresh the bundle with latest MBFC data:
-
-```powershell
-set RAPIDAPI_KEY=your_key_here
-npx ts-node apps\web\src\lib\mbfc-loader.ts ./source-bundle.json
-```
-
-Consider scheduling this monthly to capture MBFC rating updates.
-
-## Source Code Reference
-
-The source reliability feature is implemented in the following files:
-
-### Types (`apps/web/src/lib/analyzer/types.ts`)
-
-```typescript
-// Source with reliability score
-interface FetchedSource {
-  id: string;
-  url: string;
-  title: string;
-  trackRecordScore: number | null;  // Reliability score (0-1), null if unknown
-  fullText: string;
-  fetchedAt: string;
-  category: string;
-  fetchSuccess: boolean;
-  searchQuery?: string;
-}
-```
-
-### Core Functions (`apps/web/src/lib/analyzer/source-reliability.ts`)
-
-| Function | Description |
-|----------|-------------|
-| `loadSourceBundle()` | Loads scores from `FH_SOURCE_BUNDLE_PATH` at startup |
-| `getTrackRecordScore(url)` | Returns score for a URL (or `null` if unknown) |
-| `applyEvidenceWeighting()` | Adjusts verdict confidence based on source scores |
-| `calculateOverallCredibility()` | Returns average score and credibility level for an analysis |
-
-### Bundle Loader (`apps/web/src/lib/mbfc-loader.ts`)
-
-TypeScript types for the bundle format:
-
-```typescript
-interface SourceBundle {
-  version: string;
-  generated: string;
-  sourceCount: number;
-  provider: string;
-  providerUrl: string;
-  sources: Record<string, number>;      // domain -> score (0-1)
-  metadata: Record<string, SourceMetadata>;
-}
-
-interface SourceMetadata {
-  name: string;
-  bias?: string;
-  factual?: string;
-  credibility?: string;
-  category?: string;
-  mbfcUrl?: string;
-}
-```
-
-## Future Work
-
-To enable this feature for production, the following needs to be resolved:
-
-### 1. Reliable Data Source
-- [ ] Evaluate MBFC RapidAPI for stability and update frequency
-- [ ] Consider alternative sources (NewsGuard, Ad Fontes Media)
-- [ ] Evaluate maintaining a curated FactHarbor-specific bundle
-
-### 2. Integrity Verification
-- [ ] Implement SHA-256 checksum verification for bundle files
-- [ ] Add signature verification for remote bundles
-- [ ] Version control for bundle updates
-
-### 3. Dynamic Updates
-- [ ] Scheduled refresh mechanism (monthly recommended)
-- [ ] Change detection and logging
-- [ ] Fallback handling if source becomes unavailable
-
-### 4. UI Integration
-- [ ] Show source credibility at claim level (not article level)
-- [ ] Display credibility context without implying authority = truth
-- [ ] Allow users to see why a source has a particular rating
-
-## References
-
-- [MBFC Methodology](https://mediabiasfactcheck.com/methodology/)
-- [MBFC API on RapidAPI](https://rapidapi.com/mbfcnews/api/media-bias-fact-check-ratings-api2)
-- [Wikipedia: Media Bias/Fact Check](https://en.wikipedia.org/wiki/Media_Bias/Fact_Check)
