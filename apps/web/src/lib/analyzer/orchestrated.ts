@@ -29,7 +29,7 @@
  * - v2.6.31: Modularized - extracted debug, config modules
  * - v2.6.32: Verdict structured-output resilience (recover from NoObjectGeneratedError + JSON-text fallback)
  * - v2.6.33: Fixed counter-claim detection - thesis-aligned claims no longer flagged as counter
- * - v2.6.33: Auto-detect foreign response claims as tangential for legal proceeding theses
+ * - v2.6.33: Auto-detect external reaction claims as tangential (generic: reactions to X don't evaluate X)
  * - v2.6.33: Contested claims WITH factual counter-evidence get reduced weight in aggregation
  *
  * @version 2.6.33
@@ -2613,30 +2613,43 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
 });
 
 /**
- * Detect if a claim is about a foreign government's response/reaction to an event.
- * Such claims should be marked as tangential when the thesis is about the event itself.
+ * Detect if a claim is about an EXTERNAL REACTION to the subject being evaluated.
+ * 
+ * Generic principle: When evaluating whether X is fair/valid/correct, claims about
+ * how third parties REACTED to X are tangential - they don't evaluate X itself.
+ * 
+ * Examples:
+ * - Thesis: "Was the trial fair?" → Claim about sanctions imposed in response = tangential
+ * - Thesis: "Was the policy effective?" → Claim about protests against the policy = tangential
+ * - Thesis: "Was the decision correct?" → Claim about appeals filed = tangential (reaction)
+ * 
+ * This is NOT domain-specific - it applies to any evaluative thesis.
  */
-function isForeignResponseClaim(claimText: string): boolean {
+function isExternalReactionClaim(claimText: string): boolean {
   const text = claimText.toLowerCase();
-  // Patterns indicating foreign government responses/reactions
-  const foreignResponsePatterns = [
-    // Tariffs/trade restrictions
-    /\b(tariff|tariffs)\b.*\b(imposed|impose|proportionate|justified|response)\b/,
-    /\b(trade\s+restriction|trade\s+sanction|economic\s+sanction)\b/,
-    // Sanctions against individuals/entities
-    /\b(sanction|sanctions)\b.*\b(against|imposed|justified|proportionate)\b/,
-    // Visa / travel retaliation against officials
-    /\b(visa|visas|travel\s+ban|travel\s+bans|visa\s+revocation|visa\s+revoked)\b/,
-    /\b(revoke|revoked|revocation)\b.*\bvisa\b/,
-    // Foreign government actions in response
-    /\b(us|united\s+states|american|foreign)\b.*\b(response|reaction|retaliation|condemned|denounced)\b/,
-    /\b(diplomatic|international)\b.*\b(response|reaction|pressure|intervention)\b/,
-    // Explicit "in response to" framing
-    /\bin\s+response\s+to\b/,
-    /\bas\s+a\s+response\s+to\b/,
-    /\bretaliation\s+(for|against)\b/,
+  
+  // Generic patterns for external reactions to any subject
+  const externalReactionPatterns = [
+    // Explicit reaction/response framing (most reliable signal)
+    /\b(in\s+response\s+to|as\s+a\s+response|retaliation\s+for|retaliation\s+against)\b/,
+    /\b(response|reaction|retaliation)\s+(to|against|for)\b/,
+    /\b(condemned|denounced|criticized|protested)\s+(the|this|that|against)\b/,
+    
+    // Third-party measures/actions (sanctions, restrictions, etc.)
+    /\b(sanction|sanctions|embargo|embargoes)\b.*\b(imposed|impose|against|in\s+response)\b/,
+    /\b(tariff|tariffs|duties|duty|restriction|restrictions)\b.*\b(imposed|impose|imposition|in\s+response)\b/,
+    /\b(ban|bans|banned|boycott|boycotted)\b.*\b(imposed|in\s+response|as\s+a\s+result)\b/,
+    
+    // Proportionality of external response (evaluating the reaction, not the subject)
+    /\b(proportionate|disproportionate|justified|unjustified)\s+(response|reaction|measure|sanction|retaliation)\b/,
+    /\b(response|reaction|measure|sanction)\b.*\b(proportionate|disproportionate|justified|appropriate)\b/,
+    
+    // Diplomatic/international reactions
+    /\b(diplomatic|international)\s+(response|reaction|pressure|intervention|condemnation)\b/,
+    /\b(foreign|external)\s+(government|nation|country)\b.*\b(response|reaction|condemned|imposed)\b/,
   ];
-  return foreignResponsePatterns.some((p) => p.test(text));
+  
+  return externalReactionPatterns.some((p) => p.test(text));
 }
 
 function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; centrality?: any; isCentral?: any; text?: any }>(
@@ -2708,13 +2721,13 @@ function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; cen
       raw === "direct" || raw === "tangential" || raw === "irrelevant" ? raw : "direct";
     const isMarkedCentral = claim?.isCentral === true || claim?.centrality === "high";
 
-    // v2.6.33: Auto-detect foreign response claims and mark them tangential
-    // when the thesis is about a domestic legal proceeding
+    // v2.6.33: Auto-detect external reaction claims and mark them tangential
+    // Generic: When evaluating X, claims about reactions TO X are tangential
     if (thesisIsAboutLegalProceeding && thesisRelevance === "direct") {
       const claimText = String(claim?.text || "");
-      if (isForeignResponseClaim(claimText)) {
+      if (isExternalReactionClaim(claimText)) {
         thesisRelevance = "tangential";
-        debugLog("enforceThesisRelevanceInvariants: Foreign response claim → tangential", {
+        debugLog("enforceThesisRelevanceInvariants: External reaction claim → tangential", {
           claimText: claimText.slice(0, 80),
           thesis: thesisLower.slice(0, 80),
         });
@@ -8644,7 +8657,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       markBudgetExceeded(state.budgetTracker, reason);
       await emit(
         `⚠️ Budget limit reached: ${reason}`,
-        10 + (iteration / config.maxResearchIterations) * 50,
+        Math.round(10 + (iteration / config.maxResearchIterations) * 50),
       );
       break;
     }
@@ -8653,7 +8666,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Note: Per-scope limits enforced separately when researching specific scopes
     recordIteration(state.budgetTracker, `ITER_${iteration}`);
 
-    const baseProgress = 10 + (iteration / config.maxResearchIterations) * 50;
+    const baseProgress = Math.round(10 + (iteration / config.maxResearchIterations) * 50);
 
     const decision = decideNextResearch(state);
     if (decision.complete) {
