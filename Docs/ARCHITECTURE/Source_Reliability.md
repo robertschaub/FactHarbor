@@ -1,5 +1,11 @@
 # FactHarbor Source Reliability
 
+**Version**: 1.0 (Implemented)  
+**Status**: Operational  
+**Last Updated**: 2026-01-21
+
+---
+
 ## Overview
 
 FactHarbor evaluates source reliability dynamically using LLM-powered assessment with multi-model consensus. Sources are evaluated on-demand and cached for 90 days.
@@ -10,6 +16,7 @@ FactHarbor evaluates source reliability dynamically using LLM-powered assessment
 | **Storage** | SQLite cache (`source-reliability.db`) |
 | **Integration** | Batch prefetch + sync lookup |
 | **Cost Control** | Importance filter + rate limiting |
+| **Verdict Impact** | Evidence weighting adjusts truth percentages |
 
 ---
 
@@ -31,6 +38,7 @@ The service is **enabled by default**. It will automatically:
 - Use multi-model consensus (Claude + GPT-4)
 - Cache results for 90 days
 - Skip blog platforms and spam TLDs
+- Apply evidence weighting to verdicts
 
 ### Verify It's Working
 
@@ -39,6 +47,40 @@ Run an analysis and check the logs for:
 [SR] Prefetching 5 unique domains
 [SR] Cache hits: 0/5
 [SR] Evaluated reuters.com: score=0.95, confidence=0.92
+```
+
+---
+
+## How It Affects Verdicts
+
+Source reliability scores directly influence verdict calculations through **evidence weighting**.
+
+### Formula
+
+```
+adjustedTruth = 50 + (originalTruth - 50) × avgSourceScore
+adjustedConfidence = confidence × (0.5 + avgSourceScore / 2)
+```
+
+### Effect on Verdicts
+
+| Source Reliability | Effect on Verdict |
+|-------------------|-------------------|
+| **High (0.9)** | Truth stays close to original (±5%) |
+| **Medium (0.7)** | Truth pulled toward neutral (±15%) |
+| **Low (0.3)** | Truth pulled strongly toward neutral (±35%) |
+| **Unknown (null)** | Verdict unchanged |
+
+### Example
+
+```
+Original verdict: 80% (Strong True)
+Source reliability: 0.5 (Mixed)
+
+Adjusted = 50 + (80 - 50) × 0.5
+         = 50 + 30 × 0.5
+         = 50 + 15
+         = 65% (Leaning True)
 ```
 
 ---
@@ -75,8 +117,8 @@ All configuration is via environment variables (`apps/web/.env.local`):
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `FH_SR_FILTER_ENABLED` | `true` | Enable importance filter |
-| `FH_SR_SKIP_PLATFORMS` | (see below) | Platforms to skip (comma-separated) |
-| `FH_SR_SKIP_TLDS` | (see below) | TLDs to skip (comma-separated) |
+| `FH_SR_SKIP_PLATFORMS` | *(see below)* | Platforms to skip (comma-separated) |
+| `FH_SR_SKIP_TLDS` | *(see below)* | TLDs to skip (comma-separated) |
 
 **Default skip platforms**: `blogspot.,wordpress.com,medium.com,substack.com,tumblr.com,wix.com,weebly.com,squarespace.com,ghost.io,blogger.com,sites.google.com,github.io,netlify.app,vercel.app,herokuapp.com`
 
@@ -110,6 +152,104 @@ FH_SR_FILTER_ENABLED=false
 
 ---
 
+## Architecture
+
+### Integration Pattern: Batch Prefetch + Sync Lookup
+
+The Source Reliability system uses a two-phase pattern to avoid async operations in the analyzer's hot path:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 1: Async Prefetch (before analysis)                                   │
+│ ┌─────────────┐    ┌─────────┐    ┌─────────────────┐                       │
+│ │ Extract URLs│───►│ Cache   │───►│ LLM Evaluation  │                       │
+│ └─────────────┘    │ Lookup  │    │ (cache misses)  │                       │
+│                    └─────────┘    └─────────────────┘                       │
+│                          │                  │                               │
+│                          ▼                  ▼                               │
+│                    ┌─────────────────────────────┐                          │
+│                    │    In-Memory Map            │                          │
+│                    └─────────────────────────────┘                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PHASE 2: Sync Lookup (during analysis)                                      │
+│ ┌─────────────┐    ┌─────────────────────────────┐                          │
+│ │ getTrack    │───►│    In-Memory Map            │                          │
+│ │ RecordScore │    │    (instant read)           │                          │
+│ └─────────────┘    └─────────────────────────────┘                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PHASE 3: Evidence Weighting (after verdicts generated)                      │
+│ ┌─────────────┐    ┌─────────────────────────────┐                          │
+│ │ applyEvid   │───►│ Adjust truth percentages    │                          │
+│ │ enceWeight  │    │ based on source scores      │                          │
+│ └─────────────┘    └─────────────────────────────┘                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Why This Pattern?
+
+| Concern | How Pattern Addresses It |
+|---------|-------------------------|
+| **No async ripple** | Only ONE `await` at pipeline boundary, rest stays sync |
+| **Batch efficiency** | Single batch cache lookup instead of N individual calls |
+| **LLM cost control** | Filter + rate limit applied during prefetch |
+| **Graceful degradation** | Unknown sources get `null`, analysis continues |
+| **No blocking** | Sync lookups are instant map reads |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `apps/web/src/lib/analyzer/source-reliability.ts` | Prefetch, sync lookup, evidence weighting |
+| `apps/web/src/lib/source-reliability-cache.ts` | SQLite cache operations |
+| `apps/web/src/app/api/internal/evaluate-source/route.ts` | LLM evaluation endpoint |
+| `apps/web/src/app/admin/source-reliability/page.tsx` | Admin UI for cache management |
+| `apps/web/src/app/api/admin/source-reliability/route.ts` | Admin API endpoint |
+
+### Key Functions
+
+```typescript
+// Phase 1: Call ONCE before analysis (async)
+export async function prefetchSourceReliability(urls: string[]): Promise<void>;
+
+// Phase 2: Call MANY times during analysis (sync, instant)
+export function getTrackRecordScore(url: string): number | null;
+
+// Phase 3: Apply to verdicts (sync)
+export function applyEvidenceWeighting(
+  claimVerdicts: ClaimVerdict[],
+  facts: ExtractedFact[],
+  sources: FetchedSource[]
+): ClaimVerdict[];
+
+// Utilities
+export function extractDomain(url: string): string | null;
+export function isImportantSource(domain: string): boolean;
+export function normalizeTrackRecordScore(score: number): number;
+export function clampTruthPercentage(value: number): number;
+```
+
+---
+
+## Admin Interface
+
+Access the Source Reliability admin page at: `/admin/source-reliability`
+
+### Features
+
+- **Cache Statistics**: Total entries, average scores, expired count
+- **Paginated Table**: View all cached scores with sorting
+- **Cleanup**: Remove expired entries
+
+### Admin Tasks (~15 min/week)
+
+| Task | Time | Frequency |
+|------|------|-----------|
+| Check LLM cost dashboard | 5 min | Weekly |
+| Spot-check 2-3 recent scores | 8 min | Weekly |
+| Review any flagged issues | 2 min | Weekly |
+
+---
+
 ## Cost Estimates
 
 | Mode | Monthly Cost |
@@ -118,14 +258,6 @@ FH_SR_FILTER_ENABLED=false
 | Single-model | $20-30 |
 
 The importance filter saves ~60% of LLM costs by skipping blog platforms and spam domains.
-
----
-
-## Admin Tasks (~15 min/week)
-
-1. **Spot-check cache**: Review cached scores for accuracy
-2. **Monitor logs**: Check for consensus failures
-3. **Optional cleanup**: Expired entries are automatically ignored
 
 ---
 
@@ -153,6 +285,15 @@ All sources are evaluated identically by LLM:
 - Cache expires after 90 days (configurable)
 - Re-evaluation happens automatically on cache miss
 
+### Score Scale Contract
+
+**Canonical scale: 0.0-1.0 everywhere**
+
+- All stored scores use decimal 0.0-1.0
+- API responses use 0.0-1.0
+- In-memory caches use 0.0-1.0
+- Defensive normalization handles 0-100 scale inputs
+
 ---
 
 ## Troubleshooting
@@ -164,42 +305,29 @@ All sources are evaluated identically by LLM:
 | All sources returning null | Check API keys, lower `FH_SR_CONFIDENCE_THRESHOLD` |
 | High LLM costs | Enable filter, use single model (`FH_SR_MULTI_MODEL=false`) |
 | Consensus failures | Lower `FH_SR_CONSENSUS_THRESHOLD` (default 0.15) |
+| Score not affecting verdict | Check `applyEvidenceWeighting` is called, verify `trackRecordScore` on sources |
 
 ---
 
-## Architecture
+## Test Coverage
 
-See [Source_Reliability_Service_Proposal.md](Source_Reliability_Service_Proposal.md) for detailed architecture documentation.
+The Source Reliability system has comprehensive test coverage:
 
-### Key Files
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `source-reliability.test.ts` | 42 | Domain extraction, importance filter, evidence weighting |
+| `source-reliability-cache.test.ts` | 16 | SQLite operations, pagination, expiration |
 
-| File | Purpose |
-|------|---------|
-| `apps/web/src/lib/analyzer/source-reliability.ts` | Prefetch + sync lookup |
-| `apps/web/src/lib/source-reliability-cache.ts` | SQLite cache |
-| `apps/web/src/app/api/internal/evaluate-source/route.ts` | LLM evaluation endpoint |
-
-### Integration Pattern
-
+Run tests:
+```bash
+cd apps/web && npm test -- src/lib/analyzer/source-reliability.test.ts
+cd apps/web && npm test -- src/lib/source-reliability-cache.test.ts
 ```
-┌─────────────────────────────────────────────────────────┐
-│ Phase 1: Async Prefetch (before analysis)              │
-│ ┌─────────────┐    ┌─────────┐    ┌─────────────────┐  │
-│ │ Extract URLs│───▶│ Cache   │───▶│ LLM Evaluation  │  │
-│ └─────────────┘    │ Lookup  │    │ (cache misses)  │  │
-│                    └─────────┘    └─────────────────┘  │
-│                          │                  │          │
-│                          ▼                  ▼          │
-│                    ┌─────────────────────────────┐     │
-│                    │    In-Memory Map            │     │
-│                    └─────────────────────────────┘     │
-└─────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────┐
-│ Phase 2: Sync Lookup (during analysis)                 │
-│ ┌─────────────┐    ┌─────────────────────────────┐     │
-│ │ getTrack    │───▶│    In-Memory Map            │     │
-│ │ RecordScore │    │    (instant read)           │     │
-│ └─────────────┘    └─────────────────────────────┘     │
-└─────────────────────────────────────────────────────────┘
-```
+---
+
+## Historical Documentation
+
+For the original architecture proposal and review history, see:
+- [Source_Reliability_Service_Proposal.md](../ARCHIVE/Source_Reliability_Service_Proposal.md) (archived)
+- [Review documents](../ARCHIVE/) (archived)

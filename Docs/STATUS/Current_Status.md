@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.33 (Code) | 2.7.0 (Schema Output)  
-**Last Updated**: 2026-01-20  
+**Version**: 2.6.34 (Code) | 2.7.0 (Schema Output)  
+**Last Updated**: 2026-01-21  
 **Status**: POC1 Operational
 
 ---
@@ -158,7 +158,7 @@
 | **Provenance Validation** | ✅ Implemented | All paths validate URL provenance |
 | **PDF/HTML Extraction** | ✅ Working | Timeout handling, redirect following |
 | **Quality Gates** | ⚠️ Partial | Applied, but not displayed in UI |
-| **Source Reliability** | ⚠️ Partial | Static bundle loaded, no historical tracking |
+| **Source Reliability** | ✅ Implemented | LLM evaluation with cache, multi-model consensus, evidence weighting |
 | **Claim Caching** | ❌ Not implemented | Recomputes per job |
 | **Normalized Data Model** | ❌ Not implemented | Job blobs only, no claim/evidence tables |
 | **AuthN/AuthZ** | ❌ Not implemented | Open endpoints (except internal runner) |
@@ -264,6 +264,15 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ---
 
 ## Recent Changes
+
+### v2.6.34 (January 2026)
+- **Source Reliability Service Implemented**: Full LLM-powered source evaluation with multi-model consensus
+  - Batch prefetch + sync lookup pattern for pipeline integration
+  - SQLite cache with 90-day TTL
+  - Evidence weighting affects verdict calculations
+  - Admin interface for cache management
+  - 58 tests covering all functionality
+- Documentation updates: Merged proposal into main docs, archived historical documents
 
 ### v2.6.33 (January 2026)
 - Fixed counter-claim detection - thesis-aligned claims no longer flagged as counter

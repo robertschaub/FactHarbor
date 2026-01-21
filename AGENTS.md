@@ -77,9 +77,12 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 | `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
 | `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation logic |
 | `apps/web/src/lib/analyzer/scopes.ts` | Scope detection and handling |
+| `apps/web/src/lib/analyzer/source-reliability.ts` | Source reliability: prefetch, lookup, weighting |
+| `apps/web/src/lib/source-reliability-cache.ts` | SQLite cache for source scores |
 | `apps/web/src/app/jobs/[id]/page.tsx` | Job results UI |
 | `apps/api/Controllers/JobsController.cs` | Job CRUD API |
 | `Docs/ARCHITECTURE/Calculations.md` | Verdict calculation documentation |
+| `Docs/ARCHITECTURE/Source_Reliability.md` | Source reliability documentation |
 
 ---
 
@@ -130,7 +133,7 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 
 ---
 
-## Current State (v2.6.33)
+## Current State (v2.6.34)
 
 ### Working Features
 - ✅ Multi-scope detection and display
@@ -140,6 +143,7 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 - ✅ Claim deduplication for fair aggregation
 - ✅ KeyFactors aggregation
 - ✅ Triple-path pipeline (Orchestrated, Monolithic Canonical, Monolithic Dynamic)
+- ✅ Source Reliability (LLM evaluation with multi-model consensus, caching, evidence weighting)
 
 ### Key Environment Variables
 
@@ -150,6 +154,9 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 | `FH_SEARCH_ENABLED` | `true` | Enable web search |
 | `FH_SEARCH_DATE_RESTRICT` | - | Limit search to recent results (y/m/w) |
 | `LLM_PROVIDER` | `anthropic` | LLM provider selection |
+| `FH_SR_ENABLED` | `true` | Enable source reliability scoring |
+| `FH_SR_MULTI_MODEL` | `true` | Use multi-model consensus (Claude + GPT-4) |
+| `FH_SR_CONFIDENCE_THRESHOLD` | `0.8` | Min LLM confidence to accept score |
 
 ---
 

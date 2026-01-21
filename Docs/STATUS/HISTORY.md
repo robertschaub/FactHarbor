@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
-**Last Updated**: January 20, 2026  
-**Current Version**: 2.6.33  
+**Last Updated**: January 21, 2026  
+**Current Version**: 2.6.34  
 **Schema Version**: 2.7.0
 
 ---
@@ -42,6 +42,53 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 ---
 
 ## Version History
+
+### v2.6.34 (January 21, 2026)
+
+**Focus**: Source Reliability Service Implementation
+
+**Major Changes**:
+
+1. **Source Reliability Service**: Full implementation of LLM-powered source evaluation
+   - Multi-model consensus (Claude + GPT-4) for hallucination reduction
+   - SQLite cache with 90-day TTL
+   - Batch prefetch + sync lookup pattern (no async in analyzer hot path)
+   - Importance filter skips blogs and spam TLDs (~60% cost savings)
+   - Rate limiting for cost control
+
+2. **Evidence Weighting**: Source reliability now affects verdict calculations
+   - Formula: `adjustedTruth = 50 + (originalTruth - 50) × avgSourceScore`
+   - High reliability (0.9): Verdicts stay near original
+   - Low reliability (0.3): Verdicts pulled toward neutral
+   - Defensive normalization handles 0-100 scale inputs
+
+3. **Admin Interface**: New admin page for cache management
+   - View cache statistics
+   - Browse cached scores with pagination/sorting
+   - Cleanup expired entries
+
+4. **Test Coverage**: 58 tests for Source Reliability
+   - `source-reliability.test.ts`: 42 tests (domain extraction, filter, weighting)
+   - `source-reliability-cache.test.ts`: 16 tests (SQLite operations)
+
+**Key Files Created/Modified**:
+- `apps/web/src/lib/analyzer/source-reliability.ts` (enhanced with evidence weighting)
+- `apps/web/src/lib/source-reliability-cache.ts` (new)
+- `apps/web/src/app/api/internal/evaluate-source/route.ts` (new)
+- `apps/web/src/app/admin/source-reliability/page.tsx` (new)
+- `apps/web/src/app/api/admin/source-reliability/route.ts` (new)
+- `apps/web/src/lib/analyzer/orchestrated.ts` (prefetch integration)
+
+**Documentation**:
+- `Docs/ARCHITECTURE/Source_Reliability.md` (comprehensive user guide)
+- `Docs/ARCHIVE/Source_Reliability_Service_Proposal.md` (archived proposal)
+
+**Configuration** (environment variables):
+- `FH_SR_ENABLED`, `FH_SR_MULTI_MODEL`, `FH_SR_CONFIDENCE_THRESHOLD`
+- `FH_SR_CONSENSUS_THRESHOLD`, `FH_SR_CACHE_TTL_DAYS`, `FH_SR_FILTER_ENABLED`
+- `FH_SR_SKIP_PLATFORMS`, `FH_SR_SKIP_TLDS`, `FH_SR_RATE_LIMIT_PER_IP`
+
+---
 
 ### v2.8.0 (January 2026)
 
