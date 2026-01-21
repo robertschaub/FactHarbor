@@ -45,21 +45,23 @@ export function validateContestation<T extends ContestableKeyFactor>(keyFactors:
     
     // Sources that are NOT documented evidence - just opinions/advocacy/media
     // These should be "opinion" (doubted) not "established"/"disputed" (contested)
-    const opinionBasedSource = new RegExp([
+    // Use word boundaries (\b) to avoid matching substrings (e.g., "some" in "someone")
+    const opinionBasedTerms = [
       // Political/government sources
       'government', 'diplomatic', 'political', 'administration', 'official', 'state',
       'foreign ministry', 'embassy', 'department of', 'secretary of', 'ministry of',
       'envoy', 'ambassador',
       // Media sources
       'media', 'news', 'journalist', 'reporter', 'outlet', 'publication',
-      // Vague stakeholder groups
-      'stakeholder', 'various', 'some', 'many', 'several', 'multiple', 'numerous',
+      // Vague stakeholder groups (require word boundaries to avoid "someone", "awesome", etc.)
+      'stakeholder', 'various', 'some\\b', 'many\\b', 'several', 'multiple', 'numerous',
       // Advocacy/interest groups
       'advocate', 'advocacy', 'lobby', 'lobbyist', 'industry group', 'trade association',
       'interest group', 'pressure group', 'activist',
       // General critics
       'critic', 'opponent', 'skeptic', 'detractor', 'challenger',
-    ].join('|'), 'i');
+    ];
+    const opinionBasedSource = new RegExp('\\b(' + opinionBasedTerms.join('|') + ')', 'i');
     
     const hasOpinionSource = opinionBasedSource.test(kf.contestedBy || "");
     

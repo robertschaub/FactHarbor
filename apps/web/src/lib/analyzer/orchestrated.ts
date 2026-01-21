@@ -6204,7 +6204,7 @@ ${scopesFormatted}
    - contestedBy: Be SPECIFIC about who disputes it (e.g., "supplier group A", "regulator X", "employee union")
      * Do NOT use vague terms like "some people" - specify WHICH group/organization
      * **NO CIRCULAR CONTESTATION**: The entity making a decision CANNOT contest its own decision
-       - WRONG: "Due process adherence" contested by "Brazilian judiciary" (they conducted it!)
+       - WRONG: "Due process adherence" contested by "Court X judiciary" (they conducted it!)
        - RIGHT: "Due process adherence" contested by "international observers" or "defense counsel"
    - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
      * **CRITICAL: factualBasis classification determines weight in aggregation**
