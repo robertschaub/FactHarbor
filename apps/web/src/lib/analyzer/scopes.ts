@@ -155,8 +155,8 @@ export function formatDetectedScopesHint(scopes: DetectedScope[] | null, detaile
  * identification regardless of input phrasing (question vs statement).
  *
  * This addresses the input neutrality issue where:
- * - "Was the Bolsonaro judgment fair?" detected 3 scopes
- * - "The Bolsonaro judgment was fair" detected 4 scopes
+ * - "Was the legal proceeding fair?" detected 3 scopes
+ * - "The legal proceeding was fair" detected 4 scopes
  *
  * The function normalizes both phrasings to the same canonical form for
  * scope detection purposes.

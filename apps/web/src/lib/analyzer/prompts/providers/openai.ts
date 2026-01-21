@@ -88,33 +88,33 @@ export function getOpenAIExtractFactsVariant(): string {
   "facts": [
     {
       "id": "F1",
-      "fact": "Hydrogen fuel cell vehicles achieve 40% well-to-wheel efficiency",
+      "fact": "Technology A achieves 40% full-cycle efficiency",
       "category": "statistic",
       "specificity": "high",
-      "sourceExcerpt": "The WTW efficiency of hydrogen FCEVs is approximately 40%",
+      "sourceExcerpt": "The full-cycle efficiency of Technology A is approximately 40%",
       "claimDirection": "contradicts",
-      "contextId": "CTX_WTW",
+      "contextId": "CTX_FULL",
       "evidenceScope": {
-        "name": "WTW",
-        "methodology": "Well-to-Wheel analysis",
-        "boundaries": "Primary energy production through vehicle operation",
-        "geographic": "European Union",
+        "name": "Full-Cycle",
+        "methodology": "End-to-end analysis",
+        "boundaries": "Primary production through final operation",
+        "geographic": "Region X",
         "temporal": "2024"
       }
     },
     {
       "id": "F2",
-      "fact": "Battery electric vehicles achieve 77% well-to-wheel efficiency",
+      "fact": "Technology B achieves 77% full-cycle efficiency",
       "category": "statistic",
       "specificity": "high",
-      "sourceExcerpt": "BEVs demonstrate WTW efficiency of approximately 77%",
+      "sourceExcerpt": "Technology B demonstrates full-cycle efficiency of approximately 77%",
       "claimDirection": "supports",
-      "contextId": "CTX_WTW",
+      "contextId": "CTX_FULL",
       "evidenceScope": {
-        "name": "WTW",
-        "methodology": "Well-to-Wheel analysis",
-        "boundaries": "Primary energy production through vehicle operation",
-        "geographic": "European Union",
+        "name": "Full-Cycle",
+        "methodology": "End-to-end analysis",
+        "boundaries": "Primary production through final operation",
+        "geographic": "Region X",
         "temporal": "2024"
       }
     }
@@ -150,13 +150,13 @@ export function getOpenAIVerdictVariant(): string {
 ### CRITICAL: RATING DIRECTION EXAMPLES
 
 **Example 1 - Correct Rating:**
-- User claim: "Hydrogen cars are MORE efficient than electric cars"
-- Evidence shows: Electric cars are 77% efficient, Hydrogen is 40% efficient
+- User claim: "Technology A is MORE efficient than Technology B"
+- Evidence shows: Technology B is 77% efficient, Technology A is 40% efficient
 - CORRECT verdict: 5-15% (FALSE) - the user's claim is wrong
 - WRONG verdict: 85-95% - this would rate analysis quality, not claim truth
 
 **Example 2 - Correct Rating:**
-- User claim: "The trial followed proper procedures"
+- User claim: "The proceeding followed proper procedures"
 - Evidence shows: Multiple procedural violations documented
 - CORRECT verdict: 10-25% (MOSTLY FALSE) - claim contradicts evidence
 - WRONG verdict: 75-90% - this would confuse "we found evidence" with "claim is true"
@@ -198,16 +198,16 @@ export function getOpenAIScopeRefinementVariant(): string {
 
 ### FEW-SHOT EXAMPLE
 
-**Input:** Facts about hydrogen vs electric vehicle efficiency from multiple studies
+**Input:** Facts about Technology A vs Technology B efficiency from multiple studies
 **Output:**
 {
   "requiresSeparateAnalysis": true,
   "analysisContexts": [
     {
-      "id": "CTX_WTW",
-      "name": "Well-to-Wheel Efficiency Analysis",
-      "shortName": "WTW",
-      "subject": "Full energy chain efficiency comparison",
+      "id": "CTX_FULL",
+      "name": "Full-Cycle Efficiency Analysis",
+      "shortName": "FULL",
+      "subject": "Complete process chain efficiency comparison",
       "temporal": "2020-2024",
       "status": "concluded",
       "outcome": "Studies show efficiency differences",

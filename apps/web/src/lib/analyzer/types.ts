@@ -186,8 +186,8 @@ export interface AnalysisContext {
  * its evidence. It's attached to individual facts as `fact.evidenceScope`.
  *
  * Critical for comparing apples-to-apples:
- * Example: A study saying "hydrogen car efficiency is 40%" using WTW methodology
- * cannot be directly compared to a TTW study (different calculation boundaries).
+ * Example: A study saying "Technology A efficiency is 40%" using full-cycle methodology
+ * cannot be directly compared to a partial-cycle study (different calculation boundaries).
  *
  * @see AnalysisContext for top-level analysis contexts (different concept!)
  */

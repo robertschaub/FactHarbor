@@ -64,7 +64,7 @@ Centrality = LOW:
 Centrality = HIGH:
 - "10 people were harmed by Product X" (factual impact)
 - "The process violated due process" (procedural violation)
-- "Hydrogen is more efficient than electric" (comparative claim)
+- "Technology A is more efficient than Technology B" (comparative claim)
 
 ### VALIDATION CHECKLIST
 Before output, verify:
