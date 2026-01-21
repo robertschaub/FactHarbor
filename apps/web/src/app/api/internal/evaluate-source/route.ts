@@ -9,7 +9,7 @@
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { generateText, Output } from "ai";
+import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { getDeterministicTemperature } from "@/lib/analyzer/config";
@@ -109,16 +109,30 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
 // LLM EVALUATION
 // ============================================================================
 
-const EVALUATION_PROMPT = `You are an expert media analyst evaluating the reliability of news sources and websites.
+// Generate prompt with current date for temporal awareness
+function getEvaluationPrompt(domain: string): string {
+  const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  
+  return `You are an expert media analyst evaluating the reliability of news sources and websites.
 
-TASK: Evaluate the factual reliability of the domain: {DOMAIN}
+CURRENT DATE: ${currentDate}
+
+TASK: Evaluate the CURRENT factual reliability of the domain: ${domain}
+
+TEMPORAL AWARENESS (IMPORTANT):
+- Source reliability can change over time due to ownership changes, editorial shifts, or political transitions
+- Government sites (e.g., whitehouse.gov, state departments) may vary in reliability across administrations
+- News organizations can improve or decline in quality over time
+- Base your assessment on the source's RECENT track record (last 1-2 years when possible)
+- If a source has undergone recent changes, factor that into your assessment
 
 IMPORTANT GUIDELINES:
 1. Focus ONLY on factual accuracy and reliability, NOT political bias
-2. Base your assessment on the source's demonstrated track record
+2. Base your assessment on the source's demonstrated track record, especially RECENT performance
 3. Consider: fact-checking record, corrections policy, editorial standards, transparency
 4. Do NOT rely on the domain name alone - consider actual reporting history
 5. If you don't have sufficient information about this source, say so
+6. For government sources, consider current administration's transparency and accuracy record
 
 RATING SCALE (factualRating):
 - "very_high": Wire services, major fact-checkers (AP, Reuters, FactCheck.org)
@@ -146,10 +160,11 @@ Respond with a JSON object matching this schema:
 {
   "score": <number 0-1>,
   "confidence": <number 0-1>,
-  "reasoning": "<brief explanation of your assessment>",
+  "reasoning": "<brief explanation including any recent changes affecting reliability>",
   "factualRating": "<one of: very_high, high, mostly_factual, mixed, low, very_low>",
   "evidenceCited": ["<specific facts supporting your rating>"]
 }`;
+}
 
 async function evaluateWithModel(
   domain: string,
@@ -169,7 +184,7 @@ async function evaluateWithModel(
     return null;
   }
 
-  const prompt = EVALUATION_PROMPT.replace("{DOMAIN}", domain);
+  const prompt = getEvaluationPrompt(domain);
   const temperature = getDeterministicTemperature(0.3);
 
   const modelName = modelProvider === "anthropic" 
@@ -185,20 +200,37 @@ async function evaluateWithModel(
   try {
     const response = await generateText({
       model,
-      prompt,
+      messages: [
+        { role: "system", content: "You are an expert media analyst evaluating the reliability of news sources. Always respond with valid JSON only, no other text." },
+        { role: "user", content: prompt },
+      ],
       temperature,
-      output: Output.object({ schema: EvaluationResultSchema }),
     });
 
-    // Extract structured output
-    const output = (response as any).output ?? (response as any)._output ?? (response as any).experimental_output;
-    
-    if (!output) {
-      console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED: No structured output returned`);
+    // Parse JSON from text response (works reliably across all providers)
+    const text = response.text?.trim() || "";
+    if (!text) {
+      console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED: Empty response`);
       return null;
     }
 
-    const result = EvaluationResultSchema.parse(output);
+    // Extract JSON from response (handle markdown code blocks if present)
+    let jsonStr = text;
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1].trim();
+    }
+    
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (parseErr) {
+      console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED: Invalid JSON`);
+      console.error(`  - Raw response: ${text.slice(0, 200)}...`);
+      return null;
+    }
+
+    const result = EvaluationResultSchema.parse(parsed);
     console.log(`[SR-Eval] ${modelProvider.toUpperCase()} SUCCESS: score=${result.score.toFixed(2)}, confidence=${result.confidence.toFixed(2)}`);
     return { result, modelName };
   } catch (err: any) {
