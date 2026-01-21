@@ -71,8 +71,12 @@ export function detectAndCorrectVerdictInversion(
     // Excessive patterns
     /\b(excessive|unwarranted|undue)\s+(economic\s+)?(punishment|pressure|retaliation)\b/i,
     // Additional denial patterns
-    // No evidence patterns - critical for catching "No evidence supports/provided supports"
-    /\bno\s+(evidence|data|proof|support)\b/i,
+    // No evidence patterns - MUST check what follows to avoid false positives
+    // "no evidence supports X" = negative (X not supported)
+    // "no evidence against X" = positive (nothing refutes X) - DO NOT match
+    /\bno\s+(evidence|data|proof)\s+(supports?|shows?|indicates?|suggests?|provided|found|exists?)\b/i,
+    /\bno\s+(evidence|data|proof)\s+(for|of|that)\b/i,
+    // "no evidence was found/provided" patterns
     /\bno\s+\w+\s+(evidence|data|support)\s+(supports?|shows?|indicates?|suggests?)\b/i,
     // Insufficiency patterns
     /\b(lacks?|lacking)\s+(sufficient\s+)?(evidence|basis|support|justification)\b/i,
