@@ -43,26 +43,42 @@ export function validateContestation<T extends ContestableKeyFactor>(keyFactors:
     // Skip if already opinion or not contesting
     if (kf.factualBasis === "opinion" || kf.supports !== "no") return kf;
     
-    // Political/government/diplomatic sources
-    const politicalSource = /(government|diplomatic|political|administration|official|state|foreign ministry|embassy|department of|secretary of|ministry of|envoy|ambassador)/i;
-    const hasPoliticalSource = politicalSource.test(kf.contestedBy || "");
+    // Sources that are NOT documented evidence - just opinions/advocacy/media
+    // These should be "opinion" (doubted) not "established"/"disputed" (contested)
+    const opinionBasedSource = new RegExp([
+      // Political/government sources
+      'government', 'diplomatic', 'political', 'administration', 'official', 'state',
+      'foreign ministry', 'embassy', 'department of', 'secretary of', 'ministry of',
+      'envoy', 'ambassador',
+      // Media sources
+      'media', 'news', 'journalist', 'reporter', 'outlet', 'publication',
+      // Vague stakeholder groups
+      'stakeholder', 'various', 'some', 'many', 'several', 'multiple', 'numerous',
+      // Advocacy/interest groups
+      'advocate', 'advocacy', 'lobby', 'lobbyist', 'industry group', 'trade association',
+      'interest group', 'pressure group', 'activist',
+      // General critics
+      'critic', 'opponent', 'skeptic', 'detractor', 'challenger',
+    ].join('|'), 'i');
+    
+    const hasOpinionSource = opinionBasedSource.test(kf.contestedBy || "");
     
     // Check if contestation cites SPECIFIC documented evidence
     // Must include specific references: statute numbers, procedure names, documented violations, measurements, etc.
-    const specificEvidence = /\b(data|measurement|study|record|document|report|investigation|standard|precedent|statute|regulation|evidence|violation|breach|procedure\s+\d+|article\s+\d+|section\s+\d+|protocol\s+\d+|rule\s+\d+|finding|determination|ruling|documentation)\b/i;
+    const specificEvidence = /\b(data|measurement|study|record|document|report|investigation|standard|precedent|statute|regulation|evidence|violation|breach|procedure\s+\d+|article\s+\d+|section\s+\d+|protocol\s+\d+|rule\s+\d+|finding|determination|ruling|documentation|audit|log|dataset)\b/i;
     const hasSpecificEvidence = specificEvidence.test(
       (kf.contestationReason || "") + " " + (kf.explanation || "")
     );
     
-    // Downgrade political criticism without specific evidence to "opinion"
+    // Downgrade opinion-based contestation without specific evidence to "opinion"
     // This keeps FULL weight (baseless doubt doesn't reduce verdict)
-    if (hasPoliticalSource && 
+    if (hasOpinionSource && 
         (kf.factualBasis === "established" || kf.factualBasis === "disputed") && 
         !hasSpecificEvidence) {
       return {
         ...kf,
         factualBasis: "opinion" as const,
-        contestationReason: `Political criticism without documented counter-evidence: ${kf.contestationReason || kf.explanation || "general disagreement"}`
+        contestationReason: `Opinion/advocacy without documented counter-evidence: ${kf.contestationReason || kf.explanation || "general disagreement"}`
       } as T;
     }
     
