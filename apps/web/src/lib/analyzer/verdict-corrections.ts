@@ -98,11 +98,39 @@ export function detectAndCorrectVerdictInversion(
     p.test(reasoningLower),
   );
 
+  // v2.8.3: Also check for REVERSE inversion - claim asserts NEGATIVE, reasoning shows POSITIVE
+  // Example: Claim says "Technology A has lower efficiency" but reasoning shows "Technology A uses 60% efficiently"
+  const negativeClaimPatterns = [
+    // Comparative negative assertions (X has lower/less/worse Y)
+    /\b(has|have|had)\s+(lower|less|worse|inferior|reduced)\s+(efficiency|performance|effectiveness|accuracy)\b/i,
+    /\b(less|lower|worse|inferior)\s+(efficient|effective|accurate|reliable)\s+(than|compared)\b/i,
+    /\b(are|is|was|were)\s+(less|lower|worse|inferior)\s+.{0,20}\s+(efficient|effective)\b/i,
+  ];
+
+  const positiveReasoningPatterns = [
+    // Counter-evidence showing positive performance
+    /\bcounter-?evidence\s+shows?\b/i,
+    /\bno\s+evidence\s+supports?\s+(the\s+claim|that|this|it)\b/i,
+    /\b(actually|in\s+fact|evidence\s+shows?)\s+.{0,30}\s+(more|higher|better)\s+(efficient|effective)\b/i,
+    /\buse\s+\d+%\s+(of\s+)?(input\s+)?energy\s+efficiently\b/i,
+    /\b(contradicts?|directly\s+contradicts?)\s+(the\s+)?claim\b/i,
+  ];
+
+  const claimAssertsNegative = negativeClaimPatterns.some((p) =>
+    p.test(claimLower),
+  );
+  const reasoningShowsPositive = positiveReasoningPatterns.some((p) =>
+    p.test(reasoningLower),
+  );
+
   // DEBUG: Log pattern matching results
   debugLog("[INVERSION DEBUG] Pattern matching results", {
     claimAssertsPositive,
     reasoningNegates,
-    shouldInvert: claimAssertsPositive && reasoningNegates && verdictPct >= 50,
+    claimAssertsNegative,
+    reasoningShowsPositive,
+    shouldInvert: (claimAssertsPositive && reasoningNegates && verdictPct >= 50) ||
+                  (claimAssertsNegative && reasoningShowsPositive && verdictPct >= 50),
   });
 
   debugLog("detectAndCorrectVerdictInversion: CHECK", {
@@ -111,9 +139,13 @@ export function detectAndCorrectVerdictInversion(
     verdictPct,
     claimAssertsPositive,
     reasoningNegates,
+    claimAssertsNegative,
+    reasoningShowsPositive,
   });
 
-  if (claimAssertsPositive && reasoningNegates && verdictPct >= 50) {
+  // Invert if: (positive claim + negative reasoning) OR (negative claim + positive reasoning)
+  if ((claimAssertsPositive && reasoningNegates && verdictPct >= 50) ||
+      (claimAssertsNegative && reasoningShowsPositive && verdictPct >= 50)) {
     // Invert the verdict: 72% → 28%, 85% → 15%, etc.
     const correctedPct = 100 - verdictPct;
     debugLog("detectAndCorrectVerdictInversion: INVERTED", {
@@ -218,7 +250,8 @@ export function detectCounterClaim(
       /\b(evidence|record|proof)\b.*\b(supports?|supporting|corroborates?)\b.*\b(charges?|case|allegations?)\b/,
       /\b(charges?|case|allegations?)\b.*\b(are\s+)?\b(supported|corroborated)\b.*\b(evidence|record|proof)\b/,
       /\b(based on|pursuant to|according to)\b.*\b(law|legal|statute|constitution)\b/,
-      /\b(law|legal|statute|constitution)\b.*\b(applied|followed|observed|respected)\b/,
+      /\b(law|legal|statute|constitution)\b.*\b(applied|followed|observed|respected|complied)\b/,
+      /\bcompl(y|ies|ied|iant|iance)\b.*\b(law|legal|electoral|statute|constitution|standards?)\b/,
       /\b(charges|indictment|prosecution)\b.*\b(based on|supported by|grounded in)\b.*\b(law|evidence)\b/,
       /\b(constitutional|legal)\b.*\b(jurisdiction|authority|basis|foundation)\b/,
       /\b(sentence|penalty|punishment|fine)\b.*\b(proportionate|appropriate|justified|fair)\b/,

@@ -1699,12 +1699,12 @@ function normalizePercentage(value: number | string | undefined | null): number 
       return 50;
     }
   }
-  
+
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     console.warn(`[normalizePercentage] Invalid value: ${value} (type: ${typeof value}), defaulting to 50`);
     return 50;
   }
-  
+
   const normalized = value >= 0 && value <= 1 ? value * 100 : value;
   return Math.max(0, Math.min(100, Math.round(normalized)));
 }
@@ -2082,6 +2082,8 @@ interface ClaimUnderstanding {
     isCentral: boolean; // Derived: true if centrality is "high"
     // v2.6.31: Thesis relevance - does this claim DIRECTLY test the main thesis?
     thesisRelevance: "direct" | "tangential" | "irrelevant";
+    // v2.8.4: Counter-claim detection - true if claim tests OPPOSITE of thesis
+    isCounterClaim: boolean;
     contextId: string;
     approximatePosition: string;
     keyFactorId: string; // empty string if not mapped to any factor
@@ -2585,6 +2587,10 @@ const SUBCLAIM_SCHEMA = z.object({
   // "tangential" = related context but doesn't test the thesis (e.g., reactions to an event)
   // "irrelevant" = off-topic noise that should not be evaluated or shown
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]),
+  // v2.8.4: Counter-claim detection - LLM explicitly indicates if claim tests OPPOSITE of thesis
+  // true = this claim evaluates the opposite position (e.g., thesis "X is fair", claim tests "X violated procedures")
+  // false = this claim is thesis-aligned (tests the same direction as thesis)
+  isCounterClaim: z.boolean(),
   contextId: z.string(), // empty string if not applicable
   approximatePosition: z.string(), // empty string if not applicable
   keyFactorId: z.string(), // empty string if not mapped to any factor
@@ -2607,6 +2613,8 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   centrality: z.enum(["high", "medium", "low"]).catch("medium"),
   isCentral: z.boolean().catch(false),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).catch("direct"), // Default to direct for backward compat
+  // v2.8.4: Counter-claim detection - default to false (thesis-aligned) for backward compat
+  isCounterClaim: z.boolean().catch(false),
   contextId: z.string().default(""),
   approximatePosition: z.string().default(""),
   keyFactorId: z.string().default(""),
@@ -2614,41 +2622,41 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
 
 /**
  * Detect if a claim is about an EXTERNAL REACTION to the subject being evaluated.
- * 
+ *
  * Generic principle: When evaluating whether X is fair/valid/correct, claims about
  * how third parties REACTED to X are tangential - they don't evaluate X itself.
- * 
+ *
  * Examples:
  * - Thesis: "Was the trial fair?" → Claim about sanctions imposed in response = tangential
  * - Thesis: "Was the policy effective?" → Claim about protests against the policy = tangential
  * - Thesis: "Was the decision correct?" → Claim about appeals filed = tangential (reaction)
- * 
+ *
  * This is NOT domain-specific - it applies to any evaluative thesis.
  */
 function isExternalReactionClaim(claimText: string): boolean {
   const text = claimText.toLowerCase();
-  
+
   // Generic patterns for external reactions to any subject
   const externalReactionPatterns = [
     // Explicit reaction/response framing (most reliable signal)
     /\b(in\s+response\s+to|as\s+a\s+response|retaliation\s+for|retaliation\s+against)\b/,
     /\b(response|reaction|retaliation)\s+(to|against|for)\b/,
     /\b(condemned|denounced|criticized|protested)\s+(the|this|that|against)\b/,
-    
+
     // Third-party measures/actions (sanctions, restrictions, etc.)
     /\b(sanction|sanctions|embargo|embargoes)\b.*\b(imposed|impose|against|in\s+response)\b/,
     /\b(tariff|tariffs|duties|duty|restriction|restrictions)\b.*\b(imposed|impose|imposition|in\s+response)\b/,
     /\b(ban|bans|banned|boycott|boycotted)\b.*\b(imposed|in\s+response|as\s+a\s+result)\b/,
-    
+
     // Proportionality of external response (evaluating the reaction, not the subject)
     /\b(proportionate|disproportionate|justified|unjustified)\s+(response|reaction|measure|sanction|retaliation)\b/,
     /\b(response|reaction|measure|sanction)\b.*\b(proportionate|disproportionate|justified|appropriate)\b/,
-    
+
     // Diplomatic/international reactions
     /\b(diplomatic|international)\s+(response|reaction|pressure|intervention|condemnation)\b/,
     /\b(foreign|external)\s+(government|nation|country)\b.*\b(response|reaction|condemned|imposed)\b/,
   ];
-  
+
   return externalReactionPatterns.some((p) => p.test(text));
 }
 
@@ -2656,11 +2664,17 @@ function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; cen
   claims: T[],
   thesis?: string,
 ): T[] {
-  // Check if thesis is about a domestic legal proceeding
   const thesisLower = (thesis || "").toLowerCase();
-  const thesisIsAboutLegalProceeding =
-    /\b(trial|judgment|ruling|proceeding|verdict|sentence|conviction|case)\b/.test(thesisLower) &&
-    /\b(fair|lawful|legal|constitutional|based\s+on\s+law|proper)\b/.test(thesisLower);
+
+  // Generic: Detect if thesis is EVALUATIVE (asking whether something is fair/valid/correct/effective)
+  // When evaluating X, claims about reactions TO X are tangential (they don't evaluate X itself)
+  const thesisIsEvaluative =
+    // Evaluative adjectives (fair, valid, correct, effective, proper, lawful, etc.)
+    /\b(fair|unfair|valid|invalid|correct|incorrect|effective|ineffective|proper|improper|lawful|unlawful|legal|illegal|constitutional|unconstitutional|justified|unjustified|appropriate|inappropriate|legitimate|illegitimate|reasonable|unreasonable|accurate|inaccurate|true|false|successful|failed)\b/.test(thesisLower) ||
+    // Evaluative question patterns ("was X fair?", "is X correct?", "did X work?")
+    /\b(was|is|were|are)\s+.{3,50}\s+(fair|valid|correct|effective|proper|lawful|legal|justified|appropriate|legitimate|reasonable|accurate|true|successful)\b/.test(thesisLower) ||
+    // "based on" patterns (based on law, based on evidence, based on facts)
+    /\bbased\s+on\s+(law|evidence|facts|data|standards|rules|procedures)\b/.test(thesisLower);
   const STOP_WORDS = new Set([
     "the",
     "a",
@@ -2723,7 +2737,7 @@ function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; cen
 
     // v2.6.33: Auto-detect external reaction claims and mark them tangential
     // Generic: When evaluating X, claims about reactions TO X are tangential
-    if (thesisIsAboutLegalProceeding && thesisRelevance === "direct") {
+    if (thesisIsEvaluative && thesisRelevance === "direct") {
       const claimText = String(claim?.text || "");
       if (isExternalReactionClaim(claimText)) {
         thesisRelevance = "tangential";
@@ -3630,6 +3644,24 @@ The system must verify BOTH: (1) did he say it? AND (2) is what he said accurate
 1. List dependencies in dependsOn array (claim IDs that must be true for this claim to matter)
 2. Core claims typically depend on attribution claims
 
+## COUNTER-CLAIM DETECTION (isCounterClaim field) - v2.8.4
+
+For EACH sub-claim, determine if it tests the OPPOSITE of the main thesis:
+
+**isCounterClaim = true** when the claim evaluates the OPPOSITE position:
+- Thesis: "X is fair" → Claim: "X violated due process" (tests unfairness) → **isCounterClaim: true**
+- Thesis: "A is more efficient than B" → Claim: "B outperforms A" (tests opposite) → **isCounterClaim: true**
+- Thesis: "The decision was justified" → Claim: "The decision lacked basis" (tests unjustified) → **isCounterClaim: true**
+
+**isCounterClaim = false** when the claim is thesis-aligned:
+- Thesis: "X is fair" → Claim: "X followed procedures" (supports fairness) → **isCounterClaim: false**
+- Thesis: "A is more efficient than B" → Claim: "A has higher output" (supports thesis) → **isCounterClaim: false**
+- Thesis: "The decision was justified" → Claim: "Evidence supported the decision" → **isCounterClaim: false**
+
+**WHY THIS MATTERS**: Counter-claims have their verdicts INVERTED during aggregation.
+If a counter-claim is rated TRUE (85%), it means the OPPOSITE of the thesis is true,
+so it contributes as FALSE (15%) to the overall verdict.
+
 ## MULTI-SCOPE DETECTION
 
 Look for multiple distinct scopes that should be analyzed separately.
@@ -3699,10 +3731,10 @@ Set requiresSeparateAnalysis = true when multiple scopes are detected.
   - WRONG: "may or may not have been fair"
 
 - **subClaims**: Generate sub-claims that need to be verified to address the thesis.
-  
+
   ⚠️ **MINIMUM CLAIM COUNT**: Generate AT LEAST 3-4 separate claims for any non-trivial input
   ⚠️ **IF YOU GENERATE ONLY 1 CLAIM, YOU ARE DOING IT WRONG** - go back and decompose!
-  
+
   - **MANDATORY: Break compound statements into ATOMIC claims** (each testing ONE assertion)
   - Each atomic claim must be independently verifiable with its own evidence
   - **ALL core atomic claims should have thesisRelevance="direct"** since they each test part of the input
@@ -4112,7 +4144,7 @@ Now analyze the input and output JSON only.`;
   // v2.6.23: Use analysisInput (normalized statement) for consistent scope canonicalization
   // This ensures any input phrasing yields identical scope detection and research queries
   parsed = canonicalizeScopes(analysisInput, parsed);
-  
+
   // v2.8.2: Force detectedInputType to "claim" for input neutrality
   // The LLM sometimes returns "question" even after normalization, causing
   // different analysis paths for semantically identical inputs.
@@ -4122,7 +4154,7 @@ Now analyze the input and output JSON only.`;
     console.warn(`[INPUT NEUTRALITY FIX] Forcing detectedInputType from "${parsed.detectedInputType}" to "claim"`);
     parsed.detectedInputType = "claim";
   }
-  
+
   debugLog("understandClaim: scopes after canonicalize", {
     detectedInputType: parsed.detectedInputType,
     requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
@@ -5749,6 +5781,11 @@ const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
       reasoning: z.string(),
       supportingFactIds: z.array(z.string()),
       contextId: z.string(), // empty string if not applicable
+      // v2.8.4: Explicit rating direction confirmation - LLM states what it's rating
+      // "claim_supported" = evidence supports the claim being TRUE (verdict should be 58-100)
+      // "claim_refuted" = evidence refutes the claim (verdict should be 0-42)
+      // "mixed" = evidence is balanced or insufficient (verdict should be 43-57)
+      ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
     }),
   ),
 });
@@ -5827,6 +5864,7 @@ const DEFAULT_CLAIM_VERDICT_MULTI_SCOPE_LENIENT = {
   reasoning: "",
   supportingFactIds: [] as string[],
   contextId: "",
+  ratingConfirmation: "mixed" as const,
 };
 
 const CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT = z
@@ -5836,6 +5874,8 @@ const CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT = z
     confidence: z.number().min(0).max(100).catch(50),
     riskTier: z.enum(["A", "B", "C"]).catch("B"),
     reasoning: z.string().catch(""),
+    // v2.8.4: Rating direction confirmation with fallback
+    ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]).catch("mixed"),
     supportingFactIds: z.array(z.string()).catch([]),
     contextId: z.string().catch(""),
   })
@@ -5871,6 +5911,8 @@ const VERDICTS_SCHEMA_SIMPLE = z.object({
       riskTier: z.enum(["A", "B", "C"]),
       reasoning: z.string(),
       supportingFactIds: z.array(z.string()),
+      // v2.8.4: Explicit rating direction confirmation
+      ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
     }),
   ),
 });
@@ -5884,6 +5926,8 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
       riskTier: z.enum(["A", "B", "C"]),
       reasoning: z.string(),
       supportingFactIds: z.array(z.string()),
+      // v2.8.4: Explicit rating direction confirmation
+      ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
       // Contestation fields
       isContested: z.boolean(),
       contestedBy: z.string(), // empty string if not contested
@@ -6163,7 +6207,7 @@ ${scopesFormatted}
        - **Use "opinion" for**: Political criticism without specifics, "says it was unfair" without citing violated procedures, "claims bias" without evidence
        - **Do NOT use "opinion" for**: Documented violations, measured discrepancies, recorded non-compliance
      * "unknown" = Cannot determine
-     
+
    **EXAMPLES of factualBasis classification**:
    - "US government says trial was unfair" → "opinion" (no specific violation cited)
    - "Critics claim procedure violated" → "opinion" (no specific procedure number/statute cited)
@@ -6263,7 +6307,7 @@ Provide SEPARATE answers for each scope.`;
 
   const normalizeMultiScopeOutput = (obj: any) => {
     if (!obj || typeof obj !== "object") return obj;
-    
+
     // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
     // The LLM sometimes returns {"$PARAMETER_NAME": {actual data}} instead of {actual data}
     let result = obj;
@@ -6271,18 +6315,18 @@ Provide SEPARATE answers for each scope.`;
       console.log("[normalizeMultiScopeOutput] Unwrapping $PARAMETER_NAME wrapper");
       result = result.$PARAMETER_NAME;
     }
-    
+
     // Also check for other common wrapper patterns
     const wrapperKeys = ['$PARAMETER_NAME', 'data', 'result', 'output', 'response'];
     for (const key of wrapperKeys) {
-      if (result[key] && typeof result[key] === 'object' && 
+      if (result[key] && typeof result[key] === 'object' &&
           (result[key].verdictSummary || result[key].proceedingAnswers || result[key].claimVerdicts)) {
         console.log(`[normalizeMultiScopeOutput] Unwrapping ${key} wrapper`);
         result = result[key];
         break;
       }
     }
-    
+
     // Normalize field names (contextAnswers -> proceedingAnswers)
     if (
       Array.isArray((result as any).contextAnswers) &&
@@ -6290,7 +6334,7 @@ Provide SEPARATE answers for each scope.`;
     ) {
       result = { ...result, proceedingAnswers: (result as any).contextAnswers };
     }
-    
+
     // CRITICAL FIX: Coerce string values to numbers (LLM sometimes returns "65" instead of 65)
     const coerceToNumber = (val: any): number | any => {
       if (typeof val === 'string') {
@@ -6299,7 +6343,7 @@ Provide SEPARATE answers for each scope.`;
       }
       return val;
     };
-    
+
     // Coerce verdictSummary numeric fields
     if (result.verdictSummary) {
       result.verdictSummary = {
@@ -6308,7 +6352,7 @@ Provide SEPARATE answers for each scope.`;
         confidence: coerceToNumber(result.verdictSummary.confidence),
       };
     }
-    
+
     // Coerce proceedingAnswers numeric fields
     if (Array.isArray(result.proceedingAnswers)) {
       result.proceedingAnswers = result.proceedingAnswers.map((pa: any) => ({
@@ -6317,7 +6361,7 @@ Provide SEPARATE answers for each scope.`;
         confidence: coerceToNumber(pa.confidence),
       }));
     }
-    
+
     // Coerce claimVerdicts numeric fields
     if (Array.isArray(result.claimVerdicts)) {
       result.claimVerdicts = result.claimVerdicts.map((cv: any) => ({
@@ -6326,7 +6370,7 @@ Provide SEPARATE answers for each scope.`;
         confidence: coerceToNumber(cv.confidence),
       }));
     }
-    
+
     return result;
   };
 
@@ -6786,10 +6830,10 @@ The JSON object MUST include these top-level keys:
 
   // Calculate overall factorAnalysis
   const allFactors = correctedContextAnswers.flatMap((pa) => pa.keyFactors);
-  
+
   // v2.8: Validate contestation classification for all factors across contexts
   const validatedAllFactors = validateContestation(allFactors);
-  
+
   // Update correctedContextAnswers with validated keyFactors
   correctedContextAnswers = correctedContextAnswers.map((pa, idx) => {
     const startIdx = correctedContextAnswers.slice(0, idx).reduce((sum, p) => sum + p.keyFactors.length, 0);
@@ -6799,7 +6843,7 @@ The JSON object MUST include these top-level keys:
       keyFactors: validatedAllFactors.slice(startIdx, endIdx)
     };
   });
-  
+
   // Only flag contested negatives with evidence-based contestation
   const hasContestedFactors = validatedAllFactors.some(
     (f) =>
@@ -6881,21 +6925,50 @@ The JSON object MUST include these top-level keys:
     // Calculate base truth percentage from LLM verdict
     let truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
 
-    // v2.6.31: Detect and correct inverted verdicts
+    // v2.8.4: Use LLM-provided ratingConfirmation to validate verdict direction
+    // Check for mismatch between ratingConfirmation and verdict
+    const ratingConfirmation = (cv as any).ratingConfirmation;
+    let inversionDetected = false;
+    if (ratingConfirmation) {
+      const expectedLow = ratingConfirmation === "claim_refuted";
+      const expectedHigh = ratingConfirmation === "claim_supported";
+      const actuallyHigh = truthPct >= 58;
+      const actuallyLow = truthPct <= 42;
+      
+      // Mismatch: LLM says "refuted" but verdict is high, or "supported" but verdict is low
+      if ((expectedLow && actuallyHigh) || (expectedHigh && actuallyLow)) {
+        debugLog("ratingConfirmation MISMATCH detected", {
+          ratingConfirmation,
+          truthPct,
+          expectedLow,
+          expectedHigh,
+          actuallyHigh,
+          actuallyLow,
+        });
+        // Invert the verdict
+        truthPct = 100 - truthPct;
+        inversionDetected = true;
+      }
+    }
+    
+    // v2.6.31: Detect and correct inverted verdicts (regex fallback)
     // LLM sometimes rates "is my analysis correct" instead of "is the claim true"
-    const inversionCheck = detectAndCorrectVerdictInversion(
-      claim?.text || cv.claimId || "",
-      sanitizedReasoning,
-      truthPct
-    );
+    // Only run regex detection if LLM ratingConfirmation didn't already detect inversion
+    const inversionCheck = !inversionDetected
+      ? detectAndCorrectVerdictInversion(
+          claim?.text || cv.claimId || "",
+          sanitizedReasoning,
+          truthPct
+        )
+      : { wasInverted: false, correctedPct: truthPct };
     if (inversionCheck.wasInverted) {
       truthPct = inversionCheck.correctedPct;
     }
 
-    // v2.6.31: Detect if this is a counter-claim (evaluates opposite of user's thesis)
+    // v2.8.4: Use LLM-provided isCounterClaim from understand phase, fall back to regex detection
     // NOTE: `supportingFactIds` may include refuting evidence; counter-claim detection uses truth% as a guard.
     const claimFacts = state.facts.filter((f) => cv.supportingFactIds?.includes(f.id));
-    const isCounterClaim = detectCounterClaim(
+    const isCounterClaim = claim?.isCounterClaim ?? detectCounterClaim(
       claim?.text || cv.claimId || "",
       understanding.impliedClaim || understanding.articleThesis || "",
       truthPct,
@@ -6974,10 +7047,10 @@ The JSON object MUST include these top-level keys:
 
   // PR-C: Clamp truth percentage to valid range (defensive)
   const clampedAvgTruthPct = clampTruthPercentage(avgTruthPct);
-  
+
   // v2.8: Validate verdictSummary keyFactors
   const validatedSummaryKeyFactors = validateContestation(parsed.verdictSummary.keyFactors || []);
-  
+
   const verdictSummary: VerdictSummary = {
     displayText: displayText,
     answer: clampedAvgTruthPct,
@@ -7223,22 +7296,22 @@ ${factsFormatted}`;
       // Also check for other common wrapper patterns
       const wrapperKeys = ['data', 'result', 'output', 'response'];
       for (const key of wrapperKeys) {
-        if (rawOutput[key] && typeof rawOutput[key] === 'object' && 
+        if (rawOutput[key] && typeof rawOutput[key] === 'object' &&
             (rawOutput[key].verdictSummary || rawOutput[key].claimVerdicts)) {
           console.log(`[generateSingleScopeVerdicts] Unwrapping ${key} wrapper`);
           rawOutput = rawOutput[key];
           break;
         }
       }
-      
+
       // CRITICAL FIX: Validate against schema with coercion for numeric fields
       // The LLM sometimes returns answer/confidence as strings like "65" instead of 65
       const coercedOutput = {
         ...rawOutput,
         verdictSummary: rawOutput.verdictSummary ? {
           ...rawOutput.verdictSummary,
-          answer: typeof rawOutput.verdictSummary.answer === 'string' 
-            ? parseFloat(rawOutput.verdictSummary.answer) 
+          answer: typeof rawOutput.verdictSummary.answer === 'string'
+            ? parseFloat(rawOutput.verdictSummary.answer)
             : rawOutput.verdictSummary.answer,
           confidence: typeof rawOutput.verdictSummary.confidence === 'string'
             ? parseFloat(rawOutput.verdictSummary.confidence)
@@ -7250,11 +7323,11 @@ ${factsFormatted}`;
           confidence: typeof cv.confidence === 'string' ? parseFloat(cv.confidence) : cv.confidence,
         })),
       };
-      
+
       // Debug: Log what we received vs what we're using
       console.log("[Analyzer] generateSingleScopeVerdicts: Raw verdictSummary.answer =", rawOutput.verdictSummary?.answer, "type =", typeof rawOutput.verdictSummary?.answer);
       console.log("[Analyzer] generateSingleScopeVerdicts: Coerced verdictSummary.answer =", coercedOutput.verdictSummary?.answer);
-      
+
       parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
     }
   } catch (err) {
@@ -7267,10 +7340,10 @@ ${factsFormatted}`;
 
   // Fallback if structured output failed or verdictSummary is missing
   // CRITICAL: Also check that answer is a valid number (not NaN, undefined, or non-numeric)
-  const hasValidVerdictSummary = parsed?.verdictSummary && 
-    typeof parsed.verdictSummary.answer === 'number' && 
+  const hasValidVerdictSummary = parsed?.verdictSummary &&
+    typeof parsed.verdictSummary.answer === 'number' &&
     Number.isFinite(parsed.verdictSummary.answer);
-  
+
   if (!parsed || !parsed.claimVerdicts || !hasValidVerdictSummary) {
     console.log("[Analyzer] Using fallback verdict generation (parsed:", !!parsed, ", claimVerdicts:", !!parsed?.claimVerdicts, ", verdictSummary:", !!parsed?.verdictSummary, ", hasValidAnswer:", hasValidVerdictSummary, ")");
 
@@ -7376,33 +7449,50 @@ ${factsFormatted}`;
 
       let truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
 
-      // v2.6.31: Detect and correct inverted verdicts
-      const inversionCheck = detectAndCorrectVerdictInversion(
-        claim.text || cv.claimId || "",
-        sanitizedReasoning,
-        truthPct
-      );
+      // v2.8.4: Use LLM-provided ratingConfirmation to validate verdict direction
+      const ratingConfirmation = (cv as any).ratingConfirmation;
+      let inversionDetected = false;
+      if (ratingConfirmation) {
+        const expectedLow = ratingConfirmation === "claim_refuted";
+        const expectedHigh = ratingConfirmation === "claim_supported";
+        const actuallyHigh = truthPct >= 58;
+        const actuallyLow = truthPct <= 42;
+        
+        if ((expectedLow && actuallyHigh) || (expectedHigh && actuallyLow)) {
+          truthPct = 100 - truthPct;
+          inversionDetected = true;
+        }
+      }
+
+      // v2.6.31: Detect and correct inverted verdicts (regex fallback)
+      const inversionCheck = !inversionDetected
+        ? detectAndCorrectVerdictInversion(
+            claim.text || cv.claimId || "",
+            sanitizedReasoning,
+            truthPct
+          )
+        : { wasInverted: false, correctedPct: truthPct };
       if (inversionCheck.wasInverted) {
         truthPct = inversionCheck.correctedPct;
       }
 
-      // v2.6.31: Detect if this is a counter-claim
+      // v2.8.4: Use LLM-provided isCounterClaim, fall back to regex detection
       const claimFacts = state.facts.filter(f =>
         cv.supportingFactIds?.includes(f.id)
       );
-      const isCounterClaim = detectCounterClaim(
+      const isCounterClaim = claim.isCounterClaim ?? detectCounterClaim(
         claim.text || cv.claimId || "",
         understanding.impliedClaim || understanding.articleThesis || "",
         truthPct,
         claimFacts,
       );
 
-        // PR-C: Clamp truth percentage to valid range
-        const clampedTruthPct = clampTruthPercentage(truthPct);
-        return {
+      // PR-C: Clamp truth percentage to valid range
+      const clampedTruthPct = clampTruthPercentage(truthPct);
+      return {
         ...cv,
         claimId: claim.id,
-          verdict: clampedTruthPct,
+        verdict: clampedTruthPct,
         truthPercentage: clampedTruthPct,
         reasoning: sanitizedReasoning,
         claimText: claim.text || "",
@@ -7440,10 +7530,10 @@ ${factsFormatted}`;
   };
 
   const keyFactors = parsed.verdictSummary.keyFactors || [];
-  
+
   // v2.8: Validate contestation classification - downgrade political criticism without evidence to "opinion"
   const validatedKeyFactors = validateContestation(keyFactors);
-  
+
   // Only flag contested negatives with evidence-based contestation
   const hasContestedFactors = validatedKeyFactors.some(
     (kf: any) =>
@@ -7464,7 +7554,7 @@ ${factsFormatted}`;
   // DEBUG: Log raw values from LLM before normalization
   console.log("[generateSingleScopeVerdicts] Raw verdictSummary.answer =", parsed.verdictSummary.answer, "type =", typeof parsed.verdictSummary.answer);
   console.log("[generateSingleScopeVerdicts] Raw verdictSummary.confidence =", parsed.verdictSummary.confidence, "type =", typeof parsed.verdictSummary.confidence);
-  
+
   let answerTruthPct = normalizePercentage(parsed.verdictSummary.answer);
   let correctedConfidence = normalizePercentage(parsed.verdictSummary.confidence);
 
@@ -7620,7 +7710,7 @@ Facts in the FACTS section are labeled with their relationship to the user's cla
     - **Use "opinion" for**: Political criticism without specifics, "says it was unfair" without citing violated procedures, "claims bias" without evidence
     - **Do NOT use "opinion" for**: Documented violations, measured discrepancies, recorded non-compliance
   * "unknown" = Cannot determine
-  
+
 **EXAMPLES of factualBasis classification**:
 - "US government says trial was unfair" → "opinion" (no specific violation cited)
 - "Critics claim procedure violated" → "opinion" (no specific procedure number/statute cited)
@@ -7632,6 +7722,24 @@ CRITICAL - factualBasis MUST be "opinion" for:
 - Public statements or rhetoric without documented evidence
 - Ideological objections without factual basis
 - "Some people say" or "critics claim" without specific counter-evidence
+
+## RATING CONFIRMATION (ratingConfirmation field) - v2.8.4
+
+For EACH claim verdict, EXPLICITLY confirm what direction you are rating:
+
+**ratingConfirmation** confirms your verdict direction:
+- **"claim_supported"**: Evidence SUPPORTS the claim being TRUE → verdict should be 58-100%
+- **"claim_refuted"**: Evidence REFUTES the claim → verdict should be 0-42%
+- **"mixed"**: Evidence is balanced or insufficient → verdict should be 43-57%
+
+**CRITICAL VALIDATION**: Your ratingConfirmation MUST match your verdict:
+- ratingConfirmation: "claim_supported" + verdict: 25% = ERROR (mismatch!)
+- ratingConfirmation: "claim_refuted" + verdict: 80% = ERROR (mismatch!)
+- ratingConfirmation: "claim_supported" + verdict: 75% = CORRECT
+
+**BEFORE OUTPUTTING**: Ask yourself:
+"Am I rating THE USER'S CLAIM as true/false, or am I rating my analysis quality?"
+→ Rate THE CLAIM, not your analysis.
 
 ## EVIDENCE-SCOPE-AWARE EVALUATION
 
@@ -7729,14 +7837,14 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
       // Also check for other common wrapper patterns
       const wrapperKeys = ['data', 'result', 'output', 'response'];
       for (const key of wrapperKeys) {
-        if (rawOutput[key] && typeof rawOutput[key] === 'object' && 
+        if (rawOutput[key] && typeof rawOutput[key] === 'object' &&
             (rawOutput[key].articleAnalysis || rawOutput[key].claimVerdicts)) {
           console.log(`[generateClaimVerdicts] Unwrapping ${key} wrapper`);
           rawOutput = rawOutput[key];
           break;
         }
       }
-      
+
       // CRITICAL FIX: Coerce string values to numbers (LLM sometimes returns "65" instead of 65)
       const coerceToNumber = (val: any): number | any => {
         if (typeof val === 'string') {
@@ -7745,7 +7853,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         }
         return val;
       };
-      
+
       const coercedOutput = {
         ...rawOutput,
         articleAnalysis: rawOutput.articleAnalysis ? {
@@ -7759,7 +7867,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
           confidence: coerceToNumber(cv.confidence),
         })),
       };
-      
+
       parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
     }
   } catch (err: any) {
@@ -7878,21 +7986,38 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
       let finalConfidence = normalizePercentage(cv.confidence);
       let escalationReason: string | undefined;
 
-      // v2.6.31: Detect and correct inverted verdicts
-      const inversionCheck = detectAndCorrectVerdictInversion(
-        claim.text || cv.claimId || "",
-        sanitizedReasoning,
-        truthPct
-      );
+      // v2.8.4: Use LLM-provided ratingConfirmation to validate verdict direction
+      const ratingConfirmation = (cv as any).ratingConfirmation;
+      let inversionDetected = false;
+      if (ratingConfirmation) {
+        const expectedLow = ratingConfirmation === "claim_refuted";
+        const expectedHigh = ratingConfirmation === "claim_supported";
+        const actuallyHigh = truthPct >= 58;
+        const actuallyLow = truthPct <= 42;
+        
+        if ((expectedLow && actuallyHigh) || (expectedHigh && actuallyLow)) {
+          truthPct = 100 - truthPct;
+          inversionDetected = true;
+        }
+      }
+
+      // v2.6.31: Detect and correct inverted verdicts (regex fallback)
+      const inversionCheck = !inversionDetected
+        ? detectAndCorrectVerdictInversion(
+            claim.text || cv.claimId || "",
+            sanitizedReasoning,
+            truthPct
+          )
+        : { wasInverted: false, correctedPct: truthPct };
       if (inversionCheck.wasInverted) {
         truthPct = inversionCheck.correctedPct;
       }
 
-      // v2.6.31: Detect if this is a counter-claim
+      // v2.8.4: Use LLM-provided isCounterClaim, fall back to regex detection
       const claimFacts = state.facts.filter(f =>
         cv.supportingFactIds?.includes(f.id)
       );
-      const isCounterClaim = detectCounterClaim(
+      const isCounterClaim = claim.isCounterClaim ?? detectCounterClaim(
         claim.text || cv.claimId || "",
         understanding.impliedClaim || understanding.articleThesis || "",
         truthPct,

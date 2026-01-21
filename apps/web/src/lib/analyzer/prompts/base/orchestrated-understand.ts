@@ -58,6 +58,16 @@ ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.eva
 - When in doubt, use fewer scopes rather than including marginally relevant ones
 - A scope with zero relevant claims/evidence should NOT exist
 
+**SAME SUBJECT/ENTITY RULE**: 
+- Scopes MUST be about the SAME SUBJECT as the thesis
+- If thesis is about "Person A's trial", do NOT include scopes about Person B, C, etc.
+- Different cases involving DIFFERENT PEOPLE are NOT relevant scopes, even if they share:
+  - The same court/institution
+  - The same country/jurisdiction
+  - Similar legal issues
+  - The same time period
+- Example: If analyzing "Was X's trial fair?", a scope about Y's trial (even in same court) is IRRELEVANT
+
 ${recencySection}## TEMPORAL REASONING
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDate}).
@@ -177,13 +187,29 @@ ${keyFactorHintsSection}
 
 **CRITICAL: factor MUST be abstract, NOT claim text**
 
+## COUNTER-CLAIM DETECTION (isCounterClaim field)
+
+For EACH sub-claim, determine if it tests the OPPOSITE of the main thesis:
+
+**isCounterClaim = true** when the claim evaluates the OPPOSITE position:
+- Thesis: "X is fair" → Claim: "X violated due process" (tests unfairness) → **isCounterClaim: true**
+- Thesis: "A is more efficient than B" → Claim: "B outperforms A" (tests opposite) → **isCounterClaim: true**
+- Thesis: "The decision was justified" → Claim: "The decision lacked basis" (tests unjustified) → **isCounterClaim: true**
+
+**isCounterClaim = false** when the claim is thesis-aligned:
+- Thesis: "X is fair" → Claim: "X followed procedures" (supports fairness) → **isCounterClaim: false**
+- Thesis: "A is more efficient than B" → Claim: "A has higher output" (supports thesis) → **isCounterClaim: false**
+- Thesis: "The decision was justified" → Claim: "Evidence supported the decision" → **isCounterClaim: false**
+
+**WHY THIS MATTERS**: Counter-claims have their verdicts INVERTED during aggregation. If a counter-claim is rated TRUE (85%), it means the OPPOSITE of the thesis is true, contributing as FALSE (15%) to the overall verdict.
+
 ## OUTPUT FORMAT
 
 Return JSON with:
 - impliedClaim: What claim would "YES" confirm? Must be AFFIRMATIVE.
 - articleThesis: Neutral summary of what the article claims
 - analysisContext: ArticleFrame (narrative background) or empty string
-- subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, contextId, keyFactorId
+- subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, isCounterClaim, contextId, keyFactorId
 - analysisContexts: Array of detected scopes (if any)
 - requiresSeparateAnalysis: boolean
 - researchQueries: 4-6 specific search queries

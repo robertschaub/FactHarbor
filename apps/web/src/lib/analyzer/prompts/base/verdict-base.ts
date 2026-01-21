@@ -47,14 +47,14 @@ Today is ${currentDate}.
 **Examples** (CRITICAL - prevents rating inversion):
 
 Example 1:
-- User claim: "Hydrogen cars are MORE efficient than electric cars"
-- Evidence shows: Electric cars are MORE efficient than hydrogen
+- User claim: "Technology A is MORE efficient than Technology B"
+- Evidence shows: Technology B is MORE efficient than Technology A
 - **Correct verdict**: 0-14% (FALSE) - user's claim contradicts evidence
 - **Wrong verdict**: 80-100% (TRUE) - this would be rating the analysis quality, not the claim
 
 Example 2:
-- User claim: "The trial was UNFAIR"
-- Evidence shows: Trial followed proper procedures, met standards
+- User claim: "The proceeding was UNFAIR"
+- Evidence shows: Proceeding followed proper procedures, met standards
 - **Correct verdict**: 0-28% (FALSE/MOSTLY FALSE) - claim contradicts evidence
 - **Wrong verdict**: 72-100% (TRUE/MOSTLY TRUE) - this rates whether we verified it, not whether claim is true
 
@@ -156,6 +156,24 @@ Do NOT rely on training data for factual assertions.`
 - Protests, position papers → "opinion"
 Only documented violations/data → "established" or "disputed"
 
+## RATING CONFIRMATION (ratingConfirmation field) - v2.8.4
+
+For EACH claim verdict, EXPLICITLY confirm what direction you are rating:
+
+**ratingConfirmation** confirms your verdict direction:
+- **"claim_supported"**: Evidence SUPPORTS the claim being TRUE → verdict should be 58-100%
+- **"claim_refuted"**: Evidence REFUTES the claim → verdict should be 0-42%
+- **"mixed"**: Evidence is balanced or insufficient → verdict should be 43-57%
+
+**CRITICAL VALIDATION**: Your ratingConfirmation MUST match your verdict:
+- ratingConfirmation: "claim_supported" + verdict: 25% = ERROR (mismatch!)
+- ratingConfirmation: "claim_refuted" + verdict: 80% = ERROR (mismatch!)
+- ratingConfirmation: "claim_supported" + verdict: 75% = CORRECT
+
+**BEFORE OUTPUTTING**: Ask yourself:
+"Am I rating THE USER'S CLAIM as true/false, or am I rating my analysis quality?"
+→ Rate THE CLAIM, not your analysis.
+
 ## OUTPUT FORMAT
 
 For EACH scope:
@@ -167,6 +185,7 @@ For EACH scope:
 For EACH claim:
 - claimId: From claims list
 - verdict: 0-100 truth percentage
+- ratingConfirmation: "claim_supported" | "claim_refuted" | "mixed"
 - reasoning: 1-2 sentences explaining verdict
 - supportingFactIds: Array of relevant fact IDs
 
