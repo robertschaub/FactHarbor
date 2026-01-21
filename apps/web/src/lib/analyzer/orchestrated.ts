@@ -2293,69 +2293,19 @@ interface TwoPanelSummary {
 // SOURCE TRACK RECORD (Configurable via FH_SOURCE_BUNDLE_PATH)
 // ============================================================================
 
-/**
- * Source reliability scores loaded from FH_SOURCE_BUNDLE_PATH
- * No hard-coded scores - all scores must come from the configured bundle.
- * If no bundle is configured, all sources return null (unknown reliability).
- */
-let SOURCE_TRACK_RECORDS: Record<string, number> = {};
+// ============================================================================
+// SOURCE RELIABILITY (v2.2 - LLM + Cache)
+// ============================================================================
 
-/**
- * Load source reliability scores from external bundle if configured
- */
-function loadSourceBundle(): void {
-  if (!CONFIG.sourceBundlePath) {
-    console.log(
-      `[FactHarbor] No source bundle configured (FH_SOURCE_BUNDLE_PATH not set)`,
-    );
-    return;
-  }
+// Import from the new source-reliability module
+import {
+  prefetchSourceReliability,
+  getTrackRecordScore,
+  clearPrefetchedScores,
+} from "./source-reliability";
 
-  try {
-    const bundlePath = path.resolve(CONFIG.sourceBundlePath);
-    if (fs.existsSync(bundlePath)) {
-      const bundle = JSON.parse(fs.readFileSync(bundlePath, "utf-8"));
-      if (bundle.sources && typeof bundle.sources === "object") {
-        SOURCE_TRACK_RECORDS = bundle.sources;
-        console.log(
-          `[FactHarbor] Loaded ${Object.keys(bundle.sources).length} source scores from bundle`,
-        );
-      }
-    } else {
-      console.warn(`[FactHarbor] Source bundle not found: ${bundlePath}`);
-    }
-  } catch (err) {
-    console.error(`[FactHarbor] Failed to load source bundle:`, err);
-  }
-}
-
-// Load source bundle at startup
-loadSourceBundle();
-
-/**
- * Get track record score for a URL
- * Returns score from bundle if available, otherwise null (unknown).
- */
-function getTrackRecordScore(url: string): number | null {
-  try {
-    const hostname = new URL(url).hostname.replace(/^www\./, "");
-
-    // Check exact match from bundle
-    if (SOURCE_TRACK_RECORDS[hostname] !== undefined) {
-      return SOURCE_TRACK_RECORDS[hostname];
-    }
-
-    // Check subdomain match from bundle
-    for (const [domain, score] of Object.entries(SOURCE_TRACK_RECORDS)) {
-      if (hostname.endsWith("." + domain)) return score;
-    }
-
-    // No default - unknown reliability
-    return null;
-  } catch {
-    return null;
-  }
-}
+// Re-export for backward compatibility
+export { prefetchSourceReliability, getTrackRecordScore };
 
 /**
  * Calculate de-duplicated weighted average truth percentage
@@ -8587,8 +8537,9 @@ type AnalysisInput = {
 };
 
 export async function runFactHarborAnalysis(input: AnalysisInput) {
-  // Clear debug log at start of each analysis
+  // Clear debug log and prefetched scores at start of each analysis
   clearDebugLog();
+  clearPrefetchedScores();
   debugLog("=== ANALYSIS STARTED ===");
   debugLog("Input", {
     jobId: input.jobId || "",
@@ -8895,6 +8846,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           console.warn(`[Analyzer] Grounded search returned no valid URLs - falling back to standard search`);
           // Fall through to standard search
         } else {
+          // Prefetch source reliability scores for grounded URLs
+          const groundedUrls = groundedUrlCandidates.map(c => c.url);
+          await prefetchSourceReliability(groundedUrls);
+
           // Fetch URLs just like standard search sources
           const fetchPromises = groundedUrlCandidates.map((candidate, i) =>
             fetchSource(
@@ -9075,6 +9030,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     }
 
     await emit(`Fetching ${uniqueResults.length} sources`, baseProgress + 3);
+
+    // Prefetch source reliability scores (async batch operation)
+    const urlsToFetch = uniqueResults.map((r: any) => r.url);
+    await prefetchSourceReliability(urlsToFetch);
 
     const fetchPromises = uniqueResults.map((r: any, i: number) =>
       fetchSource(
