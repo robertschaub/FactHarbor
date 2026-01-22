@@ -398,7 +398,7 @@ export default function SourceReliabilityPage() {
     if (score >= 0.86) return "#10b981"; // green - highly reliable
     if (score >= 0.72) return "#22c55e"; // emerald - reliable
     if (score >= 0.58) return "#84cc16"; // lime - mostly reliable
-    if (score >= 0.43) return "#8b5cf6"; // purple - uncertain (center)
+    if (score >= 0.43) return "#d1d5db"; // gray - uncertain (center)
     if (score >= 0.29) return "#f59e0b"; // amber - mostly unreliable
     if (score >= 0.15) return "#f97316"; // orange - unreliable
     return "#ef4444"; // red - highly unreliable
@@ -777,7 +777,7 @@ export default function SourceReliabilityPage() {
             <span className={styles.arrow}>→</span>
           </div>
           <div className={styles.centerRow}>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#8b5cf6" }} /> Uncertain (43-57%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#d1d5db" }} /> Uncertain (43-57%)</span>
           </div>
           <div className={styles.scaleRow}>
             <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> Mostly Unreliable (29-43%)</span>
