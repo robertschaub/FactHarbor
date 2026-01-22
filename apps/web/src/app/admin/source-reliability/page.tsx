@@ -390,7 +390,12 @@ export default function SourceReliabilityPage() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${month}/${day}/${year} ${hours}:${minutes}`;
   };
 
   // Symmetric 7-band scale (matches verdict scale), centered at 0.5
@@ -636,21 +641,21 @@ export default function SourceReliabilityPage() {
                   <th onClick={() => handleSort("domain")} className={styles.sortable}>
                     Domain {sortBy === "domain" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
-                  <th onClick={() => handleSort("score")} className={styles.sortable}>
+                  <th onClick={() => handleSort("score")} className={styles.sortable} style={{ width: "70px", textAlign: "center" }}>
                     Score {sortBy === "score" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
-                  <th onClick={() => handleSort("confidence")} className={styles.sortable}>
-                    Confidence {sortBy === "confidence" && (sortOrder === "asc" ? "↑" : "↓")}
+                  <th onClick={() => handleSort("confidence")} className={styles.sortable} style={{ width: "70px", textAlign: "center" }}>
+                    Conf. {sortBy === "confidence" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
-                  <th>Models</th>
-                  <th>Consensus</th>
-                  <th onClick={() => handleSort("evaluated_at")} className={styles.sortable}>
+                  <th style={{ width: "90px" }}>Models</th>
+                  <th style={{ width: "60px", textAlign: "center" }}>✓</th>
+                  <th onClick={() => handleSort("evaluated_at")} className={styles.sortable} style={{ width: "110px" }}>
                     Evaluated {sortBy === "evaluated_at" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
-                  <th onClick={() => handleSort("expires_at")} className={styles.sortable}>
+                  <th onClick={() => handleSort("expires_at")} className={styles.sortable} style={{ width: "110px" }}>
                     Expires {sortBy === "expires_at" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
-                  <th>Actions</th>
+                  <th style={{ width: "70px", textAlign: "center" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -664,7 +669,7 @@ export default function SourceReliabilityPage() {
                       />
                     </td>
                     <td className={styles.domain}>{entry.domain}</td>
-                    <td>
+                    <td style={{ textAlign: "center" }}>
                       <span
                         className={styles.scoreBadge}
                         style={{ backgroundColor: getScoreColor(entry.score) }}
@@ -673,10 +678,10 @@ export default function SourceReliabilityPage() {
                         {formatScore(entry.score)}
                       </span>
                     </td>
-                    <td>
+                    <td style={{ textAlign: "center" }}>
                       <span 
                         className={styles.confidence}
-                        title={`LLM confidence: ${entry.confidence >= 0.8 ? 'High' : entry.confidence >= 0.6 ? 'Medium' : 'Low'}`}
+                        title={`LLM confidence: ${entry.confidence >= 0.8 ? 'High' : entry.confidence >= 0.6 ? 'Medium' : 'Low'} (${formatScore(entry.confidence)})`}
                       >
                         {formatScore(entry.confidence)}
                       </span>
@@ -690,7 +695,7 @@ export default function SourceReliabilityPage() {
                         </>
                       )}
                     </td>
-                    <td>
+                    <td style={{ textAlign: "center" }}>
                       {entry.consensusAchieved ? (
                         <span className={styles.consensusYes} title="Multi-model consensus achieved">✓</span>
                       ) : (
