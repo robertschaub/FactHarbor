@@ -24,8 +24,6 @@ interface CacheStats {
 
 interface WeightConfig {
   blendCenter: number;
-  spreadMultiplier: number;
-  consensusSpreadMultiplier: number;
   defaultScore: number;
 }
 
@@ -63,6 +61,17 @@ export default function SourceReliabilityPage() {
   const [adminKeyInput, setAdminKeyInput] = useState("");
   const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [domainsInput, setDomainsInput] = useState("");
+  const [evaluating, setEvaluating] = useState(false);
+  const [evalResults, setEvalResults] = useState<Array<{
+    domain: string;
+    success: boolean;
+    score?: number;
+    confidence?: number;
+    consensus?: boolean;
+    models?: string;
+    error?: string;
+  }> | null>(null);
   const pageSize = 25;
 
   // Helper to build fetch headers with admin key
@@ -245,6 +254,49 @@ export default function SourceReliabilityPage() {
   const isAllSelected = data && data.entries.length > 0 && 
     data.entries.every(e => selectedDomains.has(e.domain));
 
+  const handleEvaluateDomains = async () => {
+    if (!domainsInput.trim()) return;
+    
+    setEvaluating(true);
+    setEvalResults(null);
+    
+    try {
+      const response = await fetch("/api/admin/source-reliability", {
+        method: "POST",
+        headers: {
+          ...getHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ domains: domainsInput }),
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          setNeedsAuth(true);
+          throw new Error("Unauthorized");
+        }
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      setEvalResults(result.results);
+      
+      // Refresh the main data table if we had successful evaluations
+      if (result.successful > 0) {
+        fetchData();
+      }
+    } catch (err) {
+      setEvalResults([{
+        domain: "Error",
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }]);
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
   const handleSort = (column: string) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -420,6 +472,76 @@ export default function SourceReliabilityPage() {
           </div>
         </div>
       )}
+
+      {/* Evaluate Domains Section */}
+      <div className={styles.evaluateSection}>
+        <h3>Evaluate Domains</h3>
+        <p className={styles.evaluateHelp}>
+          Enter domains to evaluate (one per line, comma-separated, or space-separated). 
+          Max 20 domains per request.
+        </p>
+        <div className={styles.evaluateForm}>
+          <textarea
+            className={styles.domainsInput}
+            placeholder="example.com&#10;news.example.org&#10;blog.example.net"
+            value={domainsInput}
+            onChange={(e) => setDomainsInput(e.target.value)}
+            rows={4}
+            disabled={evaluating}
+          />
+          <button
+            onClick={handleEvaluateDomains}
+            className={styles.button}
+            disabled={evaluating || !domainsInput.trim()}
+          >
+            {evaluating ? "Evaluating..." : "Evaluate Domains"}
+          </button>
+        </div>
+        
+        {/* Evaluation Results */}
+        {evalResults && evalResults.length > 0 && (
+          <div className={styles.evalResults}>
+            <h4>Results</h4>
+            <table className={styles.evalTable}>
+              <thead>
+                <tr>
+                  <th>Domain</th>
+                  <th>Status</th>
+                  <th>Score</th>
+                  <th>Confidence</th>
+                  <th>Consensus</th>
+                  <th>Models</th>
+                </tr>
+              </thead>
+              <tbody>
+                {evalResults.map((r, i) => (
+                  <tr key={i} className={r.success ? styles.evalSuccess : styles.evalFailed}>
+                    <td>{r.domain}</td>
+                    <td>{r.success ? "✓" : "✗"}</td>
+                    <td>
+                      {r.success && r.score !== undefined ? (
+                        <span style={{ color: getScoreColor(r.score) }}>
+                          {formatScore(r.score)}
+                        </span>
+                      ) : r.error || "-"}
+                    </td>
+                    <td>{r.success && r.confidence !== undefined ? formatScore(r.confidence) : "-"}</td>
+                    <td>{r.success ? (r.consensus ? "✓" : "✗") : "-"}</td>
+                    <td>{r.models || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button 
+              onClick={() => { setEvalResults(null); setDomainsInput(""); }}
+              className={styles.buttonSecondary}
+              style={{ marginTop: "8px" }}
+            >
+              Clear Results
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Data Table */}
       {data && data.entries.length > 0 ? (

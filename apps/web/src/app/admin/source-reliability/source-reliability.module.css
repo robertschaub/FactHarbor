@@ -344,3 +344,98 @@
 .selectedRow:hover {
   background-color: #dbeafe !important;
 }
+
+/* Evaluate Domains Section */
+.evaluateSection {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.evaluateSection h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #1a1a1a;
+}
+
+.evaluateHelp {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.evaluateForm {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.domainsInput {
+  flex: 1;
+  min-width: 300px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.domainsInput:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.domainsInput:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+/* Evaluation Results */
+.evalResults {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.evalResults h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #475569;
+}
+
+.evalTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.evalTable th {
+  background: #f8fafc;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.evalTable td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.evalSuccess {
+  background: #f0fdf4;
+}
+
+.evalFailed {
+  background: #fef2f2;
+}
+
+.evalFailed td:nth-child(3) {
+  color: #dc2626;
+  font-size: 12px;
+}

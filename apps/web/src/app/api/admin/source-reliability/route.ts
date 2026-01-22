@@ -2,10 +2,11 @@
  * Admin API - Source Reliability Cache
  *
  * Returns cached source reliability data for admin viewing.
+ * POST: Evaluate domains and add to cache.
  */
 
 import { NextResponse } from "next/server";
-import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore } from "@/lib/source-reliability-cache";
+import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore, setCachedScore } from "@/lib/source-reliability-cache";
 
 export const runtime = "nodejs";
 
@@ -71,6 +72,131 @@ export async function GET(req: Request) {
     console.error("[Admin SR] Error:", err);
     return NextResponse.json(
       { error: "Failed to fetch source reliability data" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: Request) {
+  if (!checkAuth(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const domainsInput: string = body.domains || "";
+    
+    // Parse domains from input (comma-separated, newline-separated, or space-separated)
+    const domains = domainsInput
+      .split(/[,\n\s]+/)
+      .map((d: string) => d.trim().toLowerCase())
+      .filter((d: string) => d.length > 0 && d.includes("."));
+
+    if (domains.length === 0) {
+      return NextResponse.json(
+        { error: "No valid domains provided" },
+        { status: 400 }
+      );
+    }
+
+    // Limit batch size
+    if (domains.length > 20) {
+      return NextResponse.json(
+        { error: "Maximum 20 domains per request" },
+        { status: 400 }
+      );
+    }
+
+    // Get config for evaluation
+    const multiModel = process.env.FH_SR_MULTI_MODEL !== "false";
+    const confidenceThreshold = parseFloat(process.env.FH_SR_CONFIDENCE_THRESHOLD || "0.65");
+    const consensusThreshold = parseFloat(process.env.FH_SR_CONSENSUS_THRESHOLD || "0.15");
+    const runnerKey = getEnv("FH_INTERNAL_RUNNER_KEY");
+
+    const results: Array<{
+      domain: string;
+      success: boolean;
+      score?: number;
+      confidence?: number;
+      consensus?: boolean;
+      models?: string;
+      error?: string;
+    }> = [];
+
+    // Evaluate each domain
+    for (const domain of domains) {
+      try {
+        // Call internal evaluate endpoint
+        const evalUrl = new URL("/api/internal/evaluate-source", req.url);
+        const evalResponse = await fetch(evalUrl.toString(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(runnerKey ? { "x-runner-key": runnerKey } : {}),
+          },
+          body: JSON.stringify({
+            domain,
+            multiModel,
+            confidenceThreshold,
+            consensusThreshold,
+          }),
+        });
+
+        if (!evalResponse.ok) {
+          const errData = await evalResponse.json().catch(() => ({}));
+          results.push({
+            domain,
+            success: false,
+            error: errData.error || `HTTP ${evalResponse.status}`,
+          });
+          continue;
+        }
+
+        const evalData = await evalResponse.json();
+        
+        // Save to cache
+        await setCachedScore(
+          domain,
+          evalData.score,
+          evalData.confidence,
+          evalData.modelPrimary,
+          evalData.modelSecondary,
+          evalData.consensusAchieved
+        );
+
+        results.push({
+          domain,
+          success: true,
+          score: evalData.score,
+          confidence: evalData.confidence,
+          consensus: evalData.consensusAchieved,
+          models: evalData.modelSecondary 
+            ? `${evalData.modelPrimary} + ${evalData.modelSecondary}`
+            : evalData.modelPrimary,
+        });
+      } catch (err) {
+        results.push({
+          domain,
+          success: false,
+          error: err instanceof Error ? err.message : "Unknown error",
+        });
+      }
+    }
+
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+
+    return NextResponse.json({
+      success: true,
+      evaluated: domains.length,
+      successful,
+      failed,
+      results,
+    });
+  } catch (err) {
+    console.error("[Admin SR] Evaluate error:", err);
+    return NextResponse.json(
+      { error: "Failed to evaluate domains" },
       { status: 500 }
     );
   }
