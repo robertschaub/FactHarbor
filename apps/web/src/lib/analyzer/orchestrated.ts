@@ -8368,7 +8368,11 @@ function calculateOverallCredibility(
                 ? "Mostly Reliable"
                 : inputScore >= 0.43
                   ? "Uncertain"
-                  : "Unreliable";
+                  : inputScore >= 0.29
+                    ? "Mostly Unreliable"
+                    : inputScore >= 0.15
+                      ? "Unreliable"
+                      : "Highly Unreliable";
         inputSourceInfo = `${hostname}: ${level} (${(inputScore * 100).toFixed(0)}%)`;
       } else {
         inputSourceInfo = `${hostname}: Unknown`;
@@ -8400,7 +8404,11 @@ function calculateOverallCredibility(
           ? "Mostly Reliable"
           : avg >= 0.43
             ? "Uncertain"
-            : "Unreliable";
+            : avg >= 0.29
+              ? "Mostly Unreliable"
+              : avg >= 0.15
+                ? "Unreliable"
+                : "Highly Unreliable";
   const researchInfo = `Research sources: ${researchLevel} (${(avg * 100).toFixed(0)}%)`;
 
   if (inputSourceInfo) {

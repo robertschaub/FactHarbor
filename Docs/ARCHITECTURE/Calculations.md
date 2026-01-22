@@ -549,6 +549,27 @@ function calculateEffectiveWeight(data: SourceReliabilityData): number {
 - Blend center is **fixed at 0.5** for formula stability
 - `FH_SR_DEFAULT_SCORE` only affects initial score for unknown sources
 
+### Reliability Score Scale (7-Band Symmetric)
+
+The source reliability system uses a symmetric 7-band scale centered at 0.5, mirroring the verdict scale structure:
+
+| Score Range | Band | Label | Impact on Verdict |
+|-------------|------|-------|-------------------|
+| 0.86-1.00 | Highly Reliable | Exceptional accuracy | Verdict fully preserved (~95-100% weight) |
+| 0.72-0.86 | Reliable | Strong standards | Verdict mostly preserved (~75-90% weight) |
+| 0.58-0.72 | Mostly Reliable | Generally accurate | Moderate preservation (~60-75% weight) |
+| 0.43-0.57 | Uncertain | Neutral center | Appropriate skepticism (~40-60% weight) |
+| 0.29-0.43 | Mostly Unreliable | Frequent errors | Pulls toward neutral (~30-45% weight) |
+| 0.15-0.29 | Unreliable | Consistent issues | Strong pull (~15-30% weight) |
+| 0.00-0.15 | Highly Unreliable | Known misinfo | Maximum skepticism (~0-15% weight) |
+
+**Key properties**:
+- **Symmetric around 0.5** - Center of "uncertain" band (0.43-0.57)
+- **Mirrors verdict scale** - 7 bands matching TRUE↔FALSE structure  
+- **Score = 0.5** means neutral/unknown - appropriate default skepticism
+- **Above 0.58** = verdict preservation (trusted source)
+- **Below 0.43** = verdict skepticism (unreliable source)
+
 ### Effective Weight Examples
 
 | Source | Score | Confidence | Consensus | Effective Weight |

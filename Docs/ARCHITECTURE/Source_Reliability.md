@@ -231,20 +231,24 @@ adjustedTruth = 50 + (originalTruth - 50) × avgSourceScore
 adjustedConfidence = confidence × (0.5 + avgSourceScore / 2)
 ```
 
-### Effect on Verdicts
+### Effect on Verdicts (7-Band Scale)
 
-| Source Reliability | Effect on Verdict |
-|-------------------|-------------------|
-| **High (0.9)** | Truth stays close to original (±5%) |
-| **Medium (0.7)** | Truth pulled toward neutral (±15%) |
-| **Low (0.3)** | Truth pulled strongly toward neutral (±35%) |
-| **Unknown (null)** | Verdict unchanged |
+| Source Reliability Band | Effective Weight | Effect on Verdict |
+|------------------------|------------------|-------------------|
+| **Highly Reliable (0.86+)** | ~95-100% | Verdict fully preserved |
+| **Reliable (0.72-0.86)** | ~75-90% | Verdict mostly preserved |
+| **Mostly Reliable (0.58-0.72)** | ~60-75% | Moderate preservation |
+| **Uncertain (0.43-0.57)** | ~40-60% | Appropriate skepticism (neutral center) |
+| **Mostly Unreliable (0.29-0.43)** | ~30-45% | Pulls toward neutral |
+| **Unreliable (0.15-0.29)** | ~15-30% | Strong pull toward neutral |
+| **Highly Unreliable (0.00-0.15)** | ~0-15% | Maximum skepticism |
+| **Unknown (null)** | 50% | Uses default score (neutral) |
 
 ### Example
 
 ```
 Original verdict: 80% (Strong True)
-Source reliability: 0.5 (Mixed)
+Source reliability: 0.5 (Uncertain - neutral center)
 
 Adjusted = 50 + (80 - 50) × 0.5
          = 50 + 30 × 0.5
@@ -482,6 +486,29 @@ export function clearPrefetchedScores(): void;
 export const DEFAULT_UNKNOWN_SOURCE_SCORE: number; // 0.5 by default (neutral center)
 export const SR_CONFIG: SourceReliabilityConfig;
 ```
+
+### Temporal Awareness (v2.6.35+)
+
+The LLM evaluation prompt includes the current date and temporal guidance to ensure assessments reflect **recent** source performance:
+
+```typescript
+CURRENT DATE: ${currentDate}
+
+TEMPORAL AWARENESS (IMPORTANT):
+- Source reliability can change over time due to ownership changes, editorial shifts, or political transitions
+- Government sites (e.g., whitehouse.gov, state departments) may vary in reliability across administrations  
+- News organizations can improve or decline in quality over time
+- Base your assessment on the source's RECENT track record (last 1-2 years when possible)
+- If a source has undergone recent changes, factor that into your assessment
+```
+
+**Why This Matters**:
+- **Government sources** vary by administration (e.g., transparency changes across presidencies)
+- **Media outlets** can shift with ownership or editorial changes
+- **Historical reputation** may not reflect current performance
+- **Time-sensitive evaluations** prevent outdated assessments
+
+**Cache TTL enforces freshness**: 90-day default means scores are re-evaluated quarterly, capturing significant changes in source reliability over time.
 
 ### Pipeline Integration
 

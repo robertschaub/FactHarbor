@@ -44,7 +44,15 @@ const EvaluationResultSchema = z.object({
   score: z.number().min(0).max(1),
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
-  factualRating: z.enum(["very_high", "high", "mostly_factual", "mixed", "low", "very_low"]),
+  factualRating: z.enum([
+    "highly_reliable",    // 0.86-1.00
+    "reliable",           // 0.72-0.86
+    "mostly_reliable",    // 0.58-0.72
+    "uncertain",          // 0.43-0.57 (neutral center)
+    "mostly_unreliable",  // 0.29-0.43
+    "unreliable",         // 0.15-0.29
+    "highly_unreliable",  // 0.00-0.15
+  ]),
   evidenceCited: z.array(z.string()).optional(),
 });
 
@@ -163,7 +171,7 @@ Respond with a JSON object matching this schema:
   "score": <number 0-1>,
   "confidence": <number 0-1>,
   "reasoning": "<brief explanation including any recent changes affecting reliability>",
-  "factualRating": "<one of: very_high, high, mostly_factual, mixed, low, very_low>",
+  "factualRating": "<one of: highly_reliable, reliable, mostly_reliable, uncertain, mostly_unreliable, unreliable, highly_unreliable>",
   "evidenceCited": ["<specific facts supporting your rating>"]
 }`;
 }
