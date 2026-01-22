@@ -80,7 +80,11 @@ export default function SourceReliabilityPage() {
   }> | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<CachedScore | null>(null);
   const [pageSize, setPageSize] = useState(25);
+  const [pageSizeInput, setPageSizeInput] = useState("25");
   const PAGE_SIZE_OPTIONS = [25, 50, 100];
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // Helper to build fetch headers with admin key
   const getHeaders = useCallback((): HeadersInit => {
@@ -132,8 +136,67 @@ export default function SourceReliabilityPage() {
   // Reset to page 1 when page size changes
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
+    setPageSizeInput(String(newSize));
     setPage(0);
   };
+
+  const handlePageSizeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPageSizeInput(value);
+    
+    const num = parseInt(value, 10);
+    if (!isNaN(num) && num > 0 && num <= 500) {
+      setPageSize(num);
+      setPage(0);
+    }
+  };
+
+  const handlePageSizeInputBlur = () => {
+    const num = parseInt(pageSizeInput, 10);
+    if (isNaN(num) || num < 1) {
+      setPageSizeInput(String(pageSize));
+    } else if (num > 500) {
+      setPageSize(500);
+      setPageSizeInput("500");
+      setPage(0);
+    }
+  };
+
+  // Modal drag handlers
+  const handleModalMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest(`.${styles.modalHeader}`)) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - modalPosition.x,
+        y: e.clientY - modalPosition.y,
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        setModalPosition({
+          x: e.clientX - dragStart.x,
+          y: e.clientY - dragStart.y,
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, dragStart]);
 
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -681,18 +744,16 @@ export default function SourceReliabilityPage() {
             </button>
             <div className={styles.pageSizeControl}>
               <label htmlFor="pageSize">Per page:</label>
-              <select
+              <input
+                type="number"
                 id="pageSize"
-                className={styles.pageSizeSelect}
-                value={pageSize}
-                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              >
-                {PAGE_SIZE_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                className={styles.pageSizeInput}
+                value={pageSizeInput}
+                onChange={handlePageSizeInputChange}
+                onBlur={handlePageSizeInputBlur}
+                min="1"
+                max="500"
+              />
             </div>
           </div>
         </>
@@ -718,18 +779,27 @@ export default function SourceReliabilityPage() {
         
         <h3 style={{ marginTop: "16px" }}>How It Works</h3>
         <div className={styles.legendItems} style={{ flexDirection: "column", gap: "8px" }}>
-          <span>• <strong>Score</strong> = LLM-evaluated reliability (directly used in verdict weighting)</span>
+          <span>• <strong>Score</strong> = LLM-evaluated reliability</span>
           <span>• <strong>Confidence</strong> = How certain the LLM was (used as quality gate, threshold: 65%)</span>
           <span>• <strong>Consensus</strong> = Claude and GPT-4 agreed within 15%</span>
-          <span>• <strong>Unknown Sources</strong> = Default to 50% (neutral)</span>
         </div>
       </div>
 
       {/* Details Modal */}
       {selectedEntry && (
         <div className={styles.modal} onClick={() => setSelectedEntry(null)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
+          <div 
+            className={styles.modalContent} 
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={handleModalMouseDown}
+            style={{
+              transform: modalPosition.x !== 0 || modalPosition.y !== 0 
+                ? `translate(${modalPosition.x}px, ${modalPosition.y}px)` 
+                : 'none',
+              cursor: isDragging ? 'grabbing' : 'auto'
+            }}
+          >
+            <div className={styles.modalHeader} style={{ cursor: 'grab' }}>
               <h2>Source Evaluation Details</h2>
               <button onClick={() => setSelectedEntry(null)} className={styles.modalClose}>
                 ✕

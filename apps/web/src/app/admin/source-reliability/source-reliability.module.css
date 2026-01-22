@@ -235,23 +235,35 @@
   color: #666;
 }
 
-.pageSizeSelect {
-  padding: 6px 12px;
+.pageSizeInput {
+  width: 60px;
+  padding: 6px 8px;
   border: 1px solid #e2e8f0;
   border-radius: 4px;
   font-size: 14px;
   background: white;
-  cursor: pointer;
+  text-align: center;
 }
 
-.pageSizeSelect:hover {
+.pageSizeInput:hover {
   border-color: #cbd5e1;
 }
 
-.pageSizeSelect:focus {
+.pageSizeInput:focus {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Remove spinner arrows from number input */
+.pageSizeInput::-webkit-inner-spin-button,
+.pageSizeInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.pageSizeInput[type=number] {
+  -moz-appearance: textfield;
 }
 
 /* States */
@@ -572,6 +584,7 @@
   align-items: center;
   padding: 20px 24px;
   border-bottom: 1px solid #e2e8f0;
+  user-select: none;
 }
 
 .modalHeader h2 {
