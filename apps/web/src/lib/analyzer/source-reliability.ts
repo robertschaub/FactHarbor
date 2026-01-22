@@ -516,8 +516,32 @@ export function applyEvidenceWeighting(
 }
 
 /**
- * Calculate overall credibility score for an analysis
+ * 7-band credibility level matching the symmetric reliability scale.
+ * Mirrors the verdict scale structure (TRUE↔FALSE, MOSTLY-TRUE↔MOSTLY-FALSE, etc.)
  */
+export type CredibilityLevel7Band =
+  | "HIGHLY_RELIABLE"    // 0.86-1.00
+  | "RELIABLE"           // 0.72-0.86
+  | "MOSTLY_RELIABLE"    // 0.58-0.72
+  | "UNCERTAIN"          // 0.43-0.57 (neutral center)
+  | "MOSTLY_UNRELIABLE"  // 0.29-0.43
+  | "UNRELIABLE"         // 0.15-0.29
+  | "HIGHLY_UNRELIABLE"  // 0.00-0.15
+  | "UNKNOWN";           // no data
+
+/**
+ * Convert score to 7-band credibility level.
+ */
+export function scoreToCredibilityLevel(score: number): CredibilityLevel7Band {
+  if (score >= 0.86) return "HIGHLY_RELIABLE";
+  if (score >= 0.72) return "RELIABLE";
+  if (score >= 0.58) return "MOSTLY_RELIABLE";
+  if (score >= 0.43) return "UNCERTAIN";
+  if (score >= 0.29) return "MOSTLY_UNRELIABLE";
+  if (score >= 0.15) return "UNRELIABLE";
+  return "HIGHLY_UNRELIABLE";
+}
+
 export function calculateOverallCredibility(
   sources: FetchedSource[],
   _facts: ExtractedFact[]
@@ -525,7 +549,7 @@ export function calculateOverallCredibility(
   averageScore: number;
   knownSourceCount: number;
   unknownSourceCount: number;
-  credibilityLevel: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
+  credibilityLevel: CredibilityLevel7Band;
 } {
   const scores = sources
     .map((s) => s.trackRecordScore)
@@ -545,15 +569,8 @@ export function calculateOverallCredibility(
 
   const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
 
-  // Credibility levels aligned with symmetric 7-band scale (centered at 0.5)
-  let credibilityLevel: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
-  if (averageScore >= 0.58) {
-    credibilityLevel = "HIGH";      // mostly_reliable + reliable + highly_reliable (0.58+)
-  } else if (averageScore >= 0.43) {
-    credibilityLevel = "MEDIUM";    // uncertain (0.43-0.57, neutral center)
-  } else {
-    credibilityLevel = "LOW";       // mostly_unreliable + unreliable + highly_unreliable (<0.43)
-  }
+  // 7-band credibility level matching symmetric reliability scale
+  const credibilityLevel = scoreToCredibilityLevel(averageScore);
 
   return {
     averageScore,

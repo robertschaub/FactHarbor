@@ -20,6 +20,7 @@ import {
   applyEvidenceWeighting,
   normalizeTrackRecordScore,
   clampTruthPercentage,
+  scoreToCredibilityLevel,
 } from "./source-reliability";
 
 describe("extractDomain", () => {
@@ -249,6 +250,33 @@ describe("Score interpretation (symmetric 7-band scale, matches verdict scale)",
       expect(score).toBeGreaterThanOrEqual(0);
       expect(score).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe("scoreToCredibilityLevel (7-band)", () => {
+  it("returns correct level for each band", () => {
+    // Test boundary and mid-point values
+    expect(scoreToCredibilityLevel(0.93)).toBe("HIGHLY_RELIABLE");
+    expect(scoreToCredibilityLevel(0.86)).toBe("HIGHLY_RELIABLE");
+    expect(scoreToCredibilityLevel(0.79)).toBe("RELIABLE");
+    expect(scoreToCredibilityLevel(0.72)).toBe("RELIABLE");
+    expect(scoreToCredibilityLevel(0.65)).toBe("MOSTLY_RELIABLE");
+    expect(scoreToCredibilityLevel(0.58)).toBe("MOSTLY_RELIABLE");
+    expect(scoreToCredibilityLevel(0.50)).toBe("UNCERTAIN");
+    expect(scoreToCredibilityLevel(0.43)).toBe("UNCERTAIN");
+    expect(scoreToCredibilityLevel(0.36)).toBe("MOSTLY_UNRELIABLE");
+    expect(scoreToCredibilityLevel(0.29)).toBe("MOSTLY_UNRELIABLE");
+    expect(scoreToCredibilityLevel(0.22)).toBe("UNRELIABLE");
+    expect(scoreToCredibilityLevel(0.15)).toBe("UNRELIABLE");
+    expect(scoreToCredibilityLevel(0.07)).toBe("HIGHLY_UNRELIABLE");
+    expect(scoreToCredibilityLevel(0.00)).toBe("HIGHLY_UNRELIABLE");
+  });
+
+  it("handles edge cases at exact boundaries", () => {
+    expect(scoreToCredibilityLevel(1.0)).toBe("HIGHLY_RELIABLE");
+    expect(scoreToCredibilityLevel(0.859)).toBe("RELIABLE"); // Just below 0.86
+    expect(scoreToCredibilityLevel(0.429)).toBe("MOSTLY_UNRELIABLE"); // Just below 0.43
+    expect(scoreToCredibilityLevel(0.149)).toBe("HIGHLY_UNRELIABLE"); // Just below 0.15
   });
 });
 
