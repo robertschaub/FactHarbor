@@ -767,14 +767,25 @@ export default function SourceReliabilityPage() {
       {/* Legend */}
       <div className={styles.legend}>
         <h3>Score Legend (Symmetric 7-Band Scale)</h3>
-        <div className={styles.legendItems}>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> 86-100%: Highly Reliable</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#22c55e" }} /> 72-86%: Reliable</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> 58-72%: Mostly Reliable</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#8b5cf6" }} /> 43-57%: Uncertain (center)</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 29-43%: Mostly Unreliable</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> 15-29%: Unreliable</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-15%: Highly Unreliable</span>
+        <div className={styles.symmetricScale}>
+          <div className={styles.scaleRow}>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> Highly Reliable (86-100%)</span>
+            <span className={styles.arrow}>→</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#22c55e" }} /> Reliable (72-86%)</span>
+            <span className={styles.arrow}>→</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> Mostly Reliable (58-72%)</span>
+            <span className={styles.arrow}>→</span>
+          </div>
+          <div className={styles.centerRow}>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#8b5cf6" }} /> Uncertain (43-57%)</span>
+          </div>
+          <div className={styles.scaleRow}>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> Mostly Unreliable (29-43%)</span>
+            <span className={styles.arrow}>→</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> Unreliable (15-29%)</span>
+            <span className={styles.arrow}>→</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> Highly Unreliable (0-15%)</span>
+          </div>
         </div>
         
         <h3 style={{ marginTop: "16px" }}>How It Works</h3>

@@ -324,6 +324,37 @@
   vertical-align: middle;
 }
 
+/* Symmetric scale layout */
+.symmetricScale {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.scaleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #666;
+}
+
+.centerRow {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  padding: 4px 0;
+}
+
+.arrow {
+  color: #94a3b8;
+  font-size: 16px;
+  font-weight: 300;
+}
+
 /* Delete button */
 .deleteButton {
   background: transparent;
