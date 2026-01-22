@@ -126,32 +126,83 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
 function getEvaluationPrompt(domain: string): string {
   const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   
-  return `You are an expert media analyst.
+  return `You are a media reliability analyst evaluating source credibility.
 
 CURRENT DATE: ${currentDate}
+SOURCE: ${domain}
 
-TASK: Evaluate the source: ${domain}
+TASK: Rate the FACTUAL RELIABILITY of this source. Focus on:
+- Does it publish FACTS with evidence, or BASELESS CLAIMS?
+- Does it clearly separate OPINION from NEWS?
+- Does it have a pattern of TRUTH or FALSEHOODS?
 
-Rate the general reliability of the information source on a 7-band scale (0-100%):
+═══════════════════════════════════════════════════════════════
+EVALUATION CRITERIA (Score each dimension, then sum for total)
+═══════════════════════════════════════════════════════════════
 
-7. Established Authority (86-100%): Consistent editorial rigor, strong fact-checking processes, transparent corrections policy, multiple verification layers.
-6. High Credibility (72-85%): Reliable track record, transparent sourcing, professional editorial standards, occasional minor issues.
-5. Generally Credible (58-71%): Mostly accurate reporting, may have limited depth or occasional lapses, acceptable journalistic practices.
-4. Mixed Track Record (43-57%): Inconsistent quality, insufficient information to assess, or conflicting indicators of reliability.
-3. Questionable Credibility (29-42%): Frequent accuracy issues, poor sourcing practices, or significant editorial concerns.
-2. Low Credibility (15-28%): Persistent inaccuracies, lack of editorial standards, or systemic reliability failures.
-1. Known Disinformation (0-14%): Documented pattern of intentional falsehoods, propaganda, or coordinated deception.
+A. FACTUAL ACCURACY (0-30 points)
+   30: Excellent - Rigorous fact-checking, rarely wrong, third-party verification
+   20: Good - Generally accurate, occasional minor errors corrected
+   10: Poor - Frequent errors, unverified claims, selective facts
+   0: Failing - Pattern of publishing falsehoods or fabrications
 
-Guidelines:
-- Evaluate the source's overall reputation and track record, not individual articles.
-- Consider: editorial standards, correction practices, transparency, and accountability.
-- Do not infer intent EXCEPT for Band 1 ("Known Disinformation"), which requires documented evidence.
-- Use Band 4 ("Mixed Track Record") when there is inconsistent quality, insufficient information, or conflicting indicators.
-- Avoid clustering scores at band midpoints; use the full 0-100% range to reflect the strength of evidence.
+B. OPINION/FACT SEPARATION (0-25 points)
+   25: Excellent - Clear labels, distinct sections, transparent editorial stance
+   15: Adequate - Some blurring but news vs opinion mostly distinguishable
+   5: Poor - Opinions routinely presented as news, editorializing in reporting
+   0: Failing - Propaganda disguised as journalism, no separation
+
+C. SOURCE ATTRIBUTION (0-20 points)
+   20: Excellent - Primary sources cited, documents linked, named experts
+   12: Good - Generally sourced, some anonymous but justified
+   5: Poor - Vague attribution ("sources say"), unverifiable claims
+   0: Failing - Baseless claims presented as fact, no sourcing
+
+D. CORRECTION PRACTICES (0-15 points)
+   15: Excellent - Prompt corrections, transparent policy, accountable
+   10: Good - Corrects errors but not always prominently
+   5: Poor - Rarely corrects, defensive when challenged
+   0: Failing - Doubles down on falsehoods, no accountability
+
+E. BIAS PENALTY (subtract from total)
+   -20: Extreme bias - Propaganda-level, completely one-sided, narrative over facts
+   -12: Strong bias - Consistently slanted coverage, omits inconvenient facts
+   -5: Moderate bias - Noticeable partisan lean but still reports facts
+   0: Minimal bias - Balanced coverage or neutral presentation
+
+═══════════════════════════════════════════════════════════════
+SCORE CALCULATION
+═══════════════════════════════════════════════════════════════
+
+Total = A + B + C + D + E (max 90, min -20, clamp to 0-90)
+Final percentage = Total / 90 × 100%
+
+═══════════════════════════════════════════════════════════════
+SCORE BANDS
+═══════════════════════════════════════════════════════════════
+
+86-100%: ESTABLISHED AUTHORITY - Rigorous fact-checking, transparent corrections
+72-85%:  HIGH CREDIBILITY - Professional standards, good sourcing, minor issues
+58-71%:  GENERALLY CREDIBLE - Factual core, some unsourced claims, moderate bias
+43-57%:  MIXED TRACK RECORD - Inconsistent quality, insufficient info, OR conflicting indicators
+29-42%:  QUESTIONABLE CREDIBILITY - Opinion as news, selective facts, strong bias
+15-28%:  LOW CREDIBILITY - Persistent falsehoods, extreme bias, baseless claims
+0-14%:   KNOWN DISINFORMATION - Pattern of lies, propaganda, coordinated deception
+
+═══════════════════════════════════════════════════════════════
+CRITICAL RULES
+═══════════════════════════════════════════════════════════════
+
+1. BASELESS CLAIMS are a major penalty - lack of evidence = unreliable
+2. MIXING OPINION WITH NEWS is deceptive - penalize heavily
+3. POLITICAL BIAS affects reliability when extreme - apply full penalty
+4. CORRECTIONS matter - refusing to correct errors = unreliable
+5. Do NOT give credit for "brand recognition" or "longevity"
+6. Pattern of falsehoods = Known Disinformation (no "intent" required)
 
 TEMPORAL AWARENESS:
-- Source reliability can change over time due to ownership changes, editorial shifts, or political transitions.
-- Base your assessment on the source's RECENT track record (within one year or less when possible).
+- Base assessment on RECENT track record (last 1-2 years)
+- Consider ownership changes, editorial shifts, quality trends
 
 CONFIDENCE (0.0 to 1.0):
 - 0.9+: Well-known major source with documented track record
@@ -163,9 +214,10 @@ Respond with JSON:
 {
   "score": <decimal 0.0-1.0>,
   "confidence": <0.0-1.0>,
-  "reasoning": "<one-sentence justification>",
+  "reasoning": "<one-sentence justification citing key factors>",
   "factualRating": "<established_authority|high_credibility|generally_credible|mixed_track_record|questionable_credibility|low_credibility|known_disinformation>",
-  "evidenceCited": ["<facts about the source's track record>"]
+  "biasIndicator": "<left|center-left|center|center-right|right>",
+  "evidenceCited": ["<specific facts about the source>"]
 }`;
 }
 
@@ -204,7 +256,7 @@ async function evaluateWithModel(
     const response = await generateText({
       model,
       messages: [
-        { role: "system", content: "You are an expert media analyst evaluating the general reliability of information sources. Always respond with valid JSON only, no other text." },
+        { role: "system", content: "You are a media reliability analyst. Evaluate sources based on FACTUAL ACCURACY, not reputation or prestige. Penalize baseless claims, opinion-as-news, and political bias. Always respond with valid JSON only." },
         { role: "user", content: prompt },
       ],
       temperature,

@@ -332,15 +332,22 @@ FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
 
 **7-band credibility scale (centered at 0.5)**
 
-| Score | Rating | Meaning |
-|-------|--------|---------|
-| 0.86-1.00 | Established Authority | Consistent editorial rigor, strong fact-checking, transparent corrections |
-| 0.72-0.85 | High Credibility | Reliable track record, professional editorial standards |
-| 0.58-0.71 | Generally Credible | Mostly accurate reporting, occasional lapses |
-| 0.43-0.57 | Mixed Track Record | Inconsistent quality, insufficient information, or conflicting indicators |
-| 0.29-0.42 | Questionable Credibility | Frequent accuracy issues, poor sourcing practices |
-| 0.15-0.28 | Low Credibility | Persistent inaccuracies, lack of editorial standards |
-| 0.00-0.14 | Known Disinformation | Documented intentional falsehoods, propaganda |
+| Score | Rating | Key Criteria |
+|-------|--------|--------------|
+| 0.86-1.00 | Established Authority | Rigorous fact-checking, clear opinion labels, transparent corrections, primary sources |
+| 0.72-0.85 | High Credibility | Good sourcing, mostly factual, professional standards, minor issues only |
+| 0.58-0.71 | Generally Credible | Factual core, some unsourced claims, occasional opinion/fact blurring, moderate bias |
+| 0.43-0.57 | Mixed Track Record | Inconsistent quality, insufficient information to assess, OR conflicting indicators |
+| 0.29-0.42 | Questionable Credibility | Frequent unsourced claims, opinion presented as news, selective facts, strong bias |
+| 0.15-0.28 | Low Credibility | Persistent inaccuracies, extreme bias, baseless claims common, poor corrections |
+| 0.00-0.14 | Known Disinformation | Pattern of falsehoods, propaganda, coordinated deception |
+
+**Evaluation Dimensions:**
+- **Factual Accuracy (30%)**: Verifiable facts vs. baseless claims
+- **Opinion/Fact Separation (25%)**: Clear labels vs. propaganda disguised as news
+- **Source Attribution (20%)**: Primary sources vs. unverified claims
+- **Correction Practices (15%)**: Transparent corrections vs. doubling down
+- **Bias Penalty (up to -20%)**: Extreme political bias reduces reliability
 
 **Impact on verdicts:**
 - Score >= 0.58: Preserves original verdict (credible source)
