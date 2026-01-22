@@ -126,98 +126,117 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
 function getEvaluationPrompt(domain: string): string {
   const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   
-  return `You are a media reliability analyst evaluating source credibility.
+  return `You are a media reliability analyst. Your job is to identify sources that spread LIES.
 
 CURRENT DATE: ${currentDate}
 SOURCE: ${domain}
 
-TASK: Rate the FACTUAL RELIABILITY of this source. Focus on:
-- Does it publish FACTS with evidence, or BASELESS CLAIMS?
-- Does it clearly separate OPINION from NEWS?
-- Does it have a pattern of TRUTH or FALSEHOODS?
-
 ═══════════════════════════════════════════════════════════════
-EVALUATION CRITERIA (Score each dimension, then sum for total)
+THE CORE QUESTION: TRUTH vs. LIES
 ═══════════════════════════════════════════════════════════════
 
-A. FACTUAL ACCURACY (0-30 points)
-   30: Excellent - Rigorous fact-checking, rarely wrong, third-party verification
-   20: Good - Generally accurate, occasional minor errors corrected
-   10: Poor - Frequent errors, unverified claims, selective facts
-   0: Failing - Pattern of publishing falsehoods or fabrications
+Does this source tell the TRUTH or spread LIES?
 
-B. OPINION/FACT SEPARATION (0-25 points)
-   25: Excellent - Clear labels, distinct sections, transparent editorial stance
-   15: Adequate - Some blurring but news vs opinion mostly distinguishable
-   5: Poor - Opinions routinely presented as news, editorializing in reporting
-   0: Failing - Propaganda disguised as journalism, no separation
+- Has this source been caught publishing false information?
+- Have fact-checkers debunked claims from this source?
+- Does this source spread known misinformation or propaganda?
+- Does it present lies as facts, or opinions as news?
 
-C. SOURCE ATTRIBUTION (0-20 points)
-   20: Excellent - Primary sources cited, documents linked, named experts
-   12: Good - Generally sourced, some anonymous but justified
-   5: Poor - Vague attribution ("sources say"), unverifiable claims
-   0: Failing - Baseless claims presented as fact, no sourcing
+═══════════════════════════════════════════════════════════════
+EVALUATION CRITERIA
+═══════════════════════════════════════════════════════════════
 
-D. CORRECTION PRACTICES (0-15 points)
-   15: Excellent - Prompt corrections, transparent policy, accountable
-   10: Good - Corrects errors but not always prominently
-   5: Poor - Rarely corrects, defensive when challenged
-   0: Failing - Doubles down on falsehoods, no accountability
+A. TRUTH TRACK RECORD (0-40 points) ← PRIMARY CRITERION
+   40: Excellent - Rarely publishes false info, fact-checkers confirm accuracy
+   30: Good - Mostly truthful, occasional errors promptly corrected
+   20: Mixed - Some accurate reporting, but also spreads unverified claims
+   10: Poor - Frequently publishes false or misleading information
+   0: Failing - DOCUMENTED PATTERN OF LIES, debunked repeatedly by fact-checkers
 
-E. BIAS PENALTY (subtract from total)
-   -20: Extreme bias - Propaganda-level, completely one-sided, narrative over facts
-   -12: Strong bias - Consistently slanted coverage, omits inconvenient facts
-   -5: Moderate bias - Noticeable partisan lean but still reports facts
-   0: Minimal bias - Balanced coverage or neutral presentation
+B. LIES FREQUENCY (0-25 points)
+   25: Rare - False claims are exceptional, not the norm
+   15: Occasional - Some misleading content, but not systematic
+   5: Frequent - Regularly publishes misleading or false content
+   0: Constant - Lies are the norm, truth is the exception
+
+C. OPINION SOLD AS FACT (0-15 points)
+   15: Clear separation - Opinion clearly labeled, news is factual
+   10: Some blurring - Occasional editorializing in news
+   5: Frequent mixing - Often presents opinion as news
+   0: Propaganda - Systematically disguises opinion/lies as facts
+
+D. BIAS PENALTY (subtract from total)
+   -20: Extreme - Propaganda outlet, facts sacrificed for narrative
+   -12: Strong - Consistently misleads to support political agenda
+   -5: Moderate - Partisan lean but still mostly factual
+   0: Minimal - Balanced or neutral presentation
 
 ═══════════════════════════════════════════════════════════════
 SCORE CALCULATION
 ═══════════════════════════════════════════════════════════════
 
-Total = A + B + C + D + E (max 90, min -20, clamp to 0-90)
-Final percentage = Total / 90 × 100%
+Total = A + B + C + D (max 80, min -20)
+Final percentage = (Total + 20) / 100 × 100%
+
+This centers the scale so that:
+- A source scoring 0 on all dimensions = 20% (Low Credibility)
+- A source with mixed truth record (20+15+10+0) = 45% (Mixed Track Record)
+- A source with good truth record (30+20+12-5) = 57% (Mixed/Generally Credible)
+- A source spreading lies (0+0+0-20) = 0% (Known Disinformation)
 
 ═══════════════════════════════════════════════════════════════
 SCORE BANDS
 ═══════════════════════════════════════════════════════════════
 
-86-100%: ESTABLISHED AUTHORITY - Rigorous fact-checking, transparent corrections
-72-85%:  HIGH CREDIBILITY - Professional standards, good sourcing, minor issues
-58-71%:  GENERALLY CREDIBLE - Factual core, some unsourced claims, moderate bias
-43-57%:  MIXED TRACK RECORD - Inconsistent quality, insufficient info, OR conflicting indicators
-29-42%:  QUESTIONABLE CREDIBILITY - Opinion as news, selective facts, strong bias
-15-28%:  LOW CREDIBILITY - Persistent falsehoods, extreme bias, baseless claims
-0-14%:   KNOWN DISINFORMATION - Pattern of lies, propaganda, coordinated deception
+86-100%: ESTABLISHED AUTHORITY - Verified truthful, fact-checkers confirm
+72-85%:  HIGH CREDIBILITY - Consistently truthful, rare minor errors
+58-71%:  GENERALLY CREDIBLE - Mostly truthful, some unverified claims
+43-57%:  MIXED TRACK RECORD - Truth mixed with questionable claims
+29-42%:  QUESTIONABLE CREDIBILITY - Frequently misleading, strong bias
+15-28%:  LOW CREDIBILITY - Spreads false information regularly
+0-14%:   KNOWN DISINFORMATION - Documented liar, propaganda outlet
 
 ═══════════════════════════════════════════════════════════════
-CRITICAL RULES
+CRITICAL RULES - READ CAREFULLY
 ═══════════════════════════════════════════════════════════════
 
-1. BASELESS CLAIMS are a major penalty - lack of evidence = unreliable
-2. MIXING OPINION WITH NEWS is deceptive - penalize heavily
-3. POLITICAL BIAS affects reliability when extreme - apply full penalty
-4. CORRECTIONS matter - refusing to correct errors = unreliable
-5. Do NOT give credit for "brand recognition" or "longevity"
-6. Pattern of falsehoods = Known Disinformation (no "intent" required)
+1. TRUTH IS EVERYTHING - A source that spreads lies is unreliable, period
+2. FACT-CHECKER RATINGS MATTER - If PolitiFact, Snopes, or other fact-checkers have repeatedly debunked this source, score LOW
+3. PROPAGANDA = KNOWN DISINFORMATION - State propaganda, conspiracy sites, and outlets that systematically lie score 0-14%
+4. BIAS THAT LEADS TO LIES - If political bias causes the source to publish false information, apply FULL penalty
+5. "Professional appearance" means NOTHING - A slick website that spreads lies is still spreading lies
+6. NO CREDIT FOR OCCASIONAL TRUTH - A liar who sometimes tells the truth is still a liar
+7. WHEN IN DOUBT, SCORE LOWER - Better to be skeptical of a source than to trust a liar
+
+EXAMPLES OF KNOWN DISINFORMATION (0-14%):
+- State propaganda outlets (RT, Sputnik, CGTN for political content)
+- Sites repeatedly debunked by multiple fact-checkers
+- Conspiracy theory promoters
+- Sites that fabricate stories or quotes
+
+EXAMPLES OF LOW CREDIBILITY (15-28%):
+- Hyper-partisan sites that frequently mislead
+- Sites that mix some news with significant misinformation
+- Sources with documented patterns of false claims
 
 TEMPORAL AWARENESS:
 - Base assessment on RECENT track record (last 1-2 years)
-- Consider ownership changes, editorial shifts, quality trends
+- Consider if the source has gotten worse or better over time
 
 CONFIDENCE (0.0 to 1.0):
-- 0.9+: Well-known major source with documented track record
-- 0.7-0.9: Reasonably well-known source
+- 0.9+: Well-known source, clear fact-checker consensus
+- 0.7-0.9: Reasonably known, some fact-checker data
 - 0.5-0.7: Less familiar but some information available
-- <0.5: Insufficient information for reliable assessment
+- <0.5: Unknown source, insufficient data
 
 Respond with JSON:
 {
   "score": <decimal 0.0-1.0>,
   "confidence": <0.0-1.0>,
-  "reasoning": "<one-sentence justification citing key factors>",
+  "reasoning": "<one-sentence: does it tell truth or spread lies?>",
   "factualRating": "<established_authority|high_credibility|generally_credible|mixed_track_record|questionable_credibility|low_credibility|known_disinformation>",
   "biasIndicator": "<left|center-left|center|center-right|right>",
-  "evidenceCited": ["<specific facts about the source>"]
+  "evidenceCited": ["<specific lies or truth examples from this source>"]
 }`;
 }
 
@@ -256,7 +275,7 @@ async function evaluateWithModel(
     const response = await generateText({
       model,
       messages: [
-        { role: "system", content: "You are a media reliability analyst. Evaluate sources based on FACTUAL ACCURACY, not reputation or prestige. Penalize baseless claims, opinion-as-news, and political bias. Always respond with valid JSON only." },
+        { role: "system", content: "You are a media reliability analyst. Your job is to identify sources that spread LIES. A source that spreads lies is UNRELIABLE regardless of how professional it looks. Score propaganda and misinformation sources LOW. Always respond with valid JSON only." },
         { role: "user", content: prompt },
       ],
       temperature,
