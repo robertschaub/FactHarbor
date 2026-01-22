@@ -49,7 +49,8 @@ export function validateContestation<T extends ContestableKeyFactor>(keyFactors:
     // Check if contestation actually cites SPECIFIC documented evidence
     // The SOURCE doesn't matter - what matters is whether there's DOCUMENTED counter-evidence
     // Must include specific references: measurements, audits, reports, legal citations, etc.
-    const documentedEvidencePattern = /\b(data|measurement|study|record|document|report|investigation|audit|log|dataset|finding|determination|ruling|documentation|violation|breach|non-?compliance|procedure\s+\d+|article\s+\d+|section\s+\d+|protocol\s+\d+|rule\s+\d+|regulation\s+\d+|statute|precedent|\d+%|\d+\s*(kg|g|kwh|mwh|efficiency|percent))\b/i;
+    // v2.8.5: Added scientific/methodological terms for causal claim contestation
+    const documentedEvidencePattern = /\b(data|measurement|study|record|document|report|investigation|audit|log|dataset|finding|determination|ruling|documentation|violation|breach|non-?compliance|procedure\s+\d+|article\s+\d+|section\s+\d+|protocol\s+\d+|rule\s+\d+|regulation\s+\d+|statute|precedent|\d+%|\d+\s*(kg|g|kwh|mwh|efficiency|percent)|methodology|causation|causality|correlation|unverified|control\s*group|randomized|peer-?review|replicated|confound|bias|systematic|meta-?analysis|does\s+not\s+prove|no\s+causal|self-?report|passive\s+surveillance|adverse\s+event|safety\s+signal|VAERS|pharmacovigilance)\b/i;
     
     const textToCheck = [
       kf.contestationReason || "",
@@ -144,11 +145,22 @@ export function detectClaimContestation(claimText: string, reasoning?: string): 
     return { isContested: false, factualBasis: "unknown" };
   }
   
+  // v2.8.5: Detect if this is a causal claim that requires stronger evidence
+  // Causal claims ("due to", "caused by", etc.) need proper causal evidence, not just temporal correlation
+  const causalClaimPattern = /\b(due\s+to|caused\s+by|because\s+of|result\s+of|linked\s+to|attributed\s+to|leads?\s+to|responsible\s+for|kills?|died\s+from|death\s+from|died\s+due\s+to|died\s+because)/i;
+  const isCausalClaim = causalClaimPattern.test(claimText || "");
+  
   // Evidence-based approach: the SOURCE doesn't matter, only whether there's DOCUMENTED counter-evidence
   // If no documented evidence → "opinion" (keeps full weight)
   // If documented evidence → "established" or "disputed" (reduces weight)
-  const documentedEvidence = /\b(audit|study|report|investigation|finding|data|measurement|record|document|statistic|evidence shows|according to records|documented|violation of|breach of|non-?compliance|article \d+|section \d+|regulation \d+|procedure \d+|\d+%|\d+\s*(kg|g|kwh|mwh|efficiency|percent))/i;
+  // v2.8.5: Added scientific/methodological terms for causal claim contestation
+  const documentedEvidence = /\b(audit|study|report|investigation|finding|data|measurement|record|document|statistic|evidence shows|according to records|documented|violation of|breach of|non-?compliance|article \d+|section \d+|regulation \d+|procedure \d+|\d+%|\d+\s*(kg|g|kwh|mwh|efficiency|percent)|methodology|causation|causality|correlation|unverified|control\s*group|randomized|peer-?review|replicated|confound|bias|systematic|meta-?analysis|does\s+not\s+prove|no\s+causal|self-?report|passive\s+surveillance|adverse\s+event|safety\s+signal|VAERS|pharmacovigilance)/i;
   const hasDocumentedEvidence = documentedEvidence.test(combined);
+  
+  // v2.8.5: Methodology criticism for causal claims = "established" counter-evidence
+  // When experts criticize the methodology used to establish causation, this is strong counter-evidence
+  const methodologyCriticism = /\b(methodology|causation|causality|correlation|unverified|does\s+not\s+prove|no\s+causal|cannot\s+establish|cannot\s+prove|not\s+evidence\s+of|insufficient\s+evidence|flawed|misuse|misinterpret)/i;
+  const hasMethodologyCriticism = methodologyCriticism.test(combined);
   
   // Determine factual basis purely on evidence, not source
   let factualBasis: "established" | "disputed" | "opinion" | "unknown";
@@ -158,6 +170,11 @@ export function detectClaimContestation(claimText: string, reasoning?: string): 
     // There's specific documented counter-evidence
     factualBasis = "established";
     contestedBy = "documented counter-evidence";
+  } else if (isCausalClaim && hasMethodologyCriticism) {
+    // v2.8.5: For causal claims, methodology criticism is strong counter-evidence
+    // because it directly challenges whether causation can be established
+    factualBasis = "established";
+    contestedBy = "methodology criticism (causal claim)";
   } else {
     // No documented evidence cited → opinion (keeps full weight)
     factualBasis = "opinion";

@@ -6118,6 +6118,20 @@ Facts in the FACTS section are labeled with their relationship to the user's cla
 - If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
 - Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
 
+## CRITICAL: CAUSAL vs TEMPORAL CLAIMS
+
+When a claim contains causal language ("due to", "caused by", "because of", "linked to", "result of"):
+- **Do NOT conflate "after" with "due to"**: Temporal sequence does NOT establish causation
+- **Require causal evidence**: Association/correlation is NOT causation
+- **Weight methodology criticism**: If the methodology used to establish causation is contested (e.g., unverified reporting systems, missing control groups, passive surveillance data), this DIRECTLY reduces the claim's truth value
+
+**EXAMPLES**:
+- Claim: "10 deaths occurred after X" - evaluate temporal sequence (easier to verify)
+- Claim: "10 deaths were due to X" - evaluate CAUSATION (requires stronger evidence)
+- Claim: "10 deaths after or due to X" - must evaluate the CAUSAL part ("due to") separately; temporal sequence alone is insufficient
+
+**CRITICAL**: If causation is claimed but only temporal/correlational evidence exists (e.g., deaths reported after an event in an unverified system), the verdict should be LOW (29-42% LEANING-FALSE) because causation is NOT established.
+
 ## SCOPES - PROVIDE SEPARATE ANSWER FOR EACH
 ${scopesFormatted}
 
@@ -6130,6 +6144,13 @@ ${scopesFormatted}
      * CRITICAL: Rate whether the USER'S CLAIM is true, NOT whether your analysis is correct
      * If user claims "X is MORE efficient" and evidence shows "X is LESS efficient", answer should be 0-28% (FALSE/MOSTLY FALSE)
      * Preserve the direction/comparative aspect of the original claim
+     * **CRITICAL: Evaluate SUBSTANCE, Not Attribution**
+       - When evaluating a claim like "X happened according to Y's review":
+         Do NOT evaluate whether Y's review EXISTS or what it SAID
+         EVALUATE whether X is ACTUALLY TRUE based on evidence
+       - The claim's truth depends on the SUBSTANCE (did X happen?), not the source's existence
+       - If the source's methodology is contested by experts, the underlying claim's truth is UNCERTAIN regardless of what the source said
+       - Example: "10 died due to Z per report R" → evaluate if deaths were CAUSED BY Z, not just whether R exists
    - shortAnswer: A complete sentence summarizing what the evidence shows (e.g., "Evidence indicates the methodology was scientifically valid.")
      * MUST be a descriptive sentence, NOT just a percentage or scale label
    - keyFactors: Array of factors that address the SUBSTANCE of the original claim:
@@ -7134,6 +7155,14 @@ CRITICAL: The "answer" field must be a NUMBER (not a string), and must reflect t
 - Preserve the directional/comparative aspect of the original claim
 - DO NOT rate your analysis conclusion - rate whether the USER'S CLAIM matches the evidence
 
+**CRITICAL: Evaluate SUBSTANCE, Not Attribution**
+- When evaluating a claim like "X happened according to Y's review":
+  - Do NOT evaluate whether Y's review EXISTS or what it SAID
+  - EVALUATE whether X is ACTUALLY TRUE based on evidence
+- The claim's truth depends on the SUBSTANCE (did X happen?), not the source's existence
+- If the source's methodology is contested by experts, the underlying claim's truth is UNCERTAIN regardless of what the source said
+- Example: "10 died due to Z per report R" → evaluate if deaths were CAUSED BY Z, not just whether R exists
+
 ## COUNTER-EVIDENCE HANDLING
 
 Facts in the FACTS section are labeled with their relationship to the user's claim:
@@ -7145,6 +7174,20 @@ Facts in the FACTS section are labeled with their relationship to the user's cla
 - If most facts are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
 - If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
 - Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
+
+## CRITICAL: CAUSAL vs TEMPORAL CLAIMS
+
+When a claim contains causal language ("due to", "caused by", "because of", "linked to", "result of"):
+- **Do NOT conflate "after" with "due to"**: Temporal sequence does NOT establish causation
+- **Require causal evidence**: Association/correlation is NOT causation
+- **Weight methodology criticism**: If the methodology used to establish causation is contested (e.g., unverified reporting systems, missing control groups, passive surveillance data), this DIRECTLY reduces the claim's truth value
+
+**EXAMPLES**:
+- Claim: "10 deaths occurred after X" - evaluate temporal sequence (easier to verify)
+- Claim: "10 deaths were due to X" - evaluate CAUSATION (requires stronger evidence)
+- Claim: "10 deaths after or due to X" - must evaluate the CAUSAL part ("due to") separately; temporal sequence alone is insufficient
+
+**CRITICAL**: If causation is claimed but only temporal/correlational evidence exists (e.g., deaths reported after an event in an unverified system), the verdict should be LOW (29-42% LEANING-FALSE) because causation is NOT established.
 
 ## EVIDENCE-SCOPE-AWARE EVALUATION
 
@@ -7636,6 +7679,14 @@ async function generateClaimVerdicts(
 - The reasoning field explains why the verdict is high or low - the verdict percentage MUST match the reasoning's conclusion
 - Example: If reasoning says "tariffs were NOT proportionate", the verdict for a claim stating "tariffs were proportionate" MUST be LOW
 
+**CRITICAL: Evaluate SUBSTANCE, Not Attribution**
+- When evaluating a claim like "X happened according to Y's review":
+  - Do NOT evaluate whether Y's review EXISTS or what it SAID
+  - EVALUATE whether X is ACTUALLY TRUE based on evidence
+- The claim's truth depends on the SUBSTANCE (did X happen?), not the source's existence
+- If the source's methodology is contested by experts, the underlying claim's truth is UNCERTAIN regardless of what the source said
+- Example: "10 died due to Z per report R" → evaluate if deaths were CAUSED BY Z, not just whether R exists
+
 - Provide a truth percentage (0-100) for each claim.
 - Use these bands to calibrate:
   * 86-100: TRUE (strong support, no credible counter-evidence)
@@ -7659,6 +7710,20 @@ Facts in the FACTS section are labeled with their relationship to the user's cla
 - If most facts are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
 - If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
 - Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
+
+## CRITICAL: CAUSAL vs TEMPORAL CLAIMS
+
+When a claim contains causal language ("due to", "caused by", "because of", "linked to", "result of"):
+- **Do NOT conflate "after" with "due to"**: Temporal sequence does NOT establish causation
+- **Require causal evidence**: Association/correlation is NOT causation
+- **Weight methodology criticism**: If the methodology used to establish causation is contested (e.g., unverified reporting systems, missing control groups, passive surveillance data), this DIRECTLY reduces the claim's truth value
+
+**EXAMPLES**:
+- Claim: "10 deaths occurred after X" - evaluate temporal sequence (easier to verify)
+- Claim: "10 deaths were due to X" - evaluate CAUSATION (requires stronger evidence)
+- Claim: "10 deaths after or due to X" - must evaluate the CAUSAL part ("due to") separately; temporal sequence alone is insufficient
+
+**CRITICAL**: If causation is claimed but only temporal/correlational evidence exists (e.g., deaths reported after an event in an unverified system), the verdict should be LOW (29-42% LEANING-FALSE) because causation is NOT established.
 
 ## CLAIM CONTESTATION (for each claim):
 - isContested: true if this claim is politically disputed or challenged
