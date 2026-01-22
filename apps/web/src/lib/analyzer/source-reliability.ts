@@ -384,26 +384,14 @@ export interface SourceReliabilityData {
  * Formula: effectiveWeight = score × confidenceMultiplier × consensusBonus
  * 
  * With the 7-band scale, the score directly represents reliability level.
- * Confidence modulates how much the score deviates from neutral:
- * - High confidence: effective weight ≈ score
- * - Low confidence: effective weight pulled toward neutral (0.5)
+ * Confidence is used for filtering (threshold gate) but not for weighting.
+ * If a score passes the confidence threshold, we trust it as-is.
  */
-// Fixed blend center - the neutral point for uncertain/unknown sources
-const BLEND_CENTER = 0.5;
-
 export function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  const { score, confidence } = data;
-  
-  // Simple formula: confidence modulates deviation from neutral
-  // effectiveWeight = 0.5 + (score - 0.5) × confidence
-  // - High confidence (1.0): effective weight = score
-  // - Low confidence (0.5): effective weight halfway between 0.5 and score
-  // - Zero confidence: effective weight = 0.5 (neutral)
-  const deviation = score - BLEND_CENTER;
-  const effectiveWeight = BLEND_CENTER + deviation * confidence;
-  
-  // Clamp to [0, 1] for safety
-  return Math.max(0, Math.min(1.0, effectiveWeight));
+  // Simple: effective weight = score
+  // Confidence already filtered out low-quality evaluations (threshold gate)
+  // If it passed that gate, the score IS the effective weight
+  return data.score;
 }
 
 /**

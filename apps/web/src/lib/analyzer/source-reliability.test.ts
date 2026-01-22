@@ -350,10 +350,10 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     const sources = [{ id: "s1", trackRecordScore: 0.95 }]; // High reliability
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // New simple formula: effectiveWeight = 0.5 + (0.95 - 0.5) × 0.7 = 0.5 + 0.315 = 0.815
-    // adjustedTruth = 50 + (80 - 50) × 0.815 = 50 + 24.45 ≈ 74
-    expect(result[0].truthPercentage).toBeCloseTo(74, 0);
-    expect(result[0].evidenceWeight).toBeCloseTo(0.815, 2);
+    // Simple: effectiveWeight = score = 0.95
+    // adjustedTruth = 50 + (80 - 50) × 0.95 = 50 + 28.5 ≈ 79
+    expect(result[0].truthPercentage).toBeCloseTo(79, 0);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.95, 2);
   });
 
   it("pulls truth toward neutral for low reliability source", () => {
@@ -364,10 +364,10 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     const sources = [{ id: "s1", trackRecordScore: 0.3 }]; // Low reliability
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // New simple formula: effectiveWeight = 0.5 + (0.3 - 0.5) × 0.7 = 0.5 - 0.14 = 0.36
-    // adjustedTruth = 50 + (80 - 50) × 0.36 = 50 + 10.8 ≈ 61
-    expect(result[0].truthPercentage).toBe(61);
-    expect(result[0].evidenceWeight).toBeCloseTo(0.36, 2);
+    // Simple: effectiveWeight = score = 0.3
+    // adjustedTruth = 50 + (80 - 50) × 0.3 = 50 + 9 = 59
+    expect(result[0].truthPercentage).toBe(59);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.3, 2);
   });
 
   it("averages effective weights from multiple supporting facts", () => {
@@ -384,13 +384,13 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     ];
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // New simple formula: effectiveWeight = 0.5 + (score - 0.5) × confidence
-    // s1: effectiveWeight = 0.5 + (0.9 - 0.5) × 0.7 = 0.5 + 0.28 = 0.78
-    // s2: effectiveWeight = 0.5 + (0.5 - 0.5) × 0.7 = 0.5 + 0 = 0.5
-    // avgWeight = (0.78 + 0.5) / 2 = 0.64
-    // adjustedTruth = 50 + (80 - 50) × 0.64 = 50 + 19.2 ≈ 69
-    expect(result[0].truthPercentage).toBe(69);
-    expect(result[0].evidenceWeight).toBeCloseTo(0.64, 2);
+    // Simple: effectiveWeight = score
+    // s1: effectiveWeight = 0.9
+    // s2: effectiveWeight = 0.5
+    // avgWeight = (0.9 + 0.5) / 2 = 0.7
+    // adjustedTruth = 50 + (80 - 50) × 0.7 = 50 + 21 = 71
+    expect(result[0].truthPercentage).toBe(71);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.7, 2);
   });
 
   it("clamps truth percentage to valid range", () => {
@@ -415,9 +415,9 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     const sources = [{ id: "s1", trackRecordScore: 0.9 }];
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // New simple formula: effectiveWeight = 0.5 + (0.9 - 0.5) × 0.7 = 0.78
-    // Confidence formula: confidence × (0.5 + avgWeight/2) = 80 × (0.5 + 0.39) = 80 × 0.89 = 71.2 ≈ 71
-    expect(result[0].confidence).toBe(71);
+    // Simple: effectiveWeight = score = 0.9
+    // Confidence formula: confidence × (0.5 + avgWeight/2) = 80 × (0.5 + 0.45) = 80 × 0.95 = 76
+    expect(result[0].confidence).toBe(76);
   });
 });
 

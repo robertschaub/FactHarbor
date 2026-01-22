@@ -577,62 +577,50 @@ sources.push({
   trackRecordConsensus: reliabilityData?.consensusAchieved ?? null,
 });
 
-// 4. Calculate effective weight and apply to verdicts
-const avgSourceReliabilityWeight = calculateEffectiveWeight(...);
-const adjustedVerdict = Math.round(50 + (v.verdict - 50) * avgSourceReliabilityWeight);
-const adjustedConfidence = Math.round(v.confidence * (0.5 + avgSourceReliabilityWeight / 2));
+// 4. Apply score as weight to verdicts
+const avgSourceScore = sources.reduce((sum, s) => sum + s.trackRecordScore, 0) / sources.length;
+const adjustedVerdict = Math.round(50 + (v.verdict - 50) * avgSourceScore);
+const adjustedConfidence = Math.round(v.confidence * (0.5 + avgSourceScore / 2));
 ```
 
-### Effective Weight Calculation
+### Score = Weight
 
-With the 7-band scale, the LLM score directly represents reliability. Confidence modulates how much the score deviates from neutral:
+With the 7-band scale, the LLM score directly represents reliability and is used as-is:
 
 ```typescript
-const BLEND_CENTER = 0.5;  // Fixed: mathematical neutral
-
 function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  const { score, confidence } = data;
-  
-  // Confidence modulates deviation from neutral
-  // effectiveWeight = 0.5 + (score - 0.5) × confidence
-  const deviation = score - BLEND_CENTER;
-  const effectiveWeight = BLEND_CENTER + deviation * confidence;
-  
-  return Math.max(0, Math.min(1.0, effectiveWeight));
+  // Simple: score IS the weight
+  // Confidence already filtered out low-quality evaluations (threshold gate)
+  return data.score;
 }
 ```
 
-| Component | Effect |
-|-----------|--------|
-| **Score** | LLM-evaluated reliability (7-band scale, 0.0-1.0) |
-| **Confidence** | How certain the LLM was - pulls toward neutral when low |
-| **Blend Center** | Fixed at 0.5 (mathematical neutral) |
+| Component | Purpose |
+|-----------|---------|
+| **Score** | LLM-evaluated reliability (7-band scale) - used directly as weight |
+| **Confidence** | Quality gate (threshold: 65%) - scores below are rejected |
+| **Consensus** | Multi-model agreement (Claude + GPT-4 within 15%) |
 
 **Key Design Decisions**:
-- **Simple formula**: `effectiveWeight = 0.5 + (score - 0.5) × confidence`
-- High confidence (1.0) → effective weight = score
-- Low confidence (0.5) → effective weight halfway between 0.5 and score
-- The 7-band scale makes artificial amplification unnecessary
+- **Score = Weight** - No transformation, what LLM says is what we use
+- **Confidence is a gate, not a modifier** - If evaluation passes threshold, we trust it
+- **Transparency** - A 70% score means 70% weight, no hidden calculations
 
 **Examples:**
-- High-rated source (95% score, 95% conf): `0.5 + 0.45 × 0.95 = 93%` effective
-- Mixed source (67% score, 83% conf): `0.5 + 0.17 × 0.83 = 64%` effective
-- Low quality (40% score, 70% conf): `0.5 + (-0.10) × 0.70 = 43%` effective
-- Unknown source (50% score, 50% conf): `0.5 + 0.0 × 0.50 = 50%` effective (neutral)
+- Reuters (95% score): 95% weight
+- Fox Business (67% score): 67% weight
+- xinhuanet.com (27% score): 27% weight
+- Unknown source (50% default): 50% weight (neutral)
 
 ### Unknown Source Handling
 
-Sources not in the cache are assigned a configurable default score:
+Sources not in the cache are assigned a default score:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `FH_SR_DEFAULT_SCORE` | `0.5` | Score assigned to unknown sources (neutral center) |
 
-Unknown sources use:
-- Default score (0.5 = neutral)
-- Low confidence (0.5)
-
-This results in an effective weight of 50% (neutral), applying appropriate skepticism to unverified sources while not completely discounting their evidence.
+This results in 50% weight (neutral), applying appropriate skepticism to unverified sources while not completely discounting their evidence.
 
 ### Multi-Model Consensus
 

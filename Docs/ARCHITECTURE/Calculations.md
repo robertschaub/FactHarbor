@@ -514,37 +514,28 @@ This prevents unsupported judgments like "27-year sentence was proportionate" wi
 
 Source reliability scores influence verdict calculations by adjusting truth percentages based on the credibility of evidence sources. This applies across **all three analysis pipelines**.
 
-### Effective Weight Formula
+### Score = Verdict Weight
 
-With the 7-band scale, the LLM score directly represents reliability. Confidence modulates how much the score deviates from neutral:
+With the 7-band scale, the LLM score directly represents reliability and is used as-is for verdict weighting:
 
 ```typescript
-const BLEND_CENTER = 0.5;  // Fixed: mathematical neutral
-
 function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  const { score, confidence } = data;
-  
-  // Confidence modulates deviation from neutral
-  // effectiveWeight = 0.5 + (score - 0.5) × confidence
-  const deviation = score - BLEND_CENTER;
-  const effectiveWeight = BLEND_CENTER + deviation * confidence;
-  
-  return Math.max(0, Math.min(1.0, effectiveWeight));
+  // Simple: score IS the weight
+  // Confidence already filtered out low-quality evaluations (threshold gate)
+  return data.score;
 }
 ```
 
 | Component | Purpose |
 |-----------|---------|
-| **Score** | LLM-evaluated reliability (7-band scale, 0.0-1.0) |
-| **Confidence** | How certain the LLM was - pulls toward neutral when low |
-| **Blend Center** | Fixed at 0.5 (mathematical neutral) |
+| **Score** | LLM-evaluated reliability (7-band scale, 0.0-1.0) - used directly as weight |
+| **Confidence** | Quality gate (threshold: 65%) - scores below threshold are rejected |
+| **Consensus** | Multi-model agreement (Claude + GPT-4 must agree within 15%) |
 
 **Key Design Decisions**:
-- **Simple formula**: `effectiveWeight = 0.5 + (score - 0.5) × confidence`
-- **High confidence** (1.0): effective weight = score (full impact)
-- **Low confidence** (0.5): effective weight halfway between 0.5 and score
-- **Zero confidence**: effective weight = 0.5 (neutral)
-- The 7-band scale makes artificial amplification unnecessary
+- **Score = Weight** - No transformation, what LLM says is what we use
+- **Confidence is a gate, not a modifier** - If evaluation passes 65% confidence threshold, we trust it
+- **Transparency** - A 70% score means 70% weight, no hidden calculations
 
 ### Reliability Score Scale (7-Band Symmetric)
 
@@ -567,18 +558,16 @@ The source reliability system uses a symmetric 7-band scale centered at 0.5, mir
 - **Above 0.58** = verdict preservation (trusted source)
 - **Below 0.43** = verdict skepticism (unreliable source)
 
-### Effective Weight Examples
+### Score Examples
 
-Using formula: `effectiveWeight = 0.5 + (score - 0.5) × confidence`
-
-| Source | Score | Confidence | Calculation | Effective Weight |
-|--------|-------|------------|-------------|------------------|
-| Reuters | 95% | 95% | 0.5 + 0.45 × 0.95 | **93%** |
-| bag.admin.ch | 93% | 90% | 0.5 + 0.43 × 0.90 | **89%** |
-| Fox Business | 67% | 83% | 0.5 + 0.17 × 0.83 | **64%** |
-| Reddit | 55% | 63% | 0.5 + 0.05 × 0.63 | **53%** |
-| Low quality | 40% | 70% | 0.5 + (-0.10) × 0.70 | **43%** |
-| Unknown source | 50%* | 50% | 0.5 + 0.0 × 0.50 | **50%** (neutral) |
+| Source | Score | Confidence | Consensus | Used in Verdicts |
+|--------|-------|------------|-----------|------------------|
+| Reuters | 95% | 95% | ✓ | **95%** |
+| bag.admin.ch | 93% | 90% | ✓ | **93%** |
+| Fox Business | 67% | 83% | ✓ | **67%** |
+| xinhuanet.com | 27% | 73% | ✓ | **27%** |
+| bild.de | 44% | 73% | ✓ | **44%** |
+| Unknown source | 50%* | - | - | **50%** (neutral) |
 
 *Unknown sources use `FH_SR_DEFAULT_SCORE=0.5` (symmetric scale center)
 
@@ -599,60 +588,51 @@ adjustedConfidence = Math.round(originalConfidence * (0.5 + avgWeight / 2));
 
 ### Impact Examples
 
-**High Reliability Source (Reuters, 93% effective weight)**
+**High Reliability Source (Reuters, 95% score)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.93 = 82.6% → 83% (MOSTLY-TRUE)
-Impact: Verdict mostly preserved (high score + high confidence)
+Adjusted: 50 + (85 - 50) × 0.95 = 83.3% → 83% (MOSTLY-TRUE)
+Impact: Verdict mostly preserved
 ```
 
-**Unknown Source (50% effective weight - neutral)**
+**Unknown Source (50% score - neutral)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
 Adjusted: 50 + (85 - 50) × 0.50 = 67.5% → 68% (LEANING-TRUE)
-Impact: Strong pull toward neutral (appropriate skepticism for unknown)
+Impact: Strong pull toward neutral (appropriate skepticism)
 ```
 
-**Mixed Source (Reddit 55% score, 63% conf → 53% effective weight)**
+**Low Reliability Source (xinhuanet.com, 27% score)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.53 = 68.6% → 69% (LEANING-TRUE)
-Impact: Slight skepticism due to borderline score
-```
-
-**Low Quality Source (40% score, 70% conf → 43% effective weight)**
-```
-Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.43 = 65% (LEANING-TRUE)
-Impact: Pull toward neutral (unreliable source with high confidence)
+Adjusted: 50 + (85 - 50) × 0.27 = 59.5% → 60% (LEANING-TRUE)
+Impact: Strong pull toward neutral (unreliable source)
 ```
 
 ### Multi-Source Averaging
 
-When a verdict uses multiple sources, their effective weights are averaged:
+When a verdict uses multiple sources, their scores are averaged:
 
 ```
 Verdict evidence from:
-  - reuters.com: 98.7% effective
-  - reddit.com: 50.4% effective
-  - unknown-blog.xyz: 40.6% effective
+  - reuters.com: 95% score
+  - bild.de: 44% score
+  - unknown-blog.xyz: 50% score (default)
 
-Average weight: (98.7 + 50.4 + 40.6) / 3 = 63.2%
+Average weight: (95 + 44 + 50) / 3 = 63%
 
-Original: 85% → Adjusted: 50 + (85 - 50) × 0.632 = 72.1% (LEANING-TRUE)
+Original: 85% → Adjusted: 50 + (85 - 50) × 0.63 = 72% (LEANING-TRUE)
 ```
 
 ### Unknown Source Handling
 
-Sources not in the reliability cache are assigned defaults:
+Sources not in the reliability cache are assigned a default score:
 
 | Property | Default Value | Rationale |
 |----------|---------------|-----------|
 | Score | 0.5 (`FH_SR_DEFAULT_SCORE`) | Neutral center (symmetric scale) |
-| Confidence | 0.5 | Low confidence (no evaluation) |
-| Consensus | false | No multi-model agreement |
 
-This results in 50% effective weight (neutral center), applying appropriate skepticism without completely discounting evidence.
+This results in 50% weight (neutral), applying appropriate skepticism without completely discounting evidence.
 
 ### Pipeline Integration
 

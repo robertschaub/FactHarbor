@@ -339,29 +339,6 @@ export default function SourceReliabilityPage() {
     return "Highly Unreliable (0-15%)";
   };
 
-  /**
-   * Calculate effective weight used in verdict calculations.
-   * Simple formula: effectiveWeight = 0.5 + (score - 0.5) × confidence
-   * - High confidence: effective weight ≈ score
-   * - Low confidence: pulls toward neutral (0.5)
-   */
-  const calculateEffectiveWeight = (score: number, confidence: number, _consensus: boolean): number => {
-    const blendCenter = 0.5;
-    const deviation = score - blendCenter;
-    const effectiveWeight = blendCenter + deviation * confidence;
-    return Math.max(0, Math.min(1.0, effectiveWeight));
-  };
-
-  // Symmetric 7-band scale for effective weight colors
-  const getEffectiveWeightColor = (weight: number): string => {
-    if (weight >= 0.86) return "#10b981"; // green - highly reliable
-    if (weight >= 0.72) return "#22c55e"; // emerald - reliable
-    if (weight >= 0.58) return "#84cc16"; // lime - mostly reliable
-    if (weight >= 0.43) return "#8b5cf6"; // purple - uncertain (center)
-    if (weight >= 0.29) return "#f59e0b"; // amber - mostly unreliable
-    if (weight >= 0.15) return "#f97316"; // orange - unreliable
-    return "#ef4444"; // red - highly unreliable
-  };
 
   if (loading && !data) {
     return (
@@ -584,9 +561,6 @@ export default function SourceReliabilityPage() {
                   </th>
                   <th>Models</th>
                   <th>Consensus</th>
-                  <th title="Effective Weight = Score × Confidence × Consensus. This is the actual weight used in verdict calculations.">
-                    Eff. Weight
-                  </th>
                   <th onClick={() => handleSort("evaluated_at")} className={styles.sortable}>
                     Evaluated {sortBy === "evaluated_at" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
@@ -597,13 +571,7 @@ export default function SourceReliabilityPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.entries.map((entry) => {
-                  const effectiveWeight = calculateEffectiveWeight(
-                    entry.score,
-                    entry.confidence,
-                    entry.consensusAchieved
-                  );
-                  return (
+                {data.entries.map((entry) => (
                   <tr key={entry.domain} className={selectedDomains.has(entry.domain) ? styles.selectedRow : ""}>
                     <td className={styles.checkboxCol}>
                       <input
@@ -641,19 +609,10 @@ export default function SourceReliabilityPage() {
                     </td>
                     <td>
                       {entry.consensusAchieved ? (
-                        <span className={styles.consensusYes} title="Multi-model consensus achieved (+5% bonus)">✓</span>
+                        <span className={styles.consensusYes} title="Multi-model consensus achieved">✓</span>
                       ) : (
                         <span className={styles.consensusNo} title="No consensus (single model only)">✗</span>
                       )}
-                    </td>
-                    <td>
-                      <span
-                        className={styles.scoreBadge}
-                        style={{ backgroundColor: getEffectiveWeightColor(effectiveWeight) }}
-                        title={`Effective weight used in verdict calculations\n= Score × (0.75 + Confidence×0.25) × Consensus bonus`}
-                      >
-                        {formatScore(effectiveWeight)}
-                      </span>
                     </td>
                     <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
                     <td className={styles.date}>{formatDate(entry.expiresAt)}</td>
@@ -667,8 +626,7 @@ export default function SourceReliabilityPage() {
                       </button>
                     </td>
                   </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </table>
           </div>
@@ -714,19 +672,12 @@ export default function SourceReliabilityPage() {
           <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-15%: Highly Unreliable</span>
         </div>
         
-        <h3 style={{ marginTop: "16px" }}>How Verdict Weighting Works</h3>
+        <h3 style={{ marginTop: "16px" }}>How It Works</h3>
         <div className={styles.legendItems} style={{ flexDirection: "column", gap: "8px" }}>
-          <span><strong>Effective Weight</strong> = 0.5 + (score - 0.5) × confidence</span>
-          <span>• <strong>High confidence</strong>: effective weight ≈ score (full impact)</span>
-          <span>• <strong>Low confidence</strong>: pulls toward neutral (0.5)</span>
-          <span>• <strong>Unknown Sources</strong>: 50% score, 50% confidence → 50% effective (neutral)</span>
-        </div>
-        
-        <h3 style={{ marginTop: "16px" }}>Examples</h3>
-        <div className={styles.legendItems} style={{ flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span>High score (95%, 95% conf): 0.5 + 0.45 × 0.95 = <strong>93%</strong> effective</span>
-          <span>Medium (67%, 83% conf): 0.5 + 0.17 × 0.83 = <strong>64%</strong> effective</span>
-          <span>Unknown source (50%, 50% conf): 0.5 + 0.0 × 0.5 = <strong>50%</strong> effective (neutral)</span>
+          <span>• <strong>Score</strong> = LLM-evaluated reliability (directly used in verdict weighting)</span>
+          <span>• <strong>Confidence</strong> = How certain the LLM was (used as quality gate, threshold: 65%)</span>
+          <span>• <strong>Consensus</strong> = Claude and GPT-4 agreed within 15%</span>
+          <span>• <strong>Unknown Sources</strong> = Default to 50% (neutral)</span>
         </div>
       </div>
     </div>
