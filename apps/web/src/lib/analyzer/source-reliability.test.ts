@@ -194,42 +194,48 @@ describe("SR_CONFIG validation", () => {
   });
 });
 
-describe("Score interpretation", () => {
-  // These tests document the expected score ranges
-  it("score 0.9-1.0 indicates very high reliability", () => {
-    const veryHighScore = 0.95;
-    expect(veryHighScore).toBeGreaterThanOrEqual(0.9);
+describe("Score interpretation (symmetric scale centered at 0.5)", () => {
+  // These tests document the expected score ranges for the symmetric scale
+  it("score 0.85-1.0 indicates very high reliability", () => {
+    const veryHighScore = 0.92;
+    expect(veryHighScore).toBeGreaterThanOrEqual(0.85);
     expect(veryHighScore).toBeLessThanOrEqual(1.0);
   });
 
-  it("score 0.8-0.89 indicates high reliability", () => {
-    const highScore = 0.85;
-    expect(highScore).toBeGreaterThanOrEqual(0.8);
-    expect(highScore).toBeLessThan(0.9);
+  it("score 0.70-0.84 indicates high reliability", () => {
+    const highScore = 0.77;
+    expect(highScore).toBeGreaterThanOrEqual(0.70);
+    expect(highScore).toBeLessThan(0.85);
   });
 
-  it("score 0.7-0.79 indicates mostly factual", () => {
-    const mostlyFactualScore = 0.75;
-    expect(mostlyFactualScore).toBeGreaterThanOrEqual(0.7);
-    expect(mostlyFactualScore).toBeLessThan(0.8);
+  it("score 0.55-0.69 indicates mostly factual", () => {
+    const mostlyFactualScore = 0.62;
+    expect(mostlyFactualScore).toBeGreaterThanOrEqual(0.55);
+    expect(mostlyFactualScore).toBeLessThan(0.70);
   });
 
-  it("score 0.5-0.69 indicates mixed reliability", () => {
-    const mixedScore = 0.55;
-    expect(mixedScore).toBeGreaterThanOrEqual(0.5);
-    expect(mixedScore).toBeLessThan(0.7);
+  it("score 0.45-0.54 indicates mixed reliability (neutral center)", () => {
+    const mixedScore = 0.50;
+    expect(mixedScore).toBeGreaterThanOrEqual(0.45);
+    expect(mixedScore).toBeLessThan(0.55);
   });
 
-  it("score 0.3-0.49 indicates low reliability", () => {
-    const lowScore = 0.35;
-    expect(lowScore).toBeGreaterThanOrEqual(0.3);
-    expect(lowScore).toBeLessThan(0.5);
+  it("score 0.30-0.44 indicates low reliability", () => {
+    const lowScore = 0.37;
+    expect(lowScore).toBeGreaterThanOrEqual(0.30);
+    expect(lowScore).toBeLessThan(0.45);
   });
 
-  it("score 0.0-0.29 indicates very low reliability", () => {
-    const veryLowScore = 0.15;
-    expect(veryLowScore).toBeGreaterThanOrEqual(0);
-    expect(veryLowScore).toBeLessThan(0.3);
+  it("score 0.15-0.29 indicates very low reliability", () => {
+    const veryLowScore = 0.22;
+    expect(veryLowScore).toBeGreaterThanOrEqual(0.15);
+    expect(veryLowScore).toBeLessThan(0.30);
+  });
+
+  it("score 0.0-0.14 indicates unreliable (extreme cases)", () => {
+    const unreliableScore = 0.07;
+    expect(unreliableScore).toBeGreaterThanOrEqual(0);
+    expect(unreliableScore).toBeLessThan(0.15);
   });
 
   it("scores are always in 0-1 range", () => {
@@ -272,16 +278,35 @@ describe("Integration: Domain extraction + Importance filter", () => {
   });
 });
 
-describe("applyEvidenceWeighting", () => {
-  it("returns verdicts unchanged when no source scores", () => {
+describe("applyEvidenceWeighting (amplified deviation formula)", () => {
+  // New formula: effectiveWeight = 0.5 + (score - 0.5) × SPREAD × confidence × consensus
+  // Where SPREAD_MULTIPLIER = 1.5, CONSENSUS_SPREAD_MULTIPLIER = 1.15
+  // Default confidence when not specified = 0.7, default consensus = false
+
+  it("returns verdicts unchanged when no supporting facts", () => {
+    const verdicts = [
+      { id: "v1", truthPercentage: 75, confidence: 80, supportingFactIds: [] },
+    ];
+    const facts: any[] = [];
+    const sources: any[] = [];
+
+    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    expect(result[0].truthPercentage).toBe(75); // Truly unchanged (no facts)
+  });
+
+  it("applies neutral weight to unknown sources (null score)", () => {
     const verdicts = [
       { id: "v1", truthPercentage: 75, confidence: 80, supportingFactIds: ["f1"] },
     ];
     const facts = [{ id: "f1", sourceId: "s1" }];
-    const sources = [{ id: "s1", trackRecordScore: null }]; // No score
+    const sources = [{ id: "s1", trackRecordScore: null }]; // Unknown source
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    expect(result[0].truthPercentage).toBe(75); // Unchanged
+    // Unknown source: score=0.5 (neutral), confidence=0.5, no consensus
+    // effectiveWeight = 0.5 + (0.5 - 0.5) × 1.5 × 0.5 × 1.0 = 0.5 + 0 = 0.5
+    // adjustedTruth = 50 + (75 - 50) × 0.5 = 50 + 12.5 = 63
+    expect(result[0].truthPercentage).toBe(63);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.5, 2);
   });
 
   it("adjusts truth percentage based on high reliability source", () => {
@@ -292,10 +317,10 @@ describe("applyEvidenceWeighting", () => {
     const sources = [{ id: "s1", trackRecordScore: 0.95 }]; // High reliability
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // Truth should stay high (80 is 30 above neutral)
-    // Formula: 50 + (80-50) * 0.95 = 50 + 28.5 = 78.5 ≈ 79
+    // effectiveWeight = 0.5 + (0.95 - 0.5) × 1.5 × 0.7 × 1.0 = 0.5 + 0.4725 = 0.9725
+    // adjustedTruth = 50 + (80 - 50) × 0.9725 = 50 + 29.175 ≈ 79
     expect(result[0].truthPercentage).toBeCloseTo(79, 0);
-    expect(result[0].evidenceWeight).toBe(0.95);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.97, 1);
   });
 
   it("pulls truth toward neutral for low reliability source", () => {
@@ -306,12 +331,13 @@ describe("applyEvidenceWeighting", () => {
     const sources = [{ id: "s1", trackRecordScore: 0.3 }]; // Low reliability
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // Truth should be pulled toward neutral
-    // Formula: 50 + (80-50) * 0.3 = 50 + 9 = 59
+    // effectiveWeight = 0.5 + (0.3 - 0.5) × 1.5 × 0.7 × 1.0 = 0.5 - 0.21 = 0.29
+    // adjustedTruth = 50 + (80 - 50) × 0.29 = 50 + 8.7 ≈ 59
     expect(result[0].truthPercentage).toBe(59);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.29, 2);
   });
 
-  it("averages scores from multiple supporting facts", () => {
+  it("averages effective weights from multiple supporting facts", () => {
     const verdicts = [
       { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1", "f2"] },
     ];
@@ -320,15 +346,17 @@ describe("applyEvidenceWeighting", () => {
       { id: "f2", sourceId: "s2" },
     ];
     const sources = [
-      { id: "s1", trackRecordScore: 0.9 },
-      { id: "s2", trackRecordScore: 0.5 },
+      { id: "s1", trackRecordScore: 0.9 },  // High
+      { id: "s2", trackRecordScore: 0.5 },  // Neutral
     ];
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // Average score: (0.9 + 0.5) / 2 = 0.7
-    // Formula: 50 + (80-50) * 0.7 = 50 + 21 = 71
+    // s1: effectiveWeight = 0.5 + (0.9 - 0.5) × 1.5 × 0.7 = 0.5 + 0.42 = 0.92
+    // s2: effectiveWeight = 0.5 + (0.5 - 0.5) × 1.5 × 0.7 = 0.5 + 0 = 0.5
+    // avgWeight = (0.92 + 0.5) / 2 = 0.71
+    // adjustedTruth = 50 + (80 - 50) × 0.71 = 50 + 21.3 ≈ 71
     expect(result[0].truthPercentage).toBe(71);
-    expect(result[0].evidenceWeight).toBe(0.7);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.71, 2);
   });
 
   it("clamps truth percentage to valid range", () => {
@@ -345,7 +373,7 @@ describe("applyEvidenceWeighting", () => {
     expect(normalizeTrackRecordScore(0.75)).toBe(0.75); // Already 0-1
   });
 
-  it("adjusts confidence based on source reliability", () => {
+  it("adjusts confidence based on effective weight", () => {
     const verdicts = [
       { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1"] },
     ];
@@ -353,8 +381,9 @@ describe("applyEvidenceWeighting", () => {
     const sources = [{ id: "s1", trackRecordScore: 0.9 }];
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // Confidence formula: confidence * (0.5 + score/2) = 80 * (0.5 + 0.45) = 80 * 0.95 = 76
-    expect(result[0].confidence).toBe(76);
+    // effectiveWeight = 0.5 + (0.9 - 0.5) × 1.5 × 0.7 = 0.92
+    // Confidence formula: confidence × (0.5 + avgWeight/2) = 80 × (0.5 + 0.46) = 80 × 0.96 = 76.8 ≈ 77
+    expect(result[0].confidence).toBe(77);
   });
 });
 

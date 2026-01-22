@@ -265,20 +265,23 @@ export default function SourceReliabilityPage() {
   };
 
   const getScoreColor = (score: number): string => {
-    if (score >= 0.8) return "#10b981"; // green - High/Very High
-    if (score >= 0.7) return "#84cc16"; // lime - Mostly Factual
-    if (score >= 0.5) return "#f59e0b"; // amber - Mixed
-    if (score >= 0.3) return "#f97316"; // orange - Low
-    return "#ef4444"; // red - Very Low
+    if (score >= 0.85) return "#10b981"; // green - very_high (85-100%)
+    if (score >= 0.70) return "#84cc16"; // lime - high (70-84%)
+    if (score >= 0.55) return "#3b82f6"; // blue - mostly_factual (55-69%)
+    if (score >= 0.45) return "#8b5cf6"; // purple - mixed (45-54%, neutral center)
+    if (score >= 0.30) return "#f59e0b"; // amber - low (30-44%)
+    if (score >= 0.15) return "#f97316"; // orange - very_low (15-29%)
+    return "#ef4444"; // red - unreliable (0-14%)
   };
 
   const getScoreLabel = (score: number): string => {
-    if (score >= 0.9) return "Very High";
-    if (score >= 0.8) return "High";
-    if (score >= 0.7) return "Mostly Factual";
-    if (score >= 0.5) return "Mixed";
-    if (score >= 0.3) return "Low";
-    return "Very Low";
+    if (score >= 0.85) return "Very High (85-100%)";
+    if (score >= 0.70) return "High (70-84%)";
+    if (score >= 0.55) return "Mostly Factual (55-69%)";
+    if (score >= 0.45) return "Mixed (45-54%)";
+    if (score >= 0.30) return "Low (30-44%)";
+    if (score >= 0.15) return "Very Low (15-29%)";
+    return "Unreliable (0-14%)";
   };
 
   /**
@@ -308,11 +311,13 @@ export default function SourceReliabilityPage() {
   };
 
   const getEffectiveWeightColor = (weight: number): string => {
-    if (weight >= 0.85) return "#10b981"; // green
-    if (weight >= 0.70) return "#84cc16"; // lime
-    if (weight >= 0.55) return "#f59e0b"; // amber
-    if (weight >= 0.40) return "#f97316"; // orange
-    return "#ef4444"; // red
+    if (weight >= 0.85) return "#10b981"; // green - very high
+    if (weight >= 0.70) return "#84cc16"; // lime - high
+    if (weight >= 0.55) return "#3b82f6"; // blue - mostly factual
+    if (weight >= 0.45) return "#8b5cf6"; // purple - mixed (neutral)
+    if (weight >= 0.30) return "#f59e0b"; // amber - low
+    if (weight >= 0.15) return "#f97316"; // orange - very low
+    return "#ef4444"; // red - unreliable
   };
 
   if (loading && !data) {
@@ -572,13 +577,15 @@ export default function SourceReliabilityPage() {
 
       {/* Legend */}
       <div className={styles.legend}>
-        <h3>Score Legend</h3>
+        <h3>Score Legend (Symmetric Scale)</h3>
         <div className={styles.legendItems}>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> 80-100%: High/Very High</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> 70-79%: Mostly Factual</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 50-69%: Mixed</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> 30-49%: Low</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-29%: Very Low</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> 85-100%: Very High</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> 70-84%: High</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#3b82f6" }} /> 55-69%: Mostly Factual</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#8b5cf6" }} /> 45-54%: Mixed (neutral center)</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 30-44%: Low</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> 15-29%: Very Low</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-14%: Unreliable</span>
         </div>
         
         <h3 style={{ marginTop: "16px" }}>How Verdict Weighting Works</h3>

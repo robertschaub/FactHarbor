@@ -354,11 +354,13 @@ export function clampTruthPercentage(value: number): number {
 /**
  * Default score for unknown sources (sources without reliability data).
  * 
- * Set to 0.65 (65%) which represents "cautiously neutral" - slightly below
- * the "Mostly Factual" threshold of 0.70. This means:
- * - Unknown sources are treated with appropriate skepticism
- * - They're not penalized as heavily as known unreliable sources
- * - Known reliable sources (0.80+) get better treatment than unknown
+ * Set to 0.5 (50%) which represents the neutral center of the symmetric scale:
+ * - Above 0.5: Positive boost to verdict preservation (trusted sources)
+ * - At 0.5: No change (neutral/unknown - appropriate skepticism)
+ * - Below 0.5: Pull verdict toward neutral (skepticism for unreliable sources)
+ * 
+ * Unknown sources use this with low confidence (0.5), resulting in:
+ * effectiveWeight = 0.5 + (0.5 - 0.5) × spread × 0.5 = 0.5 (neutral)
  * 
  * Configurable via FH_SR_DEFAULT_SCORE environment variable.
  */
@@ -417,16 +419,17 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
  * Apply evidence weighting based on source track record scores.
  * 
  * This adjusts verdict truth percentages based on source reliability:
- * - High reliability sources (0.8-1.0): Verdicts move further from neutral
- * - Low reliability sources (0.0-0.5): Verdicts move closer to neutral
- * - Unknown sources: Use DEFAULT_UNKNOWN_SOURCE_SCORE (0.65)
+ * - High reliability sources (0.70+): Verdicts preserved (positive boost)
+ * - Neutral sources (0.45-0.54): No change (center of symmetric scale)
+ * - Low reliability sources (<0.45): Verdicts pulled toward neutral
+ * - Unknown sources: Use DEFAULT_UNKNOWN_SOURCE_SCORE (0.5 = neutral)
  * 
  * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
  * 
  * The effective weight now incorporates:
- * - Score: Base reliability rating
+ * - Score: Base reliability rating (symmetric scale centered at 0.5)
  * - Confidence: How confident the LLM was in its evaluation  
- * - Consensus: Whether multiple models agreed
+ * - Consensus: Whether multiple models agreed (multiplies spread)
  */
 export function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
@@ -539,13 +542,14 @@ export function calculateOverallCredibility(
 
   const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
 
+  // Credibility levels aligned with symmetric scale (centered at 0.5)
   let credibilityLevel: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
-  if (averageScore >= 0.8) {
-    credibilityLevel = "HIGH";
-  } else if (averageScore >= 0.6) {
-    credibilityLevel = "MEDIUM";
+  if (averageScore >= 0.70) {
+    credibilityLevel = "HIGH";      // high + very_high (0.70+)
+  } else if (averageScore >= 0.45) {
+    credibilityLevel = "MEDIUM";    // mixed + mostly_factual (0.45-0.69)
   } else {
-    credibilityLevel = "LOW";
+    credibilityLevel = "LOW";       // low + very_low + unreliable (<0.45)
   }
 
   return {

@@ -230,11 +230,11 @@ function getEventLevelClass(level: string): string {
   }
 }
 
-// Helper function to get track record score CSS class
+// Helper function to get track record score CSS class (symmetric scale centered at 0.5)
 function getTrackRecordClass(score: number): string {
-  if (score >= 0.8) return styles.trackRecordHigh;
-  if (score >= 0.6) return styles.trackRecordMedium;
-  return styles.trackRecordLow;
+  if (score >= 0.70) return styles.trackRecordHigh;    // high + very_high
+  if (score >= 0.45) return styles.trackRecordMedium;  // mixed + mostly_factual
+  return styles.trackRecordLow;                        // low + very_low + unreliable
 }
 
 export default function JobPage() {
