@@ -89,20 +89,20 @@
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   text-align: center;
 }
 
 .statValue {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
 }
 
 .statLabel {
-  font-size: 13px;
+  font-size: 12px;
   color: #666;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* Table */
