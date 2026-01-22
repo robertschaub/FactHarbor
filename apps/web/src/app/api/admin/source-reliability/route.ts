@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore, setCachedScore } from "@/lib/source-reliability-cache";
+import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore, setCachedScore, batchGetCachedData } from "@/lib/source-reliability-cache";
 
 export const runtime = "nodejs";
 
@@ -85,6 +85,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const domainsInput: string = body.domains || "";
+    const forceReevaluate: boolean = body.forceReevaluate ?? false;
     
     // Parse domains from input (comma-separated, newline-separated, or space-separated)
     const domains = domainsInput
@@ -107,6 +108,12 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check which domains already exist in cache (if not forcing re-evaluation)
+    let existingDomains = new Map<string, { score: number; confidence: number; consensusAchieved: boolean }>();
+    if (!forceReevaluate) {
+      existingDomains = await batchGetCachedData(domains);
+    }
+
     // Get config for evaluation
     const multiModel = process.env.FH_SR_MULTI_MODEL !== "false";
     const confidenceThreshold = parseFloat(process.env.FH_SR_CONFIDENCE_THRESHOLD || "0.65");
@@ -116,6 +123,7 @@ export async function POST(req: Request) {
     const results: Array<{
       domain: string;
       success: boolean;
+      cached?: boolean;
       score?: number;
       confidence?: number;
       consensus?: boolean;
@@ -126,6 +134,21 @@ export async function POST(req: Request) {
     // Evaluate each domain
     for (const domain of domains) {
       try {
+        // Check if already cached (and not forcing re-evaluation)
+        const existingData = existingDomains.get(domain);
+        if (existingData) {
+          results.push({
+            domain,
+            success: true,
+            cached: true,
+            score: existingData.score,
+            confidence: existingData.confidence,
+            consensus: existingData.consensusAchieved,
+            models: "(cached)",
+          });
+          continue;
+        }
+
         // Call internal evaluate endpoint
         const evalUrl = new URL("/api/internal/evaluate-source", req.url);
         const evalResponse = await fetch(evalUrl.toString(), {
@@ -167,6 +190,7 @@ export async function POST(req: Request) {
         results.push({
           domain,
           success: true,
+          cached: false,
           score: evalData.score,
           confidence: evalData.confidence,
           consensus: evalData.consensusAchieved,
@@ -185,12 +209,16 @@ export async function POST(req: Request) {
 
     const successful = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
+    const cached = results.filter(r => r.success && r.cached).length;
+    const newlyEvaluated = results.filter(r => r.success && !r.cached).length;
 
     return NextResponse.json({
       success: true,
-      evaluated: domains.length,
+      total: domains.length,
       successful,
       failed,
+      cached,
+      newlyEvaluated,
       results,
     });
   } catch (err) {

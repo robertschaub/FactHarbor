@@ -63,9 +63,11 @@ export default function SourceReliabilityPage() {
   const [deleting, setDeleting] = useState(false);
   const [domainsInput, setDomainsInput] = useState("");
   const [evaluating, setEvaluating] = useState(false);
+  const [forceReevaluate, setForceReevaluate] = useState(false);
   const [evalResults, setEvalResults] = useState<Array<{
     domain: string;
     success: boolean;
+    cached?: boolean;
     score?: number;
     confidence?: number;
     consensus?: boolean;
@@ -267,7 +269,7 @@ export default function SourceReliabilityPage() {
           ...getHeaders(),
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ domains: domainsInput }),
+        body: JSON.stringify({ domains: domainsInput, forceReevaluate }),
       });
       
       if (!response.ok) {
@@ -489,13 +491,24 @@ export default function SourceReliabilityPage() {
             rows={4}
             disabled={evaluating}
           />
-          <button
-            onClick={handleEvaluateDomains}
-            className={styles.button}
-            disabled={evaluating || !domainsInput.trim()}
-          >
-            {evaluating ? "Evaluating..." : "Evaluate Domains"}
-          </button>
+          <div className={styles.evaluateActions}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={forceReevaluate}
+                onChange={(e) => setForceReevaluate(e.target.checked)}
+                disabled={evaluating}
+              />
+              Re-evaluate existing domains
+            </label>
+            <button
+              onClick={handleEvaluateDomains}
+              className={styles.button}
+              disabled={evaluating || !domainsInput.trim()}
+            >
+              {evaluating ? "Evaluating..." : "Evaluate Domains"}
+            </button>
+          </div>
         </div>
         
         {/* Evaluation Results */}
@@ -510,12 +523,12 @@ export default function SourceReliabilityPage() {
                   <th>Score</th>
                   <th>Confidence</th>
                   <th>Consensus</th>
-                  <th>Models</th>
+                  <th>Source</th>
                 </tr>
               </thead>
               <tbody>
                 {evalResults.map((r, i) => (
-                  <tr key={i} className={r.success ? styles.evalSuccess : styles.evalFailed}>
+                  <tr key={i} className={r.success ? (r.cached ? styles.evalCached : styles.evalSuccess) : styles.evalFailed}>
                     <td>{r.domain}</td>
                     <td>{r.success ? "✓" : "✗"}</td>
                     <td>
@@ -527,7 +540,9 @@ export default function SourceReliabilityPage() {
                     </td>
                     <td>{r.success && r.confidence !== undefined ? formatScore(r.confidence) : "-"}</td>
                     <td>{r.success ? (r.consensus ? "✓" : "✗") : "-"}</td>
-                    <td>{r.models || "-"}</td>
+                    <td className={r.cached ? styles.cachedLabel : ""}>
+                      {r.cached ? "Cached" : r.models || "-"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
