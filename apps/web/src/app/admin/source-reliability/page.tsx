@@ -264,24 +264,21 @@ export default function SourceReliabilityPage() {
     return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
+  // Symmetric 5-band scale: each band is 20 points, centered at 0.5
   const getScoreColor = (score: number): string => {
-    if (score >= 0.85) return "#10b981"; // green - very_high (85-100%)
-    if (score >= 0.70) return "#84cc16"; // lime - high (70-84%)
-    if (score >= 0.55) return "#3b82f6"; // blue - mostly_factual (55-69%)
-    if (score >= 0.45) return "#8b5cf6"; // purple - mixed (45-54%, neutral center)
-    if (score >= 0.30) return "#f59e0b"; // amber - low (30-44%)
-    if (score >= 0.15) return "#f97316"; // orange - very_low (15-29%)
-    return "#ef4444"; // red - unreliable (0-14%)
+    if (score >= 0.80) return "#10b981"; // green - very_high (80-100%)
+    if (score >= 0.60) return "#84cc16"; // lime - high (60-80%)
+    if (score >= 0.40) return "#8b5cf6"; // purple - mixed (40-60%, neutral center)
+    if (score >= 0.20) return "#f59e0b"; // amber - low (20-40%)
+    return "#ef4444"; // red - very_low (0-20%)
   };
 
   const getScoreLabel = (score: number): string => {
-    if (score >= 0.85) return "Very High (85-100%)";
-    if (score >= 0.70) return "High (70-84%)";
-    if (score >= 0.55) return "Mostly Factual (55-69%)";
-    if (score >= 0.45) return "Mixed (45-54%)";
-    if (score >= 0.30) return "Low (30-44%)";
-    if (score >= 0.15) return "Very Low (15-29%)";
-    return "Unreliable (0-14%)";
+    if (score >= 0.80) return "Very High (80-100%)";
+    if (score >= 0.60) return "High (60-80%)";
+    if (score >= 0.40) return "Mixed (40-60%)";
+    if (score >= 0.20) return "Low (20-40%)";
+    return "Very Low (0-20%)";
   };
 
   /**
@@ -310,14 +307,13 @@ export default function SourceReliabilityPage() {
     return Math.max(0, Math.min(1.0, blendCenter + amplifiedDeviation));
   };
 
+  // Symmetric 5-band scale for effective weight colors
   const getEffectiveWeightColor = (weight: number): string => {
-    if (weight >= 0.85) return "#10b981"; // green - very high
-    if (weight >= 0.70) return "#84cc16"; // lime - high
-    if (weight >= 0.55) return "#3b82f6"; // blue - mostly factual
-    if (weight >= 0.45) return "#8b5cf6"; // purple - mixed (neutral)
-    if (weight >= 0.30) return "#f59e0b"; // amber - low
-    if (weight >= 0.15) return "#f97316"; // orange - very low
-    return "#ef4444"; // red - unreliable
+    if (weight >= 0.80) return "#10b981"; // green - very high
+    if (weight >= 0.60) return "#84cc16"; // lime - high
+    if (weight >= 0.40) return "#8b5cf6"; // purple - mixed (neutral)
+    if (weight >= 0.20) return "#f59e0b"; // amber - low
+    return "#ef4444"; // red - very low
   };
 
   if (loading && !data) {
@@ -577,15 +573,13 @@ export default function SourceReliabilityPage() {
 
       {/* Legend */}
       <div className={styles.legend}>
-        <h3>Score Legend (Symmetric Scale)</h3>
+        <h3>Score Legend (Symmetric 5-Band Scale)</h3>
         <div className={styles.legendItems}>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> 85-100%: Very High</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> 70-84%: High</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#3b82f6" }} /> 55-69%: Mostly Factual</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#8b5cf6" }} /> 45-54%: Mixed (neutral center)</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 30-44%: Low</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> 15-29%: Very Low</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-14%: Unreliable</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> 80-100%: Very High</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> 60-80%: High</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#8b5cf6" }} /> 40-60%: Mixed (neutral center)</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 20-40%: Low</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-20%: Very Low</span>
         </div>
         
         <h3 style={{ marginTop: "16px" }}>How Verdict Weighting Works</h3>

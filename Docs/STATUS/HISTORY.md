@@ -62,9 +62,9 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
      effectiveWeight = 0.5 + (score - 0.5) × spreadMultiplier × confidence × consensusFactor
      ```
    - Configurable: `FH_SR_SPREAD_MULTIPLIER` (default 1.5), `FH_SR_CONSENSUS_SPREAD_MULTIPLIER` (default 1.15)
-   - **Symmetric score scale** centered at 0.5:
-     - 0.85-1.0: very_high | 0.70-0.84: high | 0.55-0.69: mostly_factual
-     - 0.45-0.54: mixed (neutral) | 0.30-0.44: low | 0.15-0.29: very_low
+   - **Symmetric 5-band scale** (20 points each, centered at 0.5):
+     - 0.80-1.00: very_high | 0.60-0.80: high | 0.40-0.60: mixed (neutral center)
+     - 0.20-0.40: low | 0.00-0.20: very_low
    - Unknown sources default to 0.5 (truly neutral, no verdict bias)
 
 3. **Admin Interface**: New admin page for cache management

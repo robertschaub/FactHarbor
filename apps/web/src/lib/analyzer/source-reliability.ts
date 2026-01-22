@@ -418,15 +418,16 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
 /**
  * Apply evidence weighting based on source track record scores.
  * 
- * This adjusts verdict truth percentages based on source reliability:
- * - High reliability sources (0.70+): Verdicts preserved (positive boost)
- * - Neutral sources (0.45-0.54): No change (center of symmetric scale)
- * - Low reliability sources (<0.45): Verdicts pulled toward neutral
- * - Unknown sources: Use DEFAULT_UNKNOWN_SOURCE_SCORE (0.5 = neutral)
+ * Symmetric 5-band scale (20 points each, centered at 0.5):
+ * - 0.80-1.00: very_high (verdict fully preserved)
+ * - 0.60-0.80: high (verdict mostly preserved)
+ * - 0.40-0.60: mixed/neutral (no change, center band contains 0.5)
+ * - 0.20-0.40: low (pulls verdict toward neutral)
+ * - 0.00-0.20: very_low (strong pull toward neutral)
  * 
  * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
  * 
- * The effective weight now incorporates:
+ * The effective weight incorporates:
  * - Score: Base reliability rating (symmetric scale centered at 0.5)
  * - Confidence: How confident the LLM was in its evaluation  
  * - Consensus: Whether multiple models agreed (multiplies spread)
@@ -542,14 +543,14 @@ export function calculateOverallCredibility(
 
   const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
 
-  // Credibility levels aligned with symmetric scale (centered at 0.5)
+  // Credibility levels aligned with symmetric 5-band scale (centered at 0.5)
   let credibilityLevel: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
-  if (averageScore >= 0.70) {
-    credibilityLevel = "HIGH";      // high + very_high (0.70+)
-  } else if (averageScore >= 0.45) {
-    credibilityLevel = "MEDIUM";    // mixed + mostly_factual (0.45-0.69)
+  if (averageScore >= 0.60) {
+    credibilityLevel = "HIGH";      // high + very_high (0.60+)
+  } else if (averageScore >= 0.40) {
+    credibilityLevel = "MEDIUM";    // mixed (0.40-0.60, neutral center)
   } else {
-    credibilityLevel = "LOW";       // low + very_low + unreliable (<0.45)
+    credibilityLevel = "LOW";       // low + very_low (<0.40)
   }
 
   return {

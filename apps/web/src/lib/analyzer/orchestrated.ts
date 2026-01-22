@@ -8358,13 +8358,14 @@ function calculateOverallCredibility(
       const hostname = new URL(inputUrl).hostname.replace(/^www\./, "");
       const inputScore = getTrackRecordScore(inputUrl);
       if (inputScore !== null) {
+        // Symmetric 5-band scale: 0.80/0.60/0.40/0.20
         const level =
-          inputScore >= 0.85
+          inputScore >= 0.80
             ? "Very High"
-            : inputScore >= 0.7
+            : inputScore >= 0.60
               ? "High"
-              : inputScore >= 0.55
-                ? "Medium"
+              : inputScore >= 0.40
+                ? "Mixed"
                 : "Low";
         inputSourceInfo = `${hostname}: ${level} (${(inputScore * 100).toFixed(0)}%)`;
       } else {
@@ -8387,13 +8388,14 @@ function calculateOverallCredibility(
   const avg =
     withScore.reduce((sum, s) => sum + normalizeTrackRecordScore(s.trackRecordScore || 0), 0) /
     withScore.length;
+  // Symmetric 5-band scale: 0.80/0.60/0.40/0.20
   const researchLevel =
-    avg >= 0.85
+    avg >= 0.80
       ? "Very High"
-      : avg >= 0.7
+      : avg >= 0.60
         ? "High"
-        : avg >= 0.55
-          ? "Medium"
+        : avg >= 0.40
+          ? "Mixed"
           : "Low";
   const researchInfo = `Research sources: ${researchLevel} (${(avg * 100).toFixed(0)}%)`;
 

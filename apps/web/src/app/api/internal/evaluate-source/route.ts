@@ -137,19 +137,16 @@ IMPORTANT GUIDELINES:
 RATING SCALE (factualRating) - symmetric around 0.5:
 - "very_high": Exceptional factual accuracy, rigorous fact-checking
 - "high": Strong editorial standards, reliable reporting
-- "mostly_factual": Generally accurate with minor issues
-- "mixed": Inconsistent accuracy, neutral/uncertain (center point)
+- "mixed": Neutral/uncertain - use when reliability is unclear (center)
 - "low": Frequently misleading or inaccurate
 - "very_low": Consistently unreliable, misinformation
 
-SCORE SCALE (0.0 to 1.0) - symmetric around 0.5:
-- 0.85-1.00: very_high factual rating
-- 0.70-0.84: high factual rating
-- 0.55-0.69: mostly_factual rating
-- 0.45-0.54: mixed rating (neutral center)
-- 0.30-0.44: low rating
-- 0.15-0.29: very_low rating
-- 0.00-0.14: unreliable (extreme cases only)
+SCORE SCALE (0.0 to 1.0) - 5 equal bands, symmetric around 0.5:
+- 0.80-1.00: very_high factual rating
+- 0.60-0.80: high factual rating
+- 0.40-0.60: mixed rating (neutral center, contains 0.5)
+- 0.20-0.40: low rating
+- 0.00-0.20: very_low rating
 
 CONFIDENCE (0.0 to 1.0):
 - 0.9+: Well-known major source with documented track record

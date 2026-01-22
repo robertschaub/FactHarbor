@@ -194,48 +194,40 @@ describe("SR_CONFIG validation", () => {
   });
 });
 
-describe("Score interpretation (symmetric scale centered at 0.5)", () => {
-  // These tests document the expected score ranges for the symmetric scale
-  it("score 0.85-1.0 indicates very high reliability", () => {
-    const veryHighScore = 0.92;
-    expect(veryHighScore).toBeGreaterThanOrEqual(0.85);
+describe("Score interpretation (symmetric 5-band scale, 20 points each)", () => {
+  // Symmetric scale: each band is exactly 20 points, centered at 0.5
+  // very_high (0.80-1.00) ↔ very_low (0.00-0.20)
+  // high (0.60-0.80) ↔ low (0.20-0.40)
+  // mixed (0.40-0.60) = CENTER
+
+  it("score 0.80-1.00 indicates very high reliability", () => {
+    const veryHighScore = 0.90;
+    expect(veryHighScore).toBeGreaterThanOrEqual(0.80);
     expect(veryHighScore).toBeLessThanOrEqual(1.0);
   });
 
-  it("score 0.70-0.84 indicates high reliability", () => {
-    const highScore = 0.77;
-    expect(highScore).toBeGreaterThanOrEqual(0.70);
-    expect(highScore).toBeLessThan(0.85);
+  it("score 0.60-0.80 indicates high reliability", () => {
+    const highScore = 0.70;
+    expect(highScore).toBeGreaterThanOrEqual(0.60);
+    expect(highScore).toBeLessThan(0.80);
   });
 
-  it("score 0.55-0.69 indicates mostly factual", () => {
-    const mostlyFactualScore = 0.62;
-    expect(mostlyFactualScore).toBeGreaterThanOrEqual(0.55);
-    expect(mostlyFactualScore).toBeLessThan(0.70);
-  });
-
-  it("score 0.45-0.54 indicates mixed reliability (neutral center)", () => {
+  it("score 0.40-0.60 indicates mixed reliability (neutral center)", () => {
     const mixedScore = 0.50;
-    expect(mixedScore).toBeGreaterThanOrEqual(0.45);
-    expect(mixedScore).toBeLessThan(0.55);
+    expect(mixedScore).toBeGreaterThanOrEqual(0.40);
+    expect(mixedScore).toBeLessThan(0.60);
   });
 
-  it("score 0.30-0.44 indicates low reliability", () => {
-    const lowScore = 0.37;
-    expect(lowScore).toBeGreaterThanOrEqual(0.30);
-    expect(lowScore).toBeLessThan(0.45);
+  it("score 0.20-0.40 indicates low reliability", () => {
+    const lowScore = 0.30;
+    expect(lowScore).toBeGreaterThanOrEqual(0.20);
+    expect(lowScore).toBeLessThan(0.40);
   });
 
-  it("score 0.15-0.29 indicates very low reliability", () => {
-    const veryLowScore = 0.22;
-    expect(veryLowScore).toBeGreaterThanOrEqual(0.15);
-    expect(veryLowScore).toBeLessThan(0.30);
-  });
-
-  it("score 0.0-0.14 indicates unreliable (extreme cases)", () => {
-    const unreliableScore = 0.07;
-    expect(unreliableScore).toBeGreaterThanOrEqual(0);
-    expect(unreliableScore).toBeLessThan(0.15);
+  it("score 0.00-0.20 indicates very low reliability", () => {
+    const veryLowScore = 0.10;
+    expect(veryLowScore).toBeGreaterThanOrEqual(0);
+    expect(veryLowScore).toBeLessThan(0.20);
   });
 
   it("scores are always in 0-1 range", () => {

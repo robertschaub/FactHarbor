@@ -326,22 +326,20 @@ FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
 
 ## Score Interpretation
 
-**Symmetric scale centered at 0.5 (neutral)**
+**Symmetric 5-band scale (20 points each, centered at 0.5)**
 
-| Score | Rating | Meaning |
-|-------|--------|---------|
-| 0.85-1.00 | Very High | Exceptional factual accuracy |
-| 0.70-0.84 | High | Strong editorial standards |
-| 0.55-0.69 | Mostly Factual | Generally accurate with minor issues |
-| 0.45-0.54 | Mixed | Neutral center - uncertain reliability |
-| 0.30-0.44 | Low | Frequently misleading |
-| 0.15-0.29 | Very Low | Consistently unreliable |
-| 0.00-0.14 | Unreliable | Extreme cases only |
+| Score | Rating | Meaning | Mirror |
+|-------|--------|---------|--------|
+| 0.80-1.00 | Very High | Exceptional factual accuracy | ↔ Very Low |
+| 0.60-0.80 | High | Strong editorial standards | ↔ Low |
+| 0.40-0.60 | Mixed | Neutral center - uncertain reliability | CENTER |
+| 0.20-0.40 | Low | Frequently misleading | ↔ High |
+| 0.00-0.20 | Very Low | Consistently unreliable | ↔ Very High |
 
 **Impact on verdicts:**
-- Score > 0.5: Preserves original verdict (trusted source)
-- Score = 0.5: Maximum pull toward neutral (unknown/uncertain)
-- Score < 0.5: Pulls verdict toward neutral (skepticism)
+- Score > 0.6: Preserves original verdict (trusted source)
+- Score 0.4-0.6: Moderate pull toward neutral (uncertain)
+- Score < 0.4: Strong pull toward neutral (skepticism)
 
 ---
 
@@ -399,22 +397,22 @@ Per review feedback, the system avoids categorical assumptions:
 
 ### Score Scale Contract
 
-**Canonical scale: 0.0-1.0, symmetric around 0.5**
+**Canonical scale: 0.0-1.0, symmetric 5-band scale around 0.5**
 
-| Score Range | Rating | Meaning |
-|-------------|--------|---------|
-| 0.85-1.00 | very_high | Exceptional factual accuracy |
-| 0.70-0.84 | high | Strong editorial standards |
-| 0.55-0.69 | mostly_factual | Generally accurate |
-| 0.45-0.54 | mixed | Neutral center point |
-| 0.30-0.44 | low | Frequently misleading |
-| 0.15-0.29 | very_low | Consistently unreliable |
-| 0.00-0.14 | unreliable | Extreme cases only |
+| Score Range | Rating | Meaning | Mirror |
+|-------------|--------|---------|--------|
+| 0.80-1.00 | very_high | Exceptional factual accuracy | ↔ very_low |
+| 0.60-0.80 | high | Strong editorial standards | ↔ low |
+| 0.40-0.60 | mixed | Neutral center point | CENTER |
+| 0.20-0.40 | low | Frequently misleading | ↔ high |
+| 0.00-0.20 | very_low | Consistently unreliable | ↔ very_high |
 
 **Key properties:**
-- **0.5 = neutral center** - no impact on verdict weighting
-- Above 0.5 = positive boost to verdict preservation
-- Below 0.5 = pulls verdict toward neutral (skepticism)
+- **5 equal bands of 20 points each** - perfectly symmetric
+- **0.5 = exact center** of the mixed band (0.40-0.60)
+- Above 0.6 = positive boost to verdict preservation
+- 0.4-0.6 = neutral zone (appropriate for unknown sources)
+- Below 0.4 = pulls verdict toward neutral (skepticism)
 - All stored scores use decimal 0.0-1.0
 - Defensive normalization handles 0-100 scale inputs
 
