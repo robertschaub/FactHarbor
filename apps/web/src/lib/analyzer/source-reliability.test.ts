@@ -256,27 +256,27 @@ describe("Score interpretation (symmetric 7-band scale, matches verdict scale)",
 describe("scoreToCredibilityLevel (7-band)", () => {
   it("returns correct level for each band", () => {
     // Test boundary and mid-point values
-    expect(scoreToCredibilityLevel(0.93)).toBe("HIGHLY_RELIABLE");
-    expect(scoreToCredibilityLevel(0.86)).toBe("HIGHLY_RELIABLE");
-    expect(scoreToCredibilityLevel(0.79)).toBe("RELIABLE");
-    expect(scoreToCredibilityLevel(0.72)).toBe("RELIABLE");
-    expect(scoreToCredibilityLevel(0.65)).toBe("MOSTLY_RELIABLE");
-    expect(scoreToCredibilityLevel(0.58)).toBe("MOSTLY_RELIABLE");
-    expect(scoreToCredibilityLevel(0.50)).toBe("UNCERTAIN");
-    expect(scoreToCredibilityLevel(0.43)).toBe("UNCERTAIN");
-    expect(scoreToCredibilityLevel(0.36)).toBe("MOSTLY_UNRELIABLE");
-    expect(scoreToCredibilityLevel(0.29)).toBe("MOSTLY_UNRELIABLE");
-    expect(scoreToCredibilityLevel(0.22)).toBe("UNRELIABLE");
-    expect(scoreToCredibilityLevel(0.15)).toBe("UNRELIABLE");
-    expect(scoreToCredibilityLevel(0.07)).toBe("HIGHLY_UNRELIABLE");
-    expect(scoreToCredibilityLevel(0.00)).toBe("HIGHLY_UNRELIABLE");
+    expect(scoreToCredibilityLevel(0.93)).toBe("ESTABLISHED_AUTHORITY");
+    expect(scoreToCredibilityLevel(0.86)).toBe("ESTABLISHED_AUTHORITY");
+    expect(scoreToCredibilityLevel(0.79)).toBe("HIGH_CREDIBILITY");
+    expect(scoreToCredibilityLevel(0.72)).toBe("HIGH_CREDIBILITY");
+    expect(scoreToCredibilityLevel(0.65)).toBe("GENERALLY_CREDIBLE");
+    expect(scoreToCredibilityLevel(0.58)).toBe("GENERALLY_CREDIBLE");
+    expect(scoreToCredibilityLevel(0.50)).toBe("MIXED_TRACK_RECORD");
+    expect(scoreToCredibilityLevel(0.43)).toBe("MIXED_TRACK_RECORD");
+    expect(scoreToCredibilityLevel(0.36)).toBe("QUESTIONABLE_CREDIBILITY");
+    expect(scoreToCredibilityLevel(0.29)).toBe("QUESTIONABLE_CREDIBILITY");
+    expect(scoreToCredibilityLevel(0.22)).toBe("LOW_CREDIBILITY");
+    expect(scoreToCredibilityLevel(0.15)).toBe("LOW_CREDIBILITY");
+    expect(scoreToCredibilityLevel(0.07)).toBe("KNOWN_DISINFORMATION");
+    expect(scoreToCredibilityLevel(0.00)).toBe("KNOWN_DISINFORMATION");
   });
 
   it("handles edge cases at exact boundaries", () => {
-    expect(scoreToCredibilityLevel(1.0)).toBe("HIGHLY_RELIABLE");
-    expect(scoreToCredibilityLevel(0.859)).toBe("RELIABLE"); // Just below 0.86
-    expect(scoreToCredibilityLevel(0.429)).toBe("MOSTLY_UNRELIABLE"); // Just below 0.43
-    expect(scoreToCredibilityLevel(0.149)).toBe("HIGHLY_UNRELIABLE"); // Just below 0.15
+    expect(scoreToCredibilityLevel(1.0)).toBe("ESTABLISHED_AUTHORITY");
+    expect(scoreToCredibilityLevel(0.859)).toBe("HIGH_CREDIBILITY"); // Just below 0.86
+    expect(scoreToCredibilityLevel(0.429)).toBe("QUESTIONABLE_CREDIBILITY"); // Just below 0.43
+    expect(scoreToCredibilityLevel(0.149)).toBe("KNOWN_DISINFORMATION"); // Just below 0.15
   });
 });
 

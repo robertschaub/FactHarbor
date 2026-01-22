@@ -233,22 +233,22 @@ adjustedConfidence = confidence × (0.5 + avgSourceScore / 2)
 
 ### Effect on Verdicts (7-Band Scale)
 
-| Source Reliability Band | Score (Weight) | Effect on Verdict |
+| Source Credibility Band | Score (Weight) | Effect on Verdict |
 |------------------------|------------------|-------------------|
-| **Highly Reliable (0.86+)** | ~95-100% | Verdict fully preserved |
-| **Reliable (0.72-0.86)** | ~75-90% | Verdict mostly preserved |
-| **Mostly Reliable (0.58-0.72)** | ~60-75% | Moderate preservation |
-| **Uncertain (0.43-0.57)** | ~40-60% | Appropriate skepticism (neutral center) |
-| **Mostly Unreliable (0.29-0.43)** | ~30-45% | Pulls toward neutral |
-| **Unreliable (0.15-0.29)** | ~15-30% | Strong pull toward neutral |
-| **Highly Unreliable (0.00-0.15)** | ~0-15% | Maximum skepticism |
+| **Established Authority (0.86+)** | ~95-100% | Verdict fully preserved |
+| **High Credibility (0.72-0.86)** | ~75-90% | Verdict mostly preserved |
+| **Generally Credible (0.58-0.72)** | ~60-75% | Moderate preservation |
+| **Mixed Track Record (0.43-0.57)** | ~40-60% | Appropriate skepticism (neutral center) |
+| **Questionable Credibility (0.29-0.43)** | ~30-45% | Pulls toward neutral |
+| **Low Credibility (0.15-0.29)** | ~15-30% | Strong pull toward neutral |
+| **Known Disinformation (0.00-0.15)** | ~0-15% | Maximum skepticism |
 | **Unknown (null)** | 50% | Uses default score (neutral) |
 
 ### Example
 
 ```
 Original verdict: 80% (Strong True)
-Source reliability: 0.5 (Uncertain - neutral center)
+Source credibility: 0.5 (Mixed Track Record - neutral center)
 
 Adjusted = 50 + (80 - 50) × 0.5
          = 50 + 30 × 0.5
@@ -330,21 +330,21 @@ FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
 
 ## Score Interpretation
 
-**Symmetric 7-band scale (matches verdict scale, centered at 0.5)**
+**7-band credibility scale (centered at 0.5)**
 
-| Score | Rating | Meaning | Mirror |
-|-------|--------|---------|--------|
-| 0.86-1.00 | Highly Reliable | Exceptional factual accuracy | ↔ Highly Unreliable |
-| 0.72-0.86 | Reliable | Strong editorial standards | ↔ Unreliable |
-| 0.58-0.72 | Mostly Reliable | Generally accurate | ↔ Mostly Unreliable |
-| 0.43-0.57 | Uncertain | Neutral center - unclear reliability | CENTER |
-| 0.29-0.43 | Mostly Unreliable | Frequent errors or bias | ↔ Mostly Reliable |
-| 0.15-0.29 | Unreliable | Consistent inaccuracies | ↔ Reliable |
-| 0.00-0.15 | Highly Unreliable | Known misinformation | ↔ Highly Reliable |
+| Score | Rating | Meaning |
+|-------|--------|---------|
+| 0.86-1.00 | Established Authority | Consistent editorial rigor, strong fact-checking, transparent corrections |
+| 0.72-0.85 | High Credibility | Reliable track record, professional editorial standards |
+| 0.58-0.71 | Generally Credible | Mostly accurate reporting, occasional lapses |
+| 0.43-0.57 | Mixed Track Record | Inconsistent quality, insufficient information, or conflicting indicators |
+| 0.29-0.42 | Questionable Credibility | Frequent accuracy issues, poor sourcing practices |
+| 0.15-0.28 | Low Credibility | Persistent inaccuracies, lack of editorial standards |
+| 0.00-0.14 | Known Disinformation | Documented intentional falsehoods, propaganda |
 
 **Impact on verdicts:**
-- Score >= 0.58: Preserves original verdict (trusted source)
-- Score 0.43-0.57: Moderate pull toward neutral (uncertain)
+- Score >= 0.58: Preserves original verdict (credible source)
+- Score 0.43-0.57: Moderate pull toward neutral (mixed track record)
 - Score < 0.43: Strong pull toward neutral (skepticism)
 
 ---
@@ -403,21 +403,21 @@ Per review feedback, the system avoids categorical assumptions:
 
 ### Score Scale Contract
 
-**Canonical scale: 0.0-1.0, symmetric 7-band scale (matches verdict scale)**
+**Canonical scale: 0.0-1.0, 7-band credibility scale**
 
-| Score Range | Rating | Meaning | Mirror |
-|-------------|--------|---------|--------|
-| 0.86-1.00 | highly_reliable | Exceptional factual accuracy | ↔ highly_unreliable |
-| 0.72-0.86 | reliable | Strong editorial standards | ↔ unreliable |
-| 0.58-0.72 | mostly_reliable | Generally accurate | ↔ mostly_unreliable |
-| 0.43-0.57 | uncertain | Neutral center point | CENTER |
-| 0.29-0.43 | mostly_unreliable | Frequent errors or bias | ↔ mostly_reliable |
-| 0.15-0.29 | unreliable | Consistent inaccuracies | ↔ reliable |
-| 0.00-0.15 | highly_unreliable | Known misinformation | ↔ highly_reliable |
+| Score Range | Rating | Meaning |
+|-------------|--------|---------|
+| 0.86-1.00 | established_authority | Consistent editorial rigor, strong fact-checking |
+| 0.72-0.85 | high_credibility | Reliable track record, professional standards |
+| 0.58-0.71 | generally_credible | Mostly accurate, occasional lapses |
+| 0.43-0.57 | mixed_track_record | Inconsistent quality, insufficient info, or conflicting indicators |
+| 0.29-0.42 | questionable_credibility | Frequent accuracy issues, poor sourcing |
+| 0.15-0.28 | low_credibility | Persistent inaccuracies, lack of standards |
+| 0.00-0.14 | known_disinformation | Documented intentional falsehoods, propaganda |
 
 **Key properties:**
-- **7 bands matching verdict scale** - TRUE↔FALSE, MOSTLY-TRUE↔MOSTLY-FALSE, etc.
-- **0.5 = exact center** of the uncertain band (0.43-0.57)
+- **7 bands** for source credibility assessment
+- **0.5 = exact center** of the mixed_track_record band (0.43-0.57)
 - Above 0.58 = positive boost to verdict preservation
 - 0.43-0.57 = neutral zone (appropriate for unknown sources)
 - Below 0.43 = pulls verdict toward neutral (skepticism)

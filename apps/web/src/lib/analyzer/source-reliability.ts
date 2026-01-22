@@ -405,14 +405,14 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
 /**
  * Apply evidence weighting based on source track record scores.
  * 
- * Symmetric 7-band scale (matches verdict scale, centered at 0.5):
- * - 0.86-1.00: highly_reliable (verdict fully preserved)
- * - 0.72-0.86: reliable (verdict mostly preserved)
- * - 0.58-0.72: mostly_reliable (moderate preservation)
- * - 0.43-0.57: uncertain (neutral center, appropriate skepticism)
- * - 0.29-0.43: mostly_unreliable (pulls verdict toward neutral)
- * - 0.15-0.29: unreliable (strong pull toward neutral)
- * - 0.00-0.15: highly_unreliable (maximum skepticism)
+ * 7-band credibility scale (centered at 0.5):
+ * - 0.86-1.00: established_authority (verdict fully preserved)
+ * - 0.72-0.86: high_credibility (verdict mostly preserved)
+ * - 0.58-0.72: generally_credible (moderate preservation)
+ * - 0.43-0.57: mixed_track_record (neutral center, appropriate skepticism)
+ * - 0.29-0.43: questionable_credibility (pulls verdict toward neutral)
+ * - 0.15-0.29: low_credibility (strong pull toward neutral)
+ * - 0.00-0.15: known_disinformation (maximum skepticism)
  * 
  * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
  * 
@@ -502,30 +502,37 @@ export function applyEvidenceWeighting(
 }
 
 /**
- * 7-band credibility level matching the symmetric reliability scale.
- * Mirrors the verdict scale structure (TRUE↔FALSE, MOSTLY-TRUE↔MOSTLY-FALSE, etc.)
+ * 7-band credibility level for source reliability assessment.
+ * 
+ * Band 7 (86-100%): Established Authority - Consistent editorial rigor, strong fact-checking
+ * Band 6 (72-85%): High Credibility - Reliable track record, professional standards
+ * Band 5 (58-71%): Generally Credible - Mostly accurate, occasional lapses
+ * Band 4 (43-57%): Mixed Track Record - Inconsistent quality, insufficient info, or conflicting indicators
+ * Band 3 (29-42%): Questionable Credibility - Frequent accuracy issues, poor sourcing
+ * Band 2 (15-28%): Low Credibility - Persistent inaccuracies, lack of standards
+ * Band 1 (0-14%): Known Disinformation - Documented intentional falsehoods, propaganda
  */
 export type CredibilityLevel7Band =
-  | "HIGHLY_RELIABLE"    // 0.86-1.00
-  | "RELIABLE"           // 0.72-0.86
-  | "MOSTLY_RELIABLE"    // 0.58-0.72
-  | "UNCERTAIN"          // 0.43-0.57 (neutral center)
-  | "MOSTLY_UNRELIABLE"  // 0.29-0.43
-  | "UNRELIABLE"         // 0.15-0.29
-  | "HIGHLY_UNRELIABLE"  // 0.00-0.15
-  | "UNKNOWN";           // no data
+  | "ESTABLISHED_AUTHORITY"       // 0.86-1.00
+  | "HIGH_CREDIBILITY"            // 0.72-0.86
+  | "GENERALLY_CREDIBLE"          // 0.58-0.72
+  | "MIXED_TRACK_RECORD"          // 0.43-0.57 (neutral center)
+  | "QUESTIONABLE_CREDIBILITY"    // 0.29-0.43
+  | "LOW_CREDIBILITY"             // 0.15-0.29
+  | "KNOWN_DISINFORMATION"        // 0.00-0.15
+  | "UNKNOWN";                    // no data
 
 /**
  * Convert score to 7-band credibility level.
  */
 export function scoreToCredibilityLevel(score: number): CredibilityLevel7Band {
-  if (score >= 0.86) return "HIGHLY_RELIABLE";
-  if (score >= 0.72) return "RELIABLE";
-  if (score >= 0.58) return "MOSTLY_RELIABLE";
-  if (score >= 0.43) return "UNCERTAIN";
-  if (score >= 0.29) return "MOSTLY_UNRELIABLE";
-  if (score >= 0.15) return "UNRELIABLE";
-  return "HIGHLY_UNRELIABLE";
+  if (score >= 0.86) return "ESTABLISHED_AUTHORITY";
+  if (score >= 0.72) return "HIGH_CREDIBILITY";
+  if (score >= 0.58) return "GENERALLY_CREDIBLE";
+  if (score >= 0.43) return "MIXED_TRACK_RECORD";
+  if (score >= 0.29) return "QUESTIONABLE_CREDIBILITY";
+  if (score >= 0.15) return "LOW_CREDIBILITY";
+  return "KNOWN_DISINFORMATION";
 }
 
 export function calculateOverallCredibility(

@@ -45,13 +45,13 @@ const EvaluationResultSchema = z.object({
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
   factualRating: z.enum([
-    "highly_reliable",    // 0.86-1.00
-    "reliable",           // 0.72-0.86
-    "mostly_reliable",    // 0.58-0.72
-    "uncertain",          // 0.43-0.57 (neutral center)
-    "mostly_unreliable",  // 0.29-0.43
-    "unreliable",         // 0.15-0.29
-    "highly_unreliable",  // 0.00-0.15
+    "established_authority",      // 0.86-1.00
+    "high_credibility",           // 0.72-0.86
+    "generally_credible",         // 0.58-0.72
+    "mixed_track_record",         // 0.43-0.57 (neutral center)
+    "questionable_credibility",   // 0.29-0.43
+    "low_credibility",            // 0.15-0.29
+    "known_disinformation",       // 0.00-0.15
   ]),
   biasIndicator: z.enum(["left", "center-left", "center", "center-right", "right"]).nullable().optional(),
   evidenceCited: z.array(z.string()).optional(),
@@ -126,44 +126,32 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
 function getEvaluationPrompt(domain: string): string {
   const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   
-  return `You are an expert media analyst evaluating the reliability of news sources and websites.
+  return `You are an expert media analyst.
 
 CURRENT DATE: ${currentDate}
 
-TASK: Evaluate the CURRENT factual reliability of the domain: ${domain}
+TASK: Evaluate the source: ${domain}
 
-TEMPORAL AWARENESS (IMPORTANT):
-- Source reliability can change over time due to ownership changes, editorial shifts, or political transitions
-- Government sites (e.g., whitehouse.gov, state departments) may vary in reliability across administrations
-- News organizations can improve or decline in quality over time
-- Base your assessment on the source's RECENT track record (last 1-2 years when possible)
-- If a source has undergone recent changes, factor that into your assessment
+Rate the general reliability of the information source on a 7-band scale (0-100%):
 
-IMPORTANT GUIDELINES:
-1. Focus ONLY on factual accuracy and reliability, NOT political bias
-2. Base your assessment on the source's demonstrated track record, especially RECENT performance
-3. Consider: fact-checking record, corrections policy, editorial standards, transparency
-4. Do NOT rely on the domain name alone - consider actual reporting history
-5. If you don't have sufficient information about this source, say so
-6. For government sources, consider current administration's transparency and accuracy record
+7. Established Authority (86-100%): Consistent editorial rigor, strong fact-checking processes, transparent corrections policy, multiple verification layers.
+6. High Credibility (72-85%): Reliable track record, transparent sourcing, professional editorial standards, occasional minor issues.
+5. Generally Credible (58-71%): Mostly accurate reporting, may have limited depth or occasional lapses, acceptable journalistic practices.
+4. Mixed Track Record (43-57%): Inconsistent quality, insufficient information to assess, or conflicting indicators of reliability.
+3. Questionable Credibility (29-42%): Frequent accuracy issues, poor sourcing practices, or significant editorial concerns.
+2. Low Credibility (15-28%): Persistent inaccuracies, lack of editorial standards, or systemic reliability failures.
+1. Known Disinformation (0-14%): Documented pattern of intentional falsehoods, propaganda, or coordinated deception.
 
-RATING SCALE (factualRating) - symmetric 7-band scale around 0.5:
-- "highly_reliable": Exceptional factual accuracy, rigorous fact-checking, primary sources
-- "reliable": Strong editorial standards, consistent accuracy
-- "mostly_reliable": Generally accurate with occasional minor issues
-- "uncertain": Reliability unclear, insufficient track record (neutral center)
-- "mostly_unreliable": Frequent errors or bias, verify independently
-- "unreliable": Consistent inaccuracies or misleading content
-- "highly_unreliable": Known misinformation source, fabricated content
+Guidelines:
+- Evaluate the source's overall reputation and track record, not individual articles.
+- Consider: editorial standards, correction practices, transparency, and accountability.
+- Do not infer intent EXCEPT for Band 1 ("Known Disinformation"), which requires documented evidence.
+- Use Band 4 ("Mixed Track Record") when there is inconsistent quality, insufficient information, or conflicting indicators.
+- Avoid clustering scores at band midpoints; use the full 0-100% range to reflect the strength of evidence.
 
-SCORE SCALE (0.0 to 1.0) - 7 bands symmetric around 0.5 (matches verdict scale):
-- 0.86-1.00: highly_reliable
-- 0.72-0.86: reliable
-- 0.58-0.72: mostly_reliable
-- 0.43-0.57: uncertain (neutral center)
-- 0.29-0.43: mostly_unreliable
-- 0.15-0.29: unreliable
-- 0.00-0.15: highly_unreliable
+TEMPORAL AWARENESS:
+- Source reliability can change over time due to ownership changes, editorial shifts, or political transitions.
+- Base your assessment on the source's RECENT track record (within one year or less when possible).
 
 CONFIDENCE (0.0 to 1.0):
 - 0.9+: Well-known major source with documented track record
@@ -171,13 +159,13 @@ CONFIDENCE (0.0 to 1.0):
 - 0.5-0.7: Less familiar but some information available
 - <0.5: Insufficient information for reliable assessment
 
-Respond with a JSON object matching this schema:
+Respond with JSON:
 {
-  "score": <number 0-1>,
-  "confidence": <number 0-1>,
-  "reasoning": "<brief explanation including any recent changes affecting reliability>",
-  "factualRating": "<one of: highly_reliable, reliable, mostly_reliable, uncertain, mostly_unreliable, unreliable, highly_unreliable>",
-  "evidenceCited": ["<specific facts supporting your rating>"]
+  "score": <decimal 0.0-1.0>,
+  "confidence": <0.0-1.0>,
+  "reasoning": "<one-sentence justification>",
+  "factualRating": "<established_authority|high_credibility|generally_credible|mixed_track_record|questionable_credibility|low_credibility|known_disinformation>",
+  "evidenceCited": ["<facts about the source's track record>"]
 }`;
 }
 
@@ -216,7 +204,7 @@ async function evaluateWithModel(
     const response = await generateText({
       model,
       messages: [
-        { role: "system", content: "You are an expert media analyst evaluating the reliability of news sources. Always respond with valid JSON only, no other text." },
+        { role: "system", content: "You are an expert media analyst evaluating the general reliability of information sources. Always respond with valid JSON only, no other text." },
         { role: "user", content: prompt },
       ],
       temperature,

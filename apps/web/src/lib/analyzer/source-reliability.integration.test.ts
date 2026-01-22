@@ -25,7 +25,7 @@ import type { ClaimVerdict, ExtractedFact, FetchedSource } from "./types";
 
 // Mock the cache module to avoid SQLite in tests
 vi.mock("../source-reliability-cache", () => ({
-  batchGetCachedScores: vi.fn(),
+  batchGetCachedData: vi.fn(),
   setCachedScore: vi.fn(),
 }));
 
@@ -46,12 +46,12 @@ describe("Source Reliability Integration", () => {
 
   describe("End-to-End Pipeline Flow", () => {
     it("prefetch → lookup → weighting produces correct verdict adjustment", async () => {
-      // Mock cache returns some scores
-      const { batchGetCachedScores } = await import("../source-reliability-cache");
-      (batchGetCachedScores as ReturnType<typeof vi.fn>).mockResolvedValue(
+      // Mock cache returns some scores (batchGetCachedData returns full data objects)
+      const { batchGetCachedData } = await import("../source-reliability-cache");
+      (batchGetCachedData as ReturnType<typeof vi.fn>).mockResolvedValue(
         new Map([
-          ["reuters.com", 0.95],
-          ["bbc.com", 0.88],
+          ["reuters.com", { score: 0.95, confidence: 0.9, consensusAchieved: true }],
+          ["bbc.com", { score: 0.88, confidence: 0.85, consensusAchieved: true }],
         ])
       );
 
@@ -141,8 +141,8 @@ describe("Source Reliability Integration", () => {
     });
 
     it("handles unknown sources gracefully (null scores)", async () => {
-      const { batchGetCachedScores } = await import("../source-reliability-cache");
-      (batchGetCachedScores as ReturnType<typeof vi.fn>).mockResolvedValue(
+      const { batchGetCachedData } = await import("../source-reliability-cache");
+      (batchGetCachedData as ReturnType<typeof vi.fn>).mockResolvedValue(
         new Map() // Empty cache
       );
 
@@ -199,14 +199,16 @@ describe("Source Reliability Integration", () => {
 
       const weighted = applyEvidenceWeighting(verdicts, facts, sources);
 
-      // Verdict should be unchanged (no score to weight with)
-      expect(weighted[0].truthPercentage).toBe(80);
-      expect(weighted[0].evidenceWeight).toBeUndefined();
+      // Unknown sources use DEFAULT_UNKNOWN_SOURCE_SCORE (0.5) which pulls verdict toward neutral
+      // Formula: adjustedTruth = 50 + (80 - 50) * 0.5 = 50 + 15 = 65
+      expect(weighted[0].truthPercentage).toBe(65);
+      expect(weighted[0].evidenceWeight).toBe(0.5);
+      expect(weighted[0].sourceReliabilityMeta?.unknownSources).toBe(1);
     });
 
     it("skips blog platforms during prefetch (importance filter)", async () => {
-      const { batchGetCachedScores, setCachedScore } = await import("../source-reliability-cache");
-      (batchGetCachedScores as ReturnType<typeof vi.fn>).mockResolvedValue(new Map());
+      const { batchGetCachedData, setCachedScore } = await import("../source-reliability-cache");
+      (batchGetCachedData as ReturnType<typeof vi.fn>).mockResolvedValue(new Map());
 
       const urls = [
         "https://myblog.blogspot.com/post",
@@ -223,9 +225,9 @@ describe("Source Reliability Integration", () => {
 
   describe("Mixed Source Reliability Scenarios", () => {
     it("high reliability sources strengthen verdicts", async () => {
-      const { batchGetCachedScores } = await import("../source-reliability-cache");
-      (batchGetCachedScores as ReturnType<typeof vi.fn>).mockResolvedValue(
-        new Map([["factcheck.org", 0.98]])
+      const { batchGetCachedData } = await import("../source-reliability-cache");
+      (batchGetCachedData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        new Map([["factcheck.org", { score: 0.98, confidence: 0.95, consensusAchieved: true }]])
       );
 
       await prefetchSourceReliability(["https://factcheck.org/check/123"]);
@@ -271,9 +273,9 @@ describe("Source Reliability Integration", () => {
     });
 
     it("low reliability sources pull verdicts toward neutral", async () => {
-      const { batchGetCachedScores } = await import("../source-reliability-cache");
-      (batchGetCachedScores as ReturnType<typeof vi.fn>).mockResolvedValue(
-        new Map([["conspiracy-site.xyz", 0.15]])
+      const { batchGetCachedData } = await import("../source-reliability-cache");
+      (batchGetCachedData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        new Map([["conspiracy-site.xyz", { score: 0.15, confidence: 0.8, consensusAchieved: true }]])
       );
 
       await prefetchSourceReliability(["https://conspiracy-site.xyz/article"]);
@@ -319,11 +321,11 @@ describe("Source Reliability Integration", () => {
     });
 
     it("mixed reliability sources average correctly", async () => {
-      const { batchGetCachedScores } = await import("../source-reliability-cache");
-      (batchGetCachedScores as ReturnType<typeof vi.fn>).mockResolvedValue(
+      const { batchGetCachedData } = await import("../source-reliability-cache");
+      (batchGetCachedData as ReturnType<typeof vi.fn>).mockResolvedValue(
         new Map([
-          ["good-source.com", 0.85],
-          ["bad-source.net", 0.25],
+          ["good-source.com", { score: 0.85, confidence: 0.9, consensusAchieved: true }],
+          ["bad-source.net", { score: 0.25, confidence: 0.8, consensusAchieved: true }],
         ])
       );
 
@@ -387,11 +389,11 @@ describe("Source Reliability Integration", () => {
 
   describe("Cache Integration", () => {
     it("uses cached scores without re-evaluation", async () => {
-      const { batchGetCachedScores, setCachedScore } = await import("../source-reliability-cache");
+      const { batchGetCachedData, setCachedScore } = await import("../source-reliability-cache");
 
       // Simulate cache hit
-      (batchGetCachedScores as ReturnType<typeof vi.fn>).mockResolvedValue(
-        new Map([["cached-source.com", 0.72]])
+      (batchGetCachedData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        new Map([["cached-source.com", { score: 0.72, confidence: 0.85, consensusAchieved: true }]])
       );
 
       await prefetchSourceReliability(["https://cached-source.com/article"]);
@@ -405,14 +407,14 @@ describe("Source Reliability Integration", () => {
     });
 
     it("batch lookup is efficient for multiple URLs", async () => {
-      const { batchGetCachedScores } = await import("../source-reliability-cache");
+      const { batchGetCachedData } = await import("../source-reliability-cache");
 
-      const cachedScores = new Map([
-        ["source1.com", 0.8],
-        ["source2.com", 0.7],
-        ["source3.com", 0.9],
+      const cachedData = new Map([
+        ["source1.com", { score: 0.8, confidence: 0.9, consensusAchieved: true }],
+        ["source2.com", { score: 0.7, confidence: 0.85, consensusAchieved: true }],
+        ["source3.com", { score: 0.9, confidence: 0.95, consensusAchieved: true }],
       ]);
-      (batchGetCachedScores as ReturnType<typeof vi.fn>).mockResolvedValue(cachedScores);
+      (batchGetCachedData as ReturnType<typeof vi.fn>).mockResolvedValue(cachedData);
 
       const urls = [
         "https://source1.com/a",
@@ -423,9 +425,9 @@ describe("Source Reliability Integration", () => {
 
       await prefetchSourceReliability(urls);
 
-      // Should call batchGetCachedScores once with unique domains
-      expect(batchGetCachedScores).toHaveBeenCalledTimes(1);
-      const calledDomains = (batchGetCachedScores as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      // Should call batchGetCachedData once with unique domains
+      expect(batchGetCachedData).toHaveBeenCalledTimes(1);
+      const calledDomains = (batchGetCachedData as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(calledDomains).toHaveLength(3); // Deduplicated
     });
   });
@@ -498,7 +500,7 @@ describe("Source Reliability Integration", () => {
         id: "unknown-source",
         url: "https://unknown.example/article",
         title: "Unknown Article",
-        trackRecordScore: null, // Unknown source
+        trackRecordScore: null, // Unknown source - uses DEFAULT_UNKNOWN_SOURCE_SCORE (0.5)
         fullText: "...",
         fetchedAt: new Date().toISOString(),
         category: "unknown",
@@ -527,9 +529,11 @@ describe("Source Reliability Integration", () => {
 
       const weighted = applyEvidenceWeighting(verdicts, facts, [source]);
 
-      // Verdict unchanged when no score
-      expect(weighted[0].truthPercentage).toBe(75);
-      expect(weighted[0].evidenceWeight).toBeUndefined();
+      // Unknown sources use DEFAULT_UNKNOWN_SOURCE_SCORE (0.5) which pulls verdict toward neutral
+      // Formula: adjustedTruth = 50 + (75 - 50) * 0.5 = 50 + 12.5 = 63 (rounded)
+      expect(weighted[0].truthPercentage).toBe(63);
+      expect(weighted[0].evidenceWeight).toBe(0.5);
+      expect(weighted[0].sourceReliabilityMeta?.unknownSources).toBe(1);
     });
   });
 });

@@ -537,26 +537,26 @@ function calculateEffectiveWeight(data: SourceReliabilityData): number {
 - **Confidence is a gate, not a modifier** - If evaluation passes 65% confidence threshold, we trust it
 - **Transparency** - A 70% score means 70% weight, no hidden calculations
 
-### Reliability Score Scale (7-Band Symmetric)
+### Reliability Score Scale (7-Band Credibility)
 
-The source reliability system uses a symmetric 7-band scale centered at 0.5, mirroring the verdict scale structure:
+The source reliability system uses a 7-band credibility scale centered at 0.5:
 
 | Score Range | Band | Label | Impact on Verdict |
 |-------------|------|-------|-------------------|
-| 0.86-1.00 | Highly Reliable | Exceptional accuracy | Verdict fully preserved (~95-100% weight) |
-| 0.72-0.86 | Reliable | Strong standards | Verdict mostly preserved (~75-90% weight) |
-| 0.58-0.72 | Mostly Reliable | Generally accurate | Moderate preservation (~60-75% weight) |
-| 0.43-0.57 | Uncertain | Neutral center | Appropriate skepticism (~40-60% weight) |
-| 0.29-0.43 | Mostly Unreliable | Frequent errors | Pulls toward neutral (~30-45% weight) |
-| 0.15-0.29 | Unreliable | Consistent issues | Strong pull (~15-30% weight) |
-| 0.00-0.15 | Highly Unreliable | Known misinfo | Maximum skepticism (~0-15% weight) |
+| 0.86-1.00 | Established Authority | Consistent editorial rigor | Verdict fully preserved (~95-100% weight) |
+| 0.72-0.85 | High Credibility | Reliable track record | Verdict mostly preserved (~75-90% weight) |
+| 0.58-0.71 | Generally Credible | Mostly accurate | Moderate preservation (~60-75% weight) |
+| 0.43-0.57 | Mixed Track Record | Inconsistent quality | Appropriate skepticism (~40-60% weight) |
+| 0.29-0.42 | Questionable Credibility | Frequent issues | Pulls toward neutral (~30-45% weight) |
+| 0.15-0.28 | Low Credibility | Persistent inaccuracies | Strong pull (~15-30% weight) |
+| 0.00-0.14 | Known Disinformation | Documented falsehoods | Maximum skepticism (~0-15% weight) |
 
 **Key properties**:
-- **Symmetric around 0.5** - Center of "uncertain" band (0.43-0.57)
-- **Mirrors verdict scale** - 7 bands matching TRUE↔FALSE structure  
+- **Centered at 0.5** - Center of "Mixed Track Record" band (0.43-0.57)
+- **7 bands** for source credibility assessment
 - **Score = 0.5** means neutral/unknown - appropriate default skepticism
-- **Above 0.58** = verdict preservation (trusted source)
-- **Below 0.43** = verdict skepticism (unreliable source)
+- **Above 0.58** = verdict preservation (credible source)
+- **Below 0.43** = verdict skepticism (low credibility source)
 
 ### Score Examples
 

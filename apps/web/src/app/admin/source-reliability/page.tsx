@@ -398,25 +398,25 @@ export default function SourceReliabilityPage() {
     return `${month}/${day}/${year} ${hours}:${minutes}`;
   };
 
-  // Symmetric 7-band scale (matches verdict scale), centered at 0.5
+  // 7-band credibility scale, centered at 0.5
   const getScoreColor = (score: number): string => {
-    if (score >= 0.86) return "#10b981"; // green - highly reliable
-    if (score >= 0.72) return "#22c55e"; // emerald - reliable
-    if (score >= 0.58) return "#84cc16"; // lime - mostly reliable
-    if (score >= 0.43) return "#d1d5db"; // gray - uncertain (center)
-    if (score >= 0.29) return "#f59e0b"; // amber - mostly unreliable
-    if (score >= 0.15) return "#f97316"; // orange - unreliable
-    return "#ef4444"; // red - highly unreliable
+    if (score >= 0.86) return "#10b981"; // green - established authority
+    if (score >= 0.72) return "#22c55e"; // emerald - high credibility
+    if (score >= 0.58) return "#84cc16"; // lime - generally credible
+    if (score >= 0.43) return "#d1d5db"; // gray - mixed track record (center)
+    if (score >= 0.29) return "#f59e0b"; // amber - questionable credibility
+    if (score >= 0.15) return "#f97316"; // orange - low credibility
+    return "#ef4444"; // red - known disinformation
   };
 
   const getScoreLabel = (score: number): string => {
-    if (score >= 0.86) return "Highly Reliable (86-100%)";
-    if (score >= 0.72) return "Reliable (72-86%)";
-    if (score >= 0.58) return "Mostly Reliable (58-72%)";
-    if (score >= 0.43) return "Uncertain (43-57%)";
-    if (score >= 0.29) return "Mostly Unreliable (29-43%)";
-    if (score >= 0.15) return "Unreliable (15-29%)";
-    return "Highly Unreliable (0-15%)";
+    if (score >= 0.86) return "Established Authority (86-100%)";
+    if (score >= 0.72) return "High Credibility (72-85%)";
+    if (score >= 0.58) return "Generally Credible (58-71%)";
+    if (score >= 0.43) return "Mixed Track Record (43-57%)";
+    if (score >= 0.29) return "Questionable Credibility (29-42%)";
+    if (score >= 0.15) return "Low Credibility (15-28%)";
+    return "Known Disinformation (0-14%)";
   };
 
 
@@ -771,31 +771,31 @@ export default function SourceReliabilityPage() {
 
       {/* Legend */}
       <div className={styles.legend}>
-        <h3>Score Legend (Symmetric 7-Band Scale)</h3>
+        <h3>Score Legend (7-Band Credibility Scale)</h3>
         <div className={styles.symmetricScale}>
           <div className={styles.scaleRow}>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> Highly Reliable (86-100%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> Established Authority (86-100%)</span>
             <span className={styles.arrow}>→</span>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#22c55e" }} /> Reliable (72-86%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#22c55e" }} /> High Credibility (72-85%)</span>
             <span className={styles.arrow}>→</span>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> Mostly Reliable (58-72%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> Generally Credible (58-71%)</span>
             <span className={styles.arrow}>→</span>
           </div>
           <div className={styles.centerRow}>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#d1d5db" }} /> Uncertain (43-57%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#d1d5db" }} /> Mixed Track Record (43-57%)</span>
           </div>
           <div className={styles.scaleRow}>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> Mostly Unreliable (29-43%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> Questionable Credibility (29-42%)</span>
             <span className={styles.arrow}>→</span>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> Unreliable (15-29%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> Low Credibility (15-28%)</span>
             <span className={styles.arrow}>→</span>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> Highly Unreliable (0-15%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> Known Disinformation (0-14%)</span>
           </div>
         </div>
         
         <h3 style={{ marginTop: "16px" }}>How It Works</h3>
         <div className={styles.legendItems} style={{ flexDirection: "column", gap: "8px" }}>
-          <span>• <strong>Score</strong> = LLM-evaluated reliability</span>
+          <span>• <strong>Score</strong> = LLM-evaluated source credibility</span>
           <span>• <strong>Confidence</strong> = How certain the LLM was (used as quality gate, threshold: 65%)</span>
           <span>• <strong>Consensus</strong> = Claude and GPT-4 agreed within 15%</span>
         </div>
