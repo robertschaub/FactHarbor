@@ -36,6 +36,7 @@ export interface CachedScore {
   reasoning?: string | null;
   category?: string | null;
   biasIndicator?: string | null;
+  evidenceCited?: string | null; // JSON array stored as string
 }
 
 interface ScoreRow {
@@ -50,6 +51,7 @@ interface ScoreRow {
   reasoning: string | null;
   category: string | null;
   bias_indicator: string | null;
+  evidence_cited: string | null; // JSON array stored as string
 }
 
 // ============================================================================
@@ -82,7 +84,8 @@ async function getDb(): Promise<Database> {
       consensus_achieved INTEGER NOT NULL DEFAULT 0,
       reasoning TEXT,
       category TEXT,
-      bias_indicator TEXT
+      bias_indicator TEXT,
+      evidence_cited TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
@@ -122,6 +125,7 @@ export async function getCachedScore(domain: string): Promise<CachedScore | null
     reasoning: row.reasoning,
     category: row.category,
     biasIndicator: row.bias_indicator,
+    evidenceCited: row.evidence_cited,
   };
 }
 
@@ -205,7 +209,8 @@ export async function setCachedScore(
   consensusAchieved: boolean,
   reasoning?: string | null,
   category?: string | null,
-  biasIndicator?: string | null
+  biasIndicator?: string | null,
+  evidenceCited?: string[] | null
 ): Promise<void> {
   const database = await getDb();
   const now = new Date();
@@ -213,10 +218,15 @@ export async function setCachedScore(
     now.getTime() + SR_CACHE_CONFIG.cacheTtlDays * 24 * 60 * 60 * 1000
   );
 
+  // Convert evidenceCited array to JSON string for storage
+  const evidenceJson = evidenceCited && evidenceCited.length > 0 
+    ? JSON.stringify(evidenceCited) 
+    : null;
+
   await database.run(
     `INSERT OR REPLACE INTO source_reliability 
-     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       domain,
       score,
@@ -229,6 +239,7 @@ export async function setCachedScore(
       reasoning ?? null,
       category ?? null,
       biasIndicator ?? null,
+      evidenceJson,
     ]
   );
 }
@@ -346,6 +357,7 @@ export async function getAllCachedScores(options: {
     reasoning: row.reasoning,
     category: row.category,
     biasIndicator: row.bias_indicator,
+    evidenceCited: row.evidence_cited,
   }));
 
   return {

@@ -206,7 +206,8 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
           evalResult.consensusAchieved,
           evalResult.reasoning,
           evalResult.category,
-          evalResult.biasIndicator
+          evalResult.biasIndicator,
+          evalResult.evidenceCited
         );
         console.log(
           `[SR] Evaluated ${domain}: score=${evalResult.score.toFixed(2)}, confidence=${evalResult.confidence.toFixed(2)}, consensus=${evalResult.consensusAchieved}`
@@ -276,6 +277,7 @@ interface EvaluationResult {
   reasoning?: string;
   category?: string;
   biasIndicator?: string | null;
+  evidenceCited?: string[];
 }
 
 /**

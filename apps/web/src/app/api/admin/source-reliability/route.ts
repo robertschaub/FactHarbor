@@ -187,7 +187,8 @@ export async function POST(req: Request) {
           evalData.consensusAchieved,
           evalData.reasoning,
           evalData.category,
-          evalData.biasIndicator
+          evalData.biasIndicator,
+          evalData.evidenceCited
         );
 
         results.push({

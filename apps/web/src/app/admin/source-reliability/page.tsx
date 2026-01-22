@@ -16,6 +16,7 @@ interface CachedScore {
   reasoning?: string | null;
   category?: string | null;
   biasIndicator?: string | null;
+  evidenceCited?: string | null; // JSON array stored as string
 }
 
 interface CacheStats {
@@ -764,6 +765,27 @@ export default function SourceReliabilityPage() {
                   </div>
                 </div>
               )}
+
+              {selectedEntry.evidenceCited && (() => {
+                try {
+                  const evidence = JSON.parse(selectedEntry.evidenceCited);
+                  if (Array.isArray(evidence) && evidence.length > 0) {
+                    return (
+                      <div className={styles.detailSection}>
+                        <h3>Evidence Cited by LLM</h3>
+                        <ul className={styles.evidenceList}>
+                          {evidence.map((item, idx) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  }
+                } catch {
+                  // Invalid JSON, skip
+                }
+                return null;
+              })()}
 
               <div className={styles.detailGrid}>
                 <div className={styles.detailSection}>

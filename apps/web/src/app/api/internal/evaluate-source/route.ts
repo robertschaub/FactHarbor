@@ -68,6 +68,7 @@ interface ResponsePayload {
   reasoning: string;
   category: string;
   biasIndicator: string | null | undefined;
+  evidenceCited: string[] | undefined;
 }
 
 // ============================================================================
@@ -330,6 +331,7 @@ async function evaluateSourceWithConsensus(
         reasoning: primary.result.reasoning,
         category: primary.result.factualRating,
         biasIndicator: primary.result.biasIndicator,
+        evidenceCited: primary.result.evidenceCited,
       },
     };
   }
@@ -349,6 +351,7 @@ async function evaluateSourceWithConsensus(
         reasoning: primary.result.reasoning,
         category: primary.result.factualRating,
         biasIndicator: primary.result.biasIndicator,
+        evidenceCited: primary.result.evidenceCited,
       },
     };
   }
@@ -394,6 +397,7 @@ async function evaluateSourceWithConsensus(
       reasoning: primary.result.reasoning,
       category: primary.result.factualRating,
       biasIndicator: primary.result.biasIndicator,
+      evidenceCited: primary.result.evidenceCited,
     },
   };
 }
