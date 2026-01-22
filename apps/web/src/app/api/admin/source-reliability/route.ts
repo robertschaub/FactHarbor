@@ -170,7 +170,7 @@ export async function POST(req: Request) {
           results.push({
             domain,
             success: false,
-            error: errData.error || `HTTP ${evalResponse.status}`,
+            error: errData.details || errData.error || `HTTP ${evalResponse.status}`,
           });
           continue;
         }

@@ -507,18 +507,26 @@ export default function SourceReliabilityPage() {
                 {evalResults.map((r, i) => (
                   <tr key={i} className={r.success ? (r.cached ? styles.evalCached : styles.evalSuccess) : styles.evalFailed}>
                     <td>{r.domain}</td>
-                    <td>{r.success ? "✓" : "✗"}</td>
+                    <td>{r.success ? (r.cached ? "✓ (cached)" : "✓") : "✗"}</td>
                     <td>
                       {r.success && r.score !== undefined ? (
                         <span style={{ color: getScoreColor(r.score) }}>
                           {formatScore(r.score)}
                         </span>
-                      ) : r.error || "-"}
+                      ) : "-"}
                     </td>
                     <td>{r.success && r.confidence !== undefined ? formatScore(r.confidence) : "-"}</td>
                     <td>{r.success ? (r.consensus ? "✓" : "✗") : "-"}</td>
                     <td className={r.cached ? styles.cachedLabel : ""}>
                       {r.cached ? "Cached" : r.models || "-"}
+                    </td>
+                  </tr>
+                ))}
+                {/* Show errors in separate rows below for clarity */}
+                {evalResults.filter(r => !r.success && r.error).map((r, i) => (
+                  <tr key={`error-${i}`} className={styles.errorDetailsRow}>
+                    <td colSpan={6} className={styles.errorDetails}>
+                      <strong>Error for {r.domain}:</strong> {r.error}
                     </td>
                   </tr>
                 ))}

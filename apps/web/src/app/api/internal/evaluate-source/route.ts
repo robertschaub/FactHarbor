@@ -267,33 +267,63 @@ async function evaluateWithModel(
   }
 }
 
+interface EvaluationError {
+  reason: 
+    | "primary_model_failed"
+    | "confidence_too_low" 
+    | "no_consensus"
+    | "evaluation_error";
+  details: string;
+  primaryScore?: number;
+  primaryConfidence?: number;
+  secondaryScore?: number;
+  secondaryConfidence?: number;
+}
+
 async function evaluateSourceWithConsensus(
   domain: string,
   multiModel: boolean,
   confidenceThreshold: number,
   consensusThreshold: number
-): Promise<ResponsePayload | null> {
+): Promise<{ success: true; data: ResponsePayload } | { success: false; error: EvaluationError }> {
   // Primary evaluation (Anthropic Claude)
   const primary = await evaluateWithModel(domain, "anthropic");
   if (!primary) {
     console.log(`[SR-Eval] Primary evaluation failed for ${domain}`);
-    return null;
+    return {
+      success: false,
+      error: {
+        reason: "primary_model_failed",
+        details: "Claude evaluation failed. Check API key or service availability.",
+      },
+    };
   }
 
   // Check confidence threshold
   if (primary.result.confidence < confidenceThreshold) {
     console.log(`[SR-Eval] Confidence too low for ${domain}: ${primary.result.confidence} < ${confidenceThreshold}`);
-    return null;
+    return {
+      success: false,
+      error: {
+        reason: "confidence_too_low",
+        details: `LLM confidence ${(primary.result.confidence * 100).toFixed(0)}% is below threshold ${(confidenceThreshold * 100).toFixed(0)}%. Source may be unknown or insufficient information available.`,
+        primaryScore: primary.result.score,
+        primaryConfidence: primary.result.confidence,
+      },
+    };
   }
 
   // Single model mode
   if (!multiModel) {
     return {
-      score: primary.result.score,
-      confidence: primary.result.confidence,
-      modelPrimary: primary.modelName,
-      modelSecondary: null,
-      consensusAchieved: true, // Single model = automatic "consensus"
+      success: true,
+      data: {
+        score: primary.result.score,
+        confidence: primary.result.confidence,
+        modelPrimary: primary.modelName,
+        modelSecondary: null,
+        consensusAchieved: true, // Single model = automatic "consensus"
+      },
     };
   }
 
@@ -302,11 +332,14 @@ async function evaluateSourceWithConsensus(
   if (!secondary) {
     console.log(`[SR-Eval] Secondary evaluation failed for ${domain}, using primary only`);
     return {
-      score: primary.result.score,
-      confidence: primary.result.confidence * 0.8, // Reduce confidence without consensus
-      modelPrimary: primary.modelName,
-      modelSecondary: null,
-      consensusAchieved: false,
+      success: true,
+      data: {
+        score: primary.result.score,
+        confidence: primary.result.confidence * 0.8, // Reduce confidence without consensus
+        modelPrimary: primary.modelName,
+        modelSecondary: null,
+        consensusAchieved: false,
+      },
     };
   }
 
@@ -318,7 +351,17 @@ async function evaluateSourceWithConsensus(
     console.log(
       `[SR-Eval] No consensus for ${domain}: ${primary.result.score.toFixed(2)} vs ${secondary.result.score.toFixed(2)} (diff: ${scoreDiff.toFixed(2)} > ${consensusThreshold})`
     );
-    return null;
+    return {
+      success: false,
+      error: {
+        reason: "no_consensus",
+        details: `Models disagree: Claude scored ${(primary.result.score * 100).toFixed(0)}%, GPT-4 scored ${(secondary.result.score * 100).toFixed(0)}% (difference ${(scoreDiff * 100).toFixed(0)}% exceeds ${(consensusThreshold * 100).toFixed(0)}% threshold).`,
+        primaryScore: primary.result.score,
+        primaryConfidence: primary.result.confidence,
+        secondaryScore: secondary.result.score,
+        secondaryConfidence: secondary.result.confidence,
+      },
+    };
   }
 
   // Consensus achieved - average the scores
@@ -330,11 +373,14 @@ async function evaluateSourceWithConsensus(
   );
 
   return {
-    score: avgScore,
-    confidence: avgConfidence,
-    modelPrimary: primary.modelName,
-    modelSecondary: secondary.modelName,
-    consensusAchieved: true,
+    success: true,
+    data: {
+      score: avgScore,
+      confidence: avgConfidence,
+      modelPrimary: primary.modelName,
+      modelSecondary: secondary.modelName,
+      consensusAchieved: true,
+    },
   };
 }
 
@@ -392,12 +438,20 @@ export async function POST(req: Request) {
     body.consensusThreshold
   );
 
-  if (!result) {
+  if (!result.success) {
     return NextResponse.json(
-      { error: "Evaluation failed or no consensus" },
+      { 
+        error: "Evaluation failed",
+        reason: result.error.reason,
+        details: result.error.details,
+        primaryScore: result.error.primaryScore,
+        primaryConfidence: result.error.primaryConfidence,
+        secondaryScore: result.error.secondaryScore,
+        secondaryConfidence: result.error.secondaryConfidence,
+      },
       { status: 422 }
     );
   }
 
-  return NextResponse.json(result);
+  return NextResponse.json(result.data);
 }
