@@ -79,7 +79,8 @@ export default function SourceReliabilityPage() {
     error?: string;
   }> | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<CachedScore | null>(null);
-  const pageSize = 25;
+  const [pageSize, setPageSize] = useState(25);
+  const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
   // Helper to build fetch headers with admin key
   const getHeaders = useCallback((): HeadersInit => {
@@ -127,6 +128,12 @@ export default function SourceReliabilityPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Reset to page 1 when page size changes
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setPage(0);
+  };
 
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -672,6 +679,21 @@ export default function SourceReliabilityPage() {
             >
               Next →
             </button>
+            <div className={styles.pageSizeControl}>
+              <label htmlFor="pageSize">Per page:</label>
+              <select
+                id="pageSize"
+                className={styles.pageSizeSelect}
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              >
+                {PAGE_SIZE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </>
       ) : (

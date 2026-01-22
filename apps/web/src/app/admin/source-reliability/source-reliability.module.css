@@ -226,6 +226,34 @@
   font-size: 14px;
 }
 
+/* Page size control */
+.pageSizeControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.pageSizeSelect {
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.pageSizeSelect:hover {
+  border-color: #cbd5e1;
+}
+
+.pageSizeSelect:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 /* States */
 .loading {
   text-align: center;
