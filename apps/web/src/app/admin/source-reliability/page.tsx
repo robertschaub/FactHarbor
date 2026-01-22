@@ -264,21 +264,25 @@ export default function SourceReliabilityPage() {
     return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  // Symmetric 5-band scale: each band is 20 points, centered at 0.5
+  // Symmetric 7-band scale (matches verdict scale), centered at 0.5
   const getScoreColor = (score: number): string => {
-    if (score >= 0.80) return "#10b981"; // green - very_high (80-100%)
-    if (score >= 0.60) return "#84cc16"; // lime - high (60-80%)
-    if (score >= 0.40) return "#8b5cf6"; // purple - mixed (40-60%, neutral center)
-    if (score >= 0.20) return "#f59e0b"; // amber - low (20-40%)
-    return "#ef4444"; // red - very_low (0-20%)
+    if (score >= 0.86) return "#10b981"; // green - highly reliable
+    if (score >= 0.72) return "#22c55e"; // emerald - reliable
+    if (score >= 0.58) return "#84cc16"; // lime - mostly reliable
+    if (score >= 0.43) return "#8b5cf6"; // purple - uncertain (center)
+    if (score >= 0.29) return "#f59e0b"; // amber - mostly unreliable
+    if (score >= 0.15) return "#f97316"; // orange - unreliable
+    return "#ef4444"; // red - highly unreliable
   };
 
   const getScoreLabel = (score: number): string => {
-    if (score >= 0.80) return "Very High (80-100%)";
-    if (score >= 0.60) return "High (60-80%)";
-    if (score >= 0.40) return "Mixed (40-60%)";
-    if (score >= 0.20) return "Low (20-40%)";
-    return "Very Low (0-20%)";
+    if (score >= 0.86) return "Highly Reliable (86-100%)";
+    if (score >= 0.72) return "Reliable (72-86%)";
+    if (score >= 0.58) return "Mostly Reliable (58-72%)";
+    if (score >= 0.43) return "Uncertain (43-57%)";
+    if (score >= 0.29) return "Mostly Unreliable (29-43%)";
+    if (score >= 0.15) return "Unreliable (15-29%)";
+    return "Highly Unreliable (0-15%)";
   };
 
   /**
@@ -307,13 +311,15 @@ export default function SourceReliabilityPage() {
     return Math.max(0, Math.min(1.0, blendCenter + amplifiedDeviation));
   };
 
-  // Symmetric 5-band scale for effective weight colors
+  // Symmetric 7-band scale for effective weight colors
   const getEffectiveWeightColor = (weight: number): string => {
-    if (weight >= 0.80) return "#10b981"; // green - very high
-    if (weight >= 0.60) return "#84cc16"; // lime - high
-    if (weight >= 0.40) return "#8b5cf6"; // purple - mixed (neutral)
-    if (weight >= 0.20) return "#f59e0b"; // amber - low
-    return "#ef4444"; // red - very low
+    if (weight >= 0.86) return "#10b981"; // green - highly reliable
+    if (weight >= 0.72) return "#22c55e"; // emerald - reliable
+    if (weight >= 0.58) return "#84cc16"; // lime - mostly reliable
+    if (weight >= 0.43) return "#8b5cf6"; // purple - uncertain (center)
+    if (weight >= 0.29) return "#f59e0b"; // amber - mostly unreliable
+    if (weight >= 0.15) return "#f97316"; // orange - unreliable
+    return "#ef4444"; // red - highly unreliable
   };
 
   if (loading && !data) {
@@ -573,13 +579,15 @@ export default function SourceReliabilityPage() {
 
       {/* Legend */}
       <div className={styles.legend}>
-        <h3>Score Legend (Symmetric 5-Band Scale)</h3>
+        <h3>Score Legend (Symmetric 7-Band Scale)</h3>
         <div className={styles.legendItems}>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> 80-100%: Very High</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> 60-80%: High</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#8b5cf6" }} /> 40-60%: Mixed (neutral center)</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 20-40%: Low</span>
-          <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-20%: Very Low</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> 86-100%: Highly Reliable</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#22c55e" }} /> 72-86%: Reliable</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> 58-72%: Mostly Reliable</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#8b5cf6" }} /> 43-57%: Uncertain (center)</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> 29-43%: Mostly Unreliable</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> 15-29%: Unreliable</span>
+          <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> 0-15%: Highly Unreliable</span>
         </div>
         
         <h3 style={{ marginTop: "16px" }}>How Verdict Weighting Works</h3>

@@ -8358,15 +8358,17 @@ function calculateOverallCredibility(
       const hostname = new URL(inputUrl).hostname.replace(/^www\./, "");
       const inputScore = getTrackRecordScore(inputUrl);
       if (inputScore !== null) {
-        // Symmetric 5-band scale: 0.80/0.60/0.40/0.20
+        // Symmetric 7-band scale (matches verdict scale)
         const level =
-          inputScore >= 0.80
-            ? "Very High"
-            : inputScore >= 0.60
-              ? "High"
-              : inputScore >= 0.40
-                ? "Mixed"
-                : "Low";
+          inputScore >= 0.86
+            ? "Highly Reliable"
+            : inputScore >= 0.72
+              ? "Reliable"
+              : inputScore >= 0.58
+                ? "Mostly Reliable"
+                : inputScore >= 0.43
+                  ? "Uncertain"
+                  : "Unreliable";
         inputSourceInfo = `${hostname}: ${level} (${(inputScore * 100).toFixed(0)}%)`;
       } else {
         inputSourceInfo = `${hostname}: Unknown`;
@@ -8388,15 +8390,17 @@ function calculateOverallCredibility(
   const avg =
     withScore.reduce((sum, s) => sum + normalizeTrackRecordScore(s.trackRecordScore || 0), 0) /
     withScore.length;
-  // Symmetric 5-band scale: 0.80/0.60/0.40/0.20
+  // Symmetric 7-band scale (matches verdict scale)
   const researchLevel =
-    avg >= 0.80
-      ? "Very High"
-      : avg >= 0.60
-        ? "High"
-        : avg >= 0.40
-          ? "Mixed"
-          : "Low";
+    avg >= 0.86
+      ? "Highly Reliable"
+      : avg >= 0.72
+        ? "Reliable"
+        : avg >= 0.58
+          ? "Mostly Reliable"
+          : avg >= 0.43
+            ? "Uncertain"
+            : "Unreliable";
   const researchInfo = `Research sources: ${researchLevel} (${(avg * 100).toFixed(0)}%)`;
 
   if (inputSourceInfo) {

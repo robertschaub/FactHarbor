@@ -134,19 +134,23 @@ IMPORTANT GUIDELINES:
 5. If you don't have sufficient information about this source, say so
 6. For government sources, consider current administration's transparency and accuracy record
 
-RATING SCALE (factualRating) - symmetric around 0.5:
-- "very_high": Exceptional factual accuracy, rigorous fact-checking
-- "high": Strong editorial standards, reliable reporting
-- "mixed": Neutral/uncertain - use when reliability is unclear (center)
-- "low": Frequently misleading or inaccurate
-- "very_low": Consistently unreliable, misinformation
+RATING SCALE (factualRating) - symmetric 7-band scale around 0.5:
+- "highly_reliable": Exceptional factual accuracy, rigorous fact-checking, primary sources
+- "reliable": Strong editorial standards, consistent accuracy
+- "mostly_reliable": Generally accurate with occasional minor issues
+- "uncertain": Reliability unclear, insufficient track record (neutral center)
+- "mostly_unreliable": Frequent errors or bias, verify independently
+- "unreliable": Consistent inaccuracies or misleading content
+- "highly_unreliable": Known misinformation source, fabricated content
 
-SCORE SCALE (0.0 to 1.0) - 5 equal bands, symmetric around 0.5:
-- 0.80-1.00: very_high factual rating
-- 0.60-0.80: high factual rating
-- 0.40-0.60: mixed rating (neutral center, contains 0.5)
-- 0.20-0.40: low rating
-- 0.00-0.20: very_low rating
+SCORE SCALE (0.0 to 1.0) - 7 bands symmetric around 0.5 (matches verdict scale):
+- 0.86-1.00: highly_reliable
+- 0.72-0.86: reliable
+- 0.58-0.72: mostly_reliable
+- 0.43-0.57: uncertain (neutral center)
+- 0.29-0.43: mostly_unreliable
+- 0.15-0.29: unreliable
+- 0.00-0.15: highly_unreliable
 
 CONFIDENCE (0.0 to 1.0):
 - 0.9+: Well-known major source with documented track record

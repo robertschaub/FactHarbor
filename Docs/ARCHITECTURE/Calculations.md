@@ -655,7 +655,7 @@ Source reliability weighting is applied in all three pipelines:
 
 FactHarbor's calculation system:
 
-1. **Scales verdicts** using a symmetric 5-band reliability system (0-100%)
+1. **Scales verdicts** using a symmetric 7-band reliability system (matches verdict scale)
 2. **Distinguishes counter-evidence** from contestation and applies penalties
 3. **Aggregates hierarchically** from facts → claims → factors → analysis contexts → overall
 4. **Modulates by confidence** using truth bands

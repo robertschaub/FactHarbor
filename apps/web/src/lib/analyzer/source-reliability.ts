@@ -418,12 +418,14 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
 /**
  * Apply evidence weighting based on source track record scores.
  * 
- * Symmetric 5-band scale (20 points each, centered at 0.5):
- * - 0.80-1.00: very_high (verdict fully preserved)
- * - 0.60-0.80: high (verdict mostly preserved)
- * - 0.40-0.60: mixed/neutral (no change, center band contains 0.5)
- * - 0.20-0.40: low (pulls verdict toward neutral)
- * - 0.00-0.20: very_low (strong pull toward neutral)
+ * Symmetric 7-band scale (matches verdict scale, centered at 0.5):
+ * - 0.86-1.00: highly_reliable (verdict fully preserved)
+ * - 0.72-0.86: reliable (verdict mostly preserved)
+ * - 0.58-0.72: mostly_reliable (slight preservation)
+ * - 0.43-0.57: uncertain (neutral center, appropriate skepticism)
+ * - 0.29-0.43: mostly_unreliable (pulls verdict toward neutral)
+ * - 0.15-0.29: unreliable (strong pull toward neutral)
+ * - 0.00-0.15: highly_unreliable (maximum skepticism)
  * 
  * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
  * 
@@ -543,14 +545,14 @@ export function calculateOverallCredibility(
 
   const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
 
-  // Credibility levels aligned with symmetric 5-band scale (centered at 0.5)
+  // Credibility levels aligned with symmetric 7-band scale (centered at 0.5)
   let credibilityLevel: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
-  if (averageScore >= 0.60) {
-    credibilityLevel = "HIGH";      // high + very_high (0.60+)
-  } else if (averageScore >= 0.40) {
-    credibilityLevel = "MEDIUM";    // mixed (0.40-0.60, neutral center)
+  if (averageScore >= 0.58) {
+    credibilityLevel = "HIGH";      // mostly_reliable + reliable + highly_reliable (0.58+)
+  } else if (averageScore >= 0.43) {
+    credibilityLevel = "MEDIUM";    // uncertain (0.43-0.57, neutral center)
   } else {
-    credibilityLevel = "LOW";       // low + very_low (<0.40)
+    credibilityLevel = "LOW";       // mostly_unreliable + unreliable + highly_unreliable (<0.43)
   }
 
   return {
