@@ -57,11 +57,11 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
    - Rate limiting for cost control
 
 2. **Evidence Weighting**: Source reliability now affects verdict calculations
-   - **Effective Weight Formula** (amplified deviation):
+   - **Effective Weight Formula** (confidence-modulated):
      ```
-     effectiveWeight = 0.5 + (score - 0.5) × spreadMultiplier × confidence × consensusFactor
+     effectiveWeight = 0.5 + (score - 0.5) × confidence
      ```
-   - Configurable: `FH_SR_SPREAD_MULTIPLIER` (default 1.5), `FH_SR_CONSENSUS_SPREAD_MULTIPLIER` (default 1.15)
+   - High confidence → effective weight ≈ score; low confidence → pulled toward 0.5
    - **Symmetric 7-band scale** (matches verdict scale, centered at 0.5):
      - 0.86-1.00: highly_reliable | 0.72-0.86: reliable | 0.58-0.72: mostly_reliable
      - 0.43-0.57: uncertain (center) | 0.29-0.43: mostly_unreliable
@@ -95,7 +95,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 - `FH_SR_ENABLED`, `FH_SR_MULTI_MODEL`, `FH_SR_CONFIDENCE_THRESHOLD`
 - `FH_SR_CONSENSUS_THRESHOLD`, `FH_SR_CACHE_TTL_DAYS`, `FH_SR_FILTER_ENABLED`
 - `FH_SR_SKIP_PLATFORMS`, `FH_SR_SKIP_TLDS`, `FH_SR_RATE_LIMIT_PER_IP`
-- `FH_SR_SPREAD_MULTIPLIER`, `FH_SR_CONSENSUS_SPREAD_MULTIPLIER`, `FH_SR_DEFAULT_SCORE`
+- `FH_SR_DEFAULT_SCORE`
 
 ---
 

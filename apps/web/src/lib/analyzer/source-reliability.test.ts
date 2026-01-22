@@ -335,8 +335,8 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     const sources = [{ id: "s1", trackRecordScore: null }]; // Unknown source
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // Unknown source: score=0.5 (neutral), confidence=0.5, no consensus
-    // effectiveWeight = 0.5 + (0.5 - 0.5) × 1.5 × 0.5 × 1.0 = 0.5 + 0 = 0.5
+    // Unknown source: score=0.5 (neutral), confidence=0.5
+    // effectiveWeight = 0.5 + (0.5 - 0.5) × 0.5 = 0.5 + 0 = 0.5
     // adjustedTruth = 50 + (75 - 50) × 0.5 = 50 + 12.5 = 63
     expect(result[0].truthPercentage).toBe(63);
     expect(result[0].evidenceWeight).toBeCloseTo(0.5, 2);
@@ -350,10 +350,10 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     const sources = [{ id: "s1", trackRecordScore: 0.95 }]; // High reliability
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // effectiveWeight = 0.5 + (0.95 - 0.5) × 1.5 × 0.7 × 1.0 = 0.5 + 0.4725 = 0.9725
-    // adjustedTruth = 50 + (80 - 50) × 0.9725 = 50 + 29.175 ≈ 79
-    expect(result[0].truthPercentage).toBeCloseTo(79, 0);
-    expect(result[0].evidenceWeight).toBeCloseTo(0.97, 1);
+    // New simple formula: effectiveWeight = 0.5 + (0.95 - 0.5) × 0.7 = 0.5 + 0.315 = 0.815
+    // adjustedTruth = 50 + (80 - 50) × 0.815 = 50 + 24.45 ≈ 74
+    expect(result[0].truthPercentage).toBeCloseTo(74, 0);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.815, 2);
   });
 
   it("pulls truth toward neutral for low reliability source", () => {
@@ -364,10 +364,10 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     const sources = [{ id: "s1", trackRecordScore: 0.3 }]; // Low reliability
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // effectiveWeight = 0.5 + (0.3 - 0.5) × 1.5 × 0.7 × 1.0 = 0.5 - 0.21 = 0.29
-    // adjustedTruth = 50 + (80 - 50) × 0.29 = 50 + 8.7 ≈ 59
-    expect(result[0].truthPercentage).toBe(59);
-    expect(result[0].evidenceWeight).toBeCloseTo(0.29, 2);
+    // New simple formula: effectiveWeight = 0.5 + (0.3 - 0.5) × 0.7 = 0.5 - 0.14 = 0.36
+    // adjustedTruth = 50 + (80 - 50) × 0.36 = 50 + 10.8 ≈ 61
+    expect(result[0].truthPercentage).toBe(61);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.36, 2);
   });
 
   it("averages effective weights from multiple supporting facts", () => {
@@ -384,12 +384,13 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     ];
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // s1: effectiveWeight = 0.5 + (0.9 - 0.5) × 1.5 × 0.7 = 0.5 + 0.42 = 0.92
-    // s2: effectiveWeight = 0.5 + (0.5 - 0.5) × 1.5 × 0.7 = 0.5 + 0 = 0.5
-    // avgWeight = (0.92 + 0.5) / 2 = 0.71
-    // adjustedTruth = 50 + (80 - 50) × 0.71 = 50 + 21.3 ≈ 71
-    expect(result[0].truthPercentage).toBe(71);
-    expect(result[0].evidenceWeight).toBeCloseTo(0.71, 2);
+    // New simple formula: effectiveWeight = 0.5 + (score - 0.5) × confidence
+    // s1: effectiveWeight = 0.5 + (0.9 - 0.5) × 0.7 = 0.5 + 0.28 = 0.78
+    // s2: effectiveWeight = 0.5 + (0.5 - 0.5) × 0.7 = 0.5 + 0 = 0.5
+    // avgWeight = (0.78 + 0.5) / 2 = 0.64
+    // adjustedTruth = 50 + (80 - 50) × 0.64 = 50 + 19.2 ≈ 69
+    expect(result[0].truthPercentage).toBe(69);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.64, 2);
   });
 
   it("clamps truth percentage to valid range", () => {
@@ -414,9 +415,9 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     const sources = [{ id: "s1", trackRecordScore: 0.9 }];
 
     const result = applyEvidenceWeighting(verdicts, facts, sources);
-    // effectiveWeight = 0.5 + (0.9 - 0.5) × 1.5 × 0.7 = 0.92
-    // Confidence formula: confidence × (0.5 + avgWeight/2) = 80 × (0.5 + 0.46) = 80 × 0.96 = 76.8 ≈ 77
-    expect(result[0].confidence).toBe(77);
+    // New simple formula: effectiveWeight = 0.5 + (0.9 - 0.5) × 0.7 = 0.78
+    // Confidence formula: confidence × (0.5 + avgWeight/2) = 80 × (0.5 + 0.39) = 80 × 0.89 = 71.2 ≈ 71
+    expect(result[0].confidence).toBe(71);
   });
 });
 

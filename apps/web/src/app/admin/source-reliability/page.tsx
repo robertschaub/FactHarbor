@@ -287,28 +287,15 @@ export default function SourceReliabilityPage() {
 
   /**
    * Calculate effective weight used in verdict calculations.
-   * Formula: amplified deviation from neutral (0.5) based on confidence
-   * - Consensus multiplies spread (extra impact when models agree)
-   * - Deviation from 0.5 is amplified by spread multiplier
-   * - Higher confidence = more impact from the score
-   * 
-   * Uses config from API (matching server-side calculation) with fallback defaults.
+   * Simple formula: effectiveWeight = 0.5 + (score - 0.5) × confidence
+   * - High confidence: effective weight ≈ score
+   * - Low confidence: pulls toward neutral (0.5)
    */
-  const calculateEffectiveWeight = (score: number, confidence: number, consensus: boolean): number => {
-    // Use config from API or fall back to defaults
-    const blendCenter = data?.config?.blendCenter ?? 0.5;
-    const spreadMultiplier = data?.config?.spreadMultiplier ?? 1.5;
-    const consensusSpreadMultiplier = data?.config?.consensusSpreadMultiplier ?? 1.15;
-    
-    // Calculate deviation from neutral
+  const calculateEffectiveWeight = (score: number, confidence: number, _consensus: boolean): number => {
+    const blendCenter = 0.5;
     const deviation = score - blendCenter;
-    
-    // Consensus multiplies spread (agreement = more impact)
-    const consensusFactor = consensus ? consensusSpreadMultiplier : 1.0;
-    const amplifiedDeviation = deviation * spreadMultiplier * confidence * consensusFactor;
-    
-    // Clamp to [0, 1]
-    return Math.max(0, Math.min(1.0, blendCenter + amplifiedDeviation));
+    const effectiveWeight = blendCenter + deviation * confidence;
+    return Math.max(0, Math.min(1.0, effectiveWeight));
   };
 
   // Symmetric 7-band scale for effective weight colors
@@ -592,17 +579,17 @@ export default function SourceReliabilityPage() {
         
         <h3 style={{ marginTop: "16px" }}>How Verdict Weighting Works</h3>
         <div className={styles.legendItems} style={{ flexDirection: "column", gap: "8px" }}>
-          <span><strong>Effective Weight</strong> = 0.5 + (deviation × spread × confidence × consensus)</span>
-          <span>• <strong>Spread Multiplier</strong>: {data?.config?.spreadMultiplier ?? 1.5}x amplifies deviation from neutral</span>
-          <span>• <strong>Consensus Spread</strong>: {data?.config?.consensusSpreadMultiplier ?? 1.15}x extra spread when models agree</span>
-          <span>• <strong>Unknown Sources</strong>: {((data?.config?.defaultScore ?? 0.5) * 100).toFixed(0)}% default score (neutral), 50% confidence</span>
+          <span><strong>Effective Weight</strong> = 0.5 + (score - 0.5) × confidence</span>
+          <span>• <strong>High confidence</strong>: effective weight ≈ score (full impact)</span>
+          <span>• <strong>Low confidence</strong>: pulls toward neutral (0.5)</span>
+          <span>• <strong>Unknown Sources</strong>: 50% score, 50% confidence → 50% effective (neutral)</span>
         </div>
         
-        <h3 style={{ marginTop: "16px" }}>Examples (with current config)</h3>
+        <h3 style={{ marginTop: "16px" }}>Examples</h3>
         <div className={styles.legendItems} style={{ flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span>High score (95%, 95% conf, consensus): <strong>100%</strong> effective (capped)</span>
-          <span>Medium (70%, 80% conf, no consensus): <strong>~74%</strong> effective</span>
-          <span>Unknown source ({((data?.config?.defaultScore ?? 0.5) * 100).toFixed(0)}%, 50% conf): <strong>50%</strong> effective (neutral)</span>
+          <span>High score (95%, 95% conf): 0.5 + 0.45 × 0.95 = <strong>93%</strong> effective</span>
+          <span>Medium (67%, 83% conf): 0.5 + 0.17 × 0.83 = <strong>64%</strong> effective</span>
+          <span>Unknown source (50%, 50% conf): 0.5 + 0.0 × 0.5 = <strong>50%</strong> effective (neutral)</span>
         </div>
       </div>
     </div>

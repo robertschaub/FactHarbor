@@ -516,38 +516,35 @@ Source reliability scores influence verdict calculations by adjusting truth perc
 
 ### Effective Weight Formula
 
-The system uses **amplified deviation** from a fixed neutral center (0.5) to create meaningful spread:
+With the 7-band scale, the LLM score directly represents reliability. Confidence modulates how much the score deviates from neutral:
 
 ```typescript
-const BLEND_CENTER = 0.5;           // Fixed: mathematical neutral
-const SPREAD_MULTIPLIER = 1.5;      // Amplifies differences (FH_SR_SPREAD_MULTIPLIER)
-const CONSENSUS_SPREAD_MULTIPLIER = 1.15;  // Extra spread when models agree
+const BLEND_CENTER = 0.5;  // Fixed: mathematical neutral
 
 function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  // Calculate deviation from neutral
+  const { score, confidence } = data;
+  
+  // Confidence modulates deviation from neutral
+  // effectiveWeight = 0.5 + (score - 0.5) × confidence
   const deviation = score - BLEND_CENTER;
+  const effectiveWeight = BLEND_CENTER + deviation * confidence;
   
-  // Consensus multiplies spread (agreement = more impact)
-  const consensusFactor = consensusAchieved ? CONSENSUS_SPREAD_MULTIPLIER : 1.0;
-  const amplifiedDeviation = deviation * SPREAD_MULTIPLIER * confidence * consensusFactor;
-  
-  // Clamp to [0, 1]
-  return Math.max(0, Math.min(1.0, BLEND_CENTER + amplifiedDeviation));
+  return Math.max(0, Math.min(1.0, effectiveWeight));
 }
 ```
 
 | Component | Purpose |
 |-----------|---------|
-| **Score** | LLM-evaluated factual reliability (0.0-1.0) |
-| **Spread Multiplier** | 1.5x amplifies deviation from neutral (configurable) |
-| **Consensus Spread Multiplier** | 1.15x extra spread when Claude and GPT-4 agreed (configurable) |
-| **Blend Center** | Fixed at 0.5 (mathematical neutral, NOT configurable) |
+| **Score** | LLM-evaluated reliability (7-band scale, 0.0-1.0) |
+| **Confidence** | How certain the LLM was - pulls toward neutral when low |
+| **Blend Center** | Fixed at 0.5 (mathematical neutral) |
 
 **Key Design Decisions**:
-- Consensus multiplies **spread**, giving more impact to agreed-upon scores
-- Spread multiplier creates meaningful differentiation (39% to 100% range)
-- Blend center is **fixed at 0.5** for formula stability
-- `FH_SR_DEFAULT_SCORE` only affects initial score for unknown sources
+- **Simple formula**: `effectiveWeight = 0.5 + (score - 0.5) × confidence`
+- **High confidence** (1.0): effective weight = score (full impact)
+- **Low confidence** (0.5): effective weight halfway between 0.5 and score
+- **Zero confidence**: effective weight = 0.5 (neutral)
+- The 7-band scale makes artificial amplification unnecessary
 
 ### Reliability Score Scale (7-Band Symmetric)
 
@@ -572,18 +569,20 @@ The source reliability system uses a symmetric 7-band scale centered at 0.5, mir
 
 ### Effective Weight Examples
 
-| Source | Score | Confidence | Consensus | Effective Weight |
-|--------|-------|------------|-----------|------------------|
-| Reuters | 95% | 95% | Yes | **100%** (capped) |
-| bag.admin.ch | 93% | 90% | Yes | **100%** (capped) |
-| Generic news | 70% | 80% | No | **74%** |
-| Reddit | 55% | 63% | Yes | **56%** |
-| Low quality | 40% | 70% | No | **39%** |
-| Unknown source | 50%* | 50% | No | **50%** (neutral) |
+Using formula: `effectiveWeight = 0.5 + (score - 0.5) × confidence`
 
-*Unknown sources use configurable `FH_SR_DEFAULT_SCORE=0.5` as initial score (symmetric scale center), confidence=0.5
+| Source | Score | Confidence | Calculation | Effective Weight |
+|--------|-------|------------|-------------|------------------|
+| Reuters | 95% | 95% | 0.5 + 0.45 × 0.95 | **93%** |
+| bag.admin.ch | 93% | 90% | 0.5 + 0.43 × 0.90 | **89%** |
+| Fox Business | 67% | 83% | 0.5 + 0.17 × 0.83 | **64%** |
+| Reddit | 55% | 63% | 0.5 + 0.05 × 0.63 | **53%** |
+| Low quality | 40% | 70% | 0.5 + (-0.10) × 0.70 | **43%** |
+| Unknown source | 50%* | 50% | 0.5 + 0.0 × 0.50 | **50%** (neutral) |
 
-**Spread: 40% to 100% = 60 points** (good differentiation)
+*Unknown sources use `FH_SR_DEFAULT_SCORE=0.5` (symmetric scale center)
+
+**Key insight**: High confidence → effective weight ≈ score. Low confidence → pulled toward 50%.
 
 ### Verdict Adjustment Formula
 
@@ -600,32 +599,32 @@ adjustedConfidence = Math.round(originalConfidence * (0.5 + avgWeight / 2));
 
 ### Impact Examples
 
-**High Reliability Source (Reuters, 100% effective weight)**
+**High Reliability Source (Reuters, 93% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 1.0 = 85% (MOSTLY-TRUE)
-Impact: No change, verdict fully preserved
+Adjusted: 50 + (85 - 50) × 0.93 = 82.6% → 83% (MOSTLY-TRUE)
+Impact: Verdict mostly preserved (high score + high confidence)
 ```
 
 **Unknown Source (50% effective weight - neutral)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
 Adjusted: 50 + (85 - 50) × 0.50 = 67.5% → 68% (LEANING-TRUE)
-Impact: Strong pull toward neutral (maximum skepticism for unknown)
+Impact: Strong pull toward neutral (appropriate skepticism for unknown)
 ```
 
-**Mixed Source (Reddit 55% score, 63% conf → 55% effective weight)**
+**Mixed Source (Reddit 55% score, 63% conf → 53% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.55 = 69.3% → 69% (LEANING-TRUE)
-Impact: Low score pulls verdict toward neutral
+Adjusted: 50 + (85 - 50) × 0.53 = 68.6% → 69% (LEANING-TRUE)
+Impact: Slight skepticism due to borderline score
 ```
 
-**Low Quality Source (40% score, 70% conf → 40% effective weight)**
+**Low Quality Source (40% score, 70% conf → 43% effective weight)**
 ```
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.40 = 64% (LEANING-TRUE)
-Impact: Strong pull toward neutral (significant skepticism)
+Adjusted: 50 + (85 - 50) × 0.43 = 65% (LEANING-TRUE)
+Impact: Pull toward neutral (unreliable source with high confidence)
 ```
 
 ### Multi-Source Averaging

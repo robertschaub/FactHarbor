@@ -383,36 +383,27 @@ export interface SourceReliabilityData {
  * 
  * Formula: effectiveWeight = score × confidenceMultiplier × consensusBonus
  * 
- * - confidenceMultiplier: Scales impact based on how confident the evaluation was
- *   Low confidence (0.5) → 0.75 multiplier, High confidence (1.0) → 1.0 multiplier
- * 
- * - consensusBonus: Multi-model agreement boosts trust slightly
- *   No consensus → 1.0, Consensus achieved → 1.05 (5% boost, capped at 1.0 final)
+ * With the 7-band scale, the score directly represents reliability level.
+ * Confidence modulates how much the score deviates from neutral:
+ * - High confidence: effective weight ≈ score
+ * - Low confidence: effective weight pulled toward neutral (0.5)
  */
-// Fixed blend center for mathematical stability (NOT configurable)
-// 0.5 = "we don't know" - the neutral point for uncertain scores
+// Fixed blend center - the neutral point for uncertain/unknown sources
 const BLEND_CENTER = 0.5;
 
-// Spread multiplier: amplifies deviation from neutral (configurable via env)
-const SPREAD_MULTIPLIER = parseFloat(process.env.FH_SR_SPREAD_MULTIPLIER || "1.5");
-
-// Consensus spread multiplier: extra spread when models agree (configurable via env)
-const CONSENSUS_SPREAD_MULTIPLIER = parseFloat(process.env.FH_SR_CONSENSUS_SPREAD_MULTIPLIER || "1.15");
-
 export function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  const { score, confidence, consensusAchieved } = data;
+  const { score, confidence } = data;
   
-  // Calculate deviation from neutral
+  // Simple formula: confidence modulates deviation from neutral
+  // effectiveWeight = 0.5 + (score - 0.5) × confidence
+  // - High confidence (1.0): effective weight = score
+  // - Low confidence (0.5): effective weight halfway between 0.5 and score
+  // - Zero confidence: effective weight = 0.5 (neutral)
   const deviation = score - BLEND_CENTER;
+  const effectiveWeight = BLEND_CENTER + deviation * confidence;
   
-  // Consensus multiplies spread (agreement = more impact from score deviation)
-  const consensusFactor = consensusAchieved ? CONSENSUS_SPREAD_MULTIPLIER : 1.0;
-  const amplifiedDeviation = deviation * SPREAD_MULTIPLIER * confidence * consensusFactor;
-  
-  // Calculate effective weight, clamped to [0, 1]
-  const effectiveWeight = Math.max(0, Math.min(1.0, BLEND_CENTER + amplifiedDeviation));
-  
-  return effectiveWeight;
+  // Clamp to [0, 1] for safety
+  return Math.max(0, Math.min(1.0, effectiveWeight));
 }
 
 /**
@@ -421,7 +412,7 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
  * Symmetric 7-band scale (matches verdict scale, centered at 0.5):
  * - 0.86-1.00: highly_reliable (verdict fully preserved)
  * - 0.72-0.86: reliable (verdict mostly preserved)
- * - 0.58-0.72: mostly_reliable (slight preservation)
+ * - 0.58-0.72: mostly_reliable (moderate preservation)
  * - 0.43-0.57: uncertain (neutral center, appropriate skepticism)
  * - 0.29-0.43: mostly_unreliable (pulls verdict toward neutral)
  * - 0.15-0.29: unreliable (strong pull toward neutral)
@@ -429,10 +420,9 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
  * 
  * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
  * 
- * The effective weight incorporates:
- * - Score: Base reliability rating (symmetric scale centered at 0.5)
- * - Confidence: How confident the LLM was in its evaluation  
- * - Consensus: Whether multiple models agreed (multiplies spread)
+ * Effective weight = 0.5 + (score - 0.5) × confidence
+ * - Score: LLM-evaluated reliability (7-band scale)
+ * - Confidence: How certain the LLM was (pulls toward neutral when low)
  */
 export function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],

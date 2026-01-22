@@ -13,8 +13,6 @@ export const runtime = "nodejs";
 function getConfig() {
   return {
     blendCenter: 0.5, // Fixed: mathematical neutral
-    spreadMultiplier: parseFloat(process.env.FH_SR_SPREAD_MULTIPLIER || "1.5"),
-    consensusSpreadMultiplier: parseFloat(process.env.FH_SR_CONSENSUS_SPREAD_MULTIPLIER || "1.15"),
     defaultScore: parseFloat(process.env.FH_SR_DEFAULT_SCORE || "0.5"),
   };
 }

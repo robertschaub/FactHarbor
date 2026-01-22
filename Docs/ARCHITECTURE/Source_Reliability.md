@@ -585,44 +585,40 @@ const adjustedConfidence = Math.round(v.confidence * (0.5 + avgSourceReliability
 
 ### Effective Weight Calculation
 
-The system uses **amplified deviation** from a fixed neutral center (0.5) to create meaningful spread:
+With the 7-band scale, the LLM score directly represents reliability. Confidence modulates how much the score deviates from neutral:
 
 ```typescript
-const BLEND_CENTER = 0.5;           // Fixed: mathematical neutral
-const SPREAD_MULTIPLIER = 1.5;      // Amplifies differences (configurable)
-const CONSENSUS_SPREAD_MULTIPLIER = 1.15;  // Extra spread when models agree
+const BLEND_CENTER = 0.5;  // Fixed: mathematical neutral
 
 function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  // Calculate deviation from neutral
+  const { score, confidence } = data;
+  
+  // Confidence modulates deviation from neutral
+  // effectiveWeight = 0.5 + (score - 0.5) × confidence
   const deviation = score - BLEND_CENTER;
+  const effectiveWeight = BLEND_CENTER + deviation * confidence;
   
-  // Consensus multiplies spread (agreement = more impact)
-  const consensusFactor = consensusAchieved ? CONSENSUS_SPREAD_MULTIPLIER : 1.0;
-  const amplifiedDeviation = deviation * SPREAD_MULTIPLIER * confidence * consensusFactor;
-  
-  // Clamp to [0, 1]
-  return Math.max(0, Math.min(1.0, BLEND_CENTER + amplifiedDeviation));
+  return Math.max(0, Math.min(1.0, effectiveWeight));
 }
 ```
 
 | Component | Effect |
 |-----------|--------|
-| **Score** | Base reliability from LLM (0.0-1.0) |
-| **Spread Multiplier** | 1.5x amplifies deviation from neutral (configurable) |
-| **Consensus Spread Multiplier** | 1.15x extra spread when models agreed (configurable) |
+| **Score** | LLM-evaluated reliability (7-band scale, 0.0-1.0) |
+| **Confidence** | How certain the LLM was - pulls toward neutral when low |
 | **Blend Center** | Fixed at 0.5 (mathematical neutral) |
 
 **Key Design Decisions**:
-- Consensus multiplies **spread**, giving more impact to agreed-upon scores
-- Spread multiplier creates meaningful differentiation between sources
-- Blend center is **fixed at 0.5** for formula stability
-- Cap at [0, 1] prevents "extra credit" or negative weights
+- **Simple formula**: `effectiveWeight = 0.5 + (score - 0.5) × confidence`
+- High confidence (1.0) → effective weight = score
+- Low confidence (0.5) → effective weight halfway between 0.5 and score
+- The 7-band scale makes artificial amplification unnecessary
 
 **Examples:**
-- High-rated source (95% score, 95% conf, consensus): `0.5 + (0.45 × 1.5 × 1.0) = 100%` (capped)
-- Mixed source (55% score, 63% conf, consensus): `0.5 + (0.05 × 1.5 × 0.72) = 55%` effective
-- Low quality (40% score, 70% conf, no consensus): `0.5 + (-0.10 × 1.5 × 0.70) = 40%` effective
-- Unknown source (50% score, 50% conf, no consensus): `0.5 + (0.0 × 1.5 × 0.50) = 50%` effective (neutral)
+- High-rated source (95% score, 95% conf): `0.5 + 0.45 × 0.95 = 93%` effective
+- Mixed source (67% score, 83% conf): `0.5 + 0.17 × 0.83 = 64%` effective
+- Low quality (40% score, 70% conf): `0.5 + (-0.10) × 0.70 = 43%` effective
+- Unknown source (50% score, 50% conf): `0.5 + 0.0 × 0.50 = 50%` effective (neutral)
 
 ### Unknown Source Handling
 
@@ -635,9 +631,8 @@ Sources not in the cache are assigned a configurable default score:
 Unknown sources use:
 - Default score (0.5 = neutral)
 - Low confidence (0.5)
-- No consensus bonus
 
-This results in an effective weight of ~40%, applying appropriate skepticism to unverified sources while not completely discounting their evidence.
+This results in an effective weight of 50% (neutral), applying appropriate skepticism to unverified sources while not completely discounting their evidence.
 
 ### Multi-Model Consensus
 
