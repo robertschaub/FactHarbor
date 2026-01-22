@@ -91,6 +91,35 @@ async function getDb(): Promise<Database> {
     CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
   `);
 
+  // Migration: Add new columns if they don't exist (for existing databases)
+  try {
+    // Check if reasoning column exists
+    const tableInfo = await db.all("PRAGMA table_info(source_reliability)");
+    const hasReasoning = tableInfo.some((col: any) => col.name === "reasoning");
+    const hasCategory = tableInfo.some((col: any) => col.name === "category");
+    const hasBiasIndicator = tableInfo.some((col: any) => col.name === "bias_indicator");
+    const hasEvidenceCited = tableInfo.some((col: any) => col.name === "evidence_cited");
+
+    if (!hasReasoning) {
+      console.log("[SR-Cache] Adding reasoning column");
+      await db.exec("ALTER TABLE source_reliability ADD COLUMN reasoning TEXT");
+    }
+    if (!hasCategory) {
+      console.log("[SR-Cache] Adding category column");
+      await db.exec("ALTER TABLE source_reliability ADD COLUMN category TEXT");
+    }
+    if (!hasBiasIndicator) {
+      console.log("[SR-Cache] Adding bias_indicator column");
+      await db.exec("ALTER TABLE source_reliability ADD COLUMN bias_indicator TEXT");
+    }
+    if (!hasEvidenceCited) {
+      console.log("[SR-Cache] Adding evidence_cited column");
+      await db.exec("ALTER TABLE source_reliability ADD COLUMN evidence_cited TEXT");
+    }
+  } catch (err) {
+    console.error("[SR-Cache] Migration error:", err);
+  }
+
   console.log(`[SR-Cache] Database initialized`);
   return db;
 }
