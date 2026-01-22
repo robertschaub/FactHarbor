@@ -13,6 +13,9 @@ interface CachedScore {
   modelPrimary: string;
   modelSecondary: string | null;
   consensusAchieved: boolean;
+  reasoning?: string | null;
+  category?: string | null;
+  biasIndicator?: string | null;
 }
 
 interface CacheStats {
@@ -74,6 +77,7 @@ export default function SourceReliabilityPage() {
     models?: string;
     error?: string;
   }> | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<CachedScore | null>(null);
   const pageSize = 25;
 
   // Helper to build fetch headers with admin key
@@ -625,13 +629,22 @@ export default function SourceReliabilityPage() {
                     <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
                     <td className={styles.date}>{formatDate(entry.expiresAt)}</td>
                     <td>
-                      <button
-                        onClick={() => handleDelete(entry.domain)}
-                        className={styles.deleteButton}
-                        title="Delete this entry"
-                      >
-                        🗑
-                      </button>
+                      <div className={styles.actionButtons}>
+                        <button
+                          onClick={() => setSelectedEntry(entry)}
+                          className={styles.viewButton}
+                          title="View detailed evaluation"
+                        >
+                          👁
+                        </button>
+                        <button
+                          onClick={() => handleDelete(entry.domain)}
+                          className={styles.deleteButton}
+                          title="Delete this entry"
+                        >
+                          🗑
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -688,6 +701,100 @@ export default function SourceReliabilityPage() {
           <span>• <strong>Unknown Sources</strong> = Default to 50% (neutral)</span>
         </div>
       </div>
+
+      {/* Details Modal */}
+      {selectedEntry && (
+        <div className={styles.modal} onClick={() => setSelectedEntry(null)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Source Evaluation Details</h2>
+              <button onClick={() => setSelectedEntry(null)} className={styles.modalClose}>
+                ✕
+              </button>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <div className={styles.detailSection}>
+                <h3>Domain</h3>
+                <p className={styles.domainLarge}>{selectedEntry.domain}</p>
+              </div>
+
+              <div className={styles.detailGrid}>
+                <div className={styles.detailSection}>
+                  <h3>Reliability Score</h3>
+                  <div className={styles.scoreDisplay}>
+                    <span
+                      className={styles.scoreBadgeLarge}
+                      style={{ backgroundColor: getScoreColor(selectedEntry.score) }}
+                    >
+                      {formatScore(selectedEntry.score)}
+                    </span>
+                    <span className={styles.scoreLabel}>{getScoreLabel(selectedEntry.score)}</span>
+                  </div>
+                </div>
+
+                <div className={styles.detailSection}>
+                  <h3>Confidence</h3>
+                  <p className={styles.valueDisplay}>{formatScore(selectedEntry.confidence)}</p>
+                  <p className={styles.valueLabel}>
+                    {selectedEntry.confidence >= 0.8 ? "High confidence" : selectedEntry.confidence >= 0.6 ? "Medium confidence" : "Low confidence"}
+                  </p>
+                </div>
+
+                {selectedEntry.category && (
+                  <div className={styles.detailSection}>
+                    <h3>Category</h3>
+                    <p className={styles.valueDisplay}>{selectedEntry.category.replace(/_/g, " ").toUpperCase()}</p>
+                  </div>
+                )}
+
+                {selectedEntry.biasIndicator && (
+                  <div className={styles.detailSection}>
+                    <h3>Bias Indicator</h3>
+                    <p className={styles.valueDisplay}>{selectedEntry.biasIndicator.replace(/_/g, " ").toUpperCase()}</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedEntry.reasoning && (
+                <div className={styles.detailSection}>
+                  <h3>LLM Reasoning</h3>
+                  <div className={styles.reasoningBox}>
+                    {selectedEntry.reasoning}
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.detailGrid}>
+                <div className={styles.detailSection}>
+                  <h3>Evaluation Models</h3>
+                  <p className={styles.modelInfo}>
+                    <strong>Primary:</strong> {selectedEntry.modelPrimary}<br />
+                    {selectedEntry.modelSecondary && (
+                      <><strong>Secondary:</strong> {selectedEntry.modelSecondary}<br /></>
+                    )}
+                    <strong>Consensus:</strong> {selectedEntry.consensusAchieved ? "✓ Achieved" : "✗ Not achieved"}
+                  </p>
+                </div>
+
+                <div className={styles.detailSection}>
+                  <h3>Cache Info</h3>
+                  <p className={styles.dateInfo}>
+                    <strong>Evaluated:</strong> {formatDate(selectedEntry.evaluatedAt)}<br />
+                    <strong>Expires:</strong> {formatDate(selectedEntry.expiresAt)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button onClick={() => setSelectedEntry(null)} className={styles.button}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

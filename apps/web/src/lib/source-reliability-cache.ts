@@ -33,6 +33,9 @@ export interface CachedScore {
   modelPrimary: string;
   modelSecondary: string | null;
   consensusAchieved: boolean;
+  reasoning?: string | null;
+  category?: string | null;
+  biasIndicator?: string | null;
 }
 
 interface ScoreRow {
@@ -44,6 +47,9 @@ interface ScoreRow {
   model_primary: string;
   model_secondary: string | null;
   consensus_achieved: number;
+  reasoning: string | null;
+  category: string | null;
+  bias_indicator: string | null;
 }
 
 // ============================================================================
@@ -73,7 +79,10 @@ async function getDb(): Promise<Database> {
       expires_at TEXT NOT NULL,
       model_primary TEXT NOT NULL,
       model_secondary TEXT,
-      consensus_achieved INTEGER NOT NULL DEFAULT 0
+      consensus_achieved INTEGER NOT NULL DEFAULT 0,
+      reasoning TEXT,
+      category TEXT,
+      bias_indicator TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
@@ -110,6 +119,9 @@ export async function getCachedScore(domain: string): Promise<CachedScore | null
     modelPrimary: row.model_primary,
     modelSecondary: row.model_secondary,
     consensusAchieved: row.consensus_achieved === 1,
+    reasoning: row.reasoning,
+    category: row.category,
+    biasIndicator: row.bias_indicator,
   };
 }
 
@@ -190,7 +202,10 @@ export async function setCachedScore(
   confidence: number,
   modelPrimary: string,
   modelSecondary: string | null,
-  consensusAchieved: boolean
+  consensusAchieved: boolean,
+  reasoning?: string | null,
+  category?: string | null,
+  biasIndicator?: string | null
 ): Promise<void> {
   const database = await getDb();
   const now = new Date();
@@ -200,8 +215,8 @@ export async function setCachedScore(
 
   await database.run(
     `INSERT OR REPLACE INTO source_reliability 
-     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       domain,
       score,
@@ -211,6 +226,9 @@ export async function setCachedScore(
       modelPrimary,
       modelSecondary,
       consensusAchieved ? 1 : 0,
+      reasoning ?? null,
+      category ?? null,
+      biasIndicator ?? null,
     ]
   );
 }
@@ -325,6 +343,9 @@ export async function getAllCachedScores(options: {
     modelPrimary: row.model_primary,
     modelSecondary: row.model_secondary,
     consensusAchieved: row.consensus_achieved === 1,
+    reasoning: row.reasoning,
+    category: row.category,
+    biasIndicator: row.bias_indicator,
   }));
 
   return {

@@ -184,7 +184,10 @@ export async function POST(req: Request) {
           evalData.confidence,
           evalData.modelPrimary,
           evalData.modelSecondary,
-          evalData.consensusAchieved
+          evalData.consensusAchieved,
+          evalData.reasoning,
+          evalData.category,
+          evalData.biasIndicator
         );
 
         results.push({

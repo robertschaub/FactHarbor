@@ -53,6 +53,7 @@ const EvaluationResultSchema = z.object({
     "unreliable",         // 0.15-0.29
     "highly_unreliable",  // 0.00-0.15
   ]),
+  biasIndicator: z.enum(["left", "center-left", "center", "center-right", "right"]).nullable().optional(),
   evidenceCited: z.array(z.string()).optional(),
 });
 
@@ -64,6 +65,9 @@ interface ResponsePayload {
   modelPrimary: string;
   modelSecondary: string | null;
   consensusAchieved: boolean;
+  reasoning: string;
+  category: string;
+  biasIndicator: string | null | undefined;
 }
 
 // ============================================================================
@@ -323,6 +327,9 @@ async function evaluateSourceWithConsensus(
         modelPrimary: primary.modelName,
         modelSecondary: null,
         consensusAchieved: true, // Single model = automatic "consensus"
+        reasoning: primary.result.reasoning,
+        category: primary.result.factualRating,
+        biasIndicator: primary.result.biasIndicator,
       },
     };
   }
@@ -339,6 +346,9 @@ async function evaluateSourceWithConsensus(
         modelPrimary: primary.modelName,
         modelSecondary: null,
         consensusAchieved: false,
+        reasoning: primary.result.reasoning,
+        category: primary.result.factualRating,
+        biasIndicator: primary.result.biasIndicator,
       },
     };
   }
@@ -380,6 +390,10 @@ async function evaluateSourceWithConsensus(
       modelPrimary: primary.modelName,
       modelSecondary: secondary.modelName,
       consensusAchieved: true,
+      // Use primary model's reasoning and category as the "canonical" one
+      reasoning: primary.result.reasoning,
+      category: primary.result.factualRating,
+      biasIndicator: primary.result.biasIndicator,
     },
   };
 }
