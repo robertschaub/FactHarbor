@@ -233,7 +233,7 @@ adjustedConfidence = confidence × (0.5 + avgSourceScore / 2)
 
 ### Effect on Verdicts (7-Band Scale)
 
-| Source Reliability Band | Effective Weight | Effect on Verdict |
+| Source Reliability Band | Score (Weight) | Effect on Verdict |
 |------------------------|------------------|-------------------|
 | **Highly Reliable (0.86+)** | ~95-100% | Verdict fully preserved |
 | **Reliable (0.72-0.86)** | ~75-90% | Verdict mostly preserved |
