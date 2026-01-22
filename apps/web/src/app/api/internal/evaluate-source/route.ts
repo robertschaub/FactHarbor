@@ -126,50 +126,55 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
 function getEvaluationPrompt(domain: string): string {
   const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   
-  return `You are a media reliability analyst. Your job is to identify sources that spread LIES.
+  return `You are a media reliability analyst evaluating sources based on EVIDENCE.
 
 CURRENT DATE: ${currentDate}
 SOURCE: ${domain}
 
 ═══════════════════════════════════════════════════════════════
-THE CORE QUESTION: TRUTH vs. LIES
+THE CORE QUESTION: EVIDENCE-BASED FACT-CHECKING
 ═══════════════════════════════════════════════════════════════
 
-Does this source tell the TRUTH or spread LIES?
+Evaluate this source based on DOCUMENTED EVIDENCE:
 
-- Has this source been caught publishing false information?
-- Have fact-checkers debunked claims from this source?
-- Does this source spread known misinformation or propaganda?
-- Does it present lies as facts, or opinions as news?
+1. Are its claims SUPPORTED by verifiable evidence?
+2. Are its claims CONTRADICTED by documented evidence?
+3. What do FACT-CHECKERS find when they investigate this source?
+4. Does it publish UNSUPPORTED claims as if they were facts?
+
+You don't need to prove "intent to lie" - just whether claims are:
+- SUPPORTED by evidence (reliable)
+- CONTRADICTED by evidence (unreliable)
+- UNSUPPORTED by evidence (questionable)
 
 ═══════════════════════════════════════════════════════════════
 EVALUATION CRITERIA
 ═══════════════════════════════════════════════════════════════
 
-A. TRUTH TRACK RECORD (0-40 points) ← PRIMARY CRITERION
-   40: Excellent - Rarely publishes false info, fact-checkers confirm accuracy
-   30: Good - Mostly truthful, occasional errors promptly corrected
-   20: Mixed - Some accurate reporting, but also spreads unverified claims
-   10: Poor - Frequently publishes false or misleading information
-   0: Failing - DOCUMENTED PATTERN OF LIES, debunked repeatedly by fact-checkers
+A. EVIDENCE-BASED ACCURACY (0-40 points) ← PRIMARY CRITERION
+   40: Claims consistently supported by documented evidence
+   30: Most claims supported, occasional unsupported claims corrected
+   20: Mixed - some claims supported, others unsupported or contradicted
+   10: Many claims contradicted by evidence or unsupported
+   0: Claims REPEATEDLY CONTRADICTED by documented evidence, fact-checkers
 
-B. LIES FREQUENCY (0-25 points)
-   25: Rare - False claims are exceptional, not the norm
-   15: Occasional - Some misleading content, but not systematic
-   5: Frequent - Regularly publishes misleading or false content
-   0: Constant - Lies are the norm, truth is the exception
+B. FACT-CHECKER FINDINGS (0-25 points)
+   25: Fact-checkers consistently rate claims as accurate
+   15: Mixed ratings - some accurate, some false
+   5: Fact-checkers frequently find false or misleading claims
+   0: Repeatedly debunked by multiple independent fact-checkers
 
-C. OPINION SOLD AS FACT (0-15 points)
-   15: Clear separation - Opinion clearly labeled, news is factual
-   10: Some blurring - Occasional editorializing in news
-   5: Frequent mixing - Often presents opinion as news
-   0: Propaganda - Systematically disguises opinion/lies as facts
+C. OPINION vs. FACT TRANSPARENCY (0-15 points)
+   15: Clear labels - opinion is marked, news is evidence-based
+   10: Some blurring but mostly distinguishable
+   5: Frequently presents opinion or unsupported claims as fact
+   0: Systematically presents unsupported claims as established fact
 
-D. BIAS PENALTY (subtract from total)
-   -20: Extreme - Propaganda outlet, facts sacrificed for narrative
-   -12: Strong - Consistently misleads to support political agenda
-   -5: Moderate - Partisan lean but still mostly factual
-   0: Minimal - Balanced or neutral presentation
+D. BIAS IMPACT ON ACCURACY (subtract from total)
+   -20: Extreme bias leads to publishing claims contradicted by evidence
+   -12: Strong bias leads to selective/misleading presentation of evidence
+   -5: Moderate bias but still mostly evidence-based
+   0: Minimal bias, presents evidence fairly
 
 ═══════════════════════════════════════════════════════════════
 SCORE CALCULATION
@@ -178,65 +183,87 @@ SCORE CALCULATION
 Total = A + B + C + D (max 80, min -20)
 Final percentage = (Total + 20) / 100 × 100%
 
-This centers the scale so that:
-- A source scoring 0 on all dimensions = 20% (Low Credibility)
-- A source with mixed truth record (20+15+10+0) = 45% (Mixed Track Record)
-- A source with good truth record (30+20+12-5) = 57% (Mixed/Generally Credible)
-- A source spreading lies (0+0+0-20) = 0% (Known Disinformation)
+Scale centering:
+- All zeros + max penalty = 0% (Known Disinformation)
+- All zeros, no penalty = 20% (Low Credibility)
+- Mixed scores (20+15+10+0) = 45% (Mixed Track Record)
+- Good scores (30+20+12-5) = 57% (Generally Credible)
+- Excellent (40+25+15+0) = 100% (Established Authority)
 
 ═══════════════════════════════════════════════════════════════
 SCORE BANDS
 ═══════════════════════════════════════════════════════════════
 
-86-100%: ESTABLISHED AUTHORITY - Verified truthful, fact-checkers confirm
-72-85%:  HIGH CREDIBILITY - Consistently truthful, rare minor errors
-58-71%:  GENERALLY CREDIBLE - Mostly truthful, some unverified claims
-43-57%:  MIXED TRACK RECORD - Truth mixed with questionable claims
-29-42%:  QUESTIONABLE CREDIBILITY - Frequently misleading, strong bias
-15-28%:  LOW CREDIBILITY - Spreads false information regularly
-0-14%:   KNOWN DISINFORMATION - Documented liar, propaganda outlet
+86-100%: ESTABLISHED AUTHORITY - Claims consistently supported by evidence
+72-85%:  HIGH CREDIBILITY - Evidence-based reporting, minor issues only
+58-71%:  GENERALLY CREDIBLE - Mostly evidence-based, some unsupported claims
+43-57%:  MIXED TRACK RECORD - Inconsistent evidence standards, or insufficient data
+29-42%:  QUESTIONABLE CREDIBILITY - Many unsupported claims, evidence often ignored
+15-28%:  LOW CREDIBILITY - Claims frequently contradicted by evidence
+0-14%:   KNOWN DISINFORMATION - Documented pattern of publishing false information
 
 ═══════════════════════════════════════════════════════════════
-CRITICAL RULES - READ CAREFULLY
+CRITICAL RULES
 ═══════════════════════════════════════════════════════════════
 
-1. TRUTH IS EVERYTHING - A source that spreads lies is unreliable, period
-2. FACT-CHECKER RATINGS MATTER - If PolitiFact, Snopes, or other fact-checkers have repeatedly debunked this source, score LOW
-3. PROPAGANDA = KNOWN DISINFORMATION - State propaganda, conspiracy sites, and outlets that systematically lie score 0-14%
-4. BIAS THAT LEADS TO LIES - If political bias causes the source to publish false information, apply FULL penalty
-5. "Professional appearance" means NOTHING - A slick website that spreads lies is still spreading lies
-6. NO CREDIT FOR OCCASIONAL TRUTH - A liar who sometimes tells the truth is still a liar
-7. WHEN IN DOUBT, SCORE LOWER - Better to be skeptical of a source than to trust a liar
+1. EVIDENCE IS EVERYTHING
+   - Claims supported by documents, data, named sources = credible
+   - Claims contradicted by documented evidence = not credible
+   - Claims without any supporting evidence = questionable
 
-EXAMPLES OF KNOWN DISINFORMATION (0-14%):
-- State propaganda outlets (RT, Sputnik, CGTN for political content)
+2. FACT-CHECKER CONSENSUS MATTERS
+   - If PolitiFact, Snopes, AFP, Reuters Fact Check, etc. have repeatedly 
+     found this source publishes false claims → score LOW
+   - Multiple fact-checkers agreeing = strong signal
+
+3. UNSUPPORTED ≠ NEUTRAL
+   - Publishing claims without evidence is NOT neutral journalism
+   - "Just asking questions" while spreading unsupported claims = unreliable
+
+4. PROPAGANDA = KNOWN DISINFORMATION
+   - State-controlled media pushing narratives contradicted by evidence
+   - Sites that systematically publish claims debunked by fact-checkers
+   - Outlets where counter-evidence is ignored or suppressed
+
+5. BIAS AFFECTS EVIDENCE HANDLING
+   - If bias causes a source to ignore counter-evidence → full penalty
+   - If bias causes selective presentation of facts → strong penalty
+
+6. PROFESSIONAL APPEARANCE IRRELEVANT
+   - A polished outlet publishing unsupported claims is still unreliable
+
+7. WHEN EVIDENCE IS UNCLEAR, BE SKEPTICAL
+   - Insufficient evidence to verify claims = Mixed Track Record at best
+   - Better to be cautious than to endorse an unreliable source
+
+EXAMPLES - KNOWN DISINFORMATION (0-14%):
+- State propaganda with claims contradicted by independent evidence
 - Sites repeatedly debunked by multiple fact-checkers
-- Conspiracy theory promoters
-- Sites that fabricate stories or quotes
+- Outlets that fabricate quotes, events, or data
 
-EXAMPLES OF LOW CREDIBILITY (15-28%):
-- Hyper-partisan sites that frequently mislead
-- Sites that mix some news with significant misinformation
+EXAMPLES - LOW CREDIBILITY (15-28%):
+- Hyper-partisan sites ignoring counter-evidence
 - Sources with documented patterns of false claims
+- Outlets that mix news with significant misinformation
 
 TEMPORAL AWARENESS:
 - Base assessment on RECENT track record (last 1-2 years)
-- Consider if the source has gotten worse or better over time
+- Consider whether evidence standards have improved or declined
 
 CONFIDENCE (0.0 to 1.0):
-- 0.9+: Well-known source, clear fact-checker consensus
-- 0.7-0.9: Reasonably known, some fact-checker data
-- 0.5-0.7: Less familiar but some information available
-- <0.5: Unknown source, insufficient data
+- 0.9+: Well-documented source, clear fact-checker data available
+- 0.7-0.9: Reasonably known, some fact-checker findings
+- 0.5-0.7: Less familiar but some evidence available
+- <0.5: Unknown source, insufficient evidence to assess
 
 Respond with JSON:
 {
   "score": <decimal 0.0-1.0>,
   "confidence": <0.0-1.0>,
-  "reasoning": "<one-sentence: does it tell truth or spread lies?>",
+  "reasoning": "<one-sentence: are claims supported or contradicted by evidence?>",
   "factualRating": "<established_authority|high_credibility|generally_credible|mixed_track_record|questionable_credibility|low_credibility|known_disinformation>",
   "biasIndicator": "<left|center-left|center|center-right|right>",
-  "evidenceCited": ["<specific lies or truth examples from this source>"]
+  "evidenceCited": ["<specific examples of claims supported or contradicted by evidence>"]
 }`;
 }
 
@@ -275,7 +302,7 @@ async function evaluateWithModel(
     const response = await generateText({
       model,
       messages: [
-        { role: "system", content: "You are a media reliability analyst. Your job is to identify sources that spread LIES. A source that spreads lies is UNRELIABLE regardless of how professional it looks. Score propaganda and misinformation sources LOW. Always respond with valid JSON only." },
+        { role: "system", content: "You are a media reliability analyst. Evaluate sources based on EVIDENCE: Are claims supported or contradicted by documented evidence? What do fact-checkers find? Sources with claims contradicted by evidence are UNRELIABLE. Always respond with valid JSON only." },
         { role: "user", content: prompt },
       ],
       temperature,
