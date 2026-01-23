@@ -73,19 +73,15 @@ const EvaluationResultSchema = z.object({
     correctionPractices: z.number().min(0).max(15),   // 0-15 points
     biasPenalty: z.number().min(-10).max(0),          // -10 to 0 points
   }).optional(),
-  biasIndicator: z.enum([
-    "left", "center-left", "center", "center-right", "right"
-  ]).optional(),
-  bias: z.object({
-    politicalBias: z.enum([
-      "far_left", "left", "center_left", "center",
-      "center_right", "right", "far_right", "not_applicable"
-    ]),
-    otherBias: z.enum([
-      "pro_government", "anti_government", "corporate_interest",
-      "ideological_other", "sensationalist", "none_detected"
-    ]).nullable().optional(),
-  }).optional(),
+  // Bias fields are informational only; keep permissive to avoid hard-failing
+  // the entire evaluation on minor label differences.
+  biasIndicator: z.string().optional(),
+  bias: z
+    .object({
+      politicalBias: z.string(),
+      otherBias: z.string().nullable().optional(),
+    })
+    .optional(),
   evidenceCited: z.array(z.object({
     claim: z.string(),
     basis: z.string(),
