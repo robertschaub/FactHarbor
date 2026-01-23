@@ -280,9 +280,11 @@ All configuration is via environment variables (`apps/web/.env.local`):
 |----------|---------|-------------|
 | `FH_SR_ENABLED` | `true` | Enable/disable source reliability |
 | `FH_SR_MULTI_MODEL` | `true` | Use multi-model consensus |
-| `FH_SR_CONFIDENCE_THRESHOLD` | `0.65` | Min LLM confidence to accept score |
+| `FH_SR_CONFIDENCE_THRESHOLD` | `0.8` | Min LLM confidence to accept score |
 | `FH_SR_CONSENSUS_THRESHOLD` | `0.15` | Max score difference between models |
 | `FH_SR_DEFAULT_SCORE` | `0.5` | Default score for unknown sources (0.5 = neutral center) |
+
+**Note (POC)**: Some admin tooling may still default to a lower threshold if `FH_SR_CONFIDENCE_THRESHOLD` is unset. For consistent behavior, set `FH_SR_CONFIDENCE_THRESHOLD` explicitly in `apps/web/.env.local`.
 
 ### Cache Settings
 
@@ -309,6 +311,25 @@ All configuration is via environment variables (`apps/web/.env.local`):
 **Default skip platforms**: `blogspot.,wordpress.com,medium.com,substack.com,tumblr.com,wix.com,weebly.com,squarespace.com,ghost.io,blogger.com,sites.google.com,github.io,netlify.app,vercel.app,herokuapp.com`
 
 **Default skip TLDs**: `xyz,top,club,icu,buzz,tk,ml,ga,cf,gq,work,click,link,win,download,stream`
+
+### Evaluator Evidence Grounding (POC)
+
+These settings affect the internal evaluation endpoint (`/api/internal/evaluate-source`):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FH_SR_EVAL_USE_SEARCH` | `true` | If `true` and a search provider is configured, build an evidence pack from web search and inject it into the evaluation prompt |
+| `FH_SR_EVAL_MAX_EVIDENCE_ITEMS` | `6` | Max number of evidence-pack items to include in the prompt (POC default) |
+| `FH_SR_EVAL_SEARCH_MAX_RESULTS_PER_QUERY` | `3` | Max search results per query when building the evidence pack (POC default) |
+| `FH_SR_EVAL_SEARCH_DATE_RESTRICT` | *(unset)* | Optional: `y` \| `m` \| `w` (falls back to `FH_SEARCH_DATE_RESTRICT` if set) |
+
+**POC query set (cost-efficient)**:
+The evaluator builds an evidence pack using a small query set and stops early once enough evidence items are collected:
+- `<brand?> "<domain>" fact check reliability`
+- `<brand?> "<domain>" bias rating credibility`
+- `<brand?> "<domain>" misinformation moderation fact check`
+
+Where `<brand?>` is an optional heuristic token derived from the domain; it is omitted when too short/ambiguous (e.g., very short brands). The domain is always included as a quoted token.
 
 ### Example Configurations
 
@@ -346,6 +367,11 @@ FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
 - Default assumption is 0.5 (mixed). Adjust up or down based on evidence.
 - Do not inflate scores based on brand recognition or reputation alone.
 - "No negative findings" ≠ reliable. Absence of evidence lowers confidence; truly unknown sources should use insufficient_data.
+
+**Negative-side calibration (POC intent):**
+- **platform_ugc**: if a domain is primarily an open UGC platform without centralized editorial verification, it should generally land **below the mixed band** unless evidence shows consistent domain-level verification and corrections.
+- **state_controlled_media**: if evidence indicates editorial coordination/control, default below mixed unless evidence shows meaningful editorial independence and correction practices.
+- **propaganda_outlet / known_disinformation**: if evidence indicates repeated independent debunks / multiple independent assessors flagging systemic misinformation, score should land in **0.00–0.20** even if occasional factual content exists.
 
 **Weighting Rules (applied during evaluation):**
 1. **Recency Priority**: Last 24 months matter most. Historical reputation does not excuse recent failures.
@@ -645,28 +671,31 @@ This results in 50% weight (neutral), applying appropriate skepticism to unverif
 
 When `FH_SR_MULTI_MODEL=true` (default):
 
-1. Both Claude and GPT-4 evaluate the source in parallel
-2. Both must return confidence ≥ threshold
-3. Score difference must be ≤ `FH_SR_CONSENSUS_THRESHOLD` (0.15)
-4. Final score = average of both models
-5. If consensus fails → return `null` (unknown reliability)
+1. Build an optional **evidence pack** (web search results) if `FH_SR_EVAL_USE_SEARCH=true` and a search provider is configured
+2. Both Claude and GPT evaluate the source using the same evidence pack
+3. Primary must return confidence ≥ threshold; secondary must return a non-null score (if secondary fails, fallback to primary with reduced confidence)
+4. Score difference must be ≤ `FH_SR_CONSENSUS_THRESHOLD` (0.15)
+5. Final score = **“better founded”** model output (more grounded citations/recency to the evidence pack); tie-breaker = **lower score** (skeptical default)
+6. If consensus fails → return `null` (unknown reliability)
 
 ```typescript
-// Simplified consensus logic
-const [claude, gpt] = await Promise.all([
-  evaluateWithModel(domain, 'anthropic'),
-  evaluateWithModel(domain, 'openai'),
-]);
+// Simplified consensus logic (POC)
+const evidencePack = await buildEvidencePack(domain);
+const claude = await evaluateWithModel(domain, "anthropic", evidencePack);
+const gpt = await evaluateWithModel(domain, "openai", evidencePack);
 
 if (!claude || !gpt) return null;
 
 const scoreDiff = Math.abs(claude.score - gpt.score);
 if (scoreDiff > consensusThreshold) return null;
 
-return {
-  score: (claude.score + gpt.score) / 2,
-  confidence: Math.min(claude.confidence, gpt.confidence),
-};
+// Choose "better founded" output; tie-breaker lower score
+const chosen =
+  gpt.foundedness > claude.foundedness ? gpt :
+  claude.foundedness > gpt.foundedness ? claude :
+  (Math.min(claude.score, gpt.score) === claude.score ? claude : gpt);
+
+return { score: chosen.score, confidence: (claude.confidence + gpt.confidence) / 2 };
 ```
 
 ---
@@ -708,7 +737,7 @@ The importance filter saves ~60% of LLM costs by skipping blog platforms and spa
 |-------|----------|
 | "Unauthorized" from evaluate endpoint | Set `FH_INTERNAL_RUNNER_KEY` in `.env.local` |
 | No scores appearing | Verify `FH_SR_ENABLED=true` (default) |
-| All sources returning null | Check API keys, lower `FH_SR_CONFIDENCE_THRESHOLD` |
+| Low-confidence evaluations (shown as score N/A) | Ensure a search provider is configured so the evidence pack is populated; otherwise evaluations may return `insufficient_data` |
 | High LLM costs | Enable filter, use single model (`FH_SR_MULTI_MODEL=false`) |
 | Consensus failures | Lower `FH_SR_CONSENSUS_THRESHOLD` (default 0.15) |
 | Score not affecting verdict | Check `applyEvidenceWeighting` is called, verify `trackRecordScore` on sources |
