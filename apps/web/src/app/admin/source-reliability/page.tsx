@@ -17,6 +17,7 @@ interface CachedScore {
   category?: string | null;
   biasIndicator?: string | null;
   evidenceCited?: string | null; // JSON array stored as string (can be string[] or EvidenceItem[])
+  evidencePack?: string | null; // JSON object stored as string (items + queries/providers)
 }
 
 interface CacheStats {
@@ -914,6 +915,61 @@ export default function SourceReliabilityPage() {
                   // Invalid JSON, skip
                 }
                 return null;
+              })()}
+
+              {selectedEntry.evidencePack && (() => {
+                try {
+                  const pack = JSON.parse(selectedEntry.evidencePack);
+                  const items = Array.isArray(pack?.items) ? pack.items : [];
+                  const queries = Array.isArray(pack?.queries) ? pack.queries : [];
+                  const providers = Array.isArray(pack?.providersUsed) ? pack.providersUsed : [];
+                  if (items.length === 0) return null;
+
+                  return (
+                    <div className={styles.detailSection}>
+                      <h3>Evidence Pack (E# Source Map)</h3>
+                      {providers.length > 0 && (
+                        <div className={styles.reasoningBox} style={{ marginBottom: "8px" }}>
+                          <strong>Providers:</strong> {providers.join(", ")}
+                          {queries.length > 0 && (
+                            <>
+                              <br />
+                              <strong>Queries:</strong> {queries.join(" | ")}
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <ul className={styles.evidenceList}>
+                        {items.map((it: any, idx: number) => (
+                          <li key={idx}>
+                            <strong>{it.id || `E${idx + 1}`}: </strong>
+                            {it.url ? (
+                              <a href={it.url} target="_blank" rel="noreferrer">
+                                {it.title || it.url}
+                              </a>
+                            ) : (
+                              <span>{it.title || "(no title)"}</span>
+                            )}
+                            {it.query && (
+                              <>
+                                <br />
+                                <span className={styles.evidenceBasis}>Query: {it.query}</span>
+                              </>
+                            )}
+                            {it.snippet && (
+                              <>
+                                <br />
+                                <span className={styles.evidenceBasis}>{it.snippet}</span>
+                              </>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                } catch {
+                  return null;
+                }
               })()}
 
               <div className={styles.detailGrid}>

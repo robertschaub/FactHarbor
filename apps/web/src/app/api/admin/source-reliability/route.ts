@@ -188,7 +188,8 @@ export async function POST(req: Request) {
           evalData.reasoning,
           evalData.category,
           evalData.biasIndicator,
-          evalData.evidenceCited
+          evalData.evidenceCited,
+          evalData.evidencePack
         );
 
         results.push({

@@ -37,6 +37,7 @@ export interface CachedScore {
   category?: string | null;
   biasIndicator?: string | null;
   evidenceCited?: string | null; // JSON array stored as string
+  evidencePack?: string | null; // JSON object stored as string (evidence-pack items+queries/providers)
 }
 
 interface ScoreRow {
@@ -52,6 +53,7 @@ interface ScoreRow {
   category: string | null;
   bias_indicator: string | null;
   evidence_cited: string | null; // JSON array stored as string
+  evidence_pack: string | null; // JSON object stored as string
 }
 
 // ============================================================================
@@ -86,7 +88,8 @@ async function getDb(): Promise<Database> {
       reasoning TEXT,
       category TEXT,
       bias_indicator TEXT,
-      evidence_cited TEXT
+      evidence_cited TEXT,
+      evidence_pack TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
@@ -103,6 +106,7 @@ async function getDb(): Promise<Database> {
     const hasCategory = tableInfo.some((col) => col.name === "category");
     const hasBiasIndicator = tableInfo.some((col) => col.name === "bias_indicator");
     const hasEvidenceCited = tableInfo.some((col) => col.name === "evidence_cited");
+    const hasEvidencePack = tableInfo.some((col) => col.name === "evidence_pack");
 
     if (!hasReasoning) {
       console.log("[SR-Cache] Adding reasoning column");
@@ -119,6 +123,10 @@ async function getDb(): Promise<Database> {
     if (!hasEvidenceCited) {
       console.log("[SR-Cache] Adding evidence_cited column");
       await db.exec("ALTER TABLE source_reliability ADD COLUMN evidence_cited TEXT");
+    }
+    if (!hasEvidencePack) {
+      console.log("[SR-Cache] Adding evidence_pack column");
+      await db.exec("ALTER TABLE source_reliability ADD COLUMN evidence_pack TEXT");
     }
 
     // STEP 2: Now check if score column has NOT NULL constraint (notnull=1)
@@ -144,13 +152,14 @@ async function getDb(): Promise<Database> {
           reasoning TEXT,
           category TEXT,
           bias_indicator TEXT,
-          evidence_cited TEXT
+          evidence_cited TEXT,
+          evidence_pack TEXT
         );
         
         -- Copy existing data (all columns now exist)
         INSERT INTO source_reliability_new 
         SELECT domain, score, confidence, evaluated_at, expires_at, model_primary, 
-               model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited
+               model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited, evidence_pack
         FROM source_reliability;
         
         -- Drop old table and rename
@@ -201,6 +210,7 @@ export async function getCachedScore(domain: string): Promise<CachedScore | null
     category: row.category,
     biasIndicator: row.bias_indicator,
     evidenceCited: row.evidence_cited,
+    evidencePack: row.evidence_pack,
   };
 }
 
@@ -285,7 +295,8 @@ export async function setCachedScore(
   reasoning?: string | null,
   category?: string | null,
   biasIndicator?: string | null,
-  evidenceCited?: Array<{ claim: string; basis: string; recency?: string }> | null
+  evidenceCited?: Array<{ claim: string; basis: string; recency?: string; evidenceId?: string; url?: string }> | null,
+  evidencePack?: unknown | null
 ): Promise<void> {
   const database = await getDb();
   const now = new Date();
@@ -298,10 +309,12 @@ export async function setCachedScore(
     ? JSON.stringify(evidenceCited) 
     : null;
 
+  const evidencePackJson = evidencePack ? JSON.stringify(evidencePack) : null;
+
   await database.run(
     `INSERT OR REPLACE INTO source_reliability 
-     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited, evidence_pack)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       domain,
       score,
@@ -315,6 +328,7 @@ export async function setCachedScore(
       category ?? null,
       biasIndicator ?? null,
       evidenceJson,
+      evidencePackJson,
     ]
   );
 }
@@ -433,6 +447,7 @@ export async function getAllCachedScores(options: {
     category: row.category,
     biasIndicator: row.bias_indicator,
     evidenceCited: row.evidence_cited,
+    evidencePack: row.evidence_pack,
   }));
 
   return {

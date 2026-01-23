@@ -31,7 +31,8 @@ async function createTestDb(): Promise<Database> {
       reasoning TEXT,
       category TEXT,
       bias_indicator TEXT,
-      evidence_cited TEXT
+      evidence_cited TEXT,
+      evidence_pack TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
   `);
@@ -62,6 +63,7 @@ describe("Cache Schema", () => {
     expect(columnNames).toContain("model_primary");
     expect(columnNames).toContain("model_secondary");
     expect(columnNames).toContain("consensus_achieved");
+    expect(columnNames).toContain("evidence_pack");
   });
 
   it("domain is primary key", async () => {

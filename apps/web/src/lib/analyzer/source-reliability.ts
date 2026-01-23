@@ -207,7 +207,8 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
           evalResult.reasoning,
           evalResult.category,
           evalResult.biasIndicator,
-          evalResult.evidenceCited
+          evalResult.evidenceCited,
+          evalResult.evidencePack
         );
         const scoreStr = evalResult.score !== null ? evalResult.score.toFixed(2) : "null";
         console.log(
@@ -284,6 +285,7 @@ interface EvaluationResult {
   reasoning?: string;
   category?: string;
   biasIndicator?: string | null;
+  evidencePack?: unknown;
   bias?: {
     politicalBias: string;
     otherBias?: string | null;
