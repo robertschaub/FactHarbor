@@ -216,25 +216,43 @@ CRITICAL RULES
      found this source publishes false claims → score LOW
    - Multiple fact-checkers agreeing = strong signal
 
-3. UNSUPPORTED ≠ NEUTRAL
+3. LEGAL FINDINGS ARE STRONG EVIDENCE
+   - Court documents, depositions, settlements = powerful evidence
+   - If a source has lost lawsuits or paid settlements for false claims,
+     this is DOCUMENTED EVIDENCE of publishing false information
+   - Internal communications revealed in legal proceedings count
+
+4. OPINION PROGRAMMING COUNTS AGAINST THE OUTLET
+   - If opinion hosts spread claims contradicted by evidence, this counts
+   - "News division vs Opinion division" does NOT absolve the outlet
+   - The WHOLE outlet is evaluated - not just the best parts
+   - Primetime opinion shows with large audiences matter MORE, not less
+
+5. UNSUPPORTED ≠ NEUTRAL
    - Publishing claims without evidence is NOT neutral journalism
    - "Just asking questions" while spreading unsupported claims = unreliable
 
-4. PROPAGANDA = KNOWN DISINFORMATION
+6. PROPAGANDA = KNOWN DISINFORMATION
    - State-controlled media pushing narratives contradicted by evidence
    - Sites that systematically publish claims debunked by fact-checkers
    - Outlets where counter-evidence is ignored or suppressed
 
-5. BIAS AFFECTS EVIDENCE HANDLING
+7. BIAS AFFECTS EVIDENCE HANDLING
    - If bias causes a source to ignore counter-evidence → full penalty
    - If bias causes selective presentation of facts → strong penalty
 
-6. PROFESSIONAL APPEARANCE IRRELEVANT
+8. PROFESSIONAL APPEARANCE IRRELEVANT
    - A polished outlet publishing unsupported claims is still unreliable
+   - Major networks can still spread misinformation
 
-7. WHEN EVIDENCE IS UNCLEAR, BE SKEPTICAL
+9. WHEN EVIDENCE IS UNCLEAR, BE SKEPTICAL
    - Insufficient evidence to verify claims = Mixed Track Record at best
    - Better to be cautious than to endorse an unreliable source
+
+10. RECENCY MATTERS - RECENT FAILURES WEIGH HEAVILY
+    - Focus on the MOST RECENT 1-2 years
+    - Recent documented failures matter more than past reputation
+    - A source that was reliable but has declined should score lower
 
 EXAMPLES - KNOWN DISINFORMATION (0-14%):
 - State propaganda with claims contradicted by independent evidence
@@ -243,12 +261,15 @@ EXAMPLES - KNOWN DISINFORMATION (0-14%):
 
 EXAMPLES - LOW CREDIBILITY (15-28%):
 - Hyper-partisan sites ignoring counter-evidence
+- Outlets that have lost lawsuits or paid settlements for false claims
 - Sources with documented patterns of false claims
 - Outlets that mix news with significant misinformation
 
-TEMPORAL AWARENESS:
-- Base assessment on RECENT track record (last 1-2 years)
-- Consider whether evidence standards have improved or declined
+TEMPORAL AWARENESS - VERY IMPORTANT:
+- Focus on the MOST RECENT track record (last 1-2 years)
+- Recent lawsuits, settlements, or fact-checker findings are HIGHLY relevant
+- A source that spread false claims recently should score LOW even if it was once reliable
+- Consider: Has this source been involved in recent controversies about false claims?
 
 CONFIDENCE (0.0 to 1.0):
 - 0.9+: Well-documented source, clear fact-checker data available
