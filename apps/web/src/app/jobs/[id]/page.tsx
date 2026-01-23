@@ -232,9 +232,9 @@ function getEventLevelClass(level: string): string {
 
 // Helper function to get track record score CSS class (symmetric 7-band scale)
 function getTrackRecordClass(score: number): string {
-  if (score >= 0.58) return styles.trackRecordHigh;    // mostly_reliable+ (58%+)
-  if (score >= 0.43) return styles.trackRecordMedium;  // uncertain (43-57%, neutral center)
-  return styles.trackRecordLow;                        // mostly_unreliable- (<43%)
+  if (score >= 0.58) return styles.trackRecordHigh;    // generally_reliable+ (58%+)
+  if (score >= 0.43) return styles.trackRecordMedium;  // mixed (43-57%, variable track record)
+  return styles.trackRecordLow;                        // generally_unreliable- (<43%)
 }
 
 export default function JobPage() {

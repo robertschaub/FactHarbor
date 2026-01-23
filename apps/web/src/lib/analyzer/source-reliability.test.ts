@@ -199,8 +199,9 @@ describe("Score interpretation (symmetric 7-band scale, matches verdict scale)",
   // Symmetric scale matching verdict scale, centered at 0.5:
   // highly_reliable (0.86-1.00) ↔ highly_unreliable (0.00-0.15)
   // reliable (0.72-0.86) ↔ unreliable (0.15-0.29)
-  // mostly_reliable (0.58-0.72) ↔ mostly_unreliable (0.29-0.43)
-  // uncertain (0.43-0.57) = CENTER
+  // generally_reliable (0.58-0.72) ↔ generally_unreliable (0.29-0.43)
+  // mixed (0.43-0.57) = CENTER (known source with variable track record)
+  // insufficient_data (null) = Unknown source, no assessments
 
   it("score 0.86-1.00 indicates highly reliable", () => {
     const score = 0.93;
@@ -214,19 +215,19 @@ describe("Score interpretation (symmetric 7-band scale, matches verdict scale)",
     expect(score).toBeLessThan(0.86);
   });
 
-  it("score 0.58-0.72 indicates mostly reliable", () => {
+  it("score 0.58-0.72 indicates generally reliable", () => {
     const score = 0.65;
     expect(score).toBeGreaterThanOrEqual(0.58);
     expect(score).toBeLessThan(0.72);
   });
 
-  it("score 0.43-0.57 indicates uncertain (neutral center)", () => {
+  it("score 0.43-0.57 indicates mixed (variable track record)", () => {
     const score = 0.50;
     expect(score).toBeGreaterThanOrEqual(0.43);
     expect(score).toBeLessThan(0.57);
   });
 
-  it("score 0.29-0.43 indicates mostly unreliable", () => {
+  it("score 0.29-0.43 indicates generally unreliable", () => {
     const score = 0.36;
     expect(score).toBeGreaterThanOrEqual(0.29);
     expect(score).toBeLessThan(0.43);

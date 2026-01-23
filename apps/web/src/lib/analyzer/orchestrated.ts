@@ -8430,11 +8430,11 @@ function calculateOverallCredibility(
             : inputScore >= 0.72
               ? "Reliable"
               : inputScore >= 0.58
-                ? "Mostly Reliable"
+                ? "Generally Reliable"
                 : inputScore >= 0.43
-                  ? "Uncertain"
+                  ? "Mixed"
                   : inputScore >= 0.29
-                    ? "Mostly Unreliable"
+                    ? "Generally Unreliable"
                     : inputScore >= 0.15
                       ? "Unreliable"
                       : "Highly Unreliable";
@@ -8466,11 +8466,11 @@ function calculateOverallCredibility(
       : avg >= 0.72
         ? "Reliable"
         : avg >= 0.58
-          ? "Mostly Reliable"
+          ? "Generally Reliable"
           : avg >= 0.43
-            ? "Uncertain"
+            ? "Mixed"
             : avg >= 0.29
-              ? "Mostly Unreliable"
+              ? "Generally Unreliable"
               : avg >= 0.15
                 ? "Unreliable"
                 : "Highly Unreliable";

@@ -420,11 +420,12 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
  * 7-band credibility scale (centered at 0.5):
  * - 0.86-1.00: highly_reliable (verdict fully preserved)
  * - 0.72-0.86: reliable (verdict mostly preserved)
- * - 0.58-0.72: mostly_reliable (moderate preservation)
- * - 0.43-0.57: uncertain (neutral center, appropriate skepticism)
- * - 0.29-0.43: mostly_unreliable (pulls verdict toward neutral)
+ * - 0.58-0.72: generally_reliable (moderate preservation)
+ * - 0.43-0.57: mixed (variable track record, appropriate skepticism)
+ * - 0.29-0.43: generally_unreliable (pulls verdict toward neutral)
  * - 0.15-0.29: unreliable (strong pull toward neutral)
  * - 0.00-0.15: highly_unreliable (maximum skepticism)
+ * - null: insufficient_data (unknown source, no assessments)
  * 
  * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
  * 
@@ -518,11 +519,12 @@ export function applyEvidenceWeighting(
  * 
  * Band 7 (86-100%): Highly Reliable - Verified accuracy, recognized standards body
  * Band 6 (72-85%): Reliable - Consistent accuracy, professional standards
- * Band 5 (58-71%): Mostly Reliable - Mostly accurate, occasional errors
- * Band 4 (43-57%): Uncertain - Variable accuracy, inconsistent quality
- * Band 3 (29-42%): Mostly Unreliable - Frequent inaccuracies, bias affects reporting
+ * Band 5 (58-71%): Generally Reliable - Often accurate, corrects when notified
+ * Band 4 (43-57%): Mixed - Variable accuracy, inconsistent quality
+ * Band 3 (29-42%): Generally Unreliable - Often inaccurate, slow to correct
  * Band 2 (15-28%): Unreliable - Pattern of false claims, ignores corrections
  * Band 1 (0-14%): Highly Unreliable - Fabricates content, documented disinformation
+ * Null: Insufficient Data - Unknown source, no assessments exist
  */
 export type CredibilityLevel7Band =
   | "ESTABLISHED_AUTHORITY"       // 0.86-1.00

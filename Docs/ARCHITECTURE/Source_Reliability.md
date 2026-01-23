@@ -237,9 +237,9 @@ adjustedConfidence = confidence × (0.5 + avgSourceScore / 2)
 |------------------------|------------------|-------------------|
 | **Highly Reliable (0.86+)** | ~95-100% | Verdict fully preserved |
 | **Reliable (0.72-0.86)** | ~75-90% | Verdict mostly preserved |
-| **Mostly Reliable (0.58-0.72)** | ~60-75% | Moderate preservation |
-| **Uncertain (0.43-0.57)** | ~40-60% | Appropriate skepticism (neutral center) |
-| **Mostly Unreliable (0.29-0.43)** | ~30-45% | Pulls toward neutral |
+| **Generally Reliable (0.58-0.72)** | ~60-75% | Moderate preservation |
+| **Mixed (0.43-0.57)** | ~40-60% | Variable track record (neutral center) |
+| **Generally Unreliable (0.29-0.43)** | ~30-45% | Pulls toward neutral |
 | **Unreliable (0.15-0.29)** | ~15-30% | Strong pull toward neutral |
 | **Highly Unreliable (0.00-0.15)** | ~0-15% | Maximum skepticism |
 | **Unknown (null)** | 50% | Uses default score (neutral) |
@@ -248,7 +248,7 @@ adjustedConfidence = confidence × (0.5 + avgSourceScore / 2)
 
 ```
 Original verdict: 80% (Strong True)
-Source credibility: 0.5 (Uncertain - neutral center)
+Source credibility: 0.5 (Mixed - variable track record)
 
 Adjusted = 50 + (80 - 50) × 0.5
          = 50 + 30 × 0.5
@@ -336,14 +336,14 @@ FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
 |-------|--------|--------------|
 | 0.86-1.00 | Highly Reliable | Verified accuracy, recognized standards body, rigorous corrections |
 | 0.72-0.85 | Reliable | Consistent accuracy, professional standards, rarely faulted |
-| 0.58-0.71 | Mostly Reliable | Mostly accurate, occasional errors, corrects when notified |
-| 0.43-0.57 | Uncertain | Variable accuracy OR inconsistent quality by topic/author |
-| 0.29-0.42 | Mostly Unreliable | Frequent inaccuracies OR bias significantly affects reporting |
+| 0.58-0.71 | Generally Reliable | Often accurate, occasional errors, corrects when notified |
+| 0.43-0.57 | Mixed | Variable accuracy OR inconsistent quality by topic/author |
+| 0.29-0.42 | Generally Unreliable | Often inaccurate OR bias significantly affects reporting |
 | 0.15-0.28 | Unreliable | Pattern of false claims OR ignores corrections |
 | 0.00-0.14 | Highly Unreliable | Fabricates content OR documented disinformation source |
 
 **Calibration:**
-- Default assumption is 0.5 (uncertain). Adjust up or down based on evidence.
+- Default assumption is 0.5 (mixed). Adjust up or down based on evidence.
 - Do not inflate scores based on brand recognition or reputation alone.
 - "No negative findings" ≠ reliable. Absence of evidence lowers confidence; truly unknown sources should use insufficient_data.
 
@@ -428,17 +428,17 @@ Per review feedback, the system avoids categorical assumptions:
 |-------------|--------|---------|
 | 0.86-1.00 | highly_reliable | Verified accuracy, recognized standards body |
 | 0.72-0.85 | reliable | Consistent accuracy, professional standards |
-| 0.58-0.71 | mostly_reliable | Mostly accurate, occasional errors |
-| 0.43-0.57 | uncertain | Variable accuracy, inconsistent quality |
-| 0.29-0.42 | mostly_unreliable | Frequent inaccuracies, bias affects reporting |
+| 0.58-0.71 | generally_reliable | Often accurate, occasional errors |
+| 0.43-0.57 | mixed | Variable accuracy, inconsistent quality |
+| 0.29-0.42 | generally_unreliable | Often inaccurate, bias affects reporting |
 | 0.15-0.28 | unreliable | Pattern of false claims, ignores corrections |
 | 0.00-0.14 | highly_unreliable | Fabricates content, documented disinformation |
 
 **Key properties:**
 - **7 bands** for source credibility assessment
-- **0.5 = exact center** of the uncertain band (0.43-0.57)
+- **0.5 = exact center** of the mixed band (0.43-0.57)
 - Above 0.58 = positive boost to verdict preservation
-- 0.43-0.57 = neutral zone (appropriate for unknown sources)
+- 0.43-0.57 = neutral zone (known sources with variable track record)
 - Below 0.43 = pulls verdict toward neutral (skepticism)
 - All stored scores use decimal 0.0-1.0
 - Defensive normalization handles 0-100 scale inputs

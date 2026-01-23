@@ -63,9 +63,10 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
      ```
    - High confidence → effective weight ≈ score; low confidence → pulled toward 0.5
    - **Symmetric 7-band scale** (matches verdict scale, centered at 0.5):
-     - 0.86-1.00: highly_reliable | 0.72-0.86: reliable | 0.58-0.72: mostly_reliable
-     - 0.43-0.57: uncertain (center) | 0.29-0.43: mostly_unreliable
+     - 0.86-1.00: highly_reliable | 0.72-0.86: reliable | 0.58-0.72: generally_reliable
+     - 0.43-0.57: mixed (center) | 0.29-0.43: generally_unreliable
      - 0.15-0.29: unreliable | 0.00-0.15: highly_unreliable
+     - null: insufficient_data (unknown source)
    - Unknown sources default to 0.5 (truly neutral, no verdict bias)
 
 3. **Admin Interface**: New admin page for cache management

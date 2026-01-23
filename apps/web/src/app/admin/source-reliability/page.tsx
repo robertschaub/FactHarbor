@@ -415,9 +415,9 @@ export default function SourceReliabilityPage() {
     if (score === null) return "Insufficient Data";
     if (score >= 0.86) return "Highly Reliable (86-100%)";
     if (score >= 0.72) return "Reliable (72-85%)";
-    if (score >= 0.58) return "Mostly Reliable (58-71%)";
-    if (score >= 0.43) return "Uncertain (43-57%)";
-    if (score >= 0.29) return "Mostly Unreliable (29-42%)";
+    if (score >= 0.58) return "Generally Reliable (58-71%)";
+    if (score >= 0.43) return "Mixed (43-57%)";
+    if (score >= 0.29) return "Generally Unreliable (29-42%)";
     if (score >= 0.15) return "Unreliable (15-28%)";
     return "Highly Unreliable (0-14%)";
   };
@@ -781,14 +781,14 @@ export default function SourceReliabilityPage() {
             <span className={styles.arrow}>→</span>
             <span><span className={styles.legendDot} style={{ backgroundColor: "#22c55e" }} /> Reliable (72-85%)</span>
             <span className={styles.arrow}>→</span>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> Mostly Reliable (58-71%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> Generally Reliable (58-71%)</span>
             <span className={styles.arrow}>→</span>
           </div>
           <div className={styles.centerRow}>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#d1d5db" }} /> Uncertain (43-57%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#d1d5db" }} /> Mixed (43-57%)</span>
           </div>
           <div className={styles.scaleRow}>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> Mostly Unreliable (29-42%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> Generally Unreliable (29-42%)</span>
             <span className={styles.arrow}>→</span>
             <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> Unreliable (15-28%)</span>
             <span className={styles.arrow}>→</span>

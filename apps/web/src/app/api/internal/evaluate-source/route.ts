@@ -47,15 +47,26 @@ const EvaluationResultSchema = z.object({
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
   factualRating: z.enum([
-    "highly_reliable",            // 0.86-1.00
-    "reliable",                   // 0.72-0.85
-    "mostly_reliable",            // 0.58-0.71
-    "uncertain",                  // 0.43-0.57
-    "mostly_unreliable",          // 0.29-0.42
-    "unreliable",                 // 0.15-0.28
-    "highly_unreliable",          // 0.00-0.14
-    "insufficient_data",          // null score
+    "highly_reliable",            // 0.86-1.00 - Highest standards, verified, proactively corrects
+    "reliable",                   // 0.72-0.85 - Professional standards, accurate, corrects promptly
+    "generally_reliable",         // 0.58-0.71 - Decent standards, often accurate, corrects when notified
+    "mixed",                      // 0.43-0.57 - Known source with variable/inconsistent track record
+    "generally_unreliable",       // 0.29-0.42 - Lax standards, often inaccurate, slow to correct
+    "unreliable",                 // 0.15-0.28 - Poor standards, inaccurate, seldom corrects
+    "highly_unreliable",          // 0.00-0.14 - Lowest standards, fabricates, resists correction
+    "insufficient_data",          // null score - Unknown source, no assessments exist
   ]),
+  // Dimension scores for multi-criteria evaluation
+  dimensionScores: z.object({
+    factualAccuracy: z.number().min(0).max(30),       // 0-30 points
+    opinionFactSeparation: z.number().min(0).max(25), // 0-25 points
+    sourceAttribution: z.number().min(0).max(20),     // 0-20 points
+    correctionPractices: z.number().min(0).max(15),   // 0-15 points
+    biasPenalty: z.number().min(-10).max(0),          // -10 to 0 points
+  }).optional(),
+  biasIndicator: z.enum([
+    "left", "center-left", "center", "center-right", "right"
+  ]).optional(),
   bias: z.object({
     politicalBias: z.enum([
       "far_left", "left", "center_left", "center",
@@ -155,6 +166,27 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
  * Generate LLM evaluation prompt for source reliability assessment.
  * @param domain - The domain to evaluate
  * @param hasWebSearch - Whether the model has web search capability
+ * 
+ * PROMPT DESIGN NOTES:
+ * 
+ * 1. PERSONA: "As a professional fact-checker"
+ *    - Establishes expert role to encourage rigorous, evidence-based evaluation
+ *    - Reduces tendency to give benefit of the doubt without evidence
+ * 
+ * 2. SKEPTICAL DEFAULT: "Reliability is earned; lack of positive evidence degrades score"
+ *    - Prevents score inflation for sources with no documented track record
+ *    - Unknown ≠ neutral; absence of positive evidence should pull toward lower bands
+ *    - Contrast with insufficient_data (null) which is for truly unknown sources
+ * 
+ * 3. CONFIDENCE MECHANISM: "Low confidence (<0.5) pulls score toward 0.5"
+ *    - When LLM is uncertain about its assessment, the effective weight is reduced
+ *    - Formula: effectiveWeight = 0.5 + (score - 0.5) × confidence
+ *    - High confidence → score preserved; low confidence → pulled to neutral
+ * 
+ * 4. BIAS TREATMENT: "Bias alone is noted. Combined with other issues, it degrades further"
+ *    - Bias without accuracy issues: noted but doesn't automatically lower score
+ *    - Bias + inaccuracies: compounds the reliability penalty
+ *    - Prevents penalizing sources solely for having a perspective
  */
 function getEvaluationPrompt(domain: string, hasWebSearch: boolean = false): string {
   const currentDate = new Date().toISOString().split("T")[0];
@@ -166,32 +198,30 @@ CONSULT: IFCN members, Media Bias/Fact Check, Ad Fontes Media, Wikipedia controv
 `
     : "";
 
-  return `Evaluate factual reliability of: ${domain}
+  return `As a professional fact-checker, evaluate factual reliability of: ${domain}
 Date: ${currentDate}
 ${webSearchLine}
 
 RATING SCALE (symmetric around 0.5)
-- 0.86 to 1.00: highly_reliable (Exceptional accuracy, rigorous fact-checking)
-- 0.72 to 0.85: reliable (Strong editorial standards, consistent accuracy)
-- 0.58 to 0.71: mostly_reliable (Generally accurate, occasional minor issues)
-- 0.43 to 0.57: uncertain (Reliability unclear OR insufficient track record)
-- 0.29 to 0.42: mostly_unreliable (Frequent errors OR bias affects reporting)
-- 0.15 to 0.28: unreliable (Consistent inaccuracies OR misleading content)
-- 0.00 to 0.14: highly_unreliable (Known misinformation OR fabricated content)
-- null: insufficient_data (Unknown source, no assessments available)
+- 0.86-1.00: highly_reliable (Highest standards, verified, proactively corrects)
+- 0.72-0.85: reliable (Professional standards, accurate, corrects promptly)
+- 0.58-0.71: generally_reliable (Decent standards, often accurate, corrects when notified)
+- 0.43-0.57: mixed (Known source with variable/inconsistent track record)
+- 0.29-0.42: generally_unreliable (Lax standards, often inaccurate, slow to correct)
+- 0.15-0.28: unreliable (Poor standards, inaccurate, seldom corrects)
+- 0.00-0.14: highly_unreliable (Lowest standards, fabricates, resists correction)
+- null: insufficient_data (Unknown source, no assessments exist)
 
 CALIBRATION
-- Start at 0.5 (uncertain). Adjust only based on explicit evidence.
-- Brand recognition does not equal reliability.
-- Lack of negative findings does not equal reliability.
-- If truly unknown, use insufficient_data with null score.
+- Be skeptical. Reliability is earned; lack of positive evidence degrades score.
+- Match bands by overall pattern, not all criteria required.
+- Low confidence (<0.5) pulls score toward 0.5
 
 PRIORITIES
 - RECENCY: Findings from the last 24 months carry the most weight.
-- VERIFICATION: Independent fact-checker findings are primary signals.
-- VISIBILITY CAP: Overall score capped by high-visibility failures.
-- OPINION IMPACT: Systematic misinformation in editorial degrades entire source.
-- BIAS IMPACT: Bias degrades score only when it affects accuracy.
+- VERIFICATION: Results from established fact-checkers are the strongest signal.
+- PROMINENCE: Misinformation in prominent content significantly impacts source score.
+- BIAS IMPACT: Bias alone is noted. Combined with other issues, it degrades score further.
 
 CONFIDENCE: How much evidence supports your assessment (0.0-1.0).
 
@@ -213,7 +243,7 @@ OUTPUT (JSON only)
 }
 
 EXAMPLE
-{"domain":"example-news.com","evaluationDate":"${currentDate}","score":0.35,"confidence":0.72,"factualRating":"mostly_unreliable","bias":{"politicalBias":"right","otherBias":"sensationalist"},"reasoning":"Multiple fact-checkers documented false claims. 2023 defamation settlement revealed internal awareness claims lacked evidence.","evidenceCited":[{"claim":"False election claims in prime-time","basis":"PolitiFact, FactCheck.org","recency":"2022-2023"},{"claim":"Defamation settlement","basis":"Court records","recency":"2023"}],"caveats":["News division may differ from opinion programming"]}`;
+{"domain":"example-news.com","evaluationDate":"${currentDate}","score":0.35,"confidence":0.72,"factualRating":"generally_unreliable","bias":{"politicalBias":"right","otherBias":"sensationalist"},"reasoning":"Multiple fact-checkers documented false claims. 2023 defamation settlement revealed internal awareness claims lacked evidence.","evidenceCited":[{"claim":"False election claims in prime-time","basis":"PolitiFact, FactCheck.org","recency":"2022-2023"},{"claim":"Defamation settlement","basis":"Court records","recency":"2023"}],"caveats":["News division may differ from opinion programming"]}`;
 }
 
 async function evaluateWithModel(
