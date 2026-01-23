@@ -233,7 +233,7 @@ CRITICAL RULES
    - "Just asking questions" while spreading unsupported claims = unreliable
 
 6. PROPAGANDA = KNOWN DISINFORMATION
-   - State-controlled media pushing narratives contradicted by evidence
+   - Propaganda outlets pushing narratives contradicted by evidence
    - Sites that systematically publish claims debunked by fact-checkers
    - Outlets where counter-evidence is ignored or suppressed
 
@@ -254,14 +254,44 @@ CRITICAL RULES
     - Recent documented failures matter more than past reputation
     - A source that was reliable but has declined should score lower
 
-EXAMPLES - KNOWN DISINFORMATION (0-14%):
-- State propaganda with claims contradicted by independent evidence
+═══════════════════════════════════════════════════════════════
+CALIBRATION GUIDANCE (by source characteristics)
+═══════════════════════════════════════════════════════════════
+
+ESTABLISHED AUTHORITY (86-100%):
+- Major international wire services with rigorous fact-checking
+- Quality newspapers of record with transparent correction policies
+- Public broadcasters with strong editorial independence and accountability
+
+HIGH CREDIBILITY (72-85%):
+- Well-regarded news outlets with professional editorial standards
+- Sources where fact-checkers rarely find significant problems
+- Outlets with clear separation of news and opinion
+
+GENERALLY CREDIBLE (58-71%):
+- Mainstream outlets with mostly accurate reporting
+- Some unsupported claims or occasional fact-checker findings
+- May have moderate bias but still mostly evidence-based
+
+MIXED TRACK RECORD (43-57%):
+- Inconsistent quality - some good reporting, some problematic
+- Insufficient information to assess reliably
+- Conflicting indicators of reliability
+
+QUESTIONABLE CREDIBILITY (29-42%):
+- Outlets where opinion hosts spread claims contradicted by evidence
+- Hyper-partisan outlets that mix news with misleading opinion
+- Outlets where legal proceedings revealed systemic failures in evidence handling
+
+LOW CREDIBILITY (15-28%):
+- Outlets with documented patterns of publishing false claims
+- Sites that systematically ignore counter-evidence
+- Sources repeatedly debunked by multiple fact-checkers
+
+KNOWN DISINFORMATION (0-14%):
+- Propaganda outlets with claims contradicted by independent evidence
 - Sites repeatedly debunked by multiple fact-checkers
 - Outlets that fabricate quotes, events, or data
-
-EXAMPLES - LOW CREDIBILITY (15-28%):
-- Hyper-partisan sites ignoring counter-evidence
-- Outlets that have lost lawsuits or paid settlements for false claims
 - Sources with documented patterns of false claims
 - Outlets that mix news with significant misinformation
 
