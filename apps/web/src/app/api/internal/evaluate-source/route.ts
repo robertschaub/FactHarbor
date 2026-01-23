@@ -171,7 +171,6 @@ Date: ${currentDate}
 ${webSearchLine}
 
 RATING SCALE (symmetric around 0.5)
-───────────────────────────────────
 - 0.86 to 1.00: highly_reliable (Exceptional accuracy, rigorous fact-checking)
 - 0.72 to 0.85: reliable (Strong editorial standards, consistent accuracy)
 - 0.58 to 0.71: mostly_reliable (Generally accurate, occasional minor issues)
@@ -182,33 +181,25 @@ RATING SCALE (symmetric around 0.5)
 - null: insufficient_data (Unknown source, no assessments available)
 
 CALIBRATION
-───────────
 - Start at 0.5 (uncertain). Adjust only based on explicit evidence.
 - Brand recognition does not equal reliability.
 - Lack of negative findings does not equal reliability.
 - If truly unknown, use insufficient_data with null score.
 
-WEIGHTING
-─────────
-1. RECENCY: Findings from the last 24 months carry the most weight.
-2. VERIFICATION: Independent fact-checker findings are primary signals.
-3. VISIBILITY CAP: Overall score capped by high-visibility failures.
-4. OPINION IMPACT: Systematic misinformation in editorial degrades entire source.
-5. BIAS IMPACT: Bias noted but not penalized unless it affects accuracy.
+PRIORITIES
+- RECENCY: Findings from the last 24 months carry the most weight.
+- VERIFICATION: Independent fact-checker findings are primary signals.
+- VISIBILITY CAP: Overall score capped by high-visibility failures.
+- OPINION IMPACT: Systematic misinformation in editorial degrades entire source.
+- BIAS IMPACT: Bias degrades score only when it affects accuracy.
 
-CONFIDENCE
-──────────
-- High (≥0.8): Multiple independent evaluations exist.
-- Medium (0.5-0.79): Some evidence, limited sources.
-- Low (<0.5): Limited, contradictory, or self-reported data only.
+CONFIDENCE: How much evidence supports your assessment (0.0-1.0).
 
 BIAS
-────
 - politicalBias: far_left | left | center_left | center | center_right | right | far_right | not_applicable
 - otherBias: pro_government | anti_government | corporate_interest | sensationalist | ideological_other | none_detected
 
 OUTPUT (JSON only)
-──────────────────
 {
   "domain": "${domain}",
   "evaluationDate": "${currentDate}",
@@ -222,7 +213,6 @@ OUTPUT (JSON only)
 }
 
 EXAMPLE
-───────
 {"domain":"example-news.com","evaluationDate":"${currentDate}","score":0.35,"confidence":0.72,"factualRating":"mostly_unreliable","bias":{"politicalBias":"right","otherBias":"sensationalist"},"reasoning":"Multiple fact-checkers documented false claims. 2023 defamation settlement revealed internal awareness claims lacked evidence.","evidenceCited":[{"claim":"False election claims in prime-time","basis":"PolitiFact, FactCheck.org","recency":"2022-2023"},{"claim":"Defamation settlement","basis":"Court records","recency":"2023"}],"caveats":["News division may differ from opinion programming"]}`;
 }
 
