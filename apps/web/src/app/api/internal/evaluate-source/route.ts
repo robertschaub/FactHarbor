@@ -154,27 +154,36 @@ EVALUATION CRITERIA
 A. EVIDENCE-BASED ACCURACY (0-40 points) ← PRIMARY CRITERION
    40: Claims consistently supported by documented evidence
    30: Most claims supported, occasional unsupported claims corrected
-   20: Mixed - some claims supported, others unsupported or contradicted
-   10: Many claims contradicted by evidence or unsupported
-   0: Claims REPEATEDLY CONTRADICTED by documented evidence, fact-checkers
+   20: Mixed - some accurate, some unsupported (use for genuinely mixed outlets)
+   10: Many claims contradicted OR major programs spread false claims
+   0: Claims REPEATEDLY CONTRADICTED - propaganda-level falsehoods
+
+   NOTE: If ANY major program/host at the outlet spreads claims contradicted 
+   by evidence, score 10 or lower - not 20.
 
 B. FACT-CHECKER FINDINGS (0-25 points)
    25: Fact-checkers consistently rate claims as accurate
-   15: Mixed ratings - some accurate, some false
+   15: Occasional issues, mostly accurate
    5: Fact-checkers frequently find false or misleading claims
    0: Repeatedly debunked by multiple independent fact-checkers
+
+   NOTE: Check what PolitiFact, Snopes, AFP, etc. find for this source.
 
 C. OPINION vs. FACT TRANSPARENCY (0-15 points)
    15: Clear labels - opinion is marked, news is evidence-based
    10: Some blurring but mostly distinguishable
-   5: Frequently presents opinion or unsupported claims as fact
+   5: Opinion hosts present unsupported claims as fact
    0: Systematically presents unsupported claims as established fact
 
+   NOTE: If primetime opinion shows present unsupported claims as fact, score 5 or lower.
+
 D. BIAS IMPACT ON ACCURACY (subtract from total)
-   -20: Extreme bias leads to publishing claims contradicted by evidence
-   -12: Strong bias leads to selective/misleading presentation of evidence
-   -5: Moderate bias but still mostly evidence-based
+   -20: Extreme bias - outlet publishes claims contradicted by evidence
+   -12: Strong bias - selective presentation, omits inconvenient evidence
+   -5: Moderate bias - partisan lean but still evidence-based
    0: Minimal bias, presents evidence fairly
+
+   NOTE: If bias causes the outlet to spread false claims, use -20 (not -12).
 
 ═══════════════════════════════════════════════════════════════
 SCORE CALCULATION
@@ -223,10 +232,10 @@ CRITICAL RULES
    - Internal communications revealed in legal proceedings count
 
 4. OPINION PROGRAMMING COUNTS AGAINST THE OUTLET
-   - If opinion hosts spread claims contradicted by evidence, this counts
-   - "News division vs Opinion division" does NOT absolve the outlet
-   - The WHOLE outlet is evaluated - not just the best parts
-   - Primetime opinion shows with large audiences matter MORE, not less
+   - An outlet cannot score higher than its worst systematic issues
+   - Good journalism elsewhere does NOT cancel out misinformation
+   - Primetime programs reaching millions define reliability more than smaller accurate sections
+   - Misinformation on major programs pulls the ENTIRE outlet down - not just that program
 
 5. UNSUPPORTED ≠ NEUTRAL
    - Publishing claims without evidence is NOT neutral journalism
