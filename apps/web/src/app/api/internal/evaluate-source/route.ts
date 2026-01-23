@@ -228,6 +228,37 @@ function isUsableBrandToken(token: string): boolean {
   return true;
 }
 
+function isRelevantSearchResult(
+  r: WebSearchResult,
+  domain: string,
+  brand: string
+): boolean {
+  const url = (r.url ?? "").toLowerCase();
+  const title = (r.title ?? "").toLowerCase();
+  const snippet = (r.snippet ?? "").toLowerCase();
+  const blob = `${title} ${snippet} ${url}`;
+
+  const d = String(domain || "").toLowerCase();
+  if (!d) return true;
+
+  // Any direct domain mention is relevant (including in URL).
+  if (blob.includes(d) || blob.includes(`www.${d}`)) return true;
+
+  // If URL host is the domain (or subdomain), treat as relevant even if snippet/title omit it.
+  try {
+    const host = new URL(r.url).hostname.toLowerCase().replace(/^www\./, "");
+    if (host === d || host.endsWith(`.${d}`)) return true;
+  } catch {
+    // ignore URL parse errors
+  }
+
+  // Brand mention can be relevant, but only if it's a usable (non-ambiguous) token.
+  const b = (brand ?? "").toLowerCase().trim();
+  if (isUsableBrandToken(b) && blob.includes(b)) return true;
+
+  return false;
+}
+
 function parseDateRestrictEnv(v: string | undefined): "y" | "m" | "w" | undefined {
   const s = (v ?? "").toLowerCase().trim();
   if (s === "y" || s === "m" || s === "w") return s;
@@ -288,6 +319,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       for (const r of resp.results) {
         if (!r.url) continue;
         if (seen.has(r.url)) continue;
+        if (!isRelevantSearchResult(r, domain, brand)) continue;
         seen.add(r.url);
         rawItems.push({ r, query: q, provider });
         if (rawItems.length >= maxEvidenceItems) break;

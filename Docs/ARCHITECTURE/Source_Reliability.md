@@ -331,6 +331,9 @@ The evaluator builds an evidence pack using a small query set and stops early on
 
 Where `<brand?>` is an optional heuristic token derived from the domain; it is omitted when too short/ambiguous (e.g., very short brands). The domain is always included as a quoted token.
 
+**Relevance filter (POC)**:
+Search results are filtered to reduce noise: we only keep evidence-pack items that mention the domain/brand in the title/snippet/URL, or whose URL host matches the domain (or subdomain).
+
 ### Example Configurations
 
 ```bash
