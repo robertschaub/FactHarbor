@@ -235,20 +235,20 @@ adjustedConfidence = confidence × (0.5 + avgSourceScore / 2)
 
 | Source Credibility Band | Score (Weight) | Effect on Verdict |
 |------------------------|------------------|-------------------|
-| **Established Authority (0.86+)** | ~95-100% | Verdict fully preserved |
-| **High Credibility (0.72-0.86)** | ~75-90% | Verdict mostly preserved |
-| **Generally Credible (0.58-0.72)** | ~60-75% | Moderate preservation |
-| **Mixed Track Record (0.43-0.57)** | ~40-60% | Appropriate skepticism (neutral center) |
-| **Questionable Credibility (0.29-0.43)** | ~30-45% | Pulls toward neutral |
-| **Low Credibility (0.15-0.29)** | ~15-30% | Strong pull toward neutral |
-| **Known Disinformation (0.00-0.15)** | ~0-15% | Maximum skepticism |
+| **Highly Reliable (0.86+)** | ~95-100% | Verdict fully preserved |
+| **Reliable (0.72-0.86)** | ~75-90% | Verdict mostly preserved |
+| **Mostly Reliable (0.58-0.72)** | ~60-75% | Moderate preservation |
+| **Uncertain (0.43-0.57)** | ~40-60% | Appropriate skepticism (neutral center) |
+| **Mostly Unreliable (0.29-0.43)** | ~30-45% | Pulls toward neutral |
+| **Unreliable (0.15-0.29)** | ~15-30% | Strong pull toward neutral |
+| **Highly Unreliable (0.00-0.15)** | ~0-15% | Maximum skepticism |
 | **Unknown (null)** | 50% | Uses default score (neutral) |
 
 ### Example
 
 ```
 Original verdict: 80% (Strong True)
-Source credibility: 0.5 (Mixed Track Record - neutral center)
+Source credibility: 0.5 (Uncertain - neutral center)
 
 Adjusted = 50 + (80 - 50) × 0.5
          = 50 + 30 × 0.5
@@ -334,20 +334,32 @@ FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
 
 | Score | Rating | Key Criteria |
 |-------|--------|--------------|
-| 0.86-1.00 | Established Authority | Rigorous fact-checking, clear opinion labels, transparent corrections, primary sources |
-| 0.72-0.85 | High Credibility | Good sourcing, mostly factual, professional standards, minor issues only |
-| 0.58-0.71 | Generally Credible | Factual core, some unsourced claims, occasional opinion/fact blurring, moderate bias |
-| 0.43-0.57 | Mixed Track Record | Inconsistent quality, insufficient information to assess, OR conflicting indicators |
-| 0.29-0.42 | Questionable Credibility | Frequent unsourced claims, opinion presented as news, selective facts, strong bias |
-| 0.15-0.28 | Low Credibility | Persistent inaccuracies, extreme bias, baseless claims common, poor corrections |
-| 0.00-0.14 | Known Disinformation | Pattern of falsehoods, propaganda, coordinated deception |
+| 0.86-1.00 | Highly Reliable | Verified accuracy, recognized standards body, rigorous corrections |
+| 0.72-0.85 | Reliable | Consistent accuracy, professional standards, rarely faulted |
+| 0.58-0.71 | Mostly Reliable | Mostly accurate, occasional errors, corrects when notified |
+| 0.43-0.57 | Uncertain | Variable accuracy OR inconsistent quality by topic/author |
+| 0.29-0.42 | Mostly Unreliable | Frequent inaccuracies OR bias significantly affects reporting |
+| 0.15-0.28 | Unreliable | Pattern of false claims OR ignores corrections |
+| 0.00-0.14 | Highly Unreliable | Fabricates content OR documented disinformation source |
 
-**Evaluation Dimensions:**
-- **Factual Accuracy (30%)**: Verifiable facts vs. baseless claims
-- **Opinion/Fact Separation (25%)**: Clear labels vs. propaganda disguised as news
-- **Source Attribution (20%)**: Primary sources vs. unverified claims
-- **Correction Practices (15%)**: Transparent corrections vs. doubling down
-- **Bias Penalty (up to -20%)**: Extreme political bias reduces reliability
+**Calibration:**
+- Default assumption is 0.5 (uncertain). Adjust up or down based on evidence.
+- Do not inflate scores based on brand recognition or reputation alone.
+- "No negative findings" ≠ reliable. Absence of evidence lowers confidence; truly unknown sources should use insufficient_data.
+
+**Weighting Rules (applied during evaluation):**
+1. **Recency Priority**: Last 24 months matter most. Historical reputation does not excuse recent failures.
+2. **Verification**: Fact-checker findings are strong reliability signals.
+3. **Visibility Cap**: Score capped by worst high-visibility failures.
+4. **Opinion Counts**: Misinformation in opinion/editorial degrades entire source score.
+5. **Bias Impact**: Bias affecting accuracy lowers score. Bias without factual issues is noted, not penalized.
+
+**Bias Assessment:**
+- Political spectrum: far_left | left | center_left | center | center_right | right | far_right
+- Other bias types: pro_government | anti_government | corporate_interest | sensationalist | ideological_other
+
+**Insufficient Data:**
+- Sources with no independent assessments return `score: null` with `factualRating: insufficient_data`
 
 **Impact on verdicts:**
 - Score >= 0.58: Preserves original verdict (credible source)
@@ -414,17 +426,17 @@ Per review feedback, the system avoids categorical assumptions:
 
 | Score Range | Rating | Meaning |
 |-------------|--------|---------|
-| 0.86-1.00 | established_authority | Consistent editorial rigor, strong fact-checking |
-| 0.72-0.85 | high_credibility | Reliable track record, professional standards |
-| 0.58-0.71 | generally_credible | Mostly accurate, occasional lapses |
-| 0.43-0.57 | mixed_track_record | Inconsistent quality, insufficient info, or conflicting indicators |
-| 0.29-0.42 | questionable_credibility | Frequent accuracy issues, poor sourcing |
-| 0.15-0.28 | low_credibility | Persistent inaccuracies, lack of standards |
-| 0.00-0.14 | known_disinformation | Documented intentional falsehoods, propaganda |
+| 0.86-1.00 | highly_reliable | Verified accuracy, recognized standards body |
+| 0.72-0.85 | reliable | Consistent accuracy, professional standards |
+| 0.58-0.71 | mostly_reliable | Mostly accurate, occasional errors |
+| 0.43-0.57 | uncertain | Variable accuracy, inconsistent quality |
+| 0.29-0.42 | mostly_unreliable | Frequent inaccuracies, bias affects reporting |
+| 0.15-0.28 | unreliable | Pattern of false claims, ignores corrections |
+| 0.00-0.14 | highly_unreliable | Fabricates content, documented disinformation |
 
 **Key properties:**
 - **7 bands** for source credibility assessment
-- **0.5 = exact center** of the mixed_track_record band (0.43-0.57)
+- **0.5 = exact center** of the uncertain band (0.43-0.57)
 - Above 0.58 = positive boost to verdict preservation
 - 0.43-0.57 = neutral zone (appropriate for unknown sources)
 - Below 0.43 = pulls verdict toward neutral (skepticism)

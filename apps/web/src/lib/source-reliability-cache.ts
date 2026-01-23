@@ -26,7 +26,7 @@ const SR_CACHE_CONFIG = {
 
 export interface CachedScore {
   domain: string;
-  score: number;
+  score: number | null;
   confidence: number;
   evaluatedAt: string;
   expiresAt: string;
@@ -41,7 +41,7 @@ export interface CachedScore {
 
 interface ScoreRow {
   domain: string;
-  score: number;
+  score: number | null;
   confidence: number;
   evaluated_at: string;
   expires_at: string;
@@ -72,10 +72,11 @@ async function getDb(): Promise<Database> {
   });
 
   // Create table if not exists
+  // Note: score can be NULL for "insufficient_data" evaluations
   await db.exec(`
     CREATE TABLE IF NOT EXISTS source_reliability (
       domain TEXT PRIMARY KEY,
-      score REAL NOT NULL,
+      score REAL,
       confidence REAL NOT NULL,
       evaluated_at TEXT NOT NULL,
       expires_at TEXT NOT NULL,
@@ -91,14 +92,17 @@ async function getDb(): Promise<Database> {
     CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
   `);
 
-  // Migration: Add new columns if they don't exist (for existing databases)
+  // Migration: Add new columns and fix constraints for existing databases
   try {
-    // Check if reasoning column exists
-    const tableInfo = await db.all("PRAGMA table_info(source_reliability)");
-    const hasReasoning = tableInfo.some((col: any) => col.name === "reasoning");
-    const hasCategory = tableInfo.some((col: any) => col.name === "category");
-    const hasBiasIndicator = tableInfo.some((col: any) => col.name === "bias_indicator");
-    const hasEvidenceCited = tableInfo.some((col: any) => col.name === "evidence_cited");
+    let tableInfo = await db.all<Array<{ name: string; notnull: number }>>(
+      "PRAGMA table_info(source_reliability)"
+    );
+    
+    // STEP 1: First add any missing columns (must happen BEFORE table recreation)
+    const hasReasoning = tableInfo.some((col) => col.name === "reasoning");
+    const hasCategory = tableInfo.some((col) => col.name === "category");
+    const hasBiasIndicator = tableInfo.some((col) => col.name === "bias_indicator");
+    const hasEvidenceCited = tableInfo.some((col) => col.name === "evidence_cited");
 
     if (!hasReasoning) {
       console.log("[SR-Cache] Adding reasoning column");
@@ -115,6 +119,48 @@ async function getDb(): Promise<Database> {
     if (!hasEvidenceCited) {
       console.log("[SR-Cache] Adding evidence_cited column");
       await db.exec("ALTER TABLE source_reliability ADD COLUMN evidence_cited TEXT");
+    }
+
+    // STEP 2: Now check if score column has NOT NULL constraint (notnull=1)
+    // Re-fetch tableInfo in case columns were added
+    tableInfo = await db.all<Array<{ name: string; notnull: number }>>(
+      "PRAGMA table_info(source_reliability)"
+    );
+    const scoreCol = tableInfo.find((col) => col.name === "score");
+    if (scoreCol && scoreCol.notnull === 1) {
+      // SQLite doesn't support ALTER TABLE to remove NOT NULL, so we need to recreate
+      console.log("[SR-Cache] Migrating: score column has NOT NULL, recreating table to allow NULL scores");
+      await db.exec(`
+        -- Create new table with correct schema (score allows NULL)
+        CREATE TABLE source_reliability_new (
+          domain TEXT PRIMARY KEY,
+          score REAL,
+          confidence REAL NOT NULL,
+          evaluated_at TEXT NOT NULL,
+          expires_at TEXT NOT NULL,
+          model_primary TEXT NOT NULL,
+          model_secondary TEXT,
+          consensus_achieved INTEGER NOT NULL DEFAULT 0,
+          reasoning TEXT,
+          category TEXT,
+          bias_indicator TEXT,
+          evidence_cited TEXT
+        );
+        
+        -- Copy existing data (all columns now exist)
+        INSERT INTO source_reliability_new 
+        SELECT domain, score, confidence, evaluated_at, expires_at, model_primary, 
+               model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited
+        FROM source_reliability;
+        
+        -- Drop old table and rename
+        DROP TABLE source_reliability;
+        ALTER TABLE source_reliability_new RENAME TO source_reliability;
+        
+        -- Recreate index
+        CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
+      `);
+      console.log("[SR-Cache] Migration complete: score column now allows NULL");
     }
   } catch (err) {
     console.error("[SR-Cache] Migration error:", err);
@@ -162,7 +208,7 @@ export async function getCachedScore(domain: string): Promise<CachedScore | null
  * Full cached reliability data for a domain.
  */
 export interface CachedReliabilityDataFromCache {
-  score: number;
+  score: number | null;
   confidence: number;
   consensusAchieved: boolean;
 }
@@ -174,7 +220,7 @@ export interface CachedReliabilityDataFromCache {
  */
 export async function batchGetCachedScores(
   domains: string[]
-): Promise<Map<string, number>> {
+): Promise<Map<string, number | null>> {
   if (domains.length === 0) return new Map();
 
   const database = await getDb();
@@ -187,7 +233,7 @@ export async function batchGetCachedScores(
     [...domains, now]
   );
 
-  const result = new Map<string, number>();
+  const result = new Map<string, number | null>();
   for (const row of rows) {
     result.set(row.domain, row.score);
   }
@@ -231,7 +277,7 @@ export async function batchGetCachedData(
  */
 export async function setCachedScore(
   domain: string,
-  score: number,
+  score: number | null,
   confidence: number,
   modelPrimary: string,
   modelSecondary: string | null,
@@ -239,7 +285,7 @@ export async function setCachedScore(
   reasoning?: string | null,
   category?: string | null,
   biasIndicator?: string | null,
-  evidenceCited?: string[] | null
+  evidenceCited?: Array<{ claim: string; basis: string; recency?: string }> | null
 ): Promise<void> {
   const database = await getDb();
   const now = new Date();

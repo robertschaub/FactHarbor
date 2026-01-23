@@ -41,34 +41,63 @@ const RequestSchema = z.object({
 });
 
 const EvaluationResultSchema = z.object({
-  score: z.number().min(0).max(1),
+  domain: z.string().optional(),
+  evaluationDate: z.string().optional(),
+  score: z.number().min(0).max(1).nullable(),
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
   factualRating: z.enum([
-    "established_authority",      // 0.86-1.00
-    "high_credibility",           // 0.72-0.86
-    "generally_credible",         // 0.58-0.72
-    "mixed_track_record",         // 0.43-0.57 (neutral center)
-    "questionable_credibility",   // 0.29-0.43
-    "low_credibility",            // 0.15-0.29
-    "known_disinformation",       // 0.00-0.15
+    "highly_reliable",            // 0.86-1.00
+    "reliable",                   // 0.72-0.85
+    "mostly_reliable",            // 0.58-0.71
+    "uncertain",                  // 0.43-0.57
+    "mostly_unreliable",          // 0.29-0.42
+    "unreliable",                 // 0.15-0.28
+    "highly_unreliable",          // 0.00-0.14
+    "insufficient_data",          // null score
   ]),
-  biasIndicator: z.enum(["left", "center-left", "center", "center-right", "right"]).nullable().optional(),
-  evidenceCited: z.array(z.string()).optional(),
+  bias: z.object({
+    politicalBias: z.enum([
+      "far_left", "left", "center_left", "center",
+      "center_right", "right", "far_right", "not_applicable"
+    ]),
+    otherBias: z.enum([
+      "pro_government", "anti_government", "corporate_interest",
+      "ideological_other", "sensationalist", "none_detected"
+    ]).nullable().optional(),
+  }).optional(),
+  evidenceCited: z.array(z.object({
+    claim: z.string(),
+    basis: z.string(),
+    recency: z.string().optional(),
+  })).optional(),
+  caveats: z.array(z.string()).optional(),
 });
 
 type EvaluationResult = z.infer<typeof EvaluationResultSchema>;
 
+interface EvidenceItem {
+  claim: string;
+  basis: string;
+  recency?: string;
+}
+
 interface ResponsePayload {
-  score: number;
+  score: number | null;
   confidence: number;
   modelPrimary: string;
   modelSecondary: string | null;
   consensusAchieved: boolean;
   reasoning: string;
   category: string;
+  // Keep biasIndicator for backward compatibility with cache
   biasIndicator: string | null | undefined;
-  evidenceCited: string[] | undefined;
+  bias?: {
+    politicalBias: string;
+    otherBias?: string | null;
+  };
+  evidenceCited?: EvidenceItem[];
+  caveats?: string[];
 }
 
 // ============================================================================
@@ -122,210 +151,82 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
 // LLM EVALUATION
 // ============================================================================
 
-// Generate prompt with current date for temporal awareness
-function getEvaluationPrompt(domain: string): string {
-  const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  
-  return `You are a media reliability analyst evaluating sources based on EVIDENCE.
+/**
+ * Generate LLM evaluation prompt for source reliability assessment.
+ * @param domain - The domain to evaluate
+ * @param hasWebSearch - Whether the model has web search capability
+ */
+function getEvaluationPrompt(domain: string, hasWebSearch: boolean = false): string {
+  const currentDate = new Date().toISOString().split("T")[0];
 
-CURRENT DATE: ${currentDate}
-SOURCE: ${domain}
+  const webSearchLine = hasWebSearch
+    ? `
+SEARCH: Query "${domain} fact check", "${domain} bias rating", "${domain} credibility".
+CONSULT: IFCN members, Media Bias/Fact Check, Ad Fontes Media, Wikipedia controversies section.
+`
+    : "";
 
-═══════════════════════════════════════════════════════════════
-THE CORE QUESTION: EVIDENCE-BASED FACT-CHECKING
-═══════════════════════════════════════════════════════════════
+  return `Evaluate factual reliability of: ${domain}
+Date: ${currentDate}
+${webSearchLine}
+RATING SCALE
+────────────
+RATING SCALE (factualRating) - symmetric 7-band scale around 0.5:
+- "highly_reliable": Exceptional factual accuracy, rigorous fact-checking, primary sources
+- "reliable": Strong editorial standards, consistent accuracy
+- "mostly_reliable": Generally accurate with occasional minor issues
+- "uncertain": Reliability unclear, insufficient track record (neutral center)
+- "mostly_unreliable": Frequent errors or bias, verify independently
+- "unreliable": Consistent inaccuracies or misleading content
+- "highly_unreliable": Known misinformation source, fabricated content
 
-Evaluate this source based on DOCUMENTED EVIDENCE:
+SCORE SCALE (0.0 to 1.0) - 7 bands symmetric around 0.5 (matches verdict scale):
+- 0.86-1.00: highly_reliable
+- 0.72-0.86: reliable
+- 0.58-0.72: mostly_reliable
+- 0.43-0.57: uncertain (neutral center)
+- 0.29-0.43: mostly_unreliable
+- 0.15-0.29: unreliable
+- 0.00-0.15: highly_unreliable
 
-1. Are its claims SUPPORTED by verifiable evidence?
-2. Are its claims CONTRADICTED by documented evidence?
-3. What do FACT-CHECKERS find when they investigate this source?
-4. Does it publish UNSUPPORTED claims as if they were facts?
+CALIBRATION
+───────────
+Default assumption is 0.5 (uncertain). Adjust up or down based on evidence.
+Do not inflate scores based on brand recognition or reputation alone.
+"No negative findings" ≠ reliable. Absence of evidence lowers confidence; truly unknown sources should use insufficient_data.
 
-You don't need to prove "intent to lie" - just whether claims are:
-- SUPPORTED by evidence (reliable)
-- CONTRADICTED by evidence (unreliable)
-- UNSUPPORTED by evidence (questionable)
+WEIGHTING
+─────────
+1. RECENCY PRIORITY: Last 24 months matter most. Historical reputation does not excuse recent failures.
+2. VERIFICATION: Fact-checker findings are strong reliability signals.
+3. VISIBILITY CAP: Score capped by worst high-visibility failures.
+4. OPINION COUNTS: Misinformation in opinion/editorial degrades entire source score.
+5. BIAS IMPACT: Bias affecting accuracy lowers score. Bias without factual issues is noted, not penalized.
 
-═══════════════════════════════════════════════════════════════
-EVALUATION CRITERIA
-═══════════════════════════════════════════════════════════════
+CONFIDENCE: 0.0-1.0 based on evidence availability. High (≥0.8) = multiple sources agree. Low (<0.5) = limited or conflicting data.
 
-A. EVIDENCE-BASED ACCURACY (0-40 points) ← PRIMARY CRITERION
-   40: Claims consistently supported by documented evidence
-   30: Most claims supported, occasional unsupported claims corrected
-   20: Mixed - some accurate, some unsupported (use for genuinely mixed outlets)
-   10: Many claims contradicted OR major programs spread false claims
-   0: Claims REPEATEDLY CONTRADICTED - propaganda-level falsehoods
+BIAS
+────
+politicalBias: far_left | left | center_left | center | center_right | right | far_right | not_applicable
+otherBias: pro_government | anti_government | corporate_interest | sensationalist | ideological_other | none_detected
 
-   NOTE: If ANY major program/host at the outlet spreads claims contradicted 
-   by evidence, score 10 or lower - not 20.
-
-B. FACT-CHECKER FINDINGS (0-25 points)
-   25: Fact-checkers consistently rate claims as accurate
-   15: Occasional issues, mostly accurate
-   5: Fact-checkers frequently find false or misleading claims
-   0: Repeatedly debunked by multiple independent fact-checkers
-
-   NOTE: Check what PolitiFact, Snopes, AFP, etc. find for this source.
-
-C. OPINION vs. FACT TRANSPARENCY (0-15 points)
-   15: Clear labels - opinion is marked, news is evidence-based
-   10: Some blurring but mostly distinguishable
-   5: Opinion hosts present unsupported claims as fact
-   0: Systematically presents unsupported claims as established fact
-
-   NOTE: If primetime opinion shows present unsupported claims as fact, score 5 or lower.
-
-D. BIAS IMPACT ON ACCURACY (subtract from total)
-   -20: Extreme bias - outlet publishes claims contradicted by evidence
-   -12: Strong bias - selective presentation, omits inconvenient evidence
-   -5: Moderate bias - partisan lean but still evidence-based
-   0: Minimal bias, presents evidence fairly
-
-   NOTE: If bias causes the outlet to spread false claims, use -20 (not -12).
-
-═══════════════════════════════════════════════════════════════
-SCORE CALCULATION
-═══════════════════════════════════════════════════════════════
-
-Total = A + B + C + D (max 80, min -20)
-Final percentage = (Total + 20) / 100 × 100%
-
-Scale centering:
-- All zeros + max penalty = 0% (Known Disinformation)
-- All zeros, no penalty = 20% (Low Credibility)
-- Mixed scores (20+15+10+0) = 45% (Mixed Track Record)
-- Good scores (30+20+12-5) = 57% (Generally Credible)
-- Excellent (40+25+15+0) = 100% (Established Authority)
-
-═══════════════════════════════════════════════════════════════
-SCORE BANDS
-═══════════════════════════════════════════════════════════════
-
-86-100%: ESTABLISHED AUTHORITY - Claims consistently supported by evidence
-72-85%:  HIGH CREDIBILITY - Evidence-based reporting, minor issues only
-58-71%:  GENERALLY CREDIBLE - Mostly evidence-based, some unsupported claims
-43-57%:  MIXED TRACK RECORD - Inconsistent evidence standards, or insufficient data
-29-42%:  QUESTIONABLE CREDIBILITY - Many unsupported claims, evidence often ignored
-15-28%:  LOW CREDIBILITY - Claims frequently contradicted by evidence
-0-14%:   KNOWN DISINFORMATION - Documented pattern of publishing false information
-
-═══════════════════════════════════════════════════════════════
-CRITICAL RULES
-═══════════════════════════════════════════════════════════════
-
-1. EVIDENCE IS EVERYTHING
-   - Claims supported by documents, data, named sources = credible
-   - Claims contradicted by documented evidence = not credible
-   - Claims without any supporting evidence = questionable
-
-2. FACT-CHECKER CONSENSUS MATTERS
-   - If PolitiFact, Snopes, AFP, Reuters Fact Check, etc. have repeatedly 
-     found this source publishes false claims → score LOW
-   - Multiple fact-checkers agreeing = strong signal
-
-3. LEGAL FINDINGS ARE STRONG EVIDENCE
-   - Court documents, depositions, settlements = powerful evidence
-   - If a source has lost lawsuits or paid settlements for false claims,
-     this is DOCUMENTED EVIDENCE of publishing false information
-   - Internal communications revealed in legal proceedings count
-
-4. OPINION PROGRAMMING COUNTS AGAINST THE OUTLET
-   - An outlet cannot score higher than its worst systematic issues
-   - Good journalism elsewhere does NOT cancel out misinformation
-   - Primetime programs reaching millions define reliability more than smaller accurate sections
-   - Misinformation on major programs pulls the ENTIRE outlet down - not just that program
-
-5. UNSUPPORTED ≠ NEUTRAL
-   - Publishing claims without evidence is NOT neutral journalism
-   - "Just asking questions" while spreading unsupported claims = unreliable
-
-6. PROPAGANDA = KNOWN DISINFORMATION
-   - Propaganda outlets pushing narratives contradicted by evidence
-   - Sites that systematically publish claims debunked by fact-checkers
-   - Outlets where counter-evidence is ignored or suppressed
-
-7. BIAS AFFECTS EVIDENCE HANDLING
-   - If bias causes a source to ignore counter-evidence → full penalty
-   - If bias causes selective presentation of facts → strong penalty
-
-8. PROFESSIONAL APPEARANCE IRRELEVANT
-   - A polished outlet publishing unsupported claims is still unreliable
-   - Major networks can still spread misinformation
-
-9. WHEN EVIDENCE IS UNCLEAR, BE SKEPTICAL
-   - Insufficient evidence to verify claims = Mixed Track Record at best
-   - Better to be cautious than to endorse an unreliable source
-
-10. RECENCY MATTERS - RECENT FAILURES WEIGH HEAVILY
-    - Focus on the MOST RECENT 1-2 years
-    - Recent documented failures matter more than past reputation
-    - A source that was reliable but has declined should score lower
-
-═══════════════════════════════════════════════════════════════
-CALIBRATION GUIDANCE (by source characteristics)
-═══════════════════════════════════════════════════════════════
-
-ESTABLISHED AUTHORITY (86-100%):
-- Major international wire services with rigorous fact-checking
-- Quality newspapers of record with transparent correction policies
-- Public broadcasters with strong editorial independence and accountability
-
-HIGH CREDIBILITY (72-85%):
-- Well-regarded news outlets with professional editorial standards
-- Sources where fact-checkers rarely find significant problems
-- Outlets with clear separation of news and opinion
-
-GENERALLY CREDIBLE (58-71%):
-- Mainstream outlets with mostly accurate reporting
-- Some unsupported claims or occasional fact-checker findings
-- May have moderate bias but still mostly evidence-based
-
-MIXED TRACK RECORD (43-57%):
-- Inconsistent quality - some good reporting, some problematic
-- Insufficient information to assess reliably
-- Conflicting indicators of reliability
-
-QUESTIONABLE CREDIBILITY (29-42%):
-- Outlets where opinion hosts spread claims contradicted by evidence
-- Hyper-partisan outlets that mix news with misleading opinion
-- Outlets where legal proceedings revealed systemic failures in evidence handling
-
-LOW CREDIBILITY (15-28%):
-- Outlets with documented patterns of publishing false claims
-- Sites that systematically ignore counter-evidence
-- Sources repeatedly debunked by multiple fact-checkers
-
-KNOWN DISINFORMATION (0-14%):
-- Propaganda outlets with claims contradicted by independent evidence
-- Sites repeatedly debunked by multiple fact-checkers
-- Outlets that fabricate quotes, events, or data
-- Sources with documented patterns of false claims
-- Outlets that mix news with significant misinformation
-
-TEMPORAL AWARENESS - VERY IMPORTANT:
-- Focus on the MOST RECENT track record (last 1-2 years)
-- Recent lawsuits, settlements, or fact-checker findings are HIGHLY relevant
-- A source that spread false claims recently should score LOW even if it was once reliable
-- Consider: Has this source been involved in recent controversies about false claims?
-
-CONFIDENCE (0.0 to 1.0):
-- 0.9+: Well-documented source, clear fact-checker data available
-- 0.7-0.9: Reasonably known, some fact-checker findings
-- 0.5-0.7: Less familiar but some evidence available
-- <0.5: Unknown source, insufficient evidence to assess
-
-Respond with JSON:
+OUTPUT FORMAT (JSON only)
+─────────────────────────
 {
-  "score": <decimal 0.0-1.0>,
+  "domain": "${domain}",
+  "evaluationDate": "${currentDate}",
+  "score": <0.0-1.0 | null>,
   "confidence": <0.0-1.0>,
-  "reasoning": "<one-sentence: are claims supported or contradicted by evidence?>",
-  "factualRating": "<established_authority|high_credibility|generally_credible|mixed_track_record|questionable_credibility|low_credibility|known_disinformation>",
-  "biasIndicator": "<left|center-left|center|center-right|right>",
-  "evidenceCited": ["<specific examples of claims supported or contradicted by evidence>"]
-}`;
+  "factualRating": "<rating>",
+  "bias": {"politicalBias": "<value>", "otherBias": "<value|null>"},
+  "reasoning": "<2-3 sentences>",
+  "evidenceCited": [{"claim": "<assertion>", "basis": "<evidence>", "recency": "<when>"}],
+  "caveats": ["<limitations>"]
 }
+
+EXAMPLE
+───────
+{"domain":"example-news.com","evaluationDate":"${currentDate}","score":0.35,"confidence":0.72,"factualRating":"mostly_unreliable","bias":{"politicalBias":"right","otherBias":"sensationalist"},"reasoning":"Multiple fact-checkers documented false claims from prime-time hosts. A 2023 defamation settlement revealed internal awareness that claims lacked evidence.","evidenceCited":[{"claim":"Prime-time content included false election claims","basis":"PolitiFact, FactCheck.org findings","recency":"2022-2023"},{"claim":"Settled defamation lawsuit","basis":"Court records","recency":"2023"}],"caveats":["News division may have higher standards than opinion programming"]}`;}
 
 async function evaluateWithModel(
   domain: string,
@@ -334,12 +235,12 @@ async function evaluateWithModel(
   // Check API key availability
   const apiKeyEnvVar = modelProvider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
   const apiKey = process.env[apiKeyEnvVar];
-  
+
   if (!apiKey) {
     console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED: ${apiKeyEnvVar} not set in environment`);
     return null;
   }
-  
+
   if (apiKey.startsWith("PASTE_") || apiKey === "sk-...") {
     console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED: ${apiKeyEnvVar} appears to be a placeholder value`);
     return null;
@@ -348,12 +249,12 @@ async function evaluateWithModel(
   const prompt = getEvaluationPrompt(domain);
   const temperature = getDeterministicTemperature(0.3);
 
-  const modelName = modelProvider === "anthropic" 
-    ? "claude-3-5-haiku-20241022" 
+  const modelName = modelProvider === "anthropic"
+    ? "claude-3-5-haiku-20241022"
     : "gpt-4o-mini";
-  
+
   console.log(`[SR-Eval] Calling ${modelProvider} (${modelName}) for ${domain}...`);
-  
+
   const model = modelProvider === "anthropic"
     ? anthropic(modelName)
     : openai(modelName);
@@ -381,7 +282,7 @@ async function evaluateWithModel(
     if (jsonMatch) {
       jsonStr = jsonMatch[1].trim();
     }
-    
+
     let parsed: unknown;
     try {
       parsed = JSON.parse(jsonStr);
@@ -392,17 +293,18 @@ async function evaluateWithModel(
     }
 
     const result = EvaluationResultSchema.parse(parsed);
-    console.log(`[SR-Eval] ${modelProvider.toUpperCase()} SUCCESS: score=${result.score.toFixed(2)}, confidence=${result.confidence.toFixed(2)}`);
+    const scoreStr = result.score !== null ? result.score.toFixed(2) : "null";
+    console.log(`[SR-Eval] ${modelProvider.toUpperCase()} SUCCESS: score=${scoreStr}, confidence=${result.confidence.toFixed(2)}, rating=${result.factualRating}`);
     return { result, modelName };
   } catch (err: any) {
     // Detailed error logging
     const errorMessage = err?.message || String(err);
     const errorCode = err?.code || err?.status || "unknown";
-    
+
     console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED for ${domain}:`);
     console.error(`  - Error code: ${errorCode}`);
     console.error(`  - Message: ${errorMessage}`);
-    
+
     // Check for common error types
     if (errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("invalid_api_key")) {
       console.error(`  - DIAGNOSIS: API key is invalid or expired. Check ${apiKeyEnvVar}`);
@@ -413,22 +315,56 @@ async function evaluateWithModel(
     } else if (errorMessage.includes("timeout") || errorMessage.includes("ETIMEDOUT")) {
       console.error(`  - DIAGNOSIS: Request timed out. Network issue or slow response.`);
     }
-    
+
     return null;
   }
 }
 
 interface EvaluationError {
-  reason: 
+  reason:
     | "primary_model_failed"
-    | "confidence_too_low" 
+    | "confidence_too_low"
     | "no_consensus"
     | "evaluation_error";
   details: string;
-  primaryScore?: number;
+  primaryScore?: number | null;
   primaryConfidence?: number;
-  secondaryScore?: number;
+  secondaryScore?: number | null;
   secondaryConfidence?: number;
+}
+
+// Helper to extract biasIndicator string from bias object (for backward compatibility)
+function extractBiasIndicator(bias?: EvaluationResult["bias"]): string | null {
+  if (!bias) return null;
+  // Map new spectrum values to old format where needed
+  const spectrum = bias.politicalBias;
+  if (spectrum === "not_applicable") return null;
+  // Convert underscores to hyphens for backward compatibility (center_left -> center-left)
+  return spectrum.replace(/_/g, "-");
+}
+
+// Helper to build ResponsePayload from evaluation result
+function buildResponsePayload(
+  result: EvaluationResult,
+  modelPrimary: string,
+  modelSecondary: string | null,
+  consensusAchieved: boolean,
+  overrideScore?: number | null,
+  overrideConfidence?: number
+): ResponsePayload {
+  return {
+    score: overrideScore !== undefined ? overrideScore : result.score,
+    confidence: overrideConfidence !== undefined ? overrideConfidence : result.confidence,
+    modelPrimary,
+    modelSecondary,
+    consensusAchieved,
+    reasoning: result.reasoning,
+    category: result.factualRating,
+    biasIndicator: extractBiasIndicator(result.bias),
+    bias: result.bias,
+    evidenceCited: result.evidenceCited,
+    caveats: result.caveats,
+  };
 }
 
 async function evaluateSourceWithConsensus(
@@ -450,6 +386,15 @@ async function evaluateSourceWithConsensus(
     };
   }
 
+  // Handle insufficient_data case
+  if (primary.result.factualRating === "insufficient_data" || primary.result.score === null) {
+    console.log(`[SR-Eval] Insufficient data for ${domain}`);
+    return {
+      success: true,
+      data: buildResponsePayload(primary.result, primary.modelName, null, true),
+    };
+  }
+
   // Check confidence threshold
   if (primary.result.confidence < confidenceThreshold) {
     console.log(`[SR-Eval] Confidence too low for ${domain}: ${primary.result.confidence} < ${confidenceThreshold}`);
@@ -468,17 +413,7 @@ async function evaluateSourceWithConsensus(
   if (!multiModel) {
     return {
       success: true,
-      data: {
-        score: primary.result.score,
-        confidence: primary.result.confidence,
-        modelPrimary: primary.modelName,
-        modelSecondary: null,
-        consensusAchieved: true, // Single model = automatic "consensus"
-        reasoning: primary.result.reasoning,
-        category: primary.result.factualRating,
-        biasIndicator: primary.result.biasIndicator,
-        evidenceCited: primary.result.evidenceCited,
-      },
+      data: buildResponsePayload(primary.result, primary.modelName, null, true),
     };
   }
 
@@ -488,21 +423,34 @@ async function evaluateSourceWithConsensus(
     console.log(`[SR-Eval] Secondary evaluation failed for ${domain}, using primary only`);
     return {
       success: true,
-      data: {
-        score: primary.result.score,
-        confidence: primary.result.confidence * 0.8, // Reduce confidence without consensus
-        modelPrimary: primary.modelName,
-        modelSecondary: null,
-        consensusAchieved: false,
-        reasoning: primary.result.reasoning,
-        category: primary.result.factualRating,
-        biasIndicator: primary.result.biasIndicator,
-        evidenceCited: primary.result.evidenceCited,
-      },
+      data: buildResponsePayload(
+        primary.result,
+        primary.modelName,
+        null,
+        false,
+        primary.result.score,
+        primary.result.confidence * 0.8 // Reduce confidence without consensus
+      ),
     };
   }
 
-  // Check consensus
+  // Handle case where secondary returns insufficient_data
+  if (secondary.result.factualRating === "insufficient_data" || secondary.result.score === null) {
+    console.log(`[SR-Eval] Secondary model returned insufficient_data for ${domain}, using primary only`);
+    return {
+      success: true,
+      data: buildResponsePayload(
+        primary.result,
+        primary.modelName,
+        secondary.modelName,
+        false,
+        primary.result.score,
+        primary.result.confidence * 0.8
+      ),
+    };
+  }
+
+  // Check consensus (both scores are non-null at this point)
   const scoreDiff = Math.abs(primary.result.score - secondary.result.score);
   const consensusAchieved = scoreDiff <= consensusThreshold;
 
@@ -533,18 +481,14 @@ async function evaluateSourceWithConsensus(
 
   return {
     success: true,
-    data: {
-      score: avgScore,
-      confidence: avgConfidence,
-      modelPrimary: primary.modelName,
-      modelSecondary: secondary.modelName,
-      consensusAchieved: true,
-      // Use primary model's reasoning and category as the "canonical" one
-      reasoning: primary.result.reasoning,
-      category: primary.result.factualRating,
-      biasIndicator: primary.result.biasIndicator,
-      evidenceCited: primary.result.evidenceCited,
-    },
+    data: buildResponsePayload(
+      primary.result,
+      primary.modelName,
+      secondary.modelName,
+      true,
+      avgScore,
+      avgConfidence
+    ),
   };
 }
 
@@ -604,7 +548,7 @@ export async function POST(req: Request) {
 
   if (!result.success) {
     return NextResponse.json(
-      { 
+      {
         error: "Evaluation failed",
         reason: result.error.reason,
         details: result.error.details,

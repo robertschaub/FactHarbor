@@ -109,7 +109,7 @@ export async function POST(req: Request) {
     }
 
     // Check which domains already exist in cache (if not forcing re-evaluation)
-    let existingDomains = new Map<string, { score: number; confidence: number; consensusAchieved: boolean }>();
+    let existingDomains = new Map<string, { score: number | null; confidence: number; consensusAchieved: boolean }>();
     if (!forceReevaluate) {
       existingDomains = await batchGetCachedData(domains);
     }
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
       domain: string;
       success: boolean;
       cached?: boolean;
-      score?: number;
+      score?: number | null;
       confidence?: number;
       consensus?: boolean;
       models?: string;

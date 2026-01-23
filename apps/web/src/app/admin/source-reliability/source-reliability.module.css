@@ -770,3 +770,16 @@
 .evidenceList li:last-child {
   margin-bottom: 0;
 }
+
+.evidenceBasis {
+  display: block;
+  color: #666;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.evidenceRecency {
+  color: #888;
+  font-size: 12px;
+  font-style: italic;
+}

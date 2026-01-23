@@ -6,7 +6,7 @@ import styles from "./source-reliability.module.css";
 
 interface CachedScore {
   domain: string;
-  score: number;
+  score: number | null;
   confidence: number;
   evaluatedAt: string;
   expiresAt: string;
@@ -16,7 +16,7 @@ interface CachedScore {
   reasoning?: string | null;
   category?: string | null;
   biasIndicator?: string | null;
-  evidenceCited?: string | null; // JSON array stored as string
+  evidenceCited?: string | null; // JSON array stored as string (can be string[] or EvidenceItem[])
 }
 
 interface CacheStats {
@@ -384,7 +384,8 @@ export default function SourceReliabilityPage() {
     setPage(0);
   };
 
-  const formatScore = (score: number) => {
+  const formatScore = (score: number | null) => {
+    if (score === null) return "N/A";
     return (score * 100).toFixed(0) + "%";
   };
 
@@ -398,8 +399,9 @@ export default function SourceReliabilityPage() {
     return `${month}/${day}/${year} ${hours}:${minutes}`;
   };
 
-  // 7-band credibility scale, centered at 0.5
-  const getScoreColor = (score: number): string => {
+  // 7-band credibility scale (original ranges for backward compatibility with cached entries)
+  const getScoreColor = (score: number | null): string => {
+    if (score === null) return "#ffffff"; // white - insufficient data
     if (score >= 0.86) return "#10b981"; // green - established authority
     if (score >= 0.72) return "#22c55e"; // emerald - high credibility
     if (score >= 0.58) return "#84cc16"; // lime - generally credible
@@ -409,14 +411,15 @@ export default function SourceReliabilityPage() {
     return "#ef4444"; // red - known disinformation
   };
 
-  const getScoreLabel = (score: number): string => {
-    if (score >= 0.86) return "Established Authority (86-100%)";
-    if (score >= 0.72) return "High Credibility (72-85%)";
-    if (score >= 0.58) return "Generally Credible (58-71%)";
-    if (score >= 0.43) return "Mixed Track Record (43-57%)";
-    if (score >= 0.29) return "Questionable Credibility (29-42%)";
-    if (score >= 0.15) return "Low Credibility (15-28%)";
-    return "Known Disinformation (0-14%)";
+  const getScoreLabel = (score: number | null): string => {
+    if (score === null) return "Insufficient Data";
+    if (score >= 0.86) return "Highly Reliable (86-100%)";
+    if (score >= 0.72) return "Reliable (72-85%)";
+    if (score >= 0.58) return "Mostly Reliable (58-71%)";
+    if (score >= 0.43) return "Uncertain (43-57%)";
+    if (score >= 0.29) return "Mostly Unreliable (29-42%)";
+    if (score >= 0.15) return "Unreliable (15-28%)";
+    return "Highly Unreliable (0-14%)";
   };
 
 
@@ -774,22 +777,25 @@ export default function SourceReliabilityPage() {
         <h3>Score Legend (7-Band Credibility Scale)</h3>
         <div className={styles.symmetricScale}>
           <div className={styles.scaleRow}>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> Established Authority (86-100%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#10b981" }} /> Highly Reliable (86-100%)</span>
             <span className={styles.arrow}>→</span>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#22c55e" }} /> High Credibility (72-85%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#22c55e" }} /> Reliable (72-85%)</span>
             <span className={styles.arrow}>→</span>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> Generally Credible (58-71%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#84cc16" }} /> Mostly Reliable (58-71%)</span>
             <span className={styles.arrow}>→</span>
           </div>
           <div className={styles.centerRow}>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#d1d5db" }} /> Mixed Track Record (43-57%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#d1d5db" }} /> Uncertain (43-57%)</span>
           </div>
           <div className={styles.scaleRow}>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> Questionable Credibility (29-42%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#f59e0b" }} /> Mostly Unreliable (29-42%)</span>
             <span className={styles.arrow}>→</span>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> Low Credibility (15-28%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#f97316" }} /> Unreliable (15-28%)</span>
             <span className={styles.arrow}>→</span>
-            <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> Known Disinformation (0-14%)</span>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#ef4444" }} /> Highly Unreliable (0-14%)</span>
+          </div>
+          <div className={styles.centerRow} style={{ marginTop: "8px" }}>
+            <span><span className={styles.legendDot} style={{ backgroundColor: "#ffffff", border: "1px solid #d1d5db" }} /> Insufficient Data (no score)</span>
           </div>
         </div>
         
@@ -878,12 +884,27 @@ export default function SourceReliabilityPage() {
                 try {
                   const evidence = JSON.parse(selectedEntry.evidenceCited);
                   if (Array.isArray(evidence) && evidence.length > 0) {
+                    // Check if new format (objects with claim/basis) or old format (strings)
+                    const isNewFormat = typeof evidence[0] === "object" && evidence[0] !== null;
                     return (
                       <div className={styles.detailSection}>
                         <h3>Evidence Cited by LLM</h3>
                         <ul className={styles.evidenceList}>
-                          {evidence.map((item, idx) => (
-                            <li key={idx}>{item}</li>
+                          {evidence.map((item: string | { claim: string; basis: string; recency?: string }, idx: number) => (
+                            <li key={idx}>
+                              {isNewFormat && typeof item === "object" ? (
+                                <>
+                                  <strong>{item.claim}</strong>
+                                  <br />
+                                  <span className={styles.evidenceBasis}>{item.basis}</span>
+                                  {item.recency && (
+                                    <span className={styles.evidenceRecency}> ({item.recency})</span>
+                                  )}
+                                </>
+                              ) : (
+                                String(item)
+                              )}
+                            </li>
                           ))}
                         </ul>
                       </div>

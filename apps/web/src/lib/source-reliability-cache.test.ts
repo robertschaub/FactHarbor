@@ -21,13 +21,17 @@ async function createTestDb(): Promise<Database> {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS source_reliability (
       domain TEXT PRIMARY KEY,
-      score REAL NOT NULL,
+      score REAL,
       confidence REAL NOT NULL,
       evaluated_at TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       model_primary TEXT NOT NULL,
       model_secondary TEXT,
-      consensus_achieved INTEGER NOT NULL DEFAULT 0
+      consensus_achieved INTEGER NOT NULL DEFAULT 0,
+      reasoning TEXT,
+      category TEXT,
+      bias_indicator TEXT,
+      evidence_cited TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
   `);

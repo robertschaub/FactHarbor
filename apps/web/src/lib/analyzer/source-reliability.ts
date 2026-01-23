@@ -55,7 +55,7 @@ export const SR_CONFIG = {
  * Stores all evaluation properties, not just score.
  */
 export interface CachedReliabilityData {
-  score: number;
+  score: number | null;
   confidence: number;
   consensusAchieved: boolean;
 }
@@ -209,8 +209,9 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
           evalResult.biasIndicator,
           evalResult.evidenceCited
         );
+        const scoreStr = evalResult.score !== null ? evalResult.score.toFixed(2) : "null";
         console.log(
-          `[SR] Evaluated ${domain}: score=${evalResult.score.toFixed(2)}, confidence=${evalResult.confidence.toFixed(2)}, consensus=${evalResult.consensusAchieved}`
+          `[SR] Evaluated ${domain}: score=${scoreStr}, confidence=${evalResult.confidence.toFixed(2)}, consensus=${evalResult.consensusAchieved}`
         );
       } else {
         prefetchedData.set(domain, null);
@@ -268,8 +269,14 @@ export function getTrackRecordData(url: string): CachedReliabilityData | null {
 // LLM EVALUATION (Internal API Call)
 // ============================================================================
 
+interface EvidenceItem {
+  claim: string;
+  basis: string;
+  recency?: string;
+}
+
 interface EvaluationResult {
-  score: number;
+  score: number | null;
   confidence: number;
   modelPrimary: string;
   modelSecondary: string | null;
@@ -277,7 +284,12 @@ interface EvaluationResult {
   reasoning?: string;
   category?: string;
   biasIndicator?: string | null;
-  evidenceCited?: string[];
+  bias?: {
+    politicalBias: string;
+    otherBias?: string | null;
+  };
+  evidenceCited?: EvidenceItem[];
+  caveats?: string[];
 }
 
 /**
@@ -406,13 +418,13 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
  * Apply evidence weighting based on source track record scores.
  * 
  * 7-band credibility scale (centered at 0.5):
- * - 0.86-1.00: established_authority (verdict fully preserved)
- * - 0.72-0.86: high_credibility (verdict mostly preserved)
- * - 0.58-0.72: generally_credible (moderate preservation)
- * - 0.43-0.57: mixed_track_record (neutral center, appropriate skepticism)
- * - 0.29-0.43: questionable_credibility (pulls verdict toward neutral)
- * - 0.15-0.29: low_credibility (strong pull toward neutral)
- * - 0.00-0.15: known_disinformation (maximum skepticism)
+ * - 0.86-1.00: highly_reliable (verdict fully preserved)
+ * - 0.72-0.86: reliable (verdict mostly preserved)
+ * - 0.58-0.72: mostly_reliable (moderate preservation)
+ * - 0.43-0.57: uncertain (neutral center, appropriate skepticism)
+ * - 0.29-0.43: mostly_unreliable (pulls verdict toward neutral)
+ * - 0.15-0.29: unreliable (strong pull toward neutral)
+ * - 0.00-0.15: highly_unreliable (maximum skepticism)
  * 
  * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
  * 
@@ -504,13 +516,13 @@ export function applyEvidenceWeighting(
 /**
  * 7-band credibility level for source reliability assessment.
  * 
- * Band 7 (86-100%): Established Authority - Consistent editorial rigor, strong fact-checking
- * Band 6 (72-85%): High Credibility - Reliable track record, professional standards
- * Band 5 (58-71%): Generally Credible - Mostly accurate, occasional lapses
- * Band 4 (43-57%): Mixed Track Record - Inconsistent quality, insufficient info, or conflicting indicators
- * Band 3 (29-42%): Questionable Credibility - Frequent accuracy issues, poor sourcing
- * Band 2 (15-28%): Low Credibility - Persistent inaccuracies, lack of standards
- * Band 1 (0-14%): Known Disinformation - Documented intentional falsehoods, propaganda
+ * Band 7 (86-100%): Highly Reliable - Verified accuracy, recognized standards body
+ * Band 6 (72-85%): Reliable - Consistent accuracy, professional standards
+ * Band 5 (58-71%): Mostly Reliable - Mostly accurate, occasional errors
+ * Band 4 (43-57%): Uncertain - Variable accuracy, inconsistent quality
+ * Band 3 (29-42%): Mostly Unreliable - Frequent inaccuracies, bias affects reporting
+ * Band 2 (15-28%): Unreliable - Pattern of false claims, ignores corrections
+ * Band 1 (0-14%): Highly Unreliable - Fabricates content, documented disinformation
  */
 export type CredibilityLevel7Band =
   | "ESTABLISHED_AUTHORITY"       // 0.86-1.00
