@@ -13,6 +13,7 @@ import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { getDeterministicTemperature } from "@/lib/analyzer/config";
+import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
@@ -43,6 +44,14 @@ const RequestSchema = z.object({
 const EvaluationResultSchema = z.object({
   domain: z.string().optional(),
   evaluationDate: z.string().optional(),
+  // Keep these fields permissive to avoid failing the entire evaluation if a model
+  // uses slightly different labels/typing. We still instruct exact values in the prompt.
+  sourceType: z.string().optional(),
+  evidenceQuality: z.object({
+    independentAssessmentsCount: z.coerce.number().min(0).max(10).optional(),
+    recencyWindowUsed: z.string().optional(),
+    notes: z.string().optional(),
+  }).optional(),
   score: z.number().min(0).max(1).nullable(),
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
@@ -81,6 +90,8 @@ const EvaluationResultSchema = z.object({
     claim: z.string(),
     basis: z.string(),
     recency: z.string().optional(),
+    evidenceId: z.string().optional(),
+    url: z.string().optional(),
   })).optional(),
   caveats: z.array(z.string()).optional(),
 });
@@ -101,6 +112,11 @@ interface ResponsePayload {
   consensusAchieved: boolean;
   reasoning: string;
   category: string;
+  evidencePack?: {
+    providersUsed: string[];
+    queries: string[];
+    items: EvidencePackItem[];
+  };
   // Keep biasIndicator for backward compatibility with cache
   biasIndicator: string | null | undefined;
   bias?: {
@@ -162,45 +178,165 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
 // LLM EVALUATION
 // ============================================================================
 
+type EvidencePackItem = {
+  id: string; // E1, E2, ...
+  url: string;
+  title: string;
+  snippet: string | null;
+  query: string;
+  provider: string;
+};
+
+type EvidencePack = {
+  enabled: boolean;
+  providersUsed: string[];
+  queries: string[];
+  items: EvidencePackItem[];
+};
+
+function deriveBrandToken(domain: string): string {
+  const labels = String(domain || "")
+    .toLowerCase()
+    .split(".")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0];
+
+  // For common ccTLD patterns like bbc.co.uk, skip registry-like second-level labels.
+  // This is a generic heuristic (not a domain list).
+  const registryLike = new Set(["co", "com", "net", "org", "gov", "edu", "ac"]);
+
+  // Start just left of the TLD and walk left until we find a non-registry-like label.
+  for (let i = labels.length - 2; i >= 0; i--) {
+    const candidate = labels[i];
+    if (registryLike.has(candidate)) continue;
+    if (candidate === "www") continue;
+    return candidate;
+  }
+
+  // Fallback
+  return labels[0];
+}
+
+function isUsableBrandToken(token: string): boolean {
+  const t = (token ?? "").trim().toLowerCase();
+  // Too short tends to be ambiguous/noisy (e.g., "x").
+  if (t.length < 3) return false;
+  // Avoid extremely generic placeholders.
+  if (t === "www") return false;
+  return true;
+}
+
+function parseDateRestrictEnv(v: string | undefined): "y" | "m" | "w" | undefined {
+  const s = (v ?? "").toLowerCase().trim();
+  if (s === "y" || s === "m" || s === "w") return s;
+  return undefined;
+}
+
+function isSearchEnabledForSrEval(): { enabled: boolean; providersUsed: string[] } {
+  const useSearch = (process.env.FH_SR_EVAL_USE_SEARCH ?? "true").toLowerCase() !== "false";
+  const searchEnabled = (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true";
+  if (!useSearch || !searchEnabled) return { enabled: false, providersUsed: [] };
+
+  const providersUsed = getActiveSearchProviders();
+  const hasProvider = providersUsed.some((p) => p && p !== "None" && p !== "Unknown");
+  return { enabled: hasProvider, providersUsed };
+}
+
+async function buildEvidencePack(domain: string): Promise<EvidencePack> {
+  const { enabled, providersUsed } = isSearchEnabledForSrEval();
+  if (!enabled) return { enabled: false, providersUsed, queries: [], items: [] };
+
+  const brand = deriveBrandToken(domain);
+  const brandPrefix = isUsableBrandToken(brand) ? `${brand} ` : "";
+  const domainToken = `"${domain}"`;
+
+  // Keep search small to fit the 60s route budget.
+  // Goal: enough signal to avoid inflated "mixed" scores.
+  const queries = [
+    `${brandPrefix}${domainToken} fact check reliability`,
+    `${brandPrefix}${domainToken} bias rating credibility`,
+    `${brandPrefix}${domainToken} misinformation moderation fact check`,
+  ];
+
+  const maxResultsPerQuery = Math.max(
+    1,
+    Math.min(parseInt(process.env.FH_SR_EVAL_SEARCH_MAX_RESULTS_PER_QUERY || "3", 10), 10)
+  );
+  const maxEvidenceItems = Math.max(
+    1,
+    Math.min(parseInt(process.env.FH_SR_EVAL_MAX_EVIDENCE_ITEMS || "6", 10), 20)
+  );
+  const dateRestrict =
+    parseDateRestrictEnv(process.env.FH_SR_EVAL_SEARCH_DATE_RESTRICT) ??
+    parseDateRestrictEnv(process.env.FH_SEARCH_DATE_RESTRICT) ??
+    undefined;
+
+  const seen = new Set<string>();
+  const rawItems: Array<{ r: WebSearchResult; query: string; provider: string }> = [];
+
+  for (const q of queries) {
+    try {
+      const resp = await searchWebWithProvider({
+        query: q,
+        maxResults: maxResultsPerQuery,
+        dateRestrict,
+      });
+
+      const provider = resp.providersUsed.join("+") || "unknown";
+      for (const r of resp.results) {
+        if (!r.url) continue;
+        if (seen.has(r.url)) continue;
+        seen.add(r.url);
+        rawItems.push({ r, query: q, provider });
+        if (rawItems.length >= maxEvidenceItems) break;
+      }
+    } catch (err) {
+      console.warn(`[SR-Eval] Search failed for query "${q}":`, err);
+    }
+    if (rawItems.length >= maxEvidenceItems) break;
+  }
+
+  const items: EvidencePackItem[] = rawItems.slice(0, maxEvidenceItems).map((it, idx) => ({
+    id: `E${idx + 1}`,
+    url: it.r.url,
+    title: it.r.title,
+    snippet: it.r.snippet ?? null,
+    query: it.query,
+    provider: it.provider,
+  }));
+
+  return { enabled: true, providersUsed, queries, items };
+}
+
 /**
  * Generate LLM evaluation prompt for source reliability assessment.
  * @param domain - The domain to evaluate
- * @param hasWebSearch - Whether the model has web search capability
- *
- * PROMPT DESIGN NOTES:
- *
- * 1. PERSONA: "As a professional fact-checker"
- *    - Establishes expert role to encourage rigorous, evidence-based evaluation
- *    - Reduces tendency to give benefit of the doubt without evidence
- *
- * 2. SKEPTICAL DEFAULT: "Reliability is earned; lack of positive evidence degrades score"
- *    - Prevents score inflation for sources with no documented track record
- *    - Unknown ≠ neutral; absence of positive evidence should pull toward lower bands
- *    - Contrast with insufficient_data (null) which is for truly unknown sources
- *
- * 3. CONFIDENCE MECHANISM: "Low confidence (<0.5) pulls score toward 0.5"
- *    - When LLM is uncertain about its assessment, the effective weight is reduced
- *    - Formula: effectiveWeight = 0.5 + (score - 0.5) × confidence
- *    - High confidence → score preserved; low confidence → pulled to neutral
- *
- * 4. BIAS TREATMENT: "Bias alone is noted. Combined with other issues, it degrades further"
- *    - Bias without accuracy issues: noted but doesn't automatically lower score
- *    - Bias + inaccuracies: compounds the reliability penalty
- *    - Prevents penalizing sources solely for having a perspective
+ * @param evidencePack - Retrieved evidence pack (may be empty if search is disabled/unavailable)
  */
-function getEvaluationPrompt(domain: string, hasWebSearch: boolean = false): string {
+function getEvaluationPrompt(domain: string, evidencePack: EvidencePack): string {
   const currentDate = new Date().toISOString().split("T")[0];
 
-  const webSearchLine = hasWebSearch
-    ? `
-SEARCH: Query "${domain} fact check", "${domain} bias rating", "${domain} credibility".
-CONSULT: IFCN members, Media Bias/Fact Check, Ad Fontes Media, Wikipedia controversies section.
-`
-    : "";
+  const evidenceSection =
+    evidencePack.enabled && evidencePack.items.length > 0
+      ? [
+          `EVIDENCE_PACK (search results; treat these as your ONLY external evidence):`,
+          ...evidencePack.items.map((it) => {
+            const snip = (it.snippet ?? "").replace(/\s+/g, " ").trim();
+            return [
+              `${it.id}: ${it.title}`,
+              `URL: ${it.url}`,
+              `Query: ${it.query}`,
+              snip ? `Snippet: ${snip}` : `Snippet: (none)`,
+            ].join("\n");
+          }),
+        ].join("\n\n")
+      : `EVIDENCE_PACK: (unavailable or empty). If you cannot ground claims in external evidence, you MUST lower confidence and put limitations in caveats.`;
 
   return `As a professional fact-checker, evaluate the reliability of the source: ${domain}
 Date: ${currentDate}
-${webSearchLine}
+${evidenceSection}
 
 RATING SCALE (symmetric around 0.5)
 - 0.86-1.00: highly_reliable (Highest standards, verified, proactively corrects)
@@ -214,6 +350,11 @@ RATING SCALE (symmetric around 0.5)
 
 CALIBRATION
 - Be skeptical. Reliability is earned; lack of positive evidence degrades score.
+- Do NOT treat the "mixed (0.43-0.57)" band as a safe default for structurally low-reliability source types (e.g., open UGC platforms without centralized editorial verification). If the domain is primarily an open UGC platform, the domain-as-a-source score should generally fall below the mixed band unless evidence supports stronger verification at the domain level.
+- For sourceType=platform_ugc, a typical range is 0.15-0.42 (unreliable to generally_unreliable) unless you have strong, external evidence of consistent domain-level verification.
+- For sourceType=state_media, state influence/coordination should be treated as a negative factor for factual reliability; do not default to "mixed" without evidence of editorial independence and correction practices.
+- For sourceType=state_controlled_media, default below the mixed band unless the evidence shows meaningful editorial independence and correction practices.
+- For sourceType=propaganda_outlet or sourceType=known_disinformation: if the evidence indicates repeated independent debunks / multiple independent assessors flagging systemic misinformation, the score should be 0.00-0.20 even if occasional factual content exists.
 
 PRIORITIES
 - RECENCY: Findings from the last 24 months carry the most weight.
@@ -231,12 +372,18 @@ OUTPUT (JSON only)
 {
   "domain": "${domain}",
   "evaluationDate": "${currentDate}",
+  "sourceType": "<one of: editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown>",
+  "evidenceQuality": {
+    "independentAssessmentsCount": <0-10>,
+    "recencyWindowUsed": "<e.g. 2024-2026|unknown>",
+    "notes": "<short>"
+  },
   "score": <0.0-1.0 | null>,
   "confidence": <0.0-1.0>,
   "factualRating": "<rating_label>",
   "bias": {"politicalBias": "<value>", "otherBias": "<value|null>"},
   "reasoning": "<2-3 sentence justification>",
-  "evidenceCited": [{"claim": "<assertion>", "basis": "<source>", "recency": "<period>"}],
+  "evidenceCited": [{"claim": "<assertion>", "basis": "<MUST reference E# from EVIDENCE_PACK if provided>", "recency": "<period>"}],
   "caveats": ["<limitations>"]
 }
 
@@ -246,7 +393,8 @@ EXAMPLE
 
 async function evaluateWithModel(
   domain: string,
-  modelProvider: "anthropic" | "openai"
+  modelProvider: "anthropic" | "openai",
+  evidencePack: EvidencePack
 ): Promise<{ result: EvaluationResult; modelName: string } | null> {
   // Check API key availability
   const apiKeyEnvVar = modelProvider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
@@ -262,7 +410,7 @@ async function evaluateWithModel(
     return null;
   }
 
-  const prompt = getEvaluationPrompt(domain);
+  const prompt = getEvaluationPrompt(domain, evidencePack);
   const temperature = getDeterministicTemperature(0.3);
 
   const modelName = modelProvider === "anthropic"
@@ -336,10 +484,58 @@ async function evaluateWithModel(
   }
 }
 
+function computeFoundednessScore(result: EvaluationResult, evidencePack: EvidencePack): number {
+  const cited = result.evidenceCited ?? [];
+  if (cited.length === 0) return 0;
+
+  // If we have an evidence pack, score based on explicit references to it.
+  if (evidencePack.enabled && evidencePack.items.length > 0) {
+    const ids = new Set(evidencePack.items.map((i) => i.id));
+    const urls = new Set(evidencePack.items.map((i) => i.url));
+
+    let totalRefs = 0;
+    const uniqueRefs = new Set<string>();
+    let recencyCount = 0;
+
+    for (const item of cited) {
+      if (item.recency && item.recency.trim()) recencyCount++;
+
+      if (item.evidenceId && ids.has(item.evidenceId)) {
+        totalRefs++;
+        uniqueRefs.add(item.evidenceId);
+      }
+
+      const basis = item.basis || "";
+      const matches = basis.match(/\bE\d+\b/g) ?? [];
+      for (const m of matches) {
+        if (ids.has(m)) {
+          totalRefs++;
+          uniqueRefs.add(m);
+        }
+      }
+
+      if (item.url && urls.has(item.url)) {
+        totalRefs++;
+        uniqueRefs.add(item.url);
+      }
+    }
+
+    const independentBonus = result.evidenceQuality?.independentAssessmentsCount
+      ? Math.min(2, Math.max(0, result.evidenceQuality.independentAssessmentsCount) / 5)
+      : 0;
+
+    // Heuristic: prefer more (and more varied) grounded citations, with some reward for recency.
+    return totalRefs * 2 + uniqueRefs.size * 1 + recencyCount * 0.25 + independentBonus;
+  }
+
+  // Fallback: no evidence pack available → reward structured citations and recency.
+  const recencyCount = cited.filter((c) => (c.recency ?? "").trim().length > 0).length;
+  return cited.length + recencyCount * 0.25;
+}
+
 interface EvaluationError {
   reason:
     | "primary_model_failed"
-    | "confidence_too_low"
     | "no_consensus"
     | "evaluation_error";
   details: string;
@@ -365,6 +561,7 @@ function buildResponsePayload(
   modelPrimary: string,
   modelSecondary: string | null,
   consensusAchieved: boolean,
+  evidencePack: EvidencePack,
   overrideScore?: number | null,
   overrideConfidence?: number
 ): ResponsePayload {
@@ -376,6 +573,11 @@ function buildResponsePayload(
     consensusAchieved,
     reasoning: result.reasoning,
     category: result.factualRating,
+    evidencePack: {
+      providersUsed: evidencePack.providersUsed,
+      queries: evidencePack.queries,
+      items: evidencePack.items,
+    },
     biasIndicator: extractBiasIndicator(result.bias),
     bias: result.bias,
     evidenceCited: result.evidenceCited,
@@ -389,8 +591,15 @@ async function evaluateSourceWithConsensus(
   confidenceThreshold: number,
   consensusThreshold: number
 ): Promise<{ success: true; data: ResponsePayload } | { success: false; error: EvaluationError }> {
+  const evidencePack = await buildEvidencePack(domain);
+  if (evidencePack.enabled) {
+    console.log(
+      `[SR-Eval] Evidence pack for ${domain}: ${evidencePack.items.length} items (providers: ${evidencePack.providersUsed.join(", ") || "unknown"})`
+    );
+  }
+
   // Primary evaluation (Anthropic Claude)
-  const primary = await evaluateWithModel(domain, "anthropic");
+  const primary = await evaluateWithModel(domain, "anthropic", evidencePack);
   if (!primary) {
     console.log(`[SR-Eval] Primary evaluation failed for ${domain}`);
     return {
@@ -407,7 +616,7 @@ async function evaluateSourceWithConsensus(
     console.log(`[SR-Eval] Insufficient data for ${domain}`);
     return {
       success: true,
-      data: buildResponsePayload(primary.result, primary.modelName, null, true),
+      data: buildResponsePayload(primary.result, primary.modelName, null, true, evidencePack),
     };
   }
 
@@ -415,12 +624,27 @@ async function evaluateSourceWithConsensus(
   if (primary.result.confidence < confidenceThreshold) {
     console.log(`[SR-Eval] Confidence too low for ${domain}: ${primary.result.confidence} < ${confidenceThreshold}`);
     return {
-      success: false,
-      error: {
-        reason: "confidence_too_low",
-        details: `LLM confidence ${(primary.result.confidence * 100).toFixed(0)}% is below threshold ${(confidenceThreshold * 100).toFixed(0)}%. Source may be unknown or insufficient information available.`,
-        primaryScore: primary.result.score,
-        primaryConfidence: primary.result.confidence,
+      success: true,
+      data: {
+        score: null,
+        confidence: primary.result.confidence,
+        modelPrimary: primary.modelName,
+        modelSecondary: null,
+        consensusAchieved: false,
+        reasoning: primary.result.reasoning,
+        category: "insufficient_data",
+        evidencePack: {
+          providersUsed: evidencePack.providersUsed,
+          queries: evidencePack.queries,
+          items: evidencePack.items,
+        },
+        biasIndicator: extractBiasIndicator(primary.result.bias),
+        bias: primary.result.bias,
+        evidenceCited: primary.result.evidenceCited,
+        caveats: [
+          ...(primary.result.caveats ?? []),
+          `Low confidence ${(primary.result.confidence * 100).toFixed(0)}% is below threshold ${(confidenceThreshold * 100).toFixed(0)}%; returning insufficient_data (score=null).`,
+        ],
       },
     };
   }
@@ -429,12 +653,12 @@ async function evaluateSourceWithConsensus(
   if (!multiModel) {
     return {
       success: true,
-      data: buildResponsePayload(primary.result, primary.modelName, null, true),
+      data: buildResponsePayload(primary.result, primary.modelName, null, true, evidencePack),
     };
   }
 
   // Multi-model: Secondary evaluation (OpenAI GPT-4)
-  const secondary = await evaluateWithModel(domain, "openai");
+  const secondary = await evaluateWithModel(domain, "openai", evidencePack);
   if (!secondary) {
     console.log(`[SR-Eval] Secondary evaluation failed for ${domain}, using primary only`);
     return {
@@ -444,6 +668,7 @@ async function evaluateSourceWithConsensus(
         primary.modelName,
         null,
         false,
+        evidencePack,
         primary.result.score,
         primary.result.confidence * 0.8 // Reduce confidence without consensus
       ),
@@ -460,6 +685,7 @@ async function evaluateSourceWithConsensus(
         primary.modelName,
         secondary.modelName,
         false,
+        evidencePack,
         primary.result.score,
         primary.result.confidence * 0.8
       ),
@@ -487,23 +713,58 @@ async function evaluateSourceWithConsensus(
     };
   }
 
-  // Consensus achieved - average the scores
-  const avgScore = (primary.result.score + secondary.result.score) / 2;
-  const avgConfidence = (primary.result.confidence + secondary.result.confidence) / 2;
+  // Consensus achieved - choose the "better founded" score using the evidence pack.
+  // Tie-breaker: choose the lower score (skeptical default).
+  const primaryFounded = computeFoundednessScore(primary.result, evidencePack);
+  const secondaryFounded = computeFoundednessScore(secondary.result, evidencePack);
+
+  let winner: typeof primary | typeof secondary = primary;
+  if (secondaryFounded > primaryFounded) {
+    winner = secondary;
+  } else if (secondaryFounded === primaryFounded) {
+    // Tie-breaker:
+    // - If both scores are on the "positive side" (>= generally_reliable lower bound), avoid
+    //   systematically biasing downward: use the average.
+    // - Otherwise (negative-side / borderline), prefer the lower score (skeptical default).
+    if (primary.result.score >= 0.58 && secondary.result.score >= 0.58) {
+      // Keep winner as primary but override score later via buildResponsePayload override.
+      winner = primary;
+    } else {
+      winner = primary.result.score <= secondary.result.score ? primary : secondary;
+    }
+  }
+
+  const finalScore =
+    primaryFounded === secondaryFounded &&
+    primary.result.score >= 0.58 &&
+    secondary.result.score >= 0.58
+      ? (primary.result.score + secondary.result.score) / 2
+      : winner.result.score;
+  if (finalScore === null) {
+    return {
+      success: false,
+      error: {
+        reason: "evaluation_error",
+        details: "Unexpected null score after consensus (internal invariant).",
+      },
+    };
+  }
+  const finalConfidence = (primary.result.confidence + secondary.result.confidence) / 2;
 
   console.log(
-    `[SR-Eval] Consensus for ${domain}: score=${avgScore.toFixed(2)}, conf=${avgConfidence.toFixed(2)}`
+    `[SR-Eval] Consensus for ${domain}: score=${finalScore.toFixed(2)}, conf=${finalConfidence.toFixed(2)}, foundedness=${primaryFounded.toFixed(2)} vs ${secondaryFounded.toFixed(2)}`
   );
 
   return {
     success: true,
     data: buildResponsePayload(
-      primary.result,
+      winner.result,
       primary.modelName,
       secondary.modelName,
       true,
-      avgScore,
-      avgConfidence
+      evidencePack,
+      finalScore,
+      finalConfidence
     ),
   };
 }

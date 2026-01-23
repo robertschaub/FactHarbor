@@ -133,6 +133,8 @@ describe("Rate Limiting", () => {
 interface EvalResult {
   score: number;
   confidence: number;
+  /** Proxy for how well the score is grounded (e.g., citations+recency) */
+  foundedness?: number;
 }
 
 function calculateConsensus(
@@ -161,9 +163,21 @@ function calculateConsensus(
     return null; // Models disagree too much
   }
 
-  // Consensus achieved
+  // Consensus achieved - "better founded" winner.
+  // Tie-breaker:
+  // - If both scores are positive-side (>=0.58), average to avoid systematic downward bias.
+  // - Otherwise, lower score (skeptical default).
+  const pFound = primary.foundedness ?? 0;
+  const sFound = secondary.foundedness ?? 0;
+  const chosenScore = (() => {
+    if (sFound > pFound) return secondary.score;
+    if (pFound > sFound) return primary.score;
+    if (primary.score >= 0.58 && secondary.score >= 0.58) return (primary.score + secondary.score) / 2;
+    return Math.min(primary.score, secondary.score);
+  })();
+
   return {
-    score: (primary.score + secondary.score) / 2,
+    score: chosenScore,
     confidence: (primary.confidence + secondary.confidence) / 2,
     consensusAchieved: true,
   };
@@ -231,22 +245,31 @@ describe("Consensus Calculation", () => {
   });
 
   describe("score averaging", () => {
-    it("averages scores when consensus achieved", () => {
+    it("chooses the better founded score when consensus achieved", () => {
       const result = calculateConsensus(
-        { score: 0.80, confidence: 0.9 },
-        { score: 0.90, confidence: 0.8 }
+        { score: 0.80, confidence: 0.9, foundedness: 2 },
+        { score: 0.90, confidence: 0.8, foundedness: 5 }
       );
-      expect(result!.score).toBeCloseTo(0.85, 5);
+      expect(result!.score).toBeCloseTo(0.90, 5);
       expect(result!.confidence).toBeCloseTo(0.85, 5);
     });
 
-    it("handles asymmetric scores", () => {
+    it("ties on foundedness: chooses lower score on negative side", () => {
       const result = calculateConsensus(
-        { score: 0.92, confidence: 0.95 },
-        { score: 0.88, confidence: 0.85 }
+        { score: 0.42, confidence: 0.95, foundedness: 3 },
+        { score: 0.35, confidence: 0.85, foundedness: 3 }
       );
-      expect(result!.score).toBeCloseTo(0.9, 5);
-      expect(result!.confidence).toBeCloseTo(0.9, 5);
+      expect(result!.score).toBeCloseTo(0.35, 5);
+      expect(result!.confidence).toBeCloseTo(0.90, 5);
+    });
+
+    it("ties on foundedness: averages when both are positive-side", () => {
+      const result = calculateConsensus(
+        { score: 0.78, confidence: 0.95, foundedness: 3 },
+        { score: 0.74, confidence: 0.85, foundedness: 3 }
+      );
+      expect(result!.score).toBeCloseTo(0.76, 5);
+      expect(result!.confidence).toBeCloseTo(0.90, 5);
     });
   });
 
@@ -286,21 +309,21 @@ describe("Consensus Calculation", () => {
 describe("Edge Cases", () => {
   it("handles boundary scores (0.0 and 1.0)", () => {
     const result = calculateConsensus(
-      { score: 1.0, confidence: 0.9 },
-      { score: 0.9, confidence: 0.9 }
+      { score: 1.0, confidence: 0.9, foundedness: 2 },
+      { score: 0.9, confidence: 0.9, foundedness: 1 }
     );
-    expect(result!.score).toBe(0.95);
+    expect(result!.score).toBe(1.0);
   });
 
   it("handles minimum valid consensus", () => {
     // Both at confidence threshold, scores within consensus boundary
     const result = calculateConsensus(
-      { score: 0.5, confidence: 0.8 },
-      { score: 0.6, confidence: 0.8 }, // Diff is 0.1, within 0.15
+      { score: 0.5, confidence: 0.8, foundedness: 0 },
+      { score: 0.6, confidence: 0.8, foundedness: 1 }, // Diff is 0.1, within 0.15
       0.8,
       0.15
     );
     expect(result).not.toBeNull();
-    expect(result!.score).toBeCloseTo(0.55, 5);
+    expect(result!.score).toBeCloseTo(0.6, 5);
   });
 });
