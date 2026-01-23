@@ -700,10 +700,14 @@ export default function SourceReliabilityPage() {
                       )}
                     </td>
                     <td style={{ textAlign: "center" }}>
-                      {entry.consensusAchieved ? (
+                      {entry.score === null ? (
+                        <span className={styles.consensusNo} title="Insufficient data / low confidence (consensus not attempted)">—</span>
+                      ) : entry.consensusAchieved ? (
                         <span className={styles.consensusYes} title="Multi-model consensus achieved">✓</span>
+                      ) : entry.modelSecondary ? (
+                        <span className={styles.consensusNo} title="Multi-model used but no consensus recorded">✗</span>
                       ) : (
-                        <span className={styles.consensusNo} title="No consensus (single model only)">✗</span>
+                        <span className={styles.consensusNo} title="Single-model result (no consensus attempted)">—</span>
                       )}
                     </td>
                     <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
