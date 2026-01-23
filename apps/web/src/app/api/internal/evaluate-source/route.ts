@@ -166,23 +166,23 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
  * Generate LLM evaluation prompt for source reliability assessment.
  * @param domain - The domain to evaluate
  * @param hasWebSearch - Whether the model has web search capability
- * 
+ *
  * PROMPT DESIGN NOTES:
- * 
+ *
  * 1. PERSONA: "As a professional fact-checker"
  *    - Establishes expert role to encourage rigorous, evidence-based evaluation
  *    - Reduces tendency to give benefit of the doubt without evidence
- * 
+ *
  * 2. SKEPTICAL DEFAULT: "Reliability is earned; lack of positive evidence degrades score"
  *    - Prevents score inflation for sources with no documented track record
  *    - Unknown ≠ neutral; absence of positive evidence should pull toward lower bands
  *    - Contrast with insufficient_data (null) which is for truly unknown sources
- * 
+ *
  * 3. CONFIDENCE MECHANISM: "Low confidence (<0.5) pulls score toward 0.5"
  *    - When LLM is uncertain about its assessment, the effective weight is reduced
  *    - Formula: effectiveWeight = 0.5 + (score - 0.5) × confidence
  *    - High confidence → score preserved; low confidence → pulled to neutral
- * 
+ *
  * 4. BIAS TREATMENT: "Bias alone is noted. Combined with other issues, it degrades further"
  *    - Bias without accuracy issues: noted but doesn't automatically lower score
  *    - Bias + inaccuracies: compounds the reliability penalty
@@ -198,7 +198,7 @@ CONSULT: IFCN members, Media Bias/Fact Check, Ad Fontes Media, Wikipedia controv
 `
     : "";
 
-  return `As a professional fact-checker, evaluate factual reliability of: ${domain}
+  return `As a professional fact-checker, evaluate the reliability of the source: ${domain}
 Date: ${currentDate}
 ${webSearchLine}
 
@@ -214,8 +214,6 @@ RATING SCALE (symmetric around 0.5)
 
 CALIBRATION
 - Be skeptical. Reliability is earned; lack of positive evidence degrades score.
-- Match bands by overall pattern, not all criteria required.
-- Low confidence (<0.5) pulls score toward 0.5
 
 PRIORITIES
 - RECENCY: Findings from the last 24 months carry the most weight.
