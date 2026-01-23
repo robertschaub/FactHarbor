@@ -327,7 +327,7 @@ These settings affect the internal evaluation endpoint (`/api/internal/evaluate-
 The evaluator builds an evidence pack using a small query set and stops early once enough evidence items are collected:
 - `<brand?> "<domain>" fact check reliability`
 - `<brand?> "<domain>" bias rating credibility`
-- `<brand?> "<domain>" misinformation moderation fact check`
+- `<brand?> "<domain>" media bias fact check credibility`
 
 Where `<brand?>` is an optional heuristic token derived from the domain; it is omitted when too short/ambiguous (e.g., very short brands). The domain is always included as a quoted token.
 

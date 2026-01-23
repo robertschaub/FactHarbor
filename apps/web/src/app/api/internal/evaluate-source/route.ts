@@ -288,7 +288,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   const queries = [
     `${brandPrefix}${domainToken} fact check reliability`,
     `${brandPrefix}${domainToken} bias rating credibility`,
-    `${brandPrefix}${domainToken} misinformation moderation fact check`,
+    `${brandPrefix}${domainToken} media bias fact check credibility`,
   ];
 
   const maxResultsPerQuery = Math.max(
