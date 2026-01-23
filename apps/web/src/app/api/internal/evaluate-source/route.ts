@@ -283,8 +283,8 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   // Goal: enough signal to avoid inflated "mixed" scores.
   const queries = [
     `${brandPrefix}${domainToken} fact check reliability`,
-    `${brandPrefix}${domainToken} bias rating credibility`,
-    `${brandPrefix}${domainToken} media bias fact check credibility`,
+    `${brandPrefix}${domainToken} media bias fact check credibility rating`,
+    `${brandPrefix}${domainToken} corrections policy editorial standards retractions`,
   ];
 
   const maxResultsPerQuery = Math.max(
