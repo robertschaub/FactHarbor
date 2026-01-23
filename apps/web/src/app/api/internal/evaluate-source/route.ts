@@ -169,64 +169,62 @@ CONSULT: IFCN members, Media Bias/Fact Check, Ad Fontes Media, Wikipedia controv
   return `Evaluate factual reliability of: ${domain}
 Date: ${currentDate}
 ${webSearchLine}
-RATING SCALE
-────────────
-RATING SCALE (factualRating) - symmetric 7-band scale around 0.5:
-- "highly_reliable": Exceptional factual accuracy, rigorous fact-checking, primary sources
-- "reliable": Strong editorial standards, consistent accuracy
-- "mostly_reliable": Generally accurate with occasional minor issues
-- "uncertain": Reliability unclear, insufficient track record (neutral center)
-- "mostly_unreliable": Frequent errors or bias, verify independently
-- "unreliable": Consistent inaccuracies or misleading content
-- "highly_unreliable": Known misinformation source, fabricated content
 
-SCORE SCALE (0.0 to 1.0) - 7 bands symmetric around 0.5 (matches verdict scale):
-- 0.86-1.00: highly_reliable
-- 0.72-0.86: reliable
-- 0.58-0.72: mostly_reliable
-- 0.43-0.57: uncertain (neutral center)
-- 0.29-0.43: mostly_unreliable
-- 0.15-0.29: unreliable
-- 0.00-0.15: highly_unreliable
+RATING SCALE (symmetric around 0.5)
+───────────────────────────────────
+- 0.86 to 1.00: highly_reliable (Exceptional accuracy, rigorous fact-checking)
+- 0.72 to 0.85: reliable (Strong editorial standards, consistent accuracy)
+- 0.58 to 0.71: mostly_reliable (Generally accurate, occasional minor issues)
+- 0.43 to 0.57: uncertain (Reliability unclear OR insufficient track record)
+- 0.29 to 0.42: mostly_unreliable (Frequent errors OR bias affects reporting)
+- 0.15 to 0.28: unreliable (Consistent inaccuracies OR misleading content)
+- 0.00 to 0.14: highly_unreliable (Known misinformation OR fabricated content)
+- null: insufficient_data (Unknown source, no assessments available)
 
 CALIBRATION
 ───────────
-Default assumption is 0.5 (uncertain). Adjust up or down based on evidence.
-Do not inflate scores based on brand recognition or reputation alone.
-"No negative findings" ≠ reliable. Absence of evidence lowers confidence; truly unknown sources should use insufficient_data.
+- Start at 0.5 (uncertain). Adjust only based on explicit evidence.
+- Brand recognition does not equal reliability.
+- Lack of negative findings does not equal reliability.
+- If truly unknown, use insufficient_data with null score.
 
 WEIGHTING
 ─────────
-1. RECENCY PRIORITY: Last 24 months matter most. Historical reputation does not excuse recent failures.
-2. VERIFICATION: Fact-checker findings are strong reliability signals.
-3. VISIBILITY CAP: Score capped by worst high-visibility failures.
-4. OPINION COUNTS: Misinformation in opinion/editorial degrades entire source score.
-5. BIAS IMPACT: Bias affecting accuracy lowers score. Bias without factual issues is noted, not penalized.
+1. RECENCY: Findings from the last 24 months carry the most weight.
+2. VERIFICATION: Independent fact-checker findings are primary signals.
+3. VISIBILITY CAP: Overall score capped by high-visibility failures.
+4. OPINION IMPACT: Systematic misinformation in editorial degrades entire source.
+5. BIAS IMPACT: Bias noted but not penalized unless it affects accuracy.
 
-CONFIDENCE: 0.0-1.0 based on evidence availability. High (≥0.8) = multiple sources agree. Low (<0.5) = limited or conflicting data.
+CONFIDENCE
+──────────
+- High (≥0.8): Multiple independent evaluations exist.
+- Medium (0.5-0.79): Some evidence, limited sources.
+- Low (<0.5): Limited, contradictory, or self-reported data only.
 
 BIAS
 ────
-politicalBias: far_left | left | center_left | center | center_right | right | far_right | not_applicable
-otherBias: pro_government | anti_government | corporate_interest | sensationalist | ideological_other | none_detected
+- politicalBias: far_left | left | center_left | center | center_right | right | far_right | not_applicable
+- otherBias: pro_government | anti_government | corporate_interest | sensationalist | ideological_other | none_detected
 
-OUTPUT FORMAT (JSON only)
-─────────────────────────
+OUTPUT (JSON only)
+──────────────────
 {
   "domain": "${domain}",
   "evaluationDate": "${currentDate}",
   "score": <0.0-1.0 | null>,
   "confidence": <0.0-1.0>,
-  "factualRating": "<rating>",
+  "factualRating": "<rating_label>",
   "bias": {"politicalBias": "<value>", "otherBias": "<value|null>"},
-  "reasoning": "<2-3 sentences>",
-  "evidenceCited": [{"claim": "<assertion>", "basis": "<evidence>", "recency": "<when>"}],
+  "reasoning": "<2-3 sentence justification>",
+  "evidenceCited": [{"claim": "<assertion>", "basis": "<source>", "recency": "<period>"}],
   "caveats": ["<limitations>"]
 }
 
 EXAMPLE
 ───────
-{"domain":"example-news.com","evaluationDate":"${currentDate}","score":0.35,"confidence":0.72,"factualRating":"mostly_unreliable","bias":{"politicalBias":"right","otherBias":"sensationalist"},"reasoning":"Multiple fact-checkers documented false claims from prime-time hosts. A 2023 defamation settlement revealed internal awareness that claims lacked evidence.","evidenceCited":[{"claim":"Prime-time content included false election claims","basis":"PolitiFact, FactCheck.org findings","recency":"2022-2023"},{"claim":"Settled defamation lawsuit","basis":"Court records","recency":"2023"}],"caveats":["News division may have higher standards than opinion programming"]}`;}
+{"domain":"example-news.com","evaluationDate":"${currentDate}","score":0.35,"confidence":0.72,"factualRating":"mostly_unreliable","bias":{"politicalBias":"right","otherBias":"sensationalist"},"reasoning":"Multiple fact-checkers documented false claims. 2023 defamation settlement revealed internal awareness claims lacked evidence.","evidenceCited":[{"claim":"False election claims in prime-time","basis":"PolitiFact, FactCheck.org","recency":"2022-2023"},{"claim":"Defamation settlement","basis":"Court records","recency":"2023"}],"caveats":["News division may differ from opinion programming"]}`;
+}
 
 async function evaluateWithModel(
   domain: string,
