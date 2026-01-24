@@ -367,22 +367,24 @@ Date: ${currentDate}
 ${evidenceSection}
 
 RATING SCALE (symmetric around 0.5)
-- 0.86-1.00: highly_reliable (Highest standards, verified, proactively corrects)
-- 0.72-0.85: reliable (Professional standards, accurate, corrects promptly)
-- 0.58-0.71: generally_reliable (Decent standards, often accurate, corrects when notified)
-- 0.43-0.57: mixed (Known source with variable/inconsistent track record)
-- 0.29-0.42: generally_unreliable (Lax standards, often inaccurate, slow to correct)
-- 0.15-0.28: unreliable (Poor standards, inaccurate, seldom corrects)
-- 0.00-0.14: highly_unreliable (Lowest standards, fabricates, resists correction)
-- null: insufficient_data (Unknown source, no assessments exist)
+- 0.86-1.00: highly_reliable
+- 0.72-0.85: reliable
+- 0.58-0.71: leaning_reliable
+- 0.43-0.57: mixed
+- 0.29-0.42: leaning_unreliable
+- 0.15-0.28: unreliable
+- 0.00-0.14: highly_unreliable
+- null: insufficient_data
+
+CONSIDER (EVIDENCE-BASED)
+- Editorial standards: transparent policies, separation of news vs opinion, named editors/authors
+- Sourcing: primary documents, attribution quality, correction of misquotes/false claims
+- Corrections: visible corrections policy, speed and consistency of corrections
+- Track record: repeated independent debunks, retractions/defamation findings, major controversies (weight recency)
+- Platform vs publisher: if the domain is primarily UGC without centralized verification, do NOT treat it like an editorial outlet
 
 CALIBRATION
 - Be skeptical. Reliability is earned; lack of positive evidence degrades score.
-- Do NOT treat the "mixed (0.43-0.57)" band as a safe default for structurally low-reliability source types (e.g., open UGC platforms without centralized editorial verification). If the domain is primarily an open UGC platform, the domain-as-a-source score should generally fall below the mixed band unless evidence supports stronger verification at the domain level.
-- For sourceType=platform_ugc, a typical range is 0.15-0.42 (unreliable to generally_unreliable) unless you have strong, external evidence of consistent domain-level verification.
-- For sourceType=state_media, state influence/coordination should be treated as a negative factor for factual reliability; do not default to "mixed" without evidence of editorial independence and correction practices.
-- For sourceType=state_controlled_media, default below the mixed band unless the evidence shows meaningful editorial independence and correction practices.
-- For sourceType=propaganda_outlet or sourceType=known_disinformation: if the evidence indicates repeated independent debunks / multiple independent assessors flagging systemic misinformation, the score should be 0.00-0.20 even if occasional factual content exists.
 
 PRIORITIES
 - RECENCY: Findings from the last 24 months carry the most weight.
