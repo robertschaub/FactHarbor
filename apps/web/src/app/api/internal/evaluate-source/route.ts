@@ -357,107 +357,146 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
 function getEvaluationPrompt(domain: string, evidencePack: EvidencePack): string {
   const currentDate = new Date().toISOString().split("T")[0];
 
-  const evidenceSection =
-    evidencePack.enabled && evidencePack.items.length > 0
-      ? [
-          `EVIDENCE_PACK (search results; treat these as your ONLY external evidence):`,
-          ...evidencePack.items.map((it) => {
-            const snip = (it.snippet ?? "").replace(/\s+/g, " ").trim();
-            return [
-              `${it.id}: ${it.title}`,
-              `URL: ${it.url}`,
-              `Query: ${it.query}`,
-              snip ? `Snippet: ${snip}` : `Snippet: (none)`,
-            ].join("\n");
-          }),
-        ].join("\n\n")
-      : `EVIDENCE_PACK: (unavailable or empty). If you cannot ground claims in external evidence, you MUST lower confidence and put limitations in caveats.`;
+  const hasEvidence = evidencePack.enabled && evidencePack.items.length > 0;
 
-  return `ROLE
-You are a professional, skeptical fact-checker. Assess overall source reliability (editorial process and track record), not individual articles.
+  const evidenceSection = hasEvidence
+    ? [
+        `EVIDENCE PACK`,
+        `The following ${evidencePack.items.length} search results are your ONLY external evidence. Base all claims on these items using their IDs (E1, E2, etc.).`,
+        ``,
+        ...evidencePack.items.map((it) => {
+          const snip = (it.snippet ?? "").replace(/\s+/g, " ").trim();
+          return [
+            `[${it.id}] ${it.title}`,
+            `    URL: ${it.url}`,
+            snip ? `    Excerpt: ${snip}` : `    Excerpt: (none)`,
+          ].join("\n");
+        }),
+      ].join("\n")
+    : `EVIDENCE PACK: Empty or unavailable.\nWithout external evidence, you MUST output score=null and factualRating="insufficient_data" unless the source is definitively known disinformation.`;
 
-INPUT
-Domain: ${domain}
-Evaluation date: ${currentDate}
+  return `TASK: Evaluate source reliability for "${domain}" (evaluation date: ${currentDate}).
 
 ${evidenceSection}
 
-RULES
-- Evaluate the source as a whole.
-- Reliability must be supported by evidence; do not infer from brand recognition or prominence alone. Independent assessments by established fact-checkers count.
-- Absence of positive evidence lowers score and confidence.
-- Rely only on provided evidence; do not hallucinate.
+─────────────────────────────────────────────────────────────────────
+RATING SCALE (score → factualRating — MUST match)
+─────────────────────────────────────────────────────────────────────
+  0.86–1.00 → highly_reliable     (exemplary editorial standards, rare errors, prompt corrections)
+  0.72–0.85 → reliable            (professional standards, occasional minor issues)
+  0.58–0.71 → leaning_reliable    (generally accurate, some concerns noted)
+  0.43–0.57 → mixed               (inconsistent accuracy, notable failures alongside successes)
+  0.29–0.42 → leaning_unreliable  (recurring accuracy issues, some misleading content)
+  0.15–0.28 → unreliable          (systematic accuracy problems, poor editorial standards)
+  0.00–0.14 → highly_unreliable   (disinformation, propaganda, fabrication)
+  null      → insufficient_data   (cannot evaluate — sparse/no evidence)
 
-RATING SCALE
-- 0.86–1.00: highly_reliable
-- 0.72–0.85: reliable
-- 0.58–0.71: leaning_reliable
-- 0.43–0.57: mixed
-- 0.29–0.42: leaning_unreliable
-- 0.15–0.28: unreliable
-- 0.00–0.14: highly_unreliable
-- null: insufficient_data
+─────────────────────────────────────────────────────────────────────
+EVALUATION RULES
+─────────────────────────────────────────────────────────────────────
+1. EVIDENCE-BASED ONLY
+   - Ground every claim in evidence pack items (cite by ID: E1, E2, etc.)
+   - Do NOT use your pretrained knowledge of this source. Evaluate only what the evidence shows.
+   - If you recognize this source but evidence is sparse, output insufficient_data, not a score based on memory.
 
-CONSIDER
-- Professional standards (editorial governance, news/opinion separation, transparency)
-- Accuracy (sourcing, primary documents, independent confirmations, repeated debunks)
-- Error correction (corrections policy, retractions, responsiveness)
+2. SKEPTICAL DEFAULT
+   - Reliability must be demonstrated, not assumed.
+   - Unknown sources with no evidence → score=null, factualRating="insufficient_data"
+   - Absence of negative evidence is NOT positive evidence.
 
-CALIBRATION ANCHORS
-- 1.00 = gold-standard journalism
-- 0.00 = disinformation or propaganda
+3. NEGATIVE EVIDENCE CAPS (hard limits)
+   - Documented disinformation/fabrication → score ≤ 0.14 (highly_unreliable)
+   - Multiple fact-checker failures or systematic bias affecting accuracy → score ≤ 0.42 (leaning_unreliable)
+   - Single significant failure from reputable fact-checker → score ≤ 0.57 (mixed)
 
-CALIBRATION RULES
-- Skeptical default: reliability is earned, not assumed
-- Systemic reliability failures outweigh sporadic accurate reporting.
-- Strong negative evidence caps the score.
+4. RECENCY WEIGHTING
+   - Last 12 months: full weight
+   - 12-24 months: high weight
+   - 2-5 years: moderate weight (organization may have changed)
+   - >5 years: low weight (only if pattern persists to present)
 
-PRIORITIES
-- RECENCY: prioritize evidence from the last 24 months; older evidence has diminishing weight.
-- VERIFICATION: established fact-checkers provide strongest signals.
-- COURTS: court records carry weight only when judicial independence is credible; otherwise treat as neutral.
-- PROMINENCE: failures in flagship or high-reach content matter more.
-- BIAS IMPACT: bias alone does not reduce score; bias plus factual failures does.
+5. CONFIDENCE SCORING (0.0–1.0)
+   Confidence = how well the evidence supports the verdict you're giving.
+   - 0.85+ : Strong — fact-checker rating(s) or multiple corroborating sources
+   - 0.7–0.85 : Good — at least one credible assessment or consistent pattern across sources
+   - 0.55–0.7 : Moderate — some relevant mentions, enough to form a view
+   - 0.4–0.55 : Limited — sparse but usable evidence, verdict is tentative
+   - <0.4 : Insufficient — consider score=null / insufficient_data instead
 
-JUDICIAL INDEPENDENCE
-Courts are independent if adversarial, transparent, allow appeals, and are not routinely used to suppress journalism or opposition.
+6. BIAS HANDLING
+   - Political lean alone does NOT reduce score
+   - Bias + factual failures = reduced score
+   - Bias without documented accuracy issues = note in bias fields only
 
-ESTABLISHED FACT-CHECKER
-Independent organizations with a transparent verification process, disclosed funding, public corrections policy, and multi-year track record; recognized network membership or cross-confirmation strengthens weight.
+─────────────────────────────────────────────────────────────────────
+SOURCE TYPE CRITERIA
+─────────────────────────────────────────────────────────────────────
+- editorial_publisher: Independent newsroom with editorial standards
+- wire_service: News agency providing content to other outlets (AP, Reuters, AFP)
+- government: Official government communication (not journalism)
+- state_media: Government-funded but editorially independent (BBC, NPR model)
+- state_controlled_media: Government controls editorial content
+- platform_ugc: User-generated content platforms (social media, forums)
+- advocacy: Organization promoting specific cause/viewpoint
+- aggregator: Republishes content from other sources
+- propaganda_outlet: Primary purpose is influence operations
+- known_disinformation: Documented source of fabricated content
+- unknown: Cannot determine from evidence
 
-CONFIDENCE
-Report evidence support (0.0–1.0), not certainty.
+─────────────────────────────────────────────────────────────────────
+CALIBRATION EXAMPLES
+─────────────────────────────────────────────────────────────────────
+Example A: Evidence shows 3 fact-checker assessments rating source as "mostly factual" with rare corrections needed, professional corrections policy documented.
+→ score: 0.78, factualRating: "reliable", confidence: 0.85
 
-BIAS (values only)
-- politicalBias: far_left | left | center_left | center | center_right | right | far_right | not_applicable
-- otherBias: pro_government | anti_government | corporate_interest | sensationalist | ideological_other | none_detected
+Example B: Evidence shows 2 documented false claims flagged by fact-checkers, but also shows corrections policy and generally accurate reporting otherwise.
+→ score: 0.52, factualRating: "mixed", confidence: 0.75
 
-OUTPUT (JSON ONLY)
+Example C: No fact-checker assessments found, source is unfamiliar, evidence pack contains only tangential mentions.
+→ score: null, factualRating: "insufficient_data", confidence: 0.3
+
+─────────────────────────────────────────────────────────────────────
+BIAS VALUES (exact strings only)
+─────────────────────────────────────────────────────────────────────
+politicalBias: far_left | left | center_left | center | center_right | right | far_right | not_applicable
+otherBias: pro_government | anti_government | corporate_interest | sensationalist | ideological_other | none_detected | null
+
+─────────────────────────────────────────────────────────────────────
+OUTPUT FORMAT (JSON only, no markdown, no commentary)
+─────────────────────────────────────────────────────────────────────
 {
-  "domain": "${domain}",
-  "evaluationDate": "${currentDate}",
-  "sourceType": "<one of: editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown>",
+  "sourceType": "string (from list above)",
   "evidenceQuality": {
-    "independentAssessmentsCount": <0-10>,
-    "recencyWindowUsed": "<e.g. 2024-2026|unknown>",
-    "notes": "<short>"
+    "independentAssessmentsCount": "number 0-10",
+    "recencyWindowUsed": "string, e.g. '2024-2026' or 'unknown'",
+    "notes": "string, brief quality assessment"
   },
-  "score": <0.0-1.0 | null>,
-  "confidence": <0.0-1.0>,
-  "factualRating": "<rating_label>",
-  "bias": {"politicalBias": "<value>", "otherBias": "<value|null>"},
-  "reasoning": "<2-3 sentences>",
+  "score": "number 0.0-1.0 OR null",
+  "confidence": "number 0.0-1.0",
+  "factualRating": "string (from rating scale)",
+  "bias": {
+    "politicalBias": "string (from list)",
+    "otherBias": "string (from list) OR null"
+  },
+  "reasoning": "string, 2-4 sentences explaining verdict",
   "evidenceCited": [
-    {"claim": "<assertion>", "basis": "<MUST reference E# from EVIDENCE_PACK if provided>", "recency": "<period>"}
+    {
+      "claim": "string, what you assert about the source",
+      "basis": "string, MUST cite evidence ID (e.g. 'E1 shows...', 'Per E2 and E3...')",
+      "recency": "string, time period if known (e.g. '2024', '2023-2025', 'unknown')"
+    }
   ],
-  "caveats": ["<limitations>"]
+  "caveats": ["string array of limitations, gaps, or uncertainties"]
 }
 
-FINAL CHECK
-- score and factualRating must align
-- confidence decreases with sparse, weak, or outdated evidence
-- systematic negative evidence caps score
-- if evidence is inconclusive or absent → score = null AND factualRating = "insufficient_data"
+─────────────────────────────────────────────────────────────────────
+FINAL VALIDATION (check before responding)
+─────────────────────────────────────────────────────────────────────
+□ score falls within correct range for factualRating
+□ Every claim in evidenceCited references an evidence ID (E1, E2, etc.)
+□ If evidenceCited is empty or weak → confidence ≤ 0.55
+□ If no meaningful evidence → score=null AND factualRating="insufficient_data"
+□ Negative evidence caps applied if applicable
 `;
 }
 
