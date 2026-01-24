@@ -100,7 +100,7 @@ async function getDb(): Promise<Database> {
     let tableInfo = await db.all<Array<{ name: string; notnull: number }>>(
       "PRAGMA table_info(source_reliability)"
     );
-    
+
     // STEP 1: First add any missing columns (must happen BEFORE table recreation)
     const hasReasoning = tableInfo.some((col) => col.name === "reasoning");
     const hasCategory = tableInfo.some((col) => col.name === "category");
@@ -155,22 +155,35 @@ async function getDb(): Promise<Database> {
           evidence_cited TEXT,
           evidence_pack TEXT
         );
-        
+
         -- Copy existing data (all columns now exist)
-        INSERT INTO source_reliability_new 
-        SELECT domain, score, confidence, evaluated_at, expires_at, model_primary, 
+        INSERT INTO source_reliability_new
+        SELECT domain, score, confidence, evaluated_at, expires_at, model_primary,
                model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited, evidence_pack
         FROM source_reliability;
-        
+
         -- Drop old table and rename
         DROP TABLE source_reliability;
         ALTER TABLE source_reliability_new RENAME TO source_reliability;
-        
+
         -- Recreate index
         CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
       `);
       console.log("[SR-Cache] Migration complete: score column now allows NULL");
     }
+
+    // STEP 3: Normalize category naming (idempotent)
+    // We renamed the mid bands from "generally_*" to "leaning_*" for UI/prompt clarity.
+    // Convert any existing cached rows so the admin UI and downstream consumers stay consistent.
+    await db.exec(`
+      UPDATE source_reliability
+      SET category = 'leaning_reliable'
+      WHERE category IN ('generally_reliable', 'Generally Reliable');
+
+      UPDATE source_reliability
+      SET category = 'leaning_unreliable'
+      WHERE category IN ('generally_unreliable', 'Generally Unreliable');
+    `);
   } catch (err) {
     console.error("[SR-Cache] Migration error:", err);
   }
@@ -238,7 +251,7 @@ export async function batchGetCachedScores(
   const placeholders = domains.map(() => "?").join(",");
 
   const rows = await database.all<ScoreRow[]>(
-    `SELECT domain, score FROM source_reliability 
+    `SELECT domain, score FROM source_reliability
      WHERE domain IN (${placeholders}) AND expires_at > ?`,
     [...domains, now]
   );
@@ -265,7 +278,7 @@ export async function batchGetCachedData(
   const placeholders = domains.map(() => "?").join(",");
 
   const rows = await database.all<ScoreRow[]>(
-    `SELECT domain, score, confidence, consensus_achieved FROM source_reliability 
+    `SELECT domain, score, confidence, consensus_achieved FROM source_reliability
      WHERE domain IN (${placeholders}) AND expires_at > ?`,
     [...domains, now]
   );
@@ -305,14 +318,14 @@ export async function setCachedScore(
   );
 
   // Convert evidenceCited array to JSON string for storage
-  const evidenceJson = evidenceCited && evidenceCited.length > 0 
-    ? JSON.stringify(evidenceCited) 
+  const evidenceJson = evidenceCited && evidenceCited.length > 0
+    ? JSON.stringify(evidenceCited)
     : null;
 
   const evidencePackJson = evidencePack ? JSON.stringify(evidencePack) : null;
 
   await database.run(
-    `INSERT OR REPLACE INTO source_reliability 
+    `INSERT OR REPLACE INTO source_reliability
      (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited, evidence_pack)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -380,7 +393,7 @@ export async function getCacheStats(): Promise<{
     avg_score: number;
     avg_confidence: number;
   }>(`
-    SELECT 
+    SELECT
       COUNT(*) as total,
       SUM(CASE WHEN expires_at <= ? THEN 1 ELSE 0 END) as expired,
       AVG(score) as avg_score,
@@ -427,7 +440,7 @@ export async function getAllCachedScores(options: {
 
   // Get paginated results
   const rows = await database.all<ScoreRow[]>(
-    `SELECT * FROM source_reliability 
+    `SELECT * FROM source_reliability
      WHERE expires_at > ?
      ORDER BY ${sortColumn} ${sortDir}
      LIMIT ? OFFSET ?`,

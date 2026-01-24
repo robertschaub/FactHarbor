@@ -545,9 +545,9 @@ The source reliability system uses a 7-band credibility scale centered at 0.5:
 |-------------|------|-------|-------------------|
 | 0.86-1.00 | Highly Reliable | Verified accuracy | Verdict fully preserved (~95-100% weight) |
 | 0.72-0.85 | Reliable | Consistent accuracy | Verdict mostly preserved (~75-90% weight) |
-| 0.58-0.71 | Generally Reliable | Often accurate | Moderate preservation (~60-75% weight) |
+| 0.58-0.71 | Leaning Reliable | Often accurate | Moderate preservation (~60-75% weight) |
 | 0.43-0.57 | Mixed | Variable accuracy | Appropriate skepticism (~40-60% weight) |
-| 0.29-0.42 | Generally Unreliable | Often inaccurate | Pulls toward neutral (~30-45% weight) |
+| 0.29-0.42 | Leaning Unreliable | Often inaccurate | Pulls toward neutral (~30-45% weight) |
 | 0.15-0.28 | Unreliable | Pattern of false claims | Strong pull (~15-30% weight) |
 | 0.00-0.14 | Highly Unreliable | Fabricates content | Maximum skepticism (~0-15% weight) |
 

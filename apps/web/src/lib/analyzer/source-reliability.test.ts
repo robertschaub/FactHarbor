@@ -199,7 +199,7 @@ describe("Score interpretation (symmetric 7-band scale, matches verdict scale)",
   // Symmetric scale matching verdict scale, centered at 0.5:
   // highly_reliable (0.86-1.00) ↔ highly_unreliable (0.00-0.15)
   // reliable (0.72-0.86) ↔ unreliable (0.15-0.29)
-  // generally_reliable (0.58-0.72) ↔ generally_unreliable (0.29-0.43)
+  // leaning_reliable (0.58-0.72) ↔ leaning_unreliable (0.29-0.43)
   // mixed (0.43-0.57) = CENTER (known source with variable track record)
   // insufficient_data (null) = Unknown source, no assessments
 

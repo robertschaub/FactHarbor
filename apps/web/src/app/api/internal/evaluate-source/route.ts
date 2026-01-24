@@ -41,6 +41,26 @@ const RequestSchema = z.object({
   consensusThreshold: z.number().min(0).max(1).default(0.15),
 });
 
+const FactualRatingSchema = z
+  .enum([
+    "highly_reliable", // 0.86-1.00
+    "reliable", // 0.72-0.85
+    "leaning_reliable", // 0.58-0.71 (formerly generally_reliable)
+    "mixed", // 0.43-0.57
+    "leaning_unreliable", // 0.29-0.42 (formerly generally_unreliable)
+    "unreliable", // 0.15-0.28
+    "highly_unreliable", // 0.00-0.14
+    "insufficient_data", // null score - Unknown source, no assessments exist
+    // Legacy aliases (accept but normalize)
+    "generally_reliable",
+    "generally_unreliable",
+  ])
+  .transform((v) => {
+    if (v === "generally_reliable") return "leaning_reliable";
+    if (v === "generally_unreliable") return "leaning_unreliable";
+    return v;
+  });
+
 const EvaluationResultSchema = z.object({
   domain: z.string().optional(),
   evaluationDate: z.string().optional(),
@@ -55,16 +75,7 @@ const EvaluationResultSchema = z.object({
   score: z.number().min(0).max(1).nullable(),
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
-  factualRating: z.enum([
-    "highly_reliable",            // 0.86-1.00 - Highest standards, verified, proactively corrects
-    "reliable",                   // 0.72-0.85 - Professional standards, accurate, corrects promptly
-    "generally_reliable",         // 0.58-0.71 - Decent standards, often accurate, corrects when notified
-    "mixed",                      // 0.43-0.57 - Known source with variable/inconsistent track record
-    "generally_unreliable",       // 0.29-0.42 - Lax standards, often inaccurate, slow to correct
-    "unreliable",                 // 0.15-0.28 - Poor standards, inaccurate, seldom corrects
-    "highly_unreliable",          // 0.00-0.14 - Lowest standards, fabricates, resists correction
-    "insufficient_data",          // null score - Unknown source, no assessments exist
-  ]),
+  factualRating: FactualRatingSchema,
   // Dimension scores for multi-criteria evaluation
   dimensionScores: z.object({
     factualAccuracy: z.number().min(0).max(30),       // 0-30 points
@@ -380,9 +391,9 @@ RULES
 RATING SCALE
 - 0.86–1.00: highly_reliable
 - 0.72–0.85: reliable
-- 0.58–0.71: leaning_reliable (use factualRating="generally_reliable")
+- 0.58–0.71: leaning_reliable
 - 0.43–0.57: mixed
-- 0.29–0.42: leaning_unreliable (use factualRating="generally_unreliable")
+- 0.29–0.42: leaning_unreliable
 - 0.15–0.28: unreliable
 - 0.00–0.14: highly_unreliable
 - null: insufficient_data
@@ -392,8 +403,12 @@ CONSIDER
 - Accuracy (sourcing, primary documents, independent confirmations, repeated debunks)
 - Error correction (corrections policy, retractions, responsiveness)
 
-CALIBRATION
-- Be conservative; reliability is earned.
+CALIBRATION ANCHORS
+- 1.00 = gold-standard journalism
+- 0.00 = disinformation or propaganda
+
+CALIBRATION RULES
+- Skeptical default: reliability is earned, not assumed
 - Systemic reliability failures outweigh sporadic accurate reporting.
 - Strong negative evidence caps the score.
 
@@ -778,7 +793,7 @@ async function evaluateSourceWithConsensus(
     winner = secondary;
   } else if (secondaryFounded === primaryFounded) {
     // Tie-breaker:
-    // - If both scores are on the "positive side" (>= generally_reliable lower bound), avoid
+    // - If both scores are on the "positive side" (>= leaning_reliable lower bound), avoid
     //   systematically biasing downward: use the average.
     // - Otherwise (negative-side / borderline), prefer the lower score (skeptical default).
     if (primary.result.score >= 0.58 && secondary.result.score >= 0.58) {

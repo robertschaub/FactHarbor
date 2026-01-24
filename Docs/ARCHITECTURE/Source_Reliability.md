@@ -237,9 +237,9 @@ adjustedConfidence = confidence × (0.5 + avgSourceScore / 2)
 |------------------------|------------------|-------------------|
 | **Highly Reliable (0.86+)** | ~95-100% | Verdict fully preserved |
 | **Reliable (0.72-0.86)** | ~75-90% | Verdict mostly preserved |
-| **Generally Reliable (0.58-0.72)** | ~60-75% | Moderate preservation |
+| **Leaning Reliable (0.58-0.72)** | ~60-75% | Moderate preservation |
 | **Mixed (0.43-0.57)** | ~40-60% | Variable track record (neutral center) |
-| **Generally Unreliable (0.29-0.43)** | ~30-45% | Pulls toward neutral |
+| **Leaning Unreliable (0.29-0.43)** | ~30-45% | Pulls toward neutral |
 | **Unreliable (0.15-0.29)** | ~15-30% | Strong pull toward neutral |
 | **Highly Unreliable (0.00-0.15)** | ~0-15% | Maximum skepticism |
 | **Unknown (null)** | 50% | Uses default score (neutral) |
@@ -360,9 +360,9 @@ FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
 |-------|--------|--------------|
 | 0.86-1.00 | Highly Reliable | Verified accuracy, recognized standards body, rigorous corrections |
 | 0.72-0.85 | Reliable | Consistent accuracy, professional standards, rarely faulted |
-| 0.58-0.71 | Generally Reliable | Often accurate, occasional errors, corrects when notified |
+| 0.58-0.71 | Leaning Reliable | Often accurate, occasional errors, corrects when notified |
 | 0.43-0.57 | Mixed | Variable accuracy OR inconsistent quality by topic/author |
-| 0.29-0.42 | Generally Unreliable | Often inaccurate OR bias significantly affects reporting |
+| 0.29-0.42 | Leaning Unreliable | Often inaccurate OR bias significantly affects reporting |
 | 0.15-0.28 | Unreliable | Pattern of false claims OR ignores corrections |
 | 0.00-0.14 | Highly Unreliable | Fabricates content OR documented disinformation source |
 
@@ -457,9 +457,9 @@ Per review feedback, the system avoids categorical assumptions:
 |-------------|--------|---------|
 | 0.86-1.00 | highly_reliable | Verified accuracy, recognized standards body |
 | 0.72-0.85 | reliable | Consistent accuracy, professional standards |
-| 0.58-0.71 | generally_reliable | Often accurate, occasional errors |
+| 0.58-0.71 | leaning_reliable | Often accurate, occasional errors |
 | 0.43-0.57 | mixed | Variable accuracy, inconsistent quality |
-| 0.29-0.42 | generally_unreliable | Often inaccurate, bias affects reporting |
+| 0.29-0.42 | leaning_unreliable | Often inaccurate, bias affects reporting |
 | 0.15-0.28 | unreliable | Pattern of false claims, ignores corrections |
 | 0.00-0.14 | highly_unreliable | Fabricates content, documented disinformation |
 
