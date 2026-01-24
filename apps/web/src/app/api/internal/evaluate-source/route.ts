@@ -392,7 +392,7 @@ RATING SCALE (score → factualRating — MUST match)
   null      → insufficient_data   (cannot evaluate — sparse/no evidence)
 
 ─────────────────────────────────────────────────────────────────────
-EVALUATION RULES
+EVALUATION PRINCIPLES
 ─────────────────────────────────────────────────────────────────────
 1. EVIDENCE-BASED ONLY
    - Ground every claim in evidence pack items (cite by ID: E1, E2, etc.)
@@ -403,34 +403,31 @@ EVALUATION RULES
    - Reliability must be demonstrated, not assumed.
    - Unknown sources with no evidence → score=null, factualRating="insufficient_data"
    - Absence of negative evidence is NOT positive evidence.
+   - Consider insufficient_data when: no fact-checker assessments + only weak mentions
 
-3. NEGATIVE EVIDENCE CAPS (hard limits)
-   - Documented disinformation/fabrication → score ≤ 0.14 (highly_unreliable)
-   - Multiple fact-checker failures or systematic bias affecting accuracy → score ≤ 0.42 (leaning_unreliable)
-   - Single significant failure from reputable fact-checker → score ≤ 0.57 (mixed)
+3. NEGATIVE EVIDENCE CAPS (hard limits when evidence is clear)
+   - Evidence of fabricated stories/disinformation → score ≤ 0.14 (highly_unreliable)
+   - Multiple documented fact-checker failures → score ≤ 0.42 (leaning_unreliable)
+   - Documented failures from reputable fact-checkers → score ≤ 0.57 (mixed)
+   - Use judgment on severity, consistency, and pattern of failures
 
-4. EVIDENCE QUALITY PRIORITY
-   - Prioritize explicit fact-checker assessments and documented corrections
-   - Reputable newsroom analyses are medium weight
-   - Single blogs/forums or thin mentions are low weight and should not trigger caps alone
+4. EVIDENCE QUALITY & WEIGHTING
+   - Prioritize: explicit fact-checker assessments, documented corrections, journalism reviews
+   - Weight heavily: recent evidence over older evidence
+   - Discount: single blogs/forums, tangential mentions, very old evidence unless pattern persists
+   - Consider recency: organizations can change; note if relying on dated evidence
 
-5. RECENCY WEIGHTING
-   - Last 12 months: full weight
-   - 12-24 months: high weight
-   - 2-5 years: moderate weight (organization may have changed)
-   - >5 years: low weight (only if pattern persists to present)
+5. CONFIDENCE SCORING (0.0–1.0)
+   Confidence = how well the evidence supports your verdict.
+   - 0.85+ : Strong — multiple fact-checker assessments or robust corroboration
+   - 0.7–0.85 : Good — credible assessment or consistent pattern
+   - 0.55–0.7 : Moderate — some relevant evidence, enough to form tentative view
+   - 0.4–0.55 : Limited — sparse but usable evidence, verdict is uncertain
+   - <0.4 : Insufficient — strongly consider score=null / insufficient_data instead
 
-6. CONFIDENCE SCORING (0.0–1.0)
-   Confidence = how well the evidence supports the verdict you're giving.
-   - 0.85+ : Strong — fact-checker rating(s) or multiple corroborating sources
-   - 0.7–0.85 : Good — at least one credible assessment or consistent pattern across sources
-   - 0.55–0.7 : Moderate — some relevant mentions, enough to form a view
-   - 0.4–0.55 : Limited — sparse but usable evidence, verdict is tentative
-   - <0.4 : Insufficient — consider score=null / insufficient_data instead
-
-7. BIAS HANDLING
+6. BIAS HANDLING
    - Political lean alone does NOT reduce score
-   - Bias + factual failures = reduced score
+   - Bias + documented factual failures = reduced score (apply caps)
    - Bias without documented accuracy issues = note in bias fields only
    - If evidence does not address bias, use politicalBias="not_applicable" and otherBias=null
 
@@ -448,18 +445,6 @@ SOURCE TYPE CRITERIA
 - propaganda_outlet: Primary purpose is influence operations
 - known_disinformation: Documented source of fabricated content
 - unknown: Cannot determine from evidence
-
-─────────────────────────────────────────────────────────────────────
-CALIBRATION EXAMPLES
-─────────────────────────────────────────────────────────────────────
-Example A: Evidence shows 3 fact-checker assessments rating source as "mostly factual" with rare corrections needed, professional corrections policy documented.
-→ score: 0.78, factualRating: "reliable", confidence: 0.85
-
-Example B: Evidence shows 2 documented false claims flagged by fact-checkers, but also shows corrections policy and generally accurate reporting otherwise.
-→ score: 0.52, factualRating: "mixed", confidence: 0.75
-
-Example C: No fact-checker assessments found, source is unfamiliar, evidence pack contains only tangential mentions.
-→ score: null, factualRating: "insufficient_data", confidence: 0.3
 
 ─────────────────────────────────────────────────────────────────────
 BIAS VALUES (exact strings only)
@@ -484,7 +469,7 @@ OUTPUT FORMAT (JSON only, no markdown, no commentary)
     "politicalBias": "string (from list)",
     "otherBias": "string (from list) OR null"
   },
-  "reasoning": "string, 2-4 sentences explaining verdict",
+  "reasoning": "string, 2-4 sentences explaining verdict and key evidence factors",
   "evidenceCited": [
     {
       "claim": "string, what you assert about the source",
@@ -500,10 +485,12 @@ FINAL VALIDATION (check before responding)
 ─────────────────────────────────────────────────────────────────────
 □ score falls within correct range for factualRating
 □ Every claim in evidenceCited references an evidence ID (E1, E2, etc.)
-□ If evidenceCited is empty or weak → confidence ≤ 0.55
-□ If no meaningful evidence → score=null AND factualRating="insufficient_data"
-□ Negative evidence caps applied if applicable
+□ Applied evidence-only rule (no pretrained knowledge)
+□ If sparse evidence or low confidence → considered insufficient_data
+□ Negative evidence caps applied where warranted
+□ Political bias separated from accuracy assessment
 `;
+
 }
 
 async function evaluateWithModel(
@@ -542,7 +529,10 @@ async function evaluateWithModel(
     const response = await generateText({
       model,
       messages: [
-        { role: "system", content: "You are a media reliability analyst. Evaluate sources based on EVIDENCE: Are claims supported or contradicted by documented evidence? What do fact-checkers find? Sources with claims contradicted by evidence are UNRELIABLE. Always respond with valid JSON only." },
+        {
+          role: "system",
+          content: "You are a media reliability analyst. Evaluate sources based solely on PROVIDED EVIDENCE - cite evidence pack items (E1, E2, etc.) for every claim. Never use pretrained knowledge about sources. Apply negative evidence caps when warranted (disinformation ≤0.14, multiple failures ≤0.42, 1-2 failures ≤0.57). Separate political bias from accuracy - bias alone does not reduce score. Default to insufficient_data when evidence is sparse. Always respond with valid JSON only."
+        },
         { role: "user", content: prompt },
       ],
       temperature,
