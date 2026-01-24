@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
 **Last Updated**: January 24, 2026  
-**Current Version**: 2.6.35  
+**Current Version**: 2.6.37  
 **Schema Version**: 2.7.0
 
 ---
@@ -42,6 +42,124 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 ---
 
 ## Version History
+
+### v2.6.37 (January 24, 2026)
+
+**Focus**: Entity-Level Source Evaluation & Consensus Tuning
+
+**Problem**: High-quality legacy media (e.g., `srf.ch`) were being underrated or failing consensus because the evaluation focused too narrowly on the domain rather than the parent organization's established standards.
+
+**Major Changes**:
+
+1. **Entity-Level Evaluation** (`getEvaluationPrompt()`)
+   - New CRITICAL RULE: Evaluate the WHOLE ORGANIZATION if the domain is its primary outlet.
+   - Specific guidance for legacy media and public broadcasters (e.g., BBC, SRF).
+   - Expected scores for high-quality public broadcasters: 0.80–0.85 (reliable).
+
+2. **Consensus Confidence Boost** (`evaluateSourceWithConsensus()`)
+   - Added +15% confidence boost when independent models (Claude + GPT-5 mini) agree.
+   - Agreement is a strong signal that overcomes individual model uncertainty.
+
+3. **Fallback Logic** (`evaluateSourceWithConsensus()`)
+   - When consensus fails, the system now falls back to the **more confident model** instead of returning an error.
+   - Ensures a result is always available, marked with a ⚠️ indicator in the UI.
+
+4. **Adaptive Evidence Pack Enhancement** (`buildEvidencePack()`)
+   - Added "Entity-focused" queries to target organization standards directly.
+   - Improved abbreviation detection (e.g., `srf`, `bbc`) for better brand matching.
+
+5. **UI & Schema Updates**
+   - Added `identifiedEntity` field to track which organization was evaluated.
+   - Admin UI now displays the identified entity name alongside the domain.
+   - Added fallback reason tooltips in the UI.
+
+**Expected Outcomes**:
+
+| Domain | Before | After | Reason |
+|--------|--------|-------|--------|
+| srf.ch | N/A (Failed) | ~83% | Entity-level evaluation + Consensus boost |
+| foxnews.com | 12% | ~30-40% | Stricter sourceType criteria + Fallback |
+| weltwoche.ch | N/A | ~40% | Lowered confidence thresholds |
+
+---
+
+### v2.6.36 (January 24, 2026)
+
+**Focus**: Source Reliability Evaluation Hardening
+
+**Problem**: Propaganda and misinformation sources (e.g., `anti-spiegel.ru`, `xinhuanet.com`, `reitschuster.de`) were being scored too high (37-45% instead of ≤14% for propaganda).
+
+**Root Causes Identified**:
+1. Evidence pack queries too narrow - missed propaganda/disinformation coverage
+2. Relevance filtering brittle - dropped results with brand variants
+3. Prompt lacked SOURCE TYPE SCORE CAPS enforcement
+4. Threshold inconsistency between admin (0.65) and pipeline (0.8)
+5. Prompt contained real domain names (AGENTS.md violation)
+
+**Major Changes**:
+
+1. **Adaptive Evidence Pack** (`buildEvidencePack()`)
+   - Added negative-signal queries: `propaganda disinformation misinformation`, `false claims debunked`
+   - Queries added adaptively when initial results are sparse
+   - Applies equally to all domains (no TLD hardcoding per AGENTS.md)
+
+2. **Brand Variant Matching** (`generateBrandVariants()`)
+   - Hyphen variants: `anti-spiegel` ↔ `antispiegel` ↔ `anti spiegel`
+   - Suffix stripping: `foxnews` → `fox`, `fox news`; `xinhuanet` → `xinhua`
+   - Improved `isRelevantSearchResult()` uses variant matching
+
+3. **SOURCE TYPE SCORE CAPS** (deterministic post-processing)
+   - `propaganda_outlet` / `known_disinformation` → ≤ 0.14 (highly_unreliable)
+   - `state_controlled_media` / `platform_ugc` → ≤ 0.42 (leaning_unreliable)
+   - Caps enforced after LLM evaluation, regardless of LLM variance
+
+4. **Asymmetric Confidence Gating** (skeptical default)
+   - High scores require higher confidence: `highly_reliable` needs ≥0.85
+   - Low scores accept lower confidence: `highly_unreliable` accepts ≥0.45
+   - Prevents false "reliable" assignments under weak evidence
+
+5. **Unified Configuration** (`source-reliability-config.ts`)
+   - All consumers (admin, pipeline, evaluator) use shared defaults
+   - Fixed threshold inconsistency: unified to 0.8 everywhere
+   - Exports: `getSRConfig()`, `scoreToFactualRating()`, `SOURCE_TYPE_CAPS`
+
+6. **AGENTS.md Compliance**
+   - Removed all real domain names from prompt examples
+   - Abstract examples: "example-wire-service.com", "example-propaganda-site.example"
+   - No TLD-specific heuristics (generic-by-design)
+
+**Expected Outcomes**:
+
+| Domain | Before | After | Reason |
+|--------|--------|-------|--------|
+| anti-spiegel.ru | 37% | 8-14% | propaganda_outlet cap |
+| xinhuanet.com | N/A | 27-42% | state_controlled_media cap |
+| reitschuster.de | 45% | 25-35% | Better evidence + failures |
+| foxnews.com | 45% | 35-42% | Multiple failures cap |
+| weltwoche.ch | N/A | 35-42% | Better evidence |
+| srf.ch | 82% | 82% | No change (correct) |
+| reuters.com | 85% | 85% | No change (correct) |
+
+**Files Created**:
+- `apps/web/src/lib/source-reliability-config.ts` (shared config)
+- `apps/web/src/lib/source-reliability-config.test.ts` (config tests)
+- `apps/web/src/app/api/internal/evaluate-source/evaluator-logic.test.ts` (evaluator tests)
+
+**Files Modified**:
+- `apps/web/src/app/api/internal/evaluate-source/route.ts` (major rewrite)
+- `apps/web/src/app/api/admin/source-reliability/route.ts` (use shared config)
+- `apps/web/src/lib/analyzer/source-reliability.ts` (use shared config)
+- `Docs/ARCHITECTURE/Source_Reliability.md` (v1.1 → v1.2)
+
+**Test Coverage Added**:
+- `scoreToFactualRating()` band mapping (12 tests)
+- `meetsConfidenceRequirement()` asymmetric gating (6 tests)
+- `generateBrandVariants()` hyphen/suffix handling (12 tests)
+- `isRelevantSearchResult()` variant matching (8 tests)
+- SOURCE_TYPE_CAPS enforcement (5 tests)
+- Problem case scenarios (3 tests)
+
+---
 
 ### v2.6.35 (January 24, 2026)
 

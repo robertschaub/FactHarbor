@@ -162,6 +162,19 @@
   max-width: 180px;
 }
 
+.entity {
+  color: #64748b;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entitySmall {
+  color: #64748b;
+  font-size: 11px;
+}
+
 .scoreBadge {
   display: inline-block;
   padding: 3px 8px;
@@ -193,6 +206,11 @@
 .consensusNo {
   color: #ef4444;
   font-weight: bold;
+  font-size: 14px;
+}
+
+.consensusFallback {
+  color: #f59e0b;
   font-size: 14px;
 }
 

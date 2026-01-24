@@ -133,7 +133,7 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 
 ---
 
-## Current State (v2.6.35)
+## Current State (v2.6.37)
 
 ### Working Features
 - ✅ Multi-scope detection and display
@@ -143,7 +143,8 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 - ✅ Claim deduplication for fair aggregation
 - ✅ KeyFactors aggregation
 - ✅ Triple-path pipeline (Orchestrated, Monolithic Canonical, Monolithic Dynamic)
-- ✅ Source Reliability (LLM evaluation with multi-model consensus, caching, evidence weighting)
+- ✅ Source Reliability (LLM evaluation with multi-model consensus, caching, evidence weighting, entity-level evaluation)
+- ✅ Source Reliability Hardening (SOURCE TYPE CAPS, asymmetric confidence gating, brand variant matching)
 
 ### Key Environment Variables
 

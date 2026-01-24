@@ -18,6 +18,9 @@ interface CachedScore {
   biasIndicator?: string | null;
   evidenceCited?: string | null; // JSON array stored as string (can be string[] or EvidenceItem[])
   evidencePack?: string | null; // JSON object stored as string (items + queries/providers)
+  fallbackUsed?: boolean; // When consensus failed but primary (Claude) was used anyway
+  fallbackReason?: string | null;
+  identifiedEntity?: string | null; // The organization evaluated
 }
 
 interface CacheStats {
@@ -76,6 +79,9 @@ export default function SourceReliabilityPage() {
     score?: number;
     confidence?: number;
     consensus?: boolean;
+    fallbackUsed?: boolean;
+    fallbackReason?: string;
+    identifiedEntity?: string | null;
     models?: string;
     error?: string;
   }> | null>(null);
@@ -580,6 +586,7 @@ export default function SourceReliabilityPage() {
               <thead>
                 <tr>
                   <th>Domain</th>
+                  <th>Entity</th>
                   <th>Status</th>
                   <th>Score</th>
                   <th>Confidence</th>
@@ -591,6 +598,7 @@ export default function SourceReliabilityPage() {
                 {evalResults.map((r, i) => (
                   <tr key={i} className={r.success ? (r.cached ? styles.evalCached : styles.evalSuccess) : styles.evalFailed}>
                     <td>{r.domain}</td>
+                    <td className={styles.entitySmall}>{r.identifiedEntity || "—"}</td>
                     <td>{r.success ? (r.cached ? "✓ (cached)" : "✓") : "✗"}</td>
                     <td>
                       {r.success && r.score !== undefined ? (
@@ -600,7 +608,22 @@ export default function SourceReliabilityPage() {
                       ) : "-"}
                     </td>
                     <td>{r.success && r.confidence !== undefined ? formatScore(r.confidence) : "-"}</td>
-                    <td>{r.success ? (r.consensus ? "✓" : "✗") : "-"}</td>
+                    <td>
+                      {r.success ? (
+                        r.consensus ? (
+                          <span title="Multi-model consensus achieved">✓</span>
+                        ) : r.fallbackUsed ? (
+                          <span 
+                            title={r.fallbackReason || "Fallback: Used primary model (Claude) due to model disagreement"}
+                            style={{ cursor: "help" }}
+                          >
+                            ⚠️
+                          </span>
+                        ) : (
+                          <span title="No consensus">✗</span>
+                        )
+                      ) : "-"}
+                    </td>
                     <td className={r.cached ? styles.cachedLabel : ""}>
                       {r.cached ? "Cached" : r.models || "-"}
                     </td>
@@ -609,7 +632,7 @@ export default function SourceReliabilityPage() {
                 {/* Show errors in separate rows below for clarity */}
                 {evalResults.filter(r => !r.success && r.error).map((r, i) => (
                   <tr key={`error-${i}`} className={styles.errorDetailsRow}>
-                    <td colSpan={6} className={styles.errorDetails}>
+                    <td colSpan={7} className={styles.errorDetails}>
                       <strong>Error for {r.domain}:</strong> {r.error}
                     </td>
                   </tr>
@@ -645,6 +668,7 @@ export default function SourceReliabilityPage() {
                   <th onClick={() => handleSort("domain")} className={styles.sortable}>
                     Domain {sortBy === "domain" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
+                  <th style={{ width: "120px" }}>Entity</th>
                   <th onClick={() => handleSort("score")} className={styles.sortable} style={{ width: "70px", textAlign: "center" }}>
                     Score {sortBy === "score" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
@@ -673,6 +697,9 @@ export default function SourceReliabilityPage() {
                       />
                     </td>
                     <td className={styles.domain}>{entry.domain}</td>
+                    <td className={styles.entity} title={entry.identifiedEntity || ""}>
+                      {entry.identifiedEntity || "—"}
+                    </td>
                     <td style={{ textAlign: "center" }}>
                       <span
                         className={styles.scoreBadge}
@@ -704,6 +731,14 @@ export default function SourceReliabilityPage() {
                         <span className={styles.consensusNo} title="Insufficient data / low confidence (consensus not attempted)">—</span>
                       ) : entry.consensusAchieved ? (
                         <span className={styles.consensusYes} title="Multi-model consensus achieved">✓</span>
+                      ) : entry.fallbackUsed ? (
+                        <span 
+                          className={styles.consensusFallback} 
+                          title={entry.fallbackReason || "Fallback: Used primary model (Claude) due to model disagreement"}
+                          style={{ cursor: "help" }}
+                        >
+                          ⚠️
+                        </span>
                       ) : entry.modelSecondary ? (
                         <span className={styles.consensusNo} title="Multi-model used but no consensus recorded">✗</span>
                       ) : (
@@ -807,8 +842,8 @@ export default function SourceReliabilityPage() {
         <h3 style={{ marginTop: "16px" }}>How It Works</h3>
         <div className={styles.legendItems} style={{ flexDirection: "column", gap: "8px" }}>
           <span>• <strong>Score</strong> = LLM-evaluated source credibility</span>
-          <span>• <strong>Confidence</strong> = How certain the LLM was (used as quality gate, threshold: 65%)</span>
-          <span>• <strong>Consensus</strong> = Claude and GPT-4 agreed within 15%</span>
+          <span>• <strong>Confidence</strong> = How certain the LLM was (used as quality gate)</span>
+          <span>• <strong>Consensus</strong>: ✓ = Models agreed | ⚠️ = Fallback to Claude (models disagreed) | ✗ = Failed</span>
         </div>
       </div>
 
@@ -984,7 +1019,16 @@ export default function SourceReliabilityPage() {
                     {selectedEntry.modelSecondary && (
                       <><strong>Secondary:</strong> {selectedEntry.modelSecondary}<br /></>
                     )}
-                    <strong>Consensus:</strong> {selectedEntry.consensusAchieved ? "✓ Achieved" : "✗ Not achieved"}
+                    <strong>Consensus:</strong> {
+                      selectedEntry.consensusAchieved 
+                        ? "✓ Achieved" 
+                        : selectedEntry.fallbackUsed 
+                          ? "⚠️ Fallback used" 
+                          : "✗ Not achieved"
+                    }
+                    {selectedEntry.fallbackUsed && selectedEntry.fallbackReason && (
+                      <><br /><span style={{ color: "#f59e0b", fontSize: "13px" }}>{selectedEntry.fallbackReason}</span></>
+                    )}
                   </p>
                 </div>
 

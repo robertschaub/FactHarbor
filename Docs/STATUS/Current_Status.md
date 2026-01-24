@@ -1,6 +1,6 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.35 (Code) | 2.7.0 (Schema Output)  
+**Version**: 2.6.37 (Code) | 2.7.0 (Schema Output)  
 **Last Updated**: 2026-01-24  
 **Status**: POC1 Operational
 
@@ -264,6 +264,25 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ---
 
 ## Recent Changes
+
+### v2.6.37 (January 24, 2026)
+- **Entity-Level Source Evaluation**: Prioritize organization reputation (e.g., SRF, BBC) over domain-only metrics
+  - **Entity-Level Evaluation**: New rule to evaluate the WHOLE ORGANIZATION if the domain is its primary outlet
+  - **Consensus Confidence Boost**: +15% confidence when independent models (Claude + GPT-5 mini) agree
+  - **Fallback Logic**: Always return a result (more confident model) even if consensus fails
+  - **Adaptive Evidence Pack**: Added entity-focused queries and better abbreviation detection
+  - **UI Updates**: Display `identifiedEntity` name and fallback reasons in Admin UI
+
+### v2.6.36 (January 24, 2026)
+- **Source Reliability Evaluation Hardening**: Major improvements for propaganda/misinformation scoring
+  - **SOURCE TYPE SCORE CAPS**: Deterministic enforcement (`propaganda_outlet` → ≤14%, `state_controlled_media` → ≤42%)
+  - **Adaptive Evidence Queries**: Negative-signal queries (`propaganda`, `disinformation`) added when results sparse
+  - **Brand Variant Matching**: Handles `anti-spiegel` ↔ `antispiegel`, suffix stripping (`foxnews` → `fox news`)
+  - **Asymmetric Confidence Gating**: High scores require higher confidence (skeptical default)
+  - **Unified Thresholds**: Admin + pipeline + evaluator share same defaults (0.8 confidence)
+  - **AGENTS.md Compliance**: Abstract examples only (no real domain names in prompts)
+- **New Shared Config**: `apps/web/src/lib/source-reliability-config.ts` centralizes SR settings
+- **46+ new tests** for scoring calibration, brand variants, and caps enforcement
 
 ### v2.6.35 (January 24, 2026)
 - **Source Reliability Prompt Improvements**: Comprehensive LLM prompt enhancements

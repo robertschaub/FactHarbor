@@ -38,6 +38,9 @@ export interface CachedScore {
   biasIndicator?: string | null;
   evidenceCited?: string | null; // JSON array stored as string
   evidencePack?: string | null; // JSON object stored as string (evidence-pack items+queries/providers)
+  fallbackUsed?: boolean; // When consensus failed but primary (Claude) was used anyway
+  fallbackReason?: string | null;
+  identifiedEntity?: string | null; // The organization evaluated
 }
 
 interface ScoreRow {
@@ -54,6 +57,9 @@ interface ScoreRow {
   bias_indicator: string | null;
   evidence_cited: string | null; // JSON array stored as string
   evidence_pack: string | null; // JSON object stored as string
+  fallback_used: number;
+  fallback_reason: string | null;
+  identified_entity: string | null;
 }
 
 // ============================================================================
@@ -89,7 +95,10 @@ async function getDb(): Promise<Database> {
       category TEXT,
       bias_indicator TEXT,
       evidence_cited TEXT,
-      evidence_pack TEXT
+      evidence_pack TEXT,
+      fallback_used INTEGER NOT NULL DEFAULT 0,
+      fallback_reason TEXT,
+      identified_entity TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_expires_at ON source_reliability(expires_at);
@@ -127,6 +136,25 @@ async function getDb(): Promise<Database> {
     if (!hasEvidencePack) {
       console.log("[SR-Cache] Adding evidence_pack column");
       await db.exec("ALTER TABLE source_reliability ADD COLUMN evidence_pack TEXT");
+    }
+    
+    // Check for fallback columns (v2.6.36+)
+    const hasFallbackUsed = tableInfo.some((col) => col.name === "fallback_used");
+    const hasFallbackReason = tableInfo.some((col) => col.name === "fallback_reason");
+    if (!hasFallbackUsed) {
+      console.log("[SR-Cache] Adding fallback_used column");
+      await db.exec("ALTER TABLE source_reliability ADD COLUMN fallback_used INTEGER NOT NULL DEFAULT 0");
+    }
+    if (!hasFallbackReason) {
+      console.log("[SR-Cache] Adding fallback_reason column");
+      await db.exec("ALTER TABLE source_reliability ADD COLUMN fallback_reason TEXT");
+    }
+    
+    // Check for identified_entity column (v2.6.37+)
+    const hasIdentifiedEntity = tableInfo.some((col) => col.name === "identified_entity");
+    if (!hasIdentifiedEntity) {
+      console.log("[SR-Cache] Adding identified_entity column");
+      await db.exec("ALTER TABLE source_reliability ADD COLUMN identified_entity TEXT");
     }
 
     // STEP 2: Now check if score column has NOT NULL constraint (notnull=1)
@@ -234,6 +262,9 @@ export interface CachedReliabilityDataFromCache {
   score: number | null;
   confidence: number;
   consensusAchieved: boolean;
+  fallbackUsed?: boolean;
+  fallbackReason?: string | null;
+  identifiedEntity?: string | null;
 }
 
 /**
@@ -278,18 +309,21 @@ export async function batchGetCachedData(
   const placeholders = domains.map(() => "?").join(",");
 
   const rows = await database.all<ScoreRow[]>(
-    `SELECT domain, score, confidence, consensus_achieved FROM source_reliability
+    `SELECT domain, score, confidence, consensus_achieved, fallback_used, fallback_reason, identified_entity FROM source_reliability
      WHERE domain IN (${placeholders}) AND expires_at > ?`,
     [...domains, now]
   );
 
   const result = new Map<string, CachedReliabilityDataFromCache>();
   for (const row of rows) {
-    result.set(row.domain, {
-      score: row.score,
-      confidence: row.confidence,
-      consensusAchieved: row.consensus_achieved === 1,
-    });
+      result.set(row.domain, {
+        score: row.score,
+        confidence: row.confidence,
+        consensusAchieved: row.consensus_achieved === 1,
+        fallbackUsed: row.fallback_used === 1,
+        fallbackReason: row.fallback_reason,
+        identifiedEntity: row.identified_entity,
+      });
   }
 
   return result;
@@ -309,7 +343,10 @@ export async function setCachedScore(
   category?: string | null,
   biasIndicator?: string | null,
   evidenceCited?: Array<{ claim: string; basis: string; recency?: string; evidenceId?: string; url?: string }> | null,
-  evidencePack?: unknown | null
+  evidencePack?: unknown | null,
+  fallbackUsed?: boolean,
+  fallbackReason?: string | null,
+  identifiedEntity?: string | null
 ): Promise<void> {
   const database = await getDb();
   const now = new Date();
@@ -326,8 +363,8 @@ export async function setCachedScore(
 
   await database.run(
     `INSERT OR REPLACE INTO source_reliability
-     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited, evidence_pack)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited, evidence_pack, fallback_used, fallback_reason, identified_entity)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       domain,
       score,
@@ -342,6 +379,9 @@ export async function setCachedScore(
       biasIndicator ?? null,
       evidenceJson,
       evidencePackJson,
+      fallbackUsed ? 1 : 0,
+      fallbackReason ?? null,
+      identifiedEntity ?? null,
     ]
   );
 }
@@ -461,6 +501,9 @@ export async function getAllCachedScores(options: {
     biasIndicator: row.bias_indicator,
     evidenceCited: row.evidence_cited,
     evidencePack: row.evidence_pack,
+    fallbackUsed: row.fallback_used === 1,
+    fallbackReason: row.fallback_reason,
+    identifiedEntity: row.identified_entity,
   }));
 
   return {
