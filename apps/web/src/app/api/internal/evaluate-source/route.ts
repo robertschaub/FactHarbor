@@ -348,6 +348,13 @@ RATING SCALE (symmetric around 0.5)
 - 0.00-0.14: highly_unreliable (Lowest standards, fabricates, resists correction)
 - null: insufficient_data (Unknown source, no assessments exist)
 
+CONSIDER (EVIDENCE-BASED)
+- Editorial standards: transparent policies, separation of news vs opinion, named editors/authors
+- Sourcing: primary documents, attribution quality, correction of misquotes/false claims
+- Corrections: visible corrections policy, speed and consistency of corrections
+- Track record: repeated independent debunks, retractions/defamation findings, major controversies (weight recency)
+- Platform vs publisher: if the domain is primarily UGC without centralized verification, do NOT treat it like an editorial outlet
+
 CALIBRATION
 - Be skeptical. Reliability is earned; lack of positive evidence degrades score.
 - Do NOT treat the "mixed (0.43-0.57)" band as a safe default for structurally low-reliability source types (e.g., open UGC platforms without centralized editorial verification). If the domain is primarily an open UGC platform, the domain-as-a-source score should generally fall below the mixed band unless evidence supports stronger verification at the domain level.
