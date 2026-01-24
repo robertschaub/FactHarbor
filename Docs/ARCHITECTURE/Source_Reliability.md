@@ -1,6 +1,6 @@
 # FactHarbor Source Reliability
 
-**Version**: 1.1 (Implemented)  
+**Version**: 1.2 (Hardened)  
 **Status**: Operational  
 **Last Updated**: 2026-01-24
 
@@ -394,6 +394,61 @@ FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
 - Score >= 0.58: Preserves original verdict (credible source)
 - Score 0.43-0.57: Moderate pull toward neutral (mixed track record)
 - Score < 0.43: Strong pull toward neutral (skepticism)
+
+---
+
+## v1.2 Hardening (January 2026)
+
+Version 1.2 introduces significant improvements to scoring accuracy, especially for propaganda and misinformation sources.
+
+### Key Changes
+
+| Feature | Description |
+|---------|-------------|
+| **SOURCE TYPE SCORE CAPS** | Deterministic ceiling enforcement: `propaganda_outlet`/`known_disinformation` → ≤14%, `state_controlled_media`/`platform_ugc` → ≤42% |
+| **Adaptive Evidence Queries** | Negative-signal queries (`propaganda`, `disinformation`, `false claims`) added when initial results are sparse |
+| **Brand Variant Matching** | Improved relevance filtering: handles `anti-spiegel` ↔ `antispiegel` ↔ `anti spiegel`, suffix stripping (`foxnews` → `fox news`) |
+| **Mechanistic Confidence** | Formula-based confidence scoring: base 0.40 + factors (fact-checkers, recency, corroboration) |
+| **Asymmetric Confidence Gating** | High scores require higher confidence (skeptical default) |
+| **Unified Thresholds** | Admin + pipeline + evaluator use same defaults (confidence: 0.8) |
+| **AGENTS.md Compliant** | Abstract examples only (no real domain names in prompts) |
+
+### Source Type Caps (Enforced Deterministically)
+
+```
+propaganda_outlet       → score ≤ 0.14 (highly_unreliable)
+known_disinformation    → score ≤ 0.14 (highly_unreliable)
+state_controlled_media  → score ≤ 0.42 (leaning_unreliable)
+platform_ugc            → score ≤ 0.42 (leaning_unreliable)
+```
+
+These caps are enforced in post-processing after LLM evaluation, ensuring deterministic behavior regardless of LLM variance.
+
+### Asymmetric Confidence Requirements
+
+High reliability scores require stronger evidence (skeptical default):
+
+| Rating | Min Confidence |
+|--------|---------------|
+| highly_reliable | 0.85 |
+| reliable | 0.80 |
+| leaning_reliable | 0.75 |
+| mixed | 0.65 |
+| leaning_unreliable | 0.55 |
+| unreliable | 0.50 |
+| highly_unreliable | 0.45 |
+
+### Shared Configuration
+
+All components now use `apps/web/src/lib/source-reliability-config.ts` for unified defaults:
+
+```typescript
+import { getSRConfig, scoreToFactualRating, SOURCE_TYPE_CAPS } from "@/lib/source-reliability-config";
+
+const config = getSRConfig();
+// config.confidenceThreshold = 0.8 (unified)
+// config.consensusThreshold = 0.15
+```
 
 ---
 

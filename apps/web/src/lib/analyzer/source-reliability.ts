@@ -13,9 +13,10 @@ import { CONFIG } from "./config";
 import { getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
 import type { ClaimVerdict, ExtractedFact, FetchedSource } from "./types";
 import { batchGetCachedData, setCachedScore, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
+import { getSRConfig, scoreToFactualRating } from "../source-reliability-config";
 
 // ============================================================================
-// CONFIGURATION
+// CONFIGURATION (using shared config for unified defaults)
 // ============================================================================
 
 const DEFAULT_SKIP_PLATFORMS =
@@ -28,22 +29,18 @@ const SKIP_PLATFORMS = (
 ).split(",");
 const SKIP_TLDS = (process.env.FH_SR_SKIP_TLDS || DEFAULT_SKIP_TLDS).split(",");
 
+// Use shared config for unified defaults across admin, pipeline, and evaluator
+const sharedConfig = getSRConfig();
+
 export const SR_CONFIG = {
-  enabled: process.env.FH_SR_ENABLED !== "false",
-  confidenceThreshold: parseFloat(
-    process.env.FH_SR_CONFIDENCE_THRESHOLD || "0.8"
-  ),
-  cacheTtlDays: parseInt(process.env.FH_SR_CACHE_TTL_DAYS || "90", 10),
-  multiModel: process.env.FH_SR_MULTI_MODEL !== "false",
-  consensusThreshold: parseFloat(
-    process.env.FH_SR_CONSENSUS_THRESHOLD || "0.15"
-  ),
-  filterEnabled: process.env.FH_SR_FILTER_ENABLED !== "false",
-  rateLimitPerIp: parseInt(process.env.FH_SR_RATE_LIMIT_PER_IP || "10", 10),
-  domainCooldownSec: parseInt(
-    process.env.FH_SR_RATE_LIMIT_DOMAIN_COOLDOWN || "60",
-    10
-  ),
+  enabled: sharedConfig.enabled,
+  confidenceThreshold: sharedConfig.confidenceThreshold, // Unified default: 0.8
+  cacheTtlDays: sharedConfig.cacheTtlDays,
+  multiModel: sharedConfig.multiModel,
+  consensusThreshold: sharedConfig.consensusThreshold,
+  filterEnabled: sharedConfig.filterEnabled,
+  rateLimitPerIp: sharedConfig.rateLimitPerIp,
+  domainCooldownSec: sharedConfig.domainCooldownSec,
 };
 
 // ============================================================================

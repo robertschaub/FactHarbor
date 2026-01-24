@@ -7,14 +7,21 @@
 
 import { NextResponse } from "next/server";
 import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore, setCachedScore, batchGetCachedData } from "@/lib/source-reliability-cache";
+import {
+  DEFAULT_CONFIDENCE_THRESHOLD,
+  DEFAULT_CONSENSUS_THRESHOLD,
+  DEFAULT_UNKNOWN_SCORE,
+  getSRConfig,
+} from "@/lib/source-reliability-config";
 
 export const runtime = "nodejs";
 
-// Get effective weight calculation config (read from env, matching source-reliability.ts)
+// Get effective weight calculation config (using shared config)
 function getConfig() {
+  const srConfig = getSRConfig();
   return {
     blendCenter: 0.5, // Fixed: mathematical neutral
-    defaultScore: parseFloat(process.env.FH_SR_DEFAULT_SCORE || "0.5"),
+    defaultScore: srConfig.defaultScore,
   };
 }
 
@@ -109,15 +116,16 @@ export async function POST(req: Request) {
     }
 
     // Check which domains already exist in cache (if not forcing re-evaluation)
-    let existingDomains = new Map<string, { score: number | null; confidence: number; consensusAchieved: boolean }>();
+    let existingDomains = new Map<string, { score: number | null; confidence: number; consensusAchieved: boolean; fallbackUsed?: boolean; fallbackReason?: string | null; identifiedEntity?: string | null }>();
     if (!forceReevaluate) {
       existingDomains = await batchGetCachedData(domains);
     }
 
-    // Get config for evaluation
-    const multiModel = process.env.FH_SR_MULTI_MODEL !== "false";
-    const confidenceThreshold = parseFloat(process.env.FH_SR_CONFIDENCE_THRESHOLD || "0.65");
-    const consensusThreshold = parseFloat(process.env.FH_SR_CONSENSUS_THRESHOLD || "0.15");
+    // Get config for evaluation (using unified defaults)
+    const srConfig = getSRConfig();
+    const multiModel = srConfig.multiModel;
+    const confidenceThreshold = srConfig.confidenceThreshold; // Unified default: 0.8
+    const consensusThreshold = srConfig.consensusThreshold;
     const runnerKey = getEnv("FH_INTERNAL_RUNNER_KEY");
 
     const results: Array<{
@@ -127,6 +135,9 @@ export async function POST(req: Request) {
       score?: number | null;
       confidence?: number;
       consensus?: boolean;
+      fallbackUsed?: boolean;
+      fallbackReason?: string | null;
+      identifiedEntity?: string | null;
       models?: string;
       error?: string;
     }> = [];
@@ -144,6 +155,9 @@ export async function POST(req: Request) {
             score: existingData.score,
             confidence: existingData.confidence,
             consensus: existingData.consensusAchieved,
+            fallbackUsed: existingData.fallbackUsed || false,
+            fallbackReason: existingData.fallbackReason || null,
+            identifiedEntity: existingData.identifiedEntity || null,
             models: "(cached)",
           });
           continue;
@@ -189,7 +203,10 @@ export async function POST(req: Request) {
           evalData.category,
           evalData.biasIndicator,
           evalData.evidenceCited,
-          evalData.evidencePack
+          evalData.evidencePack,
+          evalData.fallbackUsed || false,
+          evalData.fallbackReason || null,
+          evalData.identifiedEntity || null
         );
 
         results.push({
@@ -199,6 +216,9 @@ export async function POST(req: Request) {
           score: evalData.score,
           confidence: evalData.confidence,
           consensus: evalData.consensusAchieved,
+          fallbackUsed: evalData.fallbackUsed || false,
+          fallbackReason: evalData.fallbackReason || null,
+          identifiedEntity: evalData.identifiedEntity || null,
           models: evalData.modelSecondary 
             ? `${evalData.modelPrimary} + ${evalData.modelSecondary}`
             : evalData.modelPrimary,
