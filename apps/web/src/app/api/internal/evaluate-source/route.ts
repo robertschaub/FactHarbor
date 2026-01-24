@@ -361,7 +361,7 @@ function getEvaluationPrompt(domain: string, evidencePack: EvidencePack): string
 
   const evidenceSection = hasEvidence
     ? [
-        `EVIDENCE PACK`,
+        `## EVIDENCE PACK`,
         `The following ${evidencePack.items.length} search results are your ONLY external evidence. Base all claims on these items using their IDs (E1, E2, etc.).`,
         ``,
         ...evidencePack.items.map((it) => {
@@ -373,7 +373,7 @@ function getEvaluationPrompt(domain: string, evidencePack: EvidencePack): string
           ].join("\n");
         }),
       ].join("\n")
-    : `EVIDENCE PACK: Empty or unavailable.\nWithout external evidence, you MUST output score=null and factualRating="insufficient_data". Do not rely on pretrained knowledge.`;
+    : `## EVIDENCE PACK: Empty or unavailable.\nWithout external evidence, you MUST output score=null and factualRating="insufficient_data". Do not rely on pretrained knowledge.`;
 
   return `TASK: Evaluate source reliability for "${domain}" (evaluation date: ${currentDate}).
 
@@ -481,12 +481,70 @@ OUTPUT FORMAT (JSON only, no markdown, no commentary)
 }
 
 ─────────────────────────────────────────────────────────────────────
+FEW-SHOT EXAMPLES (Follow these patterns)
+─────────────────────────────────────────────────────────────────────
+
+**Example 1: Reliable Source (e.g. Reuters)**
+Input: "reuters.com"
+Evidence: [E1] Reuters Fact Check: Claim X is false. [E2] Reuters Editorial Standards: Strict verification...
+Output:
+{
+  "sourceType": "wire_service",
+  "evidenceQuality": { "independentAssessmentsCount": 2, "recencyWindowUsed": "2024-2026", "notes": "Strong documentation of standards and active fact-checking." },
+  "score": 0.95,
+  "confidence": 0.95,
+  "factualRating": "highly_reliable",
+  "bias": { "politicalBias": "center", "otherBias": "none_detected" },
+  "reasoning": "Reuters is a major wire service with documented high editorial standards and a robust fact-checking operation. Evidence shows consistent accuracy and prompt corrections.",
+  "evidenceCited": [
+    { "claim": "Maintains strict editorial and verification standards", "basis": "E2", "recency": "2024" },
+    { "claim": "Operates active, transparent fact-checking department", "basis": "E1", "recency": "2025" }
+  ],
+  "caveats": []
+}
+
+**Example 2: Mixed/Unreliable Source**
+Input: "example-tabloid.com"
+Evidence: [E1] PolitiFact: example-tabloid.com claim about Y is False. [E2] Snopes: example-tabloid.com fabricated story Z.
+Output:
+{
+  "sourceType": "editorial_publisher",
+  "evidenceQuality": { "independentAssessmentsCount": 2, "recencyWindowUsed": "2023-2025", "notes": "Multiple documented failures from reputable fact-checkers." },
+  "score": 0.25,
+  "confidence": 0.90,
+  "factualRating": "unreliable",
+  "bias": { "politicalBias": "right", "otherBias": "sensationalist" },
+  "reasoning": "The source has multiple documented instances of fabricating content and failing fact-checks by reputable organizations. This indicates systematic accuracy problems.",
+  "evidenceCited": [
+    { "claim": "Documented fabrication of news stories", "basis": "E2", "recency": "2023" },
+    { "claim": "Failed multiple independent fact-checks", "basis": "E1", "recency": "2024" }
+  ],
+  "caveats": ["Evaluation based on specific documented failures; overall volume of output not assessed."]
+}
+
+**Example 3: Insufficient Data**
+Input: "new-local-blog.org"
+Evidence: [E1] Mention of new-local-blog.org in a directory.
+Output:
+{
+  "sourceType": "unknown",
+  "evidenceQuality": { "independentAssessmentsCount": 0, "recencyWindowUsed": "unknown", "notes": "No independent assessments or detailed information available." },
+  "score": null,
+  "confidence": 0.20,
+  "factualRating": "insufficient_data",
+  "bias": { "politicalBias": "not_applicable", "otherBias": null },
+  "reasoning": "There is insufficient evidence to form a reliable assessment of this source's factual accuracy or editorial standards.",
+  "evidenceCited": [],
+  "caveats": ["No fact-checker data found", "Source is not widely indexed"]
+}
+
+─────────────────────────────────────────────────────────────────────
 FINAL VALIDATION (check before responding)
 ─────────────────────────────────────────────────────────────────────
 □ score falls within correct range for factualRating
 □ Every claim in evidenceCited references an evidence ID (E1, E2, etc.)
 □ Applied evidence-only rule (no pretrained knowledge)
-□ If sparse evidence or low confidence → considered insufficient_data
+□ If sparse evidence or low confidence → output insufficient_data
 □ Negative evidence caps applied where warranted
 □ Political bias separated from accuracy assessment
 `;
