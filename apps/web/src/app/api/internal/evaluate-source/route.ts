@@ -341,12 +341,19 @@ ${evidenceSection}
 RATING SCALE (symmetric around 0.5)
 - 0.86-1.00: highly_reliable (Highest standards, verified, proactively corrects)
 - 0.72-0.85: reliable (Professional standards, accurate, corrects promptly)
-- 0.58-0.71: generally_reliable (Decent standards, often accurate, corrects when notified)
+- 0.58-0.71: generally_reliable (leaning_reliable; decent standards, often accurate, corrects when notified)
 - 0.43-0.57: mixed (Known source with variable/inconsistent track record)
-- 0.29-0.42: generally_unreliable (Lax standards, often inaccurate, slow to correct)
+- 0.29-0.42: generally_unreliable (leaning_unreliable; lax standards, often inaccurate, slow to correct)
 - 0.15-0.28: unreliable (Poor standards, inaccurate, seldom corrects)
 - 0.00-0.14: highly_unreliable (Lowest standards, fabricates, resists correction)
 - null: insufficient_data (Unknown source, no assessments exist)
+
+CONSIDER (EVIDENCE-BASED)
+- Editorial standards: transparent policies, separation of news vs opinion, named editors/authors
+- Sourcing: primary documents, attribution quality, correction of misquotes/false claims
+- Corrections: visible corrections policy, speed and consistency of corrections
+- Track record: repeated independent debunks, retractions/defamation findings, major controversies (weight recency)
+- Platform vs publisher: if the domain is primarily UGC without centralized verification, do NOT treat it like an editorial outlet
 
 CALIBRATION
 - Be skeptical. Reliability is earned; lack of positive evidence degrades score.
@@ -380,7 +387,7 @@ OUTPUT (JSON only)
   },
   "score": <0.0-1.0 | null>,
   "confidence": <0.0-1.0>,
-  "factualRating": "<rating_label>",
+  "factualRating": "<rating_label: highly_reliable | reliable | generally_reliable | mixed | generally_unreliable | unreliable | highly_unreliable | insufficient_data>",
   "bias": {"politicalBias": "<value>", "otherBias": "<value|null>"},
   "reasoning": "<2-3 sentence justification>",
   "evidenceCited": [{"claim": "<assertion>", "basis": "<MUST reference E# from EVIDENCE_PACK if provided>", "recency": "<period>"}],
