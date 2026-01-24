@@ -133,7 +133,7 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 
 ---
 
-## Current State (v2.6.34)
+## Current State (v2.6.35)
 
 ### Working Features
 - ✅ Multi-scope detection and display

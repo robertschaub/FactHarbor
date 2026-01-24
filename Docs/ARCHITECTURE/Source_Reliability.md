@@ -1,8 +1,8 @@
 # FactHarbor Source Reliability
 
-**Version**: 1.0 (Implemented)  
+**Version**: 1.1 (Implemented)  
 **Status**: Operational  
-**Last Updated**: 2026-01-21
+**Last Updated**: 2026-01-24
 
 ---
 
@@ -775,3 +775,7 @@ cd apps/web && npm test -- src/app/api/internal/evaluate-source/evaluate-source.
 For the original architecture proposal and review history, see:
 - [Source_Reliability_Service_Proposal.md](../ARCHIVE/Source_Reliability_Service_Proposal.md) (archived)
 - [Review documents](../ARCHIVE/) (archived)
+
+## Related Documentation
+
+- [Source_Reliability_Prompt_Improvements.md](./Source_Reliability_Prompt_Improvements.md) - Detailed changelog of LLM prompt improvements (2026-01-24)

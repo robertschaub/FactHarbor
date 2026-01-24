@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
-**Last Updated**: January 21, 2026  
-**Current Version**: 2.6.34  
+**Last Updated**: January 24, 2026  
+**Current Version**: 2.6.35  
 **Schema Version**: 2.7.0
 
 ---
@@ -42,6 +42,42 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 ---
 
 ## Version History
+
+### v2.6.35 (January 24, 2026)
+
+**Focus**: Source Reliability Prompt Improvements & Cleanup
+
+**Major Changes**:
+
+1. **Source Reliability Prompt Improvements**: Comprehensive LLM prompt enhancements for better evaluation stability
+   - Restructured prompt hierarchy with CRITICAL RULES section at top
+   - Quantified "insufficient data" thresholds (zero fact-checkers + ≤1 weak mention → score=null)
+   - Mechanistic confidence scoring formula (base 0.40 + additive factors)
+   - Numeric negative evidence caps (3+ failures → ≤0.42, 1-2 failures → ≤0.57)
+   - Quantified recency weighting (0-12mo: 1.0×, 12-24mo: 0.8×, 2-5yr: 0.5×, >5yr: 0.2×)
+   - Evidence quality hierarchy (HIGH/MEDIUM/LOW weight sources)
+   - Enhanced calibration examples showing formula application
+   - Expanded final validation checklist
+
+2. **Schema Cleanup (YAGNI)**: Removed unused `dimensionScores` field from evaluation schema
+   - Was added speculatively in v2.6.34 but never integrated into prompt
+   - No functionality impact - field was never populated or used
+   - Reduces schema complexity
+
+**Expected Improvements**:
+- Insufficient data detection: ~60% → ~85% consistency
+- Confidence scoring variance: ±0.20 → ±0.10
+- Negative evidence cap application: ~70% → ~90% correct
+- Inter-model agreement: 75% → 85% within ±0.10
+
+**Documentation Updates**:
+- New: `Docs/ARCHITECTURE/Source_Reliability_Prompt_Improvements.md`
+- Updated: `Docs/ARCHITECTURE/Source_Reliability.md` (v1.0 → v1.1)
+
+**Files Modified**:
+- `apps/web/src/app/api/internal/evaluate-source/route.ts` (prompt improvements + schema cleanup)
+
+---
 
 ### v2.6.34 (January 21, 2026)
 

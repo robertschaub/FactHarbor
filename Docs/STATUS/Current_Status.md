@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.34 (Code) | 2.7.0 (Schema Output)  
-**Last Updated**: 2026-01-21  
+**Version**: 2.6.35 (Code) | 2.7.0 (Schema Output)  
+**Last Updated**: 2026-01-24  
 **Status**: POC1 Operational
 
 ---
@@ -265,6 +265,15 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ## Recent Changes
 
+### v2.6.35 (January 24, 2026)
+- **Source Reliability Prompt Improvements**: Comprehensive LLM prompt enhancements
+  - Quantified thresholds for insufficient data, confidence scoring, and negative evidence caps
+  - Mechanistic confidence formula (base 0.40 + additive factors)
+  - Evidence quality hierarchy and recency weighting
+  - Expected: ~25% improvement in insufficient data detection, 50% reduction in confidence variance
+- **Schema Cleanup**: Removed unused `dimensionScores` field (YAGNI - never integrated)
+- **Documentation**: New `Source_Reliability_Prompt_Improvements.md`, updated main SR docs to v1.1
+
 ### v2.6.34 (January 2026)
 - **Source Reliability Service Implemented**: Full LLM-powered source evaluation with multi-model consensus
   - Batch prefetch + sync lookup pattern for pipeline integration
@@ -430,6 +439,6 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ---
 
-**Last Updated**: January 19, 2026  
-**Actual Version**: 2.6.33 (Code) | 2.7.0 (Schema)  
+**Last Updated**: January 24, 2026  
+**Actual Version**: 2.6.35 (Code) | 2.7.0 (Schema)  
 **Document Status**: Corrected to reflect actual implementation state
