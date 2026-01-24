@@ -376,12 +376,10 @@ RATING SCALE (symmetric around 0.5)
 - 0.00-0.14: highly_unreliable
 - null: insufficient_data
 
-CONSIDER (EVIDENCE-BASED)
-- Editorial standards: transparent policies, separation of news vs opinion, named editors/authors
-- Sourcing: primary documents, attribution quality, correction of misquotes/false claims
-- Corrections: visible corrections policy, speed and consistency of corrections
-- Track record: repeated independent debunks, retractions/defamation findings, major controversies (weight recency)
-- Platform vs publisher: if the domain is primarily UGC without centralized verification, do NOT treat it like an editorial outlet
+CONSIDER ASPECTS
+- Professional standards (editorial standards, separation of news vs opinion, transparency)
+- Accuracy (sourcing quality, primary documents, attribution, repeated independent debunks)
+- Error correction practices (visible corrections policy, corrections/retractions, responsiveness)
 
 CALIBRATION
 - Be skeptical. Reliability is earned; lack of positive evidence degrades score.
