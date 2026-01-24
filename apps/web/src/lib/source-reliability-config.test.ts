@@ -146,8 +146,8 @@ describe("meetsConfidenceRequirement (asymmetric gating)", () => {
   });
 
   it("requires moderate confidence for reliable", () => {
-    expect(meetsConfidenceRequirement("reliable", 0.80)).toBe(true);
-    expect(meetsConfidenceRequirement("reliable", 0.79)).toBe(false);
+    expect(meetsConfidenceRequirement("reliable", 0.75)).toBe(true);
+    expect(meetsConfidenceRequirement("reliable", 0.74)).toBe(false);
   });
 
   it("requires moderate confidence for leaning_reliable", () => {

@@ -432,12 +432,12 @@ High reliability scores require stronger evidence (skeptical default):
 | Rating | Min Confidence |
 |--------|---------------|
 | highly_reliable | 0.85 |
-| reliable | 0.80 |
-| leaning_reliable | 0.75 |
-| mixed | 0.65 |
-| leaning_unreliable | 0.55 |
-| unreliable | 0.50 |
-| highly_unreliable | 0.45 |
+| reliable | 0.75 |
+| leaning_reliable | 0.65 |
+| mixed | 0.55 |
+| leaning_unreliable | 0.50 |
+| unreliable | 0.45 |
+| highly_unreliable | 0.40 |
 
 ### Shared Configuration
 

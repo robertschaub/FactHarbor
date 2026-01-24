@@ -142,7 +142,7 @@ export const WEAK_FOUNDEDNESS_THRESHOLD = 2;
  */
 export const CONFIDENCE_REQUIREMENTS: Record<string, number> = {
   highly_reliable: 0.85,      // Need strong evidence for best rating
-  reliable: 0.80,             // Need good evidence
+  reliable: 0.75,             // Lowered from 0.80 - consensus boost often lands ~79%
   leaning_reliable: 0.65,     // Lowered from 0.70 - allows consensus to pass more easily
   mixed: 0.55,                // Lowered from 0.65 - allows borderline sources
   leaning_unreliable: 0.50,   // Lowered from 0.55

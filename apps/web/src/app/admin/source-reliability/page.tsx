@@ -668,7 +668,7 @@ export default function SourceReliabilityPage() {
                   <th onClick={() => handleSort("domain")} className={styles.sortable}>
                     Domain {sortBy === "domain" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
-                  <th style={{ width: "120px" }}>Entity</th>
+                  <th>Entity</th>
                   <th onClick={() => handleSort("score")} className={styles.sortable} style={{ width: "70px", textAlign: "center" }}>
                     Score {sortBy === "score" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
