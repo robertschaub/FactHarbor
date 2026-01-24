@@ -373,7 +373,7 @@ function getEvaluationPrompt(domain: string, evidencePack: EvidencePack): string
           ].join("\n");
         }),
       ].join("\n")
-    : `EVIDENCE PACK: Empty or unavailable.\nWithout external evidence, you MUST output score=null and factualRating="insufficient_data" unless the source is definitively known disinformation.`;
+    : `EVIDENCE PACK: Empty or unavailable.\nWithout external evidence, you MUST output score=null and factualRating="insufficient_data". Do not rely on pretrained knowledge.`;
 
   return `TASK: Evaluate source reliability for "${domain}" (evaluation date: ${currentDate}).
 
@@ -409,13 +409,18 @@ EVALUATION RULES
    - Multiple fact-checker failures or systematic bias affecting accuracy → score ≤ 0.42 (leaning_unreliable)
    - Single significant failure from reputable fact-checker → score ≤ 0.57 (mixed)
 
-4. RECENCY WEIGHTING
+4. EVIDENCE QUALITY PRIORITY
+   - Prioritize explicit fact-checker assessments and documented corrections
+   - Reputable newsroom analyses are medium weight
+   - Single blogs/forums or thin mentions are low weight and should not trigger caps alone
+
+5. RECENCY WEIGHTING
    - Last 12 months: full weight
    - 12-24 months: high weight
    - 2-5 years: moderate weight (organization may have changed)
    - >5 years: low weight (only if pattern persists to present)
 
-5. CONFIDENCE SCORING (0.0–1.0)
+6. CONFIDENCE SCORING (0.0–1.0)
    Confidence = how well the evidence supports the verdict you're giving.
    - 0.85+ : Strong — fact-checker rating(s) or multiple corroborating sources
    - 0.7–0.85 : Good — at least one credible assessment or consistent pattern across sources
@@ -423,10 +428,11 @@ EVALUATION RULES
    - 0.4–0.55 : Limited — sparse but usable evidence, verdict is tentative
    - <0.4 : Insufficient — consider score=null / insufficient_data instead
 
-6. BIAS HANDLING
+7. BIAS HANDLING
    - Political lean alone does NOT reduce score
    - Bias + factual failures = reduced score
    - Bias without documented accuracy issues = note in bias fields only
+   - If evidence does not address bias, use politicalBias="not_applicable" and otherBias=null
 
 ─────────────────────────────────────────────────────────────────────
 SOURCE TYPE CRITERIA
@@ -465,7 +471,7 @@ otherBias: pro_government | anti_government | corporate_interest | sensationalis
 OUTPUT FORMAT (JSON only, no markdown, no commentary)
 ─────────────────────────────────────────────────────────────────────
 {
-  "sourceType": "string (from list above)",
+  "sourceType": "editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown",
   "evidenceQuality": {
     "independentAssessmentsCount": "number 0-10",
     "recencyWindowUsed": "string, e.g. '2024-2026' or 'unknown'",
