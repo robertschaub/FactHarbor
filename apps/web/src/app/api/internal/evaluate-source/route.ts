@@ -76,14 +76,6 @@ const EvaluationResultSchema = z.object({
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
   factualRating: FactualRatingSchema,
-  // Dimension scores for multi-criteria evaluation
-  dimensionScores: z.object({
-    factualAccuracy: z.number().min(0).max(30),       // 0-30 points
-    opinionFactSeparation: z.number().min(0).max(25), // 0-25 points
-    sourceAttribution: z.number().min(0).max(20),     // 0-20 points
-    correctionPractices: z.number().min(0).max(15),   // 0-15 points
-    biasPenalty: z.number().min(-10).max(0),          // -10 to 0 points
-  }).optional(),
   // Bias fields are informational only; keep permissive to avoid hard-failing
   // the entire evaluation on minor label differences.
   biasIndicator: z.string().optional(),
