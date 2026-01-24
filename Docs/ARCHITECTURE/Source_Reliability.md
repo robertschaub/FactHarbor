@@ -2,7 +2,7 @@
 
 **Version**: 1.2 (Hardened)  
 **Status**: Operational  
-**Last Updated**: 2026-01-24
+**Last Updated**: 2026-01-24 (v2.6.37)
 
 ---
 
@@ -405,6 +405,7 @@ Version 1.2 introduces significant improvements to scoring accuracy, especially 
 
 | Feature | Description |
 |---------|-------------|
+| **Entity-Level Evaluation** | Prioritize organization reputation (e.g., SRF, BBC) over domain-only metrics when the domain is a primary outlet. |
 | **SOURCE TYPE SCORE CAPS** | Deterministic ceiling enforcement: `propaganda_outlet`/`known_disinformation` → ≤14%, `state_controlled_media`/`platform_ugc` → ≤42% |
 | **Adaptive Evidence Queries** | Negative-signal queries (`propaganda`, `disinformation`, `false claims`) added when initial results are sparse |
 | **Brand Variant Matching** | Improved relevance filtering: handles `anti-spiegel` ↔ `antispiegel` ↔ `anti spiegel`, suffix stripping (`foxnews` → `fox news`) |
@@ -498,6 +499,14 @@ Per review feedback, the system avoids categorical assumptions:
 - Scores derived from demonstrated track record, not institutional prestige
 - Editorial independence matters - state control is a negative factor
 
+### Entity-Level Evaluation
+
+When a domain is the primary digital outlet for a larger organization (e.g., a TV channel, newspaper, or media group), the evaluation must focus on the reliability of the entire organization.
+
+- **Scope**: If the domain name (e.g., `srf.ch`) or the website's branding closely matches an organization name (e.g., "SRF" or "Schweizer Radio und Fernsehen"), the whole organization shall be rated.
+- **Legacy Media**: Public broadcasters and established legacy media (e.g., BBC, NPR, SRF) should be evaluated based on their institutional standards and editorial oversight.
+- **Consistency**: This prevents high-quality organizations from being underrated due to narrow domain-focused metrics.
+
 ### Dynamic Assessment
 
 - Sources can gain or lose credibility over time
@@ -561,6 +570,7 @@ interface CachedReliabilityData {
   score: number;
   confidence: number;
   consensusAchieved: boolean;
+  identifiedEntity?: string;
 }
 
 // Phase 3: Apply to verdicts (sync)

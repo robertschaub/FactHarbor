@@ -35,28 +35,6 @@ public sealed class RunnerClient
         _maxRetryDelayMs = cfg.GetValue("Runner:MaxRetryDelayMs", 30000);
     }
 
-    // #region agent log
-    private static void FhDebugLog(string hypothesisId, string location, string message, object data)
-    {
-        // Never log secrets (keys/tokens/PII). Job IDs and coarse timings are OK.
-        try
-        {
-            var line = JsonSerializer.Serialize(new
-            {
-                sessionId = "debug-session",
-                runId = "runner-timeout-investigation",
-                hypothesisId,
-                location,
-                message,
-                data,
-                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-            });
-            File.AppendAllText(@"c:\DEV\FactHarbor\.cursor\debug.log", line + "\n");
-        }
-        catch { /* best-effort */ }
-    }
-    // #endregion agent log
-
     /// <summary>
     /// Triggers the runner with automatic retry on transient failures.
     /// Uses exponential backoff with jitter.
@@ -111,16 +89,6 @@ public sealed class RunnerClient
                 // Non-transient error or final attempt
                 lastException = ex;
                 _log.LogError(ex, "Runner trigger failed (attempt {Attempt}/{MaxRetries}). JobId={JobId}", attempt, _maxRetries, jobId);
-
-                // #region agent log
-                FhDebugLog("H1", "apps/api/Services/RunnerClient.cs:TriggerRunnerAsync:fail", "Trigger attempt failed", new
-                {
-                    jobId,
-                    attempt,
-                    exType = ex.GetType().Name,
-                    msg = ex.Message.Length > 400 ? ex.Message[..400] : ex.Message
-                });
-                // #endregion agent log
 
                 if (attempt == _maxRetries)
                 {

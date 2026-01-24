@@ -22,8 +22,8 @@ describe("Source Reliability Config - Constants", () => {
     expect(DEFAULT_CONFIDENCE_THRESHOLD).toBe(0.8);
   });
 
-  it("has correct default consensus threshold (0.15)", () => {
-    expect(DEFAULT_CONSENSUS_THRESHOLD).toBe(0.15);
+  it("has correct default consensus threshold (0.20)", () => {
+    expect(DEFAULT_CONSENSUS_THRESHOLD).toBe(0.20);
   });
 
   it("has correct default unknown score (0.5)", () => {
@@ -150,14 +150,29 @@ describe("meetsConfidenceRequirement (asymmetric gating)", () => {
     expect(meetsConfidenceRequirement("reliable", 0.79)).toBe(false);
   });
 
+  it("requires moderate confidence for leaning_reliable", () => {
+    expect(meetsConfidenceRequirement("leaning_reliable", 0.65)).toBe(true);
+    expect(meetsConfidenceRequirement("leaning_reliable", 0.64)).toBe(false);
+  });
+
+  it("allows lower bar for mixed", () => {
+    expect(meetsConfidenceRequirement("mixed", 0.55)).toBe(true);
+    expect(meetsConfidenceRequirement("mixed", 0.54)).toBe(false);
+  });
+
+  it("allows lower bar for leaning_unreliable", () => {
+    expect(meetsConfidenceRequirement("leaning_unreliable", 0.50)).toBe(true);
+    expect(meetsConfidenceRequirement("leaning_unreliable", 0.49)).toBe(false);
+  });
+
   it("allows lower confidence for unreliable", () => {
-    expect(meetsConfidenceRequirement("unreliable", 0.50)).toBe(true);
-    expect(meetsConfidenceRequirement("unreliable", 0.49)).toBe(false);
+    expect(meetsConfidenceRequirement("unreliable", 0.45)).toBe(true);
+    expect(meetsConfidenceRequirement("unreliable", 0.44)).toBe(false);
   });
 
   it("allows lowest confidence for highly_unreliable", () => {
-    expect(meetsConfidenceRequirement("highly_unreliable", 0.45)).toBe(true);
-    expect(meetsConfidenceRequirement("highly_unreliable", 0.44)).toBe(false);
+    expect(meetsConfidenceRequirement("highly_unreliable", 0.40)).toBe(true);
+    expect(meetsConfidenceRequirement("highly_unreliable", 0.39)).toBe(false);
   });
 
   it("always allows insufficient_data", () => {

@@ -15,32 +15,6 @@
  * @module api/internal/evaluate-source
  */
 
-// #region debug logging helper - writes to debug-sr-eval.log
-import * as fs from "fs";
-import * as path from "path";
-
-const DEBUG_LOG_PATH = path.join(process.cwd(), "debug-sr-eval.log");
-
-function debugLog(location: string, message: string, data: Record<string, unknown>, tag?: string) {
-  try {
-    const timestamp = new Date().toISOString();
-    const tagStr = tag ? `[${tag}]` : "";
-    const entry = `${timestamp} ${tagStr} [${location}] ${message}\n${JSON.stringify(data, null, 2)}\n\n`;
-    fs.appendFileSync(DEBUG_LOG_PATH, entry);
-  } catch {
-    // Ignore logging errors
-  }
-}
-
-function clearDebugLog() {
-  try {
-    fs.writeFileSync(DEBUG_LOG_PATH, `=== SR Evaluation Debug Log ===\nStarted: ${new Date().toISOString()}\n\n`);
-  } catch {
-    // Ignore errors
-  }
-}
-// #endregion
-
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { generateText } from "ai";
@@ -400,10 +374,6 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   const brandPrefix = isUsableBrandToken(brand) ? `${brand} ` : "";
   const domainToken = `"${domain}"`;
 
-  // #region agent log
-  debugLog('route.ts:buildEvidencePack', 'Brand variants generated', { domain, brand, brandVariants, brandPrefix }, 'H2');
-  // #endregion
-
   // Phase 1: Standard queries (Domain + Brand)
   const standardQueries = [
     `${brandPrefix}${domainToken} fact check reliability`,
@@ -501,10 +471,6 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     query: it.query,
     provider: it.provider,
   }));
-
-  // #region agent log
-  debugLog('route.ts:buildEvidencePack:end', 'Evidence pack built', { domain, itemCount: items.length, queries: allQueries, itemTitles: items.map(i => i.title.slice(0, 60)) }, 'H3');
-  // #endregion
 
   return { enabled: true, providersUsed, queries: allQueries, items };
 }
@@ -926,10 +892,6 @@ function applyPostProcessing(result: EvaluationResult, evidencePack: EvidencePac
   // Make a mutable copy
   const processed = { ...result, caveats: [...(result.caveats ?? [])] };
 
-  // #region agent log
-  debugLog('route.ts:applyPostProcessing:entry', 'Post-processing entry', { sourceType: result.sourceType, originalScore: result.score, factualRating: result.factualRating, confidence: result.confidence }, 'H1');
-  // #endregion
-
   // Skip if score is null (insufficient_data)
   if (processed.score === null) {
     processed.factualRating = "insufficient_data";
@@ -940,15 +902,8 @@ function applyPostProcessing(result: EvaluationResult, evidencePack: EvidencePac
   const sourceType = processed.sourceType ?? "";
   const cap = SOURCE_TYPE_CAPS[sourceType];
   
-  // #region agent log
-  debugLog('route.ts:applyPostProcessing:capCheck', 'Checking source type cap', { sourceType, cap, currentScore: processed.score, capDefined: cap !== undefined, wouldApply: cap !== undefined && processed.score > cap }, 'H1');
-  // #endregion
-  
   if (cap !== undefined && processed.score > cap) {
     console.log(`[SR-Eval] Enforcing ${sourceType} cap: ${processed.score.toFixed(2)} → ${cap.toFixed(2)}`);
-    // #region agent log
-    debugLog('route.ts:applyPostProcessing:capApplied', 'CAP APPLIED', { sourceType, cap, beforeScore: processed.score, afterScore: cap }, 'H5');
-    // #endregion
     processed.caveats.push(
       `Score capped from ${(processed.score * 100).toFixed(0)}% to ${(cap * 100).toFixed(0)}% due to sourceType="${sourceType}" classification.`
     );
@@ -1111,16 +1066,8 @@ Always respond with valid JSON only.`
 
     let result = EvaluationResultSchema.parse(parsed);
 
-    // #region agent log
-    debugLog('route.ts:evaluateWithModel:rawLLM', 'Raw LLM result before post-processing', { modelProvider, domain, sourceType: result.sourceType, score: result.score, confidence: result.confidence, factualRating: result.factualRating }, 'H1');
-    // #endregion
-
     // Apply post-processing (caps, alignment)
     result = applyPostProcessing(result, evidencePack);
-
-    // #region agent log
-    debugLog('route.ts:evaluateWithModel:afterPostProcessing', 'Result after post-processing', { modelProvider, domain, sourceType: result.sourceType, score: result.score, factualRating: result.factualRating, caveatsCount: result.caveats?.length }, 'H5');
-    // #endregion
 
     const scoreStr = result.score !== null ? result.score.toFixed(2) : "null";
     console.log(`[SR-Eval] ${modelProvider.toUpperCase()} SUCCESS: score=${scoreStr}, confidence=${result.confidence.toFixed(2)}, rating=${result.factualRating}, type=${result.sourceType || "unknown"}`);
@@ -1157,34 +1104,17 @@ async function evaluateSourceWithConsensus(
   confidenceThreshold: number,
   consensusThreshold: number
 ): Promise<{ success: true; data: ResponsePayload } | { success: false; error: EvaluationError }> {
-  // Clear log on new evaluation
-  clearDebugLog();
-  
-  debugLog("evaluateSourceWithConsensus", `Starting evaluation for ${domain}`, {
-    multiModel,
-    confidenceThreshold,
-    consensusThreshold,
-  }, "START");
-
   const evidencePack = await buildEvidencePack(domain);
   if (evidencePack.enabled) {
     console.log(
       `[SR-Eval] Evidence pack for ${domain}: ${evidencePack.items.length} items (providers: ${evidencePack.providersUsed.join(", ") || "unknown"})`
     );
-    
-    debugLog("evaluateSourceWithConsensus", `Evidence pack built`, {
-      domain,
-      itemCount: evidencePack.items.length,
-      providers: evidencePack.providersUsed,
-      items: evidencePack.items.map(i => ({ title: i.title?.slice(0, 60), url: i.url })),
-    }, "EVIDENCE");
   }
 
   // Primary evaluation (Anthropic Claude)
   const primary = await evaluateWithModel(domain, "anthropic", evidencePack);
   if (!primary) {
     console.log(`[SR-Eval] Primary evaluation failed for ${domain}`);
-    debugLog("evaluateSourceWithConsensus", "Primary model FAILED", { domain }, "ERROR");
     return {
       success: false,
       error: {
@@ -1194,117 +1124,35 @@ async function evaluateSourceWithConsensus(
     };
   }
 
-  debugLog("evaluateSourceWithConsensus", "PRIMARY (Claude) result", {
-    domain,
-    model: primary.modelName,
-    score: primary.result.score,
-    scorePercent: primary.result.score !== null ? `${(primary.result.score * 100).toFixed(0)}%` : "N/A",
-    confidence: primary.result.confidence,
-    confidencePercent: `${(primary.result.confidence * 100).toFixed(0)}%`,
-    factualRating: primary.result.factualRating,
-    sourceType: primary.result.sourceType,
-    reasoning: primary.result.reasoning?.slice(0, 200),
-  }, "PRIMARY");
-
   // Handle insufficient_data case
   if (primary.result.factualRating === "insufficient_data" || primary.result.score === null) {
     console.log(`[SR-Eval] Insufficient data for ${domain}`);
-    debugLog("evaluateSourceWithConsensus", "Returning insufficient_data (primary)", { domain }, "RESULT");
     return {
       success: true,
       data: buildResponsePayload(primary.result, primary.modelName, null, true, evidencePack),
     };
   }
 
-  // Check asymmetric confidence requirement
-  // MOVED: This check now happens AFTER consensus/fallback to allow multi-model agreement
-  // to overcome lower individual model confidence.
-  
-  /* 
-  const rating = primary.result.factualRating as FactualRating;
-  const meetsConfReq = meetsConfidenceRequirement(rating, primary.result.confidence);
-  
-  debugLog("evaluateSourceWithConsensus", "Confidence check", {
-    domain,
-    rating,
-    confidence: primary.result.confidence,
-    meetsRequirement: meetsConfReq,
-  }, "CONFIDENCE");
-  
-  if (!meetsConfReq) {
-    console.log(`[SR-Eval] Confidence ${primary.result.confidence.toFixed(2)} too low for rating "${rating}" for ${domain}`);
-    return {
-      success: true,
-      data: {
-        score: null,
-        confidence: primary.result.confidence,
-        modelPrimary: primary.modelName,
-        modelSecondary: null,
-        consensusAchieved: false,
-        reasoning: primary.result.reasoning,
-        category: "insufficient_data",
-        evidencePack: {
-          providersUsed: evidencePack.providersUsed,
-          queries: evidencePack.queries,
-          items: evidencePack.items,
-        },
-        biasIndicator: extractBiasIndicator(primary.result.bias),
-        bias: primary.result.bias,
-        evidenceCited: primary.result.evidenceCited,
-        caveats: [
-          ...(primary.result.caveats ?? []),
-          `Confidence ${(primary.result.confidence * 100).toFixed(0)}% insufficient for "${rating}" rating; returning insufficient_data.`,
-        ],
-      },
-    };
-  }
-  */
-
-  // Legacy confidence threshold check (backward compatibility)
-  // MOVED: Also moved after consensus
-  /*
-  if (primary.result.confidence < confidenceThreshold) {
-    console.log(`[SR-Eval] Confidence too low for ${domain}: ${primary.result.confidence} < ${confidenceThreshold}`);
-    return {
-      success: true,
-      data: {
-        score: null,
-        confidence: primary.result.confidence,
-        modelPrimary: primary.modelName,
-        modelSecondary: null,
-        consensusAchieved: false,
-        reasoning: primary.result.reasoning,
-        category: "insufficient_data",
-        evidencePack: {
-          providersUsed: evidencePack.providersUsed,
-          queries: evidencePack.queries,
-          items: evidencePack.items,
-        },
-        biasIndicator: extractBiasIndicator(primary.result.bias),
-        bias: primary.result.bias,
-        evidenceCited: primary.result.evidenceCited,
-        caveats: [
-          ...(primary.result.caveats ?? []),
-          `Low confidence ${(primary.result.confidence * 100).toFixed(0)}% is below threshold ${(confidenceThreshold * 100).toFixed(0)}%; returning insufficient_data (score=null).`,
-        ],
-      },
-    };
-  }
-  */
-
-  // Single model mode
+  // Single-model mode: Skip secondary evaluation if multiModel is disabled
   if (!multiModel) {
+    console.log(`[SR-Eval] Single-model mode: Using primary only for ${domain}`);
     return {
       success: true,
-      data: buildResponsePayload(primary.result, primary.modelName, null, true, evidencePack),
+      data: buildResponsePayload(
+        primary.result,
+        primary.modelName,
+        null,
+        true, // consensusAchieved = true in single-model mode (no disagreement possible)
+        evidencePack
+        // No score/confidence override - use full primary confidence
+      ),
     };
   }
 
-  // Multi-model: Secondary evaluation (OpenAI GPT-4)
+  // Multi-model: Secondary evaluation (OpenAI GPT-5 mini)
   const secondary = await evaluateWithModel(domain, "openai", evidencePack);
   if (!secondary) {
     console.log(`[SR-Eval] Secondary evaluation failed for ${domain}, using primary only`);
-    debugLog("evaluateSourceWithConsensus", "Secondary model FAILED", { domain }, "ERROR");
     return {
       success: true,
       data: buildResponsePayload(
@@ -1314,27 +1162,14 @@ async function evaluateSourceWithConsensus(
         false,
         evidencePack,
         primary.result.score,
-        primary.result.confidence * 0.8
+        primary.result.confidence * 0.8 // Reduced confidence when secondary fails in multi-model mode
       ),
     };
   }
 
-  debugLog("evaluateSourceWithConsensus", "SECONDARY (GPT-5 mini) result", {
-    domain,
-    model: secondary.modelName,
-    score: secondary.result.score,
-    scorePercent: secondary.result.score !== null ? `${(secondary.result.score * 100).toFixed(0)}%` : "N/A",
-    confidence: secondary.result.confidence,
-    confidencePercent: `${(secondary.result.confidence * 100).toFixed(0)}%`,
-    factualRating: secondary.result.factualRating,
-    sourceType: secondary.result.sourceType,
-    reasoning: secondary.result.reasoning?.slice(0, 200),
-  }, "SECONDARY");
-
   // Handle case where secondary returns insufficient_data
   if (secondary.result.factualRating === "insufficient_data" || secondary.result.score === null) {
     console.log(`[SR-Eval] Secondary model returned insufficient_data for ${domain}, using primary only`);
-    debugLog("evaluateSourceWithConsensus", "Secondary returned insufficient_data, using primary only", { domain }, "FALLBACK");
     return {
       success: true,
       data: buildResponsePayload(
@@ -1358,27 +1193,10 @@ async function evaluateSourceWithConsensus(
   const primaryType = primary.result.sourceType ?? "";
   const secondaryType = secondary.result.sourceType ?? "";
   
-  debugLog("evaluateSourceWithConsensus", "SourceType comparison", {
-    domain,
-    primaryType,
-    secondaryType,
-    primaryInSevere: severeTypes.has(primaryType),
-    secondaryInSevere: severeTypes.has(secondaryType),
-  }, "SOURCETYPE");
-  
   let adjustedSecondary = secondary;
   if (severeTypes.has(secondaryType) && !severeTypes.has(primaryType)) {
     // Secondary is more severe - adjust it
     console.log(`[SR-Eval] SourceType disagreement: primary="${primaryType}" vs secondary="${secondaryType}"`);
-    
-    debugLog("evaluateSourceWithConsensus", "SOURCETYPE DISAGREEMENT - adjusting secondary", {
-      domain,
-      primaryType,
-      secondaryType,
-      action: `Adjusting secondary from "${secondaryType}" to "${primaryType}"`,
-      primaryScore: primary.result.score,
-      secondaryScore: secondary.result.score,
-    }, "ADJUST");
     
     // Create adjusted copy with less severe classification
     const adjustedResult = {
@@ -1408,21 +1226,6 @@ async function evaluateSourceWithConsensus(
   const scoreDiff = Math.abs(primary.result.score - (adjustedSecondary.result.score ?? 0));
   const consensusAchieved = scoreDiff <= consensusThreshold;
 
-  debugLog("evaluateSourceWithConsensus", "CONSENSUS CHECK", {
-    domain,
-    primaryScore: primary.result.score,
-    primaryScorePercent: `${(primary.result.score * 100).toFixed(0)}%`,
-    secondaryScore: adjustedSecondary.result.score,
-    secondaryScorePercent: adjustedSecondary.result.score !== null ? `${(adjustedSecondary.result.score * 100).toFixed(0)}%` : "N/A",
-    scoreDiff,
-    scoreDiffPercent: `${(scoreDiff * 100).toFixed(0)}%`,
-    consensusThreshold,
-    consensusThresholdPercent: `${(consensusThreshold * 100).toFixed(0)}%`,
-    consensusAchieved,
-    primarySourceType: primary.result.sourceType,
-    secondarySourceType: adjustedSecondary.result.sourceType,
-  }, "CONSENSUS");
-
   if (!consensusAchieved) {
     console.log(
       `[SR-Eval] No consensus for ${domain}: ${primary.result.score.toFixed(2)} vs ${adjustedSecondary.result.score?.toFixed(2)} (diff: ${scoreDiff.toFixed(2)} > ${consensusThreshold})`
@@ -1435,18 +1238,6 @@ async function evaluateSourceWithConsensus(
     if (primaryConf >= secondaryConf) {
       // Claude has higher or equal confidence - use its result with fallback flag
       const fallbackReason = `Models disagreed (${(scoreDiff * 100).toFixed(0)}% diff). Using Claude result (${(primaryConf * 100).toFixed(0)}% confidence vs GPT-5 mini ${(secondaryConf * 100).toFixed(0)}%).`;
-      
-      debugLog("evaluateSourceWithConsensus", "CONSENSUS FAILED - FALLBACK to Claude", {
-        domain,
-        reason: "fallback_to_primary",
-        primaryScore: `${(primary.result.score * 100).toFixed(0)}%`,
-        primaryConfidence: `${(primaryConf * 100).toFixed(0)}%`,
-        secondaryScore: `${((adjustedSecondary.result.score ?? 0) * 100).toFixed(0)}%`,
-        secondaryConfidence: `${(secondaryConf * 100).toFixed(0)}%`,
-        diff: `${(scoreDiff * 100).toFixed(0)}%`,
-        threshold: `${(consensusThreshold * 100).toFixed(0)}%`,
-        fallbackReason,
-      }, "FALLBACK");
       
       console.log(`[SR-Eval] Fallback to Claude for ${domain}: ${fallbackReason}`);
       
@@ -1476,18 +1267,6 @@ async function evaluateSourceWithConsensus(
     
     // Secondary has higher confidence - use GPT-5 mini (the more confident model)
     const fallbackReason = `Models disagreed (${(scoreDiff * 100).toFixed(0)}% diff). Using GPT-5 mini (${(secondaryConf * 100).toFixed(0)}% confidence vs Claude ${(primaryConf * 100).toFixed(0)}%).`;
-    
-    debugLog("evaluateSourceWithConsensus", "CONSENSUS FAILED - FALLBACK to GPT-5 mini (more confident)", {
-      domain,
-      reason: "fallback_to_secondary",
-      primaryScore: `${(primary.result.score * 100).toFixed(0)}%`,
-      primaryConfidence: `${(primaryConf * 100).toFixed(0)}%`,
-      secondaryScore: `${((adjustedSecondary.result.score ?? 0) * 100).toFixed(0)}%`,
-      secondaryConfidence: `${(secondaryConf * 100).toFixed(0)}%`,
-      diff: `${(scoreDiff * 100).toFixed(0)}%`,
-      threshold: `${(consensusThreshold * 100).toFixed(0)}%`,
-      fallbackReason,
-    }, "FALLBACK");
     
     console.log(`[SR-Eval] Fallback to GPT-5 mini for ${domain}: ${fallbackReason}`);
     
@@ -1569,13 +1348,6 @@ async function evaluateSourceWithConsensus(
   // ============================================================================
   const meetsConfReq = meetsConfidenceRequirement(finalRating, finalConfidence);
   
-  debugLog("evaluateSourceWithConsensus", "Final Confidence check", {
-    domain,
-    rating: finalRating,
-    confidence: finalConfidence,
-    meetsRequirement: meetsConfReq,
-  }, "CONFIDENCE_FINAL");
-
   if (!meetsConfReq) {
     console.log(`[SR-Eval] Final confidence ${finalConfidence.toFixed(2)} too low for rating "${finalRating}" for ${domain}`);
     
@@ -1635,18 +1407,6 @@ async function evaluateSourceWithConsensus(
   console.log(
     `[SR-Eval] Consensus for ${domain}: score=${finalScore.toFixed(2)}, conf=${finalConfidence.toFixed(2)}, foundedness=${primaryFounded.toFixed(2)} vs ${secondaryFounded.toFixed(2)}`
   );
-
-  debugLog("evaluateSourceWithConsensus", "FINAL RESULT - Consensus achieved", {
-    domain,
-    finalScore,
-    finalScorePercent: `${(finalScore * 100).toFixed(0)}%`,
-    finalConfidence,
-    finalConfidencePercent: `${(finalConfidence * 100).toFixed(0)}%`,
-    finalRating,
-    primaryFounded,
-    secondaryFounded,
-    winnerModel: winner === primary ? "Claude" : "GPT-5 mini",
-  }, "SUCCESS");
 
   // Build payload with potentially overridden score and aligned rating
   const payload = buildResponsePayload(

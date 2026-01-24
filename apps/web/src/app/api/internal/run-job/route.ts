@@ -56,25 +56,6 @@ function getRunnerQueueState(): RunnerQueueState {
   return st;
 }
 
-// #region agent log
-function fhDebugLog(hypothesisId: string, location: string, message: string, data: Record<string, any>) {
-  // Never log secrets (keys/tokens/PII). Job IDs and coarse timings are OK.
-  fetch("http://127.0.0.1:7242/ingest/6ba69d74-cd95-4a82-aebe-8b8eeb32980a", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId: "debug-session",
-      runId: "runner-timeout-investigation",
-      hypothesisId,
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-}
-// #endregion agent log
-
 function getApiBaseOrThrow(): string {
   const apiBaseRaw = getEnv("FH_API_BASE_URL");
   if (!apiBaseRaw) throw new Error("FH_API_BASE_URL not set");
@@ -232,13 +213,6 @@ async function runJobBackground(jobId: string) {
     });
   } catch (e: any) {
     const msg = e?.message ?? String(e);
-    // #region agent log
-    fhDebugLog("H3", "apps/web/src/app/api/internal/run-job/route.ts:POST:error", "Runner request failed (500)", {
-      jobId,
-      elapsedMs: Date.now() - startTs,
-      error: String(msg).slice(0, 500),
-    });
-    // #endregion agent log
     try {
       await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
         status: "FAILED",
@@ -331,15 +305,6 @@ export async function POST(req: Request) {
 
   const jobId = body.jobId;
   try {
-    // #region agent log
-    fhDebugLog("H1", "apps/web/src/app/api/internal/run-job/route.ts:POST:entry", "Runner request received", {
-      jobId,
-      maxConcurrency: getMaxConcurrency(),
-      rawEnv_FH_RUNNER_MAX_CONCURRENCY: process.env.FH_RUNNER_MAX_CONCURRENCY ?? null,
-      provider: process.env.LLM_PROVIDER ?? "anthropic",
-    });
-    // #endregion agent log
-
     const qs = getRunnerQueueState();
     // De-dupe: if this job is already running or queued in this process, ACK immediately and do NOT clobber status.
     const alreadyQueued =
@@ -353,16 +318,6 @@ export async function POST(req: Request) {
     void drainRunnerQueue();
 
     // ACK immediately so the API trigger does not wait for the full analysis (prevents 300s timeout + retries).
-    // #region agent log
-    fhDebugLog("H3", "apps/web/src/app/api/internal/run-job/route.ts:POST:ack", "Runner trigger ACK (202), job enqueued", {
-      jobId,
-      alreadyQueued,
-      alreadyRunning,
-      queueDepth: qs.queue.length,
-      runningCount: qs.runningCount,
-    });
-    // #endregion agent log
-
     return NextResponse.json({ ok: true, accepted: true }, { status: 202 });
   } catch (e: any) {
     const msg = e?.message ?? String(e);
