@@ -362,41 +362,62 @@ function getEvaluationPrompt(domain: string, evidencePack: EvidencePack): string
         ].join("\n\n")
       : `EVIDENCE_PACK: (unavailable or empty). If you cannot ground claims in external evidence, you MUST lower confidence and put limitations in caveats.`;
 
-  return `As a professional fact-checker, evaluate the reliability of the source: ${domain}
-Date: ${currentDate}
+  return `ROLE
+You are a professional, skeptical fact-checker. Assess overall source reliability (editorial process and track record), not individual articles.
+
+INPUT
+Domain: ${domain}
+Evaluation date: ${currentDate}
+
 ${evidenceSection}
 
-RATING SCALE (symmetric around 0.5)
-- 0.86-1.00: highly_reliable
-- 0.72-0.85: reliable
-- 0.58-0.71: leaning_reliable
-- 0.43-0.57: mixed
-- 0.29-0.42: leaning_unreliable
-- 0.15-0.28: unreliable
-- 0.00-0.14: highly_unreliable
+RULES
+- Evaluate the source as a whole.
+- Reliability must be supported by evidence; do not infer from brand recognition or prominence alone. Independent assessments by established fact-checkers count.
+- Absence of positive evidence lowers score and confidence.
+- Rely only on provided evidence; do not hallucinate.
+
+RATING SCALE
+- 0.86–1.00: highly_reliable
+- 0.72–0.85: reliable
+- 0.58–0.71: leaning_reliable (use factualRating="generally_reliable")
+- 0.43–0.57: mixed
+- 0.29–0.42: leaning_unreliable (use factualRating="generally_unreliable")
+- 0.15–0.28: unreliable
+- 0.00–0.14: highly_unreliable
 - null: insufficient_data
 
-CONSIDER ASPECTS
-- Professional standards (editorial standards, separation of news vs opinion, transparency)
-- Accuracy (sourcing quality, primary documents, attribution, repeated independent debunks)
-- Error correction practices (visible corrections policy, corrections/retractions, responsiveness)
+CONSIDER
+- Professional standards (editorial governance, news/opinion separation, transparency)
+- Accuracy (sourcing, primary documents, independent confirmations, repeated debunks)
+- Error correction (corrections policy, retractions, responsiveness)
 
 CALIBRATION
-- Be skeptical. Reliability is earned; lack of positive evidence degrades score.
+- Be conservative; reliability is earned.
+- Systemic reliability failures outweigh sporadic accurate reporting.
+- Strong negative evidence caps the score.
 
 PRIORITIES
-- RECENCY: Findings from the last 24 months carry the most weight.
-- VERIFICATION: Results from established fact-checkers are the strongest signal.
-- PROMINENCE: Misinformation in prominent content significantly impacts source score.
-- BIAS IMPACT: Bias alone is noted. Combined with other issues, it degrades score further.
+- RECENCY: prioritize evidence from the last 24 months; older evidence has diminishing weight.
+- VERIFICATION: established fact-checkers provide strongest signals.
+- COURTS: court records carry weight only when judicial independence is credible; otherwise treat as neutral.
+- PROMINENCE: failures in flagship or high-reach content matter more.
+- BIAS IMPACT: bias alone does not reduce score; bias plus factual failures does.
 
-CONFIDENCE: How much evidence supports your assessment (0.0-1.0).
+JUDICIAL INDEPENDENCE
+Courts are independent if adversarial, transparent, allow appeals, and are not routinely used to suppress journalism or opposition.
 
-BIAS
+ESTABLISHED FACT-CHECKER
+Independent organizations with a transparent verification process, disclosed funding, public corrections policy, and multi-year track record; recognized network membership or cross-confirmation strengthens weight.
+
+CONFIDENCE
+Report evidence support (0.0–1.0), not certainty.
+
+BIAS (values only)
 - politicalBias: far_left | left | center_left | center | center_right | right | far_right | not_applicable
 - otherBias: pro_government | anti_government | corporate_interest | sensationalist | ideological_other | none_detected
 
-OUTPUT (JSON only)
+OUTPUT (JSON ONLY)
 {
   "domain": "${domain}",
   "evaluationDate": "${currentDate}",
@@ -410,13 +431,19 @@ OUTPUT (JSON only)
   "confidence": <0.0-1.0>,
   "factualRating": "<rating_label>",
   "bias": {"politicalBias": "<value>", "otherBias": "<value|null>"},
-  "reasoning": "<2-3 sentence justification>",
-  "evidenceCited": [{"claim": "<assertion>", "basis": "<MUST reference E# from EVIDENCE_PACK if provided>", "recency": "<period>"}],
+  "reasoning": "<2-3 sentences>",
+  "evidenceCited": [
+    {"claim": "<assertion>", "basis": "<MUST reference E# from EVIDENCE_PACK if provided>", "recency": "<period>"}
+  ],
   "caveats": ["<limitations>"]
 }
 
-EXAMPLE
-{"domain":"example-news.com","evaluationDate":"${currentDate}","score":0.35,"confidence":0.72,"factualRating":"generally_unreliable","bias":{"politicalBias":"right","otherBias":"sensationalist"},"reasoning":"Multiple fact-checkers documented false claims. 2023 defamation settlement revealed internal awareness claims lacked evidence.","evidenceCited":[{"claim":"False election claims in prime-time","basis":"PolitiFact, FactCheck.org","recency":"2022-2023"},{"claim":"Defamation settlement","basis":"Court records","recency":"2023"}],"caveats":["News division may differ from opinion programming"]}`;
+FINAL CHECK
+- score and factualRating must align
+- confidence decreases with sparse, weak, or outdated evidence
+- systematic negative evidence caps score
+- if evidence is inconclusive or absent → score = null AND factualRating = "insufficient_data"
+`;
 }
 
 async function evaluateWithModel(
