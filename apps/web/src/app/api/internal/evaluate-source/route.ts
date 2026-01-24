@@ -545,10 +545,9 @@ FINAL VALIDATION (check before responding)
 □ Every claim in evidenceCited references an evidence ID (E1, E2, etc.)
 □ Applied evidence-only rule (no pretrained knowledge)
 □ If sparse evidence or low confidence → output insufficient_data
-□ Negative evidence caps applied where warranted
-□ Political bias separated from accuracy assessment
+□ Follow the schema above exactly.
+□ Return only valid JSON (no markdown, no extra commentary).
 `;
-
 }
 
 async function evaluateWithModel(
