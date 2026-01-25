@@ -362,6 +362,271 @@ function isSearchEnabledForSrEval(): { enabled: boolean; providersUsed: string[]
 }
 
 // ============================================================================
+// MULTI-LANGUAGE SUPPORT
+// ============================================================================
+
+/**
+ * Cache for detected languages per domain.
+ */
+const languageDetectionCache = new Map<string, string | null>();
+
+/**
+ * Supported languages for fact-checker searches.
+ */
+const SUPPORTED_LANGUAGES = new Set([
+  "German", "French", "Spanish", "Portuguese", "Italian", "Dutch",
+  "Polish", "Russian", "Swedish", "Norwegian", "Danish", "Finnish",
+  "Czech", "Hungarian", "Turkish", "Japanese", "Chinese", "Korean", "Arabic"
+]);
+
+/**
+ * Normalize language names from various formats to our standard names.
+ */
+function normalizeLanguageName(lang: string): string | null {
+  const normalized = lang.toLowerCase().trim();
+  
+  const mapping: Record<string, string> = {
+    // ISO codes
+    "de": "German", "deu": "German", "ger": "German",
+    "fr": "French", "fra": "French", "fre": "French",
+    "es": "Spanish", "spa": "Spanish",
+    "pt": "Portuguese", "por": "Portuguese",
+    "it": "Italian", "ita": "Italian",
+    "nl": "Dutch", "nld": "Dutch", "dut": "Dutch",
+    "pl": "Polish", "pol": "Polish",
+    "ru": "Russian", "rus": "Russian",
+    "sv": "Swedish", "swe": "Swedish",
+    "no": "Norwegian", "nor": "Norwegian", "nb": "Norwegian", "nn": "Norwegian",
+    "da": "Danish", "dan": "Danish",
+    "fi": "Finnish", "fin": "Finnish",
+    "cs": "Czech", "ces": "Czech", "cze": "Czech",
+    "hu": "Hungarian", "hun": "Hungarian",
+    "tr": "Turkish", "tur": "Turkish",
+    "ja": "Japanese", "jpn": "Japanese",
+    "zh": "Chinese", "zho": "Chinese", "chi": "Chinese",
+    "ko": "Korean", "kor": "Korean",
+    "ar": "Arabic", "ara": "Arabic",
+    "en": "English", "eng": "English",
+    // Full names (lowercase)
+    "german": "German", "deutsch": "German",
+    "french": "French", "français": "French", "francais": "French",
+    "spanish": "Spanish", "español": "Spanish", "espanol": "Spanish",
+    "portuguese": "Portuguese", "português": "Portuguese", "portugues": "Portuguese",
+    "italian": "Italian", "italiano": "Italian",
+    "dutch": "Dutch", "nederlands": "Dutch",
+    "polish": "Polish", "polski": "Polish",
+    "russian": "Russian", "русский": "Russian",
+    "swedish": "Swedish", "svenska": "Swedish",
+    "norwegian": "Norwegian", "norsk": "Norwegian",
+    "danish": "Danish", "dansk": "Danish",
+    "finnish": "Finnish", "suomi": "Finnish",
+    "czech": "Czech", "čeština": "Czech", "cestina": "Czech",
+    "hungarian": "Hungarian", "magyar": "Hungarian",
+    "turkish": "Turkish", "türkçe": "Turkish", "turkce": "Turkish",
+    "japanese": "Japanese", "日本語": "Japanese",
+    "chinese": "Chinese", "中文": "Chinese",
+    "korean": "Korean", "한국어": "Korean",
+    "arabic": "Arabic", "العربية": "Arabic",
+    "english": "English",
+  };
+  
+  return mapping[normalized] || null;
+}
+
+/**
+ * Detect the publication language of a source by fetching its homepage.
+ * Returns null for English or if detection fails.
+ */
+async function detectSourceLanguage(domain: string): Promise<string | null> {
+  // Check cache first
+  if (languageDetectionCache.has(domain)) {
+    return languageDetectionCache.get(domain) ?? null;
+  }
+
+  debugLog(`[SR-Eval] Detecting language for ${domain}`, { domain });
+
+  try {
+    // Fetch homepage with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(`https://${domain}`, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; FactHarbor/1.0; +https://factharbor.com)",
+        "Accept": "text/html",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      debugLog(`[SR-Eval] Failed to fetch ${domain}: ${response.status}`, { domain, status: response.status });
+      languageDetectionCache.set(domain, null);
+      return null;
+    }
+
+    const html = await response.text();
+    
+    // Strategy 1: Check <html lang="..."> attribute
+    const htmlLangMatch = html.match(/<html[^>]*\slang=["']([^"']+)["']/i);
+    if (htmlLangMatch) {
+      const langCode = htmlLangMatch[1].split("-")[0]; // "de-DE" -> "de"
+      const normalized = normalizeLanguageName(langCode);
+      if (normalized && normalized !== "English" && SUPPORTED_LANGUAGES.has(normalized)) {
+        debugLog(`[SR-Eval] Detected language via html lang: ${normalized}`, { domain, langCode, normalized });
+        languageDetectionCache.set(domain, normalized);
+        return normalized;
+      }
+    }
+
+    // Strategy 2: Check <meta> content-language
+    const metaLangMatch = html.match(/<meta[^>]*http-equiv=["']content-language["'][^>]*content=["']([^"']+)["']/i)
+      || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*http-equiv=["']content-language["']/i);
+    if (metaLangMatch) {
+      const langCode = metaLangMatch[1].split("-")[0];
+      const normalized = normalizeLanguageName(langCode);
+      if (normalized && normalized !== "English" && SUPPORTED_LANGUAGES.has(normalized)) {
+        debugLog(`[SR-Eval] Detected language via meta tag: ${normalized}`, { domain, langCode, normalized });
+        languageDetectionCache.set(domain, normalized);
+        return normalized;
+      }
+    }
+
+    // Strategy 3: Check og:locale meta tag
+    const ogLocaleMatch = html.match(/<meta[^>]*property=["']og:locale["'][^>]*content=["']([^"']+)["']/i);
+    if (ogLocaleMatch) {
+      const langCode = ogLocaleMatch[1].split("_")[0]; // "de_DE" -> "de"
+      const normalized = normalizeLanguageName(langCode);
+      if (normalized && normalized !== "English" && SUPPORTED_LANGUAGES.has(normalized)) {
+        debugLog(`[SR-Eval] Detected language via og:locale: ${normalized}`, { domain, langCode, normalized });
+        languageDetectionCache.set(domain, normalized);
+        return normalized;
+      }
+    }
+
+    // Strategy 4: Use LLM to detect from content sample
+    // Extract visible text (strip tags, take first ~500 chars)
+    const textContent = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1000);
+
+    if (textContent.length > 100) {
+      const { text } = await generateText({
+        model: anthropic("claude-3-5-haiku-20241022"),
+        prompt: `What is the primary publication language of this webpage content? 
+Return ONLY the language name in English (e.g., "German", "French", "Russian", "English").
+If uncertain, return "English".
+
+Content sample:
+${textContent}`,
+        temperature: 0,
+        maxOutputTokens: 50,
+      });
+
+      const detectedLang = text.trim();
+      const normalized = normalizeLanguageName(detectedLang);
+      
+      if (normalized && normalized !== "English" && SUPPORTED_LANGUAGES.has(normalized)) {
+        debugLog(`[SR-Eval] Detected language via LLM: ${normalized}`, { domain, detectedLang, normalized });
+        languageDetectionCache.set(domain, normalized);
+        return normalized;
+      }
+    }
+
+    // Default: English or unknown
+    debugLog(`[SR-Eval] No non-English language detected for ${domain}`, { domain });
+    languageDetectionCache.set(domain, null);
+    return null;
+
+  } catch (err) {
+    debugLog(`[SR-Eval] Language detection failed for ${domain}`, { domain, error: String(err) });
+    languageDetectionCache.set(domain, null);
+    return null;
+  }
+}
+
+/**
+ * Translation cache to avoid repeated LLM calls for the same language.
+ */
+const translationCache = new Map<string, Record<string, string>>();
+
+/**
+ * Key search terms that need translation for fact-checker searches.
+ */
+const SEARCH_TERMS_TO_TRANSLATE = [
+  "fact check",
+  "reliability",
+  "misinformation",
+  "disinformation",
+  "propaganda",
+  "fake news",
+  "debunked",
+  "false claims",
+  "media bias",
+  "credibility",
+];
+
+/**
+ * Get translated search terms for a language, using LLM with caching.
+ */
+async function getTranslatedSearchTerms(
+  language: string
+): Promise<Record<string, string>> {
+  // Check cache first
+  const cached = translationCache.get(language);
+  if (cached) return cached;
+
+  debugLog(`[SR-Eval] Translating search terms to ${language}`, { language });
+
+  try {
+    const prompt = `Translate these English fact-checking search terms to ${language}. 
+Return ONLY a JSON object with English keys and ${language} translations as values.
+Use the most common/natural terms that fact-checkers and media critics would use in ${language}.
+
+Terms to translate:
+${SEARCH_TERMS_TO_TRANSLATE.map((t) => `- "${t}"`).join("\n")}
+
+Output format (JSON only, no markdown):
+{"fact check": "...", "reliability": "...", ...}`;
+
+    const { text } = await generateText({
+      model: anthropic("claude-3-5-haiku-20241022"),
+      prompt,
+      temperature: 0,
+      maxOutputTokens: 500,
+    });
+
+    // Parse the JSON response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.warn(`[SR-Eval] Failed to parse translation response for ${language}`);
+      return {};
+    }
+
+    const translations = JSON.parse(jsonMatch[0]) as Record<string, string>;
+
+    // Cache the result
+    translationCache.set(language, translations);
+
+    debugLog(`[SR-Eval] Translated ${Object.keys(translations).length} terms to ${language}`, {
+      language,
+      translations,
+    });
+
+    return translations;
+  } catch (err) {
+    console.warn(`[SR-Eval] Translation failed for ${language}:`, err);
+    return {};
+  }
+}
+
+// ============================================================================
 // ADAPTIVE EVIDENCE PACK BUILDING
 // ============================================================================
 
@@ -382,26 +647,54 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   const brandPrefix = isUsableBrandToken(brand) ? `${brand} ` : "";
   const domainToken = `"${domain}"`;
 
-  // Phase 1: Standard queries (Domain + Brand)
+  // Detect source language for multi-language queries
+  const sourceLanguage = await detectSourceLanguage(domain);
+  let translatedTerms: Record<string, string> = {};
+
+  if (sourceLanguage) {
+    debugLog(`[SR-Eval] Detected language for ${domain}: ${sourceLanguage}`, { domain, sourceLanguage });
+    translatedTerms = await getTranslatedSearchTerms(sourceLanguage);
+  }
+
+  // Helper to get translated term or fallback to English
+  const t = (term: string): string => translatedTerms[term] || term;
+
+  // Phase 1: Standard queries (Domain + Brand) - English
   const standardQueries = [
     `${brandPrefix}${domainToken} fact check reliability`,
     `${brandPrefix}${domainToken} media bias fact check credibility rating`,
     `${brandPrefix}${domainToken} corrections policy editorial standards`,
   ];
 
-  // Phase 2: Entity-focused queries (Organization/Brand only)
-  // This helps identify the parent organization standards
+  // Phase 1b: Standard queries in source language (if non-English)
+  const standardQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
+    ? [
+        `${brandPrefix}${domainToken} ${t("fact check")} ${t("reliability")}`,
+        `${brandPrefix}${domainToken} ${t("media bias")} ${t("credibility")}`,
+      ]
+    : [];
+
+  // Phase 2: Entity-focused queries (Organization/Brand only) - English
   const entityQueries = isUsableBrandToken(brand) ? [
     `${brand} organization journalistic standards`,
     `${brand} media group ownership and reliability`,
     `${brand} parent company editorial policy`,
   ] : [];
 
-  // Phase 3: Negative-signal queries (added adaptively if needed)
+  // Phase 3: Negative-signal queries - English
   const negativeSignalQueries = [
     `${brandPrefix}${domainToken} propaganda disinformation misinformation`,
     `${brandPrefix}${domainToken} false claims debunked fake news`,
   ];
+
+  // Phase 3b: Negative-signal queries in source language (if non-English)
+  // These are critical for finding local fact-checker assessments
+  const negativeSignalQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
+    ? [
+        `${brandPrefix}${domainToken} ${t("propaganda")} ${t("disinformation")} ${t("misinformation")}`,
+        `${brandPrefix}${domainToken} ${t("fake news")} ${t("debunked")} ${t("false claims")}`,
+      ]
+    : [];
 
   const maxResultsPerQuery = Math.max(
     1,
@@ -447,13 +740,22 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     return added;
   }
 
-  // Phase 1: Run standard queries
+  // Phase 1: Run standard queries (English)
   for (const q of standardQueries) {
     await runQuery(q);
     if (rawItems.length >= maxEvidenceItems) break;
   }
 
-  // Phase 2: Run entity-focused queries
+  // Phase 1b: Run standard queries (translated) - important for local fact-checkers
+  if (rawItems.length < maxEvidenceItems && standardQueriesTranslated.length > 0) {
+    debugLog(`[SR-Eval] Running translated queries for ${domain}`, { language: sourceLanguage });
+    for (const q of standardQueriesTranslated) {
+      await runQuery(q);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 2: Run entity-focused queries (English)
   if (rawItems.length < maxEvidenceItems) {
     for (const q of entityQueries) {
       await runQuery(q);
@@ -461,11 +763,21 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 3: If results are sparse, add negative-signal queries
-  // Adaptive: always run negative-signal queries if we haven't reached our target
-  // This ensures we don't miss well-documented propaganda/misinformation
+  // Phase 3: Run negative-signal queries (English)
+  // Always run these to catch well-documented propaganda/misinformation
   if (rawItems.length < maxEvidenceItems) {
     for (const q of negativeSignalQueries) {
+      await runQuery(q);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 3b: Run negative-signal queries (translated) - critical for local fact-checkers
+  // German: CORRECTIV, Mimikama, dpa-Faktencheck
+  // French: AFP Factuel, Les Décodeurs
+  // Spanish: Maldita.es, Newtral
+  if (rawItems.length < maxEvidenceItems && negativeSignalQueriesTranslated.length > 0) {
+    for (const q of negativeSignalQueriesTranslated) {
       await runQuery(q);
       if (rawItems.length >= maxEvidenceItems) break;
     }
@@ -649,6 +961,18 @@ ${evidenceSection}
    - If the domain is the primary outlet for a larger organization (e.g., a TV channel, newspaper, or media group), you MUST evaluate the reliability of the WHOLE ORGANIZATION.
    - Legacy media and public broadcasters should be rated based on their organizational reputation.
    - Identify the organization name in the "identifiedEntity" field.
+
+7. MULTILINGUAL EVIDENCE HANDLING
+   - Evidence items may be in languages OTHER than English (German, French, Spanish, etc.)
+   - Evaluate ALL evidence regardless of language — non-English evidence is equally valid
+   - Regional fact-checkers are authoritative for sources in their region:
+     * German: CORRECTIV, Mimikama, dpa-Faktencheck, Faktenfinder (ARD)
+     * French: AFP Factuel, Les Décodeurs (Le Monde), Libération CheckNews
+     * Spanish: Maldita.es, Newtral, EFE Verifica
+     * Portuguese: Aos Fatos, Lupa, Polígrafo
+     * Italian: Pagella Politica, ANSA Fact-checking
+     * Dutch: Nu.nl Factcheck, Nieuwscheckers
+   - These regional fact-checkers are Tier 1 assessors (same authority as IFCN signatories)
 
 ─────────────────────────────────────────────────────────────────────
 RATING SCALE (score → factualRating — MUST match exactly)
@@ -996,6 +1320,12 @@ YOUR TASK: CROSS-CHECK AND REFINE
    - DOWNWARD adjustment if negative signals were missed or underweighted
    - NO adjustment if evidence is simply sparse (sparse ≠ positive)
    - Absence of negative evidence alone does NOT justify upward adjustment
+
+6. MULTILINGUAL EVIDENCE CHECK
+   - Evidence may be in languages OTHER than English
+   - Regional fact-checkers (CORRECTIV, Mimikama, AFP Factuel, etc.) are Tier 1 assessors
+   - Did the initial evaluation properly weigh non-English evidence?
+   - Check if regional fact-checker assessments were overlooked
 
 ═══════════════════════════════════════════════════════════════════════════════
 EVIDENCE SIGNALS (same as initial evaluation)
@@ -1575,7 +1905,7 @@ async function evaluateSourceWithConsensus(
   // Apply confidence boost for successful refinement
   const boostedConfidence = Math.min(0.95, refinedResult.confidence + 0.10); // +10% for successful cross-check
 
-  const finalRating = scoreToFactualRating(refinedResult.score ?? 0);
+  const finalRating = scoreToFactualRating(refinedResult.score);
 
   // Check confidence requirements (informational only, no blocking)
   const meetsConfReq = meetsConfidenceRequirement(finalRating, boostedConfidence);

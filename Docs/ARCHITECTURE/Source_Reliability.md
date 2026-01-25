@@ -1,8 +1,8 @@
 # FactHarbor Source Reliability
 
-**Version**: 1.3.1 (Sequential Refinement + Shared Prompts)  
+**Version**: 1.4 (Multi-Language Support)  
 **Status**: Operational  
-**Last Updated**: 2026-01-25 (v2.6.39)
+**Last Updated**: 2026-01-25 (v2.6.40)
 
 ---
 
@@ -14,6 +14,8 @@
 - [How It Affects Verdicts](#how-it-affects-verdicts)
 - [Configuration](#configuration)
 - [Score Interpretation](#score-interpretation)
+- [v1.3 Sequential Refinement](#v13-sequential-refinement-january-2026)
+- [v1.4 Multi-Language Support](#v14-multi-language-support-january-2026)
 - [Admin Interface](#admin-interface)
 - [Design Principles](#design-principles)
 - [Implementation Details](#implementation-details)
@@ -25,7 +27,7 @@
 
 ## Overview
 
-FactHarbor evaluates source reliability dynamically using LLM-powered assessment with **sequential refinement**. The primary model (Claude) performs initial evaluation, then the secondary model (GPT-5 mini) cross-checks and refines the result. Sources are evaluated on-demand and cached for 90 days.
+FactHarbor evaluates source reliability dynamically using LLM-powered assessment with **sequential refinement** and **multi-language support**. The primary model (Claude) performs initial evaluation, then the secondary model (GPT-5 mini) cross-checks and refines the result. For non-English sources, the system detects the publication language and searches for regional fact-checker assessments. Sources are evaluated on-demand and cached for 90 days.
 
 | Aspect | Implementation |
 |--------|----------------|
@@ -531,6 +533,68 @@ The refinement stage follows strict adjustment criteria:
 - **DOWNWARD adjustment** if negative signals were missed or underweighted
 - **NO adjustment** if evidence is simply sparse (sparse ≠ positive)
 - Absence of negative evidence alone does NOT justify upward adjustment
+
+---
+
+## v1.4 Multi-Language Support (January 2026)
+
+Version 1.4 adds automatic language detection and multi-language search queries to find regional fact-checker assessments.
+
+### Problem Solved
+
+English-only searches miss critical evidence from regional fact-checkers:
+
+| Domain | Issue with English-only |
+|--------|------------------------|
+| `reitschuster.de` | CORRECTIV assessments not found |
+| `anti-spiegel.ru` | German-language propaganda site, German fact-checkers cover it |
+| `weltwoche.ch` | German/Swiss fact-checker coverage missed |
+
+### Language Detection
+
+The system detects the **actual publication language** (not TLD) by:
+
+1. Fetching the homepage (5s timeout)
+2. Checking `<html lang="...">` attribute
+3. Checking `<meta http-equiv="content-language">`
+4. Checking `<meta property="og:locale">`
+5. If all fail: LLM analyzes content sample
+
+Results are cached per domain.
+
+### Multi-Language Queries
+
+When a non-English language is detected:
+
+1. **LLM translates** key fact-checking terms (cached per language)
+2. **Dual-language searches** are performed:
+   - English queries (always, for international coverage)
+   - Translated queries (for regional fact-checkers)
+
+### Supported Languages
+
+German, French, Spanish, Portuguese, Italian, Dutch, Polish, Russian, Swedish, Norwegian, Danish, Finnish, Czech, Hungarian, Turkish, Japanese, Chinese, Korean, Arabic.
+
+### Regional Fact-Checkers (Tier 1)
+
+| Language | Fact-Checkers |
+|----------|---------------|
+| German | CORRECTIV, Mimikama, dpa-Faktencheck, Faktenfinder (ARD) |
+| French | AFP Factuel, Les Décodeurs (Le Monde), Libération CheckNews |
+| Spanish | Maldita.es, Newtral, EFE Verifica |
+| Portuguese | Aos Fatos, Lupa, Polígrafo |
+| Italian | Pagella Politica, ANSA Fact-checking |
+| Dutch | Nu.nl Factcheck, Nieuwscheckers |
+
+These regional fact-checkers have the same authority as IFCN signatories.
+
+### Cost Impact
+
+| Component | Cost per Evaluation |
+|-----------|---------------------|
+| Language detection (page fetch) | Free |
+| Translation (LLM, cached) | ~$0.001 per new language |
+| Additional searches | ~2-4 extra queries |
 
 ### Response Fields
 
