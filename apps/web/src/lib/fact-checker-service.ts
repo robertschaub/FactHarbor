@@ -192,10 +192,12 @@ function getFactCheckersFromStaticConfig(query: FactCheckerQuery): FactCheckerRe
     targetLanguages.push(query.language);
   }
   
-  if (query.country && COUNTRY_TO_LANGUAGE[query.country]) {
-    const countryLang = COUNTRY_TO_LANGUAGE[query.country];
-    if (!targetLanguages.includes(countryLang)) {
-      targetLanguages.push(countryLang);
+  if (query.country && COUNTRY_TO_LANGUAGES[query.country]) {
+    const countryLangs = COUNTRY_TO_LANGUAGES[query.country];
+    for (const lang of countryLangs) {
+      if (!targetLanguages.includes(lang)) {
+        targetLanguages.push(lang);
+      }
     }
   }
   
