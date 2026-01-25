@@ -310,13 +310,75 @@ function isUsableBrandToken(token: string): boolean {
 }
 
 /**
+ * Check if a search result is FROM the source being evaluated.
+ * Results FROM the source are not useful for reliability assessment.
+ */
+function isResultFromSourceDomain(r: WebSearchResult, domain: string): boolean {
+  if (!r.url || !domain) return false;
+  
+  try {
+    const resultHost = new URL(r.url).hostname.toLowerCase().replace(/^www\./, "");
+    const d = domain.toLowerCase().replace(/^www\./, "");
+    // Result is FROM the source if the URL is on the source's domain
+    return resultHost === d || resultHost.endsWith(`.${d}`);
+  } catch {
+    return false;
+  }
+}
+
+// Import fact-checker domains from centralized service
+import { getAllFactCheckerDomains, getGlobalFactCheckerSites } from "@/lib/fact-checker-service";
+
+/**
+ * All fact-checker domains (global + regional) from config.
+ * Used to auto-accept search results from known fact-checker sites.
+ */
+const FACT_CHECKER_DOMAINS = getAllFactCheckerDomains();
+
+/**
+ * English terms that indicate a result is actually ABOUT reliability/credibility assessment,
+ * not just citing the source. Translations are added dynamically from LLM.
+ */
+const RELIABILITY_ASSESSMENT_TERMS_EN = [
+  "reliability", "credibility", "bias", "rating", "rated", "assessment",
+  "fact check", "fact-check", "factcheck", "misinformation", "disinformation",
+  "propaganda", "fake news", "misleading", "false claim", "debunk",
+  "media bias", "news quality", "trustworth", "accuracy",
+];
+
+/**
+ * Build full assessment terms list including dynamic translations.
+ */
+function getReliabilityAssessmentTerms(translatedTerms: Record<string, string>): string[] {
+  const terms = [...RELIABILITY_ASSESSMENT_TERMS_EN];
+  
+  // Add translated versions of key assessment terms
+  const keysToTranslate = [
+    "reliability", "credibility", "fact check", "misinformation", 
+    "disinformation", "propaganda", "fake news", "media bias",
+  ];
+  
+  for (const key of keysToTranslate) {
+    const translated = translatedTerms[key];
+    if (translated && translated !== key && !terms.includes(translated.toLowerCase())) {
+      terms.push(translated.toLowerCase());
+    }
+  }
+  
+  return terms;
+}
+
+/**
  * Check if a search result is relevant to the domain being evaluated.
  * Now uses brand variants for more flexible matching.
+ * EXCLUDES results FROM the source itself (those are not reliability assessments).
+ * PRIORITIZES results that actually assess reliability, not just cite the source.
  */
 function isRelevantSearchResult(
   r: WebSearchResult,
   domain: string,
-  brandVariants: string[]
+  brandVariants: string[],
+  assessmentTerms: string[] = RELIABILITY_ASSESSMENT_TERMS_EN
 ): boolean {
   const url = (r.url ?? "").toLowerCase();
   const title = (r.title ?? "").toLowerCase();
@@ -326,22 +388,37 @@ function isRelevantSearchResult(
   const d = String(domain || "").toLowerCase();
   if (!d) return true;
 
-  // Direct domain mention
-  if (blob.includes(d) || blob.includes(`www.${d}`)) return true;
+  // EXCLUDE results FROM the source itself - these are not reliability assessments
+  if (isResultFromSourceDomain(r, domain)) {
+    return false;
+  }
 
-  // URL host match
+  // Check if result mentions the source (domain or brand)
+  const mentionsSource = blob.includes(d) || 
+    blob.includes(`www.${d}`) ||
+    brandVariants.some(v => v.length >= 4 && blob.includes(v));
+
+  if (!mentionsSource) return false;
+
+  // Check if result is FROM a known fact-checker domain (always relevant)
   try {
-    const host = new URL(r.url).hostname.toLowerCase().replace(/^www\./, "");
-    if (host === d || host.endsWith(`.${d}`)) return true;
+    const resultHost = new URL(r.url).hostname.toLowerCase().replace(/^www\./, "");
+    if (FACT_CHECKER_DOMAINS.has(resultHost) || 
+        [...FACT_CHECKER_DOMAINS].some(fc => resultHost.endsWith(`.${fc}`))) {
+      return true;
+    }
   } catch {
     // ignore URL parse errors
   }
 
-  // Brand variant matching (flexible)
-  for (const variant of brandVariants) {
-    if (variant.length >= 4 && blob.includes(variant)) return true;
-  }
+  // Check if result contains reliability/assessment-related terms (including translations)
+  const hasAssessmentTerms = assessmentTerms.some(term => blob.includes(term));
+  
+  if (hasAssessmentTerms) return true;
 
+  // Exclude results that just cite the source without assessing it
+  // These are typically academic papers, news articles, etc. that reference the outlet
+  // but don't evaluate its reliability
   return false;
 }
 
@@ -435,6 +512,15 @@ function normalizeLanguageName(lang: string): string | null {
 
 /**
  * Detect the publication language of a source by fetching its homepage.
+ * This is the PRIMARY language detection method for source reliability evaluation.
+ * 
+ * Strategy (in order):
+ * 1. <html lang="..."> attribute
+ * 2. <meta http-equiv="content-language"> tag
+ * 3. og:locale meta tag
+ * 4. LLM-based text analysis (fallback)
+ * 
+ * NOTE: This detects actual site content language, NOT country-based inference.
  * Returns null for English or if detection fails.
  */
 async function detectSourceLanguage(domain: string): Promise<string | null> {
@@ -570,6 +656,11 @@ const SEARCH_TERMS_TO_TRANSLATE = [
   "false claims",
   "media bias",
   "credibility",
+  "state propaganda",
+  "foreign propaganda",
+  "state media",
+  "state-backed",
+  "government propaganda",
 ];
 
 /**
@@ -626,6 +717,9 @@ Output format (JSON only, no markdown):
   }
 }
 
+// Regional fact-checker queries - delegated to FactChecker Service
+import { getRegionalFactCheckerQueries } from "@/lib/fact-checker-service";
+
 // ============================================================================
 // ADAPTIVE EVIDENCE PACK BUILDING
 // ============================================================================
@@ -659,42 +753,84 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   // Helper to get translated term or fallback to English
   const t = (term: string): string => translatedTerms[term] || term;
 
-  // Phase 1: Standard queries (Domain + Brand) - English
+  // Build assessment terms with dynamic translations (no hardcoded non-English terms)
+  const assessmentTerms = getReliabilityAssessmentTerms(translatedTerms);
+
+  // Phase 1: Reliability assessment queries - focused on ABOUT the source
+  // Use "rating" and "assessment" to find fact-checker evaluations, not articles FROM the source
   const standardQueries = [
-    `${brandPrefix}${domainToken} fact check reliability`,
-    `${brandPrefix}${domainToken} media bias fact check credibility rating`,
-    `${brandPrefix}${domainToken} corrections policy editorial standards`,
+    `${domainToken} reliability rating assessment`,
+    `${domainToken} media bias rating fact checker`,
+    `"${brand}" credibility assessment fact check`,
   ];
 
   // Phase 1b: Standard queries in source language (if non-English)
   const standardQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
     ? [
-        `${brandPrefix}${domainToken} ${t("fact check")} ${t("reliability")}`,
-        `${brandPrefix}${domainToken} ${t("media bias")} ${t("credibility")}`,
+        `${domainToken} ${t("reliability")} ${t("credibility")}`,
+        `"${brand}" ${t("fact check")} ${t("media bias")}`,
       ]
     : [];
 
-  // Phase 2: Entity-focused queries (Organization/Brand only) - English
-  const entityQueries = isUsableBrandToken(brand) ? [
-    `${brand} organization journalistic standards`,
-    `${brand} media group ownership and reliability`,
-    `${brand} parent company editorial policy`,
-  ] : [];
+  // Phase 2: Fact-checker site-specific queries
+  // Directly search known fact-checker domains for assessments
+  // Uses global fact-checker sites from config
+  const globalSites = getGlobalFactCheckerSites();
+  const factCheckerQueries: string[] = [];
+  
+  // Build queries in batches of 3 sites (to avoid overly long queries)
+  for (let i = 0; i < globalSites.length; i += 3) {
+    const batch = globalSites.slice(i, i + 3);
+    const siteQuery = batch.map(s => `site:${s}`).join(" OR ");
+    factCheckerQueries.push(`"${brand}" ${siteQuery}`);
+  }
 
-  // Phase 3: Negative-signal queries - English
-  const negativeSignalQueries = [
-    `${brandPrefix}${domainToken} propaganda disinformation misinformation`,
-    `${brandPrefix}${domainToken} false claims debunked fake news`,
+  // Phase 2b: Regional fact-checker queries (language-specific)
+  // Comprehensive coverage for all supported languages
+  const regionalFactCheckerQueries: string[] = getRegionalFactCheckerQueries(brand, sourceLanguage);
+
+  // Phase 3: State/foreign propaganda tracking queries (PRIORITY - run early)
+  // Critical for finding outlets that echo state propaganda (any country)
+  // Generic terms only - no country-specific hardcoding per AGENTS.md
+  const statePropagandaQueries = [
+    `"${brand}" state propaganda OR foreign propaganda OR government propaganda`,
+    `"${brand}" site:euvsdisinfo.eu OR site:disinfo.eu`,
+    `"${brand}" "disinformation" "state media" OR "state-backed"`,
+    `"${brand}" "propaganda outlet" OR "government-controlled media"`,
   ];
 
-  // Phase 3b: Negative-signal queries in source language (if non-English)
-  // These are critical for finding local fact-checker assessments
-  const negativeSignalQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
+  // Phase 3b: State propaganda queries in source language
+  // Generic terms only - no country-specific hardcoding per AGENTS.md
+  const statePropagandaQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
     ? [
-        `${brandPrefix}${domainToken} ${t("propaganda")} ${t("disinformation")} ${t("misinformation")}`,
-        `${brandPrefix}${domainToken} ${t("fake news")} ${t("debunked")} ${t("false claims")}`,
+        `"${brand}" ${t("state propaganda")} OR ${t("foreign propaganda")}`,
+        `"${brand}" ${t("state media")} ${t("disinformation")}`,
+        `"${brand}" ${t("state-backed")} OR ${t("government propaganda")}`,
       ]
     : [];
+
+  // Phase 4: Negative-signal queries - English
+  // These help find documented problems with the source
+  const negativeSignalQueries = [
+    `${domainToken} propaganda accusations disinformation`,
+    `"${brand}" false claims debunked misinformation`,
+    `"${brand}" fact check failed OR misleading`,
+  ];
+
+  // Phase 4b: Negative-signal queries in source language (if non-English)
+  // Critical for finding local fact-checker assessments of problematic sources
+  const negativeSignalQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
+    ? [
+        `${domainToken} ${t("propaganda")} ${t("disinformation")}`,
+        `"${brand}" ${t("fake news")} ${t("debunked")} ${t("false claims")}`,
+      ]
+    : [];
+
+  // Phase 5: Entity-focused queries (Organization/Brand only) - lower priority
+  const entityQueries = isUsableBrandToken(brand) ? [
+    `"${brand}" news outlet reliability assessment`,
+    `"${brand}" media organization bias rating`,
+  ] : [];
 
   const maxResultsPerQuery = Math.max(
     1,
@@ -728,7 +864,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       for (const r of resp.results) {
         if (!r.url) continue;
         if (seen.has(r.url)) continue;
-        if (!isRelevantSearchResult(r, domain, brandVariants)) continue;
+        if (!isRelevantSearchResult(r, domain, brandVariants, assessmentTerms)) continue;
         seen.add(r.url);
         rawItems.push({ r, query: q, provider });
         added++;
@@ -740,7 +876,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     return added;
   }
 
-  // Phase 1: Run standard queries (English)
+  // Phase 1: Run standard reliability assessment queries (English)
   for (const q of standardQueries) {
     await runQuery(q);
     if (rawItems.length >= maxEvidenceItems) break;
@@ -755,16 +891,45 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 2: Run entity-focused queries (English)
+  // Phase 2: Run fact-checker site-specific queries
+  // These directly target known fact-checker domains for assessments
   if (rawItems.length < maxEvidenceItems) {
-    for (const q of entityQueries) {
+    for (const q of factCheckerQueries) {
       await runQuery(q);
       if (rawItems.length >= maxEvidenceItems) break;
     }
   }
 
-  // Phase 3: Run negative-signal queries (English)
-  // Always run these to catch well-documented propaganda/misinformation
+  // Phase 2b: Run regional fact-checker queries
+  if (rawItems.length < maxEvidenceItems && regionalFactCheckerQueries.length > 0) {
+    debugLog(`[SR-Eval] Running regional fact-checker queries for ${domain}`, { language: sourceLanguage });
+    for (const q of regionalFactCheckerQueries) {
+      await runQuery(q);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 3: Run state/foreign propaganda tracking queries (PRIORITY)
+  // Critical for finding outlets that amplify state narratives from any country
+  // Run early to ensure these queries execute before evidence pack fills up
+  if (rawItems.length < maxEvidenceItems) {
+    debugLog(`[SR-Eval] Running state propaganda tracking queries for ${domain}`, { brand });
+    for (const q of statePropagandaQueries) {
+      await runQuery(q);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 3b: Run state propaganda queries (translated)
+  if (rawItems.length < maxEvidenceItems && statePropagandaQueriesTranslated.length > 0) {
+    for (const q of statePropagandaQueriesTranslated) {
+      await runQuery(q);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 4: Run negative-signal queries (English)
+  // These help find documented problems with the source
   if (rawItems.length < maxEvidenceItems) {
     for (const q of negativeSignalQueries) {
       await runQuery(q);
@@ -772,12 +937,21 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 3b: Run negative-signal queries (translated) - critical for local fact-checkers
+  // Phase 4b: Run negative-signal queries (translated) - critical for local fact-checkers
   // German: CORRECTIV, Mimikama, dpa-Faktencheck
   // French: AFP Factuel, Les Décodeurs
   // Spanish: Maldita.es, Newtral
   if (rawItems.length < maxEvidenceItems && negativeSignalQueriesTranslated.length > 0) {
     for (const q of negativeSignalQueriesTranslated) {
+      await runQuery(q);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 5: Run entity-focused queries (English)
+  // Lower priority - general organization info
+  if (rawItems.length < maxEvidenceItems) {
+    for (const q of entityQueries) {
       await runQuery(q);
       if (rawItems.length >= maxEvidenceItems) break;
     }
