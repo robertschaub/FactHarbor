@@ -938,9 +938,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   }
 
   // Phase 4b: Run negative-signal queries (translated) - critical for local fact-checkers
-  // German: CORRECTIV, Mimikama, dpa-Faktencheck
-  // French: AFP Factuel, Les Décodeurs
-  // Spanish: Maldita.es, Newtral
+  // Regional fact-checkers are loaded from config (see regional-fact-checkers.json)
   if (rawItems.length < maxEvidenceItems && negativeSignalQueriesTranslated.length > 0) {
     for (const q of negativeSignalQueriesTranslated) {
       await runQuery(q);
@@ -1139,14 +1137,9 @@ ${evidenceSection}
 7. MULTILINGUAL EVIDENCE HANDLING
    - Evidence items may be in languages OTHER than English (German, French, Spanish, etc.)
    - Evaluate ALL evidence regardless of language — non-English evidence is equally valid
-   - Regional fact-checkers are authoritative for sources in their region:
-     * German: CORRECTIV, Mimikama, dpa-Faktencheck, Faktenfinder (ARD)
-     * French: AFP Factuel, Les Décodeurs (Le Monde), Libération CheckNews
-     * Spanish: Maldita.es, Newtral, EFE Verifica
-     * Portuguese: Aos Fatos, Lupa, Polígrafo
-     * Italian: Pagella Politica, ANSA Fact-checking
-     * Dutch: Nu.nl Factcheck, Nieuwscheckers
-   - These regional fact-checkers are Tier 1 assessors (same authority as IFCN signatories)
+   - Regional fact-checkers are authoritative for sources in their region
+   - Regional fact-checkers are Tier 1 assessors (same authority as IFCN signatories)
+   - Evidence from regional fact-checkers should be weighted equally to global fact-checkers
 
 ─────────────────────────────────────────────────────────────────────
 RATING SCALE (score → factualRating — MUST match exactly)
@@ -1497,7 +1490,7 @@ YOUR TASK: CROSS-CHECK AND REFINE
 
 6. MULTILINGUAL EVIDENCE CHECK
    - Evidence may be in languages OTHER than English
-   - Regional fact-checkers (CORRECTIV, Mimikama, AFP Factuel, etc.) are Tier 1 assessors
+   - Regional fact-checkers are Tier 1 assessors (same weight as global fact-checkers)
    - Did the initial evaluation properly weigh non-English evidence?
    - Check if regional fact-checker assessments were overlooked
 
