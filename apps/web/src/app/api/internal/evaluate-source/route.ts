@@ -550,8 +550,7 @@ ${evidenceSection}
 
 6. ENTITY-LEVEL EVALUATION (ORGANIZATION VS DOMAIN)
    - If the domain is the primary outlet for a larger organization (e.g., a TV channel, newspaper, or media group), you MUST evaluate the reliability of the WHOLE ORGANIZATION.
-   - Legacy media and public broadcasters (e.g., BBC, NPR, SRF) with established journalistic standards should be rated based on their organizational reputation.
-   - High-quality public broadcasters with independent editorial oversight typically score in the 0.80–0.85 (reliable) range.
+   - Legacy media and public broadcasters should be rated based on their organizational reputation.
    - Identify the organization name in the "identifiedEntity" field.
 
 ─────────────────────────────────────────────────────────────────────
