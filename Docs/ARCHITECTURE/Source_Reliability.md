@@ -1,8 +1,8 @@
 # FactHarbor Source Reliability
 
-**Version**: 1.2 (Hardened)  
+**Version**: 1.3.1 (Sequential Refinement + Shared Prompts)  
 **Status**: Operational  
-**Last Updated**: 2026-01-24 (v2.6.37)
+**Last Updated**: 2026-01-25 (v2.6.39)
 
 ---
 
@@ -25,11 +25,11 @@
 
 ## Overview
 
-FactHarbor evaluates source reliability dynamically using LLM-powered assessment with multi-model consensus. Sources are evaluated on-demand and cached for 90 days.
+FactHarbor evaluates source reliability dynamically using LLM-powered assessment with **sequential refinement**. The primary model (Claude) performs initial evaluation, then the secondary model (GPT-5 mini) cross-checks and refines the result. Sources are evaluated on-demand and cached for 90 days.
 
 | Aspect | Implementation |
 |--------|----------------|
-| **Evaluation** | Multi-model LLM consensus (Claude + GPT-4) |
+| **Evaluation** | Sequential LLM refinement (Claude → GPT-5 mini cross-check) |
 | **Storage** | SQLite cache (`source-reliability.db`) |
 | **Integration** | Batch prefetch + sync lookup (all 3 pipelines) |
 | **Pipelines** | Orchestrated ✅, Canonical ✅, Dynamic ✅ |
@@ -86,11 +86,11 @@ flowchart TB
         MAP[In-Memory Map<br/>prefetchedScores]
     end
     
-    subgraph evaluation [LLM Evaluation - Internal Only]
+    subgraph evaluation [LLM Evaluation - Sequential Refinement]
         EVAL[/api/internal/evaluate-source]
-        LLM1[Claude<br/>claude-3-haiku]
-        LLM2[GPT-4<br/>gpt-4o-mini]
-        CONS{Consensus<br/>Check}
+        LLM1[Claude<br/>Initial Evaluation]
+        LLM2[GPT-5 mini<br/>Cross-check and Refine]
+        FINAL[Final Result]
     end
     
     AN -->|1. Extract URLs| PF
@@ -98,11 +98,10 @@ flowchart TB
     SQLITE -->|3. Cache hits| MAP
     PF -->|4. Cache miss| EVAL
     EVAL --> LLM1
-    EVAL --> LLM2
-    LLM1 --> CONS
-    LLM2 --> CONS
-    CONS -->|5. Store score| SQLITE
-    CONS -->|6. Populate| MAP
+    LLM1 -->|Initial result| LLM2
+    LLM2 -->|Refined result| FINAL
+    FINAL -->|5. Store score| SQLITE
+    FINAL -->|6. Populate| MAP
     AN -->|7. Sync lookup| SR
     SR -->|8. Read from| MAP
     SR -->|9. Apply to| VERDICTS[Verdict Weighting]
@@ -405,7 +404,7 @@ Version 1.2 introduces significant improvements to scoring accuracy, especially 
 
 | Feature | Description |
 |---------|-------------|
-| **Entity-Level Evaluation** | Prioritize organization reputation (e.g., SRF, BBC) over domain-only metrics when the domain is a primary outlet. |
+| **Entity-Level Evaluation** | Prioritize organization reputation over domain-only metrics when the domain is a primary outlet for an established organization. |
 | **SOURCE TYPE SCORE CAPS** | Deterministic ceiling enforcement: `propaganda_outlet`/`known_disinformation` → ≤14%, `state_controlled_media`/`platform_ugc` → ≤42% |
 | **Adaptive Evidence Queries** | Negative-signal queries (`propaganda`, `disinformation`, `false claims`) added when initial results are sparse |
 | **Brand Variant Matching** | Improved relevance filtering: handles `anti-spiegel` ↔ `antispiegel` ↔ `anti spiegel`, suffix stripping (`foxnews` → `fox news`) |
@@ -450,6 +449,109 @@ const config = getSRConfig();
 // config.confidenceThreshold = 0.8 (unified)
 // config.consensusThreshold = 0.15
 ```
+
+---
+
+## v1.3 Sequential Refinement (January 2026)
+
+Version 1.3 replaces the parallel consensus model with **sequential refinement** for more accurate entity-level evaluation and better handling of established organizations like public broadcasters.
+
+### Architecture Change
+
+**Previous (v1.2) - Parallel Consensus:**
+```
+Evidence Pack → Claude (evaluate) → Result 1
+Evidence Pack → GPT-4 (evaluate) → Result 2
+Compare Results → Consensus or Fallback → Final
+```
+
+**Problem**: Both models evaluated independently with the same prompt, often both missing entity-level context (e.g., a domain belonging to a major public broadcaster).
+
+**New (v1.3) - Sequential Refinement:**
+```
+Evidence Pack → Claude (Initial Evaluation) → Initial Result
+                         ↓
+Evidence Pack + Initial Result → GPT-5 mini (Cross-check & Refine) → Final Result
+```
+
+**Benefits**:
+- LLM2 can catch what LLM1 missed (especially entity recognition)
+- Explicit cross-checking of entity identification
+- Baseline score adjustments for known organization types (public broadcasters, wire services)
+- Better reasoning transparency (shows refinement logic)
+
+### Refinement Process
+
+The secondary model (GPT-5 mini) receives:
+1. The original evidence pack
+2. The complete initial evaluation from Claude
+3. Instructions to cross-check, sharpen entity identification, and refine the score
+
+The refinement prompt includes guidance for:
+- **Entity identification**: Recognizing when a domain belongs to an established organization
+- **Organization type context**: Public broadcasters, wire services, legacy media characteristics
+- **Positive signals**: Academic citations, institutional use, professional reliance
+- **Established org handling**: Absence of explicit fact-checker ratings does NOT penalize established organizations (fact-checkers focus on problematic sources)
+
+### Shared Prompt Sections
+
+Both LLM1 (initial evaluation) and LLM2 (refinement) use **shared prompt constants** for consistency:
+
+| Section | Purpose |
+|---------|---------|
+| Rating Scale | Score → rating mapping (0.86+ = highly_reliable, etc.) |
+| Evidence Signals | Positive/neutral signal definitions |
+| Bias Values | Political and other bias enum values |
+| Source Types | Classification definitions and triggers |
+| Score Caps | Hard limits for severe source types |
+
+This ensures both models interpret evidence identically.
+
+### Score Caps (Hard Limits)
+
+Source type caps are **strictly enforced with no exceptions**:
+
+| Source Type | Maximum Score | Rating |
+|-------------|---------------|--------|
+| `propaganda_outlet` | 0.14 | highly_unreliable |
+| `known_disinformation` | 0.14 | highly_unreliable |
+| `state_controlled_media` | 0.42 | leaning_unreliable |
+| `platform_ugc` | 0.42 | leaning_unreliable |
+
+If evidence suggests a source has reformed, the correct action is to **reclassify the sourceType**, not exceed the cap.
+
+### Refinement Adjustment Rules
+
+The refinement stage follows strict adjustment criteria:
+
+- **UPWARD adjustment** requires positive signals PRESENT in evidence:
+  - Academic citations of the source as reference material
+  - Professional/institutional use documented
+  - Independent mentions treating it as authoritative
+- **DOWNWARD adjustment** if negative signals were missed or underweighted
+- **NO adjustment** if evidence is simply sparse (sparse ≠ positive)
+- Absence of negative evidence alone does NOT justify upward adjustment
+
+### Response Fields
+
+The API response now includes refinement tracking:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `refinementApplied` | boolean | Whether the score was adjusted by cross-check |
+| `refinementNotes` | string | Summary of cross-check findings |
+| `originalScore` | number | Score before refinement (if changed) |
+
+### Example: Public Broadcaster Evaluation
+
+**Before (v1.2 - Parallel Consensus)**:
+- Both models evaluated the source independently at ~60% (leaning_reliable)
+- Consensus achieved, but score may be too conservative for an established organization
+
+**After (v1.3 - Sequential Refinement)**:
+- Claude initial evaluation: 60% (leaning_reliable)
+- GPT-5 mini cross-check: Identifies the source as an established public broadcaster, notes academic citations and institutional use in evidence, no negative evidence found
+- Final result: Score refined upward with `refinementApplied: true` and detailed `refinementNotes`
 
 ---
 
@@ -503,8 +605,8 @@ Per review feedback, the system avoids categorical assumptions:
 
 When a domain is the primary digital outlet for a larger organization (e.g., a TV channel, newspaper, or media group), the evaluation must focus on the reliability of the entire organization.
 
-- **Scope**: If the domain name (e.g., `srf.ch`) or the website's branding closely matches an organization name (e.g., "SRF" or "Schweizer Radio und Fernsehen"), the whole organization shall be rated.
-- **Legacy Media**: Public broadcasters and established legacy media (e.g., BBC, NPR, SRF) should be evaluated based on their institutional standards and editorial oversight.
+- **Scope**: If the domain name or the website's branding closely matches an organization name, the whole organization shall be rated.
+- **Legacy Media**: Public broadcasters and established legacy media should be evaluated based on their institutional standards and editorial oversight.
 - **Consistency**: This prevents high-quality organizations from being underrated due to narrow domain-focused metrics.
 
 ### Dynamic Assessment
@@ -720,9 +822,9 @@ function calculateEffectiveWeight(data: SourceReliabilityData): number {
 - **Transparency** - A 70% score means 70% weight, no hidden calculations
 
 **Examples:**
-- Reuters (95% score): 95% weight
-- Fox Business (67% score): 67% weight
-- xinhuanet.com (27% score): 27% weight
+- Highly reliable source (95% score): 95% weight
+- Mixed reliability source (67% score): 67% weight
+- Unreliable source (27% score): 27% weight
 - Unknown source (50% default): 50% weight (neutral)
 
 ### Unknown Source Handling

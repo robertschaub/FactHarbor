@@ -85,7 +85,7 @@ const EvaluationResultSchema = z.object({
   domain: z.string().optional(),
   evaluationDate: z.string().optional(),
   sourceType: z.string().optional(),
-  identifiedEntity: z.string().optional(), // The organization evaluated (e.g. "SRF", "BBC")
+  identifiedEntity: z.string().nullable().optional(), // The organization evaluated, or null if unknown
   evidenceQuality: z.object({
     independentAssessmentsCount: z.coerce.number().min(0).max(10).optional(),
     recencyWindowUsed: z.string().optional(),
@@ -128,7 +128,7 @@ interface ResponsePayload {
   consensusAchieved: boolean;
   reasoning: string;
   category: string;
-  identifiedEntity?: string; // The organization evaluated
+  identifiedEntity?: string | null; // The organization evaluated, or null if unknown
   evidencePack?: {
     providersUsed: string[];
     queries: string[];
@@ -144,6 +144,12 @@ interface ResponsePayload {
   /** When consensus fails but primary (Claude) has higher confidence, we use its result */
   fallbackUsed?: boolean;
   fallbackReason?: string;
+  /** Sequential refinement: Whether the second LLM adjusted the score */
+  refinementApplied?: boolean;
+  /** Sequential refinement: Notes from the cross-check process */
+  refinementNotes?: string;
+  /** Sequential refinement: Original score before refinement */
+  originalScore?: number | null;
 }
 
 // ============================================================================
@@ -478,6 +484,98 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
 }
 
 // ============================================================================
+// SHARED PROMPT SECTIONS
+// ============================================================================
+// These sections are used by both the initial evaluation and refinement prompts
+// to ensure consistency in how both LLMs interpret evidence and apply ratings.
+
+/**
+ * Rating scale - MUST be identical in both prompts
+ */
+const SHARED_RATING_SCALE = `
+  0.86–1.00 → highly_reliable     (highest standards, fact-checked, proactively corrects)
+  0.72–0.85 → reliable            (good standards, accurate, corrects promptly)
+  0.58–0.71 → leaning_reliable    (basic standards, mostly accurate, corrects when notified)
+  0.43–0.57 → mixed               (mixed standards, mixed accuracy, mixed corrections)
+  0.29–0.42 → leaning_unreliable  (lax standards, often inaccurate, slow to correct)
+  0.15–0.28 → unreliable          (poor standards, inaccurate, rarely corrects)
+  0.00–0.14 → highly_unreliable   (lowest standards, fabricates, resists correction)
+  null      → insufficient_data   (cannot evaluate — sparse/no evidence)`;
+
+/**
+ * Evidence quality signals - shared understanding of what counts as positive/negative
+ */
+const SHARED_EVIDENCE_SIGNALS = `
+POSITIVE CONTEXTUAL SIGNALS (supporting evidence, not standalone):
+  - Source is frequently cited in academic publications as reference material
+  - Source is used by professional institutions as information source
+  - Community/industry treats the source as respected/authoritative
+  - Note: These support reliability assessment but cannot establish verdict alone
+
+NEUTRAL SIGNALS (context only):
+  - Government funding with editorial independence
+  - Self-published editorial policies or standards pages
+  - Awards from industry organizations (without independent verification)`;
+
+/**
+ * Bias value definitions - MUST be identical in both prompts
+ */
+const SHARED_BIAS_VALUES = `
+politicalBias: far_left | left | center_left | center | center_right | right | far_right | not_applicable
+otherBias: pro_government | anti_government | corporate_interest | sensationalist | ideological_other | none_detected | null`;
+
+/**
+ * Source type definitions with score caps - MUST be consistent across prompts
+ */
+const SHARED_SOURCE_TYPES = `
+- editorial_publisher: Traditional news outlet with editorial oversight (newspaper, magazine, TV news)
+
+- wire_service: News agency providing content to other outlets (neutral aggregation)
+
+- government: Official government communication (not journalism)
+
+- state_media: Government-FUNDED but editorially INDEPENDENT (national public broadcasters).
+  Key test: Does it criticize its own government? If yes → state_media, not state_controlled.
+
+- state_controlled_media: Government DIRECTLY CONTROLS editorial decisions
+  STRICT: Requires evidence of editorial control, not just government funding.
+  If evidence is ambiguous → use state_media instead.
+
+- platform_ugc: User-generated content platforms
+
+- advocacy: Organization promoting specific cause/viewpoint.
+  USE THIS for outlets with strong political slant but legitimate editorial operations.
+
+- aggregator: Republishes content from other sources
+
+- propaganda_outlet: PRIMARY PURPOSE is coordinated influence operations
+  CLASSIFICATION TRIGGERS (ANY ONE is sufficient):
+  (1) Listed on government/EU disinformation tracking databases
+  (2) Identified by academic disinformation researchers as coordinated influence
+  (3) Evidence shows domain mirrors/amplifies known state propaganda narratives
+  (4) Domain registered/operated by sanctioned entities or state actors
+  (5) Multiple independent assessors classify as propaganda
+
+- known_disinformation: DOCUMENTED source of FABRICATED content
+  CLASSIFICATION TRIGGERS (ANY ONE is sufficient):
+  (1) Multiple fact-checkers document FABRICATED (invented) content
+  (2) Listed on disinformation tracking databases as fake news source
+  (3) Documented history of publishing verifiably false stories
+  (4) Platform bans for repeated violations of misinformation policies
+
+- unknown: Cannot determine from evidence`;
+
+/**
+ * Score caps for severe source types - MUST be enforced consistently
+ */
+const SHARED_SCORE_CAPS = `
+SOURCE TYPE SCORE CAPS (hard limits):
+  - propaganda_outlet:       MAX 0.14 (highly_unreliable)
+  - known_disinformation:    MAX 0.14 (highly_unreliable)
+  - state_controlled_media:  MAX 0.42 (leaning_unreliable)
+  - platform_ugc:            MAX 0.42 (leaning_unreliable)`;
+
+// ============================================================================
 // HARDENED EVALUATION PROMPT
 // ============================================================================
 
@@ -536,13 +634,12 @@ ${evidenceSection}
    - 1-2 documented failures from reputable fact-checkers → score ≤ 0.57 (mixed)
    - Political/ideological bias WITHOUT documented failures → no score cap (note in bias field only)
 
-4. SOURCE TYPE SCORE CAPS (automatic ceilings based on classification)
+4. SOURCE TYPE SCORE CAPS (hard limits — NO exceptions)
    - sourceType="propaganda_outlet" → score MUST be ≤ 0.14 (highly_unreliable)
    - sourceType="known_disinformation" → score MUST be ≤ 0.14 (highly_unreliable)
    - sourceType="state_controlled_media" → score MUST be ≤ 0.42 (leaning_unreliable)
-     unless evidence demonstrates genuine editorial independence and correction practices
-   - sourceType="platform_ugc" → score MUST be ≤ 0.42 unless evidence shows
-     consistent domain-level verification
+   - sourceType="platform_ugc" → score MUST be ≤ 0.42 (leaning_unreliable)
+   Note: If evidence suggests a source has reformed, reclassify the sourceType instead.
 
 5. SELF-PUBLISHED PAGES DO NOT COUNT
    - The source's own "about", "editorial standards", or "corrections" pages are NOT independent assessments
@@ -556,14 +653,7 @@ ${evidenceSection}
 ─────────────────────────────────────────────────────────────────────
 RATING SCALE (score → factualRating — MUST match exactly)
 ─────────────────────────────────────────────────────────────────────
-  0.86–1.00 → highly_reliable     (highest standards, fact-checked, proactively corrects)
-  0.72–0.85 → reliable            (good standards, accurate, corrects promptly)
-  0.58–0.71 → leaning_reliable    (basic standards, mostly accurate, corrects when notified)
-  0.43–0.57 → mixed               (mixed standards, mixed accuracy, mixed corrections)
-  0.29–0.42 → leaning_unreliable  (lax standards, often inaccurate, slow to correct)
-  0.15–0.28 → unreliable          (poor standards, inaccurate, rarely corrects)
-  0.00–0.14 → highly_unreliable   (lowest standards, fabricates, resists correction)
-  null      → insufficient_data   (cannot evaluate — sparse/no evidence)
+${SHARED_RATING_SCALE}
 
 ─────────────────────────────────────────────────────────────────────
 CONFIDENCE CALCULATION (mechanistic formula)
@@ -592,50 +682,13 @@ SOURCE TYPE CLASSIFICATION (USE STRICT CRITERIA - prefer LESS SEVERE)
 ─────────────────────────────────────────────────────────────────────
 ⚠️ CRITICAL: Use the LEAST severe classification that fits the evidence.
    Political bias alone does NOT make a source propaganda or disinformation.
+${SHARED_SOURCE_TYPES}
 
-- editorial_publisher: Independent newsroom with editorial standards.
-  USE THIS for mainstream news outlets with editorial processes, even if biased.
+ADDITIONAL GUIDANCE for severe classifications:
+  - propaganda_outlet: DO NOT USE for mainstream outlets with political bias, advocacy journalism
+  - known_disinformation: DO NOT USE for outlets with occasional fact-check failures but real journalistic operation
 
-- wire_service: News agency providing content to other outlets
-
-- government: Official government communication (not journalism)
-
-- state_media: Government-FUNDED but editorially INDEPENDENT (like BBC, NPR, SRF).
-  Key test: Does it criticize its own government? If yes → state_media, not state_controlled.
-
-- state_controlled_media: Government DIRECTLY CONTROLS editorial decisions (cap: ≤0.42)
-  STRICT: Requires evidence of editorial control, not just government funding.
-  If evidence is ambiguous → use state_media instead.
-
-- platform_ugc: User-generated content platforms (cap: ≤0.42)
-
-- advocacy: Organization promoting specific cause/viewpoint.
-  USE THIS for outlets with strong political slant but legitimate editorial operations.
-
-- aggregator: Republishes content from other sources
-
-- propaganda_outlet: PRIMARY PURPOSE is coordinated influence operations (cap: ≤0.14)
-  CLASSIFICATION TRIGGERS (ANY ONE is sufficient):
-  (1) Listed on government/EU disinformation tracking databases
-  (2) Identified by academic disinformation researchers as coordinated influence
-  (3) Evidence shows domain mirrors/amplifies known state propaganda narratives
-  (4) Domain registered/operated by sanctioned entities or state actors
-  (5) Multiple independent assessors classify as propaganda
-  ADDITIONAL SIGNALS (supporting, not alone):
-  - Funding traced to foreign state actors
-  - Content patterns match known influence operations
-  - Domain name mimics legitimate outlet (typosquatting)
-  DO NOT USE for: mainstream outlets with political bias, advocacy journalism
-
-- known_disinformation: DOCUMENTED source of FABRICATED content (cap: ≤0.14)
-  CLASSIFICATION TRIGGERS (ANY ONE is sufficient):
-  (1) Multiple fact-checkers document FABRICATED (invented) content
-  (2) Listed on disinformation tracking databases as fake news source
-  (3) Documented history of publishing verifiably false stories
-  (4) Platform bans for repeated violations of misinformation policies
-  DO NOT USE for: outlets with occasional fact-check failures but real journalistic operation
-
-- unknown: Cannot determine from evidence
+${SHARED_SCORE_CAPS}
 
 ─────────────────────────────────────────────────────────────────────
 RECOGNIZED INDEPENDENT ASSESSORS (any of these count as "fact-checker")
@@ -686,6 +739,8 @@ LOW WEIGHT (context only, cannot trigger caps):
   - Generic references without reliability details
   - Self-published claims (source's own website)
 
+${SHARED_EVIDENCE_SIGNALS}
+
 ─────────────────────────────────────────────────────────────────────
 RECENCY WEIGHTING (apply temporal discount to evidence)
 ─────────────────────────────────────────────────────────────────────
@@ -700,15 +755,14 @@ evidence; may not reflect current state."
 ─────────────────────────────────────────────────────────────────────
 BIAS VALUES (exact strings only)
 ─────────────────────────────────────────────────────────────────────
-politicalBias: far_left | left | center_left | center | center_right | right | far_right | not_applicable
-otherBias: pro_government | anti_government | corporate_interest | sensationalist | ideological_other | none_detected | null
+${SHARED_BIAS_VALUES}
 
 ─────────────────────────────────────────────────────────────────────
 OUTPUT FORMAT (JSON only, no markdown, no commentary)
 ─────────────────────────────────────────────────────────────────────
 {
   "sourceType": "editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown",
-  "identifiedEntity": "string, the organization name if domain is primary outlet (e.g. 'SRF', 'BBC', 'Fox News') OR null",
+  "identifiedEntity": "string, the organization name if domain is primary outlet OR null",
   "evidenceQuality": {
     "independentAssessmentsCount": "number 0-10",
     "recencyWindowUsed": "string, e.g. '2024-2026' or 'unknown'",
@@ -848,6 +902,277 @@ FINAL VALIDATION (check before responding)
 □ Follow the schema above exactly
 □ Return only valid JSON (no markdown, no extra commentary)
 `;
+}
+
+// ============================================================================
+// REFINEMENT PROMPT (Sequential LLM Chain)
+// ============================================================================
+
+/**
+ * Generate a refinement prompt for the second LLM to cross-check and refine
+ * the initial evaluation. This enables sequential refinement where LLM2
+ * can catch what LLM1 missed, especially for entity-level evaluation.
+ */
+function getRefinementPrompt(
+  domain: string,
+  evidenceSection: string,
+  initialResult: EvaluationResult,
+  initialModelName: string
+): string {
+  const scoreStr = initialResult.score !== null 
+    ? `${(initialResult.score * 100).toFixed(0)}%` 
+    : "null (insufficient_data)";
+  
+  const evidenceCitedSummary = (initialResult.evidenceCited ?? [])
+    .map(e => `- ${e.claim} (${e.basis})`)
+    .join("\n") || "(none cited)";
+
+  return `You are a senior fact-check analyst performing a CROSS-CHECK and REFINEMENT of an initial source reliability evaluation.
+
+═══════════════════════════════════════════════════════════════════════════════
+DOMAIN UNDER EVALUATION: ${domain}
+═══════════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════════
+INITIAL EVALUATION (by ${initialModelName})
+═══════════════════════════════════════════════════════════════════════════════
+Score: ${scoreStr}
+Rating: ${initialResult.factualRating}
+Source Type: ${initialResult.sourceType || "unknown"}
+Identified Entity: ${initialResult.identifiedEntity || "Not identified"}
+Confidence: ${(initialResult.confidence * 100).toFixed(0)}%
+
+Initial Reasoning:
+${initialResult.reasoning}
+
+Evidence Cited by Initial Evaluation:
+${evidenceCitedSummary}
+
+Caveats from Initial Evaluation:
+${(initialResult.caveats ?? []).map(c => `- ${c}`).join("\n") || "(none)"}
+
+═══════════════════════════════════════════════════════════════════════════════
+EVIDENCE PACK (Same evidence the initial evaluation used)
+═══════════════════════════════════════════════════════════════════════════════
+${evidenceSection}
+
+═══════════════════════════════════════════════════════════════════════════════
+YOUR TASK: CROSS-CHECK AND REFINE
+═══════════════════════════════════════════════════════════════════════════════
+
+1. CROSS-CHECK the initial evaluation against the evidence
+   - Did the initial evaluation interpret the evidence correctly?
+   - Are there any errors or oversights?
+
+2. IDENTIFY what the initial evaluation missed or got wrong
+   - Look for evidence the initial evaluation didn't cite
+   - Check if evidence was misinterpreted
+
+3. SHARPEN the entity identification
+   - Is this domain the PRIMARY outlet for a larger organization?
+   - What type of organization is it? (public broadcaster, wire service, newspaper, etc.)
+   - Is this a well-known, established media organization?
+
+4. ENRICH with organizational context
+   - For PUBLIC BROADCASTERS (national/public media funded by government but editorially independent):
+     * Government-funded but editorially independent
+     * Institutional history and accountability structures
+   - For WIRE SERVICES (news agencies providing content to other outlets):
+     * Industry standard for factual reporting
+     * Used by other news organizations worldwide
+   - For LEGACY NEWSPAPERS/BROADCASTERS (established media with decades of operation):
+     * Established editorial standards and correction policies
+     * Track record matters
+
+5. CROSS-CHECK AND ADJUST the score
+   - Verify the initial evaluation is correct
+   - Add entity-level context if the initial evaluation missed it
+   
+   ADJUSTMENT RULES (must follow strictly):
+   - UPWARD adjustment if positive signals are PRESENT in the evidence pack:
+     * Academic citations of the source as reference material
+     * Professional/institutional use documented
+     * Independent mentions treating it as authoritative
+   - DOWNWARD adjustment if negative signals were missed or underweighted
+   - NO adjustment if evidence is simply sparse (sparse ≠ positive)
+   - Absence of negative evidence alone does NOT justify upward adjustment
+
+═══════════════════════════════════════════════════════════════════════════════
+EVIDENCE SIGNALS (same as initial evaluation)
+═══════════════════════════════════════════════════════════════════════════════
+${SHARED_EVIDENCE_SIGNALS}
+
+REFINEMENT-SPECIFIC RULES:
+- Absence of explicit fact-checker ratings does NOT penalize well respected sources
+  (fact-checkers focus on problematic sources, not trusted ones)
+- Upward adjustment requires POSITIVE signals to be documented in the evidence pack
+
+═══════════════════════════════════════════════════════════════════════════════
+RATING SCALE (must match initial evaluation)
+═══════════════════════════════════════════════════════════════════════════════
+${SHARED_RATING_SCALE}
+
+═══════════════════════════════════════════════════════════════════════════════
+SOURCE TYPES (must match initial evaluation)
+═══════════════════════════════════════════════════════════════════════════════
+${SHARED_SOURCE_TYPES}
+
+${SHARED_SCORE_CAPS}
+
+═══════════════════════════════════════════════════════════════════════════════
+OUTPUT FORMAT (JSON only, no markdown, no extra commentary)
+═══════════════════════════════════════════════════════════════════════════════
+{
+  "crossCheckFindings": "string: What did the initial evaluation miss, get wrong, or interpret incorrectly? Be specific.",
+  "entityRefinement": {
+    "identifiedEntity": "string: The organization name or null if unknown",
+    "organizationType": "string: public_broadcaster | wire_service | legacy_newspaper | legacy_broadcaster | digital_native | other",
+    "isWellKnown": "boolean: Is this a well-established, recognized organization?",
+    "notes": "string: Brief explanation of the organization's status"
+  },
+  "scoreAdjustment": {
+    "originalScore": ${initialResult.score !== null ? initialResult.score.toFixed(2) : "null"},
+    "refinedScore": "number (0.00-1.00) or null if insufficient_data",
+    "adjustmentReason": "string: Why the score was adjusted, or 'No adjustment - initial score is appropriate'"
+  },
+  "refinedRating": "string: highly_reliable | reliable | leaning_reliable | mixed | leaning_unreliable | unreliable | highly_unreliable | insufficient_data",
+  "refinedConfidence": "number (0.00-1.00): Your confidence in the refined assessment",
+  "combinedReasoning": "string: Updated reasoning that incorporates your cross-check findings"
+}
+
+Return ONLY valid JSON. No markdown fences, no extra text.`;
+}
+
+/**
+ * Schema for parsing refinement output from the second LLM.
+ */
+const RefinementResultSchema = z.object({
+  crossCheckFindings: z.string(),
+  entityRefinement: z.object({
+    identifiedEntity: z.string().nullable(),
+    organizationType: z.string(),
+    isWellKnown: z.boolean(),
+    notes: z.string(),
+  }),
+  scoreAdjustment: z.object({
+    originalScore: z.number().nullable(),
+    refinedScore: z.number().min(0).max(1).nullable(),
+    adjustmentReason: z.string(),
+  }),
+  refinedRating: FactualRatingSchema,
+  refinedConfidence: z.number().min(0).max(1),
+  combinedReasoning: z.string(),
+});
+
+type RefinementResult = z.infer<typeof RefinementResultSchema>;
+
+/**
+ * Call the secondary model to cross-check and refine the primary evaluation.
+ * This implements the sequential refinement pattern where LLM2 reviews LLM1's work.
+ */
+async function refineEvaluation(
+  domain: string,
+  evidencePack: EvidencePack,
+  initialResult: EvaluationResult,
+  initialModelName: string
+): Promise<{
+  refinedResult: EvaluationResult;
+  refinementApplied: boolean;
+  refinementNotes: string;
+  originalScore: number | null;
+} | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey || apiKey.startsWith("PASTE_") || apiKey === "sk-...") {
+    debugLog(`[SR-Eval] Refinement skipped: OpenAI API key not configured`);
+    return null;
+  }
+
+  // Build evidence section for the refinement prompt
+  const evidenceSection = evidencePack.enabled && evidencePack.items.length > 0
+    ? evidencePack.items.map((it) => {
+        const snip = (it.snippet ?? "").replace(/\s+/g, " ").trim();
+        return `[${it.id}] ${it.title}\n    URL: ${it.url}\n    Excerpt: ${snip || "(none)"}`;
+      }).join("\n\n")
+    : "(No evidence items available)";
+
+  const prompt = getRefinementPrompt(domain, evidenceSection, initialResult, initialModelName);
+  const temperature = getDeterministicTemperature(0.3);
+  const modelName = "gpt-5-mini";
+
+  debugLog(`[SR-Eval] Starting refinement pass with ${modelName} for ${domain}...`);
+
+  try {
+    const { text } = await generateText({
+      model: openai(modelName),
+      prompt,
+      temperature,
+      maxOutputTokens: 2000,
+    });
+
+    // Parse JSON response
+    const cleaned = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "").trim();
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      debugLog(`[SR-Eval] Refinement failed: Invalid JSON response`, { domain, response: text.slice(0, 500) });
+      return null;
+    }
+
+    const validated = RefinementResultSchema.safeParse(parsed);
+    if (!validated.success) {
+      debugLog(`[SR-Eval] Refinement failed: Schema validation error`, { domain, errors: validated.error.issues });
+      return null;
+    }
+
+    const refinement = validated.data;
+    const originalScore = initialResult.score;
+    const refinedScore = refinement.scoreAdjustment.refinedScore;
+    const scoreChanged = refinedScore !== originalScore;
+
+    // Build refined result
+    const refinedResult: EvaluationResult = {
+      ...initialResult,
+      score: refinedScore,
+      confidence: refinement.refinedConfidence,
+      factualRating: refinement.refinedRating,
+      reasoning: refinement.combinedReasoning,
+      identifiedEntity: refinement.entityRefinement.identifiedEntity ?? initialResult.identifiedEntity,
+      caveats: [
+        ...(initialResult.caveats ?? []),
+        ...(scoreChanged ? [`Score refined from ${originalScore !== null ? (originalScore * 100).toFixed(0) + '%' : 'null'} to ${refinedScore !== null ? (refinedScore * 100).toFixed(0) + '%' : 'null'}: ${refinement.scoreAdjustment.adjustmentReason}`] : []),
+      ],
+    };
+
+    // Apply post-processing to ensure caps and rating alignment
+    const processedResult = applyPostProcessing(refinedResult, evidencePack);
+
+    const refinementNotes = [
+      `Cross-check findings: ${refinement.crossCheckFindings}`,
+      `Entity: ${refinement.entityRefinement.identifiedEntity ?? 'Not identified'} (${refinement.entityRefinement.organizationType})`,
+      `Well-known: ${refinement.entityRefinement.isWellKnown ? 'Yes' : 'No'}`,
+      scoreChanged ? `Score adjusted: ${refinement.scoreAdjustment.adjustmentReason}` : 'Score confirmed as appropriate',
+    ].join(' | ');
+
+    debugLog(`[SR-Eval] Refinement complete for ${domain}: ${scoreChanged ? 'score adjusted' : 'score confirmed'}`, {
+      domain,
+      originalScore,
+      refinedScore: processedResult.score,
+      refinementApplied: scoreChanged,
+    });
+
+    return {
+      refinedResult: processedResult,
+      refinementApplied: scoreChanged,
+      refinementNotes,
+      originalScore,
+    };
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    debugLog(`[SR-Eval] Refinement failed with error: ${errorMessage}`, { domain });
+    return null;
+  }
 }
 
 // ============================================================================
@@ -1140,14 +1465,23 @@ Always respond with valid JSON only.`
 }
 
 // ============================================================================
-// CONSENSUS EVALUATION
+// SEQUENTIAL REFINEMENT EVALUATION
+// ============================================================================
+//
+// Architecture: LLM1 (Initial Evaluation) → LLM2 (Cross-check and Refine) → Final Result
+//
+// Benefits over parallel consensus:
+// - LLM2 can catch what LLM1 missed (especially entity-level evaluation)
+// - LLM2 explicitly cross-checks entity identification
+// - LLM2 can apply baseline adjustments for known organization types
+// - Better reasoning transparency (shows refinement logic)
 // ============================================================================
 
 async function evaluateSourceWithConsensus(
   domain: string,
   multiModel: boolean,
   confidenceThreshold: number,
-  consensusThreshold: number
+  _consensusThreshold: number // Kept for API compatibility, not used in sequential mode
 ): Promise<{ success: true; data: ResponsePayload } | { success: false; error: EvaluationError }> {
   const evidencePack = await buildEvidencePack(domain);
   if (evidencePack.enabled) {
@@ -1157,7 +1491,9 @@ async function evaluateSourceWithConsensus(
     );
   }
 
-  // Primary evaluation (Anthropic Claude)
+  // ============================================================================
+  // STEP 1: Primary evaluation (Anthropic Claude)
+  // ============================================================================
   const primary = await evaluateWithModel(domain, "anthropic", evidencePack);
   if (!primary) {
     debugLog(`[SR-Eval] Primary evaluation failed for ${domain}`);
@@ -1170,7 +1506,7 @@ async function evaluateSourceWithConsensus(
     };
   }
 
-  // Handle insufficient_data case
+  // Handle insufficient_data case - no refinement needed
   if (primary.result.factualRating === "insufficient_data" || primary.result.score === null) {
     debugLog(`[SR-Eval] Insufficient data for ${domain}`);
     return {
@@ -1179,7 +1515,9 @@ async function evaluateSourceWithConsensus(
     };
   }
 
-  // Single-model mode: Skip secondary evaluation if multiModel is disabled
+  // ============================================================================
+  // STEP 2: Single-model mode - skip refinement
+  // ============================================================================
   if (!multiModel) {
     debugLog(`[SR-Eval] Single-model mode: Using primary only for ${domain}`);
     return {
@@ -1188,262 +1526,95 @@ async function evaluateSourceWithConsensus(
         primary.result,
         primary.modelName,
         null,
-        true, // consensusAchieved = true in single-model mode (no disagreement possible)
+        true, // consensusAchieved = true in single-model mode
         evidencePack
-        // No score/confidence override - use full primary confidence
-      ),
-    };
-  }
-
-  // Multi-model: Secondary evaluation (OpenAI GPT-5 mini)
-  const secondary = await evaluateWithModel(domain, "openai", evidencePack);
-  if (!secondary) {
-    debugLog(`[SR-Eval] Secondary evaluation failed for ${domain}, using primary only`);
-    return {
-      success: true,
-      data: buildResponsePayload(
-        primary.result,
-        primary.modelName,
-        null,
-        false,
-        evidencePack,
-        primary.result.score,
-        primary.result.confidence * 0.8 // Reduced confidence when secondary fails in multi-model mode
-      ),
-    };
-  }
-
-  // Handle case where secondary returns insufficient_data
-  if (secondary.result.factualRating === "insufficient_data" || secondary.result.score === null) {
-    debugLog(`[SR-Eval] Secondary model returned insufficient_data for ${domain}, using primary only`);
-    return {
-      success: true,
-      data: buildResponsePayload(
-        primary.result,
-        primary.modelName,
-        secondary.modelName,
-        false,
-        evidencePack,
-        primary.result.score,
-        primary.result.confidence * 0.8
       ),
     };
   }
 
   // ============================================================================
-  // SOURCE TYPE DISAGREEMENT HANDLING
-  // When models disagree on sourceType, prefer the MORE SEVERE classification.
-  // Rationale: For propaganda/disinformation detection, false negatives (missing
-  // real propaganda) are worse than false positives (over-flagging). If either
-  // model identifies a severe type, trust that assessment.
+  // STEP 3: Sequential Refinement (GPT-5 mini cross-checks Claude's work)
   // ============================================================================
-  const severeTypes = new Set(["propaganda_outlet", "known_disinformation", "state_controlled_media"]);
-  const primaryType = primary.result.sourceType ?? "";
-  const secondaryType = secondary.result.sourceType ?? "";
+  debugLog(`[SR-Eval] Starting sequential refinement for ${domain}...`);
+  
+  const refinement = await refineEvaluation(
+    domain,
+    evidencePack,
+    primary.result,
+    primary.modelName
+  );
 
-  let adjustedPrimary = primary;
-  let adjustedSecondary = secondary;
-
-  // If secondary identified severe type but primary didn't, promote primary to severe
-  if (severeTypes.has(secondaryType) && !severeTypes.has(primaryType)) {
-    debugLog(`[SR-Eval] SourceType disagreement: primary="${primaryType}" vs secondary="${secondaryType}" - trusting severe classification`, { domain, primaryType, secondaryType });
-
-    // Apply the severe type's cap to primary
-    const cap = SOURCE_TYPE_CAPS[secondaryType];
-    if (cap !== undefined && primary.result.score !== null && primary.result.score > cap) {
-      const adjustedResult = {
-        ...primary.result,
-        sourceType: secondaryType,
-        score: cap,
-        caveats: [
-          ...(primary.result.caveats ?? []),
-          `Score capped to ${(cap * 100).toFixed(0)}% - secondary model identified as "${secondaryType}".`
-        ]
-      };
-      adjustedPrimary = { result: adjustedResult, modelName: primary.modelName };
-      debugLog(`[SR-Eval] Applied severe cap to primary: ${primary.result.score.toFixed(2)} → ${cap.toFixed(2)}`, { domain });
-    }
-  }
-
-  // If primary identified severe type but secondary didn't, promote secondary to severe
-  if (severeTypes.has(primaryType) && !severeTypes.has(secondaryType)) {
-    debugLog(`[SR-Eval] SourceType disagreement: primary="${primaryType}" vs secondary="${secondaryType}" - trusting severe classification`, { domain, primaryType, secondaryType });
-
-    // Apply the severe type's cap to secondary
-    const cap = SOURCE_TYPE_CAPS[primaryType];
-    if (cap !== undefined && secondary.result.score !== null && secondary.result.score > cap) {
-      const adjustedResult = {
-        ...secondary.result,
-        sourceType: primaryType,
-        score: cap,
-        caveats: [
-          ...(secondary.result.caveats ?? []),
-          `Score capped to ${(cap * 100).toFixed(0)}% - primary model identified as "${primaryType}".`
-        ]
-      };
-      adjustedSecondary = { result: adjustedResult, modelName: secondary.modelName };
-      debugLog(`[SR-Eval] Applied severe cap to secondary: ${secondary.result.score.toFixed(2)} → ${cap.toFixed(2)}`, { domain });
-    }
-  }
-
-  // Check consensus (both scores are non-null at this point)
-  // Use adjusted scores which may have severe-type caps applied
-  const scoreDiff = Math.abs((adjustedPrimary.result.score ?? 0) - (adjustedSecondary.result.score ?? 0));
-  const consensusAchieved = scoreDiff <= consensusThreshold;
-
-  if (!consensusAchieved) {
-    debugLog(
-      `[SR-Eval] No consensus for ${domain}: ${adjustedPrimary.result.score?.toFixed(2)} vs ${adjustedSecondary.result.score?.toFixed(2)} (diff: ${scoreDiff.toFixed(2)} > ${consensusThreshold})`,
-      { domain, primaryScore: adjustedPrimary.result.score, secondaryScore: adjustedSecondary.result.score, scoreDiff, consensusThreshold }
-    );
-
-    // FALLBACK LOGIC: When consensus fails, use the LOWER score (skeptical default for disagreements)
-    const primaryScore = adjustedPrimary.result.score ?? 0;
-    const secondaryScore = adjustedSecondary.result.score ?? 0;
-
-    // For safety, use the lower score when models disagree
-    if (primaryScore <= secondaryScore) {
-      // Primary has lower or equal score - use it
-      const fallbackReason = `Models disagreed (${(scoreDiff * 100).toFixed(0)}% diff). Using lower score (Claude ${(primaryScore * 100).toFixed(0)}% vs GPT-5 mini ${(secondaryScore * 100).toFixed(0)}%).`;
-
-      debugLog(`[SR-Eval] Fallback to Claude (lower score) for ${domain}: ${fallbackReason}`, { domain, fallbackReason });
-
-      // Build response with fallback indicators
-      const payload = buildResponsePayload(
-        adjustedPrimary.result,
-        adjustedPrimary.modelName,
-        adjustedSecondary.modelName,
-        false, // consensusAchieved = false
-        evidencePack,
-        adjustedPrimary.result.score,
-        adjustedPrimary.result.confidence
-      );
-      payload.fallbackUsed = true;
-      payload.fallbackReason = fallbackReason;
-      payload.identifiedEntity = adjustedPrimary.result.identifiedEntity;
-      payload.caveats = [
-        ...(payload.caveats ?? []),
-        `⚠️ Fallback: ${fallbackReason}`
-      ];
-
-      return {
-        success: true,
-        data: payload,
-      };
-    }
-
-    // Secondary has lower score - use it (skeptical default)
-    const fallbackReason2 = `Models disagreed (${(scoreDiff * 100).toFixed(0)}% diff). Using lower score (GPT-5 mini ${(secondaryScore * 100).toFixed(0)}% vs Claude ${(primaryScore * 100).toFixed(0)}%).`;
-
-    debugLog(`[SR-Eval] Fallback to GPT-5 mini (lower score) for ${domain}: ${fallbackReason2}`, { domain, fallbackReason: fallbackReason2 });
-
-    // Build response with fallback indicators - use secondary (lower score) model's result
+  // If refinement fails, fall back to primary result
+  if (!refinement) {
+    debugLog(`[SR-Eval] Refinement failed for ${domain}, using primary result`);
     const payload = buildResponsePayload(
-      adjustedSecondary.result,
-      adjustedPrimary.modelName,
-      adjustedSecondary.modelName,
-      false, // consensusAchieved = false
+      primary.result,
+      primary.modelName,
+      "gpt-5-mini", // Attempted but failed
+      false, // consensusAchieved = false (refinement failed)
       evidencePack,
-      adjustedSecondary.result.score,
-      adjustedSecondary.result.confidence
+      primary.result.score,
+      primary.result.confidence * 0.9 // Slight confidence reduction when refinement fails
     );
-    payload.fallbackUsed = true;
-    payload.fallbackReason = fallbackReason2;
-    payload.identifiedEntity = adjustedSecondary.result.identifiedEntity;
+    payload.identifiedEntity = primary.result.identifiedEntity;
     payload.caveats = [
       ...(payload.caveats ?? []),
-      `⚠️ Fallback: ${fallbackReason2}`
+      "⚠️ Refinement pass failed; using initial evaluation only."
     ];
-
     return {
       success: true,
       data: payload,
     };
   }
 
-  // Consensus achieved - choose the "better founded" score
-  // Tie-breaker: choose the lower score (skeptical default)
-  const primaryFounded = computeFoundednessScore(adjustedPrimary.result, evidencePack);
-  const secondaryFounded = computeFoundednessScore(adjustedSecondary.result, evidencePack);
-
-  const primaryScore = adjustedPrimary.result.score ?? 0;
-  const secondaryScore = adjustedSecondary.result.score ?? 0;
-
-  let winner = secondaryFounded > primaryFounded ? adjustedSecondary : adjustedPrimary;
-  if (secondaryFounded === primaryFounded) {
-    // Tie-breaker: for positive scores, average; for negative/borderline, prefer lower
-    if (primaryScore >= 0.58 && secondaryScore >= 0.58) {
-      winner = adjustedPrimary; // Will use average below
-    } else {
-      winner = primaryScore <= secondaryScore ? adjustedPrimary : adjustedSecondary;
-    }
-  }
-
-  const finalScore =
-    primaryFounded === secondaryFounded &&
-    primaryScore >= 0.58 &&
-    secondaryScore >= 0.58
-      ? (primaryScore + secondaryScore) / 2
-      : winner.result.score;
-
-  if (finalScore === null) {
-    return {
-      success: false,
-      error: {
-        reason: "evaluation_error",
-        details: "Unexpected null score after consensus (internal invariant).",
-      },
-    };
-  }
-
-  const baseConfidence = (adjustedPrimary.result.confidence + adjustedSecondary.result.confidence) / 2;
-
   // ============================================================================
-  // CONSENSUS CONFIDENCE BOOST
-  // If models agree (consensus achieved), boost the final confidence.
-  // Agreement between two independent models is a strong signal of reliability.
+  // STEP 4: Build final response with refinement data
   // ============================================================================
-  const finalConfidence = consensusAchieved
-    ? Math.min(0.95, baseConfidence + 0.15) // +15% boost for agreement
-    : baseConfidence;
+  const { refinedResult, refinementApplied, refinementNotes, originalScore } = refinement;
 
-  // Align final rating with potentially averaged score
-  const finalRating = scoreToFactualRating(finalScore);
+  // Apply confidence boost for successful refinement
+  const boostedConfidence = Math.min(0.95, refinedResult.confidence + 0.10); // +10% for successful cross-check
 
-  // ============================================================================
-  // CONFIDENCE REPORTING (no blocking)
-  // Confidence communicates uncertainty - it should NOT block scores.
-  // If we have a consensus score, return it with its confidence.
-  // ============================================================================
-  const meetsConfReq = meetsConfidenceRequirement(finalRating, finalConfidence);
+  const finalRating = scoreToFactualRating(refinedResult.score ?? 0);
 
+  // Check confidence requirements (informational only, no blocking)
+  const meetsConfReq = meetsConfidenceRequirement(finalRating, boostedConfidence);
   if (!meetsConfReq) {
-    // Log but DON'T block - confidence is informational, not a gate
-    debugLog(`[SR-Eval] Note: confidence ${finalConfidence.toFixed(2)} is below typical threshold for "${finalRating}" - proceeding anyway`, { domain, finalRating, finalConfidence });
+    debugLog(`[SR-Eval] Note: confidence ${boostedConfidence.toFixed(2)} is below typical threshold for "${finalRating}" - proceeding anyway`, { domain, finalRating, boostedConfidence });
   }
 
-  // Legacy confidence threshold - log but don't block valid consensus scores
-  if (finalConfidence < confidenceThreshold) {
-    debugLog(`[SR-Eval] Note: confidence ${finalConfidence.toFixed(2)} is below threshold ${confidenceThreshold} - proceeding with score anyway`, { domain, confidenceThreshold });
+  if (boostedConfidence < confidenceThreshold) {
+    debugLog(`[SR-Eval] Note: confidence ${boostedConfidence.toFixed(2)} is below threshold ${confidenceThreshold} - proceeding with score anyway`, { domain, confidenceThreshold });
   }
 
   debugLog(
-    `[SR-Eval] Consensus for ${domain}: score=${finalScore.toFixed(2)}, conf=${finalConfidence.toFixed(2)}, foundedness=${primaryFounded.toFixed(2)} vs ${secondaryFounded.toFixed(2)}`,
-    { domain, finalScore, finalConfidence, primaryFounded, secondaryFounded }
+    `[SR-Eval] Sequential refinement complete for ${domain}: score=${refinedResult.score?.toFixed(2)}, conf=${boostedConfidence.toFixed(2)}, refined=${refinementApplied}`,
+    { domain, finalScore: refinedResult.score, boostedConfidence, refinementApplied, originalScore }
   );
 
-  // Build payload with potentially overridden score and aligned rating
+  // Build final payload
   const payload = buildResponsePayload(
-    winner.result,
-    adjustedPrimary.modelName,
-    adjustedSecondary.modelName,
-    true,
+    refinedResult,
+    primary.modelName,
+    "gpt-5-mini",
+    true, // consensusAchieved = true (sequential refinement completed)
     evidencePack,
-    finalScore,
-    finalConfidence
+    refinedResult.score,
+    boostedConfidence
   );
-  payload.category = finalRating; // Ensure rating matches final score
-  payload.identifiedEntity = winner.result.identifiedEntity; // Track the organization evaluated
+  
+  payload.category = finalRating;
+  payload.identifiedEntity = refinedResult.identifiedEntity;
+  payload.refinementApplied = refinementApplied;
+  payload.refinementNotes = refinementNotes;
+  payload.originalScore = originalScore;
+
+  if (refinementApplied) {
+    payload.caveats = [
+      ...(payload.caveats ?? []),
+      `✓ Score refined by cross-check: ${originalScore !== null ? (originalScore * 100).toFixed(0) + '%' : 'null'} → ${refinedResult.score !== null ? (refinedResult.score * 100).toFixed(0) + '%' : 'null'}`
+    ];
+  }
 
   return {
     success: true,

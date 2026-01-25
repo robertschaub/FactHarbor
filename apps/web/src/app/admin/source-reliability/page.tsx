@@ -728,21 +728,21 @@ export default function SourceReliabilityPage() {
                     </td>
                     <td style={{ textAlign: "center" }}>
                       {entry.score === null ? (
-                        <span className={styles.consensusNo} title="Insufficient data / low confidence (consensus not attempted)">—</span>
+                        <span className={styles.consensusNo} title="Insufficient data / low confidence">—</span>
                       ) : entry.consensusAchieved ? (
-                        <span className={styles.consensusYes} title="Multi-model consensus achieved">✓</span>
+                        <span className={styles.consensusYes} title={entry.modelSecondary ? "Sequential refinement: Cross-checked and refined by secondary model" : "Single-model evaluation completed"}>✓</span>
                       ) : entry.fallbackUsed ? (
                         <span 
                           className={styles.consensusFallback} 
-                          title={entry.fallbackReason || "Fallback: Used primary model (Claude) due to model disagreement"}
+                          title={entry.fallbackReason || "Fallback: Models disagreed, used lower score"}
                           style={{ cursor: "help" }}
                         >
                           ⚠️
                         </span>
                       ) : entry.modelSecondary ? (
-                        <span className={styles.consensusNo} title="Multi-model used but no consensus recorded">✗</span>
+                        <span className={styles.consensusNo} title="Refinement failed or not recorded">✗</span>
                       ) : (
-                        <span className={styles.consensusNo} title="Single-model result (no consensus attempted)">—</span>
+                        <span className={styles.consensusNo} title="Single-model result">—</span>
                       )}
                     </td>
                     <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
@@ -1019,9 +1019,11 @@ export default function SourceReliabilityPage() {
                     {selectedEntry.modelSecondary && (
                       <><strong>Secondary:</strong> {selectedEntry.modelSecondary}<br /></>
                     )}
-                    <strong>Consensus:</strong> {
+                    <strong>{selectedEntry.modelSecondary ? "Refinement" : "Status"}:</strong> {
                       selectedEntry.consensusAchieved 
-                        ? "✓ Achieved" 
+                        ? selectedEntry.modelSecondary 
+                          ? "✓ Cross-checked and refined" 
+                          : "✓ Completed"
                         : selectedEntry.fallbackUsed 
                           ? "⚠️ Fallback used" 
                           : "✗ Not achieved"
