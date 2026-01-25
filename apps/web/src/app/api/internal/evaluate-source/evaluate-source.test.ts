@@ -7,6 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
+import { __test__ } from "./route";
 
 // ============================================================================
 // RATE LIMITING TESTS
@@ -325,5 +326,171 @@ describe("Edge Cases", () => {
     );
     expect(result).not.toBeNull();
     expect(result!.score).toBeCloseTo(0.6, 5);
+  });
+});
+
+// ============================================================================
+// REFINEMENT & EVIDENCE PARSING TESTS
+// ============================================================================
+
+type TestEvidencePack = {
+  enabled: boolean;
+  providersUsed: string[];
+  queries: string[];
+  items: Array<{ id: string; url: string; title: string; snippet: string | null; query: string; provider: string }>;
+};
+
+describe("Evidence ID parsing", () => {
+  it("extracts evidence IDs across common formats", () => {
+    const extracted = __test__.extractEvidenceIdsFromText(
+      "Sources: E1, E 2, [E3], Evidence 4, and evidence 5 show..."
+    );
+    expect(extracted.sort()).toEqual(["E1", "E2", "E3", "E4", "E5"]);
+  });
+
+  it("counts unique evidence IDs with evidenceId and basis", () => {
+    const pack: TestEvidencePack = {
+      enabled: true,
+      providersUsed: [],
+      queries: [],
+      items: [
+        { id: "E1", url: "u1", title: "t1", snippet: null, query: "", provider: "" },
+        { id: "E2", url: "u2", title: "t2", snippet: null, query: "", provider: "" },
+        { id: "E3", url: "u3", title: "t3", snippet: null, query: "", provider: "" },
+      ],
+    };
+
+    const result = {
+      score: 0.6,
+      confidence: 0.6,
+      reasoning: "ok",
+      factualRating: "leaning_reliable",
+      evidenceCited: [
+        { claim: "a", basis: "[E1] confirms ...", recency: "2024" },
+        { claim: "b", basis: "Evidence 2 suggests ...", recency: "2023" },
+        { claim: "c", basis: "Background", evidenceId: "E3" },
+      ],
+    };
+
+    expect(__test__.countUniqueEvidenceIds(result as any, pack as any)).toBe(3);
+  });
+});
+
+describe("Refinement confidence boost tiers", () => {
+  const pack: TestEvidencePack = {
+    enabled: true,
+    providersUsed: [],
+    queries: [],
+    items: [
+      { id: "E1", url: "u1", title: "t1", snippet: null, query: "", provider: "" },
+      { id: "E2", url: "u2", title: "t2", snippet: null, query: "", provider: "" },
+    ],
+  };
+
+  it("does not boost when refinement adds nothing", () => {
+    const base = {
+      score: 0.6,
+      confidence: 0.6,
+      reasoning: "ok",
+      factualRating: "leaning_reliable",
+      evidenceCited: [{ claim: "a", basis: "E1", recency: "2024" }],
+    };
+    const { boost } = __test__.computeRefinementConfidenceBoost(
+      base as any,
+      base as any,
+      pack as any,
+      false
+    );
+    expect(boost).toBe(0);
+  });
+
+  it("applies small boost for minor refinement", () => {
+    const initial = {
+      score: 0.6,
+      confidence: 0.6,
+      reasoning: "ok",
+      factualRating: "leaning_reliable",
+      evidenceCited: [{ claim: "a", basis: "E1", recency: "2024" }],
+    };
+    const refined = { ...initial, score: 0.62 };
+    const { boost } = __test__.computeRefinementConfidenceBoost(
+      initial as any,
+      refined as any,
+      pack as any,
+      true
+    );
+    expect(boost).toBe(0.02);
+  });
+
+  it("applies medium boost for moderate refinement", () => {
+    const initial = {
+      score: 0.6,
+      confidence: 0.6,
+      reasoning: "ok",
+      factualRating: "leaning_reliable",
+      evidenceCited: [{ claim: "a", basis: "E1", recency: "2024" }],
+    };
+    const refined = { ...initial, score: 0.66 };
+    const { boost } = __test__.computeRefinementConfidenceBoost(
+      initial as any,
+      refined as any,
+      pack as any,
+      true
+    );
+    expect(boost).toBe(0.05);
+  });
+
+  it("applies full boost for substantive refinement", () => {
+    const initial = {
+      score: 0.6,
+      confidence: 0.6,
+      reasoning: "ok",
+      factualRating: "leaning_reliable",
+      evidenceCited: [{ claim: "a", basis: "E1", recency: "2024" }],
+    };
+    const refined = { ...initial, score: 0.72 };
+    const { boost } = __test__.computeRefinementConfidenceBoost(
+      initial as any,
+      refined as any,
+      pack as any,
+      true
+    );
+    expect(boost).toBe(0.10);
+  });
+
+  it("applies boost when evidence delta increases even without score change", () => {
+    const initial = {
+      score: 0.6,
+      confidence: 0.6,
+      reasoning: "ok",
+      factualRating: "leaning_reliable",
+      evidenceCited: [{ claim: "a", basis: "E1", recency: "2024" }],
+    };
+    const refined = {
+      ...initial,
+      evidenceCited: [
+        { claim: "a", basis: "E1", recency: "2024" },
+        { claim: "b", basis: "Evidence 2", recency: "2023" },
+      ],
+    };
+    const { boost } = __test__.computeRefinementConfidenceBoost(
+      initial as any,
+      refined as any,
+      pack as any,
+      false
+    );
+    expect(boost).toBe(0.05);
+  });
+});
+
+describe("Language detection caveat", () => {
+  it("returns caveats for timeout/failure", () => {
+    __test__.languageDetectionStatus.set("timeout.example", "timeout");
+    __test__.languageDetectionStatus.set("failed.example", "failed");
+    __test__.languageDetectionStatus.set("ok.example", "ok");
+
+    expect(__test__.getLanguageDetectionCaveat("timeout.example")).toMatch(/timed out/);
+    expect(__test__.getLanguageDetectionCaveat("failed.example")).toMatch(/failed/);
+    expect(__test__.getLanguageDetectionCaveat("ok.example")).toBeNull();
   });
 });

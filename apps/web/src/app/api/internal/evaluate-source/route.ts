@@ -461,6 +461,7 @@ function isSearchEnabledForSrEval(): { enabled: boolean; providersUsed: string[]
  * Cache for detected languages per domain.
  */
 const languageDetectionCache = new Map<string, string | null>();
+const languageDetectionStatus = new Map<string, "ok" | "failed" | "timeout">();
 
 /**
  * Supported languages for fact-checker searches.
@@ -565,6 +566,7 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
     if (!response.ok) {
       debugLog(`[SR-Eval] Failed to fetch ${domain}: ${response.status}`, { domain, status: response.status });
       languageDetectionCache.set(domain, null);
+      languageDetectionStatus.set(domain, "failed");
       return null;
     }
 
@@ -578,6 +580,7 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
       if (normalized && normalized !== "English" && SUPPORTED_LANGUAGES.has(normalized)) {
         debugLog(`[SR-Eval] Detected language via html lang: ${normalized}`, { domain, langCode, normalized });
         languageDetectionCache.set(domain, normalized);
+        languageDetectionStatus.set(domain, "ok");
         return normalized;
       }
     }
@@ -591,6 +594,7 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
       if (normalized && normalized !== "English" && SUPPORTED_LANGUAGES.has(normalized)) {
         debugLog(`[SR-Eval] Detected language via meta tag: ${normalized}`, { domain, langCode, normalized });
         languageDetectionCache.set(domain, normalized);
+        languageDetectionStatus.set(domain, "ok");
         return normalized;
       }
     }
@@ -603,6 +607,7 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
       if (normalized && normalized !== "English" && SUPPORTED_LANGUAGES.has(normalized)) {
         debugLog(`[SR-Eval] Detected language via og:locale: ${normalized}`, { domain, langCode, normalized });
         languageDetectionCache.set(domain, normalized);
+        languageDetectionStatus.set(domain, "ok");
         return normalized;
       }
     }
@@ -636,6 +641,7 @@ ${textContent}`,
       if (normalized && normalized !== "English" && SUPPORTED_LANGUAGES.has(normalized)) {
         debugLog(`[SR-Eval] Detected language via LLM: ${normalized}`, { domain, detectedLang, normalized });
         languageDetectionCache.set(domain, normalized);
+        languageDetectionStatus.set(domain, "ok");
         return normalized;
       }
     }
@@ -643,11 +649,15 @@ ${textContent}`,
     // Default: English or unknown
     debugLog(`[SR-Eval] No non-English language detected for ${domain}`, { domain });
     languageDetectionCache.set(domain, null);
+    languageDetectionStatus.set(domain, "ok");
     return null;
 
   } catch (err) {
-    debugLog(`[SR-Eval] Language detection failed for ${domain}`, { domain, error: String(err) });
+    const errorMessage = String(err);
+    const isTimeout = (err as { name?: string })?.name === "AbortError";
+    debugLog(`[SR-Eval] Language detection failed for ${domain}`, { domain, error: errorMessage });
     languageDetectionCache.set(domain, null);
+    languageDetectionStatus.set(domain, isTimeout ? "timeout" : "failed");
     return null;
   }
 }
@@ -1093,7 +1103,8 @@ SOURCE TYPE SCORE CAPS (hard limits):
   - propaganda_outlet:       MAX 0.14 (highly_unreliable)
   - known_disinformation:    MAX 0.14 (highly_unreliable)
   - state_controlled_media:  MAX 0.42 (leaning_unreliable)
-  - platform_ugc:            MAX 0.42 (leaning_unreliable)`;
+  - platform_ugc:            MAX 0.42 (leaning_unreliable)
+Note: If evidence suggests a source has reformed, reclassify the sourceType instead.`;
 
 // ============================================================================
 // HARDENED EVALUATION PROMPT
@@ -1144,9 +1155,9 @@ ${evidenceSection}
    - If you recognize this source but evidence is sparse → output insufficient_data
 
 2. INSUFFICIENT DATA THRESHOLDS (output score=null, factualRating="insufficient_data" if):
-   - Zero fact-checker assessments AND ≤1 weak/tangential mentions
-   - Zero fact-checker assessments AND only 1-2 mentions without substantive reliability info
-   - Evidence quality insufficient to form confident judgment (confidence < 0.50)
+   - Zero fact-checker assessments AND fewer than 3 evidence items (E1, E2, E3)
+   - Zero fact-checker assessments AND no item contains explicit reliability assessment (rating, bias, standards, corrections)
+   - Mechanistic confidence calculation < 0.50
 
 3. NEGATIVE EVIDENCE CAPS (hard limits — override other factors)
    - Evidence of fabricated stories/disinformation → score ≤ 0.14 (highly_unreliable)
@@ -1715,6 +1726,26 @@ async function refineEvaluation(
 /**
  * Count unique evidence IDs referenced in the evaluation.
  */
+function extractEvidenceIdsFromText(text: string): string[] {
+  if (!text) return [];
+  const patterns = [
+    /\bE\s*\d+\b/gi,           // E1, E 1
+    /\[E\s*\d+\]/gi,           // [E1]
+    /\bEvidence\s*\d+\b/gi,    // Evidence 1
+  ];
+
+  const ids = new Set<string>();
+  for (const pattern of patterns) {
+    const matches = text.match(pattern) ?? [];
+    for (const m of matches) {
+      const num = m.match(/\d+/)?.[0];
+      if (num) ids.add(`E${num}`);
+    }
+  }
+
+  return [...ids];
+}
+
 function countUniqueEvidenceIds(result: EvaluationResult, evidencePack: EvidencePack): number {
   const cited = result.evidenceCited ?? [];
   if (cited.length === 0) return 0;
@@ -1723,11 +1754,14 @@ function countUniqueEvidenceIds(result: EvaluationResult, evidencePack: Evidence
   const uniqueRefs = new Set<string>();
 
   for (const item of cited) {
-    const basis = item.basis || "";
-    const matches = basis.match(/\bE\d+\b/g) ?? [];
-    for (const m of matches) {
-      if (ids.has(m)) {
-        uniqueRefs.add(m);
+    if (item.evidenceId && ids.has(item.evidenceId)) {
+      uniqueRefs.add(item.evidenceId);
+    }
+
+    const extracted = extractEvidenceIdsFromText(item.basis || "");
+    for (const id of extracted) {
+      if (ids.has(id)) {
+        uniqueRefs.add(id);
       }
     }
   }
@@ -1758,12 +1792,11 @@ function computeFoundednessScore(result: EvaluationResult, evidencePack: Evidenc
         uniqueRefs.add(item.evidenceId);
       }
 
-      const basis = item.basis || "";
-      const matches = basis.match(/\bE\d+\b/g) ?? [];
-      for (const m of matches) {
-        if (ids.has(m)) {
+      const extracted = extractEvidenceIdsFromText(item.basis || "");
+      for (const id of extracted) {
+        if (ids.has(id)) {
           totalRefs++;
-          uniqueRefs.add(m);
+          uniqueRefs.add(id);
         }
       }
 
@@ -1892,6 +1925,48 @@ function buildResponsePayload(
     evidenceCited: result.evidenceCited,
     caveats: result.caveats,
   };
+}
+
+function getLanguageDetectionCaveat(domain: string): string | null {
+  const status = languageDetectionStatus.get(domain);
+  if (status === "timeout") {
+    return "Language detection timed out; evaluation may be incomplete for non-English sources.";
+  }
+  if (status === "failed") {
+    return "Language detection failed; evaluation may be incomplete for non-English sources.";
+  }
+  return null;
+}
+
+function applyLanguageDetectionCaveat(payload: ResponsePayload, domain: string): void {
+  const caveat = getLanguageDetectionCaveat(domain);
+  if (!caveat) return;
+  payload.caveats = [...(payload.caveats ?? []), caveat];
+}
+
+function computeRefinementConfidenceBoost(
+  initialResult: EvaluationResult,
+  refinedResult: EvaluationResult,
+  evidencePack: EvidencePack,
+  refinementApplied: boolean
+): { boost: number; evidenceDelta: number; scoreDelta: number } {
+  const originalEvidenceCount = countUniqueEvidenceIds(initialResult, evidencePack);
+  const refinedEvidenceCount = countUniqueEvidenceIds(refinedResult, evidencePack);
+  const evidenceDelta = Math.max(0, refinedEvidenceCount - originalEvidenceCount);
+  const scoreDelta = Math.abs((refinedResult.score ?? 0) - (initialResult.score ?? 0));
+
+  let boost = 0;
+  if (refinementApplied || evidenceDelta > 0) {
+    if (scoreDelta >= 0.10 || evidenceDelta >= 2) {
+      boost = 0.10;
+    } else if (scoreDelta >= 0.05 || evidenceDelta >= 1) {
+      boost = 0.05;
+    } else {
+      boost = 0.02;
+    }
+  }
+
+  return { boost, evidenceDelta, scoreDelta };
 }
 
 async function evaluateWithModel(
@@ -2042,9 +2117,11 @@ async function evaluateSourceWithConsensus(
   // Handle insufficient_data case - no refinement needed
   if (primary.result.factualRating === "insufficient_data" || primary.result.score === null) {
     debugLog(`[SR-Eval] Insufficient data for ${domain}`);
+    const payload = buildResponsePayload(primary.result, primary.modelName, null, true, evidencePack);
+    applyLanguageDetectionCaveat(payload, domain);
     return {
       success: true,
-      data: buildResponsePayload(primary.result, primary.modelName, null, true, evidencePack),
+      data: payload,
     };
   }
 
@@ -2053,15 +2130,17 @@ async function evaluateSourceWithConsensus(
   // ============================================================================
   if (!multiModel) {
     debugLog(`[SR-Eval] Single-model mode: Using primary only for ${domain}`);
+    const payload = buildResponsePayload(
+      primary.result,
+      primary.modelName,
+      null,
+      true, // consensusAchieved = true in single-model mode
+      evidencePack
+    );
+    applyLanguageDetectionCaveat(payload, domain);
     return {
       success: true,
-      data: buildResponsePayload(
-        primary.result,
-        primary.modelName,
-        null,
-        true, // consensusAchieved = true in single-model mode
-        evidencePack
-      ),
+      data: payload,
     };
   }
 
@@ -2089,6 +2168,7 @@ async function evaluateSourceWithConsensus(
       primary.result.score,
       primary.result.confidence * 0.9 // Slight confidence reduction when refinement fails
     );
+    applyLanguageDetectionCaveat(payload, domain);
     payload.identifiedEntity = primary.result.identifiedEntity;
     payload.caveats = [
       ...(payload.caveats ?? []),
@@ -2105,8 +2185,15 @@ async function evaluateSourceWithConsensus(
   // ============================================================================
   const { refinedResult, refinementApplied, refinementNotes, originalScore } = refinement;
 
-  // Apply confidence boost for successful refinement
-  const boostedConfidence = Math.min(0.95, refinedResult.confidence + 0.10); // +10% for successful cross-check
+  // Apply confidence boost based on refinement substance (score delta + new evidence)
+  const { boost: confidenceBoost } = computeRefinementConfidenceBoost(
+    primary.result,
+    refinedResult,
+    evidencePack,
+    refinementApplied
+  );
+
+  const boostedConfidence = Math.min(0.95, refinedResult.confidence + confidenceBoost);
 
   const finalRating = scoreToFactualRating(refinedResult.score);
 
@@ -2135,6 +2222,7 @@ async function evaluateSourceWithConsensus(
     refinedResult.score,
     boostedConfidence
   );
+  applyLanguageDetectionCaveat(payload, domain);
   
   payload.category = finalRating;
   payload.identifiedEntity = refinedResult.identifiedEntity;
@@ -2163,6 +2251,14 @@ function getEnv(name: string): string | null {
   const v = process.env[name];
   return v && v.trim() ? v : null;
 }
+
+export const __test__ = {
+  extractEvidenceIdsFromText,
+  countUniqueEvidenceIds,
+  computeRefinementConfidenceBoost,
+  getLanguageDetectionCaveat,
+  languageDetectionStatus,
+};
 
 export async function POST(req: Request) {
   // Authentication
