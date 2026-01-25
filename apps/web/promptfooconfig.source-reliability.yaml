@@ -1,0 +1,249 @@
+# FactHarbor Source Reliability Evaluation - Promptfoo Configuration
+# Tests the evaluate-source API's LLM prompts across providers
+
+description: "FactHarbor Source Reliability Evaluation"
+
+# Prompt template
+prompts:
+  - file://prompts/promptfoo/source-reliability-prompt.txt
+
+# Providers to compare
+providers:
+  - id: anthropic:claude-3-5-haiku-20241022
+    label: Claude Haiku
+    config:
+      temperature: 0
+    transform: |
+      // Remove markdown code fences if present
+      let cleaned = output;
+      const match = output.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (match) {
+        cleaned = match[1].trim();
+      }
+      return cleaned;
+
+  # Production default: gpt-4o (configurable via FH_SR_OPENAI_MODEL)
+  - id: openai:gpt-4o
+    label: GPT-4o
+    config:
+      temperature: 0
+    transform: |
+      // Remove markdown code fences if present
+      let cleaned = output;
+      const match = output.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (match) {
+        cleaned = match[1].trim();
+      }
+      return cleaned;
+
+# Default test settings
+defaultTest:
+  options:
+    timeout: 60000
+    # Strip markdown code fences from output before assertions
+    transform: |
+      let cleaned = output;
+      const match = output.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (match) {
+        cleaned = match[1].trim();
+      }
+      return cleaned;
+
+# Test cases covering different source reliability scenarios
+tests:
+  # ============================================================================
+  # TEST 1: Reliable Wire Service (expected: highly_reliable, 0.86-1.00)
+  # ============================================================================
+  - description: "Reliable wire service with multiple fact-checker endorsements"
+    vars:
+      domain: "example-wire-service.com"
+      currentDate: "2026-01-25"
+      evidencePack: |
+        [E1] Media Bias/Fact Check: Rated HIGH for factual reporting. Uses credible sources and proper sourcing. Minor fails over time but corrects promptly.
+        [E2] Wikipedia Reliable Sources: Described as "generally reliable" with strong editorial standards.
+        [E3] NewsGuard: 95/100 rating. Adheres to basic standards of credibility and transparency.
+        [E4] AllSides: Center bias rating. Known for balanced coverage.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.score >= 0.72 && data.score <= 1.0;
+        metric: score_in_reliable_range
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return ["highly_reliable", "reliable"].includes(data.factualRating);
+        metric: correct_rating
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.sourceType === "wire_service" || data.sourceType === "editorial_publisher";
+        metric: correct_source_type
+
+  # ============================================================================
+  # TEST 2: Unreliable Source with Failures (expected: unreliable, 0.15-0.28)
+  # ============================================================================
+  - description: "Source with multiple documented fact-check failures"
+    vars:
+      domain: "example-tabloid.net"
+      currentDate: "2026-01-25"
+      evidencePack: |
+        [E1] PolitiFact (IFCN signatory, last 6 months): 8 claims reviewed, 6 rated False or Mostly False. Published fabricated quotes attributed to government officials.
+        [E2] Snopes (IFCN signatory, last 12 months): Documented 5 instances of misleading headlines that directly contradict article content. Pattern of clickbait misinformation.
+        [E3] Media Bias/Fact Check (current): Rated LOW for factual reporting. Failed 12 fact-checks in past 2 years. Questionable sources cited.
+        [E4] NewsGuard (current): 35/100 rating. Fails to gather and present information responsibly. Does not regularly correct errors.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.score !== null && data.score >= 0.0 && data.score <= 0.42;
+        metric: score_capped_correctly
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return ["unreliable", "leaning_unreliable", "highly_unreliable"].includes(data.factualRating);
+        metric: correct_rating
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.confidence >= 0.50;
+        metric: adequate_confidence
+
+  # ============================================================================
+  # TEST 3: State-Controlled Media (expected: capped at 0.42)
+  # ============================================================================
+  - description: "State-controlled media outlet - score must be capped"
+    vars:
+      domain: "state-news-agency.example"
+      currentDate: "2026-01-25"
+      evidencePack: |
+        [E1] Reporters Without Borders: Classified as state-controlled media. No editorial independence from government.
+        [E2] EU DisinfoLab: Content consistently reflects government narratives without critical coverage.
+        [E3] Freedom House: Media outlet directly controlled by Ministry of Information.
+        [E4] Academic study (last 18 months): Analysis shows 98% alignment with official government positions.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.sourceType === "state_controlled_media";
+        metric: correct_source_type
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.score !== null && data.score <= 0.42;
+        metric: score_capped_at_042
+
+  # ============================================================================
+  # TEST 4: Propaganda Outlet (expected: capped at 0.14)
+  # ============================================================================
+  - description: "Known propaganda outlet - score must be capped at 0.14"
+    vars:
+      domain: "propaganda-network.example"
+      currentDate: "2026-01-25"
+      evidencePack: |
+        [E1] EU EUvsDisinfo: Listed in database of pro-Kremlin disinformation outlets.
+        [E2] US State Department: Identified as part of coordinated influence operation.
+        [E3] Stanford Internet Observatory: Documented as amplifying state propaganda narratives.
+        [E4] NewsGuard: 0/100 rating. Publishes false content and does not disclose ownership.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.sourceType === "propaganda_outlet" || data.sourceType === "known_disinformation";
+        metric: correct_source_type
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.score !== null && data.score <= 0.14;
+        metric: score_capped_at_014
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.factualRating === "highly_unreliable";
+        metric: correct_rating
+
+  # ============================================================================
+  # TEST 5: Insufficient Data (expected: score=null, insufficient_data)
+  # ============================================================================
+  - description: "Unknown source with sparse evidence - should return insufficient_data"
+    vars:
+      domain: "unknown-local-blog.example"
+      currentDate: "2026-01-25"
+      evidencePack: |
+        [E1] Directory listing: Small local blog, no additional information available.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.score === null;
+        metric: null_score
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.factualRating === "insufficient_data";
+        metric: insufficient_data_rating
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.confidence < 0.50;
+        metric: low_confidence
+
+  # ============================================================================
+  # TEST 6: Biased but Reliable (bias should NOT reduce score)
+  # ============================================================================
+  - description: "Politically biased source with good accuracy - bias alone should not cap score"
+    vars:
+      domain: "partisan-news.example"
+      currentDate: "2026-01-25"
+      evidencePack: |
+        [E1] Media Bias/Fact Check: Rated HIGH for factual reporting. Strong left-center bias but accurate.
+        [E2] AllSides: Left bias rating, but described as "factually reliable".
+        [E3] NewsGuard: 82/100 rating. Gathers and presents information responsibly despite perspective.
+        [E4] PolitiFact: Reviewed 20 claims in past 18 months, only 2 rated as misleading.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.score !== null && data.score >= 0.58;
+        metric: score_not_penalized_for_bias
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.bias && data.bias.politicalBias !== "center";
+        metric: bias_noted
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return ["reliable", "leaning_reliable", "highly_reliable"].includes(data.factualRating);
+        metric: correct_rating
+
+  # ============================================================================
+  # TEST 7: Evidence Citation Check
+  # ============================================================================
+  - description: "All claims must cite evidence IDs (E1, E2, etc.)"
+    vars:
+      domain: "test-citation-source.example"
+      currentDate: "2026-01-25"
+      evidencePack: |
+        [E1] Fact-checker A: Rates source as generally reliable with good editorial standards.
+        [E2] Fact-checker B: Confirms accurate reporting in recent review.
+        [E3] Academic analysis: Source cited frequently in peer-reviewed research.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          if (!data.evidenceCited || data.evidenceCited.length === 0) return false;
+          return data.evidenceCited.every(e => /E\d+/.test(e.basis));
+        metric: evidence_cited_correctly
+
+# Output settings
+outputPath: ./prompts/promptfoo-results/source-reliability.json
+
+sharing: false

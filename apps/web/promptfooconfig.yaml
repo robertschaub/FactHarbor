@@ -1,0 +1,125 @@
+# FactHarbor Promptfoo Configuration
+# Tests verdict generation across providers with assertion-based evaluation
+
+description: "FactHarbor Verdict Generation Evaluation"
+
+# Prompts to test - using the verdict prompt template
+prompts:
+  - file://prompts/promptfoo/verdict-prompt.txt
+
+# Providers to compare
+providers:
+  # Anthropic Claude models
+  - id: anthropic:claude-3-5-haiku-20241022
+    label: Claude Haiku
+    config:
+      temperature: 0
+
+  - id: anthropic:claude-sonnet-4-20250514
+    label: Claude Sonnet
+    config:
+      temperature: 0
+
+  # OpenAI models
+  - id: openai:gpt-4o-mini
+    label: GPT-4o Mini
+    config:
+      temperature: 0
+
+  - id: openai:gpt-4o
+    label: GPT-4o
+    config:
+      temperature: 0
+
+# Default test settings
+defaultTest:
+  options:
+    timeout: 60000  # 60 second timeout
+
+# Test cases based on STANDARD_TEST_CASES from prompt-testing.ts
+tests:
+  # Simple factual claim - should be TRUE (85-100%)
+  - vars:
+      claim: "The Earth is approximately 4.5 billion years old"
+      evidence: |
+        [SUPPORTING] Scientific consensus based on radiometric dating of meteorites
+        and Earth rocks establishes Earth's age at 4.54 billion years.
+        [SUPPORTING] Multiple independent dating methods (uranium-lead, potassium-argon)
+        converge on this age estimate.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: "output.answer >= 85 && output.answer <= 100"
+        metric: verdict_accuracy
+      - type: contains
+        value: "claim_supported"
+
+  # Rating direction test - Hydrogen vs EV efficiency
+  # Evidence contradicts claim, so verdict should be LOW (0-35%)
+  - vars:
+      claim: "Hydrogen cars are more efficient than electric cars"
+      evidence: |
+        [COUNTER-EVIDENCE] Well-to-wheel efficiency of hydrogen fuel cell vehicles: 25-35%
+        [COUNTER-EVIDENCE] Well-to-wheel efficiency of battery electric vehicles: 70-90%
+        [COUNTER-EVIDENCE] Energy losses in hydrogen production, compression, and fuel cell conversion
+        [SUPPORTING] Tank-to-wheel efficiency of fuel cells can reach 60%
+    assert:
+      - type: is-json
+      - type: javascript
+        value: "output.answer >= 0 && output.answer <= 35"
+        metric: verdict_accuracy
+      - type: contains
+        value: "claim_refuted"
+
+  # Mixed evidence - should be in middle range (43-57%)
+  - vars:
+      claim: "Remote work increases productivity"
+      evidence: |
+        [SUPPORTING] Stanford study (2023): 13% productivity increase for remote workers
+        [SUPPORTING] Reduced commute time allows more work hours
+        [COUNTER-EVIDENCE] Microsoft study (2022): Collaboration and innovation decreased
+        [COUNTER-EVIDENCE] Some workers report difficulty separating work/life boundaries
+        [NEUTRAL] Effects vary significantly by industry and job type
+    assert:
+      - type: is-json
+      - type: javascript
+        value: "output.answer >= 35 && output.answer <= 65"
+        metric: verdict_accuracy
+      - type: contains
+        value: "mixed"
+
+  # False claim test - should be FALSE (0-14%)
+  - vars:
+      claim: "The Great Wall of China is visible from the Moon"
+      evidence: |
+        [COUNTER-EVIDENCE] NASA astronauts confirm the wall is not visible from space
+        [COUNTER-EVIDENCE] At ~6m wide, the wall is far too narrow to be seen from 384,400 km away
+        [COUNTER-EVIDENCE] Human eye resolution limit makes this physically impossible
+    assert:
+      - type: is-json
+      - type: javascript
+        value: "output.answer >= 0 && output.answer <= 14"
+        metric: verdict_accuracy
+      - type: contains
+        value: "claim_refuted"
+
+  # Mostly true claim (72-85%)
+  - vars:
+      claim: "Coffee consumption is associated with reduced risk of type 2 diabetes"
+      evidence: |
+        [SUPPORTING] Meta-analysis of 28 studies shows 6% reduced risk per cup/day
+        [SUPPORTING] Harvard School of Public Health confirms association
+        [SUPPORTING] Mechanism linked to chlorogenic acid and magnesium content
+        [NEUTRAL] Association does not prove causation
+        [NEUTRAL] Effects may vary based on preparation method
+    assert:
+      - type: is-json
+      - type: javascript
+        value: "output.answer >= 65 && output.answer <= 90"
+        metric: verdict_accuracy
+
+# Output settings
+outputPath: ./prompts/promptfoo-results/verdict.json
+
+# Sharing disabled by default
+sharing: false
