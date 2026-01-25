@@ -340,10 +340,23 @@ const FACT_CHECKER_DOMAINS = getAllFactCheckerDomains();
  * not just citing the source. Translations are added dynamically from LLM.
  */
 const RELIABILITY_ASSESSMENT_TERMS_EN = [
+  // Core assessment terms
   "reliability", "credibility", "bias", "rating", "rated", "assessment",
   "fact check", "fact-check", "factcheck", "misinformation", "disinformation",
   "propaganda", "fake news", "misleading", "false claim", "debunk",
   "media bias", "news quality", "trustworth", "accuracy",
+  // Bias/slant indicators
+  "partisan", "right-wing", "left-wing", "far-right", "far-left",
+  "conservative bias", "liberal bias", "political slant",
+  // Criticism indicators
+  "criticism", "criticized", "controversial", "questioned", "problematic",
+  "unreliable", "untrustworthy", "inaccurate", "sensational",
+  // Propaganda/state media indicators  
+  "kremlin", "state-aligned", "state-funded", "government-backed",
+  "narratives", "echo", "amplif", "disinformation campaign",
+  // Quality indicators
+  "journalistic standards", "editorial standards", "corrections policy",
+  "retraction", "correction", "apolog",
 ];
 
 /**
@@ -356,6 +369,8 @@ function getReliabilityAssessmentTerms(translatedTerms: Record<string, string>):
   const keysToTranslate = [
     "reliability", "credibility", "fact check", "misinformation", 
     "disinformation", "propaganda", "fake news", "media bias",
+    "partisan", "right-wing", "far-right", "controversial",
+    "criticism", "unreliable", "inaccurate",
   ];
   
   for (const key of keysToTranslate) {
@@ -646,6 +661,7 @@ const translationCache = new Map<string, Record<string, string>>();
  * Key search terms that need translation for fact-checker searches.
  */
 const SEARCH_TERMS_TO_TRANSLATE = [
+  // Core fact-checking terms
   "fact check",
   "reliability",
   "misinformation",
@@ -656,11 +672,23 @@ const SEARCH_TERMS_TO_TRANSLATE = [
   "false claims",
   "media bias",
   "credibility",
+  // State/foreign influence
   "state propaganda",
   "foreign propaganda",
   "state media",
   "state-backed",
   "government propaganda",
+  // Bias/slant terms
+  "partisan",
+  "right-wing",
+  "far-right",
+  "controversial",
+  "criticism",
+  "unreliable",
+  // Quality terms
+  "journalistic standards",
+  "inaccurate",
+  "sensationalist",
 ];
 
 /**
@@ -815,6 +843,12 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     `${domainToken} propaganda accusations disinformation`,
     `"${brand}" false claims debunked misinformation`,
     `"${brand}" fact check failed OR misleading`,
+    // Broader criticism/bias coverage
+    `"${brand}" bias criticism controversial`,
+    `"${brand}" partisan right-wing OR far-right OR left-wing`,
+    `"${brand}" unreliable OR inaccurate OR sensationalist`,
+    // Wikipedia often has documented controversies
+    `"${brand}" site:wikipedia.org controversy OR criticism`,
   ];
 
   // Phase 4b: Negative-signal queries in source language (if non-English)
@@ -823,6 +857,8 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     ? [
         `${domainToken} ${t("propaganda")} ${t("disinformation")}`,
         `"${brand}" ${t("fake news")} ${t("debunked")} ${t("false claims")}`,
+        `"${brand}" ${t("partisan")} ${t("controversial")}`,
+        `"${brand}" ${t("criticism")} ${t("unreliable")}`,
       ]
     : [];
 
