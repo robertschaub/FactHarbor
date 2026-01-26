@@ -1,27 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { useState, useEffect, useCallback, ReactNode } from "react";
 import styles from "./admin.module.css";
-
-// Admin auth context
-interface AdminAuthContext {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  adminKey: string | null;
-  login: (key: string) => Promise<boolean>;
-  logout: () => void;
-  getHeaders: () => HeadersInit;
-}
-
-const AdminAuthContext = createContext<AdminAuthContext | null>(null);
-
-export function useAdminAuth() {
-  const context = useContext(AdminAuthContext);
-  if (!context) {
-    throw new Error("useAdminAuth must be used within AdminLayout");
-  }
-  return context;
-}
+import { AdminAuthContext } from "./admin-auth-context";
 
 // Get admin key from sessionStorage
 function getStoredAdminKey(): string | null {
