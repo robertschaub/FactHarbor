@@ -345,6 +345,30 @@ const avgTruthPct = Math.round(
 );
 ```
 
+#### When is the Overall Average Meaningful?
+
+**Single Context (Most Common Case)**:
+- Average = context verdict (identical)
+- Overall verdict fully represents the analysis
+- This is the primary use case
+
+**Multiple Contexts (Distinct Analytical Frames)**:
+- Average may not be meaningful if contexts answer different questions
+- Example: "Legal trial fairness (85%)" + "Scientific validity (30%)" = 57.5% average
+- The 57.5% doesn't represent either question well
+
+**UI Handling**:
+- `hasMultipleContexts` flag signals when average may be unreliable
+- `articleVerdictReason` explains: "Average of distinct contexts: [list]"
+- UI should de-emphasize overall average and highlight individual context verdicts
+- See `articleVerdictReliability` field for programmatic reliability signal
+
+**Architecture Decision (v2.6.38)**:
+- Simple averaging chosen over complex weighting schemes
+- Transparency via explicit messaging about meaningless averages
+- Individual context verdicts always preserved and displayed
+- Future enhancement: Primary context detection to show most relevant verdict
+
 ## 5. Confidence Usage
 
 ### LLM Confidence (0-100%)

@@ -1,7 +1,7 @@
 # Prompt Architecture
 
-**Version**: 2.6.33  
-**Last Updated**: January 2026  
+**Version**: 2.6.38  
+**Last Updated**: January 26, 2026  
 **Audience**: Developers, Prompt Engineers  
 **Purpose**: Document the modular prompt composition system used across all pipelines
 
@@ -210,8 +210,39 @@ const understandPrompt = buildPrompt({
 
 ---
 
+## Prompt Content Improvements
+
+### v2.6.38: Temporal Guidance Clarification
+
+**Problem**: Base prompts had conflicting guidance about when temporal differences create distinct contexts:
+- "Different time periods alone do not create separate contexts"
+- "Time period (e.g., '2000s' vs '1970s') → DISTINCT"
+
+**Solution**: Clarified distinction between:
+- **Incidental temporal mentions** (e.g., "in 2020, the court...") - Do NOT create separate contexts
+- **Time period as primary subject** (e.g., "2000s event" vs "1970s event" as distinct historical events) - DO create separate contexts
+
+**Files Updated**:
+- `base/understand-base.ts`
+- `base/scope-refinement-base.ts`
+- `base/orchestrated-understand.ts`
+
+**New Guidance**:
+```
+CRITICAL - Do NOT split for:
+- Incidental temporal mentions (e.g., "in 2020, the court..." - when not central to the claim)
+
+KEEP SEPARATE when ANY of these differ:
+- Time period AS PRIMARY SUBJECT (e.g., "2000s event" vs "1970s event" - comparing distinct historical events) → DISTINCT
+```
+
+This ensures consistent behavior across all three pipelines while preventing both under-splitting (missing genuine temporal contexts) and over-splitting (creating contexts for incidental date mentions).
+
+---
+
 ## Related Documentation
 
 - [LLM Configuration Guide](../USER_GUIDES/LLM_Configuration.md) - User-facing provider setup
 - [LLM Schema Mapping](../REFERENCE/LLM_Schema_Mapping.md) - TypeScript to LLM output mapping
 - [Pipeline Architecture](./Pipeline_TriplePath_Architecture.md) - Overall pipeline design
+- [Calculations](./Calculations.md) - Verdict calculation methodology including multi-context averaging

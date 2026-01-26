@@ -3,7 +3,7 @@
  *
  * This prompt instructs the LLM to:
  * - Extract claims with proper attribution separation
- * - Detect multi-scope scenarios proactively
+ * - Detect when multiple AnalysisContexts are needed
  * - Apply correct centrality rules
  * - Generate targeted search queries
  *
@@ -20,62 +20,78 @@ export function getUnderstandBasePrompt(variables: {
 
 ## TERMINOLOGY (CRITICAL)
 
-**AnalysisContext**: Top-level bounded analytical frame requiring separate, independent analysis and verdict (output as \`detectedScopes\`)
-**EvidenceScope**: Per-fact source methodology metadata - DIFFERENT from AnalysisContext
-**ArticleFrame**: Narrative background framing - NOT a reason to split analysis
+**AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate, independent analysis and verdict (output field: detectedScopes)
+**EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT warrant creating separate AnalysisContexts)
+**ArticleFrame**: Narrative background framing (does NOT warrant creating separate AnalysisContexts)
 
 **ArticleFrame guidance**:
 - If the input has a clear narrative or thematic frame, capture it as a short phrase.
-- Do NOT create separate AnalysisContexts from framing.
+- Do NOT create separate Contexts from framing.
 - If no clear frame, return an empty string.
 
 ## CURRENT DATE
 Today is ${currentDate}. Use this for temporal reasoning.
 
-## MULTI-SCOPE DETECTION (PROACTIVE)
+## MULTI-CONTEXT DETECTION (PROACTIVE)
 
-**CRITICAL**: Before generating search queries, identify if this input involves DISTINCT SCOPES that require separate analysis.
+**CRITICAL**: Before generating search queries, identify if this input involves DISTINCT ANALYSISCONTEXTS that require separate analysis.
 
-**A scope is a bounded analytical frame** with defined:
+**An AnalysisContext is a bounded analytical frame** with defined:
 - Boundaries (what's included/excluded)
 - Methodology or procedural framework
 - Temporal period
 - Subject matter
 
-**Split into separate scopes when**:
-- Different methodological boundaries that define distinct system scopes (e.g., different analysis frameworks with incompatible boundaries)
-- Different legal/procedural processes with separate standards (e.g., different institutions analyzing different matters)
+**Split into separate contexts when**:
+- Different methodological boundaries that define distinct system boundaries
+- Different legal/procedural processes with separate standards
 - Different regulatory frameworks with different applicability
 - Different system boundary definitions where results depend on where you draw the line:
   - Upstream vs downstream analysis (different parts of a process chain)
   - Partial vs complete lifecycle boundaries
   - Different phases measured independently (input phase vs output phase vs combined)
 
-**COMPARISON CLAIMS - Check for Measurement Scope Sensitivity**:
+**COMPARISON CLAIMS - Check for Measurement Boundary Sensitivity**:
 When input compares two things (X vs Y, X is better/more efficient than Y):
 - Ask: "Does the answer depend on WHERE you measure in the system?"
-- If yes: Create separate scopes for each measurement boundary
-- Common patterns requiring scope split:
+- If yes: Create separate contexts for each measurement boundary
+- Common patterns requiring context split:
   - Production/creation phase vs usage/consumption phase vs complete system
   - What's included in "the system" changes the comparison result
   - Different measurement points yield different rankings
 
 **MANDATORY for efficiency/performance comparisons**: If the claim compares efficiency, performance, or environmental impact:
 - ALWAYS check if results differ by measurement phase
-- If evidence could show X>Y in one phase but Y>X in another phase → MUST split into scopes
-- Output at least 2 scopes: one for each major measurement boundary commonly used in that domain
+- If evidence could show X>Y in one phase but Y>X in another phase → MUST split into contexts
+- Output at least 2 contexts: one for each major measurement boundary commonly used in that domain
 
 **CRITICAL - Do NOT split for**:
 - Different viewpoints or perspectives (different opinions on same matter)
-- Different geographic locations (unless explicitly defining scope boundaries)
-- Different studies or sources (multiple sources often analyze the same scope)
-- Different time periods (temporal mentions alone do not create separate scopes)
-- Different narrative framings (rhetorical differences are not scopes)
+- Different geographic locations (unless explicitly defining analytical boundaries)
+- Different studies or sources (multiple sources often analyze the same context)
+- Incidental temporal mentions (e.g., "in 2020, the court..." - when not central to the claim)
+- Different narrative framings (rhetorical differences are not contexts)
 
-**Scope Relevance Rule**: Every scope MUST be directly relevant to the input AND represent a genuinely distinct analytical frame. When in doubt, use fewer scopes.
+**OVERLAP DETECTION (Merge Near-Duplicates Only)**:
 
-**For each detected scope**, note:
-- id: Short generic identifier (e.g., "SCOPE_A", "SCOPE_B")
+**MERGE contexts when names differ only by**:
+- Minor rewording (synonyms, word order)
+- One has extra qualifier that doesn't change the subject
+- One is abbreviation/variant of the other
+- Same subject, same analytical question, same time period
+
+**KEEP SEPARATE when ANY of these differ**:
+- Time period AS PRIMARY SUBJECT (e.g., "2000s event" vs "1970s event" - comparing different historical events) → DISTINCT
+- Analytical focus or question → DISTINCT
+- Subject matter → DISTINCT
+- Would require different evidence to evaluate → DISTINCT
+
+**PRESERVE ALL CLAIMS**: Assign unmatched claims to "General" context. Never drop claims.
+
+When in doubt, keep contexts separate - losing valid contexts is worse than slight overlap.
+
+**For each detected context**, note:
+- id: Short generic identifier (e.g., "CTX_A", "CTX_B")
 - name: Human-readable name describing the analytical frame
 - type: "legal" | "scientific" | "methodological" | "general"
 
@@ -176,9 +192,9 @@ This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was ap
 - "Was Y appropriate?" → Search for: "Y methodology", "Y guidelines", "Y compliance"
 - Never include the evaluative word itself in the query
 
-**If multiple scopes detected**:
-- Generate scope-specific queries
-- Tag queries with scope hints (e.g., "SCOPE:A - ...")
+**If multiple contexts detected**:
+- Generate context-specific queries
+- Tag queries with context hints (e.g., "CTX:A - ...")
 
 **For recent topics** (${isRecent ? 'DETECTED' : 'not detected'}):
 - Include temporal qualifiers to find current information
@@ -201,9 +217,9 @@ Return JSON with:
     - "tangential": Related but doesn't test the thesis (e.g., reactions to events)
     - "irrelevant": Off-topic noise
   - checkWorthiness, harmPotential, dependsOn (claim IDs)
-- researchQueries: Array with query text and optional scopeHint
-- detectedScopes: Array of preliminary scopes (if multi-scope detected)
-- requiresSeparateAnalysis: boolean (true if multiple scopes)
+- researchQueries: Array with query text and optional contextHint
+- detectedScopes: Array of preliminary contexts (output field name is "detectedScopes" for compatibility)
+- requiresSeparateAnalysis: boolean (true if multiple contexts)
 
 **CRITICAL**: All core claims that test any part of the input statement should have thesisRelevance="direct". Only mark as "tangential" claims about reactions, responses, or commentary that don't directly evaluate the truth of the input.`;
 }

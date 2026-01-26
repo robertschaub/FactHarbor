@@ -927,6 +927,10 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
   const overallVerdict = percentageToClaimVerdict(overallTruth, overallConfidence);
   const overallColor = CLAIM_VERDICT_COLORS[overallVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
+  // v2.6.38: Check if overall verdict is reliable (single context vs multiple distinct contexts)
+  const verdictReliability = articleAnalysis?.articleVerdictReliability || "high";
+  const isUnreliableAverage = verdictReliability === "low";
+
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   const contextAnswers =
     verdictSummary?.contextAnswers || verdictSummary?.proceedingAnswers || [];
@@ -967,8 +971,10 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
       </div>
 
       <div className={styles.answerContent} style={{ borderColor: overallColor.border }}>
-        <div className={styles.answerRow}>
-          <span className={styles.answerLabel} title="Overall verdict is assessed holistically. Claims average may differ due to evidence discovery and weighting.">VERDICT</span>
+        <div className={styles.answerRow} style={isUnreliableAverage ? { opacity: 0.6 } : undefined}>
+          <span className={styles.answerLabel} title={isUnreliableAverage ? "This average may not be meaningful - see individual context verdicts below" : "Overall verdict is assessed holistically. Claims average may differ due to evidence discovery and weighting."}>
+            VERDICT {isUnreliableAverage && "(avg)"}
+          </span>
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
@@ -999,6 +1005,15 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
         {verdictReason && (
           <div className={styles.scopeSummary}>
             <div className={styles.scopeSummaryText}>{verdictReason}</div>
+          </div>
+        )}
+
+        {/* v2.6.38: Explain unreliable average */}
+        {isUnreliableAverage && (
+          <div className={styles.calibrationNote} style={{ background: '#fff4e6', borderLeft: '3px solid #ff9800' }}>
+            <span className={styles.calibrationText}>
+              ℹ️ This average may not be meaningful because contexts answer different questions. Focus on individual context verdicts below.
+            </span>
           </div>
         )}
 
@@ -1038,8 +1053,8 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
 
         {contextAnswers.length > 0 && (
         <div className={styles.scopesAnalysis}>
-          <h4 className={styles.scopesHeader}>
-            📑 Contexts
+          <h4 className={styles.scopesHeader} style={isUnreliableAverage ? { fontSize: '1.1rem', fontWeight: 700 } : undefined}>
+            {isUnreliableAverage && '⭐ '}📑 {isUnreliableAverage ? 'Individual Context Verdicts (Primary)' : 'Contexts'}
           </h4>
           <div className={styles.scopesStack}>
             {contextAnswers.map((pa: any) => {

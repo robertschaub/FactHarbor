@@ -1,42 +1,66 @@
 /**
- * Base prompt template for SCOPE_REFINEMENT phase (scope detection from evidence)
+ * Base prompt template for SCOPE_REFINEMENT phase
  *
  * This prompt instructs the LLM to:
- * - Identify distinct analysis contexts from evidence
- * - Distinguish AnalysisContext from ArticleFrame
+ * - Refine EvidenceScope metadata attached to facts
+ * - Assign facts to AnalysisContexts via contextId
+ * - Distinguish EvidenceScope (per-fact) from AnalysisContext (top-level)
  * - Apply strict relevance requirements
- * - Assign facts to scopes correctly
  */
 
 export function getScopeRefinementBasePrompt(): string {
-  return `You are FactHarbor's scope refinement engine. Identify DISTINCT ANALYSIS CONTEXTS from evidence.
+  return `You are FactHarbor's context refinement engine. Identify DISTINCT ANALYSISCONTEXTS from evidence.
 
 ## TERMINOLOGY (CRITICAL)
 
-- **AnalysisContext**: Bounded analytical frame requiring separate analysis (output as analysisContexts)
-- **ArticleFrame**: Narrative background framing - NOT a reason to split
-- **EvidenceScope**: Per-fact source methodology/boundaries - DIFFERENT from AnalysisContext
+- **AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate analysis (output field: analysisContexts)
+- **EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT warrant creating separate AnalysisContexts)
+- **ArticleFrame**: Narrative background framing (does NOT warrant creating separate AnalysisContexts)
 
 ## YOUR TASK
 
-Identify which AnalysisContexts are ACTUALLY PRESENT in the provided evidence.
+Identify which ANALYSISCONTEXTS are ACTUALLY PRESENT in the provided evidence.
 
 ## RULES FOR SPLITTING INTO MULTIPLE CONTEXTS
 
 **Split when evidence shows DISTINCT ANALYTICAL FRAMES**:
-- Different methodological boundaries that define system scope (e.g., WTW vs. TTW analysis - different system boundaries, not just different studies)
-- Different legal processes/institutions with separate standards (e.g., different courts analyzing different matters)
+- Different methodological boundaries that define system boundaries
+- Different legal processes/institutions with separate standards
 - Different regulatory/procedural frameworks with different applicability
-- Different process phases with incompatible boundaries (e.g., upstream vs. downstream when they define distinct scopes)
+- Different process phases with incompatible boundaries
 
 **CRITICAL - Do NOT split for**:
 - Different viewpoints or narratives (pro vs. con are perspectives, not contexts)
 - Different evidence genres (expert quotes vs. statistics are source types, not contexts)
 - Different narrative framings (political vs. technical framing are ArticleFrames, not contexts)
-- Different countries (unless the evidence explicitly defines country-specific scope boundaries)
-- Different studies (multiple studies often analyze the same scope; a study is not a scope)
-- Different time periods (temporal differences alone do not create separate contexts)
+- Different countries (unless the evidence explicitly defines country-specific boundaries)
+- Different studies (multiple studies often analyze the same context; a study is not a context)
+- Incidental temporal mentions (e.g., dates within same event timeline)
 - Incidental geographic/temporal mentions (unless they explicitly define distinct analytical frames)
+
+## OVERLAP DETECTION (Merge Near-Duplicates Only)
+
+Only merge contexts that are TRUE DUPLICATES. Preserve distinct analytical frames.
+
+**MERGE contexts when names differ only by**:
+- Minor rewording (synonyms, word order)
+- One has extra qualifier that doesn't change the subject
+- One is abbreviation/variant of the other
+- Generic parent AND specific child with same subject → Keep the more specific one
+
+**KEEP SEPARATE when ANY of these differ**:
+- Time period AS PRIMARY SUBJECT (e.g., "2000s event" vs "1970s event" - comparing distinct historical events) → DISTINCT
+- Analytical focus or question → DISTINCT
+- Subject matter → DISTINCT
+- Different phases (e.g., development vs current status) → DISTINCT
+- Would require different evidence to evaluate → DISTINCT
+
+**PRESERVE CLAIMS RULE (CRITICAL)**:
+- Every claim MUST be assigned to a context
+- If a claim doesn't fit any specific context, assign to "General" context
+- NEVER drop or suppress claims
+
+**When in doubt**: Keep contexts separate. Losing valid contexts is worse than slight overlap.
 
 ## RELEVANCE REQUIREMENT (CRITICAL)
 
@@ -91,7 +115,7 @@ Return JSON with:
 - charges: Array of charges/allegations
 
 **Scientific domain**:
-- methodology: Standard/framework used (e.g., "ISO 14040", "Well-to-Wheel")
+- methodology: Standard/framework used
 - boundaries: What's included/excluded
 - geographic: Study region
 - dataSource: Dataset/model used
@@ -99,5 +123,22 @@ Return JSON with:
 **Regulatory domain**:
 - regulatoryBody: Agency name
 - standardApplied: Regulation/standard
-- geographic: Jurisdiction`;
+- geographic: Jurisdiction
+
+## FINAL VALIDATION
+
+**Merge only when names differ only by**:
+- Minor rewording, synonyms, or word order
+- Extra qualifier that doesn't change the subject
+- One is abbreviation/variant of the other
+
+**DO NOT merge when ANY of these differ**:
+- Time period - these are DISTINCT events
+- Analytical focus or question - these are DISTINCT
+- Subject matter - these are DISTINCT
+- Would require different evidence to evaluate
+
+**PRESERVE ALL CLAIMS**: Assign unmatched claims to "General" context. Never drop claims.
+
+**PRESERVE DISTINCT CONTEXTS**: Better to have more contexts than lose valid analytical frames.`;
 }

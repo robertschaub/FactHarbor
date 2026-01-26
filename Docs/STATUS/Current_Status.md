@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.37 (Code) | 2.7.0 (Schema Output)  
-**Last Updated**: 2026-01-24  
+**Version**: 2.6.38 (Code) | 2.7.0 (Schema Output)  
+**Last Updated**: 2026-01-26  
 **Status**: POC1 Operational
 
 ---
@@ -17,6 +17,8 @@
   - Monolithic Dynamic (experimental, flexible output)
 - Multi-scope detection and analysis
 - **Heuristic Scope Pre-Detection**: Code-level pattern detection for comparison, legal, and environmental claims
+- **Context Overlap Detection**: LLM-driven merge heuristics with defensive validation (v2.6.38)
+- **UI Reliability Signals**: Multi-context verdict reliability indicators (v2.6.38)
 - Input neutrality (question ≈ statement within ±5%)
 - Claim extraction with dependency tracking
 - Temporal reasoning with current date awareness
@@ -265,6 +267,19 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ## Recent Changes
 
+### v2.6.38 (January 26, 2026)
+- **Context Overlap Detection Improvements**: Refined LLM-driven context detection
+  - **Temporal Guidance Clarification**: Fixed contradiction between "incidental temporal mentions" (don't split) vs "time period as primary subject" (do split)
+  - **Context Count Warning**: Added logging when 5+ contexts detected (may indicate over-splitting)
+  - **Claim Assignment Validation**: Catches claims assigned to non-existent contexts (orphaned claims unassigned for fallback handling)
+  - **UI Reliability Field**: Added `articleVerdictReliability` ("high" | "low") to signal when overall average is meaningful
+  - **UI Improvements**: 
+    - De-emphasize overall average when reliability is low (60% opacity, "(avg)" label)
+    - Explanatory note: "ℹ️ This average may not be meaningful because contexts answer different questions"
+    - Emphasize individual context verdicts section (⭐ header, increased font weight)
+  - **Documentation**: Updated `Calculations.md` with "When is the Overall Average Meaningful?" section
+  - **Architecture Decision**: Simple averaging + transparency approved (see Opus review in agent transcripts)
+
 ### v2.6.37 (January 24, 2026)
 - **Entity-Level Source Evaluation**: Prioritize organization reputation (e.g., SRF, BBC) over domain-only metrics
   - **Entity-Level Evaluation**: New rule to evaluate the WHOLE ORGANIZATION if the domain is its primary outlet
@@ -458,6 +473,6 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ---
 
-**Last Updated**: January 24, 2026  
-**Actual Version**: 2.6.35 (Code) | 2.7.0 (Schema)  
+**Last Updated**: January 26, 2026  
+**Actual Version**: 2.6.38 (Code) | 2.7.0 (Schema)  
 **Document Status**: Corrected to reflect actual implementation state

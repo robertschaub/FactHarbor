@@ -1,8 +1,8 @@
 # FactHarbor POC1 Architecture Overview
 
-**Version:** 2.6.33  
+**Version:** 2.6.38  
 **Schema Version:** 2.7.0  
-**Last Updated:** January 2026
+**Last Updated:** January 26, 2026
 
 This document provides a comprehensive technical overview of FactHarbor's POC1 architecture, including system flows, data models, component interactions, and current implementation status.
 
@@ -280,6 +280,7 @@ erDiagram
         string articleVerdict "7-point scale verdict"
         int articleTruthPercentage "0-100 calibrated score"
         string articleVerdictReason "Why verdict differs from claims avg"
+        string articleVerdictReliability "high | low (v2.6.38)"
         int claimsAverageTruthPercentage "Average of claim verdicts"
         string claimsAverageVerdict "7-point average verdict"
         int claimsTotal "Total claims analyzed"
@@ -486,10 +487,12 @@ flowchart TB
 | **Caching & separated architecture** | ❌ Missing | Docs propose claim cache; current pipeline recomputes per job |
 | **Testing** | ⚠️ Partial | Web has unit/integration tests for analyzer; API has no tests; CI only builds |
 
-### Working Features (v2.6.33)
+### Working Features (v2.6.38)
 
 **Core Analysis:**
 - ✅ Multi-scope detection and display
+- ✅ Context overlap detection with LLM-driven merge heuristics (v2.6.38)
+- ✅ Defensive validation: context count warnings, claim assignment validation (v2.6.38)
 - ✅ Input neutrality (question ≈ statement within ±5%)
 - ✅ Scope/context extraction from sources
 - ✅ Temporal reasoning (current date awareness)
@@ -499,6 +502,7 @@ flowchart TB
 - ✅ Pseudoscience detection and escalation
 - ✅ 7-point verdict scale (TRUE to FALSE)
 - ✅ MIXED vs UNVERIFIED distinction (confidence-based)
+- ✅ UI reliability signals for multi-context verdicts (v2.6.38)
 
 **Infrastructure:**
 - ✅ Job lifecycle management (QUEUED → RUNNING → SUCCEEDED/FAILED)
@@ -679,5 +683,15 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 
 ---
 
-**Last Updated**: January 2026  
+## Recent Updates
+
+### v2.6.38 (January 26, 2026)
+- **Context Overlap Detection**: LLM-driven merge heuristics with temporal guidance clarification
+- **Defensive Validation**: Context count warnings (5+ threshold) and claim assignment validation
+- **UI Reliability Signals**: `articleVerdictReliability` field added to signal when overall average is meaningful
+- **Transparency**: De-emphasize unreliable averages, emphasize individual context verdicts in UI
+
+---
+
+**Last Updated**: January 26, 2026  
 **Document Status**: Living document - updated as architecture evolves

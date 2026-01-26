@@ -39,34 +39,34 @@ The following KeyFactor dimensions have been suggested as potentially relevant. 
 ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.evaluationCriteria}"`).join("\n")}`
     : "";
 
-  return `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT SCOPES (bounded analytical frames).
+  return `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT CONTEXTS (bounded analytical frames).
 
 ## TERMINOLOGY (CRITICAL)
 
-- **ArticleFrame**: Narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
-- **AnalysisContext**: A bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
-- **EvidenceScope**: Per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts later in the pipeline. NOT the same as AnalysisContext.
+- **AnalysisContext** (or "Context"): Top-level bounded analytical frame that should be analyzed separately (output field: analysisContexts)
+- **EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT warrant creating separate AnalysisContexts)
+- **ArticleFrame**: Narrative/background framing of the article or input (does NOT warrant creating separate AnalysisContexts)
 
-## NOT DISTINCT SCOPES
-- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
-- Pro vs con viewpoints are NOT scopes.
+## NOT DISTINCT CONTEXTS
+- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate contexts by themselves.
+- Pro vs con viewpoints are NOT contexts.
 
-## SCOPE RELEVANCE REQUIREMENT (CRITICAL)
-- Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include scopes from unrelated domains just because they share a general category
-- Each scope must have a clear, direct connection to the input's subject matter
-- When in doubt, use fewer scopes rather than including marginally relevant ones
-- A scope with zero relevant claims/evidence should NOT exist
+## CONTEXT RELEVANCE REQUIREMENT (CRITICAL)
+- Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include contexts from unrelated domains just because they share a general category
+- Each context must have a clear, direct connection to the input's subject matter
+- When in doubt, use fewer contexts rather than including marginally relevant ones
+- A context with zero relevant claims/evidence should NOT exist
 
 **SAME SUBJECT/ENTITY RULE**: 
-- Scopes MUST be about the SAME SUBJECT as the thesis
-- If thesis is about "Person A's trial", do NOT include scopes about Person B, C, etc.
-- Different cases involving DIFFERENT PEOPLE are NOT relevant scopes, even if they share:
+- Contexts MUST be about the SAME SUBJECT as the thesis
+- If thesis is about "Person A's trial", do NOT include contexts about Person B, C, etc.
+- Different cases involving DIFFERENT PEOPLE are NOT relevant contexts, even if they share:
   - The same court/institution
   - The same country/jurisdiction
   - Similar legal issues
   - The same time period
-- Example: If analyzing "Was X's trial fair?", a scope about Y's trial (even in same court) is IRRELEVANT
+- Example: If analyzing "Was X's trial fair?", a context about Y's trial (even in same court) is IRRELEVANT
 
 ${recencySection}## TEMPORAL REASONING
 
@@ -152,23 +152,39 @@ Claims with claimRole "source", "attribution", or "timing" should ALWAYS have ce
 
 **CRITICAL**: Foreign government responses to domestic proceedings are ALWAYS tangential.
 
-## MULTI-SCOPE DETECTION
+## MULTI-CONTEXT DETECTION
 
-Look for multiple distinct scopes that should be analyzed separately.
+Look for multiple distinct AnalysisContexts that should be analyzed separately.
 
-### What IS a valid distinct scope:
-- Separate formal proceedings (e.g., TSE electoral case vs STF criminal case)
-- Distinct temporal events (e.g., 2023 rollout vs 2024 review)
-- Different jurisdictional processes (e.g., state court vs federal court)
-- Different analytical methodologies or boundaries (e.g., WTW vs TTW analysis)
-- Different regulatory frameworks (e.g., EU vs US regulations)
+### What IS a valid distinct context:
+- Separate formal proceedings
+- Distinct temporal events
+- Different jurisdictional processes
+- Different analytical methodologies or boundaries
+- Different regulatory frameworks
 
-### What is NOT a distinct scope:
+### What is NOT a distinct context:
 - Different national/political perspectives on the SAME event
 - Different stakeholder viewpoints on a single topic
 - Pro vs con arguments about the same topic
 
-Set requiresSeparateAnalysis = true when multiple scopes are detected.
+### OVERLAP DETECTION (Merge Near-Duplicates Only):
+
+**MERGE contexts when names differ only by**:
+- Minor rewording (synonyms, word order)
+- One has extra qualifier that doesn't change the subject
+- One is abbreviation/variant of the other
+- Same subject, same analytical question, same time period
+
+**KEEP SEPARATE when ANY of these differ**:
+- Time period AS PRIMARY SUBJECT (e.g., "2000s event" vs "1970s event" - comparing distinct historical events) → DISTINCT
+- Analytical focus or question → DISTINCT
+- Subject matter → DISTINCT
+- Would require different evidence to evaluate → DISTINCT
+
+**PRESERVE ALL CLAIMS**: Assign unmatched claims to "General" context. Never drop claims.
+
+Set requiresSeparateAnalysis = true when genuinely distinct contexts exist.
 
 ## KEY FACTORS (Emergent Decomposition)
 
@@ -210,7 +226,7 @@ Return JSON with:
 - articleThesis: Neutral summary of what the article claims
 - analysisContext: ArticleFrame (narrative background) or empty string
 - subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, isCounterClaim, contextId, keyFactorId
-- analysisContexts: Array of detected scopes (if any)
+- analysisContexts: Array of detected contexts (if any)
 - requiresSeparateAnalysis: boolean
 - researchQueries: 4-6 specific search queries
 - keyFactors: Array of KeyFactors (or empty array)
@@ -233,7 +249,7 @@ export function getOrchestratedUnderstandPrompt(
 
 <claude_optimization>
 ## CLAUDE-SPECIFIC GUIDANCE
-- Use nuanced reasoning for scope boundary detection
+- Use nuanced reasoning for context boundary detection
 - Be direct and confident in centrality assessments
 - Apply careful judgment to thesisRelevance classification
 - Expect 1-4 HIGH centrality claims maximum
