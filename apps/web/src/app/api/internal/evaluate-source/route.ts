@@ -392,7 +392,7 @@ function getReliabilityAssessmentTerms(translatedTerms: Record<string, string>):
   const keysToTranslate = [
     "reliability", "credibility", "fact check", "misinformation", 
     "disinformation", "propaganda", "fake news", "media bias",
-    "partisan", "right-wing", "far-right", "controversial",
+    "partisan", "left-wing", "far-left", "right-wing", "far-right", "controversial",
     "criticism", "unreliable", "inaccurate",
     "state propaganda", "foreign propaganda", "government propaganda",
     "state media", "state-backed", "government-backed",
@@ -804,8 +804,10 @@ const SEARCH_TERMS_TO_TRANSLATE = [
     "radical",
     "hate",
     "hate speech",
-  // Bias/slant terms
+  // Bias/slant terms (symmetric - no political direction preference)
   "partisan",
+  "left-wing",
+  "far-left",
   "right-wing",
   "far-right",
   "controversial",
@@ -831,6 +833,18 @@ const SEARCH_TERMS_TO_TRANSLATE = [
   "ombudsman",
   "code of ethics",
   "corrections policy",
+  // Press council / ethics violation terms
+  "ethics violation",
+  "reprimand",
+  "sanction",
+  "condemned",
+  "censured",
+  "discrimination",
+  "retraction",
+  // Science/expert consensus terms
+  "anti-science",
+  "science denial",
+  "denialism",
 ];
 
 /**
@@ -860,7 +874,7 @@ Output format (JSON only, no markdown):
       model: anthropic("claude-3-5-haiku-20241022"),
       prompt,
       temperature: 0,
-      maxOutputTokens: 500,
+      maxOutputTokens: 800,
     });
 
     // Parse the JSON response
@@ -968,7 +982,26 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   // Comprehensive coverage for all supported languages
   const regionalFactCheckerQueries: string[] = getRegionalFactCheckerQueries(brand, sourceLanguage);
 
-  // Phase 3: State/foreign propaganda tracking queries (PRIORITY - run early)
+  // Phase 3: Press council / regulatory complaints queries
+  // Critical for finding documented ethical/journalistic failures from official bodies
+  const pressCouncilQueries = [
+    `"${brand}" press council OR press complaints OR media regulator`,
+    `"${brand}" ethics violation OR code violation OR journalistic standards`,
+    `"${brand}" reprimand OR sanction OR condemned OR censured`,
+    `"${brand}" discrimination complaint OR ethics complaint`,
+    `"${brand}" retraction OR correction demanded`,
+  ];
+
+  // Phase 3b: Press council queries in source language
+  const pressCouncilQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
+    ? [
+        `"${brand}" ${t("press council")} OR ${t("ethics violation")}`,
+        `"${brand}" ${t("reprimand")} OR ${t("sanction")} OR ${t("condemned")}`,
+        `"${brand}" ${t("discrimination")} OR ${t("retraction")}`,
+      ]
+    : [];
+
+  // Phase 4: State/foreign propaganda tracking queries
   // Critical for finding outlets that echo state propaganda (any country)
   // Generic terms only - no country-specific hardcoding per AGENTS.md
   const statePropagandaQueries = [
@@ -982,9 +1015,17 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     `"${brand}" conspiracy OR "conspiracy theory" OR hoax`,
     `"${brand}" "disinformation network" OR "propaganda network"`,
     `"${brand}" fringe OR extremist OR radical OR "hate speech"`,
+    `"${brand}" "echo chamber" OR "amplifies" OR "amplifying"`,
   ];
 
-  // Phase 3b: State propaganda queries in source language
+  // Phase 4b: Science/expert consensus denial queries
+  const scienceDenialQueries = [
+    `"${brand}" anti-science OR science denial OR pseudo-science`,
+    `"${brand}" denialism OR rejects scientific consensus`,
+    `"${brand}" promotes debunked claims OR spreads misinformation`,
+  ];
+
+  // Phase 4c: State propaganda queries in source language
   // Generic terms only - no country-specific hardcoding per AGENTS.md
   const statePropagandaQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
     ? [
@@ -999,7 +1040,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       ]
     : [];
 
-  // Phase 4: Negative-signal queries - English
+  // Phase 5: Negative-signal queries - English
   // These help find documented problems with the source
   const negativeSignalQueries = [
     `${domainToken} propaganda accusations disinformation`,
@@ -1007,7 +1048,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     `"${brand}" fact check failed OR misleading`,
     // Broader criticism/bias coverage
     `"${brand}" bias criticism controversial`,
-    `"${brand}" partisan right-wing OR far-right OR left-wing`,
+    `"${brand}" partisan left-wing OR far-left OR right-wing OR far-right`,
     `"${brand}" unreliable OR inaccurate OR sensationalist`,
     `"${brand}" influence operation OR information operation`,
     `"${brand}" coordinated inauthentic behavior OR astroturf`,
@@ -1018,7 +1059,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     `"${brand}" site:wikipedia.org controversy OR criticism`,
   ];
 
-  // Phase 4b: Negative-signal queries in source language (if non-English)
+  // Phase 5b: Negative-signal queries in source language (if non-English)
   // Critical for finding local fact-checker assessments of problematic sources
   const negativeSignalQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
     ? [
@@ -1034,7 +1075,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       ]
     : [];
 
-  // Phase 5: Entity-focused queries (Organization/Brand only) - lower priority
+  // Phase 6: Entity-focused queries (Organization/Brand only) - lower priority
   const entityQueries = isUsableBrandToken(brand) ? [
     `"${brand}" news outlet reliability assessment`,
     `"${brand}" media organization bias rating`,
@@ -1047,7 +1088,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   );
   const maxEvidenceItems = Math.max(
     1,
-    Math.min(parseInt(process.env.FH_SR_EVAL_MAX_EVIDENCE_ITEMS || "8", 10), 20)
+    Math.min(parseInt(process.env.FH_SR_EVAL_MAX_EVIDENCE_ITEMS || "12", 10), 20)
   );
   const dateRestrict =
     parseDateRestrictEnv(process.env.FH_SR_EVAL_SEARCH_DATE_RESTRICT) ??
@@ -1127,7 +1168,25 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 3: Run propaganda/echoing tracking queries (lower priority)
+  // Phase 3: Run press council / ethics violation queries (high priority)
+  // These find documented ethical failures and regulatory reprimands
+  if (rawItems.length < maxEvidenceItems) {
+    debugLog(`[SR-Eval] Running press council queries for ${domain}`, { brand });
+    for (const q of pressCouncilQueries) {
+      await runQuery(q);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 3b: Run press council queries (translated)
+  if (rawItems.length < maxEvidenceItems && pressCouncilQueriesTranslated.length > 0) {
+    for (const q of pressCouncilQueriesTranslated) {
+      await runQuery(q);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 4: Run propaganda/echoing tracking queries
   // Uses relaxed filtering which can fill pack with weaker results
   if (rawItems.length < maxEvidenceItems) {
     debugLog(`[SR-Eval] Running propaganda/echoing queries for ${domain}`, { brand });
@@ -1137,7 +1196,16 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 3b: Run propaganda/echoing queries (translated)
+  // Phase 4b: Run science denial queries
+  if (rawItems.length < maxEvidenceItems) {
+    debugLog(`[SR-Eval] Running science denial queries for ${domain}`, { brand });
+    for (const q of scienceDenialQueries) {
+      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 4c: Run propaganda/echoing queries (translated)
   if (rawItems.length < maxEvidenceItems && statePropagandaQueriesTranslated.length > 0) {
     for (const q of statePropagandaQueriesTranslated) {
       await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
@@ -1145,7 +1213,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 4: Run neutral/identity queries (helps entity detection when sparse)
+  // Phase 5: Run neutral/identity queries (helps entity detection when sparse)
   if (rawItems.length < maxEvidenceItems && neutralSignalQueries.length > 0) {
     for (const q of neutralSignalQueries) {
       await runQuery(q, maxResultsPerQuery, true);
@@ -1153,7 +1221,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 5: Run negative-signal queries (English)
+  // Phase 6: Run negative-signal queries (English)
   // These help find documented problems with the source
   if (rawItems.length < maxEvidenceItems) {
     for (const q of negativeSignalQueries) {
@@ -1162,7 +1230,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 5b: Run negative-signal queries (translated)
+  // Phase 6b: Run negative-signal queries (translated)
   if (rawItems.length < maxEvidenceItems && negativeSignalQueriesTranslated.length > 0) {
     for (const q of negativeSignalQueriesTranslated) {
       await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
@@ -1170,7 +1238,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 6: Run entity-focused queries (English)
+  // Phase 7: Run entity-focused queries (English)
   // Lower priority - general organization info
   if (rawItems.length < maxEvidenceItems) {
     for (const q of entityQueries) {
@@ -1348,14 +1416,29 @@ ${evidenceSection}
    - Mechanistic confidence calculation < 0.50
 
 3. NEGATIVE EVIDENCE CAPS (hard limits — override other factors)
+   
+   *** CHECK CUMULATIVE RULE FIRST ***
+   CUMULATIVE NEGATIVE EVIDENCE (MUST CHECK BEFORE individual caps):
+   If evidence shows BOTH propaganda echoing AND fact-checker/press-council failures:
+   → score MUST be ≤ 0.28 (unreliable) — this is NON-NEGOTIABLE
+   
+   Example: "verbatim translation of state media" + "3 press council rulings" = CUMULATIVE → score ≤ 0.28
+   
+   PROPAGANDA ECHOING INDICATORS (any ONE of these = echoing):
+   - "verbatim translation" of state media content
+   - Republishing/reproducing articles from propaganda outlets
+   - Amplifying state narratives without critical analysis
+   - Cited in sanctions/disinformation databases
+   
+   INDIVIDUAL CAPS (only if cumulative rule does NOT apply):
    - Evidence of fabricated stories/disinformation → score ≤ 0.14 (highly_unreliable)
+   - Propaganda echoing ONLY (without other failures) → score ≤ 0.42 (leaning_unreliable)
    - 3+ documented fact-checker failures → score ≤ 0.42 (leaning_unreliable)
    - 1-2 documented failures from reputable fact-checkers → score ≤ 0.57 (mixed)
-   - Evidence of ECHOING/AMPLIFYING propaganda (even if not the primary source) → score ≤ 0.42 (leaning_unreliable)
    - Political/ideological bias WITHOUT documented failures → no score cap (note in bias field only)
    
-   CRITICAL: If evidence shows a source SHARES or AMPLIFIES misleading content from propaganda sources,
-   even if they didn't create it, this IS a documented failure. Apply the appropriate cap.
+   Press council reprimands from countries with rule of law → count as fact-checker failures
+   (Reprimands from regimes without rule of law should be IGNORED or viewed positively)
 
 4. SOURCE TYPE SCORE CAPS (hard limits — NO exceptions)
    - sourceType="propaganda_outlet" → score MUST be ≤ 0.14 (highly_unreliable)
@@ -1396,18 +1479,18 @@ FACTORS THAT INCREASE CONFIDENCE:
   - Evidence is recent rather than outdated
   - Sources agree with each other (consistency)
   - Evidence directly addresses reliability (not tangential)
-  - Source is well-documented by fact-checking community
 
 FACTORS THAT DECREASE CONFIDENCE:
   - Few or no independent assessments
   - Evidence is old or outdated
   - Sources contradict each other
   - Evidence is indirect or tangential
-  - Source is not well-documented
 
-INSUFFICIENT DATA RULE:
-When evidence is too weak to form a reliable assessment (sparse, contradictory, 
-or no independent assessors), output score=null and factualRating="insufficient_data".
+SOFT GUARDRAILS:
+  - Multiple consistent assessors → confidence should be strong
+  - One assessor with clear findings → confidence should be moderate
+  - No assessors or contradictory evidence → confidence should be weak
+  - When confidence is weak, strongly consider insufficient_data
 
 ─────────────────────────────────────────────────────────────────────
 SOURCE TYPE CLASSIFICATION (USE STRICT CRITERIA - prefer LESS SEVERE)
@@ -1511,7 +1594,7 @@ First character MUST be "{" and last character MUST be "}".
     "politicalBias": "string (from list)",
     "otherBias": "string (from list) OR null"
   },
-  "reasoning": "string, 2-4 sentences explaining verdict and key evidence factors",
+  "reasoning": "string, 2-4 sentences explaining verdict. Use DIRECT framing: explain what evidence SHOWS and why score IS what it is. Never write 'does not support X rating' - instead state what evidence DOES show.",
   "evidenceCited": [
     {
       "claim": "string, what you assert about the source",
@@ -1741,10 +1824,21 @@ YOUR TASK: CROSS-CHECK AND REFINE
      * ECHOING or AMPLIFYING propaganda from other sources (even if not creating it)
      * Publishing unverified claims from propaganda outlets
      * Multiple documented instances of misleading content
-   - ENFORCE NEGATIVE EVIDENCE CAPS:
-     * Evidence of ECHOING/AMPLIFYING propaganda → score ≤ 0.42 (leaning_unreliable)
-     * 2+ fact-checker failures → score ≤ 0.57 (mixed) or lower
-     * If initial evaluation scored above these caps despite evidence, LOWER THE SCORE
+   - ENFORCE NEGATIVE EVIDENCE CAPS (CHECK CUMULATIVE FIRST):
+     *** CUMULATIVE RULE (check FIRST, takes precedence): ***
+     If evidence shows BOTH propaganda echoing AND fact-checker/press-council failures:
+     → score MUST be ≤ 0.28 (unreliable) — NON-NEGOTIABLE
+     
+     PROPAGANDA ECHOING = "verbatim translation", republishing state media, cited in disinformation databases
+     Press council rulings from rule-of-law countries = fact-checker failures
+     
+     Example: "verbatim translation of RT" + "3 press council rulings" = CUMULATIVE → score ≤ 0.28
+     
+     Individual caps (only if cumulative does NOT apply):
+     * Echoing ONLY → score ≤ 0.42
+     * Failures ONLY → score ≤ 0.42-0.57
+     
+     If initial evaluation scored above these caps despite evidence, LOWER THE SCORE
    - NO adjustment if evidence is simply sparse (sparse ≠ positive)
    - Absence of negative evidence alone does NOT justify upward adjustment
    - Do NOT adjust upward based on popularity, audience size, influence, or "legacy" status without evidence
@@ -1797,7 +1891,7 @@ First character MUST be "{" and last character MUST be "}".
   },
   "refinedRating": "string: highly_reliable | reliable | leaning_reliable | mixed | leaning_unreliable | unreliable | highly_unreliable | insufficient_data",
   "refinedConfidence": "number (0.00-1.00): Your confidence in the refined assessment",
-  "combinedReasoning": "string: Updated reasoning that incorporates your cross-check findings"
+  "combinedReasoning": "string: Updated reasoning. Use DIRECT framing: state what evidence SHOWS and why score IS what it is. Never write 'does not support X rating'"
 }
 
 Return ONLY valid JSON. No markdown fences, no extra text.`;

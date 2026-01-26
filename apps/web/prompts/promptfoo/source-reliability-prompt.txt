@@ -46,11 +46,14 @@ CONFIDENCE ASSESSMENT
 ═══════════════════════════════════════════════════════════════════
 Your confidence reflects how well the evidence supports your assessment.
 
-INCREASES CONFIDENCE: More assessors, recent evidence, consistency, direct evidence
-DECREASES CONFIDENCE: Few assessors, old evidence, contradictions, tangential evidence
+INCREASES: More assessors, recent evidence, consistency, direct evidence
+DECREASES: Few assessors, old evidence, contradictions, tangential evidence
 
-INSUFFICIENT DATA: When evidence is too weak (sparse, contradictory, no assessors),
-output score=null and factualRating="insufficient_data"
+GUARDRAILS:
+  - Multiple consistent assessors → confidence should be strong
+  - One assessor with clear findings → confidence should be moderate
+  - No assessors or contradictory evidence → confidence should be weak
+  - When weak, strongly consider insufficient_data
 
 ═══════════════════════════════════════════════════════════════════
 BIAS VALUES
