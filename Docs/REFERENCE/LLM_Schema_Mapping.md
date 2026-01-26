@@ -17,8 +17,10 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 | TypeScript Type | Prompt Term | LLM Output Field (v2.7) | LLM Output Field (Legacy) | Zod Schema |
 |----------------|-------------|---------------------------|--------------------------|------------|
-| `AnalysisContext` | "AnalysisContext" or "Scope" | `analysisContexts` | `distinctProceedings` | `AnalysisContextSchema` |
-| `EvidenceScope` | "EvidenceScope" | `evidenceScope` | `evidenceScope` | `EvidenceScopeSchema` |
+| `AnalysisContext` | "AnalysisContext" or "Context" | `analysisContexts` | `distinctProceedings` | `AnalysisContextSchema` |
+| `EvidenceScope` | "EvidenceScope" or "Scope" | `evidenceScope` | `evidenceScope` | `EvidenceScopeSchema` |
+
+> **CRITICAL TERMINOLOGY (v2.6.39)**: "Scope" refers to `EvidenceScope` (per-fact metadata), NOT `AnalysisContext`. Use "Context" for top-level analytical frames.
 | `ExtractedFact` | "Fact" | `facts` | `facts` | `ExtractedFactSchema` |
 | `ContextAnswer` | "Verdict" | (embedded in result) | (embedded in result) | `ContextAnswerSchema` |
 
@@ -28,7 +30,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 ### UNDERSTAND Phase
 
-**Purpose**: Extract claims and detect preliminary scopes
+**Purpose**: Extract claims and detect preliminary AnalysisContexts
 
 **Input to LLM**:
 ```typescript
@@ -40,8 +42,8 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 ```
 
 **Prompt Terms Used**:
-- "AnalysisContext" or "Scope" for top-level frames
-- "Multi-Scope Detection" for identifying distinct frames
+- "AnalysisContext" or "Context" for top-level analytical frames
+- "Multi-Context Detection" for identifying distinct frames
 - "Claim Extraction" for factual assertions
 
 **LLM Output Schema (v2.7)**:
@@ -87,13 +89,13 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 {
   currentDate: string;
   originalClaim: string;      // User's input
-  scopesList: string;         // Stringified list of detected scopes
+  contextsList: string;       // Stringified list of detected AnalysisContexts
 }
 ```
 
 **Prompt Terms Used**:
-- "EvidenceScope" for per-fact methodology metadata
-- "contextId" for scope assignment
+- "EvidenceScope" for per-fact methodology metadata (NOT an AnalysisContext)
+- "contextId" for AnalysisContext assignment
 - "claimDirection" for support/contradict/neutral assessment
 
 **LLM Output Schema (v2.7)**:
@@ -131,22 +133,22 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 ---
 
-### SCOPE_REFINEMENT Phase
+### CONTEXT_REFINEMENT Phase
 
 **Purpose**: Identify final AnalysisContexts from evidence
 
 **Input to LLM**:
 ```typescript
 {
-  facts: ExtractedFact[];       // All extracted facts
-  preliminaryScopes: Scope[];   // From UNDERSTAND phase
+  facts: ExtractedFact[];              // All extracted facts
+  preliminaryContexts: AnalysisContext[];  // From UNDERSTAND phase
 }
 ```
 
 **Prompt Terms Used**:
-- "AnalysisContext" (primary term)
+- "AnalysisContext" or "Context" (primary term for top-level frames)
 - "ArticleFrame" (what NOT to split on)
-- "EvidenceScope" (distinguished from AnalysisContext)
+- "EvidenceScope" (per-fact metadata - NOT an AnalysisContext)
 - "analysisContexts" (output field name)
 
 **LLM Output Schema (v2.7)**:
@@ -172,10 +174,10 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
       }
     }
   ],
-  "factScopeAssignments": [
+  "factScopeAssignments": [  // Legacy name: assigns facts to AnalysisContexts (not EvidenceScopes)
     {
       "factId": "string",
-      "contextId": "string"
+      "contextId": "string"    // References AnalysisContext.id
     }
   ]
 }
@@ -183,8 +185,9 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 **Legacy Compatibility**:
 - Legacy fields `distinctProceedings` and `proceedingId` are still accepted when reading older jobs.
+- `factScopeAssignments` field name is legacy - it assigns facts to AnalysisContexts (the "Scope" in the name is historical)
 
-**Zod Validation**: `ScopeRefinementSchema` (in `analyzer.ts`)
+**Zod Validation**: `ContextRefinementSchema` (legacy: `ScopeRefinementSchema`) in `analyzer.ts`
 
 **Key Mappings**:
 - Prompt: "AnalysisContext" → Output: `analysisContexts` (legacy: `distinctProceedings`)
@@ -203,7 +206,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
   currentDate: string;
   originalClaim: string;
   claimsList: string;          // Stringified claims
-  scopesList: string;          // Stringified contexts
+  contextsList: string;        // Stringified AnalysisContexts
   factsList: string;           // Stringified facts
 }
 ```
@@ -264,7 +267,7 @@ See `Docs/REFERENCE/TERMINOLOGY.md` for "Doubted vs Contested" distinction.
 
 | Layer | Term | Notes |
 |-------|------|-------|
-| Prompt | "AnalysisContext" or "Scope" | Primary prompt term |
+| Prompt | "AnalysisContext" or "Context" | Primary prompt term (NEVER "Scope") |
 | LLM Output (v2.7) | `analysisContexts` | JSON field name |
 | LLM Output (Legacy) | `distinctProceedings` | Backward compatibility |
 | TypeScript | `AnalysisContext` | Interface name |
@@ -274,7 +277,7 @@ See `Docs/REFERENCE/TERMINOLOGY.md` for "Doubted vs Contested" distinction.
 
 | Layer | Term | Notes |
 |-------|------|-------|
-| Prompt | "EvidenceScope" | Explicit terminology |
+| Prompt | "EvidenceScope" or "Scope" | Per-fact metadata (NOT an AnalysisContext) |
 | LLM Output | `evidenceScope` | Consistent across versions |
 | TypeScript | `EvidenceScope` | Interface name |
 | Database | (embedded in fact objects) | Part of ResultJson |
@@ -325,14 +328,16 @@ graph TD
 
 ### Pitfall 2: Terminology Confusion in Prompts
 
-❌ **Wrong** (Mixing terms for same concept):
+❌ **Wrong** (Confusing "scope" with "context"):
 ```
-"Identify the distinct proceedings or scopes or contexts..."
+"Identify the distinct scopes..."
+// WRONG: "Scope" means EvidenceScope (per-fact metadata), not AnalysisContext
 ```
 
-✅ **Correct** (Single term with alias):
+✅ **Correct** (Clear terminology):
 ```
-"Identify AnalysisContexts (also called Scopes)..."
+"Identify AnalysisContexts (or Contexts)..."
+// "Scope" reserved for EvidenceScope (per-fact source methodology)
 ```
 
 ### Pitfall 3: Missing Glossary
@@ -340,14 +345,14 @@ graph TD
 ❌ **Wrong** (No term definitions in prompt):
 ```
 "Extract the scopes from evidence."
-// LLM doesn't know what "scope" means in FactHarbor context
+// Ambiguous: Does "scope" mean AnalysisContext or EvidenceScope?
 ```
 
-✅ **Correct** (Explicit glossary):
+✅ **Correct** (Explicit glossary with CRITICAL distinction):
 ```
-## TERMINOLOGY
-- **AnalysisContext**: Bounded analytical frame requiring separate verdict
-- **EvidenceScope**: Per-fact source methodology metadata
+## TERMINOLOGY (CRITICAL)
+- **AnalysisContext** (or "Context"): Top-level analytical frame requiring separate verdict
+- **EvidenceScope** (or "Scope"): Per-fact source methodology metadata (NOT an AnalysisContext)
 ```
 
 ---
@@ -361,18 +366,20 @@ graph TD
 
 ### Phase 2: Update Zod Schemas
 ```typescript
-// Before (v2.6)
-const ScopeSchema = z.object({
+// Before (v2.6) - legacy naming
+const ScopeSchema = z.object({  // Note: "Scope" here meant AnalysisContext (legacy)
   distinctProceedings: z.array(AnalysisContextSchema),
   // ...
 });
 
-// After (v2.7)
-const ScopeSchema = z.object({
+// After (v2.7+) - clear naming
+const ContextRefinementSchema = z.object({  // Renamed for clarity
   analysisContexts: z.array(AnalysisContextSchema),
   // ...
 });
 ```
+
+> **Note (v2.6.39)**: Legacy code may still use "Scope" to mean AnalysisContext. New code should use "Context" for AnalysisContext and "Scope" only for EvidenceScope.
 
 ### Phase 3: Update LLM Output Parsing
 ```typescript

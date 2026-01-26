@@ -39,11 +39,11 @@ For each claim found:
 - isCentral: true if centrality="high", else false
 - dependsOn: [array of claim IDs this depends on, or []]
 
-**Step 4:** Detect scope boundaries
+**Step 4:** Detect context boundaries
 Look for:
-- Different jurisdictions (courts, countries)
-- Different methodologies (WTW vs TTW)
-- Different regulatory frameworks (EU vs US)
+- Different institutions or formal bodies
+- Different methodologies or standards
+- Different regulatory or governance frameworks
 If found: Create detectedScopes array
 If not: Leave detectedScopes empty
 
@@ -214,9 +214,9 @@ export function getMistralScopeRefinementVariant(): string {
 Look for these markers:
 | Marker Type | Examples |
 |-------------|----------|
-| Methodology | "WTW", "TTW", "LCA", "ISO 14040" |
-| Jurisdiction | Court names, country names, agencies |
-| Temporal | "2020 study", "2025 revision", "FY2024" |
+| Methodology | Different analytical standards or frameworks |
+| Institution | Different formal bodies or agencies |
+| Temporal | Different time periods or phases |
 
 **Step 2:** For each potential boundary, answer these questions
 
@@ -239,15 +239,12 @@ If ANY unchecked → Skip this boundary
   "status": "[concluded | ongoing | pending | unknown]",
   "outcome": "[result or empty string]",
   "metadata": {
-    // Legal domain:
-    "institution": "[court/agency name]",
-    "jurisdiction": "[Federal/State/National]",
-    "charges": ["array of charges"],
-    
-    // OR Scientific domain:
-    "methodology": "[WTW/TTW/LCA]",
+    // Domain-specific fields:
+    "institution": "[formal body name]",
+    "level": "[Federal/State/National/International]",
+    "methodology": "[standard/framework used]",
     "boundaries": "[what included/excluded]",
-    "geographic": "[region]",
+    "geographic": "[region/area]",
     "dataSource": "[dataset used]"
   }
 }

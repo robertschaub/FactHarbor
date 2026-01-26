@@ -23,7 +23,7 @@ This prompt uses XML tags for optimal Claude comprehension. Follow the structure
 Before generating output, work through these steps internally:
 1. What type of input is this? (claim vs article)
 2. Identify the core factual assertions that need verification
-3. Are there multiple analytical frames? (look for jurisdiction/methodology boundaries)
+3. Are there multiple analytical frames? (look for institutional/methodology boundaries)
 4. Which claims require attribution separation (WHO said vs WHAT was said)?
 5. What search queries would find supporting AND contradicting evidence?
 </thinking_process>
@@ -200,9 +200,9 @@ DO NOT create separate scopes for:
 ## METADATA EXTRACTION
 <metadata_guidance>
 Use your strong comprehension to extract metadata from evidence:
-- "Under EU methodology..." → geographic: "EU", methodology: varies
+- "Under [framework] methodology..." → methodology: [framework name]
 - "The 2020 assessment..." → temporal: "2020"
-- "TSE electoral court ruling..." → institution: "TSE", jurisdiction: "Federal"
+- "[Institution] ruling..." → institution: [name], level: [Federal/State/etc.]
 
 Ensure metadata reflects ACTUAL EVIDENCE, not your background knowledge.
 </metadata_guidance>

@@ -70,9 +70,9 @@ ${contextsList}
 - A fact from Context A cannot support a verdict in Context B
 - If contexts have different verdicts, that's NORMAL - report separately
 
-**Example** (multi-jurisdiction):
-- Context 1: "Electoral court followed procedures" → 85% TRUE
-- Context 2: "Supreme court violated due process" → 20% FALSE
+**Example** (multiple analytical frames):
+- Context 1: "Institution A followed procedures" → 85% TRUE
+- Context 2: "Institution B violated process" → 20% FALSE
 - Do NOT average these - they're separate analytical frames
 
 ## EVIDENCESCOPE AWARENESS

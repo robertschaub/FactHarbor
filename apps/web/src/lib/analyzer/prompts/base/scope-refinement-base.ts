@@ -74,7 +74,7 @@ Only merge contexts that are TRUE DUPLICATES. Preserve distinct analytical frame
 **SAME SUBJECT/ENTITY RULE**: 
 - Contexts MUST be about the SAME SUBJECT as the thesis
 - If thesis is about "Person A's trial", do NOT include contexts about Person B, C, etc.
-- Different cases involving DIFFERENT PEOPLE are NOT relevant contexts, even if they share the same court, jurisdiction, or legal issue
+- Different cases involving DIFFERENT PEOPLE are NOT relevant contexts, even if they share the same institution or similar issues
 
 ## EVIDENCE-GROUNDED ONLY
 
@@ -115,21 +115,15 @@ Return JSON with:
 
 ## METADATA FIELDS (Domain-Specific)
 
-**Legal domain**:
-- institution: Court/tribunal name
-- jurisdiction: Federal/State/National
-- charges: Array of charges/allegations
-
-**Scientific domain**:
+Use appropriate fields based on the domain. Examples:
+- institution: Name of the formal body
+- level: Federal/State/National/International
 - methodology: Standard/framework used
 - boundaries: What's included/excluded
-- geographic: Study region
+- geographic: Region/area of coverage
 - dataSource: Dataset/model used
-
-**Regulatory domain**:
 - regulatoryBody: Agency name
 - standardApplied: Regulation/standard
-- geographic: Jurisdiction
 
 ## FINAL VALIDATION
 

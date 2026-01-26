@@ -71,7 +71,7 @@ Output:
 1. Separate WHO SAID from WHAT THEY SAID (attribution vs core)
 2. Only 1-4 claims should have "high" centrality
 3. Generate 4-6 DISTINCT search queries (no redundancy)
-4. Look for jurisdiction/methodology differences for scope detection
+4. Look for institutional/methodology differences for context detection
 5. Use "" for empty strings, never null
 
 Now analyze the input following these exact patterns.`;

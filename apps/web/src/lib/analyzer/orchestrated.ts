@@ -1,9 +1,9 @@
 /**
- * FactHarbor POC1 Analyzer v2.6.33
+ * FactHarbor POC1 Analyzer v2.6.40
  *
  * Features:
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
- * - Multi-Scope analysis with Contested Factors
+ * - Multi-Context analysis with Contested Factors
  * - Search tracking with LLM call counting
  * - Source reliability via LLM evaluation with caching (FH_SR_* config)
  * - Configurable search with FH_SEARCH_ENABLED and FH_SEARCH_DOMAIN_WHITELIST
@@ -31,8 +31,10 @@
  * - v2.6.33: Fixed counter-claim detection - thesis-aligned claims no longer flagged as counter
  * - v2.6.33: Auto-detect external reaction claims as tangential (generic: reactions to X don't evaluate X)
  * - v2.6.33: Contested claims WITH factual counter-evidence get reduced weight in aggregation
+ * - v2.6.40: Fixed Context/Scope terminology - assessedStatement now passed to verdict prompts
+ * - v2.6.40: Renamed scopesFormatted to contextsFormatted, fixed all "scope" to "context" in prompts
  *
- * @version 2.6.33
+ * @version 2.6.40
  * @date January 2026
  */
 
@@ -172,8 +174,8 @@ CRITICAL RULES:
 - When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones.
 - Evidence-grounded only: every AnalysisContext MUST be supported by at least one factId from the list.
 - Do NOT invent AnalysisContexts based on guesswork or background knowledge.
-- Split into multiple AnalysisContexts when the evidence indicates different boundaries, methods, time periods, institutions, jurisdictions, datasets, or processes that should be analyzed separately.
-- Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different jurisdictions/regulatory regimes, different datasets/studies, different measurement windows).
+- Split into multiple AnalysisContexts when the evidence indicates different boundaries, methods, time periods, institutions, datasets, or processes that should be analyzed separately.
+- Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different regulatory regimes, different datasets/studies, different measurement windows).
 - Also split when evidence clearly covers different phases/components/metrics that are not directly comparable (e.g., upstream vs downstream phases, production vs use-phase, system-wide vs component-level metrics, different denominators/normalizations).
 - Do NOT split into AnalysisContexts just because there are pro vs con viewpoints. Viewpoints are not AnalysisContexts.
 - Do NOT split into AnalysisContexts purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting). Those are source types, not bounded analytical frames.
@@ -1973,7 +1975,7 @@ interface DecisionMaker {
 // Formerly "Proceeding" - now unified under "Context" terminology
 // Note: This is different from EvidenceScope (per-fact source-defined scope metadata)
 interface Scope {
-  id: string;                // e.g., "SCOPE_TSE", "SCOPE_WTW"
+  id: string;                // e.g., "CTX_TSE", "CTX_WTW"
   name: string;              // Human-readable name
   shortName: string;         // Abbreviation
 
@@ -1987,6 +1989,7 @@ interface Scope {
   criteria?: string[];       // Evaluation criteria (was: charges)
   outcome?: string;          // Result if known
   status: "concluded" | "ongoing" | "pending" | "unknown";
+  assessedStatement?: string; // v2.6.40: What is being assessed in this context
 
   // Extensible domain metadata (legal/scientific/regulatory fields, etc.)
   metadata?: Record<string, any>;
@@ -2167,7 +2170,7 @@ interface ExtractedFact {
   fromOppositeClaimSearch?: boolean;
   // EvidenceScope: Captures the methodology/boundaries of the source document
   evidenceScope?: {
-    name: string;           // Short label (e.g., "WTW", "TTW", "Lifecycle-A", "National jurisdiction")
+    name: string;           // Short label (e.g., "Broad boundary", "Narrow boundary", "Federal scope")
     methodology?: string;   // Standard/method referenced (e.g., "ISO 14040", "Standard XYZ")
     boundaries?: string;    // What's included/excluded (e.g., "Primary energy to vehicle motion")
     geographic?: string;    // Geographic scope (e.g., "Region A", "Region B")
@@ -3234,27 +3237,27 @@ async function understandClaim(
   // CRITICAL: Pass ORIGINAL input (not canonical) so proper nouns are detected
   const scopeDetectionHint = generateScopeDetectionHint(analysisInput);
 
-  const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT SCOPES (bounded analytical frames).
+  const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT CONTEXTS (bounded analytical frames).
 
-SCOPE TERMINOLOGY (critical):
+TERMINOLOGY (critical):
 - ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
-- AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
-- EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts later in the pipeline. NOT the same as AnalysisContext.
+- AnalysisContext (or "Context"): a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
+- EvidenceScope (or "Scope"): per-fact source metadata (methodology/boundaries/geography/temporal) attached to individual facts later in the pipeline. NOT the same as AnalysisContext.
 
-NOT DISTINCT SCOPES:
-- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
-- Pro vs con viewpoints are NOT scopes.
-- "Public perception", "trust", or "confidence in institutions" scopes - AVOID unless explicitly the main topic.
-- Meta-level commentary scopes (how people feel about the topic) - AVOID, focus on factual scopes.
+NOT DISTINCT CONTEXTS:
+- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate contexts by themselves.
+- Pro vs con viewpoints are NOT contexts.
+- "Public perception", "trust", or "confidence in institutions" contexts - AVOID unless explicitly the main topic.
+- Meta-level commentary contexts (how people feel about the topic) - AVOID, focus on factual contexts.
 ${scopeHint}${scopeDetectionHint}
-SCOPE RELEVANCE REQUIREMENT (CRITICAL):
-- Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include scopes from unrelated domains just because they share a general category
-- Example: If input is about "solar panel efficiency", do NOT include scopes about nuclear power regulations or wind farm subsidies - even though all are "energy-related"
-- Example: If input is about "coffee consumption effects", do NOT include scopes about alcohol studies or tobacco research - even though all are "substance consumption"
-- Each scope must have a clear, direct connection to the input's subject matter
-- When in doubt, use fewer scopes rather than including marginally relevant ones
-- A scope with zero relevant claims/evidence should NOT exist
+CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
+- Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include contexts from unrelated domains just because they share a general category
+- Example: If input is about "solar panel efficiency", do NOT include contexts about nuclear power regulations or wind farm subsidies - even though all are "energy-related"
+- Example: If input is about "coffee consumption effects", do NOT include contexts about alcohol studies or tobacco research - even though all are "substance consumption"
+- Each context must have a clear, direct connection to the input's subject matter
+- When in doubt, use fewer contexts rather than including marginally relevant ones
+- A context with zero relevant claims/evidence should NOT exist
 
 ${recencyMatters ? `## ⚠️ RECENT DATA DETECTED
 
@@ -3512,11 +3515,11 @@ NOT "high" for:
 **Examples for input "The court judgment was fair and based on applicable law"**:
 
 ✓ thesisRelevance="direct" (evaluates the THESIS):
-- "The trial followed due process" → directly tests fairness
-- "The evidence was properly evaluated" → directly tests fairness
-- "Applicable legal standards were applied" → directly tests legal basis
-- "The sentence was proportionate to the crimes" → directly tests fairness
-- "Constitutional jurisdiction was properly established" → directly tests legal basis
+- "The process followed proper procedures" → directly tests the claim
+- "The evidence was properly evaluated" → directly tests the claim
+- "Applicable standards were applied" → directly tests the claim
+- "The outcome was proportionate" → directly tests the claim
+- "Proper authority was established" → directly tests the claim
 
 ✗ thesisRelevance="tangential" (does NOT evaluate the thesis):
 - "Foreign trade restrictions were proportionate" → reaction, not the judgment itself
@@ -3637,34 +3640,34 @@ For EACH sub-claim, determine if it tests the OPPOSITE of the main thesis:
 If a counter-claim is rated TRUE (85%), it means the OPPOSITE of the thesis is true,
 so it contributes as FALSE (15%) to the overall verdict.
 
-## MULTI-SCOPE DETECTION
+## MULTI-CONTEXT DETECTION
 
-Look for multiple distinct scopes that should be analyzed separately.
-**Definition**: A "Scope" is a bounded analytical frame with defined boundaries, methodology, temporal period, and subject matter.
+Look for multiple distinct contexts (AnalysisContexts) that should be analyzed separately.
+**Definition**: A "Context" is a bounded analytical frame with defined boundaries, methodology, temporal period, and subject matter.
 
-If the input mixes timelines, distinct scopes, or different analytical frames, split them.
+If the input mixes timelines, distinct contexts, or different analytical frames, split them.
 
-### IMPORTANT: What is a VALID distinct scope
-- Separate formal proceedings (e.g., TSE electoral case vs STF criminal case)
-- Distinct temporal events (e.g., 2023 rollout vs 2024 review)
-- Different jurisdictional processes (e.g., state court vs federal court)
-- Different analytical methodologies or boundaries (e.g., broad-boundary vs narrow-boundary vs mid-boundary efficiency analysis)
-- Different measurement boundaries (e.g., vehicle-only vs full-lifecycle)
-- Different regulatory frameworks (e.g., Jurisdiction A vs Jurisdiction B regulations)
+### IMPORTANT: What is a VALID distinct context
+- Separate formal proceedings or processes
+- Distinct temporal events or phases
+- Different institutional processes
+- Different analytical methodologies or boundaries
+- Different measurement boundaries
+- Different regulatory or governance frameworks
 
-### IMPORTANT: What is NOT a distinct scope
+### IMPORTANT: What is NOT a distinct context
 - Different national/political perspectives on the SAME event (e.g., "Country A view" vs "Country B view")
 - Different stakeholder viewpoints on a single topic
 - Contested interpretations of the same event
 - Pro vs con arguments about the same topic
 - Claims and counter-claims about one event
 
-**Only create separate scopes for GENUINELY DISTINCT events, proceedings, or analytical frames - not for different perspectives on the same event.**
+**Only create separate contexts for GENUINELY DISTINCT events, proceedings, or analytical frames - not for different perspectives on the same event.**
 
-### GENERIC EXAMPLES - MUST DETECT MULTIPLE SCOPES:
+### GENERIC EXAMPLES - MUST DETECT MULTIPLE CONTEXTS:
 
 **Legal Domain:**
-1. **SCOPE_COURT_A**: Legal proceeding A
+1. **CTX_COURT_A**: Legal proceeding A
    - subject: Case A allegations
    - temporal: 2024
    - status: concluded
@@ -3672,7 +3675,7 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - assessedStatement: (what is being assessed in this context)
    - metadata: { institution: "Court A", charges: [...], decisionMakers: [...] }
 
-2. **SCOPE_COURT_B**: Legal proceeding B
+2. **CTX_COURT_B**: Legal proceeding B
    - subject: Case B allegations
    - temporal: 2024
    - status: ongoing
@@ -3707,7 +3710,7 @@ For each analysisContext, include an assessedStatement that describes what you a
 - Extract key decision-makers or primary actors only when they are explicitly mentioned in the input or evidence.
 - Do NOT rely on background knowledge for names/roles (avoid hallucination).
 
-Set requiresSeparateAnalysis = true when multiple scopes are detected.
+Set requiresSeparateAnalysis = true when multiple contexts are detected.
 
 ## FOR ANY INPUT STYLE
 
@@ -4003,20 +4006,20 @@ Return ONLY a single JSON object that EXACTLY matches the expected schema.
 - Every required field must exist.
 - Use empty strings "" and empty arrays [] when unknown.
 
-CRITICAL: MULTI-SCOPE DETECTION
-- Detect whether the input mixes multiple distinct scopes (e.g., different events, methodologies, institutions, jurisdictions, timelines, or processes).
-- If there are 2+ distinct scopes, put them in analysisContexts (one per scope) and set requiresSeparateAnalysis=true.
-- If there is only 1 scope, analysisContexts may contain 0 or 1 item, and requiresSeparateAnalysis=false.
+CRITICAL: MULTI-CONTEXT DETECTION
+- Detect whether the input mixes multiple distinct contexts (e.g., different events, methodologies, institutions, timelines, or processes).
+- If there are 2+ distinct contexts, put them in analysisContexts (one per context) and set requiresSeparateAnalysis=true.
+- If there is only 1 context, analysisContexts may contain 0 or 1 item, and requiresSeparateAnalysis=false.
 
-NOT DISTINCT SCOPES:
-- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
-- Pro vs con viewpoints are NOT scopes.
+NOT DISTINCT CONTEXTS:
+- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate contexts by themselves.
+- Pro vs con viewpoints are NOT contexts.
 
-SCOPE RELEVANCE REQUIREMENT (CRITICAL):
-- Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include scopes from unrelated domains just because they share a general category
-- When in doubt, use fewer scopes rather than including marginally relevant ones
-- A scope with zero relevant claims/evidence should NOT exist
+CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
+- Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include contexts from unrelated domains just because they share a general category
+- When in doubt, use fewer contexts rather than including marginally relevant ones
+- A context with zero relevant claims/evidence should NOT exist
 
 ENUM RULES
 - detectedInputType must be exactly one of: claim | article
@@ -4552,19 +4555,19 @@ Return ONLY a single JSON object with keys:
 - requiresSeparateAnalysis: boolean
 
 CRITICAL:
-- Detect whether the input mixes 2+ distinct AnalysisContexts (e.g., different events, phases, institutions, jurisdictions, timelines, or processes).
-- Only split when there are clearly 2+ distinct scopes that would benefit from separate analysis.
-- If there is only 1 scope, return an empty array or a 1-item array and set requiresSeparateAnalysis=false.
+- Detect whether the input mixes 2+ distinct AnalysisContexts (e.g., different events, phases, institutions, timelines, or processes).
+- Only split when there are clearly 2+ distinct contexts that would benefit from separate analysis.
+- If there is only 1 context, return an empty array or a 1-item array and set requiresSeparateAnalysis=false.
 
-NOT DISTINCT SCOPES:
-- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate scopes by themselves.
-- Pro vs con viewpoints are NOT scopes.
+NOT DISTINCT CONTEXTS:
+- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate contexts by themselves.
+- Pro vs con viewpoints are NOT contexts.
 
-SCOPE RELEVANCE REQUIREMENT (CRITICAL):
-- Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include scopes from unrelated domains just because they share a general category
-- When in doubt, use fewer scopes rather than including marginally relevant ones
-- A scope with zero relevant claims/evidence should NOT exist
+CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
+- Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include contexts from unrelated domains just because they share a general category
+- When in doubt, use fewer contexts rather than including marginally relevant ones
+- A context with zero relevant claims/evidence should NOT exist
 
 SCHEMA:
 analysisContexts items must include:
@@ -4576,7 +4579,7 @@ analysisContexts items must include:
 - status (concluded|ongoing|pending|unknown)
 - outcome (string)
 - assessedStatement (string): What is being assessed in this context (Assessment MUST summarize assessment of THIS)
-- metadata (object, may include domain-specific fields like court/institution/jurisdiction/charges/decisionMakers/methodology/boundaries/geographic/standardApplied)
+- metadata (object, may include domain-specific fields like institution/methodology/boundaries/geographic/standardApplied)
 
 Use empty strings "" and empty arrays [] when unknown.`;
 
@@ -5496,7 +5499,7 @@ const FACT_SCHEMA = z.object({
       // NEW v2.6.29: Does this fact support or contradict the ORIGINAL user claim?
       claimDirection: z.enum(["supports", "contradicts", "neutral"]),
       // EvidenceScope: Captures the methodology/boundaries of the source document
-      // (e.g., WTW vs TTW, Jurisdiction A vs Jurisdiction B standards, different time periods)
+      // (e.g., different analytical standards, different regulatory frameworks, different time periods)
       evidenceScope: z.object({
         name: z.string(),           // Short label (e.g., "WTW", "TTW", "Lifecycle-A")
         methodology: z.string(),    // Standard/method (empty string if not applicable)
@@ -5567,7 +5570,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 **Look for explicit scope definitions**:
 - Methodology: "This study uses a specific analysis method", "Based on ISO 14040 LCA"
 - Boundaries: "From primary energy to vehicle motion", "Excluding manufacturing"
-- Geographic: "Region A market", "Region B regulations", "national jurisdiction"
+- Geographic: "Region A market", "Region B regulations", "national scope"
 - Temporal: "2020-2025 data", "FY2024", "as of March 2024"
 
 **Set evidenceScope when the source defines its analytical frame**:
@@ -6056,10 +6059,13 @@ async function generateMultiScopeVerdicts(
   articleAnalysis: ArticleAnalysis;
   verdictSummary: VerdictSummary;
 }> {
-  const scopesFormatted = understanding.analysisContexts
+  const contextsFormatted = understanding.analysisContexts
     .map(
       (s: Scope) =>
-        `- **${s.id}**: ${s.name}\n  Institution: ${s.institution || s.court || "N/A"} | Date: ${s.temporal || s.date || "N/A"} | Status: ${s.status}\n  Subject: ${s.subject}`,
+        `- **${s.id}**: ${s.name}
+  Institution: ${s.institution || s.court || "N/A"} | Date: ${s.temporal || s.date || "N/A"} | Status: ${s.status}
+  Subject: ${s.subject}
+  **assessedStatement**: ${s.assessedStatement || "(assess the user's claim in this context)"}`,
     )
     .join("\n\n");
 
@@ -6165,14 +6171,14 @@ When a claim contains causal language ("due to", "caused by", "because of", "lin
 
 **CRITICAL**: If causation is claimed but only temporal/correlational evidence exists (e.g., deaths reported after an event in an unverified system), the verdict should be LOW (29-42% LEANING-FALSE) because causation is NOT established.
 
-## SCOPES - PROVIDE SEPARATE ANSWER FOR EACH
-${scopesFormatted}
+## CONTEXTS - PROVIDE SEPARATE ANSWER FOR EACH
+${contextsFormatted}
 
 ## INSTRUCTIONS
 
-1. For EACH scope (use contextId/contextName in the schema), provide:
+1. For EACH context (use contextId/contextName in the schema), provide:
    - contextId (must match: ${understanding.analysisContexts.map((p: Scope) => p.id).join(", ")})
-   - contextName (use the scope name)
+   - contextName (use the context name)
    - answer: Truth percentage (0-100) rating THE ORIGINAL USER CLAIM shown above
      * CRITICAL: Rate whether the USER'S CLAIM is true, NOT whether your analysis is correct
      * If user claims "X is MORE efficient" and evidence shows "X is LESS efficient", answer should be 0-28% (FALSE/MOSTLY FALSE)
@@ -6184,7 +6190,8 @@ ${scopesFormatted}
        - The claim's truth depends on the SUBSTANCE (did X happen?), not the source's existence
        - If the source's methodology is contested by experts, the underlying claim's truth is UNCERTAIN regardless of what the source said
        - Example: "10 died due to Z per report R" → evaluate if deaths were CAUSED BY Z, not just whether R exists
-   - shortAnswer: A complete sentence summarizing what the evidence shows (e.g., "Evidence indicates the methodology was scientifically valid.")
+   - shortAnswer (Assessment): A 1-sentence summary that MUST evaluate the assessedStatement shown above for this context
+     * CRITICAL: The shortAnswer must answer/evaluate the assessedStatement for THIS context
      * MUST be a descriptive sentence, NOT just a percentage or scale label
    - keyFactors: Array of factors that address the SUBSTANCE of the original claim:
      * CRITICAL: Key factors must evaluate whether THE USER'S CLAIM is true, NOT whether your analysis is correct
@@ -6246,7 +6253,7 @@ ${scopesFormatted}
 5. CLAIM VERDICT RULES (for claimVerdicts array):
    **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Those are the DIRECT thesis-relevant claims. Every listed claim must have a corresponding entry in claimVerdicts. Do NOT add verdicts for tangential/irrelevant claims that are not listed.
 
-   - For each scope, ensure ALL claims with that contextId (or claims that logically belong to that scope) have verdicts
+   - For each context, ensure ALL claims with that contextId (or claims that logically belong to that context) have verdicts
    - If a claim doesn't have a contextId, assign it to the most relevant scope based on the claim content
 
    **CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
@@ -6278,7 +6285,7 @@ ${getProviderPromptHint()}`;
   const brevityRules = `
 ## OUTPUT BREVITY (CRITICAL)
 - Be concise. Avoid long paragraphs.
-- keyFactors: provide 3–5 items max (overall + per scope).
+- keyFactors: provide 3–5 items max (overall + per context).
 - keyFactors.factor: <= 12 words. keyFactors.explanation: <= 1 sentence.
 - claimVerdicts.reasoning: <= 2 short sentences.
 - supportingFactIds: include up to 5 IDs per claim (or [] if unclear).
@@ -6289,8 +6296,8 @@ ${getProviderPromptHint()}`;
   const userPrompt = `## ${inputLabel}
 "${analysisInput}"
 
-## SCOPES
-${scopesFormatted}
+## CONTEXTS
+${contextsFormatted}
 
 ## CLAIMS
 ${claimsFormatted}
@@ -6298,7 +6305,7 @@ ${claimsFormatted}
 ## FACTS
 ${factsFormatted}
 
-Provide SEPARATE answers for each scope.`;
+Provide SEPARATE answers for each context.`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE> | null = null;
 
@@ -9375,8 +9382,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       inputType: input.inputType,
       detectedInputType: state.understanding!.detectedInputType,
       hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,
-      hasMultipleContexts: articleAnalysis.hasMultipleProceedings,
-      hasMultipleScopes: articleAnalysis.hasMultipleProceedings,  // Alias
+      hasMultipleContexts: articleAnalysis.hasMultipleContexts,
+      hasMultipleScopes: articleAnalysis.hasMultipleContexts,  // Alias (use hasMultipleContexts)
       proceedingCount: state.understanding!.analysisContexts.length,
       contextCount: state.understanding!.analysisContexts.length,
       scopeCount: state.understanding!.analysisContexts.length,  // Alias

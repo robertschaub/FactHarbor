@@ -78,7 +78,7 @@ Return ONLY a single JSON object with keys:
 
 **SPLIT when there are clearly 2+ distinct contexts:**
 - Different events, phases, or timelines
-- Different institutions or jurisdictions
+- Different institutions or formal bodies
 - Different processes or proceedings
 - Different analytical methodologies/boundaries
 
@@ -108,9 +108,7 @@ Each analysisContexts item must include:
 - status ("concluded"|"ongoing"|"pending"|"unknown")
 - outcome (string): Result or ""
 - assessedStatement (string): What is being assessed in this context (Assessment MUST summarize assessment of THIS)
-- metadata (object): Domain-specific fields like:
-  - Legal: institution, jurisdiction, charges, decisionMakers
-  - Scientific: methodology, boundaries, geographic, standardApplied
+- metadata (object): Domain-specific fields (institution, methodology, boundaries, geographic, etc.)
 
 Use empty strings "" and empty arrays [] when unknown.
 

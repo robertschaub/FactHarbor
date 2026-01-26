@@ -62,9 +62,9 @@ ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.eva
 - Contexts MUST be about the SAME SUBJECT as the thesis
 - If thesis is about "Person A's trial", do NOT include contexts about Person B, C, etc.
 - Different cases involving DIFFERENT PEOPLE are NOT relevant contexts, even if they share:
-  - The same court/institution
-  - The same country/jurisdiction
-  - Similar legal issues
+  - The same institution
+  - The same region/country
+  - Similar issues
   - The same time period
 - Example: If analyzing "Was X's trial fair?", a context about Y's trial (even in same court) is IRRELEVANT
 
@@ -157,11 +157,11 @@ Claims with claimRole "source", "attribution", or "timing" should ALWAYS have ce
 Look for multiple distinct AnalysisContexts that should be analyzed separately.
 
 ### What IS a valid distinct context:
-- Separate formal proceedings
+- Separate formal proceedings or processes
 - Distinct temporal events
-- Different jurisdictional processes
+- Different institutional processes
 - Different analytical methodologies or boundaries
-- Different regulatory frameworks
+- Different regulatory or governance frameworks
 
 ### What is NOT a distinct context:
 - Different national/political perspectives on the SAME event

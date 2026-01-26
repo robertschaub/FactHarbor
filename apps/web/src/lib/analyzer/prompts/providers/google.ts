@@ -49,11 +49,11 @@ Before outputting, verify each claim has:
 - Use short phrases, not sentences where possible
 - detectedScopes structure: {id, name, type} only
 
-### SCOPE BOUNDARIES
+### CONTEXT BOUNDARIES
 Maintain clear distinctions:
-- Different jurisdictions → separate scopes
-- Different methodologies → separate scopes
-- Different perspectives on same matter → NOT separate scopes`;
+- Different institutions/processes → separate contexts
+- Different methodologies → separate contexts
+- Different perspectives on same matter → NOT separate contexts`;
 }
 
 export function getGeminiExtractFactsVariant(): string {
@@ -172,10 +172,10 @@ export function getGeminiScopeRefinementVariant(): string {
 
 ### NUMBERED REFINEMENT PROCESS
 1. Read all facts provided
-2. Identify potential scope boundaries:
-   - Methodology markers (WTW, TTW, LCA)
-   - Jurisdiction markers (court names, countries)
-   - Temporal markers (study years, ruling dates)
+2. Identify potential context boundaries:
+   - Methodology markers (different standards, frameworks)
+   - Institutional markers (different bodies, agencies)
+   - Temporal markers (different time periods, phases)
 3. For each potential scope, verify:
    - [ ] Directly relevant to input topic?
    - [ ] Supported by ≥1 fact?
