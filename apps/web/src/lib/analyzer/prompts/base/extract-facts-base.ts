@@ -1,11 +1,13 @@
 /**
- * Base prompt template for EXTRACT_FACTS phase (fact extraction from sources)
+ * Base prompt template for EXTRACT_FACTS phase (Evidence extraction from sources)
  *
  * This prompt instructs the LLM to:
- * - Extract verifiable facts with context awareness (assign to AnalysisContexts)
- * - Capture EvidenceScope metadata (per-fact source methodology)
- * - Prevent context bleeding (facts stay in their AnalysisContext)
+ * - Extract verifiable Evidence with context awareness (assign to AnalysisContexts)
+ * - Capture EvidenceScope metadata SELECTIVELY (only significant boundaries)
+ * - Prevent context bleeding (Evidence stays in their AnalysisContext)
  * - Assess claim direction accurately
+ *
+ * Terminology: "Evidence" (not "fact") covers studies, reports, documentation
  */
 
 export function getExtractFactsBasePrompt(variables: {
@@ -15,12 +17,13 @@ export function getExtractFactsBasePrompt(variables: {
 }): string {
   const { currentDate, originalClaim, contextsList = 'No contexts defined yet' } = variables;
 
-  return `You are a fact extraction specialist. Extract SPECIFIC, VERIFIABLE facts from the source.
+  return `You are an Evidence extraction specialist. Extract SPECIFIC, VERIFIABLE Evidence from the source.
 
 ## TERMINOLOGY (CRITICAL)
 
-**AnalysisContext** (or "Context"): Top-level bounded analytical frame (referenced as contextId in facts output)
-**EvidenceScope** (or "Scope"): Per-fact source methodology metadata (attached to fact.evidenceScope) - NOT an AnalysisContext
+**Evidence**: Information extracted from sources (studies, fact-check reports, documentation)
+**AnalysisContext** (or "Context"): Top-level bounded analytical frame (referenced as contextId)
+**EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata - NOT an AnalysisContext
 **ArticleFrame**: Narrative background framing - NOT an AnalysisContext
 
 ## CURRENT DATE
@@ -28,32 +31,51 @@ Today is ${currentDate}. Use for temporal context.
 
 ## CONTEXT-AWARE EXTRACTION (CRITICAL)
 
-**Identify which AnalysisContext each fact belongs to**:
-- Assign contextId based on which analytical frame the fact relates to
-- If the fact applies generally across contexts → contextId: "CTX_GENERAL" or empty
+**Identify which AnalysisContext each Evidence item belongs to**:
+- Assign contextId based on which analytical frame the Evidence relates to
+- If the Evidence applies generally across contexts → contextId: "CTX_GENERAL" or empty
 
 **Prevent context bleeding**:
-- Do NOT conflate facts from different analytical frames
-- Identify WHICH specific entity/institution/process each fact relates to
+- Do NOT conflate Evidence from different analytical frames
+- Identify WHICH specific entity/institution/process each Evidence relates to
 - If citing a study, note the SPECIFIC methodology/boundaries
-- Facts from different AnalysisContexts should have different contextId values
+- Evidence from different AnalysisContexts should have different contextId values
 
-## EVIDENCE SCOPE METADATA (per-fact)
+## EVIDENCESCOPE: INCOMPATIBLE ANALYTICAL BOUNDARIES (SELECTIVE)
 
-For EACH fact, extract the source's analytical frame when present:
+**Purpose**: Flag when Evidence items answer DIFFERENT QUESTIONS due to incompatible analytical boundaries.
 
-**evidenceScope** (attach to fact):
-- name: Short label (e.g., "WTW", "TTW", "EU REACH", "US EPA")
-- methodology: Standard referenced (e.g., "ISO 14040", "EU RED II")
-- boundaries: What's included/excluded (e.g., "primary energy to wheel", "tank to wheel only")
-- geographic: Geographic scope (e.g., "European Union", "California")
-- temporal: Time period (e.g., "2020-2025", "FY2024")
+**THE SINGLE TEST**: Ask yourself:
+"If I combined or averaged findings from this source with findings from other sources, 
+would the result be MISLEADING because they measure or analyze fundamentally different things?"
 
-**Why this matters**: A "40% efficiency" from a WTW study (includes full energy chain) is NOT comparable to a TTW study (only vehicle operation). Capturing evidenceScope enables accurate comparisons.
+- **YES** → Extract EvidenceScope (document what makes it incompatible)
+- **NO** → Don't extract (the boundaries are compatible enough)
+
+**WHAT MAKES BOUNDARIES INCOMPATIBLE**:
+Look for **explicit statements** in sources about:
+- What is INCLUDED vs EXCLUDED from the analysis (boundaries and synonyms: scope, delimitations, limitations, inclusion criteria)
+- What system, process, or entity was examined
+- What standards or methodology defined the measurement
+
+Only flag these when they would cause **apples-to-oranges** comparisons.
+
+**CONSTRAINTS**:
+- **Most analyses**: 0-1 significant boundary patterns
+- **Complex comparisons**: 2-3 patterns maximum
+- **If source doesn't explicitly state boundaries**: Don't invent them
+- **If all sources use similar boundaries**: Nothing to flag
+
+**evidenceScope fields** (when extracted):
+- name: Short label for this analytical boundary
+- methodology: Standard/framework used
+- boundaries: What's included/excluded
+- geographic: Geographic scope (if relevant)
+- temporal: Time period (if relevant)
 
 ## CLAIM DIRECTION (relative to original user claim)
 
-**For EVERY fact, assess claimDirection**:
+**For EVERY Evidence item, assess claimDirection**:
 - **"supports"**: Evidence SUPPORTS the user's original claim being TRUE
 - **"contradicts"**: Evidence CONTRADICTS the user's claim (supports OPPOSITE)
 - **"neutral"**: Contextual/background, doesn't directly support or refute
@@ -86,6 +108,6 @@ ${contextsList}
 
 **Quality filters**:
 - sourceExcerpt: MUST be 50-200 characters from source
-- Extract 3-8 facts per source (focus on most relevant)
-- Only include facts with HIGH or MEDIUM specificity`;
+- Extract 3-8 Evidence items per source (focus on most relevant)
+- Only include Evidence with HIGH or MEDIUM specificity`;
 }

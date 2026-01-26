@@ -2,24 +2,44 @@
  * Base prompt template for SCOPE_REFINEMENT phase
  *
  * This prompt instructs the LLM to:
- * - Refine EvidenceScope metadata attached to facts
- * - Assign facts to AnalysisContexts via contextId
- * - Distinguish EvidenceScope (per-fact) from AnalysisContext (top-level)
+ * - Refine EvidenceScope metadata attached to Evidence items
+ * - Assign Evidence to AnalysisContexts via contextId
+ * - Discover AnalysisContexts from EvidenceScope patterns (incompatibility signals)
+ * - Distinguish EvidenceScope (per-Evidence) from AnalysisContext (top-level)
  * - Apply strict relevance requirements
  */
 
 export function getScopeRefinementBasePrompt(): string {
-  return `You are FactHarbor's context refinement engine. Identify DISTINCT ANALYSISCONTEXTS from evidence.
+  return `You are FactHarbor's context refinement engine. Identify DISTINCT ANALYSISCONTEXTS from Evidence.
 
 ## TERMINOLOGY (CRITICAL)
 
+- **Evidence**: Information extracted from sources (studies, fact-check reports, documentation)
 - **AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate analysis (output field: analysisContexts)
-- **EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT warrant creating separate AnalysisContexts)
+- **EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata (does NOT warrant creating separate AnalysisContexts BY ITSELF)
 - **ArticleFrame**: Narrative background framing (does NOT warrant creating separate AnalysisContexts)
 
 ## YOUR TASK
 
-Identify which ANALYSISCONTEXTS are ACTUALLY PRESENT in the provided evidence.
+Identify which ANALYSISCONTEXTS are ACTUALLY PRESENT in the provided Evidence.
+
+## CONTEXT DISCOVERY FROM EVIDENCESCOPE PATTERNS
+
+When reviewing Evidence, examine EvidenceScope metadata for patterns suggesting 
+genuinely distinct AnalysisContexts may be needed.
+
+**The Core Question**: Do the incompatible boundaries found represent genuinely 
+different analytical frames that need separate verdicts?
+
+**Create separate AnalysisContexts when**:
+- EvidenceScope patterns show Evidence answering DIFFERENT QUESTIONS
+- Combining conclusions from them would be MISLEADING
+- They would require different evidence to evaluate
+
+**Do NOT create separate AnalysisContexts when**:
+- EvidenceScope differences are minor/technical
+- All Evidence still answers the same core question
+- Boundaries affect precision but not the fundamental analysis
 
 ## RULES FOR SPLITTING INTO MULTIPLE CONTEXTS
 
@@ -66,7 +86,7 @@ Only merge contexts that are TRUE DUPLICATES. Preserve distinct analytical frame
 
 **Every AnalysisContext MUST be**:
 - Directly relevant to the input's specific topic
-- Supported by at least one fact from the evidence
+- Supported by at least one Evidence item from the provided Evidence
 - A distinct analytical frame (not just a different perspective)
 
 **When in doubt**: Use FEWER contexts rather than including marginally relevant ones.
@@ -79,15 +99,15 @@ Only merge contexts that are TRUE DUPLICATES. Preserve distinct analytical frame
 ## EVIDENCE-GROUNDED ONLY
 
 - Do NOT invent contexts based on background knowledge
-- Every context must be supported by factIds from the provided facts
-- If evidence doesn't clearly support multiple contexts, return ONE context
+- Every context must be supported by Evidence IDs from the provided Evidence
+- If Evidence doesn't clearly support multiple contexts, return ONE context
 
-## FACT AND CLAIM ASSIGNMENTS
+## EVIDENCE AND CLAIM ASSIGNMENTS
 
-**factScopeAssignments**: Map EACH factId to exactly ONE contextId
+**factScopeAssignments**: Map EACH Evidence ID to exactly ONE contextId
 - Use contextId from your analysisContexts output
-- Assign based on which context the fact belongs to
-- Every fact listed must be assigned
+- Assign based on which context the Evidence belongs to
+- Every Evidence item listed must be assigned
 
 **claimScopeAssignments** (optional): Map claimIds to contextId when clear
 
