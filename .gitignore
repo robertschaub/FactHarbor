@@ -58,6 +58,7 @@ apps/api/*.db-wal
 /apps/web/tsconfig.tsbuildinfo
 apps/web/test/output/
 apps/web/prompts/promptfoo-results/
+prompts/promptfoo-results/
 /tmp*
 /temp*
 
@@ -77,3 +78,4 @@ apps/web/prompts/promptfoo-results/
 # Source Reliability cache
 apps/web/*.db
 source-reliability.db
+
