@@ -8,7 +8,13 @@
   "scripts": {
     "lint": "echo \"(add lint later)\"",
     "test": "npm -w apps/web test",
-    "test:llm": "npm -w apps/web run test:llm"
+    "test:llm": "npm -w apps/web run test:llm",
+    "promptfoo": "node scripts/promptfoo-sr.js",
+    "promptfoo:sr": "node scripts/promptfoo-sr.js sr",
+    "promptfoo:verdict": "node scripts/promptfoo-sr.js verdict",
+    "promptfoo:all": "node scripts/promptfoo-sr.js all",
+    "promptfoo:list": "node scripts/promptfoo-sr.js --list",
+    "promptfoo:view": "node scripts/promptfoo-sr.js --view"
   },
   "dependencies": {
     "sqlite": "^5.1.1",

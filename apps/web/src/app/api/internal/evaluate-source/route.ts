@@ -24,6 +24,13 @@ import { getDeterministicTemperature } from "@/lib/analyzer/config";
 import { debugLog } from "@/lib/analyzer/debug";
 import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
 import {
+  computeRefinementConfidenceBoost,
+  countUniqueEvidenceIds,
+  extractEvidenceIdsFromText,
+  getLanguageDetectionCaveat,
+  languageDetectionStatus,
+} from "@/lib/source-reliability-eval-helpers";
+import {
   DEFAULT_CONFIDENCE_THRESHOLD,
   DEFAULT_CONSENSUS_THRESHOLD,
   SOURCE_TYPE_CAPS,
@@ -43,6 +50,9 @@ export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
 
 const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.startsWith("PASTE_");
 const hasOpenAIKey = !!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.startsWith("PASTE_");
+
+// Configurable model selection (default: gpt-4o for quality, use gpt-4o-mini for cost savings)
+const SR_OPENAI_MODEL = process.env.FH_SR_OPENAI_MODEL || "gpt-4o";
 
 debugLog(`[SR-Eval] Configuration check`, {
   anthropicKey: hasAnthropicKey ? "configured" : "MISSING",
@@ -345,15 +355,28 @@ const RELIABILITY_ASSESSMENT_TERMS_EN = [
   "fact check", "fact-check", "factcheck", "misinformation", "disinformation",
   "propaganda", "fake news", "misleading", "false claim", "debunk",
   "media bias", "news quality", "trustworth", "accuracy",
+  // Organization identity / accountability terms (neutral signals)
+  "news outlet", "news organization", "media outlet", "media company",
+  "newspaper", "publisher", "ownership", "owner",
+  "editor-in-chief", "editorial board", "editorial policy",
+  "press council", "ombudsman", "code of ethics",
   // Bias/slant indicators
   "partisan", "right-wing", "left-wing", "far-right", "far-left",
   "conservative bias", "liberal bias", "political slant",
   // Criticism indicators
   "criticism", "criticized", "controversial", "questioned", "problematic",
   "unreliable", "untrustworthy", "inaccurate", "sensational",
-  // Propaganda/state media indicators  
+  // Propaganda/state media indicators
   "kremlin", "state-aligned", "state-funded", "government-backed",
+  "state-sponsored", "state narrative", "state narratives", "pro-government",
+  "pro-regime", "government narrative", "government narratives",
   "narratives", "echo", "amplif", "disinformation campaign",
+  "influence operation", "information operation", "influence campaign",
+  "coordinated inauthentic behavior", "cib", "astroturf", "proxy media",
+  // Broader manipulation / fringe indicators
+  "conspiracy", "conspiracy theory", "hoax", "falsehood", "deceptive",
+  "manipulation", "propaganda network", "disinformation network",
+  "fringe", "extremist", "radical", "hate", "hate speech", "white nationalist",
   // Quality indicators
   "journalistic standards", "editorial standards", "corrections policy",
   "retraction", "correction", "apolog",
@@ -371,6 +394,18 @@ function getReliabilityAssessmentTerms(translatedTerms: Record<string, string>):
     "disinformation", "propaganda", "fake news", "media bias",
     "partisan", "right-wing", "far-right", "controversial",
     "criticism", "unreliable", "inaccurate",
+    "state propaganda", "foreign propaganda", "government propaganda",
+    "state media", "state-backed", "government-backed",
+    "influence operation", "information operation", "influence campaign",
+    "coordinated inauthentic behavior", "state-sponsored",
+    "conspiracy", "conspiracy theory", "hoax", "falsehood", "deceptive",
+    "manipulation", "propaganda network", "disinformation network",
+    "fringe", "extremist", "radical", "hate", "hate speech",
+    "news outlet", "news organization", "media outlet", "media company",
+    "newspaper", "publisher", "ownership", "owner",
+    "editor-in-chief", "editorial board", "editorial policy",
+    "press council", "ombudsman", "code of ethics",
+    "editorial standards", "corrections policy", "journalistic standards",
   ];
   
   for (const key of keysToTranslate) {
@@ -393,12 +428,15 @@ function isRelevantSearchResult(
   r: WebSearchResult,
   domain: string,
   brandVariants: string[],
-  assessmentTerms: string[] = RELIABILITY_ASSESSMENT_TERMS_EN
+  assessmentTerms: string[] = RELIABILITY_ASSESSMENT_TERMS_EN,
+  relaxAssessmentTerms: boolean = false
 ): boolean {
   const url = (r.url ?? "").toLowerCase();
   const title = (r.title ?? "").toLowerCase();
   const snippet = (r.snippet ?? "").toLowerCase();
   const blob = `${title} ${snippet} ${url}`;
+  const blobNoSpaces = blob.replace(/\s+/g, "");
+  const brandVariantsNoSpaces = brandVariants.map((v) => v.replace(/\s+/g, ""));
 
   const d = String(domain || "").toLowerCase();
   if (!d) return true;
@@ -411,7 +449,8 @@ function isRelevantSearchResult(
   // Check if result mentions the source (domain or brand)
   const mentionsSource = blob.includes(d) || 
     blob.includes(`www.${d}`) ||
-    brandVariants.some(v => v.length >= 4 && blob.includes(v));
+    brandVariants.some(v => v.length >= 4 && blob.includes(v)) ||
+    brandVariantsNoSpaces.some(v => v.length >= 6 && blobNoSpaces.includes(v));
 
   if (!mentionsSource) return false;
 
@@ -430,6 +469,12 @@ function isRelevantSearchResult(
   const hasAssessmentTerms = assessmentTerms.some(term => blob.includes(term));
   
   if (hasAssessmentTerms) return true;
+
+  if (relaxAssessmentTerms) {
+    // When evidence is sparse, allow source-mention results even if
+    // assessment terms are missing (still excludes source's own domain).
+    return true;
+  }
 
   // Exclude results that just cite the source without assessing it
   // These are typically academic papers, news articles, etc. that reference the outlet
@@ -461,7 +506,6 @@ function isSearchEnabledForSrEval(): { enabled: boolean; providersUsed: string[]
  * Cache for detected languages per domain.
  */
 const languageDetectionCache = new Map<string, string | null>();
-const languageDetectionStatus = new Map<string, "ok" | "failed" | "timeout">();
 
 /**
  * Supported languages for fact-checker searches.
@@ -548,9 +592,9 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
   debugLog(`[SR-Eval] Detecting language for ${domain}`, { domain });
 
   try {
-    // Fetch homepage with timeout
+    // Fetch homepage with timeout (increased from 5s to 10s for slower international sites)
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
     const response = await fetch(`https://${domain}`, {
       signal: controller.signal,
@@ -572,8 +616,60 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
 
     const html = await response.text();
     
+    // Check for redirect pages (common pattern: .com redirects to .com.br for Brazilian sites)
+    const isRedirectPage = /<title[^>]*>Redirecting/i.test(html) || 
+      (html.length < 2000 && /<script/i.test(html) && !/<article|<main|<p[^>]*>/i.test(html));
+    
+    if (isRedirectPage && domain.endsWith('.com') && !domain.includes('.com.')) {
+      // Try alternate TLDs for common patterns
+      const alternateDomains = [
+        domain + '.br',  // .com → .com.br (Brazil)
+        domain.replace(/\.com$/, '.com.ar'),  // Argentina
+        domain.replace(/\.com$/, '.com.mx'),  // Mexico
+      ];
+      
+      for (const altDomain of alternateDomains) {
+        debugLog(`[SR-Eval] Redirect page detected, trying alternate TLD: ${altDomain}`, { domain, altDomain });
+        try {
+          const altController = new AbortController();
+          const altTimeout = setTimeout(() => altController.abort(), 8000);
+          const altResponse = await fetch(`https://${altDomain}`, {
+            signal: altController.signal,
+            headers: {
+              "User-Agent": "Mozilla/5.0 (compatible; FactHarbor/1.0; +https://factharbor.com)",
+              "Accept": "text/html",
+              "Accept-Language": "en-US,en;q=0.9",
+            },
+          });
+          clearTimeout(altTimeout);
+          
+          if (altResponse.ok) {
+            const altHtml = await altResponse.text();
+            // Check if alternate site has actual content (not another redirect)
+            if (altHtml.length > 5000 || /<article|<main/i.test(altHtml)) {
+              const altLangMatch = altHtml.match(/<html[^>]*?\s+lang=["']([^"']+)["']/i);
+              if (altLangMatch) {
+                const altLangCode = altLangMatch[1].split("-")[0];
+                const altNormalized = normalizeLanguageName(altLangCode);
+                if (altNormalized && altNormalized !== "English" && SUPPORTED_LANGUAGES.has(altNormalized)) {
+                  debugLog(`[SR-Eval] Detected language via alternate TLD ${altDomain}: ${altNormalized}`, { domain, altDomain, altNormalized });
+                  languageDetectionCache.set(domain, altNormalized);
+                  languageDetectionStatus.set(domain, "ok");
+                  return altNormalized;
+                }
+              }
+            }
+          }
+        } catch {
+          // Continue to next alternate
+        }
+      }
+    }
+    
     // Strategy 1: Check <html lang="..."> attribute
-    const htmlLangMatch = html.match(/<html[^>]*\slang=["']([^"']+)["']/i);
+    // Use non-greedy match and allow optional whitespace before lang=
+    const htmlLangMatch = html.match(/<html[^>]*?\s+lang=["']([^"']+)["']/i)
+      || html.match(/<html\s+lang=["']([^"']+)["']/i);
     if (htmlLangMatch) {
       const langCode = htmlLangMatch[1].split("-")[0]; // "de-DE" -> "de"
       const normalized = normalizeLanguageName(langCode);
@@ -599,8 +695,9 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
       }
     }
 
-    // Strategy 3: Check og:locale meta tag
-    const ogLocaleMatch = html.match(/<meta[^>]*property=["']og:locale["'][^>]*content=["']([^"']+)["']/i);
+    // Strategy 3: Check og:locale meta tag (try both attribute orders)
+    const ogLocaleMatch = html.match(/<meta[^>]*property=["']og:locale["'][^>]*content=["']([^"']+)["']/i)
+      || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:locale["']/i);
     if (ogLocaleMatch) {
       const langCode = ogLocaleMatch[1].split("_")[0]; // "de_DE" -> "de"
       const normalized = normalizeLanguageName(langCode);
@@ -688,6 +785,25 @@ const SEARCH_TERMS_TO_TRANSLATE = [
   "state media",
   "state-backed",
   "government propaganda",
+    "government-backed",
+    "state-sponsored",
+    "influence operation",
+    "information operation",
+    "influence campaign",
+    "coordinated inauthentic behavior",
+    "conspiracy",
+    "conspiracy theory",
+    "hoax",
+    "falsehood",
+    "deceptive",
+    "manipulation",
+    "propaganda network",
+    "disinformation network",
+    "fringe",
+    "extremist",
+    "radical",
+    "hate",
+    "hate speech",
   // Bias/slant terms
   "partisan",
   "right-wing",
@@ -699,6 +815,22 @@ const SEARCH_TERMS_TO_TRANSLATE = [
   "journalistic standards",
   "inaccurate",
   "sensationalist",
+  // Organization identity / accountability terms
+  "news outlet",
+  "news organization",
+  "media outlet",
+  "media company",
+  "newspaper",
+  "publisher",
+  "ownership",
+  "owner",
+  "editor-in-chief",
+  "editorial board",
+  "editorial policy",
+  "press council",
+  "ombudsman",
+  "code of ethics",
+  "corrections policy",
 ];
 
 /**
@@ -810,6 +942,15 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       ]
     : [];
 
+  // Phase 1c: Neutral/identity queries (to help entity detection)
+  const neutralSignalQueries = isUsableBrandToken(brand) ? [
+    `"${brand}" ${t("editorial standards")} OR ${t("corrections policy")}`,
+    `"${brand}" ${t("editorial policy")} OR ${t("code of ethics")}`,
+    `"${brand}" ${t("owner")} OR ${t("ownership")} OR ${t("publisher")}`,
+    `"${brand}" ${t("news outlet")} OR ${t("news organization")} OR ${t("media company")}`,
+    `"${brand}" ${t("newspaper")} OR ${t("media outlet")}`,
+  ] : [];
+
   // Phase 2: Fact-checker site-specific queries
   // Directly search known fact-checker domains for assessments
   // Uses global fact-checker sites from config
@@ -835,6 +976,12 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     `"${brand}" site:euvsdisinfo.eu OR site:disinfo.eu`,
     `"${brand}" "disinformation" "state media" OR "state-backed"`,
     `"${brand}" "propaganda outlet" OR "government-controlled media"`,
+    `"${brand}" "influence operation" OR "information operation" OR "influence campaign"`,
+    `"${brand}" "coordinated inauthentic behavior" OR "state-sponsored"`,
+    `"${brand}" "state narrative" OR "government narrative"`,
+    `"${brand}" conspiracy OR "conspiracy theory" OR hoax`,
+    `"${brand}" "disinformation network" OR "propaganda network"`,
+    `"${brand}" fringe OR extremist OR radical OR "hate speech"`,
   ];
 
   // Phase 3b: State propaganda queries in source language
@@ -844,6 +991,11 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
         `"${brand}" ${t("state propaganda")} OR ${t("foreign propaganda")}`,
         `"${brand}" ${t("state media")} ${t("disinformation")}`,
         `"${brand}" ${t("state-backed")} OR ${t("government propaganda")}`,
+        `"${brand}" ${t("influence operation")} OR ${t("information operation")} OR ${t("influence campaign")}`,
+        `"${brand}" ${t("coordinated inauthentic behavior")} OR ${t("state-sponsored")}`,
+        `"${brand}" ${t("conspiracy")} OR ${t("conspiracy theory")} OR ${t("hoax")}`,
+        `"${brand}" ${t("disinformation network")} OR ${t("propaganda network")}`,
+        `"${brand}" ${t("fringe")} OR ${t("extremist")} OR ${t("radical")}`,
       ]
     : [];
 
@@ -857,6 +1009,11 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     `"${brand}" bias criticism controversial`,
     `"${brand}" partisan right-wing OR far-right OR left-wing`,
     `"${brand}" unreliable OR inaccurate OR sensationalist`,
+    `"${brand}" influence operation OR information operation`,
+    `"${brand}" coordinated inauthentic behavior OR astroturf`,
+    `"${brand}" conspiracy OR "conspiracy theory" OR hoax`,
+    `"${brand}" "disinformation network" OR "propaganda network"`,
+    `"${brand}" fringe OR extremist OR radical OR "hate speech"`,
     // Wikipedia often has documented controversies
     `"${brand}" site:wikipedia.org controversy OR criticism`,
   ];
@@ -869,6 +1026,11 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
         `"${brand}" ${t("fake news")} ${t("debunked")} ${t("false claims")}`,
         `"${brand}" ${t("partisan")} ${t("controversial")}`,
         `"${brand}" ${t("criticism")} ${t("unreliable")}`,
+        `"${brand}" ${t("influence operation")} OR ${t("information operation")}`,
+        `"${brand}" ${t("coordinated inauthentic behavior")} OR ${t("state-sponsored")}`,
+        `"${brand}" ${t("conspiracy")} OR ${t("conspiracy theory")} OR ${t("hoax")}`,
+        `"${brand}" ${t("disinformation network")} OR ${t("propaganda network")}`,
+        `"${brand}" ${t("fringe")} OR ${t("extremist")} OR ${t("radical")}`,
       ]
     : [];
 
@@ -876,6 +1038,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   const entityQueries = isUsableBrandToken(brand) ? [
     `"${brand}" news outlet reliability assessment`,
     `"${brand}" media organization bias rating`,
+    `"${brand}" ownership publisher editor-in-chief`,
   ] : [];
 
   const maxResultsPerQuery = Math.max(
@@ -896,13 +1059,19 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   const allQueries: string[] = [];
 
   // Helper to run a query and collect results
-  async function runQuery(q: string): Promise<number> {
+  const sparseThreshold = Math.max(2, Math.floor(maxEvidenceItems / 3));
+
+  async function runQuery(
+    q: string,
+    maxResultsOverride?: number,
+    relaxWhenSparse: boolean = false
+  ): Promise<number> {
     allQueries.push(q);
     let added = 0;
     try {
       const resp = await searchWebWithProvider({
         query: q,
-        maxResults: maxResultsPerQuery,
+        maxResults: maxResultsOverride ?? maxResultsPerQuery,
         dateRestrict,
       });
 
@@ -910,7 +1079,8 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       for (const r of resp.results) {
         if (!r.url) continue;
         if (seen.has(r.url)) continue;
-        if (!isRelevantSearchResult(r, domain, brandVariants, assessmentTerms)) continue;
+        const relax = relaxWhenSparse && rawItems.length < sparseThreshold;
+        if (!isRelevantSearchResult(r, domain, brandVariants, assessmentTerms, relax)) continue;
         seen.add(r.url);
         rawItems.push({ r, query: q, provider });
         added++;
@@ -922,31 +1092,18 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     return added;
   }
 
-  // Phase 1: Run standard reliability assessment queries (English)
-  for (const q of standardQueries) {
-    await runQuery(q);
-    if (rawItems.length >= maxEvidenceItems) break;
-  }
-
-  // Phase 1b: Run standard queries (translated) - important for local fact-checkers
-  if (rawItems.length < maxEvidenceItems && standardQueriesTranslated.length > 0) {
-    debugLog(`[SR-Eval] Running translated queries for ${domain}`, { language: sourceLanguage });
-    for (const q of standardQueriesTranslated) {
-      await runQuery(q);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
-  }
-
-  // Phase 2: Run fact-checker site-specific queries
+  // Phase 1: Run fact-checker site-specific queries FIRST (highest priority)
   // These directly target known fact-checker domains for assessments
+  // Must run before relaxed queries to ensure fact-checker results get priority slots
   if (rawItems.length < maxEvidenceItems) {
+    debugLog(`[SR-Eval] Running global fact-checker queries for ${domain}`, { brand });
     for (const q of factCheckerQueries) {
       await runQuery(q);
       if (rawItems.length >= maxEvidenceItems) break;
     }
   }
 
-  // Phase 2b: Run regional fact-checker queries
+  // Phase 1b: Run regional fact-checker queries (language-specific) - also high priority
   if (rawItems.length < maxEvidenceItems && regionalFactCheckerQueries.length > 0) {
     debugLog(`[SR-Eval] Running regional fact-checker queries for ${domain}`, { language: sourceLanguage });
     for (const q of regionalFactCheckerQueries) {
@@ -955,44 +1112,65 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
-  // Phase 3: Run state/foreign propaganda tracking queries (PRIORITY)
-  // Critical for finding outlets that amplify state narratives from any country
-  // Run early to ensure these queries execute before evidence pack fills up
-  if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Running state propaganda tracking queries for ${domain}`, { brand });
-    for (const q of statePropagandaQueries) {
+  // Phase 2: Run standard reliability assessment queries (English)
+  for (const q of standardQueries) {
+    await runQuery(q);
+    if (rawItems.length >= maxEvidenceItems) break;
+  }
+
+  // Phase 2b: Run standard queries (translated) - important for local fact-checkers
+  if (rawItems.length < maxEvidenceItems && standardQueriesTranslated.length > 0) {
+    debugLog(`[SR-Eval] Running translated queries for ${domain}`, { language: sourceLanguage });
+    for (const q of standardQueriesTranslated) {
       await runQuery(q);
       if (rawItems.length >= maxEvidenceItems) break;
     }
   }
 
-  // Phase 3b: Run state propaganda queries (translated)
+  // Phase 3: Run propaganda/echoing tracking queries (lower priority)
+  // Uses relaxed filtering which can fill pack with weaker results
+  if (rawItems.length < maxEvidenceItems) {
+    debugLog(`[SR-Eval] Running propaganda/echoing queries for ${domain}`, { brand });
+    for (const q of statePropagandaQueries) {
+      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 3b: Run propaganda/echoing queries (translated)
   if (rawItems.length < maxEvidenceItems && statePropagandaQueriesTranslated.length > 0) {
     for (const q of statePropagandaQueriesTranslated) {
-      await runQuery(q);
+      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
       if (rawItems.length >= maxEvidenceItems) break;
     }
   }
 
-  // Phase 4: Run negative-signal queries (English)
+  // Phase 4: Run neutral/identity queries (helps entity detection when sparse)
+  if (rawItems.length < maxEvidenceItems && neutralSignalQueries.length > 0) {
+    for (const q of neutralSignalQueries) {
+      await runQuery(q, maxResultsPerQuery, true);
+      if (rawItems.length >= maxEvidenceItems) break;
+    }
+  }
+
+  // Phase 5: Run negative-signal queries (English)
   // These help find documented problems with the source
   if (rawItems.length < maxEvidenceItems) {
     for (const q of negativeSignalQueries) {
-      await runQuery(q);
+      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
       if (rawItems.length >= maxEvidenceItems) break;
     }
   }
 
-  // Phase 4b: Run negative-signal queries (translated) - critical for local fact-checkers
-  // Regional fact-checkers are loaded from config (see regional-fact-checkers.json)
+  // Phase 5b: Run negative-signal queries (translated)
   if (rawItems.length < maxEvidenceItems && negativeSignalQueriesTranslated.length > 0) {
     for (const q of negativeSignalQueriesTranslated) {
-      await runQuery(q);
+      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
       if (rawItems.length >= maxEvidenceItems) break;
     }
   }
 
-  // Phase 5: Run entity-focused queries (English)
+  // Phase 6: Run entity-focused queries (English)
   // Lower priority - general organization info
   if (rawItems.length < maxEvidenceItems) {
     for (const q of entityQueries) {
@@ -1163,9 +1341,20 @@ ${evidenceSection}
    - Evidence of fabricated stories/disinformation → score ≤ 0.14 (highly_unreliable)
    - 3+ documented fact-checker failures → score ≤ 0.42 (leaning_unreliable)
    - 1-2 documented failures from reputable fact-checkers → score ≤ 0.57 (mixed)
+   - Evidence of ECHOING/AMPLIFYING propaganda (even if not the primary source) → score ≤ 0.42 (leaning_unreliable)
    - Political/ideological bias WITHOUT documented failures → no score cap (note in bias field only)
+   
+   CRITICAL: If evidence shows a source SHARES or AMPLIFIES misleading content from propaganda sources,
+   even if they didn't create it, this IS a documented failure. Apply the appropriate cap.
 
-4. SOURCE TYPE SCORE CAPS (hard limits — NO exceptions)
+4. TOP-TIER SOURCE RECOGNITION (when evidence strongly supports)
+   - Wire services (AP, Reuters, AFP) with consistent HIGH ratings → score 0.88-0.95
+   - Major newspapers with established fact-checking teams → score 0.80-0.90
+   - Public broadcasters with independent funding and oversight → score 0.80-0.90
+   - DO NOT artificially cap scores at 0.85 for sources with excellent track records
+   - If evidence shows HIGH factual reporting with minimal failures, score accordingly
+
+5. SOURCE TYPE SCORE CAPS (hard limits — NO exceptions)
    - sourceType="propaganda_outlet" → score MUST be ≤ 0.14 (highly_unreliable)
    - sourceType="known_disinformation" → score MUST be ≤ 0.14 (highly_unreliable)
    - sourceType="state_controlled_media" → score MUST be ≤ 0.42 (leaning_unreliable)
@@ -1178,8 +1367,9 @@ ${evidenceSection}
 
 6. ENTITY-LEVEL EVALUATION (ORGANIZATION VS DOMAIN)
    - If the domain is the primary outlet for a larger organization (e.g., a TV channel, newspaper, or media group), you MUST evaluate the reliability of the WHOLE ORGANIZATION.
-   - Legacy media and public broadcasters should be rated based on their organizational reputation.
-   - Identify the organization name in the "identifiedEntity" field.
+   - ONLY use organization-level reputation if the evidence pack explicitly documents it (ratings, standards, corrections, independent assessments).
+   - Do NOT raise scores based on size, influence, reach, or "legacy" status unless evidence cites concrete reliability practices.
+   - If organization identity or reputation is not explicitly supported by evidence, set identifiedEntity=null and do NOT infer.
 
 7. MULTILINGUAL EVIDENCE HANDLING
    - Evidence items may be in languages OTHER than English (German, French, Spanish, etc.)
@@ -1276,6 +1466,8 @@ LOW WEIGHT (context only, cannot trigger caps):
   - Passing mentions without substantive analysis
   - Generic references without reliability details
   - Self-published claims (source's own website)
+  - Social media posts, comment threads, or partisan opinion pieces
+  - Wikipedia controversy lists or unsourced summaries
 
 ${SHARED_EVIDENCE_SIGNALS}
 
@@ -1297,6 +1489,8 @@ ${SHARED_BIAS_VALUES}
 
 ─────────────────────────────────────────────────────────────────────
 OUTPUT FORMAT (JSON only, no markdown, no commentary)
+CRITICAL: Output MUST be raw JSON. Do NOT wrap in code fences.
+First character MUST be "{" and last character MUST be "}".
 ─────────────────────────────────────────────────────────────────────
 {
   "sourceType": "editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown",
@@ -1509,7 +1703,7 @@ YOUR TASK: CROSS-CHECK AND REFINE
 3. SHARPEN the entity identification
    - Is this domain the PRIMARY outlet for a larger organization?
    - What type of organization is it? (public broadcaster, wire service, newspaper, etc.)
-   - Is this a well-known, established media organization?
+   - Only mark "well-known/established" if the evidence pack explicitly says so
 
 4. ENRICH with organizational context
    - For PUBLIC BROADCASTERS (national/public media funded by government but editorially independent):
@@ -1521,19 +1715,35 @@ YOUR TASK: CROSS-CHECK AND REFINE
    - For LEGACY NEWSPAPERS/BROADCASTERS (established media with decades of operation):
      * Established editorial standards and correction policies
      * Track record matters
+   IMPORTANT: Only include organization-level context if the evidence pack explicitly documents it.
 
 5. CROSS-CHECK AND ADJUST the score
    - Verify the initial evaluation is correct
    - Add entity-level context if the initial evaluation missed it
    
    ADJUSTMENT RULES (must follow strictly):
-   - UPWARD adjustment if positive signals are PRESENT in the evidence pack:
+   - UPWARD adjustment only if positive signals are PRESENT in the evidence pack:
      * Academic citations of the source as reference material
      * Professional/institutional use documented
      * Independent mentions treating it as authoritative
-   - DOWNWARD adjustment if negative signals were missed or underweighted
+     * Explicit evidence of editorial standards, corrections, or reliability ratings
+   - DOWNWARD adjustment if negative signals were missed or underweighted:
+     * Fact-checker failures (CORRECTIV, Snopes, etc. found misleading content)
+     * ECHOING or AMPLIFYING propaganda from other sources (even if not creating it)
+     * Publishing unverified claims from propaganda outlets
+     * Multiple documented instances of misleading content
+   - ENFORCE NEGATIVE EVIDENCE CAPS:
+     * Evidence of ECHOING/AMPLIFYING propaganda → score ≤ 0.42 (leaning_unreliable)
+     * 2+ fact-checker failures → score ≤ 0.57 (mixed) or lower
+     * If initial evaluation scored above these caps despite evidence, LOWER THE SCORE
    - NO adjustment if evidence is simply sparse (sparse ≠ positive)
    - Absence of negative evidence alone does NOT justify upward adjustment
+   - Do NOT adjust upward based on popularity, audience size, influence, or "legacy" status without evidence
+   
+   TOP-TIER SOURCE RECOGNITION:
+   - Wire services (AP, Reuters, AFP) with HIGH factual ratings → can score 0.88-0.95
+   - Major newspapers with excellent track records → can score 0.82-0.90
+   - Don't artificially cap reliable sources at 0.85
 
 6. MULTILINGUAL EVIDENCE CHECK
    - Evidence may be in languages OTHER than English
@@ -1547,8 +1757,8 @@ EVIDENCE SIGNALS (same as initial evaluation)
 ${SHARED_EVIDENCE_SIGNALS}
 
 REFINEMENT-SPECIFIC RULES:
-- Absence of explicit fact-checker ratings does NOT penalize well respected sources
-  (fact-checkers focus on problematic sources, not trusted ones)
+- Absence of explicit fact-checker ratings does NOT penalize sources
+  (fact-checkers focus on problematic sources), but it also does NOT justify upward adjustment
 - Upward adjustment requires POSITIVE signals to be documented in the evidence pack
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -1565,6 +1775,8 @@ ${SHARED_SCORE_CAPS}
 
 ═══════════════════════════════════════════════════════════════════════════════
 OUTPUT FORMAT (JSON only, no markdown, no extra commentary)
+CRITICAL: Output MUST be raw JSON. Do NOT wrap in code fences.
+First character MUST be "{" and last character MUST be "}".
 ═══════════════════════════════════════════════════════════════════════════════
 {
   "crossCheckFindings": "string: What did the initial evaluation miss, get wrong, or interpret incorrectly? Be specific.",
@@ -1642,7 +1854,7 @@ async function refineEvaluation(
 
   const prompt = getRefinementPrompt(domain, evidenceSection, initialResult, initialModelName);
   const temperature = getDeterministicTemperature(0.3);
-  const modelName = "gpt-5-mini";
+  const modelName = SR_OPENAI_MODEL;
 
   debugLog(`[SR-Eval] Starting refinement pass with ${modelName} for ${domain}...`);
 
@@ -1726,49 +1938,6 @@ async function refineEvaluation(
 /**
  * Count unique evidence IDs referenced in the evaluation.
  */
-function extractEvidenceIdsFromText(text: string): string[] {
-  if (!text) return [];
-  const patterns = [
-    /\bE\s*\d+\b/gi,           // E1, E 1
-    /\[E\s*\d+\]/gi,           // [E1]
-    /\bEvidence\s*\d+\b/gi,    // Evidence 1
-  ];
-
-  const ids = new Set<string>();
-  for (const pattern of patterns) {
-    const matches = text.match(pattern) ?? [];
-    for (const m of matches) {
-      const num = m.match(/\d+/)?.[0];
-      if (num) ids.add(`E${num}`);
-    }
-  }
-
-  return [...ids];
-}
-
-function countUniqueEvidenceIds(result: EvaluationResult, evidencePack: EvidencePack): number {
-  const cited = result.evidenceCited ?? [];
-  if (cited.length === 0) return 0;
-
-  const ids = new Set(evidencePack.items.map((i) => i.id));
-  const uniqueRefs = new Set<string>();
-
-  for (const item of cited) {
-    if (item.evidenceId && ids.has(item.evidenceId)) {
-      uniqueRefs.add(item.evidenceId);
-    }
-
-    const extracted = extractEvidenceIdsFromText(item.basis || "");
-    for (const id of extracted) {
-      if (ids.has(id)) {
-        uniqueRefs.add(id);
-      }
-    }
-  }
-
-  return uniqueRefs.size;
-}
-
 /**
  * Compute foundedness score based on evidence grounding.
  */
@@ -1927,46 +2096,10 @@ function buildResponsePayload(
   };
 }
 
-function getLanguageDetectionCaveat(domain: string): string | null {
-  const status = languageDetectionStatus.get(domain);
-  if (status === "timeout") {
-    return "Language detection timed out; evaluation may be incomplete for non-English sources.";
-  }
-  if (status === "failed") {
-    return "Language detection failed; evaluation may be incomplete for non-English sources.";
-  }
-  return null;
-}
-
 function applyLanguageDetectionCaveat(payload: ResponsePayload, domain: string): void {
   const caveat = getLanguageDetectionCaveat(domain);
   if (!caveat) return;
   payload.caveats = [...(payload.caveats ?? []), caveat];
-}
-
-function computeRefinementConfidenceBoost(
-  initialResult: EvaluationResult,
-  refinedResult: EvaluationResult,
-  evidencePack: EvidencePack,
-  refinementApplied: boolean
-): { boost: number; evidenceDelta: number; scoreDelta: number } {
-  const originalEvidenceCount = countUniqueEvidenceIds(initialResult, evidencePack);
-  const refinedEvidenceCount = countUniqueEvidenceIds(refinedResult, evidencePack);
-  const evidenceDelta = Math.max(0, refinedEvidenceCount - originalEvidenceCount);
-  const scoreDelta = Math.abs((refinedResult.score ?? 0) - (initialResult.score ?? 0));
-
-  let boost = 0;
-  if (refinementApplied || evidenceDelta > 0) {
-    if (scoreDelta >= 0.10 || evidenceDelta >= 2) {
-      boost = 0.10;
-    } else if (scoreDelta >= 0.05 || evidenceDelta >= 1) {
-      boost = 0.05;
-    } else {
-      boost = 0.02;
-    }
-  }
-
-  return { boost, evidenceDelta, scoreDelta };
 }
 
 async function evaluateWithModel(
@@ -1992,7 +2125,7 @@ async function evaluateWithModel(
 
   const modelName = modelProvider === "anthropic"
     ? "claude-3-5-haiku-20241022"
-    : "gpt-5-mini"; // Upgraded from gpt-4o-mini for better classification accuracy
+    : SR_OPENAI_MODEL;
 
   debugLog(`[SR-Eval] Calling ${modelProvider} (${modelName}) for ${domain}...`);
 
@@ -2162,7 +2295,7 @@ async function evaluateSourceWithConsensus(
     const payload = buildResponsePayload(
       primary.result,
       primary.modelName,
-      "gpt-5-mini", // Attempted but failed
+      SR_OPENAI_MODEL, // Attempted but failed
       false, // consensusAchieved = false (refinement failed)
       evidencePack,
       primary.result.score,
@@ -2216,7 +2349,7 @@ async function evaluateSourceWithConsensus(
   const payload = buildResponsePayload(
     refinedResult,
     primary.modelName,
-    "gpt-5-mini",
+    SR_OPENAI_MODEL,
     true, // consensusAchieved = true (sequential refinement completed)
     evidencePack,
     refinedResult.score,
@@ -2251,14 +2384,6 @@ function getEnv(name: string): string | null {
   const v = process.env[name];
   return v && v.trim() ? v : null;
 }
-
-export const __test__ = {
-  extractEvidenceIdsFromText,
-  countUniqueEvidenceIds,
-  computeRefinementConfidenceBoost,
-  getLanguageDetectionCaveat,
-  languageDetectionStatus,
-};
 
 export async function POST(req: Request) {
   // Authentication

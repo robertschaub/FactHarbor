@@ -49,7 +49,7 @@ tests:
     assert:
       - type: is-json
       - type: javascript
-        value: "output.answer >= 85 && output.answer <= 100"
+        value: "const data = JSON.parse(output); data.answer >= 85 && data.answer <= 100"
         metric: verdict_accuracy
       - type: contains
         value: "claim_supported"
@@ -66,7 +66,7 @@ tests:
     assert:
       - type: is-json
       - type: javascript
-        value: "output.answer >= 0 && output.answer <= 35"
+        value: "const data = JSON.parse(output); data.answer >= 0 && data.answer <= 35"
         metric: verdict_accuracy
       - type: contains
         value: "claim_refuted"
@@ -83,7 +83,7 @@ tests:
     assert:
       - type: is-json
       - type: javascript
-        value: "output.answer >= 35 && output.answer <= 65"
+        value: "const data = JSON.parse(output); data.answer >= 35 && data.answer <= 65"
         metric: verdict_accuracy
       - type: contains
         value: "mixed"
@@ -98,7 +98,7 @@ tests:
     assert:
       - type: is-json
       - type: javascript
-        value: "output.answer >= 0 && output.answer <= 14"
+        value: "const data = JSON.parse(output); data.answer >= 0 && data.answer <= 14"
         metric: verdict_accuracy
       - type: contains
         value: "claim_refuted"
@@ -115,7 +115,7 @@ tests:
     assert:
       - type: is-json
       - type: javascript
-        value: "output.answer >= 65 && output.answer <= 90"
+        value: "const data = JSON.parse(output); data.answer >= 65 && data.answer <= 90"
         metric: verdict_accuracy
 
 # Output settings
