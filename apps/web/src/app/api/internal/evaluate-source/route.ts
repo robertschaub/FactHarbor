@@ -447,10 +447,11 @@ function isRelevantSearchResult(
   }
 
   // Check if result mentions the source (domain or brand)
+  // Note: Use length >= 3 for brands to support short abbreviations like FDA, BBC, CNN, NZZ
   const mentionsSource = blob.includes(d) || 
     blob.includes(`www.${d}`) ||
-    brandVariants.some(v => v.length >= 4 && blob.includes(v)) ||
-    brandVariantsNoSpaces.some(v => v.length >= 6 && blobNoSpaces.includes(v));
+    brandVariants.some(v => v.length >= 3 && blob.includes(v)) ||
+    brandVariantsNoSpaces.some(v => v.length >= 5 && blobNoSpaces.includes(v));
 
   if (!mentionsSource) return false;
 
@@ -845,6 +846,11 @@ const SEARCH_TERMS_TO_TRANSLATE = [
   "anti-science",
   "science denial",
   "denialism",
+  // Institutional independence terms
+  "independence",
+  "politicization",
+  "political pressure",
+  "scientific integrity",
 ];
 
 /**
@@ -1075,7 +1081,27 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       ]
     : [];
 
-  // Phase 6: Entity-focused queries (Organization/Brand only) - lower priority
+  // Institutional independence queries (HIGH PRIORITY - run early)
+  // Critical for detecting recent politicization or compromised independence
+  // Especially important for government/official sources
+  const institutionalIndependenceQueries = [
+    `"${brand}" independence politicization political pressure`,
+    `"${brand}" scientific integrity compromised OR undermined`,
+    `"${brand}" political interference OR political influence`,
+    `"${brand}" staff exodus OR workforce cuts OR mass resignation`,
+    `"${brand}" credibility crisis OR trust crisis`,
+    `"${brand}" leadership change controversy OR new leadership concerns`,
+  ];
+
+  // Institutional independence queries (translated)
+  const institutionalIndependenceQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
+    ? [
+        `"${brand}" ${t("independence")} ${t("politicization")}`,
+        `"${brand}" ${t("political pressure")} ${t("scientific integrity")}`,
+      ]
+    : [];
+
+  // Entity-focused queries (Organization/Brand only) - lower priority
   const entityQueries = isUsableBrandToken(brand) ? [
     `"${brand}" news outlet reliability assessment`,
     `"${brand}" media organization bias rating`,
@@ -1133,37 +1159,59 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     return added;
   }
 
+  // Phase budgets - ensure later phases get slots even if early phases find lots of results
+  const phase1Budget = Math.floor(maxEvidenceItems * 0.5); // 50% for fact-checkers
+  const phase2Budget = Math.floor(maxEvidenceItems * 0.75); // 75% cumulative for standard + institutional
+  // Remaining 25% for negative signal, entity queries, etc.
+
   // Phase 1: Run fact-checker site-specific queries FIRST (highest priority)
   // These directly target known fact-checker domains for assessments
-  // Must run before relaxed queries to ensure fact-checker results get priority slots
-  if (rawItems.length < maxEvidenceItems) {
+  // Budget-limited to ensure other phases get slots
+  if (rawItems.length < phase1Budget) {
     debugLog(`[SR-Eval] Running global fact-checker queries for ${domain}`, { brand });
     for (const q of factCheckerQueries) {
       await runQuery(q);
-      if (rawItems.length >= maxEvidenceItems) break;
+      if (rawItems.length >= phase1Budget) break;
     }
   }
 
   // Phase 1b: Run regional fact-checker queries (language-specific) - also high priority
-  if (rawItems.length < maxEvidenceItems && regionalFactCheckerQueries.length > 0) {
+  if (rawItems.length < phase1Budget && regionalFactCheckerQueries.length > 0) {
     debugLog(`[SR-Eval] Running regional fact-checker queries for ${domain}`, { language: sourceLanguage });
     for (const q of regionalFactCheckerQueries) {
       await runQuery(q);
-      if (rawItems.length >= maxEvidenceItems) break;
+      if (rawItems.length >= phase1Budget) break;
     }
   }
 
   // Phase 2: Run standard reliability assessment queries (English)
   for (const q of standardQueries) {
     await runQuery(q);
-    if (rawItems.length >= maxEvidenceItems) break;
+    if (rawItems.length >= phase2Budget) break;
   }
 
   // Phase 2b: Run standard queries (translated) - important for local fact-checkers
-  if (rawItems.length < maxEvidenceItems && standardQueriesTranslated.length > 0) {
+  if (rawItems.length < phase2Budget && standardQueriesTranslated.length > 0) {
     debugLog(`[SR-Eval] Running translated queries for ${domain}`, { language: sourceLanguage });
     for (const q of standardQueriesTranslated) {
       await runQuery(q);
+      if (rawItems.length >= phase2Budget) break;
+    }
+  }
+
+  // Phase 2c: Run institutional independence queries (HIGH PRIORITY - ALWAYS RUN)
+  // Critical for detecting politicization or compromised independence (especially government sources)
+  // These ALWAYS run regardless of current count to ensure independence concerns are captured
+  debugLog(`[SR-Eval] Running institutional independence queries for ${domain}`, { brand });
+  for (const q of institutionalIndependenceQueries) {
+    await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
+    if (rawItems.length >= maxEvidenceItems) break;
+  }
+
+  // Phase 2d: Run institutional independence queries (translated)
+  if (institutionalIndependenceQueriesTranslated.length > 0) {
+    for (const q of institutionalIndependenceQueriesTranslated) {
+      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
       if (rawItems.length >= maxEvidenceItems) break;
     }
   }
@@ -1453,6 +1501,12 @@ ${evidenceSection}
    - The source's own "about", "editorial standards", or "corrections" pages are NOT independent assessments
    - Only third-party fact-checkers, journalism reviews, or independent analyses count as evidence
 
+6. INSTITUTIONAL INDEPENDENCE (especially for government/official sources)
+   - Evidence of politicization, political pressure, or compromised scientific integrity → LOWER the score
+   - Mass staff resignations, workforce cuts, or leadership changes with controversy → treat as warning signs
+   - Recent evidence (within 1-2 years) of independence concerns outweighs historical reputation
+   - Government sources are NOT automatically reliable - evaluate based on current evidence of independence
+
 6. ENTITY-LEVEL EVALUATION (ORGANIZATION VS DOMAIN)
    - If the domain is the primary outlet for a larger organization (e.g., a TV channel, newspaper, or media group), you MUST evaluate the reliability of the WHOLE ORGANIZATION.
    - ONLY use organization-level reputation if the evidence pack explicitly documents it (ratings, standards, corrections, independent assessments).
@@ -1596,7 +1650,7 @@ First character MUST be "{" and last character MUST be "}".
     "politicalBias": "string (from list)",
     "otherBias": "string (from list) OR null"
   },
-  "reasoning": "string, 2-4 sentences explaining verdict. Use DIRECT framing: explain what evidence SHOWS and why score IS what it is. Never write 'does not support X rating' - instead state what evidence DOES show.",
+  "reasoning": "string, 2-4 sentences explaining verdict. Use DIRECT framing: explain what evidence SHOWS and why score IS what it is. IMPORTANT: Use CONSISTENT terminology matching the factualRating (e.g., if rating is 'reliable', say 'reliable' not 'highly reliable'). Never write 'does not support X rating'.",
   "evidenceCited": [
     {
       "claim": "string, what you assert about the source",
@@ -1895,7 +1949,7 @@ First character MUST be "{" and last character MUST be "}".
   },
   "refinedRating": "string: highly_reliable | reliable | leaning_reliable | mixed | leaning_unreliable | unreliable | highly_unreliable | insufficient_data",
   "refinedConfidence": "number (0.00-1.00): Your confidence in the refined assessment",
-  "combinedReasoning": "string: Updated reasoning. Use DIRECT framing: state what evidence SHOWS and why score IS what it is. Never write 'does not support X rating'"
+  "combinedReasoning": "string: Updated reasoning. Use DIRECT framing and CONSISTENT terminology matching the refinedRating (e.g., 'reliable' not 'highly reliable'). Never write 'does not support X rating'"
 }
 
 Return ONLY valid JSON. No markdown fences, no extra text.`;
