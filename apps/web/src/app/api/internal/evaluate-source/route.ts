@@ -1214,6 +1214,16 @@ const SHARED_RATING_SCALE = `
  * Evidence quality signals - shared understanding of what counts as positive/negative
  */
 const SHARED_EVIDENCE_SIGNALS = `
+STRONG POSITIVE SIGNALS (can justify high scores when present):
+  - Fact-checker explicitly rates source as "HIGH" or "VERY HIGH" factual reporting
+  - Multiple independent Tier 1 assessors give positive ratings
+  - No documented fact-checker failures combined with positive assessments
+  - Evidence describes "highest standards", "proactively corrects", "gold standard"
+  
+  IMPORTANT: When evidence explicitly supports high reliability, the score should MATCH the evidence.
+  Do not be artificially conservative when assessors rate a source highly.
+  Let the assessor ratings guide your score - if they say "HIGH", score in the reliable/highly_reliable range.
+
 POSITIVE CONTEXTUAL SIGNALS (supporting evidence, not standalone):
   - Source is frequently cited in academic publications as reference material
   - Source is used by professional institutions as information source
@@ -1347,14 +1357,7 @@ ${evidenceSection}
    CRITICAL: If evidence shows a source SHARES or AMPLIFIES misleading content from propaganda sources,
    even if they didn't create it, this IS a documented failure. Apply the appropriate cap.
 
-4. TOP-TIER SOURCE RECOGNITION (when evidence strongly supports)
-   - Wire services (AP, Reuters, AFP) with consistent HIGH ratings → score 0.88-0.95
-   - Major newspapers with established fact-checking teams → score 0.80-0.90
-   - Public broadcasters with independent funding and oversight → score 0.80-0.90
-   - DO NOT artificially cap scores at 0.85 for sources with excellent track records
-   - If evidence shows HIGH factual reporting with minimal failures, score accordingly
-
-5. SOURCE TYPE SCORE CAPS (hard limits — NO exceptions)
+4. SOURCE TYPE SCORE CAPS (hard limits — NO exceptions)
    - sourceType="propaganda_outlet" → score MUST be ≤ 0.14 (highly_unreliable)
    - sourceType="known_disinformation" → score MUST be ≤ 0.14 (highly_unreliable)
    - sourceType="state_controlled_media" → score MUST be ≤ 0.42 (leaning_unreliable)
@@ -1384,26 +1387,27 @@ RATING SCALE (score → factualRating — MUST match exactly)
 ${SHARED_RATING_SCALE}
 
 ─────────────────────────────────────────────────────────────────────
-CONFIDENCE CALCULATION (mechanistic formula)
+CONFIDENCE ASSESSMENT
 ─────────────────────────────────────────────────────────────────────
-Calculate confidence score using this formula:
+Your confidence reflects how well the evidence supports your assessment.
 
-Base: 0.40
+FACTORS THAT INCREASE CONFIDENCE:
+  - More independent assessors have evaluated the source
+  - Evidence is recent rather than outdated
+  - Sources agree with each other (consistency)
+  - Evidence directly addresses reliability (not tangential)
+  - Source is well-documented by fact-checking community
 
-ADD:
-  +0.15 per independent fact-checker assessment (max +0.45 for 3+)
-  +0.10 if most evidence is within last 12 months
-  +0.10 if evidence shows consistent pattern (3+ sources agree)
-  +0.05 per additional corroborating source beyond first (max +0.15)
+FACTORS THAT DECREASE CONFIDENCE:
+  - Few or no independent assessments
+  - Evidence is old or outdated
+  - Sources contradict each other
+  - Evidence is indirect or tangential
+  - Source is not well-documented
 
-SUBTRACT:
-  -0.15 if evidence is contradictory/mixed signals
-  -0.10 if evidence is mostly >2 years old
-
-Final confidence: clamp result to [0.0, 1.0]
-
-THRESHOLD: If calculated confidence < 0.50, strongly consider outputting
-score=null and factualRating="insufficient_data"
+INSUFFICIENT DATA RULE:
+When evidence is too weak to form a reliable assessment (sparse, contradictory, 
+or no independent assessors), output score=null and factualRating="insufficient_data".
 
 ─────────────────────────────────────────────────────────────────────
 SOURCE TYPE CLASSIFICATION (USE STRICT CRITERIA - prefer LESS SEVERE)
@@ -1722,7 +1726,12 @@ YOUR TASK: CROSS-CHECK AND REFINE
    - Add entity-level context if the initial evaluation missed it
    
    ADJUSTMENT RULES (must follow strictly):
-   - UPWARD adjustment only if positive signals are PRESENT in the evidence pack:
+   - UPWARD adjustment when positive signals are PRESENT and score doesn't match evidence:
+     * Fact-checker explicitly rates "HIGH" or "VERY HIGH" factual → score in reliable/highly_reliable range
+     * Multiple Tier 1 assessors give positive ratings → score should reflect the consensus
+     * If assessors say source is highly reliable but initial score seems low, adjust upward
+     * Don't be artificially conservative when assessors explicitly rate a source highly
+   - UPWARD adjustment also supported by:
      * Academic citations of the source as reference material
      * Professional/institutional use documented
      * Independent mentions treating it as authoritative
@@ -1739,11 +1748,6 @@ YOUR TASK: CROSS-CHECK AND REFINE
    - NO adjustment if evidence is simply sparse (sparse ≠ positive)
    - Absence of negative evidence alone does NOT justify upward adjustment
    - Do NOT adjust upward based on popularity, audience size, influence, or "legacy" status without evidence
-   
-   TOP-TIER SOURCE RECOGNITION:
-   - Wire services (AP, Reuters, AFP) with HIGH factual ratings → can score 0.88-0.95
-   - Major newspapers with excellent track records → can score 0.82-0.90
-   - Don't artificially cap reliable sources at 0.85
 
 6. MULTILINGUAL EVIDENCE CHECK
    - Evidence may be in languages OTHER than English

@@ -42,27 +42,15 @@ SOURCE TYPE CLASSIFICATION
 - unknown: Cannot determine from evidence
 
 ═══════════════════════════════════════════════════════════════════
-CONFIDENCE CALCULATION
+CONFIDENCE ASSESSMENT
 ═══════════════════════════════════════════════════════════════════
-Base: 0.40
-ADD:
-  +0.15 per independent fact-checker assessment (max +0.45 for 3+)
-  +0.10 if most evidence is within last 12 months
-  +0.10 if evidence shows consistent pattern (3+ sources agree)
-SUBTRACT:
-  -0.15 if evidence is contradictory/mixed signals
-  -0.10 if evidence is mostly >2 years old
+Your confidence reflects how well the evidence supports your assessment.
 
-How to compute (do NOT guess):
-1) confidence = 0.40
-2) confidence += 0.15 * min(independentAssessmentsCount, 3)
-3) add +0.10 for recency, +0.10 for consistency
-4) subtract penalties if applicable
-5) clamp to [0.0, 1.0]
-Sanity check: If independentAssessmentsCount >= 3 AND evidence is recent AND consistent AND not contradictory,
-confidence MUST be >= 0.70 (do not output < 0.50 in this case).
+INCREASES CONFIDENCE: More assessors, recent evidence, consistency, direct evidence
+DECREASES CONFIDENCE: Few assessors, old evidence, contradictions, tangential evidence
 
-THRESHOLD: If confidence < 0.50, output score=null and factualRating="insufficient_data"
+INSUFFICIENT DATA: When evidence is too weak (sparse, contradictory, no assessors),
+output score=null and factualRating="insufficient_data"
 
 ═══════════════════════════════════════════════════════════════════
 BIAS VALUES
