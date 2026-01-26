@@ -153,7 +153,7 @@ export interface AnalysisContext {
   temporal: string;              // Time period or date
   status: "concluded" | "ongoing" | "pending" | "unknown";
   outcome: string;               // Result/conclusion/finding
-  assessedStatement?: string;    // v2.6.39: User's original question/claim narrowed to this specific context
+  assessedStatement?: string;    // v2.6.39: What is being assessed in this context (Assessment must summarize this)
 
   // Flexible metadata (domain-specific details stored as key-value)
   metadata: {

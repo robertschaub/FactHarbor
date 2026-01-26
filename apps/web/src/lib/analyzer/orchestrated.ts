@@ -184,7 +184,7 @@ CRITICAL RULES:
 - Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
 - Non-example: do NOT create separate AnalysisContexts from ArticleFrame narrative background (e.g., \"political frame\", \"media discourse\") unless the evidence itself defines distinct analytical frames.
 - An AnalysisContext with zero relevant claims/evidence should NOT exist.
-- IMPORTANT: For each AnalysisContext, include an assessedStatement field: the user's original question/claim narrowed to this specific context's analytical frame. Do NOT invent a different question.
+- IMPORTANT: For each AnalysisContext, include an assessedStatement field describing what you are assessing in this context. The Assessment summary MUST summarize the assessment of THIS assessedStatement.
 
 Return JSON only matching the schema.`;
 
@@ -3669,7 +3669,7 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - temporal: 2024
    - status: concluded
    - outcome: Ruling issued
-   - assessedStatement: (user's input narrowed to this context)
+   - assessedStatement: (what is being assessed in this context)
    - metadata: { institution: "Court A", charges: [...], decisionMakers: [...] }
 
 2. **SCOPE_COURT_B**: Legal proceeding B
@@ -3677,7 +3677,7 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - temporal: 2024
    - status: ongoing
    - outcome: Unresolved
-   - assessedStatement: (user's input narrowed to this context)
+   - assessedStatement: (what is being assessed in this context)
    - metadata: { institution: "Court B", charges: [...], decisionMakers: [...] }
 
 **Scientific Domain:**
@@ -3686,7 +3686,7 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - temporal: 2024
    - status: concluded
    - outcome: Example numeric estimate
-   - assessedStatement: (user's input narrowed to this context)
+   - assessedStatement: (what is being assessed in this context)
    - metadata: { methodology: "Standard X", boundaries: "Narrow boundary", geographic: "Region A" }
 
 2. **CTX_BOUNDARY_B**: Broad boundary analysis
@@ -3694,18 +3694,14 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - temporal: 2024
    - status: concluded
    - outcome: Example numeric estimate
-   - assessedStatement: (user's input narrowed to this context)
+   - assessedStatement: (what is being assessed in this context)
    - metadata: { methodology: "Standard Y", boundaries: "Broad boundary", geographic: "Region A" }
 
 **CRITICAL - assessedStatement field (v2.6.39)**:
-For each analysisContext, include an assessedStatement: the user's original question/claim NARROWED to this specific context.
-- Keep the user's phrasing (question → question, claim → claim)
-- Add context-specific details (institution name, methodology, time period)
-- Example: User asks "Was the trial fair?" → Context A: "Was the [Court A] trial fair?" Context B: "Was the [Court B] proceeding fair?"
-- If user asked "Was X fair?" → each context's assessedStatement is about fairness of THAT context
-- If user claimed "X was legitimate" → each context's assessedStatement is about legitimacy of THAT context
-- Do NOT invent a different question (e.g., don't change "Was it fair?" to "Did they violate law?")
-- Format: Match user input format (question → question, claim → claim)
+For each analysisContext, include an assessedStatement that describes what you are assessing in this context.
+- The assessedStatement MUST describe what is being evaluated in THIS specific context
+- The Assessment summary MUST summarize the assessment OF the assessedStatement
+- These two fields must be consistent: Assessment answers/evaluates the assessedStatement
 
 **CRITICAL: metadata.decisionMakers field**
 - Extract key decision-makers or primary actors only when they are explicitly mentioned in the input or evidence.
@@ -4579,7 +4575,7 @@ analysisContexts items must include:
 - temporal (string)
 - status (concluded|ongoing|pending|unknown)
 - outcome (string)
-- assessedStatement (string): User's original question/claim NARROWED to this context (keep user's phrasing, add context details)
+- assessedStatement (string): What is being assessed in this context (Assessment MUST summarize assessment of THIS)
 - metadata (object, may include domain-specific fields like court/institution/jurisdiction/charges/decisionMakers/methodology/boundaries/geographic/standardApplied)
 
 Use empty strings "" and empty arrays [] when unknown.`;

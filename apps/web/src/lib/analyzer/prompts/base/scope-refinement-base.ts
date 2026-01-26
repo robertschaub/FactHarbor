@@ -103,15 +103,15 @@ Return JSON with:
   - temporal: Time period or date
   - status: "concluded" | "ongoing" | "pending" | "unknown"
   - outcome: Result/conclusion
-  - **assessedStatement** (v2.6.39): User's original question/claim NARROWED to this specific context
+  - **assessedStatement** (v2.6.39): What is being assessed in this context
   - metadata: Domain-specific details (institution, methodology, boundaries, geographic, etc.)
 - factScopeAssignments: Array of {factId, contextId}
 - claimScopeAssignments: Array of {claimId, contextId} (optional)
 
-**CRITICAL for assessedStatement**: The user's original input, narrowed to this specific context.
-- Keep user's phrasing (question → question, claim → claim)
-- Add context-specific details (institution name, methodology, time period, etc.)
-- The Assessment summary MUST answer THIS assessedStatement
+**CRITICAL for assessedStatement**:
+- The assessedStatement MUST describe what is being evaluated in THIS specific context
+- The Assessment summary MUST summarize the assessment OF the assessedStatement
+- These two fields must be consistent: Assessment answers/evaluates the assessedStatement
 
 ## METADATA FIELDS (Domain-Specific)
 

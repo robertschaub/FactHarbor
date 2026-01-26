@@ -228,16 +228,16 @@ Return JSON with:
 - subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, isCounterClaim, contextId, keyFactorId
 - analysisContexts: Array of detected AnalysisContext objects, each with:
   - id, name, shortName, subject, temporal, status, outcome, metadata
-  - **assessedStatement** (v2.6.39): The user's original question/claim NARROWED to this specific context
+  - **assessedStatement** (v2.6.39): What is being assessed in this context
 - requiresSeparateAnalysis: boolean
 - researchQueries: 4-6 specific search queries
 - keyFactors: Array of KeyFactors (or empty array)
 - riskTier: "A" | "B" | "C"
 
-**CRITICAL for assessedStatement**: The user's original input, narrowed to this specific context.
-- Keep user's phrasing (question → question, claim → claim)
-- Add context-specific details (institution name, methodology, time period, etc.)
-- The Assessment summary MUST answer THIS assessedStatement`;
+**CRITICAL for assessedStatement**:
+- The assessedStatement MUST describe what is being evaluated in THIS specific context
+- The Assessment summary MUST summarize the assessment OF the assessedStatement
+- These two fields must be consistent: Assessment answers/evaluates the assessedStatement`;
 }
 
 /**
