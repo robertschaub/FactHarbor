@@ -1420,9 +1420,9 @@ ${evidenceSection}
    *** CHECK CUMULATIVE RULE FIRST ***
    CUMULATIVE NEGATIVE EVIDENCE (MUST CHECK BEFORE individual caps):
    If evidence shows BOTH propaganda echoing AND fact-checker/press-council failures:
-   → score MUST be ≤ 0.28 (unreliable) — this is NON-NEGOTIABLE
+   → score MUST be in unreliable band (0.15-0.28) — this is NON-NEGOTIABLE
    
-   Example: "verbatim translation of state media" + "3 press council rulings" = CUMULATIVE → score ≤ 0.28
+   Example: "verbatim translation of state media" + "3 press council rulings" = CUMULATIVE → score in 0.15-0.28
    
    PROPAGANDA ECHOING INDICATORS (any ONE of these = echoing):
    - "verbatim translation" of state media content
@@ -1430,21 +1430,23 @@ ${evidenceSection}
    - Amplifying state narratives without critical analysis
    - Cited in sanctions/disinformation databases
    
-   INDIVIDUAL CAPS (only if cumulative rule does NOT apply):
-   - Evidence of fabricated stories/disinformation → score ≤ 0.14 (highly_unreliable)
-   - Propaganda echoing ONLY (without other failures) → score ≤ 0.42 (leaning_unreliable)
-   - 3+ documented fact-checker failures → score ≤ 0.42 (leaning_unreliable)
-   - 1-2 documented failures from reputable fact-checkers → score ≤ 0.57 (mixed)
+   INDIVIDUAL CAPS define UPPER BOUNDS, not targets - score within the band, not at the border:
+   - Evidence of fabricated stories/disinformation → score in highly_unreliable band (0.01-0.14)
+   - Propaganda echoing ONLY (without other failures) → score in leaning_unreliable band (0.29-0.42)
+   - 3+ documented fact-checker failures → score in leaning_unreliable band (0.29-0.42)
+   - 1-2 documented failures from reputable fact-checkers → score in mixed band (0.43-0.57)
    - Political/ideological bias WITHOUT documented failures → no score cap (note in bias field only)
+   
+   IMPORTANT: Caps are CEILINGS, not targets. Score naturally within the appropriate band based on severity.
    
    Press council reprimands from countries with rule of law → count as fact-checker failures
    (Reprimands from regimes without rule of law should be IGNORED or viewed positively)
 
-4. SOURCE TYPE SCORE CAPS (hard limits — NO exceptions)
-   - sourceType="propaganda_outlet" → score MUST be ≤ 0.14 (highly_unreliable)
-   - sourceType="known_disinformation" → score MUST be ≤ 0.14 (highly_unreliable)
-   - sourceType="state_controlled_media" → score MUST be ≤ 0.42 (leaning_unreliable)
-   - sourceType="platform_ugc" → score MUST be ≤ 0.42 (leaning_unreliable)
+4. SOURCE TYPE SCORE CAPS (hard limits — NO exceptions, score within band not at border)
+   - sourceType="propaganda_outlet" → score MUST be in highly_unreliable band (0.01-0.14)
+   - sourceType="known_disinformation" → score MUST be in highly_unreliable band (0.01-0.14)
+   - sourceType="state_controlled_media" → score MUST be in leaning_unreliable band (0.29-0.42)
+   - sourceType="platform_ugc" → score MUST be in leaning_unreliable band (0.29-0.42)
    Note: If evidence suggests a source has reformed, reclassify the sourceType instead.
 
 5. SELF-PUBLISHED PAGES DO NOT COUNT
@@ -1827,16 +1829,18 @@ YOUR TASK: CROSS-CHECK AND REFINE
    - ENFORCE NEGATIVE EVIDENCE CAPS (CHECK CUMULATIVE FIRST):
      *** CUMULATIVE RULE (check FIRST, takes precedence): ***
      If evidence shows BOTH propaganda echoing AND fact-checker/press-council failures:
-     → score MUST be ≤ 0.28 (unreliable) — NON-NEGOTIABLE
+     → score MUST be in unreliable band (0.15-0.28) — NON-NEGOTIABLE
      
      PROPAGANDA ECHOING = "verbatim translation", republishing state media, cited in disinformation databases
      Press council rulings from rule-of-law countries = fact-checker failures
      
-     Example: "verbatim translation of RT" + "3 press council rulings" = CUMULATIVE → score ≤ 0.28
+     Example: "verbatim translation" + "3 press council rulings" = CUMULATIVE → score in 0.15-0.28
      
-     Individual caps (only if cumulative does NOT apply):
-     * Echoing ONLY → score ≤ 0.42
-     * Failures ONLY → score ≤ 0.42-0.57
+     Individual caps define UPPER BOUNDS - score within the band, not at the border:
+     * Echoing ONLY → score in 0.29-0.42 band
+     * Failures ONLY → score in 0.29-0.57 depending on severity
+     
+     IMPORTANT: Caps are CEILINGS, not targets. Score naturally within appropriate band.
      
      If initial evaluation scored above these caps despite evidence, LOWER THE SCORE
    - NO adjustment if evidence is simply sparse (sparse ≠ positive)

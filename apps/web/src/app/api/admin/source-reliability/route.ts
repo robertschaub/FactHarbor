@@ -65,8 +65,9 @@ export async function GET(req: Request) {
     const offset = parseInt(url.searchParams.get("offset") || "0", 10);
     const sortBy = url.searchParams.get("sortBy") || "evaluated_at";
     const sortOrder = url.searchParams.get("sortOrder") || "desc";
+    const search = url.searchParams.get("search") || undefined;
 
-    const data = await getAllCachedScores({ limit, offset, sortBy, sortOrder });
+    const data = await getAllCachedScores({ limit, offset, sortBy, sortOrder, search });
     const stats = await getCacheStats();
     const config = getConfig();
 

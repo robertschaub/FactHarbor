@@ -92,6 +92,8 @@ export default function SourceReliabilityPage() {
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
   // Helper to build fetch headers with admin key
   const getHeaders = useCallback((): HeadersInit => {
@@ -114,6 +116,9 @@ export default function SourceReliabilityPage() {
         sortBy,
         sortOrder,
       });
+      if (searchTerm) {
+        params.set("search", searchTerm);
+      }
 
       const response = await fetch(`/api/admin/source-reliability?${params}`, {
         headers: getHeaders(),
@@ -134,7 +139,7 @@ export default function SourceReliabilityPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, sortBy, sortOrder, getHeaders]);
+  }, [page, pageSize, sortBy, sortOrder, searchTerm, getHeaders]);
 
   useEffect(() => {
     fetchData();
@@ -167,6 +172,24 @@ export default function SourceReliabilityPage() {
       setPageSizeInput("500");
       setPage(0);
     }
+  };
+
+  // Search handlers
+  const handleSearch = () => {
+    setSearchTerm(searchInput.trim());
+    setPage(0);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+    setPage(0);
   };
 
   // Modal drag handlers
@@ -541,6 +564,33 @@ export default function SourceReliabilityPage() {
           </div>
         </div>
       )}
+
+      {/* Search Section */}
+      <div className={styles.searchSection}>
+        <div className={styles.searchBox}>
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Search by domain or entity..."
+            className={styles.searchInput}
+          />
+          <button onClick={handleSearch} className={styles.button} disabled={loading}>
+            Search
+          </button>
+          {searchTerm && (
+            <button onClick={handleClearSearch} className={styles.buttonSecondary}>
+              Clear
+            </button>
+          )}
+        </div>
+        {searchTerm && (
+          <div className={styles.searchInfo}>
+            Showing results for: <strong>{searchTerm}</strong> ({data?.total || 0} matches)
+          </div>
+        )}
+      </div>
 
       {/* Evaluate Domains Section */}
       <div className={styles.evaluateSection}>
@@ -970,12 +1020,6 @@ export default function SourceReliabilityPage() {
                       {providers.length > 0 && (
                         <div className={styles.reasoningBox} style={{ marginBottom: "8px" }}>
                           <strong>Providers:</strong> {providers.join(", ")}
-                          {queries.length > 0 && (
-                            <>
-                              <br />
-                              <strong>Queries:</strong> {queries.join(" | ")}
-                            </>
-                          )}
                         </div>
                       )}
                       <ul className={styles.evidenceList}>

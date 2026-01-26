@@ -457,6 +457,7 @@ export async function getAllCachedScores(options: {
   offset: number;
   sortBy: string;
   sortOrder: string;
+  search?: string;
 }): Promise<{
   entries: CachedScore[];
   total: number;
@@ -471,21 +472,33 @@ export async function getAllCachedScores(options: {
   const sortColumn = validSortColumns.includes(options.sortBy) ? options.sortBy : "evaluated_at";
   const sortDir = options.sortOrder === "asc" ? "ASC" : "DESC";
 
-  // Get total count
-  const countResult = await database.get<{ count: number }>(
-    `SELECT COUNT(*) as count FROM source_reliability WHERE expires_at > ?`,
-    [now]
-  );
+  // Build search condition if provided
+  const searchTerm = options.search?.trim().toLowerCase();
+  const hasSearch = searchTerm && searchTerm.length > 0;
+  const searchPattern = hasSearch ? `%${searchTerm}%` : null;
+
+  // Get total count (with optional search filter)
+  const countQuery = hasSearch
+    ? `SELECT COUNT(*) as count FROM source_reliability WHERE expires_at > ? AND (LOWER(domain) LIKE ? OR LOWER(identified_entity) LIKE ?)`
+    : `SELECT COUNT(*) as count FROM source_reliability WHERE expires_at > ?`;
+  const countParams = hasSearch ? [now, searchPattern, searchPattern] : [now];
+  const countResult = await database.get<{ count: number }>(countQuery, countParams);
   const total = countResult?.count ?? 0;
 
-  // Get paginated results
-  const rows = await database.all<ScoreRow[]>(
-    `SELECT * FROM source_reliability
-     WHERE expires_at > ?
-     ORDER BY ${sortColumn} ${sortDir}
-     LIMIT ? OFFSET ?`,
-    [now, options.limit, options.offset]
-  );
+  // Get paginated results (with optional search filter)
+  const dataQuery = hasSearch
+    ? `SELECT * FROM source_reliability
+       WHERE expires_at > ? AND (LOWER(domain) LIKE ? OR LOWER(identified_entity) LIKE ?)
+       ORDER BY ${sortColumn} ${sortDir}
+       LIMIT ? OFFSET ?`
+    : `SELECT * FROM source_reliability
+       WHERE expires_at > ?
+       ORDER BY ${sortColumn} ${sortDir}
+       LIMIT ? OFFSET ?`;
+  const dataParams = hasSearch
+    ? [now, searchPattern, searchPattern, options.limit, options.offset]
+    : [now, options.limit, options.offset];
+  const rows = await database.all<ScoreRow[]>(dataQuery, dataParams);
 
   const entries: CachedScore[] = rows.map((row) => ({
     domain: row.domain,
