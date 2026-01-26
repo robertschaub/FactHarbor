@@ -272,6 +272,8 @@ Return:
   // NOTE: Do this BEFORE applying factScopeAssignments/claimScopeAssignments so both are mapped consistently.
   let dedupMerged: Map<string, string> | null = null;
   if (process.env.FH_ENABLE_SCOPE_DEDUP !== "false") {
+    // v2.6.38: Only drop contexts that are highly overlapping (>=85% similarity)
+    // Lower values cause valid contexts and claims to be lost
     const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
     const dedup = deduplicateScopes(state.understanding!.analysisContexts || [], threshold);
@@ -288,6 +290,17 @@ Return:
       const rp = String((c as any).contextId || "");
       if (!rp) continue;
       if (dedupMerged.has(rp)) (c as any).contextId = dedupMerged.get(rp)!;
+    }
+  }
+
+  // v2.6.38: Validate claim assignments (all claims assigned to existing contexts)
+  const existingContextIds = new Set(state.understanding!.analysisContexts.map(ctx => ctx.id));
+  for (const claim of state.understanding!.subClaims || []) {
+    const claimContextId = String((claim as any).contextId || "");
+    if (claimContextId && !existingContextIds.has(claimContextId)) {
+      debugLog(`⚠️ Claim ${claim.id} assigned to non-existent context ${claimContextId}`);
+      // Unassign orphaned claims - they'll be assigned to General or fallback context later
+      (claim as any).contextId = "";
     }
   }
 
@@ -784,7 +797,10 @@ function selectFactsForScopeRefinementPrompt(
 }
 
 function calculateScopeSimilarity(a: Scope, b: Scope): number {
-  const nameSim = calculateTextSimilarity(String(a?.name || ""), String(b?.name || ""));
+  const nameA = String(a?.name || "");
+  const nameB = String(b?.name || "");
+  
+  const nameSim = calculateTextSimilarity(nameA, nameB);
   const subjectSim =
     a?.subject && b?.subject ? calculateTextSimilarity(String(a.subject), String(b.subject)) : 0;
 
@@ -826,7 +842,9 @@ function calculateScopeSimilarity(a: Scope, b: Scope): number {
   if (secondaryCount > 0) secondarySim /= secondaryCount;
 
   // Weighted average: name (45%), primary metadata (30%), subject (20%), geo/time (5%)
-  return nameSim * 0.45 + primarySim * 0.3 + subjectSim * 0.2 + secondarySim * 0.05;
+  const similarity = nameSim * 0.45 + primarySim * 0.3 + subjectSim * 0.2 + secondarySim * 0.05;
+
+  return Math.min(1.0, similarity);
 }
 
 function mergeScopeMetadata(primary: Scope, duplicates: Scope[]): Scope {
@@ -853,7 +871,7 @@ function mergeScopeMetadata(primary: Scope, duplicates: Scope[]): Scope {
 
 function deduplicateScopes(
   scopes: Scope[],
-  similarityThreshold: number = 0.85,
+  similarityThreshold: number = 0.85,  // Only merge at >=85% similarity to preserve valid contexts
 ): { scopes: Scope[]; merged: Map<string, string> } {
   if (!Array.isArray(scopes) || scopes.length <= 1) return { scopes: scopes || [], merged: new Map() };
 
@@ -2252,6 +2270,8 @@ interface ArticleAnalysis {
   articleTruthPercentage: number;
   articleVerdict: number;
   articleVerdictReason?: string;
+  // v2.6.38: Signal for UI to de-emphasize overall average when multiple distinct contexts exist
+  articleVerdictReliability?: "high" | "low";
 
   claimPattern: {
     total: number;
@@ -6794,19 +6814,24 @@ The JSON object MUST include these top-level keys:
   });
 
 
-  // Recalculate overall using truth percentages
-  const avgTruthPct = Math.round(
-    correctedContextAnswers.reduce(
-      (sum, pa) => sum + pa.truthPercentage,
-      0,
-    ) / correctedContextAnswers.length,
-  );
-
-
-  const avgConfidence = Math.round(
-    correctedContextAnswers.reduce((sum, pa) => sum + pa.confidence, 0) /
-      correctedContextAnswers.length,
-  );
+  // Context verdicts
+  // When multiple distinct contexts exist, the average is shown but UI should emphasize individual context verdicts
+  // The hasMultipleContexts flag indicates the average may not be meaningful
+  const hasMultipleContexts = correctedContextAnswers.length > 1;
+  
+  // v2.6.38: Context count warning (detect over-splitting)
+  const CONTEXT_WARNING_THRESHOLD = 5;
+  if (correctedContextAnswers.length > CONTEXT_WARNING_THRESHOLD) {
+    debugLog(`⚠️ High context count detected: ${correctedContextAnswers.length} contexts may indicate over-splitting`);
+  }
+  
+  // Calculate average for display (UI can choose to de-emphasize when hasMultipleContexts=true)
+  const avgTruthPct = correctedContextAnswers.length > 0
+    ? Math.round(correctedContextAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) / correctedContextAnswers.length)
+    : 50;
+  const avgConfidence = correctedContextAnswers.length > 0
+    ? Math.round(correctedContextAnswers.reduce((sum, pa) => sum + pa.confidence, 0) / correctedContextAnswers.length)
+    : 50;
 
   // Calculate overall factorAnalysis
   const allFactors = correctedContextAnswers.flatMap((pa) => pa.keyFactors);
@@ -7040,7 +7065,7 @@ The JSON object MUST include these top-level keys:
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer,
     keyFactors: validatedSummaryKeyFactors, // v2.8: Use validated keyFactors
     hasMultipleProceedings: true,
-    hasMultipleContexts: true,
+    hasMultipleContexts: hasMultipleContexts,
     proceedingAnswers: correctedContextAnswers,
     contextAnswers: correctedContextAnswers,
     proceedingSummary: parsed.proceedingSummary,
@@ -7055,7 +7080,7 @@ The JSON object MUST include these top-level keys:
     inputType: analysisInputType,
     verdictSummary,
     hasMultipleProceedings: true,
-    hasMultipleContexts: true,
+    hasMultipleContexts: hasMultipleContexts,
     proceedings: understanding.analysisContexts,
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
     logicalFallacies: [],
@@ -7064,10 +7089,12 @@ The JSON object MUST include these top-level keys:
     claimsAverageTruthPercentage: claimsAvgTruthPct,
     claimsAverageVerdict: claimsAvgTruthPct,
 
-  // Article verdict
+  // Article verdict (average shown, but UI should emphasize individual contexts when hasMultipleContexts=true)
     articleTruthPercentage: avgTruthPct,
     articleVerdict: avgTruthPct,
-    articleVerdictReason: undefined,
+    articleVerdictReason: hasMultipleContexts ? "Average of distinct contexts - see individual verdicts" : undefined,
+    // v2.6.38: Signal UI reliability - low when multiple distinct contexts (average may not be meaningful)
+    articleVerdictReliability: hasMultipleContexts ? "low" : "high",
 
     claimPattern,
   };
@@ -7610,6 +7637,8 @@ ${factsFormatted}`;
     articleVerdict: clampedAnswerTruthPct,
     // Avoid duplicating claims average in the UI; we show it as a dedicated row.
     articleVerdictReason: undefined,
+    // v2.6.38: Single context always has high reliability (verdict is meaningful)
+    articleVerdictReliability: "high",
 
     claimPattern,
   };

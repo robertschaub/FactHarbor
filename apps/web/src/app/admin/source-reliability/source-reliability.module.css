@@ -834,3 +834,102 @@
   font-size: 12px;
   font-style: italic;
 }
+
+/* Export buttons styling */
+.exportButtons {
+  display: flex;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.exportButtons button {
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.exportButtons button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Print styles */
+@media print {
+  /* Hide everything except the modal */
+  .container > h1,
+  .header,
+  .actions,
+  .stats,
+  .searchSection,
+  .evaluateSection,
+  .tableContainer,
+  .pagination,
+  .legend,
+  .buttonRow {
+    display: none !important;
+  }
+  
+  /* Show only the selected modal content */
+  .modal {
+    position: static !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+  
+  .modalContent {
+    position: static !important;
+    transform: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+  
+  /* Hide modal close button and export buttons during print */
+  .modalClose,
+  .exportButtons {
+    display: none !important;
+  }
+  
+  .modalHeader {
+    cursor: default !important;
+    border-bottom: 2px solid #000 !important;
+  }
+  
+  .modalFooter {
+    display: none !important;
+  }
+  
+  /* Optimize print layout */
+  .modalBody {
+    padding: 20px 0 !important;
+  }
+  
+  .reasoningBox {
+    border: 1px solid #000 !important;
+    page-break-inside: avoid;
+  }
+  
+  .detailSection {
+    page-break-inside: avoid;
+  }
+  
+  /* Ensure links are visible */
+  .modalBody a,
+  .evidenceList a {
+    color: #2563eb !important;
+    text-decoration: underline !important;
+  }
+  
+  /* Print-friendly colors for score badges */
+  .scoreBadgeLarge {
+    border: 2px solid #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

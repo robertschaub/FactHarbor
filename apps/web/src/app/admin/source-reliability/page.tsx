@@ -452,6 +452,331 @@ export default function SourceReliabilityPage() {
     return "Highly Unreliable (0-14%)";
   };
 
+  // Utility functions for export
+  const sanitizeDomain = (domain: string): string => {
+    return domain.replace(/[^a-zA-Z0-9.-]/g, '_').substring(0, 40);
+  };
+
+  const getDateTimeString = (): string => {
+    const now = new Date();
+    return now.toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d+Z$/, '')
+      .replace('T', '_')
+      .substring(0, 15);
+  };
+
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Export handlers for modal
+  const handlePrintModal = () => {
+    window.print();
+  };
+
+  const handleExportModalHTML = () => {
+    if (!selectedEntry) return;
+
+    const scoreColor = getScoreColor(selectedEntry.score);
+    const scoreLabel = getScoreLabel(selectedEntry.score);
+    const confidenceLabel = selectedEntry.confidence >= 0.8 ? "High confidence" : selectedEntry.confidence >= 0.6 ? "Medium confidence" : "Low confidence";
+
+    let evidenceCitedHTML = '';
+    if (selectedEntry.evidenceCited) {
+      try {
+        const evidence = JSON.parse(selectedEntry.evidenceCited);
+        if (Array.isArray(evidence) && evidence.length > 0) {
+          const isNewFormat = typeof evidence[0] === "object" && evidence[0] !== null;
+          evidenceCitedHTML = '<h3>Evidence Cited by LLM</h3><ol>';
+          evidence.forEach((item: any) => {
+            if (isNewFormat && typeof item === "object") {
+              evidenceCitedHTML += `<li><strong>${item.claim}</strong><br><span style="color: #666; font-size: 13px;">${item.basis}</span>`;
+              if (item.recency) {
+                evidenceCitedHTML += `<span style="color: #888; font-size: 12px; font-style: italic;"> (${item.recency})</span>`;
+              }
+              evidenceCitedHTML += '</li>';
+            } else {
+              evidenceCitedHTML += `<li>${String(item)}</li>`;
+            }
+          });
+          evidenceCitedHTML += '</ol>';
+        }
+      } catch {
+        // Invalid JSON, skip
+      }
+    }
+
+    let evidencePackHTML = '';
+    if (selectedEntry.evidencePack) {
+      try {
+        const pack = JSON.parse(selectedEntry.evidencePack);
+        const items = Array.isArray(pack?.items) ? pack.items : [];
+        const providers = Array.isArray(pack?.providersUsed) ? pack.providersUsed : [];
+        if (items.length > 0) {
+          evidencePackHTML = '<h3>Evidence Pack (E# Source Map)</h3>';
+          if (providers.length > 0) {
+            evidencePackHTML += `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 8px;"><strong>Providers:</strong> ${providers.join(", ")}</div>`;
+          }
+          evidencePackHTML += '<ul>';
+          items.forEach((it: any, idx: number) => {
+            evidencePackHTML += `<li><strong>${it.id || `E${idx + 1}`}: </strong>`;
+            if (it.url) {
+              evidencePackHTML += `<a href="${it.url}" target="_blank" rel="noreferrer">${it.title || it.url}</a>`;
+            } else {
+              evidencePackHTML += `<span>${it.title || "(no title)"}</span>`;
+            }
+            if (it.query) {
+              evidencePackHTML += `<br><span style="color: #666; font-size: 13px;">Query: ${it.query}</span>`;
+            }
+            if (it.snippet) {
+              evidencePackHTML += `<br><span style="color: #666; font-size: 13px;">${it.snippet}</span>`;
+            }
+            evidencePackHTML += '</li>';
+          });
+          evidencePackHTML += '</ul>';
+        }
+      } catch {
+        // Invalid JSON, skip
+      }
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Source Evaluation: ${selectedEntry.domain}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      color: #1a1a1a;
+      line-height: 1.6;
+    }
+    h1 { font-size: 24px; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+    h2 { font-size: 18px; color: #1a1a1a; margin-top: 24px; margin-bottom: 12px; }
+    h3 { font-size: 14px; color: #475569; text-transform: uppercase; margin-top: 20px; margin-bottom: 8px; }
+    .domain { font-size: 20px; font-family: monospace; font-weight: 600; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+    .section { margin-bottom: 20px; }
+    .badge { display: inline-block; padding: 8px 16px; border-radius: 12px; color: white; font-weight: 700; font-size: 18px; background: ${scoreColor}; }
+    .value { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .label { font-size: 13px; color: #666; }
+    .reasoning { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; white-space: pre-wrap; }
+    ol, ul { margin: 0; padding-left: 20px; }
+    li { margin-bottom: 12px; }
+    .meta { font-size: 13px; color: #666; line-height: 1.8; }
+    a { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <h1>Source Evaluation Details</h1>
+  <div class="domain">${selectedEntry.domain}</div>
+  
+  <div class="grid">
+    <div class="section">
+      <h3>Reliability Score</h3>
+      <div><span class="badge">${formatScore(selectedEntry.score)}</span></div>
+      <div class="label">${scoreLabel}</div>
+    </div>
+    <div class="section">
+      <h3>Confidence</h3>
+      <div class="value">${formatScore(selectedEntry.confidence)}</div>
+      <div class="label">${confidenceLabel}</div>
+    </div>
+    ${selectedEntry.category ? `<div class="section"><h3>Category</h3><div class="value">${selectedEntry.category.replace(/_/g, " ").toUpperCase()}</div></div>` : ''}
+    ${selectedEntry.biasIndicator ? `<div class="section"><h3>Bias Indicator</h3><div class="value">${selectedEntry.biasIndicator.replace(/_/g, " ").toUpperCase()}</div></div>` : ''}
+  </div>
+
+  ${selectedEntry.reasoning ? `<div class="section"><h3>LLM Reasoning</h3><div class="reasoning">${selectedEntry.reasoning}</div></div>` : ''}
+  
+  ${evidenceCitedHTML}
+  ${evidencePackHTML}
+
+  <div class="section">
+    <h3>Evaluation Models</h3>
+    <div class="meta">
+      <strong>Primary:</strong> ${selectedEntry.modelPrimary}<br>
+      ${selectedEntry.modelSecondary ? `<strong>Secondary:</strong> ${selectedEntry.modelSecondary}<br>` : ''}
+      <strong>${selectedEntry.modelSecondary ? "Refinement" : "Status"}:</strong> ${
+        selectedEntry.consensusAchieved 
+          ? selectedEntry.modelSecondary 
+            ? "✓ Cross-checked and refined" 
+            : "✓ Completed"
+          : selectedEntry.fallbackUsed 
+            ? "⚠️ Fallback used" 
+            : "✗ Not achieved"
+      }
+      ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `<br><span style="color: #f59e0b;">${selectedEntry.fallbackReason}</span>` : ''}
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Cache Info</h3>
+    <div class="meta">
+      <strong>Evaluated:</strong> ${formatDate(selectedEntry.evaluatedAt)}<br>
+      <strong>Expires:</strong> ${formatDate(selectedEntry.expiresAt)}
+    </div>
+  </div>
+
+  <hr style="margin-top: 40px; border: none; border-top: 1px solid #e2e8f0;">
+  <div style="text-align: center; color: #666; font-size: 12px; margin-top: 20px;">
+    Generated by FactHarbor Source Reliability System on ${new Date().toLocaleString()}
+  </div>
+</body>
+</html>`;
+
+    const filename = `${sanitizeDomain(selectedEntry.domain)}_source_eval_${getDateTimeString()}.html`;
+    downloadFile(html, filename, 'text/html');
+  };
+
+  const handleExportModalMarkdown = () => {
+    if (!selectedEntry) return;
+
+    const scoreLabel = getScoreLabel(selectedEntry.score);
+    const confidenceLabel = selectedEntry.confidence >= 0.8 ? "High confidence" : selectedEntry.confidence >= 0.6 ? "Medium confidence" : "Low confidence";
+
+    let evidenceCitedMD = '';
+    if (selectedEntry.evidenceCited) {
+      try {
+        const evidence = JSON.parse(selectedEntry.evidenceCited);
+        if (Array.isArray(evidence) && evidence.length > 0) {
+          const isNewFormat = typeof evidence[0] === "object" && evidence[0] !== null;
+          evidenceCitedMD = '\n## Evidence Cited by LLM\n\n';
+          evidence.forEach((item: any, idx: number) => {
+            if (isNewFormat && typeof item === "object") {
+              evidenceCitedMD += `${idx + 1}. **${item.claim}**\n   - ${item.basis}`;
+              if (item.recency) {
+                evidenceCitedMD += ` (${item.recency})`;
+              }
+              evidenceCitedMD += '\n';
+            } else {
+              evidenceCitedMD += `${idx + 1}. ${String(item)}\n`;
+            }
+          });
+        }
+      } catch {
+        // Invalid JSON, skip
+      }
+    }
+
+    let evidencePackMD = '';
+    if (selectedEntry.evidencePack) {
+      try {
+        const pack = JSON.parse(selectedEntry.evidencePack);
+        const items = Array.isArray(pack?.items) ? pack.items : [];
+        const providers = Array.isArray(pack?.providersUsed) ? pack.providersUsed : [];
+        if (items.length > 0) {
+          evidencePackMD = '\n## Evidence Pack (E# Source Map)\n\n';
+          if (providers.length > 0) {
+            evidencePackMD += `**Providers:** ${providers.join(", ")}\n\n`;
+          }
+          items.forEach((it: any, idx: number) => {
+            evidencePackMD += `- **${it.id || `E${idx + 1}`}:** `;
+            if (it.url) {
+              evidencePackMD += `[${it.title || it.url}](${it.url})`;
+            } else {
+              evidencePackMD += `${it.title || "(no title)"}`;
+            }
+            if (it.query) {
+              evidencePackMD += `\n  - Query: ${it.query}`;
+            }
+            if (it.snippet) {
+              evidencePackMD += `\n  - ${it.snippet}`;
+            }
+            evidencePackMD += '\n';
+          });
+        }
+      } catch {
+        // Invalid JSON, skip
+      }
+    }
+
+    const markdown = `# Source Evaluation: ${selectedEntry.domain}
+
+## Summary
+
+| Field | Value |
+|-------|-------|
+| **Reliability Score** | ${formatScore(selectedEntry.score)} - ${scoreLabel} |
+| **Confidence** | ${formatScore(selectedEntry.confidence)} - ${confidenceLabel} |
+${selectedEntry.category ? `| **Category** | ${selectedEntry.category.replace(/_/g, " ").toUpperCase()} |\n` : ''}${selectedEntry.biasIndicator ? `| **Bias Indicator** | ${selectedEntry.biasIndicator.replace(/_/g, " ").toUpperCase()} |\n` : ''}${selectedEntry.identifiedEntity ? `| **Identified Entity** | ${selectedEntry.identifiedEntity} |\n` : ''}
+${selectedEntry.reasoning ? `\n## LLM Reasoning\n\n> ${selectedEntry.reasoning.split('\n').join('\n> ')}\n` : ''}${evidenceCitedMD}${evidencePackMD}
+## Evaluation Models
+
+| Field | Value |
+|-------|-------|
+| **Primary Model** | ${selectedEntry.modelPrimary} |
+${selectedEntry.modelSecondary ? `| **Secondary Model** | ${selectedEntry.modelSecondary} |\n` : ''}| **${selectedEntry.modelSecondary ? "Refinement" : "Status"}** | ${
+      selectedEntry.consensusAchieved 
+        ? selectedEntry.modelSecondary 
+          ? "✓ Cross-checked and refined" 
+          : "✓ Completed"
+        : selectedEntry.fallbackUsed 
+          ? "⚠️ Fallback used" 
+          : "✗ Not achieved"
+    } |
+${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Reason** | ${selectedEntry.fallbackReason} |\n` : ''}
+## Cache Info
+
+| Field | Value |
+|-------|-------|
+| **Evaluated** | ${formatDate(selectedEntry.evaluatedAt)} |
+| **Expires** | ${formatDate(selectedEntry.expiresAt)} |
+
+---
+
+*Generated by FactHarbor Source Reliability System on ${new Date().toLocaleString()}*
+`;
+
+    const filename = `${sanitizeDomain(selectedEntry.domain)}_source_eval_${getDateTimeString()}.md`;
+    downloadFile(markdown, filename, 'text/markdown');
+  };
+
+  const handleExportModalJSON = () => {
+    if (!selectedEntry) return;
+
+    // Parse JSON fields for cleaner export
+    let evidenceCited: any = null;
+    if (selectedEntry.evidenceCited) {
+      try {
+        evidenceCited = JSON.parse(selectedEntry.evidenceCited);
+      } catch {
+        evidenceCited = selectedEntry.evidenceCited;
+      }
+    }
+
+    let evidencePack: any = null;
+    if (selectedEntry.evidencePack) {
+      try {
+        evidencePack = JSON.parse(selectedEntry.evidencePack);
+      } catch {
+        evidencePack = selectedEntry.evidencePack;
+      }
+    }
+
+    const exportData = {
+      ...selectedEntry,
+      evidenceCited,
+      evidencePack,
+      _exported: new Date().toISOString(),
+      _source: "FactHarbor Source Reliability System"
+    };
+
+    const json = JSON.stringify(exportData, null, 2);
+    const filename = `${sanitizeDomain(selectedEntry.domain)}_source_eval_${getDateTimeString()}.json`;
+    downloadFile(json, filename, 'application/json');
+  };
+
 
   if (loading && !data) {
     return (
@@ -1089,6 +1414,20 @@ export default function SourceReliabilityPage() {
             </div>
 
             <div className={styles.modalFooter}>
+              <div className={styles.exportButtons}>
+                <button onClick={handlePrintModal} title="Print">
+                  🖨️ Print
+                </button>
+                <button onClick={handleExportModalHTML} title="Export as HTML">
+                  📄 HTML
+                </button>
+                <button onClick={handleExportModalMarkdown} title="Export as Markdown">
+                  📝 Markdown
+                </button>
+                <button onClick={handleExportModalJSON} title="Export as JSON">
+                  💾 JSON
+                </button>
+              </div>
               <button onClick={() => setSelectedEntry(null)} className={styles.button}>
                 Close
               </button>

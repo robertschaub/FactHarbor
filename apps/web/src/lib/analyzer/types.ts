@@ -431,7 +431,9 @@ export interface ArticleAnalysis {
    * JSON field names kept for backward compatibility.
    */
   hasMultipleProceedings: boolean;
+  hasMultipleContexts?: boolean; // v2.6.38: New field for UI - true when contexts answer different questions
   proceedings?: AnalysisContext[];  // AnalysisContexts (field name kept for backward compat)
+  verdictSummary?: any; // v2.6.38: Added for orchestrated pipeline verdict summary
 
   articleThesis: string;
   logicalFallacies: Array<{
@@ -446,6 +448,10 @@ export interface ArticleAnalysis {
   articleTruthPercentage: number;
   articleVerdict: number;
   articleVerdictReason?: string;
+  // v2.6.38: Signal for UI to de-emphasize overall average when multiple distinct contexts exist
+  // "high" = single context or contexts answer same question (average is meaningful)
+  // "low" = multiple distinct contexts answering different questions (average may not be meaningful)
+  articleVerdictReliability?: "high" | "low";
 
   claimPattern: {
     total: number;
