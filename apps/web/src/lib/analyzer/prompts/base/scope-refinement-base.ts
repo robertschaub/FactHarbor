@@ -103,9 +103,17 @@ Return JSON with:
   - temporal: Time period or date
   - status: "concluded" | "ongoing" | "pending" | "unknown"
   - outcome: Result/conclusion
+  - **assessedStatement** (v2.6.39): Statement being evaluated in THIS AnalysisContext (match user input format)
   - metadata: Domain-specific details (institution, methodology, boundaries, geographic, etc.)
 - factScopeAssignments: Array of {factId, contextId}
 - claimScopeAssignments: Array of {claimId, contextId} (optional)
+
+**CRITICAL for assessedStatement**: For each AnalysisContext object, state the specific statement being evaluated, matching user input format. Examples using ONLY GENERIC PLACEHOLDERS:
+- Question input → "Was [proceeding/action] fair and legally conducted?"
+- Claim input → "[Proceeding/action] was fair and legally conducted"
+- Legal AnalysisContext → Fairness and legal compliance
+- Scientific AnalysisContext → Methodological validity
+- Political AnalysisContext → "Did [entity] view [action] as legitimate?" OR "[Entity] viewed [action] as legitimate"
 
 ## METADATA FIELDS (Domain-Specific)
 
@@ -133,9 +141,9 @@ Return JSON with:
 - One is abbreviation/variant of the other
 
 **DO NOT merge when ANY of these differ**:
-- Time period - these are DISTINCT events
-- Analytical focus or question - these are DISTINCT
-- Subject matter - these are DISTINCT
+- Time period AS PRIMARY SUBJECT (distinct historical events, not incidental dates)
+- Analytical focus or question
+- Subject matter
 - Would require different evidence to evaluate
 
 **PRESERVE ALL CLAIMS**: Assign unmatched claims to "General" context. Never drop claims.

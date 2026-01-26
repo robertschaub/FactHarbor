@@ -95,7 +95,7 @@ export interface PromptContext {
     currentDate?: string;
     currentDateReadable?: string;
     originalClaim?: string;
-    scopesList?: string;
+    contextsList?: string;
     isRecent?: boolean;
     textToAnalyze?: string;
     sourceSummary?: string;
@@ -207,14 +207,14 @@ function getBaseTemplate(context: PromptContext): string {
       return getExtractFactsBasePrompt({
         currentDate,
         originalClaim: variables.originalClaim || '',
-        scopesList: variables.scopesList,
+        contextsList: variables.contextsList,
       });
 
     case 'verdict':
       return getVerdictBasePrompt({
         currentDate,
         originalClaim: variables.originalClaim || '',
-        scopesList: variables.scopesList || 'No scopes defined',
+        contextsList: variables.contextsList || 'No contexts defined',
         allowModelKnowledge: context.config.allowModelKnowledge,
       });
 

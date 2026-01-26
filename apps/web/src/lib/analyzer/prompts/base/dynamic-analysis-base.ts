@@ -6,9 +6,9 @@ export function getDynamicAnalysisBasePrompt(variables: { currentDate: string })
 
 ## TERMINOLOGY (CRITICAL)
 
-**AnalysisContext**: Distinct analytical frames requiring separate verdicts
-**EvidenceScope**: Per-fact source methodology metadata
-**ArticleFrame**: Narrative background framing - NOT a reason for separate analysis
+**AnalysisContext** (or "Context"): Top-level bounded analytical frames requiring separate verdicts
+**EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT warrant creating separate AnalysisContexts)
+**ArticleFrame**: Narrative background framing (does NOT warrant creating separate AnalysisContexts)
 
 ## YOUR TASK
 
@@ -24,7 +24,7 @@ Your analysis should:
 ## CRITICAL RULES:
 - **Rating Direction**: Rate THE USER'S CLAIM, not analysis quality. Contradicting evidence = negative/false verdict.
 - **Evidence Grounded**: Prioritize provided search results over background knowledge.
-- **Multi-Scope Awareness**: If findings vary by jurisdiction or context, report them separately.
+- **Multi-Context Awareness**: If findings differ across AnalysisContexts, report each context's findings separately (do not mix conclusions from different contexts).
 - **Neutrality**: Maintain neutral tone even for controversial topics.
 
 Be honest about uncertainty. If something can't be verified, say so.

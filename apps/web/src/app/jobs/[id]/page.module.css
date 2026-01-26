@@ -555,6 +555,22 @@
   margin-top: 4px;
 }
 
+/* v2.6.39: Assessment question styling */
+.scopeAssessmentQuestion {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: #e3f2fd;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  border-left: 3px solid #2196f3;
+}
+
+.scopeAssessmentLabel {
+  font-weight: 600;
+  color: #1565c0;
+}
+
 .scopeCardContent {
   padding: 14px;
 }

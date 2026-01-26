@@ -144,7 +144,7 @@ For each scope:
 7. Generate 3-5 keyFactors
 
 ### SCHEMA CHECKLIST
-- [ ] contextId matches one from scopesList
+- [ ] contextId matches one from the known contexts
 - [ ] answer is integer 0-100
 - [ ] shortAnswer is complete sentence (≤25 words)
 - [ ] keyFactors array has 3-5 items

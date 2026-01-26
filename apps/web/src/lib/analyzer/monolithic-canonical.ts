@@ -303,7 +303,7 @@ async function extractFacts(
     variables: {
       currentDate: new Date().toISOString().split('T')[0],
       originalClaim: claim,
-      scopesList: 'No scopes defined yet',
+      contextsList: 'No contexts defined yet',
     },
   });
 
@@ -363,7 +363,7 @@ async function generateVerdict(
     variables: {
       currentDate: new Date().toISOString().split('T')[0],
       originalClaim: claim,
-      scopesList: 'Single scope analysis',
+      contextsList: 'Single context analysis',
     },
   });
 

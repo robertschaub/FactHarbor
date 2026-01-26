@@ -2961,6 +2961,7 @@ const ANALYSIS_CONTEXT_SCHEMA = z.object({
   temporal: z.string().default(""),
   status: z.enum(["concluded", "ongoing", "pending", "unknown"]).catch("unknown"),
   outcome: z.string().default("unknown"),
+  assessedStatement: z.string().optional(), // v2.6.39: Statement being evaluated in this context
   metadata: z.object({
     // Legal domain (backward compatibility)
     institution: z.string().optional(),
@@ -5512,7 +5513,7 @@ async function extractFacts(
     return [];
   }
 
-  const scopesList =
+  const contextsList =
     scopes.length > 0
       ? `\n\nKNOWN CONTEXTS:\n${scopes.map((p: Scope) => `- ${p.id}: ${p.name}`).join("\n")}`
       : "";
@@ -5564,7 +5565,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 - geographic: Geographic scope (empty string if not specified)
 - temporal: Time period (empty string if not specified)
 
-**IMPORTANT**: Different sources may use different scopes. A "40% efficiency" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing scope enables accurate comparisons.${scopesList}`;
+**IMPORTANT**: Different sources may use different EvidenceScopes. A "40% efficiency" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing EvidenceScope enables accurate comparisons.${contextsList}`;
 
   debugLog(`extractFacts: Calling LLM for ${source.id}`, {
     textLength: source.fullText.length,
@@ -7081,7 +7082,7 @@ The JSON object MUST include these top-level keys:
     verdictSummary,
     hasMultipleProceedings: true,
     hasMultipleContexts: hasMultipleContexts,
-    proceedings: understanding.analysisContexts,
+    proceedings: understanding.analysisContexts, // v2.6.39: Contexts include assessmentQuestion from LLM
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
     logicalFallacies: [],
 

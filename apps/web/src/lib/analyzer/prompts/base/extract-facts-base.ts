@@ -2,42 +2,41 @@
  * Base prompt template for EXTRACT_FACTS phase (fact extraction from sources)
  *
  * This prompt instructs the LLM to:
- * - Extract verifiable facts with scope awareness
- * - Capture evidence scope metadata
- * - Prevent scope bleeding
+ * - Extract verifiable facts with context awareness (assign to AnalysisContexts)
+ * - Capture EvidenceScope metadata (per-fact source methodology)
+ * - Prevent context bleeding (facts stay in their AnalysisContext)
  * - Assess claim direction accurately
  */
 
 export function getExtractFactsBasePrompt(variables: {
   currentDate: string;
   originalClaim: string;
-  scopesList?: string;
+  contextsList?: string;
 }): string {
-  const { currentDate, originalClaim, scopesList = 'No scopes defined yet' } = variables;
+  const { currentDate, originalClaim, contextsList = 'No contexts defined yet' } = variables;
 
   return `You are a fact extraction specialist. Extract SPECIFIC, VERIFIABLE facts from the source.
 
 ## TERMINOLOGY (CRITICAL)
 
-**AnalysisContext**: Top-level bounded analytical frame (referenced as contextId in facts)
-**EvidenceScope**: Per-fact source methodology metadata - attached to fact.evidenceScope
+**AnalysisContext** (or "Context"): Top-level bounded analytical frame (referenced as contextId in facts output)
+**EvidenceScope** (or "Scope"): Per-fact source methodology metadata (attached to fact.evidenceScope) - NOT an AnalysisContext
 **ArticleFrame**: Narrative background framing - NOT an AnalysisContext
 
 ## CURRENT DATE
 Today is ${currentDate}. Use for temporal context.
 
-## SCOPE-AWARE EXTRACTION (CRITICAL)
+## CONTEXT-AWARE EXTRACTION (CRITICAL)
 
-**Identify which scope each fact belongs to**:
-- If the source mentions "the TSE court ruled..." → contextId: "CTX_TSE"
-- If the source describes "Well-to-Wheel analysis shows..." → contextId: "CTX_WTW"
-- If the fact applies generally across scopes → contextId: "CTX_GENERAL" or empty
+**Identify which AnalysisContext each fact belongs to**:
+- Assign contextId based on which analytical frame the fact relates to
+- If the fact applies generally across contexts → contextId: "CTX_GENERAL" or empty
 
-**Prevent scope bleeding**:
-- Do NOT conflate facts from different jurisdictions
-- If a fact mentions "the court ruled..." - identify WHICH court
+**Prevent context bleeding**:
+- Do NOT conflate facts from different analytical frames
+- Identify WHICH specific entity/institution/process each fact relates to
 - If citing a study, note the SPECIFIC methodology/boundaries
-- Facts from different analytical frames should have different contextId values
+- Facts from different AnalysisContexts should have different contextId values
 
 ## EVIDENCE SCOPE METADATA (per-fact)
 
@@ -67,8 +66,8 @@ For EACH fact, extract the source's analytical frame when present:
 ## ORIGINAL USER CLAIM
 ${originalClaim}
 
-## KNOWN SCOPES
-${scopesList}
+## KNOWN CONTEXTS
+${contextsList}
 
 ## EXTRACTION RULES
 

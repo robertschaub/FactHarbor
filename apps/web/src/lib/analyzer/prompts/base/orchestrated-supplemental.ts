@@ -2,8 +2,8 @@
  * Supplemental prompts for ORCHESTRATED pipeline
  *
  * These prompts handle:
- * - Adding missing claims to under-covered scopes
- * - Re-evaluating scope detection when initial pass under-splits
+ * - Adding missing claims to under-covered contexts
+ * - Re-evaluating context detection when initial pass under-splits
  * - Extracting outcome-related claims from research facts
  *
  * @version 2.8.0 - Extracted from analyzer.ts inline prompts
@@ -15,7 +15,7 @@ export interface SupplementalClaimsVariables {
 }
 
 /**
- * Get prompt for requesting supplemental subclaims for under-covered scopes
+ * Get prompt for requesting supplemental subclaims for under-covered contexts
  */
 export function getSupplementalClaimsPrompt(variables: SupplementalClaimsVariables): string {
   const { minCoreClaimsPerContext, hasScopes } = variables;
@@ -23,15 +23,15 @@ export function getSupplementalClaimsPrompt(variables: SupplementalClaimsVariabl
   return `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
 
 ## TASK
-Generate additional claims for scopes that don't have enough coverage.
+Generate additional claims for contexts that don't have enough coverage.
 
 ## RULES
 - Return ONLY new claims (do not repeat existing ones)
-- Each claim must be tied to a single scope via contextId${hasScopes ? "" : ". Use an empty string if no scopes are listed."}
+- Each claim must be tied to a single context via contextId${hasScopes ? "" : ". Use an empty string if no contexts are listed."}
 - Use claimRole="core" and checkWorthiness="high"
 - Set thesisRelevance="direct" for ALL supplemental claims you generate
 - Set harmPotential and centrality realistically
-- Default centrality to "medium" unless the claim is truly the primary thesis of that scope
+- Default centrality to "medium" unless the claim is truly the primary thesis of that context
 - Set isCentral=true if centrality==="high"
 - Use dependsOn=[] unless a dependency is truly required
 - Ensure each listed context reaches at least ${minCoreClaimsPerContext} core claims
@@ -61,7 +61,7 @@ Return JSON with:
 }
 
 /**
- * Get prompt for requesting supplemental scope detection
+ * Get prompt for requesting supplemental context detection
  */
 export function getSupplementalScopesPrompt(): string {
   return `You are a fact-checking assistant.
@@ -74,29 +74,29 @@ Return ONLY a single JSON object with keys:
 - analysisContexts: array
 - requiresSeparateAnalysis: boolean
 
-## SCOPE DETECTION RULES
+## CONTEXT DETECTION RULES
 
-**SPLIT when there are clearly 2+ distinct scopes:**
+**SPLIT when there are clearly 2+ distinct contexts:**
 - Different events, phases, or timelines
 - Different institutions or jurisdictions
 - Different processes or proceedings
 - Different analytical methodologies/boundaries
 
-**NOT DISTINCT SCOPES:**
-- Different perspectives on the same event (e.g., "Country A view" vs "Country B view")
+**NOT DISTINCT CONTEXTS:**
+- Different perspectives on the same event
 - Pro vs con viewpoints on a single topic
 - Different stakeholder opinions on one matter
 
-## SCOPE RELEVANCE REQUIREMENT (CRITICAL)
-- Every scope MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include scopes from unrelated domains just because they share a general category
-- When in doubt, use fewer scopes rather than including marginally relevant ones
-- A scope with zero relevant claims/evidence should NOT exist
+## CONTEXT RELEVANCE REQUIREMENT (CRITICAL)
+- Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include contexts from unrelated domains just because they share a general category
+- When in doubt, use fewer contexts rather than including marginally relevant ones
+- A context with zero relevant claims/evidence should NOT exist
 
 **SAME SUBJECT/ENTITY RULE**: 
-- Scopes MUST be about the SAME SUBJECT as the thesis
-- If thesis is about "Person A's trial", do NOT include scopes about Person B, C, etc.
-- Different cases involving DIFFERENT PEOPLE are NOT relevant scopes
+- Contexts MUST be about the SAME SUBJECT as the thesis
+- If thesis is about "Person A's trial", do NOT include contexts about Person B, C, etc.
+- Different cases involving DIFFERENT PEOPLE are NOT relevant contexts
 
 ## SCHEMA
 Each analysisContexts item must include:
@@ -114,8 +114,8 @@ Each analysisContexts item must include:
 Use empty strings "" and empty arrays [] when unknown.
 
 ## DECISION GUIDE
-- If only 1 scope exists → return empty array or 1-item array with requiresSeparateAnalysis=false
-- If 2+ distinct scopes exist → return full array with requiresSeparateAnalysis=true`;
+- If only 1 context exists → return empty array or 1-item array with requiresSeparateAnalysis=false
+- If 2+ distinct contexts exist → return full array with requiresSeparateAnalysis=true`;
 }
 
 /**
@@ -210,7 +210,7 @@ export function getSupplementalClaimsPromptForProvider(
 }
 
 /**
- * Get provider-optimized supplemental scopes prompt
+ * Get provider-optimized supplemental contexts prompt
  */
 export function getSupplementalScopesPromptForProvider(
   provider: 'anthropic' | 'openai' | 'google' | 'mistral'
@@ -222,8 +222,8 @@ export function getSupplementalScopesPromptForProvider(
       return basePrompt + `
 
 <claude_optimization>
-- Use nuanced judgment for scope boundary detection
-- Be conservative - when in doubt, fewer scopes is better
+- Use nuanced judgment for context boundary detection
+- Be conservative - when in doubt, fewer contexts is better
 - Ensure metadata reflects evidence, not background knowledge
 </claude_optimization>`;
 
@@ -247,7 +247,7 @@ export function getSupplementalScopesPromptForProvider(
       return basePrompt + `
 
 ## MISTRAL GUIDANCE
-- Verify against the scope detection rules
+- Verify against the context detection rules
 - Use the checklist before outputting
 - Ensure schema compliance`;
 

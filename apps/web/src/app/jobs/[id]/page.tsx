@@ -1113,6 +1113,12 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
             {scope.status && scope.status !== "unknown" && <span> • {scope.status}</span>}
           </div>
         )}
+        {/* v2.6.39: Show assessed statement to clarify what is being evaluated in this context */}
+        {scope?.assessedStatement && (
+          <div className={styles.scopeAssessmentQuestion}>
+            <span className={styles.scopeAssessmentLabel}>Assessed Statement:</span> {scope.assessedStatement}
+          </div>
+        )}
         {showAbout && (
           <div className={styles.scopeAboutInline}>
             {subject && (

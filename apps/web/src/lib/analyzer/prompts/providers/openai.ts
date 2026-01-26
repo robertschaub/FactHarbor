@@ -188,7 +188,7 @@ Do NOT artificially center at 50%. If evidence is clear, be decisive.
 ### SCHEMA COMPLIANCE
 - Use "" for empty strings, NEVER null
 - supportingFactIds must be array (even if empty: [])
-- Ensure contextId matches one from scopesList
+- Ensure contextId matches one from the known contexts
 - factualBasis = "established" ONLY if documented counter-evidence exists`;
 }
 

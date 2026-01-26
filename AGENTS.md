@@ -28,11 +28,13 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 - **Evidence transparency**: Every verdict must cite supporting or opposing facts
 - **Quality gates**: Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 
-### Scope Detection
-- **Scope** = A bounded analytical frame with defined boundaries, methodology, temporal period, and subject
-- **Unified terminology**: "Scope" replaces and unifies "Context", "Proceeding", "Event" throughout the codebase
-- **Detect distinct scopes**: Identify and separate different scopes (legal, methodological, temporal, regulatory)
-- **NOT distinct**: Different perspectives on same event (e.g., "US view" vs "Brazil view")
+### Context vs Scope - NEVER CONFUSE
+- **AnalysisContext** = Top-level analytical frame requiring separate analysis
+- **EvidenceScope** = Per-fact source metadata (methodology, temporal bounds, boundaries of evidence)
+- **NEVER** use "scope" when referring to AnalysisContext - always say "context"
+- **NEVER** use "context" when referring to source metadata - always say "evidenceScope"
+- Variables: Use `context`/`analysisContext` for top-level frames, `evidenceScope` for fact metadata
+- UI: Display "Context" cards, never "Scope" cards (unless specifically about evidence scope)
 
 ---
 
