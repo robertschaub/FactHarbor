@@ -228,16 +228,16 @@ Return JSON with:
 - subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, isCounterClaim, contextId, keyFactorId
 - analysisContexts: Array of detected AnalysisContext objects, each with:
   - id, name, shortName, subject, temporal, status, outcome, metadata
-  - **assessedStatement** (v2.6.39): The specific statement being evaluated in THIS context (match user input format)
-    - If user input was question: "Was [proceeding/event] fair and legally conducted?"
-    - If user input was claim: "[Proceeding/event] was fair and legally conducted"
-    - Use generic terms like [entity], [proceeding], [action], [methodology] - NEVER use specific names from test cases
+  - **assessedStatement** (v2.6.39): The user's original question/claim NARROWED to this specific context
 - requiresSeparateAnalysis: boolean
 - researchQueries: 4-6 specific search queries
 - keyFactors: Array of KeyFactors (or empty array)
 - riskTier: "A" | "B" | "C"
 
-**CRITICAL for assessedStatement**: For each AnalysisContext object, articulate the SPECIFIC statement being evaluated, matching user input format (question or claim). Make clear what aspect is assessed (fairness, legality, validity, accuracy). Use ONLY GENERIC PLACEHOLDERS in examples.`;
+**CRITICAL for assessedStatement**: The user's original input, narrowed to this specific context.
+- Keep user's phrasing (question → question, claim → claim)
+- Add context-specific details (institution name, methodology, time period, etc.)
+- The Assessment summary MUST answer THIS assessedStatement`;
 }
 
 /**

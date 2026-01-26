@@ -107,7 +107,7 @@ Each analysisContexts item must include:
 - temporal (string): Time period
 - status ("concluded"|"ongoing"|"pending"|"unknown")
 - outcome (string): Result or ""
-- assessedStatement (string): What statement is being evaluated in this context (match user input format - question or claim)
+- assessedStatement (string): User's original question/claim NARROWED to this context (keep user's phrasing, add context details)
 - metadata (object): Domain-specific fields like:
   - Legal: institution, jurisdiction, charges, decisionMakers
   - Scientific: methodology, boundaries, geographic, standardApplied

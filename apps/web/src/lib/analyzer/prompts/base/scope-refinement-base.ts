@@ -103,17 +103,15 @@ Return JSON with:
   - temporal: Time period or date
   - status: "concluded" | "ongoing" | "pending" | "unknown"
   - outcome: Result/conclusion
-  - **assessedStatement** (v2.6.39): Statement being evaluated in THIS AnalysisContext (match user input format)
+  - **assessedStatement** (v2.6.39): User's original question/claim NARROWED to this specific context
   - metadata: Domain-specific details (institution, methodology, boundaries, geographic, etc.)
 - factScopeAssignments: Array of {factId, contextId}
 - claimScopeAssignments: Array of {claimId, contextId} (optional)
 
-**CRITICAL for assessedStatement**: For each AnalysisContext object, state the specific statement being evaluated, matching user input format. Examples using ONLY GENERIC PLACEHOLDERS:
-- Question input → "Was [proceeding/action] fair and legally conducted?"
-- Claim input → "[Proceeding/action] was fair and legally conducted"
-- Legal AnalysisContext → Fairness and legal compliance
-- Scientific AnalysisContext → Methodological validity
-- Political AnalysisContext → "Did [entity] view [action] as legitimate?" OR "[Entity] viewed [action] as legitimate"
+**CRITICAL for assessedStatement**: The user's original input, narrowed to this specific context.
+- Keep user's phrasing (question → question, claim → claim)
+- Add context-specific details (institution name, methodology, time period, etc.)
+- The Assessment summary MUST answer THIS assessedStatement
 
 ## METADATA FIELDS (Domain-Specific)
 
