@@ -184,6 +184,7 @@ CRITICAL RULES:
 - Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
 - Non-example: do NOT create separate AnalysisContexts from ArticleFrame narrative background (e.g., \"political frame\", \"media discourse\") unless the evidence itself defines distinct analytical frames.
 - An AnalysisContext with zero relevant claims/evidence should NOT exist.
+- IMPORTANT: For each AnalysisContext, include an assessedStatement field stating what specific statement is being evaluated in that context. Match the user input format (question or claim).
 
 Return JSON only matching the schema.`;
 
@@ -3668,6 +3669,7 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - temporal: 2024
    - status: concluded
    - outcome: Ruling issued
+   - assessedStatement: "Was this proceeding fair and legally conducted?" (match user input format)
    - metadata: { institution: "Court A", charges: [...], decisionMakers: [...] }
 
 2. **SCOPE_COURT_B**: Legal proceeding B
@@ -3675,6 +3677,7 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - temporal: 2024
    - status: ongoing
    - outcome: Unresolved
+   - assessedStatement: "Was this proceeding fair and legally conducted?" (match user input format)
    - metadata: { institution: "Court B", charges: [...], decisionMakers: [...] }
 
 **Scientific Domain:**
@@ -3683,6 +3686,7 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - temporal: 2024
    - status: concluded
    - outcome: Example numeric estimate
+   - assessedStatement: "Is this methodology valid and accurate?" (match user input format)
    - metadata: { methodology: "Standard X", boundaries: "Narrow boundary", geographic: "Region A" }
 
 2. **CTX_BOUNDARY_B**: Broad boundary analysis
@@ -3690,7 +3694,14 @@ If the input mixes timelines, distinct scopes, or different analytical frames, s
    - temporal: 2024
    - status: concluded
    - outcome: Example numeric estimate
+   - assessedStatement: "Is this methodology valid and accurate?" (match user input format)
    - metadata: { methodology: "Standard Y", boundaries: "Broad boundary", geographic: "Region A" }
+
+**CRITICAL - assessedStatement field (v2.6.39)**:
+For each analysisContext, include an assessedStatement field that states what specific statement is being evaluated.
+- If user input was a question: Use question format (e.g., "Was [proceeding] fair?")
+- If user input was a claim: Use claim format (e.g., "[Proceeding] was fair")
+- Make it specific to what THIS context is assessing
 
 **CRITICAL: metadata.decisionMakers field**
 - Extract key decision-makers or primary actors only when they are explicitly mentioned in the input or evidence.
@@ -4564,6 +4575,7 @@ analysisContexts items must include:
 - temporal (string)
 - status (concluded|ongoing|pending|unknown)
 - outcome (string)
+- assessedStatement (string): What statement is being evaluated in this context (match input format - question or claim)
 - metadata (object, may include domain-specific fields like court/institution/jurisdiction/charges/decisionMakers/methodology/boundaries/geographic/standardApplied)
 
 Use empty strings "" and empty arrays [] when unknown.`;
