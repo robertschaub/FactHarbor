@@ -7,11 +7,14 @@
     "build": "next build",
     "start": "next start -p 3000",
     "test": "vitest run",
-    "test:llm": "vitest run src/lib/llm-integration.test.ts",
-    "test:jobs": "vitest run src/lib/job-lifecycle.test.ts",
+    "test:llm": "vitest run test/unit/lib/llm-integration.test.ts",
+    "test:jobs": "vitest run test/unit/lib/job-lifecycle.test.ts",
     "test:baseline": "node scripts/baseline-runner.js",
     "test:ab": "node scripts/ab-runner.js",
-    "test:ab:quick": "node scripts/ab-runner.js --quick"
+    "test:ab:quick": "node scripts/ab-runner.js --quick",
+    "promptfoo": "promptfoo eval --env-file .env.local",
+    "promptfoo:sr": "promptfoo eval -c promptfooconfig.source-reliability.yaml --env-file .env.local",
+    "promptfoo:view": "promptfoo view"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.1",
@@ -36,6 +39,7 @@
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "promptfoo": "^0.120.17",
     "typescript": "^5.5.4",
     "vitest": "^4.0.16"
   }

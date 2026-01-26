@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
-**Last Updated**: January 24, 2026  
-**Current Version**: 2.6.37  
+**Last Updated**: January 26, 2026
+**Current Version**: 2.6.38  
 **Schema Version**: 2.7.0
 
 ---
@@ -42,6 +42,33 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 ---
 
 ## Version History
+
+### v2.6.38 (January 26, 2026)
+
+**Focus**: Test Infrastructure Reorganization & Promptfoo Integration
+
+**Changes**:
+
+1. **Test Directory Consolidation** (`apps/web/test/`)
+   - Moved all test files from `src/` to dedicated `test/` folder
+   - New structure: `test/unit/`, `test/fixtures/`, `test/config/`, `test/helpers/`, `test/scripts/`
+   - Updated all imports to use `@/` and `@test/` path aliases
+   - Updated `vitest.config.ts` with new test paths
+
+2. **Promptfoo Testing Infrastructure**
+   - Added promptfoo configs for Source Reliability and Verdict testing
+   - Created prompt templates in `prompts/promptfoo/`
+   - Added runner script `scripts/promptfoo-sr.js`
+   - Results output to `prompts/promptfoo-results/`
+   - Documentation: `Docs/USER_GUIDES/Promptfoo_Testing.md`
+
+3. **Documentation Updates**
+   - Updated `CI_CD_Test_Setup_Guide.md` with new test paths
+   - Updated `.gitignore` for new test output locations
+
+**Files Changed**: 40+ files moved/updated
+
+---
 
 ### v2.6.37 (January 24, 2026)
 

@@ -67,7 +67,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-results
-          path: apps/web/test-output/
+          path: apps/web/test/output/
 
   integration-tests-fast:
     name: Integration Tests (Single Pair)
@@ -103,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results-fast
-          path: apps/web/test-output/
+          path: apps/web/test/output/
 
   integration-tests-full:
     name: Integration Tests (Full Suite)
@@ -138,9 +138,9 @@ jobs:
         if: always()
         run: |
           echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-          if [ -f apps/web/test-output/neutrality/aggregate-results.json ]; then
+          if [ -f apps/web/test/output/neutrality/aggregate-results.json ]; then
             echo "### Input Neutrality" >> $GITHUB_STEP_SUMMARY
-            cat apps/web/test-output/neutrality/aggregate-results.json | jq -r '"- Average divergence: \(.avgDivergence) points\n- p95 divergence: \(.p95Divergence) points\n- Pairs completed: \(.pairsCompleted)/\(.pairsTotal)"' >> $GITHUB_STEP_SUMMARY
+            cat apps/web/test/output/neutrality/aggregate-results.json | jq -r '"- Average divergence: \(.avgDivergence) points\n- p95 divergence: \(.p95Divergence) points\n- Pairs completed: \(.pairsCompleted)/\(.pairsTotal)"' >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Upload test results
@@ -148,7 +148,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results-full
-          path: apps/web/test-output/
+          path: apps/web/test/output/
           retention-days: 30
 
       - name: Comment PR with results
@@ -157,7 +157,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const path = 'apps/web/test-output/neutrality/aggregate-results.json';
+            const path = 'apps/web/test/output/neutrality/aggregate-results.json';
             if (fs.existsSync(path)) {
               const results = JSON.parse(fs.readFileSync(path, 'utf8'));
               const comment = `## Pipeline Regression Tests
@@ -226,7 +226,7 @@ unit-tests:
   artifacts:
     when: always
     paths:
-      - apps/web/test-output/
+      - apps/web/test/output/
     expire_in: 7 days
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -247,7 +247,7 @@ integration-tests-fast:
   artifacts:
     when: always
     paths:
-      - apps/web/test-output/
+      - apps/web/test/output/
     expire_in: 7 days
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -267,9 +267,9 @@ integration-tests-full:
   artifacts:
     when: always
     paths:
-      - apps/web/test-output/
+      - apps/web/test/output/
     reports:
-      junit: apps/web/test-output/junit.xml
+      junit: apps/web/test/output/junit.xml
     expire_in: 30 days
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -353,7 +353,7 @@ Add to workflow:
       avgDivergence: .avgDivergence,
       p95Divergence: .p95Divergence,
       passed: .passed
-    }' apps/web/test-output/neutrality/aggregate-results.json \
+    }' apps/web/test/output/neutrality/aggregate-results.json \
       > metrics/neutrality-${{ github.run_id }}.json
 
 - name: Upload metrics
