@@ -8,7 +8,8 @@ describe("analyzer/debug", () => {
     // This test guards against a regression where debug logs were written relative to
     // process.cwd(), producing paths like apps/web/apps/web/debug-analyzer.log when
     // the Next.js dev server runs from apps/web.
-    const repoRoot = path.resolve(__dirname, "../../../../..");
+    // Path: test/unit/lib/analyzer -> 6 levels up to repo root
+    const repoRoot = path.resolve(__dirname, "../../../../../..");
 
     expect(__internalFindRepoRoot(repoRoot)).toBe(repoRoot);
     expect(__internalFindRepoRoot(path.join(repoRoot, "apps", "web"))).toBe(

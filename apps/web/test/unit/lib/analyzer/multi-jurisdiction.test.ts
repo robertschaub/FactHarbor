@@ -21,7 +21,8 @@ describe("Multi-Jurisdiction Stress Test (Monolithic Canonical)", () => {
   let testsEnabled = true;
 
   beforeAll(() => {
-    const webRoot = path.resolve(__dirname, "../../..");
+    // Path: test/unit/lib/analyzer -> 4 levels up to apps/web
+    const webRoot = path.resolve(__dirname, "../../../..");
     const envPath = path.join(webRoot, ".env.local");
     loadEnvFile(envPath);
 

@@ -40,6 +40,7 @@ defaultTest:
 tests:
   # Simple factual claim - should be TRUE (85-100%)
   - vars:
+      currentDate: "2026-01-26"
       claim: "The Earth is approximately 4.5 billion years old"
       evidence: |
         [SUPPORTING] Scientific consensus based on radiometric dating of meteorites
@@ -57,6 +58,7 @@ tests:
   # Rating direction test - Hydrogen vs EV efficiency
   # Evidence contradicts claim, so verdict should be LOW (0-35%)
   - vars:
+      currentDate: "2026-01-26"
       claim: "Hydrogen cars are more efficient than electric cars"
       evidence: |
         [COUNTER-EVIDENCE] Well-to-wheel efficiency of hydrogen fuel cell vehicles: 25-35%
@@ -73,6 +75,7 @@ tests:
 
   # Mixed evidence - should be in middle range (43-57%)
   - vars:
+      currentDate: "2026-01-26"
       claim: "Remote work increases productivity"
       evidence: |
         [SUPPORTING] Stanford study (2023): 13% productivity increase for remote workers
@@ -90,6 +93,7 @@ tests:
 
   # False claim test - should be FALSE (0-14%)
   - vars:
+      currentDate: "2026-01-26"
       claim: "The Great Wall of China is visible from the Moon"
       evidence: |
         [COUNTER-EVIDENCE] NASA astronauts confirm the wall is not visible from space
@@ -105,6 +109,7 @@ tests:
 
   # Mostly true claim (72-85%)
   - vars:
+      currentDate: "2026-01-26"
       claim: "Coffee consumption is associated with reduced risk of type 2 diabetes"
       evidence: |
         [SUPPORTING] Meta-analysis of 28 studies shows 6% reduced risk per cup/day

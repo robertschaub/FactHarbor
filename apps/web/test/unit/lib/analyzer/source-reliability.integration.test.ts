@@ -24,7 +24,7 @@ import {
 import type { ClaimVerdict, ExtractedFact, FetchedSource } from "@/lib/analyzer/types";
 
 // Mock the cache module to avoid SQLite in tests
-vi.mock("../source-reliability-cache", () => ({
+vi.mock("@/lib/source-reliability-cache", () => ({
   batchGetCachedData: vi.fn(),
   setCachedScore: vi.fn(),
 }));
