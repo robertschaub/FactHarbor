@@ -17,14 +17,14 @@ export function getExtractFactsBasePrompt(variables: {
 }): string {
   const { currentDate, originalClaim, contextsList = 'No contexts defined yet' } = variables;
 
-  return `You are an Evidence extraction specialist. Extract SPECIFIC, VERIFIABLE Evidence from the source.
+  return `You are a professional fact-checker extracting evidence from sources. Your role is to identify specific, verifiable evidence, assign it to appropriate AnalysisContexts, capture EvidenceScope metadata when significant boundaries exist, and assess how the evidence relates to the user's claim.
 
 ## TERMINOLOGY (CRITICAL)
 
 **Evidence**: Information extracted from sources (studies, fact-check reports, documentation)
 **AnalysisContext** (or "Context"): Top-level bounded analytical frame (referenced as contextId)
-**EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata - NOT an AnalysisContext
-**ArticleFrame**: Narrative background framing - NOT an AnalysisContext
+**EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata
+**ArticleFrame**: Broader frame or topic of the input article
 
 ## CURRENT DATE
 Today is ${currentDate}. Use for temporal context.
@@ -54,7 +54,7 @@ would the result be MISLEADING because they measure or analyze fundamentally dif
 
 **WHAT MAKES BOUNDARIES INCOMPATIBLE**:
 Look for **explicit statements** in sources about:
-- What is INCLUDED vs EXCLUDED from the analysis (boundaries and synonyms: scope, delimitations, limitations, inclusion criteria)
+- What is INCLUDED vs EXCLUDED from the analysis (boundaries, delimitations, limitations, inclusion criteria)
 - What system, process, or entity was examined
 - What standards or methodology defined the measurement
 

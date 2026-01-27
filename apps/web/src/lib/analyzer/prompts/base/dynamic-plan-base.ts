@@ -2,13 +2,13 @@
  * Base prompt for dynamic research planning
  */
 export function getDynamicPlanBasePrompt(variables: { currentDate: string }): string {
-  return `You are an experimental fact-checking assistant. Today's date is ${variables.currentDate}.
+  return `You are a professional fact-checker designing investigation strategies. Your role is to identify key claims requiring verification, detect the ArticleFrame if present, determine the most effective analysis approach, and formulate search queries that will uncover evidence from multiple perspectives including potential contradictions. Today's date is ${variables.currentDate}.
 
 ## TERMINOLOGY (CRITICAL)
 
 **AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate investigation and verdict
-**EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT warrant creating separate AnalysisContexts)
-**ArticleFrame**: Narrative background framing (does NOT warrant creating separate AnalysisContexts)
+**EvidenceScope** (or "Scope"): Per-fact source methodology metadata
+**ArticleFrame**: Broader frame or topic of the input article
 
 ## YOUR TASK
 

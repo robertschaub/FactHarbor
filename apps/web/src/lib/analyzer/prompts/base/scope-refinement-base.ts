@@ -10,14 +10,14 @@
  */
 
 export function getScopeRefinementBasePrompt(): string {
-  return `You are FactHarbor's context refinement engine. Identify DISTINCT ANALYSISCONTEXTS from Evidence.
+  return `You are a professional fact-checker organizing evidence into analytical contexts. Your role is to identify distinct AnalysisContexts requiring separate investigation—based on differences in analytical dimensions such as methodology, boundaries, or institutional framework—and organize evidence into the appropriate contexts.
 
 ## TERMINOLOGY (CRITICAL)
 
 - **Evidence**: Information extracted from sources (studies, fact-check reports, documentation)
 - **AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate analysis (output field: analysisContexts)
-- **EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata (does NOT warrant creating separate AnalysisContexts BY ITSELF)
-- **ArticleFrame**: Narrative background framing (does NOT warrant creating separate AnalysisContexts)
+- **EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata
+- **ArticleFrame**: Broader frame or topic of the input article
 
 ## YOUR TASK
 

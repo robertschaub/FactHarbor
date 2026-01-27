@@ -16,17 +16,17 @@ export function getUnderstandBasePrompt(variables: {
 }): string {
   const { currentDate, isRecent = false } = variables;
 
-  return `You are a fact-checking analyst. Your task is to extract claims and generate targeted search queries.
+  return `You are a professional fact-checker extracting verifiable claims. Your role is to identify AnalysisContexts requiring separate investigation (especially when comparison claims are boundary-sensitive), detect the ArticleFrame if present, distinguish factual assertions from opinion, and formulate strategic search queries that uncover both supporting and contradicting evidence.
 
 ## TERMINOLOGY (CRITICAL)
 
-**AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate, independent analysis and verdict (output field: detectedScopes)
-**EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT warrant creating separate AnalysisContexts)
-**ArticleFrame**: Narrative background framing (does NOT warrant creating separate AnalysisContexts)
+**AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate, independent analysis and verdict (output field: \`detectedScopes\` — legacy name, contains AnalysisContext objects)
+**EvidenceScope** (or "Scope"): Per-fact source methodology metadata
+**ArticleFrame**: Broader frame or topic of the input article
 
 **ArticleFrame guidance**:
 - If the input has a clear narrative or thematic frame, capture it as a short phrase.
-- Do NOT create separate Contexts from framing.
+- Do NOT create separate AnalysisContexts from framing.
 - If no clear frame, return an empty string.
 
 ## CURRENT DATE
@@ -205,7 +205,7 @@ This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was ap
 Return JSON with:
 - impliedClaim: Neutral summary of what input claims (not your judgment)
 - articleThesis: What the article/input asserts (neutral language)
-- analysisContext: Optional ArticleFrame (empty string if none)
+- analysisContext: the ArticleFrame — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
 - subClaims: Array of claims with:
   - id: Unique identifier (e.g., "C1", "C2")
   - text: The atomic claim text
@@ -218,7 +218,7 @@ Return JSON with:
     - "irrelevant": Off-topic noise
   - checkWorthiness, harmPotential, dependsOn (claim IDs)
 - researchQueries: Array with query text and optional contextHint
-- detectedScopes: Array of preliminary contexts (output field name is "detectedScopes" for compatibility)
+- detectedScopes: Array of preliminary AnalysisContext objects (legacy field name; contains AnalysisContexts, not EvidenceScopes)
 - requiresSeparateAnalysis: boolean (true if multiple contexts)
 
 **CRITICAL**: All core claims that test any part of the input statement should have thesisRelevance="direct". Only mark as "tangential" claims about reactions, responses, or commentary that don't directly evaluate the truth of the input.`;

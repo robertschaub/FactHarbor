@@ -39,13 +39,13 @@ The following KeyFactor dimensions have been suggested as potentially relevant. 
 ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.evaluationCriteria}"`).join("\n")}`
     : "";
 
-  return `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT CONTEXTS (bounded analytical frames).
+  return `You are a professional fact-checker analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect the ArticleFrame if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
 
 ## TERMINOLOGY (CRITICAL)
 
 - **AnalysisContext** (or "Context"): Top-level bounded analytical frame that should be analyzed separately (output field: analysisContexts)
-- **EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT warrant creating separate AnalysisContexts)
-- **ArticleFrame**: Narrative/background framing of the article or input (does NOT warrant creating separate AnalysisContexts)
+- **EvidenceScope** (or "Scope"): Per-fact source methodology metadata
+- **ArticleFrame**: Broader frame or topic of the input article
 
 ## NOT DISTINCT CONTEXTS
 - Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate contexts by themselves.
@@ -224,7 +224,7 @@ For EACH sub-claim, determine if it tests the OPPOSITE of the main thesis:
 Return JSON with:
 - impliedClaim: What claim would "YES" confirm? Must be AFFIRMATIVE.
 - articleThesis: Neutral summary of what the article claims
-- analysisContext: ArticleFrame (narrative background) or empty string
+- analysisContext: the ArticleFrame — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
 - subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, isCounterClaim, contextId, keyFactorId
 - analysisContexts: Array of detected AnalysisContext objects, each with:
   - id, name, shortName, subject, temporal, status, outcome, metadata

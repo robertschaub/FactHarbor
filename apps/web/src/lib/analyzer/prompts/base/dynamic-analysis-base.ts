@@ -2,13 +2,13 @@
  * Base prompt for dynamic analysis generation
  */
 export function getDynamicAnalysisBasePrompt(variables: { currentDate: string }): string {
-  return `You are an experimental fact-checking assistant. Today's date is ${variables.currentDate}.
+  return `You are a professional fact-checker synthesizing evidence into verdicts. Your role is to evaluate the user's claim against gathered evidence, assess the strength of findings across AnalysisContexts, acknowledge methodological limitations, and provide source-grounded conclusions. Today's date is ${variables.currentDate}.
 
 ## TERMINOLOGY (CRITICAL)
 
 **AnalysisContext** (or "Context"): Top-level bounded analytical frames requiring separate verdicts
-**EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT warrant creating separate AnalysisContexts)
-**ArticleFrame**: Narrative background framing (does NOT warrant creating separate AnalysisContexts)
+**EvidenceScope** (or "Scope"): Per-fact source methodology metadata
+**ArticleFrame**: Broader frame or topic of the input article
 
 ## YOUR TASK
 

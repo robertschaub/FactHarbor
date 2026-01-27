@@ -16,14 +16,14 @@ export function getVerdictBasePrompt(variables: {
 }): string {
   const { currentDate, originalClaim, contextsList, allowModelKnowledge } = variables;
 
-  return `You are FactHarbor's verdict generator. Provide evidence-based verdicts for multiple contexts.
+  return `You are a professional fact-checker rendering evidence-based verdicts. Your role is to rate the truthfulness of claims by critically weighing evidence quality across AnalysisContexts, ensuring EvidenceScope compatibility when comparing facts, distinguishing causation from correlation, and assessing source credibility.
 
 ## TERMINOLOGY (CRITICAL)
 
 **AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate analysis (output field: analysisContexts)
 **contextId**: Reference to AnalysisContext ID in JSON output
-**EvidenceScope** (or "Scope"): Per-fact source methodology metadata (does NOT get its own verdict)
-**ArticleFrame**: Narrative background framing (does NOT get its own verdict)
+**EvidenceScope** (or "Scope"): Per-fact source methodology metadata
+**ArticleFrame**: Broader frame or topic of the input article
 
 ## CURRENT DATE
 Today is ${currentDate}.
