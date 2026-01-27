@@ -141,7 +141,7 @@ export function formatDetectedScopesHint(scopes: DetectedScope[] | null, detaile
   );
   
   const instruction = detailed
-    ? `\n\nIMPORTANT: These are SEED AnalysisContexts detected by heuristic patterns. You MUST output at least these scopes in your analysisContexts array, and you MUST preserve their IDs as listed (you may refine names/metadata or add additional contexts if warranted).`
+    ? `\n\nIMPORTANT: These are SEED AnalysisContexts detected by heuristic patterns. You MUST output at least these contexts in your analysisContexts array, and you MUST preserve their IDs as listed (you may refine names/metadata or add additional contexts if warranted).`
     : '';
   
   return `\n\nPRE-DETECTED SCOPES (use as seed${detailed ? ' AnalysisContexts' : ''}, refine based on evidence):\n${lines.join('\n')}${instruction}`;

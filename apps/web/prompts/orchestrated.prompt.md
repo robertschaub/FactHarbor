@@ -1,8 +1,8 @@
 ---
-version: "2.6.42"
+version: "2.6.43"
 pipeline: "orchestrated"
 description: "Full orchestrated multi-stage analysis pipeline prompts"
-lastModified: "2026-01-27T12:00:00Z"
+lastModified: "2026-01-27T18:00:00Z"
 variables:
   - currentDate
   - currentDateReadable
@@ -83,13 +83,15 @@ NOT DISTINCT CONTEXTS:
 - "Public perception", "trust", or "confidence in institutions" contexts - AVOID unless explicitly the main topic.
 - Meta-level commentary contexts (how people feel about the topic) - AVOID, focus on factual contexts.
 
-### PRE-DETECTED SCOPES (CRITICAL)
+### PRE-DETECTED CONTEXTS (CRITICAL)
 
-If this prompt includes a **PRE-DETECTED SCOPES** section (seed contexts suggested by heuristics), you MUST do ALL of the following:
+If this prompt includes a **PRE-DETECTED SCOPES** section (seed AnalysisContexts suggested by heuristics), you MUST do ALL of the following:
 - Convert EACH listed seed item into an AnalysisContext in your `analysisContexts` output (do not drop them).
 - Keep them as DISTINCT contexts (do not merge them just because they are related).
 - Set `requiresSeparateAnalysis=true` if there are 2+ seed items.
 - Tie at least one CORE claim to each context via `contextId` (so contexts are not empty shells).
+
+Note: The section is titled "PRE-DETECTED SCOPES" for historical reasons but contains seed AnalysisContexts.
 
 ${scopeHint}${scopeDetectionHint}
 
@@ -473,6 +475,13 @@ When a claim contains causal language ("due to", "caused by", "because of"):
 - Require causal evidence: Association/correlation is NOT causation
 - If causation is claimed but only temporal/correlational evidence exists, verdict should be LOW
 
+### CAUSAL CLAIM CALIBRATION (CRITICAL)
+
+When a claim uses causal language (e.g., "caused by", "due to", "because of"):
+- Do NOT treat "after" / temporal sequence as proof of causation.
+- If evidence only shows temporal association, unverified reports, or speculation (no causal methodology), the verdict should be in the **FALSE/MOSTLY-FALSE** bands (0-28%).
+- Only rate causal claims above 42% if there is credible causal evidence (e.g., controlled analysis, clear causal mechanism with strong evidence, or authoritative findings with methodology).
+
 ### CONTEXTS - SEPARATE ANSWER FOR EACH
 
 ${contextsFormatted}
@@ -524,6 +533,12 @@ For ALL claims listed, provide verdicts:
 - The verdict MUST rate whether THE CLAIM AS STATED is true
 - ratingConfirmation: "claim_supported" | "claim_refuted" | "mixed"
 
+### CENTRAL-CLAIM DOMINANCE RULE
+
+When rendering the overall verdict:
+- If a CENTRAL claim is refuted in the **MOSTLY-FALSE/FALSE** bands (0-28%) AND that claim is a key pillar of the thesis, the overall verdict should typically also fall in **15-28%** unless the thesis is clearly separable and primarily about other central claims.
+- If the refuted CENTRAL claim is also framed as causal/high-impact, weight it more heavily than peripheral accurate details.
+
 ### OUTPUT BREVITY (CRITICAL)
 - keyFactors: 3-5 items max per context
 - keyFactors.factor: <= 12 words
@@ -538,6 +553,10 @@ For ALL claims listed, provide verdicts:
 Answer the input based on documented evidence.
 
 ### OUTPUT STRUCTURE - verdictSummary
+
+**CRITICAL - JSON FORMAT REQUIREMENT**: Return ONLY the raw JSON object matching the schema. Do NOT wrap it in any parameter names, variable names, or wrapper objects.
+- Correct: `{ "verdictSummary": { ... }, ... }`
+- WRONG: `{"$PARAMETER_NAME": { ... }}` or `{"result": { ... }}`
 
 You MUST provide a complete verdictSummary with:
 - **answer**: A NUMBER from 0-100 representing the overall truth percentage of the ${inputLabel}
@@ -602,13 +621,26 @@ When a claim contains causal language ("due to", "caused by"):
 - Temporal sequence does NOT establish causation
 - If causation is claimed but only temporal/correlational evidence exists, verdict should be LOW
 
+### DIRECTION CONSISTENCY CHECK (MANDATORY)
+
+Before finalizing each claim's verdict:
+1. Decide clearly: does the evidence SUPPORT the claim as stated, CONTRADICT it, or is it UNVERIFIED/MIXED?
+2. Your numeric verdict MUST match that direction:
+   - SUPPORTS → verdict should be ≥ 58 (leaning-true or higher)
+   - CONTRADICTS → verdict should be ≤ 42 (leaning-false or lower)
+   - UNVERIFIED/MIXED → verdict should be 43-57
+
 ### CLAIM CONTESTATION
 
-- isContested: true if politically disputed or challenged
-- contestedBy: Who disputes it
-  * **NO CIRCULAR CONTESTATION**
+- isContested: true ONLY if this claim is genuinely disputed with documented factual counter-evidence
+- **CRITICAL: Do NOT set isContested=true for:**
+  - Mere disagreement or political criticism without documented counter-evidence
+  - Rhetorical opposition without factual basis
+- contestedBy: Who disputes it (be SPECIFIC)
+  * **NO CIRCULAR CONTESTATION**: The entity making a decision CANNOT contest its own decision
 - factualBasis: "established" | "disputed" | "opinion" | "unknown"
 
-CRITICAL - factualBasis MUST be "opinion" for:
+CRITICAL - factualBasis MUST be "opinion" AND isContested=false for:
 - Public statements or rhetoric without documented evidence
 - Ideological objections without factual basis
+- Political criticism without specific factual counter-evidence

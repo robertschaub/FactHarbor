@@ -21,7 +21,7 @@ interface ContestableKeyFactor {
   isContested?: boolean;
   contestedBy?: string;
   contestationReason?: string;
-  factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown" | string;
+  factualBasis?: "established" | "disputed" | "opinion" | "unknown" | string;
 }
 
 /**
@@ -211,7 +211,7 @@ export function detectClaimContestation(claimText: string, reasoning?: string): 
  * Weight reduction for contested claims:
  * - factualBasis "established" (strong counter-evidence): 0.3x weight
  * - factualBasis "disputed" (some counter-evidence): 0.5x weight
- * - factualBasis "opinion"/"alleged"/"unknown" (no counter-evidence): full weight
+ * - factualBasis "opinion"/"unknown" (no counter-evidence): full weight
  */
 export function getClaimWeight(claim: {
   centrality?: "high" | "medium" | "low";
@@ -219,7 +219,7 @@ export function getClaimWeight(claim: {
   thesisRelevance?: "direct" | "tangential" | "irrelevant";
   harmPotential?: "high" | "medium" | "low";
   isContested?: boolean;
-  factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";
+  factualBasis?: "established" | "disputed" | "opinion" | "unknown";
 }): number {
   // Only direct claims contribute to the verdict
   if (claim.thesisRelevance && claim.thesisRelevance !== "direct") return 0;
@@ -252,7 +252,7 @@ export function getClaimWeight(claim: {
       // Some factual counter-evidence exists - moderately reduce weight
       weight *= 0.5;
     }
-    // "opinion", "alleged", "unknown" = just "doubted", no real evidence → keep full weight
+    // "opinion", "unknown" = just "doubted", no real evidence → keep full weight
   }
 
   return weight;
@@ -279,7 +279,7 @@ export function calculateWeightedVerdictAverage(
     harmPotential?: "high" | "medium" | "low";
     isCounterClaim?: boolean;
     isContested?: boolean;
-    factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";
+    factualBasis?: "established" | "disputed" | "opinion" | "unknown";
   }>,
 ): number {
   // Only direct claims contribute to the verdict

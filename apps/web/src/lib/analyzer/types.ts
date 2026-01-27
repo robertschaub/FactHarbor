@@ -212,7 +212,7 @@ export interface KeyFactor {
   isContested: boolean;
   contestedBy: string;
   contestationReason: string;
-  factualBasis: "established" | "disputed" | "alleged" | "opinion" | "unknown";
+  factualBasis: "established" | "disputed" | "opinion" | "unknown";
 }
 
 export interface FactorAnalysis {
@@ -418,7 +418,7 @@ export interface ClaimVerdict {
   escalationReason?: string;
   isContested?: boolean;
   contestedBy?: string;
-  factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";
+  factualBasis?: "established" | "disputed" | "opinion" | "unknown";
   // v2.6.31: Counter-claim tracking - true if this claim evaluates the OPPOSITE of the user's thesis
   // When aggregating, counter-claim verdicts should be inverted (TRUE 85% → contributes as FALSE 15%)
   isCounterClaim?: boolean;

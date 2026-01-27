@@ -2017,7 +2017,7 @@ interface KeyFactor {
   isContested: boolean;
   contestedBy: string;
   contestationReason: string;
-  factualBasis: "established" | "disputed" | "alleged" | "opinion" | "unknown";
+  factualBasis: "established" | "disputed" | "opinion" | "unknown";
 }
 
 interface FactorAnalysis {
@@ -2231,7 +2231,7 @@ interface ClaimVerdict {
   escalationReason?: string;
   isContested?: boolean;
   contestedBy?: string;
-  factualBasis?: "established" | "disputed" | "alleged" | "opinion" | "unknown";
+  factualBasis?: "established" | "disputed" | "opinion" | "unknown";
 }
 
 // v2.6.27: Renamed from VerdictSummary for input neutrality
@@ -5849,7 +5849,7 @@ const KEY_FACTOR_SCHEMA = z.object({
   isContested: z.boolean(),
   contestedBy: z.string(), // empty string if not contested
   contestationReason: z.string(), // empty string if not contested
-  factualBasis: z.enum(["established", "disputed", "alleged", "opinion", "unknown"]),
+  factualBasis: z.enum(["established", "disputed", "opinion", "unknown"]),
 });
 
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
@@ -5912,7 +5912,7 @@ const KEY_FACTOR_SCHEMA_LENIENT = z
     contestedBy: z.string().catch(""),
     contestationReason: z.string().catch(""),
     factualBasis: z
-      .enum(["established", "disputed", "alleged", "opinion", "unknown"])
+      .enum(["established", "disputed", "opinion", "unknown"])
       .catch("unknown"),
   })
   .catch(DEFAULT_KEY_FACTOR_LENIENT);
@@ -6032,7 +6032,7 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
       // Contestation fields
       isContested: z.boolean(),
       contestedBy: z.string(), // empty string if not contested
-      factualBasis: z.enum(["established", "disputed", "alleged", "opinion", "unknown"]),
+      factualBasis: z.enum(["established", "disputed", "opinion", "unknown"]),
     }),
   ),
   articleAnalysis: z.object({
@@ -7727,8 +7727,10 @@ ${factsFormatted}`;
   const evidencedNegatives = validatedKeyFactors.filter(
     (f: KeyFactor) => f.supports === "no" && f.factualBasis === "established",
   ).length;
+  // v2.6.43: Fixed to match multi-scope path - only count contested negatives WITHOUT established counter-evidence
+  // If factualBasis is "established", the negative should NOT be discounted just because it's labeled contested.
   const contestedNegatives = validatedKeyFactors.filter(
-    (f: KeyFactor) => f.supports === "no" && f.isContested,
+    (f: KeyFactor) => f.supports === "no" && f.isContested && f.factualBasis !== "established",
   ).length;
 
   // DEBUG: Log raw values from LLM before normalization

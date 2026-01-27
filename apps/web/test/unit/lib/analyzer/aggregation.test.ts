@@ -249,21 +249,15 @@ describe('Aggregation Module (v2.8)', () => {
       expect(doubted).toBe(uncontested);
     });
 
-    it('keeps full weight for contested with "alleged" or "unknown" basis', () => {
+    it('keeps full weight for contested with "unknown" basis', () => {
       const uncontested = getClaimWeight({ confidence: 100 });
       
-      const alleged = getClaimWeight({ 
-        confidence: 100, 
-        isContested: true, 
-        factualBasis: 'alleged' 
-      });
       const unknown = getClaimWeight({ 
         confidence: 100, 
         isContested: true, 
         factualBasis: 'unknown' 
       });
       
-      expect(alleged).toBe(uncontested);
       expect(unknown).toBe(uncontested);
     });
 
