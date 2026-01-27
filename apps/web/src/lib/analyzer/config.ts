@@ -2,7 +2,7 @@
  * Configuration and constants for FactHarbor Analyzer
  * 
  * Contains environment-based configuration, helper functions for parsing
- * config values, and utility functions for scope/proceeding handling.
+ * config values, and utility functions for AnalysisContext handling.
  * 
  * @module analyzer/config
  */
@@ -207,7 +207,7 @@ export function inferToAcronym(text: string): string {
 }
 
 /**
- * Infer scope type label from proceeding data
+ * Infer scope type label from AnalysisContext data
  */
 export function inferScopeTypeLabel(p: any): string {
   const hay = [
@@ -261,7 +261,7 @@ export function scopeTypeRank(label: string): number {
 export const contextTypeRank = scopeTypeRank;
 
 /**
- * Detect institution code from proceeding data
+ * Detect institution code from AnalysisContext data
  */
 export function detectInstitutionCode(p: any): string {
   const fromCourt = extractAllCapsToken(String(p?.metadata?.court || ""));

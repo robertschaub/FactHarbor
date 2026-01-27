@@ -96,7 +96,7 @@ export function getMistralExtractFactsVariant(): string {
   "specificity": "[high | medium]",
   "sourceExcerpt": "[copy 50-200 chars verbatim from source]",
   "claimDirection": "[pick one: supports | contradicts | neutral]",
-  "contextId": "[scope ID or empty string]",
+  "contextId": "[AnalysisContext ID or empty string]",
   "evidenceScope": [object or null]
 }
 
@@ -142,9 +142,9 @@ export function getMistralVerdictVariant(): string {
 **Step 1:** Read user's original claim
 Write it down: "[claim]"
 
-**Step 2:** For each scope, process separately:
+**Step 2:** For each AnalysisContext, process separately:
 
-**Step 2a:** List facts for this scope only
+**Step 2a:** List facts for this AnalysisContext only
 - Count SUPPORTING facts: ___
 - Count COUNTER-EVIDENCE facts: ___
 
@@ -155,7 +155,7 @@ Write it down: "[claim]"
 
 **Step 2c:** Fill verdict template
 {
-  "contextId": "[scope ID]",
+  "contextId": "[AnalysisContext ID]",
   "answer": [0-100 integer],
   "confidence": [0-100 integer],
   "shortAnswer": "[complete sentence, ≤25 words]",
@@ -187,7 +187,7 @@ Example:
 
 ### VALIDATION CHECKLIST
 For each verdict:
-[ ] contextId matches scope ID from list
+[ ] contextId matches AnalysisContext ID from list
 [ ] answer is 0-100 integer
 [ ] answer matches evidence direction
 [ ] shortAnswer is complete sentence
@@ -225,10 +225,10 @@ Boundary: ____________
 [ ] Supported by ≥1 fact from the evidence?
 [ ] Represents distinct analytical frame (not just perspective)?
 
-If ALL boxes checked → Create scope
+If ALL boxes checked → Create AnalysisContext
 If ANY unchecked → Skip this boundary
 
-**Step 3:** Create scope using template
+**Step 3:** Create AnalysisContext using template
 
 {
   "id": "CTX_[SHORT_CODE]",

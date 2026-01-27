@@ -107,8 +107,7 @@ export interface VerdictValidationResult {
  *   = Shown in UI as "Contexts".
  *
  * "ArticleFrame"
- *   = Narrative/background framing of the input article.
- *   = NOT a reason to split into separate AnalysisContexts.
+ *   = Broader frame or topic of the input article.
  *   = Stored in `analysisContext` field.
  *
  * "EvidenceScope" (per-fact source scope)
@@ -120,7 +119,7 @@ export interface VerdictValidationResult {
  * SUMMARY:
  *   - Top-level split unit = AnalysisContext
  *   - "EvidenceScope" in code = per-fact source methodology/boundaries
- *   - "ArticleFrame" = narrative background (not a reason to split)
+ *   - "ArticleFrame" = broader frame or topic of the input article
  *
  * JSON field names use v2.7 terminology (`analysisContexts`, `analysisContext`, `contextId`).
  * ============================================================================
@@ -180,7 +179,7 @@ export interface AnalysisContext {
 }
 
 /**
- * EvidenceScope: The analytical frame/scope defined BY a source document
+ * EvidenceScope: Per-fact source methodology metadata defined BY a source document
  *
  * This is DIFFERENT from AnalysisContext! EvidenceScope describes the methodology,
  * boundaries, geography, and timeframe that a SOURCE DOCUMENT used when producing
@@ -289,11 +288,12 @@ export interface ClaimUnderstanding {
   requiresSeparateAnalysis: boolean;
 
   /**
-   * ArticleFrame: Narrative/background framing of the input.
-   * This is NOT an AnalysisContext - it's just background information.
-   * NOT a reason to split into separate analysis contexts.
+   * ArticleFrame: Broader frame or topic of the input article.
    *
-   * JSON field name "analysisContext".
+   * LEGACY FIELD NAME: "analysisContext" (singular) — kept for backward
+   * compatibility with stored job JSON. Do NOT confuse with `analysisContexts`
+   * (plural) which holds the array of AnalysisContext objects.
+   * Consider renaming to `articleFrame` in a future major version (v3.0).
    */
   analysisContext: string;
 

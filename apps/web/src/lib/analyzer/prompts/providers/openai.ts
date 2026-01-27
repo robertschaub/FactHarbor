@@ -47,7 +47,7 @@ Output:
   "requiresSeparateAnalysis": false
 }
 
-**Example 2 - Multi-Scope Detection:**
+**Example 2 - Multi-Context Detection:**
 Input: "The TSE court in Brazil ruled he was ineligible, while SCOTUS in the US ruled differently on ballot access"
 Output:
 {
@@ -61,7 +61,7 @@ Output:
 ### REQUIRED OUTPUT FIELDS (All must be present)
 - impliedClaim: string (neutral summary)
 - articleThesis: string (what input asserts)
-- analysisContext: string (ArticleFrame or "")
+- analysisContext: string — the ArticleFrame (broader frame/topic), or "". NOT an AnalysisContext despite the field name.
 - subClaims: array with id, text, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn
 - researchQueries: array of 4-6 distinct search strings
 - detectedScopes: array (can be empty)
@@ -128,7 +128,7 @@ export function getOpenAIExtractFactsVariant(): string {
 - specificity: "high" | "medium" (never "low")
 - sourceExcerpt: string (50-200 chars, verbatim from source)
 - claimDirection: "supports" | "contradicts" | "neutral"
-- contextId: string (scope ID or "")
+- contextId: string (AnalysisContext ID or "")
 - evidenceScope: object with name, methodology, boundaries, geographic, temporal (or null if not defined)
 
 ### CLAIM DIRECTION RULES
@@ -173,7 +173,7 @@ export function getOpenAIVerdictVariant(): string {
 Do NOT artificially center at 50%. If evidence is clear, be decisive.
 
 ### REQUIRED FIELDS PER VERDICT
-- contextId: string (must match scope ID from list)
+- contextId: string (must match AnalysisContext ID from list)
 - answer: number 0-100 (truth percentage of USER'S CLAIM)
 - confidence: number 0-100
 - shortAnswer: string (complete sentence)

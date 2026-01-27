@@ -7,7 +7,7 @@
  * - Prefill technique for structured output
  * - Leverage excellent nuanced reasoning
  * - Trust judgment on complex assessments
- * - Strong at scope boundary detection
+ * - Strong at AnalysisContext boundary detection
  *
  * @version 2.8.0 - Enhanced with XML structure and thinking patterns
  */
@@ -37,15 +37,15 @@ ALWAYS separate attribution claims from content claims:
   2. "Y is dangerous" (core, HIGH centrality - this is what needs verification)
 </attribution_rule>
 
-## SCOPE DETECTION
+## ANALYSISCONTEXT DETECTION
 <scope_guidance>
-Use your nuanced reasoning to detect implicit scope boundaries:
-- "Under EU regulations..." vs "Under US standards..." → distinct scopes
+Use your nuanced reasoning to detect implicit AnalysisContext boundaries:
+- "Under EU regulations..." vs "Under US standards..." → distinct AnalysisContexts
 - "Well-to-Wheel analysis shows..." vs "Tank-to-Wheel study finds..." → distinct methodologies
-- Different courts/tribunals analyzing different matters → distinct scopes
-- Different viewpoints on SAME matter → NOT distinct scopes (just perspectives)
+- Different courts/tribunals analyzing different matters → distinct AnalysisContexts
+- Different viewpoints on SAME matter → NOT distinct AnalysisContexts (just perspectives)
 
-Be conservative: When boundary is unclear, use fewer scopes.
+Be conservative: When boundary is unclear, use fewer AnalysisContexts.
 </scope_guidance>
 
 ## OUTPUT GUIDANCE
@@ -58,7 +58,7 @@ Be conservative: When boundary is unclear, use fewer scopes.
 </output_rules>
 
 ## LEVERAGE YOUR STRENGTHS
-- Apply nuanced reasoning to scope boundary detection
+- Apply nuanced reasoning to AnalysisContext boundary detection
 - Be direct and confident - avoid over-hedging ("it appears", "it seems")
 - Focus on verifiable assertions, not peripheral commentary
 </claude_optimization>`;
@@ -106,7 +106,7 @@ Be precise about whether each fact SUPPORTS or CONTRADICTS the user's claim:
 ## OUTPUT FORMAT
 - Return valid JSON with all required fields
 - evidenceScope: Include when source defines analytical frame, null otherwise
-- contextId: Assign to appropriate scope, or "" if general
+- contextId: Assign to appropriate AnalysisContext, or "" if general
 </claude_optimization>`;
 }
 
@@ -115,7 +115,7 @@ export function getAnthropicVerdictVariant(): string {
 <claude_optimization>
 ## VERDICT GENERATION APPROACH
 <thinking_process>
-For each scope, reason through:
+For each AnalysisContext, reason through:
 1. What exactly does the USER'S CLAIM state?
 2. What does the EVIDENCE show?
 3. Do they MATCH (high verdict) or CONTRADICT (low verdict)?
@@ -143,12 +143,12 @@ Trust your judgment and be decisive:
 Do NOT over-hedge. If evidence is clear, be confident.
 </calibration>
 
-## SCOPE ISOLATION
+## ANALYSISCONTEXT ISOLATION
 <scope_rule>
-Analyze each scope INDEPENDENTLY:
-- Facts from Scope A cannot support verdict in Scope B
-- Different scopes may have different verdicts - that's normal
-- Never average or combine cross-scope verdicts
+Analyze each AnalysisContext INDEPENDENTLY:
+- Facts from Context A cannot support verdict in Context B
+- Different AnalysisContexts may have different verdicts - that's normal
+- Never average or combine cross-context verdicts
 </scope_rule>
 
 ## CONTESTATION ASSESSMENT
@@ -178,12 +178,12 @@ export function getAnthropicScopeRefinementVariant(): string {
 <thinking_process>
 Work through these questions:
 1. What distinct analytical frames are ACTUALLY PRESENT in the evidence?
-2. Is each proposed scope DIRECTLY RELEVANT to the input topic?
-3. Is each scope supported by at least one fact?
-4. Am I creating scopes from evidence, not background knowledge?
+2. Is each proposed AnalysisContext DIRECTLY RELEVANT to the input topic?
+3. Is each AnalysisContext supported by at least one fact?
+4. Am I creating AnalysisContexts from evidence, not background knowledge?
 </thinking_process>
 
-## SCOPE VS NON-SCOPE DISTINCTION
+## ANALYSISCONTEXT VS NON-CONTEXT DISTINCTION
 <distinction_rules>
 CREATE separate scopes for:
 - Different methodological boundaries (WTW vs TTW - incompatible measurements)
@@ -214,7 +214,7 @@ When in doubt, use FEWER scopes:
 - Marginal relevance → don't include
 - No supporting facts → don't create
 
-Every scope MUST be:
+Every AnalysisContext MUST be:
 1. Directly relevant to input topic
 2. Supported by at least one factId
 3. Representing a genuinely distinct analytical frame
@@ -222,7 +222,7 @@ Every scope MUST be:
 
 ## OUTPUT REQUIREMENTS
 - factScopeAssignments must cover ≥70% of facts
-- Each scope must have ≥1 fact assigned
+- Each AnalysisContext must have ≥1 fact assigned
 - Use "" for unknown metadata fields (not null)
 </claude_optimization>`;
 }

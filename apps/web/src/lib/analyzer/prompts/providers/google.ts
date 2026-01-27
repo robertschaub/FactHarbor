@@ -39,7 +39,7 @@ Before outputting, verify each claim has:
 2. Identify claim type (statement vs article)
 3. Extract claims with attribution separation
 4. Assess centrality (expect 1-4 HIGH max)
-5. Detect scope boundaries if present
+5. Detect AnalysisContext boundaries if present
 6. Generate 4-6 search queries
 7. Output JSON
 
@@ -86,7 +86,7 @@ Each fact MUST have:
 - [ ] specificity: "high" | "medium" (NEVER "low")
 - [ ] sourceExcerpt: string (50-200 chars, verbatim quote)
 - [ ] claimDirection: "supports" | "contradicts" | "neutral"
-- [ ] contextId: string (scope ID or "")
+- [ ] contextId: string (AnalysisContext ID or "")
 - [ ] evidenceScope: object OR null (NEVER missing/undefined)
 
 ### EVIDENCE SCOPE FORMAT
@@ -131,8 +131,8 @@ Before each verdict, answer these 4 questions:
 - Match: CONTRADICT → Low verdict (0-28%)
 
 ### NUMBERED VERDICT PROCESS
-For each scope:
-1. Identify user's claim for this scope
+For each AnalysisContext:
+1. Identify user's claim for this AnalysisContext
 2. List supporting facts (count them)
 3. List contradicting facts (count them)
 4. Compare counts to determine verdict band:
@@ -176,7 +176,7 @@ export function getGeminiScopeRefinementVariant(): string {
    - Methodology markers (different standards, frameworks)
    - Institutional markers (different bodies, agencies)
    - Temporal markers (different time periods, phases)
-3. For each potential scope, verify:
+3. For each potential AnalysisContext, verify:
    - [ ] Directly relevant to input topic?
    - [ ] Supported by ≥1 fact?
    - [ ] Genuinely distinct analytical frame?

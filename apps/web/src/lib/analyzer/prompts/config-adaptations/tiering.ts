@@ -41,7 +41,7 @@ export function getTieringExtractFactsAdaptation(): string {
 - specificity: high (has numbers/dates) or medium
 - sourceExcerpt: 50-200 chars verbatim
 - claimDirection: supports|contradicts|neutral
-- contextId: scope ID or ""
+- contextId: AnalysisContext ID or ""
 - evidenceScope: null (skip unless obvious)
 
 **Direction rule**:
@@ -113,7 +113,7 @@ Extract 4-6 specific, verifiable facts from the source.
 - specificity: high|medium
 - sourceExcerpt: verbatim quote (50-200 chars)
 - claimDirection: supports|contradicts|neutral (relative to user's claim)
-- contextId: "" (or scope ID if known)
+- contextId: "" (or AnalysisContext ID if known)
 - evidenceScope: null
 
 ## OUTPUT (JSON)
