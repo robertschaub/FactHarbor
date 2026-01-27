@@ -23,6 +23,12 @@ public sealed class JobEntity
     /// </summary>
     public string PipelineVariant { get; set; } = "orchestrated";
 
+    // Prompt tracking (External Prompt File System)
+    /// <summary>SHA-256 hash of the prompt content used for this analysis</summary>
+    public string? PromptContentHash { get; set; }
+    /// <summary>When the prompt was loaded from file for this analysis</summary>
+    public DateTime? PromptLoadedUtc { get; set; }
+
     // Stored outputs
     public string? ResultJson { get; set; }
     public string? ReportMarkdown { get; set; }
