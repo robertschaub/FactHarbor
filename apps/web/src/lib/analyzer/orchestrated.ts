@@ -179,6 +179,9 @@ CRITICAL RULES:
 - Split into multiple AnalysisContexts when the evidence indicates different boundaries, methods, time periods, institutions, datasets, or processes that should be analyzed separately.
 - Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different regulatory regimes, different datasets/studies, different measurement windows).
 - Also split when evidence clearly covers different phases/components/metrics that are not directly comparable (e.g., upstream vs downstream phases, production vs use-phase, system-wide vs component-level metrics, different denominators/normalizations).
+- **CRITICAL: Separate formal authority = separate contexts (evidence-gated)**: If evidence references decisions, rulings, or processes from DIFFERENT formal bodies (each with independent authority to make determinations on different matters), AND each authority has at least one supporting fact, these require separate AnalysisContexts. Do NOT split on incidental mentions without supporting evidence.
+- **CRITICAL: Different system boundaries = separate contexts (evidence-gated)**: If the input is a comparative claim and evidence uses different measurement boundaries or system definitions, AND each boundary has at least one supporting fact, these require separate AnalysisContexts. Do NOT split on incidental mentions.
+- **Anti-duplication rule**: If you create an authority-specific or boundary-specific context, do NOT also keep a redundant generic parent context UNLESS the parent context (a) answers a different question than the specific contexts, OR (b) has distinct evidence not covered by the specific contexts.
 - Do NOT split into AnalysisContexts just because there are pro vs con viewpoints. Viewpoints are not AnalysisContexts.
 - Do NOT split into AnalysisContexts purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting). Those are source types, not bounded analytical frames.
 - If you split, prefer frames that reflect methodology/boundaries/process-chain segmentation present in the evidence (e.g., end-to-end vs component-level; upstream vs downstream; production vs use-phase).
@@ -3265,6 +3268,16 @@ CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
 - When in doubt, use fewer contexts rather than including marginally relevant ones
 - A context with zero relevant claims/evidence should NOT exist
 
+**CRITICAL: The Incompatibility Test (apply to ALL inputs)**
+Before finalizing contexts, ask: "If I combined verdicts from these potential contexts, would the result be MISLEADING because they evaluate fundamentally different things?"
+- If YES and combining would change what is being evaluated: Create separate AnalysisContexts
+- If NO: Keep as single AnalysisContext
+
+Common incompatibility signals (only split if evidence supports each):
+- Different formal bodies with separate authority
+- Different measurement system boundaries
+- Different process phases that yield incomparable outputs
+
 ${recencyMatters ? `## ⚠️ RECENT DATA DETECTED
 
 This input appears to involve recent events, dates, or announcements. When generating research queries:
@@ -3432,7 +3445,13 @@ IMPORTANT: riskTier is ANALYSIS-LEVEL only.
 Ask yourself: "Does this claim DIRECTLY address the user's primary thesis?"
 → If yes, it's central. If it's supporting evidence or background, it's not.
 
-**EXPECT 3-6 CLAIMS** in most analyses. The number depends on the thesis type:
+**CRITICAL: Centrality calibration (prevent over-centrality + redundancy)**
+- There should be **AT MOST 1-2 HIGH centrality claims per AnalysisContext**.
+- If multiple claims seem equally important, most should be **MEDIUM**, not HIGH.
+- Do NOT create multiple near-duplicate HIGH centrality claims that all mean "the process was fair/proper" in slightly different wording. Prefer ONE canonical claim.
+- Claims about specific outcomes/penalties/consequences are usually MEDIUM unless the user's thesis is specifically about that outcome.
+
+**EXPECT 3-6 CLAIMS** in most analyses (hard cap: do not output more than 8). The number depends on the thesis type:
 - Simple factual claim: 2-3 central claims (break down into testable parts)
 - Comparative claim ("X vs Y"): 3-5 central claims (one per major aspect of comparison)
 - Compound statement: 4-6 central claims (each atomic assertion separately)
@@ -3716,6 +3735,24 @@ For each AnalysisContext, include an assessedStatement that describes what you a
 - Extract key decision-makers or primary actors only when they are explicitly mentioned in the input or evidence.
 - Do NOT rely on background knowledge for names/roles (avoid hallucination).
 
+**CRITICAL: Comparative claims and boundary sensitivity (MANDATORY)**
+If the input compares alternatives (e.g., "X is better/more efficient than Y", "X causes more harm than Y"):
+- Ask: "Could the answer change depending on the measurement boundary, phase, or system definition?"
+- If yes (or plausibly yes), you MUST create **at least TWO** AnalysisContexts representing distinct boundaries (e.g., end-to-end vs use-phase only; upstream vs downstream; lifecycle vs operational).
+- Set requiresSeparateAnalysis=true.
+
+**MANDATORY for efficiency/performance comparisons**
+If the user's claim compares **efficiency / performance / effectiveness / impact** between alternatives:
+- You MUST create **at least TWO** AnalysisContexts representing different measurement boundaries/phases (same metric, different boundary), even if the input does not explicitly name the boundaries.
+- Set requiresSeparateAnalysis=true.
+This requirement OVERRIDES the general heuristic of using fewer contexts when in doubt.
+
+**CRITICAL: Comparative contexts must be SAME-METRIC boundary variants (MANDATORY)**
+When creating multiple AnalysisContexts for a comparison claim:
+- ALL contexts MUST evaluate the SAME metric/dimension stated in the user's claim.
+- Contexts may vary the measurement boundary/phase/system definition, but MUST NOT shift to unrelated dimensions.
+- DO NOT create contexts for other dimensions (e.g., cost, environmental impact, popularity) unless the user's claim explicitly includes them.
+
 Set requiresSeparateAnalysis = true when multiple contexts are detected.
 
 ## FOR ANY INPUT STYLE
@@ -3833,7 +3870,17 @@ For "This product causes a specific harm."
     "category": "evaluative"
   }
 ]
-**CLAIM-TO-FACTOR MAPPING**: If you generate keyFactors, map each claim to the most relevant factor using keyFactorId. Claims can only map to one factor. Use empty string "" for claims that don't address any specific factor.`;
+**CLAIM-TO-FACTOR MAPPING**: If you generate keyFactors, map each claim to the most relevant factor using keyFactorId. Claims can only map to one factor. Use empty string "" for claims that don't address any specific factor.
+
+**CRITICAL OUTPUT CONSTRAINT (comparative efficiency/performance claims)**:
+If the input is a comparative efficiency/performance/effectiveness claim, then:
+- \`analysisContexts\` MUST contain **at least 2** items
+- \`requiresSeparateAnalysis\` MUST be \`true\`
+
+### FINAL OUTPUT CHECKLIST (MANDATORY)
+- If the input is a comparative efficiency/performance/effectiveness claim: did you output **2+** \`analysisContexts\` and set \`requiresSeparateAnalysis=true\`?
+- If \`analysisContexts\` has 2+ items: did you assign each core claim a non-empty \`contextId\` (avoid leaving claims unscoped)?
+- Did you avoid adding off-thesis dimensions (do not invent unrelated metrics that are not in the user's claim)?`;
 
 // Use normalized analysisInput (yes/no→statement) for consistent LLM analysis
   const userPrompt = `Analyze for fact-checking:\n\n"${analysisInputForLLM}"`;
@@ -4020,6 +4067,8 @@ CRITICAL: MULTI-CONTEXT DETECTION
 NOT DISTINCT CONTEXTS:
 - Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate contexts by themselves.
 - Pro vs con viewpoints are NOT contexts.
+
+INCOMPATIBILITY TEST: Split into separate contexts ONLY IF combining verdicts would be MISLEADING because they evaluate fundamentally different things (e.g., different formal authorities, different measurement boundaries). Only split if each context has supporting evidence.
 
 CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
 - Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
@@ -4455,14 +4504,20 @@ async function requestSupplementalSubClaims(
 - Each claim must be tied to a single AnalysisContext via contextId.${hasScopes ? "" : " Use an empty string if no AnalysisContexts are listed."}
  - Use claimRole="core" and checkWorthiness="high".
  - Set thesisRelevance="direct" for ALL supplemental claims you generate.
- - Set harmPotential and centrality realistically. Default centrality to "medium" unless the claim is truly the primary thesis of that AnalysisContext.
+ - Set harmPotential and centrality realistically. **Default centrality to "medium" for ALL supplemental claims.** Only set centrality="high" if this claim IS a primary thesis question being evaluated in that AnalysisContext (rare for supplemental claims).
+ - **CRITICAL**: Avoid redundant or near-duplicate claims. Before adding a claim, verify it is meaningfully distinct from existing claims.
+ - **CRITICAL**: Do NOT add more than 2 supplemental claims per context unless explicitly instructed.
  - Set isCentral=true if centrality==="high" (harmPotential affects risk tier, not centrality).
  - Use dependsOn=[] unless a dependency is truly required.
  - **CRITICAL**: If the input contains multiple assertions, decompose into ATOMIC claims (one assertion per claim).
  - **CRITICAL**: Do NOT create claims that combine multiple assertions with "and", "which", or "that".
  - **CRITICAL**: Return at least ${minNewClaimsTotal} new claims in total across all listed contexts.
  - Ensure each listed context reaches at least ${MIN_CORE_CLAIMS_PER_PROCEEDING} core claims.
- - **CRITICAL**: If specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.`;
+ - **CRITICAL**: If specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.
+ - **CRITICAL: Thesis dimension lock (MANDATORY)**:
+   - Identify the SPECIFIC metric/dimension the user's claim evaluates (e.g., efficiency, fairness, harm, cost).
+   - ALL supplemental claims MUST evaluate the SAME metric/dimension.
+   - Do NOT add claims about other dimensions not present in the user's original claim.`;
 
   const userPrompt = `INPUT:\n"${input}"\n\nCONTEXTS NEEDING MORE CLAIMS:\n${missingSummary}\n\nEXISTING CLAIMS (DO NOT DUPLICATE):\n${existingClaimsSummary}`;
 
@@ -4614,6 +4669,8 @@ CRITICAL:
 NOT DISTINCT CONTEXTS:
 - Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate contexts by themselves.
 - Pro vs con viewpoints are NOT contexts.
+
+INCOMPATIBILITY TEST: Split into separate contexts ONLY IF combining verdicts would be MISLEADING because they evaluate fundamentally different things (e.g., different formal authorities, different measurement boundaries). Only split if each context has supporting evidence.
 
 CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
 - Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
@@ -6245,6 +6302,16 @@ ${contextsFormatted}
    - shortAnswer (Assessment): A 1-sentence summary that MUST evaluate the assessedStatement shown above for this context
      * CRITICAL: The shortAnswer must answer/evaluate the assessedStatement for THIS context
      * MUST be a descriptive sentence, NOT just a percentage or scale label
+   
+   **CRITICAL: Direction consistency check (MANDATORY)**
+   Before finalizing each context's answer:
+   1. Decide clearly: does the evidence SUPPORT the user's claim as stated, CONTRADICT it, or is it UNVERIFIED/MIXED?
+   2. Your numeric answer MUST match that direction:
+      - SUPPORTS → answer should be ≥ 58 (leaning-true or higher)
+      - CONTRADICTS → answer should be ≤ 42 (leaning-false or lower)
+      - UNVERIFIED/MIXED → answer should be 43-57
+   3. For comparison claims: if evidence supports the OPPOSITE direction (user claims "X > Y" but evidence shows "Y > X"), the answer MUST be ≤ 42.
+
    - keyFactors: Array of factors that address the SUBSTANCE of the original claim:
      * CRITICAL: Key factors must evaluate whether THE USER'S CLAIM is true, NOT whether your analysis is correct
      * For comparative claims ("X is better than Y"), factors should evaluate the actual comparison
@@ -6265,7 +6332,11 @@ ${contextsFormatted}
    Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
 
 3. Mark contested factors:
-   - isContested: true if this factor is disputed
+   - isContested: true ONLY if this factor is genuinely disputed with documented factual counter-evidence
+   - **CRITICAL: Do NOT set isContested=true for:**
+     * Mere disagreement or different viewpoints without documented counter-evidence
+     * Rhetorical opposition without factual basis
+     * Normal debate where both sides cite evidence (this is not "contested"; it's "disputed")
    - contestedBy: Be SPECIFIC about who disputes it (e.g., "supplier group A", "regulator X", "employee union")
      * Do NOT use vague terms like "some people" - specify WHICH group/organization
      * **NO CIRCULAR CONTESTATION**: The entity making a decision CANNOT contest its own decision
@@ -7323,7 +7394,11 @@ CRITICAL: Being "contested" by stakeholders does NOT make something neutral.
 Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
 
 ## Mark contested factors:
-- isContested: true if this claim is politically disputed
+- isContested: true ONLY if this factor is genuinely disputed with documented factual counter-evidence
+- **CRITICAL: Do NOT set isContested=true for:**
+  * Mere disagreement or different viewpoints without documented counter-evidence
+  * Rhetorical opposition without factual basis
+  * Normal debate where both sides cite evidence (this is not "contested"; it's "disputed")
 - contestedBy: Who disputes it (empty string if not contested)
   * **NO CIRCULAR CONTESTATION**: The entity that made the decision CANNOT contest it
   * Example: If evaluating "Was Court X's trial fair?", contestedBy CANNOT be "Court X" or "Court X judiciary"
@@ -7829,7 +7904,11 @@ When a claim contains causal language ("due to", "caused by", "because of", "lin
 **CRITICAL**: If causation is claimed but only temporal/correlational evidence exists (e.g., deaths reported after an event in an unverified system), the verdict should be LOW (29-42% LEANING-FALSE) because causation is NOT established.
 
 ## CLAIM CONTESTATION (for each claim):
-- isContested: true if this claim is politically disputed or challenged
+- isContested: true ONLY if this claim is genuinely disputed with documented factual counter-evidence
+- **CRITICAL: Do NOT set isContested=true for:**
+  * Mere disagreement or different viewpoints without documented counter-evidence
+  * Rhetorical opposition without factual basis
+  * Normal debate where both sides cite evidence (this is not "contested"; it's "disputed")
 - contestedBy: Who disputes it (e.g., "critics", "opponents") - empty string if not contested
   * **NO CIRCULAR CONTESTATION**: The entity that made the decision CANNOT contest its own decision
 - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?

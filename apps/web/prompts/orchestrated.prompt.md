@@ -1,8 +1,8 @@
 ---
-version: "2.6.41"
+version: "2.6.42"
 pipeline: "orchestrated"
 description: "Full orchestrated multi-stage analysis pipeline prompts"
-lastModified: "2026-01-27T00:00:00Z"
+lastModified: "2026-01-27T12:00:00Z"
 variables:
   - currentDate
   - currentDateReadable
@@ -52,6 +52,9 @@ CRITICAL RULES:
 - Split into multiple AnalysisContexts when the evidence indicates different boundaries, methods, time periods, institutions, datasets, or processes that should be analyzed separately.
 - Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame.
 - Also split when evidence clearly covers different phases/components/metrics that are not directly comparable.
+- **CRITICAL: Separate formal authority = separate contexts (evidence-gated)**: If evidence references decisions, rulings, or processes from DIFFERENT formal bodies (each with independent authority to make determinations on different matters), AND each authority has at least one supporting fact, these require separate AnalysisContexts. Do NOT split on incidental mentions without supporting evidence.
+- **CRITICAL: Different system boundaries = separate contexts (evidence-gated)**: If the input is a comparative claim and evidence uses different measurement boundaries or system definitions, AND each boundary has at least one supporting fact, these require separate AnalysisContexts. Do NOT split on incidental mentions.
+- **Anti-duplication rule**: If you create an authority-specific or boundary-specific context, do NOT also keep a redundant generic parent context UNLESS the parent context (a) answers a different question than the specific contexts, OR (b) has distinct evidence not covered by the specific contexts.
 - Do NOT split into AnalysisContexts just because there are pro vs con viewpoints. Viewpoints are not AnalysisContexts.
 - Do NOT split into AnalysisContexts purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting).
 - If you split, prefer frames that reflect methodology/boundaries/process-chain segmentation present in the evidence.
@@ -96,6 +99,16 @@ CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
 - Each context must have a clear, direct connection to the input's subject matter
 - When in doubt, use fewer contexts rather than including marginally relevant ones
 - A context with zero relevant claims/evidence should NOT exist
+
+**CRITICAL: The Incompatibility Test (apply to ALL inputs)**
+Before finalizing contexts, ask: "If I combined verdicts from these potential contexts, would the result be MISLEADING because they evaluate fundamentally different things?"
+- If YES and combining would change what is being evaluated: Create separate AnalysisContexts
+- If NO: Keep as single AnalysisContext
+
+Common incompatibility signals (only split if evidence supports each):
+- Different formal bodies with separate authority
+- Different measurement system boundaries
+- Different process phases that yield incomparable outputs
 
 ### TEMPORAL REASONING
 
