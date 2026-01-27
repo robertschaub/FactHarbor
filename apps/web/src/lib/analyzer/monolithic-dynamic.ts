@@ -30,6 +30,8 @@ import {
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
+import { loadPromptFile, type Pipeline } from "./prompt-loader";
+import { recordPromptUsage, savePromptVersion } from "@/lib/prompt-storage";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
@@ -172,6 +174,26 @@ export async function runMonolithicDynamic(
 
   // v2.6.35: Clear source reliability cache at start of analysis
   clearPrefetchedScores();
+
+  // External Prompt File System: Track prompt version per job
+  try {
+    const pipelineName: Pipeline = "monolithic-dynamic";
+    const promptResult = await loadPromptFile(pipelineName);
+    if (promptResult.success && promptResult.prompt) {
+      await savePromptVersion(
+        pipelineName,
+        promptResult.prompt.rawContent,
+        promptResult.prompt.contentHash,
+        promptResult.prompt.frontmatter.version,
+      ).catch(() => {});
+      if (input.jobId) {
+        await recordPromptUsage(input.jobId, pipelineName, promptResult.prompt.contentHash).catch(() => {});
+      }
+      console.log(`[Prompt-Tracking] Loaded monolithic-dynamic prompt (hash: ${promptResult.prompt.contentHash.substring(0, 12)}...)`);
+    }
+  } catch (err: any) {
+    console.warn(`[Prompt-Tracking] Error loading prompt file (non-fatal): ${err?.message}`);
+  }
 
   // Collected citations (safety contract)
   const citations: Citation[] = [];

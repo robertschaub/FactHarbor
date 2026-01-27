@@ -30,6 +30,8 @@ import { percentageToClaimVerdict, getHighlightColor } from "./truth-scale";
 import { filterFactsByProvenance } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
+import { loadPromptFile, type Pipeline } from "./prompt-loader";
+import { recordPromptUsage, savePromptVersion } from "@/lib/prompt-storage";
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
 import { calculateWeightedVerdictAverage, detectHarmPotential, detectClaimContestation } from "./aggregation";
 import { detectScopes, formatDetectedScopesHint } from "./scopes";
@@ -154,11 +156,11 @@ const ClaimExtractionSchema = z.object({
   subClaims: z.array(SubClaimSchema).optional(),
   // Multi-scope detection fields
   detectedScopes: z.array(z.object({
-    id: z.string().describe("Short ID like 'SCOPE_A', 'SCOPE_B'"),
+    id: z.string().describe("Short ID like 'CTX_A', 'CTX_B'"),
     name: z.string().describe("Human-readable name"),
     type: z.enum(["legal", "scientific", "methodological", "general"]),
-  })).optional().describe("Distinct analytical frames detected (e.g., multiple trials, different proceedings)"),
-  requiresSeparateAnalysis: z.boolean().optional().describe("True if input involves multiple distinct proceedings/trials that should be analyzed separately"),
+  })).optional().describe("Distinct AnalysisContexts detected (e.g., multiple trials, different analytical frames)"),
+  requiresSeparateAnalysis: z.boolean().optional().describe("True if input involves multiple distinct AnalysisContexts that should be analyzed separately"),
 });
 
 const FactExtractionSchema = z.object({
@@ -406,6 +408,26 @@ export async function runMonolithicCanonical(
 
   // v2.6.35: Clear source reliability cache at start of analysis
   clearPrefetchedScores();
+
+  // External Prompt File System: Track prompt version per job
+  try {
+    const pipelineName: Pipeline = "monolithic-canonical";
+    const promptResult = await loadPromptFile(pipelineName);
+    if (promptResult.success && promptResult.prompt) {
+      await savePromptVersion(
+        pipelineName,
+        promptResult.prompt.rawContent,
+        promptResult.prompt.contentHash,
+        promptResult.prompt.frontmatter.version,
+      ).catch(() => {});
+      if (input.jobId) {
+        await recordPromptUsage(input.jobId, pipelineName, promptResult.prompt.contentHash).catch(() => {});
+      }
+      console.log(`[Prompt-Tracking] Loaded monolithic-canonical prompt (hash: ${promptResult.prompt.contentHash.substring(0, 12)}...)`);
+    }
+  } catch (err: any) {
+    console.warn(`[Prompt-Tracking] Error loading prompt file (non-fatal): ${err?.message}`);
+  }
 
   // State tracking
   const facts: ExtractedFact[] = [];

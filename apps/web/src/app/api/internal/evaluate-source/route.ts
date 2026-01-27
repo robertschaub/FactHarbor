@@ -22,6 +22,8 @@ import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { getDeterministicTemperature } from "@/lib/analyzer/config";
 import { debugLog } from "@/lib/analyzer/debug";
+import { loadPromptFile, type Pipeline } from "@/lib/analyzer/prompt-loader";
+import { savePromptVersion } from "@/lib/prompt-storage";
 import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
 import {
   computeRefinementConfidenceBoost,
@@ -2566,6 +2568,22 @@ export async function POST(req: Request) {
       { error: "Invalid request body", details: String(err) },
       { status: 400 }
     );
+  }
+
+  // External Prompt File System: Track SR prompt version
+  try {
+    const pipelineName: Pipeline = "source-reliability";
+    const promptResult = await loadPromptFile(pipelineName);
+    if (promptResult.success && promptResult.prompt) {
+      await savePromptVersion(
+        pipelineName,
+        promptResult.prompt.rawContent,
+        promptResult.prompt.contentHash,
+        promptResult.prompt.frontmatter.version,
+      ).catch(() => {});
+    }
+  } catch {
+    // Non-fatal: SR prompt tracking is optional
   }
 
   // Rate limiting

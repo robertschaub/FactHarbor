@@ -92,6 +92,8 @@ import {
   generateScopeDetectionHint,
 } from "./scopes";
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
+import { loadPromptFile, type Pipeline } from "./prompt-loader";
+import { recordPromptUsage, savePromptVersion } from "@/lib/prompt-storage";
 
 // Configuration, helpers, and debug utilities imported from modular files above
 
@@ -154,10 +156,10 @@ async function refineScopesFromEvidence(
       .default([]),
   });
 
-  const systemPrompt = `You are FactHarbor's AnalysisContext refinement engine.
+  const systemPrompt = `You are a professional fact-checker organizing evidence into analytical contexts. Your role is to identify distinct AnalysisContexts requiring separate investigation—based on differences in analytical dimensions such as methodology, boundaries, or institutional framework—and organize evidence into the appropriate contexts.
 
 Terminology (critical):
-- ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
+- ArticleFrame: Broader frame or topic of the input article.
 - AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
 - EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts (ExtractedFact.evidenceScope). This is NOT the same as AnalysisContext.
 
@@ -165,7 +167,7 @@ Language rules (avoid ambiguity):
 - Use the term "AnalysisContext" (or "analysis context") for top-level bounded frames.
 - Use the term "EvidenceScope" ONLY for per-fact scope metadata shown in the FACTS.
 - Avoid using the bare word "scope" (it is too ambiguous here).
-- Avoid using the bare word "context" unless you explicitly mean ArticleFrame or AnalysisContext.
+- Avoid using the bare word "context" unless you explicitly mean AnalysisContext.
 
 Your job is to identify DISTINCT ANALYSIS CONTEXTS (bounded analytical frames) that are actually present in the EVIDENCE provided.
 
@@ -184,7 +186,7 @@ CRITICAL RULES:
 - Use neutral, generic labels (no domain-specific hardcoding), BUT ensure each AnalysisContext name reflects 1–3 specific identifying details found in the evidence (per-fact EvidenceScope fields and/or the AnalysisContext metadata).
 - Different evidence reports may define DIFFERENT AnalysisContexts. A single evidence report may contain MULTIPLE AnalysisContexts. Do not restrict AnalysisContexts to one-per-source.
 - Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
-- Non-example: do NOT create separate AnalysisContexts from ArticleFrame narrative background (e.g., \"political frame\", \"media discourse\") unless the evidence itself defines distinct analytical frames.
+- Non-example: do NOT create separate AnalysisContexts from the ArticleFrame (e.g., \"political frame\", \"media discourse\") unless the evidence itself defines distinct analytical frames.
 - An AnalysisContext with zero relevant claims/evidence should NOT exist.
 - IMPORTANT: For each AnalysisContext, include an assessedStatement field describing what you are assessing in this context. The Assessment summary MUST summarize the assessment of THIS assessedStatement.
 
@@ -802,7 +804,7 @@ function selectFactsForScopeRefinementPrompt(
 function calculateScopeSimilarity(a: Scope, b: Scope): number {
   const nameA = String(a?.name || "");
   const nameB = String(b?.name || "");
-  
+
   const nameSim = calculateTextSimilarity(nameA, nameB);
   const subjectSim =
     a?.subject && b?.subject ? calculateTextSimilarity(String(a.subject), String(b.subject)) : 0;
@@ -2086,7 +2088,7 @@ interface ClaimUnderstanding {
 
   analysisContexts: DistinctProceeding[];
   requiresSeparateAnalysis: boolean;
-  analysisContext: string;
+  analysisContext: string; // ArticleFrame (legacy field name, NOT an AnalysisContext)
 
   mainThesis: string;
   articleThesis: string;
@@ -3000,7 +3002,7 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
 
   analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA),
   requiresSeparateAnalysis: z.boolean(),
-  analysisContext: z.string(), // empty string if not applicable
+  analysisContext: z.string(), // ArticleFrame (legacy field name, NOT an AnalysisContext)
 
   mainThesis: z.string(),
   articleThesis: z.string(),
@@ -3063,7 +3065,7 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
 
   analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA).default([]),
   requiresSeparateAnalysis: z.boolean().default(false),
-  analysisContext: z.string().default(""),
+  analysisContext: z.string().default(""), // ArticleFrame (legacy field name)
 
   mainThesis: z.string().default(""),
   articleThesis: z.string().default(""),
@@ -3237,10 +3239,10 @@ async function understandClaim(
   // CRITICAL: Pass ORIGINAL input (not canonical) so proper nouns are detected
   const scopeDetectionHint = generateScopeDetectionHint(analysisInput);
 
-  const systemPrompt = `You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT CONTEXTS (bounded analytical frames).
+  const systemPrompt = `You are a professional fact-checker analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect the ArticleFrame if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
 
 TERMINOLOGY (critical):
-- ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
+- ArticleFrame: Broader frame or topic of the input article.
 - AnalysisContext (or "Context"): a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
 - EvidenceScope (or "Scope"): per-fact source metadata (methodology/boundaries/geography/temporal) attached to individual facts later in the pipeline. NOT the same as AnalysisContext.
 
@@ -3701,7 +3703,7 @@ If the input mixes timelines, distinct contexts, or different analytical frames,
    - metadata: { methodology: "Standard Y", boundaries: "Broad boundary", geographic: "Region A" }
 
 **CRITICAL - assessedStatement field (v2.6.39)**:
-For each analysisContext, include an assessedStatement that describes what you are assessing in this context.
+For each AnalysisContext, include an assessedStatement that describes what you are assessing in this context.
 - The assessedStatement MUST describe what is being evaluated in THIS specific context
 - The Assessment summary MUST summarize the assessment OF the assessedStatement
 - These two fields must be consistent: Assessment answers/evaluates the assessedStatement
@@ -3732,7 +3734,7 @@ Set requiresSeparateAnalysis = true when multiple contexts are detected.
     - Multiple core claims can have isCentral=true if they test different parts of the thesis
     - Separate source/attribution claims as non-central (isCentral: false, claimRole: "source" or "attribution")
     - Use dependsOn to link claims to their prerequisites
-  - For each scope, consider claims covering:
+  - For each AnalysisContext, consider claims covering:
     - Standards application (were relevant rules/standards/methods applied correctly?)
     - Process integrity (were appropriate procedures followed?)
     - Evidence basis (were conclusions based on evidence?)
@@ -3933,7 +3935,7 @@ For "This product causes a specific harm."
 
   const tryJsonTextFallback = async () => {
     debugLog("understandClaim: FALLBACK JSON TEXT ATTEMPT");
-    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- ArticleFrame is narrative background; do NOT create separate AnalysisContexts from framing/perspectives.\n- analysisContexts represents AnalysisContexts (top-level bounded analytical frames).\n- EvidenceScope is per-fact source-defined scope metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- analysisContexts\n- requiresSeparateAnalysis\n- analysisContext\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
+    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- ArticleFrame is the broader frame or topic of the input article.\n- analysisContexts represents AnalysisContexts (top-level bounded analytical frames).\n- analysisContext (singular) is the ArticleFrame field (NOT an AnalysisContext despite the name).\n- EvidenceScope is per-fact source-defined scope metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- analysisContexts\n- requiresSeparateAnalysis\n- analysisContext (ArticleFrame string)\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
     const llmTimeoutMsRaw = parseInt(process.env.FH_UNDERSTAND_LLM_TIMEOUT_MS || "600000", 10);
     const llmTimeoutMs = Number.isFinite(llmTimeoutMsRaw)
       ? Math.max(60000, Math.min(3600000, llmTimeoutMsRaw))
@@ -4400,10 +4402,10 @@ async function requestSupplementalSubClaims(
 
   const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
  - Return ONLY new claims (do not repeat existing ones).
-- Each claim must be tied to a single scope via contextId.${hasScopes ? "" : " Use an empty string if no scopes are listed."}
+- Each claim must be tied to a single AnalysisContext via contextId.${hasScopes ? "" : " Use an empty string if no AnalysisContexts are listed."}
  - Use claimRole="core" and checkWorthiness="high".
  - Set thesisRelevance="direct" for ALL supplemental claims you generate.
- - Set harmPotential and centrality realistically. Default centrality to "medium" unless the claim is truly the primary thesis of that scope.
+ - Set harmPotential and centrality realistically. Default centrality to "medium" unless the claim is truly the primary thesis of that AnalysisContext.
  - Set isCentral=true if centrality==="high" (harmPotential affects risk tier, not centrality).
  - Use dependsOn=[] unless a dependency is truly required.
  - **CRITICAL**: If the input contains multiple assertions, decompose into ATOMIC claims (one assertion per claim).
@@ -4745,7 +4747,7 @@ Extract outcomes that need separate evaluation claims.`;
 }
 
 /**
- * Enrich proceedings/scopes with outcomes discovered in the extracted facts.
+ * Enrich AnalysisContexts with outcomes discovered in the extracted evidence.
  * Uses LLM to extract outcomes generically (no hardcoded domain-specific patterns).
  * This addresses the issue where outcome is shown as "pending" or "unknown" in the UI
  * even though the actual outcome was found in the evidence.
@@ -6094,7 +6096,7 @@ async function generateMultiScopeVerdicts(
   );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
-  const systemPromptBase = `You are FactHarbor's verdict generator. Analyze MULTIPLE DISTINCT AnalysisContexts separately when provided.
+  const systemPromptBase = `You are a professional fact-checker rendering evidence-based verdicts. Your role is to rate the truthfulness of claims by critically weighing evidence quality across AnalysisContexts, ensuring EvidenceScope compatibility when comparing facts, distinguishing causation from correlation, and assessing source credibility.
 
 ## CRITICAL: OUTPUT STRUCTURE - verdictSummary
 
@@ -6318,7 +6320,7 @@ Provide SEPARATE answers for each context.`;
       extraSystem: `
 
 ## EXTREME COMPACT MODE (RETRY)
-- keyFactors: provide 3 items max (overall + per scope).
+- keyFactors: provide 3 items max (overall + per AnalysisContext).
 - keyFactors.explanation: <= 12 words.
 - claimVerdicts.reasoning: <= 12 words.
 - If unsure, prefer short, conservative wording over long explanations.`,
@@ -6457,8 +6459,8 @@ Return ONLY a single JSON object. Do NOT include markdown. Do NOT include any te
 
 The JSON object MUST include these top-level keys:
 - verdictSummary
-- contextAnswers (preferred) or proceedingAnswers
-- proceedingSummary
+- contextAnswers (preferred) or proceedingAnswers (legacy field name)
+- proceedingSummary (legacy field name)
 - claimVerdicts`;
 
     try {
@@ -6838,13 +6840,13 @@ The JSON object MUST include these top-level keys:
   // When multiple distinct contexts exist, the average is shown but UI should emphasize individual context verdicts
   // The hasMultipleContexts flag indicates the average may not be meaningful
   const hasMultipleContexts = correctedContextAnswers.length > 1;
-  
+
   // v2.6.38: Context count warning (detect over-splitting)
   const CONTEXT_WARNING_THRESHOLD = 5;
   if (correctedContextAnswers.length > CONTEXT_WARNING_THRESHOLD) {
     debugLog(`⚠️ High context count detected: ${correctedContextAnswers.length} contexts may indicate over-splitting`);
   }
-  
+
   // Calculate average for display (UI can choose to de-emphasize when hasMultipleContexts=true)
   const avgTruthPct = correctedContextAnswers.length > 0
     ? Math.round(correctedContextAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) / correctedContextAnswers.length)
@@ -6959,7 +6961,7 @@ The JSON object MUST include these top-level keys:
       const expectedHigh = ratingConfirmation === "claim_supported";
       const actuallyHigh = truthPct >= 58;
       const actuallyLow = truthPct <= 42;
-      
+
       // Mismatch: LLM says "refuted" but verdict is high, or "supported" but verdict is low
       if ((expectedLow && actuallyHigh) || (expectedHigh && actuallyLow)) {
         debugLog("ratingConfirmation MISMATCH detected", {
@@ -6975,7 +6977,7 @@ The JSON object MUST include these top-level keys:
         inversionDetected = true;
       }
     }
-    
+
     // v2.6.31: Detect and correct inverted verdicts (regex fallback)
     // LLM sometimes rates "is my analysis correct" instead of "is the claim true"
     // Only run regex detection if LLM ratingConfirmation didn't already detect inversion
@@ -7508,7 +7510,7 @@ ${factsFormatted}`;
         const expectedHigh = ratingConfirmation === "claim_supported";
         const actuallyHigh = truthPct >= 58;
         const actuallyLow = truthPct <= 42;
-        
+
         if ((expectedLow && actuallyHigh) || (expectedHigh && actuallyLow)) {
           truthPct = 100 - truthPct;
           inversionDetected = true;
@@ -8070,7 +8072,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         const expectedHigh = ratingConfirmation === "claim_supported";
         const actuallyHigh = truthPct >= 58;
         const actuallyLow = truthPct <= 42;
-        
+
         if ((expectedLow && actuallyHigh) || (expectedHigh && actuallyLow)) {
           truthPct = 100 - truthPct;
           inversionDetected = true;
@@ -8740,6 +8742,46 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const budgetTracker = createBudgetTracker();
   console.log(`[Budget] Initialized: maxIterationsPerScope=${budget.maxIterationsPerScope}, maxTotalIterations=${budget.maxTotalIterations}, maxTotalTokens=${budget.maxTotalTokens}`);
 
+  // ==========================================================================
+  // External Prompt File System: Load prompt and track version per job
+  // ==========================================================================
+  let promptContentHash: string | null = null;
+  let promptLoadedUtc: string | null = null;
+  try {
+    const pipelineName: Pipeline = "orchestrated";
+    const promptResult = await loadPromptFile(pipelineName);
+    if (promptResult.success && promptResult.prompt) {
+      promptContentHash = promptResult.prompt.contentHash;
+      promptLoadedUtc = promptResult.prompt.loadedAt;
+
+      // Save version to DB if not already tracked
+      await savePromptVersion(
+        pipelineName,
+        promptResult.prompt.rawContent,
+        promptResult.prompt.contentHash,
+        promptResult.prompt.frontmatter.version,
+      ).catch((err) => {
+        console.warn(`[Prompt-Tracking] Failed to save prompt version: ${err?.message}`);
+      });
+
+      // Record usage for this job
+      if (input.jobId) {
+        await recordPromptUsage(input.jobId, pipelineName, promptResult.prompt.contentHash).catch((err) => {
+          console.warn(`[Prompt-Tracking] Failed to record prompt usage: ${err?.message}`);
+        });
+      }
+
+      console.log(`[Prompt-Tracking] Loaded orchestrated prompt v${promptResult.prompt.frontmatter.version} (hash: ${promptContentHash?.substring(0, 12)}...)`);
+      if (promptResult.warnings.length > 0) {
+        console.warn(`[Prompt-Tracking] Warnings:`, promptResult.warnings);
+      }
+    } else {
+      console.warn(`[Prompt-Tracking] Failed to load orchestrated prompt file:`, promptResult.errors);
+    }
+  } catch (err: any) {
+    console.warn(`[Prompt-Tracking] Error loading prompt file (non-fatal): ${err?.message}`);
+  }
+
   const state: ResearchState = {
     originalInput: normalizedInputValue,  // v2.6.26: Use NORMALIZED input everywhere
     originalText: "",
@@ -8980,8 +9022,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           const groundedUrls = groundedUrlCandidates.map(c => c.url);
           const groundedDomains = groundedUrls.map(u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } });
           const uniqueGroundedDomains = [...new Set(groundedDomains)];
-          const domainPreview = uniqueGroundedDomains.length <= 3 
-            ? uniqueGroundedDomains.join(', ') 
+          const domainPreview = uniqueGroundedDomains.length <= 3
+            ? uniqueGroundedDomains.join(', ')
             : `${uniqueGroundedDomains.slice(0, 3).join(', ')} +${uniqueGroundedDomains.length - 3} more`;
           await emit(`📊 Checking source reliability (${uniqueGroundedDomains.length}): ${domainPreview}`, baseProgress + 3);
           const srResult = await prefetchSourceReliability(groundedUrls);
@@ -9174,8 +9216,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const urlsToFetch = uniqueResults.map((r: any) => r.url);
     const domainsToFetch = urlsToFetch.map((u: string) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } });
     const uniqueDomainsToFetch = [...new Set(domainsToFetch)];
-    const domainPreview2 = uniqueDomainsToFetch.length <= 3 
-      ? uniqueDomainsToFetch.join(', ') 
+    const domainPreview2 = uniqueDomainsToFetch.length <= 3
+      ? uniqueDomainsToFetch.join(', ')
       : `${uniqueDomainsToFetch.slice(0, 3).join(', ')} +${uniqueDomainsToFetch.length - 3} more`;
     await emit(`📊 Checking source reliability (${uniqueDomainsToFetch.length}): ${domainPreview2}`, baseProgress + 4);
     const srResult2 = await prefetchSourceReliability(urlsToFetch);
