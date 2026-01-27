@@ -27,6 +27,7 @@ import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
 import { MethodologySubGroup } from "./components/MethodologySubGroup";
 import { ArticleFrameBanner } from "./components/ArticleFrameBanner";
 import { groupFactsByMethodology } from "./utils/methodologyGrouping";
+import { PromptViewer } from "./components/PromptViewer";
 
 type Job = {
   jobId: string;
@@ -661,6 +662,7 @@ export default function JobPage() {
             ))}
             {events.length === 0 && <li style={{ color: "#666" }}>No events yet.</li>}
           </ul>
+          {job && <PromptViewer jobId={job.jobId} />}
         </div>
       )}
     </div>

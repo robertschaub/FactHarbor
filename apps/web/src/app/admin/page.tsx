@@ -140,6 +140,13 @@ export default function AdminPage() {
           View and manage cached source reliability scores
         </p>
 
+        <Link href="/admin/prompts" className={styles.btnPrimary}>
+          📝 Prompt Management
+        </Link>
+        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          View, edit, and manage prompt templates for all pipelines
+        </p>
+
         <Link href="/admin/test-config" className={styles.btnPrimary}>
           🔧 Configuration Test Dashboard
         </Link>
