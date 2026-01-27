@@ -79,3 +79,6 @@ prompts/promptfoo-results/
 apps/web/*.db
 source-reliability.db
 
+
+# Prompt versions database (SQLite runtime files)
+apps/web/prompt-versions.db*
