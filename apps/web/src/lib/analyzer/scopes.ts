@@ -55,7 +55,8 @@ export function detectScopes(text: string): DetectedScope[] | null {
   
   // Pattern 1: Comparison claims (efficiency, performance, impact)
   const comparisonPattern = /\b(more|less|better|worse|superior|inferior|higher|lower|greater|smaller)\b.*\bthan\b|\bvs\.?\b|\bversus\b/i;
-  const efficiencyKeywords = /\b(efficien|performance|impact|effect|output|consumption|energy|resource|cost|speed)\b/i;
+  // NOTE: Use a stem for "efficien*" so both "efficient" and "efficiency" match.
+  const efficiencyKeywords = /\b(efficien\w*|performance|impact|effect|output|consumption|energy|resource|cost|speed)\b/i;
   
   if (comparisonPattern.test(text) && efficiencyKeywords.test(text)) {
     scopes.push(
@@ -135,12 +136,12 @@ export function formatDetectedScopesHint(scopes: DetectedScope[] | null, detaile
   
   const lines = scopes.map(s => 
     detailed 
-      ? `- ${s.name} (${s.type}): ${JSON.stringify(s.metadata || {})}`
-      : `- ${s.name} (${s.type})`
+      ? `- ${s.id}: ${s.name} (${s.type}) ${JSON.stringify(s.metadata || {})}`
+      : `- ${s.id}: ${s.name} (${s.type})`
   );
   
   const instruction = detailed
-    ? `\n\nIMPORTANT: These are SEED scopes detected by heuristic patterns. You MUST output at least these scopes in your analysisContexts array, but you may refine their names or add additional scopes if the evidence warrants it.`
+    ? `\n\nIMPORTANT: These are SEED AnalysisContexts detected by heuristic patterns. You MUST output at least these scopes in your analysisContexts array, and you MUST preserve their IDs as listed (you may refine names/metadata or add additional contexts if warranted).`
     : '';
   
   return `\n\nPRE-DETECTED SCOPES (use as seed${detailed ? ' AnalysisContexts' : ''}, refine based on evidence):\n${lines.join('\n')}${instruction}`;

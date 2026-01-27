@@ -3234,6 +3234,10 @@ async function understandClaim(
   // v2.8: Pre-detect scopes using heuristics (shared implementation from scopes.ts)
   const preDetectedScopes = detectScopes(analysisInput);
   const scopeHint = formatDetectedScopesHint(preDetectedScopes, true);
+  debugLog("understandClaim: preDetectedScopes (heuristic)", {
+    count: preDetectedScopes?.length ?? 0,
+    ids: (preDetectedScopes || []).map((s: any) => String(s?.id || "")).filter(Boolean),
+  });
 
   // v2.8.2: Generate scope detection hint for input neutrality
   // CRITICAL: Pass ORIGINAL input (not canonical) so proper nouns are detected
@@ -3255,8 +3259,8 @@ ${scopeHint}${scopeDetectionHint}
 CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
 - Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
 - Do NOT include contexts from unrelated domains just because they share a general category
-- Example: If input is about "solar panel efficiency", do NOT include contexts about nuclear power regulations or wind farm subsidies - even though all are "energy-related"
-- Example: If input is about "coffee consumption effects", do NOT include contexts about alcohol studies or tobacco research - even though all are "substance consumption"
+- Example: If input is about "Topic A's efficiency", do NOT include contexts about "Topic B regulations" or "Topic C subsidies" just because all are in a broad category
+- Example: If input is about "Substance A effects", do NOT include contexts about "Substance B studies" or "Substance C research" just because all involve consumption
 - Each context must have a clear, direct connection to the input's subject matter
 - When in doubt, use fewer contexts rather than including marginally relevant ones
 - A context with zero relevant claims/evidence should NOT exist
@@ -4152,6 +4156,48 @@ Now analyze the input and output JSON only.`;
     ids: (parsed.analysisContexts || []).map((p: any) => p.id),
   });
 
+  // v2.8.x: Deterministic seed-scope enforcement
+  // If heuristic scope pre-detection found multiple scopes but the LLM under-split,
+  // enforce the seed scopes to avoid collapsing boundary-sensitive comparison claims
+  // into a single generic context.
+  //
+  // This is intentionally conservative:
+  // - Only applies when we have 2+ heuristic scopes AND the LLM produced <= 1 scope
+  // - Uses generic, evidence-agnostic seed contexts (will be refined later)
+  if (Array.isArray(preDetectedScopes) && preDetectedScopes.length >= 2) {
+    const existingCount = parsed.analysisContexts?.length ?? 0;
+    if (existingCount <= 1) {
+      const seedContexts = preDetectedScopes.map((s, idx) => {
+        const rawId = String(s.id || `SCOPE_SEED_${idx + 1}`);
+        const short = rawId.replace(/^SCOPE_/, "").slice(0, 12) || `CTX${idx + 1}`;
+        return {
+          id: rawId,
+          name: String(s.name || rawId),
+          shortName: short,
+          subject: String(parsed.impliedClaim || analysisInput || "").slice(0, 200),
+          temporal: "",
+          status: "unknown",
+          outcome: "",
+          assessedStatement: String(parsed.impliedClaim || analysisInput || ""),
+          metadata: (s.metadata && typeof s.metadata === "object") ? s.metadata : {},
+        };
+      });
+      parsed.analysisContexts = seedContexts as any;
+      parsed.requiresSeparateAnalysis = true;
+      // Assign unscoped claims to the first seed scope so they aren't dropped in multi-scope flows.
+      const firstScopeId = seedContexts[0]?.id || "";
+      if (firstScopeId && Array.isArray(parsed.subClaims)) {
+        for (const c of parsed.subClaims as any[]) {
+          if (!String(c?.contextId || "").trim()) c.contextId = firstScopeId;
+        }
+      }
+      debugLog("understandClaim: applied heuristic seed scopes (LLM under-split)", {
+        seedCount: seedContexts.length,
+        seedIds: seedContexts.map((s) => s.id),
+      });
+    }
+  }
+
   // If the model under-split scopes for a claim, do a single best-effort retry
   // focused ONLY on scope detection. v2.6.30: Simplified - single input type after normalization
   if (
@@ -4270,6 +4316,8 @@ Now analyze the input and output JSON only.`;
       // covers all referenced scope IDs, then re-canonicalize for stable IDs.
       parsed = reconcileScopesWithClaimAssignments(parsed);
       parsed = canonicalizeScopes(analysisInput, parsed);
+      // Supplemental claims can reintroduce over-centrality and role drift; re-normalize deterministically.
+      normalizeSubClaimsImportance(parsed.subClaims as any);
       break;
     }
   }
@@ -4297,6 +4345,8 @@ Now analyze the input and output JSON only.`;
     if (heuristicClaims.length > 0) {
       parsed.subClaims.push(...heuristicClaims);
       console.log(`[Analyzer] Added ${heuristicClaims.length} heuristic claims from input text`);
+      // Heuristic claims may violate role/centrality invariants; re-normalize deterministically.
+      normalizeSubClaimsImportance(parsed.subClaims as any);
     }
   }
 
@@ -6737,8 +6787,10 @@ The JSON object MUST include these top-level keys:
     const evidencedNegatives = factors.filter(
       (f) => f.supports === "no" && f.factualBasis === "established",
     ).length;
+    // v2.6.40+: Treat "contested negatives" as negatives disputed WITHOUT established counter-evidence.
+    // If factualBasis is "established", the negative should NOT be discounted just because it's labeled contested.
     const contestedNegatives = factors.filter(
-      (f) => f.supports === "no" && f.isContested,
+      (f) => f.supports === "no" && f.isContested && f.factualBasis !== "established",
     ).length;
     // Contested neutrals (opinions without evidence) should not count negatively
     const contestedNeutrals = factors.filter(
@@ -7819,6 +7871,13 @@ For EACH claim verdict, EXPLICITLY confirm what direction you are rating:
 "Am I rating THE USER'S CLAIM as true/false, or am I rating my analysis quality?"
 → Rate THE CLAIM, not your analysis.
 
+## CAUSAL CLAIM CALIBRATION (CRITICAL)
+
+When a claim uses causal language (e.g., "caused by", "due to", "because of"):
+- Do NOT treat "after" / temporal sequence as proof of causation.
+- If evidence only shows temporal association, unverified reports, or speculation (no causal methodology), the verdict should be in the **FALSE/MOSTLY-FALSE** bands (0-28%).
+- Only rate causal claims above 42% if there is credible causal evidence (e.g., controlled analysis, clear causal mechanism with strong evidence, or authoritative findings with methodology).
+
 ## EVIDENCE-SCOPE-AWARE EVALUATION
 
 Evidence may come from sources with DIFFERENT EvidenceScopes (per-fact source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
@@ -7856,6 +7915,10 @@ AFTER analyzing individual claims, evaluate the article as a whole:
 4. Even if individual facts are accurate, is the article's framing MISLEADING?
 5. Are CENTRAL claims (marked [CENTRAL]) true? If central claims are FALSE but supporting claims are TRUE, the article is MISLEADING.
 
+6. **Central-claim dominance rule (generic)**:
+   - If a CENTRAL claim is refuted in the **MOSTLY-FALSE/FALSE** bands (0-28%) AND that claim is a key pillar of the thesis, the articleVerdict should typically also fall in **15-28%** unless the thesis is clearly separable and primarily about other central claims.
+   - If the refuted CENTRAL claim is also framed as causal/high-impact, weight it more heavily than peripheral accurate details.
+
 ARTICLE VERDICT TRUTH PERCENTAGE:
 - Provide articleVerdict as a truth percentage (0-100).
 - Use these bands to calibrate:
@@ -7881,7 +7944,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
 
   if (pseudoscienceAnalysis?.isPseudoscience) {
     systemPrompt += `\n\nPSEUDOSCIENCE DETECTED: This content contains patterns associated with pseudoscience (${pseudoscienceAnalysis.categories.join(", ")}).
-Claims relying on mechanisms that contradict established science (like "water memory", "molecular restructuring", etc.) should be in the MOSTLY-FALSE/FALSE bands (0-28%), not the UNVERIFIED band (43-57%).
+Claims relying on mechanisms that contradict established science should be in the MOSTLY-FALSE/FALSE bands (0-28%), not the UNVERIFIED band (43-57%).
 However, do NOT place them in the FALSE band (0-14%) unless you can prove them wrong with 99%+ certainty - we can't prove a negative absolutely.`;
   }
 
