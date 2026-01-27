@@ -18,6 +18,18 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 - **Parameterize, don't specialize**: Use configuration over conditionals
 - **No test-case terms in prompts**: LLM prompt examples must NOT contain terms, phrases, or patterns from known test cases or verification inputs. Examples must be abstract/generic (e.g., "Entity A did X" not "Country built industry"). This prevents "teaching to the test" and ensures genuine generalization.
 
+### Do not optimize prompts just for some test-case(s)
+- **Do not enforce** to find Contexts (AnalysisContext) or Scope (EvidenceScope) by using non generic terms in prompts.
+- **Do not enforce** to find different AnlysisContexts by date-periods or regions, such AnlysisContexts must be found naturally by LLM (Such boundaries could be found in evidence documentation).
+
+### Context vs Scope - NEVER CONFUSE
+- **AnalysisContext** = Top-level analytical frame requiring separate analysis
+- **EvidenceScope** = Per-fact source metadata (methodology, temporal bounds, boundaries of evidence)
+- **NEVER** use "scope" when referring to AnalysisContext - always say "context"
+- **NEVER** use "context" when referring to source metadata - always say "evidenceScope"
+- Variables: Use `context`/`analysisContext` for top-level frames, `evidenceScope` for fact metadata
+- UI: Display "Context" cards, never "Scope" cards (unless specifically about evidence scope)
+
 ### Input Neutrality
 - **Question ≈ Statement**: "Was X fair?" must yield same analysis as "X was fair"
 - **Format independence**: Input phrasing must NOT affect analysis depth or structure
@@ -27,14 +39,6 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 - **No stage skipping**: Understand → Research → Verdict (all required)
 - **Evidence transparency**: Every verdict must cite supporting or opposing facts
 - **Quality gates**: Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
-
-### Context vs Scope - NEVER CONFUSE
-- **AnalysisContext** = Top-level analytical frame requiring separate analysis
-- **EvidenceScope** = Per-fact source metadata (methodology, temporal bounds, boundaries of evidence)
-- **NEVER** use "scope" when referring to AnalysisContext - always say "context"
-- **NEVER** use "context" when referring to source metadata - always say "evidenceScope"
-- Variables: Use `context`/`analysisContext` for top-level frames, `evidenceScope` for fact metadata
-- UI: Display "Context" cards, never "Scope" cards (unless specifically about evidence scope)
 
 ---
 
