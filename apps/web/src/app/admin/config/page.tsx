@@ -669,7 +669,12 @@ export default function ConfigAdminPage() {
 
   // Auto-validate prompts with debounce
   useEffect(() => {
-    if (selectedType !== "prompt" || !promptContent || !promptDirty) {
+    if (selectedType !== "prompt" || !promptContent) {
+      return;
+    }
+    // Clear stale validation when content matches active (no unsaved changes)
+    if (!promptDirty) {
+      setValidation(null);
       return;
     }
     const abortController = new AbortController();
@@ -698,7 +703,12 @@ export default function ConfigAdminPage() {
 
   // Auto-validate JSON configs with debounce
   useEffect(() => {
-    if (selectedType === "prompt" || !editConfig || !hasUnsavedJsonChanges) {
+    if (selectedType === "prompt" || !editConfig) {
+      return;
+    }
+    // Clear stale validation when content matches active (no unsaved changes)
+    if (!hasUnsavedJsonChanges) {
+      setValidation(null);
       return;
     }
     const abortController = new AbortController();
