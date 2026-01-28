@@ -1164,7 +1164,7 @@ export default function PromptsPage() {
                 </button>
               </div>
             </div>
-          ) : (
+          ) : tab === "history" ? (
             <div>
               {history.length === 0 ? (
                 <div className={styles.loading}>No version history yet</div>

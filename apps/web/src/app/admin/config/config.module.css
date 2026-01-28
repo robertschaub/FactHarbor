@@ -1,0 +1,355 @@
+/* Config Admin Page Styles */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Tab navigation */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.tab {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #374151;
+  background: #f9fafb;
+}
+
+.tab.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+/* Config type selector */
+.typeSelector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.typeCard {
+  flex: 1;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.typeCard:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.typeCard.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.typeCardTitle {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.typeCardDesc {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Profile selector */
+.profileSelector {
+  margin-bottom: 24px;
+}
+
+.profileSelect {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+/* Config viewer */
+.configViewer {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.configHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.configMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.configHash {
+  font-family: monospace;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.configLabel {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.configActions {
+  display: flex;
+  gap: 8px;
+}
+
+.configContent {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 16px;
+  font-family: "Fira Code", "Monaco", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  max-height: 600px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Buttons */
+.button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.buttonPrimary {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.buttonPrimary:hover {
+  background: #1d4ed8;
+}
+
+.buttonSecondary {
+  background: white;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.buttonSecondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* Status indicators */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusActive {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.statusInactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* History list */
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.historyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+}
+
+.historyItem:hover {
+  background: #f9fafb;
+}
+
+.historyMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.historyHash {
+  font-family: monospace;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.historyLabel {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.historyDate {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.historyActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Loading state */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px;
+  color: #6b7280;
+}
+
+/* Error state */
+.error {
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+}
+
+/* Empty state */
+.empty {
+  padding: 48px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.emptyText {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.emptyHint {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* Form editor styles (for Phase 2) */
+.formSection {
+  margin-bottom: 24px;
+}
+
+.formSectionTitle {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: #374151;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.formInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.formHelp {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .typeSelector {
+    flex-direction: column;
+  }
+
+  .configHeader {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}

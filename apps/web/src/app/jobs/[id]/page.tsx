@@ -28,6 +28,7 @@ import { MethodologySubGroup } from "./components/MethodologySubGroup";
 import { ArticleFrameBanner } from "./components/ArticleFrameBanner";
 import { groupFactsByMethodology } from "./utils/methodologyGrouping";
 import { PromptViewer } from "./components/PromptViewer";
+import { ConfigViewer } from "./components/ConfigViewer";
 
 type Job = {
   jobId: string;
@@ -663,6 +664,7 @@ export default function JobPage() {
             {events.length === 0 && <li style={{ color: "#666" }}>No events yet.</li>}
           </ul>
           {job && <PromptViewer jobId={job.jobId} />}
+          {job && <ConfigViewer jobId={job.jobId} />}
         </div>
       )}
     </div>
@@ -1020,7 +1022,7 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
         )}
 
         {/* Only show shortAnswer if it's different from verdictReason to avoid duplication */}
-        {(verdictSummary?.shortAnswer || verdictSummary?.summary) && 
+        {(verdictSummary?.shortAnswer || verdictSummary?.summary) &&
          (verdictSummary?.shortAnswer || verdictSummary?.summary) !== verdictReason && (
           <div className={styles.shortAnswerBox} style={{ borderLeftColor: overallColor.border }}>
             <div className={styles.shortAnswerText}>{verdictSummary.shortAnswer || verdictSummary.summary}</div>
@@ -1083,9 +1085,9 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
   const negativeCount = factors.filter((f: any) => f.supports === "no").length;
   const neutralCount = factors.filter((f: any) => f.supports === "neutral").length;
   // Only count as "contested" factors with actual counter-evidence (not mere opinions/doubts)
-  const contestedCount = factors.filter((f: any) => 
-    f.supports === "no" && 
-    f.isContested && 
+  const contestedCount = factors.filter((f: any) =>
+    f.supports === "no" &&
+    f.isContested &&
     (f.factualBasis === "established" || f.factualBasis === "disputed")
   ).length;
 
@@ -1235,8 +1237,8 @@ function KeyFactorRow({ factor, showContestation = true }: { factor: any; showCo
 function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis, pseudoscienceAnalysis, fallbackConfidence }: { articleAnalysis: any; verdictSummary?: any; fallbackThesis?: string; pseudoscienceAnalysis?: any; fallbackConfidence?: number }) {
   // CRITICAL FIX: Use verdictSummary as fallback when articleAnalysis is missing
   // The verdictSummary contains the correct truth percentage from the analyzer
-  const articleTruth = articleAnalysis 
-    ? getArticleTruthPercentage(articleAnalysis) 
+  const articleTruth = articleAnalysis
+    ? getArticleTruthPercentage(articleAnalysis)
     : getVerdictTruthPercentage(verdictSummary);
   // v2.6.28: Use verdictSummary confidence as fallback when articleAnalysis confidence is missing
   // v2.6.31: Also check twoPanelSummary.factharborAnalysis.confidence via fallbackConfidence prop

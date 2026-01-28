@@ -147,6 +147,13 @@ export default function AdminPage() {
           View, edit, and manage prompt templates for all pipelines
         </p>
 
+        <Link href="/admin/config" className={styles.btnPrimary}>
+          ⚙️ Unified Config Management
+        </Link>
+        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          Manage search, calculation, and prompt configurations with version history
+        </p>
+
         <Link href="/admin/test-config" className={styles.btnPrimary}>
           🔧 Configuration Test Dashboard
         </Link>
