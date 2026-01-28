@@ -523,3 +523,300 @@ Start with config test to confirm hypothesis, then refinement gate (quick win), 
 - Consider adding this document to `Docs/STATUS/KNOWN_ISSUES.md` or cross-referencing it.
 
 **Approved for implementation of Adjustments 1-4. Adjustment 5 should be implemented with the confidence threshold modification suggested above.**
+
+---
+
+## Implementation Plan
+
+**Created**: 2026-01-28  
+**Status**: Ready for execution  
+**Estimated Total Effort**: 1-2 days (excluding testing)
+
+---
+
+### Phase 0: Preparation (30 min)
+
+**Goal**: Establish baseline and create test harness
+
+| Task | File | Action |
+|------|------|--------|
+| 0.1 | `scripts/quality-regression.ps1` | Create script that runs 5 canonical inputs under two configs and outputs comparison |
+| 0.2 | `test-inputs/` | Create folder with 5 test JSON files (see Test Inputs below) |
+| 0.3 | `.env.local` | Document current settings before changes |
+
+**Test Inputs to Create** (abstract, AGENTS.md compliant):
+1. `comparative-boundary.json` - "How has X changed before and after [date]?"
+2. `multi-jurisdiction.json` - "How does policy Y differ between [region A] and [region B]?"
+3. `contested-scientific.json` - Scientific claim with genuine peer-reviewed counter-evidence
+4. `factual-historical.json` - Well-documented historical event (non-controversial)
+5. `opinion-editorial.json` - Editorial with rhetorical criticism but no factual counter-evidence
+
+---
+
+### Phase 1: Config Baseline Test (0 code changes)
+
+**Goal**: Confirm that `deep` + `FH_ALLOW_MODEL_KNOWLEDGE=true` improves quality
+
+| Task | Action | Success Criteria |
+|------|--------|------------------|
+| 1.1 | Run 5 test inputs with `quick` mode, `deterministic=true`, `model_knowledge=false` | Capture results |
+| 1.2 | Run same 5 inputs with `deep` mode, `deterministic=false`, `model_knowledge=true` | Capture results |
+| 1.3 | Compare: contexts detected, tangential contexts, contestation accuracy | Document delta |
+
+**Decision Gate**: If `deep` mode shows >30% improvement in context detection, proceed with code changes. Otherwise, investigate further.
+
+---
+
+### Phase 2: Refinement Gate Fix (Adjustment 3)
+
+**Goal**: Allow evidence-based refinement to run in quick mode
+
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts`
+
+**Change**:
+```typescript
+// BEFORE (around line ~3500 in refineScopesFromEvidence)
+if (facts.length < 8) {
+  return { contexts: existingContexts, ... };
+}
+
+// AFTER
+const minRefineFacts = Math.min(8, getActiveConfig().minFactsRequired);
+if (facts.length < minRefineFacts) {
+  debugLog(`[Refine] Skipping: ${facts.length} facts < ${minRefineFacts} threshold`);
+  return { contexts: existingContexts, ... };
+}
+```
+
+**Verification**:
+- Run quick-mode test input with 6-7 facts
+- Confirm `refineScopesFromEvidence()` now executes (check debug log)
+- Confirm no regression in deep-mode behavior
+
+**Effort**: 30 min
+
+---
+
+### Phase 3: Seed Context Forcing Gate (Adjustment 1)
+
+**Goal**: Stop heuristic seed contexts from overriding LLM in non-deterministic/exploratory runs
+
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts`
+
+**Locate**: Block with comment `// v2.8.x: Deterministic seed-scope enforcement`
+
+**Change**:
+```typescript
+// BEFORE
+if (seedScopes.length >= 2 && understanding.analysisContexts.length <= 1) {
+  // Force seed contexts
+  understanding.analysisContexts = seedScopes.map(...);
+}
+
+// AFTER
+const shouldForceSeeds = 
+  getActiveConfig().deterministic === true &&
+  isComparativeLikeText(analysisInput) &&
+  seedScopes.length >= 2 &&
+  understanding.analysisContexts.length <= 1;
+
+if (shouldForceSeeds) {
+  debugLog(`[Seed-Force] Applying heuristic seeds (deterministic + comparative)`);
+  understanding.analysisContexts = seedScopes.map(...);
+} else if (seedScopes.length >= 2) {
+  debugLog(`[Seed-Force] Skipped: deterministic=${getActiveConfig().deterministic}, comparative=${isComparativeLikeText(analysisInput)}`);
+}
+```
+
+**Verification**:
+- Run non-deterministic test → seed forcing should NOT apply
+- Run deterministic + comparative test → seed forcing should apply
+- Confirm tangential context reduction in non-deterministic runs
+
+**Effort**: 1 hour
+
+---
+
+### Phase 4: Seeds as Soft Hints in Refinement (Adjustment 2)
+
+**Goal**: Pass heuristic seeds to refinement prompt as optional candidates
+
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts`
+
+**Locate**: `refineScopesFromEvidence()` function
+
+**Change**:
+```typescript
+// Add to refineScopesFromEvidence() parameters or compute inside:
+const seedScopes = detectScopes(originalInput);
+const seedHint = seedScopes.length > 0 
+  ? formatDetectedScopesHint(seedScopes, true) 
+  : "";
+
+// Add to userPrompt (keep concise, ≤200 tokens):
+const userPrompt = `
+... existing prompt content ...
+
+${seedHint ? `
+## CANDIDATE CONTEXTS (heuristic detection)
+${seedHint}
+
+NOTE: Use these candidates ONLY if supported by ≥1 fact. Drop any candidate without evidence support.
+` : ""}
+`;
+```
+
+**Verification**:
+- Run test with heuristic-detectable scopes → candidates appear in prompt
+- Confirm candidates are dropped when no facts support them
+- Confirm candidates are kept when facts support them
+
+**Effort**: 2 hours
+
+---
+
+### Phase 5: Contested vs Doubted Fix (Adjustment 4)
+
+**Goal**: Only label "contested" when explicit counter-evidence exists
+
+**File**: `apps/web/src/lib/analyzer/aggregation.ts`
+
+**Changes**:
+
+**5a. In `validateContestation()`**:
+```typescript
+// When downgrading to opinion, also clear contested flag
+if (shouldDowngrade) {
+  return {
+    ...result,
+    factualBasis: "opinion",
+    isContested: false,        // ADD THIS
+    contestedBy: undefined,    // ADD THIS (optional)
+  };
+}
+```
+
+**5b. In `detectClaimContestation()`**:
+```typescript
+// If no documented counter-evidence, return doubted not contested
+if (!hasDocumentedCounterEvidence) {
+  return {
+    isContested: false,
+    factualBasis: "opinion",
+    // ... other fields
+  };
+}
+```
+
+**5c. Remove domain-specific tokens**:
+```typescript
+// BEFORE
+const documentedEvidencePattern = /VAERS|report|investigation|study|data/i;
+
+// AFTER (generic only)
+const documentedEvidencePattern = /\breport\b|\binvestigation\b|\bstudy\b|\bdata\b|\banalysis\b|\bfindings\b/i;
+```
+
+**Verification**:
+- Run opinion-editorial test → should NOT show "Contested"
+- Run contested-scientific test → should show "Contested" with factIds
+- Confirm no domain-specific terms in regex
+
+**Effort**: 3 hours
+
+---
+
+### Phase 6: Directionality Hardening (Adjustment 5) — WITH THRESHOLD
+
+**Goal**: Catch "reasoning contradicts verdict" for extreme low verdicts
+
+**File**: `apps/web/src/lib/analyzer/verdict-corrections.ts`
+
+**Locate**: `detectAndCorrectVerdictInversion()`
+
+**Change**:
+```typescript
+// BEFORE
+if (verdictPct < 50) {
+  return { inverted: false, ... };
+}
+
+// AFTER
+// Check high verdicts (existing logic)
+if (verdictPct >= 80 && hasNegationSignals(reasoning)) {
+  return { inverted: true, correctedPct: 100 - verdictPct, ... };
+}
+
+// Check extreme low verdicts (NEW - with threshold)
+if (verdictPct <= 20 && hasStrongSupportSignals(reasoning)) {
+  debugLog(`[Inversion] Low verdict ${verdictPct}% but reasoning supports claim`);
+  return { inverted: true, correctedPct: 100 - verdictPct, ... };
+}
+
+// Mixed zone (20-80%) - don't invert, tension is expected
+return { inverted: false, ... };
+```
+
+**Add helper** (if not exists):
+```typescript
+function hasStrongSupportSignals(reasoning: string): boolean {
+  const supportPatterns = [
+    /\bconfirm(s|ed|ing)?\b/i,
+    /\bsupport(s|ed|ing)?\b/i,
+    /\bconsistent with\b/i,
+    /\bevidence (shows|demonstrates|indicates)\b/i,
+    /\bverified\b/i,
+  ];
+  const matches = supportPatterns.filter(p => p.test(reasoning)).length;
+  return matches >= 2; // Require multiple signals
+}
+```
+
+**Verification**:
+- Create test case with verdict=15% but reasoning says "evidence confirms"
+- Confirm inversion triggers
+- Confirm 30% verdict with mixed reasoning does NOT invert
+
+**Effort**: 2 hours
+
+---
+
+### Phase 7: Documentation & Cleanup
+
+| Task | Action |
+|------|--------|
+| 7.1 | Update `Docs/STATUS/Changelog_v2.6.38_to_v2.6.39.md` with all changes |
+| 7.2 | Update `Docs/STATUS/KNOWN_ISSUES.md` to reference this document |
+| 7.3 | Add note to `.env.example` about `deep` mode cost implications |
+| 7.4 | Remove any remaining domain-specific terms from `orchestrated.ts` |
+| 7.5 | Run full test harness and document results |
+
+**Effort**: 1 hour
+
+---
+
+### Summary Timeline
+
+| Phase | Description | Effort | Dependencies |
+|-------|-------------|--------|--------------|
+| 0 | Preparation | 30 min | None |
+| 1 | Config baseline test | 1 hour | Phase 0 |
+| 2 | Refinement gate fix | 30 min | Phase 1 confirms hypothesis |
+| 3 | Seed forcing gate | 1 hour | Phase 2 |
+| 4 | Seeds as hints | 2 hours | Phase 3 |
+| 5 | Contested/doubted fix | 3 hours | Phase 4 |
+| 6 | Directionality hardening | 2 hours | Phase 5 |
+| 7 | Documentation | 1 hour | Phase 6 |
+
+**Total**: ~11 hours (1.5 working days)
+
+---
+
+### Rollback Plan
+
+Each phase is independently revertable:
+- Phase 2-4: Revert changes to `orchestrated.ts`
+- Phase 5: Revert changes to `aggregation.ts`
+- Phase 6: Revert changes to `verdict-corrections.ts`
+
+If quality regresses after any phase, revert that phase and investigate before proceeding.
