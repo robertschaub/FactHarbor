@@ -49,6 +49,13 @@ different analytical frames that need separate verdicts?
 - Different regulatory/procedural frameworks with different applicability
 - Different process phases with incompatible boundaries
 
+**CRITICAL: Post-evidence boundary detection (comparative claims)**
+After examining evidence for comparative inputs (e.g., "X is more efficient than Y"):
+- Scan EvidenceScope metadata for boundary markers (methodology, boundaries fields)
+- If evidence uses DIFFERENT system boundaries (e.g., "full chain" vs "use phase", "end-to-end" vs "direct use"), these MUST become separate AnalysisContexts
+- The user's input may not name the boundaries explicitly - the evidence will reveal them
+- Create contexts named by boundary type (e.g., "End-to-End Analysis", "Direct Use Analysis")
+
 **CRITICAL - Do NOT split for**:
 - Different viewpoints or narratives (pro vs. con are perspectives, not contexts)
 - Different evidence genres (expert quotes vs. statistics are source types, not contexts)

@@ -108,7 +108,7 @@ export interface VerdictValidationResult {
  *
  * "ArticleFrame"
  *   = Broader frame or topic of the input article.
- *   = Stored in `analysisContext` field.
+ *   = Stored in `analysisContext` field (singular - legacy name, NOT an AnalysisContext!).
  *
  * "EvidenceScope" (per-fact source scope)
  *   = Methodology/boundaries defined BY a source document.
@@ -117,11 +117,11 @@ export interface VerdictValidationResult {
  *     the SOURCE computed its data (e.g., a specific methodology/boundary).
  *
  * SUMMARY:
- *   - Top-level split unit = AnalysisContext
- *   - "EvidenceScope" in code = per-fact source methodology/boundaries
- *   - "ArticleFrame" = broader frame or topic of the input article
+ *   - Top-level split unit = AnalysisContext (stored in `analysisContexts` plural)
+ *   - "EvidenceScope" = per-fact source methodology/boundaries
+ *   - "ArticleFrame" = broader topic (stored in `analysisContext` singular - naming collision!)
  *
- * JSON field names use v2.7 terminology (`analysisContexts`, `analysisContext`, `contextId`).
+ * WATCH OUT: `analysisContext` (singular) ≠ AnalysisContext type! It stores ArticleFrame.
  * ============================================================================
  */
 

@@ -1,5 +1,5 @@
 ---
-version: "2.6.43"
+version: "2.6.44"
 pipeline: "orchestrated"
 description: "Full orchestrated multi-stage analysis pipeline prompts"
 lastModified: "2026-01-27T18:00:00Z"
@@ -55,6 +55,7 @@ CRITICAL RULES:
 - **CRITICAL: Separate formal authority = separate contexts (evidence-gated)**: If evidence references decisions, rulings, or processes from DIFFERENT formal bodies (each with independent authority to make determinations on different matters), AND each authority has at least one supporting fact, these require separate AnalysisContexts. Do NOT split on incidental mentions without supporting evidence.
 - **CRITICAL: Different system boundaries = separate contexts (evidence-gated)**: If the input is a comparative claim and evidence uses different measurement boundaries or system definitions, AND each boundary has at least one supporting fact, these require separate AnalysisContexts. Do NOT split on incidental mentions.
 - **Anti-duplication rule**: If you create an authority-specific or boundary-specific context, do NOT also keep a redundant generic parent context UNLESS the parent context (a) answers a different question than the specific contexts, OR (b) has distinct evidence not covered by the specific contexts.
+- **CRITICAL: Post-evidence boundary detection (comparative claims)**: After examining evidence for comparative inputs (e.g., "X is more efficient than Y"), scan EvidenceScope metadata for boundary markers. If evidence uses DIFFERENT system boundaries (e.g., "full chain" vs "use phase", "end-to-end" vs "direct use"), these MUST become separate AnalysisContexts. The user's input may not name the boundaries explicitly - the evidence will reveal them.
 - Do NOT split into AnalysisContexts just because there are pro vs con viewpoints. Viewpoints are not AnalysisContexts.
 - Do NOT split into AnalysisContexts purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting).
 - If you split, prefer frames that reflect methodology/boundaries/process-chain segmentation present in the evidence.
