@@ -323,7 +323,7 @@ function SearchConfigForm({
         <input
           type="text"
           className={styles.formInput}
-          value={config.domainWhitelist.join(", ")}
+          value={(config.domainWhitelist || []).join(", ")}
           placeholder="e.g., reuters.com, apnews.com"
           onChange={(e) => updateField("domainWhitelist", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
         />
@@ -335,7 +335,7 @@ function SearchConfigForm({
         <input
           type="text"
           className={styles.formInput}
-          value={config.domainBlacklist.join(", ")}
+          value={(config.domainBlacklist || []).join(", ")}
           placeholder="e.g., example.com, spam.net"
           onChange={(e) => updateField("domainBlacklist", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
         />
@@ -1580,12 +1580,12 @@ export default function ConfigAdminPage() {
                 <div style={{ color: "#065f46" }}>Valid prompt</div>
               ) : (
                 <div>
-                  {validation.errors.map((e, i) => (
+                  {(validation.errors || []).map((e, i) => (
                     <div key={i} style={{ color: "#b91c1c" }}>Error: {e}</div>
                   ))}
                 </div>
               )}
-              {validation.warnings.map((w, i) => (
+              {(validation.warnings || []).map((w, i) => (
                 <div key={i} style={{ color: "#92400e" }}>Warning: {w}</div>
               ))}
             </div>
@@ -1772,12 +1772,12 @@ export default function ConfigAdminPage() {
               <div style={{ fontWeight: 600, marginBottom: 4 }}>
                 {validation.valid ? "✓ Valid" : "✗ Invalid"}
               </div>
-              {validation.errors.length > 0 && (
+              {validation.errors?.length > 0 && (
                 <ul style={{ margin: "8px 0", paddingLeft: 20, color: "#991b1b" }}>
                   {validation.errors.map((e, i) => <li key={i}>{e}</li>)}
                 </ul>
               )}
-              {validation.warnings.length > 0 && (
+              {validation.warnings?.length > 0 && (
                 <ul style={{ margin: "8px 0", paddingLeft: 20, color: "#92400e" }}>
                   {validation.warnings.map((w, i) => <li key={i}>Warning: {w}</li>)}
                 </ul>
