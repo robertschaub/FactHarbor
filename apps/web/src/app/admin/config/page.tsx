@@ -262,7 +262,10 @@ function SearchConfigForm({
             value={config.maxResults}
             min={1}
             max={20}
-            onChange={(e) => updateField("maxResults", parseInt(e.target.value) || 6)}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("maxResults", isNaN(v) ? 6 : v);
+            }}
           />
           <div className={styles.formHelp}>1-20 results per query</div>
         </div>
@@ -275,7 +278,10 @@ function SearchConfigForm({
             value={config.maxSourcesPerIteration}
             min={1}
             max={10}
-            onChange={(e) => updateField("maxSourcesPerIteration", parseInt(e.target.value) || 4)}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("maxSourcesPerIteration", isNaN(v) ? 4 : v);
+            }}
           />
           <div className={styles.formHelp}>1-10 sources</div>
         </div>
@@ -289,7 +295,10 @@ function SearchConfigForm({
             min={1000}
             max={60000}
             step={1000}
-            onChange={(e) => updateField("timeoutMs", parseInt(e.target.value) || 12000)}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("timeoutMs", isNaN(v) ? 12000 : v);
+            }}
           />
           <div className={styles.formHelp}>1000-60000 ms</div>
         </div>
@@ -372,14 +381,15 @@ function CalcConfigForm({
               min={1}
               max={10}
               step={0.1}
-              onChange={(e) =>
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
                 updateNested("aggregation", {
                   centralityWeights: {
                     ...config.aggregation.centralityWeights,
-                    high: parseFloat(e.target.value) || 3,
+                    high: isNaN(v) ? 3 : v,
                   },
-                })
-              }
+                });
+              }}
             />
           </div>
           <div className={styles.formGroup}>
@@ -391,14 +401,15 @@ function CalcConfigForm({
               min={1}
               max={10}
               step={0.1}
-              onChange={(e) =>
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
                 updateNested("aggregation", {
                   centralityWeights: {
                     ...config.aggregation.centralityWeights,
-                    medium: parseFloat(e.target.value) || 2,
+                    medium: isNaN(v) ? 2 : v,
                   },
-                })
-              }
+                });
+              }}
             />
           </div>
           <div className={styles.formGroup}>
@@ -410,14 +421,15 @@ function CalcConfigForm({
               min={0.1}
               max={5}
               step={0.1}
-              onChange={(e) =>
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
                 updateNested("aggregation", {
                   centralityWeights: {
                     ...config.aggregation.centralityWeights,
-                    low: parseFloat(e.target.value) || 1,
+                    low: isNaN(v) ? 1 : v,
                   },
-                })
-              }
+                });
+              }}
             />
           </div>
         </div>
@@ -439,11 +451,12 @@ function CalcConfigForm({
               min={0}
               max={1}
               step={0.05}
-              onChange={(e) =>
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
                 updateNested("sourceReliability", {
-                  confidenceThreshold: parseFloat(e.target.value) || 0.8,
-                })
-              }
+                  confidenceThreshold: isNaN(v) ? 0.8 : v,
+                });
+              }}
             />
             <div className={styles.formHelp}>Min LLM confidence (0-1)</div>
           </div>
@@ -456,11 +469,12 @@ function CalcConfigForm({
               min={0}
               max={1}
               step={0.05}
-              onChange={(e) =>
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
                 updateNested("sourceReliability", {
-                  consensusThreshold: parseFloat(e.target.value) || 0.2,
-                })
-              }
+                  consensusThreshold: isNaN(v) ? 0.2 : v,
+                });
+              }}
             />
             <div className={styles.formHelp}>Max disagreement (0-1)</div>
           </div>
@@ -473,11 +487,12 @@ function CalcConfigForm({
               min={0}
               max={1}
               step={0.05}
-              onChange={(e) =>
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
                 updateNested("sourceReliability", {
-                  defaultScore: parseFloat(e.target.value) || 0.5,
-                })
-              }
+                  defaultScore: isNaN(v) ? 0.5 : v,
+                });
+              }}
             />
             <div className={styles.formHelp}>For unknown sources (0-1)</div>
           </div>
@@ -496,11 +511,12 @@ function CalcConfigForm({
               value={config.contestationPenalties.established}
               min={-50}
               max={0}
-              onChange={(e) =>
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
                 updateNested("contestationPenalties", {
-                  established: parseInt(e.target.value) || -12,
-                })
-              }
+                  established: isNaN(v) ? -12 : v,
+                });
+              }}
             />
           </div>
           <div className={styles.formGroup}>
@@ -511,11 +527,12 @@ function CalcConfigForm({
               value={config.contestationPenalties.disputed}
               min={-50}
               max={0}
-              onChange={(e) =>
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
                 updateNested("contestationPenalties", {
-                  disputed: parseInt(e.target.value) || -8,
-                })
-              }
+                  disputed: isNaN(v) ? -8 : v,
+                });
+              }}
             />
           </div>
         </div>
@@ -535,12 +552,13 @@ function CalcConfigForm({
             value={config.mixedConfidenceThreshold}
             min={0}
             max={100}
-            onChange={(e) =>
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
               onChange({
                 ...config,
-                mixedConfidenceThreshold: parseInt(e.target.value) || 60,
-              })
-            }
+                mixedConfidenceThreshold: isNaN(v) ? 60 : v,
+              });
+            }}
           />
           <div className={styles.formHelp}>
             Below this, MIXED becomes UNVERIFIED (0-100)
