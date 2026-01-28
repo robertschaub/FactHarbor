@@ -1149,9 +1149,11 @@ export default function ConfigAdminPage() {
                 const blob = await res.blob();
                 const filename = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || `${profileKey}.prompt.md`;
                 const a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
+                const objectUrl = URL.createObjectURL(blob);
+                a.href = objectUrl;
                 a.download = filename;
                 a.click();
+                URL.revokeObjectURL(objectUrl); // Clean up to prevent memory leak
               } else {
                 alert("Export failed: " + (await res.json()).error);
               }
