@@ -607,9 +607,18 @@ export default function ConfigAdminPage() {
   const [promptDirty, setPromptDirty] = useState(false);
 
   // Track if JSON config has been modified (compare with activeConfig)
+  // Only compare if activeConfig matches current type AND profile to prevent race conditions
   const hasUnsavedJsonChanges = useMemo(() => {
     if (!editConfig || selectedType === "prompt") return false;
-    if (!activeConfig?.content) return !!editConfig; // New config = unsaved
+    // Verify activeConfig is for the current type/profile before comparing
+    if (
+      !activeConfig?.content ||
+      activeConfig.configType !== selectedType ||
+      activeConfig.profileKey !== profileKey
+    ) {
+      // No valid activeConfig for comparison - treat as unsaved if we have edits
+      return !!editConfig;
+    }
     try {
       // Compare with same formatting used when saving (2-space indentation)
       const current = JSON.stringify(editConfig, null, 2);
@@ -618,7 +627,7 @@ export default function ConfigAdminPage() {
     } catch {
       return false;
     }
-  }, [editConfig, activeConfig, selectedType]);
+  }, [editConfig, activeConfig, selectedType, profileKey]);
 
   // Combined unsaved changes check
   const hasUnsavedChanges = promptDirty || hasUnsavedJsonChanges;
