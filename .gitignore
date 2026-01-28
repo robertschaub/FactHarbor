@@ -59,6 +59,13 @@ apps/api/*.db-wal
 apps/web/test/output/
 apps/web/prompts/promptfoo-results/
 prompts/promptfoo-results/
+
+# Prompt version backups and test-specific prompts
+# Keep canonical prompts (e.g., orchestrated.prompt.md, orchestrated-compact.prompt.md)
+# Ignore version snapshots and test-case-specific variants
+apps/web/prompts/*-[0-9].[0-9].[0-9]*.prompt.md
+apps/web/prompts/*Good*.prompt.md
+apps/web/prompts/*Test*.prompt.md
 /tmp*
 /temp*
 

@@ -12,9 +12,12 @@
  * @version 2.6.41
  */
 
-import { readFile, stat } from "fs/promises";
+import { readFile, stat, readdir, writeFile, rename, unlink } from "fs/promises";
 import { createHash } from "crypto";
 import path from "path";
+
+// Active prompt file override (per pipeline)
+const activePromptFiles = new Map<Pipeline, string>();
 
 // ============================================================================
 // TYPES
@@ -108,11 +111,373 @@ export function clearPromptCache(): void {
 // ============================================================================
 
 /**
+ * Get the prompts directory path
+ */
+export function getPromptDir(): string {
+  return process.env.FH_PROMPT_DIR || path.resolve(process.cwd(), "prompts");
+}
+
+/**
  * Get the absolute path to a prompt file for a given pipeline
+ * Uses active prompt file if set, otherwise defaults to {pipeline}.prompt.md
  */
 export function getPromptFilePath(pipeline: Pipeline): string {
-  const promptDir = process.env.FH_PROMPT_DIR || path.resolve(process.cwd(), "prompts");
+  const promptDir = getPromptDir();
+  const activeFile = activePromptFiles.get(pipeline);
+  if (activeFile) {
+    return path.join(promptDir, activeFile);
+  }
   return path.join(promptDir, `${pipeline}.prompt.md`);
+}
+
+/**
+ * List available prompt files for a pipeline
+ * Returns files matching pattern: {pipeline}*.prompt.md
+ */
+export async function listPromptFiles(pipeline: Pipeline): Promise<{
+  files: Array<{
+    filename: string;
+    isActive: boolean;
+    isDefault: boolean;
+    version?: string;
+    description?: string;
+    tokenEstimate?: number;
+  }>;
+  activeFile: string;
+}> {
+  const promptDir = getPromptDir();
+  const defaultFile = `${pipeline}.prompt.md`;
+  const activeFile = activePromptFiles.get(pipeline) || defaultFile;
+
+  try {
+    const allFiles = await readdir(promptDir);
+    const matchingFiles = allFiles.filter(f =>
+      f.startsWith(pipeline) && f.endsWith(".prompt.md")
+    );
+
+    const files = await Promise.all(matchingFiles.map(async (filename) => {
+      const filePath = path.join(promptDir, filename);
+      let version: string | undefined;
+      let description: string | undefined;
+      let tokenEstimate: number | undefined;
+
+      try {
+        const content = await readFile(filePath, "utf-8");
+        // Quick parse of frontmatter for version/description
+        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        if (frontmatterMatch) {
+          const fm = frontmatterMatch[1];
+          const versionMatch = fm.match(/version:\s*["']?([^"'\n]+)/);
+          const descMatch = fm.match(/description:\s*["']?([^"'\n]+)/);
+          if (versionMatch) version = versionMatch[1].trim();
+          if (descMatch) description = descMatch[1].trim();
+        }
+        tokenEstimate = estimateTokens(content);
+      } catch {
+        // Ignore read errors for metadata
+      }
+
+      return {
+        filename,
+        isActive: filename === activeFile,
+        isDefault: filename === defaultFile,
+        version,
+        description,
+        tokenEstimate,
+      };
+    }));
+
+    // Sort: active first, then default, then alphabetically
+    files.sort((a, b) => {
+      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+      if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
+      return a.filename.localeCompare(b.filename);
+    });
+
+    return { files, activeFile };
+  } catch (err) {
+    // Directory not found or other error
+    return {
+      files: [{
+        filename: defaultFile,
+        isActive: true,
+        isDefault: true,
+      }],
+      activeFile: defaultFile,
+    };
+  }
+}
+
+/**
+ * Set the active prompt file for a pipeline
+ * Pass null/undefined to reset to default
+ */
+export function setActivePromptFile(pipeline: Pipeline, filename: string | null): void {
+  if (filename && filename !== `${pipeline}.prompt.md`) {
+    activePromptFiles.set(pipeline, filename);
+  } else {
+    activePromptFiles.delete(pipeline);
+  }
+  // Clear cache for this pipeline so next load uses new file
+  clearPromptCache();
+}
+
+/**
+ * Get the currently active prompt file for a pipeline
+ */
+export function getActivePromptFile(pipeline: Pipeline): string {
+  return activePromptFiles.get(pipeline) || `${pipeline}.prompt.md`;
+}
+
+// ============================================================================
+// FILE MANAGEMENT OPERATIONS
+// ============================================================================
+
+/**
+ * Validate a prompt filename for a pipeline
+ */
+export function isValidPromptFilename(pipeline: Pipeline, filename: string): boolean {
+  // Must start with pipeline name, end with .prompt.md
+  if (!filename.startsWith(pipeline) || !filename.endsWith(".prompt.md")) {
+    return false;
+  }
+  // No path traversal
+  if (filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
+    return false;
+  }
+  // Reasonable length
+  if (filename.length < 10 || filename.length > 100) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Load content of a specific prompt file by filename
+ */
+export async function loadPromptFileByName(pipeline: Pipeline, filename: string): Promise<{
+  success: boolean;
+  content?: string;
+  version?: string;
+  description?: string;
+  tokenEstimate?: number;
+  error?: string;
+}> {
+  if (!isValidPromptFilename(pipeline, filename)) {
+    return { success: false, error: `Invalid filename: ${filename}` };
+  }
+
+  const promptDir = getPromptDir();
+  const filePath = path.join(promptDir, filename);
+
+  try {
+    const content = await readFile(filePath, "utf-8");
+
+    // Parse frontmatter for metadata
+    let version: string | undefined;
+    let description: string | undefined;
+    const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    if (frontmatterMatch) {
+      const fm = frontmatterMatch[1];
+      const versionMatch = fm.match(/version:\s*["']?([^"'\n]+)/);
+      const descMatch = fm.match(/description:\s*["']?([^"'\n]+)/);
+      if (versionMatch) version = versionMatch[1].trim();
+      if (descMatch) description = descMatch[1].trim();
+    }
+
+    return {
+      success: true,
+      content,
+      version,
+      description,
+      tokenEstimate: estimateTokens(content),
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to read file" };
+  }
+}
+
+/**
+ * Create a new prompt file for a pipeline
+ */
+export async function createPromptFile(
+  pipeline: Pipeline,
+  filename: string,
+  content?: string,
+): Promise<{ success: boolean; error?: string }> {
+  if (!isValidPromptFilename(pipeline, filename)) {
+    return { success: false, error: `Invalid filename: ${filename}` };
+  }
+
+  const promptDir = getPromptDir();
+  const filePath = path.join(promptDir, filename);
+
+  // Check if file already exists
+  try {
+    await stat(filePath);
+    return { success: false, error: `File already exists: ${filename}` };
+  } catch {
+    // File doesn't exist, good to proceed
+  }
+
+  // Default template if no content provided
+  const defaultContent = content || `---
+version: "1.0.0"
+pipeline: "${pipeline}"
+description: "New prompt file"
+lastModified: "${new Date().toISOString()}"
+variables: []
+requiredSections: []
+---
+
+## SECTION_NAME
+
+Your prompt content here.
+`;
+
+  try {
+    await writeFile(filePath, defaultContent, "utf-8");
+    clearPromptCache();
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to create file" };
+  }
+}
+
+/**
+ * Duplicate a prompt file with a new name
+ */
+export async function duplicatePromptFile(
+  pipeline: Pipeline,
+  sourceFilename: string,
+  targetFilename: string,
+): Promise<{ success: boolean; error?: string }> {
+  if (!isValidPromptFilename(pipeline, sourceFilename)) {
+    return { success: false, error: `Invalid source filename: ${sourceFilename}` };
+  }
+  if (!isValidPromptFilename(pipeline, targetFilename)) {
+    return { success: false, error: `Invalid target filename: ${targetFilename}` };
+  }
+  if (sourceFilename === targetFilename) {
+    return { success: false, error: "Source and target filenames must be different" };
+  }
+
+  const promptDir = getPromptDir();
+  const sourcePath = path.join(promptDir, sourceFilename);
+  const targetPath = path.join(promptDir, targetFilename);
+
+  // Check target doesn't exist
+  try {
+    await stat(targetPath);
+    return { success: false, error: `Target file already exists: ${targetFilename}` };
+  } catch {
+    // Good, doesn't exist
+  }
+
+  try {
+    const content = await readFile(sourcePath, "utf-8");
+
+    // Update version label in frontmatter to indicate it's a copy
+    const updatedContent = content.replace(
+      /^(---\n[\s\S]*?version:\s*["']?)([^"'\n]+)(["']?)/m,
+      `$1$2-copy$3`
+    ).replace(
+      /^(---\n[\s\S]*?lastModified:\s*["']?)([^"'\n]+)(["']?)/m,
+      `$1${new Date().toISOString()}$3`
+    );
+
+    await writeFile(targetPath, updatedContent, "utf-8");
+    clearPromptCache();
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to duplicate file" };
+  }
+}
+
+/**
+ * Rename a prompt file
+ */
+export async function renamePromptFile(
+  pipeline: Pipeline,
+  oldFilename: string,
+  newFilename: string,
+): Promise<{ success: boolean; error?: string }> {
+  if (!isValidPromptFilename(pipeline, oldFilename)) {
+    return { success: false, error: `Invalid source filename: ${oldFilename}` };
+  }
+  if (!isValidPromptFilename(pipeline, newFilename)) {
+    return { success: false, error: `Invalid target filename: ${newFilename}` };
+  }
+  if (oldFilename === newFilename) {
+    return { success: false, error: "Filenames are the same" };
+  }
+
+  // Don't allow renaming the default file
+  const defaultFile = `${pipeline}.prompt.md`;
+  if (oldFilename === defaultFile) {
+    return { success: false, error: "Cannot rename the default prompt file" };
+  }
+
+  const promptDir = getPromptDir();
+  const oldPath = path.join(promptDir, oldFilename);
+  const newPath = path.join(promptDir, newFilename);
+
+  // Check new name doesn't exist
+  try {
+    await stat(newPath);
+    return { success: false, error: `Target file already exists: ${newFilename}` };
+  } catch {
+    // Good
+  }
+
+  try {
+    await rename(oldPath, newPath);
+
+    // Update active file reference if needed
+    if (activePromptFiles.get(pipeline) === oldFilename) {
+      activePromptFiles.set(pipeline, newFilename);
+    }
+
+    clearPromptCache();
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to rename file" };
+  }
+}
+
+/**
+ * Delete a prompt file
+ */
+export async function deletePromptFile(
+  pipeline: Pipeline,
+  filename: string,
+): Promise<{ success: boolean; error?: string }> {
+  if (!isValidPromptFilename(pipeline, filename)) {
+    return { success: false, error: `Invalid filename: ${filename}` };
+  }
+
+  // Don't allow deleting the default file
+  const defaultFile = `${pipeline}.prompt.md`;
+  if (filename === defaultFile) {
+    return { success: false, error: "Cannot delete the default prompt file" };
+  }
+
+  const promptDir = getPromptDir();
+  const filePath = path.join(promptDir, filename);
+
+  try {
+    await unlink(filePath);
+
+    // Reset active file if we deleted it
+    if (activePromptFiles.get(pipeline) === filename) {
+      activePromptFiles.delete(pipeline);
+    }
+
+    clearPromptCache();
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to delete file" };
+  }
 }
 
 /**

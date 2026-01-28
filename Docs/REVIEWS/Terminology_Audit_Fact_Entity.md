@@ -1,8 +1,8 @@
 # Terminology Audit: "Fact" Entity
 
-**Date**: 2026-01-27
-**Status**: Findings documented, awaiting decision
-**Scope**: All `apps/web/src/` files
+**Date**: 2026-01-27 (updated 2026-01-28)
+**Status**: Phase 0 in progress (documentation fixes)
+**Scope**: All `apps/web/src/` files + xWiki architecture documentation
 
 ---
 
@@ -15,6 +15,8 @@ The prompt layer already uses "Evidence" terminology correctly (see `extract-fac
 ---
 
 ## 2. Current Usage Map
+
+### 2.1 Code Usage
 
 ```
                          ExtractedFact (interface)
@@ -34,6 +36,22 @@ The prompt layer already uses "Evidence" terminology correctly (see `extract-fac
     +-- renderFactCard / renderFactList (UI)
     +-- keyFactor* CSS classes (UI)
 ```
+
+### 2.2 Documentation Inconsistency (xWiki Architecture Document)
+
+The xWiki architecture document (`Docs/FactHarbor POC1 Architecture Analysis.xwiki`) contains an internal inconsistency:
+
+**Section 2: ERD Data Model (Current POC1 Implementation)**
+- **Data Objects ERD**: Uses entity name `EVIDENCE` with field `fact` for the statement text
+- **Data Usage ERD**: Uses entity name `EXTRACTED_FACT` with field `fact` for the same concept
+
+**Additional Issues:**
+- Both ERDs use `fact` as the field name for the extracted statement text (should be `statement` or `text`)
+- The `ExtractedFact.category` enum includes `"evidence"` as one option, creating circular naming (an "evidence" that has category "evidence")
+- The documentation couldn't decide between conceptual naming (EVIDENCE) and implementation naming (EXTRACTED_FACT)
+
+**Why This Matters:**
+The xWiki documentation is the architectural specification. Having two different names for the same entity in the same document perpetuates the naming confusion and suggests uncertainty about whether these items are "facts" (implying certainty) or "evidence" (implying material to be evaluated).
 
 ### Type Definitions (3)
 
@@ -176,4 +194,8 @@ These issues were found and fixed in the same audit session:
 | Timeline | v3.0 | Gradual | Immediate |
 | **Recommendation** | **For v3.0** | **For now** | **Already done** |
 
-**Recommended path**: Apply Option C now (done), then Option B when starting new feature work, then Option A at v3.0.
+**Recommended path**:
+1. **Phase 0** (in progress): Fix documentation inconsistencies in xWiki architecture document
+2. Apply **Option C** to code (add clarifying comments)
+3. Apply **Option B** when starting new feature work (alias + gradual migration)
+4. Apply **Option A** at v3.0 (full rename with backward compat handling)

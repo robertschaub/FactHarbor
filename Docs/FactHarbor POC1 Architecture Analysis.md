@@ -1,0 +1,673 @@
+# FactHarbor POC1 Architecture Analysis
+
+**Version:** 2.6.17
+**Analysis Date:** January 2026
+**Document Purpose:** Technical diagrams, gap analysis, and optimization recommendations
+**Last Updated:** 2026-01-28 (Terminology corrections applied)
+
+> **Terminology Note:** This document uses "Evidence" as the entity name for extracted information from sources. In the current POC1 codebase, this is implemented as `ExtractedFact` (TypeScript interface). The term "Evidence" more accurately reflects that these items are extracted material to be evaluated, not verified facts. See [Terminology_Audit_Fact_Entity.md](REVIEWS/Terminology_Audit_Fact_Entity.md) for migration plans.
+
+---
+
+## 1. AKEL Flow Diagram (with LLM and WebSearch Interactions)
+
+```mermaid
+flowchart TB
+    subgraph Input["📥 Input Layer"]
+        URL[URL Input]
+        TEXT[Text Input]
+    end
+
+    subgraph Retrieval["🔍 Content Retrieval"]
+        FETCH[extractTextFromUrl]
+        PDF[PDF Parser<br/>pdf-parse v1]
+        HTML[HTML Parser<br/>cheerio]
+    end
+
+    subgraph AKEL["🧠 AKEL Pipeline"]
+        direction TB
+
+        subgraph Step1["Step 1: Understand"]
+            UNDERSTAND[understandClaim<br/>━━━━━━━━━━━━━<br/>• Detect input type<br/>• Extract claims<br/>• Identify dependencies<br/>• Assign risk tiers]
+            LLM1[("🤖 LLM Call #1<br/>Claude/GPT/Gemini")]
+        end
+
+        subgraph Step2["Step 2: Research (Iterative)"]
+            DECIDE[decideNextResearch<br/>━━━━━━━━━━━━━<br/>• Generate queries<br/>• Focus areas]
+
+            SEARCH[("🌐 Web Search<br/>Google CSE / SerpAPI")]
+
+            FETCHSRC[fetchSourceContent<br/>━━━━━━━━━━━━━<br/>• Parallel fetching<br/>• Timeout handling]
+
+            EXTRACT[extractFacts<br/>━━━━━━━━━━━━━<br/>• Parse sources<br/>• Extract facts]
+            LLM2[("🤖 LLM Call #2-N<br/>Per source")]
+        end
+
+        subgraph Step3["Step 3: Verdict Generation"]
+            VERDICT[generateVerdicts<br/>━━━━━━━━━━━━━<br/>• Claim verdicts<br/>• Article verdict<br/>• Dependency propagation]
+            LLM3[("🤖 LLM Call #N+1<br/>Final synthesis")]
+        end
+
+        subgraph Step4["Step 4: Report"]
+            REPORT[buildTwoPanelSummary<br/>━━━━━━━━━━━━━<br/>• Format results<br/>• Generate markdown]
+        end
+    end
+
+    subgraph Output["📤 Output"]
+        RESULT[AnalysisResult JSON]
+        MARKDOWN[Report Markdown]
+    end
+
+    %% Flow connections
+    URL --> FETCH
+    TEXT --> UNDERSTAND
+    FETCH --> PDF
+    FETCH --> HTML
+    PDF --> UNDERSTAND
+    HTML --> UNDERSTAND
+
+    UNDERSTAND --> LLM1
+    LLM1 --> DECIDE
+
+    DECIDE --> SEARCH
+    SEARCH --> FETCHSRC
+    FETCHSRC --> EXTRACT
+    EXTRACT --> LLM2
+    LLM2 --> DECIDE
+
+    DECIDE -->|"Research Complete"| VERDICT
+    VERDICT --> LLM3
+    LLM3 --> REPORT
+
+    REPORT --> RESULT
+    REPORT --> MARKDOWN
+
+    %% Styling
+    classDef llm fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef search fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef step fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+
+    class LLM1,LLM2,LLM3 llm
+    class SEARCH search
+    class UNDERSTAND,DECIDE,FETCHSRC,EXTRACT,VERDICT,REPORT step
+```
+
+---
+
+## 2. ERD Data Model (Current POC1 Implementation)
+
+### Data Objects ERD
+
+```mermaid
+erDiagram
+    ARTICLE ||--o{ CLAIM : "contains"
+    ARTICLE ||--|| ARTICLE_VERDICT : "has"
+    CLAIM ||--|| CLAIM_VERDICT : "has"
+    CLAIM ||--o{ CLAIM : "depends on"
+    CLAIM_VERDICT }o--o{ EVIDENCE : "supported by"
+    SOURCE ||--o{ EVIDENCE : "provides"
+    ARTICLE ||--o{ SOURCE : "references"
+
+    ARTICLE {
+        string id PK "Unique identifier (job ID)"
+        string inputType "text | url"
+        string inputValue "Original URL or text"
+        string articleThesis "Main argument/thesis"
+        string detectedInputType "question | claim | article"
+        boolean isQuestion "True if input is a question"
+        datetime createdAt "Analysis timestamp"
+        datetime updatedAt "Last update"
+        json distinctProceedings "Legal proceedings if any"
+        boolean hasMultipleProceedings "Multi-proceeding flag"
+        string proceedingContext "Context for proceedings"
+        json logicalFallacies "Detected fallacies array"
+        boolean isPseudoscience "Pseudoscience detection"
+        string_array pseudoscienceCategories "Categories if detected"
+        int llmCalls "Total LLM API calls"
+        json searchQueries "All search queries performed"
+        string schemaVersion "e.g. 2.6.17"
+    }
+
+    CLAIM {
+        string id PK "SC1, SC2, C1, etc."
+        string articleId FK "Parent article"
+        string text "The claim statement"
+        string type "legal | procedural | factual | evaluative"
+        string claimRole "attribution | source | timing | core"
+        string_array dependsOn "IDs of prerequisite claims"
+        string_array keyEntities "Named entities in claim"
+        boolean isCentral "Is this a central claim?"
+        string relatedProceedingId "Linked proceeding if any"
+        int startOffset "Position in original text"
+        int endOffset "End position in original text"
+        string approximatePosition "Descriptive position"
+    }
+
+    CLAIM_VERDICT {
+        string id PK "Same as claim ID"
+        string claimId FK "Reference to claim"
+        string llmVerdict "WELL-SUPPORTED | PARTIALLY-SUPPORTED | UNCERTAIN | REFUTED"
+        string verdict "True | Mostly True | Leaning True | Unverified | Leaning False | Mostly False | False"
+        int confidence "0-100 LLM confidence"
+        int truthPercentage "0-100 calibrated truth score"
+        string riskTier "A (high) | B (medium) | C (low)"
+        string reasoning "Explanation of verdict"
+        string_array supportingEvidenceIds "Evidence IDs supporting this"
+        boolean dependencyFailed "True if prerequisite failed"
+        string_array failedDependencies "Which deps failed"
+        string highlightColor "green | light-green | yellow | orange | dark-orange | red | dark-red"
+        boolean isPseudoscience "Pseudoscience flag"
+        string escalationReason "Why verdict was escalated"
+    }
+
+    ARTICLE_VERDICT {
+        string id PK "Same as article ID"
+        string articleId FK "Reference to article"
+        string llmArticleVerdict "Original LLM verdict"
+        int llmArticleConfidence "Original LLM confidence"
+        string articleVerdict "True | Mostly True | Leaning True | Unverified | Leaning False | Mostly False | False"
+        int articleTruthPercentage "0-100 calibrated score"
+        string articleVerdictReason "Why verdict differs from claims avg"
+        int claimsAverageTruthPercentage "Average of claim verdicts"
+        string claimsAverageVerdict "7-point average verdict"
+        int claimsTotal "Total claims analyzed"
+        int claimsSupported "Claims with truth >= 72%"
+        int claimsUncertain "Claims with truth 43-71%"
+        int claimsRefuted "Claims with truth < 43%"
+        int centralClaimsTotal "Number of central claims"
+        int centralClaimsSupported "Central claims supported"
+    }
+
+    EVIDENCE {
+        string id PK "S1-F1, S1-F2 format"
+        string sourceId FK "Reference to source"
+        string claimId FK "Optional: specific claim this supports"
+        string statement "The extracted statement text"
+        string category "legal_provision | direct_evidence | expert_quote | statistic | event | criticism"
+        string specificity "high | medium"
+        string sourceExcerpt "Original text excerpt"
+        string relatedProceedingId "Linked proceeding if any"
+        boolean isContestedClaim "Is this a contested assertion"
+        string claimSource "Who made contested claim"
+    }
+
+    SOURCE {
+        string id PK "S1, S2, etc."
+        string articleId FK "Parent article"
+        string url "Full URL"
+        string title "Page/document title"
+        string domain "Extracted domain"
+        int trackRecordScore "0-100 reliability score or null"
+        string fullText "Extracted content"
+        datetime fetchedAt "When content was fetched"
+        string category "news | academic | government | legal"
+        boolean fetchSuccess "True if fetch succeeded"
+        string searchQuery "Which query found this"
+        string mimeType "text/html | application/pdf"
+    }
+```
+
+### Data Usage ERD
+
+```mermaid
+erDiagram
+    JOB ||--o{ JOB_EVENT : "has"
+    JOB ||--|| ANALYSIS_RESULT : "produces"
+    ANALYSIS_RESULT ||--o{ CLAIM_VERDICT : "contains"
+    ANALYSIS_RESULT ||--o{ FETCHED_SOURCE : "references"
+    ANALYSIS_RESULT ||--o{ EVIDENCE : "contains"
+    CLAIM_VERDICT }o--o{ EVIDENCE : "supported by"
+    FETCHED_SOURCE ||--o{ EVIDENCE : "provides"
+    CLAIM_VERDICT ||--o{ CLAIM_VERDICT : "depends on"
+
+    JOB {
+        string JobId PK "GUID"
+        string Status "QUEUED|RUNNING|COMPLETE|FAILED"
+        int Progress "0-100"
+        datetime CreatedUtc
+        datetime UpdatedUtc
+        string InputType "text|url"
+        string InputValue "URL or text content"
+        string InputPreview "First 100 chars"
+        json ResultJson "Full analysis result"
+        string ReportMarkdown "Formatted report"
+    }
+
+    JOB_EVENT {
+        long Id PK
+        string JobId FK
+        datetime TsUtc
+        string Level "info|warn|error"
+        string Message
+    }
+
+    ANALYSIS_RESULT {
+        string schemaVersion "2.6.17"
+        string inputType "question|claim|article"
+        boolean isQuestion
+        string articleThesis
+        int articleTruthPercentage "0-100"
+        string articleVerdict "7-point scale"
+        json claimPattern "total/supported/uncertain/refuted"
+        boolean isPseudoscience
+        int llmCalls "Total LLM invocations"
+        json searchQueries "All search queries"
+    }
+
+    CLAIM_VERDICT {
+        string claimId PK "SC1, SC2, etc."
+        string claimText
+        boolean isCentral
+        string claimRole "attribution|source|timing|core"
+        string_array dependsOn "Prerequisite claim IDs"
+        boolean dependencyFailed
+        string llmVerdict "WELL-SUPPORTED|PARTIALLY-SUPPORTED|UNCERTAIN|REFUTED"
+        string verdict "7-point: True to False"
+        int confidence "0-100"
+        int truthPercentage "0-100"
+        string riskTier "A|B|C"
+        string reasoning
+        string_array supportingEvidenceIds
+        string highlightColor "green to dark-red"
+    }
+
+    FETCHED_SOURCE {
+        string id PK "S1, S2, etc."
+        string url
+        string title
+        int trackRecordScore "0-100 or null"
+        string fullText "Extracted content"
+        datetime fetchedAt
+        string category "legal|news|academic"
+        boolean fetchSuccess
+        string searchQuery "Which query found this"
+    }
+
+    EVIDENCE {
+        string id PK "S1-F1, S1-F2, etc."
+        string statement "The extracted statement text"
+        string category "legal_provision|direct_evidence|expert_quote|statistic|event|criticism"
+        string specificity "high|medium"
+        string sourceId FK
+        string sourceUrl
+        string sourceTitle
+        string sourceExcerpt
+        string relatedProceedingId
+        boolean isContestedClaim
+        string claimSource
+    }
+```
+
+---
+
+## 3. Overall Architecture with Interactions
+
+```mermaid
+flowchart TB
+    subgraph Client["🖥️ Client Layer"]
+        BROWSER[Web Browser]
+        ANALYZE_PAGE["/analyze page<br/>React + TailwindCSS"]
+        JOBS_PAGE["/jobs page<br/>Job history & status"]
+    end
+
+    subgraph NextJS["⚡ Next.js Web App (apps/web)"]
+        direction TB
+
+        subgraph API_Routes["API Routes"]
+            ANALYZE_API["/api/fh/analyze<br/>━━━━━━━━━━━━━<br/>POST: Create job"]
+            JOBS_API["/api/fh/jobs<br/>━━━━━━━━━━━━━<br/>GET: List jobs<br/>POST: Create job"]
+            JOB_API["/api/fh/jobs/[id]<br/>━━━━━━━━━━━━━<br/>GET: Job status"]
+            EVENTS_API["/api/fh/jobs/[id]/events<br/>━━━━━━━━━━━━━<br/>GET: Job events (SSE)"]
+            RUN_JOB["/api/internal/run-job<br/>━━━━━━━━━━━━━<br/>POST: Execute analysis"]
+        end
+
+        subgraph Lib["Core Libraries"]
+            ANALYZER["analyzer.ts<br/>━━━━━━━━━━━━━<br/>AKEL Pipeline<br/>2918 lines"]
+            RETRIEVAL["retrieval.ts<br/>━━━━━━━━━━━━━<br/>URL content extraction"]
+            WEBSEARCH["web-search.ts<br/>━━━━━━━━━━━━━<br/>Search abstraction"]
+            MBFC["mbfc-loader.ts<br/>━━━━━━━━━━━━━<br/>Source reliability"]
+        end
+    end
+
+    subgraph DotNet["🔧 .NET API (apps/api)"]
+        DOTNET_API["FactHarbor.Api<br/>ASP.NET Core"]
+
+        subgraph Controllers["Controllers"]
+            ANALYZE_CTRL["AnalyzeController"]
+            JOBS_CTRL["JobsController"]
+            INTERNAL_CTRL["InternalJobsController"]
+        end
+
+        subgraph Services["Services"]
+            JOB_SVC["JobService<br/>━━━━━━━━━━━━━<br/>Job CRUD operations"]
+            RUNNER_CLIENT["RunnerClient<br/>━━━━━━━━━━━━━<br/>Calls Next.js runner"]
+        end
+
+        DB[(SQLite Database<br/>━━━━━━━━━━━━━<br/>JobEntity<br/>JobEventEntity)]
+    end
+
+    subgraph External["🌐 External Services"]
+        LLM_PROVIDERS["LLM Providers<br/>━━━━━━━━━━━━━<br/>• Anthropic Claude<br/>• OpenAI GPT<br/>• Google Gemini<br/>• Mistral"]
+        SEARCH_PROVIDERS["Search Providers<br/>━━━━━━━━━━━━━<br/>• Google CSE<br/>• SerpAPI<br/>• Brave<br/>• Tavily"]
+        WEB["Web Content<br/>━━━━━━━━━━━━━<br/>• News sites<br/>• PDFs<br/>• Academic sources"]
+    end
+
+    %% Client interactions
+    BROWSER --> ANALYZE_PAGE
+    BROWSER --> JOBS_PAGE
+    ANALYZE_PAGE --> ANALYZE_API
+    JOBS_PAGE --> JOBS_API
+
+    %% Next.js internal
+    ANALYZE_API --> JOBS_API
+    JOBS_API -->|"Proxy"| DOTNET_API
+    JOB_API -->|"Proxy"| DOTNET_API
+    EVENTS_API -->|"Proxy"| DOTNET_API
+
+    %% .NET flow
+    DOTNET_API --> ANALYZE_CTRL
+    DOTNET_API --> JOBS_CTRL
+    DOTNET_API --> INTERNAL_CTRL
+    ANALYZE_CTRL --> JOB_SVC
+    JOBS_CTRL --> JOB_SVC
+    JOB_SVC --> DB
+    JOB_SVC --> RUNNER_CLIENT
+    RUNNER_CLIENT -->|"HTTP POST"| RUN_JOB
+
+    %% Analysis execution
+    RUN_JOB --> ANALYZER
+    ANALYZER --> RETRIEVAL
+    ANALYZER --> WEBSEARCH
+    ANALYZER --> MBFC
+
+    %% External calls
+    ANALYZER -->|"AI SDK"| LLM_PROVIDERS
+    WEBSEARCH --> SEARCH_PROVIDERS
+    RETRIEVAL --> WEB
+
+    %% Styling
+    classDef external fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef core fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef api fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+
+    class LLM_PROVIDERS,SEARCH_PROVIDERS,WEB external
+    class ANALYZER,RETRIEVAL,WEBSEARCH,MBFC core
+    class ANALYZE_API,JOBS_API,JOB_API,EVENTS_API,RUN_JOB api
+```
+
+---
+
+## 4. Specification vs Implementation Gap Analysis
+
+### 4.1 Data Model Gaps
+
+| Specification Entity | POC1 Status | Gap Description |
+|---------------------|-------------|-----------------|
+| **Claim** | ⚠️ Partial | No persistent storage; claims exist only in JSON result. Missing: `status`, `confidence_score`, `risk_score`, `completeness_score`, `version`, `views`, `edit_count` |
+| **Evidence** | ⚠️ Partial | Implemented as `ExtractedFact` but lacks: `supports` enum, proper `relevance_score` |
+| **Source** | ⚠️ Partial | `FetchedSource` exists but missing: `type` enum, `accuracy_history`, `correction_frequency`, weekly update scheduler |
+| **Scenario** | ❌ Missing | Not implemented. Claims are evaluated directly without scenario contexts |
+| **Verdict** | ⚠️ Partial | `ClaimVerdict` exists but missing: `likelihood_range`, `uncertainty_factors` array, proper `explanation_summary` |
+| **User** | ❌ Missing | No user authentication or role system |
+| **Edit** | ❌ Missing | No audit trail for changes |
+
+### 4.2 AKEL Component Gaps
+
+| Spec Component | POC1 Status | Gap Description |
+|---------------|-------------|-----------------|
+| **AKEL Orchestrator** | ✅ Implemented | `runAnalysis()` function serves this role |
+| **Claim Extractor** | ✅ Implemented | `understandClaim()` with claim role/dependency tracking |
+| **Claim Classifier** | ⚠️ Partial | Risk tier (A/B/C) assigned, but no domain classification |
+| **Scenario Generator** | ❌ Missing | Claims evaluated without scenario extraction |
+| **Evidence Summarizer** | ✅ Implemented | `extractFacts()` function |
+| **Contradiction Detector** | ⚠️ Partial | `isContestedClaim` flag exists but no active contradiction search |
+| **Quality Gate Validator** | ❌ Missing | No source quality gates, no mandatory checks |
+| **Audit Sampling Scheduler** | ❌ Missing | No audit system |
+| **Embedding Handler** | ❌ Missing | Not needed for POC |
+| **Federation Sync** | ❌ Missing | Not needed for POC |
+
+### 4.3 Architecture Gaps
+
+| Spec Requirement | POC1 Status | Gap Description |
+|-----------------|-------------|-----------------|
+| **Three-Layer Architecture** | ✅ Implemented | Interface (Next.js) → Processing (AKEL) → Data (SQLite) |
+| **LLM Abstraction Layer** | ✅ Implemented | AI SDK supports multiple providers with failover |
+| **PostgreSQL Primary DB** | ⚠️ Different | Using SQLite for simplicity (acceptable for POC) |
+| **Redis Caching** | ❌ Missing | No caching layer |
+| **S3 Archival** | ❌ Missing | No long-term storage |
+| **Background Jobs** | ❌ Missing | No scheduler for source updates, cache warming |
+| **Quality Monitoring** | ⚠️ Partial | LLM call counting exists, but no anomaly detection |
+
+### 4.4 Publication & Review Gaps
+
+| Spec Feature | POC1 Status | Gap Description |
+|-------------|-------------|-----------------|
+| **Risk Tier Publication Rules** | ❌ Missing | All results published immediately regardless of tier |
+| **Human Review Queue** | ❌ Missing | No review workflow |
+| **AI-Generated Labeling** | ⚠️ Partial | Results show "AI analysis" but no formal labeling system |
+| **Audit Rate Sampling** | ❌ Missing | No sampling audits |
+
+---
+
+## 5. Optimization Recommendations
+
+### 5.1 Cost Optimizations
+
+```mermaid
+pie title Current LLM Cost Distribution (Estimated per Analysis)
+    "Step 1: Understand" : 15
+    "Step 2: Research (per source)" : 60
+    "Step 3: Verdicts" : 25
+```
+
+| Optimization | Estimated Savings | Implementation Effort |
+|-------------|-------------------|----------------------|
+| **Cache claim understanding** | 30-50% on repeated claims | Medium |
+| **Use Haiku for fact extraction** | 40% on Step 2 costs | Low (config change) |
+| **Batch fact extraction** | 20% fewer API calls | Medium |
+| **Skip search for known claims** | 50%+ for cached claims | High (needs claim DB) |
+| **Reduce max iterations** | Linear reduction | Low (config change) |
+
+### 5.2 Timing Optimizations
+
+```mermaid
+gantt
+    title Current Analysis Timeline (Typical)
+    dateFormat ss
+    axisFormat %S sec
+
+    section Current Flow
+    URL Fetch           :a1, 00, 2s
+    Step 1 Understand   :a2, after a1, 15s
+    Search Iteration 1  :a3, after a2, 8s
+    Fetch Sources 1     :a4, after a3, 10s
+    Extract Facts 1     :a5, after a4, 12s
+    Search Iteration 2  :a6, after a5, 8s
+    Fetch Sources 2     :a7, after a6, 10s
+    Extract Facts 2     :a8, after a7, 12s
+    Generate Verdicts   :a9, after a8, 15s
+
+    section Optimized Flow
+    URL Fetch           :b1, 00, 2s
+    Step 1 Understand   :b2, after b1, 10s
+    Search + Fetch (parallel) :b3, after b2, 12s
+    Extract Facts (batched)   :b4, after b3, 8s
+    Generate Verdicts   :b5, after b4, 10s
+```
+
+| Optimization | Time Savings | Notes |
+|-------------|--------------|-------|
+| **Parallel source fetching** | Already implemented | Currently fetches 3 sources in parallel |
+| **Streaming LLM responses** | 20-30% perceived | User sees progress faster |
+| **Search query batching** | 10-15% | Send multiple queries to search API |
+| **Reduce prompt size** | 5-10% per call | Optimize system prompts |
+| **Use faster models for extraction** | 30-40% on Step 2 | Claude Haiku vs Sonnet |
+
+### 5.3 Priority Recommendations
+
+1. **HIGH PRIORITY - Implement Claim Caching**
+   - Cache claim verdicts by content hash
+   - Reduces costs for repeated/similar claims
+   - Enables the separated verdict architecture (see Section 6)
+
+2. **MEDIUM PRIORITY - Use Tiered Models**
+   - Step 1 (Understand): Sonnet (needs reasoning)
+   - Step 2 (Extract): Haiku (simple extraction)
+   - Step 3 (Verdicts): Sonnet (needs synthesis)
+
+3. **LOW PRIORITY - Add Redis Cache**
+   - Cache source content (24h TTL)
+   - Cache search results (1h TTL)
+   - Reduces external API calls
+
+---
+
+## 6. Separated Verdict Architecture Proposal
+
+### 6.1 Current Architecture
+
+```mermaid
+flowchart LR
+    subgraph Current["Current: Monolithic Analysis"]
+        INPUT[Article Input] --> ANALYZE[Full Analysis Pipeline]
+        ANALYZE --> CLAIMS[Claim Verdicts]
+        ANALYZE --> ARTICLE[Article Verdict]
+        CLAIMS -.->|"Aggregated"| ARTICLE
+    end
+```
+
+**Issues:**
+- Every analysis re-processes all claims
+- No caching of individual claim verdicts
+- Article verdict tightly coupled to claim extraction
+
+### 6.2 Proposed Separated Architecture
+
+```mermaid
+flowchart TB
+    subgraph Input["Input Processing"]
+        ARTICLE[Article/Text Input]
+        EXTRACT[Claim Extraction]
+    end
+
+    subgraph ClaimLayer["Claim Verdict Layer (Cacheable)"]
+        CACHE[(Claim Cache<br/>━━━━━━━━━━━━━<br/>Key: claim_hash<br/>TTL: 7 days)]
+
+        CLAIM1["Claim 1 Analysis"]
+        CLAIM2["Claim 2 Analysis"]
+        CLAIM3["Claim N Analysis"]
+
+        VERDICT1[Claim 1 Verdict]
+        VERDICT2[Claim 2 Verdict]
+        VERDICT3[Claim N Verdict]
+    end
+
+    subgraph ArticleLayer["Article Verdict Layer (Dynamic)"]
+        AGGREGATE[Aggregate Claim Verdicts]
+        CONTEXT[Apply Article Context<br/>━━━━━━━━━━━━━<br/>• Claim relationships<br/>• Logical structure<br/>• Author intent]
+        ARTICLE_VERDICT[Article Verdict]
+    end
+
+    %% Flow
+    ARTICLE --> EXTRACT
+    EXTRACT --> CLAIM1
+    EXTRACT --> CLAIM2
+    EXTRACT --> CLAIM3
+
+    CLAIM1 -->|"Cache Miss"| VERDICT1
+    CLAIM2 -->|"Cache Hit"| VERDICT2
+    CLAIM3 -->|"Cache Miss"| VERDICT3
+
+    CLAIM1 <-.-> CACHE
+    CLAIM2 <-.-> CACHE
+    CLAIM3 <-.-> CACHE
+
+    VERDICT1 --> AGGREGATE
+    VERDICT2 --> AGGREGATE
+    VERDICT3 --> AGGREGATE
+
+    AGGREGATE --> CONTEXT
+    CONTEXT --> ARTICLE_VERDICT
+
+    classDef cache fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef dynamic fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    class CACHE cache
+    class CONTEXT,ARTICLE_VERDICT dynamic
+```
+
+### 6.3 Benefits Analysis
+
+| Benefit | Impact | Rationale |
+|---------|--------|-----------|
+| **Cost Reduction** | 40-70% for repeated claims | Many articles share common claims (e.g., "COVID vaccines are safe") |
+| **Faster Analysis** | 50%+ for cached claims | Skip research + LLM calls for known claims |
+| **Consistency** | High | Same claim always gets same verdict (until cache expires) |
+| **Freshness Control** | Configurable TTL | Balance consistency vs. new evidence |
+| **Scalability** | Linear improvement | More users = higher cache hit rate |
+
+### 6.4 Implementation Considerations
+
+**Claim Hashing Strategy:**
+
+```typescript
+function getClaimHash(claim: string): string {
+  // Normalize: lowercase, remove punctuation, stem words
+  const normalized = normalize(claim);
+  // Hash for cache key
+  return crypto.createHash('sha256').update(normalized).digest('hex').slice(0, 16);
+}
+```
+
+**Cache Invalidation Triggers:**
+- TTL expiration (default 7 days)
+- Major news event related to claim topic
+- Source track record significant change
+- Manual invalidation by moderator
+
+**Article Verdict Considerations:**
+- Article verdict should ALWAYS be dynamic (never cached)
+- Same claims in different article contexts may yield different article verdicts
+- Example: "Vaccines are safe" + "Vaccines cause autism" → article may be misleading even if first claim is true
+
+### 6.5 Recommendation
+
+**YES, separating is beneficial** with the following caveats:
+
+1. **Claim verdicts should be cached** with semantic similarity matching (not just exact match)
+2. **Article verdicts should always be dynamic** to account for:
+   - Claim relationships and logical structure
+   - Author's argumentative strategy
+   - Context and framing
+   - Selective use of true claims to support false conclusions
+
+3. **Implementation phases:**
+   - Phase 1: Exact-match claim caching (simple hash)
+   - Phase 2: Semantic similarity caching (embedding-based)
+   - Phase 3: Federated claim sharing across instances
+
+---
+
+## 7. Summary
+
+### Current State
+
+- POC1 implements core AKEL pipeline successfully
+- Claim dependency tracking is implemented
+- Multiple LLM providers supported
+- No persistent claim storage or caching
+
+### Key Gaps from Specification
+
+- No scenario extraction
+- No user/role system
+- No audit trail
+- No source track record updates
+- No review queue
+
+### Recommended Next Steps
+
+1. Implement claim caching layer
+2. Separate claim vs article verdict generation
+3. Add Redis for source/search caching
+4. Implement tiered model selection
+5. Add basic audit logging

@@ -1,0 +1,14 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<package>
+  <infos>
+    <name>FactHarbor POC1 Architecture Analysis - Terminology Fix</name>
+    <description>Delta export containing terminology corrections: EVIDENCE entity standardization</description>
+    <licence></licence>
+    <author>XWiki.Admin</author>
+    <version>2.6.17-terminology-fix</version>
+    <backupPack>false</backupPack>
+  </infos>
+  <files>
+    <file defaultAction="0" language="">Docs.FactHarbor_POC1_Architecture_Analysis</file>
+  </files>
+</package>
