@@ -2,9 +2,73 @@
 
 ## Overview
 
-The FactHarbor Admin GUI provides a web-based interface for administrators to test and validate their API keys and service configurations. This helps ensure all external services are properly configured before running fact-checking jobs.
+The FactHarbor Admin GUI provides web-based interfaces for administrators to:
+- Manage unified configuration (search, calculation, and prompt configs)
+- View and manage source reliability cache
+- Test and validate API keys and service configurations
 
-## Accessing the Admin GUI
+## Admin Pages
+
+| Page | URL | Purpose |
+|------|-----|---------|
+| **Unified Configuration** | `/admin/config` | Manage all configuration types with version history |
+| **Source Reliability** | `/admin/source-reliability` | View/manage cached source reliability scores |
+| **Test Config** | `/admin/test-config` | Validate API keys and service connectivity |
+
+---
+
+## Unified Configuration Management
+
+Navigate to: `http://localhost:3000/admin/config`
+
+The Unified Configuration Management system provides a single interface for managing all FactHarbor configurations with version history, validation, and export capabilities.
+
+### Configuration Types
+
+| Type | Profile Keys | Description |
+|------|-------------|-------------|
+| **Search** | `default` | Web search provider settings |
+| **Calculation** | `default` | Verdict aggregation and weighting parameters |
+| **Prompt** | `orchestrated`, `monolithic-canonical`, `monolithic-dynamic`, `source-reliability` | LLM prompt templates for each pipeline |
+
+### Tabs
+
+- **Active**: View currently active configuration with version info
+- **Edit**: Modify configuration using form-based editors (JSON) or text editor (prompts)
+- **History**: Browse all saved versions with activation status
+- **Effective** (Search/Calc only): See final config after environment variable overrides
+
+### Features
+
+#### Version Control
+- Every saved configuration is immutable and content-addressed (SHA-256 hash)
+- Full version history with timestamps and activation tracking
+- One-click rollback to any previous version
+
+#### Validation
+- Real-time JSON schema validation for search/calculation configs
+- Syntax highlighting and error markers for prompt editing
+- Pre-save validation prevents invalid configurations
+
+#### Export/Import
+- Export any configuration as JSON or `.prompt.md` file
+- Import configurations from files with schema validation
+
+### Environment Variable Overrides
+
+Search and Calculation configs support runtime overrides via environment variables:
+
+| Config Type | Env Var | Field |
+|-------------|---------|-------|
+| Search | `FH_SEARCH_ENABLED` | `enabled` |
+| Search | `FH_SEARCH_PROVIDER` | `provider` |
+| Calculation | `FH_CALC_CONFIDENCE_THRESHOLD` | `aggregation.confidenceThreshold` |
+
+The **Effective** tab shows the final configuration after overrides are applied.
+
+---
+
+## Configuration Test Dashboard
 
 Navigate to: `http://localhost:3000/admin/test-config`
 

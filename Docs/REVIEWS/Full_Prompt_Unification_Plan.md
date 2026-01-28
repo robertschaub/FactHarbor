@@ -29,13 +29,13 @@
 
 ## Acceptance Checklist
 
-Before Phase 4 deletions, all criteria must pass:
+All criteria verified and passed (2026-01-28):
 
-- [ ] **Tracking**: Changing active DB prompt changes the recorded/tracked prompt version and hash deterministically; job reports retrieve that content
-- [ ] **Admin**: Can view/save/validate/activate/rollback prompt configs with same or better safety as old admin
-- [ ] **Job reports**: Job shows exact prompt version hash used and content is retrievable via unified config system
-- [ ] **Storage unification**: Exactly one **tracking** source of truth (DB `config_blobs`); `.prompt.md` files are seed/export only; old `prompt_versions`/`prompt_usage` tables removed
-- [ ] **Export**: Admin can download prompt content as `.prompt.md` file for Git-based review
+- [x] **Tracking**: Changing active DB prompt changes the recorded/tracked prompt version and hash deterministically; job reports retrieve that content
+- [x] **Admin**: Can view/save/validate/activate/rollback prompt configs with same or better safety as old admin
+- [x] **Job reports**: Job shows exact prompt version hash used and content is retrievable via unified config system
+- [x] **Storage unification**: Exactly one **tracking** source of truth (DB `config_blobs`); `.prompt.md` files are seed/export only; old `prompt_versions`/`prompt_usage` tables removed
+- [x] **Export**: Admin can download prompt content as `.prompt.md` file for Git-based review
 
 ---
 
