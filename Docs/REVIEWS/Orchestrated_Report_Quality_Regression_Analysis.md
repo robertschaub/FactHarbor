@@ -865,3 +865,37 @@ Each phase is independently revertable:
 - Phase 6: Revert changes to `verdict-corrections.ts`
 
 If quality regresses after any phase, revert that phase and investigate before proceeding.
+
+---
+
+## Implementation Status
+
+### Batch 1: Low-Risk Implementation ✅ COMPLETED
+
+**Date**: January 28, 2026
+
+#### Phase 2: Refinement gate fix ✅
+- **File**: `apps/web/src/lib/analyzer/orchestrated.ts`
+- **Change**: Modified `refineScopesFromEvidence()` to use mode-aware threshold instead of hardcoded 8
+- **Logic**: `minRefineFacts = Math.min(8, config.minFactsRequired)` → quick=6, deep=8
+- **Impact**: Quick mode can now trigger scope refinement with 6+ facts (was blocked at <8)
+
+#### Phase 3: Seed forcing gate ✅
+- **File**: `apps/web/src/lib/analyzer/orchestrated.ts`
+- **Change**: Gated seed-scope enforcement to only activate when BOTH conditions are true:
+  - `CONFIG.deterministic === true`
+  - `isComparativeLikeText(analysisInput)` is true
+- **Impact**: Non-comparative inputs in exploratory runs will let LLM + evidence-based refinement decide contexts
+
+#### Phase 4: Seeds as soft hints ✅
+- **File**: `apps/web/src/lib/analyzer/orchestrated.ts`
+- **Change**: Added `CANDIDATE CONTEXTS` section to `refineScopesFromEvidence()` prompt
+- **Logic**: Heuristically-detected scopes passed as optional candidates with instruction "Use only if ≥1 fact supports"
+- **Impact**: Seeds inform refinement without forcing adoption of unsupported contexts
+
+#### Phase 7a: Interim documentation ✅
+- Updated this document with implementation status
+
+### Next Step: Batch 2 Testing Checkpoint
+
+Before proceeding with medium-risk changes (Batch 3), run test harness with canonical inputs to evaluate improvement.

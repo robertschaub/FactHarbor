@@ -109,7 +109,13 @@ async function refineScopesFromEvidence(
 
   const facts = state.facts || [];
   // If we don't have enough evidence, skip refinement (avoid hallucinated scopes).
-  if (facts.length < 8) return { updated: false, llmCalls: 0 };
+  // v2.6.39: Align threshold with mode config (quick=6, deep=8) to enable refinement in quick mode
+  const config = getActiveConfig();
+  const minRefineFacts = Math.min(8, config.minFactsRequired);
+  if (facts.length < minRefineFacts) {
+    debugLog(`[Refine] Skipping refinement: ${facts.length} facts < ${minRefineFacts} threshold (mode: ${CONFIG.deepModeEnabled ? 'deep' : 'quick'})`);
+    return { updated: false, llmCalls: 0 };
+  }
 
   const analysisInput =
     state.understanding.impliedClaim ||
@@ -144,6 +150,10 @@ async function refineScopesFromEvidence(
     .slice(0, 12)
     .map((c: any) => `${c.id}: ${c.text}`)
     .join("\n");
+
+  // v2.6.39: Compute seed context candidates from heuristics (soft hints, not mandatory)
+  const seedScopes = detectScopes(analysisInput);
+  const seedHint = seedScopes.length > 0 ? formatDetectedScopesHint(seedScopes, true) : "";
 
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),
@@ -195,6 +205,14 @@ CRITICAL RULES:
 
 Return JSON only matching the schema.`;
 
+  // v2.6.39: Build candidate contexts section if heuristics detected potential scopes
+  const candidateContextsSection = seedHint ? `
+CANDIDATE CONTEXTS (heuristic detection - optional):
+${seedHint}
+
+NOTE: These candidates are heuristic suggestions. Use a candidate ONLY if it is supported by ≥1 fact from the FACTS list above. Drop any candidate that lacks evidence support. You may also identify additional contexts not listed here if the evidence supports them.
+` : "";
+
   const userPrompt = `INPUT (normalized):
 "${analysisInput}"
 
@@ -203,13 +221,21 @@ ${factsText}
 
 CURRENT CLAIMS (may be incomplete):
 ${claimsText || "(none)"}
-
+${candidateContextsSection}
 Return:
 - requiresSeparateAnalysis
 - analysisContexts (1..N)
 - factScopeAssignments: map each factId listed above to exactly one contextId (use contextId from your analysisContexts). NOTE: this assigns facts to AnalysisContexts (not to per-fact EvidenceScope).
 - claimScopeAssignments: (optional) map any claimIds that clearly belong to a specific contextId
 `;
+
+  // v2.6.39: Log when seed hints are passed to refinement
+  if (seedScopes.length > 0) {
+    debugLog("refineScopesFromEvidence: passing seed hints as candidates", {
+      seedCount: seedScopes.length,
+      seedIds: seedScopes.map((s) => s.id),
+    });
+  }
 
   let refined: any;
   try {
@@ -4210,41 +4236,54 @@ Now analyze the input and output JSON only.`;
   // enforce the seed scopes to avoid collapsing boundary-sensitive comparison claims
   // into a single generic context.
   //
-  // This is intentionally conservative:
-  // - Only applies when we have 2+ heuristic scopes AND the LLM produced <= 1 scope
-  // - Uses generic, evidence-agnostic seed contexts (will be refined later)
-  if (Array.isArray(preDetectedScopes) && preDetectedScopes.length >= 2) {
-    const existingCount = parsed.analysisContexts?.length ?? 0;
-    if (existingCount <= 1) {
-      const seedContexts = preDetectedScopes.map((s, idx) => {
-        const rawId = String(s.id || `SCOPE_SEED_${idx + 1}`);
-        const short = rawId.replace(/^SCOPE_/, "").slice(0, 12) || `CTX${idx + 1}`;
-        return {
-          id: rawId,
-          name: String(s.name || rawId),
-          shortName: short,
-          subject: String(parsed.impliedClaim || analysisInput || "").slice(0, 200),
-          temporal: "",
-          status: "unknown",
-          outcome: "",
-          assessedStatement: String(parsed.impliedClaim || analysisInput || ""),
-          metadata: (s.metadata && typeof s.metadata === "object") ? s.metadata : {},
-        };
-      });
-      parsed.analysisContexts = seedContexts as any;
-      parsed.requiresSeparateAnalysis = true;
-      // Assign unscoped claims to the first seed scope so they aren't dropped in multi-scope flows.
-      const firstScopeId = seedContexts[0]?.id || "";
-      if (firstScopeId && Array.isArray(parsed.subClaims)) {
-        for (const c of parsed.subClaims as any[]) {
-          if (!String(c?.contextId || "").trim()) c.contextId = firstScopeId;
-        }
+  // v2.6.39: Gate seed forcing to only apply when BOTH conditions are true:
+  // - deterministic mode is enabled (reproducible runs need consistent scope splits)
+  // - input is comparative-like (boundary-sensitive, e.g., "X before vs after Y")
+  // In non-deterministic/exploratory runs, let the model + evidence-based refinement decide contexts.
+  const shouldForceSeedScopes =
+    CONFIG.deterministic === true &&
+    isComparativeLikeText(analysisInput) &&
+    Array.isArray(preDetectedScopes) &&
+    preDetectedScopes.length >= 2 &&
+    (parsed.analysisContexts?.length ?? 0) <= 1;
+
+  if (shouldForceSeedScopes) {
+    const seedContexts = preDetectedScopes.map((s, idx) => {
+      const rawId = String(s.id || `SCOPE_SEED_${idx + 1}`);
+      const short = rawId.replace(/^SCOPE_/, "").slice(0, 12) || `CTX${idx + 1}`;
+      return {
+        id: rawId,
+        name: String(s.name || rawId),
+        shortName: short,
+        subject: String(parsed.impliedClaim || analysisInput || "").slice(0, 200),
+        temporal: "",
+        status: "unknown",
+        outcome: "",
+        assessedStatement: String(parsed.impliedClaim || analysisInput || ""),
+        metadata: (s.metadata && typeof s.metadata === "object") ? s.metadata : {},
+      };
+    });
+    parsed.analysisContexts = seedContexts as any;
+    parsed.requiresSeparateAnalysis = true;
+    // Assign unscoped claims to the first seed scope so they aren't dropped in multi-scope flows.
+    const firstScopeId = seedContexts[0]?.id || "";
+    if (firstScopeId && Array.isArray(parsed.subClaims)) {
+      for (const c of parsed.subClaims as any[]) {
+        if (!String(c?.contextId || "").trim()) c.contextId = firstScopeId;
       }
-      debugLog("understandClaim: applied heuristic seed scopes (LLM under-split)", {
-        seedCount: seedContexts.length,
-        seedIds: seedContexts.map((s) => s.id),
-      });
     }
+    debugLog("understandClaim: applied heuristic seed scopes (deterministic + comparative)", {
+      seedCount: seedContexts.length,
+      seedIds: seedContexts.map((s) => s.id),
+    });
+  } else if (Array.isArray(preDetectedScopes) && preDetectedScopes.length >= 2) {
+    // Log when we skip seed forcing (helps debugging)
+    debugLog("understandClaim: skipped seed forcing", {
+      deterministic: CONFIG.deterministic,
+      isComparative: isComparativeLikeText(analysisInput),
+      preDetectedScopesCount: preDetectedScopes.length,
+      existingContextsCount: parsed.analysisContexts?.length ?? 0,
+    });
   }
 
   // If the model under-split scopes for a claim, do a single best-effort retry
