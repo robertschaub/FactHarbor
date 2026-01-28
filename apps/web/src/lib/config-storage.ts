@@ -259,11 +259,22 @@ export async function saveConfigBlob(
   );
 
   if (existing) {
-    return {
-      blob: rowToConfigBlob(existing),
-      isNew: false,
-      validation,
-    };
+    // If same type AND profile, return existing (idempotent save)
+    if (existing.config_type === configType && existing.profile_key === profileKey) {
+      return {
+        blob: rowToConfigBlob(existing),
+        isNew: false,
+        validation,
+      };
+    }
+
+    // Content hash already exists for DIFFERENT type/profile - can't create duplicate hash
+    // This is an edge case where identical config content is used across profiles
+    throw new Error(
+      `Identical content already saved for ${existing.config_type}/${existing.profile_key}. ` +
+        `Content-addressable storage does not allow duplicate content across profiles. ` +
+        `Consider copying the active config from "${existing.profile_key}" to "${profileKey}" instead.`,
+    );
   }
 
   // Insert new blob
