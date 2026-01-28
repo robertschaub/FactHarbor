@@ -874,11 +874,19 @@ export default function ConfigAdminPage() {
   }, [activeTab, selectedType, profileKey, fetchActiveConfig, fetchHistory, fetchEffectiveConfig, promptContent, promptDirty, editConfig]);
 
   // Initialize prompt content from active config when available
+  // Only use activeConfig if it matches current type AND profile to prevent race conditions
   useEffect(() => {
-    if (selectedType === "prompt" && activeConfig?.content && !promptContent && !promptDirty) {
+    if (
+      selectedType === "prompt" &&
+      activeConfig?.content &&
+      activeConfig.configType === "prompt" &&
+      activeConfig.profileKey === profileKey &&
+      !promptContent &&
+      !promptDirty
+    ) {
       setPromptContent(activeConfig.content);
     }
-  }, [selectedType, activeConfig, promptContent, promptDirty]);
+  }, [selectedType, activeConfig, profileKey, promptContent, promptDirty]);
 
   // Copy content to clipboard
   const copyToClipboard = (content: string) => {
