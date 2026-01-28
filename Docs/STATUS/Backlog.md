@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: January 14, 2026
+**Last Updated**: January 28, 2026
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -43,6 +43,8 @@
 
 | Description | Domain | Urgency | Importance | Effort | Reference |
 |---|---|---|---|---|---|
+| **Config admin: auto-save drafts to localStorage**: Protect against accidental page refresh. Recover unsaved drafts on reload. *(Skipped: medium risk of stale draft confusion)* | Web UI / UX | low | low | 0.5 day | UCM UX Review |
+| **Config admin: diff view**: Side-by-side comparison of current edit vs active version before saving. | Web UI / UX | low | low | 2-3 days | UCM UX Review |
 | **Analysis templates/presets**: Domain-specific templates (health, legal, political) with curated search whitelists and KeyFactor hints. | Web UI / UX | low | med | 3-4 days | Improvements #8 |
 | **Interactive analysis refinement**: Allow users to add sources, challenge claims, refine searches, or add scopes as child jobs extending existing analysis. | Web UI / UX | low | med | 7-10 days | Improvements #7 |
 | **Comparative analysis mode**: Side-by-side comparison of two articles/claims. Show shared claims, unique claims, contradictions, consensus areas. | Analyzer / UX | low | med | 10-14 days | Improvements #9 |
@@ -68,6 +70,8 @@
 
 | Description | Domain | Urgency | Importance | Effort | Reference |
 |---|---|---|---|---|---|
+| **Config storage seeding race condition**: `saveConfigBlob()` uses check-then-insert without transaction. Use `INSERT OR IGNORE` for multi-instance safety. *(POC: low urgency; HIGH before multi-worker deployment)* | Architecture / Reliability | low | high | 0.5 day | UCM Review |
+| **Cross-profile content hash policy**: Document or change behavior where identical content cannot exist across different profiles (may block copy/paste workflows). | Architecture / UX | low | med | 0.5 day | UCM Review |
 | **Normalized database schema**: Create proper tables for Claims, Verdicts, Sources, Facts, ClaimFactSupport. Enables cross-analysis queries, trend analysis, citation networks. | Architecture / Data | low | med | 10-14 days | Improvements #15 |
 | **Comprehensive testing**: Unit tests (80% coverage), integration tests, E2E tests (Playwright), API tests (xUnit). | Testing / Quality | low | high | 14-21 days | Improvements #16 |
 | Analyzer modularization plan: `apps/web/src/lib/analyzer.ts` is monolithic (8234 lines); do incremental extraction only with safety rails. Split into understanding, research, verdict-generation, aggregation, report-generation modules. | Architecture | low | low | 5-7 days | Improvements #14 |
