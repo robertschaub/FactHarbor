@@ -195,8 +195,12 @@ export interface EvidenceScope {
   name: string;           // Short label (e.g., "WTW", "TTW", "EU-LCA", "US jurisdiction")
   methodology?: string;   // Standard referenced (e.g., "ISO 14040", "EU RED II")
   boundaries?: string;    // What's included/excluded (e.g., "Primary energy to wheel")
-  geographic?: string;    // Geographic scope (e.g., "European Union", "California")
-  temporal?: string;      // Time period (e.g., "2020-2025", "FY2024")
+  // Geographic scope OF THE SOURCE'S DATA (not the analysis jurisdiction)
+  // Example: A US court case analyzing European law would have geographic="Europe" here
+  geographic?: string;    // e.g., "European Union", "California", "Global"
+  // Time period OF THE SOURCE'S DATA (not the analysis timeframe)
+  // Example: A 2024 study analyzing 2020-2022 data would have temporal="2020-2022" here
+  temporal?: string;      // e.g., "2020-2025", "FY2024", "Q1 2023"
 }
 
 /**
@@ -358,7 +362,8 @@ export interface ExtractedFact {
   fact: string;
   category:
     | "legal_provision"
-    | "evidence"
+    | "evidence"         // Legacy value - still accepted for backward compatibility
+    | "direct_evidence"  // NEW v2.8: Preferred value (avoids tautology with "Evidence" entity name)
     | "expert_quote"
     | "statistic"
     | "event"
@@ -382,6 +387,13 @@ export interface ExtractedFact {
   // EvidenceScope: Captures the methodology/boundaries of the source document
   // (e.g., WTW vs TTW, EU vs US standards, different time periods)
   evidenceScope?: EvidenceScope;
+  // NEW v2.8: Probative value - LLM assessment of evidence quality
+  // "high" = concrete, specific, well-sourced
+  // "medium" = adequate but less specific or weaker sourcing
+  // "low" = vague, poorly sourced, or borderline probative
+  probativeValue?: "high" | "medium" | "low";
+  // NEW v2.8: Extraction confidence - how confident the LLM is in this extraction (0-100)
+  extractionConfidence?: number;
 }
 
 export interface FetchedSource {
