@@ -22,6 +22,15 @@ If `.env.local` / deployment env was adjusted toward these settings (or budgets 
 - weaker counter-evidence retrieval,
 - higher sensitivity to prompt ambiguity and heuristic misclassifications.
 
+### Status update (local test confirmation)
+The user updated `.env.local` to a higher-evidence / exploration-friendly configuration:
+
+- `FH_ANALYSIS_MODE=deep`
+- `FH_ALLOW_MODEL_KNOWLEDGE=true`
+- `FH_DETERMINISTIC=false`
+
+Result: **new reports look better**, but are **still not as good as desired**. This strongly supports the “evidence depth / operating mode” hypothesis as a major driver, and motivates the next step: implement the targeted adjustments below (especially seed-context forcing, refinement gating, and contested semantics) before running further tests.
+
 ### Secondary finding (code-level contributor)
 Even with “quick” mode, there are a few **structural gates and heuristics** that strongly amplify quality variance:
 
@@ -61,6 +70,81 @@ Even with “quick” mode, there are a few **structural gates and heuristics** 
 
 6) **Remove domain-specific tokens/examples from heuristics and prompts** (AGENTS.md “Generic by Design”):
    - Replace topic-specific regex tokens and examples with abstract/generic phrasing.
+
+---
+
+## Concrete Adjustments to Implement Next (Clear Task List)
+
+These are the recommended **next adjustments** to make before running further quality tests.
+
+### Adjustment 1 — Stop forcing heuristic seed contexts in `UNDERSTAND` (or gate it hard)
+
+**Problem**: `understandClaim()` currently **overrides** the model’s `analysisContexts` with heuristic “seed contexts” when heuristics detect 2+ scopes and the LLM returns ≤1 context. This can create **tangential contexts** and “wrong” context splits in deep mode, because the override is evidence-agnostic (it happens before facts exist).
+
+**Change** (recommended minimal approach):
+- In `apps/web/src/lib/analyzer/orchestrated.ts` in the block:
+  - `// v2.8.x: Deterministic seed-scope enforcement`
+- Gate the override so it only runs when **both** are true:
+  - `CONFIG.deterministic === true` (so exploratory quality runs are not forced), and
+  - the input is **comparative-like** (use `isComparativeLikeText(analysisInput)` which already exists in this file).
+
+**Rationale**: In deep, non-deterministic runs, let the model + evidence-based refinement decide contexts; keep heuristic enforcement only as a deterministic safety net for true boundary-sensitive comparative inputs.
+
+### Adjustment 2 — Feed seed scopes into evidence-based refinement (not into final contexts)
+
+**Problem**: heuristics can be useful (especially for boundary-sensitive comparisons), but applying them before evidence exists is risky.
+
+**Change**:
+- In `apps/web/src/lib/analyzer/orchestrated.ts` inside `refineScopesFromEvidence()`:
+  - Compute `seedScopes = detectScopes(analysisInput)` and `seedHint = formatDetectedScopesHint(seedScopes, true)`
+  - Add a `SEED CONTEXT CANDIDATES (heuristic)` section into the `userPrompt`, with explicit instruction:
+    - “use only if supported by facts; drop otherwise.”
+
+**Rationale**: This preserves the upside (recall of “candidate contexts”) while keeping **evidence-gated** selection, which reduces tangential contexts.
+
+### Adjustment 3 — Align the refinement gate with mode (fix quick/deep mismatch)
+
+**Problem**: `refineScopesFromEvidence()` currently skips unless `facts.length >= 8`, but quick mode can proceed at 6 facts. This creates a predictable failure mode where contexts remain “early guesses.”
+
+**Change**:
+- In `apps/web/src/lib/analyzer/orchestrated.ts` inside `refineScopesFromEvidence()` replace:
+  - `if (facts.length < 8) return …`
+- With a mode-aware threshold such as:
+  - `const minRefineFacts = Math.min(8, getActiveConfig().minFactsRequired);`
+  - `if (facts.length < minRefineFacts) return …`
+
+**Rationale**: In quick mode, refinement becomes possible at 6 facts; in deep mode it remains conservative (≥8).
+
+### Adjustment 4 — Fix “contested vs doubted” so baseless disagreement does not appear as “contested”
+
+**Problem**: `validateContestation()` can downgrade `factualBasis` to `"opinion"` but still leave `isContested=true`. That preserves “contested” semantics in UI/outputs even when it should be treated as “doubted” (or omitted).
+
+**Change** (minimal, semantics-correct, low-risk):
+- In `apps/web/src/lib/analyzer/aggregation.ts`:
+  - In `validateContestation()`:
+    - when you downgrade to `factualBasis: "opinion"`, also set:
+      - `isContested: false`
+      - clear `contestedBy` (optional, recommended)
+  - In `detectClaimContestation()`:
+    - if no documented counter-evidence is detected, return:
+      - `isContested: false`
+      - `factualBasis: "opinion"`
+
+**Also** (AGENTS.md compliance):
+- Remove domain-specific tokens from the documented-evidence regexes (e.g., `VAERS`) and keep only generic terms.
+
+### Adjustment 5 — Improve directionality correction for low verdicts (symmetry)
+
+**Problem**: `detectAndCorrectVerdictInversion()` currently returns early for `verdictPct < 50`, which prevents correcting cases where the model output is “low” but reasoning clearly supports the claim (or vice versa).
+
+**Change**:
+- In `apps/web/src/lib/analyzer/verdict-corrections.ts`:
+  - Remove the early return for `verdictPct < 50`.
+  - Add symmetric inversion logic:
+    - If verdict is low but reasoning contains strong “supports/confirmed/consistent with evidence” signals, invert.
+    - Keep the existing “verdict high but reasoning negates claim” inversion behavior.
+
+**Rationale**: This is a direct fix for the “directionality wrong” class of errors, without changing prompts.
 
 ---
 
@@ -314,3 +398,128 @@ When a claim is marked “contested”:
 - “Contested” should be reserved for evidence-backed counter-claims.
 - “Doubted” should cover rhetorical disagreement without counter-evidence.
 
+
+---
+
+## Lead Developer / LLM Expert Review
+
+**Reviewer**: Claude (Lead Dev + LLM Expert role)  
+**Date**: 2026-01-28
+
+### Overall Assessment
+
+This is an **excellent diagnostic document**. The analysis correctly identifies that most "quality regression" symptoms are not prompt bugs but rather **operating point issues** (config/budget settings that reduce evidence depth). The document follows sound engineering practice: prove the hypothesis with minimal intervention before making code changes.
+
+**Verdict: APPROVE with minor suggestions**
+
+---
+
+### Strengths
+
+1. **Correct root cause prioritization**: The document correctly identifies that `FH_ANALYSIS_MODE=quick` + `FH_ALLOW_MODEL_KNOWLEDGE=false` + low fact counts are the primary drivers. This is consistent with LLM behavior — context detection and nuanced reasoning degrade predictably when evidence is sparse.
+
+2. **Actionable task list**: The "Concrete Adjustments" section (Adjustments 1-5) provides specific file paths, function names, and code snippets. This is implementation-ready.
+
+3. **AGENTS.md compliance awareness**: The document correctly flags domain-specific tokens (`VAERS`, "US sanctions…") as violations of the "Generic by Design" rule. This is important for preventing test-case overfitting.
+
+4. **Evidence-first philosophy**: The recommendation to feed seed contexts into refinement (not final contexts) aligns with the principle that LLM outputs should be evidence-grounded, not heuristic-forced.
+
+5. **Mermaid diagrams**: The entity/flow diagrams are helpful for onboarding and debugging.
+
+---
+
+### Concerns / Suggestions
+
+#### 1. Adjustment 5 (Directionality Hardening) Needs Caution
+
+**Risk**: Removing the `verdictPct < 50` early return and adding symmetric inversion could introduce false corrections. The current asymmetry exists because:
+- High verdicts with negative reasoning are clearly wrong (model said "true" but explained why it's false)
+- Low verdicts with positive reasoning are ambiguous (model may be saying "mostly false but some evidence supports")
+
+**Suggestion**: Instead of symmetric inversion, add a **confidence threshold**:
+
+```typescript
+// Only invert if reasoning signals are strong AND verdict is extreme
+if (verdictPct < 20 && hasStrongSupportSignals(reasoning)) {
+  // Likely inverted
+}
+```
+
+This preserves the "mixed evidence" zone (20-80%) where reasoning/verdict tension is expected.
+
+#### 2. Missing: Prompt Token Budget Awareness
+
+The document doesn't mention that **prompt length** affects LLM quality. When `refineScopesFromEvidence()` injects seed context hints, this adds tokens. If the evidence bundle is large, the model may truncate or lose coherence.
+
+**Suggestion**: Add a note about token budgeting in Adjustment 2:
+> "Ensure the seed context hint is concise (≤200 tokens) to avoid crowding out evidence."
+
+#### 3. "Contested vs Doubted" Schema Change is Breaking
+
+Adjustment 4 proposes adding `contestationType`, `counterEvidenceFactIds`, and `counterEvidenceSummary`. This is a **schema change** that affects:
+- TypeScript types (`ClaimVerdict`, aggregation types)
+- UI rendering logic
+- Existing job results (may need migration or graceful fallback)
+
+**Suggestion**: Add a migration note:
+> "Existing jobs without these fields should render `contestationType` as `"none"` (default). UI should use optional chaining."
+
+#### 4. Test Harness Recommendation is Underspecified
+
+The document recommends a "quality regression harness" but doesn't specify inputs. For this to be actionable:
+
+**Suggestion**: Define 3-5 canonical test inputs:
+1. **Comparative boundary** (e.g., "X before vs after 2020")
+2. **Multi-jurisdiction** (e.g., policy that differs by country)
+3. **Contested topic** (e.g., scientific claim with genuine counter-evidence)
+4. **Non-contested topic** (e.g., factual historical event)
+5. **Opinion-heavy input** (e.g., editorial with rhetorical criticism)
+
+This ensures the harness tests the specific failure modes identified.
+
+#### 5. `.env.example` Change Should Be Documented as Behavior Change
+
+The diff shows `.env.example` now defaults to `deep` mode and `FH_ALLOW_MODEL_KNOWLEDGE=true`. This is a **significant behavior change** for new deployments.
+
+**Suggestion**: Add a changelog entry or migration note:
+> "Default analysis mode changed from `quick` to `deep` as of v2.6.38. This increases LLM costs but improves context detection. Set `FH_ANALYSIS_MODE=quick` to restore previous behavior."
+
+---
+
+### LLM-Specific Observations
+
+1. **Temperature 0 (`FH_DETERMINISTIC=true`) can amplify bad local optima**: This is correctly identified. For quality exploration, `temperature=0.3-0.5` often produces more robust context detection than `temperature=0`, because the model explores alternative framings.
+
+2. **Model knowledge (`FH_ALLOW_MODEL_KNOWLEDGE=true`) improves coherence**: When set to `false`, the model must cite evidence for everything, which leads to "unknown" verdicts and sparse reasoning. Setting to `true` allows the model to use its training knowledge as a coherence scaffold, with evidence providing grounding.
+
+3. **Seed context forcing vs LLM autonomy**: The document correctly identifies this tension. LLMs perform better when given "hints to consider" rather than "requirements to preserve". The recommended change (Adjustment 1) aligns with best practices.
+
+---
+
+### Prioritization Recommendation
+
+Based on impact/effort ratio:
+
+| Priority | Adjustment | Impact | Effort | Risk |
+|----------|------------|--------|--------|------|
+| 1 | **Config test (Phase 1)** | High | None | None |
+| 2 | **Adjustment 3** (refinement gate) | High | 0.5h | Low |
+| 3 | **Adjustment 1** (seed forcing gate) | High | 1h | Low |
+| 4 | **Adjustment 2** (seeds as hints) | Med | 2h | Low |
+| 5 | **Adjustment 4** (contested/doubted) | Med | 3h | Med |
+| 6 | **Adjustment 5** (directionality) | Med | 2h | Med |
+
+**Recommended order**: 1 → 2 → 3 → 4 → 5 → 6
+
+Start with config test to confirm hypothesis, then refinement gate (quick win), then seed forcing (reduces tangential contexts), then the rest.
+
+---
+
+### Final Notes
+
+- The document is well-structured and correctly separates symptoms, diagnosis, and remediation.
+- The "Status update" section showing that `deep` mode improved results confirms the hypothesis.
+- The AGENTS.md compliance flags are important and should be addressed.
+- Consider adding this document to `Docs/STATUS/KNOWN_ISSUES.md` or cross-referencing it.
+
+**Approved for implementation of Adjustments 1-4. Adjustment 5 should be implemented with the confidence threshold modification suggested above.**
