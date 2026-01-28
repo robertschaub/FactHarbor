@@ -686,6 +686,10 @@ export default function ConfigAdminPage() {
           body: JSON.stringify({ content: promptContent }),
           signal: abortController.signal,
         });
+        if (!res.ok) {
+          // API error - don't set malformed data as validation state
+          return;
+        }
         const data = await res.json();
         setValidation(data);
       } catch (err) {
@@ -720,6 +724,10 @@ export default function ConfigAdminPage() {
           body: JSON.stringify({ content: JSON.stringify(editConfig, null, 2) }),
           signal: abortController.signal,
         });
+        if (!res.ok) {
+          // API error - don't set malformed data as validation state
+          return;
+        }
         const data = await res.json();
         setValidation(data);
       } catch (err) {

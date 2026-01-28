@@ -9,13 +9,13 @@
 ## Executive Summary
 
 ### Primary finding (most likely)
-The suspected “regression since commit `42b6b06…`” is **not explained by code changes in that commit**. That commit changes only `apps/web/.env.example` and effectively shifts the *recommended/default operational mode* toward:
+Most “quality regression” symptoms reported (missing contexts, tangential contexts, weak counter-evidence, incorrect directionality, “contested” false positives) correlate strongly with **operating in low-evidence settings**, especially:
 
-- **`FH_ANALYSIS_MODE=quick`**
-- **`FH_ALLOW_MODEL_KNOWLEDGE=false`**
-- **`FH_DETERMINISTIC=true`**
+- **`FH_ANALYSIS_MODE=quick`** (fewer iterations/sources/facts)
+- **`FH_ALLOW_MODEL_KNOWLEDGE=false`** (stricter: more “unknown” and fewer usable facts)
+- **`FH_DETERMINISTIC=true`** (reproducible but can amplify a bad local optimum)
 
-If these defaults were copied into `.env.local` or deployment env, they will **reduce evidence depth**, which predictably causes:
+If `.env.local` / deployment env was adjusted toward these settings (or budgets were enforced more aggressively), the system will **reduce evidence depth**, which predictably causes:
 
 - fewer contexts discovered/refined,
 - more reliance on early-stage guesses,
@@ -34,6 +34,33 @@ Even with “quick” mode, there are a few **structural gates and heuristics** 
 - **Directionality correction is partial**: inversion detection and counter-claim detection are heuristic and do not correct all “wrong-direction” failures (notably when the LLM outputs a low truth-percent but reasoning clearly negates/supports the claim).
 
 - **“Contested vs doubted” is currently susceptible to false positives**: the current implementation can still surface “contested” labels even when the underlying “counter-evidence” is only rhetorical or baseless; it relies heavily on keyword patterns rather than explicit counter-evidence linkage.
+
+---
+
+## Summary of Recommendations (Condensed)
+
+1) **A/B test config first (no code changes)**:
+   - Compare a baseline “quality” run (`deep`, non-deterministic, budgets relaxed) vs current production-like settings.
+   - If quality improves materially under the baseline, treat this as primarily a **config/budget** issue, not a prompt-only problem.
+
+2) **Align the refinement gate with the active mode**:
+   - Replace the hard-coded `facts.length < 8` skip with a threshold derived from the active analyzer mode/config.
+   - Goal: ensure evidence-grounded context refinement runs reliably in quick-mode fact counts.
+
+3) **Make pre-detected contexts “soft hints”, not mandatory**:
+   - Require evidence support (≥1 fact) for a seed context to survive, otherwise allow it to be dropped.
+   - This reduces tangential contexts.
+
+4) **Make “contested” evidence-linked (and demote baseless disagreement to “doubted”)**:
+   - Only label “contested” when there is explicit counter-evidence with referenced `factId`s.
+   - Ensure UI only shows “Contested” when counter-evidence exists.
+
+5) **Harden directionality**:
+   - Expand inversion/directionality correction to catch “reasoning contradicts verdict” even for low percentages.
+   - Prefer semantic counter-claim detection over keyword triggers.
+
+6) **Remove domain-specific tokens/examples from heuristics and prompts** (AGENTS.md “Generic by Design”):
+   - Replace topic-specific regex tokens and examples with abstract/generic phrasing.
 
 ---
 
