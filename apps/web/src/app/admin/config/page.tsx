@@ -611,9 +611,9 @@ export default function ConfigAdminPage() {
     if (!editConfig || selectedType === "prompt") return false;
     if (!activeConfig?.content) return !!editConfig; // New config = unsaved
     try {
-      const current = JSON.stringify(editConfig);
+      // Compare with same formatting used when saving (2-space indentation)
+      const current = JSON.stringify(editConfig, null, 2);
       const active = activeConfig.content;
-      // Compare normalized JSON (activeConfig.content is already a string)
       return current !== active;
     } catch {
       return false;
@@ -641,7 +641,7 @@ export default function ConfigAdminPage() {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         if (activeTab !== "edit") return;
-        
+
         // Trigger save based on config type
         if (selectedType === "prompt" && promptContent && promptDirty) {
           // Find and click the Save & Activate button for prompts
