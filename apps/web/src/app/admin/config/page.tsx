@@ -844,7 +844,7 @@ export default function ConfigAdminPage() {
 
     try {
       const content = JSON.stringify(editConfig, null, 2);
-      const label = versionLabel || `v-${Date.now()}`;
+      const label = versionLabel || suggestVersionLabel();
 
       // Save
       const saveRes = await fetch(`/api/admin/config/${selectedType}/${profileKey}`, {
@@ -930,6 +930,14 @@ export default function ConfigAdminPage() {
   // Truncate hash for display
   const truncateHash = (hash: string) => {
     return `${hash.slice(0, 8)}...${hash.slice(-8)}`;
+  };
+
+  // Generate suggested version label with timestamp
+  const suggestVersionLabel = () => {
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    const time = now.toTimeString().slice(0, 5).replace(":", ""); // HHMM
+    return `v${date}-${time}`;
   };
 
   // Import JSON handler with schema validation
@@ -1329,14 +1337,31 @@ export default function ConfigAdminPage() {
         <div className={styles.editorSection}>
           {/* Toolbar */}
           <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
-            <input
-              type="text"
-              placeholder="Version label (optional)"
-              className={styles.formInput}
-              style={{ width: 200 }}
-              value={versionLabel}
-              onChange={(e) => setVersionLabel(e.target.value)}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <input
+                type="text"
+                placeholder="Version label (optional)"
+                className={styles.formInput}
+                style={{ width: 200 }}
+                value={versionLabel}
+                onChange={(e) => setVersionLabel(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setVersionLabel(suggestVersionLabel())}
+                title="Generate timestamp-based version label"
+                style={{
+                  padding: "6px 10px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 4,
+                  background: "#f9fafb",
+                  cursor: "pointer",
+                  fontSize: 14,
+                }}
+              >
+                📅
+              </button>
+            </div>
             <button
               className={`${styles.button} ${styles.buttonSecondary}`}
               onClick={async () => {
@@ -1361,7 +1386,7 @@ export default function ConfigAdminPage() {
                   const res = await fetch(`/api/admin/config/prompt/${profileKey}`, {
                     method: "PUT",
                     headers: { ...getHeaders(), "Content-Type": "application/json" },
-                    body: JSON.stringify({ content: promptContent, versionLabel: versionLabel || `v-${Date.now()}` }),
+                    body: JSON.stringify({ content: promptContent, versionLabel: versionLabel || suggestVersionLabel() }),
                   });
                   if (!res.ok) throw new Error((await res.json()).error || "Save failed");
                   alert("Saved as draft");
@@ -1386,7 +1411,7 @@ export default function ConfigAdminPage() {
                   const saveRes = await fetch(`/api/admin/config/prompt/${profileKey}`, {
                     method: "PUT",
                     headers: { ...getHeaders(), "Content-Type": "application/json" },
-                    body: JSON.stringify({ content: promptContent, versionLabel: versionLabel || `v-${Date.now()}` }),
+                    body: JSON.stringify({ content: promptContent, versionLabel: versionLabel || suggestVersionLabel() }),
                   });
                   if (!saveRes.ok) throw new Error((await saveRes.json()).error || "Save failed");
                   const saveData = await saveRes.json();
@@ -1556,14 +1581,31 @@ export default function ConfigAdminPage() {
         <div>
           {/* Toolbar */}
           <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>
-            <input
-              type="text"
-              placeholder="Version label (optional)"
-              className={styles.formInput}
-              style={{ width: 200 }}
-              value={versionLabel}
-              onChange={(e) => setVersionLabel(e.target.value)}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <input
+                type="text"
+                placeholder="Version label (optional)"
+                className={styles.formInput}
+                style={{ width: 200 }}
+                value={versionLabel}
+                onChange={(e) => setVersionLabel(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setVersionLabel(suggestVersionLabel())}
+                title="Generate timestamp-based version label"
+                style={{
+                  padding: "6px 10px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 4,
+                  background: "#f9fafb",
+                  cursor: "pointer",
+                  fontSize: 14,
+                }}
+              >
+                📅
+              </button>
+            </div>
             <button
               className={`${styles.button} ${styles.buttonSecondary}`}
               onClick={validateConfig}
