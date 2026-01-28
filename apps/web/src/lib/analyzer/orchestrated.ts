@@ -93,7 +93,7 @@ import {
 } from "./scopes";
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
-import { recordPromptUsage, savePromptVersion } from "@/lib/prompt-storage";
+import { recordConfigUsage } from "@/lib/config-storage";
 
 // Configuration, helpers, and debug utilities imported from modular files above
 
@@ -6302,7 +6302,7 @@ ${contextsFormatted}
    - shortAnswer (Assessment): A 1-sentence summary that MUST evaluate the assessedStatement shown above for this context
      * CRITICAL: The shortAnswer must answer/evaluate the assessedStatement for THIS context
      * MUST be a descriptive sentence, NOT just a percentage or scale label
-   
+
    **CRITICAL: Direction consistency check (MANDATORY)**
    Before finalizing each context's answer:
    1. Decide clearly: does the evidence SUPPORT the user's claim as stated, CONTRADICT it, or is it UNVERIFIED/MIXED?
@@ -8898,20 +8898,17 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       promptContentHash = promptResult.prompt.contentHash;
       promptLoadedUtc = promptResult.prompt.loadedAt;
 
-      // Save version to DB if not already tracked
-      await savePromptVersion(
-        pipelineName,
-        promptResult.prompt.rawContent,
-        promptResult.prompt.contentHash,
-        promptResult.prompt.frontmatter.version,
-      ).catch((err) => {
-        console.warn(`[Prompt-Tracking] Failed to save prompt version: ${err?.message}`);
-      });
-
       // Record usage for this job
       if (input.jobId) {
-        await recordPromptUsage(input.jobId, pipelineName, promptResult.prompt.contentHash).catch((err) => {
-          console.warn(`[Prompt-Tracking] Failed to record prompt usage: ${err?.message}`);
+        await recordConfigUsage(
+          input.jobId,
+          "prompt",
+          pipelineName,
+          promptResult.prompt.contentHash,
+        ).catch((err) => {
+          console.warn(
+            `[Prompt-Tracking] Failed to record prompt usage: ${err instanceof Error ? err.message : String(err)}`,
+          );
         });
       }
 

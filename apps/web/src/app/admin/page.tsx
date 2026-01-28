@@ -133,25 +133,18 @@ export default function AdminPage() {
       </div>
 
       <div style={{ display: "grid", gap: "16px", maxWidth: "600px" }}>
+        <Link href="/admin/config" className={styles.btnPrimary} style={{ background: "#10b981" }}>
+          ⚙️ Unified Configuration Management
+        </Link>
+        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          <strong>Recommended:</strong> Manage search, calculation, and prompt configurations with version history, validation, and export
+        </p>
+
         <Link href="/admin/source-reliability" className={styles.btnPrimary}>
           📊 Source Reliability Cache
         </Link>
         <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
           View and manage cached source reliability scores
-        </p>
-
-        <Link href="/admin/prompts" className={styles.btnPrimary}>
-          📝 Prompt Management
-        </Link>
-        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
-          View, edit, and manage prompt templates for all pipelines
-        </p>
-
-        <Link href="/admin/config" className={styles.btnPrimary}>
-          ⚙️ Unified Config Management
-        </Link>
-        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
-          Manage search, calculation, and prompt configurations with version history
         </p>
 
         <Link href="/admin/test-config" className={styles.btnPrimary}>

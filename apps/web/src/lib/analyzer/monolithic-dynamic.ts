@@ -31,7 +31,7 @@ import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
-import { recordPromptUsage, savePromptVersion } from "@/lib/prompt-storage";
+import { recordConfigUsage } from "@/lib/config-storage";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
@@ -180,14 +180,13 @@ export async function runMonolithicDynamic(
     const pipelineName: Pipeline = "monolithic-dynamic";
     const promptResult = await loadPromptFile(pipelineName);
     if (promptResult.success && promptResult.prompt) {
-      await savePromptVersion(
-        pipelineName,
-        promptResult.prompt.rawContent,
-        promptResult.prompt.contentHash,
-        promptResult.prompt.frontmatter.version,
-      ).catch(() => {});
       if (input.jobId) {
-        await recordPromptUsage(input.jobId, pipelineName, promptResult.prompt.contentHash).catch(() => {});
+        await recordConfigUsage(
+          input.jobId,
+          "prompt",
+          pipelineName,
+          promptResult.prompt.contentHash,
+        ).catch(() => {});
       }
       console.log(`[Prompt-Tracking] Loaded monolithic-dynamic prompt (hash: ${promptResult.prompt.contentHash.substring(0, 12)}...)`);
     }
@@ -302,7 +301,7 @@ export async function runMonolithicDynamic(
         .slice(0, 2)
         .filter((r) => !citations.some((c) => c.url === r.url))
         .map((r) => r.url);
-      
+
       // Prefetch source reliability before fetching
       if (SR_CONFIG.enabled && urlsToFetch.length > 0) {
         const domains = urlsToFetch.map((u) => {

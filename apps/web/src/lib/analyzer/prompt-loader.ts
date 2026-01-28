@@ -15,6 +15,7 @@
 import { readFile, stat, readdir, writeFile, rename, unlink } from "fs/promises";
 import { createHash } from "crypto";
 import path from "path";
+import { loadPromptConfig } from "@/lib/config-loader";
 
 // Active prompt file override (per pipeline)
 const activePromptFiles = new Map<Pipeline, string>();
@@ -647,30 +648,37 @@ function extractSections(body: string): PromptSection[] {
 // ============================================================================
 
 /**
- * Load and parse a prompt file for a given pipeline
+ * Load and parse a prompt for a given pipeline
  *
- * Uses mtime-based caching: reads from disk only if file changed.
+ * UNIFIED: Now loads from config DB (with lazy fallback seeding from files).
  * Returns structured result with warnings/errors.
  */
 export async function loadPromptFile(pipeline: Pipeline): Promise<LoadResult> {
-  const filePath = getPromptFilePath(pipeline);
   const warnings: ValidationWarning[] = [];
   const errors: ValidationError[] = [];
 
   try {
-    // Check file stats for cache validation
-    const fileStats = await stat(filePath);
+    // Load from unified config system (with lazy fallback seeding)
+    const configResult = await loadPromptConfig(pipeline);
 
-    // Check cache
+    if (!configResult) {
+      errors.push({
+        type: "file_not_found",
+        message: `No prompt config found for pipeline: ${pipeline}`,
+      });
+      return { success: false, warnings, errors };
+    }
+
+    // Check local cache (by content hash, not mtime)
     const cached = promptCache.get(pipeline);
-    if (cached && cached.mtimeMs === fileStats.mtimeMs) {
+    if (cached && cached.prompt.contentHash === configResult.contentHash) {
       return { success: true, prompt: cached.prompt, warnings: [], errors: [] };
     }
 
-    // Cache miss or file changed - read from disk
+    // Parse the content
     // Normalize \r\n to \n for cross-platform compatibility
-    const rawContent = (await readFile(filePath, "utf-8")).replace(/\r\n/g, "\n");
-    const contentHash = hashContent(rawContent);
+    const rawContent = configResult.content.replace(/\r\n/g, "\n");
+    const contentHash = configResult.contentHash;
 
     // Parse frontmatter
     const { frontmatter, body, error: fmError } = parseFrontmatter(rawContent);
@@ -687,7 +695,7 @@ export async function loadPromptFile(pipeline: Pipeline): Promise<LoadResult> {
     if (sections.length === 0) {
       errors.push({
         type: "no_sections",
-        message: "No sections found in prompt file (expected ## SECTION_NAME headers)",
+        message: "No sections found in prompt (expected ## SECTION_NAME headers)",
       });
       return { success: false, warnings, errors };
     }
@@ -698,7 +706,7 @@ export async function loadPromptFile(pipeline: Pipeline): Promise<LoadResult> {
       if (!sectionNames.has(required)) {
         warnings.push({
           type: "missing_section",
-          message: `Required section "${required}" not found in prompt file`,
+          message: `Required section "${required}" not found in prompt`,
         });
       }
     }
@@ -718,26 +726,21 @@ export async function loadPromptFile(pipeline: Pipeline): Promise<LoadResult> {
       sections,
       rawContent,
       contentHash,
-      filePath,
+      filePath: `db:config_blobs:${contentHash.substring(0, 12)}`, // Virtual path for DB source
       loadedAt: new Date().toISOString(),
     };
 
-    // Update cache
-    promptCache.set(pipeline, { prompt, mtimeMs: fileStats.mtimeMs });
+    // Update local cache (using contentHash as key instead of mtime)
+    // Use 0 as mtime since we're now hash-based
+    promptCache.set(pipeline, { prompt, mtimeMs: 0 });
 
     return { success: true, prompt, warnings, errors };
-  } catch (err: any) {
-    if (err?.code === "ENOENT") {
-      errors.push({
-        type: "file_not_found",
-        message: `Prompt file not found: ${filePath}`,
-      });
-    } else {
-      errors.push({
-        type: "parse_error",
-        message: `Failed to load prompt file: ${err?.message || String(err)}`,
-      });
-    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    errors.push({
+      type: "parse_error",
+      message: `Failed to load prompt: ${message}`,
+    });
     return { success: false, warnings, errors };
   }
 }

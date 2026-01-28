@@ -657,3 +657,139 @@ export async function closeConfigDb(): Promise<void> {
     db = null;
   }
 }
+
+// ============================================================================
+// PROMPT SEEDING
+// ============================================================================
+
+import { readFile } from "fs/promises";
+import { existsSync } from "fs";
+
+const VALID_PROMPT_PROFILES = [
+  "orchestrated",
+  "monolithic-canonical",
+  "monolithic-dynamic",
+  "source-reliability",
+] as const;
+
+type PromptProfile = (typeof VALID_PROMPT_PROFILES)[number];
+
+function isValidPromptProfile(profile: string): profile is PromptProfile {
+  return VALID_PROMPT_PROFILES.includes(profile as PromptProfile);
+}
+
+/**
+ * Get the prompts directory path
+ */
+function getPromptDir(): string {
+  return process.env.FH_PROMPT_DIR || path.join(process.cwd(), "prompts");
+}
+
+/**
+ * Seed a single prompt from file if no active config exists.
+ * Idempotent: no-op if active config already present.
+ * Concurrency-safe: uses DB transaction with conflict handling.
+ *
+ * @param profile - Pipeline/profile name (e.g., "orchestrated")
+ * @param force - If true, re-seed even if config exists
+ * @returns Result indicating if seeding occurred
+ */
+export async function seedPromptFromFile(
+  profile: string,
+  force = false,
+): Promise<{ seeded: boolean; contentHash: string | null; error?: string }> {
+  if (!isValidPromptProfile(profile)) {
+    return { seeded: false, contentHash: null, error: `Invalid profile: ${profile}` };
+  }
+
+  // Check if already has active config (unless forcing)
+  if (!force) {
+    const existingHash = await getActiveConfigHash("prompt", profile);
+    if (existingHash) {
+      console.log(`[Config-Storage] Prompt config for ${profile} already exists, skipping seed`);
+      return { seeded: false, contentHash: existingHash };
+    }
+  }
+
+  // Find and read prompt file
+  const promptDir = getPromptDir();
+  const filePath = path.join(promptDir, `${profile}.prompt.md`);
+
+  if (!existsSync(filePath)) {
+    return { seeded: false, contentHash: null, error: `Prompt file not found: ${filePath}` };
+  }
+
+  try {
+    const content = await readFile(filePath, "utf-8");
+
+    // Extract version from frontmatter for label
+    const versionMatch = content.match(/^version:\s*["']?([^"'\n]+)["']?/m);
+    const version = versionMatch?.[1] || "seed";
+    const versionLabel = `seed-v${version}`;
+
+    // Save to config_blobs
+    const { blob, isNew } = await saveConfigBlob(
+      "prompt",
+      profile,
+      content,
+      versionLabel,
+      "system-seed",
+    );
+
+    // Activate it
+    await activateConfig("prompt", profile, blob.contentHash, "system-seed", "initial-seed");
+
+    console.log(
+      `[Config-Storage] Seeded prompt ${profile} from file (hash: ${blob.contentHash.substring(0, 12)}..., isNew: ${isNew})`,
+    );
+
+    return { seeded: true, contentHash: blob.contentHash };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[Config-Storage] Failed to seed prompt ${profile}:`, message);
+    return { seeded: false, contentHash: null, error: message };
+  }
+}
+
+/**
+ * Seed all prompts from files (optional optimization).
+ * Can be called on app startup, but lazy fallback in loader is the primary mechanism.
+ */
+export async function seedAllPromptsFromFiles(): Promise<{
+  results: Array<{ profile: string; seeded: boolean; error?: string }>;
+}> {
+  const results: Array<{ profile: string; seeded: boolean; error?: string }> = [];
+
+  for (const profile of VALID_PROMPT_PROFILES) {
+    const result = await seedPromptFromFile(profile);
+    results.push({ profile, seeded: result.seeded, error: result.error });
+  }
+
+  const seededCount = results.filter((r) => r.seeded).length;
+  console.log(`[Config-Storage] Seeded ${seededCount}/${VALID_PROMPT_PROFILES.length} prompts from files`);
+
+  return { results };
+}
+
+/**
+ * Export a prompt to file (download or dev-only file write)
+ * Returns the content for download; file write is handled by caller
+ */
+export async function getPromptForExport(
+  profile: string,
+): Promise<{ content: string; filename: string; contentHash: string } | null> {
+  if (!isValidPromptProfile(profile)) {
+    return null;
+  }
+
+  const config = await getActiveConfig("prompt", profile);
+  if (!config) {
+    return null;
+  }
+
+  return {
+    content: config.content,
+    filename: `${profile}.prompt.md`,
+    contentHash: config.contentHash,
+  };
+}

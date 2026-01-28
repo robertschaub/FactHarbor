@@ -1,8 +1,8 @@
 # Full Prompt Unification Plan
 
-**Status**: APPROVED - Ready for Implementation  
+**Status**: ✅ COMPLETE  
 **Date**: 2026-01-28  
-**Revision**: v3.1 (final tightening after GO)  
+**Revision**: v3.2 (Phase 4 complete)  
 **Overview**: Migrate prompt management from the separate file-based system into the Unified Config Management system, consolidating storage in config_blobs and merging the admin UI.
 
 ---
@@ -11,19 +11,19 @@
 
 | ID | Phase | Task | Status |
 |----|-------|------|--------|
-| runtime-inventory | 0 | Inventory all runtime prompt entrypoints and classify in-scope vs out-of-scope | pending |
-| enhance-schemas | 1 | Enhance config-schemas.ts for structural prompt validation (rich validation in UI) | pending |
-| add-prompt-loader | 1 | Add loadPromptConfig() to config-loader.ts | pending |
-| add-seeding | 1 | Add seedPromptsFromFiles() with idempotency and concurrency safety | pending |
-| add-export | 1 | Add prompt export API (download response, optional dev-only file write) | pending |
-| refactor-prompt-loader | 2 | Refactor prompt-loader.ts to use config-loader (with lazy fallback seeding) | pending |
-| migrate-job-prompts | 2 | Migrate /api/fh/jobs/[id]/prompts to use config_usage | pending |
-| extract-prompt-editor | 3 | Extract PromptEditor component from admin/prompts | pending |
-| integrate-editor | 3 | Integrate PromptEditor into admin/config page | pending |
-| add-redirect | 3 | Add redirect /admin/prompts -> /admin/config?type=prompt | pending |
-| verify-acceptance | 4 | Run acceptance checklist before deletion | pending |
-| delete-old-system | 4 | Delete old prompt admin, API, and storage files | pending |
-| update-admin-nav | 4 | Update admin page navigation | pending |
+| runtime-inventory | 0 | Inventory all runtime prompt entrypoints and classify in-scope vs out-of-scope | ✅ DONE |
+| enhance-schemas | 1 | Enhance config-schemas.ts for structural prompt validation (rich validation in UI) | ✅ DONE |
+| add-prompt-loader | 1 | Add loadPromptConfig() to config-loader.ts | ✅ DONE |
+| add-seeding | 1 | Add seedPromptsFromFiles() with idempotency and concurrency safety | ✅ DONE |
+| add-export | 1 | Add prompt export API (download response, optional dev-only file write) | ✅ DONE |
+| refactor-prompt-loader | 2 | Refactor prompt-loader.ts to use config-loader (with lazy fallback seeding) | ✅ DONE |
+| migrate-job-prompts | 2 | Migrate /api/fh/jobs/[id]/prompts to use config_usage | ✅ DONE |
+| extract-prompt-editor | 3 | Extract PromptEditor component from admin/prompts | ✅ DONE |
+| integrate-editor | 3 | Integrate PromptEditor into admin/config page | ✅ DONE |
+| add-redirect | 3 | Add redirect /admin/prompts -> /admin/config?type=prompt | ✅ DONE |
+| verify-acceptance | 4 | Run acceptance checklist before deletion | ✅ DONE |
+| delete-old-system | 4 | Delete old prompt admin, API, and storage files | ✅ DONE |
+| update-admin-nav | 4 | Update admin page navigation | ✅ DONE |
 
 ---
 

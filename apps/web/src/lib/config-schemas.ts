@@ -309,7 +309,7 @@ function extractVariablesFromContent(content: string): string[] {
  *     - foo
  *     - bar
  *
- * For full prompt management, use /admin/prompts which has dedicated validation.
+ * For full prompt management, use /admin/config?type=prompt which has dedicated prompt tooling.
  * This validation is for basic structural checks only.
  */
 export function validatePromptContent(content: string): ValidationResult {
@@ -338,7 +338,7 @@ export function validatePromptContent(content: string): ValidationResult {
   if (/^  - /m.test(frontmatterYaml)) {
     warnings.push(
       "Frontmatter uses multi-line YAML arrays which cannot be fully validated here. " +
-      "Use /admin/prompts for full prompt validation."
+      "Use /admin/config?type=prompt for full prompt validation."
     );
   }
 
@@ -392,7 +392,7 @@ export function validatePromptContent(content: string): ValidationResult {
     }
   } catch {
     // Simple YAML parser failed - that's OK for complex frontmatter
-    warnings.push("Could not fully parse frontmatter YAML. Use /admin/prompts for detailed validation.");
+    warnings.push("Could not fully parse frontmatter YAML. Use /admin/config?type=prompt for detailed validation.");
   }
 
   return { valid: errors.length === 0, errors, warnings };

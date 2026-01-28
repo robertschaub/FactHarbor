@@ -90,6 +90,9 @@ apps/web/prompts/*Test*.prompt.md
 
 # Source Reliability cache
 apps/web/*.db
+apps/web/*.db-wal
+apps/web/*.db-shm
+apps/web/*.db-journal
 source-reliability.db
 
 

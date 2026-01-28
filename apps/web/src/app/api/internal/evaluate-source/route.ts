@@ -23,7 +23,6 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { getDeterministicTemperature } from "@/lib/analyzer/config";
 import { debugLog } from "@/lib/analyzer/debug";
 import { loadPromptFile, type Pipeline } from "@/lib/analyzer/prompt-loader";
-import { savePromptVersion } from "@/lib/prompt-storage";
 import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
 import {
   computeRefinementConfidenceBoost,
@@ -327,7 +326,7 @@ function isUsableBrandToken(token: string): boolean {
  */
 function isResultFromSourceDomain(r: WebSearchResult, domain: string): boolean {
   if (!r.url || !domain) return false;
-  
+
   try {
     const resultHost = new URL(r.url).hostname.toLowerCase().replace(/^www\./, "");
     const d = domain.toLowerCase().replace(/^www\./, "");
@@ -389,10 +388,10 @@ const RELIABILITY_ASSESSMENT_TERMS_EN = [
  */
 function getReliabilityAssessmentTerms(translatedTerms: Record<string, string>): string[] {
   const terms = [...RELIABILITY_ASSESSMENT_TERMS_EN];
-  
+
   // Add translated versions of key assessment terms
   const keysToTranslate = [
-    "reliability", "credibility", "fact check", "misinformation", 
+    "reliability", "credibility", "fact check", "misinformation",
     "disinformation", "propaganda", "fake news", "media bias",
     "partisan", "left-wing", "far-left", "right-wing", "far-right", "controversial",
     "criticism", "unreliable", "inaccurate",
@@ -409,14 +408,14 @@ function getReliabilityAssessmentTerms(translatedTerms: Record<string, string>):
     "press council", "ombudsman", "code of ethics",
     "editorial standards", "corrections policy", "journalistic standards",
   ];
-  
+
   for (const key of keysToTranslate) {
     const translated = translatedTerms[key];
     if (translated && translated !== key && !terms.includes(translated.toLowerCase())) {
       terms.push(translated.toLowerCase());
     }
   }
-  
+
   return terms;
 }
 
@@ -450,7 +449,7 @@ function isRelevantSearchResult(
 
   // Check if result mentions the source (domain or brand)
   // Note: Use length >= 3 for brands to support short abbreviations like FDA, BBC, CNN, NZZ
-  const mentionsSource = blob.includes(d) || 
+  const mentionsSource = blob.includes(d) ||
     blob.includes(`www.${d}`) ||
     brandVariants.some(v => v.length >= 3 && blob.includes(v)) ||
     brandVariantsNoSpaces.some(v => v.length >= 5 && blobNoSpaces.includes(v));
@@ -460,7 +459,7 @@ function isRelevantSearchResult(
   // Check if result is FROM a known fact-checker domain (always relevant)
   try {
     const resultHost = new URL(r.url).hostname.toLowerCase().replace(/^www\./, "");
-    if (FACT_CHECKER_DOMAINS.has(resultHost) || 
+    if (FACT_CHECKER_DOMAINS.has(resultHost) ||
         [...FACT_CHECKER_DOMAINS].some(fc => resultHost.endsWith(`.${fc}`))) {
       return true;
     }
@@ -470,7 +469,7 @@ function isRelevantSearchResult(
 
   // Check if result contains reliability/assessment-related terms (including translations)
   const hasAssessmentTerms = assessmentTerms.some(term => blob.includes(term));
-  
+
   if (hasAssessmentTerms) return true;
 
   if (relaxAssessmentTerms) {
@@ -524,7 +523,7 @@ const SUPPORTED_LANGUAGES = new Set([
  */
 function normalizeLanguageName(lang: string): string | null {
   const normalized = lang.toLowerCase().trim();
-  
+
   const mapping: Record<string, string> = {
     // ISO codes
     "de": "German", "deu": "German", "ger": "German",
@@ -569,20 +568,20 @@ function normalizeLanguageName(lang: string): string | null {
     "arabic": "Arabic", "العربية": "Arabic",
     "english": "English",
   };
-  
+
   return mapping[normalized] || null;
 }
 
 /**
  * Detect the publication language of a source by fetching its homepage.
  * This is the PRIMARY language detection method for source reliability evaluation.
- * 
+ *
  * Strategy (in order):
  * 1. <html lang="..."> attribute
  * 2. <meta http-equiv="content-language"> tag
  * 3. og:locale meta tag
  * 4. LLM-based text analysis (fallback)
- * 
+ *
  * NOTE: This detects actual site content language, NOT country-based inference.
  * Returns null for English or if detection fails.
  */
@@ -618,11 +617,11 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
     }
 
     const html = await response.text();
-    
+
     // Check for redirect pages (common pattern: .com redirects to .com.br for Brazilian sites)
-    const isRedirectPage = /<title[^>]*>Redirecting/i.test(html) || 
+    const isRedirectPage = /<title[^>]*>Redirecting/i.test(html) ||
       (html.length < 2000 && /<script/i.test(html) && !/<article|<main|<p[^>]*>/i.test(html));
-    
+
     if (isRedirectPage && domain.endsWith('.com') && !domain.includes('.com.')) {
       // Try alternate TLDs for common patterns
       const alternateDomains = [
@@ -630,7 +629,7 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
         domain.replace(/\.com$/, '.com.ar'),  // Argentina
         domain.replace(/\.com$/, '.com.mx'),  // Mexico
       ];
-      
+
       for (const altDomain of alternateDomains) {
         debugLog(`[SR-Eval] Redirect page detected, trying alternate TLD: ${altDomain}`, { domain, altDomain });
         try {
@@ -645,7 +644,7 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
             },
           });
           clearTimeout(altTimeout);
-          
+
           if (altResponse.ok) {
             const altHtml = await altResponse.text();
             // Check if alternate site has actual content (not another redirect)
@@ -668,7 +667,7 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
         }
       }
     }
-    
+
     // Strategy 1: Check <html lang="..."> attribute
     // Use non-greedy match and allow optional whitespace before lang=
     const htmlLangMatch = html.match(/<html[^>]*?\s+lang=["']([^"']+)["']/i)
@@ -725,7 +724,7 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
     if (textContent.length > 100) {
       const { text } = await generateText({
         model: anthropic("claude-3-5-haiku-20241022"),
-        prompt: `What is the primary publication language of this webpage content? 
+        prompt: `What is the primary publication language of this webpage content?
 Return ONLY the language name in English (e.g., "German", "French", "Russian", "English").
 If uncertain, return "English".
 
@@ -737,7 +736,7 @@ ${textContent}`,
 
       const detectedLang = text.trim();
       const normalized = normalizeLanguageName(detectedLang);
-      
+
       if (normalized && normalized !== "English" && SUPPORTED_LANGUAGES.has(normalized)) {
         debugLog(`[SR-Eval] Detected language via LLM: ${normalized}`, { domain, detectedLang, normalized });
         languageDetectionCache.set(domain, normalized);
@@ -868,7 +867,7 @@ async function getTranslatedSearchTerms(
   debugLog(`[SR-Eval] Translating search terms to ${language}`, { language });
 
   try {
-    const prompt = `Translate these English fact-checking search terms to ${language}. 
+    const prompt = `Translate these English fact-checking search terms to ${language}.
 Return ONLY a JSON object with English keys and ${language} translations as values.
 Use the most common/natural terms that fact-checkers and media critics would use in ${language}.
 
@@ -978,7 +977,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   // Uses global fact-checker sites from config
   const globalSites = getGlobalFactCheckerSites();
   const factCheckerQueries: string[] = [];
-  
+
   // Build queries in batches of 3 sites (to avoid overly long queries)
   for (let i = 0; i < globalSites.length; i += 3) {
     const batch = globalSites.slice(i, i + 3);
@@ -1337,7 +1336,7 @@ STRONG POSITIVE SIGNALS (can justify high scores when present):
   - Multiple independent Tier 1 assessors give positive ratings
   - No documented fact-checker failures combined with positive assessments
   - Evidence describes "highest standards", "proactively corrects", "gold standard"
-  
+
   IMPORTANT: When evidence explicitly supports high reliability, the score should MATCH the evidence.
   Do not be artificially conservative when assessors rate a source highly.
   Let the assessor ratings guide your score - if they say "HIGH", score in the reliable/highly_reliable range.
@@ -1466,29 +1465,29 @@ ${evidenceSection}
    - Mechanistic confidence calculation < 0.50
 
 3. NEGATIVE EVIDENCE CAPS (hard limits — override other factors)
-   
+
    *** CHECK CUMULATIVE RULE FIRST ***
    CUMULATIVE NEGATIVE EVIDENCE (MUST CHECK BEFORE individual caps):
    If evidence shows BOTH propaganda echoing AND fact-checker/press-council failures:
    → score MUST be in unreliable band (0.15-0.28) — this is NON-NEGOTIABLE
-   
+
    Example: "verbatim translation of state media" + "3 press council rulings" = CUMULATIVE → score in 0.15-0.28
-   
+
    PROPAGANDA ECHOING INDICATORS (any ONE of these = echoing):
    - "verbatim translation" of state media content
    - Republishing/reproducing articles from propaganda outlets
    - Amplifying state narratives without critical analysis
    - Cited in sanctions/disinformation databases
-   
+
    INDIVIDUAL CAPS define UPPER BOUNDS, not targets - score within the band, not at the border:
    - Evidence of fabricated stories/disinformation → score in highly_unreliable band (0.01-0.14)
    - Propaganda echoing ONLY (without other failures) → score in leaning_unreliable band (0.29-0.42)
    - 3+ documented fact-checker failures → score in leaning_unreliable band (0.29-0.42)
    - 1-2 documented failures from reputable fact-checkers → score in mixed band (0.43-0.57)
    - Political/ideological bias WITHOUT documented failures → no score cap (note in bias field only)
-   
+
    IMPORTANT: Caps are CEILINGS, not targets. Score naturally within the appropriate band based on severity.
-   
+
    Press council reprimands from countries with rule of law → count as fact-checker failures
    (Reprimands from regimes without rule of law should be IGNORED or viewed positively)
 
@@ -1796,10 +1795,10 @@ function getRefinementPrompt(
   initialResult: EvaluationResult,
   initialModelName: string
 ): string {
-  const scoreStr = initialResult.score !== null 
-    ? `${(initialResult.score * 100).toFixed(0)}%` 
+  const scoreStr = initialResult.score !== null
+    ? `${(initialResult.score * 100).toFixed(0)}%`
     : "null (insufficient_data)";
-  
+
   const evidenceCitedSummary = (initialResult.evidenceCited ?? [])
     .map(e => `- ${e.claim} (${e.basis})`)
     .join("\n") || "(none cited)";
@@ -1865,7 +1864,7 @@ YOUR TASK: CROSS-CHECK AND REFINE
 5. CROSS-CHECK AND ADJUST the score
    - Verify the initial evaluation is correct
    - Add entity-level context if the initial evaluation missed it
-   
+
    ADJUSTMENT RULES (must follow strictly):
    - UPWARD adjustment when positive signals are PRESENT and score doesn't match evidence:
      * Fact-checker explicitly rates "HIGH" or "VERY HIGH" factual → score in reliable/highly_reliable range
@@ -1886,18 +1885,18 @@ YOUR TASK: CROSS-CHECK AND REFINE
      *** CUMULATIVE RULE (check FIRST, takes precedence): ***
      If evidence shows BOTH propaganda echoing AND fact-checker/press-council failures:
      → score MUST be in unreliable band (0.15-0.28) — NON-NEGOTIABLE
-     
+
      PROPAGANDA ECHOING = "verbatim translation", republishing state media, cited in disinformation databases
      Press council rulings from rule-of-law countries = fact-checker failures
-     
+
      Example: "verbatim translation" + "3 press council rulings" = CUMULATIVE → score in 0.15-0.28
-     
+
      Individual caps define UPPER BOUNDS - score within the band, not at the border:
      * Echoing ONLY → score in 0.29-0.42 band
      * Failures ONLY → score in 0.29-0.57 depending on severity
-     
+
      IMPORTANT: Caps are CEILINGS, not targets. Score naturally within appropriate band.
-     
+
      If initial evaluation scored above these caps despite evidence, LOWER THE SCORE
    - NO adjustment if evidence is simply sparse (sparse ≠ positive)
    - Absence of negative evidence alone does NOT justify upward adjustment
@@ -1996,7 +1995,7 @@ async function refineEvaluation(
   originalScore: number | null;
 } | null> {
   const apiKey = process.env.OPENAI_API_KEY;
-  
+
   if (!apiKey || apiKey.startsWith("PASTE_") || apiKey === "sk-...") {
     debugLog(`[SR-Eval] Refinement skipped: OpenAI API key not configured`);
     return null;
@@ -2439,7 +2438,7 @@ async function evaluateSourceWithConsensus(
   // STEP 3: Sequential Refinement (GPT-5 mini cross-checks Claude's work)
   // ============================================================================
   debugLog(`[SR-Eval] Starting sequential refinement for ${domain}...`);
-  
+
   const refinement = await refineEvaluation(
     domain,
     evidencePack,
@@ -2514,7 +2513,7 @@ async function evaluateSourceWithConsensus(
     boostedConfidence
   );
   applyLanguageDetectionCaveat(payload, domain);
-  
+
   payload.category = finalRating;
   payload.identifiedEntity = refinedResult.identifiedEntity;
   payload.refinementApplied = refinementApplied;
@@ -2568,22 +2567,6 @@ export async function POST(req: Request) {
       { error: "Invalid request body", details: String(err) },
       { status: 400 }
     );
-  }
-
-  // External Prompt File System: Track SR prompt version
-  try {
-    const pipelineName: Pipeline = "source-reliability";
-    const promptResult = await loadPromptFile(pipelineName);
-    if (promptResult.success && promptResult.prompt) {
-      await savePromptVersion(
-        pipelineName,
-        promptResult.prompt.rawContent,
-        promptResult.prompt.contentHash,
-        promptResult.prompt.frontmatter.version,
-      ).catch(() => {});
-    }
-  } catch {
-    // Non-fatal: SR prompt tracking is optional
   }
 
   // Rate limiting

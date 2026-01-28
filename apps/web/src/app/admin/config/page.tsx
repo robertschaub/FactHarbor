@@ -596,11 +596,15 @@ export default function ConfigAdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Edit state
+  // Edit state (for JSON configs)
   const [editConfig, setEditConfig] = useState<SearchConfig | CalcConfig | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Prompt edit state
+  const [promptContent, setPromptContent] = useState<string>("");
+  const [promptDirty, setPromptDirty] = useState(false);
 
   // Profile options
   // Fetch profile options from backend
@@ -659,6 +663,8 @@ export default function ConfigAdminPage() {
     }
     setEditConfig(null);
     setValidation(null);
+    setPromptContent("");
+    setPromptDirty(false);
   }, [selectedType, profileOptions, urlProfile, profileKey]);
 
   // Load specific version from URL hash (deep link from job report)
@@ -679,7 +685,7 @@ export default function ConfigAdminPage() {
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
     }
-  }, [targetHash, selectedType, profileKey]);
+  }, [targetHash, selectedType, profileKey, getHeaders]);
 
   // Initialize edit config when switching to edit tab
   useEffect(() => {
@@ -854,8 +860,21 @@ export default function ConfigAdminPage() {
       fetchHistory();
     } else if (activeTab === "effective") {
       fetchEffectiveConfig();
+    } else if (activeTab === "edit" && selectedType === "prompt" && !promptContent && !promptDirty) {
+      // Load prompt content for editing
+      fetchActiveConfig();
+    } else if (activeTab === "edit" && selectedType !== "prompt" && !editConfig) {
+      // Load JSON config for editing (search/calculation)
+      fetchActiveConfig();
     }
-  }, [activeTab, selectedType, profileKey, fetchActiveConfig, fetchHistory, fetchEffectiveConfig]);
+  }, [activeTab, selectedType, profileKey, fetchActiveConfig, fetchHistory, fetchEffectiveConfig, promptContent, promptDirty, editConfig]);
+
+  // Initialize prompt content from active config when available
+  useEffect(() => {
+    if (selectedType === "prompt" && activeConfig?.content && !promptContent && !promptDirty) {
+      setPromptContent(activeConfig.content);
+    }
+  }, [selectedType, activeConfig, promptContent, promptDirty]);
 
   // Copy content to clipboard
   const copyToClipboard = (content: string) => {
@@ -872,7 +891,7 @@ export default function ConfigAdminPage() {
     return `${hash.slice(0, 8)}...${hash.slice(-8)}`;
   };
 
-  // Import JSON handler
+  // Import JSON handler with schema validation
   const handleImport = async () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -884,10 +903,24 @@ export default function ConfigAdminPage() {
       try {
         const text = await file.text();
         const parsed = JSON.parse(text);
+
+        // Validate structure matches expected config type
+        if (selectedType === "search") {
+          // Check required top-level keys for search config
+          if (typeof parsed.enabled !== "boolean" || typeof parsed.provider !== "string") {
+            throw new Error("Invalid search config: missing 'enabled' or 'provider' fields");
+          }
+        } else if (selectedType === "calculation") {
+          // Check required top-level keys for calculation config
+          if (!parsed.aggregation || !parsed.verdictBands || !parsed.sourceReliability) {
+            throw new Error("Invalid calculation config: missing 'aggregation', 'verdictBands', or 'sourceReliability' fields");
+          }
+        }
+
         setEditConfig(parsed);
         setValidation(null);
       } catch (err) {
-        alert(`Failed to import: ${err}`);
+        alert(`Failed to import: ${err instanceof Error ? err.message : String(err)}`);
       }
     };
     input.click();
@@ -965,8 +998,6 @@ export default function ConfigAdminPage() {
         <button
           className={`${styles.tab} ${activeTab === "edit" ? styles.active : ""}`}
           onClick={() => setActiveTab("edit")}
-          disabled={selectedType === "prompt"}
-          title={selectedType === "prompt" ? "Use Prompt Management for prompts" : "Edit configuration"}
         >
           Edit
         </button>
@@ -974,10 +1005,31 @@ export default function ConfigAdminPage() {
           className={`${styles.tab} ${activeTab === "effective" ? styles.active : ""}`}
           onClick={() => setActiveTab("effective")}
           disabled={selectedType === "prompt"}
-          title={selectedType === "prompt" ? "N/A for prompts" : "View config with environment overrides applied"}
+          title={selectedType === "prompt" ? "N/A for prompts (no env overrides)" : "View config with environment overrides applied"}
         >
           Effective
         </button>
+        {selectedType === "prompt" && (
+          <button
+            className={`${styles.tab}`}
+            onClick={async () => {
+              const url = `/api/admin/config/prompt/${profileKey}/export`;
+              const res = await fetch(url, { headers: getHeaders() });
+              if (res.ok) {
+                const blob = await res.blob();
+                const filename = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || `${profileKey}.prompt.md`;
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click();
+              } else {
+                alert("Export failed: " + (await res.json()).error);
+              }
+            }}
+          >
+            Export
+          </button>
+        )}
       </div>
 
       {/* Error display */}
@@ -1215,7 +1267,231 @@ export default function ConfigAdminPage() {
         </>
       )}
 
-      {/* Edit Tab */}
+      {/* Edit Tab - Prompt (Markdown Editor) */}
+      {activeTab === "edit" && selectedType === "prompt" && (
+        <div className={styles.editorSection}>
+          {/* Toolbar */}
+          <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
+            <input
+              type="text"
+              placeholder="Version label (optional)"
+              className={styles.formInput}
+              style={{ width: 200 }}
+              value={versionLabel}
+              onChange={(e) => setVersionLabel(e.target.value)}
+            />
+            <button
+              className={`${styles.button} ${styles.buttonSecondary}`}
+              onClick={async () => {
+                // Validate prompt
+                const res = await fetch(`/api/admin/config/prompt/${profileKey}/validate`, {
+                  method: "POST",
+                  headers: { ...getHeaders(), "Content-Type": "application/json" },
+                  body: JSON.stringify({ content: promptContent }),
+                });
+                const data = await res.json();
+                setValidation(data);
+              }}
+            >
+              Validate
+            </button>
+            <button
+              className={`${styles.button} ${styles.buttonSecondary}`}
+              onClick={async () => {
+                // Save draft
+                try {
+                  setSaving(true);
+                  const res = await fetch(`/api/admin/config/prompt/${profileKey}`, {
+                    method: "PUT",
+                    headers: { ...getHeaders(), "Content-Type": "application/json" },
+                    body: JSON.stringify({ content: promptContent, versionLabel: versionLabel || `v-${Date.now()}` }),
+                  });
+                  if (!res.ok) throw new Error((await res.json()).error || "Save failed");
+                  alert("Saved as draft");
+                  setPromptDirty(false);
+                  fetchHistory();
+                } catch (err) {
+                  alert(`Error: ${err}`);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving || !promptContent}
+            >
+              Save Draft
+            </button>
+            <button
+              className={`${styles.button} ${styles.buttonPrimary}`}
+              onClick={async () => {
+                // Save and activate
+                try {
+                  setSaving(true);
+                  const saveRes = await fetch(`/api/admin/config/prompt/${profileKey}`, {
+                    method: "PUT",
+                    headers: { ...getHeaders(), "Content-Type": "application/json" },
+                    body: JSON.stringify({ content: promptContent, versionLabel: versionLabel || `v-${Date.now()}` }),
+                  });
+                  if (!saveRes.ok) throw new Error((await saveRes.json()).error || "Save failed");
+                  const saveData = await saveRes.json();
+
+                  const activateRes = await fetch(`/api/admin/config/prompt/${profileKey}/activate`, {
+                    method: "POST",
+                    headers: { ...getHeaders(), "Content-Type": "application/json" },
+                    body: JSON.stringify({ contentHash: saveData.contentHash }),
+                  });
+                  if (!activateRes.ok) throw new Error("Saved but failed to activate");
+
+                  alert("Saved and activated!");
+                  setPromptDirty(false);
+                  setVersionLabel("");
+                  fetchActiveConfig();
+                  fetchHistory();
+                } catch (err) {
+                  alert(`Error: ${err}`);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving || !promptContent}
+            >
+              {saving ? "Saving..." : "Save & Activate"}
+            </button>
+            <button
+              className={`${styles.button} ${styles.buttonSecondary}`}
+              onClick={() => {
+                if (activeConfig?.content) {
+                  setPromptContent(activeConfig.content);
+                  setPromptDirty(false);
+                }
+              }}
+              disabled={!activeConfig}
+            >
+              Reset
+            </button>
+          </div>
+
+          {/* Validation results */}
+          {validation && (
+            <div style={{
+              marginBottom: 16,
+              padding: "12px 16px",
+              background: validation.valid ? "#d1fae5" : "#fee2e2",
+              border: `1px solid ${validation.valid ? "#10b981" : "#ef4444"}`,
+              borderRadius: 8,
+            }}>
+              {validation.valid ? (
+                <div style={{ color: "#065f46" }}>Valid prompt</div>
+              ) : (
+                <div>
+                  {validation.errors.map((e, i) => (
+                    <div key={i} style={{ color: "#b91c1c" }}>Error: {e}</div>
+                  ))}
+                </div>
+              )}
+              {validation.warnings.map((w, i) => (
+                <div key={i} style={{ color: "#92400e" }}>Warning: {w}</div>
+              ))}
+            </div>
+          )}
+
+          {/* Markdown editor */}
+          <div style={{ display: "flex", gap: 16, height: 600 }}>
+            {/* Line numbers + editor */}
+            <div style={{ flex: 1, display: "flex", border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}>
+              <div style={{
+                width: 50,
+                background: "#f3f4f6",
+                borderRight: "1px solid #d1d5db",
+                padding: "8px 0",
+                fontFamily: "monospace",
+                fontSize: 13,
+                lineHeight: "1.5em",
+                color: "#9ca3af",
+                textAlign: "right",
+                overflow: "hidden",
+                userSelect: "none",
+              }}>
+                {promptContent.split("\n").map((_, i) => (
+                  <div key={i} style={{ paddingRight: 8 }}>{i + 1}</div>
+                ))}
+              </div>
+              <textarea
+                value={promptContent}
+                onChange={(e) => {
+                  setPromptContent(e.target.value);
+                  setPromptDirty(true);
+                }}
+                style={{
+                  flex: 1,
+                  border: "none",
+                  resize: "none",
+                  padding: 8,
+                  fontFamily: "monospace",
+                  fontSize: 13,
+                  lineHeight: "1.5em",
+                  outline: "none",
+                }}
+                spellCheck={false}
+                placeholder="Load a prompt to edit, or paste content here..."
+              />
+            </div>
+
+            {/* Section navigator */}
+            <div style={{
+              width: 200,
+              background: "#f9fafb",
+              border: "1px solid #d1d5db",
+              borderRadius: 8,
+              padding: 12,
+              overflow: "auto",
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13 }}>Sections</div>
+              {promptContent.split("\n").map((line, i) => {
+                const match = line.match(/^## ([A-Z][A-Z0-9_]+)\s*$/);
+                if (match) {
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        padding: "4px 8px",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        borderRadius: 4,
+                        marginBottom: 2,
+                      }}
+                      onClick={() => {
+                        // Scroll to line (approximate)
+                        const textarea = document.querySelector("textarea");
+                        if (textarea) {
+                          const lines = promptContent.substring(0, promptContent.split("\n").slice(0, i).join("\n").length).split("\n").length;
+                          textarea.scrollTop = lines * 19.5;
+                          textarea.focus();
+                        }
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#e5e7eb")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      {match[1]}
+                    </div>
+                  );
+                }
+                return null;
+              })}
+              {!promptContent.includes("## ") && (
+                <div style={{ color: "#9ca3af", fontSize: 11 }}>No sections found</div>
+              )}
+            </div>
+          </div>
+
+          {promptDirty && (
+            <div style={{ marginTop: 8, color: "#92400e", fontSize: 13 }}>
+              Unsaved changes
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Edit Tab - JSON configs (search, calculation) */}
       {activeTab === "edit" && selectedType !== "prompt" && (
         <div>
           {/* Toolbar */}
@@ -1324,20 +1600,6 @@ export default function ConfigAdminPage() {
               </pre>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Edit Tab - Prompt redirect */}
-      {activeTab === "edit" && selectedType === "prompt" && (
-        <div className={styles.empty}>
-          <div className={styles.emptyIcon}>📝</div>
-          <div className={styles.emptyText}>Use Prompt Management for editing prompts</div>
-          <div className={styles.emptyHint}>
-            Prompts have a dedicated editor with section navigation and validation
-          </div>
-          <a href="/admin/prompts" className={`${styles.button} ${styles.buttonPrimary}`} style={{ marginTop: 16, display: "inline-block", textDecoration: "none" }}>
-            Go to Prompt Management
-          </a>
         </div>
       )}
 

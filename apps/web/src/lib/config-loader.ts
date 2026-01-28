@@ -13,6 +13,7 @@ import {
   getActiveConfigHash,
   getConfigBlob,
   recordConfigUsage,
+  seedPromptFromFile,
   type ConfigType,
   type OverrideRecord,
 } from "./config-storage";
@@ -413,6 +414,104 @@ export async function getEffectiveConfig<T extends SearchConfig | CalcConfig>(
     return { base, overrides, effective: result as T };
   } catch (err) {
     console.error(`[Config-Loader] Error getting effective config:`, err);
+    return null;
+  }
+}
+
+// ============================================================================
+// PROMPT CONFIG LOADING
+// ============================================================================
+
+/**
+ * Resolved prompt config result
+ */
+export interface ResolvedPromptConfig {
+  content: string;
+  contentHash: string;
+  fromCache: boolean;
+  seededFromFile: boolean;
+}
+
+/**
+ * Load prompt config with caching and lazy fallback seeding.
+ * If no DB config exists, seeds from file automatically.
+ *
+ * @param profile - Pipeline name (orchestrated, monolithic-canonical, etc.)
+ * @param jobId - Optional job ID for usage tracking
+ */
+export async function loadPromptConfig(
+  profile: string,
+  jobId?: string,
+): Promise<ResolvedPromptConfig | null> {
+  const configType: ConfigType = "prompt";
+  const key = getCacheKey(configType, profile);
+  const now = Date.now();
+
+  try {
+    // Check pointer (is active hash still valid?)
+    let hash = await refreshPointer(configType, profile);
+    let seededFromFile = false;
+
+    // Lazy fallback: seed from file if no DB config
+    if (!hash) {
+      console.log(`[Config-Loader] No prompt config for ${profile}, attempting to seed from file...`);
+      const seedResult = await seedPromptFromFile(profile);
+
+      if (seedResult.seeded && seedResult.contentHash) {
+        hash = seedResult.contentHash;
+        seededFromFile = true;
+        console.log(`[Config-Loader] Seeded prompt ${profile} (hash: ${hash.substring(0, 12)}...)`);
+      } else if (seedResult.error) {
+        console.error(`[Config-Loader] Failed to seed prompt ${profile}: ${seedResult.error}`);
+        return null;
+      } else {
+        // Already existed (race condition - another process seeded it)
+        hash = await getActiveConfigHash(configType, profile);
+        if (!hash) {
+          console.error(`[Config-Loader] No prompt config and seeding failed for ${profile}`);
+          return null;
+        }
+      }
+    }
+
+    // Check content cache
+    const cached = cache.get(key);
+    if (cached && cached.hash === hash && now - cached.loadedAt < CACHE_CONFIG.contentTTL) {
+      // Record usage even for cached hits
+      if (jobId) {
+        await recordConfigUsage(jobId, configType, profile, hash).catch((err) => {
+          console.warn(`[Config-Loader] Failed to record prompt usage: ${err?.message}`);
+        });
+      }
+      return { content: cached.content, contentHash: hash, fromCache: true, seededFromFile: false };
+    }
+
+    // Load from DB
+    const blob = await getConfigBlob(hash);
+    if (!blob) {
+      console.error(`[Config-Loader] Blob not found for prompt hash ${hash}`);
+      return null;
+    }
+
+    // Update cache
+    cache.set(key, {
+      hash,
+      content: blob.content,
+      parsed: {} as SearchConfig, // Not used for prompts, but cache type requires it
+      loadedAt: now,
+      pointerCheckedAt: now,
+    });
+
+    // Record usage
+    if (jobId) {
+      await recordConfigUsage(jobId, configType, profile, hash).catch((err) => {
+        console.warn(`[Config-Loader] Failed to record prompt usage: ${err?.message}`);
+      });
+    }
+
+    return { content: blob.content, contentHash: hash, fromCache: false, seededFromFile };
+  } catch (err) {
+    console.error(`[Config-Loader] Error loading prompt config for ${profile}:`, err);
     return null;
   }
 }

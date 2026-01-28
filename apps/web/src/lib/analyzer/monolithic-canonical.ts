@@ -31,7 +31,7 @@ import { filterFactsByProvenance } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
-import { recordPromptUsage, savePromptVersion } from "@/lib/prompt-storage";
+import { recordConfigUsage } from "@/lib/config-storage";
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
 import { calculateWeightedVerdictAverage, detectHarmPotential, detectClaimContestation } from "./aggregation";
 import { detectScopes, formatDetectedScopesHint } from "./scopes";
@@ -237,7 +237,7 @@ async function extractClaim(
 
   // v2.8: Pre-detect scopes using heuristics (shared implementation from scopes.ts)
   const preDetectedScopes = detectScopes(text);
-  
+
   let understandPrompt = buildPrompt({
     task: 'understand',
     provider: detectProvider(model.modelId || ''),
@@ -252,7 +252,7 @@ async function extractClaim(
       isRecent: false, // TODO: Add recency detection
     },
   });
-  
+
   // v2.8: Append pre-detected scopes hint to prompt (using shared formatter)
   understandPrompt += formatDetectedScopesHint(preDetectedScopes);
 
@@ -414,14 +414,13 @@ export async function runMonolithicCanonical(
     const pipelineName: Pipeline = "monolithic-canonical";
     const promptResult = await loadPromptFile(pipelineName);
     if (promptResult.success && promptResult.prompt) {
-      await savePromptVersion(
-        pipelineName,
-        promptResult.prompt.rawContent,
-        promptResult.prompt.contentHash,
-        promptResult.prompt.frontmatter.version,
-      ).catch(() => {});
       if (input.jobId) {
-        await recordPromptUsage(input.jobId, pipelineName, promptResult.prompt.contentHash).catch(() => {});
+        await recordConfigUsage(
+          input.jobId,
+          "prompt",
+          pipelineName,
+          promptResult.prompt.contentHash,
+        ).catch(() => {});
       }
       console.log(`[Prompt-Tracking] Loaded monolithic-canonical prompt (hash: ${promptResult.prompt.contentHash.substring(0, 12)}...)`);
     }
