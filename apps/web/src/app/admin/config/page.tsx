@@ -672,20 +672,28 @@ export default function ConfigAdminPage() {
     if (selectedType !== "prompt" || !promptContent || !promptDirty) {
       return;
     }
+    const abortController = new AbortController();
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/admin/config/prompt/${profileKey}/validate`, {
           method: "POST",
           headers: { ...getHeaders(), "Content-Type": "application/json" },
           body: JSON.stringify({ content: promptContent }),
+          signal: abortController.signal,
         });
         const data = await res.json();
         setValidation(data);
-      } catch {
-        // Silently fail - user can manually validate
+      } catch (err) {
+        // Silently fail - user can manually validate (or request was aborted)
+        if (err instanceof Error && err.name !== "AbortError") {
+          // Log non-abort errors for debugging if needed
+        }
       }
     }, 800); // 800ms debounce
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      abortController.abort();
+    };
   }, [selectedType, promptContent, promptDirty, profileKey, getHeaders]);
 
   // Auto-validate JSON configs with debounce
@@ -693,20 +701,28 @@ export default function ConfigAdminPage() {
     if (selectedType === "prompt" || !editConfig || !hasUnsavedJsonChanges) {
       return;
     }
+    const abortController = new AbortController();
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/admin/config/${selectedType}/${profileKey}/validate`, {
           method: "POST",
           headers: { ...getHeaders(), "Content-Type": "application/json" },
           body: JSON.stringify({ content: JSON.stringify(editConfig, null, 2) }),
+          signal: abortController.signal,
         });
         const data = await res.json();
         setValidation(data);
-      } catch {
-        // Silently fail - user can manually validate
+      } catch (err) {
+        // Silently fail - user can manually validate (or request was aborted)
+        if (err instanceof Error && err.name !== "AbortError") {
+          // Log non-abort errors for debugging if needed
+        }
       }
     }, 800); // 800ms debounce
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      abortController.abort();
+    };
   }, [selectedType, editConfig, hasUnsavedJsonChanges, profileKey, getHeaders]);
 
   // Profile options
