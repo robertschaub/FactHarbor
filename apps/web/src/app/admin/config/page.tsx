@@ -688,20 +688,24 @@ export default function ConfigAdminPage() {
   }, [targetHash, selectedType, profileKey, getHeaders]);
 
   // Initialize edit config when switching to edit tab
+  // Only use activeConfig if it matches the current selectedType to prevent race conditions
   useEffect(() => {
-    if (activeTab === "edit" && !editConfig) {
-      if (activeConfig?.content) {
+    if (activeTab === "edit" && !editConfig && selectedType !== "prompt") {
+      // Only initialize from activeConfig if it matches the current type
+      if (activeConfig?.content && activeConfig.configType === selectedType) {
         try {
           setEditConfig(JSON.parse(activeConfig.content));
         } catch {
-          // Use default
+          // Use default on parse failure
           setEditConfig(selectedType === "search" ? DEFAULT_SEARCH_CONFIG : DEFAULT_CALC_CONFIG);
         }
-      } else {
+      } else if (activeConfig === null && !loading) {
+        // No config exists for this type/profile - use defaults
         setEditConfig(selectedType === "search" ? DEFAULT_SEARCH_CONFIG : DEFAULT_CALC_CONFIG);
       }
+      // If activeConfig exists but wrong type, wait for fetchActiveConfig() to complete
     }
-  }, [activeTab, activeConfig, editConfig, selectedType]);
+  }, [activeTab, activeConfig, editConfig, selectedType, loading]);
 
   // Fetch active config
   const fetchActiveConfig = useCallback(async () => {
