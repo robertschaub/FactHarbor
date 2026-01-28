@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
-**Last Updated**: January 26, 2026
-**Current Version**: 2.6.38  
+**Last Updated**: January 28, 2026
+**Current Version**: 2.6.41  
 **Schema Version**: 2.7.0
 
 ---
@@ -42,6 +42,100 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 ---
 
 ## Version History
+
+### v2.6.41 (January 27-28, 2026)
+
+**Focus**: Unified Configuration Management & Prompt Unification
+
+**Major Changes**:
+
+1. **Unified Configuration Management System**
+   - Three-table database design: `config_blobs` (immutable), `config_active` (pointers), `config_usage` (per-job)
+   - Configuration types: `search`, `calculation`, `prompt`
+   - Zod schema validation with structured error messages
+   - Full version history with one-click rollback
+   - Export/import with deep linking from job reports
+
+2. **Prompt Unification** (Phase 4 Complete)
+   - Migrated prompts from file-based system (`prompt-versions.db`) to UCM (`config.db`)
+   - Prompts stored in `config_blobs` with `type='prompt'`
+   - Profile keys: `orchestrated`, `monolithic-canonical`, `monolithic-dynamic`, `source-reliability`
+   - Per-job usage tracking via `recordConfigUsage()`
+
+3. **Admin UI Consolidation**
+   - New `/admin/config` page with tabs: Active, Edit, History, Effective
+   - Form-based editors for JSON configs, text editor for prompts
+   - Removed legacy `/admin/prompts` page (redirect to `/admin/config?type=prompt`)
+
+4. **Bug Fixes**
+   - Race condition when switching config types on edit tab
+   - Import validation now checks JSON structure matches expected config type
+   - `editConfig` initialization from stale `activeConfig` prevented
+
+**Files Created**:
+- `apps/web/src/lib/config-storage.ts` - SQLite storage layer
+- `apps/web/src/lib/config-loader.ts` - Caching and effective config resolution
+- `apps/web/src/lib/config-schemas.ts` - Zod schemas and validation
+- `apps/web/src/app/api/admin/config/` - All config API routes (12 routes)
+- `apps/web/src/app/api/fh/jobs/[id]/configs/route.ts` - Job config retrieval
+- `apps/web/src/app/jobs/[id]/components/ConfigViewer.tsx` - Job report component
+- `apps/web/test/unit/lib/config-storage.test.ts` - 20 unit tests
+
+**Files Deleted** (Legacy System):
+- `apps/web/src/lib/prompt-storage.ts`
+- `apps/web/src/app/admin/prompts/page.tsx`
+- `apps/web/src/app/admin/prompts/prompts.module.css`
+- `apps/web/src/app/api/admin/prompts/[pipeline]/` (10 routes)
+
+**Documentation**:
+- `Docs/STATUS/Changelog_v2.6.41_Unified_Config.md` - Full changelog
+- `Docs/USER_GUIDES/Admin_Interface.md` - Updated with UCM section
+- `Docs/REVIEWS/Full_Prompt_Unification_Plan.md` - Marked complete
+
+---
+
+### v2.6.40 (January 26, 2026)
+
+**Focus**: Context/Scope Terminology Fix
+
+**Problem**: Inline prompts in `orchestrated.ts` mixed "scope" and "context" terminology, causing confusion for the LLM and preventing `assessedStatement` from being properly passed to the verdict phase.
+
+**Changes**:
+- `contextsFormatted` now includes `assessedStatement` field for each context
+- Added explicit instruction: shortAnswer must evaluate the assessedStatement
+- Fixed ~10 terminology instances in inline prompts:
+  - `"MULTIPLE DISTINCT SCOPES"` → `"MULTIPLE DISTINCT CONTEXTS"`
+  - `"MULTI-SCOPE DETECTION"` → `"MULTI-CONTEXT DETECTION"`
+  - Variable renamed: `scopesFormatted` → `contextsFormatted`
+  - Example IDs: `SCOPE_COURT_A` → `CTX_COURT_A`
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer/orchestrated.ts`
+- `apps/web/src/lib/analyzer/config.ts` (version bump)
+
+---
+
+### v2.6.39 (January 26, 2026)
+
+**Focus**: Assessed Statement Feature
+
+**Problem**: Users couldn't tell what specific statement was being evaluated in each AnalysisContext card. A context showing "74% Mostly True" was unclear about what was being assessed.
+
+**Solution**: Added explicit `assessedStatement` field to each **AnalysisContext** object.
+
+**Implementation**:
+- Added `assessedStatement?: string` to `AnalysisContext` interface in `types.ts`
+- Updated prompts: `orchestrated-understand.ts`, `scope-refinement-base.ts`
+- UI display with styled label in job results page
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer/types.ts`
+- `apps/web/src/lib/analyzer/prompts/base/orchestrated-understand.ts`
+- `apps/web/src/lib/analyzer/prompts/base/scope-refinement-base.ts`
+- `apps/web/src/app/jobs/[id]/page.tsx`
+- `apps/web/src/app/jobs/[id]/page.module.css`
+
+---
 
 ### v2.6.38 (January 26, 2026)
 

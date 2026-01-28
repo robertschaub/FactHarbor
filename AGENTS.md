@@ -85,6 +85,8 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 | `apps/web/src/lib/analyzer/scopes.ts` | Scope detection and handling |
 | `apps/web/src/lib/analyzer/source-reliability.ts` | Source reliability: prefetch, lookup, weighting |
 | `apps/web/src/lib/source-reliability-cache.ts` | SQLite cache for source scores |
+| `apps/web/src/lib/config-storage.ts` | Unified Config Management: SQLite storage layer |
+| `apps/web/src/lib/config-loader.ts` | Config caching and effective config resolution |
 | `apps/web/src/app/jobs/[id]/page.tsx` | Job results UI |
 | `apps/api/Controllers/JobsController.cs` | Job CRUD API |
 | `Docs/ARCHITECTURE/Calculations.md` | Verdict calculation documentation |
@@ -139,7 +141,7 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 
 ---
 
-## Current State (v2.6.37)
+## Current State (v2.6.41)
 
 ### Working Features
 - ✅ Multi-scope detection and display
@@ -151,6 +153,7 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 - ✅ Triple-path pipeline (Orchestrated, Monolithic Canonical, Monolithic Dynamic)
 - ✅ Source Reliability (LLM evaluation with multi-model consensus, caching, evidence weighting, entity-level evaluation)
 - ✅ Source Reliability Hardening (SOURCE TYPE CAPS, asymmetric confidence gating, brand variant matching)
+- ✅ Unified Configuration Management (database-backed version control for search, calculation, and prompt configs)
 
 ### Key Environment Variables
 

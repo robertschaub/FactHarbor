@@ -261,16 +261,16 @@ AGENTS.md Key Files table now lists modular analyzer structure:
 
 ### Priority 1: Version Alignment (Critical) - ✅ RESOLVED
 
-1. **Canonical version decided**: `2.6.33`
-   - Updated `config.ts` schemaVersion from `2.6.32` to `2.6.33`
-   - Updated `metrics.ts` schemaVersion from `2.8.0` to `2.6.33`
+1. **Canonical version decided**: `2.6.41` (updated from 2.6.33)
+   - Updated after Unified Config Management implementation
+   - Current: v2.6.41 (Code) | 2.7.0 (Schema Output)
 
-2. **All version references updated** to 2.6.33:
+2. **All version references updated** to current version:
    - Overview.md, Calculations.md, KeyFactors_Design.md, Pipeline_TriplePath_Architecture.md
    - Prompt_Architecture.md, TERMINOLOGY.md, LLM_Schema_Mapping.md, Provider_Prompt_Guidelines.md
    - Current_Status.md (header and footer now consistent), HISTORY.md
 
-3. **ERD schema versions fixed** in `Overview.md` (changed `2.6.18` to `2.6.33`)
+3. **ERD schema versions fixed** in `Overview.md`
 
 ### Priority 2: Terminology Migration (High) - ✅ RESOLVED
 

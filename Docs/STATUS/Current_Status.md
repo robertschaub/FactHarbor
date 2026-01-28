@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.38 (Code) | 2.7.0 (Schema Output)  
-**Last Updated**: 2026-01-26  
+**Version**: 2.6.41 (Code) | 2.7.0 (Schema Output)  
+**Last Updated**: 2026-01-28  
 **Status**: POC1 Operational
 
 ---
@@ -48,6 +48,7 @@
 - Multi-provider search support (Google CSE, SerpAPI, Gemini Grounded)
 - SQLite database for local development
 - Automated retry with exponential backoff
+- **Unified Configuration Management** (v2.6.41): Database-backed version control for search, calculation, and prompt configurations with validation, history, rollback, and export
 
 **Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
 - ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
@@ -267,6 +268,32 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ## Recent Changes
 
+### v2.6.41 (January 27-28, 2026)
+- **Unified Configuration Management**: Complete config system with database-backed version control
+  - Three-table design: `config_blobs` (immutable versions), `config_active` (activation pointers), `config_usage` (per-job tracking)
+  - Configuration types: search, calculation, prompt
+  - Admin UI at `/admin/config` with edit, history, effective, and export tabs
+  - Schema validation with Zod, version history, one-click rollback
+  - Export/import with deep linking from job reports
+- **Prompt Unification**: Migrated prompts from file-based system to Unified Config Management
+  - Prompts now stored in `config_blobs` with `type='prompt'`
+  - Deleted legacy `/admin/prompts` page and `/api/admin/prompts/*` routes
+  - Deleted `prompt-storage.ts` and associated database tables
+  - Updated analyzers to use `recordConfigUsage()` instead of legacy functions
+- **Bug Fixes**:
+  - Fixed race condition when switching config types on edit tab
+  - Fixed import validation to check JSON structure matches config type
+
+### v2.6.40 (January 26, 2026)
+- **Context/Scope Terminology Fix**: Fixed inline prompts using wrong terminology
+  - `assessedStatement` now passed correctly to verdict phase
+  - Renamed "SCOPE" to "CONTEXT" in ~10 inline prompt locations
+
+### v2.6.39 (January 26, 2026)
+- **Assessed Statement Feature**: Added `assessedStatement` field to AnalysisContext
+  - Displays what specific statement is being evaluated in each context card
+  - Improves clarity for multi-context analyses
+
 ### v2.6.38 (January 26, 2026)
 - **Context Overlap Detection Improvements**: Refined LLM-driven context detection
   - **Temporal Guidance Clarification**: Fixed contradiction between "incidental temporal mentions" (don't split) vs "time period as primary subject" (do split)
@@ -473,6 +500,6 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ---
 
-**Last Updated**: January 26, 2026  
-**Actual Version**: 2.6.38 (Code) | 2.7.0 (Schema)  
+**Last Updated**: January 28, 2026  
+**Actual Version**: 2.6.41 (Code) | 2.7.0 (Schema)  
 **Document Status**: Corrected to reflect actual implementation state
