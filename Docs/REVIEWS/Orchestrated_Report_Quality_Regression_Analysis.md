@@ -795,20 +795,44 @@ function hasStrongSupportSignals(reasoning: string): boolean {
 
 ---
 
-### Summary Timeline
+### Summary Timeline (Revised: Low-Risk First)
 
-| Phase | Description | Effort | Dependencies |
-|-------|-------------|--------|--------------|
-| 0 | Preparation | 30 min | None |
-| 1 | Config baseline test | 1 hour | Phase 0 |
-| 2 | Refinement gate fix | 30 min | Phase 1 confirms hypothesis |
-| 3 | Seed forcing gate | 1 hour | Phase 2 |
-| 4 | Seeds as hints | 2 hours | Phase 3 |
-| 5 | Contested/doubted fix | 3 hours | Phase 4 |
-| 6 | Directionality hardening | 2 hours | Phase 5 |
-| 7 | Documentation | 1 hour | Phase 6 |
+**Strategy**: Implement all low-risk changes first, then test, then proceed with medium-risk changes.
+
+#### Batch 1: Low-Risk Implementation (4 hours)
+
+| Phase | Description | Effort | Risk |
+|-------|-------------|--------|------|
+| 2 | Refinement gate fix | 30 min | Low |
+| 3 | Seed forcing gate | 1 hour | Low |
+| 4 | Seeds as hints | 2 hours | Low |
+| 7a | Interim documentation | 30 min | None |
+
+#### Batch 2: Testing Checkpoint
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 0 | Create test harness + 5 canonical inputs | 30 min |
+| 1 | Run full comparison (before/after low-risk changes) | 1 hour |
+| - | **Decision**: Evaluate improvement before medium-risk | - |
+
+#### Batch 3: Medium-Risk Implementation (5 hours) — After Testing
+
+| Phase | Description | Effort | Risk |
+|-------|-------------|--------|------|
+| 5 | Contested/doubted fix | 3 hours | Med |
+| 6 | Directionality hardening | 2 hours | Med |
+
+#### Batch 4: Final Testing & Documentation
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 1b | Re-run test harness with all changes | 1 hour |
+| 7b | Final documentation | 30 min |
 
 **Total**: ~11 hours (1.5 working days)
+
+**Rationale**: Low-risk changes (Phases 2-4) address the primary root cause (evidence depth / gating) identified in the analysis. Testing after these changes will show whether the medium-risk changes (Phases 5-6) are even necessary.
 
 ---
 
