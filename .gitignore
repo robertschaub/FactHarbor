@@ -23,6 +23,12 @@ Docs/xWiki-work/*_fulltree_pages/
 Docs/xWiki-work/*.xml
 !Docs/xWiki-work/.gitkeep
 
+# xwiki-export intermediate files
+# Track .xar packages and README.md, ignore unpacked XML and temp files
+Docs/xwiki-export/*.xml
+Docs/xwiki-export/package*.xml
+Docs/xwiki-export/temp*/
+
 # Node / Next.js
 node_modules/
 .next/

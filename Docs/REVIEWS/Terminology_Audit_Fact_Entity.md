@@ -1,7 +1,7 @@
 # Terminology Audit: "Fact" Entity
 
 **Date**: 2026-01-27 (updated 2026-01-28)
-**Status**: Phase 0 in progress (documentation fixes)
+**Status**: Phase 0 complete (documentation fixes), awaiting other changes before Phase 1
 **Scope**: All `apps/web/src/` files + xWiki architecture documentation
 
 ---
