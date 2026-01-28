@@ -606,6 +606,35 @@ export default function ConfigAdminPage() {
   const [promptContent, setPromptContent] = useState<string>("");
   const [promptDirty, setPromptDirty] = useState(false);
 
+  // Track if JSON config has been modified (compare with activeConfig)
+  const hasUnsavedJsonChanges = useMemo(() => {
+    if (!editConfig || selectedType === "prompt") return false;
+    if (!activeConfig?.content) return !!editConfig; // New config = unsaved
+    try {
+      const current = JSON.stringify(editConfig);
+      const active = activeConfig.content;
+      // Compare normalized JSON (activeConfig.content is already a string)
+      return current !== active;
+    } catch {
+      return false;
+    }
+  }, [editConfig, activeConfig, selectedType]);
+
+  // Combined unsaved changes check
+  const hasUnsavedChanges = promptDirty || hasUnsavedJsonChanges;
+
+  // Warn user before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   // Profile options
   // Fetch profile options from backend
   const [profileOptions, setProfileOptions] = useState<string[]>(
@@ -954,7 +983,13 @@ export default function ConfigAdminPage() {
           <div
             key={ct.type}
             className={`${styles.typeCard} ${selectedType === ct.type ? styles.selected : ""}`}
-            onClick={() => setSelectedType(ct.type)}
+            onClick={() => {
+              if (ct.type === selectedType) return;
+              if (hasUnsavedChanges) {
+                if (!confirm("You have unsaved changes. Switch config type anyway?")) return;
+              }
+              setSelectedType(ct.type);
+            }}
             role="button"
             tabIndex={0}
           >
@@ -973,7 +1008,17 @@ export default function ConfigAdminPage() {
           id="profile-select"
           className={styles.profileSelect}
           value={profileKey}
-          onChange={(e) => setProfileKey(e.target.value)}
+          onChange={(e) => {
+            if (e.target.value === profileKey) return;
+            if (hasUnsavedChanges) {
+              if (!confirm("You have unsaved changes. Switch profile anyway?")) {
+                // Reset the select to current value (user cancelled)
+                e.target.value = profileKey;
+                return;
+              }
+            }
+            setProfileKey(e.target.value);
+          }}
         >
           {profileOptions.map((p) => (
             <option key={p} value={p}>{p}</option>
@@ -1011,7 +1056,7 @@ export default function ConfigAdminPage() {
           className={`${styles.tab} ${activeTab === "edit" ? styles.active : ""}`}
           onClick={() => setActiveTab("edit")}
         >
-          Edit
+          Edit {hasUnsavedChanges && <span style={{ color: "#f59e0b", marginLeft: 4 }}>●</span>}
         </button>
         <button
           className={`${styles.tab} ${activeTab === "effective" ? styles.active : ""}`}
@@ -1371,12 +1416,15 @@ export default function ConfigAdminPage() {
             <button
               className={`${styles.button} ${styles.buttonSecondary}`}
               onClick={() => {
+                if (promptDirty && !confirm("Discard your changes and reset to the active version?")) {
+                  return;
+                }
                 if (activeConfig?.content) {
                   setPromptContent(activeConfig.content);
                   setPromptDirty(false);
                 }
               }}
-              disabled={!activeConfig}
+              disabled={!activeConfig || !promptDirty}
             >
               Reset
             </button>
@@ -1545,6 +1593,9 @@ export default function ConfigAdminPage() {
             <button
               className={`${styles.button} ${styles.buttonSecondary}`}
               onClick={() => {
+                if (hasUnsavedJsonChanges && !confirm("Discard your changes and reset to defaults?")) {
+                  return;
+                }
                 setEditConfig(selectedType === "search" ? DEFAULT_SEARCH_CONFIG : DEFAULT_CALC_CONFIG);
                 setValidation(null);
               }}
