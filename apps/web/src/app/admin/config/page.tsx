@@ -635,6 +635,71 @@ export default function ConfigAdminPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  // Keyboard shortcut for save (Ctrl+S / Cmd+S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (activeTab !== "edit") return;
+        
+        // Trigger save based on config type
+        if (selectedType === "prompt" && promptContent && promptDirty) {
+          // Find and click the Save & Activate button for prompts
+          const saveBtn = document.querySelector('[data-save-prompt-activate]') as HTMLButtonElement;
+          if (saveBtn && !saveBtn.disabled) saveBtn.click();
+        } else if (selectedType !== "prompt" && editConfig && hasUnsavedJsonChanges) {
+          // Find and click the Save & Activate button for JSON configs
+          const saveBtn = document.querySelector('[data-save-json-activate]') as HTMLButtonElement;
+          if (saveBtn && !saveBtn.disabled) saveBtn.click();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [activeTab, selectedType, promptContent, promptDirty, editConfig, hasUnsavedJsonChanges]);
+
+  // Auto-validate prompts with debounce
+  useEffect(() => {
+    if (selectedType !== "prompt" || !promptContent || !promptDirty) {
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/config/prompt/${profileKey}/validate`, {
+          method: "POST",
+          headers: { ...getHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ content: promptContent }),
+        });
+        const data = await res.json();
+        setValidation(data);
+      } catch {
+        // Silently fail - user can manually validate
+      }
+    }, 800); // 800ms debounce
+    return () => clearTimeout(timer);
+  }, [selectedType, promptContent, promptDirty, profileKey, getHeaders]);
+
+  // Auto-validate JSON configs with debounce
+  useEffect(() => {
+    if (selectedType === "prompt" || !editConfig || !hasUnsavedJsonChanges) {
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/config/${selectedType}/${profileKey}/validate`, {
+          method: "POST",
+          headers: { ...getHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ content: JSON.stringify(editConfig, null, 2) }),
+        });
+        const data = await res.json();
+        setValidation(data);
+      } catch {
+        // Silently fail - user can manually validate
+      }
+    }, 800); // 800ms debounce
+    return () => clearTimeout(timer);
+  }, [selectedType, editConfig, hasUnsavedJsonChanges, profileKey, getHeaders]);
+
   // Profile options
   // Fetch profile options from backend
   const [profileOptions, setProfileOptions] = useState<string[]>(
@@ -1403,6 +1468,7 @@ export default function ConfigAdminPage() {
               Save Draft
             </button>
             <button
+              data-save-prompt-activate
               className={`${styles.button} ${styles.buttonPrimary}`}
               onClick={async () => {
                 // Save and activate
@@ -1435,6 +1501,7 @@ export default function ConfigAdminPage() {
                 }
               }}
               disabled={saving || !promptContent}
+              title="Ctrl+S"
             >
               {saving ? "Saving..." : "Save & Activate"}
             </button>
@@ -1620,9 +1687,11 @@ export default function ConfigAdminPage() {
               Save Draft
             </button>
             <button
+              data-save-json-activate
               className={`${styles.button} ${styles.buttonPrimary}`}
               onClick={() => saveConfig(true)}
               disabled={saving}
+              title="Ctrl+S"
             >
               {saving ? "Saving..." : "Save & Activate"}
             </button>
