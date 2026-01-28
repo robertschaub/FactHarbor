@@ -1050,6 +1050,11 @@ export default function ConfigAdminPage() {
 
   // Import JSON handler with schema validation
   const handleImport = async () => {
+    // Check for unsaved changes before importing (consistent with Reset to Default)
+    if (hasUnsavedJsonChanges && !confirm("You have unsaved changes. Import and overwrite anyway?")) {
+      return;
+    }
+
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".json";
