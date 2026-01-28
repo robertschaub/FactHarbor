@@ -152,7 +152,7 @@ async function refineScopesFromEvidence(
     .join("\n");
 
   // v2.6.39: Compute seed context candidates from heuristics (soft hints, not mandatory)
-  const seedScopes = detectScopes(analysisInput);
+  const seedScopes = detectScopes(analysisInput) || [];
   const seedHint = seedScopes.length > 0 ? formatDetectedScopesHint(seedScopes, true) : "";
 
   const schema = z.object({
@@ -171,11 +171,11 @@ async function refineScopesFromEvidence(
 Terminology (critical):
 - ArticleFrame: Broader frame or topic of the input article.
 - AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
-- EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts (ExtractedFact.evidenceScope). This is NOT the same as AnalysisContext.
+- EvidenceScope: per-evidence-item source scope (methodology/boundaries/geography/temporal) attached to individual extracted evidence items (ExtractedFact.evidenceScope). This is NOT the same as AnalysisContext.
 
 Language rules (avoid ambiguity):
 - Use the term "AnalysisContext" (or "analysis context") for top-level bounded frames.
-- Use the term "EvidenceScope" ONLY for per-fact scope metadata shown in the FACTS.
+- Use the term "EvidenceScope" ONLY for per-evidence-item metadata shown in the EVIDENCE list.
 - Avoid using the bare word "scope" (it is too ambiguous here).
 - Avoid using the bare word "context" unless you explicitly mean AnalysisContext.
 
@@ -210,13 +210,13 @@ Return JSON only matching the schema.`;
 CANDIDATE CONTEXTS (heuristic detection - optional):
 ${seedHint}
 
-NOTE: These candidates are heuristic suggestions. Use a candidate ONLY if it is supported by ≥1 fact from the FACTS list above. Drop any candidate that lacks evidence support. You may also identify additional contexts not listed here if the evidence supports them.
+NOTE: These candidates are heuristic suggestions. Use a candidate ONLY if it is supported by ≥1 evidence item from the EVIDENCE list above. Drop any candidate that lacks evidence support. You may also identify additional contexts not listed here if the evidence supports them.
 ` : "";
 
   const userPrompt = `INPUT (normalized):
 "${analysisInput}"
 
-FACTS (evidence):
+EVIDENCE (unverified extracted statements):
 ${factsText}
 
 CURRENT CLAIMS (may be incomplete):
@@ -225,7 +225,7 @@ ${candidateContextsSection}
 Return:
 - requiresSeparateAnalysis
 - analysisContexts (1..N)
-- factScopeAssignments: map each factId listed above to exactly one contextId (use contextId from your analysisContexts). NOTE: this assigns facts to AnalysisContexts (not to per-fact EvidenceScope).
+- factScopeAssignments: map each factId (evidence item id) listed above to exactly one contextId (use contextId from your analysisContexts). NOTE: this assigns evidence items to AnalysisContexts (not to per-item EvidenceScope).
 - claimScopeAssignments: (optional) map any claimIds that clearly belong to a specific contextId
 `;
 
@@ -4783,10 +4783,10 @@ async function extractOutcomeClaimsFromFacts(
   const existingClaims = understanding.subClaims || [];
   const existingClaimTexts = new Set(existingClaims.map((c) => c.text.toLowerCase().trim()));
 
-  // Extract facts text for LLM analysis
+  // Extract evidence text for LLM analysis (legacy variable name: factsText)
   const factsText = state.facts
     .slice(0, 50) // Limit to first 50 facts to avoid token limits
-    .map((f, idx) => `F${idx + 1}: ${f.fact}`)
+    .map((f, idx) => `E${idx + 1}: ${f.fact}`)
     .join("\n");
 
   if (!factsText || factsText.length < 100) return [];
@@ -4811,7 +4811,7 @@ Only extract outcomes that:
 
 Return empty array if no such outcomes are found.`;
 
-  const userPrompt = `FACTS DISCOVERED DURING RESEARCH:
+  const userPrompt = `EVIDENCE DISCOVERED DURING RESEARCH (unverified extracted statements):
 ${factsText}
 
 EXISTING CLAIMS (DO NOT DUPLICATE):
@@ -6295,14 +6295,14 @@ Evidence may come from sources with DIFFERENT EvidenceScopes (per-fact source me
 
 ## COUNTER-EVIDENCE HANDLING
 
-Facts in the FACTS section are labeled with their relationship to the user's claim:
+Evidence items in the EVIDENCE section are labeled with their relationship to the user's claim:
 - **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
 - **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- Unlabeled facts are neutral/contextual
+- Unlabeled items are neutral/contextual
 
 **How to use these labels:**
-- If most facts are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
-- If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
+- If most evidence items are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
+- If most evidence items are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
 - Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
 
 ## CRITICAL: CAUSAL vs TEMPORAL CLAIMS
@@ -6464,7 +6464,7 @@ ${contextsFormatted}
 ## CLAIMS
 ${claimsFormatted}
 
-## FACTS
+## EVIDENCE (UNVERIFIED EXTRACTED STATEMENTS)
 ${factsFormatted}
 
 Provide SEPARATE answers for each context.`;
@@ -7376,14 +7376,14 @@ CRITICAL: The "answer" field must be a NUMBER (not a string), and must reflect t
 
 ## COUNTER-EVIDENCE HANDLING
 
-Facts in the FACTS section are labeled with their relationship to the user's claim:
+Evidence items in the EVIDENCE section are labeled with their relationship to the user's claim:
 - **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
 - **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- Unlabeled facts are neutral/contextual
+- Unlabeled items are neutral/contextual
 
 **How to use these labels:**
-- If most facts are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
-- If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
+- If most evidence items are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
+- If most evidence items are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
 - Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
 
 ## CRITICAL: CAUSAL vs TEMPORAL CLAIMS
@@ -7484,7 +7484,7 @@ ${getProviderPromptHint()}`;
 ## CLAIMS
 ${claimsFormatted}
 
-## FACTS
+## EVIDENCE (UNVERIFIED EXTRACTED STATEMENTS)
 ${factsFormatted}`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_SIMPLE> | null = null;
@@ -7920,14 +7920,14 @@ Use the MOSTLY-FALSE/FALSE bands (0-28%) for any claim that evidence contradicts
 
 ## COUNTER-EVIDENCE HANDLING
 
-Facts in the FACTS section are labeled with their relationship to the user's claim:
+Evidence items in the EVIDENCE section are labeled with their relationship to the user's claim:
 - **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
 - **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- Unlabeled facts are neutral/contextual
+- Unlabeled items are neutral/contextual
 
 **How to use these labels:**
-- If most facts are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
-- If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
+- If most evidence items are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
+- If most evidence items are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
 - Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
 
 ## CRITICAL: CAUSAL vs TEMPORAL CLAIMS

@@ -708,7 +708,7 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
           <StatCard label="Results Found" value={researchStats.totalResults} icon="📋" />
           <StatCard label="Sources Fetched" value={researchStats.sourcesFetched} icon="🌐" />
           <StatCard label="Fetch Success" value={researchStats.sourcesSuccessful} icon="✅" />
-          <StatCard label="Facts Extracted" value={researchStats.factsExtracted} icon="📝" />
+          <StatCard label="Evidence Extracted" value={researchStats.factsExtracted} icon="📝" />
         </div>
       )}
 
@@ -777,7 +777,7 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
 }
 
 // ============================================================================
-// Facts Panel - NEW v2.6.29: Display facts with counter-evidence marking
+// Evidence Panel (legacy field name: facts) - NEW v2.6.29: Display extracted evidence with counter-evidence marking
 // ============================================================================
 
 function FactsPanel({ facts, disableGrouping = false }: { facts: any[]; disableGrouping?: boolean }) {
@@ -786,7 +786,7 @@ function FactsPanel({ facts, disableGrouping = false }: { facts: any[]; disableG
   // Group facts by claim direction and source type
   const supportingFacts = facts.filter((f: any) => f.claimDirection === "supports" && !f.fromOppositeClaimSearch);
   const contradictingFacts = facts.filter((f: any) => f.claimDirection === "contradicts" && !f.fromOppositeClaimSearch);
-  // NEW v2.6.29: Facts from opposite claim search - evidence that supports the inverse claim
+  // NEW v2.6.29: Evidence from opposite claim search - evidence that supports the inverse claim
   const oppositeClaimFacts = facts.filter((f: any) => f.fromOppositeClaimSearch === true);
   const neutralFacts = facts.filter((f: any) =>
     (f.claimDirection === "neutral" || !f.claimDirection) && !f.fromOppositeClaimSearch
@@ -888,7 +888,7 @@ function FactsPanel({ facts, disableGrouping = false }: { facts: any[]; disableG
             {renderFactList(neutralFacts.slice(0, 5), styles.factItemNeutral)}
             {neutralFacts.length > 5 && (
               <div className={styles.factMoreIndicator}>
-                + {neutralFacts.length - 5} more background facts
+                + {neutralFacts.length - 5} more background items
               </div>
             )}
           </div>

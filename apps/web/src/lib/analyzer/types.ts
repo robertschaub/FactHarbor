@@ -338,8 +338,23 @@ export interface ResearchIteration {
   factsExtracted: number;
 }
 
+/**
+ * Extracted evidence item from a source (legacy name: `ExtractedFact`).
+ *
+ * Despite the name, this is NOT a verified fact. It is an unverified statement,
+ * statistic, quote, or other evidence snippet extracted from a source to be
+ * evaluated against claims.
+ *
+ * IMPORTANT:
+ * - The system verifies claims; it does not assume extracted items are true.
+ * - JSON field names are kept for backward compatibility.
+ */
 export interface ExtractedFact {
   id: string;
+  /**
+   * The extracted statement text (legacy field name: `fact`).
+   * This represents an unverified evidence statement from a source.
+   */
   fact: string;
   category:
     | "legal_provision"
@@ -408,6 +423,10 @@ export interface ClaimVerdict {
   evidenceWeight?: number;
   riskTier: "A" | "B" | "C";
   reasoning: string;
+  /**
+   * IDs of supporting evidence items (legacy field name: `supportingFactIds`).
+   * These point into the analysis `facts[]` array (which contains extracted evidence items).
+   */
   supportingFactIds: string[];
   keyFactorId?: string;
   contextId?: string;
