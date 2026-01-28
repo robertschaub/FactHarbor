@@ -1,7 +1,7 @@
 ---
-version: "2.6.37-GoodBolsonaro"
+version: "2.6.38"
 pipeline: "orchestrated"
-description: "Orchestrated pipeline prompts from Good_BolsonaroReport tag (with modern type/naming adjustments)"
+description: "Orchestrated pipeline prompts with modern type/naming adjustments"
 lastModified: "2026-01-28T00:00:00Z"
 variables:
   - currentDate
