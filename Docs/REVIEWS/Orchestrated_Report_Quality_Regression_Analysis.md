@@ -131,7 +131,7 @@ These are the recommended **next adjustments** to make before running further qu
       - `factualBasis: "opinion"`
 
 **Also** (AGENTS.md compliance):
-- Remove domain-specific tokens from the documented-evidence regexes (e.g., `VAERS`) and keep only generic terms.
+- Remove domain-specific tokens from documented-evidence heuristics (e.g., named registries/datasets/acronyms) and keep only generic terms.
 
 ### Adjustment 5 — Improve directionality correction for low verdicts (symmetry)
 
@@ -171,7 +171,11 @@ UserInput --> Understanding[Understanding_JSON]
 Understanding --> AnalysisContexts[AnalysisContext_List]
 Understanding --> Claims[Claim_List]
 
-Research[Research_SearchFetch] --> Sources[Source_List]
+Understanding --> ResearchInputs[ResearchInputs: researchQueries + context/claim hints]
+SearchConfig[SearchConfig/Budgets/Mode] --> ResearchInputs
+
+ResearchInputs --> Research[Research_SearchFetch]
+Research --> Sources[Source_List]
 Sources --> Facts[ExtractedFact_List]
 Facts --> EvidenceScope[EvidenceScope_PerFactMetadata]
 
@@ -194,7 +198,9 @@ flowchart TD
 Input[Input] --> U[UNDERSTAND_Prompt]
 U --> UO[Understanding_JSON: ArticleFrame + AnalysisContexts + Claims]
 
-UO --> R[ResearchLoop_SearchFetch]
+UO --> RQ[ResearchQueries/QueryPlan]
+SearchConfig[SearchConfig/Budgets/Mode] --> R
+RQ --> R[ResearchLoop_SearchFetch]
 R --> EF[EXTRACT_FACTS_Prompt]
 EF --> FO[Facts_JSON with EvidenceScope per fact]
 
@@ -261,10 +267,10 @@ However, the current approach still allows false positives because it:
 
 This is consistent with the symptom: “contested where it should only be doubted.”
 
-**Important note**:
-Some code/prompt content also violates the repo’s “Generic by Design / no test-case terms” rule (AGENTS.md). This can bias the model:
-- `apps/web/src/lib/analyzer/aggregation.ts` includes domain-specific tokens like `VAERS` inside the contestation regex.
-- `apps/web/src/lib/analyzer/orchestrated.ts` contains a domain-specific example string (“US sanctions…”).
+**Important note (AGENTS.md compliance)**:
+Some code/prompt content violates the repo’s “Generic by Design / no test-case terms” rule (AGENTS.md). This can bias the model:
+- `apps/web/src/lib/analyzer/aggregation.ts` includes domain-specific tokens (e.g., named registries/acronyms) inside contestation heuristics.
+- `apps/web/src/lib/analyzer/orchestrated.ts` contains at least one domain-specific example string in a prompt.
 
 Even if intended as “helpful”, these increase the chance of topic-specific overfitting.
 
@@ -331,7 +337,7 @@ Practical options:
 2) **UI rule**:
    - only display “Contested” badge if `contestationType === "contested"` and `counterEvidenceFactIds.length > 0`.
 
-3) **Remove topic-specific tokens** from heuristics (`VAERS` etc.). Keep patterns generic (e.g., “passive surveillance system”, “self-reported adverse event database”) if needed.
+3) **Remove topic-specific tokens** from heuristics (named registries/datasets/acronyms). Keep patterns generic (methodology/measurement/reporting concepts) if needed.
 
 ### Phase 5 — Directionality hardening (targeted)
 
@@ -388,7 +394,7 @@ Pick one claim that looks wrong-direction and verify:
 
 If the pipeline did not fetch opposing evidence, directionality errors are expected and should be addressed by **research depth** before prompt tweaks.
 
-### 4) “Contested vs doubted” sanity check (especially for politically charged criticism)
+### 4) “Contested vs doubted” sanity check (especially for rhetoric-heavy disagreement)
 
 When a claim is marked “contested”:
 - ensure the report can point to at least one fact that is *explicit* counter-evidence (not just “X criticized Y”).
@@ -401,16 +407,14 @@ When a claim is marked “contested”:
 
 ---
 
-## Lead Developer / LLM Expert Review
+## Review Notes (for Lead Developer)
 
-**Reviewer**: Claude (Lead Dev + LLM Expert role)  
-**Date**: 2026-01-28
+**Purpose**: Reviewer notes and implementation cautions (for the Lead Developer).  
+**Date**: 2026-01-28 (draft)
 
 ### Overall Assessment
 
-This is an **excellent diagnostic document**. The analysis correctly identifies that most "quality regression" symptoms are not prompt bugs but rather **operating point issues** (config/budget settings that reduce evidence depth). The document follows sound engineering practice: prove the hypothesis with minimal intervention before making code changes.
-
-**Verdict: APPROVE with minor suggestions**
+This diagnostic is directionally correct: many observed “quality regression” symptoms track **operating point issues** (evidence depth / budgets / mode), and the recommended approach (prove via controlled config changes before heavier refactors) is sound.
 
 ---
 
@@ -420,7 +424,7 @@ This is an **excellent diagnostic document**. The analysis correctly identifies 
 
 2. **Actionable task list**: The "Concrete Adjustments" section (Adjustments 1-5) provides specific file paths, function names, and code snippets. This is implementation-ready.
 
-3. **AGENTS.md compliance awareness**: The document correctly flags domain-specific tokens (`VAERS`, "US sanctions…") as violations of the "Generic by Design" rule. This is important for preventing test-case overfitting.
+3. **AGENTS.md compliance awareness**: The document correctly flags domain-specific tokens/examples as violations of the "Generic by Design" rule. This is important for preventing test-case overfitting.
 
 4. **Evidence-first philosophy**: The recommendation to feed seed contexts into refinement (not final contexts) aligns with the principle that LLM outputs should be evidence-grounded, not heuristic-forced.
 
@@ -477,12 +481,12 @@ The document recommends a "quality regression harness" but doesn't specify input
 
 This ensures the harness tests the specific failure modes identified.
 
-#### 5. `.env.example` Change Should Be Documented as Behavior Change
+#### 5. `.env.example` Change Should Be Documented as Behavior Change (if applicable)
 
-The diff shows `.env.example` now defaults to `deep` mode and `FH_ALLOW_MODEL_KNOWLEDGE=true`. This is a **significant behavior change** for new deployments.
+If `.env.example` now defaults to `deep` mode and `FH_ALLOW_MODEL_KNOWLEDGE=true`, this is a **significant behavior change** for new deployments.
 
 **Suggestion**: Add a changelog entry or migration note:
-> "Default analysis mode changed from `quick` to `deep` as of v2.6.38. This increases LLM costs but improves context detection. Set `FH_ANALYSIS_MODE=quick` to restore previous behavior."
+> "Default analysis mode changed from `quick` to `deep`. This increases LLM costs but improves context detection. Set `FH_ANALYSIS_MODE=quick` to restore previous behavior."
 
 ---
 
@@ -523,6 +527,27 @@ Start with config test to confirm hypothesis, then refinement gate (quick win), 
 - Consider adding this document to `Docs/STATUS/KNOWN_ISSUES.md` or cross-referencing it.
 
 **Approved for implementation of Adjustments 1-4. Adjustment 5 should be implemented with the confidence threshold modification suggested above.**
+
+---
+
+## Final Review: GPT 4.5
+
+**Reviewer**: GPT 4.5  
+**Date**: 2026-01-28
+
+### Verdict: GO FOR IMPLEMENTATION
+
+The diagrams have been updated to explicitly show inputs to `Research_SearchFetch`:
+- From `Understanding_JSON`: ResearchInputs / ResearchQueries / QueryPlan (plus context/claim hints)
+- From config: SearchConfig / Budgets / Mode
+
+### Must-Follow Caution
+
+**Adjustment 5 (Directionality)**: Implement with threshold (extreme-only, ≤20% or ≥80%) to avoid over-correcting legitimately mixed cases. This aligns with the Lead Developer review recommendation.
+
+### Implementation Authorization
+
+**Authorized for implementation by Claude Opus 4.5.**
 
 ---
 
@@ -575,16 +600,14 @@ Start with config test to confirm hypothesis, then refinement gate (quick win), 
 
 **Change**:
 ```typescript
-// BEFORE (around line ~3500 in refineScopesFromEvidence)
-if (facts.length < 8) {
-  return { contexts: existingContexts, ... };
-}
+// BEFORE (in refineScopesFromEvidence)
+if (facts.length < 8) return { updated: false, llmCalls: 0 };
 
 // AFTER
 const minRefineFacts = Math.min(8, getActiveConfig().minFactsRequired);
 if (facts.length < minRefineFacts) {
   debugLog(`[Refine] Skipping: ${facts.length} facts < ${minRefineFacts} threshold`);
-  return { contexts: existingContexts, ... };
+  return { updated: false, llmCalls: 0 };
 }
 ```
 
@@ -608,23 +631,24 @@ if (facts.length < minRefineFacts) {
 **Change**:
 ```typescript
 // BEFORE
-if (seedScopes.length >= 2 && understanding.analysisContexts.length <= 1) {
-  // Force seed contexts
-  understanding.analysisContexts = seedScopes.map(...);
-}
+// If pre-detected scopes exist, we currently may force them into contexts (see orchestrated.ts).
 
 // AFTER
-const shouldForceSeeds = 
-  getActiveConfig().deterministic === true &&
+const existingCount = parsed.analysisContexts?.length ?? 0;
+const shouldForceSeeds =
+  CONFIG.deterministic === true &&
   isComparativeLikeText(analysisInput) &&
-  seedScopes.length >= 2 &&
-  understanding.analysisContexts.length <= 1;
+  Array.isArray(preDetectedScopes) &&
+  preDetectedScopes.length >= 2 &&
+  existingCount <= 1;
 
 if (shouldForceSeeds) {
   debugLog(`[Seed-Force] Applying heuristic seeds (deterministic + comparative)`);
-  understanding.analysisContexts = seedScopes.map(...);
-} else if (seedScopes.length >= 2) {
-  debugLog(`[Seed-Force] Skipped: deterministic=${getActiveConfig().deterministic}, comparative=${isComparativeLikeText(analysisInput)}`);
+  // Apply the same seedContexts mapping used in orchestrated.ts (seedContexts from preDetectedScopes)
+} else if (Array.isArray(preDetectedScopes) && preDetectedScopes.length >= 2) {
+  debugLog(
+    `[Seed-Force] Skipped: deterministic=${CONFIG.deterministic}, comparative=${isComparativeLikeText(analysisInput)}`,
+  );
 }
 ```
 
@@ -648,7 +672,7 @@ if (shouldForceSeeds) {
 **Change**:
 ```typescript
 // Add to refineScopesFromEvidence() parameters or compute inside:
-const seedScopes = detectScopes(originalInput);
+const seedScopes = detectScopes(analysisInput);
 const seedHint = seedScopes.length > 0 
   ? formatDetectedScopesHint(seedScopes, true) 
   : "";
@@ -710,17 +734,14 @@ if (!hasDocumentedCounterEvidence) {
 
 **5c. Remove domain-specific tokens**:
 ```typescript
-// BEFORE
-const documentedEvidencePattern = /VAERS|report|investigation|study|data/i;
-
-// AFTER (generic only)
-const documentedEvidencePattern = /\breport\b|\binvestigation\b|\bstudy\b|\bdata\b|\banalysis\b|\bfindings\b/i;
+// Avoid including named registries/datasets/acronyms in heuristics.
+// Keep patterns generic and methodology/evidence-oriented.
 ```
 
 **Verification**:
 - Run opinion-editorial test → should NOT show "Contested"
-- Run contested-scientific test → should show "Contested" with factIds
-- Confirm no domain-specific terms in regex
+- Run contested-scientific test → should show "Contested" (only when documented counter-evidence exists)
+- Confirm no domain-specific tokens exist in heuristics
 
 **Effort**: 3 hours
 
@@ -738,23 +759,23 @@ const documentedEvidencePattern = /\breport\b|\binvestigation\b|\bstudy\b|\bdata
 ```typescript
 // BEFORE
 if (verdictPct < 50) {
-  return { inverted: false, ... };
+  return { correctedPct: verdictPct, wasInverted: false };
 }
 
 // AFTER
 // Check high verdicts (existing logic)
 if (verdictPct >= 80 && hasNegationSignals(reasoning)) {
-  return { inverted: true, correctedPct: 100 - verdictPct, ... };
+  return { correctedPct: 100 - verdictPct, wasInverted: true, inversionReason: "Reasoning contradicts claim assertion" };
 }
 
 // Check extreme low verdicts (NEW - with threshold)
 if (verdictPct <= 20 && hasStrongSupportSignals(reasoning)) {
   debugLog(`[Inversion] Low verdict ${verdictPct}% but reasoning supports claim`);
-  return { inverted: true, correctedPct: 100 - verdictPct, ... };
+  return { correctedPct: 100 - verdictPct, wasInverted: true, inversionReason: "Reasoning strongly supports claim but verdict was extreme low" };
 }
 
 // Mixed zone (20-80%) - don't invert, tension is expected
-return { inverted: false, ... };
+return { correctedPct: verdictPct, wasInverted: false };
 ```
 
 **Add helper** (if not exists):
@@ -785,8 +806,8 @@ function hasStrongSupportSignals(reasoning: string): boolean {
 
 | Task | Action |
 |------|--------|
-| 7.1 | Update `Docs/STATUS/Changelog_v2.6.38_to_v2.6.39.md` with all changes |
-| 7.2 | Update `Docs/STATUS/KNOWN_ISSUES.md` to reference this document |
+| 7.1 | Update changelog (if present) with all changes |
+| 7.2 | Update known-issues documentation (if present) to reference this document |
 | 7.3 | Add note to `.env.example` about `deep` mode cost implications |
 | 7.4 | Remove any remaining domain-specific terms from `orchestrated.ts` |
 | 7.5 | Run full test harness and document results |
