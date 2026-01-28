@@ -163,15 +163,21 @@ const ClaimExtractionSchema = z.object({
   requiresSeparateAnalysis: z.boolean().optional().describe("True if input involves multiple distinct AnalysisContexts that should be analyzed separately"),
 });
 
+/**
+ * Legacy schema name: FactExtractionSchema
+ * Extracts evidence items (unverified statements) from sources.
+ * Field names are legacy: "facts" contains ExtractedFact objects (evidence items),
+ * "fact" field contains the extracted statement text.
+ */
 const FactExtractionSchema = z.object({
   facts: z.array(
     z.object({
-      fact: z.string().describe("The factual statement extracted"),
+      fact: z.string().describe("The factual statement extracted"), // Legacy field name for statement
       sourceUrl: z.string(),
       sourceTitle: z.string(),
       excerpt: z.string().describe("Relevant quote from source (50-200 chars)"),
       category: z.enum([
-        "evidence",
+        "evidence", // Legacy value - type system also accepts "direct_evidence"
         "expert_quote",
         "statistic",
         "event",

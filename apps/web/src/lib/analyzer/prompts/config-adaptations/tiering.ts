@@ -36,8 +36,9 @@ export function getTieringExtractFactsAdaptation(): string {
 **Task**: Extract 4-6 facts from source. Simple rules.
 
 **Per fact**:
-- fact: one sentence, ≤100 chars
+- fact: one sentence, ≤100 chars // Legacy field name for extracted statement
 - category: evidence|expert_quote|statistic|event|legal_provision|criticism
+  // NOTE: "evidence" is legacy value, system also accepts "direct_evidence"
 - specificity: high (has numbers/dates) or medium
 - sourceExcerpt: 50-200 chars verbatim
 - claimDirection: supports|contradicts|neutral
@@ -108,8 +109,9 @@ CLAIM TO VERIFY: ${originalClaim}
 Extract 4-6 specific, verifiable facts from the source.
 
 ## PER FACT
-- fact: one sentence (≤100 chars)
+- fact: one sentence (≤100 chars) // Legacy field name
 - category: evidence|expert_quote|statistic|event|legal_provision|criticism
+  // NOTE: "evidence" is legacy, "direct_evidence" also accepted
 - specificity: high|medium
 - sourceExcerpt: verbatim quote (50-200 chars)
 - claimDirection: supports|contradicts|neutral (relative to user's claim)

@@ -792,6 +792,8 @@ function FactsPanel({ facts, disableGrouping = false }: { facts: any[]; disableG
     (f.claimDirection === "neutral" || !f.claimDirection) && !f.fromOppositeClaimSearch
   );
 
+  // Legacy function name: renders an evidence item card
+  // The "fact" parameter is actually an ExtractedFact (evidence item)
   const renderFactCard = (fact: any, className: string, extraMeta?: ReactNode) => (
     <div key={fact.id || fact.fact} className={`${styles.factItem} ${className}`}>
       <div className={styles.factText}>
@@ -808,6 +810,8 @@ function FactsPanel({ facts, disableGrouping = false }: { facts: any[]; disableG
     </div>
   );
 
+  // Legacy function name: renders a list of evidence items (facts array contains ExtractedFact objects)
+  // Groups by methodology/EvidenceScope when applicable
   const renderFactList = (factList: any[], className: string, extraMeta?: (fact: any) => ReactNode) => {
     if (factList.length === 0) return null;
     if (disableGrouping) {

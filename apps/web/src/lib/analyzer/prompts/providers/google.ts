@@ -81,8 +81,9 @@ export function getGeminiExtractFactsVariant(): string {
 ### SCHEMA CHECKLIST (Verify before output)
 Each fact MUST have:
 - [ ] id: string (F1, F2, etc.)
-- [ ] fact: string (≤100 chars, one sentence)
+- [ ] fact: string (≤100 chars, one sentence) // Legacy field name for extracted statement
 - [ ] category: "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
+  // NOTE: "evidence" is legacy value, type system also accepts "direct_evidence" (Phase 1.5 will migrate prompts)
 - [ ] specificity: "high" | "medium" (NEVER "low")
 - [ ] sourceExcerpt: string (50-200 chars, verbatim quote)
 - [ ] claimDirection: "supports" | "contradicts" | "neutral"

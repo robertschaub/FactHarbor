@@ -176,12 +176,12 @@ SearchConfig[SearchConfig/Budgets/Mode] --> ResearchInputs
 
 ResearchInputs --> Research[Research_SearchFetch]
 Research --> Sources[Source_List]
-Sources --> Facts[ExtractedFact_List]
-Facts --> EvidenceScope[EvidenceScope_PerFactMetadata]
+Sources --> Evidence[ExtractedEvidence_List<br/>legacy: ExtractedFact]
+Evidence --> EvidenceScope[EvidenceScope_PerItemMetadata]
 
 AnalysisContexts --> ClaimVerdicts[ClaimVerdict_PerContext]
 Claims --> ClaimVerdicts
-Facts --> ClaimVerdicts
+Evidence --> ClaimVerdicts
 
 ClaimVerdicts --> ArticleVerdict[ArticleVerdict_Aggregation]
 ArticleVerdict --> ReportUI[JobReportUI]
@@ -202,10 +202,10 @@ UO --> RQ[ResearchQueries/QueryPlan]
 SearchConfig[SearchConfig/Budgets/Mode] --> R
 RQ --> R[ResearchLoop_SearchFetch]
 R --> EF[EXTRACT_FACTS_Prompt]
-EF --> FO[Facts_JSON with EvidenceScope per fact]
+EF --> FO[Evidence_JSON with EvidenceScope per item<br/>legacy field: facts array]
 
 FO --> SR[SCOPE_REFINEMENT_Prompt]
-SR --> SRO[Updated AnalysisContexts + Fact/Claim assignments]
+SR --> SRO[Updated AnalysisContexts + Evidence/Claim assignments]
 
 SRO --> V[VERDICT_Prompt per AnalysisContext]
 V --> VO[Verdicts_JSON (ClaimVerdicts + KeyFactors + Flags)]

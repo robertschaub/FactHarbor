@@ -91,8 +91,9 @@ export function getMistralExtractFactsVariant(): string {
 **Step 3:** For EACH fact, fill this template
 {
   "id": "F{n}",
-  "fact": "[one sentence, ≤100 chars]",
+  "fact": "[one sentence, ≤100 chars]",  // Legacy field name for extracted statement
   "category": "[pick one: evidence | expert_quote | statistic | event | legal_provision | criticism]",
+  // NOTE: "evidence" is legacy value, type system also accepts "direct_evidence" (Phase 1.5 will migrate prompts)
   "specificity": "[high | medium]",
   "sourceExcerpt": "[copy 50-200 chars verbatim from source]",
   "claimDirection": "[pick one: supports | contradicts | neutral]",

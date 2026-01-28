@@ -123,8 +123,9 @@ export function getOpenAIExtractFactsVariant(): string {
 
 ### REQUIRED FIELDS PER FACT
 - id: string (F1, F2, etc.)
-- fact: string (one sentence, under 100 chars preferred)
+- fact: string (one sentence, under 100 chars preferred) // Legacy field name for extracted statement
 - category: "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
+  // NOTE: "evidence" is legacy value, type system also accepts "direct_evidence" (Phase 1.5 will migrate prompts)
 - specificity: "high" | "medium" (never "low")
 - sourceExcerpt: string (50-200 chars, verbatim from source)
 - claimDirection: "supports" | "contradicts" | "neutral"
