@@ -43,6 +43,14 @@ import {
   DEFAULT_UNKNOWN_SOURCE_SCORE,
   SR_CONFIG,
 } from "./source-reliability";
+import {
+  getTextAnalysisService,
+  isLLMEnabled,
+  type InputClassificationResult,
+  type EvidenceItemInput,
+  type EvidenceQualityResult,
+  type VerdictValidationResult as TextAnalysisVerdictResult,
+} from "./text-analysis-service";
 
 function normalizeForContainsMatch(text: string): string {
   return String(text || "")
@@ -246,6 +254,25 @@ async function extractClaim(
   // v2.8: Pre-detect scopes using heuristics (shared implementation from scopes.ts)
   const preDetectedScopes = detectScopes(text);
 
+  // v2.9: LLM Text Analysis - Classify input
+  let inputClassification: InputClassificationResult | null = null;
+  try {
+    const textAnalysisService = getTextAnalysisService();
+    inputClassification = await textAnalysisService.classifyInput({
+      inputText: text,
+      pipeline: "monolithic-canonical",
+    });
+    console.log("[MonolithicCanonical] inputClassification:", {
+      isComparative: inputClassification.isComparative,
+      isCompound: inputClassification.isCompound,
+      claimType: inputClassification.claimType,
+      complexity: inputClassification.complexity,
+      decomposedClaimsCount: inputClassification.decomposedClaims.length,
+    });
+  } catch (err) {
+    console.log("[MonolithicCanonical] inputClassification failed, using inline heuristics:", err instanceof Error ? err.message : String(err));
+  }
+
   let understandPrompt = buildPrompt({
     task: 'understand',
     provider: detectProvider(model.modelId || ''),
@@ -336,7 +363,53 @@ async function extractFacts(
   });
 
   const output = extractStructuredOutput(result);
-  return FactExtractionSchema.parse(output) as z.infer<typeof FactExtractionSchema>;
+  const parsed = FactExtractionSchema.parse(output) as z.infer<typeof FactExtractionSchema>;
+
+  // v2.9: LLM Text Analysis - Evidence Quality Assessment
+  const useLLMEvidenceQuality = isLLMEnabled("evidence");
+  if (useLLMEvidenceQuality && parsed.facts.length > 0) {
+    try {
+      const evidenceInputs: EvidenceItemInput[] = parsed.facts.map((f, idx) => ({
+        evidenceId: `E${idx + 1}`,
+        statement: f.fact,
+        excerpt: f.excerpt,
+        sourceUrl: f.sourceUrl,
+        category: f.category,
+      }));
+
+      const textAnalysisService = getTextAnalysisService();
+      const qualityResults = await textAnalysisService.assessEvidenceQuality({
+        evidenceItems: evidenceInputs,
+        thesisText: claim,
+      });
+
+      // Build a map of quality assessments
+      const qualityMap = new Map<string, EvidenceQualityResult>();
+      for (const qr of qualityResults) {
+        qualityMap.set(qr.evidenceId, qr);
+      }
+
+      // Filter out "filter" quality items
+      const filteredFacts = parsed.facts.filter((_, idx) => {
+        const qr = qualityMap.get(`E${idx + 1}`);
+        return !qr || qr.qualityAssessment !== "filter";
+      });
+
+      const filteredCount = parsed.facts.length - filteredFacts.length;
+      if (filteredCount > 0) {
+        console.log(`[MonolithicCanonical] Evidence quality filter: removed ${filteredCount}/${parsed.facts.length} low-quality facts`);
+      }
+
+      return {
+        ...parsed,
+        facts: filteredFacts,
+      };
+    } catch (err) {
+      console.log("[MonolithicCanonical] Evidence quality assessment failed, using all facts:", err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  return parsed;
 }
 
 /**
@@ -396,7 +469,52 @@ async function generateVerdict(
   });
 
   const output = extractStructuredOutput(result);
-  return VerdictSchema.parse(output) as z.infer<typeof VerdictSchema>;
+  let parsed = VerdictSchema.parse(output) as z.infer<typeof VerdictSchema>;
+
+  // v2.9: LLM Text Analysis - Verdict Validation
+  const useLLMVerdictValidation = isLLMEnabled("verdict");
+  if (useLLMVerdictValidation) {
+    try {
+      const textAnalysisService = getTextAnalysisService();
+      const validationResults = await textAnalysisService.validateVerdicts({
+        thesis: claim,
+        claimVerdicts: [{
+          claimId: "V1",
+          claimText: parsed.claim,
+          verdictPct: parsed.verdict,
+          reasoning: parsed.reasoning,
+        }],
+        evidenceSummary: factsSummary.slice(0, 2000),
+        mode: "full",
+      });
+
+      if (validationResults.length > 0) {
+        const validation = validationResults[0];
+
+        // Apply inversion correction if detected
+        if (validation.isInverted && validation.suggestedCorrection !== null && validation.suggestedCorrection !== undefined) {
+          console.log(`[MonolithicCanonical] Verdict inversion detected: ${parsed.verdict}% -> ${validation.suggestedCorrection}%`);
+          parsed = {
+            ...parsed,
+            verdict: validation.suggestedCorrection,
+            reasoning: parsed.reasoning + ` [Note: Original verdict was inverted and corrected from ${parsed.verdict}% to ${validation.suggestedCorrection}%]`,
+          };
+        }
+
+        // Log validation results
+        console.log("[MonolithicCanonical] Verdict validation:", {
+          harmPotential: validation.harmPotential,
+          isContested: validation.contestation?.isContested,
+          factualBasis: validation.contestation?.factualBasis,
+          isCounterClaim: validation.isCounterClaim,
+        });
+      }
+    } catch (err) {
+      console.log("[MonolithicCanonical] Verdict validation failed:", err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  return parsed;
 }
 
 // ============================================================================

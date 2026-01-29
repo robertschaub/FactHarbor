@@ -3,14 +3,14 @@
 **Document Type**: Technical Proposal / Architecture Review
 **Date**: 2026-01-29
 **Author**: Claude (AI Assistant)
-**Status**: ✅ IMPLEMENTED (Phases 1-5 Complete)
+**Status**: ✅ IMPLEMENTED (Phases 1-5, 7 Complete)
 **Related**: `LLM_Delegation_Proposal_Text_Analysis.md` (predecessor)
 
 ---
 
 ## Implementation Status (2026-01-29)
 
-> **Implementation Complete**: The LLM Text Analysis Pipeline has been implemented for the Orchestrated pipeline. All 4 analysis points are now integrated with feature flag control and heuristic fallback.
+> **Implementation Complete**: The LLM Text Analysis Pipeline has been implemented for both the Orchestrated and Monolithic Canonical pipelines. All 4 analysis points are integrated with feature flag control and heuristic fallback.
 
 ### Files Created
 
@@ -35,6 +35,17 @@
 | 3 | `deduplicateScopes()` | ~947 | `FH_LLM_SCOPE_SIMILARITY` |
 | 4 | `generateClaimVerdicts()` | ~8595 | `FH_LLM_VERDICT_VALIDATION` |
 
+### Integration Points (monolithic-canonical.ts)
+
+| Call | Integration Function | Line | Feature Flag |
+|------|---------------------|------|--------------|
+| 1 | `extractClaim()` | ~247 | `FH_LLM_INPUT_CLASSIFICATION` |
+| 2 | `extractFacts()` | ~316 | `FH_LLM_EVIDENCE_QUALITY` |
+| 3 | N/A (single context) | - | - |
+| 4 | `generateVerdict()` | ~418 | `FH_LLM_VERDICT_VALIDATION` |
+
+Note: Call 3 (Scope Similarity) is not applicable to monolithic-canonical as it uses single-context analysis.
+
 ### Enabling LLM Text Analysis
 
 Set feature flags in `.env.local`:
@@ -49,8 +60,8 @@ FH_LLM_VERDICT_VALIDATION=true
 
 ### Remaining Work
 
-- **Phase 6**: Optimization & Cleanup (not started)
-- **Phase 7**: Monolithic Canonical Integration (not started)
+- **Phase 6**: Optimization & Cleanup (requires production A/B testing data)
+- **Phase 7**: Monolithic Canonical Integration ✅ COMPLETE
 - **Phase 8**: Monolithic Dynamic (no action - documented)
 
 ### Live Testing Results (2026-01-29)
