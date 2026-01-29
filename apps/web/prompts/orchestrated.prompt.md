@@ -611,9 +611,9 @@ Facts are labeled: [SUPPORTING], [COUNTER-EVIDENCE], or unlabeled (neutral).
 
 ### CLAIM CONTESTATION
 
-- isContested: true if politically disputed or challenged
-- contestedBy: Who disputes it
-- factualBasis: "established" | "disputed" | "opinion" | "unknown"
+- isContested: true if disputed or challenged (by anyone)
+- contestedBy: Who disputes it (source of the contestation)
+- factualBasis: "established" | "disputed" | "opinion" | "unknown" (determines weight reduction)
 
 CRITICAL - factualBasis MUST be "opinion" for:
 - Public statements or rhetoric without documented evidence

@@ -7305,7 +7305,7 @@ The JSON object MUST include these top-level keys:
   };
 
   const calibrationNote = hasContestedFactors
-    ? "Some factors against the claim have documented counter-evidence; these contested factors receive reduced weight."
+    ? "Some negative factors are contested with documented evidence and receive reduced weight."
     : undefined;
 
   // PR-C: Clamp truth percentage to valid range (defensive)
