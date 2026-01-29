@@ -45,6 +45,7 @@ import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-searc
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
 import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts } from "./quality-gates";
 import { filterFactsByProvenance } from "./provenance-validation";
+import { filterByProbativeValue, calculateFalsePositiveRate, DEFAULT_FILTER_CONFIG } from "./evidence-filter";
 import {
   getBudgetConfig,
   createBudgetTracker,
@@ -94,6 +95,7 @@ import {
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { recordConfigUsage } from "@/lib/config-storage";
+import type { EvidenceItem } from "./types";
 
 // Configuration, helpers, and debug utilities imported from modular files above
 
@@ -5881,17 +5883,52 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       );
     }
 
+    // Phase 1.5 Layer 2: Probative value filter (deterministic post-process)
+    // Filter out low-quality evidence that slipped through LLM extraction layer
+    // Only apply if enabled via environment flag (default: enabled)
+    const probativeFilterEnabled = process.env.FH_PROBATIVE_FILTER_ENABLED !== "false";
+    let filteredByProbativeValue = factsWithProvenance as typeof factsWithProvenance;
+
+    if (probativeFilterEnabled && factsWithProvenance.length > 0) {
+      const { kept, filtered, stats } = filterByProbativeValue(factsWithProvenance as EvidenceItem[], DEFAULT_FILTER_CONFIG);
+
+      // Log filter statistics
+      if (stats.filtered > 0) {
+        const falsePositiveRate = calculateFalsePositiveRate(filtered);
+        console.log(
+          `[Evidence Filter] Probative filter for ${source.id}: kept ${stats.kept}/${stats.total} ` +
+          `(${Math.round(100 * stats.kept / stats.total)}%), filtered ${stats.filtered} items`
+        );
+        console.log(
+          `[Evidence Filter] Filter reasons: ${Object.entries(stats.filterReasons)
+            .map(([reason, count]) => `${reason}=${count}`)
+            .join(", ")}`
+        );
+
+        if (falsePositiveRate > 0.05) {
+          console.warn(
+            `[Evidence Filter] ⚠️ High false positive rate: ${Math.round(falsePositiveRate * 100)}% ` +
+            `of filtered items had probativeValue="high"`
+          );
+        }
+      } else {
+        console.log(`[Evidence Filter] Probative filter for ${source.id}: all ${stats.kept} items passed`);
+      }
+
+      filteredByProbativeValue = kept as typeof factsWithProvenance;
+    }
+
     // Apply Ground Realism gate (PR 5): Facts must have real sources, not LLM synthesis
     // Only validate if enabled via environment flag (default: enabled)
     const provenanceValidationEnabled = process.env.FH_PROVENANCE_VALIDATION_ENABLED !== "false";
 
-    if (provenanceValidationEnabled && factsWithProvenance.length > 0) {
-      const { validFacts, stats } = filterFactsByProvenance(factsWithProvenance);
+    if (provenanceValidationEnabled && filteredByProbativeValue.length > 0) {
+      const { validFacts, stats } = filterFactsByProvenance(filteredByProbativeValue);
       console.log(`[Analyzer] Provenance validation for ${source.id}: ${stats.valid}/${stats.total} facts have valid provenance, ${stats.invalid} rejected`);
       return validFacts;
     }
 
-    return factsWithProvenance;
+    return filteredByProbativeValue;
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     debugLog(`extractFacts: ERROR for ${source.id}`, {
