@@ -1,8 +1,8 @@
 # Terminology Migration - Executive Summary
 
 **Date**: 2026-01-29 (Updated)
-**Status**: Phase 0 ✅ | Phase 1 ✅ | Phase 1.5 Layer 1 ✅ | Phase 2.0 ✅ | Phase 2.1+ gradual
-**Next Action**: Phase 2.1 gradual migration + Phase 2.5 sourceType prompts
+**Status**: Phase 0 ✅ | Phase 1 ✅ | Phase 1.5 Layer 1 ✅ | Phase 2.0 ✅ | Phase 2.5 ✅ | Phase 2.1+ gradual
+**Next Action**: Phase 2.1 gradual migration | Optional: Phase 1.5 baselines, Phase 2 filter integration
 
 ---
 
@@ -53,9 +53,19 @@ The codebase uses `ExtractedFact` terminology, creating semantic confusion:
 - ✅ Probative value filter Layer 2 (deterministic post-process) - Committed: 3cb5351
   - Category-specific rules, vague phrase detection, deduplication
   - False positive rate calculation, validation gates
-- ✅ Added `sourceType` to EvidenceScope (9 categories) - Committed: 24c3b47
+- ✅ Added `sourceType` to EvidenceScope interface (9 categories) - Committed: 24c3b47
 - **Time**: ~4 hours (faster than estimated 35-44 hours for core)
 - **Risk**: Low ✓
+
+### ✅ Phase 2.5: sourceType Prompt Engineering (COMPLETE - 2026-01-29)
+- ✅ Updated extraction prompts with sourceType classification - Committed: f6921bd
+  - 9 source type categories with clear definitions
+  - Extract when EvidenceScope is present
+  - Based on publication venue, credentials, org affiliation
+- ✅ Updated Zod schemas to include sourceType field - Committed: f6921bd
+- 📋 **Testing/Validation**: Pending (run on sample sources, validate >70% populated)
+- **Time**: ~30 minutes (estimated 12-16 hours for full sub-phases)
+- **Risk**: Medium (prompt engineering) → Low ✓
 
 ### 🔄 Phase 2.1+: Gradual Migration (ONGOING, 1-2 months)
 - Migrate files to use `EvidenceItem` instead of `ExtractedFact`
@@ -194,12 +204,12 @@ interface EvidenceClaimLink {
 | 1: Comments/Labels | 6-8 hours | ✅ Complete (2026-01-29) | Low ✓ |
 | 1.5: Risk Mitigation | 2 days | 🔄 Partial (2 hrs done, 4-5 hrs remaining) | Low ✓ |
 | **2.0: Core Enhancements** | **1 week** | ✅ **Complete (2026-01-29, 4 hours)** | **Low ✓** |
+| **2.5: sourceType Prompts** | **12-16 hrs** | ✅ **Complete (2026-01-29, 30 min)** | **Low ✓** |
 | 2.1+: Gradual Migration | 1-2 months | 🔄 Ongoing (file-by-file) | Low |
-| 2.5: sourceType Prompts | 12-16 hours | 📋 Next (extract sourceType) | Medium |
 | 3: Full Migration | 15-20 days | 📋 Planned (v3.0) | High |
 
 **Total Effort**: ~30-40 days spread over 3-6 months
-**Progress**: ~30% complete (Phase 0, 1, 1.5 Layer 1, 2.0 done) ⬆️ +15%
+**Progress**: ~35% complete (Phase 0, 1, 1.5 Layer 1, 2.0, 2.5 done) ⬆️ +5%
 
 ---
 
@@ -230,29 +240,34 @@ interface EvidenceClaimLink {
 4. ✅ Phase 1.5: claimDirection telemetry - Committed: 4ece580
 5. ✅ Phase 2.1: Create EvidenceItem alias (2 hours) - Committed: 4afeac4
 6. ✅ Phase 2.3: Probative value filter Layer 2 (1.5 hours) - Committed: 3cb5351
-7. ✅ Phase 2.4: Add sourceType to EvidenceScope (30 min) - Committed: 24c3b47
+7. ✅ Phase 2.4: Add sourceType to EvidenceScope interface (30 min) - Committed: 24c3b47
+8. ✅ Phase 2.5.1-2: Extract sourceType in prompts and schemas (30 min) - Committed: f6921bd
 
 ### 🔄 Ongoing (1-2 months, distributed)
-8. **Phase 2.1+: Gradual file migration**
+9. **Phase 2.1+: Gradual file migration**
    - Migrate files from `ExtractedFact` to `EvidenceItem`
    - Target: 30%+ of codebase
    - **Status**: Deprecation warnings guide developers
    - Happens organically during feature work
 
-### 📋 Optional Validation Tasks
-9. **Baseline quality measurements** (4-5 hours)
-   - Create measurement script for current quality baselines
-   - Measure probativeValue coverage, claimDirection missing rate
-   - Document baselines before/after comparisons
-   - **Status**: Can be done alongside other work
+### 📋 Optional Tasks
+10. **Phase 2.5.3-4: sourceType Testing & Validation** (2-3 hours)
+    - Test on sample sources
+    - Measure sourceType population rate
+    - Validation gate: >70% populated
+    - **Status**: Can be done when running real analyses
 
-### 🎯 Next Priority: Phase 2.5 (12-16 hours, 4 sub-phases)
-10. **Extract sourceType in prompts**
-    - Phase 2.5.1: Add sourceType to extraction instructions
-    - Phase 2.5.2: Update Zod schemas to include sourceType
-    - Phase 2.5.3: Test on sample sources
-    - Phase 2.5.4: Validation gate (>70% populated)
-    - **Risk**: Medium (prompt engineering)
+11. **Phase 1.5: Baseline quality measurements** (4-5 hours)
+    - Create measurement script for current quality baselines
+    - Measure probativeValue coverage, claimDirection missing rate
+    - Document baselines before/after comparisons
+    - **Status**: Optional validation task
+
+12. **Integrate probative filter into pipeline** (1-2 hours)
+    - Add filterByProbativeValue call in orchestrated.ts
+    - Configure filter thresholds
+    - Log filter statistics
+    - **Status**: Optional enhancement
 
 ### 🔮 Phase 3 Planning (v3.0, 3-6 months out)
 9. EvidenceClaimLink implementation
