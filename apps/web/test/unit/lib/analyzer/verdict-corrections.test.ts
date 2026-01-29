@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import type { ExtractedFact } from "@/lib/analyzer/types";
+import type { EvidenceItem } from "@/lib/analyzer/types";
 import { detectCounterClaim } from "@/lib/analyzer/verdict-corrections";
 
-function makeFact(overrides: Partial<ExtractedFact>): ExtractedFact {
+function makeFact(overrides: Partial<EvidenceItem>): EvidenceItem {
   return {
     id: overrides.id ?? "F1",
     fact: overrides.fact ?? "Example fact",

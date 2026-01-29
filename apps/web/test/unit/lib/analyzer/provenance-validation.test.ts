@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { ExtractedFact, FetchedSource } from "@/lib/analyzer/types";
+import type { EvidenceItem, FetchedSource } from "@/lib/analyzer/types";
 import {
   validateFactProvenance,
   filterFactsByProvenance,
@@ -23,7 +23,7 @@ import {
 
 describe("validateFactProvenance", () => {
   it("accepts facts with valid URL and substantial excerpt", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "The court ruled in favor of the defendant",
       category: "ruling",
@@ -42,7 +42,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("rejects facts with missing sourceUrl", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "The court ruled in favor",
       category: "ruling",
@@ -61,7 +61,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("rejects facts with invalid URL patterns (localhost)", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "Test fact",
       category: "ruling",
@@ -80,7 +80,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("rejects facts with invalid URL patterns (chrome://)", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "Test fact",
       category: "ruling",
@@ -100,7 +100,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("rejects facts with malformed URLs", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "Test fact",
       category: "ruling",
@@ -119,7 +119,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("rejects facts with missing sourceExcerpt", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "The court ruled",
       category: "ruling",
@@ -138,7 +138,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("rejects facts with too-short sourceExcerpt", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "The court ruled",
       category: "ruling",
@@ -157,7 +157,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("rejects facts with synthetic LLM-generated excerpts (pattern: 'Based on the information')", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "The court ruled in favor",
       category: "ruling",
@@ -176,7 +176,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("rejects facts with synthetic LLM-generated excerpts (pattern: 'According to')", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "The study found X",
       category: "study",
@@ -195,7 +195,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("rejects facts with synthetic LLM-generated excerpts (pattern: 'The source')", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "Revenue increased",
       category: "study",
@@ -214,7 +214,7 @@ describe("validateFactProvenance", () => {
   });
 
   it("accepts excerpts that start with legitimate quoted text", () => {
-    const fact: ExtractedFact = {
+    const fact: EvidenceItem = {
       id: "S1-F1",
       fact: "Revenue increased by 25%",
       category: "study",
@@ -238,7 +238,7 @@ describe("validateFactProvenance", () => {
 
 describe("filterFactsByProvenance", () => {
   it("filters out facts without valid provenance", () => {
-    const facts: ExtractedFact[] = [
+    const facts: EvidenceItem[] = [
       {
         id: "S1-F1",
         fact: "Valid fact",
@@ -282,7 +282,7 @@ describe("filterFactsByProvenance", () => {
   });
 
   it("returns all facts when all have valid provenance", () => {
-    const facts: ExtractedFact[] = [
+    const facts: EvidenceItem[] = [
       {
         id: "S1-F1",
         fact: "Fact 1",

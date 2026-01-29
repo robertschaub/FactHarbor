@@ -21,7 +21,7 @@ import {
   normalizeTrackRecordScore,
   SR_CONFIG,
 } from "@/lib/analyzer/source-reliability";
-import type { ClaimVerdict, ExtractedFact, FetchedSource } from "@/lib/analyzer/types";
+import type { ClaimVerdict, EvidenceItem, FetchedSource } from "@/lib/analyzer/types";
 
 // Mock the cache module to avoid SQLite in tests
 vi.mock("@/lib/source-reliability-cache", () => ({
@@ -93,7 +93,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: ExtractedFact[] = [
+      const facts: EvidenceItem[] = [
         {
           id: "fact-1",
           sourceId: "src-1",
@@ -170,7 +170,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: ExtractedFact[] = [
+      const facts: EvidenceItem[] = [
         {
           id: "fact-1",
           sourceId: "src-1",
@@ -245,7 +245,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: ExtractedFact[] = [
+      const facts: EvidenceItem[] = [
         { id: "f1", sourceId: "src-1", claim: "...", excerpt: "...", supportsClaim: true, confidence: 90 },
       ];
 
@@ -293,7 +293,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: ExtractedFact[] = [
+      const facts: EvidenceItem[] = [
         { id: "f1", sourceId: "src-1", claim: "...", excerpt: "...", supportsClaim: true, confidence: 60 },
       ];
 
@@ -357,7 +357,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: ExtractedFact[] = [
+      const facts: EvidenceItem[] = [
         { id: "f1", sourceId: "src-1", claim: "...", excerpt: "...", supportsClaim: true, confidence: 80 },
         { id: "f2", sourceId: "src-2", claim: "...", excerpt: "...", supportsClaim: true, confidence: 60 },
       ];
@@ -471,7 +471,7 @@ describe("Source Reliability Integration", () => {
       expect(source.trackRecordScore).toBe(0.85);
 
       // Verify it can be used in weighting
-      const facts: ExtractedFact[] = [
+      const facts: EvidenceItem[] = [
         { id: "f1", sourceId: "test-source", claim: "...", excerpt: "...", supportsClaim: true, confidence: 80 },
       ];
 
@@ -507,7 +507,7 @@ describe("Source Reliability Integration", () => {
         fetchSuccess: true,
       };
 
-      const facts: ExtractedFact[] = [
+      const facts: EvidenceItem[] = [
         { id: "f1", sourceId: "unknown-source", claim: "...", excerpt: "...", supportsClaim: true, confidence: 70 },
       ];
 
