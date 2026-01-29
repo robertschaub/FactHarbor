@@ -18,6 +18,15 @@ This document provides a **deep pipeline analysis** for delegating hardcoded tex
 - **4 strategic LLM "analysis points"** recommended (not one)
 - Estimated cost: $0.015-0.025/job (well within budget)
 
+**Architecture Decision (2026-01-29):**
+> After analyzing drawbacks of combining calls, the decision is to **keep 4 separate calls** rather than combining them. Rationale:
+> - Single point of failure: Combined call failure loses both analyses
+> - Larger context: Higher hallucination risk
+> - Less granular feature flagging: Can't A/B test components independently
+> - Debugging complexity: Harder to identify which sub-task caused issues
+>
+> The 4-call architecture provides better resilience, debuggability, and rollout control.
+
 ---
 
 ## Part 1: Pipeline Stage Analysis
@@ -620,6 +629,10 @@ interface TextAnalysisCache {
 4. Create A/B comparison framework
 5. **[NEW]** Implement telemetry infrastructure (metrics tracking)
 6. **[NEW]** Create neutrality test suite (100+ diverse input pairs)
+7. **[NEW]** Create 4 admin-editable prompt files (see Part 8)
+8. **[NEW]** Register text-analysis profile keys in config-storage.ts
+9. **[NEW]** Add prompt loader wrapper for text analysis
+10. **[NEW]** Extend admin UI to show text-analysis profiles
 
 **Files to Create**:
 - `apps/web/src/lib/analyzer/text-analysis-service.ts`
@@ -628,6 +641,10 @@ interface TextAnalysisCache {
 - `apps/web/src/lib/analyzer/text-analysis-cache.ts`
 - **[NEW]** `apps/web/src/lib/analyzer/text-analysis-metrics.ts`
 - **[NEW]** `apps/web/test/neutrality-test-suite.ts`
+- **[NEW]** `apps/web/prompts/text-analysis-input-classification.prompt.md`
+- **[NEW]** `apps/web/prompts/text-analysis-evidence-quality.prompt.md`
+- **[NEW]** `apps/web/prompts/text-analysis-verdict-validation.prompt.md`
+- **[NEW]** `apps/web/prompts/text-analysis-scope-similarity.prompt.md`
 
 **Telemetry Schema** (required from day 1):
 ```typescript
@@ -894,6 +911,392 @@ const COST_CAPS = {
 
 ---
 
+## Part 8: Admin-Editable Prompt Integration
+
+> **Added 2026-01-29**: This section details how the 4 analysis point prompts will integrate with the existing admin-editable configuration system.
+
+### 8.1 Existing System Overview
+
+FactHarbor has a production-grade admin-editable prompt system:
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Admin UI | `/admin/config?type=prompt` | Visual editor with section navigator |
+| Storage | SQLite `config_blobs` table | Content-addressable blob storage |
+| Versioning | `config_active` table | Points to active version |
+| Loader | `config-loader.ts` | 2-tier caching with TTL |
+| Parser | `prompt-loader.ts` | YAML frontmatter + section parsing |
+
+**Key features already available:**
+- Version history and rollback
+- Content validation before save
+- Variable substitution (`${VARIABLE}` placeholders)
+- Lazy seeding from file system
+- Per-job usage tracking
+
+### 8.2 Prompt File Design (4 Files)
+
+Each analysis point gets its own prompt file in `/prompts/`:
+
+#### File 1: `text-analysis-input-classification.prompt.md`
+
+```yaml
+---
+version: "1.0.0"
+pipeline: "text-analysis"
+description: "Input classification for comparative/compound detection"
+lastModified: "2026-01-29T00:00:00Z"
+variables: [INPUT_TEXT, MAX_TOKENS]
+requiredSections: [SYSTEM_ROLE, CLASSIFICATION_TASK, OUTPUT_FORMAT]
+---
+
+## SYSTEM_ROLE
+You are a text classification specialist analyzing input structure.
+
+## CLASSIFICATION_TASK
+Analyze the following input text and classify its structure:
+
+Input: ${INPUT_TEXT}
+
+Determine:
+1. **isComparative**: Does this compare two or more entities? (e.g., "X is better than Y")
+2. **isCompound**: Does this contain multiple independent claims? (e.g., "X did A and Y did B")
+3. **claimType**: evaluative | factual | predictive | mixed
+4. **complexity**: simple | moderate | complex
+
+## OUTPUT_FORMAT
+Return JSON:
+{
+  "isComparative": boolean,
+  "isCompound": boolean,
+  "claimType": "evaluative" | "factual" | "predictive" | "mixed",
+  "complexity": "simple" | "moderate" | "complex",
+  "reasoning": "brief explanation"
+}
+```
+
+#### File 2: `text-analysis-evidence-quality.prompt.md`
+
+```yaml
+---
+version: "1.0.0"
+pipeline: "text-analysis"
+description: "Evidence quality assessment for probative value filtering"
+lastModified: "2026-01-29T00:00:00Z"
+variables: [EVIDENCE_ITEMS, THESIS_TEXT]
+requiredSections: [SYSTEM_ROLE, QUALITY_CRITERIA, OUTPUT_FORMAT]
+---
+
+## SYSTEM_ROLE
+You are an evidence quality assessor evaluating extracted evidence items.
+
+## QUALITY_CRITERIA
+Evaluate each evidence item against these criteria:
+
+**Statement Quality:**
+- Specificity (not vague like "some say" or "many believe")
+- Contains verifiable claims (names, numbers, dates)
+- Clear attribution to source
+
+**Source Linkage:**
+- Has supporting excerpt from source
+- Excerpt is substantial (not just headline)
+- URL provided
+
+**Category-Specific:**
+- Statistics: Must contain actual numbers
+- Expert quotes: Must attribute to named expert
+- Events: Must have temporal anchor (date/year)
+- Legal: Must cite specific provision
+
+Evidence items to evaluate:
+${EVIDENCE_ITEMS}
+
+Thesis context:
+${THESIS_TEXT}
+
+## OUTPUT_FORMAT
+Return JSON array:
+[
+  {
+    "evidenceId": "string",
+    "qualityAssessment": "high" | "medium" | "low" | "filter",
+    "issues": ["issue1", "issue2"],
+    "reasoning": "brief explanation"
+  }
+]
+```
+
+#### File 3: `text-analysis-verdict-validation.prompt.md`
+
+```yaml
+---
+version: "1.0.0"
+pipeline: "text-analysis"
+description: "Verdict validation for inversion/counter-claim detection"
+lastModified: "2026-01-29T00:00:00Z"
+variables: [CLAIM_VERDICTS, THESIS_TEXT, EVIDENCE_SUMMARY]
+requiredSections: [SYSTEM_ROLE, VALIDATION_CHECKS, OUTPUT_FORMAT]
+---
+
+## SYSTEM_ROLE
+You are a verdict validation specialist ensuring verdicts match their reasoning.
+
+## VALIDATION_CHECKS
+For each claim verdict, check:
+
+**Inversion Detection:**
+- Does the reasoning CONTRADICT the verdict percentage?
+- Example: Verdict 85% "true" but reasoning says "evidence refutes this"
+- If inverted, suggest corrected percentage
+
+**Counter-Claim Detection:**
+- Is this claim OPPOSING the thesis? (counter-claim)
+- Counter-claims should have inverted contribution to overall verdict
+- Identify polarity: supports_thesis | opposes_thesis | neutral
+
+**Harm Potential:**
+- Death/injury claims: HIGH harm potential
+- Safety/fraud accusations: HIGH harm potential
+- Other: MEDIUM or LOW
+
+**Contestation:**
+- Is this claim contested with documented evidence?
+- "Doubted" (opinion only) vs "Contested" (has counter-evidence)
+
+Thesis: ${THESIS_TEXT}
+Claim verdicts: ${CLAIM_VERDICTS}
+Evidence summary: ${EVIDENCE_SUMMARY}
+
+## OUTPUT_FORMAT
+Return JSON array:
+[
+  {
+    "claimId": "string",
+    "isInverted": boolean,
+    "suggestedCorrection": number | null,
+    "isCounterClaim": boolean,
+    "polarity": "supports_thesis" | "opposes_thesis" | "neutral",
+    "harmPotential": "high" | "medium" | "low",
+    "contestation": {
+      "isContested": boolean,
+      "factualBasis": "established" | "disputed" | "opinion" | "unknown"
+    },
+    "reasoning": "brief explanation"
+  }
+]
+```
+
+#### File 4: `text-analysis-scope-similarity.prompt.md`
+
+```yaml
+---
+version: "1.0.0"
+pipeline: "text-analysis"
+description: "Scope similarity and phase bucket analysis"
+lastModified: "2026-01-29T00:00:00Z"
+variables: [SCOPE_PAIRS, CONTEXT_LIST]
+requiredSections: [SYSTEM_ROLE, SIMILARITY_CRITERIA, OUTPUT_FORMAT]
+---
+
+## SYSTEM_ROLE
+You are a scope analysis specialist determining semantic relationships between evidence scopes.
+
+## SIMILARITY_CRITERIA
+For each scope pair, determine:
+
+**Semantic Similarity (0-1):**
+- Do they refer to the same real-world context?
+- Consider: time periods, geographic regions, methodologies
+- 0.85+ = likely duplicates, should merge
+- 0.5-0.85 = related but distinct
+- <0.5 = different scopes
+
+**Phase Bucket:**
+- production: Manufacturing, creation, upstream processes
+- usage: Operation, consumption, downstream effects
+- other: Administrative, general, unclear
+
+**Merge Recommendation:**
+- Should these scopes be merged?
+- Which scope name should be canonical?
+
+Scope pairs to analyze:
+${SCOPE_PAIRS}
+
+Available contexts:
+${CONTEXT_LIST}
+
+## OUTPUT_FORMAT
+Return JSON array:
+[
+  {
+    "scopeA": "string",
+    "scopeB": "string",
+    "similarity": number (0-1),
+    "phaseBucketA": "production" | "usage" | "other",
+    "phaseBucketB": "production" | "usage" | "other",
+    "shouldMerge": boolean,
+    "canonicalName": "string" | null,
+    "reasoning": "brief explanation"
+  }
+]
+```
+
+### 8.3 Storage and Configuration
+
+#### Profile Keys
+
+New profile keys for text analysis prompts:
+
+| Profile Key | Prompt File | Purpose |
+|-------------|-------------|---------|
+| `text-analysis-input` | `text-analysis-input-classification.prompt.md` | Input classification |
+| `text-analysis-evidence` | `text-analysis-evidence-quality.prompt.md` | Evidence quality |
+| `text-analysis-verdict` | `text-analysis-verdict-validation.prompt.md` | Verdict validation |
+| `text-analysis-scope` | `text-analysis-scope-similarity.prompt.md` | Scope similarity |
+
+#### Environment Variable Overrides
+
+```bash
+# Override model per analysis point (default: haiku)
+FH_TEXT_ANALYSIS_INPUT_MODEL=haiku
+FH_TEXT_ANALYSIS_EVIDENCE_MODEL=haiku
+FH_TEXT_ANALYSIS_VERDICT_MODEL=sonnet  # May need stronger model
+FH_TEXT_ANALYSIS_SCOPE_MODEL=haiku
+
+# Max tokens per analysis point
+FH_TEXT_ANALYSIS_INPUT_MAX_TOKENS=500
+FH_TEXT_ANALYSIS_EVIDENCE_MAX_TOKENS=2000
+FH_TEXT_ANALYSIS_VERDICT_MAX_TOKENS=3000
+FH_TEXT_ANALYSIS_SCOPE_MAX_TOKENS=1000
+```
+
+### 8.4 Implementation Integration
+
+#### Phase 1 Additions (Service Infrastructure)
+
+Add to Phase 1 tasks:
+
+1. **Create prompt files** (4 files in `/prompts/`)
+2. **Register profile keys** in `config-storage.ts`:
+   ```typescript
+   const TEXT_ANALYSIS_PROFILES = [
+     "text-analysis-input",
+     "text-analysis-evidence",
+     "text-analysis-verdict",
+     "text-analysis-scope"
+   ] as const;
+   ```
+
+3. **Add loader wrapper** in `text-analysis-service.ts`:
+   ```typescript
+   async function loadAnalysisPrompt(
+     analysisPoint: TextAnalysisPoint
+   ): Promise<PromptFile> {
+     const profileKey = `text-analysis-${analysisPoint}`;
+     return loadPromptFile(profileKey);
+   }
+   ```
+
+4. **Add admin UI routing** - extend `/admin/config` to show text-analysis profiles in dropdown
+
+#### Prompt Loading Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Prompt Loading Flow                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. TextAnalysisService.classifyInput()                         │
+│     │                                                           │
+│     ▼                                                           │
+│  2. loadAnalysisPrompt("input")                                 │
+│     │                                                           │
+│     ▼                                                           │
+│  3. Check config_active for "text-analysis-input"               │
+│     │                                                           │
+│     ├─── Cache hit? → Return cached prompt                      │
+│     │                                                           │
+│     └─── Cache miss? → Load from config_blobs                   │
+│                │                                                │
+│                ├─── DB has version? → Parse and cache           │
+│                │                                                │
+│                └─── No DB version? → Seed from file, then load  │
+│                                                                 │
+│  4. Render variables: ${INPUT_TEXT} → actual input              │
+│     │                                                           │
+│     ▼                                                           │
+│  5. Call LLM with rendered prompt                               │
+│     │                                                           │
+│     ▼                                                           │
+│  6. Parse structured response, validate, return                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 8.5 Admin UI Enhancements
+
+The existing admin UI at `/admin/config` already supports:
+- ✅ Markdown editor with section navigator
+- ✅ Version history and rollback
+- ✅ Validation before save
+- ✅ Profile switching
+
+**Minor additions needed:**
+
+1. **Profile dropdown**: Add text-analysis profiles to selector
+2. **Variable documentation**: Show available variables for each profile
+3. **Test button**: Add "Test with sample input" functionality
+
+```typescript
+// Admin page enhancement (page.tsx)
+const TEXT_ANALYSIS_PROFILES = {
+  "text-analysis-input": {
+    label: "Input Classification",
+    variables: ["INPUT_TEXT", "MAX_TOKENS"],
+    sampleInput: { INPUT_TEXT: "Is hydrogen more efficient than electric?" }
+  },
+  "text-analysis-evidence": {
+    label: "Evidence Quality",
+    variables: ["EVIDENCE_ITEMS", "THESIS_TEXT"],
+    sampleInput: { /* ... */ }
+  },
+  // ...
+};
+```
+
+### 8.6 Versioning Strategy
+
+**Prompt versioning follows existing system:**
+
+| Version | When to Bump | Example Change |
+|---------|--------------|----------------|
+| PATCH (1.0.x) | Wording improvements | Clearer instructions |
+| MINOR (1.x.0) | New output fields | Add `confidence` field |
+| MAJOR (x.0.0) | Breaking schema change | Restructure output format |
+
+**Rollback capability:**
+- All versions stored in `config_blobs`
+- Admin can activate any previous version
+- Jobs track which version was used (`config_usage` table)
+
+### 8.7 Estimated Additional Effort
+
+| Task | Estimate |
+|------|----------|
+| Create 4 prompt files | 2 hours |
+| Register profile keys in config-storage | 30 min |
+| Add loader wrapper in text-analysis-service | 1 hour |
+| Add profiles to admin UI dropdown | 30 min |
+| Add variable documentation panel | 1 hour |
+| Add test button functionality | 2 hours |
+| **Total** | **7 hours** |
+
+This integrates into **Phase 1** (Week 1-2), adding ~1 day of work.
+
+---
+
 ## Appendix A: Function-to-Analysis-Point Mapping
 
 | Function | File | Line | Analysis Point |
@@ -950,11 +1353,14 @@ FH_TEXT_ANALYSIS_MAX_COST=0.05
 
 - [x] Pipeline analysis is complete and accurate
 - [x] All text analysis functions are identified
-- [x] Analysis point batching is logical
+- [x] Analysis point batching is logical (4 separate calls confirmed)
 - [x] Cost estimates are realistic
 - [x] Implementation plan is feasible
 - [x] Risk mitigations are adequate
 - [x] Success criteria are measurable
+- [x] Admin-editable prompt integration designed (Part 8)
+- [x] Prompt file structure defined for all 4 analysis points
+- [x] Phase 1 updated with prompt creation tasks
 
 ---
 
@@ -1467,10 +1873,11 @@ interface SemanticCache {
 **Go/No-Go Recommendation**: **GO** (with required adjustments implemented)
 
 **Next Steps**:
-1. Update implementation plan with adjusted timelines
+1. ~~Update implementation plan with adjusted timelines~~ ✅ Done
 2. Create neutrality test suite specification
 3. Design telemetry schema and dashboard
-4. Begin Phase 1 with service infrastructure + telemetry
+4. Create 4 admin-editable prompt files (see Part 8) ← **NEW**
+5. Begin Phase 1 with service infrastructure + telemetry + prompts
 
 ---
 
@@ -1478,6 +1885,115 @@ interface SemanticCache {
 **Review Date**: 2026-01-29
 **Document Version Reviewed**: Initial proposal (FOR REVIEW)
 **Next Review**: After Phase 1 completion (service infrastructure + telemetry)
+
+---
+
+## IMPLEMENTATION APPROVAL (2026-01-29)
+
+**Approval Authority**: Claude Sonnet 4.5 (Technical Reviewer)
+**Approval Date**: 2026-01-29
+**Status**: 🚀 **APPROVED FOR IMPLEMENTATION**
+
+### Final Verification Checklist
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Technical review complete | ✅ | All source code verified |
+| Admin prompt integration designed | ✅ | Part 8 comprehensive |
+| Timeline adjusted (8-10 weeks) | ✅ | Accounts for all risks |
+| Cost estimates revised ($0.008/job) | ✅ | Within budget |
+| Fallback strategy defined | ✅ | Per-analysis-point behavior |
+| Neutrality test suite planned | ✅ | Phase 1, 100+ pairs |
+| Telemetry infrastructure planned | ✅ | Phase 1 |
+| Gradual rollout strategy (10%→100%) | ✅ | Percentage-based |
+| 4 separate calls confirmed | ✅ | Architecture decision documented |
+
+### Approval Conditions
+
+**🔴 CRITICAL - Must Complete Before Starting Implementation**:
+- [ ] Create git branch: `feature/llm-text-analysis`
+- [ ] Set up telemetry dashboard infrastructure (Phase 1 dependency)
+- [ ] Create neutrality test suite specification with 100+ politically/socially diverse input pairs
+- [ ] Allocate 8-10 week timeline (not 6-7 weeks)
+- [ ] Review and sign off on all 4 prompt file designs (Part 8.2)
+
+**🟡 RECOMMENDED - Complete During Phase 1**:
+- [ ] Define error handling fallback behavior per analysis point (see review section)
+- [ ] Set up per-analysis-point cost caps (not just global $0.05 cap)
+- [ ] Create telemetry metrics schema (TextAnalysisMetrics interface)
+- [ ] Design percentage-based rollout mechanism (10% → 25% → 50% → 100%)
+
+**🟢 OPTIONAL - Nice to Have**:
+- [ ] Semantic caching infrastructure (evaluate ROI first)
+- [ ] Prompt versioning A/B testing framework
+- [ ] Provider health check mechanism
+
+### Implementation Readiness
+
+**Architecture**: ✅ READY
+- 4-point batching strategy validated
+- Stage-aware calls correctly designed
+- Admin-editable prompt integration complete
+
+**Technical Foundation**: ✅ READY
+- All source code references verified accurate
+- Line numbers match current codebase (v2.6.41+)
+- Integration points identified and validated
+
+**Risk Management**: ✅ ADEQUATE
+- Comprehensive fallback strategy
+- Feature flags and gradual rollout planned
+- Telemetry from day 1
+
+**Cost/Benefit**: ✅ JUSTIFIED
+- Cost increase: +5.3% ($0.008/job with Haiku)
+- Benefit: Eliminate 80+ regex patterns, 20%+ edge case improvement
+- ROI: HIGH
+
+### Go Decision
+
+**Recommendation**: 🚀 **PROCEED WITH IMPLEMENTATION**
+
+**Rationale**:
+1. Architecture is sound and thoroughly validated
+2. All critical gaps identified and mitigation plans in place
+3. Cost increase is modest and justified by benefits
+4. Admin-editable prompt integration provides production flexibility
+5. Risk mitigation through gradual rollout and fallback mechanisms
+
+**Next Immediate Actions**:
+1. **Week 0** (Pre-Phase 1 Setup):
+   - Create feature branch
+   - Set up telemetry infrastructure
+   - Create neutrality test suite (100+ pairs)
+   - Review Part 8 prompt designs
+
+2. **Week 1-2** (Phase 1 - Service Infrastructure):
+   - Create `TextAnalysisService` interface and types
+   - Implement `HeuristicTextAnalysisService` wrapper
+   - Create 4 admin-editable prompt files
+   - Add telemetry metrics tracking
+   - Implement A/B comparison framework
+
+3. **Week 3+**: Continue per revised implementation plan (8-10 weeks total)
+
+### Critical Success Factors
+
+1. ✅ **Stage-aware batching** (4 points) is correct architectural choice
+2. ⚠️ **Verdict validation** needs extended timeline (2-3 weeks, not 1)
+3. ⚠️ **Input neutrality** must be tested before production deployment
+4. ⚠️ **Telemetry** must be in place from Phase 1 to validate success criteria
+5. ✅ **Admin-editable prompts** provide production tuning flexibility
+
+### Sign-Off
+
+**Technical Review**: ✅ COMPLETE (Claude Sonnet 4.5, 2026-01-29)
+**Architecture Review**: ✅ COMPLETE (4-point batching validated)
+**Cost Analysis**: ✅ COMPLETE (Revised estimates: $0.007-0.028/job)
+**Risk Assessment**: ✅ COMPLETE (Comprehensive mitigation strategy)
+**Implementation Plan**: ✅ COMPLETE (8-10 week timeline with 6 phases)
+
+**Final Approval**: 🚀 **GO FOR IMPLEMENTATION**
 
 ---
 
