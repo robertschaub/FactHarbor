@@ -46,7 +46,7 @@ Cleanup and reorganize documentation:
 ---
 Make sure :
 -Prompts and search terms are up to date, misleading terms are now correct
--The Admin editatble configurations (prompts, search, calculation) are in sync with the now changed source code and terms. Also the files at FactHarbor\apps\web\prompts
+-The Admin editable configurations (prompts, search, calculation) are in sync with the now changed source code and terms. Also the files at FactHarbor\apps\web\prompts
 -calculation configuration is extended for the newly introduced types where it maks sense to let admin do tuning. Also for search configuration.
 -Any related existin test is updated, test coverage is reasonably good.
 -Comments in code are correct.

@@ -33,6 +33,20 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
    - Revised execution order with mitigation strategies
    - Created: 2026-01-28 (Claude Sonnet 4.5)
 
+5. **[Terminology_Migration_Compliance_Audit.md](Terminology_Migration_Compliance_Audit.md)**
+   - Comprehensive 10-requirement compliance audit
+   - Senior architect review (Sections 14-28)
+   - Requirements coverage analysis
+   - 13 critical gaps identified and prioritized
+   - Created: 2026-01-29 (Claude Sonnet 4.5 + Claude Opus 4.5 review)
+
+6. **[Terminology_Migration_Compliance_Implementation_Plan.md](Terminology_Migration_Compliance_Implementation_Plan.md)**
+   - Detailed implementation plan addressing all audit findings
+   - Priority 0 phase (7.5 hours) for requirements coverage
+   - Updated time estimates: 19-21.5 hours total
+   - Complete task breakdown with verification steps
+   - Created: 2026-01-29 (Updated after senior architect review)
+
 ---
 
 ## Other Reviews
@@ -79,31 +93,38 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
 **Get started quickly:**
 → Read [Terminology_Migration_SUMMARY.md](Terminology_Migration_SUMMARY.md) (executive summary)
 
-**Implement immediate actions:**
-→ See "Next Steps" section in [Terminology_Migration_SUMMARY.md](Terminology_Migration_SUMMARY.md)
+**Understand compliance status:**
+→ Read [Terminology_Migration_Compliance_Audit.md](Terminology_Migration_Compliance_Audit.md) (includes senior architect review)
+
+**Execute next steps:**
+→ Follow [Terminology_Migration_Compliance_Implementation_Plan.md](Terminology_Migration_Compliance_Implementation_Plan.md) (Priority 0 tasks first)
 
 ---
 
-## Status Overview (2026-01-28)
+## Status Overview (2026-01-29)
 
 ### Terminology Migration
 
 | Phase | Status | Documents | Next Action |
 |-------|--------|-----------|-------------|
 | Phase 0: Documentation | ✅ Complete | Audit, xWiki fixes, XAR exports | None |
-| **Immediate Actions** | ❗ **Not started** | Risk Analysis, Summary | **Commit GPT 5.2's work, add optional fields** |
-| Phase 1: Comments/Labels | 🔄 In progress | Plan, Risk Analysis | Complete remaining 7-10 files |
-| Phase 1.5: Risk Mitigation | 📋 Planned | Risk Analysis | Await Phase 1 completion |
-| Phase 2: Enhancements | 📋 Planned | Plan, Entity Proposal | Await Phase 1.5 completion |
+| Phase 1: Comments/Labels | ✅ Complete | Plan, Risk Analysis, Summary | None |
+| Phase 1.5: Risk Mitigation | ✅ Complete (Layer 1) | Plan, Risk Analysis | Optional: Baseline measurements |
+| Phase 2.0: Core Enhancements | ✅ Complete | Plan, Summary | None |
+| Phase 2.5: sourceType Prompts | ✅ Complete | Plan, Summary | Optional: Testing/validation |
+| **Compliance Audit** | 🔄 **In Progress** | **Audit, Implementation Plan** | **Execute Priority 0 tasks** |
+| Phase 2.1: Gradual Migration | 🔄 Ongoing | Plan | File-by-file migration (1-2 months) |
 | Phase 3: Full Migration | 📋 Planned | Plan | Scheduled for v3.0 (3-6 months) |
 
-### Critical Path
-1. **Today (32 min)**: Immediate actions → unblock Phase 1 completion
-2. **Next 1-2 days (6-8 hours)**: Phase 1 completion → unblock Phase 1.5
-3. **Next 3-5 days (10-13 hours)**: Phase 1.5 risk mitigation → unblock Phase 2
-4. **Next 1 week (35-44 hours)**: Phase 2.0 core enhancements → enable gradual migration
-5. **Next 1-2 months**: Phase 2.1 gradual migration → prepare for Phase 3
-6. **v3.0 (3-6 months)**: Phase 3 full migration → complete terminology alignment
+### Critical Path (Updated 2026-01-29)
+1. **Priority 0 (7.5 hours)**: Requirements coverage tasks → close audit gaps
+   - Extend AGENTS.md with new entities (30 min)
+   - Extend CalcConfig for new types (4 hours)
+   - Add backward compatibility tests (1 hour)
+   - Document schema migration strategy (2 hours)
+2. **Priority 1 (6-8 hours)**: Test coverage + documentation → Phase 2 completion
+3. **Phase 2.1+ (1-2 months)**: Gradual migration → prepare for Phase 3
+4. **v3.0 (3-6 months)**: Phase 3 full migration → complete terminology alignment
 
 ---
 
@@ -138,7 +159,9 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
 | Terminology_Audit_Evidence_Entity_Proposal.md | 1.0 | 2026-01-28 | Proposal only |
 | Terminology_Migration_Plan_UPDATED.md | 1.2 | 2026-01-28 | Active plan |
 | Terminology_Migration_RISK_ANALYSIS.md | 1.0 | 2026-01-28 | Pre-execution |
-| Terminology_Migration_SUMMARY.md | 1.0 | 2026-01-28 | Executive summary |
+| Terminology_Migration_SUMMARY.md | 1.1 | 2026-01-29 | Executive summary |
+| Terminology_Migration_Compliance_Audit.md | 1.0 | 2026-01-29 | Audit + senior review |
+| Terminology_Migration_Compliance_Implementation_Plan.md | 1.0 | 2026-01-29 | Implementation plan |
 
 ---
 
