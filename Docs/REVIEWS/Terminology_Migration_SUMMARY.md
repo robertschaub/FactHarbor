@@ -1,8 +1,8 @@
 # Terminology Migration - Executive Summary
 
-**Date**: 2026-01-28
-**Status**: Phase 0 complete, Phase 1 in progress, Risk analysis complete
-**Next Action**: Immediate actions (32 minutes) → Phase 1 completion (6-8 hours)
+**Date**: 2026-01-29 (Updated)
+**Status**: Phase 0 ✅ | Phase 1 ✅ | Phase 1.5 Layer 1 ✅ | Phase 2 next
+**Next Action**: Phase 2 TypeScript aliases + probative filter Layer 2
 
 ---
 
@@ -27,24 +27,26 @@ The codebase uses `ExtractedFact` terminology, creating semantic confusion:
 
 ## The Solution (4-Phase Migration)
 
-### ✅ Phase 0: Documentation (COMPLETE)
+### ✅ Phase 0: Documentation (COMPLETE - 2026-01-28)
 - Fixed xWiki ERDs to use `EVIDENCE` entity consistently
 - Created XAR exports (delta + full)
 - Committed to git
 
-### 🔄 Phase 1: Comments + UI Labels (IN PROGRESS)
-- GPT 5.2 High made significant progress (3 files changed, uncommitted)
-- **Remaining**: 7-10 prompt files, UI components, regression report
-- **Time**: 6-8 hours
-- **Risk**: Low
+### ✅ Phase 1: Comments + UI Labels (COMPLETE - 2026-01-29)
+- All code has clarifying comments distinguishing "Evidence" from "Fact"
+- UI labels updated to use "Evidence" terminology
+- Committed: c7ddec1 "Phase 1 COMPLETE"
+- **Time**: Completed as planned
+- **Risk**: Low ✓
 
-### 🚨 Phase 1.5: Risk Mitigation (PLANNED, 2 days)
-- Probative value enforcement (Layer 1: prompts)
-- claimDirection validation telemetry
-- Baseline quality measurements
-- Category rename preparation
-- **Time**: 10-13 hours
-- **Risk**: Low-Medium
+### 🔄 Phase 1.5: Risk Mitigation (PARTIALLY COMPLETE - 2026-01-29)
+- ✅ Probative value enforcement Layer 1 (prompt instructions) - Committed: faec975
+- ✅ claimDirection validation telemetry (per-source + aggregate) - Committed: 4ece580
+- ✅ Category rename preparation (prompt guidance for "direct_evidence") - Committed: 4ece580
+- ✅ Immediate actions (optional fields, dual parsing, EvidenceScope comments) - Committed: 1f52298
+- 📋 **Remaining**: Baseline quality measurements (4-5 hours)
+- **Time**: ~2 hours completed, ~4-5 hours remaining
+- **Risk**: Low ✓
 
 ### 📋 Phase 2: TypeScript Aliases + Enhancements (PLANNED, 1 week + 1-2 months gradual)
 - Create `EvidenceItem` interface (alias `ExtractedFact`)
@@ -65,26 +67,26 @@ The codebase uses `ExtractedFact` terminology, creating semantic confusion:
 
 ## Critical Findings from Risk Analysis
 
-### 🚨 Must Do Immediately (32 minutes)
-1. **Commit GPT 5.2 High's work** (3 files) - prevents loss, enables collaboration
-2. **Add optional fields** (`probativeValue`, `extractionConfidence`) - zero risk, enables future phases
-3. **Dual category parsing** (accept both `"evidence"` and `"direct_evidence"`) - prevents breakage
-4. **EvidenceScope comments** (clarify field meanings) - prevents future confusion
+### ✅ Immediate Actions (COMPLETE - 32 minutes)
+1. ✅ **Commit GPT 5.2 High's work** (3 files) - Committed: 730e63b, c7ddec1
+2. ✅ **Add optional fields** (`probativeValue`, `extractionConfidence`) - Committed: 1f52298
+3. ✅ **Dual category parsing** (accept both `"evidence"` and `"direct_evidence"`) - Committed: 1f52298, faec975
+4. ✅ **EvidenceScope comments** (clarify field meanings) - Already present in types.ts
 
-**Why immediate**: These are zero-risk, high-value changes that unblock later phases and prevent issues.
+**Result**: All immediate actions complete. Phase 1 and Phase 1.5 Layer 1 successfully deployed.
 
 ### ⚠️ Key Risks Identified
 
 | Risk | Severity | Status | Mitigation |
 |------|----------|--------|------------|
-| Category rename coordination | HIGH | ✅ Mitigated | Dual parsing support |
+| Category rename coordination | HIGH | ✅ Mitigated | Dual parsing support + prompt guidance |
 | EvidenceClaimLink migration path | HIGH | 🔄 Planned | Revised estimate: 15-20 days |
-| Uncommitted changes conflict | MEDIUM | ❗ **Action required** | Commit now |
-| claimDirection optional→required | MEDIUM | ✅ Mitigated | Telemetry first |
-| Probative filter false positives | MEDIUM | ✅ Mitigated | Validation gate (FP <5%) |
-| EvidenceScope sourceType prompts | MEDIUM | 🔄 Planned | Split into 4 sub-phases |
+| Uncommitted changes conflict | MEDIUM | ✅ **RESOLVED** | All Phase 1 work committed |
+| claimDirection optional→required | MEDIUM | ✅ Mitigated | Telemetry deployed (per-source + aggregate) |
+| Probative filter false positives | MEDIUM | 🔄 In Progress | Layer 1 (prompts) done, Layer 2 pending |
+| EvidenceScope sourceType prompts | MEDIUM | 🔄 Planned | Phase 2 task |
 
-**Risk Mitigation Rate**: 67% (8 of 12 risks resolved or mitigated)
+**Risk Mitigation Rate**: 75% (9 of 12 risks resolved or mitigated) ⬆️ +8%
 
 ### 🚀 Quick Wins Identified
 
@@ -179,15 +181,16 @@ interface EvidenceClaimLink {
 
 | Phase | Duration | Status | Risk Level |
 |-------|----------|--------|------------|
-| 0: Documentation | 1 day | ✅ Complete | None |
-| **Immediate Actions** | **32 min** | ❗ **Not started** | **None** |
-| 1: Comments/Labels | 6-8 hours | 🔄 In progress | Low |
-| 1.5: Risk Mitigation | 2 days | 📋 Planned | Low-Med |
-| 2.0: Core Enhancements | 1 week | 📋 Planned | Medium |
+| 0: Documentation | 1 day | ✅ Complete (2026-01-28) | None |
+| **Immediate Actions** | **32 min** | ✅ **Complete (2026-01-29)** | **None** |
+| 1: Comments/Labels | 6-8 hours | ✅ Complete (2026-01-29) | Low ✓ |
+| 1.5: Risk Mitigation | 2 days | 🔄 Partial (2 hrs done, 4-5 hrs remaining) | Low ✓ |
+| **2.0: Core Enhancements** | **1 week** | 📋 **Next (TypeScript aliases, probative filter)** | **Medium** |
 | 2.1: Gradual Migration | 1-2 months | 📋 Planned | Low |
-| 3: Full Migration | 15-20 days | 📋 Planned | High |
+| 3: Full Migration | 15-20 days | 📋 Planned (v3.0) | High |
 
 **Total Effort**: ~30-40 days spread over 3-6 months
+**Progress**: ~15% complete (Phase 0, 1, and 1.5 Layer 1 done)
 
 ---
 
@@ -211,41 +214,42 @@ interface EvidenceClaimLink {
 
 ## Next Steps (Recommended Order)
 
-### For Claude Sonnet 4.5 (Today, 32 minutes)
+### ✅ Completed (2026-01-29)
+1. ✅ Immediate Actions (32 minutes) - All complete
+2. ✅ Phase 1: Comments/Labels (6-8 hours) - Committed: c7ddec1
+3. ✅ Phase 1.5 Layer 1: Probative value prompts - Committed: faec975
+4. ✅ Phase 1.5: claimDirection telemetry - Committed: 4ece580
 
-1. **Commit GPT 5.2 High's work** ✅ TOP PRIORITY
-   ```bash
-   git add apps/web/src/app/jobs/[id]/page.tsx
-   git add apps/web/src/lib/analyzer/orchestrated.ts
-   git add apps/web/src/lib/analyzer/types.ts
-   git commit -m "Phase 1 progress: Evidence terminology in comments, prompts, UI"
-   ```
+### 📋 Remaining Phase 1.5 (Optional, 4-5 hours)
+5. **Baseline quality measurements** (validation task)
+   - Create measurement script for current quality baselines
+   - Measure probativeValue coverage, claimDirection missing rate
+   - Document baselines before/after comparisons
+   - **Status**: Optional - can be done alongside Phase 2
 
-2. **Add optional fields** (15 min)
-   - Edit `types.ts`: Add `probativeValue?` and `extractionConfidence?`
-   - Commit: "Add optional quality fields"
+### 🎯 Phase 2: TypeScript Aliases + Enhancements (Next, 1 week)
+6. **Create EvidenceItem alias** (4-6 hours)
+   - Add `export interface EvidenceItem` (alias to `ExtractedFact`)
+   - Add `@deprecated` to `ExtractedFact`
+   - Update 30%+ of files to use new alias
+   - Gate: TypeScript compiles clean
 
-3. **Dual category parsing** (10 min)
-   - Edit `types.ts`: Add `"direct_evidence"` to category union
-   - Commit: "Support both 'evidence' and 'direct_evidence' categories"
+7. **Probative value filter Layer 2** (8-10 hours)
+   - Create `evidence-filter.ts` with deterministic filter
+   - Category-specific rules (statistics, expert_quote, etc.)
+   - Vague phrase detection
+   - Validation: False positive rate <5%
 
-4. **EvidenceScope comments** (2 min)
-   - Edit `types.ts`: Add clarifying comments to `geographic`/`temporal`
-   - Commit: "Clarify EvidenceScope field meanings"
+8. **Add sourceType to EvidenceScope** (12-16 hours, 4 sub-phases)
+   - Phase 2.1: Add field to interface
+   - Phase 2.2: Update prompts to extract sourceType
+   - Phase 2.3: Test on sample sources
+   - Phase 2.4: Validation gate (>70% populated)
 
-### For Assigned Agent (Next 1-2 days, 6-8 hours)
-5. **Complete Phase 1**
-   - Remaining prompt files
-   - UI component comments
-   - Regression report updates
-   - Gate: All terminology updated, committed
-
-### For Human Reviewer (30 min)
-6. **Review and approve**
-   - Review this summary
-   - Review risk analysis
-   - Approve immediate actions
-   - Approve Phase 1 completion plan
+### 🔮 Phase 3 Planning (v3.0, 3-6 months out)
+9. EvidenceClaimLink implementation
+10. Full rename with backward compatibility
+11. Remove legacy category "evidence"
 
 ---
 
