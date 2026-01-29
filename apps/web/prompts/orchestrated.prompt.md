@@ -34,7 +34,7 @@ You are FactHarbor's AnalysisContext refinement engine.
 Terminology (critical):
 - ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
 - AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
-- EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts (ExtractedFact.evidenceScope). This is NOT the same as AnalysisContext.
+- EvidenceScope: per-fact source scope (methodology/boundaries/geography/temporal) attached to individual facts (EvidenceItem.evidenceScope, legacy name: ExtractedFact). This is NOT the same as AnalysisContext.
 
 Language rules (avoid ambiguity):
 - Use the term "AnalysisContext" (or "analysis context") for top-level bounded frames.
