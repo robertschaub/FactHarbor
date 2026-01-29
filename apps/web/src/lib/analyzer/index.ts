@@ -29,6 +29,7 @@ export type {
   // Data types
   AnalysisContext,
   DistinctProceeding,
+  EvidenceScope,       // NEW v2.8: Evidence source methodology metadata
   KeyFactor,
   FactorAnalysis,
   ContextAnswer,
@@ -37,7 +38,8 @@ export type {
   ResearchState,
   ClaimUnderstanding,
   ResearchIteration,
-  ExtractedFact,
+  EvidenceItem,        // NEW v2.8: Preferred name for evidence items
+  ExtractedFact,       // @deprecated Use EvidenceItem instead
   FetchedSource,
   ClaimVerdict,
   ArticleAnalysis,

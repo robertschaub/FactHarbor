@@ -343,17 +343,75 @@ export interface ResearchIteration {
 }
 
 /**
- * Extracted evidence item from a source (legacy name: `ExtractedFact`).
+ * Evidence item extracted from a source.
  *
- * Despite the name, this is NOT a verified fact. It is an unverified statement,
- * statistic, quote, or other evidence snippet extracted from a source to be
- * evaluated against claims.
+ * CRITICAL: This is NOT a verified fact. It is unverified material (statement,
+ * statistic, quote, etc.) extracted from a source to be evaluated against claims.
+ *
+ * The name "EvidenceItem" clarifies this semantic distinction:
+ * - "Evidence" = material to be evaluated (correct)
+ * - "Fact" = verified truth (incorrect for this entity)
  *
  * IMPORTANT:
  * - The system verifies claims; it does not assume extracted items are true.
- * - JSON field names are kept for backward compatibility.
+ * - JSON field names (like "fact") are kept for backward compatibility.
+ *
+ * @since v2.8 (Phase 2 of terminology migration)
  */
-export interface ExtractedFact {
+export interface EvidenceItem {
+  id: string;
+  /**
+   * The extracted statement text (legacy field name: `fact`).
+   * This represents an unverified evidence statement from a source.
+   */
+  fact: string;
+  category:
+    | "legal_provision"
+    | "evidence"         // Legacy value - still accepted for backward compatibility
+    | "direct_evidence"  // NEW v2.8: Preferred value (avoids tautology with "Evidence" entity name)
+    | "expert_quote"
+    | "statistic"
+    | "event"
+    | "criticism";
+  specificity: "high" | "medium";
+  sourceId: string;
+  sourceUrl: string;
+  sourceTitle: string;
+  sourceExcerpt: string;
+  contextId?: string;
+  isContestedClaim?: boolean;
+  claimSource?: string;
+  // NEW v2.6.29: Claim direction - does this fact support or contradict the ORIGINAL user claim?
+  // "supports" = fact supports the user's claim being true
+  // "contradicts" = fact contradicts the user's claim (supports the OPPOSITE)
+  // "neutral" = fact is contextual/background, doesn't directly support or contradict
+  claimDirection?: "supports" | "contradicts" | "neutral";
+  // NEW v2.6.29: True if this fact was found from searching for the OPPOSITE claim
+  // (e.g., if user claimed "X > Y", this fact came from searching "Y > X")
+  fromOppositeClaimSearch?: boolean;
+  // EvidenceScope: Captures the methodology/boundaries of the source document
+  // (e.g., WTW vs TTW, EU vs US standards, different time periods)
+  evidenceScope?: EvidenceScope;
+  // NEW v2.8: Probative value - LLM assessment of evidence quality
+  // "high" = concrete, specific, well-sourced
+  // "medium" = adequate but less specific or weaker sourcing
+  // "low" = vague, poorly sourced, or borderline probative
+  probativeValue?: "high" | "medium" | "low";
+  // NEW v2.8: Extraction confidence - how confident the LLM is in this extraction (0-100)
+  extractionConfidence?: number;
+}
+
+/**
+ * @deprecated Use `EvidenceItem` instead. The name "ExtractedFact" is misleading
+ * because these are unverified evidence items, not verified facts.
+ *
+ * This alias is kept for backward compatibility during the Phase 2 migration.
+ * All new code should use `EvidenceItem`.
+ *
+ * @see EvidenceItem
+ * @since Legacy (pre-v2.8)
+ */
+export interface ExtractedFact extends EvidenceItem {
   id: string;
   /**
    * The extracted statement text (legacy field name: `fact`).
