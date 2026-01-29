@@ -30,6 +30,34 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 - Variables: Use `context`/`analysisContext` for top-level frames, `evidenceScope` for fact metadata
 - UI: Display "Context" cards, never "Scope" cards (unless specifically about evidence scope)
 
+### EvidenceItem (formerly ExtractedFact)
+- **EvidenceItem** = Extracted evidence from a source (NOT a verified fact)
+- **Legacy name**: `ExtractedFact` - still works as deprecated alias
+- **Key fields**:
+  - `statement` (legacy: `fact`) - the extracted statement text
+  - `category` - type of evidence (direct_evidence, statistic, expert_quote, etc.)
+  - `claimDirection` - whether evidence supports/contradicts/neutral to thesis
+  - `evidenceScope` - source methodology metadata
+  - `probativeValue` - quality assessment (high/medium/low)
+  - `sourceType` - classification of source (peer_reviewed_study, news_primary, etc.)
+- **NEVER** call these "facts" in new code - always "evidence" or "evidence items"
+
+### probativeValue Field
+- **probativeValue** = Quality assessment of evidence item (high/medium/low)
+- Assigned during extraction by LLM based on:
+  - Statement specificity
+  - Source attribution quality
+  - Verifiability
+- Used for verdict weighting - high probative evidence has more influence
+- **Layer 2 filter**: evidence-filter.ts removes items that fail deterministic checks
+
+### SourceType Enum
+- **SourceType** = Classification of evidence source
+- Values: peer_reviewed_study, fact_check_report, government_report, legal_document,
+  news_primary, news_secondary, expert_statement, organization_report, other
+- Used in EvidenceScope for source reliability calibration
+- Different types may receive different weight adjustments in aggregation
+
 ### Input Neutrality
 - **Question ≈ Statement**: "Was X fair?" must yield same analysis as "X was fair"
 - **Format independence**: Input phrasing must NOT affect analysis depth or structure
