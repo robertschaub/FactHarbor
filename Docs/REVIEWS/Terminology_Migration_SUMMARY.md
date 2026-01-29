@@ -242,37 +242,39 @@ interface EvidenceClaimLink {
 6. ✅ Phase 2.3: Probative value filter Layer 2 (1.5 hours) - Committed: 3cb5351
 7. ✅ Phase 2.4: Add sourceType to EvidenceScope interface (30 min) - Committed: 24c3b47
 8. ✅ Phase 2.5.1-2: Extract sourceType in prompts and schemas (30 min) - Committed: f6921bd
+9. ✅ Phase 2: Integrate probative filter into pipeline (1 hour) - Committed: d17e353
 
 ### 🔄 Ongoing (1-2 months, distributed)
-9. **Phase 2.1+: Gradual file migration**
+10. **Phase 2.1+: Gradual file migration**
    - Migrate files from `ExtractedFact` to `EvidenceItem`
    - Target: 30%+ of codebase
    - **Status**: Deprecation warnings guide developers
    - Happens organically during feature work
 
 ### 📋 Optional Tasks
-10. **Phase 2.5.3-4: sourceType Testing & Validation** (2-3 hours)
+11. **Phase 2.5.3-4: sourceType Testing & Validation** (2-3 hours)
     - Test on sample sources
     - Measure sourceType population rate
     - Validation gate: >70% populated
     - **Status**: Can be done when running real analyses
 
-11. **Phase 1.5: Baseline quality measurements** (4-5 hours)
+12. **Phase 1.5: Baseline quality measurements** (4-5 hours)
     - Create measurement script for current quality baselines
     - Measure probativeValue coverage, claimDirection missing rate
     - Document baselines before/after comparisons
     - **Status**: Optional validation task
 
-12. **Integrate probative filter into pipeline** (1-2 hours)
-    - Add filterByProbativeValue call in orchestrated.ts
-    - Configure filter thresholds
-    - Log filter statistics
-    - **Status**: Optional enhancement
+13. ✅ **Integrate probative filter into pipeline** (1-2 hours) - Committed: d17e353
+    - Added filterByProbativeValue call in orchestrated.ts after claimDirection telemetry
+    - Configured with FH_PROBATIVE_FILTER_ENABLED environment flag (default: true)
+    - Comprehensive statistics logging with false positive rate warnings
+    - Two-layer enforcement strategy now fully operational
+    - **Status**: Complete
 
 ### 🔮 Phase 3 Planning (v3.0, 3-6 months out)
-9. EvidenceClaimLink implementation
-10. Full rename with backward compatibility
-11. Remove legacy category "evidence"
+14. EvidenceClaimLink implementation
+15. Full rename with backward compatibility
+16. Remove legacy category "evidence"
 
 ---
 
