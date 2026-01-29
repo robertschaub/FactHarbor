@@ -2178,7 +2178,8 @@ interface ExtractedFact {
   fact: string;
   category:
     | "legal_provision"
-    | "evidence"
+    | "evidence"         // Legacy value - still accepted for backward compatibility
+    | "direct_evidence"  // NEW v2.8: Preferred value (avoids tautology)
     | "expert_quote"
     | "statistic"
     | "event"
@@ -2207,6 +2208,10 @@ interface ExtractedFact {
     geographic?: string;    // Geographic scope (e.g., "Region A", "Region B")
     temporal?: string;      // Time period (e.g., "2020-2025", "FY2024")
   };
+  // NEW v2.8: Probative value - LLM assessment of evidence quality
+  probativeValue?: "high" | "medium" | "low";
+  // NEW v2.8: Extraction confidence - how confident the LLM is in this extraction (0-100)
+  extractionConfidence?: number;
 }
 
 interface FetchedSource {
@@ -5633,7 +5638,8 @@ const FACT_SCHEMA = z.object({
       fact: z.string(),
       category: z.enum([
         "legal_provision",
-        "evidence",
+        "evidence",         // Legacy value - still accepted for backward compatibility
+        "direct_evidence",  // NEW v2.8: Preferred value (avoids tautology)
         "expert_quote",
         "statistic",
         "event",
@@ -5646,6 +5652,8 @@ const FACT_SCHEMA = z.object({
       claimSource: z.string(), // empty string if not applicable
       // NEW v2.6.29: Does this fact support or contradict the ORIGINAL user claim?
       claimDirection: z.enum(["supports", "contradicts", "neutral"]),
+      // Phase 1.5: Probative value assessment
+      probativeValue: z.enum(["high", "medium", "low"]).optional(),
       // EvidenceScope: Captures the methodology/boundaries of the source document
       // (e.g., different analytical standards, different regulatory frameworks, different time periods)
       evidenceScope: z.object({

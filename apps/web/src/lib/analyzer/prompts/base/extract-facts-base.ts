@@ -91,6 +91,33 @@ ${originalClaim}
 ## KNOWN CONTEXTS
 ${contextsList}
 
+## PROBATIVE VALUE REQUIREMENT (CRITICAL)
+
+Only extract Evidence items that have **PROBATIVE VALUE** for the analysis. Probative means the item provides information that can reasonably change an assessment of claims.
+
+**DO extract**:
+- Specific statements with verifiable content and clear attribution
+- Statistics with source attribution (numbers, percentages, quantitative data)
+- Expert quotes with named experts and their credentials
+- Documented events with dates/locations
+- Legal provisions with citations (statute, case number, etc.)
+- Concrete observations from studies with methodology
+
+**DO NOT extract**:
+- Vague assertions without specifics ("some say", "many believe", "it is widely thought")
+- Meta-commentary without substance ("this is debated", "opinions vary", "controversy exists")
+- Statements without attributable source or excerpt
+- Redundant/duplicate information (exact or near-exact paraphrases)
+- Predictions or speculation without supporting evidence
+- Purely rhetorical statements without factual content
+
+**For each item, assess probativeValue**:
+- **"high"**: Strong attribution, specific content, directly relevant
+- **"medium"**: Moderate attribution, some specificity, reasonably relevant
+- **"low"**: Weak/missing attribution, vague content, or marginal relevance
+
+**Only return items rated "high" or "medium"** - do NOT extract items you rate as "low" probative value.
+
 ## EXTRACTION RULES
 
 **Specificity**:
@@ -108,6 +135,8 @@ ${contextsList}
 
 **Quality filters**:
 - sourceExcerpt: MUST be 50-200 characters from source
+- probativeValue: MUST be "high" or "medium" (do NOT extract "low")
 - Extract 3-8 Evidence items per source (focus on most relevant)
-- Only include Evidence with HIGH or MEDIUM specificity`;
+- Only include Evidence with HIGH or MEDIUM specificity
+- Assess probativeValue independently of specificity (some high-specificity items may lack probative value if they're not relevant or lack proper attribution)`;
 }

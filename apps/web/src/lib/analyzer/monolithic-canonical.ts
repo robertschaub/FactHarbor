@@ -177,7 +177,8 @@ const FactExtractionSchema = z.object({
       sourceTitle: z.string(),
       excerpt: z.string().describe("Relevant quote from source (50-200 chars)"),
       category: z.enum([
-        "evidence", // Legacy value - type system also accepts "direct_evidence"
+        "evidence",        // Legacy value - still accepted for backward compatibility
+        "direct_evidence", // NEW v2.8: Preferred value (avoids tautology)
         "expert_quote",
         "statistic",
         "event",
@@ -185,6 +186,7 @@ const FactExtractionSchema = z.object({
         "criticism",
       ]),
       direction: z.enum(["supports", "contradicts", "neutral"]),
+      probativeValue: z.enum(["high", "medium", "low"]).optional().describe("Probative value assessment"),
     })
   ),
   needsMoreResearch: z.boolean().describe("True if more searches would help"),
