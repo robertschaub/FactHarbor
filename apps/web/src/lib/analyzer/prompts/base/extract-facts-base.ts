@@ -126,12 +126,15 @@ Only extract Evidence items that have **PROBATIVE VALUE** for the analysis. Prob
 - LOW: Vague, generic - DO NOT INCLUDE
 
 **Categories**:
-- evidence: Direct proof or data
+- direct_evidence: Direct proof or data (PREFERRED - use this for general evidence)
+- evidence: Legacy category value (accepted but prefer "direct_evidence")
 - expert_quote: Statement from expert/authority
 - statistic: Numbers, percentages, quantitative data
 - event: Historical occurrence with date/place
 - legal_provision: Law, ruling, regulation text
 - criticism: Counter-argument or opposing view
+
+**Category guidance**: Prefer "direct_evidence" over "evidence" to avoid terminology confusion. Use the more specific categories (expert_quote, statistic, event, legal_provision) when applicable.
 
 **Quality filters**:
 - sourceExcerpt: MUST be 50-200 characters from source

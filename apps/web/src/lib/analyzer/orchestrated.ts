@@ -5852,6 +5852,23 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
         fromOppositeClaimSearch: fromOppositeClaimSearch || false,
       }));
 
+    // Phase 1.5: claimDirection validation telemetry
+    // Track how often claimDirection is missing to inform future requirement enforcement
+    const missingClaimDirection = factsWithProvenance.filter(f => !f.claimDirection || f.claimDirection === undefined);
+    if (missingClaimDirection.length > 0) {
+      console.warn(
+        `[Telemetry] claimDirection missing: ${missingClaimDirection.length}/${factsWithProvenance.length} facts ` +
+        `(${Math.round(100 * missingClaimDirection.length / factsWithProvenance.length)}%) ` +
+        `from source ${source.id}`
+      );
+      console.warn(`[Telemetry] Missing claimDirection fact IDs: ${missingClaimDirection.map(f => f.id).join(", ")}`);
+    } else if (factsWithProvenance.length > 0) {
+      console.log(
+        `[Telemetry] claimDirection coverage: 100% (${factsWithProvenance.length}/${factsWithProvenance.length}) ` +
+        `from source ${source.id}`
+      );
+    }
+
     // Apply Ground Realism gate (PR 5): Facts must have real sources, not LLM synthesis
     // Only validate if enabled via environment flag (default: enabled)
     const provenanceValidationEnabled = process.env.FH_PROVENANCE_VALIDATION_ENABLED !== "false";
@@ -9471,6 +9488,35 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     await emit(
       `Iteration ${iteration}: ${state.facts.length} facts from ${state.sources.length} sources (${extractElapsed}ms)`,
       baseProgress + 12,
+    );
+  }
+
+  // Phase 1.5: Aggregate claimDirection telemetry across all iterations
+  if (state.facts.length > 0) {
+    const totalFacts = state.facts.length;
+    const factsWithClaimDirection = state.facts.filter(f => f.claimDirection && f.claimDirection !== undefined).length;
+    const missingRate = Math.round(100 * (totalFacts - factsWithClaimDirection) / totalFacts);
+
+    if (factsWithClaimDirection < totalFacts) {
+      console.warn(
+        `[Telemetry] AGGREGATE claimDirection: ${factsWithClaimDirection}/${totalFacts} have direction ` +
+        `(${missingRate}% missing)`
+      );
+    } else {
+      console.log(
+        `[Telemetry] AGGREGATE claimDirection: 100% coverage (${totalFacts}/${totalFacts} facts)`
+      );
+    }
+
+    // Break down by direction value
+    const byDirection = {
+      supports: state.facts.filter(f => f.claimDirection === "supports").length,
+      contradicts: state.facts.filter(f => f.claimDirection === "contradicts").length,
+      neutral: state.facts.filter(f => f.claimDirection === "neutral").length,
+    };
+    console.log(
+      `[Telemetry] claimDirection breakdown: ` +
+      `supports=${byDirection.supports}, contradicts=${byDirection.contradicts}, neutral=${byDirection.neutral}`
     );
   }
 
