@@ -133,6 +133,17 @@ export {
 export type { PrefetchResult, CachedReliabilityData, SourceReliabilityData } from "./source-reliability";
 
 // ============================================================================
+// EVIDENCE FILTER EXPORTS (Phase 1.5 Layer 2)
+// ============================================================================
+
+export type { ProbativeFilterConfig, FilterStats } from "./evidence-filter";
+export {
+  filterByProbativeValue,
+  calculateFalsePositiveRate,
+  DEFAULT_FILTER_CONFIG,
+} from "./evidence-filter";
+
+// ============================================================================
 // LLM EXPORTS
 // ============================================================================
 
