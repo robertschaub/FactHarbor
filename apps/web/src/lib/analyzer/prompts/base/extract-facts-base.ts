@@ -72,6 +72,24 @@ Only flag these when they would cause **apples-to-oranges** comparisons.
 - boundaries: What's included/excluded
 - geographic: Geographic scope (if relevant)
 - temporal: Time period (if relevant)
+- sourceType: Classification of source type (see below)
+
+**sourceType classification** (NEW - extract when EvidenceScope is present):
+Classify the source document type to enable better reliability calibration:
+- **"peer_reviewed_study"**: Academic research in peer-reviewed journals/conferences
+- **"fact_check_report"**: Professional fact-checking organization (Snopes, PolitiFact, FactCheck.org, etc.)
+- **"government_report"**: Official government publications, agency reports, official statistics
+- **"legal_document"**: Court decisions, statutes, legal filings, regulatory documents
+- **"news_primary"**: Original investigative journalism, firsthand reporting
+- **"news_secondary"**: News aggregation, wire services (AP, Reuters), reprints
+- **"expert_statement"**: Statement from recognized expert (not in formal publication)
+- **"organization_report"**: NGO, think tank, trade association, or organization publication
+- **"other"**: Sources that don't fit above categories
+
+**When to classify sourceType**:
+- Extract sourceType ONLY when you extract evidenceScope
+- If no evidenceScope is needed, omit sourceType as well
+- Base classification on clear indicators in the source (publication venue, author credentials, organizational affiliation)
 
 ## CLAIM DIRECTION (relative to original user claim)
 

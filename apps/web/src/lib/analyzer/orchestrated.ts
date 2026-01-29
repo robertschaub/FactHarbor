@@ -5662,6 +5662,18 @@ const FACT_SCHEMA = z.object({
         boundaries: z.string(),     // What's included/excluded (empty string if not applicable)
         geographic: z.string(),     // Geographic scope (empty string if not applicable)
         temporal: z.string(),       // Time period (empty string if not applicable)
+        // NEW v2.8 (Phase 2.5): Source type classification for better reliability calibration
+        sourceType: z.enum([
+          "peer_reviewed_study",
+          "fact_check_report",
+          "government_report",
+          "legal_document",
+          "news_primary",
+          "news_secondary",
+          "expert_statement",
+          "organization_report",
+          "other",
+        ]).optional(),
       }).optional(),
     }),
   ),
