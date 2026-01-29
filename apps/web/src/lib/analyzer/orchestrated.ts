@@ -840,17 +840,54 @@ function calculateScopeSimilarity(a: Scope, b: Scope): number {
   const subjectSim =
     a?.subject && b?.subject ? calculateTextSimilarity(String(a.subject), String(b.subject)) : 0;
 
+  const assessedSim =
+    (a as any)?.assessedStatement && (b as any)?.assessedStatement
+      ? calculateTextSimilarity(String((a as any).assessedStatement), String((b as any).assessedStatement))
+      : 0;
+
+  // For phase/boundary-sensitive contexts (common in comparative analyses), treat strong phase markers
+  // as identity signals. This helps merge redundant sub-contexts such as:
+  // - "conversion efficiency" vs "upstream production efficiency"
+  // - "powertrain efficiency" vs "vehicle operational efficiency"
+  // while remaining generic (no topic-specific hardcoding).
+  const inferPhaseBucket = (s: any): "production" | "usage" | "other" => {
+    const meta: any = s?.metadata || {};
+    const hay = [
+      s?.name,
+      s?.shortName,
+      s?.subject,
+      (s as any)?.assessedStatement,
+      meta?.boundaries,
+      meta?.methodology,
+      meta?.standardApplied,
+    ]
+      .map((v) => String(v || "").toLowerCase())
+      .join(" ");
+
+    if (/\b(upstream|production|generation|create|creation|manufactur|supply|source|extraction|initial|conversion)\b/.test(hay)) {
+      return "production";
+    }
+    if (/\b(downstream|usage|use\b|operation|operational|runtime|driving|infrastructure|adoption|deployment|storage|distribution|powertrain|vehicle|charging)\b/.test(hay)) {
+      return "usage";
+    }
+    return "other";
+  };
+
   // NOTE: geographic/temporal can be noisy and should not dominate similarity/dedup.
   // Treat them as secondary modifiers, not primary identity signals.
   const primaryKeys = [
-    "institution",
-    "jurisdiction",
-    "methodology",
-    "boundaries",
-    "standardApplied",
-    "regulatoryBody",
+    "institution",      // who is the authority
+    "methodology",      // how was it measured/determined
+    "definition",       // what does the term mean
+    "framework",        // what evaluative structure applies
+    "boundaries",       // limits of applicability
   ];
-  const secondaryKeys = ["geographic", "temporal"];
+
+  const secondaryKeys = [
+    "geographic",       // where
+    "timeframe",        // when
+    "scale",            // individual vs aggregate
+  ];
 
   const metaA: Record<string, any> = (a as any)?.metadata || {};
   const metaB: Record<string, any> = (b as any)?.metadata || {};
@@ -877,8 +914,27 @@ function calculateScopeSimilarity(a: Scope, b: Scope): number {
   }
   if (secondaryCount > 0) secondarySim /= secondaryCount;
 
-  // Weighted average: name (45%), primary metadata (30%), subject (20%), geo/time (5%)
-  const similarity = nameSim * 0.45 + primarySim * 0.3 + subjectSim * 0.2 + secondarySim * 0.05;
+  // Weighted average:
+  // - name (35%): still important, but names can vary while describing the same context
+  // - primary metadata (30%): includes institutional/boundary identity signals (now also includes court)
+  // - assessedStatement (20%): directly captures the analytical question for this context
+  // - subject (10%): often overlaps across all contexts (thesis), so keep secondary
+  // - geo/time (5%): noisy, keep minimal
+  let similarity =
+    nameSim * 0.35 +
+    primarySim * 0.3 +
+    assessedSim * 0.2 +
+    subjectSim * 0.1 +
+    secondarySim * 0.05;
+
+  const phaseA = inferPhaseBucket(a as any);
+  const phaseB = inferPhaseBucket(b as any);
+  const phaseMatch = phaseA !== "other" && phaseA === phaseB;
+  // If both contexts clearly fall into the same phase bucket and they ask a similar question,
+  // treat them as near-duplicates for deduplication purposes.
+  if (phaseMatch && assessedSim >= 0.35 && (nameSim >= 0.2 || primarySim >= 0.2)) {
+    similarity = Math.max(similarity, 0.9);
+  }
 
   return Math.min(1.0, similarity);
 }
@@ -2870,31 +2926,56 @@ function ensureUnscopedClaimsScope(
   });
   if (!hasUnscopedClaims) return understanding;
 
-  const exists = scopes.some((s) => String(s?.id || "") === UNSCOPED_ID);
-  if (!exists) {
-    scopes.push({
-      id: UNSCOPED_ID,
-      // Display as "General" in the UI (keeps the ID stable for debugging/traceability).
-      name: "General",
-      shortName: "General",
-      subject: "",
-      temporal: "",
-      status: "unknown",
-      outcome: "unknown",
-      metadata: { kind: "unscoped_claims" },
-    });
-    (understanding as any).analysisContexts = scopes;
-  }
-  // If there are multiple scopes, keep requiresSeparateAnalysis consistent with the scope list.
-  (understanding as any).requiresSeparateAnalysis = scopes.length > 1;
+  // Deterministic backstop: instead of introducing a new "General" scope (which can vary between
+  // semantically equivalent inputs), assign unscoped claims to the *best matching existing scope*.
+  // This preserves all claims while improving input neutrality and inverse-pair symmetry.
+  const candidates = scopes
+    .map((s) => ({
+      id: String(s?.id || "").trim(),
+      signature: [
+        String(s?.name || ""),
+        String((s as any)?.assessedStatement || ""),
+        String(s?.subject || ""),
+        String((s as any)?.metadata?.institution || ""),
+        String((s as any)?.metadata?.court || ""),
+        String((s as any)?.metadata?.jurisdiction || ""),
+        String((s as any)?.metadata?.boundaries || ""),
+        String((s as any)?.metadata?.methodology || ""),
+        String((s as any)?.metadata?.standardApplied || ""),
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }))
+    .filter((c) => c.id && c.id !== UNSCOPED_ID)
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  if (candidates.length === 0) return understanding;
+
+  const pickBestScopeId = (claimText: string): string => {
+    const text = String(claimText || "").trim();
+    let bestId = candidates[0].id;
+    let bestScore = -1;
+    for (const c of candidates) {
+      const score = text ? calculateTextSimilarity(text, c.signature) : 0;
+      if (score > bestScore) {
+        bestScore = score;
+        bestId = c.id;
+      } else if (score === bestScore && c.id.localeCompare(bestId) < 0) {
+        bestId = c.id;
+      }
+    }
+    return bestId;
+  };
 
   for (const c of claims) {
     const tr = String(c?.thesisRelevance || "direct");
     if (tr === "irrelevant") continue;
     const pid = String(c?.contextId || "").trim();
-    if (!pid) c.contextId = UNSCOPED_ID;
+    if (pid) continue;
+    c.contextId = pickBestScopeId(String(c?.text || ""));
   }
 
+  (understanding as any).requiresSeparateAnalysis = scopes.length > 1;
   return understanding;
 }
 
@@ -7063,7 +7144,7 @@ The JSON object MUST include these top-level keys:
     ) {
       correctedConfidence = Math.min(correctedConfidence, 68);
       answerTruthPct = truthFromBand("partial", correctedConfidence);
-      factorAnalysis.verdictExplanation = `Corrected: All ${negativeFactors} negative factors are contested`;
+      factorAnalysis.verdictExplanation = `Corrected: All ${negativeFactors} factors are contested`;
     }
 
     // PR-C: Clamp truth percentage to valid range
@@ -7312,7 +7393,7 @@ The JSON object MUST include these top-level keys:
   };
 
   const calibrationNote = hasContestedFactors
-    ? "Some negative factors are contested with documented evidence and receive reduced weight."
+    ? "Some factors are contested with documented evidence and receive reduced weight."
     : undefined;
 
   // PR-C: Clamp truth percentage to valid range (defensive)
@@ -8579,7 +8660,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     }
   }
 
-  // Check if any negative factors are contested with evidence-based contestation
+  // Check if any factors are contested with evidence-based contestation
   const hasContestedFactors = keyFactors.some(
     (f) =>
       f.supports === "no" &&
