@@ -135,6 +135,15 @@ interface CalcConfig {
     organization_report: number;    // Default: 0.95
     other: number;                  // Default: 0.8
   };
+  // Evidence Filter Configuration (v2.6.41+)
+  evidenceFilter?: {
+    minStatementLength: number;       // Default: 20
+    maxVaguePhraseCount: number;      // Default: 2
+    requireSourceExcerpt: boolean;    // Default: true
+    minExcerptLength: number;         // Default: 30
+    requireSourceUrl: boolean;        // Default: true
+    deduplicationThreshold: number;   // Default: 0.85
+  };
 }
 
 // ============================================================================
@@ -206,6 +215,14 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
     expert_statement: 0.9,
     organization_report: 0.95,
     other: 0.8,
+  },
+  evidenceFilter: {
+    minStatementLength: 20,
+    maxVaguePhraseCount: 2,
+    requireSourceExcerpt: true,
+    minExcerptLength: 30,
+    requireSourceUrl: true,
+    deduplicationThreshold: 0.85,
   },
 };
 
@@ -876,6 +893,141 @@ function CalcConfigForm({
         </div>
         <div className={styles.formHelp}>
           Reliability multipliers by source type (EvidenceScope.sourceType). Values above 1.0 increase weight, below decrease.
+        </div>
+      </div>
+
+      {/* Evidence Filter Rules (Advanced) */}
+      <div className={styles.formSection}>
+        <h3 className={styles.formSectionTitle}>Evidence Filter Rules (Advanced)</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Min Statement Length</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.evidenceFilter?.minStatementLength ?? 20}
+              min={10}
+              max={100}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                onChange({
+                  ...config,
+                  evidenceFilter: {
+                    ...(config.evidenceFilter || {}),
+                    minStatementLength: isNaN(v) ? 20 : v,
+                  } as CalcConfig["evidenceFilter"],
+                });
+              }}
+            />
+            <div className={styles.formHelp}>Minimum characters (10-100)</div>
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Max Vague Phrase Count</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.evidenceFilter?.maxVaguePhraseCount ?? 2}
+              min={0}
+              max={10}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                onChange({
+                  ...config,
+                  evidenceFilter: {
+                    ...(config.evidenceFilter || {}),
+                    maxVaguePhraseCount: isNaN(v) ? 2 : v,
+                  } as CalcConfig["evidenceFilter"],
+                });
+              }}
+            />
+            <div className={styles.formHelp}>Max allowed (&quot;some say&quot;, &quot;many believe&quot;)</div>
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>
+              <input
+                type="checkbox"
+                checked={config.evidenceFilter?.requireSourceExcerpt ?? true}
+                onChange={(e) => {
+                  onChange({
+                    ...config,
+                    evidenceFilter: {
+                      ...(config.evidenceFilter || {}),
+                      requireSourceExcerpt: e.target.checked,
+                    } as CalcConfig["evidenceFilter"],
+                  });
+                }}
+                style={{ marginRight: 8 }}
+              />
+              Require Source Excerpt
+            </label>
+            <div className={styles.formHelp}>Evidence must include source text</div>
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Min Excerpt Length</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.evidenceFilter?.minExcerptLength ?? 30}
+              min={10}
+              max={200}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                onChange({
+                  ...config,
+                  evidenceFilter: {
+                    ...(config.evidenceFilter || {}),
+                    minExcerptLength: isNaN(v) ? 30 : v,
+                  } as CalcConfig["evidenceFilter"],
+                });
+              }}
+            />
+            <div className={styles.formHelp}>Minimum excerpt characters (10-200)</div>
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>
+              <input
+                type="checkbox"
+                checked={config.evidenceFilter?.requireSourceUrl ?? true}
+                onChange={(e) => {
+                  onChange({
+                    ...config,
+                    evidenceFilter: {
+                      ...(config.evidenceFilter || {}),
+                      requireSourceUrl: e.target.checked,
+                    } as CalcConfig["evidenceFilter"],
+                  });
+                }}
+                style={{ marginRight: 8 }}
+              />
+              Require Source URL
+            </label>
+            <div className={styles.formHelp}>Evidence must have valid source link</div>
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Deduplication Threshold</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.evidenceFilter?.deduplicationThreshold ?? 0.85}
+              min={0.5}
+              max={1.0}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  evidenceFilter: {
+                    ...(config.evidenceFilter || {}),
+                    deduplicationThreshold: isNaN(v) ? 0.85 : v,
+                  } as CalcConfig["evidenceFilter"],
+                });
+              }}
+            />
+            <div className={styles.formHelp}>Similarity threshold 0.5-1.0 (higher = stricter)</div>
+          </div>
+        </div>
+        <div className={styles.formHelp}>
+          Configure evidence quality filter rules. These are applied by evidence-filter.ts during extraction (Layer 2 filter).
         </div>
       </div>
     </div>
