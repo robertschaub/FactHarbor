@@ -117,6 +117,12 @@ interface CalcConfig {
     contextMergeThreshold: number;
   };
   mixedConfidenceThreshold: number;
+  // Evidence Quality Weighting (v2.6.41+)
+  probativeValueWeights?: {
+    high: number;     // Default: 1.0
+    medium: number;   // Default: 0.8
+    low: number;      // Default: 0.5
+  };
 }
 
 // ============================================================================
@@ -173,6 +179,11 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
     contextMergeThreshold: 0.7,
   },
   mixedConfidenceThreshold: 60,
+  probativeValueWeights: {
+    high: 1.0,
+    medium: 0.8,
+    low: 0.5,
+  },
 };
 
 // ============================================================================
@@ -563,6 +574,86 @@ function CalcConfigForm({
           <div className={styles.formHelp}>
             Below this, MIXED becomes UNVERIFIED (0-100)
           </div>
+        </div>
+      </div>
+
+      {/* Probative Value Weights */}
+      <div className={styles.formSection}>
+        <h3 className={styles.formSectionTitle}>Probative Value Weights</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>High</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.probativeValueWeights?.high ?? 1.0}
+              min={0.1}
+              max={2.0}
+              step={0.1}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  probativeValueWeights: {
+                    ...config.probativeValueWeights,
+                    high: isNaN(v) ? 1.0 : v,
+                    medium: config.probativeValueWeights?.medium ?? 0.8,
+                    low: config.probativeValueWeights?.low ?? 0.5,
+                  },
+                });
+              }}
+            />
+            <div className={styles.formHelp}>Specific, well-attributed evidence</div>
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Medium</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.probativeValueWeights?.medium ?? 0.8}
+              min={0.1}
+              max={2.0}
+              step={0.1}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  probativeValueWeights: {
+                    high: config.probativeValueWeights?.high ?? 1.0,
+                    medium: isNaN(v) ? 0.8 : v,
+                    low: config.probativeValueWeights?.low ?? 0.5,
+                  },
+                });
+              }}
+            />
+            <div className={styles.formHelp}>Moderately specific evidence</div>
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Low</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.probativeValueWeights?.low ?? 0.5}
+              min={0.0}
+              max={1.0}
+              step={0.1}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  probativeValueWeights: {
+                    high: config.probativeValueWeights?.high ?? 1.0,
+                    medium: config.probativeValueWeights?.medium ?? 0.8,
+                    low: isNaN(v) ? 0.5 : v,
+                  },
+                });
+              }}
+            />
+            <div className={styles.formHelp}>Vague, unattributed evidence (filtered)</div>
+          </div>
+        </div>
+        <div className={styles.formHelp}>
+          How much to weight evidence by probativeValue (quality assessment). High should be &gt;= medium &gt;= low.
         </div>
       </div>
     </div>
