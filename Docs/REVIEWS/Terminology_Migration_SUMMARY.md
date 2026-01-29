@@ -1,8 +1,9 @@
 # Terminology Migration - Executive Summary
 
 **Date**: 2026-01-29 (Updated)
-**Status**: Phase 0 ✅ | Phase 1 ✅ | Phase 1.5 Layer 1 ✅ | Phase 2.0 ✅ | Phase 2.5 ✅ | Phase 2.1+ gradual
-**Next Action**: Phase 2.1 gradual migration | Optional: Phase 1.5 baselines, Phase 2 filter integration
+**Status**: Phase 0 ✅ | Phase 1 ✅ | Phase 1.5 ✅ | Phase 2.0 ✅ | Phase 2.5 ✅ | Phase 2.1+ gradual
+**Progress**: 40% complete (all planned phases through Phase 2.5 done)
+**Next Action**: Phase 2.1 gradual file migration (1-2 months) | Optional: Phase 1.5 baseline measurements
 
 ---
 
@@ -10,6 +11,8 @@
 
 - **Main Plan**: [Terminology_Migration_Plan_UPDATED.md](Terminology_Migration_Plan_UPDATED.md) (comprehensive)
 - **Risk Analysis**: [Terminology_Migration_RISK_ANALYSIS.md](Terminology_Migration_RISK_ANALYSIS.md) (execution strategy)
+- **Compliance Audit**: [Terminology_Migration_Compliance_Audit.md](Terminology_Migration_Compliance_Audit.md) (10 requirements + senior review)
+- **Implementation Plan**: [Terminology_Migration_Compliance_Implementation_Plan.md](Terminology_Migration_Compliance_Implementation_Plan.md) (detailed tasks)
 - **Original Audit**: [Terminology_Audit_Fact_Entity.md](Terminology_Audit_Fact_Entity.md)
 - **Entity Proposal**: [Terminology_Audit_Evidence_Entity_Proposal.md](Terminology_Audit_Evidence_Entity_Proposal.md)
 
@@ -54,7 +57,15 @@ The codebase uses `ExtractedFact` terminology, creating semantic confusion:
   - Category-specific rules, vague phrase detection, deduplication
   - False positive rate calculation, validation gates
 - ✅ Added `sourceType` to EvidenceScope interface (9 categories) - Committed: 24c3b47
-- **Time**: ~4 hours (faster than estimated 35-44 hours for core)
+- ✅ **Test Coverage Complete** (2026-01-29):
+  - evidence-filter.test.ts: 53 tests, all passing
+  - Test files migrated to EvidenceItem: 24 occurrences updated
+  - probativeValue tests: 7 tests in v2.8-verification.test.ts
+  - sourceType tests: 13 tests in v2.8-verification.test.ts
+  - CalcConfig extended: probativeValueWeights, sourceTypeCalibration, evidenceFilter
+  - Backward compatibility: 12 tests, schema migration docs
+  - **Total**: 103 tests covering all Phase 2 features
+- **Time**: ~10 hours (4 hours core + 6 hours test coverage & docs)
 - **Risk**: Low ✓
 
 ### ✅ Phase 2.5: sourceType Prompt Engineering (COMPLETE - 2026-01-29)
