@@ -213,32 +213,37 @@ export function filterByProbativeValue(
     }
 
     // 5. Category-specific rules
+    // Note: Use (item.sourceExcerpt ?? "") to handle undefined when requireSourceExcerpt is false
     else if (item.category === "statistic" && cfg.categoryRules.statistic.requireNumber) {
-      if (!containsNumber(item.fact) && !containsNumber(item.sourceExcerpt)) {
+      const excerpt = item.sourceExcerpt ?? "";
+      if (!containsNumber(item.fact) && !containsNumber(excerpt)) {
         shouldFilter = true;
         filterReason = "statistic_without_number";
-      } else if (item.sourceExcerpt.length < cfg.categoryRules.statistic.minExcerptLength) {
+      } else if (excerpt.length < cfg.categoryRules.statistic.minExcerptLength) {
         shouldFilter = true;
         filterReason = "statistic_excerpt_too_short";
       }
     }
 
     else if (item.category === "expert_quote" && cfg.categoryRules.expert_quote.requireAttribution) {
-      if (!hasAttribution(item.fact) && !hasAttribution(item.sourceExcerpt)) {
+      const excerpt = item.sourceExcerpt ?? "";
+      if (!hasAttribution(item.fact) && !hasAttribution(excerpt)) {
         shouldFilter = true;
         filterReason = "expert_quote_without_attribution";
       }
     }
 
     else if (item.category === "event" && cfg.categoryRules.event.requireTemporalAnchor) {
-      if (!hasTemporalAnchor(item.fact) && !hasTemporalAnchor(item.sourceExcerpt)) {
+      const excerpt = item.sourceExcerpt ?? "";
+      if (!hasTemporalAnchor(item.fact) && !hasTemporalAnchor(excerpt)) {
         shouldFilter = true;
         filterReason = "event_without_temporal_anchor";
       }
     }
 
     else if (item.category === "legal_provision" && cfg.categoryRules.legal_provision.requireCitation) {
-      if (!hasCitation(item.fact) && !hasCitation(item.sourceExcerpt)) {
+      const excerpt = item.sourceExcerpt ?? "";
+      if (!hasCitation(item.fact) && !hasCitation(excerpt)) {
         shouldFilter = true;
         filterReason = "legal_provision_without_citation";
       }
