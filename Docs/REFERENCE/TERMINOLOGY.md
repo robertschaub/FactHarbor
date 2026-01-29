@@ -594,10 +594,12 @@ A: Use "AnalysisContext" for precision or "context" for brevity. **NEVER use "fr
 
 ## Related Documentation
 
-- [Scope_Context_Terminology_Architecture_Analysis.md](Scope_Context_Terminology_Architecture_Analysis.md) - Full architectural audit
+- [Scope Definition Guidelines](../DEVELOPMENT/Scope_Definition_Guidelines.md) - EvidenceScope vs AnalysisContext decision guide
 - [AGENTS.md](../../AGENTS.md) - High-level rules for scope detection
 - [types.ts](../../apps/web/src/lib/analyzer/types.ts) - TypeScript interface definitions
 - [Pipeline_TriplePath_Architecture.md](../ARCHITECTURE/Pipeline_TriplePath_Architecture.md) - Pipeline design
+- [Provider Prompt Formatting](Provider_Prompt_Formatting.md) - Provider-specific prompt optimizations
+- [Evidence Quality Filtering](../ARCHITECTURE/Evidence_Quality_Filtering.md) - Two-layer probative value enforcement
 
 ---
 

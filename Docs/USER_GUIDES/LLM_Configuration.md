@@ -138,33 +138,51 @@ This admin interface will:
 
 ## Provider-Specific Optimization
 
+> **📚 Comprehensive Guide**: See [Provider-Specific Prompt Formatting](../REFERENCE/Provider_Prompt_Formatting.md) for detailed documentation on v2.8.0 prompt architecture.
+
+### Overview (v2.8.0+)
+
+FactHarbor uses **provider-specific prompt variants** to optimize performance across different LLMs. Each provider has unique strengths and preferred prompt structures:
+
+| Provider | Format | Strengths | Optimizations |
+|----------|--------|-----------|---------------|
+| **Anthropic Claude** | XML-structured | Nuanced reasoning, AnalysisContext detection | XML tags, thinking blocks, prefill technique |
+| **OpenAI GPT-4** | Markdown | General purpose, schema adherence | Clear headings, numbered lists, code blocks |
+| **Google Gemini** | Example-heavy | Long context, visual formatting | Emojis, bullets, repetition, multiple examples |
+| **Mistral** | Formal academic | Cost-effective, bilingual | Explicit reasoning chains, French examples |
+
 ### General Optimization Principles
 
-1. **Shorter prompts for Gemini/Mistral**
-   - Avoid long, legal-heavy system prompts
-   - Use bullet points and clear structure
-   - Focus on essential instructions
+1. **Prompt Composition**:
+   - Base prompt (universal logic)
+   - Provider variant (format optimization)
+   - Config adaptation (tiering, knowledge mode)
 
-2. **Strict JSON framing for all providers**
-   - Reduces stray text in responses
-   - Uses explicit schema examples
-   - Includes validation instructions
+2. **Temperature Settings**:
+   - Use `FH_DETERMINISTIC=true` for reproducible results (temperature = 0.0)
+   - Override per-provider if needed via PromptConfig
 
-3. **Temperature settings**
-   - Use `FH_DETERMINISTIC=true` for reproducible results
-   - Override per-provider if needed
+3. **Token Limits**:
+   - Claude: 200k tokens
+   - GPT-4: 128k tokens
+   - Gemini: 2M tokens
+   - Mistral: 128k tokens
 
-### Current Limitations
+### Configuration
 
-> **Note**: Provider-specific optimization features are documented but **not yet fully implemented**. Current behavior:
-> - Same prompts used for all providers
-> - Same temperature/token settings across providers
-> - No provider-specific prompt variants
+Provider-specific settings are configured via **PromptConfig** in the Unified Config Management system:
 
-**Planned Enhancements**:
-- Provider-specific prompt templates
-- Automatic prompt adaptation based on provider capabilities
-- Provider performance benchmarking
+```json
+{
+  "provider": "anthropic",
+  "model": "claude-sonnet-4",
+  "temperature": 0.2,
+  "maxTokens": 8000,
+  "tier": "standard"
+}
+```
+
+See: [Unified Config Management User Guide](Unified_Config_Management.md) for profile management
 
 ---
 

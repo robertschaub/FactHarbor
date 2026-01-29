@@ -1,8 +1,8 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.41 (Code) | 2.7.0 (Schema Output)  
-**Last Updated**: 2026-01-28  
-**Status**: POC1 Operational
+**Version**: 2.6.41 (Code) | 2.7.0 (Schema Output)
+**Last Updated**: 2026-01-29
+**Status**: POC1 Operational (Phase 2 Complete)
 
 ---
 
@@ -33,6 +33,16 @@
 - LLM Tiering for cost optimization
 - Provenance validation (Ground Realism enforcement)
 - **Harm Potential Detection**: Shared heuristic for death/injury/fraud claims
+
+**Phase 2 Quality Improvements (v2.6.41):**
+- **Evidence Quality Filtering**: Two-layer enforcement (prompts + deterministic filter) for probative value
+  - See: [Evidence Quality Filtering Architecture](../ARCHITECTURE/Evidence_Quality_Filtering.md)
+- **probativeValue Field**: Quality assessment (high/medium/low) with admin-configurable weights
+- **SourceType Classification**: 9 source types with reliability calibration factors
+- **Schema Backward Compatibility**: Optional fields + deprecated aliases for smooth migration
+  - See: [Schema Migration Strategy](../ARCHITECTURE/Schema_Migration_Strategy.md)
+- **Provider-Specific Prompts**: Optimized formatting for Anthropic, OpenAI, Google, Mistral
+  - See: [Provider Prompt Formatting](../REFERENCE/Provider_Prompt_Formatting.md)
 
 **Shared Module Architecture:**
 - `scopes.ts`: Scope detection (`detectScopes()`, `formatDetectedScopesHint()`)
