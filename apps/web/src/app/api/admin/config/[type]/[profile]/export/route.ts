@@ -18,6 +18,10 @@ const VALID_PROFILES = [
   "monolithic-canonical",
   "monolithic-dynamic",
   "source-reliability",
+  "text-analysis-input",
+  "text-analysis-evidence",
+  "text-analysis-scope",
+  "text-analysis-verdict",
 ];
 
 function getAdminKey(): string | null {

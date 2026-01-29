@@ -665,7 +665,7 @@ export async function closeConfigDb(): Promise<void> {
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 
-const VALID_PROMPT_PROFILES = [
+export const VALID_PROMPT_PROFILES = [
   "orchestrated",
   "monolithic-canonical",
   "monolithic-dynamic",
@@ -677,9 +677,9 @@ const VALID_PROMPT_PROFILES = [
   "text-analysis-verdict",
 ] as const;
 
-type PromptProfile = (typeof VALID_PROMPT_PROFILES)[number];
+export type PromptProfile = (typeof VALID_PROMPT_PROFILES)[number];
 
-function isValidPromptProfile(profile: string): profile is PromptProfile {
+export function isValidPromptProfile(profile: string): profile is PromptProfile {
   return VALID_PROMPT_PROFILES.includes(profile as PromptProfile);
 }
 
@@ -797,4 +797,96 @@ export async function getPromptForExport(
     filename: `${profile}.prompt.md`,
     contentHash: config.contentHash,
   };
+}
+
+/**
+ * Import prompt content from uploaded file
+ * Validates, saves, and optionally activates the prompt.
+ */
+export async function importPromptContent(
+  profile: string,
+  content: string,
+  options: {
+    versionLabel?: string;
+    activateImmediately?: boolean;
+    importedBy?: string;
+  } = {},
+): Promise<{
+  success: boolean;
+  blob?: ConfigBlob;
+  isNew?: boolean;
+  activated?: boolean;
+  validation: ValidationResult;
+  error?: string;
+}> {
+  // 1. Validate profile against allowlist
+  if (!isValidPromptProfile(profile)) {
+    return {
+      success: false,
+      validation: {
+        valid: false,
+        errors: [`Invalid profile: ${profile}. Valid profiles: ${VALID_PROMPT_PROFILES.join(", ")}`],
+        warnings: [],
+      },
+      error: `Invalid profile: ${profile}`,
+    };
+  }
+
+  // 2. Pre-validate content format
+  const validation = await validateConfigContent("prompt", content);
+  if (!validation.valid) {
+    return { success: false, validation, error: validation.errors.join("; ") };
+  }
+
+  // 3. Validate frontmatter pipeline matches profile
+  const pipelineMatch = content.match(/^pipeline:\s*["']?([^"'\n]+)/m);
+  if (pipelineMatch) {
+    const contentPipeline = pipelineMatch[1].trim();
+    // Map text-analysis-* profiles to "text-analysis" pipeline
+    const expectedPipeline = profile.startsWith("text-analysis") ? "text-analysis" : profile;
+    if (contentPipeline !== expectedPipeline) {
+      return {
+        success: false,
+        validation: {
+          valid: false,
+          errors: [`Frontmatter pipeline "${contentPipeline}" does not match expected "${expectedPipeline}" for profile "${profile}"`],
+          warnings: validation.warnings,
+        },
+        error: `Pipeline mismatch: file has "${contentPipeline}", expected "${expectedPipeline}"`,
+      };
+    }
+  }
+
+  // 4. Save blob
+  const versionLabel = options.versionLabel || `import-${new Date().toISOString().split("T")[0]}`;
+  try {
+    const { blob, isNew } = await saveConfigBlob(
+      "prompt",
+      profile,
+      content,
+      versionLabel,
+      options.importedBy || "import-api",
+    );
+
+    // 5. Optionally activate
+    let activated = false;
+    if (options.activateImmediately) {
+      await activateConfig("prompt", profile, blob.contentHash, options.importedBy, "import");
+      activated = true;
+    }
+
+    return {
+      success: true,
+      blob,
+      isNew,
+      activated,
+      validation,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      validation,
+      error: `Failed to save: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
 }
