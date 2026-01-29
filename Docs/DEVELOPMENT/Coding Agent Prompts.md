@@ -28,9 +28,6 @@ And analyze the current source code.
 
 ## Tasks Pending:
 ---
-Input url detection:
-- Improve url detection: e.g. this input is not an url:  https://www.gazetadopovo.com.br/ is a reliable news source that provides news based on facts and evidence
----
 Article Confidence:
 - Article verdict and Article confidence belong together, confidence is about how confident we are that the verdict is correct (thats the same principle at every level: Claim/Context/Article). Please check if this is implemented correctly.
 ---
@@ -47,10 +44,39 @@ Cleanup and reorganize documentation:
 
 ## Tasks in Progress:
 ---
+Make sure :
+-Prompts and search terms are up to date, misleading terms are now correct
+-The Admin editatble configurations (prompts, search, calculation) are in sync with the now changed source code and terms. Also the files at FactHarbor\apps\web\prompts
+-calculation configuration is extended for the newly introduced types where it maks sense to let admin do tuning. Also for search configuration.
+-Any related existin test is updated, test coverage is reasonably good.
+-Comments in code are correct.
+-Hints and rules for Agents are up to date and correct and cover all important current main entities.
+-All related documantation is up to date, also history, status and architecture docs. Docs that are only needed to look back are in archive. And all documentation is consistant and also cross-links exists where meaningful and are up to date.
+
+---
+You are a 1st class reviewer and analyzer! 
+Now there's something really important that I need an exceptionally deep analysis from you:
+Report quality (Orchestrated pipeline) is still not as desired
+
+We see these issues in reports:
+a) Contexts that should be detected are not detected.
+b) Contexts that should be tangential are used.
+c) Counter Claims and Counter evidence is still sometimes not correctly detected and take into account (directionality is wrong)
+d) At claims we sometimes see "contested" where it should only be doubted, or even not be mentioned at all because completely baselss (particularily US Government makes baseless claims and baseless contradictions - seen in multiple reports)
+
+I see these potential areas why the reports are not as good as earlier:
+1. We removed specific wording in prompts (but wee needed to)
+2. We have too complicated prompting now
+3. We had cleaned up code to get rid of confusions on terms: Frame, Scope, Context , and with this introduced unintended changes
+4. The now clear differentiation between Scope and Context is counter-productive
+5. There simply is a conceptual flaw (please provide diagrams that help to better understand. Especially show how the main Entities (Article, ArticleFrame, Claim, EvidenceScope, AnalysisContext) are used and relate at Analysis, Prompt input, Prompt Output and Display.
+
+---
 Tangential claim handling:
 - make sure that tangential source value is retreived in a meaningful way (from LLM i guess).
 - make sure tangential claims verdicts are not calculated into upper level verdicts.
 - make sure tangential claims are marked as such in the GUI
+
 ---
 Verdict direction:
 For Claims where the verdict at the core is a denyal of the claim, 
@@ -71,6 +97,9 @@ And make sure that the influence into the upper-level verdict is in the right di
 
 
 ## Tasks done
+---
+Input url detection:
+- Improve url detection: e.g. this input is not an url:  https://www.gazetadopovo.com.br/ is a reliable news source that provides news based on facts and evidence
 ---
 Layout improvements in the "Summary" page:
  - Article box shall contain all properties of an article: Summary, Verdict, Key Factors, Assesment

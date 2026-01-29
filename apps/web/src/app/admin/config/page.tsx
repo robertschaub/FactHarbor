@@ -123,6 +123,18 @@ interface CalcConfig {
     medium: number;   // Default: 0.8
     low: number;      // Default: 0.5
   };
+  // Source Type Reliability Calibration (v2.6.41+)
+  sourceTypeCalibration?: {
+    peer_reviewed_study: number;    // Default: 1.0
+    fact_check_report: number;      // Default: 1.05
+    government_report: number;      // Default: 1.0
+    legal_document: number;         // Default: 1.0
+    news_primary: number;           // Default: 1.0
+    news_secondary: number;         // Default: 0.95
+    expert_statement: number;       // Default: 0.9
+    organization_report: number;    // Default: 0.95
+    other: number;                  // Default: 0.8
+  };
 }
 
 // ============================================================================
@@ -183,6 +195,17 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
     high: 1.0,
     medium: 0.8,
     low: 0.5,
+  },
+  sourceTypeCalibration: {
+    peer_reviewed_study: 1.0,
+    fact_check_report: 1.05,
+    government_report: 1.0,
+    legal_document: 1.0,
+    news_primary: 1.0,
+    news_secondary: 0.95,
+    expert_statement: 0.9,
+    organization_report: 0.95,
+    other: 0.8,
   },
 };
 
@@ -654,6 +677,205 @@ function CalcConfigForm({
         </div>
         <div className={styles.formHelp}>
           How much to weight evidence by probativeValue (quality assessment). High should be &gt;= medium &gt;= low.
+        </div>
+      </div>
+
+      {/* Source Type Calibration */}
+      <div className={styles.formSection}>
+        <h3 className={styles.formSectionTitle}>Source Type Calibration</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Peer Reviewed Study</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.sourceTypeCalibration?.peer_reviewed_study ?? 1.0}
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  sourceTypeCalibration: {
+                    ...(config.sourceTypeCalibration || {}),
+                    peer_reviewed_study: isNaN(v) ? 1.0 : v,
+                  } as CalcConfig["sourceTypeCalibration"],
+                });
+              }}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Fact Check Report</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.sourceTypeCalibration?.fact_check_report ?? 1.05}
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  sourceTypeCalibration: {
+                    ...(config.sourceTypeCalibration || {}),
+                    fact_check_report: isNaN(v) ? 1.05 : v,
+                  } as CalcConfig["sourceTypeCalibration"],
+                });
+              }}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Government Report</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.sourceTypeCalibration?.government_report ?? 1.0}
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  sourceTypeCalibration: {
+                    ...(config.sourceTypeCalibration || {}),
+                    government_report: isNaN(v) ? 1.0 : v,
+                  } as CalcConfig["sourceTypeCalibration"],
+                });
+              }}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Legal Document</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.sourceTypeCalibration?.legal_document ?? 1.0}
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  sourceTypeCalibration: {
+                    ...(config.sourceTypeCalibration || {}),
+                    legal_document: isNaN(v) ? 1.0 : v,
+                  } as CalcConfig["sourceTypeCalibration"],
+                });
+              }}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>News Primary</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.sourceTypeCalibration?.news_primary ?? 1.0}
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  sourceTypeCalibration: {
+                    ...(config.sourceTypeCalibration || {}),
+                    news_primary: isNaN(v) ? 1.0 : v,
+                  } as CalcConfig["sourceTypeCalibration"],
+                });
+              }}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>News Secondary</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.sourceTypeCalibration?.news_secondary ?? 0.95}
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  sourceTypeCalibration: {
+                    ...(config.sourceTypeCalibration || {}),
+                    news_secondary: isNaN(v) ? 0.95 : v,
+                  } as CalcConfig["sourceTypeCalibration"],
+                });
+              }}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Expert Statement</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.sourceTypeCalibration?.expert_statement ?? 0.9}
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  sourceTypeCalibration: {
+                    ...(config.sourceTypeCalibration || {}),
+                    expert_statement: isNaN(v) ? 0.9 : v,
+                  } as CalcConfig["sourceTypeCalibration"],
+                });
+              }}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Organization Report</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.sourceTypeCalibration?.organization_report ?? 0.95}
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  sourceTypeCalibration: {
+                    ...(config.sourceTypeCalibration || {}),
+                    organization_report: isNaN(v) ? 0.95 : v,
+                  } as CalcConfig["sourceTypeCalibration"],
+                });
+              }}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Other</label>
+            <input
+              type="number"
+              className={styles.formInput}
+              value={config.sourceTypeCalibration?.other ?? 0.8}
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onChange({
+                  ...config,
+                  sourceTypeCalibration: {
+                    ...(config.sourceTypeCalibration || {}),
+                    other: isNaN(v) ? 0.8 : v,
+                  } as CalcConfig["sourceTypeCalibration"],
+                });
+              }}
+            />
+          </div>
+        </div>
+        <div className={styles.formHelp}>
+          Reliability multipliers by source type (EvidenceScope.sourceType). Values above 1.0 increase weight, below decrease.
         </div>
       </div>
     </div>
