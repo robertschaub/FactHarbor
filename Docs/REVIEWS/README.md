@@ -43,6 +43,12 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
   - Batch categorization of quality problems
   - Fix recommendations
 
+- **[Baseline_Quality_Measurements.md](Baseline_Quality_Measurements.md)**
+  - Evidence quality metrics and baseline measurements
+  - Script: `scripts/measure-evidence-quality.ts`
+  - Validates Phase 1.5 and Phase 2 improvements
+  - Success criteria and validation gates
+
 - **[Context_Detection_via_EvidenceScope.md](Context_Detection_via_EvidenceScope.md)** *(if exists)*
   - How EvidenceScope metadata enables AnalysisContext detection
   - Incompatibility detection principles
