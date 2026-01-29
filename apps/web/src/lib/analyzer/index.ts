@@ -30,6 +30,7 @@ export type {
   AnalysisContext,
   DistinctProceeding,
   EvidenceScope,       // NEW v2.8: Evidence source methodology metadata
+  SourceType,          // NEW v2.8: Source type classification for EvidenceScope
   KeyFactor,
   FactorAnalysis,
   ContextAnswer,

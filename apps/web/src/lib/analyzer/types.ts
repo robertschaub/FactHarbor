@@ -201,7 +201,29 @@ export interface EvidenceScope {
   // Time period OF THE SOURCE'S DATA (not the analysis timeframe)
   // Example: A 2024 study analyzing 2020-2022 data would have temporal="2020-2022" here
   temporal?: string;      // e.g., "2020-2025", "FY2024", "Q1 2023"
+  // NEW v2.8 (Phase 2): Source type classification for better reliability calibration
+  // This helps the system weight evidence appropriately based on source characteristics
+  sourceType?: SourceType;
 }
+
+/**
+ * Source type classification for evidence provenance
+ *
+ * Used in EvidenceScope to indicate what kind of source the evidence comes from.
+ * This enables better source reliability calibration and evidence weighting.
+ *
+ * @since v2.8 (Phase 2)
+ */
+export type SourceType =
+  | "peer_reviewed_study"    // Academic research published in peer-reviewed venues
+  | "fact_check_report"      // Professional fact-checking organization report
+  | "government_report"      // Official government publication or data
+  | "legal_document"         // Court decisions, statutes, legal filings
+  | "news_primary"           // Original investigative journalism
+  | "news_secondary"         // News aggregation, wire services, reprints
+  | "expert_statement"       // Statement from recognized expert (not in formal publication)
+  | "organization_report"    // NGO, think tank, or organization publication
+  | "other";                 // Other sources not fitting above categories
 
 /**
  * @deprecated Use AnalysisContext instead
