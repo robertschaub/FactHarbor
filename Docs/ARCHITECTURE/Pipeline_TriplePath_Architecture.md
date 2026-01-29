@@ -1,9 +1,10 @@
-# FactHarbor Analysis — Triple-Path Pipeline Architecture (Desired)
+# FactHarbor Analysis — Triple-Path Pipeline Architecture (Implemented)
 
-**Last Updated**: 2026-01-20  
-**Version**: 2.6.33  
-**Audience**: Senior Architects, Lead Developers, Reviewers  
-**Purpose**: Define the **desired end-state architecture** supporting **three user-selectable analysis variants** with maximum reuse of stable primitives and minimal added complexity/risk to the current path.
+**Last Updated**: 2026-01-29
+**Version**: 2.6.41
+**Status**: Implemented (v2.6.38)
+**Audience**: Senior Architects, Lead Developers, Reviewers
+**Purpose**: Documents the **implemented architecture** supporting **three user-selectable analysis variants** with maximum reuse of stable primitives and minimal added complexity/risk to the current path.
 
 ---
 
@@ -22,7 +23,7 @@ Ground Realism invariants:
 
 ---
 
-## 2) The three selectable variants (desired behavior)
+## 2) The three selectable variants (implemented)
 
 ### 2.1 `OrchestratedPipeline` (default)
 - Current TypeScript-orchestrated staged pipeline.

@@ -1,8 +1,8 @@
 # FactHarbor POC1 Architecture Overview
 
-**Version:** 2.6.38  
-**Schema Version:** 2.7.0  
-**Last Updated:** January 26, 2026
+**Version:** 2.6.41
+**Schema Version:** 2.7.0
+**Last Updated:** January 29, 2026
 
 This document provides a comprehensive technical overview of FactHarbor's POC1 architecture, including system flows, data models, component interactions, and current implementation status.
 

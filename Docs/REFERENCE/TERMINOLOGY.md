@@ -1,9 +1,9 @@
 # FactHarbor Terminology Reference
 
-**Version**: 2.6.33  
-**Date**: 2026-01-20  
-**Audience**: Developers, Prompt Engineers, LLM Systems  
-**Status**: Post-Refactoring (shared modules; v2.7.0 output field names; legacy names preserved for backward compatibility)
+**Version**: 2.6.41
+**Date**: 2026-01-29
+**Audience**: Developers, Prompt Engineers, LLM Systems
+**Status**: Phase 2 Complete (probativeValue, sourceType, evidenceFilter integrated; EvidenceItem type active; legacy names preserved for backward compatibility)
 
 ---
 

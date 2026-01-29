@@ -1,7 +1,7 @@
 # FactHarbor Known Issues
 
-**Last Updated**: January 19, 2026  
-**Current Version**: 2.6.33  
+**Last Updated**: January 29, 2026
+**Current Version**: 2.6.41
 **Schema Version**: 2.7.0
 
 This document tracks all known bugs, limitations, and technical debt in FactHarbor POC1.
