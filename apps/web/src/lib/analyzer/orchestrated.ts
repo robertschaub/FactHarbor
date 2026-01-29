@@ -845,38 +845,12 @@ function calculateScopeSimilarity(a: Scope, b: Scope): number {
       ? calculateTextSimilarity(String((a as any).assessedStatement), String((b as any).assessedStatement))
       : 0;
 
-  // For phase/boundary-sensitive contexts (common in comparative analyses), treat strong phase markers
-  // as identity signals. This helps merge redundant sub-contexts such as:
-  // - "conversion efficiency" vs "upstream production efficiency"
-  // - "powertrain efficiency" vs "vehicle operational efficiency"
-  // while remaining generic (no topic-specific hardcoding).
-  const inferPhaseBucket = (s: any): "production" | "usage" | "other" => {
-    const meta: any = s?.metadata || {};
-    const hay = [
-      s?.name,
-      s?.shortName,
-      s?.subject,
-      (s as any)?.assessedStatement,
-      meta?.boundaries,
-      meta?.methodology,
-      meta?.standardApplied,
-    ]
-      .map((v) => String(v || "").toLowerCase())
-      .join(" ");
-
-    if (/\b(upstream|production|generation|create|creation|manufactur|supply|source|extraction|initial|conversion)\b/.test(hay)) {
-      return "production";
-    }
-    if (/\b(downstream|usage|use\b|operation|operational|runtime|driving|infrastructure|adoption|deployment|storage|distribution|powertrain|vehicle|charging)\b/.test(hay)) {
-      return "usage";
-    }
-    return "other";
-  };
-
-  // NOTE: geographic/temporal can be noisy and should not dominate similarity/dedup.
+  // NOTE: geographic/timeframe can be noisy and should not dominate similarity/dedup.
   // Treat them as secondary modifiers, not primary identity signals.
   const primaryKeys = [
+    "court",            // authority venue (if present)
     "institution",      // who is the authority
+    "jurisdiction",     // where the authority applies (if present)
     "methodology",      // how was it measured/determined
     "definition",       // what does the term mean
     "framework",        // what evaluative structure applies
@@ -927,13 +901,12 @@ function calculateScopeSimilarity(a: Scope, b: Scope): number {
     subjectSim * 0.1 +
     secondarySim * 0.05;
 
-  const phaseA = inferPhaseBucket(a as any);
-  const phaseB = inferPhaseBucket(b as any);
-  const phaseMatch = phaseA !== "other" && phaseA === phaseB;
-  // If both contexts clearly fall into the same phase bucket and they ask a similar question,
-  // treat them as near-duplicates for deduplication purposes.
-  if (phaseMatch && assessedSim >= 0.35 && (nameSim >= 0.2 || primarySim >= 0.2)) {
-    similarity = Math.max(similarity, 0.9);
+  // Generic near-duplicate override: if two contexts are essentially asking the same assessed question
+  // (high assessedStatement similarity) and have at least mild agreement on identity signals, merge them.
+  // This helps collapse redundant rephrasings like:
+  // - "procedural compliance ..." vs "procedural compliance in Jurisdiction A ..."
+  if (assessedSim >= 0.75 && (nameSim >= 0.25 || primarySim >= 0.15)) {
+    similarity = Math.max(similarity, 0.92);
   }
 
   return Math.min(1.0, similarity);
@@ -2262,7 +2235,7 @@ interface ExtractedFact {
   evidenceScope?: {
     name: string;           // Short label (e.g., "Broad boundary", "Narrow boundary", "Federal scope")
     methodology?: string;   // Standard/method referenced (e.g., "ISO 14040", "Standard XYZ")
-    boundaries?: string;    // What's included/excluded (e.g., "Primary energy to vehicle motion")
+    boundaries?: string;    // What's included/excluded (e.g., "Raw inputs to delivered outcome")
     geographic?: string;    // Geographic scope (e.g., "Region A", "Region B")
     temporal?: string;      // Time period (e.g., "2020-2025", "FY2024")
   };
@@ -3664,8 +3637,8 @@ NOT "high" for:
 - "Foreign trade restrictions were proportionate" → reaction, not the judgment itself
 - "Foreign sanctions were justified" → reaction, not the judgment itself
 - "International relations deteriorated" → consequence, not the judgment itself
-- "US tariffs imposed on Brazilian products were proportionate" → foreign reaction, NOT the judgment
-- "US sanctions against the judge were justified" → foreign reaction, NOT the judgment
+- "Tariffs imposed by an external government were proportionate" → foreign reaction, NOT the judgment
+- "Sanctions imposed by an external government were justified" → foreign reaction, NOT the judgment
 - "Other countries condemned the proceedings" → foreign reaction, NOT the judgment
 
 **CRITICAL - FOREIGN GOVERNMENT RESPONSES ARE ALWAYS TANGENTIAL**:
@@ -5826,7 +5799,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 
 **Look for explicit scope definitions**:
 - Methodology: "This study uses a specific analysis method", "Based on ISO 14040 LCA"
-- Boundaries: "From primary energy to vehicle motion", "Excluding manufacturing"
+- Boundaries: "From initial inputs to final outcomes", "Excluding upstream production"
 - Geographic: "Region A market", "Region B regulations", "national scope"
 - Temporal: "2020-2025 data", "FY2024", "as of March 2024"
 
@@ -5837,7 +5810,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 - geographic: Geographic scope (empty string if not specified)
 - temporal: Time period (empty string if not specified)
 
-**IMPORTANT**: Different sources may use different EvidenceScopes. A "40% efficiency" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing EvidenceScope enables accurate comparisons.${contextsList}`;
+**IMPORTANT**: Different sources may use different EvidenceScopes. A "40% reported value" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing EvidenceScope enables accurate comparisons.${contextsList}`;
 
   debugLog(`extractFacts: Calling LLM for ${source.id}`, {
     textLength: source.fullText.length,
@@ -6553,10 +6526,10 @@ ${contextsFormatted}
      * "unknown" = Cannot determine
 
    **EXAMPLES of factualBasis classification**:
-   - "US government says trial was unfair" → "opinion" (no specific violation cited)
+   - "External government says the proceeding was unfair" → "opinion" (no specific violation cited)
    - "Critics claim procedure violated" → "opinion" (no specific procedure number/statute cited)
    - "Audit found violation of Regulation 47(b)" → "established" (specific documented violation)
-   - "Study measured 38% efficiency vs claimed 55%" → "established" (documented measurement contradiction)
+   - "Study measured 38 units vs claimed 55 units" → "established" (documented measurement contradiction)
    - "Defense presented conflicting expert testimony" → "disputed" (some counter-evidence but debatable)
 
    CRITICAL - factualBasis MUST be "opinion" for ALL of these:
@@ -8124,10 +8097,10 @@ When a claim contains causal language ("due to", "caused by", "because of", "lin
   * "unknown" = Cannot determine
 
 **EXAMPLES of factualBasis classification**:
-- "US government says trial was unfair" → "opinion" (no specific violation cited)
+- "External government says the proceeding was unfair" → "opinion" (no specific violation cited)
 - "Critics claim procedure violated" → "opinion" (no specific procedure number/statute cited)
 - "Audit found violation of Regulation 47(b)" → "established" (specific documented violation)
-- "Study measured 38% efficiency vs claimed 55%" → "established" (documented measurement contradiction)
+- "Study measured 38 units vs claimed 55 units" → "established" (documented measurement contradiction)
 - "Defense presented conflicting expert testimony" → "disputed" (some counter-evidence but debatable)
 
 CRITICAL - factualBasis MUST be "opinion" for:

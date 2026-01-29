@@ -899,3 +899,265 @@ If quality regresses after any phase, revert that phase and investigate before p
 ### Next Step: Batch 2 Testing Checkpoint
 
 Before proceeding with medium-risk changes (Batch 3), run test harness with canonical inputs to evaluate improvement.
+
+---
+
+## Senior Architect Review: Claude Opus 4.5
+
+**Reviewer**: Claude Opus 4.5 (Senior Software Architect)
+**Date**: 2026-01-29
+**Review Type**: Comprehensive architectural review with terminology migration alignment
+
+---
+
+### Overall Assessment: EXCELLENT ANALYSIS
+
+This document is one of the most thorough regression analyses in the codebase. The root cause identification (evidence depth / operating mode as primary driver) is correct, and the phased implementation approach with low-risk-first batching is sound engineering practice.
+
+**Rating**: ⭐⭐⭐⭐⭐ (5/5) - Ready for continued execution
+
+---
+
+### Strengths Identified
+
+1. **Correct Root Cause Prioritization**: The analysis correctly identifies that `FH_ANALYSIS_MODE=quick` + low fact counts are the primary drivers. This is validated by the user's test showing "deep mode improved results."
+
+2. **Evidence-First Design Philosophy**: The recommendation to treat seed contexts as "soft hints" (not mandatory) aligns perfectly with the codebase principle that LLM outputs should be evidence-grounded.
+
+3. **Risk-Batched Implementation**: Separating low-risk (Phases 2-4) from medium-risk (Phases 5-6) changes is excellent. The testing checkpoint after Batch 1 prevents cascading problems.
+
+4. **Mermaid Diagrams Updated**: The flow diagrams now correctly show:
+   - `Evidence[ExtractedEvidence_List<br/>legacy: ExtractedFact]`
+   - `EvidenceScope_PerItemMetadata`
+
+   This aligns with the terminology migration.
+
+5. **AGENTS.md Compliance Awareness**: The document correctly flags domain-specific tokens as violations of "Generic by Design" rules.
+
+---
+
+### Terminology Migration Alignment Check
+
+The document was created before the terminology migration was fully executed. I've reviewed it against the updated terminology standards:
+
+| Element | Current in Doc | Correct Terminology | Status |
+|---------|----------------|---------------------|--------|
+| Evidence type name | "ExtractedEvidence_List<br/>legacy: ExtractedFact" | ✅ Correct (shows both) | OK |
+| EvidenceScope | "EvidenceScope_PerItemMetadata" | ✅ Correct | OK |
+| "facts" in prose | Used throughout | Should be "evidence items" in new code | ⚠️ Legacy |
+| "fact count" | Used in Phase 2 description | Acceptable (config variable name) | OK |
+| "factId" | Used in Adjustment 4 | Acceptable (existing field name) | OK |
+
+**Verdict**: The document is **mostly aligned** with terminology migration. The prose uses "facts" because it describes existing code that still uses that terminology internally. No changes required - the document accurately reflects the codebase state.
+
+---
+
+### Critical Observations
+
+#### 1. Batch 2 Testing Checkpoint is Blocking
+
+**Current State**: Batch 1 completed on Jan 28, but Batch 2 testing checkpoint has not been executed.
+
+**Risk**: Without the testing checkpoint, we cannot confirm whether low-risk changes improved quality enough to skip medium-risk changes (Phases 5-6).
+
+**Recommendation**:
+- **Priority 0**: Execute Batch 2 testing checkpoint before any further implementation work
+- Create the 5 canonical test inputs as specified (comparative-boundary, multi-jurisdiction, contested-scientific, factual-historical, opinion-editorial)
+- Document results in this file under "Batch 2 Results"
+
+#### 2. Phase 5 (Contested/Doubted) Aligns with Terminology Migration
+
+The proposed `contestationType`, `counterEvidenceFactIds`, and `counterEvidenceSummary` fields should use the **new terminology** when implemented:
+
+```typescript
+// PROPOSED (with terminology migration alignment):
+interface ContestationResult {
+  contestationType: "none" | "doubted" | "contested";
+  counterEvidenceIds: string[];      // NOT counterEvidenceFactIds
+  counterEvidenceSummary: string;
+  // ...
+}
+```
+
+**Rationale**: If we're adding new schema fields, they should follow the new terminology from day one to avoid future migration.
+
+#### 3. Phase 6 (Directionality) Helper Function
+
+The proposed `hasStrongSupportSignals()` function is well-designed. However, it should be added to `verdict-corrections.ts` with a JSDoc comment explaining the threshold rationale:
+
+```typescript
+/**
+ * Detects strong support signals in reasoning text.
+ * Requires ≥2 pattern matches to trigger (high confidence threshold).
+ *
+ * Used for symmetric inversion detection when verdict is extreme (≤20%)
+ * but reasoning clearly supports the claim.
+ *
+ * @see detectAndCorrectVerdictInversion for usage
+ */
+function hasStrongSupportSignals(reasoning: string): boolean { ... }
+```
+
+#### 4. Missing: Integration with Source Reliability
+
+The document doesn't mention how the quality improvements interact with the **Source Reliability** system (v2.6.35+).
+
+**Potential Issue**: If source reliability weighting is applied AFTER evidence filtering (Phase 5 contested/doubted changes), the reliability scores may not account for removed evidence items.
+
+**Recommendation**: Add a note to Phase 5:
+> "Ensure `applyEvidenceWeighting()` in `source-reliability.ts` is called BEFORE contested/doubted classification, not after."
+
+---
+
+### Dependencies with Other Work
+
+| This Document | Related Work | Dependency Type |
+|---------------|--------------|-----------------|
+| Phase 5 schema changes | Terminology Migration Phase 3 | **Coordinate** - new fields should use new terminology |
+| Phase 6 verdict corrections | CalcConfig extension (from Compliance Audit) | **None** - independent |
+| Test harness creation | quality-gates.ts tests | **Leverage** - reuse test patterns |
+| Domain-specific token removal | AGENTS.md "Generic by Design" | **Enforce** - apply same standards |
+
+---
+
+### Recommended Execution Order (Updated)
+
+Based on current state (Batch 1 complete, Batch 2 not started):
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ IMMEDIATE (this week)                                       │
+├─────────────────────────────────────────────────────────────┤
+│ 1. [P0] Execute Batch 2 testing checkpoint                  │
+│    - Create 5 canonical test inputs                         │
+│    - Run comparison: before-batch-1 vs after-batch-1        │
+│    - Document results                                       │
+│                                                             │
+│ 2. [P0] DECISION GATE                                       │
+│    - If >30% improvement: Batch 3 may be unnecessary        │
+│    - If <30% improvement: Proceed with Batch 3              │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ IF BATCH 3 NEEDED                                           │
+├─────────────────────────────────────────────────────────────┤
+│ 3. [P1] Phase 5: Contested/Doubted fix                      │
+│    - Use new terminology for any new fields                 │
+│    - Remove domain-specific tokens                          │
+│                                                             │
+│ 4. [P1] Phase 6: Directionality hardening                   │
+│    - Implement with threshold (≤20% / ≥80% only)            │
+│    - Add JSDoc to helper functions                          │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ FINAL                                                       │
+├─────────────────────────────────────────────────────────────┤
+│ 5. [P2] Update .env.example with recommended values         │
+│ 6. [P2] Final documentation and cross-references            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Specific Code Review Comments
+
+#### Phase 2 Implementation (Completed) ✅
+
+The mode-aware threshold implementation is correct:
+```typescript
+const minRefineFacts = Math.min(8, config.minFactsRequired);
+```
+
+This correctly allows quick mode (minFactsRequired=6) to trigger refinement while preserving deep mode's higher bar.
+
+#### Phase 3 Implementation (Completed) ✅
+
+The gating logic is correct:
+```typescript
+const shouldForceSeeds =
+  CONFIG.deterministic === true &&
+  isComparativeLikeText(analysisInput) &&
+  ...
+```
+
+This prevents heuristic forcing in exploratory runs while preserving it for deterministic boundary-sensitive comparisons.
+
+#### Phase 4 Implementation (Completed) ✅
+
+The "CANDIDATE CONTEXTS" prompt section is well-designed. The instruction "Use only if ≥1 fact supports" is clear and actionable for the LLM.
+
+#### Phase 5 (Pending) - Caution
+
+The proposed change to `validateContestation()`:
+```typescript
+if (shouldDowngrade) {
+  return {
+    ...result,
+    factualBasis: "opinion",
+    isContested: false,
+    contestedBy: undefined,
+  };
+}
+```
+
+**Consider**: Instead of clearing `contestedBy`, preserve it but change semantics:
+```typescript
+if (shouldDowngrade) {
+  return {
+    ...result,
+    factualBasis: "opinion",
+    isContested: false,
+    // Keep contestedBy for audit trail, but UI won't show "Contested" badge
+    contestedBy: result.contestedBy,
+    contestationNote: "Downgraded to opinion - no documented counter-evidence",
+  };
+}
+```
+
+This preserves debuggability while fixing the UI behavior.
+
+#### Phase 6 (Pending) - Approved with Modification
+
+The threshold approach (≤20% / ≥80%) is correct. The `hasStrongSupportSignals()` patterns are appropriate:
+- `/\bconfirm(s|ed|ing)?\b/i`
+- `/\bsupport(s|ed|ing)?\b/i`
+- `/\bconsistent with\b/i`
+- `/\bevidence (shows|demonstrates|indicates)\b/i`
+- `/\bverified\b/i`
+
+**Add one more pattern** for better recall:
+```typescript
+/\bproves?\b/i,
+/\bestablishes?\b/i,
+```
+
+---
+
+### Acceptance Criteria (Validation Checklist)
+
+Before marking this work complete, verify:
+
+- [ ] Batch 2 testing checkpoint executed and documented
+- [ ] >30% improvement confirmed (or Batch 3 executed)
+- [ ] No domain-specific tokens remain in `aggregation.ts` or `orchestrated.ts`
+- [ ] New schema fields (if added) use new terminology
+- [ ] `.env.example` updated with recommended values
+- [ ] This document cross-referenced from KNOWN_ISSUES.md or STATUS
+
+---
+
+### Final Verdict
+
+**APPROVED FOR CONTINUED EXECUTION**
+
+The analysis is sound, the implementation plan is well-structured, and Batch 1 was executed correctly. The immediate priority is executing Batch 2 testing checkpoint to determine if Batch 3 is necessary.
+
+**Key Risk**: Delaying Batch 2 testing risks implementing unnecessary medium-risk changes. Execute testing checkpoint promptly.
+
+---
+
+**Review Version**: 1.0
+**Date**: 2026-01-29
+**Reviewer**: Claude Opus 4.5 (Senior Software Architect)
+**Status**: Complete
