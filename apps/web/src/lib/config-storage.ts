@@ -670,6 +670,11 @@ const VALID_PROMPT_PROFILES = [
   "monolithic-canonical",
   "monolithic-dynamic",
   "source-reliability",
+  // LLM text analysis prompts (4 analysis points)
+  "text-analysis-input",
+  "text-analysis-evidence",
+  "text-analysis-scope",
+  "text-analysis-verdict",
 ] as const;
 
 type PromptProfile = (typeof VALID_PROMPT_PROFILES)[number];

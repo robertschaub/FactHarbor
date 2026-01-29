@@ -269,6 +269,7 @@ const PromptFrontmatterSchema = z.object({
     "monolithic-canonical",
     "monolithic-dynamic",
     "source-reliability",
+    "text-analysis",  // LLM text analysis prompts (input, evidence, scope, verdict)
   ]),
   description: z.string().optional(),
   lastModified: z.string().optional(),

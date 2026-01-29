@@ -96,6 +96,16 @@ import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { recordConfigUsage } from "@/lib/config-storage";
 import type { EvidenceItem } from "./types";
+import {
+  getTextAnalysisService,
+  isLLMEnabled,
+  type InputClassificationResult,
+  type EvidenceItemInput,
+  type EvidenceQualityResult,
+  type VerdictValidationResult as TextAnalysisVerdictResult,
+  type ScopeSimilarityResult,
+  type ScopePair,
+} from "./text-analysis-service";
 
 // Configuration, helpers, and debug utilities imported from modular files above
 
@@ -312,7 +322,8 @@ Return:
     // Lower values cause valid contexts and claims to be lost
     const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
-    const dedup = deduplicateScopes(state.understanding!.analysisContexts || [], threshold);
+    // v2.9: deduplicateScopes is now async to support LLM scope similarity analysis
+    const dedup = await deduplicateScopes(state.understanding!.analysisContexts || [], threshold);
     dedupMerged = dedup.merged;
     state.understanding!.analysisContexts = dedup.scopes;
 
@@ -934,15 +945,75 @@ function mergeScopeMetadata(primary: Scope, duplicates: Scope[]): Scope {
   return merged;
 }
 
-function deduplicateScopes(
+async function deduplicateScopes(
   scopes: Scope[],
   similarityThreshold: number = 0.85,  // Only merge at >=85% similarity to preserve valid contexts
-): { scopes: Scope[]; merged: Map<string, string> } {
+): Promise<{ scopes: Scope[]; merged: Map<string, string> }> {
   if (!Array.isArray(scopes) || scopes.length <= 1) return { scopes: scopes || [], merged: new Map() };
 
   const merged = new Map<string, string>();
   const kept: Scope[] = [];
   const processed = new Set<string>();
+
+  // v2.9: LLM Scope Similarity Analysis (when enabled via FH_LLM_SCOPE_SIMILARITY)
+  const useLLMScopeSimilarity = isLLMEnabled("scope");
+  let llmSimilarityMap: Map<string, ScopeSimilarityResult> | null = null;
+
+  if (useLLMScopeSimilarity && scopes.length >= 2) {
+    try {
+      debugLog("deduplicateScopes: LLM scope similarity analysis starting", {
+        scopeCount: scopes.length,
+      });
+
+      // Build all scope pairs for analysis
+      const scopePairs: ScopePair[] = [];
+      for (let i = 0; i < scopes.length; i++) {
+        for (let j = i + 1; j < scopes.length; j++) {
+          const a = scopes[i];
+          const b = scopes[j];
+          if (!a?.id || !b?.id) continue;
+          scopePairs.push({
+            scopeA: String(a.name || a.id),
+            scopeB: String(b.name || b.id),
+            metadataA: (a as any).metadata,
+            metadataB: (b as any).metadata,
+          });
+        }
+      }
+
+      if (scopePairs.length > 0) {
+        const textAnalysisService = getTextAnalysisService();
+        const results = await textAnalysisService.analyzeScopeSimilarity({
+          scopePairs,
+          contextList: scopes.map((s) => String(s.name || s.id)),
+        });
+
+        // Build a map for quick lookup (key = "scopeA|scopeB")
+        llmSimilarityMap = new Map();
+        for (const result of results) {
+          const key = `${result.scopeA}|${result.scopeB}`;
+          llmSimilarityMap.set(key, result);
+          // Also store reverse key
+          const reverseKey = `${result.scopeB}|${result.scopeA}`;
+          llmSimilarityMap.set(reverseKey, result);
+        }
+
+        debugLog("deduplicateScopes: LLM scope similarity analysis complete", {
+          pairsAnalyzed: results.length,
+          mergeRecommendations: results.filter((r) => r.shouldMerge).length,
+        });
+      }
+    } catch (err) {
+      console.warn(
+        "[Scope Dedup] LLM scope similarity analysis failed, using heuristics:",
+        err instanceof Error ? err.message : String(err)
+      );
+      debugLog("deduplicateScopes: LLM scope similarity analysis failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      llmSimilarityMap = null;
+    }
+  }
 
   for (let i = 0; i < scopes.length; i++) {
     const cur = scopes[i];
@@ -954,8 +1025,28 @@ function deduplicateScopes(
       const other = scopes[j];
       if (!other?.id) continue;
       if (processed.has(other.id)) continue;
-      const sim = calculateScopeSimilarity(cur, other);
-      if (sim >= similarityThreshold) {
+
+      // Use LLM similarity if available, fall back to heuristic
+      let sim: number;
+      let shouldMerge: boolean;
+
+      if (llmSimilarityMap) {
+        const key = `${String(cur.name || cur.id)}|${String(other.name || other.id)}`;
+        const llmResult = llmSimilarityMap.get(key);
+        if (llmResult) {
+          sim = llmResult.similarity;
+          shouldMerge = llmResult.shouldMerge;
+        } else {
+          // Fall back to heuristic for pairs not in LLM results
+          sim = calculateScopeSimilarity(cur, other);
+          shouldMerge = sim >= similarityThreshold;
+        }
+      } else {
+        sim = calculateScopeSimilarity(cur, other);
+        shouldMerge = sim >= similarityThreshold;
+      }
+
+      if (shouldMerge) {
         dups.push(other);
         processed.add(other.id);
         merged.set(other.id, cur.id);
@@ -2294,6 +2385,10 @@ interface ClaimVerdict {
   isContested?: boolean;
   contestedBy?: string;
   factualBasis?: "established" | "disputed" | "opinion" | "unknown";
+  // v2.8: Harm potential assessment
+  harmPotential?: "high" | "medium" | "low";
+  // v2.9: Counter-claim detection (claim opposes thesis rather than supporting it)
+  isCounterClaim?: boolean;
 }
 
 // v2.6.27: Renamed from VerdictSummary for input neutrality
@@ -3321,6 +3416,29 @@ async function understandClaim(
   // Detect recency sensitivity for this analysis (using normalized input)
   const recencyMatters = isRecencySensitive(analysisInput, undefined);
 
+  // v2.9: LLM Text Analysis - Classify input and decompose claims
+  // Uses hybrid service (LLM with heuristic fallback) when enabled via FH_LLM_INPUT_CLASSIFICATION
+  let inputClassification: InputClassificationResult | null = null;
+  try {
+    const textAnalysisService = getTextAnalysisService();
+    inputClassification = await textAnalysisService.classifyInput({
+      inputText: analysisInput,
+      pipeline: "orchestrated",
+    });
+    debugLog("understandClaim: inputClassification", {
+      isComparative: inputClassification.isComparative,
+      isCompound: inputClassification.isCompound,
+      claimType: inputClassification.claimType,
+      complexity: inputClassification.complexity,
+      decomposedClaimsCount: inputClassification.decomposedClaims.length,
+    });
+  } catch (err) {
+    // Non-fatal: fall back to inline heuristics if service fails
+    debugLog("understandClaim: inputClassification failed, using inline heuristics", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
   // v2.8: Pre-detect scopes using heuristics (shared implementation from scopes.ts)
   const preDetectedScopes = detectScopes(analysisInput);
   const scopeHint = formatDetectedScopesHint(preDetectedScopes, true);
@@ -4307,9 +4425,13 @@ Now analyze the input and output JSON only.`;
   // - deterministic mode is enabled (reproducible runs need consistent scope splits)
   // - input is comparative-like (boundary-sensitive, e.g., "X before vs after Y")
   // In non-deterministic/exploratory runs, let the model + evidence-based refinement decide contexts.
+  // v2.9: Use cached inputClassification if available, fall back to inline heuristics
+  const isComparativeInput = inputClassification?.isComparative ?? isComparativeLikeText(analysisInput);
+  const isCompoundInput = inputClassification?.isCompound ?? isCompoundLikeText(analysisInput);
+
   const shouldForceSeedScopes =
     CONFIG.deterministic === true &&
-    isComparativeLikeText(analysisInput) &&
+    isComparativeInput &&
     Array.isArray(preDetectedScopes) &&
     preDetectedScopes.length >= 2 &&
     (parsed.analysisContexts?.length ?? 0) <= 1;
@@ -4347,7 +4469,7 @@ Now analyze the input and output JSON only.`;
     // Log when we skip seed forcing (helps debugging)
     debugLog("understandClaim: skipped seed forcing", {
       deterministic: CONFIG.deterministic,
-      isComparative: isComparativeLikeText(analysisInput),
+      isComparative: isComparativeInput,
       preDetectedScopesCount: preDetectedScopes.length,
       existingContextsCount: parsed.analysisContexts?.length ?? 0,
     });
@@ -4398,9 +4520,10 @@ Now analyze the input and output JSON only.`;
     !analysisInput.includes("\n") &&
     analysisInput.split(/\s+/).filter(Boolean).length <= 12 &&
     // Comparative statements are short but need decomposition; don't skip expansion.
-    !isComparativeLikeText(analysisInput) &&
+    // v2.9: Use cached classification result with heuristic fallback
+    !isComparativeInput &&
     // Compound statements are short but still need decomposition.
-    !isCompoundLikeText(analysisInput);
+    !isCompoundInput;
 
   if (isShortSimpleInput && parsed.detectedInputType === "article") {
     parsed.detectedInputType = "claim";
@@ -5951,32 +6074,119 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
     let filteredByProbativeValue = factsWithProvenance as typeof factsWithProvenance;
 
     if (probativeFilterEnabled && factsWithProvenance.length > 0) {
-      const { kept, filtered, stats } = filterByProbativeValue(factsWithProvenance as EvidenceItem[], DEFAULT_FILTER_CONFIG);
+      // v2.9: LLM Evidence Quality Assessment (when enabled via FH_LLM_EVIDENCE_QUALITY)
+      const useLLMEvidenceQuality = isLLMEnabled("evidence");
+      let llmFilterSuccess = false;
 
-      // Log filter statistics
-      if (stats.filtered > 0) {
-        const falsePositiveRate = calculateFalsePositiveRate(filtered);
-        console.log(
-          `[Evidence Filter] Probative filter for ${source.id}: kept ${stats.kept}/${stats.total} ` +
-          `(${Math.round(100 * stats.kept / stats.total)}%), filtered ${stats.filtered} items`
-        );
-        console.log(
-          `[Evidence Filter] Filter reasons: ${Object.entries(stats.filterReasons)
-            .map(([reason, count]) => `${reason}=${count}`)
-            .join(", ")}`
-        );
+      if (useLLMEvidenceQuality) {
+        try {
+          debugLog("extractFacts: LLM evidence quality assessment starting", {
+            sourceId: source.id,
+            itemCount: factsWithProvenance.length,
+          });
 
-        if (falsePositiveRate > 0.05) {
+          // Convert EvidenceItem to EvidenceItemInput format for the service
+          const evidenceInputs: EvidenceItemInput[] = factsWithProvenance.map((item: any) => ({
+            evidenceId: item.id,
+            statement: item.fact,
+            excerpt: item.sourceExcerpt,
+            sourceUrl: item.sourceUrl,
+            category: item.category,
+          }));
+
+          const textAnalysisService = getTextAnalysisService();
+          const qualityResults = await textAnalysisService.assessEvidenceQuality({
+            evidenceItems: evidenceInputs,
+            thesisText: originalClaim || focus,
+          });
+
+          // Filter items based on LLM quality assessment
+          const qualityMap = new Map<string, EvidenceQualityResult>();
+          for (const result of qualityResults) {
+            qualityMap.set(result.evidenceId, result);
+          }
+
+          const llmKept: typeof factsWithProvenance = [];
+          const llmFiltered: typeof factsWithProvenance = [];
+          const llmFilterReasons: Record<string, number> = {};
+
+          for (const item of factsWithProvenance as any[]) {
+            const quality = qualityMap.get(item.id);
+            if (!quality || quality.qualityAssessment === "filter") {
+              llmFiltered.push(item);
+              const reasons = quality?.issues || ["llm_quality_filter"];
+              for (const reason of reasons) {
+                llmFilterReasons[reason] = (llmFilterReasons[reason] || 0) + 1;
+              }
+            } else {
+              llmKept.push(item);
+            }
+          }
+
+          // Log LLM filter statistics
+          if (llmFiltered.length > 0) {
+            console.log(
+              `[Evidence Filter] LLM quality filter for ${source.id}: kept ${llmKept.length}/${factsWithProvenance.length} ` +
+              `(${Math.round(100 * llmKept.length / factsWithProvenance.length)}%), filtered ${llmFiltered.length} items`
+            );
+            console.log(
+              `[Evidence Filter] LLM filter reasons: ${Object.entries(llmFilterReasons)
+                .map(([reason, count]) => `${reason}=${count}`)
+                .join(", ")}`
+            );
+          } else {
+            console.log(`[Evidence Filter] LLM quality filter for ${source.id}: all ${llmKept.length} items passed`);
+          }
+
+          filteredByProbativeValue = llmKept;
+          llmFilterSuccess = true;
+          debugLog("extractFacts: LLM evidence quality assessment complete", {
+            sourceId: source.id,
+            kept: llmKept.length,
+            filtered: llmFiltered.length,
+          });
+        } catch (err) {
+          // Fall back to heuristic filtering
           console.warn(
-            `[Evidence Filter] ⚠️ High false positive rate: ${Math.round(falsePositiveRate * 100)}% ` +
-            `of filtered items had probativeValue="high"`
+            `[Evidence Filter] LLM evidence quality assessment failed for ${source.id}, falling back to heuristics:`,
+            err instanceof Error ? err.message : String(err)
           );
+          debugLog("extractFacts: LLM evidence quality assessment failed", {
+            sourceId: source.id,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
-      } else {
-        console.log(`[Evidence Filter] Probative filter for ${source.id}: all ${stats.kept} items passed`);
       }
 
-      filteredByProbativeValue = kept as typeof factsWithProvenance;
+      // Heuristic filtering (default or fallback from LLM failure)
+      if (!llmFilterSuccess) {
+        const { kept, filtered, stats } = filterByProbativeValue(factsWithProvenance as EvidenceItem[], DEFAULT_FILTER_CONFIG);
+
+        // Log filter statistics
+        if (stats.filtered > 0) {
+          const falsePositiveRate = calculateFalsePositiveRate(filtered);
+          console.log(
+            `[Evidence Filter] Probative filter for ${source.id}: kept ${stats.kept}/${stats.total} ` +
+            `(${Math.round(100 * stats.kept / stats.total)}%), filtered ${stats.filtered} items`
+          );
+          console.log(
+            `[Evidence Filter] Filter reasons: ${Object.entries(stats.filterReasons)
+              .map(([reason, count]) => `${reason}=${count}`)
+              .join(", ")}`
+          );
+
+          if (falsePositiveRate > 0.05) {
+            console.warn(
+              `[Evidence Filter] ⚠️ High false positive rate: ${Math.round(falsePositiveRate * 100)}% ` +
+              `of filtered items had probativeValue="high"`
+            );
+          }
+        } else {
+          console.log(`[Evidence Filter] Probative filter for ${source.id}: all ${stats.kept} items passed`);
+        }
+
+        filteredByProbativeValue = kept as typeof factsWithProvenance;
+      }
     }
 
     // Apply Ground Realism gate (PR 5): Facts must have real sources, not LLM synthesis
@@ -8470,8 +8680,91 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     },
   );
 
+  // v2.9: LLM Verdict Validation (when enabled via FH_LLM_VERDICT_VALIDATION)
+  // Validates verdicts for harm potential, contestation, and inversion detection
+  const useLLMVerdictValidation = isLLMEnabled("verdict");
+  let validatedClaimVerdicts = claimVerdicts;
+
+  if (useLLMVerdictValidation && claimVerdicts.length > 0) {
+    try {
+      debugLog("generateClaimVerdicts: LLM verdict validation starting", {
+        claimCount: claimVerdicts.length,
+      });
+
+      // Prepare claim verdicts for validation
+      const claimVerdictsForValidation = claimVerdicts.map((cv) => ({
+        claimId: cv.claimId,
+        claimText: cv.claimText,
+        verdictPct: cv.truthPercentage,
+        reasoning: cv.reasoning || "",
+      }));
+
+      const textAnalysisService = getTextAnalysisService();
+      const validationResults = await textAnalysisService.validateVerdicts({
+        thesis: understanding.impliedClaim || understanding.articleThesis || "",
+        claimVerdicts: claimVerdictsForValidation,
+        evidenceSummary: factsFormatted?.slice(0, 2000) || "",
+        mode: "full",
+      });
+
+      // Build map for quick lookup
+      const validationMap = new Map<string, TextAnalysisVerdictResult>();
+      for (const result of validationResults) {
+        validationMap.set(result.claimId, result);
+      }
+
+      // Apply validation results to claim verdicts
+      validatedClaimVerdicts = claimVerdicts.map((cv) => {
+        const validation = validationMap.get(cv.claimId);
+        if (!validation) return cv;
+
+        let updatedVerdict = { ...cv };
+
+        // Apply inversion correction if detected
+        if (validation.isInverted && validation.suggestedCorrection !== undefined && validation.suggestedCorrection !== null) {
+          const correctedPct = clampTruthPercentage(validation.suggestedCorrection);
+          debugLog("Verdict inversion detected (LLM)", {
+            claimId: cv.claimId,
+            originalPct: cv.truthPercentage,
+            correctedPct,
+            reasoning: validation.reasoning,
+          });
+          updatedVerdict.truthPercentage = correctedPct;
+          updatedVerdict.verdict = correctedPct;
+          updatedVerdict.reasoning = `[LLM INVERSION CORRECTED] ${cv.reasoning || ""}`;
+        }
+
+        // Override harm potential if LLM assessment differs
+        if (validation.harmPotential !== cv.harmPotential) {
+          updatedVerdict.harmPotential = validation.harmPotential;
+        }
+
+        // Apply counter-claim detection
+        if (validation.isCounterClaim !== undefined) {
+          updatedVerdict.isCounterClaim = validation.isCounterClaim;
+        }
+
+        return updatedVerdict;
+      });
+
+      debugLog("generateClaimVerdicts: LLM verdict validation complete", {
+        processed: validationResults.length,
+        inversionsDetected: validationResults.filter((r) => r.isInverted).length,
+      });
+    } catch (err) {
+      // Non-fatal: continue with original verdicts if LLM validation fails
+      console.warn(
+        "[Verdict Validation] LLM verdict validation failed, using heuristic results:",
+        err instanceof Error ? err.message : String(err)
+      );
+      debugLog("generateClaimVerdicts: LLM verdict validation failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   const weightedClaimVerdicts = applyEvidenceWeighting(
-    claimVerdicts,
+    validatedClaimVerdicts,
     state.facts,
     state.sources,
   );
