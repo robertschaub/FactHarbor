@@ -4150,6 +4150,10 @@ Now analyze the input and output JSON only.`;
       const rp = String(c?.contextId || "").trim();
       if (rp && !scopeIds.has(rp)) missing.add(rp);
     }
+    // IMPORTANT: Keep requiresSeparateAnalysis consistent with the current context list.
+    // Some providers may emit requiresSeparateAnalysis=false even when analysisContexts has 2+ items,
+    // which can lead to downstream divergence (input neutrality failures).
+    (u as any).requiresSeparateAnalysis = scopes.length > 1;
     if (missing.size === 0) return u;
 
     for (const id of Array.from(missing)) {
@@ -4220,6 +4224,8 @@ Now analyze the input and output JSON only.`;
   // v2.6.23: Use analysisInput (normalized statement) for consistent scope canonicalization
   // This ensures any input phrasing yields identical scope detection and research queries
   parsed = canonicalizeScopes(analysisInput, parsed);
+  // Ensure flag consistency after canonicalization (some providers drift this field).
+  parsed.requiresSeparateAnalysis = (parsed.analysisContexts?.length ?? 0) > 1;
 
   // v2.8.2: Force detectedInputType to "claim" for input neutrality
   // The LLM sometimes returns "question" even after normalization, causing
@@ -5863,6 +5869,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
         isContestedClaim: f.isContestedClaim,
         claimSource: f.claimSource,
         claimDirection: f.claimDirection,
+        probativeValue: f.probativeValue,  // v2.8: LLM assessment of evidence quality
         fromOppositeClaimSearch: fromOppositeClaimSearch || false,
       }));
 

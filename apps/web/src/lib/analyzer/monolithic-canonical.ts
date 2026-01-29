@@ -722,6 +722,7 @@ export async function runMonolithicCanonical(
             sourceExcerpt: f.excerpt,
             category: f.category,
             claimDirection: f.direction,
+            probativeValue: f.probativeValue,  // v2.8: LLM assessment of evidence quality
             specificity: "medium",
           });
         }
