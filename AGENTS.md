@@ -24,10 +24,10 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 
 ### Context vs Scope - NEVER CONFUSE
 - **AnalysisContext** = Top-level analytical frame requiring separate analysis
-- **EvidenceScope** = Per-fact source metadata (methodology, temporal bounds, boundaries of evidence)
+- **EvidenceScope** = Per-evidence source metadata (methodology, temporal bounds, boundaries of evidence)
 - **NEVER** use "scope" when referring to AnalysisContext - always say "context"
 - **NEVER** use "context" when referring to source metadata - always say "evidenceScope"
-- Variables: Use `context`/`analysisContext` for top-level frames, `evidenceScope` for fact metadata
+- Variables: Use `context`/`analysisContext` for top-level frames, `evidenceScope` for evidence metadata
 - UI: Display "Context" cards, never "Scope" cards (unless specifically about evidence scope)
 
 ### EvidenceItem (formerly ExtractedFact)

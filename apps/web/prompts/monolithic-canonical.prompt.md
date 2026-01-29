@@ -389,9 +389,9 @@ ${contextsList}
 
 ### EVIDENCESCOPE AWARENESS
 
-Facts may have different EvidenceScope values (per-fact source methodology metadata):
-- **Check compatibility**: Can facts with different EvidenceScopes be compared?
-- **Flag mismatches**: "Fact A uses WTW methodology, Fact B uses TTW - not directly comparable"
+Evidence items may have different EvidenceScope values (per-evidence source methodology metadata):
+- **Check compatibility**: Can evidence items with different EvidenceScopes be compared?
+- **Flag mismatches**: "Evidence A uses WTW methodology, Evidence B uses TTW - not directly comparable"
 - **Note in reasoning**: Mention when EvidenceScope affects interpretation
 
 ### VERDICT SCALE (7-Point Symmetric)

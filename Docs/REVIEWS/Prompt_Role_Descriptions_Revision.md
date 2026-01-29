@@ -32,7 +32,7 @@ You are a professional fact-checker organizing evidence into analytical contexts
 **What this role does:**
 - Takes extracted facts and determines if they span multiple distinct AnalysisContexts
 - Assigns facts to appropriate contexts
-- **Does not author EvidenceScope** (per-fact metadata is extracted elsewhere)
+- **Does not author EvidenceScope** (per-evidence metadata is extracted elsewhere)
 - **May use evidenceScope patterns** to detect incompatible boundaries that justify separate AnalysisContexts
 - Outputs: `requiresSeparateAnalysis`, `analysisContexts`, `factScopeAssignments`, `claimScopeAssignments`
 
@@ -238,7 +238,7 @@ This revision doc is valuable, but it should explicitly acknowledge the drift ri
 
 ### 2) Scope Refinement: “does not deal with EvidenceScope” is imprecise
 
-The scope refinement role should not *author* per-fact `EvidenceScope`, but it **does** commonly **use EvidenceScope patterns** to infer whether multiple `AnalysisContexts` exist (e.g., the canonical monolithic prompt explicitly instructs this).
+The scope refinement role should not *author* per-evidence `EvidenceScope`, but it **does** commonly **use EvidenceScope patterns** to infer whether multiple `AnalysisContexts` exist (e.g., the canonical monolithic prompt explicitly instructs this).
 
 Suggested phrasing: **“Does not author EvidenceScope; may use evidenceScope patterns to infer AnalysisContexts.”**
 
@@ -280,7 +280,7 @@ This is a common, high-leverage safety instruction for web-sourced text.
 #### Scope Refinement section text tweak
 
 - Replace “Does NOT deal with EvidenceScope” with:
-  - **Does not author EvidenceScope** (per-fact metadata is extracted elsewhere)
+  - **Does not author EvidenceScope** (per-evidence metadata is extracted elsewhere)
   - **May use evidenceScope patterns** to detect incompatible boundaries that justify separate AnalysisContexts
 
 #### Understand output-field mapping note

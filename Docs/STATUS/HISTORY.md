@@ -451,7 +451,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 - Debug log path now resolves to repo root even when Next.js server runs with `cwd=apps/web`
 
 **Terminology**:
-- Prompts/docs/types now consistently use **ArticleFrame** (narrative background), **AnalysisContext** (top-level bounded frame), and **EvidenceScope** (per-fact source scope metadata)
+- Prompts/docs/types now consistently use **ArticleFrame** (narrative background), **AnalysisContext** (top-level bounded frame), and **EvidenceScope** (per-evidence source scope metadata)
 
 **Files Modified**:
 - `apps/web/src/lib/analyzer.ts`

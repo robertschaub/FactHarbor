@@ -61,10 +61,10 @@ FactHarbor uses multiple "framing" concepts that work together hierarchically:
 
 ### Level 5: EvidenceScope (Source Methodology - NOT Currently Displayed)
 - **What:** The analytical frame/methodology used BY THE SOURCE when producing evidence
-- **When:** Optional per-fact metadata (not all facts have this)
+- **When:** Optional per-evidence metadata (not all evidence items have this)
 - **Display:** *Should be shown via tooltips or sub-grouping (currently hidden)*
 - **Example:** "ISO 14040 LCA", "GREET Model", "Brazilian Electoral Law", "Journalistic reporting"
-- **JSON field:** `fact.evidenceScope` (optional object)
+- **JSON field:** `evidenceItem.evidenceScope` (optional object)
 
 **Key Distinction:**
 - **AnalysisContext** = "WHAT we're analyzing" (user's question: "Was TSE fair?")
@@ -115,14 +115,14 @@ export interface AnalysisContext {
 - Legacy: "Proceeding" (avoid in new prompts)
 
 **Common confusion**:
-- ❌ NOT the same as EvidenceScope (per-fact metadata)
+- ❌ NOT the same as EvidenceScope (per-evidence metadata)
 - ❌ NOT the same as ArticleFrame (narrative background)
 
 ---
 
-### 2. EvidenceScope (Per-Fact Source Metadata)
+### 2. EvidenceScope (Per-Evidence Source Metadata)
 
-**What it is**: Metadata attached to individual facts describing the methodology, boundaries, geography, and time period that **the source document** used when producing that evidence.
+**What it is**: Metadata attached to individual evidence items describing the methodology, boundaries, geography, and time period that **the source document** used when producing that evidence.
 
 **Why it matters**: A fact saying "40% efficiency" from a Well-to-Wheel study (includes full energy chain) cannot be directly compared to a Tank-to-Wheel study (only vehicle operation). EvidenceScope captures these methodological differences.
 
@@ -142,10 +142,10 @@ export interface EvidenceScope {
   temporal?: string;
 }
 
-// Attached to facts
-export interface ExtractedFact {
+// Attached to evidence items (EvidenceItem, legacy name: ExtractedFact)
+export interface EvidenceItem {
   id: string;
-  fact: string;
+  statement: string;  // legacy name: fact
   evidenceScope?: EvidenceScope;
   // ...
 }
@@ -424,7 +424,7 @@ function getScope(id: string) { ... }
 ```typescript
 // Explicit
 function getAnalysisContext(id: string): AnalysisContext { ... }
-function getEvidenceScope(fact: ExtractedFact): EvidenceScope | null { ... }
+function getEvidenceScope(evidence: EvidenceItem): EvidenceScope | null { ... }
 ```
 
 ### Pitfall 2: Conflating ArticleFrame with AnalysisContext

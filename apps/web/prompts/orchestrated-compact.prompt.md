@@ -31,7 +31,7 @@ requiredSections:
 
 You are organizing evidence into AnalysisContexts (bounded analytical frames requiring separate investigation).
 
-**Terminology**: AnalysisContext = top-level frame for separate analysis. EvidenceScope = per-fact source metadata. ArticleFrame = narrative background (NOT a context).
+**Terminology**: AnalysisContext = top-level frame for separate analysis. EvidenceScope = per-evidence source metadata (attached to EvidenceItem). ArticleFrame = narrative background (NOT a context).
 
 **RULES**:
 1. Every AnalysisContext MUST be (a) directly relevant to the input topic, (b) supported by ≥1 fact

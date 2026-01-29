@@ -110,15 +110,15 @@ export interface VerdictValidationResult {
  *   = Broader frame or topic of the input article.
  *   = Stored in `analysisContext` field (singular - legacy name, NOT an AnalysisContext!).
  *
- * "EvidenceScope" (per-fact source scope)
+ * "EvidenceScope" (per-evidence source scope)
  *   = Methodology/boundaries defined BY a source document.
- *   = Attached to individual facts as `fact.evidenceScope`.
- *   = Different from AnalysisContext! A fact's EvidenceScope describes how
+ *   = Attached to individual evidence items as `evidenceItem.evidenceScope`.
+ *   = Different from AnalysisContext! An evidence item's EvidenceScope describes how
  *     the SOURCE computed its data (e.g., a specific methodology/boundary).
  *
  * SUMMARY:
  *   - Top-level split unit = AnalysisContext (stored in `analysisContexts` plural)
- *   - "EvidenceScope" = per-fact source methodology/boundaries
+ *   - "EvidenceScope" = per-evidence source methodology/boundaries
  *   - "ArticleFrame" = broader topic (stored in `analysisContext` singular - naming collision!)
  *
  * WATCH OUT: `analysisContext` (singular) ≠ AnalysisContext type! It stores ArticleFrame.
@@ -140,7 +140,7 @@ export interface VerdictValidationResult {
  * - Geographic: Different regions (California vs Texas laws)
  *
  * Note: Shown in UI as "Contexts".
- * @see EvidenceScope for per-fact source-defined scope metadata (different concept!)
+ * @see EvidenceScope for per-evidence source-defined scope metadata (different concept!)
  */
 export interface AnalysisContext {
   id: string;                    // Stable ID (e.g., "CTX_TSE", "CTX_WTW", "CTX_US")
@@ -179,11 +179,11 @@ export interface AnalysisContext {
 }
 
 /**
- * EvidenceScope: Per-fact source methodology metadata defined BY a source document
+ * EvidenceScope: Per-evidence source methodology metadata defined BY a source document
  *
  * This is DIFFERENT from AnalysisContext! EvidenceScope describes the methodology,
  * boundaries, geography, and timeframe that a SOURCE DOCUMENT used when producing
- * its evidence. It's attached to individual facts as `fact.evidenceScope`.
+ * its evidence. It's attached to individual evidence items as `evidenceItem.evidenceScope`.
  *
  * Critical for comparing apples-to-apples:
  * Example: A study saying "Technology A efficiency is 40%" using full-cycle methodology

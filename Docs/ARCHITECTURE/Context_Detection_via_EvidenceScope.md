@@ -82,7 +82,7 @@ flowchart TB
 
 ### Current EvidenceScope Capture
 
-The EXTRACT_FACTS phase captures EvidenceScope metadata per-fact:
+The EXTRACT_FACTS phase captures EvidenceScope metadata per-evidence:
 
 ```typescript
 interface EvidenceScope {

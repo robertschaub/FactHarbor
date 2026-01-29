@@ -20,7 +20,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 | `AnalysisContext` | "AnalysisContext" or "Context" | `analysisContexts` | `distinctProceedings` | `AnalysisContextSchema` |
 | `EvidenceScope` | "EvidenceScope" or "Scope" | `evidenceScope` | `evidenceScope` | `EvidenceScopeSchema` |
 
-> **CRITICAL TERMINOLOGY (v2.6.39)**: "Scope" refers to `EvidenceScope` (per-fact metadata), NOT `AnalysisContext`. Use "Context" for top-level analytical frames.
+> **CRITICAL TERMINOLOGY (v2.6.39)**: "Scope" refers to `EvidenceScope` (per-evidence metadata), NOT `AnalysisContext`. Use "Context" for top-level analytical frames.
 | `ExtractedFact` | "Fact" | `facts` | `facts` | `ExtractedFactSchema` |
 | `ContextAnswer` | "Verdict" | (embedded in result) | (embedded in result) | `ContextAnswerSchema` |
 
@@ -94,7 +94,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 ```
 
 **Prompt Terms Used**:
-- "EvidenceScope" for per-fact methodology metadata (NOT an AnalysisContext)
+- "EvidenceScope" for per-evidence methodology metadata (NOT an AnalysisContext)
 - "contextId" for AnalysisContext assignment
 - "claimDirection" for support/contradict/neutral assessment
 
@@ -148,7 +148,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 **Prompt Terms Used**:
 - "AnalysisContext" or "Context" (primary term for top-level frames)
 - "ArticleFrame" (what NOT to split on)
-- "EvidenceScope" (per-fact metadata - NOT an AnalysisContext)
+- "EvidenceScope" (per-evidence metadata - NOT an AnalysisContext)
 - "analysisContexts" (output field name)
 
 **LLM Output Schema (v2.7)**:
@@ -192,7 +192,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 **Key Mappings**:
 - Prompt: "AnalysisContext" → Output: `analysisContexts` (legacy: `distinctProceedings`)
 - Prompt: "ArticleFrame" → (explicitly NOT included in output)
-- Prompt: "EvidenceScope" → (per-fact metadata, not top-level context)
+- Prompt: "EvidenceScope" → (per-evidence metadata, not top-level context)
 
 ---
 
@@ -331,13 +331,13 @@ graph TD
 ❌ **Wrong** (Confusing "scope" with "context"):
 ```
 "Identify the distinct scopes..."
-// WRONG: "Scope" means EvidenceScope (per-fact metadata), not AnalysisContext
+// WRONG: "Scope" means EvidenceScope (per-evidence metadata), not AnalysisContext
 ```
 
 ✅ **Correct** (Clear terminology):
 ```
 "Identify AnalysisContexts (or Contexts)..."
-// "Scope" reserved for EvidenceScope (per-fact source methodology)
+// "Scope" reserved for EvidenceScope (per-evidence source methodology)
 ```
 
 ### Pitfall 3: Missing Glossary

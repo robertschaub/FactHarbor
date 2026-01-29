@@ -198,7 +198,7 @@ CRITICAL RULES:
 - Do NOT split into AnalysisContexts purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting). Those are source types, not bounded analytical frames.
 - If you split, prefer frames that reflect methodology/boundaries/process-chain segmentation present in the evidence (e.g., end-to-end vs component-level; upstream vs downstream; production vs use-phase).
 - If the evidence does not clearly support multiple AnalysisContexts, return exactly ONE AnalysisContext.
-- Use neutral, generic labels (no domain-specific hardcoding), BUT ensure each AnalysisContext name reflects 1–3 specific identifying details found in the evidence (per-fact EvidenceScope fields and/or the AnalysisContext metadata).
+- Use neutral, generic labels (no domain-specific hardcoding), BUT ensure each AnalysisContext name reflects 1–3 specific identifying details found in the evidence (per-evidence EvidenceScope fields and/or the AnalysisContext metadata).
 - Different evidence reports may define DIFFERENT AnalysisContexts. A single evidence report may contain MULTIPLE AnalysisContexts. Do not restrict AnalysisContexts to one-per-source.
 - Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
 - Non-example: do NOT create separate AnalysisContexts from the ArticleFrame (e.g., \"political frame\", \"media discourse\") unless the evidence itself defines distinct analytical frames.
@@ -474,7 +474,7 @@ Return:
     }
   }
 
-  // Optional: enforce EvidenceScope name alignment based on scope metadata + per-fact evidenceScope signals.
+  // Optional: enforce EvidenceScope name alignment based on scope metadata + per-evidence evidenceScope signals.
   if (process.env.FH_ENABLE_SCOPE_NAME_ALIGNMENT !== "false") {
     const thr = parseFloat(process.env.FH_SCOPE_NAME_ALIGNMENT_THRESHOLD || "0.3");
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.3;
@@ -980,7 +980,7 @@ function validateAndFixScopeNameAlignment(
     const scopeFacts = factsByScope.get(String((s as any)?.id || "")) || [];
     const meta: Record<string, any> = ((s as any)?.metadata as any) || {};
 
-    // Gather candidate identifiers from per-fact evidenceScope (prioritize common values)
+    // Gather candidate identifiers from per-evidence evidenceScope (prioritize common values)
     const counts = new Map<string, number>();
     const bump = (v: string, w: number = 1) => {
       const vv = String(v || "").trim();
@@ -1018,7 +1018,7 @@ function validateAndFixScopeNameAlignment(
     const name = String((s as any)?.name || "");
     const alreadyAligned = identifiers.some((id) => covers(name, id));
 
-    // Opportunistically copy consistent per-fact evidenceScope fields into metadata
+    // Opportunistically copy consistent per-evidence evidenceScope fields into metadata
     const uniqueValue = (vals: Array<string | undefined>) => {
       const set = new Set(vals.map((v) => String(v || "").trim()).filter(Boolean));
       return set.size === 1 ? Array.from(set)[0] : "";
@@ -2006,7 +2006,7 @@ interface DecisionMaker {
 
 // AnalysisContext = A bounded analytical frame requiring separate analysis
 // Formerly "Proceeding" - now unified under "Context" terminology
-// Note: This is different from EvidenceScope (per-fact source-defined scope metadata)
+// Note: This is different from EvidenceScope (per-evidence source-defined scope metadata)
 interface Scope {
   id: string;                // e.g., "CTX_TSE", "CTX_WTW"
   name: string;              // Human-readable name
@@ -3284,7 +3284,7 @@ async function understandClaim(
 TERMINOLOGY (critical):
 - ArticleFrame: Broader frame or topic of the input article.
 - AnalysisContext (or "Context"): a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
-- EvidenceScope (or "Scope"): per-fact source metadata (methodology/boundaries/geography/temporal) attached to individual facts later in the pipeline. NOT the same as AnalysisContext.
+- EvidenceScope (or "Scope"): per-evidence source metadata (methodology/boundaries/geography/temporal) attached to individual evidence items later in the pipeline. NOT the same as AnalysisContext.
 
 NOT DISTINCT CONTEXTS:
 - Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate contexts by themselves.
@@ -4019,7 +4019,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
 
   const tryJsonTextFallback = async () => {
     debugLog("understandClaim: FALLBACK JSON TEXT ATTEMPT");
-    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- ArticleFrame is the broader frame or topic of the input article.\n- analysisContexts represents AnalysisContexts (top-level bounded analytical frames).\n- analysisContext (singular) is the ArticleFrame field (NOT an AnalysisContext despite the name).\n- EvidenceScope is per-fact source-defined scope metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- analysisContexts\n- requiresSeparateAnalysis\n- analysisContext (ArticleFrame string)\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
+    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- ArticleFrame is the broader frame or topic of the input article.\n- analysisContexts represents AnalysisContexts (top-level bounded analytical frames).\n- analysisContext (singular) is the ArticleFrame field (NOT an AnalysisContext despite the name).\n- EvidenceScope is per-evidence source-defined scope metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- analysisContexts\n- requiresSeparateAnalysis\n- analysisContext (ArticleFrame string)\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
     const llmTimeoutMsRaw = parseInt(process.env.FH_UNDERSTAND_LLM_TIMEOUT_MS || "600000", 10);
     const llmTimeoutMs = Number.isFinite(llmTimeoutMsRaw)
       ? Math.max(60000, Math.min(3600000, llmTimeoutMsRaw))
@@ -5733,7 +5733,7 @@ and set contextId accordingly. Do not omit key numeric outcomes (durations, amou
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${originalClaimSection}
 
-## EVIDENCE SCOPE EXTRACTION (per-fact EvidenceScope)
+## EVIDENCE SCOPE EXTRACTION (per-evidence EvidenceScope)
 
 Evidence documents often define their EvidenceScope (methodology/boundaries/geography/temporal). Extract this when present:
 
@@ -6350,7 +6350,7 @@ CRITICAL: The "answer" field must be a NUMBER (not a string), and must reflect t
 
 ## EVIDENCE-SCOPE-AWARE EVALUATION
 
-Evidence may come from sources with DIFFERENT EvidenceScopes (per-fact source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
+Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
 - **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?
 - **Flag EvidenceScope mismatches**: Different EvidenceScopes are NOT directly comparable
@@ -7476,7 +7476,7 @@ When a claim contains causal language ("due to", "caused by", "because of", "lin
 
 ## EVIDENCE-SCOPE-AWARE EVALUATION
 
-Evidence may come from sources with DIFFERENT EvidenceScopes (per-fact source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
+Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
 - **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?
 - **Flag EvidenceScope mismatches**: Different EvidenceScopes are NOT directly comparable
@@ -8074,7 +8074,7 @@ When a claim uses causal language (e.g., "caused by", "due to", "because of"):
 
 ## EVIDENCE-SCOPE-AWARE EVALUATION
 
-Evidence may come from sources with DIFFERENT EvidenceScopes (per-fact source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
+Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
 **When evaluating claims with EvidenceScope-specific evidence**:
 1. **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?

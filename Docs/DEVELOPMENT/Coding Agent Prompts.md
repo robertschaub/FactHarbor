@@ -133,7 +133,7 @@ LLM sometimes not aware about current time and recent information:
 Please detect when a verdict or claim comment statement does not recognize the current date and makes false comments like "temporal error" and "in the future from the current date" or "date discrepancy".
 - LLM often did not find very recent information e.g. that Blosonaro trial sentenca was 27 years. Make sure this problem is covered well.
 ---
-- We use ArticleFrame for article narrative/background framing. Important note: do not confuse ArticleFrame with EvidenceScope (per-fact source scope). Make sure this is consistently done.
+- We use ArticleFrame for article narrative/background framing. Important note: do not confuse ArticleFrame with EvidenceScope (per-evidence source scope). Make sure this is consistently done.
 ---
 - With single scope report, the layout is different than with multi scope report. Please generalize the layout, so that for single scope report, the same layout is used as with multi scope, but in the single scope case, omit the layout elements that are not needed for single scope.
 ---

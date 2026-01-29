@@ -72,7 +72,7 @@ function truthFromBand(band: "strong" | "partial" | "uncertain" | "refuted", con
 
 A **AnalysisContext** is a bounded analytical frame that should be analyzed separately. It replaces the previous terminology of "proceeding".
 
-Note: **EvidenceScope** is the *per-fact* source methodology/boundaries (`ExtractedFact.evidenceScope`). This section’s AnalysisContext refers to the *top-level* bounded analytical frame.
+Note: **EvidenceScope** is the *per-evidence* source methodology/boundaries (`EvidenceItem.evidenceScope`). This section's AnalysisContext refers to the *top-level* bounded analytical frame.
 
 ### Definition
 
