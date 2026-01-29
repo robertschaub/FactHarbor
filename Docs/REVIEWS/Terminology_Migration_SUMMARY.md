@@ -1,8 +1,8 @@
 # Terminology Migration - Executive Summary
 
 **Date**: 2026-01-29 (Updated)
-**Status**: Phase 0 ✅ | Phase 1 ✅ | Phase 1.5 Layer 1 ✅ | Phase 2 next
-**Next Action**: Phase 2 TypeScript aliases + probative filter Layer 2
+**Status**: Phase 0 ✅ | Phase 1 ✅ | Phase 1.5 Layer 1 ✅ | Phase 2.0 ✅ | Phase 2.1+ gradual
+**Next Action**: Phase 2.1 gradual migration + Phase 2.5 sourceType prompts
 
 ---
 
@@ -48,13 +48,21 @@ The codebase uses `ExtractedFact` terminology, creating semantic confusion:
 - **Time**: ~2 hours completed, ~4-5 hours remaining
 - **Risk**: Low ✓
 
-### 📋 Phase 2: TypeScript Aliases + Enhancements (PLANNED, 1 week + 1-2 months gradual)
-- Create `EvidenceItem` interface (alias `ExtractedFact`)
-- Probative value filter (Layer 2: deterministic)
-- Add `sourceType` to EvidenceScope
-- Gradual file migration
-- **Time**: 35-44 hours core + distributed over feature work
-- **Risk**: Medium
+### ✅ Phase 2.0: Core Enhancements (COMPLETE - 2026-01-29)
+- ✅ Created `EvidenceItem` interface (ExtractedFact now deprecated alias) - Committed: 4afeac4
+- ✅ Probative value filter Layer 2 (deterministic post-process) - Committed: 3cb5351
+  - Category-specific rules, vague phrase detection, deduplication
+  - False positive rate calculation, validation gates
+- ✅ Added `sourceType` to EvidenceScope (9 categories) - Committed: 24c3b47
+- **Time**: ~4 hours (faster than estimated 35-44 hours for core)
+- **Risk**: Low ✓
+
+### 🔄 Phase 2.1+: Gradual Migration (ONGOING, 1-2 months)
+- Migrate files to use `EvidenceItem` instead of `ExtractedFact`
+- Target: 30%+ of codebase by end of Phase 2.1
+- **Status**: Deprecation warnings guide developers
+- **Time**: Distributed over feature work
+- **Risk**: Low
 
 ### 🎯 Phase 3: Full Migration (PLANNED, v3.0 in 3-6 months)
 - EvidenceClaimLink implementation (15-20 days)
@@ -185,12 +193,13 @@ interface EvidenceClaimLink {
 | **Immediate Actions** | **32 min** | ✅ **Complete (2026-01-29)** | **None** |
 | 1: Comments/Labels | 6-8 hours | ✅ Complete (2026-01-29) | Low ✓ |
 | 1.5: Risk Mitigation | 2 days | 🔄 Partial (2 hrs done, 4-5 hrs remaining) | Low ✓ |
-| **2.0: Core Enhancements** | **1 week** | 📋 **Next (TypeScript aliases, probative filter)** | **Medium** |
-| 2.1: Gradual Migration | 1-2 months | 📋 Planned | Low |
+| **2.0: Core Enhancements** | **1 week** | ✅ **Complete (2026-01-29, 4 hours)** | **Low ✓** |
+| 2.1+: Gradual Migration | 1-2 months | 🔄 Ongoing (file-by-file) | Low |
+| 2.5: sourceType Prompts | 12-16 hours | 📋 Next (extract sourceType) | Medium |
 | 3: Full Migration | 15-20 days | 📋 Planned (v3.0) | High |
 
 **Total Effort**: ~30-40 days spread over 3-6 months
-**Progress**: ~15% complete (Phase 0, 1, and 1.5 Layer 1 done)
+**Progress**: ~30% complete (Phase 0, 1, 1.5 Layer 1, 2.0 done) ⬆️ +15%
 
 ---
 
@@ -215,36 +224,35 @@ interface EvidenceClaimLink {
 ## Next Steps (Recommended Order)
 
 ### ✅ Completed (2026-01-29)
-1. ✅ Immediate Actions (32 minutes) - All complete
+1. ✅ Immediate Actions (32 minutes) - Committed: 1f52298
 2. ✅ Phase 1: Comments/Labels (6-8 hours) - Committed: c7ddec1
 3. ✅ Phase 1.5 Layer 1: Probative value prompts - Committed: faec975
 4. ✅ Phase 1.5: claimDirection telemetry - Committed: 4ece580
+5. ✅ Phase 2.1: Create EvidenceItem alias (2 hours) - Committed: 4afeac4
+6. ✅ Phase 2.3: Probative value filter Layer 2 (1.5 hours) - Committed: 3cb5351
+7. ✅ Phase 2.4: Add sourceType to EvidenceScope (30 min) - Committed: 24c3b47
 
-### 📋 Remaining Phase 1.5 (Optional, 4-5 hours)
-5. **Baseline quality measurements** (validation task)
+### 🔄 Ongoing (1-2 months, distributed)
+8. **Phase 2.1+: Gradual file migration**
+   - Migrate files from `ExtractedFact` to `EvidenceItem`
+   - Target: 30%+ of codebase
+   - **Status**: Deprecation warnings guide developers
+   - Happens organically during feature work
+
+### 📋 Optional Validation Tasks
+9. **Baseline quality measurements** (4-5 hours)
    - Create measurement script for current quality baselines
    - Measure probativeValue coverage, claimDirection missing rate
    - Document baselines before/after comparisons
-   - **Status**: Optional - can be done alongside Phase 2
+   - **Status**: Can be done alongside other work
 
-### 🎯 Phase 2: TypeScript Aliases + Enhancements (Next, 1 week)
-6. **Create EvidenceItem alias** (4-6 hours)
-   - Add `export interface EvidenceItem` (alias to `ExtractedFact`)
-   - Add `@deprecated` to `ExtractedFact`
-   - Update 30%+ of files to use new alias
-   - Gate: TypeScript compiles clean
-
-7. **Probative value filter Layer 2** (8-10 hours)
-   - Create `evidence-filter.ts` with deterministic filter
-   - Category-specific rules (statistics, expert_quote, etc.)
-   - Vague phrase detection
-   - Validation: False positive rate <5%
-
-8. **Add sourceType to EvidenceScope** (12-16 hours, 4 sub-phases)
-   - Phase 2.1: Add field to interface
-   - Phase 2.2: Update prompts to extract sourceType
-   - Phase 2.3: Test on sample sources
-   - Phase 2.4: Validation gate (>70% populated)
+### 🎯 Next Priority: Phase 2.5 (12-16 hours, 4 sub-phases)
+10. **Extract sourceType in prompts**
+    - Phase 2.5.1: Add sourceType to extraction instructions
+    - Phase 2.5.2: Update Zod schemas to include sourceType
+    - Phase 2.5.3: Test on sample sources
+    - Phase 2.5.4: Validation gate (>70% populated)
+    - **Risk**: Medium (prompt engineering)
 
 ### 🔮 Phase 3 Planning (v3.0, 3-6 months out)
 9. EvidenceClaimLink implementation
