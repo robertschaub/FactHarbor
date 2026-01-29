@@ -601,7 +601,15 @@ interface TextAnalysisCache {
 
 ---
 
-## Part 4: Implementation Plan
+## Part 4: Implementation Plan (REVISED per Technical Review)
+
+> **Timeline Adjustment**: Original 6-7 weeks → **8-10 weeks** (+29% for risk mitigation)
+>
+> Key changes from technical review:
+> - Phase 1: Add telemetry infrastructure + neutrality test suite
+> - Phase 3: Split into 2 weeks (implement + integrate)
+> - Phase 4: Extended to 2-3 weeks (highest risk/impact)
+> - Added percentage-based gradual rollout strategy
 
 ### Phase 1: Service Infrastructure (Week 1-2)
 
@@ -610,25 +618,42 @@ interface TextAnalysisCache {
 2. Implement `HeuristicTextAnalysisService` wrapping current functions
 3. Add service injection points to orchestrated.ts
 4. Create A/B comparison framework
+5. **[NEW]** Implement telemetry infrastructure (metrics tracking)
+6. **[NEW]** Create neutrality test suite (100+ diverse input pairs)
 
 **Files to Create**:
 - `apps/web/src/lib/analyzer/text-analysis-service.ts`
 - `apps/web/src/lib/analyzer/text-analysis-types.ts`
 - `apps/web/src/lib/analyzer/text-analysis-heuristic.ts`
 - `apps/web/src/lib/analyzer/text-analysis-cache.ts`
+- **[NEW]** `apps/web/src/lib/analyzer/text-analysis-metrics.ts`
+- **[NEW]** `apps/web/test/neutrality-test-suite.ts`
+
+**Telemetry Schema** (required from day 1):
+```typescript
+interface TextAnalysisMetrics {
+  accuracyVsHeuristic: number;      // % agreement
+  latencyP50: number;
+  latencyP95: number;
+  costPerCall: number;
+  fallbackRate: number;
+  fallbackReasons: Map<string, number>;
+}
+```
 
 **Risk**: LOW - No behavior changes, just extraction
 
 ---
 
-### Phase 2: Analysis Point 1 - Input Classification (Week 2-3)
+### Phase 2: Analysis Point 1 - Input Classification (Week 3)
 
 **Tasks**:
 1. Implement `LLMTextAnalysisService.classifyInput()`
 2. Create prompt template for input classification
 3. Replace `isComparativeLikeText()` and `isCompoundLikeText()` calls
 4. Run A/B comparison on test corpus
-5. Enable via feature flag
+5. **[NEW]** Run neutrality test suite - verify no bias
+6. Enable via feature flag (10% rollout initially)
 
 **Integration Points** (orchestrated.ts):
 - Line 4349: `shouldForceSeedScopes` check
@@ -640,17 +665,21 @@ interface TextAnalysisCache {
 - 95%+ agreement with existing heuristics on test cases
 - 20%+ improvement on edge cases LLM identifies better
 - No regression in input neutrality tests
+- **[NEW]** Neutrality test: No statistically significant bias (p > 0.05)
 
 ---
 
-### Phase 3: Analysis Point 2 - Evidence Quality (Week 3-4)
+### Phase 3: Analysis Point 2 - Evidence Quality (Week 4-5, split)
 
-**Tasks**:
+**Week 4 Tasks** (Implementation):
 1. Implement `LLMTextAnalysisService.assessEvidenceQuality()`
 2. Create prompt template for evidence quality assessment
-3. Replace `filterByProbativeValue()` call at line 5991
-4. Run A/B comparison
-5. Enable via feature flag
+3. Run A/B comparison (no integration yet)
+
+**Week 5 Tasks** (Integration):
+4. Replace `filterByProbativeValue()` call at line 5991
+5. Enable via feature flag (10% → 25% rollout)
+6. Monitor metrics for 1 week before proceeding
 
 **Integration Points** (orchestrated.ts):
 - Line 5991: `filterByProbativeValue()` call in `extractFacts()`
@@ -660,16 +689,29 @@ interface TextAnalysisCache {
 - False positive rate (filtering high-probative items) < 5%
 - Better detection of semantically vague statements
 
+**Note**: Analysis Point 2 **replaces the deterministic filter layer**, not the LLM extraction guidance.
+
 ---
 
-### Phase 4: Analysis Point 3 - Verdict Validation (Week 4-5)
+### Phase 4: Analysis Point 3 - Verdict Validation (Week 6-8, EXTENDED)
 
-**Tasks**:
+> **Critical Phase**: Highest risk, highest impact. Extended from 1 week to 2-3 weeks per technical review.
+
+**Week 6 Tasks** (Implementation + Testing):
 1. Implement `LLMTextAnalysisService.validateVerdicts()`
 2. Create prompt template for verdict validation
-3. Replace multiple function calls in verdict generation
-4. Run extensive A/B comparison
-5. Enable via feature flag
+3. Run extensive A/B comparison
+4. **[NEW]** Manual review of 200+ samples with ground truth labels
+
+**Week 7 Tasks** (Integration):
+5. Replace multiple function calls in verdict generation
+6. Enable via feature flag (10% rollout)
+7. **[NEW]** Implement comprehensive logging of all inversion detections
+
+**Week 8 Tasks** (Validation + Rollout):
+8. Analyze production metrics from 10% rollout
+9. Gradual rollout: 10% → 25% → 50%
+10. Final validation before 100% rollout
 
 **Integration Points** (orchestrated.ts):
 - Lines 7116, 7319, 7860, 8439: `detectAndCorrectVerdictInversion()`
@@ -679,71 +721,119 @@ interface TextAnalysisCache {
 - Lines 7284, 8416: `sanitizeTemporalErrors()`
 - Line 7196: `validateContestation()`
 
-**Acceptance Criteria**:
+**Acceptance Criteria** (STRENGTHENED):
 - Inversion detection accuracy > 95%
 - Counter-claim detection accuracy > 90%
-- No false positives on thesis-aligned claims
+- **[NEW]** Zero false positives on thesis-aligned claims
 - Maintains input neutrality
+- **[NEW]** 200 samples reviewed with ground truth (not 100)
+- **[NEW]** Comprehensive logging enabled for post-deployment analysis
+
+**Token Estimate** (REVISED): 4000-6000 input tokens (was 3000-5000)
 
 ---
 
-### Phase 5: Analysis Point 4 - Scope Similarity (Week 5-6)
+### Phase 5: Analysis Point 4 - Scope Similarity (Week 9)
 
 **Tasks**:
 1. Implement `LLMTextAnalysisService.analyzeScopes()`
 2. Create prompt template for scope similarity
 3. Replace `calculateScopeSimilarity()` calls
-4. Run A/B comparison
-5. Enable via feature flag
+4. **[NEW]** Replace `inferPhaseBucket()` heuristic entirely (LLM can infer semantic phase buckets)
+5. Run A/B comparison
+6. Enable via feature flag (gradual rollout)
 
 **Integration Points** (orchestrated.ts):
 - Line 835: `calculateScopeSimilarity()` function
+- Line 853: `inferPhaseBucket()` heuristic (replace entirely)
 - Multiple calls in `canonicalizeScopes()` and `refineScopesFromEvidence()`
 
 **Acceptance Criteria**:
 - Better semantic understanding of scope relationships
 - Reduced over-splitting of contexts
 - Correct identification of phase boundaries
+- **[NEW]** Handles domain-specific terminology automatically
 
 ---
 
-### Phase 6: Optimization & Cleanup (Week 6-7)
+### Phase 6: Optimization & Cleanup (Week 9-10)
 
 **Tasks**:
 1. Tune prompts based on A/B results
 2. Implement caching for frequently-used patterns
-3. Add monitoring and cost tracking
+3. **[NEW]** Finalize telemetry dashboard
 4. Remove deprecated heuristic code (keep as fallback)
 5. Documentation update
+6. **[NEW]** Complete 100% rollout for all analysis points
+
+**Gradual Rollout Schedule**:
+```bash
+# Use percentage-based rollout
+FH_LLM_TEXT_ANALYSIS_ROLLOUT_PCT=10   # Week 1 of each phase
+FH_LLM_TEXT_ANALYSIS_ROLLOUT_PCT=25   # Week 2 (if metrics stable)
+FH_LLM_TEXT_ANALYSIS_ROLLOUT_PCT=50   # Week 3
+FH_LLM_TEXT_ANALYSIS_ROLLOUT_PCT=100  # Final
+```
+
+**Error Handling Strategy** (per analysis point):
+```typescript
+enum FallbackBehavior {
+  USE_HEURISTIC_FOR_REMAINING,  // Hybrid result
+  RETRY_ALL_WITH_HEURISTIC,     // All-or-nothing
+}
+
+const FALLBACK_STRATEGY = {
+  inputClassification: FallbackBehavior.USE_HEURISTIC_FOR_REMAINING,
+  evidenceQuality: FallbackBehavior.RETRY_ALL_WITH_HEURISTIC,
+  verdictValidation: FallbackBehavior.RETRY_ALL_WITH_HEURISTIC,  // Critical
+  scopeSimilarity: FallbackBehavior.USE_HEURISTIC_FOR_REMAINING,
+};
+```
 
 ---
 
-## Part 5: Cost Analysis
+## Part 5: Cost Analysis (REVISED per Technical Review)
 
 ### Per-Job Cost Breakdown
 
 | Analysis Point | Input Tokens | Output Tokens | Cost (GPT-4) | Cost (Claude Haiku) |
 |---------------|--------------|---------------|--------------|---------------------|
-| 1. Input Classification | 150-300 | 200-400 | $0.002 | $0.0005 |
-| 2. Evidence Quality | 2000-4000 | 500-1000 | $0.008 | $0.002 |
-| 3. Verdict Validation | 3000-5000 | 800-1500 | $0.012 | $0.003 |
-| 4. Scope Similarity | 500-1000 | 200-400 | $0.003 | $0.0008 |
-| **TOTAL** | 5650-10300 | 1700-3300 | **$0.025** | **$0.0063** |
+| 1. Input Classification | 100-250 | 200-400 | $0.002 | $0.0005 |
+| 2. Evidence Quality | 1500-3500 | 500-1000 | $0.008 | $0.002 |
+| 3. Verdict Validation | **4000-6000** ⚠️ | 800-1500 | **$0.015** | **$0.004** |
+| 4. Scope Similarity | 400-800 | 200-400 | $0.003 | $0.0008 |
+| **TOTAL** | 6000-10550 | 1700-3300 | **$0.028** | **$0.0073** |
+
+> ⚠️ **Revised Estimate**: Verdict Validation increased from 3000-5000 to 4000-6000 input tokens to account for full context serialization (thesis + claims + keyFactors + evidence).
 
 ### Comparison with Current Costs
 
 | Item | Current | With LLM Text Analysis |
 |------|---------|----------------------|
 | Existing LLM calls/job | ~$0.15-0.25 | ~$0.15-0.25 |
-| Text analysis | $0 (heuristics) | $0.006-0.025 |
-| **Total** | ~$0.15-0.25 | ~$0.16-0.28 |
-| **Increase** | - | +4-10% |
+| Text analysis | $0 (heuristics) | **$0.007-0.028** |
+| **Total** | ~$0.15-0.25 | ~$0.157-0.278 |
+| **Increase** | - | **+4.7-11%** |
+
+### Per-Analysis-Point Cost Caps (NEW)
+
+```typescript
+const COST_CAPS = {
+  inputClassification: 0.005,
+  evidenceQuality: 0.010,
+  verdictValidation: 0.025,  // Highest cap (most critical)
+  scopeSimilarity: 0.010,
+  GLOBAL_MAX: 0.05,          // Hard cap per job
+};
+```
+
+**Behavior**: If any point exceeds its cap, fall back to heuristic for that point only (don't fail entire job).
 
 **Recommendation**: Use Claude Haiku for text analysis calls (cheaper, fast, sufficient for classification tasks).
 
 ---
 
-## Part 6: Risk Assessment
+## Part 6: Risk Assessment (REVISED per Technical Review)
 
 ### Technical Risks
 
@@ -753,6 +843,8 @@ interface TextAnalysisCache {
 | Latency increase | Medium | Medium | Parallel calls, caching |
 | Cost overrun | Low | Medium | Budget caps, monitoring |
 | Regression in accuracy | Medium | High | A/B testing, gradual rollout |
+| **LLM provider downtime** | Low | High | **[NEW]** Health check + auto-fallback |
+| **Input bias introduction** | Medium | High | **[NEW]** Neutrality test suite |
 
 ### Mitigation Strategies
 
@@ -761,20 +853,27 @@ interface TextAnalysisCache {
 3. **A/B Testing**: Compare LLM vs heuristic results before switch
 4. **Monitoring**: Track accuracy, latency, and cost metrics
 5. **Rate Limiting**: Cap LLM calls per job if cost exceeds threshold
+6. **[NEW] Provider Health Check**: Lightweight ping before expensive analysis; fail fast to heuristic if provider down
+7. **[NEW] Neutrality Testing**: 100+ politically/socially diverse input pairs tested before each phase rollout
 
 ---
 
-## Part 7: Success Criteria
+## Part 7: Success Criteria (REVISED per Technical Review)
 
 ### Quantitative Metrics
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Inversion detection accuracy | > 95% | Manual review of 100 samples |
-| Counter-claim detection accuracy | > 90% | Manual review of 100 samples |
+| Inversion detection accuracy | > 95% | **Manual review of 200 samples** ⚠️ |
+| Counter-claim detection accuracy | > 90% | **Manual review of 200 samples** ⚠️ |
 | Evidence quality false positive rate | < 5% | Compare filtered items |
 | Latency increase per job | < 2 seconds | P95 timing |
 | Cost increase per job | < $0.03 | Billing tracking |
+| **[NEW]** Input neutrality bias | p > 0.05 | Chi-square test on 100+ pairs |
+| **[NEW]** Thesis-aligned false positives | **Zero** | Critical safety metric |
+
+> ⚠️ **Sample Size Increased**: 100 → 200 samples with ground truth labels per technical review.
+> For 95% confidence with 5% margin, power analysis suggests 385 samples. 200 is pragmatic minimum.
 
 ### Qualitative Criteria
 
@@ -782,6 +881,16 @@ interface TextAnalysisCache {
 2. **Maintainability**: No more regex pattern maintenance
 3. **Generalization**: Works across domains without hardcoding
 4. **Input Neutrality**: Maintained or improved
+
+### Post-Deployment Monitoring (30 days) - NEW
+
+| Metric | Target | Alert Threshold |
+|--------|--------|-----------------|
+| User-reported inversion issues | < 2 per 1000 jobs | > 5 per 1000 |
+| Unexpected cost overruns | 0 incidents | Any incident |
+| Heuristic fallback rate | < 10% | > 20% |
+| P99 latency | < 5 seconds | > 8 seconds |
+| Input neutrality violations | 0 reported | Any report |
 
 ---
 
