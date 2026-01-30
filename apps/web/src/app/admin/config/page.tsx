@@ -1667,6 +1667,11 @@ export default function ConfigAdminPage() {
     percentageCustomized: number;
   } | null>(null);
 
+  // Hash search state
+  const [hashSearch, setHashSearch] = useState("");
+  const [hashSearchResults, setHashSearchResults] = useState<ConfigVersion[] | null>(null);
+  const [hashSearching, setHashSearching] = useState(false);
+
   // Edit state (for JSON configs)
   const [editConfig, setEditConfig] = useState<SearchConfig | CalcConfig | PipelineConfig | SRConfig | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
@@ -2243,6 +2248,162 @@ export default function ConfigAdminPage() {
         <p className={styles.subtitle}>
           View and manage search, calculation, and prompt configurations
         </p>
+      </div>
+
+      {/* Hash Search */}
+      <div style={{ marginBottom: 32, maxWidth: 800 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12, color: "#374151" }}>
+          🔎 Search by Config Hash
+        </h2>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <input
+            type="text"
+            placeholder="Enter full or partial hash (min 4 chars)..."
+            value={hashSearch}
+            onChange={(e) => setHashSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && hashSearch.length >= 4) {
+                setHashSearching(true);
+                fetch(`/api/admin/config/search-hash?q=${encodeURIComponent(hashSearch)}`, {
+                  headers: getHeaders(),
+                })
+                  .then((res) => res.json())
+                  .then((data) => {
+                    if (data.results) {
+                      setHashSearchResults(data.results);
+                      if (data.results.length === 0) {
+                        toast("No configs found matching that hash");
+                      }
+                    } else {
+                      toast.error("Search failed");
+                      setHashSearchResults(null);
+                    }
+                  })
+                  .catch((err) => {
+                    toast.error(`Search failed: ${err.message}`);
+                    setHashSearchResults(null);
+                  })
+                  .finally(() => setHashSearching(false));
+              }
+            }}
+            style={{
+              flex: 1,
+              padding: "10px 14px",
+              border: "1px solid #d1d5db",
+              borderRadius: 6,
+              fontSize: 14,
+              fontFamily: "monospace",
+            }}
+          />
+          <button
+            className={`${styles.button} ${styles.buttonPrimary}`}
+            disabled={hashSearch.length < 4 || hashSearching}
+            onClick={() => {
+              if (hashSearch.length >= 4) {
+                setHashSearching(true);
+                fetch(`/api/admin/config/search-hash?q=${encodeURIComponent(hashSearch)}`, {
+                  headers: getHeaders(),
+                })
+                  .then((res) => res.json())
+                  .then((data) => {
+                    if (data.results) {
+                      setHashSearchResults(data.results);
+                      if (data.results.length === 0) {
+                        toast("No configs found matching that hash");
+                      }
+                    } else {
+                      toast.error("Search failed");
+                      setHashSearchResults(null);
+                    }
+                  })
+                  .catch((err) => {
+                    toast.error(`Search failed: ${err.message}`);
+                    setHashSearchResults(null);
+                  })
+                  .finally(() => setHashSearching(false));
+              }
+            }}
+            style={{ padding: "10px 20px", fontSize: 14 }}
+          >
+            {hashSearching ? "Searching..." : "Search"}
+          </button>
+          {hashSearchResults && (
+            <button
+              className={`${styles.button} ${styles.buttonSecondary}`}
+              onClick={() => {
+                setHashSearch("");
+                setHashSearchResults(null);
+              }}
+              style={{ padding: "10px 16px", fontSize: 14 }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Search results */}
+        {hashSearchResults && hashSearchResults.length > 0 && (
+          <div style={{ marginTop: 16, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ background: "#f9fafb", padding: 12, borderBottom: "1px solid #e5e7eb", fontWeight: 600, fontSize: 13 }}>
+              Found {hashSearchResults.length} result{hashSearchResults.length !== 1 ? "s" : ""}
+            </div>
+            <div style={{ maxHeight: 300, overflowY: "auto" }}>
+              {hashSearchResults.map((result) => (
+                <div
+                  key={result.contentHash}
+                  style={{
+                    padding: 12,
+                    borderBottom: "1px solid #f3f4f6",
+                    cursor: "pointer",
+                    background: "#fff",
+                  }}
+                  onClick={() => {
+                    // Navigate to this specific config version
+                    setSelectedType(result.configType as ConfigType);
+                    setProfileKey(result.profileKey);
+                    setTargetHash(result.contentHash);
+                    setActiveTab("active");
+                    setHashSearchResults(null);
+                    setHashSearch("");
+                    toast.success(`Loaded ${result.configType}/${result.profileKey} - ${result.versionLabel}`);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#f9fafb";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#fff";
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        background: result.isActive ? "#d1fae5" : "#e5e7eb",
+                        color: result.isActive ? "#065f46" : "#374151",
+                        borderRadius: 4,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {result.configType}
+                    </span>
+                    <strong style={{ fontSize: 13 }}>{result.profileKey}</strong>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>v{result.versionLabel}</span>
+                    {result.isActive && (
+                      <span style={{ fontSize: 11, color: "#10b981", fontWeight: 600 }}>● ACTIVE</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, fontFamily: "monospace", color: "#6b7280" }}>
+                    {result.contentHash}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
+                    Created: {new Date(result.createdUtc).toLocaleDateString()} {new Date(result.createdUtc).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Active Config Dashboard */}
