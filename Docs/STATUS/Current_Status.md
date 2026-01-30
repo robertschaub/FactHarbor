@@ -69,7 +69,7 @@
 - Multi-provider search support (Google CSE, SerpAPI, Gemini Grounded)
 - SQLite database for local development
 - Automated retry with exponential backoff
-- **Unified Configuration Management** (v2.9.0 Complete): Database-backed version control for all 5 config types (prompt, search, calculation, pipeline, sr) with validation, history, rollback, import/export, and per-job tracking. 158 unit tests.
+- **Unified Configuration Management** (v2.9.0 Foundation ~40% Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **Analyzer integration and job snapshots pending** - settings still require restart.
 
 **Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
 - ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
@@ -301,7 +301,10 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ## Recent Changes
 
-### v2.9.0 Unified Configuration Management Complete (January 30, 2026)
+### v2.9.0 Unified Configuration Management - Foundation Complete (January 30, 2026)
+**Status: ~40% Complete** - Foundation built, analyzer integration pending
+
+**✅ What's Complete:**
 - **Extended Config Types**: Added Pipeline and Source Reliability (SR) config types to unified config system
   - `pipeline` config: Model selection, LLM tiering, analysis behavior, budget controls
   - `sr` config: Source reliability settings with modularity for future standalone extraction
@@ -311,7 +314,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - `GET /api/admin/config/prompt/:profile/export` - Download prompts with metadata
   - `POST /api/admin/config/prompt/:profile/reseed` - Re-seed from disk for dev workflow
   - Text-analysis profiles now supported: `text-analysis-input`, `text-analysis-evidence`, `text-analysis-scope`, `text-analysis-verdict`
-- **Comprehensive Test Coverage**: 158 unit tests for config system
+- **Comprehensive Test Coverage**: 158 unit tests for config system (A+ grade)
   - `config-schemas.test.ts`: 50 tests for validation, parsing, canonicalization
   - `config-storage.test.ts`: 26 tests for CRUD, caching, env overrides
   - `source-reliability-config.test.ts`: 32 tests for SR scoring and caps
@@ -321,6 +324,19 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - Fixed `SOURCE_TYPE_EXPECTED_CAPS` constant naming (was `SOURCE_TYPE_CAPS`)
   - Fixed `getBudgetConfig()` to respect `DEFAULT_BUDGET.enforceHard` when env var unset
   - Fixed budget test to use explicit values since defaults changed in v2.8.2
+
+**🔴 Critical Gaps Remaining:**
+1. **Analyzer Integration**: Analyzer still reads 87 `process.env.FH_*` variables - hot-reload not yet realized
+2. **Job Config Snapshots**: Cannot view complete config that produced a job - auditability compromised
+3. **SR Interface**: SR modularity interface not enforced - not yet extractable
+
+**Remaining Work: ~4-5 weeks**
+- Phase 1: Analyzer Integration (2 weeks, CRITICAL)
+- Phase 2: Job Snapshots (1 week, HIGH)
+- Phase 3: SR Modularity Interface (1 week, MEDIUM)
+- Phase 4: Admin UI Polish (3 days, LOW)
+
+See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md)
 
 ### v2.8.0 LLM Text Analysis Pipeline (January 29-30, 2026)
 - **LLM Text Analysis Pipeline**: Approved for implementation after senior architect review

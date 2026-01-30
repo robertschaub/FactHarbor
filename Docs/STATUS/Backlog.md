@@ -16,7 +16,7 @@
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
-| ✅ **Unified Configuration Management Complete (v2.9.0)**: Extended config system to all 5 types (prompt, search, calculation, pipeline, sr). Added prompt import/export/reseed APIs. 158 unit tests covering schemas, storage, caching, env overrides. | Architecture / Testing | 2026-01-30 | [Current Status](Current_Status.md#v290-unified-configuration-management-complete-january-30-2026) |
+| ✅ **Unified Configuration Management Foundation (v2.9.0)**: Extended config system to all 5 types (prompt, search, calculation, pipeline, sr). Added prompt import/export/reseed APIs. 158 unit tests. Admin UI complete. **Foundation only (~40%)** - analyzer integration and job snapshots pending. | Architecture / Testing | 2026-01-30 | [Implementation Review](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
 | ✅ **LLM Text Analysis Pipeline**: Implemented 4 analysis points with hybrid LLM/heuristic architecture. Bug fix in v2.8.1 removed counter-claim detection from verdict prompt. | Analyzer / LLM | 2026-01-30 | [Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) |
 | ✅ **Promptfoo Test Coverage for Text Analysis**: Created 26 test cases covering all 4 text-analysis prompts (input classification, evidence quality, scope similarity, verdict validation). Total promptfoo coverage now 38 test cases across 6 prompts. | Testing / LLM | 2026-01-30 | [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md) |
 
@@ -26,6 +26,9 @@
 
 | Description | Domain | Urgency | Importance | Effort | Reference |
 |---|---|---|---|---|---|
+| **🔴 UCM Phase 1: Analyzer Integration**: Create config-loader.ts abstraction to replace 87 `process.env.FH_*` reads in analyzer. Enable hot-reload of settings without restart. **CRITICAL for operational value**. | Architecture / Config | high | high | 2 weeks | [UCM Review §Phase 1](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
+| **🟠 UCM Phase 2: Job Config Snapshots**: Implement `job_config_snapshots` table and async capture. Enable viewing complete config that produced any job. **Critical for auditability**. | Architecture / Config | high | high | 1 week | [UCM Review §Phase 2](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
+| **🟡 UCM Phase 3: SR Modularity Interface**: Define SRServiceInterface contract and ensure analyzer uses interface (not direct SR config access). Enable future SR extraction. | Architecture / Config | med | med | 1 week | [UCM Review §Phase 3](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
 | **LLM Text Analysis A/B Testing**: Run promptfoo text-analysis tests and compare heuristic vs LLM modes to validate quality improvements. Test infrastructure ready (26 cases). | Analyzer / Testing | med | high | 1-2 days + $20-50 API | [Promptfoo Testing](../USER_GUIDES/Promptfoo_Testing.md) |
 | Inverse-input symmetry hardening: keep `scripts/inverse-scope-regression.ps1` green; add 2–3 more inverse pairs; define "strict symmetry" vs "best-effort" per test. | Analyzer | med | high | 3-4 days | Existing |
 | Evidence-driven scope refinement guardrails: add lightweight instrumentation (how often refine is applied/rejected + reason) to prevent over-splitting into non-scope "dimensions". | Analyzer | med | high | 2-3 days | Existing |
@@ -54,6 +57,7 @@
 
 | Description | Domain | Urgency | Importance | Effort | Reference |
 |---|---|---|---|---|---|
+| **🟢 UCM Phase 4: Admin UI Polish**: Split routes to `/admin/quality/*` (FactHarbor) and `/admin/sr/*` (SR standalone). Add validation warnings for dangerous config combos. API route consistency. | Web UI / Config | low | low | 3 days | [UCM Review §Phase 4](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
 | **Config admin: auto-save drafts to localStorage**: Protect against accidental page refresh. Recover unsaved drafts on reload. *(Skipped: medium risk of stale draft confusion)* | Web UI / UX | low | low | 0.5 day | UCM UX Review |
 | **Config admin: diff view**: Side-by-side comparison of current edit vs active version before saving. | Web UI / UX | low | low | 2-3 days | UCM UX Review |
 | **Analysis templates/presets**: Domain-specific templates (health, legal, political) with curated search whitelists and KeyFactor hints. | Web UI / UX | low | med | 3-4 days | Improvements #8 |
