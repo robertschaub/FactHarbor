@@ -220,7 +220,7 @@ export interface ConfigWithActivation extends ConfigBlob {
 
 let db: Database | null = null;
 
-async function getDb(): Promise<Database> {
+export async function getDb(): Promise<Database> {
   if (db) return db;
 
   const dbPath = path.resolve(CONFIG_DB_PATH);

@@ -95,7 +95,8 @@ import {
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { recordConfigUsage } from "@/lib/config-storage";
-import { getAnalyzerConfig, type PipelineConfig } from "@/lib/config-loader";
+import { getAnalyzerConfig, loadSearchConfig, type PipelineConfig, type SearchConfig } from "@/lib/config-loader";
+import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
 import type { EvidenceItem } from "./types";
 import {
   getTextAnalysisService,
@@ -9316,6 +9317,23 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     analysisMode: pipelineConfig.analysisMode,
   });
 
+  // ============================================================================
+  // v2.9.0 Phase 2: Capture config snapshot for job auditability
+  // Capture complete resolved config (DB + env overrides) asynchronously
+  // ============================================================================
+  const searchConfigResolved = await loadSearchConfig("default", input.jobId);
+  const srSummary = getSRConfigSummary();
+
+  // Only capture snapshot if jobId is provided
+  const snapshotPromise = input.jobId
+    ? captureConfigSnapshotAsync(
+        input.jobId,
+        pipelineConfig,
+        searchConfigResolved.config, // Extract config from ResolvedConfig
+        srSummary
+      )
+    : Promise.resolve(); // No-op if no jobId
+
   const config = getActiveConfig(pipelineConfig);
   const mode = pipelineConfig.analysisMode;
 
@@ -10205,6 +10223,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       },
     },
   };
+
+  // ============================================================================
+  // v2.9.0 Phase 2: Ensure config snapshot is saved before returning
+  // ============================================================================
+  await snapshotPromise;
 
   return { resultJson, reportMarkdown };
 }
