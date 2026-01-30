@@ -30,28 +30,73 @@ export { HybridTextAnalysisService, hybridTextAnalysisService } from "./text-ana
 // FEATURE FLAGS
 // ============================================================================
 
-/** Feature flag environment variables
+/**
+ * Pipeline config subset for text analysis flags.
+ * Used during UCM Phase 1 migration.
+ */
+export interface TextAnalysisConfig {
+  llmInputClassification?: boolean;
+  llmEvidenceQuality?: boolean;
+  llmScopeSimilarity?: boolean;
+  llmVerdictValidation?: boolean;
+}
+
+/**
+ * Get feature flags from pipeline config or environment variables.
+ *
+ * Priority:
+ * 1. Pipeline config (if provided) - UCM Phase 1
+ * 2. Environment variables (fallback during migration)
+ *
  * Default: true (LLM enabled) - set to "false" to disable
  * v2.8.3: Changed defaults from false to true after prompt-code alignment
  */
-const FEATURE_FLAGS = {
-  inputClassification: process.env.FH_LLM_INPUT_CLASSIFICATION !== "false",
-  evidenceQuality: process.env.FH_LLM_EVIDENCE_QUALITY !== "false",
-  scopeSimilarity: process.env.FH_LLM_SCOPE_SIMILARITY !== "false",
-  verdictValidation: process.env.FH_LLM_VERDICT_VALIDATION !== "false",
-} as const;
+function getFeatureFlags(config?: TextAnalysisConfig): {
+  inputClassification: boolean;
+  evidenceQuality: boolean;
+  scopeSimilarity: boolean;
+  verdictValidation: boolean;
+} {
+  if (config) {
+    // Use pipeline config (UCM Phase 1)
+    return {
+      inputClassification: config.llmInputClassification ?? true,
+      evidenceQuality: config.llmEvidenceQuality ?? true,
+      scopeSimilarity: config.llmScopeSimilarity ?? true,
+      verdictValidation: config.llmVerdictValidation ?? true,
+    };
+  }
 
-/** Check if LLM is enabled for a specific analysis point */
-export function isLLMEnabled(analysisPoint: AnalysisPoint): boolean {
+  // Fallback to environment variables (during migration)
+  return {
+    inputClassification: process.env.FH_LLM_INPUT_CLASSIFICATION !== "false",
+    evidenceQuality: process.env.FH_LLM_EVIDENCE_QUALITY !== "false",
+    scopeSimilarity: process.env.FH_LLM_SCOPE_SIMILARITY !== "false",
+    verdictValidation: process.env.FH_LLM_VERDICT_VALIDATION !== "false",
+  };
+}
+
+/**
+ * Check if LLM is enabled for a specific analysis point.
+ *
+ * @param analysisPoint - The analysis point to check
+ * @param config - Optional pipeline config (UCM Phase 1)
+ */
+export function isLLMEnabled(
+  analysisPoint: AnalysisPoint,
+  config?: TextAnalysisConfig,
+): boolean {
+  const flags = getFeatureFlags(config);
+
   switch (analysisPoint) {
     case "input":
-      return FEATURE_FLAGS.inputClassification;
+      return flags.inputClassification;
     case "evidence":
-      return FEATURE_FLAGS.evidenceQuality;
+      return flags.evidenceQuality;
     case "scope":
-      return FEATURE_FLAGS.scopeSimilarity;
+      return flags.scopeSimilarity;
     case "verdict":
-      return FEATURE_FLAGS.verdictValidation;
+      return flags.verdictValidation;
     default:
       return false;
   }
@@ -95,9 +140,12 @@ export function registerService(
  *
  * The hybrid service checks per-analysis-point feature flags internally,
  * so it will use heuristics for disabled points and LLM for enabled ones.
+ *
+ * @param config - Optional pipeline config (UCM Phase 1)
  */
-export function getTextAnalysisService(): ITextAnalysisService {
-  const anyLLMEnabled = Object.values(FEATURE_FLAGS).some(Boolean);
+export function getTextAnalysisService(config?: TextAnalysisConfig): ITextAnalysisService {
+  const flags = getFeatureFlags(config);
+  const anyLLMEnabled = Object.values(flags).some(Boolean);
 
   if (anyLLMEnabled) {
     // Use hybrid service - it handles per-point feature flag checks
