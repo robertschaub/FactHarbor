@@ -149,22 +149,38 @@ export const DEFAULT_TASK_TIER_MAPPING: Record<TaskType, ModelTier> = {
 
 /**
  * Get the appropriate model for a task
+ *
+ * @param taskType - The type of task (understand, extract_facts, verdict, etc.)
+ * @param provider - LLM provider
+ * @param config - Optional tiering config (pass llmTiering from pipeline config)
  */
 export function getModelForTask(
   taskType: TaskType,
   provider: 'anthropic' | 'openai' | 'google' | 'mistral',
-  config?: Partial<TieredRoutingConfig>
+  config?: Partial<TieredRoutingConfig> | { llmTiering: boolean }
 ): ModelConfig {
   // Check if tiering is enabled
-  const enabled = config?.enabled ?? (process.env.FH_LLM_TIERING === 'true');
-  
+  let enabled: boolean;
+  if (config && 'llmTiering' in config) {
+    // New config system (pipeline config)
+    enabled = config.llmTiering;
+  } else if (config && 'enabled' in config) {
+    // Legacy TieredRoutingConfig
+    enabled = config.enabled;
+  } else {
+    // Fallback to env var (during migration)
+    enabled = process.env.FH_LLM_TIERING !== 'false'; // v2.8.2+ default: true
+  }
+
   if (!enabled) {
     // Tiering disabled - use premium model for everything
     return getPremiumModel(provider);
   }
 
   // Get task tier
-  const taskTierMapping = config?.taskTierMapping ?? DEFAULT_TASK_TIER_MAPPING;
+  const taskTierMapping = (config && 'taskTierMapping' in config)
+    ? config.taskTierMapping
+    : DEFAULT_TASK_TIER_MAPPING;
   const tier = taskTierMapping[taskType];
 
   // Get model for tier
@@ -244,11 +260,15 @@ export function calculateTieringSavings(
 // ============================================================================
 
 /**
- * Load tiering configuration from environment
+ * Load tiering configuration from pipeline config or environment
+ *
+ * @param pipelineConfig - Optional pipeline config from unified config system
  */
-export function loadTieringConfig(): TieredRoutingConfig {
-  const enabled = process.env.FH_LLM_TIERING === 'true';
-  
+export function loadTieringConfig(pipelineConfig?: { llmTiering: boolean }): TieredRoutingConfig {
+  const enabled = pipelineConfig
+    ? pipelineConfig.llmTiering
+    : process.env.FH_LLM_TIERING !== 'false'; // v2.8.2+ default: true
+
   return {
     enabled,
     budgetModels: {
