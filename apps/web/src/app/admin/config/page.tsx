@@ -1653,27 +1653,128 @@ export default function ConfigAdminPage() {
           Effective
         </button>
         {selectedType === "prompt" && (
-          <button
-            className={`${styles.tab}`}
-            onClick={async () => {
-              const url = `/api/admin/config/prompt/${profileKey}/export`;
-              const res = await fetch(url, { headers: getHeaders() });
-              if (res.ok) {
+          <>
+            <button
+              className={`${styles.tab}`}
+              onClick={async () => {
+                const url = `/api/admin/config/prompt/${profileKey}/export`;
+                const res = await fetch(url, { headers: getHeaders() });
+                if (!res.ok) {
+                  alert("Export failed: " + (await res.json()).error);
+                  return;
+                }
                 const blob = await res.blob();
-                const filename = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || `${profileKey}.prompt.md`;
-                const a = document.createElement("a");
-                const objectUrl = URL.createObjectURL(blob);
-                a.href = objectUrl;
-                a.download = filename;
-                a.click();
-                URL.revokeObjectURL(objectUrl); // Clean up to prevent memory leak
-              } else {
-                alert("Export failed: " + (await res.json()).error);
-              }
-            }}
-          >
-            Export
-          </button>
+                const defaultFilename = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || `${profileKey}.prompt.md`;
+
+                // Try File System Access API for folder selection, fallback to download
+                if ("showSaveFilePicker" in window) {
+                  try {
+                    const handle = await (window as any).showSaveFilePicker({
+                      suggestedName: defaultFilename,
+                      types: [{
+                        description: "Prompt Markdown",
+                        accept: { "text/markdown": [".md", ".prompt.md"] },
+                      }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    alert(`Exported to: ${handle.name}`);
+                  } catch (err: any) {
+                    if (err.name !== "AbortError") {
+                      alert(`Export failed: ${err.message}`);
+                    }
+                  }
+                } else {
+                  // Fallback: standard download
+                  const a = document.createElement("a");
+                  const objectUrl = URL.createObjectURL(blob);
+                  a.href = objectUrl;
+                  a.download = defaultFilename;
+                  a.click();
+                  URL.revokeObjectURL(objectUrl);
+                }
+              }}
+            >
+              Export
+            </button>
+            <button
+              className={`${styles.tab}`}
+              onClick={async () => {
+                // Try File System Access API for folder selection, fallback to input
+                if ("showOpenFilePicker" in window) {
+                  try {
+                    const [handle] = await (window as any).showOpenFilePicker({
+                      types: [{
+                        description: "Prompt Markdown",
+                        accept: { "text/markdown": [".md"] },
+                      }],
+                    });
+                    const file = await handle.getFile();
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    formData.append("activateImmediately", "true");
+
+                    const res = await fetch(`/api/admin/config/prompt/${profileKey}/import`, {
+                      method: "POST",
+                      headers: {
+                        "x-admin-key": process.env.NEXT_PUBLIC_ADMIN_KEY || "",
+                      },
+                      body: formData,
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                      alert(`Import successful!\nVersion: ${data.versionLabel || "new"}\nActivated: ${data.activated ? "Yes" : "No"}`);
+                      fetchActiveConfig();
+                      fetchHistory();
+                    } else {
+                      alert(`Import failed: ${data.error || "Unknown error"}\n${data.errors?.join("\n") || ""}`);
+                    }
+                  } catch (err: any) {
+                    if (err.name !== "AbortError") {
+                      alert(`Import failed: ${err.message}`);
+                    }
+                  }
+                } else {
+                  // Fallback: hidden file input
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".md,.prompt.md";
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (!file) return;
+
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    formData.append("activateImmediately", "true");
+
+                    try {
+                      const res = await fetch(`/api/admin/config/prompt/${profileKey}/import`, {
+                        method: "POST",
+                        headers: {
+                          "x-admin-key": process.env.NEXT_PUBLIC_ADMIN_KEY || "",
+                        },
+                        body: formData,
+                      });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        alert(`Import successful!\nVersion: ${data.versionLabel || "new"}\nActivated: ${data.activated ? "Yes" : "No"}`);
+                        fetchActiveConfig();
+                        fetchHistory();
+                      } else {
+                        alert(`Import failed: ${data.error || "Unknown error"}\n${data.errors?.join("\n") || ""}`);
+                      }
+                    } catch (err) {
+                      alert(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
+                    }
+                  };
+                  input.click();
+                }
+              }}
+            >
+              Import
+            </button>
+          </>
         )}
       </div>
 

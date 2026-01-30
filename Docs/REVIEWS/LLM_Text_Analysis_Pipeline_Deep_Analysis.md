@@ -1,14 +1,14 @@
 # LLM Text Analysis Delegation - Pipeline Deep Analysis
 
 **Document Type**: Technical Proposal / Architecture Review
-**Date**: 2026-01-29
+**Date**: 2026-01-30
 **Author**: Claude (AI Assistant)
-**Status**: ✅ IMPLEMENTED (Phases 1-5, 7 Complete)
+**Status**: ✅ IMPLEMENTED & TESTED (v2.8.2 - 26 promptfoo test cases)
 **Related**: `LLM_Delegation_Proposal_Text_Analysis.md` (predecessor)
 
 ---
 
-## Implementation Status (2026-01-29)
+## Implementation Status (2026-01-30)
 
 > **Implementation Complete**: The LLM Text Analysis Pipeline has been implemented for both the Orchestrated and Monolithic Canonical pipelines. All 4 analysis points are integrated with feature flag control and heuristic fallback.
 
@@ -21,10 +21,11 @@
 | `apps/web/src/lib/analyzer/text-analysis-llm.ts` | LLM implementation with prompt loading |
 | `apps/web/src/lib/analyzer/text-analysis-hybrid.ts` | Hybrid service with fallback |
 | `apps/web/src/lib/analyzer/text-analysis-service.ts` | Service registry and feature flags |
-| `apps/web/prompts/text-analysis-input.prompt.md` | Call 1: Input Classification prompt |
-| `apps/web/prompts/text-analysis-evidence.prompt.md` | Call 2: Evidence Quality prompt |
-| `apps/web/prompts/text-analysis-scope.prompt.md` | Call 3: Scope Similarity prompt |
-| `apps/web/prompts/text-analysis-verdict.prompt.md` | Call 4: Verdict Validation prompt |
+| `apps/web/prompts/text-analysis/text-analysis-input.prompt.md` | Call 1: Input Classification prompt (v1.0.0) |
+| `apps/web/prompts/text-analysis/text-analysis-evidence.prompt.md` | Call 2: Evidence Quality prompt (v1.0.0) |
+| `apps/web/prompts/text-analysis/text-analysis-scope.prompt.md` | Call 3: Scope Similarity prompt (v1.0.0) |
+| `apps/web/prompts/text-analysis/text-analysis-verdict.prompt.md` | Call 4: Verdict Validation prompt (v1.1.0) |
+| `apps/web/prompts/text-analysis/README.md` | Documentation for prompt files |
 
 ### Integration Points (orchestrated.ts)
 
@@ -63,6 +64,28 @@ FH_LLM_VERDICT_VALIDATION=true
 - **Phase 6**: Optimization & Cleanup (requires production A/B testing data)
 - **Phase 7**: Monolithic Canonical Integration ✅ COMPLETE
 - **Phase 8**: Monolithic Dynamic (no action - documented)
+
+### Promptfoo Test Coverage (v2.8.2)
+
+All 4 text-analysis prompts now have comprehensive promptfoo test coverage:
+
+| Prompt | Test Cases | Key Assertions |
+|--------|------------|----------------|
+| `text-analysis-input` | 8 | Comparative, compound, claim types, complexity, decomposition |
+| `text-analysis-evidence` | 5 | Quality levels (high/medium/low/filter), expert attribution |
+| `text-analysis-scope` | 5 | Similarity thresholds, phase buckets, merge recommendations |
+| `text-analysis-verdict` | 8 | Inversion detection, harm potential, contestation |
+| **Total** | **26** | - |
+
+**Running Tests**:
+```bash
+npm run promptfoo:text-analysis   # Run text-analysis tests only
+npm run promptfoo:all             # Run all 38 promptfoo tests
+```
+
+**Test Configuration**: `apps/web/promptfooconfig.text-analysis.yaml`
+
+See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
 
 ### Live Testing Results (2026-01-29)
 
@@ -4016,6 +4039,86 @@ These are missing from the current Phase 7 section.
 **Reviewer**: Claude Opus 4.5
 **Date**: 2026-01-29
 **Verdict**: Multi-pipeline extension enhances the proposal without introducing significant risk. The sequential orchestrated-first approach is correct architecture.
+
+---
+
+## Implementation Approval (2026-01-30)
+
+**Status**: ✅ IMPLEMENTED AND VERIFIED
+
+### Critical Bug Fix: Counter-Claim Detection Removal
+
+**Issue Identified**: When LLM text analysis was enabled (`FH_LLM_VERDICT_VALIDATION=true`), analysis results were **worse** than with heuristics alone. Root cause investigation revealed:
+
+1. **Problem**: The verdict validation prompt (v1.0.0) included counter-claim detection (`isCounterClaim`, `polarity` fields)
+2. **Root Cause**: Counter-claims have their verdicts **inverted** during aggregation (85% becomes 15%). The verdict phase has insufficient context compared to the `understandClaim` phase which already does superior counter-claim detection with full context.
+3. **Impact**: LLM counter-claim detection was **overriding** better earlier detection, causing incorrect verdict inversions.
+
+**Fix Applied** (2026-01-30):
+
+| Component | Change | Version |
+|-----------|--------|---------|
+| `text-analysis-verdict.prompt.md` | Removed `isCounterClaim` and `polarity` from output format | v1.1.0 |
+| `text-analysis-heuristic.ts` | Returns `undefined` for `isCounterClaim` and `polarity` | - |
+| Documentation | Added explicit note that counter-claim detection is handled in understand phase | - |
+
+**Prompt Note Added**:
+```markdown
+NOTE: Counter-claim detection is handled separately in the understand phase with full context.
+Do NOT attempt to detect counter-claims here - that would override better earlier detection.
+```
+
+### File Reorganization (2026-01-30)
+
+Text-analysis prompts moved to dedicated subfolder for better organization:
+
+**Old Location**: `apps/web/prompts/text-analysis-*.prompt.md`
+**New Location**: `apps/web/prompts/text-analysis/text-analysis-*.prompt.md`
+
+**Files Moved**:
+| File | Version | Last Modified |
+|------|---------|---------------|
+| `text-analysis-input.prompt.md` | 1.0.0 | 2026-01-29 |
+| `text-analysis-evidence.prompt.md` | 1.0.0 | 2026-01-29 |
+| `text-analysis-scope.prompt.md` | 1.0.0 | 2026-01-29 |
+| `text-analysis-verdict.prompt.md` | 1.1.0 | 2026-01-30 |
+
+**Code Updated**:
+- `config-storage.ts`: Added `getPromptFilePath()` helper to route text-analysis profiles to subfolder
+- Database reseeded with new file locations
+
+**Documentation Created**:
+- `apps/web/prompts/text-analysis/README.md` - File listing, hashes, feature flags, reseed instructions
+
+### Verification Test Results
+
+Comparison tests run between heuristic (code) and LLM (file prompts):
+
+| Test Category | Tests | Passed | Failed |
+|---------------|-------|--------|--------|
+| Input Classification | 4 | 4 | 0 |
+| Evidence Quality | 3 | 3 | 0 |
+| Scope Similarity | 2 | 1 | 1* |
+| Verdict Validation | 3 | 3 | 0 |
+| **Total** | **12** | **11** | **1** |
+
+*Expected failure: Jaccard word similarity cannot detect semantic equivalence for lexically different phrases (e.g., "EV manufacturing" ≠ "electric vehicle production").
+
+### Active Database Hashes (2026-01-30)
+
+| Profile | Content Hash |
+|---------|--------------|
+| text-analysis-input | `5daeb5327b0a...` |
+| text-analysis-evidence | `4fc7afb24c6e...` |
+| text-analysis-scope | `94d867f24657...` |
+| text-analysis-verdict | `5cf3ea03e472...` |
+
+### Version History Summary
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-01-29 | Initial implementation of all 4 analysis points |
+| 1.1.0 | 2026-01-30 | Removed counter-claim detection from verdict prompt; file reorganization |
 
 ---
 

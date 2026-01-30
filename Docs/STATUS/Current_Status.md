@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
-**Version**: 2.6.41 (Code) | 2.7.0 (Schema Output)
-**Last Updated**: 2026-01-29
+**Version**: 2.8.2 (Code) | 2.7.0 (Schema Output)
+**Last Updated**: 2026-01-30
 **Status**: POC1 Operational (Phase 2 Complete)
 
 ---
@@ -44,6 +44,16 @@
 - **Provider-Specific Prompts**: Optimized formatting for Anthropic, OpenAI, Google, Mistral
   - See: [Provider Prompt Formatting](../REFERENCE/Provider_Prompt_Formatting.md)
 
+**LLM Text Analysis Pipeline (v2.8.1 - Implemented & Verified):**
+- **Four Analysis Points**: Input Classification, Evidence Quality, Scope Similarity, Verdict Validation
+- **Hybrid Architecture**: LLM-enabled analysis with automatic heuristic fallback
+- **Per-Point Feature Flags**: `FH_LLM_INPUT_CLASSIFICATION`, `FH_LLM_EVIDENCE_QUALITY`, `FH_LLM_SCOPE_SIMILARITY`, `FH_LLM_VERDICT_VALIDATION`
+- **Multi-Pipeline Support**: Works across Orchestrated, Monolithic Canonical, and Monolithic Dynamic pipelines
+- **Telemetry**: Built-in metrics for success rates, latency, fallback usage
+- **Bug Fix (v2.8.1)**: Counter-claim detection removed from verdict prompt (was overriding better understand-phase detection)
+- **Prompt Files**: Located in `apps/web/prompts/text-analysis/` with README documentation
+- See: [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
+
 **Shared Module Architecture:**
 - `scopes.ts`: Scope detection (`detectScopes()`, `formatDetectedScopesHint()`)
 - `aggregation.ts`: Verdict weighting (`validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()`)
@@ -68,6 +78,17 @@
 - ⚠️ **Schema Retry Logic**: Implemented in separate module, not integrated
 - ⚠️ **Parallel Verdict Generation**: Built (50-80% speed improvement) but not integrated
 - ⚠️ **Tiered LLM Routing**: Built (50-70% cost reduction) but not integrated
+
+**Promptfoo Testing Infrastructure (v2.8.2 - OPERATIONAL)**:
+- ✅ **38 Total Test Cases** across 3 configurations
+- ✅ **Source Reliability Tests**: 7 test cases (score caps, ratings, evidence citation)
+- ✅ **Verdict Generation Tests**: 5 test cases (rating direction, accuracy bands)
+- ✅ **Text Analysis Pipeline Tests**: 26 test cases covering all 4 analysis points
+  - Input Classification (8 tests): Comparative, compound, claim types, decomposition
+  - Evidence Quality (5 tests): Quality levels, expert attribution, filtering
+  - Scope Similarity (5 tests): Duplicate detection, phase buckets, merge logic
+  - Verdict Validation (8 tests): Inversion, harm potential, contestation
+- See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
 
 **UI/UX:**
 - Analysis submission interface
@@ -245,11 +266,12 @@ ANTHROPIC_API_KEY=sk-ant-...
 # GOOGLE_GENERATIVE_AI_API_KEY=AIza...
 # MISTRAL_API_KEY=...
 
-# Search Provider
+# Search Provider (REQUIRED for web search in ALL pipelines)
 FH_SEARCH_ENABLED=true
 FH_SEARCH_PROVIDER=auto  # auto | serpapi | google-cse
 SERPAPI_API_KEY=...
 # Or: GOOGLE_CSE_API_KEY=... and GOOGLE_CSE_ID=...
+# NOTE: Without search credentials, all pipelines run without web sources
 
 # Internal Keys (must match between web and API)
 FH_ADMIN_KEY=your-secure-admin-key
@@ -277,6 +299,31 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ---
 
 ## Recent Changes
+
+### v2.8.0 LLM Text Analysis Pipeline (January 29-30, 2026)
+- **LLM Text Analysis Pipeline**: Approved for implementation after senior architect review
+  - 4 analysis points: Input Classification, Evidence Quality, Scope Similarity, Verdict Validation
+  - ITextAnalysisService interface with HeuristicTextAnalysisService, LLMTextAnalysisService, HybridTextAnalysisService
+  - Per-analysis-point feature flags for gradual rollout
+  - Multi-pipeline support (Orchestrated, Canonical, Dynamic)
+  - Cost estimate: $0.007-0.028/job (~5.3% increase with Haiku)
+  - See: [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
+- **Search Provider Documentation**: Clarified that all pipelines require search credentials
+  - Added Section 8 to Pipeline Architecture doc
+  - Added troubleshooting for "No sources fetched" issue
+  - See: [Pipeline Architecture](../ARCHITECTURE/Pipeline_TriplePath_Architecture.md#8-search-provider-requirements)
+
+### v2.8.1 Bug Fix & File Reorganization (January 30, 2026)
+- **Critical Bug Fix**: Counter-claim detection removed from verdict validation
+  - **Issue**: LLM text analysis produced worse results than heuristics alone
+  - **Root Cause**: Verdict prompt detected counter-claims with insufficient context, overriding better understand-phase detection
+  - **Impact**: False counter-claim detection caused incorrect verdict inversions (85% → 15%)
+  - **Fix**: Removed `isCounterClaim` and `polarity` from verdict prompt (v1.0.0 → v1.1.0)
+- **Prompt File Reorganization**
+  - Moved text-analysis prompts to `prompts/text-analysis/` subfolder
+  - Added `getPromptFilePath()` helper to `config-storage.ts`
+  - Created `prompts/text-analysis/README.md` documentation
+- **Database Reseeded**: All 4 text-analysis prompts reseeded with new file locations
 
 ### v2.6.41 (January 27-28, 2026)
 - **Unified Configuration Management**: Complete config system with database-backed version control
@@ -462,6 +509,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 | No progress updates | Check `FH_ADMIN_KEY` matches `Admin:Key` |
 | API not starting | DB is auto-created on startup; check API console for DB errors, and (local dev) delete `apps/api/factharbor.db` to recreate |
 | Search not working | Verify `FH_SEARCH_ENABLED=true` and search API key |
+| No sources fetched | Configure `SERPAPI_API_KEY` or `GOOGLE_CSE_API_KEY`+`GOOGLE_CSE_ID`. See [LLM Configuration](../USER_GUIDES/LLM_Configuration.md#search-provider-issues) |
 
 ---
 

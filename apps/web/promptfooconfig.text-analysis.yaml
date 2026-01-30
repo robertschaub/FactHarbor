@@ -1,0 +1,734 @@
+# FactHarbor Text Analysis Prompts - Promptfoo Configuration
+# Tests the new LLM text analysis pipeline (v2.9) prompts
+# Covers: input classification, evidence quality, scope similarity, verdict validation
+
+description: "FactHarbor Text Analysis Pipeline Evaluation"
+
+# ============================================================================
+# PROVIDERS
+# ============================================================================
+providers:
+  - id: anthropic:claude-3-5-haiku-20241022
+    label: Claude Haiku
+    config:
+      temperature: 0
+    transform: |
+      let cleaned = output;
+      const match = output.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (match) {
+        cleaned = match[1].trim();
+      }
+      return cleaned;
+
+  - id: openai:gpt-4o-mini
+    label: GPT-4o Mini
+    config:
+      temperature: 0
+    transform: |
+      let cleaned = output;
+      const match = output.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (match) {
+        cleaned = match[1].trim();
+      }
+      return cleaned;
+
+# ============================================================================
+# DEFAULT TEST SETTINGS
+# ============================================================================
+defaultTest:
+  options:
+    timeout: 60000
+    transform: |
+      let cleaned = output;
+      const match = output.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (match) {
+        cleaned = match[1].trim();
+      }
+      return cleaned;
+
+# ============================================================================
+# TEST SUITES
+# ============================================================================
+tests:
+  # ==========================================================================
+  # SECTION 1: INPUT CLASSIFICATION & DECOMPOSITION
+  # ==========================================================================
+
+  # --------------------------------------------------------------------------
+  # TEST 1.1: Simple Factual Claim (non-comparative, non-compound)
+  # --------------------------------------------------------------------------
+  - description: "Simple factual claim - should be simple, factual, non-comparative"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+    vars:
+      inputText: "The Earth is approximately 4.5 billion years old"
+      pipeline: "monolithic-canonical"
+      promptHash: "test-hash-1"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.isComparative === false;
+        metric: not_comparative
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.isCompound === false;
+        metric: not_compound
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.claimType === "factual";
+        metric: factual_type
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.complexity === "simple";
+        metric: simple_complexity
+
+  # --------------------------------------------------------------------------
+  # TEST 1.2: Comparative Claim Detection
+  # --------------------------------------------------------------------------
+  - description: "Comparative claim - should detect 'more efficient than' pattern"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+    vars:
+      inputText: "Electric vehicles are more efficient than hydrogen fuel cell cars"
+      pipeline: "monolithic-canonical"
+      promptHash: "test-hash-2"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.isComparative === true;
+        metric: comparative_detected
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.claimType === "factual";
+        metric: factual_type
+
+  # --------------------------------------------------------------------------
+  # TEST 1.3: Compound Claim Detection (semicolon separator)
+  # --------------------------------------------------------------------------
+  - description: "Compound claim with semicolon - should detect multiple claims"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+    vars:
+      inputText: "Biden won the 2020 election; inflation reached 40-year highs in 2022"
+      pipeline: "monolithic-canonical"
+      promptHash: "test-hash-3"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.isCompound === true;
+        metric: compound_detected
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.decomposedClaims && data.result.decomposedClaims.length >= 2;
+        metric: multiple_claims_extracted
+
+  # --------------------------------------------------------------------------
+  # TEST 1.4: Compound with "and" joining independent claims
+  # --------------------------------------------------------------------------
+  - description: "Compound claim with 'and' joining independent predicates"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+    vars:
+      inputText: "The CEO resigned and the stock price dropped 15%"
+      pipeline: "monolithic-canonical"
+      promptHash: "test-hash-4"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.isCompound === true;
+        metric: compound_with_and
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.decomposedClaims && data.result.decomposedClaims.length >= 2;
+        metric: split_independent_claims
+
+  # --------------------------------------------------------------------------
+  # TEST 1.5: Non-compound "and" (single predicate)
+  # --------------------------------------------------------------------------
+  - description: "Non-compound 'and' - single predicate should NOT split"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+    vars:
+      inputText: "Cats and dogs are both mammals that make popular pets"
+      pipeline: "monolithic-canonical"
+      promptHash: "test-hash-5"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          // This is a single predicate about multiple subjects - should NOT be compound
+          // OR if compound, should still be treated as 1 claim about multiple subjects
+          return data.result && (data.result.isCompound === false ||
+            (data.result.decomposedClaims && data.result.decomposedClaims.length === 1));
+        metric: single_predicate_preserved
+
+  # --------------------------------------------------------------------------
+  # TEST 1.6: Evaluative Claim Type
+  # --------------------------------------------------------------------------
+  - description: "Evaluative claim - should detect opinion/judgment"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+    vars:
+      inputText: "Tesla is the best electric vehicle company in the world"
+      pipeline: "monolithic-canonical"
+      promptHash: "test-hash-6"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.claimType === "evaluative";
+        metric: evaluative_type
+
+  # --------------------------------------------------------------------------
+  # TEST 1.7: Predictive Claim Type
+  # --------------------------------------------------------------------------
+  - description: "Predictive claim - should detect future prediction"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+    vars:
+      inputText: "AI will replace 50% of jobs by 2035"
+      pipeline: "monolithic-canonical"
+      promptHash: "test-hash-7"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.claimType === "predictive";
+        metric: predictive_type
+
+  # --------------------------------------------------------------------------
+  # TEST 1.8: Complex Multi-Context Claim
+  # --------------------------------------------------------------------------
+  - description: "Complex claim requiring significant context"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+    vars:
+      inputText: "The government's new healthcare policy will reduce costs for middle-class families while improving coverage for pre-existing conditions, but critics argue it will increase the national debt and reduce doctor choice"
+      pipeline: "monolithic-canonical"
+      promptHash: "test-hash-8"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.complexity === "complex";
+        metric: complex_classification
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          return data.result && data.result.isCompound === true;
+        metric: compound_detected
+
+  # ==========================================================================
+  # SECTION 2: EVIDENCE QUALITY ASSESSMENT
+  # ==========================================================================
+
+  # --------------------------------------------------------------------------
+  # TEST 2.1: High Quality Evidence (statistics with numbers)
+  # --------------------------------------------------------------------------
+  - description: "High quality statistical evidence with specific numbers"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+    vars:
+      thesisText: "Electric vehicles produce less CO2 than gasoline cars"
+      promptHash: "test-hash-9"
+      evidenceItems: |
+        [E1] EPA Report (2024): Battery electric vehicles produce 2,817 lbs CO2-equivalent per year on average, compared to 11,435 lbs for gasoline vehicles. Source: epa.gov/greenvehicles
+        [E2] Department of Energy Study (2023): EVs are 3-4 times more efficient than internal combustion engines, converting 85-90% of energy to motion vs 20-30% for ICE. Source: energy.gov/eere
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const e1 = data.result && data.result.find(e => e.evidenceId === "E1");
+          return e1 && e1.qualityAssessment === "high";
+        metric: high_quality_stats
+
+  # --------------------------------------------------------------------------
+  # TEST 2.2: Low Quality Evidence (vague attribution)
+  # --------------------------------------------------------------------------
+  - description: "Low quality evidence with vague attribution"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+    vars:
+      thesisText: "Coffee is good for health"
+      promptHash: "test-hash-10"
+      evidenceItems: |
+        [E1] Some experts say coffee might have health benefits.
+        [E2] Many studies suggest coffee could be beneficial.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const e1 = data.result && data.result.find(e => e.evidenceId === "E1");
+          return e1 && (e1.qualityAssessment === "low" || e1.qualityAssessment === "filter");
+        metric: vague_attribution_detected
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const e1 = data.result && data.result.find(e => e.evidenceId === "E1");
+          return e1 && e1.issues && e1.issues.length > 0;
+        metric: issues_identified
+
+  # --------------------------------------------------------------------------
+  # TEST 2.3: Medium Quality Evidence (partial criteria)
+  # --------------------------------------------------------------------------
+  - description: "Medium quality evidence - meets some criteria"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+    vars:
+      thesisText: "Remote work improves productivity"
+      promptHash: "test-hash-11"
+      evidenceItems: |
+        [E1] Stanford University found that remote workers showed productivity gains. The study was conducted over several months with call center employees.
+        [E2] Microsoft 2022 Report: Collaboration patterns changed significantly with remote work, with some metrics improving and others declining.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const e1 = data.result && data.result.find(e => e.evidenceId === "E1");
+          // Stanford study has institution but lacks specific numbers - medium
+          return e1 && (e1.qualityAssessment === "medium" || e1.qualityAssessment === "high");
+        metric: medium_quality_partial
+
+  # --------------------------------------------------------------------------
+  # TEST 2.4: Filter-worthy Evidence (irrelevant)
+  # --------------------------------------------------------------------------
+  - description: "Evidence that should be filtered (irrelevant)"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+    vars:
+      thesisText: "Electric vehicles are safer than gasoline cars"
+      promptHash: "test-hash-12"
+      evidenceItems: |
+        [E1] Electric vehicles come in many colors including red, blue, and white.
+        [E2] The first electric car was invented in the 1800s.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const e1 = data.result && data.result.find(e => e.evidenceId === "E1");
+          return e1 && e1.qualityAssessment === "filter";
+        metric: irrelevant_filtered
+
+  # --------------------------------------------------------------------------
+  # TEST 2.5: Expert Quote Quality Check
+  # --------------------------------------------------------------------------
+  - description: "Expert quote - should require named expert with credentials"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+    vars:
+      thesisText: "Climate change is accelerating"
+      promptHash: "test-hash-13"
+      evidenceItems: |
+        [E1] Dr. James Hansen, former NASA climate scientist and professor at Columbia University, stated: "We are seeing unprecedented warming that exceeds our models from 20 years ago."
+        [E2] An expert says climate change is real and we should be worried.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const e1 = data.result && data.result.find(e => e.evidenceId === "E1");
+          const e2 = data.result && data.result.find(e => e.evidenceId === "E2");
+          return e1 && e2 &&
+            (e1.qualityAssessment === "high" || e1.qualityAssessment === "medium") &&
+            (e2.qualityAssessment === "low" || e2.qualityAssessment === "filter");
+        metric: expert_attribution_check
+
+  # ==========================================================================
+  # SECTION 3: SCOPE SIMILARITY ANALYSIS
+  # ==========================================================================
+
+  # --------------------------------------------------------------------------
+  # TEST 3.1: Duplicate Scopes (should merge)
+  # --------------------------------------------------------------------------
+  - description: "Duplicate scopes - same entity, should recommend merge"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+    vars:
+      promptHash: "test-hash-14"
+      contextList: |
+        Available contexts:
+        - EPA US emissions standards
+        - US Environmental Protection Agency regulations
+      scopePairs: |
+        Scope Pair 1:
+        - Scope A: "EPA emissions standards for passenger vehicles"
+        - Scope B: "US EPA regulations on car emissions"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const pair = data.result && data.result[0];
+          return pair && pair.similarity >= 0.85;
+        metric: high_similarity_detected
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const pair = data.result && data.result[0];
+          return pair && pair.shouldMerge === true;
+        metric: merge_recommended
+
+  # --------------------------------------------------------------------------
+  # TEST 3.2: Different Scopes (should NOT merge)
+  # --------------------------------------------------------------------------
+  - description: "Different scopes - different jurisdictions, should not merge"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+    vars:
+      promptHash: "test-hash-15"
+      contextList: |
+        Available contexts:
+        - US EPA standards
+        - EU emissions regulations
+      scopePairs: |
+        Scope Pair 1:
+        - Scope A: "US EPA tailpipe emissions standards"
+        - Scope B: "European Union Euro 7 emissions regulations"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const pair = data.result && data.result[0];
+          return pair && pair.similarity < 0.85;
+        metric: low_similarity_detected
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const pair = data.result && data.result[0];
+          return pair && pair.shouldMerge === false;
+        metric: no_merge_recommended
+
+  # --------------------------------------------------------------------------
+  # TEST 3.3: Phase Bucket Classification - Production
+  # --------------------------------------------------------------------------
+  - description: "Phase bucket - production phase classification"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+    vars:
+      promptHash: "test-hash-16"
+      contextList: |
+        Available contexts:
+        - Manufacturing emissions
+        - Factory production metrics
+      scopePairs: |
+        Scope Pair 1:
+        - Scope A: "Battery manufacturing emissions in China"
+        - Scope B: "EV production CO2 footprint"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const pair = data.result && data.result[0];
+          return pair && pair.phaseBucketA === "production" && pair.phaseBucketB === "production";
+        metric: production_phase_detected
+
+  # --------------------------------------------------------------------------
+  # TEST 3.4: Phase Bucket Classification - Usage
+  # --------------------------------------------------------------------------
+  - description: "Phase bucket - usage phase classification"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+    vars:
+      promptHash: "test-hash-17"
+      contextList: |
+        Available contexts:
+        - Vehicle operation metrics
+        - Driving emissions data
+      scopePairs: |
+        Scope Pair 1:
+        - Scope A: "Tailpipe emissions during driving"
+        - Scope B: "Operating costs per mile"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const pair = data.result && data.result[0];
+          return pair && pair.phaseBucketA === "usage" && pair.phaseBucketB === "usage";
+        metric: usage_phase_detected
+
+  # --------------------------------------------------------------------------
+  # TEST 3.5: Mixed Phase Buckets (different phases)
+  # --------------------------------------------------------------------------
+  - description: "Mixed phase buckets - production vs usage"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+    vars:
+      promptHash: "test-hash-18"
+      contextList: |
+        Available contexts:
+        - Full lifecycle analysis
+      scopePairs: |
+        Scope Pair 1:
+        - Scope A: "Battery manufacturing emissions"
+        - Scope B: "Vehicle operating emissions"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const pair = data.result && data.result[0];
+          return pair && pair.phaseBucketA !== pair.phaseBucketB;
+        metric: different_phases_detected
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const pair = data.result && data.result[0];
+          return pair && pair.shouldMerge === false;
+        metric: no_merge_for_different_phases
+
+  # ==========================================================================
+  # SECTION 4: VERDICT VALIDATION
+  # ==========================================================================
+
+  # --------------------------------------------------------------------------
+  # TEST 4.1: Inversion Detection (full mode)
+  # --------------------------------------------------------------------------
+  - description: "Inversion detection - reasoning contradicts verdict"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+    vars:
+      mode: "full"
+      thesisText: "Hydrogen cars are more efficient than electric cars"
+      promptHash: "test-hash-19"
+      evidenceSummary: "Evidence shows EVs have 70-90% efficiency vs 25-35% for hydrogen."
+      claimVerdicts: |
+        Claim 1:
+        - claimId: "claim-1"
+        - verdict: 85 (MOSTLY TRUE)
+        - reasoning: "The evidence clearly shows that electric vehicles are significantly more efficient than hydrogen fuel cell vehicles. EV efficiency is 70-90% while hydrogen is only 25-35%. This directly contradicts the claim."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.isInverted === true;
+        metric: inversion_detected
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.suggestedCorrection !== null && claim.suggestedCorrection <= 35;
+        metric: correction_suggested
+
+  # --------------------------------------------------------------------------
+  # TEST 4.2: Non-Inverted Verdict
+  # --------------------------------------------------------------------------
+  - description: "Non-inverted verdict - reasoning matches verdict"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+    vars:
+      mode: "full"
+      thesisText: "The Earth is approximately 4.5 billion years old"
+      promptHash: "test-hash-20"
+      evidenceSummary: "Multiple radiometric dating methods confirm 4.54 billion years."
+      claimVerdicts: |
+        Claim 1:
+        - claimId: "claim-1"
+        - verdict: 95 (TRUE)
+        - reasoning: "Scientific consensus strongly supports this claim. Multiple independent dating methods converge on 4.54 billion years."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.isInverted === false;
+        metric: no_inversion
+
+  # --------------------------------------------------------------------------
+  # TEST 4.3: High Harm Potential Detection
+  # --------------------------------------------------------------------------
+  - description: "High harm potential - death/injury keywords"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+    vars:
+      mode: "harm_potential_only"
+      thesisText: "The vaccine caused 10,000 deaths"
+      promptHash: "test-hash-21"
+      evidenceSummary: "VAERS reports are unverified; CDC confirms vaccine safety."
+      claimVerdicts: |
+        Claim 1:
+        - claimId: "claim-1"
+        - verdict: 15 (MOSTLY FALSE)
+        - reasoning: "VAERS reports are self-submitted and unverified. CDC analysis shows no causal link between vaccines and reported deaths."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.harmPotential === "high";
+        metric: high_harm_detected
+
+  # --------------------------------------------------------------------------
+  # TEST 4.4: Medium Harm Potential (default)
+  # --------------------------------------------------------------------------
+  - description: "Medium harm potential - standard claim"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+    vars:
+      mode: "harm_potential_only"
+      thesisText: "Coffee consumption reduces diabetes risk"
+      promptHash: "test-hash-22"
+      evidenceSummary: "Meta-analyses show 6% reduced risk per cup."
+      claimVerdicts: |
+        Claim 1:
+        - claimId: "claim-1"
+        - verdict: 75 (MOSTLY TRUE)
+        - reasoning: "Multiple studies support this association, though causation is not established."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.harmPotential === "medium";
+        metric: medium_harm_default
+
+  # --------------------------------------------------------------------------
+  # TEST 4.5: Contestation Detection - Established Counter-Evidence
+  # --------------------------------------------------------------------------
+  - description: "Contestation with documented counter-evidence"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+    vars:
+      mode: "contestation_only"
+      thesisText: "Masks are ineffective at preventing COVID transmission"
+      promptHash: "test-hash-23"
+      evidenceSummary: "Claim is disputed. Multiple peer-reviewed studies show mask effectiveness."
+      claimVerdicts: |
+        Claim 1:
+        - claimId: "claim-1"
+        - verdict: 20 (MOSTLY FALSE)
+        - reasoning: "This claim is contested by numerous peer-reviewed studies and official health agency guidance. Research published in journals like The Lancet and JAMA demonstrates mask effectiveness."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.contestation && claim.contestation.isContested === true;
+        metric: contested_detected
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.contestation &&
+            (claim.contestation.factualBasis === "established" || claim.contestation.factualBasis === "disputed");
+        metric: established_counter_evidence
+
+  # --------------------------------------------------------------------------
+  # TEST 4.6: Opinion-only Doubt (not true contestation)
+  # --------------------------------------------------------------------------
+  - description: "Opinion doubt vs documented contestation"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+    vars:
+      mode: "contestation_only"
+      thesisText: "The economic policy will create jobs"
+      promptHash: "test-hash-24"
+      evidenceSummary: "Policy supporters cite projections. Opposition criticizes methodology."
+      claimVerdicts: |
+        Claim 1:
+        - claimId: "claim-1"
+        - verdict: 55 (MIXED)
+        - reasoning: "Political opponents have criticized this claim, calling it unrealistic. However, no peer-reviewed economic analysis contradicts the projections. The criticism appears to be political opinion rather than documented counter-evidence."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          // Opinion-only criticism should result in opinion factualBasis or not contested
+          return claim && claim.contestation &&
+            (claim.contestation.factualBasis === "opinion" || claim.contestation.isContested === false);
+        metric: opinion_vs_established
+
+  # --------------------------------------------------------------------------
+  # TEST 4.7: Causal Claim with Methodology Criticism
+  # --------------------------------------------------------------------------
+  - description: "Causal claim contested on methodology grounds"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+    vars:
+      mode: "full"
+      thesisText: "The new drug caused a 50% reduction in symptoms"
+      promptHash: "test-hash-25"
+      evidenceSummary: "Study claims causation but critics note correlation-only design."
+      claimVerdicts: |
+        Claim 1:
+        - claimId: "claim-1"
+        - verdict: 60 (LEANING TRUE)
+        - reasoning: "The study shows correlation between drug use and symptom reduction. However, researchers note the study design cannot establish causation. Critics argue the methodology does not prove causal relationship."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.contestation && claim.contestation.isContested === true;
+        metric: causal_contestation
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.contestation && claim.contestation.factualBasis === "established";
+        metric: methodology_criticism_established
+
+  # --------------------------------------------------------------------------
+  # TEST 4.8: Fraud/Crime Harm Detection
+  # --------------------------------------------------------------------------
+  - description: "High harm - fraud accusation"
+    prompts:
+      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+    vars:
+      mode: "harm_potential_only"
+      thesisText: "The company committed fraud by falsifying emissions data"
+      promptHash: "test-hash-26"
+      evidenceSummary: "Court documents detail systematic fraud over 10 years."
+      claimVerdicts: |
+        Claim 1:
+        - claimId: "claim-1"
+        - verdict: 90 (TRUE)
+        - reasoning: "Court records and regulatory findings confirm the company deliberately falsified emissions testing data for years, constituting fraud."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const data = JSON.parse(output);
+          const claim = data.result && data.result.find(c => c.claimId === "claim-1");
+          return claim && claim.harmPotential === "high";
+        metric: fraud_high_harm
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+outputPath: ./prompts/promptfoo-results/text-analysis.json
+
+sharing: false

@@ -1,8 +1,8 @@
 # FactHarbor POC1 Architecture Overview
 
-**Version:** 2.6.41
+**Version:** 2.8.2
 **Schema Version:** 2.7.0
-**Last Updated:** January 29, 2026
+**Last Updated:** January 30, 2026
 
 This document provides a comprehensive technical overview of FactHarbor's POC1 architecture, including system flows, data models, component interactions, and current implementation status.
 
@@ -69,8 +69,40 @@ flowchart LR
 | `scopes.ts` | `detectScopes()`, `formatDetectedScopesHint()` | Heuristic scope pre-detection |
 | `aggregation.ts` | `validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()` | Verdict weighting and contestation |
 | `claim-decomposition.ts` | `normalizeClaimText()`, `deriveCandidateClaimTexts()` | Claim text parsing |
+| `text-analysis-service.ts` | `getTextAnalysisService()`, `isLLMEnabled()` | LLM/Heuristic hybrid text analysis |
+| `text-analysis-hybrid.ts` | `HybridTextAnalysisService` | Automatic fallback from LLM to heuristics |
 
 See `Docs/REFERENCE/TERMINOLOGY.md` for "Doubted vs Contested" distinction.
+
+**Text Analysis Service (v2.8):**
+
+The Text Analysis Service provides LLM-powered analysis with automatic heuristic fallback:
+
+```mermaid
+flowchart LR
+    subgraph TextAnalysis["🧠 Text Analysis"]
+        HYBRID[HybridService]
+        LLM[LLMService]
+        HEUR[HeuristicService]
+    end
+
+    LLM -->|fallback| HEUR
+    HYBRID --> LLM
+    HYBRID --> HEUR
+
+    HYBRID --> ORCH[Orchestrated]
+    HYBRID --> CANON[Canonical]
+    HYBRID --> DYN[Dynamic]
+```
+
+| Analysis Point | Feature Flag | Pipeline Phase |
+|----------------|--------------|----------------|
+| Input Classification | `FH_LLM_INPUT_CLASSIFICATION` | Understand |
+| Evidence Quality | `FH_LLM_EVIDENCE_QUALITY` | Research |
+| Scope Similarity | `FH_LLM_SCOPE_SIMILARITY` | Organize |
+| Verdict Validation | `FH_LLM_VERDICT_VALIDATION` | Aggregate |
+
+See [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
 
 **Runner Route Protection:**
 - Runner route `/api/internal/run-job` requires `x-runner-key` when `FH_INTERNAL_RUNNER_KEY` is set (and is required in production)
@@ -657,6 +689,73 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 
 ---
 
+## Testing Infrastructure
+
+### Promptfoo Test Coverage (v2.8.2)
+
+```mermaid
+flowchart TB
+    subgraph Configs["📋 Test Configurations"]
+        SR[promptfooconfig.source-reliability.yaml<br/>7 test cases]
+        VD[promptfooconfig.yaml<br/>5 test cases]
+        TA[promptfooconfig.text-analysis.yaml<br/>26 test cases]
+    end
+
+    subgraph TextAnalysis["🔬 Text Analysis Tests (26 cases)"]
+        INPUT[Input Classification<br/>8 tests]
+        EVIDENCE[Evidence Quality<br/>5 tests]
+        SCOPE[Scope Similarity<br/>5 tests]
+        VERDICT[Verdict Validation<br/>8 tests]
+    end
+
+    subgraph Providers["🤖 Test Providers"]
+        HAIKU[Claude Haiku]
+        GPT4MINI[GPT-4o Mini]
+    end
+
+    TA --> INPUT
+    TA --> EVIDENCE
+    TA --> SCOPE
+    TA --> VERDICT
+
+    INPUT --> HAIKU
+    INPUT --> GPT4MINI
+    EVIDENCE --> HAIKU
+    EVIDENCE --> GPT4MINI
+    SCOPE --> HAIKU
+    SCOPE --> GPT4MINI
+    VERDICT --> HAIKU
+    VERDICT --> GPT4MINI
+```
+
+### Test Summary
+
+| Config | Description | Test Cases | Prompts Covered |
+|--------|-------------|------------|-----------------|
+| `source-reliability` | Source reliability evaluation | 7 | 1 |
+| `verdict` | Verdict generation accuracy | 5 | 1 |
+| `text-analysis` | LLM text analysis pipeline | 26 | 4 |
+| **Total** | | **38** | **6** |
+
+### Running Tests
+
+```bash
+# Run all tests
+npm run promptfoo:all
+
+# Run specific test suite
+npm run promptfoo:sr              # Source reliability
+npm run promptfoo:verdict         # Verdict generation
+npm run promptfoo:text-analysis   # Text analysis pipeline
+
+# View results
+npm run promptfoo:view
+```
+
+See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
+
+---
+
 ## References
 
 ### Related Documentation
@@ -665,6 +764,7 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 - **KeyFactors Design**: `Docs/ARCHITECTURE/KeyFactors_Design.md` - KeyFactors implementation details
 - **Source Reliability**: `Docs/ARCHITECTURE/Source_Reliability.md` - Source scoring system
 - **Prompt Architecture**: `Docs/ARCHITECTURE/Prompt_Architecture.md` - Modular prompt composition system
+- **Promptfoo Testing**: `Docs/USER_GUIDES/Promptfoo_Testing.md` - Prompt testing guide
 - **Pipeline Architecture**: `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md` - Triple-path pipeline design
 - **Getting Started**: `Docs/USER_GUIDES/Getting_Started.md` - Setup and installation
 - **LLM Configuration**: `Docs/USER_GUIDES/LLM_Configuration.md` - Provider configuration

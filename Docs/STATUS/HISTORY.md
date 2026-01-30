@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
-**Last Updated**: January 28, 2026
-**Current Version**: 2.6.41  
+**Last Updated**: January 30, 2026
+**Current Version**: 2.8.2 (Code) | 2.7.0 (Schema Output)
 **Schema Version**: 2.7.0
 
 ---
@@ -42,6 +42,187 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 ---
 
 ## Version History
+
+### v2.8.0 LLM Text Analysis Pipeline (January 29-30, 2026)
+
+**Focus**: LLM-Powered Text Analysis Delegation
+
+**Status**: ✅ APPROVED FOR IMPLEMENTATION (Senior Architect Review Complete)
+
+**Major Changes**:
+
+1. **LLM Text Analysis Pipeline Architecture**
+   - Designed 4 strategic analysis points for LLM delegation:
+     - **Call 1: Input Classification** (Understand phase) - Claim decomposition, comparative/compound detection
+     - **Call 2: Evidence Quality** (Research phase) - Evidence filtering, probative value assessment
+     - **Call 3: Scope Similarity** (Organize phase) - Scope merging, phase bucket inference
+     - **Call 4: Verdict Validation** (Aggregate phase) - Inversion detection, harm potential, contestation
+   - ITextAnalysisService interface with three implementations:
+     - `HeuristicTextAnalysisService`: Baseline using existing regex/pattern functions
+     - `LLMTextAnalysisService`: AI SDK with Zod schema validation, retry logic, JSON repair
+     - `HybridTextAnalysisService`: LLM-first with automatic heuristic fallback
+
+2. **Multi-Pipeline Support**
+   - Works across all three pipelines: Orchestrated, Monolithic Canonical, Monolithic Dynamic
+   - Integration points defined per pipeline with shared service interface
+   - Graceful degradation: LLM failure triggers heuristic fallback automatically
+
+3. **Feature Flag System**
+   - Per-analysis-point enablement for gradual rollout:
+     - `FH_LLM_INPUT_CLASSIFICATION`
+     - `FH_LLM_EVIDENCE_QUALITY`
+     - `FH_LLM_SCOPE_SIMILARITY`
+     - `FH_LLM_VERDICT_VALIDATION`
+   - Telemetry: Success rate, latency, retry count, fallback usage
+
+4. **Cost Analysis**
+   - Baseline (heuristic-only): $0.00/job
+   - Full LLM (4 calls): $0.007-0.028/job with Claude Haiku
+   - ~5.3% increase on typical $0.50 analysis job
+   - Admin-configurable prompt profiles via Unified Config Management
+
+5. **Search Provider Documentation**
+   - Clarified that ALL pipelines require search provider credentials for web search
+   - Added Section 8 to Pipeline Architecture document
+   - Added troubleshooting guide for "No sources fetched" issue
+
+**Files Created**:
+- `apps/web/src/lib/analyzer/text-analysis-types.ts` - Type definitions
+- `apps/web/src/lib/analyzer/text-analysis-service.ts` - Service factory
+- `apps/web/src/lib/analyzer/text-analysis-heuristic.ts` - Heuristic implementation
+- `apps/web/src/lib/analyzer/text-analysis-llm.ts` - LLM implementation
+- `apps/web/src/lib/analyzer/text-analysis-hybrid.ts` - Hybrid implementation
+- `apps/web/prompts/text-analysis-input.prompt.md` - Input classification prompt
+- `apps/web/prompts/text-analysis-verdict.prompt.md` - Verdict validation prompt
+- `apps/web/test/analyzer/text-analysis-service.test.ts` - 20+ test cases
+
+**Documentation**:
+- `Docs/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md` - Full proposal with senior review
+- `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md` - Added Section 8 (Search Provider Requirements)
+- `Docs/USER_GUIDES/LLM_Configuration.md` - Added "No sources fetched" troubleshooting
+
+**Review Process**:
+- Initial design by Claude Sonnet
+- Senior Architect Review by Claude Opus 4.5 (8 sections, 14 assessments)
+- Approved with minor documentation fixes
+
+---
+
+### v2.8.1 LLM Text Analysis Bug Fix & Reorganization (January 30, 2026)
+
+**Focus**: Critical Bug Fix for Counter-Claim Detection & File Reorganization
+
+**Status**: ✅ IMPLEMENTED AND VERIFIED
+
+**Major Changes**:
+
+1. **Critical Bug Fix: Counter-Claim Detection Removal** (verdict prompt v1.0.0 → v1.1.0)
+   - **Issue**: LLM text analysis (`FH_LLM_VERDICT_VALIDATION=true`) produced WORSE results than heuristics
+   - **Root Cause**: Verdict prompt detected counter-claims with insufficient context, overriding better detection from understand phase
+   - **Impact**: Counter-claims have verdicts inverted during aggregation (85% → 15%), so false detection caused incorrect inversions
+   - **Fix**: Removed `isCounterClaim` and `polarity` fields from verdict validation prompt and heuristic service
+
+2. **Prompt File Reorganization**
+   - Moved text-analysis prompts to dedicated subfolder: `prompts/text-analysis/`
+   - Updated `config-storage.ts` with `getPromptFilePath()` helper for routing
+   - Database reseeded with new file locations
+
+3. **Verification Tests**
+   - Created comparison test script: `scripts/compare-code-vs-file-prompts.ts`
+   - Results: 11/12 tests pass (1 expected failure for Jaccard similarity on semantic matching)
+
+**Files Modified**:
+- `apps/web/prompts/text-analysis/text-analysis-verdict.prompt.md` - v1.1.0 (removed counter-claim detection)
+- `apps/web/src/lib/analyzer/text-analysis-heuristic.ts` - Returns `undefined` for `isCounterClaim`
+- `apps/web/src/lib/config-storage.ts` - Added `getPromptFilePath()` helper
+
+**Files Created**:
+- `apps/web/prompts/text-analysis/README.md` - Prompt documentation with hashes, versions, feature flags
+- `apps/web/scripts/reseed-text-analysis-prompts.ts` - Database reseed script
+
+**Active Prompt Versions**:
+| Prompt | Version | Content Hash |
+|--------|---------|--------------|
+| text-analysis-input | 1.0.0 | `5daeb5327b0a...` |
+| text-analysis-evidence | 1.0.0 | `4fc7afb24c6e...` |
+| text-analysis-scope | 1.0.0 | `94d867f24657...` |
+| text-analysis-verdict | 1.1.0 | `5cf3ea03e472...` |
+
+**Key Lesson**: Counter-claim detection requires full context (available only in understand phase). Verdict phase has insufficient context and should NOT attempt re-detection.
+
+---
+
+### v2.8.2 Promptfoo Testing Infrastructure for Text Analysis (January 30, 2026)
+
+**Focus**: Comprehensive Promptfoo Test Coverage for LLM Text Analysis Pipeline
+
+**Status**: ✅ IMPLEMENTED
+
+**Major Changes**:
+
+1. **Text Analysis Promptfoo Test Suite** (26 new test cases)
+   - Complete test coverage for all 4 text analysis prompts
+   - Tests run against Claude Haiku and GPT-4o Mini for cross-provider validation
+   - All test cases include assertion-based evaluation with custom metrics
+
+2. **Input Classification Tests** (8 cases)
+   - Simple factual claims: Non-comparative, non-compound detection
+   - Comparative claims: "more X than Y" pattern detection
+   - Compound claims: Semicolon and "and" separator handling
+   - Non-compound preservation: Single predicate with multiple subjects
+   - Claim type classification: Factual, evaluative, predictive, mixed
+   - Complexity assessment: Simple, moderate, complex
+
+3. **Evidence Quality Tests** (5 cases)
+   - High quality: Statistics with specific numbers and sources
+   - Vague attribution: "Some say", "many believe" → low/filter
+   - Medium quality: Partial criteria met
+   - Filter detection: Irrelevant evidence excluded
+   - Expert quote validation: Named experts vs anonymous sources
+
+4. **Scope Similarity Tests** (5 cases)
+   - Duplicate scope detection: Same entity → high similarity, merge recommended
+   - Different jurisdictions: US vs EU → low similarity, no merge
+   - Phase bucket classification: Production vs usage phase detection
+   - Mixed phase handling: Different phases → no merge recommended
+
+5. **Verdict Validation Tests** (8 cases)
+   - Inversion detection: Reasoning contradicts verdict → correction suggested
+   - Non-inverted verification: Reasoning matches verdict
+   - Harm potential: Death/injury/fraud keywords → high harm
+   - Medium harm: Standard claims → default
+   - Contestation with evidence: Documented counter-evidence → established/disputed
+   - Opinion-only doubt: Political criticism → opinion factualBasis
+   - Causal contestation: Methodology criticism on causal claims
+   - Fraud accusations: High harm detection
+
+**Files Created**:
+- `apps/web/promptfooconfig.text-analysis.yaml` - Test configuration (26 cases)
+- `apps/web/prompts/promptfoo/text-analysis-input-prompt.txt` - Input classification template
+- `apps/web/prompts/promptfoo/text-analysis-evidence-prompt.txt` - Evidence quality template
+- `apps/web/prompts/promptfoo/text-analysis-scope-prompt.txt` - Scope similarity template
+- `apps/web/prompts/promptfoo/text-analysis-verdict-prompt.txt` - Verdict validation template
+
+**Documentation Updated**:
+- `Docs/USER_GUIDES/Promptfoo_Testing.md` - Added text-analysis test documentation
+- `Docs/STATUS/Current_Status.md` - Added promptfoo test coverage section
+- `apps/web/prompts/text-analysis/README.md` - Added promptfoo test reference
+
+**Test Coverage Summary**:
+| Config | Prompts | Test Cases | Providers |
+|--------|---------|------------|-----------|
+| source-reliability | 1 | 7 | Claude Haiku, GPT-4o |
+| verdict | 1 | 5 | Claude Haiku, Sonnet, GPT-4o Mini, GPT-4o |
+| text-analysis | 4 | 26 | Claude Haiku, GPT-4o Mini |
+| **Total** | **6** | **38** | - |
+
+**Run Commands**:
+```bash
+npm run promptfoo:text-analysis  # Run text-analysis tests only
+npm run promptfoo:all            # Run all 38 tests
+```
+
+---
 
 ### v2.6.41 (January 27-28, 2026)
 

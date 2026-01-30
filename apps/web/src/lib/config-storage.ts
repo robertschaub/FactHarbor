@@ -691,6 +691,18 @@ function getPromptDir(): string {
 }
 
 /**
+ * Get the file path for a prompt profile.
+ * Text-analysis prompts are in the text-analysis/ subfolder.
+ */
+function getPromptFilePath(profile: string): string {
+  const promptDir = getPromptDir();
+  if (profile.startsWith("text-analysis-")) {
+    return path.join(promptDir, "text-analysis", `${profile}.prompt.md`);
+  }
+  return path.join(promptDir, `${profile}.prompt.md`);
+}
+
+/**
  * Seed a single prompt from file if no active config exists.
  * Idempotent: no-op if active config already present.
  * Concurrency-safe: uses DB transaction with conflict handling.
@@ -717,8 +729,7 @@ export async function seedPromptFromFile(
   }
 
   // Find and read prompt file
-  const promptDir = getPromptDir();
-  const filePath = path.join(promptDir, `${profile}.prompt.md`);
+  const filePath = getPromptFilePath(profile);
 
   if (!existsSync(filePath)) {
     return { seeded: false, contentHash: null, error: `Prompt file not found: ${filePath}` };

@@ -82,10 +82,13 @@ npm run promptfoo:view
 
 ## Available Test Configurations
 
-| Config | Command | Description |
-|--------|---------|-------------|
-| `sr` | `npm run promptfoo:sr` | Source Reliability evaluation prompts |
-| `verdict` | `npm run promptfoo:verdict` | Verdict generation prompts |
+| Config | Command | Description | Test Cases |
+|--------|---------|-------------|------------|
+| `sr` | `npm run promptfoo:sr` | Source Reliability evaluation prompts | 7 |
+| `verdict` | `npm run promptfoo:verdict` | Verdict generation prompts | 5 |
+| `text-analysis` | `npm run promptfoo:text-analysis` | LLM Text Analysis Pipeline prompts (v2.9) | 26 |
+
+**Total Test Coverage**: 38 test cases across 6 prompts
 
 ## Understanding Results
 
@@ -112,7 +115,8 @@ Raw results are saved to `apps/web/prompts/promptfoo-results/`:
 ```
 prompts/promptfoo-results/
 ├── source-reliability.json   # Source reliability test results
-└── verdict.json              # Verdict generation test results
+├── verdict.json              # Verdict generation test results
+└── text-analysis.json        # Text analysis pipeline test results
 ```
 
 ## Test Configuration Files
@@ -123,9 +127,14 @@ prompts/promptfoo-results/
 apps/web/
 ├── promptfooconfig.yaml                      # Verdict tests
 ├── promptfooconfig.source-reliability.yaml   # Source reliability tests
+├── promptfooconfig.text-analysis.yaml        # Text analysis pipeline tests (26 cases)
 └── prompts/promptfoo/
     ├── verdict-prompt.txt
-    └── source-reliability-prompt.txt
+    ├── source-reliability-prompt.txt
+    ├── text-analysis-input-prompt.txt        # Input classification tests
+    ├── text-analysis-evidence-prompt.txt     # Evidence quality tests
+    ├── text-analysis-scope-prompt.txt        # Scope similarity tests
+    └── text-analysis-verdict-prompt.txt      # Verdict validation tests
 ```
 
 ### Config Structure
@@ -267,6 +276,67 @@ The source reliability tests (`promptfooconfig.source-reliability.yaml`) validat
 | Insufficient Data | `score` = null, `factualRating` = `insufficient_data` |
 | Biased but Reliable | Bias noted but score ≥0.58 (not penalized) |
 | Evidence Citation | All claims cite evidence IDs (E1, E2, etc.) |
+
+## Text Analysis Pipeline Test Cases
+
+The text analysis tests (`promptfooconfig.text-analysis.yaml`) validate the LLM Text Analysis Pipeline (v2.9) across four analysis points:
+
+### Input Classification Tests (8 cases)
+
+| Test | What It Checks |
+|------|----------------|
+| Simple Factual Claim | `isComparative=false`, `isCompound=false`, `claimType=factual`, `complexity=simple` |
+| Comparative Claim | `isComparative=true` - detects "more efficient than" pattern |
+| Compound (semicolon) | `isCompound=true`, multiple `decomposedClaims` |
+| Compound (and) | Splits independent predicates joined by "and" |
+| Non-compound (and) | Single predicate with multiple subjects NOT split |
+| Evaluative Claim | `claimType=evaluative` for opinions/judgments |
+| Predictive Claim | `claimType=predictive` for future predictions |
+| Complex Claim | `complexity=complex` for multi-context claims |
+
+### Evidence Quality Tests (5 cases)
+
+| Test | What It Checks |
+|------|----------------|
+| High Quality Stats | Specific numbers, sources → `qualityAssessment=high` |
+| Vague Attribution | "Some say", "many believe" → `qualityAssessment=low/filter` |
+| Medium Quality | Partial criteria met → `qualityAssessment=medium` |
+| Irrelevant Evidence | Off-topic evidence → `qualityAssessment=filter` |
+| Expert Quote Check | Named expert + credentials → `high`; anonymous → `low/filter` |
+
+### Scope Similarity Tests (5 cases)
+
+| Test | What It Checks |
+|------|----------------|
+| Duplicate Scopes | Same entity → `similarity≥0.85`, `shouldMerge=true` |
+| Different Jurisdictions | US vs EU → `similarity<0.85`, `shouldMerge=false` |
+| Production Phase | Manufacturing scopes → `phaseBucket=production` |
+| Usage Phase | Operating scopes → `phaseBucket=usage` |
+| Mixed Phases | Production vs Usage → different phase buckets, no merge |
+
+### Verdict Validation Tests (8 cases)
+
+| Test | What It Checks |
+|------|----------------|
+| Inversion Detection | Reasoning contradicts verdict → `isInverted=true`, correction suggested |
+| Non-Inverted | Reasoning matches verdict → `isInverted=false` |
+| High Harm (death) | Death/injury keywords → `harmPotential=high` |
+| Medium Harm | Standard claims → `harmPotential=medium` |
+| Contested (evidence) | Documented counter-evidence → `isContested=true`, `factualBasis=established/disputed` |
+| Opinion Only | Political criticism → `factualBasis=opinion` or `isContested=false` |
+| Causal Contestation | Methodology criticism on causal claim → `factualBasis=established` |
+| Fraud High Harm | Fraud accusations → `harmPotential=high` |
+
+### Feature Flags
+
+Enable LLM-based analysis for each point (heuristic fallback when disabled):
+
+```bash
+FH_LLM_INPUT_CLASSIFICATION=true
+FH_LLM_EVIDENCE_QUALITY=true
+FH_LLM_SCOPE_SIMILARITY=true
+FH_LLM_VERDICT_VALIDATION=true
+```
 
 ## Troubleshooting
 

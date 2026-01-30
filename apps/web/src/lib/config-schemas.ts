@@ -368,7 +368,7 @@ export function validatePromptContent(content: string): ValidationResult {
     // Validate pipeline value if we got it
     const pipeline = frontmatter.pipeline;
     if (pipeline && typeof pipeline === "string") {
-      const validPipelines = ["orchestrated", "monolithic-canonical", "monolithic-dynamic", "source-reliability"];
+      const validPipelines = ["orchestrated", "monolithic-canonical", "monolithic-dynamic", "source-reliability", "text-analysis"];
       if (!validPipelines.includes(pipeline)) {
         errors.push(`Invalid pipeline: ${pipeline}. Valid: ${validPipelines.join(", ")}`);
       }

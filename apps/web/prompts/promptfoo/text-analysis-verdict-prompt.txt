@@ -1,31 +1,12 @@
----
-version: "1.0.0"
-pipeline: "text-analysis"
-description: "Verdict validation for inversion/counter-claim/harm detection"
-lastModified: "2026-01-29T00:00:00Z"
-variables:
-  - CLAIM_VERDICTS
-  - THESIS_TEXT
-  - EVIDENCE_SUMMARY
-  - MODE
-  - PROMPT_HASH
-models:
-  - anthropic
-defaultModel: anthropic
-requiredSections:
-  - "SYSTEM_ROLE"
-  - "VALIDATION_CHECKS"
-  - "OUTPUT_FORMAT"
----
-
-## SYSTEM_ROLE
-
 You are a verdict validation specialist ensuring verdicts match their reasoning.
-Your task is to detect inversions, counter-claims, harm potential, and contestation.
+Your task is to detect inversions, harm potential, and contestation.
 
-Mode: ${MODE}
-- "full": Perform all validation checks
-- "harm_potential_only": Only assess harm potential (skip inversion/counter-claim)
+NOTE: Counter-claim detection is handled separately in the understand phase with full context.
+Do NOT attempt to detect counter-claims here - that would override better earlier detection.
+
+Mode: {{mode}}
+- "full": Perform all validation checks (inversion, harm, contestation)
+- "harm_potential_only": Only assess harm potential (skip inversion)
 - "contestation_only": Only assess contestation status
 
 ## VALIDATION_CHECKS
@@ -36,14 +17,6 @@ For each claim verdict, check the following (based on MODE):
 - Does the reasoning CONTRADICT the verdict percentage?
 - Example: Verdict 85% "true" but reasoning says "evidence refutes this" → INVERTED
 - If inverted, suggest corrected percentage based on reasoning
-
-### Counter-Claim Detection (skip if MODE != "full")
-- Is this claim OPPOSING the thesis? (counter-claim)
-- Counter-claims should have inverted contribution to overall verdict
-- Identify polarity:
-  - supports_thesis: Evidence supports the main thesis
-  - opposes_thesis: Evidence contradicts the main thesis
-  - neutral: Neither clearly supports nor opposes
 
 ### Harm Potential (always check)
 Keywords that indicate HIGH harm potential:
@@ -78,9 +51,9 @@ Pattern: "due to", "caused by", "because of", "result of", "linked to", "attribu
 - If causal claim + methodology criticism → factualBasis: "established"
 - Methodology criticism keywords: methodology, causation, causality, correlation, unverified, "does not prove", "no causal", "cannot establish"
 
-Thesis: ${THESIS_TEXT}
-Claim verdicts: ${CLAIM_VERDICTS}
-Evidence summary: ${EVIDENCE_SUMMARY}
+Thesis: {{thesisText}}
+Claim verdicts: {{claimVerdicts}}
+Evidence summary: {{evidenceSummary}}
 
 ## OUTPUT_FORMAT
 
@@ -91,17 +64,15 @@ CRITICAL: Your response must be a single valid JSON object only.
 
 {
   "_meta": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "analysisPoint": "verdict",
-    "promptHash": "${PROMPT_HASH}"
+    "promptHash": "{{promptHash}}"
   },
   "result": [
     {
       "claimId": "claim-1",
       "isInverted": true | false,
       "suggestedCorrection": 15 | null,
-      "isCounterClaim": true | false,
-      "polarity": "supports_thesis" | "opposes_thesis" | "neutral",
       "harmPotential": "high" | "medium" | "low",
       "contestation": {
         "isContested": true | false,
@@ -112,9 +83,9 @@ CRITICAL: Your response must be a single valid JSON object only.
   ]
 }
 
-For harm_potential_only mode, omit inversion and counter-claim fields:
+For harm_potential_only mode, omit inversion fields:
 {
-  "_meta": { "version": "1.0.0", "analysisPoint": "verdict", "promptHash": "${PROMPT_HASH}" },
+  "_meta": { "version": "1.1.0", "analysisPoint": "verdict", "promptHash": "{{promptHash}}" },
   "result": [
     {
       "claimId": "claim-1",
@@ -127,7 +98,7 @@ For harm_potential_only mode, omit inversion and counter-claim fields:
 
 If you cannot complete the analysis, return:
 {
-  "_meta": { "version": "1.0.0", "analysisPoint": "verdict", "promptHash": "${PROMPT_HASH}" },
+  "_meta": { "version": "1.1.0", "analysisPoint": "verdict", "promptHash": "{{promptHash}}" },
   "result": null,
   "error": "Brief explanation of why analysis failed"
 }

@@ -321,17 +321,17 @@ export class HeuristicTextAnalysisService implements ITextAnalysisService {
         }
       }
 
-      // Simple counter-claim detection based on thesis relationship
-      // This is a placeholder - real detection requires thesis context
-      const isCounterClaim = false;
-      const polarity = "supports_thesis" as const;
+      // NOTE: Counter-claim detection is handled separately in the understand phase
+      // with full context. We intentionally do NOT detect counter-claims here
+      // to avoid overriding better earlier detection.
+      // isCounterClaim and polarity are left undefined.
 
       return {
         claimId: claim.claimId,
         isInverted,
         suggestedCorrection,
-        isCounterClaim,
-        polarity,
+        // isCounterClaim: intentionally omitted - handled in understand phase
+        // polarity: intentionally omitted - handled in understand phase
         harmPotential,
         contestation,
         reasoning: `Heuristic: inversion=${isInverted}, harm=${harmPotential}`,

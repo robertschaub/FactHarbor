@@ -91,7 +91,59 @@ flowchart TD
 | `aggregation.ts` | ✅ | ✅ | Verdict weighting, contestation validation |
 | `claim-decomposition.ts` | ✅ | ✅ | Claim text parsing and normalization |
 
-### 3.4 Isolated components (do not unify)
+### 3.4 Text Analysis Service (v2.8)
+
+LLM-powered text analysis with automatic heuristic fallback. See [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
+
+```mermaid
+flowchart TD
+    subgraph TextAnalysisService["🧠 Text Analysis Service (apps/web/src/lib/analyzer/)"]
+        TYPES[text-analysis-types.ts<br/>━━━━━━━━━━━━━<br/>• ITextAnalysisService<br/>• InputClassificationResult<br/>• EvidenceQualityResult<br/>• ScopeSimilarityResult<br/>• VerdictValidationResult]
+
+        SERVICE[text-analysis-service.ts<br/>━━━━━━━━━━━━━<br/>• getTextAnalysisService<br/>• isLLMEnabled<br/>• recordMetrics]
+
+        HEURISTIC[text-analysis-heuristic.ts<br/>━━━━━━━━━━━━━<br/>• HeuristicTextAnalysisService<br/>• isComparativeLikeText<br/>• isCompoundLikeText<br/>• inferClaimType]
+
+        LLM[text-analysis-llm.ts<br/>━━━━━━━━━━━━━<br/>• LLMTextAnalysisService<br/>• Zod schema validation<br/>• JSON repair<br/>• Retry logic]
+
+        HYBRID[text-analysis-hybrid.ts<br/>━━━━━━━━━━━━━<br/>• HybridTextAnalysisService<br/>• executeWithFallback<br/>• Automatic degradation]
+    end
+
+    TYPES --> SERVICE
+    TYPES --> HEURISTIC
+    TYPES --> LLM
+    TYPES --> HYBRID
+
+    HEURISTIC --> HYBRID
+    LLM --> HYBRID
+    SERVICE --> HYBRID
+
+    subgraph Pipelines["🔄 All Pipelines"]
+        ORCH2[orchestrated.ts]
+        CANON2[monolithic-canonical.ts]
+        DYN2[monolithic-dynamic.ts]
+    end
+
+    HYBRID --> ORCH2
+    HYBRID --> CANON2
+    HYBRID --> DYN2
+```
+
+**Analysis Points:**
+
+| Analysis Point | Pipeline Phase | Feature Flag | Purpose |
+|----------------|----------------|--------------|---------|
+| Input Classification | Understand | `FH_LLM_INPUT_CLASSIFICATION` | Decompose claims, detect comparative/compound |
+| Evidence Quality | Research | `FH_LLM_EVIDENCE_QUALITY` | Filter low-quality evidence, assess probative value |
+| Scope Similarity | Organize | `FH_LLM_SCOPE_SIMILARITY` | Merge similar scopes, infer phase buckets |
+| Verdict Validation | Aggregate | `FH_LLM_VERDICT_VALIDATION` | Detect inversions, harm potential, contestation |
+
+**Fallback Behavior:**
+- LLM disabled → Use heuristic directly
+- LLM fails → Automatic fallback to heuristic
+- Metrics recorded for all operations (success, latency, fallback usage)
+
+### 3.5 Isolated components (do not unify)
 Keep separate to avoid coupling:
 - Orchestrated pipeline orchestration logic (existing `apps/web/src/lib/analyzer.ts`)
 - Monolithic tool-loop orchestration logic (new module)
@@ -184,4 +236,43 @@ flowchart TD
 ### 7.5 Security/abuse risk (user-selectable variants)
 - **Risk**: users can pick experimental path and consume higher resources.
 - **Mitigation**: enforce budgets; optionally gate variants later (not in scope now).
+
+---
+
+## 8) Search Provider Requirements
+
+### 8.1 All pipelines require search credentials for web search
+
+All three pipelines (Orchestrated, Monolithic Canonical, Monolithic Dynamic) use the same `searchWebWithProvider()` function from `apps/web/src/lib/web-search.ts`. This function requires at least one of:
+
+| Provider | Environment Variables | Notes |
+|----------|----------------------|-------|
+| **SerpAPI** | `SERPAPI_API_KEY` | Pay-per-use (~$0.002/search) |
+| **Google CSE** | `GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID` | Free tier: 100 queries/day |
+
+### 8.2 Behavior without search credentials
+
+When no search provider is configured:
+1. Pipeline generates search queries (correctly)
+2. Search loop executes but returns empty results
+3. Analysis continues **without external sources**
+4. LLM uses only internal knowledge (if `FH_ALLOW_MODEL_KNOWLEDGE=true`)
+
+**Symptom**: Job completes successfully but shows "No sources were fetched."
+
+### 8.3 Verification
+
+Check server logs for:
+```
+# Success:
+[Search] Available providers: Google CSE=true, SerpAPI=true
+[Search] Google CSE returned 4 results, total now: 4
+
+# Failure:
+[Search] ❌ NO SEARCH PROVIDERS CONFIGURED! Set SERPAPI_API_KEY or GOOGLE_CSE_API_KEY+GOOGLE_CSE_ID
+```
+
+### 8.4 Configuration
+
+See [LLM Configuration Guide](../USER_GUIDES/LLM_Configuration.md#search-provider-configuration) for detailed setup instructions.
 

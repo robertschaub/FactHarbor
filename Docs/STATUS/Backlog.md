@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: January 28, 2026
+**Last Updated**: January 30, 2026
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -12,10 +12,20 @@
 
 ---
 
+## Recently Completed (January 30, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **LLM Text Analysis Pipeline**: Implemented 4 analysis points with hybrid LLM/heuristic architecture. Bug fix in v2.8.1 removed counter-claim detection from verdict prompt. | Analyzer / LLM | 2026-01-30 | [Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) |
+| ✅ **Promptfoo Test Coverage for Text Analysis**: Created 26 test cases covering all 4 text-analysis prompts (input classification, evidence quality, scope similarity, verdict validation). Total promptfoo coverage now 38 test cases across 6 prompts. | Testing / LLM | 2026-01-30 | [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md) |
+
+---
+
 ## Core Functionality & Quality
 
 | Description | Domain | Urgency | Importance | Effort | Reference |
 |---|---|---|---|---|---|
+| **LLM Text Analysis A/B Testing**: Run promptfoo text-analysis tests and compare heuristic vs LLM modes to validate quality improvements. Test infrastructure ready (26 cases). | Analyzer / Testing | med | high | 1-2 days + $20-50 API | [Promptfoo Testing](../USER_GUIDES/Promptfoo_Testing.md) |
 | Inverse-input symmetry hardening: keep `scripts/inverse-scope-regression.ps1` green; add 2–3 more inverse pairs; define "strict symmetry" vs "best-effort" per test. | Analyzer | med | high | 3-4 days | Existing |
 | Evidence-driven scope refinement guardrails: add lightweight instrumentation (how often refine is applied/rejected + reason) to prevent over-splitting into non-scope "dimensions". | Analyzer | med | high | 2-3 days | Existing |
 | Central-claim evidence coverage pass: bounded "missing-evidence" retrieval pass for central claims with zero supporting/counter facts (best-effort; no loops; respect search budgets). | Analyzer / Search | med | high | 3-5 days | Existing |

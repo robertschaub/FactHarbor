@@ -361,6 +361,36 @@ Track costs via the admin dashboard (when implemented):
 - Provider service disruption
 - Try alternative provider
 
+**"No sources were fetched" (All pipelines including Dynamic):**
+
+All three pipelines (Orchestrated, Monolithic Canonical, Monolithic Dynamic) require search provider credentials to perform web searches. Without them, the pipeline will:
+1. Generate search queries (correctly)
+2. Attempt searches (loop runs but returns empty)
+3. Continue without external sources (LLM uses only internal knowledge)
+
+**Verify search providers are configured:**
+```bash
+# Check logs for this message:
+[Search] ❌ NO SEARCH PROVIDERS CONFIGURED! Set SERPAPI_API_KEY or GOOGLE_CSE_API_KEY+GOOGLE_CSE_ID
+```
+
+**Solution**: Configure at least one search provider:
+```bash
+# Option 1: SerpAPI (simpler setup)
+SERPAPI_API_KEY=your-serpapi-key
+
+# Option 2: Google CSE (free tier available)
+GOOGLE_CSE_API_KEY=your-google-api-key
+GOOGLE_CSE_ID=your-custom-search-engine-id
+```
+
+**Verify configuration is working:**
+Look for successful search logs:
+```bash
+[Search] Available providers: Google CSE=true, SerpAPI=true
+[Search] Google CSE returned 4 results, total now: 4
+```
+
 ### Configuration Validation
 
 **Test configuration without running analysis:**
