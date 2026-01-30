@@ -34,7 +34,7 @@ import {
 import {
   DEFAULT_CONFIDENCE_THRESHOLD,
   DEFAULT_CONSENSUS_THRESHOLD,
-  SOURCE_TYPE_CAPS,
+  SOURCE_TYPE_EXPECTED_CAPS,
   scoreToFactualRating,
   meetsConfidenceRequirement,
   MIN_EVIDENCE_IDS_FOR_SCORE,
@@ -2160,16 +2160,18 @@ function applyPostProcessing(result: EvaluationResult, evidencePack: EvidencePac
     return processed;
   }
 
-  // 1. Enforce source type caps
+  // 1. Validate source type caps (warn but don't override - prompt is authoritative v2.8.3)
   const sourceType = processed.sourceType ?? "";
-  const cap = SOURCE_TYPE_CAPS[sourceType];
+  const expectedCap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
 
-  if (cap !== undefined && processed.score > cap) {
-    debugLog(`[SR-Eval] Enforcing ${sourceType} cap: ${processed.score.toFixed(2)} → ${cap.toFixed(2)}`, { sourceType, originalScore: processed.score, cap });
+  if (expectedCap !== undefined && processed.score > expectedCap) {
+    // LLM gave score above expected cap - add warning caveat but TRUST the LLM
+    // The prompt explicitly instructs caps; if LLM exceeded, it may have good reason
+    debugLog(`[SR-Eval] Score exceeds expected ${sourceType} cap: ${processed.score.toFixed(2)} > ${expectedCap.toFixed(2)} (not overriding - prompt authoritative)`, { sourceType, score: processed.score, expectedCap });
     processed.caveats.push(
-      `Score capped from ${(processed.score * 100).toFixed(0)}% to ${(cap * 100).toFixed(0)}% due to sourceType="${sourceType}" classification.`
+      `Note: Score ${(processed.score * 100).toFixed(0)}% exceeds typical ${(expectedCap * 100).toFixed(0)}% cap for sourceType="${sourceType}". LLM may have found mitigating evidence.`
     );
-    processed.score = cap;
+    // DO NOT override: processed.score = expectedCap; (prompt is authoritative)
   }
 
   // 2. Align factualRating with (potentially capped) score

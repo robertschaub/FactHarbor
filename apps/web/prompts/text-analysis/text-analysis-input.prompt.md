@@ -1,8 +1,8 @@
 ---
-version: "1.0.0"
+version: "1.1.0"
 pipeline: "text-analysis"
 description: "Input classification AND claim decomposition for LLM text analysis"
-lastModified: "2026-01-29T00:00:00Z"
+lastModified: "2026-01-30T00:00:00Z"
 variables:
   - INPUT_TEXT
   - PIPELINE
@@ -42,10 +42,10 @@ Determine:
    - Examples: "Biden won; inflation rose", "X did A and Y did B"
 
 3. **claimType**: What type of claim is this?
-   - evaluative: Opinion/judgment (e.g., "X is the best")
-   - factual: Verifiable fact (e.g., "X happened in 2024")
-   - predictive: Future prediction (e.g., "X will happen")
-   - mixed: Combination of types
+   - **predictive**: Future prediction - look for: will, would, shall, going to, predict, forecast, expect
+   - **evaluative**: Opinion/judgment - look for: best, worst, should, must, better, worse, good, bad, right, wrong
+   - **factual**: Verifiable fact (default if no predictive/evaluative indicators)
+   - **mixed**: Combination of types
 
 4. **complexity**: How complex is this input?
    - simple: Single, straightforward claim

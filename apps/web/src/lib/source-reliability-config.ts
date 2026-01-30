@@ -31,42 +31,38 @@ export const DEFAULT_CONSENSUS_THRESHOLD = 0.20;
 export const DEFAULT_UNKNOWN_SCORE = 0.5;
 
 // ============================================================================
-// SOURCE TYPE SCORE CAPS
+// SOURCE TYPE SCORE CAPS (REFERENCE ONLY - PROMPT IS AUTHORITATIVE)
 // ============================================================================
 
 /**
- * Hard ceiling scores based on source type classification.
- * These caps are enforced deterministically after LLM evaluation.
+ * Expected score caps for source types.
  *
- * Per Source_Reliability.md documentation:
- * - propaganda_outlet/known_disinformation: should land in 0.00-0.20 range
- * - state_controlled_media: default below mixed unless evidence shows independence
- * - platform_ugc: default below mixed unless evidence shows verification
+ * IMPORTANT (v2.8.3): These values are REFERENCE ONLY for validation warnings.
+ * The authoritative source for caps is the source-reliability.prompt.md file.
+ * Edit the prompt to change evaluation criteria - do NOT change these values.
+ *
+ * See: prompts/source-reliability.prompt.md section "SOURCE TYPE SCORE CAPS"
  */
-export const SOURCE_TYPE_CAPS: Record<string, number> = {
-  propaganda_outlet: 0.14,      // highly_unreliable ceiling
-  known_disinformation: 0.14,  // highly_unreliable ceiling
-  state_controlled_media: 0.42, // leaning_unreliable ceiling
-  platform_ugc: 0.42,           // leaning_unreliable ceiling
+export const SOURCE_TYPE_EXPECTED_CAPS: Record<string, number> = {
+  propaganda_outlet: 0.14,      // highly_unreliable band
+  known_disinformation: 0.14,   // highly_unreliable band
+  state_controlled_media: 0.42, // leaning_unreliable band
+  platform_ugc: 0.42,           // leaning_unreliable band
 };
 
 // ============================================================================
-// RATING BAND MAPPING
+// RATING BANDS (REFERENCE ONLY - PROMPT IS AUTHORITATIVE)
 // ============================================================================
 
 /**
- * Rating band boundaries (score → factualRating).
- * Single source of truth for all score↔rating conversions.
+ * Rating band boundaries for reference and validation.
+ *
+ * IMPORTANT (v2.8.3): The authoritative source for rating bands is the
+ * source-reliability.prompt.md file. These are kept for scoreToFactualRating()
+ * to ensure score↔rating alignment after LLM evaluation.
+ *
+ * See: prompts/source-reliability.prompt.md section "RATING SCALE"
  */
-export const RATING_BANDS = [
-  { min: 0.86, max: 1.00, rating: "highly_reliable" },
-  { min: 0.72, max: 0.859, rating: "reliable" },
-  { min: 0.58, max: 0.719, rating: "leaning_reliable" },
-  { min: 0.43, max: 0.579, rating: "mixed" },
-  { min: 0.29, max: 0.429, rating: "leaning_unreliable" },
-  { min: 0.15, max: 0.289, rating: "unreliable" },
-  { min: 0.00, max: 0.149, rating: "highly_unreliable" },
-] as const;
 
 export type FactualRating =
   | "highly_reliable"

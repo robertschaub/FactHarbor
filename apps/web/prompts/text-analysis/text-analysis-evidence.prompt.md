@@ -1,8 +1,8 @@
 ---
-version: "1.0.0"
+version: "1.2.0"
 pipeline: "text-analysis"
 description: "Evidence quality assessment for probative value filtering"
-lastModified: "2026-01-29T00:00:00Z"
+lastModified: "2026-01-30T00:00:00Z"
 variables:
   - EVIDENCE_ITEMS
   - THESIS_TEXT
@@ -26,26 +26,30 @@ Your task is to assess the probative value of each evidence item for fact-checki
 Evaluate each evidence item against these criteria:
 
 **Statement Quality:**
-- Specificity: Not vague like "some say" or "many believe"
+- Specificity: Not vague - FILTER these phrases (from evidence-filter.ts:73-87):
+  - Attribution without specifics: "some say/believe/argue/claim/think/suggest", "many people/experts/critics/scientists/researchers", "according to some"
+  - Passive hedging: "it is said/believed/argued/thought/claimed", "purportedly", "supposedly", "allegedly", "reportedly"
+  - Uncertainty markers: "opinions vary/differ", "the debate continues", "controversy exists", "it's unclear"
 - Contains verifiable claims: names, numbers, dates, specific facts
 - Clear attribution to source
+- **Minimum length**: Statement must be >= 25 characters (shorter = filter)
 
 **Source Linkage:**
 - Has supporting excerpt from source document
-- Excerpt is substantial (not just headline or single word)
-- URL or source reference provided
+- **Minimum excerpt length**: >= 20 characters (shorter = insufficient_excerpt issue)
+- URL or source reference provided (missing = missing_source_url issue)
 
 **Category-Specific Rules:**
-- **Statistics**: Must contain actual numbers (percentages, counts, amounts)
+- **Statistics**: Must contain actual numbers (percentages, counts, amounts) - no numbers = filter
 - **Expert quotes**: Must attribute to a named expert with credentials
 - **Events**: Must have temporal anchor (date, year, or time reference)
 - **Legal/regulatory**: Must cite specific provision, law, or regulation
 
 **Quality Levels:**
-- **high**: Meets all criteria, strong probative value
+- **high**: Meets all criteria, excerpt >= 50 chars, has URL, no issues
 - **medium**: Meets most criteria, usable but not ideal
-- **low**: Missing key criteria, weak probative value
-- **filter**: Should be excluded (vague, unattributed, or irrelevant)
+- **low**: Has vague attribution OR insufficient excerpt
+- **filter**: Statement < 25 chars OR statistic without numbers OR vague phrases
 
 Evidence items to evaluate:
 ${EVIDENCE_ITEMS}

@@ -30,12 +30,15 @@ export { HybridTextAnalysisService, hybridTextAnalysisService } from "./text-ana
 // FEATURE FLAGS
 // ============================================================================
 
-/** Feature flag environment variables */
+/** Feature flag environment variables
+ * Default: true (LLM enabled) - set to "false" to disable
+ * v2.8.3: Changed defaults from false to true after prompt-code alignment
+ */
 const FEATURE_FLAGS = {
-  inputClassification: process.env.FH_LLM_INPUT_CLASSIFICATION === "true",
-  evidenceQuality: process.env.FH_LLM_EVIDENCE_QUALITY === "true",
-  scopeSimilarity: process.env.FH_LLM_SCOPE_SIMILARITY === "true",
-  verdictValidation: process.env.FH_LLM_VERDICT_VALIDATION === "true",
+  inputClassification: process.env.FH_LLM_INPUT_CLASSIFICATION !== "false",
+  evidenceQuality: process.env.FH_LLM_EVIDENCE_QUALITY !== "false",
+  scopeSimilarity: process.env.FH_LLM_SCOPE_SIMILARITY !== "false",
+  verdictValidation: process.env.FH_LLM_VERDICT_VALIDATION !== "false",
 } as const;
 
 /** Check if LLM is enabled for a specific analysis point */

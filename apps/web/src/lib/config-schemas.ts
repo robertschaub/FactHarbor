@@ -286,12 +286,14 @@ export type PromptFrontmatter = z.infer<typeof PromptFrontmatterSchema>;
 // ============================================================================
 
 function validateHasSections(content: string): boolean {
-  return /^## [A-Z][A-Z0-9_]+\s*$/m.test(content);
+  // Allow either SNAKE_CASE format (## SECTION_NAME) or Title Case (## Section Name)
+  return /^## [A-Z]/m.test(content);
 }
 
 function validateNoDuplicateSections(content: string): boolean {
-  const sections = content.match(/^## ([A-Z][A-Z0-9_]+)\s*$/gm) || [];
-  const names = sections.map((s) => s.replace(/^## /, "").trim());
+  // Match any ## header that starts with uppercase
+  const sections = content.match(/^## ([A-Z][^\r\n]+)/gm) || [];
+  const names = sections.map((s) => s.replace(/^## /, "").trim().toUpperCase());
   return names.length === new Set(names).size;
 }
 
@@ -317,8 +319,8 @@ export function validatePromptContent(content: string): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // Check for frontmatter
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
+  // Check for frontmatter (handle both LF and CRLF line endings)
+  const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
   if (!frontmatterMatch) {
     errors.push("Prompt must start with YAML frontmatter (--- block)");
     return { valid: false, errors, warnings };

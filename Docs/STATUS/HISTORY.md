@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
 **Last Updated**: January 30, 2026
-**Current Version**: 2.8.2 (Code) | 2.7.0 (Schema Output)
+**Current Version**: 2.8.3 (Code) | 2.7.0 (Schema Output)
 **Schema Version**: 2.7.0
 
 ---
@@ -105,6 +105,40 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 - Initial design by Claude Sonnet
 - Senior Architect Review by Claude Opus 4.5 (8 sections, 14 assessments)
 - Approved with minor documentation fixes
+
+---
+
+### v2.8.3 LLM Enabled by Default & Prompt-Code Alignment (January 30, 2026)
+
+**Focus**: Enable LLM text analysis by default after completing prompt-code alignment
+
+**Status**: ✅ IMPLEMENTED
+
+**Major Changes**:
+
+1. **LLM Enabled by Default**
+   - Changed `FH_LLM_*` feature flag defaults from `false` to `true`
+   - Previous: Required `FH_LLM_INPUT_CLASSIFICATION=true` etc. to enable LLM
+   - New: Set `FH_LLM_INPUT_CLASSIFICATION=false` etc. to disable LLM and use heuristics only
+   - Rationale: Prompts now contain exact patterns from heuristic code, ensuring consistent behavior
+
+2. **Prompt-Code Alignment Complete**
+   - `text-analysis-evidence.prompt.md` v1.2.0: Added complete vague phrases list from `evidence-filter.ts:73-87`
+   - `text-analysis-verdict.prompt.md` v1.2.0: Added inversion patterns from `verdict-corrections.ts:41-134` and extended evidence keywords from `aggregation.ts:53`
+
+**Active Prompt Versions**:
+| Prompt | Version | Content Hash |
+|--------|---------|--------------|
+| text-analysis-input | 1.1.0 | `34309de4baf7...` |
+| text-analysis-evidence | 1.2.0 | `5f1b551dd10d...` |
+| text-analysis-scope | 1.2.0 | `76a16acb2dd9...` |
+| text-analysis-verdict | 1.2.0 | `ea27d6d0f26b...` |
+
+**Files Modified**:
+- `apps/web/src/lib/analyzer/text-analysis-service.ts` - Changed defaults to `!== "false"`
+- `apps/web/prompts/text-analysis/text-analysis-evidence.prompt.md` - v1.2.0
+- `apps/web/prompts/text-analysis/text-analysis-verdict.prompt.md` - v1.2.0
+- `apps/web/prompts/text-analysis/README.md` - Updated versions, hashes, feature flag docs
 
 ---
 

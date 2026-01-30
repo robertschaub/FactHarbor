@@ -1,8 +1,8 @@
 ---
-version: "1.0.0"
+version: "1.2.0"
 pipeline: "text-analysis"
 description: "Scope similarity and phase bucket analysis"
-lastModified: "2026-01-29T00:00:00Z"
+lastModified: "2026-01-30T00:00:00Z"
 variables:
   - SCOPE_PAIRS
   - CONTEXT_LIST
@@ -28,16 +28,18 @@ For each scope pair, determine:
 **Semantic Similarity (0-1 scale):**
 - Do they refer to the same real-world context?
 - Consider these PRIMARY identity factors (high weight):
-  - institution: Who is the authority (e.g., "EPA", "WHO")
-  - jurisdiction: Where the authority applies (e.g., "US", "EU")
+  - court: Authority venue (if present)
+  - institution: Who is the authority (e.g., "EPA", "WHO", "Supreme Court")
+  - jurisdiction: Where the authority applies (e.g., "US", "EU", "California")
   - methodology: How was it measured/determined
+  - definition: What does the term mean in this context
+  - framework: What evaluative structure applies
   - boundaries: Limits of applicability
-  - standardApplied: What standard was used
-  - regulatoryBody: Which regulator
 
 - Consider these SECONDARY factors (lower weight, can be noisy):
-  - geographic: Location context
-  - temporal: Time period
+  - geographic: Where (location context)
+  - timeframe: When (time period)
+  - scale: Individual vs aggregate measurement
 
 **Similarity Thresholds:**
 - 0.85+ = Likely duplicates, SHOULD merge
@@ -46,10 +48,12 @@ For each scope pair, determine:
 
 **Phase Bucket Classification:**
 - **production**: Manufacturing, creation, upstream processes
+  - Keywords: manufactur*, production, factory, assembly, upstream, mining, extraction, refin*
   - Examples: "manufacturing emissions", "production costs", "factory output"
 - **usage**: Operation, consumption, downstream effects
+  - Keywords: usage, use, operation, driving, consumption, downstream, running, operat*
   - Examples: "driving emissions", "operating costs", "consumer use"
-- **other**: Administrative, general, or unclear phase
+- **other**: Administrative, general, or unclear phase (default if no keywords match)
   - Examples: "overall lifecycle", "general comparison", "policy context"
 
 **Merge Recommendation:**

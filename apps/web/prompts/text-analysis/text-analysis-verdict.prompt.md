@@ -1,5 +1,5 @@
 ---
-version: "1.1.0"
+version: "1.2.0"
 pipeline: "text-analysis"
 description: "Verdict validation for inversion/harm/contestation detection"
 lastModified: "2026-01-30T00:00:00Z"
@@ -40,6 +40,24 @@ For each claim verdict, check the following (based on MODE):
 - Example: Verdict 85% "true" but reasoning says "evidence refutes this" → INVERTED
 - If inverted, suggest corrected percentage based on reasoning
 
+**Inversion Patterns (from verdict-corrections.ts:41-134):**
+
+Positive claim words (claim asserts something favorable):
+- Proportionality: proportionate, justified, fair, appropriate, reasonable, valid, correct, proper
+- Comparison positive: "more/higher/better/superior efficient/effective", "has higher X"
+- Support patterns: "supports the claim", "establishes the conclusion"
+
+Negative reasoning words (reasoning negates the positive claim):
+- Direct negations: "was/were NOT proportionate/justified/fair"
+- Negative adjectives: disproportionate, unjustified, unfair, inappropriate, unreasonable, invalid, incorrect, improper
+- Legal violations: "violates principles/norms/standards/law/rights", "lacks factual basis", "represents retaliation"
+- Evidence denial: "no evidence supports", "insufficient evidence", "fails to demonstrate"
+- Contradiction: "contradicts the claim", "evidence shows opposite", "refutes", "disproves"
+- Comparison denial: "less/lower/worse/inferior efficient/effective", "not more efficient"
+
+**Reverse Inversion (claim negative, reasoning positive):**
+- Claim says "X has lower efficiency" but reasoning shows positive performance → INVERTED
+
 ### Harm Potential (always check)
 Keywords that indicate HIGH harm potential:
 - Death/injury: die, dies, died, death, dead, kill, killed, fatal, fatality
@@ -63,15 +81,20 @@ Classification:
 - **contested** (has counter-evidence): Has documented counter-evidence
   - factualBasis: "established" or "disputed" → REDUCED weight
 
-**Documented Evidence Keywords:**
-- study, studies, research, data, report, analysis
-- evidence, finding, findings, experiment, investigation
-- peer-review, journal, publication, official, government, agency
+**Documented Evidence Keywords (from aggregation.ts:53):**
+- Research: study, studies, research, data, report, analysis, finding, findings
+- Investigation: experiment, investigation, audit, measurement, record, document
+- Academic: peer-review, journal, publication, meta-analysis, replicated
+- Scientific rigor: control group, randomized, systematic, confound, bias
+- Official: official, government, agency, determination, ruling, documentation
+- Legal/regulatory: violation, breach, non-compliance, article X, section X, regulation X
+- Statistics: percentages (%), measurements (kg, kwh, mwh)
+- Pharmacovigilance: adverse event, safety signal, VAERS, passive surveillance, self-report
 
 **Causal Claims (special handling):**
-Pattern: "due to", "caused by", "because of", "result of", "linked to", "attributed to"
+Pattern: "due to", "caused by", "because of", "result of", "linked to", "attributed to", "leads to", "responsible for", "kills", "died from", "death from"
 - If causal claim + methodology criticism → factualBasis: "established"
-- Methodology criticism keywords: methodology, causation, causality, correlation, unverified, "does not prove", "no causal", "cannot establish"
+- Methodology criticism keywords: methodology, causation, causality, correlation, unverified, "does not prove", "no causal", "cannot establish", "cannot prove", "not evidence of", "insufficient evidence", "flawed", "misuse", "misinterpret"
 
 Thesis: ${THESIS_TEXT}
 Claim verdicts: ${CLAIM_VERDICTS}
@@ -86,7 +109,7 @@ CRITICAL: Your response must be a single valid JSON object only.
 
 {
   "_meta": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "analysisPoint": "verdict",
     "promptHash": "${PROMPT_HASH}"
   },
@@ -107,7 +130,7 @@ CRITICAL: Your response must be a single valid JSON object only.
 
 For harm_potential_only mode, omit inversion fields:
 {
-  "_meta": { "version": "1.1.0", "analysisPoint": "verdict", "promptHash": "${PROMPT_HASH}" },
+  "_meta": { "version": "1.2.0", "analysisPoint": "verdict", "promptHash": "${PROMPT_HASH}" },
   "result": [
     {
       "claimId": "claim-1",
@@ -120,7 +143,7 @@ For harm_potential_only mode, omit inversion fields:
 
 If you cannot complete the analysis, return:
 {
-  "_meta": { "version": "1.1.0", "analysisPoint": "verdict", "promptHash": "${PROMPT_HASH}" },
+  "_meta": { "version": "1.2.0", "analysisPoint": "verdict", "promptHash": "${PROMPT_HASH}" },
   "result": null,
   "error": "Brief explanation of why analysis failed"
 }

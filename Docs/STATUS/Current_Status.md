@@ -1,6 +1,6 @@
 # FactHarbor Current Status
 
-**Version**: 2.8.2 (Code) | 2.7.0 (Schema Output)
+**Version**: 2.8.3 (Code) | 2.7.0 (Schema Output)
 **Last Updated**: 2026-01-30
 **Status**: POC1 Operational (Phase 2 Complete)
 
@@ -44,10 +44,11 @@
 - **Provider-Specific Prompts**: Optimized formatting for Anthropic, OpenAI, Google, Mistral
   - See: [Provider Prompt Formatting](../REFERENCE/Provider_Prompt_Formatting.md)
 
-**LLM Text Analysis Pipeline (v2.8.1 - Implemented & Verified):**
+**LLM Text Analysis Pipeline (v2.8.3 - Implemented & Verified):**
 - **Four Analysis Points**: Input Classification, Evidence Quality, Scope Similarity, Verdict Validation
 - **Hybrid Architecture**: LLM-enabled analysis with automatic heuristic fallback
 - **Per-Point Feature Flags**: `FH_LLM_INPUT_CLASSIFICATION`, `FH_LLM_EVIDENCE_QUALITY`, `FH_LLM_SCOPE_SIMILARITY`, `FH_LLM_VERDICT_VALIDATION`
+- **LLM Enabled by Default (v2.8.3)**: Set to `false` to disable and use heuristics only
 - **Multi-Pipeline Support**: Works across Orchestrated, Monolithic Canonical, and Monolithic Dynamic pipelines
 - **Telemetry**: Built-in metrics for success rates, latency, fallback usage
 - **Bug Fix (v2.8.1)**: Counter-claim detection removed from verdict prompt (was overriding better understand-phase detection)
@@ -312,6 +313,15 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - Added Section 8 to Pipeline Architecture doc
   - Added troubleshooting for "No sources fetched" issue
   - See: [Pipeline Architecture](../ARCHITECTURE/Pipeline_TriplePath_Architecture.md#8-search-provider-requirements)
+
+### v2.8.3 LLM Enabled by Default (January 30, 2026)
+- **Default Changed**: LLM text analysis now enabled by default for all 4 analysis points
+  - Previous: `FH_LLM_*=true` required to enable LLM
+  - New: `FH_LLM_*=false` required to disable LLM and use heuristics only
+- **Prompt-Code Alignment Complete**: All prompts now contain exact patterns from heuristic code
+  - `text-analysis-evidence.prompt.md` v1.2.0: Complete vague phrases list
+  - `text-analysis-verdict.prompt.md` v1.2.0: Inversion patterns, extended evidence keywords
+- **Database Reseeded**: Updated prompts active for analysis
 
 ### v2.8.1 Bug Fix & File Reorganization (January 30, 2026)
 - **Critical Bug Fix**: Counter-claim detection removed from verdict validation

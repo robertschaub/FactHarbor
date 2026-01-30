@@ -1,6 +1,6 @@
 # FactHarbor POC1 Architecture Overview
 
-**Version:** 2.8.2
+**Version:** 2.8.3
 **Schema Version:** 2.7.0
 **Last Updated:** January 30, 2026
 
@@ -101,6 +101,8 @@ flowchart LR
 | Evidence Quality | `FH_LLM_EVIDENCE_QUALITY` | Research |
 | Scope Similarity | `FH_LLM_SCOPE_SIMILARITY` | Organize |
 | Verdict Validation | `FH_LLM_VERDICT_VALIDATION` | Aggregate |
+
+**Default (v2.8.3+)**: LLM enabled for all analysis points. Set `=false` to disable and use heuristics only.
 
 See [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
 
