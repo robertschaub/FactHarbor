@@ -66,6 +66,22 @@ interface ValidationResult {
   canonicalizedHash?: string;
 }
 
+interface ActiveConfigSummary {
+  profileKey: string;
+  hash: string;
+  versionLabel: string;
+  activatedUtc: string;
+  activatedBy: string | null;
+  createdUtc: string;
+}
+
+interface ActiveSummaryResponse {
+  success: boolean;
+  activeConfigs: Record<string, ActiveConfigSummary[]>;
+  totalCount: number;
+  timestamp: string;
+}
+
 // Search config type
 interface SearchConfig {
   enabled: boolean;
@@ -1633,6 +1649,10 @@ export default function ConfigAdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Active config dashboard state
+  const [dashboardData, setDashboardData] = useState<ActiveSummaryResponse | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+
   // Edit state (for JSON configs)
   const [editConfig, setEditConfig] = useState<SearchConfig | CalcConfig | PipelineConfig | SRConfig | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
@@ -1908,6 +1928,26 @@ export default function ConfigAdminPage() {
     }
   }, [selectedType, profileKey, getHeaders]);
 
+  // Fetch dashboard summary
+  const fetchDashboard = useCallback(async () => {
+    setDashboardLoading(true);
+    try {
+      const res = await fetch("/api/admin/config/active-summary", {
+        headers: getHeaders(),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to load dashboard");
+      }
+      const data = await res.json();
+      setDashboardData(data);
+    } catch (err) {
+      console.error("[Dashboard] Error loading active configs:", err);
+      setDashboardData(null);
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, [getHeaders]);
+
   // Fetch history
   const fetchHistory = useCallback(async () => {
     setLoading(true);
@@ -2047,6 +2087,11 @@ export default function ConfigAdminPage() {
     }
   }, [activeTab, selectedType, profileKey, fetchActiveConfig, fetchHistory, fetchEffectiveConfig, promptContent, promptDirty, editConfig]);
 
+  // Load dashboard on mount
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
   // Initialize prompt content from active config when available
   // Only use activeConfig if it matches current type AND profile to prevent race conditions
   useEffect(() => {
@@ -2133,6 +2178,76 @@ export default function ConfigAdminPage() {
         <p className={styles.subtitle}>
           View and manage search, calculation, and prompt configurations
         </p>
+      </div>
+
+      {/* Active Config Dashboard */}
+      <div style={{ marginBottom: 32, maxWidth: 1200 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: "#374151" }}>
+          📊 Active Configurations Overview
+        </h2>
+        {dashboardLoading ? (
+          <div style={{ padding: 20, textAlign: "center", color: "#6b7280" }}>Loading active configs...</div>
+        ) : dashboardData ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+            {Object.entries(dashboardData.activeConfigs).map(([configType, configs]) => {
+              const typeInfo = {
+                search: { label: "Search Config", icon: "🔍", color: "#3b82f6" },
+                calculation: { label: "Calculation Config", icon: "🧮", color: "#8b5cf6" },
+                prompt: { label: "Prompts", icon: "📝", color: "#f59e0b" },
+                pipeline: { label: "Pipeline Config", icon: "⚙️", color: "#10b981" },
+                sr: { label: "SR Config", icon: "📊", color: "#ec4899" },
+              }[configType] || { label: configType, icon: "📄", color: "#6b7280" };
+
+              return (
+                <div
+                  key={configType}
+                  style={{
+                    border: `2px solid ${typeInfo.color}`,
+                    borderRadius: 8,
+                    padding: 16,
+                    background: "#fff",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 20 }}>{typeInfo.icon}</span>
+                    <strong style={{ fontSize: 14, color: typeInfo.color }}>{typeInfo.label}</strong>
+                  </div>
+                  {configs.length === 0 ? (
+                    <div style={{ fontSize: 13, color: "#9ca3af" }}>No active configs</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {configs.map((config) => (
+                        <div
+                          key={config.profileKey}
+                          style={{
+                            padding: 10,
+                            background: "#f9fafb",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        >
+                          <div style={{ fontWeight: 600, marginBottom: 4, color: "#1f2937" }}>
+                            {config.profileKey}
+                          </div>
+                          <div style={{ color: "#6b7280", marginBottom: 2 }}>
+                            v{config.versionLabel}
+                          </div>
+                          <div style={{ color: "#9ca3af", fontSize: 11 }}>
+                            {new Date(config.activatedUtc).toLocaleDateString()} {new Date(config.activatedUtc).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ padding: 20, textAlign: "center", color: "#ef4444" }}>
+            Failed to load active configs
+          </div>
+        )}
       </div>
 
       {/* Config Type Selector */}
