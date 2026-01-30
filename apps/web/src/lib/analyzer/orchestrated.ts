@@ -2486,14 +2486,18 @@ interface TwoPanelSummary {
 // ============================================================================
 
 // ============================================================================
-// SOURCE RELIABILITY (v2.2 - LLM + Cache)
+// SOURCE RELIABILITY (v2.9.0 - Interface-based for modularity)
 // ============================================================================
 
-// Import from the new source-reliability module
+// v2.9.0 Phase 3: Use SR service interface for modularity
+// This allows SR to be extracted as a standalone service in the future
+import type { ISRService } from "./sr-service-interface";
+import { getDefaultSRService } from "./sr-service-impl";
+
+// Legacy direct imports (deprecated - use SR service interface)
 import {
   prefetchSourceReliability,
   getTrackRecordScore,
-  clearPrefetchedScores,
 } from "./source-reliability";
 
 // Re-export for backward compatibility
@@ -9290,9 +9294,8 @@ type AnalysisInput = {
 };
 
 export async function runFactHarborAnalysis(input: AnalysisInput) {
-  // Clear debug log and prefetched scores at start of each analysis
+  // Clear debug log at start of each analysis
   clearDebugLog();
-  clearPrefetchedScores();
   debugLog("=== ANALYSIS STARTED ===");
   debugLog("Input", {
     jobId: input.jobId || "",
@@ -9302,6 +9305,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   const startTime = Date.now();
   const emit = input.onEvent ?? (() => {});
+
+  // ============================================================================
+  // v2.9.0 Phase 3: Initialize SR service (interface-based modularity)
+  // ============================================================================
+  const srService = getDefaultSRService();
+  srService.clearCache(); // Clear prefetched data at start of analysis
 
   // ============================================================================
   // v2.9.0: Load unified configuration from DB/env/defaults
@@ -9675,10 +9684,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             ? uniqueGroundedDomains.join(', ')
             : `${uniqueGroundedDomains.slice(0, 3).join(', ')} +${uniqueGroundedDomains.length - 3} more`;
           await emit(`📊 Checking source reliability (${uniqueGroundedDomains.length}): ${domainPreview}`, baseProgress + 3);
-          const srResult = await prefetchSourceReliability(groundedUrls);
-          if (srResult.alreadyPrefetched > 0) {
-            console.log(`[SR] Skipped ${srResult.alreadyPrefetched} already-checked domains`);
-          }
+          // v2.9.0: Use SR service interface
+          await srService.prefetch(groundedUrls);
 
           // Fetch URLs just like standard search sources
           const fetchPromises = groundedUrlCandidates.map((candidate, i) =>
@@ -9866,16 +9873,20 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     // Prefetch source reliability scores (async batch operation)
     const urlsToFetch = uniqueResults.map((r: any) => r.url);
-    const domainsToFetch = urlsToFetch.map((u: string) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } });
+    const domainsToFetch = urlsToFetch.map((u: string) => {
+      try {
+        return new URL(u).hostname.replace(/^www\./, '');
+      } catch {
+        return u;
+      }
+    });
     const uniqueDomainsToFetch = [...new Set(domainsToFetch)];
     const domainPreview2 = uniqueDomainsToFetch.length <= 3
       ? uniqueDomainsToFetch.join(', ')
       : `${uniqueDomainsToFetch.slice(0, 3).join(', ')} +${uniqueDomainsToFetch.length - 3} more`;
     await emit(`📊 Checking source reliability (${uniqueDomainsToFetch.length}): ${domainPreview2}`, baseProgress + 4);
-    const srResult2 = await prefetchSourceReliability(urlsToFetch);
-    if (srResult2.alreadyPrefetched > 0) {
-      console.log(`[SR] Skipped ${srResult2.alreadyPrefetched} already-checked domains`);
-    }
+    // v2.9.0: Use SR service interface
+    await srService.prefetch(urlsToFetch);
 
     const fetchPromises = uniqueResults.map((r: any, i: number) =>
       fetchSource(
