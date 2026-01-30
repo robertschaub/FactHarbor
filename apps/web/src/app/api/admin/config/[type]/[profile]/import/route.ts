@@ -15,15 +15,11 @@ import {
   VALID_PROMPT_PROFILES,
   type ConfigType,
 } from "@/lib/config-storage";
+import { isValidConfigType } from "@/lib/config-schemas";
 
 export const runtime = "nodejs";
 
-const VALID_CONFIG_TYPES = ["prompt", "search", "calculation"] as const;
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
-
-function isValidConfigType(type: string): type is ConfigType {
-  return VALID_CONFIG_TYPES.includes(type as ConfigType);
-}
 
 function getAdminKey(): string | null {
   const v = process.env.FH_ADMIN_KEY;

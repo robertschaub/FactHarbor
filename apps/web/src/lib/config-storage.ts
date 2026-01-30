@@ -20,16 +20,120 @@ import {
   computeContentHash,
   getSchemaVersion,
   getDefaultConfig,
+  ConfigSchemaTypes,
+  parseTypedConfig,
+  DEFAULT_SEARCH_CONFIG,
+  DEFAULT_CALC_CONFIG,
+  DEFAULT_PIPELINE_CONFIG,
+  DEFAULT_SR_CONFIG,
 } from "./config-schemas";
 
 // Re-export types for API routes
-export type { ConfigType, SchemaVersion, ValidationResult };
+export type { ConfigType, SchemaVersion, ValidationResult, ConfigSchemaTypes };
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
 const CONFIG_DB_PATH = process.env.FH_CONFIG_DB_PATH || "./config.db";
+
+// Cache TTL in milliseconds (60 seconds default, per architecture plan)
+const CONFIG_CACHE_TTL_MS = parseInt(process.env.FH_CONFIG_CACHE_TTL_MS || "60000", 10);
+
+// ============================================================================
+// CONFIG CACHE (Recommendation #14 - TTL-based with explicit invalidation)
+// ============================================================================
+
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+  contentHash: string;
+}
+
+// Separate caches for different config types to support independent invalidation
+const configCache = new Map<string, CacheEntry<unknown>>();
+
+/**
+ * Generate cache key for a config type + profile combination
+ */
+function getCacheKey(configType: ConfigType, profileKey: string): string {
+  return `${configType}:${profileKey}`;
+}
+
+/**
+ * Get cached config if valid (not expired)
+ */
+function getCached<T>(cacheKey: string): CacheEntry<T> | null {
+  const entry = configCache.get(cacheKey) as CacheEntry<T> | undefined;
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    configCache.delete(cacheKey);
+    return null;
+  }
+  return entry;
+}
+
+/**
+ * Set cached config with TTL
+ */
+function setCache<T>(cacheKey: string, value: T, contentHash: string): void {
+  configCache.set(cacheKey, {
+    value,
+    expiresAt: Date.now() + CONFIG_CACHE_TTL_MS,
+    contentHash,
+  });
+}
+
+/**
+ * Invalidate cache for a specific config type + profile
+ * Called automatically on save/activate
+ */
+export function invalidateConfigCache(configType: ConfigType, profileKey: string): void {
+  const cacheKey = getCacheKey(configType, profileKey);
+  configCache.delete(cacheKey);
+  console.log(`[Config-Cache] Invalidated cache for ${cacheKey}`);
+}
+
+/**
+ * Invalidate all caches for a config type (useful for bulk operations)
+ */
+export function invalidateConfigCacheByType(configType: ConfigType): void {
+  const prefix = `${configType}:`;
+  let count = 0;
+  for (const key of configCache.keys()) {
+    if (key.startsWith(prefix)) {
+      configCache.delete(key);
+      count++;
+    }
+  }
+  if (count > 0) {
+    console.log(`[Config-Cache] Invalidated ${count} cache entries for type ${configType}`);
+  }
+}
+
+/**
+ * Clear entire config cache (for testing or emergency)
+ */
+export function clearConfigCache(): void {
+  const size = configCache.size;
+  configCache.clear();
+  console.log(`[Config-Cache] Cleared all ${size} cache entries`);
+}
+
+/**
+ * Get cache statistics (for monitoring/debugging)
+ */
+export function getConfigCacheStats(): {
+  entries: number;
+  keys: string[];
+  ttlMs: number;
+} {
+  return {
+    entries: configCache.size,
+    keys: Array.from(configCache.keys()),
+    ttlMs: CONFIG_CACHE_TTL_MS,
+  };
+}
 
 // ============================================================================
 // TYPES
@@ -293,6 +397,9 @@ export async function saveConfigBlob(
     ],
   );
 
+  // Invalidate cache for this config (new version available)
+  invalidateConfigCache(configType, profileKey);
+
   return {
     blob: {
       contentHash,
@@ -409,6 +516,9 @@ export async function activateConfig(
        activation_reason = excluded.activation_reason`,
     [configType, profileKey, contentHash, now, activatedBy || null, reason || null],
   );
+
+  // Invalidate cache (active config changed)
+  invalidateConfigCache(configType, profileKey);
 
   return {
     configType,
@@ -557,6 +667,284 @@ export async function getConfigForJob(
 }
 
 // ============================================================================
+// TYPED CONFIG GETTER (Recommendation #24 - Type-safe config access)
+// ============================================================================
+
+/**
+ * Environment variable mappings for config fields.
+ * Maps config field paths to env var names.
+ */
+const ENV_VAR_MAPPINGS: Record<ConfigType, Record<string, string>> = {
+  search: {
+    provider: "FH_SEARCH_PROVIDER",
+    enabled: "FH_SEARCH_ENABLED",
+    maxResults: "FH_SEARCH_MAX_RESULTS",
+    dateRestrict: "FH_SEARCH_DATE_RESTRICT",
+    domainWhitelist: "FH_SEARCH_DOMAIN_WHITELIST",
+  },
+  calculation: {
+    highConfidenceThreshold: "FH_HIGH_CONFIDENCE_THRESHOLD",
+    mediumConfidenceThreshold: "FH_MEDIUM_CONFIDENCE_THRESHOLD",
+    maxSourcesPerClaim: "FH_MAX_SOURCES_PER_CLAIM",
+    minFactsForVerdict: "FH_MIN_FACTS_FOR_VERDICT",
+    sourceReliabilityWeight: "FH_SOURCE_RELIABILITY_WEIGHT",
+  },
+  pipeline: {
+    llmTiering: "FH_LLM_TIERING",
+    modelUnderstand: "FH_MODEL_UNDERSTAND",
+    modelExtractFacts: "FH_MODEL_EXTRACT_FACTS",
+    modelVerdict: "FH_MODEL_VERDICT",
+    llmInputClassification: "FH_LLM_INPUT_CLASSIFICATION",
+    llmEvidenceQuality: "FH_LLM_EVIDENCE_QUALITY",
+    llmScopeSimilarity: "FH_LLM_SCOPE_SIMILARITY",
+    llmVerdictValidation: "FH_LLM_VERDICT_VALIDATION",
+    analysisMode: "FH_ANALYSIS_MODE",
+    allowModelKnowledge: "FH_ALLOW_MODEL_KNOWLEDGE",
+    deterministic: "FH_DETERMINISTIC",
+    scopeDedupThreshold: "FH_SCOPE_DEDUP_THRESHOLD",
+    maxIterationsPerScope: "FH_MAX_ITERATIONS_PER_SCOPE",
+    maxTotalIterations: "FH_MAX_TOTAL_ITERATIONS",
+    maxTotalTokens: "FH_MAX_TOTAL_TOKENS",
+    enforceBudgets: "FH_ENFORCE_BUDGETS",
+    defaultPipelineVariant: "FH_DEFAULT_PIPELINE_VARIANT",
+  },
+  sr: {
+    enabled: "FH_SR_ENABLED",
+    multiModel: "FH_SR_MULTI_MODEL",
+    openaiModel: "FH_SR_OPENAI_MODEL",
+    confidenceThreshold: "FH_SR_CONFIDENCE_THRESHOLD",
+    consensusThreshold: "FH_SR_CONSENSUS_THRESHOLD",
+    defaultScore: "FH_SR_DEFAULT_SCORE",
+    cacheTtlDays: "FH_SR_CACHE_TTL_DAYS",
+    filterEnabled: "FH_SR_FILTER_ENABLED",
+    skipPlatforms: "FH_SR_SKIP_PLATFORMS",
+    skipTlds: "FH_SR_SKIP_TLDS",
+    rateLimitPerIp: "FH_SR_RATE_LIMIT_PER_IP",
+    domainCooldownSec: "FH_SR_RATE_LIMIT_DOMAIN_COOLDOWN",
+  },
+  prompt: {}, // Prompts don't have env var overrides
+};
+
+/**
+ * Default configs by type
+ */
+const DEFAULT_CONFIGS: Record<Exclude<ConfigType, "prompt">, unknown> = {
+  search: DEFAULT_SEARCH_CONFIG,
+  calculation: DEFAULT_CALC_CONFIG,
+  pipeline: DEFAULT_PIPELINE_CONFIG,
+  sr: DEFAULT_SR_CONFIG,
+};
+
+/**
+ * Parse an env var value to the appropriate type based on the default value type
+ */
+function parseEnvValue(envValue: string, defaultValue: unknown): unknown {
+  if (typeof defaultValue === "boolean") {
+    // Treat "on"/"off", "true"/"false", "1"/"0" as booleans
+    return envValue === "true" || envValue === "on" || envValue === "1";
+  }
+  if (typeof defaultValue === "number") {
+    const parsed = parseFloat(envValue);
+    return isNaN(parsed) ? defaultValue : parsed;
+  }
+  if (Array.isArray(defaultValue)) {
+    // Comma-separated list
+    return envValue.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  return envValue;
+}
+
+/**
+ * Apply environment variable overrides to a config object.
+ * Returns the modified config and a list of applied overrides.
+ */
+function applyEnvOverrides<T extends object>(
+  configType: ConfigType,
+  config: T,
+): { config: T; overrides: OverrideRecord[] } {
+  const mappings = ENV_VAR_MAPPINGS[configType];
+  const overrides: OverrideRecord[] = [];
+  const result = { ...config };
+
+  for (const [fieldPath, envVar] of Object.entries(mappings)) {
+    const envValue = process.env[envVar];
+    if (envValue !== undefined) {
+      const defaultValue = (config as Record<string, unknown>)[fieldPath];
+      const parsed = parseEnvValue(envValue, defaultValue);
+      (result as Record<string, unknown>)[fieldPath] = parsed;
+      overrides.push({
+        envVar,
+        fieldPath,
+        wasSet: true,
+        appliedValue: typeof parsed === "object" ? undefined : (parsed as string | number | boolean),
+        valueHash: typeof parsed === "object" ? computeContentHash(JSON.stringify(parsed)) : undefined,
+      });
+    }
+  }
+
+  return { config: result, overrides };
+}
+
+/**
+ * Get typed configuration with caching and env var fallback.
+ *
+ * Resolution order:
+ * 1. Check cache (TTL-based)
+ * 2. Load from database (active config)
+ * 3. Apply environment variable overrides (Tier 1 takes precedence)
+ * 4. Fall back to default config if no DB config exists
+ *
+ * @param configType - The type of config to retrieve
+ * @param profileKey - The profile key (default: "default")
+ * @param options - Optional: skipCache to bypass cache, jobId to record usage
+ * @returns Typed config with metadata
+ */
+export async function getConfig<T extends keyof ConfigSchemaTypes>(
+  configType: T,
+  profileKey = "default",
+  options: {
+    skipCache?: boolean;
+    jobId?: string;
+  } = {},
+): Promise<{
+  config: ConfigSchemaTypes[T];
+  contentHash: string | null;
+  fromCache: boolean;
+  fromDefault: boolean;
+  overrides: OverrideRecord[];
+}> {
+  const cacheKey = getCacheKey(configType, profileKey);
+
+  // 1. Check cache (unless skipCache)
+  if (!options.skipCache) {
+    const cached = getCached<{
+      config: ConfigSchemaTypes[T];
+      contentHash: string | null;
+      overrides: OverrideRecord[];
+    }>(cacheKey);
+    if (cached) {
+      return {
+        config: cached.value.config,
+        contentHash: cached.value.contentHash,
+        fromCache: true,
+        fromDefault: false,
+        overrides: cached.value.overrides,
+      };
+    }
+  }
+
+  // 2. Try to load from database
+  let baseConfig: ConfigSchemaTypes[T] | null = null;
+  let contentHash: string | null = null;
+  let fromDefault = false;
+
+  if (configType === "prompt") {
+    // Prompts are strings, no env override
+    const activeConfig = await getActiveConfig(configType, profileKey);
+    if (activeConfig) {
+      const result = {
+        config: activeConfig.content as ConfigSchemaTypes[T],
+        contentHash: activeConfig.contentHash,
+        fromCache: false,
+        fromDefault: false,
+        overrides: [] as OverrideRecord[],
+      };
+      // Cache the result
+      setCache(cacheKey, result, activeConfig.contentHash);
+      // Record usage if jobId provided
+      if (options.jobId) {
+        await recordConfigUsage(options.jobId, configType, profileKey, activeConfig.contentHash, []);
+      }
+      return result;
+    }
+    // No DB config for prompt - this is an error state, prompts should always be seeded
+    throw new Error(`No active prompt config for profile: ${profileKey}. Run seedPromptFromFile() first.`);
+  }
+
+  // For non-prompt types
+  const activeConfig = await getActiveConfig(configType, profileKey);
+  if (activeConfig) {
+    baseConfig = parseTypedConfig(configType, activeConfig.content);
+    contentHash = activeConfig.contentHash;
+  } else {
+    // Fall back to default config
+    const defaultConfig = DEFAULT_CONFIGS[configType as Exclude<ConfigType, "prompt">];
+    if (defaultConfig) {
+      baseConfig = defaultConfig as ConfigSchemaTypes[T];
+      fromDefault = true;
+    } else {
+      throw new Error(`No config found for ${configType}/${profileKey} and no default available`);
+    }
+  }
+
+  // 3. Apply environment variable overrides
+  const { config: finalConfig, overrides } = applyEnvOverrides(
+    configType,
+    baseConfig as object,
+  );
+
+  const result = {
+    config: finalConfig as ConfigSchemaTypes[T],
+    contentHash,
+    fromCache: false,
+    fromDefault,
+    overrides,
+  };
+
+  // 4. Cache the result
+  setCache(cacheKey, result, contentHash || "default");
+
+  // 5. Record usage if jobId provided (for non-default configs)
+  if (options.jobId && contentHash) {
+    await recordConfigUsage(options.jobId, configType, profileKey, contentHash, overrides);
+  }
+
+  return result;
+}
+
+/**
+ * Get multiple config types at once (for job startup).
+ * More efficient than calling getConfig multiple times.
+ */
+export async function getConfigBundle(
+  jobId: string,
+  pipelineVariant: string,
+): Promise<{
+  search: ConfigSchemaTypes["search"];
+  calculation: ConfigSchemaTypes["calculation"];
+  pipeline: ConfigSchemaTypes["pipeline"];
+  prompt: string;
+  hashes: Record<string, string | null>;
+  overrides: Record<string, OverrideRecord[]>;
+}> {
+  const [searchResult, calcResult, pipelineResult, promptResult] = await Promise.all([
+    getConfig("search", "default", { jobId }),
+    getConfig("calculation", "default", { jobId }),
+    getConfig("pipeline", "default", { jobId }),
+    getConfig("prompt", pipelineVariant, { jobId }),
+  ]);
+
+  return {
+    search: searchResult.config,
+    calculation: calcResult.config,
+    pipeline: pipelineResult.config,
+    prompt: promptResult.config,
+    hashes: {
+      search: searchResult.contentHash,
+      calculation: calcResult.contentHash,
+      pipeline: pipelineResult.contentHash,
+      prompt: promptResult.contentHash,
+    },
+    overrides: {
+      search: searchResult.overrides,
+      calculation: calcResult.overrides,
+      pipeline: pipelineResult.overrides,
+      prompt: promptResult.overrides,
+    },
+  };
+}
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
@@ -643,6 +1031,32 @@ export async function initializeDefaultConfigs(): Promise<void> {
       "system",
     );
     await activateConfig("calculation", "default", blob.contentHash, "system", "initial");
+  }
+
+  // Create default pipeline config
+  const pipelineContent = getDefaultConfig("pipeline");
+  if (pipelineContent) {
+    const { blob } = await saveConfigBlob(
+      "pipeline",
+      "default",
+      pipelineContent,
+      "Initial default config",
+      "system",
+    );
+    await activateConfig("pipeline", "default", blob.contentHash, "system", "initial");
+  }
+
+  // Create default SR config (kept separate per SR modularity requirement)
+  const srContent = getDefaultConfig("sr");
+  if (srContent) {
+    const { blob } = await saveConfigBlob(
+      "sr",
+      "default",
+      srContent,
+      "Initial default config",
+      "system",
+    );
+    await activateConfig("sr", "default", blob.contentHash, "system", "initial");
   }
 
   console.log("[Config-Storage] Default configs initialized");

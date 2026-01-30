@@ -10,10 +10,12 @@ import type { ConfigType } from "@/lib/config-storage";
 
 export const runtime = "nodejs";
 
-const VALID_CONFIG_TYPES = ["search", "calculation"] as const;
+// Effective config endpoint only supports non-prompt configs
+const VALID_EFFECTIVE_TYPES = ["search", "calculation", "pipeline", "sr"] as const;
+type EffectiveConfigType = (typeof VALID_EFFECTIVE_TYPES)[number];
 
-function isValidConfigType(type: string): type is "search" | "calculation" {
-  return VALID_CONFIG_TYPES.includes(type as "search" | "calculation");
+function isValidEffectiveType(type: string): type is EffectiveConfigType {
+  return VALID_EFFECTIVE_TYPES.includes(type as EffectiveConfigType);
 }
 
 function getAdminKey(): string | null {
@@ -42,9 +44,9 @@ export async function GET(req: Request, { params }: RouteParams) {
 
   const { type, profile } = await params;
 
-  if (!isValidConfigType(type)) {
+  if (!isValidEffectiveType(type)) {
     return NextResponse.json(
-      { error: `Invalid config type: ${type}. Only 'search' and 'calculation' supported.` },
+      { error: `Invalid config type: ${type}. Only 'search', 'calculation', 'pipeline', 'sr' supported for effective config.` },
       { status: 400 },
     );
   }

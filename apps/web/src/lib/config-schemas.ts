@@ -15,8 +15,21 @@ import crypto from "crypto";
 // TYPES
 // ============================================================================
 
-export type ConfigType = "prompt" | "search" | "calculation";
-export type SchemaVersion = "prompt.v1" | "search.v1" | "calc.v1";
+export type ConfigType = "prompt" | "search" | "calculation" | "pipeline" | "sr";
+export type SchemaVersion = "prompt.v1" | "search.v1" | "calc.v1" | "pipeline.v1" | "sr.v1";
+
+/**
+ * Valid config types for API validation.
+ * Single source of truth - import this in API routes.
+ */
+export const VALID_CONFIG_TYPES = ["prompt", "search", "calculation", "pipeline", "sr"] as const;
+
+/**
+ * Check if a string is a valid config type
+ */
+export function isValidConfigType(type: string): type is ConfigType {
+  return VALID_CONFIG_TYPES.includes(type as ConfigType);
+}
 
 export interface ValidationResult {
   valid: boolean;
@@ -52,6 +65,131 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   dateRestrict: null,
   domainWhitelist: [],
   domainBlacklist: [],
+};
+
+// ============================================================================
+// PIPELINE CONFIG SCHEMA (pipeline.v1)
+// ============================================================================
+// Tier 2 operational config for analysis pipeline settings.
+// Hot-reloadable via Admin UI, env vars used as fallback defaults.
+
+export const PipelineConfigSchema = z.object({
+  // === Model Selection ===
+  llmTiering: z.boolean().describe("Enable tiered model selection for cost optimization"),
+  modelUnderstand: z.string().min(1).describe("Model for UNDERSTAND phase (claim comprehension)"),
+  modelExtractFacts: z.string().min(1).describe("Model for EXTRACT_FACTS phase"),
+  modelVerdict: z.string().min(1).describe("Model for VERDICT phase (final verdicts)"),
+
+  // === LLM Text Analysis Feature Flags ===
+  llmInputClassification: z.boolean().describe("Use LLM for input classification (replaces heuristics)"),
+  llmEvidenceQuality: z.boolean().describe("Use LLM for evidence quality assessment"),
+  llmScopeSimilarity: z.boolean().describe("Use LLM for scope similarity analysis"),
+  llmVerdictValidation: z.boolean().describe("Use LLM for verdict validation (inversion/harm detection)"),
+
+  // === Analysis Behavior ===
+  analysisMode: z.enum(["quick", "deep"]).describe("Analysis depth: quick (faster) or deep (more thorough)"),
+  allowModelKnowledge: z.boolean().describe("Allow LLM to use training knowledge (not just web sources)"),
+  deterministic: z.boolean().describe("Use temperature=0 for reproducible outputs"),
+  scopeDedupThreshold: z.number().min(0).max(1).describe("Threshold for scope deduplication (lower = more scopes)"),
+
+  // === Budget Controls ===
+  maxIterationsPerScope: z.number().int().min(1).max(20).describe("Max research iterations per scope"),
+  maxTotalIterations: z.number().int().min(1).max(50).describe("Max total iterations across all scopes"),
+  maxTotalTokens: z.number().int().min(10000).max(2000000).describe("Max tokens per analysis"),
+  enforceBudgets: z.boolean().describe("Hard enforce budget limits (false = soft limits for important claims)"),
+
+  // === Pipeline Selection ===
+  defaultPipelineVariant: z.enum(["orchestrated", "monolithic_canonical", "monolithic_dynamic"])
+    .optional()
+    .describe("Default pipeline variant for new jobs"),
+});
+
+export type PipelineConfig = z.infer<typeof PipelineConfigSchema>;
+
+export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
+  // Model selection
+  llmTiering: true,
+  modelUnderstand: "claude-3-5-haiku-20241022",
+  modelExtractFacts: "claude-3-5-haiku-20241022",
+  modelVerdict: "claude-sonnet-4-20250514",
+
+  // LLM text analysis (all enabled by default per v2.8.3)
+  llmInputClassification: true,
+  llmEvidenceQuality: true,
+  llmScopeSimilarity: true,
+  llmVerdictValidation: true,
+
+  // Analysis behavior
+  analysisMode: "deep",
+  allowModelKnowledge: true,
+  deterministic: true,
+  scopeDedupThreshold: 0.70,
+
+  // Budget controls
+  maxIterationsPerScope: 5,
+  maxTotalIterations: 20,
+  maxTotalTokens: 750000,
+  enforceBudgets: false,
+
+  // Pipeline selection
+  defaultPipelineVariant: "orchestrated",
+};
+
+// ============================================================================
+// SOURCE RELIABILITY CONFIG SCHEMA (sr.v1)
+// ============================================================================
+// Tier 2 operational config for Source Reliability service.
+// IMPORTANT: This config is kept SEPARATE for SR modularity (future extraction).
+// See: Docs/REVIEWS/Unified_Configuration_Management_Plan.md - SR Modularity Architecture
+
+export const SourceReliabilityConfigSchema = z.object({
+  // === Core Settings ===
+  enabled: z.boolean().describe("Enable source reliability scoring"),
+  multiModel: z.boolean().describe("Use multi-model consensus (Claude + OpenAI)"),
+  openaiModel: z.string().min(1).describe("OpenAI model for secondary evaluation"),
+
+  // === Thresholds ===
+  confidenceThreshold: z.number().min(0).max(1).describe("Minimum confidence to accept a score"),
+  consensusThreshold: z.number().min(0).max(1).describe("Max score difference between models for consensus"),
+  defaultScore: z.number().min(0).max(1).describe("Default score for unknown sources"),
+
+  // === Cache Settings ===
+  cacheTtlDays: z.number().int().min(1).max(365).describe("Cache TTL in days"),
+
+  // === Filtering ===
+  filterEnabled: z.boolean().describe("Skip evaluation for low-value domains"),
+  skipPlatforms: z.array(z.string()).describe("Platform domains to skip (e.g., blogspot.com)"),
+  skipTlds: z.array(z.string()).describe("TLDs to skip (e.g., xyz, top)"),
+
+  // === Rate Limiting ===
+  rateLimitPerIp: z.number().int().min(1).max(100).optional().describe("Max evaluations per IP per minute"),
+  domainCooldownSec: z.number().int().min(0).max(3600).optional().describe("Cooldown between re-evaluating same domain"),
+});
+
+export type SourceReliabilityConfig = z.infer<typeof SourceReliabilityConfigSchema>;
+
+export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
+  // Core settings
+  enabled: true,
+  multiModel: true,
+  openaiModel: "gpt-4o-mini",
+
+  // Thresholds
+  confidenceThreshold: 0.8,
+  consensusThreshold: 0.20,
+  defaultScore: 0.5,
+
+  // Cache
+  cacheTtlDays: 90,
+
+  // Filtering
+  filterEnabled: true,
+  skipPlatforms: ["blogspot.", "wordpress.com", "medium.com", "substack.com"],
+  skipTlds: ["xyz", "top", "club", "icu", "buzz", "tk", "ml", "ga", "cf", "gq"],
+
+  // Rate limiting
+  rateLimitPerIp: 10,
+  domainCooldownSec: 60,
 };
 
 // ============================================================================
@@ -660,6 +798,24 @@ export function validateConfig(
           ),
         );
       }
+    } else if (configType === "pipeline" && schemaVersion === "pipeline.v1") {
+      const result = PipelineConfigSchema.safeParse(parsed);
+      if (!result.success) {
+        errors.push(
+          ...result.error.issues.map(
+            (i) => `${i.path.join(".")}: ${i.message}`,
+          ),
+        );
+      }
+    } else if (configType === "sr" && schemaVersion === "sr.v1") {
+      const result = SourceReliabilityConfigSchema.safeParse(parsed);
+      if (!result.success) {
+        errors.push(
+          ...result.error.issues.map(
+            (i) => `${i.path.join(".")}: ${i.message}`,
+          ),
+        );
+      }
     } else {
       errors.push(`Unknown schema version: ${schemaVersion}`);
     }
@@ -681,6 +837,10 @@ export function getSchemaVersion(configType: ConfigType): SchemaVersion {
       return "search.v1";
     case "calculation":
       return "calc.v1";
+    case "pipeline":
+      return "pipeline.v1";
+    case "sr":
+      return "sr.v1";
   }
 }
 
@@ -693,7 +853,73 @@ export function getDefaultConfig(configType: ConfigType): string {
       return canonicalizeJson(DEFAULT_SEARCH_CONFIG);
     case "calculation":
       return canonicalizeJson(DEFAULT_CALC_CONFIG);
+    case "pipeline":
+      return canonicalizeJson(DEFAULT_PIPELINE_CONFIG);
+    case "sr":
+      return canonicalizeJson(DEFAULT_SR_CONFIG);
     case "prompt":
       return ""; // No default prompt
   }
+}
+
+// ============================================================================
+// TYPE-SAFE CONFIG ACCESS (Recommendation #24)
+// ============================================================================
+
+/**
+ * Type mapping for config types to their schema types.
+ * Used by getTypedConfig() for type-safe config access.
+ */
+export type ConfigSchemaTypes = {
+  search: SearchConfig;
+  calculation: CalcConfig;
+  pipeline: PipelineConfig;
+  sr: SourceReliabilityConfig;
+  prompt: string;
+};
+
+/**
+ * Get the Zod schema for a config type.
+ */
+export function getSchemaForType(configType: ConfigType): z.ZodType<unknown> | null {
+  switch (configType) {
+    case "search":
+      return SearchConfigSchema;
+    case "calculation":
+      return CalcConfigSchema;
+    case "pipeline":
+      return PipelineConfigSchema;
+    case "sr":
+      return SourceReliabilityConfigSchema;
+    case "prompt":
+      return null; // Prompts are validated differently
+  }
+}
+
+/**
+ * Parse and validate config content with type safety.
+ * Returns the validated config object or throws on validation failure.
+ */
+export function parseTypedConfig<T extends keyof ConfigSchemaTypes>(
+  configType: T,
+  content: string,
+): ConfigSchemaTypes[T] {
+  if (configType === "prompt") {
+    return content as ConfigSchemaTypes[T];
+  }
+
+  const parsed = JSON.parse(content);
+  const schema = getSchemaForType(configType);
+
+  if (!schema) {
+    throw new Error(`No schema for config type: ${configType}`);
+  }
+
+  const result = schema.safeParse(parsed);
+  if (!result.success) {
+    const errors = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
+    throw new Error(`Config validation failed: ${errors.join(", ")}`);
+  }
+
+  return result.data as ConfigSchemaTypes[T];
 }
