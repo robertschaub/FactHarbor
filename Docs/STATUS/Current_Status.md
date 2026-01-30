@@ -69,7 +69,7 @@
 - Multi-provider search support (Google CSE, SerpAPI, Gemini Grounded)
 - SQLite database for local development
 - Automated retry with exponential backoff
-- **Unified Configuration Management** (v2.9.0 ~55% Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **Phase 1 high-value settings migrated** (13 settings hot-reloadable). Job snapshots and SR interface pending.
+- **Unified Configuration Management** (v2.9.0 ~70% Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **Phase 1 & 2 complete** - 13 settings hot-reloadable + job config snapshots for full auditability. SR interface and admin UI pending.
 
 **Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
 - ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
@@ -302,7 +302,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ## Recent Changes
 
 ### v2.9.0 Unified Configuration Management - Phase 1 In Progress (January 30, 2026)
-**Status: ~55% Complete** - Foundation built, Phase 1 high-value settings migrated and reviewed
+**Status: ~70% Complete** - Foundation built, Phase 1 & 2 complete (high-value settings + job snapshots)
 
 **✅ What's Complete:**
 - **Extended Config Types**: Added Pipeline and Source Reliability (SR) config types to unified config system
@@ -349,6 +349,24 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - Added schema documentation for `maxTokensPerCall` exclusion
 - **Gradual Migration Pattern**: Functions accept optional config param with env fallback for backwards compatibility
 
+**✅ Phase 2: Job Config Snapshots (Complete)**
+- **Database Schema**: `job_config_snapshots` table stores full resolved configs per job
+  - Migration: `003_add_job_config_snapshots.sql`
+  - Stores PipelineConfig and SearchConfig as JSON blobs
+  - Stores SR summary fields (maintains modularity per review Rec #22)
+  - Indexed by job_id for fast lookups
+- **Config Snapshots Module**: `config-snapshots.ts` with capture/retrieval API
+  - `captureConfigSnapshot()`: Persist complete config for a job
+  - `captureConfigSnapshotAsync()`: Non-blocking background capture
+  - `getConfigSnapshot()`: Retrieve snapshot by job_id
+  - `formatSnapshotForDisplay()`: Format for admin UI display
+- **Analyzer Integration**: Snapshots captured at analysis start
+  - Loads both PipelineConfig and SearchConfig
+  - Captures SR summary (enabled/score/threshold)
+  - Async capture (non-blocking), awaited before return
+  - Handles optional jobId gracefully (no-op if undefined)
+- **Success Metric Achieved**: ✅ Can view complete config that produced any job
+
 **🟡 Remaining Env Vars (65 reads):**
 - **26 refs**: Already migrated settings (env fallbacks for backwards compatibility)
 - **11 refs**: Separate config types (SearchConfig, SRConfig) - Phase 3 scope
@@ -357,14 +375,16 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 - **6 refs**: Legacy monolithic pipelines - low priority
 
 **🔴 Critical Gaps Remaining:**
-1. **Job Config Snapshots**: Cannot view complete config that produced a job - auditability compromised (~1 week)
-2. **Integration Test**: Write test demonstrating hot-reload works end-to-end (~1 day)
-3. **SR Interface**: SR modularity interface not enforced - not yet extractable (~1 week)
+1. **Integration Test**: Write test demonstrating hot-reload works end-to-end (~1 day)
+2. **SR Interface**: SR modularity interface not enforced - not yet extractable (~1 week)
+3. **Admin UI for Snapshots**: Create /admin/quality/job/[id] view showing full config (~2 days)
 
-**Remaining Work: ~2.5 weeks**
-- Phase 2: Job Snapshots (1 week, HIGH)
+**Remaining Work: ~1.5 weeks**
 - Phase 3: SR Modularity Interface (1 week, MEDIUM)
 - Phase 4: Admin UI Polish (3 days, LOW)
+  - Snapshot viewer at /admin/quality/job/[id]
+  - Split routes to /admin/quality/* and /admin/sr/*
+  - Validation warnings for dangerous config combos
 
 See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md)
 
