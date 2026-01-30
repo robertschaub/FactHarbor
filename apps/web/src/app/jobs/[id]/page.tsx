@@ -313,11 +313,25 @@ export default function JobPage() {
   const impliedClaim: string = (result?.understanding?.impliedClaim || "").trim();
   const hasContestedFactors = result?.meta?.hasContestedFactors;
   const searchQueries = result?.searchQueries || [];
-  const sources = result?.sources || [];
   const researchStats = result?.researchStats;
   const facts = result?.facts || []; // NEW v2.6.29: Access extracted facts for counter-evidence display
   // Prefer job.pipelineVariant (available immediately) over result meta (only after completion)
   const pipelineVariant = job?.pipelineVariant || result?.meta?.pipelineVariant || "orchestrated";
+
+  // v2.8.2: For dynamic pipeline, use citations array; for canonical pipelines, use sources array
+  // Dynamic pipeline stores fetched sources as citations with different structure
+  const sources = pipelineVariant === "monolithic_dynamic"
+    ? (result?.citations || []).map((c: any) => ({
+        url: c.url,
+        title: c.title,
+        fetchSuccess: true, // Citations are only added if successfully fetched
+        trackRecordScore: c.trackRecordScore,
+        trackRecordConfidence: c.trackRecordConfidence,
+        trackRecordConsensus: c.trackRecordConsensus,
+        excerpt: c.excerpt,
+        category: c.sourceType || 'citation',
+      }))
+    : result?.sources || [];
   const subClaims = result?.understanding?.subClaims || [];
   const tangentialSubClaims = Array.isArray(subClaims)
     ? subClaims.filter((c: any) => c?.thesisRelevance === "tangential")
