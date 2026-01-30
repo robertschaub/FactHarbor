@@ -283,3 +283,49 @@ Bottom Line: The v2.9.0 implementation is architecturally sound with excellent t
 Confidence Level: HIGH that remaining work is well-scoped and achievable.
 
 🎉 Congratulations on excellent foundational work! The hard part (schema design, validation, testing) is done. Now connect it to the analyzer to unlock the operational value
+
+___
+
+## ✅ ALL CODE REVIEW ISSUES RESOLVED
+
+All 5 issues identified in the code review have been fixed in commit `1315273`:
+
+### Critical Issues - FIXED ✅
+
+**Issue 1: Environment Variable Parsing Regression**
+- Location: [config-loader.ts:112](../apps/web/src/lib/config-loader.ts#L112)
+- **Status**: FIXED - Boolean parsers now use explicit allowlist
+- Fix: `parser: (v) => ["on", "true", "1", "enabled"].includes(v.toLowerCase().trim())`
+- Verified: FH_LLM_TIERING, FH_ALLOW_MODEL_KNOWLEDGE now parse correctly
+
+**Issue 2: Default Value Changes**
+- Location: [config-schemas.ts:111-128](../apps/web/src/lib/config-schemas.ts#L111-L128)
+- **Status**: FIXED - All defaults reverted to match original behavior
+- Verified:
+  - `llmTiering: false` (line 113) ✓
+  - `analysisMode: "quick"` (line 125) ✓
+  - `allowModelKnowledge: false` (line 126) ✓
+  - `scopeDedupThreshold: 0.85` (line 128) ✓
+
+**Issue 3: Missing Fallback for Report Model Task**
+- Location: [llm.ts:61-63](../apps/web/src/lib/analyzer/llm.ts#L61-L63)
+- **Status**: FIXED - Report task now falls through to env var check
+- Fix: Changed from `return null` to `break` allowing fallback to FH_MODEL_REPORT
+
+### Medium Issues - FIXED ✅
+
+**Issue 4: Inconsistent Type Union**
+- Location: [model-tiering.ts:157](../apps/web/src/lib/analyzer/model-tiering.ts#L157)
+- **Status**: FIXED - TODO comment added for post-migration simplification
+- Fix: `@todo v2.9.0: Simplify config type to PipelineConfig | undefined once migration complete`
+
+**Issue 5: maxTokensPerCall Not Configurable**
+- Location: [config-schemas.ts:96-97](../apps/web/src/lib/config-schemas.ts#L96-L97)
+- **Status**: FIXED - Documented why excluded from pipeline config
+- Fix: Clear comment explaining it's a low-level safety limit that should remain an env var
+
+### Summary
+- **Fixed**: 5/5 issues (100%) ✅
+- **Remaining**: 0 issues
+- **Commit**: `1315273` - fix(config): address code review issues - fix regressions and defaults
+- **Impact**: All backwards compatibility concerns resolved, no breaking changes for existing deployments
