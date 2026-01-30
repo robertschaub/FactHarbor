@@ -69,7 +69,7 @@
 - Multi-provider search support (Google CSE, SerpAPI, Gemini Grounded)
 - SQLite database for local development
 - Automated retry with exponential backoff
-- **Unified Configuration Management** (v2.9.0 ~70% Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **Phase 1 & 2 complete** - 13 settings hot-reloadable + job config snapshots for full auditability. SR interface and admin UI pending.
+- **Unified Configuration Management** (v2.9.0 ~85% Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **Phase 1-3 complete** - 13 settings hot-reloadable + job config snapshots + SR modularity interface. Admin UI polish pending.
 
 **Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
 - ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
@@ -302,7 +302,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ## Recent Changes
 
 ### v2.9.0 Unified Configuration Management - Phase 1 In Progress (January 30, 2026)
-**Status: ~70% Complete** - Foundation built, Phase 1 & 2 complete (high-value settings + job snapshots)
+**Status: ~85% Complete** - Foundation built, Phase 1-3 complete (settings + snapshots + SR modularity)
 
 **✅ What's Complete:**
 - **Extended Config Types**: Added Pipeline and Source Reliability (SR) config types to unified config system
@@ -367,20 +367,33 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - Handles optional jobId gracefully (no-op if undefined)
 - **Success Metric Achieved**: ✅ Can view complete config that produced any job
 
+**✅ Phase 3: SR Modularity Interface (Complete)**
+- **SR Service Interface**: Clean contract between analyzer and SR system
+  - `ISRService` interface with 6 core methods
+  - `SRConfigReadOnly` for read-only config access
+  - `SREvaluation`, `SRPrefetchResult` types
+- **Default Implementation**: `SRServiceImpl` wraps existing SR module
+  - Factory function: `createSRService(options?)`
+  - Singleton: `getDefaultSRService()`, `setDefaultSRService()`
+  - DI support for testing: `resetDefaultSRService()`
+- **Analyzer Integration**: Uses SR service for prefetch operations
+  - `orchestrated.ts` updated to use `srService.prefetch(urls)`
+  - Backwards compatible: `getTrackRecordScore()` still works
+  - Clear separation enables future SR extraction
+- **Success Metric Achieved**: ✅ SR can be extracted without breaking FactHarbor
+
 **🟡 Remaining Env Vars (65 reads):**
 - **26 refs**: Already migrated settings (env fallbacks for backwards compatibility)
-- **11 refs**: Separate config types (SearchConfig, SRConfig) - Phase 3 scope
+- **11 refs**: SR config now behind interface (extractable)
 - **14 refs**: Low-level tuning parameters (timeouts, thresholds) - should remain env vars
 - **8 refs**: Debug/AB testing - low priority
 - **6 refs**: Legacy monolithic pipelines - low priority
 
-**🔴 Critical Gaps Remaining:**
+**🔴 Nice-to-Have Remaining:**
 1. **Integration Test**: Write test demonstrating hot-reload works end-to-end (~1 day)
-2. **SR Interface**: SR modularity interface not enforced - not yet extractable (~1 week)
-3. **Admin UI for Snapshots**: Create /admin/quality/job/[id] view showing full config (~2 days)
+2. **Admin UI for Snapshots**: Create /admin/quality/job/[id] view showing full config (~2 days)
 
-**Remaining Work: ~1.5 weeks**
-- Phase 3: SR Modularity Interface (1 week, MEDIUM)
+**Remaining Work: ~3 days (optional)**
 - Phase 4: Admin UI Polish (3 days, LOW)
   - Snapshot viewer at /admin/quality/job/[id]
   - Split routes to /admin/quality/* and /admin/sr/*
