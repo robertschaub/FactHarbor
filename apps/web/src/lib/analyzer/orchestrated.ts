@@ -95,7 +95,7 @@ import {
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { recordConfigUsage } from "@/lib/config-storage";
-import { getAnalyzerConfig } from "@/lib/config-loader";
+import { getAnalyzerConfig, type PipelineConfig } from "@/lib/config-loader";
 import type { EvidenceItem } from "./types";
 import {
   getTextAnalysisService,
@@ -123,7 +123,7 @@ async function refineScopesFromEvidence(
   const facts = state.facts || [];
   // If we don't have enough evidence, skip refinement (avoid hallucinated scopes).
   // v2.6.39: Align threshold with mode config (quick=6, deep=8) to enable refinement in quick mode
-  const config = getActiveConfig();
+  const config = getActiveConfig(state.pipelineConfig);
   const minRefineFacts = Math.min(8, config.minFactsRequired);
   if (facts.length < minRefineFacts) {
     debugLog(`[Refine] Skipping refinement: ${facts.length} facts < ${minRefineFacts} threshold (mode: ${CONFIG.deepModeEnabled ? 'deep' : 'quick'})`);
@@ -258,7 +258,7 @@ Return:
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: getDeterministicTemperature(0.1),
+      temperature: getDeterministicTemperature(0.1, state.pipelineConfig),
       output: Output.object({ schema }),
     });
     refined = extractStructuredOutput(result);
@@ -582,7 +582,7 @@ Return:
   // If we introduced multi-scope but claim coverage is thin, add minimal per-scope central claims.
   // (This is generic decomposition; it does not “hunt” for named scenarios.)
   if (state.understanding!.analysisContexts.length > 1 && state.understanding!.subClaims.length <= 1) {
-    const added = await requestSupplementalSubClaims(analysisInput, model, state.understanding!);
+    const added = await requestSupplementalSubClaims(analysisInput, model, state.understanding!, state.pipelineConfig);
     if (added.length > 0) {
       state.understanding!.subClaims.push(...added);
     }
@@ -2230,6 +2230,8 @@ interface ResearchState {
   // NEW PR 6: Budget tracking for p95 hardening
   budget: ResearchBudget;
   budgetTracker: BudgetTracker;
+  // NEW v2.9.0: Pipeline config for hot-reload support
+  pipelineConfig: PipelineConfig;
 }
 
 interface ClaimUnderstanding {
@@ -3367,6 +3369,7 @@ function buildHeuristicSubClaims(
 async function understandClaim(
   input: string,
   model: any,
+  pipelineConfig?: PipelineConfig,
 ): Promise<ClaimUnderstanding> {
   // Get current date for temporal reasoning
   const currentDate = new Date();
@@ -4129,7 +4132,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
         { role: "system", content: prompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: getDeterministicTemperature(0.3),
+      temperature: getDeterministicTemperature(0.3, pipelineConfig),
       output: Output.object({ schema: understandingSchemaForProvider }),
       }),
       new Promise((_, reject) =>
@@ -4205,7 +4208,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
         { role: "system", content: system },
         { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
       ],
-      temperature: getDeterministicTemperature(0.2),
+      temperature: getDeterministicTemperature(0.2, pipelineConfig),
       }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`understandClaim JSON fallback timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
@@ -4488,7 +4491,7 @@ Now analyze the input and output JSON only.`;
     // Using the same normalized form here ensures scope detection aligns with claim analysis,
     // preventing scope-to-statement misalignment and maintaining input neutrality.
     const supplementalInput = parsed.impliedClaim || analysisInput;
-    const supplemental = await requestSupplementalScopes(supplementalInput, model, parsed);
+    const supplemental = await requestSupplementalScopes(supplementalInput, model, parsed, pipelineConfig);
     if (supplemental?.analysisContexts && supplemental.analysisContexts.length > 1) {
       parsed = {
         ...parsed,
@@ -4586,7 +4589,8 @@ Now analyze the input and output JSON only.`;
       const supplementalClaims = await requestSupplementalSubClaims(
         analysisInput,
         model,
-        parsed
+        parsed,
+        pipelineConfig,
       );
       if (supplementalClaims.length === 0) break;
       parsed.subClaims.push(...supplementalClaims);
@@ -4648,6 +4652,7 @@ async function requestSupplementalSubClaims(
   input: string,
   model: any,
   understanding: ClaimUnderstanding,
+  pipelineConfig?: PipelineConfig,
 ): Promise<ClaimUnderstanding["subClaims"]> {
   const scopes = understanding.analysisContexts || [];
   const hasScopes = scopes.length > 0;
@@ -4765,7 +4770,7 @@ async function requestSupplementalSubClaims(
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: getDeterministicTemperature(0.2),
+      temperature: getDeterministicTemperature(0.2, pipelineConfig),
       output: Output.object({ schema: SUPPLEMENTAL_SUBCLAIMS_SCHEMA_LITE }),
     });
 
@@ -4879,6 +4884,7 @@ async function requestSupplementalScopes(
   input: string,
   model: any,
   understanding: ClaimUnderstanding,
+  pipelineConfig?: PipelineConfig,
 ): Promise<Pick<ClaimUnderstanding, "analysisContexts" | "requiresSeparateAnalysis"> | null> {
   const currentCount = Array.isArray(understanding.analysisContexts)
     ? understanding.analysisContexts.length
@@ -4936,7 +4942,7 @@ Use empty strings "" and empty arrays [] when unknown.`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: getDeterministicTemperature(0.2),
+      temperature: getDeterministicTemperature(0.2, pipelineConfig),
       output: Output.object({ schema }),
     });
     const raw = extractStructuredOutput(result) as any;
@@ -5030,7 +5036,7 @@ Extract outcomes that need separate evaluation claims.`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: getDeterministicTemperature(0.2),
+      temperature: getDeterministicTemperature(0.2, state.pipelineConfig),
       output: Output.object({ schema: OUTCOME_SCHEMA }),
     });
 
@@ -5205,7 +5211,7 @@ interface ResearchDecision {
 }
 
 function decideNextResearch(state: ResearchState): ResearchDecision {
-  const config = getActiveConfig();
+  const config = getActiveConfig(state.pipelineConfig);
   const categories = [
     ...new Set(state.facts.map((f: ExtractedFact) => f.category)),
   ];
@@ -5768,8 +5774,9 @@ async function fetchSource(
   id: string,
   category: string,
   searchQuery?: string,
+  pipelineConfig?: PipelineConfig,
 ): Promise<FetchedSource | null> {
-  const config = getActiveConfig();
+  const config = getActiveConfig(pipelineConfig);
   const trackRecord = getTrackRecordScore(url);
 
   try {
@@ -5873,6 +5880,7 @@ async function extractFacts(
   targetProceedingId?: string,
   originalClaim?: string,
   fromOppositeClaimSearch?: boolean,
+  pipelineConfig?: PipelineConfig,
 ): Promise<ExtractedFact[]> {
   console.log(`[Analyzer] extractFacts called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
   console.log(`[Analyzer] extractFacts: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
@@ -5959,7 +5967,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
           content: `Source: ${source.title}\nURL: ${source.url}\n\n${source.fullText}`,
         },
       ],
-      temperature: getDeterministicTemperature(0.2),
+      temperature: getDeterministicTemperature(0.2, pipelineConfig),
       output: Output.object({ schema: FACT_SCHEMA }),
       }),
       new Promise((_, reject) =>
@@ -6976,7 +6984,7 @@ The JSON object MUST include these top-level keys:
           { role: "system", content: system },
           { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
         ],
-        temperature: getDeterministicTemperature(0.3),
+        temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
         maxOutputTokens: 4096,
       });
       state.llmCalls++;
@@ -7034,7 +7042,7 @@ The JSON object MUST include these top-level keys:
           { role: "system", content: systemPrompt + attempt.extraSystem },
           { role: "user", content: userPrompt },
         ],
-        temperature: getDeterministicTemperature(0.3),
+        temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
         // Explicit maxOutputTokens avoids relying on SDK/provider defaults (which can be too low for multi-scope verdicts).
         maxOutputTokens: 4096,
         output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_SCOPE }),
@@ -9423,6 +9431,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     inverseClaimSearchPerformed: false, // NEW v2.6.29
     budget, // NEW PR 6: p95 hardening
     budgetTracker, // NEW PR 6: p95 hardening
+    pipelineConfig, // NEW v2.9.0: Hot-reload support
   };
 
   // Handle URL
@@ -9446,7 +9455,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const step1Start = Date.now();
   try {
     debugLog("Calling understandClaim...");
-    state.understanding = await understandClaim(textToAnalyze, understandModelInfo.model);
+    state.understanding = await understandClaim(textToAnalyze, understandModelInfo.model, state.pipelineConfig);
     state.llmCalls++; // understandClaim uses 1 LLM call
 
     // UI-only: preserve original input text for display; analysis uses normalized statement
@@ -9660,6 +9669,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
               `S${state.sources.length + i + 1}`,
               "grounded_search",
               decision.focus!,
+              state.pipelineConfig,
             ),
           );
           const fetchedSources = await Promise.all(fetchPromises);
@@ -9698,6 +9708,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
                 state.understanding!.analysisContexts,
                 decision.targetProceedingId,
                 state.understanding?.impliedClaim || state.originalInput,
+                undefined, // fromOppositeClaimSearch
+                state.pipelineConfig,
               );
               const uniqueFacts = deduplicateFacts(facts, state.facts);
               state.facts.push(...uniqueFacts);
@@ -9853,6 +9865,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         `S${state.sources.length + i + 1}`,
         decision.category || "general",
         r.query,
+        state.pipelineConfig,
       ),
     );
     const fetchedSources = await Promise.all(fetchPromises);
@@ -9886,6 +9899,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         decision.targetProceedingId,
         state.understanding?.impliedClaim || state.originalInput,
         isOppositeClaimSearch,
+        state.pipelineConfig,
       );
       // v2.6.29: Deduplicate facts before adding to avoid near-duplicates
       const uniqueFacts = deduplicateFacts(facts, state.facts);
