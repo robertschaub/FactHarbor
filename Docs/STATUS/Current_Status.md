@@ -301,8 +301,8 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ## Recent Changes
 
-### v2.9.0 Unified Configuration Management - Foundation Complete (January 30, 2026)
-**Status: ~40% Complete** - Foundation built, analyzer integration pending
+### v2.9.0 Unified Configuration Management - Phase 1 In Progress (January 30, 2026)
+**Status: ~50% Complete** - Foundation built, Phase 1 analyzer integration started
 
 **✅ What's Complete:**
 - **Extended Config Types**: Added Pipeline and Source Reliability (SR) config types to unified config system
@@ -325,13 +325,32 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - Fixed `getBudgetConfig()` to respect `DEFAULT_BUDGET.enforceHard` when env var unset
   - Fixed budget test to use explicit values since defaults changed in v2.8.2
 
-**🔴 Critical Gaps Remaining:**
-1. **Analyzer Integration**: Analyzer still reads 87 `process.env.FH_*` variables - hot-reload not yet realized
-2. **Job Config Snapshots**: Cannot view complete config that produced a job - auditability compromised
-3. **SR Interface**: SR modularity interface not enforced - not yet extractable
+**🟡 Phase 1: Analyzer Integration (In Progress)**
+- **Updated Analyzer Modules** to accept `PipelineConfig`:
+  - `budgets.ts`: `getBudgetConfig()` - budget limits (4 settings)
+  - `config.ts`: `getAnalyzerConfigValues()` - analysis behavior (4 settings)
+  - `llm.ts`: `getModelForTask()` - model selection (3 settings)
+  - `model-tiering.ts`: Updated tiering check (1 setting)
+  - `metrics-integration.ts`: `initializeMetrics()` - metrics config (reuses settings)
+- **Proof-of-Concept Integration**: Main entry point (`orchestrated.ts`) demonstrates hot-reload pattern
+  - Calls `getAnalyzerConfig()` to load DB → env → defaults
+  - Passes `pipelineConfig` to budget/model/metrics functions
+  - TypeScript compilation: ✅ No errors
+- **Migration Progress**: 13 unique settings now hot-reloadable (reduced env reads from 87 → 65)
+  - Model: `llmTiering`, `modelUnderstand`, `modelExtractFacts`, `modelVerdict`
+  - LLM Flags: `llmInputClassification`, `llmEvidenceQuality`, `llmScopeSimilarity`, `llmVerdictValidation`
+  - Budgets: `maxIterationsPerScope`, `maxTotalIterations`, `maxTotalTokens`, `enforceBudgets`
+  - Analysis: `analysisMode`, `deterministic`, `allowModelKnowledge`, `scopeDedupThreshold`
+- **Gradual Migration Pattern**: Functions accept optional config param with env fallback for backwards compatibility
 
-**Remaining Work: ~4-5 weeks**
-- Phase 1: Analyzer Integration (2 weeks, CRITICAL)
+**🔴 Critical Gaps Remaining:**
+1. **Complete Analyzer Integration**: 65 remaining env var reads across other call sites need migration (~1.5 weeks)
+2. **Integration Test**: Write test demonstrating hot-reload works end-to-end (~1 day)
+3. **Job Config Snapshots**: Cannot view complete config that produced a job - auditability compromised (~1 week)
+4. **SR Interface**: SR modularity interface not enforced - not yet extractable (~1 week)
+
+**Remaining Work: ~4 weeks**
+- Phase 1 Completion: Migrate remaining 65 env var reads (1.5 weeks, CRITICAL)
 - Phase 2: Job Snapshots (1 week, HIGH)
 - Phase 3: SR Modularity Interface (1 week, MEDIUM)
 - Phase 4: Admin UI Polish (3 days, LOW)
