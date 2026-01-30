@@ -13,6 +13,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAdminAuth } from "../admin-auth-context";
 import styles from "./config.module.css";
+import toast from "react-hot-toast";
 
 // ============================================================================
 // TYPES
@@ -2021,7 +2022,7 @@ export default function ConfigAdminPage() {
       fetchActiveConfig();
       fetchHistory();
       setVersionLabel("");
-      alert(activate ? "Config saved and activated!" : "Config saved as draft");
+      toast.success(activate ? "Config saved and activated!" : "Config saved as draft");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -2118,7 +2119,7 @@ export default function ConfigAdminPage() {
         setEditConfig(parsed);
         setValidation(null);
       } catch (err) {
-        alert(`Failed to import: ${err instanceof Error ? err.message : String(err)}`);
+        toast.error(`Failed to import: ${err instanceof Error ? err.message : String(err)}`);
       }
     };
     input.click();
@@ -2231,7 +2232,7 @@ export default function ConfigAdminPage() {
                 const url = `/api/admin/config/prompt/${profileKey}/export`;
                 const res = await fetch(url, { headers: getHeaders() });
                 if (!res.ok) {
-                  alert("Export failed: " + (await res.json()).error);
+                  toast.error("Export failed: " + (await res.json()).error);
                   return;
                 }
                 const blob = await res.blob();
@@ -2250,10 +2251,10 @@ export default function ConfigAdminPage() {
                     const writable = await handle.createWritable();
                     await writable.write(blob);
                     await writable.close();
-                    alert(`Exported to: ${handle.name}`);
+                    toast.success(`Exported to: ${handle.name}`);
                   } catch (err: any) {
                     if (err.name !== "AbortError") {
-                      alert(`Export failed: ${err.message}`);
+                      toast.error(`Export failed: ${err.message}`);
                     }
                   }
                 } else {
@@ -2295,15 +2296,15 @@ export default function ConfigAdminPage() {
                     });
                     const data = await res.json();
                     if (res.ok && data.success) {
-                      alert(`Import successful!\nVersion: ${data.versionLabel || "new"}\nActivated: ${data.activated ? "Yes" : "No"}`);
+                      toast.success(`Import successful!\nVersion: ${data.versionLabel || "new"}\nActivated: ${data.activated ? "Yes" : "No"}`);
                       fetchActiveConfig();
                       fetchHistory();
                     } else {
-                      alert(`Import failed: ${data.error || "Unknown error"}\n${data.errors?.join("\n") || ""}`);
+                      toast.error(`Import failed: ${data.error || "Unknown error"}\n${data.errors?.join("\n") || ""}`);
                     }
                   } catch (err: any) {
                     if (err.name !== "AbortError") {
-                      alert(`Import failed: ${err.message}`);
+                      toast.error(`Import failed: ${err.message}`);
                     }
                   }
                 } else {
@@ -2329,14 +2330,14 @@ export default function ConfigAdminPage() {
                       });
                       const data = await res.json();
                       if (res.ok && data.success) {
-                        alert(`Import successful!\nVersion: ${data.versionLabel || "new"}\nActivated: ${data.activated ? "Yes" : "No"}`);
+                        toast.success(`Import successful!\nVersion: ${data.versionLabel || "new"}\nActivated: ${data.activated ? "Yes" : "No"}`);
                         fetchActiveConfig();
                         fetchHistory();
                       } else {
-                        alert(`Import failed: ${data.error || "Unknown error"}\n${data.errors?.join("\n") || ""}`);
+                        toast.error(`Import failed: ${data.error || "Unknown error"}\n${data.errors?.join("\n") || ""}`);
                       }
                     } catch (err) {
-                      alert(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
+                      toast.error(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
                     }
                   };
                   input.click();
@@ -2465,7 +2466,7 @@ export default function ConfigAdminPage() {
                           setEditConfig(JSON.parse((viewingVersion || activeConfig)!.content));
                           setActiveTab("edit");
                         } catch {
-                          alert("Failed to parse config for editing");
+                          toast.error("Failed to parse config for editing");
                         }
                       }}
                     >
@@ -2558,7 +2559,7 @@ export default function ConfigAdminPage() {
                             fetchHistory();
                             fetchActiveConfig();
                           } catch (err) {
-                            alert(`Error: ${err}`);
+                            toast.error(`Error: ${err}`);
                           }
                         }}
                       >
@@ -2641,11 +2642,11 @@ export default function ConfigAdminPage() {
                     body: JSON.stringify({ content: promptContent, versionLabel: versionLabel || suggestVersionLabel() }),
                   });
                   if (!res.ok) throw new Error((await res.json()).error || "Save failed");
-                  alert("Saved as draft");
+                  toast.success("Saved as draft");
                   setPromptDirty(false);
                   fetchHistory();
                 } catch (err) {
-                  alert(`Error: ${err}`);
+                  toast.error(`Error: ${err}`);
                 } finally {
                   setSaving(false);
                 }
@@ -2676,13 +2677,13 @@ export default function ConfigAdminPage() {
                   });
                   if (!activateRes.ok) throw new Error("Saved but failed to activate");
 
-                  alert("Saved and activated!");
+                  toast.success("Saved and activated!");
                   setPromptDirty(false);
                   setVersionLabel("");
                   fetchActiveConfig();
                   fetchHistory();
                 } catch (err) {
-                  alert(`Error: ${err}`);
+                  toast.error(`Error: ${err}`);
                 } finally {
                   setSaving(false);
                 }
@@ -2729,12 +2730,12 @@ export default function ConfigAdminPage() {
                     setPromptDirty(false);
                     // Refresh active config to get the new content
                     await fetchActiveConfig();
-                    alert(`Loaded from file: ${data.fromFile || profileKey + ".prompt.md"}`);
+                    toast.success(`Loaded from file: ${data.fromFile || profileKey + ".prompt.md"}`);
                   } else {
-                    alert(data.reason || "No changes made");
+                    toast.info(data.reason || "No changes made");
                   }
                 } catch (err) {
-                  alert(`Error: ${err instanceof Error ? err.message : err}`);
+                  toast.error(`Error: ${err instanceof Error ? err.message : err}`);
                 } finally {
                   setSaving(false);
                 }

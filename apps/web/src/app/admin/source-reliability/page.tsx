@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import styles from "./source-reliability.module.css";
+import toast from "react-hot-toast";
 
 interface CachedScore {
   domain: string;
@@ -253,10 +254,10 @@ export default function SourceReliabilityPage() {
         throw new Error("Cleanup failed");
       }
       const result = await response.json();
-      alert(`Deleted ${result.deleted} expired entries`);
+      toast.success(`Deleted ${result.deleted} expired entries`);
       fetchData();
     } catch (err) {
-      alert("Cleanup failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      toast.error("Cleanup failed: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 
@@ -285,7 +286,7 @@ export default function SourceReliabilityPage() {
       });
       fetchData();
     } catch (err) {
-      alert("Delete failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      toast.error("Delete failed: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 
@@ -315,10 +316,10 @@ export default function SourceReliabilityPage() {
       }
       const result = await response.json();
       setSelectedDomains(new Set());
-      alert(`Deleted ${result.deleted} of ${count} entries`);
+      toast.success(`Deleted ${result.deleted} of ${count} entries`);
       fetchData();
     } catch (err) {
-      alert("Delete failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      toast.error("Delete failed: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setDeleting(false);
     }
