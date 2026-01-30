@@ -69,7 +69,7 @@
 - Multi-provider search support (Google CSE, SerpAPI, Gemini Grounded)
 - SQLite database for local development
 - Automated retry with exponential backoff
-- **Unified Configuration Management** (v2.9.0 ~85% Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **Phase 1-3 complete** - 13 settings hot-reloadable + job config snapshots + SR modularity interface. Admin UI polish pending.
+- **Unified Configuration Management** (v2.9.0 ✅ Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **All 4 phases complete** - 13 settings hot-reloadable + job config snapshots + SR modularity interface + admin UI with snapshot viewer and validation warnings.
 
 **Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
 - ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
@@ -302,7 +302,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ## Recent Changes
 
 ### v2.9.0 Unified Configuration Management - Phase 1 In Progress (January 30, 2026)
-**Status: ~85% Complete** - Foundation built, Phase 1-3 complete (settings + snapshots + SR modularity)
+**Status: ✅ 100% Complete** - All 4 phases complete (settings + snapshots + SR modularity + admin UI)
 
 **✅ What's Complete:**
 - **Extended Config Types**: Added Pipeline and Source Reliability (SR) config types to unified config system
@@ -382,6 +382,23 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - Clear separation enables future SR extraction
 - **Success Metric Achieved**: ✅ SR can be extracted without breaking FactHarbor
 
+**✅ Phase 4: Admin UI Polish (Complete)**
+- **Job Config Snapshot Viewer**: `/admin/quality/job/[jobId]`
+  - Displays complete resolved config (pipeline + search + SR summary)
+  - Shows metadata (captured time, analyzer version, schema version)
+  - Markdown export for documentation
+  - API: `GET /api/admin/quality/job/[jobId]/config`
+- **Config Validation Warnings**: Detects dangerous config combinations
+  - 7 pipeline warnings (deep mode budget, tiering, scope dedup, etc.)
+  - 5 search warnings (disabled search, low limits, timeouts, etc.)
+  - 2 cross-config warnings (deep mode with few results, etc.)
+  - API: `GET /api/admin/config/warnings`
+  - Severity levels: danger/warning/info
+- **Admin Page Reorganization**: Separated FactHarbor Quality vs SR sections
+  - Clear visual hierarchy for admin tasks
+  - Job Audit & Debugging section with snapshot viewer
+- **Success Metric Achieved**: ✅ Can view complete config via admin UI + dangerous configs warned
+
 **🟡 Remaining Env Vars (65 reads):**
 - **26 refs**: Already migrated settings (env fallbacks for backwards compatibility)
 - **11 refs**: SR config now behind interface (extractable)
@@ -389,15 +406,15 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 - **8 refs**: Debug/AB testing - low priority
 - **6 refs**: Legacy monolithic pipelines - low priority
 
-**🔴 Nice-to-Have Remaining:**
-1. **Integration Test**: Write test demonstrating hot-reload works end-to-end (~1 day)
-2. **Admin UI for Snapshots**: Create /admin/quality/job/[id] view showing full config (~2 days)
+**🎯 All Phase Success Metrics Achieved:**
+1. ✅ Settings change without restart (Phase 1)
+2. ✅ Can view complete config for any job (Phase 2)
+3. ✅ SR extractable without breaking FactHarbor (Phase 3)
+4. ✅ Admin UI with snapshot viewer and validation warnings (Phase 4)
 
-**Remaining Work: ~3 days (optional)**
-- Phase 4: Admin UI Polish (3 days, LOW)
-  - Snapshot viewer at /admin/quality/job/[id]
-  - Split routes to /admin/quality/* and /admin/sr/*
-  - Validation warnings for dangerous config combos
+**📝 Optional Future Enhancements:**
+- Integration test demonstrating end-to-end hot-reload (~1 day)
+- Additional admin UI features (config comparison, rollback UI, etc.)
 
 See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md)
 
