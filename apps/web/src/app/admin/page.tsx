@@ -132,27 +132,58 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: "16px", maxWidth: "600px" }}>
-        <Link href="/admin/config" className={styles.btnPrimary} style={{ background: "#10b981" }}>
-          ⚙️ Unified Configuration Management
-        </Link>
-        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
-          <strong>Recommended:</strong> Manage search, calculation, and prompt configurations with version history, validation, and export
-        </p>
+      {/* FactHarbor Quality Section */}
+      <div style={{ marginBottom: 32, maxWidth: "600px" }}>
+        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>
+          FactHarbor Quality Administration
+        </h2>
+        <div style={{ display: "grid", gap: "16px" }}>
+          <Link href="/admin/config" className={styles.btnPrimary} style={{ background: "#10b981" }}>
+            ⚙️ Unified Configuration Management
+          </Link>
+          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+            <strong>Recommended:</strong> Manage pipeline, search, calculation, and prompt configurations with version history
+          </p>
 
-        <Link href="/admin/source-reliability" className={styles.btnPrimary}>
-          📊 Source Reliability Cache
-        </Link>
-        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
-          View and manage cached source reliability scores
-        </p>
+          <Link href="/admin/test-config" className={styles.btnPrimary}>
+            🔧 Configuration Test Dashboard
+          </Link>
+          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+            Test and validate API keys and service configurations
+          </p>
+        </div>
+      </div>
 
-        <Link href="/admin/test-config" className={styles.btnPrimary}>
-          🔧 Configuration Test Dashboard
-        </Link>
-        <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
-          Test and validate API keys and service configurations
-        </p>
+      {/* Source Reliability Section */}
+      <div style={{ marginBottom: 32, maxWidth: "600px" }}>
+        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>
+          Source Reliability (SR) Administration
+        </h2>
+        <div style={{ display: "grid", gap: "16px" }}>
+          <Link href="/admin/source-reliability" className={styles.btnPrimary}>
+            📊 Source Reliability Cache
+          </Link>
+          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+            View and manage cached source reliability scores
+          </p>
+        </div>
+      </div>
+
+      {/* Job Audit Section */}
+      <div style={{ marginBottom: 32, maxWidth: "600px" }}>
+        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>
+          Job Audit & Debugging
+        </h2>
+        <div style={{ display: "grid", gap: "16px" }}>
+          <div className={styles.btnSecondary} style={{ cursor: "default", opacity: 0.7 }}>
+            🔍 Job Config Viewer
+          </div>
+          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+            View complete config snapshot for any job: <code>/admin/quality/job/[jobId]</code>
+            <br />
+            <span style={{ fontSize: 12, color: "#999" }}>Enter job ID in URL to view config</span>
+          </p>
+        </div>
       </div>
     </div>
   );
