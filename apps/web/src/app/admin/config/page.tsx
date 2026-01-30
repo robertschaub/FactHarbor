@@ -18,7 +18,7 @@ import styles from "./config.module.css";
 // TYPES
 // ============================================================================
 
-type ConfigType = "search" | "calculation" | "prompt";
+type ConfigType = "search" | "calculation" | "prompt" | "pipeline" | "sr";
 type Tab = "active" | "history" | "edit" | "effective";
 
 interface OverrideRecord {
@@ -146,6 +146,48 @@ interface CalcConfig {
   };
 }
 
+// Pipeline config type
+interface PipelineConfig {
+  // Model selection
+  llmTiering: boolean;
+  modelUnderstand: string;
+  modelExtractFacts: string;
+  modelVerdict: string;
+  // LLM Text Analysis feature flags
+  llmInputClassification: boolean;
+  llmEvidenceQuality: boolean;
+  llmScopeSimilarity: boolean;
+  llmVerdictValidation: boolean;
+  // Analysis behavior
+  analysisMode: "quick" | "deep";
+  allowModelKnowledge: boolean;
+  deterministic: boolean;
+  scopeDedupThreshold: number;
+  // Budget controls
+  maxIterationsPerScope: number;
+  maxTotalIterations: number;
+  maxTotalTokens: number;
+  enforceBudgets: boolean;
+  // Pipeline selection
+  defaultPipelineVariant?: "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
+}
+
+// Source Reliability config type
+interface SRConfig {
+  enabled: boolean;
+  multiModel: boolean;
+  openaiModel: string;
+  confidenceThreshold: number;
+  consensusThreshold: number;
+  defaultScore: number;
+  cacheTtlDays: number;
+  filterEnabled: boolean;
+  skipPlatforms: string[];
+  skipTlds: string[];
+  rateLimitPerIp?: number;
+  domainCooldownSec?: number;
+}
+
 // ============================================================================
 // DEFAULT VALUES
 // ============================================================================
@@ -226,6 +268,59 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
   },
 };
 
+const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
+  llmTiering: true,
+  modelUnderstand: "claude-3-5-haiku-20241022",
+  modelExtractFacts: "claude-3-5-haiku-20241022",
+  modelVerdict: "claude-sonnet-4-20250514",
+  llmInputClassification: true,
+  llmEvidenceQuality: true,
+  llmScopeSimilarity: true,
+  llmVerdictValidation: true,
+  analysisMode: "deep",
+  allowModelKnowledge: true,
+  deterministic: true,
+  scopeDedupThreshold: 0.70,
+  maxIterationsPerScope: 5,
+  maxTotalIterations: 20,
+  maxTotalTokens: 750000,
+  enforceBudgets: false,
+  defaultPipelineVariant: "orchestrated",
+};
+
+const DEFAULT_SR_CONFIG: SRConfig = {
+  enabled: true,
+  multiModel: true,
+  openaiModel: "gpt-4o-mini",
+  confidenceThreshold: 0.8,
+  consensusThreshold: 0.20,
+  defaultScore: 0.5,
+  cacheTtlDays: 90,
+  filterEnabled: true,
+  skipPlatforms: ["blogspot.", "wordpress.com", "medium.com", "substack.com"],
+  skipTlds: ["xyz", "top", "club", "icu", "buzz", "tk", "ml", "ga", "cf", "gq"],
+  rateLimitPerIp: 10,
+  domainCooldownSec: 60,
+};
+
+/**
+ * Get default config for a config type (for form initialization)
+ */
+function getDefaultConfigForType(type: ConfigType): SearchConfig | CalcConfig | PipelineConfig | SRConfig | null {
+  switch (type) {
+    case "search":
+      return DEFAULT_SEARCH_CONFIG;
+    case "calculation":
+      return DEFAULT_CALC_CONFIG;
+    case "pipeline":
+      return DEFAULT_PIPELINE_CONFIG;
+    case "sr":
+      return DEFAULT_SR_CONFIG;
+    default:
+      return null; // Prompts don't have a default form config
+  }
+}
+
 // ============================================================================
 // CONFIG TYPE DEFINITIONS
 // ============================================================================
@@ -240,6 +335,16 @@ const CONFIG_TYPES: { type: ConfigType; title: string; description: string }[] =
     type: "calculation",
     title: "Calculation",
     description: "Verdict bands, centrality weights, quality gates",
+  },
+  {
+    type: "pipeline",
+    title: "Pipeline",
+    description: "Analysis mode, LLM models, budget controls, feature flags",
+  },
+  {
+    type: "sr",
+    title: "Source Reliability",
+    description: "Multi-model consensus, thresholds, caching, filtering",
   },
   {
     type: "prompt",
@@ -1035,6 +1140,472 @@ function CalcConfigForm({
 }
 
 // ============================================================================
+// PIPELINE CONFIG FORM COMPONENT
+// ============================================================================
+
+function PipelineConfigForm({
+  config,
+  onChange,
+}: {
+  config: PipelineConfig;
+  onChange: (config: PipelineConfig) => void;
+}) {
+  const updateField = <K extends keyof PipelineConfig>(key: K, value: PipelineConfig[K]) => {
+    onChange({ ...config, [key]: value });
+  };
+
+  return (
+    <div className={styles.formSection}>
+      {/* Model Selection */}
+      <h3 className={styles.formSectionTitle}>Model Selection</h3>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          <input
+            type="checkbox"
+            checked={config.llmTiering}
+            onChange={(e) => updateField("llmTiering", e.target.checked)}
+            style={{ marginRight: 8 }}
+          />
+          Enable LLM Tiering (50-70% cost savings)
+        </label>
+        <div className={styles.formHelp}>Use cheaper models for simpler tasks</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Understand Model</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.modelUnderstand}
+            onChange={(e) => updateField("modelUnderstand", e.target.value)}
+          />
+          <div className={styles.formHelp}>Claim comprehension phase</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Extract Facts Model</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.modelExtractFacts}
+            onChange={(e) => updateField("modelExtractFacts", e.target.value)}
+          />
+          <div className={styles.formHelp}>Evidence extraction phase</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Verdict Model</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.modelVerdict}
+            onChange={(e) => updateField("modelVerdict", e.target.value)}
+          />
+          <div className={styles.formHelp}>Final verdict (highest quality)</div>
+        </div>
+      </div>
+
+      {/* LLM Text Analysis Feature Flags */}
+      <h3 className={styles.formSectionTitle}>LLM Text Analysis (v2.8.3)</h3>
+      <div className={styles.formHelp} style={{ marginBottom: 12 }}>
+        Replace hardcoded heuristics with LLM calls. Automatic fallback to heuristics on failure.
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            <input
+              type="checkbox"
+              checked={config.llmInputClassification}
+              onChange={(e) => updateField("llmInputClassification", e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Input Classification
+          </label>
+          <div className={styles.formHelp}>Claim decomposition & type detection</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            <input
+              type="checkbox"
+              checked={config.llmEvidenceQuality}
+              onChange={(e) => updateField("llmEvidenceQuality", e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Evidence Quality
+          </label>
+          <div className={styles.formHelp}>Vagueness & citation detection</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            <input
+              type="checkbox"
+              checked={config.llmScopeSimilarity}
+              onChange={(e) => updateField("llmScopeSimilarity", e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Scope Similarity
+          </label>
+          <div className={styles.formHelp}>Scope deduplication & phase inference</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            <input
+              type="checkbox"
+              checked={config.llmVerdictValidation}
+              onChange={(e) => updateField("llmVerdictValidation", e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Verdict Validation
+          </label>
+          <div className={styles.formHelp}>Harm/inversion/contestation detection</div>
+        </div>
+      </div>
+
+      {/* Analysis Behavior */}
+      <h3 className={styles.formSectionTitle}>Analysis Behavior</h3>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Analysis Mode</label>
+          <select
+            className={styles.formInput}
+            value={config.analysisMode}
+            onChange={(e) => updateField("analysisMode", e.target.value as "quick" | "deep")}
+          >
+            <option value="quick">Quick (4 iterations, faster)</option>
+            <option value="deep">Deep (5 iterations, more thorough)</option>
+          </select>
+          <div className={styles.formHelp}>Deep mode costs ~2-3x more but yields higher quality</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Scope Dedup Threshold</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.scopeDedupThreshold}
+            min={0.5}
+            max={1.0}
+            step={0.05}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("scopeDedupThreshold", isNaN(v) ? 0.7 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Lower = more scopes (0.5-1.0)</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            <input
+              type="checkbox"
+              checked={config.allowModelKnowledge}
+              onChange={(e) => updateField("allowModelKnowledge", e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Allow Model Knowledge
+          </label>
+          <div className={styles.formHelp}>Use LLM training data (not just web sources)</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            <input
+              type="checkbox"
+              checked={config.deterministic}
+              onChange={(e) => updateField("deterministic", e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Deterministic Mode
+          </label>
+          <div className={styles.formHelp}>Temperature=0 for reproducible outputs</div>
+        </div>
+      </div>
+
+      {/* Budget Controls */}
+      <h3 className={styles.formSectionTitle}>Budget Controls</h3>
+      <div className={styles.formHelp} style={{ marginBottom: 12, color: "#dc2626" }}>
+        ⚠️ Too strict limits cause fewer claims investigated & lower confidence scores
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Max Iterations/Scope</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.maxIterationsPerScope}
+            min={1}
+            max={20}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("maxIterationsPerScope", isNaN(v) ? 5 : v);
+            }}
+          />
+          <div className={styles.formHelp}>1-20 (default: 5)</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Max Total Iterations</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.maxTotalIterations}
+            min={1}
+            max={50}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("maxTotalIterations", isNaN(v) ? 20 : v);
+            }}
+          />
+          <div className={styles.formHelp}>1-50 (default: 20)</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Max Total Tokens</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.maxTotalTokens}
+            min={10000}
+            max={2000000}
+            step={50000}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("maxTotalTokens", isNaN(v) ? 750000 : v);
+            }}
+          />
+          <div className={styles.formHelp}>~$2.25 max at 750K</div>
+        </div>
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          <input
+            type="checkbox"
+            checked={config.enforceBudgets}
+            onChange={(e) => updateField("enforceBudgets", e.target.checked)}
+            style={{ marginRight: 8 }}
+          />
+          Enforce Hard Budget Limits
+        </label>
+        <div className={styles.formHelp}>false = soft limits (recommended for quality)</div>
+      </div>
+
+      {/* Pipeline Selection */}
+      <h3 className={styles.formSectionTitle}>Default Pipeline</h3>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Default Pipeline Variant</label>
+        <select
+          className={styles.formInput}
+          value={config.defaultPipelineVariant || "orchestrated"}
+          onChange={(e) => updateField("defaultPipelineVariant", e.target.value as PipelineConfig["defaultPipelineVariant"])}
+        >
+          <option value="orchestrated">Orchestrated (highest quality)</option>
+          <option value="monolithic_canonical">Monolithic Canonical (faster)</option>
+          <option value="monolithic_dynamic">Monolithic Dynamic (experimental)</option>
+        </select>
+        <div className={styles.formHelp}>User can override per-job in UI</div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// SOURCE RELIABILITY CONFIG FORM COMPONENT
+// ============================================================================
+
+function SRConfigForm({
+  config,
+  onChange,
+}: {
+  config: SRConfig;
+  onChange: (config: SRConfig) => void;
+}) {
+  const updateField = <K extends keyof SRConfig>(key: K, value: SRConfig[K]) => {
+    onChange({ ...config, [key]: value });
+  };
+
+  return (
+    <div className={styles.formSection}>
+      {/* Core Settings */}
+      <h3 className={styles.formSectionTitle}>Core Settings</h3>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            <input
+              type="checkbox"
+              checked={config.enabled}
+              onChange={(e) => updateField("enabled", e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Enable Source Reliability
+          </label>
+          <div className={styles.formHelp}>LLM-powered source evaluation</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            <input
+              type="checkbox"
+              checked={config.multiModel}
+              onChange={(e) => updateField("multiModel", e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Multi-Model Consensus
+          </label>
+          <div className={styles.formHelp}>Claude + OpenAI reduces hallucination</div>
+        </div>
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>OpenAI Model for Refinement</label>
+        <select
+          className={styles.formInput}
+          value={config.openaiModel}
+          onChange={(e) => updateField("openaiModel", e.target.value)}
+        >
+          <option value="gpt-4o">gpt-4o (best quality)</option>
+          <option value="gpt-4o-mini">gpt-4o-mini (~15x cheaper)</option>
+        </select>
+        <div className={styles.formHelp}>Secondary model for consensus</div>
+      </div>
+
+      {/* Thresholds */}
+      <h3 className={styles.formSectionTitle}>Thresholds</h3>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Confidence Threshold</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.confidenceThreshold}
+            min={0.5}
+            max={0.95}
+            step={0.05}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("confidenceThreshold", isNaN(v) ? 0.8 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Min confidence to accept score</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Consensus Threshold</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.consensusThreshold}
+            min={0.05}
+            max={0.30}
+            step={0.05}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("consensusThreshold", isNaN(v) ? 0.2 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Max diff between models</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Default Score</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.defaultScore}
+            min={0}
+            max={1}
+            step={0.1}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("defaultScore", isNaN(v) ? 0.5 : v);
+            }}
+          />
+          <div className={styles.formHelp}>For unknown sources (0.5 = neutral)</div>
+        </div>
+      </div>
+
+      {/* Cache Settings */}
+      <h3 className={styles.formSectionTitle}>Cache Settings</h3>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Cache TTL (days)</label>
+        <input
+          type="number"
+          className={styles.formInput}
+          value={config.cacheTtlDays}
+          min={1}
+          max={365}
+          onChange={(e) => {
+            const v = parseInt(e.target.value, 10);
+            updateField("cacheTtlDays", isNaN(v) ? 90 : v);
+          }}
+        />
+        <div className={styles.formHelp}>How long to cache reliability scores</div>
+      </div>
+
+      {/* Filtering */}
+      <h3 className={styles.formSectionTitle}>Low-Value Filtering (60% cost savings)</h3>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          <input
+            type="checkbox"
+            checked={config.filterEnabled}
+            onChange={(e) => updateField("filterEnabled", e.target.checked)}
+            style={{ marginRight: 8 }}
+          />
+          Enable Importance Filter
+        </label>
+        <div className={styles.formHelp}>Skip evaluation for blogs and spam domains</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Skip Platforms</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.skipPlatforms.join(", ")}
+            onChange={(e) => updateField("skipPlatforms", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+          />
+          <div className={styles.formHelp}>Comma-separated platform domains</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Skip TLDs</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.skipTlds.join(", ")}
+            onChange={(e) => updateField("skipTlds", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+          />
+          <div className={styles.formHelp}>Comma-separated TLDs to skip</div>
+        </div>
+      </div>
+
+      {/* Rate Limiting */}
+      <h3 className={styles.formSectionTitle}>Rate Limiting</h3>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Rate Limit per IP</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.rateLimitPerIp ?? 10}
+            min={1}
+            max={100}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("rateLimitPerIp", isNaN(v) ? 10 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Max evaluations/minute per IP</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Domain Cooldown (sec)</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.domainCooldownSec ?? 60}
+            min={0}
+            max={3600}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("domainCooldownSec", isNaN(v) ? 60 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Cooldown before re-evaluating same domain</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -1062,7 +1633,7 @@ export default function ConfigAdminPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Edit state (for JSON configs)
-  const [editConfig, setEditConfig] = useState<SearchConfig | CalcConfig | null>(null);
+  const [editConfig, setEditConfig] = useState<SearchConfig | CalcConfig | PipelineConfig | SRConfig | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [saving, setSaving] = useState(false);
@@ -1299,11 +1870,11 @@ export default function ConfigAdminPage() {
           setEditConfig(JSON.parse(activeConfig.content));
         } catch {
           // Use default on parse failure
-          setEditConfig(selectedType === "search" ? DEFAULT_SEARCH_CONFIG : DEFAULT_CALC_CONFIG);
+          setEditConfig(getDefaultConfigForType(selectedType));
         }
       } else if (activeConfig === null && !loading) {
         // No config exists for this type/profile - use defaults
-        setEditConfig(selectedType === "search" ? DEFAULT_SEARCH_CONFIG : DEFAULT_CALC_CONFIG);
+        setEditConfig(getDefaultConfigForType(selectedType));
       }
       // If activeConfig exists but wrong type, wait for fetchActiveConfig() to complete
     }
@@ -1919,7 +2490,7 @@ export default function ConfigAdminPage() {
                   className={`${styles.button} ${styles.buttonPrimary}`}
                   style={{ marginTop: 16 }}
                   onClick={() => {
-                    setEditConfig(selectedType === "search" ? DEFAULT_SEARCH_CONFIG : DEFAULT_CALC_CONFIG);
+                    setEditConfig(getDefaultConfigForType(selectedType));
                     setActiveTab("edit");
                   }}
                 >
@@ -2370,7 +2941,7 @@ export default function ConfigAdminPage() {
                 if (hasUnsavedJsonChanges && !confirm("Discard your changes and reset to defaults?")) {
                   return;
                 }
-                setEditConfig(selectedType === "search" ? DEFAULT_SEARCH_CONFIG : DEFAULT_CALC_CONFIG);
+                setEditConfig(getDefaultConfigForType(selectedType));
                 setValidation(null);
               }}
             >
@@ -2421,6 +2992,24 @@ export default function ConfigAdminPage() {
           {editConfig && selectedType === "calculation" && (
             <CalcConfigForm
               config={editConfig as CalcConfig}
+              onChange={(c) => {
+                setEditConfig(c);
+                setValidation(null);
+              }}
+            />
+          )}
+          {editConfig && selectedType === "pipeline" && (
+            <PipelineConfigForm
+              config={editConfig as PipelineConfig}
+              onChange={(c) => {
+                setEditConfig(c);
+                setValidation(null);
+              }}
+            />
+          )}
+          {editConfig && selectedType === "sr" && (
+            <SRConfigForm
+              config={editConfig as SRConfig}
               onChange={(c) => {
                 setEditConfig(c);
                 setValidation(null);
