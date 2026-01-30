@@ -11,9 +11,11 @@ import Link from "next/link";
 import styles from "../../styles/common.module.css";
 import type { PipelineVariant } from "@/lib/pipeline-variant";
 import { readDefaultPipelineVariant, writeDefaultPipelineVariant } from "@/lib/pipeline-variant";
+import toast from "react-hot-toast";
 
 export default function AdminPage() {
   const [defaultPipeline, setDefaultPipeline] = useState<PipelineVariant>("orchestrated");
+  const [exporting, setExporting] = useState(false);
 
   // Load saved default pipeline on mount
   useEffect(() => {
@@ -23,6 +25,40 @@ export default function AdminPage() {
   const selectPipeline = (variant: PipelineVariant) => {
     setDefaultPipeline(variant);
     writeDefaultPipelineVariant(variant);
+  };
+
+  const handleExportAll = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch("/api/admin/config/export-all");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Export failed");
+      }
+
+      const data = await response.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const timestamp = new Date().toISOString().split("T")[0];
+      a.download = `factharbor-config-backup-${timestamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Configuration backup downloaded successfully");
+    } catch (error) {
+      toast.error(
+        `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -150,6 +186,18 @@ export default function AdminPage() {
           </Link>
           <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
             Test and validate API keys and service configurations
+          </p>
+
+          <button
+            onClick={handleExportAll}
+            disabled={exporting}
+            className={styles.btnPrimary}
+            style={{ background: "#6366f1", cursor: exporting ? "wait" : "pointer" }}
+          >
+            {exporting ? "⏳ Exporting..." : "📥 Export All Configurations"}
+          </button>
+          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+            Download complete backup of all active configurations (disaster recovery)
           </p>
         </div>
       </div>

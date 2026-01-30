@@ -2732,7 +2732,7 @@ export default function ConfigAdminPage() {
                     await fetchActiveConfig();
                     toast.success(`Loaded from file: ${data.fromFile || profileKey + ".prompt.md"}`);
                   } else {
-                    toast.info(data.reason || "No changes made");
+                    toast(data.reason || "No changes made");
                   }
                 } catch (err) {
                   toast.error(`Error: ${err instanceof Error ? err.message : err}`);
