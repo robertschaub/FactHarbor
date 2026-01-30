@@ -153,6 +153,8 @@ export const DEFAULT_TASK_TIER_MAPPING: Record<TaskType, ModelTier> = {
  * @param taskType - The type of task (understand, extract_facts, verdict, etc.)
  * @param provider - LLM provider
  * @param config - Optional tiering config (pass llmTiering from pipeline config)
+ *
+ * @todo v2.9.0: Simplify config type to PipelineConfig | undefined once migration complete
  */
 export function getModelForTask(
   taskType: TaskType,

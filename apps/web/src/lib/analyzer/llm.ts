@@ -59,7 +59,8 @@ function envModelOverrideForTask(task: ModelTask, config?: PipelineConfig): stri
       case "verdict":
         return config.modelVerdict;
       case "report":
-        return null; // Not in pipeline config yet
+        // Not in pipeline config yet - fall through to env var check
+        break;
     }
   }
 

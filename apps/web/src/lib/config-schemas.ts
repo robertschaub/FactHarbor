@@ -93,6 +93,8 @@ export const PipelineConfigSchema = z.object({
   scopeDedupThreshold: z.number().min(0).max(1).describe("Threshold for scope deduplication (lower = more scopes)"),
 
   // === Budget Controls ===
+  // Note: maxTokensPerCall is excluded from pipeline config - it's a low-level safety limit
+  // that protects against individual LLM call failures and should remain an env var (FH_MAX_TOKENS_PER_CALL)
   maxIterationsPerScope: z.number().int().min(1).max(20).describe("Max research iterations per scope"),
   maxTotalIterations: z.number().int().min(1).max(50).describe("Max total iterations across all scopes"),
   maxTotalTokens: z.number().int().min(10000).max(2000000).describe("Max tokens per analysis"),
@@ -108,7 +110,7 @@ export type PipelineConfig = z.infer<typeof PipelineConfigSchema>;
 
 export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Model selection
-  llmTiering: true,
+  llmTiering: false, // v2.9.0: Default to off for backwards compatibility
   modelUnderstand: "claude-3-5-haiku-20241022",
   modelExtractFacts: "claude-3-5-haiku-20241022",
   modelVerdict: "claude-sonnet-4-20250514",
@@ -120,10 +122,10 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   llmVerdictValidation: true,
 
   // Analysis behavior
-  analysisMode: "deep",
-  allowModelKnowledge: true,
+  analysisMode: "quick", // v2.9.0: Default to quick mode for backwards compatibility
+  allowModelKnowledge: false, // v2.9.0: Default to off for backwards compatibility
   deterministic: true,
-  scopeDedupThreshold: 0.70,
+  scopeDedupThreshold: 0.85, // v2.9.0: Default to 0.85 per original config.ts:187
 
   // Budget controls
   maxIterationsPerScope: 5,

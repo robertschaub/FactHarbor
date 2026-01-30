@@ -105,12 +105,17 @@ const CALC_ENV_MAP: Record<string, { envVar: string; fieldPath: string; parser: 
 // Pipeline config env var mappings
 const PIPELINE_ENV_MAP: Record<string, { envVar: string; fieldPath: string; parser: (v: string) => unknown }> = {
   // Model Selection
-  FH_LLM_TIERING: { envVar: "FH_LLM_TIERING", fieldPath: "llmTiering", parser: (v) => v !== "false" },
+  // Original logic from llm.ts:42-44: only "on", "true", "1", "enabled" → true
+  FH_LLM_TIERING: {
+    envVar: "FH_LLM_TIERING",
+    fieldPath: "llmTiering",
+    parser: (v) => ["on", "true", "1", "enabled"].includes(v.toLowerCase().trim())
+  },
   FH_MODEL_UNDERSTAND: { envVar: "FH_MODEL_UNDERSTAND", fieldPath: "modelUnderstand", parser: (v) => v },
   FH_MODEL_EXTRACT_FACTS: { envVar: "FH_MODEL_EXTRACT_FACTS", fieldPath: "modelExtractFacts", parser: (v) => v },
   FH_MODEL_VERDICT: { envVar: "FH_MODEL_VERDICT", fieldPath: "modelVerdict", parser: (v) => v },
 
-  // LLM Text Analysis Feature Flags
+  // LLM Text Analysis Feature Flags (v2.8.3: default enabled, set to "false" to disable)
   FH_LLM_INPUT_CLASSIFICATION: { envVar: "FH_LLM_INPUT_CLASSIFICATION", fieldPath: "llmInputClassification", parser: (v) => v !== "false" },
   FH_LLM_EVIDENCE_QUALITY: { envVar: "FH_LLM_EVIDENCE_QUALITY", fieldPath: "llmEvidenceQuality", parser: (v) => v !== "false" },
   FH_LLM_SCOPE_SIMILARITY: { envVar: "FH_LLM_SCOPE_SIMILARITY", fieldPath: "llmScopeSimilarity", parser: (v) => v !== "false" },
@@ -118,7 +123,8 @@ const PIPELINE_ENV_MAP: Record<string, { envVar: string; fieldPath: string; pars
 
   // Analysis Behavior
   FH_ANALYSIS_MODE: { envVar: "FH_ANALYSIS_MODE", fieldPath: "analysisMode", parser: (v) => v as "quick" | "deep" },
-  FH_ALLOW_MODEL_KNOWLEDGE: { envVar: "FH_ALLOW_MODEL_KNOWLEDGE", fieldPath: "allowModelKnowledge", parser: (v) => v !== "false" },
+  // Original logic: only "true" → true (was default false)
+  FH_ALLOW_MODEL_KNOWLEDGE: { envVar: "FH_ALLOW_MODEL_KNOWLEDGE", fieldPath: "allowModelKnowledge", parser: (v) => v === "true" },
   FH_DETERMINISTIC: { envVar: "FH_DETERMINISTIC", fieldPath: "deterministic", parser: (v) => v === "true" },
   FH_SCOPE_DEDUP_THRESHOLD: { envVar: "FH_SCOPE_DEDUP_THRESHOLD", fieldPath: "scopeDedupThreshold", parser: (v) => parseFloat(v) },
 
@@ -126,6 +132,7 @@ const PIPELINE_ENV_MAP: Record<string, { envVar: string; fieldPath: string; pars
   FH_MAX_ITERATIONS_PER_SCOPE: { envVar: "FH_MAX_ITERATIONS_PER_SCOPE", fieldPath: "maxIterationsPerScope", parser: (v) => parseInt(v, 10) },
   FH_MAX_TOTAL_ITERATIONS: { envVar: "FH_MAX_TOTAL_ITERATIONS", fieldPath: "maxTotalIterations", parser: (v) => parseInt(v, 10) },
   FH_MAX_TOTAL_TOKENS: { envVar: "FH_MAX_TOTAL_TOKENS", fieldPath: "maxTotalTokens", parser: (v) => parseInt(v, 10) },
+  // Original logic from budgets.ts:100-102: if defined, parse as !== "false"
   FH_ENFORCE_BUDGETS: { envVar: "FH_ENFORCE_BUDGETS", fieldPath: "enforceBudgets", parser: (v) => v !== "false" },
 
   // Pipeline Selection
