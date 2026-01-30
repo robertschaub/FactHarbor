@@ -97,7 +97,9 @@ export function getBudgetConfig(): ResearchBudget {
       process.env.FH_MAX_TOKENS_PER_CALL || String(DEFAULT_BUDGET.maxTokensPerCall),
       10
     ),
-    enforceHard: process.env.FH_ENFORCE_BUDGETS !== "false",
+    enforceHard: process.env.FH_ENFORCE_BUDGETS !== undefined
+      ? process.env.FH_ENFORCE_BUDGETS !== "false"
+      : DEFAULT_BUDGET.enforceHard,
   };
 }
 

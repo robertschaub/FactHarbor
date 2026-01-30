@@ -9,7 +9,7 @@ import {
   DEFAULT_CONFIDENCE_THRESHOLD,
   DEFAULT_CONSENSUS_THRESHOLD,
   DEFAULT_UNKNOWN_SCORE,
-  SOURCE_TYPE_CAPS,
+  SOURCE_TYPE_EXPECTED_CAPS,
   scoreToFactualRating,
   ratingToScoreRange,
   meetsConfidenceRequirement,
@@ -31,29 +31,29 @@ describe("Source Reliability Config - Constants", () => {
   });
 });
 
-describe("SOURCE_TYPE_CAPS", () => {
+describe("SOURCE_TYPE_EXPECTED_CAPS", () => {
   it("caps propaganda_outlet at 0.14 (highly_unreliable)", () => {
-    expect(SOURCE_TYPE_CAPS.propaganda_outlet).toBe(0.14);
+    expect(SOURCE_TYPE_EXPECTED_CAPS.propaganda_outlet).toBe(0.14);
   });
 
   it("caps known_disinformation at 0.14 (highly_unreliable)", () => {
-    expect(SOURCE_TYPE_CAPS.known_disinformation).toBe(0.14);
+    expect(SOURCE_TYPE_EXPECTED_CAPS.known_disinformation).toBe(0.14);
   });
 
   it("caps state_controlled_media at 0.42 (leaning_unreliable)", () => {
-    expect(SOURCE_TYPE_CAPS.state_controlled_media).toBe(0.42);
+    expect(SOURCE_TYPE_EXPECTED_CAPS.state_controlled_media).toBe(0.42);
   });
 
   it("caps platform_ugc at 0.42 (leaning_unreliable)", () => {
-    expect(SOURCE_TYPE_CAPS.platform_ugc).toBe(0.42);
+    expect(SOURCE_TYPE_EXPECTED_CAPS.platform_ugc).toBe(0.42);
   });
 
   it("does not cap editorial_publisher", () => {
-    expect(SOURCE_TYPE_CAPS.editorial_publisher).toBeUndefined();
+    expect(SOURCE_TYPE_EXPECTED_CAPS.editorial_publisher).toBeUndefined();
   });
 
   it("does not cap wire_service", () => {
-    expect(SOURCE_TYPE_CAPS.wire_service).toBeUndefined();
+    expect(SOURCE_TYPE_EXPECTED_CAPS.wire_service).toBeUndefined();
   });
 });
 

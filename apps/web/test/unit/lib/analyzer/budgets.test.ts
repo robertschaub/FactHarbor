@@ -279,7 +279,11 @@ describe("Budget Stats", () => {
 
 describe("Budget Integration Scenarios", () => {
   it("realistic multi-scope research scenario", () => {
-    const budget = DEFAULT_BUDGET;
+    // Use explicit budget with per-scope limit of 3 to test boundary behavior
+    const budget = {
+      ...DEFAULT_BUDGET,
+      maxIterationsPerScope: 3,
+    };
     const tracker = createBudgetTracker();
 
     // Simulate research on 3 scopes, 2-3 iterations each
@@ -305,7 +309,8 @@ describe("Budget Integration Scenarios", () => {
     expect(stats.llmCalls).toBe(7);
     expect(stats.budgetExceeded).toBe(false);
 
-    // All scopes should still be within budget
+    // SCOPE_A (2) and SCOPE_C (2) still within limit of 3
+    // SCOPE_B (3) has exactly hit the limit - next iteration blocked
     expect(checkScopeIterationBudget(tracker, budget, "SCOPE_A").allowed).toBe(true);
     expect(checkScopeIterationBudget(tracker, budget, "SCOPE_B").allowed).toBe(false); // Hit limit
     expect(checkScopeIterationBudget(tracker, budget, "SCOPE_C").allowed).toBe(true);

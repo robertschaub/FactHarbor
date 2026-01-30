@@ -258,7 +258,7 @@ describe("isRelevantSearchResult", () => {
 // SCORE TO RATING ALIGNMENT
 // ============================================================================
 
-import { scoreToFactualRating, SOURCE_TYPE_CAPS } from "@/lib/source-reliability-config";
+import { scoreToFactualRating, SOURCE_TYPE_EXPECTED_CAPS } from "@/lib/source-reliability-config";
 
 describe("Post-processing: Score-Rating Alignment", () => {
   it("score 0.37 should align to leaning_unreliable (0.29-0.42)", () => {
@@ -276,24 +276,24 @@ describe("Post-processing: Score-Rating Alignment", () => {
 
 describe("Post-processing: Source Type Caps", () => {
   it("propaganda_outlet cap is 0.14", () => {
-    expect(SOURCE_TYPE_CAPS.propaganda_outlet).toBe(0.14);
+    expect(SOURCE_TYPE_EXPECTED_CAPS.propaganda_outlet).toBe(0.14);
     // A score of 0.37 would be capped to 0.14
     const originalScore = 0.37;
-    const cappedScore = Math.min(originalScore, SOURCE_TYPE_CAPS.propaganda_outlet);
+    const cappedScore = Math.min(originalScore, SOURCE_TYPE_EXPECTED_CAPS.propaganda_outlet);
     expect(cappedScore).toBe(0.14);
   });
 
   it("state_controlled_media cap is 0.42", () => {
-    expect(SOURCE_TYPE_CAPS.state_controlled_media).toBe(0.42);
+    expect(SOURCE_TYPE_EXPECTED_CAPS.state_controlled_media).toBe(0.42);
     // A score of 0.55 would be capped to 0.42
     const originalScore = 0.55;
-    const cappedScore = Math.min(originalScore, SOURCE_TYPE_CAPS.state_controlled_media);
+    const cappedScore = Math.min(originalScore, SOURCE_TYPE_EXPECTED_CAPS.state_controlled_media);
     expect(cappedScore).toBe(0.42);
   });
 
   it("scores below cap are not modified", () => {
     const originalScore = 0.10;
-    const cappedScore = Math.min(originalScore, SOURCE_TYPE_CAPS.propaganda_outlet);
+    const cappedScore = Math.min(originalScore, SOURCE_TYPE_EXPECTED_CAPS.propaganda_outlet);
     expect(cappedScore).toBe(0.10); // Already below cap
   });
 });
@@ -309,7 +309,7 @@ describe("Problem Case: Propaganda Sources", () => {
     const sourceType = "propaganda_outlet";
     
     // When: Post-processing applies cap
-    const cap = SOURCE_TYPE_CAPS[sourceType];
+    const cap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
     const finalScore = cap !== undefined ? Math.min(llmScore, cap) : llmScore;
     
     // Then: Score should be capped to 0.14
@@ -323,7 +323,7 @@ describe("Problem Case: Propaganda Sources", () => {
     const sourceType = "state_controlled_media";
     
     // When: Post-processing applies cap
-    const cap = SOURCE_TYPE_CAPS[sourceType];
+    const cap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
     const finalScore = cap !== undefined ? Math.min(llmScore, cap) : llmScore;
     
     // Then: Score should be capped to 0.42
@@ -339,7 +339,7 @@ describe("Problem Case: Editorial Publisher (no cap)", () => {
     const sourceType = "editorial_publisher";
     
     // When: Post-processing checks for cap
-    const cap = SOURCE_TYPE_CAPS[sourceType];
+    const cap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
     const finalScore = cap !== undefined ? Math.min(llmScore, cap) : llmScore;
     
     // Then: Score should NOT be modified
