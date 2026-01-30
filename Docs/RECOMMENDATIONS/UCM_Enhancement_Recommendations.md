@@ -1453,14 +1453,531 @@ interface AutoRollbackConfig {
 
 ---
 
-**Status:** ✅ **PLAN APPROVED - READY FOR PHASE 0**
+## 🔥 CRITICAL REVISION: Implement Low-Hanging Fruits BEFORE Validation
 
-**Next Steps:**
-1. Deploy UCM v2.9.0 to production
-2. Begin Phase 0 validation period
-3. Reconvene after 2-4 weeks with validation report
-4. Make Phase 1 implementation decision based on evidence
+**Date:** 2026-01-30 (Same day revision)
+**Revised By:** User Recommendation + Analysis
+
+### Key Insight from User
+
+> "I recommend to implement all 'Low-Hanging Fruits' now because they make validation easier."
+
+**This changes everything.** The user is absolutely right.
+
+### Why This Makes Sense
+
+**Original Plan:**
+- Wait 2-4 weeks → Validate with bare-bones system → Then add UX improvements
+
+**Revised Plan:**
+- Add UX improvements first (1 week) → Validate with complete system → Much better data
+
+**Why Better:**
+1. ✅ **Better Validation Data** - Professional UX → Operators take system seriously → More confident usage → More data
+2. ✅ **Self-Documenting** - Dashboard + Diff + Search → Operators self-serve → Less support needed
+3. ✅ **Safety Net** - Export + Diff → Operators feel safer experimenting
+4. ✅ **Debugging Ready** - Issues during validation easier to investigate
+5. ✅ **Complete Evaluation** - Operators evaluate production-ready system, not MVP
+
+---
+
+### Risk & Feasibility Assessment
+
+#### Summary Table
+
+| # | Feature | Effort | Risk | Feasibility | Value | Verdict |
+|---|---------|--------|------|-------------|-------|---------|
+| 1 | Toast Notifications | 1 day | ✅ ZERO | ✅ Trivial | 🔥🔥🔥🔥🔥 | ✅ DO NOW |
+| 2 | Config Diff View | 2 days | ✅ Low | ✅ Easy | 🔥🔥🔥🔥🔥 | ✅ DO NOW |
+| 3 | Active Config Dashboard | 1 day | ✅ ZERO | ✅ Trivial | 🔥🔥🔥🔥 | ✅ DO NOW |
+| 4 | Config Search by Hash | 1 day | ✅ ZERO | ✅ Easy | 🔥🔥🔥 | ✅ DO NOW |
+| 5 | Default Value Indicators | 4 hours | ✅ ZERO | ✅ Trivial | 🔥🔥🔥 | ✅ DO NOW |
+| 6 | Export All Configs | 2 hours | ✅ ZERO | ✅ Trivial | 🔥🔥 | ✅ DO NOW |
+
+**Total Effort:** ~5.5 days (1 work week)
+**Total Risk:** Minimal (all read-only or UX-only)
+**Feasibility:** High (mature libraries, well-scoped)
+
+---
+
+### Risk Analysis
+
+#### ✅ Risk 1: Wasting Week If System Has Fundamental Flaws
+**Likelihood:** Very Low
+**Reasoning:** v2.9.0 production-ready (158 tests passing, all code review issues resolved)
+**Mitigation:** Features isolated, still valuable even if fixes needed
+**Verdict:** Risk acceptable
+
+#### ✅ Risk 2: Features Might Not Be Needed
+**Likelihood:** Very Low
+**Reasoning:** All are table-stakes features (toast > alert, diff view standard, dashboard essential, etc.)
+**Mitigation:** Even if rarely used, one-time 5.5-day cost is low
+**Verdict:** Risk acceptable
+
+#### ✅ Risk 3: Delaying Validation by 1 Week
+**Likelihood:** Guaranteed
+**Impact:** Acceptable
+**Reasoning:** Validation delayed 6 days, but MORE productive with better tools
+**Mitigation:** None needed - intentional trade-off
+**Verdict:** Acceptable trade-off
+
+#### ⚠️ Risk 4: Implementation Overruns (Takes >1 Week)
+**Likelihood:** Low-Medium
+**Mitigation:**
+- ✅ Strict timeboxing - if feature exceeds estimate, defer and move on
+- ✅ MVP approach - implement simplest version that works
+- ✅ Fallback plan - if Day 5 arrives and not done, deploy what's ready
+**Verdict:** Manageable with discipline
+
+---
+
+### Open Questions & Prerequisites
+
+#### ❓ Q1: Does Version History Tracking Exist?
+
+**For Config Diff View:**
+
+Config diff requires comparing two versions. Need to verify:
+- ✅ Does `pipeline_config` table track version history?
+- ✅ Does it have `version_label`, `created_utc`, `content_hash`?
+- ❌ Or is there only current active version?
+
+**Options:**
+
+**If version history exists:** ✅ Implement diff as planned (2 days)
+
+**If NOT:**
+- **Option A:** Add version history table first (+4 hours)
+- **Option B:** Defer diff view to Phase 1
+- **Option C:** Simplified diff (current vs defaults only) (2 days)
+
+**ACTION REQUIRED:** Check database schema
+
+---
+
+#### ❓ Q2: Does config_usage Table Exist?
+
+**For Config Search by Hash:**
+
+Search needs table with job_id + content_hash mapping.
+
+**Check if exists:**
+- `job_config_snapshots` table (Phase 2) - has job_id + hash?
+- `config_usage` table (proposed) - exists yet?
+
+**Options:**
+
+**If table exists:** ✅ Implement search as planned (1 day)
+
+**If NOT:**
+- **Option A:** Search only snapshots (limited but works)
+- **Option B:** Defer until table created
+- **Option C:** Create table first (quick migration)
+
+**ACTION REQUIRED:** Check database schema
+
+---
+
+#### ❓ Q3: Implementation Order - Sequential or Iterative?
+
+**Option A: Sequential (All-at-Once)**
+- Implement all 6 features
+- Test everything together
+- Deploy as single release (v2.10.0)
+
+**Pros:** ✅ Single deployment, ✅ Complete feature set, ✅ One testing round
+**Cons:** ❌ Longer time to first value, ❌ Larger testing surface, ❌ Unclear issue source
+
+**Option B: Iterative (Daily Releases)**
+- Day 1: Toast + Export → Deploy
+- Day 2: Dashboard → Deploy
+- Day 3-4: Diff View → Deploy
+- Day 5: Search + Defaults → Deploy
+
+**Pros:** ✅ Immediate value daily, ✅ Issues isolated, ✅ Can stop early, ✅ Faster feedback
+**Cons:** ❌ Multiple deployments, ❌ More testing cycles
+
+**RECOMMENDATION:** ✅ **Option B (Iterative)**
+- Operators get value sooner
+- Risk isolated per feature
+- Can pivot if time runs out
+
+---
+
+#### ❓ Q4: Include Validation Warnings UI from Phase 2?
+
+**Validation Warnings UI:**
+- Effort: 2 days
+- Priority: ⭐⭐⭐ (Safety feature)
+- Prevents costly mistakes
+
+**Arguments FOR:**
+- ✅ Safety feature during validation
+- ✅ Only 2 days (could fit)
+- ✅ Makes validation safer
+
+**Arguments AGAINST:**
+- ❌ Total effort becomes 7.5 days (overruns 1 week)
+- ❌ Can add later if needed
+- ❌ Backend already exists (just needs UI)
+
+**RECOMMENDATION:** ⚠️ **Conditional**
+- If time permits: Add it
+- If tight on time: Defer to Phase 2
+
+---
+
+## 📋 REVISED IMPLEMENTATION PLAN (APPROVED)
+
+### **Pre-Validation Sprint (Week 1): Low-Hanging Fruits First**
+
+**Goal:** Ship professional UX and operational tools BEFORE validation
+
+**Duration:** 5-6 days (1 week with buffer)
+
+**Deployment Strategy:** Iterative daily releases
+
+**Start:** Immediately after v2.9.0 deployed
+
+---
+
+#### **Day 1: Quick Wins** ⭐⭐⭐⭐⭐
+
+**Morning (4 hours): Toast Notification System**
+
+**Tasks:**
+1. Install dependency: `npm install react-hot-toast`
+2. Add `<Toaster />` to root layout
+3. Replace all `alert()` calls with toasts
+   - Success: `toast.success("Config saved!")`
+   - Error: `toast.error("Failed to save")`
+   - Loading: `toast.loading("Saving...")`
+4. Files to modify:
+   - `apps/web/src/app/admin/config/page.tsx` (primary)
+   - Any other admin pages with alert()
+
+**Testing:**
+- Toast appears correctly
+- Auto-dismisses after 3-5 seconds
+- Errors persist until dismissed
+- Multiple toasts stack properly
+
+**Afternoon (2 hours): Export All Configs**
+
+**Tasks:**
+1. Create API: `GET /api/admin/config/export-all`
+   - Query all active configs from DB
+   - Return JSON with structure:
+   ```typescript
+   {
+     exportedAt: "2026-01-30T14:30:00Z",
+     configs: {
+       pipeline: { versionLabel, content },
+       search: { versionLabel, content },
+       // ... all config types
+     }
+   }
+   ```
+2. Add "📥 Export All Configs" button to dashboard
+3. Download as `factharbor-config-backup-YYYY-MM-DD.json`
+
+**Testing:**
+- Export downloads correctly
+- JSON is valid and complete
+- All active configs included
+
+**End of Day 1:**
+- Deploy as v2.10.0 (or v2.9.1)
+- ✅ **Deliverable:** Professional UX + Backup capability
+
+---
+
+#### **Day 2: System Visibility** ⭐⭐⭐⭐
+
+**Full Day (8 hours): Active Config Dashboard**
+
+**Tasks:**
+1. Create new page: `/admin/config/dashboard` (3 hours)
+   - Table showing all config types
+   - Columns: Type, Profile, Version, Activated (time ago), By whom
+   - Visual indicators (icons, colors)
+2. Create API: `GET /api/admin/config/dashboard` (2 hours)
+   - Query active configs from all types
+   - Join with metadata (activation times, users)
+   - Return recent changes (last 24 hours)
+3. Query implementation (1 hour)
+   - Pipeline config from `pipeline_config` table
+   - Search config from `search_config` table (if exists)
+   - Aggregation logic
+4. UI styling and polish (1 hour)
+   - Recent changes section with highlighting
+   - Responsive layout
+   - Clear visual hierarchy
+5. Testing (1 hour)
+   - All config types show correctly
+   - Recent changes accurate
+   - Navigation works
+
+**End of Day 2:**
+- Deploy as v2.10.1
+- ✅ **Deliverable:** System-wide visibility at a glance
+
+---
+
+#### **Day 3-4: Version Comparison** ⭐⭐⭐⭐⭐
+
+**Day 3 (8 hours): Config Diff View - Backend + Core**
+
+**Prerequisites Check (1 hour):**
+- ✅ Verify version history tracking exists
+- ⚠️ If missing: Add version history table first
+- Document current state
+
+**Implementation (6 hours):**
+1. Install library: `npm install diff` (5 min)
+2. Create diff utility function (1 hour)
+   ```typescript
+   function computeConfigDiff(oldConfig: object, newConfig: object) {
+     const oldJson = JSON.stringify(oldConfig, null, 2);
+     const newJson = JSON.stringify(newConfig, null, 2);
+     const diff = Diff.diffLines(oldJson, newJson);
+     return diff.map(part => ({
+       type: part.added ? 'added' : part.removed ? 'removed' : 'unchanged',
+       value: part.value,
+       count: part.count
+     }));
+   }
+   ```
+3. Create API: `GET /api/admin/config/compare` (2 hours)
+   - Query params: `from=hash1&to=hash2&type=pipeline`
+   - Fetch both versions from DB
+   - Compute diff
+   - Return structured diff
+4. Backend testing (2 hours)
+5. Edge case handling (1 hour)
+   - Missing versions
+   - Invalid hashes
+   - Same version comparison
+
+**Day 4 (8 hours): Config Diff View - UI**
+
+**Implementation:**
+1. Create diff modal component (3 hours)
+   - Modal overlay
+   - Side-by-side layout
+   - Syntax highlighting
+2. Add "Compare" buttons to config UI (1 hour)
+   - History tab: "Compare to Previous"
+   - Version selector: "Compare Selected"
+3. Render diff with colors (2 hours)
+   - Added lines: green background
+   - Removed lines: red background
+   - Unchanged: normal
+   - Line numbers
+4. UX polish (1 hour)
+   - Smooth animations
+   - Clear labels
+   - Easy to close
+5. Testing (1 hour)
+   - All diff scenarios work
+   - Colors correct
+   - Performance acceptable
+
+**End of Day 4:**
+- Deploy as v2.10.2
+- ✅ **Deliverable:** Visual config comparison capability
+
+---
+
+#### **Day 5: Polish & Debugging Tools** ⭐⭐⭐
+
+**Morning (4 hours): Default Value Indicators**
+
+**Tasks:**
+1. Define DEFAULT constants (1 hour)
+   ```typescript
+   const DEFAULT_PIPELINE_CONFIG = { ... }; // Already exists
+   const DEFAULT_SEARCH_CONFIG = { ... };   // Import if exists
+   ```
+2. Add "Default" badge next to matching values (1 hour)
+   ```typescript
+   {config.maxResults === DEFAULT.maxResults && (
+     <span className={styles.defaultBadge}>Default</span>
+   )}
+   ```
+3. Add blue border for customized fields (1 hour)
+   ```css
+   .formInput.modified {
+     border-left: 3px solid #2196f3;
+   }
+   ```
+4. Testing (1 hour)
+   - Badges appear correctly
+   - Only show for actual defaults
+   - Visual polish
+
+**Afternoon (4 hours): Config Search by Hash**
+
+**Prerequisites Check (30 min):**
+- ✅ Verify `job_config_snapshots` table exists with content_hash
+- Document query approach
+
+**Implementation (3.5 hours):**
+1. Create API: `GET /api/admin/config/usage/:contentHash` (1 hour)
+   ```sql
+   SELECT job_id, captured_utc, pipeline_config, search_config
+   FROM job_config_snapshots
+   WHERE pipeline_config LIKE '%"contentHash":"' || ? || '"%'
+   ORDER BY captured_utc DESC
+   LIMIT 100;
+   ```
+2. Add search box to config UI (1 hour)
+   - History tab: "🔍 Find jobs using this config"
+   - Input: content hash (autocomplete from versions)
+   - Search button
+3. Display search results (1 hour)
+   - Table of jobs
+   - Link to job details
+   - Timestamp, verdict
+4. Testing (30 min)
+   - Search works correctly
+   - Results accurate
+   - Performance acceptable
+
+**End of Day 5:**
+- Deploy as v2.10.3
+- ✅ **Deliverable:** Complete operational toolkit
+
+---
+
+#### **Day 6: Buffer & Finalization** (Optional)
+
+**If Ahead of Schedule:**
+- ✅ Add Validation Warnings UI (from Phase 2)
+- ✅ Additional polish and bug fixes
+- ✅ Documentation updates
+- ✅ Comprehensive integration testing
+
+**If Behind Schedule:**
+- ✅ Complete any unfinished features
+- ✅ Fix critical bugs
+- ✅ Ensure all deployments successful
+
+**If On Schedule:**
+- ✅ Comprehensive testing of all features together
+- ✅ Write release notes
+- ✅ Prepare Phase 0 validation materials
+- ✅ Create operator feedback form
+- ✅ Set up monitoring dashboards
+
+---
+
+### 📦 Deliverables After Pre-Validation Sprint
+
+**Shipped Features (v2.10.0 → v2.10.3):**
+1. ✅ Toast notifications - Professional UX (replaces alert())
+2. ✅ Active config dashboard - System visibility at a glance
+3. ✅ Config diff view - Understand what changed between versions
+4. ✅ Default value indicators - Show which settings are customized
+5. ✅ Config search by hash - Find jobs that used specific config
+6. ✅ Export all configs - Disaster recovery capability
+
+**System Status:** Production-ready with complete operational toolkit
+
+**Ready For:** Phase 0 validation with professional UX and debugging tools
+
+---
+
+### 📅 Revised Overall Timeline
+
+**Week 1 (NOW): Pre-Validation Sprint**
+- Implement all 6 Low-Hanging Fruits
+- Iterative daily deployments
+- **Budget:** 5-6 days development
+
+**Week 2-5: Phase 0 (Validation)**
+- Deploy to production WITH all features
+- Monitor usage with better tools
+- Gather operator feedback
+- Track baseline metrics
+- **Budget:** 0 development time (observation only)
+
+**Week 6: Phase 1 Decision Point**
+- Review validation report
+- Decide on Phase 2 timing
+- Plan operational intelligence features
+
+**Month 2-3: Phase 2 (Operational Intelligence)**
+- IF prerequisites met (30 days + baseline metrics)
+- Implement impact monitoring, activity feed, validation warnings UI
+- **Budget:** 2.5 weeks
+
+**Month 3-6: Phase 3-4 (Quality of Life + Advanced)**
+- Based on usage patterns and maturity
+- **Budget:** TBD based on validation outcomes
+
+---
+
+### ✅ Why This Revised Plan Is Better
+
+**Original Plan Issues:**
+- Operators evaluate bare-bones system (less meaningful feedback)
+- Missing debugging tools if issues arise during validation
+- Professional UX added AFTER validation (backwards)
+
+**Revised Plan Benefits:**
+1. ✅ **Complete System** - Operators evaluate production-ready system, not MVP
+2. ✅ **Better Data** - Professional UX → More confident usage → More validation data
+3. ✅ **Self-Service** - Dashboard + Diff + Search → Less support burden
+4. ✅ **Safety Net** - Export + Diff → Operators feel safer experimenting
+5. ✅ **Debug Ready** - Issues during validation easier to investigate
+6. ✅ **Immediate Value** - Iterative daily deploys → Value from Day 1
+
+**Trade-Off:**
+- ⚠️ Validation delayed by 1 week (6 days development)
+- ✅ BUT validation is MORE productive with better tools
+- ✅ Net result: Better outcomes in same total calendar time
+
+---
+
+### 🎯 Open Questions Requiring Action
+
+Before starting implementation:
+
+1. **❓ Database Schema Check:**
+   - Does `pipeline_config` table support version history?
+   - Does `job_config_snapshots` table exist with content_hash?
+   - What's the exact table structure?
+
+2. **❓ Deployment Approval:**
+   - Confirm iterative daily releases (6 small releases)
+   - OR prefer single bundled release after Day 5?
+
+3. **❓ Validation Warnings UI:**
+   - Include in Week 1 if time permits?
+   - OR strictly defer to Phase 2?
+
+**ACTION:** Verify prerequisites, then proceed with Day 1 implementation
+
+---
+
+**Status:** ✅ **REVISED PLAN APPROVED - READY FOR PRE-VALIDATION SPRINT**
+
+**Next Steps (REVISED):**
+1. ✅ **Week 1 (NOW): Pre-Validation Sprint**
+   - Implement all 6 Low-Hanging Fruits
+   - Iterative daily deployments (v2.10.0 → v2.10.3)
+   - Verify database schema prerequisites
+2. **Week 2-5: Phase 0 Validation**
+   - Deploy complete system to production
+   - Monitor usage with professional UX and debugging tools
+   - Gather operator feedback
+   - Track baseline metrics
+3. **Week 6: Phase 1 Decision Point**
+   - Review validation report
+   - Decide on Phase 2 timing based on evidence
 
 **Author:** Claude Sonnet 4.5
 **Plan Approved:** 2026-01-30
-**Review Date:** After Phase 0 complete (est. mid-February 2026)
+**Plan Revised:** 2026-01-30 (Same day - User recommendation)
+**Review Date:** After Pre-Validation Sprint (est. early February 2026)
