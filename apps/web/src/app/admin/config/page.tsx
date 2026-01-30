@@ -2136,6 +2136,43 @@ export default function ConfigAdminPage() {
             >
               Reset
             </button>
+            <button
+              className={`${styles.button} ${styles.buttonSecondary}`}
+              onClick={async () => {
+                // Load prompt from file via reseed endpoint
+                if (promptContent && !confirm("This will replace current content with the file version. Continue?")) {
+                  return;
+                }
+                try {
+                  setSaving(true);
+                  const res = await fetch(`/api/admin/config/prompt/${profileKey}/reseed`, {
+                    method: "POST",
+                    headers: { ...getHeaders(), "Content-Type": "application/json" },
+                    body: JSON.stringify({ force: true }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || "Reseed failed");
+                  if (data.seeded || data.contentHash) {
+                    // Clear current content so the effect can repopulate from activeConfig
+                    setPromptContent("");
+                    setPromptDirty(false);
+                    // Refresh active config to get the new content
+                    await fetchActiveConfig();
+                    alert(`Loaded from file: ${data.fromFile || profileKey + ".prompt.md"}`);
+                  } else {
+                    alert(data.reason || "No changes made");
+                  }
+                } catch (err) {
+                  alert(`Error: ${err instanceof Error ? err.message : err}`);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+              title="Load prompt content from the file on disk"
+            >
+              📂 Load from File
+            </button>
           </div>
 
           {/* Validation results */}
@@ -2228,12 +2265,22 @@ export default function ConfigAdminPage() {
                         marginBottom: 2,
                       }}
                       onClick={() => {
-                        // Scroll to line (approximate)
-                        const textarea = document.querySelector("textarea");
+                        // Scroll to section and position cursor
+                        const textarea = document.querySelector("textarea") as HTMLTextAreaElement;
                         if (textarea) {
-                          const lines = promptContent.substring(0, promptContent.split("\n").slice(0, i).join("\n").length).split("\n").length;
-                          textarea.scrollTop = lines * 19.5;
+                          // Calculate character position at start of target line
+                          const lines = promptContent.split("\n");
+                          let charPos = 0;
+                          for (let j = 0; j < i; j++) {
+                            charPos += lines[j].length + 1; // +1 for newline
+                          }
+                          // Set cursor position at the section header
                           textarea.focus();
+                          textarea.setSelectionRange(charPos, charPos + lines[i].length);
+                          // Scroll to show the selected line (estimate ~20px per line)
+                          const lineHeight = 20;
+                          const visibleLines = Math.floor(textarea.clientHeight / lineHeight);
+                          textarea.scrollTop = Math.max(0, (i - Math.floor(visibleLines / 4)) * lineHeight);
                         }
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.background = "#e5e7eb")}
