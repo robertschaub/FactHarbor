@@ -20,15 +20,18 @@ import {
 import {
   DEFAULT_SEARCH_CONFIG,
   DEFAULT_CALC_CONFIG,
+  DEFAULT_PIPELINE_CONFIG,
   SearchConfigSchema,
   CalcConfigSchema,
+  PipelineConfigSchema,
   type SearchConfig,
   type CalcConfig,
+  type PipelineConfig,
 } from "./config-schemas";
 
 // Re-export types for convenience
-export type { SearchConfig, CalcConfig } from "./config-schemas";
-export { DEFAULT_SEARCH_CONFIG, DEFAULT_CALC_CONFIG } from "./config-schemas";
+export type { SearchConfig, CalcConfig, PipelineConfig } from "./config-schemas";
+export { DEFAULT_SEARCH_CONFIG, DEFAULT_CALC_CONFIG, DEFAULT_PIPELINE_CONFIG } from "./config-schemas";
 
 // ============================================================================
 // CONFIGURATION
@@ -53,7 +56,7 @@ function getOverridePolicy(): OverridePolicy {
 interface CacheEntry {
   hash: string;
   content: string;
-  parsed: SearchConfig | CalcConfig;
+  parsed: SearchConfig | CalcConfig | PipelineConfig;
   loadedAt: number;
   pointerCheckedAt: number;
 }
@@ -99,6 +102,36 @@ const CALC_ENV_MAP: Record<string, { envVar: string; fieldPath: string; parser: 
   FH_SR_DEFAULT_SCORE: { envVar: "FH_SR_DEFAULT_SCORE", fieldPath: "sourceReliability.defaultScore", parser: (v) => parseFloat(v) },
 };
 
+// Pipeline config env var mappings
+const PIPELINE_ENV_MAP: Record<string, { envVar: string; fieldPath: string; parser: (v: string) => unknown }> = {
+  // Model Selection
+  FH_LLM_TIERING: { envVar: "FH_LLM_TIERING", fieldPath: "llmTiering", parser: (v) => v !== "false" },
+  FH_MODEL_UNDERSTAND: { envVar: "FH_MODEL_UNDERSTAND", fieldPath: "modelUnderstand", parser: (v) => v },
+  FH_MODEL_EXTRACT_FACTS: { envVar: "FH_MODEL_EXTRACT_FACTS", fieldPath: "modelExtractFacts", parser: (v) => v },
+  FH_MODEL_VERDICT: { envVar: "FH_MODEL_VERDICT", fieldPath: "modelVerdict", parser: (v) => v },
+
+  // LLM Text Analysis Feature Flags
+  FH_LLM_INPUT_CLASSIFICATION: { envVar: "FH_LLM_INPUT_CLASSIFICATION", fieldPath: "llmInputClassification", parser: (v) => v !== "false" },
+  FH_LLM_EVIDENCE_QUALITY: { envVar: "FH_LLM_EVIDENCE_QUALITY", fieldPath: "llmEvidenceQuality", parser: (v) => v !== "false" },
+  FH_LLM_SCOPE_SIMILARITY: { envVar: "FH_LLM_SCOPE_SIMILARITY", fieldPath: "llmScopeSimilarity", parser: (v) => v !== "false" },
+  FH_LLM_VERDICT_VALIDATION: { envVar: "FH_LLM_VERDICT_VALIDATION", fieldPath: "llmVerdictValidation", parser: (v) => v !== "false" },
+
+  // Analysis Behavior
+  FH_ANALYSIS_MODE: { envVar: "FH_ANALYSIS_MODE", fieldPath: "analysisMode", parser: (v) => v as "quick" | "deep" },
+  FH_ALLOW_MODEL_KNOWLEDGE: { envVar: "FH_ALLOW_MODEL_KNOWLEDGE", fieldPath: "allowModelKnowledge", parser: (v) => v !== "false" },
+  FH_DETERMINISTIC: { envVar: "FH_DETERMINISTIC", fieldPath: "deterministic", parser: (v) => v === "true" },
+  FH_SCOPE_DEDUP_THRESHOLD: { envVar: "FH_SCOPE_DEDUP_THRESHOLD", fieldPath: "scopeDedupThreshold", parser: (v) => parseFloat(v) },
+
+  // Budget Controls
+  FH_MAX_ITERATIONS_PER_SCOPE: { envVar: "FH_MAX_ITERATIONS_PER_SCOPE", fieldPath: "maxIterationsPerScope", parser: (v) => parseInt(v, 10) },
+  FH_MAX_TOTAL_ITERATIONS: { envVar: "FH_MAX_TOTAL_ITERATIONS", fieldPath: "maxTotalIterations", parser: (v) => parseInt(v, 10) },
+  FH_MAX_TOTAL_TOKENS: { envVar: "FH_MAX_TOTAL_TOKENS", fieldPath: "maxTotalTokens", parser: (v) => parseInt(v, 10) },
+  FH_ENFORCE_BUDGETS: { envVar: "FH_ENFORCE_BUDGETS", fieldPath: "enforceBudgets", parser: (v) => v !== "false" },
+
+  // Pipeline Selection
+  FH_DEFAULT_PIPELINE_VARIANT: { envVar: "FH_DEFAULT_PIPELINE_VARIANT", fieldPath: "defaultPipelineVariant", parser: (v) => v as "orchestrated" | "monolithic_canonical" | "monolithic_dynamic" },
+};
+
 // ============================================================================
 // OVERRIDE RESOLUTION
 // ============================================================================
@@ -115,8 +148,21 @@ function applyOverrides<T extends object>(
     return { result: base, overrides: [], skippedOverrides };
   }
 
-  const envMap = configType === "search" ? SEARCH_ENV_MAP : CALC_ENV_MAP;
-  const schema = configType === "search" ? SearchConfigSchema : CalcConfigSchema;
+  const envMap =
+    configType === "search" ? SEARCH_ENV_MAP :
+    configType === "calculation" ? CALC_ENV_MAP :
+    configType === "pipeline" ? PIPELINE_ENV_MAP :
+    {};
+  const schema =
+    configType === "search" ? SearchConfigSchema :
+    configType === "calculation" ? CalcConfigSchema :
+    configType === "pipeline" ? PipelineConfigSchema :
+    null;
+
+  // Early return if no schema (e.g., prompt type)
+  if (!schema) {
+    return { result: base, overrides: [], skippedOverrides };
+  }
   const overrides: OverrideRecord[] = [];
 
   // Parse allowlist if specified
@@ -351,6 +397,50 @@ export async function loadCalcConfig(
 }
 
 /**
+ * Load pipeline config with caching and env var overrides
+ */
+export async function loadPipelineConfig(
+  profileKey = "default",
+  jobId?: string,
+): Promise<ResolvedConfig<PipelineConfig>> {
+  const configType: ConfigType = "pipeline";
+
+  try {
+    // Refresh pointer
+    const hash = await refreshPointer(configType, profileKey);
+
+    if (!hash) {
+      // No config in DB, use default
+      console.log(`[Config-Loader] No pipeline config found, using defaults`);
+      const { result, overrides } = applyOverrides(DEFAULT_PIPELINE_CONFIG, configType);
+      return { config: result, contentHash: "default", overrides, fromCache: false };
+    }
+
+    // Get content
+    const { content, fromCache } = await getOrLoadContent(
+      configType,
+      profileKey,
+      hash,
+      DEFAULT_PIPELINE_CONFIG,
+    );
+
+    // Apply env overrides
+    const { result, overrides } = applyOverrides(content, configType);
+
+    // Record usage
+    if (jobId) {
+      await recordConfigUsage(jobId, configType, profileKey, hash, overrides.length > 0 ? overrides : undefined);
+    }
+
+    return { config: result, contentHash: hash, overrides, fromCache };
+  } catch (err) {
+    console.error(`[Config-Loader] Error loading pipeline config:`, err);
+    const { result, overrides } = applyOverrides(DEFAULT_PIPELINE_CONFIG, configType);
+    return { config: result, contentHash: "error-fallback", overrides, fromCache: false };
+  }
+}
+
+/**
  * Invalidate cache for a specific config type/profile
  */
 export function invalidateConfigCache(configType?: ConfigType, profileKey?: string): number {
@@ -514,4 +604,102 @@ export async function loadPromptConfig(
     console.error(`[Config-Loader] Error loading prompt config for ${profile}:`, err);
     return null;
   }
+}
+
+// ============================================================================
+// UNIFIED ANALYZER CONFIG (Phase 1: Hot-Reload Support)
+// ============================================================================
+
+/**
+ * Complete analyzer configuration (all types needed for analysis).
+ * This is the main entry point for the analyzer to get all settings.
+ */
+export interface AnalyzerConfig {
+  pipeline: PipelineConfig;
+  search: SearchConfig;
+  calc: CalcConfig;
+
+  // Metadata
+  source: "database" | "environment" | "mixed" | "default";
+  loadedAt: Date;
+
+  // Content hashes for auditability
+  hashes: {
+    pipeline: string;
+    search: string;
+    calc: string;
+  };
+
+  // Override tracking
+  overrides: {
+    pipeline: OverrideRecord[];
+    search: OverrideRecord[];
+    calc: OverrideRecord[];
+  };
+}
+
+/**
+ * Get complete analyzer configuration with all settings.
+ *
+ * This is the main entry point for Phase 1 (Analyzer Integration).
+ * Replaces direct `process.env.FH_*` reads with unified config loading.
+ *
+ * Resolution order:
+ * 1. Database (if exists and valid)
+ * 2. Environment variables (if set)
+ * 3. Defaults from schemas
+ *
+ * @param options - Load options
+ * @returns Complete analyzer config with all settings
+ */
+export async function getAnalyzerConfig(options: {
+  skipCache?: boolean;
+  jobId?: string;
+} = {}): Promise<AnalyzerConfig> {
+  // Load all configs in parallel
+  const [pipelineResult, searchResult, calcResult] = await Promise.all([
+    loadPipelineConfig("default", options.jobId),
+    loadSearchConfig("default", options.jobId),
+    loadCalcConfig("default", options.jobId),
+  ]);
+
+  // Determine overall source
+  let source: AnalyzerConfig["source"] = "default";
+  const sources = [
+    pipelineResult.contentHash === "default" ? "default" : "database",
+    searchResult.contentHash === "default" ? "default" : "database",
+    calcResult.contentHash === "default" ? "default" : "database",
+  ];
+
+  if (sources.every(s => s === "database")) {
+    source = "database";
+  } else if (sources.every(s => s === "default")) {
+    source = "default";
+  } else if (
+    pipelineResult.overrides.length > 0 ||
+    searchResult.overrides.length > 0 ||
+    calcResult.overrides.length > 0
+  ) {
+    source = "environment";
+  } else {
+    source = "mixed";
+  }
+
+  return {
+    pipeline: pipelineResult.config,
+    search: searchResult.config,
+    calc: calcResult.config,
+    source,
+    loadedAt: new Date(),
+    hashes: {
+      pipeline: pipelineResult.contentHash,
+      search: searchResult.contentHash,
+      calc: calcResult.contentHash,
+    },
+    overrides: {
+      pipeline: pipelineResult.overrides,
+      search: searchResult.overrides,
+      calc: calcResult.overrides,
+    },
+  };
 }
