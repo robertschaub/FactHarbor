@@ -1658,6 +1658,15 @@ export default function ConfigAdminPage() {
   const [diffData, setDiffData] = useState<any>(null);
   const [diffLoading, setDiffLoading] = useState(false);
 
+  // Default comparison state
+  const [defaultComparison, setDefaultComparison] = useState<{
+    hasDefaults: boolean;
+    customizedFields: string[];
+    totalFields: number;
+    customizedCount: number;
+    percentageCustomized: number;
+  } | null>(null);
+
   // Edit state (for JSON configs)
   const [editConfig, setEditConfig] = useState<SearchConfig | CalcConfig | PipelineConfig | SRConfig | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
@@ -1975,6 +1984,28 @@ export default function ConfigAdminPage() {
     }
   }, [getHeaders]);
 
+  // Fetch default comparison
+  const fetchDefaultComparison = useCallback(async () => {
+    if (selectedType === "prompt") {
+      setDefaultComparison(null);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/config/default-comparison?type=${selectedType}&profile=${profileKey}`, {
+        headers: getHeaders(),
+      });
+      if (!res.ok) {
+        setDefaultComparison(null);
+        return;
+      }
+      const data = await res.json();
+      setDefaultComparison(data);
+    } catch (err) {
+      console.error("[DefaultComparison] Error:", err);
+      setDefaultComparison(null);
+    }
+  }, [selectedType, profileKey, getHeaders]);
+
   // Fetch history
   const fetchHistory = useCallback(async () => {
     setLoading(true);
@@ -2118,6 +2149,13 @@ export default function ConfigAdminPage() {
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+
+  // Load default comparison when viewing active or editing
+  useEffect(() => {
+    if (activeTab === "active" || activeTab === "edit") {
+      fetchDefaultComparison();
+    }
+  }, [activeTab, selectedType, profileKey, fetchDefaultComparison]);
 
   // Initialize prompt content from active config when available
   // Only use activeConfig if it matches current type AND profile to prevent race conditions
@@ -2617,6 +2655,46 @@ export default function ConfigAdminPage() {
                   )}
                 </div>
               </div>
+
+              {/* Default comparison indicator */}
+              {defaultComparison && defaultComparison.hasDefaults && !viewingVersion && (
+                <div
+                  style={{
+                    padding: 12,
+                    marginBottom: 16,
+                    background: defaultComparison.customizedCount > 0 ? "#fef3c7" : "#d1fae5",
+                    borderLeft: `4px solid ${defaultComparison.customizedCount > 0 ? "#f59e0b" : "#10b981"}`,
+                    borderRadius: 4,
+                    fontSize: 13,
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                    {defaultComparison.customizedCount === 0 ? (
+                      <>✓ Using default configuration</>
+                    ) : (
+                      <>⚠️ {defaultComparison.customizedCount} field{defaultComparison.customizedCount > 1 ? "s" : ""} customized from defaults ({defaultComparison.percentageCustomized}%)</>
+                    )}
+                  </div>
+                  {defaultComparison.customizedCount > 0 && (
+                    <details style={{ marginTop: 8 }}>
+                      <summary style={{ cursor: "pointer", color: "#92400e" }}>
+                        Show customized fields ({defaultComparison.customizedFields.length})
+                      </summary>
+                      <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20, fontSize: 12, fontFamily: "monospace" }}>
+                        {defaultComparison.customizedFields.slice(0, 20).map((field, idx) => (
+                          <li key={idx} style={{ marginBottom: 2 }}>
+                            {field}
+                          </li>
+                        ))}
+                        {defaultComparison.customizedFields.length > 20 && (
+                          <li style={{ color: "#6b7280" }}>... and {defaultComparison.customizedFields.length - 20} more</li>
+                        )}
+                      </ul>
+                    </details>
+                  )}
+                </div>
+              )}
+
               <pre className={styles.configContent}>
                 {(viewingVersion || activeConfig)!.content}
               </pre>
