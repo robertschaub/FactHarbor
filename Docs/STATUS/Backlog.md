@@ -16,6 +16,7 @@
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **Unified Configuration Management Complete (v2.9.0)**: Extended config system to all 5 types (prompt, search, calculation, pipeline, sr). Added prompt import/export/reseed APIs. 158 unit tests covering schemas, storage, caching, env overrides. | Architecture / Testing | 2026-01-30 | [Current Status](Current_Status.md#v290-unified-configuration-management-complete-january-30-2026) |
 | ✅ **LLM Text Analysis Pipeline**: Implemented 4 analysis points with hybrid LLM/heuristic architecture. Bug fix in v2.8.1 removed counter-claim detection from verdict prompt. | Analyzer / LLM | 2026-01-30 | [Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) |
 | ✅ **Promptfoo Test Coverage for Text Analysis**: Created 26 test cases covering all 4 text-analysis prompts (input classification, evidence quality, scope similarity, verdict validation). Total promptfoo coverage now 38 test cases across 6 prompts. | Testing / LLM | 2026-01-30 | [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md) |
 

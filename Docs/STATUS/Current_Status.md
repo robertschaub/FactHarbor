@@ -1,6 +1,6 @@
 # FactHarbor Current Status
 
-**Version**: 2.8.3 (Code) | 2.7.0 (Schema Output)
+**Version**: 2.9.0 (Code) | 2.7.0 (Schema Output)
 **Last Updated**: 2026-01-30
 **Status**: POC1 Operational (Phase 2 Complete)
 
@@ -69,7 +69,7 @@
 - Multi-provider search support (Google CSE, SerpAPI, Gemini Grounded)
 - SQLite database for local development
 - Automated retry with exponential backoff
-- **Unified Configuration Management** (v2.6.41): Database-backed version control for search, calculation, and prompt configurations with validation, history, rollback, and export
+- **Unified Configuration Management** (v2.9.0 Complete): Database-backed version control for all 5 config types (prompt, search, calculation, pipeline, sr) with validation, history, rollback, import/export, and per-job tracking. 158 unit tests.
 
 **Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
 - ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
@@ -300,6 +300,27 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ---
 
 ## Recent Changes
+
+### v2.9.0 Unified Configuration Management Complete (January 30, 2026)
+- **Extended Config Types**: Added Pipeline and Source Reliability (SR) config types to unified config system
+  - `pipeline` config: Model selection, LLM tiering, analysis behavior, budget controls
+  - `sr` config: Source reliability settings with modularity for future standalone extraction
+  - Admin UI forms for both config types with full CRUD support
+- **Prompt Import/Export/Reseed APIs**: Complete workflow for prompt management
+  - `POST /api/admin/config/prompt/:profile/import` - Upload .prompt.md files with validation
+  - `GET /api/admin/config/prompt/:profile/export` - Download prompts with metadata
+  - `POST /api/admin/config/prompt/:profile/reseed` - Re-seed from disk for dev workflow
+  - Text-analysis profiles now supported: `text-analysis-input`, `text-analysis-evidence`, `text-analysis-scope`, `text-analysis-verdict`
+- **Comprehensive Test Coverage**: 158 unit tests for config system
+  - `config-schemas.test.ts`: 50 tests for validation, parsing, canonicalization
+  - `config-storage.test.ts`: 26 tests for CRUD, caching, env overrides
+  - `source-reliability-config.test.ts`: 32 tests for SR scoring and caps
+  - `budgets.test.ts`: 22 tests for iteration and token budget tracking
+  - `evaluator-logic.test.ts`: 28 tests for source evaluation logic
+- **Bug Fixes**:
+  - Fixed `SOURCE_TYPE_EXPECTED_CAPS` constant naming (was `SOURCE_TYPE_CAPS`)
+  - Fixed `getBudgetConfig()` to respect `DEFAULT_BUDGET.enforceHard` when env var unset
+  - Fixed budget test to use explicit values since defaults changed in v2.8.2
 
 ### v2.8.0 LLM Text Analysis Pipeline (January 29-30, 2026)
 - **LLM Text Analysis Pipeline**: Approved for implementation after senior architect review
@@ -568,6 +589,6 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 
 ---
 
-**Last Updated**: January 28, 2026  
-**Actual Version**: 2.6.41 (Code) | 2.7.0 (Schema)  
-**Document Status**: Corrected to reflect actual implementation state
+**Last Updated**: January 30, 2026
+**Actual Version**: 2.9.0 (Code) | 2.7.0 (Schema)
+**Document Status**: Reflects Unified Configuration Management v2.9.0 complete
