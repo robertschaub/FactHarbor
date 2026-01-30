@@ -610,3 +610,178 @@ describe("Profile Management", () => {
     expect(promptConfigs.length).toBe(1);
   });
 });
+
+// ============================================================================
+// PIPELINE AND SR CONFIG TYPES
+// ============================================================================
+
+describe("Pipeline and SR Config Types", () => {
+  let db: Database;
+
+  beforeAll(async () => {
+    db = await createTestDb();
+  });
+
+  beforeEach(async () => {
+    await db.run(`DELETE FROM config_usage`);
+    await db.run(`DELETE FROM config_active`);
+    await db.run(`DELETE FROM config_blobs`);
+  });
+
+  afterAll(async () => {
+    await db.close();
+  });
+
+  it("supports pipeline config type", async () => {
+    const now = new Date().toISOString();
+    const content = JSON.stringify({
+      llmTiering: true,
+      modelUnderstand: "claude-3-5-haiku-20241022",
+      analysisMode: "deep",
+    });
+
+    await db.run(
+      `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ["pipeline-hash", "pipeline", "default", "pipeline.v1", "v1.0", content, now, null],
+    );
+
+    const row = await db.get(`SELECT * FROM config_blobs WHERE config_type = ?`, ["pipeline"]);
+    expect(row).toBeDefined();
+    expect(row.config_type).toBe("pipeline");
+    expect(row.schema_version).toBe("pipeline.v1");
+  });
+
+  it("supports sr config type", async () => {
+    const now = new Date().toISOString();
+    const content = JSON.stringify({
+      enabled: true,
+      multiModel: true,
+      confidenceThreshold: 0.8,
+    });
+
+    await db.run(
+      `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ["sr-hash", "sr", "default", "sr.v1", "v1.0", content, now, null],
+    );
+
+    const row = await db.get(`SELECT * FROM config_blobs WHERE config_type = ?`, ["sr"]);
+    expect(row).toBeDefined();
+    expect(row.config_type).toBe("sr");
+    expect(row.schema_version).toBe("sr.v1");
+  });
+
+  it("isolates pipeline and sr configs", async () => {
+    const now = new Date().toISOString();
+
+    await db.run(
+      `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ["pipeline-hash", "pipeline", "default", "pipeline.v1", "v1.0", '{"type":"pipeline"}', now, null],
+    );
+    await db.run(
+      `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ["sr-hash", "sr", "default", "sr.v1", "v1.0", '{"type":"sr"}', now, null],
+    );
+
+    const pipelineConfigs = await db.all(`SELECT * FROM config_blobs WHERE config_type = ?`, ["pipeline"]);
+    const srConfigs = await db.all(`SELECT * FROM config_blobs WHERE config_type = ?`, ["sr"]);
+
+    expect(pipelineConfigs.length).toBe(1);
+    expect(srConfigs.length).toBe(1);
+  });
+
+  it("records all 5 config types for a complete job", async () => {
+    const now = new Date().toISOString();
+    const jobId = "complete-job";
+
+    const configs = [
+      { type: "prompt", profile: "orchestrated", hash: "prompt-hash" },
+      { type: "search", profile: "default", hash: "search-hash" },
+      { type: "calculation", profile: "default", hash: "calc-hash" },
+      { type: "pipeline", profile: "default", hash: "pipeline-hash" },
+      { type: "sr", profile: "default", hash: "sr-hash" },
+    ];
+
+    for (const cfg of configs) {
+      await db.run(
+        `INSERT INTO config_usage (job_id, config_type, profile_key, content_hash, loaded_utc)
+         VALUES (?, ?, ?, ?, ?)`,
+        [jobId, cfg.type, cfg.profile, cfg.hash, now],
+      );
+    }
+
+    const usages = await db.all(`SELECT * FROM config_usage WHERE job_id = ?`, [jobId]);
+    expect(usages.length).toBe(5);
+
+    const types = usages.map((u: any) => u.config_type);
+    expect(types).toContain("prompt");
+    expect(types).toContain("search");
+    expect(types).toContain("calculation");
+    expect(types).toContain("pipeline");
+    expect(types).toContain("sr");
+  });
+});
+
+// ============================================================================
+// ENV VAR OVERRIDE RECORDING
+// ============================================================================
+
+describe("Environment Override Recording", () => {
+  let db: Database;
+
+  beforeAll(async () => {
+    db = await createTestDb();
+  });
+
+  beforeEach(async () => {
+    await db.run(`DELETE FROM config_usage`);
+  });
+
+  afterAll(async () => {
+    await db.close();
+  });
+
+  it("stores pipeline config overrides as JSON", async () => {
+    const now = new Date().toISOString();
+    const overrides = JSON.stringify([
+      { envVar: "FH_LLM_TIERING", fieldPath: "llmTiering", wasSet: true, appliedValue: false },
+      { envVar: "FH_ANALYSIS_MODE", fieldPath: "analysisMode", wasSet: true, appliedValue: "quick" },
+    ]);
+
+    await db.run(
+      `INSERT INTO config_usage (job_id, config_type, profile_key, content_hash, effective_overrides, loaded_utc)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ["job-overrides", "pipeline", "default", "hash", overrides, now],
+    );
+
+    const usage = await db.get(`SELECT * FROM config_usage WHERE job_id = ?`, ["job-overrides"]);
+    const parsed = JSON.parse(usage.effective_overrides);
+
+    expect(parsed.length).toBe(2);
+    expect(parsed[0].envVar).toBe("FH_LLM_TIERING");
+    expect(parsed[1].envVar).toBe("FH_ANALYSIS_MODE");
+  });
+
+  it("stores SR config overrides as JSON", async () => {
+    const now = new Date().toISOString();
+    const overrides = JSON.stringify([
+      { envVar: "FH_SR_MULTI_MODEL", fieldPath: "multiModel", wasSet: true, appliedValue: false },
+      { envVar: "FH_SR_CONFIDENCE_THRESHOLD", fieldPath: "confidenceThreshold", wasSet: true, appliedValue: 0.9 },
+    ]);
+
+    await db.run(
+      `INSERT INTO config_usage (job_id, config_type, profile_key, content_hash, effective_overrides, loaded_utc)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ["job-sr-overrides", "sr", "default", "hash", overrides, now],
+    );
+
+    const usage = await db.get(`SELECT * FROM config_usage WHERE job_id = ?`, ["job-sr-overrides"]);
+    const parsed = JSON.parse(usage.effective_overrides);
+
+    expect(parsed.length).toBe(2);
+    expect(parsed[0].envVar).toBe("FH_SR_MULTI_MODEL");
+  });
+});
