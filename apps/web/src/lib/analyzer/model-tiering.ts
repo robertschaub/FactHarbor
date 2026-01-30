@@ -164,7 +164,7 @@ export function getModelForTask(
   if (config && 'llmTiering' in config) {
     // New config system (pipeline config)
     enabled = config.llmTiering;
-  } else if (config && 'enabled' in config) {
+  } else if (config && 'enabled' in config && config.enabled !== undefined) {
     // Legacy TieredRoutingConfig
     enabled = config.enabled;
   } else {
@@ -178,7 +178,7 @@ export function getModelForTask(
   }
 
   // Get task tier
-  const taskTierMapping = (config && 'taskTierMapping' in config)
+  const taskTierMapping = (config && 'taskTierMapping' in config && config.taskTierMapping)
     ? config.taskTierMapping
     : DEFAULT_TASK_TIER_MAPPING;
   const tier = taskTierMapping[taskType];

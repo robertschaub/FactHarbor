@@ -18,6 +18,7 @@ import {
   getOpenAIJsonModeHint,
   type ProviderType,
 } from "./prompts/config-adaptations/structured-output";
+import type { PipelineConfig } from "../config-schemas";
 
 // ============================================================================
 // MODEL SELECTION
@@ -39,12 +40,30 @@ function normalizeProvider(raw: string): "anthropic" | "google" | "mistral" | "o
   return "openai";
 }
 
-function isTieringEnabled(): boolean {
+function isTieringEnabled(config?: PipelineConfig): boolean {
+  if (config) {
+    return config.llmTiering;
+  }
   const v = (process.env.FH_LLM_TIERING ?? "off").toLowerCase().trim();
   return v === "on" || v === "true" || v === "1" || v === "enabled";
 }
 
-function envModelOverrideForTask(task: ModelTask): string | null {
+function envModelOverrideForTask(task: ModelTask, config?: PipelineConfig): string | null {
+  // If config provided, use config values
+  if (config) {
+    switch (task) {
+      case "understand":
+        return config.modelUnderstand;
+      case "extract_facts":
+        return config.modelExtractFacts;
+      case "verdict":
+        return config.modelVerdict;
+      case "report":
+        return null; // Not in pipeline config yet
+    }
+  }
+
+  // Fall back to environment variables
   const key =
     task === "understand"
       ? "FH_MODEL_UNDERSTAND"
@@ -112,14 +131,20 @@ export function getModel(providerOverride?: string): ModelInfo {
  * - `FH_MODEL_EXTRACT_FACTS`
  * - `FH_MODEL_VERDICT`
  * - `FH_MODEL_REPORT` (reserved for future use)
+ *
+ * @param config - Optional pipeline config from unified config system
  */
-export function getModelForTask(task: ModelTask, providerOverride?: string): ModelInfo {
-  if (!isTieringEnabled()) {
+export function getModelForTask(
+  task: ModelTask,
+  providerOverride?: string,
+  config?: PipelineConfig,
+): ModelInfo {
+  if (!isTieringEnabled(config)) {
     return getModel(providerOverride);
   }
 
   const provider = normalizeProvider(providerOverride ?? process.env.LLM_PROVIDER ?? "anthropic");
-  const overrideName = envModelOverrideForTask(task);
+  const overrideName = envModelOverrideForTask(task, config);
   const modelName = overrideName ?? defaultModelNameForTask(provider, task);
   return buildModelInfo(provider, modelName);
 }

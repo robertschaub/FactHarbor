@@ -95,6 +95,7 @@ import {
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { recordConfigUsage } from "@/lib/config-storage";
+import { getAnalyzerConfig } from "@/lib/config-loader";
 import type { EvidenceItem } from "./types";
 import {
   getTextAnalysisService,
@@ -9292,16 +9293,29 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   const startTime = Date.now();
   const emit = input.onEvent ?? (() => {});
-  const config = getActiveConfig();
-  const mode = CONFIG.deepModeEnabled ? "deep" : "quick";
 
-  const tieringRaw = (process.env.FH_LLM_TIERING ?? "off").toLowerCase().trim();
-  const tieringEnabled =
-    tieringRaw === "on" || tieringRaw === "true" || tieringRaw === "1" || tieringRaw === "enabled";
+  // ============================================================================
+  // v2.9.0: Load unified configuration from DB/env/defaults
+  // This replaces direct process.env.FH_* reads with hot-reload capable config
+  // ============================================================================
+  const analyzerConfig = await getAnalyzerConfig({ jobId: input.jobId });
+  const pipelineConfig = analyzerConfig.pipeline;
 
-  const understandModelInfo = getModelForTask("understand");
-  const extractFactsModelInfo = getModelForTask("extract_facts");
-  const verdictModelInfo = getModelForTask("verdict");
+  debugLog("[Config] Loaded analyzer config", {
+    source: analyzerConfig.source,
+    pipelineHash: analyzerConfig.hashes.pipeline,
+    llmTiering: pipelineConfig.llmTiering,
+    analysisMode: pipelineConfig.analysisMode,
+  });
+
+  const config = getActiveConfig(pipelineConfig);
+  const mode = pipelineConfig.analysisMode;
+
+  const tieringEnabled = pipelineConfig.llmTiering;
+
+  const understandModelInfo = getModelForTask("understand", undefined, pipelineConfig);
+  const extractFactsModelInfo = getModelForTask("extract_facts", undefined, pipelineConfig);
+  const verdictModelInfo = getModelForTask("verdict", undefined, pipelineConfig);
 
   const provider = verdictModelInfo.provider;
   const modelName = verdictModelInfo.modelName;
@@ -9349,7 +9363,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // normalizedInputValue is now the canonical form for all analysis paths
 
   // Initialize budget tracker (PR 6: p95 Hardening)
-  const budget = getBudgetConfig();
+  const budget = getBudgetConfig(pipelineConfig);
   const budgetTracker = createBudgetTracker();
   console.log(`[Budget] Initialized: maxIterationsPerScope=${budget.maxIterationsPerScope}, maxTotalIterations=${budget.maxTotalIterations}, maxTotalTokens=${budget.maxTotalTokens}`);
 

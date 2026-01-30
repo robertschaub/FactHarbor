@@ -1,14 +1,15 @@
 /**
  * Analyzer Metrics Integration Helper
- * 
+ *
  * This file provides integration points for adding metrics collection
  * to the existing analyzer.ts without major refactoring.
- * 
+ *
  * Usage: Import this helper and add calls at key points in analyzer.ts
  */
 
 import { createMetricsCollector, persistMetrics, type MetricsCollector } from './metrics';
 import type { LLMCallMetric, SearchQueryMetric } from './metrics';
+import type { PipelineConfig } from '../config-schemas';
 
 // Global metrics collector (set by initializeMetrics)
 let currentMetrics: MetricsCollector | null = null;
@@ -16,20 +17,29 @@ let currentMetrics: MetricsCollector | null = null;
 /**
  * Initialize metrics collection for an analysis job
  * Call at the START of runAnalysis()
+ *
+ * @param config - Optional pipeline config from unified config system
  */
 export function initializeMetrics(
   jobId: string,
-  pipelineVariant: 'orchestrated' | 'monolithic-canonical' | 'monolithic-dynamic'
+  pipelineVariant: 'orchestrated' | 'monolithic-canonical' | 'monolithic-dynamic',
+  config?: PipelineConfig,
 ): void {
   currentMetrics = createMetricsCollector(jobId, pipelineVariant);
-  
-  // Set config
+
+  // Set config - use pipeline config if provided, otherwise fall back to env vars
   currentMetrics.setConfig({
     llmProvider: process.env.LLM_PROVIDER || 'anthropic',
     searchProvider: process.env.FH_SEARCH_PROVIDER || 'google-cse',
-    allowModelKnowledge: process.env.FH_ALLOW_MODEL_KNOWLEDGE === 'true',
-    isLLMTiering: process.env.FH_LLM_TIERING === 'true',
-    isDeterministic: process.env.FH_DETERMINISTIC === 'true',
+    allowModelKnowledge: config
+      ? config.allowModelKnowledge
+      : process.env.FH_ALLOW_MODEL_KNOWLEDGE === 'true',
+    isLLMTiering: config
+      ? config.llmTiering
+      : process.env.FH_LLM_TIERING === 'true',
+    isDeterministic: config
+      ? config.deterministic
+      : process.env.FH_DETERMINISTIC === 'true',
   });
 }
 

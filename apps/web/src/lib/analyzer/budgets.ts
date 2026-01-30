@@ -10,6 +10,8 @@
  * @module analyzer/budgets
  */
 
+import type { PipelineConfig } from "../config-schemas";
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -77,9 +79,31 @@ export const DEFAULT_BUDGET: ResearchBudget = {
 // ============================================================================
 
 /**
- * Get budget configuration from environment or defaults
+ * Get budget configuration from pipeline config, environment, or defaults
+ *
+ * Resolution order:
+ * 1. Pipeline config (if provided)
+ * 2. Environment variables
+ * 3. Default values
+ *
+ * @param config - Optional pipeline config from unified config system
  */
-export function getBudgetConfig(): ResearchBudget {
+export function getBudgetConfig(config?: PipelineConfig): ResearchBudget {
+  // If pipeline config provided, use it
+  if (config) {
+    return {
+      maxIterationsPerScope: config.maxIterationsPerScope,
+      maxTotalIterations: config.maxTotalIterations,
+      maxTotalTokens: config.maxTotalTokens,
+      maxTokensPerCall: parseInt(
+        process.env.FH_MAX_TOKENS_PER_CALL || String(DEFAULT_BUDGET.maxTokensPerCall),
+        10
+      ), // Not in pipeline config - low-level safety limit
+      enforceHard: config.enforceBudgets,
+    };
+  }
+
+  // Fall back to environment variables or defaults
   return {
     maxIterationsPerScope: parseInt(
       process.env.FH_MAX_ITERATIONS_PER_SCOPE || String(DEFAULT_BUDGET.maxIterationsPerScope),

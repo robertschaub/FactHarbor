@@ -1,11 +1,13 @@
 /**
  * Configuration and constants for FactHarbor Analyzer
- * 
+ *
  * Contains environment-based configuration, helper functions for parsing
  * config values, and utility functions for AnalysisContext handling.
- * 
+ *
  * @module analyzer/config
  */
+
+import type { PipelineConfig } from "../config-schemas";
 
 // ============================================================================
 // CONFIGURATION PARSING HELPERS
@@ -157,17 +159,82 @@ export const CONFIG = {
 // ============================================================================
 
 /**
- * Get the active configuration based on analysis mode (quick vs deep)
+ * Get analysis configuration from pipeline config, environment, or defaults
+ *
+ * Resolution order:
+ * 1. Pipeline config (if provided)
+ * 2. Environment variables
+ * 3. Default values
+ *
+ * @param config - Optional pipeline config from unified config system
  */
-export function getActiveConfig() {
+export function getAnalyzerConfigValues(config?: PipelineConfig) {
+  const deepModeEnabled = config
+    ? config.analysisMode === "deep"
+    : (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep";
+
+  const deterministic = config
+    ? config.deterministic
+    : (process.env.FH_DETERMINISTIC ?? "true").toLowerCase() === "true";
+
+  const allowModelKnowledge = config
+    ? config.allowModelKnowledge
+    : (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true";
+
+  const scopeDedupThreshold = config
+    ? config.scopeDedupThreshold
+    : (() => {
+        const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
+        return Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
+      })();
+
+  return {
+    schemaVersion: CONFIG.schemaVersion,
+    deepModeEnabled,
+    deterministic,
+    searchEnabled: CONFIG.searchEnabled,
+    searchProvider: CONFIG.searchProvider,
+    searchDomainWhitelist: CONFIG.searchDomainWhitelist,
+    searchMode: CONFIG.searchMode,
+    searchDateRestrict: CONFIG.searchDateRestrict,
+    reportStyle: CONFIG.reportStyle,
+    allowModelKnowledge,
+    keyFactorHints: CONFIG.keyFactorHints,
+    scopeDedupThreshold,
+    quick: CONFIG.quick,
+    deep: CONFIG.deep,
+    minCategories: CONFIG.minCategories,
+    fetchTimeoutMs: CONFIG.fetchTimeoutMs,
+  };
+}
+
+/**
+ * Get the active configuration based on analysis mode (quick vs deep)
+ *
+ * @param config - Optional pipeline config from unified config system
+ */
+export function getActiveConfig(config?: PipelineConfig) {
+  if (config) {
+    const deepModeEnabled = config.analysisMode === "deep";
+    return deepModeEnabled ? CONFIG.deep : CONFIG.quick;
+  }
   return CONFIG.deepModeEnabled ? CONFIG.deep : CONFIG.quick;
 }
 
 /**
  * Get temperature value for deterministic mode
+ *
+ * @param defaultTemp - Default temperature if not deterministic
+ * @param config - Optional pipeline config from unified config system
  */
-export function getDeterministicTemperature(defaultTemp: number): number {
-  return CONFIG.deterministic ? 0 : defaultTemp;
+export function getDeterministicTemperature(
+  defaultTemp: number,
+  config?: PipelineConfig,
+): number {
+  const deterministic = config
+    ? config.deterministic
+    : CONFIG.deterministic;
+  return deterministic ? 0 : defaultTemp;
 }
 
 // ============================================================================

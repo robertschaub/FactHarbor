@@ -263,7 +263,7 @@ async function refreshPointer(configType: ConfigType, profileKey: string): Promi
   return hash;
 }
 
-async function getOrLoadContent<T extends SearchConfig | CalcConfig>(
+async function getOrLoadContent<T extends SearchConfig | CalcConfig | PipelineConfig>(
   configType: ConfigType,
   profileKey: string,
   hash: string,
