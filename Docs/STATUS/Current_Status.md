@@ -69,7 +69,7 @@
 - Multi-provider search support (Google CSE, SerpAPI, Gemini Grounded)
 - SQLite database for local development
 - Automated retry with exponential backoff
-- **Unified Configuration Management** (v2.9.0 Foundation ~40% Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **Analyzer integration and job snapshots pending** - settings still require restart.
+- **Unified Configuration Management** (v2.9.0 ~55% Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **Phase 1 high-value settings migrated** (13 settings hot-reloadable). Job snapshots and SR interface pending.
 
 **Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
 - ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
@@ -302,7 +302,7 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ## Recent Changes
 
 ### v2.9.0 Unified Configuration Management - Phase 1 In Progress (January 30, 2026)
-**Status: ~50% Complete** - Foundation built, Phase 1 analyzer integration started
+**Status: ~55% Complete** - Foundation built, Phase 1 high-value settings migrated and reviewed
 
 **✅ What's Complete:**
 - **Extended Config Types**: Added Pipeline and Source Reliability (SR) config types to unified config system
@@ -325,32 +325,43 @@ FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
   - Fixed `getBudgetConfig()` to respect `DEFAULT_BUDGET.enforceHard` when env var unset
   - Fixed budget test to use explicit values since defaults changed in v2.8.2
 
-**🟡 Phase 1: Analyzer Integration (In Progress)**
+**✅ Phase 1: High-Value Settings Migration (Complete)**
 - **Updated Analyzer Modules** to accept `PipelineConfig`:
   - `budgets.ts`: `getBudgetConfig()` - budget limits (4 settings)
   - `config.ts`: `getAnalyzerConfigValues()` - analysis behavior (4 settings)
   - `llm.ts`: `getModelForTask()` - model selection (3 settings)
   - `model-tiering.ts`: Updated tiering check (1 setting)
   - `metrics-integration.ts`: `initializeMetrics()` - metrics config (reuses settings)
-- **Proof-of-Concept Integration**: Main entry point (`orchestrated.ts`) demonstrates hot-reload pattern
+  - `text-analysis-service.ts`: Feature flag configuration
+- **Main Pipeline Integration**: `orchestrated.ts` fully threaded with config hot-reload
   - Calls `getAnalyzerConfig()` to load DB → env → defaults
-  - Passes `pipelineConfig` to budget/model/metrics functions
+  - Passes `pipelineConfig` through entire call chain (11 functions updated)
   - TypeScript compilation: ✅ No errors
-- **Migration Progress**: 13 unique settings now hot-reloadable (reduced env reads from 87 → 65)
+- **Migration Complete for High-Value Settings**: 13 unique settings now hot-reloadable
   - Model: `llmTiering`, `modelUnderstand`, `modelExtractFacts`, `modelVerdict`
   - LLM Flags: `llmInputClassification`, `llmEvidenceQuality`, `llmScopeSimilarity`, `llmVerdictValidation`
   - Budgets: `maxIterationsPerScope`, `maxTotalIterations`, `maxTotalTokens`, `enforceBudgets`
   - Analysis: `analysisMode`, `deterministic`, `allowModelKnowledge`, `scopeDedupThreshold`
+- **Code Review & Regression Fixes**:
+  - Fixed boolean parser regressions (`FH_LLM_TIERING`, `FH_ALLOW_MODEL_KNOWLEDGE`)
+  - Reverted default value changes to maintain backwards compatibility
+  - Fixed missing report model fallback in `llm.ts`
+  - Added schema documentation for `maxTokensPerCall` exclusion
 - **Gradual Migration Pattern**: Functions accept optional config param with env fallback for backwards compatibility
 
-**🔴 Critical Gaps Remaining:**
-1. **Complete Analyzer Integration**: 65 remaining env var reads across other call sites need migration (~1.5 weeks)
-2. **Integration Test**: Write test demonstrating hot-reload works end-to-end (~1 day)
-3. **Job Config Snapshots**: Cannot view complete config that produced a job - auditability compromised (~1 week)
-4. **SR Interface**: SR modularity interface not enforced - not yet extractable (~1 week)
+**🟡 Remaining Env Vars (65 reads):**
+- **26 refs**: Already migrated settings (env fallbacks for backwards compatibility)
+- **11 refs**: Separate config types (SearchConfig, SRConfig) - Phase 3 scope
+- **14 refs**: Low-level tuning parameters (timeouts, thresholds) - should remain env vars
+- **8 refs**: Debug/AB testing - low priority
+- **6 refs**: Legacy monolithic pipelines - low priority
 
-**Remaining Work: ~4 weeks**
-- Phase 1 Completion: Migrate remaining 65 env var reads (1.5 weeks, CRITICAL)
+**🔴 Critical Gaps Remaining:**
+1. **Job Config Snapshots**: Cannot view complete config that produced a job - auditability compromised (~1 week)
+2. **Integration Test**: Write test demonstrating hot-reload works end-to-end (~1 day)
+3. **SR Interface**: SR modularity interface not enforced - not yet extractable (~1 week)
+
+**Remaining Work: ~2.5 weeks**
 - Phase 2: Job Snapshots (1 week, HIGH)
 - Phase 3: SR Modularity Interface (1 week, MEDIUM)
 - Phase 4: Admin UI Polish (3 days, LOW)
