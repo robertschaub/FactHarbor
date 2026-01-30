@@ -1653,6 +1653,11 @@ export default function ConfigAdminPage() {
   const [dashboardData, setDashboardData] = useState<ActiveSummaryResponse | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
 
+  // Diff comparison state
+  const [selectedForDiff, setSelectedForDiff] = useState<string[]>([]);
+  const [diffData, setDiffData] = useState<any>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
+
   // Edit state (for JSON configs)
   const [editConfig, setEditConfig] = useState<SearchConfig | CalcConfig | PipelineConfig | SRConfig | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
@@ -1945,6 +1950,28 @@ export default function ConfigAdminPage() {
       setDashboardData(null);
     } finally {
       setDashboardLoading(false);
+    }
+  }, [getHeaders]);
+
+  // Fetch diff comparison
+  const fetchDiff = useCallback(async (hash1: string, hash2: string) => {
+    setDiffLoading(true);
+    setDiffData(null);
+    try {
+      const res = await fetch(`/api/admin/config/diff?hash1=${hash1}&hash2=${hash2}`, {
+        headers: getHeaders(),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to generate diff");
+      }
+      const data = await res.json();
+      setDiffData(data);
+    } catch (err) {
+      toast.error(`Diff error: ${err instanceof Error ? err.message : String(err)}`);
+      setDiffData(null);
+    } finally {
+      setDiffLoading(false);
     }
   }, [getHeaders]);
 
@@ -2622,27 +2649,79 @@ export default function ConfigAdminPage() {
       {activeTab === "history" && !loading && (
         <>
           {history && history.versions.length > 0 ? (
-            <div className={styles.historyList}>
-              {history.versions.map((v) => (
-                <div key={v.contentHash} className={styles.historyItem}>
-                  <div className={styles.historyMeta}>
-                    <div className={styles.historyLabel}>
-                      {v.versionLabel}
-                      {v.isActive && (
-                        <span className={`${styles.status} ${styles.statusActive}`} style={{ marginLeft: 8 }}>
-                          Active
-                        </span>
-                      )}
+            <>
+              {/* Diff comparison controls */}
+              <div style={{ marginBottom: 16, padding: 12, background: "#f9fafb", borderRadius: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <strong style={{ fontSize: 14 }}>Compare Versions:</strong>
+                  <button
+                    className={`${styles.button} ${styles.buttonPrimary}`}
+                    disabled={selectedForDiff.length !== 2 || diffLoading}
+                    onClick={() => {
+                      if (selectedForDiff.length === 2) {
+                        fetchDiff(selectedForDiff[0], selectedForDiff[1]);
+                      }
+                    }}
+                    style={{ fontSize: 13 }}
+                  >
+                    {diffLoading ? "Loading..." : "Compare Selected"}
+                  </button>
+                  {selectedForDiff.length > 0 && (
+                    <button
+                      className={`${styles.button} ${styles.buttonSecondary}`}
+                      onClick={() => {
+                        setSelectedForDiff([]);
+                        setDiffData(null);
+                      }}
+                      style={{ fontSize: 13 }}
+                    >
+                      Clear Selection
+                    </button>
+                  )}
+                  <span style={{ fontSize: 12, color: "#6b7280" }}>
+                    {selectedForDiff.length}/2 selected
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.historyList}>
+                {history.versions.map((v) => (
+                  <div key={v.contentHash} className={styles.historyItem}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedForDiff.includes(v.contentHash)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            if (selectedForDiff.length < 2) {
+                              setSelectedForDiff([...selectedForDiff, v.contentHash]);
+                            }
+                          } else {
+                            setSelectedForDiff(selectedForDiff.filter((h) => h !== v.contentHash));
+                          }
+                        }}
+                        disabled={!selectedForDiff.includes(v.contentHash) && selectedForDiff.length >= 2}
+                        style={{ width: 16, height: 16, cursor: "pointer" }}
+                      />
+                      <div className={styles.historyMeta} style={{ flex: 1 }}>
+                        <div className={styles.historyLabel}>
+                          {v.versionLabel}
+                          {v.isActive && (
+                            <span className={`${styles.status} ${styles.statusActive}`} style={{ marginLeft: 8 }}>
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <div className={styles.historyHash} title={v.contentHash}>
+                          {truncateHash(v.contentHash)}
+                        </div>
+                        <div className={styles.historyDate}>
+                          Created: {formatDate(v.createdUtc)}
+                          {v.createdBy && ` by ${v.createdBy}`}
+                        </div>
+                      </div>
                     </div>
-                    <div className={styles.historyHash} title={v.contentHash}>
-                      {truncateHash(v.contentHash)}
-                    </div>
-                    <div className={styles.historyDate}>
-                      Created: {formatDate(v.createdUtc)}
-                      {v.createdBy && ` by ${v.createdBy}`}
-                    </div>
-                  </div>
-                  <div className={styles.historyActions}>
+                    <div className={styles.historyActions}>
                     <button
                       className={`${styles.button} ${styles.buttonSecondary}`}
                       onClick={async () => {
@@ -2684,11 +2763,96 @@ export default function ConfigAdminPage() {
                   </div>
                 </div>
               ))}
-              <div style={{ marginTop: 16, fontSize: 13, color: "#6b7280" }}>
-                Showing {history.versions.length} of {history.total} versions
+                <div style={{ marginTop: 16, fontSize: 13, color: "#6b7280" }}>
+                  Showing {history.versions.length} of {history.total} versions
+                </div>
               </div>
-            </div>
-          ) : !error && (
+
+              {/* Diff view */}
+              {diffData && (
+                <div style={{ marginTop: 24, padding: 16, background: "#f9fafb", borderRadius: 8 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
+                    Comparison: {diffData.version1.versionLabel} vs {diffData.version2.versionLabel}
+                  </h3>
+
+                  {diffData.diff.type === "json" ? (
+                    <div>
+                      {diffData.diff.totalChanges === 0 ? (
+                        <div style={{ padding: 20, textAlign: "center", color: "#6b7280" }}>
+                          No differences found
+                        </div>
+                      ) : (
+                        <div style={{ maxHeight: 500, overflowY: "auto" }}>
+                          {diffData.diff.changes.map((change: any, idx: number) => (
+                            <div
+                              key={idx}
+                              style={{
+                                padding: 8,
+                                marginBottom: 4,
+                                borderLeft: `4px solid ${
+                                  change.type === "added"
+                                    ? "#10b981"
+                                    : change.type === "removed"
+                                    ? "#ef4444"
+                                    : "#f59e0b"
+                                }`,
+                                background: "#fff",
+                                fontSize: 12,
+                                fontFamily: "monospace",
+                              }}
+                            >
+                              <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                                {change.path} ({change.type})
+                              </div>
+                              {change.type === "modified" && (
+                                <div>
+                                  <div style={{ color: "#ef4444" }}>
+                                    - {JSON.stringify(change.oldValue)}
+                                  </div>
+                                  <div style={{ color: "#10b981" }}>
+                                    + {JSON.stringify(change.newValue)}
+                                  </div>
+                                </div>
+                              )}
+                              {change.type === "added" && (
+                                <div style={{ color: "#10b981" }}>
+                                  + {JSON.stringify(change.newValue)}
+                                </div>
+                              )}
+                              {change.type === "removed" && (
+                                <div style={{ color: "#ef4444" }}>
+                                  - {JSON.stringify(change.oldValue)}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                      <div>
+                        <h4 style={{ fontSize: 14, marginBottom: 8 }}>
+                          {diffData.version1.versionLabel}
+                        </h4>
+                        <pre style={{ fontSize: 11, whiteSpace: "pre-wrap", maxHeight: 400, overflowY: "auto" }}>
+                          {diffData.version1.content}
+                        </pre>
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: 14, marginBottom: 8 }}>
+                          {diffData.version2.versionLabel}
+                        </h4>
+                        <pre style={{ fontSize: 11, whiteSpace: "pre-wrap", maxHeight: 400, overflowY: "auto" }}>
+                          {diffData.version2.content}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : !error ? (
             <div className={styles.empty}>
               <div className={styles.emptyIcon}>📜</div>
               <div className={styles.emptyText}>No version history</div>
@@ -2696,7 +2860,7 @@ export default function ConfigAdminPage() {
                 Save a config to start tracking versions
               </div>
             </div>
-          )}
+          ) : null}
         </>
       )}
 
