@@ -66,7 +66,7 @@ export async function GET() {
     // Build export data
     const exportData = {
       exportedAt: new Date().toISOString(),
-      analyzerVersion: "2.9.0",
+      analyzerVersion: "2.10.0",
       schemaVersion: "1.0",
       configs,
     };
