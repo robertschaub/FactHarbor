@@ -50,7 +50,7 @@ export const UNSCOPED_ID = "CTX_UNSCOPED";
  * @param text - Input text to analyze for scope patterns
  * @returns Array of detected scopes or null if no patterns match
  */
-export function detectScopes(text: string): DetectedScope[] | null {
+export function   (text: string): DetectedScope[] | null {
   const scopes: DetectedScope[] = [];
 
   // Pattern 1: Comparison claims (efficiency, performance, impact)

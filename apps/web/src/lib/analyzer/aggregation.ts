@@ -303,3 +303,95 @@ export function calculateWeightedVerdictAverage(
   return totalWeight > 0 ? Math.round(totalWeightedTruth / totalWeight) : 50;
 }
 
+// ============================================================================
+// TANGENTIAL BASELESS CLAIM PRUNING (v2.8.6)
+// ============================================================================
+
+/**
+ * Minimum fields required for claim pruning.
+ */
+interface PrunableClaimVerdict {
+  thesisRelevance?: "direct" | "tangential" | "irrelevant";
+  supportingFactIds?: string[];
+  factualBasis?: "established" | "disputed" | "opinion" | "unknown";
+  claimId?: string;
+  claimText?: string;
+}
+
+/**
+ * Minimum fields required for KeyFactor pruning.
+ */
+interface PrunableKeyFactor {
+  supports?: "yes" | "no" | "neutral" | string;
+  factualBasis?: "established" | "disputed" | "opinion" | "unknown" | string;
+  factor?: string;
+  explanation?: string;
+}
+
+/**
+ * Minimum evidence threshold for tangential claims.
+ * Claims with fewer supporting evidence items than this are considered "low evidence".
+ */
+const MIN_EVIDENCE_FOR_TANGENTIAL = 1;
+
+/**
+ * Prune tangential claims that have no or very low supporting evidence.
+ *
+ * v2.8.6: Baseless tangential claims should be dropped entirely from the report,
+ * not just weighted to 0%. This prevents cluttering the output with unsubstantiated
+ * tangential observations (e.g., foreign government opinions on domestic proceedings).
+ *
+ * A claim is pruned if:
+ * - thesisRelevance is "tangential" or "irrelevant" AND
+ * - supportingFactIds is empty or below minimum threshold
+ *
+ * Direct claims are NEVER pruned (they are the core of the analysis).
+ *
+ * @param claims - Array of claim verdicts to filter
+ * @returns Filtered array with baseless tangential claims removed
+ */
+export function pruneTangentialBaselessClaims<T extends PrunableClaimVerdict>(claims: T[]): T[] {
+  return claims.filter(claim => {
+    // Direct claims are never pruned
+    if (!claim.thesisRelevance || claim.thesisRelevance === "direct") {
+      return true;
+    }
+
+    // Tangential/irrelevant claims need sufficient evidence to be kept
+    const evidenceCount = claim.supportingFactIds?.length ?? 0;
+    if (evidenceCount < MIN_EVIDENCE_FOR_TANGENTIAL) {
+      console.log(`[Prune] Dropping tangential claim with insufficient evidence: "${(claim.claimText || claim.claimId || "unknown").substring(0, 60)}..." (${evidenceCount} evidence items)`);
+      return false;
+    }
+
+    return true;
+  });
+}
+
+/**
+ * Prune KeyFactors that are opinion-based (no documented evidence).
+ *
+ * v2.8.6: Opinion-only factors (positive OR negative) should be dropped entirely.
+ * Only factors with documented evidence contribute meaningful signal.
+ *
+ * A KeyFactor is pruned if:
+ * - factualBasis is "opinion" or "unknown" (no documented evidence)
+ *
+ * Factors with documented evidence ("established" or "disputed") are kept.
+ *
+ * @param keyFactors - Array of KeyFactors to filter
+ * @returns Filtered array with opinion-only factors removed
+ */
+export function pruneOpinionOnlyFactors<T extends PrunableKeyFactor>(keyFactors: T[]): T[] {
+  return keyFactors.filter(kf => {
+    // Keep factors with documented evidence
+    if (kf.factualBasis === "established" || kf.factualBasis === "disputed") {
+      return true;
+    }
+
+    // Drop opinion-only factors (no documented evidence)
+    console.log(`[Prune] Dropping opinion-only factor: "${(kf.factor || kf.explanation || "unknown").substring(0, 60)}..." (supports: ${kf.supports || "unknown"}, factualBasis: ${kf.factualBasis || "unknown"})`);
+    return false;
+  });
+}
+

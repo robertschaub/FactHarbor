@@ -78,7 +78,7 @@ import {
   detectInstitutionCode,
   sanitizeScopeShortAnswer,
 } from "./config";
-import { calculateWeightedVerdictAverage, validateContestation, detectHarmPotential } from "./aggregation";
+import { calculateWeightedVerdictAverage, validateContestation, detectHarmPotential, pruneTangentialBaselessClaims, pruneOpinionOnlyFactors } from "./aggregation";
 import { detectScopes, formatDetectedScopesHint } from "./scopes";
 import { getModelForTask } from "./llm";
 import {
@@ -7597,6 +7597,8 @@ The JSON object MUST include these top-level keys:
 
   // v2.8: Validate verdictSummary keyFactors
   const validatedSummaryKeyFactors = validateContestation(parsed.verdictSummary.keyFactors || []);
+  // v2.8.6: Prune opinion-only factors (no documented evidence)
+  const prunedSummaryKeyFactors = pruneOpinionOnlyFactors(validatedSummaryKeyFactors);
 
   const verdictSummary: VerdictSummary = {
     displayText: displayText,
@@ -7605,7 +7607,7 @@ The JSON object MUST include these top-level keys:
     truthPercentage: clampedAvgTruthPct,
     shortAnswer: parsed.verdictSummary.shortAnswer,
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer,
-    keyFactors: validatedSummaryKeyFactors, // v2.8: Use validated keyFactors
+    keyFactors: prunedSummaryKeyFactors, // v2.8.6: Use pruned keyFactors
     hasMultipleProceedings: true,
     hasMultipleContexts: hasMultipleContexts,
     proceedingAnswers: correctedContextAnswers,
@@ -7641,8 +7643,12 @@ The JSON object MUST include these top-level keys:
     claimPattern,
   };
 
+  // v2.8.6: Prune tangential claims with no/low evidence
+  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts);
+  console.log(`[Analyzer] MultiScope: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${validatedSummaryKeyFactors.length - prunedSummaryKeyFactors.length} baseless factors`);
+
   return {
-    claimVerdicts: weightedClaimVerdicts,
+    claimVerdicts: prunedClaimVerdicts,
     articleAnalysis,
     verdictSummary,
   };
@@ -8110,9 +8116,11 @@ ${factsFormatted}`;
 
   // v2.8: Validate contestation classification - downgrade political criticism without evidence to "opinion"
   const validatedKeyFactors = validateContestation(keyFactors);
+  // v2.8.6: Prune opinion-only factors (no documented evidence)
+  const prunedKeyFactors = pruneOpinionOnlyFactors(validatedKeyFactors);
 
   // Only flag contested negatives with evidence-based contestation
-  const hasContestedFactors = validatedKeyFactors.some(
+  const hasContestedFactors = prunedKeyFactors.some(
     (kf: any) =>
       kf.supports === "no" &&
       kf.isContested &&
@@ -8120,13 +8128,13 @@ ${factsFormatted}`;
   );
 
   // v2.5.1: Apply factor-based correction for single-proceeding cases
-  const positiveFactors = validatedKeyFactors.filter((f: KeyFactor) => f.supports === "yes").length;
-  const evidencedNegatives = validatedKeyFactors.filter(
+  const positiveFactors = prunedKeyFactors.filter((f: KeyFactor) => f.supports === "yes").length;
+  const evidencedNegatives = prunedKeyFactors.filter(
     (f: KeyFactor) => f.supports === "no" && f.factualBasis === "established",
   ).length;
   // v2.6.43: Fixed to match multi-scope path - only count contested negatives WITHOUT established counter-evidence
   // If factualBasis is "established", the negative should NOT be discounted just because it's labeled contested.
-  const contestedNegatives = validatedKeyFactors.filter(
+  const contestedNegatives = prunedKeyFactors.filter(
     (f: KeyFactor) => f.supports === "no" && f.isContested && f.factualBasis !== "established",
   ).length;
 
@@ -8159,7 +8167,7 @@ ${factsFormatted}`;
     truthPercentage: clampedAnswerTruthPct,
     shortAnswer: parsed.verdictSummary.shortAnswer || "",
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer || "",
-    keyFactors: validatedKeyFactors, // v2.8: Use validated keyFactors
+    keyFactors: prunedKeyFactors, // v2.8.6: Use pruned keyFactors
     hasMultipleProceedings: false,
     hasMultipleContexts: false,
     hasContestedFactors,
@@ -8191,8 +8199,12 @@ ${factsFormatted}`;
     claimPattern,
   };
 
+  // v2.8.6: Prune tangential claims with no/low evidence
+  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts);
+  console.log(`[Analyzer] SingleScope: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${validatedKeyFactors.length - prunedKeyFactors.length} baseless factors`);
+
   return {
-    claimVerdicts: weightedClaimVerdicts,
+    claimVerdicts: prunedClaimVerdicts,
     articleAnalysis,
     verdictSummary,
   };
@@ -8949,8 +8961,13 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
 
   console.log(`[Analyzer] Key Factors aggregated: ${keyFactors.length} factors from ${understanding.keyFactors?.length || 0} discovered, ${hasContestedFactors ? "has" : "no"} contested factors`);
 
+  // v2.8.6: Prune tangential claims with no/low evidence and opinion-only factors
+  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts);
+  const prunedKeyFactors = pruneOpinionOnlyFactors(keyFactors);
+  console.log(`[Analyzer] Pruned: ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${keyFactors.length - prunedKeyFactors.length} opinion-only factors`);
+
   return {
-    claimVerdicts: weightedClaimVerdicts,
+    claimVerdicts: prunedClaimVerdicts,
     articleAnalysis: {
       inputType: understanding.detectedInputType,
       hasMultipleProceedings: false,
@@ -8978,8 +8995,8 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
       pseudoscienceCategories: pseudoscienceAnalysis?.categories,
 
   // NEW v2.6.18: Key Factors for article mode (unified analysis mode)
-      keyFactors: keyFactors.length > 0 ? keyFactors : undefined,
-      hasContestedFactors: keyFactors.length > 0 ? hasContestedFactors : undefined,
+      keyFactors: prunedKeyFactors.length > 0 ? prunedKeyFactors : undefined,
+      hasContestedFactors: prunedKeyFactors.length > 0 ? hasContestedFactors : undefined,
     },
   };
 }
