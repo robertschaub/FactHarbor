@@ -15,14 +15,14 @@ import crypto from "crypto";
 // TYPES
 // ============================================================================
 
-export type ConfigType = "prompt" | "search" | "calculation" | "pipeline" | "sr";
-export type SchemaVersion = "prompt.v1" | "search.v1" | "calc.v1" | "pipeline.v1" | "sr.v1";
+export type ConfigType = "prompt" | "search" | "calculation" | "pipeline" | "sr" | "evidence-lexicon" | "aggregation-lexicon";
+export type SchemaVersion = "prompt.v1" | "search.v1" | "calc.v1" | "pipeline.v1" | "sr.v1" | "evidence-lexicon.v1" | "aggregation-lexicon.v1";
 
 /**
  * Valid config types for API validation.
  * Single source of truth - import this in API routes.
  */
-export const VALID_CONFIG_TYPES = ["prompt", "search", "calculation", "pipeline", "sr"] as const;
+export const VALID_CONFIG_TYPES = ["prompt", "search", "calculation", "pipeline", "sr", "evidence-lexicon", "aggregation-lexicon"] as const;
 
 /**
  * Check if a string is a valid config type
@@ -86,11 +86,65 @@ export const PipelineConfigSchema = z.object({
   llmScopeSimilarity: z.boolean().describe("Use LLM for scope similarity analysis"),
   llmVerdictValidation: z.boolean().describe("Use LLM for verdict validation (inversion/harm detection)"),
 
+  // === Heuristic Fallback Controls (Phase 4) ===
+  allowQualityFallbacks: z.boolean().describe(
+    "Allow heuristic fallbacks for quality-impacting tasks (verdict, evidence filtering) when LLM fails. " +
+    "When false (default), LLM failures return errors for quality-impacting steps."
+  ),
+  allowNonQualityFallbacks: z.boolean().describe(
+    "Allow heuristic fallbacks for non-quality-impacting tasks (input classification, recency hints). " +
+    "Graceful degradation is safer for these tasks."
+  ),
+  heuristicCircuitBreakerThreshold: z.number().int().min(1).max(10).describe(
+    "After N consecutive LLM failures, surface error to user instead of degrading"
+  ),
+
   // === Analysis Behavior ===
   analysisMode: z.enum(["quick", "deep"]).describe("Analysis depth: quick (faster) or deep (more thorough)"),
   allowModelKnowledge: z.boolean().describe("Allow LLM to use training knowledge (not just web sources)"),
   deterministic: z.boolean().describe("Use temperature=0 for reproducible outputs"),
   scopeDedupThreshold: z.number().min(0).max(1).describe("Threshold for scope deduplication (lower = more scopes)"),
+
+  // === Scope Detection Settings ===
+  scopeDetectionMethod: z
+    .enum(["heuristic", "llm", "hybrid"])
+    .describe("Scope detection method: heuristic (patterns only), llm (AI only), hybrid (patterns + AI)"),
+  scopeDetectionEnabled: z.boolean().describe("Enable scope detection (if false, use single general scope)"),
+  scopeDetectionMinConfidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .describe("Minimum confidence threshold for LLM-detected scopes (0-1)"),
+  scopeDetectionMaxContexts: z
+    .number()
+    .int()
+    .min(1)
+    .max(10)
+    .describe("Maximum number of contexts to detect per input"),
+  scopeDetectionCustomPatterns: z
+    .array(
+      z.object({
+        id: z.string().regex(/^SCOPE_[A-Z_]+$/),
+        name: z.string(),
+        type: z.enum(["methodological", "legal", "scientific", "general", "regulatory", "temporal", "geographic"]),
+        triggerPattern: z.string(),
+        keywords: z.array(z.string()),
+        metadata: z.record(z.any()).optional(),
+      }),
+    )
+    .optional()
+    .describe("Custom scope detection patterns (extends built-in)"),
+  scopeFactorHints: z
+    .array(
+      z.object({
+        scopeType: z.string(),
+        evaluationCriteria: z.string(),
+        factor: z.string(),
+        category: z.string(),
+      }),
+    )
+    .optional()
+    .describe("Hints for LLM context-specific factor generation"),
 
   // === Budget Controls ===
   // Note: maxTokensPerCall is excluded from pipeline config - it's a low-level safety limit
@@ -121,11 +175,24 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   llmScopeSimilarity: true,
   llmVerdictValidation: true,
 
+  // Heuristic fallback controls (Phase 4)
+  allowQualityFallbacks: false, // Strict by default for quality-impacting tasks
+  allowNonQualityFallbacks: true, // Graceful degradation for non-quality tasks
+  heuristicCircuitBreakerThreshold: 3, // Surface error after 3 consecutive failures
+
   // Analysis behavior
   analysisMode: "quick", // v2.9.0: Default to quick mode for backwards compatibility
   allowModelKnowledge: false, // v2.9.0: Default to off for backwards compatibility
   deterministic: true,
   scopeDedupThreshold: 0.85, // v2.9.0: Default to 0.85 per original config.ts:187
+
+  // Scope detection settings
+  scopeDetectionMethod: "heuristic",
+  scopeDetectionEnabled: true,
+  scopeDetectionMinConfidence: 0.7,
+  scopeDetectionMaxContexts: 5,
+  scopeDetectionCustomPatterns: undefined,
+  scopeFactorHints: undefined,
 
   // Budget controls
   maxIterationsPerScope: 5,
@@ -135,6 +202,420 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
 
   // Pipeline selection
   defaultPipelineVariant: "orchestrated",
+};
+
+// ============================================================================
+// EVIDENCE LEXICON CONFIG SCHEMA (evidence-lexicon.v1)
+// ============================================================================
+// UCM-managed keyword lists for evidence filtering and quality gates.
+// Pattern syntax: Use "re:" prefix for regex patterns, otherwise literal strings.
+// All defaults must be generic (no brands, jurisdictions, or named entities).
+
+export const EvidenceLexiconSchema = z.object({
+  // === Evidence Filtering ===
+  evidenceFilter: z.object({
+    vaguePhrases: z.array(z.string()).describe(
+      "Patterns indicating vague/hedged language (e.g., 're:some (say|believe)', 'reportedly')"
+    ),
+    citationPatterns: z.array(z.string()).describe(
+      "Patterns indicating legal citations (e.g., 're:§\\s*\\d+', 're:article\\s+\\d+')"
+    ),
+    attributionPatterns: z.array(z.string()).describe(
+      "Patterns indicating expert attribution (e.g., 're:(dr|prof)\\s+\\w+', 'according to')"
+    ),
+  }),
+
+  // === Quality Gates (Gate 1) ===
+  gate1: z.object({
+    opinionMarkers: z.array(z.string()).describe(
+      "Patterns indicating opinion/hedging (e.g., 're:i (think|believe)', 'probably', 'maybe')"
+    ),
+    futureMarkers: z.array(z.string()).describe(
+      "Patterns indicating future predictions (e.g., 're:will (be|have)', 'going to', 'forecast')"
+    ),
+    specificityPatterns: z.array(z.string()).describe(
+      "Patterns indicating concrete/verifiable claims (e.g., 're:\\d+%', 're:\\$\\d+', 'according to')"
+    ),
+    stopwords: z.array(z.string()).describe(
+      "Common stopwords excluded from content word counting"
+    ),
+  }),
+
+  // === Quality Gates (Gate 4) ===
+  gate4: z.object({
+    uncertaintyMarkers: z.array(z.string()).describe(
+      "Patterns indicating verdict uncertainty (e.g., 'unclear', 're:insufficient (data|evidence)')"
+    ),
+  }),
+});
+
+export type EvidenceLexicon = z.infer<typeof EvidenceLexiconSchema>;
+
+export const DEFAULT_EVIDENCE_LEXICON: EvidenceLexicon = {
+  evidenceFilter: {
+    vaguePhrases: [
+      "re:some (say|believe|argue|claim|think|suggest)",
+      "re:many (people|experts|critics|scientists|researchers)",
+      "re:it is (said|believed|argued|thought|claimed)",
+      "re:opinions (vary|differ)",
+      "the debate continues",
+      "controversy exists",
+      "allegedly",
+      "reportedly",
+      "purportedly",
+      "supposedly",
+      "re:it'?s unclear",
+      "some argue",
+      "according to some",
+    ],
+    citationPatterns: [
+      "re:§\\s*\\d+",
+      "re:(article|section|sec|para|paragraph)\\s+\\d+",
+      "re:\\d+\\s+u\\.s\\.c\\.\\s*§\\s*\\d+",
+      "re:\\w+\\s+v\\.\\s+\\w+",
+      "re:(no\\.|#)\\s*\\d+",
+    ],
+    attributionPatterns: [
+      "re:(dr|prof|professor|mr|ms|mrs)\\.?\\s+\\w+",
+      "re:\\w+\\s+\\w+\\s+(said|stated|explained|argued|claimed)",
+      "re:according to\\s+\\w+",
+    ],
+  },
+  gate1: {
+    opinionMarkers: [
+      "re:i (think|believe)",
+      "re:in my (view|opinion)",
+      "probably",
+      "possibly",
+      "perhaps",
+      "maybe",
+      "might",
+      "could be",
+      "seems to",
+      "appears to",
+      "looks like",
+      "best",
+      "worst",
+      "should",
+      "ought to",
+      "beautiful",
+      "terrible",
+      "amazing",
+      "wonderful",
+      "horrible",
+    ],
+    futureMarkers: [
+      "re:will (be|have|become|happen|occur|result)",
+      "going to",
+      "in the future",
+      "re:by (\\d{4}|next year|next month)",
+      "will likely",
+      "predicted to",
+      "forecast",
+      "re:expected to (increase|decrease|grow|rise|fall)",
+    ],
+    specificityPatterns: [
+      "re:\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}",
+      "re:(january|february|march|april|may|june|july|august|september|october|november|december)\\s+\\d+",
+      "re:\\d+\\s*percent",
+      "re:\\d+\\s*(million|billion|thousand)",
+      "re:\\$\\s*\\d+",
+      "re:(dr|prof|president|ceo|director)\\.?\\s+\\w+",
+      "re:\\w+\\s+(university|institute|hospital|corporation|inc|ltd)",
+      "re:(said|stated|announced|declared|confirmed)\\s+(that|in)",
+      "re:at least \\d+",
+      "according to",
+      "re:(more|less|higher|lower|better|worse)\\s+.*\\s+than",
+      "compared to",
+      "re:versus|vs\\.?",
+    ],
+    stopwords: [
+      "the", "a", "an", "and", "or", "but", "is", "are", "was", "were",
+      "have", "has", "had", "been", "be", "being", "do", "does", "did",
+      "will", "would", "could", "should", "may", "might", "must", "can",
+      "to", "of", "in", "for", "on", "with", "at", "by", "from", "as",
+      "into", "through", "during", "before", "after", "above", "below",
+      "between", "under", "again", "further", "then", "once", "here",
+      "there", "when", "where", "why", "how", "all", "each", "every",
+      "both", "few", "more", "most", "other", "some", "such", "no",
+      "nor", "not", "only", "own", "same", "so", "than", "too", "very",
+      "just", "also", "now", "it", "its", "this", "that", "these", "those",
+    ],
+  },
+  gate4: {
+    uncertaintyMarkers: [
+      "unclear",
+      "re:not (certain|sure|definitive)",
+      "limited evidence",
+      "insufficient data",
+      "re:conflicting (reports|evidence|sources)",
+      "re:cannot (confirm|verify|determine)",
+      "re:no (reliable|credible) sources",
+      "may or may not",
+    ],
+  },
+};
+
+// ============================================================================
+// AGGREGATION LEXICON CONFIG SCHEMA (aggregation-lexicon.v1)
+// ============================================================================
+// UCM-managed keyword lists for verdict aggregation, contestation, and harm detection.
+// Pattern syntax: Use "re:" prefix for regex patterns, otherwise literal strings.
+
+export const AggregationLexiconSchema = z.object({
+  // === Contestation Detection ===
+  contestation: z.object({
+    documentedEvidenceKeywords: z.array(z.string()).describe(
+      "Keywords indicating documented/specific counter-evidence"
+    ),
+    causalClaimPatterns: z.array(z.string()).describe(
+      "Patterns indicating causal claims requiring stronger evidence"
+    ),
+    methodologyCriticismPatterns: z.array(z.string()).describe(
+      "Patterns indicating methodology criticism"
+    ),
+  }),
+
+  // === Harm Potential Detection ===
+  harmPotential: z.object({
+    deathKeywords: z.array(z.string()).describe("Keywords related to death/mortality"),
+    injuryKeywords: z.array(z.string()).describe("Keywords related to injury/harm"),
+    safetyKeywords: z.array(z.string()).describe("Keywords related to safety/hazards"),
+    crimeKeywords: z.array(z.string()).describe("Keywords related to fraud/crime"),
+  }),
+
+  // === Verdict Inversion Detection ===
+  verdictCorrection: z.object({
+    positiveClaimPatterns: z.array(z.string()).describe(
+      "Patterns indicating positive/affirmative claims"
+    ),
+    negativeReasoningPatterns: z.array(z.string()).describe(
+      "Patterns indicating negative reasoning contradicting positive claims"
+    ),
+    negativeClaimPatterns: z.array(z.string()).describe(
+      "Patterns indicating negative claim assertions"
+    ),
+    positiveReasoningPatterns: z.array(z.string()).describe(
+      "Patterns indicating positive reasoning contradicting negative claims"
+    ),
+  }),
+
+  // === Counter-Claim Detection ===
+  counterClaimDetection: z.object({
+    evaluativeTermSynonyms: z.record(z.array(z.string())).describe(
+      "Mapping of evaluative terms to their synonyms (e.g., fair: [just, equitable])"
+    ),
+    coreEvaluativeTerms: z.array(z.string()).describe(
+      "Core evaluative terms for polarity detection"
+    ),
+    negativeFormMappings: z.record(z.string()).describe(
+      "Mapping of negative forms to positive (e.g., unfair: fair)"
+    ),
+    supportingAspectPatterns: z.array(z.string()).describe(
+      "Patterns detecting procedural/evidential support aspects"
+    ),
+    stopwords: z.array(z.string()).describe(
+      "Stopwords for tokenization in counter-claim detection"
+    ),
+  }),
+
+  // === Text Analysis Heuristics ===
+  textAnalysisHeuristic: z.object({
+    comparativeKeywords: z.array(z.string()).describe(
+      "Keywords indicating comparative language"
+    ),
+    compoundIndicators: z.array(z.string()).describe(
+      "Patterns indicating compound claims"
+    ),
+    predictiveKeywords: z.array(z.string()).describe(
+      "Keywords indicating predictive claims"
+    ),
+    evaluativeKeywords: z.array(z.string()).describe(
+      "Keywords indicating evaluative/opinion claims"
+    ),
+    productionPhaseKeywords: z.array(z.string()).describe(
+      "Keywords indicating production/creation phase"
+    ),
+    usagePhaseKeywords: z.array(z.string()).describe(
+      "Keywords indicating usage/operation phase"
+    ),
+    negativeIndicators: z.array(z.string()).describe(
+      "Keywords indicating negative/contradicting assertions"
+    ),
+    positiveIndicators: z.array(z.string()).describe(
+      "Keywords indicating positive/confirming assertions"
+    ),
+  }),
+});
+
+export type AggregationLexicon = z.infer<typeof AggregationLexiconSchema>;
+
+export const DEFAULT_AGGREGATION_LEXICON: AggregationLexicon = {
+  contestation: {
+    documentedEvidenceKeywords: [
+      "data", "measurement", "study", "record", "document", "report",
+      "investigation", "audit", "log", "dataset", "finding", "determination",
+      "ruling", "documentation", "violation", "breach", "non-compliance",
+      "procedure", "article", "section", "regulation", "statute",
+      "methodology", "causation", "causality", "correlation", "unverified",
+      "control group", "randomized", "peer-review", "replicated", "confound",
+      "bias", "systematic", "meta-analysis", "does not prove", "no causal",
+      "self-report", "passive surveillance", "adverse event", "safety signal",
+    ],
+    causalClaimPatterns: [
+      "due to",
+      "caused by",
+      "because of",
+      "result of",
+      "linked to",
+      "attributed to",
+      "leads to",
+      "responsible for",
+      "re:(kills|died from|death from|died due to|died because)",
+    ],
+    methodologyCriticismPatterns: [
+      "methodology",
+      "causation",
+      "causality",
+      "correlation",
+      "unverified",
+      "does not prove",
+      "no causal",
+      "cannot establish",
+      "cannot prove",
+      "not evidence of",
+      "insufficient evidence",
+      "flawed",
+      "misuse",
+      "misinterpret",
+    ],
+  },
+  harmPotential: {
+    deathKeywords: ["re:(dies|death|dead|kills|fatal)"],
+    injuryKeywords: ["re:(injur|harm|damage|victim)"],
+    safetyKeywords: ["danger", "unsafe", "risk", "threat", "hazard"],
+    crimeKeywords: ["fraud", "crime", "corrupt", "illegal", "stolen", "theft"],
+  },
+  verdictCorrection: {
+    positiveClaimPatterns: [
+      "re:(was|were|is|are)\\s+(a\\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)",
+      "re:(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\\s+(response|action|decision|measure)",
+      "re:(more|higher|better|superior|greater)\\s+(efficient|effective|accurate|reliable)",
+      "re:(has|have|had)\\s+(higher|greater|better|more|superior)",
+      "re:(has|have|had)\\s+(sufficient|adequate|strong|solid)\\s+(evidence|basis|support)",
+      "re:(supports|justifies|warrants|establishes)\\s+(the\\s+)?(claim|assertion|conclusion)",
+    ],
+    negativeReasoningPatterns: [
+      "re:was\\s+NOT\\s+(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)",
+      "disproportionate",
+      "unjustified",
+      "unfair",
+      "inappropriate",
+      "unreasonable",
+      "invalid",
+      "incorrect",
+      "improper",
+      "re:violates\\s+(principles|norms|standards|law|rights)",
+      "lacks factual basis",
+      "re:(excessive|unwarranted|undue)\\s+(economic\\s+)?(punishment|pressure|retaliation)",
+      "re:no\\s+(evidence|data|proof)\\s+(supports|shows|indicates|suggests)",
+      "re:(lacks|lacking)\\s+(sufficient\\s+)?(evidence|basis|support|justification)",
+      "insufficient",
+      "inadequate",
+      "re:does not\\s+(support|justify|warrant|establish)",
+      "re:fails to\\s+(support|justify|demonstrate|establish|show)",
+      "re:(contradicts|contradicted|contradicting)\\s+(the\\s+)?(claim|assertion|thesis)",
+      "re:evidence\\s+(shows|indicates|suggests|demonstrates)\\s+(the\\s+)?opposite",
+      "re:(contrary|opposite)\\s+to",
+      "re:(refutes|refuted|disproves|disproved|negates|negated)",
+      "biased",
+      "partial",
+      "conflicted",
+      "re:(less|lower|worse|inferior|reduced)\\s+(efficient|effective|productive|performance)",
+      "re:not\\s+(more|higher|better|superior)\\s+(efficient|effective)",
+    ],
+    negativeClaimPatterns: [
+      "re:(has|have|had)\\s+(lower|less|worse|inferior|reduced)\\s+(efficiency|performance|effectiveness|accuracy)",
+      "re:(less|lower|worse|inferior)\\s+(efficient|effective|accurate|reliable)\\s+(than|compared)",
+      "re:(are|is|was|were)\\s+(less|lower|worse|inferior).*?(efficient|effective)",
+    ],
+    positiveReasoningPatterns: [
+      "counter-evidence shows",
+      "re:no evidence supports\\s+(the claim|that|this|it)",
+      "re:(actually|in fact|evidence shows).*?(more|higher|better)\\s+(efficient|effective)",
+      "re:use\\s+\\d+%.*?efficiently",
+      "re:(contradicts|directly contradicts)\\s+(the\\s+)?claim",
+    ],
+  },
+  counterClaimDetection: {
+    evaluativeTermSynonyms: {
+      fair: ["fair", "just", "equitable", "impartial", "unbiased"],
+      proportionate: ["proportionate", "proportional", "appropriate", "reasonable", "fitting"],
+      justified: ["justified", "warranted", "legitimate", "valid", "well-founded"],
+      proper: ["proper", "correct", "appropriate", "due", "right"],
+      lawful: ["lawful", "legal", "legitimate", "constitutional", "valid"],
+      true: ["true", "accurate", "correct", "valid", "factual"],
+      efficient: ["efficient", "effective", "productive", "optimal"],
+    },
+    coreEvaluativeTerms: [
+      "proportionate", "justified", "fair", "efficient", "effective", "true", "valid",
+    ],
+    negativeFormMappings: {
+      disproportionate: "proportionate",
+      unjustified: "justified",
+      unfair: "fair",
+      inefficient: "efficient",
+      ineffective: "effective",
+      false: "true",
+      untrue: "true",
+      invalid: "valid",
+    },
+    supportingAspectPatterns: [
+      "re:(due process|proper process|procedure|procedural).*?(follow|met|comply|observed)",
+      "re:(evidence|evidentiary|proof).*?(proper|sufficient|adequate|considered|reviewed)",
+      "re:(evidence|record|proof).*?(meets|met|satisfies|satisfied|complies|complied).*?legal standards",
+      "re:(evidence|record|proof).*?(supports|supporting|corroborates).*?(charges|case|allegations)",
+      "re:(based on|pursuant to|according to).*?(law|legal|statute|constitution)",
+      "re:(law|legal|statute|constitution).*?(applied|followed|observed|respected|complied)",
+      "re:compl(y|ies|ied|iant|iance).*?(law|legal|electoral|statute|constitution|standards)",
+      "re:(charges|indictment|prosecution).*?(based on|supported by|grounded in).*?(law|evidence)",
+      "re:(constitutional|legal).*?(jurisdiction|authority|basis|foundation)",
+      "re:(sentence|penalty|punishment|fine).*?(proportionate|appropriate|justified|fair)",
+      "re:(judicial|judge|court).*?(independence|impartial|unbiased|free from)",
+    ],
+    stopwords: [
+      "the", "a", "an", "and", "or", "but", "of", "to", "in", "on",
+      "for", "with", "at", "by", "from", "as", "into", "than", "over",
+      "under", "using", "use", "is", "are", "was", "were", "be", "been", "being",
+    ],
+  },
+  textAnalysisHeuristic: {
+    comparativeKeywords: [
+      "more", "less", "better", "worse", "higher", "lower", "fewer", "greater", "smaller",
+    ],
+    compoundIndicators: [
+      "re:[;,]",
+      "re:(and|or|but|while|which|that)",
+    ],
+    predictiveKeywords: [
+      "will", "would", "shall", "going to", "predict", "forecast", "expect",
+    ],
+    evaluativeKeywords: [
+      "best", "worst", "should", "must", "better", "worse", "good", "bad", "right", "wrong",
+    ],
+    productionPhaseKeywords: [
+      "re:manufactur", "production", "factory", "assembly", "upstream", "mining", "extraction", "re:refin",
+    ],
+    usagePhaseKeywords: [
+      "usage", "use", "operation", "driving", "consumption", "downstream", "running", "re:operat",
+    ],
+    negativeIndicators: [
+      "false", "incorrect", "wrong", "refute", "disprove", "contradict", "not true", "unsupported",
+    ],
+    positiveIndicators: [
+      "true", "correct", "accurate", "support", "confirm", "verify", "evidence shows",
+    ],
+  },
 };
 
 // ============================================================================
@@ -818,6 +1299,24 @@ export function validateConfig(
           ),
         );
       }
+    } else if (configType === "evidence-lexicon" && schemaVersion === "evidence-lexicon.v1") {
+      const result = EvidenceLexiconSchema.safeParse(parsed);
+      if (!result.success) {
+        errors.push(
+          ...result.error.issues.map(
+            (i) => `${i.path.join(".")}: ${i.message}`,
+          ),
+        );
+      }
+    } else if (configType === "aggregation-lexicon" && schemaVersion === "aggregation-lexicon.v1") {
+      const result = AggregationLexiconSchema.safeParse(parsed);
+      if (!result.success) {
+        errors.push(
+          ...result.error.issues.map(
+            (i) => `${i.path.join(".")}: ${i.message}`,
+          ),
+        );
+      }
     } else {
       errors.push(`Unknown schema version: ${schemaVersion}`);
     }
@@ -843,6 +1342,10 @@ export function getSchemaVersion(configType: ConfigType): SchemaVersion {
       return "pipeline.v1";
     case "sr":
       return "sr.v1";
+    case "evidence-lexicon":
+      return "evidence-lexicon.v1";
+    case "aggregation-lexicon":
+      return "aggregation-lexicon.v1";
   }
 }
 
@@ -859,6 +1362,10 @@ export function getDefaultConfig(configType: ConfigType): string {
       return canonicalizeJson(DEFAULT_PIPELINE_CONFIG);
     case "sr":
       return canonicalizeJson(DEFAULT_SR_CONFIG);
+    case "evidence-lexicon":
+      return canonicalizeJson(DEFAULT_EVIDENCE_LEXICON);
+    case "aggregation-lexicon":
+      return canonicalizeJson(DEFAULT_AGGREGATION_LEXICON);
     case "prompt":
       return ""; // No default prompt
   }
@@ -877,6 +1384,8 @@ export type ConfigSchemaTypes = {
   calculation: CalcConfig;
   pipeline: PipelineConfig;
   sr: SourceReliabilityConfig;
+  "evidence-lexicon": EvidenceLexicon;
+  "aggregation-lexicon": AggregationLexicon;
   prompt: string;
 };
 
@@ -893,6 +1402,10 @@ export function getSchemaForType(configType: ConfigType): z.ZodType<unknown> | n
       return PipelineConfigSchema;
     case "sr":
       return SourceReliabilityConfigSchema;
+    case "evidence-lexicon":
+      return EvidenceLexiconSchema;
+    case "aggregation-lexicon":
+      return AggregationLexiconSchema;
     case "prompt":
       return null; // Prompts are validated differently
   }

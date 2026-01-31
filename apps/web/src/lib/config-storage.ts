@@ -27,6 +27,8 @@ import {
   DEFAULT_CALC_CONFIG,
   DEFAULT_PIPELINE_CONFIG,
   DEFAULT_SR_CONFIG,
+  DEFAULT_EVIDENCE_LEXICON,
+  DEFAULT_AGGREGATION_LEXICON,
 } from "./config-schemas";
 
 // Re-export types for API routes
@@ -747,6 +749,8 @@ const ENV_VAR_MAPPINGS: Record<ConfigType, Record<string, string>> = {
     domainCooldownSec: "FH_SR_RATE_LIMIT_DOMAIN_COOLDOWN",
   },
   prompt: {}, // Prompts don't have env var overrides
+  "evidence-lexicon": {}, // Lexicons are UCM-only, no env var overrides
+  "aggregation-lexicon": {}, // Lexicons are UCM-only, no env var overrides
 };
 
 /**
@@ -757,6 +761,8 @@ const DEFAULT_CONFIGS: Record<Exclude<ConfigType, "prompt">, unknown> = {
   calculation: DEFAULT_CALC_CONFIG,
   pipeline: DEFAULT_PIPELINE_CONFIG,
   sr: DEFAULT_SR_CONFIG,
+  "evidence-lexicon": DEFAULT_EVIDENCE_LEXICON,
+  "aggregation-lexicon": DEFAULT_AGGREGATION_LEXICON,
 };
 
 /**
