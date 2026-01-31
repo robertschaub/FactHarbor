@@ -5,6 +5,8 @@
  * - Gate 1: Claim Validation (factual vs opinion/prediction)
  * - Gate 4: Verdict Confidence Assessment
  *
+ * v2.9: Patterns are now configurable via UCM lexicon config.
+ *
  * @module analyzer/quality-gates
  */
 
@@ -15,96 +17,34 @@ import type {
   FetchedSource,
   ExtractedFact,
 } from "./types";
+import type { EvidenceLexicon } from "../config-schemas";
+import { getEvidencePatterns, matchesAnyPattern, countPatternMatches } from "./lexicon-utils";
 
 // ============================================================================
-// PATTERN CONSTANTS
+// PATTERN CONFIGURATION
 // ============================================================================
+// DEPRECATED: Hardcoded patterns moved to UCM lexicon (evidence-lexicon.v1)
+// See: DEFAULT_EVIDENCE_LEXICON.gate1.* and DEFAULT_EVIDENCE_LEXICON.gate4.*
 
 /**
- * Opinion/hedging markers that indicate non-factual claims
+ * Module-level compiled patterns (cached, initialized with defaults)
+ * Can be updated via setQualityGatesLexicon() for testing or config reload
  */
-const OPINION_MARKERS = [
-  /\bi\s+think\b/i,
-  /\bi\s+believe\b/i,
-  /\bin\s+my\s+(view|opinion)\b/i,
-  /\bprobably\b/i,
-  /\bpossibly\b/i,
-  /\bperhaps\b/i,
-  /\bmaybe\b/i,
-  /\bmight\b/i,
-  /\bcould\s+be\b/i,
-  /\bseems\s+to\b/i,
-  /\bappears\s+to\b/i,
-  /\blooks\s+like\b/i,
-  /\bbest\b/i,
-  /\bworst\b/i,
-  /\bshould\b/i,
-  /\bought\s+to\b/i,
-  /\bbeautiful\b/i,
-  /\bterrible\b/i,
-  /\bamazing\b/i,
-  /\bwonderful\b/i,
-  /\bhorrible\b/i,
-];
+let _patterns = getEvidencePatterns();
 
 /**
- * Future prediction markers
+ * Set the lexicon for quality gates (useful for testing or config reload)
  */
-const FUTURE_MARKERS = [
-  /\bwill\s+(be|have|become|happen|occur|result)\b/i,
-  /\bgoing\s+to\b/i,
-  /\bin\s+the\s+future\b/i,
-  /\bby\s+(2026|2027|2028|2029|2030|next\s+year|next\s+month)\b/i,
-  /\bwill\s+likely\b/i,
-  /\bpredicted\s+to\b/i,
-  /\bforecast/i,
-  /\bexpected\s+to\s+(increase|decrease|grow|rise|fall)\b/i,
-];
+export function setQualityGatesLexicon(lexicon?: EvidenceLexicon): void {
+  _patterns = getEvidencePatterns(lexicon);
+}
 
 /**
- * Specificity indicators (names, numbers, dates, locations)
+ * Get current patterns (for testing)
  */
-const SPECIFICITY_PATTERNS = [
-  /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/,
-  /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}/i,
-  /\b\d+\s*(percent|%)\b/i,
-  /\b\d+\s*(million|billion|thousand)\b/i,
-  /\b\$\s*\d+/i,
-  /\b(Dr\.|Prof\.|President|CEO|Director)\s+[A-Z][a-z]+/i,
-  /\b[A-Z][a-z]+\s+(University|Institute|Hospital|Corporation|Inc\.|Ltd\.)/i,
-  /\b(said|stated|announced|declared|confirmed)\s+(that|in)/i,
-  /\bat\s+least\s+\d+/i,
-  /\baccording\s+to\b/i,
-  // Comparative claims are often verifiable even without explicit numbers/dates.
-  // Treat clear comparison structure as a specificity signal (topic-agnostic).
-  /\b(more|less|higher|lower|better|worse|fewer|greater|smaller)\b[\w\s,]{0,80}\bthan\b/i,
-  /\bcompared\s+to\b/i,
-  /\bversus\b|\bvs\.?\b/i,
-];
-
-/**
- * Uncertainty markers in verdict reasoning
- */
-const UNCERTAINTY_MARKERS = [
-  /\bunclear\b/i,
-  /\bnot\s+(certain|sure|definitive)\b/i,
-  /\blimited\s+evidence\b/i,
-  /\binsufficient\s+data\b/i,
-  /\bconflicting\s+(reports|evidence|sources)\b/i,
-  /\bcannot\s+(confirm|verify|determine)\b/i,
-  /\bno\s+(reliable|credible)\s+sources?\b/i,
-  /\bmay\s+or\s+may\s+not\b/i,
-];
-
-/**
- * Common English stopwords for lightweight content-word counting.
- * (Generic; used to avoid over-filtering verifiable claims that lack numbers/dates.)
- */
-const STOPWORDS = new Set([
-  "the","a","an","and","or","but","if","then","than","to","of","in","on","for","with","at","by","from","as","into","through","during","before","after",
-  "is","was","were","are","be","been","being","have","has","had","do","does","did","will","would","could","should","may","might","must","can",
-  "this","that","these","those","it","its","they","them","their","we","our","you","your","i","me","my",
-]);
+export function getQualityGatesPatterns() {
+  return _patterns;
+}
 
 // ============================================================================
 // GATE 1: CLAIM VALIDATION
@@ -121,22 +61,15 @@ export function validateClaimGate1(
   claimText: string,
   isCentral: boolean = false
 ): ClaimValidationResult {
+  // Use module-level patterns (from UCM lexicon or defaults)
+  const patterns = _patterns;
+
   // 1. Calculate opinion score (0-1)
-  let opinionMatches = 0;
-  for (const pattern of OPINION_MARKERS) {
-    if (pattern.test(claimText)) {
-      opinionMatches++;
-    }
-  }
+  const opinionMatches = countPatternMatches(claimText, patterns.opinionMarkers);
   const opinionScore = Math.min(opinionMatches / 3, 1);
 
   // 2. Calculate specificity score (0-1)
-  let specificityMatches = 0;
-  for (const pattern of SPECIFICITY_PATTERNS) {
-    if (pattern.test(claimText)) {
-      specificityMatches++;
-    }
-  }
+  const specificityMatches = countPatternMatches(claimText, patterns.specificityPatterns);
   const specificityScore = Math.min(specificityMatches / 3, 1);
 
   // 2b. Lightweight content-word count: helps keep verifiable, mechanism-style claims
@@ -145,18 +78,12 @@ export function validateClaimGate1(
     .toLowerCase()
     .replace(/[^\w\s]/g, " ")
     .split(/\s+/)
-    .filter(w => w.length >= 4 && !STOPWORDS.has(w))
+    .filter(w => w.length >= 4 && !patterns.stopwords.has(w))
     .length;
   const hasEnoughContent = contentWordCount >= 5;
 
   // 3. Check for future predictions
-  let futureOriented = false;
-  for (const pattern of FUTURE_MARKERS) {
-    if (pattern.test(claimText)) {
-      futureOriented = true;
-      break;
-    }
-  }
+  const futureOriented = matchesAnyPattern(claimText, patterns.futureMarkers);
 
   // 4. Determine claim type
   let claimType: "FACTUAL" | "OPINION" | "PREDICTION" | "AMBIGUOUS";
@@ -250,13 +177,8 @@ export function validateVerdictGate4(
     ? supportingFactIds.length / totalEvidence
     : 0;
 
-  // 4. Count uncertainty factors in reasoning
-  let uncertaintyFactors = 0;
-  for (const pattern of UNCERTAINTY_MARKERS) {
-    if (pattern.test(verdictReasoning)) {
-      uncertaintyFactors++;
-    }
-  }
+  // 4. Count uncertainty factors in reasoning (using UCM lexicon patterns)
+  const uncertaintyFactors = countPatternMatches(verdictReasoning, _patterns.uncertaintyMarkers);
 
   // 5. Determine confidence tier
   let confidenceTier: "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
