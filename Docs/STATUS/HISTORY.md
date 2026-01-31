@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
-**Last Updated**: January 30, 2026
-**Current Version**: 2.8.3 (Code) | 2.7.0 (Schema Output)
+**Last Updated**: January 31, 2026
+**Current Version**: 2.10.0 (Code) | 2.7.0 (Schema Output)
 **Schema Version**: 2.7.0
 
 ---
@@ -42,6 +42,69 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 ---
 
 ## Version History
+
+### v2.10.0 UCM Pre-Validation Sprint (January 31, 2026)
+
+**Focus**: Professional Admin UX and Operational Tools
+
+**Status**: ✅ COMPLETE - All 6 Low-Hanging Fruits implemented
+
+**Goal**: Ship professional UX and debugging tools BEFORE validation period to enable better system understanding and issue investigation.
+
+**Major Changes**:
+
+1. **Toast Notifications** (Day 1.1 - `859fb00`)
+   - Replaced 22 `alert()` calls with `react-hot-toast` notifications
+   - Non-blocking, auto-dismiss, color-coded (success/error/info)
+   - Added `<Toaster />` to root layout
+
+2. **Export All Configs** (Day 1.2 - `cd87a4a`)
+   - New API: `GET /api/admin/config/export-all`
+   - Complete backup of all active configs as timestamped JSON
+   - UI button on admin dashboard
+
+3. **Active Config Dashboard** (Day 2 - `84180c6`)
+   - New API: `GET /api/admin/config/active-summary`
+   - Visual overview panel on `/admin/config`
+   - Color-coded cards by config type with version labels
+
+4. **Config Diff View** (Day 3-4 - `d3851b3`)
+   - New API: `GET /api/admin/config/diff?hash1=&hash2=`
+   - Checkbox selection to compare any 2 versions
+   - JSON: Field-by-field diff with added/removed/modified indicators
+   - Prompts: Side-by-side text comparison
+
+5. **Default Value Indicators** (Day 5.1 - `38a8c4f`)
+   - New API: `GET /api/admin/config/default-comparison?type=&profile=`
+   - Shows customization status vs defaults
+   - Expandable field path list
+
+6. **Config Search by Hash** (Day 5.2 - `1a49969`)
+   - New API: `GET /api/admin/config/search-hash?q=`
+   - Search by full or partial hash (min 4 chars)
+   - Click-to-navigate to found versions
+
+**Files Created**:
+- `apps/web/src/app/api/admin/config/export-all/route.ts`
+- `apps/web/src/app/api/admin/config/active-summary/route.ts`
+- `apps/web/src/app/api/admin/config/diff/route.ts`
+- `apps/web/src/app/api/admin/config/default-comparison/route.ts`
+- `apps/web/src/app/api/admin/config/search-hash/route.ts`
+
+**Files Modified**:
+- `apps/web/src/app/layout.tsx` - Added Toaster component
+- `apps/web/src/app/admin/config/page.tsx` - Dashboard, diff, search, indicators
+- `apps/web/src/app/admin/page.tsx` - Export button
+- `apps/web/src/app/admin/source-reliability/page.tsx` - Toast notifications
+
+**Documentation**:
+- `Docs/RECOMMENDATIONS/UCM_Enhancement_Recommendations.md` - Sprint completion
+- `Docs/USER_GUIDES/Unified_Config_Management.md` - Section 7: New Admin Tools
+- `Docs/STATUS/Current_Status.md` - Updated to v2.10.0
+
+**Next Step**: Phase 0 Validation with complete operational toolkit
+
+---
 
 ### v2.8.0 LLM Text Analysis Pipeline (January 29-30, 2026)
 

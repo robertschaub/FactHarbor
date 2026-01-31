@@ -1,7 +1,7 @@
 # Unified Config Management (UCM) User Guide
 
-**Version**: 2.6.41
-**Date**: 2026-01-29
+**Version**: 2.10.0
+**Date**: 2026-01-31
 **Audience**: Administrators, Power Users
 **Related**: [Evidence Quality Filtering](../ARCHITECTURE/Evidence_Quality_Filtering.md), [Provider Prompt Formatting](../REFERENCE/Provider_Prompt_Formatting.md)
 
@@ -15,6 +15,7 @@
 4. [Configuration Types](#4-configuration-types)
 5. [Common Use Cases](#5-common-use-cases)
 6. [Troubleshooting](#6-troubleshooting)
+7. [New in v2.10: Admin Tools](#7-new-in-v210-admin-tools)
 
 ---
 
@@ -558,6 +559,119 @@ evidenceFilter: {
 
 ---
 
+## 7. New in v2.10: Admin Tools
+
+### 7.1 Active Config Dashboard
+
+**Location**: Top of `/admin/config` page
+
+**Purpose**: Visual overview of all currently active configurations at a glance.
+
+**Features**:
+- Color-coded cards for each config type (Search, Calculation, Pipeline, Prompts, SR)
+- Shows version label for each active config
+- Displays activation timestamp
+- Grouped by profile key
+
+**Use Case**: Quickly understand current system state before making changes.
+
+### 7.2 Config Search by Hash
+
+**Location**: Top of `/admin/config` page
+
+**Purpose**: Find configs by content hash for debugging and traceability.
+
+**How to Use**:
+1. Enter full or partial hash (minimum 4 characters)
+2. Press Enter or click "Search"
+3. Results show matching configs across all types
+4. Click result to navigate directly to that config version
+
+**Use Case**: When debugging a job report that shows a config hash, quickly find the exact config that was used.
+
+### 7.3 Version Comparison (Diff View)
+
+**Location**: History tab in `/admin/config`
+
+**Purpose**: Compare any two config versions side-by-side.
+
+**How to Use**:
+1. Go to History tab
+2. Check boxes next to two versions to compare
+3. Click "Compare Selected"
+4. Diff view shows:
+   - JSON configs: Field-by-field changes with added/removed/modified indicators
+   - Prompts: Side-by-side text comparison
+
+**Color Coding**:
+- Green: Added fields/lines
+- Red: Removed fields/lines
+- Yellow: Modified fields
+
+**Use Case**: Understand what changed between versions when reviewing history.
+
+### 7.4 Default Value Indicators
+
+**Location**: Active Config view (when viewing active config for JSON types)
+
+**Purpose**: Identify which settings are customized from defaults.
+
+**Visual Indicators**:
+- **Green banner**: "Using default configuration" - no customizations
+- **Yellow banner**: Shows count of customized fields with percentage
+
+**Expandable Details**: Click to see exact field paths that differ from defaults.
+
+**Use Case**: Quickly identify if a config has been customized and which fields changed.
+
+### 7.5 Export All Configs
+
+**Location**: `/admin` page (main admin dashboard)
+
+**Purpose**: Create complete backup of all active configurations.
+
+**How to Use**:
+1. Navigate to Admin Dashboard
+2. Click "Export All Configurations"
+3. Downloads JSON file with all configs
+
+**Export Format**:
+```json
+{
+  "exportedAt": "2026-01-31T14:30:00Z",
+  "analyzerVersion": "2.10.0",
+  "schemaVersion": "1.0",
+  "configs": {
+    "pipeline": { "default": { ... } },
+    "search": { "default": { ... } },
+    "calculation": { "default": { ... } },
+    "prompt": { "default": { ... } }
+  }
+}
+```
+
+**Use Cases**:
+- Disaster recovery backup
+- Environment migration
+- Version control of configurations
+
+### 7.6 Toast Notifications
+
+**Behavior**: All admin operations now use professional toast notifications instead of browser alerts.
+
+**Toast Types**:
+- **Success** (green): Operation completed successfully
+- **Error** (red): Operation failed - includes error details
+- **Info** (default): Informational feedback
+
+**Features**:
+- Non-blocking (can continue working while notification shows)
+- Auto-dismiss after 3-5 seconds
+- Errors persist until dismissed
+- Multiple toasts stack properly
+
+---
+
 ## Appendix A: Default Profile Settings
 
 ### Default SearchConfig
@@ -643,7 +757,8 @@ evidenceFilter: {
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-29
+**Document Version**: 2.0
+**Last Updated**: 2026-01-31
+**Changes**: Added Section 7 - New Admin Tools (v2.10.0 features)
 **Next Review**: When adding new configuration options
 **Maintained by**: Plan Coordinator
