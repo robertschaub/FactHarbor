@@ -3,8 +3,39 @@
  *
  * Extracted from the monolithic `analyzer.ts` to keep responsibilities separated.
  *
+ * v2.9: Patterns are now configurable via UCM lexicon config.
+ *
  * @module analyzer/aggregation
  */
+
+import type { AggregationLexicon } from "../config-schemas";
+import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
+
+// ============================================================================
+// PATTERN CONFIGURATION
+// ============================================================================
+// DEPRECATED: Hardcoded patterns moved to UCM lexicon (aggregation-lexicon.v1)
+// See: DEFAULT_AGGREGATION_LEXICON.contestation.*, harmPotential.*, etc.
+
+/**
+ * Module-level compiled patterns (cached, initialized with defaults)
+ * Can be updated via setAggregationLexicon() for testing or config reload
+ */
+let _patterns = getAggregationPatterns();
+
+/**
+ * Set the lexicon for aggregation functions (useful for testing or config reload)
+ */
+export function setAggregationLexicon(lexicon?: AggregationLexicon): void {
+  _patterns = getAggregationPatterns(lexicon);
+}
+
+/**
+ * Get current patterns (for testing)
+ */
+export function getAggregationPatternsConfig() {
+  return _patterns;
+}
 
 // ============================================================================
 // CONTESTATION VALIDATION (v2.8)
@@ -50,15 +81,15 @@ export function validateContestation<T extends ContestableKeyFactor>(keyFactors:
     // The SOURCE doesn't matter - what matters is whether there's DOCUMENTED counter-evidence
     // Must include specific references: measurements, audits, reports, legal citations, etc.
     // v2.8.5: Added scientific/methodological terms for causal claim contestation
-    const documentedEvidencePattern = /\b(data|measurement|study|record|document|report|investigation|audit|log|dataset|finding|determination|ruling|documentation|violation|breach|non-?compliance|procedure\s+\d+|article\s+\d+|section\s+\d+|protocol\s+\d+|rule\s+\d+|regulation\s+\d+|statute|precedent|\d+%|\d+\s*(kg|g|kwh|mwh|efficiency|percent)|methodology|causation|causality|correlation|unverified|control\s*group|randomized|peer-?review|replicated|confound|bias|systematic|meta-?analysis|does\s+not\s+prove|no\s+causal|self-?report|passive\s+surveillance|adverse\s+event|safety\s+signal|VAERS|pharmacovigilance)\b/i;
-    
+    // v2.9: Patterns now configurable via UCM lexicon (aggregation-lexicon.v1)
+
     const textToCheck = [
       kf.contestationReason || "",
       kf.explanation || "",
       kf.factor || ""
     ].join(" ");
-    
-    const hasDocumentedEvidence = documentedEvidencePattern.test(textToCheck);
+
+    const hasDocumentedEvidence = matchesAnyPattern(textToCheck, _patterns.documentedEvidenceKeywords);
     
     // If claimed as "established"/"disputed" but no documented evidence found → downgrade to "opinion"
     // This ensures only REAL counter-evidence reduces verdict weight
@@ -81,31 +112,32 @@ export function validateContestation<T extends ContestableKeyFactor>(keyFactors:
 /**
  * Detect high harm potential from claim text using heuristic patterns.
  * This is a safety net for when LLM fails to detect severe claims.
- * 
+ *
  * v2.8: Shared implementation for consistent harm potential detection across pipelines.
- * 
+ * v2.9: Patterns now configurable via UCM lexicon (aggregation-lexicon.v1)
+ *
  * High harm claims include:
  * - Death/mortality claims
  * - Injury/harm claims
  * - Safety/health risk claims
  * - Fraud/crime accusations
- * 
+ *
  * @param text - Claim text to analyze
  * @returns "high" | "medium" | "low"
  */
 export function detectHarmPotential(text: string): "high" | "medium" | "low" {
-  const lowered = (text || "").toLowerCase();
-  
-  // Death/injury claims are ALWAYS high harm potential
-  if (/\b(die[ds]?|death[s]?|dead|kill[eds]*|fatal|fatalit)/i.test(lowered)) return "high";
-  if (/\b(injur[yies]*|harm[eds]*|damage[ds]*|victim[s]?)/i.test(lowered)) return "high";
-  
-  // Safety/health risk claims
-  if (/\b(danger|unsafe|risk|threat|hazard)/i.test(lowered)) return "high";
-  
-  // Fraud/crime accusations
-  if (/\b(fraud|crime|corrupt|illegal|stolen|theft)/i.test(lowered)) return "high";
-  
+  const textToCheck = text || "";
+
+  // Death/injury claims are ALWAYS high harm potential (UCM: harmPotential.deathKeywords)
+  if (matchesAnyPattern(textToCheck, _patterns.harmDeathKeywords)) return "high";
+  if (matchesAnyPattern(textToCheck, _patterns.harmInjuryKeywords)) return "high";
+
+  // Safety/health risk claims (UCM: harmPotential.safetyKeywords)
+  if (matchesAnyPattern(textToCheck, _patterns.harmSafetyKeywords)) return "high";
+
+  // Fraud/crime accusations (UCM: harmPotential.crimeKeywords)
+  if (matchesAnyPattern(textToCheck, _patterns.harmCrimeKeywords)) return "high";
+
   return "medium";
 }
 
@@ -125,42 +157,43 @@ export interface ClaimContestationResult {
 /**
  * Detect contestation at the claim level using heuristic patterns.
  * This is a simpler approach for pipelines that don't extract KeyFactors.
- * 
+ *
  * v2.8: Implements "doubted" vs "contested" distinction at claim level:
  * - DOUBTED (opinion): Political criticism without documented evidence → FULL weight
  * - CONTESTED (disputed/established): Has documented counter-evidence → REDUCED weight
- * 
+ * v2.9: Patterns now configurable via UCM lexicon (aggregation-lexicon.v1)
+ *
  * @param claimText - The claim text being evaluated
  * @param reasoning - The LLM reasoning for the verdict (if available)
  * @returns Contestation detection result
  */
 export function detectClaimContestation(claimText: string, reasoning?: string): ClaimContestationResult {
-  const combined = `${claimText || ""} ${reasoning || ""}`.toLowerCase();
-  
-  // Check if there's any contestation signal
+  const combined = `${claimText || ""} ${reasoning || ""}`;
+
+  // Check if there's any contestation signal (using negativeClaimPatterns which include contestation signals)
+  // Note: We use a simple inline check here since contestation signals overlap with negative claim patterns
   const contestationSignals = /\b(disputed|contested|challenged|criticized|questioned|denied|rejected|opposed|controversy|contentious|debat)/i;
   const hasContestationSignal = contestationSignals.test(combined);
-  
+
   if (!hasContestationSignal) {
     return { isContested: false, factualBasis: "unknown" };
   }
-  
+
   // v2.8.5: Detect if this is a causal claim that requires stronger evidence
   // Causal claims ("due to", "caused by", etc.) need proper causal evidence, not just temporal correlation
-  const causalClaimPattern = /\b(due\s+to|caused\s+by|because\s+of|result\s+of|linked\s+to|attributed\s+to|leads?\s+to|responsible\s+for|kills?|died\s+from|death\s+from|died\s+due\s+to|died\s+because)/i;
-  const isCausalClaim = causalClaimPattern.test(claimText || "");
-  
+  // v2.9: Uses UCM lexicon (aggregation-lexicon.v1 contestation.causalClaimPatterns)
+  const isCausalClaim = matchesAnyPattern(claimText || "", _patterns.causalClaimPatterns);
+
   // Evidence-based approach: the SOURCE doesn't matter, only whether there's DOCUMENTED counter-evidence
   // If no documented evidence → "opinion" (keeps full weight)
   // If documented evidence → "established" or "disputed" (reduces weight)
-  // v2.8.5: Added scientific/methodological terms for causal claim contestation
-  const documentedEvidence = /\b(audit|study|report|investigation|finding|data|measurement|record|document|statistic|evidence shows|according to records|documented|violation of|breach of|non-?compliance|article \d+|section \d+|regulation \d+|procedure \d+|\d+%|\d+\s*(kg|g|kwh|mwh|efficiency|percent)|methodology|causation|causality|correlation|unverified|control\s*group|randomized|peer-?review|replicated|confound|bias|systematic|meta-?analysis|does\s+not\s+prove|no\s+causal|self-?report|passive\s+surveillance|adverse\s+event|safety\s+signal|VAERS|pharmacovigilance)/i;
-  const hasDocumentedEvidence = documentedEvidence.test(combined);
-  
+  // v2.9: Uses UCM lexicon (aggregation-lexicon.v1 contestation.documentedEvidenceKeywords)
+  const hasDocumentedEvidence = matchesAnyPattern(combined, _patterns.documentedEvidenceKeywords);
+
   // v2.8.5: Methodology criticism for causal claims = "established" counter-evidence
   // When experts criticize the methodology used to establish causation, this is strong counter-evidence
-  const methodologyCriticism = /\b(methodology|causation|causality|correlation|unverified|does\s+not\s+prove|no\s+causal|cannot\s+establish|cannot\s+prove|not\s+evidence\s+of|insufficient\s+evidence|flawed|misuse|misinterpret)/i;
-  const hasMethodologyCriticism = methodologyCriticism.test(combined);
+  // v2.9: Uses UCM lexicon (aggregation-lexicon.v1 contestation.methodologyCriticismPatterns)
+  const hasMethodologyCriticism = matchesAnyPattern(combined, _patterns.methodologyCriticismPatterns);
   
   // Determine factual basis purely on evidence, not source
   let factualBasis: "established" | "disputed" | "opinion" | "unknown";
