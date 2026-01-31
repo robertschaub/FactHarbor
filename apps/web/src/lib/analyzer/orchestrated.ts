@@ -7316,9 +7316,8 @@ The JSON object MUST include these top-level keys:
     }
 
     // v2.5.1: Only evidenced negatives count at full weight
-    // Contested negatives without established basis count at 25%
-    // Neutral contested don't count negatively at all
-    const effectiveNegatives = evidencedNegatives + (negativeFactors - evidencedNegatives) * 0.25;
+    // Negatives without established evidence (opinion/unknown) do NOT reduce verdict
+    const effectiveNegatives = evidencedNegatives;
 
     // v2.6.20: Removed factor-based boost to ensure input neutrality
     // The boost was causing inconsistent verdicts for identical inputs
