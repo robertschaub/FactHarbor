@@ -8,11 +8,15 @@
  * - Layer 1 (prompts): extract-facts-base.ts instructs LLM not to extract low-quality items
  * - Layer 2 (this file): Deterministic filter catches anything that slips through
  *
+ * v2.9: Patterns are now configurable via UCM lexicon config.
+ *
  * @module evidence-filter
  * @since v2.8 (Phase 1.5)
  */
 
 import type { EvidenceItem } from "./types";
+import type { EvidenceLexicon } from "../config-schemas";
+import { getEvidencePatterns, countPatternMatches, matchesAnyPattern } from "./lexicon-utils";
 
 /**
  * Configuration for probative value filtering
@@ -37,6 +41,9 @@ export interface ProbativeFilterConfig {
     event: { requireTemporalAnchor: boolean };
     legal_provision: { requireCitation: boolean };
   };
+
+  // UCM lexicon for pattern matching (optional, uses defaults if not provided)
+  lexicon?: EvidenceLexicon;
 }
 
 /**
@@ -67,30 +74,14 @@ export const DEFAULT_FILTER_CONFIG: ProbativeFilterConfig = {
   },
 };
 
-/**
- * Common vague phrases that indicate low probative value
- */
-const VAGUE_PHRASES = [
-  /\bsome\s+(say|believe|argue|claim|think|suggest)\b/i,
-  /\bmany\s+(people|experts|critics|scientists|researchers)\b/i,
-  /\bit\s+is\s+(said|believed|argued|thought|claimed)\b/i,
-  /\bopinions\s+(vary|differ)\b/i,
-  /\bthe\s+debate\s+continues\b/i,
-  /\bcontroversy\s+exists\b/i,
-  /\ballegedly\b/i,
-  /\breportedly\b/i,
-  /\bpurportedly\b/i,
-  /\bsupposedly\b/i,
-  /\bits?\s+unclear\b/i,
-  /\bsome\s+argue\b/i,
-  /\baccording\s+to\s+some\b/i,
-];
+// DEPRECATED: VAGUE_PHRASES moved to UCM lexicon (evidence-lexicon.v1)
+// See: DEFAULT_EVIDENCE_LEXICON.evidenceFilter.vaguePhrases
 
 /**
- * Count vague phrases in a statement
+ * Count vague phrases in a statement using lexicon patterns
  */
-function countVaguePhrases(statement: string): number {
-  return VAGUE_PHRASES.filter((pattern) => pattern.test(statement)).length;
+function countVaguePhrases(statement: string, patterns: RegExp[]): number {
+  return countPatternMatches(statement, patterns);
 }
 
 /**
@@ -116,34 +107,24 @@ function hasTemporalAnchor(text: string): boolean {
   return yearPattern.test(text) || monthPattern.test(text) || datePattern.test(text) || relativePattern.test(text);
 }
 
+// DEPRECATED: citationPatterns moved to UCM lexicon (evidence-lexicon.v1)
+// See: DEFAULT_EVIDENCE_LEXICON.evidenceFilter.citationPatterns
+
 /**
  * Check if text contains citation-like patterns (for legal provisions)
  */
-function hasCitation(text: string): boolean {
-  // Patterns like "§", "Article", "Section", case numbers, statute references
-  const citationPatterns = [
-    /§\s*\d+/,                          // § 123
-    /\b(article|section|sec\.|para\.|paragraph)\s+\d+/i,
-    /\b\d+\s+u\.?s\.?c\.?\s+§?\s*\d+/i, // 42 USC § 1983
-    /\b[A-Z][a-z]+\s+v\.?\s+[A-Z][a-z]+/,  // Case v. Case
-    /\b(no\.|#)\s*\d{2,}/i,             // No. 12345
-  ];
-
-  return citationPatterns.some((pattern) => pattern.test(text));
+function hasCitation(text: string, patterns: RegExp[]): boolean {
+  return matchesAnyPattern(text, patterns);
 }
+
+// DEPRECATED: attributionPatterns moved to UCM lexicon (evidence-lexicon.v1)
+// See: DEFAULT_EVIDENCE_LEXICON.evidenceFilter.attributionPatterns
 
 /**
  * Check if text contains attribution to a named person/expert
  */
-function hasAttribution(text: string): boolean {
-  // Look for patterns like "Dr. Name", "Prof. Name", quoted statements with attribution
-  const attributionPatterns = [
-    /\b(dr|prof|professor|mr|ms|mrs)\.?\s+[A-Z][a-z]+/i,
-    /\b[A-Z][a-z]+\s+[A-Z][a-z]+\s+(said|stated|explained|argued|claimed)\b/i,
-    /according\s+to\s+[A-Z][a-z]+/i,
-  ];
-
-  return attributionPatterns.some((pattern) => pattern.test(text));
+function hasAttribution(text: string, patterns: RegExp[]): boolean {
+  return matchesAnyPattern(text, patterns);
 }
 
 /**
@@ -175,6 +156,9 @@ export function filterByProbativeValue(
 ): { kept: EvidenceItem[]; filtered: EvidenceItem[]; stats: FilterStats } {
   const cfg: ProbativeFilterConfig = { ...DEFAULT_FILTER_CONFIG, ...config };
 
+  // Compile lexicon patterns (cached)
+  const patterns = getEvidencePatterns(cfg.lexicon);
+
   const kept: EvidenceItem[] = [];
   const filtered: EvidenceItem[] = [];
   const filterReasons: Record<string, number> = {};
@@ -195,7 +179,7 @@ export function filterByProbativeValue(
     }
 
     // 2. Vague phrase count
-    else if (countVaguePhrases(item.fact) > cfg.maxVaguePhraseCount) {
+    else if (countVaguePhrases(item.fact, patterns.vaguePhrases) > cfg.maxVaguePhraseCount) {
       shouldFilter = true;
       filterReason = "excessive_vague_phrases";
     }
@@ -227,7 +211,7 @@ export function filterByProbativeValue(
 
     else if (item.category === "expert_quote" && cfg.categoryRules.expert_quote.requireAttribution) {
       const excerpt = item.sourceExcerpt ?? "";
-      if (!hasAttribution(item.fact) && !hasAttribution(excerpt)) {
+      if (!hasAttribution(item.fact, patterns.attributionPatterns) && !hasAttribution(excerpt, patterns.attributionPatterns)) {
         shouldFilter = true;
         filterReason = "expert_quote_without_attribution";
       }
@@ -243,7 +227,7 @@ export function filterByProbativeValue(
 
     else if (item.category === "legal_provision" && cfg.categoryRules.legal_provision.requireCitation) {
       const excerpt = item.sourceExcerpt ?? "";
-      if (!hasCitation(item.fact) && !hasCitation(excerpt)) {
+      if (!hasCitation(item.fact, patterns.citationPatterns) && !hasCitation(excerpt, patterns.citationPatterns)) {
         shouldFilter = true;
         filterReason = "legal_provision_without_citation";
       }
