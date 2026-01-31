@@ -8,12 +8,12 @@ LLM prompts for the Text Analysis Pipeline. These prompts are used when the corr
 |------|---------|-------------|---------------|
 | `text-analysis-input.prompt.md` | 1.1.0 | Input classification and claim decomposition | 2026-01-30 |
 | `text-analysis-evidence.prompt.md` | 1.2.0 | Evidence quality assessment for filtering | 2026-01-30 |
-| `text-analysis-scope.prompt.md` | 1.2.0 | Scope similarity and phase bucket analysis | 2026-01-30 |
+| `text-analysis-scope.prompt.md` | 1.3.0 | AnalysisContext similarity and phase bucket analysis | 2026-01-31 |
 | `text-analysis-verdict.prompt.md` | 1.2.0 | Verdict validation (inversion/harm/contestation) | 2026-01-30 |
 
 ## Database Content Hashes (Active)
 
-As of 2026-01-30:
+As of 2026-01-31:
 
 | Profile | Content Hash |
 |---------|--------------|
@@ -34,6 +34,23 @@ FH_LLM_VERDICT_VALIDATION=false     # Disable LLM for verdict validation
 ```
 
 When disabled, the heuristic fallback is used instead (see `text-analysis-heuristic.ts`).
+
+## UCM Configuration (v2.9+)
+
+As of v2.9, heuristic patterns referenced in these prompts are **configurable via UCM** (Unified Configuration Management). The patterns documented below are now stored in UCM lexicon configs rather than hardcoded in TypeScript.
+
+**UCM Config Types:**
+- `evidence-lexicon.v1`: Evidence filter patterns, quality gate patterns (vague phrases, citation patterns, opinion markers, etc.)
+- `aggregation-lexicon.v1`: Aggregation patterns (harm keywords, contestation patterns, verdict correction patterns, counter-claim detection patterns)
+
+**Default patterns are used when no UCM config is active.** To customize patterns:
+1. Navigate to Admin → Configuration → UCM
+2. Edit the relevant lexicon config (evidence-lexicon or aggregation-lexicon)
+3. Modify patterns using UCM pattern syntax:
+   - `re:<regex>` for regex patterns (e.g., `re:some (say|believe)`)
+   - `<literal>` for literal string match (case-insensitive word boundary)
+
+See [UCM Administrator Handbook](../../../../Docs/USER_GUIDES/UCM_Administrator_Handbook.md) for details.
 
 ## Reseeding Prompts
 
@@ -102,6 +119,8 @@ See: [Promptfoo Testing Guide](../../../../Docs/USER_GUIDES/Promptfoo_Testing.md
 - **v1.0.0** (2026-01-29): Initial version
 
 ### text-analysis-scope.prompt.md
+
+- **v1.3.0** (2026-01-31): Clarified AnalysisContext vs EvidenceScope terminology in scope similarity prompt
 
 - **v1.2.0** (2026-01-30): Added phase bucket keyword patterns from heuristic code
   - production: manufactur*, production, factory, assembly, upstream, mining, extraction, refin*

@@ -1,8 +1,8 @@
 ---
-version: "1.2.0"
+version: "1.3.0"
 pipeline: "text-analysis"
-description: "Scope similarity and phase bucket analysis"
-lastModified: "2026-01-30T00:00:00Z"
+description: "AnalysisContext similarity and phase bucket analysis"
+lastModified: "2026-01-31T00:00:00Z"
 variables:
   - SCOPE_PAIRS
   - CONTEXT_LIST
@@ -18,15 +18,19 @@ requiredSections:
 
 ## SYSTEM_ROLE
 
-You are a scope analysis specialist determining semantic relationships between evidence scopes.
-Your task is to identify duplicate/similar scopes that should be merged and categorize them by phase.
+You are an AnalysisContext similarity specialist.
+Your task is to identify duplicate/similar AnalysisContexts that should be merged and categorize them by phase.
+
+TERMINOLOGY (critical):
+- AnalysisContext = top-level analytical frame (what this prompt compares).
+- EvidenceScope = per-evidence source metadata (methodology/boundaries/time/geo). Do NOT treat EvidenceScope differences as separate AnalysisContexts unless the contexts themselves are defined by different boundaries.
 
 ## SIMILARITY_CRITERIA
 
-For each scope pair, determine:
+For each AnalysisContext pair, determine:
 
 **Semantic Similarity (0-1 scale):**
-- Do they refer to the same real-world context?
+- Do they refer to the same real-world analysis context?
 - Consider these PRIMARY identity factors (high weight):
   - court: Authority venue (if present)
   - institution: Who is the authority (e.g., "EPA", "WHO", "Supreme Court")
@@ -44,9 +48,10 @@ For each scope pair, determine:
 **Similarity Thresholds:**
 - 0.85+ = Likely duplicates, SHOULD merge
 - 0.50-0.84 = Related but distinct, keep separate
-- <0.50 = Different scopes, definitely keep separate
+- <0.50 = Different contexts, definitely keep separate
 
 **Phase Bucket Classification:**
+(Note: Keywords are UCM-configurable via aggregation-lexicon.v1 textAnalysisHeuristic.productionPhaseKeywords/usagePhaseKeywords)
 - **production**: Manufacturing, creation, upstream processes
   - Keywords: manufactur*, production, factory, assembly, upstream, mining, extraction, refin*
   - Examples: "manufacturing emissions", "production costs", "factory output"
@@ -57,10 +62,10 @@ For each scope pair, determine:
   - Examples: "overall lifecycle", "general comparison", "policy context"
 
 **Merge Recommendation:**
-- Should these scopes be merged?
-- If yes, which scope name should be canonical (prefer more specific/descriptive)?
+- Should these AnalysisContexts be merged?
+- If yes, which context name should be canonical (prefer more specific/descriptive)?
 
-Scope pairs to analyze:
+Context pairs to analyze:
 ${SCOPE_PAIRS}
 
 Available contexts:
@@ -81,13 +86,13 @@ CRITICAL: Your response must be a single valid JSON object only.
   },
   "result": [
     {
-      "scopeA": "scope name A",
-      "scopeB": "scope name B",
+      "scopeA": "context name A",
+      "scopeB": "context name B",
       "similarity": 0.87,
       "phaseBucketA": "production" | "usage" | "other",
       "phaseBucketB": "production" | "usage" | "other",
       "shouldMerge": true | false,
-      "canonicalName": "preferred scope name" | null,
+      "canonicalName": "preferred context name" | null,
       "reasoning": "Brief explanation of similarity assessment"
     }
   ]
