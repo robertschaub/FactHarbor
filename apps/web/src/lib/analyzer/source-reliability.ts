@@ -205,7 +205,10 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
           evalResult.category,
           evalResult.biasIndicator,
           evalResult.evidenceCited,
-          evalResult.evidencePack
+          evalResult.evidencePack,
+          undefined, // fallbackUsed
+          undefined, // fallbackReason
+          evalResult.identifiedEntity
         );
         const scoreStr = evalResult.score !== null ? evalResult.score.toFixed(2) : "null";
         console.log(
@@ -289,6 +292,7 @@ interface EvaluationResult {
   };
   evidenceCited?: EvidenceItem[];
   caveats?: string[];
+  identifiedEntity?: string | null;
 }
 
 /**
