@@ -388,6 +388,9 @@ function SearchConfigForm({
   return (
     <div className={styles.formSection}>
       <h3 className={styles.formSectionTitle}>Search Settings</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Controls web search behavior for evidence gathering. Higher values = more evidence but increased cost/time.
+      </p>
 
       <div className={styles.formGroup}>
         <label className={styles.formLabel}>
@@ -399,6 +402,7 @@ function SearchConfigForm({
           />
           Enable Web Search
         </label>
+        <div className={styles.formHelp}>When disabled, analysis uses only LLM knowledge (not recommended for fact-checking)</div>
       </div>
 
       <div className={styles.formGroup}>
@@ -412,6 +416,7 @@ function SearchConfigForm({
           <option value="google-cse">Google CSE</option>
           <option value="serpapi">SerpAPI</option>
         </select>
+        <div className={styles.formHelp}>Search API to use. Auto selects first available based on configured API keys.</div>
       </div>
 
       <div className={styles.formGroup}>
@@ -424,6 +429,7 @@ function SearchConfigForm({
           <option value="standard">Standard</option>
           <option value="grounded">Grounded (Gemini only)</option>
         </select>
+        <div className={styles.formHelp}>Standard: Traditional search. Grounded: Uses Gemini's grounding API for inline citations.</div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
@@ -440,7 +446,7 @@ function SearchConfigForm({
               updateField("maxResults", isNaN(v) ? 6 : v);
             }}
           />
-          <div className={styles.formHelp}>1-20 results per query</div>
+          <div className={styles.formHelp}>Search results per query (default: 6). Higher = more evidence but slower.</div>
         </div>
 
         <div className={styles.formGroup}>
@@ -456,7 +462,7 @@ function SearchConfigForm({
               updateField("maxSourcesPerIteration", isNaN(v) ? 4 : v);
             }}
           />
-          <div className={styles.formHelp}>1-10 sources</div>
+          <div className={styles.formHelp}>Max sources fetched per research round (default: 4). Affects cost and depth.</div>
         </div>
 
         <div className={styles.formGroup}>
@@ -473,7 +479,7 @@ function SearchConfigForm({
               updateField("timeoutMs", isNaN(v) ? 12000 : v);
             }}
           />
-          <div className={styles.formHelp}>1000-60000 ms</div>
+          <div className={styles.formHelp}>Max wait per source fetch (default: 12000ms). Lower = faster but may miss slow sites.</div>
         </div>
       </div>
 
@@ -489,6 +495,7 @@ function SearchConfigForm({
           <option value="m">Past month</option>
           <option value="w">Past week</option>
         </select>
+        <div className={styles.formHelp}>Filter search results by recency. Useful for current events; leave open for historical claims.</div>
       </div>
 
       <div className={styles.formGroup}>
@@ -500,7 +507,7 @@ function SearchConfigForm({
           placeholder="e.g., reuters.com, apnews.com"
           onChange={(e) => updateField("domainWhitelist", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
         />
-        <div className={styles.formHelp}>Only search these domains (empty = all)</div>
+        <div className={styles.formHelp}>Only search these domains. Leave empty to search all. Use for domain-specific analysis (e.g., .gov only).</div>
       </div>
 
       <div className={styles.formGroup}>
@@ -512,7 +519,7 @@ function SearchConfigForm({
           placeholder="e.g., example.com, spam.net"
           onChange={(e) => updateField("domainBlacklist", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
         />
-        <div className={styles.formHelp}>Never search these domains</div>
+        <div className={styles.formHelp}>Never search these domains. Use to exclude known unreliable sources.</div>
       </div>
     </div>
   );
@@ -1175,6 +1182,10 @@ function PipelineConfigForm({
     <div className={styles.formSection}>
       {/* Model Selection */}
       <h3 className={styles.formSectionTitle}>Model Selection</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Choose LLM models for each analysis phase. Better models = higher quality but more cost.
+        Examples: claude-sonnet-4, claude-haiku-3.5, gpt-4o, gpt-4o-mini
+      </p>
       <div className={styles.formGroup}>
         <label className={styles.formLabel}>
           <input
@@ -1185,7 +1196,7 @@ function PipelineConfigForm({
           />
           Enable LLM Tiering (50-70% cost savings)
         </label>
-        <div className={styles.formHelp}>Use cheaper models for simpler tasks</div>
+        <div className={styles.formHelp}>Automatically use cheaper models (Haiku) for simpler tasks like extraction. Recommended ON.</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
         <div className={styles.formGroup}>
@@ -1196,7 +1207,7 @@ function PipelineConfigForm({
             value={config.modelUnderstand}
             onChange={(e) => updateField("modelUnderstand", e.target.value)}
           />
-          <div className={styles.formHelp}>Claim comprehension phase</div>
+          <div className={styles.formHelp}>Initial claim comprehension. Medium quality OK. Default: claude-sonnet-4</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Extract Facts Model</label>
@@ -1206,7 +1217,7 @@ function PipelineConfigForm({
             value={config.modelExtractFacts}
             onChange={(e) => updateField("modelExtractFacts", e.target.value)}
           />
-          <div className={styles.formHelp}>Evidence extraction phase</div>
+          <div className={styles.formHelp}>Evidence extraction from sources. Can use cheaper model. Default: claude-haiku-3.5</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Verdict Model</label>
@@ -1216,7 +1227,7 @@ function PipelineConfigForm({
             value={config.modelVerdict}
             onChange={(e) => updateField("modelVerdict", e.target.value)}
           />
-          <div className={styles.formHelp}>Final verdict (highest quality)</div>
+          <div className={styles.formHelp}>Final reasoning - use best model. Default: claude-sonnet-4</div>
         </div>
       </div>
 
@@ -1335,6 +1346,9 @@ function PipelineConfigForm({
 
       {/* Budget Controls */}
       <h3 className={styles.formSectionTitle}>Budget Controls</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+        Control analysis depth vs cost. Higher limits = more thorough but expensive.
+      </p>
       <div className={styles.formHelp} style={{ marginBottom: 12, color: "#dc2626" }}>
         ⚠️ Too strict limits cause fewer claims investigated & lower confidence scores
       </div>
@@ -1352,7 +1366,7 @@ function PipelineConfigForm({
               updateField("maxIterationsPerScope", isNaN(v) ? 5 : v);
             }}
           />
-          <div className={styles.formHelp}>1-20 (default: 5)</div>
+          <div className={styles.formHelp}>Research rounds per context. 5 is balanced, 8+ for deep analysis.</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Max Total Iterations</label>
@@ -1367,7 +1381,7 @@ function PipelineConfigForm({
               updateField("maxTotalIterations", isNaN(v) ? 20 : v);
             }}
           />
-          <div className={styles.formHelp}>1-50 (default: 20)</div>
+          <div className={styles.formHelp}>Total research rounds across all contexts. 20 typical, 40+ for complex.</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Max Total Tokens</label>
@@ -1383,7 +1397,7 @@ function PipelineConfigForm({
               updateField("maxTotalTokens", isNaN(v) ? 750000 : v);
             }}
           />
-          <div className={styles.formHelp}>~$2.25 max at 750K</div>
+          <div className={styles.formHelp}>Token budget. 750K ≈ $2.25. 1.5M for thorough analysis.</div>
         </div>
       </div>
       <div className={styles.formGroup}>
@@ -1396,7 +1410,7 @@ function PipelineConfigForm({
           />
           Enforce Hard Budget Limits
         </label>
-        <div className={styles.formHelp}>false = soft limits (recommended for quality)</div>
+        <div className={styles.formHelp}>OFF (soft limits) = may exceed slightly for quality. ON = strict stop at limit.</div>
       </div>
 
       {/* Pipeline Selection */}
@@ -1437,6 +1451,9 @@ function SRConfigForm({
     <div className={styles.formSection}>
       {/* Core Settings */}
       <h3 className={styles.formSectionTitle}>Core Settings</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Source Reliability evaluates domain credibility using LLM analysis. Affects evidence weighting in verdicts.
+      </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>
@@ -1448,7 +1465,7 @@ function SRConfigForm({
             />
             Enable Source Reliability
           </label>
-          <div className={styles.formHelp}>LLM-powered source evaluation</div>
+          <div className={styles.formHelp}>LLM-powered domain evaluation. Evidence from low-scoring sources gets reduced weight.</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>
@@ -1460,7 +1477,7 @@ function SRConfigForm({
             />
             Multi-Model Consensus
           </label>
-          <div className={styles.formHelp}>Claude + OpenAI reduces hallucination</div>
+          <div className={styles.formHelp}>Uses both Claude + OpenAI. Higher accuracy but 2x cost per evaluation.</div>
         </div>
       </div>
       <div className={styles.formGroup}>
@@ -1473,11 +1490,14 @@ function SRConfigForm({
           <option value="gpt-4o">gpt-4o (best quality)</option>
           <option value="gpt-4o-mini">gpt-4o-mini (~15x cheaper)</option>
         </select>
-        <div className={styles.formHelp}>Secondary model for consensus</div>
+        <div className={styles.formHelp}>Secondary model for consensus. gpt-4o-mini is usually sufficient.</div>
       </div>
 
       {/* Thresholds */}
       <h3 className={styles.formSectionTitle}>Thresholds</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Control quality gates for score acceptance. Higher thresholds = more conservative but may reject valid scores.
+      </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Confidence Threshold</label>
@@ -1493,7 +1513,7 @@ function SRConfigForm({
               updateField("confidenceThreshold", isNaN(v) ? 0.8 : v);
             }}
           />
-          <div className={styles.formHelp}>Min confidence to accept score</div>
+          <div className={styles.formHelp}>Min LLM confidence to accept score. 0.8 = balanced. 0.9 = strict.</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Consensus Threshold</label>
@@ -1509,7 +1529,7 @@ function SRConfigForm({
               updateField("consensusThreshold", isNaN(v) ? 0.2 : v);
             }}
           />
-          <div className={styles.formHelp}>Max diff between models</div>
+          <div className={styles.formHelp}>Max allowed diff between models. 0.2 = 20% max disagreement.</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Default Score</label>
@@ -1525,7 +1545,7 @@ function SRConfigForm({
               updateField("defaultScore", isNaN(v) ? 0.5 : v);
             }}
           />
-          <div className={styles.formHelp}>For unknown sources (0.5 = neutral)</div>
+          <div className={styles.formHelp}>Fallback for unknown sources. 0.5 = neutral. Lower = more skeptical.</div>
         </div>
       </div>
 
