@@ -332,6 +332,12 @@ export async function loadSearchConfig(
       // No config in DB, use default
       console.log(`[Config-Loader] No search config found, using defaults`);
       const { result, overrides } = applyOverrides(DEFAULT_SEARCH_CONFIG, configType);
+      // Still record usage for defaults so job page shows what was used
+      if (jobId) {
+        await recordConfigUsage(jobId, configType, profileKey, "default", overrides.length > 0 ? overrides : undefined).catch((err) => {
+          console.warn(`[Config-Loader] Failed to record default config usage: ${err?.message}`);
+        });
+      }
       return { config: result, contentHash: "default", overrides, fromCache: false };
     }
 
@@ -376,6 +382,12 @@ export async function loadCalcConfig(
       // No config in DB, use default
       console.log(`[Config-Loader] No calc config found, using defaults`);
       const { result, overrides } = applyOverrides(DEFAULT_CALC_CONFIG, configType);
+      // Still record usage for defaults so job page shows what was used
+      if (jobId) {
+        await recordConfigUsage(jobId, configType, profileKey, "default", overrides.length > 0 ? overrides : undefined).catch((err) => {
+          console.warn(`[Config-Loader] Failed to record default config usage: ${err?.message}`);
+        });
+      }
       return { config: result, contentHash: "default", overrides, fromCache: false };
     }
 
@@ -420,6 +432,12 @@ export async function loadPipelineConfig(
       // No config in DB, use default
       console.log(`[Config-Loader] No pipeline config found, using defaults`);
       const { result, overrides } = applyOverrides(DEFAULT_PIPELINE_CONFIG, configType);
+      // Still record usage for defaults so job page shows what was used
+      if (jobId) {
+        await recordConfigUsage(jobId, configType, profileKey, "default", overrides.length > 0 ? overrides : undefined).catch((err) => {
+          console.warn(`[Config-Loader] Failed to record default config usage: ${err?.message}`);
+        });
+      }
       return { config: result, contentHash: "default", overrides, fromCache: false };
     }
 

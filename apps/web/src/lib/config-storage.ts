@@ -11,6 +11,7 @@
 import sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
 import path from "path";
+import fs from "fs";
 import {
   ConfigType,
   SchemaVersion,
@@ -35,7 +36,29 @@ export type { ConfigType, SchemaVersion, ValidationResult, ConfigSchemaTypes };
 // CONFIGURATION
 // ============================================================================
 
-const CONFIG_DB_PATH = process.env.FH_CONFIG_DB_PATH || "./config.db";
+// Resolve database path: prefer env var, then check multiple locations
+function resolveDbPath(): string {
+  if (process.env.FH_CONFIG_DB_PATH) {
+    return process.env.FH_CONFIG_DB_PATH;
+  }
+
+  // Check multiple possible locations based on where server is started from
+  const possiblePaths = [
+    path.resolve(process.cwd(), "config.db"),           // If started from apps/web
+    path.resolve(process.cwd(), "apps/web/config.db"),  // If started from repo root
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+
+  // Default to ./config.db (will be created if it doesn't exist)
+  return path.resolve(process.cwd(), "config.db");
+}
+
+const CONFIG_DB_PATH = resolveDbPath();
 
 // Cache TTL in milliseconds (60 seconds default, per architecture plan)
 const CONFIG_CACHE_TTL_MS = parseInt(process.env.FH_CONFIG_CACHE_TTL_MS || "60000", 10);
@@ -224,7 +247,8 @@ export async function getDb(): Promise<Database> {
   if (db) return db;
 
   const dbPath = path.resolve(CONFIG_DB_PATH);
-  console.log(`[Config-Storage] Opening database at ${dbPath}`);
+  const usingEnvPath = !!process.env.FH_CONFIG_DB_PATH;
+  console.log(`[Config-Storage] Opening database at ${dbPath} (${usingEnvPath ? "from FH_CONFIG_DB_PATH" : "default path"}, cwd: ${process.cwd()})`);
 
   db = await open({
     filename: dbPath,

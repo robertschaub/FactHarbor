@@ -40,15 +40,17 @@ export async function GET(req: Request, { params }: RouteParams) {
     // Fetch additional details for each deduplicated config
     const configs = await Promise.all(
       Array.from(latestByTypeProfile.values()).map(async (usage) => {
-        const blob = await getConfigBlob(usage.contentHash);
+        // Handle "default" hash (config from schema defaults, not DB)
+        const isDefault = usage.contentHash === "default" || usage.contentHash === "error-fallback";
+        const blob = isDefault ? null : await getConfigBlob(usage.contentHash);
         return {
           // Include id for unique React key
           id: usage.id,
           configType: usage.configType,
           profileKey: usage.profileKey,
           contentHash: usage.contentHash,
-          versionLabel: blob?.versionLabel || "Unknown",
-          schemaVersion: blob?.schemaVersion || "Unknown",
+          versionLabel: isDefault ? "(schema default)" : (blob?.versionLabel || "Unknown"),
+          schemaVersion: isDefault ? "default" : (blob?.schemaVersion || "Unknown"),
           loadedUtc: usage.loadedUtc,
           effectiveOverrides: usage.effectiveOverrides,
           hasOverrides: usage.effectiveOverrides && usage.effectiveOverrides.length > 0,

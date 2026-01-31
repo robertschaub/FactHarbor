@@ -130,22 +130,24 @@ export function ConfigViewer({ jobId }: Props) {
                     {expandedOverrides === String(c.id) ? "Hide" : "Show"} overrides
                   </button>
                 )}
-                <button
-                  onClick={() => openConfigEditor(c.configType, c.profileKey, c.contentHash)}
-                  style={{
-                    background: "#2563eb",
-                    border: "none",
-                    borderRadius: 4,
-                    padding: "3px 10px",
-                    cursor: "pointer",
-                    fontSize: 11,
-                    color: "#fff",
-                    fontWeight: 500,
-                  }}
-                  title="Open this config version in the editor (new tab)"
-                >
-                  Open in Editor ↗
-                </button>
+                {c.contentHash !== "default" && c.contentHash !== "error-fallback" && (
+                  <button
+                    onClick={() => openConfigEditor(c.configType, c.profileKey, c.contentHash)}
+                    style={{
+                      background: "#2563eb",
+                      border: "none",
+                      borderRadius: 4,
+                      padding: "3px 10px",
+                      cursor: "pointer",
+                      fontSize: 11,
+                      color: "#fff",
+                      fontWeight: 500,
+                    }}
+                    title="Open this config version in the editor (new tab)"
+                  >
+                    Open in Editor ↗
+                  </button>
+                )}
               </div>
             </div>
             <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>

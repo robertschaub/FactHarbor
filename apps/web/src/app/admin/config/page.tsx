@@ -546,6 +546,11 @@ function CalcConfigForm({
     });
   };
 
+  // Guard against incomplete config structure
+  if (!config?.aggregation?.centralityWeights) {
+    return <div className={styles.formSection}>Loading configuration...</div>;
+  }
+
   return (
     <div>
       {/* Centrality Weights */}
@@ -1651,17 +1656,43 @@ export default function ConfigAdminPage() {
   const { getHeaders } = useAdminAuth();
 
   // Query params for deep linking from job reports
-  const searchParams = useSearchParams();
-  const urlType = searchParams.get("type") as ConfigType | null;
-  const urlProfile = searchParams.get("profile");
-  const urlHash = searchParams.get("hash");
-  const urlTab = searchParams.get("tab") as Tab | null;
+  // Note: We use window.location.search directly for reliability (useSearchParams may not have values during SSR/hydration)
+  useSearchParams(); // Keep hook call for Next.js Suspense boundary requirement
 
-  // State
-  const [selectedType, setSelectedType] = useState<ConfigType>(urlType || "search");
-  const [profileKey, setProfileKey] = useState<string>(urlProfile || "default");
-  const [activeTab, setActiveTab] = useState<Tab>(urlTab || "active");
-  const [targetHash, setTargetHash] = useState<string | null>(urlHash);
+  // Track if URL params have been applied (to handle Next.js hydration)
+  const [urlParamsApplied, setUrlParamsApplied] = useState(false);
+
+  // Store the initial URL params (used for profile injection and display)
+  const [urlProfile, setUrlProfile] = useState<string | null>(null);
+
+  // State - initialize with defaults, URL params applied via effect after mount
+  const [selectedType, setSelectedType] = useState<ConfigType>("search");
+  const [profileKey, setProfileKey] = useState<string>("default");
+  const [activeTab, setActiveTab] = useState<Tab>("active");
+  const [targetHash, setTargetHash] = useState<string | null>(null);
+
+  // Sync URL params to state after mount - use window.location directly for reliability
+  useEffect(() => {
+    if (urlParamsApplied) return;
+
+    // Use window.location.search directly - it's always available on client
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get("type") as ConfigType | null;
+    const profile = params.get("profile");
+    const hash = params.get("hash");
+    const tab = params.get("tab") as Tab | null;
+
+    // Store the URL profile for later use
+    if (profile) setUrlProfile(profile);
+
+    // Apply params if any exist
+    if (type) setSelectedType(type);
+    if (profile) setProfileKey(profile);
+    if (hash) setTargetHash(hash);
+    if (tab) setActiveTab(tab);
+
+    setUrlParamsApplied(true);
+  }, [urlParamsApplied]);
   const [activeConfig, setActiveConfig] = useState<ConfigVersion | null>(null);
   const [viewingVersion, setViewingVersion] = useState<ConfigVersion | null>(null); // Specific version from URL
   const [history, setHistory] = useState<HistoryResponse | null>(null);
@@ -1902,8 +1933,15 @@ export default function ConfigAdminPage() {
 
   // Load specific version from URL hash (deep link from job report)
   useEffect(() => {
+    // Wait for URL params to be applied before fetching (prevents race condition)
+    if (!urlParamsApplied) {
+      return;
+    }
+
     if (targetHash && selectedType && profileKey) {
       setLoading(true);
+      setError(null); // Clear any previous error
+      setViewingVersion(null); // Clear previous version while loading
       fetch(`/api/admin/config/${selectedType}/${profileKey}/version/${targetHash}`, {
         headers: getHeaders(),
       })
@@ -1911,14 +1949,19 @@ export default function ConfigAdminPage() {
         .then((data) => {
           if (data) {
             setViewingVersion(data);
+            setError(null); // Ensure error is cleared on success
           } else {
+            setViewingVersion(null);
             setError(`Version ${targetHash.slice(0, 8)}... not found`);
           }
         })
-        .catch((err) => setError(err.message))
+        .catch((err) => {
+          setViewingVersion(null);
+          setError(err.message);
+        })
         .finally(() => setLoading(false));
     }
-  }, [targetHash, selectedType, profileKey, getHeaders]);
+  }, [targetHash, selectedType, profileKey, getHeaders, urlParamsApplied]);
 
   // Initialize edit config when switching to edit tab
   // Only use activeConfig if it matches the current selectedType to prevent race conditions
