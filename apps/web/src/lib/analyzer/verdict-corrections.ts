@@ -3,11 +3,41 @@
  *
  * Extracted from the monolithic `analyzer.ts` to keep responsibilities separated.
  *
+ * v2.9: Patterns are now configurable via UCM lexicon config.
+ *
  * @module analyzer/verdict-corrections
  */
 
 import type { ExtractedFact } from "./types";
+import type { AggregationLexicon } from "../config-schemas";
 import { debugLog } from "./debug";
+import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
+
+// ============================================================================
+// PATTERN CONFIGURATION
+// ============================================================================
+// DEPRECATED: Hardcoded patterns moved to UCM lexicon (aggregation-lexicon.v1)
+// See: DEFAULT_AGGREGATION_LEXICON.verdictCorrection.*, counterClaimDetection.*
+
+/**
+ * Module-level compiled patterns (cached, initialized with defaults)
+ * Can be updated via setVerdictCorrectionsLexicon() for testing or config reload
+ */
+let _patterns = getAggregationPatterns();
+
+/**
+ * Set the lexicon for verdict corrections (useful for testing or config reload)
+ */
+export function setVerdictCorrectionsLexicon(lexicon?: AggregationLexicon): void {
+  _patterns = getAggregationPatterns(lexicon);
+}
+
+/**
+ * Get current patterns (for testing)
+ */
+export function getVerdictCorrectionsPatternsConfig() {
+  return _patterns;
+}
 
 /**
  * Detect and correct inverted verdicts.
@@ -36,103 +66,20 @@ export function detectAndCorrectVerdictInversion(
   const claimLower = claimText.toLowerCase();
   const reasoningLower = reasoning.toLowerCase();
 
+  // v2.9: Patterns now configurable via UCM lexicon (aggregation-lexicon.v1 verdictCorrection.*)
   // Pattern 1: Claim says "X was proportionate/justified/fair" but reasoning says "NOT proportionate/justified/fair"
-  // Allow optional articles/words between verb and adjective: "were a proportionate", "was not a fair"
-  const positiveClaimPatterns = [
-    /\b(was|were|is|are)\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\b/i,
-    /\b(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\s+(response|action|decision|measure|and\s+justified)\b/i,
-    // Additional positive assertion patterns
-    // Comparative positive assertions - direct adjacency
-    /\b(more|higher|better|superior|greater)\s+(efficient|effective|accurate|reliable)\b/i,
-    // Comparative positive assertions - with words between (e.g., "higher energy conversion efficiency")
-    /\b(more|higher|better|superior|greater)\s+\w+(\s+\w+){0,3}\s+(efficiency|effectiveness|accuracy|reliability|performance)\b/i,
-    // "have/has/had higher X" patterns
-    /\b(has|have|had)\s+(higher|greater|better|more|superior)\s+/i,
-    // Positive state assertions
-    /\b(has|have|had)\s+(sufficient|adequate|strong|solid)\s+(evidence|basis|support)\b/i,
-    /\b(supports?|justifies?|warrants?|establishes?)\s+(the\s+)?(claim|assertion|conclusion)\b/i,
-  ];
+  // Pattern 2 (v2.8.3): REVERSE inversion - claim asserts NEGATIVE, reasoning shows POSITIVE
 
-  const negativeReasoningPatterns = [
-    // "were NOT proportionate", "was NOT a fair response"
-    /\b(was|were|is|are)\s+not\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)\b/i,
-    // "NOT proportionate to", "not a proportionate response"
-    /\bnot\s+(a\s+)?(proportionate|justified|fair|appropriate|reasonable|valid|correct|proper)/i,
-    // Negative adjectives
-    /\b(disproportionate|unjustified|unfair|inappropriate|unreasonable|invalid|incorrect|improper)\b/i,
-    // Legal/ethical violations
-    /\bviolates?\s+(principles?|norms?|standards?|law|rights?)\b/i,
-    /\blacks?\s+(factual\s+)?basis\b/i,
-    /\brepresents?\s+(economic\s+)?retaliation\b/i,
-    /\b(inappropriate|improper)\s+(interference|intervention)\b/i,
-    // Interference patterns
-    /\binterfere\s+with\b/i,
-    /\bmaking\s+them\s+(disproportionate|inappropriate)\b/i,
-    // Excessive patterns
-    /\b(excessive|unwarranted|undue)\s+(economic\s+)?(punishment|pressure|retaliation)\b/i,
-    // Additional denial patterns
-    // No evidence patterns - MUST check what follows to avoid false positives
-    // "no evidence supports X" = negative (X not supported)
-    // "no evidence against X" = positive (nothing refutes X) - DO NOT match
-    /\bno\s+(evidence|data|proof)\s+(supports?|shows?|indicates?|suggests?|provided|found|exists?)\b/i,
-    /\bno\s+(evidence|data|proof)\s+(for|of|that)\b/i,
-    // "no evidence was found/provided" patterns
-    /\bno\s+\w+\s+(evidence|data|support)\s+(supports?|shows?|indicates?|suggests?)\b/i,
-    // Insufficiency patterns
-    /\b(lacks?|lacking)\s+(sufficient\s+)?(evidence|basis|support|justification)\b/i,
-    /\b(insufficient|inadequate)\s+(evidence|basis|support|justification)\b/i,
-    /\bdoes\s+not\s+(support|justify|warrant|establish)\b/i,
-    /\bfails?\s+to\s+(support|justify|demonstrate|establish|show)\b/i,
-    // Contradiction patterns
-    /\b(contradicts?|contradicted|contradicting)\s+(the\s+)?(claim|assertion|thesis)\b/i,
-    /\bevidence\s+(shows?|indicates?|suggests?|demonstrates?)\s+(the\s+)?opposite\b/i,
-    /\b(contrary|opposite)\s+to\s+(what|the\s+claim)\b/i,
-    // Falsification patterns
-    /\b(refutes?|refuted|disproves?|disproved|negates?|negated)\b/i,
-    /\b(false|untrue|inaccurate|incorrect|wrong|erroneous)\s+(based\s+on|according\s+to)?\s*(the\s+)?evidence\b/i,
-    // Impartiality/conflict patterns
-    /\b(conflict\s+of\s+interest|appearance\s+of\s+conflict)\b/i,
-    /\b(acting\s+impartially|impartiality)\b.*\b(undermined|questioned|challenged)\b/i,
-    /\b(biased|partial|conflicted)\b/i,
-    // Efficiency/comparison denial for comparative claims
-    /\b(less|lower|worse|inferior|reduced)\s+(efficient|effective|productive|performance)\b/i,
-    /\bnot\s+(more|higher|better|superior)\s+(efficient|effective)\b/i,
-  ];
+  // Check if claim asserts something positive (UCM: verdictCorrection.positiveClaimPatterns)
+  const claimAssertsPositive = matchesAnyPattern(claimLower, _patterns.positiveClaimPatterns);
 
-  // Check if claim asserts something positive
-  const claimAssertsPositive = positiveClaimPatterns.some((p) =>
-    p.test(claimLower),
-  );
-
-  // Check if reasoning negates it
-  const reasoningNegates = negativeReasoningPatterns.some((p) =>
-    p.test(reasoningLower),
-  );
+  // Check if reasoning negates it (UCM: verdictCorrection.negativeReasoningPatterns)
+  const reasoningNegates = matchesAnyPattern(reasoningLower, _patterns.negativeReasoningPatterns);
 
   // v2.8.3: Also check for REVERSE inversion - claim asserts NEGATIVE, reasoning shows POSITIVE
   // Example: Claim says "Technology A has lower efficiency" but reasoning shows "Technology A uses 60% efficiently"
-  const negativeClaimPatterns = [
-    // Comparative negative assertions (X has lower/less/worse Y)
-    /\b(has|have|had)\s+(lower|less|worse|inferior|reduced)\s+(efficiency|performance|effectiveness|accuracy)\b/i,
-    /\b(less|lower|worse|inferior)\s+(efficient|effective|accurate|reliable)\s+(than|compared)\b/i,
-    /\b(are|is|was|were)\s+(less|lower|worse|inferior)\s+.{0,20}\s+(efficient|effective)\b/i,
-  ];
-
-  const positiveReasoningPatterns = [
-    // Counter-evidence showing positive performance
-    /\bcounter-?evidence\s+shows?\b/i,
-    /\bno\s+evidence\s+supports?\s+(the\s+claim|that|this|it)\b/i,
-    /\b(actually|in\s+fact|evidence\s+shows?)\s+.{0,30}\s+(more|higher|better)\s+(efficient|effective)\b/i,
-    /\buse\s+\d+%\s+(of\s+)?(input\s+)?energy\s+efficiently\b/i,
-    /\b(contradicts?|directly\s+contradicts?)\s+(the\s+)?claim\b/i,
-  ];
-
-  const claimAssertsNegative = negativeClaimPatterns.some((p) =>
-    p.test(claimLower),
-  );
-  const reasoningShowsPositive = positiveReasoningPatterns.some((p) =>
-    p.test(reasoningLower),
-  );
+  const claimAssertsNegative = matchesAnyPattern(claimLower, _patterns.negativeClaimPatterns);
+  const reasoningShowsPositive = matchesAnyPattern(reasoningLower, _patterns.positiveReasoningPatterns);
 
   // DEBUG: Log pattern matching results
   debugLog("[INVERSION DEBUG] Pattern matching results", {
@@ -204,20 +151,12 @@ export function detectCounterClaim(
   // If the claim is thesis-aligned, it cannot be a counter-claim.
   // =========================================================================
 
-  // Common evaluative terms and their synonyms for alignment detection
-  const POSITIVE_EVAL_SYNONYMS: Record<string, string[]> = {
-    fair: ["fair", "just", "equitable", "impartial", "unbiased"],
-    proportionate: ["proportionate", "proportional", "appropriate", "reasonable", "fitting"],
-    justified: ["justified", "warranted", "legitimate", "valid", "well-founded"],
-    proper: ["proper", "correct", "appropriate", "due", "right"],
-    lawful: ["lawful", "legal", "legitimate", "constitutional", "valid"],
-    true: ["true", "accurate", "correct", "valid", "factual"],
-    efficient: ["efficient", "effective", "productive", "optimal"],
-  };
+  // v2.9: Evaluative term synonyms now configurable via UCM lexicon
+  // (aggregation-lexicon.v1 counterClaimDetection.evaluativeTermSynonyms)
 
   // Check if claim and thesis share aligned evaluative framing
   function hasAlignedEvalTerms(claim: string, thesis: string): boolean {
-    for (const [, synonyms] of Object.entries(POSITIVE_EVAL_SYNONYMS)) {
+    for (const [, synonyms] of Object.entries(_patterns.evaluativeTermSynonyms)) {
       const claimHasTerm = synonyms.some((s) => claim.includes(s));
       const thesisHasTerm = synonyms.some((s) => thesis.includes(s));
       // If both contain terms from the same synonym group (both positive), they're aligned
@@ -246,33 +185,15 @@ export function detectCounterClaim(
 
   // Check if claim is about a supporting aspect of the thesis
   // e.g., thesis: "trial was fair" → claim: "due process was followed" (supports fairness)
+  // v2.9: Patterns now configurable via UCM lexicon (aggregation-lexicon.v1 counterClaimDetection.supportingAspectPatterns)
   function isClaimAboutSupportingAspect(claim: string, thesis: string): boolean {
     // If thesis is about fairness/justice/propriety, and claim is about procedural/evidential
     // aspects that would SUPPORT such a conclusion, they're aligned
     const fairnessThesis =
       /\b(fair|just|equitable|impartial|proper|lawful|legal|constitutional)\b/.test(thesis);
-    const supportingClaimPatterns = [
-      /\b(due process|proper process|procedure|procedural)\b.*\b(follow|met|comply|observed)\b/,
-      /\b(follow|met|comply|observed)\b.*\b(due process|proper process|procedure)\b/,
-      /\b(evidence|evidentiary|proof)\b.*\b(proper|sufficient|adequate|considered|reviewed)\b/,
-      /\b(proper|sufficient|adequate)\b.*\b(evidence|evidentiary|proof)\b/,
-      /\b(evidence|record|proof)\b.*\b(meets|meet|met|satisfies|satisfied|complies|complied)\b.*\b(legal\s+)?standards?\b/,
-      /\b(meets|meet|met|satisfies|satisfied|complies|complied)\b.*\b(legal\s+)?standards?\b.*\b(evidence|record|proof)\b/,
-      /\b(evidence|record|proof)\b.*\b(supports?|supporting|corroborates?)\b.*\b(charges?|case|allegations?)\b/,
-      /\b(charges?|case|allegations?)\b.*\b(are\s+)?\b(supported|corroborated)\b.*\b(evidence|record|proof)\b/,
-      /\b(based on|pursuant to|according to)\b.*\b(law|legal|statute|constitution)\b/,
-      /\b(law|legal|statute|constitution)\b.*\b(applied|followed|observed|respected|complied)\b/,
-      /\bcompl(y|ies|ied|iant|iance)\b.*\b(law|legal|electoral|statute|constitution|standards?)\b/,
-      /\b(charges|indictment|prosecution)\b.*\b(based on|supported by|grounded in)\b.*\b(law|evidence)\b/,
-      /\b(constitutional|legal)\b.*\b(jurisdiction|authority|basis|foundation)\b/,
-      /\b(sentence|penalty|punishment|fine)\b.*\b(proportionate|appropriate|justified|fair)\b/,
-      /\b(proportionate|appropriate|justified|fair)\b.*\b(sentence|penalty|punishment|fine)\b/,
-      /\b(judicial|judge|court)\b.*\b(independence|impartial|unbiased|free from)\b/,
-    ];
     if (fairnessThesis) {
-      for (const pattern of supportingClaimPatterns) {
-        if (pattern.test(claim)) return true;
-      }
+      // Use UCM patterns for supporting aspect detection
+      if (matchesAnyPattern(claim, _patterns.supportingAspectPatterns)) return true;
     }
     return false;
   }
@@ -366,37 +287,8 @@ export function detectCounterClaim(
   // Text-based detection (preferred): compare claim text vs thesis text
   // =========================================================================
 
-  const STOP_WORDS = new Set([
-    "the",
-    "a",
-    "an",
-    "and",
-    "or",
-    "but",
-    "of",
-    "to",
-    "in",
-    "on",
-    "for",
-    "with",
-    "at",
-    "by",
-    "from",
-    "as",
-    "into",
-    "than",
-    "over",
-    "under",
-    "using",
-    "use",
-    "is",
-    "are",
-    "was",
-    "were",
-    "be",
-    "been",
-    "being",
-  ]);
+  // v2.9: Stop words now configurable via UCM lexicon
+  // (aggregation-lexicon.v1 counterClaimDetection.stopwords)
 
   function tokenizePhrase(text: string): string[] {
     return text
@@ -405,7 +297,7 @@ export function detectCounterClaim(
       .split(/\s+/)
       .map((t) => t.trim())
       .filter(Boolean)
-      .filter((t) => t.length > 2 && !STOP_WORDS.has(t));
+      .filter((t) => t.length > 2 && !_patterns.counterClaimStopwords.has(t));
   }
 
   function overlapRatio(a: string, b: string): number {
@@ -535,36 +427,16 @@ export function detectCounterClaim(
   // Conservative heuristic:
   // Only flag counter-claim when BOTH thesis and claim mention the same evaluative term,
   // but with opposite polarity (e.g., "fair" vs "not fair"/"unfair").
-  const EVAL_TERMS = [
-    "proportionate",
-    "justified",
-    "fair",
-    "efficient",
-    "effective",
-    "true",
-    "valid",
-  ] as const;
-  type EvalTerm = (typeof EVAL_TERMS)[number];
-
-  const NEGATIVE_TO_POSITIVE: Record<string, EvalTerm> = {
-    disproportionate: "proportionate",
-    unjustified: "justified",
-    unfair: "fair",
-    inefficient: "efficient",
-    ineffective: "effective",
-    false: "true",
-    untrue: "true",
-    invalid: "valid",
-  };
+  // v2.9: Terms now configurable via UCM lexicon (aggregation-lexicon.v1 counterClaimDetection.*)
 
   function getPolarityByTerm(
     text: string,
-  ): Partial<Record<EvalTerm, "positive" | "negative">> {
-    const out: Partial<Record<EvalTerm, "positive" | "negative">> = {};
+  ): Partial<Record<string, "positive" | "negative">> {
+    const out: Partial<Record<string, "positive" | "negative">> = {};
     const t = text.toLowerCase();
 
     // Detect explicit negation: "not <term>"
-    for (const term of EVAL_TERMS) {
+    for (const term of _patterns.coreEvaluativeTerms) {
       const negRe = new RegExp(`\\bnot\\s+${term}\\b`, "i");
       if (negRe.test(t)) {
         out[term] = "negative";
@@ -572,7 +444,8 @@ export function detectCounterClaim(
     }
 
     // Detect negative lexical forms: "unfair", "invalid", etc.
-    for (const [negWord, posTerm] of Object.entries(NEGATIVE_TO_POSITIVE)) {
+    // (UCM: counterClaimDetection.negativeFormMappings)
+    for (const [negWord, posTerm] of Object.entries(_patterns.negativeFormMappings)) {
       const negWordRe = new RegExp(`\\b${negWord}\\b`, "i");
       if (negWordRe.test(t)) {
         out[posTerm] = "negative";
@@ -580,7 +453,7 @@ export function detectCounterClaim(
     }
 
     // Detect positive mentions of the term only if we didn't already mark it negative.
-    for (const term of EVAL_TERMS) {
+    for (const term of _patterns.coreEvaluativeTerms) {
       if (out[term]) continue;
       const posRe = new RegExp(`\\b${term}\\b`, "i");
       if (posRe.test(t)) {
@@ -593,7 +466,7 @@ export function detectCounterClaim(
 
   const thesisPolarity = getPolarityByTerm(thesisLower);
   const claimPolarity = getPolarityByTerm(claimLower);
-  for (const term of EVAL_TERMS) {
+  for (const term of _patterns.coreEvaluativeTerms) {
     const tp = thesisPolarity[term];
     const cp = claimPolarity[term];
     if (!tp || !cp) continue;
