@@ -83,7 +83,13 @@ export const PipelineConfigSchema = z.object({
   // === LLM Text Analysis Feature Flags ===
   llmInputClassification: z.boolean().describe("Use LLM for input classification (replaces heuristics)"),
   llmEvidenceQuality: z.boolean().describe("Use LLM for evidence quality assessment"),
-  llmScopeSimilarity: z.boolean().describe("Use LLM for scope similarity analysis"),
+
+  // NEW: Correctly-named key (PRIMARY)
+  llmContextSimilarity: z.boolean().optional().describe("Use LLM for AnalysisContext similarity analysis"),
+  // DEPRECATED: Old key kept for backward compatibility
+  /** @deprecated Use llmContextSimilarity instead - 'scope' here means AnalysisContext */
+  llmScopeSimilarity: z.boolean().optional().describe("Use LLM for scope similarity analysis"),
+
   llmVerdictValidation: z.boolean().describe("Use LLM for verdict validation (inversion/harm detection)"),
 
   // === Heuristic Fallback Controls (Phase 4) ===
@@ -103,17 +109,65 @@ export const PipelineConfigSchema = z.object({
   analysisMode: z.enum(["quick", "deep"]).describe("Analysis depth: quick (faster) or deep (more thorough)"),
   allowModelKnowledge: z.boolean().describe("Allow LLM to use training knowledge (not just web sources)"),
   deterministic: z.boolean().describe("Use temperature=0 for reproducible outputs"),
-  scopeDedupThreshold: z.number().min(0).max(1).describe("Threshold for scope deduplication (lower = more scopes)"),
 
-  // === Scope Detection Settings ===
+  // NEW: Correctly-named key (PRIMARY)
+  contextDedupThreshold: z.number().min(0).max(1).optional().describe("Threshold for AnalysisContext deduplication (0-1, lower = more contexts)"),
+  // DEPRECATED: Old key kept for backward compatibility
+  /** @deprecated Use contextDedupThreshold instead - 'scope' here means AnalysisContext */
+  scopeDedupThreshold: z.number().min(0).max(1).optional().describe("Threshold for scope deduplication (lower = more scopes)"),
+
+  // === Context Detection Settings ===
+  // NEW: Correctly-named keys (PRIMARY)
+  contextDetectionMethod: z
+    .enum(["heuristic", "llm", "hybrid"])
+    .optional()
+    .describe("AnalysisContext detection method: heuristic (patterns only), llm (AI only), hybrid (patterns + AI)"),
+  contextDetectionEnabled: z.boolean().optional().describe("Enable AnalysisContext detection (if false, use single general context)"),
+  contextDetectionMinConfidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .optional()
+    .describe("Minimum confidence threshold for LLM-detected AnalysisContexts (0-1)"),
+  contextDetectionCustomPatterns: z
+    .array(
+      z.object({
+        id: z.string().regex(/^SCOPE_[A-Z_]+$/),
+        name: z.string(),
+        type: z.enum(["methodological", "legal", "scientific", "general", "regulatory", "temporal", "geographic"]),
+        triggerPattern: z.string(),
+        keywords: z.array(z.string()),
+        metadata: z.record(z.any()).optional(),
+      }),
+    )
+    .optional()
+    .describe("Custom AnalysisContext detection patterns (extends built-in)"),
+  contextFactorHints: z
+    .array(
+      z.object({
+        scopeType: z.string(),
+        evaluationCriteria: z.string(),
+        factor: z.string(),
+        category: z.string(),
+      }),
+    )
+    .optional()
+    .describe("Hints for LLM AnalysisContext-specific factor generation"),
+
+  // DEPRECATED: Old keys kept for backward compatibility
+  /** @deprecated Use contextDetectionMethod instead - 'scope' here means AnalysisContext */
   scopeDetectionMethod: z
     .enum(["heuristic", "llm", "hybrid"])
+    .optional()
     .describe("Scope detection method: heuristic (patterns only), llm (AI only), hybrid (patterns + AI)"),
-  scopeDetectionEnabled: z.boolean().describe("Enable scope detection (if false, use single general scope)"),
+  /** @deprecated Use contextDetectionEnabled instead - 'scope' here means AnalysisContext */
+  scopeDetectionEnabled: z.boolean().optional().describe("Enable scope detection (if false, use single general scope)"),
+  /** @deprecated Use contextDetectionMinConfidence instead - 'scope' here means AnalysisContext */
   scopeDetectionMinConfidence: z
     .number()
     .min(0)
     .max(1)
+    .optional()
     .describe("Minimum confidence threshold for LLM-detected scopes (0-1)"),
   scopeDetectionMaxContexts: z
     .number()
@@ -121,6 +175,7 @@ export const PipelineConfigSchema = z.object({
     .min(1)
     .max(10)
     .describe("Maximum number of contexts to detect per input"),
+  /** @deprecated Use contextDetectionCustomPatterns instead - 'scope' here means AnalysisContext */
   scopeDetectionCustomPatterns: z
     .array(
       z.object({
@@ -134,6 +189,7 @@ export const PipelineConfigSchema = z.object({
     )
     .optional()
     .describe("Custom scope detection patterns (extends built-in)"),
+  /** @deprecated Use contextFactorHints instead - 'scope' here means AnalysisContext */
   scopeFactorHints: z
     .array(
       z.object({
@@ -149,7 +205,13 @@ export const PipelineConfigSchema = z.object({
   // === Budget Controls ===
   // Note: maxTokensPerCall is excluded from pipeline config - it's a low-level safety limit
   // that protects against individual LLM call failures and should remain an env var (FH_MAX_TOKENS_PER_CALL)
-  maxIterationsPerScope: z.number().int().min(1).max(20).describe("Max research iterations per scope"),
+
+  // NEW: Correctly-named key (PRIMARY)
+  maxIterationsPerContext: z.number().int().min(1).max(20).optional().describe("Max research iterations per AnalysisContext"),
+  // DEPRECATED: Old key kept for backward compatibility
+  /** @deprecated Use maxIterationsPerContext instead - 'scope' here means AnalysisContext */
+  maxIterationsPerScope: z.number().int().min(1).max(20).optional().describe("Max research iterations per scope"),
+
   maxTotalIterations: z.number().int().min(1).max(50).describe("Max total iterations across all scopes"),
   maxTotalTokens: z.number().int().min(10000).max(2000000).describe("Max tokens per analysis"),
   enforceBudgets: z.boolean().describe("Hard enforce budget limits (false = soft limits for important claims)"),
@@ -158,6 +220,63 @@ export const PipelineConfigSchema = z.object({
   defaultPipelineVariant: z.enum(["orchestrated", "monolithic_canonical", "monolithic_dynamic"])
     .optional()
     .describe("Default pipeline variant for new jobs"),
+}).transform((data) => {
+  // Runtime migration: Copy old keys to new keys if new keys don't exist
+  const warnings: string[] = [];
+
+  // llmScopeSimilarity → llmContextSimilarity
+  if (data.llmScopeSimilarity !== undefined && data.llmContextSimilarity === undefined) {
+    data.llmContextSimilarity = data.llmScopeSimilarity;
+    warnings.push("llmScopeSimilarity → llmContextSimilarity");
+  }
+
+  // scopeDedupThreshold → contextDedupThreshold
+  if (data.scopeDedupThreshold !== undefined && data.contextDedupThreshold === undefined) {
+    data.contextDedupThreshold = data.scopeDedupThreshold;
+    warnings.push("scopeDedupThreshold → contextDedupThreshold");
+  }
+
+  // scopeDetectionMethod → contextDetectionMethod
+  if (data.scopeDetectionMethod !== undefined && data.contextDetectionMethod === undefined) {
+    data.contextDetectionMethod = data.scopeDetectionMethod;
+    warnings.push("scopeDetectionMethod → contextDetectionMethod");
+  }
+
+  // scopeDetectionEnabled → contextDetectionEnabled
+  if (data.scopeDetectionEnabled !== undefined && data.contextDetectionEnabled === undefined) {
+    data.contextDetectionEnabled = data.scopeDetectionEnabled;
+    warnings.push("scopeDetectionEnabled → contextDetectionEnabled");
+  }
+
+  // scopeDetectionMinConfidence → contextDetectionMinConfidence
+  if (data.scopeDetectionMinConfidence !== undefined && data.contextDetectionMinConfidence === undefined) {
+    data.contextDetectionMinConfidence = data.scopeDetectionMinConfidence;
+    warnings.push("scopeDetectionMinConfidence → contextDetectionMinConfidence");
+  }
+
+  // scopeDetectionCustomPatterns → contextDetectionCustomPatterns
+  if (data.scopeDetectionCustomPatterns !== undefined && data.contextDetectionCustomPatterns === undefined) {
+    data.contextDetectionCustomPatterns = data.scopeDetectionCustomPatterns;
+    warnings.push("scopeDetectionCustomPatterns → contextDetectionCustomPatterns");
+  }
+
+  // scopeFactorHints → contextFactorHints
+  if (data.scopeFactorHints !== undefined && data.contextFactorHints === undefined) {
+    data.contextFactorHints = data.scopeFactorHints;
+    warnings.push("scopeFactorHints → contextFactorHints");
+  }
+
+  // maxIterationsPerScope → maxIterationsPerContext
+  if (data.maxIterationsPerScope !== undefined && data.maxIterationsPerContext === undefined) {
+    data.maxIterationsPerContext = data.maxIterationsPerScope;
+    warnings.push("maxIterationsPerScope → maxIterationsPerContext");
+  }
+
+  if (warnings.length > 0) {
+    console.warn(`[DEPRECATED] Pipeline config keys migrated: ${warnings.join(", ")}`);
+  }
+
+  return data;
 });
 
 export type PipelineConfig = z.infer<typeof PipelineConfigSchema>;
@@ -172,7 +291,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // LLM text analysis (all enabled by default per v2.8.3)
   llmInputClassification: true,
   llmEvidenceQuality: true,
-  llmScopeSimilarity: true,
+  llmContextSimilarity: true, // NEW: Use new key name
   llmVerdictValidation: true,
 
   // Heuristic fallback controls (Phase 4)
@@ -184,18 +303,18 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   analysisMode: "quick", // v2.9.0: Default to quick mode for backwards compatibility
   allowModelKnowledge: false, // v2.9.0: Default to off for backwards compatibility
   deterministic: true,
-  scopeDedupThreshold: 0.85, // v2.9.0: Default to 0.85 per original config.ts:187
+  contextDedupThreshold: 0.85, // NEW: Use new key name (v2.9.0: Default to 0.85 per original config.ts:187)
 
-  // Scope detection settings
-  scopeDetectionMethod: "heuristic",
-  scopeDetectionEnabled: true,
-  scopeDetectionMinConfidence: 0.7,
+  // Context detection settings (NEW: Use new key names)
+  contextDetectionMethod: "heuristic",
+  contextDetectionEnabled: true,
+  contextDetectionMinConfidence: 0.7,
   scopeDetectionMaxContexts: 5,
-  scopeDetectionCustomPatterns: undefined,
-  scopeFactorHints: undefined,
+  contextDetectionCustomPatterns: undefined,
+  contextFactorHints: undefined,
 
   // Budget controls
-  maxIterationsPerScope: 5,
+  maxIterationsPerContext: 5, // NEW: Use new key name
   maxTotalIterations: 20,
   maxTotalTokens: 750000,
   enforceBudgets: false,
@@ -396,6 +515,42 @@ export const DEFAULT_EVIDENCE_LEXICON: EvidenceLexicon = {
 // UCM-managed keyword lists for verdict aggregation, contestation, and harm detection.
 // Pattern syntax: Use "re:" prefix for regex patterns, otherwise literal strings.
 
+const ContextHeuristicsSchema = z.object({
+  comparisonPatterns: z.array(z.string()).describe(
+    "Patterns indicating comparative claims (e.g., more/less/versus)"
+  ),
+  efficiencyKeywords: z.array(z.string()).describe(
+    "Patterns indicating efficiency/performance dimensions"
+  ),
+  legalFairnessPatterns: z.array(z.string()).describe(
+    "Patterns indicating legal fairness claims"
+  ),
+  legalProcessKeywords: z.array(z.string()).describe(
+    "Patterns indicating legal process context"
+  ),
+  internationalCuePatterns: z.array(z.string()).describe(
+    "Patterns indicating international/external cues"
+  ),
+  envHealthPatterns: z.array(z.string()).describe(
+    "Patterns indicating environment/health comparisons"
+  ),
+});
+
+const ContextCanonicalizationSchema = z.object({
+  predicateStarters: z.array(z.string()).describe(
+    "Patterns indicating predicate starters in yes/no normalization"
+  ),
+  fillerWords: z.array(z.string()).describe(
+    "Filler words removed during canonicalization"
+  ),
+  legalTerms: z.array(z.string()).describe(
+    "Generic legal/institutional terms for entity extraction"
+  ),
+  jurisdictionIndicators: z.array(z.string()).describe(
+    "Generic jurisdiction indicators for entity extraction"
+  ),
+});
+
 export const AggregationLexiconSchema = z.object({
   // === Contestation Detection ===
   contestation: z.object({
@@ -494,43 +649,27 @@ export const AggregationLexiconSchema = z.object({
     ),
   }),
 
-  // === Scope Detection Heuristics ===
-  scopeHeuristics: z.object({
-    comparisonPatterns: z.array(z.string()).describe(
-      "Patterns indicating comparative claims (e.g., more/less/versus)"
-    ),
-    efficiencyKeywords: z.array(z.string()).describe(
-      "Patterns indicating efficiency/performance dimensions"
-    ),
-    legalFairnessPatterns: z.array(z.string()).describe(
-      "Patterns indicating legal fairness claims"
-    ),
-    legalProcessKeywords: z.array(z.string()).describe(
-      "Patterns indicating legal process context"
-    ),
-    internationalCuePatterns: z.array(z.string()).describe(
-      "Patterns indicating international/external cues"
-    ),
-    envHealthPatterns: z.array(z.string()).describe(
-      "Patterns indicating environment/health comparisons"
-    ),
-  }),
+  // === AnalysisContext Detection Heuristics ===
+  // NEW: Correctly-named section (PRIMARY)
+  contextHeuristics: ContextHeuristicsSchema.optional().describe(
+    "Heuristics for detecting AnalysisContexts (e.g., comparative, legal, environmental claims)"
+  ),
+  // DEPRECATED: Old section name kept for backward compatibility
+  /** @deprecated Use contextHeuristics instead - 'scope' here means AnalysisContext */
+  scopeHeuristics: ContextHeuristicsSchema.optional().describe(
+    "Patterns indicating comparative claims (e.g., more/less/versus)"
+  ),
 
-  // === Scope Canonicalization Helpers ===
-  scopeCanonicalization: z.object({
-    predicateStarters: z.array(z.string()).describe(
-      "Patterns indicating predicate starters in yes/no normalization"
-    ),
-    fillerWords: z.array(z.string()).describe(
-      "Filler words removed during canonicalization"
-    ),
-    legalTerms: z.array(z.string()).describe(
-      "Generic legal/institutional terms for entity extraction"
-    ),
-    jurisdictionIndicators: z.array(z.string()).describe(
-      "Generic jurisdiction indicators for entity extraction"
-    ),
-  }),
+  // === AnalysisContext Canonicalization Helpers ===
+  // NEW: Correctly-named section (PRIMARY)
+  contextCanonicalization: ContextCanonicalizationSchema.optional().describe(
+    "Helpers for canonicalizing AnalysisContext names and extracting entities"
+  ),
+  // DEPRECATED: Old section name kept for backward compatibility
+  /** @deprecated Use contextCanonicalization instead - 'scope' here means AnalysisContext */
+  scopeCanonicalization: ContextCanonicalizationSchema.optional().describe(
+    "Patterns indicating predicate starters in yes/no normalization"
+  ),
 
   // === Recency & Procedural Topic Heuristics ===
   recencyHeuristics: z.object({
@@ -551,6 +690,27 @@ export const AggregationLexiconSchema = z.object({
       "Patterns indicating external reaction claims"
     ),
   }),
+}).transform((data) => {
+  // Runtime migration: Copy old sections to new sections if new sections don't exist
+  const warnings: string[] = [];
+
+  // scopeHeuristics → contextHeuristics
+  if (data.scopeHeuristics && !data.contextHeuristics) {
+    data.contextHeuristics = data.scopeHeuristics;
+    warnings.push("scopeHeuristics → contextHeuristics");
+  }
+
+  // scopeCanonicalization → contextCanonicalization
+  if (data.scopeCanonicalization && !data.contextCanonicalization) {
+    data.contextCanonicalization = data.scopeCanonicalization;
+    warnings.push("scopeCanonicalization → contextCanonicalization");
+  }
+
+  if (warnings.length > 0) {
+    console.warn(`[DEPRECATED] Aggregation lexicon sections migrated: ${warnings.join(", ")}`);
+  }
+
+  return data;
 });
 
 export type AggregationLexicon = z.infer<typeof AggregationLexiconSchema>;
@@ -801,7 +961,7 @@ export const DEFAULT_AGGREGATION_LEXICON: AggregationLexicon = {
       "re:scientifically\\s*impossible",
     ],
   },
-  scopeHeuristics: {
+  contextHeuristics: {
     comparisonPatterns: [
       "re:\\b(more|less|better|worse|superior|inferior|higher|lower|greater|smaller)\\b.*\\bthan\\b",
       "re:\\bvs\\.?\\b",
@@ -823,7 +983,7 @@ export const DEFAULT_AGGREGATION_LEXICON: AggregationLexicon = {
       "re:\\b(environment|health|safety|pollution|emission|contamination|toxicity|hazard)\\b",
     ],
   },
-  scopeCanonicalization: {
+  contextCanonicalization: {
     predicateStarters: [
       "fair", "true", "false", "accurate", "correct", "legitimate", "legal",
       "valid", "based", "justified", "reasonable", "biased", "efficient",

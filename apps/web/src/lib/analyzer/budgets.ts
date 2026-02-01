@@ -91,8 +91,11 @@ export const DEFAULT_BUDGET: ResearchBudget = {
 export function getBudgetConfig(config?: PipelineConfig): ResearchBudget {
   // If pipeline config provided, use it
   if (config) {
+    // Support both maxIterationsPerContext (new) and maxIterationsPerScope (old) with new key taking precedence
+    const maxIterationsPerScope = config.maxIterationsPerContext ?? config.maxIterationsPerScope ?? DEFAULT_BUDGET.maxIterationsPerScope;
+
     return {
-      maxIterationsPerScope: config.maxIterationsPerScope,
+      maxIterationsPerScope,
       maxTotalIterations: config.maxTotalIterations,
       maxTotalTokens: config.maxTotalTokens,
       maxTokensPerCall: parseInt(
@@ -176,7 +179,8 @@ export function checkTokenBudget(
 }
 
 /**
- * Check if scope can perform another iteration
+ * Check if scope/context can perform another iteration.
+ * Note: "Scope" in this function name refers to AnalysisContext, NOT EvidenceScope.
  */
 export function checkScopeIterationBudget(
   tracker: BudgetTracker,
@@ -201,6 +205,9 @@ export function checkScopeIterationBudget(
 
   return { allowed: true };
 }
+
+/** Primary name for checking context iteration budget */
+export const checkContextIterationBudget = checkScopeIterationBudget;
 
 // ============================================================================
 // RECORDING FUNCTIONS

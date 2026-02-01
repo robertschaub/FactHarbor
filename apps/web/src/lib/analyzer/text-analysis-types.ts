@@ -117,28 +117,42 @@ export interface EvidenceQualityResult {
 }
 
 // ============================================================================
-// CALL 3: SCOPE SIMILARITY ANALYSIS
+// CALL 3: CONTEXT SIMILARITY ANALYSIS
 // ============================================================================
+// Note: "Scope" in this section refers to AnalysisContext (top-level analytical frame),
+// NOT EvidenceScope (per-evidence metadata). See types.ts:98-126 for definitions.
 
 /** Phase bucket classification */
 export type PhaseBucket = "production" | "usage" | "other";
 
-/** A scope pair for similarity analysis */
-export interface ScopePair {
+/**
+ * A context pair for similarity analysis.
+ * Note: Field names use "scope" for backward compatibility with LLM prompt output.
+ */
+export interface ContextPair {
   scopeA: string;
   scopeB: string;
   metadataA?: Record<string, unknown>;
   metadataB?: Record<string, unknown>;
 }
 
-/** Request for scope similarity analysis */
-export interface ScopeSimilarityRequest {
-  scopePairs: ScopePair[];
+/** @deprecated Use ContextPair instead */
+export type ScopePair = ContextPair;
+
+/** Request for context similarity analysis */
+export interface ContextSimilarityRequest {
+  scopePairs: ContextPair[];
   contextList: string[];
 }
 
-/** Result for a single scope pair */
-export interface ScopeSimilarityResult {
+/** @deprecated Use ContextSimilarityRequest instead */
+export type ScopeSimilarityRequest = ContextSimilarityRequest;
+
+/**
+ * Result for a single context pair.
+ * Note: Field names use "scope" for backward compatibility with LLM prompt output.
+ */
+export interface ContextSimilarityResult {
   scopeA: string;
   scopeB: string;
   similarity: number;
@@ -148,6 +162,9 @@ export interface ScopeSimilarityResult {
   canonicalName: string | null;
   reasoning: string;
 }
+
+/** @deprecated Use ContextSimilarityResult instead */
+export type ScopeSimilarityResult = ContextSimilarityResult;
 
 // ============================================================================
 // CALL 4: VERDICT VALIDATION

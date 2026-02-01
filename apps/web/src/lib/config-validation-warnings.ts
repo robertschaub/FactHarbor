@@ -65,13 +65,15 @@ export function validatePipelineConfig(config: PipelineConfig): ConfigWarning[] 
   }
 
   // Warning 4: Aggressive scope deduplication
-  if (config.scopeDedupThreshold < 0.75) {
+  // Support both contextDedupThreshold (new) and scopeDedupThreshold (old) with new key taking precedence
+  const dedupThreshold = config.contextDedupThreshold ?? config.scopeDedupThreshold ?? 0.85;
+  if (dedupThreshold < 0.75) {
     warnings.push({
       level: "warning",
-      title: "Aggressive Scope Deduplication",
-      message: `Scope dedup threshold is ${config.scopeDedupThreshold} (recommended: ≥0.85). This may incorrectly merge distinct contexts.`,
-      suggestion: "Increase scopeDedupThreshold to 0.85 or higher to avoid context loss",
-      affectedFields: ["scopeDedupThreshold"],
+      title: "Aggressive Context Deduplication",
+      message: `Context dedup threshold is ${dedupThreshold} (recommended: ≥0.85). This may incorrectly merge distinct contexts.`,
+      suggestion: "Increase contextDedupThreshold to 0.85 or higher to avoid context loss",
+      affectedFields: ["contextDedupThreshold", "scopeDedupThreshold"],
     });
   }
 
@@ -98,10 +100,12 @@ export function validatePipelineConfig(config: PipelineConfig): ConfigWarning[] 
   }
 
   // Warning 7: All LLM text analysis disabled (lower quality)
+  // Support both llmContextSimilarity (new) and llmScopeSimilarity (old) with new key taking precedence
+  const contextSimilarityEnabled = config.llmContextSimilarity ?? config.llmScopeSimilarity ?? true;
   const allLLMDisabled =
     !config.llmInputClassification &&
     !config.llmEvidenceQuality &&
-    !config.llmScopeSimilarity &&
+    !contextSimilarityEnabled &&
     !config.llmVerdictValidation;
 
   if (allLLMDisabled) {

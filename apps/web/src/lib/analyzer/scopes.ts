@@ -25,14 +25,30 @@ import type { PipelineConfig } from "../config-schemas";
 // TYPES
 // ============================================================================
 
-export interface DetectedScope {
+/**
+ * Detected AnalysisContext from scope detection (heuristic or LLM).
+ * This represents a top-level bounded analytical frame.
+ *
+ * TERMINOLOGY: "Scope" in this file historically referred to AnalysisContext.
+ * The type is being renamed for clarity. See types.ts:98-126 for definitions.
+ */
+export interface DetectedAnalysisContext {
   id: string;
   name: string;
   type: string;
   metadata?: Record<string, any>;
 }
 
-export const ScopeDetectionOutputSchema = z.object({
+/**
+ * @deprecated Use DetectedAnalysisContext instead.
+ * "Scope" here refers to AnalysisContext (top-level analytical frame), NOT EvidenceScope.
+ */
+export type DetectedScope = DetectedAnalysisContext;
+
+/**
+ * Schema for AnalysisContext detection output from LLM.
+ */
+export const ContextDetectionOutputSchema = z.object({
   contexts: z.array(
     z.object({
       id: z.string(),
@@ -55,7 +71,13 @@ export const ScopeDetectionOutputSchema = z.object({
   rationale: z.string(),
 });
 
-export type ScopeDetectionOutput = z.infer<typeof ScopeDetectionOutputSchema>;
+/** @deprecated Use ContextDetectionOutputSchema instead */
+export const ScopeDetectionOutputSchema = ContextDetectionOutputSchema;
+
+export type ContextDetectionOutput = z.infer<typeof ContextDetectionOutputSchema>;
+
+/** @deprecated Use ContextDetectionOutput instead */
+export type ScopeDetectionOutput = ContextDetectionOutput;
 
 // ============================================================================
 // CONSTANTS
@@ -786,4 +808,50 @@ export function ensureAtLeastOneScope(
     requiresSeparateAnalysis: false,
   };
 }
+
+// ============================================================================
+// FUNCTION ALIASES (Phase 1: Backward Compatibility)
+// ============================================================================
+// These aliases maintain backward compatibility while transitioning to
+// correct terminology. "Scope" in these function names refers to
+// AnalysisContext, NOT EvidenceScope. See types.ts:98-126 for definitions.
+
+/** Primary name for setting context heuristics lexicon */
+export const setContextHeuristicsLexicon = setScopeHeuristicsLexicon;
+
+/** Primary name for getting context heuristics patterns config */
+export const getContextHeuristicsPatternsConfig = getScopeHeuristicsPatternsConfig;
+
+/** Primary name for heuristic context detection */
+export const detectContextsHeuristic = detectScopesHeuristic;
+
+/** Primary name for LLM context detection */
+export const detectContextsLLM = detectScopesLLM;
+
+/** Primary name for hybrid context detection */
+export const detectContextsHybrid = detectScopesHybrid;
+
+/** Primary name for synchronous context detection */
+export const detectContexts = detectScopes;
+
+/** Primary name for formatting detected contexts hint */
+export const formatDetectedContextsHint = formatDetectedScopesHint;
+
+/** Primary name for canonicalizing input for context detection */
+export const canonicalizeInputForContextDetection = canonicalizeInputForScopeDetection;
+
+/** Primary name for generating context detection hint */
+export const generateContextDetectionHint = generateScopeDetectionHint;
+
+/** Primary name for canonicalizing contexts */
+export const canonicalizeContexts = canonicalizeScopes;
+
+/** Primary name for canonicalizing contexts with ID remap */
+export const canonicalizeContextsWithRemap = canonicalizeScopesWithRemap;
+
+/** Primary name for ensuring at least one context */
+export const ensureAtLeastOneContext = ensureAtLeastOneScope;
+
+// Note: generateDeterministicScopeId is an internal helper function (not exported)
+// so no alias is needed for it.
 

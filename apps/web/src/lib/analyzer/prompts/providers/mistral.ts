@@ -272,3 +272,6 @@ Ensure:
 [ ] Each context has ≥1 fact assigned
 [ ] JSON is valid`;
 }
+
+/** Primary name for getting Mistral context refinement variant */
+export const getMistralContextRefinementVariant = getMistralScopeRefinementVariant;

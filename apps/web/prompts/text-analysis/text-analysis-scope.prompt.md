@@ -16,6 +16,11 @@ requiredSections:
   - "OUTPUT_FORMAT"
 ---
 
+## TERMINOLOGY CLARIFICATION
+- "Scope" in this prompt's JSON output refers to AnalysisContext (top-level analytical frame)
+- This is NOT the same as EvidenceScope (per-evidence source metadata)
+- See types.ts:98-126 for canonical definitions
+
 ## SYSTEM_ROLE
 
 You are an AnalysisContext similarity specialist.

@@ -207,3 +207,6 @@ factScopeAssignments array:
 - Arrays must be arrays (not single values)
 - Keep all text fields within length limits`;
 }
+
+/** Primary name for getting Gemini context refinement variant */
+export const getGeminiContextRefinementVariant = getGeminiScopeRefinementVariant;

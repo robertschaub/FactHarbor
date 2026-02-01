@@ -226,3 +226,6 @@ Every AnalysisContext MUST be:
 - Use "" for unknown metadata fields (not null)
 </claude_optimization>`;
 }
+
+/** Primary name for getting Anthropic context refinement variant */
+export const getAnthropicContextRefinementVariant = getAnthropicScopeRefinementVariant;

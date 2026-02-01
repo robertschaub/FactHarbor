@@ -37,6 +37,9 @@ export { HybridTextAnalysisService, hybridTextAnalysisService } from "./text-ana
 export interface TextAnalysisConfig {
   llmInputClassification?: boolean;
   llmEvidenceQuality?: boolean;
+  /** NEW: Correctly-named key (PRIMARY) */
+  llmContextSimilarity?: boolean;
+  /** @deprecated Use llmContextSimilarity instead - 'scope' here means AnalysisContext */
   llmScopeSimilarity?: boolean;
   llmVerdictValidation?: boolean;
 }
@@ -59,19 +62,25 @@ function getFeatureFlags(config?: TextAnalysisConfig): {
 } {
   if (config) {
     // Use pipeline config (UCM Phase 1)
+    // Support both llmContextSimilarity (new) and llmScopeSimilarity (old) with new key taking precedence
+    const contextSimilarity = config.llmContextSimilarity ?? config.llmScopeSimilarity ?? true;
+
     return {
       inputClassification: config.llmInputClassification ?? true,
       evidenceQuality: config.llmEvidenceQuality ?? true,
-      scopeSimilarity: config.llmScopeSimilarity ?? true,
+      scopeSimilarity: contextSimilarity,
       verdictValidation: config.llmVerdictValidation ?? true,
     };
   }
 
   // Fallback to environment variables (during migration)
+  // Support both FH_LLM_CONTEXT_SIMILARITY (new) and FH_LLM_SCOPE_SIMILARITY (old) with new key taking precedence
+  const contextSimilarityEnv = process.env.FH_LLM_CONTEXT_SIMILARITY || process.env.FH_LLM_SCOPE_SIMILARITY;
+
   return {
     inputClassification: process.env.FH_LLM_INPUT_CLASSIFICATION !== "false",
     evidenceQuality: process.env.FH_LLM_EVIDENCE_QUALITY !== "false",
-    scopeSimilarity: process.env.FH_LLM_SCOPE_SIMILARITY !== "false",
+    scopeSimilarity: contextSimilarityEnv !== "false",
     verdictValidation: process.env.FH_LLM_VERDICT_VALIDATION !== "false",
   };
 }

@@ -165,7 +165,10 @@ async function refineScopesFromEvidence(
 
   const shouldEnableScopePromptSelection =
     process.env.FH_ENABLE_SCOPE_PROMPT_SELECTION !== "false";
-  const scopePromptMaxFactsRaw = parseInt(process.env.FH_SCOPE_PROMPT_MAX_FACTS || "40", 10);
+
+  // Environment variable alias: FH_CONTEXT_PROMPT_MAX_FACTS (new) takes precedence over FH_SCOPE_PROMPT_MAX_FACTS (old)
+  const contextPromptMaxFactsEnv = process.env.FH_CONTEXT_PROMPT_MAX_FACTS || process.env.FH_SCOPE_PROMPT_MAX_FACTS || "40";
+  const scopePromptMaxFactsRaw = parseInt(contextPromptMaxFactsEnv, 10);
   const scopePromptMaxFacts = Number.isFinite(scopePromptMaxFactsRaw)
     ? Math.max(8, Math.min(80, scopePromptMaxFactsRaw))
     : 40;

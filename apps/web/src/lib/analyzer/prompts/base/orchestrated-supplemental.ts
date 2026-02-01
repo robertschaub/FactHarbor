@@ -254,3 +254,13 @@ export function getSupplementalScopesPromptForProvider(
       return basePrompt;
   }
 }
+
+// ============================================================================
+// FUNCTION ALIASES (Phase 1: Backward Compatibility)
+// ============================================================================
+
+/** Primary name for getting supplemental contexts prompt */
+export const getSupplementalContextsPrompt = getSupplementalScopesPrompt;
+
+/** Primary name for getting supplemental contexts prompt for provider */
+export const getSupplementalContextsPromptForProvider = getSupplementalScopesPromptForProvider;

@@ -259,3 +259,6 @@ If ANY answer is "no" → Don't create that context.
 - metadata must be object (can be empty {})
 - shortName: max 12 characters`;
 }
+
+/** Primary name for getting OpenAI context refinement variant */
+export const getOpenAIContextRefinementVariant = getOpenAIScopeRefinementVariant;

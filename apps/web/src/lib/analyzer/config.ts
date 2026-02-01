@@ -324,7 +324,17 @@ export function scopeTypeRank(label: string): number {
   }
 }
 
-// Backward compatibility alias
+// ============================================================================
+// FUNCTION ALIASES (Phase 1: Backward Compatibility)
+// ============================================================================
+// These aliases maintain backward compatibility while transitioning to
+// correct terminology. "Scope" in these function names refers to
+// AnalysisContext, NOT EvidenceScope. See types.ts:98-126 for definitions.
+
+/** Primary name for inferring context type label */
+export const inferContextTypeLabel = inferScopeTypeLabel;
+
+/** Primary name for context type ranking (alias already existed) */
 export const contextTypeRank = scopeTypeRank;
 
 /**
@@ -363,3 +373,6 @@ export function sanitizeScopeShortAnswer(shortAnswer: string, proceedingStatus: 
   out = out.replace(/\bpending\b/gi, "unresolved");
   return out;
 }
+
+/** Primary name for sanitizing context short answer */
+export const sanitizeContextShortAnswer = sanitizeScopeShortAnswer;

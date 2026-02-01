@@ -169,3 +169,6 @@ Use appropriate fields based on the domain. Examples:
 
 **PRESERVE DISTINCT CONTEXTS**: Better to have more contexts than lose valid analytical frames.`;
 }
+
+/** Primary name for getting context refinement base prompt */
+export const getContextRefinementBasePrompt = getScopeRefinementBasePrompt;
