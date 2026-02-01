@@ -247,6 +247,19 @@ export const EvidenceLexiconSchema = z.object({
       "Patterns indicating verdict uncertainty (e.g., 'unclear', 're:insufficient (data|evidence)')"
     ),
   }),
+
+  // === Provenance Validation ===
+  provenanceValidation: z.object({
+    minSourceExcerptLength: z.number().int().min(1).max(500).describe(
+      "Minimum characters required for a valid sourceExcerpt"
+    ),
+    syntheticContentPatterns: z.array(z.string()).describe(
+      "Patterns indicating synthetic/LLM-generated excerpts (not real source quotes)"
+    ),
+    invalidUrlPatterns: z.array(z.string()).describe(
+      "Patterns indicating invalid or internal URLs (non-real sources)"
+    ),
+  }),
 });
 
 export type EvidenceLexicon = z.infer<typeof EvidenceLexiconSchema>;
@@ -354,6 +367,27 @@ export const DEFAULT_EVIDENCE_LEXICON: EvidenceLexicon = {
       "may or may not",
     ],
   },
+  provenanceValidation: {
+    minSourceExcerptLength: 20,
+    syntheticContentPatterns: [
+      "re:^Based on (the|my|our) (information|analysis|available data)",
+      "re:^According to (the|my|our) (analysis|findings)",
+      "re:^The source (indicates|shows|suggests)",
+      "re:^This suggests that",
+      "re:^It appears that",
+      "re:^I (found|discovered|learned) that",
+      "re:^Here('s| is) what (I|we) found",
+      "re:^The (information|data) shows",
+    ],
+    invalidUrlPatterns: [
+      "re:^(about|chrome|data|javascript):",
+      "re:^#",
+      "re:^$",
+      "re:localhost",
+      "re:127\\.0\\.0\\.1",
+      "re:\\.internal$",
+    ],
+  },
 };
 
 // ============================================================================
@@ -444,6 +478,77 @@ export const AggregationLexiconSchema = z.object({
     ),
     positiveIndicators: z.array(z.string()).describe(
       "Keywords indicating positive/confirming assertions"
+    ),
+  }),
+
+  // === Pseudoscience Detection ===
+  pseudoscience: z.object({
+    patterns: z.record(z.array(z.string())).describe(
+      "Category → pattern lists for pseudoscience detection"
+    ),
+    brands: z.array(z.string()).describe(
+      "Known pseudoscience product/brand patterns"
+    ),
+    debunkedIndicators: z.array(z.string()).describe(
+      "Patterns indicating consensus debunking"
+    ),
+  }),
+
+  // === Scope Detection Heuristics ===
+  scopeHeuristics: z.object({
+    comparisonPatterns: z.array(z.string()).describe(
+      "Patterns indicating comparative claims (e.g., more/less/versus)"
+    ),
+    efficiencyKeywords: z.array(z.string()).describe(
+      "Patterns indicating efficiency/performance dimensions"
+    ),
+    legalFairnessPatterns: z.array(z.string()).describe(
+      "Patterns indicating legal fairness claims"
+    ),
+    legalProcessKeywords: z.array(z.string()).describe(
+      "Patterns indicating legal process context"
+    ),
+    internationalCuePatterns: z.array(z.string()).describe(
+      "Patterns indicating international/external cues"
+    ),
+    envHealthPatterns: z.array(z.string()).describe(
+      "Patterns indicating environment/health comparisons"
+    ),
+  }),
+
+  // === Scope Canonicalization Helpers ===
+  scopeCanonicalization: z.object({
+    predicateStarters: z.array(z.string()).describe(
+      "Patterns indicating predicate starters in yes/no normalization"
+    ),
+    fillerWords: z.array(z.string()).describe(
+      "Filler words removed during canonicalization"
+    ),
+    legalTerms: z.array(z.string()).describe(
+      "Generic legal/institutional terms for entity extraction"
+    ),
+    jurisdictionIndicators: z.array(z.string()).describe(
+      "Generic jurisdiction indicators for entity extraction"
+    ),
+  }),
+
+  // === Recency & Procedural Topic Heuristics ===
+  recencyHeuristics: z.object({
+    recentKeywords: z.array(z.string()).describe(
+      "Keywords indicating recency sensitivity"
+    ),
+    newsIndicatorKeywords: z.array(z.string()).describe(
+      "Keywords indicating news-like topics"
+    ),
+  }),
+  proceduralTopicHeuristics: z.object({
+    proceduralKeywords: z.array(z.string()).describe(
+      "Patterns indicating procedural/governance topics"
+    ),
+  }),
+  externalReactionHeuristics: z.object({
+    externalReactionPatterns: z.array(z.string()).describe(
+      "Patterns indicating external reaction claims"
     ),
   }),
 });
@@ -614,6 +719,185 @@ export const DEFAULT_AGGREGATION_LEXICON: AggregationLexicon = {
     ],
     positiveIndicators: [
       "true", "correct", "accurate", "support", "confirm", "verify", "evidence shows",
+    ],
+  },
+  pseudoscience: {
+    patterns: {
+      waterMemory: [
+        "re:water\\s*memory",
+        "re:information\\s*water",
+        "re:informed\\s*water",
+        "re:structured\\s*water",
+        "re:hexagonal\\s*water",
+        "re:water\\s*structur(e|ing)",
+        "re:molecular\\s*(re)?structur",
+        "re:water\\s*cluster",
+        "re:energi[sz]ed\\s*water",
+        "re:revitali[sz]ed\\s*water",
+        "re:living\\s*water",
+        "re:grander",
+        "re:emoto",
+      ],
+      energyFields: [
+        "re:life\\s*force",
+        "re:vital\\s*energy",
+        "re:bio[\\s-]*energy",
+        "re:subtle\\s*energy",
+        "re:energy\\s*field",
+        "re:healing\\s*frequencies",
+        "re:vibrational\\s*(healing|medicine|therapy)",
+        "re:frequency\\s*(healing|therapy)",
+        "re:chakra",
+        "re:aura\\s*(reading|healing|cleansing)",
+      ],
+      quantumMisuse: [
+        "re:quantum\\s*(healing|medicine|therapy|wellness)",
+        "re:quantum\\s*consciousness",
+        "re:quantum\\s*energy",
+      ],
+      homeopathy: [
+        "re:homeopath",
+        "re:potenti[sz]ation",
+        "re:succussion",
+        "re:dilution.*memory",
+        "re:like\\s*cures\\s*like",
+      ],
+      detoxPseudo: [
+        "re:detox\\s*(foot|ion|cleanse)",
+        "re:toxin\\s*removal.*(?:crystal|magnet|ion)",
+        "re:ionic\\s*cleanse",
+      ],
+      other: [
+        "re:crystal\\s*(healing|therapy|energy)",
+        "re:magnet\\s*therapy",
+        "re:magnetic\\s*healing",
+        "re:earthing\\s*(therapy|healing)",
+        "re:grounding\\s*(therapy|healing|mat)",
+        "re:orgone",
+        "re:scalar\\s*(wave|energy)",
+        "re:tachyon",
+        "re:zero[\\s-]*point\\s*energy.*healing",
+      ],
+    },
+    brands: [
+      "re:grander",
+      "re:pimag",
+      "re:kangen",
+      "re:enagic",
+      "re:alkaline\\s*ionizer",
+      "re:structured\\s*water\\s*unit",
+    ],
+    debunkedIndicators: [
+      "re:no\\s*(scientific\\s*)?(evidence|proof|basis)",
+      "re:not\\s*(scientifically\\s*)?(proven|supported|verified)",
+      "re:lacks?\\s*(scientific\\s*)?(evidence|proof|basis|foundation)",
+      "re:contradict.*(?:physics|chemistry|biology|science)",
+      "re:violates?\\s*(?:laws?\\s*of\\s*)?(?:physics|thermodynamics)",
+      "re:pseudoscien",
+      "re:debunked",
+      "re:disproven",
+      "re:no\\s*plausible\\s*mechanism",
+      "re:implausible",
+      "re:scientifically\\s*impossible",
+    ],
+  },
+  scopeHeuristics: {
+    comparisonPatterns: [
+      "re:\\b(more|less|better|worse|superior|inferior|higher|lower|greater|smaller)\\b.*\\bthan\\b",
+      "re:\\bvs\\.?\\b",
+      "re:\\bversus\\b",
+    ],
+    efficiencyKeywords: [
+      "re:\\b(efficien\\w*|performance|impact|effect|output|consumption|energy|resource|cost|speed)\\b",
+    ],
+    legalFairnessPatterns: [
+      "re:\\b(trial|judgment|proceeding|conviction|ruling|hearing|case)\\b.*\\b(fair|just|legal|law|proper|appropriate|legitimate|valid)\\b",
+    ],
+    legalProcessKeywords: [
+      "re:\\b(trial|judgment|court|legal|law|procedure|process|due process|judicial)\\b",
+    ],
+    internationalCuePatterns: [
+      "re:\\b(international|foreign|external|global|overseas|outside)\\b",
+    ],
+    envHealthPatterns: [
+      "re:\\b(environment|health|safety|pollution|emission|contamination|toxicity|hazard)\\b",
+    ],
+  },
+  scopeCanonicalization: {
+    predicateStarters: [
+      "fair", "true", "false", "accurate", "correct", "legitimate", "legal",
+      "valid", "based", "justified", "reasonable", "biased", "efficient",
+      "effective", "successful", "proper", "appropriate", "proportionate",
+      "consistent", "compliant", "constitutional", "lawful", "unlawful",
+      "applied", "followed", "implemented", "enforced", "violated", "upheld",
+      "overturned", "dismissed", "granted", "denied", "approved", "rejected",
+      "cause", "causes", "caused", "increase", "increases", "increased",
+      "decrease", "decreases", "decreased", "improve", "improves", "improved",
+      "reduce", "reduces", "reduced", "prevent", "prevents", "prevented",
+      "lead", "leads", "led", "result", "results", "resulted",
+      "follow", "follows", "produce", "produces", "produced",
+      "affect", "affects", "affected", "create", "creates", "created",
+      "apply", "applies", "implement", "implements", "violate", "violates",
+    ],
+    fillerWords: [
+      "really", "actually", "truly", "basically", "essentially", "simply",
+      "just", "very", "quite", "rather",
+    ],
+    legalTerms: [
+      "court", "trial", "judgment", "ruling", "verdict", "sentence",
+      "conviction", "case", "proceeding", "tribunal", "commission",
+      "appeal", "hearing", "indictment",
+    ],
+    jurisdictionIndicators: [
+      "national", "federal", "supreme", "constitutional", "electoral",
+      "regional", "state", "provincial", "municipal", "international",
+    ],
+  },
+  recencyHeuristics: {
+    recentKeywords: [
+      "recent", "recently", "latest", "newest", "current", "now", "today",
+      "this year", "this month", "last month", "last week", "yesterday",
+      "announced", "released", "published", "unveiled", "revealed",
+    ],
+    newsIndicatorKeywords: [
+      "trial", "verdict", "sentence", "sentenced", "ruling", "ruled", "convicted", "acquitted",
+      "indicted", "charged", "plea", "appeal", "court", "judge", "judgment",
+      "election", "elected", "voted", "vote", "poll", "campaign", "inauguration",
+      "decision", "announced", "confirmed", "approved", "rejected", "signed",
+      "investigation", "hearing", "testimony", "inquiry", "probe",
+      "breaking", "update", "developing", "just", "new",
+    ],
+  },
+  proceduralTopicHeuristics: {
+    proceduralKeywords: [
+      "re:\\b(phase|stage|episode|cycle|version|iteration|rollout|release)\\b",
+      "re:\\b(process|procedure|protocol|standard|policy|framework)\\b",
+      "re:\\b(review|audit|assessment|evaluation|investigation|probe)\\b",
+      "re:\\b(committee|board|panel|commission|authority|agency)\\b",
+      "re:\\b(conflict|impartial|independent|oversight|compliance)\\b",
+      "re:\\b(trial|court|judge|ruling|verdict|sentence|conviction|acquittal)\\b",
+      "re:\\b(lawsuit|litigation|prosecution|defendant|plaintiff)\\b",
+      "re:\\b(due process|fair trial|impartial|jurisdiction)\\b",
+      "re:\\b(electoral|election|ballot|vote|ineligibility)\\b",
+      "re:\\b(investigation|indictment|charges|allegations)\\b",
+      "re:\\b(supreme court|federal court|tribunal|justice)\\b",
+      "re:\\b(constitutional|legislation|statute|law|legal)\\b",
+      "re:\\b(regulatory|agency|commission|board|authority)\\b",
+      "re:\\b(proceeding|hearing|testimony|evidence|witness)\\b",
+    ],
+  },
+  externalReactionHeuristics: {
+    externalReactionPatterns: [
+      "re:\\b(in\\s+response\\s+to|as\\s+a\\s+response|retaliation\\s+for|retaliation\\s+against)\\b",
+      "re:\\b(response|reaction|retaliation)\\s+(to|against|for)\\b",
+      "re:\\b(condemned|denounced|criticized|protested)\\s+(the|this|that|against)\\b",
+      "re:\\b(sanction|sanctions|embargo|embargoes)\\b.*\\b(imposed|impose|against|in\\s+response)\\b",
+      "re:\\b(tariff|tariffs|duties|duty|restriction|restrictions)\\b.*\\b(imposed|impose|imposition|in\\s+response)\\b",
+      "re:\\b(ban|bans|banned|boycott|boycotted)\\b.*\\b(imposed|in\\s+response|as\\s+a\\s+result)\\b",
+      "re:\\b(proportionate|disproportionate|justified|unjustified)\\s+(response|reaction|measure|sanction|retaliation)\\b",
+      "re:\\b(response|reaction|measure|sanction)\\b.*\\b(proportionate|disproportionate|justified|appropriate)\\b",
+      "re:\\b(diplomatic|international)\\s+(response|reaction|pressure|intervention|condemnation)\\b",
+      "re:\\b(foreign|external)\\s+(government|nation|country)\\b.*\\b(response|reaction|condemned|imposed)\\b",
     ],
   },
 };

@@ -93,12 +93,11 @@ export {
 // ============================================================================
 
 export {
-  PSEUDOSCIENCE_PATTERNS,
-  PSEUDOSCIENCE_BRANDS,
-  DEBUNKED_INDICATORS,
   detectPseudoscience,
   escalatePseudoscienceVerdict,
   calculateArticleVerdictWithPseudoscience,
+  setPseudoscienceLexicon,
+  getPseudosciencePatternsConfig,
 } from "./pseudoscience";
 
 // ============================================================================
@@ -111,22 +110,22 @@ export {
   getTrackRecordScore,
   getTrackRecordData,
   clearPrefetchedScores,
-  
+
   // Verdict weighting
   applyEvidenceWeighting,
   calculateOverallCredibility,
-  
+
   // Utility functions
   extractDomain,
   isImportantSource,
   normalizeTrackRecordScore,
   clampTruthPercentage,
   calculateEffectiveWeight,
-  
+
   // Configuration
   SR_CONFIG,
   DEFAULT_UNKNOWN_SOURCE_SCORE,
-  
+
   // Legacy (deprecated)
   loadSourceBundle,
 } from "./source-reliability";

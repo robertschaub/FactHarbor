@@ -13,6 +13,13 @@ import {
   inferToAcronym,
   contextTypeRank,
 } from "./config";
+import { z } from "zod";
+import { generateText, Output } from "ai";
+import { getModelForTask, extractStructuredOutput } from "./llm";
+import { getDeterministicTemperature } from "./config";
+import type { AggregationLexicon } from "../config-schemas";
+import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
+import type { PipelineConfig } from "../config-schemas";
 
 // ============================================================================
 // TYPES
@@ -24,6 +31,31 @@ export interface DetectedScope {
   type: string;
   metadata?: Record<string, any>;
 }
+
+export const ScopeDetectionOutputSchema = z.object({
+  contexts: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum([
+        "methodological",
+        "legal",
+        "scientific",
+        "general",
+        "regulatory",
+        "temporal",
+        "geographic",
+      ]),
+      confidence: z.number().min(0).max(1),
+      reasoning: z.string(),
+      metadata: z.record(z.any()).optional(),
+    }),
+  ),
+  requiresSeparateAnalysis: z.boolean(),
+  rationale: z.string(),
+});
+
+export type ScopeDetectionOutput = z.infer<typeof ScopeDetectionOutputSchema>;
 
 // ============================================================================
 // CONSTANTS
@@ -40,6 +72,26 @@ export const UNSCOPED_ID = "CTX_UNSCOPED";
 // ============================================================================
 
 /**
+ * Module-level compiled patterns (cached, initialized with defaults)
+ * Can be updated via setScopeHeuristicsLexicon() for testing or config reload
+ */
+let _patterns = getAggregationPatterns();
+
+/**
+ * Set the lexicon for scope heuristics (useful for testing or config reload)
+ */
+export function setScopeHeuristicsLexicon(lexicon?: AggregationLexicon): void {
+  _patterns = getAggregationPatterns(lexicon);
+}
+
+/**
+ * Get current patterns (for testing)
+ */
+export function getScopeHeuristicsPatternsConfig() {
+  return _patterns;
+}
+
+/**
  * Detect potential analysis contexts from input text using heuristic patterns.
  * Returns suggested scopes to guide LLM, or null if no patterns match.
  *
@@ -50,15 +102,14 @@ export const UNSCOPED_ID = "CTX_UNSCOPED";
  * @param text - Input text to analyze for scope patterns
  * @returns Array of detected scopes or null if no patterns match
  */
-export function   (text: string): DetectedScope[] | null {
+export function detectScopesHeuristic(text: string, config?: PipelineConfig): DetectedScope[] | null {
   const scopes: DetectedScope[] = [];
 
   // Pattern 1: Comparison claims (efficiency, performance, impact)
-  const comparisonPattern = /\b(more|less|better|worse|superior|inferior|higher|lower|greater|smaller)\b.*\bthan\b|\bvs\.?\b|\bversus\b/i;
-  // NOTE: Use a stem for "efficien*" so both "efficient" and "efficiency" match.
-  const efficiencyKeywords = /\b(efficien\w*|performance|impact|effect|output|consumption|energy|resource|cost|speed)\b/i;
+  const hasComparison = matchesAnyPattern(text, _patterns.scopeComparisonPatterns);
+  const hasEfficiencyKeywords = matchesAnyPattern(text, _patterns.scopeEfficiencyKeywords);
 
-  if (comparisonPattern.test(text) && efficiencyKeywords.test(text)) {
+  if (hasComparison && hasEfficiencyKeywords) {
     scopes.push(
       {
         id: "SCOPE_PRODUCTION",
@@ -76,10 +127,11 @@ export function   (text: string): DetectedScope[] | null {
   }
 
   // Pattern 2: Legal/trial fairness claims
-  const legalFairnessPattern = /\b(trial|judgment|proceeding|conviction|ruling|hearing|case)\b.*\b(fair|just|legal|law|proper|appropriate|legitimate|valid)\b/i;
-  const legalProcessKeywords = /\b(trial|judgment|court|legal|law|procedure|process|due process|judicial)\b/i;
+  const hasLegalFairness = matchesAnyPattern(text, _patterns.scopeLegalFairnessPatterns);
+  const hasLegalProcess = matchesAnyPattern(text, _patterns.scopeLegalProcessKeywords);
+  const fairnessCue = /\b(fair|unfair|appropriate|proper|just|legitimate)\b/i;
 
-  if (legalFairnessPattern.test(text) || (legalProcessKeywords.test(text) && /\b(fair|unfair|appropriate|proper|just|legitimate)\b/i.test(text))) {
+  if (hasLegalFairness || (hasLegalProcess && fairnessCue.test(text))) {
     scopes.push(
       {
         id: "SCOPE_LEGAL_PROC",
@@ -95,8 +147,7 @@ export function   (text: string): DetectedScope[] | null {
       }
     );
 
-    const internationalCuePattern = /\b(international|foreign|external|global|overseas|outside)\b/i;
-    if (internationalCuePattern.test(text)) {
+    if (matchesAnyPattern(text, _patterns.scopeInternationalCuePatterns)) {
       scopes.push({
         id: "SCOPE_INTL_PERSPECTIVE",
         name: "International Perspectives and Criticism",
@@ -107,8 +158,8 @@ export function   (text: string): DetectedScope[] | null {
   }
 
   // Pattern 3: Environmental/health comparisons
-  const envHealthPattern = /\b(environment|health|safety|pollution|emission|contamination|toxicity|hazard)\b/i;
-  if (comparisonPattern.test(text) && envHealthPattern.test(text)) {
+  const hasEnvHealth = matchesAnyPattern(text, _patterns.scopeEnvHealthPatterns);
+  if (hasComparison && hasEnvHealth) {
     scopes.push(
       {
         id: "SCOPE_DIRECT",
@@ -126,6 +177,156 @@ export function   (text: string): DetectedScope[] | null {
   }
 
   return scopes.length > 0 ? scopes : null;
+}
+
+/**
+ * Detect analysis contexts using an LLM with semantic understanding.
+ * Falls back to heuristic seeds on error or invalid output.
+ */
+export async function detectScopesLLM(
+  text: string,
+  heuristicSeeds: DetectedScope[] | null,
+  config: PipelineConfig,
+): Promise<DetectedScope[]> {
+  const modelInfo = getModelForTask("understand", undefined, config);
+
+  const seedHint = heuristicSeeds?.length
+    ? `\n\nHEURISTIC SEED CONTEXTS (optional hints):\n${heuristicSeeds
+        .map((s) => `- ${s.id}: ${s.name} (${s.type})`)
+        .join("\n")}`
+    : "";
+
+  const entities = extractCoreEntities(text);
+  const entityHint = entities.length
+    ? `\n\nCORE ENTITIES: ${entities.join(", ")}`
+    : "";
+
+  const systemPrompt = `You identify distinct AnalysisContexts for a claim.\n\nCRITICAL TERMINOLOGY:\n- Use "AnalysisContext" to mean top-level bounded analytical frames.\n- Use "EvidenceScope" only for per-source metadata (methodology/boundaries/time/geo).\n- Do NOT use the word "scope" when referring to AnalysisContexts.\n\nINCOMPATIBILITY TEST: Split contexts ONLY if combining them would be MISLEADING because they evaluate fundamentally different things.\n\nWHEN TO SPLIT (only when clearly supported):\n- Different formal authorities (distinct institutional decision-makers)\n- Different measurement boundaries or system definitions\n- Different regulatory regimes or time periods that change the analytical frame\n\nDO NOT SPLIT ON:\n- Pro vs con viewpoints\n- Different evidence types\n- Incidental geographic/temporal mentions\n- Public perception or meta commentary\n\nOUTPUT REQUIREMENTS:\n- Provide contexts as JSON array under 'contexts'.\n- Each context must include id, name, type, confidence (0-1), reasoning, metadata.\n- Use neutral, generic names tied to the input (no domain-specific hardcoding).${seedHint}${entityHint}`;
+
+  const userPrompt = `Detect distinct AnalysisContexts for:\n\n${text}`;
+
+  try {
+    const result = await generateText({
+      model: modelInfo.model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: getDeterministicTemperature(0.2, config),
+      output: Output.object({ schema: ScopeDetectionOutputSchema }),
+    });
+
+    const output = extractStructuredOutput(result) as ScopeDetectionOutput | null;
+    if (!output || !Array.isArray(output.contexts)) {
+      return heuristicSeeds || [];
+    }
+
+    const minConfidence = config.scopeDetectionMinConfidence ?? 0.7;
+    const maxContexts = config.scopeDetectionMaxContexts ?? 5;
+
+    return output.contexts
+      .filter((c) => c.confidence >= minConfidence)
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, maxContexts)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        metadata: {
+          ...(c.metadata || {}),
+          confidence: c.confidence,
+          detectionMethod: "llm",
+          reasoning: c.reasoning,
+        },
+      }));
+  } catch (error) {
+    console.error("LLM context detection failed:", error);
+    return heuristicSeeds || [];
+  }
+}
+
+/**
+ * Hybrid detection: heuristic seeds + LLM refinement.
+ */
+export async function detectScopesHybrid(
+  text: string,
+  config: PipelineConfig,
+): Promise<DetectedScope[] | null> {
+  if (config.scopeDetectionEnabled === false) return null;
+
+  const method = config.scopeDetectionMethod ?? "heuristic";
+  const heuristic = detectScopesHeuristic(text, config);
+
+  if (method === "heuristic") return heuristic;
+
+  const llmSeeds = method === "hybrid" ? heuristic : null;
+  const llmContexts = await detectScopesLLM(text, llmSeeds, config);
+
+  if (method === "llm") return llmContexts;
+
+  return mergeAndDeduplicateScopes(heuristic, llmContexts, config);
+}
+
+function mergeAndDeduplicateScopes(
+  heuristic: DetectedScope[] | null,
+  llmContexts: DetectedScope[],
+  config: PipelineConfig,
+): DetectedScope[] {
+  const merged = new Map<string, DetectedScope>();
+
+  for (const scope of heuristic || []) {
+    merged.set(scope.id, {
+      ...scope,
+      metadata: { ...(scope.metadata || {}), detectionMethod: "heuristic" },
+    });
+  }
+
+  for (const scope of llmContexts) {
+    merged.set(scope.id, scope);
+  }
+
+  const threshold = config.scopeDedupThreshold ?? 0.85;
+  const deduplicated: DetectedScope[] = [];
+
+  for (const scope of merged.values()) {
+    const isDuplicate = deduplicated.some(
+      (existing) => calculateTextSimilarity(scope.name, existing.name) >= threshold,
+    );
+    if (!isDuplicate) deduplicated.push(scope);
+  }
+
+  return deduplicated.sort((a, b) => {
+    const aConf = (a.metadata?.confidence as number) ?? 0.5;
+    const bConf = (b.metadata?.confidence as number) ?? 0.5;
+    return bConf - aConf;
+  });
+}
+
+function calculateTextSimilarity(text1: string, text2: string): number {
+  const normalize = (s: string) =>
+    (s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 2);
+
+  const words1 = new Set(normalize(text1));
+  const words2 = new Set(normalize(text2));
+
+  if (words1.size === 0 && words2.size === 0) return 1;
+  if (words1.size === 0 || words2.size === 0) return 0;
+
+  const intersection = new Set([...words1].filter((w) => words2.has(w)));
+  const union = new Set([...words1, ...words2]);
+
+  return union.size === 0 ? 0 : intersection.size / union.size;
+}
+
+/**
+ * Backward-compatible synchronous wrapper for deterministic seed logic.
+ */
+export function detectScopes(text: string): DetectedScope[] | null {
+  return detectScopesHeuristic(text);
 }
 
 /**
@@ -199,26 +400,9 @@ export function canonicalizeInputForScopeDetection(input: string): string {
           text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
         } else {
           // Heuristic: split before common predicate starters (adjectives, verbs)
-          const predicateStarters = [
-            // Evaluation adjectives
-            "fair", "true", "false", "accurate", "correct", "legitimate", "legal",
-            "valid", "based", "justified", "reasonable", "biased", "efficient",
-            "effective", "successful", "proper", "appropriate", "proportionate",
-            "consistent", "compliant", "constitutional", "lawful", "unlawful",
-            // Past participles (for "Were X applied/followed?" patterns)
-            "applied", "followed", "implemented", "enforced", "violated", "upheld",
-            "overturned", "dismissed", "granted", "denied", "approved", "rejected",
-            // Common verbs for "Did X verb Y?" patterns
-            "cause", "causes", "caused", "increase", "increases", "increased",
-            "decrease", "decreases", "decreased", "improve", "improves", "improved",
-            "reduce", "reduces", "reduced", "prevent", "prevents", "prevented",
-            "lead", "leads", "led", "result", "results", "resulted",
-            "follow", "follows", "produce", "produces", "produced",
-            "affect", "affects", "affected", "create", "creates", "created",
-            "apply", "applies", "implement", "implements", "violate", "violates",
-          ];
-          const starterRe = new RegExp(`\\b(${predicateStarters.join("|")})\\b`, "i");
-          const starterMatch = rest.match(starterRe);
+          const starterMatch = _patterns.scopePredicateStarters
+            .map((pattern) => rest.match(pattern))
+            .find((match) => match && typeof match.index === "number");
 
           if (starterMatch && typeof starterMatch.index === "number" && starterMatch.index > 0) {
             const subject = rest.slice(0, starterMatch.index).trim();
@@ -240,8 +424,11 @@ export function canonicalizeInputForScopeDetection(input: string): string {
   }
 
   // 3. Remove filler words that don't affect scope detection
-  const fillers = /\b(really|actually|truly|basically|essentially|simply|just|very|quite|rather)\b/gi;
-  text = text.replace(fillers, ' ').replace(/\s+/g, ' ').trim();
+  const fillerRe = new RegExp(
+    _patterns.scopeFillerWords.map((p) => p.source).join("|"),
+    "gi",
+  );
+  text = text.replace(fillerRe, " ").replace(/\s+/g, " ").trim();
 
   // 4. Extract core semantic entities BEFORE lowercasing
   // This preserves proper nouns for entity detection
@@ -275,12 +462,17 @@ function extractCoreEntities(text: string): string[] {
   entities.push(...properNouns.map(n => n.toLowerCase()));
 
   // Look for legal/institutional terms (case-insensitive)
-  const legalTerms = text.match(/\b(court|trial|judgment|ruling|verdict|sentence|conviction|case|proceeding|tribunal|commission|appeal|hearing|indictment)\b/gi) || [];
-  entities.push(...legalTerms.map(t => t.toLowerCase()));
+  const legalTerms = _patterns.scopeLegalTerms.filter((pattern) => pattern.test(text)).map((p) => {
+    const match = text.match(p);
+    return match ? match[0] : "";
+  }).filter(Boolean);
+  entities.push(...legalTerms.map((t) => t.toLowerCase()));
 
-  // Look for country/jurisdiction indicators (case-insensitive)
-  const jurisdictions = text.match(/\b(brazil|brazilian|eu|european|uk|british|us|usa|american|federal|supreme|electoral|constitutional|stf|tse|tst|cnj)\b/gi) || [];
-  entities.push(...jurisdictions.map(j => j.toLowerCase()));
+  const jurisdictions = _patterns.scopeJurisdictionIndicators.filter((pattern) => pattern.test(text)).map((p) => {
+    const match = text.match(p);
+    return match ? match[0] : "";
+  }).filter(Boolean);
+  entities.push(...jurisdictions.map((j) => j.toLowerCase()));
 
   // Deduplicate
   return [...new Set(entities)];

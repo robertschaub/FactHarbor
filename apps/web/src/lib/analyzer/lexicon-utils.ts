@@ -76,6 +76,9 @@ export function getEvidencePatterns(
   specificityPatterns: RegExp[];
   uncertaintyMarkers: RegExp[];
   stopwords: Set<string>;
+  provenanceMinSourceExcerptLength: number;
+  provenanceSyntheticContentPatterns: RegExp[];
+  provenanceInvalidUrlPatterns: RegExp[];
 } {
   const lex = lexicon ?? DEFAULT_EVIDENCE_LEXICON;
 
@@ -88,6 +91,9 @@ export function getEvidencePatterns(
     specificityPatterns: compilePatterns(lex.gate1.specificityPatterns),
     uncertaintyMarkers: compilePatterns(lex.gate4.uncertaintyMarkers),
     stopwords: new Set(lex.gate1.stopwords),
+    provenanceMinSourceExcerptLength: lex.provenanceValidation.minSourceExcerptLength,
+    provenanceSyntheticContentPatterns: compilePatterns(lex.provenanceValidation.syntheticContentPatterns),
+    provenanceInvalidUrlPatterns: compilePatterns(lex.provenanceValidation.invalidUrlPatterns),
   };
 }
 
@@ -122,8 +128,29 @@ export function getAggregationPatterns(
   coreEvaluativeTerms: string[];
   negativeFormMappings: Record<string, string>;
   counterClaimStopwords: Set<string>;
+  pseudosciencePatterns: Record<string, RegExp[]>;
+  pseudoscienceBrands: RegExp[];
+  pseudoscienceDebunkedIndicators: RegExp[];
+  scopeComparisonPatterns: RegExp[];
+  scopeEfficiencyKeywords: RegExp[];
+  scopeLegalFairnessPatterns: RegExp[];
+  scopeLegalProcessKeywords: RegExp[];
+  scopeInternationalCuePatterns: RegExp[];
+  scopeEnvHealthPatterns: RegExp[];
+  scopePredicateStarters: RegExp[];
+  scopeFillerWords: RegExp[];
+  scopeLegalTerms: RegExp[];
+  scopeJurisdictionIndicators: RegExp[];
+  recencyKeywords: RegExp[];
+  newsIndicatorKeywords: RegExp[];
+  proceduralKeywords: RegExp[];
+  externalReactionPatterns: RegExp[];
 } {
   const lex = lexicon ?? DEFAULT_AGGREGATION_LEXICON;
+  const pseudosciencePatterns: Record<string, RegExp[]> = {};
+  for (const [category, patterns] of Object.entries(lex.pseudoscience.patterns || {})) {
+    pseudosciencePatterns[category] = compilePatterns(patterns);
+  }
 
   return {
     documentedEvidenceKeywords: compilePatterns(lex.contestation.documentedEvidenceKeywords),
@@ -150,6 +177,23 @@ export function getAggregationPatterns(
     coreEvaluativeTerms: lex.counterClaimDetection.coreEvaluativeTerms,
     negativeFormMappings: lex.counterClaimDetection.negativeFormMappings,
     counterClaimStopwords: new Set(lex.counterClaimDetection.stopwords),
+    pseudosciencePatterns,
+    pseudoscienceBrands: compilePatterns(lex.pseudoscience.brands),
+    pseudoscienceDebunkedIndicators: compilePatterns(lex.pseudoscience.debunkedIndicators),
+    scopeComparisonPatterns: compilePatterns(lex.scopeHeuristics.comparisonPatterns),
+    scopeEfficiencyKeywords: compilePatterns(lex.scopeHeuristics.efficiencyKeywords),
+    scopeLegalFairnessPatterns: compilePatterns(lex.scopeHeuristics.legalFairnessPatterns),
+    scopeLegalProcessKeywords: compilePatterns(lex.scopeHeuristics.legalProcessKeywords),
+    scopeInternationalCuePatterns: compilePatterns(lex.scopeHeuristics.internationalCuePatterns),
+    scopeEnvHealthPatterns: compilePatterns(lex.scopeHeuristics.envHealthPatterns),
+    scopePredicateStarters: compilePatterns(lex.scopeCanonicalization.predicateStarters),
+    scopeFillerWords: compilePatterns(lex.scopeCanonicalization.fillerWords),
+    scopeLegalTerms: compilePatterns(lex.scopeCanonicalization.legalTerms),
+    scopeJurisdictionIndicators: compilePatterns(lex.scopeCanonicalization.jurisdictionIndicators),
+    recencyKeywords: compilePatterns(lex.recencyHeuristics.recentKeywords),
+    newsIndicatorKeywords: compilePatterns(lex.recencyHeuristics.newsIndicatorKeywords),
+    proceduralKeywords: compilePatterns(lex.proceduralTopicHeuristics.proceduralKeywords),
+    externalReactionPatterns: compilePatterns(lex.externalReactionHeuristics.externalReactionPatterns),
   };
 }
 

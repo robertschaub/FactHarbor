@@ -27,8 +27,32 @@ import {
   PhaseBucket,
 } from "./text-analysis-types";
 
+import type { EvidenceLexicon, AggregationLexicon } from "../config-schemas";
 import { deriveCandidateClaimTexts, normalizeClaimText } from "./claim-decomposition";
 import { detectHarmPotential, detectClaimContestation } from "./aggregation";
+import { getEvidencePatterns, getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
+
+// ============================================================================
+// LEXICON PATTERN CONFIGURATION
+// ============================================================================
+
+/**
+ * Module-level compiled patterns (cached, initialized with defaults)
+ * Can be updated via setTextAnalysisLexicon() for testing or config reload
+ */
+let _evidencePatterns = getEvidencePatterns();
+let _aggregationPatterns = getAggregationPatterns();
+
+/**
+ * Set lexicons for heuristic text analysis (useful for testing or config reload)
+ */
+export function setTextAnalysisLexicon(
+  aggregationLexicon?: AggregationLexicon,
+  evidenceLexicon?: EvidenceLexicon,
+): void {
+  _aggregationPatterns = getAggregationPatterns(aggregationLexicon);
+  _evidencePatterns = getEvidencePatterns(evidenceLexicon);
+}
 
 // ============================================================================
 // INTERNAL HEURISTIC FUNCTIONS (from orchestrated.ts)
@@ -40,11 +64,13 @@ import { detectHarmPotential, detectClaimContestation } from "./aggregation";
  */
 function isComparativeLikeText(text: string): boolean {
   const t = (text || "").toLowerCase().replace(/\s+/g, " ").trim();
+  if (!t) return false;
   if (!t.includes(" than ")) return false;
   const before = t.split(" than ")[0] || "";
   const window = before.split(/\s+/).slice(-6).join(" ");
   // Generic comparative cues
-  if (/\b(more|less|better|worse|higher|lower|fewer|greater|smaller)\b/.test(window)) return true;
+  if (matchesAnyPattern(window, _aggregationPatterns.comparativeKeywords)) return true;
+  if (matchesAnyPattern(t, _aggregationPatterns.comparativeKeywords)) return true;
   // Common comparative adjective/adverb form near "than"
   if (/\b[a-z]{3,}er\b/.test(window)) return true;
   return false;
@@ -57,8 +83,7 @@ function isComparativeLikeText(text: string): boolean {
 function isCompoundLikeText(text: string): boolean {
   const t = (text || "").toLowerCase();
   if (!t) return false;
-  if (/[;,]/.test(t)) return true;
-  if (/\b(and|or|but|while|which|that)\b/.test(t)) return true;
+  if (matchesAnyPattern(t, _aggregationPatterns.compoundIndicators)) return true;
   // Enumeration cue: multiple numerals or roman numerals
   if (/\b[ivxlcdm]+\b/.test(t) && t.includes(",")) return true;
   return false;
@@ -71,12 +96,12 @@ function inferClaimType(text: string): ClaimType {
   const t = (text || "").toLowerCase();
 
   // Predictive indicators
-  if (/\b(will|would|shall|going to|predict|forecast|expect)\b/.test(t)) {
+  if (matchesAnyPattern(t, _aggregationPatterns.predictiveKeywords)) {
     return "predictive";
   }
 
   // Evaluative indicators (opinion/judgment)
-  if (/\b(best|worst|should|must|better|worse|good|bad|right|wrong)\b/.test(t)) {
+  if (matchesAnyPattern(t, _aggregationPatterns.evaluativeKeywords)) {
     return "evaluative";
   }
 
@@ -127,12 +152,12 @@ function inferPhaseBucket(scopeName: string, metadata?: Record<string, unknown>)
   const text = `${scopeName} ${JSON.stringify(metadata || {})}`.toLowerCase();
 
   // Production indicators
-  if (/\b(manufactur|production|factory|assembly|upstream|mining|extraction|refin)/i.test(text)) {
+  if (matchesAnyPattern(text, _aggregationPatterns.productionPhaseKeywords)) {
     return "production";
   }
 
   // Usage indicators
-  if (/\b(usage|use|operation|driving|consumption|downstream|running|operat)/i.test(text)) {
+  if (matchesAnyPattern(text, _aggregationPatterns.usagePhaseKeywords)) {
     return "usage";
   }
 
@@ -195,7 +220,7 @@ export class HeuristicTextAnalysisService implements ITextAnalysisService {
       const excerpt = item.excerpt || "";
 
       // Check for vague phrases
-      if (/\b(some say|many believe|it is said|reportedly|allegedly)\b/i.test(statement)) {
+      if (matchesAnyPattern(statement, _evidencePatterns.vaguePhrases)) {
         issues.push("vague_attribution");
         quality = "low";
       }
@@ -309,13 +334,10 @@ export class HeuristicTextAnalysisService implements ITextAnalysisService {
         const isLowVerdict = claim.verdictPct <= 30;
 
         // Check for contradiction
-        const negativeIndicators = /\b(false|incorrect|wrong|refute|disprove|contradict|not true|unsupported)\b/;
-        const positiveIndicators = /\b(true|correct|accurate|support|confirm|verify|evidence shows)\b/;
-
-        if (isHighVerdict && negativeIndicators.test(reasoning)) {
+        if (isHighVerdict && matchesAnyPattern(reasoning, _aggregationPatterns.negativeIndicators)) {
           isInverted = true;
           suggestedCorrection = 100 - claim.verdictPct;
-        } else if (isLowVerdict && positiveIndicators.test(reasoning)) {
+        } else if (isLowVerdict && matchesAnyPattern(reasoning, _aggregationPatterns.positiveIndicators)) {
           isInverted = true;
           suggestedCorrection = 100 - claim.verdictPct;
         }

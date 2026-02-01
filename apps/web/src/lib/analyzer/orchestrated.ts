@@ -79,7 +79,7 @@ import {
   sanitizeScopeShortAnswer,
 } from "./config";
 import { calculateWeightedVerdictAverage, validateContestation, detectHarmPotential, pruneTangentialBaselessClaims, pruneOpinionOnlyFactors } from "./aggregation";
-import { detectScopes, formatDetectedScopesHint } from "./scopes";
+import { detectScopes, detectScopesHybrid, formatDetectedScopesHint } from "./scopes";
 import { getModelForTask } from "./llm";
 import {
   detectAndCorrectVerdictInversion,
@@ -108,10 +108,36 @@ import {
   type ScopeSimilarityResult,
   type ScopePair,
 } from "./text-analysis-service";
+import type { AggregationLexicon } from "../config-schemas";
+import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 
 // Configuration, helpers, and debug utilities imported from modular files above
 
 // NOTE: scope canonicalization helpers extracted to ./analyzer/scopes
+
+// ============================================================================
+// UCM-Configurable Heuristics (Shared)
+// ============================================================================
+
+/**
+ * Module-level compiled patterns (cached, initialized with defaults)
+ * Can be updated via setOrchestratedHeuristicsLexicon() for testing or config reload
+ */
+let _heuristicPatterns = getAggregationPatterns();
+
+/**
+ * Set the lexicon for orchestrated heuristics (useful for testing or config reload)
+ */
+export function setOrchestratedHeuristicsLexicon(lexicon?: AggregationLexicon): void {
+  _heuristicPatterns = getAggregationPatterns(lexicon);
+}
+
+/**
+ * Get current patterns (for testing)
+ */
+export function getOrchestratedHeuristicsPatternsConfig() {
+  return _heuristicPatterns;
+}
 
 async function refineScopesFromEvidence(
   state: ResearchState,
@@ -166,7 +192,10 @@ async function refineScopesFromEvidence(
     .join("\n");
 
   // v2.6.39: Compute seed context candidates from heuristics (soft hints, not mandatory)
-  const seedScopes = detectScopes(analysisInput) || [];
+  const pipelineCfg = state.pipelineConfig;
+  const seedScopes = pipelineCfg?.scopeDetectionMethod === "heuristic"
+    ? detectScopes(analysisInput) || []
+    : (await detectScopesHybrid(analysisInput, pipelineCfg!)) || [];
   const seedHint = seedScopes.length > 0 ? formatDetectedScopesHint(seedScopes, true) : "";
 
   const schema = z.object({
@@ -1241,33 +1270,12 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
   }
 
   // Check for recent temporal keywords
-  const recentKeywords = [
-    'recent', 'recently', 'latest', 'newest', 'current', 'now', 'today',
-    'this year', 'this month', 'last month', 'last week', 'yesterday',
-    'announced', 'released', 'published', 'unveiled', 'revealed'
-  ];
-
-  if (recentKeywords.some(keyword => lowerText.includes(keyword))) {
+  if (_heuristicPatterns.recencyKeywords.some((pattern) => pattern.test(lowerText))) {
     return true;
   }
 
   // Check for news-related keywords that typically involve recent events (GENERIC - no person names)
-  // These topics often have ongoing developments that require fresh search results
-  const newsIndicatorKeywords = [
-    // Legal/court outcomes (often have recent rulings)
-    'trial', 'verdict', 'sentence', 'sentenced', 'ruling', 'ruled', 'convicted', 'acquitted',
-    'indicted', 'charged', 'plea', 'appeal', 'court', 'judge', 'judgment',
-    // Political events
-    'election', 'elected', 'voted', 'vote', 'poll', 'campaign', 'inauguration',
-    // Announcements and decisions
-    'decision', 'announced', 'confirmed', 'approved', 'rejected', 'signed',
-    // Investigations and proceedings
-    'investigation', 'hearing', 'testimony', 'inquiry', 'probe',
-    // Breaking news indicators
-    'breaking', 'update', 'developing', 'just', 'new'
-  ];
-
-  if (newsIndicatorKeywords.some(keyword => lowerText.includes(keyword))) {
+  if (_heuristicPatterns.newsIndicatorKeywords.some((pattern) => pattern.test(lowerText))) {
     return true;
   }
 
@@ -1500,108 +1508,6 @@ interface VerdictValidationResult {
 // PSEUDOSCIENCE DETECTION
 // ============================================================================
 
-/**
- * Patterns that indicate pseudoscientific claims
- * These are mechanisms that contradict established physics/chemistry/biology
- */
-const PSEUDOSCIENCE_PATTERNS = {
-  // Water pseudoscience
-  waterMemory: [
-    /water\s*memory/i,
-    /information\s*water/i,
-    /informed\s*water/i,
-    /structured\s*water/i,
-    /hexagonal\s*water/i,
-    /water\s*structur(e|ing)/i,
-    /molecular\s*(re)?structur/i,
-    /water\s*cluster/i,
-    /energi[sz]ed\s*water/i,
-    /revitali[sz]ed\s*water/i,
-    /living\s*water/i,
-    /grander/i,
-    /emoto/i, // Masaru Emoto's debunked water crystal claims
-  ],
-
-  // Energy/vibration pseudoscience
-  energyFields: [
-    /life\s*force/i,
-    /vital\s*energy/i,
-    /bio[\s-]*energy/i,
-    /subtle\s*energy/i,
-    /energy\s*field/i,
-    /healing\s*frequencies/i,
-    /vibrational\s*(healing|medicine|therapy)/i,
-    /frequency\s*(healing|therapy)/i,
-    /chakra/i,
-    /aura\s*(reading|healing|cleansing)/i,
-  ],
-
-  // Quantum misuse
-  quantumMisuse: [
-    /quantum\s*(healing|medicine|therapy|wellness)/i,
-    /quantum\s*consciousness/i,
-    /quantum\s*energy/i,
-  ],
-
-  // Homeopathy
-  homeopathy: [
-    /homeopath/i,
-    /potenti[sz]ation/i,
-    /succussion/i,
-    /dilution.*memory/i,
-    /like\s*cures\s*like/i,
-  ],
-
-  // Detox pseudoscience
-  detoxPseudo: [
-    /detox\s*(foot|ion|cleanse)/i,
-    /toxin\s*removal.*(?:crystal|magnet|ion)/i,
-    /ionic\s*cleanse/i,
-  ],
-
-  // Other pseudoscience
-  other: [
-    /crystal\s*(healing|therapy|energy)/i,
-    /magnet\s*therapy/i,
-    /magnetic\s*healing/i,
-    /earthing\s*(therapy|healing)/i,
-    /grounding\s*(therapy|healing|mat)/i,
-    /orgone/i,
-    /scalar\s*(wave|energy)/i,
-    /tachyon/i,
-    /zero[\s-]*point\s*energy.*healing/i,
-  ],
-};
-
-/**
- * Known pseudoscience products/brands
- */
-const PSEUDOSCIENCE_BRANDS = [
-  /grander/i,
-  /pimag/i,
-  /kangen/i,
-  /enagic/i,
-  /alkaline\s*ionizer/i,
-  /structured\s*water\s*unit/i,
-];
-
-/**
- * Scientific consensus statements that indicate a claim is debunked
- */
-const DEBUNKED_INDICATORS = [
-  /no\s*(scientific\s*)?(evidence|proof|basis)/i,
-  /not\s*(scientifically\s*)?(proven|supported|verified)/i,
-  /lacks?\s*(scientific\s*)?(evidence|proof|basis|foundation)/i,
-  /contradict.*(?:physics|chemistry|biology|science)/i,
-  /violates?\s*(?:laws?\s*of\s*)?(?:physics|thermodynamics)/i,
-  /pseudoscien/i,
-  /debunked/i,
-  /disproven/i,
-  /no\s*plausible\s*mechanism/i,
-  /implausible/i,
-  /scientifically\s*impossible/i,
-];
-
 interface PseudoscienceAnalysis {
   isPseudoscience: boolean;
   confidence: number; // 0-1
@@ -1630,7 +1536,7 @@ function detectPseudoscience(
   const combinedText = `${text} ${claimText || ""}`.toLowerCase();
 
   // Check each pseudoscience category
-  for (const [category, patterns] of Object.entries(PSEUDOSCIENCE_PATTERNS)) {
+  for (const [category, patterns] of Object.entries(_heuristicPatterns.pseudosciencePatterns)) {
     for (const pattern of patterns) {
       if (pattern.test(combinedText)) {
         if (!result.categories.includes(category)) {
@@ -1642,7 +1548,7 @@ function detectPseudoscience(
   }
 
   // Check for known pseudoscience brands
-  for (const brand of PSEUDOSCIENCE_BRANDS) {
+  for (const brand of _heuristicPatterns.pseudoscienceBrands) {
     if (brand.test(combinedText)) {
       result.matchedPatterns.push(brand.toString());
       if (!result.categories.includes("knownBrand")) {
@@ -1652,7 +1558,7 @@ function detectPseudoscience(
   }
 
   // Check for debunked indicators in sources
-  for (const indicator of DEBUNKED_INDICATORS) {
+  for (const indicator of _heuristicPatterns.pseudoscienceDebunkedIndicators) {
     if (indicator.test(combinedText)) {
       result.debunkIndicatorsFound.push(indicator.toString());
     }
@@ -2682,25 +2588,8 @@ function detectProceduralTopic(understanding: ClaimUnderstanding, originalText: 
   }
 
   // Check 4: Text contains procedural or governance keywords
-  const proceduralKeywords = [
-    /\b(phase|stage|episode|cycle|version|iteration|rollout|release)\b/i,
-    /\b(process|procedure|protocol|standard|policy|framework)\b/i,
-    /\b(review|audit|assessment|evaluation|investigation|probe)\b/i,
-    /\b(committee|board|panel|commission|authority|agency)\b/i,
-    /\b(conflict|impartial|independent|oversight|compliance)\b/i,
-    /\b(trial|court|judge|ruling|verdict|sentence|conviction|acquittal)\b/i,
-    /\b(lawsuit|litigation|prosecution|defendant|plaintiff)\b/i,
-    /\b(due process|fair trial|impartial|jurisdiction)\b/i,
-    /\b(electoral|election|ballot|vote|ineligibility)\b/i,
-    /\b(investigation|indictment|charges|allegations)\b/i,
-    /\b(supreme court|federal court|tribunal|justice)\b/i,
-    /\b(constitutional|legislation|statute|law|legal)\b/i,
-    /\b(regulatory|agency|commission|board|authority)\b/i,
-    /\b(proceeding|hearing|testimony|evidence|witness)\b/i,
-  ];
-
   const textToCheck = `${understanding.articleThesis} ${originalText}`.toLowerCase();
-  const keywordMatches = proceduralKeywords.filter(pattern => pattern.test(textToCheck));
+  const keywordMatches = _heuristicPatterns.proceduralKeywords.filter((pattern) => pattern.test(textToCheck));
 
   // If 3+ procedural keywords found, it's a procedural topic
   if (keywordMatches.length >= 3) {
@@ -2782,28 +2671,7 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
 function isExternalReactionClaim(claimText: string): boolean {
   const text = claimText.toLowerCase();
 
-  // Generic patterns for external reactions to any subject
-  const externalReactionPatterns = [
-    // Explicit reaction/response framing (most reliable signal)
-    /\b(in\s+response\s+to|as\s+a\s+response|retaliation\s+for|retaliation\s+against)\b/,
-    /\b(response|reaction|retaliation)\s+(to|against|for)\b/,
-    /\b(condemned|denounced|criticized|protested)\s+(the|this|that|against)\b/,
-
-    // Third-party measures/actions (sanctions, restrictions, etc.)
-    /\b(sanction|sanctions|embargo|embargoes)\b.*\b(imposed|impose|against|in\s+response)\b/,
-    /\b(tariff|tariffs|duties|duty|restriction|restrictions)\b.*\b(imposed|impose|imposition|in\s+response)\b/,
-    /\b(ban|bans|banned|boycott|boycotted)\b.*\b(imposed|in\s+response|as\s+a\s+result)\b/,
-
-    // Proportionality of external response (evaluating the reaction, not the subject)
-    /\b(proportionate|disproportionate|justified|unjustified)\s+(response|reaction|measure|sanction|retaliation)\b/,
-    /\b(response|reaction|measure|sanction)\b.*\b(proportionate|disproportionate|justified|appropriate)\b/,
-
-    // Diplomatic/international reactions
-    /\b(diplomatic|international)\s+(response|reaction|pressure|intervention|condemnation)\b/,
-    /\b(foreign|external)\s+(government|nation|country)\b.*\b(response|reaction|condemned|imposed)\b/,
-  ];
-
-  return externalReactionPatterns.some((p) => p.test(text));
+  return _heuristicPatterns.externalReactionPatterns.some((pattern) => pattern.test(text));
 }
 
 function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; centrality?: any; isCentral?: any; text?: any }>(
@@ -3449,7 +3317,11 @@ async function understandClaim(
   }
 
   // v2.8: Pre-detect scopes using heuristics (shared implementation from scopes.ts)
-  const preDetectedScopes = detectScopes(analysisInput);
+  const preDetectedScopes = pipelineConfig?.scopeDetectionMethod === "heuristic"
+    ? detectScopes(analysisInput)
+    : pipelineConfig
+      ? await detectScopesHybrid(analysisInput, pipelineConfig)
+      : detectScopes(analysisInput);
   const scopeHint = formatDetectedScopesHint(preDetectedScopes, true);
   debugLog("understandClaim: preDetectedScopes (heuristic)", {
     count: preDetectedScopes?.length ?? 0,

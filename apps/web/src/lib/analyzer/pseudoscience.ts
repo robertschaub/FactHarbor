@@ -7,112 +7,32 @@
  */
 
 import type { PseudoscienceAnalysis } from "./types";
+import type { AggregationLexicon } from "../config-schemas";
+import { getAggregationPatterns } from "./lexicon-utils";
 
 // ============================================================================
-// PSEUDOSCIENCE PATTERNS
+// PSEUDOSCIENCE PATTERNS (UCM-Configurable)
 // ============================================================================
 
 /**
- * Patterns that indicate pseudoscientific claims
- * These are mechanisms that contradict established physics/chemistry/biology
+ * Module-level compiled patterns (cached, initialized with defaults)
+ * Can be updated via setPseudoscienceLexicon() for testing or config reload
  */
-export const PSEUDOSCIENCE_PATTERNS: Record<string, RegExp[]> = {
-  // Water pseudoscience
-  waterMemory: [
-    /water\s*memory/i,
-    /information\s*water/i,
-    /informed\s*water/i,
-    /structured\s*water/i,
-    /hexagonal\s*water/i,
-    /water\s*structur(e|ing)/i,
-    /molecular\s*(re)?structur/i,
-    /water\s*cluster/i,
-    /energi[sz]ed\s*water/i,
-    /revitali[sz]ed\s*water/i,
-    /living\s*water/i,
-    /grander/i,
-    /emoto/i,
-  ],
-
-  // Energy/vibration pseudoscience
-  energyFields: [
-    /life\s*force/i,
-    /vital\s*energy/i,
-    /bio[\s-]*energy/i,
-    /subtle\s*energy/i,
-    /energy\s*field/i,
-    /healing\s*frequencies/i,
-    /vibrational\s*(healing|medicine|therapy)/i,
-    /frequency\s*(healing|therapy)/i,
-    /chakra/i,
-    /aura\s*(reading|healing|cleansing)/i,
-  ],
-
-  // Quantum misuse
-  quantumMisuse: [
-    /quantum\s*(healing|medicine|therapy|wellness)/i,
-    /quantum\s*consciousness/i,
-    /quantum\s*energy/i,
-  ],
-
-  // Homeopathy
-  homeopathy: [
-    /homeopath/i,
-    /potenti[sz]ation/i,
-    /succussion/i,
-    /dilution.*memory/i,
-    /like\s*cures\s*like/i,
-  ],
-
-  // Detox pseudoscience
-  detoxPseudo: [
-    /detox\s*(foot|ion|cleanse)/i,
-    /toxin\s*removal.*(?:crystal|magnet|ion)/i,
-    /ionic\s*cleanse/i,
-  ],
-
-  // Other pseudoscience
-  other: [
-    /crystal\s*(healing|therapy|energy)/i,
-    /magnet\s*therapy/i,
-    /magnetic\s*healing/i,
-    /earthing\s*(therapy|healing)/i,
-    /grounding\s*(therapy|healing|mat)/i,
-    /orgone/i,
-    /scalar\s*(wave|energy)/i,
-    /tachyon/i,
-    /zero[\s-]*point\s*energy.*healing/i,
-  ],
-};
+let _patterns = getAggregationPatterns();
 
 /**
- * Known pseudoscience products/brands
+ * Set the lexicon for pseudoscience detection (useful for testing or config reload)
  */
-export const PSEUDOSCIENCE_BRANDS = [
-  /grander/i,
-  /pimag/i,
-  /kangen/i,
-  /enagic/i,
-  /alkaline\s*ionizer/i,
-  /structured\s*water\s*unit/i,
-];
+export function setPseudoscienceLexicon(lexicon?: AggregationLexicon): void {
+  _patterns = getAggregationPatterns(lexicon);
+}
 
 /**
- * Scientific consensus statements that indicate a claim is debunked
+ * Get current patterns (for testing)
  */
-export const DEBUNKED_INDICATORS = [
-  /no\s*(scientific\s*)?(evidence|proof|basis)/i,
-  /not\s*(scientifically\s*)?(proven|supported|verified)/i,
-  /lacks?\s*(scientific\s*)?(evidence|proof|basis|foundation)/i,
-  /contradict.*(?:physics|chemistry|biology|science)/i,
-  /violates?\s*(?:laws?\s*of\s*)?(?:physics|thermodynamics)/i,
-  /pseudoscien/i,
-  /debunked/i,
-  /disproven/i,
-  /no\s*plausible\s*mechanism/i,
-  /implausible/i,
-  /scientifically\s*impossible/i,
-];
+export function getPseudosciencePatternsConfig() {
+  return _patterns;
+}
 
 function normalizePercentage(value: number): number {
   if (!Number.isFinite(value)) return 50;
@@ -160,7 +80,7 @@ export function detectPseudoscience(
   const combinedText = `${text} ${claimText || ""}`.toLowerCase();
 
   // Check each pseudoscience category
-  for (const [category, patterns] of Object.entries(PSEUDOSCIENCE_PATTERNS)) {
+  for (const [category, patterns] of Object.entries(_patterns.pseudosciencePatterns)) {
     for (const pattern of patterns) {
       if (pattern.test(combinedText)) {
         if (!result.categories.includes(category)) {
@@ -172,7 +92,7 @@ export function detectPseudoscience(
   }
 
   // Check for known pseudoscience brands
-  for (const brand of PSEUDOSCIENCE_BRANDS) {
+  for (const brand of _patterns.pseudoscienceBrands) {
     if (brand.test(combinedText)) {
       result.matchedPatterns.push(brand.toString());
       if (!result.categories.includes("knownBrand")) {
@@ -182,7 +102,7 @@ export function detectPseudoscience(
   }
 
   // Check for debunked indicators in sources
-  for (const indicator of DEBUNKED_INDICATORS) {
+  for (const indicator of _patterns.pseudoscienceDebunkedIndicators) {
     if (indicator.test(combinedText)) {
       result.debunkIndicatorsFound.push(indicator.toString());
     }

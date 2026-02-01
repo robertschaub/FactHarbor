@@ -10,42 +10,32 @@
  */
 
 import type { ExtractedFact, FetchedSource } from "./types";
+import type { EvidenceLexicon } from "../config-schemas";
+import { getEvidencePatterns } from "./lexicon-utils";
 
 // ============================================================================
-// CONFIGURATION
+// CONFIGURATION (UCM-Configurable)
 // ============================================================================
 
 /**
- * Minimum length for a valid sourceExcerpt (must be substantive, not empty/trivial)
+ * Module-level compiled patterns (cached, initialized with defaults)
+ * Can be updated via setProvenanceLexicon() for testing or config reload
  */
-const MIN_SOURCE_EXCERPT_LENGTH = 20;
+let _patterns = getEvidencePatterns();
 
 /**
- * Patterns that indicate synthetic/LLM-generated content (not real source excerpts)
- * Note: "According to X" where X is a specific source is valid, but "According to the analysis" is synthetic
+ * Set the lexicon for provenance validation (useful for testing or config reload)
  */
-const SYNTHETIC_CONTENT_PATTERNS = [
-  /^Based on (the|my|our) (information|analysis|available data)/i,
-  /^According to (the|my|our) (analysis|findings)/i,
-  /^The source (indicates|shows|suggests)/i,
-  /^This suggests that/i,
-  /^It appears that/i,
-  /^I (found|discovered|learned) that/i,
-  /^Here('s| is) what (I|we) found/i,
-  /^The (information|data) shows/i,
-];
+export function setProvenanceLexicon(lexicon?: EvidenceLexicon): void {
+  _patterns = getEvidencePatterns(lexicon);
+}
 
 /**
- * URL patterns that are NOT valid sources (internal/synthetic)
+ * Get current patterns (for testing)
  */
-const INVALID_URL_PATTERNS = [
-  /^(about|chrome|data|javascript):/i,
-  /^#/,
-  /^$/,
-  /localhost/i,
-  /127\.0\.0\.1/i,
-  /\.internal$/i,
-];
+export function getProvenancePatternsConfig() {
+  return _patterns;
+}
 
 // ============================================================================
 // PROVENANCE VALIDATION
@@ -110,7 +100,7 @@ export function validateFactProvenance(fact: ExtractedFact): ProvenanceValidatio
   }
 
   // 4. Check sourceUrl is not a synthetic/internal URL (after URL parsing)
-  for (const pattern of INVALID_URL_PATTERNS) {
+  for (const pattern of _patterns.provenanceInvalidUrlPatterns) {
     if (pattern.test(url)) {
       return {
         isValid: false,
@@ -132,16 +122,16 @@ export function validateFactProvenance(fact: ExtractedFact): ProvenanceValidatio
   const excerpt = fact.sourceExcerpt.trim();
 
   // 6. Check sourceExcerpt is substantive
-  if (excerpt.length < MIN_SOURCE_EXCERPT_LENGTH) {
+  if (excerpt.length < _patterns.provenanceMinSourceExcerptLength) {
     return {
       isValid: false,
-      failureReason: `sourceExcerpt too short (${excerpt.length} chars, need >=${MIN_SOURCE_EXCERPT_LENGTH})`,
+      failureReason: `sourceExcerpt too short (${excerpt.length} chars, need >=${_patterns.provenanceMinSourceExcerptLength})`,
       severity: "error",
     };
   }
 
   // 7. Check sourceExcerpt is not synthetic LLM text
-  for (const pattern of SYNTHETIC_CONTENT_PATTERNS) {
+  for (const pattern of _patterns.provenanceSyntheticContentPatterns) {
     if (pattern.test(excerpt)) {
       return {
         isValid: false,
@@ -243,7 +233,7 @@ export function validateSourceProvenance(source: FetchedSource): SourceProvenanc
     }
 
     // Check if URL looks synthetic
-    for (const pattern of INVALID_URL_PATTERNS) {
+    for (const pattern of _patterns.provenanceInvalidUrlPatterns) {
       if (pattern.test(source.url)) {
         return {
           hasProvenance: false,
@@ -255,7 +245,7 @@ export function validateSourceProvenance(source: FetchedSource): SourceProvenanc
 
     // Check if fullText is just LLM synthesis (not actual source content)
     if (source.fullText && source.fullText.length > 0) {
-      for (const pattern of SYNTHETIC_CONTENT_PATTERNS) {
+      for (const pattern of _patterns.provenanceSyntheticContentPatterns) {
         if (pattern.test(source.fullText)) {
           return {
             hasProvenance: false,

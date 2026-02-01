@@ -154,7 +154,14 @@ export function filterByProbativeValue(
   evidence: EvidenceItem[],
   config: Partial<ProbativeFilterConfig> = {}
 ): { kept: EvidenceItem[]; filtered: EvidenceItem[]; stats: FilterStats } {
-  const cfg: ProbativeFilterConfig = { ...DEFAULT_FILTER_CONFIG, ...config };
+  const cfg: ProbativeFilterConfig = {
+    ...DEFAULT_FILTER_CONFIG,
+    ...config,
+    categoryRules: {
+      ...DEFAULT_FILTER_CONFIG.categoryRules,
+      ...(config.categoryRules ?? {}),
+    },
+  };
 
   // Compile lexicon patterns (cached)
   const patterns = getEvidencePatterns(cfg.lexicon);
