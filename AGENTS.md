@@ -29,6 +29,8 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 - **NEVER** use "context" when referring to source metadata - always say "evidenceScope"
 - Variables: Use `context`/`analysisContext` for top-level frames, `evidenceScope` for evidence metadata
 - UI: Display "Context" cards, never "Scope" cards (unless specifically about evidence scope)
+- **Assignment fields**: Use `factContextAssignments`/`claimContextAssignments` (NOT `factScopeAssignments`)
+- See [Context vs Scope documentation](Docs/ARCHITECTURE/Context_vs_Scope.md) for detailed explanation
 
 ### EvidenceItem (formerly ExtractedFact)
 - **EvidenceItem** = Extracted evidence from a source (NOT a verified fact)
