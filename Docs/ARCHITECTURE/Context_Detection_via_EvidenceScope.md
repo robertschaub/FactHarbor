@@ -371,6 +371,7 @@ Key benefits:
 
 ## Related Documentation
 
+- [When_Are_AnalysisContexts_Defined.md](When_Are_AnalysisContexts_Defined.md) - Timeline and phases of context detection
 - [Calculations.md](Calculations.md) - Verdict calculation methodology
 - [Pipeline_TriplePath_Architecture.md](Pipeline_TriplePath_Architecture.md) - Pipeline architecture
 - [TERMINOLOGY.md](../REFERENCE/TERMINOLOGY.md) - AnalysisContext vs EvidenceScope definitions

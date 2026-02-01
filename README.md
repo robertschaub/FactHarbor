@@ -42,6 +42,7 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 - **[KeyFactors Design](Docs/ARCHITECTURE/KeyFactors_Design.md)** - KeyFactors implementation details
 - **[Source Reliability](Docs/ARCHITECTURE/Source_Reliability.md)** - Source scoring system
 - **[Pipeline Architecture](Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md)** - Triple-path pipeline design
+- **[When Are AnalysisContexts Defined](Docs/ARCHITECTURE/When_Are_AnalysisContexts_Defined.md)** - Timeline and phases of context detection
 
 ### Development
 - **[Coding Guidelines](Docs/DEVELOPMENT/Coding_Guidelines.md)** - Code quality standards and principles

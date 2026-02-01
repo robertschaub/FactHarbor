@@ -768,6 +768,7 @@ See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
 - **Prompt Architecture**: `Docs/ARCHITECTURE/Prompt_Architecture.md` - Modular prompt composition system
 - **Promptfoo Testing**: `Docs/USER_GUIDES/Promptfoo_Testing.md` - Prompt testing guide
 - **Pipeline Architecture**: `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md` - Triple-path pipeline design
+- **When Are AnalysisContexts Defined**: `Docs/ARCHITECTURE/When_Are_AnalysisContexts_Defined.md` - Timeline of context detection
 - **Getting Started**: `Docs/USER_GUIDES/Getting_Started.md` - Setup and installation
 - **LLM Configuration**: `Docs/USER_GUIDES/LLM_Configuration.md` - Provider configuration
 

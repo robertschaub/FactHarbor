@@ -594,6 +594,7 @@ A: Use "AnalysisContext" for precision or "context" for brevity. **NEVER use "fr
 
 ## Related Documentation
 
+- [When_Are_AnalysisContexts_Defined.md](../ARCHITECTURE/When_Are_AnalysisContexts_Defined.md) - Timeline and phases of context detection
 - [Scope Definition Guidelines](../DEVELOPMENT/Scope_Definition_Guidelines.md) - EvidenceScope vs AnalysisContext decision guide
 - [AGENTS.md](../../AGENTS.md) - High-level rules for scope detection
 - [types.ts](../../apps/web/src/lib/analyzer/types.ts) - TypeScript interface definitions
