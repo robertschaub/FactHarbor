@@ -39,6 +39,8 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 ### Architecture
 - **[Overview](Docs/ARCHITECTURE/Overview.md)** - System architecture, data models, component interactions
 - **[Calculations](Docs/ARCHITECTURE/Calculations.md)** - Verdict calculation methodology
+- **[AnalysisContext Creation](Docs/ARCHITECTURE/AnalysisContext_Creation_Lifecycle.md)** - When and how contexts are created
+- **[Context vs Scope](Docs/ARCHITECTURE/Context_vs_Scope.md)** - Critical terminology distinction
 - **[KeyFactors Design](Docs/ARCHITECTURE/KeyFactors_Design.md)** - KeyFactors implementation details
 - **[Source Reliability](Docs/ARCHITECTURE/Source_Reliability.md)** - Source scoring system
 - **[Pipeline Architecture](Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md)** - Triple-path pipeline design
