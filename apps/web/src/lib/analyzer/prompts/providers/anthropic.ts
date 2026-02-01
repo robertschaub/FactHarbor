@@ -221,7 +221,7 @@ Every AnalysisContext MUST be:
 </conservative_rule>
 
 ## OUTPUT REQUIREMENTS
-- factScopeAssignments must cover ≥70% of facts
+- factContextAssignments must cover ≥70% of facts
 - Each AnalysisContext must have ≥1 fact assigned
 - Use "" for unknown metadata fields (not null)
 </claude_optimization>`;

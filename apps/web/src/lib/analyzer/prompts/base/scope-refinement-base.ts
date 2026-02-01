@@ -111,12 +111,12 @@ Only merge contexts that are TRUE DUPLICATES. Preserve distinct analytical frame
 
 ## EVIDENCE AND CLAIM ASSIGNMENTS
 
-**factScopeAssignments**: Map EACH Evidence ID to exactly ONE contextId
+**factContextAssignments**: Map EACH Evidence ID to exactly ONE contextId
 - Use contextId from your analysisContexts output
 - Assign based on which context the Evidence belongs to
 - Every Evidence item listed must be assigned
 
-**claimScopeAssignments** (optional): Map claimIds to contextId when clear
+**claimContextAssignments** (optional): Map claimIds to contextId when clear
 
 ## OUTPUT FORMAT
 
@@ -132,8 +132,8 @@ Return JSON with:
   - outcome: Result/conclusion
   - **assessedStatement** (v2.6.39): What is being assessed in this context
   - metadata: Domain-specific details (institution, methodology, boundaries, geographic, etc.)
-- factScopeAssignments: Array of {factId, contextId}
-- claimScopeAssignments: Array of {claimId, contextId} (optional)
+- factContextAssignments: Array of {factId, contextId}
+- claimContextAssignments: Array of {claimId, contextId} (optional)
 
 **CRITICAL for assessedStatement**:
 - The assessedStatement MUST describe what is being evaluated in THIS specific context

@@ -172,10 +172,10 @@ async function refineScopesFromEvidence(
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),
     analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA),
-    factScopeAssignments: z
+    factContextAssignments: z
       .array(z.object({ factId: z.string(), contextId: z.string() }))
       .default([]),
-    claimScopeAssignments: z
+    claimContextAssignments: z
       .array(z.object({ claimId: z.string(), contextId: z.string() }))
       .default([]),
   });
@@ -239,8 +239,8 @@ ${candidateContextsSection}
 Return:
 - requiresSeparateAnalysis
 - analysisContexts (1..N)
-- factScopeAssignments: map each factId (evidence item id) listed above to exactly one contextId (use contextId from your analysisContexts). NOTE: this assigns evidence items to AnalysisContexts (not to per-item EvidenceScope).
-- claimScopeAssignments: (optional) map any claimIds that clearly belong to a specific contextId
+- factContextAssignments: map each factId (evidence item id) listed above to exactly one contextId (use contextId from your analysisContexts). NOTE: this assigns evidence items to AnalysisContexts (not to per-item EvidenceScope).
+- claimContextAssignments: (optional) map any claimIds that clearly belong to a specific contextId
 `;
 
   // v2.6.39: Log when seed hints are passed to refinement
@@ -282,7 +282,7 @@ Return:
   }
 
   // Validate coverage: we need assignments for most facts, and at least one fact per scope.
-  const assignmentCount = (next.factScopeAssignments || []).length;
+  const assignmentCount = (next.factContextAssignments || []).length;
   if (assignmentCount < Math.floor(promptFacts.length * 0.7)) {
     debugLog("refineScopesFromEvidence: rejected (insufficient fact assignments)", {
       factsInPrompt: promptFacts.length,
@@ -317,7 +317,7 @@ Return:
   }
 
   // Optional: merge near-duplicate EvidenceScopes deterministically and remap assignments.
-  // NOTE: Do this BEFORE applying factScopeAssignments/claimScopeAssignments so both are mapped consistently.
+  // NOTE: Do this BEFORE applying factContextAssignments/claimContextAssignments so both are mapped consistently.
   let dedupMerged: Map<string, string> | null = null;
   if (process.env.FH_ENABLE_SCOPE_DEDUP !== "false") {
     // v2.6.38: Only drop contexts that are highly overlapping (>=85% similarity)
@@ -371,7 +371,7 @@ Return:
   };
 
   const factAssignments = new Map<string, string>();
-  for (const a of next.factScopeAssignments || []) {
+  for (const a of next.factContextAssignments || []) {
     const pid = finalizeContextId(a.contextId || "");
     if (!a.factId || !pid) continue;
     factAssignments.set(a.factId, pid);
@@ -407,7 +407,7 @@ Return:
   // scope ID that does not exist in analysisContexts). This can happen because:
   // - understandClaim/extractFacts may assign IDs from the initial scope list
   // - refineScopesFromEvidence may overwrite analysisContexts with a refined list that omits
-  //   some previously-referenced scope IDs (claimScopeAssignments are optional)
+  //   some previously-referenced scope IDs (claimContextAssignments are optional)
   //
   // Strategy (generic):
   // - If an orphaned scopeId exists in the pre-refinement scope list, restore that scope.
@@ -567,7 +567,7 @@ Return:
   }
 
   const claimAssignments = new Map<string, string>();
-  for (const a of next.claimScopeAssignments || []) {
+  for (const a of next.claimContextAssignments || []) {
     const pid = finalizeContextId(a.contextId || "");
     if (!a.claimId || !pid) continue;
     claimAssignments.set(a.claimId, pid);

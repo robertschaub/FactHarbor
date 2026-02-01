@@ -233,7 +233,7 @@ export function getOpenAIScopeRefinementVariant(): string {
       }
     }
   ],
-  "factScopeAssignments": [
+  "factContextAssignments": [
     {"factId": "F1", "contextId": "CTX_WTW"},
     {"factId": "F2", "contextId": "CTX_TTW"}
   ]
@@ -251,7 +251,7 @@ If ANY answer is "no" → Don't create that context.
 ### REQUIRED FIELDS
 - requiresSeparateAnalysis: boolean
 - analysisContexts: array with id, name, shortName, subject, temporal, status, outcome, metadata
-- factScopeAssignments: array of {factId, contextId} covering ≥70% of facts
+- factContextAssignments: array of {factId, contextId} covering ≥70% of facts
 - Each context must have ≥1 fact assigned
 
 ### OUTPUT FORMAT

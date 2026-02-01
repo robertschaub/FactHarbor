@@ -268,7 +268,7 @@ Ensure:
 [ ] Each context has all required fields
 [ ] shortName ≤12 characters
 [ ] metadata uses "" for unknown fields (not null)
-[ ] factScopeAssignments covers ≥70% of facts
+[ ] factContextAssignments covers ≥70% of facts
 [ ] Each context has ≥1 fact assigned
 [ ] JSON is valid`;
 }

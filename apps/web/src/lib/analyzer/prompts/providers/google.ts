@@ -196,7 +196,7 @@ analysisContexts array - each item must have:
 - [ ] outcome: string (≤100 chars)
 - [ ] metadata: object (can be {})
 
-factScopeAssignments array:
+factContextAssignments array:
 - [ ] Each item: {factId: string, contextId: string}
 - [ ] Coverage: ≥70% of facts assigned
 - [ ] Each context: ≥1 fact assigned
