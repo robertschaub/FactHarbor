@@ -73,6 +73,15 @@ const DEFAULT_CONFIG_FILENAMES: Record<Exclude<ConfigType, "prompt">, string> = 
   "aggregation-lexicon": "aggregation-lexicon.default.json",
 };
 
+/**
+ * Check if config file writes are allowed.
+ * Only permitted in development or with explicit env flag.
+ */
+export function isFileWriteAllowed(): boolean {
+  return process.env.NODE_ENV === "development" ||
+    process.env.FH_ALLOW_CONFIG_FILE_WRITE === "true";
+}
+
 function resolveDefaultConfigPath(configType: Exclude<ConfigType, "prompt">): string {
   const filename = DEFAULT_CONFIG_FILENAMES[configType];
   const envDir = process.env.FH_CONFIG_DEFAULTS_DIR;
@@ -273,6 +282,16 @@ export interface ConfigWithActivation extends ConfigBlob {
   isActive: boolean;
   activatedUtc: string | null;
   activatedBy: string | null;
+}
+
+export interface SaveToFileResult {
+  success: boolean;
+  filePath: string;
+  backupPath?: string;
+  checksum: string;
+  schemaVersion: string;
+  dryRun?: boolean;
+  warnings?: string[];
 }
 
 // ============================================================================
@@ -1066,6 +1085,90 @@ export function loadDefaultConfigFromFile(
     console.error(`[Config] Failed to load ${filename}:`, err);
     return null;
   }
+}
+
+/**
+ * Save config to default JSON file with atomic write and backup.
+ *
+ * Safety features:
+ * - Environment gating (dev only or explicit flag)
+ * - Atomic write (.tmp then rename)
+ * - Backup creation (.bak)
+ * - Schema validation
+ * - dryRun mode for preview
+ */
+export async function saveConfigToFile(
+  configType: Exclude<ConfigType, "prompt">,
+  config: unknown,
+  dryRun: boolean = false,
+): Promise<SaveToFileResult> {
+  if (!isFileWriteAllowed()) {
+    throw new Error(
+      "Config file writes not allowed. Set NODE_ENV=development or FH_ALLOW_CONFIG_FILE_WRITE=true",
+    );
+  }
+
+  const filePath = resolveDefaultConfigPath(configType);
+  const tmpPath = `${filePath}.tmp`;
+  const bakPath = `${filePath}.bak`;
+
+  const schemaVersion = SCHEMA_VERSIONS[configType];
+  const configObject = (config ?? {}) as Record<string, unknown>;
+  const { schemaVersion: _ignored, ...configBody } = configObject;
+  const configWithVersion = {
+    schemaVersion,
+    ...configBody,
+  };
+
+  const validation = await validateConfigContent(
+    configType,
+    JSON.stringify(configBody),
+  );
+  if (!validation.valid) {
+    throw new Error(`Invalid config: ${validation.errors.join(", ")}`);
+  }
+
+  const content = JSON.stringify(configWithVersion, null, 2) + "\n";
+  const checksum = computeContentHash(content);
+
+  if (dryRun) {
+    return {
+      success: true,
+      filePath,
+      checksum,
+      schemaVersion,
+      dryRun: true,
+      warnings: validation.warnings,
+    };
+  }
+
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
+  let backupCreated = false;
+  if (fs.existsSync(filePath)) {
+    fs.copyFileSync(filePath, bakPath);
+    backupCreated = true;
+  }
+
+  try {
+    fs.writeFileSync(tmpPath, content, "utf-8");
+    fs.renameSync(tmpPath, filePath);
+  } catch (err) {
+    if (fs.existsSync(tmpPath)) {
+      fs.unlinkSync(tmpPath);
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to write config file: ${message}`);
+  }
+
+  return {
+    success: true,
+    filePath,
+    backupPath: backupCreated ? bakPath : undefined,
+    checksum,
+    schemaVersion,
+    warnings: validation.warnings,
+  };
 }
 
 /**

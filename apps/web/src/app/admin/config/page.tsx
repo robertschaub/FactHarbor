@@ -1878,6 +1878,9 @@ export default function ConfigAdminPage() {
   const [versionLabel, setVersionLabel] = useState("");
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [saving, setSaving] = useState(false);
+  const [fileWriteAllowed, setFileWriteAllowed] = useState(false);
+  const [fileWriteChecking, setFileWriteChecking] = useState(false);
+  const [savingToFile, setSavingToFile] = useState(false);
 
   // Prompt edit state
   const [promptContent, setPromptContent] = useState<string>("");
@@ -2069,6 +2072,45 @@ export default function ConfigAdminPage() {
         }
       });
   }, [selectedType, getHeaders, urlProfile]);
+
+  useEffect(() => {
+    if (selectedType === "prompt") {
+      setFileWriteAllowed(false);
+      setFileWriteChecking(false);
+      return;
+    }
+
+    let cancelled = false;
+    setFileWriteChecking(true);
+    fetch(`/api/admin/config/${selectedType}/${profileKey}/save-to-file`, { headers: getHeaders() })
+      .then(async (res) => {
+        let data: any = {};
+        try {
+          data = await res.json();
+        } catch {
+          data = {};
+        }
+        return { ok: res.ok, data };
+      })
+      .then(({ ok, data }) => {
+        if (cancelled) return;
+        setFileWriteAllowed(Boolean(ok && data?.fileWriteAllowed));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFileWriteAllowed(false);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setFileWriteChecking(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedType, profileKey, getHeaders]);
 
   // Update profile when type changes (but not on initial load with URL params)
   useEffect(() => {
@@ -2364,6 +2406,48 @@ export default function ConfigAdminPage() {
       setSaving(false);
     }
   };
+
+  const handleSaveToFile = useCallback(async (dryRun: boolean) => {
+    if (selectedType === "prompt") return;
+
+    setSavingToFile(true);
+    try {
+      const res = await fetch(`/api/admin/config/${selectedType}/${profileKey}/save-to-file`, {
+        method: "POST",
+        headers: { ...getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Save to file failed");
+      }
+
+      if (dryRun) {
+        toast.success("Preview ready");
+        alert(
+          `Preview:\n` +
+          `File: ${data.filePath}\n` +
+          `Checksum: ${data.checksum}\n` +
+          `Schema: ${data.schemaVersion}`,
+        );
+      } else {
+        toast.success("Saved to file");
+      }
+
+      if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+        toast((t) => (
+          <span>
+            Warnings: {data.warnings.join("; ")}
+          </span>
+        ));
+      }
+    } catch (err) {
+      toast.error(`Save-to-file failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSavingToFile(false);
+    }
+  }, [selectedType, profileKey, getHeaders]);
 
   // Load data when tab/type/profile changes
   useEffect(() => {
@@ -3792,6 +3876,39 @@ export default function ConfigAdminPage() {
               Reset to Default
             </button>
           </div>
+
+          {fileWriteAllowed && (
+            <div style={{
+              marginBottom: 20,
+              padding: "12px 16px",
+              background: "#fef3c7",
+              border: "1px solid #fcd34d",
+              borderRadius: 8,
+            }}>
+              <div style={{ fontSize: 12, color: "#78350f", marginBottom: 8 }}>
+                💾 Save active config back to file (development only)
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <button
+                  className={`${styles.button} ${styles.buttonSecondary}`}
+                  onClick={() => handleSaveToFile(true)}
+                  disabled={savingToFile || fileWriteChecking}
+                >
+                  Preview Save to File
+                </button>
+                <button
+                  className={`${styles.button} ${styles.buttonPrimary}`}
+                  onClick={() => handleSaveToFile(false)}
+                  disabled={savingToFile || fileWriteChecking}
+                >
+                  💾 Save to File
+                </button>
+                <span style={{ color: "#92400e", fontSize: 12 }}>
+                  ⚠️ Creates a .bak backup before overwriting
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Validation results */}
           {validation && (
