@@ -10,13 +10,13 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
 
 ---
 
-## ✅ Recently Completed (2026-01-30 to 2026-02-01)
+## ✅ Recently Completed (2026-01-30 to 2026-02-02)
 
 ### 1. Unified Configuration Management (UCM)
-**Status:** ✅ COMPLETE (v2.9.0)
+**Status:** ✅ COMPLETE (v2.9.0 + 2026-02-02 integration)
 - **Document:** [Unified_Configuration_Management_Plan.md](Unified_Configuration_Management_Plan.md)
-- **Delivered:** 5 config types, hot-reload, admin UI, 158 tests, config snapshots
-- **Impact:** All configuration now manageable via UI, full auditability
+- **Delivered:** 6 config types + lexicons, hot-reload, admin UI, job config snapshots, SR modularity
+- **Impact:** Analysis-impacting settings now fully UCM-managed; SR config remains separate domain
 
 ### 2. Hardcoded Heuristics → UCM Migration
 **Status:** ✅ COMPLETE
@@ -27,14 +27,14 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
 - **Impact:** Zero hardcoded patterns, better domain extensibility
 
 ### 3. Terminology: AnalysisContext Aliases (Phase 1)
-**Status:** ✅ PHASE 1 COMPLETE (2026-02-01)
+**Status:** ✅ COMPLETE (2026-02-02)
 - **Commit:** fb0febf
 - **Documents:**
   - [Terminology_Cleanup_AnalysisContext_vs_EvidenceScope.md](Terminology_Cleanup_AnalysisContext_vs_EvidenceScope.md)
   - [Terminology_Catalog_Five_Core_Terms.md](Terminology_Catalog_Five_Core_Terms.md)
 - **Delivered:** 42 non-breaking aliases, 17 files, full backward compatibility
 - **Impact:** New code can use correct `context*` names; old `scope*` names still work
-- **Next:** Phase 2+ deferred pending 2+ weeks stability
+- **Next:** Other terminology items remain deferred pending stability
 
 ---
 
@@ -57,8 +57,8 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
 
 ### Terminology & Definitions
 - **[Terminology_Catalog_Five_Core_Terms.md](Terminology_Catalog_Five_Core_Terms.md)** - Complete catalog of AnalysisContext, EvidenceScope, ArticleFrame, KeyFactor, Fact
-- **[TERMINOLOGY.md](../TERMINOLOGY.md)** - Core terminology reference
-- **[AGENTS.md](../AGENTS.md)** - Agent guidelines with terminology rules
+- **[TERMINOLOGY.md](../../REFERENCE/TERMINOLOGY.md)** - Core terminology reference
+- **[AGENTS.md](../../AGENTS.md)** - Agent guidelines with terminology rules
 
 ### Quality & Analysis
 - **[Orchestrated_Report_Quality_Improvements_Plan.md](Orchestrated_Report_Quality_Improvements_Plan.md)** - Ongoing quality improvements
@@ -116,11 +116,11 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
 
 ---
 
-## 📊 Current Status (2026-02-01)
+## 📊 Current Status (2026-02-02)
 
 | Area | Status | Next Action |
 |------|--------|-------------|
-| **UCM** | ✅ Complete (v2.9.0) | Monitor production usage |
+| **UCM** | ✅ Complete (v2.9.0 + integration) | Monitor production usage |
 | **Heuristics → UCM** | ✅ Complete | None |
 | **AnalysisContext Aliases** | ✅ Phase 1 Complete | Monitor 2+ weeks stability |
 | **Other Terminology** | ⏸️ Deferred | Await designs & stability |
@@ -171,6 +171,9 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
 
 ## 🔄 Recent Updates
 
+### 2026-02-02
+- ✅ **Completed:** UCM analyzer integration + SR separation + terminology cleanup
+
 ### 2026-02-01
 - ✅ **Created:** IMPLEMENTATION_STATUS.md (master tracker)
 - ✅ **Completed:** AnalysisContext aliases Phase 1 (commit fb0febf)
@@ -187,7 +190,7 @@ This directory contains comprehensive reviews, audits, and analysis documents fo
 ---
 
 **README Version**: 2.0
-**Last Updated**: 2026-02-01
+**Last Updated**: 2026-02-02
 **Maintained by**: Architecture Team
 
 **See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for comprehensive tracking of all initiatives.**

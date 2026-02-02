@@ -560,7 +560,7 @@ attached to individual facts (EvidenceItem.evidenceScope, legacy name: Extracted
 
 #### Task 4.3: Fix Cross-References
 **Updates**:
-- `Docs/REVIEWS/README.md` - Add link to Baseline_Quality_Measurements.md
+- `Docs/ARCHIVE/REVIEWS/README.md` - Add link to Baseline_Quality_Measurements.md
 - `Docs/STATUS/Current_Status.md` - Link to new evidence-filter docs
 - `Docs/USER_GUIDES/LLM_Configuration.md` - Link to Provider_Prompt_Formatting.md
 - `Docs/REFERENCE/TERMINOLOGY.md` line 597 - Fix broken reference (file doesn't exist)
@@ -568,7 +568,7 @@ attached to individual facts (EvidenceItem.evidenceScope, legacy name: Extracted
 **Time**: 30 minutes
 
 #### Task 4.4: Update Terminology Migration Status
-**File**: `Docs/REVIEWS/Terminology_Migration_SUMMARY.md`
+**File**: `Docs/ARCHIVE/REVIEWS/Terminology_Migration_SUMMARY.md`
 
 **Updates**:
 - Mark Phase 2 as fully complete (all tasks done including filter integration)
@@ -647,10 +647,10 @@ attached to individual facts (EvidenceItem.evidenceScope, legacy name: Extracted
 9. `Docs/REFERENCE/TERMINOLOGY.md` - Update version tag
 10. `Docs/ARCHITECTURE/Overview.md` - Update version to v2.6.41
 11. `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md` - Change to "implemented"
-12. `Docs/REVIEWS/README.md` - Add Baseline_Quality_Measurements.md link
+12. `Docs/ARCHIVE/REVIEWS/README.md` - Add Baseline_Quality_Measurements.md link
 13. `Docs/STATUS/Current_Status.md` - Link to evidence-filter docs, schema migration docs
 14. `Docs/USER_GUIDES/LLM_Configuration.md` - Link to provider formats
-15. `Docs/REVIEWS/Terminology_Migration_SUMMARY.md` - Update Phase 2 status
+15. `Docs/ARCHIVE/REVIEWS/Terminology_Migration_SUMMARY.md` - Update Phase 2 status
 
 ### Moved Files (8)
 - All Source Reliability Service review files → `Docs/ARCHIVE/Source_Reliability_Service_Reviews/`
@@ -908,3 +908,4 @@ After this plan executes:
 - [Terminology_Migration_Compliance_Audit.md](Terminology_Migration_Compliance_Audit.md) - **FULL AUDIT** (includes senior review Sections 14-28)
 - [Baseline_Quality_Measurements.md](Baseline_Quality_Measurements.md) - Metrics validation
 - [AGENTS_xWiki.md](../AGENTS/AGENTS_xWiki.md) - LLM guidance (to be extended in Task 0.1)
+

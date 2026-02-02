@@ -9,6 +9,8 @@
 
 Major infrastructure change: consolidated all configuration management (search, calculation, and prompts) into a single unified system with database-backed versioning, validation, and per-job usage tracking.
 
+**Note (2026-02-02)**: Later releases expanded UCM to include `pipeline`, `sr`, and lexicon config types, and moved analysis-impacting settings into UCM. See `Docs/STATUS/Current_Status.md` for current coverage.
+
 ---
 
 ## Unified Configuration Management System (v2.6.41)
@@ -118,6 +120,8 @@ Unified all prompt management into the new config system.
 
 ## Environment Variables
 
+**Note (2026-02-02)**: Analysis-related env overrides have been retired; UCM is the source of truth. This section reflects v2.6.41 behavior only.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `FH_CONFIG_DB_PATH` | `./config.db` | Config database location |
@@ -155,8 +159,8 @@ Unified all prompt management into the new config system.
 ## Documentation Updated
 
 - `Docs/USER_GUIDES/Admin_Interface.md` - Added Unified Config Management section
-- `Docs/REVIEWS/Full_Prompt_Unification_Plan.md` - Marked complete
-- `Docs/REVIEWS/Unified_Config_Management_Proposal.md` - Reference architecture
+- `Docs/ARCHIVE/REVIEWS/Full_Prompt_Unification_Plan.md` - Marked complete
+- `Docs/ARCHIVE/REVIEWS/Unified_Config_Management_Proposal.md` - Reference architecture
 
 ---
 
@@ -165,3 +169,4 @@ Unified all prompt management into the new config system.
 - **Unit Tests**: 20 tests in `config-storage.test.ts`
 - **Build**: `npm run build --workspace @factharbor/web` passes
 - **Static Pages**: 20 (down from 21, `/admin/prompts` removed)
+

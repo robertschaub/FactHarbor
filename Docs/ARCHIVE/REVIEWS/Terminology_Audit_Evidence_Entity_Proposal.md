@@ -2,7 +2,7 @@
 
 **Date**: 2026-01-28  
 **Status**: Proposal only (no implementation in this document)  
-**Companion**: `Docs/REVIEWS/Terminology_Audit_Fact_Entity.md`  
+**Companion**: `Docs/ARCHIVE/REVIEWS/Terminology_Audit_Fact_Entity.md`  
 
 ---
 
@@ -241,7 +241,7 @@ Non-probative “contradictions” should not be upgraded to “contested”.
 
 ### 7.1 Diagrams still using “Facts” terminology
 
-`Docs/REVIEWS/Orchestrated_Report_Quality_Regression_Analysis.md` diagrams currently include nodes like:
+`Docs/ARCHIVE/REVIEWS/Orchestrated_Report_Quality_Regression_Analysis.md` diagrams currently include nodes like:
 - `Facts[ExtractedFact_List]`
 - `EvidenceScope_PerFactMetadata`
 - `Facts_JSON with EvidenceScope per fact`
@@ -249,7 +249,7 @@ Non-probative “contradictions” should not be upgraded to “contested”.
 These should be updated in a later doc pass to consistently use “Evidence” terminology, while preserving legacy field-name notes where needed.
 
 **Concrete references (for the future doc edit)**
-- `Docs/REVIEWS/Orchestrated_Report_Quality_Regression_Analysis.md` contains these strings in the Conceptual Model diagrams near:
+- `Docs/ARCHIVE/REVIEWS/Orchestrated_Report_Quality_Regression_Analysis.md` contains these strings in the Conceptual Model diagrams near:
   - `Sources --> Facts[ExtractedFact_List]`
   - `Facts --> EvidenceScope[EvidenceScope_PerFactMetadata]`
   - `EF --> FO[Facts_JSON with EvidenceScope per fact]`
@@ -258,4 +258,5 @@ These should be updated in a later doc pass to consistently use “Evidence” t
 - Should the public-facing conceptual term be **EvidenceItem** or just **Evidence**?
 - Should claim-links be stored explicitly (best long-term), or inferred only from verdict artifacts (lowest change)?
 - Should the system standardize a “probative minimum” as a hard gate (recommended), and what the minimum criteria are (keep generic)?
+
 

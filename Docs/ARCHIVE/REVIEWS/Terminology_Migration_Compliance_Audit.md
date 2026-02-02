@@ -485,10 +485,10 @@ Some comments use "fact" terminology in factual contexts:
 7. `Docs/REFERENCE/TERMINOLOGY.md` - Version update
 8. `Docs/ARCHITECTURE/Overview.md` - Version update
 9. `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md` - Status update
-10. `Docs/REVIEWS/README.md` - Add link (already done ✅)
+10. `Docs/ARCHIVE/REVIEWS/README.md` - Add link (already done ✅)
 11. `Docs/STATUS/Current_Status.md` - Add links
 12. `Docs/USER_GUIDES/LLM_Configuration.md` - Add links
-13. `Docs/REVIEWS/Terminology_Migration_SUMMARY.md` - Update progress
+13. `Docs/ARCHIVE/REVIEWS/Terminology_Migration_SUMMARY.md` - Update progress
 
 ### Files to Move (8)
 
@@ -1393,3 +1393,4 @@ After implementing above additions:
 **Date**: 2026-01-29
 **Analyst**: Claude Opus 4.5 (Senior Software Architect)
 **Status**: Complete - Additional tasks identified and prioritized
+

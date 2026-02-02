@@ -6,7 +6,7 @@
 **Last Updated:** 2026-01-28 (Terminology corrections applied)
 
 {{info}}
-**Terminology Note:** This document uses "Evidence" as the entity name for extracted information from sources. In the current POC1 codebase, this is implemented as `ExtractedFact` (TypeScript interface). The term "Evidence" more accurately reflects that these items are extracted material to be evaluated, not verified facts. See `Docs/REVIEWS/Terminology_Audit_Fact_Entity.md` for migration plans.
+**Terminology Note:** This document uses "Evidence" as the entity name for extracted information from sources. In the current POC1 codebase, this is implemented as `ExtractedFact` (TypeScript interface). The term "Evidence" more accurately reflects that these items are extracted material to be evaluated, not verified facts. See `Docs/ARCHIVE/REVIEWS/Terminology_Audit_Fact_Entity.md` for migration plans.
 {{/info}}
 
 ----
@@ -671,3 +671,4 @@ flowchart TB
 3. Add Redis for source/search caching
 4. Implement tiered model selection
 5. Add basic audit logging
+

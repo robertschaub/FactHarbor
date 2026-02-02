@@ -43,7 +43,7 @@ Both packages contain **identical corrected content** from Phase 0 terminology f
 
 ### 5. Documentation Added
 - Added terminology info box at document top
-- Links to `Docs/REVIEWS/Terminology_Audit_Fact_Entity.md` for migration plans
+- Links to `Docs/ARCHIVE/REVIEWS/Terminology_Audit_Fact_Entity.md` for migration plans
 - Updated "Last Modified" to 2026-01-28
 
 ## Package Contents
@@ -74,8 +74,8 @@ Both packages contain **identical corrected content** from Phase 0 terminology f
 ## Related Files
 
 - **Source xWiki:** `../FactHarbor POC1 Architecture Analysis.xwiki`
-- **Markdown version:** `../FactHarbor POC1 Architecture Analysis.md`
-- **Audit document:** `../REVIEWS/Terminology_Audit_Fact_Entity.md`
+- **Markdown version:** `../ARCHIVE/FactHarbor POC1 Architecture Analysis.md`
+- **Audit document:** `../ARCHIVE/REVIEWS/Terminology_Audit_Fact_Entity.md`
 
 ## Phase Status
 
@@ -103,3 +103,5 @@ grep 'string statement "The extracted statement text"' page_content  # Should fi
 - Schema Version: 2.6.17
 - Created: 2026-01-28
 - Status: Ready for import
+
+

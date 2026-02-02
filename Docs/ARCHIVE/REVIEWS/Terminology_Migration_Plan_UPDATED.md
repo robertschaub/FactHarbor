@@ -1,10 +1,10 @@
 # Terminology Migration Plan - UPDATED 2026-01-28
 
-**Status**: Phase 0 complete, Phase 1 in progress
+**Status**: Implemented (2026-02-02). Archived for historical reference.
 **Coordinator**: Multi-agent effort (Claude Sonnet 4.5 + GPT 5.2 High)
 **Foundation documents**:
-- `Docs/REVIEWS/Terminology_Audit_Fact_Entity.md` (original audit + phased approach)
-- `Docs/REVIEWS/Terminology_Audit_Evidence_Entity_Proposal.md` (entity model + probative rule)
+- `Docs/ARCHIVE/REVIEWS/Terminology_Audit_Fact_Entity.md` (original audit + phased approach)
+- `Docs/ARCHIVE/REVIEWS/Terminology_Audit_Evidence_Entity_Proposal.md` (entity model + probative rule)
 
 ---
 
@@ -62,7 +62,7 @@ See risk analysis document for complete details and revised timeline.
    - ✅ Full XAR: `FactHarbor-Full-Export-v2.6.17.xar` (350.6 KB, 98 pages)
    - ✅ Import instructions in README.md
 
-3. **Audit Extension** (`Docs/REVIEWS/Terminology_Audit_Fact_Entity.md`)
+3. **Audit Extension** (`Docs/ARCHIVE/REVIEWS/Terminology_Audit_Fact_Entity.md`)
    - ✅ Added Section 2.2: Documentation Inconsistency (xWiki)
    - ✅ Updated status to reflect Phase 0 completion
 
@@ -137,7 +137,7 @@ Remaining UI rendering functions:
 - [ ] `renderFactList()` - add comment: "(legacy function name, renders evidence list)"
 - [ ] CSS class comments in the render logic explaining `factItem*` and `factStat*` classes
 
-#### F. Regression Report Diagrams (`Docs/REVIEWS/Orchestrated_Report_Quality_Regression_Analysis.md`)
+#### F. Regression Report Diagrams (`Docs/ARCHIVE/REVIEWS/Orchestrated_Report_Quality_Regression_Analysis.md`)
 Update Mermaid diagrams to use "Evidence" terminology:
 - [ ] Change `Facts[ExtractedFact_List]` → `Evidence[ExtractedEvidence_List]`
 - [ ] Change `EvidenceScope_PerFactMetadata` → `EvidenceScope_PerItemMetadata`
@@ -608,8 +608,8 @@ state.facts = filterResult.kept;
 
 ## References
 
-- **Original Audit**: `Docs/REVIEWS/Terminology_Audit_Fact_Entity.md`
-- **Entity Proposal**: `Docs/REVIEWS/Terminology_Audit_Evidence_Entity_Proposal.md`
+- **Original Audit**: `Docs/ARCHIVE/REVIEWS/Terminology_Audit_Fact_Entity.md`
+- **Entity Proposal**: `Docs/ARCHIVE/REVIEWS/Terminology_Audit_Evidence_Entity_Proposal.md`
 - **xWiki Documentation**: `Docs/FactHarbor POC1 Architecture Analysis.xwiki`
 - **XAR Exports**: `Docs/xwiki-export/` (delta and full packages)
 
@@ -1626,3 +1626,4 @@ This phased approach ensures:
 - Clear success metrics guide go/no-go decisions between phases
 
 **The central insight**: Report quality is fundamentally limited by evidence quality. Investing in the Evidence entity model pays dividends across the entire pipeline - from extraction to weighting to verdict generation.
+

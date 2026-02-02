@@ -342,9 +342,9 @@ Update the following docs to reflect **UCM-only** controls and remove legacy env
 - `Docs/USER_GUIDES/Promptfoo_Testing.md`
 - `Docs/ARCHITECTURE/Overview.md`
 - `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md`
-- `Docs/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md`
-- `Docs/REVIEWS/Unified_Config_Management_Proposal.md`
-- `Docs/REVIEWS/Unified_Configuration_Management_Plan.md`
+- `Docs/ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md`
+- `Docs/ARCHIVE/REVIEWS/Unified_Config_Management_Proposal.md`
+- `Docs/ARCHIVE/REVIEWS/Unified_Configuration_Management_Plan.md`
 - Any other doc files containing `FH_LLM_*`
 
 ---
@@ -1196,3 +1196,4 @@ For clarification on any architectural recommendations in this review, schedule 
 - 2026-02-01: Initial draft (FactHarbor Team)
 - 2026-02-01: Principal Architect review - Production scope
 - 2026-02-01: Updated for POC context - **APPROVED FOR POC IMPLEMENTATION**
+

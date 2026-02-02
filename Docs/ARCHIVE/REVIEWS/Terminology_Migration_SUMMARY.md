@@ -272,7 +272,7 @@ interface EvidenceClaimLink {
 12. ✅ **Phase 1.5: Baseline quality measurements** (1 hour) - Committed: (pending)
     - Created measurement script: `scripts/measure-evidence-quality.ts`
     - Measures probativeValue coverage, claimDirection missing rate, sourceType coverage
-    - Comprehensive documentation: `Docs/REVIEWS/Baseline_Quality_Measurements.md`
+    - Comprehensive documentation: `Docs/ARCHIVE/REVIEWS/Baseline_Quality_Measurements.md`
     - Success criteria and validation gates defined
     - **Status**: Complete (ready to run on production data)
 
@@ -305,3 +305,4 @@ interface EvidenceClaimLink {
 **Summary Version**: 1.0
 **Date**: 2026-01-28
 **Prepared by**: Claude Sonnet 4.5 (Risk Analysis & Execution Planning)
+

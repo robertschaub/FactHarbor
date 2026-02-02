@@ -2,11 +2,43 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-01-29
+**Last Updated**: 2026-02-02
 
 ---
 
 ## What's Archived
+
+### Review & Audit Documents
+
+**Location**: `REVIEWS/`
+
+**Description**: Historical review documents (UCM, terminology migration, analysis quality, SR investigations). These are no longer actively edited but remain as reference and audit trail.
+
+**Current Documentation**: Active guidance lives in `Docs/STATUS/` and `Docs/ARCHITECTURE/`.
+
+---
+
+### Status Changelogs & Reports
+
+**Location**: `STATUS/`
+
+**Description**: Historical status snapshots and changelogs that are superseded by current status/history docs.
+
+**Examples**:
+1. `Changelog_v2.6.38_to_v2.6.40.md`
+2. `Changelog_v2.6.41_Unified_Config.md`
+3. `Documentation_Inconsistencies.md`
+
+---
+
+### Historical Reports & Summaries
+
+**Location**: Root of `ARCHIVE/`
+
+**Examples**:
+1. `FactHarbor POC1 Architecture Analysis.md`
+2. `WORKSHOP_REPORT_2026-01-21.md`
+3. `Mermaid_Fix_Summary.md`
 
 ### Source Reliability Service Reviews
 
@@ -64,12 +96,14 @@ If you need to reference archived documents:
 ## Related Directories
 
 - **`Docs/ARCHITECTURE/`** - Current architecture documentation
-- **`Docs/REVIEWS/`** - Active reviews and audits
+- **`Docs/ARCHIVE/REVIEWS/`** - Archived reviews and audits
+- **`Docs/ARCHIVE/STATUS/`** - Archived changelogs and resolved audits
 - **`Docs/STATUS/`** - Current status and known issues
 - **`Docs/REFERENCE/`** - Reference documentation and guides
 
 ---
 
 **Archive Maintainer**: Plan Coordinator
-**Last Review**: 2026-01-29
+**Last Review**: 2026-02-02
 **Next Review**: Quarterly (or when major features complete)
+
