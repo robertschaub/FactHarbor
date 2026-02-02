@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "2.0.0",
+  "enabled": true,
+  "multiModel": true,
+  "openaiModel": "gpt-4o-mini",
+  "confidenceThreshold": 0.8,
+  "consensusThreshold": 0.2,
+  "defaultScore": 0.5,
+  "cacheTtlDays": 90,
+  "filterEnabled": true,
+  "skipPlatforms": [
+    "blogspot.",
+    "wordpress.com",
+    "medium.com",
+    "substack.com"
+  ],
+  "skipTlds": [
+    "xyz",
+    "top",
+    "club",
+    "icu",
+    "buzz",
+    "tk",
+    "ml",
+    "ga",
+    "cf",
+    "gq"
+  ],
+  "rateLimitPerIp": 10,
+  "domainCooldownSec": 60,
+  "evalUseSearch": true,
+  "evalSearchMaxResultsPerQuery": 3,
+  "evalMaxEvidenceItems": 12,
+  "evalSearchDateRestrict": null
+}

@@ -1,7 +1,7 @@
 # Unified Config Management (UCM) User Guide
 
-**Version**: 2.10.0
-**Date**: 2026-01-31
+**Version**: 2.10.1
+**Date**: 2026-02-02
 **Audience**: Administrators, Power Users
 **Related**: [Evidence Quality Filtering](../ARCHITECTURE/Evidence_Quality_Filtering.md), [Provider Prompt Formatting](../REFERENCE/Provider_Prompt_Formatting.md)
 
@@ -10,12 +10,13 @@
 ## Table of Contents
 
 1. [Introduction](#1-introduction)
-2. [Configuration Profiles](#2-configuration-profiles)
-3. [Profile Management](#3-profile-management)
-4. [Configuration Types](#4-configuration-types)
-5. [Common Use Cases](#5-common-use-cases)
-6. [Troubleshooting](#6-troubleshooting)
-7. [New in v2.10: Admin Tools](#7-new-in-v210-admin-tools)
+2. [Config Source Precedence (Alpha)](#2-config-source-precedence-alpha)
+3. [Configuration Profiles](#3-configuration-profiles)
+4. [Profile Management](#4-profile-management)
+5. [Configuration Types](#5-configuration-types)
+6. [Common Use Cases](#6-common-use-cases)
+7. [Troubleshooting](#7-troubleshooting)
+8. [New in v2.10: Admin Tools](#8-new-in-v210-admin-tools)
 
 ---
 
@@ -57,7 +58,30 @@ There is no single combined profile object; each config type is versioned indepe
 
 ---
 
-## 2. Configuration Profiles
+## 2. Config Source Precedence (Alpha)
+
+### Where Configs Live
+1. **Runtime Authority:** Database (active config in UCM)
+2. **Default Templates:** JSON files in `apps/web/configs/`
+3. **Fallback:** Code constants in `config-schemas.ts`
+
+### Update Scenarios
+
+| Scenario | Behavior | Notes |
+|----------|----------|-------|
+| Fresh DB | File → DB | On first startup, seed from files |
+| File updated | **Manual reset required** | DB unchanged; admin must Reset to Default |
+| DB updated via UI | File unchanged | Only affects DB; files stay as templates |
+| Save-to-File invoked | DB → File | Overwrites file (dev mode only; not enabled in alpha) |
+
+### Alpha Limitations
+- No automatic drift detection UI
+- No automatic merging of file updates
+- File changes require manual admin action
+
+---
+
+## 3. Configuration Profiles
 
 ### Profile Structure
 
@@ -95,7 +119,7 @@ interface ConfigProfile<T> {
 
 ---
 
-## 3. Profile Management
+## 4. Profile Management
 
 ### Creating a New Profile
 
@@ -197,7 +221,7 @@ interface ConfigProfile<T> {
 
 ---
 
-## 4. Configuration Types
+## 5. Configuration Types
 
 ### 4.1 SearchConfig
 
@@ -334,7 +358,7 @@ evidenceFilter: {
 
 ---
 
-## 5. Common Use Cases
+## 6. Common Use Cases
 
 ### 5.1 High-Stakes Fact-Checking
 
@@ -476,7 +500,7 @@ evidenceFilter: {
 
 ---
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 ### Profile Not Saving
 
@@ -560,7 +584,7 @@ evidenceFilter: {
 
 ---
 
-## 7. New in v2.10: Admin Tools
+## 8. New in v2.10: Admin Tools
 
 ### 7.1 Active Config Dashboard
 

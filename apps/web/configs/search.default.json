@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "2.0.0",
+  "enabled": true,
+  "provider": "auto",
+  "mode": "standard",
+  "maxResults": 6,
+  "maxSourcesPerIteration": 4,
+  "timeoutMs": 12000,
+  "dateRestrict": null,
+  "domainWhitelist": [],
+  "domainBlacklist": []
+}

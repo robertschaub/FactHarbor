@@ -18,6 +18,16 @@ import crypto from "crypto";
 export type ConfigType = "prompt" | "search" | "calculation" | "pipeline" | "sr" | "evidence-lexicon" | "aggregation-lexicon";
 export type SchemaVersion = "prompt.v1" | "search.v1" | "calc.v1" | "pipeline.v1" | "sr.v1" | "evidence-lexicon.v1" | "aggregation-lexicon.v1";
 
+// File-backed default schema versions (alpha). Used to validate apps/web/configs/*.default.json.
+export const SCHEMA_VERSIONS = {
+  pipeline: "2.1.0",
+  search: "2.0.0",
+  calculation: "2.0.0",
+  sr: "2.0.0",
+  "evidence-lexicon": "2.0.0",
+  "aggregation-lexicon": "2.0.0",
+} as const;
+
 /**
  * Valid config types for API validation.
  * Single source of truth - import this in API routes.

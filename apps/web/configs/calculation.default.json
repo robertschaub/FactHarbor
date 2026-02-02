@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "2.0.0",
+  "verdictBands": {
+    "true": [
+      86,
+      100
+    ],
+    "mostlyTrue": [
+      72,
+      85
+    ],
+    "leaningTrue": [
+      58,
+      71
+    ],
+    "mixed": [
+      43,
+      57
+    ],
+    "leaningFalse": [
+      29,
+      42
+    ],
+    "mostlyFalse": [
+      15,
+      28
+    ],
+    "false": [
+      0,
+      14
+    ]
+  },
+  "aggregation": {
+    "centralityWeights": {
+      "high": 3,
+      "medium": 2,
+      "low": 1
+    },
+    "harmPotentialMultiplier": 1.5,
+    "contestationWeights": {
+      "established": 0.3,
+      "disputed": 0.5,
+      "opinion": 1
+    }
+  },
+  "sourceReliability": {
+    "confidenceThreshold": 0.8,
+    "consensusThreshold": 0.2,
+    "defaultScore": 0.5
+  },
+  "qualityGates": {
+    "gate1OpinionThreshold": 0.7,
+    "gate1SpecificityThreshold": 0.3,
+    "gate1MinContentWords": 3,
+    "gate4MinSourcesHigh": 3,
+    "gate4MinSourcesMedium": 2,
+    "gate4QualityThresholdHigh": 0.7,
+    "gate4QualityThresholdMedium": 0.5,
+    "gate4AgreementThresholdHigh": 0.7,
+    "gate4AgreementThresholdMedium": 0.5
+  },
+  "contestationPenalties": {
+    "established": -12,
+    "disputed": -8
+  },
+  "deduplication": {
+    "evidenceScopeThreshold": 0.85,
+    "claimSimilarityThreshold": 0.85,
+    "contextMergeThreshold": 0.7
+  },
+  "mixedConfidenceThreshold": 60
+}

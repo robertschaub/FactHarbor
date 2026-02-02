@@ -18,9 +18,11 @@ import {
   ValidationResult,
   validateConfig,
   canonicalizeContent,
+  canonicalizeJson,
   computeContentHash,
   getSchemaVersion,
   getDefaultConfig,
+  SCHEMA_VERSIONS,
   ConfigSchemaTypes,
   parseTypedConfig,
   DEFAULT_SEARCH_CONFIG,
@@ -61,6 +63,36 @@ function resolveDbPath(): string {
 }
 
 const CONFIG_DB_PATH = resolveDbPath();
+
+const DEFAULT_CONFIG_FILENAMES: Record<Exclude<ConfigType, "prompt">, string> = {
+  search: "search.default.json",
+  calculation: "calculation.default.json",
+  pipeline: "pipeline.default.json",
+  sr: "sr.default.json",
+  "evidence-lexicon": "evidence-lexicon.default.json",
+  "aggregation-lexicon": "aggregation-lexicon.default.json",
+};
+
+function resolveDefaultConfigPath(configType: Exclude<ConfigType, "prompt">): string {
+  const filename = DEFAULT_CONFIG_FILENAMES[configType];
+  const envDir = process.env.FH_CONFIG_DEFAULTS_DIR;
+  if (envDir && envDir.trim()) {
+    return path.join(envDir, filename);
+  }
+
+  const candidates = [
+    path.resolve(process.cwd(), "configs", filename),
+    path.resolve(process.cwd(), "apps/web/configs", filename),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return candidates[0];
+}
 
 // Cache TTL in milliseconds (60 seconds default, per architecture plan)
 const CONFIG_CACHE_TTL_MS = parseInt(process.env.FH_CONFIG_CACHE_TTL_MS || "60000", 10);
@@ -927,6 +959,43 @@ export async function validateConfigContent(
 }
 
 /**
+ * Load default config from file with schema version validation.
+ * Alpha behavior: warn on version mismatch and fall back to code constants.
+ */
+export function loadDefaultConfigFromFile(
+  configType: Exclude<ConfigType, "prompt">,
+): string | null {
+  const filePath = resolveDefaultConfigPath(configType);
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  const filename = path.basename(filePath);
+
+  try {
+    const fileContent = fs.readFileSync(filePath, "utf-8");
+    const parsed = JSON.parse(fileContent) as Record<string, unknown>;
+
+    const expectedVersion = SCHEMA_VERSIONS[configType];
+    const fileVersion = typeof parsed.schemaVersion === "string" ? parsed.schemaVersion : null;
+    if (fileVersion !== expectedVersion) {
+      console.warn(
+        `[Config] ${filename} version mismatch: expected ${expectedVersion}, got ${fileVersion ?? "missing"}`,
+      );
+      return null;
+    }
+
+    const { schemaVersion: _schemaVersion, ...config } = parsed;
+    const validated = parseTypedConfig(configType, JSON.stringify(config));
+
+    return canonicalizeJson(validated as Record<string, unknown>);
+  } catch (err) {
+    console.error(`[Config] Failed to load ${filename}:`, err);
+    return null;
+  }
+}
+
+/**
  * Initialize default configs if none exist
  */
 export async function initializeDefaultConfigs(): Promise<void> {
@@ -967,7 +1036,7 @@ async function ensureDefaultConfig(
     [configType, "default"],
   );
 
-  const defaultContent = getDefaultConfig(configType);
+  const defaultContent = loadDefaultConfigFromFile(configType) ?? getDefaultConfig(configType);
 
   if (!active) {
     const { blob } = await saveConfigBlob(
