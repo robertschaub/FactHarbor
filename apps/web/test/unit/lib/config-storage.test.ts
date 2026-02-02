@@ -28,7 +28,9 @@ async function createTestDb(): Promise<Database> {
       version_label TEXT NOT NULL,
       content TEXT NOT NULL,
       created_utc TEXT NOT NULL,
-      created_by TEXT
+      created_by TEXT,
+      updated_utc TEXT,
+      updated_by TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_config_blobs_type_profile
@@ -91,6 +93,8 @@ describe("Config Storage Schema", () => {
     expect(columnNames).toContain("content");
     expect(columnNames).toContain("created_utc");
     expect(columnNames).toContain("created_by");
+    expect(columnNames).toContain("updated_utc");
+    expect(columnNames).toContain("updated_by");
   });
 
   it("config_blobs has content_hash as primary key", async () => {

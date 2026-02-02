@@ -964,7 +964,7 @@ describe('Config File Loading (Alpha)', () => {
    - Fallback behavior test
 
 #### Should Implement (Before Phase 2 save-to-file)
-4. ⏳ **AC3 - Basic concurrency warning** (2 hours)
+4. ✅ **AC3 - Basic concurrency warning** (2 hours)
    - Add updatedBy field to DB
    - Add timestamp warning in setConfig
    - Show warning in UI
@@ -1173,12 +1173,14 @@ From my Section 7 questions:
 The pragmatic approach prevents technical debt without over-engineering. The clear upgrade path to beta/production is well-defined. Effort is manageable.
 
 **Recommended execution order:**
-1. **Today:** Fix Bolsonaro bug via Admin UI (P0, no code)
-2. **This week:** Implement AC1, AC2 docs, AC5 tests (~8 hours)
-3. **Before Phase 1:** Implement AC3 warning (~2 hours)
-4. **Phase 1:** File-backed defaults
+1. ✅ **COMPLETED:** Implement AC1, AC2 docs, AC5 tests (~8 hours) - Done 2026-02-02
+2. **Completed:** Implemented AC3 warning (~2 hours)
+3. **Then:** Commit UCM alpha improvements
+4. **Phase 1:** File-backed defaults (already wired in ensureSystemDefaults)
 5. **Phase 2:** Save-to-file with dryRun
+6. **Finally:** Fix Bolsonaro bug via Admin UI or agent (P0, deferred to end of plan)
 
 ---
 
 *Final review added by Claude Code on 2026-02-02*
+*Execution order updated 2026-02-02 per user preference*

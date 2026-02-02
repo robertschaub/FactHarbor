@@ -73,7 +73,11 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   // 5. Reseed from file
   try {
-    const result = await seedPromptFromFile(profile, force);
+    const result = await seedPromptFromFile(
+      profile,
+      force,
+      req.headers.get("x-admin-user") || "admin",
+    );
 
     if (result.error) {
       return NextResponse.json(

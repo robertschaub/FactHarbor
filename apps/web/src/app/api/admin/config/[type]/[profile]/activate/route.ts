@@ -62,7 +62,7 @@ export async function POST(req: Request, { params }: RouteParams) {
       type,
       profile,
       body.contentHash,
-      req.headers.get("x-admin-user") || undefined,
+      req.headers.get("x-admin-user") || "admin",
       body.reason,
     );
 

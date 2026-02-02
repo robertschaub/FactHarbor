@@ -77,6 +77,8 @@ export async function GET(req: Request, { params }: RouteParams) {
       content: config.content,
       createdUtc: config.createdUtc,
       createdBy: config.createdBy,
+      updatedUtc: config.updatedUtc,
+      updatedBy: config.updatedBy,
       activatedUtc: config.activatedUtc,
       activatedBy: config.activatedBy,
       isActive: config.isActive,
@@ -129,7 +131,8 @@ export async function PUT(req: Request, { params }: RouteParams) {
       profile,
       body.content,
       versionLabel,
-      req.headers.get("x-admin-user") || undefined,
+      req.headers.get("x-admin-user") || "admin",
+      req.headers.get("x-admin-user") || "admin",
     );
 
     return NextResponse.json({
@@ -143,6 +146,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
       valid: validation.valid,
       warnings: validation.warnings,
       createdUtc: blob.createdUtc,
+      updatedUtc: blob.updatedUtc,
     });
   } catch (err: unknown) {
     console.error("[Config-API] PUT error:", err);

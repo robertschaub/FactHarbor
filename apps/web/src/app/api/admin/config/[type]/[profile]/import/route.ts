@@ -121,7 +121,7 @@ export async function POST(req: Request, { params }: RouteParams) {
     const result = await importPromptContent(profile, content, {
       versionLabel: typeof versionLabel === "string" ? versionLabel : undefined,
       activateImmediately,
-      importedBy: req.headers.get("x-admin-user") || "import-api",
+      importedBy: req.headers.get("x-admin-user") || "admin",
     });
 
     if (!result.success) {

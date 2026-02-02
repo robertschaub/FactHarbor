@@ -47,6 +47,8 @@ interface ConfigVersion {
   content: string;
   createdUtc: string;
   createdBy: string | null;
+  updatedUtc?: string | null;
+  updatedBy?: string | null;
   isActive: boolean;
   activatedUtc: string | null;
   activatedBy: string | null;
@@ -2418,6 +2420,12 @@ export default function ConfigAdminPage() {
     return new Date(iso).toLocaleString();
   };
 
+  const isRecentlyUpdated = (iso?: string | null) => {
+    if (!iso) return false;
+    const delta = Date.now() - Date.parse(iso);
+    return !Number.isNaN(delta) && delta < 60_000;
+  };
+
   // Truncate hash for display
   const truncateHash = (hash: string) => {
     return `${hash.slice(0, 8)}...${hash.slice(-8)}`;
@@ -3077,6 +3085,12 @@ export default function ConfigAdminPage() {
                     Schema: {(viewingVersion || activeConfig)!.schemaVersion} |
                     Created: {formatDate((viewingVersion || activeConfig)!.createdUtc)}
                     {(viewingVersion || activeConfig)!.createdBy && ` by ${(viewingVersion || activeConfig)!.createdBy}`}
+                    {" | "}
+                    Updated: {formatDate((viewingVersion || activeConfig)!.updatedUtc || (viewingVersion || activeConfig)!.createdUtc)}
+                    {(viewingVersion || activeConfig)!.updatedBy && ` by ${(viewingVersion || activeConfig)!.updatedBy}`}
+                    {isRecentlyUpdated((viewingVersion || activeConfig)!.updatedUtc || (viewingVersion || activeConfig)!.createdUtc) && (
+                      <span style={{ color: "#d97706", marginLeft: 8 }}>⚠️ Recently modified</span>
+                    )}
                   </div>
                 </div>
                 <div className={styles.configActions}>
@@ -3260,6 +3274,15 @@ export default function ConfigAdminPage() {
                           Created: {formatDate(v.createdUtc)}
                           {v.createdBy && ` by ${v.createdBy}`}
                         </div>
+                        {v.updatedUtc && (
+                          <div className={styles.historyDate}>
+                            Updated: {formatDate(v.updatedUtc)}
+                            {v.updatedBy && ` by ${v.updatedBy}`}
+                            {isRecentlyUpdated(v.updatedUtc) && (
+                              <span style={{ color: "#d97706", marginLeft: 8 }}>⚠️ Recently modified</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className={styles.historyActions}>

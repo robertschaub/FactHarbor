@@ -60,6 +60,8 @@ export async function GET(req: Request, { params }: RouteParams) {
         versionLabel: v.versionLabel,
         createdUtc: v.createdUtc,
         createdBy: v.createdBy,
+        updatedUtc: v.updatedUtc,
+        updatedBy: v.updatedBy,
         isActive: v.isActive,
         activatedUtc: v.activatedUtc,
         activatedBy: v.activatedBy,

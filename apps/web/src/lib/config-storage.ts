@@ -205,6 +205,8 @@ export interface ConfigBlobRow {
   content: string;
   created_utc: string;
   created_by: string | null;
+  updated_utc?: string | null;
+  updated_by?: string | null;
 }
 
 export interface ConfigActiveRow {
@@ -236,6 +238,8 @@ export interface ConfigBlob {
   content: string;
   createdUtc: string;
   createdBy: string | null;
+  updatedUtc: string | null;
+  updatedBy: string | null;
 }
 
 export interface ConfigActive {
@@ -303,7 +307,9 @@ export async function getDb(): Promise<Database> {
       version_label TEXT NOT NULL,
       content TEXT NOT NULL,
       created_utc TEXT NOT NULL,
-      created_by TEXT
+      created_by TEXT,
+      updated_utc TEXT,
+      updated_by TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_config_blobs_type_profile
@@ -359,9 +365,38 @@ export async function getDb(): Promise<Database> {
       ON job_config_snapshots(captured_utc);
   `);
 
+  await ensureConfigBlobColumns(db);
+
   await initializeDefaultConfigsWithDb(db);
 
   return db;
+}
+
+async function ensureConfigBlobColumns(database: Database): Promise<void> {
+  const columns = await database.all<{ name: string }[]>(`PRAGMA table_info(config_blobs)`);
+  const columnNames = new Set(columns.map((col) => col.name));
+
+  const addColumn = async (name: string, type: string) => {
+    if (columnNames.has(name)) return;
+    try {
+      await database.exec(`ALTER TABLE config_blobs ADD COLUMN ${name} ${type}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (!message.includes("duplicate column name")) {
+        throw err;
+      }
+    }
+  };
+
+  await addColumn("created_by", "TEXT");
+  await addColumn("updated_utc", "TEXT");
+  await addColumn("updated_by", "TEXT");
+
+  await database.exec(`
+    UPDATE config_blobs
+    SET updated_utc = COALESCE(updated_utc, created_utc),
+        updated_by = COALESCE(updated_by, created_by)
+  `);
 }
 
 // ============================================================================
@@ -378,6 +413,8 @@ function rowToConfigBlob(row: ConfigBlobRow): ConfigBlob {
     content: row.content,
     createdUtc: row.created_utc,
     createdBy: row.created_by,
+    updatedUtc: row.updated_utc ?? row.created_utc,
+    updatedBy: row.updated_by ?? row.created_by,
   };
 }
 
@@ -420,6 +457,7 @@ export async function saveConfigBlob(
   content: string,
   versionLabel: string,
   createdBy?: string,
+  updatedBy?: string,
 ): Promise<{ blob: ConfigBlob; isNew: boolean; validation: ValidationResult }> {
   const database = await getDb();
   const schemaVersion = getSchemaVersion(configType);
@@ -434,6 +472,34 @@ export async function saveConfigBlob(
   const canonicalized = canonicalizeContent(configType, content);
   const contentHash = computeContentHash(canonicalized);
   const now = new Date().toISOString();
+  const nowMs = Date.parse(now);
+
+  const recent = await database.get<{
+    created_utc: string;
+    created_by: string | null;
+    updated_utc: string | null;
+    updated_by: string | null;
+  }>(
+    `SELECT created_utc, created_by, updated_utc, updated_by
+     FROM config_blobs
+     WHERE config_type = ? AND profile_key = ?
+     ORDER BY COALESCE(updated_utc, created_utc) DESC
+     LIMIT 1`,
+    [configType, profileKey],
+  );
+
+  if (recent) {
+    const lastTimestamp = recent.updated_utc || recent.created_utc;
+    const lastUpdatedBy = recent.updated_by || recent.created_by || "unknown";
+    const lastMs = Date.parse(lastTimestamp);
+    const deltaMs = Number.isNaN(lastMs) ? null : nowMs - lastMs;
+    if (deltaMs !== null && deltaMs < 60_000) {
+      console.warn(
+        `[Config] Recent update detected for ${configType}/${profileKey}: ` +
+        `${deltaMs}ms ago by ${lastUpdatedBy}`,
+      );
+    }
+  }
 
   // Check if hash already exists
   const existing = await database.get<ConfigBlobRow>(
@@ -461,9 +527,12 @@ export async function saveConfigBlob(
   }
 
   // Insert new blob
+  const createdByValue = createdBy ?? updatedBy ?? "system";
+  const updatedByValue = updatedBy ?? createdBy ?? "system";
+
   await database.run(
-    `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by, updated_utc, updated_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       contentHash,
       configType,
@@ -472,7 +541,9 @@ export async function saveConfigBlob(
       versionLabel,
       canonicalized,
       now,
-      createdBy || null,
+      createdByValue,
+      now,
+      updatedByValue,
     ],
   );
 
@@ -488,7 +559,9 @@ export async function saveConfigBlob(
       versionLabel,
       content: canonicalized,
       createdUtc: now,
-      createdBy: createdBy || null,
+      createdBy: createdByValue,
+      updatedUtc: now,
+      updatedBy: updatedByValue,
     },
     isNew: true,
     validation,
@@ -1197,6 +1270,7 @@ export async function refreshPromptFromFileIfSystemSeed(
 export async function seedPromptFromFile(
   profile: string,
   force = false,
+  seededBy?: string,
 ): Promise<{ seeded: boolean; contentHash: string | null; error?: string }> {
   if (!isValidPromptProfile(profile)) {
     return { seeded: false, contentHash: null, error: `Invalid profile: ${profile}` };
@@ -1232,11 +1306,12 @@ export async function seedPromptFromFile(
       profile,
       content,
       versionLabel,
-      "system-seed",
+      seededBy ?? "system-seed",
+      seededBy ?? "system-seed",
     );
 
     // Activate it
-    await activateConfig("prompt", profile, blob.contentHash, "system-seed", "initial-seed");
+    await activateConfig("prompt", profile, blob.contentHash, seededBy ?? "system-seed", "initial-seed");
 
     console.log(
       `[Config-Storage] Seeded prompt ${profile} from file (hash: ${blob.contentHash.substring(0, 12)}..., isNew: ${isNew})`,
@@ -1359,13 +1434,14 @@ export async function importPromptContent(
       profile,
       content,
       versionLabel,
-      options.importedBy || "import-api",
+      options.importedBy || "admin",
+      options.importedBy || "admin",
     );
 
     // 5. Optionally activate
     let activated = false;
     if (options.activateImmediately) {
-      await activateConfig("prompt", profile, blob.contentHash, options.importedBy, "import");
+      await activateConfig("prompt", profile, blob.contentHash, options.importedBy || "admin", "import");
       activated = true;
     }
 
