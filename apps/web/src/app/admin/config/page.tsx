@@ -1674,7 +1674,7 @@ function SRConfigForm({
           <input
             type="text"
             className={styles.formInput}
-            value={config.skipPlatforms.join(", ")}
+            value={(config.skipPlatforms || []).join(", ")}
             onChange={(e) => updateField("skipPlatforms", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
           />
           <div className={styles.formHelp}>Comma-separated platform domains</div>
@@ -1684,7 +1684,7 @@ function SRConfigForm({
           <input
             type="text"
             className={styles.formInput}
-            value={config.skipTlds.join(", ")}
+            value={(config.skipTlds || []).join(", ")}
             onChange={(e) => updateField("skipTlds", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
           />
           <div className={styles.formHelp}>Comma-separated TLDs to skip</div>
