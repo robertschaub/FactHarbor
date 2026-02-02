@@ -1,11 +1,58 @@
 import { NextResponse } from "next/server";
-import { getConfig } from "@/lib/config-storage";
-import { DEFAULT_PIPELINE_CONFIG } from "@/lib/config-schemas";
+import {
+  getActiveConfig,
+  getConfig,
+  validateConfigContent,
+  type ConfigType,
+} from "@/lib/config-storage";
+import { DEFAULT_PIPELINE_CONFIG, getDefaultConfig } from "@/lib/config-schemas";
 
 export const runtime = "nodejs";
 
 function isNonEmpty(s?: string | null) {
   return typeof s === "string" && s.trim().length > 0;
+}
+
+async function validateAllConfigs() {
+  const configTypes: Array<Exclude<ConfigType, "prompt">> = [
+    "pipeline",
+    "search",
+    "calculation",
+    "sr",
+    "evidence-lexicon",
+    "aggregation-lexicon",
+  ];
+
+  const validationResults: Record<string, { valid: boolean; warnings: string[] }> = {};
+
+  for (const type of configTypes) {
+    try {
+      const active = await getActiveConfig(type, "default");
+      const content = active?.content ?? getDefaultConfig(type);
+      const validation = await validateConfigContent(type, content);
+
+      if (validation.valid) {
+        validationResults[type] = {
+          valid: true,
+          warnings: validation.warnings ?? [],
+        };
+      } else {
+        validationResults[type] = {
+          valid: false,
+          warnings: validation.errors.length ? validation.errors : ["Validation failed"],
+        };
+      }
+    } catch (err) {
+      validationResults[type] = {
+        valid: false,
+        warnings: [
+          `Failed to load or validate: ${err instanceof Error ? err.message : String(err)}`,
+        ],
+      };
+    }
+  }
+
+  return validationResults;
 }
 
 export async function GET() {
@@ -62,8 +109,19 @@ export async function GET() {
     providerOk &&
     (apiReachable !== false);
 
+  const configValidation = await validateAllConfigs();
+  const hasInvalidConfigs = Object.values(configValidation).some((v) => !v.valid);
+  const status = ok ? (hasInvalidConfigs ? "degraded" : "healthy") : "unhealthy";
+
   return NextResponse.json(
-    { ok, checks, api: { reachable: apiReachable, health_status: apiHealthStatus, error: apiError } },
+    {
+      ok,
+      status,
+      timestamp: new Date().toISOString(),
+      checks,
+      configValidation,
+      api: { reachable: apiReachable, health_status: apiHealthStatus, error: apiError },
+    },
     { status: ok ? 200 : 503 }
   );
 }
