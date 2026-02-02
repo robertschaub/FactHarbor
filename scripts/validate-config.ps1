@@ -46,6 +46,7 @@ $openAiKey = $envMap["OPENAI_API_KEY"]
 $anthropicKey = $envMap["ANTHROPIC_API_KEY"]
 $googleKey = $envMap["GOOGLE_GENERATIVE_AI_API_KEY"]
 $mistralKey = $envMap["MISTRAL_API_KEY"]
+$configDbPath = $envMap["FH_CONFIG_DB_PATH"]
 
 if ([string]::IsNullOrWhiteSpace($runnerBaseUrl)) { $errors += "Runner:BaseUrl is missing in appsettings.Development.json" }
 if ([string]::IsNullOrWhiteSpace($runnerKey)) { $errors += "Runner:RunnerKey is missing in appsettings.Development.json" }
@@ -65,6 +66,27 @@ if ($adminKey -and $webAdminKey -and ($adminKey -ne $webAdminKey)) {
 
 if ($webApiBaseUrl -and ($webApiBaseUrl -ne "http://localhost:5000")) {
     $warnings += "FH_API_BASE_URL is '$webApiBaseUrl' (expected http://localhost:5000 for local dev)"
+}
+
+# Warn if UCM DB not found (optional but useful)
+$candidateDbPaths = @()
+if (![string]::IsNullOrWhiteSpace($configDbPath)) {
+    $candidateDbPaths += $configDbPath
+} else {
+    $candidateDbPaths += (Join-Path $repoRoot "config.db")
+    $candidateDbPaths += (Join-Path $repoRoot "apps\web\config.db")
+}
+
+$dbExists = $false
+foreach ($p in $candidateDbPaths) {
+    if (Test-Path $p) {
+        $dbExists = $true
+        break
+    }
+}
+
+if (-not $dbExists) {
+    $warnings += "UCM config database not found (config.db). It will be created on first run."
 }
 
 if (
