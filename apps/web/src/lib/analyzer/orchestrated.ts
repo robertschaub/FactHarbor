@@ -79,7 +79,15 @@ import {
   detectInstitutionCode,
   sanitizeScopeShortAnswer,
 } from "./config";
-import { calculateWeightedVerdictAverage, validateContestation, detectHarmPotential, pruneTangentialBaselessClaims, pruneOpinionOnlyFactors, setAggregationLexicon } from "./aggregation";
+import {
+  calculateWeightedVerdictAverage,
+  validateContestation,
+  detectHarmPotential,
+  pruneTangentialBaselessClaims,
+  pruneOpinionOnlyFactors,
+  monitorOpinionAccumulation,
+  setAggregationLexicon,
+} from "./aggregation";
 import { detectScopes, detectScopesHybrid, formatDetectedScopesHint, setContextHeuristicsLexicon } from "./scopes";
 import { getModelForTask } from "./llm";
 import {
@@ -2208,6 +2216,8 @@ interface ClaimUnderstanding {
     isCentral: boolean; // Derived: true if centrality is "high"
     // v2.6.31: Thesis relevance - does this claim DIRECTLY test the main thesis?
     thesisRelevance: "direct" | "tangential" | "irrelevant";
+    // v2.9.1: Confidence in thesis relevance classification (0-100)
+    thesisRelevanceConfidence?: number;
     // v2.8.4: Counter-claim detection - true if claim tests OPPOSITE of thesis
     isCounterClaim: boolean;
     contextId: string;
@@ -2310,6 +2320,8 @@ interface ClaimVerdict {
   // NEW v2.6.31: Thesis relevance - does this claim directly test the thesis?
   // "direct" = contributes to verdict, "tangential" = on-topic but excluded, "irrelevant" = off-topic noise
   thesisRelevance?: "direct" | "tangential" | "irrelevant";
+  // v2.9.1: Confidence in thesis relevance classification (0-100)
+  thesisRelevanceConfidence?: number;
   // NEW: Claim role and dependencies
   claimRole?: "attribution" | "source" | "timing" | "core";
   dependsOn?: string[]; // Claim IDs this depends on
@@ -2664,6 +2676,8 @@ const SUBCLAIM_SCHEMA = z.object({
   // "tangential" = related context but doesn't test the thesis (e.g., reactions to an event)
   // "irrelevant" = off-topic noise that should not be evaluated or shown
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]),
+  // v2.9.1: Confidence in thesis relevance classification (0-100)
+  thesisRelevanceConfidence: z.number().int().min(0).max(100),
   // v2.8.4: Counter-claim detection - LLM explicitly indicates if claim tests OPPOSITE of thesis
   // true = this claim evaluates the opposite position (e.g., thesis "X is fair", claim tests "X violated procedures")
   // false = this claim is thesis-aligned (tests the same direction as thesis)
@@ -2690,6 +2704,7 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   centrality: z.enum(["high", "medium", "low"]).catch("medium"),
   isCentral: z.boolean().catch(false),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).catch("direct"), // Default to direct for backward compat
+  thesisRelevanceConfidence: z.number().int().min(0).max(100).catch(100),
   // v2.8.4: Counter-claim detection - default to false (thesis-aligned) for backward compat
   isCounterClaim: z.boolean().catch(false),
   contextId: z.string().default(""),
@@ -2714,6 +2729,52 @@ function isExternalReactionClaim(claimText: string): boolean {
   const text = claimText.toLowerCase();
 
   return _heuristicPatterns.externalReactionPatterns.some((pattern) => pattern.test(text));
+}
+
+/**
+ * Validate thesis relevance classifications and flag low-confidence cases.
+ * Optionally downgrade "direct" to "tangential" when confidence is very low.
+ */
+function validateThesisRelevance<T extends {
+  thesisRelevance?: "direct" | "tangential" | "irrelevant";
+  thesisRelevanceConfidence?: number;
+  text?: string;
+  claimText?: string;
+}>(claims: T[], pipelineConfig?: PipelineConfig): T[] {
+  const enabled =
+    pipelineConfig?.thesisRelevanceValidationEnabled ??
+    DEFAULT_PIPELINE_CONFIG.thesisRelevanceValidationEnabled;
+  if (!enabled) return claims;
+
+  const lowThreshold =
+    pipelineConfig?.thesisRelevanceLowConfidenceThreshold ??
+    DEFAULT_PIPELINE_CONFIG.thesisRelevanceLowConfidenceThreshold ?? 70;
+  const downgradeThreshold =
+    pipelineConfig?.thesisRelevanceAutoDowngradeThreshold ??
+    DEFAULT_PIPELINE_CONFIG.thesisRelevanceAutoDowngradeThreshold ?? 60;
+
+  for (const claim of claims) {
+    const confidence = Number.isFinite(claim.thesisRelevanceConfidence)
+      ? (claim.thesisRelevanceConfidence as number)
+      : 100;
+    const label = claim.thesisRelevance || "direct";
+    const preview = String(claim.text || claim.claimText || "").slice(0, 80);
+
+    if (confidence < lowThreshold) {
+      console.warn(
+        `[Relevance] Low-confidence thesisRelevance: "${preview}..." classified as "${label}" (${confidence}%)`,
+      );
+    }
+
+    if (confidence < downgradeThreshold && label === "direct") {
+      console.warn(
+        `[Relevance] Downgrading "direct" to "tangential" due to very low confidence (${confidence}%)`,
+      );
+      claim.thesisRelevance = "tangential";
+    }
+  }
+
+  return claims;
 }
 
 function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; centrality?: any; isCentral?: any; text?: any }>(
@@ -3150,6 +3211,7 @@ const SUPPLEMENTAL_SUBCLAIM_LITE_SCHEMA = z.object({
   centrality: z.enum(["high", "medium", "low"]).optional(),
   isCentral: z.boolean().optional(),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).optional(),
+  thesisRelevanceConfidence: z.number().int().min(0).max(100).optional(),
   approximatePosition: z.string().optional(),
   keyFactorId: z.string().optional(),
 });
@@ -3274,6 +3336,7 @@ function buildHeuristicSubClaims(
     centrality: "medium" as const,
     isCentral: false,
     thesisRelevance: "direct" as const,
+    thesisRelevanceConfidence: 100,
     isCounterClaim: false, // Heuristic claims default to thesis-aligned
     contextId,
     approximatePosition: "",
@@ -4575,7 +4638,8 @@ Now analyze the input and output JSON only.`;
 
   // Pass thesis to detect foreign response claims that should be tangential
   const thesis = parsed.impliedClaim || parsed.articleThesis || analysisInput;
-  const claimsWithThesisRelevanceInvariant = enforceThesisRelevanceInvariants(validatedClaims as any, thesis);
+  const relevanceValidatedClaims = validateThesisRelevance(validatedClaims as any, pipelineConfig);
+  const claimsWithThesisRelevanceInvariant = enforceThesisRelevanceInvariants(relevanceValidatedClaims as any, thesis);
   const claimsPolicyB = applyThesisRelevancePolicyBToSubClaims(claimsWithThesisRelevanceInvariant as any);
   const withMinimumDirect = enforceMinimumDirectClaimsPerScope(
     { ...parsed, subClaims: claimsPolicyB } as ClaimUnderstanding,
@@ -4789,6 +4853,10 @@ async function requestSupplementalSubClaims(
       centrality,
       isCentral,
       thesisRelevance: claim.thesisRelevance || "direct",
+      thesisRelevanceConfidence:
+        typeof claim.thesisRelevanceConfidence === "number"
+          ? claim.thesisRelevanceConfidence
+          : 100,
       // v2.8.4: Use LLM-provided isCounterClaim or default to false
       isCounterClaim: claim.isCounterClaim ?? false,
       contextId: procId,
@@ -5010,6 +5078,7 @@ Extract outcomes that need separate evaluation claims.`;
         centrality: "medium",
         isCentral: false,
         thesisRelevance: "direct", // Outcome claims are direct evaluations
+        thesisRelevanceConfidence: 100,
         isCounterClaim: false, // Outcome claims default to thesis-aligned
         contextId: outcome.contextId || "",
         approximatePosition: "",
@@ -7108,6 +7177,10 @@ The JSON object MUST include these top-level keys:
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
         thesisRelevance: claim.thesisRelevance || "direct",
+        thesisRelevanceConfidence:
+          typeof claim.thesisRelevanceConfidence === "number"
+            ? claim.thesisRelevanceConfidence
+            : 100,
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(50),
@@ -7398,6 +7471,10 @@ The JSON object MUST include these top-level keys:
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
         thesisRelevance: claim.thesisRelevance || "direct",
+        thesisRelevanceConfidence:
+          typeof claim.thesisRelevanceConfidence === "number"
+            ? claim.thesisRelevanceConfidence
+            : 100,
         highlightColor: getHighlightColor7Point(fallbackVerdict),
       });
 
@@ -7549,8 +7626,13 @@ The JSON object MUST include these top-level keys:
 
   // v2.8: Validate verdictSummary keyFactors
   const validatedSummaryKeyFactors = validateContestation(parsed.verdictSummary.keyFactors || []);
+  const monitoredSummaryKeyFactors = monitorOpinionAccumulation(validatedSummaryKeyFactors, {
+    maxOpinionCount: state.pipelineConfig?.maxOpinionFactors ?? DEFAULT_PIPELINE_CONFIG.maxOpinionFactors,
+    warningThresholdPercent: state.pipelineConfig?.opinionAccumulationWarningThreshold ??
+      DEFAULT_PIPELINE_CONFIG.opinionAccumulationWarningThreshold,
+  });
   // v2.8.6: Prune opinion-only factors (no documented evidence)
-  const prunedSummaryKeyFactors = pruneOpinionOnlyFactors(validatedSummaryKeyFactors);
+  const prunedSummaryKeyFactors = pruneOpinionOnlyFactors(monitoredSummaryKeyFactors);
 
   const verdictSummary: VerdictSummary = {
     displayText: displayText,
@@ -7596,8 +7678,14 @@ The JSON object MUST include these top-level keys:
   };
 
   // v2.8.6: Prune tangential claims with no/low evidence
-  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts);
-  console.log(`[Analyzer] MultiScope: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${validatedSummaryKeyFactors.length - prunedSummaryKeyFactors.length} baseless factors`);
+  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts, {
+    facts: state.facts,
+    minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
+      DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
+    requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
+      DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
+  });
+  console.log(`[Analyzer] MultiScope: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredSummaryKeyFactors.length - prunedSummaryKeyFactors.length} baseless factors`);
 
   return {
     claimVerdicts: prunedClaimVerdicts,
@@ -7899,6 +7987,10 @@ ${factsFormatted}`;
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
         thesisRelevance: claim.thesisRelevance || "direct",
+        thesisRelevanceConfidence:
+          typeof claim.thesisRelevanceConfidence === "number"
+            ? claim.thesisRelevanceConfidence
+            : 100,
         highlightColor: getHighlightColor7Point(50),
         isContested: false,
         contestedBy: "",
@@ -7977,6 +8069,10 @@ ${factsFormatted}`;
           // v2.8: Use detectHarmPotential as fallback for death/injury claims
           harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
           thesisRelevance: claim.thesisRelevance || "direct",
+          thesisRelevanceConfidence:
+            typeof claim.thesisRelevanceConfidence === "number"
+              ? claim.thesisRelevanceConfidence
+              : 100,
           startOffset: claim.startOffset,
           endOffset: claim.endOffset,
           highlightColor: getHighlightColor7Point(50),
@@ -8040,6 +8136,10 @@ ${factsFormatted}`;
         // v2.8: Use detectHarmPotential as fallback for death/injury claims
         harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
         thesisRelevance: claim.thesisRelevance || "direct",
+        thesisRelevanceConfidence:
+          typeof claim.thesisRelevanceConfidence === "number"
+            ? claim.thesisRelevanceConfidence
+            : 100,
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(clampedTruthPct),
@@ -8072,8 +8172,13 @@ ${factsFormatted}`;
 
   // v2.8: Validate contestation classification - downgrade political criticism without evidence to "opinion"
   const validatedKeyFactors = validateContestation(keyFactors);
+  const monitoredKeyFactors = monitorOpinionAccumulation(validatedKeyFactors, {
+    maxOpinionCount: state.pipelineConfig?.maxOpinionFactors ?? DEFAULT_PIPELINE_CONFIG.maxOpinionFactors,
+    warningThresholdPercent: state.pipelineConfig?.opinionAccumulationWarningThreshold ??
+      DEFAULT_PIPELINE_CONFIG.opinionAccumulationWarningThreshold,
+  });
   // v2.8.6: Prune opinion-only factors (no documented evidence)
-  const prunedKeyFactors = pruneOpinionOnlyFactors(validatedKeyFactors);
+  const prunedKeyFactors = pruneOpinionOnlyFactors(monitoredKeyFactors);
 
   // Only flag contested negatives with evidence-based contestation
   const hasContestedFactors = prunedKeyFactors.some(
@@ -8156,8 +8261,14 @@ ${factsFormatted}`;
   };
 
   // v2.8.6: Prune tangential claims with no/low evidence
-  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts);
-  console.log(`[Analyzer] SingleScope: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${validatedKeyFactors.length - prunedKeyFactors.length} baseless factors`);
+  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts, {
+    facts: state.facts,
+    minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
+      DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
+    requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
+      DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
+  });
+  console.log(`[Analyzer] SingleScope: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredKeyFactors.length - prunedKeyFactors.length} baseless factors`);
 
   return {
     claimVerdicts: prunedClaimVerdicts,
@@ -8489,6 +8600,10 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
         thesisRelevance: claim.thesisRelevance || "direct",
+        thesisRelevanceConfidence:
+          typeof claim.thesisRelevanceConfidence === "number"
+            ? claim.thesisRelevanceConfidence
+            : 100,
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(50),
@@ -8561,6 +8676,10 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
           // v2.8: Use detectHarmPotential as fallback for death/injury claims
           harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
           thesisRelevance: claim.thesisRelevance || "direct",
+          thesisRelevanceConfidence:
+            typeof claim.thesisRelevanceConfidence === "number"
+              ? claim.thesisRelevanceConfidence
+              : 100,
           claimRole: claim.claimRole || "core",
           dependsOn: claim.dependsOn || [],
           keyFactorId: claim.keyFactorId || "", // Preserve KeyFactor mapping
@@ -8652,6 +8771,10 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         // v2.8: Use detectHarmPotential as fallback for death/injury claims
         harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
         thesisRelevance: claim.thesisRelevance || "direct",
+        thesisRelevanceConfidence:
+          typeof claim.thesisRelevanceConfidence === "number"
+            ? claim.thesisRelevanceConfidence
+            : 100,
         claimRole: claim.claimRole || "core",
         dependsOn: claim.dependsOn || [],
         keyFactorId: claim.keyFactorId || "", // Preserve KeyFactor mapping for aggregation
@@ -8924,9 +9047,20 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
   console.log(`[Analyzer] Key Factors aggregated: ${keyFactors.length} factors from ${understanding.keyFactors?.length || 0} discovered, ${hasContestedFactors ? "has" : "no"} contested factors`);
 
   // v2.8.6: Prune tangential claims with no/low evidence and opinion-only factors
-  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts);
-  const prunedKeyFactors = pruneOpinionOnlyFactors(keyFactors);
-  console.log(`[Analyzer] Pruned: ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${keyFactors.length - prunedKeyFactors.length} opinion-only factors`);
+  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts, {
+    facts: state.facts,
+    minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
+      DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
+    requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
+      DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
+  });
+  const monitoredKeyFactors = monitorOpinionAccumulation(keyFactors, {
+    maxOpinionCount: state.pipelineConfig?.maxOpinionFactors ?? DEFAULT_PIPELINE_CONFIG.maxOpinionFactors,
+    warningThresholdPercent: state.pipelineConfig?.opinionAccumulationWarningThreshold ??
+      DEFAULT_PIPELINE_CONFIG.opinionAccumulationWarningThreshold,
+  });
+  const prunedKeyFactors = pruneOpinionOnlyFactors(monitoredKeyFactors);
+  console.log(`[Analyzer] Pruned: ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredKeyFactors.length - prunedKeyFactors.length} opinion-only factors`);
 
   return {
     claimVerdicts: prunedClaimVerdicts,
@@ -9548,6 +9682,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           centrality: "high",
           isCentral: true,
           thesisRelevance: "direct",
+          thesisRelevanceConfidence: 100,
           isCounterClaim: false, // Fallback claims are thesis-aligned
           contextId: "",
           approximatePosition: "",
@@ -10005,7 +10140,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Pass thesis to detect foreign response claims that should be tangential
     const thesis = state.understanding!.impliedClaim || state.understanding!.articleThesis || state.originalInput;
     state.understanding!.subClaims = applyThesisRelevancePolicyBToSubClaims(
-      enforceThesisRelevanceInvariants(state.understanding!.subClaims as any, thesis) as any,
+      enforceThesisRelevanceInvariants(
+        validateThesisRelevance(state.understanding!.subClaims as any, state.pipelineConfig) as any,
+        thesis,
+      ) as any,
     ) as any;
     console.log(`[Analyzer] Added ${outcomeClaims.length} outcome-related claims from research`);
     await emit(`Added ${outcomeClaims.length} outcome-related claims`, 63);

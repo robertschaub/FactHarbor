@@ -213,6 +213,14 @@ Each atomic claim should make ONE testable assertion that can be verified indepe
 - **"tangential"**: Related context but does NOT test the thesis → displayed but excluded from verdict
 - **"irrelevant"**: Not meaningfully about the input's specific topic → dropped
 
+**Also provide thesisRelevanceConfidence (0-100)** for each claim:
+- **90-100**: Very clear classification
+- **70-89**: Confident classification
+- **50-69**: Borderline case
+- **0-49**: Uncertain classification
+
+If confidence is low, be conservative: avoid labeling a claim as "direct" unless it clearly tests the thesis.
+
 **CRITICAL - REACTION/RESPONSE CLAIMS ARE GENERALLY TANGENTIAL**
 
 Claims about how third parties *reacted* or *responded* to an event are usually tangential because they do not evaluate whether the underlying claim is true.
@@ -302,7 +310,7 @@ Return JSON with:
 - impliedClaim: What claim would "YES" confirm? Must be AFFIRMATIVE.
 - articleThesis: Neutral summary of what the article claims
 - analysisContext: the ArticleFrame — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
-- subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, isCounterClaim, contextId, keyFactorId
+- subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, thesisRelevanceConfidence, isCounterClaim, contextId, keyFactorId
 - analysisContexts: Array of detected AnalysisContext objects with id, name, shortName, subject, temporal, status, outcome, assessedStatement, metadata
 - requiresSeparateAnalysis: boolean
 - researchQueries: 4-6 specific search queries

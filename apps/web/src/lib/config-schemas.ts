@@ -272,6 +272,24 @@ export const PipelineConfigSchema = z.object({
     "Max runtime for monolithic dynamic pipeline (ms)"
   ),
 
+  // === Claim Filtering Enhancements ===
+  thesisRelevanceValidationEnabled: z.boolean().optional()
+    .describe("Enable validation of thesis relevance classifications"),
+  thesisRelevanceLowConfidenceThreshold: z.number().int().min(0).max(100).optional()
+    .describe("Threshold for flagging low-confidence relevance classifications (default: 70)"),
+  thesisRelevanceAutoDowngradeThreshold: z.number().int().min(0).max(100).optional()
+    .describe("Threshold for auto-downgrading 'direct' to 'tangential' (default: 60)"),
+
+  minEvidenceForTangential: z.number().int().min(0).max(10).optional()
+    .describe("Minimum supporting facts required for tangential claims to appear in report (default: 2)"),
+  tangentialEvidenceQualityCheckEnabled: z.boolean().optional()
+    .describe("Require at least one high/medium probative fact for tangential claims (default: false)"),
+
+  maxOpinionFactors: z.number().int().min(0).max(20).optional()
+    .describe("Maximum opinion-based keyFactors to include in report (0 = unlimited, monitor only)"),
+  opinionAccumulationWarningThreshold: z.number().int().min(0).max(100).optional()
+    .describe("Warn if opinion-based keyFactors exceed this percentage (default: 70)"),
+
   // === Pipeline Selection ===
   defaultPipelineVariant: z.enum(["orchestrated", "monolithic_canonical", "monolithic_dynamic"])
     .optional()
@@ -375,6 +393,27 @@ export const PipelineConfigSchema = z.object({
   if (data.monolithicDynamicTimeoutMs === undefined) {
     data.monolithicDynamicTimeoutMs = 150000;
   }
+  if (data.thesisRelevanceValidationEnabled === undefined) {
+    data.thesisRelevanceValidationEnabled = true;
+  }
+  if (data.thesisRelevanceLowConfidenceThreshold === undefined) {
+    data.thesisRelevanceLowConfidenceThreshold = 70;
+  }
+  if (data.thesisRelevanceAutoDowngradeThreshold === undefined) {
+    data.thesisRelevanceAutoDowngradeThreshold = 60;
+  }
+  if (data.minEvidenceForTangential === undefined) {
+    data.minEvidenceForTangential = 2;
+  }
+  if (data.tangentialEvidenceQualityCheckEnabled === undefined) {
+    data.tangentialEvidenceQualityCheckEnabled = false;
+  }
+  if (data.maxOpinionFactors === undefined) {
+    data.maxOpinionFactors = 0;
+  }
+  if (data.opinionAccumulationWarningThreshold === undefined) {
+    data.opinionAccumulationWarningThreshold = 70;
+  }
   if (data.probativeFilterEnabled === undefined) {
     data.probativeFilterEnabled = true;
   }
@@ -438,6 +477,13 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   extractFactsLlmTimeoutMs: 300000,
   monolithicCanonicalTimeoutMs: 180000,
   monolithicDynamicTimeoutMs: 150000,
+  thesisRelevanceValidationEnabled: true,
+  thesisRelevanceLowConfidenceThreshold: 70,
+  thesisRelevanceAutoDowngradeThreshold: 60,
+  minEvidenceForTangential: 2,
+  tangentialEvidenceQualityCheckEnabled: false,
+  maxOpinionFactors: 0,
+  opinionAccumulationWarningThreshold: 70,
   probativeFilterEnabled: true,
   provenanceValidationEnabled: true,
   pdfParseTimeoutMs: 60000,

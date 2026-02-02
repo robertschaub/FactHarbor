@@ -365,7 +365,54 @@ interface PrunableKeyFactor {
  * Minimum evidence threshold for tangential claims.
  * Claims with fewer supporting evidence items than this are considered "low evidence".
  */
-const MIN_EVIDENCE_FOR_TANGENTIAL = 1;
+const MIN_EVIDENCE_FOR_TANGENTIAL = 2;
+
+interface PrunableFact {
+  id: string;
+  probativeValue?: "high" | "medium" | "low";
+}
+
+/**
+ * Check if a claim has sufficient high-quality evidence.
+ * Used to determine if tangential claims should be kept in the report.
+ */
+function hasSufficientQualityEvidence(
+  claim: {
+    supportingFactIds?: string[];
+    thesisRelevance?: "direct" | "tangential" | "irrelevant";
+    claimText?: string;
+    claimId?: string;
+  },
+  facts: PrunableFact[],
+  minEvidenceForTangential: number,
+): boolean {
+  const evidenceCount = claim.supportingFactIds?.length ?? 0;
+
+  if (!claim.thesisRelevance || claim.thesisRelevance === "direct") {
+    return true;
+  }
+
+  if (evidenceCount < minEvidenceForTangential) {
+    return false;
+  }
+
+  const supportingFacts = facts.filter((f) =>
+    claim.supportingFactIds?.includes(f.id),
+  );
+
+  const hasQualityFact = supportingFacts.some(
+    (f) => f.probativeValue === "high" || f.probativeValue === "medium",
+  );
+
+  if (!hasQualityFact) {
+    console.log(
+      `[Prune] Tangential claim has ${evidenceCount} facts but none are high-quality: ` +
+      `"${(claim.claimText || claim.claimId || "unknown").substring(0, 60)}..."`,
+    );
+  }
+
+  return hasQualityFact;
+}
 
 /**
  * Prune tangential claims that have no or very low supporting evidence.
@@ -383,7 +430,21 @@ const MIN_EVIDENCE_FOR_TANGENTIAL = 1;
  * @param claims - Array of claim verdicts to filter
  * @returns Filtered array with baseless tangential claims removed
  */
-export function pruneTangentialBaselessClaims<T extends PrunableClaimVerdict>(claims: T[]): T[] {
+export function pruneTangentialBaselessClaims<T extends PrunableClaimVerdict>(
+  claims: T[],
+  options: {
+    facts?: PrunableFact[];
+    minEvidenceForTangential?: number;
+    requireQualityEvidence?: boolean;
+  } = {},
+): T[] {
+  const minEvidence = Math.max(
+    0,
+    options.minEvidenceForTangential ?? MIN_EVIDENCE_FOR_TANGENTIAL,
+  );
+  const requireQuality = options.requireQualityEvidence ?? false;
+  const facts = options.facts ?? [];
+
   return claims.filter(claim => {
     // Direct claims are never pruned
     if (!claim.thesisRelevance || claim.thesisRelevance === "direct") {
@@ -392,9 +453,20 @@ export function pruneTangentialBaselessClaims<T extends PrunableClaimVerdict>(cl
 
     // Tangential/irrelevant claims need sufficient evidence to be kept
     const evidenceCount = claim.supportingFactIds?.length ?? 0;
-    if (evidenceCount < MIN_EVIDENCE_FOR_TANGENTIAL) {
-      console.log(`[Prune] Dropping tangential claim with insufficient evidence: "${(claim.claimText || claim.claimId || "unknown").substring(0, 60)}..." (${evidenceCount} evidence items)`);
+    if (evidenceCount < minEvidence) {
+      console.log(`[Prune] Dropping tangential claim with insufficient evidence: "${(claim.claimText || claim.claimId || "unknown").substring(0, 60)}..." (${evidenceCount} evidence items, min=${minEvidence})`);
       return false;
+    }
+
+    if (requireQuality && facts.length > 0) {
+      return hasSufficientQualityEvidence(claim, facts, minEvidence);
+    }
+
+    if (requireQuality && facts.length === 0) {
+      console.warn(
+        `[Prune] Quality check enabled but no facts provided for claim: "${(claim.claimText || claim.claimId || "unknown").substring(0, 60)}..."`,
+      );
+      return true;
     }
 
     return true;
@@ -428,3 +500,62 @@ export function pruneOpinionOnlyFactors<T extends PrunableKeyFactor>(keyFactors:
   });
 }
 
+/**
+ * Monitor and optionally limit opinion-based factors in report.
+ */
+export function monitorOpinionAccumulation<T extends PrunableKeyFactor>(
+  keyFactors: T[],
+  options: {
+    maxOpinionCount?: number;
+    warningThresholdPercent?: number;
+  } = {},
+): T[] {
+  const maxOpinionCount = options.maxOpinionCount ?? 0;
+  const warningThresholdPercent = options.warningThresholdPercent ?? 70;
+
+  const opinionFactors = keyFactors.filter(
+    (kf) => kf.factualBasis === "opinion" || kf.factualBasis === "unknown",
+  );
+  const documentedFactors = keyFactors.filter(
+    (kf) => kf.factualBasis === "established" || kf.factualBasis === "disputed",
+  );
+
+  const opinionCount = opinionFactors.length;
+  const documentedCount = documentedFactors.length;
+  const opinionRatio = keyFactors.length > 0
+    ? Math.round((opinionCount / keyFactors.length) * 100)
+    : 0;
+
+  console.log(
+    `[Opinion Monitor] KeyFactors: ${opinionCount} opinion, ${documentedCount} documented (${opinionRatio}% opinion-based)`,
+  );
+
+  if (warningThresholdPercent > 0 && opinionRatio > warningThresholdPercent && documentedCount > 0) {
+    console.warn(
+      `[Opinion Monitor] High opinion ratio: ${opinionRatio}% opinion-based (${opinionCount} opinion vs ${documentedCount} documented)`,
+    );
+  }
+
+  if (documentedCount === 0 && opinionCount > 0) {
+    console.warn(
+      `[Opinion Monitor] All ${opinionCount} keyFactors are opinion-based. No documented evidence found.`,
+    );
+  }
+
+  if (maxOpinionCount > 0 && opinionCount > maxOpinionCount) {
+    console.warn(
+      `[Opinion Monitor] Limiting opinion factors from ${opinionCount} to ${maxOpinionCount} (keeping all ${documentedCount} documented factors)`,
+    );
+
+    const sortedOpinions = [...opinionFactors].sort((a, b) => {
+      if (a.supports === "yes" && b.supports !== "yes") return -1;
+      if (b.supports === "yes" && a.supports !== "yes") return 1;
+      return 0;
+    });
+
+    const limitedOpinions = sortedOpinions.slice(0, maxOpinionCount);
+    return [...documentedFactors, ...limitedOpinions] as T[];
+  }
+
+  return keyFactors;
+}
