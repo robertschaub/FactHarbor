@@ -13,8 +13,11 @@ import {
   getActiveConfigHash,
   getConfigBlob,
   recordConfigUsage,
+  refreshPromptFromFileIfSystemSeed,
   seedPromptFromFile,
   type ConfigType,
+  // NOTE: Override types preserved for backward compatibility but always return empty arrays
+  // in LLM-only mode. May be removed in future cleanup or repurposed for production features.
   type OverrideRecord,
 } from "./config-storage";
 import {
@@ -42,12 +45,6 @@ const CACHE_CONFIG = {
   contentTTL: 300_000, // 5 minutes - content rarely changes
 };
 
-// Override policy
-type OverridePolicy = "on" | "off" | string; // string for "allowlist:VAR1,VAR2"
-
-function getOverridePolicy(): OverridePolicy {
-  return process.env.FH_CONFIG_ENV_OVERRIDES || "on";
-}
 
 // ============================================================================
 // CACHE TYPES
@@ -78,166 +75,6 @@ function getCacheKey(configType: ConfigType, profileKey: string): string {
   return `${configType}:${profileKey}`;
 }
 
-// ============================================================================
-// ENVIRONMENT VARIABLE OVERRIDE MAPPING
-// ============================================================================
-
-// Search config env var mappings
-const SEARCH_ENV_MAP: Record<string, { envVar: string; fieldPath: string; parser: (v: string) => unknown }> = {
-  FH_SEARCH_ENABLED: { envVar: "FH_SEARCH_ENABLED", fieldPath: "enabled", parser: (v) => v === "true" },
-  FH_SEARCH_PROVIDER: { envVar: "FH_SEARCH_PROVIDER", fieldPath: "provider", parser: (v) => v },
-  FH_SEARCH_MODE: { envVar: "FH_SEARCH_MODE", fieldPath: "mode", parser: (v) => v },
-  FH_SEARCH_MAX_RESULTS: { envVar: "FH_SEARCH_MAX_RESULTS", fieldPath: "maxResults", parser: (v) => parseInt(v, 10) },
-  FH_SEARCH_TIMEOUT_MS: { envVar: "FH_SEARCH_TIMEOUT_MS", fieldPath: "timeoutMs", parser: (v) => parseInt(v, 10) },
-  FH_SEARCH_DATE_RESTRICT: { envVar: "FH_SEARCH_DATE_RESTRICT", fieldPath: "dateRestrict", parser: (v) => v || null },
-  FH_SEARCH_DOMAIN_WHITELIST: { envVar: "FH_SEARCH_DOMAIN_WHITELIST", fieldPath: "domainWhitelist", parser: (v) => v.split(",").map(s => s.trim()).filter(Boolean) },
-  FH_SEARCH_DOMAIN_BLACKLIST: { envVar: "FH_SEARCH_DOMAIN_BLACKLIST", fieldPath: "domainBlacklist", parser: (v) => v.split(",").map(s => s.trim()).filter(Boolean) },
-};
-
-// Calculation config env var mappings
-const CALC_ENV_MAP: Record<string, { envVar: string; fieldPath: string; parser: (v: string) => unknown }> = {
-  FH_CALC_MIXED_CONFIDENCE_THRESHOLD: { envVar: "FH_CALC_MIXED_CONFIDENCE_THRESHOLD", fieldPath: "mixedConfidenceThreshold", parser: (v) => parseInt(v, 10) },
-  FH_SR_CONFIDENCE_THRESHOLD: { envVar: "FH_SR_CONFIDENCE_THRESHOLD", fieldPath: "sourceReliability.confidenceThreshold", parser: (v) => parseFloat(v) },
-  FH_SR_CONSENSUS_THRESHOLD: { envVar: "FH_SR_CONSENSUS_THRESHOLD", fieldPath: "sourceReliability.consensusThreshold", parser: (v) => parseFloat(v) },
-  FH_SR_DEFAULT_SCORE: { envVar: "FH_SR_DEFAULT_SCORE", fieldPath: "sourceReliability.defaultScore", parser: (v) => parseFloat(v) },
-};
-
-// Pipeline config env var mappings
-const PIPELINE_ENV_MAP: Record<string, { envVar: string; fieldPath: string; parser: (v: string) => unknown }> = {
-  // Model Selection
-  // Original logic from llm.ts:42-44: only "on", "true", "1", "enabled" → true
-  FH_LLM_TIERING: {
-    envVar: "FH_LLM_TIERING",
-    fieldPath: "llmTiering",
-    parser: (v) => ["on", "true", "1", "enabled"].includes(v.toLowerCase().trim())
-  },
-  FH_MODEL_UNDERSTAND: { envVar: "FH_MODEL_UNDERSTAND", fieldPath: "modelUnderstand", parser: (v) => v },
-  FH_MODEL_EXTRACT_FACTS: { envVar: "FH_MODEL_EXTRACT_FACTS", fieldPath: "modelExtractFacts", parser: (v) => v },
-  FH_MODEL_VERDICT: { envVar: "FH_MODEL_VERDICT", fieldPath: "modelVerdict", parser: (v) => v },
-
-  // LLM Text Analysis Feature Flags (v2.8.3: default enabled, set to "false" to disable)
-  FH_LLM_INPUT_CLASSIFICATION: { envVar: "FH_LLM_INPUT_CLASSIFICATION", fieldPath: "llmInputClassification", parser: (v) => v !== "false" },
-  FH_LLM_EVIDENCE_QUALITY: { envVar: "FH_LLM_EVIDENCE_QUALITY", fieldPath: "llmEvidenceQuality", parser: (v) => v !== "false" },
-  FH_LLM_SCOPE_SIMILARITY: { envVar: "FH_LLM_SCOPE_SIMILARITY", fieldPath: "llmScopeSimilarity", parser: (v) => v !== "false" },
-  FH_LLM_VERDICT_VALIDATION: { envVar: "FH_LLM_VERDICT_VALIDATION", fieldPath: "llmVerdictValidation", parser: (v) => v !== "false" },
-
-  // Analysis Behavior
-  FH_ANALYSIS_MODE: { envVar: "FH_ANALYSIS_MODE", fieldPath: "analysisMode", parser: (v) => v as "quick" | "deep" },
-  // Original logic: only "true" → true (was default false)
-  FH_ALLOW_MODEL_KNOWLEDGE: { envVar: "FH_ALLOW_MODEL_KNOWLEDGE", fieldPath: "allowModelKnowledge", parser: (v) => v === "true" },
-  FH_DETERMINISTIC: { envVar: "FH_DETERMINISTIC", fieldPath: "deterministic", parser: (v) => v === "true" },
-  FH_SCOPE_DEDUP_THRESHOLD: { envVar: "FH_SCOPE_DEDUP_THRESHOLD", fieldPath: "scopeDedupThreshold", parser: (v) => parseFloat(v) },
-
-  // Budget Controls
-  FH_MAX_ITERATIONS_PER_SCOPE: { envVar: "FH_MAX_ITERATIONS_PER_SCOPE", fieldPath: "maxIterationsPerScope", parser: (v) => parseInt(v, 10) },
-  FH_MAX_TOTAL_ITERATIONS: { envVar: "FH_MAX_TOTAL_ITERATIONS", fieldPath: "maxTotalIterations", parser: (v) => parseInt(v, 10) },
-  FH_MAX_TOTAL_TOKENS: { envVar: "FH_MAX_TOTAL_TOKENS", fieldPath: "maxTotalTokens", parser: (v) => parseInt(v, 10) },
-  // Original logic from budgets.ts:100-102: if defined, parse as !== "false"
-  FH_ENFORCE_BUDGETS: { envVar: "FH_ENFORCE_BUDGETS", fieldPath: "enforceBudgets", parser: (v) => v !== "false" },
-
-  // Pipeline Selection
-  FH_DEFAULT_PIPELINE_VARIANT: { envVar: "FH_DEFAULT_PIPELINE_VARIANT", fieldPath: "defaultPipelineVariant", parser: (v) => v as "orchestrated" | "monolithic_canonical" | "monolithic_dynamic" },
-};
-
-// ============================================================================
-// OVERRIDE RESOLUTION
-// ============================================================================
-
-function applyOverrides<T extends object>(
-  base: T,
-  configType: ConfigType,
-): { result: T; overrides: OverrideRecord[]; skippedOverrides: string[] } {
-  const policy = getOverridePolicy();
-  const skippedOverrides: string[] = [];
-
-  // If overrides are off, return base unchanged
-  if (policy === "off") {
-    return { result: base, overrides: [], skippedOverrides };
-  }
-
-  const envMap =
-    configType === "search" ? SEARCH_ENV_MAP :
-    configType === "calculation" ? CALC_ENV_MAP :
-    configType === "pipeline" ? PIPELINE_ENV_MAP :
-    {};
-  const schema =
-    configType === "search" ? SearchConfigSchema :
-    configType === "calculation" ? CalcConfigSchema :
-    configType === "pipeline" ? PipelineConfigSchema :
-    null;
-
-  // Early return if no schema (e.g., prompt type)
-  if (!schema) {
-    return { result: base, overrides: [], skippedOverrides };
-  }
-  const overrides: OverrideRecord[] = [];
-
-  // Parse allowlist if specified
-  let allowlist: Set<string> | null = null;
-  if (policy.startsWith("allowlist:")) {
-    const vars = policy.slice("allowlist:".length).split(",").map(s => s.trim());
-    allowlist = new Set(vars);
-  }
-
-  // Deep clone base
-  const result = JSON.parse(JSON.stringify(base)) as T;
-
-  // Apply each env var if set, validating after each override
-  for (const [envVar, mapping] of Object.entries(envMap)) {
-    // Skip if not in allowlist (when allowlist is active)
-    if (allowlist && !allowlist.has(envVar)) continue;
-
-    const envValue = process.env[envVar];
-    if (envValue === undefined || envValue === "") continue;
-
-    try {
-      const parsed = mapping.parser(envValue);
-
-      // Apply the override tentatively
-      const tentative = JSON.parse(JSON.stringify(result)) as T;
-      setNestedValue(tentative, mapping.fieldPath, parsed);
-
-      // Validate the result - only accept if still valid
-      const validation = schema.safeParse(tentative);
-      if (!validation.success) {
-        console.warn(
-          `[Config-Loader] Skipping invalid override ${envVar}=${envValue}: ` +
-          validation.error.issues.map(i => i.message).join(", ")
-        );
-        skippedOverrides.push(`${envVar} (invalid: ${validation.error.issues[0]?.message})`);
-        continue;
-      }
-
-      // Override is valid, apply it
-      setNestedValue(result, mapping.fieldPath, parsed);
-
-      overrides.push({
-        envVar,
-        fieldPath: mapping.fieldPath,
-        wasSet: true,
-        appliedValue: typeof parsed === "object" ? undefined : parsed as string | number | boolean,
-      });
-    } catch {
-      console.warn(`[Config-Loader] Failed to parse ${envVar}=${envValue}`);
-    }
-  }
-
-  return { result, overrides, skippedOverrides };
-}
-
-function setNestedValue(obj: object, path: string, value: unknown): void {
-  const parts = path.split(".");
-  let current = obj as Record<string, unknown>;
-
-  for (let i = 0; i < parts.length - 1; i++) {
-    if (!(parts[i] in current)) {
-      current[parts[i]] = {};
-    }
-    current = current[parts[i]] as Record<string, unknown>;
-  }
-
-  current[parts[parts.length - 1]] = value;
-}
 
 // ============================================================================
 // CACHE MANAGEMENT
@@ -316,7 +153,7 @@ async function getOrLoadContent<T extends SearchConfig | CalcConfig | PipelineCo
 // ============================================================================
 
 /**
- * Load search config with caching and env var overrides
+ * Load search config with caching.
  */
 export async function loadSearchConfig(
   profileKey = "default",
@@ -331,14 +168,13 @@ export async function loadSearchConfig(
     if (!hash) {
       // No config in DB, use default
       console.log(`[Config-Loader] No search config found, using defaults`);
-      const { result, overrides } = applyOverrides(DEFAULT_SEARCH_CONFIG, configType);
       // Still record usage for defaults so job page shows what was used
       if (jobId) {
-        await recordConfigUsage(jobId, configType, profileKey, "default", overrides.length > 0 ? overrides : undefined).catch((err) => {
+        await recordConfigUsage(jobId, configType, profileKey, "default").catch((err) => {
           console.warn(`[Config-Loader] Failed to record default config usage: ${err?.message}`);
         });
       }
-      return { config: result, contentHash: "default", overrides, fromCache: false };
+      return { config: DEFAULT_SEARCH_CONFIG, contentHash: "default", overrides: [], fromCache: false };
     }
 
     // Get content (from cache or DB)
@@ -349,24 +185,20 @@ export async function loadSearchConfig(
       DEFAULT_SEARCH_CONFIG,
     );
 
-    // Apply env overrides
-    const { result, overrides } = applyOverrides(content, configType);
-
     // Record usage if job ID provided
     if (jobId) {
-      await recordConfigUsage(jobId, configType, profileKey, hash, overrides.length > 0 ? overrides : undefined);
+      await recordConfigUsage(jobId, configType, profileKey, hash);
     }
 
-    return { config: result, contentHash: hash, overrides, fromCache };
+    return { config: content, contentHash: hash, overrides: [], fromCache };
   } catch (err) {
     console.error(`[Config-Loader] Error loading search config:`, err);
-    const { result, overrides } = applyOverrides(DEFAULT_SEARCH_CONFIG, configType);
-    return { config: result, contentHash: "error-fallback", overrides, fromCache: false };
+    return { config: DEFAULT_SEARCH_CONFIG, contentHash: "error-fallback", overrides: [], fromCache: false };
   }
 }
 
 /**
- * Load calculation config with caching and env var overrides
+ * Load calculation config with caching.
  */
 export async function loadCalcConfig(
   profileKey = "default",
@@ -381,14 +213,13 @@ export async function loadCalcConfig(
     if (!hash) {
       // No config in DB, use default
       console.log(`[Config-Loader] No calc config found, using defaults`);
-      const { result, overrides } = applyOverrides(DEFAULT_CALC_CONFIG, configType);
       // Still record usage for defaults so job page shows what was used
       if (jobId) {
-        await recordConfigUsage(jobId, configType, profileKey, "default", overrides.length > 0 ? overrides : undefined).catch((err) => {
+        await recordConfigUsage(jobId, configType, profileKey, "default").catch((err) => {
           console.warn(`[Config-Loader] Failed to record default config usage: ${err?.message}`);
         });
       }
-      return { config: result, contentHash: "default", overrides, fromCache: false };
+      return { config: DEFAULT_CALC_CONFIG, contentHash: "default", overrides: [], fromCache: false };
     }
 
     // Get content
@@ -399,24 +230,20 @@ export async function loadCalcConfig(
       DEFAULT_CALC_CONFIG,
     );
 
-    // Apply env overrides
-    const { result, overrides } = applyOverrides(content, configType);
-
     // Record usage
     if (jobId) {
-      await recordConfigUsage(jobId, configType, profileKey, hash, overrides.length > 0 ? overrides : undefined);
+      await recordConfigUsage(jobId, configType, profileKey, hash);
     }
 
-    return { config: result, contentHash: hash, overrides, fromCache };
+    return { config: content, contentHash: hash, overrides: [], fromCache };
   } catch (err) {
     console.error(`[Config-Loader] Error loading calc config:`, err);
-    const { result, overrides } = applyOverrides(DEFAULT_CALC_CONFIG, configType);
-    return { config: result, contentHash: "error-fallback", overrides, fromCache: false };
+    return { config: DEFAULT_CALC_CONFIG, contentHash: "error-fallback", overrides: [], fromCache: false };
   }
 }
 
 /**
- * Load pipeline config with caching and env var overrides
+ * Load pipeline config with caching.
  */
 export async function loadPipelineConfig(
   profileKey = "default",
@@ -431,14 +258,13 @@ export async function loadPipelineConfig(
     if (!hash) {
       // No config in DB, use default
       console.log(`[Config-Loader] No pipeline config found, using defaults`);
-      const { result, overrides } = applyOverrides(DEFAULT_PIPELINE_CONFIG, configType);
       // Still record usage for defaults so job page shows what was used
       if (jobId) {
-        await recordConfigUsage(jobId, configType, profileKey, "default", overrides.length > 0 ? overrides : undefined).catch((err) => {
+        await recordConfigUsage(jobId, configType, profileKey, "default").catch((err) => {
           console.warn(`[Config-Loader] Failed to record default config usage: ${err?.message}`);
         });
       }
-      return { config: result, contentHash: "default", overrides, fromCache: false };
+      return { config: DEFAULT_PIPELINE_CONFIG, contentHash: "default", overrides: [], fromCache: false };
     }
 
     // Get content
@@ -449,19 +275,15 @@ export async function loadPipelineConfig(
       DEFAULT_PIPELINE_CONFIG,
     );
 
-    // Apply env overrides
-    const { result, overrides } = applyOverrides(content, configType);
-
     // Record usage
     if (jobId) {
-      await recordConfigUsage(jobId, configType, profileKey, hash, overrides.length > 0 ? overrides : undefined);
+      await recordConfigUsage(jobId, configType, profileKey, hash);
     }
 
-    return { config: result, contentHash: hash, overrides, fromCache };
+    return { config: content, contentHash: hash, overrides: [], fromCache };
   } catch (err) {
     console.error(`[Config-Loader] Error loading pipeline config:`, err);
-    const { result, overrides } = applyOverrides(DEFAULT_PIPELINE_CONFIG, configType);
-    return { config: result, contentHash: "error-fallback", overrides, fromCache: false };
+    return { config: DEFAULT_PIPELINE_CONFIG, contentHash: "error-fallback", overrides: [], fromCache: false };
   }
 }
 
@@ -519,14 +341,12 @@ export async function getEffectiveConfig<T extends SearchConfig | CalcConfig>(
 
     if (!activeConfig) {
       const defaultConfig = (configType === "search" ? DEFAULT_SEARCH_CONFIG : DEFAULT_CALC_CONFIG) as T;
-      const { result, overrides } = applyOverrides(defaultConfig, configType);
-      return { base: defaultConfig, overrides, effective: result as T };
+      return { base: defaultConfig, overrides: [], effective: defaultConfig as T };
     }
 
     const base = JSON.parse(activeConfig.content) as T;
-    const { result, overrides } = applyOverrides(base, configType);
 
-    return { base, overrides, effective: result as T };
+    return { base, overrides: [], effective: base as T };
   } catch (err) {
     console.error(`[Config-Loader] Error getting effective config:`, err);
     return null;
@@ -563,6 +383,11 @@ export async function loadPromptConfig(
   const now = Date.now();
 
   try {
+    // Refresh system-seeded prompts from files if they changed (safe no-op for user edits)
+    await refreshPromptFromFileIfSystemSeed(profile).catch((err) => {
+      console.warn(`[Config-Loader] Prompt refresh skipped for ${profile}: ${err?.message || err}`);
+    });
+
     // Check pointer (is active hash still valid?)
     let hash = await refreshPointer(configType, profile);
     let seededFromFile = false;
@@ -671,8 +496,7 @@ export interface AnalyzerConfig {
  *
  * Resolution order:
  * 1. Database (if exists and valid)
- * 2. Environment variables (if set)
- * 3. Defaults from schemas
+ * 2. Defaults from schemas
  *
  * @param options - Load options
  * @returns Complete analyzer config with all settings
@@ -696,16 +520,10 @@ export async function getAnalyzerConfig(options: {
     calcResult.contentHash === "default" ? "default" : "database",
   ];
 
-  if (sources.every(s => s === "database")) {
+  if (sources.every((s) => s === "database")) {
     source = "database";
-  } else if (sources.every(s => s === "default")) {
+  } else if (sources.every((s) => s === "default")) {
     source = "default";
-  } else if (
-    pipelineResult.overrides.length > 0 ||
-    searchResult.overrides.length > 0 ||
-    calcResult.overrides.length > 0
-  ) {
-    source = "environment";
   } else {
     source = "mixed";
   }

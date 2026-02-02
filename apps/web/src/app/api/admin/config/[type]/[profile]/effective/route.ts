@@ -67,7 +67,6 @@ export async function GET(req: Request, { params }: RouteParams) {
       base: result.base,
       overrides: result.overrides,
       effective: result.effective,
-      overridePolicy: process.env.FH_CONFIG_ENV_OVERRIDES || "on",
     });
   } catch (err: unknown) {
     console.error("[Config-API] effective error:", err);

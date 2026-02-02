@@ -306,7 +306,28 @@ export async function getDb(): Promise<Database> {
       ON config_usage(job_id);
     CREATE INDEX IF NOT EXISTS idx_config_usage_hash
       ON config_usage(content_hash);
+
+    -- Table 4: job_config_snapshots (Resolved per-job configs for auditability)
+    CREATE TABLE IF NOT EXISTS job_config_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_id TEXT NOT NULL,
+      schema_version TEXT NOT NULL,
+      pipeline_config TEXT NOT NULL,
+      search_config TEXT NOT NULL,
+      sr_enabled INTEGER NOT NULL,
+      sr_default_score REAL NOT NULL,
+      sr_confidence_threshold REAL NOT NULL,
+      captured_utc TEXT NOT NULL,
+      analyzer_version TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_job_config_snapshots_job
+      ON job_config_snapshots(job_id);
+    CREATE INDEX IF NOT EXISTS idx_job_config_snapshots_captured
+      ON job_config_snapshots(captured_utc);
   `);
+
+  await initializeDefaultConfigsWithDb(db);
 
   return db;
 }
@@ -697,63 +718,6 @@ export async function getConfigForJob(
 // ============================================================================
 
 /**
- * Environment variable mappings for config fields.
- * Maps config field paths to env var names.
- */
-const ENV_VAR_MAPPINGS: Record<ConfigType, Record<string, string>> = {
-  search: {
-    provider: "FH_SEARCH_PROVIDER",
-    enabled: "FH_SEARCH_ENABLED",
-    maxResults: "FH_SEARCH_MAX_RESULTS",
-    dateRestrict: "FH_SEARCH_DATE_RESTRICT",
-    domainWhitelist: "FH_SEARCH_DOMAIN_WHITELIST",
-  },
-  calculation: {
-    highConfidenceThreshold: "FH_HIGH_CONFIDENCE_THRESHOLD",
-    mediumConfidenceThreshold: "FH_MEDIUM_CONFIDENCE_THRESHOLD",
-    maxSourcesPerClaim: "FH_MAX_SOURCES_PER_CLAIM",
-    minFactsForVerdict: "FH_MIN_FACTS_FOR_VERDICT",
-    sourceReliabilityWeight: "FH_SOURCE_RELIABILITY_WEIGHT",
-  },
-  pipeline: {
-    llmTiering: "FH_LLM_TIERING",
-    modelUnderstand: "FH_MODEL_UNDERSTAND",
-    modelExtractFacts: "FH_MODEL_EXTRACT_FACTS",
-    modelVerdict: "FH_MODEL_VERDICT",
-    llmInputClassification: "FH_LLM_INPUT_CLASSIFICATION",
-    llmEvidenceQuality: "FH_LLM_EVIDENCE_QUALITY",
-    llmScopeSimilarity: "FH_LLM_SCOPE_SIMILARITY",
-    llmVerdictValidation: "FH_LLM_VERDICT_VALIDATION",
-    analysisMode: "FH_ANALYSIS_MODE",
-    allowModelKnowledge: "FH_ALLOW_MODEL_KNOWLEDGE",
-    deterministic: "FH_DETERMINISTIC",
-    scopeDedupThreshold: "FH_SCOPE_DEDUP_THRESHOLD",
-    maxIterationsPerScope: "FH_MAX_ITERATIONS_PER_SCOPE",
-    maxTotalIterations: "FH_MAX_TOTAL_ITERATIONS",
-    maxTotalTokens: "FH_MAX_TOTAL_TOKENS",
-    enforceBudgets: "FH_ENFORCE_BUDGETS",
-    defaultPipelineVariant: "FH_DEFAULT_PIPELINE_VARIANT",
-  },
-  sr: {
-    enabled: "FH_SR_ENABLED",
-    multiModel: "FH_SR_MULTI_MODEL",
-    openaiModel: "FH_SR_OPENAI_MODEL",
-    confidenceThreshold: "FH_SR_CONFIDENCE_THRESHOLD",
-    consensusThreshold: "FH_SR_CONSENSUS_THRESHOLD",
-    defaultScore: "FH_SR_DEFAULT_SCORE",
-    cacheTtlDays: "FH_SR_CACHE_TTL_DAYS",
-    filterEnabled: "FH_SR_FILTER_ENABLED",
-    skipPlatforms: "FH_SR_SKIP_PLATFORMS",
-    skipTlds: "FH_SR_SKIP_TLDS",
-    rateLimitPerIp: "FH_SR_RATE_LIMIT_PER_IP",
-    domainCooldownSec: "FH_SR_RATE_LIMIT_DOMAIN_COOLDOWN",
-  },
-  prompt: {}, // Prompts don't have env var overrides
-  "evidence-lexicon": {}, // Lexicons are UCM-only, no env var overrides
-  "aggregation-lexicon": {}, // Lexicons are UCM-only, no env var overrides
-};
-
-/**
  * Default configs by type
  */
 const DEFAULT_CONFIGS: Record<Exclude<ConfigType, "prompt">, unknown> = {
@@ -766,63 +730,12 @@ const DEFAULT_CONFIGS: Record<Exclude<ConfigType, "prompt">, unknown> = {
 };
 
 /**
- * Parse an env var value to the appropriate type based on the default value type
- */
-function parseEnvValue(envValue: string, defaultValue: unknown): unknown {
-  if (typeof defaultValue === "boolean") {
-    // Treat "on"/"off", "true"/"false", "1"/"0" as booleans
-    return envValue === "true" || envValue === "on" || envValue === "1";
-  }
-  if (typeof defaultValue === "number") {
-    const parsed = parseFloat(envValue);
-    return isNaN(parsed) ? defaultValue : parsed;
-  }
-  if (Array.isArray(defaultValue)) {
-    // Comma-separated list
-    return envValue.split(",").map((s) => s.trim()).filter(Boolean);
-  }
-  return envValue;
-}
-
-/**
- * Apply environment variable overrides to a config object.
- * Returns the modified config and a list of applied overrides.
- */
-function applyEnvOverrides<T extends object>(
-  configType: ConfigType,
-  config: T,
-): { config: T; overrides: OverrideRecord[] } {
-  const mappings = ENV_VAR_MAPPINGS[configType];
-  const overrides: OverrideRecord[] = [];
-  const result = { ...config };
-
-  for (const [fieldPath, envVar] of Object.entries(mappings)) {
-    const envValue = process.env[envVar];
-    if (envValue !== undefined) {
-      const defaultValue = (config as Record<string, unknown>)[fieldPath];
-      const parsed = parseEnvValue(envValue, defaultValue);
-      (result as Record<string, unknown>)[fieldPath] = parsed;
-      overrides.push({
-        envVar,
-        fieldPath,
-        wasSet: true,
-        appliedValue: typeof parsed === "object" ? undefined : (parsed as string | number | boolean),
-        valueHash: typeof parsed === "object" ? computeContentHash(JSON.stringify(parsed)) : undefined,
-      });
-    }
-  }
-
-  return { config: result, overrides };
-}
-
-/**
- * Get typed configuration with caching and env var fallback.
+ * Get typed configuration with caching.
  *
  * Resolution order:
  * 1. Check cache (TTL-based)
  * 2. Load from database (active config)
- * 3. Apply environment variable overrides (Tier 1 takes precedence)
- * 4. Fall back to default config if no DB config exists
+ * 3. Fall back to default config if no DB config exists
  *
  * @param configType - The type of config to retrieve
  * @param profileKey - The profile key (default: "default")
@@ -907,18 +820,12 @@ export async function getConfig<T extends keyof ConfigSchemaTypes>(
     }
   }
 
-  // 3. Apply environment variable overrides
-  const { config: finalConfig, overrides } = applyEnvOverrides(
-    configType,
-    baseConfig as object,
-  );
-
   const result = {
-    config: finalConfig as ConfigSchemaTypes[T],
+    config: baseConfig as ConfigSchemaTypes[T],
     contentHash,
     fromCache: false,
     fromDefault,
-    overrides,
+    overrides: [] as OverrideRecord[],
   };
 
   // 4. Cache the result
@@ -926,7 +833,7 @@ export async function getConfig<T extends keyof ConfigSchemaTypes>(
 
   // 5. Record usage if jobId provided (for non-default configs)
   if (options.jobId && contentHash) {
-    await recordConfigUsage(options.jobId, configType, profileKey, contentHash, overrides);
+    await recordConfigUsage(options.jobId, configType, profileKey, contentHash);
   }
 
   return result;
@@ -1024,72 +931,70 @@ export async function validateConfigContent(
  */
 export async function initializeDefaultConfigs(): Promise<void> {
   const database = await getDb();
+  await initializeDefaultConfigsWithDb(database);
+}
 
-  // Check if any configs exist
-  const count = await database.get<{ count: number }>(
-    "SELECT COUNT(*) as count FROM config_blobs",
+async function initializeDefaultConfigsWithDb(database: Database): Promise<void> {
+  console.log("[Config-Storage] Ensuring default configs exist...");
+
+  await ensureDefaultConfig(database, "search");
+  await ensureDefaultConfig(database, "calculation");
+  await ensureDefaultConfig(database, "pipeline");
+  await ensureDefaultConfig(database, "sr");
+  await ensureDefaultConfig(database, "evidence-lexicon");
+  await ensureDefaultConfig(database, "aggregation-lexicon");
+
+  console.log("[Config-Storage] Default configs ensured");
+}
+
+type DefaultConfigType = Exclude<ConfigType, "prompt">;
+
+async function ensureDefaultConfig(
+  database: Database,
+  configType: DefaultConfigType,
+): Promise<void> {
+  const active = await database.get<{
+    active_hash: string;
+    content: string;
+    created_by: string | null;
+    version_label: string | null;
+  }>(
+    `SELECT a.active_hash, b.content, b.created_by, b.version_label
+     FROM config_active a
+     JOIN config_blobs b ON a.active_hash = b.content_hash
+     WHERE a.config_type = ? AND a.profile_key = ?
+     LIMIT 1`,
+    [configType, "default"],
   );
 
-  if (count && count.count > 0) {
-    console.log("[Config-Storage] Configs already exist, skipping initialization");
+  const defaultContent = getDefaultConfig(configType);
+
+  if (!active) {
+    const { blob } = await saveConfigBlob(
+      configType,
+      "default",
+      defaultContent,
+      "Initial default config",
+      "system",
+    );
+    await activateConfig(configType, "default", blob.contentHash, "system", "initial");
     return;
   }
 
-  console.log("[Config-Storage] Initializing default configs...");
+  const isSystemDefault =
+    active.created_by === "system" && active.version_label === "Initial default config";
 
-  // Create default search config
-  const searchContent = getDefaultConfig("search");
-  if (searchContent) {
+  if (isSystemDefault && active.content !== defaultContent) {
     const { blob } = await saveConfigBlob(
-      "search",
+      configType,
       "default",
-      searchContent,
+      defaultContent,
       "Initial default config",
       "system",
     );
-    await activateConfig("search", "default", blob.contentHash, "system", "initial");
+    await activateConfig(configType, "default", blob.contentHash, "system", "refresh-default");
+    console.log(`[Config-Storage] Refreshed default ${configType} config`);
   }
-
-  // Create default calculation config
-  const calcContent = getDefaultConfig("calculation");
-  if (calcContent) {
-    const { blob } = await saveConfigBlob(
-      "calculation",
-      "default",
-      calcContent,
-      "Initial default config",
-      "system",
-    );
-    await activateConfig("calculation", "default", blob.contentHash, "system", "initial");
-  }
-
-  // Create default pipeline config
-  const pipelineContent = getDefaultConfig("pipeline");
-  if (pipelineContent) {
-    const { blob } = await saveConfigBlob(
-      "pipeline",
-      "default",
-      pipelineContent,
-      "Initial default config",
-      "system",
-    );
-    await activateConfig("pipeline", "default", blob.contentHash, "system", "initial");
-  }
-
-  // Create default SR config (kept separate per SR modularity requirement)
-  const srContent = getDefaultConfig("sr");
-  if (srContent) {
-    const { blob } = await saveConfigBlob(
-      "sr",
-      "default",
-      srContent,
-      "Initial default config",
-      "system",
-    );
-    await activateConfig("sr", "default", blob.contentHash, "system", "initial");
-  }
-
-  console.log("[Config-Storage] Default configs initialized");
 }
 
 /**
@@ -1144,6 +1049,71 @@ function getPromptFilePath(profile: string): string {
     return path.join(promptDir, "text-analysis", `${profile}.prompt.md`);
   }
   return path.join(promptDir, `${profile}.prompt.md`);
+}
+
+/**
+ * Refresh a prompt from file if the active config is a system seed.
+ * Safe: does not overwrite user-edited prompts.
+ */
+export async function refreshPromptFromFileIfSystemSeed(
+  profile: string,
+): Promise<{ refreshed: boolean; contentHash: string | null; error?: string }> {
+  if (!isValidPromptProfile(profile)) {
+    return { refreshed: false, contentHash: null, error: `Invalid profile: ${profile}` };
+  }
+
+  const active = await getActiveConfig("prompt", profile);
+  if (!active) {
+    // No active config - seed as normal
+    const seeded = await seedPromptFromFile(profile);
+    return { refreshed: seeded.seeded, contentHash: seeded.contentHash, error: seeded.error };
+  }
+
+  const isSystemSeed =
+    active.createdBy === "system-seed" &&
+    typeof active.versionLabel === "string" &&
+    active.versionLabel.startsWith("seed-v");
+
+  if (!isSystemSeed) {
+    return { refreshed: false, contentHash: active.contentHash };
+  }
+
+  const filePath = getPromptFilePath(profile);
+  if (!existsSync(filePath)) {
+    return { refreshed: false, contentHash: active.contentHash, error: `Prompt file not found: ${filePath}` };
+  }
+
+  try {
+    const content = await readFile(filePath, "utf-8");
+    const canonical = canonicalizeContent("prompt", content);
+
+    if (canonical === active.content) {
+      return { refreshed: false, contentHash: active.contentHash };
+    }
+
+    const versionMatch = content.match(/^version:\s*["']?([^"'\n]+)["']?/m);
+    const version = versionMatch?.[1] || "seed";
+    const versionLabel = `seed-v${version}`;
+
+    const { blob } = await saveConfigBlob(
+      "prompt",
+      profile,
+      content,
+      versionLabel,
+      "system-seed",
+    );
+    await activateConfig("prompt", profile, blob.contentHash, "system-seed", "refresh-seed");
+
+    console.log(
+      `[Config-Storage] Refreshed prompt ${profile} from file (hash: ${blob.contentHash.substring(0, 12)}...)`,
+    );
+
+    return { refreshed: true, contentHash: blob.contentHash };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[Config-Storage] Failed to refresh prompt ${profile}:`, message);
+    return { refreshed: false, contentHash: active.contentHash, error: message };
+  }
 }
 
 /**
