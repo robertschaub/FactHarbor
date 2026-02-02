@@ -43,8 +43,8 @@ const hasSpecificOutcome = extractNumericClaims(text);
 **Hard requirements**:
 - **No separate analysis paths**: There must be **zero branching** in analysis logic based on whether the user wrote a question or a statement.
 - **Entry-point normalization**: If input is yes/no phrasing (including trailing `?`), convert to an **affirmative statement** **before any analysis stage runs**.
-- **Single canonical analysis string**: All analysis steps (scope detection, research, fact extraction, verdict generation, weighting, quality gates, inversion correction) must use the **normalized statement** only.
-- **Raw input is UI-only**: Preserve the original input (question or statement) **only for display**. It must not influence LLM prompts, research queries, scope splitting, or scoring.
+- **Single canonical analysis string**: All analysis steps (context detection, research, fact extraction, verdict generation, weighting, quality gates, inversion correction) must use the **normalized statement** only.
+- **Raw input is UI-only**: Preserve the original input (question or statement) **only for display**. It must not influence LLM prompts, research queries, context splitting, or scoring.
 - **No question-specific metadata**: Do not emit or persist flags/fields such as `wasQuestionInput`, `questionBeingAsked`, `questionIntent`, `QuestionAnswer`, `calculateQuestionTruthPercentage`, etc.
 - **UI neutrality**: UI must not show question badges/labels or question-specific layouts. The same components and result fields must be used regardless of phrasing.
 - **Equivalence guarantee**: For meaning-equivalent inputs, verdict and reasoning must be effectively identical; any drift should be **<1%** and treated as a regression.
@@ -59,7 +59,7 @@ const hasSpecificOutcome = extractNumericClaims(text);
 **Rule**: All pipeline stages must execute, no skipping allowed.
 
 **Required Stages**:
-1. **Understand** → Extract claims, detect scope, assign risk tiers
+1. **Understand** → Extract claims, detect context, assign risk tiers
 2. **Research** → Web search, fetch sources, extract facts
 3. **Verdict** → Generate verdicts, apply quality gates
 4. **Summary** → Format results
@@ -94,24 +94,24 @@ const counterEvidence = facts.filter(f =>
 ).length;
 ```
 
-### 5. Scope Detection
+### 5. Context Detection
 
-**Rule**: Detect and analyze distinct scopes (contexts) independently.
+**Rule**: Detect and analyze distinct contexts independently.
 
-**Scope Definition**:
+**Context Definition**:
 - A bounded analytical frame with:
   - Defined boundaries (what's included/excluded)
   - Methodology (how analysis is done)
   - Temporal period (when)
   - Subject matter (what)
 
-**Examples of Distinct Scopes**:
+**Examples of Distinct Contexts**:
 - Different legal proceedings (Trial A vs. Trial B)
 - Different methodological approaches (Study 1 vs. Study 2)
 - Different temporal periods (2020 events vs. 2024 events)
 - Different regulatory frameworks (US law vs. EU law)
 
-**NOT Distinct Scopes**:
+**NOT Distinct Contexts**:
 - Different perspectives on same event ("US view" vs. "Brazil view")
 - Different claims within same event
 - Different sources reporting same facts

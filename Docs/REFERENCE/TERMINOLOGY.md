@@ -1,7 +1,7 @@
 # FactHarbor Terminology Reference
 
 **Version**: 2.6.41
-**Date**: 2026-01-29
+**Date**: 2026-02-02
 **Audience**: Developers, Prompt Engineers, LLM Systems
 **Status**: Phase 2 Complete (probativeValue, sourceType, evidenceFilter integrated; EvidenceItem type active; legacy names preserved for backward compatibility)
 
@@ -53,8 +53,8 @@ FactHarbor uses multiple "framing" concepts that work together hierarchically:
 - **Example:** [TSE electoral case, STF criminal case], [WTW methodology, TTW methodology]
 - **JSON field:** `analysisContexts` (plural array)
 
-### Level 4: Facts (Supporting Evidence)
-- **What:** Individual pieces of evidence extracted from sources
+### Level 4: Evidence Items (Supporting Evidence)
+- **What:** Individual evidence items extracted from sources
 - **When:** Found during research phase
 - **Display:** Listed under each AnalysisContext with supporting/opposing indicators
 - **Assigned to:** One AnalysisContext via `contextId`
@@ -110,8 +110,8 @@ export interface AnalysisContext {
 ```
 
 **Prompt terminology**:
-- Preferred: "AnalysisContext"
-- Acceptable: "Scope" (when context makes it clear it's top-level)
+- Preferred: "AnalysisContext" or "Context"
+- Avoid: "Scope" (reserved for EvidenceScope)
 - Legacy: "Proceeding" (avoid in new prompts)
 
 **Common confusion**:
@@ -295,9 +295,9 @@ if (claim.isContested) {
 
 | Constant | Value | Meaning | When to Use |
 |----------|-------|---------|-------------|
-| `UNSCOPED_ID` | `"CTX_UNSCOPED"` | Fact doesn't map to any detected scope | When fact is general/background |
-| `CTX_MAIN` | `"CTX_MAIN"` | Fallback scope for single-scope analysis | When no distinct scopes detected |
-| `CTX_GENERAL` | `"CTX_GENERAL"` | General scope (cross-cutting) | When fact applies to all scopes |
+| `UNSCOPED_ID` | `"CTX_UNSCOPED"` | Fact doesn't map to any detected context | When fact is general/background |
+| `CTX_MAIN` | `"CTX_MAIN"` | Fallback context for single-context analysis | When no distinct contexts detected |
+| `CTX_GENERAL` | `"CTX_GENERAL"` | General context (cross-cutting) | When fact applies to all contexts |
 
 ---
 
@@ -580,7 +580,7 @@ A: If the information describes **how a source document computed its data** (met
 
 **Q: What's the difference between CTX_UNSCOPED and CTX_GENERAL?**
 
-A: `CTX_UNSCOPED` means the fact doesn't map to any detected scope (background info). `CTX_GENERAL` means the fact applies across all scopes (cross-cutting evidence). In practice, both are grouped together in display.
+A: `CTX_UNSCOPED` means the fact doesn't map to any detected context (background info). `CTX_GENERAL` means the fact applies across all contexts (cross-cutting evidence). In practice, both are grouped together in display.
 
 **Q: Can a fact have BOTH relatedProceedingId AND evidenceScope?**
 
@@ -595,7 +595,7 @@ A: Use "AnalysisContext" for precision or "context" for brevity. **NEVER use "fr
 ## Related Documentation
 
 - [Scope Definition Guidelines](../DEVELOPMENT/Scope_Definition_Guidelines.md) - EvidenceScope vs AnalysisContext decision guide
-- [AGENTS.md](../../AGENTS.md) - High-level rules for scope detection
+- [AGENTS.md](../../AGENTS.md) - High-level rules for context detection
 - [types.ts](../../apps/web/src/lib/analyzer/types.ts) - TypeScript interface definitions
 - [Pipeline_TriplePath_Architecture.md](../ARCHITECTURE/Pipeline_TriplePath_Architecture.md) - Pipeline design
 - [Provider Prompt Formatting](Provider_Prompt_Formatting.md) - Provider-specific prompt optimizations

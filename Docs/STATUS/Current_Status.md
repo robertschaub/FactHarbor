@@ -1,8 +1,8 @@
 # FactHarbor Current Status
 
-**Version**: 2.10.0 (Code) | 2.7.0 (Schema Output)
-**Last Updated**: 2026-01-31
-**Status**: POC1 Operational (UCM Pre-Validation Sprint Complete)
+**Version**: 2.10.1 (Code) | 2.7.0 (Schema Output)
+**Last Updated**: 2026-02-02
+**Status**: POC1 Operational (UCM Integration + Terminology Cleanup Complete)
 
 ---
 
@@ -15,8 +15,8 @@
   - Orchestrated Pipeline (default, highest quality)
   - Monolithic Canonical (faster, lower cost)
   - Monolithic Dynamic (experimental, flexible output)
-- Multi-scope detection and analysis
-- **Heuristic Scope Pre-Detection**: Code-level pattern detection for comparison, legal, and environmental claims
+- Multi-context detection and analysis
+- **Heuristic Context Pre-Detection**: Code-level pattern detection for comparison, legal, and environmental claims
 - **Context Overlap Detection**: LLM-driven merge heuristics with defensive validation (v2.6.38)
 - **UI Reliability Signals**: Multi-context verdict reliability indicators (v2.6.38)
 - Input neutrality (question ≈ statement within ±5%)
@@ -45,16 +45,16 @@
   - See: [Provider Prompt Formatting](../REFERENCE/Provider_Prompt_Formatting.md)
 
 **LLM Text Analysis Pipeline (v2.9+):**
-- **Four Analysis Points**: Input Classification, Evidence Quality, Scope Similarity, Verdict Validation
+- **Four Analysis Points**: Input Classification, Evidence Quality, Context Similarity, Verdict Validation
 - **LLM-Only Contract**: All analysis points are always LLM-driven (no hybrid/heuristic fallback)
 - **Multi-Pipeline Support**: Works across Orchestrated, Monolithic Canonical, and Monolithic Dynamic pipelines
 - **Telemetry**: Built-in metrics for success rates, latency
 - **Bug Fix (v2.8.1)**: Counter-claim detection removed from verdict prompt (was overriding better understand-phase detection)
 - **Prompt Files**: Located in `apps/web/prompts/text-analysis/` with README documentation
-- See: [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
+- See: [LLM Text Analysis Pipeline Deep Analysis](../ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
 
 **Shared Module Architecture:**
-- `scopes.ts`: Scope detection (`detectScopes()`, `formatDetectedScopesHint()`)
+- `scopes.ts`: Context detection (`detectScopes()`, `formatDetectedScopesHint()`)
 - `aggregation.ts`: Verdict weighting (`validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()`)
 - `claim-decomposition.ts`: Claim parsing utilities
 - Consistent behavior across canonical and orchestrated pipelines
@@ -67,7 +67,7 @@
 - Multi-provider search support (Google CSE, SerpAPI, Gemini Grounded)
 - SQLite database for local development
 - Automated retry with exponential backoff
-- **Unified Configuration Management** (v2.9.0 ✅ Complete): Database-backed config system with 5 config types (prompt, search, calculation, pipeline, sr), validation, history, rollback, import/export. 158 unit tests. **All 4 phases complete** - 13 settings hot-reloadable + job config snapshots + SR modularity interface + admin UI with snapshot viewer and validation warnings.
+- **Unified Configuration Management** (v2.9.0 ✅ Complete): Database-backed config system for prompt/search/calculation/pipeline/sr/lexicons, validation, history, rollback, import/export. Analysis settings (including LLM provider selection) now load from UCM with hot-reload. **All phases complete** - job config snapshots + SR modularity interface + admin UI with snapshot tools.
 
 **Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
 - ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
@@ -85,7 +85,7 @@
 - ✅ **Text Analysis Pipeline Tests**: 26 test cases covering all 4 analysis points
   - Input Classification (8 tests): Comparative, compound, claim types, decomposition
   - Evidence Quality (5 tests): Quality levels, expert attribution, filtering
-  - Scope Similarity (5 tests): Duplicate detection, phase buckets, merge logic
+  - Context Similarity (5 tests): Duplicate detection, phase buckets, merge logic
   - Verdict Validation (8 tests): Inversion, harm potential, contestation
 - See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
 
@@ -94,7 +94,7 @@
 - Job history and status tracking
 - Report display (Summary, JSON, Report tabs)
 - Two-panel summary format
-- Multi-scope result display
+- Multi-context result display
 - Admin metrics dashboard (NEW)
 
 ### ⚠️ Known Issues
@@ -105,8 +105,8 @@
 
 **HIGH**:
 3. **Quality Gate Display**: Gate stats exist in JSON but not shown in UI with per-item reasons
-4. **Input Neutrality Scope Variance**: Question vs statement can yield different scope counts in some cases
-5. **Model Knowledge Toggle**: `FH_ALLOW_MODEL_KNOWLEDGE=false` not fully respected in Understanding phase
+4. **Input Neutrality Context Variance**: Question vs statement can yield different context counts in some cases
+5. **Model Knowledge Toggle**: `pipeline.allowModelKnowledge=false` not fully respected in Understanding phase
 
 **MEDIUM**:
 6. **Budget Constraints**: May be too strict, could limit research quality
@@ -167,10 +167,10 @@
 
 ### Open Topics / Task List (Jan 2026)
 
-- [ ] **Inverse-input symmetry hardening**: Keep `scripts/inverse-scope-regression.ps1` green; add 2-3 more inverse pairs and explicitly define which pairs require *strict* scope symmetry vs *best-effort* symmetry (to avoid overfitting to a single example).
-- [ ] **Evidence-driven scope refinement guardrails**: Add lightweight metrics/logging so we can tell how often scope refinement is applied vs rejected, and why (avoid over-splitting into “dimensions” that are not bounded scopes).
+- [ ] **Inverse-input symmetry hardening**: Keep `scripts/inverse-scope-regression.ps1` green; add 2-3 more inverse pairs and explicitly define which pairs require *strict* context symmetry vs *best-effort* symmetry (to avoid overfitting to a single example).
+- [ ] **Evidence-driven context refinement guardrails**: Add lightweight metrics/logging so we can tell how often context refinement is applied vs rejected, and why (avoid over-splitting into “dimensions” that are not bounded contexts).
 - [ ] **Central-claim evidence coverage**: When a central claim has zero supporting/counter facts, do a bounded “missing-evidence” retrieval pass per claim (best-effort; must respect search limits and avoid infinite loops).
-- [ ] **Scope guidelines**: Document (in a short developer note) what qualifies as a distinct “Scope” vs a “dimension” so future prompt tweaks remain consistent with `AGENTS.md`.
+- [ ] **Context guidelines**: Document (in a short developer note) what qualifies as a distinct “Context” vs a “dimension” so future prompt tweaks remain consistent with `AGENTS.md`.
 - [ ] **Analyzer modularization (defer unless needed)**: `apps/web/src/lib/analyzer.ts` is still monolithic; any split should be planned and done incrementally to minimize risk.
 
 ---
@@ -359,7 +359,7 @@ See: [UCM Enhancement Recommendations](../RECOMMENDATIONS/UCM_Enhancement_Recomm
   - `POST /api/admin/config/prompt/:profile/import` - Upload .prompt.md files with validation
   - `GET /api/admin/config/prompt/:profile/export` - Download prompts with metadata
   - `POST /api/admin/config/prompt/:profile/reseed` - Re-seed from disk for dev workflow
-  - Text-analysis profiles now supported: `text-analysis-input`, `text-analysis-evidence`, `text-analysis-scope`, `text-analysis-verdict`
+  - Text-analysis profiles now supported: `text-analysis-input`, `text-analysis-evidence`, `text-analysis-scope`, `text-analysis-verdict` (legacy filename for context similarity)
 - **Comprehensive Test Coverage**: 158 unit tests for config system (A+ grade)
   - `config-schemas.test.ts`: 50 tests for validation, parsing, canonicalization
   - `config-storage.test.ts`: 26 tests for CRUD, caching, env overrides
@@ -380,20 +380,20 @@ See: [UCM Enhancement Recommendations](../RECOMMENDATIONS/UCM_Enhancement_Recomm
   - `metrics-integration.ts`: `initializeMetrics()` - metrics config (reuses settings)
   - `text-analysis-service.ts`: Feature flag configuration
 - **Main Pipeline Integration**: `orchestrated.ts` fully threaded with config hot-reload
-  - Calls `getAnalyzerConfig()` to load DB → env → defaults
+  - Calls `getAnalyzerConfig()` to load DB → defaults (UCM is source of truth)
   - Passes `pipelineConfig` through entire call chain (11 functions updated)
   - TypeScript compilation: ✅ No errors
 - **Migration Complete for High-Value Settings**: 13 unique settings now hot-reloadable
   - Model: `llmTiering`, `modelUnderstand`, `modelExtractFacts`, `modelVerdict`
-  - LLM Flags: `llmInputClassification`, `llmEvidenceQuality`, `llmScopeSimilarity`, `llmVerdictValidation`
-  - Budgets: `maxIterationsPerScope`, `maxTotalIterations`, `maxTotalTokens`, `enforceBudgets`
-  - Analysis: `analysisMode`, `deterministic`, `allowModelKnowledge`, `scopeDedupThreshold`
+  - LLM Flags: `llmInputClassification`, `llmEvidenceQuality`, `llmContextSimilarity` (legacy: `llmScopeSimilarity`), `llmVerdictValidation`
+  - Budgets: `maxIterationsPerContext` (legacy: `maxIterationsPerScope`), `maxTotalIterations`, `maxTotalTokens`, `enforceBudgets`
+  - Analysis: `analysisMode`, `deterministic`, `allowModelKnowledge`, `contextDedupThreshold` (legacy: `scopeDedupThreshold`)
 - **Code Review & Regression Fixes**:
-  - Fixed boolean parser regressions (`FH_LLM_TIERING`, `FH_ALLOW_MODEL_KNOWLEDGE`)
+  - Preserved legacy key aliases for backward compatibility (`scope*` → `context*`)
   - Reverted default value changes to maintain backwards compatibility
   - Fixed missing report model fallback in `llm.ts`
   - Added schema documentation for `maxTokensPerCall` exclusion
-- **Gradual Migration Pattern**: Functions accept optional config param with env fallback for backwards compatibility
+- **Migration Pattern**: Functions accept optional config param; env fallbacks removed for analysis settings
 
 **✅ Phase 2: Job Config Snapshots (Complete)**
 - **Database Schema**: `job_config_snapshots` table stores full resolved configs per job
@@ -435,7 +435,7 @@ See: [UCM Enhancement Recommendations](../RECOMMENDATIONS/UCM_Enhancement_Recomm
   - Markdown export for documentation
   - API: `GET /api/admin/quality/job/[jobId]/config`
 - **Config Validation Warnings**: Detects dangerous config combinations
-  - 7 pipeline warnings (deep mode budget, tiering, scope dedup, etc.)
+  - 7 pipeline warnings (deep mode budget, tiering, context dedup, etc.)
   - 5 search warnings (disabled search, low limits, timeouts, etc.)
   - 2 cross-config warnings (deep mode with few results, etc.)
   - API: `GET /api/admin/config/warnings`
@@ -462,16 +462,16 @@ See: [UCM Enhancement Recommendations](../RECOMMENDATIONS/UCM_Enhancement_Recomm
 - Integration test demonstrating end-to-end hot-reload (~1 day)
 - Additional admin UI features (config comparison, rollback UI, etc.)
 
-See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md)
+See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management_Implementation_Review.md)
 
 ### v2.8.0 LLM Text Analysis Pipeline (January 29-30, 2026)
 - **LLM Text Analysis Pipeline**: Approved for implementation after senior architect review
-  - 4 analysis points: Input Classification, Evidence Quality, Scope Similarity, Verdict Validation
+  - 4 analysis points: Input Classification, Evidence Quality, Context Similarity, Verdict Validation
   - ITextAnalysisService interface with HeuristicTextAnalysisService, LLMTextAnalysisService, HybridTextAnalysisService
   - Per-analysis-point feature flags for gradual rollout
   - Multi-pipeline support (Orchestrated, Canonical, Dynamic)
   - Cost estimate: $0.007-0.028/job (~5.3% increase with Haiku)
-  - See: [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
+  - See: [LLM Text Analysis Pipeline Deep Analysis](../ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
 - **Search Provider Documentation**: Clarified that all pipelines require search credentials
   - Added Section 8 to Pipeline Architecture doc
   - Added troubleshooting for "No sources fetched" issue
@@ -513,7 +513,7 @@ See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Impleme
   - Fixed import validation to check JSON structure matches config type
 
 ### v2.6.40 (January 26, 2026)
-- **Context/Scope Terminology Fix**: Fixed inline prompts using wrong terminology
+- **Context/EvidenceScope Terminology Fix**: Fixed inline prompts using wrong terminology
   - `assessedStatement` now passed correctly to verdict phase
   - Renamed "SCOPE" to "CONTEXT" in ~10 inline prompt locations
 
@@ -622,7 +622,7 @@ See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Impleme
 
 **Generic by Design**: ✅ Compliant
 - Removed hardcoded domain-specific keywords
-- Generic scope detection and analysis
+- Generic context detection and analysis
 - Parameterized prompts
 
 **Input Neutrality**: ✅ Compliant
@@ -640,10 +640,10 @@ See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Impleme
 - Counter-evidence tracked and counted
 - Source excerpts included
 
-**Scope Detection**: ✅ Compliant
-- Multi-scope detection working
-- Distinct scopes analyzed independently
-- Generic scope terminology
+**Context Detection**: ✅ Compliant
+- Multi-context detection working
+- Distinct contexts analyzed independently
+- Generic context terminology
 
 ---
 
@@ -729,6 +729,7 @@ See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Impleme
 
 ---
 
-**Last Updated**: January 31, 2026
-**Actual Version**: 2.10.0 (Code) | 2.7.0 (Schema)
-**Document Status**: Reflects UCM Pre-Validation Sprint v2.10.0 complete
+**Last Updated**: February 2, 2026
+**Actual Version**: 2.10.1 (Code) | 2.7.0 (Schema)
+**Document Status**: Reflects UCM Integration + terminology cleanup complete
+

@@ -14,7 +14,7 @@ FactHarbor's testing strategy focuses on measurement-driven quality improvement:
 ### Coverage (30 cases total)
 
 - **Simple Factual** (5 cases): Basic well-established facts
-- **Multi-Scope** (5 cases): Distinct analytical frames requiring separation
+- **Multi-Context** (5 cases): Distinct analytical frames requiring separation
 - **Comparative** (5 cases): Comparisons with rating direction challenges
 - **Attribution Separation** (5 cases): WHO said vs WHAT was said
 - **Temporal** (5 cases): Recent claims requiring current data
@@ -282,7 +282,7 @@ Test cases must NOT include:
 
 ## By Category
 - Simple Factual: 5/5 ✅
-- Multi-Scope: 4/5 ⚠️
+- Multi-Context: 4/5 ⚠️
 - Comparative: 5/5 ✅
 ...
 ```

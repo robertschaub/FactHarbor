@@ -505,12 +505,12 @@ const PRESETS = {
     description: "Maximum quality, higher cost",
     config: {
       analysisMode: "deep",
-      maxIterationsPerScope: 10,
+      maxIterationsPerContext: 10,
       maxTotalIterations: 50,
       enforceBudgets: false,
       llmInputClassification: true,
       llmEvidenceQuality: true,
-      llmScopeSimilarity: true,
+      llmContextSimilarity: true,
       llmVerdictValidation: true,
     }
   },
@@ -520,12 +520,12 @@ const PRESETS = {
     description: "Balanced quality, lower cost",
     config: {
       analysisMode: "quick",
-      maxIterationsPerScope: 3,
+      maxIterationsPerContext: 3,
       maxTotalIterations: 15,
       enforceBudgets: true,
       llmInputClassification: false,
       llmEvidenceQuality: false,
-      llmScopeSimilarity: false,
+      llmContextSimilarity: false,
       llmVerdictValidation: true, // Keep this for safety
     }
   },
@@ -535,12 +535,12 @@ const PRESETS = {
     description: "Minimal analysis for testing",
     config: {
       analysisMode: "quick",
-      maxIterationsPerScope: 1,
+      maxIterationsPerContext: 1,
       maxTotalIterations: 5,
       enforceBudgets: true,
       llmInputClassification: false,
       llmEvidenceQuality: false,
-      llmScopeSimilarity: false,
+      llmContextSimilarity: false,
       llmVerdictValidation: false,
     }
   }
@@ -595,7 +595,7 @@ const PRESETS = {
 │    Risk: Verdict inversions may go undetected              │
 │    Suggestion: Keep enabled for safety                     │
 │                                                            │
-│ ℹ️ analysisMode=deep + maxIterationsPerScope=10           │
+│ ℹ️ analysisMode=deep + maxIterationsPerContext=10           │
 │    Note: High quality but expensive (~$2-3 per job)       │
 └────────────────────────────────────────────────────────────┘
 
@@ -626,7 +626,7 @@ function validatePipelineConfig(config: PipelineConfig): Warning[] {
   }
 
   // Info: High cost configuration
-  if (config.analysisMode === "deep" && config.maxIterationsPerScope >= 8) {
+  if (config.analysisMode === "deep" && config.maxIterationsPerContext >= 8) {
     warnings.push({
       level: "info",
       message: "High-quality but expensive configuration",
@@ -2873,3 +2873,4 @@ Strategic Assessment Review
 **Overall Grade: A+ (Excellent strategy, minor execution refinements needed)**
 
 **Status:** ✅ **APPROVED FOR PRE-VALIDATION SPRINT**
+

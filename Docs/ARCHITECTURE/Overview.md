@@ -66,7 +66,7 @@ flowchart LR
 
 | Module | Key Exports | Purpose |
 |--------|-------------|---------|
-| `scopes.ts` | `detectScopes()`, `formatDetectedScopesHint()` | Heuristic scope pre-detection |
+| `scopes.ts` | `detectScopes()`, `formatDetectedScopesHint()` | Heuristic context pre-detection |
 | `aggregation.ts` | `validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()` | Verdict weighting and contestation |
 | `claim-decomposition.ts` | `normalizeClaimText()`, `deriveCandidateClaimTexts()` | Claim text parsing |
 | `text-analysis-service.ts` | `getTextAnalysisService()` | LLM-only text analysis |
@@ -92,10 +92,10 @@ flowchart LR
 |----------------|----------------|
 | Input Classification | Understand |
 | Evidence Quality | Research |
-| Scope Similarity | Organize |
+| Context Similarity | Organize |
 | Verdict Validation | Aggregate |
 
-See [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
+See [LLM Text Analysis Pipeline Deep Analysis](../ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
 
 **Runner Route Protection:**
 - Runner route `/api/internal/run-job` requires `x-runner-key` when `FH_INTERNAL_RUNNER_KEY` is set (and is required in production)
@@ -200,7 +200,7 @@ flowchart TB
 - Detects input type: question | statement | article
 - Extracts claims with dependencies
 - Assigns risk tiers (A/B/C)
-- Detects scope(s) and temporal boundaries
+- Detects context(s) and temporal boundaries
 - Discovers KeyFactors (optional decomposition questions)
 - Applies Gate 1: Claim Validation
 
@@ -214,7 +214,7 @@ flowchart TB
 **Step 3: Verdict Generation (generateVerdicts)**
 - Generates verdicts for each claim
 - Aggregates claim verdicts into KeyFactor verdicts
-- Aggregates KeyFactor verdicts into scope answers
+- Aggregates KeyFactor verdicts into context answers
 - Generates overall article verdict
 - Applies Gate 4: Verdict Confidence Assessment
 
@@ -250,9 +250,9 @@ erDiagram
         string detectedInputType "question | claim | article"
         boolean isQuestion "True if input is a question"
         datetime createdAt "Analysis timestamp"
-        json distinctScopes "Detected scopes/contexts"
-        boolean hasMultipleScopes "Multi-scope flag"
-        string scopeContext "Context for scopes"
+        json distinctContexts "Detected contexts (legacy: distinctScopes)"
+        boolean hasMultipleContexts "Multi-context flag (legacy: hasMultipleScopes)"
+        string scopeContext "Context for contexts (legacy: scopeContext)"
         json logicalFallacies "Detected fallacies array"
         boolean isPseudoscience "Pseudoscience detection"
         string_array pseudoscienceCategories "Categories if detected"
@@ -271,7 +271,7 @@ erDiagram
         string_array keyEntities "Named entities in claim"
         string keyFactorId "Key factor mapping (empty if none)"
         boolean isCentral "Is this a central claim?"
-        string relatedScopeId "Linked scope if any"
+        string relatedContextId "Linked context if any (legacy: relatedScopeId)"
         int startOffset "Position in original text"
         int endOffset "End position in original text"
         string approximatePosition "Descriptive position"
@@ -291,7 +291,7 @@ erDiagram
         boolean dependencyFailed "True if prerequisite failed"
         string_array failedDependencies "Which deps failed"
         string keyFactorId "Key factor mapping (empty if none)"
-        string relatedScopeId "Linked scope if any"
+        string relatedContextId "Linked context if any (legacy: relatedScopeId)"
         string highlightColor "green | light-green | yellow | orange | dark-orange | red | dark-red"
         boolean isPseudoscience "Pseudoscience flag"
         string escalationReason "Why verdict was escalated"
@@ -324,7 +324,7 @@ erDiagram
         string category "legal_provision | evidence | expert_quote | statistic | event | criticism"
         string specificity "high | medium"
         string sourceExcerpt "Original text excerpt"
-        string relatedScopeId "Linked scope if any"
+        string relatedContextId "Linked context if any (legacy: relatedScopeId)"
         boolean isContestedClaim "Is this a contested assertion"
         string claimSource "Who made contested claim"
     }
@@ -515,11 +515,11 @@ flowchart TB
 ### Working Features (v2.6.38)
 
 **Core Analysis:**
-- ✅ Multi-scope detection and display
+- ✅ Multi-context detection and display
 - ✅ Context overlap detection with LLM-driven merge heuristics (v2.6.38)
 - ✅ Defensive validation: context count warnings, claim assignment validation (v2.6.38)
 - ✅ Input neutrality (question ≈ statement within ±5%)
-- ✅ Scope/context extraction from sources
+- ✅ Context extraction from sources
 - ✅ Temporal reasoning (current date awareness)
 - ✅ Claim deduplication for fair aggregation
 - ✅ KeyFactors aggregation
@@ -571,7 +571,7 @@ flowchart TB
 
 **v2.6.23:**
 - Input neutrality divergence fixed (4% → 1%)
-- Canonicalization scope detection corrected
+- Canonicalization context detection corrected
 - Generic recency detection enhanced
 
 **v2.6.18-v2.6.22:**
@@ -610,7 +610,7 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 - 7-point scale mapping
 - MIXED vs UNVERIFIED distinction
 - Counter-evidence handling
-- Aggregation hierarchy (Facts → Claims → KeyFactors → Scopes → Overall)
+- Aggregation hierarchy (Facts → Claims → KeyFactors → Contexts → Overall)
 - Dependency handling
 - Pseudoscience escalation
 - Benchmark guard
@@ -697,7 +697,7 @@ flowchart TB
     subgraph TextAnalysis["🔬 Text Analysis Tests (26 cases)"]
         INPUT[Input Classification<br/>8 tests]
         EVIDENCE[Evidence Quality<br/>5 tests]
-        SCOPE[Scope Similarity<br/>5 tests]
+        SCOPE[Context Similarity<br/>5 tests]
         VERDICT[Verdict Validation<br/>8 tests]
     end
 
@@ -787,3 +787,4 @@ reserved for infrastructure and secrets.
 
 **Last Updated**: January 26, 2026  
 **Document Status**: Living document - updated as architecture evolves
+

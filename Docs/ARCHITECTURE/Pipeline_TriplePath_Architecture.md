@@ -8,12 +8,12 @@
 
 ---
 
-## 1) Scope and non-negotiable invariants
+## 1) Context and non-negotiable invariants
 
 This architecture must preserve repo governance (see `AGENTS.md`):
 - **Pipeline integrity**: Understand → Research → Verdict (no stage skipping)
 - **Input neutrality**: question vs statement divergence target **≤ 4 points** (avg absolute)
-- **Scope detection**: multi-scope detection with unified “Scope” terminology
+- **Context detection**: multi-context detection with unified “Context” terminology
 - **Quality gates**: Gate 1 and Gate 4 are mandatory
 - **Generic by design**: no domain-specific hardcoding/keyword lists
 
@@ -86,12 +86,12 @@ flowchart TD
 **Module Responsibilities:**
 ### 3.4 Text Analysis Service (v2.9+)
 
-LLM-only text analysis (no heuristic fallback). See [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
+LLM-only text analysis (no heuristic fallback). See [LLM Text Analysis Pipeline Deep Analysis](../ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
 
 ```mermaid
 flowchart TD
     subgraph TextAnalysisService["🧠 Text Analysis Service (apps/web/src/lib/analyzer/")]
-        TYPES[text-analysis-types.ts<br/>━━━━━━━━━━━━━<br/>• ITextAnalysisService<br/>• InputClassificationResult<br/>• EvidenceQualityResult<br/>• ScopeSimilarityResult<br/>• VerdictValidationResult]
+        TYPES[text-analysis-types.ts<br/>━━━━━━━━━━━━━<br/>• ITextAnalysisService<br/>• InputClassificationResult<br/>• EvidenceQualityResult<br/>• ContextSimilarityResult (legacy: ScopeSimilarityResult)<br/>• VerdictValidationResult]
 
         SERVICE[text-analysis-service.ts<br/>━━━━━━━━━━━━━<br/>• getTextAnalysisService<br/>• recordMetrics]
 
@@ -119,7 +119,7 @@ flowchart TD
 |----------------|----------------|---------|
 | Input Classification | Understand | Decompose claims, detect comparative/compound |
 | Evidence Quality | Research | Filter low-quality evidence, assess probative value |
-| Scope Similarity | Organize | Merge similar scopes, infer phase buckets |
+| Context Similarity | Organize | Merge similar contexts, infer phase buckets |
 | Verdict Validation | Aggregate | Detect inversions, harm potential, contestation |
 
 ### 3.5 Isolated components (do not unify)
@@ -214,7 +214,7 @@ flowchart TD
 
 ### 7.5 Security/abuse risk (user-selectable variants)
 - **Risk**: users can pick experimental path and consume higher resources.
-- **Mitigation**: enforce budgets; optionally gate variants later (not in scope now).
+- **Mitigation**: enforce budgets; optionally gate variants later (not in context now).
 
 ---
 
@@ -254,4 +254,5 @@ Check server logs for:
 ### 8.4 Configuration
 
 See [LLM Configuration Guide](../USER_GUIDES/LLM_Configuration.md#search-provider-configuration) for detailed setup instructions.
+
 

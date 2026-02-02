@@ -3,7 +3,7 @@
 **Version**: 2.6.41
 **Date**: 2026-01-29
 **Status**: Implemented (Phase 1.5)
-**Related**: [Schema Migration Strategy](Schema_Migration_Strategy.md), [Terminology Migration Plan](../REVIEWS/Terminology_Migration_Plan_UPDATED.md)
+**Related**: [Schema Migration Strategy](Schema_Migration_Strategy.md), [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md)
 
 ---
 
@@ -718,7 +718,7 @@ Evidence Item
 ## Appendix B: Related Documents
 
 - [Schema Migration Strategy](Schema_Migration_Strategy.md) - Backward compatibility approach
-- [Terminology Migration Plan](../REVIEWS/Terminology_Migration_Plan_UPDATED.md) - Phase 1.5 context
+- [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md) - Phase 1.5 context
 - [AGENTS.md](../../AGENTS.md) - LLM guidance for evidence extraction
 - [evidence-filter.ts](../../apps/web/src/lib/analyzer/evidence-filter.ts) - Implementation
 - [evidence-filter.test.ts](../../apps/web/test/unit/lib/analyzer/evidence-filter.test.ts) - Test suite
@@ -729,3 +729,4 @@ Evidence Item
 **Last Updated**: 2026-01-29
 **Next Review**: Before Phase 3 planning
 **Maintained by**: Plan Coordinator
+

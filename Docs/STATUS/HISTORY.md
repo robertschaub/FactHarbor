@@ -1,10 +1,12 @@
 # FactHarbor Development History
 
-**Last Updated**: January 31, 2026
-**Current Version**: 2.10.0 (Code) | 2.7.0 (Schema Output)
+**Last Updated**: February 2, 2026
+**Current Version**: 2.10.1 (Code) | 2.7.0 (Schema Output)
 **Schema Version**: 2.7.0
 
 ---
+
+**Terminology Note**: Historical entries may use the legacy term "scope" when referring to AnalysisContext. Current terminology is **Context** for top-level analysis frames and **EvidenceScope** for per-evidence metadata.
 
 ## Table of Contents
 
@@ -37,11 +39,42 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 2. **Input Neutrality**: Question ≈ Statement (within ±5%)
 3. **Pipeline Integrity**: No stage skipping (Understand → Research → Verdict)
 4. **Evidence Transparency**: Every verdict cites supporting facts
-5. **Scope Detection**: Identify and analyze distinct bounded analytical frames
+5. **Context Detection**: Identify and analyze distinct bounded analytical frames
 
 ---
 
 ## Version History
+
+### v2.10.1 UCM Integration + Terminology Cleanup (February 2, 2026)
+
+**Focus**: Finalizing UCM integration and terminology correctness
+
+**Status**: ✅ COMPLETE
+
+**Major Changes**:
+
+1. **UCM Analyzer Integration (Phase 1)**
+   - Pipeline/search/calculation configs now loaded from UCM for all pipelines
+   - LLM provider selection moved into pipeline config (`pipeline.llmProvider`)
+   - Health/test-config endpoints now reference UCM provider
+
+2. **Job Config Snapshots (Phase 2)**
+   - Snapshot capture stores pipeline/search configs + SR summary per job
+   - Ensures auditability and reproducibility
+
+3. **SR Modularity (Phase 3)**
+   - SR config remains separate UCM domain (`sr.v1`)
+   - SR evaluator search settings controlled by SR config (no env overrides)
+
+4. **Terminology Cleanup**
+   - Context vs EvidenceScope naming corrected in UI/docs/schema
+   - Legacy `scope*` config keys mapped to `context*` equivalents
+
+**Docs Updated**:
+- UCM, LLM, SR, Admin UI guides
+- Architecture docs and status references
+
+---
 
 ### v2.10.0 UCM Pre-Validation Sprint (January 31, 2026)
 
@@ -118,7 +151,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
    - Designed 4 strategic analysis points for LLM delegation:
      - **Call 1: Input Classification** (Understand phase) - Claim decomposition, comparative/compound detection
      - **Call 2: Evidence Quality** (Research phase) - Evidence filtering, probative value assessment
-     - **Call 3: Scope Similarity** (Organize phase) - Scope merging, phase bucket inference
+     - **Call 3: Context Similarity** (Organize phase) - Scope merging, phase bucket inference
      - **Call 4: Verdict Validation** (Aggregate phase) - Inversion detection, harm potential, contestation
    - ITextAnalysisService interface with three implementations:
      - `HeuristicTextAnalysisService`: Baseline using existing regex/pattern functions
@@ -160,7 +193,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 - `apps/web/test/analyzer/text-analysis-service.test.ts` - 20+ test cases
 
 **Documentation**:
-- `Docs/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md` - Full proposal with senior review
+- `Docs/ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md` - Full proposal with senior review
 - `Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md` - Added Section 8 (Search Provider Requirements)
 - `Docs/USER_GUIDES/LLM_Configuration.md` - Added "No sources fetched" troubleshooting
 
@@ -277,7 +310,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
    - Filter detection: Irrelevant evidence excluded
    - Expert quote validation: Named experts vs anonymous sources
 
-4. **Scope Similarity Tests** (5 cases)
+4. **Context Similarity Tests** (5 cases)
    - Duplicate scope detection: Same entity → high similarity, merge recommended
    - Different jurisdictions: US vs EU → low similarity, no merge
    - Phase bucket classification: Production vs usage phase detection
@@ -297,7 +330,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 - `apps/web/promptfooconfig.text-analysis.yaml` - Test configuration (26 cases)
 - `apps/web/prompts/promptfoo/text-analysis-input-prompt.txt` - Input classification template
 - `apps/web/prompts/promptfoo/text-analysis-evidence-prompt.txt` - Evidence quality template
-- `apps/web/prompts/promptfoo/text-analysis-scope-prompt.txt` - Scope similarity template
+- `apps/web/prompts/promptfoo/text-analysis-scope-prompt.txt` - Context Similarity template
 - `apps/web/prompts/promptfoo/text-analysis-verdict-prompt.txt` - Verdict validation template
 
 **Documentation Updated**:
@@ -366,9 +399,9 @@ npm run promptfoo:all            # Run all 38 tests
 - `apps/web/src/app/api/admin/prompts/[pipeline]/` (10 routes)
 
 **Documentation**:
-- `Docs/STATUS/Changelog_v2.6.41_Unified_Config.md` - Full changelog
+- `Docs/ARCHIVE/STATUS/Changelog_v2.6.41_Unified_Config.md` - Full changelog
 - `Docs/USER_GUIDES/Admin_Interface.md` - Updated with UCM section
-- `Docs/REVIEWS/Full_Prompt_Unification_Plan.md` - Marked complete
+- `Docs/ARCHIVE/REVIEWS/Full_Prompt_Unification_Plan.md` - Marked complete
 
 ---
 
@@ -645,11 +678,13 @@ npm run promptfoo:all            # Run all 38 tests
 - `Docs/ARCHITECTURE/Source_Reliability.md` (comprehensive user guide)
 - `Docs/ARCHIVE/Source_Reliability_Service_Proposal.md` (archived proposal)
 
-**Configuration** (environment variables):
-- `FH_SR_ENABLED`, `FH_SR_MULTI_MODEL`, `FH_SR_CONFIDENCE_THRESHOLD`
-- `FH_SR_CONSENSUS_THRESHOLD`, `FH_SR_CACHE_TTL_DAYS`, `FH_SR_FILTER_ENABLED`
-- `FH_SR_SKIP_PLATFORMS`, `FH_SR_SKIP_TLDS`, `FH_SR_RATE_LIMIT_PER_IP`
-- `FH_SR_DEFAULT_SCORE`
+**Configuration** (UCM, SR domain):
+- `sr.enabled`, `sr.multiModel`, `sr.confidenceThreshold`
+- `sr.consensusThreshold`, `sr.cacheTtlDays`, `sr.filterEnabled`
+- `sr.skipPlatforms`, `sr.skipTlds`, `sr.rateLimitPerIp`
+- `sr.defaultScore`
+
+**Note (2026-02-02)**: SR settings are now fully UCM-managed; env overrides are retired.
 
 ---
 
@@ -1071,7 +1106,7 @@ npm run promptfoo:all            # Run all 38 tests
 - Budget stats in result envelope
 
 **Environment Variables**:
-- `FH_ANALYSIS_MODE`: `"quick"` (default) | `"deep"`
+- `pipeline.analysisMode`: `"quick"` (default) | `"deep"` (UCM-managed)
 - `FH_MAX_TOTAL_ITERATIONS`: Override total cap
 - `FH_MAX_ITERATIONS_PER_SCOPE`: Override per-scope cap
 - `FH_ENFORCE_BUDGETS`: `true` | `false`
@@ -1123,7 +1158,7 @@ npm run promptfoo:all            # Run all 38 tests
 **Budget Model Optimization**:
 - Simplified prompts for budget models (Haiku, Flash, Mini)
 - ~40% claimed token reduction (unvalidated)
-- Ultra-compact when `FH_LLM_TIERING=on`
+- Ultra-compact when `pipeline.llmTiering=true` (UCM-managed)
 - Minimal provider hints
 
 **Structured Output Hardening**:
@@ -1156,7 +1191,7 @@ npm run promptfoo:all            # Run all 38 tests
 **Git Commits**:
 - `048efa4` - Implement v2.8 provider-specific LLM optimization
 - `05de7aa` - Prompting improvements and Metrics
-- `5837ebb` - Budget models respect FH_ALLOW_MODEL_KNOWLEDGE
+- `5837ebb` - Budget models respect `pipeline.allowModelKnowledge`
 
 **Earlier Prompting Improvements**:
 
@@ -1179,7 +1214,7 @@ npm run promptfoo:all            # Run all 38 tests
 - Pseudoscience detection patterns
 
 **Key Prompt Principles** (from Provider Guidelines):
-- Evidence-based analysis (no model knowledge when `FH_ALLOW_MODEL_KNOWLEDGE=false`)
+- Evidence-based analysis (no model knowledge when `pipeline.allowModelKnowledge=false`)
 - Provenance validation (URL + excerpt required)
 - Scope detection with generic terminology
 - Input neutrality (question ≈ statement)
@@ -1400,7 +1435,7 @@ npm run promptfoo:all            # Run all 38 tests
 - **Status**: Data exists, UI implementation needed
 
 **7. Model Knowledge Toggle** (QUALITY)
-- **Impact**: `FH_ALLOW_MODEL_KNOWLEDGE=false` not fully respected in Understanding phase
+- **Impact**: `pipeline.allowModelKnowledge=false` not fully respected in Understanding phase
 - **Solution**: Enforce evidence-only analysis throughout pipeline
 - **Status**: Partially implemented
 
@@ -1488,3 +1523,5 @@ This history reflects work by the FactHarbor development team and AI coding assi
 **Document Status**: Comprehensive history compiled from 45+ source documents  
 **Consolidation Date**: January 19, 2026  
 **Source Documents**: CHANGELOG.md, EVOLUTION.md, investigation reports, bug fix reports, implementation summaries, architecture reviews
+
+

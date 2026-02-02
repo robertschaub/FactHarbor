@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: January 30, 2026
+**Last Updated**: February 2, 2026
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -12,13 +12,18 @@
 
 ---
 
-## Recently Completed (January 30, 2026)
+## Recently Completed (February 2, 2026)
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
-| ✅ **Unified Configuration Management Foundation (v2.9.0)**: Extended config system to all 5 types (prompt, search, calculation, pipeline, sr). Added prompt import/export/reseed APIs. 158 unit tests. Admin UI complete. **Foundation only (~40%)** - analyzer integration and job snapshots pending. | Architecture / Testing | 2026-01-30 | [Implementation Review](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
-| ✅ **LLM Text Analysis Pipeline**: Implemented 4 analysis points with hybrid LLM/heuristic architecture. Bug fix in v2.8.1 removed counter-claim detection from verdict prompt. | Analyzer / LLM | 2026-01-30 | [Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) |
-| ✅ **Promptfoo Test Coverage for Text Analysis**: Created 26 test cases covering all 4 text-analysis prompts (input classification, evidence quality, scope similarity, verdict validation). Total promptfoo coverage now 38 test cases across 6 prompts. | Testing / LLM | 2026-01-30 | [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md) |
+| ✅ **UCM Phase 1: Analyzer Integration**: Analyzer now loads pipeline/search/calc from UCM (hot-reloadable). Env-based analysis settings removed. | Architecture / Config | 2026-02-02 | [UCM Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
+| ✅ **UCM Phase 2: Job Config Snapshots**: `job_config_snapshots` capture pipeline/search + SR summary per job for auditability. | Architecture / Config | 2026-02-02 | [UCM Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
+| ✅ **UCM Phase 3: SR Modularity Interface**: SR config is separate UCM domain; SR service config wired and isolated from pipeline config. | Architecture / Config | 2026-02-02 | [UCM Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
+| ✅ **UCM Phase 4: Admin UI Polish**: Split routes to `/admin/quality/*` (FactHarbor) and `/admin/sr/*` (SR standalone). Added validation warnings for dangerous config combos and snapshot viewer. | Web UI / Config | 2026-02-02 | [UCM Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
+| ✅ **Terminology cleanup**: Context vs EvidenceScope naming cleanup in admin UI + schema (legacy keys supported). | Analyzer / Docs | 2026-02-02 | [Terminology Migration Summary](../ARCHIVE/REVIEWS/Terminology_Migration_SUMMARY.md) |
+| ✅ **Unified Configuration Management Foundation (v2.9.0)**: Extended config system to all core types (prompt, search, calculation, pipeline, sr) plus lexicons. Added prompt import/export/reseed APIs. 158 unit tests. Admin UI complete. **Foundation only (~40%)** - analyzer integration and job snapshots pending. | Architecture / Testing | 2026-01-30 | [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
+| ✅ **LLM Text Analysis Pipeline**: Implemented 4 analysis points with hybrid LLM/heuristic architecture. Bug fix in v2.8.1 removed counter-claim detection from verdict prompt. | Analyzer / LLM | 2026-01-30 | [Deep Analysis](../ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) |
+| ✅ **Promptfoo Test Coverage for Text Analysis**: Created 26 test cases covering all 4 text-analysis prompts (input classification, evidence quality, context similarity, verdict validation). Total promptfoo coverage now 38 test cases across 6 prompts. | Testing / LLM | 2026-01-30 | [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md) |
 
 ---
 
@@ -26,18 +31,15 @@
 
 | Description | Domain | Urgency | Importance | Effort | Reference |
 |---|---|---|---|---|---|
-| **🔴 UCM Phase 1: Analyzer Integration**: Create config-loader.ts abstraction to replace 87 `process.env.FH_*` reads in analyzer. Enable hot-reload of settings without restart. **CRITICAL for operational value**. | Architecture / Config | high | high | 2 weeks | [UCM Review §Phase 1](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
-| **🟠 UCM Phase 2: Job Config Snapshots**: Implement `job_config_snapshots` table and async capture. Enable viewing complete config that produced any job. **Critical for auditability**. | Architecture / Config | high | high | 1 week | [UCM Review §Phase 2](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
-| **🟡 UCM Phase 3: SR Modularity Interface**: Define SRServiceInterface contract and ensure analyzer uses interface (not direct SR config access). Enable future SR extraction. | Architecture / Config | med | med | 1 week | [UCM Review §Phase 3](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
 | **LLM Text Analysis A/B Testing**: Run promptfoo text-analysis tests and compare heuristic vs LLM modes to validate quality improvements. Test infrastructure ready (26 cases). | Analyzer / Testing | med | high | 1-2 days + $20-50 API | [Promptfoo Testing](../USER_GUIDES/Promptfoo_Testing.md) |
-| Inverse-input symmetry hardening: keep `scripts/inverse-scope-regression.ps1` green; add 2–3 more inverse pairs; define "strict symmetry" vs "best-effort" per test. | Analyzer | med | high | 3-4 days | Existing |
-| Evidence-driven scope refinement guardrails: add lightweight instrumentation (how often refine is applied/rejected + reason) to prevent over-splitting into non-scope "dimensions". | Analyzer | med | high | 2-3 days | Existing |
+| Inverse-input symmetry hardening: keep `scripts/inverse-scope-regression.ps1` green; add 2–3 more inverse pairs; define "strict context symmetry" vs "best-effort" per test. | Analyzer | med | high | 3-4 days | Existing |
+| Evidence-driven context refinement guardrails: add lightweight instrumentation (how often refine is applied/rejected + reason) to prevent over-splitting into non-context "dimensions". | Analyzer | med | high | 2-3 days | Existing |
 | Central-claim evidence coverage pass: bounded "missing-evidence" retrieval pass for central claims with zero supporting/counter facts (best-effort; no loops; respect search budgets). | Analyzer / Search | med | high | 3-5 days | Existing |
 | **Parallel verdict generation**: Process claim verdicts in parallel (with concurrency limit) instead of sequentially. 50-80% speed improvement for multi-claim analyses. | Analyzer / Performance | med | high | 1-2 days | Improvements #5 |
 | **Tiered LLM model routing**: Use cheaper models (Haiku) for extraction tasks, premium models (Sonnet) for reasoning. 50-70% cost savings on LLM calls. | Analyzer / Cost | med | high | 3-4 days | Improvements #3 |
 | **Claim-level caching**: Cache normalized claim verdicts to reuse across analyses. 30-50% cost savings on repeat claims. Requires normalized DB schema. | Analyzer / Cost | med | high | 5-7 days | Improvements #4 |
 | **Quality Gate UI display**: Show Gate 1 and Gate 4 statistics and per-item failure reasons in the results UI. Core transparency requirement. | Web UI | med | high | 2-3 days | Improvements #6 |
-| Scope guidelines note: short dev note defining what qualifies as a distinct "Scope" vs a dimension; keep aligned with `AGENTS.md`. | Analyzer / Docs | med | med | 1 day | Existing |
+| Context guidelines note: short dev note defining what qualifies as a distinct "Context" vs a dimension; keep aligned with `AGENTS.md`. | Analyzer / Docs | med | med | 1 day | Existing |
 
 ---
 
@@ -57,11 +59,10 @@
 
 | Description | Domain | Urgency | Importance | Effort | Reference |
 |---|---|---|---|---|---|
-| **🟢 UCM Phase 4: Admin UI Polish**: Split routes to `/admin/quality/*` (FactHarbor) and `/admin/sr/*` (SR standalone). Add validation warnings for dangerous config combos. API route consistency. | Web UI / Config | low | low | 3 days | [UCM Review §Phase 4](../REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
 | **Config admin: auto-save drafts to localStorage**: Protect against accidental page refresh. Recover unsaved drafts on reload. *(Skipped: medium risk of stale draft confusion)* | Web UI / UX | low | low | 0.5 day | UCM UX Review |
 | **Config admin: diff view**: Side-by-side comparison of current edit vs active version before saving. | Web UI / UX | low | low | 2-3 days | UCM UX Review |
 | **Analysis templates/presets**: Domain-specific templates (health, legal, political) with curated search whitelists and KeyFactor hints. | Web UI / UX | low | med | 3-4 days | Improvements #8 |
-| **Interactive analysis refinement**: Allow users to add sources, challenge claims, refine searches, or add scopes as child jobs extending existing analysis. | Web UI / UX | low | med | 7-10 days | Improvements #7 |
+| **Interactive analysis refinement**: Allow users to add sources, challenge claims, refine searches, or add contexts as child jobs extending existing analysis. | Web UI / UX | low | med | 7-10 days | Improvements #7 |
 | **Comparative analysis mode**: Side-by-side comparison of two articles/claims. Show shared claims, unique claims, contradictions, consensus areas. | Analyzer / UX | low | med | 10-14 days | Improvements #9 |
 | **Real-time source quality feedback**: Aggregate multiple quality signals (MBFC, NewsGuard, Wikipedia citations, HTTPS, domain age) instead of single vendor. | Analyzer / Quality | low | med | 5-7 days | Improvements #10 |
 | **PDF report export**: Generate professional PDF reports with charts, graphs, confidence bars, optional branding. | Reporting | low | low | 3-5 days | Improvements #12 |
@@ -117,4 +118,3 @@
 - **Current Status**: `Docs/STATUS/Current_Status.md`
 - **Architecture**: `Docs/ARCHITECTURE/Overview.md`
 - **Coding Guidelines**: `Docs/DEVELOPMENT/Coding_Guidelines.md`
-

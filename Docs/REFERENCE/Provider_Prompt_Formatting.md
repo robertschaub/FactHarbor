@@ -1,7 +1,7 @@
 # Provider-Specific Prompt Formatting
 
 **Version**: 2.6.41 (v2.8.0 prompt architecture)
-**Date**: 2026-01-29
+**Date**: 2026-02-02
 **Status**: Implemented
 **Related**: [Evidence Quality Filtering](../ARCHITECTURE/Evidence_Quality_Filtering.md)
 
@@ -72,7 +72,7 @@ Prompts are composed for 7 task types:
 1. **understand** - Initial claim understanding and decomposition
 2. **extract_facts** - Evidence extraction from sources
 3. **verdict** - Claim evaluation and verdict assignment
-4. **scope_refinement** - AnalysisContext boundary detection
+4. **scope_refinement** - AnalysisContext boundary detection (legacy task name)
 5. **dynamic_plan** - Dynamic analysis planning (monolithic mode)
 6. **dynamic_analysis** - Dynamic analysis execution (monolithic mode)
 7. **orchestrated_understand** - Combined understanding (orchestrated mode)
@@ -104,7 +104,7 @@ Prompts are composed for 7 task types:
 - ✅ **Thinking blocks** - Explicit `<thinking_process>` sections for reasoning
 - ✅ **Prefill technique** - Structured output guidance with examples
 - ✅ **Nuanced reasoning** - Trust Claude's judgment on complex assessments
-- ✅ **AnalysisContext detection** - Strong at detecting implicit scope boundaries
+- ✅ **AnalysisContext detection** - Strong at detecting implicit context boundaries
 
 **Example Optimization**:
 ```xml

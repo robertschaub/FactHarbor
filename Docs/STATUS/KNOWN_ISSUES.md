@@ -1,6 +1,6 @@
 # FactHarbor Known Issues
 
-**Last Updated**: January 29, 2026
+**Last Updated**: February 2, 2026
 **Current Version**: 2.6.41
 **Schema Version**: 2.7.0
 
@@ -142,34 +142,34 @@ Display gate information in results UI:
 
 ---
 
-### 4. Input Neutrality Scope Variance
+### 4. Input Neutrality Context Variance
 
 **Status**: ⚠️ PARTIALLY RESOLVED  
 **Severity**: HIGH
 
 **Description**:
-Question vs statement phrasing can still yield different scope counts in some cases:
-- EV Lifecycle: ✅ PASSED (identical scopes)
-- Bolsonaro: ⚠️ HIGH VARIANCE (2 vs 3 scopes)
+Question vs statement phrasing can still yield different context counts in some cases:
+- EV Lifecycle: ✅ PASSED (identical contexts)
+- Bolsonaro: ⚠️ HIGH VARIANCE (2 vs 3 contexts)
 
 **Impact**:
 - Violates "Question ≈ Statement" requirement
-- Different scope detection → different analysis depth
+- Different context detection → different analysis depth
 - Inconsistent user experience
 
 **Root Cause**:
-LLM scope detection is probabilistic even with temperature=0. Normalized input doesn't fully eliminate semantic interpretation differences.
+LLM context detection is probabilistic even with temperature=0. Normalized input doesn't fully eliminate semantic interpretation differences.
 
 **Workaround**:
 Use statement format for consistent results.
 
 **Possible Solutions**:
 - Strengthen input normalization
-- Add deterministic scope seeding based on normalized keywords
-- Implement scope merging heuristics for near-duplicate scopes
-- Reduce scope detection temperature further
+- Add deterministic context seeding based on normalized keywords
+- Implement context merging heuristics for near-duplicate contexts
+- Reduce context detection temperature further
 
-**Status**: Under investigation. See `Docs/INVESTIGATION/Input_Neutrality_Scope_Variance.md`
+**Status**: Under investigation. See `Docs/INVESTIGATION/Input_Neutrality_Scope_Variance.md` (legacy filename)
 
 ---
 
@@ -179,7 +179,7 @@ Use statement format for consistent results.
 **Severity**: MEDIUM-HIGH
 
 **Description**:
-`FH_ALLOW_MODEL_KNOWLEDGE=false` is not fully respected in Understanding phase. LLM may still use internal knowledge instead of requiring evidence.
+`pipeline.allowModelKnowledge=false` is not fully respected in Understanding phase. LLM may still use internal knowledge instead of requiring evidence.
 
 **Impact**:
 - Cannot guarantee evidence-only analysis
@@ -210,8 +210,8 @@ Manual review of verdicts to ensure evidence citation.
 **Description**:
 Current budget limits may be too restrictive:
 - Quick mode: 4 iterations max (was 2, increased in v2.8.2)
-- Per-scope limit: 3 iterations
-- For 2-scope analysis: 3 × 2 = 6 iterations max
+- Per-context limit: 3 iterations
+- For 2-context analysis: 3 × 2 = 6 iterations max
 
 January regression showed 16 searches → 9 searches when budgets were enforced.
 
@@ -221,9 +221,9 @@ January regression showed 16 searches → 9 searches when budgets were enforced.
 - Lower confidence scores
 
 **Workaround**:
-- Use deep mode: `FH_ANALYSIS_MODE=deep`
-- Increase limits: `FH_MAX_TOTAL_ITERATIONS=20`
-- Disable hard enforcement: `FH_ENFORCE_BUDGETS=false`
+- Use deep mode: set `pipeline.analysisMode=deep` in UCM
+- Increase limits: set `pipeline.maxTotalIterations` in UCM
+- Disable hard enforcement: set `pipeline.enforceBudgets=false` in UCM
 
 **Solution**:
 Run baseline tests with different budget configurations to find optimal balance between cost and quality.

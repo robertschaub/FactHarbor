@@ -2,8 +2,8 @@
 
 **Unified Configuration Management for FactHarbor**
 
-**Version**: 2.10.0
-**Last Updated**: January 31, 2026
+**Version**: 2.10.1
+**Last Updated**: February 2, 2026
 **Audience**: System Administrators, DevOps Engineers, Quality Analysts
 **Document Type**: Operational Handbook
 
@@ -322,7 +322,7 @@ Every configuration version is identified by its **content hash** - a SHA-256 fi
 | `analysisMode` | "quick"/"deep" | quick | Research depth and iteration limits |
 | `allowModelKnowledge` | boolean | false | Allow LLM to use training data vs evidence-only |
 | `deterministic` | boolean | true | Use temperature=0 for reproducibility |
-| `maxIterationsPerScope` | integer | 5 | Research iterations per analysis scope |
+| `maxIterationsPerContext` | integer | 5 | Research iterations per analysis context |
 | `maxTotalIterations` | integer | 20 | Total iterations across all scopes |
 | `maxTotalTokens` | integer | 750000 | Token budget for entire analysis |
 
@@ -448,7 +448,7 @@ Every configuration version is identified by its **content hash** - a SHA-256 fi
 │  │   ─────────────────────────────────────────────────────────────────    │ │
 │  │   ▶ Show customized fields (3)                                         │ │
 │  │     • analysisMode                                                     │ │
-│  │     • maxIterationsPerScope                                            │ │
+│  │     • maxIterationsPerContext                                            │ │
 │  │     • llmTiering                                                       │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
 │                                                                              │
@@ -504,7 +504,7 @@ Every configuration version is identified by its **content hash** - a SHA-256 fi
 │  │ │  - "quick"                                                           │ │
 │  │ │  + "deep"                                                            │ │
 │  ├────────────────────────────────────────────────────────────────────────┤ │
-│  │ ▌maxIterationsPerScope (modified)                                      │ │
+│  │ ▌maxIterationsPerContext (modified)                                      │ │
 │  │ │  - 5                                                                 │ │
 │  │ │  + 8                                                                 │ │
 │  ├────────────────────────────────────────────────────────────────────────┤ │
@@ -598,7 +598,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
 │  │ {                                                                       ││
 │  │   "llmTiering": true,                                                   ││
 │  │   "analysisMode": "deep",                                               ││
-│  │   "maxIterationsPerScope": 8,                                           ││
+│  │   "maxIterationsPerContext": 8,                                           ││
 │  │   ...                                                                   ││
 │  │ }                                                                       ││
 │  └─────────────────────────────────────────────────────────────────────────┘│
@@ -628,7 +628,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
   ─────────────────────────────   ────────────────────────────────────────
 
   Analysis seems shallow          ► pipeline.analysisMode = "quick"?
-                                  ► pipeline.maxIterationsPerScope too low?
+                                  ► pipeline.maxIterationsPerContext too low? (legacy: maxIterationsPerScope)
 
   Few sources cited               ► search.enabled = false?
                                   ► search.maxResults too low?
@@ -735,7 +735,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
   "modelUnderstand": "claude-3-5-haiku-20241022",
   "modelExtractFacts": "claude-3-5-haiku-20241022",
   "modelVerdict": "claude-3-5-haiku-20241022",
-  "maxIterationsPerScope": 3,
+  "maxIterationsPerContext": 3,
   "maxTotalIterations": 10
 }
 ```
@@ -748,7 +748,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
   "modelUnderstand": "claude-sonnet-4-20250514",
   "modelExtractFacts": "claude-sonnet-4-20250514",
   "modelVerdict": "claude-sonnet-4-20250514",
-  "maxIterationsPerScope": 8,
+  "maxIterationsPerContext": 8,
   "maxTotalIterations": 30
 }
 ```
@@ -761,7 +761,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
   "modelUnderstand": "claude-3-5-haiku-20241022",
   "modelExtractFacts": "claude-3-5-haiku-20241022",
   "modelVerdict": "claude-sonnet-4-20250514",
-  "maxIterationsPerScope": 5,
+  "maxIterationsPerContext": 5,
   "maxTotalIterations": 20
 }
 ```
@@ -830,7 +830,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
   │   - "quick"                                 │
   │   + "deep"                                  │
   │                                             │
-  │ maxIterationsPerScope (modified)            │
+  │ maxIterationsPerContext (modified)            │
   │   - 5                                       │
   │   + 8                                       │
   └─────────────────────────────────────────────┘
@@ -912,7 +912,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
   maxResults: high (10)    ⬆️ 20%   ⬇️ 30%   ⬆️ 20%    ⬆️ HIGH
 
   domainWhitelist used     ━        ━        ⬆️ ~10%   ⬇️ ~50%
-                                             (quality)  (scope)
+                                             (quality)  (coverage)
 
   timeoutMs: low           ━        ⬆️       ⬇️ ~10%   ⬇️
   timeoutMs: high          ━        ⬇️       ⬆️ ~10%   ⬆️
@@ -1120,3 +1120,4 @@ To create meaningful screenshots:
 **Author**: FactHarbor Documentation Team
 **Review Cycle**: Quarterly
 **Next Review**: April 2026
+

@@ -67,8 +67,8 @@ d) At claims we sometimes see "contested" where it should only be doubted, or ev
 I see these potential areas why the reports are not as good as earlier:
 1. We removed specific wording in prompts (but wee needed to)
 2. We have too complicated prompting now
-3. We had cleaned up code to get rid of confusions on terms: Frame, Scope, Context , and with this introduced unintended changes
-4. The now clear differentiation between Scope and Context is counter-productive
+3. We had cleaned up code to get rid of confusions on terms: Frame, AnalysisContext, EvidenceScope, and with this introduced unintended changes
+4. The now clear differentiation between EvidenceScope and AnalysisContext is counter-productive
 5. There simply is a conceptual flaw (please provide diagrams that help to better understand. Especially show how the main Entities (Article, ArticleFrame, Claim, EvidenceScope, AnalysisContext) are used and relate at Analysis, Prompt input, Prompt Output and Display.
 
 ---
@@ -135,7 +135,7 @@ Please detect when a verdict or claim comment statement does not recognize the c
 ---
 - We use ArticleFrame for article narrative/background framing. Important note: do not confuse ArticleFrame with EvidenceScope (per-evidence source scope). Make sure this is consistently done.
 ---
-- With single scope report, the layout is different than with multi scope report. Please generalize the layout, so that for single scope report, the same layout is used as with multi scope, but in the single scope case, omit the layout elements that are not needed for single scope.
+- With single-context report, the layout is different than with multi-context report. Please generalize the layout, so that for single-context report, the same layout is used as with multi-context, but in the single-context case, omit the layout elements that are not needed for single-context.
 ---
 - At page "FactHarbor Jobs" pagination prev/next does nothing. Please make sure that at the jobs page we can really page back - currently it seem that noch all data from the database is available.
 ---

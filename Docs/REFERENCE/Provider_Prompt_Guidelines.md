@@ -1,7 +1,7 @@
 # Provider-Specific Prompt Guidelines
 
-**Version**: 2.6.33
-**Last Updated**: 2026-01-19
+**Version**: 2.6.41
+**Last Updated**: 2026-02-02
 **Status**: Implementation Complete
 
 ---
@@ -16,7 +16,7 @@ This document describes the provider-specific prompt optimizations implemented i
 
 | Provider | Strengths | Compensations | Key Techniques |
 |----------|-----------|---------------|----------------|
-| **Claude (Anthropic)** | Nuanced reasoning, scope detection | Over-hedging tendency | XML tags, thinking blocks |
+| **Claude (Anthropic)** | Nuanced reasoning, context detection | Over-hedging tendency | XML tags, thinking blocks |
 | **GPT (OpenAI)** | Fast structured output, examples | Over-splitting, balanced drift | Few-shot examples, calibration |
 | **Gemini (Google)** | Large context, factual extraction | Verbosity | Length limits, checklists |
 | **Mistral** | Fast, rule-following | Less nuanced | Step-by-step, templates |
@@ -58,7 +58,7 @@ Encourage explicit reasoning before output:
 
 ```xml
 <thinking_process>
-For each scope, reason through:
+For each context, reason through:
 1. What does the USER'S CLAIM state?
 2. What does the EVIDENCE show?
 3. Do they MATCH or CONTRADICT?
@@ -177,7 +177,7 @@ Structure complex tasks as numbered steps:
 2. Identify claim type (statement vs article)
 3. Extract claims with attribution separation
 4. Assess centrality (expect 1-4 HIGH max)
-5. Detect scope boundaries if present
+5. Detect context boundaries if present
 6. Generate 4-6 search queries
 7. Output JSON`
 ```
@@ -235,7 +235,7 @@ Provide exact structure to fill in:
 ```typescript
 `**Step 2c:** Fill verdict template
 {
-  "contextId": "[scope ID]",
+  "contextId": "[context ID]",
   "answer": [0-100 integer],
   "confidence": [0-100 integer],
   "shortAnswer": "[complete sentence, ≤25 words]",

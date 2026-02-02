@@ -133,7 +133,7 @@ apps/web/
     ├── source-reliability-prompt.txt
     ├── text-analysis-input-prompt.txt        # Input classification tests
     ├── text-analysis-evidence-prompt.txt     # Evidence quality tests
-    ├── text-analysis-scope-prompt.txt        # Scope similarity tests
+    ├── text-analysis-scope-prompt.txt        # Context similarity tests (legacy filename)
     └── text-analysis-verdict-prompt.txt      # Verdict validation tests
 ```
 
@@ -304,14 +304,14 @@ The text analysis tests (`promptfooconfig.text-analysis.yaml`) validate the LLM 
 | Irrelevant Evidence | Off-topic evidence → `qualityAssessment=filter` |
 | Expert Quote Check | Named expert + credentials → `high`; anonymous → `low/filter` |
 
-### Scope Similarity Tests (5 cases)
+### Context Similarity Tests (5 cases)
 
 | Test | What It Checks |
 |------|----------------|
-| Duplicate Scopes | Same entity → `similarity≥0.85`, `shouldMerge=true` |
+| Duplicate Contexts | Same entity → `similarity≥0.85`, `shouldMerge=true` |
 | Different Jurisdictions | US vs EU → `similarity<0.85`, `shouldMerge=false` |
-| Production Phase | Manufacturing scopes → `phaseBucket=production` |
-| Usage Phase | Operating scopes → `phaseBucket=usage` |
+| Production Phase | Manufacturing contexts → `phaseBucket=production` |
+| Usage Phase | Operating contexts → `phaseBucket=usage` |
 | Mixed Phases | Production vs Usage → different phase buckets, no merge |
 
 ### Verdict Validation Tests (8 cases)

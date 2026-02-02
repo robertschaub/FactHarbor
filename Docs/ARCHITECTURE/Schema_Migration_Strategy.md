@@ -3,7 +3,7 @@
 **Version**: 1.0
 **Date**: 2026-01-29
 **Status**: Active
-**Related**: [Terminology Migration Plan](../REVIEWS/Terminology_Migration_Plan_UPDATED.md)
+**Related**: [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md)
 
 ---
 
@@ -564,10 +564,10 @@ it("ExtractedFact alias still works", () => {
 
 ## Appendix B: Related Documents
 
-- [Terminology Migration Plan](../REVIEWS/Terminology_Migration_Plan_UPDATED.md) - Comprehensive migration plan
-- [Terminology Migration Summary](../REVIEWS/Terminology_Migration_SUMMARY.md) - Current status
-- [Terminology Migration Compliance Audit](../REVIEWS/Terminology_Migration_Compliance_Audit.md) - Requirements audit
-- [Baseline Quality Measurements](../REVIEWS/Baseline_Quality_Measurements.md) - Quality metrics
+- [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md) - Comprehensive migration plan
+- [Terminology Migration Summary](../ARCHIVE/REVIEWS/Terminology_Migration_SUMMARY.md) - Current status
+- [Terminology Migration Compliance Audit](../ARCHIVE/REVIEWS/Terminology_Migration_Compliance_Audit.md) - Requirements audit
+- [Baseline Quality Measurements](../ARCHIVE/REVIEWS/Baseline_Quality_Measurements.md) - Quality metrics
 - [Backward Compatibility Test Suite](../../apps/web/test/unit/lib/analyzer/schema-backward-compatibility.test.ts) - Test implementation
 
 ---
@@ -576,3 +576,4 @@ it("ExtractedFact alias still works", () => {
 **Last Updated**: 2026-01-29
 **Next Review**: Before Phase 3 planning
 **Maintained by**: Plan Coordinator
+

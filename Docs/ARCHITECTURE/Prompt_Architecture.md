@@ -32,11 +32,11 @@ apps/web/src/lib/analyzer/prompts/
 │   ├── understand-base.ts         # Claim understanding (shared)
 │   ├── extract-facts-base.ts      # Fact extraction (shared)
 │   ├── verdict-base.ts            # Verdict generation (shared)
-│   ├── scope-refinement-base.ts   # Scope refinement (shared)
+│   ├── scope-refinement-base.ts   # Context refinement (shared)
 │   ├── dynamic-plan-base.ts       # Dynamic pipeline planning
 │   ├── dynamic-analysis-base.ts   # Dynamic pipeline analysis
 │   ├── orchestrated-understand.ts # Orchestrated pipeline understanding
-│   └── orchestrated-supplemental.ts # Supplemental claims/scopes
+│   └── orchestrated-supplemental.ts # Supplemental claims/contexts
 │
 ├── providers/                     # LLM provider-specific variants
 │   ├── anthropic.ts              # Claude optimizations
@@ -138,12 +138,12 @@ Before generating output, work through these steps internally:
 | `understand` | Canonical, Orchestrated | `understand-base.ts` |
 | `extract_facts` | Canonical, Orchestrated | `extract-facts-base.ts` |
 | `verdict` | Canonical, Orchestrated | `verdict-base.ts` |
-| `scope_refinement` | Orchestrated | `scope-refinement-base.ts` |
+| `scope_refinement` | Orchestrated | `scope-refinement-base.ts` (legacy name) |
 | `dynamic_plan` | Dynamic | `dynamic-plan-base.ts` |
 | `dynamic_analysis` | Dynamic | `dynamic-analysis-base.ts` |
 | `orchestrated_understand` | Orchestrated | `orchestrated-understand.ts` |
 | `supplemental_claims` | Orchestrated | `orchestrated-supplemental.ts` |
-| `supplemental_scopes` | Orchestrated | `orchestrated-supplemental.ts` |
+| `supplemental_scopes` | Orchestrated | `orchestrated-supplemental.ts` (legacy name) |
 
 ---
 
@@ -224,7 +224,7 @@ const understandPrompt = buildPrompt({
 
 **Files Updated**:
 - `base/understand-base.ts`
-- `base/scope-refinement-base.ts`
+- `base/scope-refinement-base.ts` (legacy name)
 - `base/orchestrated-understand.ts`
 
 **New Guidance**:
