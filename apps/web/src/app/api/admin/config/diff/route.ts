@@ -11,6 +11,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/config-storage";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Simple recursive diff function for JSON objects
  * Returns an array of changes with path, oldValue, and newValue

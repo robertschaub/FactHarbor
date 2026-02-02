@@ -14,6 +14,8 @@ import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, DEFAULT_CALC_CONFIG } f
 import { DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import { getActiveConfig } from "@/lib/config-storage";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Recursively compare objects and return paths of fields that differ
  */
