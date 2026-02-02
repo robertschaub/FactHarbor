@@ -129,6 +129,13 @@ export const PipelineConfigSchema = z.object({
     .max(1)
     .optional()
     .describe("Minimum confidence threshold for LLM-detected AnalysisContexts (0-1)"),
+  contextDetectionMaxContexts: z
+    .number()
+    .int()
+    .min(1)
+    .max(10)
+    .optional()
+    .describe("Maximum number of AnalysisContexts to keep after detection"),
   contextDetectionCustomPatterns: z
     .array(
       z.object({
@@ -174,6 +181,7 @@ export const PipelineConfigSchema = z.object({
     .int()
     .min(1)
     .max(10)
+    .optional()
     .describe("Maximum number of contexts to detect per input"),
   /** @deprecated Use contextDetectionCustomPatterns instead - 'scope' here means AnalysisContext */
   scopeDetectionCustomPatterns: z
@@ -254,6 +262,12 @@ export const PipelineConfigSchema = z.object({
     warnings.push("scopeDetectionMinConfidence → contextDetectionMinConfidence");
   }
 
+  // scopeDetectionMaxContexts → contextDetectionMaxContexts
+  if (data.scopeDetectionMaxContexts !== undefined && data.contextDetectionMaxContexts === undefined) {
+    data.contextDetectionMaxContexts = data.scopeDetectionMaxContexts;
+    warnings.push("scopeDetectionMaxContexts → contextDetectionMaxContexts");
+  }
+
   // scopeDetectionCustomPatterns → contextDetectionCustomPatterns
   if (data.scopeDetectionCustomPatterns !== undefined && data.contextDetectionCustomPatterns === undefined) {
     data.contextDetectionCustomPatterns = data.scopeDetectionCustomPatterns;
@@ -309,7 +323,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   contextDetectionMethod: "heuristic",
   contextDetectionEnabled: true,
   contextDetectionMinConfidence: 0.7,
-  scopeDetectionMaxContexts: 5,
+  contextDetectionMaxContexts: 5,
   contextDetectionCustomPatterns: undefined,
   contextFactorHints: undefined,
 
@@ -403,7 +417,6 @@ export const DEFAULT_EVIDENCE_LEXICON: EvidenceLexicon = {
     citationPatterns: [
       "re:§\\s*\\d+",
       "re:(article|section|sec|para|paragraph)\\s+\\d+",
-      "re:\\d+\\s+u\\.s\\.c\\.\\s*§\\s*\\d+",
       "re:\\w+\\s+v\\.\\s+\\w+",
       "re:(no\\.|#)\\s*\\d+",
     ],
@@ -939,14 +952,7 @@ export const DEFAULT_AGGREGATION_LEXICON: AggregationLexicon = {
         "re:zero[\\s-]*point\\s*energy.*healing",
       ],
     },
-    brands: [
-      "re:grander",
-      "re:pimag",
-      "re:kangen",
-      "re:enagic",
-      "re:alkaline\\s*ionizer",
-      "re:structured\\s*water\\s*unit",
-    ],
+    brands: [],
     debunkedIndicators: [
       "re:no\\s*(scientific\\s*)?(evidence|proof|basis)",
       "re:not\\s*(scientifically\\s*)?(proven|supported|verified)",

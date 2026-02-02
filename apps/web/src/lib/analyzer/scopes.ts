@@ -243,8 +243,14 @@ export async function detectScopesLLM(
       return heuristicSeeds || [];
     }
 
-    const minConfidence = config.scopeDetectionMinConfidence ?? 0.7;
-    const maxContexts = config.scopeDetectionMaxContexts ?? 5;
+    const minConfidence =
+      config.contextDetectionMinConfidence ??
+      config.scopeDetectionMinConfidence ??
+      0.7;
+    const maxContexts =
+      config.contextDetectionMaxContexts ??
+      config.scopeDetectionMaxContexts ??
+      5;
 
     return output.contexts
       .filter((c) => c.confidence >= minConfidence)
@@ -274,9 +280,14 @@ export async function detectScopesHybrid(
   text: string,
   config: PipelineConfig,
 ): Promise<DetectedScope[] | null> {
-  if (config.scopeDetectionEnabled === false) return null;
+  const detectionEnabled =
+    config.contextDetectionEnabled ?? config.scopeDetectionEnabled;
+  if (detectionEnabled === false) return null;
 
-  const method = config.scopeDetectionMethod ?? "heuristic";
+  const method =
+    config.contextDetectionMethod ??
+    config.scopeDetectionMethod ??
+    "heuristic";
   const heuristic = detectScopesHeuristic(text, config);
 
   if (method === "heuristic") return heuristic;
@@ -307,7 +318,10 @@ function mergeAndDeduplicateScopes(
     merged.set(scope.id, scope);
   }
 
-  const threshold = config.scopeDedupThreshold ?? 0.85;
+  const threshold =
+    config.contextDedupThreshold ??
+    config.scopeDedupThreshold ??
+    0.85;
   const deduplicated: DetectedScope[] = [];
 
   for (const scope of merged.values()) {
@@ -371,7 +385,7 @@ export function formatDetectedScopesHint(scopes: DetectedScope[] | null, detaile
     ? `\n\nIMPORTANT: These are SEED AnalysisContexts detected by heuristic patterns. You MUST output at least these contexts in your analysisContexts array, and you MUST preserve their IDs as listed (you may refine names/metadata or add additional contexts if warranted).`
     : '';
 
-  return `\n\nPRE-DETECTED SCOPES (use as seed${detailed ? ' AnalysisContexts' : ''}, refine based on evidence):\n${lines.join('\n')}${instruction}`;
+  return `\n\nPRE-DETECTED CONTEXTS (use as seed${detailed ? ' AnalysisContexts' : ''}, refine based on evidence):\n${lines.join('\n')}${instruction}`;
 }
 
 // ============================================================================
@@ -854,4 +868,3 @@ export const ensureAtLeastOneContext = ensureAtLeastOneScope;
 
 // Note: generateDeterministicScopeId is an internal helper function (not exported)
 // so no alias is needed for it.
-

@@ -82,9 +82,9 @@ NOT DISTINCT CONTEXTS:
 - "Public perception", "trust", or "confidence in institutions" contexts - AVOID unless explicitly the main topic.
 - Meta-level commentary contexts (how people feel about the topic) - AVOID, focus on factual contexts.
 
-### PRE-DETECTED SCOPES (CRITICAL)
+### PRE-DETECTED CONTEXTS (CRITICAL)
 
-If this prompt includes a **PRE-DETECTED SCOPES** section (seed AnalysisContexts suggested by heuristics), you MUST do ALL of the following:
+If this prompt includes a **PRE-DETECTED CONTEXTS** section (seed AnalysisContexts suggested by heuristics), you MUST do ALL of the following:
 - Convert EACH listed seed item into an AnalysisContext in your `analysisContexts` output (do not drop them).
 - Keep them as DISTINCT contexts (do not merge them just because they are related).
 - Set `requiresSeparateAnalysis=true` if there are 2+ seed items.

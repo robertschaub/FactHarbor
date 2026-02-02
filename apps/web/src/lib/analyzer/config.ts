@@ -182,7 +182,7 @@ export function getAnalyzerConfigValues(config?: PipelineConfig) {
     : (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true";
 
   const scopeDedupThreshold = config
-    ? config.scopeDedupThreshold
+    ? (config.contextDedupThreshold ?? config.scopeDedupThreshold)
     : (() => {
         const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
         return Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;

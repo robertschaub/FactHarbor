@@ -312,7 +312,7 @@ describe('formatDetectedScopesHint (v2.8)', () => {
     
     const hint = formatDetectedScopesHint(scopes, false);
     
-    expect(hint).toContain('PRE-DETECTED SCOPES');
+    expect(hint).toContain('PRE-DETECTED CONTEXTS');
     expect(hint).toContain('Scope A (legal)');
     expect(hint).toContain('Scope B (methodological)');
     expect(hint).not.toContain('MUST output');
@@ -325,7 +325,7 @@ describe('formatDetectedScopesHint (v2.8)', () => {
     
     const hint = formatDetectedScopesHint(scopes, true);
     
-    expect(hint).toContain('PRE-DETECTED SCOPES');
+    expect(hint).toContain('PRE-DETECTED CONTEXTS');
     expect(hint).toContain('MUST output at least these scopes');
     expect(hint).toContain('AnalysisContexts');
     expect(hint).toContain('"focus":"compliance"');

@@ -63,7 +63,7 @@ describe("v2.8 Verification - Unit Tests", () => {
 
       const hint = formatDetectedScopesHint(scopesWithEnergy, true);
 
-      expect(hint).toContain("PRE-DETECTED SCOPES");
+      expect(hint).toContain("PRE-DETECTED CONTEXTS");
       expect(hint).toContain("MUST output at least these contexts");
     });
   });
