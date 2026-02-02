@@ -2,87 +2,30 @@
  * Text Analysis Service
  *
  * Main entry point for text analysis functionality.
- * Provides factory function to get the appropriate service implementation
- * based on feature flags and configuration.
+ * Provides factory function to get the LLM-only implementation.
  *
  * @module analyzer/text-analysis-service
  * @version 1.0.0
  */
 
-import {
-  ITextAnalysisService,
-  AnalysisPoint,
-  TextAnalysisMetrics,
-  DEFAULT_PARSE_CONFIG,
-  ParseConfig,
-} from "./text-analysis-types";
-import { HeuristicTextAnalysisService, heuristicTextAnalysisService } from "./text-analysis-heuristic";
+import { ITextAnalysisService, AnalysisPoint, TextAnalysisMetrics } from "./text-analysis-types";
 import { LLMTextAnalysisService, llmTextAnalysisService } from "./text-analysis-llm";
-import { HybridTextAnalysisService, hybridTextAnalysisService } from "./text-analysis-hybrid";
 
 // Re-export types for convenience
 export * from "./text-analysis-types";
-export { HeuristicTextAnalysisService, heuristicTextAnalysisService } from "./text-analysis-heuristic";
 export { LLMTextAnalysisService, llmTextAnalysisService } from "./text-analysis-llm";
-export { HybridTextAnalysisService, hybridTextAnalysisService } from "./text-analysis-hybrid";
 
 // ============================================================================
-// FEATURE FLAGS
+// CONFIG SURFACE
 // ============================================================================
 
 /**
- * Pipeline config subset for text analysis flags.
- * Used during UCM Phase 1 migration.
+ * Pipeline config subset for text analysis configuration.
+ * Retained for compatibility with existing callers.
  */
 export interface TextAnalysisConfig {
-  llmInputClassification?: boolean;
-  llmEvidenceQuality?: boolean;
-  /** NEW: Correctly-named key (PRIMARY) */
-  llmContextSimilarity?: boolean;
-  /** @deprecated Use llmContextSimilarity instead - 'scope' here means AnalysisContext */
-  llmScopeSimilarity?: boolean;
-  llmVerdictValidation?: boolean;
-}
-
-/**
- * Get feature flags from pipeline config or environment variables.
- *
- * Priority:
- * 1. Pipeline config (if provided) - UCM Phase 1
- * 2. Environment variables (fallback during migration)
- *
- * Default: true (LLM enabled) - set to "false" to disable
- * v2.8.3: Changed defaults from false to true after prompt-code alignment
- */
-function getFeatureFlags(config?: TextAnalysisConfig): {
-  inputClassification: boolean;
-  evidenceQuality: boolean;
-  scopeSimilarity: boolean;
-  verdictValidation: boolean;
-} {
-  if (config) {
-    // Use pipeline config (UCM Phase 1)
-    // Support both llmContextSimilarity (new) and llmScopeSimilarity (old) with new key taking precedence
-    const contextSimilarity = config.llmContextSimilarity ?? config.llmScopeSimilarity ?? true;
-
-    return {
-      inputClassification: config.llmInputClassification ?? true,
-      evidenceQuality: config.llmEvidenceQuality ?? true,
-      scopeSimilarity: contextSimilarity,
-      verdictValidation: config.llmVerdictValidation ?? true,
-    };
-  }
-
-  // Fallback to environment variables (during migration)
-  // Support both FH_LLM_CONTEXT_SIMILARITY (new) and FH_LLM_SCOPE_SIMILARITY (old) with new key taking precedence
-  const contextSimilarityEnv = process.env.FH_LLM_CONTEXT_SIMILARITY || process.env.FH_LLM_SCOPE_SIMILARITY;
-
-  return {
-    inputClassification: process.env.FH_LLM_INPUT_CLASSIFICATION !== "false",
-    evidenceQuality: process.env.FH_LLM_EVIDENCE_QUALITY !== "false",
-    scopeSimilarity: contextSimilarityEnv !== "false",
-    verdictValidation: process.env.FH_LLM_VERDICT_VALIDATION !== "false",
-  };
+  // Placeholder for future per-point tuning (all points are LLM-only).
+  // This interface remains to avoid breaking callers until pipeline.v2 lands.
 }
 
 /**
@@ -93,22 +36,10 @@ function getFeatureFlags(config?: TextAnalysisConfig): {
  */
 export function isLLMEnabled(
   analysisPoint: AnalysisPoint,
-  config?: TextAnalysisConfig,
+  _config?: TextAnalysisConfig,
 ): boolean {
-  const flags = getFeatureFlags(config);
-
-  switch (analysisPoint) {
-    case "input":
-      return flags.inputClassification;
-    case "evidence":
-      return flags.evidenceQuality;
-    case "scope":
-      return flags.scopeSimilarity;
-    case "verdict":
-      return flags.verdictValidation;
-    default:
-      return false;
-  }
+  void analysisPoint;
+  return true;
 }
 
 // ============================================================================
@@ -116,17 +47,13 @@ export function isLLMEnabled(
 // ============================================================================
 
 /** Service implementation type */
-export type ServiceImplementation = "heuristic" | "llm" | "hybrid";
+export type ServiceImplementation = "llm";
 
 /** Service registry for dependency injection */
 const serviceRegistry: {
-  heuristic: ITextAnalysisService;
   llm: ITextAnalysisService;
-  hybrid: ITextAnalysisService;
 } = {
-  heuristic: heuristicTextAnalysisService,
   llm: llmTextAnalysisService,
-  hybrid: hybridTextAnalysisService,
 };
 
 /**
@@ -143,26 +70,11 @@ export function registerService(
 /**
  * Get the text analysis service based on configuration.
  *
- * Priority:
- * 1. If any LLM feature flag is enabled, use hybrid (LLM with heuristic fallback)
- * 2. Otherwise, use pure heuristic
- *
- * The hybrid service checks per-analysis-point feature flags internally,
- * so it will use heuristics for disabled points and LLM for enabled ones.
- *
  * @param config - Optional pipeline config (UCM Phase 1)
  */
 export function getTextAnalysisService(config?: TextAnalysisConfig): ITextAnalysisService {
-  const flags = getFeatureFlags(config);
-  const anyLLMEnabled = Object.values(flags).some(Boolean);
-
-  if (anyLLMEnabled) {
-    // Use hybrid service - it handles per-point feature flag checks
-    return serviceRegistry.hybrid;
-  }
-
-  // No LLM enabled - use pure heuristic for best performance
-  return serviceRegistry.heuristic;
+  void config;
+  return serviceRegistry.llm;
 }
 
 /**

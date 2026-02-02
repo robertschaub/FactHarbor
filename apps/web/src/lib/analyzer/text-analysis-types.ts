@@ -34,12 +34,11 @@ export interface TextAnalysisResponse<T> {
   error?: string;
 }
 
-/** Parse configuration for retry/fallback behavior */
+/** Parse configuration for retry/repair behavior */
 export interface ParseConfig {
   maxRetries: number;
   retryDelayMs: number;
   repairAttempt: boolean;
-  fallbackToHeuristic: boolean;
 }
 
 /** Default parse configuration */
@@ -47,7 +46,6 @@ export const DEFAULT_PARSE_CONFIG: ParseConfig = {
   maxRetries: 2,
   retryDelayMs: 500,
   repairAttempt: true,
-  fallbackToHeuristic: true,
 };
 
 // ============================================================================
@@ -223,10 +221,8 @@ export interface VerdictValidationResult {
 /**
  * Text Analysis Service Interface
  *
- * Provides methods for all 4 analysis points. Implementations can be:
- * - HeuristicTextAnalysisService: Uses existing regex/heuristic functions
- * - LLMTextAnalysisService: Uses LLM calls with admin-editable prompts
- * - HybridTextAnalysisService: Uses LLM with heuristic fallback
+ * Provides methods for all 4 analysis points.
+ * Implementations are LLM-based, using admin-editable prompts.
  */
 export interface ITextAnalysisService {
   /**
@@ -268,7 +264,7 @@ export interface TextAnalysisMetrics {
     output: number;
   };
   retryCount: number;
-  usedFallback: boolean;
+  usedFallback?: boolean;
   error?: string;
 }
 
