@@ -1,8 +1,8 @@
 # Evidence Quality Filtering Architecture
 
-**Version**: 2.6.41
-**Date**: 2026-01-29
-**Status**: Implemented (Phase 1.5)
+**Version**: 2.6.42
+**Date**: 2026-02-02
+**Status**: Implemented (Phase 1.5 + 7-Layer Defense documented)
 **Related**: [Schema Migration Strategy](Schema_Migration_Strategy.md), [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md)
 
 ---
@@ -10,13 +10,14 @@
 ## Table of Contents
 
 1. [Introduction](#1-introduction)
-2. [Two-Layer Enforcement Strategy](#2-two-layer-enforcement-strategy)
-3. [Filter Rules and Rationale](#3-filter-rules-and-rationale)
-4. [Configuration Options](#4-configuration-options)
-5. [Integration Points](#5-integration-points)
-6. [Examples](#6-examples)
-7. [Testing](#7-testing)
-8. [False Positive Detection](#8-false-positive-detection)
+2. [Multi-Layer Claim Filtering Defense](#2-multi-layer-claim-filtering-defense)
+3. [Two-Layer Enforcement Strategy](#3-two-layer-enforcement-strategy)
+4. [Filter Rules and Rationale](#4-filter-rules-and-rationale)
+5. [Configuration Options](#5-configuration-options)
+6. [Integration Points](#6-integration-points)
+7. [Examples](#7-examples)
+8. [Testing](#8-testing)
+9. [False Positive Detection](#9-false-positive-detection)
 
 ---
 
@@ -39,11 +40,79 @@ Without filtering, these low-quality items can dilute verdict accuracy and reduc
 
 ### Solution
 
-A **two-layer enforcement strategy** combines LLM instruction (soft enforcement) with deterministic filtering (hard enforcement) to maintain evidence quality standards.
+A **multi-layer defense strategy** combines LLM instruction (soft enforcement) with deterministic filtering (hard enforcement) across 7 layers to maintain evidence quality standards.
 
 ---
 
-## 2. Two-Layer Enforcement Strategy
+## 2. Multi-Layer Claim Filtering Defense
+
+> **Source**: [Baseless_Tangential_Claims_Investigation_2026-02-02.md](../ARCHIVE/REVIEWS/Baseless_Tangential_Claims_Investigation_2026-02-02.md)
+
+### Overview
+
+The FactHarbor analysis system implements a **comprehensive 7-layer defense strategy** to prevent baseless claims and tangential/unrelated claims from influencing final verdicts. Each layer operates independently and redundantly, ensuring that even if one layer fails, others catch problematic claims.
+
+### 7-Layer Defense Diagram
+
+```
+analyzeOrchestrated()
+  │
+  ├─ extractFacts() [for each source]
+  │   ├─ filterByProbativeValue()         ← Layer 1: Evidence Quality Filtering
+  │   └─ filterFactsByProvenance()        ← Layer 2: Provenance Validation
+  │
+  ├─ generateVerdicts()
+  │   └─ [LLM generates verdicts with thesisRelevance tagging]
+  │
+  ├─ aggregateSummaryVerdicts()
+  │   ├─ validateContestation()           ← Layer 6: Contestation Validation
+  │   ├─ pruneOpinionOnlyFactors()        ← Layer 5: Opinion-Only Pruning
+  │   ├─ calculateWeightedVerdictAverage()← Layer 4: Thesis Relevance Filtering
+  │   └─ pruneTangentialBaselessClaims()  ← Layer 3: Tangential Baseless Pruning
+  │
+  └─ Context routing throughout          ← Layer 7: Context-Aware Claim Routing
+```
+
+### Layer Summary
+
+| Layer | Name | File | Purpose |
+|-------|------|------|---------|
+| **1** | Evidence Quality Filtering | [evidence-filter.ts](../../apps/web/src/lib/analyzer/evidence-filter.ts) | Filter vague/incomplete evidence at extraction |
+| **2** | Provenance Validation | [provenance-validation.ts](../../apps/web/src/lib/analyzer/provenance-validation.ts) | Reject synthetic/LLM-generated content |
+| **3** | Tangential Baseless Pruning | [aggregation.ts:386-402](../../apps/web/src/lib/analyzer/aggregation.ts#L386) | Remove tangential claims with 0 supporting facts |
+| **4** | Thesis Relevance Filtering | [aggregation.ts:257-258](../../apps/web/src/lib/analyzer/aggregation.ts#L257) | Give tangential claims weight=0 in verdict calc |
+| **5** | Opinion-Only Factor Pruning | [aggregation.ts:418-429](../../apps/web/src/lib/analyzer/aggregation.ts#L418) | Remove keyFactors with factualBasis="opinion" |
+| **6** | Contestation Validation | [aggregation.ts:40-222](../../apps/web/src/lib/analyzer/aggregation.ts#L40) | Downgrade opinion-based contestation, keep documented counter-evidence |
+| **7** | Context-Aware Routing | [scopes.ts](../../apps/web/src/lib/analyzer/scopes.ts) | Route claims to correct analytical context |
+
+### Layer Protection Summary
+
+| Layer | What It Filters | Verdict Impact |
+|-------|-----------------|----------------|
+| 1 | Vague attribution, missing sources | Evidence never reaches aggregation |
+| 2 | LLM-generated text, synthetic URLs | Hallucinated "evidence" rejected |
+| 3 | Tangential claims with 0 evidence | Claims removed from report |
+| 4 | All tangential claims | Claims contribute weight=0 to verdict |
+| 5 | Opinion-only keyFactors | Factors removed from report |
+| 6 | Opinion-based contestation | Full weight retained (doubt ≠ contestation) |
+| 7 | Cross-context evidence | Claims evaluated in correct analytical frame |
+
+### Configuration Locations
+
+All layers are configurable via UCM:
+
+| Layer | Configuration | UCM Location |
+|-------|---------------|--------------|
+| 1-2 | Evidence filtering | Admin → Config → Pipeline |
+| 1-2 | Pattern lexicons | Admin → Config → Evidence Lexicon |
+| 3-6 | Aggregation rules | Admin → Config → Aggregation Lexicon |
+| 7 | Context detection | Admin → Config → Pipeline (`contextDetection*`) |
+
+For complete layer-by-layer details with code examples, see the [full investigation report](../ARCHIVE/REVIEWS/Baseless_Tangential_Claims_Investigation_2026-02-02.md).
+
+---
+
+## 3. Two-Layer Enforcement Strategy
 
 ### Layer 1: LLM Prompts (Soft Enforcement)
 
@@ -107,7 +176,7 @@ export function filterByProbativeValue(
 
 ---
 
-## 3. Filter Rules and Rationale
+## 4. Filter Rules and Rationale
 
 ### 3.1 Statement Quality Rules
 
@@ -321,7 +390,7 @@ evidenceFilter: {
 
 ---
 
-## 4. Configuration Options
+## 5. Configuration Options
 
 ### ProbativeFilterConfig Interface
 
@@ -404,7 +473,7 @@ interface CalcConfig {
 
 ---
 
-## 5. Integration Points
+## 6. Integration Points
 
 ### Primary Integration: Orchestrated Pipeline
 
@@ -466,7 +535,7 @@ function loadCalcConfig(storedJson: string): CalcConfig {
 
 ---
 
-## 6. Examples
+## 7. Examples
 
 ### Example 1: Vague Attribution Filtering
 
@@ -582,7 +651,7 @@ function loadCalcConfig(storedJson: string): CalcConfig {
 
 ---
 
-## 7. Testing
+## 8. Testing
 
 ### Test Suite Location
 
@@ -633,7 +702,7 @@ npm run test:coverage -- evidence-filter
 
 ---
 
-## 8. False Positive Detection
+## 9. False Positive Detection
 
 ### False Positive Rate Calculation
 
@@ -725,8 +794,9 @@ Evidence Item
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-29
+**Document Version**: 2.0
+**Last Updated**: 2026-02-02
+**Changes**: Added Section 2 (Multi-Layer Claim Filtering Defense) from investigation report
 **Next Review**: Before Phase 3 planning
 **Maintained by**: Plan Coordinator
 

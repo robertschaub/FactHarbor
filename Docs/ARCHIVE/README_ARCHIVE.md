@@ -6,6 +6,18 @@
 
 ---
 
+## Content Extraction Log
+
+The following documents had valuable content extracted and merged into active documentation:
+
+| Archived Document | Extracted Content | Merged Into |
+|-------------------|-------------------|-------------|
+| `REVIEWS/Claim_Filtering_Enhancements_Implementation_Prompt.md` | Config options table | [Unified_Config_Management.md](../USER_GUIDES/Unified_Config_Management.md#54-pipelineconfig) |
+| `REVIEWS/Terminology_Catalog_Five_Core_Terms.md` | Known Issues & Migration Status | [TERMINOLOGY.md](../REFERENCE/TERMINOLOGY.md#known-issues--migration-status) |
+| `REVIEWS/Baseless_Tangential_Claims_Investigation_2026-02-02.md` | 7-Layer Defense System | [Evidence_Quality_Filtering.md](../ARCHITECTURE/Evidence_Quality_Filtering.md#2-multi-layer-claim-filtering-defense) |
+
+---
+
 ## What's Archived
 
 ### Review & Audit Documents

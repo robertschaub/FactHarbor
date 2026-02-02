@@ -192,6 +192,23 @@ Ensure these match exactly:
 - `FH_ADMIN_KEY` (web) = `Admin:Key` (API)
 - `FH_INTERNAL_RUNNER_KEY` (web) = `Runner:RunnerKey` (API)
 
+### Configuration Management (UCM)
+
+FactHarbor uses **Unified Config Management (UCM)** for runtime configuration:
+
+- **API keys** → Environment variables (`.env.local`)
+- **Provider selection & analysis settings** → UCM Admin UI
+
+After first run, configure your LLM provider:
+1. Open http://localhost:3000/admin/config
+2. Go to **Pipeline** config
+3. Set `llmProvider` to your preferred provider (`anthropic`, `openai`, `google`, `mistral`)
+4. Save and activate
+
+**Note:** The deprecated `LLM_PROVIDER` environment variable is no longer used. Provider selection is now managed via UCM.
+
+See [Unified Config Management Guide](Unified_Config_Management.md) for detailed configuration options.
+
 ---
 
 ## Database Initialization
@@ -376,24 +393,24 @@ netstat -ano | findstr ":3000"
 
 Now that FactHarbor is running:
 
-1. **Explore the Admin Interface**: http://localhost:3000/admin/test-config
-   - Test all your API keys
-   - Verify LLM and search provider configuration
+1. **Configure via UCM Admin**: http://localhost:3000/admin/config
+   - Set your LLM provider (Pipeline config)
+   - Configure search settings (Search config)
+   - Adjust analysis parameters (Calculation config)
 
-2. **Read the Documentation**:
-   - `Docs/USER_GUIDES/Admin_Interface.md` - Admin features
-   - `Docs/USER_GUIDES/LLM_Configuration.md` - Configure AI providers
+2. **Test Your Configuration**: http://localhost:3000/admin/test-config
+   - Verify all API keys are valid
+   - Test LLM and search provider connectivity
+
+3. **Read the Documentation**:
+   - [Unified Config Management](Unified_Config_Management.md) - Runtime configuration
+   - [LLM Configuration](LLM_Configuration.md) - Configure AI providers
    - `Docs/ARCHITECTURE/Calculations.md` - How verdicts are calculated
 
-3. **Join the Community**:
-   - Report issues on GitHub
-   - Contribute improvements
-   - Share feedback
-
 4. **Customize Your Setup**:
-   - Configure search providers (SerpAPI, Google CSE)
-   - Enable source reliability scoring
-   - Adjust analysis parameters
+   - Configure search providers via UCM (Admin → Config → Search)
+   - Enable source reliability scoring (Admin → Config → Source Reliability)
+   - Adjust verdict thresholds (Admin → Config → Calculation)
 
 ---
 
@@ -422,4 +439,4 @@ If you encounter issues not covered in this guide:
 
 ---
 
-**Last Updated**: January 2026
+**Last Updated**: February 2, 2026

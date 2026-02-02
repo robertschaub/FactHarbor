@@ -47,7 +47,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 
 ### v2.10.1 UCM Integration + Terminology Cleanup (February 2, 2026)
 
-**Focus**: Finalizing UCM integration and terminology correctness
+**Focus**: Finalizing UCM integration, file-backed defaults, and terminology correctness
 
 **Status**: ✅ COMPLETE
 
@@ -57,22 +57,43 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
    - Pipeline/search/calculation configs now loaded from UCM for all pipelines
    - LLM provider selection moved into pipeline config (`pipeline.llmProvider`)
    - Health/test-config endpoints now reference UCM provider
+   - `LLM_PROVIDER` environment variable deprecated
 
-2. **Job Config Snapshots (Phase 2)**
+2. **Save-to-File Functionality (Phase 2)**
+   - Bidirectional sync: DB configs can be saved back to default JSON files
+   - Development mode only (`NODE_ENV=development` or `FH_ALLOW_CONFIG_FILE_WRITE=true`)
+   - Atomic writes with `.bak` backups and `.tmp` → rename pattern
+   - Preview functionality before committing changes
+
+3. **Drift Detection & Health Validation**
+   - New endpoint: `GET /api/admin/config/:type/drift` for detecting DB vs file differences
+   - Health check now includes config validation (`GET /api/health` returns `configValidation`)
+   - Concurrency warnings with `updatedBy` tracking
+
+4. **Job Config Snapshots**
    - Snapshot capture stores pipeline/search configs + SR summary per job
    - Ensures auditability and reproducibility
 
-3. **SR Modularity (Phase 3)**
+5. **SR Modularity (Phase 3)**
    - SR config remains separate UCM domain (`sr.v1`)
    - SR evaluator search settings controlled by SR config (no env overrides)
 
-4. **Terminology Cleanup**
+6. **Terminology Cleanup**
    - Context vs EvidenceScope naming corrected in UI/docs/schema
    - Legacy `scope*` config keys mapped to `context*` equivalents
+
+7. **Pipeline Configuration**
+   - Monolithic pipeline timeouts now configurable via UCM
+   - Aggregation-lexicon keywords refined to prevent false evidence classification
+
+**Breaking Changes**:
+- `LLM_PROVIDER` environment variable deprecated (use UCM `pipeline.llmProvider`)
 
 **Docs Updated**:
 - UCM, LLM, SR, Admin UI guides
 - Architecture docs and status references
+- Getting Started guide with UCM section
+- Coding Guidelines with configuration management rules
 
 ---
 

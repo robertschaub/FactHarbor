@@ -1,8 +1,8 @@
 # FactHarbor POC1 Architecture Overview
 
-**Version:** 2.8.3
+**Version:** 2.10.1
 **Schema Version:** 2.7.0
-**Last Updated:** January 30, 2026
+**Last Updated:** February 2, 2026
 
 This document provides a comprehensive technical overview of FactHarbor's POC1 architecture, including system flows, data models, component interactions, and current implementation status.
 
@@ -44,24 +44,36 @@ This document provides a comprehensive technical overview of FactHarbor's POC1 a
 The analyzer pipeline uses shared modules to ensure consistency across pipelines:
 
 ```mermaid
-flowchart LR
-    subgraph Shared["📦 Shared Modules"]
-        SCOPES[scopes.ts]
-        AGG[aggregation.ts]
-        CLAIM[claim-decomposition.ts]
+flowchart TB
+    subgraph SHARED["Shared Utility Modules"]
+        AGG["aggregation.ts<br/>detectHarmPotential()<br/>detectClaimContestation()<br/>calculateWeightedVerdictAverage()"]
+        FILT["evidence-filter.ts<br/>filterByProbativeValue()<br/>countVaguePhrases()"]
+        VERD["verdict-corrections.ts<br/>detectAndCorrectVerdictInversion()"]
+        PROV["provenance-validation.ts<br/>filterFactsByProvenance()"]
+        CLAIM["claim-decomposition.ts<br/>deriveCandidateClaimTexts()<br/>normalizeClaimText()"]
+        SCOPE["scopes.ts<br/>detectScopes()"]
+        SR["source-reliability.ts<br/>calculateEffectiveWeight()"]
     end
 
-    subgraph Pipelines["🔄 Pipelines"]
-        ORCH[Orchestrated]
-        CANON[Canonical]
+    subgraph ORCH["Orchestrated Pipeline"]
+        O1["Full text analysis<br/>4 analysis points"]
     end
 
-    SCOPES --> ORCH
-    SCOPES --> CANON
-    AGG --> ORCH
-    AGG --> CANON
-    CLAIM --> ORCH
-    CLAIM --> CANON
+    subgraph MONO["Monolithic Pipelines"]
+        MC["Canonical"]
+        MD["Dynamic"]
+    end
+
+    ORCH --> SHARED
+    MONO --> PROV
+    MONO --> SR
+    MC --> AGG
+    MC --> CLAIM
+    MC --> SCOPE
+
+    style ORCH fill:#e3f2fd
+    style MC fill:#fff3e0
+    style MD fill:#f3e5f5
 ```
 
 | Module | Key Exports | Purpose |
@@ -69,6 +81,10 @@ flowchart LR
 | `scopes.ts` | `detectScopes()`, `formatDetectedScopesHint()` | Heuristic context pre-detection |
 | `aggregation.ts` | `validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()` | Verdict weighting and contestation |
 | `claim-decomposition.ts` | `normalizeClaimText()`, `deriveCandidateClaimTexts()` | Claim text parsing |
+| `evidence-filter.ts` | `filterByProbativeValue()`, `countVaguePhrases()` | Evidence quality filtering |
+| `verdict-corrections.ts` | `detectAndCorrectVerdictInversion()` | Verdict validation |
+| `provenance-validation.ts` | `filterFactsByProvenance()` | Source provenance checks |
+| `source-reliability.ts` | `calculateEffectiveWeight()` | Source reliability scoring |
 | `text-analysis-service.ts` | `getTextAnalysisService()` | LLM-only text analysis |
 
 See `Docs/REFERENCE/TERMINOLOGY.md` for "Doubted vs Contested" distinction.
@@ -496,6 +512,77 @@ flowchart TB
 
 ---
 
+## Unified Config Management (UCM)
+
+FactHarbor uses UCM for all runtime configuration. UCM provides:
+- File-backed defaults with schema versioning
+- Admin UI for runtime configuration changes
+- Bidirectional sync between DB and files (development mode)
+- Drift detection and config validation
+
+### UCM Architecture
+
+```mermaid
+flowchart TB
+    subgraph AdminUI [Admin UI]
+        Tabs[Config Type Tabs]
+        Editor[Editor/Form]
+        History[Version History]
+        Compare[Compare View]
+    end
+
+    subgraph ConfigTypes [Configuration Types]
+        Pipeline[Pipeline]
+        Search[Search]
+        Calc[Calculation]
+        SR[Source Reliability]
+        Prompts[Prompts]
+        Lexicons[Lexicons]
+    end
+
+    subgraph Storage [SQLite Storage]
+        ConfigBlobs[config_blobs<br/>immutable content]
+        ConfigActive[config_active<br/>activation pointers]
+        ConfigUsage[config_usage<br/>per-job tracking]
+    end
+
+    subgraph Validation [Validation Layer]
+        ZodSchemas[Zod Schemas]
+        Canonicalize[Canonicalization]
+    end
+
+    Tabs --> ConfigTypes
+    ConfigTypes --> ZodSchemas
+    ZodSchemas --> Canonicalize
+    Canonicalize --> ConfigBlobs
+    ConfigBlobs --> ConfigActive
+    ConfigActive --> ConfigUsage
+```
+
+### Configuration File Organization
+
+FactHarbor uses a hybrid config storage model:
+
+| Config Type | File Location | Format | UCM Domain |
+|-------------|---------------|--------|------------|
+| Pipeline/Search/Calc | `apps/web/configs/` | JSON | Yes |
+| Prompts | `apps/web/prompts/` | Markdown | Yes |
+| Source Reliability | `apps/web/configs/` | JSON | Yes (separate) |
+| Lexicons | `apps/web/configs/` | JSON | Yes |
+
+**Rationale:** Prompts are version-controlled text that benefits from Markdown
+formatting and line-based diffs. Structured configs benefit from JSON schema
+validation and programmatic manipulation.
+
+### Source of Truth Hierarchy
+1. **Runtime Authority:** Database (what the app actually uses)
+2. **Default Templates:** JSON files in `apps/web/configs/`
+3. **Fallback:** Code constants in `config-schemas.ts`
+
+See [Unified_Config_Management.md](../USER_GUIDES/Unified_Config_Management.md) for details.
+
+---
+
 ## Implementation Status
 
 ### Specification Alignment
@@ -764,14 +851,29 @@ See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
 
 ### Key Environment Variables
 
-Analysis behavior (pipeline/search/calculation/SR) is configured in UCM. Environment variables are
-reserved for infrastructure and secrets.
+**Configuration Management:**
+- **LLM Provider Selection:** Configure via UCM pipeline config (`pipeline.llmProvider`)
+- **Analysis Behavior:** Configure via UCM (pipeline/search/calculation/SR configs)
+- **DEPRECATED:** `LLM_PROVIDER` environment variable is no longer used (removed 2026-02-02)
+
+**Environment variables are only for:**
+- API keys and secrets (ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)
+- Deployment settings (PORT, NODE_ENV, etc.)
+- Infrastructure config (DATABASE_URL, FH_ADMIN_KEY, etc.)
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
+| `ANTHROPIC_API_KEY` | - | Anthropic Claude API key (required if using Anthropic) |
+| `OPENAI_API_KEY` | - | OpenAI API key (required if using OpenAI) |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | - | Google Gemini API key (required if using Google) |
+| `MISTRAL_API_KEY` | - | Mistral API key (required if using Mistral) |
+| `SERPAPI_API_KEY` | - | SerpAPI search key (required if using SerpAPI) |
+| `GOOGLE_CSE_API_KEY` | - | Google Custom Search API key (required if using Google CSE) |
+| `GOOGLE_CSE_ID` | - | Google Custom Search Engine ID (required if using Google CSE) |
 | `FH_RUNNER_MAX_CONCURRENCY` | `3` | Max parallel analysis jobs |
 | `FH_ADMIN_KEY` | - | Admin endpoints authentication |
 | `FH_INTERNAL_RUNNER_KEY` | - | Internal job execution authentication |
+| ~~`LLM_PROVIDER`~~ | ~~-~~ | **DEPRECATED** (use UCM `pipeline.llmProvider`) |
 
 ---
 
@@ -785,6 +887,6 @@ reserved for infrastructure and secrets.
 
 ---
 
-**Last Updated**: January 26, 2026  
+**Last Updated**: February 2, 2026
 **Document Status**: Living document - updated as architecture evolves
 

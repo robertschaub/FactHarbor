@@ -347,6 +347,41 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 
 See: [UCM Enhancement Recommendations](../RECOMMENDATIONS/UCM_Enhancement_Recommendations.md)
 
+### 2026-02-02: UCM Terminology Cleanup + Phase 2 Complete
+
+**Major Implementation:** Unified Config Management terminology and save-to-file functionality
+
+- ✅ File-backed defaults for all 6 config types (pipeline, search, calc, SR, lexicons)
+- ✅ Schema versioning with validation and fallback
+- ✅ Concurrency warnings with updatedBy tracking (from earlier Alpha work)
+- ✅ Bidirectional sync (Save-to-file) with environment gating
+- ✅ Drift detection endpoint (GET /api/admin/config/:type/drift)
+- ✅ Health check config validation (status: degraded on invalid config)
+- ✅ Terminology cleanup (Context vs EvidenceScope) complete throughout codebase
+- ✅ Monolithic pipeline timeouts now configurable via UCM
+- 🐛 Fixed: Aggregation-lexicon keywords refined (completed in previous work)
+
+**Breaking Changes:**
+- `LLM_PROVIDER` env variable deprecated (use UCM `pipeline.llmProvider`)
+- `.env.example` updated to remove deprecated vars
+
+**Recent Commits (2026-01-30 to 2026-02-02):**
+1. `ucm: make monolithic pipeline timeouts configurable`
+2. `ucm: add drift detection and health config validation`
+3. `docs: update UCM response plan status`
+4. `ucm: implement save-to-file functionality (Phase 2)`
+5. `docs: add Phase 2 save-to-file implementation guide`
+
+**Implementation Time:** ~4 days (Terminology + Phase 2)
+
+**Deferred to Beta:**
+- Optimistic locking (full solution)
+- Detailed diff views in admin UI
+- Automatic schema migration
+- Audit logging with full history
+
+See: [Knowledge_Transfer_UCM_Terminology.md](../Knowledge_Transfer_UCM_Terminology.md)
+
 ### v2.9.0 Unified Configuration Management - Phase 1 In Progress (January 30, 2026)
 **Status: ✅ 100% Complete** - All 4 phases complete (settings + snapshots + SR modularity + admin UI)
 

@@ -368,6 +368,28 @@ Prompt examples must NEVER contain terms, phrases, or patterns from known test c
 
 ---
 
+## Configuration Management
+
+**Use UCM for runtime configuration:**
+- ✅ Add new config fields to appropriate UCM schema (pipeline, search, calc, SR, lexicons)
+- ✅ Update schema version when adding/removing fields
+- ✅ Add validation rules in config-schemas.ts
+- ❌ Do not add hardcoded config constants
+- ❌ Do not use environment variables for business logic config
+
+**Environment variables are only for:**
+- API keys and secrets (ANTHROPIC_API_KEY, etc.)
+- Deployment settings (PORT, NODE_ENV, etc.)
+- Infrastructure config (DATABASE_URL, etc.)
+
+**For new config fields:**
+1. Add to appropriate schema in `apps/web/src/lib/config-schemas.ts`
+2. Update default file in `apps/web/configs/*.default.json`
+3. Increment schema version if breaking change
+4. Document in user guides
+
+---
+
 ## Configuration and Environment
 
 ### Environment Variables
@@ -430,4 +452,4 @@ Prompt examples must NEVER contain terms, phrases, or patterns from known test c
 
 ---
 
-**Last Updated**: January 2026
+**Last Updated**: February 2, 2026

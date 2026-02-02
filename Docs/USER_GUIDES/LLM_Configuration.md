@@ -46,17 +46,22 @@ FactHarbor supports multiple LLM (Large Language Model) providers and search pro
 
 ### Setting the LLM Provider
 
-Configure via UCM (Admin → Config → Pipeline):
+**Current (UCM):** LLM provider is configured via UCM pipeline config.
 
-```json
-{
-  "llmProvider": "anthropic"
-}
-```
+To change provider:
+1. Navigate to Admin → Config → Pipeline
+2. Update `llmProvider` field (values: `anthropic`, `openai`, `google`, `mistral`)
+3. Save and activate
 
-Supported values: `anthropic`, `openai`, `google`, `mistral`.
+**Deprecated:** The `LLM_PROVIDER` environment variable is no longer used (removed 2026-02-02).
+If present in your `.env` file, it will be ignored.
+
+**Migration:** If you previously set `LLM_PROVIDER=openai`, update your pipeline config to
+`"llmProvider": "openai"` via the admin UI.
 
 ### Provider API Keys
+
+**Important:** Provider selection is configured in UCM (Admin → Config → Pipeline), but API keys remain environment-based for security.
 
 **Anthropic Claude** (Recommended):
 ```bash
@@ -487,4 +492,4 @@ When switching providers or configurations:
 
 ---
 
-**Last Updated**: January 2026
+**Last Updated**: February 2, 2026

@@ -1,6 +1,6 @@
 # FactHarbor Terminology Reference
 
-**Version**: 2.6.41
+**Version**: 2.6.42
 **Date**: 2026-02-02
 **Audience**: Developers, Prompt Engineers, LLM Systems
 **Status**: Phase 2 Complete (probativeValue, sourceType, evidenceFilter integrated; EvidenceItem type active; legacy names preserved for backward compatibility)
@@ -592,6 +592,60 @@ A: Use "AnalysisContext" for precision or "context" for brevity. **NEVER use "fr
 
 ---
 
+## Known Issues & Migration Status
+
+> **Source**: Extracted from [Terminology_Catalog_Five_Core_Terms.md](../ARCHIVE/REVIEWS/Terminology_Catalog_Five_Core_Terms.md)
+
+### Terminology Status Matrix
+
+| Term | Status | Notes |
+|------|--------|-------|
+| **AnalysisContext** | `[DEFER]` | ~40 locations use "Scope" when referring to AnalysisContext. Requires backward-compat aliases before renaming. |
+| **EvidenceScope** | `[CORRECT]` | Usage is correct throughout the codebase. No changes needed. |
+| **ArticleFrame** | `[DEFER]` | Field name `analysisContext` (singular) stores ArticleFrame. Known collision kept for backward compat; UI shows "Frame". |
+| **KeyFactor** | `[CORRECT]` | Well-documented and consistently used throughout. No changes needed. |
+| **EvidenceItem** | `[DEFER]` | Continue phased migration from `ExtractedFact`. JSON field `fact` kept for backward compat. |
+
+### Deferred Renames (Backward Compatibility Required)
+
+```
+scopes.ts:
+├─ DetectedScope → DetectedAnalysisContext
+├─ detectScopesHeuristic() → detectContextsHeuristic()
+├─ detectScopesLLM() → detectContextsLLM()
+└─ formatDetectedScopesHint() → formatDetectedContextsHint()
+
+config-schemas.ts:
+├─ scopeDetectionMethod → contextDetectionMethod
+├─ scopeDetectionEnabled → contextDetectionEnabled
+├─ scopeDetectionMinConfidence → contextDetectionMinConfidence
+└─ scopeDedupThreshold → contextDedupThreshold
+
+orchestrated.ts:
+├─ seedScopes → seedContexts
+├─ preDetectedScopes → preDetectedContexts
+└─ factScopeAssignments → factContextAssignments
+```
+
+### EvidenceItem Migration Status
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase 0 | Add `EvidenceItem` type, keep `ExtractedFact` alias | ✅ Complete |
+| Phase 1 | Prompts use "Evidence" terminology | ✅ Complete |
+| Phase 2 | Add `probativeValue`, `sourceType` to EvidenceItem | ✅ Complete |
+| Phase 2.1 | File-by-file migration from ExtractedFact to EvidenceItem | 🔄 In Progress |
+| Phase 3 | Remove deprecated `ExtractedFact` alias | ⏳ Future |
+| Phase 4 | Rename JSON field `fact` to `statement` | ⏳ Future (breaking) |
+
+### Legend
+
+- `[CORRECT]` - Usage is correct, no change needed
+- `[DEFER]` - Known issue, deferred to maintain backward compatibility
+- `[FIX]` - Issue identified and corrected
+
+---
+
 ## Related Documentation
 
 - [Scope Definition Guidelines](../DEVELOPMENT/Scope_Definition_Guidelines.md) - EvidenceScope vs AnalysisContext decision guide
@@ -604,5 +658,5 @@ A: Use "AnalysisContext" for precision or "context" for brevity. **NEVER use "fr
 ---
 
 **Document Maintainer**: Lead Developer
-**Last Reviewed**: 2026-01-18 (Framework terminology fix applied)
+**Last Reviewed**: 2026-02-02 (Added Known Issues & Migration Status from catalog)
 **Next Review**: 2026-04 (or after migration Phase 1)

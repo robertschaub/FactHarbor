@@ -79,6 +79,23 @@ There is no single combined profile object; each config type is versioned indepe
 - No automatic merging of file updates
 - File changes require manual admin action
 
+### Save to File (Development Mode)
+
+In development, you can save active DB configs back to default files:
+
+1. Navigate to Admin → Config → [config type]
+2. Make your changes and save to DB
+3. Click "💾 Save to File" button (appears only in development)
+4. Preview with "Preview Save to File" before committing
+
+**Safety Features:**
+- Only works in `NODE_ENV=development` or with `FH_ALLOW_CONFIG_FILE_WRITE=true`
+- Creates `.bak` backup before overwriting
+- Atomic writes (.tmp → rename)
+- Schema validation before write
+
+**Production:** Save-to-file is blocked by default in production for safety.
+
 ---
 
 ## 3. Configuration Profiles
@@ -355,6 +372,64 @@ evidenceFilter: {
 - **High-Stakes**: Lower thresholds, stricter filters
 - **Exploratory**: Higher thresholds, lenient filters
 - **Budget**: Moderate settings, balance cost vs quality
+
+### 5.4 PipelineConfig
+
+**Purpose**: Controls LLM provider selection, model routing, budgets, feature flags, and **claim filtering behavior**.
+
+**Key Settings**:
+
+| Setting | Description | Default | Range |
+|---------|-------------|---------|-------|
+| **llmProvider** | Default LLM provider | `anthropic` | anthropic/openai/google |
+| **llmModel** | Default model (null = provider default) | `null` | - |
+| **llmTemperature** | LLM temperature | `0.2` | 0.0-1.0 |
+| **llmTiering** | Enable model tiering | `false` | - |
+| **searchEnabled** | Enable search step | `true` | - |
+
+#### Claim Filtering Options
+
+These options control the multi-layer claim filtering system:
+
+| Setting | Description | Default | Range |
+|---------|-------------|---------|-------|
+| **thesisRelevanceValidationEnabled** | Validate thesis relevance classifications | `true` | - |
+| **thesisRelevanceLowConfidenceThreshold** | Flag low-confidence relevance (warn) | `70` | 0-100 |
+| **thesisRelevanceAutoDowngradeThreshold** | Auto-downgrade direct→tangential | `60` | 0-100 |
+| **minEvidenceForTangential** | Min evidence required for tangential claims | `2` | 0-10 |
+| **tangentialEvidenceQualityCheckEnabled** | Extra quality check for tangential | `false` | - |
+| **maxOpinionFactors** | Max opinion keyFactors (0=unlimited) | `0` | 0-20 |
+| **opinionAccumulationWarningThreshold** | Warn if opinion % exceeds this | `70` | 0-100 |
+
+**Example PipelineConfig (Claim Filtering)**:
+```json
+{
+  "thesisRelevanceValidationEnabled": true,
+  "thesisRelevanceLowConfidenceThreshold": 70,
+  "thesisRelevanceAutoDowngradeThreshold": 60,
+  "minEvidenceForTangential": 2,
+  "tangentialEvidenceQualityCheckEnabled": false,
+  "maxOpinionFactors": 0,
+  "opinionAccumulationWarningThreshold": 70
+}
+```
+
+**Behavior**:
+
+1. **Thesis Relevance Validation**: When enabled, validates LLM relevance classifications:
+   - If confidence < `thesisRelevanceLowConfidenceThreshold` (70): logs warning
+   - If confidence < `thesisRelevanceAutoDowngradeThreshold` (60): auto-downgrades "direct" to "tangential"
+
+2. **Tangential Claim Pruning**: Claims marked "tangential" require `minEvidenceForTangential` (2) supporting facts to appear in the final report. This prevents baseless tangential claims from diluting the analysis.
+
+3. **Opinion Monitoring**: Tracks opinion-based keyFactors:
+   - If `maxOpinionFactors` > 0: prunes excess opinion factors
+   - If opinion % exceeds `opinionAccumulationWarningThreshold`: logs warning
+
+**Use Cases**:
+- **Strict Fact-Checking**: Set `minEvidenceForTangential: 3`, `thesisRelevanceAutoDowngradeThreshold: 70`
+- **Opinion-Tolerant**: Set `maxOpinionFactors: 5`, `opinionAccumulationWarningThreshold: 90`
+- **Development/Debug**: Set `tangentialEvidenceQualityCheckEnabled: true` for extra validation
 
 ---
 
@@ -782,8 +857,8 @@ evidenceFilter: {
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: 2026-01-31
-**Changes**: Added Section 7 - New Admin Tools (v2.10.0 features)
+**Document Version**: 2.1
+**Last Updated**: 2026-02-02
+**Changes**: Added Section 5.4 PipelineConfig with Claim Filtering options
 **Next Review**: When adding new configuration options
 **Maintained by**: Plan Coordinator

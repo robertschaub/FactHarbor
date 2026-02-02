@@ -277,6 +277,18 @@ Source Reliability is configured via UCM as a **separate SR config type** (`sr.v
 **Admin → Config → Source Reliability**. This SR config is owned by the SR service and is separate
 from the main pipeline/search/calculation configs.
 
+### SR Config Independence
+
+While SR config is stored in UCM alongside pipeline/search configs, it maintains
+operational independence:
+
+- **Schema versioning:** `sr.v1`, `sr.v2` (independent of `pipeline.v1`)
+- **Hot reload:** SR config changes apply to new evaluations only
+- **No cascading invalidation:** SR updates don't trigger pipeline/search config reloads
+- **Separate domain:** SR uses `getConfig("sr")` and `setSourceReliabilityConfig()`
+
+This separation preserves modularity between orthogonal concerns.
+
 ### Core Settings (UCM)
 
 | Field | Default | Description |
@@ -304,9 +316,9 @@ from the main pipeline/search/calculation configs.
 | `rateLimitPerIp` | `10` | Max evaluations per minute per IP |
 | `domainCooldownSec` | `60` | Seconds between same-domain evals |
 
-### Evaluator Evidence Grounding (UCM)
+### Evaluator Evidence Grounding (UCM SR Config)
 
-These settings affect the internal evaluation endpoint (`/api/internal/evaluate-source`):
+These settings affect the internal evaluation endpoint (`/api/internal/evaluate-source`) and are configured in the SR UCM config (Admin → Config → Source Reliability):
 
 | Field | Default | Description |
 |-------|---------|-------------|
@@ -314,6 +326,8 @@ These settings affect the internal evaluation endpoint (`/api/internal/evaluate-
 | `evalSearchMaxResultsPerQuery` | `3` | Max search results per query for the evidence pack |
 | `evalMaxEvidenceItems` | `12` | Max evidence-pack items to include |
 | `evalSearchDateRestrict` | `null` | Optional: `y` \| `m` \| `w` (falls back to SearchConfig `dateRestrict`) |
+
+**Note:** These SR evaluation settings (`evalUseSearch`, `evalSearchMaxResultsPerQuery`, etc.) are part of the SR UCM config domain and managed independently from the main pipeline/search configs.
 
 ### Environment Variables (infra only)
 
