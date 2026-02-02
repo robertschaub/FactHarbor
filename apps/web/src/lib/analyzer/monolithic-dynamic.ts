@@ -19,6 +19,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { getModel, getModelForTask } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
+import { DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import { filterFactsByProvenance, setProvenanceLexicon } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import {
@@ -42,6 +43,7 @@ import {
   calculateEffectiveWeight,
   DEFAULT_UNKNOWN_SOURCE_SCORE,
   SR_CONFIG,
+  setSourceReliabilityConfig,
   type CachedReliabilityData,
 } from "./source-reliability";
 
@@ -178,18 +180,21 @@ export async function runMonolithicDynamic(
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
-  const budgetConfig = getBudgetConfig();
+  const budgetConfig = getBudgetConfig(pipelineConfig);
   const budgetTracker = createBudgetTracker();
 
   let evidenceLexicon;
   let aggregationLexicon;
+  let srConfig = DEFAULT_SR_CONFIG;
   try {
-    const [evidenceResult, aggregationResult] = await Promise.all([
+    const [evidenceResult, aggregationResult, srResult] = await Promise.all([
       getConfig("evidence-lexicon", "default", { jobId: input.jobId }),
       getConfig("aggregation-lexicon", "default", { jobId: input.jobId }),
+      getConfig("sr", "default", { jobId: input.jobId }),
     ]);
     evidenceLexicon = evidenceResult.config;
     aggregationLexicon = aggregationResult.config;
+    srConfig = srResult.config;
   } catch (err) {
     console.warn(
       "[Config] Failed to load lexicon configs, using defaults:",
@@ -200,6 +205,7 @@ export async function runMonolithicDynamic(
   setProvenanceLexicon(evidenceLexicon);
   setAggregationLexicon(aggregationLexicon);
   setContextHeuristicsLexicon(aggregationLexicon);
+  setSourceReliabilityConfig(srConfig);
 
   // v2.6.35: Clear source reliability cache at start of analysis
   clearPrefetchedScores();
@@ -289,7 +295,7 @@ export async function runMonolithicDynamic(
       },
       { role: "user", content: textToAnalyze },
     ],
-    temperature: getDeterministicTemperature(0.2),
+    temperature: getDeterministicTemperature(0.2, pipelineConfig),
     output: Output.object({
       schema: z.object({
         keyQuestions: z.array(z.string()).describe("Main questions to investigate"),
@@ -446,7 +452,7 @@ ${sourceSummary}
 Provide your dynamic analysis.`,
       },
     ],
-    temperature: getDeterministicTemperature(0.15),
+    temperature: getDeterministicTemperature(0.15, pipelineConfig),
     output: Output.object({ schema: DynamicAnalysisSchema }),
   });
   recordLLMCall(budgetTracker, 4000);

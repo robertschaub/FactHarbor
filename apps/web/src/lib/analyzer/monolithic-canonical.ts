@@ -18,6 +18,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { getModel, getModelForTask } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
+import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import {
   createBudgetTracker,
   getBudgetConfig,
@@ -43,6 +44,7 @@ import {
   calculateEffectiveWeight,
   DEFAULT_UNKNOWN_SOURCE_SCORE,
   SR_CONFIG,
+  setSourceReliabilityConfig,
 } from "./source-reliability";
 import {
   getTextAnalysisService,
@@ -280,7 +282,7 @@ async function extractClaim(
     provider: detectProvider(model.modelId || ''),
     modelName: model.modelId || '',
     config: {
-      allowModelKnowledge: pipelineConfig ? pipelineConfig.allowModelKnowledge : CONFIG.allowModelKnowledge,
+      allowModelKnowledge: pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
       isLLMTiering: pipelineConfig ? pipelineConfig.llmTiering : false,
       isBudgetModel: isBudgetModel(model.modelId || ''),
     },
@@ -304,7 +306,7 @@ async function extractClaim(
       },
       { role: "user", content: text },
     ],
-    temperature: getDeterministicTemperature(0.1),
+    temperature: getDeterministicTemperature(0.1, pipelineConfig ?? undefined),
     output: outputConfig as any,
   });
 
@@ -336,7 +338,7 @@ async function extractFacts(
     provider: detectProvider(model.modelId || ''),
     modelName: model.modelId || '',
     config: {
-      allowModelKnowledge: pipelineConfig ? pipelineConfig.allowModelKnowledge : CONFIG.allowModelKnowledge,
+      allowModelKnowledge: pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
       isLLMTiering: pipelineConfig ? pipelineConfig.llmTiering : false,
       isBudgetModel: isBudgetModel(model.modelId || ''),
     },
@@ -361,7 +363,7 @@ async function extractFacts(
         content: `CLAIM TO VERIFY: ${claim}\n\nSOURCES:\n${sourceSummary}\n\nExisting fact count: ${existingFactCount}.\n\nRules:\n- Extract ONLY factual statements that are supported by the source text.\n- The excerpt MUST be a verbatim quote (or near-verbatim) from the source content.\n- If you cannot quote the source, do NOT include that fact.\n- If more research would help, set needsMoreResearch=true.`,
       },
     ],
-    temperature: getDeterministicTemperature(0.1),
+    temperature: getDeterministicTemperature(0.1, pipelineConfig ?? undefined),
     output: outputConfig as any,
   });
 
@@ -468,7 +470,7 @@ async function generateVerdict(
         content: `CLAIM: ${claim}\n\nEVIDENCE (${facts.length} facts):\n${factsSummary}\n\nRules:\n- Use ONLY the evidence facts above.\n- Do NOT introduce new facts, institutions, outcomes, or dates not present in the evidence list.\n- If evidence is insufficient or conflicting, keep confidence low and explain the gap.`,
       },
     ],
-    temperature: getDeterministicTemperature(0.1),
+    temperature: getDeterministicTemperature(0.1, pipelineConfig ?? undefined),
     output: outputConfig as any,
   });
 
@@ -539,18 +541,21 @@ export async function runMonolithicCanonical(
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
-  const budgetConfig = getBudgetConfig();
+  const budgetConfig = getBudgetConfig(pipelineConfig);
   const budgetTracker = createBudgetTracker();
 
   let evidenceLexicon;
   let aggregationLexicon;
+  let srConfig = DEFAULT_SR_CONFIG;
   try {
-    const [evidenceResult, aggregationResult] = await Promise.all([
+    const [evidenceResult, aggregationResult, srResult] = await Promise.all([
       getConfig("evidence-lexicon", "default", { jobId: input.jobId }),
       getConfig("aggregation-lexicon", "default", { jobId: input.jobId }),
+      getConfig("sr", "default", { jobId: input.jobId }),
     ]);
     evidenceLexicon = evidenceResult.config;
     aggregationLexicon = aggregationResult.config;
+    srConfig = srResult.config;
   } catch (err) {
     console.warn(
       "[Config] Failed to load lexicon configs, using defaults:",
@@ -561,6 +566,7 @@ export async function runMonolithicCanonical(
   setProvenanceLexicon(evidenceLexicon);
   setAggregationLexicon(aggregationLexicon);
   setContextHeuristicsLexicon(aggregationLexicon);
+  setSourceReliabilityConfig(srConfig);
 
   // v2.6.35: Clear source reliability cache at start of analysis
   clearPrefetchedScores();

@@ -5,8 +5,8 @@
  * - 7-level symmetric scale (True/Mostly True/Leaning True/Unverified/Leaning False/Mostly False/False)
  * - Multi-Context analysis with Contested Factors
  * - Search tracking with LLM call counting
- * - Source reliability via LLM evaluation with caching (FH_SR_* config)
- * - Configurable search with FH_SEARCH_ENABLED and FH_SEARCH_DOMAIN_WHITELIST
+ * - Source reliability via LLM evaluation with caching (UCM SR config)
+ * - Configurable search via UCM search config
  * - Fixed AI SDK output handling for different versions (output vs experimental_output)
  * - Claim dependency tracking (claimRole: attribution/source/timing/core)
  * - Dependency propagation (if prerequisite false, dependent claims flagged)
@@ -109,7 +109,7 @@ import {
   type ScopeSimilarityResult,
   type ScopePair,
 } from "./text-analysis-service";
-import type { AggregationLexicon, EvidenceLexicon } from "../config-schemas";
+import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG, type AggregationLexicon, type EvidenceLexicon } from "../config-schemas";
 import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 
 // Configuration, helpers, and debug utilities imported from modular files above
@@ -154,7 +154,8 @@ async function refineScopesFromEvidence(
   const config = getActiveConfig(state.pipelineConfig);
   const minRefineFacts = Math.min(8, config.minFactsRequired);
   if (facts.length < minRefineFacts) {
-    debugLog(`[Refine] Skipping refinement: ${facts.length} facts < ${minRefineFacts} threshold (mode: ${CONFIG.deepModeEnabled ? 'deep' : 'quick'})`);
+    const mode = state.pipelineConfig?.analysisMode ?? DEFAULT_PIPELINE_CONFIG.analysisMode;
+    debugLog(`[Refine] Skipping refinement: ${facts.length} facts < ${minRefineFacts} threshold (mode: ${mode})`);
     return { updated: false, llmCalls: 0 };
   }
 
@@ -165,11 +166,13 @@ async function refineScopesFromEvidence(
     "";
 
   const shouldEnableScopePromptSelection =
-    process.env.FH_ENABLE_SCOPE_PROMPT_SELECTION !== "false";
+    state.pipelineConfig?.contextPromptSelectionEnabled ??
+    DEFAULT_PIPELINE_CONFIG.contextPromptSelectionEnabled;
 
-  // Environment variable alias: FH_CONTEXT_PROMPT_MAX_FACTS (new) takes precedence over FH_SCOPE_PROMPT_MAX_FACTS (old)
-  const contextPromptMaxFactsEnv = process.env.FH_CONTEXT_PROMPT_MAX_FACTS || process.env.FH_SCOPE_PROMPT_MAX_FACTS || "40";
-  const scopePromptMaxFactsRaw = parseInt(contextPromptMaxFactsEnv, 10);
+  const scopePromptMaxFactsRaw =
+    state.pipelineConfig?.contextPromptMaxFacts ??
+    DEFAULT_PIPELINE_CONFIG.contextPromptMaxFacts ??
+    40;
   const scopePromptMaxFacts = Number.isFinite(scopePromptMaxFactsRaw)
     ? Math.max(8, Math.min(80, scopePromptMaxFactsRaw))
     : 40;
@@ -356,10 +359,17 @@ Return:
   // Optional: merge near-duplicate EvidenceScopes deterministically and remap assignments.
   // NOTE: Do this BEFORE applying factScopeAssignments/claimScopeAssignments so both are mapped consistently.
   let dedupMerged: Map<string, string> | null = null;
-  if (process.env.FH_ENABLE_SCOPE_DEDUP !== "false") {
+  const dedupEnabled =
+    state.pipelineConfig?.contextDedupEnabled ??
+    DEFAULT_PIPELINE_CONFIG.contextDedupEnabled;
+  if (dedupEnabled) {
     // v2.6.38: Only drop contexts that are highly overlapping (>=85% similarity)
     // Lower values cause valid contexts and claims to be lost
-    const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
+    const thr =
+      state.pipelineConfig?.contextDedupThreshold ??
+      state.pipelineConfig?.scopeDedupThreshold ??
+      DEFAULT_PIPELINE_CONFIG.contextDedupThreshold ??
+      0.85;
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
     // v2.9: deduplicateScopes is now async to support LLM scope similarity analysis
     const dedup = await deduplicateScopes(state.understanding!.analysisContexts || [], threshold);
@@ -525,8 +535,14 @@ Return:
   }
 
   // Optional: enforce EvidenceScope name alignment based on scope metadata + per-evidence evidenceScope signals.
-  if (process.env.FH_ENABLE_SCOPE_NAME_ALIGNMENT !== "false") {
-    const thr = parseFloat(process.env.FH_SCOPE_NAME_ALIGNMENT_THRESHOLD || "0.3");
+  const nameAlignmentEnabled =
+    state.pipelineConfig?.contextNameAlignmentEnabled ??
+    DEFAULT_PIPELINE_CONFIG.contextNameAlignmentEnabled;
+  if (nameAlignmentEnabled) {
+    const thr =
+      state.pipelineConfig?.contextNameAlignmentThreshold ??
+      DEFAULT_PIPELINE_CONFIG.contextNameAlignmentThreshold ??
+      0.3;
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.3;
     state.understanding!.analysisContexts = validateAndFixScopeNameAlignment(
       state.understanding!.analysisContexts || [],
@@ -581,7 +597,10 @@ Return:
 
     if (!hasStrongFrameSignal) {
       // Extra debug signal: if scopes are very similar by text/metadata, it's likely a dimension split.
-      const thrRaw = parseFloat(process.env.FH_EVIDENCESCOPE_ALMOST_EQUAL_THRESHOLD || "0.70");
+      const thrRaw =
+        state.pipelineConfig?.evidenceScopeAlmostEqualThreshold ??
+        DEFAULT_PIPELINE_CONFIG.evidenceScopeAlmostEqualThreshold ??
+        0.7;
       const simThreshold = Number.isFinite(thrRaw) ? Math.max(0, Math.min(1, thrRaw)) : 0.7;
       const pairs: Array<{ a: string; b: string; sim: number }> = [];
       for (let i = 0; i < scopesNow.length; i++) {
@@ -1300,10 +1319,14 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
   return false;
 }
 
-function getKnowledgeInstruction(text?: string, understanding?: ClaimUnderstanding): string {
+function getKnowledgeInstruction(
+  allowModelKnowledge: boolean,
+  text?: string,
+  understanding?: ClaimUnderstanding,
+): string {
   const recencyMatters = text ? isRecencySensitive(text, understanding) : false;
 
-  if (CONFIG.allowModelKnowledge) {
+  if (allowModelKnowledge) {
     const recencyGuidance = recencyMatters ? `
 ### ⚠️ RECENT DATA DETECTED - PRIORITIZE WEB SEARCH RESULTS:
 
@@ -2147,6 +2170,8 @@ interface ResearchState {
   budgetTracker: BudgetTracker;
   // NEW v2.9.0: Pipeline config for hot-reload support
   pipelineConfig: PipelineConfig;
+  // NEW v2.10.0: Search config for hot-reload support
+  searchConfig: SearchConfig;
 }
 
 interface ClaimUnderstanding {
@@ -2412,6 +2437,7 @@ import { getDefaultSRService } from "./sr-service-impl";
 import {
   prefetchSourceReliability,
   getTrackRecordScore,
+  setSourceReliabilityConfig,
 } from "./source-reliability";
 
 // Re-export for backward compatibility
@@ -3252,6 +3278,8 @@ async function understandClaim(
   model: any,
   pipelineConfig?: PipelineConfig,
 ): Promise<ClaimUnderstanding> {
+  const deterministic = pipelineConfig?.deterministic ?? DEFAULT_PIPELINE_CONFIG.deterministic;
+  const keyFactorHints = pipelineConfig?.keyFactorHints ?? DEFAULT_PIPELINE_CONFIG.keyFactorHints;
   // Get current date for temporal reasoning
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
@@ -3291,7 +3319,10 @@ async function understandClaim(
 
   // Safety: extremely long article/PDF inputs can cause provider hangs or excessive prompt sizes.
   // We keep analysis logic consistent, but cap what we send to the Step 1 LLM call.
-  const understandMaxCharsRaw = parseInt(process.env.FH_UNDERSTAND_MAX_CHARS || "12000", 10);
+  const understandMaxCharsRaw =
+    pipelineConfig?.understandMaxChars ??
+    DEFAULT_PIPELINE_CONFIG.understandMaxChars ??
+    12000;
   const understandMaxChars = Number.isFinite(understandMaxCharsRaw)
     ? Math.max(2000, Math.min(50000, understandMaxCharsRaw))
     : 12000;
@@ -3890,10 +3921,10 @@ Set requiresSeparateAnalysis = true when multiple contexts are detected.
 
 **IMPORTANT**: KeyFactors are OPTIONAL and EMERGENT - only generate them if the thesis naturally decomposes into distinct evaluation dimensions.
 
-${CONFIG.keyFactorHints && CONFIG.keyFactorHints.length > 0
+${keyFactorHints && keyFactorHints.length > 0
   ? `\n**OPTIONAL HINTS** (you may consider these, but are not required to use them):
 The following KeyFactor dimensions have been suggested as potentially relevant. Use them only if they genuinely apply to this thesis. If they don't fit, ignore them and generate factors that actually match the thesis:
-${CONFIG.keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "${hint.evaluationCriteria}"`).join("\n")}`
+${keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "${hint.evaluationCriteria}"`).join("\n")}`
   : ""}
 
 **WHEN TO GENERATE**: Create keyFactors array when the thesis involves:
@@ -4008,7 +4039,10 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
     debugLog("understandClaim: Input (first 100 chars)", input.substring(0, 100));
     debugLog("understandClaim: Model", String(model));
 
-    const llmTimeoutMsRaw = parseInt(process.env.FH_UNDERSTAND_LLM_TIMEOUT_MS || "600000", 10);
+    const llmTimeoutMsRaw =
+      pipelineConfig?.understandLlmTimeoutMs ??
+      DEFAULT_PIPELINE_CONFIG.understandLlmTimeoutMs ??
+      600000;
     const llmTimeoutMs = Number.isFinite(llmTimeoutMsRaw)
       ? Math.max(60000, Math.min(3600000, llmTimeoutMsRaw))
       : 600000;
@@ -4084,7 +4118,10 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
   const tryJsonTextFallback = async () => {
     debugLog("understandClaim: FALLBACK JSON TEXT ATTEMPT");
     const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- ArticleFrame is the broader frame or topic of the input article.\n- analysisContexts represents AnalysisContexts (top-level bounded analytical frames).\n- analysisContext (singular) is the ArticleFrame field (NOT an AnalysisContext despite the name).\n- EvidenceScope is per-evidence source-defined scope metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- analysisContexts\n- requiresSeparateAnalysis\n- analysisContext (ArticleFrame string)\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
-    const llmTimeoutMsRaw = parseInt(process.env.FH_UNDERSTAND_LLM_TIMEOUT_MS || "600000", 10);
+    const llmTimeoutMsRaw =
+      pipelineConfig?.understandLlmTimeoutMs ??
+      DEFAULT_PIPELINE_CONFIG.understandLlmTimeoutMs ??
+      600000;
     const llmTimeoutMs = Number.isFinite(llmTimeoutMsRaw)
       ? Math.max(60000, Math.min(3600000, llmTimeoutMsRaw))
       : 600000;
@@ -4322,7 +4359,7 @@ Now analyze the input and output JSON only.`;
   const isCompoundInput = inputClassification?.isCompound ?? isCompoundLikeText(analysisInput);
 
   const shouldForceSeedScopes =
-    CONFIG.deterministic === true &&
+    deterministic === true &&
     isComparativeInput &&
     Array.isArray(preDetectedScopes) &&
     preDetectedScopes.length >= 2 &&
@@ -4360,7 +4397,7 @@ Now analyze the input and output JSON only.`;
   } else if (Array.isArray(preDetectedScopes) && preDetectedScopes.length >= 2) {
     // Log when we skip seed forcing (helps debugging)
     debugLog("understandClaim: skipped seed forcing", {
-      deterministic: CONFIG.deterministic,
+      deterministic,
       isComparative: isComparativeInput,
       preDetectedScopesCount: preDetectedScopes.length,
       existingContextsCount: parsed.analysisContexts?.length ?? 0,
@@ -4370,7 +4407,7 @@ Now analyze the input and output JSON only.`;
   // If the model under-split scopes for a claim, do a single best-effort retry
   // focused ONLY on scope detection. v2.6.30: Simplified - single input type after normalization
   if (
-    CONFIG.deterministic &&
+    deterministic &&
     parsed.detectedInputType === "claim" &&
     (parsed.analysisContexts?.length ?? 0) <= 1
   ) {
@@ -4988,6 +5025,7 @@ async function enrichScopesWithOutcomes(state: ResearchState, model: any): Promi
 
   const facts = state.facts || [];
   if (facts.length === 0) return;
+  const deterministic = state.pipelineConfig?.deterministic ?? DEFAULT_PIPELINE_CONFIG.deterministic;
 
   for (const proc of state.understanding.analysisContexts) {
     // Skip if already has a specific outcome (not vague placeholders)
@@ -5015,7 +5053,7 @@ async function enrichScopesWithOutcomes(state: ResearchState, model: any): Promi
       // Use LLM to extract outcome - generic, not domain-specific
       const result = await generateText({
         model,
-        temperature: CONFIG.deterministic ? 0 : undefined,
+        temperature: deterministic ? 0 : undefined,
         messages: [
           { role: "system", content: "You extract specific outcomes from evidence. Return ONLY the outcome phrase, nothing else." },
           { role: "user", content: `Given these facts about "${proc.name}" (${proc.subject || ""}):
@@ -5162,7 +5200,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   // Get current year for date-specific queries
   const currentYear = new Date().getFullYear();
 
-  if (recencyMatters && CONFIG.searchEnabled) {
+  if (recencyMatters && state.searchConfig.enabled) {
     debugLog("Research phase: Recency-sensitive topic detected - prioritizing web search", {
       input: state.originalInput?.substring(0, 100),
     });
@@ -5500,7 +5538,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
 
   // NEW v2.6.18: Use generated research queries for additional searches
   // Determinism: skip this step because researchQueries come from the model and can cause run-to-run drift.
-  if (CONFIG.deterministic) {
+  if ((state.pipelineConfig?.deterministic ?? DEFAULT_PIPELINE_CONFIG.deterministic)) {
     // no-op
   } else {
   const researchQueries = understanding.researchQueries || [];
@@ -5841,7 +5879,10 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 
   try {
     const startTime = Date.now();
-    const llmTimeoutMsRaw = parseInt(process.env.FH_EXTRACT_FACTS_LLM_TIMEOUT_MS || "300000", 10);
+    const llmTimeoutMsRaw =
+      pipelineConfig?.extractFactsLlmTimeoutMs ??
+      DEFAULT_PIPELINE_CONFIG.extractFactsLlmTimeoutMs ??
+      300000;
     const llmTimeoutMs = Number.isFinite(llmTimeoutMsRaw)
       ? Math.max(60000, Math.min(3600000, llmTimeoutMsRaw))
       : 300000;
@@ -5968,7 +6009,9 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
     // Phase 1.5 Layer 2: Probative value filter (deterministic post-process)
     // Filter out low-quality evidence that slipped through LLM extraction layer
     // Only apply if enabled via environment flag (default: enabled)
-    const probativeFilterEnabled = process.env.FH_PROBATIVE_FILTER_ENABLED !== "false";
+    const probativeFilterEnabled =
+      pipelineConfig?.probativeFilterEnabled ??
+      DEFAULT_PIPELINE_CONFIG.probativeFilterEnabled;
     let filteredByProbativeValue = factsWithProvenance as typeof factsWithProvenance;
 
     if (probativeFilterEnabled && factsWithProvenance.length > 0) {
@@ -6092,7 +6135,9 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 
     // Apply Ground Realism gate (PR 5): Facts must have real sources, not LLM synthesis
     // Only validate if enabled via environment flag (default: enabled)
-    const provenanceValidationEnabled = process.env.FH_PROVENANCE_VALIDATION_ENABLED !== "false";
+    const provenanceValidationEnabled =
+      pipelineConfig?.provenanceValidationEnabled ??
+      DEFAULT_PIPELINE_CONFIG.provenanceValidationEnabled;
 
     if (provenanceValidationEnabled && filteredByProbativeValue.length > 0) {
       const { validFacts, stats } = filterFactsByProvenance(filteredByProbativeValue);
@@ -6609,7 +6654,7 @@ ${contextsFormatted}
    - supports="no": Factor refutes the claim with counter-evidence (NOT just disputed/contested)
    - supports="neutral": Use ONLY when you genuinely have no information about this factor
 
-   ${CONFIG.allowModelKnowledge ? `IMPORTANT: You MUST use your background knowledge! For well-known public events, established procedures/standards, and widely-reported facts, you ALREADY KNOW the relevant information - use it!
+   ${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events, established procedures/standards, and widely-reported facts, you ALREADY KNOW the relevant information - use it!
    DO NOT mark factors as "neutral" if you know the answer from your training data.
    Example: If you know a process followed standard procedures, mark it "yes" even if sources don't explicitly state it.` : "Use ONLY the provided facts and sources."}
 
@@ -6685,7 +6730,11 @@ ${contextsFormatted}
    CRITICAL: Stakeholder contestation ("critics say it was unfair") is NOT the same as counter-evidence.
    Use the TRUE/MOSTLY-TRUE band (>=72%), not the UNVERIFIED band (43-57%), if you know the facts support the claim despite stakeholder opposition.
 
-${getKnowledgeInstruction(state.originalInput, understanding)}
+${getKnowledgeInstruction(
+  state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
+  state.originalInput,
+  understanding,
+)}
 ${getProviderPromptHint()}`;
 
   // Prevent structured-output truncation (common cause of JSON/schema parse failures).
@@ -7677,7 +7726,7 @@ Key factors must address the SUBSTANCE of the original claim:
 - supports="no": Factor refutes the claim with counter-evidence (NOT just disputed/contested)
 - supports="neutral": Use ONLY when you genuinely have no information about this factor
 
-${CONFIG.allowModelKnowledge ? `IMPORTANT: You MUST use your background knowledge! For well-known public events and widely-reported facts, use what you know!
+${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events and widely-reported facts, use what you know!
 DO NOT mark factors as "neutral" if you know the answer from your training data.` : "Use ONLY the provided facts and sources."}
 
 CRITICAL: Being "contested" by stakeholders does NOT make something neutral.
@@ -7726,7 +7775,11 @@ CRITICAL - factualBasis MUST be "opinion" for:
 CRITICAL: Stakeholder contestation is NOT counter-evidence.
 Use the TRUE/MOSTLY-TRUE band (>=72%) if you know the facts support the claim despite stakeholder opposition.
 
-${getKnowledgeInstruction(state.originalInput, understanding)}
+${getKnowledgeInstruction(
+  state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
+  state.originalInput,
+  understanding,
+)}
 ${getProviderPromptHint()}`;
 
   const userPrompt = `## ${inputLabel}
@@ -7747,7 +7800,7 @@ ${factsFormatted}`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: getDeterministicTemperature(0.3),
+      temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
       maxOutputTokens: 4096,
       output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE }),
     });
@@ -8310,7 +8363,11 @@ ARTICLE VERDICT TRUTH PERCENTAGE:
 IMPORTANT: Set verdictDiffersFromClaimAverage=true if the article verdict differs from what a simple average would suggest.
 Example: If 3/4 claims are true but the main conclusion is false -> set articleVerdict in the LEANING-FALSE band (29-42%).
 
-${getKnowledgeInstruction(state.originalInput, understanding)}
+${getKnowledgeInstruction(
+  state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
+  state.originalInput,
+  understanding,
+)}
 ${getProviderPromptHint()}`;
 
   // KeyFactors are now generated in understanding phase, not verdict generation
@@ -8337,7 +8394,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
           content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${factsFormatted}`,
         },
       ],
-      temperature: getDeterministicTemperature(0.3),
+      temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
       maxOutputTokens: 4096,
       output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM }),
     });
@@ -9085,6 +9142,7 @@ async function generateReport(
   searchProvider: string,
 ): Promise<string> {
   const understanding = state.understanding!;
+  const analysisMode = state.pipelineConfig?.analysisMode ?? DEFAULT_PIPELINE_CONFIG.analysisMode;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
   const useRich = CONFIG.reportStyle === "rich";
   const iconPositive = useRich ? "✅" : "";
@@ -9173,7 +9231,7 @@ async function generateReport(
   report += `| Sources successful | ${state.sources.filter((s: FetchedSource) => s.fetchSuccess).length} |\n`;
   report += `| Facts extracted | ${state.facts.length} |\n`;
   report += `| Search provider | ${searchProvider} |\n`;
-  report += `| Analysis mode | ${CONFIG.deepModeEnabled ? "deep" : "quick"} |\n\n`;
+  report += `| Analysis mode | ${analysisMode} |\n\n`;
 
   if (state.searchQueries.length > 0) {
     report += `### Web Search Queries\n\n`;
@@ -9218,7 +9276,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // ============================================================================
   // v2.9.0: Load unified configuration from DB/env/defaults
-  // This replaces direct process.env.FH_* reads with hot-reload capable config
+  // This replaces direct env reads with hot-reload capable UCM config
   // ============================================================================
   const analyzerConfig = await getAnalyzerConfig({ jobId: input.jobId });
   const pipelineConfig = analyzerConfig.pipeline;
@@ -9233,13 +9291,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   let evidenceLexicon: EvidenceLexicon | undefined;
   let aggregationLexicon: AggregationLexicon | undefined;
+  let srConfig = DEFAULT_SR_CONFIG;
   try {
-    const [evidenceResult, aggregationResult] = await Promise.all([
+    const [evidenceResult, aggregationResult, srResult] = await Promise.all([
       getConfig("evidence-lexicon", "default", { jobId: input.jobId }),
       getConfig("aggregation-lexicon", "default", { jobId: input.jobId }),
+      getConfig("sr", "default", { jobId: input.jobId }),
     ]);
     evidenceLexicon = evidenceResult.config;
     aggregationLexicon = aggregationResult.config;
+    srConfig = srResult.config;
   } catch (err) {
     console.warn(
       "[Config] Failed to load lexicon configs, using defaults:",
@@ -9253,12 +9314,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   setVerdictCorrectionsLexicon(aggregationLexicon);
   setContextHeuristicsLexicon(aggregationLexicon);
   setOrchestratedHeuristicsLexicon(aggregationLexicon);
+  setSourceReliabilityConfig(srConfig);
 
   // ============================================================================
   // v2.9.0 Phase 2: Capture config snapshot for job auditability
   // Capture complete resolved config (DB + env overrides) asynchronously
   // ============================================================================
-  const srSummary = getSRConfigSummary();
+  const srSummary = getSRConfigSummary(srConfig);
 
   // Only capture snapshot if jobId is provided
   const snapshotPromise = input.jobId
@@ -9386,6 +9448,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     budget, // NEW PR 6: p95 hardening
     budgetTracker, // NEW PR 6: p95 hardening
     pipelineConfig, // NEW v2.9.0: Hot-reload support
+    searchConfig, // NEW v2.10.0: Hot-reload support
   };
 
   // Handle URL

@@ -9,7 +9,7 @@
 
 import { createMetricsCollector, persistMetrics, type MetricsCollector } from './metrics';
 import type { LLMCallMetric, SearchQueryMetric } from './metrics';
-import type { PipelineConfig } from '../config-schemas';
+import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig, type SearchConfig } from '../config-schemas';
 
 // Global metrics collector (set by initializeMetrics)
 let currentMetrics: MetricsCollector | null = null;
@@ -24,22 +24,20 @@ export function initializeMetrics(
   jobId: string,
   pipelineVariant: 'orchestrated' | 'monolithic-canonical' | 'monolithic-dynamic',
   config?: PipelineConfig,
+  searchConfig?: SearchConfig,
 ): void {
   currentMetrics = createMetricsCollector(jobId, pipelineVariant);
 
-  // Set config - use pipeline config if provided, otherwise fall back to defaults
+  const pipeline = config ?? DEFAULT_PIPELINE_CONFIG;
+  const search = searchConfig ?? DEFAULT_SEARCH_CONFIG;
+
+  // Set config - use pipeline/search configs if provided, otherwise fall back to defaults
   currentMetrics.setConfig({
     llmProvider: process.env.LLM_PROVIDER || 'anthropic',
-    searchProvider: process.env.FH_SEARCH_PROVIDER || 'google-cse',
-    allowModelKnowledge: config
-      ? config.allowModelKnowledge
-      : false,
-    isLLMTiering: config
-      ? config.llmTiering
-      : false,
-    isDeterministic: config
-      ? config.deterministic
-      : true,
+    searchProvider: search.provider,
+    allowModelKnowledge: pipeline.allowModelKnowledge,
+    isLLMTiering: pipeline.llmTiering,
+    isDeterministic: pipeline.deterministic,
   });
 }
 

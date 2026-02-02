@@ -1,4 +1,4 @@
-import type { SearchConfig } from "./config-schemas";
+import { DEFAULT_SEARCH_CONFIG, type SearchConfig } from "./config-schemas";
 
 export type WebSearchResult = {
   url: string;
@@ -26,7 +26,7 @@ export type WebSearchResponse = {
  * Get the actual search provider(s) that will be used
  */
 export function getActiveSearchProviders(config?: SearchConfig): string[] {
-  const provider = ((config?.provider ?? process.env.FH_SEARCH_PROVIDER) ?? "auto").toLowerCase();
+  const provider = (config ?? DEFAULT_SEARCH_CONFIG).provider.toLowerCase();
   if (provider === "serpapi") return ["SerpAPI"];
   if (provider === "google-cse") return ["Google-CSE"];
   if (provider === "auto") {
@@ -39,7 +39,7 @@ export function getActiveSearchProviders(config?: SearchConfig): string[] {
 }
 
 export async function searchWebWithProvider(options: WebSearchOptions): Promise<WebSearchResponse> {
-  const provider = ((options.config?.provider ?? process.env.FH_SEARCH_PROVIDER) ?? "auto").toLowerCase();
+  const provider = (options.config ?? DEFAULT_SEARCH_CONFIG).provider.toLowerCase();
   const providersUsed: string[] = [];
   console.log(`[Search] Provider: ${provider} | Query: "${options.query.substring(0, 60)}..." | Max results: ${options.maxResults}`);
 
@@ -101,7 +101,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
 }
 
 export async function searchWeb(options: WebSearchOptions): Promise<WebSearchResult[]> {
-  const provider = ((options.config?.provider ?? process.env.FH_SEARCH_PROVIDER) ?? "auto").toLowerCase();
+  const provider = (options.config ?? DEFAULT_SEARCH_CONFIG).provider.toLowerCase();
   console.log(`[Search] Provider: ${provider} | Query: "${options.query.substring(0, 60)}..." | Max results: ${options.maxResults}`);
 
   if (provider === "serpapi") {
