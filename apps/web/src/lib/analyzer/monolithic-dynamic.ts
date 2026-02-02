@@ -19,7 +19,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { getModel, getModelForTask } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
-import { DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
+import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import { filterFactsByProvenance, setProvenanceLexicon } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import {
@@ -251,6 +251,8 @@ export async function runMonolithicDynamic(
       const urlContent = await extractTextFromUrl(input.inputValue, {
         timeoutMs: 20000,
         maxLength: 10000,
+        pdfParseTimeoutMs:
+          pipelineConfig?.pdfParseTimeoutMs ?? DEFAULT_PIPELINE_CONFIG.pdfParseTimeoutMs,
       });
       textToAnalyze = `URL: ${input.inputValue}\n\nTitle: ${urlContent.title}\n\nContent:\n${urlContent.text}`;
 
@@ -271,7 +273,7 @@ export async function runMonolithicDynamic(
     await input.onEvent("Analyzing input and planning research", 15);
   }
 
-  const understandModel = getModelForTask("understand");
+  const understandModel = getModelForTask("understand", undefined, pipelineConfig ?? undefined);
   const planPrompt = buildPrompt({
     task: 'dynamic_plan',
     provider: detectProvider(understandModel.modelName || ''),
@@ -376,6 +378,8 @@ export async function runMonolithicDynamic(
           const content = await extractTextFromUrl(result.url, {
             timeoutMs: 12000,
             maxLength: 15000,
+            pdfParseTimeoutMs:
+              pipelineConfig?.pdfParseTimeoutMs ?? DEFAULT_PIPELINE_CONFIG.pdfParseTimeoutMs,
           });
 
           // v2.6.35: Get source reliability data
@@ -417,7 +421,7 @@ export async function runMonolithicDynamic(
           .join("\n\n---\n\n")
       : "No external sources were successfully retrieved.";
 
-  const verdictModel = getModelForTask("verdict");
+  const verdictModel = getModelForTask("verdict", undefined, pipelineConfig ?? undefined);
   const dynamicAnalysisPrompt = buildPrompt({
     task: 'dynamic_analysis',
     provider: detectProvider(verdictModel.modelName || ''),

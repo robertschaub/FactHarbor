@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { runFactHarborAnalysis } from "@/lib/analyzer";
+import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "@/lib/config-schemas";
 
 type LlmIntegrationConfig = {
   enabled: boolean;
@@ -55,9 +55,40 @@ describe.sequential("llm integration", () => {
     const outputDir = path.join(webRoot, config.outputDir ?? "test/output");
     fs.mkdirSync(outputDir, { recursive: true });
     const runId = new Date().toISOString().replace(/[:.]/g, "-");
+    const configDbPath = path.join(outputDir, "config-llm-integration.db");
+
+    process.env.FH_CONFIG_DB_PATH = configDbPath;
+
+    const { runFactHarborAnalysis } = await import("@/lib/analyzer");
+    const { saveConfigBlob, activateConfig, closeConfigDb } = await import("@/lib/config-storage");
+    const { invalidateConfigCache } = await import("@/lib/config-loader");
+
+    const normalizeProvider = (provider: string): PipelineConfig["llmProvider"] => {
+      const p = provider.toLowerCase().trim();
+      if (p === "anthropic" || p === "claude") return "anthropic";
+      if (p === "google" || p === "gemini") return "google";
+      if (p === "mistral") return "mistral";
+      return "openai";
+    };
+
+    const setPipelineProvider = async (provider: string) => {
+      const pipelineConfig: PipelineConfig = {
+        ...DEFAULT_PIPELINE_CONFIG,
+        llmProvider: normalizeProvider(provider),
+      };
+      const { blob } = await saveConfigBlob(
+        "pipeline",
+        "default",
+        JSON.stringify(pipelineConfig, null, 2),
+        `llm-integration-${provider}`,
+        "test",
+      );
+      await activateConfig("pipeline", "default", blob.contentHash, "test", "llm-integration");
+      invalidateConfigCache("pipeline", "default");
+    };
 
     for (const provider of config.providers) {
-      process.env.LLM_PROVIDER = provider;
+      await setPipelineProvider(provider);
 
       const result = await runFactHarborAnalysis({
         inputType: config.inputType,
@@ -70,5 +101,7 @@ describe.sequential("llm integration", () => {
       const outPath = path.join(outputDir, `${safeProvider}-${runId}.md`);
       fs.writeFileSync(outPath, result.reportMarkdown, "utf-8");
     }
+
+    await closeConfigDb();
   }, 10 * 60 * 1000);
 });

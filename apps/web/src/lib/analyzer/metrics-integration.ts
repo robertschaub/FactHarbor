@@ -33,7 +33,7 @@ export function initializeMetrics(
 
   // Set config - use pipeline/search configs if provided, otherwise fall back to defaults
   currentMetrics.setConfig({
-    llmProvider: process.env.LLM_PROVIDER || 'anthropic',
+    llmProvider: pipeline.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic",
     searchProvider: search.provider,
     allowModelKnowledge: pipeline.allowModelKnowledge,
     isLLMTiering: pipeline.llmTiering,

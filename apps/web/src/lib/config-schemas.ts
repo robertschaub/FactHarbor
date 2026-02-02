@@ -71,10 +71,11 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 // PIPELINE CONFIG SCHEMA (pipeline.v1)
 // ============================================================================
 // Tier 2 operational config for analysis pipeline settings.
-// Hot-reloadable via Admin UI, env vars used as fallback defaults.
+// Hot-reloadable via Admin UI (defaults defined in code + UCM).
 
 export const PipelineConfigSchema = z.object({
   // === Model Selection ===
+  llmProvider: z.enum(["anthropic", "openai", "google", "mistral"]).optional().describe("Primary LLM provider for analysis"),
   llmTiering: z.boolean().describe("Enable tiered model selection for cost optimization"),
   modelUnderstand: z.string().min(1).describe("Model for UNDERSTAND phase (claim comprehension)"),
   modelExtractFacts: z.string().min(1).describe("Model for EXTRACT_FACTS phase"),
@@ -88,7 +89,7 @@ export const PipelineConfigSchema = z.object({
   llmContextSimilarity: z.boolean().optional().describe("Use LLM for AnalysisContext similarity analysis"),
   // DEPRECATED: Old key kept for backward compatibility
   /** @deprecated Use llmContextSimilarity instead - 'scope' here means AnalysisContext */
-  llmScopeSimilarity: z.boolean().optional().describe("Use LLM for scope similarity analysis"),
+  llmScopeSimilarity: z.boolean().optional().describe("Legacy key for AnalysisContext similarity analysis"),
 
   llmVerdictValidation: z.boolean().describe("Use LLM for verdict validation (inversion/harm detection)"),
 
@@ -124,7 +125,7 @@ export const PipelineConfigSchema = z.object({
   contextDedupThreshold: z.number().min(0).max(1).optional().describe("Threshold for AnalysisContext deduplication (0-1, lower = more contexts)"),
   // DEPRECATED: Old key kept for backward compatibility
   /** @deprecated Use contextDedupThreshold instead - 'scope' here means AnalysisContext */
-  scopeDedupThreshold: z.number().min(0).max(1).optional().describe("Threshold for scope deduplication (lower = more scopes)"),
+  scopeDedupThreshold: z.number().min(0).max(1).optional().describe("Legacy key for AnalysisContext deduplication threshold (lower = more contexts)"),
 
   // === Context Detection Settings ===
   // NEW: Correctly-named keys (PRIMARY)
@@ -185,29 +186,30 @@ export const PipelineConfigSchema = z.object({
   extractFactsLlmTimeoutMs: z.number().int().min(10000).max(1200000).optional().describe("Timeout for EXTRACT_FACTS LLM calls (ms)"),
   probativeFilterEnabled: z.boolean().optional().describe("Enable probative value filtering"),
   provenanceValidationEnabled: z.boolean().optional().describe("Enable provenance validation gate"),
+  pdfParseTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for PDF parsing (ms)"),
 
   // DEPRECATED: Old keys kept for backward compatibility
   /** @deprecated Use contextDetectionMethod instead - 'scope' here means AnalysisContext */
   scopeDetectionMethod: z
     .enum(["heuristic", "llm", "hybrid"])
     .optional()
-    .describe("Scope detection method: heuristic (patterns only), llm (AI only), hybrid (patterns + AI)"),
+    .describe("Legacy key for AnalysisContext detection method (heuristic, llm, hybrid)"),
   /** @deprecated Use contextDetectionEnabled instead - 'scope' here means AnalysisContext */
-  scopeDetectionEnabled: z.boolean().optional().describe("Enable scope detection (if false, use single general scope)"),
+  scopeDetectionEnabled: z.boolean().optional().describe("Legacy key for AnalysisContext detection enablement"),
   /** @deprecated Use contextDetectionMinConfidence instead - 'scope' here means AnalysisContext */
   scopeDetectionMinConfidence: z
     .number()
     .min(0)
     .max(1)
     .optional()
-    .describe("Minimum confidence threshold for LLM-detected scopes (0-1)"),
+    .describe("Legacy key for AnalysisContext confidence threshold (0-1)"),
   scopeDetectionMaxContexts: z
     .number()
     .int()
     .min(1)
     .max(10)
     .optional()
-    .describe("Maximum number of contexts to detect per input"),
+    .describe("Legacy key for max AnalysisContext count per input"),
   /** @deprecated Use contextDetectionCustomPatterns instead - 'scope' here means AnalysisContext */
   scopeDetectionCustomPatterns: z
     .array(
@@ -221,7 +223,7 @@ export const PipelineConfigSchema = z.object({
       }),
     )
     .optional()
-    .describe("Custom scope detection patterns (extends built-in)"),
+    .describe("Legacy key for AnalysisContext detection patterns"),
   /** @deprecated Use contextFactorHints instead - 'scope' here means AnalysisContext */
   scopeFactorHints: z
     .array(
@@ -233,7 +235,7 @@ export const PipelineConfigSchema = z.object({
       }),
     )
     .optional()
-    .describe("Hints for LLM context-specific factor generation"),
+    .describe("Legacy key for AnalysisContext-specific factor generation"),
 
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
@@ -242,7 +244,7 @@ export const PipelineConfigSchema = z.object({
   maxIterationsPerContext: z.number().int().min(1).max(20).optional().describe("Max research iterations per AnalysisContext"),
   // DEPRECATED: Old key kept for backward compatibility
   /** @deprecated Use maxIterationsPerContext instead - 'scope' here means AnalysisContext */
-  maxIterationsPerScope: z.number().int().min(1).max(20).optional().describe("Max research iterations per scope"),
+  maxIterationsPerScope: z.number().int().min(1).max(20).optional().describe("Legacy key for max research iterations per AnalysisContext"),
 
   maxTotalIterations: z.number().int().min(1).max(50).describe("Max total iterations across all scopes"),
   maxTotalTokens: z.number().int().min(10000).max(2000000).describe("Max tokens per analysis"),
@@ -311,6 +313,10 @@ export const PipelineConfigSchema = z.object({
     warnings.push("maxIterationsPerScope → maxIterationsPerContext");
   }
 
+  if (data.llmProvider === undefined) {
+    data.llmProvider = "anthropic";
+  }
+
   if (data.maxTokensPerCall === undefined) {
     data.maxTokensPerCall = 100000;
   }
@@ -348,6 +354,9 @@ export const PipelineConfigSchema = z.object({
   if (data.provenanceValidationEnabled === undefined) {
     data.provenanceValidationEnabled = true;
   }
+  if (data.pdfParseTimeoutMs === undefined) {
+    data.pdfParseTimeoutMs = 60000;
+  }
 
   if (warnings.length > 0) {
     console.warn(`[DEPRECATED] Pipeline config keys migrated: ${warnings.join(", ")}`);
@@ -360,6 +369,7 @@ export type PipelineConfig = z.infer<typeof PipelineConfigSchema>;
 
 export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Model selection
+  llmProvider: "anthropic",
   llmTiering: false, // v2.9.0: Default to off for backwards compatibility
   modelUnderstand: "claude-3-5-haiku-20241022",
   modelExtractFacts: "claude-3-5-haiku-20241022",
@@ -401,6 +411,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   extractFactsLlmTimeoutMs: 300000,
   probativeFilterEnabled: true,
   provenanceValidationEnabled: true,
+  pdfParseTimeoutMs: 60000,
 
   // Budget controls
   maxIterationsPerContext: 5, // NEW: Use new key name
@@ -1173,6 +1184,28 @@ export const SourceReliabilityConfigSchema = z.object({
   // === Rate Limiting ===
   rateLimitPerIp: z.number().int().min(1).max(100).optional().describe("Max evaluations per IP per minute"),
   domainCooldownSec: z.number().int().min(0).max(3600).optional().describe("Cooldown between re-evaluating same domain"),
+
+  // === Evaluation Search ===
+  evalUseSearch: z.boolean().optional().describe("Enable web search for SR evaluation evidence"),
+  evalSearchMaxResultsPerQuery: z
+    .number()
+    .int()
+    .min(1)
+    .max(10)
+    .optional()
+    .describe("Max search results per SR evaluation query"),
+  evalMaxEvidenceItems: z
+    .number()
+    .int()
+    .min(1)
+    .max(20)
+    .optional()
+    .describe("Max evidence items collected per SR evaluation"),
+  evalSearchDateRestrict: z
+    .enum(["y", "m", "w"])
+    .nullable()
+    .optional()
+    .describe("Date restrict for SR evaluation searches (y|m|w). Null uses search config."),
 });
 
 export type SourceReliabilityConfig = z.infer<typeof SourceReliabilityConfigSchema>;
@@ -1199,6 +1232,12 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   // Rate limiting
   rateLimitPerIp: 10,
   domainCooldownSec: 60,
+
+  // Evaluation search
+  evalUseSearch: true,
+  evalSearchMaxResultsPerQuery: 3,
+  evalMaxEvidenceItems: 12,
+  evalSearchDateRestrict: null,
 };
 
 // ============================================================================

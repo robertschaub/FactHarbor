@@ -199,7 +199,7 @@ export default function TestConfigPage() {
                 </li>
                 <li>
                   <strong>Service skipped:</strong> This service is not currently selected. Update your
-                  LLM_PROVIDER or the active UCM search config if you want to use it.
+                  pipeline llmProvider or the active UCM search config if you want to use it.
                 </li>
                 <li>
                   <strong>Connection errors:</strong> Check your internet connection and verify the API key
@@ -211,7 +211,6 @@ export default function TestConfigPage() {
               <div className={styles.envVarList}>
                 <div className={styles.envVarCategory}>
                   <strong>LLM Providers:</strong>
-                  <code className={styles.code}>LLM_PROVIDER</code>,
                   <code className={styles.code}>OPENAI_API_KEY</code>,
                   <code className={styles.code}>ANTHROPIC_API_KEY</code>,
                   <code className={styles.code}>GOOGLE_GENERATIVE_AI_API_KEY</code>,

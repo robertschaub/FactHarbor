@@ -372,7 +372,11 @@ Return:
       0.85;
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
     // v2.9: deduplicateScopes is now async to support LLM scope similarity analysis
-    const dedup = await deduplicateScopes(state.understanding!.analysisContexts || [], threshold);
+    const dedup = await deduplicateScopes(
+      state.understanding!.analysisContexts || [],
+      threshold,
+      state.pipelineConfig ?? undefined,
+    );
     dedupMerged = dedup.merged;
     state.understanding!.analysisContexts = dedup.scopes;
 
@@ -1006,6 +1010,7 @@ function mergeScopeMetadata(primary: Scope, duplicates: Scope[]): Scope {
 async function deduplicateScopes(
   scopes: Scope[],
   similarityThreshold: number = 0.85,  // Only merge at >=85% similarity to preserve valid contexts
+  pipelineConfig?: PipelineConfig,
 ): Promise<{ scopes: Scope[]; merged: Map<string, string> }> {
   if (!Array.isArray(scopes) || scopes.length <= 1) return { scopes: scopes || [], merged: new Map() };
 
@@ -1040,7 +1045,9 @@ async function deduplicateScopes(
       }
 
       if (scopePairs.length > 0) {
-        const textAnalysisService = getTextAnalysisService();
+        const textAnalysisService = getTextAnalysisService({
+          pipelineConfig: pipelineConfig ?? undefined,
+        });
         const results = await textAnalysisService.analyzeScopeSimilarity({
           scopePairs,
           contextList: scopes.map((s) => String(s.name || s.id)),
@@ -1377,8 +1384,8 @@ Prioritize provided sources when available, but actively supplement with your kn
  * Get provider-specific prompt hints for better cross-provider compatibility
  * Different LLMs have different strengths/weaknesses with structured output
  */
-function getProviderPromptHint(): string {
-  const provider = (process.env.LLM_PROVIDER ?? "anthropic").toLowerCase();
+function getProviderPromptHint(providerOverride?: string): string {
+  const provider = (providerOverride ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic").toLowerCase();
 
   if (provider === "openai" || provider === "gpt") {
     return `
@@ -3335,7 +3342,9 @@ async function understandClaim(
   // v2.9: LLM Text Analysis - Classify input and decompose claims
   let inputClassification: InputClassificationResult | null = null;
   try {
-    const textAnalysisService = getTextAnalysisService();
+    const textAnalysisService = getTextAnalysisService({
+      pipelineConfig: pipelineConfig ?? undefined,
+    });
     inputClassification = await textAnalysisService.classifyInput({
       inputText: analysisInput,
       pipeline: "orchestrated",
@@ -4026,7 +4035,8 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
     return null;
   }
 
-  const providerName = (process.env.LLM_PROVIDER ?? "anthropic").toLowerCase();
+  const providerName =
+    (pipelineConfig?.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic").toLowerCase();
   const isOpenAiProvider =
     providerName === "openai" || providerName.startsWith("gpt") || providerName.includes("openai");
   const understandingSchemaForProvider = isOpenAiProvider
@@ -4163,7 +4173,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
   const handleApiKeyOrQuota = (errMsg: string) => {
     if (errMsg.includes("credit balance is too low") || errMsg.includes("insufficient_quota")) {
       console.error("[Analyzer] ❌ ANTHROPIC API CREDITS EXHAUSTED - Please add credits at https://console.anthropic.com/settings/plans");
-      throw new Error("Anthropic API credits exhausted. Please add credits or switch to a different LLM provider (LLM_PROVIDER=openai)");
+      throw new Error("Anthropic API credits exhausted. Please add credits or switch provider in UCM pipeline config (llmProvider).");
     }
     if (errMsg.includes("invalid_api_key") || errMsg.includes("401")) {
       console.error("[Analyzer] ❌ INVALID API KEY - Check your ANTHROPIC_API_KEY or OPENAI_API_KEY");
@@ -5707,7 +5717,10 @@ async function fetchSource(
 
   try {
     const result = await Promise.race([
-      extractTextFromUrl(url),
+      extractTextFromUrl(url, {
+        pdfParseTimeoutMs:
+          pipelineConfig?.pdfParseTimeoutMs ?? DEFAULT_PIPELINE_CONFIG.pdfParseTimeoutMs,
+      }),
       new Promise<{ text: string; title: string; contentType: string }>(
         (_, reject) =>
           setTimeout(() => reject(new Error("timeout")), CONFIG.fetchTimeoutMs),
@@ -6035,7 +6048,9 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
             category: item.category,
           }));
 
-          const textAnalysisService = getTextAnalysisService();
+          const textAnalysisService = getTextAnalysisService({
+            pipelineConfig: pipelineConfig ?? undefined,
+          });
           const qualityResults = await textAnalysisService.assessEvidenceQuality({
             evidenceItems: evidenceInputs,
             thesisText: originalClaim || focus,
@@ -6735,7 +6750,7 @@ ${getKnowledgeInstruction(
   state.originalInput,
   understanding,
 )}
-${getProviderPromptHint()}`;
+${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 
   // Prevent structured-output truncation (common cause of JSON/schema parse failures).
   // Keep outputs concise so they fit within typical provider output token limits.
@@ -7780,7 +7795,7 @@ ${getKnowledgeInstruction(
   state.originalInput,
   understanding,
 )}
-${getProviderPromptHint()}`;
+${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 
   const userPrompt = `## ${inputLabel}
 "${analysisInput}"
@@ -8368,7 +8383,7 @@ ${getKnowledgeInstruction(
   state.originalInput,
   understanding,
 )}
-${getProviderPromptHint()}`;
+${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 
   // KeyFactors are now generated in understanding phase, not verdict generation
   systemPrompt += `
@@ -8668,7 +8683,9 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         reasoning: cv.reasoning || "",
       }));
 
-      const textAnalysisService = getTextAnalysisService();
+      const textAnalysisService = getTextAnalysisService({
+        pipelineConfig: state.pipelineConfig ?? undefined,
+      });
       const validationResults = await textAnalysisService.validateVerdicts({
         thesis: understanding.impliedClaim || understanding.articleThesis || "",
         claimVerdicts: claimVerdictsForValidation,
@@ -9456,7 +9473,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   if (input.inputType === "url") {
     await emit("Fetching URL content", 3);
     try {
-      const result = await extractTextFromUrl(input.inputValue);
+      const result = await extractTextFromUrl(input.inputValue, {
+        pdfParseTimeoutMs:
+          pipelineConfig?.pdfParseTimeoutMs ?? DEFAULT_PIPELINE_CONFIG.pdfParseTimeoutMs,
+      });
       // Handle both old (string) and new (object) return types
       textToAnalyze = typeof result === "string" ? result : result.text;
     } catch (err) {
@@ -9640,7 +9660,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // =========================================================================
     // GROUNDED SEARCH MODE: Use Gemini's built-in Google Search
     // =========================================================================
-    if (searchConfig.mode === "grounded" && isGroundedSearchAvailable()) {
+    if (
+      searchConfig.mode === "grounded" &&
+      isGroundedSearchAvailable(state.pipelineConfig?.llmProvider)
+    ) {
       await emit(
         `🔍 Using Gemini Grounded Search for: "${decision.focus}"`,
         baseProgress + 1,

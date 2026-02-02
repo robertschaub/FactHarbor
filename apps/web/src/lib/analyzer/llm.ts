@@ -18,7 +18,7 @@ import {
   getOpenAIJsonModeHint,
   type ProviderType,
 } from "./prompts/config-adaptations/structured-output";
-import type { PipelineConfig } from "../config-schemas";
+import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
 
 // ============================================================================
 // MODEL SELECTION
@@ -51,6 +51,14 @@ function detectProviderFromModelName(modelName: string): "anthropic" | "google" 
 
 function isTieringEnabled(config?: PipelineConfig): boolean {
   return config ? config.llmTiering : false;
+}
+
+function resolveProvider(
+  providerOverride?: string,
+  config?: PipelineConfig,
+): "anthropic" | "google" | "mistral" | "openai" {
+  const fallback = config?.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic";
+  return normalizeProvider(providerOverride ?? fallback);
 }
 
 function modelOverrideForTask(task: ModelTask, config?: PipelineConfig): string | null {
@@ -99,8 +107,8 @@ function buildModelInfo(provider: "anthropic" | "google" | "mistral" | "openai",
 /**
  * Get the LLM model based on configuration
  */
-export function getModel(providerOverride?: string): ModelInfo {
-  const provider = normalizeProvider(providerOverride ?? process.env.LLM_PROVIDER ?? "anthropic");
+export function getModel(providerOverride?: string, config?: PipelineConfig): ModelInfo {
+  const provider = resolveProvider(providerOverride, config);
   // Preserve legacy single-model defaults.
   const modelName =
     provider === "anthropic"
@@ -127,10 +135,10 @@ export function getModelForTask(
   config?: PipelineConfig,
 ): ModelInfo {
   if (!isTieringEnabled(config)) {
-    return getModel(providerOverride);
+    return getModel(providerOverride, config);
   }
 
-  const provider = normalizeProvider(providerOverride ?? process.env.LLM_PROVIDER ?? "anthropic");
+  const provider = resolveProvider(providerOverride, config);
   const overrideName = modelOverrideForTask(task, config);
   let modelName: string | null = null;
 

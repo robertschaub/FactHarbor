@@ -41,7 +41,7 @@ export interface GroundedSearchOptions {
  * This approach lets Gemini decide what to search for and how to interpret
  * the results, which can be more effective for recent/breaking news.
  *
- * Note: This only works when LLM_PROVIDER=gemini. The grounding metadata
+ * Note: This only works when the active LLM provider is Google/Gemini. The grounding metadata
  * is extracted from the response and converted to a format compatible
  * with FactHarbor's existing source pipeline.
  */
@@ -212,10 +212,10 @@ export function convertToFetchedSources(
 
 /**
  * Check if Gemini grounded search is available.
- * Requires LLM_PROVIDER=gemini and a valid Google API key.
+ * Requires llmProvider=google and a valid Google API key.
  */
-export function isGroundedSearchAvailable(): boolean {
-  const provider = (process.env.LLM_PROVIDER || "anthropic").toLowerCase();
+export function isGroundedSearchAvailable(providerOverride?: string): boolean {
+  const provider = (providerOverride || "anthropic").toLowerCase();
   const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
   return (provider === "google" || provider === "gemini") && hasGoogleKey;

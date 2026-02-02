@@ -59,6 +59,11 @@ let SR_OPENAI_MODEL = DEFAULT_SR_CONFIG.openaiModel;
 let RATE_LIMIT_PER_IP = DEFAULT_SR_CONFIG.rateLimitPerIp ?? 10;
 let DOMAIN_COOLDOWN_SEC = DEFAULT_SR_CONFIG.domainCooldownSec ?? 60;
 let SR_SEARCH_CONFIG: SearchConfig = DEFAULT_SEARCH_CONFIG;
+let SR_EVAL_USE_SEARCH = DEFAULT_SR_CONFIG.evalUseSearch ?? true;
+let SR_EVAL_MAX_RESULTS_PER_QUERY = DEFAULT_SR_CONFIG.evalSearchMaxResultsPerQuery ?? 3;
+let SR_EVAL_MAX_EVIDENCE_ITEMS = DEFAULT_SR_CONFIG.evalMaxEvidenceItems ?? 12;
+let SR_EVAL_DATE_RESTRICT: "y" | "m" | "w" | null =
+  DEFAULT_SR_CONFIG.evalSearchDateRestrict ?? null;
 
 debugLog(`[SR-Eval] Configuration check`, {
   anthropicKey: hasAnthropicKey ? "configured" : "MISSING",
@@ -487,16 +492,9 @@ function isRelevantSearchResult(
   return false;
 }
 
-function parseDateRestrictEnv(v: string | undefined): "y" | "m" | "w" | undefined {
-  const s = (v ?? "").toLowerCase().trim();
-  if (s === "y" || s === "m" || s === "w") return s;
-  return undefined;
-}
-
 function isSearchEnabledForSrEval(): { enabled: boolean; providersUsed: string[] } {
-  const useSearch = (process.env.FH_SR_EVAL_USE_SEARCH ?? "true").toLowerCase() !== "false";
   const searchEnabled = SR_SEARCH_CONFIG.enabled;
-  if (!useSearch || !searchEnabled) return { enabled: false, providersUsed: [] };
+  if (!SR_EVAL_USE_SEARCH || !searchEnabled) return { enabled: false, providersUsed: [] };
 
   const providersUsed = getActiveSearchProviders(SR_SEARCH_CONFIG);
   const hasProvider = providersUsed.some((p) => p && p !== "None" && p !== "Unknown");
@@ -1114,16 +1112,14 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
 
   const maxResultsPerQuery = Math.max(
     1,
-    Math.min(parseInt(process.env.FH_SR_EVAL_SEARCH_MAX_RESULTS_PER_QUERY || "3", 10), 10)
+    Math.min(SR_EVAL_MAX_RESULTS_PER_QUERY, 10)
   );
   const maxEvidenceItems = Math.max(
     1,
-    Math.min(parseInt(process.env.FH_SR_EVAL_MAX_EVIDENCE_ITEMS || "12", 10), 20)
+    Math.min(SR_EVAL_MAX_EVIDENCE_ITEMS, 20)
   );
   const dateRestrict =
-    parseDateRestrictEnv(process.env.FH_SR_EVAL_SEARCH_DATE_RESTRICT) ??
-    SR_SEARCH_CONFIG.dateRestrict ??
-    undefined;
+    (SR_EVAL_DATE_RESTRICT ?? SR_SEARCH_CONFIG.dateRestrict) ?? undefined;
 
   const seen = new Set<string>();
   const rawItems: Array<{ r: WebSearchResult; query: string; provider: string }> = [];
@@ -2588,6 +2584,11 @@ export async function POST(req: Request) {
   SR_OPENAI_MODEL = srConfig.openaiModel;
   RATE_LIMIT_PER_IP = srConfig.rateLimitPerIp ?? RATE_LIMIT_PER_IP;
   DOMAIN_COOLDOWN_SEC = srConfig.domainCooldownSec ?? DOMAIN_COOLDOWN_SEC;
+  SR_EVAL_USE_SEARCH = srConfig.evalUseSearch ?? SR_EVAL_USE_SEARCH;
+  SR_EVAL_MAX_RESULTS_PER_QUERY =
+    srConfig.evalSearchMaxResultsPerQuery ?? SR_EVAL_MAX_RESULTS_PER_QUERY;
+  SR_EVAL_MAX_EVIDENCE_ITEMS = srConfig.evalMaxEvidenceItems ?? SR_EVAL_MAX_EVIDENCE_ITEMS;
+  SR_EVAL_DATE_RESTRICT = srConfig.evalSearchDateRestrict ?? SR_EVAL_DATE_RESTRICT;
 
   const effectiveMultiModel = raw.multiModel !== undefined ? body.multiModel : srConfig.multiModel;
   const effectiveConfidenceThreshold =

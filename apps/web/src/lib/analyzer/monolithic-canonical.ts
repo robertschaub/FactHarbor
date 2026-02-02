@@ -261,7 +261,9 @@ async function extractClaim(
   // v2.9: LLM Text Analysis - Classify input
   let inputClassification: InputClassificationResult | null = null;
   try {
-    const textAnalysisService = getTextAnalysisService();
+    const textAnalysisService = getTextAnalysisService({
+      pipelineConfig: pipelineConfig ?? undefined,
+    });
     inputClassification = await textAnalysisService.classifyInput({
       inputText: text,
       pipeline: "monolithic-canonical",
@@ -382,7 +384,9 @@ async function extractFacts(
         category: f.category,
       }));
 
-      const textAnalysisService = getTextAnalysisService();
+      const textAnalysisService = getTextAnalysisService({
+        pipelineConfig: pipelineConfig ?? undefined,
+      });
       const qualityResults = await textAnalysisService.assessEvidenceQuality({
         evidenceItems: evidenceInputs,
         thesisText: claim,
@@ -481,7 +485,9 @@ async function generateVerdict(
   const useLLMVerdictValidation = isLLMEnabled("verdict");
   if (useLLMVerdictValidation) {
     try {
-      const textAnalysisService = getTextAnalysisService();
+      const textAnalysisService = getTextAnalysisService({
+        pipelineConfig: pipelineConfig ?? undefined,
+      });
       const validationResults = await textAnalysisService.validateVerdicts({
         thesis: claim,
         claimVerdicts: [{
@@ -611,6 +617,8 @@ export async function runMonolithicCanonical(
       const urlContent = await extractTextFromUrl(input.inputValue, {
         timeoutMs: 20000,
         maxLength: 8000,
+        pdfParseTimeoutMs:
+          pipelineConfig?.pdfParseTimeoutMs ?? DEFAULT_PIPELINE_CONFIG.pdfParseTimeoutMs,
       });
       textToAnalyze = `URL: ${input.inputValue}\n\nTitle: ${urlContent.title}\n\nContent:\n${urlContent.text}`;
     } catch (err) {
@@ -619,7 +627,7 @@ export async function runMonolithicCanonical(
   }
 
   // Step 1: Extract claim and generate search queries
-  const understandModel = getModelForTask("understand");
+  const understandModel = getModelForTask("understand", undefined, pipelineConfig ?? undefined);
   const claimData = await extractClaim(understandModel.model, textToAnalyze, pipelineConfig, input.onEvent);
   recordLLMCall(budgetTracker, 2000); // Estimate
 
@@ -712,7 +720,7 @@ export async function runMonolithicCanonical(
   // Step 2: Research loop
   let iteration = 0;
   let needsMoreResearch = true;
-  const extractFactsModel = getModelForTask("extract_facts");
+      const extractFactsModel = getModelForTask("extract_facts", undefined, pipelineConfig ?? undefined);
 
   while (
     needsMoreResearch &&
@@ -826,6 +834,8 @@ export async function runMonolithicCanonical(
         const content = await extractTextFromUrl(result.url, {
           timeoutMs: 15000,
           maxLength: 20000,
+          pdfParseTimeoutMs:
+            pipelineConfig?.pdfParseTimeoutMs ?? DEFAULT_PIPELINE_CONFIG.pdfParseTimeoutMs,
         });
 
         // v2.6.35: Get source reliability data
@@ -958,7 +968,7 @@ export async function runMonolithicCanonical(
     throw new Error("Facts failed provenance validation. Falling back to orchestrated pipeline.");
   }
 
-  const verdictModel = getModelForTask("verdict");
+  const verdictModel = getModelForTask("verdict", undefined, pipelineConfig ?? undefined);
   const verdictResults: Array<{
     entry: typeof claimsForVerdicts[number];
     verdictData: z.infer<typeof VerdictSchema>;

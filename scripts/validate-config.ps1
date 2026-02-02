@@ -42,10 +42,10 @@ foreach ($line in $envLines) {
 $webApiBaseUrl = $envMap["FH_API_BASE_URL"]
 $webRunnerKey = $envMap["FH_INTERNAL_RUNNER_KEY"]
 $webAdminKey = $envMap["FH_ADMIN_KEY"]
-$llmProvider = $envMap["LLM_PROVIDER"]
 $openAiKey = $envMap["OPENAI_API_KEY"]
 $anthropicKey = $envMap["ANTHROPIC_API_KEY"]
-$llmProviderNormalized = if ([string]::IsNullOrWhiteSpace($llmProvider)) { "" } else { $llmProvider.ToLowerInvariant() }
+$googleKey = $envMap["GOOGLE_GENERATIVE_AI_API_KEY"]
+$mistralKey = $envMap["MISTRAL_API_KEY"]
 
 if ([string]::IsNullOrWhiteSpace($runnerBaseUrl)) { $errors += "Runner:BaseUrl is missing in appsettings.Development.json" }
 if ([string]::IsNullOrWhiteSpace($runnerKey)) { $errors += "Runner:RunnerKey is missing in appsettings.Development.json" }
@@ -67,12 +67,13 @@ if ($webApiBaseUrl -and ($webApiBaseUrl -ne "http://localhost:5000")) {
     $warnings += "FH_API_BASE_URL is '$webApiBaseUrl' (expected http://localhost:5000 for local dev)"
 }
 
-if ([string]::IsNullOrWhiteSpace($llmProvider)) {
-    $warnings += "LLM_PROVIDER is not set"
-} elseif ($llmProviderNormalized -eq "openai" -and [string]::IsNullOrWhiteSpace($openAiKey)) {
-    $warnings += "OPENAI_API_KEY is missing for LLM_PROVIDER=openai"
-} elseif (($llmProviderNormalized -eq "anthropic" -or $llmProviderNormalized -eq "claude") -and [string]::IsNullOrWhiteSpace($anthropicKey)) {
-    $warnings += "ANTHROPIC_API_KEY is missing for LLM_PROVIDER=anthropic"
+if (
+    [string]::IsNullOrWhiteSpace($openAiKey) -and
+    [string]::IsNullOrWhiteSpace($anthropicKey) -and
+    [string]::IsNullOrWhiteSpace($googleKey) -and
+    [string]::IsNullOrWhiteSpace($mistralKey)
+) {
+    $warnings += "No LLM API keys configured (set OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY / MISTRAL_API_KEY)"
 }
 
 $placeholderKeys = @(
@@ -85,6 +86,8 @@ if ($placeholderKeys -contains $adminKey) { $warnings += "Admin:Key is set to a 
 if ($placeholderKeys -contains $runnerKey) { $warnings += "Runner:RunnerKey is set to a placeholder value" }
 if ($placeholderKeys -contains $openAiKey) { $warnings += "OPENAI_API_KEY is set to a placeholder value" }
 if ($placeholderKeys -contains $anthropicKey) { $warnings += "ANTHROPIC_API_KEY is set to a placeholder value" }
+if ($placeholderKeys -contains $googleKey) { $warnings += "GOOGLE_GENERATIVE_AI_API_KEY is set to a placeholder value" }
+if ($placeholderKeys -contains $mistralKey) { $warnings += "MISTRAL_API_KEY is set to a placeholder value" }
 
 if ($errors.Count -gt 0) {
     $errors | ForEach-Object { Write-Host "? $_" -ForegroundColor Red }

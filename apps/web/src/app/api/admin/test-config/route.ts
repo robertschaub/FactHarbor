@@ -35,12 +35,19 @@ export async function GET(request: NextRequest) {
   results.push(testFhInternalRunnerKey());
 
   // Test LLM Providers
-  const llmProvider = process.env.LLM_PROVIDER?.toLowerCase() || "anthropic";
+  let llmProvider = "anthropic";
+  try {
+    const pipelineConfigResult = await getConfig("pipeline", "default");
+    llmProvider = pipelineConfigResult.config.llmProvider ?? llmProvider;
+  } catch {
+    // Fall back to default if config load fails.
+  }
+  const llmProviderLower = llmProvider.toLowerCase();
 
-  results.push(await testOpenAI(llmProvider === "openai"));
-  results.push(await testAnthropic(llmProvider === "anthropic"));
-  results.push(await testGoogle(llmProvider === "google"));
-  results.push(await testMistral(llmProvider === "mistral"));
+  results.push(await testOpenAI(llmProviderLower === "openai"));
+  results.push(await testAnthropic(llmProviderLower === "anthropic"));
+  results.push(await testGoogle(llmProviderLower === "google"));
+  results.push(await testMistral(llmProviderLower === "mistral"));
 
   // Test Search Providers
   const searchConfigResult = await getConfig("search", "default");
@@ -183,7 +190,7 @@ async function testOpenAI(shouldTest: boolean): Promise<TestResult> {
     return {
       service: "OpenAI",
       status: "skipped",
-      message: "Not selected as LLM_PROVIDER",
+      message: "Not selected as pipeline.llmProvider",
       configUrl: "https://platform.openai.com/api-keys",
     };
   }
@@ -238,7 +245,7 @@ async function testAnthropic(shouldTest: boolean): Promise<TestResult> {
     return {
       service: "Anthropic",
       status: "skipped",
-      message: "Not selected as LLM_PROVIDER",
+      message: "Not selected as pipeline.llmProvider",
       configUrl: "https://console.anthropic.com/settings/keys",
     };
   }
@@ -293,7 +300,7 @@ async function testGoogle(shouldTest: boolean): Promise<TestResult> {
     return {
       service: "Google Generative AI",
       status: "skipped",
-      message: "Not selected as LLM_PROVIDER",
+      message: "Not selected as pipeline.llmProvider",
       configUrl: "https://aistudio.google.com/app/apikey",
     };
   }
@@ -348,7 +355,7 @@ async function testMistral(shouldTest: boolean): Promise<TestResult> {
     return {
       service: "Mistral AI",
       status: "skipped",
-      message: "Not selected as LLM_PROVIDER",
+      message: "Not selected as pipeline.llmProvider",
       configUrl: "https://console.mistral.ai/api-keys",
     };
   }

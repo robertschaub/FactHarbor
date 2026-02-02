@@ -166,6 +166,7 @@ interface CalcConfig {
 // Pipeline config type
 interface PipelineConfig {
   // Model selection
+  llmProvider: "anthropic" | "openai" | "google" | "mistral";
   llmTiering: boolean;
   modelUnderstand: string;
   modelExtractFacts: string;
@@ -173,18 +174,23 @@ interface PipelineConfig {
   // LLM Text Analysis feature flags
   llmInputClassification: boolean;
   llmEvidenceQuality: boolean;
-  llmScopeSimilarity: boolean;
+  llmContextSimilarity?: boolean;
+  llmScopeSimilarity?: boolean;
   llmVerdictValidation: boolean;
   // Analysis behavior
   analysisMode: "quick" | "deep";
   allowModelKnowledge: boolean;
   deterministic: boolean;
-  scopeDedupThreshold: number;
+  contextDedupThreshold?: number;
+  scopeDedupThreshold?: number;
   // Budget controls
-  maxIterationsPerScope: number;
+  maxIterationsPerContext?: number;
+  maxIterationsPerScope?: number;
   maxTotalIterations: number;
   maxTotalTokens: number;
   enforceBudgets: boolean;
+  // Retrieval
+  pdfParseTimeoutMs?: number;
   // Pipeline selection
   defaultPipelineVariant?: "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
 }
@@ -203,6 +209,10 @@ interface SRConfig {
   skipTlds: string[];
   rateLimitPerIp?: number;
   domainCooldownSec?: number;
+  evalUseSearch?: boolean;
+  evalSearchMaxResultsPerQuery?: number;
+  evalMaxEvidenceItems?: number;
+  evalSearchDateRestrict?: "y" | "m" | "w" | null;
 }
 
 // ============================================================================
@@ -286,22 +296,24 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
 };
 
 const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
+  llmProvider: "anthropic",
   llmTiering: false,
   modelUnderstand: "claude-3-5-haiku-20241022",
   modelExtractFacts: "claude-3-5-haiku-20241022",
   modelVerdict: "claude-sonnet-4-20250514",
   llmInputClassification: true,
   llmEvidenceQuality: true,
-  llmScopeSimilarity: true,
+  llmContextSimilarity: true,
   llmVerdictValidation: true,
   analysisMode: "quick",
   allowModelKnowledge: false,
   deterministic: true,
-  scopeDedupThreshold: 0.85,
-  maxIterationsPerScope: 5,
+  contextDedupThreshold: 0.85,
+  maxIterationsPerContext: 5,
   maxTotalIterations: 20,
   maxTotalTokens: 750000,
   enforceBudgets: false,
+  pdfParseTimeoutMs: 60000,
   defaultPipelineVariant: "orchestrated",
 };
 
@@ -318,6 +330,10 @@ const DEFAULT_SR_CONFIG: SRConfig = {
   skipTlds: ["xyz", "top", "club", "icu", "buzz", "tk", "ml", "ga", "cf", "gq"],
   rateLimitPerIp: 10,
   domainCooldownSec: 60,
+  evalUseSearch: true,
+  evalSearchMaxResultsPerQuery: 3,
+  evalMaxEvidenceItems: 12,
+  evalSearchDateRestrict: null,
 };
 
 /**
@@ -361,7 +377,7 @@ const CONFIG_TYPES: { type: ConfigType; title: string; description: string }[] =
   {
     type: "sr",
     title: "Source Reliability",
-    description: "Multi-model consensus, thresholds, caching, filtering",
+    description: "Separate SR service config (consensus, thresholds, caching, filtering)",
   },
   {
     type: "prompt",
@@ -1192,6 +1208,20 @@ function PipelineConfigForm({
         Examples: claude-sonnet-4, claude-haiku-3.5, gpt-4o, gpt-4o-mini
       </p>
       <div className={styles.formGroup}>
+        <label className={styles.formLabel}>LLM Provider</label>
+        <select
+          className={styles.formInput}
+          value={config.llmProvider}
+          onChange={(e) => updateField("llmProvider", e.target.value as PipelineConfig["llmProvider"])}
+        >
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (GPT)</option>
+          <option value="google">Google (Gemini)</option>
+          <option value="mistral">Mistral</option>
+        </select>
+        <div className={styles.formHelp}>Primary provider used for analysis LLM calls</div>
+      </div>
+      <div className={styles.formGroup}>
         <label className={styles.formLabel}>
           <input
             type="checkbox"
@@ -1270,13 +1300,20 @@ function PipelineConfigForm({
           <label className={styles.formLabel}>
             <input
               type="checkbox"
-              checked={config.llmScopeSimilarity}
-              onChange={(e) => updateField("llmScopeSimilarity", e.target.checked)}
+              checked={config.llmContextSimilarity ?? config.llmScopeSimilarity ?? true}
+              onChange={(e) => {
+                const next = e.target.checked;
+                onChange({
+                  ...config,
+                  llmContextSimilarity: next,
+                  llmScopeSimilarity: undefined,
+                });
+              }}
               style={{ marginRight: 8 }}
             />
-            Scope Similarity
+            Context Similarity
           </label>
-          <div className={styles.formHelp}>Scope deduplication & phase inference</div>
+          <div className={styles.formHelp}>Context deduplication & phase inference</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>
@@ -1308,20 +1345,24 @@ function PipelineConfigForm({
           <div className={styles.formHelp}>Deep mode costs ~2-3x more but yields higher quality</div>
         </div>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Scope Dedup Threshold</label>
+          <label className={styles.formLabel}>Context Dedup Threshold</label>
           <input
             type="number"
             className={styles.formInput}
-            value={config.scopeDedupThreshold}
+            value={config.contextDedupThreshold ?? config.scopeDedupThreshold ?? 0.85}
             min={0.5}
             max={1.0}
             step={0.05}
             onChange={(e) => {
               const v = parseFloat(e.target.value);
-              updateField("scopeDedupThreshold", isNaN(v) ? 0.7 : v);
+              onChange({
+                ...config,
+                contextDedupThreshold: isNaN(v) ? 0.7 : v,
+                scopeDedupThreshold: undefined,
+              });
             }}
           />
-          <div className={styles.formHelp}>Lower = more scopes (0.5-1.0)</div>
+          <div className={styles.formHelp}>Lower = more contexts (0.5-1.0)</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>
@@ -1349,6 +1390,25 @@ function PipelineConfigForm({
         </div>
       </div>
 
+      {/* Retrieval */}
+      <h3 className={styles.formSectionTitle}>Retrieval</h3>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>PDF Parse Timeout (ms)</label>
+        <input
+          type="number"
+          className={styles.formInput}
+          value={config.pdfParseTimeoutMs ?? 60000}
+          min={10000}
+          max={300000}
+          step={1000}
+          onChange={(e) => {
+            const v = parseInt(e.target.value, 10);
+            updateField("pdfParseTimeoutMs", isNaN(v) ? 60000 : v);
+          }}
+        />
+        <div className={styles.formHelp}>Timeout for PDF parsing during URL retrieval</div>
+      </div>
+
       {/* Budget Controls */}
       <h3 className={styles.formSectionTitle}>Budget Controls</h3>
       <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
@@ -1359,16 +1419,20 @@ function PipelineConfigForm({
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Max Iterations/Scope</label>
+          <label className={styles.formLabel}>Max Iterations/Context</label>
           <input
             type="number"
             className={styles.formInput}
-            value={config.maxIterationsPerScope}
+            value={config.maxIterationsPerContext ?? config.maxIterationsPerScope ?? 5}
             min={1}
             max={20}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              updateField("maxIterationsPerScope", isNaN(v) ? 5 : v);
+              onChange({
+                ...config,
+                maxIterationsPerContext: isNaN(v) ? 5 : v,
+                maxIterationsPerScope: undefined,
+              });
             }}
           />
           <div className={styles.formHelp}>Research rounds per context. 5 is balanced, 8+ for deep analysis.</div>
@@ -1457,7 +1521,8 @@ function SRConfigForm({
       {/* Core Settings */}
       <h3 className={styles.formSectionTitle}>Core Settings</h3>
       <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
-        Source Reliability evaluates domain credibility using LLM analysis. Affects evidence weighting in verdicts.
+        Source Reliability evaluates domain credibility using LLM analysis. This config is owned by the SR service
+        and is separate from the main pipeline/search configs.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div className={styles.formGroup}>
@@ -1641,6 +1706,70 @@ function SRConfigForm({
             }}
           />
           <div className={styles.formHelp}>Cooldown before re-evaluating same domain</div>
+        </div>
+      </div>
+
+      {/* Evaluation Search */}
+      <h3 className={styles.formSectionTitle}>Evaluation Search</h3>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          <input
+            type="checkbox"
+            checked={config.evalUseSearch ?? true}
+            onChange={(e) => updateField("evalUseSearch", e.target.checked)}
+            style={{ marginRight: 8 }}
+          />
+          Enable Search During Evaluation
+        </label>
+        <div className={styles.formHelp}>Uses web search results to ground SR evaluations</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Max Results per Query</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.evalSearchMaxResultsPerQuery ?? 3}
+            min={1}
+            max={10}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("evalSearchMaxResultsPerQuery", isNaN(v) ? 3 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Upper bound per SR evaluation query</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Max Evidence Items</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.evalMaxEvidenceItems ?? 12}
+            min={1}
+            max={20}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("evalMaxEvidenceItems", isNaN(v) ? 12 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Total evidence items collected per evaluation</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Date Restrict</label>
+          <select
+            className={styles.formInput}
+            value={config.evalSearchDateRestrict ?? ""}
+            onChange={(e) => {
+              const v = e.target.value as "" | "y" | "m" | "w";
+              updateField("evalSearchDateRestrict", v === "" ? null : v);
+            }}
+          >
+            <option value="">Use search config</option>
+            <option value="y">Past year</option>
+            <option value="m">Past month</option>
+            <option value="w">Past week</option>
+          </select>
+          <div className={styles.formHelp}>Override search recency for SR evaluation</div>
         </div>
       </div>
     </div>

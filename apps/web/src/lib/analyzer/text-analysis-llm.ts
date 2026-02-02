@@ -30,6 +30,7 @@ import {
 } from "./text-analysis-types";
 
 import { getModel, getModelForTask, type ModelTask } from "./llm";
+import type { PipelineConfig } from "../config-schemas";
 import { loadPromptConfig } from "../config-loader";
 import { recordMetrics } from "./text-analysis-service";
 
@@ -212,9 +213,11 @@ function parseJSONResponse<T>(
  */
 export class LLMTextAnalysisService implements ITextAnalysisService {
   private config: ParseConfig;
+  private pipelineConfig?: PipelineConfig;
 
-  constructor(config: Partial<ParseConfig> = {}) {
+  constructor(config: Partial<ParseConfig> = {}, pipelineConfig?: PipelineConfig) {
     this.config = { ...DEFAULT_PARSE_CONFIG, ...config };
+    this.pipelineConfig = pipelineConfig;
   }
 
   /**
@@ -243,7 +246,11 @@ export class LLMTextAnalysisService implements ITextAnalysisService {
     prompt: string,
     _maxTokens: number = 2000 // Reserved for future use
   ): Promise<string> {
-    const modelInfo = getModelForTask(this.getModelTask(analysisPoint));
+    const modelInfo = getModelForTask(
+      this.getModelTask(analysisPoint),
+      undefined,
+      this.pipelineConfig,
+    );
 
     const result = await generateText({
       model: modelInfo.model,

@@ -10,6 +10,7 @@
 
 import { ITextAnalysisService, AnalysisPoint, TextAnalysisMetrics } from "./text-analysis-types";
 import { LLMTextAnalysisService, llmTextAnalysisService } from "./text-analysis-llm";
+import type { PipelineConfig } from "../config-schemas";
 
 // Re-export types for convenience
 export * from "./text-analysis-types";
@@ -24,8 +25,8 @@ export { LLMTextAnalysisService, llmTextAnalysisService } from "./text-analysis-
  * Retained for compatibility with existing callers.
  */
 export interface TextAnalysisConfig {
-  // Placeholder for future per-point tuning (all points are LLM-only).
-  // This interface remains to avoid breaking callers until pipeline.v2 lands.
+  // Optional pipeline config for provider/tiering alignment.
+  pipelineConfig?: PipelineConfig;
 }
 
 /**
@@ -73,7 +74,9 @@ export function registerService(
  * @param config - Optional pipeline config (UCM Phase 1)
  */
 export function getTextAnalysisService(config?: TextAnalysisConfig): ITextAnalysisService {
-  void config;
+  if (config?.pipelineConfig && serviceRegistry.llm instanceof LLMTextAnalysisService) {
+    return new LLMTextAnalysisService({}, config.pipelineConfig);
+  }
   return serviceRegistry.llm;
 }
 

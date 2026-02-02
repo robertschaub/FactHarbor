@@ -14,8 +14,8 @@ import * as os from "os";
 import * as path from "path";
 import { Worker } from "worker_threads";
 
-// Default timeout for PDF parsing (ms) - can be overridden via environment variable
-const PDF_PARSE_TIMEOUT_MS = parseInt(process.env.FH_PDF_PARSE_TIMEOUT_MS || "60000", 10);
+// Default timeout for PDF parsing (ms)
+const DEFAULT_PDF_PARSE_TIMEOUT_MS = 60000;
 
 /**
  * Clean up PDF-extracted text that has spurious spaces from character-level extraction.
@@ -146,7 +146,7 @@ run()
  * @param buffer - PDF file buffer
  * @param timeoutMs - Parsing timeout in ms (default: 60 seconds)
  */
-async function extractTextFromPdfBuffer(buffer: Buffer, timeoutMs: number = PDF_PARSE_TIMEOUT_MS): Promise<string> {
+async function extractTextFromPdfBuffer(buffer: Buffer, timeoutMs: number = DEFAULT_PDF_PARSE_TIMEOUT_MS): Promise<string> {
   try {
     // Validate buffer before parsing
     if (!buffer || buffer.length === 0) {
@@ -329,7 +329,7 @@ export async function extractTextFromUrl(
     pdfParseTimeoutMs?: number;
   } = {}
 ): Promise<{ text: string; title: string; contentType: string }> {
-  const { timeoutMs = 30000, maxLength = 50000, pdfParseTimeoutMs = PDF_PARSE_TIMEOUT_MS } = options;
+  const { timeoutMs = 30000, maxLength = 50000, pdfParseTimeoutMs = DEFAULT_PDF_PARSE_TIMEOUT_MS } = options;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);

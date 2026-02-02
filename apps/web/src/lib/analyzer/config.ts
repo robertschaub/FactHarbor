@@ -28,7 +28,7 @@ export const CONFIG = {
   searchProvider: DEFAULT_SEARCH_CONFIG.provider,
   searchDomainWhitelist: DEFAULT_SEARCH_CONFIG.domainWhitelist,
   // Search mode: "standard" (default) or "grounded" (uses Gemini's built-in Google Search)
-  // Note: "grounded" mode only works when LLM_PROVIDER=gemini
+  // Note: "grounded" mode only works when llmProvider=google
   searchMode: DEFAULT_SEARCH_CONFIG.mode,
   // Optional global recency bias for search results.
   // If set to y|m|w, applies to ALL searches. If unset, date filtering is only applied when recency is detected.
