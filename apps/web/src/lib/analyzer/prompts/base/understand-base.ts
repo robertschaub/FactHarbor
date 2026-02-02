@@ -170,6 +170,15 @@ When in doubt, keep contexts separate - losing valid contexts is worse than slig
 
 **Expect 3-6 claims** from typical inputs (more for complex compound statements).
 
+## HARM POTENTIAL (harmPotential field)
+
+Assess harmPotential for each claim:
+- **high**: Death, severe injury, serious safety hazards, major fraud/crime allegations
+- **medium**: Moderate economic, legal, or reputational impact
+- **low**: Minimal real-world impact (routine updates, low-stakes claims)
+
+**If uncertain**, default to **medium** rather than inflating to high without clear harm.
+
 ## SEARCH QUERY GENERATION
 
 **Generate 4-6 diverse queries**:

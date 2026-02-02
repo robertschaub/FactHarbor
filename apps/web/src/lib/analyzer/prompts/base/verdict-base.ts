@@ -82,6 +82,13 @@ Evidence items may have different EvidenceScope values (per-evidence source meth
 - **Flag mismatches**: "Evidence A uses WTW methodology, Evidence B uses TTW - not directly comparable"
 - **Note in reasoning**: Mention when EvidenceScope affects interpretation
 
+## EVIDENCE QUALITY GUIDANCE
+
+Classify evidence quality using the evidence provided:
+- Claims relying on mechanisms that contradict established scientific principles should be treated with skepticism.
+- Claims lacking peer-reviewed or documented evidence, or relying on anecdotes/testimonials, should be treated as **opinion**, not established fact.
+- If evidence is mixed, prioritize the strongest documented evidence but note limitations.
+
 ## VERDICT SCALE (7-Point Symmetric)
 
 **Truth Percentage Bands**:
@@ -150,6 +157,11 @@ Do NOT rely on training data for factual assertions.`
   - "opinion": No factual counter-evidence, just claims/rhetoric
   - "unknown": Cannot determine
 
+**Examples** (generic):
+- "Independent audit found 12 violations" → factualBasis: "established"
+- "Public statement claims wrongdoing without records" → factualBasis: "opinion"
+- "Report mentions concerns but no data" → factualBasis: "opinion"
+
 **CRITICAL - NO CIRCULAR CONTESTATION**:
 - The entity making a decision CANNOT be listed as contesting its own decision
 - Example: If evaluating "Was Court X's trial fair?", do NOT set contestedBy to "Court X" or "Court X judiciary"
@@ -162,6 +174,8 @@ Do NOT rely on training data for factual assertions.`
 - Statements by groups/officials → "opinion"
 - Protests, position papers → "opinion"
 Only documented violations/data → "established" or "disputed"
+
+**If evidence is unclear**: Use "unknown" rather than "disputed" to avoid unjustified weight reduction.
 
 ## RATING CONFIRMATION (ratingConfirmation field) - v2.8.4
 
@@ -195,6 +209,7 @@ For EACH claim:
 - ratingConfirmation: "claim_supported" | "claim_refuted" | "mixed"
 - reasoning: 1-2 sentences explaining verdict
 - supportingFactIds: Array of relevant fact IDs
+- evidenceQuality (optional): Summary of evidenceBasis types used (counts, weightedQuality, strongestBasis, diversity)
 
 **Output Brevity** (prevent truncation):
 - keyFactors.factor: ≤12 words

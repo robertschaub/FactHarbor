@@ -414,6 +414,10 @@ export interface EvidenceItem {
   // EvidenceScope: Captures the methodology/boundaries of the source document
   // (e.g., WTW vs TTW, EU vs US standards, different time periods)
   evidenceScope?: EvidenceScope;
+  // NEW: Source authority classification (LLM)
+  sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
+  // NEW: Evidence basis classification (LLM)
+  evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
   // NEW v2.8: Probative value - LLM assessment of evidence quality
   // "high" = concrete, specific, well-sourced
   // "medium" = adequate but less specific or weaker sourcing
@@ -467,6 +471,10 @@ export interface ExtractedFact extends EvidenceItem {
   // EvidenceScope: Captures the methodology/boundaries of the source document
   // (e.g., WTW vs TTW, EU vs US standards, different time periods)
   evidenceScope?: EvidenceScope;
+  // NEW: Source authority classification (LLM)
+  sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
+  // NEW: Evidence basis classification (LLM)
+  evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
   // NEW v2.8: Probative value - LLM assessment of evidence quality
   // "high" = concrete, specific, well-sourced
   // "medium" = adequate but less specific or weaker sourcing
@@ -530,6 +538,16 @@ export interface ClaimVerdict {
   isContested?: boolean;
   contestedBy?: string;
   factualBasis?: "established" | "disputed" | "opinion" | "unknown";
+  evidenceQuality?: {
+    scientificCount: number;
+    documentedCount: number;
+    anecdotalCount: number;
+    theoreticalCount: number;
+    pseudoscientificCount: number;
+    weightedQuality: number;
+    strongestBasis: "scientific" | "documented" | "theoretical" | "anecdotal" | "pseudoscientific";
+    diversity: number;
+  };
   // v2.6.31: Counter-claim tracking - true if this claim evaluates the OPPOSITE of the user's thesis
   // When aggregating, counter-claim verdicts should be inverted (TRUE 85% → contributes as FALSE 15%)
   isCounterClaim?: boolean;

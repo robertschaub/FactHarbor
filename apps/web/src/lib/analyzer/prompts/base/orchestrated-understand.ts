@@ -129,9 +129,15 @@ For EACH claim, assess these three attributes (high/medium/low):
 - LOW: Pure opinion with no factual component, or not independently verifiable
 
 **2. harmPotential** - Does it impact high-stakes areas?
-- HIGH: Public health, safety, democratic integrity, financial markets, legal outcomes
-- MEDIUM: Affects specific groups or has moderate societal impact
-- LOW: Limited impact, affects few people, low stakes
+- HIGH: Death, severe injury, serious safety hazards, major fraud/crime allegations
+- MEDIUM: Moderate economic, legal, or reputational impact
+- LOW: Minimal real-world impact (routine updates, low-stakes claims)
+
+**Guidance**:
+- If the claim alleges severe harm or criminal conduct, mark **HIGH**
+- If consequences are moderate or limited to a narrow group, mark **MEDIUM**
+- If impact is minor or procedural, mark **LOW**
+- If uncertain, default to **MEDIUM** (do NOT inflate to HIGH without clear harm)
 
 **3. centrality** - Is it pivotal to the author's argument?
 - HIGH: Core assertion the argument depends on; removing it collapses the narrative

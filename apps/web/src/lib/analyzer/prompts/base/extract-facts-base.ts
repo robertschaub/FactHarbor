@@ -91,6 +91,29 @@ Classify the source document type to enable better reliability calibration:
 - If no evidenceScope is needed, omit sourceType as well
 - Base classification on clear indicators in the source (publication venue, author credentials, organizational affiliation)
 
+## SOURCE AUTHORITY (NEW - classify for each evidence item)
+
+Classify the authority level of the source for each evidence item:
+- **primary**: Original research, official records, court documents, audited datasets
+- **secondary**: News reporting or analysis summarizing primary sources
+- **opinion**: Editorials, advocacy statements, public commentary without concrete evidence
+- **contested**: The source itself is disputed or unreliable within the context
+
+**CRITICAL**:
+- Opinion sources are NOT documented evidence even if they use evidence-like language
+- If the source lacks concrete records, measurements, or verifiable documentation, classify as **opinion**
+
+## EVIDENCE BASIS (NEW - classify for each evidence item)
+
+Classify the basis of the evidence itself:
+- **scientific**: Empirical studies, experiments, measured data
+- **documented**: Official records, audits, legal findings, verified logs
+- **anecdotal**: Personal accounts or testimonials without broader verification
+- **theoretical**: Logical arguments without empirical confirmation
+- **pseudoscientific**: Claims that conflict with established scientific principles
+
+If unclear, leave evidenceBasis empty rather than guessing.
+
 ## CLAIM DIRECTION (relative to original user claim)
 
 **For EVERY Evidence item, assess claimDirection**:

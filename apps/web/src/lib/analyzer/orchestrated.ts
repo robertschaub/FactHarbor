@@ -100,7 +100,6 @@ import {
   canonicalizeScopesWithRemap,
   ensureAtLeastOneScope,
   UNSCOPED_ID,
-  generateScopeDetectionHint,
 } from "./scopes";
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
@@ -2291,6 +2290,10 @@ interface ExtractedFact {
     geographic?: string;    // Geographic scope (e.g., "Region A", "Region B")
     temporal?: string;      // Time period (e.g., "2020-2025", "FY2024")
   };
+  // NEW: Source authority classification (LLM)
+  sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
+  // NEW: Evidence basis classification (LLM)
+  evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
   // NEW v2.8: Probative value - LLM assessment of evidence quality
   probativeValue?: "high" | "medium" | "low";
   // NEW v2.8: Extraction confidence - how confident the LLM is in this extraction (0-100)
@@ -2348,6 +2351,16 @@ interface ClaimVerdict {
   isContested?: boolean;
   contestedBy?: string;
   factualBasis?: "established" | "disputed" | "opinion" | "unknown";
+  evidenceQuality?: {
+    scientificCount: number;
+    documentedCount: number;
+    anecdotalCount: number;
+    theoreticalCount: number;
+    pseudoscientificCount: number;
+    weightedQuality: number;
+    strongestBasis: "scientific" | "documented" | "theoretical" | "anecdotal" | "pseudoscientific";
+    diversity: number;
+  };
   // v2.8: Harm potential assessment
   harmPotential?: "high" | "medium" | "low";
   // v2.9: Counter-claim detection (claim opposes thesis rather than supporting it)
@@ -3433,20 +3446,18 @@ async function understandClaim(
     pipelineConfig?.contextDetectionMethod ??
     pipelineConfig?.scopeDetectionMethod ??
     "heuristic";
+  // v2.9.2: Context detection is now done entirely by LLM - no pattern-based pre-detection
+  // The LLM should discover analytical contexts independently based on the input content
   const preDetectedScopes = contextDetectionMethod === "heuristic"
     ? detectScopes(analysisInput)
     : pipelineConfig
       ? await detectScopesHybrid(analysisInput, pipelineConfig)
       : detectScopes(analysisInput);
-  const scopeHint = formatDetectedScopesHint(preDetectedScopes, true);
-  debugLog("understandClaim: preDetectedScopes (heuristic)", {
+  // Note: preDetectedScopes kept for backward compatibility but NOT passed to LLM prompt
+  debugLog("understandClaim: preDetectedScopes (heuristic, not passed to LLM)", {
     count: preDetectedScopes?.length ?? 0,
     ids: (preDetectedScopes || []).map((s: any) => String(s?.id || "")).filter(Boolean),
   });
-
-  // v2.8.2: Generate scope detection hint for input neutrality
-  // CRITICAL: Pass ORIGINAL input (not canonical) so proper nouns are detected
-  const scopeDetectionHint = generateScopeDetectionHint(analysisInput);
 
   const systemPrompt = `You are a professional fact-checker analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect the ArticleFrame if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
 
@@ -3460,7 +3471,7 @@ NOT DISTINCT CONTEXTS:
 - Pro vs con viewpoints are NOT contexts.
 - "Public perception", "trust", or "confidence in institutions" contexts - AVOID unless explicitly the main topic.
 - Meta-level commentary contexts (how people feel about the topic) - AVOID, focus on factual contexts.
-${scopeHint}${scopeDetectionHint}
+
 CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
 - Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
 - Do NOT include contexts from unrelated domains just because they share a general category
@@ -5855,6 +5866,12 @@ const FACT_SCHEMA = z.object({
       claimSource: z.string(), // empty string if not applicable
       // NEW v2.6.29: Does this fact support or contradict the ORIGINAL user claim?
       claimDirection: z.enum(["supports", "contradicts", "neutral"]),
+      // NEW: Source authority classification
+      sourceAuthority: z.enum(["primary", "secondary", "opinion", "contested"]).optional(),
+      // NEW: Evidence basis classification
+      evidenceBasis: z
+        .enum(["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"])
+        .optional(),
       // Phase 1.5: Probative value assessment
       probativeValue: z.enum(["high", "medium", "low"]).optional(),
       // EvidenceScope: Captures the methodology/boundaries of the source document
@@ -6268,6 +6285,41 @@ const KEY_FACTOR_SCHEMA = z.object({
   factualBasis: z.enum(["established", "disputed", "opinion", "unknown"]),
 });
 
+const DEFAULT_EVIDENCE_QUALITY = {
+  scientificCount: 0,
+  documentedCount: 0,
+  anecdotalCount: 0,
+  theoreticalCount: 0,
+  pseudoscientificCount: 0,
+  weightedQuality: 0,
+  strongestBasis: "documented" as const,
+  diversity: 0,
+};
+
+const EVIDENCE_QUALITY_SCHEMA = z.object({
+  scientificCount: z.number().min(0),
+  documentedCount: z.number().min(0),
+  anecdotalCount: z.number().min(0),
+  theoreticalCount: z.number().min(0),
+  pseudoscientificCount: z.number().min(0),
+  weightedQuality: z.number().min(0).max(100),
+  strongestBasis: z.enum(["scientific", "documented", "theoretical", "anecdotal", "pseudoscientific"]),
+  diversity: z.number().min(0).max(1),
+});
+
+const EVIDENCE_QUALITY_SCHEMA_LENIENT = z
+  .object({
+    scientificCount: z.number().catch(0),
+    documentedCount: z.number().catch(0),
+    anecdotalCount: z.number().catch(0),
+    theoreticalCount: z.number().catch(0),
+    pseudoscientificCount: z.number().catch(0),
+    weightedQuality: z.number().catch(0),
+    strongestBasis: z.enum(["scientific", "documented", "theoretical", "anecdotal", "pseudoscientific"]).catch("documented"),
+    diversity: z.number().catch(0),
+  })
+  .catch(DEFAULT_EVIDENCE_QUALITY);
+
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
 const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
   verdictSummary: z.object({
@@ -6303,6 +6355,7 @@ const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
       // "claim_refuted" = evidence refutes the claim (verdict should be 0-42)
       // "mixed" = evidence is balanced or insufficient (verdict should be 43-57)
       ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
+      evidenceQuality: EVIDENCE_QUALITY_SCHEMA.optional(),
     }),
   ),
 });
@@ -6395,6 +6448,7 @@ const CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT = z
     ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]).catch("mixed"),
     supportingFactIds: z.array(z.string()).catch([]),
     contextId: z.string().catch(""),
+    evidenceQuality: EVIDENCE_QUALITY_SCHEMA_LENIENT.optional(),
   })
   .catch(DEFAULT_CLAIM_VERDICT_MULTI_SCOPE_LENIENT);
 
@@ -6430,6 +6484,7 @@ const VERDICTS_SCHEMA_SIMPLE = z.object({
       supportingFactIds: z.array(z.string()),
       // v2.8.4: Explicit rating direction confirmation
       ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
+      evidenceQuality: EVIDENCE_QUALITY_SCHEMA.optional(),
     }),
   ),
 });
@@ -6449,6 +6504,7 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
       isContested: z.boolean(),
       contestedBy: z.string(), // empty string if not contested
       factualBasis: z.enum(["established", "disputed", "opinion", "unknown"]),
+      evidenceQuality: EVIDENCE_QUALITY_SCHEMA.optional(),
     }),
   ),
   articleAnalysis: z.object({
@@ -8504,11 +8560,13 @@ ${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 ## KEY FACTORS
 KeyFactors are handled in the understanding phase. Provide an empty keyFactors array: []`;
 
-  if (pseudoscienceAnalysis?.isPseudoscience) {
-    systemPrompt += `\n\nPSEUDOSCIENCE DETECTED: This content contains patterns associated with pseudoscience (${pseudoscienceAnalysis.categories.join(", ")}).
-Claims relying on mechanisms that contradict established science should be in the MOSTLY-FALSE/FALSE bands (0-28%), not the UNVERIFIED band (43-57%).
-However, do NOT place them in the FALSE band (0-14%) unless you can prove them wrong with 99%+ certainty - we can't prove a negative absolutely.`;
-  }
+  // v2.9.2: Generic instruction for unscientific evidence (replaces pattern-based pseudoscience detection)
+  // LLM should independently identify claims lacking scientific basis based on evidence quality
+  systemPrompt += `\n\nEVIDENCE QUALITY GUIDANCE:
+- Claims that rely on mechanisms contradicting established physics, chemistry, or biology should be treated with skepticism
+- Claims lacking peer-reviewed scientific evidence, or relying on anecdotes/testimonials, are OPINION not established fact
+- If a claim's mechanism has no scientific basis, it should be in the MOSTLY-FALSE/FALSE bands (0-28%)
+- However, do NOT place claims in the FALSE band (0-14%) unless directly contradicted by strong evidence`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_CLAIM> | null = null;
 
@@ -8735,19 +8793,8 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         claimFacts,
       );
 
-      const claimPseudo = detectPseudoscience(claim.text || cv.claimId);
-
-      // Apply pseudoscience escalation only when the claim itself matches pseudoscience patterns
-      if (claimPseudo.isPseudoscience) {
-        const escalation = escalatePseudoscienceVerdict(
-          truthPct,
-          finalConfidence,
-          claimPseudo,
-        );
-        truthPct = escalation.truthPercentage;
-        finalConfidence = escalation.confidence;
-        escalationReason = escalation.escalationReason;
-      }
+      // v2.9.2: Pseudoscience detection removed - LLM should identify claims lacking scientific basis
+      // based on evidence quality, not pattern matching
 
       const evidenceBasedContestation =
         cv.isContested &&
@@ -8782,7 +8829,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(clampedTruthPct),
-        isPseudoscience: claimPseudo.isPseudoscience,
+        isPseudoscience: false, // v2.9.2: Pattern-based detection removed - LLM determines via evidence quality
         escalationReason,
         isCounterClaim,
       } as ClaimVerdict;
