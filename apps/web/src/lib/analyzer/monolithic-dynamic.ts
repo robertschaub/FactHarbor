@@ -180,6 +180,10 @@ export async function runMonolithicDynamic(
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
+  const dynamicBudget = {
+    ...DYNAMIC_BUDGET,
+    timeoutMs: pipelineConfig.monolithicDynamicTimeoutMs ?? DYNAMIC_BUDGET.timeoutMs,
+  };
   const budgetConfig = getBudgetConfig(pipelineConfig);
   const budgetTracker = createBudgetTracker();
 
@@ -315,8 +319,8 @@ export async function runMonolithicDynamic(
   const sourceContents: Array<{ url: string; title: string; content: string }> = [];
 
   for (const query of queriesToRun) {
-    if (searchCount >= DYNAMIC_BUDGET.maxSearches) break;
-    if (Date.now() - startTime > DYNAMIC_BUDGET.timeoutMs) break;
+    if (searchCount >= dynamicBudget.maxSearches) break;
+    if (Date.now() - startTime > dynamicBudget.timeoutMs) break;
 
     if (!searchConfig.enabled) {
       console.warn("[Analyzer] Search disabled (UCM search.enabled=false) - skipping web search");
@@ -343,7 +347,7 @@ export async function runMonolithicDynamic(
 
       const maxSourcesToFetch = Math.min(
         searchConfig.maxSourcesPerIteration,
-        Math.max(0, DYNAMIC_BUDGET.maxFetches - fetchCount),
+        Math.max(0, dynamicBudget.maxFetches - fetchCount),
       );
 
       // v2.6.35: Collect URLs for source reliability prefetch
@@ -369,7 +373,7 @@ export async function runMonolithicDynamic(
 
       // Fetch top results
       for (const result of response.results.slice(0, maxSourcesToFetch)) {
-        if (fetchCount >= DYNAMIC_BUDGET.maxFetches) break;
+        if (fetchCount >= dynamicBudget.maxFetches) break;
         if (citations.some((c) => c.url === result.url)) continue;
 
         fetchCount++;
@@ -567,9 +571,9 @@ Provide your dynamic analysis.`,
       analysisId: input.jobId || `dyn-${Date.now()}`,
       dynamicStats: {
         searches: searchCount,
-        maxSearches: DYNAMIC_BUDGET.maxSearches,
+        maxSearches: dynamicBudget.maxSearches,
         fetches: fetchCount,
-        maxFetches: DYNAMIC_BUDGET.maxFetches,
+        maxFetches: dynamicBudget.maxFetches,
         citationsCollected: finalCitations.length,
       },
       budgetStats: {

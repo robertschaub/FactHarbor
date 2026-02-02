@@ -264,6 +264,14 @@ export const PipelineConfigSchema = z.object({
   maxTokensPerCall: z.number().int().min(1000).max(500000).optional().describe("Max tokens per LLM call"),
   enforceBudgets: z.boolean().describe("Hard enforce budget limits (false = soft limits for important claims)"),
 
+  // === Pipeline Runtime Timeouts ===
+  monolithicCanonicalTimeoutMs: z.number().int().min(60000).max(600000).optional().describe(
+    "Max runtime for monolithic canonical pipeline (ms)"
+  ),
+  monolithicDynamicTimeoutMs: z.number().int().min(60000).max(600000).optional().describe(
+    "Max runtime for monolithic dynamic pipeline (ms)"
+  ),
+
   // === Pipeline Selection ===
   defaultPipelineVariant: z.enum(["orchestrated", "monolithic_canonical", "monolithic_dynamic"])
     .optional()
@@ -361,6 +369,12 @@ export const PipelineConfigSchema = z.object({
   if (data.extractFactsLlmTimeoutMs === undefined) {
     data.extractFactsLlmTimeoutMs = 300000;
   }
+  if (data.monolithicCanonicalTimeoutMs === undefined) {
+    data.monolithicCanonicalTimeoutMs = 180000;
+  }
+  if (data.monolithicDynamicTimeoutMs === undefined) {
+    data.monolithicDynamicTimeoutMs = 150000;
+  }
   if (data.probativeFilterEnabled === undefined) {
     data.probativeFilterEnabled = true;
   }
@@ -422,6 +436,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   understandMaxChars: 12000,
   understandLlmTimeoutMs: 600000,
   extractFactsLlmTimeoutMs: 300000,
+  monolithicCanonicalTimeoutMs: 180000,
+  monolithicDynamicTimeoutMs: 150000,
   probativeFilterEnabled: true,
   provenanceValidationEnabled: true,
   pdfParseTimeoutMs: 60000,

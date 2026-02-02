@@ -29,6 +29,8 @@
   "understandMaxChars": 12000,
   "understandLlmTimeoutMs": 600000,
   "extractFactsLlmTimeoutMs": 300000,
+  "monolithicCanonicalTimeoutMs": 180000,
+  "monolithicDynamicTimeoutMs": 150000,
   "probativeFilterEnabled": true,
   "provenanceValidationEnabled": true,
   "pdfParseTimeoutMs": 60000,

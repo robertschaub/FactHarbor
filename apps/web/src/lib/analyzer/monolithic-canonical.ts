@@ -547,6 +547,10 @@ export async function runMonolithicCanonical(
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
+  const monolithicBudget = {
+    ...MONOLITHIC_BUDGET,
+    timeoutMs: pipelineConfig.monolithicCanonicalTimeoutMs ?? MONOLITHIC_BUDGET.timeoutMs,
+  };
   const budgetConfig = getBudgetConfig(pipelineConfig);
   const budgetTracker = createBudgetTracker();
 
@@ -724,9 +728,9 @@ export async function runMonolithicCanonical(
 
   while (
     needsMoreResearch &&
-    iteration < MONOLITHIC_BUDGET.maxIterations &&
-    searchCount < MONOLITHIC_BUDGET.maxSearches &&
-    Date.now() - startTime < MONOLITHIC_BUDGET.timeoutMs
+    iteration < monolithicBudget.maxIterations &&
+    searchCount < monolithicBudget.maxSearches &&
+    Date.now() - startTime < monolithicBudget.timeoutMs
   ) {
     iteration++;
 
@@ -749,7 +753,7 @@ export async function runMonolithicCanonical(
     }
 
     for (const query of queriesToRun) {
-      if (searchCount >= MONOLITHIC_BUDGET.maxSearches) break;
+      if (searchCount >= monolithicBudget.maxSearches) break;
       // Skip if we've already searched this exact query
       if (searchQueriesWithResults.some((q) => q.query === query)) continue;
 
@@ -787,7 +791,7 @@ export async function runMonolithicCanonical(
 
     const maxSourcesToFetch = Math.min(
       searchConfig.maxSourcesPerIteration,
-      Math.max(0, MONOLITHIC_BUDGET.maxFetches - sources.length),
+      Math.max(0, monolithicBudget.maxFetches - sources.length),
     );
 
     // Fetch top URLs
@@ -814,7 +818,7 @@ export async function runMonolithicCanonical(
     const fetchedContents: Array<{ url: string; title: string; content: string }> = [];
 
     for (const result of urlsToFetch) {
-      if (fetchCount >= MONOLITHIC_BUDGET.maxFetches) break;
+      if (fetchCount >= monolithicBudget.maxFetches) break;
 
       fetchCount++;
 
@@ -945,6 +949,7 @@ export async function runMonolithicCanonical(
       searchProvider: searchConfig.provider,
       budgetTracker,
       budgetConfig,
+      monolithicBudget,
       claim: claimData.mainClaim,
       claimType,
       facts: [],
@@ -1098,6 +1103,7 @@ export async function runMonolithicCanonical(
     searchProvider: searchConfig.provider,
     budgetTracker,
     budgetConfig,
+    monolithicBudget,
     claim: claimData.mainClaim,
     claimType,
     facts: validatedFacts,
@@ -1180,6 +1186,7 @@ function buildResultJson(params: {
   searchProvider: string;
   budgetTracker: any;
   budgetConfig: any;
+  monolithicBudget: MonolithicBudget;
   claim: string;
   claimType: string;
   facts: ExtractedFact[];
@@ -1214,6 +1221,7 @@ function buildResultJson(params: {
     searchProvider,
     budgetTracker,
     budgetConfig,
+    monolithicBudget,
     claim,
     claimType,
     facts,
@@ -1305,9 +1313,9 @@ function buildResultJson(params: {
       analysisId: input.jobId || `mono-${Date.now()}`,
       monolithicStats: {
         searches: searchQueriesWithResults.length,
-        maxSearches: MONOLITHIC_BUDGET.maxSearches,
+        maxSearches: monolithicBudget.maxSearches,
         fetches: sources.length,
-        maxFetches: MONOLITHIC_BUDGET.maxFetches,
+        maxFetches: monolithicBudget.maxFetches,
         factsExtracted: facts.length,
       },
       budgetStats: {
