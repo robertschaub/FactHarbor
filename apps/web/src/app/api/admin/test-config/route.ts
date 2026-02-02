@@ -9,6 +9,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateText } from "ai";
+import { getConfig } from "@/lib/config-storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,8 +43,9 @@ export async function GET(request: NextRequest) {
   results.push(await testMistral(llmProvider === "mistral"));
 
   // Test Search Providers
-  const searchEnabled = (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true";
-  const searchProvider = (process.env.FH_SEARCH_PROVIDER ?? "auto").toLowerCase();
+  const searchConfigResult = await getConfig("search", "default");
+  const searchEnabled = searchConfigResult.config.enabled;
+  const searchProvider = searchConfigResult.config.provider;
 
   results.push(await testSerpApi(searchEnabled && (searchProvider === "serpapi" || searchProvider === "auto")));
   results.push(await testGoogleCse(searchEnabled && (searchProvider === "google-cse" || searchProvider === "auto")));

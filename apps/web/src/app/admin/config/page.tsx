@@ -286,7 +286,7 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
 };
 
 const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
-  llmTiering: true,
+  llmTiering: false,
   modelUnderstand: "claude-3-5-haiku-20241022",
   modelExtractFacts: "claude-3-5-haiku-20241022",
   modelVerdict: "claude-sonnet-4-20250514",
@@ -294,10 +294,10 @@ const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   llmEvidenceQuality: true,
   llmScopeSimilarity: true,
   llmVerdictValidation: true,
-  analysisMode: "deep",
-  allowModelKnowledge: true,
+  analysisMode: "quick",
+  allowModelKnowledge: false,
   deterministic: true,
-  scopeDedupThreshold: 0.70,
+  scopeDedupThreshold: 0.85,
   maxIterationsPerScope: 5,
   maxTotalIterations: 20,
   maxTotalTokens: 750000,

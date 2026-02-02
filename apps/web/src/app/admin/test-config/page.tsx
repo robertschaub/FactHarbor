@@ -182,8 +182,9 @@ export default function TestConfigPage() {
             <h2 className={styles.sectionTitle}>Configuration Help</h2>
             <div className={styles.helpContent}>
               <p>
-                All configuration is done through environment variables in your{" "}
-                <code className={styles.code}>apps/web/.env.local</code> file.
+                Provider credentials and runtime wiring live in{" "}
+                <code className={styles.code}>apps/web/.env.local</code>.
+                Analysis and search behavior are configured in UCM (Admin → Config).
               </p>
 
               <h3 className={styles.helpSubtitle}>Common Issues:</h3>
@@ -198,7 +199,7 @@ export default function TestConfigPage() {
                 </li>
                 <li>
                   <strong>Service skipped:</strong> This service is not currently selected. Update your
-                  LLM_PROVIDER or FH_SEARCH_PROVIDER setting if you want to use it.
+                  LLM_PROVIDER or the active UCM search config if you want to use it.
                 </li>
                 <li>
                   <strong>Connection errors:</strong> Check your internet connection and verify the API key
@@ -218,7 +219,6 @@ export default function TestConfigPage() {
                 </div>
                 <div className={styles.envVarCategory}>
                   <strong>Search Providers:</strong>
-                  <code className={styles.code}>FH_SEARCH_PROVIDER</code>,
                   <code className={styles.code}>SERPAPI_API_KEY</code>,
                   <code className={styles.code}>GOOGLE_CSE_API_KEY</code>,
                   <code className={styles.code}>GOOGLE_CSE_ID</code>
