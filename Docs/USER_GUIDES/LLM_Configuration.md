@@ -254,20 +254,14 @@ Use cheaper models for simple tasks, premium models for complex reasoning:
 | Understanding | Claude Haiku | 70% cheaper |
 | Verdict generation | Claude Sonnet | Baseline |
 
-Tiered model routing is **implemented** but **off by default** to preserve legacy behavior.
-
-Enable it with:
-
-```bash
-FH_LLM_TIERING=on
-```
+Tiered model routing is configured via the **pipeline config** in Unified Configuration Management (UCM). Adjust the tiering toggle and per-task model names in the pipeline config editor (Admin UI → Config → Pipeline).
 
 When enabled, FactHarbor routes models per pipeline task:
 - **Understand**: cheaper/faster model (provider default)
 - **Extract facts**: cheaper/faster model (provider default)
 - **Verdict**: higher-quality model (provider default)
 
-Default per-provider routing when `FH_LLM_TIERING=on` (unless overridden):
+Default per-provider routing (unless overridden in pipeline config):
 - **Anthropic**: understand/extract → `claude-3-5-haiku-20241022`, verdict → `claude-sonnet-4-20250514`
 - **OpenAI**: understand/extract → `gpt-4o-mini`, verdict → `gpt-4o`
 - **Google**: understand/extract → `gemini-1.5-flash`, verdict → `gemini-1.5-pro`
@@ -275,17 +269,7 @@ Default per-provider routing when `FH_LLM_TIERING=on` (unless overridden):
 
 #### Per-task model overrides (optional)
 
-You can override the model names per task (within the selected `LLM_PROVIDER`):
-
-```bash
-# Turn on tiered routing
-FH_LLM_TIERING=on
-
-# Optional overrides (model names are provider-specific)
-FH_MODEL_UNDERSTAND=claude-3-5-haiku-20241022
-FH_MODEL_EXTRACT_FACTS=claude-3-5-haiku-20241022
-FH_MODEL_VERDICT=claude-sonnet-4-20250514
-```
+Override the model names per task via the pipeline config (UCM), not environment variables. See [Unified Config Management User Guide](Unified_Config_Management.md) for editing pipeline profiles.
 
 ### Tuning analysis depth (implemented)
 
@@ -442,30 +426,11 @@ curl https://api.openai.com/v1/chat/completions \
 
 ### Custom Model Selection
 
-FactHarbor supports task-tiered model routing (off by default). The supported environment variables are:
-
-```bash
-# Enable/disable tiered routing (default: off)
-FH_LLM_TIERING=on
-
-# Per-task model name overrides (optional)
-FH_MODEL_UNDERSTAND=...
-FH_MODEL_EXTRACT_FACTS=...
-FH_MODEL_VERDICT=...
-FH_MODEL_REPORT=...  # reserved for future use
-```
+FactHarbor supports task-tiered model routing. Configure tiering and per-task model overrides in the **pipeline config** (UCM) rather than environment variables. See [Unified Config Management User Guide](Unified_Config_Management.md) for editing pipeline profiles.
 
 ### Fallback Configuration
 
-> **Note**: Fallback configuration is **not yet implemented**.
-
-Planned feature for automatic failover:
-
-```bash
-FH_LLM_FALLBACKS=anthropic,openai,google,mistral
-```
-
-When implemented, this will retry failed requests with alternative providers.
+The text-analysis pipeline is **LLM-only** and does not support heuristic or provider fallbacks. LLM provider selection and routing are controlled via the pipeline config.
 
 ### Knowledge Toggle
 

@@ -319,9 +319,9 @@ CI/CD → Schedules → New schedule:
 
 2. **Use Cheaper Models**
    ```bash
-   # In CI environment variables
-   FH_LLM_UNDERSTAND_MODEL=gpt-4o-mini
-   FH_LLM_EXTRACT_MODEL=gpt-4o-mini
+   # In CI pipeline config (UCM)
+   modelUnderstand=gpt-4o-mini
+   modelExtractFacts=gpt-4o-mini
    ```
 
 3. **Parallel Execution Limits**

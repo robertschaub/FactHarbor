@@ -130,8 +130,8 @@ When FactHarbor needs a configuration value, it resolves in this order:
         │                                           │
         ▼                                           │
    ┌─────────────────────┐                          │
-   │ 1. ENVIRONMENT VAR  │  FH_LLM_TIERING=on      │
-   │    (if allowed)     │  Overrides database      │
+   │ 1. ENVIRONMENT VAR  │  (infra-only)            │
+   │    (if allowed)     │  does not affect analysis │
    └─────────────────────┘                          │
         │                                           │
         ▼                                           │

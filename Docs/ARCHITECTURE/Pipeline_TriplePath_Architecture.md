@@ -84,39 +84,23 @@ flowchart TD
 ```
 
 **Module Responsibilities:**
+### 3.4 Text Analysis Service (v2.9+)
 
-| Module | Canonical | Orchestrated | Purpose |
-|--------|-----------|--------------|---------|
-| `scopes.ts` | ✅ | ✅ | Heuristic scope pre-detection before LLM |
-| `aggregation.ts` | ✅ | ✅ | Verdict weighting, contestation validation |
-| `claim-decomposition.ts` | ✅ | ✅ | Claim text parsing and normalization |
-
-### 3.4 Text Analysis Service (v2.8)
-
-LLM-powered text analysis with automatic heuristic fallback. See [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
+LLM-only text analysis (no heuristic fallback). See [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
 
 ```mermaid
 flowchart TD
-    subgraph TextAnalysisService["🧠 Text Analysis Service (apps/web/src/lib/analyzer/)"]
+    subgraph TextAnalysisService["🧠 Text Analysis Service (apps/web/src/lib/analyzer/")]
         TYPES[text-analysis-types.ts<br/>━━━━━━━━━━━━━<br/>• ITextAnalysisService<br/>• InputClassificationResult<br/>• EvidenceQualityResult<br/>• ScopeSimilarityResult<br/>• VerdictValidationResult]
 
-        SERVICE[text-analysis-service.ts<br/>━━━━━━━━━━━━━<br/>• getTextAnalysisService<br/>• isLLMEnabled<br/>• recordMetrics]
-
-        HEURISTIC[text-analysis-heuristic.ts<br/>━━━━━━━━━━━━━<br/>• HeuristicTextAnalysisService<br/>• isComparativeLikeText<br/>• isCompoundLikeText<br/>• inferClaimType]
+        SERVICE[text-analysis-service.ts<br/>━━━━━━━━━━━━━<br/>• getTextAnalysisService<br/>• recordMetrics]
 
         LLM[text-analysis-llm.ts<br/>━━━━━━━━━━━━━<br/>• LLMTextAnalysisService<br/>• Zod schema validation<br/>• JSON repair<br/>• Retry logic]
-
-        HYBRID[text-analysis-hybrid.ts<br/>━━━━━━━━━━━━━<br/>• HybridTextAnalysisService<br/>• executeWithFallback<br/>• Automatic degradation]
     end
 
     TYPES --> SERVICE
-    TYPES --> HEURISTIC
     TYPES --> LLM
-    TYPES --> HYBRID
-
-    HEURISTIC --> HYBRID
-    LLM --> HYBRID
-    SERVICE --> HYBRID
+    SERVICE --> LLM
 
     subgraph Pipelines["🔄 All Pipelines"]
         ORCH2[orchestrated.ts]
@@ -124,24 +108,19 @@ flowchart TD
         DYN2[monolithic-dynamic.ts]
     end
 
-    HYBRID --> ORCH2
-    HYBRID --> CANON2
-    HYBRID --> DYN2
+    LLM --> ORCH2
+    LLM --> CANON2
+    LLM --> DYN2
 ```
 
 **Analysis Points:**
 
-| Analysis Point | Pipeline Phase | Feature Flag | Purpose |
-|----------------|----------------|--------------|---------|
-| Input Classification | Understand | `FH_LLM_INPUT_CLASSIFICATION` | Decompose claims, detect comparative/compound |
-| Evidence Quality | Research | `FH_LLM_EVIDENCE_QUALITY` | Filter low-quality evidence, assess probative value |
-| Scope Similarity | Organize | `FH_LLM_SCOPE_SIMILARITY` | Merge similar scopes, infer phase buckets |
-| Verdict Validation | Aggregate | `FH_LLM_VERDICT_VALIDATION` | Detect inversions, harm potential, contestation |
-
-**Fallback Behavior:**
-- LLM disabled → Use heuristic directly
-- LLM fails → Automatic fallback to heuristic
-- Metrics recorded for all operations (success, latency, fallback usage)
+| Analysis Point | Pipeline Phase | Purpose |
+|----------------|----------------|---------|
+| Input Classification | Understand | Decompose claims, detect comparative/compound |
+| Evidence Quality | Research | Filter low-quality evidence, assess probative value |
+| Scope Similarity | Organize | Merge similar scopes, infer phase buckets |
+| Verdict Validation | Aggregate | Detect inversions, harm potential, contestation |
 
 ### 3.5 Isolated components (do not unify)
 Keep separate to avoid coupling:

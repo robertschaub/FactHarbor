@@ -44,13 +44,11 @@
 - **Provider-Specific Prompts**: Optimized formatting for Anthropic, OpenAI, Google, Mistral
   - See: [Provider Prompt Formatting](../REFERENCE/Provider_Prompt_Formatting.md)
 
-**LLM Text Analysis Pipeline (v2.8.3 - Implemented & Verified):**
+**LLM Text Analysis Pipeline (v2.9+):**
 - **Four Analysis Points**: Input Classification, Evidence Quality, Scope Similarity, Verdict Validation
-- **Hybrid Architecture**: LLM-enabled analysis with automatic heuristic fallback
-- **Per-Point Feature Flags**: `FH_LLM_INPUT_CLASSIFICATION`, `FH_LLM_EVIDENCE_QUALITY`, `FH_LLM_SCOPE_SIMILARITY`, `FH_LLM_VERDICT_VALIDATION`
-- **LLM Enabled by Default (v2.8.3)**: Set to `false` to disable and use heuristics only
+- **LLM-Only Contract**: All analysis points are always LLM-driven (no hybrid/heuristic fallback)
 - **Multi-Pipeline Support**: Works across Orchestrated, Monolithic Canonical, and Monolithic Dynamic pipelines
-- **Telemetry**: Built-in metrics for success rates, latency, fallback usage
+- **Telemetry**: Built-in metrics for success rates, latency
 - **Bug Fix (v2.8.1)**: Counter-claim detection removed from verdict prompt (was overriding better understand-phase detection)
 - **Prompt Files**: Located in `apps/web/prompts/text-analysis/` with README documentation
 - See: [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
@@ -489,10 +487,8 @@ See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Impleme
   - Added troubleshooting for "No sources fetched" issue
   - See: [Pipeline Architecture](../ARCHITECTURE/Pipeline_TriplePath_Architecture.md#8-search-provider-requirements)
 
-### v2.8.3 LLM Enabled by Default (January 30, 2026)
-- **Default Changed**: LLM text analysis now enabled by default for all 4 analysis points
-  - Previous: `FH_LLM_*=true` required to enable LLM
-  - New: `FH_LLM_*=false` required to disable LLM and use heuristics only
+### v2.8.3 LLM-Only Text Analysis (January 30, 2026)
+- **Contract Updated**: Text analysis is LLM-only for all 4 analysis points (no heuristic fallback)
 - **Prompt-Code Alignment Complete**: All prompts now contain exact patterns from heuristic code
   - `text-analysis-evidence.prompt.md` v1.2.0: Complete vague phrases list
   - `text-analysis-verdict.prompt.md` v1.2.0: Inversion patterns, extended evidence keywords

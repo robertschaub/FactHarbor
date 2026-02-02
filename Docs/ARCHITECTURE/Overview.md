@@ -69,40 +69,31 @@ flowchart LR
 | `scopes.ts` | `detectScopes()`, `formatDetectedScopesHint()` | Heuristic scope pre-detection |
 | `aggregation.ts` | `validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()` | Verdict weighting and contestation |
 | `claim-decomposition.ts` | `normalizeClaimText()`, `deriveCandidateClaimTexts()` | Claim text parsing |
-| `text-analysis-service.ts` | `getTextAnalysisService()`, `isLLMEnabled()` | LLM/Heuristic hybrid text analysis |
-| `text-analysis-hybrid.ts` | `HybridTextAnalysisService` | Automatic fallback from LLM to heuristics |
+| `text-analysis-service.ts` | `getTextAnalysisService()` | LLM-only text analysis |
 
 See `Docs/REFERENCE/TERMINOLOGY.md` for "Doubted vs Contested" distinction.
 
-**Text Analysis Service (v2.8):**
+**Text Analysis Service (v2.9+):**
 
-The Text Analysis Service provides LLM-powered analysis with automatic heuristic fallback:
+The Text Analysis Service is **LLM-only** (no heuristic fallback):
 
 ```mermaid
 flowchart LR
     subgraph TextAnalysis["🧠 Text Analysis"]
-        HYBRID[HybridService]
         LLM[LLMService]
-        HEUR[HeuristicService]
     end
 
-    LLM -->|fallback| HEUR
-    HYBRID --> LLM
-    HYBRID --> HEUR
-
-    HYBRID --> ORCH[Orchestrated]
-    HYBRID --> CANON[Canonical]
-    HYBRID --> DYN[Dynamic]
+    LLM --> ORCH[Orchestrated]
+    LLM --> CANON[Canonical]
+    LLM --> DYN[Dynamic]
 ```
 
-| Analysis Point | Feature Flag | Pipeline Phase |
-|----------------|--------------|----------------|
-| Input Classification | `FH_LLM_INPUT_CLASSIFICATION` | Understand |
-| Evidence Quality | `FH_LLM_EVIDENCE_QUALITY` | Research |
-| Scope Similarity | `FH_LLM_SCOPE_SIMILARITY` | Organize |
-| Verdict Validation | `FH_LLM_VERDICT_VALIDATION` | Aggregate |
-
-**Default (v2.8.3+)**: LLM enabled for all analysis points. Set `=false` to disable and use heuristics only.
+| Analysis Point | Pipeline Phase |
+|----------------|----------------|
+| Input Classification | Understand |
+| Evidence Quality | Research |
+| Scope Similarity | Organize |
+| Verdict Validation | Aggregate |
 
 See [LLM Text Analysis Pipeline Deep Analysis](../REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) for full specification.
 

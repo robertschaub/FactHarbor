@@ -322,19 +322,19 @@ Highlight extracted article text instead of URL string.
 
 ---
 
-### 11. LLM Fallback Not Implemented
+### 11. LLM Provider Fallback Not Implemented
 
 **Status**: ❌ DOCUMENTED BUT NOT IMPLEMENTED  
 **Severity**: LOW (Resilience)
 
 **Description**:
-`FH_LLM_FALLBACKS` config is documented but fallback logic is not implemented. If primary LLM fails, analysis fails.
+Provider fallback configuration is documented but fallback logic is not implemented. If the primary LLM fails, analysis fails.
 
 **Impact**:
 Lower resilience to LLM provider outages.
 
 **Solution**:
-Implement automatic fallback to secondary LLM provider.
+Implement automatic fallback to secondary LLM provider via pipeline config (UCM).
 
 ---
 
@@ -462,7 +462,7 @@ const verdicts = await generateClaimVerdictsParallel(
 Model tiering system exists (budget models for extraction, premium for reasoning) but is not enabled.
 
 **Solution**:
-1. Set `FH_LLM_TIERING=true`
+1. Enable tiering in the pipeline config (UCM)
 2. Use `getModelForTask()` to select appropriate model per task:
    - Budget models: Haiku ($0.25/M), Mini ($0.15/M), Flash ($0.075/M)
    - Premium models: Sonnet-4 ($3/M) for verdicts

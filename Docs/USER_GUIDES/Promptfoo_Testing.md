@@ -327,16 +327,9 @@ The text analysis tests (`promptfooconfig.text-analysis.yaml`) validate the LLM 
 | Causal Contestation | Methodology criticism on causal claim → `factualBasis=established` |
 | Fraud High Harm | Fraud accusations → `harmPotential=high` |
 
-### Feature Flags
+### Configuration Note
 
-Enable LLM-based analysis for each point (heuristic fallback when disabled):
-
-```bash
-FH_LLM_INPUT_CLASSIFICATION=true
-FH_LLM_EVIDENCE_QUALITY=true
-FH_LLM_SCOPE_SIMILARITY=true
-FH_LLM_VERDICT_VALIDATION=true
-```
+Text analysis is **LLM-only** and no longer uses per-point env feature flags or heuristic fallback. Prompt tests always target the LLM text-analysis prompts configured in Unified Config Management.
 
 ## Troubleshooting
 

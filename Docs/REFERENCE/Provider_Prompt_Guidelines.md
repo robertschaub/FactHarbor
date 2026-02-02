@@ -264,7 +264,7 @@ Include explicit pre-output verification:
 
 ## Budget Model Optimization
 
-When `FH_LLM_TIERING=on`, budget models receive simplified prompts:
+When pipeline config enables tiering, budget models receive simplified prompts:
 
 ### Token Reduction (~40%)
 | Component | Full Prompt | Budget Prompt |
