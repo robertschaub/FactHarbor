@@ -7,18 +7,14 @@
 
 import { NextResponse } from "next/server";
 import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore, setCachedScore, batchGetCachedData } from "@/lib/source-reliability-cache";
-import {
-  DEFAULT_CONFIDENCE_THRESHOLD,
-  DEFAULT_CONSENSUS_THRESHOLD,
-  DEFAULT_UNKNOWN_SCORE,
-  getSRConfig,
-} from "@/lib/source-reliability-config";
+import { getConfig } from "@/lib/config-storage";
 
 export const runtime = "nodejs";
 
 // Get effective weight calculation config (using shared config)
-function getConfig() {
-  const srConfig = getSRConfig();
+async function getWeightConfig() {
+  const srConfigResult = await getConfig("sr", "default");
+  const srConfig = srConfigResult.config;
   return {
     blendCenter: 0.5, // Fixed: mathematical neutral
     defaultScore: srConfig.defaultScore,
@@ -69,7 +65,7 @@ export async function GET(req: Request) {
 
     const data = await getAllCachedScores({ limit, offset, sortBy, sortOrder, search });
     const stats = await getCacheStats();
-    const config = getConfig();
+    const config = await getWeightConfig();
 
     return NextResponse.json({
       ...data,
@@ -123,7 +119,8 @@ export async function POST(req: Request) {
     }
 
     // Get config for evaluation (using unified defaults)
-    const srConfig = getSRConfig();
+    const srConfigResult = await getConfig("sr", "default");
+    const srConfig = srConfigResult.config;
     const multiModel = srConfig.multiModel;
     const confidenceThreshold = srConfig.confidenceThreshold; // Unified default: 0.8
     const consensusThreshold = srConfig.consensusThreshold;

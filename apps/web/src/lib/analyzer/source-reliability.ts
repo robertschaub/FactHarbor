@@ -12,22 +12,13 @@
 import { CONFIG } from "./config";
 import { getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
 import type { ClaimVerdict, ExtractedFact, FetchedSource } from "./types";
-import { batchGetCachedData, setCachedScore, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
-import { getSRConfig, scoreToFactualRating } from "../source-reliability-config";
+import { batchGetCachedData, setCachedScore, setCacheTtlDays, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
+import { getSRConfig, scoreToFactualRating, setSRConfig } from "../source-reliability-config";
+import type { SourceReliabilityConfig } from "../config-schemas";
 
 // ============================================================================
 // CONFIGURATION (using shared config for unified defaults)
 // ============================================================================
-
-const DEFAULT_SKIP_PLATFORMS =
-  "blogspot.,wordpress.com,medium.com,substack.com,tumblr.com,wix.com,weebly.com,squarespace.com,ghost.io,blogger.com,sites.google.com,github.io,netlify.app,vercel.app,herokuapp.com";
-const DEFAULT_SKIP_TLDS =
-  "xyz,top,club,icu,buzz,tk,ml,ga,cf,gq,work,click,link,win,download,stream";
-
-const SKIP_PLATFORMS = (
-  process.env.FH_SR_SKIP_PLATFORMS || DEFAULT_SKIP_PLATFORMS
-).split(",");
-const SKIP_TLDS = (process.env.FH_SR_SKIP_TLDS || DEFAULT_SKIP_TLDS).split(",");
 
 // Use shared config for unified defaults across admin, pipeline, and evaluator
 const sharedConfig = getSRConfig();
@@ -41,7 +32,30 @@ export const SR_CONFIG = {
   filterEnabled: sharedConfig.filterEnabled,
   rateLimitPerIp: sharedConfig.rateLimitPerIp,
   domainCooldownSec: sharedConfig.domainCooldownSec,
+  skipPlatforms: sharedConfig.skipPlatforms,
+  skipTlds: sharedConfig.skipTlds,
+  defaultScore: sharedConfig.defaultScore,
 };
+
+let DEFAULT_UNKNOWN_SOURCE_SCORE = SR_CONFIG.defaultScore;
+
+export function setSourceReliabilityConfig(config?: SourceReliabilityConfig): void {
+  setSRConfig(config);
+  const next = getSRConfig();
+  SR_CONFIG.enabled = next.enabled;
+  SR_CONFIG.confidenceThreshold = next.confidenceThreshold;
+  SR_CONFIG.cacheTtlDays = next.cacheTtlDays;
+  SR_CONFIG.multiModel = next.multiModel;
+  SR_CONFIG.consensusThreshold = next.consensusThreshold;
+  SR_CONFIG.filterEnabled = next.filterEnabled;
+  SR_CONFIG.rateLimitPerIp = next.rateLimitPerIp;
+  SR_CONFIG.domainCooldownSec = next.domainCooldownSec;
+  SR_CONFIG.skipPlatforms = next.skipPlatforms;
+  SR_CONFIG.skipTlds = next.skipTlds;
+  SR_CONFIG.defaultScore = next.defaultScore;
+  DEFAULT_UNKNOWN_SOURCE_SCORE = next.defaultScore;
+  setCacheTtlDays(next.cacheTtlDays);
+}
 
 // ============================================================================
 // IN-MEMORY MAP (populated by prefetch, read by sync lookup)
@@ -91,7 +105,7 @@ export function isImportantSource(domain: string): boolean {
   if (!SR_CONFIG.filterEnabled) return true;
 
   // 1. Skip user-content platforms (configurable list)
-  if (SKIP_PLATFORMS.some((p) => domain.includes(p))) {
+  if (SR_CONFIG.skipPlatforms.some((p) => domain.includes(p))) {
     return false;
   }
 
@@ -102,7 +116,7 @@ export function isImportantSource(domain: string): boolean {
 
   // 3. Skip exotic/spam-associated TLDs (configurable list)
   const tld = domain.split(".").pop()?.toLowerCase() || "";
-  if (SKIP_TLDS.includes(tld)) {
+  if (SR_CONFIG.skipTlds.includes(tld)) {
     return false;
   }
 
@@ -385,11 +399,9 @@ export function clampTruthPercentage(value: number): number {
  * Unknown sources use this with low confidence (0.5), resulting in:
  * effectiveWeight = 0.5 + (0.5 - 0.5) × spread × 0.5 = 0.5 (neutral)
  * 
- * Configurable via FH_SR_DEFAULT_SCORE environment variable.
+ * Configurable via UCM SR defaultScore.
  */
-export const DEFAULT_UNKNOWN_SOURCE_SCORE = parseFloat(
-  process.env.FH_SR_DEFAULT_SCORE || "0.5"
-);
+export { DEFAULT_UNKNOWN_SOURCE_SCORE };
 
 /**
  * Extended source reliability data for verdict calculation.

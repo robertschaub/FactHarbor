@@ -7,6 +7,8 @@
  * @module lib/source-reliability-config
  */
 
+import { DEFAULT_SR_CONFIG, type SourceReliabilityConfig } from "./config-schemas";
+
 // ============================================================================
 // THRESHOLDS (unified across all consumers)
 // ============================================================================
@@ -159,26 +161,16 @@ export function meetsConfidenceRequirement(rating: FactualRating, confidence: nu
 // UNIFIED CONFIG GETTER
 // ============================================================================
 
+let currentSRConfig: SourceReliabilityConfig = DEFAULT_SR_CONFIG;
+
+export function setSRConfig(config?: SourceReliabilityConfig): void {
+  currentSRConfig = config ?? DEFAULT_SR_CONFIG;
+}
+
 /**
- * Get the complete SR configuration with environment overrides.
- * Use this instead of reading env vars directly.
+ * Get the complete SR configuration.
+ * UCM is the source of truth (no env overrides).
  */
-export function getSRConfig() {
-  return {
-    enabled: process.env.FH_SR_ENABLED !== "false",
-    multiModel: process.env.FH_SR_MULTI_MODEL !== "false",
-    confidenceThreshold: parseFloat(
-      process.env.FH_SR_CONFIDENCE_THRESHOLD || String(DEFAULT_CONFIDENCE_THRESHOLD)
-    ),
-    consensusThreshold: parseFloat(
-      process.env.FH_SR_CONSENSUS_THRESHOLD || String(DEFAULT_CONSENSUS_THRESHOLD)
-    ),
-    defaultScore: parseFloat(
-      process.env.FH_SR_DEFAULT_SCORE || String(DEFAULT_UNKNOWN_SCORE)
-    ),
-    cacheTtlDays: parseInt(process.env.FH_SR_CACHE_TTL_DAYS || "90", 10),
-    filterEnabled: process.env.FH_SR_FILTER_ENABLED !== "false",
-    rateLimitPerIp: parseInt(process.env.FH_SR_RATE_LIMIT_PER_IP || "10", 10),
-    domainCooldownSec: parseInt(process.env.FH_SR_RATE_LIMIT_DOMAIN_COOLDOWN || "60", 10),
-  };
+export function getSRConfig(): SourceReliabilityConfig {
+  return currentSRConfig;
 }

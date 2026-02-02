@@ -1,7 +1,7 @@
 /**
  * Job Config Snapshots
  *
- * Captures and stores complete resolved configuration (DB + env overrides)
+ * Captures and stores complete resolved configuration (UCM + defaults)
  * for each analysis job to enable full auditability.
  *
  * Part of UCM v2.9.0 Phase 2: Job Config Snapshots
@@ -11,7 +11,7 @@
  * @date 2026-01-30
  */
 
-import type { PipelineConfig, SearchConfig } from "./config-schemas";
+import type { PipelineConfig, SearchConfig, SourceReliabilityConfig } from "./config-schemas";
 import { getDb } from "./config-storage";
 
 // ============================================================================
@@ -25,7 +25,7 @@ export interface JobConfigSnapshot {
   jobId: string;
   schemaVersion: string;
 
-  // Full resolved configs (after env override resolution)
+  // Full resolved configs (after UCM resolution)
   pipelineConfig: PipelineConfig;
   searchConfig: SearchConfig;
 
@@ -63,8 +63,8 @@ interface JobConfigSnapshotRow {
  * to capture the exact config that will be used.
  *
  * @param jobId - Unique job identifier
- * @param pipelineConfig - Resolved pipeline config (DB + env overrides)
- * @param searchConfig - Resolved search config (DB + env overrides)
+ * @param pipelineConfig - Resolved pipeline config (UCM + defaults)
+ * @param searchConfig - Resolved search config (UCM + defaults)
  * @param srSummary - SR configuration summary (maintains modularity)
  */
 export async function captureConfigSnapshot(
@@ -236,17 +236,15 @@ export async function getJobsWithSnapshots(limit: number = 100): Promise<string[
  *
  * @returns SR summary for snapshot
  */
-export function getSRConfigSummary(): {
+export function getSRConfigSummary(srConfig: SourceReliabilityConfig): {
   enabled: boolean;
   defaultScore: number;
   confidenceThreshold: number;
 } {
-  // TODO: Once SR config is in unified system, read from there
-  // For now, read from env vars (same as current behavior)
   return {
-    enabled: true, // SR is always enabled currently
-    defaultScore: parseFloat(process.env.FH_SR_DEFAULT_SCORE || "0.5"),
-    confidenceThreshold: 0.5, // Default threshold
+    enabled: srConfig.enabled,
+    defaultScore: srConfig.defaultScore,
+    confidenceThreshold: srConfig.confidenceThreshold,
   };
 }
 

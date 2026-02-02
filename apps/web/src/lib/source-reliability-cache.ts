@@ -10,6 +10,7 @@
 import sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
 import path from "path";
+import { DEFAULT_SR_CONFIG } from "./config-schemas";
 
 // ============================================================================
 // CONFIGURATION
@@ -17,8 +18,14 @@ import path from "path";
 
 const SR_CACHE_CONFIG = {
   dbPath: process.env.FH_SR_CACHE_PATH || "./source-reliability.db",
-  cacheTtlDays: parseInt(process.env.FH_SR_CACHE_TTL_DAYS || "90", 10),
+  cacheTtlDays: DEFAULT_SR_CONFIG.cacheTtlDays,
 };
+
+export function setCacheTtlDays(days: number): void {
+  if (Number.isFinite(days) && days > 0) {
+    SR_CACHE_CONFIG.cacheTtlDays = Math.floor(days);
+  }
+}
 
 // ============================================================================
 // TYPES

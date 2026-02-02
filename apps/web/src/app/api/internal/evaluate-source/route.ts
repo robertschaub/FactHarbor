@@ -24,6 +24,8 @@ import { getDeterministicTemperature } from "@/lib/analyzer/config";
 import { debugLog } from "@/lib/analyzer/debug";
 import { loadPromptFile, type Pipeline } from "@/lib/analyzer/prompt-loader";
 import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
+import { getConfig } from "@/lib/config-storage";
+import { DEFAULT_SEARCH_CONFIG, DEFAULT_SR_CONFIG, type SearchConfig } from "@/lib/config-schemas";
 import {
   computeRefinementConfidenceBoost,
   countUniqueEvidenceIds,
@@ -52,8 +54,11 @@ export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
 const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.startsWith("PASTE_");
 const hasOpenAIKey = !!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.startsWith("PASTE_");
 
-// Configurable model selection (default: gpt-4o for quality, use gpt-4o-mini for cost savings)
-const SR_OPENAI_MODEL = process.env.FH_SR_OPENAI_MODEL || "gpt-4o";
+// Configurable model selection (from UCM)
+let SR_OPENAI_MODEL = DEFAULT_SR_CONFIG.openaiModel;
+let RATE_LIMIT_PER_IP = DEFAULT_SR_CONFIG.rateLimitPerIp ?? 10;
+let DOMAIN_COOLDOWN_SEC = DEFAULT_SR_CONFIG.domainCooldownSec ?? 60;
+let SR_SEARCH_CONFIG: SearchConfig = DEFAULT_SEARCH_CONFIG;
 
 debugLog(`[SR-Eval] Configuration check`, {
   anthropicKey: hasAnthropicKey ? "configured" : "MISSING",
@@ -177,8 +182,6 @@ const rateLimitState: RateLimitState = {
   domainLastEval: new Map(),
 };
 
-const RATE_LIMIT_PER_IP = parseInt(process.env.FH_SR_RATE_LIMIT_PER_IP || "10", 10);
-const DOMAIN_COOLDOWN_SEC = parseInt(process.env.FH_SR_RATE_LIMIT_DOMAIN_COOLDOWN || "60", 10);
 const RATE_LIMIT_WINDOW_SEC = 60;
 
 function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?: string } {
@@ -492,10 +495,10 @@ function parseDateRestrictEnv(v: string | undefined): "y" | "m" | "w" | undefine
 
 function isSearchEnabledForSrEval(): { enabled: boolean; providersUsed: string[] } {
   const useSearch = (process.env.FH_SR_EVAL_USE_SEARCH ?? "true").toLowerCase() !== "false";
-  const searchEnabled = (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true";
+  const searchEnabled = SR_SEARCH_CONFIG.enabled;
   if (!useSearch || !searchEnabled) return { enabled: false, providersUsed: [] };
 
-  const providersUsed = getActiveSearchProviders();
+  const providersUsed = getActiveSearchProviders(SR_SEARCH_CONFIG);
   const hasProvider = providersUsed.some((p) => p && p !== "None" && p !== "Unknown");
   return { enabled: hasProvider, providersUsed };
 }
@@ -1119,7 +1122,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   );
   const dateRestrict =
     parseDateRestrictEnv(process.env.FH_SR_EVAL_SEARCH_DATE_RESTRICT) ??
-    parseDateRestrictEnv(process.env.FH_SEARCH_DATE_RESTRICT) ??
+    SR_SEARCH_CONFIG.dateRestrict ??
     undefined;
 
   const seen = new Set<string>();
@@ -1141,6 +1144,10 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
         query: q,
         maxResults: maxResultsOverride ?? maxResultsPerQuery,
         dateRestrict,
+        domainWhitelist: SR_SEARCH_CONFIG.domainWhitelist,
+        domainBlacklist: SR_SEARCH_CONFIG.domainBlacklist,
+        timeoutMs: SR_SEARCH_CONFIG.timeoutMs,
+        config: SR_SEARCH_CONFIG,
       });
 
       const provider = resp.providersUsed.join("+") || "unknown";
@@ -2561,8 +2568,9 @@ export async function POST(req: Request) {
 
   // Parse request
   let body: z.infer<typeof RequestSchema>;
+  let raw: any;
   try {
-    const raw = await req.json();
+    raw = await req.json();
     body = RequestSchema.parse(raw);
   } catch (err) {
     return NextResponse.json(
@@ -2570,6 +2578,22 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
+  const [srConfigResult, searchConfigResult] = await Promise.all([
+    getConfig("sr", "default"),
+    getConfig("search", "default"),
+  ]);
+  const srConfig = srConfigResult.config;
+  SR_SEARCH_CONFIG = searchConfigResult.config;
+  SR_OPENAI_MODEL = srConfig.openaiModel;
+  RATE_LIMIT_PER_IP = srConfig.rateLimitPerIp ?? RATE_LIMIT_PER_IP;
+  DOMAIN_COOLDOWN_SEC = srConfig.domainCooldownSec ?? DOMAIN_COOLDOWN_SEC;
+
+  const effectiveMultiModel = raw.multiModel !== undefined ? body.multiModel : srConfig.multiModel;
+  const effectiveConfidenceThreshold =
+    raw.confidenceThreshold !== undefined ? body.confidenceThreshold : srConfig.confidenceThreshold;
+  const effectiveConsensusThreshold =
+    raw.consensusThreshold !== undefined ? body.consensusThreshold : srConfig.consensusThreshold;
 
   // Rate limiting
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
@@ -2584,9 +2608,9 @@ export async function POST(req: Request) {
   // Evaluate
   const result = await evaluateSourceWithConsensus(
     body.domain,
-    body.multiModel,
-    body.confidenceThreshold,
-    body.consensusThreshold
+    effectiveMultiModel,
+    effectiveConfidenceThreshold,
+    effectiveConsensusThreshold
   );
 
   if (!result.success) {
