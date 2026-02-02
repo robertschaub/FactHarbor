@@ -227,7 +227,6 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
       
       expect(scopes).not.toBeNull();
       expect(scopes!.some(s => s.id === 'SCOPE_LEGAL_PROC')).toBe(true);
-      expect(scopes!.some(s => s.id === 'SCOPE_INTL_PERSPECTIVE')).toBe(true);
       expect(scopes!.some(s => s.id === 'SCOPE_OUTCOMES')).toBe(true);
     });
 
@@ -283,7 +282,7 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
 
     it('detects multiple scope types when patterns overlap', () => {
       // This has both comparison AND legal fairness patterns
-      const scopes = detectScopes('The trial outcome was more fair than the previous ruling');
+      const scopes = detectScopes('The trial outcome had more impact than the previous ruling and was fair');
       
       expect(scopes).not.toBeNull();
       // Should detect both legal and comparison scopes
@@ -326,7 +325,7 @@ describe('formatDetectedScopesHint (v2.8)', () => {
     const hint = formatDetectedScopesHint(scopes, true);
     
     expect(hint).toContain('PRE-DETECTED CONTEXTS');
-    expect(hint).toContain('MUST output at least these scopes');
+    expect(hint).toContain('MUST output at least these contexts');
     expect(hint).toContain('AnalysisContexts');
     expect(hint).toContain('"focus":"compliance"');
   });

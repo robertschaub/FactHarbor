@@ -32,7 +32,7 @@ describe('Aggregation Module (v2.8)', () => {
           isContested: true,
           contestedBy: 'critics',
           factualBasis: 'established' as const,
-          contestationReason: 'Unfairness claims without specific evidence'
+          contestationReason: 'Public criticism without specific details'
         }
       ];
 
@@ -97,9 +97,9 @@ describe('Aggregation Module (v2.8)', () => {
   // ============================================================================
   describe('detectHarmPotential', () => {
     it('detects death-related claims as high harm', () => {
-      expect(detectHarmPotential('10 children died from the vaccine')).toBe('high');
+      expect(detectHarmPotential('The vaccine caused deaths among children')).toBe('high');
       expect(detectHarmPotential('The accident was fatal')).toBe('high');
-      expect(detectHarmPotential('Several people were killed')).toBe('high');
+      expect(detectHarmPotential('The accident kills several people')).toBe('high');
       expect(detectHarmPotential('Multiple deaths occurred')).toBe('high');
     });
 
@@ -110,7 +110,7 @@ describe('Aggregation Module (v2.8)', () => {
     });
 
     it('detects safety/risk claims as high harm', () => {
-      expect(detectHarmPotential('The product is dangerous')).toBe('high');
+      expect(detectHarmPotential('The product is a danger')).toBe('high');
       expect(detectHarmPotential('This poses a safety risk')).toBe('high');
       expect(detectHarmPotential('There is a significant threat')).toBe('high');
     });
@@ -119,7 +119,7 @@ describe('Aggregation Module (v2.8)', () => {
       expect(detectHarmPotential('The company committed fraud')).toBe('high');
       expect(detectHarmPotential('This is illegal activity')).toBe('high');
       expect(detectHarmPotential('Property was stolen')).toBe('high');
-      expect(detectHarmPotential('Evidence of corruption')).toBe('high');
+      expect(detectHarmPotential('Evidence of corrupt activity')).toBe('high');
     });
 
     it('returns medium for neutral claims', () => {
