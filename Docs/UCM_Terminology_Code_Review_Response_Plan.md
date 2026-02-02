@@ -1215,13 +1215,223 @@ The pragmatic approach prevents technical debt without over-engineering. The cle
 4. **Bug fixed:** Legal-citation keywords removed from aggregation-lexicon
 5. **Documentation updated:** UCM guide, precedence rules, and fix documentation complete
 
-### Next Steps (Optional/Future)
+### Next Steps
 
-1. **Test Bolsonaro fix:** Run trial fairness query to verify classifications
-2. **Beta planning:** Consider implementing drift detection and save-to-file
-3. **Production prep:** Add audit logging, optimistic locking before multi-admin deployment
+1. ✅ **UCM Coverage Complete:** All 6 config types have file-backed defaults
+2. ⏭️ **NEXT: Phase 2 Save-to-file** (~4-5 hours implementation)
+3. **Future:** Test Bolsonaro fix, drift detection, audit logging, optimistic locking
 
-**Status:** 🎉 **UCM Alpha Implementation Plan 100% Complete**
+**Status:** 🎉 **UCM Alpha Complete** | ⏭️ **Phase 2 Ready to Start**
+
+---
+
+## 12. Phase 2: Save-to-File Implementation Guide (2026-02-02)
+
+### Overview
+
+Implement bidirectional config sync: allow admin UI to save active DB configs back to `apps/web/configs/*.default.json` files. This closes the DevOps loop for config management.
+
+### Design Requirements
+
+**Safety Features (CRITICAL):**
+1. **Environment gating:** Only allow in development (`NODE_ENV=development`) or with explicit flag (`FH_ALLOW_CONFIG_FILE_WRITE=true`)
+2. **Atomic writes:** Write to `.tmp` file first, then rename (prevents corruption)
+3. **Backup creation:** Create `.bak` file before overwriting
+4. **Schema validation:** Validate config before writing
+5. **Admin auth:** Require authenticated admin user
+6. **dryRun mode:** Preview changes without actually writing
+
+**API Endpoint:**
+```typescript
+POST /api/admin/config/:type/:profile/save-to-file
+Body: { dryRun?: boolean }
+Returns: {
+  success: boolean,
+  filePath: string,
+  backupPath?: string, // Only if actually written
+  checksum: string,
+  schemaVersion: string,
+  warnings?: string[]
+}
+```
+
+**Implementation Steps:**
+
+1. **Add environment check function**
+   ```typescript
+   // apps/web/src/lib/config-storage.ts
+   function isFileWriteAllowed(): boolean {
+     return process.env.NODE_ENV === 'development' ||
+            process.env.FH_ALLOW_CONFIG_FILE_WRITE === 'true';
+   }
+   ```
+
+2. **Implement atomic file write with backup**
+   ```typescript
+   async function saveConfigToFile(
+     configType: ConfigType,
+     config: any,
+     dryRun: boolean = false
+   ): Promise<SaveResult> {
+     // 1. Validate environment
+     if (!isFileWriteAllowed()) {
+       throw new Error('File writes not allowed in this environment');
+     }
+
+     // 2. Get file path
+     const filePath = resolveDefaultConfigPath(configType);
+     const tmpPath = `${filePath}.tmp`;
+     const bakPath = `${filePath}.bak`;
+
+     // 3. Add schemaVersion
+     const configWithVersion = {
+       schemaVersion: SCHEMA_VERSIONS[configType],
+       ...config
+     };
+
+     // 4. Validate
+     const validation = validateConfig(configType, config);
+     if (!validation.success) {
+       throw new Error(`Invalid config: ${validation.errors.join(', ')}`);
+     }
+
+     // 5. Compute checksum
+     const content = JSON.stringify(configWithVersion, null, 2);
+     const checksum = computeContentHash(content);
+
+     if (dryRun) {
+       return {
+         success: true,
+         filePath,
+         checksum,
+         schemaVersion: configWithVersion.schemaVersion,
+         dryRun: true
+       };
+     }
+
+     // 6. Create backup if file exists
+     if (fs.existsSync(filePath)) {
+       fs.copyFileSync(filePath, bakPath);
+     }
+
+     // 7. Atomic write
+     fs.writeFileSync(tmpPath, content, 'utf-8');
+     fs.renameSync(tmpPath, filePath);
+
+     return {
+       success: true,
+       filePath,
+       backupPath: bakPath,
+       checksum,
+       schemaVersion: configWithVersion.schemaVersion
+     };
+   }
+   ```
+
+3. **Create API route**
+   ```typescript
+   // apps/web/src/app/api/admin/config/[type]/[profile]/save-to-file/route.ts
+   export async function POST(
+     request: Request,
+     { params }: { params: { type: ConfigType, profile: string } }
+   ) {
+     // 1. Check auth
+     const session = await getSession();
+     if (!session?.user?.isAdmin) {
+       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+     }
+
+     // 2. Get current config from DB
+     const config = await getConfig(params.type, params.profile);
+
+     // 3. Parse request body
+     const body = await request.json();
+     const dryRun = body.dryRun ?? false;
+
+     try {
+       // 4. Save to file
+       const result = await saveConfigToFile(params.type, config, dryRun);
+
+       // 5. Log action
+       console.info(
+         `[Config] ${dryRun ? 'DRY RUN' : 'SAVED'} ${params.type} to file by ${session.user.email}`
+       );
+
+       return NextResponse.json(result);
+     } catch (err) {
+       console.error(`[Config] Failed to save ${params.type} to file:`, err);
+       return NextResponse.json(
+         { error: err.message },
+         { status: 500 }
+       );
+     }
+   }
+   ```
+
+4. **Add UI button (optional but recommended)**
+   ```typescript
+   // apps/web/src/app/admin/config/page.tsx
+
+   // Show button only in development
+   const showSaveToFile = process.env.NODE_ENV === 'development' ||
+                          process.env.NEXT_PUBLIC_ALLOW_CONFIG_FILE_WRITE === 'true';
+
+   async function handleSaveToFile(dryRun: boolean) {
+     const result = await fetch(
+       `/api/admin/config/${configType}/${profile}/save-to-file`,
+       {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ dryRun })
+       }
+     );
+
+     if (result.ok) {
+       const data = await result.json();
+       if (dryRun) {
+         alert(`Preview: Would save to ${data.filePath}\nChecksum: ${data.checksum}`);
+       } else {
+         alert(`Saved successfully!\nFile: ${data.filePath}\nBackup: ${data.backupPath}`);
+       }
+     }
+   }
+
+   // In the UI
+   {showSaveToFile && (
+     <div className="flex gap-2">
+       <button onClick={() => handleSaveToFile(true)}>
+         Preview Save to File
+       </button>
+       <button onClick={() => handleSaveToFile(false)}>
+         💾 Save to File
+       </button>
+       <span className="text-yellow-600">⚠️ Development only</span>
+     </div>
+   )}
+   ```
+
+### Testing Checklist
+
+- [ ] Environment gating works (blocked in production without flag)
+- [ ] dryRun mode previews without writing
+- [ ] Atomic write creates .tmp then renames
+- [ ] Backup file (.bak) created before overwrite
+- [ ] Schema validation rejects invalid configs
+- [ ] Checksum computed correctly
+- [ ] File written with proper JSON formatting (2-space indent)
+- [ ] schemaVersion field included in output
+- [ ] Build passes: `npm -w apps/web run build`
+
+### Acceptance Criteria
+
+- [ ] `POST /api/admin/config/:type/:profile/save-to-file` endpoint works
+- [ ] dryRun mode returns preview without writing
+- [ ] Actual write creates backup and uses atomic write
+- [ ] Environment gating prevents production writes
+- [ ] UI button shows only in development (optional)
+- [ ] All tests pass
+
+**Estimated Time:** 4-5 hours
 
 ---
 
