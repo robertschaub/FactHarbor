@@ -1,7 +1,7 @@
 /**
  * Budget mode adaptations for LLM tiering configuration
  *
- * When FH_LLM_TIERING=on with cheaper/faster models (Haiku, Flash, Mini):
+ * When tiering is enabled with cheaper/faster models (Haiku, Flash, Mini):
  * - Ultra-simplified instructions (minimize token count)
  * - Single concrete example per task
  * - Direct field mapping, no verbose explanations
@@ -145,7 +145,7 @@ Rate THE CLAIM truth (not your analysis quality).
 
 ## PROCESS
 1. Count supporting facts
-2. Count contradicting facts  
+2. Count contradicting facts
 3. Assign percentage:
    - More support → 72-100%
    - Balanced → 43-57%

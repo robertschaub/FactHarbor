@@ -1,14 +1,14 @@
 /**
  * Tiered LLM Model Routing
- * 
+ *
  * Routes tasks to appropriate model tiers:
  * - Cheap models (Haiku, Mini, Flash) for extraction
  * - Premium models (Sonnet, GPT-4, Pro) for reasoning
- * 
+ *
  * Expected savings: 50-70% cost reduction
- * 
+ *
  * Part of Phase 5: Performance Optimization
- * 
+ *
  * @version 1.0.0
  * @date 2026-01-19
  */
@@ -17,7 +17,7 @@
 // TYPES
 // ============================================================================
 
-export type TaskType = 
+export type TaskType =
   | 'understand'
   | 'extract_facts'
   | 'scope_refinement'
@@ -170,8 +170,7 @@ export function getModelForTask(
     // Legacy TieredRoutingConfig
     enabled = config.enabled;
   } else {
-    // Fallback to env var (during migration)
-    enabled = process.env.FH_LLM_TIERING !== 'false'; // v2.8.2+ default: true
+    enabled = false;
   }
 
   if (!enabled) {
@@ -231,16 +230,16 @@ export function calculateTieringSavings(
   savingsPercent: number;
 } {
   const premiumModel = getPremiumModel(provider);
-  
+
   let costWithoutTiering = 0;
   let costWithTiering = 0;
 
   for (const task of tasksExecuted) {
     const tokens = task.tokenCount;
-    
+
     // Cost without tiering (all premium)
     costWithoutTiering += (tokens / 1_000_000) * premiumModel.costPer1MTokens.input;
-    
+
     // Cost with tiering (appropriate tier per task)
     const tierModel = getModelForTask(task.type, provider, { enabled: true });
     costWithTiering += (tokens / 1_000_000) * tierModel.costPer1MTokens.input;
@@ -267,9 +266,7 @@ export function calculateTieringSavings(
  * @param pipelineConfig - Optional pipeline config from unified config system
  */
 export function loadTieringConfig(pipelineConfig?: { llmTiering: boolean }): TieredRoutingConfig {
-  const enabled = pipelineConfig
-    ? pipelineConfig.llmTiering
-    : process.env.FH_LLM_TIERING !== 'false'; // v2.8.2+ default: true
+  const enabled = pipelineConfig ? pipelineConfig.llmTiering : false;
 
   return {
     enabled,
@@ -312,18 +309,18 @@ export function estimateTaskCost(
 
 /**
  * Example of using tiered routing in analyzer.ts:
- * 
+ *
  * ```typescript
  * import { getModelForTask } from './model-tiering';
  * import { anthropic } from '@ai-sdk/anthropic';
- * 
+ *
  * // Instead of:
  * const model = anthropic(process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514');
- * 
+ *
  * // Use:
  * const modelConfig = getModelForTask('understand', 'anthropic');
  * const model = anthropic(modelConfig.modelId);
- * 
+ *
  * // For verdict generation (critical reasoning):
  * const verdictModelConfig = getModelForTask('verdict', 'anthropic');
  * const verdictModel = anthropic(verdictModelConfig.modelId);
@@ -332,7 +329,7 @@ export function estimateTaskCost(
 
 /**
  * Example cost comparison:
- * 
+ *
  * ```typescript
  * const tasks = [
  *   { type: 'understand' as TaskType, tokenCount: 50000 },
@@ -341,7 +338,7 @@ export function estimateTaskCost(
  *   { type: 'extract_facts' as TaskType, tokenCount: 100000 },
  *   { type: 'verdict' as TaskType, tokenCount: 80000 },
  * ];
- * 
+ *
  * const savings = calculateTieringSavings(tasks, 'anthropic');
  * console.log(`Savings: $${savings.savings.toFixed(4)} (${savings.savingsPercent.toFixed(1)}%)`);
  * // Expected output: "Savings: $0.0825 (55.0%)"

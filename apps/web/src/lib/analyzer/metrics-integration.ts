@@ -27,19 +27,19 @@ export function initializeMetrics(
 ): void {
   currentMetrics = createMetricsCollector(jobId, pipelineVariant);
 
-  // Set config - use pipeline config if provided, otherwise fall back to env vars
+  // Set config - use pipeline config if provided, otherwise fall back to defaults
   currentMetrics.setConfig({
     llmProvider: process.env.LLM_PROVIDER || 'anthropic',
     searchProvider: process.env.FH_SEARCH_PROVIDER || 'google-cse',
     allowModelKnowledge: config
       ? config.allowModelKnowledge
-      : process.env.FH_ALLOW_MODEL_KNOWLEDGE === 'true',
+      : false,
     isLLMTiering: config
       ? config.llmTiering
-      : process.env.FH_LLM_TIERING === 'true',
+      : false,
     isDeterministic: config
       ? config.deterministic
-      : process.env.FH_DETERMINISTIC === 'true',
+      : true,
   });
 }
 
@@ -163,7 +163,7 @@ export function recordOutputQuality(result: any): void {
   const claims = result.claims || [];
   const contexts = result.analysisContexts || [];
   const sources = result.sources || [];
-  
+
   const claimsWithVerdicts = claims.filter((c: any) => c.verdict && c.verdict !== 'UNVERIFIED').length;
   const totalFacts = claims.reduce((sum: number, c: any) => sum + (c.evidence?.length || 0), 0);
   const avgConfidence = claims.length > 0
@@ -223,7 +223,7 @@ export async function withMetrics<T>(
     throw error;
   } finally {
     const durationMs = Date.now() - startTime;
-    
+
     recordLLMCall({
       taskType,
       provider,
@@ -247,7 +247,7 @@ export async function withMetrics<T>(
 
 /**
  * Example of how to integrate into analyzer.ts:
- * 
+ *
  * ```typescript
  * // At the top of analyzer.ts
  * import {
@@ -260,26 +260,26 @@ export async function withMetrics<T>(
  *   recordOutputQuality,
  *   finalizeMetrics,
  * } from './analyzer/metrics-integration';
- * 
+ *
  * // At start of runAnalysis()
  * initializeMetrics(jobId, 'orchestrated');
- * 
+ *
  * try {
  *   // Phase 1: Understand
  *   startPhase('understand');
  *   const understanding = await understandClaim(...);
  *   endPhase('understand');
- *   
+ *
  *   // Phase 2: Research
  *   startPhase('research');
  *   const sources = await findSources(...);
  *   endPhase('research');
- *   
+ *
  *   // Phase 3: Verdict
  *   startPhase('verdict');
  *   const verdicts = await generateVerdicts(...);
  *   endPhase('verdict');
- *   
+ *
  *   // Record quality gates
  *   recordGate1Stats({
  *     totalClaims: allClaims.length,
@@ -287,14 +287,14 @@ export async function withMetrics<T>(
  *     filteredReasons: { 'opinion': 2, 'prediction': 1 },
  *     centralClaimsKept: 3,
  *   });
- *   
+ *
  *   recordGate4Stats(verdicts);
- *   
+ *
  *   // Record final quality
  *   recordOutputQuality(result);
- *   
+ *
  *   return result;
- *   
+ *
  * } finally {
  *   await finalizeMetrics();
  * }

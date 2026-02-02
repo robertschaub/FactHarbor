@@ -141,7 +141,7 @@ export function buildPrompt(context: PromptContext): string {
 
 /**
  * Get ultra-simplified budget prompt for fast models
- * Used when FH_LLM_TIERING=on and model is Haiku/Flash/Mini
+ * Used when tiering is enabled in pipeline config and model is a budget tier (Haiku/Flash/Mini)
  */
 function getBudgetPrompt(context: PromptContext): string {
   const { task, provider, variables, config } = context;

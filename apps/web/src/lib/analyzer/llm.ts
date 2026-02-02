@@ -40,41 +40,31 @@ function normalizeProvider(raw: string): "anthropic" | "google" | "mistral" | "o
   return "openai";
 }
 
-function isTieringEnabled(config?: PipelineConfig): boolean {
-  if (config) {
-    return config.llmTiering;
-  }
-  const v = (process.env.FH_LLM_TIERING ?? "off").toLowerCase().trim();
-  return v === "on" || v === "true" || v === "1" || v === "enabled";
+function detectProviderFromModelName(modelName: string): "anthropic" | "google" | "mistral" | "openai" | null {
+  const name = (modelName || "").toLowerCase();
+  if (name.includes("claude")) return "anthropic";
+  if (name.includes("gemini")) return "google";
+  if (name.includes("mistral")) return "mistral";
+  if (name.includes("gpt")) return "openai";
+  return null;
 }
 
-function envModelOverrideForTask(task: ModelTask, config?: PipelineConfig): string | null {
-  // If config provided, use config values
-  if (config) {
-    switch (task) {
-      case "understand":
-        return config.modelUnderstand;
-      case "extract_facts":
-        return config.modelExtractFacts;
-      case "verdict":
-        return config.modelVerdict;
-      case "report":
-        // Not in pipeline config yet - fall through to env var check
-        break;
-    }
-  }
+function isTieringEnabled(config?: PipelineConfig): boolean {
+  return config ? config.llmTiering : false;
+}
 
-  // Fall back to environment variables
-  const key =
-    task === "understand"
-      ? "FH_MODEL_UNDERSTAND"
-      : task === "extract_facts"
-        ? "FH_MODEL_EXTRACT_FACTS"
-        : task === "verdict"
-          ? "FH_MODEL_VERDICT"
-          : "FH_MODEL_REPORT";
-  const v = process.env[key];
-  return v && v.trim() ? v.trim() : null;
+function modelOverrideForTask(task: ModelTask, config?: PipelineConfig): string | null {
+  if (!config) return null;
+  switch (task) {
+    case "understand":
+      return config.modelUnderstand;
+    case "extract_facts":
+      return config.modelExtractFacts;
+    case "verdict":
+      return config.modelVerdict;
+    case "report":
+      return null;
+  }
 }
 
 function defaultModelNameForTask(provider: "anthropic" | "google" | "mistral" | "openai", task: ModelTask): string {
@@ -127,11 +117,7 @@ export function getModel(providerOverride?: string): ModelInfo {
  * Get an LLM model for a specific pipeline task.
  *
  * By default, tiering is OFF and this returns the same model as `getModel()`.
- * Enable by setting `FH_LLM_TIERING=on` and optionally override per-task models:
- * - `FH_MODEL_UNDERSTAND`
- * - `FH_MODEL_EXTRACT_FACTS`
- * - `FH_MODEL_VERDICT`
- * - `FH_MODEL_REPORT` (reserved for future use)
+ * Tiering and per-task overrides are configured via the pipeline config.
  *
  * @param config - Optional pipeline config from unified config system
  */
@@ -145,8 +131,23 @@ export function getModelForTask(
   }
 
   const provider = normalizeProvider(providerOverride ?? process.env.LLM_PROVIDER ?? "anthropic");
-  const overrideName = envModelOverrideForTask(task, config);
-  const modelName = overrideName ?? defaultModelNameForTask(provider, task);
+  const overrideName = modelOverrideForTask(task, config);
+  let modelName: string | null = null;
+
+  if (overrideName) {
+    const inferredProvider = detectProviderFromModelName(overrideName);
+    if (inferredProvider && inferredProvider !== provider) {
+      console.warn(
+        `[LLM] Ignoring model override "${overrideName}" for task "${task}" because provider is "${provider}"`,
+      );
+    } else {
+      modelName = overrideName;
+    }
+  }
+
+  if (!modelName) {
+    modelName = defaultModelNameForTask(provider, task);
+  }
   return buildModelInfo(provider, modelName);
 }
 
