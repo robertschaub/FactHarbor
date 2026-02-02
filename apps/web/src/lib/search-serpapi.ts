@@ -49,7 +49,7 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
   try {
     const startTime = Date.now();
     const res = await fetch(`${SERPAPI_BASE}?${params.toString()}`, {
-      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
+      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS)
     });
     const elapsed = Date.now() - startTime;
 

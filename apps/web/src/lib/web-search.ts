@@ -1,3 +1,5 @@
+import type { SearchConfig } from "./config-schemas";
+
 export type WebSearchResult = {
   url: string;
   title: string;
@@ -8,8 +10,11 @@ export type WebSearchOptions = {
   query: string;
   maxResults: number;
   domainWhitelist?: string[];
+  domainBlacklist?: string[];
   /** Date restriction: "y" (past year), "m" (past month), "w" (past week), or undefined (no restriction) */
   dateRestrict?: "y" | "m" | "w";
+  timeoutMs?: number;
+  config?: SearchConfig;
 };
 
 export type WebSearchResponse = {
@@ -20,8 +25,8 @@ export type WebSearchResponse = {
 /**
  * Get the actual search provider(s) that will be used
  */
-export function getActiveSearchProviders(): string[] {
-  const provider = (process.env.FH_SEARCH_PROVIDER ?? "auto").toLowerCase();
+export function getActiveSearchProviders(config?: SearchConfig): string[] {
+  const provider = ((config?.provider ?? process.env.FH_SEARCH_PROVIDER) ?? "auto").toLowerCase();
   if (provider === "serpapi") return ["SerpAPI"];
   if (provider === "google-cse") return ["Google-CSE"];
   if (provider === "auto") {
@@ -34,7 +39,7 @@ export function getActiveSearchProviders(): string[] {
 }
 
 export async function searchWebWithProvider(options: WebSearchOptions): Promise<WebSearchResponse> {
-  const provider = (process.env.FH_SEARCH_PROVIDER ?? "auto").toLowerCase();
+  const provider = ((options.config?.provider ?? process.env.FH_SEARCH_PROVIDER) ?? "auto").toLowerCase();
   const providersUsed: string[] = [];
   console.log(`[Search] Provider: ${provider} | Query: "${options.query.substring(0, 60)}..." | Max results: ${options.maxResults}`);
 
@@ -42,7 +47,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
     console.log("[Search] Using SerpAPI (explicit)");
     providersUsed.push("SerpAPI");
     const { searchSerpApi } = await import("./search-serpapi");
-    const results = await applyWhitelist(searchSerpApi(options), options.domainWhitelist);
+    const results = await applyDomainFilters(searchSerpApi(options), options);
     console.log(`[Search] Final results from SerpAPI: ${results.length}`);
     return { results, providersUsed };
   }
@@ -50,7 +55,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
     console.log("[Search] Using Google CSE (explicit)");
     providersUsed.push("Google-CSE");
     const { searchGoogleCse } = await import("./search-google-cse");
-    const results = await applyWhitelist(searchGoogleCse(options), options.domainWhitelist);
+    const results = await applyDomainFilters(searchGoogleCse(options), options);
     console.log(`[Search] Final results from Google CSE: ${results.length}`);
     return { results, providersUsed };
   }
@@ -86,7 +91,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
       providersUsed.push("None");
     }
 
-    const finalResults = await applyWhitelist(Promise.resolve(results), options.domainWhitelist);
+    const finalResults = await applyDomainFilters(Promise.resolve(results), options);
     console.log(`[Search] Final results after whitelist: ${finalResults.length}`);
     return { results: finalResults, providersUsed };
   }
@@ -96,20 +101,20 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
 }
 
 export async function searchWeb(options: WebSearchOptions): Promise<WebSearchResult[]> {
-  const provider = (process.env.FH_SEARCH_PROVIDER ?? "auto").toLowerCase();
+  const provider = ((options.config?.provider ?? process.env.FH_SEARCH_PROVIDER) ?? "auto").toLowerCase();
   console.log(`[Search] Provider: ${provider} | Query: "${options.query.substring(0, 60)}..." | Max results: ${options.maxResults}`);
 
   if (provider === "serpapi") {
     console.log("[Search] Using SerpAPI (explicit)");
     const { searchSerpApi } = await import("./search-serpapi");
-    const results = await applyWhitelist(searchSerpApi(options), options.domainWhitelist);
+    const results = await applyDomainFilters(searchSerpApi(options), options);
     console.log(`[Search] Final results from SerpAPI: ${results.length}`);
     return results;
   }
   if (provider === "google-cse") {
     console.log("[Search] Using Google CSE (explicit)");
     const { searchGoogleCse } = await import("./search-google-cse");
-    const results = await applyWhitelist(searchGoogleCse(options), options.domainWhitelist);
+    const results = await applyDomainFilters(searchGoogleCse(options), options);
     console.log(`[Search] Final results from Google CSE: ${results.length}`);
     return results;
   }
@@ -142,7 +147,7 @@ export async function searchWeb(options: WebSearchOptions): Promise<WebSearchRes
       console.error("[Search] ❌ NO SEARCH PROVIDERS CONFIGURED! Set SERPAPI_API_KEY or GOOGLE_CSE_API_KEY+GOOGLE_CSE_ID");
     }
 
-    const finalResults = await applyWhitelist(Promise.resolve(results), options.domainWhitelist);
+    const finalResults = await applyDomainFilters(Promise.resolve(results), options);
     console.log(`[Search] Final results after whitelist: ${finalResults.length}`);
     return finalResults;
   }
@@ -151,19 +156,43 @@ export async function searchWeb(options: WebSearchOptions): Promise<WebSearchRes
   return [];
 }
 
-async function applyWhitelist(
+function normalizeDomain(hostname: string): string {
+  return hostname.replace(/^www\./, "").toLowerCase();
+}
+
+async function applyDomainFilters(
   resultsPromise: Promise<WebSearchResult[]>,
-  whitelist?: string[]
+  options: WebSearchOptions,
 ): Promise<WebSearchResult[]> {
   const results = await resultsPromise;
-  if (!whitelist || whitelist.length === 0) return results;
-  const allowed = new Set(whitelist.map((d) => d.toLowerCase()));
-  return results.filter((r) => {
-    try {
-      const host = new URL(r.url).hostname.toLowerCase();
-      return allowed.has(host) || allowed.has(host.replace(/^www\./, ""));
-    } catch {
-      return false;
-    }
-  });
+  const whitelist = options.domainWhitelist ?? options.config?.domainWhitelist;
+  const blacklist = options.domainBlacklist ?? options.config?.domainBlacklist;
+
+  let filtered = results;
+
+  if (whitelist && whitelist.length > 0) {
+    const allowed = new Set(whitelist.map((d) => d.toLowerCase()));
+    filtered = filtered.filter((r) => {
+      try {
+        const host = normalizeDomain(new URL(r.url).hostname);
+        return allowed.has(host) || [...allowed].some((domain) => host.endsWith(`.${domain}`));
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  if (blacklist && blacklist.length > 0) {
+    const blocked = new Set(blacklist.map((d) => d.toLowerCase()));
+    filtered = filtered.filter((r) => {
+      try {
+        const host = normalizeDomain(new URL(r.url).hostname);
+        return !(blocked.has(host) || [...blocked].some((domain) => host.endsWith(`.${domain}`)));
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  return filtered;
 }

@@ -19,7 +19,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { getModel, getModelForTask } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
-import { filterFactsByProvenance } from "./provenance-validation";
+import { filterFactsByProvenance, setProvenanceLexicon } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import {
   createBudgetTracker,
@@ -31,7 +31,10 @@ import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
-import { recordConfigUsage } from "@/lib/config-storage";
+import { getConfig, recordConfigUsage } from "@/lib/config-storage";
+import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
+import { setAggregationLexicon } from "./aggregation";
+import { setContextHeuristicsLexicon } from "./scopes";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
@@ -169,8 +172,34 @@ export async function runMonolithicDynamic(
 ): Promise<{ resultJson: any; reportMarkdown: string }> {
   const startTime = Date.now();
   // We use tiered models below instead of a single getModel()
+  const [pipelineResult, searchResult] = await Promise.all([
+    loadPipelineConfig("default", input.jobId),
+    loadSearchConfig("default", input.jobId),
+  ]);
+  const pipelineConfig = pipelineResult.config;
+  const searchConfig = searchResult.config;
   const budgetConfig = getBudgetConfig();
   const budgetTracker = createBudgetTracker();
+
+  let evidenceLexicon;
+  let aggregationLexicon;
+  try {
+    const [evidenceResult, aggregationResult] = await Promise.all([
+      getConfig("evidence-lexicon", "default", { jobId: input.jobId }),
+      getConfig("aggregation-lexicon", "default", { jobId: input.jobId }),
+    ]);
+    evidenceLexicon = evidenceResult.config;
+    aggregationLexicon = aggregationResult.config;
+  } catch (err) {
+    console.warn(
+      "[Config] Failed to load lexicon configs, using defaults:",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  setProvenanceLexicon(evidenceLexicon);
+  setAggregationLexicon(aggregationLexicon);
+  setContextHeuristicsLexicon(aggregationLexicon);
 
   // v2.6.35: Clear source reliability cache at start of analysis
   clearPrefetchedScores();
@@ -242,8 +271,8 @@ export async function runMonolithicDynamic(
     provider: detectProvider(understandModel.modelName || ''),
     modelName: understandModel.modelName || '',
     config: {
-      allowModelKnowledge: CONFIG.allowModelKnowledge,
-      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      allowModelKnowledge: pipelineConfig.allowModelKnowledge,
+      isLLMTiering: pipelineConfig.llmTiering,
       isBudgetModel: isBudgetModel(understandModel.modelName || ''),
     },
     variables: {
@@ -281,6 +310,11 @@ export async function runMonolithicDynamic(
     if (searchCount >= DYNAMIC_BUDGET.maxSearches) break;
     if (Date.now() - startTime > DYNAMIC_BUDGET.timeoutMs) break;
 
+    if (!searchConfig.enabled) {
+      console.warn("[Analyzer] Search disabled (UCM search.enabled=false) - skipping web search");
+      break;
+    }
+
     searchCount++;
     searchQueries.push(query);
 
@@ -291,14 +325,22 @@ export async function runMonolithicDynamic(
     try {
       const response = await searchWebWithProvider({
         query,
-        maxResults: 4,
-        domainWhitelist: CONFIG.searchDomainWhitelist ?? undefined,
-        dateRestrict: CONFIG.searchDateRestrict ?? undefined,
+        maxResults: searchConfig.maxResults,
+        domainWhitelist: searchConfig.domainWhitelist,
+        domainBlacklist: searchConfig.domainBlacklist,
+        dateRestrict: searchConfig.dateRestrict ?? undefined,
+        timeoutMs: searchConfig.timeoutMs,
+        config: searchConfig,
       });
+
+      const maxSourcesToFetch = Math.min(
+        searchConfig.maxSourcesPerIteration,
+        Math.max(0, DYNAMIC_BUDGET.maxFetches - fetchCount),
+      );
 
       // v2.6.35: Collect URLs for source reliability prefetch
       const urlsToFetch = response.results
-        .slice(0, 2)
+        .slice(0, maxSourcesToFetch)
         .filter((r) => !citations.some((c) => c.url === r.url))
         .map((r) => r.url);
 
@@ -318,7 +360,7 @@ export async function runMonolithicDynamic(
       }
 
       // Fetch top results
-      for (const result of response.results.slice(0, 2)) {
+      for (const result of response.results.slice(0, maxSourcesToFetch)) {
         if (fetchCount >= DYNAMIC_BUDGET.maxFetches) break;
         if (citations.some((c) => c.url === result.url)) continue;
 
@@ -375,8 +417,8 @@ export async function runMonolithicDynamic(
     provider: detectProvider(verdictModel.modelName || ''),
     modelName: verdictModel.modelName || '',
     config: {
-      allowModelKnowledge: CONFIG.allowModelKnowledge,
-      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      allowModelKnowledge: pipelineConfig.allowModelKnowledge,
+      isLLMTiering: pipelineConfig.llmTiering,
       isBudgetModel: isBudgetModel(verdictModel.modelName || ''),
     },
     variables: {
@@ -508,7 +550,7 @@ Provide your dynamic analysis.`,
       isExperimental: true,
       llmProvider: verdictModel.provider,
       llmModel: verdictModel.modelName,
-      searchProvider: CONFIG.searchProvider,
+      searchProvider: searchConfig.provider,
       inputType: input.inputType,
       inputLength: input.inputValue.length,
       analysisTimeMs,

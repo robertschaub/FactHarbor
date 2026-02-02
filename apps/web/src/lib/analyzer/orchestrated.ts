@@ -43,8 +43,8 @@ import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
-import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts } from "./quality-gates";
-import { filterFactsByProvenance } from "./provenance-validation";
+import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts, setQualityGatesLexicon } from "./quality-gates";
+import { filterFactsByProvenance, setProvenanceLexicon } from "./provenance-validation";
 import { filterByProbativeValue, calculateFalsePositiveRate, DEFAULT_FILTER_CONFIG } from "./evidence-filter";
 import {
   getBudgetConfig,
@@ -78,12 +78,13 @@ import {
   detectInstitutionCode,
   sanitizeScopeShortAnswer,
 } from "./config";
-import { calculateWeightedVerdictAverage, validateContestation, detectHarmPotential, pruneTangentialBaselessClaims, pruneOpinionOnlyFactors } from "./aggregation";
-import { detectScopes, detectScopesHybrid, formatDetectedScopesHint } from "./scopes";
+import { calculateWeightedVerdictAverage, validateContestation, detectHarmPotential, pruneTangentialBaselessClaims, pruneOpinionOnlyFactors, setAggregationLexicon } from "./aggregation";
+import { detectScopes, detectScopesHybrid, formatDetectedScopesHint, setContextHeuristicsLexicon } from "./scopes";
 import { getModelForTask } from "./llm";
 import {
   detectAndCorrectVerdictInversion,
   detectCounterClaim,
+  setVerdictCorrectionsLexicon,
 } from "./verdict-corrections";
 import {
   canonicalizeScopes,
@@ -94,8 +95,8 @@ import {
 } from "./scopes";
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
-import { recordConfigUsage } from "@/lib/config-storage";
-import { getAnalyzerConfig, loadSearchConfig, type PipelineConfig, type SearchConfig } from "@/lib/config-loader";
+import { getConfig, recordConfigUsage } from "@/lib/config-storage";
+import { getAnalyzerConfig, type PipelineConfig, type SearchConfig } from "@/lib/config-loader";
 import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
 import type { EvidenceItem } from "./types";
 import {
@@ -108,7 +109,7 @@ import {
   type ScopeSimilarityResult,
   type ScopePair,
 } from "./text-analysis-service";
-import type { AggregationLexicon } from "../config-schemas";
+import type { AggregationLexicon, EvidenceLexicon } from "../config-schemas";
 import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 
 // Configuration, helpers, and debug utilities imported from modular files above
@@ -196,7 +197,11 @@ async function refineScopesFromEvidence(
 
   // v2.6.39: Compute seed context candidates from heuristics (soft hints, not mandatory)
   const pipelineCfg = state.pipelineConfig;
-  const seedScopes = pipelineCfg?.scopeDetectionMethod === "heuristic"
+  const detectionMethod =
+    pipelineCfg?.contextDetectionMethod ??
+    pipelineCfg?.scopeDetectionMethod ??
+    "heuristic";
+  const seedScopes = detectionMethod === "heuristic"
     ? detectScopes(analysisInput) || []
     : (await detectScopesHybrid(analysisInput, pipelineCfg!)) || [];
   const seedHint = seedScopes.length > 0 ? formatDetectedScopesHint(seedScopes, true) : "";
@@ -989,7 +994,7 @@ async function deduplicateScopes(
   const kept: Scope[] = [];
   const processed = new Set<string>();
 
-  // v2.9: LLM Scope Similarity Analysis (when enabled via FH_LLM_SCOPE_SIMILARITY)
+  // v2.9: LLM Scope Similarity Analysis (when enabled via pipeline config)
   const useLLMScopeSimilarity = isLLMEnabled("scope");
   let llmSimilarityMap: Map<string, ScopeSimilarityResult> | null = null;
 
@@ -3297,7 +3302,6 @@ async function understandClaim(
   const recencyMatters = isRecencySensitive(analysisInput, undefined);
 
   // v2.9: LLM Text Analysis - Classify input and decompose claims
-  // Uses hybrid service (LLM with heuristic fallback) when enabled via FH_LLM_INPUT_CLASSIFICATION
   let inputClassification: InputClassificationResult | null = null;
   try {
     const textAnalysisService = getTextAnalysisService();
@@ -3319,8 +3323,12 @@ async function understandClaim(
     });
   }
 
-  // v2.8: Pre-detect scopes using heuristics (shared implementation from scopes.ts)
-  const preDetectedScopes = pipelineConfig?.scopeDetectionMethod === "heuristic"
+  // v2.8: Pre-detect contexts using heuristics (shared implementation from scopes.ts)
+  const contextDetectionMethod =
+    pipelineConfig?.contextDetectionMethod ??
+    pipelineConfig?.scopeDetectionMethod ??
+    "heuristic";
+  const preDetectedScopes = contextDetectionMethod === "heuristic"
     ? detectScopes(analysisInput)
     : pipelineConfig
       ? await detectScopesHybrid(analysisInput, pipelineConfig)
@@ -5761,6 +5769,7 @@ async function extractFacts(
   originalClaim?: string,
   fromOppositeClaimSearch?: boolean,
   pipelineConfig?: PipelineConfig,
+  evidenceLexicon?: EvidenceLexicon,
 ): Promise<ExtractedFact[]> {
   console.log(`[Analyzer] extractFacts called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
   console.log(`[Analyzer] extractFacts: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
@@ -5963,7 +5972,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
     let filteredByProbativeValue = factsWithProvenance as typeof factsWithProvenance;
 
     if (probativeFilterEnabled && factsWithProvenance.length > 0) {
-      // v2.9: LLM Evidence Quality Assessment (when enabled via FH_LLM_EVIDENCE_QUALITY)
+  // v2.9: LLM Evidence Quality Assessment
       const useLLMEvidenceQuality = isLLMEnabled("evidence");
       let llmFilterSuccess = false;
 
@@ -6049,7 +6058,10 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 
       // Heuristic filtering (default or fallback from LLM failure)
       if (!llmFilterSuccess) {
-        const { kept, filtered, stats } = filterByProbativeValue(factsWithProvenance as EvidenceItem[], DEFAULT_FILTER_CONFIG);
+        const { kept, filtered, stats } = filterByProbativeValue(
+          factsWithProvenance as EvidenceItem[],
+          { ...DEFAULT_FILTER_CONFIG, lexicon: evidenceLexicon },
+        );
 
         // Log filter statistics
         if (stats.filtered > 0) {
@@ -8580,7 +8592,7 @@ However, do NOT place them in the FALSE band (0-14%) unless you can prove them w
     },
   );
 
-  // v2.9: LLM Verdict Validation (when enabled via FH_LLM_VERDICT_VALIDATION)
+  // v2.9: LLM Verdict Validation
   // Validates verdicts for harm potential, contestation, and inversion detection
   const useLLMVerdictValidation = isLLMEnabled("verdict");
   let validatedClaimVerdicts = claimVerdicts;
@@ -9070,6 +9082,7 @@ async function generateReport(
   articleAnalysis: ArticleAnalysis,
   twoPanelSummary: TwoPanelSummary,
   model: any,
+  searchProvider: string,
 ): Promise<string> {
   const understanding = state.understanding!;
   const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
@@ -9159,7 +9172,7 @@ async function generateReport(
   report += `| Sources fetched | ${state.sources.length} |\n`;
   report += `| Sources successful | ${state.sources.filter((s: FetchedSource) => s.fetchSuccess).length} |\n`;
   report += `| Facts extracted | ${state.facts.length} |\n`;
-  report += `| Search provider | ${CONFIG.searchProvider} |\n`;
+  report += `| Search provider | ${searchProvider} |\n`;
   report += `| Analysis mode | ${CONFIG.deepModeEnabled ? "deep" : "quick"} |\n\n`;
 
   if (state.searchQueries.length > 0) {
@@ -9209,6 +9222,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // ============================================================================
   const analyzerConfig = await getAnalyzerConfig({ jobId: input.jobId });
   const pipelineConfig = analyzerConfig.pipeline;
+  const searchConfig = analyzerConfig.search;
 
   debugLog("[Config] Loaded analyzer config", {
     source: analyzerConfig.source,
@@ -9217,11 +9231,33 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     analysisMode: pipelineConfig.analysisMode,
   });
 
+  let evidenceLexicon: EvidenceLexicon | undefined;
+  let aggregationLexicon: AggregationLexicon | undefined;
+  try {
+    const [evidenceResult, aggregationResult] = await Promise.all([
+      getConfig("evidence-lexicon", "default", { jobId: input.jobId }),
+      getConfig("aggregation-lexicon", "default", { jobId: input.jobId }),
+    ]);
+    evidenceLexicon = evidenceResult.config;
+    aggregationLexicon = aggregationResult.config;
+  } catch (err) {
+    console.warn(
+      "[Config] Failed to load lexicon configs, using defaults:",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  setQualityGatesLexicon(evidenceLexicon);
+  setProvenanceLexicon(evidenceLexicon);
+  setAggregationLexicon(aggregationLexicon);
+  setVerdictCorrectionsLexicon(aggregationLexicon);
+  setContextHeuristicsLexicon(aggregationLexicon);
+  setOrchestratedHeuristicsLexicon(aggregationLexicon);
+
   // ============================================================================
   // v2.9.0 Phase 2: Capture config snapshot for job auditability
   // Capture complete resolved config (DB + env overrides) asynchronously
   // ============================================================================
-  const searchConfigResolved = await loadSearchConfig("default", input.jobId);
   const srSummary = getSRConfigSummary();
 
   // Only capture snapshot if jobId is provided
@@ -9229,7 +9265,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     ? captureConfigSnapshotAsync(
         input.jobId,
         pipelineConfig,
-        searchConfigResolved.config, // Extract config from ResolvedConfig
+        searchConfig,
         srSummary
       )
     : Promise.resolve(); // No-op if no jobId
@@ -9522,9 +9558,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     }
 
     // Check if search is enabled
-    if (!CONFIG.searchEnabled) {
+    if (!searchConfig.enabled) {
       await emit(
-        `⚠️ Search disabled (FH_SEARCH_ENABLED=false)`,
+        `⚠️ Search disabled (UCM search.enabled=false)`,
         baseProgress + 1,
       );
       state.searchQueries.push({
@@ -9541,7 +9577,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // =========================================================================
     // GROUNDED SEARCH MODE: Use Gemini's built-in Google Search
     // =========================================================================
-    if (CONFIG.searchMode === "grounded" && isGroundedSearchAvailable()) {
+    if (searchConfig.mode === "grounded" && isGroundedSearchAvailable()) {
       await emit(
         `🔍 Using Gemini Grounded Search for: "${decision.focus}"`,
         baseProgress + 1,
@@ -9559,9 +9595,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         // Fetch the URLs provided by grounded search (don't use synthetic content)
         await emit(`Fetching ${groundedResult.sources.length} grounded sources`, baseProgress + 2);
 
-        const groundedUrlCandidates = groundedResult.sources
+      const groundedUrlCandidates = groundedResult.sources
           .filter(s => s.url && s.url.trim().length > 0)
-          .slice(0, config.maxSourcesPerIteration);
+          .slice(0, searchConfig.maxSourcesPerIteration);
 
         if (groundedUrlCandidates.length === 0) {
           console.warn(`[Analyzer] Grounded search returned no valid URLs - falling back to standard search`);
@@ -9626,6 +9662,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
                 state.understanding?.impliedClaim || state.originalInput,
                 undefined, // fromOppositeClaimSearch
                 state.pipelineConfig,
+                evidenceLexicon,
               );
               const uniqueFacts = deduplicateFacts(facts, state.facts);
               state.facts.push(...uniqueFacts);
@@ -9661,10 +9698,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       // This ensures date filtering is consistent across all queries in a recency-sensitive topic
       const recencyMatters = decision.recencyMatters || isRecencySensitive(query, state.understanding || undefined);
       const dateRestrict: "y" | "m" | "w" | undefined =
-        CONFIG.searchDateRestrict || (recencyMatters ? "y" : undefined);
+        searchConfig.dateRestrict ?? (recencyMatters ? "y" : undefined);
 
       // Get providers before search to show in event
-      const searchProviders = getActiveSearchProviders().join("+");
+      const searchProviders = getActiveSearchProviders(searchConfig).join("+");
       const dateFilterMsg = dateRestrict ? ` [filtering: past ${dateRestrict === "y" ? "year" : dateRestrict === "m" ? "month" : "week"}]` : "";
       await emit(
         `🔍 Searching [${searchProviders}]${dateFilterMsg}: "${query}"`,
@@ -9674,40 +9711,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       try {
         const searchResponse = await searchWebWithProvider({
           query,
-          maxResults: config.maxSourcesPerIteration,
+          maxResults: searchConfig.maxResults,
           dateRestrict,
-          domainWhitelist: CONFIG.searchDomainWhitelist || undefined,
+          domainWhitelist: searchConfig.domainWhitelist,
+          domainBlacklist: searchConfig.domainBlacklist,
+          timeoutMs: searchConfig.timeoutMs,
+          config: searchConfig,
         });
         let results = searchResponse.results;
         const actualProviders = searchResponse.providersUsed.join("+");
         console.log(`[Analyzer] Search used: ${actualProviders}, returned ${results.length} results`);
-
-        // Apply domain whitelist if configured
-        if (
-          CONFIG.searchDomainWhitelist &&
-          CONFIG.searchDomainWhitelist.length > 0
-        ) {
-          const beforeCount = results.length;
-          results = results.filter((r: any) => {
-            try {
-              const hostname = new URL(r.url).hostname
-                .replace(/^www\./, "")
-                .toLowerCase();
-              return CONFIG.searchDomainWhitelist!.some(
-                (domain) =>
-                  hostname === domain || hostname.endsWith("." + domain),
-              );
-            } catch {
-              return false;
-            }
-          });
-          if (beforeCount > results.length) {
-            await emit(
-              `  → Filtered ${beforeCount - results.length} results (domain whitelist)`,
-              baseProgress + 1,
-            );
-          }
-        }
 
         // Track the search with provider info
         state.searchQueries.push({
@@ -9716,7 +9729,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           focus: decision.focus!,
           resultsCount: results.length,
           timestamp: new Date().toISOString(),
-          searchProvider: CONFIG.searchProvider,
+          searchProvider: searchConfig.provider,
         });
 
         searchResults.push(...results.map((r: any) => ({ ...r, query })));
@@ -9729,7 +9742,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           focus: decision.focus!,
           resultsCount: 0,
           timestamp: new Date().toISOString(),
-          searchProvider: CONFIG.searchProvider,
+          searchProvider: searchConfig.provider,
         });
       }
     }
@@ -9746,7 +9759,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       if (used.has(url)) continue;
       used.add(url);
       uniqueResults.push(r);
-      if (uniqueResults.length >= config.maxSourcesPerIteration) break;
+      if (uniqueResults.length >= searchConfig.maxSourcesPerIteration) break;
     }
 
     if (uniqueResults.length === 0) {
@@ -9820,6 +9833,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         state.understanding?.impliedClaim || state.originalInput,
         isOppositeClaimSearch,
         state.pipelineConfig,
+        evidenceLexicon,
       );
       // v2.6.29: Deduplicate facts before adding to avoid near-duplicates
       const uniqueFacts = deduplicateFacts(facts, state.facts);
@@ -9975,6 +9989,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     articleAnalysis,
     twoPanelSummary,
     model,
+    searchConfig.provider,
   );
 
   // Safety: ensure we never emit a result with zero scopes, even if scope refinement was
@@ -10005,7 +10020,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       analysisMode: mode,
       llmProvider: provider,
       llmModel: modelName,
-      searchProvider: CONFIG.searchProvider,
+      searchProvider: searchConfig.provider,
       inputType: input.inputType,
       detectedInputType: state.understanding!.detectedInputType,
       hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,

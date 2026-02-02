@@ -27,14 +27,15 @@ import {
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
 import { percentageToClaimVerdict, getHighlightColor } from "./truth-scale";
-import { filterFactsByProvenance } from "./provenance-validation";
+import { filterFactsByProvenance, setProvenanceLexicon } from "./provenance-validation";
 import type { ExtractedFact } from "./types";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
-import { recordConfigUsage } from "@/lib/config-storage";
+import { getConfig, recordConfigUsage } from "@/lib/config-storage";
+import { loadPipelineConfig, loadSearchConfig, type PipelineConfig } from "@/lib/config-loader";
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
-import { calculateWeightedVerdictAverage, detectHarmPotential, detectClaimContestation } from "./aggregation";
-import { detectScopes, formatDetectedScopesHint } from "./scopes";
+import { calculateWeightedVerdictAverage, detectHarmPotential, detectClaimContestation, setAggregationLexicon } from "./aggregation";
+import { detectScopes, formatDetectedScopesHint, setContextHeuristicsLexicon } from "./scopes";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
@@ -247,6 +248,7 @@ function extractStructuredOutput(result: any): any {
 async function extractClaim(
   model: any,
   text: string,
+  pipelineConfig: PipelineConfig | null,
   onEvent?: (msg: string, progress: number) => void | Promise<void>
 ): Promise<z.infer<typeof ClaimExtractionSchema>> {
   if (onEvent) await onEvent("Analyzing claim", 10);
@@ -278,8 +280,8 @@ async function extractClaim(
     provider: detectProvider(model.modelId || ''),
     modelName: model.modelId || '',
     config: {
-      allowModelKnowledge: CONFIG.allowModelKnowledge,
-      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      allowModelKnowledge: pipelineConfig ? pipelineConfig.allowModelKnowledge : CONFIG.allowModelKnowledge,
+      isLLMTiering: pipelineConfig ? pipelineConfig.llmTiering : false,
       isBudgetModel: isBudgetModel(model.modelId || ''),
     },
     variables: {
@@ -320,6 +322,7 @@ async function extractFacts(
   limitationNote: string | null,
   sourceContents: Array<{ url: string; title: string; content: string }>,
   existingFactCount: number,
+  pipelineConfig: PipelineConfig | null,
   onEvent?: (msg: string, progress: number) => void | Promise<void>
 ): Promise<z.infer<typeof FactExtractionSchema>> {
   if (onEvent) await onEvent("Extracting facts from sources", 40);
@@ -333,8 +336,8 @@ async function extractFacts(
     provider: detectProvider(model.modelId || ''),
     modelName: model.modelId || '',
     config: {
-      allowModelKnowledge: CONFIG.allowModelKnowledge,
-      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      allowModelKnowledge: pipelineConfig ? pipelineConfig.allowModelKnowledge : CONFIG.allowModelKnowledge,
+      isLLMTiering: pipelineConfig ? pipelineConfig.llmTiering : false,
       isBudgetModel: isBudgetModel(model.modelId || ''),
     },
     variables: {
@@ -421,6 +424,7 @@ async function generateVerdict(
   claimType: string | null,
   limitationNote: string | null,
   facts: ExtractedFact[],
+  pipelineConfig: PipelineConfig | null,
   onEvent?: (msg: string, progress: number) => void | Promise<void>
 ): Promise<z.infer<typeof VerdictSchema>> {
   if (onEvent) await onEvent("Generating verdict", 80);
@@ -440,7 +444,7 @@ async function generateVerdict(
       // Monolithic canonical is intended to be evidence-grounded; do not allow
       // training-data assertions to substitute for provenance.
       allowModelKnowledge: false,
-      isLLMTiering: process.env.FH_LLM_TIERING === 'on',
+      isLLMTiering: pipelineConfig ? pipelineConfig.llmTiering : false,
       isBudgetModel: isBudgetModel(model.modelId || ''),
     },
     variables: {
@@ -529,8 +533,34 @@ export async function runMonolithicCanonical(
 ): Promise<{ resultJson: any; reportMarkdown: string }> {
   const startTime = Date.now();
   // We use tiered models below instead of a single getModel()
+  const [pipelineResult, searchResult] = await Promise.all([
+    loadPipelineConfig("default", input.jobId),
+    loadSearchConfig("default", input.jobId),
+  ]);
+  const pipelineConfig = pipelineResult.config;
+  const searchConfig = searchResult.config;
   const budgetConfig = getBudgetConfig();
   const budgetTracker = createBudgetTracker();
+
+  let evidenceLexicon;
+  let aggregationLexicon;
+  try {
+    const [evidenceResult, aggregationResult] = await Promise.all([
+      getConfig("evidence-lexicon", "default", { jobId: input.jobId }),
+      getConfig("aggregation-lexicon", "default", { jobId: input.jobId }),
+    ]);
+    evidenceLexicon = evidenceResult.config;
+    aggregationLexicon = aggregationResult.config;
+  } catch (err) {
+    console.warn(
+      "[Config] Failed to load lexicon configs, using defaults:",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  setProvenanceLexicon(evidenceLexicon);
+  setAggregationLexicon(aggregationLexicon);
+  setContextHeuristicsLexicon(aggregationLexicon);
 
   // v2.6.35: Clear source reliability cache at start of analysis
   clearPrefetchedScores();
@@ -584,7 +614,7 @@ export async function runMonolithicCanonical(
 
   // Step 1: Extract claim and generate search queries
   const understandModel = getModelForTask("understand");
-  const claimData = await extractClaim(understandModel.model, textToAnalyze, input.onEvent);
+  const claimData = await extractClaim(understandModel.model, textToAnalyze, pipelineConfig, input.onEvent);
   recordLLMCall(budgetTracker, 2000); // Estimate
 
   const normalizedSeen = new Set<string>();
@@ -699,6 +729,11 @@ export async function runMonolithicCanonical(
     // Run searches
     const searchResults: Array<{ url: string; title: string; snippet: string }> = [];
 
+    if (!searchConfig.enabled) {
+      console.warn("[Analyzer] Search disabled (UCM search.enabled=false) - skipping web search");
+      break;
+    }
+
     for (const query of queriesToRun) {
       if (searchCount >= MONOLITHIC_BUDGET.maxSearches) break;
       // Skip if we've already searched this exact query
@@ -713,9 +748,12 @@ export async function runMonolithicCanonical(
       try {
         const response = await searchWebWithProvider({
           query,
-          maxResults: 4,
-          domainWhitelist: CONFIG.searchDomainWhitelist ?? undefined,
-          dateRestrict: CONFIG.searchDateRestrict ?? undefined,
+          maxResults: searchConfig.maxResults,
+          domainWhitelist: searchConfig.domainWhitelist,
+          domainBlacklist: searchConfig.domainBlacklist,
+          dateRestrict: searchConfig.dateRestrict ?? undefined,
+          timeoutMs: searchConfig.timeoutMs,
+          config: searchConfig,
         });
         // Track query with actual results count
         searchQueriesWithResults.push({ query, resultsCount: response.results.length });
@@ -733,10 +771,15 @@ export async function runMonolithicCanonical(
       }
     }
 
+    const maxSourcesToFetch = Math.min(
+      searchConfig.maxSourcesPerIteration,
+      Math.max(0, MONOLITHIC_BUDGET.maxFetches - sources.length),
+    );
+
     // Fetch top URLs
     const urlsToFetch = searchResults
       .filter((r) => !sources.some((s) => s.url === r.url))
-      .slice(0, 3);
+      .slice(0, maxSourcesToFetch);
 
     // v2.6.35: Prefetch source reliability scores before fetching
     if (SR_CONFIG.enabled && urlsToFetch.length > 0) {
@@ -816,6 +859,7 @@ export async function runMonolithicCanonical(
           limitationNote,
           fetchedContents,
           facts.length,
+          pipelineConfig,
           input.onEvent
         );
         recordLLMCall(budgetTracker, 3000); // Estimate
@@ -882,6 +926,7 @@ export async function runMonolithicCanonical(
       startTime,
       provider: understandModel.provider,
       modelName: understandModel.modelName,
+      searchProvider: searchConfig.provider,
       budgetTracker,
       budgetConfig,
       claim: claimData.mainClaim,
@@ -920,6 +965,7 @@ export async function runMonolithicCanonical(
       claimType,
       limitationNote,
       validatedFacts,
+      pipelineConfig,
       input.onEvent
     );
     verdictResults.push({ entry, verdictData });
@@ -1033,6 +1079,7 @@ export async function runMonolithicCanonical(
     startTime,
     provider: verdictModel.provider,
     modelName: verdictModel.modelName,
+    searchProvider: searchConfig.provider,
     budgetTracker,
     budgetConfig,
     claim: claimData.mainClaim,
@@ -1114,6 +1161,7 @@ function buildResultJson(params: {
   startTime: number;
   provider: string;
   modelName: string;
+  searchProvider: string;
   budgetTracker: any;
   budgetConfig: any;
   claim: string;
@@ -1147,6 +1195,7 @@ function buildResultJson(params: {
     startTime,
     provider,
     modelName,
+    searchProvider,
     budgetTracker,
     budgetConfig,
     claim,
@@ -1225,7 +1274,7 @@ function buildResultJson(params: {
       pipelineVariant: "monolithic_canonical",
       llmProvider: provider,
       llmModel: modelName,
-      searchProvider: CONFIG.searchProvider,
+      searchProvider,
       inputType: input.inputType,
       detectedInputType: input.inputType,
       hasMultipleProceedings: finalScopes.length > 1,

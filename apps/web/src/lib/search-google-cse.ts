@@ -51,7 +51,7 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
   try {
     const startTime = Date.now();
     const res = await fetch(`${GOOGLE_CSE_BASE}?${params.toString()}`, {
-      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
+      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS)
     });
     const elapsed = Date.now() - startTime;
 
