@@ -35,7 +35,7 @@ FactHarbor supports multiple LLM (Large Language Model) providers and search pro
 |----------|-----|----------|--------|
 | **Google Custom Search (CSE)** | Free tier available | General web search | ✅ Supported |
 | **SerpAPI** | Pay-per-use | Reliable Google results | ✅ Supported |
-| **Gemini Grounded Search** | Built-in | When using Gemini | ⚠️ Experimental (requires `LLM_PROVIDER=gemini` + `FH_SEARCH_MODE=grounded`; only counts as “grounded” when the provider returns grounding metadata/citations) |
+| **Gemini Grounded Search** | Built-in | When using Gemini | ⚠️ Experimental (requires `pipeline.llmProvider=google` + search `mode=grounded`; only counts as “grounded” when the provider returns grounding metadata/citations) |
 | **Brave Search** | API required | Privacy-focused | ❌ Not implemented (no adapter in code) |
 | **Tavily** | API required | AI-optimized | ❌ Not implemented (no adapter in code) |
 | **Bing Search** | API required | General web search | ❌ Not implemented (no adapter in code) |
@@ -46,12 +46,15 @@ FactHarbor supports multiple LLM (Large Language Model) providers and search pro
 
 ### Setting the LLM Provider
 
-Configure via environment variable in `apps/web/.env.local`:
+Configure via UCM (Admin → Config → Pipeline):
 
-```bash
-# Choose ONE provider
-LLM_PROVIDER=anthropic  # Options: openai | anthropic | google | gemini | mistral | claude
+```json
+{
+  "llmProvider": "anthropic"
+}
 ```
+
+Supported values: `anthropic`, `openai`, `google`, `mistral`.
 
 ### Provider API Keys
 
@@ -93,35 +96,21 @@ MISTRAL_API_KEY=...
 
 ### Complete `.env.local` Example
 
-```bash
-# LLM Provider Selection
-LLM_PROVIDER=anthropic
+Provider selection and analysis behavior are configured in UCM (Admin → Config). The environment only
+stores API keys and infrastructure settings.
 
-# API Keys (only configure the one you're using)
+```bash
+# API Keys (configure the providers you intend to use)
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 # OPENAI_API_KEY=sk-your-key-here
 # GOOGLE_GENERATIVE_AI_API_KEY=AIza-your-key-here
 # MISTRAL_API_KEY=your-key-here
 
-# Search Provider
-FH_SEARCH_ENABLED=true
-FH_SEARCH_PROVIDER=auto  # Options: auto | serpapi | google-cse
-
-# Search API Keys
+# Search API Keys (search provider selected in UCM)
 SERPAPI_API_KEY=your-serpapi-key
 # Or Google Custom Search:
 # GOOGLE_CSE_API_KEY=your-cse-key
 # GOOGLE_CSE_ID=your-cse-id
-
-# Optional: Domain whitelist for trusted sources
-FH_SEARCH_DOMAIN_WHITELIST=who.int,cdc.gov,nih.gov,justice.gov
-
-# Analysis Configuration
-FH_DETERMINISTIC=true  # Use temperature=0 for reproducible results
-FH_ALLOW_MODEL_KNOWLEDGE=false  # Require evidence-based analysis only
-
-# Experimental Features
-FH_SEARCH_MODE=standard  # Options: standard | grounded (Gemini only; experimental)
 ```
 
 ### Configuration Validation
@@ -192,9 +181,12 @@ See: [Unified Config Management User Guide](Unified_Config_Management.md) for pr
 
 1. **Get API Key**: https://developers.google.com/custom-search/v1/introduction
 2. **Create Custom Search Engine**: https://cse.google.com/cse/
-3. **Configure**:
+3. **Configure in UCM** (Admin → Config → Web Search):
+   - `enabled`: `true`
+   - `provider`: `google-cse`
+
+   **Environment keys**:
    ```bash
-   FH_SEARCH_PROVIDER=google-cse
    GOOGLE_CSE_API_KEY=your-api-key
    GOOGLE_CSE_ID=your-cse-id
    ```
@@ -205,9 +197,12 @@ See: [Unified Config Management User Guide](Unified_Config_Management.md) for pr
 
 1. **Sign up**: https://serpapi.com
 2. **Get API Key**: https://serpapi.com/manage-api-key
-3. **Configure**:
+3. **Configure in UCM** (Admin → Config → Web Search):
+   - `enabled`: `true`
+   - `provider`: `serpapi`
+
+   **Environment key**:
    ```bash
-   FH_SEARCH_PROVIDER=serpapi
    SERPAPI_API_KEY=your-api-key
    ```
 
@@ -217,21 +212,21 @@ See: [Unified Config Management User Guide](Unified_Config_Management.md) for pr
 
 Let FactHarbor choose the best available provider:
 
-```bash
-FH_SEARCH_PROVIDER=auto
-```
+Set the search `provider` to `auto` in UCM (Admin → Config → Web Search).
 
 **Behavior**:
 - Tries Google CSE first (if configured)
 - Falls back to SerpAPI for remaining slots
-- Uses Gemini Grounded Search when `LLM_PROVIDER=gemini` and `FH_SEARCH_MODE=grounded` (experimental). If grounding metadata/citations are missing, FactHarbor should fall back to standard search rather than treating model synthesis as evidence.
+- Uses Gemini Grounded Search when `pipeline.llmProvider=google` and search `mode=grounded` (experimental). If grounding metadata/citations are missing, FactHarbor should fall back to standard search rather than treating model synthesis as evidence.
 
 ### Domain Whitelist
 
 Restrict searches to trusted domains:
 
-```bash
-FH_SEARCH_DOMAIN_WHITELIST=who.int,cdc.gov,nih.gov,nature.com,science.org
+```json
+{
+  "domainWhitelist": ["who.int", "cdc.gov", "nih.gov", "nature.com", "science.org"]
+}
 ```
 
 This improves:
@@ -275,24 +270,27 @@ Override the model names per task via the pipeline config (UCM), not environment
 
 FactHarbor’s primary “cost vs quality” knob is still **analysis mode**; tiered model routing is optional and can further reduce cost by using cheaper models for extraction-style steps:
 
-```bash
-# Options: quick (default) | deep
-FH_ANALYSIS_MODE=quick
+```json
+{
+  "analysisMode": "quick"
+}
 ```
 
 This affects limits like max iterations and max total sources (see `apps/web/src/lib/analyzer/config.ts`).
 
 ### Cost Control Settings
 
-```bash
-# Use deterministic mode to avoid redundant retries
-FH_DETERMINISTIC=true
+```json
+{
+  "deterministic": true,
+  "allowModelKnowledge": false
+}
+```
 
-# Restrict to documented evidence only
-FH_ALLOW_MODEL_KNOWLEDGE=false
-
-# Optional: Limit search to recent results
-FH_SEARCH_DATE_RESTRICT=y  # Options: y (year) | m (month) | w (week)
+```json
+{
+  "dateRestrict": "y"
+}
 ```
 
 ### Cost Monitoring
@@ -330,7 +328,7 @@ Track costs via the admin dashboard (when implemented):
 ### Search Provider Issues
 
 **"No search results":**
-1. Verify `FH_SEARCH_ENABLED=true`
+1. Verify search is enabled in UCM (Search config)
 2. Check search provider API key is valid
 3. Verify domain whitelist isn't too restrictive
 4. Check search provider status page
@@ -338,7 +336,7 @@ Track costs via the admin dashboard (when implemented):
 **"Quota exceeded" (Google CSE):**
 - Free tier: 100 queries/day
 - Upgrade to paid tier or switch to SerpAPI
-- Use `FH_SEARCH_PROVIDER=auto` for automatic fallback
+- Use `provider=auto` in UCM for automatic fallback
 
 **"Search provider timeout":**
 - Network connectivity issues

@@ -593,7 +593,7 @@ The source reliability system uses a 7-band credibility scale centered at 0.5:
 | bild.de | 44% | 73% | ✓ | **44%** |
 | Unknown source | 50%* | - | - | **50%** (neutral) |
 
-*Unknown sources use `FH_SR_DEFAULT_SCORE=0.5` (symmetric scale center)
+*Unknown sources use SR config `defaultScore=0.5` (symmetric scale center)
 
 **Key insight**: High confidence → effective weight ≈ score. Low confidence → pulled toward 50%.
 
@@ -654,7 +654,7 @@ Sources not in the reliability cache are assigned a default score:
 
 | Property | Default Value | Rationale |
 |----------|---------------|-----------|
-| Score | 0.5 (`FH_SR_DEFAULT_SCORE`) | Neutral center (symmetric scale) |
+| Score | 0.5 (`sr.defaultScore`) | Neutral center (symmetric scale) |
 
 This results in 50% weight (neutral), applying appropriate skepticism without completely discounting evidence.
 

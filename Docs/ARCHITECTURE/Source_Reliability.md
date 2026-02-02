@@ -2,7 +2,7 @@
 
 **Version**: 1.4 (Multi-Language Support)  
 **Status**: Operational  
-**Last Updated**: 2026-01-25 (v2.6.40)
+**Last Updated**: 2026-02-02 (v2.6.41)
 
 ---
 
@@ -27,11 +27,11 @@
 
 ## Overview
 
-FactHarbor evaluates source reliability dynamically using LLM-powered assessment with **sequential refinement** and **multi-language support**. The primary model (Claude) performs initial evaluation, then the secondary model (GPT-5 mini) cross-checks and refines the result. For non-English sources, the system detects the publication language and searches for regional fact-checker assessments. Sources are evaluated on-demand and cached for 90 days.
+FactHarbor evaluates source reliability dynamically using LLM-powered assessment with **sequential refinement** and **multi-language support**. The primary model (Claude) performs initial evaluation, then a secondary OpenAI model (default: `gpt-4o-mini`) cross-checks and refines the result. For non-English sources, the system detects the publication language and searches for regional fact-checker assessments. Sources are evaluated on-demand and cached for 90 days.
 
 | Aspect | Implementation |
 |--------|----------------|
-| **Evaluation** | Sequential LLM refinement (Claude → GPT-5 mini cross-check) |
+| **Evaluation** | Sequential LLM refinement (Claude → OpenAI mini model cross-check) |
 | **Storage** | SQLite cache (`source-reliability.db`) |
 | **Integration** | Batch prefetch + sync lookup (all 3 pipelines) |
 | **Pipelines** | Orchestrated ✅, Canonical ✅, Dynamic ✅ |
@@ -55,7 +55,7 @@ FH_INTERNAL_RUNNER_KEY=your-secret-key-here
 
 The service is **enabled by default**. It will automatically:
 - Prefetch source reliability before analyzing sources
-- Use multi-model consensus (Claude + GPT-4)
+- Use multi-model refinement (Claude + OpenAI mini model, default `gpt-4o-mini`)
 - Cache results for 90 days
 - Skip blog platforms and spam TLDs
 - Apply evidence weighting to verdicts
@@ -91,7 +91,7 @@ flowchart TB
     subgraph evaluation [LLM Evaluation - Sequential Refinement]
         EVAL[/api/internal/evaluate-source]
         LLM1[Claude<br/>Initial Evaluation]
-        LLM2[GPT-5 mini<br/>Cross-check and Refine]
+    LLM2[OpenAI mini model<br/>Cross-check and Refine]
         FINAL[Final Result]
     end
     
@@ -198,7 +198,7 @@ flowchart TD
         FILTER -->|Legitimate| LLM[Multi-Model LLM<br/>Internal API Only]
         LLM --> CONF{Confidence ≥ 0.8?}
         CONF -->|No| SKIP
-        CONF -->|Yes| CONS{Models Agree?<br/>Diff ≤ 0.15}
+        CONF -->|Yes| CONS{Models Agree?<br/>Diff ≤ 0.20}
         CONS -->|No| SKIP
         CONS -->|Yes| SAVE[Cache + Add to Map]
     end
@@ -273,82 +273,68 @@ Average score = (0.95 + 0.88) / 2 = 0.915
 
 ## Configuration
 
-All configuration is via environment variables (`apps/web/.env.local`):
+Source Reliability is configured via UCM as a **separate SR config type** (`sr.v1`). Edit it in
+**Admin → Config → Source Reliability**. This SR config is owned by the SR service and is separate
+from the main pipeline/search/calculation configs.
 
-### Core Settings
+### Core Settings (UCM)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `FH_SR_ENABLED` | `true` | Enable/disable source reliability |
-| `FH_SR_MULTI_MODEL` | `true` | Use multi-model consensus |
-| `FH_SR_CONFIDENCE_THRESHOLD` | `0.8` | Min LLM confidence to accept score |
-| `FH_SR_CONSENSUS_THRESHOLD` | `0.15` | Max score difference between models |
-| `FH_SR_DEFAULT_SCORE` | `0.5` | Default score for unknown sources (0.5 = neutral center) |
+| Field | Default | Description |
+|-------|---------|-------------|
+| `enabled` | `true` | Enable/disable source reliability |
+| `multiModel` | `true` | Use multi-model consensus |
+| `openaiModel` | `gpt-4o-mini` | Secondary model for consensus |
+| `confidenceThreshold` | `0.8` | Min LLM confidence to accept score |
+| `consensusThreshold` | `0.20` | Max score difference between models |
+| `defaultScore` | `0.5` | Default score for unknown sources (neutral center) |
 
-**Note (POC)**: Some admin tooling may still default to a lower threshold if `FH_SR_CONFIDENCE_THRESHOLD` is unset. For consistent behavior, set `FH_SR_CONFIDENCE_THRESHOLD` explicitly in `apps/web/.env.local`.
+### Cache & Filtering (UCM)
 
-### Cache Settings
+| Field | Default | Description |
+|-------|---------|-------------|
+| `cacheTtlDays` | `90` | Cache expiration in days |
+| `filterEnabled` | `true` | Enable importance filter |
+| `skipPlatforms` | *(defaults in config)* | Platform domains to skip |
+| `skipTlds` | *(defaults in config)* | TLDs to skip |
+
+### Rate Limiting (UCM)
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `rateLimitPerIp` | `10` | Max evaluations per minute per IP |
+| `domainCooldownSec` | `60` | Seconds between same-domain evals |
+
+### Evaluator Evidence Grounding (UCM)
+
+These settings affect the internal evaluation endpoint (`/api/internal/evaluate-source`):
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `evalUseSearch` | `true` | Build an evidence pack from web search |
+| `evalSearchMaxResultsPerQuery` | `3` | Max search results per query for the evidence pack |
+| `evalMaxEvidenceItems` | `12` | Max evidence-pack items to include |
+| `evalSearchDateRestrict` | `null` | Optional: `y` \| `m` \| `w` (falls back to SearchConfig `dateRestrict`) |
+
+### Environment Variables (infra only)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `FH_SR_CACHE_PATH` | `./source-reliability.db` | SQLite database location |
-| `FH_SR_CACHE_TTL_DAYS` | `90` | Cache expiration in days |
 
-### Rate Limiting
+### Example SR Config (JSON)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `FH_SR_RATE_LIMIT_PER_IP` | `10` | Max evaluations per minute per IP |
-| `FH_SR_RATE_LIMIT_DOMAIN_COOLDOWN` | `60` | Seconds between same-domain evals |
-
-### Importance Filter
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `FH_SR_FILTER_ENABLED` | `true` | Enable importance filter |
-| `FH_SR_SKIP_PLATFORMS` | *(see below)* | Platforms to skip (comma-separated) |
-| `FH_SR_SKIP_TLDS` | *(see below)* | TLDs to skip (comma-separated) |
-
-**Default skip platforms**: `blogspot.,wordpress.com,medium.com,substack.com,tumblr.com,wix.com,weebly.com,squarespace.com,ghost.io,blogger.com,sites.google.com,github.io,netlify.app,vercel.app,herokuapp.com`
-
-**Default skip TLDs**: `xyz,top,club,icu,buzz,tk,ml,ga,cf,gq,work,click,link,win,download,stream`
-
-### Evaluator Evidence Grounding (POC)
-
-These settings affect the internal evaluation endpoint (`/api/internal/evaluate-source`):
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `FH_SR_EVAL_USE_SEARCH` | `true` | If `true` and a search provider is configured, build an evidence pack from web search and inject it into the evaluation prompt |
-| `FH_SR_EVAL_MAX_EVIDENCE_ITEMS` | `6` | Max number of evidence-pack items to include in the prompt (POC default) |
-| `FH_SR_EVAL_SEARCH_MAX_RESULTS_PER_QUERY` | `3` | Max search results per query when building the evidence pack (POC default) |
-| `FH_SR_EVAL_SEARCH_DATE_RESTRICT` | *(unset)* | Optional: `y` \| `m` \| `w` (falls back to `FH_SEARCH_DATE_RESTRICT` if set) |
-
-**POC query set (cost-efficient)**:
-The evaluator builds an evidence pack using a small query set and stops early once enough evidence items are collected:
-- `<brand?> "<domain>" fact check reliability`
-- `<brand?> "<domain>" media bias fact check credibility rating`
-- `<brand?> "<domain>" corrections policy editorial standards retractions`
-
-Where `<brand?>` is an optional heuristic token derived from the domain; it is omitted when too short/ambiguous (e.g., very short brands). The domain is always included as a quoted token.
-
-**Relevance filter (POC)**:
-Search results are filtered to reduce noise: we only keep evidence-pack items that mention the domain/brand in the title/snippet/URL, or whose URL host matches the domain (or subdomain).
-
-### Example Configurations
-
-```bash
-# Disable multi-model (faster, cheaper)
-FH_SR_MULTI_MODEL=false
-
-# Lower confidence threshold
-FH_SR_CONFIDENCE_THRESHOLD=0.7
-
-# Evaluate ALL sources (disable filter)
-FH_SR_FILTER_ENABLED=false
-
-# Add custom platforms to skip
-FH_SR_SKIP_PLATFORMS=blogspot.,wordpress.com,medium.com,custom-blog.com
+```json
+{
+  "enabled": true,
+  "multiModel": true,
+  "openaiModel": "gpt-4o-mini",
+  "confidenceThreshold": 0.8,
+  "consensusThreshold": 0.2,
+  "defaultScore": 0.5,
+  "cacheTtlDays": 90,
+  "filterEnabled": true,
+  "evalUseSearch": true
+}
 ```
 
 ---
@@ -445,11 +431,11 @@ High reliability scores require stronger evidence (skeptical default):
 All components now use `apps/web/src/lib/source-reliability-config.ts` for unified defaults:
 
 ```typescript
-import { getSRConfig, scoreToFactualRating, SOURCE_TYPE_CAPS } from "@/lib/source-reliability-config";
+import { getSRConfig, scoreToFactualRating, SOURCE_TYPE_EXPECTED_CAPS } from "@/lib/source-reliability-config";
 
 const config = getSRConfig();
 // config.confidenceThreshold = 0.8 (unified)
-// config.consensusThreshold = 0.15
+// config.consensusThreshold = 0.20
 ```
 
 ---
@@ -463,7 +449,7 @@ Version 1.3 replaces the parallel consensus model with **sequential refinement**
 **Previous (v1.2) - Parallel Consensus:**
 ```
 Evidence Pack → Claude (evaluate) → Result 1
-Evidence Pack → GPT-4 (evaluate) → Result 2
+Evidence Pack → OpenAI model (evaluate) → Result 2
 Compare Results → Consensus or Fallback → Final
 ```
 
@@ -473,7 +459,7 @@ Compare Results → Consensus or Fallback → Final
 ```
 Evidence Pack → Claude (Initial Evaluation) → Initial Result
                          ↓
-Evidence Pack + Initial Result → GPT-5 mini (Cross-check & Refine) → Final Result
+Evidence Pack + Initial Result → OpenAI mini model (Cross-check & Refine) → Final Result
 ```
 
 **Benefits**:
@@ -484,7 +470,7 @@ Evidence Pack + Initial Result → GPT-5 mini (Cross-check & Refine) → Final R
 
 ### Refinement Process
 
-The secondary model (GPT-5 mini) receives:
+The secondary OpenAI model (default: `gpt-4o-mini`) receives:
 1. The original evidence pack
 2. The complete initial evaluation from Claude
 3. Instructions to cross-check, sharpen entity identification, and refine the score
@@ -614,7 +600,7 @@ The API response now includes refinement tracking:
 
 **After (v1.3 - Sequential Refinement)**:
 - Claude initial evaluation: 60% (leaning_reliable)
-- GPT-5 mini cross-check: Identifies the source as an established public broadcaster, notes academic citations and institutional use in evidence, no negative evidence found
+- OpenAI mini-model cross-check: Identifies the source as an established public broadcaster, notes academic citations and institutional use in evidence, no negative evidence found
 - Final result: Score refined upward with `refinementApplied: true` and detailed `refinementNotes`
 
 ---
@@ -669,7 +655,7 @@ Per review feedback, the system avoids categorical assumptions:
 
 When a domain is the primary digital outlet for a larger organization (e.g., a TV channel, newspaper, or media group), the evaluation must focus on the reliability of the entire organization.
 
-- **Scope**: If the domain name or the website's branding closely matches an organization name, the whole organization shall be rated.
+- **Evaluation focus**: If the domain name or the website's branding closely matches an organization name, the whole organization shall be rated.
 - **Legacy Media**: Public broadcasters and established legacy media should be evaluated based on their institutional standards and editorial oversight.
 - **Consistency**: This prevents high-quality organizations from being underrated due to narrow domain-focused metrics.
 
@@ -877,8 +863,8 @@ function calculateEffectiveWeight(data: SourceReliabilityData): number {
 | Component | Purpose |
 |-----------|---------|
 | **Score** | LLM-evaluated reliability (7-band scale) - used directly as weight |
-| **Confidence** | Quality gate (threshold: 65%) - scores below are rejected |
-| **Consensus** | Multi-model agreement (Claude + GPT-4 within 15%) |
+| **Confidence** | Quality gate (threshold: `sr.confidenceThreshold`, default 0.8) - scores below are rejected |
+| **Consensus** | Multi-model agreement (diff ≤ `sr.consensusThreshold`, default 0.20) |
 
 **Key Design Decisions**:
 - **Score = Weight** - No transformation, what LLM says is what we use
@@ -895,20 +881,20 @@ function calculateEffectiveWeight(data: SourceReliabilityData): number {
 
 Sources not in the cache are assigned a default score:
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `FH_SR_DEFAULT_SCORE` | `0.5` | Score assigned to unknown sources (neutral center) |
+| Field | Default | Purpose |
+|-------|---------|---------|
+| `defaultScore` | `0.5` | Score assigned to unknown sources (neutral center, SR UCM config) |
 
 This results in 50% weight (neutral), applying appropriate skepticism to unverified sources while not completely discounting their evidence.
 
 ### Multi-Model Consensus
 
-When `FH_SR_MULTI_MODEL=true` (default):
+When `sr.multiModel` is enabled (default):
 
-1. Build an optional **evidence pack** (web search results) if `FH_SR_EVAL_USE_SEARCH=true` and a search provider is configured
-2. Both Claude and GPT evaluate the source using the same evidence pack
-3. Primary must return confidence ≥ threshold; secondary must return a non-null score (if secondary fails, fallback to primary with reduced confidence)
-4. Score difference must be ≤ `FH_SR_CONSENSUS_THRESHOLD` (0.15)
+1. Build an optional **evidence pack** (web search results) if `sr.evalUseSearch=true` and a search provider is configured
+2. Both Claude and the secondary OpenAI model evaluate the source using the same evidence pack
+3. Primary must return confidence ≥ `sr.confidenceThreshold`; secondary must return a non-null score (if secondary fails, fallback to primary with reduced confidence)
+4. Score difference must be ≤ `sr.consensusThreshold` (default 0.20)
 5. Final score = **“better founded”** model output (more grounded citations/recency to the evidence pack); tie-breaker = **lower score** (skeptical default)
 6. If consensus fails → return `null` (unknown reliability)
 
@@ -958,10 +944,10 @@ The importance filter saves ~60% of LLM costs by skipping blog platforms and spa
 
 | Issue | Action |
 |-------|--------|
-| LLM costs too high | Set `FH_SR_MULTI_MODEL=false` |
-| Still too expensive | Set `FH_SR_ENABLED=false` |
-| Too many hallucinations | Raise `FH_SR_CONFIDENCE_THRESHOLD` to 0.9 |
-| Low consensus rate | Lower `FH_SR_CONSENSUS_THRESHOLD` to 0.20 |
+| LLM costs too high | Set `sr.multiModel=false` in UCM (Admin → Config → Source Reliability) |
+| Still too expensive | Set `sr.enabled=false` in UCM |
+| Too many hallucinations | Raise `sr.confidenceThreshold` to 0.9 |
+| Low consensus rate | Lower `sr.consensusThreshold` (default 0.20) |
 
 ---
 
@@ -970,10 +956,10 @@ The importance filter saves ~60% of LLM costs by skipping blog platforms and spa
 | Issue | Solution |
 |-------|----------|
 | "Unauthorized" from evaluate endpoint | Set `FH_INTERNAL_RUNNER_KEY` in `.env.local` |
-| No scores appearing | Verify `FH_SR_ENABLED=true` (default) |
+| No scores appearing | Verify `sr.enabled=true` in UCM (Admin → Config → Source Reliability) |
 | Low-confidence evaluations (shown as score N/A) | Ensure a search provider is configured so the evidence pack is populated; otherwise evaluations may return `insufficient_data` |
-| High LLM costs | Enable filter, use single model (`FH_SR_MULTI_MODEL=false`) |
-| Consensus failures | Lower `FH_SR_CONSENSUS_THRESHOLD` (default 0.15) |
+| High LLM costs | Enable filter and use single model (`sr.multiModel=false`) |
+| Consensus failures | Lower `sr.consensusThreshold` (default 0.20) |
 | Score not affecting verdict | Check `applyEvidenceWeighting` is called, verify `trackRecordScore` on sources |
 | Admin page shows 401 | Enter admin key in the auth form, or set `FH_ADMIN_KEY` in env |
 

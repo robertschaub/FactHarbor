@@ -3,7 +3,7 @@
 ## Overview
 
 The FactHarbor Admin GUI provides web-based interfaces for administrators to:
-- Manage unified configuration (search, calculation, and prompt configs)
+- Manage unified configuration (pipeline, search, calculation, prompts, SR)
 - View and manage source reliability cache
 - Test and validate API keys and service configurations
 
@@ -27,8 +27,10 @@ The Unified Configuration Management system provides a single interface for mana
 
 | Type | Profile Keys | Description |
 |------|-------------|-------------|
+| **Pipeline** | `default` | LLM provider selection, model routing, budgets, feature flags |
 | **Search** | `default` | Web search provider settings |
 | **Calculation** | `default` | Verdict aggregation and weighting parameters |
+| **Source Reliability** | `default` | SR service thresholds, caching, filtering (separate SR domain) |
 | **Prompt** | `orchestrated`, `monolithic-canonical`, `monolithic-dynamic`, `source-reliability` | LLM prompt templates for each pipeline |
 
 ### Tabs
@@ -36,7 +38,7 @@ The Unified Configuration Management system provides a single interface for mana
 - **Active**: View currently active configuration with version info
 - **Edit**: Modify configuration using form-based editors (JSON) or text editor (prompts)
 - **History**: Browse all saved versions with activation status
-- **Effective** (Search/Calc only): See final config after environment variable overrides
+- **Effective** (non-prompt): See resolved config (UCM is the source of truth; env overrides are disabled for analysis settings)
 
 ### Features
 
@@ -54,17 +56,11 @@ The Unified Configuration Management system provides a single interface for mana
 - Export any configuration as JSON or `.prompt.md` file
 - Import configurations from files with schema validation
 
-### Environment Variable Overrides
+### Environment Variables
 
-Search and Calculation configs support runtime overrides via environment variables:
-
-| Config Type | Env Var | Field |
-|-------------|---------|-------|
-| Search | `FH_SEARCH_ENABLED` | `enabled` |
-| Search | `FH_SEARCH_PROVIDER` | `provider` |
-| Calculation | `FH_CALC_CONFIDENCE_THRESHOLD` | `aggregation.confidenceThreshold` |
-
-The **Effective** tab shows the final configuration after overrides are applied.
+Analysis settings (pipeline/search/calculation/SR) are managed in UCM. Environment variables are used
+only for infrastructure and secrets (API keys, endpoints, cache paths). The **Effective** tab shows
+the resolved config from UCM (no env overrides for analysis behavior).
 
 ---
 
@@ -122,7 +118,7 @@ Each service test returns one of the following statuses:
 
 ### LLM Providers
 
-Only the currently selected LLM provider (via `LLM_PROVIDER`) is actively tested. Others are marked as "Skipped".
+Only the currently selected LLM provider (via the pipeline config `llmProvider`) is actively tested. Others are marked as "Skipped".
 
 | Provider | Environment Variables | Config URL |
 |----------|----------------------|------------|
@@ -132,13 +128,11 @@ Only the currently selected LLM provider (via `LLM_PROVIDER`) is actively tested
 | Mistral AI | `MISTRAL_API_KEY` | https://console.mistral.ai/api-keys |
 
 **Setting the LLM Provider:**
-```
-LLM_PROVIDER=anthropic   # Options: openai, anthropic, google, mistral
-```
+Use **Admin → Config → Pipeline** and set `llmProvider` (anthropic/openai/google/mistral).
 
 ### Search Providers
 
-Search providers are tested when search is enabled (`FH_SEARCH_ENABLED=true`) and the provider is selected or auto-detection is enabled.
+Search providers are tested when search is enabled in UCM and the provider is selected or auto-detection is enabled.
 
 | Provider | Environment Variables | Config URL |
 |----------|----------------------|------------|
@@ -146,10 +140,7 @@ Search providers are tested when search is enabled (`FH_SEARCH_ENABLED=true`) an
 | Google Custom Search | `GOOGLE_CSE_API_KEY`, `GOOGLE_CSE_ID` | https://developers.google.com/custom-search/v1/introduction |
 
 **Setting the Search Provider:**
-```
-FH_SEARCH_ENABLED=true
-FH_SEARCH_PROVIDER=auto   # Options: auto, serpapi, google-cse
-```
+Use **Admin → Config → Web Search** and set `enabled` + `provider`.
 
 ## Troubleshooting
 
@@ -170,7 +161,7 @@ FH_SEARCH_PROVIDER=auto   # Options: auto, serpapi, google-cse
 #### Service skipped
 **Problem:** The service shows as "Skipped".
 
-**Solution:** This is normal if you're using a different provider. Update your `LLM_PROVIDER` or `FH_SEARCH_PROVIDER` setting if you want to use this service instead.
+**Solution:** This is normal if you're using a different provider. Update pipeline `llmProvider` or the UCM search provider if you want to use this service instead.
 
 #### Connection errors
 **Problem:** The service shows connection timeout or network errors.
@@ -190,16 +181,13 @@ FH_API_BASE_URL=http://localhost:8080
 FH_ADMIN_KEY=your-admin-key
 FH_INTERNAL_RUNNER_KEY=your-runner-key
 
-# LLM Provider (choose one)
-LLM_PROVIDER=anthropic
+# LLM Provider API keys (provider selected in UCM pipeline config)
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 GOOGLE_GENERATIVE_AI_API_KEY=AIza...
 MISTRAL_API_KEY=...
 
-# Search Provider
-FH_SEARCH_ENABLED=true
-FH_SEARCH_PROVIDER=auto
+# Search Provider keys (provider selected in UCM search config)
 SERPAPI_API_KEY=...
 GOOGLE_CSE_API_KEY=...
 GOOGLE_CSE_ID=...

@@ -185,16 +185,13 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 
 ### Key Environment Variables
 
+Analysis configuration (pipeline/search/calculation/SR) is managed in UCM (Admin → Config). Env vars are reserved for infra/runtime concerns.
+
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `FH_DETERMINISTIC` | `true` | Zero temperature for reproducibility |
 | `FH_RUNNER_MAX_CONCURRENCY` | `3` | Max parallel analysis jobs |
-| `FH_SEARCH_ENABLED` | `true` | Enable web search |
-| `FH_SEARCH_DATE_RESTRICT` | - | Limit search to recent results (y/m/w) |
-| `LLM_PROVIDER` | `anthropic` | LLM provider selection |
-| `FH_SR_ENABLED` | `true` | Enable source reliability scoring |
-| `FH_SR_MULTI_MODEL` | `true` | Use multi-model consensus (Claude + GPT-4) |
-| `FH_SR_CONFIDENCE_THRESHOLD` | `0.8` | Min LLM confidence to accept score |
+| `FH_CONFIG_DB_PATH` | `./config.db` | UCM SQLite location (optional) |
+| `FH_SR_CACHE_PATH` | `./source-reliability.db` | SR cache database path |
 
 ---
 

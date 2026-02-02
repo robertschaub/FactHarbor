@@ -370,7 +370,7 @@ Typical costs per 100 source reliability evaluations:
 | Claude Haiku + GPT-4o-mini | ~$0.32 |
 | Claude Haiku only | ~$0.28 |
 
-Configure `FH_SR_OPENAI_MODEL` in `.env.local` to switch between `gpt-4o` (quality) and `gpt-4o-mini` (cost savings).
+Set SR config `openaiModel` in UCM (Admin → Config → Source Reliability) to switch between `gpt-4o` (quality) and `gpt-4o-mini` (cost savings).
 
 ## Best Practices
 

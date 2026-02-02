@@ -378,9 +378,9 @@ Prompt examples must NEVER contain terms, phrases, or patterns from known test c
 - Internal keys (FH_ADMIN_KEY, FH_INTERNAL_RUNNER_KEY)
 
 **Optional**:
-- Feature flags (FH_SEARCH_ENABLED, FH_DETERMINISTIC)
+- Feature flags (UCM: `pipeline.deterministic`, `search.enabled`)
 - Limits (FH_RUNNER_MAX_CONCURRENCY)
-- Domain whitelist (FH_SEARCH_DOMAIN_WHITELIST)
+- Domain whitelist (UCM: `search.domainWhitelist`)
 
 **Security**:
 - Never commit secrets to git

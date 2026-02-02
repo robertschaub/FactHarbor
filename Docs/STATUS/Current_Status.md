@@ -258,16 +258,13 @@
 ### Required Variables
 
 ```bash
-# LLM Provider (choose one)
-LLM_PROVIDER=anthropic  # anthropic | openai | google | mistral
+# LLM Provider API keys (provider selected in UCM pipeline config)
 ANTHROPIC_API_KEY=sk-ant-...
 # OPENAI_API_KEY=sk-...
 # GOOGLE_GENERATIVE_AI_API_KEY=AIza...
 # MISTRAL_API_KEY=...
 
-# Search Provider (REQUIRED for web search in ALL pipelines)
-FH_SEARCH_ENABLED=true
-FH_SEARCH_PROVIDER=auto  # auto | serpapi | google-cse
+# Search Provider keys (provider selected in UCM search config)
 SERPAPI_API_KEY=...
 # Or: GOOGLE_CSE_API_KEY=... and GOOGLE_CSE_ID=...
 # NOTE: Without search credentials, all pipelines run without web sources
@@ -284,15 +281,8 @@ FH_INTERNAL_RUNNER_KEY=your-secure-runner-key
 ### Optional Variables
 
 ```bash
-# Analysis Configuration
-FH_DETERMINISTIC=true  # Use temperature=0 for reproducibility
-FH_ALLOW_MODEL_KNOWLEDGE=false  # Require evidence-based analysis only
+# Job execution controls
 FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
-
-# Optional Features
-FH_SEARCH_MODE=standard  # standard | grounded (Gemini only)
-FH_SEARCH_DATE_RESTRICT=  # y (year) | m (month) | w (week)
-FH_SEARCH_DOMAIN_WHITELIST=  # Comma-separated trusted domains
 ```
 
 ---
@@ -689,7 +679,7 @@ See: [Implementation Review](../REVIEWS/Unified_Configuration_Management_Impleme
 | Job fails immediately | Check LLM API key is valid |
 | No progress updates | Check `FH_ADMIN_KEY` matches `Admin:Key` |
 | API not starting | DB is auto-created on startup; check API console for DB errors, and (local dev) delete `apps/api/factharbor.db` to recreate |
-| Search not working | Verify `FH_SEARCH_ENABLED=true` and search API key |
+| Search not working | Verify Web Search config is enabled in UCM (Admin → Config → Web Search) and the search API key is set |
 | No sources fetched | Configure `SERPAPI_API_KEY` or `GOOGLE_CSE_API_KEY`+`GOOGLE_CSE_ID`. See [LLM Configuration](../USER_GUIDES/LLM_Configuration.md#search-provider-issues) |
 
 ---

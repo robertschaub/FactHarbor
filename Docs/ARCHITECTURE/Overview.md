@@ -628,9 +628,9 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 - Estimated savings: 30-50% on repeat claims
 
 **Search Optimization:**
-- Limit sources by using `FH_ANALYSIS_MODE=quick` (default) vs `FH_ANALYSIS_MODE=deep` (more sources/iterations). Limits live in `apps/web/src/lib/analyzer/config.ts`.
-- Use domain whitelist to improve relevance
-- Use date restriction for recent topics (`FH_SEARCH_DATE_RESTRICT`)
+- Limit sources by setting Pipeline config `analysisMode` (quick vs deep) and iteration limits in UCM (Admin → Config → Pipeline). Defaults live in `apps/web/src/lib/analyzer/config.ts`.
+- Use Search config `domainWhitelist` to improve relevance
+- Use Search config `dateRestrict` for recent topics
 
 ### Performance Characteristics
 
@@ -764,13 +764,12 @@ See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
 
 ### Key Environment Variables
 
+Analysis behavior (pipeline/search/calculation/SR) is configured in UCM. Environment variables are
+reserved for infrastructure and secrets.
+
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `LLM_PROVIDER` | `anthropic` | LLM provider selection |
-| `FH_DETERMINISTIC` | `true` | Zero temperature for reproducibility |
 | `FH_RUNNER_MAX_CONCURRENCY` | `3` | Max parallel analysis jobs |
-| `FH_SEARCH_ENABLED` | `true` | Enable web search |
-| `FH_ALLOW_MODEL_KNOWLEDGE` | `false` | Require evidence-based analysis only |
 | `FH_ADMIN_KEY` | - | Admin endpoints authentication |
 | `FH_INTERNAL_RUNNER_KEY` | - | Internal job execution authentication |
 

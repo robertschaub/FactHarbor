@@ -41,12 +41,17 @@
 
 ### Key Concepts
 
-**Profile**: A named set of configurations (search settings + prompts + calculation parameters)
+**Profile**: A named configuration **per config type** (e.g., `pipeline:default`, `search:default`).
+There is no single combined profile object; each config type is versioned independently.
 
 **Configuration Types**:
+- **PipelineConfig** - LLM provider selection, model routing, budgets, feature flags
 - **SearchConfig** - Web search behavior (provider, max results, timeouts)
-- **PromptConfig** - LLM prompts and templates
 - **CalcConfig** - Calculation thresholds and verdict bands
+- **PromptConfig** - LLM prompts and templates
+- **Evidence Lexicon** - Evidence filtering patterns (UCM lexicon)
+- **Aggregation Lexicon** - Aggregation heuristics (UCM lexicon)
+- **Source Reliability (SR)** - SR service config (separate SR domain)
 
 **Default Profile**: Built-in profile used when no custom profile selected
 
@@ -56,17 +61,13 @@
 
 ### Profile Structure
 
-Each profile contains 3 configuration objects:
+Each config type has its own profile:
 
 ```typescript
-interface Profile {
-  id: string;                    // Unique identifier (UUID)
-  name: string;                  // Display name ("High-Stakes Fact-Checking")
-  description: string;           // Purpose description
-  isDefault: boolean;            // Whether this is the default profile
-  searchConfig: SearchConfig;    // Search settings
-  promptConfig: PromptConfig;    // Prompt templates
-  calcConfig: CalcConfig;        // Calculation parameters
+interface ConfigProfile<T> {
+  configType: "pipeline" | "search" | "calculation" | "prompt" | "sr" | "evidence-lexicon" | "aggregation-lexicon";
+  profileKey: string;            // Usually "default"
+  content: T;                    // Config JSON or prompt content
   createdAt: string;             // ISO 8601 timestamp
   updatedAt: string;             // ISO 8601 timestamp
 }
