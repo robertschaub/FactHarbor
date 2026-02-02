@@ -33,13 +33,15 @@ import {
 // ============================================================================
 
 describe("Config Type Validation", () => {
-  it("VALID_CONFIG_TYPES includes all 5 types", () => {
+  it("VALID_CONFIG_TYPES includes all 7 types", () => {
     expect(VALID_CONFIG_TYPES).toContain("prompt");
     expect(VALID_CONFIG_TYPES).toContain("search");
     expect(VALID_CONFIG_TYPES).toContain("calculation");
     expect(VALID_CONFIG_TYPES).toContain("pipeline");
     expect(VALID_CONFIG_TYPES).toContain("sr");
-    expect(VALID_CONFIG_TYPES.length).toBe(5);
+    expect(VALID_CONFIG_TYPES).toContain("evidence-lexicon");
+    expect(VALID_CONFIG_TYPES).toContain("aggregation-lexicon");
+    expect(VALID_CONFIG_TYPES.length).toBe(7);
   });
 
   it("isValidConfigType returns true for valid types", () => {
@@ -133,7 +135,7 @@ describe("PipelineConfigSchema", () => {
       ...DEFAULT_PIPELINE_CONFIG,
       llmInputClassification: false,
       llmEvidenceQuality: false,
-      llmScopeSimilarity: false,
+      llmContextSimilarity: false,
       llmVerdictValidation: false,
     };
     const result = PipelineConfigSchema.safeParse(config);
@@ -148,20 +150,20 @@ describe("PipelineConfigSchema", () => {
 
   it("validates budget controls range", () => {
     // Valid ranges
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerScope: 1 }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerScope: 20 }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerContext: 1 }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerContext: 20 }).success).toBe(true);
 
     // Invalid ranges
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerScope: 0 }).success).toBe(false);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerScope: 21 }).success).toBe(false);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerContext: 0 }).success).toBe(false);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerContext: 21 }).success).toBe(false);
   });
 
-  it("validates scopeDedupThreshold range (0-1)", () => {
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, scopeDedupThreshold: 0 }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, scopeDedupThreshold: 1 }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, scopeDedupThreshold: 0.7 }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, scopeDedupThreshold: -0.1 }).success).toBe(false);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, scopeDedupThreshold: 1.1 }).success).toBe(false);
+  it("validates contextDedupThreshold range (0-1)", () => {
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: 0 }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: 1 }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: 0.7 }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: -0.1 }).success).toBe(false);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: 1.1 }).success).toBe(false);
   });
 
   it("validates defaultPipelineVariant enum", () => {
@@ -337,8 +339,8 @@ describe("getDefaultConfig function", () => {
     const result = getDefaultConfig("pipeline");
     expect(result).toBeTruthy();
     const parsed = JSON.parse(result);
-    expect(parsed.llmTiering).toBe(true);
-    expect(parsed.analysisMode).toBe("deep");
+    expect(parsed.llmTiering).toBe(false); // v2.9.0: Default to off for backwards compatibility
+    expect(parsed.analysisMode).toBe("quick"); // v2.9.0: Default to quick mode for backwards compatibility
   });
 
   it("returns stringified SR config", () => {
@@ -370,7 +372,7 @@ describe("parseTypedConfig function", () => {
   it("parses and returns typed pipeline config", () => {
     const content = JSON.stringify(DEFAULT_PIPELINE_CONFIG);
     const result = parseTypedConfig("pipeline", content);
-    expect(result.llmTiering).toBe(true);
+    expect(result.llmTiering).toBe(false); // v2.9.0: Default to off for backwards compatibility
     expect(result.modelVerdict).toBe("claude-sonnet-4-20250514");
   });
 
@@ -455,12 +457,12 @@ describe("Default Config Values", () => {
     it("has LLM text analysis enabled by default (v2.8.3)", () => {
       expect(DEFAULT_PIPELINE_CONFIG.llmInputClassification).toBe(true);
       expect(DEFAULT_PIPELINE_CONFIG.llmEvidenceQuality).toBe(true);
-      expect(DEFAULT_PIPELINE_CONFIG.llmScopeSimilarity).toBe(true);
+      expect(DEFAULT_PIPELINE_CONFIG.llmContextSimilarity).toBe(true); // Renamed from llmScopeSimilarity
       expect(DEFAULT_PIPELINE_CONFIG.llmVerdictValidation).toBe(true);
     });
 
     it("has correct budget defaults", () => {
-      expect(DEFAULT_PIPELINE_CONFIG.maxIterationsPerScope).toBe(5);
+      expect(DEFAULT_PIPELINE_CONFIG.maxIterationsPerContext).toBe(5); // Renamed from maxIterationsPerScope
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalIterations).toBe(20);
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalTokens).toBe(750000);
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);

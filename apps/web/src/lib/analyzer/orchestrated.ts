@@ -2734,8 +2734,9 @@ function isExternalReactionClaim(claimText: string): boolean {
 /**
  * Validate thesis relevance classifications and flag low-confidence cases.
  * Optionally downgrade "direct" to "tangential" when confidence is very low.
+ * @exported for unit testing
  */
-function validateThesisRelevance<T extends {
+export function validateThesisRelevance<T extends {
   thesisRelevance?: "direct" | "tangential" | "irrelevant";
   thesisRelevanceConfidence?: number;
   text?: string;

@@ -2401,7 +2401,9 @@ export default function ConfigAdminPage() {
       setVersionLabel("");
       toast.success(activate ? "Config saved and activated!" : "Config saved as draft");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toast.error(`Save failed: ${message}`);
     } finally {
       setSaving(false);
     }
