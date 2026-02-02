@@ -7,7 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { invalidateConfigCache, getConfigCacheStatus } from "@/lib/config-loader";
-import type { ConfigType } from "@/lib/config-storage";
+import { getConfigCacheStats, type ConfigType } from "@/lib/config-storage";
 
 export const runtime = "nodejs";
 
@@ -32,10 +32,12 @@ export async function GET(req: Request) {
   }
 
   const status = getConfigCacheStatus();
+  const storageCache = getConfigCacheStats();
   return NextResponse.json({
     ...status,
     hitRate: "N/A", // Would need tracking to calculate
     lastPoll: new Date().toISOString(),
+    storageCache,
   });
 }
 

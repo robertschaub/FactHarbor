@@ -33,6 +33,7 @@
  * - v2.6.33: Contested claims WITH factual counter-evidence get reduced weight in aggregation
  * - v2.6.40: Fixed Context/Scope terminology - assessedStatement now passed to verdict prompts
  * - v2.6.40: Renamed scopesFormatted to contextsFormatted, fixed all "scope" to "context" in prompts
+ * - Note: Any remaining "scope" mentions in version notes are historical (legacy AnalysisContext wording)
  *
  * @version 2.6.40
  * @date January 2026

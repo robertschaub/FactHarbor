@@ -73,6 +73,9 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 // Tier 2 operational config for analysis pipeline settings.
 // Hot-reloadable via Admin UI (defaults defined in code + UCM).
 
+// Accept CTX_ (preferred) and SCOPE_ (legacy) during terminology transition.
+const CONTEXT_PATTERN_ID_REGEX = /^(?:CTX|SCOPE)_[A-Z_]+$/;
+
 export const PipelineConfigSchema = z.object({
   // === Model Selection ===
   llmProvider: z.enum(["anthropic", "openai", "google", "mistral"]).optional().describe("Primary LLM provider for analysis"),
@@ -150,7 +153,7 @@ export const PipelineConfigSchema = z.object({
   contextDetectionCustomPatterns: z
     .array(
       z.object({
-        id: z.string().regex(/^SCOPE_[A-Z_]+$/),
+        id: z.string().regex(CONTEXT_PATTERN_ID_REGEX),
         name: z.string(),
         type: z.enum(["methodological", "legal", "scientific", "general", "regulatory", "temporal", "geographic"]),
         triggerPattern: z.string(),
@@ -214,7 +217,7 @@ export const PipelineConfigSchema = z.object({
   scopeDetectionCustomPatterns: z
     .array(
       z.object({
-        id: z.string().regex(/^SCOPE_[A-Z_]+$/),
+        id: z.string().regex(CONTEXT_PATTERN_ID_REGEX),
         name: z.string(),
         type: z.enum(["methodological", "legal", "scientific", "general", "regulatory", "temporal", "geographic"]),
         triggerPattern: z.string(),

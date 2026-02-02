@@ -82,6 +82,18 @@ interface ActiveSummaryResponse {
   timestamp: string;
 }
 
+interface CacheStatusResponse {
+  entries: Array<{ key: string; hash: string; loadedAt: number; pointerCheckedAt: number }>;
+  size: number;
+  hitRate: string;
+  lastPoll: string;
+  storageCache?: {
+    entries: number;
+    keys: string[];
+    ttlMs: number;
+  };
+}
+
 // Search config type
 interface SearchConfig {
   enabled: boolean;
@@ -175,6 +187,7 @@ interface PipelineConfig {
   llmInputClassification: boolean;
   llmEvidenceQuality: boolean;
   llmContextSimilarity?: boolean;
+  // Deprecated alias (legacy "scope" == AnalysisContext).
   llmScopeSimilarity?: boolean;
   llmVerdictValidation: boolean;
   // Analysis behavior
@@ -182,9 +195,11 @@ interface PipelineConfig {
   allowModelKnowledge: boolean;
   deterministic: boolean;
   contextDedupThreshold?: number;
+  // Deprecated alias (legacy "scope" == AnalysisContext).
   scopeDedupThreshold?: number;
   // Budget controls
   maxIterationsPerContext?: number;
+  // Deprecated alias (legacy "scope" == AnalysisContext).
   maxIterationsPerScope?: number;
   maxTotalIterations: number;
   maxTotalTokens: number;
@@ -1833,6 +1848,10 @@ export default function ConfigAdminPage() {
   const [dashboardData, setDashboardData] = useState<ActiveSummaryResponse | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
 
+  // Config cache diagnostics
+  const [cacheStatus, setCacheStatus] = useState<CacheStatusResponse | null>(null);
+  const [cacheLoading, setCacheLoading] = useState(false);
+
   // Diff comparison state
   const [selectedForDiff, setSelectedForDiff] = useState<string[]>([]);
   const [diffData, setDiffData] = useState<any>(null);
@@ -2159,6 +2178,25 @@ export default function ConfigAdminPage() {
     }
   }, [getHeaders]);
 
+  const fetchCacheStatus = useCallback(async () => {
+    setCacheLoading(true);
+    try {
+      const res = await fetch("/api/admin/config/cache", {
+        headers: getHeaders(),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to load cache status");
+      }
+      const data = await res.json();
+      setCacheStatus(data);
+    } catch (err) {
+      console.error("[CacheStatus] Error loading cache status:", err);
+      setCacheStatus(null);
+    } finally {
+      setCacheLoading(false);
+    }
+  }, [getHeaders]);
+
   // Fetch diff comparison
   const fetchDiff = useCallback(async (hash1: string, hash2: string) => {
     setDiffLoading(true);
@@ -2345,7 +2383,8 @@ export default function ConfigAdminPage() {
   // Load dashboard on mount
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
+    fetchCacheStatus();
+  }, [fetchDashboard, fetchCacheStatus]);
 
   // Load default comparison when viewing active or editing
   useEffect(() => {
@@ -2664,6 +2703,77 @@ export default function ConfigAdminPage() {
         ) : (
           <div style={{ padding: 20, textAlign: "center", color: "#ef4444" }}>
             Failed to load active configs
+          </div>
+        )}
+      </div>
+
+      {/* Config Cache Diagnostics */}
+      <div style={{ marginBottom: 32, maxWidth: 1200 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: "#374151" }}>
+            🧠 Config Cache Diagnostics
+          </h2>
+          <button
+            type="button"
+            onClick={fetchCacheStatus}
+            disabled={cacheLoading}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid #d1d5db",
+              background: cacheLoading ? "#f3f4f6" : "#fff",
+              color: "#374151",
+              fontSize: 12,
+              cursor: cacheLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {cacheLoading ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
+        {cacheLoading ? (
+          <div style={{ padding: 16, textAlign: "center", color: "#6b7280" }}>Loading cache status...</div>
+        ) : cacheStatus ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+            <div
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 8,
+                padding: 14,
+                background: "#fff",
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 8, color: "#111827" }}>Loader Cache</div>
+              <div style={{ fontSize: 12, color: "#374151" }}>Entries: {cacheStatus.size}</div>
+              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+                Keys: {cacheStatus.entries.length ? cacheStatus.entries.map((entry) => entry.key).join(", ") : "none"}
+              </div>
+              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>
+                Last poll: {new Date(cacheStatus.lastPoll).toLocaleTimeString()}
+              </div>
+            </div>
+            <div
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 8,
+                padding: 14,
+                background: "#fff",
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 8, color: "#111827" }}>Storage Cache</div>
+              <div style={{ fontSize: 12, color: "#374151" }}>
+                Entries: {cacheStatus.storageCache?.entries ?? 0}
+              </div>
+              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+                TTL: {cacheStatus.storageCache?.ttlMs ?? "N/A"} ms
+              </div>
+              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>
+                Keys: {cacheStatus.storageCache?.keys?.length ? cacheStatus.storageCache.keys.join(", ") : "none"}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: 16, textAlign: "center", color: "#ef4444" }}>
+            Failed to load cache status
           </div>
         )}
       </div>
