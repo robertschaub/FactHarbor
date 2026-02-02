@@ -109,6 +109,16 @@ export const PipelineConfigSchema = z.object({
   analysisMode: z.enum(["quick", "deep"]).describe("Analysis depth: quick (faster) or deep (more thorough)"),
   allowModelKnowledge: z.boolean().describe("Allow LLM to use training knowledge (not just web sources)"),
   deterministic: z.boolean().describe("Use temperature=0 for reproducible outputs"),
+  keyFactorHints: z
+    .array(
+      z.object({
+        evaluationCriteria: z.string(),
+        factor: z.string(),
+        category: z.string(),
+      }),
+    )
+    .optional()
+    .describe("Optional KeyFactor hints (evaluationCriteria, factor, category)"),
 
   // NEW: Correctly-named key (PRIMARY)
   contextDedupThreshold: z.number().min(0).max(1).optional().describe("Threshold for AnalysisContext deduplication (0-1, lower = more contexts)"),
@@ -161,6 +171,21 @@ export const PipelineConfigSchema = z.object({
     .optional()
     .describe("Hints for LLM AnalysisContext-specific factor generation"),
 
+  // === Context Prompt & Alignment Controls ===
+  contextPromptSelectionEnabled: z.boolean().optional().describe("Enable targeted fact selection for context refinement prompts"),
+  contextPromptMaxFacts: z.number().int().min(8).max(80).optional().describe("Max facts included in context refinement prompts"),
+  contextDedupEnabled: z.boolean().optional().describe("Enable AnalysisContext deduplication"),
+  contextNameAlignmentEnabled: z.boolean().optional().describe("Enable AnalysisContext name alignment"),
+  contextNameAlignmentThreshold: z.number().min(0).max(1).optional().describe("Threshold for AnalysisContext name alignment (0-1)"),
+  evidenceScopeAlmostEqualThreshold: z.number().min(0).max(1).optional().describe("Threshold for EvidenceScope similarity (0-1)"),
+
+  // === LLM Limits & Gates ===
+  understandMaxChars: z.number().int().min(1000).max(50000).optional().describe("Max characters sent to UNDERSTAND prompt"),
+  understandLlmTimeoutMs: z.number().int().min(10000).max(1200000).optional().describe("Timeout for UNDERSTAND LLM calls (ms)"),
+  extractFactsLlmTimeoutMs: z.number().int().min(10000).max(1200000).optional().describe("Timeout for EXTRACT_FACTS LLM calls (ms)"),
+  probativeFilterEnabled: z.boolean().optional().describe("Enable probative value filtering"),
+  provenanceValidationEnabled: z.boolean().optional().describe("Enable provenance validation gate"),
+
   // DEPRECATED: Old keys kept for backward compatibility
   /** @deprecated Use contextDetectionMethod instead - 'scope' here means AnalysisContext */
   scopeDetectionMethod: z
@@ -211,8 +236,7 @@ export const PipelineConfigSchema = z.object({
     .describe("Hints for LLM context-specific factor generation"),
 
   // === Budget Controls ===
-  // Note: maxTokensPerCall is excluded from pipeline config - it's a low-level safety limit
-  // that protects against individual LLM call failures and should remain an env var (FH_MAX_TOKENS_PER_CALL)
+  // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
 
   // NEW: Correctly-named key (PRIMARY)
   maxIterationsPerContext: z.number().int().min(1).max(20).optional().describe("Max research iterations per AnalysisContext"),
@@ -222,6 +246,7 @@ export const PipelineConfigSchema = z.object({
 
   maxTotalIterations: z.number().int().min(1).max(50).describe("Max total iterations across all scopes"),
   maxTotalTokens: z.number().int().min(10000).max(2000000).describe("Max tokens per analysis"),
+  maxTokensPerCall: z.number().int().min(1000).max(500000).optional().describe("Max tokens per LLM call"),
   enforceBudgets: z.boolean().describe("Hard enforce budget limits (false = soft limits for important claims)"),
 
   // === Pipeline Selection ===
@@ -286,6 +311,44 @@ export const PipelineConfigSchema = z.object({
     warnings.push("maxIterationsPerScope → maxIterationsPerContext");
   }
 
+  if (data.maxTokensPerCall === undefined) {
+    data.maxTokensPerCall = 100000;
+  }
+
+  if (data.contextPromptSelectionEnabled === undefined) {
+    data.contextPromptSelectionEnabled = true;
+  }
+  if (data.contextPromptMaxFacts === undefined) {
+    data.contextPromptMaxFacts = 40;
+  }
+  if (data.contextDedupEnabled === undefined) {
+    data.contextDedupEnabled = true;
+  }
+  if (data.contextNameAlignmentEnabled === undefined) {
+    data.contextNameAlignmentEnabled = true;
+  }
+  if (data.contextNameAlignmentThreshold === undefined) {
+    data.contextNameAlignmentThreshold = 0.3;
+  }
+  if (data.evidenceScopeAlmostEqualThreshold === undefined) {
+    data.evidenceScopeAlmostEqualThreshold = 0.7;
+  }
+  if (data.understandMaxChars === undefined) {
+    data.understandMaxChars = 12000;
+  }
+  if (data.understandLlmTimeoutMs === undefined) {
+    data.understandLlmTimeoutMs = 600000;
+  }
+  if (data.extractFactsLlmTimeoutMs === undefined) {
+    data.extractFactsLlmTimeoutMs = 300000;
+  }
+  if (data.probativeFilterEnabled === undefined) {
+    data.probativeFilterEnabled = true;
+  }
+  if (data.provenanceValidationEnabled === undefined) {
+    data.provenanceValidationEnabled = true;
+  }
+
   if (warnings.length > 0) {
     console.warn(`[DEPRECATED] Pipeline config keys migrated: ${warnings.join(", ")}`);
   }
@@ -317,6 +380,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   analysisMode: "quick", // v2.9.0: Default to quick mode for backwards compatibility
   allowModelKnowledge: false, // v2.9.0: Default to off for backwards compatibility
   deterministic: true,
+  keyFactorHints: undefined,
   contextDedupThreshold: 0.85, // NEW: Use new key name (v2.9.0: Default to 0.85 per original config.ts:187)
 
   // Context detection settings (NEW: Use new key names)
@@ -326,11 +390,23 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   contextDetectionMaxContexts: 5,
   contextDetectionCustomPatterns: undefined,
   contextFactorHints: undefined,
+  contextPromptSelectionEnabled: true,
+  contextPromptMaxFacts: 40,
+  contextDedupEnabled: true,
+  contextNameAlignmentEnabled: true,
+  contextNameAlignmentThreshold: 0.3,
+  evidenceScopeAlmostEqualThreshold: 0.7,
+  understandMaxChars: 12000,
+  understandLlmTimeoutMs: 600000,
+  extractFactsLlmTimeoutMs: 300000,
+  probativeFilterEnabled: true,
+  provenanceValidationEnabled: true,
 
   // Budget controls
   maxIterationsPerContext: 5, // NEW: Use new key name
   maxTotalIterations: 20,
   maxTotalTokens: 750000,
+  maxTokensPerCall: 100000,
   enforceBudgets: false,
 
   // Pipeline selection

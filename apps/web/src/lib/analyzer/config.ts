@@ -7,91 +7,11 @@
  * @module analyzer/config
  */
 
-import type { PipelineConfig } from "../config-schemas";
+import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig } from "../config-schemas";
 
 // ============================================================================
 // CONFIGURATION PARSING HELPERS
 // ============================================================================
-
-/**
- * Parse comma-separated whitelist into array
- */
-function parseWhitelist(whitelist: string | undefined): string[] | null {
-  if (!whitelist) return null;
-  return whitelist
-    .split(",")
-    .map((d) => d.trim().toLowerCase())
-    .filter((d) => d.length > 0);
-}
-
-/**
- * Parse optional KeyFactor hints from environment variable
- * Returns array of hint objects or null if not configured
- * These are suggestions only - the LLM can use them but is not required to
- */
-function parseKeyFactorHints(
-  hintsJson: string | undefined,
-): Array<{ evaluationCriteria: string; factor: string; category: string }> | null {
-  if (!hintsJson) return null;
-  try {
-    const parsed = JSON.parse(hintsJson);
-    if (!Array.isArray(parsed)) return null;
-    return parsed.filter(
-      (hint) =>
-        typeof hint === "object" &&
-        hint !== null &&
-        typeof hint.evaluationCriteria === "string" &&
-        typeof hint.factor === "string" &&
-        typeof hint.category === "string",
-    ) as Array<{ evaluationCriteria: string; factor: string; category: string }>;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Detect which search provider is configured (uses FH_ prefix first, then fallback)
- */
-function detectSearchProvider(): string {
-  // Check for explicit FH_ config first
-  if (process.env.FH_SEARCH_PROVIDER) {
-    return process.env.FH_SEARCH_PROVIDER;
-  }
-  // Check for Google Custom Search
-  if (
-    process.env.GOOGLE_CSE_API_KEY ||
-    process.env.GOOGLE_SEARCH_API_KEY ||
-    process.env.GOOGLE_API_KEY
-  ) {
-    return "Google Custom Search";
-  }
-  // Check for Bing
-  if (process.env.BING_API_KEY || process.env.AZURE_BING_KEY) {
-    return "Bing Search";
-  }
-  // Check for SerpAPI (check both variants)
-  if (
-    process.env.SERPAPI_API_KEY ||
-    process.env.SERPAPI_KEY ||
-    process.env.SERP_API_KEY
-  ) {
-    return "SerpAPI";
-  }
-  // Check for Tavily
-  if (process.env.TAVILY_API_KEY) {
-    return "Tavily";
-  }
-  // Check for Brave
-  if (process.env.BRAVE_API_KEY || process.env.BRAVE_SEARCH_KEY) {
-    return "Brave Search";
-  }
-  // Legacy fallback
-  if (process.env.SEARCH_PROVIDER) {
-    return process.env.SEARCH_PROVIDER;
-  }
-  // Default
-  return "Web Search";
-}
 
 // ============================================================================
 // MAIN CONFIGURATION OBJECT
@@ -99,41 +19,33 @@ function detectSearchProvider(): string {
 
 export const CONFIG = {
   schemaVersion: "2.6.41",
-  deepModeEnabled:
-    (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep",
+  deepModeEnabled: DEFAULT_PIPELINE_CONFIG.analysisMode === "deep",
   // Reduce run-to-run drift by removing sampling noise and stabilizing selection.
-  deterministic:
-    (process.env.FH_DETERMINISTIC ?? "true").toLowerCase() === "true",
+  deterministic: DEFAULT_PIPELINE_CONFIG.deterministic,
 
   // Search configuration (FH_ prefixed for consistency)
-  searchEnabled:
-    (process.env.FH_SEARCH_ENABLED ?? "true").toLowerCase() === "true",
-  searchProvider: detectSearchProvider(),
-  searchDomainWhitelist: parseWhitelist(process.env.FH_SEARCH_DOMAIN_WHITELIST),
+  searchEnabled: DEFAULT_SEARCH_CONFIG.enabled,
+  searchProvider: DEFAULT_SEARCH_CONFIG.provider,
+  searchDomainWhitelist: DEFAULT_SEARCH_CONFIG.domainWhitelist,
   // Search mode: "standard" (default) or "grounded" (uses Gemini's built-in Google Search)
   // Note: "grounded" mode only works when LLM_PROVIDER=gemini
-  searchMode: (process.env.FH_SEARCH_MODE ?? "standard").toLowerCase() as "standard" | "grounded",
+  searchMode: DEFAULT_SEARCH_CONFIG.mode,
   // Optional global recency bias for search results.
   // If set to y|m|w, applies to ALL searches. If unset, date filtering is only applied when recency is detected.
-  searchDateRestrict: (() => {
-    const v = (process.env.FH_SEARCH_DATE_RESTRICT ?? "").toLowerCase().trim();
-    if (v === "y" || v === "m" || v === "w") return v as "y" | "m" | "w";
-    return null;
-  })(),
+  searchDateRestrict: DEFAULT_SEARCH_CONFIG.dateRestrict,
 
-  // Source reliability configuration (v2.2 - see FH_SR_* env vars)
+  // Source reliability configuration (v2.2 - UCM-managed)
   // Legacy: sourceBundlePath is no longer used - see source-reliability.ts
 
   // Report configuration
-  reportStyle: (process.env.FH_REPORT_STYLE ?? "standard").toLowerCase(),
-  allowModelKnowledge:
-    (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true",
+  reportStyle: "standard",
+  allowModelKnowledge: DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
 
   // KeyFactors configuration
   // Optional hints for KeyFactors (suggestions only, not enforced)
   // Format: JSON array of objects with {evaluationCriteria, factor, category}
   // Example: FH_KEYFACTOR_HINTS='[{"evaluationCriteria":"Was due process followed?","factor":"Due Process","category":"procedural"}]'
-  keyFactorHints: parseKeyFactorHints(process.env.FH_KEYFACTOR_HINTS),
+  keyFactorHints: DEFAULT_PIPELINE_CONFIG.keyFactorHints,
 
   quick: {
     maxResearchIterations: 4, // v2.8.2: was 2 - increased for better quality
@@ -169,37 +81,27 @@ export const CONFIG = {
  * @param config - Optional pipeline config from unified config system
  */
 export function getAnalyzerConfigValues(config?: PipelineConfig) {
-  const deepModeEnabled = config
-    ? config.analysisMode === "deep"
-    : (process.env.FH_ANALYSIS_MODE ?? "quick").toLowerCase() === "deep";
-
-  const deterministic = config
-    ? config.deterministic
-    : (process.env.FH_DETERMINISTIC ?? "true").toLowerCase() === "true";
-
-  const allowModelKnowledge = config
-    ? config.allowModelKnowledge
-    : (process.env.FH_ALLOW_MODEL_KNOWLEDGE ?? "false").toLowerCase() === "true";
-
-  const scopeDedupThreshold = config
-    ? (config.contextDedupThreshold ?? config.scopeDedupThreshold)
-    : (() => {
-        const thr = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD || "0.85");
-        return Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
-      })();
+  const effectiveConfig = config ?? DEFAULT_PIPELINE_CONFIG;
+  const deepModeEnabled = effectiveConfig.analysisMode === "deep";
+  const deterministic = effectiveConfig.deterministic;
+  const allowModelKnowledge = effectiveConfig.allowModelKnowledge;
+  const scopeDedupThreshold =
+    effectiveConfig.contextDedupThreshold ??
+    effectiveConfig.scopeDedupThreshold ??
+    DEFAULT_PIPELINE_CONFIG.contextDedupThreshold;
 
   return {
     schemaVersion: CONFIG.schemaVersion,
     deepModeEnabled,
     deterministic,
-    searchEnabled: CONFIG.searchEnabled,
-    searchProvider: CONFIG.searchProvider,
-    searchDomainWhitelist: CONFIG.searchDomainWhitelist,
-    searchMode: CONFIG.searchMode,
-    searchDateRestrict: CONFIG.searchDateRestrict,
+    searchEnabled: DEFAULT_SEARCH_CONFIG.enabled,
+    searchProvider: DEFAULT_SEARCH_CONFIG.provider,
+    searchDomainWhitelist: DEFAULT_SEARCH_CONFIG.domainWhitelist,
+    searchMode: DEFAULT_SEARCH_CONFIG.mode,
+    searchDateRestrict: DEFAULT_SEARCH_CONFIG.dateRestrict,
     reportStyle: CONFIG.reportStyle,
     allowModelKnowledge,
-    keyFactorHints: CONFIG.keyFactorHints,
+    keyFactorHints: effectiveConfig.keyFactorHints ?? DEFAULT_PIPELINE_CONFIG.keyFactorHints,
     scopeDedupThreshold,
     quick: CONFIG.quick,
     deep: CONFIG.deep,
@@ -214,11 +116,8 @@ export function getAnalyzerConfigValues(config?: PipelineConfig) {
  * @param config - Optional pipeline config from unified config system
  */
 export function getActiveConfig(config?: PipelineConfig) {
-  if (config) {
-    const deepModeEnabled = config.analysisMode === "deep";
-    return deepModeEnabled ? CONFIG.deep : CONFIG.quick;
-  }
-  return CONFIG.deepModeEnabled ? CONFIG.deep : CONFIG.quick;
+  const deepModeEnabled = (config ?? DEFAULT_PIPELINE_CONFIG).analysisMode === "deep";
+  return deepModeEnabled ? CONFIG.deep : CONFIG.quick;
 }
 
 /**
@@ -231,9 +130,7 @@ export function getDeterministicTemperature(
   defaultTemp: number,
   config?: PipelineConfig,
 ): number {
-  const deterministic = config
-    ? config.deterministic
-    : CONFIG.deterministic;
+  const deterministic = config ? config.deterministic : DEFAULT_PIPELINE_CONFIG.deterministic;
   return deterministic ? 0 : defaultTemp;
 }
 

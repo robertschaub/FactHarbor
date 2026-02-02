@@ -89,45 +89,23 @@ export const DEFAULT_BUDGET: ResearchBudget = {
  * @param config - Optional pipeline config from unified config system
  */
 export function getBudgetConfig(config?: PipelineConfig): ResearchBudget {
-  // If pipeline config provided, use it
   if (config) {
     // Support both maxIterationsPerContext (new) and maxIterationsPerScope (old) with new key taking precedence
-    const maxIterationsPerScope = config.maxIterationsPerContext ?? config.maxIterationsPerScope ?? DEFAULT_BUDGET.maxIterationsPerScope;
+    const maxIterationsPerScope =
+      config.maxIterationsPerContext ??
+      config.maxIterationsPerScope ??
+      DEFAULT_BUDGET.maxIterationsPerScope;
 
     return {
       maxIterationsPerScope,
       maxTotalIterations: config.maxTotalIterations,
       maxTotalTokens: config.maxTotalTokens,
-      maxTokensPerCall: parseInt(
-        process.env.FH_MAX_TOKENS_PER_CALL || String(DEFAULT_BUDGET.maxTokensPerCall),
-        10
-      ), // Not in pipeline config - low-level safety limit
+      maxTokensPerCall: config.maxTokensPerCall ?? DEFAULT_BUDGET.maxTokensPerCall,
       enforceHard: config.enforceBudgets,
     };
   }
 
-  // Fall back to environment variables or defaults
-  return {
-    maxIterationsPerScope: parseInt(
-      process.env.FH_MAX_ITERATIONS_PER_SCOPE || String(DEFAULT_BUDGET.maxIterationsPerScope),
-      10
-    ),
-    maxTotalIterations: parseInt(
-      process.env.FH_MAX_TOTAL_ITERATIONS || String(DEFAULT_BUDGET.maxTotalIterations),
-      10
-    ),
-    maxTotalTokens: parseInt(
-      process.env.FH_MAX_TOTAL_TOKENS || String(DEFAULT_BUDGET.maxTotalTokens),
-      10
-    ),
-    maxTokensPerCall: parseInt(
-      process.env.FH_MAX_TOKENS_PER_CALL || String(DEFAULT_BUDGET.maxTokensPerCall),
-      10
-    ),
-    enforceHard: process.env.FH_ENFORCE_BUDGETS !== undefined
-      ? process.env.FH_ENFORCE_BUDGETS !== "false"
-      : DEFAULT_BUDGET.enforceHard,
-  };
+  return { ...DEFAULT_BUDGET };
 }
 
 // ============================================================================
