@@ -831,14 +831,18 @@ export type AggregationLexicon = z.infer<typeof AggregationLexiconSchema>;
 export const DEFAULT_AGGREGATION_LEXICON: AggregationLexicon = {
   contestation: {
     documentedEvidenceKeywords: [
-      "data", "measurement", "study", "record", "document", "report",
-      "investigation", "audit", "log", "dataset", "finding", "determination",
-      "ruling", "documentation", "violation", "breach", "non-compliance",
-      "procedure", "article", "section", "regulation", "statute",
-      "methodology", "causation", "causality", "correlation", "unverified",
+      "data", "measurement", "metric", "statistic", "percentage",
+      "study", "record", "recorded", "document", "documented", "report",
+      "investigation", "audit", "inquiry", "review found", "examination",
+      "log", "dataset", "finding", "documentation", "violation", "breach",
+      "non-compliance", "re:violation(s)? (found|documented|confirmed)",
+      "re:non-compliance (found|documented|confirmed)",
+      "re:breach(es)? (found|documented|confirmed)",
+      "methodology", "causation", "causality", "correlation",
       "control group", "randomized", "peer-review", "replicated", "confound",
       "bias", "systematic", "meta-analysis", "does not prove", "no causal",
       "self-report", "passive surveillance", "adverse event", "safety signal",
+      "evidence", "proof", "verification", "corroboration",
     ],
     causalClaimPatterns: [
       "due to",
