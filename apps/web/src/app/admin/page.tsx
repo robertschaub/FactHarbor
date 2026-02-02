@@ -7,6 +7,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "../../styles/common.module.css";
 import type { PipelineVariant } from "@/lib/pipeline-variant";
@@ -16,6 +17,8 @@ import toast from "react-hot-toast";
 export default function AdminPage() {
   const [defaultPipeline, setDefaultPipeline] = useState<PipelineVariant>("orchestrated");
   const [exporting, setExporting] = useState(false);
+  const [jobIdInput, setJobIdInput] = useState("");
+  const router = useRouter();
 
   // Load saved default pipeline on mount
   useEffect(() => {
@@ -59,6 +62,15 @@ export default function AdminPage() {
     } finally {
       setExporting(false);
     }
+  };
+
+  const handleJobConfigOpen = () => {
+    const trimmed = jobIdInput.trim();
+    if (!trimmed) {
+      toast.error("Enter a job ID to view its config snapshot");
+      return;
+    }
+    router.push(`/admin/quality/job/${encodeURIComponent(trimmed)}`);
   };
 
   return (
@@ -222,14 +234,40 @@ export default function AdminPage() {
         <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>
           Job Audit & Debugging
         </h2>
-        <div style={{ display: "grid", gap: "16px" }}>
-          <div className={styles.btnSecondary} style={{ cursor: "default", opacity: 0.7 }}>
-            🔍 Job Config Viewer
-          </div>
+        <div style={{ display: "grid", gap: "12px" }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleJobConfigOpen();
+            }}
+            style={{ display: "flex", gap: 8, alignItems: "center" }}
+          >
+            <input
+              type="text"
+              value={jobIdInput}
+              onChange={(e) => setJobIdInput(e.target.value)}
+              placeholder="Job Config Viewer"
+              aria-label="Job Config Viewer"
+              style={{
+                flex: 1,
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                fontSize: 14,
+              }}
+            />
+            <button
+              type="submit"
+              className={styles.btnSecondary}
+              style={{ padding: "10px 12px" }}
+            >
+              🔍 Open
+            </button>
+          </form>
           <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
             View complete config snapshot for any job: <code>/admin/quality/job/[jobId]</code>
             <br />
-            <span style={{ fontSize: 12, color: "#999" }}>Enter job ID in URL to view config</span>
+            <span style={{ fontSize: 12, color: "#999" }}>Enter a job ID above or navigate directly via URL</span>
           </p>
         </div>
       </div>
