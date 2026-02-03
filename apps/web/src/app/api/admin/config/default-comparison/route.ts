@@ -26,6 +26,44 @@ function loadDefaults(configType: "pipeline" | "search" | "calculation" | "sr", 
   }
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Merge defaults into active config so missing fields are treated as defaults.
+ */
+function mergeDefaults<T>(defaults: T, active: unknown): T {
+  if (Array.isArray(defaults)) {
+    return (Array.isArray(active) ? active : defaults) as T;
+  }
+
+  if (isPlainObject(defaults)) {
+    const result: Record<string, unknown> = {};
+    const activeObj = isPlainObject(active) ? active : {};
+
+    for (const key of Object.keys(defaults)) {
+      const defaultValue = defaults[key];
+      const activeValue = activeObj[key];
+      if (activeValue === undefined) {
+        result[key] = defaultValue;
+      } else {
+        result[key] = mergeDefaults(defaultValue, activeValue);
+      }
+    }
+
+    for (const key of Object.keys(activeObj)) {
+      if (!(key in result)) {
+        result[key] = activeObj[key];
+      }
+    }
+
+    return result as T;
+  }
+
+  return (active === undefined ? defaults : active) as T;
+}
+
 /**
  * Recursively compare objects and return paths of fields that differ
  */
@@ -139,8 +177,9 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Find differences
-    const customizedFields = findDifferences(defaultConfig, activeConfig);
+    // Find differences (treat missing fields as defaults)
+    const effectiveActive = mergeDefaults(defaultConfig, activeConfig);
+    const customizedFields = findDifferences(defaultConfig, effectiveActive);
 
     // Count total fields (rough estimate)
     const countFields = (obj: any): number => {

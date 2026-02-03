@@ -70,7 +70,13 @@ export default function AdminPage() {
       toast.error("Enter a job ID to view its config snapshot");
       return;
     }
-    router.push(`/admin/quality/job/${encodeURIComponent(trimmed)}`);
+    const target = `/admin/quality/job/${encodeURIComponent(trimmed)}`;
+    try {
+      router.push(target);
+    } catch (err) {
+      console.warn("[Admin] Router push failed, falling back to location:", err);
+      window.location.assign(target);
+    }
   };
 
   return (
