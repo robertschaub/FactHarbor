@@ -18,6 +18,7 @@
 7. [Examples](#7-examples)
 8. [Testing](#8-testing)
 9. [False Positive Detection](#9-false-positive-detection)
+10. [Classification Fallbacks](#10-classification-fallbacks)
 
 ---
 
@@ -227,9 +228,9 @@ const VAGUE_PHRASES = [
 ```
 
 **Examples**:
-- "Some say climate change is real" (1 vague phrase) ✓ (below threshold)
-- "Some say many believe climate change is real" (2 vague phrases) ✓ (at threshold)
-- "Some say many believe experts argue climate change is unclear" (4 vague phrases) ❌ (exceeds threshold)
+- "Some say Topic A is true" (1 vague phrase) ✓ (below threshold)
+- "Some say many believe Topic A is true" (2 vague phrases) ✓ (at threshold)
+- "Some say many believe experts argue Topic A is unclear" (4 vague phrases) ❌ (exceeds threshold)
 
 **Configuration**:
 ```typescript
@@ -700,6 +701,67 @@ npm run test:coverage -- evidence-filter
 # Target coverage: >90%
 ```
 
+### 7-Layer Defense Enhancement Tests
+
+**File**: [apps/web/test/unit/lib/analyzer/claim-filtering-enhancements.test.ts](../../apps/web/test/unit/lib/analyzer/claim-filtering-enhancements.test.ts)
+
+**Coverage**: 30 tests covering Layers 3-6 of the 7-layer defense
+
+**Test Structure**:
+
+```typescript
+describe('Enhancement 1: validateThesisRelevance (Layer 4)', () => {
+  // 7 tests covering:
+  - Low-confidence classification warnings
+  - Confidence-based downgrading (direct → tangential)
+  - Default confidence handling (missing values)
+  - Custom threshold configuration
+});
+
+describe('Enhancement 2: pruneTangentialBaselessClaims (Layer 3 & 5)', () => {
+  // 9 tests covering:
+  - Direct claim protection (never pruned)
+  - Tangential claim pruning (0-1 facts with threshold=2)
+  - Irrelevant claim handling
+  - Custom minEvidenceForTangential thresholds
+  - Quality-based evidence filtering
+  - Default thesisRelevance handling
+});
+
+describe('Enhancement 3: monitorOpinionAccumulation (Layer 6)', () => {
+  // 9 tests covering:
+  - Opinion ratio monitoring and warnings
+  - Opinion limiting (maxOpinionCount)
+  - Priority-based opinion selection (yes > no)
+  - Edge cases (empty arrays, unknown factualBasis)
+});
+
+describe('pruneOpinionOnlyFactors (Layer 5)', () => {
+  // 5 tests covering:
+  - Established/disputed factualBasis (kept)
+  - Opinion/unknown factualBasis (pruned)
+  - Mixed factor handling
+});
+```
+
+**Layer Coverage**:
+- ✅ Layer 3: Tangential Baseless Pruning (9 tests)
+- ✅ Layer 4: Thesis Relevance Filtering (7 tests)
+- ✅ Layer 5: Opinion-Only Pruning (14 tests)
+- ✅ Layer 6: Contestation Validation (9 tests)
+
+**Running Enhancement Tests**:
+
+```bash
+# Run 7-layer defense tests only
+npm test -- claim-filtering-enhancements.test.ts
+
+# Run all evidence quality tests
+npm test -- evidence-filter.test.ts claim-filtering-enhancements.test.ts
+
+# Total coverage: 83 tests across all layers
+```
+
 ---
 
 ## 9. False Positive Detection
@@ -760,6 +822,400 @@ console.log(`[Evidence Filter] Reasons:`, stats.filterReasons);
 
 ---
 
+## 9.5 Admin Tuning Guide
+
+### When to Adjust Filter Thresholds
+
+Adjust filter configuration when you observe:
+
+1. **High False Positive Rate (>10%)**
+   - **Symptom**: Valid evidence is being filtered out
+   - **Check**: Filter stats logs show high-quality evidence in filter reasons
+   - **Action**: Relax thresholds incrementally
+
+2. **Low Evidence Retention (<50%)**
+   - **Symptom**: More than half of extracted evidence is filtered
+   - **Check**: `stats.filtered / stats.total > 0.5`
+   - **Action**: Review and adjust strict rules
+
+3. **Domain-Specific Needs**
+   - **Symptom**: Default thresholds don't match your domain's evidence quality distribution
+   - **Example**: Scientific analyses may need stricter source linkage; policy analyses may allow more qualitative evidence
+   - **Action**: Customize thresholds per use case
+
+### Threshold Tuning Recommendations
+
+#### Layer 3-6 Thresholds (Claim Filtering Enhancements)
+
+**Thesis Relevance Confidence (Layer 4)**:
+```typescript
+{
+  thesisRelevanceMinConfidence: 0.7,    // Default: 70%
+  thesisRelevanceDowngradeThreshold: 0.4 // Default: 40%
+}
+```
+- **Increase** (0.7 → 0.8): When you want stricter relevance filtering
+- **Decrease** (0.7 → 0.6): When LLM is being too conservative with direct claims
+- **Warning Threshold** (0.4): Triggers warnings without changing classification
+
+**Tangential Evidence Threshold (Layer 3)**:
+```typescript
+{
+  minEvidenceForTangential: 2  // Default: 2 facts minimum
+}
+```
+- **Increase** (2 → 3): When tangential claims need stronger evidence base
+- **Decrease** (2 → 1): When you want to preserve more contextual evidence
+- **Set to 0**: Disable pruning (keep all tangential claims)
+
+**Opinion Accumulation (Layer 6)**:
+```typescript
+{
+  maxOpinionRatio: 0.5,     // Default: 50% opinion/total
+  maxOpinionCount: 0        // Default: unlimited
+}
+```
+- **Decrease Ratio** (0.5 → 0.3): When you want more fact-based analysis
+- **Set Count** (0 → 10): Limit total opinion factors (prioritizes "yes" votes)
+- **Increase Ratio** (0.5 → 0.7): When expert opinion is valuable in your domain
+
+#### Layer 1-2 Thresholds (Evidence Quality Filter)
+
+**Statement Length**:
+```typescript
+minStatementLength: 20  // Default: 20 characters
+```
+- **Decrease** (20 → 10): Allow shorter evidence statements
+- **Increase** (20 → 30): Require more substantive evidence
+
+**Vague Phrase Tolerance**:
+```typescript
+maxVaguePhraseCount: 2  // Default: 2 vague phrases allowed
+```
+- **Increase** (2 → 3): More tolerant of hedging language
+- **Decrease** (2 → 1): Stricter quality requirements
+
+### Tuning Workflow
+
+1. **Baseline Measurement** (1-2 days)
+   - Run analyses with default configuration
+   - Collect filter stats logs
+   - Calculate average FP rate and evidence retention
+
+2. **Identify Issues**
+   - Review filtered evidence manually
+   - Check if filtered items should have been kept
+   - Identify which rules are causing problems
+
+3. **Incremental Adjustments**
+   - Change ONE threshold at a time
+   - Adjust by small increments (±10-20%)
+   - Re-measure for 1 day
+
+4. **Validation**
+   - Compare before/after FP rates
+   - Review sample analyses for quality impact
+   - Document configuration changes and rationale
+
+### Configuration Access
+
+**Admin UI** (recommended):
+```
+http://localhost:3000/admin/config
+→ Pipeline Configuration
+→ Evidence Quality Filtering section
+```
+
+**Direct File Edit** (development):
+```
+apps/web/configs/pipeline.default.json
+```
+
+**Hot Reload**: Configuration changes apply to new analyses immediately (no restart required)
+
+---
+
+## 9.6 Troubleshooting Common Issues
+
+### Issue 1: Too Much Evidence Filtered (>60%)
+
+**Symptoms**:
+- Analysis results feel thin or incomplete
+- Filter logs show `filtered: 25, kept: 15` (60%+ filtered)
+- False positive rate >15%
+
+**Common Causes**:
+1. **Too strict vague phrase detection**
+   - Solution: Increase `maxVaguePhraseCount` from 2 → 3
+   - Or review `vagueAttributionPatterns` for domain-specific false matches
+
+2. **Category-specific rules too aggressive**
+   - Solution: Check if statistics/expert quotes are being over-filtered
+   - Adjust category-specific thresholds
+
+3. **Source linkage requirements not met**
+   - Solution: Review if your evidence sources provide excerpts/URLs consistently
+   - Consider temporarily disabling `requireSourceExcerpt` during testing
+
+**Diagnostic Steps**:
+```bash
+# 1. Check filter reasons distribution
+grep "Filter Reasons:" logs/analysis.log | tail -20
+
+# 2. Look for dominant filter reason
+# If "vague_phrases" appears most → adjust maxVaguePhraseCount
+# If "missing_excerpt" dominates → check source extraction quality
+```
+
+### Issue 2: Low-Quality Evidence Passing Through
+
+**Symptoms**:
+- Analysis includes vague or unsupported claims
+- Evidence lacks proper source attribution
+- False positive rate <5% but quality concerns remain
+
+**Common Causes**:
+1. **Thresholds too lenient**
+   - Solution: Decrease `maxVaguePhraseCount` from 2 → 1
+   - Increase `minStatementLength` from 20 → 30
+
+2. **Category-specific rules disabled**
+   - Solution: Enable strict rules for statistics/expert quotes
+   - Verify category detection is working correctly
+
+3. **Opinion accumulation not monitored**
+   - Solution: Set `maxOpinionRatio: 0.4` (40% limit)
+   - Enable opinion factor pruning
+
+**Diagnostic Steps**:
+```typescript
+// Check if low-quality evidence has high probativeValue
+// Review analysis JSON:
+{
+  "evidence": [{
+    "statement": "...",
+    "probativeValue": "medium",  // Should this be "low"?
+    "category": "statistic",
+    "sourceUrl": "missing"       // ← Red flag
+  }]
+}
+```
+
+### Issue 3: Tangential Claims Being Kept Despite Weak Evidence
+
+**Symptoms**:
+- Tangential claims appear in results with 0-1 supporting facts
+- Analysis includes off-topic or loosely related evidence
+
+**Root Cause**:
+- `minEvidenceForTangential` set too low or disabled
+
+**Solution**:
+```typescript
+{
+  minEvidenceForTangential: 3,  // Increase from default 2
+  enableQualityThreshold: true  // Require "high" probativeValue facts
+}
+```
+
+**Verification**:
+```bash
+# Check claim distribution by thesis relevance
+grep "thesisRelevance.*tangential" logs/analysis.log
+# Should see fewer tangential claims after adjustment
+```
+
+### Issue 4: Opinion Factors Dominating Analysis
+
+**Symptoms**:
+- KeyFactors section filled with expert opinions
+- Lack of established facts in analysis
+- `factualBasis: "opinion"` appears frequently
+
+**Root Cause**:
+- `maxOpinionRatio` too high or unlimited
+- Opinion pruning disabled
+
+**Solution**:
+```typescript
+{
+  maxOpinionRatio: 0.3,        // Limit to 30% opinion factors
+  maxOpinionCount: 10,         // Cap total opinions at 10
+  pruneOpinionOnly: true       // Enable Layer 5 pruning
+}
+```
+
+**Verification**:
+```bash
+# Check opinion factor counts
+grep "Opinion accumulation" logs/analysis.log
+# Should see "Opinion ratio: 28.5% (within limits)"
+```
+
+### Issue 5: Classification Fallbacks Occurring Frequently
+
+**Symptoms**:
+- "Classification Fallbacks" warnings appear in >10% of analyses
+- LLM failing to classify `thesisRelevance` or `factualBasis` fields
+
+**Root Cause**:
+- LLM prompt clarity issues
+- Model temperature too high (non-deterministic output)
+- Input text too ambiguous for classification
+
+**Solution**:
+1. **Check fallback rate**: Should be <5%
+   ```bash
+   grep "classificationFallbacks" logs/analysis.log | wc -l
+   ```
+
+2. **Review fallback reasons**:
+   ```bash
+   grep "Fallback used for field" logs/analysis.log
+   ```
+
+3. **If thesisRelevance fallbacks dominate**:
+   - Review claim extraction quality
+   - Ensure claims are clear and complete sentences
+
+4. **If factualBasis fallbacks dominate**:
+   - Check if evidence statements lack context
+   - Verify source excerpts are meaningful
+
+**See**: [Classification Fallbacks](#10-classification-fallbacks) (Section 10) for detailed guidance
+
+---
+
+## 10. Classification Fallbacks
+
+### Overview
+
+When the LLM fails to classify certain fields during analysis, FactHarbor uses **safe defaults** to ensure the analysis completes successfully. The system tracks all fallback occurrences and reports them transparently in the analysis results.
+
+**Key Principle:** The LLM makes ALL intelligent decisions. Fallbacks are NOT intelligent - they are purely defensive programming to prevent runtime errors.
+
+### When Fallbacks Occur
+
+Fallbacks are triggered when:
+- The LLM returns `null` or `undefined` for a required classification field
+- The LLM returns an invalid value (not in the allowed enum)
+- An LLM error prevents classification
+
+### Fallback Flow Diagram (Mermaid)
+
+```mermaid
+flowchart TB
+  START[LLM returns classification value] --> CHECK{Value present and valid?}
+  CHECK -->|Yes| ACCEPT[Accept LLM value]
+  CHECK -->|No| DEFAULT[Use safe default for field]
+
+  DEFAULT --> TRACK[Record fallbackStats<br/>field, reason, defaultUsed, location]
+  ACCEPT --> CONTINUE[Continue analysis]
+  TRACK --> CONTINUE
+```
+
+### Classification Fields and Safe Defaults
+
+| Field | Default Value | Applies To | Reasoning |
+|-------|--------------|------------|-----------|
+| `harmPotential` | `"medium"` | Claims | **Neutral stance** - Doesn't over-alarm (high) or dismiss (low). Claims of unknown harm are treated with moderate scrutiny. |
+| `factualBasis` | `"unknown"` | KeyFactors | **Most conservative** - We cannot claim evidence quality we haven't verified. Prevents false confidence. |
+| `isContested` | `false` | KeyFactors | **Conservative** - Don't reduce claim weight without evidence of contestation. Avoids unjustified penalization. |
+| `sourceAuthority` | `"secondary"` | Evidence | **Neutral middle ground** - Treats unclassified sources as news/analysis (not primary research, not pure opinion). |
+| `evidenceBasis` | `"anecdotal"` | Evidence | **Conservative assumption** - Weakest credible evidence type. If we can't verify quality, assume personal account level. |
+
+### Why These Defaults Are Safe
+
+1. **No false positives**: We never claim something is "established" or "scientific" without LLM verification
+2. **No false negatives**: We never dismiss evidence as "pseudoscientific" or "opinion" without verification
+3. **Neutral stance**: Medium harm + secondary authority = moderate treatment until properly classified
+4. **Conservative on contestation**: `false` prevents unjustified weight reduction
+
+### Fallback Reporting
+
+When fallbacks occur, they are reported in three places:
+
+### Safe Default Selection (Mermaid)
+
+This diagram summarizes the safe default used when a specific classification field is missing or invalid.
+
+```mermaid
+flowchart LR
+  F[Classification field missing or invalid] --> HP[harmPotential -> \"medium\"]
+  F --> FB[factualBasis -> \"unknown\"]
+  F --> IC[isContested -> false]
+  F --> SA[sourceAuthority -> \"secondary\"]
+  F --> EB[evidenceBasis -> \"anecdotal\"]
+```
+
+#### 1. Result JSON (`classificationFallbacks` field)
+
+```json
+{
+  "classificationFallbacks": {
+    "totalFallbacks": 3,
+    "fallbacksByField": {
+      "harmPotential": 2,
+      "factualBasis": 1,
+      "sourceAuthority": 0,
+      "evidenceBasis": 0,
+      "isContested": 0
+    },
+    "fallbackDetails": [
+      {
+        "field": "harmPotential",
+        "location": "Claim #2",
+        "text": "This policy will impact thousands...",
+        "defaultUsed": "medium",
+        "reason": "missing"
+      }
+    ]
+  }
+}
+```
+
+When no fallbacks occur, `classificationFallbacks` is `undefined` (omitted from response).
+
+#### 2. Markdown Analysis Report
+
+A "⚠️ Classification Fallbacks" section appears in the report listing:
+- Total fallback count
+- Fallbacks grouped by field
+- Details for each fallback with the text snippet and default used
+
+#### 3. UI Warning Panel
+
+A yellow warning panel (FallbackReport component) displays when fallbacks occurred, showing:
+- Summary of fallbacks by field
+- Expandable details section
+
+### Impact on Analysis Quality
+
+**Important for users:** Fallbacks indicate that the LLM couldn't classify certain fields. The analysis continues with conservative defaults, but you should be aware that:
+
+- Results may be slightly less precise than fully-classified analyses
+- Frequent fallbacks may indicate LLM prompt issues or timeout problems
+- The safe defaults are designed to never make the analysis less trustworthy
+
+### Monitoring Fallback Rates
+
+**Healthy system:** < 5% fallback rate
+**Investigate if:** > 10% fallback rate
+**Critical issue if:** > 20% fallback rate
+
+Console logs capture all fallback events:
+```
+[Fallback] harmPotential: Claim #2 - using default "medium" (reason: missing)
+```
+
+### Configuration
+
+Fallback behavior is built-in and not configurable - this ensures consistent, safe behavior. However, you can:
+- Adjust LLM timeouts to reduce timeout-related fallbacks
+- Review prompts if a specific field consistently triggers fallbacks
+
+---
+
 ## Appendix A: Filter Decision Tree
 
 ```
@@ -794,9 +1250,8 @@ Evidence Item
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: 2026-02-02
-**Changes**: Added Section 2 (Multi-Layer Claim Filtering Defense) from investigation report
+**Document Version**: 2.1
+**Last Updated**: 2026-02-03
+**Changes**: Added test coverage summary (Section 8), Admin Tuning Guide (Section 9.5), Troubleshooting (Section 9.6)
 **Next Review**: Before Phase 3 planning
 **Maintained by**: Plan Coordinator
-

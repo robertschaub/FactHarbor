@@ -1,8 +1,8 @@
 # Context Detection via EvidenceScope
 
-**Version**: 2.6.41  
-**Status**: Implemented  
-**Date**: January 26, 2026
+**Version**: 2.6.42
+**Status**: Implemented
+**Date**: February 3, 2026
 
 ---
 
@@ -72,7 +72,7 @@ flowchart TB
         Facts --> ES[EvidenceScope Metadata]
     end
     
-    subgraph REFINE["4. SCOPE_REFINEMENT Phase"]
+    subgraph REFINE["4. CONTEXT_REFINEMENT Phase"]
         InitialContexts --> Merge[Merge/Refine]
         Facts --> Merge
         ES -.->|Partial use| Merge
@@ -86,11 +86,11 @@ The EXTRACT_FACTS phase captures EvidenceScope metadata per-evidence:
 
 ```typescript
 interface EvidenceScope {
-  name: string;         // "WTW", "TTW", "EU REACH"
-  methodology: string;  // "ISO 14040", "EU RED II"
-  boundaries: string;   // "primary energy to wheel"
-  geographic: string;   // "European Union"
-  temporal: string;     // "2020-2025"
+  name: string;         // "Framework A", "Framework B"
+  methodology: string;  // "Standard X", "Standard Y"
+  boundaries: string;   // "Full system boundary", "Subsystem boundary"
+  geographic: string;   // "Region A"
+  temporal: string;     // "Period 1"
 }
 ```
 
@@ -99,9 +99,9 @@ interface EvidenceScope {
 | Phase | Context Detection | Uses Evidence? |
 |-------|------------------|----------------|
 | UNDERSTAND | Initial detection from input text | No |
-| SCOPE_REFINEMENT | Refinement based on facts | Yes (partial) |
+| CONTEXT_REFINEMENT | Refinement based on evidence | Yes (partial) |
 
-**Gap Identified**: The SCOPE_REFINEMENT phase uses facts for validation but doesn't explicitly look for EvidenceScope patterns that might indicate new AnalysisContexts.
+**Gap Identified**: The CONTEXT_REFINEMENT phase uses extracted evidence for validation but doesn't explicitly look for EvidenceScope patterns that might indicate new AnalysisContexts.
 
 ---
 
@@ -113,29 +113,42 @@ interface EvidenceScope {
 
 2. **Evidence-first is more reliable**: Initial context detection works from input text alone, which may be vague. Evidence sources often have explicit scope declarations
 
-3. **Already partially implemented**: The SCOPE_REFINEMENT phase already receives facts with EvidenceScope metadata - it just needs better instructions for extracting context candidates from these patterns
+3. **Already partially implemented**: The CONTEXT_REFINEMENT phase already receives extracted evidence with EvidenceScope metadata - it just needs better instructions for extracting context candidates from these patterns
 
-4. **Generic by design**: Instead of hardcoding terms like "jurisdiction" or "WTW", we instruct the LLM to look for ANY methodology/institutional/temporal markers in EvidenceScope
+4. **Generic by design**: Instead of hardcoding terms like "jurisdiction" or "Framework A", we instruct the LLM to look for ANY methodology/institutional/temporal markers in EvidenceScope
 
 ### Validation Examples
 
-**Example 1: Legal Domain**
-- Input: "Was the trial fair?"
-- Evidence Source 1: "The Supreme Court ruled on..."
-- Evidence Source 2: "The Electoral Court determined..."
-- EvidenceScope metadata reveals: different institutions → distinct contexts
+The following examples are generic-by-design and use placeholders (no domain-specific entities).
 
-**Example 2: Scientific Domain**
-- Input: "Is hydrogen more efficient than electric?"
-- Evidence Source 1: "Using Well-to-Tank analysis..."
-- Evidence Source 2: "The Tank-to-Wheel efficiency..."
-- EvidenceScope metadata reveals: different methodologies → distinct contexts
+**Example 1: Institutional boundary indicates distinct contexts**
+- Input: "Is Decision X justified?"
+- Evidence Source A excerpt: "Institution A applies Standard A for Decision X..."
+- Evidence Source B excerpt: "Institution B applies Standard B for Decision X..."
+- EvidenceScope indicates: different formal bodies/standards → likely distinct AnalysisContexts
+
+**Example 2: Methodology boundary indicates distinct contexts**
+- Input: "Is Method X more effective than Method Y?"
+- Evidence Source A excerpt: "Using Framework A, we evaluate the full system boundary..."
+- Evidence Source B excerpt: "Using Framework B, we evaluate only a subsystem boundary..."
+- EvidenceScope indicates: incompatible methodological boundaries → likely distinct AnalysisContexts
+
+**Example 3: Temporal mention vs temporal subject**
+- Input: "Did Policy Z have the intended outcome?"
+- Evidence Source A excerpt: "We analyze outcomes during Period 1 (incidental date mention)."
+- Evidence Source B excerpt: "This paper compares Period 1 vs Period 2 as the primary subject."
+- EvidenceScope indicates: if time periods are the primary subject (not incidental), split contexts
+
+**Example 4: Overlap indicates merge**
+- Input: "Is Claim Q supported?"
+- Evidence Source A and B both declare the same boundary and methodology in EvidenceScope (same standard, same population, same time window).
+- EvidenceScope indicates: strong overlap → merge into a single AnalysisContext
 
 ---
 
 ## Implementation Proposal
 
-### 1. Enhance SCOPE_REFINEMENT Prompt
+### 1. Enhance CONTEXT_REFINEMENT Prompt
 
 Add explicit guidance to extract AnalysisContext candidates from EvidenceScope patterns:
 
@@ -180,7 +193,7 @@ For each potential context discovered:
 
 ### 2. Propagate EvidenceScope to Context Detection
 
-Update SCOPE_REFINEMENT to explicitly receive and process EvidenceScope metadata:
+Update CONTEXT_REFINEMENT to explicitly receive and process EvidenceScope metadata:
 
 **Current fact format passed to refinement**:
 ```json
@@ -252,7 +265,7 @@ Look for these patterns in the evidence that often indicate distinct contexts:
 **File**: `apps/web/src/lib/analyzer/orchestrated.ts`
 
 **Changes**:
-1. Ensure EvidenceScope metadata is included when passing facts to SCOPE_REFINEMENT
+1. Ensure EvidenceScope metadata is included when passing extracted evidence to CONTEXT_REFINEMENT
 2. Format EvidenceScope data in a way that's easy for LLM to scan
 
 **Effort**: Medium (code changes)
@@ -261,7 +274,7 @@ Look for these patterns in the evidence that often indicate distinct contexts:
 
 **Test Cases**:
 1. Venezuela oil nationalization (2000s vs 1970s temporal distinction)
-2. Hydrogen vs electric efficiency (WTW vs TTW methodology distinction)
+2. Method X vs Method Y evaluation (Framework A vs Framework B boundary distinction)
 3. Legal proceeding fairness (multiple court/institution distinction)
 
 **Success Criteria**:
@@ -286,7 +299,7 @@ Look for these patterns in the evidence that often indicate distinct contexts:
 | Risk | Impact |
 |------|--------|
 | Missed important contexts | Incomplete analysis, potentially misleading verdicts |
-| Methodology conflation | Comparing incomparable data (e.g., WTW vs TTW) |
+| Methodology conflation | Comparing incomparable data (e.g., Framework A vs Framework B) |
 | Institutional conflation | Mixing conclusions from different formal processes |
 
 ---
@@ -309,7 +322,7 @@ Add a dedicated "context discovery" LLM call after fact extraction.
 
 ### Alternative 3: Prompt Enhancement Only (Selected)
 
-Improve SCOPE_REFINEMENT prompt to better leverage existing EvidenceScope data.
+Improve CONTEXT_REFINEMENT prompt to better leverage existing EvidenceScope data.
 
 **Pros**: No additional calls, generic by design, builds on existing architecture  
 **Cons**: Depends on LLM following instructions correctly
@@ -338,7 +351,7 @@ would the result be MISLEADING because they measure or analyze fundamentally dif
 - If source doesn't explicitly state boundaries: Don't invent them
 ```
 
-### SCOPE_REFINEMENT Phase
+### CONTEXT_REFINEMENT Phase
 
 The prompt now includes context discovery from EvidenceScope patterns:
 
@@ -353,6 +366,61 @@ different analytical frames that need separate verdicts?
 - Combining conclusions from them would be MISLEADING
 - They would require different evidence to evaluate
 ```
+
+---
+
+## Context Count and User Guidance
+
+### How Context Count Appears
+
+When multiple AnalysisContexts are detected, users see:
+
+1. **Progress Messages**: During analysis execution
+   ```
+   Detected: CLAIM with 5 claims | 3 CONTEXTS
+   ```
+
+2. **Report Title**: In final analysis reports
+   ```
+   Analyzed Content (3 contexts)
+   ```
+
+3. **Reasoning Section**: Context names and their relationship
+   ```
+   Covers 3 contexts: INST_A, INST_B, SCOPE_GENERAL
+   ```
+
+### Thresholds and Limits
+
+- **Maximum Contexts**: System limits to 5 contexts per analysis (configurable via `contextDetectionMaxContexts`)
+- **Healthy Range**: 1-3 contexts is typical for most analyses
+- **High Context Count (4-5)**: Indicates complex analytical frame with multiple incompatible boundaries
+
+### What Users Should Do
+
+**When you see high context count (4-5 contexts)**:
+
+1. **Review Context Names**: Check if the detected contexts align with your analytical needs
+   - Are these genuinely distinct analytical frames?
+   - Or did the system over-split based on minor differences?
+
+2. **Examine Individual Context Verdicts**: Each context gets separate analysis and verdict
+   - Review each context's evidence and conclusions independently
+   - Look for meaningful differences in the evidence base per context
+
+3. **Consider Refining Your Input**: If contexts seem over-split
+   - Provide more explicit guidance in your input about the intended analytical frame
+   - Use temporal/methodological qualifiers to signal the intended boundaries
+   - Example: Instead of "Is Policy X effective?", use "Is Policy X effective in achieving Goal Y using Metric Z?"
+
+4. **Trust the Overall Verdict**: When reliability is high, the system correctly weights each context
+   - The overall average verdict accounts for context-specific confidence levels
+   - Low reliability warnings indicate when context-specific verdicts diverge significantly
+
+**When you see context count warnings**:
+- ⚠️ This feature is planned but not yet implemented
+- Future versions will warn when context count exceeds recommended thresholds
+- Warnings will suggest input refinement or manual context review
 
 ---
 
