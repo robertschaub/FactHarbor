@@ -29,6 +29,7 @@ import { ArticleFrameBanner } from "./components/ArticleFrameBanner";
 import { groupFactsByMethodology } from "./utils/methodologyGrouping";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
+import FallbackReport from "@/components/FallbackReport";
 
 type Job = {
   jobId: string;
@@ -306,6 +307,7 @@ export default function JobPage() {
   const articleAnalysis = result?.articleAnalysis;
   const claimVerdicts = result?.claimVerdicts || [];
   const verdictSummary = result?.verdictSummary;
+  const classificationFallbacks = result?.classificationFallbacks;
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? result?.meta?.hasMultipleProceedings;
   // Prefer "analysisContexts" (v2.7), fall back to legacy fields for compatibility
@@ -604,6 +606,8 @@ export default function JobPage() {
                   />
                 )
               )}
+
+              <FallbackReport summary={classificationFallbacks} />
 
               {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
                 <div className={styles.claimsSection}>

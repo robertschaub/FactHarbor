@@ -1,0 +1,129 @@
+.fallbackReport {
+  border-left: 4px solid #f59e0b;
+  background-color: #fffbeb;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #f59e0b;
+}
+
+.content {
+  flex: 1;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0 0 0.5rem 0;
+}
+
+.description {
+  font-size: 0.875rem;
+  color: #b45309;
+  margin: 0;
+}
+
+.fieldSummary {
+  margin-top: 1rem;
+}
+
+.fieldSummaryTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #92400e;
+  margin: 0 0 0.5rem 0;
+}
+
+.fieldList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.875rem;
+  color: #b45309;
+}
+
+.fieldList li {
+  margin-bottom: 0.25rem;
+}
+
+.fieldList strong {
+  color: #92400e;
+}
+
+.details {
+  margin-top: 1rem;
+}
+
+.detailsSummary {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #92400e;
+  cursor: pointer;
+  user-select: none;
+}
+
+.detailsSummary:hover {
+  text-decoration: underline;
+}
+
+.detailsContent {
+  margin-top: 0.75rem;
+}
+
+.detailItem {
+  padding: 0.5rem;
+  background-color: #fef3c7;
+  border-radius: 0.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.detailField {
+  font-weight: 600;
+  color: #92400e;
+}
+
+.detailLocation {
+  color: #b45309;
+}
+
+.detailText {
+  color: #78716c;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.detailMeta {
+  margin-top: 0.25rem;
+  color: #b45309;
+}
+
+.detailMeta code {
+  background-color: #fde68a;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
+  font-family: monospace;
+}
+
+.note {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: #a16207;
+}
+
+.note strong {
+  color: #92400e;
+}
