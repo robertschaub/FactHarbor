@@ -12,9 +12,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, DEFAULT_CALC_CONFIG } from "@/lib/config-loader";
 import { DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
-import { getActiveConfig } from "@/lib/config-storage";
+import { getActiveConfig, loadDefaultConfigFromFile } from "@/lib/config-storage";
 
 export const dynamic = "force-dynamic";
+
+function loadDefaults(configType: "pipeline" | "search" | "calculation" | "sr", fallback: any): any {
+  const content = loadDefaultConfigFromFile(configType);
+  if (!content) return fallback;
+  try {
+    return JSON.parse(content);
+  } catch {
+    return fallback;
+  }
+}
 
 /**
  * Recursively compare objects and return paths of fields that differ
@@ -81,19 +91,19 @@ export async function GET(request: NextRequest) {
       case "pipeline": {
         const result = await loadPipelineConfig(profileKey);
         activeConfig = result.config;
-        defaultConfig = DEFAULT_PIPELINE_CONFIG;
+        defaultConfig = loadDefaults("pipeline", DEFAULT_PIPELINE_CONFIG);
         break;
       }
       case "search": {
         const result = await loadSearchConfig(profileKey);
         activeConfig = result.config;
-        defaultConfig = DEFAULT_SEARCH_CONFIG;
+        defaultConfig = loadDefaults("search", DEFAULT_SEARCH_CONFIG);
         break;
       }
       case "calculation": {
         const result = await loadCalcConfig(profileKey);
         activeConfig = result.config;
-        defaultConfig = DEFAULT_CALC_CONFIG;
+        defaultConfig = loadDefaults("calculation", DEFAULT_CALC_CONFIG);
         break;
       }
       case "sr": {
@@ -109,7 +119,7 @@ export async function GET(request: NextRequest) {
           });
         }
         activeConfig = JSON.parse(activeData.content);
-        defaultConfig = DEFAULT_SR_CONFIG;
+        defaultConfig = loadDefaults("sr", DEFAULT_SR_CONFIG);
         break;
       }
       case "prompt": {
