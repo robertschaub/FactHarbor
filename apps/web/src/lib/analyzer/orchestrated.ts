@@ -116,6 +116,8 @@ import {
 } from "./text-analysis-service";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "../config-schemas";
 import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
+import { FallbackTracker } from "./classification-fallbacks";
+import { formatFallbackReportMarkdown } from "./format-fallback-report";
 
 // Configuration, helpers, and debug utilities imported from modular files above
 
@@ -144,6 +146,438 @@ export function setOrchestratedHeuristicsLexicon(): void {
 export function getOrchestratedHeuristicsPatternsConfig() {
   return _heuristicPatterns;
 }
+
+// ============================================================================
+// Classification Fallback Functions (P0: No Pattern Matching)
+// ============================================================================
+
+/**
+ * Get factualBasis with safe default fallback
+ * NO PATTERN MATCHING - just null-checking and logging
+ */
+function getFactualBasisWithFallback(
+  llmValue: string | undefined,
+  keyFactorText: string,
+  keyFactorIndex: number,
+  tracker: FallbackTracker
+): "established" | "disputed" | "opinion" | "unknown" {
+  const validValues = ["established", "disputed", "opinion", "unknown"];
+
+  // LLM provided valid value → use it
+  if (llmValue && validValues.includes(llmValue)) {
+    return llmValue as any;
+  }
+
+  // LLM failed → use safe default
+  const reason = !llmValue ? 'missing' : 'invalid';
+  const defaultValue = "unknown"; // Most conservative default
+
+  tracker.recordFallback({
+    field: 'factualBasis',
+    location: `KeyFactor #${keyFactorIndex + 1}`,
+    text: keyFactorText.substring(0, 100), // First 100 chars
+    defaultUsed: defaultValue,
+    reason
+  });
+
+  console.warn(`[Fallback] factualBasis: KeyFactor #${keyFactorIndex + 1} - using default "${defaultValue}" (reason: ${reason})`);
+
+  return defaultValue;
+}
+
+/**
+ * Get harmPotential with safe default fallback
+ * NO PATTERN MATCHING - just null-checking and logging
+ */
+function getHarmPotentialWithFallback(
+  llmValue: string | undefined,
+  claimText: string,
+  claimIndex: number,
+  tracker: FallbackTracker
+): "high" | "medium" | "low" {
+  const validValues = ["high", "medium", "low"];
+
+  // LLM provided valid value → use it
+  if (llmValue && validValues.includes(llmValue)) {
+    return llmValue as any;
+  }
+
+  // LLM failed → use safe default (NO pattern matching!)
+  const reason = !llmValue ? 'missing' : 'invalid';
+  const defaultValue = "medium"; // Neutral default
+
+  tracker.recordFallback({
+    field: 'harmPotential',
+    location: `Claim #${claimIndex + 1}`,
+    text: claimText.substring(0, 100),
+    defaultUsed: defaultValue,
+    reason
+  });
+
+  console.warn(`[Fallback] harmPotential: Claim #${claimIndex + 1} - using default "${defaultValue}" (reason: ${reason})`);
+
+  return defaultValue;
+}
+
+/**
+ * Get sourceAuthority with safe default fallback
+ * NO PATTERN MATCHING - just null-checking and logging
+ */
+function getSourceAuthorityWithFallback(
+  llmValue: string | undefined,
+  evidenceText: string,
+  evidenceIndex: number,
+  tracker: FallbackTracker
+): "primary" | "secondary" | "opinion" | "contested" {
+  const validValues = ["primary", "secondary", "opinion", "contested"];
+
+  // LLM provided valid value → use it
+  if (llmValue && validValues.includes(llmValue)) {
+    return llmValue as any;
+  }
+
+  // LLM failed → use safe default
+  const reason = !llmValue ? 'missing' : 'invalid';
+  const defaultValue = "secondary"; // Neutral default
+
+  tracker.recordFallback({
+    field: 'sourceAuthority',
+    location: `Evidence #${evidenceIndex + 1}`,
+    text: evidenceText.substring(0, 100),
+    defaultUsed: defaultValue,
+    reason
+  });
+
+  console.warn(`[Fallback] sourceAuthority: Evidence #${evidenceIndex + 1} - using default "${defaultValue}" (reason: ${reason})`);
+
+  return defaultValue;
+}
+
+/**
+ * Get evidenceBasis with safe default fallback
+ * NO PATTERN MATCHING - just null-checking and logging
+ */
+function getEvidenceBasisWithFallback(
+  llmValue: string | undefined,
+  evidenceText: string,
+  evidenceIndex: number,
+  tracker: FallbackTracker
+): "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific" {
+  const validValues = ["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"];
+
+  // LLM provided valid value → use it
+  if (llmValue && validValues.includes(llmValue)) {
+    return llmValue as any;
+  }
+
+  // LLM failed → use safe default
+  const reason = !llmValue ? 'missing' : 'invalid';
+  const defaultValue = "anecdotal"; // Conservative default (weakest documented evidence)
+
+  tracker.recordFallback({
+    field: 'evidenceBasis',
+    location: `Evidence #${evidenceIndex + 1}`,
+    text: evidenceText.substring(0, 100),
+    defaultUsed: defaultValue,
+    reason
+  });
+
+  console.warn(`[Fallback] evidenceBasis: Evidence #${evidenceIndex + 1} - using default "${defaultValue}" (reason: ${reason})`);
+
+  return defaultValue;
+}
+
+/**
+ * Get isContested with safe default fallback
+ * NO PATTERN MATCHING - just null-checking and logging
+ */
+function getIsContestedWithFallback(
+  llmValue: boolean | undefined,
+  keyFactorText: string,
+  keyFactorIndex: number,
+  tracker: FallbackTracker
+): boolean {
+  // LLM provided valid boolean → use it
+  if (typeof llmValue === 'boolean') {
+    return llmValue;
+  }
+
+  // LLM failed → use safe default
+  const defaultValue = false; // Conservative default (don't penalize without evidence)
+
+  tracker.recordFallback({
+    field: 'isContested',
+    location: `KeyFactor #${keyFactorIndex + 1}`,
+    text: keyFactorText.substring(0, 100),
+    defaultUsed: String(defaultValue),
+    reason: 'missing'
+  });
+
+  console.warn(`[Fallback] isContested: KeyFactor #${keyFactorIndex + 1} - using default "${defaultValue}"`);
+
+  return defaultValue;
+}
+
+/**
+ * Normalize claim classifications with fallback tracking
+ * Call this after LLM extraction to ensure all classification fields are defined
+ */
+function normalizeClaimClassifications<T extends { text?: string; harmPotential?: string }>(
+  claims: T[],
+  tracker: FallbackTracker,
+  locationPrefix: string = "Claim"
+): T[] {
+  return claims.map((claim, index) => {
+    const validHarmValues = ["high", "medium", "low"];
+    let harmPotential = claim.harmPotential;
+
+    if (!harmPotential || !validHarmValues.includes(harmPotential)) {
+      const reason = !harmPotential ? 'missing' : 'invalid';
+      harmPotential = "medium"; // Safe default
+
+      tracker.recordFallback({
+        field: 'harmPotential',
+        location: `${locationPrefix} #${index + 1}`,
+        text: (claim.text || "").substring(0, 100),
+        defaultUsed: harmPotential,
+        reason
+      });
+
+      console.warn(`[Fallback] harmPotential: ${locationPrefix} #${index + 1} - using default "medium" (reason: ${reason})`);
+    }
+
+    return {
+      ...claim,
+      harmPotential: harmPotential as "high" | "medium" | "low"
+    };
+  });
+}
+
+/**
+ * Normalize KeyFactor classifications with fallback tracking
+ * Call this after verdict generation to ensure all classification fields are defined
+ */
+function normalizeKeyFactorClassifications<T extends {
+  text?: string;
+  factualBasis?: string;
+  isContested?: boolean;
+}>(
+  keyFactors: T[],
+  tracker: FallbackTracker,
+  locationPrefix: string = "KeyFactor"
+): T[] {
+  return keyFactors.map((kf, index) => {
+    const validFactualBasis = ["established", "disputed", "opinion", "unknown"];
+    let factualBasis = kf.factualBasis;
+    let isContested = kf.isContested;
+
+    // Normalize factualBasis
+    if (!factualBasis || !validFactualBasis.includes(factualBasis)) {
+      const reason = !factualBasis ? 'missing' : 'invalid';
+      factualBasis = "unknown"; // Safe default
+
+      tracker.recordFallback({
+        field: 'factualBasis',
+        location: `${locationPrefix} #${index + 1}`,
+        text: (kf.text || "").substring(0, 100),
+        defaultUsed: factualBasis,
+        reason
+      });
+
+      console.warn(`[Fallback] factualBasis: ${locationPrefix} #${index + 1} - using default "unknown" (reason: ${reason})`);
+    }
+
+    // Normalize isContested
+    if (typeof isContested !== 'boolean') {
+      isContested = false; // Safe default
+
+      tracker.recordFallback({
+        field: 'isContested',
+        location: `${locationPrefix} #${index + 1}`,
+        text: (kf.text || "").substring(0, 100),
+        defaultUsed: "false",
+        reason: 'missing'
+      });
+
+      console.warn(`[Fallback] isContested: ${locationPrefix} #${index + 1} - using default "false"`);
+    }
+
+    return {
+      ...kf,
+      factualBasis: factualBasis as "established" | "disputed" | "opinion" | "unknown",
+      isContested
+    };
+  });
+}
+
+/**
+ * Normalize evidence classifications with fallback tracking
+ * Call this after fact extraction to ensure all classification fields are defined
+ */
+function normalizeEvidenceClassifications<T extends {
+  fact?: string;
+  statement?: string;
+  sourceAuthority?: string;
+  evidenceBasis?: string;
+}>(
+  evidence: T[],
+  tracker: FallbackTracker,
+  locationPrefix: string = "Evidence"
+): T[] {
+  return evidence.map((ev, index) => {
+    const validSourceAuth = ["primary", "secondary", "opinion", "contested"];
+    const validEvidenceBasis = ["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"];
+
+    let sourceAuthority = ev.sourceAuthority;
+    let evidenceBasis = ev.evidenceBasis;
+    const text = ev.statement || ev.fact || "";
+
+    // Normalize sourceAuthority
+    if (!sourceAuthority || !validSourceAuth.includes(sourceAuthority)) {
+      const reason = !sourceAuthority ? 'missing' : 'invalid';
+      sourceAuthority = "secondary"; // Safe default
+
+      tracker.recordFallback({
+        field: 'sourceAuthority',
+        location: `${locationPrefix} #${index + 1}`,
+        text: text.substring(0, 100),
+        defaultUsed: sourceAuthority,
+        reason
+      });
+
+      console.warn(`[Fallback] sourceAuthority: ${locationPrefix} #${index + 1} - using default "secondary" (reason: ${reason})`);
+    }
+
+    // Normalize evidenceBasis
+    if (!evidenceBasis || !validEvidenceBasis.includes(evidenceBasis)) {
+      const reason = !evidenceBasis ? 'missing' : 'invalid';
+      evidenceBasis = "anecdotal"; // Safe default
+
+      tracker.recordFallback({
+        field: 'evidenceBasis',
+        location: `${locationPrefix} #${index + 1}`,
+        text: text.substring(0, 100),
+        defaultUsed: evidenceBasis,
+        reason
+      });
+
+      console.warn(`[Fallback] evidenceBasis: ${locationPrefix} #${index + 1} - using default "anecdotal" (reason: ${reason})`);
+    }
+
+    return {
+      ...ev,
+      sourceAuthority: sourceAuthority as "primary" | "secondary" | "opinion" | "contested",
+      evidenceBasis: evidenceBasis as "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific"
+    };
+  });
+}
+
+/**
+ * Final verification: Check all classifications at end of analysis
+ * Catches any items that bypassed entry-point normalization
+ *
+ * Default value reasoning:
+ * - harmPotential: "medium" - Neutral; doesn't over-alarm (high) or dismiss (low)
+ * - factualBasis: "unknown" - Most conservative; doesn't claim evidence quality we can't verify
+ * - isContested: false - Conservative; don't penalize without evidence of contestation
+ * - sourceAuthority: "secondary" - Neutral; news/analysis (not primary research, not pure opinion)
+ * - evidenceBasis: "anecdotal" - Conservative; weakest credible evidence type
+ */
+function verifyFinalClassifications(
+  state: ResearchState,
+  claimVerdicts: any[],
+  articleAnalysis: any
+): void {
+  const tracker = state.fallbackTracker;
+
+  // Verify claim verdicts have harmPotential
+  claimVerdicts.forEach((cv, index) => {
+    if (!cv.harmPotential || !["high", "medium", "low"].includes(cv.harmPotential)) {
+      const reason = !cv.harmPotential ? 'missing' : 'invalid';
+      tracker.recordFallback({
+        field: 'harmPotential',
+        location: `Final Verdict #${index + 1}`,
+        text: (cv.claimText || "").substring(0, 100),
+        defaultUsed: "medium",
+        reason
+      });
+      cv.harmPotential = "medium";
+      console.warn(`[Fallback] Final verification: Verdict #${index + 1} missing harmPotential, set to "medium"`);
+    }
+  });
+
+  // Verify KeyFactors have factualBasis and isContested
+  if (articleAnalysis?.keyFactors) {
+    articleAnalysis.keyFactors.forEach((kf: any, index: number) => {
+      // factualBasis
+      if (!kf.factualBasis || !["established", "disputed", "opinion", "unknown"].includes(kf.factualBasis)) {
+        const reason = !kf.factualBasis ? 'missing' : 'invalid';
+        tracker.recordFallback({
+          field: 'factualBasis',
+          location: `Final KeyFactor #${index + 1}`,
+          text: (kf.factor || "").substring(0, 100),
+          defaultUsed: "unknown",
+          reason
+        });
+        kf.factualBasis = "unknown";
+        console.warn(`[Fallback] Final verification: KeyFactor #${index + 1} missing factualBasis, set to "unknown"`);
+      }
+
+      // isContested
+      if (typeof kf.isContested !== 'boolean') {
+        tracker.recordFallback({
+          field: 'isContested',
+          location: `Final KeyFactor #${index + 1}`,
+          text: (kf.factor || "").substring(0, 100),
+          defaultUsed: "false",
+          reason: 'missing'
+        });
+        kf.isContested = false;
+        console.warn(`[Fallback] Final verification: KeyFactor #${index + 1} missing isContested, set to false`);
+      }
+    });
+  }
+
+  // Verify evidence/facts have sourceAuthority and evidenceBasis
+  state.facts.forEach((fact: any, index: number) => {
+    // sourceAuthority
+    if (!fact.sourceAuthority || !["primary", "secondary", "opinion", "contested"].includes(fact.sourceAuthority)) {
+      const reason = !fact.sourceAuthority ? 'missing' : 'invalid';
+      tracker.recordFallback({
+        field: 'sourceAuthority',
+        location: `Final Evidence #${index + 1}`,
+        text: (fact.statement || fact.fact || "").substring(0, 100),
+        defaultUsed: "secondary",
+        reason
+      });
+      fact.sourceAuthority = "secondary";
+      console.warn(`[Fallback] Final verification: Evidence #${index + 1} missing sourceAuthority, set to "secondary"`);
+    }
+
+    // evidenceBasis
+    if (!fact.evidenceBasis || !["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"].includes(fact.evidenceBasis)) {
+      const reason = !fact.evidenceBasis ? 'missing' : 'invalid';
+      tracker.recordFallback({
+        field: 'evidenceBasis',
+        location: `Final Evidence #${index + 1}`,
+        text: (fact.statement || fact.fact || "").substring(0, 100),
+        defaultUsed: "anecdotal",
+        reason
+      });
+      fact.evidenceBasis = "anecdotal";
+      console.warn(`[Fallback] Final verification: Evidence #${index + 1} missing evidenceBasis, set to "anecdotal"`);
+    }
+  });
+
+  // Log summary if any final verifications were needed
+  const summary = tracker.getSummary();
+  const finalFallbacks = summary.fallbackDetails.filter(f => f.location.startsWith('Final'));
+  if (finalFallbacks.length > 0) {
+    console.warn(`[Fallback] Final verification caught ${finalFallbacks.length} items that bypassed entry-point normalization`);
+  }
+}
+
+// ============================================================================
 
 async function refineScopesFromEvidence(
   state: ResearchState,
@@ -1973,6 +2407,8 @@ interface ResearchState {
   pipelineConfig: PipelineConfig;
   // NEW v2.10.0: Search config for hot-reload support
   searchConfig: SearchConfig;
+  // P0: Fallback tracking for LLM classification reliability
+  fallbackTracker: FallbackTracker;
 }
 
 interface ClaimUnderstanding {
@@ -2499,7 +2935,7 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   dependsOn: z.array(z.string()).default([]),
   keyEntities: z.array(z.string()).default([]),
   checkWorthiness: z.enum(["high", "medium", "low"]).catch("medium"),
-  harmPotential: z.enum(["high", "medium", "low"]).catch("medium"),
+  harmPotential: z.enum(["high", "medium", "low"]).optional().catch(undefined),
   centrality: z.enum(["high", "medium", "low"]).catch("medium"),
   isCentral: z.boolean().catch(false),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).catch("direct"), // Default to direct for backward compat
@@ -3980,7 +4416,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
         requiresSeparateAnalysis: sp.data.requiresSeparateAnalysis,
         subClaims: sp.data.subClaims?.length ?? 0,
       });
-      return sp.data;
+      return sp.data as ClaimUnderstanding;
     } catch (e: any) {
       debugLog("understandClaim: failed to parse recovered Value JSON", e?.message || String(e));
       return null;
@@ -4025,7 +4461,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
         });
         return null;
       }
-      return parsed.data;
+      return parsed.data as ClaimUnderstanding;
     } catch (e: any) {
       debugLog("understandClaim: JSON fallback parse failed", e?.message || String(e));
       return null;
@@ -6156,19 +6592,18 @@ const DEFAULT_KEY_FACTOR_LENIENT: KeyFactor = {
   factualBasis: "unknown",
 };
 
-const KEY_FACTOR_SCHEMA_LENIENT = z
-  .object({
+const KEY_FACTOR_SCHEMA_LENIENT = z.object({
     factor: z.string().catch(""),
     supports: z.enum(["yes", "no", "neutral"]).catch("neutral"),
     explanation: z.string().catch(""),
-    isContested: z.boolean().catch(false),
+    isContested: z.boolean().optional().catch(undefined),
     contestedBy: z.string().catch(""),
     contestationReason: z.string().catch(""),
     factualBasis: z
       .enum(["established", "disputed", "opinion", "unknown"])
-      .catch("unknown"),
-  })
-  .catch(DEFAULT_KEY_FACTOR_LENIENT);
+      .optional()
+      .catch(undefined),
+  });
 
 const DEFAULT_VERDICT_SUMMARY_LENIENT = {
   answer: 50,
@@ -9172,6 +9607,16 @@ async function generateReport(
     report += `\n`;
   }
 
+  const fallbackSummary = state.fallbackTracker.hasFallbacks()
+    ? state.fallbackTracker.getSummary()
+    : null;
+  if (fallbackSummary) {
+    const fallbackReport = formatFallbackReportMarkdown(fallbackSummary);
+    if (fallbackReport) {
+      report += `\n${fallbackReport}\n`;
+    }
+  }
+
   return report;
 }
 
@@ -9198,6 +9643,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   const startTime = Date.now();
   const emit = input.onEvent ?? (() => {});
+
+  // ============================================================================
+  // P0: Initialize Fallback Tracker for LLM classification monitoring
+  // ============================================================================
+  const fallbackTracker = new FallbackTracker();
 
   // ============================================================================
   // v2.9.0 Phase 3: Initialize SR service (interface-based modularity)
@@ -9371,6 +9821,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     budgetTracker, // NEW PR 6: p95 hardening
     pipelineConfig, // NEW v2.9.0: Hot-reload support
     searchConfig, // NEW v2.10.0: Hot-reload support
+    fallbackTracker, // P0: LLM classification fallback tracking
   };
 
   // Handle URL
@@ -9465,6 +9916,15 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       riskTier: "B",
       keyFactors: [],
     };
+  }
+
+  // P0: Normalize claim classifications with fallback tracking
+  if (state.understanding?.subClaims) {
+    state.understanding.subClaims = normalizeClaimClassifications(
+      state.understanding.subClaims,
+      state.fallbackTracker,
+      "Claim"
+    );
   }
 
   const contextCount = state.understanding.analysisContexts.length;
@@ -9933,6 +10393,15 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   state.understanding = ensureAtLeastOneScope(state.understanding!);
   validateContextReferences(state.understanding!, state.facts);
 
+  // P0: Normalize evidence classifications with fallback tracking before verdict generation
+  if (state.facts.length > 0) {
+    state.facts = normalizeEvidenceClassifications(
+      state.facts,
+      state.fallbackTracker,
+      "Evidence"
+    );
+  }
+
   // STEP 5: Verdicts
   await emit(`Step 3: Generating verdicts [LLM: ${provider}/${modelName}]`, 65);
   const verdictStart = Date.now();
@@ -9943,6 +10412,15 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   } = await generateVerdicts(state, model);
   const verdictElapsed = Date.now() - verdictStart;
   console.log(`[Analyzer] Verdict generation completed in ${verdictElapsed}ms`);
+
+  // P0: Normalize KeyFactor classifications with fallback tracking
+  if (articleAnalysis?.keyFactors && articleAnalysis.keyFactors.length > 0) {
+    articleAnalysis.keyFactors = normalizeKeyFactorClassifications(
+      articleAnalysis.keyFactors,
+      state.fallbackTracker,
+      "KeyFactor"
+    );
+  }
 
   // Apply Gate 4: Verdict Confidence Assessment
   // Adds confidence tier and publication status to each verdict
@@ -9993,6 +10471,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       `[Budget] ⚠️ Analysis terminated early due to budget limits: ${state.budgetTracker.exceedReason}`
     );
   }
+
+  // P0: Final verification - catch any classifications that bypassed entry-point normalization
+  verifyFinalClassifications(state, finalClaimVerdicts, articleAnalysis);
 
   await emit("Analysis complete", 100);
 
@@ -10086,6 +10567,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     },
     // NEW v2.4.5: Pseudoscience analysis (pattern-based checks removed)
     pseudoscienceAnalysis: null,
+    // P0: Classification fallback tracking
+    classificationFallbacks: state.fallbackTracker.hasFallbacks() ? state.fallbackTracker.getSummary() : undefined,
     qualityGates: {
       passed:
         state.facts.length >= config.minFactsRequired &&
