@@ -59,26 +59,18 @@ When input compares two things (X vs Y, X is better/more efficient than Y):
 - If evidence could show X>Y in one phase but Y>X in another phase → MUST split into contexts
 - Output at least 2 contexts: one for each major measurement boundary commonly used in that domain
 
-**CRITICAL - Do NOT split for**:
-- Different viewpoints or perspectives (different opinions on same matter)
-- Different geographic locations (unless explicitly defining analytical boundaries)
-- Different studies or sources (multiple sources often analyze the same context)
-- Incidental temporal mentions (e.g., "in 2020, the court..." - when not central to the claim)
-- Different narrative framings (rhetorical differences are not contexts)
+**Do NOT Split For**:
+- Viewpoints/opinions on same matter (different perspectives ≠ distinct contexts)
+- Incidental temporal/geographic mentions (e.g., "in 2020, court ruled..." unless time IS the subject)
+- Multiple sources analyzing same context (studies/reports on one topic)
 
-**OVERLAP DETECTION (Merge Near-Duplicates Only)**:
+**DO Split For** (distinct analytical boundaries):
+- Different measurement frameworks (e.g., Well-to-Wheel vs Tank-to-Wheel efficiency)
+- Time period AS PRIMARY SUBJECT (e.g., "2000s event" vs "1970s event" as distinct historical subjects)
+- Geographic comparison as analytical boundary (e.g., cold vs tropical climates)
+- Different subject matter or analytical questions requiring different evidence
 
-**MERGE contexts when names differ only by**:
-- Minor rewording (synonyms, word order)
-- One has extra qualifier that doesn't change the subject
-- One is abbreviation/variant of the other
-- Same subject, same analytical question, same time period
-
-**KEEP SEPARATE when ANY of these differ**:
-- Time period AS PRIMARY SUBJECT (e.g., "2000s event" vs "1970s event" - comparing different historical events) → DISTINCT
-- Analytical focus or question → DISTINCT
-- Subject matter → DISTINCT
-- Would require different evidence to evaluate → DISTINCT
+**MERGE Near-Duplicates**: Same subject, same question, minor rewording/abbreviation differences → merge into one context.
 
 **PRESERVE ALL CLAIMS**: Assign unmatched claims to "General" context. Never drop claims.
 
@@ -127,42 +119,29 @@ When in doubt, keep contexts separate - losing valid contexts is worse than slig
 - **timing**: WHEN it occurred
 - **core**: THE ACTUAL FACTUAL ASSERTION to verify
 
-**Centrality Rules**:
-- Attribution/source/timing claims: ALWAYS LOW centrality
-- Methodology validation claims: ALWAYS LOW centrality
-- Core factual claims about the subject: HIGH or MEDIUM centrality based on importance
+**Centrality Assignment**:
 
-**HIGH Centrality (MANDATORY - most influential on verdict)**:
-- **DEATH/INJURY CLAIMS**: Any claim about people dying or being harmed MUST be HIGH centrality
-- **Specific quantified assertions**: Numbers, statistics, counts (e.g., "10 children died")
-- **Severe accusations**: Claims about harm, fraud, crimes, corruption
-- **Definitive factual assertions**: Claims that can be verified true/false with evidence
-- The most specific, testable factual assertion in the input
+**HIGH** (core factual, most influential):
+- **DEATH/INJURY**: MANDATORY HIGH - any claim about harm, fatalities, safety hazards
+- Quantified assertions (numbers, statistics, counts)
+- Severe accusations (fraud, crimes, corruption)
+- Definitive factual assertions verifiable with evidence
 
-**CRITICAL**: Death and safety claims are THE MOST IMPORTANT claims to verify because:
-1. They represent severe accusations with major consequences
-2. Getting them wrong (either way) causes significant harm
-3. They are often the core factual dispute that determines overall truth
+**MEDIUM** (supporting context):
+- Policy announcements, procedural changes
+- General characterizations supporting the thesis
+- Background affecting interpretation
 
-**MEDIUM Centrality**:
-- Policy announcements or procedural changes
-- General characterizations that support the main thesis
-- Background context that affects interpretation
+**LOW** (attribution/metadata):
+- Attribution (who said it), source (where documented), timing (when mentioned)
+- Methodology or process meta-claims
 
-**LOW Centrality**:
-- Who said something (attribution)
-- Where/when documented (source/timing)
-- Meta-claims about methodology or process
+**Examples**:
+- "10 people died from Product X" → HIGH (death claim - MANDATORY)
+- "Agency will change approval standards" → MEDIUM (policy)
+- "Person Y is an agency official" → LOW (attribution)
 
-**Example**: Input about "Agency official announced 10 people died from Product X"
-- "10 people died from Product X" = **HIGH centrality** (death claim - MUST be central, highest weight)
-- "Agency will change approval standards" = MEDIUM centrality (policy claim)
-- "Person Y is an agency official" = LOW centrality (attribution)
-
-**WRONG**: Making death claims LOW or MEDIUM centrality
-**CORRECT**: Death/injury claims are ALWAYS HIGH centrality regardless of other factors
-
-**Expect 3-6 claims** from typical inputs (more for complex compound statements).
+**Expect 3-6 claims** from typical inputs.
 
 ## HARM POTENTIAL (harmPotential field)
 

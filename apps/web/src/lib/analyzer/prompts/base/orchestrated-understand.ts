@@ -163,30 +163,19 @@ Claims with claimRole "source", "attribution", or "timing" should ALWAYS have ce
 Look for multiple distinct AnalysisContexts that should be analyzed separately.
 
 ### What IS a valid distinct context:
-- Separate formal proceedings or processes
-- Distinct temporal events
-- Different institutional processes
-- Different analytical methodologies or boundaries
-- Different regulatory or governance frameworks
+- Distinct formal proceedings/processes, temporal events, institutional processes
+- Different analytical methodologies or regulatory frameworks creating distinct boundaries
 
 ### What is NOT a distinct context:
-- Different national/political perspectives on the SAME event
-- Different stakeholder viewpoints on a single topic
-- Pro vs con arguments about the same topic
+- Different perspectives/viewpoints on the SAME event (political views, stakeholder opinions, pro vs con)
 
-### OVERLAP DETECTION (Merge Near-Duplicates Only):
+### Split Rules:
 
-**MERGE contexts when names differ only by**:
-- Minor rewording (synonyms, word order)
-- One has extra qualifier that doesn't change the subject
-- One is abbreviation/variant of the other
-- Same subject, same analytical question, same time period
+**Do NOT Split**: Viewpoints, incidental temporal mentions, multiple sources on same topic
 
-**KEEP SEPARATE when ANY of these differ**:
-- Time period AS PRIMARY SUBJECT (e.g., "2000s event" vs "1970s event" - comparing distinct historical events) → DISTINCT
-- Analytical focus or question → DISTINCT
-- Subject matter → DISTINCT
-- Would require different evidence to evaluate → DISTINCT
+**DO Split**: Different measurement boundaries (Well-to-Wheel vs Tank-to-Wheel), time AS primary subject (2000s vs 1970s events), geographic/institutional analytical boundaries requiring different evidence
+
+**MERGE Near-Duplicates**: Same subject/question with minor rewording, abbreviations, or qualifier differences → one context
 
 **PRESERVE ALL CLAIMS**: Assign unmatched claims to "General" context. Never drop claims.
 
