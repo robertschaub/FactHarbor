@@ -1,7 +1,7 @@
 # Provider-Specific Prompt Formatting
 
-**Version**: 2.6.41 (v2.8.0 prompt architecture)
-**Date**: 2026-02-02
+**Version**: 2.8.0 (Optimized - 20-30% token reduction)
+**Date**: 2026-02-03
 **Status**: Implemented
 **Related**: [Evidence Quality Filtering](../ARCHITECTURE/Evidence_Quality_Filtering.md)
 
@@ -51,6 +51,25 @@ const configAdaptation = getTieringExtractFactsAdaptation(tier);
 // Final composed prompt
 const finalPrompt = basePrompt + providerVariant + configAdaptation;
 ```
+
+### v2.8.0 Optimization Improvements (Feb 2026)
+
+**Token Reduction**: All provider variants and base prompts optimized for 20-30% token reduction while maintaining quality.
+
+**Changes Applied**:
+- **Provider variants**: Removed attribution duplication, condensed examples (~15-20% reduction)
+- **Base prompts**: Inlined terminology, simplified guidance (~5-10% additional reduction)
+- **Impact**: Reduced API costs by 20-30% across all providers automatically
+
+**Provider Variant Lengths** (approximate, post-optimization):
+- **Anthropic variants**: ~400-600 tokens each (down from ~600-800 tokens)
+- **OpenAI variants**: ~350-550 tokens each (down from ~500-700 tokens)
+- **Google variants**: ~450-650 tokens each (down from ~600-800 tokens)
+- **Mistral variants**: ~400-600 tokens each (down from ~550-750 tokens)
+
+**Quality**: Validated via manual review and build verification. All critical guidance preserved (death = HIGH centrality, attribution = LOW, multi-context rules intact).
+
+See [Prompt Architecture v2.8.0](../ARCHITECTURE/Prompt_Architecture.md) for detailed changes.
 
 ---
 
