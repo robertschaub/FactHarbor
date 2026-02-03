@@ -1135,18 +1135,61 @@ flowchart TB
 
 When fallbacks occur, they are reported in three places:
 
-### Safe Default Selection (Mermaid)
+### Safe Default Selection (Visual Reference)
 
-This diagram summarizes the safe default used when a specific classification field is missing or invalid.
+This visual table provides a comprehensive reference for all classification fields, their possible values, safe defaults, and decision rationale.
 
 ```mermaid
-flowchart LR
-  F[Classification field missing or invalid] --> HP[harmPotential -> \"medium\"]
-  F --> FB[factualBasis -> \"unknown\"]
-  F --> IC[isContested -> false]
-  F --> SA[sourceAuthority -> \"secondary\"]
-  F --> EB[evidenceBasis -> \"anecdotal\"]
+%%{init: {'theme':'base', 'themeVariables': { 'fontSize':'14px'}}}%%
+graph TB
+    subgraph LEGEND["📋 Classification Fields & Safe Defaults"]
+        direction TB
+
+        subgraph HP["🔸 harmPotential (Claims)"]
+            HP_DOMAIN["<b>Possible Values:</b><br/>• critical (severe harm)<br/>• high (serious harm)<br/>• medium (moderate harm) ⭐<br/>• low (minimal harm)<br/>• none (no harm)"]
+            HP_DEFAULT["<b>Safe Default: medium</b><br/><br/><b>Rationale:</b><br/>Neutral stance - doesn't over-alarm<br/>or dismiss. Unknown harm claims<br/>get moderate scrutiny."]
+        end
+
+        subgraph FB["🔸 factualBasis (KeyFactors)"]
+            FB_DOMAIN["<b>Possible Values:</b><br/>• scientific_consensus<br/>• peer_reviewed_research<br/>• established_fact<br/>• preliminary_research<br/>• expert_opinion<br/>• unknown ⭐<br/>• opinion_based"]
+            FB_DEFAULT["<b>Safe Default: unknown</b><br/><br/><b>Rationale:</b><br/>Most conservative - never claim<br/>evidence quality we haven't verified.<br/>Prevents false confidence."]
+        end
+
+        subgraph IC["🔸 isContested (KeyFactors)"]
+            IC_DOMAIN["<b>Possible Values:</b><br/>• true (contested)<br/>• false (not contested) ⭐"]
+            IC_DEFAULT["<b>Safe Default: false</b><br/><br/><b>Rationale:</b><br/>Conservative - don't reduce claim<br/>weight without evidence of contestation.<br/>Avoids unjustified penalization."]
+        end
+
+        subgraph SA["🔸 sourceAuthority (Evidence)"]
+            SA_DOMAIN["<b>Possible Values:</b><br/>• primary (original research/data)<br/>• secondary (news/analysis) ⭐<br/>• tertiary (opinion/blog)<br/>• expert (expert statement)<br/>• institutional (org report)"]
+            SA_DEFAULT["<b>Safe Default: secondary</b><br/><br/><b>Rationale:</b><br/>Neutral middle ground - treat<br/>unclassified sources as news/analysis,<br/>not primary research or pure opinion."]
+        end
+
+        subgraph EB["🔸 evidenceBasis (Evidence)"]
+            EB_DOMAIN["<b>Possible Values:</b><br/>• peer_reviewed_study<br/>• empirical_data<br/>• case_study<br/>• expert_testimony<br/>• anecdotal ⭐<br/>• none"]
+            EB_DEFAULT["<b>Safe Default: anecdotal</b><br/><br/><b>Rationale:</b><br/>Conservative assumption - weakest<br/>credible evidence type. If quality<br/>can't be verified, assume personal<br/>account level."]
+        end
+    end
+
+    style HP fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style FB fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style IC fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style SA fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style EB fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style LEGEND fill:#fafafa,stroke:#616161,stroke-width:3px
 ```
+
+**Legend**: ⭐ = Safe Default Value
+
+**Quick Reference Table**:
+
+| Field | Type | Safe Default | Domain | Applies To |
+|-------|------|--------------|--------|------------|
+| `harmPotential` | Enum (5 values) | `"medium"` | critical → high → **medium** → low → none | Claims |
+| `factualBasis` | Enum (7 values) | `"unknown"` | scientific_consensus → ... → **unknown** → opinion_based | KeyFactors |
+| `isContested` | Boolean | `false` | true \| **false** | KeyFactors |
+| `sourceAuthority` | Enum (5 values) | `"secondary"` | primary → **secondary** → tertiary → expert → institutional | Evidence |
+| `evidenceBasis` | Enum (6 values) | `"anecdotal"` | peer_reviewed_study → ... → **anecdotal** → none | Evidence |
 
 #### 1. Result JSON (`classificationFallbacks` field)
 

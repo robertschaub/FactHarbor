@@ -2,7 +2,7 @@
 
 **Version:** 2.10.1
 **Schema Version:** 2.7.0
-**Last Updated:** February 2, 2026
+**Last Updated:** February 3, 2026
 
 This document provides a comprehensive technical overview of FactHarbor's POC1 architecture, including system flows, data models, component interactions, and current implementation status.
 
@@ -88,6 +88,8 @@ flowchart TB
 | `text-analysis-service.ts` | `getTextAnalysisService()` | LLM-only text analysis |
 
 See `Docs/REFERENCE/TERMINOLOGY.md` for "Doubted vs Contested" distinction.
+
+See also: [Evidence Quality Filtering (including Classification Fallbacks)](Evidence_Quality_Filtering.md#10-classification-fallbacks).
 
 **Text Analysis Service (v2.9+):**
 
@@ -674,6 +676,8 @@ See [Unified_Config_Management.md](../USER_GUIDES/Unified_Config_Management.md) 
 
 ### Quality Gates
 
+> **📘 For detailed quality gates reference**, see [Quality Gates Reference](Quality_Gates_Reference.md).
+
 **Gate 1: Claim Validation**
 - Filters out opinions, predictions, low-specificity claims
 - Keeps central claims regardless of specificity
@@ -840,6 +844,8 @@ See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
 
 ### Related Documentation
 
+- **Context Detection**: `Docs/ARCHITECTURE/Context_and_EvidenceScope_Detection_Guide.md` - Consolidated context detection guide
+- **Quality Gates**: `Docs/ARCHITECTURE/Quality_Gates_Reference.md` - Quality gates reference
 - **Calculations**: `Docs/ARCHITECTURE/Calculations.md` - Verdict calculation methodology
 - **KeyFactors Design**: `Docs/ARCHITECTURE/KeyFactors_Design.md` - KeyFactors implementation details
 - **Source Reliability**: `Docs/ARCHITECTURE/Source_Reliability.md` - Source scoring system
@@ -887,6 +893,5 @@ See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
 
 ---
 
-**Last Updated**: February 2, 2026
+**Last Updated**: February 3, 2026
 **Document Status**: Living document - updated as architecture evolves
-

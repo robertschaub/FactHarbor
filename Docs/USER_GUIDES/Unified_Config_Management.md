@@ -60,12 +60,69 @@ There is no single combined profile object; each config type is versioned indepe
 
 ## 2. Config Source Precedence (Alpha)
 
-### Where Configs Live
+### 2.1 Config Loading Flow
+
+The diagram below shows how FactHarbor loads, validates, and activates configurations at runtime:
+
+```mermaid
+flowchart TD
+    START([System Startup]) --> CHECK_DB{Database<br/>has configs?}
+
+    CHECK_DB -->|No - Fresh DB| SEED_FILES[Load from JSON files<br/>apps/web/configs/]
+    CHECK_DB -->|Yes| LOAD_DB[Load from Database]
+
+    SEED_FILES --> VALIDATE_FILE{Valid JSON<br/>and schema?}
+    VALIDATE_FILE -->|No| FALLBACK_CODE[Use code constants<br/>config-schemas.ts]
+    VALIDATE_FILE -->|Yes| WRITE_DB[Write to Database]
+    WRITE_DB --> ACTIVATE
+
+    LOAD_DB --> VALIDATE_DB{Valid schema?}
+    VALIDATE_DB -->|No| FALLBACK_FILE[Try JSON files]
+    VALIDATE_DB -->|Yes| ACTIVATE[Activate Config]
+
+    FALLBACK_FILE --> VALIDATE_FILE
+    FALLBACK_CODE --> ACTIVATE
+
+    ACTIVATE --> RUNTIME[Runtime Authority:<br/>Database]
+
+    subgraph Manual Updates
+        ADMIN[Admin UI Update] --> VALIDATE_ADMIN{Valid JSON<br/>and schema?}
+        VALIDATE_ADMIN -->|No| REJECT[Reject with error]
+        VALIDATE_ADMIN -->|Yes| SAVE_DB[Save to Database]
+        SAVE_DB --> VERSION[Create new version]
+        VERSION --> ACTIVATE
+
+        REJECT --> ADMIN_RETRY[Admin must fix]
+    end
+
+    subgraph Dev Mode Only
+        DEV_SAVE[Save to File button] --> CHECK_ENV{Development<br/>mode?}
+        CHECK_ENV -->|No| BLOCK[Blocked - production]
+        CHECK_ENV -->|Yes| BACKUP[Create .bak backup]
+        BACKUP --> WRITE_FILE[Write to JSON file]
+    end
+
+    style RUNTIME fill:#c8e6c9
+    style FALLBACK_CODE fill:#ffcdd2
+    style FALLBACK_FILE fill:#fff9c4
+    style BLOCK fill:#ffcdd2
+    style REJECT fill:#ffcdd2
+```
+
+**Key Points**:
+- **Runtime Authority**: Database is the source of truth during execution
+- **Fresh DB Seeding**: On first startup, configs are loaded from JSON files
+- **Validation**: All configs are validated against Zod schemas before activation
+- **Fallback Chain**: Database → JSON files → Code constants
+- **Manual Updates**: Admin UI changes create new versions in the database
+- **Dev Mode**: Saving to files is restricted to development environments
+
+### 2.2 Where Configs Live
 1. **Runtime Authority:** Database (active config in UCM)
 2. **Default Templates:** JSON files in `apps/web/configs/`
 3. **Fallback:** Code constants in `config-schemas.ts`
 
-### Update Scenarios
+### 2.3 Update Scenarios
 
 | Scenario | Behavior | Notes |
 |----------|----------|-------|
@@ -74,12 +131,12 @@ There is no single combined profile object; each config type is versioned indepe
 | DB updated via UI | File unchanged | Only affects DB; files stay as templates |
 | Save-to-File invoked | DB → File | Overwrites file (dev mode only; not enabled in alpha) |
 
-### Alpha Limitations
+### 2.4 Alpha Limitations
 - No automatic drift detection UI
 - No automatic merging of file updates
 - File changes require manual admin action
 
-### Save to File (Development Mode)
+### 2.5 Save to File (Development Mode)
 
 In development, you can save active DB configs back to default files:
 
@@ -858,7 +915,7 @@ These options control the multi-layer claim filtering system:
 ---
 
 **Document Version**: 2.1
-**Last Updated**: 2026-02-02
+**Last Updated**: 2026-02-03
 **Changes**: Added Section 5.4 PipelineConfig with Claim Filtering options
 **Next Review**: When adding new configuration options
 **Maintained by**: Plan Coordinator

@@ -1,7 +1,7 @@
 # FactHarbor Calculations Documentation
 
 **Version**: 2.6.35  
-**Last Updated**: 2026-01-21
+**Last Updated**: 2026-02-03
 
 ## Overview
 
@@ -73,6 +73,8 @@ function truthFromBand(band: "strong" | "partial" | "uncertain" | "refuted", con
 A **AnalysisContext** is a bounded analytical frame that should be analyzed separately. It replaces the previous terminology of "proceeding".
 
 Note: **EvidenceScope** is the *per-evidence* source methodology/boundaries (`EvidenceItem.evidenceScope`). This section's AnalysisContext refers to the *top-level* bounded analytical frame.
+
+> **📘 For detailed context detection guidance**, see [Context and EvidenceScope Detection Guide](Context_and_EvidenceScope_Detection_Guide.md).
 
 ### Definition
 
@@ -685,7 +687,7 @@ FactHarbor's calculation system:
 4. **Modulates by confidence** using truth bands
 5. **De-duplicates near-identical claims** to prevent double-counting
 6. **Handles dependencies** to avoid cascading false prerequisites
-7. **Applies quality gates** (Gate 1, Gate 4) for evidence sufficiency
+7. **Applies quality gates** (Gate 1, Gate 4) for evidence sufficiency (see [Quality Gates Reference](Quality_Gates_Reference.md))
 8. **Guards against unsupported judgments** (pseudoscience, proportionality without benchmarks)
 9. **Applies source reliability weighting** to adjust verdicts based on source credibility (v2.6.35+)
 
@@ -693,4 +695,6 @@ All calculations are designed to be **transparent**, **traceable**, and **determ
 
 ---
 
-*See also: [Source_Reliability.md](Source_Reliability.md) for full Source Reliability system documentation.*
+*See also:*
+- *[Quality_Gates_Reference.md](Quality_Gates_Reference.md) for quality gates details*
+- *[Source_Reliability.md](Source_Reliability.md) for full Source Reliability system documentation*

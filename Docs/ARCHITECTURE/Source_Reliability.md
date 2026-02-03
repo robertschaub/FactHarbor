@@ -2,7 +2,7 @@
 
 **Version**: 1.4 (Multi-Language Support)  
 **Status**: Operational  
-**Last Updated**: 2026-02-02 (v2.6.41)
+**Last Updated**: 2026-02-03 (v2.6.41)
 
 ---
 
@@ -395,6 +395,92 @@ These settings affect the internal evaluation endpoint (`/api/internal/evaluate-
 - Score >= 0.58: Preserves original verdict (credible source)
 - Score 0.43-0.57: Moderate pull toward neutral (mixed track record)
 - Score < 0.43: Strong pull toward neutral (skepticism)
+
+---
+
+## v1.1 Prompt Improvements (January 2026)
+
+**Date**: 2026-01-24
+**Focus**: Prompt structure, quantification, and consistency across models
+
+Version 1.1 improved the LLM evaluation prompt for source reliability assessments to increase stability, consistency, and effectiveness across different models.
+
+### Key Improvements
+
+| # | Improvement | Impact | Description |
+|---|-------------|--------|-------------|
+| 1 | Restructured Prompt Hierarchy | High | Moved critical rules to top with ⚠️ visual indicator, ensuring LLMs see most important constraints first |
+| 2 | Quantified "Insufficient Data" Thresholds | High | Added specific numeric thresholds (e.g., "Zero fact-checker assessments AND ≤1 weak mention") to reduce inter-model disagreement |
+| 3 | Mechanistic Confidence Scoring Formula | High | Created step-by-step calculation formula with base (0.40) + additive factors, making confidence reproducible across models |
+| 4 | Numeric Negative Evidence Caps | Medium-High | Made caps explicit with numbers (e.g., "3+ failures → score ≤ 0.42") to prevent lenient scoring |
+| 5 | Quantified Recency Weighting | Medium | Converted subjective terms to multipliers (0-12mo: 1.0×, 12-24mo: 0.8×, 2-5yr: 0.5×, >5yr: 0.2×) |
+| 6 | Evidence Quality Hierarchy | Medium | Created three-tier hierarchy (HIGH/MEDIUM/LOW weight) to prevent single weak sources from dominating |
+| 7 | Enhanced Calibration Examples | Medium | Added confidence calculations and reasoning to examples, showing models exactly how to apply formulas |
+| 8 | Improved Source Type Positioning | Low-Medium | Renamed section to "SOURCE TYPE CLASSIFICATION (classify FIRST, then evaluate within category)" |
+| 9 | Enhanced System Message | Low-Medium | Made system message tactical with specific responsibilities (evidence-only, caps, formula) |
+| 10 | Expanded Validation Checklist | Low-Medium | Added checklist items for all critical rules to help models catch errors before responding |
+
+### Mechanistic Confidence Formula
+
+**Base**: 0.40
+
+**ADD**:
+- +0.15 per independent fact-checker assessment (max +0.45 for 3+)
+- +0.10 if most evidence is within last 12 months
+- +0.10 if evidence shows consistent pattern (3+ sources agree)
+- +0.05 per additional corroborating source beyond first (max +0.15)
+
+**SUBTRACT**:
+- -0.15 if evidence is contradictory/mixed signals
+- -0.10 if evidence is mostly >2 years old
+
+**Final confidence**: clamp result to [0.0, 1.0]
+
+**THRESHOLD**: If calculated confidence < 0.50, strongly consider outputting `score=null` and `factualRating="insufficient_data"`
+
+### Negative Evidence Caps (v1.1)
+
+| Evidence Type | Score Cap | Rating Cap |
+|---------------|-----------|------------|
+| Evidence of fabricated stories/disinformation | ≤ 0.14 | highly_unreliable |
+| 3+ documented fact-checker failures | ≤ 0.42 | leaning_unreliable |
+| 1-2 documented failures from reputable fact-checkers | ≤ 0.57 | mixed |
+| Political/ideological bias WITHOUT documented failures | No cap | Note in bias field only |
+
+### Evidence Quality Hierarchy
+
+**HIGH WEIGHT** (can establish verdict alone):
+- Explicit fact-checker assessments (MBFC, Snopes, PolitiFact, etc.)
+- Documented corrections/retractions by the source
+- Journalism reviews from reputable organizations
+
+**MEDIUM WEIGHT** (support but don't establish alone):
+- Newsroom analyses of editorial standards
+- Academic studies on source reliability
+- Awards/recognition from journalism organizations
+
+**LOW WEIGHT** (context only, cannot trigger caps):
+- Single blog posts or forum discussions
+- Passing mentions without substantive analysis
+- Generic references without reliability details
+
+### Expected Improvements
+
+| Aspect | Before | After | Expected Gain |
+|--------|--------|-------|---------------|
+| Insufficient data detection | ~60% consistent | ~85% consistent | +25% |
+| Confidence scoring variance | ±0.20 typical | ±0.10 typical | 50% reduction |
+| Negative evidence cap application | ~70% correct | ~90% correct | +20% |
+| Inter-model agreement | 75% within ±0.15 | 85% within ±0.10 | +10% tighter |
+| Evidence grounding | Already high (~95%) | Maintained | Stable |
+
+### Backward Compatibility
+
+✅ **Fully backward compatible**:
+- Output schema unchanged
+- Rating scale unchanged
+- All existing validation logic still applies
+- Cache compatibility maintained
 
 ---
 
