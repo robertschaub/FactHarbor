@@ -34,7 +34,6 @@ import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-bui
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
-import { setAggregationLexicon } from "./aggregation";
 import { setContextHeuristicsLexicon } from "./scopes";
 import {
   prefetchSourceReliability,
@@ -207,7 +206,6 @@ export async function runMonolithicDynamic(
   }
 
   setProvenanceLexicon(evidenceLexicon);
-  setAggregationLexicon(aggregationLexicon);
   setContextHeuristicsLexicon(aggregationLexicon);
   setSourceReliabilityConfig(srConfig);
 

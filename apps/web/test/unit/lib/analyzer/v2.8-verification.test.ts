@@ -3,8 +3,8 @@
  * 
  * Unit and integration tests to verify the v2.8 changes work correctly:
  * 1. Hydrogen input verifies 2+ scopes detected (production/usage phases)
- * 2. Bolsonaro verifies US criticism is factualBasis: "opinion" (not "established")
- * 3. High harm potential claims get proper weight (death/injury claims)
+ * 2. Weighting behavior for contested vs doubted claims
+ * 3. Harm potential classification observed in end-to-end runs (LLM-derived)
  * 
  * Unit tests run without API keys.
  * Integration tests require API keys and running services.
@@ -18,12 +18,9 @@ import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { detectScopes, formatDetectedScopesHint } from "@/lib/analyzer/scopes";
-import { 
-  detectHarmPotential, 
-  detectClaimContestation, 
-  validateContestation,
+import {
   getClaimWeight,
-  calculateWeightedVerdictAverage 
+  calculateWeightedVerdictAverage,
 } from "@/lib/analyzer/aggregation";
 import { runMonolithicCanonical } from "@/lib/analyzer/monolithic-canonical";
 import { loadEnvFile } from "@test/helpers/test-helpers";
@@ -65,110 +62,6 @@ describe("v2.8 Verification - Unit Tests", () => {
 
       expect(hint).toContain("PRE-DETECTED CONTEXTS");
       expect(hint).toContain("MUST output at least these contexts");
-    });
-  });
-
-  // ============================================================================
-  // TEST 2: Contestation Classification - Evidence-based approach
-  // ============================================================================
-  describe("Contestation Classification - Evidence-based", () => {
-    it("should classify contestation without documented evidence as opinion (DOUBTED)", () => {
-      const keyFactors = [
-        {
-          factor: "Trial Fairness",
-          supports: "no" as const,
-          explanation: "Critics claimed the trial was politically motivated",
-          isContested: true,
-          contestedBy: "critics",
-          factualBasis: "established" as const,  // Incorrectly marked - no documented evidence
-          contestationReason: "Unfairness claims without specific evidence"
-        }
-      ];
-
-      const validated = validateContestation(keyFactors);
-      
-      console.log("[v2.8 Unit Test] Validated contestation:", validated[0].factualBasis);
-      
-      // PASS CRITERIA: Should downgrade to "opinion" since no documented evidence
-      expect(validated[0].factualBasis).toBe("opinion");
-    });
-
-    it("should keep established when documented evidence exists", () => {
-      const keyFactors = [
-        {
-          factor: "Procedural Compliance",
-          supports: "no" as const,
-          explanation: "Audit found violations of Article 47 procedures",
-          isContested: true,
-          contestedBy: "Independent Investigation",
-          factualBasis: "established" as const,
-          contestationReason: "Documented violation of standard 12.3"
-        }
-      ];
-
-      const validated = validateContestation(keyFactors);
-      
-      // Should NOT downgrade - has documented evidence
-      expect(validated[0].factualBasis).toBe("established");
-    });
-
-    it("claim-level contestation detects no evidence as opinion", () => {
-      const result = detectClaimContestation(
-        "The trial was fair and followed legal procedures",
-        "Critics disputed the trial as politically motivated"
-      );
-      
-      console.log("[v2.8 Unit Test] Claim contestation:", result);
-      
-      // PASS CRITERIA: No documented evidence = opinion
-      expect(result.isContested).toBe(true);
-      expect(result.factualBasis).toBe("opinion");
-    });
-  });
-
-  // ============================================================================
-  // TEST 3: High Harm Potential - Death Claims
-  // ============================================================================
-  describe("High Harm Potential - Severe Claims", () => {
-    it("should detect high harm potential for death claims", () => {
-      const deathClaims = [
-        "10 children died after vaccination",
-        "The accident caused several deaths",
-        "The medication caused fatal reactions",
-        "Multiple people were killed",
-      ];
-
-      for (const claim of deathClaims) {
-        const harmPotential = detectHarmPotential(claim);
-        console.log(`[v2.8 Unit Test] "${claim.substring(0, 30)}..." -> ${harmPotential}`);
-        expect(harmPotential).toBe("high");
-      }
-    });
-
-    it("should detect high harm for injury/safety claims", () => {
-      const injuryClaims = [
-        "The product caused injuries to users",
-        "There is a significant safety risk",
-        "The hazard level is dangerous",
-      ];
-
-      for (const claim of injuryClaims) {
-        const harmPotential = detectHarmPotential(claim);
-        expect(harmPotential).toBe("high");
-      }
-    });
-
-    it("should return medium for neutral claims", () => {
-      const neutralClaims = [
-        "The company released a new product",
-        "The policy was implemented last year",
-        "The results were announced today",
-      ];
-
-      for (const claim of neutralClaims) {
-        const harmPotential = detectHarmPotential(claim);
-        expect(harmPotential).toBe("medium");
-      }
     });
   });
 
@@ -933,12 +826,12 @@ describe("v2.8 Verification - Integration Tests", () => {
           const totalHighHarm = highHarmClaims.length + highHarmVerdicts.length;
           if (totalHighHarm === 0) {
             console.warn("[v2.8 Integration] ⚠️ No high harm claims detected despite death-related input");
-            console.warn("  Unit tests verify detectHarmPotential() works correctly");
+            console.warn("  Verify LLM harmPotential classification and prompt guidance");
           }
         }
 
         // Always pass - this is a verification/observation test
-        // The unit tests verify the detectHarmPotential logic is correct
+        // LLM harmPotential classification is observed here (not hard-asserted)
         expect(true).toBe(true);
       },
       TEST_TIMEOUT_MS

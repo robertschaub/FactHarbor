@@ -89,18 +89,6 @@ export {
 } from "./truth-scale";
 
 // ============================================================================
-// PSEUDOSCIENCE EXPORTS
-// ============================================================================
-
-export {
-  detectPseudoscience,
-  escalatePseudoscienceVerdict,
-  calculateArticleVerdictWithPseudoscience,
-  setPseudoscienceLexicon,
-  getPseudosciencePatternsConfig,
-} from "./pseudoscience";
-
-// ============================================================================
 // SOURCE RELIABILITY EXPORTS
 // ============================================================================
 

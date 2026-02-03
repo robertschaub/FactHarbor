@@ -35,7 +35,7 @@ import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { loadPipelineConfig, loadSearchConfig, type PipelineConfig } from "@/lib/config-loader";
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
-import { calculateWeightedVerdictAverage, detectHarmPotential, detectClaimContestation, setAggregationLexicon } from "./aggregation";
+import { calculateWeightedVerdictAverage } from "./aggregation";
 import { detectScopes, formatDetectedScopesHint, setContextHeuristicsLexicon } from "./scopes";
 import {
   prefetchSourceReliability,
@@ -574,7 +574,6 @@ export async function runMonolithicCanonical(
   }
 
   setProvenanceLexicon(evidenceLexicon);
-  setAggregationLexicon(aggregationLexicon);
   setContextHeuristicsLexicon(aggregationLexicon);
   setSourceReliabilityConfig(srConfig);
 
@@ -646,7 +645,6 @@ export async function runMonolithicCanonical(
     isCentral: boolean;
   }> = [];
 
-  // v2.8: Use shared detectHarmPotential from aggregation.ts
   const mainClaimText = String(claimData.mainClaim || "").trim();
   if (mainClaimText) {
     claimEntries.push({
@@ -655,7 +653,7 @@ export async function runMonolithicCanonical(
       claimRole: "core",
       centrality: "high",
       thesisRelevance: "direct",
-      harmPotential: detectHarmPotential(mainClaimText),
+      harmPotential: "medium",
       isCentral: true,
     });
     normalizedSeen.add(normalizeClaimText(mainClaimText));
@@ -674,8 +672,7 @@ export async function runMonolithicCanonical(
       claimRole: c.claimRole || "core",
       centrality: c.centrality || "medium",
       thesisRelevance: c.thesisRelevance || "direct",
-      // v2.7.0: Use detectHarmPotential as fallback to catch death/injury claims LLM missed
-      harmPotential: c.harmPotential || detectHarmPotential(claimText),
+      harmPotential: c.harmPotential ?? "medium",
     };
   });
   combinedSubClaims.push(...heuristicSubClaims.map((c) => ({
@@ -683,7 +680,7 @@ export async function runMonolithicCanonical(
     claimRole: "core" as const,
     centrality: "medium" as const,
     thesisRelevance: "direct" as const,
-    harmPotential: detectHarmPotential(c.text),
+    harmPotential: "medium" as const,
   })));
 
   let subClaimIndex = 1;
@@ -1023,9 +1020,6 @@ export async function runMonolithicCanonical(
 
   const claimVerdicts = verdictResults.map((result) => {
     const v = result.verdictData;
-    // v2.8: Detect contestation at claim level (heuristic approach for canonical pipeline)
-    const contestation = detectClaimContestation(result.entry.text, v.reasoning);
-
     // v2.6.35: Apply source reliability weighting to verdict
     let adjustedVerdict = v.verdict;
     let adjustedConfidence = v.confidence;
@@ -1050,9 +1044,9 @@ export async function runMonolithicCanonical(
       reasoning: v.reasoning,
       supportingFactIds: validatedFacts.map((f) => f.id),
       highlightColor: getHighlightColor(adjustedVerdict),
-      // v2.8: Contestation info for weighted aggregation
-      isContested: contestation.isContested,
-      factualBasis: contestation.factualBasis,
+      // v2.8: Contestation info for weighted aggregation (LLM-only)
+      isContested: false,
+      factualBasis: "unknown" as const,
       // v2.6.35: Source reliability metadata
       evidenceWeight: avgSourceReliabilityWeight,
     };

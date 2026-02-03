@@ -81,12 +81,9 @@ import {
 } from "./config";
 import {
   calculateWeightedVerdictAverage,
-  validateContestation,
-  detectHarmPotential,
   pruneTangentialBaselessClaims,
   pruneOpinionOnlyFactors,
   monitorOpinionAccumulation,
-  setAggregationLexicon,
 } from "./aggregation";
 import { detectScopes, detectScopesHybrid, formatDetectedScopesHint, setContextHeuristicsLexicon } from "./scopes";
 import { getModelForTask } from "./llm";
@@ -1549,217 +1546,6 @@ interface VerdictValidationResult {
 // NOTE: Gate 1/4 implementations live in `apps/web/src/lib/analyzer/quality-gates.ts`.
 // This file imports `applyGate1ToClaims` and `applyGate4ToVerdicts` so there is a single
 // source of truth (reduces logic drift between the monolith and the modular analyzer).
-
-// ============================================================================
-// PSEUDOSCIENCE DETECTION
-// ============================================================================
-
-interface PseudoscienceAnalysis {
-  isPseudoscience: boolean;
-  confidence: number; // 0-1
-  categories: string[];
-  matchedPatterns: string[];
-  debunkIndicatorsFound: string[];
-  recommendation: number | null;
-}
-
-/**
- * Analyze text for pseudoscience patterns
- */
-function detectPseudoscience(
-  text: string,
-  claimText?: string,
-): PseudoscienceAnalysis {
-  const result: PseudoscienceAnalysis = {
-    isPseudoscience: false,
-    confidence: 0,
-    categories: [],
-    matchedPatterns: [],
-    debunkIndicatorsFound: [],
-    recommendation: null,
-  };
-
-  const combinedText = `${text} ${claimText || ""}`.toLowerCase();
-
-  // Check each pseudoscience category
-  for (const [category, patterns] of Object.entries(_heuristicPatterns.pseudosciencePatterns)) {
-    for (const pattern of patterns) {
-      if (pattern.test(combinedText)) {
-        if (!result.categories.includes(category)) {
-          result.categories.push(category);
-        }
-        result.matchedPatterns.push(pattern.toString());
-      }
-    }
-  }
-
-  // Check for known pseudoscience brands
-  for (const brand of _heuristicPatterns.pseudoscienceBrands) {
-    if (brand.test(combinedText)) {
-      result.matchedPatterns.push(brand.toString());
-      if (!result.categories.includes("knownBrand")) {
-        result.categories.push("knownBrand");
-      }
-    }
-  }
-
-  // Check for debunked indicators in sources
-  for (const indicator of _heuristicPatterns.pseudoscienceDebunkedIndicators) {
-    if (indicator.test(combinedText)) {
-      result.debunkIndicatorsFound.push(indicator.toString());
-    }
-  }
-
-  // Calculate confidence
-  const patternScore = Math.min(result.matchedPatterns.length * 0.15, 0.6);
-  const categoryScore = Math.min(result.categories.length * 0.2, 0.4);
-  const debunkScore = Math.min(result.debunkIndicatorsFound.length * 0.2, 0.4);
-
-  result.confidence = Math.min(patternScore + categoryScore + debunkScore, 1.0);
-
-  // Determine if it's pseudoscience
-  if (result.categories.length >= 1 && result.confidence >= 0.3) {
-    result.isPseudoscience = true;
-
-    const refutedRecommendation = 10;
-    const uncertainRecommendation = 50;
-
-    if (result.confidence >= 0.7 || result.debunkIndicatorsFound.length >= 2) {
-      result.recommendation = refutedRecommendation;
-    } else if (
-      result.confidence >= 0.5 ||
-      result.debunkIndicatorsFound.length >= 1
-    ) {
-      result.recommendation = refutedRecommendation;
-    } else {
-      result.recommendation = uncertainRecommendation;
-    }
-  }
-
-  return result;
-}
-
-
-/**
- * Escalate verdict when pseudoscience is detected
- */
-function escalatePseudoscienceVerdict(
-  originalTruthPercentage: number,
-  originalConfidence: number,
-  pseudoAnalysis: PseudoscienceAnalysis,
-): { truthPercentage: number; confidence: number; escalationReason?: string } {
-  const normalizedTruth = normalizePercentage(originalTruthPercentage);
-  const normalizedConfidence = normalizePercentage(originalConfidence);
-
-  if (!pseudoAnalysis.isPseudoscience) {
-    return { truthPercentage: normalizedTruth, confidence: normalizedConfidence };
-  }
-
-  const strength = normalizedTruth >= 72 ? 4 : normalizedTruth >= 50 ? 3 : normalizedTruth >= 35 ? 2 : 1;
-  let newTruth = normalizedTruth;
-  let newConfidence = normalizedConfidence;
-  let escalationReason: string | undefined;
-
-  if (strength >= 2 && pseudoAnalysis.confidence >= 0.5) {
-    if (pseudoAnalysis.debunkIndicatorsFound.length >= 2) {
-      newConfidence = Math.min(Math.max(newConfidence, 80), 95);
-      newTruth = truthFromBand("refuted", newConfidence);
-      escalationReason = `Claim contradicts scientific consensus (${pseudoAnalysis.categories.join(", ")}) - multiple debunk sources found`;
-    } else if (pseudoAnalysis.debunkIndicatorsFound.length >= 1) {
-      newConfidence = Math.min(Math.max(newConfidence, 70), 90);
-      newTruth = truthFromBand("refuted", newConfidence);
-      escalationReason = `Claim based on pseudoscience (${pseudoAnalysis.categories.join(", ")}) - contradicts established science`;
-    } else if (pseudoAnalysis.confidence >= 0.6) {
-      newConfidence = Math.min(Math.max(newConfidence, 65), 85);
-      newTruth = truthFromBand("refuted", newConfidence);
-      escalationReason = `Multiple pseudoscience patterns detected (${pseudoAnalysis.categories.join(", ")}) - no scientific basis`;
-    }
-  }
-
-  if (strength == 3 && pseudoAnalysis.confidence >= 0.4) {
-    newConfidence = Math.min(newConfidence, 40);
-    newTruth = truthFromBand("uncertain", newConfidence);
-    escalationReason = `Claimed mechanism (${pseudoAnalysis.categories.join(", ")}) lacks scientific basis`;
-  }
-
-  return { truthPercentage: newTruth, confidence: newConfidence, escalationReason };
-}
-
-
-/**
- * Determine article-level verdict considering pseudoscience
- *
- * Verdict Calibration:
- * - Returns a truth percentage (0-100) based on claim pattern and evidence strength
- */
-function calculateArticleVerdictWithPseudoscience(
-  claimVerdicts: Array<{
-    verdict: number;
-    confidence: number;
-    isPseudoscience?: boolean;
-  }>,
-  pseudoAnalysis: PseudoscienceAnalysis,
-): { verdict: number; confidence: number; reason?: string } {
-  const refutedCount = claimVerdicts.filter((v) => v.verdict < 43).length;
-  const uncertainCount = claimVerdicts.filter(
-    (v) => v.verdict >= 43 && v.verdict < 72,
-  ).length;
-  const supportedCount = claimVerdicts.filter((v) => v.verdict >= 72).length;
-  const total = claimVerdicts.length;
-
-  if (pseudoAnalysis.isPseudoscience && pseudoAnalysis.confidence >= 0.5) {
-    if (
-      uncertainCount >= total * 0.5 &&
-      pseudoAnalysis.debunkIndicatorsFound.length >= 1
-    ) {
-      const confidence = Math.min(
-        85,
-        70 + pseudoAnalysis.debunkIndicatorsFound.length * 5,
-      );
-      return {
-        verdict: truthFromBand("refuted", confidence),
-        confidence,
-        reason: `Claims based on pseudoscience (${pseudoAnalysis.categories.join(", ")}) - contradicted by scientific consensus`,
-      };
-    }
-
-    if (pseudoAnalysis.debunkIndicatorsFound.length >= 1) {
-      const avgConfidence =
-        claimVerdicts.reduce((sum, v) => sum + v.confidence, 0) / total;
-      const confidence = Math.min(avgConfidence, 90);
-      return {
-        verdict: truthFromBand("refuted", confidence),
-        confidence,
-        reason: `Contains pseudoscientific claims (${pseudoAnalysis.categories.join(", ")}) - no scientific basis`,
-      };
-    }
-
-    return {
-      verdict: Math.round(35),
-      confidence: 70,
-      reason: `Claims rely on unproven mechanisms (${pseudoAnalysis.categories.join(", ")})`,
-    };
-  }
-
-  if (refutedCount >= total * 0.8) {
-    const confidence = 85;
-    return { verdict: truthFromBand("refuted", confidence), confidence };
-  }
-  if (refutedCount >= total * 0.5) {
-    const confidence = 80;
-    return { verdict: truthFromBand("refuted", confidence), confidence };
-  }
-  if (refutedCount > 0 || uncertainCount >= total * 0.5) {
-    return { verdict: Math.round(35), confidence: 70 };
-  }
-  if (supportedCount >= total * 0.7) {
-    const confidence = 80;
-    return { verdict: truthFromBand("strong", confidence), confidence };
-  }
-  const confidence = 65;
-  return { verdict: truthFromBand("partial", confidence), confidence };
-}
-
 
 // ============================================================================
 // 7-POINT TRUTH SCALE (Symmetric, neutral)
@@ -4860,8 +4646,7 @@ async function requestSupplementalSubClaims(
       dependsOn: Array.isArray(claim.dependsOn) ? claim.dependsOn : [],
       keyEntities: Array.isArray(claim.keyEntities) ? claim.keyEntities : [],
       checkWorthiness: claim.checkWorthiness || "high",
-      // v2.8: Use detectHarmPotential as fallback for death/injury claims LLM might miss
-      harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
+      harmPotential: claim.harmPotential ?? "medium",
       centrality,
       isCentral,
       thesisRelevance: claim.thesisRelevance || "direct",
@@ -6530,25 +6315,12 @@ async function generateVerdicts(
   claimVerdicts: ClaimVerdict[];
   articleAnalysis: ArticleAnalysis;
   verdictSummary?: VerdictSummary;
-  pseudoscienceAnalysis?: PseudoscienceAnalysis;
 }> {
   const understanding = state.understanding!;
   const inputIsClaim = isClaimInput(understanding);
   const hasMultipleProceedings =
     understanding.requiresSeparateAnalysis &&
     understanding.analysisContexts.length > 1;
-
-  // Detect pseudoscience based on the input content and extracted claims
-  // v2.6.25: Only use normalized forms for consistent detection across input styles
-  const allText = [
-    understanding.articleThesis,
-    understanding.impliedClaim,
-    ...understanding.subClaims.map((c: any) => c.text),
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const pseudoscienceAnalysis = detectPseudoscience(allText);
 
   // PR-F: Exclude CTX_UNSCOPED claims from verdict calculations (fixes Blocker F)
   // Only include direct claims that are NOT unscoped (unscoped is display-only)
@@ -6604,7 +6376,7 @@ async function generateVerdicts(
       model,
       understanding.detectedInputType,
     );
-    return { ...result, pseudoscienceAnalysis };
+    return result;
   } else if (inputIsClaim) {
     const result = await generateSingleScopeVerdicts(
       state,
@@ -6614,7 +6386,7 @@ async function generateVerdicts(
       model,
       understanding.detectedInputType,
     );
-    return { ...result, pseudoscienceAnalysis };
+    return result;
   } else {
     const result = await generateClaimVerdicts(
       state,
@@ -6622,9 +6394,8 @@ async function generateVerdicts(
       factsFormatted,
       claimsFormatted,
       model,
-      pseudoscienceAnalysis,
     );
-    return { ...result, pseudoscienceAnalysis };
+    return result;
   }
 }
 
@@ -7460,21 +7231,8 @@ The JSON object MUST include these top-level keys:
   // Calculate overall factorAnalysis
   const allFactors = correctedContextAnswers.flatMap((pa) => pa.keyFactors);
 
-  // v2.8: Validate contestation classification for all factors across contexts
-  const validatedAllFactors = validateContestation(allFactors);
-
-  // Update correctedContextAnswers with validated keyFactors
-  correctedContextAnswers = correctedContextAnswers.map((pa, idx) => {
-    const startIdx = correctedContextAnswers.slice(0, idx).reduce((sum, p) => sum + p.keyFactors.length, 0);
-    const endIdx = startIdx + pa.keyFactors.length;
-    return {
-      ...pa,
-      keyFactors: validatedAllFactors.slice(startIdx, endIdx)
-    };
-  });
-
   // Only flag contested negatives with evidence-based contestation
-  const hasContestedFactors = validatedAllFactors.some(
+  const hasContestedFactors = allFactors.some(
     (f) =>
       f.supports === "no" &&
       f.isContested &&
@@ -7681,9 +7439,8 @@ The JSON object MUST include these top-level keys:
   // PR-C: Clamp truth percentage to valid range (defensive)
   const clampedAvgTruthPct = clampTruthPercentage(avgTruthPct);
 
-  // v2.8: Validate verdictSummary keyFactors
-  const validatedSummaryKeyFactors = validateContestation(parsed.verdictSummary.keyFactors || []);
-  const monitoredSummaryKeyFactors = monitorOpinionAccumulation(validatedSummaryKeyFactors, {
+  const summaryKeyFactors = parsed.verdictSummary.keyFactors || [];
+  const monitoredSummaryKeyFactors = monitorOpinionAccumulation(summaryKeyFactors, {
     maxOpinionCount: state.pipelineConfig?.maxOpinionFactors ?? DEFAULT_PIPELINE_CONFIG.maxOpinionFactors,
     warningThresholdPercent: state.pipelineConfig?.opinionAccumulationWarningThreshold ??
       DEFAULT_PIPELINE_CONFIG.opinionAccumulationWarningThreshold,
@@ -8123,8 +7880,7 @@ ${factsFormatted}`;
           supportingFactIds: [],
           isCentral: claim.isCentral || false,
           centrality: claim.centrality || "medium",
-          // v2.8: Use detectHarmPotential as fallback for death/injury claims
-          harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
+          harmPotential: claim.harmPotential ?? "medium",
           thesisRelevance: claim.thesisRelevance || "direct",
           thesisRelevanceConfidence:
             typeof claim.thesisRelevanceConfidence === "number"
@@ -8190,8 +7946,7 @@ ${factsFormatted}`;
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
-        // v2.8: Use detectHarmPotential as fallback for death/injury claims
-        harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
+        harmPotential: claim.harmPotential ?? "medium",
         thesisRelevance: claim.thesisRelevance || "direct",
         thesisRelevanceConfidence:
           typeof claim.thesisRelevanceConfidence === "number"
@@ -8227,9 +7982,7 @@ ${factsFormatted}`;
 
   const keyFactors = parsed.verdictSummary.keyFactors || [];
 
-  // v2.8: Validate contestation classification - downgrade political criticism without evidence to "opinion"
-  const validatedKeyFactors = validateContestation(keyFactors);
-  const monitoredKeyFactors = monitorOpinionAccumulation(validatedKeyFactors, {
+  const monitoredKeyFactors = monitorOpinionAccumulation(keyFactors, {
     maxOpinionCount: state.pipelineConfig?.maxOpinionFactors ?? DEFAULT_PIPELINE_CONFIG.maxOpinionFactors,
     warningThresholdPercent: state.pipelineConfig?.opinionAccumulationWarningThreshold ??
       DEFAULT_PIPELINE_CONFIG.opinionAccumulationWarningThreshold,
@@ -8340,7 +8093,6 @@ async function generateClaimVerdicts(
   factsFormatted: string,
   claimsFormatted: string,
   model: any,
-  pseudoscienceAnalysis?: PseudoscienceAnalysis,
 ): Promise<{
   claimVerdicts: ClaimVerdict[];
   articleAnalysis: ArticleAnalysis;
@@ -8360,7 +8112,6 @@ async function generateClaimVerdicts(
     directClaimsForVerdicts,
   );
 
-  // Add pseudoscience context and verdict calibration to prompt
   // Also add Article Verdict Problem analysis per POC1 spec
   // Get current date for temporal reasoning
   const currentDate = new Date();
@@ -8732,8 +8483,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
           factualBasis: "unknown",
           isCentral: claim.isCentral || false,
           centrality: claim.centrality || "medium",
-          // v2.8: Use detectHarmPotential as fallback for death/injury claims
-          harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
+          harmPotential: claim.harmPotential ?? "medium",
           thesisRelevance: claim.thesisRelevance || "direct",
           thesisRelevanceConfidence:
             typeof claim.thesisRelevanceConfidence === "number"
@@ -8753,8 +8503,6 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
 
       let truthPct = calculateTruthPercentage(cv.verdict, cv.confidence);
       let finalConfidence = normalizePercentage(cv.confidence);
-      let escalationReason: string | undefined;
-
       // v2.8.4: Use LLM-provided ratingConfirmation to validate verdict direction
       const ratingConfirmation = (cv as any).ratingConfirmation;
       let inversionDetected = false;
@@ -8816,8 +8564,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
         claimText: claim.text || "",
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
-        // v2.8: Use detectHarmPotential as fallback for death/injury claims
-        harmPotential: claim.harmPotential || detectHarmPotential(claim.text || ""),
+        harmPotential: claim.harmPotential ?? "medium",
         thesisRelevance: claim.thesisRelevance || "direct",
         thesisRelevanceConfidence:
           typeof claim.thesisRelevanceConfidence === "number"
@@ -8829,8 +8576,6 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
         startOffset: claim.startOffset,
         endOffset: claim.endOffset,
         highlightColor: getHighlightColor7Point(clampedTruthPct),
-        isPseudoscience: false, // v2.9.2: Pattern-based detection removed - LLM determines via evidence quality
-        escalationReason,
         isCounterClaim,
       } as ClaimVerdict;
     },
@@ -9025,19 +8770,6 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
     articleVerdictOverrideReason = `Central claim(s) refuted despite ${nonCentralSupported.length} accurate supporting facts - article draws unsupported conclusions`;
   }
 
-  const hasPseudoscienceClaims = weightedClaimVerdicts.some((v) => v.isPseudoscience);
-
-  // For pseudoscience: article verdict cannot be higher than claims average
-  // (can't have a credible article with false claims)
-  if (
-    pseudoscienceAnalysis?.isPseudoscience &&
-    hasPseudoscienceClaims &&
-    articleTruthPct > claimsAvgTruthPct
-  ) {
-    articleTruthPct = Math.min(claimsAvgTruthPct, 28); // Cap at FALSE level for pseudoscience
-    articleVerdictOverrideReason = `Pseudoscience detected - article verdict capped`;
-  }
-
   // Check if article verdict differs significantly from claims average
   const verdictDiffers = Math.abs(articleTruthPct - claimsAvgTruthPct) > 15 || hasMisleadingPattern;
 
@@ -9135,8 +8867,8 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
           : undefined,
 
       claimPattern,
-      isPseudoscience: pseudoscienceAnalysis?.isPseudoscience,
-      pseudoscienceCategories: pseudoscienceAnalysis?.categories,
+      isPseudoscience: false,
+      pseudoscienceCategories: [],
 
   // NEW v2.6.18: Key Factors for article mode (unified analysis mode)
       keyFactors: prunedKeyFactors.length > 0 ? prunedKeyFactors : undefined,
@@ -9510,7 +9242,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   setQualityGatesLexicon(evidenceLexicon);
   setProvenanceLexicon(evidenceLexicon);
-  setAggregationLexicon(aggregationLexicon);
   setVerdictCorrectionsLexicon(aggregationLexicon);
   setContextHeuristicsLexicon(aggregationLexicon);
   setOrchestratedHeuristicsLexicon(aggregationLexicon);
@@ -10220,7 +9951,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     claimVerdicts,
     articleAnalysis,
     verdictSummary,
-    pseudoscienceAnalysis,
   } = await generateVerdicts(state, model);
   const verdictElapsed = Date.now() - verdictStart;
   console.log(`[Analyzer] Verdict generation completed in ${verdictElapsed}ms`);
@@ -10237,13 +9967,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // Use validated verdicts going forward (includes gate4Validation metadata)
   const finalClaimVerdicts = validatedVerdicts;
-
-  if (pseudoscienceAnalysis?.isPseudoscience) {
-    await emit(
-      `⚠️ Pseudoscience detected: ${pseudoscienceAnalysis.categories.join(", ")}`,
-      67,
-    );
-  }
 
   // STEP 6: Summary
   await emit("Step 4: Building summary", 75);
@@ -10304,10 +10027,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       scopeCount: state.understanding!.analysisContexts.length,  // Alias
       hasContestedFactors:
         articleAnalysis.verdictSummary?.hasContestedFactors || false,
-      // NEW v2.4.5: Pseudoscience detection
-      isPseudoscience: pseudoscienceAnalysis?.isPseudoscience || false,
-      pseudoscienceCategories: pseudoscienceAnalysis?.categories || [],
-      pseudoscienceConfidence: pseudoscienceAnalysis?.confidence || 0,
+      // NEW v2.4.5: Pseudoscience detection (pattern-based checks removed)
+      isPseudoscience: false,
+      pseudoscienceCategories: [],
+      pseudoscienceConfidence: 0,
       inputLength: textToAnalyze.length,
       analysisTimeMs: Date.now() - startTime,
       analysisId: twoPanelSummary.factharborAnalysis.analysisId,
@@ -10372,17 +10095,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       contradictionSearchPerformed: state.contradictionSearchPerformed,
       llmCalls: state.llmCalls,
     },
-    // NEW v2.4.5: Pseudoscience analysis
-    pseudoscienceAnalysis: pseudoscienceAnalysis
-      ? {
-          isPseudoscience: pseudoscienceAnalysis.isPseudoscience,
-          confidence: pseudoscienceAnalysis.confidence,
-          categories: pseudoscienceAnalysis.categories,
-          recommendation: pseudoscienceAnalysis.recommendation,
-          debunkIndicatorsFound:
-            pseudoscienceAnalysis.debunkIndicatorsFound.length,
-        }
-      : null,
+    // NEW v2.4.5: Pseudoscience analysis (pattern-based checks removed)
+    pseudoscienceAnalysis: null,
     qualityGates: {
       passed:
         state.facts.length >= config.minFactsRequired &&
