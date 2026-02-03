@@ -14,10 +14,8 @@ export function getScopeRefinementBasePrompt(): string {
 
 ## TERMINOLOGY (CRITICAL)
 
-- **Evidence**: Information extracted from sources (studies, fact-check reports, documentation)
-- **AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate analysis (output field: analysisContexts)
-- **EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata
-- **ArticleFrame**: Broader frame or topic of the input article
+**AnalysisContext**: Top-level analytical frame requiring separate verdict (e.g., "electric vehicles" vs "gas-powered cars").
+**EvidenceScope**: Per-evidence source methodology metadata.
 
 ## YOUR TASK
 

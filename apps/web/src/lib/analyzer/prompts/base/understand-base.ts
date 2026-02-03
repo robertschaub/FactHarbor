@@ -20,14 +20,8 @@ export function getUnderstandBasePrompt(variables: {
 
 ## TERMINOLOGY (CRITICAL)
 
-**AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate, independent analysis and verdict (output field: \`detectedScopes\` — legacy name, contains AnalysisContext objects)
-**EvidenceScope** (or "Scope"): Per-fact source methodology metadata
-**ArticleFrame**: Broader frame or topic of the input article
-
-**ArticleFrame guidance**:
-- If the input has a clear narrative or thematic frame, capture it as a short phrase.
-- Do NOT create separate AnalysisContexts from framing.
-- If no clear frame, return an empty string.
+**AnalysisContext**: Top-level analytical frame requiring separate verdict (e.g., "electric vehicles" vs "gas-powered cars").
+**EvidenceScope**: Per-evidence source methodology metadata.
 
 ## CURRENT DATE
 Today is ${currentDate}. Use this for temporal reasoning.
@@ -214,7 +208,7 @@ This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was ap
 Return JSON with:
 - impliedClaim: Neutral summary of what input claims (not your judgment)
 - articleThesis: What the article/input asserts (neutral language)
-- analysisContext: the ArticleFrame — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
+- analysisContext: Article narrative background and framing
 - subClaims: Array of claims with:
   - id: Unique identifier (e.g., "C1", "C2")
   - text: The atomic claim text
@@ -227,7 +221,7 @@ Return JSON with:
     - "irrelevant": Off-topic noise
   - checkWorthiness, harmPotential, dependsOn (claim IDs)
 - researchQueries: Array with query text and optional contextHint
-- detectedScopes: Array of preliminary AnalysisContext objects (legacy field name; contains AnalysisContexts, not EvidenceScopes)
+- detectedScopes: Array of analytical frames requiring separate verdicts
 - requiresSeparateAnalysis: boolean (true if multiple contexts)
 
 **CRITICAL**: All core claims that test any part of the input statement should have thesisRelevance="direct". Only mark as "tangential" claims about reactions, responses, or commentary that don't directly evaluate the truth of the input.`;

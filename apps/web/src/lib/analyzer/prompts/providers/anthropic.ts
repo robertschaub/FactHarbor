@@ -28,15 +28,6 @@ Before generating output, work through these steps internally:
 5. What search queries would find supporting AND contradicting evidence?
 </thinking_process>
 
-## ATTRIBUTION SEPARATION (CRITICAL)
-<attribution_rule>
-ALWAYS separate attribution claims from content claims:
-- Input: "Expert X claims Y is dangerous"
-- Output TWO claims:
-  1. "Expert X made statements about Y" (attribution, LOW centrality)
-  2. "Y is dangerous" (core, HIGH centrality - this is what needs verification)
-</attribution_rule>
-
 ## ANALYSISCONTEXT DETECTION
 <scope_guidance>
 Use your nuanced reasoning to detect implicit AnalysisContext boundaries:

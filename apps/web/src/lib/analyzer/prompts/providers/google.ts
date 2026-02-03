@@ -37,7 +37,7 @@ Before outputting, verify each claim has:
 ### NUMBERED PROCESS
 1. Read input completely
 2. Identify claim type (statement vs article)
-3. Extract claims with attribution separation
+3. Extract claims from input
 4. Assess centrality (expect 1-4 HIGH max)
 5. Detect AnalysisContext boundaries if present
 6. Generate 4-6 search queries

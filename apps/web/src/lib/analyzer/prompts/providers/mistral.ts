@@ -27,13 +27,9 @@ export function getMistralUnderstandVariant(): string {
 For each claim found:
 - id: SC{n} (SC1, SC2, etc.)
 - text: [the claim statement]
-- claimRole: [pick one]
-  - "attribution" → WHO said it (person/org identity)
-  - "source" → WHERE documented (memo, report)
-  - "timing" → WHEN it happened
-  - "core" → THE ACTUAL ASSERTION to verify
+- claimRole: [pick one: "attribution" | "source" | "timing" | "core"]
 - centrality: [pick one]
-  - "low" → attribution/source/timing/methodology claims
+  - "low" → background/context claims
   - "medium" → supporting context
   - "high" → core verifiable assertions (expect 1-4 max)
 - isCentral: true if centrality="high", else false
@@ -69,7 +65,6 @@ Centrality = HIGH:
 ### VALIDATION CHECKLIST
 Before output, verify:
 [ ] All claims have unique IDs (SC1, SC2, etc.)
-[ ] Core claims separated from attribution
 [ ] Only 1-4 claims marked as "high" centrality
 [ ] 4-6 search queries included
 [ ] JSON is valid`;

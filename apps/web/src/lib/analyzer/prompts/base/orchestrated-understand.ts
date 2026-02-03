@@ -230,7 +230,7 @@ For EACH sub-claim, determine if it tests the OPPOSITE of the main thesis:
 Return JSON with:
 - impliedClaim: What claim would "YES" confirm? Must be AFFIRMATIVE.
 - articleThesis: Neutral summary of what the article claims
-- analysisContext: the ArticleFrame — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
+- analysisContext: Article narrative background and framing
 - subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, isCounterClaim, contextId, keyFactorId
 - analysisContexts: Array of detected AnalysisContext objects, each with:
   - id, name, shortName, subject, temporal, status, outcome, metadata

@@ -17,37 +17,7 @@ export function getOpenAIUnderstandVariant(): string {
 
 ### FEW-SHOT EXAMPLES (Follow these patterns exactly)
 
-**Example 1 - Attribution Separation:**
-Input: "The WHO spokesperson stated that the new variant is more transmissible"
-Output:
-{
-  "subClaims": [
-    {
-      "id": "SC1",
-      "text": "A WHO spokesperson made a public statement about variant transmissibility",
-      "claimRole": "attribution",
-      "centrality": "low",
-      "isCentral": false,
-      "checkWorthiness": "low",
-      "harmPotential": "low",
-      "dependsOn": []
-    },
-    {
-      "id": "SC2",
-      "text": "The new variant is more transmissible than previous variants",
-      "claimRole": "core",
-      "centrality": "high",
-      "isCentral": true,
-      "checkWorthiness": "high",
-      "harmPotential": "medium",
-      "dependsOn": ["SC1"]
-    }
-  ],
-  "detectedScopes": [],
-  "requiresSeparateAnalysis": false
-}
-
-**Example 2 - Multi-Context Detection:**
+**Example - Multi-Context Detection:**
 Input: "The TSE court in Brazil ruled he was ineligible, while SCOTUS in the US ruled differently on ballot access"
 Output:
 {
@@ -68,11 +38,10 @@ Output:
 - requiresSeparateAnalysis: boolean
 
 ### RULES TO FOLLOW
-1. Separate WHO SAID from WHAT THEY SAID (attribution vs core)
-2. Only 1-4 claims should have "high" centrality
-3. Generate 4-6 DISTINCT search queries (no redundancy)
-4. Look for institutional/methodology differences for context detection
-5. Use "" for empty strings, never null
+1. Only 1-4 claims should have "high" centrality
+2. Generate 4-6 DISTINCT search queries (no redundancy)
+3. Look for institutional/methodology differences for context detection
+4. Use "" for empty strings, never null
 
 Now analyze the input following these exact patterns.`;
 }

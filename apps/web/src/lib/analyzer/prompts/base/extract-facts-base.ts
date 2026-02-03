@@ -21,10 +21,8 @@ export function getExtractFactsBasePrompt(variables: {
 
 ## TERMINOLOGY (CRITICAL)
 
-**Evidence**: Information extracted from sources (studies, fact-check reports, documentation)
-**AnalysisContext** (or "Context"): Top-level bounded analytical frame (referenced as contextId)
-**EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata
-**ArticleFrame**: Broader frame or topic of the input article
+**AnalysisContext**: Top-level analytical frame requiring separate verdict (e.g., "electric vehicles" vs "gas-powered cars").
+**EvidenceScope**: Per-evidence source methodology metadata.
 
 ## CURRENT DATE
 Today is ${currentDate}. Use for temporal context.
