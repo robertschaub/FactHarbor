@@ -56,7 +56,6 @@ For each AnalysisContext pair, determine:
 - <0.50 = Different contexts, definitely keep separate
 
 **Phase Bucket Classification:**
-(Note: Keywords are UCM-configurable via aggregation-lexicon.v1 textAnalysisHeuristic.productionPhaseKeywords/usagePhaseKeywords)
 - **production**: Manufacturing, creation, upstream processes
   - Keywords: manufactur*, production, factory, assembly, upstream, mining, extraction, refin*
   - Examples: "manufacturing emissions", "production costs", "factory output"

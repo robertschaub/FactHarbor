@@ -19,8 +19,6 @@ async function validateAllConfigs() {
     "search",
     "calculation",
     "sr",
-    "evidence-lexicon",
-    "aggregation-lexicon",
   ];
 
   const validationResults: Record<string, { valid: boolean; warnings: string[] }> = {};

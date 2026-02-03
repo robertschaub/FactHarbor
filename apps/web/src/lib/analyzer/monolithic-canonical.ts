@@ -554,27 +554,19 @@ export async function runMonolithicCanonical(
   const budgetConfig = getBudgetConfig(pipelineConfig);
   const budgetTracker = createBudgetTracker();
 
-  let evidenceLexicon;
-  let aggregationLexicon;
   let srConfig = DEFAULT_SR_CONFIG;
   try {
-    const [evidenceResult, aggregationResult, srResult] = await Promise.all([
-      getConfig("evidence-lexicon", "default", { jobId: input.jobId }),
-      getConfig("aggregation-lexicon", "default", { jobId: input.jobId }),
-      getConfig("sr", "default", { jobId: input.jobId }),
-    ]);
-    evidenceLexicon = evidenceResult.config;
-    aggregationLexicon = aggregationResult.config;
+    const srResult = await getConfig("sr", "default", { jobId: input.jobId });
     srConfig = srResult.config;
   } catch (err) {
     console.warn(
-      "[Config] Failed to load lexicon configs, using defaults:",
+      "[Config] Failed to load SR config, using defaults:",
       err instanceof Error ? err.message : String(err),
     );
   }
 
-  setProvenanceLexicon(evidenceLexicon);
-  setContextHeuristicsLexicon(aggregationLexicon);
+  setProvenanceLexicon();
+  setContextHeuristicsLexicon();
   setSourceReliabilityConfig(srConfig);
 
   // v2.6.35: Clear source reliability cache at start of analysis

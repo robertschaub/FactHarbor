@@ -35,23 +35,6 @@ FH_LLM_VERDICT_VALIDATION=false     # Disable LLM for verdict validation
 
 When disabled, the heuristic fallback is used instead (see `text-analysis-heuristic.ts`).
 
-## UCM Configuration (v2.9+)
-
-As of v2.9, heuristic patterns referenced in these prompts are **configurable via UCM** (Unified Configuration Management). The patterns documented below are now stored in UCM lexicon configs rather than hardcoded in TypeScript.
-
-**UCM Config Types:**
-- `evidence-lexicon.v1`: Evidence filter patterns, quality gate patterns (vague phrases, citation patterns, opinion markers, etc.)
-- `aggregation-lexicon.v1`: Aggregation patterns (harm keywords, contestation patterns, verdict correction patterns, counter-claim detection patterns)
-
-**Default patterns are used when no UCM config is active.** To customize patterns:
-1. Navigate to Admin → Configuration → UCM
-2. Edit the relevant lexicon config (evidence-lexicon or aggregation-lexicon)
-3. Modify patterns using UCM pattern syntax:
-   - `re:<regex>` for regex patterns (e.g., `re:some (say|believe)`)
-   - `<literal>` for literal string match (case-insensitive word boundary)
-
-See [UCM Administrator Handbook](../../../../Docs/USER_GUIDES/UCM_Administrator_Handbook.md) for details.
-
 ## Reseeding Prompts
 
 To reload prompts from files into the database:

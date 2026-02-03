@@ -114,7 +114,7 @@ import {
   type ScopeSimilarityResult,
   type ScopePair,
 } from "./text-analysis-service";
-import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG, type AggregationLexicon, type EvidenceLexicon } from "../config-schemas";
+import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "../config-schemas";
 import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 
 // Configuration, helpers, and debug utilities imported from modular files above
@@ -127,15 +127,15 @@ import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 
 /**
  * Module-level compiled patterns (cached, initialized with defaults)
- * Can be updated via setOrchestratedHeuristicsLexicon() for testing or config reload
+ * Can be reset via setOrchestratedHeuristicsLexicon() for testing
  */
 let _heuristicPatterns = getAggregationPatterns();
 
 /**
- * Set the lexicon for orchestrated heuristics (useful for testing or config reload)
+ * Reset orchestrated heuristics patterns to defaults.
  */
-export function setOrchestratedHeuristicsLexicon(lexicon?: AggregationLexicon): void {
-  _heuristicPatterns = getAggregationPatterns(lexicon);
+export function setOrchestratedHeuristicsLexicon(): void {
+  _heuristicPatterns = getAggregationPatterns();
 }
 
 /**
@@ -5693,7 +5693,6 @@ async function extractFacts(
   originalClaim?: string,
   fromOppositeClaimSearch?: boolean,
   pipelineConfig?: PipelineConfig,
-  evidenceLexicon?: EvidenceLexicon,
 ): Promise<ExtractedFact[]> {
   console.log(`[Analyzer] extractFacts called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
   console.log(`[Analyzer] extractFacts: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
@@ -5991,7 +5990,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       if (!llmFilterSuccess) {
         const { kept, filtered, stats } = filterByProbativeValue(
           factsWithProvenance as EvidenceItem[],
-          { ...DEFAULT_FILTER_CONFIG, lexicon: evidenceLexicon },
+          { ...DEFAULT_FILTER_CONFIG },
         );
 
         // Log filter statistics
@@ -9221,30 +9220,22 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     analysisMode: pipelineConfig.analysisMode,
   });
 
-  let evidenceLexicon: EvidenceLexicon | undefined;
-  let aggregationLexicon: AggregationLexicon | undefined;
   let srConfig = DEFAULT_SR_CONFIG;
   try {
-    const [evidenceResult, aggregationResult, srResult] = await Promise.all([
-      getConfig("evidence-lexicon", "default", { jobId: input.jobId }),
-      getConfig("aggregation-lexicon", "default", { jobId: input.jobId }),
-      getConfig("sr", "default", { jobId: input.jobId }),
-    ]);
-    evidenceLexicon = evidenceResult.config;
-    aggregationLexicon = aggregationResult.config;
+    const srResult = await getConfig("sr", "default", { jobId: input.jobId });
     srConfig = srResult.config;
   } catch (err) {
     console.warn(
-      "[Config] Failed to load lexicon configs, using defaults:",
+      "[Config] Failed to load SR config, using defaults:",
       err instanceof Error ? err.message : String(err),
     );
   }
 
-  setQualityGatesLexicon(evidenceLexicon);
-  setProvenanceLexicon(evidenceLexicon);
-  setVerdictCorrectionsLexicon(aggregationLexicon);
-  setContextHeuristicsLexicon(aggregationLexicon);
-  setOrchestratedHeuristicsLexicon(aggregationLexicon);
+  setQualityGatesLexicon();
+  setProvenanceLexicon();
+  setVerdictCorrectionsLexicon();
+  setContextHeuristicsLexicon();
+  setOrchestratedHeuristicsLexicon();
   setSourceReliabilityConfig(srConfig);
 
   // ============================================================================
@@ -9663,7 +9654,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
                 state.understanding?.impliedClaim || state.originalInput,
                 undefined, // fromOppositeClaimSearch
                 state.pipelineConfig,
-                evidenceLexicon,
               );
               const uniqueFacts = deduplicateFacts(facts, state.facts);
               state.facts.push(...uniqueFacts);
@@ -9834,7 +9824,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         state.understanding?.impliedClaim || state.originalInput,
         isOppositeClaimSearch,
         state.pipelineConfig,
-        evidenceLexicon,
       );
       // v2.6.29: Deduplicate facts before adding to avoid near-duplicates
       const uniqueFacts = deduplicateFacts(facts, state.facts);

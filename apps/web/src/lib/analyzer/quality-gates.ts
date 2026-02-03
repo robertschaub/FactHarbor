@@ -5,7 +5,7 @@
  * - Gate 1: Claim Validation (factual vs opinion/prediction)
  * - Gate 4: Verdict Confidence Assessment
  *
- * v2.9: Patterns are now configurable via UCM lexicon config.
+ * v2.10: Uses internal pattern set (no external lexicon config).
  *
  * @module analyzer/quality-gates
  */
@@ -17,26 +17,22 @@ import type {
   FetchedSource,
   ExtractedFact,
 } from "./types";
-import type { EvidenceLexicon } from "../config-schemas";
 import { getEvidencePatterns, matchesAnyPattern, countPatternMatches } from "./lexicon-utils";
 
 // ============================================================================
 // PATTERN CONFIGURATION
 // ============================================================================
-// DEPRECATED: Hardcoded patterns moved to UCM lexicon (evidence-lexicon.v1)
-// See: DEFAULT_EVIDENCE_LEXICON.gate1.* and DEFAULT_EVIDENCE_LEXICON.gate4.*
 
 /**
  * Module-level compiled patterns (cached, initialized with defaults)
- * Can be updated via setQualityGatesLexicon() for testing or config reload
  */
 let _patterns = getEvidencePatterns();
 
 /**
- * Set the lexicon for quality gates (useful for testing or config reload)
+ * Reset quality gate patterns to defaults.
  */
-export function setQualityGatesLexicon(lexicon?: EvidenceLexicon): void {
-  _patterns = getEvidencePatterns(lexicon);
+export function setQualityGatesLexicon(): void {
+  _patterns = getEvidencePatterns();
 }
 
 /**
@@ -61,7 +57,7 @@ export function validateClaimGate1(
   claimText: string,
   isCentral: boolean = false
 ): ClaimValidationResult {
-  // Use module-level patterns (from UCM lexicon or defaults)
+  // Use module-level patterns (internal defaults)
   const patterns = _patterns;
 
   // 1. Calculate opinion score (0-1)
@@ -177,7 +173,7 @@ export function validateVerdictGate4(
     ? supportingFactIds.length / totalEvidence
     : 0;
 
-  // 4. Count uncertainty factors in reasoning (using UCM lexicon patterns)
+  // 4. Count uncertainty factors in reasoning (using internal patterns)
   const uncertaintyFactors = countPatternMatches(verdictReasoning, _patterns.uncertaintyMarkers);
 
   // 5. Determine confidence tier

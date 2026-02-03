@@ -3,33 +3,29 @@
  *
  * Extracted from the monolithic `analyzer.ts` to keep responsibilities separated.
  *
- * v2.9: Patterns are now configurable via UCM lexicon config.
+ * v2.10: Uses internal pattern set (no external lexicon config).
  *
  * @module analyzer/verdict-corrections
  */
 
 import type { ExtractedFact } from "./types";
-import type { AggregationLexicon } from "../config-schemas";
 import { debugLog } from "./debug";
 import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 
 // ============================================================================
 // PATTERN CONFIGURATION
 // ============================================================================
-// DEPRECATED: Hardcoded patterns moved to UCM lexicon (aggregation-lexicon.v1)
-// See: DEFAULT_AGGREGATION_LEXICON.verdictCorrection.*, counterClaimDetection.*
 
 /**
  * Module-level compiled patterns (cached, initialized with defaults)
- * Can be updated via setVerdictCorrectionsLexicon() for testing or config reload
  */
 let _patterns = getAggregationPatterns();
 
 /**
- * Set the lexicon for verdict corrections (useful for testing or config reload)
+ * Reset verdict correction patterns to defaults.
  */
-export function setVerdictCorrectionsLexicon(lexicon?: AggregationLexicon): void {
-  _patterns = getAggregationPatterns(lexicon);
+export function setVerdictCorrectionsLexicon(): void {
+  _patterns = getAggregationPatterns();
 }
 
 /**
@@ -66,7 +62,7 @@ export function detectAndCorrectVerdictInversion(
   const claimLower = claimText.toLowerCase();
   const reasoningLower = reasoning.toLowerCase();
 
-  // v2.9: Patterns now configurable via UCM lexicon (aggregation-lexicon.v1 verdictCorrection.*)
+  // v2.9: Patterns sourced from internal pattern set (verdict correction).
   // Pattern 1: Claim says "X was proportionate/justified/fair" but reasoning says "NOT proportionate/justified/fair"
   // Pattern 2 (v2.8.3): REVERSE inversion - claim asserts NEGATIVE, reasoning shows POSITIVE
 
@@ -151,8 +147,7 @@ export function detectCounterClaim(
   // If the claim is thesis-aligned, it cannot be a counter-claim.
   // =========================================================================
 
-  // v2.9: Evaluative term synonyms now configurable via UCM lexicon
-  // (aggregation-lexicon.v1 counterClaimDetection.evaluativeTermSynonyms)
+  // v2.9: Evaluative term synonyms sourced from internal pattern set.
 
   // Check if claim and thesis share aligned evaluative framing
   function hasAlignedEvalTerms(claim: string, thesis: string): boolean {
@@ -185,7 +180,7 @@ export function detectCounterClaim(
 
   // Check if claim is about a supporting aspect of the thesis
   // e.g., thesis: "trial was fair" → claim: "due process was followed" (supports fairness)
-  // v2.9: Patterns now configurable via UCM lexicon (aggregation-lexicon.v1 counterClaimDetection.supportingAspectPatterns)
+  // v2.9: Patterns sourced from internal pattern set (counter-claim detection).
   function isClaimAboutSupportingAspect(claim: string, thesis: string): boolean {
     // If thesis is about fairness/justice/propriety, and claim is about procedural/evidential
     // aspects that would SUPPORT such a conclusion, they're aligned
@@ -287,8 +282,7 @@ export function detectCounterClaim(
   // Text-based detection (preferred): compare claim text vs thesis text
   // =========================================================================
 
-  // v2.9: Stop words now configurable via UCM lexicon
-  // (aggregation-lexicon.v1 counterClaimDetection.stopwords)
+  // v2.9: Stop words sourced from internal pattern set.
 
   function tokenizePhrase(text: string): string[] {
     return text
@@ -427,7 +421,7 @@ export function detectCounterClaim(
   // Conservative heuristic:
   // Only flag counter-claim when BOTH thesis and claim mention the same evaluative term,
   // but with opposite polarity (e.g., "fair" vs "not fair"/"unfair").
-  // v2.9: Terms now configurable via UCM lexicon (aggregation-lexicon.v1 counterClaimDetection.*)
+  // v2.9: Terms sourced from internal pattern set (counter-claim detection).
 
   function getPolarityByTerm(
     text: string,
@@ -502,4 +496,3 @@ export function detectCounterClaim(
 
   return false;
 }
-

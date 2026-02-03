@@ -33,15 +33,13 @@ import {
 // ============================================================================
 
 describe("Config Type Validation", () => {
-  it("VALID_CONFIG_TYPES includes all 7 types", () => {
+  it("VALID_CONFIG_TYPES includes all 5 types", () => {
     expect(VALID_CONFIG_TYPES).toContain("prompt");
     expect(VALID_CONFIG_TYPES).toContain("search");
     expect(VALID_CONFIG_TYPES).toContain("calculation");
     expect(VALID_CONFIG_TYPES).toContain("pipeline");
     expect(VALID_CONFIG_TYPES).toContain("sr");
-    expect(VALID_CONFIG_TYPES).toContain("evidence-lexicon");
-    expect(VALID_CONFIG_TYPES).toContain("aggregation-lexicon");
-    expect(VALID_CONFIG_TYPES.length).toBe(7);
+    expect(VALID_CONFIG_TYPES.length).toBe(5);
   });
 
   it("isValidConfigType returns true for valid types", () => {

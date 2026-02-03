@@ -8,14 +8,13 @@
  * - Layer 1 (prompts): extract-facts-base.ts instructs LLM not to extract low-quality items
  * - Layer 2 (this file): Deterministic filter catches anything that slips through
  *
- * v2.9: Patterns are now configurable via UCM lexicon config.
+ * v2.10: Uses internal pattern set (no external lexicon config).
  *
  * @module evidence-filter
  * @since v2.8 (Phase 1.5)
  */
 
 import type { EvidenceItem } from "./types";
-import type { EvidenceLexicon } from "../config-schemas";
 import { getEvidencePatterns, countPatternMatches, matchesAnyPattern } from "./lexicon-utils";
 
 /**
@@ -42,8 +41,7 @@ export interface ProbativeFilterConfig {
     legal_provision: { requireCitation: boolean };
   };
 
-  // UCM lexicon for pattern matching (optional, uses defaults if not provided)
-  lexicon?: EvidenceLexicon;
+  // Pattern matching uses internal defaults (no external lexicon config)
 }
 
 /**
@@ -73,9 +71,6 @@ export const DEFAULT_FILTER_CONFIG: ProbativeFilterConfig = {
     legal_provision: { requireCitation: true },
   },
 };
-
-// DEPRECATED: VAGUE_PHRASES moved to UCM lexicon (evidence-lexicon.v1)
-// See: DEFAULT_EVIDENCE_LEXICON.evidenceFilter.vaguePhrases
 
 /**
  * Count vague phrases in a statement using lexicon patterns
@@ -107,18 +102,12 @@ function hasTemporalAnchor(text: string): boolean {
   return yearPattern.test(text) || monthPattern.test(text) || datePattern.test(text) || relativePattern.test(text);
 }
 
-// DEPRECATED: citationPatterns moved to UCM lexicon (evidence-lexicon.v1)
-// See: DEFAULT_EVIDENCE_LEXICON.evidenceFilter.citationPatterns
-
 /**
  * Check if text contains citation-like patterns (for legal provisions)
  */
 function hasCitation(text: string, patterns: RegExp[]): boolean {
   return matchesAnyPattern(text, patterns);
 }
-
-// DEPRECATED: attributionPatterns moved to UCM lexicon (evidence-lexicon.v1)
-// See: DEFAULT_EVIDENCE_LEXICON.evidenceFilter.attributionPatterns
 
 /**
  * Check if text contains attribution to a named person/expert
@@ -163,8 +152,8 @@ export function filterByProbativeValue(
     },
   };
 
-  // Compile lexicon patterns (cached)
-  const patterns = getEvidencePatterns(cfg.lexicon);
+  // Compile patterns (cached)
+  const patterns = getEvidencePatterns();
 
   const kept: EvidenceItem[] = [];
   const filtered: EvidenceItem[] = [];

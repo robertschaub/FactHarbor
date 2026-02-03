@@ -17,7 +17,6 @@ import { z } from "zod";
 import { generateText, Output } from "ai";
 import { getModelForTask, extractStructuredOutput } from "./llm";
 import { getDeterministicTemperature } from "./config";
-import type { AggregationLexicon } from "../config-schemas";
 import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 import type { PipelineConfig } from "../config-schemas";
 
@@ -95,15 +94,15 @@ export const UNSCOPED_ID = "CTX_UNSCOPED";
 
 /**
  * Module-level compiled patterns (cached, initialized with defaults)
- * Can be updated via setScopeHeuristicsLexicon() for testing or config reload
+ * Can be reset via setScopeHeuristicsLexicon() for testing
  */
 let _patterns = getAggregationPatterns();
 
 /**
- * Set the lexicon for scope heuristics (useful for testing or config reload)
+ * Reset scope heuristic patterns to defaults.
  */
-export function setScopeHeuristicsLexicon(lexicon?: AggregationLexicon): void {
-  _patterns = getAggregationPatterns(lexicon);
+export function setScopeHeuristicsLexicon(): void {
+  _patterns = getAggregationPatterns();
 }
 
 /**

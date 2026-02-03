@@ -1,17 +1,206 @@
 /**
  * Lexicon Utilities
  *
- * Helper functions for working with UCM lexicon patterns.
+ * Helper functions for working with internal pattern sets.
  * Pattern syntax:
  * - "re:<pattern>" - Regex pattern (e.g., "re:some (say|believe)")
  * - "<literal>" - Literal string (case-insensitive match)
  *
  * @module lexicon-utils
- * @since v2.9 (UCM Migration)
+ * @since v2.9
  */
 
-import type { EvidenceLexicon, AggregationLexicon } from "../config-schemas";
-import { DEFAULT_EVIDENCE_LEXICON, DEFAULT_AGGREGATION_LEXICON } from "../config-schemas";
+type EvidencePatternConfig = {
+  evidenceFilter: {
+    vaguePhrases: string[];
+    citationPatterns: string[];
+    attributionPatterns: string[];
+  };
+  gate1: {
+    opinionMarkers: string[];
+    futureMarkers: string[];
+    specificityPatterns: string[];
+    stopwords: string[];
+  };
+  gate4: {
+    uncertaintyMarkers: string[];
+  };
+  provenanceValidation: {
+    minSourceExcerptLength: number;
+    syntheticContentPatterns: string[];
+    invalidUrlPatterns: string[];
+  };
+};
+
+type AggregationPatternConfig = {
+  contestation: {
+    documentedEvidenceKeywords: string[];
+    causalClaimPatterns: string[];
+    methodologyCriticismPatterns: string[];
+    opinionSourcePatterns?: string[];
+  };
+  harmPotential: {
+    deathKeywords: string[];
+    injuryKeywords: string[];
+    safetyKeywords: string[];
+    crimeKeywords: string[];
+  };
+  verdictCorrection: {
+    positiveClaimPatterns: string[];
+    negativeReasoningPatterns: string[];
+    negativeClaimPatterns: string[];
+    positiveReasoningPatterns: string[];
+  };
+  counterClaimDetection: {
+    supportingAspectPatterns: string[];
+    evaluativeTermSynonyms: Record<string, string[]>;
+    coreEvaluativeTerms: string[];
+    negativeFormMappings: Record<string, string>;
+    stopwords: string[];
+  };
+  textAnalysisHeuristic: {
+    comparativeKeywords: string[];
+    compoundIndicators: string[];
+    predictiveKeywords: string[];
+    evaluativeKeywords: string[];
+    productionPhaseKeywords: string[];
+    usagePhaseKeywords: string[];
+    negativeIndicators: string[];
+    positiveIndicators: string[];
+  };
+  pseudoscience: {
+    patterns: Record<string, string[]>;
+    brands: string[];
+    debunkedIndicators: string[];
+  };
+  contextHeuristics?: {
+    comparisonPatterns: string[];
+    efficiencyKeywords: string[];
+    legalFairnessPatterns: string[];
+    legalProcessKeywords: string[];
+    internationalCuePatterns: string[];
+    envHealthPatterns: string[];
+  };
+  scopeHeuristics?: {
+    comparisonPatterns: string[];
+    efficiencyKeywords: string[];
+    legalFairnessPatterns: string[];
+    legalProcessKeywords: string[];
+    internationalCuePatterns: string[];
+    envHealthPatterns: string[];
+  };
+  contextCanonicalization?: {
+    predicateStarters: string[];
+    fillerWords: string[];
+    legalTerms: string[];
+    jurisdictionIndicators: string[];
+  };
+  scopeCanonicalization?: {
+    predicateStarters: string[];
+    fillerWords: string[];
+    legalTerms: string[];
+    jurisdictionIndicators: string[];
+  };
+  recencyHeuristics: {
+    recentKeywords: string[];
+    newsIndicatorKeywords: string[];
+  };
+  proceduralTopicHeuristics: {
+    proceduralKeywords: string[];
+  };
+  externalReactionHeuristics: {
+    externalReactionPatterns: string[];
+  };
+};
+
+const DEFAULT_EVIDENCE_PATTERNS: EvidencePatternConfig = {
+  evidenceFilter: {
+    vaguePhrases: [],
+    citationPatterns: [],
+    attributionPatterns: [],
+  },
+  gate1: {
+    opinionMarkers: [],
+    futureMarkers: [],
+    specificityPatterns: [],
+    stopwords: [],
+  },
+  gate4: {
+    uncertaintyMarkers: [],
+  },
+  provenanceValidation: {
+    minSourceExcerptLength: 0,
+    syntheticContentPatterns: [],
+    invalidUrlPatterns: [],
+  },
+};
+
+const DEFAULT_AGGREGATION_PATTERNS: AggregationPatternConfig = {
+  contestation: {
+    documentedEvidenceKeywords: [],
+    causalClaimPatterns: [],
+    methodologyCriticismPatterns: [],
+    opinionSourcePatterns: [],
+  },
+  harmPotential: {
+    deathKeywords: [],
+    injuryKeywords: [],
+    safetyKeywords: [],
+    crimeKeywords: [],
+  },
+  verdictCorrection: {
+    positiveClaimPatterns: [],
+    negativeReasoningPatterns: [],
+    negativeClaimPatterns: [],
+    positiveReasoningPatterns: [],
+  },
+  counterClaimDetection: {
+    supportingAspectPatterns: [],
+    evaluativeTermSynonyms: {},
+    coreEvaluativeTerms: [],
+    negativeFormMappings: {},
+    stopwords: [],
+  },
+  textAnalysisHeuristic: {
+    comparativeKeywords: [],
+    compoundIndicators: [],
+    predictiveKeywords: [],
+    evaluativeKeywords: [],
+    productionPhaseKeywords: [],
+    usagePhaseKeywords: [],
+    negativeIndicators: [],
+    positiveIndicators: [],
+  },
+  pseudoscience: {
+    patterns: {},
+    brands: [],
+    debunkedIndicators: [],
+  },
+  contextHeuristics: {
+    comparisonPatterns: [],
+    efficiencyKeywords: [],
+    legalFairnessPatterns: [],
+    legalProcessKeywords: [],
+    internationalCuePatterns: [],
+    envHealthPatterns: [],
+  },
+  contextCanonicalization: {
+    predicateStarters: [],
+    fillerWords: [],
+    legalTerms: [],
+    jurisdictionIndicators: [],
+  },
+  recencyHeuristics: {
+    recentKeywords: [],
+    newsIndicatorKeywords: [],
+  },
+  proceduralTopicHeuristics: {
+    proceduralKeywords: [],
+  },
+  externalReactionHeuristics: {
+    externalReactionPatterns: [],
+  },
+};
 
 /**
  * Parse a UCM pattern string into a RegExp.
@@ -62,11 +251,10 @@ export function countPatternMatches(text: string, patterns: RegExp[]): number {
 }
 
 /**
- * Get compiled patterns from lexicon, with caching.
- * Falls back to default lexicon if not provided.
+ * Get compiled patterns from the internal pattern set, with caching.
  */
 export function getEvidencePatterns(
-  lexicon?: EvidenceLexicon
+  _lexicon?: unknown
 ): {
   vaguePhrases: RegExp[];
   citationPatterns: RegExp[];
@@ -80,7 +268,7 @@ export function getEvidencePatterns(
   provenanceSyntheticContentPatterns: RegExp[];
   provenanceInvalidUrlPatterns: RegExp[];
 } {
-  const lex = lexicon ?? DEFAULT_EVIDENCE_LEXICON;
+  const lex = DEFAULT_EVIDENCE_PATTERNS;
 
   return {
     vaguePhrases: compilePatterns(lex.evidenceFilter.vaguePhrases),
@@ -98,15 +286,15 @@ export function getEvidencePatterns(
 }
 
 /**
- * Get compiled aggregation patterns from lexicon, with caching.
- * Falls back to default lexicon if not provided.
+ * Get compiled aggregation patterns from the internal pattern set, with caching.
  */
 export function getAggregationPatterns(
-  lexicon?: AggregationLexicon
+  _lexicon?: unknown
 ): {
   documentedEvidenceKeywords: RegExp[];
   causalClaimPatterns: RegExp[];
   methodologyCriticismPatterns: RegExp[];
+  opinionSourcePatterns: RegExp[];
   harmDeathKeywords: RegExp[];
   harmInjuryKeywords: RegExp[];
   harmSafetyKeywords: RegExp[];
@@ -146,7 +334,7 @@ export function getAggregationPatterns(
   proceduralKeywords: RegExp[];
   externalReactionPatterns: RegExp[];
 } {
-  const lex = lexicon ?? DEFAULT_AGGREGATION_LEXICON;
+  const lex = DEFAULT_AGGREGATION_PATTERNS;
   const pseudosciencePatterns: Record<string, RegExp[]> = {};
   for (const [category, patterns] of Object.entries(lex.pseudoscience.patterns || {})) {
     pseudosciencePatterns[category] = compilePatterns(patterns);
@@ -156,6 +344,7 @@ export function getAggregationPatterns(
     documentedEvidenceKeywords: compilePatterns(lex.contestation.documentedEvidenceKeywords),
     causalClaimPatterns: compilePatterns(lex.contestation.causalClaimPatterns),
     methodologyCriticismPatterns: compilePatterns(lex.contestation.methodologyCriticismPatterns),
+    opinionSourcePatterns: compilePatterns(lex.contestation.opinionSourcePatterns ?? []),
     harmDeathKeywords: compilePatterns(lex.harmPotential.deathKeywords),
     harmInjuryKeywords: compilePatterns(lex.harmPotential.injuryKeywords),
     harmSafetyKeywords: compilePatterns(lex.harmPotential.safetyKeywords),

@@ -29,8 +29,6 @@ import {
   DEFAULT_CALC_CONFIG,
   DEFAULT_PIPELINE_CONFIG,
   DEFAULT_SR_CONFIG,
-  DEFAULT_EVIDENCE_LEXICON,
-  DEFAULT_AGGREGATION_LEXICON,
 } from "./config-schemas";
 
 // Re-export types for API routes
@@ -69,8 +67,6 @@ const DEFAULT_CONFIG_FILENAMES: Record<Exclude<ConfigType, "prompt">, string> = 
   calculation: "calculation.default.json",
   pipeline: "pipeline.default.json",
   sr: "sr.default.json",
-  "evidence-lexicon": "evidence-lexicon.default.json",
-  "aggregation-lexicon": "aggregation-lexicon.default.json",
 };
 
 /**
@@ -849,8 +845,6 @@ const DEFAULT_CONFIGS: Record<Exclude<ConfigType, "prompt">, unknown> = {
   calculation: DEFAULT_CALC_CONFIG,
   pipeline: DEFAULT_PIPELINE_CONFIG,
   sr: DEFAULT_SR_CONFIG,
-  "evidence-lexicon": DEFAULT_EVIDENCE_LEXICON,
-  "aggregation-lexicon": DEFAULT_AGGREGATION_LEXICON,
 };
 
 /**
@@ -1186,8 +1180,6 @@ async function initializeDefaultConfigsWithDb(database: Database): Promise<void>
   await ensureDefaultConfig(database, "calculation");
   await ensureDefaultConfig(database, "pipeline");
   await ensureDefaultConfig(database, "sr");
-  await ensureDefaultConfig(database, "evidence-lexicon");
-  await ensureDefaultConfig(database, "aggregation-lexicon");
 
   console.log("[Config-Storage] Default configs ensured");
 }

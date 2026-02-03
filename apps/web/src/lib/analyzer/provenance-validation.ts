@@ -10,24 +10,22 @@
  */
 
 import type { ExtractedFact, FetchedSource } from "./types";
-import type { EvidenceLexicon } from "../config-schemas";
 import { getEvidencePatterns } from "./lexicon-utils";
 
 // ============================================================================
-// CONFIGURATION (UCM-Configurable)
+// CONFIGURATION
 // ============================================================================
 
 /**
  * Module-level compiled patterns (cached, initialized with defaults)
- * Can be updated via setProvenanceLexicon() for testing or config reload
  */
 let _patterns = getEvidencePatterns();
 
 /**
- * Set the lexicon for provenance validation (useful for testing or config reload)
+ * Reset provenance patterns to defaults.
  */
-export function setProvenanceLexicon(lexicon?: EvidenceLexicon): void {
-  _patterns = getEvidencePatterns(lexicon);
+export function setProvenanceLexicon(): void {
+  _patterns = getEvidencePatterns();
 }
 
 /**

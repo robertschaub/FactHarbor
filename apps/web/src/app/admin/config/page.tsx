@@ -367,7 +367,7 @@ function getDefaultConfigForType(type: ConfigType): SearchConfig | CalcConfig | 
     case "sr":
       return DEFAULT_SR_CONFIG;
     default:
-      return null; // Prompts don't have a default form config
+      return null; // Prompts and lexicons don't have a default form config (use JSON editor)
   }
 }
 
