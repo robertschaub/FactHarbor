@@ -70,13 +70,7 @@ export const ContextDetectionOutputSchema = z.object({
   rationale: z.string(),
 });
 
-/** @deprecated Use ContextDetectionOutputSchema instead */
-export const ScopeDetectionOutputSchema = ContextDetectionOutputSchema;
-
 export type ContextDetectionOutput = z.infer<typeof ContextDetectionOutputSchema>;
-
-/** @deprecated Use ContextDetectionOutput instead */
-export type ScopeDetectionOutput = ContextDetectionOutput;
 
 // ============================================================================
 // CONSTANTS
@@ -123,7 +117,7 @@ export function getScopeHeuristicsPatternsConfig() {
  * @param text - Input text to analyze for scope patterns
  * @returns Array of detected scopes or null if no patterns match
  */
-export function detectScopesHeuristic(text: string, config?: PipelineConfig): DetectedScope[] | null {
+export function detectContextsHeuristic(text: string, config?: PipelineConfig): DetectedScope[] | null {
   const scopes: DetectedScope[] = [];
 
   // Pattern 1: Comparison claims (efficiency, performance, impact)
@@ -204,7 +198,7 @@ export function detectScopesHeuristic(text: string, config?: PipelineConfig): De
  * Detect analysis contexts using an LLM with semantic understanding.
  * Falls back to heuristic seeds on error or invalid output.
  */
-export async function detectScopesLLM(
+export async function detectContextsLLM(
   text: string,
   heuristicSeeds: DetectedScope[] | null,
   config: PipelineConfig,
@@ -234,22 +228,18 @@ export async function detectScopesLLM(
         { role: "user", content: userPrompt },
       ],
       temperature: getDeterministicTemperature(0.2, config),
-      output: Output.object({ schema: ScopeDetectionOutputSchema }),
+      output: Output.object({ schema: ContextDetectionOutputSchema }),
     });
 
-    const output = extractStructuredOutput(result) as ScopeDetectionOutput | null;
+    const output = extractStructuredOutput(result) as ContextDetectionOutput | null;
     if (!output || !Array.isArray(output.contexts)) {
       return heuristicSeeds || [];
     }
 
     const minConfidence =
-      config.contextDetectionMinConfidence ??
-      config.scopeDetectionMinConfidence ??
-      0.7;
+      config.contextDetectionMinConfidence ?? 0.7;
     const maxContexts =
-      config.contextDetectionMaxContexts ??
-      config.scopeDetectionMaxContexts ??
-      5;
+      config.contextDetectionMaxContexts ?? 5;
 
     return output.contexts
       .filter((c) => c.confidence >= minConfidence)
@@ -275,24 +265,22 @@ export async function detectScopesLLM(
 /**
  * Hybrid detection: heuristic seeds + LLM refinement.
  */
-export async function detectScopesHybrid(
+export async function detectContextsHybrid(
   text: string,
   config: PipelineConfig,
 ): Promise<DetectedScope[] | null> {
   const detectionEnabled =
-    config.contextDetectionEnabled ?? config.scopeDetectionEnabled;
+    config.contextDetectionEnabled;
   if (detectionEnabled === false) return null;
 
   const method =
-    config.contextDetectionMethod ??
-    config.scopeDetectionMethod ??
-    "heuristic";
-  const heuristic = detectScopesHeuristic(text, config);
+    config.contextDetectionMethod ?? "heuristic";
+  const heuristic = detectContextsHeuristic(text, config);
 
   if (method === "heuristic") return heuristic;
 
   const llmSeeds = method === "hybrid" ? heuristic : null;
-  const llmContexts = await detectScopesLLM(text, llmSeeds, config);
+  const llmContexts = await detectContextsLLM(text, llmSeeds, config);
 
   if (method === "llm") return llmContexts;
 
@@ -319,7 +307,6 @@ function mergeAndDeduplicateScopes(
 
   const threshold =
     config.contextDedupThreshold ??
-    config.scopeDedupThreshold ??
     0.85;
   const deduplicated: DetectedScope[] = [];
 
@@ -360,8 +347,8 @@ function calculateTextSimilarity(text1: string, text2: string): number {
 /**
  * Backward-compatible synchronous wrapper for deterministic seed logic.
  */
-export function detectScopes(text: string): DetectedScope[] | null {
-  return detectScopesHeuristic(text);
+export function detectContexts(text: string): DetectedScope[] | null {
+  return detectContextsHeuristic(text);
 }
 
 /**
@@ -371,7 +358,7 @@ export function detectScopes(text: string): DetectedScope[] | null {
  * @param detailed - If true, include metadata and MUST instruction
  * @returns Formatted string for prompt injection (empty string if no scopes)
  */
-export function formatDetectedScopesHint(scopes: DetectedScope[] | null, detailed: boolean = false): string {
+export function formatDetectedContextsHint(scopes: DetectedScope[] | null, detailed: boolean = false): string {
   if (!scopes || scopes.length === 0) return '';
 
   const lines = scopes.map(s =>
@@ -405,7 +392,7 @@ export function formatDetectedScopesHint(scopes: DetectedScope[] | null, detaile
  * @param input - Raw or pre-normalized input text
  * @returns Canonical form for scope detection
  */
-export function canonicalizeInputForScopeDetection(input: string): string {
+export function canonicalizeInputForContextDetection(input: string): string {
   let text = input.trim();
 
   // 1. Remove question marks and trailing punctuation
@@ -519,7 +506,7 @@ function extractCoreEntities(text: string): string[] {
  *
  * IMPORTANT: Pass the ORIGINAL text (not lowercased) so proper nouns are detected.
  */
-export function generateScopeDetectionHint(originalInput: string): string {
+export function generateContextDetectionHint(originalInput: string): string {
   const entities = extractCoreEntities(originalInput);
 
   if (entities.length === 0) {
@@ -528,7 +515,7 @@ export function generateScopeDetectionHint(originalInput: string): string {
 
   // Build a hint that emphasizes what scopes to look for
   const hint = `
-SCOPE DETECTION HINT (for input neutrality):
+CONTEXT DETECTION HINT (for input neutrality):
 Focus on detecting scopes related to these core entities: ${entities.join(', ')}.
 Do NOT detect scopes based on:
 - Whether the input is phrased as a question or statement
@@ -823,47 +810,20 @@ export function ensureAtLeastOneScope(
 }
 
 // ============================================================================
-// FUNCTION ALIASES (Phase 1: Backward Compatibility)
+// CONTEXT HELPERS
 // ============================================================================
-// These aliases maintain backward compatibility while transitioning to
-// correct terminology. "Scope" in these function names refers to
-// AnalysisContext, NOT EvidenceScope. See types.ts:98-126 for definitions.
 
-/** Primary name for setting context heuristics lexicon */
+/** Set context heuristics lexicon */
 export const setContextHeuristicsLexicon = setScopeHeuristicsLexicon;
 
-/** Primary name for getting context heuristics patterns config */
+/** Get context heuristics patterns config */
 export const getContextHeuristicsPatternsConfig = getScopeHeuristicsPatternsConfig;
 
-/** Primary name for heuristic context detection */
-export const detectContextsHeuristic = detectScopesHeuristic;
-
-/** Primary name for LLM context detection */
-export const detectContextsLLM = detectScopesLLM;
-
-/** Primary name for hybrid context detection */
-export const detectContextsHybrid = detectScopesHybrid;
-
-/** Primary name for synchronous context detection */
-export const detectContexts = detectScopes;
-
-/** Primary name for formatting detected contexts hint */
-export const formatDetectedContextsHint = formatDetectedScopesHint;
-
-/** Primary name for canonicalizing input for context detection */
-export const canonicalizeInputForContextDetection = canonicalizeInputForScopeDetection;
-
-/** Primary name for generating context detection hint */
-export const generateContextDetectionHint = generateScopeDetectionHint;
-
-/** Primary name for canonicalizing contexts */
+/** Canonicalize contexts */
 export const canonicalizeContexts = canonicalizeScopes;
 
-/** Primary name for canonicalizing contexts with ID remap */
+/** Canonicalize contexts with ID remap */
 export const canonicalizeContextsWithRemap = canonicalizeScopesWithRemap;
 
-/** Primary name for ensuring at least one context */
+/** Ensure at least one context */
 export const ensureAtLeastOneContext = ensureAtLeastOneScope;
-
-// Note: generateDeterministicScopeId is an internal helper function (not exported)
-// so no alias is needed for it.

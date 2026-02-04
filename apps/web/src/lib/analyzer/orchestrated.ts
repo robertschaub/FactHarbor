@@ -85,7 +85,7 @@ import {
   pruneOpinionOnlyFactors,
   monitorOpinionAccumulation,
 } from "./aggregation";
-import { detectScopes, detectScopesHybrid, formatDetectedScopesHint, setContextHeuristicsLexicon } from "./analysis-contexts";
+import { detectContexts, detectContextsHybrid, formatDetectedContextsHint, setContextHeuristicsLexicon } from "./analysis-contexts";
 import { getModelForTask } from "./llm";
 import {
   detectAndCorrectVerdictInversion,
@@ -640,13 +640,11 @@ async function refineScopesFromEvidence(
   // v2.6.39: Compute seed context candidates from heuristics (soft hints, not mandatory)
   const pipelineCfg = state.pipelineConfig;
   const detectionMethod =
-    pipelineCfg?.contextDetectionMethod ??
-    pipelineCfg?.scopeDetectionMethod ??
-    "heuristic";
-  const seedScopes = detectionMethod === "heuristic"
-    ? detectScopes(analysisInput) || []
-    : (await detectScopesHybrid(analysisInput, pipelineCfg!)) || [];
-  const seedHint = seedScopes.length > 0 ? formatDetectedScopesHint(seedScopes, true) : "";
+    pipelineCfg?.contextDetectionMethod ?? "heuristic";
+  const seedContexts = detectionMethod === "heuristic"
+    ? detectContexts(analysisInput) || []
+    : (await detectContextsHybrid(analysisInput, pipelineCfg!)) || [];
+  const seedHint = seedContexts.length > 0 ? formatDetectedContextsHint(seedContexts, true) : "";
 
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),
@@ -731,10 +729,10 @@ Return:
 `;
 
   // v2.6.39: Log when seed hints are passed to refinement
-  if (seedScopes.length > 0) {
+  if (seedContexts.length > 0) {
     debugLog("refineScopesFromEvidence: passing seed hints as candidates", {
-      seedCount: seedScopes.length,
-      seedIds: seedScopes.map((s) => s.id),
+      seedCount: seedContexts.length,
+      seedIds: seedContexts.map((s) => s.id),
     });
   }
 
@@ -837,7 +835,6 @@ Return:
     // Lower values cause valid contexts and claims to be lost
     const thr =
       state.pipelineConfig?.contextDedupThreshold ??
-      state.pipelineConfig?.scopeDedupThreshold ??
       DEFAULT_PIPELINE_CONFIG.contextDedupThreshold ??
       0.85;
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
@@ -3652,22 +3649,20 @@ async function understandClaim(
     });
   }
 
-  // v2.8: Pre-detect contexts using heuristics (shared implementation from scopes.ts)
+  // v2.8: Pre-detect contexts using heuristics (shared implementation from analysis-contexts.ts)
   const contextDetectionMethod =
-    pipelineConfig?.contextDetectionMethod ??
-    pipelineConfig?.scopeDetectionMethod ??
-    "heuristic";
+    pipelineConfig?.contextDetectionMethod ?? "heuristic";
   // v2.9.2: Context detection is now done entirely by LLM - no pattern-based pre-detection
   // The LLM should discover analytical contexts independently based on the input content
-  const preDetectedScopes = contextDetectionMethod === "heuristic"
-    ? detectScopes(analysisInput)
+  const preDetectedContexts = contextDetectionMethod === "heuristic"
+    ? detectContexts(analysisInput)
     : pipelineConfig
-      ? await detectScopesHybrid(analysisInput, pipelineConfig)
-      : detectScopes(analysisInput);
-  // Note: preDetectedScopes kept for backward compatibility but NOT passed to LLM prompt
-  debugLog("understandClaim: preDetectedScopes (heuristic, not passed to LLM)", {
-    count: preDetectedScopes?.length ?? 0,
-    ids: (preDetectedScopes || []).map((s: any) => String(s?.id || "")).filter(Boolean),
+      ? await detectContextsHybrid(analysisInput, pipelineConfig)
+      : detectContexts(analysisInput);
+  // Note: preDetectedContexts are internal hints and are NOT passed to the LLM prompt
+  debugLog("understandClaim: preDetectedContexts (heuristic, not passed to LLM)", {
+    count: preDetectedContexts?.length ?? 0,
+    ids: (preDetectedContexts || []).map((s: any) => String(s?.id || "")).filter(Boolean),
   });
 
   const systemPrompt = `You are a professional fact-checker analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect background details if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
@@ -4654,9 +4649,9 @@ Now analyze the input and output JSON only.`;
     ids: (parsed.analysisContexts || []).map((p: any) => p.id),
   });
 
-  // v2.8.x: Deterministic seed-scope enforcement
-  // If heuristic scope pre-detection found multiple scopes but the LLM under-split,
-  // enforce the seed scopes to avoid collapsing boundary-sensitive comparison claims
+  // v2.8.x: Deterministic seed-context enforcement
+  // If heuristic context pre-detection found multiple contexts but the LLM under-split,
+  // enforce the seed contexts to avoid collapsing boundary-sensitive comparison claims
   // into a single generic context.
   //
   // v2.6.39: Gate seed forcing to only apply when BOTH conditions are true:
@@ -4667,15 +4662,15 @@ Now analyze the input and output JSON only.`;
   const isComparativeInput = inputClassification?.isComparative ?? isComparativeLikeText(analysisInput);
   const isCompoundInput = inputClassification?.isCompound ?? isCompoundLikeText(analysisInput);
 
-  const shouldForceSeedScopes =
+  const shouldForceSeedContexts =
     deterministic === true &&
     isComparativeInput &&
-    Array.isArray(preDetectedScopes) &&
-    preDetectedScopes.length >= 2 &&
+    Array.isArray(preDetectedContexts) &&
+    preDetectedContexts.length >= 2 &&
     (parsed.analysisContexts?.length ?? 0) <= 1;
 
-  if (shouldForceSeedScopes) {
-    const seedContexts = preDetectedScopes.map((s, idx) => {
+  if (shouldForceSeedContexts) {
+    const seedContexts = preDetectedContexts.map((s, idx) => {
       const rawId = String(s.id || `SCOPE_SEED_${idx + 1}`);
       const short = rawId.replace(/^SCOPE_/, "").slice(0, 12) || `CTX${idx + 1}`;
       return {
@@ -4699,16 +4694,16 @@ Now analyze the input and output JSON only.`;
         if (!String(c?.contextId || "").trim()) c.contextId = firstScopeId;
       }
     }
-    debugLog("understandClaim: applied heuristic seed scopes (deterministic + comparative)", {
+    debugLog("understandClaim: applied heuristic seed contexts (deterministic + comparative)", {
       seedCount: seedContexts.length,
       seedIds: seedContexts.map((s) => s.id),
     });
-  } else if (Array.isArray(preDetectedScopes) && preDetectedScopes.length >= 2) {
+  } else if (Array.isArray(preDetectedContexts) && preDetectedContexts.length >= 2) {
     // Log when we skip seed forcing (helps debugging)
     debugLog("understandClaim: skipped seed forcing", {
       deterministic,
       isComparative: isComparativeInput,
-      preDetectedScopesCount: preDetectedScopes.length,
+      preDetectedContextsCount: preDetectedContexts.length,
       existingContextsCount: parsed.analysisContexts?.length ?? 0,
     });
   }

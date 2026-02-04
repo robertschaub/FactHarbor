@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2.0.0",
+  "schemaVersion": "3.0.0",
   "enabled": true,
   "provider": "auto",
   "mode": "standard",

@@ -197,8 +197,6 @@ interface PipelineConfig {
   allowModelKnowledge: boolean;
   deterministic: boolean;
   contextDedupThreshold?: number;
-  // Deprecated alias (legacy "scope" == AnalysisContext).
-  scopeDedupThreshold?: number;
   // Budget controls
   maxIterationsPerContext?: number;
   // Deprecated alias (legacy "scope" == AnalysisContext).
@@ -1366,7 +1364,7 @@ function PipelineConfigForm({
           <input
             type="number"
             className={styles.formInput}
-            value={config.contextDedupThreshold ?? config.scopeDedupThreshold ?? 0.85}
+            value={config.contextDedupThreshold ?? 0.85}
             min={0.5}
             max={1.0}
             step={0.05}
@@ -1375,7 +1373,6 @@ function PipelineConfigForm({
               onChange({
                 ...config,
                 contextDedupThreshold: isNaN(v) ? 0.7 : v,
-                scopeDedupThreshold: undefined,
               });
             }}
           />

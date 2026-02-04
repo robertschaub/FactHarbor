@@ -36,7 +36,7 @@ import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { loadPipelineConfig, loadSearchConfig, type PipelineConfig } from "@/lib/config-loader";
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
 import { calculateWeightedVerdictAverage } from "./aggregation";
-import { detectScopes, formatDetectedScopesHint, setContextHeuristicsLexicon } from "./analysis-contexts";
+import { detectContexts, formatDetectedContextsHint, setContextHeuristicsLexicon } from "./analysis-contexts";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
@@ -382,7 +382,7 @@ async function extractClaim(
   if (onEvent) await onEvent("Analyzing claim", 10);
 
   // v2.8: Pre-detect scopes using heuristics (shared implementation from scopes.ts)
-  const preDetectedScopes = detectScopes(text);
+  const preDetectedContexts = detectContexts(text);
 
   // v2.9: LLM Text Analysis - Classify input
   let inputClassification: InputClassificationResult | null = null;
@@ -421,7 +421,7 @@ async function extractClaim(
   });
 
   // v2.8: Append pre-detected scopes hint to prompt (using shared formatter)
-  understandPrompt += formatDetectedScopesHint(preDetectedScopes);
+  understandPrompt += formatDetectedContextsHint(preDetectedContexts);
 
   const outputConfig = Output.object({ schema: ClaimExtractionSchema });
 

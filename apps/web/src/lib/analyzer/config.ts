@@ -85,9 +85,8 @@ export function getAnalyzerConfigValues(config?: PipelineConfig) {
   const deepModeEnabled = effectiveConfig.analysisMode === "deep";
   const deterministic = effectiveConfig.deterministic;
   const allowModelKnowledge = effectiveConfig.allowModelKnowledge;
-  const scopeDedupThreshold =
+  const contextDedupThreshold =
     effectiveConfig.contextDedupThreshold ??
-    effectiveConfig.scopeDedupThreshold ??
     DEFAULT_PIPELINE_CONFIG.contextDedupThreshold;
 
   return {
@@ -102,7 +101,7 @@ export function getAnalyzerConfigValues(config?: PipelineConfig) {
     reportStyle: CONFIG.reportStyle,
     allowModelKnowledge,
     keyFactorHints: effectiveConfig.keyFactorHints ?? DEFAULT_PIPELINE_CONFIG.keyFactorHints,
-    scopeDedupThreshold,
+    contextDedupThreshold,
     quick: CONFIG.quick,
     deep: CONFIG.deep,
     minCategories: CONFIG.minCategories,

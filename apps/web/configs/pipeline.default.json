@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2.1.0",
+  "schemaVersion": "3.0.0",
   "llmProvider": "anthropic",
   "llmTiering": false,
   "modelUnderstand": "claude-3-5-haiku-20241022",

@@ -5,75 +5,75 @@
  * - Bug 1: Removed hardcoded political figure names
  * - Bug 2: Fixed proper noun detection by extracting entities before lowercasing
  * 
- * v2.8: Added tests for detectScopes and formatDetectedScopesHint
+ * v2.8: Added tests for detectContexts and formatDetectedContextsHint
  */
 
 import { describe, it, expect } from 'vitest';
-import { 
-  generateScopeDetectionHint, 
-  detectScopes, 
-  formatDetectedScopesHint,
-  UNSCOPED_ID 
+import {
+  generateContextDetectionHint,
+  detectContexts,
+  formatDetectedContextsHint,
+  UNSCOPED_ID
 } from '@/lib/analyzer/analysis-contexts';
 
-describe('Scope Detection - Generic by Design', () => {
+describe('Context Detection - Generic by Design', () => {
   describe('Proper Noun Detection', () => {
     it('detects proper nouns regardless of domain', () => {
       // Political figures (no hardcoding needed)
-      expect(generateScopeDetectionHint('Bolsonaro case')).toContain('bolsonaro');
-      expect(generateScopeDetectionHint('Trump trial')).toContain('trump');
+      expect(generateContextDetectionHint('Bolsonaro case')).toContain('bolsonaro');
+      expect(generateContextDetectionHint('Trump trial')).toContain('trump');
       
       // Scientists
-      expect(generateScopeDetectionHint('Einstein theory')).toContain('einstein');
-      expect(generateScopeDetectionHint('Tesla invention')).toContain('tesla');
+      expect(generateContextDetectionHint('Einstein theory')).toContain('einstein');
+      expect(generateContextDetectionHint('Tesla invention')).toContain('tesla');
       
       // Historical figures
-      expect(generateScopeDetectionHint('Gandhi movement')).toContain('gandhi');
-      expect(generateScopeDetectionHint('Churchill decision')).toContain('churchill');
+      expect(generateContextDetectionHint('Gandhi movement')).toContain('gandhi');
+      expect(generateContextDetectionHint('Churchill decision')).toContain('churchill');
       
       // Business leaders
-      expect(generateScopeDetectionHint('Musk acquisition')).toContain('musk');
-      expect(generateScopeDetectionHint('Gates foundation')).toContain('gates');
+      expect(generateContextDetectionHint('Musk acquisition')).toContain('musk');
+      expect(generateContextDetectionHint('Gates foundation')).toContain('gates');
       
       // Multi-word proper nouns
-      expect(generateScopeDetectionHint('Angela Merkel policy')).toContain('angela merkel');
-      expect(generateScopeDetectionHint('Marie Curie research')).toContain('marie curie');
+      expect(generateContextDetectionHint('Angela Merkel policy')).toContain('angela merkel');
+      expect(generateContextDetectionHint('Marie Curie research')).toContain('marie curie');
     });
 
     it('works with question phrasing', () => {
-      const questionHint = generateScopeDetectionHint('Was Einstein right about relativity?');
+      const questionHint = generateContextDetectionHint('Was Einstein right about relativity?');
       expect(questionHint).toContain('einstein');
-      expect(questionHint).toContain('SCOPE DETECTION HINT');
+      expect(questionHint).toContain('CONTEXT DETECTION HINT');
     });
 
     it('works with statement phrasing', () => {
-      const statementHint = generateScopeDetectionHint('Einstein was right about relativity');
+      const statementHint = generateContextDetectionHint('Einstein was right about relativity');
       expect(statementHint).toContain('einstein');
-      expect(statementHint).toContain('SCOPE DETECTION HINT');
+      expect(statementHint).toContain('CONTEXT DETECTION HINT');
     });
 
     it('detects legal/institutional terms', () => {
-      expect(generateScopeDetectionHint('court ruling on case')).toContain('court');
-      expect(generateScopeDetectionHint('tribunal judgment')).toContain('tribunal');
-      expect(generateScopeDetectionHint('appeal hearing')).toContain('appeal');
+      expect(generateContextDetectionHint('court ruling on case')).toContain('court');
+      expect(generateContextDetectionHint('tribunal judgment')).toContain('tribunal');
+      expect(generateContextDetectionHint('appeal hearing')).toContain('appeal');
     });
 
     it('detects jurisdiction indicators', () => {
-      expect(generateScopeDetectionHint('Brazilian supreme court')).toContain('brazilian');
-      expect(generateScopeDetectionHint('EU commission ruling')).toContain('eu');
-      expect(generateScopeDetectionHint('US federal court')).toContain('us');
+      expect(generateContextDetectionHint('Brazilian supreme court')).toContain('brazilian');
+      expect(generateContextDetectionHint('EU commission ruling')).toContain('eu');
+      expect(generateContextDetectionHint('US federal court')).toContain('us');
     });
 
     it('returns empty hint when no entities detected', () => {
-      const hint = generateScopeDetectionHint('this is just filler words');
+      const hint = generateContextDetectionHint('this is just filler words');
       expect(hint).toBe('');
     });
   });
 
   describe('Input Neutrality', () => {
     it('generates identical hints for question vs statement', () => {
-      const question = generateScopeDetectionHint('Was Newton correct about gravity?');
-      const statement = generateScopeDetectionHint('Newton was correct about gravity');
+      const question = generateContextDetectionHint('Was Newton correct about gravity?');
+      const statement = generateContextDetectionHint('Newton was correct about gravity');
       
       // Both should detect "newton" and "correct"
       expect(question).toContain('newton');
@@ -92,7 +92,7 @@ describe('Scope Detection - Generic by Design', () => {
         'Galileo is correct'
       ];
       
-      const hints = inputs.map(input => generateScopeDetectionHint(input));
+      const hints = inputs.map(input => generateContextDetectionHint(input));
       
       // All should detect "galileo"
       hints.forEach(hint => {
@@ -104,13 +104,13 @@ describe('Scope Detection - Generic by Design', () => {
   describe('Generic by Design Compliance', () => {
     it('does not contain hardcoded political figure lists', () => {
       // Read the actual function implementation to verify
-      const hint = generateScopeDetectionHint('Random Person case');
+      const hint = generateContextDetectionHint('Random Person case');
       
       // Should work generically via regex, not hardcoded lists
       expect(hint).toContain('random person');
       
       // Verify it's not relying on hardcoded names
-      const obscureName = generateScopeDetectionHint('Zephyr case');
+      const obscureName = generateContextDetectionHint('Zephyr case');
       expect(obscureName).toContain('zephyr');
     });
 
@@ -124,7 +124,7 @@ describe('Scope Detection - Generic by Design', () => {
       ];
       
       domains.forEach(({ input, expected }) => {
-        const hint = generateScopeDetectionHint(input);
+        const hint = generateContextDetectionHint(input);
         expect(hint).toContain(expected);
       });
     });
@@ -132,27 +132,27 @@ describe('Scope Detection - Generic by Design', () => {
 
   describe('Edge Cases', () => {
     it('handles empty input', () => {
-      const hint = generateScopeDetectionHint('');
+      const hint = generateContextDetectionHint('');
       expect(hint).toBe('');
     });
 
     it('handles input with no proper nouns', () => {
-      const hint = generateScopeDetectionHint('the quick brown fox jumps');
+      const hint = generateContextDetectionHint('the quick brown fox jumps');
       expect(hint).toBe('');
     });
 
     it('proper noun detection requires standard capitalization', () => {
       // All caps doesn't match proper noun pattern (needs initial cap + lowercase)
-      const allCaps = generateScopeDetectionHint('EINSTEIN theory');
+      const allCaps = generateContextDetectionHint('EINSTEIN theory');
       // This is acceptable - input should have standard capitalization for best results
       
       // Standard capitalization works correctly
-      const standardCase = generateScopeDetectionHint('Einstein theory');
+      const standardCase = generateContextDetectionHint('Einstein theory');
       expect(standardCase).toContain('einstein');
     });
 
     it('deduplicates repeated entities', () => {
-      const hint = generateScopeDetectionHint('Tesla Tesla Tesla case');
+      const hint = generateContextDetectionHint('Tesla Tesla Tesla case');
       // Should only mention "tesla" once in entities list
       const teslaMatches = (hint.match(/tesla/gi) || []).length;
       expect(teslaMatches).toBeGreaterThan(0);
@@ -161,19 +161,19 @@ describe('Scope Detection - Generic by Design', () => {
 
   describe('Hint Content Quality', () => {
     it('includes input neutrality guidance', () => {
-      const hint = generateScopeDetectionHint('Newton case');
+      const hint = generateContextDetectionHint('Newton case');
       expect(hint).toContain('Whether the input is phrased as a question or statement');
     });
 
     it('warns against meta-level scopes', () => {
-      const hint = generateScopeDetectionHint('Newton case');
+      const hint = generateContextDetectionHint('Newton case');
       expect(hint).toContain('Public perception/opinion scopes');
       expect(hint).toContain('trust');
       expect(hint).toContain('confidence');
     });
 
     it('emphasizes concrete scopes', () => {
-      const hint = generateScopeDetectionHint('Newton case');
+      const hint = generateContextDetectionHint('Newton case');
       expect(hint).toContain('concrete, factual scopes');
       expect(hint).toContain('legal proceedings');
     });
@@ -181,14 +181,14 @@ describe('Scope Detection - Generic by Design', () => {
 });
 
 // ============================================================================
-// v2.8: detectScopes tests
+// v2.8: detectContexts tests
 // ============================================================================
-describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
+describe('detectContexts (v2.8 - Heuristic Pre-Detection)', () => {
   describe('Comparison Claims', () => {
     it('detects production/usage scopes for efficiency comparisons with "than"', () => {
       // Pattern requires BOTH comparison words (more/less/than) AND efficiency keywords
       // The word 'energy' is in efficiencyKeywords pattern
-      const scopes = detectScopes('Hydrogen cars use more energy than electric cars');
+      const scopes = detectContexts('Hydrogen cars use more energy than electric cars');
       
       expect(scopes).not.toBeNull();
       expect(scopes!.length).toBeGreaterThanOrEqual(2);
@@ -199,7 +199,7 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
     });
 
     it('detects scopes for performance comparisons', () => {
-      const scopes = detectScopes('Technology A has better performance than Technology B');
+      const scopes = detectContexts('Technology A has better performance than Technology B');
       
       expect(scopes).not.toBeNull();
       expect(scopes!.some(s => s.id === 'SCOPE_PRODUCTION')).toBe(true);
@@ -207,14 +207,14 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
     });
 
     it('detects scopes for "vs" comparisons with efficiency keywords', () => {
-      const scopes = detectScopes('Solar energy consumption vs wind energy consumption');
+      const scopes = detectContexts('Solar energy consumption vs wind energy consumption');
       
       expect(scopes).not.toBeNull();
       expect(scopes!.length).toBeGreaterThanOrEqual(2);
     });
 
     it('returns null for non-comparison efficiency claims', () => {
-      const scopes = detectScopes('The system is efficient');
+      const scopes = detectContexts('The system is efficient');
       
       // No comparison pattern, no scopes detected
       expect(scopes).toBeNull();
@@ -223,7 +223,7 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
 
   describe('Legal/Trial Fairness Claims', () => {
     it('detects scopes for trial fairness claims', () => {
-      const scopes = detectScopes('The trial was fair and based on law');
+      const scopes = detectContexts('The trial was fair and based on law');
       
       expect(scopes).not.toBeNull();
       expect(scopes!.some(s => s.id === 'SCOPE_LEGAL_PROC')).toBe(true);
@@ -231,14 +231,14 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
     });
 
     it('detects scopes for judgment/ruling claims', () => {
-      const scopes = detectScopes('Was the judgment fair and legitimate?');
+      const scopes = detectContexts('Was the judgment fair and legitimate?');
       
       expect(scopes).not.toBeNull();
       expect(scopes!.length).toBeGreaterThanOrEqual(2);
     });
 
     it('detects scopes for court procedure claims', () => {
-      const scopes = detectScopes('The court followed proper legal procedures');
+      const scopes = detectContexts('The court followed proper legal procedures');
       
       expect(scopes).not.toBeNull();
       expect(scopes!.some(s => s.type === 'legal')).toBe(true);
@@ -248,7 +248,7 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
   describe('Environmental/Health Comparisons', () => {
     it('detects direct/lifecycle scopes for pollution comparisons', () => {
       // Pattern requires BOTH comparison (than/vs) AND env/health keyword (pollution/emission/etc)
-      const scopes = detectScopes('Factory A causes less pollution than Factory B');
+      const scopes = detectContexts('Factory A causes less pollution than Factory B');
       
       expect(scopes).not.toBeNull();
       expect(scopes!.some(s => s.id === 'SCOPE_DIRECT')).toBe(true);
@@ -256,14 +256,14 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
     });
 
     it('detects scopes for environmental impact comparisons', () => {
-      const scopes = detectScopes('Solar has lower environmental impact than coal');
+      const scopes = detectContexts('Solar has lower environmental impact than coal');
       
       expect(scopes).not.toBeNull();
       expect(scopes!.length).toBeGreaterThanOrEqual(2);
     });
 
     it('detects scopes for safety hazard comparisons', () => {
-      const scopes = detectScopes('Process A poses more hazard than Process B');
+      const scopes = detectContexts('Process A poses more hazard than Process B');
       
       expect(scopes).not.toBeNull();
     });
@@ -271,18 +271,18 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
 
   describe('Edge Cases', () => {
     it('returns null for unstructured text', () => {
-      const scopes = detectScopes('Hello world, this is a test');
+      const scopes = detectContexts('Hello world, this is a test');
       expect(scopes).toBeNull();
     });
 
     it('handles empty input', () => {
-      const scopes = detectScopes('');
+      const scopes = detectContexts('');
       expect(scopes).toBeNull();
     });
 
     it('detects multiple scope types when patterns overlap', () => {
       // This has both comparison AND legal fairness patterns
-      const scopes = detectScopes('The trial outcome had more impact than the previous ruling and was fair');
+      const scopes = detectContexts('The trial outcome had more impact than the previous ruling and was fair');
       
       expect(scopes).not.toBeNull();
       // Should detect both legal and comparison scopes
@@ -292,15 +292,15 @@ describe('detectScopes (v2.8 - Heuristic Pre-Detection)', () => {
 });
 
 // ============================================================================
-// v2.8: formatDetectedScopesHint tests
+// v2.8: formatDetectedContextsHint tests
 // ============================================================================
-describe('formatDetectedScopesHint (v2.8)', () => {
+describe('formatDetectedContextsHint (v2.8)', () => {
   it('returns empty string for null scopes', () => {
-    expect(formatDetectedScopesHint(null)).toBe('');
+    expect(formatDetectedContextsHint(null)).toBe('');
   });
 
   it('returns empty string for empty array', () => {
-    expect(formatDetectedScopesHint([])).toBe('');
+    expect(formatDetectedContextsHint([])).toBe('');
   });
 
   it('formats scopes as list (simple mode)', () => {
@@ -309,7 +309,7 @@ describe('formatDetectedScopesHint (v2.8)', () => {
       { id: 'SCOPE_B', name: 'Scope B', type: 'methodological' }
     ];
     
-    const hint = formatDetectedScopesHint(scopes, false);
+    const hint = formatDetectedContextsHint(scopes, false);
     
     expect(hint).toContain('PRE-DETECTED CONTEXTS');
     expect(hint).toContain('Scope A (legal)');
@@ -322,7 +322,7 @@ describe('formatDetectedScopesHint (v2.8)', () => {
       { id: 'SCOPE_A', name: 'Scope A', type: 'legal', metadata: { focus: 'compliance' } }
     ];
     
-    const hint = formatDetectedScopesHint(scopes, true);
+    const hint = formatDetectedContextsHint(scopes, true);
     
     expect(hint).toContain('PRE-DETECTED CONTEXTS');
     expect(hint).toContain('MUST output at least these contexts');

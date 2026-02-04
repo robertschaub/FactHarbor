@@ -1,9 +1,26 @@
 # Backward Compatibility Break - Follow-Up Opportunities
 
-**Status:** PENDING REVIEW
+**Status:** ✅ IMPLEMENTATION COMPLETE
 **Created:** 2026-02-04
+**Last Updated:** 2026-02-04
 **Author Role:** Lead Developer
 **Related:** [Backward_Compatibility_Break_Terminology_Cleanup_Plan.md](Backward_Compatibility_Break_Terminology_Cleanup_Plan.md)
+
+---
+
+## Implementation Status
+
+| Item | Status | Assignee |
+|------|--------|----------|
+| A. Remove type aliases | ✅ DONE | - |
+| B. ID prefix F→E | ⏸️ DEFERRED to v3.1 | - |
+| C. Config scope→context | ✅ DONE | Senior Developer |
+| D. Component renames | ✅ DONE | - |
+| E. Task name changes | ⏸️ DEFERRED to v3.1 | - |
+| F. Parameter names | ✅ DONE | Senior Developer |
+| G. Prompt file rename | ✅ DONE | - |
+| H. Function alias cleanup | ✅ DONE | - |
+| Schema version bump | ✅ DONE | Senior Developer |
 
 ---
 
@@ -473,4 +490,254 @@ grep -r "scope" apps/web/src --include="*.ts" --include="*.tsx" | grep -i "error
 3. Create v2-to-v3 migration guide
 4. Review error messages, API endpoints, logging during implementation
 
-**Next Step:** Senior Developer to assess B and E, then proceed with updated Phase 2 implementation.
+---
+
+## Senior Developer Implementation Instructions
+
+### Items B and E: DEFERRED to v3.1
+
+Per Lead Developer assessment, Items B (ID prefix F→E) and E (task name changes) are **deferred to v3.1**.
+
+#### Item E Assessment (Task Names)
+
+**Grep findings for `extract_facts` and `scope_refinement`:**
+
+| File | Line | Impact |
+|------|------|--------|
+| `llm.ts` | ModelTask type | Type definition |
+| `metrics.ts:16` | `LLMCallMetric.taskType` | **Metrics storage** - historical data affected |
+| `model-tiering.ts:22-23,60,87,95` | TaskType, strengths arrays | **Model routing logic** |
+| `prompt-builder.ts` | Task routing | Medium impact |
+
+**Decision:** ⏸️ **DEFER** - The metrics dependency means changing task names would break analytics continuity and require a data migration strategy.
+
+#### Item B Assessment (ID Prefix F→E)
+
+**Grep findings for F-prefix patterns:**
+
+| File | Lines | Context |
+|------|-------|---------|
+| `orchestrated.ts` | Multiple | KeyFactor ID examples in prompts |
+| `openai.ts` | 59, 77, 98, 211 | Prompt examples showing `F1`, `F2` patterns |
+
+**Decision:** ⏸️ **DEFER** - Requires coordinated prompt + parsing changes. The F-prefix is internal and doesn't affect user-facing terminology. Can be addressed in v3.1 with proper coordination.
+
+### Remaining Tasks for Senior Developer
+
+#### Task 1: Config Field Renames (Item C) 🔴 HIGH PRIORITY
+
+**Files to modify:**
+
+1. **config-schemas.ts** - Rename schema fields:
+   ```typescript
+   scopeDetectionMethod → contextDetectionMethod
+   scopeDetectionEnabled → contextDetectionEnabled
+   scopeDetectionMinConfidence → contextDetectionMinConfidence
+   scopeDedupThreshold → contextDedupThreshold
+   ```
+
+2. **DEFAULT_PIPELINE_CONFIG** - Update default values object
+
+3. **pipeline.default.json** - Update JSON file field names
+
+4. **All code reading these config values** - Search and update:
+   ```bash
+   grep -r "scopeDetection" apps/web/src --include="*.ts"
+   grep -r "scopeDedup" apps/web/src --include="*.ts"
+   ```
+
+#### Task 2: Schema Version Bump 🔴 HIGH PRIORITY
+
+In **config-schemas.ts**, bump versions:
+```typescript
+PipelineConfigSchema: "2.1.0" → "3.0.0"
+SearchConfigSchema: "2.0.0" → "3.0.0"
+CalculationConfigSchema: "2.0.0" → "3.0.0"
+```
+
+Also update **pipeline.default.json**, **search.default.json**, **calculation.default.json** schemaVersion fields.
+
+#### Task 3: Verify Parameter Names (Item F)
+
+Run these greps to find any remaining instances:
+```bash
+grep -r "seedScopes" apps/web/src --include="*.ts"
+grep -r "preDetectedScopes" apps/web/src --include="*.ts"
+grep -r "detectScopes" apps/web/src --include="*.ts"
+```
+
+If found, rename to `seedContexts`, `preDetectedContexts`, `detectContexts`.
+
+#### Task 4: Final Build Verification
+
+```bash
+cd apps/web && npm run build
+```
+
+### Verification Checklist
+
+- [x] Config fields renamed (scopeDetection* → contextDetection*)
+- [x] Schema versions bumped to 3.0.0
+- [x] JSON default files updated
+- [x] Parameter names verified/updated
+- [x] Build passes
+- [x] No grep hits for legacy field names
+
+### Handoff Notes
+
+- Migration guide is being created by Lead Developer at `Docs/MIGRATION/v2-to-v3-migration-guide.md`
+- Items B and E are explicitly deferred - do NOT implement
+- Keep dual-parsing fallbacks for LLM output (accept both old and new field names)
+- config.db will be re-seeded on build - this is expected
+
+---
+
+## Lead Developer Verification (2026-02-04)
+
+### Verification Results
+
+| Check | Result |
+|-------|--------|
+| `grep scopeDetection` | ✅ No hits |
+| `grep scopeDedup` | ✅ No hits |
+| `grep seedScopes` | ✅ No hits |
+| `grep preDetectedScopes` | ✅ No hits |
+| Schema versions 3.0.0 | ✅ All 4 JSON files confirmed |
+| `contextDetection*` fields | ✅ Present in config-schemas.ts |
+| Build | ✅ Passed |
+
+### Sign-Off
+
+| Reviewer | Role | Decision | Date |
+|----------|------|----------|------|
+| Claude | Lead Developer | **VERIFIED & APPROVED** | 2026-02-04 |
+
+**v3.0 Terminology Cleanup is COMPLETE.** Items B and E remain deferred to v3.1.
+
+---
+
+## v3.1 Implementation Plan
+
+### Status: 🔴 IN PROGRESS
+
+### Manual Test Results (v3.0)
+
+✅ All manual tests successful - reports generally better than before
+✅ Admin functionality works as tested
+
+**Known Issues (to investigate separately - not v3.1 blockers):**
+- Input "Was the Bolsonaro judgment (trial) fair..." → Only one legal case addressed when two exist
+- U.S. Government Assessment context created despite containing no documented evidence
+
+---
+
+### v3.1 Scope
+
+| Item | Description | Priority |
+|------|-------------|----------|
+| **B. ID prefix F→E** | Change evidence IDs from F1,F2,F3 to E1,E2,E3 | MEDIUM |
+| **E. Task name changes** | `extract_facts` → `extract_evidence`, `scope_refinement` → `context_refinement` | MEDIUM |
+
+---
+
+### Item B: ID Prefix F→E
+
+**Change:** `F1, F2, F3...` → `E1, E2, E3...`
+
+**Files to modify:**
+
+1. **Prompts** (output schema examples):
+   - `orchestrated.ts` - KeyFactor ID examples
+   - `openai.ts:59,77,98,211` - F1, F2 examples in prompts
+   - `extract-facts-base.ts` - Output schema examples
+   - Any other prompts with F-prefix examples
+
+2. **Parsing logic** (accept both during transition):
+   ```typescript
+   // Pattern: Accept both F and E prefix, log warning for F
+   const id = item.id;
+   if (id.startsWith('F')) {
+     console.warn(`[WARN] Legacy F-prefix ID: ${id} → use E-prefix`);
+   }
+   ```
+
+3. **Test fixtures** - Update any hardcoded F1, F2 IDs
+
+**Implementation order:**
+1. Update prompts to output E-prefix
+2. Update parsing to accept BOTH F and E (with warning for F)
+3. Test with new prompts
+4. Remove F-prefix support after validation
+
+---
+
+### Item E: Task Name Changes
+
+**Changes:**
+```
+extract_facts → extract_evidence
+scope_refinement → context_refinement
+```
+
+**Files to modify:**
+
+| File | What to change |
+|------|----------------|
+| `llm.ts` | `ModelTask` type definition |
+| `metrics.ts:16` | `LLMCallMetric.taskType` |
+| `model-tiering.ts:22-23,60,87,95` | `TaskType` enum, strengths arrays |
+| `prompt-builder.ts` | Task routing switch statements |
+
+**Metrics migration strategy:**
+- Option A: Accept both old and new task names in queries (dual-read)
+- Option B: One-time data migration script
+- **Recommended: Option A** - simpler, no data loss risk
+
+---
+
+### Senior Developer Tasks
+
+#### Task 1: ID Prefix Change (Item B)
+
+1. Search all prompts for F-prefix examples:
+   ```bash
+   grep -rn "\"F[0-9]" apps/web/src --include="*.ts"
+   grep -rn "'F[0-9]" apps/web/src --include="*.ts"
+   ```
+
+2. Update prompt examples to use E-prefix
+
+3. Update parsing to accept both (with warning):
+   ```typescript
+   // In evidence parsing
+   if (id.startsWith('F')) {
+     logger.warn(`Legacy F-prefix: ${id}`);
+   }
+   ```
+
+4. Update test fixtures
+
+#### Task 2: Task Name Changes (Item E)
+
+1. Update `ModelTask` type in `llm.ts`
+2. Update `TaskType` in `model-tiering.ts`
+3. Update task routing in `prompt-builder.ts`
+4. Add dual-read support in metrics queries (accept both old/new names)
+
+#### Task 3: Build & Test
+
+```bash
+cd apps/web && npm run build && npm run test
+```
+
+---
+
+### Verification Checklist
+
+- [ ] No F-prefix in prompt examples (grep returns no hits)
+- [ ] Parsing accepts E-prefix (and warns on F-prefix)
+- [ ] Task names updated in type definitions
+- [ ] Model tiering uses new task names
+- [ ] Metrics queries work with both old and new task names
+- [ ] Build passes
+- [ ] Tests pass

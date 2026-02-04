@@ -20,10 +20,10 @@ export type SchemaVersion = "prompt.v1" | "search.v1" | "calc.v1" | "pipeline.v1
 
 // File-backed default schema versions (alpha). Used to validate apps/web/configs/*.default.json.
 export const SCHEMA_VERSIONS = {
-  pipeline: "2.1.0",
-  search: "2.0.0",
-  calculation: "2.0.0",
-  sr: "2.0.0",
+  pipeline: "3.0.0",
+  search: "3.0.0",
+  calculation: "3.0.0",
+  sr: "3.0.0",
 } as const;
 
 /**
@@ -134,12 +134,9 @@ export const PipelineConfigSchema = z.object({
 
   // NEW: Correctly-named key (PRIMARY)
   contextDedupThreshold: z.number().min(0).max(1).optional().describe("Threshold for AnalysisContext deduplication (0-1, lower = more contexts)"),
-  // DEPRECATED: Old key kept for backward compatibility
-  /** @deprecated Use contextDedupThreshold instead - 'scope' here means AnalysisContext */
-  scopeDedupThreshold: z.number().min(0).max(1).optional().describe("Legacy key for AnalysisContext deduplication threshold (lower = more contexts)"),
 
   // === Context Detection Settings ===
-  // NEW: Correctly-named keys (PRIMARY)
+  // Correctly-named keys
   contextDetectionMethod: z
     .enum(["heuristic", "llm", "hybrid"])
     .optional()
@@ -199,55 +196,6 @@ export const PipelineConfigSchema = z.object({
   provenanceValidationEnabled: z.boolean().optional().describe("Enable provenance validation gate"),
   pdfParseTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for PDF parsing (ms)"),
 
-  // DEPRECATED: Old keys kept for backward compatibility
-  /** @deprecated Use contextDetectionMethod instead - 'scope' here means AnalysisContext */
-  scopeDetectionMethod: z
-    .enum(["heuristic", "llm", "hybrid"])
-    .optional()
-    .describe("Legacy key for AnalysisContext detection method (heuristic, llm, hybrid)"),
-  /** @deprecated Use contextDetectionEnabled instead - 'scope' here means AnalysisContext */
-  scopeDetectionEnabled: z.boolean().optional().describe("Legacy key for AnalysisContext detection enablement"),
-  /** @deprecated Use contextDetectionMinConfidence instead - 'scope' here means AnalysisContext */
-  scopeDetectionMinConfidence: z
-    .number()
-    .min(0)
-    .max(1)
-    .optional()
-    .describe("Legacy key for AnalysisContext confidence threshold (0-1)"),
-  scopeDetectionMaxContexts: z
-    .number()
-    .int()
-    .min(1)
-    .max(10)
-    .optional()
-    .describe("Legacy key for max AnalysisContext count per input"),
-  /** @deprecated Use contextDetectionCustomPatterns instead - 'scope' here means AnalysisContext */
-  scopeDetectionCustomPatterns: z
-    .array(
-      z.object({
-        id: z.string().regex(CONTEXT_PATTERN_ID_REGEX),
-        name: z.string(),
-        type: z.enum(["methodological", "legal", "scientific", "general", "regulatory", "temporal", "geographic"]),
-        triggerPattern: z.string(),
-        keywords: z.array(z.string()),
-        metadata: z.record(z.any()).optional(),
-      }),
-    )
-    .optional()
-    .describe("Legacy key for AnalysisContext detection patterns"),
-  /** @deprecated Use contextFactorHints instead - 'scope' here means AnalysisContext */
-  scopeFactorHints: z
-    .array(
-      z.object({
-        scopeType: z.string(),
-        evaluationCriteria: z.string(),
-        factor: z.string(),
-        category: z.string(),
-      }),
-    )
-    .optional()
-    .describe("Legacy key for AnalysisContext-specific factor generation"),
-
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
 
@@ -300,48 +248,6 @@ export const PipelineConfigSchema = z.object({
   if (data.llmScopeSimilarity !== undefined && data.llmContextSimilarity === undefined) {
     data.llmContextSimilarity = data.llmScopeSimilarity;
     warnings.push("llmScopeSimilarity → llmContextSimilarity");
-  }
-
-  // scopeDedupThreshold → contextDedupThreshold
-  if (data.scopeDedupThreshold !== undefined && data.contextDedupThreshold === undefined) {
-    data.contextDedupThreshold = data.scopeDedupThreshold;
-    warnings.push("scopeDedupThreshold → contextDedupThreshold");
-  }
-
-  // scopeDetectionMethod → contextDetectionMethod
-  if (data.scopeDetectionMethod !== undefined && data.contextDetectionMethod === undefined) {
-    data.contextDetectionMethod = data.scopeDetectionMethod;
-    warnings.push("scopeDetectionMethod → contextDetectionMethod");
-  }
-
-  // scopeDetectionEnabled → contextDetectionEnabled
-  if (data.scopeDetectionEnabled !== undefined && data.contextDetectionEnabled === undefined) {
-    data.contextDetectionEnabled = data.scopeDetectionEnabled;
-    warnings.push("scopeDetectionEnabled → contextDetectionEnabled");
-  }
-
-  // scopeDetectionMinConfidence → contextDetectionMinConfidence
-  if (data.scopeDetectionMinConfidence !== undefined && data.contextDetectionMinConfidence === undefined) {
-    data.contextDetectionMinConfidence = data.scopeDetectionMinConfidence;
-    warnings.push("scopeDetectionMinConfidence → contextDetectionMinConfidence");
-  }
-
-  // scopeDetectionMaxContexts → contextDetectionMaxContexts
-  if (data.scopeDetectionMaxContexts !== undefined && data.contextDetectionMaxContexts === undefined) {
-    data.contextDetectionMaxContexts = data.scopeDetectionMaxContexts;
-    warnings.push("scopeDetectionMaxContexts → contextDetectionMaxContexts");
-  }
-
-  // scopeDetectionCustomPatterns → contextDetectionCustomPatterns
-  if (data.scopeDetectionCustomPatterns !== undefined && data.contextDetectionCustomPatterns === undefined) {
-    data.contextDetectionCustomPatterns = data.scopeDetectionCustomPatterns;
-    warnings.push("scopeDetectionCustomPatterns → contextDetectionCustomPatterns");
-  }
-
-  // scopeFactorHints → contextFactorHints
-  if (data.scopeFactorHints !== undefined && data.contextFactorHints === undefined) {
-    data.contextFactorHints = data.scopeFactorHints;
-    warnings.push("scopeFactorHints → contextFactorHints");
   }
 
   // maxIterationsPerScope → maxIterationsPerContext

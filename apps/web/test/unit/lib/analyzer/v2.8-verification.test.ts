@@ -17,7 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { detectScopes, formatDetectedScopesHint } from "@/lib/analyzer/analysis-contexts";
+import { detectContexts, formatDetectedContextsHint } from "@/lib/analyzer/analysis-contexts";
 import {
   getClaimWeight,
   calculateWeightedVerdictAverage,
@@ -37,7 +37,7 @@ describe("v2.8 Verification - Unit Tests", () => {
     it("should detect 2+ scopes for hydrogen vs electricity comparison", () => {
       const input = "Hydrogen cars use more energy than electric cars";
       
-      const scopes = detectScopes(input);
+      const scopes = detectContexts(input);
       
       console.log("[v2.8 Unit Test] Hydrogen scopes:", scopes);
       
@@ -52,13 +52,13 @@ describe("v2.8 Verification - Unit Tests", () => {
     });
 
     it("should format scope hints correctly", () => {
-      const scopes = detectScopes("Using hydrogen is more efficient than electricity");
+      const scopes = detectContexts("Using hydrogen is more efficient than electricity");
 
       // With energy keyword
-      const scopesWithEnergy = detectScopes("Hydrogen cars use more energy than electric cars");
+      const scopesWithEnergy = detectContexts("Hydrogen cars use more energy than electric cars");
       expect(scopesWithEnergy).not.toBeNull();
 
-      const hint = formatDetectedScopesHint(scopesWithEnergy, true);
+      const hint = formatDetectedContextsHint(scopesWithEnergy, true);
 
       expect(hint).toContain("PRE-DETECTED CONTEXTS");
       expect(hint).toContain("MUST output at least these contexts");
@@ -152,7 +152,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       ];
 
       for (const input of inputs) {
-        const scopes = detectScopes(input);
+        const scopes = detectContexts(input);
 
         console.log(`[v2.8 Unit Test] "${input.substring(0, 40)}..." -> ${scopes?.length ?? 0} scopes`);
 
