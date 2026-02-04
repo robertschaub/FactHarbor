@@ -56,7 +56,7 @@ export function getOpenAIExtractFactsVariant(): string {
 {
   "evidenceItems": [
     {
-      "id": "F1",
+      "id": "E1",
       "statement": "Technology A achieves 40% full-cycle efficiency",
       "category": "statistic",
       "specificity": "high",
@@ -74,7 +74,7 @@ export function getOpenAIExtractFactsVariant(): string {
       }
     },
     {
-      "id": "F2",
+      "id": "E2",
       "statement": "Technology B achieves 77% full-cycle efficiency",
       "category": "statistic",
       "specificity": "high",
@@ -95,7 +95,7 @@ export function getOpenAIExtractFactsVariant(): string {
 }
 
 ### REQUIRED FIELDS PER EVIDENCE ITEM
-- id: string (F1, F2, etc.)
+- id: string (E1, E2, etc.)
 - statement: string (one sentence, under 100 chars preferred)
 - category: "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
 - specificity: "high" | "medium" (never "low")
@@ -208,8 +208,8 @@ export function getOpenAIContextRefinementVariant(): string {
     }
   ],
   "evidenceContextAssignments": [
-    {"evidenceId": "F1", "contextId": "CTX_A"},
-    {"evidenceId": "F2", "contextId": "CTX_B"}
+    {"evidenceId": "E1", "contextId": "CTX_A"},
+    {"evidenceId": "E2", "contextId": "CTX_B"}
   ]
 }
 

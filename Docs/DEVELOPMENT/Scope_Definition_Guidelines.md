@@ -56,7 +56,7 @@
 ```typescript
 interface EvidenceItem {
   id: string;
-  fact: string;  // The evidence statement
+  statement: string;  // The evidence statement
   category: string;
   sourceId: string;
   sourceUrl: string;
@@ -116,8 +116,8 @@ EvidenceScope helps users understand WHY a particular piece of evidence was weig
 **Evidence with EvidenceScope**:
 ```typescript
 {
-  id: "S1-F1",
-  fact: "Well-to-Wheel analysis shows hydrogen vehicles require 2.5x more energy than EVs",
+  id: "S1-E1",
+  statement: "Well-to-Wheel analysis shows hydrogen vehicles require 2.5x more energy than EVs",
   category: "statistic",
   sourceUrl: "https://nature.com/articles/12345",
   sourceExcerpt: "Using Well-to-Wheel methodology including production, transport, and usage...",
@@ -141,8 +141,8 @@ EvidenceScope helps users understand WHY a particular piece of evidence was weig
 **Evidence with EvidenceScope**:
 ```typescript
 {
-  id: "S2-F1",
-  fact: "Company X's emissions exceeded the permitted limit by 15%",
+  id: "S2-E1",
+  statement: "Company X's emissions exceeded the permitted limit by 15%",
   category: "statistic",
   sourceUrl: "https://epa.gov/reports/2023",
   sourceExcerpt: "EPA audit found Company X's facility emitted 15% above the US federal limit...",
@@ -166,8 +166,8 @@ EvidenceScope helps users understand WHY a particular piece of evidence was weig
 **Evidence with EvidenceScope**:
 ```typescript
 {
-  id: "S3-F1",
-  fact: "Global temperature anomaly increased by 0.8°C from 2000 to 2020",
+  id: "S3-E1",
+  statement: "Global temperature anomaly increased by 0.8°C from 2000 to 2020",
   category: "statistic",
   sourceUrl: "https://nasa.gov/giss/data",
   sourceExcerpt: "NASA GISS temperature records show a 0.8°C increase over the 2000-2020 period...",
@@ -418,11 +418,11 @@ analysisContexts: [
 // Evidence items with EvidenceScope for methodology
 evidence: [
   {
-    fact: "Nature study found X using WTW methodology",
+    statement: "Nature study found X using WTW methodology",
     evidenceScope: { name: "Well-to-Wheel Analysis", sourceType: "peer_reviewed_study" }
   },
   {
-    fact: "MIT report found Y using TTW methodology",
+    statement: "MIT report found Y using TTW methodology",
     evidenceScope: { name: "Tank-to-Wheel Analysis", sourceType: "organization_report" }
   },
 ]
@@ -453,9 +453,9 @@ analysisContexts: [
 
 // Evidence from different perspectives (just evidence, not contexts)
 evidence: [
-  { fact: "Defense attorney claimed procedural violations", claimDirection: "contradicts" },
-  { fact: "Court records show procedures followed Article 47", claimDirection: "supports" },
-  { fact: "Human Rights Watch documented irregularities", claimDirection: "contradicts" },
+  { statement: "Defense attorney claimed procedural violations", claimDirection: "contradicts" },
+  { statement: "Court records show procedures followed Article 47", claimDirection: "supports" },
+  { statement: "Human Rights Watch documented irregularities", claimDirection: "contradicts" },
 ]
 ```
 
@@ -507,11 +507,11 @@ analysisContexts: [
 // Evidence from multiple sources (with EvidenceScope for data boundaries)
 evidence: [
   {
-    fact: "NASA data shows 0.8°C increase 2000-2020",
+    statement: "NASA data shows 0.8°C increase 2000-2020",
     evidenceScope: { name: "NASA GISS Temperature Records", temporal: "2000-2020" }
   },
   {
-    fact: "NOAA records confirm accelerating trend",
+    statement: "NOAA records confirm accelerating trend",
     evidenceScope: { name: "NOAA Climate Data", temporal: "1980-2023" }
   },
 ]
@@ -539,7 +539,7 @@ function extractEvidenceWithScope(source: Source): EvidenceItem[] {
     // Add EvidenceScope for methodology metadata
     items.push({
       id: generateId(source.id),
-      fact: statement,
+      statement: statement,
       category: categorizeEvidence(statement),
       sourceId: source.id,
       sourceUrl: source.url,
@@ -554,7 +554,7 @@ function extractEvidenceWithScope(source: Source): EvidenceItem[] {
     // No scope needed (plain evidence)
     items.push({
       id: generateId(source.id),
-      fact: statement,
+      statement: statement,
       category: categorizeEvidence(statement),
       sourceId: source.id,
       sourceUrl: source.url,
@@ -703,14 +703,14 @@ analysisContexts: [
 // Evidence with EvidenceScope (methodology metadata)
 evidence: [
   {
-    id: "S1-F1",
-    fact: "Hydrogen production requires 2.5x more energy than EV battery production",
+    id: "S1-E1",
+    statement: "Hydrogen production requires 2.5x more energy than EV battery production",
     contextId: "CTX_PRODUCTION",
     evidenceScope: { name: "Well-to-Wheel Production Analysis", boundaries: "Upstream" }
   },
   {
-    id: "S2-F1",
-    fact: "Hydrogen fuel cells are 60% efficient vs 90% for EV motors",
+    id: "S2-E1",
+    statement: "Hydrogen fuel cells are 60% efficient vs 90% for EV motors",
     contextId: "CTX_USAGE",
     evidenceScope: { name: "Tank-to-Wheel Usage Analysis", boundaries: "Downstream" }
   },
@@ -731,14 +731,14 @@ analysisContexts: [
 // Evidence from multiple perspectives (just evidence, NO separate contexts)
 evidence: [
   {
-    id: "S1-F1",
-    fact: "Defense claimed procedural violations",
+    id: "S1-E1",
+    statement: "Defense claimed procedural violations",
     claimDirection: "contradicts",
     // NO evidenceScope (just a perspective, not methodology)
   },
   {
-    id: "S2-F1",
-    fact: "Court records show Article 47 procedures followed",
+    id: "S2-E1",
+    statement: "Court records show Article 47 procedures followed",
     claimDirection: "supports",
     // NO evidenceScope (plain evidence)
   },

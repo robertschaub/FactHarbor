@@ -30,7 +30,7 @@ export interface ModelInfo {
   model: ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google> | ReturnType<typeof mistral>;
 }
 
-export type ModelTask = "understand" | "extract_facts" | "verdict" | "report";
+export type ModelTask = "understand" | "extract_evidence" | "context_refinement" | "verdict" | "report";
 
 function normalizeProvider(raw: string): "anthropic" | "google" | "mistral" | "openai" {
   const p = (raw || "").toLowerCase().trim();
@@ -66,7 +66,8 @@ function modelOverrideForTask(task: ModelTask, config?: PipelineConfig): string 
   switch (task) {
     case "understand":
       return config.modelUnderstand;
-    case "extract_facts":
+    case "extract_evidence":
+    case "context_refinement":
       return config.modelExtractFacts;
     case "verdict":
       return config.modelVerdict;

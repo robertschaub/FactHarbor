@@ -327,7 +327,7 @@ When schema validation fails, provider-specific retry prompts include:
 ### Claude Prefill Strings
 ```typescript
 getClaudePrefill('understand')    // '{"impliedClaim":'
-getClaudePrefill('extract_facts') // '{"facts":['
+getClaudePrefill('extract_evidence') // '{"evidenceItems":['
 getClaudePrefill('verdict')       // '{"contextId":'
 ```
 

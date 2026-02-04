@@ -109,7 +109,7 @@ describe("Scope Preservation", () => {
           result.resultJson.understanding?.analysisContexts ||
           result.resultJson.understanding?.distinctProceedings ||
           [];
-        const facts = result.resultJson.facts || [];
+        const facts = result.resultJson.evidenceItems || result.resultJson.facts || [];
 
         console.log(`  Detected ${scopes.length} scopes:`);
         scopes.forEach((s) => console.log(`    - ${s.id}: ${s.name}`));
@@ -383,7 +383,7 @@ have significant operations.
           result.resultJson.understanding?.analysisContexts ||
           result.resultJson.understanding?.distinctProceedings ||
           [];
-        const facts = result.resultJson.facts || [];
+        const facts = result.resultJson.evidenceItems || result.resultJson.facts || [];
 
         console.log(`  Detected ${scopes.length} scopes:`);
         scopes.forEach((s) => console.log(`    - ${s.id}: ${s.name}`));
@@ -443,7 +443,7 @@ have significant operations.
           result.resultJson.understanding?.analysisContexts ||
           result.resultJson.understanding?.distinctProceedings ||
           [];
-        const facts = result.resultJson.facts || [];
+        const facts = result.resultJson.evidenceItems || result.resultJson.facts || [];
 
         // Calculate distribution
         const distribution: Record<string, number> = {};

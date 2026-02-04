@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import type { EvidenceItem } from "@/lib/analyzer/types";
 import { detectCounterClaim } from "@/lib/analyzer/verdict-corrections";
 
-function makeFact(overrides: Partial<EvidenceItem>): EvidenceItem {
+function makeEvidence(overrides: Partial<EvidenceItem>): EvidenceItem {
   return {
-    id: overrides.id ?? "F1",
-    fact: overrides.fact ?? "Example fact",
+    id: overrides.id ?? "E1",
+    statement: overrides.statement ?? "Example evidence statement",
     category: overrides.category ?? "evidence",
     specificity: overrides.specificity ?? "high",
     sourceId: overrides.sourceId ?? "S1",
@@ -29,15 +29,15 @@ describe("detectCounterClaim", () => {
     const claim =
       "Standard efficiency measurement methodologies favor Technology A over Technology B";
 
-    const facts = [
-      makeFact({ id: "F1", claimDirection: "contradicts" }),
-      makeFact({ id: "F2", claimDirection: "contradicts" }),
-      makeFact({ id: "F3", claimDirection: "contradicts" }),
+    const evidenceItems = [
+      makeEvidence({ id: "E1", claimDirection: "contradicts" }),
+      makeEvidence({ id: "E2", claimDirection: "contradicts" }),
+      makeEvidence({ id: "E3", claimDirection: "contradicts" }),
     ];
 
     // Claim is rated mostly false; refuting evidence may all be "contradicts" vs thesis,
     // but that should not automatically make this a counter-claim.
-    expect(detectCounterClaim(claim, thesis, 20, facts)).toBe(false);
+    expect(detectCounterClaim(claim, thesis, 20, evidenceItems)).toBe(false);
   });
 
   it("detects swapped comparative claims as counter-claims (text-based)", () => {
@@ -55,13 +55,13 @@ describe("detectCounterClaim", () => {
     const claim =
       "Technology B is more efficient than Technology A";
 
-    const facts = [
-      makeFact({ id: "F1", claimDirection: "contradicts" }),
-      makeFact({ id: "F2", claimDirection: "contradicts" }),
-      makeFact({ id: "F3", claimDirection: "contradicts" }),
+    const evidenceItems = [
+      makeEvidence({ id: "E1", claimDirection: "contradicts" }),
+      makeEvidence({ id: "E2", claimDirection: "contradicts" }),
+      makeEvidence({ id: "E3", claimDirection: "contradicts" }),
     ];
 
-    expect(detectCounterClaim(claim, thesis, 85, facts)).toBe(true);
+    expect(detectCounterClaim(claim, thesis, 85, evidenceItems)).toBe(true);
   });
 
   it("detects polarity-opposite evaluative terms (fair vs unfair)", () => {
@@ -70,4 +70,3 @@ describe("detectCounterClaim", () => {
     );
   });
 });
-

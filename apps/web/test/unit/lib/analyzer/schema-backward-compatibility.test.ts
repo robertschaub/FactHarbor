@@ -9,19 +9,18 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { EvidenceItem, ExtractedFact } from "@/lib/analyzer/types";
+import type { EvidenceItem } from "@/lib/analyzer/types";
 
 // ============================================================================
-// EVIDENCEITEM → EXTRACTEDFACT MIGRATION TESTS
+// EVIDENCEITEM SCHEMA TESTS
 // ============================================================================
 
 describe("Schema Backward Compatibility", () => {
-  describe("ExtractedFact → EvidenceItem migration", () => {
-    it("EvidenceItem accepts all ExtractedFact fields", () => {
-      // Simulate old job JSON with ExtractedFact fields
-      const legacyEvidence: ExtractedFact = {
-        id: "S1-F1",
-        fact: "Test statement from legacy job",
+  describe("EvidenceItem schema", () => {
+    it("EvidenceItem accepts required fields", () => {
+      const evidence: EvidenceItem = {
+        id: "S1-E1",
+        statement: "Test statement",
         category: "evidence",
         specificity: "high",
         sourceId: "S1",
@@ -31,38 +30,17 @@ describe("Schema Backward Compatibility", () => {
         claimDirection: "supports",
       };
 
-      // Should be assignable to EvidenceItem (type compatibility check)
-      const evidence: EvidenceItem = legacyEvidence;
-
-      expect(evidence.id).toBe("S1-F1");
-      expect(evidence.fact).toBe("Test statement from legacy job");
+      expect(evidence.id).toBe("S1-E1");
+      expect(evidence.statement).toBe("Test statement");
       expect(evidence.category).toBe("evidence");
       expect(evidence.claimDirection).toBe("supports");
-    });
-
-    it("ExtractedFact type alias still works", () => {
-      // Test that deprecated alias compiles and functions correctly
-      const fact: ExtractedFact = {
-        id: "F1",
-        fact: "Using deprecated alias",
-        category: "evidence",
-        specificity: "high",
-        sourceId: "S1",
-        sourceUrl: "https://example.com",
-        sourceTitle: "Test",
-        sourceExcerpt: "Test excerpt",
-      };
-
-      // Should be usable as EvidenceItem
-      const processEvidence = (e: EvidenceItem) => e.fact;
-      expect(processEvidence(fact)).toBe("Using deprecated alias");
     });
 
     it("Missing new fields have safe defaults", () => {
       // Old job JSON without new Phase 2 fields (probativeValue, sourceType)
       const legacyEvidence: EvidenceItem = {
-        id: "S1-F1",
-        fact: "Statement without new fields",
+        id: "S1-E1",
+        statement: "Statement without new fields",
         category: "evidence",
         specificity: "high",
         sourceId: "S1",
@@ -85,8 +63,8 @@ describe("Schema Backward Compatibility", () => {
     it("EvidenceItem with new fields works correctly", () => {
       // New job JSON with Phase 2 fields
       const modernEvidence: EvidenceItem = {
-        id: "S1-F1",
-        fact: "Statement with new fields",
+        id: "S1-E1",
+        statement: "Statement with new fields",
         category: "direct_evidence",
         specificity: "high",
         sourceId: "S1",
@@ -105,24 +83,6 @@ describe("Schema Backward Compatibility", () => {
       expect(modernEvidence.evidenceScope?.sourceType).toBe("peer_reviewed_study");
     });
 
-    it("statement field can coexist with legacy fact field", () => {
-      // During Phase 2.1 gradual migration, both fields may exist
-      const transitionalEvidence: EvidenceItem = {
-        id: "S1-F1",
-        fact: "Legacy field", // Still present for compatibility
-        statement: "New preferred field", // New field added
-        category: "evidence",
-        specificity: "high",
-        sourceId: "S1",
-        sourceUrl: "https://example.com",
-        sourceTitle: "Source",
-        sourceExcerpt: "Excerpt",
-      };
-
-      // Both fields accessible
-      expect(transitionalEvidence.fact).toBe("Legacy field");
-      expect(transitionalEvidence.statement).toBe("New preferred field");
-    });
   });
 
   // ============================================================================
@@ -318,14 +278,13 @@ describe("Schema Backward Compatibility", () => {
   // ============================================================================
 
   describe("JSON parsing compatibility", () => {
-    it("JSON.parse handles legacy job results", () => {
-      // Simulate legacy job JSON from database
-      const legacyJobJson = JSON.stringify({
-        schemaVersion: "2.6.33",
-        facts: [
+    it("JSON.parse handles v3 evidenceItems results", () => {
+      const jobJson = JSON.stringify({
+        schemaVersion: "3.0.0",
+        evidenceItems: [
           {
-            id: "S1-F1",
-            fact: "Legacy statement",
+            id: "S1-E1",
+            statement: "Evidence statement",
             category: "evidence",
             specificity: "high",
             sourceId: "S1",
@@ -334,21 +293,19 @@ describe("Schema Backward Compatibility", () => {
         ],
       });
 
-      // Should parse without error
-      const parsed = JSON.parse(legacyJobJson);
-      expect(parsed.facts).toHaveLength(1);
-      expect(parsed.facts[0].fact).toBe("Legacy statement");
-      expect(parsed.facts[0].probativeValue).toBeUndefined(); // Optional field
+      const parsed = JSON.parse(jobJson);
+      expect(parsed.evidenceItems).toHaveLength(1);
+      expect(parsed.evidenceItems[0].statement).toBe("Evidence statement");
+      expect(parsed.evidenceItems[0].probativeValue).toBeUndefined(); // Optional field
     });
 
-    it("JSON.parse handles modern job results", () => {
-      // Simulate modern job JSON with Phase 2 fields
-      const modernJobJson = JSON.stringify({
-        schemaVersion: "2.6.41",
-        facts: [
+    it("JSON.parse handles v3 evidenceItems with new fields", () => {
+      const jobJson = JSON.stringify({
+        schemaVersion: "3.0.0",
+        evidenceItems: [
           {
-            id: "S1-F1",
-            fact: "Modern statement",
+            id: "S1-E1",
+            statement: "Modern statement",
             category: "direct_evidence",
             specificity: "high",
             sourceId: "S1",
@@ -362,17 +319,16 @@ describe("Schema Backward Compatibility", () => {
         ],
       });
 
-      // Should parse correctly
-      const parsed = JSON.parse(modernJobJson);
-      expect(parsed.facts[0].probativeValue).toBe("high");
-      expect(parsed.facts[0].evidenceScope.sourceType).toBe("peer_reviewed_study");
+      const parsed = JSON.parse(jobJson);
+      expect(parsed.evidenceItems[0].probativeValue).toBe("high");
+      expect(parsed.evidenceItems[0].evidenceScope.sourceType).toBe("peer_reviewed_study");
     });
 
     it("JSON.stringify preserves all fields", () => {
       // Ensure no fields are dropped during serialization
       const evidence: EvidenceItem = {
-        id: "S1-F1",
-        fact: "Test",
+        id: "S1-E1",
+        statement: "Test",
         category: "evidence",
         specificity: "high",
         sourceId: "S1",

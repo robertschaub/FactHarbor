@@ -319,7 +319,7 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
 
   it("returns verdicts unchanged when no supporting facts", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 75, confidence: 80, supportingFactIds: [] },
+      { id: "v1", truthPercentage: 75, confidence: 80, supportingEvidenceIds: [] },
     ];
     const facts: any[] = [];
     const sources: any[] = [];
@@ -330,7 +330,7 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
 
   it("applies neutral weight to unknown sources (null score)", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 75, confidence: 80, supportingFactIds: ["f1"] },
+      { id: "v1", truthPercentage: 75, confidence: 80, supportingEvidenceIds: ["f1"] },
     ];
     const facts = [{ id: "f1", sourceId: "s1" }];
     const sources = [{ id: "s1", trackRecordScore: null }]; // Unknown source
@@ -345,7 +345,7 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
 
   it("adjusts truth percentage based on high reliability source", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1"] },
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["f1"] },
     ];
     const facts = [{ id: "f1", sourceId: "s1" }];
     const sources = [{ id: "s1", trackRecordScore: 0.95 }]; // High reliability
@@ -359,7 +359,7 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
 
   it("pulls truth toward neutral for low reliability source", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1"] },
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["f1"] },
     ];
     const facts = [{ id: "f1", sourceId: "s1" }];
     const sources = [{ id: "s1", trackRecordScore: 0.3 }]; // Low reliability
@@ -373,7 +373,7 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
 
   it("averages effective weights from multiple supporting facts", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1", "f2"] },
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["f1", "f2"] },
     ];
     const facts = [
       { id: "f1", sourceId: "s1" },
@@ -410,7 +410,7 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
 
   it("adjusts confidence based on effective weight", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 80, confidence: 80, supportingFactIds: ["f1"] },
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["f1"] },
     ];
     const facts = [{ id: "f1", sourceId: "s1" }];
     const sources = [{ id: "s1", trackRecordScore: 0.9 }];

@@ -216,13 +216,13 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Direct claim with no evidence",
         thesisRelevance: "direct" as const,
-        supportingFactIds: [], // Zero evidence
+        supportingEvidenceIds: [], // Zero evidence
       },
       {
         claimId: "c2",
         claimText: "Direct claim with 1 fact",
         thesisRelevance: "direct" as const,
-        supportingFactIds: ["f1"],
+        supportingEvidenceIds: ["f1"],
       },
     ];
 
@@ -239,7 +239,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Tangential claim with no evidence",
         thesisRelevance: "tangential" as const,
-        supportingFactIds: [],
+        supportingEvidenceIds: [],
       },
     ];
 
@@ -257,7 +257,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Tangential claim with insufficient evidence",
         thesisRelevance: "tangential" as const,
-        supportingFactIds: ["f1"], // Only 1 fact, threshold is 2
+        supportingEvidenceIds: ["f1"], // Only 1 fact, threshold is 2
       },
     ];
 
@@ -275,13 +275,13 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Tangential claim with sufficient evidence",
         thesisRelevance: "tangential" as const,
-        supportingFactIds: ["f1", "f2"], // 2 facts = meets threshold
+        supportingEvidenceIds: ["f1", "f2"], // 2 facts = meets threshold
       },
       {
         claimId: "c2",
         claimText: "Another tangential with 3 facts",
         thesisRelevance: "tangential" as const,
-        supportingFactIds: ["f3", "f4", "f5"],
+        supportingEvidenceIds: ["f3", "f4", "f5"],
       },
     ];
 
@@ -297,7 +297,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Irrelevant claim",
         thesisRelevance: "irrelevant" as const,
-        supportingFactIds: ["f1"], // Below threshold
+        supportingEvidenceIds: ["f1"], // Below threshold
       },
     ];
 
@@ -312,7 +312,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Tangential claim",
         thesisRelevance: "tangential" as const,
-        supportingFactIds: ["f1", "f2", "f3"], // 3 facts
+        supportingEvidenceIds: ["f1", "f2", "f3"], // 3 facts
       },
     ];
 
@@ -330,7 +330,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Tangential with 2 low-quality facts",
         thesisRelevance: "tangential" as const,
-        supportingFactIds: ["f1", "f2"],
+        supportingEvidenceIds: ["f1", "f2"],
       },
     ];
 
@@ -354,7 +354,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Tangential with quality evidence",
         thesisRelevance: "tangential" as const,
-        supportingFactIds: ["f1", "f2"],
+        supportingEvidenceIds: ["f1", "f2"],
       },
     ];
 
@@ -378,7 +378,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Claim without relevance field",
         // No thesisRelevance
-        supportingFactIds: [],
+        supportingEvidenceIds: [],
       },
     ];
 

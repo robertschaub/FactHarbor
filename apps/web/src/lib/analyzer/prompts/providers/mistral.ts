@@ -251,7 +251,7 @@ If ANY unchecked → Skip this boundary
 **Step 4:** Assign ALL evidence items to AnalysisContexts
 
 For each evidence item:
-- evidenceId: "[F1, F2, etc.]" (use Evidence item IDs)
+- evidenceId: "[E1, E2, etc.]" (use Evidence item IDs)
 - contextId: "[CTX_XXX]"
 
 Ensure:

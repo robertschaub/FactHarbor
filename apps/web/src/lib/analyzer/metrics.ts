@@ -12,8 +12,19 @@
 // TYPES
 // ============================================================================
 
+export type LLMTaskType =
+  | 'understand'
+  | 'extract_evidence'
+  | 'context_refinement'
+  | 'verdict'
+  | 'supplemental'
+  | 'other';
+
+export type LegacyLLMTaskType = 'extract_facts' | 'scope_refinement';
+export type LLMTaskTypeWithLegacy = LLMTaskType | LegacyLLMTaskType;
+
 export interface LLMCallMetric {
-  taskType: 'understand' | 'extract_facts' | 'verdict' | 'scope_refinement' | 'supplemental' | 'other';
+  taskType: LLMTaskTypeWithLegacy;
   provider: string;
   modelName: string;
   promptTokens: number;
@@ -177,7 +188,10 @@ export class MetricsCollector {
    * Record an LLM call
    */
   recordLLMCall(call: LLMCallMetric): void {
-    this.metrics.llmCalls!.push(call);
+    this.metrics.llmCalls!.push({
+      ...call,
+      taskType: normalizeLLMTaskType(call.taskType),
+    });
   }
 
   /**
@@ -390,4 +404,21 @@ export function calculateSummaryStats(metricsArray: AnalysisMetrics[]): {
     gate1PassRate,
     gate4HighConfidenceRate,
   };
+}
+
+// ============================================================================
+// TASK TYPE NORMALIZATION (v3.1)
+// ============================================================================
+
+export function normalizeLLMTaskType(taskType: LLMTaskTypeWithLegacy): LLMTaskType {
+  if (taskType === 'extract_facts') return 'extract_evidence';
+  if (taskType === 'scope_refinement') return 'context_refinement';
+  return taskType;
+}
+
+export function isTaskTypeMatch(
+  actual: LLMTaskTypeWithLegacy,
+  requested: LLMTaskTypeWithLegacy
+): boolean {
+  return normalizeLLMTaskType(actual) === normalizeLLMTaskType(requested);
 }

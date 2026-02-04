@@ -2,7 +2,7 @@
  * Prompt Builder - Composes optimized prompts from base templates + provider variants + config adaptations
  *
  * This module dynamically builds prompts based on:
- * - Task type (understand, extract_facts, verdict, scope_refinement)
+ * - Task type (understand, extract_evidence, verdict, context_refinement)
  * - LLM provider (anthropic, openai, google, mistral)
  * - Configuration (tiering mode, model knowledge mode)
  */
@@ -72,9 +72,9 @@ import {
 
 export type TaskType =
   | 'understand'
-  | 'extract_facts'
+  | 'extract_evidence'
   | 'verdict'
-  | 'scope_refinement'
+  | 'context_refinement'
   | 'dynamic_plan'
   | 'dynamic_analysis'
   | 'orchestrated_understand'
@@ -120,7 +120,7 @@ export function buildPrompt(context: PromptContext): string {
   // For budget models with tiering, use ultra-simplified prompts for extraction tasks
   // This significantly reduces token count and speeds up responses
   const useBudgetPrompt = config.isLLMTiering && config.isBudgetModel &&
-    ['understand', 'extract_facts', 'verdict'].includes(task);
+    ['understand', 'extract_evidence', 'verdict'].includes(task);
 
   if (useBudgetPrompt) {
     return getBudgetPrompt(context);
@@ -153,7 +153,7 @@ function getBudgetPrompt(context: PromptContext): string {
     case 'understand':
       basePrompt = getBudgetUnderstandPrompt(currentDate);
       break;
-    case 'extract_facts':
+    case 'extract_evidence':
       basePrompt = getBudgetExtractFactsPrompt(currentDate, variables.originalClaim || '');
       break;
     case 'verdict':
@@ -203,7 +203,7 @@ function getBaseTemplate(context: PromptContext): string {
         isRecent: variables.isRecent,
       });
 
-    case 'extract_facts':
+    case 'extract_evidence':
       return getExtractFactsBasePrompt({
         currentDate,
         originalClaim: variables.originalClaim || '',
@@ -218,7 +218,7 @@ function getBaseTemplate(context: PromptContext): string {
         allowModelKnowledge: context.config.allowModelKnowledge,
       });
 
-    case 'scope_refinement':
+    case 'context_refinement':
       return getContextRefinementBasePrompt();
 
     case 'dynamic_plan':
@@ -271,33 +271,33 @@ function getProviderVariant(context: PromptContext): string {
   const variantMap: Record<ProviderType, Record<string, () => string>> = {
     anthropic: {
       understand: getAnthropicUnderstandVariant,
-      extract_facts: getAnthropicExtractFactsVariant,
+      extract_evidence: getAnthropicExtractFactsVariant,
       verdict: getAnthropicVerdictVariant,
-      scope_refinement: getAnthropicContextRefinementVariant,
+      context_refinement: getAnthropicContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
     openai: {
       understand: getOpenAIUnderstandVariant,
-      extract_facts: getOpenAIExtractFactsVariant,
+      extract_evidence: getOpenAIExtractFactsVariant,
       verdict: getOpenAIVerdictVariant,
-      scope_refinement: getOpenAIContextRefinementVariant,
+      context_refinement: getOpenAIContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
     google: {
       understand: getGeminiUnderstandVariant,
-      extract_facts: getGeminiExtractFactsVariant,
+      extract_evidence: getGeminiExtractFactsVariant,
       verdict: getGeminiVerdictVariant,
-      scope_refinement: getGeminiContextRefinementVariant,
+      context_refinement: getGeminiContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
     mistral: {
       understand: getMistralUnderstandVariant,
-      extract_facts: getMistralExtractFactsVariant,
+      extract_evidence: getMistralExtractFactsVariant,
       verdict: getMistralVerdictVariant,
-      scope_refinement: getMistralContextRefinementVariant,
+      context_refinement: getMistralContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
@@ -320,7 +320,7 @@ function getConfigAdaptations(context: PromptContext): string {
       case 'understand':
         adaptations += getTieringUnderstandAdaptation();
         break;
-      case 'extract_facts':
+      case 'extract_evidence':
         adaptations += getTieringExtractFactsAdaptation();
         break;
       case 'verdict':

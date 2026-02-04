@@ -70,7 +70,7 @@ describe("Multi-Jurisdiction Stress Test (Monolithic Canonical)", () => {
       expect(hasUS).toBe(true);
 
       // Pass Criteria 3: Facts are associated with correct scopes
-      const facts = result.resultJson.facts || [];
+      const facts = result.resultJson.evidenceItems || result.resultJson.facts || [];
       const brazilScope = scopes.find((s: any) => s.name.toLowerCase().includes("tse") || s.name.toLowerCase().includes("brazil"));
       const usScope = scopes.find((s: any) => s.name.toLowerCase().includes("supreme court") || s.name.toLowerCase().includes("us"));
 
@@ -78,13 +78,13 @@ describe("Multi-Jurisdiction Stress Test (Monolithic Canonical)", () => {
         // In the actual implementation, facts might not have contextId yet in buildResultJson
         // but they should be identifiable by content or IDs assigned during extraction.
         const brazilFacts = facts.filter((f: any) =>
-          f.fact.toLowerCase().includes("tse") ||
-          f.fact.toLowerCase().includes("bolsonaro") ||
+          f.statement.toLowerCase().includes("tse") ||
+          f.statement.toLowerCase().includes("bolsonaro") ||
           f.sourceTitle.toLowerCase().includes("brazil")
         );
         const usFacts = facts.filter((f: any) =>
-          f.fact.toLowerCase().includes("trump") ||
-          f.fact.toLowerCase().includes("colorado") ||
+          f.statement.toLowerCase().includes("trump") ||
+          f.statement.toLowerCase().includes("colorado") ||
           f.sourceTitle.toLowerCase().includes("supreme court")
         );
 

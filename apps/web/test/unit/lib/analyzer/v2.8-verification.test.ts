@@ -176,7 +176,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Type check: Verify probativeValue is a valid optional field
       const evidence = {
         id: "E1",
-        fact: "Specific statement with clear attribution",
+        statement: "Specific statement with clear attribution",
         category: "evidence",
         specificity: "high",
         sourceId: "S1",
@@ -193,7 +193,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Verify old evidence without probativeValue still works
       const legacyEvidence = {
         id: "E1",
-        fact: "Statement from legacy job",
+        statement: "Statement from legacy job",
         category: "evidence",
         specificity: "high",
         sourceId: "S1",
@@ -359,7 +359,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Mock evidence with peer-reviewed study source
       const peerReviewedEvidence = {
         id: "E1",
-        fact: "The study found a 25% increase in efficiency",
+        statement: "The study found a 25% increase in efficiency",
         category: "statistic",
         sourceId: "S1",
         sourceUrl: "https://nature.com/articles/12345",
@@ -379,7 +379,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Mock evidence from fact-checking site
       const factCheckEvidence = {
         id: "E2",
-        fact: "The claim was rated as false by fact-checkers",
+        statement: "The claim was rated as false by fact-checkers",
         category: "evidence",
         sourceId: "S2",
         sourceUrl: "https://snopes.com/fact-check/example",
@@ -399,7 +399,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Mock evidence from government publication
       const govReportEvidence = {
         id: "E3",
-        fact: "The census data shows population increased by 5%",
+        statement: "The census data shows population increased by 5%",
         category: "statistic",
         sourceId: "S3",
         sourceUrl: "https://census.gov/data/reports/2023",
@@ -419,7 +419,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Mock evidence from legal document
       const legalEvidence = {
         id: "E4",
-        fact: "The Supreme Court ruled in favor of the plaintiff",
+        statement: "The Supreme Court ruled in favor of the plaintiff",
         category: "event",
         sourceId: "S4",
         sourceUrl: "https://supremecourt.gov/opinions/23-456",
@@ -439,7 +439,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Mock evidence from primary journalism
       const primaryNewsEvidence = {
         id: "E5",
-        fact: "The reporter witnessed the event firsthand",
+        statement: "The reporter witnessed the event firsthand",
         category: "event",
         sourceId: "S5",
         sourceUrl: "https://reuters.com/investigative/2023/report",
@@ -459,7 +459,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Mock evidence from secondary news
       const secondaryNewsEvidence = {
         id: "E6",
-        fact: "According to reports, the incident occurred yesterday",
+        statement: "According to reports, the incident occurred yesterday",
         category: "event",
         sourceId: "S6",
         sourceUrl: "https://newsaggregator.com/story/123",
@@ -479,7 +479,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Mock evidence from expert statement
       const expertEvidence = {
         id: "E7",
-        fact: "Dr. Johnson, a leading climatologist, stated that temperatures are rising",
+        statement: "Dr. Johnson, a leading climatologist, stated that temperatures are rising",
         category: "expert_quote",
         sourceId: "S7",
         sourceUrl: "https://university.edu/expert-interviews/johnson",
@@ -499,7 +499,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Mock evidence from organization report
       const orgReportEvidence = {
         id: "E8",
-        fact: "The WHO report found increased disease prevalence",
+        statement: "The WHO report found increased disease prevalence",
         category: "statistic",
         sourceId: "S8",
         sourceUrl: "https://who.int/publications/2023/disease-report",
@@ -519,7 +519,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Mock evidence with unclassified source
       const otherEvidence = {
         id: "E9",
-        fact: "The website claims this is true",
+        statement: "The website claims this is true",
         category: "evidence",
         sourceId: "S9",
         sourceUrl: "https://random-blog.com/post/123",
@@ -539,7 +539,7 @@ describe("v2.8 Verification - Unit Tests", () => {
       // Evidence without EvidenceScope (legacy or simple evidence)
       const noScopeEvidence = {
         id: "E10",
-        fact: "Some evidence statement",
+        statement: "Some evidence statement",
         category: "evidence",
         sourceId: "S10",
         sourceUrl: "https://example.com",
@@ -571,13 +571,13 @@ describe("v2.8 Verification - Unit Tests", () => {
 
       // Verify fact_check_report has highest calibration (1.05)
       const maxCalibration = Math.max(...Object.values(defaultSourceTypeCalibration));
-      expect(defaultSourceTypeCalibration.fact_check_report).toBe(maxCalibration);
+      expect(defaultSourceTypeCalibration.statement_check_report).toBe(maxCalibration);
 
       // Verify "other" has lowest calibration (0.8)
       const minCalibration = Math.min(...Object.values(defaultSourceTypeCalibration));
       expect(defaultSourceTypeCalibration.other).toBe(minCalibration);
 
-      console.log(`[v2.8 Unit Test] sourceType calibration factors: peer_reviewed=${defaultSourceTypeCalibration.peer_reviewed_study}, fact_check=${defaultSourceTypeCalibration.fact_check_report}, other=${defaultSourceTypeCalibration.other}`);
+      console.log(`[v2.8 Unit Test] sourceType calibration factors: peer_reviewed=${defaultSourceTypeCalibration.peer_reviewed_study}, fact_check=${defaultSourceTypeCalibration.statement_check_report}, other=${defaultSourceTypeCalibration.other}`);
     });
 
     it("sourceType calibration affects evidence reliability weighting", () => {
@@ -718,7 +718,7 @@ describe("v2.8 Verification - Integration Tests", () => {
         console.log(`[v2.8 Integration] Contested claims: ${contestedClaims.length}`);
         
         for (const cv of contestedClaims) {
-          console.log(`  - ${cv.claimText?.substring(0, 50)}... (factualBasis: ${cv.factualBasis})`);
+          console.log(`  - ${cv.claimText?.substring(0, 50)}... (factualBasis: ${cv.statementualBasis})`);
         }
 
         // Write results
@@ -731,7 +731,7 @@ describe("v2.8 Verification - Integration Tests", () => {
               claimId: cv.claimId,
               claimText: cv.claimText?.substring(0, 100),
               isContested: cv.isContested,
-              factualBasis: cv.factualBasis,
+              factualBasis: cv.statementualBasis,
             })),
             overallVerdict: result.resultJson.verdictSummary?.overallVerdict,
             timestamp: new Date().toISOString(),
@@ -742,7 +742,7 @@ describe("v2.8 Verification - Integration Tests", () => {
         // Any contestation marked "established" must cite documented evidence
         if (contestedClaims.length > 0) {
           const establishedClaims = contestedClaims.filter((cv: any) => 
-            cv.factualBasis === "established"
+            cv.statementualBasis === "established"
           );
           
           // Established contestations should have evidence patterns in their reasons

@@ -403,10 +403,9 @@ X-Schema-Version: 2.6
 
 #### Type Compatibility Tests
 ```typescript
-it("EvidenceItem accepts all ExtractedFact fields", () => {
-  const legacy: ExtractedFact = { /* ... */ };
-  const evidence: EvidenceItem = legacy; // Should compile
-  expect(evidence.fact).toBe(...);
+it("EvidenceItem accepts required fields", () => {
+  const evidence: EvidenceItem = { /* ... */ };
+  expect(evidence.statement).toBe(...);
 });
 ```
 
@@ -414,8 +413,8 @@ it("EvidenceItem accepts all ExtractedFact fields", () => {
 ```typescript
 it("Missing new fields have safe defaults", () => {
   const legacy: EvidenceItem = {
-    id: "F1",
-    fact: "Statement",
+    id: "E1",
+    statement: "Statement",
     // probativeValue: missing
   };
   const value = legacy.probativeValue ?? "medium";
@@ -434,10 +433,10 @@ it("Old CalcConfig without new fields loads correctly", () => {
 
 #### JSON Parsing Tests
 ```typescript
-it("JSON.parse handles legacy job results", () => {
-  const json = '{"facts":[{"fact":"Test"}]}';
+it("JSON.parse handles v3 job results", () => {
+  const json = '{"evidenceItems":[{"statement":"Test"}]}';
   const parsed = JSON.parse(json);
-  expect(parsed.facts[0].probativeValue).toBeUndefined();
+  expect(parsed.evidenceItems[0].probativeValue).toBeUndefined();
 });
 ```
 

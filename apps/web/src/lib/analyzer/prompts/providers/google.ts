@@ -80,7 +80,7 @@ export function getGeminiExtractFactsVariant(): string {
 
 ### SCHEMA CHECKLIST (Verify before output)
 Each evidence item MUST have:
-- [ ] id: string (F1, F2, etc.)
+- [ ] id: string (E1, E2, etc.)
 - [ ] statement: string (≤100 chars, one sentence)
 - [ ] category: "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
 - [ ] specificity: "high" | "medium" (NEVER "low")

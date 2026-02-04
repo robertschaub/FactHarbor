@@ -89,9 +89,9 @@ See [Prompt Architecture v2.8.0](../ARCHITECTURE/Prompt_Architecture.md) for det
 
 Prompts are composed for 7 task types:
 1. **understand** - Initial claim understanding and decomposition
-2. **extract_facts** - Evidence extraction from sources
+2. **extract_evidence** - Evidence extraction from sources
 3. **verdict** - Claim evaluation and verdict assignment
-4. **scope_refinement** - AnalysisContext boundary detection (legacy task name)
+4. **context_refinement** - AnalysisContext boundary detection
 5. **dynamic_plan** - Dynamic analysis planning (monolithic mode)
 6. **dynamic_analysis** - Dynamic analysis execution (monolithic mode)
 7. **orchestrated_understand** - Combined understanding (orchestrated mode)
@@ -171,8 +171,8 @@ Apply nuanced reasoning. Be direct and confident.
 ### Output Requirements
 
 **REQUIRED Fields**:
-- `id`: Unique identifier (format: "S{sourceId}-F{number}")
-- `fact`: The extracted statement (20+ characters)
+- `id`: Unique identifier (format: "S{sourceId}-E{number}")
+- `statement`: The extracted statement (20+ characters)
 - `category`: Evidence category (see schema)
 - `sourceUrl`: Full URL of source
 - `sourceExcerpt`: Relevant excerpt (30+ characters)
@@ -184,8 +184,8 @@ Apply nuanced reasoning. Be direct and confident.
 
 ```json
 {
-  "id": "S1-F1",
-  "fact": "The study found a 25% increase in efficiency",
+  "id": "S1-E1",
+  "statement": "The study found a 25% increase in efficiency",
   "category": "statistic",
   "probativeValue": "high",
   "sourceUrl": "https://example.com/study",

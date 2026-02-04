@@ -12,21 +12,21 @@ describe("tiered model routing", () => {
     const config = buildConfig({ llmProvider: "openai", llmTiering: false });
     const legacy = getModel(undefined, config);
     expect(getModelForTask("understand", undefined, config).modelName).toBe(legacy.modelName);
-    expect(getModelForTask("extract_facts", undefined, config).modelName).toBe(legacy.modelName);
+    expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe(legacy.modelName);
     expect(getModelForTask("verdict", undefined, config).modelName).toBe(legacy.modelName);
   });
 
   it("uses provider defaults per task when tiering is on", () => {
     const config = buildConfig({ llmProvider: "openai", llmTiering: true });
     expect(getModelForTask("understand", undefined, config).modelName).toBe("gpt-4o-mini");
-    expect(getModelForTask("extract_facts", undefined, config).modelName).toBe("gpt-4o-mini");
+    expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe("gpt-4o-mini");
     expect(getModelForTask("verdict", undefined, config).modelName).toBe("gpt-4o");
   });
 
   it("uses Anthropic defaults per task when tiering is on", () => {
     const config = buildConfig({ llmProvider: "anthropic", llmTiering: true });
     expect(getModelForTask("understand", undefined, config).modelName).toBe("claude-3-5-haiku-20241022");
-    expect(getModelForTask("extract_facts", undefined, config).modelName).toBe("claude-3-5-haiku-20241022");
+    expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe("claude-3-5-haiku-20241022");
     expect(getModelForTask("verdict", undefined, config).modelName).toBe("claude-sonnet-4-20250514");
   });
 
@@ -39,7 +39,7 @@ describe("tiered model routing", () => {
       modelVerdict: "claude-sonnet-4-20250514",
     });
     expect(getModelForTask("understand", undefined, config).modelName).toBe("claude-3-5-haiku-20241022");
-    expect(getModelForTask("extract_facts", undefined, config).modelName).toBe("claude-3-5-haiku-20241022");
+    expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe("claude-3-5-haiku-20241022");
     expect(getModelForTask("verdict", undefined, config).modelName).toBe("claude-sonnet-4-20250514");
   });
 });

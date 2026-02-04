@@ -199,11 +199,11 @@ For each potential context discovered:
 
 Update CONTEXT_REFINEMENT to explicitly receive and process EvidenceScope metadata:
 
-**Current fact format passed to refinement**:
+**Current evidence item format passed to refinement**:
 ```json
 {
-  "factId": "F1",
-  "text": "The court ruled...",
+  "evidenceId": "E1",
+  "statement": "The court ruled...",
   "contextId": "CTX1",
   "sourceUrl": "..."
 }
@@ -212,8 +212,8 @@ Update CONTEXT_REFINEMENT to explicitly receive and process EvidenceScope metada
 **Enhanced format**:
 ```json
 {
-  "factId": "F1",
-  "text": "The court ruled...",
+  "evidenceId": "E1",
+  "statement": "The court ruled...",
   "contextId": "CTX1",
   "sourceUrl": "...",
   "evidenceScope": {

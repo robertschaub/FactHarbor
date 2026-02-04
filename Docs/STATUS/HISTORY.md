@@ -75,7 +75,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
    - Ensures auditability and reproducibility
 
 5. **SR Modularity (Phase 3)**
-   - SR config remains separate UCM domain (`sr.v1`)
+   - SR config remains separate UCM domain (schemaVersion `3.0.0`)
    - SR evaluator search settings controlled by SR config (no env overrides)
 
 6. **Terminology Cleanup**
@@ -1544,5 +1544,4 @@ This history reflects work by the FactHarbor development team and AI coding assi
 **Document Status**: Comprehensive history compiled from 45+ source documents  
 **Consolidation Date**: January 19, 2026  
 **Source Documents**: CHANGELOG.md, EVOLUTION.md, investigation reports, bug fix reports, implementation summaries, architecture reviews
-
 

@@ -776,6 +776,10 @@ Return:
   if (legacyEvidenceAssignments.length > 0 && !(next.evidenceContextAssignments || []).length) {
     warnLegacyField("refineScopesFromEvidence", "factScopeAssignments");
   }
+  const normalizedEvidenceAssignments = evidenceAssignments.map((a) => ({
+    ...a,
+    evidenceId: normalizeEvidenceId(String(a.evidenceId ?? ""), "refineScopesFromEvidence"),
+  }));
 
   const legacyClaimAssignments = (next.claimScopeAssignments || []).map((a) => ({
     claimId: a.claimId,
@@ -789,7 +793,7 @@ Return:
   }
 
   // Validate coverage: we need assignments for most evidence items, and at least one evidence item per scope.
-  const assignmentCount = evidenceAssignments.length;
+  const assignmentCount = normalizedEvidenceAssignments.length;
   if (assignmentCount < Math.floor(promptFacts.length * 0.7)) {
     debugLog("refineScopesFromEvidence: rejected (insufficient evidence assignments)", {
       factsInPrompt: promptFacts.length,
@@ -889,7 +893,7 @@ Return:
   };
 
   const evidenceAssignmentsById = new Map<string, string>();
-  for (const a of evidenceAssignments) {
+  for (const a of normalizedEvidenceAssignments) {
     const pid = finalizeContextId(a.contextId || "");
     if (!a.evidenceId || !pid) continue;
     evidenceAssignmentsById.set(a.evidenceId, pid);
@@ -6120,6 +6124,21 @@ function warnLegacyField(source: string, field: string): void {
   console.warn(`[${source}] Legacy field "${field}" detected; expected v3 field names.`);
 }
 
+function normalizeEvidenceId(id: string, source: string): string {
+  if (!id || typeof id !== "string") return "";
+  const normalized = id.replace(/(^|-)F(\d+)/g, "$1E$2");
+  if (normalized !== id) {
+    console.warn(`[${source}] Legacy F-prefix evidence ID "${id}" detected; use "${normalized}"`);
+  }
+  return normalized;
+}
+
+function normalizeEvidenceIdList(ids: string[], source: string): string[] {
+  return ids
+    .map((id) => normalizeEvidenceId(String(id ?? ""), source))
+    .filter((id) => id.length > 0);
+}
+
 type RawEvidenceItem = {
   statement?: string;
   fact?: string;
@@ -6171,11 +6190,11 @@ function normalizeEvidenceItems(raw: any, source: string): RawEvidenceItem[] {
 
 function normalizeSupportingEvidenceIds(raw: any, source: string): string[] {
   if (Array.isArray(raw?.supportingEvidenceIds) && raw.supportingEvidenceIds.length > 0) {
-    return raw.supportingEvidenceIds;
+    return normalizeEvidenceIdList(raw.supportingEvidenceIds, source);
   }
   if (Array.isArray(raw?.supportingFactIds) && raw.supportingFactIds.length > 0) {
     warnLegacyField(source, "supportingFactIds");
-    return raw.supportingFactIds;
+    return normalizeEvidenceIdList(raw.supportingFactIds, source);
   }
   return [];
 }
@@ -6359,7 +6378,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 
     // Map facts with provenance metadata
     const factsWithProvenance = filteredEvidenceItems.map((item, i) => ({
-        id: `${source.id}-F${i + 1}`,
+        id: `${source.id}-E${i + 1}`,
         statement: item.statement ?? "",
         category: (item.category ?? "evidence") as EvidenceItem["category"],
         specificity: (item.specificity ?? "medium") as "high" | "medium",
@@ -9801,7 +9820,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const tieringEnabled = pipelineConfig.llmTiering;
 
   const understandModelInfo = getModelForTask("understand", undefined, pipelineConfig);
-  const extractFactsModelInfo = getModelForTask("extract_facts", undefined, pipelineConfig);
+  const extractFactsModelInfo = getModelForTask("extract_evidence", undefined, pipelineConfig);
   const verdictModelInfo = getModelForTask("verdict", undefined, pipelineConfig);
 
   const provider = verdictModelInfo.provider;

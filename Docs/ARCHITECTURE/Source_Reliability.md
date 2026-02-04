@@ -273,7 +273,7 @@ Average score = (0.95 + 0.88) / 2 = 0.915
 
 ## Configuration
 
-Source Reliability is configured via UCM as a **separate SR config type** (`sr.v1`). Edit it in
+Source Reliability is configured via UCM as a **separate SR config type** (schemaVersion `3.0.0`). Edit it in
 **Admin → Config → Source Reliability**. This SR config is owned by the SR service and is separate
 from the main pipeline/search/calculation configs.
 
@@ -282,7 +282,7 @@ from the main pipeline/search/calculation configs.
 While SR config is stored in UCM alongside pipeline/search configs, it maintains
 operational independence:
 
-- **Schema versioning:** `sr.v1`, `sr.v2` (independent of `pipeline.v1`)
+- **Schema versioning:** `3.0.0` for SR (independent of pipeline config versioning)
 - **Hot reload:** SR config changes apply to new evaluations only
 - **No cascading invalidation:** SR updates don't trigger pipeline/search config reloads
 - **Separate domain:** SR uses `getConfig("sr")` and `setSourceReliabilityConfig()`

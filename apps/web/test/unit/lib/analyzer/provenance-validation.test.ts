@@ -1,7 +1,7 @@
 /**
  * Provenance Validation Test Suite (PR 5: Phase 0 Ground Realism)
  *
- * Tests the "Ground Realism" gate: Facts must have real source URLs + excerpts,
+ * Tests the "Ground Realism" gate: Evidence items must have real source URLs + excerpts,
  * not LLM-synthesized content.
  *
  * @module analyzer/provenance-validation.test
@@ -11,21 +11,21 @@ import { describe, expect, it } from "vitest";
 
 import type { EvidenceItem, FetchedSource } from "@/lib/analyzer/types";
 import {
-  validateFactProvenance,
-  filterFactsByProvenance,
+  validateEvidenceProvenance,
+  filterEvidenceByProvenance,
   validateSourceProvenance,
   validateGroundedSearchProvenance,
 } from "@/lib/analyzer/provenance-validation";
 
 // ============================================================================
-// FACT PROVENANCE VALIDATION TESTS
+// EVIDENCE PROVENANCE VALIDATION TESTS
 // ============================================================================
 
-describe("validateFactProvenance", () => {
-  it("accepts facts with valid URL and substantial excerpt", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "The court ruled in favor of the defendant",
+describe("validateEvidenceProvenance", () => {
+  it("accepts evidence items with valid URL and substantial excerpt", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "The court ruled in favor of the defendant",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -34,17 +34,17 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "According to the court documents filed on March 15, the judge ruled in favor of the defendant.",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(true);
     expect(result.severity).toBe("ok");
     expect(result.failureReason).toBeUndefined();
   });
 
-  it("rejects facts with missing sourceUrl", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "The court ruled in favor",
+  it("rejects evidence items with missing sourceUrl", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "The court ruled in favor",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -53,17 +53,17 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "The judge ruled in favor of the defendant on March 15.",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(false);
     expect(result.severity).toBe("error");
     expect(result.failureReason).toContain("Missing sourceUrl");
   });
 
-  it("rejects facts with invalid URL patterns (localhost)", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "Test fact",
+  it("rejects evidence items with invalid URL patterns (localhost)", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "Test fact",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -72,17 +72,17 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "This is a test excerpt from localhost.",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(false);
     expect(result.severity).toBe("error");
     expect(result.failureReason).toContain("Invalid URL pattern");
   });
 
-  it("rejects facts with invalid URL patterns (chrome://)", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "Test fact",
+  it("rejects evidence items with invalid URL patterns (chrome://)", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "Test fact",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -91,7 +91,7 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "This is a test excerpt from chrome with enough content.",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(false);
     expect(result.severity).toBe("error");
@@ -99,10 +99,10 @@ describe("validateFactProvenance", () => {
     expect(result.failureReason).toContain("Non-HTTP");
   });
 
-  it("rejects facts with malformed URLs", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "Test fact",
+  it("rejects evidence items with malformed URLs", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "Test fact",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -111,17 +111,17 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "This is a test excerpt.",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(false);
     expect(result.severity).toBe("error");
     expect(result.failureReason).toContain("Malformed URL");
   });
 
-  it("rejects facts with missing sourceExcerpt", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "The court ruled",
+  it("rejects evidence items with missing sourceExcerpt", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "The court ruled",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -130,17 +130,17 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(false);
     expect(result.severity).toBe("error");
     expect(result.failureReason).toContain("Missing sourceExcerpt");
   });
 
-  it("rejects facts with too-short sourceExcerpt", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "The court ruled",
+  it("rejects evidence items with too-short sourceExcerpt", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "The court ruled",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -149,17 +149,17 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "Too short",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(false);
     expect(result.severity).toBe("error");
     expect(result.failureReason).toContain("too short");
   });
 
-  it("rejects facts with synthetic LLM-generated excerpts (pattern: 'Based on the information')", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "The court ruled in favor",
+  it("rejects evidence items with synthetic LLM-generated excerpts (pattern: 'Based on the information')", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "The court ruled in favor",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -168,17 +168,17 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "Based on the information available, the court ruled in favor of the defendant.",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(false);
     expect(result.severity).toBe("error");
     expect(result.failureReason).toContain("LLM-generated synthesis");
   });
 
-  it("rejects facts with synthetic LLM-generated excerpts (pattern: 'According to')", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "The study found X",
+  it("rejects evidence items with synthetic LLM-generated excerpts (pattern: 'According to')", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "The study found X",
       category: "study",
       specificity: "high",
       sourceId: "S1",
@@ -187,17 +187,17 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "According to the analysis, the study found significant improvements.",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(false);
     expect(result.severity).toBe("error");
     expect(result.failureReason).toContain("LLM-generated synthesis");
   });
 
-  it("rejects facts with synthetic LLM-generated excerpts (pattern: 'The source')", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "Revenue increased",
+  it("rejects evidence items with synthetic LLM-generated excerpts (pattern: 'The source')", () => {
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "Revenue increased",
       category: "study",
       specificity: "high",
       sourceId: "S1",
@@ -206,7 +206,7 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: "The source indicates that revenue increased by 25% in Q3.",
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(false);
     expect(result.severity).toBe("error");
@@ -214,9 +214,9 @@ describe("validateFactProvenance", () => {
   });
 
   it("accepts excerpts that start with legitimate quoted text", () => {
-    const fact: EvidenceItem = {
-      id: "S1-F1",
-      fact: "Revenue increased by 25%",
+    const evidenceItem: EvidenceItem = {
+      id: "S1-E1",
+      statement: "Revenue increased by 25%",
       category: "study",
       specificity: "high",
       sourceId: "S1",
@@ -225,7 +225,7 @@ describe("validateFactProvenance", () => {
       sourceExcerpt: '"Revenue for Q3 2024 increased by 25% compared to Q3 2023," stated the CFO in the earnings call.',
     };
 
-    const result = validateFactProvenance(fact);
+    const result = validateEvidenceProvenance(evidenceItem);
 
     expect(result.isValid).toBe(true);
     expect(result.severity).toBe("ok");
@@ -233,15 +233,15 @@ describe("validateFactProvenance", () => {
 });
 
 // ============================================================================
-// FILTER FACTS BY PROVENANCE TESTS
+// FILTER EVIDENCE BY PROVENANCE TESTS
 // ============================================================================
 
-describe("filterFactsByProvenance", () => {
-  it("filters out facts without valid provenance", () => {
-    const facts: EvidenceItem[] = [
+describe("filterEvidenceByProvenance", () => {
+  it("filters out evidence items without valid provenance", () => {
+    const evidenceItems: EvidenceItem[] = [
       {
-        id: "S1-F1",
-        fact: "Valid fact",
+        id: "S1-E1",
+        statement: "Valid evidence item",
         category: "ruling",
         specificity: "high",
         sourceId: "S1",
@@ -250,8 +250,8 @@ describe("filterFactsByProvenance", () => {
         sourceExcerpt: "This is a valid excerpt with enough content to pass validation.",
       },
       {
-        id: "S1-F2",
-        fact: "Invalid fact (missing URL)",
+        id: "S1-E2",
+        statement: "Invalid evidence item (missing URL)",
         category: "ruling",
         specificity: "high",
         sourceId: "S1",
@@ -260,8 +260,8 @@ describe("filterFactsByProvenance", () => {
         sourceExcerpt: "This excerpt has a missing URL.",
       },
       {
-        id: "S1-F3",
-        fact: "Invalid fact (synthetic excerpt)",
+        id: "S1-E3",
+        statement: "Invalid evidence item (synthetic excerpt)",
         category: "ruling",
         specificity: "high",
         sourceId: "S1",
@@ -271,21 +271,21 @@ describe("filterFactsByProvenance", () => {
       },
     ];
 
-    const result = filterFactsByProvenance(facts);
+    const result = filterEvidenceByProvenance(evidenceItems);
 
     expect(result.stats.total).toBe(3);
     expect(result.stats.valid).toBe(1);
     expect(result.stats.invalid).toBe(2);
-    expect(result.validFacts).toHaveLength(1);
-    expect(result.validFacts[0].id).toBe("S1-F1");
-    expect(result.invalidFacts).toHaveLength(2);
+    expect(result.validEvidenceItems).toHaveLength(1);
+    expect(result.validEvidenceItems[0].id).toBe("S1-E1");
+    expect(result.invalidEvidenceItems).toHaveLength(2);
   });
 
-  it("returns all facts when all have valid provenance", () => {
-    const facts: EvidenceItem[] = [
+  it("returns all evidence items when all have valid provenance", () => {
+    const evidenceItems: EvidenceItem[] = [
       {
-        id: "S1-F1",
-        fact: "Fact 1",
+        id: "S1-E1",
+        statement: "Evidence item 1",
         category: "ruling",
         specificity: "high",
         sourceId: "S1",
@@ -294,8 +294,8 @@ describe("filterFactsByProvenance", () => {
         sourceExcerpt: "This is a valid excerpt from the first source.",
       },
       {
-        id: "S2-F1",
-        fact: "Fact 2",
+        id: "S2-E1",
+        statement: "Evidence item 2",
         category: "ruling",
         specificity: "high",
         sourceId: "S2",
@@ -305,13 +305,13 @@ describe("filterFactsByProvenance", () => {
       },
     ];
 
-    const result = filterFactsByProvenance(facts);
+    const result = filterEvidenceByProvenance(evidenceItems);
 
     expect(result.stats.total).toBe(2);
     expect(result.stats.valid).toBe(2);
     expect(result.stats.invalid).toBe(0);
-    expect(result.validFacts).toHaveLength(2);
-    expect(result.invalidFacts).toHaveLength(0);
+    expect(result.validEvidenceItems).toHaveLength(2);
+    expect(result.invalidEvidenceItems).toHaveLength(0);
   });
 });
 

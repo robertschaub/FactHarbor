@@ -361,11 +361,28 @@ function normalizeEvidenceExtraction(raw: any, source: string): EvidenceExtracti
   };
 }
 
+function normalizeEvidenceId(id: string, source: string): string {
+  if (!id || typeof id !== "string") return "";
+  const normalized = id.replace(/(^|-)F(\d+)/g, "$1E$2");
+  if (normalized !== id) {
+    console.warn(`[${source}] Legacy F-prefix evidence ID "${id}" detected; use "${normalized}"`);
+  }
+  return normalized;
+}
+
+function normalizeEvidenceIdList(ids: string[], source: string): string[] {
+  return ids
+    .map((id) => normalizeEvidenceId(String(id ?? ""), source))
+    .filter((id) => id.length > 0);
+}
+
 function normalizeKeyEvidenceIds(raw: any, source: string): string[] {
-  if (Array.isArray(raw?.keyEvidenceIds) && raw.keyEvidenceIds.length > 0) return raw.keyEvidenceIds;
+  if (Array.isArray(raw?.keyEvidenceIds) && raw.keyEvidenceIds.length > 0) {
+    return normalizeEvidenceIdList(raw.keyEvidenceIds, source);
+  }
   if (Array.isArray(raw?.keyFactIds) && raw.keyFactIds.length > 0) {
     warnLegacyField(source, "keyFactIds");
-    return raw.keyFactIds;
+    return normalizeEvidenceIdList(raw.keyFactIds, source);
   }
   return [];
 }
@@ -467,7 +484,7 @@ async function extractFacts(
     .join("\n\n---\n\n");
 
   const extractFactsPrompt = buildPrompt({
-    task: 'extract_facts',
+    task: 'extract_evidence',
     provider: detectProvider(model.modelId || ''),
     modelName: model.modelId || '',
     config: {
@@ -849,7 +866,7 @@ export async function runMonolithicCanonical(
   // Step 2: Research loop
   let iteration = 0;
   let needsMoreResearch = true;
-      const extractFactsModel = getModelForTask("extract_facts", undefined, pipelineConfig ?? undefined);
+      const extractFactsModel = getModelForTask("extract_evidence", undefined, pipelineConfig ?? undefined);
 
   while (
     needsMoreResearch &&
@@ -1021,7 +1038,7 @@ export async function runMonolithicCanonical(
             continue;
           }
           facts.push({
-            id: `F${facts.length + 1}`,
+            id: `E${facts.length + 1}`,
             statement: f.statement,
             sourceId: urlToSourceId.get(f.sourceUrl) || `S-${f.sourceUrl.substring(0, 10)}`,
             sourceUrl: f.sourceUrl,

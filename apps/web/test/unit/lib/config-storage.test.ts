@@ -647,13 +647,13 @@ describe("Pipeline and SR Config Types", () => {
     await db.run(
       `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ["pipeline-hash", "pipeline", "default", "pipeline.v1", "v1.0", content, now, null],
+      ["pipeline-hash", "pipeline", "default", "3.0.0", "v1.0", content, now, null],
     );
 
     const row = await db.get(`SELECT * FROM config_blobs WHERE config_type = ?`, ["pipeline"]);
     expect(row).toBeDefined();
     expect(row.config_type).toBe("pipeline");
-    expect(row.schema_version).toBe("pipeline.v1");
+    expect(row.schema_version).toBe("3.0.0");
   });
 
   it("supports sr config type", async () => {
@@ -667,13 +667,13 @@ describe("Pipeline and SR Config Types", () => {
     await db.run(
       `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ["sr-hash", "sr", "default", "sr.v1", "v1.0", content, now, null],
+      ["sr-hash", "sr", "default", "3.0.0", "v1.0", content, now, null],
     );
 
     const row = await db.get(`SELECT * FROM config_blobs WHERE config_type = ?`, ["sr"]);
     expect(row).toBeDefined();
     expect(row.config_type).toBe("sr");
-    expect(row.schema_version).toBe("sr.v1");
+    expect(row.schema_version).toBe("3.0.0");
   });
 
   it("isolates pipeline and sr configs", async () => {
@@ -682,12 +682,12 @@ describe("Pipeline and SR Config Types", () => {
     await db.run(
       `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ["pipeline-hash", "pipeline", "default", "pipeline.v1", "v1.0", '{"type":"pipeline"}', now, null],
+      ["pipeline-hash", "pipeline", "default", "3.0.0", "v1.0", '{"type":"pipeline"}', now, null],
     );
     await db.run(
       `INSERT INTO config_blobs (content_hash, config_type, profile_key, schema_version, version_label, content, created_utc, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ["sr-hash", "sr", "default", "sr.v1", "v1.0", '{"type":"sr"}', now, null],
+      ["sr-hash", "sr", "default", "3.0.0", "v1.0", '{"type":"sr"}', now, null],
     );
 
     const pipelineConfigs = await db.all(`SELECT * FROM config_blobs WHERE config_type = ?`, ["pipeline"]);

@@ -29,7 +29,7 @@ import type { EvidenceItem } from '@/lib/analyzer/types';
 function createEvidenceItem(overrides: Partial<EvidenceItem> = {}): EvidenceItem {
   return {
     id: 'E1',
-    fact: 'This is a valid evidence statement with sufficient length.',
+    statement: 'This is a valid evidence statement with sufficient length.',
     category: 'direct_evidence',
     specificity: 'high',
     sourceId: 'S1',
@@ -51,8 +51,8 @@ describe('filterByProbativeValue', () => {
     describe('minimum statement length', () => {
       it('should filter statements below minimum length (20 chars)', () => {
         const evidence = [
-          createEvidenceItem({ fact: 'Too short' }), // 9 chars
-          createEvidenceItem({ fact: 'This is a valid statement with enough length.' }),
+          createEvidenceItem({ statement: 'Too short' }), // 9 chars
+          createEvidenceItem({ statement: 'This is a valid statement with enough length.' }),
         ];
 
         const result = filterByProbativeValue(evidence);
@@ -64,7 +64,7 @@ describe('filterByProbativeValue', () => {
 
       it('should keep statements at exactly minimum length', () => {
         const evidence = [
-          createEvidenceItem({ fact: '12345678901234567890' }), // Exactly 20 chars
+          createEvidenceItem({ statement: '12345678901234567890' }), // Exactly 20 chars
         ];
 
         const result = filterByProbativeValue(evidence);
@@ -75,7 +75,7 @@ describe('filterByProbativeValue', () => {
 
       it('should allow custom minimum length via config', () => {
         const evidence = [
-          createEvidenceItem({ fact: 'This is 35 characters long text.' }), // 34 chars
+          createEvidenceItem({ statement: 'This is 35 characters long text.' }), // 34 chars
         ];
 
         const config: Partial<ProbativeFilterConfig> = {
@@ -94,10 +94,10 @@ describe('filterByProbativeValue', () => {
       it('should filter statements with excessive vague phrases (>2)', () => {
         const evidence = [
           createEvidenceItem({
-            fact: 'Some say that many people believe it is said that this is true.',
+            statement: 'Some say that many people believe it is said that this is true.',
           }), // Contains 3 vague phrases
           createEvidenceItem({
-            fact: 'According to a study, the results show clear evidence.',
+            statement: 'According to a study, the results show clear evidence.',
           }), // No vague phrases
         ];
 
@@ -111,7 +111,7 @@ describe('filterByProbativeValue', () => {
       it('should keep statements with acceptable vague phrase count (≤2)', () => {
         const evidence = [
           createEvidenceItem({
-            fact: 'Some experts argue that the policy was effective based on data.',
+            statement: 'Some experts argue that the policy was effective based on data.',
           }), // 1 vague phrase
         ];
 
@@ -124,7 +124,7 @@ describe('filterByProbativeValue', () => {
       it('should detect "some say" pattern', () => {
         const evidence = [
           createEvidenceItem({
-            fact: 'Some say this is true. Many people believe it. It is said that opinions vary on this matter.',
+            statement: 'Some say this is true. Many people believe it. It is said that opinions vary on this matter.',
           }), // 3 different vague phrase patterns
         ];
 
@@ -137,7 +137,7 @@ describe('filterByProbativeValue', () => {
       it('should detect "many people/experts" pattern', () => {
         const evidence = [
           createEvidenceItem({
-            fact: 'Many people claim X. It is believed Y. The debate continues on this topic.',
+            statement: 'Many people claim X. It is believed Y. The debate continues on this topic.',
           }), // 3 different vague phrase patterns
         ];
 
@@ -149,7 +149,7 @@ describe('filterByProbativeValue', () => {
       it('should detect passive voice vague patterns', () => {
         const evidence = [
           createEvidenceItem({
-            fact: 'It is said that something happened. Allegedly it occurred. Opinions vary on what really took place.',
+            statement: 'It is said that something happened. Allegedly it occurred. Opinions vary on what really took place.',
           }), // 3 different vague phrase patterns
         ];
 
@@ -161,7 +161,7 @@ describe('filterByProbativeValue', () => {
       it('should allow custom maximum vague phrase count', () => {
         const evidence = [
           createEvidenceItem({
-            fact: 'Some say that many people believe this is true.',
+            statement: 'Some say that many people believe this is true.',
           }), // 2 vague phrases
         ];
 
@@ -281,12 +281,12 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'statistic',
-            fact: 'Statistics show general trends without specific numbers.',
+            statement: 'Statistics show general trends without specific numbers.',
             sourceExcerpt: 'The report discusses general trends in the market.',
           }),
           createEvidenceItem({
             category: 'statistic',
-            fact: 'The study found 75% of participants agreed with the statement.',
+            statement: 'The study found 75% of participants agreed with the statement.',
             sourceExcerpt: 'Survey results: 75% agreement, 15% disagreement, 10% neutral.',
           }),
         ];
@@ -302,7 +302,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'statistic',
-            fact: 'According to data, 42% of respondents supported the measure.',
+            statement: 'According to data, 42% of respondents supported the measure.',
             sourceExcerpt: 'The comprehensive survey methodology involved random sampling from a representative population across multiple demographics.',
           }),
         ];
@@ -317,7 +317,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'statistic',
-            fact: 'The survey revealed significant public support for the policy.',
+            statement: 'The survey revealed significant public support for the policy.',
             sourceExcerpt: 'Polling data shows 68% approval rating among registered voters.',
           }),
         ];
@@ -332,7 +332,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'statistic',
-            fact: 'The data shows 50% increase in five years.',
+            statement: 'The data shows 50% increase in five years.',
             sourceExcerpt: 'Source report with 2023 data numbers', // 37 chars, below 50
           }),
         ];
@@ -347,7 +347,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'statistic',
-            fact: 'Statistics indicate general growth patterns over time.',
+            statement: 'Statistics indicate general growth patterns over time.',
             sourceExcerpt: 'The economic report describes general growth patterns over decades.',
           }),
         ];
@@ -371,12 +371,12 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'expert_quote',
-            fact: 'This policy is fundamentally flawed and will not achieve its goals.',
+            statement: 'This policy is fundamentally flawed and will not achieve its goals.',
             sourceExcerpt: 'Critics have raised concerns about the effectiveness of the approach.',
           }),
           createEvidenceItem({
             category: 'expert_quote',
-            fact: 'Dr. Johnson stated that the methodology was rigorous and scientifically sound.',
+            statement: 'Dr. Johnson stated that the methodology was rigorous and scientifically sound.',
             sourceExcerpt: 'Professor Smith commented on the study design and execution.',
           }),
         ];
@@ -392,7 +392,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'expert_quote',
-            fact: 'Prof. Martinez explained that the research supports the hypothesis.',
+            statement: 'Prof. Martinez explained that the research supports the hypothesis.',
             sourceExcerpt: 'The interview covered multiple aspects of the study.',
           }),
         ];
@@ -407,7 +407,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'expert_quote',
-            fact: 'The evidence strongly suggests a causal relationship.',
+            statement: 'The evidence strongly suggests a causal relationship.',
             sourceExcerpt: 'Dr. Williams said the evidence strongly suggests a causal relationship.',
           }),
         ];
@@ -422,15 +422,15 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'expert_quote',
-            fact: 'According to Anderson, the theory holds in most cases.',
+            statement: 'According to Anderson, the theory holds in most cases.',
           }),
           createEvidenceItem({
             category: 'expert_quote',
-            fact: 'Johnson Smith argued that the approach was innovative.',
+            statement: 'Johnson Smith argued that the approach was innovative.',
           }),
           createEvidenceItem({
             category: 'expert_quote',
-            fact: 'Ms. Davis claimed the results were statistically significant.',
+            statement: 'Ms. Davis claimed the results were statistically significant.',
           }),
         ];
 
@@ -444,7 +444,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'expert_quote',
-            fact: 'The analysis reveals significant methodological concerns.',
+            statement: 'The analysis reveals significant methodological concerns.',
             sourceExcerpt: 'The expert commentary discusses methodological issues.',
           }),
         ];
@@ -468,12 +468,12 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'event',
-            fact: 'The conference took place with significant international attendance.',
+            statement: 'The conference took place with significant international attendance.',
             sourceExcerpt: 'Participants discussed various topics during the event.',
           }),
           createEvidenceItem({
             category: 'event',
-            fact: 'The summit occurred in December 2023 with leaders from 15 nations.',
+            statement: 'The summit occurred in December 2023 with leaders from 15 nations.',
             sourceExcerpt: 'The December meeting addressed climate and trade issues.',
           }),
         ];
@@ -489,7 +489,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'event',
-            fact: 'The earthquake struck the region in 2020 causing widespread damage.',
+            statement: 'The earthquake struck the region in 2020 causing widespread damage.',
             sourceExcerpt: 'Disaster response teams were deployed to affected areas.',
           }),
         ];
@@ -504,7 +504,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'event',
-            fact: 'The legislation was passed in March after extensive debate.',
+            statement: 'The legislation was passed in March after extensive debate.',
             sourceExcerpt: 'The parliamentary session concluded with the vote.',
           }),
         ];
@@ -519,11 +519,11 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'event',
-            fact: 'The agreement was signed on 05/12/2022 at the headquarters.',
+            statement: 'The agreement was signed on 05/12/2022 at the headquarters.',
           }),
           createEvidenceItem({
             category: 'event',
-            fact: 'The incident happened last year during the festival.',
+            statement: 'The incident happened last year during the festival.',
           }),
         ];
 
@@ -537,7 +537,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'event',
-            fact: 'The meeting concluded with unanimous support for the resolution.',
+            statement: 'The meeting concluded with unanimous support for the resolution.',
             sourceExcerpt: 'Delegates expressed satisfaction with the outcome.',
           }),
         ];
@@ -561,12 +561,12 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'legal_provision',
-            fact: 'The law prohibits discrimination in employment practices.',
+            statement: 'The law prohibits discrimination in employment practices.',
             sourceExcerpt: 'Anti-discrimination measures are established by statute.',
           }),
           createEvidenceItem({
             category: 'legal_provision',
-            fact: 'Article 7 establishes the framework for environmental protection.',
+            statement: 'Article 7 establishes the framework for environmental protection.',
             sourceExcerpt: 'The environmental protection statute includes specific provisions.',
           }),
         ];
@@ -582,7 +582,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'legal_provision',
-            fact: 'Section 12 defines the penalties for non-compliance.',
+            statement: 'Section 12 defines the penalties for non-compliance.',
             sourceExcerpt: 'The statute outlines enforcement mechanisms.',
           }),
         ];
@@ -597,7 +597,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'legal_provision',
-            fact: 'In Smith v. Jones, the court held that the regulation was constitutional.',
+            statement: 'In Smith v. Jones, the court held that the regulation was constitutional.',
           }),
         ];
 
@@ -611,11 +611,11 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'legal_provision',
-            fact: 'Under 42 USC § 1983, citizens may sue state officials for rights violations.',
+            statement: 'Under 42 USC § 1983, citizens may sue state officials for rights violations.',
           }),
           createEvidenceItem({
             category: 'legal_provision',
-            fact: 'The regulation pursuant to § 501 governs tax-exempt status.',
+            statement: 'The regulation pursuant to § 501 governs tax-exempt status.',
           }),
         ];
 
@@ -629,7 +629,7 @@ describe('filterByProbativeValue', () => {
         const evidence = [
           createEvidenceItem({
             category: 'legal_provision',
-            fact: 'The statute requires annual reporting of financial activities.',
+            statement: 'The statute requires annual reporting of financial activities.',
             sourceExcerpt: 'Reporting requirements are defined in the legislation.',
           }),
         ];
@@ -658,11 +658,11 @@ describe('filterByProbativeValue', () => {
       const evidence = [
         createEvidenceItem({
           id: 'E1',
-          fact: 'The study found that 75% of participants agreed with the statement.',
+          statement: 'The study found that 75% of participants agreed with the statement.',
         }),
         createEvidenceItem({
           id: 'E2',
-          fact: 'The study found that 75% of participants agreed with the statement.',
+          statement: 'The study found that 75% of participants agreed with the statement.',
         }),
       ];
 
@@ -677,11 +677,11 @@ describe('filterByProbativeValue', () => {
       const evidence = [
         createEvidenceItem({
           id: 'E1',
-          fact: 'The comprehensive research study found that approximately seventy-five percent of surveyed participants agreed with the statement provided.',
+          statement: 'The comprehensive research study found that approximately seventy-five percent of surveyed participants agreed with the statement provided.',
         }),
         createEvidenceItem({
           id: 'E2',
-          fact: 'The comprehensive research study found that approximately seventy-five percent of surveyed participants agreed with statement provided.',
+          statement: 'The comprehensive research study found that approximately seventy-five percent of surveyed participants agreed with statement provided.',
         }),
       ];
 
@@ -696,11 +696,11 @@ describe('filterByProbativeValue', () => {
       const evidence = [
         createEvidenceItem({
           id: 'E1',
-          fact: 'The study examined urban transportation patterns in European cities.',
+          statement: 'The study examined urban transportation patterns in European cities.',
         }),
         createEvidenceItem({
           id: 'E2',
-          fact: 'Research analyzed renewable energy adoption in Asian countries.',
+          statement: 'Research analyzed renewable energy adoption in Asian countries.',
         }),
       ];
 
@@ -714,11 +714,11 @@ describe('filterByProbativeValue', () => {
       const evidence = [
         createEvidenceItem({
           id: 'E1',
-          fact: 'The study found significant correlation between education and income levels.',
+          statement: 'The study found significant correlation between education and income levels.',
         }),
         createEvidenceItem({
           id: 'E2',
-          fact: 'Research discovered strong correlation between education and income levels.',
+          statement: 'Research discovered strong correlation between education and income levels.',
         }),
       ];
 
@@ -739,19 +739,19 @@ describe('filterByProbativeValue', () => {
       const evidence = [
         createEvidenceItem({
           id: 'E1',
-          fact: 'First valid statement about renewable energy adoption in urban areas.',
+          statement: 'First valid statement about renewable energy adoption in urban areas.',
         }),
         createEvidenceItem({
           id: 'E2',
-          fact: 'Second valid statement about healthcare policy changes in rural regions.',
+          statement: 'Second valid statement about healthcare policy changes in rural regions.',
         }),
         createEvidenceItem({
           id: 'E3',
-          fact: 'Short', // Will be filtered for length
+          statement: 'Short', // Will be filtered for length
         }),
         createEvidenceItem({
           id: 'E4',
-          fact: 'Also', // Will be filtered for length
+          statement: 'Also', // Will be filtered for length
         }),
       ];
 
@@ -783,9 +783,9 @@ describe('filterByProbativeValue', () => {
 
     it('should handle all items filtered scenario', () => {
       const evidence = [
-        createEvidenceItem({ fact: 'Short' }),
-        createEvidenceItem({ fact: 'Tiny' }),
-        createEvidenceItem({ fact: 'Small' }),
+        createEvidenceItem({ statement: 'Short' }),
+        createEvidenceItem({ statement: 'Tiny' }),
+        createEvidenceItem({ statement: 'Small' }),
       ];
 
       const result = filterByProbativeValue(evidence);
@@ -798,8 +798,8 @@ describe('filterByProbativeValue', () => {
     it('should handle none filtered scenario', () => {
       const evidence = [
         createEvidenceItem(),
-        createEvidenceItem({ id: 'E2', fact: 'Another valid evidence statement.' }),
-        createEvidenceItem({ id: 'E3', fact: 'Third valid evidence statement here.' }),
+        createEvidenceItem({ id: 'E2', statement: 'Another valid evidence statement.' }),
+        createEvidenceItem({ id: 'E3', statement: 'Third valid evidence statement here.' }),
       ];
 
       const result = filterByProbativeValue(evidence);
@@ -813,20 +813,20 @@ describe('filterByProbativeValue', () => {
       const evidence = [
         createEvidenceItem({
           category: 'direct_evidence',
-          fact: 'General evidence statement with sufficient length.',
+          statement: 'General evidence statement with sufficient length.',
         }),
         createEvidenceItem({
           category: 'statistic',
-          fact: 'Statistical data shows 42% increase over three years.',
+          statement: 'Statistical data shows 42% increase over three years.',
           sourceExcerpt: 'The comprehensive analysis included data from multiple sources over time.',
         }),
         createEvidenceItem({
           category: 'expert_quote',
-          fact: 'Dr. Smith explained the methodology was scientifically rigorous.',
+          statement: 'Dr. Smith explained the methodology was scientifically rigorous.',
         }),
         createEvidenceItem({
           category: 'event',
-          fact: 'The conference occurred in May 2023 with international participation.',
+          statement: 'The conference occurred in May 2023 with international participation.',
         }),
       ];
 
@@ -838,11 +838,11 @@ describe('filterByProbativeValue', () => {
 
     it('should accumulate filter reasons correctly', () => {
       const evidence = [
-        createEvidenceItem({ fact: 'Short' }), // Too short
-        createEvidenceItem({ fact: 'Tiny' }), // Too short
+        createEvidenceItem({ statement: 'Short' }), // Too short
+        createEvidenceItem({ statement: 'Tiny' }), // Too short
         createEvidenceItem({ sourceUrl: undefined }), // Missing URL
         createEvidenceItem({
-          fact: 'Some say many people believe it is said opinions vary.',
+          statement: 'Some say many people believe it is said opinions vary.',
         }), // Vague phrases
       ];
 
@@ -886,13 +886,13 @@ describe('filterByProbativeValue', () => {
       const evidence = [
         createEvidenceItem({
           id: 'E1',
-          fact: 'First distinct statement about climate change research findings.',
+          statement: 'First distinct statement about climate change research findings.',
         }),
         createEvidenceItem({
           id: 'E2',
-          fact: 'Second distinct statement about economic policy implementation.',
+          statement: 'Second distinct statement about economic policy implementation.',
         }),
-        createEvidenceItem({ id: 'E3', fact: 'Short' }),
+        createEvidenceItem({ id: 'E3', statement: 'Short' }),
       ];
 
       const result = filterByProbativeValue(evidence);
@@ -904,10 +904,10 @@ describe('filterByProbativeValue', () => {
 
     it('should track multiple filter reasons', () => {
       const evidence = [
-        createEvidenceItem({ fact: 'Short' }),
+        createEvidenceItem({ statement: 'Short' }),
         createEvidenceItem({ sourceUrl: undefined }),
         createEvidenceItem({
-          fact: 'Some say many believe it is argued opinions vary the debate continues.',
+          statement: 'Some say many believe it is argued opinions vary the debate continues.',
         }),
       ];
 

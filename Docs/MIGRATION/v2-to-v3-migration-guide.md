@@ -197,8 +197,8 @@ The following changes are being implemented in v3.1:
 
 | Item | Status | Description |
 |------|--------|-------------|
-| ID prefix F→E | 🔴 TODO | Change evidence IDs from F1,F2 → E1,E2 |
-| Task name changes | 🔴 TODO | `extract_facts` → `extract_evidence` |
+| ID prefix F→E | ✅ DONE | Evidence IDs now use E1,E2 prefix |
+| Task name changes | ✅ DONE | `extract_facts` → `extract_evidence`, `scope_refinement` → `context_refinement` |
 
 **Note:** v3.1 maintains backward compatibility with v3.0 during transition (dual-parsing for IDs, dual-read for metrics).
 

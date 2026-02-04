@@ -2,7 +2,7 @@
  * Config Schemas Tests
  *
  * Tests for Zod schemas validating configuration content.
- * Covers search.v1, calc.v1, pipeline.v1, sr.v1, and prompt.v1 schemas.
+ * Covers schema version 3.0.0 (search/calc/pipeline/sr) and prompt.v1.
  *
  * @module config-schemas.test
  */
@@ -65,10 +65,10 @@ describe("Config Type Validation", () => {
 describe("Schema Version Mapping", () => {
   it("returns correct schema version for each type", () => {
     expect(getSchemaVersion("prompt")).toBe("prompt.v1");
-    expect(getSchemaVersion("search")).toBe("search.v1");
-    expect(getSchemaVersion("calculation")).toBe("calc.v1");
-    expect(getSchemaVersion("pipeline")).toBe("pipeline.v1");
-    expect(getSchemaVersion("sr")).toBe("sr.v1");
+    expect(getSchemaVersion("search")).toBe("3.0.0");
+    expect(getSchemaVersion("calculation")).toBe("3.0.0");
+    expect(getSchemaVersion("pipeline")).toBe("3.0.0");
+    expect(getSchemaVersion("sr")).toBe("3.0.0");
   });
 });
 
@@ -271,28 +271,28 @@ describe("CalcConfigSchema", () => {
 describe("validateConfig function", () => {
   it("validates search config", () => {
     const content = JSON.stringify(DEFAULT_SEARCH_CONFIG);
-    const result = validateConfig("search", content, "search.v1");
+    const result = validateConfig("search", content, "3.0.0");
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
 
   it("validates pipeline config", () => {
     const content = JSON.stringify(DEFAULT_PIPELINE_CONFIG);
-    const result = validateConfig("pipeline", content, "pipeline.v1");
+    const result = validateConfig("pipeline", content, "3.0.0");
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
 
   it("validates SR config", () => {
     const content = JSON.stringify(DEFAULT_SR_CONFIG);
-    const result = validateConfig("sr", content, "sr.v1");
+    const result = validateConfig("sr", content, "3.0.0");
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
 
   it("returns errors for invalid config", () => {
     const content = JSON.stringify({ enabled: "not-a-boolean" });
-    const result = validateConfig("search", content, "search.v1");
+    const result = validateConfig("search", content, "3.0.0");
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThan(0);
   });
@@ -314,7 +314,7 @@ Analyze this claim.`;
 
   it("rejects invalid JSON for non-prompt types", () => {
     const content = "not valid json {";
-    const result = validateConfig("search", content, "search.v1");
+    const result = validateConfig("search", content, "3.0.0");
     expect(result.valid).toBe(false);
     expect(result.errors[0]).toContain("parse");
   });

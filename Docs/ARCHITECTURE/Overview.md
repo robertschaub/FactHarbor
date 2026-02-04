@@ -335,10 +335,10 @@ erDiagram
     }
 
     EVIDENCE {
-        string id PK "S1-F1, S1-F2 format"
+        string id PK "S1-E1, S1-E2 format"
         string sourceId FK "Reference to source"
         string claimId FK "Optional: specific claim this supports"
-        string fact "The factual statement extracted"
+        string statement "The evidence statement extracted"
         string category "legal_provision | evidence | expert_quote | statistic | event | criticism"
         string specificity "high | medium"
         string sourceExcerpt "Original text excerpt"

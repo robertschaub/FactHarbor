@@ -618,7 +618,7 @@ cd apps/web && npm run build
 
 ## v3.1 Implementation Plan
 
-### Status: 🔴 IN PROGRESS
+### Status: ✅ COMPLETE (v3.1 tasks done)
 
 ### Manual Test Results (v3.0)
 
@@ -635,12 +635,12 @@ cd apps/web && npm run build
 
 | Item | Description | Priority |
 |------|-------------|----------|
-| **B. ID prefix F→E** | Change evidence IDs from F1,F2,F3 to E1,E2,E3 | MEDIUM |
-| **E. Task name changes** | `extract_facts` → `extract_evidence`, `scope_refinement` → `context_refinement` | MEDIUM |
+| **B. ID prefix F→E** | ✅ DONE — Evidence IDs now use E1,E2,E3 | MEDIUM |
+| **E. Task name changes** | ✅ DONE — `extract_facts` → `extract_evidence`, `scope_refinement` → `context_refinement` | MEDIUM |
 
 ---
 
-### Item B: ID Prefix F→E
+### Item B: ID Prefix F→E (✅ DONE)
 
 **Change:** `F1, F2, F3...` → `E1, E2, E3...`
 
@@ -671,7 +671,7 @@ cd apps/web && npm run build
 
 ---
 
-### Item E: Task Name Changes
+### Item E: Task Name Changes (✅ DONE)
 
 **Changes:**
 ```

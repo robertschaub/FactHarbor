@@ -90,7 +90,7 @@ interface AnalysisMetrics {
 
 ```typescript
 interface LLMCallMetric {
-  taskType: 'understand' | 'extract_facts' | 'verdict' | 'scope_refinement' | 'supplemental' | 'other';
+  taskType: 'understand' | 'extract_evidence' | 'context_refinement' | 'verdict' | 'supplemental' | 'other'; // legacy: extract_facts, scope_refinement
   provider: string;
   modelName: string;
   promptTokens: number;

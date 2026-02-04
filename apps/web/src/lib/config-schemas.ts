@@ -2,7 +2,7 @@
  * Configuration Schemas
  *
  * Zod schemas for validating and canonicalizing configuration content.
- * Supports search.v1, calc.v1, and prompt.v1 config types.
+ * Supports schema version 3.0.0 (search/calc/pipeline/sr) and prompt.v1.
  *
  * @module config-schemas
  * @version 1.0.0
@@ -16,7 +16,7 @@ import crypto from "crypto";
 // ============================================================================
 
 export type ConfigType = "prompt" | "search" | "calculation" | "pipeline" | "sr";
-export type SchemaVersion = "prompt.v1" | "search.v1" | "calc.v1" | "pipeline.v1" | "sr.v1";
+export type SchemaVersion = "prompt.v1" | "3.0.0";
 
 // File-backed default schema versions (alpha). Used to validate apps/web/configs/*.default.json.
 export const SCHEMA_VERSIONS = {
@@ -46,7 +46,7 @@ export interface ValidationResult {
 }
 
 // ============================================================================
-// SEARCH CONFIG SCHEMA (search.v1)
+// SEARCH CONFIG SCHEMA (3.0.0)
 // ============================================================================
 
 export const SearchConfigSchema = z.object({
@@ -76,7 +76,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 };
 
 // ============================================================================
-// PIPELINE CONFIG SCHEMA (pipeline.v1)
+// PIPELINE CONFIG SCHEMA (3.0.0)
 // ============================================================================
 // Tier 2 operational config for analysis pipeline settings.
 // Hot-reloadable via Admin UI (defaults defined in code + UCM).
@@ -404,7 +404,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
 };
 
 // ============================================================================
-// SOURCE RELIABILITY CONFIG SCHEMA (sr.v1)
+// SOURCE RELIABILITY CONFIG SCHEMA (3.0.0)
 // ============================================================================
 // Tier 2 operational config for Source Reliability service.
 // IMPORTANT: This config is kept SEPARATE for SR modularity (future extraction).
@@ -489,7 +489,7 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
 };
 
 // ============================================================================
-// CALCULATION CONFIG SCHEMA (calc.v1)
+// CALCULATION CONFIG SCHEMA (3.0.0)
 // ============================================================================
 
 // Helper: Integer tuple with min <= max validation
@@ -1075,8 +1075,9 @@ export function validateConfig(
     errors.push(...secretCheck.errors);
     warnings.push(...secretCheck.warnings);
 
-    // Validate against schema
-    if (configType === "search" && schemaVersion === "search.v1") {
+    if (schemaVersion !== "3.0.0") {
+      errors.push(`Unknown schema version: ${schemaVersion}`);
+    } else if (configType === "search") {
       const result = SearchConfigSchema.safeParse(parsed);
       if (!result.success) {
         errors.push(
@@ -1085,7 +1086,7 @@ export function validateConfig(
           ),
         );
       }
-    } else if (configType === "calculation" && schemaVersion === "calc.v1") {
+    } else if (configType === "calculation") {
       const result = CalcConfigSchema.safeParse(parsed);
       if (!result.success) {
         errors.push(
@@ -1094,7 +1095,7 @@ export function validateConfig(
           ),
         );
       }
-    } else if (configType === "pipeline" && schemaVersion === "pipeline.v1") {
+    } else if (configType === "pipeline") {
       const result = PipelineConfigSchema.safeParse(parsed);
       if (!result.success) {
         errors.push(
@@ -1103,7 +1104,7 @@ export function validateConfig(
           ),
         );
       }
-    } else if (configType === "sr" && schemaVersion === "sr.v1") {
+    } else if (configType === "sr") {
       const result = SourceReliabilityConfigSchema.safeParse(parsed);
       if (!result.success) {
         errors.push(
@@ -1112,8 +1113,6 @@ export function validateConfig(
           ),
         );
       }
-    } else {
-      errors.push(`Unknown schema version: ${schemaVersion}`);
     }
   } catch (err) {
     errors.push(`Failed to parse content: ${err}`);
@@ -1130,13 +1129,13 @@ export function getSchemaVersion(configType: ConfigType): SchemaVersion {
     case "prompt":
       return "prompt.v1";
     case "search":
-      return "search.v1";
+      return "3.0.0";
     case "calculation":
-      return "calc.v1";
+      return "3.0.0";
     case "pipeline":
-      return "pipeline.v1";
+      return "3.0.0";
     case "sr":
-      return "sr.v1";
+      return "3.0.0";
   }
 }
 

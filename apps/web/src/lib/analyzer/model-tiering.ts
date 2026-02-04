@@ -19,8 +19,8 @@
 
 export type TaskType =
   | 'understand'
-  | 'extract_facts'
-  | 'scope_refinement'
+  | 'extract_evidence'
+  | 'context_refinement'
   | 'verdict'
   | 'supplemental'
   | 'summary';
@@ -57,7 +57,7 @@ export const ANTHROPIC_MODELS: Record<ModelTier, ModelConfig> = {
     tier: 'budget',
     costPer1MTokens: { input: 0.25, output: 1.25 },
     maxTokens: 200000,
-    strengths: ['understand', 'extract_facts', 'scope_refinement'],
+    strengths: ['understand', 'extract_evidence', 'context_refinement'],
   },
   standard: {
     provider: 'anthropic',
@@ -84,7 +84,7 @@ export const OPENAI_MODELS: Record<ModelTier, ModelConfig> = {
     tier: 'budget',
     costPer1MTokens: { input: 0.15, output: 0.6 },
     maxTokens: 128000,
-    strengths: ['understand', 'extract_facts'],
+    strengths: ['understand', 'extract_evidence'],
   },
   standard: {
     provider: 'openai',
@@ -92,7 +92,7 @@ export const OPENAI_MODELS: Record<ModelTier, ModelConfig> = {
     tier: 'standard',
     costPer1MTokens: { input: 2.5, output: 10 },
     maxTokens: 128000,
-    strengths: ['scope_refinement', 'supplemental'],
+    strengths: ['context_refinement', 'supplemental'],
   },
   premium: {
     provider: 'openai',
@@ -111,7 +111,7 @@ export const GOOGLE_MODELS: Record<ModelTier, ModelConfig> = {
     tier: 'budget',
     costPer1MTokens: { input: 0.075, output: 0.3 },
     maxTokens: 1000000,
-    strengths: ['understand', 'extract_facts'],
+    strengths: ['understand', 'extract_evidence'],
   },
   standard: {
     provider: 'google',
@@ -119,7 +119,7 @@ export const GOOGLE_MODELS: Record<ModelTier, ModelConfig> = {
     tier: 'standard',
     costPer1MTokens: { input: 1.25, output: 5 },
     maxTokens: 2000000,
-    strengths: ['scope_refinement', 'supplemental'],
+    strengths: ['context_refinement', 'supplemental'],
   },
   premium: {
     provider: 'google',
@@ -140,8 +140,8 @@ export const GOOGLE_MODELS: Record<ModelTier, ModelConfig> = {
  */
 export const DEFAULT_TASK_TIER_MAPPING: Record<TaskType, ModelTier> = {
   understand: 'budget',      // Extraction task - use cheap model
-  extract_facts: 'budget',   // Extraction task - use cheap model
-  scope_refinement: 'standard', // Analysis task - balanced model
+  extract_evidence: 'budget',   // Extraction task - use cheap model
+  context_refinement: 'standard', // Analysis task - balanced model
   verdict: 'premium',        // Reasoning task - premium model CRITICAL
   supplemental: 'standard',  // Generation task - balanced model
   summary: 'standard',       // Generation task - balanced model
@@ -150,7 +150,7 @@ export const DEFAULT_TASK_TIER_MAPPING: Record<TaskType, ModelTier> = {
 /**
  * Get the appropriate model for a task
  *
- * @param taskType - The type of task (understand, extract_facts, verdict, etc.)
+ * @param taskType - The type of task (understand, extract_evidence, verdict, etc.)
  * @param provider - LLM provider
  * @param config - Optional tiering config (pass llmTiering from pipeline config)
  *
@@ -333,9 +333,9 @@ export function estimateTaskCost(
  * ```typescript
  * const tasks = [
  *   { type: 'understand' as TaskType, tokenCount: 50000 },
- *   { type: 'extract_facts' as TaskType, tokenCount: 100000 },
- *   { type: 'extract_facts' as TaskType, tokenCount: 100000 },
- *   { type: 'extract_facts' as TaskType, tokenCount: 100000 },
+ *   { type: 'extract_evidence' as TaskType, tokenCount: 100000 },
+ *   { type: 'extract_evidence' as TaskType, tokenCount: 100000 },
+ *   { type: 'extract_evidence' as TaskType, tokenCount: 100000 },
  *   { type: 'verdict' as TaskType, tokenCount: 80000 },
  * ];
  *

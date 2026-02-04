@@ -60,17 +60,17 @@ interface ScopeLeakAnalysis {
     id: string | null;
     name: string | null;
     factCount: number;
-    facts: Array<{ id: string; fact: string; sourceTitle: string }>;
+    facts: Array<{ id: string; statement: string; sourceTitle: string }>;
   };
   scopeB: {
     id: string | null;
     name: string | null;
     factCount: number;
-    facts: Array<{ id: string; fact: string; sourceTitle: string }>;
+    facts: Array<{ id: string; statement: string; sourceTitle: string }>;
   };
   unscoped: {
     factCount: number;
-    facts: Array<{ id: string; fact: string; sourceTitle: string }>;
+    facts: Array<{ id: string; statement: string; sourceTitle: string }>;
   };
   crossScopeCitations: Array<{
     factId: string;
@@ -85,7 +85,7 @@ function analyzeScopeLeak(
   result: Awaited<ReturnType<typeof runFactHarborAnalysis>>
 ): ScopeLeakAnalysis {
   const scopes = result.resultJson.understanding?.analysisContexts || result.resultJson.understanding?.distinctProceedings || [];
-  const facts = result.resultJson.facts || [];
+  const facts = result.resultJson.evidenceItems || result.resultJson.facts || [];
 
   // Find Scope A and Scope B by looking for "Country A" and "Country B" in names
   const scopeA = scopes.find(
@@ -122,7 +122,7 @@ function analyzeScopeLeak(
 
   // Check if Scope A facts reference Country B
   for (const fact of scopeAFacts) {
-    const factText = fact.fact.toLowerCase();
+    const factText = String((fact as any).statement ?? (fact as any).fact ?? "").toLowerCase();
     const sourceTitle = (fact.sourceTitle || "").toLowerCase();
     const sourceUrl = (fact.sourceUrl || "").toLowerCase();
 
@@ -142,7 +142,7 @@ function analyzeScopeLeak(
 
   // Check if Scope B facts reference Country A
   for (const fact of scopeBFacts) {
-    const factText = fact.fact.toLowerCase();
+    const factText = String((fact as any).statement ?? (fact as any).fact ?? "").toLowerCase();
     const sourceTitle = (fact.sourceTitle || "").toLowerCase();
     const sourceUrl = (fact.sourceUrl || "").toLowerCase();
 
@@ -167,7 +167,7 @@ function analyzeScopeLeak(
       factCount: scopeAFacts.length,
       facts: scopeAFacts.map((f) => ({
         id: f.id,
-        fact: f.fact.substring(0, 100),
+        statement: String((f as any).statement ?? (f as any).fact ?? "").substring(0, 100),
         sourceTitle: f.sourceTitle || "",
       })),
     },
@@ -177,7 +177,7 @@ function analyzeScopeLeak(
       factCount: scopeBFacts.length,
       facts: scopeBFacts.map((f) => ({
         id: f.id,
-        fact: f.fact.substring(0, 100),
+        statement: String((f as any).statement ?? (f as any).fact ?? "").substring(0, 100),
         sourceTitle: f.sourceTitle || "",
       })),
     },
@@ -185,7 +185,7 @@ function analyzeScopeLeak(
       factCount: unscopedFacts.length,
       facts: unscopedFacts.map((f) => ({
         id: f.id,
-        fact: f.fact.substring(0, 100),
+        statement: String((f as any).statement ?? (f as any).fact ?? "").substring(0, 100),
         sourceTitle: f.sourceTitle || "",
       })),
     },
@@ -270,7 +270,7 @@ describe("Adversarial Scope Leak", () => {
                 id: s.id,
                 name: s.name,
               })),
-              totalFacts: result.resultJson.facts?.length || 0,
+              totalFacts: (result.resultJson.evidenceItems || result.resultJson.facts || []).length,
               timestamp: new Date().toISOString(),
             },
             null,
@@ -319,7 +319,7 @@ describe("Adversarial Scope Leak", () => {
                 id: s.id,
                 name: s.name,
               })),
-              totalFacts: result.resultJson.facts?.length || 0,
+              totalFacts: (result.resultJson.evidenceItems || result.resultJson.facts || []).length,
               timestamp: new Date().toISOString(),
             },
             null,
@@ -352,13 +352,13 @@ describe("Adversarial Scope Leak", () => {
 
         const analysis = analyzeScopeLeak(result);
 
-        console.log(`  Unscoped facts: ${analysis.unscoped.factCount}`);
+        console.log(`  Unscoped evidence items: ${analysis.unscoped.factCount}`);
 
         // If there's ambiguous evidence (facts that mention both countries or "SC"),
         // they should be in unscoped
-        const allFacts = result.facts || [];
+        const allFacts = result.resultJson?.evidenceItems || result.resultJson?.facts || result.facts || [];
         const ambiguousFacts = allFacts.filter((f) => {
-          const text = f.fact.toLowerCase();
+          const text = String((f as any).statement ?? (f as any).fact ?? "").toLowerCase();
           // Facts that mention SC without country specificity, or mention both
           const mentionsSC = text.includes(" sc ") || text.includes("supreme court");
           const mentionsA = text.includes("country a");
@@ -366,7 +366,7 @@ describe("Adversarial Scope Leak", () => {
           return (mentionsSC && !mentionsA && !mentionsB) || (mentionsA && mentionsB);
         });
 
-        console.log(`  Ambiguous facts found: ${ambiguousFacts.length}`);
+        console.log(`  Ambiguous evidence items found: ${ambiguousFacts.length}`);
 
         // Check if ambiguous facts are properly categorized as unscoped
         for (const fact of ambiguousFacts) {
@@ -379,7 +379,7 @@ describe("Adversarial Scope Leak", () => {
 
           if (!isUnscoped) {
             console.log(
-              `  ⚠️ Ambiguous fact incorrectly scoped: ${fact.id} -> ${scopeId}`
+              `  ⚠️ Ambiguous evidence item incorrectly scoped: ${fact.id} -> ${scopeId}`
             );
           }
         }
@@ -392,7 +392,7 @@ describe("Adversarial Scope Leak", () => {
               analysis,
               ambiguousFacts: ambiguousFacts.map((f) => ({
                 id: f.id,
-                fact: f.fact.substring(0, 150),
+                statement: String((f as any).statement ?? (f as any).fact ?? "").substring(0, 150),
                 contextId: f.contextId ?? f.relatedProceedingId,
               })),
               timestamp: new Date().toISOString(),

@@ -15,7 +15,7 @@ import { buildPrompt } from '@/lib/analyzer/prompts/prompt-builder';
 /**
  * Helper to generate a test prompt for validation
  */
-function generateTestPrompt(task: 'understand' | 'extract_facts' | 'verdict' | 'scope_refinement', provider: 'anthropic' | 'openai' | 'google' | 'mistral', claim: string): string {
+function generateTestPrompt(task: 'understand' | 'extract_evidence' | 'verdict' | 'context_refinement', provider: 'anthropic' | 'openai' | 'google' | 'mistral', claim: string): string {
   return buildPrompt({
     task,
     provider,

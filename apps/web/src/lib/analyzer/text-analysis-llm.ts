@@ -228,9 +228,9 @@ export class LLMTextAnalysisService implements ITextAnalysisService {
       case "input":
         return "understand";
       case "evidence":
-        return "extract_facts";
+        return "extract_evidence";
       case "scope":
-        return "extract_facts";
+        return "context_refinement";
       case "verdict":
         return "verdict";
     }

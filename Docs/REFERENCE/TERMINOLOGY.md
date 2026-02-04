@@ -145,7 +145,7 @@ export interface EvidenceScope {
 // Attached to evidence items (EvidenceItem, legacy name: ExtractedFact)
 export interface EvidenceItem {
   id: string;
-  statement: string;  // legacy name: fact
+  statement: string;
   evidenceScope?: EvidenceScope;
   // ...
 }
@@ -154,10 +154,10 @@ export interface EvidenceItem {
 **JSON field name**:
 ```json
 {
-  "facts": [
+  "evidenceItems": [
     {
-      "id": "F1",
-      "fact": "Hydrogen achieves 40% WTW efficiency",
+      "id": "E1",
+      "statement": "Hydrogen achieves 40% WTW efficiency",
       "evidenceScope": {
         "name": "WTW",
         "methodology": "Well-to-Wheel",
@@ -172,11 +172,11 @@ export interface EvidenceItem {
 
 **Prompt terminology**:
 - Always: "evidenceScope" (lowercase, as field name)
-- In explanations: "Per-fact EvidenceScope" (to distinguish from AnalysisContext)
+- In explanations: "Per-evidence EvidenceScope" (to distinguish from AnalysisContext)
 
 **Common confusion**:
 - ❌ NOT a top-level scope requiring separate verdicts
-- ❌ Multiple facts can have the same EvidenceScope (many sources use WTW methodology)
+- ❌ Multiple evidence items can have the same EvidenceScope (many sources use WTW methodology)
 - ✅ IS metadata about **how the source computed** the data
 
 ---

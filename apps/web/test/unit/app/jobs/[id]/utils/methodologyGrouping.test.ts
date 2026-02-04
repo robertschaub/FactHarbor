@@ -9,19 +9,19 @@ const makeFact = (id: string, methodology?: string) => ({
 describe("groupFactsByMethodology", () => {
   it("returns null when fewer than 3 methodologies", () => {
     const facts = [
-      makeFact("F1", "WTW"),
-      makeFact("F2", "WTW"),
-      makeFact("F3", "LCA"),
+      makeFact("E1", "WTW"),
+      makeFact("E2", "WTW"),
+      makeFact("E3", "LCA"),
     ];
     expect(groupFactsByMethodology(facts)).toBeNull();
   });
 
   it("groups facts when 3+ methodologies exist", () => {
     const facts = [
-      makeFact("F1", "WTW"),
-      makeFact("F2", "WTW"),
-      makeFact("F3", "TTW"),
-      makeFact("F4", "LCA"),
+      makeFact("E1", "WTW"),
+      makeFact("E2", "WTW"),
+      makeFact("E3", "TTW"),
+      makeFact("E4", "LCA"),
     ];
     const groups = groupFactsByMethodology(facts);
     expect(groups).not.toBeNull();
@@ -30,10 +30,10 @@ describe("groupFactsByMethodology", () => {
 
   it("places facts without methodology into General group", () => {
     const facts = [
-      makeFact("F1", "WTW"),
-      makeFact("F2", "TTW"),
-      makeFact("F3", "LCA"),
-      makeFact("F4"),
+      makeFact("E1", "WTW"),
+      makeFact("E2", "TTW"),
+      makeFact("E3", "LCA"),
+      makeFact("E4"),
     ];
     const groups = groupFactsByMethodology(facts);
     expect(groups).not.toBeNull();

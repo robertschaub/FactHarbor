@@ -32,7 +32,7 @@ import {
 
 describe('Provider Variants', () => {
   const providers: ProviderType[] = ['anthropic', 'openai', 'google', 'mistral'];
-  const tasks: TaskType[] = ['understand', 'extract_facts', 'verdict', 'scope_refinement'];
+  const tasks: TaskType[] = ['understand', 'extract_evidence', 'verdict', 'context_refinement'];
 
   describe('All providers generate non-empty prompts', () => {
     for (const provider of providers) {
@@ -52,8 +52,8 @@ describe('Provider Variants', () => {
       expect(prompt).toContain('<claude_optimization>');
     });
 
-    it('extract_facts prompt has XML tags', () => {
-      const prompt = generateTestPrompt('extract_facts', 'anthropic');
+    it('extract_evidence prompt has XML tags', () => {
+      const prompt = generateTestPrompt('extract_evidence', 'anthropic');
       expect(prompt).toContain('<claude_optimization>');
     });
 
@@ -70,8 +70,8 @@ describe('Provider Variants', () => {
       expect(prompt).toContain('"analysisContexts"'); // Multi-context detection example present
     });
 
-    it('extract_facts prompt has example', () => {
-      const prompt = generateTestPrompt('extract_facts', 'openai');
+    it('extract_evidence prompt has example', () => {
+      const prompt = generateTestPrompt('extract_evidence', 'openai');
       expect(prompt).toMatch(/example|Example/i);
     });
 
@@ -100,8 +100,8 @@ describe('Provider Variants', () => {
       expect(prompt).toMatch(/step\s*1|Step\s*1/i);
     });
 
-    it('extract_facts prompt has checklist', () => {
-      const prompt = generateTestPrompt('extract_facts', 'mistral');
+    it('extract_evidence prompt has checklist', () => {
+      const prompt = generateTestPrompt('extract_evidence', 'mistral');
       expect(prompt).toMatch(/\[\s*\]/); // Checkbox pattern
     });
   });
@@ -114,7 +114,7 @@ describe('Provider Variants', () => {
 describe('Budget Model Optimization', () => {
   describe('Budget prompts are shorter than full prompts', () => {
     const providers: ProviderType[] = ['anthropic', 'openai', 'google', 'mistral'];
-    const tasks: TaskType[] = ['understand', 'extract_facts', 'verdict'];
+    const tasks: TaskType[] = ['understand', 'extract_evidence', 'verdict'];
 
     for (const provider of providers) {
       for (const task of tasks) {
@@ -174,7 +174,7 @@ describe('Budget Model Optimization', () => {
 describe('Structured Output Guidance', () => {
   describe('All prompts include JSON output requirements', () => {
     const providers: ProviderType[] = ['anthropic', 'openai', 'google', 'mistral'];
-    const tasks: TaskType[] = ['understand', 'extract_facts', 'verdict'];
+    const tasks: TaskType[] = ['understand', 'extract_evidence', 'verdict'];
 
     for (const provider of providers) {
       for (const task of tasks) {
@@ -242,8 +242,8 @@ describe('Critical Guidance Inclusion', () => {
     const providers: ProviderType[] = ['anthropic', 'openai', 'google', 'mistral'];
 
     for (const provider of providers) {
-      it(`${provider} scope_refinement includes terminology`, () => {
-        const prompt = generateTestPrompt('scope_refinement', provider);
+      it(`${provider} context_refinement includes terminology`, () => {
+        const prompt = generateTestPrompt('context_refinement', provider);
         expect(prompt).toMatch(/scope|Scope|context|Context/i);
       });
     }

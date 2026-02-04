@@ -59,7 +59,7 @@ apps/web/src/lib/analyzer/prompts/
 │                        buildPrompt()                             │
 │                                                                  │
 │  Input:                                                          │
-│  ├─ task: 'understand' | 'extract_facts' | 'verdict' | ...      │
+│  ├─ task: 'understand' | 'extract_evidence' | 'verdict' | ...   │
 │  ├─ provider: 'anthropic' | 'openai' | 'google' | 'mistral'     │
 │  ├─ modelName: string                                            │
 │  ├─ config: { allowModelKnowledge, isLLMTiering, isBudgetModel } │
@@ -140,9 +140,9 @@ Apply nuanced reasoning. Be direct and confident.
 | Task | Pipeline(s) | Base Prompt File |
 |------|-------------|------------------|
 | `understand` | Canonical, Orchestrated | `understand-base.ts` |
-| `extract_facts` | Canonical, Orchestrated | `extract-facts-base.ts` |
+| `extract_evidence` | Canonical, Orchestrated | `extract-facts-base.ts` |
 | `verdict` | Canonical, Orchestrated | `verdict-base.ts` |
-| `scope_refinement` | Orchestrated | `scope-refinement-base.ts` (legacy name) |
+| `context_refinement` | Orchestrated | `context-refinement-base.ts` |
 | `dynamic_plan` | Dynamic | `dynamic-plan-base.ts` |
 | `dynamic_analysis` | Dynamic | `dynamic-analysis-base.ts` |
 | `orchestrated_understand` | Orchestrated | `orchestrated-understand.ts` |
