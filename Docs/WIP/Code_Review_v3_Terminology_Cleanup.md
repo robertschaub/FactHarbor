@@ -1,9 +1,19 @@
 # Code Review: v3.0/v3.1 Terminology Cleanup
 
-**Status:** PREPARATION COMPLETE - Awaiting implementation completion
+**Status:** ✅ REVIEW COMPLETE
 **Reviewer Role:** Code Review Agent (read-only)
 **Branch Comparison:** `Before-Backward-Compatibility-Break` → `main`
 **Created:** 2026-02-04
+**Completed:** 2026-02-04
+
+## Review Verdict: PASS (with minor documentation fixes needed)
+
+| Severity | Count |
+|----------|-------|
+| BLOCKER | 0 |
+| HIGH | 0 |
+| MEDIUM | 1 (TERMINOLOGY.md update) |
+| LOW | 1 (AGENTS.md Key Files table) |
 
 ---
 
@@ -230,13 +240,20 @@ AnalysisContext.metadata  ────>  frame-level methodology
 
 ---
 
-## Part 3: Preliminary Findings (Pre-Review)
+## Part 3: Preliminary Findings (Pre-Review) - STATUS UPDATED
 
-*Identified during preparation phase. To be re-checked when review begins - some may be resolved by Senior Developer.*
+*Re-checked on 2026-02-04 when review began.*
 
-### 3.0 First Step When Review Begins
+### 3.0 Re-Check Results Summary
 
-**RE-CHECK ALL PRELIMINARY FINDINGS BELOW** - Senior Developer may have addressed these. Verify current state before proceeding with full diff review.
+| ID | Finding | Original Status | Re-Check Result |
+|----|---------|-----------------|-----------------|
+| P1 | AGENTS.md Key Files table outdated | To re-check | **CONFIRMED** - Still needs fix |
+| P2 | TERMINOLOGY.md outdated | To re-check | **CONFIRMED** - Still needs update |
+| P3 | ClaimsGroupedByScope.tsx naming | To re-check | **RESOLVED** - Renamed to ClaimsGroupedByContext.tsx |
+| P4 | ArticleFrame vs backgroundDetails mismatch | To re-check | **CONFIRMED** - TERMINOLOGY.md still uses ArticleFrame |
+| P5 | AnalysisContext.metadata vs EvidenceScope | To verify | **VERIFIED OK** - Prompts clearly distinguish |
+| P6 | "Scope" usage verification | To verify | **VERIFIED OK** - Only used for EvidenceScope |
 
 ---
 
@@ -249,11 +266,11 @@ AnalysisContext.metadata  ────>  frame-level methodology
 | apps/web/src/lib/analyzer/scopes.ts | Scope detection and handling |
 ```
 
-**Expected:** Should reference `analysis-contexts.ts`
+**Expected:** Should reference `analysis-contexts.ts` with description "AnalysisContext detection and handling"
 
 **Severity:** [LOW] - Documentation inconsistency
 
-**Status:** To re-check
+**Status:** ❌ **CONFIRMED** - Still needs fix
 
 ---
 
@@ -270,11 +287,11 @@ config-schemas.ts:
 └─ scopeDedupThreshold → contextDedupThreshold  [DEFER]
 ```
 
-**Expected:** These were implemented in v3.0. Document should reflect current state with status `[DONE]` or similar, and version should be 3.0+.
+**Expected:** These were implemented in v3.0. Document should be updated to v3.0+ with status `[DONE]`.
 
 **Severity:** [MEDIUM] - Documentation out of sync with implementation
 
-**Status:** To re-check
+**Status:** ❌ **CONFIRMED** - Still needs update
 
 ---
 
@@ -284,14 +301,7 @@ config-schemas.ts:
 
 **Issue:** Component groups claims by **AnalysisContext** (using `contextId`), but filename uses "Scope".
 
-**Rule Violated (AGENTS.md):**
-> **NEVER** use "scope" when referring to AnalysisContext - always say "context"
-
-**Expected:** Should be renamed to `ClaimsGroupedByContext.tsx`
-
-**Severity:** [MEDIUM] - Terminology rule violation in component naming
-
-**Status:** To re-check
+**Status:** ✅ **RESOLVED** - File renamed to `ClaimsGroupedByContext.tsx`
 
 ---
 
@@ -306,81 +316,127 @@ config-schemas.ts:
 | TERMINOLOGY.md | "ArticleFrame" (concept name) |
 | TypeScript field | `backgroundDetails` |
 | UI Component | `BackgroundBanner.tsx` |
+| types.ts comment | "Background details" |
 
-**Expected:** Conceptual name in documentation should align with implementation. Either:
-- Update docs to use "Background Details" as concept name, OR
-- Document that "ArticleFrame" is the conceptual name while `backgroundDetails` is the field name
+**Expected:** Conceptual name in TERMINOLOGY.md should be updated to "Background Details" to match implementation.
 
 **Severity:** [LOW] - Documentation/naming alignment
 
-**Status:** To re-check
+**Status:** ❌ **CONFIRMED** - TERMINOLOGY.md still uses "ArticleFrame"
 
 ---
 
 ### 3.5 Preliminary Finding P5: AnalysisContext.metadata vs EvidenceScope Distinction
 
-**Files:** Prompts (understand-base.ts, extract-evidence-base.ts, verdict-base.ts)
+**Issue:** Both `AnalysisContext.metadata` and `EvidenceScope` can contain similar fields.
 
-**Issue:** Both `AnalysisContext.metadata` and `EvidenceScope` can contain similar fields:
-- `methodology`
-- `boundaries`
-- `geographic`
-- `temporal`
+**Verification Result:** Prompts clearly explain the distinction:
+- `extract-evidence-base.ts`: "EvidenceScope: Per-evidence source methodology metadata"
+- `context-refinement-base.ts`: Clear separation of AnalysisContext vs EvidenceScope
+- `verdict-base.ts`: "EvidenceScope: Per-evidence source methodology metadata"
+- `types.ts`: Excellent documentation (lines 98-123) explaining the difference
 
-**Distinction:**
-- **AnalysisContext.metadata** = describes the analytical frame WE'RE using for analysis
-- **EvidenceScope** = describes what the SOURCE used when producing evidence
-
-**Risk:** LLMs may confuse these similar structures.
-
-**Expected:** Prompts should clearly explain the distinction. Need to verify during review.
-
-**Severity:** [MEDIUM] - Potential LLM confusion
-
-**Status:** To verify in prompts during review
+**Status:** ✅ **VERIFIED OK** - Prompts clearly distinguish between the two concepts
 
 ---
 
 ### 3.6 Preliminary Finding P6: "Scope" Preserved in EvidenceScope (Verification Needed)
 
-**Issue:** The term "scope" is intentionally preserved in `EvidenceScope` (correct per rules - refers to per-evidence source metadata).
+**Verification Result:**
+- [x] No prompts confuse "scope" (EvidenceScope) with "context" (AnalysisContext)
+- [x] Variable names use `evidenceScope` consistently
+- [x] UI component `EvidenceScopeTooltip.tsx` correctly uses "Evidence Scope" label
 
-**Verification Needed:**
-- [ ] No prompts confuse "scope" (EvidenceScope) with "context" (AnalysisContext)
-- [ ] Variable names use `evidenceScope` consistently (not `scope` alone)
-- [ ] UI/code comments don't misuse "scope" for AnalysisContext
-
-**Severity:** [MEDIUM] - Potential terminology confusion
-
-**Status:** To verify during review
+**Status:** ✅ **VERIFIED OK** - "Scope" correctly refers only to EvidenceScope
 
 ---
 
 ## Part 4: Full Review Findings
 
-*To be populated after implementation completion and full diff review*
+**Review completed:** 2026-02-04
 
 ### 4.1 Summary
 
-*Pending*
+The v3.0/v3.1 terminology cleanup has been **successfully implemented** in the codebase. All legacy terms have been removed from the source code, prompts use correct terminology with clear glossaries, and UI components are properly named.
+
+**Key Achievements:**
+- All legacy field names removed (`detectedScopes`, `factScopeAssignments`, `supportingFactIds`, `scopeDetection*`)
+- All legacy function names removed (`getScopeRefinement`, `detectScopes`, `extract_facts`)
+- ID prefix changed from `F1,F2` to `E1,E2`
+- Config fields correctly use `contextDetection*` pattern
+- Prompts include clear TERMINOLOGY sections
+- UI components correctly named (`ClaimsGroupedByContext`, `BackgroundBanner`, `EvidenceScopeTooltip`)
+- Types well-documented with terminology explanation
+
+**Outstanding Items:**
+Two documentation files need updates (see findings below).
 
 ### 4.2 Findings by Severity
 
 #### [BLOCKER]
 
-*None identified yet*
+*None*
 
 #### [HIGH]
 
-*None identified yet*
+*None*
 
 #### [MEDIUM]
 
-*None identified yet*
+**F1: TERMINOLOGY.md requires v3.0 update**
+
+The reference document `Docs/REFERENCE/TERMINOLOGY.md` is outdated:
+- Shows version 2.6.42, should be 3.0+
+- Lists config renames as `[DEFER]` but they are implemented
+- Uses "ArticleFrame" concept name instead of "Background Details"
+- Field mapping table references legacy v2.7 names
+
+**Suggested fix:** Update TERMINOLOGY.md to reflect v3.0 changes, update status markers from `[DEFER]` to `[DONE]`, align concept names with implementation.
 
 #### [LOW]
 
-*None identified yet*
+**F2: AGENTS.md Key Files table references old filename**
+
+Line 113 in `AGENTS.md` references:
+```
+| apps/web/src/lib/analyzer/scopes.ts | Scope detection and handling |
+```
+
+**Suggested fix:** Update to:
+```
+| apps/web/src/lib/analyzer/analysis-contexts.ts | AnalysisContext detection and handling |
+```
+
+### 4.3 Verification Commands Executed
+
+```bash
+# All returned "No files found" (PASS):
+grep -r "detectedScopes" apps/web/src --include="*.ts" --include="*.tsx"
+grep -r "factScopeAssignments" apps/web/src --include="*.ts"
+grep -r "supportingFactIds" apps/web/src --include="*.ts"
+grep -r "scopeDetection" apps/web/src --include="*.ts"
+grep -r "getScopeRefinement" apps/web/src --include="*.ts"
+grep -r "detectScopes" apps/web/src --include="*.ts"
+grep -r "extract_facts" apps/web/src --include="*.ts"
+grep -rn '"F[0-9]' apps/web/src --include="*.ts"
+```
+
+### 4.4 Files Verified (Terminology Correct)
+
+| File | Status | Notes |
+|------|--------|-------|
+| `types.ts` | ✅ | Excellent terminology section (lines 98-123) |
+| `extract-evidence-base.ts` | ✅ | Clear TERMINOLOGY section, correct field names |
+| `context-refinement-base.ts` | ✅ | Clear TERMINOLOGY section, correct usage |
+| `verdict-base.ts` | ✅ | Clear TERMINOLOGY section, AnalysisContext isolation |
+| `config-schemas.ts` | ✅ | All `contextDetection*` fields correct |
+| `ClaimsGroupedByContext.tsx` | ✅ | Correctly renamed, uses `contextId` |
+| `BackgroundBanner.tsx` | ✅ | Uses `backgroundDetails` prop |
+| `EvidenceScopeTooltip.tsx` | ✅ | Correct "Evidence Scope" label |
+
+#### [LOW]
+
+*See F2 in section 4.2 above*
 
 ---
 

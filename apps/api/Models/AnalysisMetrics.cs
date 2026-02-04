@@ -21,7 +21,7 @@ namespace FactHarbor.Api.Models
         /// Full metrics data stored as JSON
         /// </summary>
         [Required]
-        [Column(TypeName = "NVARCHAR(MAX)")]
+        [Column(TypeName = "TEXT")]
         public string MetricsJson { get; set; } = string.Empty;
 
         [Required]

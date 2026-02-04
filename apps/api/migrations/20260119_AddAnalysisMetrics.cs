@@ -17,7 +17,7 @@ namespace FactHarbor.Api.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     JobId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MetricsJson = table.Column<string>(type: "NVARCHAR(MAX)", nullable: false),
+                    MetricsJson = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
