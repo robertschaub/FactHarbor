@@ -19,7 +19,7 @@ import {
 } from './base/orchestrated-understand';
 import {
   getSupplementalClaimsPromptForProvider,
-  getSupplementalScopesPromptForProvider,
+  getSupplementalContextsPromptForProvider,
   getOutcomeClaimsExtractionPrompt,
   type SupplementalClaimsVariables,
 } from './base/orchestrated-supplemental';
@@ -79,7 +79,7 @@ export type TaskType =
   | 'dynamic_analysis'
   | 'orchestrated_understand'
   | 'supplemental_claims'
-  | 'supplemental_scopes';
+  | 'supplemental_contexts';
 export type ProviderType = 'anthropic' | 'openai' | 'google' | 'mistral';
 
 export interface PromptContext {
@@ -248,8 +248,8 @@ function getBaseTemplate(context: PromptContext): string {
         provider
       );
 
-    case 'supplemental_scopes':
-      return getSupplementalScopesPromptForProvider(provider);
+    case 'supplemental_contexts':
+      return getSupplementalContextsPromptForProvider(provider);
 
     default:
       throw new Error(`Unknown task type: ${task}`);
@@ -263,7 +263,7 @@ function getProviderVariant(context: PromptContext): string {
   const { task, provider } = context;
 
   // Orchestrated tasks already include provider optimization in base template
-  if (task === 'orchestrated_understand' || task === 'supplemental_claims' || task === 'supplemental_scopes') {
+  if (task === 'orchestrated_understand' || task === 'supplemental_claims' || task === 'supplemental_contexts') {
     return '';
   }
 
@@ -387,7 +387,7 @@ export {
 
 export {
   getSupplementalClaimsPromptForProvider,
-  getSupplementalScopesPromptForProvider,
+  getSupplementalContextsPromptForProvider,
   getOutcomeClaimsExtractionPrompt,
   type SupplementalClaimsVariables,
 } from './base/orchestrated-supplemental';

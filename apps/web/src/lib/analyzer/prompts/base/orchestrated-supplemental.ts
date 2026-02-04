@@ -63,7 +63,7 @@ Return JSON with:
 /**
  * Get prompt for requesting supplemental AnalysisContext detection
  */
-export function getSupplementalScopesPrompt(): string {
+export function getSupplementalContextsPrompt(): string {
   return `You are a verification assistant.
 
 ## TASK
@@ -211,10 +211,10 @@ export function getSupplementalClaimsPromptForProvider(
 /**
  * Get provider-optimized supplemental AnalysisContexts prompt
  */
-export function getSupplementalScopesPromptForProvider(
+export function getSupplementalContextsPromptForProvider(
   provider: 'anthropic' | 'openai' | 'google' | 'mistral'
 ): string {
-  const basePrompt = getSupplementalScopesPrompt();
+  const basePrompt = getSupplementalContextsPrompt();
 
   switch (provider) {
     case 'anthropic':
@@ -255,12 +255,3 @@ export function getSupplementalScopesPromptForProvider(
   }
 }
 
-// ============================================================================
-// FUNCTION ALIASES (Phase 1: Backward Compatibility)
-// ============================================================================
-
-/** Primary name for getting supplemental contexts prompt */
-export const getSupplementalContextsPrompt = getSupplementalScopesPrompt;
-
-/** Primary name for getting supplemental contexts prompt for provider */
-export const getSupplementalContextsPromptForProvider = getSupplementalScopesPromptForProvider;

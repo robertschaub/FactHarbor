@@ -147,7 +147,7 @@ Apply nuanced reasoning. Be direct and confident.
 | `dynamic_analysis` | Dynamic | `dynamic-analysis-base.ts` |
 | `orchestrated_understand` | Orchestrated | `orchestrated-understand.ts` |
 | `supplemental_claims` | Orchestrated | `orchestrated-supplemental.ts` |
-| `supplemental_scopes` | Orchestrated | `orchestrated-supplemental.ts` (legacy name) |
+| `supplemental_contexts` | Orchestrated | `orchestrated-supplemental.ts` |
 
 ---
 

@@ -1190,8 +1190,8 @@ npm run promptfoo:all            # Run all 38 tests
 
 **Task-Specific Prompts**:
 - `orchestrated-understand.ts`: Main analysis prompts
-- `orchestrated-supplemental.ts`: Claims/scopes generation
-- Task types: `orchestrated_understand`, `supplemental_claims`, `supplemental_scopes`
+- `orchestrated-supplemental.ts`: Claims/contexts generation
+- Task types: `orchestrated_understand`, `supplemental_claims`, `supplemental_contexts`
 - Exported via `prompt-builder.ts`
 
 **Testing**:
