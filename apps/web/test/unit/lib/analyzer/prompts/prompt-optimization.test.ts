@@ -323,16 +323,16 @@ describe('Standard Test Cases', () => {
     expect(testCase?.input).toContain('claims');
   });
 
-  it('has multi-scope detection test case', () => {
-    const testCase = STANDARD_TEST_CASES.find((t) => t.id === 'multi-scope-detection');
+  it('has multi-context detection test case', () => {
+    const testCase = STANDARD_TEST_CASES.find((t) => t.id === 'multi-context-detection');
     expect(testCase).toBeDefined();
-    expect(testCase?.expectedOutput?.scopeCount).toBe(2);
+    expect(testCase?.expectedOutput?.contextCount).toBe(2);
   });
 
-  it('has methodology scope test case', () => {
-    const testCase = STANDARD_TEST_CASES.find((t) => t.id === 'methodology-scope');
+  it('has methodology context test case', () => {
+    const testCase = STANDARD_TEST_CASES.find((t) => t.id === 'methodology-context');
     expect(testCase).toBeDefined();
-    expect(testCase?.input).toMatch(/well-to-wheel|tank-to-wheel/i);
+    expect(testCase?.input).toMatch(/method a|method b/i);
   });
 
   it('has rating direction test case', () => {

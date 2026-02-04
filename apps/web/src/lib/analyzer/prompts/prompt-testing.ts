@@ -72,7 +72,7 @@ export interface PromptQualityMetrics {
 export const STANDARD_TEST_CASES: PromptTestCase[] = [
   {
     id: 'attribution-separation',
-    input: 'Dr. Smith claims the vaccine is unsafe',
+    input: 'Person A claims Product X is unsafe',
     description: 'Tests separation of attribution from content claims',
     expectedOutput: {
       subClaimsCount: 2, // Should produce attribution + core claim
@@ -81,22 +81,20 @@ export const STANDARD_TEST_CASES: PromptTestCase[] = [
     },
   },
   {
-    id: 'multi-scope-detection',
-    input: 'The TSE court in Brazil ruled he was ineligible, while SCOTUS in the US ruled differently on ballot access',
-    description: 'Tests detection of multiple distinct legal scopes',
+    id: 'multi-context-detection',
+    input: 'Institution A ruled X was ineligible, while Institution B ruled differently on eligibility',
+    description: 'Tests detection of multiple distinct institutional contexts',
     expectedOutput: {
-      scopeCount: 2,
+      contextCount: 2,
       requiresSeparateAnalysis: true,
     },
   },
   {
-    id: 'methodology-scope',
-    input: 'Well-to-wheel analysis shows hydrogen vehicles are 40% efficient, while tank-to-wheel shows 60%',
-    description: 'Tests detection of methodology-based scopes',
+    id: 'methodology-context',
+    input: 'Method A analysis shows System A is 40% efficient, while Method B shows 60%',
+    description: 'Tests detection of methodology-based contexts',
     expectedOutput: {
-      scopeCount: 2,
-      hasWTWScope: true,
-      hasTTWScope: true,
+      contextCount: 2,
     },
   },
   {
@@ -365,10 +363,12 @@ export function validateOutput(
       if (!Array.isArray(subClaims) || subClaims.length < (value as number)) {
         errors.push(`Expected at least ${value} subClaims, got ${subClaims?.length || 0}`);
       }
-    } else if (key === 'scopeCount') {
-      const scopes = (obj.analysisContexts || obj.detectedScopes) as unknown[];
-      if (!Array.isArray(scopes) || scopes.length !== value) {
-        errors.push(`Expected ${value} scopes, got ${scopes?.length || 0}`);
+    } else if (key === 'contextCount') {
+      // NOTE: Support both analysisContexts (newer outputs) and detectedScopes (legacy understand schema).
+      // Do not remove detectedScopes until backward compatibility is intentionally broken.
+      const contexts = (obj.analysisContexts || obj.detectedScopes) as unknown[];
+      if (!Array.isArray(contexts) || contexts.length !== value) {
+        errors.push(`Expected ${value} contexts, got ${contexts?.length || 0}`);
       }
     } else if (key === 'requiresSeparateAnalysis') {
       if (obj.requiresSeparateAnalysis !== value) {
