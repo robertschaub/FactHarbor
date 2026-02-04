@@ -5,7 +5,7 @@
  * These types define the interface for all 4 analysis points:
  * 1. Input Classification + Claim Decomposition
  * 2. Evidence Quality Assessment
- * 3. Scope Similarity Analysis
+ * 3. Context Similarity Analysis
  * 4. Verdict Validation
  *
  * @module analyzer/text-analysis-types
@@ -17,7 +17,7 @@
 // ============================================================================
 
 /** Analysis point identifiers (execution order) */
-export type AnalysisPoint = "input" | "evidence" | "scope" | "verdict";
+export type AnalysisPoint = "input" | "evidence" | "context" | "verdict";
 
 /** Response metadata for telemetry */
 export interface TextAnalysisMeta {
@@ -125,34 +125,26 @@ export type PhaseBucket = "production" | "usage" | "other";
 
 /**
  * A context pair for similarity analysis.
- * Note: Field names use "scope" for backward compatibility with LLM prompt output.
  */
 export interface ContextPair {
-  scopeA: string;
-  scopeB: string;
+  contextA: string;
+  contextB: string;
   metadataA?: Record<string, unknown>;
   metadataB?: Record<string, unknown>;
 }
 
-/** @deprecated Use ContextPair instead */
-export type ScopePair = ContextPair;
-
 /** Request for context similarity analysis */
 export interface ContextSimilarityRequest {
-  scopePairs: ContextPair[];
+  contextPairs: ContextPair[];
   contextList: string[];
 }
 
-/** @deprecated Use ContextSimilarityRequest instead */
-export type ScopeSimilarityRequest = ContextSimilarityRequest;
-
 /**
  * Result for a single context pair.
- * Note: Field names use "scope" for backward compatibility with LLM prompt output.
  */
 export interface ContextSimilarityResult {
-  scopeA: string;
-  scopeB: string;
+  contextA: string;
+  contextB: string;
   similarity: number;
   phaseBucketA: PhaseBucket;
   phaseBucketB: PhaseBucket;
@@ -160,9 +152,6 @@ export interface ContextSimilarityResult {
   canonicalName: string | null;
   reasoning: string;
 }
-
-/** @deprecated Use ContextSimilarityResult instead */
-export type ScopeSimilarityResult = ContextSimilarityResult;
 
 // ============================================================================
 // CALL 4: VERDICT VALIDATION
@@ -233,15 +222,15 @@ export interface ITextAnalysisService {
 
   /**
    * Call 2: Assess evidence quality for filtering
-   * Pipeline stage: EXTRACT_FACTS
+   * Pipeline stage: EXTRACT_EVIDENCE
    */
   assessEvidenceQuality(request: EvidenceQualityRequest): Promise<EvidenceQualityResult[]>;
 
   /**
-   * Call 3: Analyze scope similarity for merging
-   * Pipeline stage: SCOPE_REFINE
+   * Call 3: Analyze context similarity for merging
+   * Pipeline stage: CONTEXT_REFINE
    */
-  analyzeScopeSimilarity(request: ScopeSimilarityRequest): Promise<ScopeSimilarityResult[]>;
+  analyzeContextSimilarity(request: ContextSimilarityRequest): Promise<ContextSimilarityResult[]>;
 
   /**
    * Call 4: Validate verdicts for inversion/harm/contestation

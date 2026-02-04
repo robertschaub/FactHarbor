@@ -51,10 +51,9 @@ function Wait-Job([string]$jobId) {
   }
 }
 
-function Get-Scopes($resultObj) {
+function Get-Contexts($resultObj) {
   if ($null -eq $resultObj) { return @() }
-  if ($resultObj.scopes) { return @($resultObj.scopes) }
-  if ($resultObj.proceedings) { return @($resultObj.proceedings) }
+  if ($resultObj.analysisContexts) { return @($resultObj.analysisContexts) }
   return @()
 }
 
@@ -79,7 +78,7 @@ function Get-CentralClaimEvidenceStats($resultObj) {
     $central = @($cvs | Where-Object { $_.isCentral -eq $true })
     $out.centralClaims = $central.Count
     foreach ($cv in $central) {
-      $sf = @($cv.supportingFactIds)
+      $sf = @($cv.supportingEvidenceIds)
       if ($sf -and $sf.Count -gt 0) { $out.centralWithEvidence++ } else { $out.centralWithoutEvidence++ }
     }
     return $out
@@ -92,7 +91,7 @@ function Assert-True([bool]$cond, [string]$msg) {
   if (-not $cond) { throw $msg }
 }
 
-Write-Host "== Inverse Scope Regression ==" -ForegroundColor Cyan
+Write-Host "== Inverse Context Regression ==" -ForegroundColor Cyan
 Write-Host "ApiBase: $ApiBase"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
@@ -142,13 +141,13 @@ foreach ($c in $cases) {
 
 function Describe-Case([string]$name) {
   $r = $results[$name]
-  $scopes = Get-Scopes $r
+  $contexts = Get-Contexts $r
   $subClaimsCount = Get-SubClaimsCount $r
   $ce = Get-CentralClaimEvidenceStats $r
   return [pscustomobject]@{
     name = $name
-    scopesCount = [int](@($scopes).Count)
-    scopeIds = ($scopes | ForEach-Object { $_.id }) -join ","
+    contextsCount = [int](@($contexts).Count)
+    contextIds = ($contexts | ForEach-Object { $_.id }) -join ","
     subClaimsCount = $subClaimsCount
     centralClaims = $ce.centralClaims
     centralWithEvidence = $ce.centralWithEvidence
@@ -171,24 +170,24 @@ $summary | Format-Table -AutoSize | Out-String | Write-Host
 
 foreach ($row in $summary) {
   if ($row.centralClaims -gt 0 -and $row.centralWithoutEvidence -gt 0) {
-    Write-Host ("WARN: {0}: {1}/{2} central claims have zero supportingFactIds (best-effort coverage, may happen)." -f $row.name, $row.centralWithoutEvidence, $row.centralClaims) -ForegroundColor Yellow
+    Write-Host ("WARN: {0}: {1}/{2} central claims have zero supportingEvidenceIds (best-effort coverage, may happen)." -f $row.name, $row.centralWithoutEvidence, $row.centralClaims) -ForegroundColor Yellow
   }
 }
 
-function Assert-Pair([string]$a, [string]$b, [int]$minScopes, [int]$minSubClaims, [bool]$requireScopeSymmetry) {
+function Assert-Pair([string]$a, [string]$b, [int]$minContexts, [int]$minSubClaims, [bool]$requireContextSymmetry) {
   $ra = $results[$a]
   $rb = $results[$b]
-  $sa = Get-Scopes $ra
-  $sb = Get-Scopes $rb
+  $sa = Get-Contexts $ra
+  $sb = Get-Contexts $rb
   $ca = [int](@($sa).Count)
   $cb = [int](@($sb).Count)
   $cla = Get-SubClaimsCount $ra
   $clb = Get-SubClaimsCount $rb
 
-  Assert-True ($ca -ge $minScopes) "$a scopesCount=$ca (expected >= $minScopes)"
-  Assert-True ($cb -ge $minScopes) "$b scopesCount=$cb (expected >= $minScopes)"
-  if ($requireScopeSymmetry) {
-    Assert-True ($ca -eq $cb) "$a scopesCount=$ca != $b scopesCount=$cb (expected symmetry)"
+  Assert-True ($ca -ge $minContexts) "$a contextsCount=$ca (expected >= $minContexts)"
+  Assert-True ($cb -ge $minContexts) "$b contextsCount=$cb (expected >= $minContexts)"
+  if ($requireContextSymmetry) {
+    Assert-True ($ca -eq $cb) "$a contextsCount=$ca != $b contextsCount=$cb (expected symmetry)"
   }
 
   Assert-True ($cla -ge $minSubClaims) "$a subClaimsCount=$cla (expected >= $minSubClaims)"
@@ -196,11 +195,11 @@ function Assert-Pair([string]$a, [string]$b, [int]$minScopes, [int]$minSubClaims
 }
 
 # Expectations:
-# - For the primary inverse pair: scopes must be non-empty AND symmetric; claims must not collapse to 1.
-# - For the secondary pair: search evidence can legitimately differ run-to-run, so we only assert non-empty scopes and non-collapsing claim counts.
+# - For the primary inverse pair: contexts must be non-empty AND symmetric; claims must not collapse to 1.
+# - For the secondary pair: search evidence can legitimately differ run-to-run, so we only assert non-empty contexts and non-collapsing claim counts.
 Assert-Pair "efficiency_h2_gt_ev" "efficiency_ev_gt_h2" 1 3 $true
 Assert-Pair "safety_flying_gt_driving" "safety_driving_gt_flying" 1 3 $false
 
 Write-Host ""
-Write-Host "✅ Inverse scope regression PASSED" -ForegroundColor Green
+Write-Host "✅ Inverse context regression PASSED" -ForegroundColor Green
 

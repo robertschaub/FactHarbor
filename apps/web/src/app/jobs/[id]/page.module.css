@@ -355,7 +355,7 @@
 }
 
 /* Multi-Scope Answer Banner */
-.multiScopeBanner {
+.multiContextBanner {
   margin-bottom: 20px;
 }
 
@@ -400,7 +400,7 @@
   color: #333;
 }
 
-.scopeNotice {
+.contextNotice {
   padding: 10px 16px;
   background-color: #fff3e0;
   border: 1px solid #ffcc80;
@@ -410,11 +410,11 @@
   gap: 8px;
 }
 
-.scopeIcon {
+.contextIcon {
   font-size: 18px;
 }
 
-.scopeText {
+.contextText {
   font-size: 13px;
   color: #e65100;
   font-weight: 600;
@@ -465,7 +465,7 @@
   color: #f57c00;
 }
 
-.scopeSummary {
+.contextSummary {
   padding: 12px;
   background-color: #f8f9fa;
   border-radius: 8px;
@@ -473,7 +473,7 @@
   border-left: 4px solid #6c757d;
 }
 
-.scopeSummaryText {
+.contextSummaryText {
   font-size: 14px;
   color: #333;
 }
@@ -491,18 +491,18 @@
   line-height: 1.5;
 }
 
-.scopesAnalysis {
+.contextsAnalysis {
   margin-top: 16px;
 }
 
-.scopesHeader {
+.contextsHeader {
   margin: 0 0 12px;
   font-size: 14px;
   color: #666;
   text-transform: uppercase;
 }
 
-.scopesStack {
+.contextsStack {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -530,33 +530,33 @@
 }
 
 /* Scope Card */
-.scopeCard {
+.contextCard {
   border: 2px solid;
   border-radius: 12px;
   overflow: hidden;
   background-color: #fff;
 }
 
-.scopeCardHeader {
+.contextCardHeader {
   padding: 10px 14px;
   background-color: #f8f9fa;
   border-bottom: 1px solid #ddd;
 }
 
-.scopeCardTitle {
+.contextCardTitle {
   font-weight: 700;
   font-size: 14px;
   color: #333;
 }
 
-.scopeCardMeta {
+.contextCardMeta {
   font-size: 11px;
   color: #666;
   margin-top: 4px;
 }
 
 /* v2.6.39: Assessment question styling */
-.scopeAssessmentQuestion {
+.contextAssessmentQuestion {
   margin-top: 8px;
   padding: 8px;
   background-color: #e3f2fd;
@@ -566,35 +566,35 @@
   border-left: 3px solid #2196f3;
 }
 
-.scopeAssessmentLabel {
+.contextAssessmentLabel {
   font-weight: 600;
   color: #1565c0;
 }
 
-.scopeCardContent {
+.contextCardContent {
   padding: 14px;
 }
 
-.scopeAnswerRow {
+.contextAnswerRow {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
 }
 
-.scopeAnswerBadge {
+.contextAnswerBadge {
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 700;
 }
 
-.scopePercentage {
+.contextPercentage {
   font-size: 12px;
   color: #666;
 }
 
-.scopeAboutBox {
+.contextAboutBox {
   margin: 10px 0 10px;
   padding: 10px;
   border: 1px solid #e6e6e6;
@@ -602,7 +602,7 @@
   border-radius: 8px;
 }
 
-.scopeAboutHeader {
+.contextAboutHeader {
   font-size: 10px;
   font-weight: 700;
   color: #666;
@@ -610,23 +610,23 @@
   margin-bottom: 6px;
 }
 
-.scopeAboutRow {
+.contextAboutRow {
   font-size: 12px;
   color: #333;
   line-height: 1.45;
   margin-bottom: 4px;
 }
 
-.scopeAboutLabel {
+.contextAboutLabel {
   font-weight: 700;
   color: #555;
 }
 
-.scopeAboutText {
+.contextAboutText {
   color: #333;
 }
 
-.scopeAboutInline {
+.contextAboutInline {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
@@ -635,11 +635,11 @@
   color: #555;
 }
 
-.scopeAboutItem {
+.contextAboutItem {
   display: inline;
 }
 
-.scopeAssessmentLabel {
+.contextAssessmentLabel {
   font-weight: 700;
   color: #555;
 }
@@ -677,7 +677,7 @@
   color: #c2185b;
 }
 
-.scopeShortAnswer {
+.contextShortAnswer {
   font-size: 13px;
   color: #333;
   line-height: 1.5;
@@ -1110,11 +1110,11 @@
   margin: 0 0 12px;
 }
 
-.scopeGroup {
+.contextGroup {
   margin-bottom: 20px;
 }
 
-.scopeGroupHeader {
+.contextGroupHeader {
   margin: 0 0 10px;
   padding: 8px 12px;
   background-color: #f0f7ff;
@@ -1298,86 +1298,86 @@
    Evidence Panel - NEW v2.6.29: Counter-evidence display
    ============================================================================ */
 
-.factsPanel {
+.evidencePanel {
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid #ddd;
 }
 
-.factsPanelTitle {
+.evidencePanelTitle {
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 12px 0;
   color: #333;
 }
 
-.factsStats {
+.evidenceStats {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
-.factStatSupporting {
+.evidenceStatSupporting {
   color: #2e7d32;
   font-weight: 500;
 }
 
-.factStatContradicting {
+.evidenceStatContradicting {
   color: #c62828;
   font-weight: 500;
 }
 
-.factStatNeutral {
+.evidenceStatNeutral {
   color: #757575;
   font-weight: 500;
 }
 
-.factsSection {
+.evidenceSection {
   margin-bottom: 20px;
 }
 
-.factsSectionTitle {
+.evidenceSectionTitle {
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 10px 0;
 }
 
-.factsList {
+.evidenceList {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.factItem {
+.evidenceItem {
   padding: 12px;
   border-radius: 8px;
   border-left: 4px solid #ddd;
   background-color: #f9f9f9;
 }
 
-.factItemContradicting {
+.evidenceItemContradicting {
   border-left-color: #c62828;
   background-color: #ffebee;
 }
 
-.factItemSupporting {
+.evidenceItemSupporting {
   border-left-color: #2e7d32;
   background-color: #e8f5e9;
 }
 
-.factItemNeutral {
+.evidenceItemNeutral {
   border-left-color: #9e9e9e;
   background-color: #f5f5f5;
 }
 
 /* NEW v2.6.29: Opposite claim evidence styling */
-.factItemOpposite {
+.evidenceItemOpposite {
   border-left-color: #1565c0;
   background-color: #e3f2fd;
 }
 
-.factStatOpposite {
+.evidenceStatOpposite {
   color: #1565c0;
   font-weight: 500;
 }
@@ -1393,7 +1393,7 @@
   border-left: 3px solid #1565c0;
 }
 
-.factOppositeTag {
+.evidenceOppositeTag {
   background-color: #1565c0;
   color: white;
   padding: 2px 6px;
@@ -1404,13 +1404,13 @@
   margin-left: auto;
 }
 
-.factText {
+.evidenceText {
   font-size: 14px;
   line-height: 1.5;
   color: #333;
 }
 
-.factMeta {
+.evidenceMeta {
   margin-top: 8px;
   display: flex;
   gap: 12px;
@@ -1418,7 +1418,7 @@
   color: #666;
 }
 
-.factCategory {
+.evidenceCategory {
   background-color: #e0e0e0;
   padding: 2px 8px;
   border-radius: 4px;
@@ -1426,12 +1426,12 @@
   text-transform: uppercase;
 }
 
-.factSource {
+.evidenceSource {
   font-style: italic;
   color: #888;
 }
 
-.factMoreIndicator {
+.evidenceMoreIndicator {
   font-size: 13px;
   color: #666;
   font-style: italic;
@@ -1687,3 +1687,4 @@
 .showMoreBtn:hover {
   text-decoration: underline;
 }
+

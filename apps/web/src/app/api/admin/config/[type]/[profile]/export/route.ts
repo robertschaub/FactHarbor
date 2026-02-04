@@ -20,7 +20,7 @@ const VALID_PROFILES = [
   "source-reliability",
   "text-analysis-input",
   "text-analysis-evidence",
-  "text-analysis-scope",
+  "text-analysis-context",
   "text-analysis-verdict",
 ];
 

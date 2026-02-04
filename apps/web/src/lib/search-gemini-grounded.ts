@@ -181,7 +181,7 @@ function extractGroundingMetadata(result: any): {
 
 /**
  * Convert grounded search results to FactHarbor's FetchedSource format.
- * This allows the results to flow into the existing fact extraction pipeline.
+ * This allows the results to flow into the existing evidence extraction pipeline.
  */
 export function convertToFetchedSources(
   result: GroundedSearchResult,

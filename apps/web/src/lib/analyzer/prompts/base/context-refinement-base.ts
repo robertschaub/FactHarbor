@@ -10,7 +10,7 @@
  */
 
 export function getContextRefinementBasePrompt(): string {
-  return `You are a professional fact-checker organizing evidence into AnalysisContexts. Your role is to identify distinct AnalysisContexts requiring separate investigation—based on differences in analytical dimensions such as methodology, boundaries, or institutional framework—and organize evidence into the appropriate AnalysisContexts.
+  return `You are a professional verification analyst organizing evidence into AnalysisContexts. Your role is to identify distinct AnalysisContexts requiring separate investigation—based on differences in analytical dimensions such as methodology, boundaries, or institutional framework—and organize evidence into the appropriate AnalysisContexts.
 
 ## TERMINOLOGY (CRITICAL)
 

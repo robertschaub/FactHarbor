@@ -1259,7 +1259,7 @@ export const VALID_PROMPT_PROFILES = [
   // LLM text analysis prompts (4 analysis points)
   "text-analysis-input",
   "text-analysis-evidence",
-  "text-analysis-scope",
+  "text-analysis-context",
   "text-analysis-verdict",
 ] as const;
 

@@ -476,7 +476,7 @@ export function applyEvidenceWeighting(
     const supportingEvidenceIds: string[] =
       verdict.supportingEvidenceIds && verdict.supportingEvidenceIds.length > 0
         ? verdict.supportingEvidenceIds
-        : (verdict as any).supportingFactIds ?? [];
+        : [];
     const reliabilityData = supportingEvidenceIds
       .map((id) => evidenceDataById.get(id))
       .filter((data): data is SourceReliabilityData | null => true);
@@ -569,7 +569,7 @@ export function scoreToCredibilityLevel(score: number): CredibilityLevel7Band {
 
 export function calculateOverallCredibility(
   sources: FetchedSource[],
-  _facts: EvidenceItem[]
+  _evidenceItems: EvidenceItem[]
 ): {
   averageScore: number;
   knownSourceCount: number;

@@ -131,7 +131,7 @@ export function getAggregateMetrics(): {
       byAnalysisPoint: {
         input: { calls: 0, successRate: 0 },
         evidence: { calls: 0, successRate: 0 },
-        scope: { calls: 0, successRate: 0 },
+        context: { calls: 0, successRate: 0 },
         verdict: { calls: 0, successRate: 0 },
       },
     };
@@ -145,7 +145,7 @@ export function getAggregateMetrics(): {
   const byPoint: Record<AnalysisPoint, { calls: number; successes: number }> = {
     input: { calls: 0, successes: 0 },
     evidence: { calls: 0, successes: 0 },
-    scope: { calls: 0, successes: 0 },
+    context: { calls: 0, successes: 0 },
     verdict: { calls: 0, successes: 0 },
   };
 
@@ -168,9 +168,9 @@ export function getAggregateMetrics(): {
         calls: byPoint.evidence.calls,
         successRate: byPoint.evidence.calls > 0 ? byPoint.evidence.successes / byPoint.evidence.calls : 0,
       },
-      scope: {
-        calls: byPoint.scope.calls,
-        successRate: byPoint.scope.calls > 0 ? byPoint.scope.successes / byPoint.scope.calls : 0,
+      context: {
+        calls: byPoint.context.calls,
+        successRate: byPoint.context.calls > 0 ? byPoint.context.successes / byPoint.context.calls : 0,
       },
       verdict: {
         calls: byPoint.verdict.calls,

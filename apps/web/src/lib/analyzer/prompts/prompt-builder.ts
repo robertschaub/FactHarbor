@@ -8,7 +8,7 @@
  */
 
 import { getUnderstandBasePrompt } from './base/understand-base';
-import { getExtractFactsBasePrompt } from './base/extract-facts-base';
+import { getExtractEvidenceBasePrompt } from './base/extract-evidence-base';
 import { getVerdictBasePrompt } from './base/verdict-base';
 import { getContextRefinementBasePrompt } from './base/context-refinement-base';
 import { getDynamicPlanBasePrompt } from './base/dynamic-plan-base';
@@ -26,38 +26,38 @@ import {
 
 import {
   getAnthropicUnderstandVariant,
-  getAnthropicExtractFactsVariant,
+  getAnthropicExtractEvidenceVariant,
   getAnthropicVerdictVariant,
   getAnthropicContextRefinementVariant,
 } from './providers/anthropic';
 
 import {
   getOpenAIUnderstandVariant,
-  getOpenAIExtractFactsVariant,
+  getOpenAIExtractEvidenceVariant,
   getOpenAIVerdictVariant,
   getOpenAIContextRefinementVariant,
 } from './providers/openai';
 
 import {
   getGeminiUnderstandVariant,
-  getGeminiExtractFactsVariant,
+  getGeminiExtractEvidenceVariant,
   getGeminiVerdictVariant,
   getGeminiContextRefinementVariant,
 } from './providers/google';
 
 import {
   getMistralUnderstandVariant,
-  getMistralExtractFactsVariant,
+  getMistralExtractEvidenceVariant,
   getMistralVerdictVariant,
   getMistralContextRefinementVariant,
 } from './providers/mistral';
 
 import {
   getTieringUnderstandAdaptation,
-  getTieringExtractFactsAdaptation,
+  getTieringExtractEvidenceAdaptation,
   getTieringVerdictAdaptation,
   getBudgetUnderstandPrompt,
-  getBudgetExtractFactsPrompt,
+  getBudgetExtractEvidencePrompt,
   getBudgetVerdictPrompt,
 } from './config-adaptations/tiering';
 
@@ -154,7 +154,7 @@ function getBudgetPrompt(context: PromptContext): string {
       basePrompt = getBudgetUnderstandPrompt(currentDate);
       break;
     case 'extract_evidence':
-      basePrompt = getBudgetExtractFactsPrompt(currentDate, variables.originalClaim || '');
+      basePrompt = getBudgetExtractEvidencePrompt(currentDate, variables.originalClaim || '');
       break;
     case 'verdict':
       basePrompt = getBudgetVerdictPrompt(currentDate, variables.originalClaim || '', config.allowModelKnowledge);
@@ -204,7 +204,7 @@ function getBaseTemplate(context: PromptContext): string {
       });
 
     case 'extract_evidence':
-      return getExtractFactsBasePrompt({
+      return getExtractEvidenceBasePrompt({
         currentDate,
         originalClaim: variables.originalClaim || '',
         contextsList: variables.contextsList,
@@ -271,7 +271,7 @@ function getProviderVariant(context: PromptContext): string {
   const variantMap: Record<ProviderType, Record<string, () => string>> = {
     anthropic: {
       understand: getAnthropicUnderstandVariant,
-      extract_evidence: getAnthropicExtractFactsVariant,
+      extract_evidence: getAnthropicExtractEvidenceVariant,
       verdict: getAnthropicVerdictVariant,
       context_refinement: getAnthropicContextRefinementVariant,
       dynamic_plan: () => '',
@@ -279,7 +279,7 @@ function getProviderVariant(context: PromptContext): string {
     },
     openai: {
       understand: getOpenAIUnderstandVariant,
-      extract_evidence: getOpenAIExtractFactsVariant,
+      extract_evidence: getOpenAIExtractEvidenceVariant,
       verdict: getOpenAIVerdictVariant,
       context_refinement: getOpenAIContextRefinementVariant,
       dynamic_plan: () => '',
@@ -287,7 +287,7 @@ function getProviderVariant(context: PromptContext): string {
     },
     google: {
       understand: getGeminiUnderstandVariant,
-      extract_evidence: getGeminiExtractFactsVariant,
+      extract_evidence: getGeminiExtractEvidenceVariant,
       verdict: getGeminiVerdictVariant,
       context_refinement: getGeminiContextRefinementVariant,
       dynamic_plan: () => '',
@@ -295,7 +295,7 @@ function getProviderVariant(context: PromptContext): string {
     },
     mistral: {
       understand: getMistralUnderstandVariant,
-      extract_evidence: getMistralExtractFactsVariant,
+      extract_evidence: getMistralExtractEvidenceVariant,
       verdict: getMistralVerdictVariant,
       context_refinement: getMistralContextRefinementVariant,
       dynamic_plan: () => '',
@@ -321,7 +321,7 @@ function getConfigAdaptations(context: PromptContext): string {
         adaptations += getTieringUnderstandAdaptation();
         break;
       case 'extract_evidence':
-        adaptations += getTieringExtractFactsAdaptation();
+        adaptations += getTieringExtractEvidenceAdaptation();
         break;
       case 'verdict':
         adaptations += getTieringVerdictAdaptation();

@@ -5075,3 +5075,49 @@ Merge all reviews into "Final Consolidated Review" document for implementation t
 
 **Recommendation to Implementation Team:**
 Start with M1 (FactHarbor Config Foundation) and validate approach before proceeding to SR isolation (M2).
+
+---
+
+# Codex Architecture Review (Lead Developer) - 2026-02-04
+
+## Review Summary
+The plan is comprehensive, internally consistent, and already implemented; the remaining value is in validating assumptions, documenting residual risks, and tightening operational safeguards for long-term maintainability. The SR modularity constraints are correctly prioritized, and the v1/v2 split is appropriate for risk control.
+
+## Feasibility Assessment
+- **Technical Feasibility:** **High**. The architecture aligns with existing code structure, and the required layers (config storage, loader, caching, snapshotting, admin UI) are already present in the repo.
+- **Operational Feasibility:** **High** for single-operator / small-team usage; **Medium** for multi-operator environments without a formal approval workflow.
+- **Scalability Feasibility:** **Medium**. Current design is strong for single-instance deployments; multi-instance consistency depends on future cache strategy and config invalidation propagation.
+- **Extraction Feasibility (SR):** **Medium-High**. The interface-first approach and independent SR config type lower coupling, but shared storage and auth boundaries remain the primary extraction risks.
+
+## Key Strengths
+1. **Clear tiering and ownership**: Separates runtime vs. analysis config and keeps SR independent, which preserves modularity and supports future extraction.
+2. **Auditability**: Job snapshots and comparison features enable reproducibility and traceability without bloating job records.
+3. **Operational safety**: Optimistic locking + validation warnings reduce accidental misconfiguration risk.
+4. **Migration discipline**: Explicit migration strategy with schema versioning prevents brittle, implicit transitions.
+5. **Strategic optionality**: SR modularity is a deliberate tradeoff that creates future product flexibility.
+
+## Gaps / Risks (Priority Ordered)
+1. **Multi-instance config consistency**: TTL cache + hot-reload may diverge across nodes without a shared invalidation mechanism.
+2. **Interface boundary erosion**: Analyzer code could still import SR internals over time unless enforced.
+3. **Operational UX fragmentation**: Separate `/admin/quality` and `/admin/sr` increases cognitive load unless navigation and naming are consistent.
+4. **Config evolution governance**: Without explicit approval or change-control gates, high-impact config changes can bypass review in multi-operator scenarios.
+5. **Snapshot version skew**: Jobs recorded during config transitions may be harder to compare unless snapshots explicitly include config schema versions and hashes for every config type used.
+
+## Recommendations (Actionable)
+1. **Add global config schemaVersion & hash normalization**
+   - Ensure every config snapshot includes `schemaVersion` and content-hash for each config type (pipeline/search/sr/prompt).
+   - This prevents ambiguous comparisons and future schema migration drift.
+2. **Enforce SR boundary in tooling**
+   - Add lint rule / CI guard that blocks analyzer imports from `source-reliability/` except the public interface.
+3. **Introduce lightweight change-control toggle**
+   - Optional "two-step publish" for high-risk config types in multi-operator environments (even if v2-feature).
+4. **Document invalidation guarantees**
+   - Explicitly document TTL guarantees and stale-read tolerances so operators understand the boundary conditions.
+5. **Navigation consistency**
+   - Add a top-level admin navigation entry for SR and cross-links between `/admin/quality` and `/admin/sr`.
+
+## Implementation Confidence
+**HIGH**. The plan aligns with the repo’s current architecture and can be maintained without major refactors. The remaining work is policy/tooling discipline rather than core engineering risk.
+
+## Final Verdict
+**Approved**. The plan is feasible, strategically sound, and already implemented with the correct architectural constraints. The remaining recommendations are operational and governance improvements rather than structural rewrites.

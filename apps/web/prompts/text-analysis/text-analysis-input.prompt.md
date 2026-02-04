@@ -44,7 +44,7 @@ Determine:
 3. **claimType**: What type of claim is this?
    - **predictive**: Future prediction - look for: will, would, shall, going to, predict, forecast, expect
    - **evaluative**: Opinion/judgment - look for: best, worst, should, must, better, worse, good, bad, right, wrong
-   - **factual**: Verifiable fact (default if no predictive/evaluative indicators)
+   - **factual**: Verifiable evidence item (default if no predictive/evaluative indicators)
    - **mixed**: Combination of types
 
 4. **complexity**: How complex is this input?

@@ -317,25 +317,25 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
   // Where SPREAD_MULTIPLIER = 1.5, CONSENSUS_SPREAD_MULTIPLIER = 1.15
   // Default confidence when not specified = 0.7, default consensus = false
 
-  it("returns verdicts unchanged when no supporting facts", () => {
+  it("returns verdicts unchanged when no supporting evidence items", () => {
     const verdicts = [
       { id: "v1", truthPercentage: 75, confidence: 80, supportingEvidenceIds: [] },
     ];
-    const facts: any[] = [];
+    const evidenceItems: any[] = [];
     const sources: any[] = [];
 
-    const result = applyEvidenceWeighting(verdicts, facts, sources);
-    expect(result[0].truthPercentage).toBe(75); // Truly unchanged (no facts)
+    const result = applyEvidenceWeighting(verdicts, evidenceItems, sources);
+    expect(result[0].truthPercentage).toBe(75); // Truly unchanged (no evidence items)
   });
 
   it("applies neutral weight to unknown sources (null score)", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 75, confidence: 80, supportingEvidenceIds: ["f1"] },
+      { id: "v1", truthPercentage: 75, confidence: 80, supportingEvidenceIds: ["E1"] },
     ];
-    const facts = [{ id: "f1", sourceId: "s1" }];
+    const evidenceItems = [{ id: "E1", sourceId: "s1" }];
     const sources = [{ id: "s1", trackRecordScore: null }]; // Unknown source
 
-    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    const result = applyEvidenceWeighting(verdicts, evidenceItems, sources);
     // Unknown source: score=0.5 (neutral), confidence=0.5
     // effectiveWeight = 0.5 + (0.5 - 0.5) × 0.5 = 0.5 + 0 = 0.5
     // adjustedTruth = 50 + (75 - 50) × 0.5 = 50 + 12.5 = 63
@@ -345,12 +345,12 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
 
   it("adjusts truth percentage based on high reliability source", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["f1"] },
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["E1"] },
     ];
-    const facts = [{ id: "f1", sourceId: "s1" }];
+    const evidenceItems = [{ id: "E1", sourceId: "s1" }];
     const sources = [{ id: "s1", trackRecordScore: 0.95 }]; // High reliability
 
-    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    const result = applyEvidenceWeighting(verdicts, evidenceItems, sources);
     // Simple: effectiveWeight = score = 0.95
     // adjustedTruth = 50 + (80 - 50) × 0.95 = 50 + 28.5 ≈ 79
     expect(result[0].truthPercentage).toBeCloseTo(79, 0);
@@ -359,32 +359,32 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
 
   it("pulls truth toward neutral for low reliability source", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["f1"] },
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["E1"] },
     ];
-    const facts = [{ id: "f1", sourceId: "s1" }];
+    const evidenceItems = [{ id: "E1", sourceId: "s1" }];
     const sources = [{ id: "s1", trackRecordScore: 0.3 }]; // Low reliability
 
-    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    const result = applyEvidenceWeighting(verdicts, evidenceItems, sources);
     // Simple: effectiveWeight = score = 0.3
     // adjustedTruth = 50 + (80 - 50) × 0.3 = 50 + 9 = 59
     expect(result[0].truthPercentage).toBe(59);
     expect(result[0].evidenceWeight).toBeCloseTo(0.3, 2);
   });
 
-  it("averages effective weights from multiple supporting facts", () => {
+  it("averages effective weights from multiple supporting evidence items", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["f1", "f2"] },
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["E1", "E2"] },
     ];
-    const facts = [
-      { id: "f1", sourceId: "s1" },
-      { id: "f2", sourceId: "s2" },
+    const evidenceItems = [
+      { id: "E1", sourceId: "s1" },
+      { id: "E2", sourceId: "s2" },
     ];
     const sources = [
       { id: "s1", trackRecordScore: 0.9 },  // High
       { id: "s2", trackRecordScore: 0.5 },  // Neutral
     ];
 
-    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    const result = applyEvidenceWeighting(verdicts, evidenceItems, sources);
     // Simple: effectiveWeight = score
     // s1: effectiveWeight = 0.9
     // s2: effectiveWeight = 0.5
@@ -410,12 +410,12 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
 
   it("adjusts confidence based on effective weight", () => {
     const verdicts = [
-      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["f1"] },
+      { id: "v1", truthPercentage: 80, confidence: 80, supportingEvidenceIds: ["E1"] },
     ];
-    const facts = [{ id: "f1", sourceId: "s1" }];
+    const evidenceItems = [{ id: "E1", sourceId: "s1" }];
     const sources = [{ id: "s1", trackRecordScore: 0.9 }];
 
-    const result = applyEvidenceWeighting(verdicts, facts, sources);
+    const result = applyEvidenceWeighting(verdicts, evidenceItems, sources);
     // Simple: effectiveWeight = score = 0.9
     // Confidence formula: confidence × (0.5 + avgWeight/2) = 80 × (0.5 + 0.45) = 80 × 0.95 = 76
     expect(result[0].confidence).toBe(76);

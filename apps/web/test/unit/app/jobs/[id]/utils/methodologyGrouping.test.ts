@@ -1,41 +1,41 @@
 import { describe, it, expect } from "vitest";
-import { groupFactsByMethodology } from "@/app/jobs/[id]/utils/methodologyGrouping";
+import { groupEvidenceByMethodology } from "@/app/jobs/[id]/utils/methodologyGrouping";
 
-const makeFact = (id: string, methodology?: string) => ({
+const makeEvidenceItem = (id: string, methodology?: string) => ({
   id,
   evidenceScope: methodology ? { methodology } : undefined,
 });
 
-describe("groupFactsByMethodology", () => {
+describe("groupEvidenceByMethodology", () => {
   it("returns null when fewer than 3 methodologies", () => {
-    const facts = [
-      makeFact("E1", "WTW"),
-      makeFact("E2", "WTW"),
-      makeFact("E3", "LCA"),
+    const evidenceItems = [
+      makeEvidenceItem("E1", "WTW"),
+      makeEvidenceItem("E2", "WTW"),
+      makeEvidenceItem("E3", "LCA"),
     ];
-    expect(groupFactsByMethodology(facts)).toBeNull();
+    expect(groupEvidenceByMethodology(evidenceItems)).toBeNull();
   });
 
-  it("groups facts when 3+ methodologies exist", () => {
-    const facts = [
-      makeFact("E1", "WTW"),
-      makeFact("E2", "WTW"),
-      makeFact("E3", "TTW"),
-      makeFact("E4", "LCA"),
+  it("groups evidence items when 3+ methodologies exist", () => {
+    const evidenceItems = [
+      makeEvidenceItem("E1", "WTW"),
+      makeEvidenceItem("E2", "WTW"),
+      makeEvidenceItem("E3", "TTW"),
+      makeEvidenceItem("E4", "LCA"),
     ];
-    const groups = groupFactsByMethodology(facts);
+    const groups = groupEvidenceByMethodology(evidenceItems);
     expect(groups).not.toBeNull();
     expect(groups!.length).toBe(3);
   });
 
-  it("places facts without methodology into General group", () => {
-    const facts = [
-      makeFact("E1", "WTW"),
-      makeFact("E2", "TTW"),
-      makeFact("E3", "LCA"),
-      makeFact("E4"),
+  it("places evidence items without methodology into General group", () => {
+    const evidenceItems = [
+      makeEvidenceItem("E1", "WTW"),
+      makeEvidenceItem("E2", "TTW"),
+      makeEvidenceItem("E3", "LCA"),
+      makeEvidenceItem("E4"),
     ];
-    const groups = groupFactsByMethodology(facts);
+    const groups = groupEvidenceByMethodology(evidenceItems);
     expect(groups).not.toBeNull();
     const hasGeneral = groups!.some((g) => g.label === "General");
     expect(hasGeneral).toBe(true);

@@ -1,5 +1,5 @@
 /**
- * Scope Utilities Test - Verifies Generic by Design compliance
+ * Context Utilities Test - Verifies Generic by Design compliance
  *
  * Tests the fixes for:
  * - Bug 1: Removed hardcoded political figure names
@@ -13,7 +13,7 @@ import {
   generateContextDetectionHint,
   detectContexts,
   formatDetectedContextsHint,
-  UNSCOPED_ID
+  UNASSIGNED_CONTEXT_ID
 } from '@/lib/analyzer/analysis-contexts';
 
 describe('Context Detection - Generic by Design', () => {
@@ -165,16 +165,16 @@ describe('Context Detection - Generic by Design', () => {
       expect(hint).toContain('Whether the input is phrased as a question or statement');
     });
 
-    it('warns against meta-level scopes', () => {
+    it('warns against meta-level contexts', () => {
       const hint = generateContextDetectionHint('Newton case');
-      expect(hint).toContain('Public perception/opinion scopes');
+      expect(hint).toContain('Public perception/opinion contexts');
       expect(hint).toContain('trust');
       expect(hint).toContain('confidence');
     });
 
-    it('emphasizes concrete scopes', () => {
+    it('emphasizes concrete contexts', () => {
       const hint = generateContextDetectionHint('Newton case');
-      expect(hint).toContain('concrete, factual scopes');
+      expect(hint).toContain('concrete, factual contexts');
       expect(hint).toContain('legal proceedings');
     });
   });
@@ -185,108 +185,108 @@ describe('Context Detection - Generic by Design', () => {
 // ============================================================================
 describe('detectContexts (v2.8 - Heuristic Pre-Detection)', () => {
   describe('Comparison Claims', () => {
-    it('detects production/usage scopes for efficiency comparisons with "than"', () => {
+    it('detects production/usage contexts for efficiency comparisons with "than"', () => {
       // Pattern requires BOTH comparison words (more/less/than) AND efficiency keywords
       // The word 'energy' is in efficiencyKeywords pattern
-      const scopes = detectContexts('Hydrogen cars use more energy than electric cars');
+      const contexts = detectContexts('Hydrogen cars use more energy than electric cars');
       
-      expect(scopes).not.toBeNull();
-      expect(scopes!.length).toBeGreaterThanOrEqual(2);
+      expect(contexts).not.toBeNull();
+      expect(contexts!.length).toBeGreaterThanOrEqual(2);
       
-      const scopeIds = scopes!.map(s => s.id);
-      expect(scopeIds).toContain('SCOPE_PRODUCTION');
-      expect(scopeIds).toContain('SCOPE_USAGE');
+      const contextIds = contexts!.map(s => s.id);
+      expect(contextIds).toContain('CTX_PRODUCTION');
+      expect(contextIds).toContain('CTX_USAGE');
     });
 
-    it('detects scopes for performance comparisons', () => {
-      const scopes = detectContexts('Technology A has better performance than Technology B');
+    it('detects contexts for performance comparisons', () => {
+      const contexts = detectContexts('Technology A has better performance than Technology B');
       
-      expect(scopes).not.toBeNull();
-      expect(scopes!.some(s => s.id === 'SCOPE_PRODUCTION')).toBe(true);
-      expect(scopes!.some(s => s.id === 'SCOPE_USAGE')).toBe(true);
+      expect(contexts).not.toBeNull();
+      expect(contexts!.some(s => s.id === 'CTX_PRODUCTION')).toBe(true);
+      expect(contexts!.some(s => s.id === 'CTX_USAGE')).toBe(true);
     });
 
-    it('detects scopes for "vs" comparisons with efficiency keywords', () => {
-      const scopes = detectContexts('Solar energy consumption vs wind energy consumption');
+    it('detects contexts for "vs" comparisons with efficiency keywords', () => {
+      const contexts = detectContexts('Solar energy consumption vs wind energy consumption');
       
-      expect(scopes).not.toBeNull();
-      expect(scopes!.length).toBeGreaterThanOrEqual(2);
+      expect(contexts).not.toBeNull();
+      expect(contexts!.length).toBeGreaterThanOrEqual(2);
     });
 
     it('returns null for non-comparison efficiency claims', () => {
-      const scopes = detectContexts('The system is efficient');
+      const contexts = detectContexts('The system is efficient');
       
-      // No comparison pattern, no scopes detected
-      expect(scopes).toBeNull();
+      // No comparison pattern, no contexts detected
+      expect(contexts).toBeNull();
     });
   });
 
   describe('Legal/Trial Fairness Claims', () => {
-    it('detects scopes for trial fairness claims', () => {
-      const scopes = detectContexts('The trial was fair and based on law');
+    it('detects contexts for trial fairness claims', () => {
+      const contexts = detectContexts('The trial was fair and based on law');
       
-      expect(scopes).not.toBeNull();
-      expect(scopes!.some(s => s.id === 'SCOPE_LEGAL_PROC')).toBe(true);
-      expect(scopes!.some(s => s.id === 'SCOPE_OUTCOMES')).toBe(true);
+      expect(contexts).not.toBeNull();
+      expect(contexts!.some(s => s.id === 'CTX_LEGAL_PROC')).toBe(true);
+      expect(contexts!.some(s => s.id === 'CTX_OUTCOMES')).toBe(true);
     });
 
-    it('detects scopes for judgment/ruling claims', () => {
-      const scopes = detectContexts('Was the judgment fair and legitimate?');
+    it('detects contexts for judgment/ruling claims', () => {
+      const contexts = detectContexts('Was the judgment fair and legitimate?');
       
-      expect(scopes).not.toBeNull();
-      expect(scopes!.length).toBeGreaterThanOrEqual(2);
+      expect(contexts).not.toBeNull();
+      expect(contexts!.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('detects scopes for court procedure claims', () => {
-      const scopes = detectContexts('The court followed proper legal procedures');
+    it('detects contexts for court procedure claims', () => {
+      const contexts = detectContexts('The court followed proper legal procedures');
       
-      expect(scopes).not.toBeNull();
-      expect(scopes!.some(s => s.type === 'legal')).toBe(true);
+      expect(contexts).not.toBeNull();
+      expect(contexts!.some(s => s.type === 'legal')).toBe(true);
     });
   });
 
   describe('Environmental/Health Comparisons', () => {
-    it('detects direct/lifecycle scopes for pollution comparisons', () => {
+    it('detects direct/lifecycle contexts for pollution comparisons', () => {
       // Pattern requires BOTH comparison (than/vs) AND env/health keyword (pollution/emission/etc)
-      const scopes = detectContexts('Factory A causes less pollution than Factory B');
+      const contexts = detectContexts('Factory A causes less pollution than Factory B');
       
-      expect(scopes).not.toBeNull();
-      expect(scopes!.some(s => s.id === 'SCOPE_DIRECT')).toBe(true);
-      expect(scopes!.some(s => s.id === 'SCOPE_LIFECYCLE')).toBe(true);
+      expect(contexts).not.toBeNull();
+      expect(contexts!.some(s => s.id === 'CTX_DIRECT')).toBe(true);
+      expect(contexts!.some(s => s.id === 'CTX_LIFECYCLE')).toBe(true);
     });
 
-    it('detects scopes for environmental impact comparisons', () => {
-      const scopes = detectContexts('Solar has lower environmental impact than coal');
+    it('detects contexts for environmental impact comparisons', () => {
+      const contexts = detectContexts('Solar has lower environmental impact than coal');
       
-      expect(scopes).not.toBeNull();
-      expect(scopes!.length).toBeGreaterThanOrEqual(2);
+      expect(contexts).not.toBeNull();
+      expect(contexts!.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('detects scopes for safety hazard comparisons', () => {
-      const scopes = detectContexts('Process A poses more hazard than Process B');
+    it('detects contexts for safety hazard comparisons', () => {
+      const contexts = detectContexts('Process A poses more hazard than Process B');
       
-      expect(scopes).not.toBeNull();
+      expect(contexts).not.toBeNull();
     });
   });
 
   describe('Edge Cases', () => {
     it('returns null for unstructured text', () => {
-      const scopes = detectContexts('Hello world, this is a test');
-      expect(scopes).toBeNull();
+      const contexts = detectContexts('Hello world, this is a test');
+      expect(contexts).toBeNull();
     });
 
     it('handles empty input', () => {
-      const scopes = detectContexts('');
-      expect(scopes).toBeNull();
+      const contexts = detectContexts('');
+      expect(contexts).toBeNull();
     });
 
-    it('detects multiple scope types when patterns overlap', () => {
+    it('detects multiple context types when patterns overlap', () => {
       // This has both comparison AND legal fairness patterns
-      const scopes = detectContexts('The trial outcome had more impact than the previous ruling and was fair');
+      const contexts = detectContexts('The trial outcome had more impact than the previous ruling and was fair');
       
-      expect(scopes).not.toBeNull();
-      // Should detect both legal and comparison scopes
-      expect(scopes!.length).toBeGreaterThan(2);
+      expect(contexts).not.toBeNull();
+      // Should detect both legal and comparison contexts
+      expect(contexts!.length).toBeGreaterThan(2);
     });
   });
 });
@@ -295,7 +295,7 @@ describe('detectContexts (v2.8 - Heuristic Pre-Detection)', () => {
 // v2.8: formatDetectedContextsHint tests
 // ============================================================================
 describe('formatDetectedContextsHint (v2.8)', () => {
-  it('returns empty string for null scopes', () => {
+  it('returns empty string for null contexts', () => {
     expect(formatDetectedContextsHint(null)).toBe('');
   });
 
@@ -303,26 +303,26 @@ describe('formatDetectedContextsHint (v2.8)', () => {
     expect(formatDetectedContextsHint([])).toBe('');
   });
 
-  it('formats scopes as list (simple mode)', () => {
-    const scopes = [
-      { id: 'SCOPE_A', name: 'Scope A', type: 'legal' },
-      { id: 'SCOPE_B', name: 'Scope B', type: 'methodological' }
+  it('formats contexts as list (simple mode)', () => {
+    const contexts = [
+      { id: 'CTX_A', name: 'Context A', type: 'legal' },
+      { id: 'CTX_B', name: 'Context B', type: 'methodological' }
     ];
     
-    const hint = formatDetectedContextsHint(scopes, false);
+    const hint = formatDetectedContextsHint(contexts, false);
     
     expect(hint).toContain('PRE-DETECTED CONTEXTS');
-    expect(hint).toContain('Scope A (legal)');
-    expect(hint).toContain('Scope B (methodological)');
+    expect(hint).toContain('Context A (legal)');
+    expect(hint).toContain('Context B (methodological)');
     expect(hint).not.toContain('MUST output');
   });
 
   it('includes detailed instructions when detailed=true', () => {
-    const scopes = [
-      { id: 'SCOPE_A', name: 'Scope A', type: 'legal', metadata: { focus: 'compliance' } }
+    const contexts = [
+      { id: 'CTX_A', name: 'Context A', type: 'legal', metadata: { focus: 'compliance' } }
     ];
     
-    const hint = formatDetectedContextsHint(scopes, true);
+    const hint = formatDetectedContextsHint(contexts, true);
     
     expect(hint).toContain('PRE-DETECTED CONTEXTS');
     expect(hint).toContain('MUST output at least these contexts');
@@ -334,8 +334,8 @@ describe('formatDetectedContextsHint (v2.8)', () => {
 // ============================================================================
 // Constants tests
 // ============================================================================
-describe('Scope Constants', () => {
-  it('exports UNSCOPED_ID constant', () => {
-    expect(UNSCOPED_ID).toBe('CTX_UNSCOPED');
+describe('Context Constants', () => {
+  it('exports UNASSIGNED_CONTEXT_ID constant', () => {
+    expect(UNASSIGNED_CONTEXT_ID).toBe('CTX_UNASSIGNED');
   });
 });

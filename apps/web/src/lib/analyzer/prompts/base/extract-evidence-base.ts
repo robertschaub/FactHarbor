@@ -1,5 +1,5 @@
 /**
- * Base prompt template for EXTRACT_FACTS phase (Evidence extraction from sources)
+ * Base prompt template for EXTRACT_EVIDENCE phase (Evidence extraction from sources)
  *
  * This prompt instructs the LLM to:
  * - Extract verifiable Evidence with AnalysisContext awareness (assign to AnalysisContexts)
@@ -7,16 +7,16 @@
  * - Prevent AnalysisContext bleeding (Evidence stays in their AnalysisContext)
  * - Assess claim direction accurately
  *
- * Terminology: "Evidence" (not "fact") covers studies, reports, documentation
+ * Terminology: "Evidence" covers studies, reports, documentation
  */
 
-export function getExtractFactsBasePrompt(variables: {
+export function getExtractEvidenceBasePrompt(variables: {
   currentDate: string;
   originalClaim: string;
   contextsList?: string;
 }): string {
   const { currentDate, originalClaim, contextsList = 'No AnalysisContexts defined yet' } = variables;
-  return `You are a professional fact-checker extracting evidence from sources. Your role is to identify specific, verifiable evidence, assign it to appropriate AnalysisContexts, capture EvidenceScope metadata when significant boundaries exist, and assess how the evidence relates to the user's claim.
+  return `You are a professional evidence analyst extracting evidence from sources. Your role is to identify specific, verifiable evidence, assign it to appropriate AnalysisContexts, capture EvidenceScope metadata when significant boundaries exist, and assess how the evidence relates to the user's claim.
 
 ## TERMINOLOGY (CRITICAL)
 
@@ -24,9 +24,8 @@ export function getExtractFactsBasePrompt(variables: {
 **EvidenceScope**: Per-evidence source methodology metadata.
 
 **OUTPUT FIELD NAMING (CRITICAL)**:
-- Preferred: \`evidenceItems[]\` with \`statement\` fields
-- Legacy (accepted): \`facts[]\` with \`fact\` fields
-These represent Evidence items (unverified statements), NOT verified facts.
+- Use \`evidenceItems[]\` with \`statement\` fields
+These represent Evidence items (unverified statements), NOT verified claims.
 
 ## CURRENT DATE
 Today is ${currentDate}. Use for temporal reference.
@@ -79,7 +78,7 @@ Only flag these when they would cause **apples-to-oranges** comparisons.
 **sourceType classification** (NEW - extract when EvidenceScope is present):
 Classify the source document type to enable better reliability calibration:
 - **"peer_reviewed_study"**: Academic research in peer-reviewed journals/conferences
-- **"fact_check_report"**: Professional fact-checking organization (independent fact-checking outlet)
+- **"fact_check_report"**: Professional verification organization report (independent claim-verification outlet)
 - **"government_report"**: Official government publications, agency reports, official statistics
 - **"legal_document"**: Court decisions, statutes, legal filings, regulatory documents
 - **"news_primary"**: Original investigative journalism, firsthand reporting
@@ -199,7 +198,5 @@ Return JSON with \`evidenceItems\` array (preferred). Each evidence item MUST in
 - probativeValue: "high" | "medium"
 - sourceAuthority: "primary" | "secondary" | "opinion" | "contested" (REQUIRED)
 - evidenceBasis: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific" (REQUIRED)
-- evidenceScope: object with {name, methodology, boundaries, geographic, temporal} OR null
-
-**Legacy compatibility**: If you must use legacy names, output \`facts[]\` with \`fact\` instead of \`evidenceItems[]\` with \`statement\`.`;
+- evidenceScope: object with {name, methodology, boundaries, geographic, temporal} OR null`;
 }

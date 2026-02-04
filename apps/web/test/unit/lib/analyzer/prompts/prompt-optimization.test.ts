@@ -244,7 +244,7 @@ describe('Critical Guidance Inclusion', () => {
     for (const provider of providers) {
       it(`${provider} context_refinement includes terminology`, () => {
         const prompt = generateTestPrompt('context_refinement', provider);
-        expect(prompt).toMatch(/scope|Scope|context|Context/i);
+        expect(prompt).toMatch(/context|Context/i);
       });
     }
   });

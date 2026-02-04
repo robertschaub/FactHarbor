@@ -99,8 +99,7 @@ export function validatePipelineConfig(config: PipelineConfig): ConfigWarning[] 
   }
 
   // Warning 7: All LLM text analysis disabled (lower quality)
-  // Support both llmContextSimilarity (new) and llmScopeSimilarity (old) with new key taking precedence
-  const contextSimilarityEnabled = config.llmContextSimilarity ?? config.llmScopeSimilarity ?? true;
+  const contextSimilarityEnabled = config.llmContextSimilarity ?? true;
   const allLLMDisabled =
     !config.llmInputClassification &&
     !config.llmEvidenceQuality &&
@@ -116,7 +115,7 @@ export function validatePipelineConfig(config: PipelineConfig): ConfigWarning[] 
       affectedFields: [
         "llmInputClassification",
         "llmEvidenceQuality",
-        "llmScopeSimilarity",
+        "llmContextSimilarity",
         "llmVerdictValidation",
       ],
     });

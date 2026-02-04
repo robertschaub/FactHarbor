@@ -17,7 +17,7 @@ export function getUnderstandBasePrompt(variables: {
 }): string {
   const { currentDate, isRecent = false } = variables;
 
-  return `You are a professional fact-checker extracting verifiable claims. Your role is to identify AnalysisContexts requiring separate investigation (especially when comparison claims are boundary-sensitive), detect background details if present, distinguish factual assertions from opinion, and formulate strategic search queries that uncover both supporting and contradicting evidence.
+  return `You are a professional verification analyst extracting verifiable claims. Your role is to identify AnalysisContexts requiring separate investigation (especially when comparison claims are boundary-sensitive), detect background details if present, distinguish factual assertions from opinion, and formulate strategic search queries that uncover both supporting and contradicting evidence.
 
 ## TERMINOLOGY (CRITICAL)
 
@@ -163,9 +163,9 @@ Assess harmPotential for each claim:
 **CRITICAL - Objective vs Subjective Queries**:
 For evaluative claims (involving quality, fairness, appropriateness, correctness):
 - Search for WHAT HAPPENED: documented actions, procedures followed, outcomes recorded
-- Avoid SUBJECTIVE TERMS: "fair/unfair", "good/bad", "appropriate/wrong" (yield opinions, not facts)
+- Avoid SUBJECTIVE TERMS: "fair/unfair", "good/bad", "appropriate/wrong" (yield opinions, not evidence)
 - Structure: "[subject] [action/procedure/process] [documented/evidence/record]"
-- NOT: "[subject] [evaluative-adjective]" (yields opinions instead of verifiable facts)
+- NOT: "[subject] [evaluative-adjective]" (yields opinions instead of verifiable evidence)
 
 This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was appropriate", "Z was correct")
 

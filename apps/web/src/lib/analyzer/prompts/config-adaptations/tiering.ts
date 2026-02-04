@@ -29,7 +29,7 @@ Output: 2 claims
 - Output valid JSON`;
 }
 
-export function getTieringExtractFactsAdaptation(): string {
+export function getTieringExtractEvidenceAdaptation(): string {
   return `
 ## FAST MODE
 
@@ -79,7 +79,7 @@ export function getTieringVerdictAdaptation(): string {
  * Strips verbose sections from full prompts for faster processing
  */
 export function getBudgetUnderstandPrompt(currentDate: string): string {
-  return `You are a fact-checker. Extract claims and generate search queries.
+  return `You are an evidence analyst. Extract claims and generate search queries.
 
 Date: ${currentDate}
 
@@ -101,7 +101,7 @@ Date: ${currentDate}
 }`;
 }
 
-export function getBudgetExtractFactsPrompt(currentDate: string, originalClaim: string): string {
+export function getBudgetExtractEvidencePrompt(currentDate: string, originalClaim: string): string {
   return `You extract evidence items from sources. Date: ${currentDate}
 
 CLAIM TO VERIFY: ${originalClaim}
@@ -119,7 +119,7 @@ Extract 4-6 specific, verifiable evidence items from the source.
 - contextId: "" (or AnalysisContext ID if known)
 - evidenceScope: null
 
-**OUTPUT FIELD NAMING**: Use \`evidenceItems[]\` with \`statement\` (preferred). Legacy \`facts[]\` with \`fact\` is accepted.
+**OUTPUT FIELD NAMING**: Use \`evidenceItems[]\` with \`statement\`.
 
 ## OUTPUT (JSON)
 {"evidenceItems": [{...}, {...}]}`;

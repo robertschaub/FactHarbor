@@ -8,7 +8,7 @@ LLM prompts for the Text Analysis Pipeline. These prompts are used when the corr
 |------|---------|-------------|---------------|
 | `text-analysis-input.prompt.md` | 1.1.0 | Input classification and claim decomposition | 2026-01-30 |
 | `text-analysis-evidence.prompt.md` | 1.2.0 | Evidence quality assessment for filtering | 2026-01-30 |
-| `text-analysis-scope.prompt.md` | 1.3.0 | AnalysisContext similarity and phase bucket analysis | 2026-01-31 |
+| `text-analysis-context.prompt.md` | 1.3.0 | AnalysisContext similarity and phase bucket analysis | 2026-01-31 |
 | `text-analysis-verdict.prompt.md` | 1.2.0 | Verdict validation (inversion/harm/contestation) | 2026-01-30 |
 
 ## Database Content Hashes (Active)
@@ -19,7 +19,7 @@ As of 2026-01-31:
 |---------|--------------|
 | text-analysis-input | `34309de4baf7...` |
 | text-analysis-evidence | `5f1b551dd10d...` |
-| text-analysis-scope | `76a16acb2dd9...` |
+| text-analysis-context | `76a16acb2dd9...` |
 | text-analysis-verdict | `ea27d6d0f26b...` |
 
 ## Feature Flags
@@ -29,7 +29,7 @@ LLM-based analysis is **enabled by default** (v2.8.3+). To disable and use heuri
 ```bash
 FH_LLM_INPUT_CLASSIFICATION=false   # Disable LLM for input classification
 FH_LLM_EVIDENCE_QUALITY=false       # Disable LLM for evidence quality
-FH_LLM_SCOPE_SIMILARITY=false       # Disable LLM for scope similarity
+FH_LLM_CONTEXT_SIMILARITY=false       # Disable LLM for context similarity
 FH_LLM_VERDICT_VALIDATION=false     # Disable LLM for verdict validation
 ```
 
@@ -63,7 +63,7 @@ npx promptfoo eval -c promptfooconfig.text-analysis.yaml
 |--------|------------|----------------|
 | `text-analysis-input` | 8 | Comparative, compound, claim types, complexity |
 | `text-analysis-evidence` | 5 | Quality levels (high/medium/low/filter), expert attribution |
-| `text-analysis-scope` | 5 | Similarity thresholds, phase buckets, merge recommendations |
+| `text-analysis-context` | 5 | Similarity thresholds, phase buckets, merge recommendations |
 | `text-analysis-verdict` | 8 | Inversion detection, harm potential, contestation |
 
 ### Test Configuration Files
@@ -74,7 +74,7 @@ apps/web/
 └── prompts/promptfoo/
     ├── text-analysis-input-prompt.txt           # Input classification template
     ├── text-analysis-evidence-prompt.txt        # Evidence quality template
-    ├── text-analysis-scope-prompt.txt           # Scope similarity template
+    ├── text-analysis-context-prompt.txt           # Context similarity template
     └── text-analysis-verdict-prompt.txt         # Verdict validation template
 ```
 
@@ -101,9 +101,9 @@ See: [Promptfoo Testing Guide](../../../../Docs/USER_GUIDES/Promptfoo_Testing.md
   - Statistics without numbers = filter
 - **v1.0.0** (2026-01-29): Initial version
 
-### text-analysis-scope.prompt.md
+### text-analysis-context.prompt.md
 
-- **v1.3.0** (2026-01-31): Clarified AnalysisContext vs EvidenceScope terminology in scope similarity prompt
+- **v1.3.0** (2026-01-31): Clarified AnalysisContext vs EvidenceScope terminology in context similarity prompt
 
 - **v1.2.0** (2026-01-30): Added phase bucket keyword patterns from heuristic code
   - production: manufactur*, production, factory, assembly, upstream, mining, extraction, refin*

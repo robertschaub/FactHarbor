@@ -125,19 +125,19 @@ export function detectAndCorrectVerdictInversion(
  * or when claims are derived from counter-evidence search results.
  *
  * CRITICAL: A claim that semantically SUPPORTS the thesis should NEVER be marked as a
- * counter-claim, regardless of fact directions. Only claims that test the OPPOSITE
+ * counter-claim, regardless of evidence directions. Only claims that test the OPPOSITE
  * position (e.g., "was unfair" when thesis says "was fair") are counter-claims.
  *
  * @param claimText - The text of the sub-claim
  * @param userThesis - The user's original thesis/claim (normalized)
- * @param claimFacts - Facts supporting this claim (check if from counter-evidence search)
+ * @param claimEvidenceItems - Evidence items supporting this claim (check if from counter-evidence search)
  * @returns true if this is a counter-claim
  */
 export function detectCounterClaim(
   claimText: string,
   userThesis: string,
   claimTruthPercentage?: number,
-  claimFacts?: EvidenceItem[],
+  claimEvidenceItems?: EvidenceItem[],
 ): boolean {
   const claimLower = claimText.toLowerCase();
   const thesisLower = userThesis.toLowerCase();
@@ -195,7 +195,7 @@ export function detectCounterClaim(
 
   /**
    * Check if a claim semantically supports/aligns with the thesis.
-   * If aligned, the claim cannot be a counter-claim regardless of fact directions.
+   * If aligned, the claim cannot be a counter-claim regardless of evidence directions.
    */
   function isClaimAlignedWithThesis(claim: string, thesis: string): boolean {
     // IMPORTANT: Don't treat swapped/reversed comparatives as "aligned" just because they share
@@ -476,14 +476,14 @@ export function detectCounterClaim(
   // to the thesis, which MUST NOT automatically make same-direction (thesis-aligned) claims
   // look like counter-claims.
   // =========================================================================
-  if (claimFacts && claimFacts.length > 0 && typeof claimTruthPercentage === "number") {
+  if (claimEvidenceItems && claimEvidenceItems.length > 0 && typeof claimTruthPercentage === "number") {
     const truthPct = claimTruthPercentage;
     // Provenance (fromOppositeClaimSearch) is metadata, not evidence direction.
-    const contradictCount = claimFacts.filter((f) => f.claimDirection === "contradicts").length;
-    const supportCount = claimFacts.filter((f) => f.claimDirection === "supports").length;
+    const contradictCount = claimEvidenceItems.filter((item) => item.claimDirection === "contradicts").length;
+    const supportCount = claimEvidenceItems.filter((item) => item.claimDirection === "supports").length;
 
-    const majorityContradicts = contradictCount > claimFacts.length / 2;
-    const majoritySupports = supportCount > claimFacts.length / 2;
+    const majorityContradicts = contradictCount > claimEvidenceItems.length / 2;
+    const majoritySupports = supportCount > claimEvidenceItems.length / 2;
 
     // If claim is (leaning) true and its evidence contradicts the user's thesis,
     // it's likely evaluating the opposite position.

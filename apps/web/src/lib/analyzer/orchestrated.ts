@@ -16,7 +16,7 @@
  * - Enhanced recency detection with news-related keywords (v2.6.22)
  * - Date-aware query variants for ALL search types (v2.6.22)
  * - Optional Gemini Grounded Search mode (v2.6.22)
- * - v2.6.23: Fixed input neutrality - canonicalizeScopes uses normalized input
+ * - v2.6.23: Fixed input neutrality - canonicalizeContexts uses normalized input
  * - v2.6.23: Strengthened centrality heuristic with explicit examples
  * - v2.6.23: Generic recency detection (removed person names)
  * - v2.6.25: Removed originalInputDisplay from analysis pipeline
@@ -32,8 +32,8 @@
  * - v2.6.33: Auto-detect external reaction claims as tangential (generic: reactions to X don't evaluate X)
  * - v2.6.33: Contested claims WITH factual counter-evidence get reduced weight in aggregation
  * - v2.6.40: Fixed Context/Scope terminology - assessedStatement now passed to verdict prompts
- * - v2.6.40: Renamed scopesFormatted to contextsFormatted, fixed all "scope" to "context" in prompts
- * - Note: Any remaining "scope" mentions in version notes are historical (legacy AnalysisContext wording)
+ * - v2.6.40: Renamed scopesFormatted to contextsFormatted, fixed legacy wording in prompts
+ * - Note: Any remaining legacy wording in version notes is historical (pre-AnalysisContext cleanup)
  *
  * @version 2.6.40
  * @date January 2026
@@ -51,7 +51,6 @@ import {
   getBudgetConfig,
   createBudgetTracker,
   checkTokenBudget,
-  checkScopeIterationBudget,
   recordIteration,
   recordLLMCall,
   markBudgetExceeded,
@@ -73,11 +72,10 @@ import {
   extractParenAcronym,
   extractAllCapsToken,
   inferToAcronym,
-  inferScopeTypeLabel,
-  scopeTypeRank,
+  inferContextTypeLabel,
   contextTypeRank,
   detectInstitutionCode,
-  sanitizeScopeShortAnswer,
+  sanitizeContextShortAnswer,
 } from "./config";
 import {
   calculateWeightedVerdictAverage,
@@ -93,10 +91,10 @@ import {
   setVerdictCorrectionsLexicon,
 } from "./verdict-corrections";
 import {
-  canonicalizeScopes,
-  canonicalizeScopesWithRemap,
-  ensureAtLeastOneScope,
-  UNSCOPED_ID,
+  canonicalizeContexts,
+  canonicalizeContextsWithRemap,
+  ensureAtLeastOneContext,
+  UNASSIGNED_CONTEXT_ID,
 } from "./analysis-contexts";
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
@@ -111,8 +109,8 @@ import {
   type EvidenceItemInput,
   type EvidenceQualityResult,
   type VerdictValidationResult as TextAnalysisVerdictResult,
-  type ScopeSimilarityResult,
-  type ScopePair,
+  type ContextSimilarityResult,
+  type ContextPair,
 } from "./text-analysis-service";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "../config-schemas";
 import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
@@ -412,10 +410,9 @@ function normalizeKeyFactorClassifications<T extends {
 
 /**
  * Normalize evidence classifications with fallback tracking
- * Call this after fact extraction to ensure all classification fields are defined
+ * Call this after evidence extraction to ensure all classification fields are defined
  */
 function normalizeEvidenceClassifications<T extends {
-  fact?: string;
   statement?: string;
   sourceAuthority?: string;
   evidenceBasis?: string;
@@ -430,7 +427,7 @@ function normalizeEvidenceClassifications<T extends {
 
     let sourceAuthority = ev.sourceAuthority;
     let evidenceBasis = ev.evidenceBasis;
-    const text = ev.statement || ev.statement || "";
+    const text = ev.statement || "";
 
     // Normalize sourceAuthority
     if (!sourceAuthority || !validSourceAuth.includes(sourceAuthority)) {
@@ -538,33 +535,33 @@ function verifyFinalClassifications(
     });
   }
 
-  // Verify evidence/facts have sourceAuthority and evidenceBasis
-  state.evidenceItems.forEach((fact: any, index: number) => {
+  // Verify evidence items have sourceAuthority and evidenceBasis
+  state.evidenceItems.forEach((item: any, index: number) => {
     // sourceAuthority
-    if (!fact.sourceAuthority || !["primary", "secondary", "opinion", "contested"].includes(fact.sourceAuthority)) {
-      const reason = !fact.sourceAuthority ? 'missing' : 'invalid';
+    if (!item.sourceAuthority || !["primary", "secondary", "opinion", "contested"].includes(item.sourceAuthority)) {
+      const reason = !item.sourceAuthority ? 'missing' : 'invalid';
       tracker.recordFallback({
         field: 'sourceAuthority',
         location: `Final Evidence #${index + 1}`,
-        text: (fact.statement || fact.statement || "").substring(0, 100),
+        text: (item.statement || "").substring(0, 100),
         defaultUsed: "secondary",
         reason
       });
-      fact.sourceAuthority = "secondary";
+      item.sourceAuthority = "secondary";
       console.warn(`[Fallback] Final verification: Evidence #${index + 1} missing sourceAuthority, set to "secondary"`);
     }
 
     // evidenceBasis
-    if (!fact.evidenceBasis || !["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"].includes(fact.evidenceBasis)) {
-      const reason = !fact.evidenceBasis ? 'missing' : 'invalid';
+    if (!item.evidenceBasis || !["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"].includes(item.evidenceBasis)) {
+      const reason = !item.evidenceBasis ? 'missing' : 'invalid';
       tracker.recordFallback({
         field: 'evidenceBasis',
         location: `Final Evidence #${index + 1}`,
-        text: (fact.statement || fact.statement || "").substring(0, 100),
+        text: (item.statement || "").substring(0, 100),
         defaultUsed: "anecdotal",
         reason
       });
-      fact.evidenceBasis = "anecdotal";
+      item.evidenceBasis = "anecdotal";
       console.warn(`[Fallback] Final verification: Evidence #${index + 1} missing evidenceBasis, set to "anecdotal"`);
     }
   });
@@ -579,22 +576,22 @@ function verifyFinalClassifications(
 
 // ============================================================================
 
-async function refineScopesFromEvidence(
+async function refineContextsFromEvidence(
   state: ResearchState,
   model: any,
 ): Promise<{ updated: boolean; llmCalls: number }> {
   if (!state.understanding) return { updated: false, llmCalls: 0 };
 
-  const preRefineScopes = state.understanding.analysisContexts || [];
+  const preRefineContexts = state.understanding.analysisContexts || [];
 
-  const facts = state.evidenceItems || [];
-  // If we don't have enough evidence, skip refinement (avoid hallucinated scopes).
+  const evidenceItems = state.evidenceItems || [];
+  // If we don't have enough evidence, skip refinement (avoid hallucinated contexts).
   // v2.6.39: Align threshold with mode config (quick=6, deep=8) to enable refinement in quick mode
   const config = getActiveConfig(state.pipelineConfig);
-  const minRefineFacts = Math.min(8, config.minFactsRequired);
-  if (facts.length < minRefineFacts) {
+  const minEvidenceItemsForRefinement = Math.min(8, config.minEvidenceItemsRequired);
+  if (evidenceItems.length < minEvidenceItemsForRefinement) {
     const mode = state.pipelineConfig?.analysisMode ?? DEFAULT_PIPELINE_CONFIG.analysisMode;
-    debugLog(`[Refine] Skipping refinement: ${facts.length} facts < ${minRefineFacts} threshold (mode: ${mode})`);
+    debugLog(`[Refine] Skipping refinement: ${evidenceItems.length} evidence items < ${minEvidenceItemsForRefinement} threshold (mode: ${mode})`);
     return { updated: false, llmCalls: 0 };
   }
 
@@ -608,27 +605,27 @@ async function refineScopesFromEvidence(
     state.pipelineConfig?.contextPromptSelectionEnabled ??
     DEFAULT_PIPELINE_CONFIG.contextPromptSelectionEnabled;
 
-  const scopePromptMaxFactsRaw =
-    state.pipelineConfig?.contextPromptMaxFacts ??
-    DEFAULT_PIPELINE_CONFIG.contextPromptMaxFacts ??
+  const contextPromptMaxEvidenceItemsRaw =
+    state.pipelineConfig?.contextPromptMaxEvidenceItems ??
+    DEFAULT_PIPELINE_CONFIG.contextPromptMaxEvidenceItems ??
     40;
-  const scopePromptMaxFacts = Number.isFinite(scopePromptMaxFactsRaw)
-    ? Math.max(8, Math.min(80, scopePromptMaxFactsRaw))
+  const contextPromptMaxEvidenceItems = Number.isFinite(contextPromptMaxEvidenceItemsRaw)
+    ? Math.max(8, Math.min(80, contextPromptMaxEvidenceItemsRaw))
     : 40;
 
-  const promptFacts = shouldEnableScopePromptSelection
-    ? selectFactsForScopeRefinementPrompt(facts, analysisInput, scopePromptMaxFacts)
-    : facts.slice(0, scopePromptMaxFacts);
+  const promptEvidenceItems = shouldEnableScopePromptSelection
+    ? selectEvidenceItemsForContextRefinementPrompt(evidenceItems, analysisInput, contextPromptMaxEvidenceItems)
+    : evidenceItems.slice(0, contextPromptMaxEvidenceItems);
 
-  const factsText = promptFacts.map((f) => {
-      const es = (f as any).evidenceScope;
+  const evidenceText = promptEvidenceItems.map((item) => {
+      const es = (item as any).evidenceScope;
       const esBits: string[] = [];
       if (es?.methodology) esBits.push(`method=${es.methodology}`);
       if (es?.boundaries) esBits.push(`boundaries=${es.boundaries}`);
       if (es?.geographic) esBits.push(`geo=${es.geographic}`);
       if (es?.temporal) esBits.push(`time=${es.temporal}`);
       const esStr = esBits.length > 0 ? ` | EvidenceScope: ${esBits.join("; ")}` : "";
-      return `[${f.id}] ${f.statement} (Source: ${f.sourceTitle})${esStr}`;
+      return `[${item.id}] ${item.statement} (Source: ${item.sourceTitle})${esStr}`;
     }).join("\n");
 
   const claimsText = (state.understanding.subClaims || [])
@@ -655,27 +652,19 @@ async function refineScopesFromEvidence(
     claimContextAssignments: z
       .array(z.object({ claimId: z.string(), contextId: z.string() }))
       .default([]),
-    // Legacy output names (accepted for LLM fallback)
-    factScopeAssignments: z
-      .array(z.object({ factId: z.string(), contextId: z.string() }))
-      .optional(),
-    claimScopeAssignments: z
-      .array(z.object({ claimId: z.string(), contextId: z.string() }))
-      .optional(),
   });
 
-  const systemPrompt = `You are a professional fact-checker organizing evidence into AnalysisContexts. Your role is to identify distinct AnalysisContexts requiring separate investigation—based on differences in analytical dimensions such as methodology, boundaries, or institutional framework—and organize evidence into the appropriate AnalysisContexts.
+  const systemPrompt = `You are a professional evidence analyst organizing evidence into AnalysisContexts. Your role is to identify distinct AnalysisContexts requiring separate investigation—based on differences in analytical dimensions such as methodology, boundaries, or institutional framework—and organize evidence into the appropriate AnalysisContexts.
 
 Terminology (critical):
 - Background details: High-level narrative frame or topic of the input. This is descriptive only and is NOT a reason to split analysis.
 - AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
-- EvidenceScope: per-evidence-item source scope (methodology/boundaries/geography/temporal) attached to individual extracted evidence items (EvidenceItem.evidenceScope). This is NOT the same as AnalysisContext.
+- EvidenceScope: per-evidence-item source metadata (methodology/boundaries/geography/temporal) attached to individual extracted evidence items (EvidenceItem.evidenceScope). This is NOT the same as AnalysisContext.
 
 Language rules (avoid ambiguity):
 - Always use the term "AnalysisContext" for top-level bounded frames.
 - Use the term "background details" for narrative framing (not a separate verdict space).
 - Use the term "EvidenceScope" ONLY for per-evidence-item metadata shown in the EVIDENCE list.
-- Avoid using the bare word "scope" (too ambiguous here).
 - Avoid using the bare word "context" unless you explicitly mean AnalysisContext.
 
 Your job: Identify the DISTINCT AnalysisContexts that are REQUIRED by the evidence. Create a separate AnalysisContext ONLY when the evidence clearly indicates a different analytical frame (methodology/boundary/jurisdiction/etc.) that would require its own verdict. If the evidence does NOT show distinct frames, return a single AnalysisContext.
@@ -688,8 +677,8 @@ CRITICAL RULES:
 - Split into multiple AnalysisContexts when the evidence indicates different boundaries, methods, time periods, institutions, datasets, or processes that should be analyzed separately.
 - Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different regulatory regimes, different datasets/studies, different measurement windows).
 - Also split when evidence clearly covers different phases/components/metrics that are not directly comparable (e.g., upstream vs downstream phases, production vs use-phase, system-wide vs component-level metrics, different denominators/normalizations).
-- **CRITICAL: Separate formal authority = separate contexts (evidence-gated)**: If evidence references decisions, rulings, or processes from DIFFERENT formal bodies (each with independent authority to make determinations on different matters), AND each authority has at least one supporting fact, these require separate AnalysisContexts. Do NOT split on incidental mentions without supporting evidence.
-- **CRITICAL: Different system boundaries = separate contexts (evidence-gated)**: If the input is a comparative claim and evidence uses different measurement boundaries or system definitions, AND each boundary has at least one supporting fact, these require separate AnalysisContexts. Do NOT split on incidental mentions.
+- **CRITICAL: Separate formal authority = separate contexts (evidence-gated)**: If evidence references decisions, rulings, or processes from DIFFERENT formal bodies (each with independent authority to make determinations on different matters), AND each authority has at least one supporting evidence item, these require separate AnalysisContexts. Do NOT split on incidental mentions without supporting evidence.
+- **CRITICAL: Different system boundaries = separate contexts (evidence-gated)**: If the input is a comparative claim and evidence uses different measurement boundaries or system definitions, AND each boundary has at least one supporting evidence item, these require separate AnalysisContexts. Do NOT split on incidental mentions.
 - **Anti-duplication rule**: If you create an authority-specific or boundary-specific context, do NOT also keep a redundant generic parent context UNLESS the parent context (a) answers a different question than the specific contexts, OR (b) has distinct evidence not covered by the specific contexts.
 - Do NOT split into AnalysisContexts just because there are pro vs con viewpoints. Viewpoints are not AnalysisContexts.
 - Do NOT split into AnalysisContexts purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting). Those are source types, not bounded analytical frames.
@@ -704,7 +693,7 @@ CRITICAL RULES:
 
 Return JSON only matching the schema.`;
 
-  // v2.6.39: Build candidate contexts section if heuristics detected potential scopes
+  // v2.6.39: Build candidate contexts section if heuristics detected potential contexts
   const candidateContextsSection = seedHint ? `
 CANDIDATE CONTEXTS (heuristic detection - optional):
 ${seedHint}
@@ -716,7 +705,7 @@ NOTE: These candidates are heuristic suggestions. Use a candidate ONLY if it is 
 "${analysisInput}"
 
 EVIDENCE (unverified extracted statements):
-${factsText}
+${evidenceText}
 
 CURRENT CLAIMS (may be incomplete):
 ${claimsText || "(none)"}
@@ -730,7 +719,7 @@ Return:
 
   // v2.6.39: Log when seed hints are passed to refinement
   if (seedContexts.length > 0) {
-    debugLog("refineScopesFromEvidence: passing seed hints as candidates", {
+    debugLog("refineContextsFromEvidence: passing seed hints as candidates", {
       seedCount: seedContexts.length,
       seedIds: seedContexts.map((s) => s.id),
     });
@@ -749,13 +738,13 @@ Return:
     });
     refined = extractStructuredOutput(result);
   } catch (err: any) {
-    debugLog("refineScopesFromEvidence: FAILED", err?.message || String(err));
+    debugLog("refineContextsFromEvidence: FAILED", err?.message || String(err));
     return { updated: false, llmCalls: 0 };
   }
 
   const sp = schema.safeParse(refined);
   if (!sp.success) {
-    debugLog("refineScopesFromEvidence: safeParse failed", {
+    debugLog("refineContextsFromEvidence: safeParse failed", {
       issues: sp.error.issues?.slice(0, 10),
     });
     return { updated: false, llmCalls: 1 };
@@ -766,61 +755,43 @@ Return:
     return { updated: false, llmCalls: 1 };
   }
 
-  const legacyEvidenceAssignments = (next.factScopeAssignments || []).map((a) => ({
-    evidenceId: a.factId,
-    contextId: a.contextId,
-  }));
-  const evidenceAssignments = (next.evidenceContextAssignments || []).length
-    ? next.evidenceContextAssignments
-    : legacyEvidenceAssignments;
-  if (legacyEvidenceAssignments.length > 0 && !(next.evidenceContextAssignments || []).length) {
-    warnLegacyField("refineScopesFromEvidence", "factScopeAssignments");
-  }
+  const evidenceAssignments = next.evidenceContextAssignments || [];
   const normalizedEvidenceAssignments = evidenceAssignments.map((a) => ({
     ...a,
-    evidenceId: normalizeEvidenceId(String(a.evidenceId ?? ""), "refineScopesFromEvidence"),
+    evidenceId: normalizeEvidenceId(String(a.evidenceId ?? ""), "refineContextsFromEvidence"),
   }));
 
-  const legacyClaimAssignments = (next.claimScopeAssignments || []).map((a) => ({
-    claimId: a.claimId,
-    contextId: a.contextId,
-  }));
-  const claimAssignmentsList = (next.claimContextAssignments || []).length
-    ? next.claimContextAssignments
-    : legacyClaimAssignments;
-  if (legacyClaimAssignments.length > 0 && !(next.claimContextAssignments || []).length) {
-    warnLegacyField("refineScopesFromEvidence", "claimScopeAssignments");
-  }
+  const claimAssignmentsList = next.claimContextAssignments || [];
 
-  // Validate coverage: we need assignments for most evidence items, and at least one evidence item per scope.
+  // Validate coverage: we need assignments for most evidence items, and at least one evidence item per context.
   const assignmentCount = normalizedEvidenceAssignments.length;
-  if (assignmentCount < Math.floor(promptFacts.length * 0.7)) {
-    debugLog("refineScopesFromEvidence: rejected (insufficient evidence assignments)", {
-      factsInPrompt: promptFacts.length,
-      totalFacts: facts.length,
+  if (assignmentCount < Math.floor(promptEvidenceItems.length * 0.7)) {
+    debugLog("refineContextsFromEvidence: rejected (insufficient evidence assignments)", {
+      evidenceItemsInPrompt: promptEvidenceItems.length,
+      totalEvidenceItems: evidenceItems.length,
       assignments: assignmentCount,
     });
     return { updated: false, llmCalls: 1 };
   }
 
-  // Apply refined scopes.
+  // Apply refined contexts.
   state.understanding = {
     ...state.understanding!,
     analysisContexts: next.analysisContexts,
     requiresSeparateAnalysis: !!next.requiresSeparateAnalysis && next.analysisContexts.length > 1,
   };
 
-  // Canonicalize IDs and keep a remap so we can remap fact/claim assignments.
-  const canon = canonicalizeScopesWithRemap(analysisInput, state.understanding!);
+  // Canonicalize IDs and keep a remap so we can remap evidence/claim assignments.
+  const canon = canonicalizeContextsWithRemap(analysisInput, state.understanding!);
   state.understanding = canon.understanding;
 
   const remapId = (id: string) => (id && canon.idRemap.has(id) ? canon.idRemap.get(id)! : id);
 
-  // Remap any pre-existing fact/claim assignments across canonicalization (important when we don't
-  // necessarily reassign every fact/claim during refinement).
-  for (const f of state.evidenceItems || []) {
-    const rp = String((f as any).contextId || "");
-    if (rp) (f as any).contextId = remapId(rp);
+  // Remap any pre-existing evidence/claim assignments across canonicalization (important when we don't
+  // necessarily reassign every evidence item/claim during refinement).
+  for (const item of state.evidenceItems || []) {
+    const rp = String((item as any).contextId || "");
+    if (rp) (item as any).contextId = remapId(rp);
   }
   for (const c of state.understanding!.subClaims || []) {
     const rp = String((c as any).contextId || "");
@@ -842,16 +813,16 @@ Return:
       DEFAULT_PIPELINE_CONFIG.contextDedupThreshold ??
       0.85;
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.85;
-    // v2.9: deduplicateScopes is now async to support LLM scope similarity analysis
-    const dedup = await deduplicateScopes(
+    // v2.9: deduplicateContexts is now async to support LLM context similarity analysis
+    const dedup = await deduplicateContexts(
       state.understanding!.analysisContexts || [],
       threshold,
       state.pipelineConfig ?? undefined,
     );
     dedupMerged = dedup.merged;
-    state.understanding!.analysisContexts = dedup.scopes;
+    state.understanding!.analysisContexts = dedup.contexts;
 
-    // Remap any pre-existing fact/claim assignments (from earlier phases) to merged IDs.
+    // Remap any pre-existing evidence/claim assignments (from earlier phases) to merged IDs.
     for (const f of state.evidenceItems || []) {
       const rp = String((f as any).contextId || "");
       if (!rp) continue;
@@ -877,7 +848,7 @@ Return:
 
   // IMPORTANT: finalize any context ID coming from the refinement output by applying both:
   // - canonicalization remap (remapId)
-  // - scope dedup merge remap (dedupMerged), transitively (in case of chained merges)
+  // - context dedup merge remap (dedupMerged), transitively (in case of chained merges)
   const finalizeContextId = (rawId: string): string => {
     let pid = remapId(rawId || "");
     if (!pid) return "";
@@ -899,44 +870,44 @@ Return:
     evidenceAssignmentsById.set(a.evidenceId, pid);
   }
 
-  // v2.6.31: Identify facts that were in promptFacts (sent to LLM) vs excluded facts
-  const promptFactIds = new Set(promptFacts.map((f) => f.id));
+  // v2.6.31: Identify evidence items that were in promptEvidenceItems (sent to LLM) vs excluded items
+  const promptEvidenceItemIds = new Set(promptEvidenceItems.map((item) => item.id));
 
-  // Determine default scope for facts not included in promptFacts
-  // Use the first/primary scope as the default (most analyses have one dominant scope)
-  const defaultScopeId = (state.understanding!.analysisContexts || [])[0]?.id || "";
+  // Determine default context for evidence items not included in promptEvidenceItems
+  // Use the first/primary context as the default (most analyses have one dominant context)
+  const defaultContextId = (state.understanding!.analysisContexts || [])[0]?.id || "";
 
-  for (const f of state.evidenceItems) {
-    const pid = evidenceAssignmentsById.get(f.id);
+  for (const item of state.evidenceItems) {
+    const pid = evidenceAssignmentsById.get(item.id);
     if (pid) {
-      // Evidence item was in promptFacts and got an assignment from LLM
-      f.contextId = pid;
-    } else if (!promptFactIds.has(f.id) && defaultScopeId && !f.contextId) {
-      // Fact was NOT in promptFacts (excluded due to max limit) and has no assignment
-      // Assign to default scope to prevent orphaning
-      f.contextId = defaultScopeId;
-      debugLog("refineScopesFromEvidence: assigned excluded evidence to default context", {
-        evidenceId: f.id,
-        defaultScopeId,
-        reason: "evidence excluded from promptFacts due to max limit",
+      // Evidence item was in promptEvidenceItems and got an assignment from LLM
+      item.contextId = pid;
+    } else if (!promptEvidenceItemIds.has(item.id) && defaultContextId && !item.contextId) {
+      // Evidence item was NOT in promptEvidenceItems (excluded due to max limit) and has no assignment
+      // Assign to default context to prevent orphaning
+      item.contextId = defaultContextId;
+      debugLog("refineContextsFromEvidence: assigned excluded evidence to default context", {
+        evidenceId: item.id,
+        defaultContextId,
+        reason: "evidence excluded from promptEvidenceItems due to max limit",
       });
     }
-    // Facts that were in promptFacts but got no assignment are left alone
+    // Evidence items that were in promptEvidenceItems but got no assignment are left alone
     // (they may have pre-existing assignments or will be reconciled by ensureScopesCoverAssignments)
   }
 
-  // IMPORTANT: ensure we never end up with orphaned assignments (facts/claims referencing a
-  // scope ID that does not exist in analysisContexts). This can happen because:
-  // - understandClaim/extractFacts may assign IDs from the initial scope list
-  // - refineScopesFromEvidence may overwrite analysisContexts with a refined list that omits
-  //   some previously-referenced scope IDs (claimContextAssignments are optional)
+  // IMPORTANT: ensure we never end up with orphaned assignments (evidence/claims referencing a
+  // context ID that does not exist in analysisContexts). This can happen because:
+  // - understandClaim/extractEvidence may assign IDs from the initial context list
+  // - refineContextsFromEvidence may overwrite analysisContexts with a refined list that omits
+  //   some previously-referenced context IDs (claimContextAssignments are optional)
   //
   // Strategy (generic):
-  // - If an orphaned scopeId exists in the pre-refinement scope list, restore that scope.
+  // - If an orphaned contextId exists in the pre-refinement context list, restore that context.
   // - Otherwise, clear the orphaned assignment to keep the state consistent.
-  const ensureScopesCoverAssignments = () => {
+  const ensureContextsCoverAssignments = () => {
     const prevById = new Map<string, any>();
-    for (const s of preRefineScopes as any[]) {
+    for (const s of preRefineContexts as any[]) {
       if (s?.id) prevById.set(String(s.id), s);
     }
 
@@ -950,20 +921,20 @@ Return:
       if (rp) referenced.add(rp);
     }
 
-    const scopesNow = state.understanding!.analysisContexts || [];
-    const scopeById = new Map<string, any>();
-    for (const s of scopesNow as any[]) {
-      if (s?.id) scopeById.set(String(s.id), s);
+    const contextsNow = state.understanding!.analysisContexts || [];
+    const contextById = new Map<string, any>();
+    for (const s of contextsNow as any[]) {
+      if (s?.id) contextById.set(String(s.id), s);
     }
 
     const restored: string[] = [];
     const cleared: string[] = [];
     for (const rp of referenced) {
-      if (scopeById.has(rp)) continue;
+      if (contextById.has(rp)) continue;
       const prev = prevById.get(rp);
       if (prev) {
-        scopesNow.push(prev);
-        scopeById.set(rp, prev);
+        contextsNow.push(prev);
+        contextById.set(rp, prev);
         restored.push(rp);
       } else {
         // We can't restore it; clear downstream references so UI/state stays consistent.
@@ -978,38 +949,38 @@ Return:
     }
 
     if (restored.length > 0 || cleared.length > 0) {
-      state.understanding!.analysisContexts = scopesNow;
+      state.understanding!.analysisContexts = contextsNow;
       // v2.6.31: Fix - use simple check instead of AND logic
-      // If we have multiple scopes after restoration, enable separate analysis
-      // (the AND logic incorrectly kept requiresSeparateAnalysis=false when scopes were restored)
-      state.understanding!.requiresSeparateAnalysis = scopesNow.length > 1;
-      debugLog("refineScopesFromEvidence: reconciled orphaned scope assignments", {
+      // If we have multiple contexts after restoration, enable separate analysis
+      // (the AND logic incorrectly kept requiresSeparateAnalysis=false when contexts were restored)
+      state.understanding!.requiresSeparateAnalysis = contextsNow.length > 1;
+      debugLog("refineContextsFromEvidence: reconciled orphaned context assignments", {
         restored: restored.slice(0, 8),
         cleared: cleared.slice(0, 8),
       });
     }
   };
 
-  ensureScopesCoverAssignments();
+  ensureContextsCoverAssignments();
 
-  const factsPerScope = new Map<string, number>();
+  const evidenceItemsPerContext = new Map<string, number>();
   for (const f of state.evidenceItems) {
     const pid = String(f.contextId || "");
     if (!pid) continue;
-    factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
+    evidenceItemsPerContext.set(pid, (evidenceItemsPerContext.get(pid) || 0) + 1);
   }
   for (const s of state.understanding!.analysisContexts || []) {
-    const c = factsPerScope.get(s.id) || 0;
+    const c = evidenceItemsPerContext.get(s.id) || 0;
     if (c < 1) {
-      debugLog("refineScopesFromEvidence: rejected (scope with zero evidence)", {
-        scopeId: s.id,
-        scopeName: s.name,
+      debugLog("refineContextsFromEvidence: rejected (context with zero evidence)", {
+        contextId: s.id,
+        contextName: s.name,
       });
       return { updated: false, llmCalls: 1 };
     }
   }
 
-  // Optional: enforce EvidenceScope name alignment based on scope metadata + per-evidence evidenceScope signals.
+  // Optional: enforce EvidenceScope name alignment based on context metadata + per-evidence evidenceScope signals.
   const nameAlignmentEnabled =
     state.pipelineConfig?.contextNameAlignmentEnabled ??
     DEFAULT_PIPELINE_CONFIG.contextNameAlignmentEnabled;
@@ -1019,29 +990,29 @@ Return:
       DEFAULT_PIPELINE_CONFIG.contextNameAlignmentThreshold ??
       0.3;
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.3;
-    state.understanding!.analysisContexts = validateAndFixScopeNameAlignment(
+    state.understanding!.analysisContexts = validateAndFixContextNameAlignment(
       state.understanding!.analysisContexts || [],
       state.evidenceItems || [],
       threshold,
     );
   }
 
-  // Avoid over-splitting into “dimension scopes” (e.g., cost vs infrastructure) unless the
+  // Avoid over-splitting into “dimension contexts” (e.g., cost vs infrastructure) unless the
   // evidence indicates genuinely distinct analytical frames (methodology/boundaries/geography/temporal).
   if ((state.understanding!.analysisContexts?.length ?? 0) > 1) {
-    const scopesNow = state.understanding!.analysisContexts || [];
+    const contextsNow = state.understanding!.analysisContexts || [];
 
-    const scopeFrameKeys = new Set<string>();
-    for (const s of scopesNow as any[]) {
+    const contextFrameKeys = new Set<string>();
+    for (const s of contextsNow as any[]) {
       const m = String(s?.metadata?.methodology || "").trim();
       const b = String(s?.metadata?.boundaries || "").trim();
       const g = String(s?.metadata?.geographic || "").trim();
       const t = String(s?.metadata?.temporal || s?.temporal || "").trim();
       const key = [m, b, g, t].filter(Boolean).join("|");
-      if (key) scopeFrameKeys.add(key);
+      if (key) contextFrameKeys.add(key);
     }
 
-    const evidenceScopeKeysByScope = new Map<string, Set<string>>();
+    const evidenceScopeKeysByContext = new Map<string, Set<string>>();
     for (const f of state.evidenceItems as any[]) {
       const pid = String(f?.contextId || "");
       if (!pid) continue;
@@ -1054,43 +1025,43 @@ Return:
       const nk = String(es?.name || "").trim();
       const key = [nk, mk, bk, gk, tk].filter(Boolean).join("|");
       if (!key) continue;
-      if (!evidenceScopeKeysByScope.has(pid)) evidenceScopeKeysByScope.set(pid, new Set());
-      evidenceScopeKeysByScope.get(pid)!.add(key);
+      if (!evidenceScopeKeysByContext.has(pid)) evidenceScopeKeysByContext.set(pid, new Set());
+      evidenceScopeKeysByContext.get(pid)!.add(key);
     }
 
     const distinctEvidenceScopeKeys = new Set<string>();
-    for (const set of evidenceScopeKeysByScope.values()) {
+    for (const set of evidenceScopeKeysByContext.values()) {
       for (const k of set) distinctEvidenceScopeKeys.add(k);
     }
-    const scopesWithEvidenceScope = Array.from(evidenceScopeKeysByScope.entries()).filter(
+    const contextsWithEvidenceScope = Array.from(evidenceScopeKeysByContext.entries()).filter(
       ([, set]) => set.size > 0,
     ).length;
 
     const hasStrongFrameSignal =
-      scopeFrameKeys.size >= 2 ||
-      (distinctEvidenceScopeKeys.size >= 2 && scopesWithEvidenceScope >= 2);
+      contextFrameKeys.size >= 2 ||
+      (distinctEvidenceScopeKeys.size >= 2 && contextsWithEvidenceScope >= 2);
 
     if (!hasStrongFrameSignal) {
-      // Extra debug signal: if scopes are very similar by text/metadata, it's likely a dimension split.
+      // Extra debug signal: if contexts are very similar by text/metadata, it's likely a dimension split.
       const thrRaw =
         state.pipelineConfig?.evidenceScopeAlmostEqualThreshold ??
         DEFAULT_PIPELINE_CONFIG.evidenceScopeAlmostEqualThreshold ??
         0.7;
       const simThreshold = Number.isFinite(thrRaw) ? Math.max(0, Math.min(1, thrRaw)) : 0.7;
       const pairs: Array<{ a: string; b: string; sim: number }> = [];
-      for (let i = 0; i < scopesNow.length; i++) {
-        for (let j = i + 1; j < scopesNow.length; j++) {
-          const sim = calculateScopeSimilarity(scopesNow[i] as any, scopesNow[j] as any);
+      for (let i = 0; i < contextsNow.length; i++) {
+        for (let j = i + 1; j < contextsNow.length; j++) {
+          const sim = calculateContextSimilarity(contextsNow[i] as any, contextsNow[j] as any);
           if (sim >= simThreshold) {
-            pairs.push({ a: (scopesNow[i] as any).name, b: (scopesNow[j] as any).name, sim });
+            pairs.push({ a: (contextsNow[i] as any).name, b: (contextsNow[j] as any).name, sim });
           }
         }
       }
-      debugLog("refineScopesFromEvidence: rejected (likely dimension split, weak frame signals)", {
-        scopeCount: scopesNow.length,
-        scopeFrameKeyCount: scopeFrameKeys.size,
+      debugLog("refineContextsFromEvidence: rejected (likely dimension split, weak frame signals)", {
+        contextCount: contextsNow.length,
+        contextFrameKeyCount: contextFrameKeys.size,
         distinctEvidenceScopeKeys: distinctEvidenceScopeKeys.size,
-        scopesWithEvidenceScope,
+        contextsWithEvidenceScope,
         highSimilarityPairs: pairs.slice(0, 8),
       });
       return { updated: false, llmCalls: 1 };
@@ -1108,10 +1079,10 @@ Return:
     if (pid) c.contextId = pid;
   }
 
-  // Ensure we never end up with zero scopes.
-  state.understanding = ensureAtLeastOneScope(state.understanding!);
+  // Ensure we never end up with zero contexts.
+  state.understanding = ensureAtLeastOneContext(state.understanding!);
 
-  // If we introduced multi-scope but claim coverage is thin, add minimal per-scope central claims.
+  // If we introduced multi-context but claim coverage is thin, add minimal per-context central claims.
   // (This is generic decomposition; it does not “hunt” for named scenarios.)
   if (state.understanding!.analysisContexts.length > 1 && state.understanding!.subClaims.length <= 1) {
     const added = await requestSupplementalSubClaims(analysisInput, model, state.understanding!, state.pipelineConfig);
@@ -1319,64 +1290,64 @@ function calculateTextSimilarity(text1: string, text2: string): number {
   return intersection.size / union.size;
 }
 
-function selectFactsForScopeRefinementPrompt(
-  facts: EvidenceItem[],
+function selectEvidenceItemsForContextRefinementPrompt(
+  evidenceItems: EvidenceItem[],
   analysisInput: string,
-  maxFacts: number,
+  maxEvidenceItems: number,
 ): EvidenceItem[] {
-  if (!Array.isArray(facts) || facts.length === 0) return [];
-  if (facts.length <= maxFacts) return facts;
+  if (!Array.isArray(evidenceItems) || evidenceItems.length === 0) return [];
+  if (evidenceItems.length <= maxEvidenceItems) return evidenceItems;
 
   const mustKeepIds = new Set<string>();
-  const bestByScope = new Map<string, { fact: EvidenceItem; score: number }>();
+  const bestByContext = new Map<string, { evidenceItem: EvidenceItem; score: number }>();
   const input = (analysisInput || "").trim();
-  for (const f of facts) {
-    if (!f?.id) continue;
-    if (f.category === "criticism") mustKeepIds.add(f.id);
-    if (f.claimDirection === "contradicts") mustKeepIds.add(f.id);
-    if (f.fromOppositeClaimSearch) mustKeepIds.add(f.id);
-    if (f.evidenceScope) mustKeepIds.add(f.id);
-    if (f.contextId) {
-      const score = input ? calculateTextSimilarity(input, f.statement || "") : 0;
-      const existing = bestByScope.get(f.contextId);
+  for (const item of evidenceItems) {
+    if (!item?.id) continue;
+    if (item.category === "criticism") mustKeepIds.add(item.id);
+    if (item.claimDirection === "contradicts") mustKeepIds.add(item.id);
+    if (item.fromOppositeClaimSearch) mustKeepIds.add(item.id);
+    if (item.evidenceScope) mustKeepIds.add(item.id);
+    if (item.contextId) {
+      const score = input ? calculateTextSimilarity(input, item.statement || "") : 0;
+      const existing = bestByContext.get(item.contextId);
       if (!existing || score > existing.score) {
-        bestByScope.set(f.contextId, { fact: f, score });
+        bestByContext.set(item.contextId, { evidenceItem: item, score });
       }
     }
   }
 
   const chosen: EvidenceItem[] = [];
-  for (const f of facts) {
-    if (f?.id && mustKeepIds.has(f.id)) chosen.push(f);
+  for (const item of evidenceItems) {
+    if (item?.id && mustKeepIds.has(item.id)) chosen.push(item);
   }
 
-  const scored = facts
-    .filter((f) => f?.id && !mustKeepIds.has(f.id))
-    .map((f) => {
-      const score = input ? calculateTextSimilarity(input, f.statement || "") : 0;
-      return { f, score };
+  const scored = evidenceItems
+    .filter((item) => item?.id && !mustKeepIds.has(item.id))
+    .map((item) => {
+      const score = input ? calculateTextSimilarity(input, item.statement || "") : 0;
+      return { item, score };
     })
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      return String(a.f.id).localeCompare(String(b.f.id));
+      return String(a.item.id).localeCompare(String(b.item.id));
     });
 
-  // Ensure at least one representative fact per scope (if any exist)
-  for (const { fact } of bestByScope.values()) {
-    if (chosen.length >= maxFacts) break;
-    if (fact?.id && !chosen.some((c) => c.id === fact.id)) {
-      chosen.push(fact);
+  // Ensure at least one representative evidence item per context (if any exist)
+  for (const { evidenceItem } of bestByContext.values()) {
+    if (chosen.length >= maxEvidenceItems) break;
+    if (evidenceItem?.id && !chosen.some((c) => c.id === evidenceItem.id)) {
+      chosen.push(evidenceItem);
     }
   }
 
   for (const s of scored) {
-    if (chosen.length >= maxFacts) break;
-    chosen.push(s.f);
+    if (chosen.length >= maxEvidenceItems) break;
+    chosen.push(s.item);
   }
-  return chosen.slice(0, maxFacts);
+  return chosen.slice(0, maxEvidenceItems);
 }
 
-function calculateScopeSimilarity(a: AnalysisContext, b: AnalysisContext): number {
+function calculateContextSimilarity(a: AnalysisContext, b: AnalysisContext): number {
   const nameA = String(a?.name || "");
   const nameB = String(b?.name || "");
 
@@ -1456,7 +1427,7 @@ function calculateScopeSimilarity(a: AnalysisContext, b: AnalysisContext): numbe
   return Math.min(1.0, similarity);
 }
 
-function mergeScopeMetadata(primary: AnalysisContext, duplicates: AnalysisContext[]): AnalysisContext {
+function mergeContextMetadata(primary: AnalysisContext, duplicates: AnalysisContext[]): AnalysisContext {
   const merged: AnalysisContext = { ...(primary as any) };
   const outMeta: Record<string, any> = { ...(((primary as any).metadata as any) || {}) };
 
@@ -1478,87 +1449,87 @@ function mergeScopeMetadata(primary: AnalysisContext, duplicates: AnalysisContex
   return merged;
 }
 
-async function deduplicateScopes(
-  scopes: AnalysisContext[],
+async function deduplicateContexts(
+  contexts: AnalysisContext[],
   similarityThreshold: number = 0.85,  // Only merge at >=85% similarity to preserve valid contexts
   pipelineConfig?: PipelineConfig,
-): Promise<{ scopes: AnalysisContext[]; merged: Map<string, string> }> {
-  if (!Array.isArray(scopes) || scopes.length <= 1) return { scopes: scopes || [], merged: new Map() };
+): Promise<{ contexts: AnalysisContext[]; merged: Map<string, string> }> {
+  if (!Array.isArray(contexts) || contexts.length <= 1) return { contexts: contexts || [], merged: new Map() };
 
   const merged = new Map<string, string>();
   const kept: AnalysisContext[] = [];
   const processed = new Set<string>();
 
   // v2.9: LLM Context Similarity Analysis (when enabled via pipeline config)
-  const useLLMScopeSimilarity = isLLMEnabled("scope");
-  let llmSimilarityMap: Map<string, ScopeSimilarityResult> | null = null;
+  const useLLMContextSimilarity = isLLMEnabled("context");
+  let llmSimilarityMap: Map<string, ContextSimilarityResult> | null = null;
 
-  if (useLLMScopeSimilarity && scopes.length >= 2) {
+  if (useLLMContextSimilarity && contexts.length >= 2) {
     try {
-      debugLog("deduplicateScopes: LLM scope similarity analysis starting", {
-        scopeCount: scopes.length,
+      debugLog("deduplicateContexts: LLM context similarity analysis starting", {
+        contextCount: contexts.length,
       });
 
-      // Build all scope pairs for analysis
-      const scopePairs: ScopePair[] = [];
-      for (let i = 0; i < scopes.length; i++) {
-        for (let j = i + 1; j < scopes.length; j++) {
-          const a = scopes[i];
-          const b = scopes[j];
+      // Build all context pairs for analysis
+      const contextPairs: ContextPair[] = [];
+      for (let i = 0; i < contexts.length; i++) {
+        for (let j = i + 1; j < contexts.length; j++) {
+          const a = contexts[i];
+          const b = contexts[j];
           if (!a?.id || !b?.id) continue;
-          scopePairs.push({
-            scopeA: String(a.name || a.id),
-            scopeB: String(b.name || b.id),
+          contextPairs.push({
+            contextA: String(a.name || a.id),
+            contextB: String(b.name || b.id),
             metadataA: (a as any).metadata,
             metadataB: (b as any).metadata,
           });
         }
       }
 
-      if (scopePairs.length > 0) {
+      if (contextPairs.length > 0) {
         const textAnalysisService = getTextAnalysisService({
           pipelineConfig: pipelineConfig ?? undefined,
         });
-        const results = await textAnalysisService.analyzeScopeSimilarity({
-          scopePairs,
-          contextList: scopes.map((s) => String(s.name || s.id)),
+        const results = await textAnalysisService.analyzeContextSimilarity({
+          contextPairs,
+          contextList: contexts.map((s) => String(s.name || s.id)),
         });
 
-        // Build a map for quick lookup (key = "scopeA|scopeB")
+        // Build a map for quick lookup (key = "contextA|contextB")
         llmSimilarityMap = new Map();
         for (const result of results) {
-          const key = `${result.scopeA}|${result.scopeB}`;
+          const key = `${result.contextA}|${result.contextB}`;
           llmSimilarityMap.set(key, result);
           // Also store reverse key
-          const reverseKey = `${result.scopeB}|${result.scopeA}`;
+          const reverseKey = `${result.contextB}|${result.contextA}`;
           llmSimilarityMap.set(reverseKey, result);
         }
 
-        debugLog("deduplicateScopes: LLM scope similarity analysis complete", {
+        debugLog("deduplicateContexts: LLM context similarity analysis complete", {
           pairsAnalyzed: results.length,
           mergeRecommendations: results.filter((r) => r.shouldMerge).length,
         });
       }
     } catch (err) {
       console.warn(
-        "[Context Dedup] LLM scope similarity analysis failed, using heuristics:",
+        "[Context Dedup] LLM context similarity analysis failed, using heuristics:",
         err instanceof Error ? err.message : String(err)
       );
-      debugLog("deduplicateScopes: LLM scope similarity analysis failed", {
+      debugLog("deduplicateContexts: LLM context similarity analysis failed", {
         error: err instanceof Error ? err.message : String(err),
       });
       llmSimilarityMap = null;
     }
   }
 
-  for (let i = 0; i < scopes.length; i++) {
-    const cur = scopes[i];
+  for (let i = 0; i < contexts.length; i++) {
+    const cur = contexts[i];
     if (!cur?.id) continue;
     if (processed.has(cur.id)) continue;
 
     const dups: AnalysisContext[] = [];
-    for (let j = i + 1; j < scopes.length; j++) {
-      const other = scopes[j];
+    for (let j = i + 1; j < contexts.length; j++) {
+      const other = contexts[j];
       if (!other?.id) continue;
       if (processed.has(other.id)) continue;
 
@@ -1574,11 +1545,11 @@ async function deduplicateScopes(
           shouldMerge = llmResult.shouldMerge;
         } else {
           // Fall back to heuristic for pairs not in LLM results
-          sim = calculateScopeSimilarity(cur, other);
+          sim = calculateContextSimilarity(cur, other);
           shouldMerge = sim >= similarityThreshold;
         }
       } else {
-        sim = calculateScopeSimilarity(cur, other);
+        sim = calculateContextSimilarity(cur, other);
         shouldMerge = sim >= similarityThreshold;
       }
 
@@ -1589,21 +1560,21 @@ async function deduplicateScopes(
       }
     }
 
-    const keptScope = dups.length > 0 ? mergeScopeMetadata(cur, dups) : cur;
+    const keptScope = dups.length > 0 ? mergeContextMetadata(cur, dups) : cur;
     kept.push(keptScope);
     processed.add(cur.id);
   }
 
-  return { scopes: kept, merged };
+  return { contexts: kept, merged };
 }
 
-function validateAndFixScopeNameAlignment(
-  scopes: AnalysisContext[],
-  facts: EvidenceItem[],
+function validateAndFixContextNameAlignment(
+  contexts: AnalysisContext[],
+  evidenceItems: EvidenceItem[],
   similarityThreshold: number,
 ): AnalysisContext[] {
-  if (!Array.isArray(scopes) || scopes.length === 0) return scopes || [];
-  if (!Array.isArray(facts) || facts.length === 0) return scopes;
+  if (!Array.isArray(contexts) || contexts.length === 0) return contexts || [];
+  if (!Array.isArray(evidenceItems) || evidenceItems.length === 0) return contexts;
 
   // Prefer non-noisy identity keys for naming; geo/time should be secondary.
   const primaryMetaKeys = [
@@ -1616,12 +1587,12 @@ function validateAndFixScopeNameAlignment(
   ];
   const secondaryMetaKeys = ["geographic", "temporal"];
 
-  const factsByScope = new Map<string, EvidenceItem[]>();
-  for (const f of facts) {
+  const evidenceItemsByContext = new Map<string, EvidenceItem[]>();
+  for (const f of evidenceItems) {
     const pid = String((f as any)?.contextId || "").trim();
     if (!pid) continue;
-    if (!factsByScope.has(pid)) factsByScope.set(pid, []);
-    factsByScope.get(pid)!.push(f);
+    if (!evidenceItemsByContext.has(pid)) evidenceItemsByContext.set(pid, []);
+    evidenceItemsByContext.get(pid)!.push(f);
   }
 
   const covers = (name: string, identifier: string) => {
@@ -1632,8 +1603,8 @@ function validateAndFixScopeNameAlignment(
     return calculateTextSimilarity(n, id) >= similarityThreshold;
   };
 
-  return scopes.map((s) => {
-    const scopeFacts = factsByScope.get(String((s as any)?.id || "")) || [];
+  return contexts.map((s) => {
+    const contextEvidenceItems = evidenceItemsByContext.get(String((s as any)?.id || "")) || [];
     const meta: Record<string, any> = ((s as any)?.metadata as any) || {};
 
     // Gather candidate identifiers from per-evidence evidenceScope (prioritize common values)
@@ -1643,7 +1614,7 @@ function validateAndFixScopeNameAlignment(
       if (!vv) return;
       counts.set(vv, (counts.get(vv) || 0) + Math.max(1, Math.floor(w)));
     };
-    for (const f of scopeFacts) {
+    for (const f of contextEvidenceItems) {
       const es: any = (f as any)?.evidenceScope;
       if (!es) continue;
       // Higher weight for core methodology/boundaries/name signals.
@@ -1679,10 +1650,10 @@ function validateAndFixScopeNameAlignment(
       const set = new Set(vals.map((v) => String(v || "").trim()).filter(Boolean));
       return set.size === 1 ? Array.from(set)[0] : "";
     };
-    const method = uniqueValue(scopeFacts.map((f) => (f as any)?.evidenceScope?.methodology));
-    const bounds = uniqueValue(scopeFacts.map((f) => (f as any)?.evidenceScope?.boundaries));
-    const geo = uniqueValue(scopeFacts.map((f) => (f as any)?.evidenceScope?.geographic));
-    const temp = uniqueValue(scopeFacts.map((f) => (f as any)?.evidenceScope?.temporal));
+    const method = uniqueValue(contextEvidenceItems.map((f) => (f as any)?.evidenceScope?.methodology));
+    const bounds = uniqueValue(contextEvidenceItems.map((f) => (f as any)?.evidenceScope?.boundaries));
+    const geo = uniqueValue(contextEvidenceItems.map((f) => (f as any)?.evidenceScope?.geographic));
+    const temp = uniqueValue(contextEvidenceItems.map((f) => (f as any)?.evidenceScope?.temporal));
 
     const nextMeta = { ...meta };
     if (!nextMeta.methodology && method) nextMeta.methodology = method;
@@ -1697,10 +1668,10 @@ function validateAndFixScopeNameAlignment(
     const primary = identifiers[0];
     const extras = identifiers.slice(1, 3);
     const improved =
-      extras.length > 0 ? `${primary} (${extras.join(", ")}) scope` : `${primary} scope`;
+      extras.length > 0 ? `${primary} (${extras.join(", ")}) context` : `${primary} context`;
 
-    debugLog("validateAndFixScopeNameAlignment: fixing scope name", {
-      scopeId: (s as any)?.id,
+    debugLog("validateAndFixContextNameAlignment: fixing context name", {
+      contextId: (s as any)?.id,
       oldName: (s as any)?.name,
       newName: improved,
       identifiers: identifiers.slice(0, 5),
@@ -1711,22 +1682,26 @@ function validateAndFixScopeNameAlignment(
 }
 
 /**
- * NEW v2.6.29: Check if a fact is a duplicate or near-duplicate of existing facts
- * Returns true if the fact should be skipped (is duplicate)
+ * NEW v2.6.29: Check if an evidence item is a duplicate or near-duplicate of existing items
+ * Returns true if the evidence item should be skipped (is duplicate)
  */
-function isDuplicateFact(newFact: EvidenceItem, existingFacts: EvidenceItem[], threshold: number = 0.85): boolean {
-  const newFactLower = newFact.statement.toLowerCase().trim();
+function isDuplicateEvidenceItem(
+  newItem: EvidenceItem,
+  existingItems: EvidenceItem[],
+  threshold: number = 0.85,
+): boolean {
+  const newItemLower = newItem.statement.toLowerCase().trim();
 
-  for (const existing of existingFacts) {
+  for (const existing of existingItems) {
     const existingLower = existing.statement.toLowerCase().trim();
 
     // Exact match
-    if (newFactLower === existingLower) {
+    if (newItemLower === existingLower) {
       return true;
     }
 
     // Near-duplicate based on text similarity
-    const similarity = calculateTextSimilarity(newFact.statement, existing.statement);
+    const similarity = calculateTextSimilarity(newItem.statement, existing.statement);
     if (similarity >= threshold) {
       return true;
     }
@@ -1736,18 +1711,21 @@ function isDuplicateFact(newFact: EvidenceItem, existingFacts: EvidenceItem[], t
 }
 
 /**
- * NEW v2.6.29: Filter out duplicate facts from a list, keeping the first occurrence
+ * NEW v2.6.29: Filter out duplicate evidence items from a list, keeping the first occurrence
  * Optionally merges fromOppositeClaimSearch flag if duplicate found from opposite search
  */
-function deduplicateFacts(newFacts: EvidenceItem[], existingFacts: EvidenceItem[]): EvidenceItem[] {
+function deduplicateEvidenceItems(
+  newEvidenceItems: EvidenceItem[],
+  existingEvidenceItems: EvidenceItem[],
+): EvidenceItem[] {
   const result: EvidenceItem[] = [];
 
-  for (const fact of newFacts) {
-    if (!isDuplicateFact(fact, existingFacts) && !isDuplicateFact(fact, result)) {
-      result.push(fact);
+  for (const item of newEvidenceItems) {
+    if (!isDuplicateEvidenceItem(item, existingEvidenceItems) && !isDuplicateEvidenceItem(item, result)) {
+      result.push(item);
     } else {
       // Log deduplication for debugging
-      console.log(`[Analyzer] Deduplication: Skipping near-duplicate fact: "${fact.statement.substring(0, 60)}..."`);
+      console.log(`[Analyzer] Deduplication: Skipping near-duplicate evidence item: "${item.statement.substring(0, 60)}..."`);
     }
   }
 
@@ -1784,10 +1762,10 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
     return true;
   }
 
-  // Check understanding for recent dates in scopes
+  // Check understanding for recent dates in contexts
   if (understanding?.analysisContexts) {
-    for (const scope of understanding.analysisContexts) {
-      const dateStr = scope.date || scope.temporal || "";
+    for (const context of understanding.analysisContexts) {
+      const dateStr = context.date || context.temporal || "";
       if (dateStr && recentYears.some(year => dateStr.includes(String(year)))) {
         return true;
       }
@@ -1811,7 +1789,7 @@ function getKnowledgeInstruction(
 This topic appears to involve recent events, dates, or announcements. For recent information:
 - **PRIORITIZE**: Web search results and fetched sources (these contain the most current data)
 - **USE CAUTIOUSLY**: Your training knowledge may be outdated for recent events
-- **WHEN TO USE KNOWLEDGE**: Only for established facts, standard procedures, or historical context that hasn't changed
+- **WHEN TO USE KNOWLEDGE**: Only for established information, standard procedures, or historical context that hasn't changed
 - **WHEN TO USE SEARCH**: For specific dates, recent announcements, current status, or events from the past 1-2 years
 
 Example: If sources say "November 2025" and your knowledge cutoff is earlier, TRUST THE SOURCES, not your training data.
@@ -1831,7 +1809,7 @@ ${recencyGuidance}
 ### WHEN TO USE BACKGROUND KNOWLEDGE:
 1. **Process integrity claims**: If you know a process follows standard procedures, mark supports="yes", NOT "neutral"
 2. **Decision-maker roles**: If you know who was responsible for a process or decision, use that knowledge
-3. **Established facts**: If something is widely documented (e.g., a process followed proper procedures), don't mark it "unknown"
+3. **Established information**: If something is widely documented (e.g., a process followed proper procedures), don't mark it "unknown"
 4. **Applicable standards**: If you know which standards apply, use that to assess correct application
 
 ### CRITICAL RULES:
@@ -1848,7 +1826,7 @@ For "The review followed proper procedures":
 
 Prioritize provided sources when available, but actively supplement with your knowledge.`;
   }
-  return "Use ONLY the provided facts and sources. If information is missing, keep the answer in the UNVERIFIED band (43-57%). Do not add facts not present in the sources.";
+  return "Use ONLY the provided evidence and sources. If information is missing, keep the answer in the UNVERIFIED band (43-57%). Do not add evidence not present in the sources.";
 }
 
 /**
@@ -2332,7 +2310,7 @@ interface DecisionMaker {
 
 // AnalysisContext = A bounded analytical frame requiring separate analysis
 // Formerly "Proceeding" - now unified under "Context" terminology
-// Note: This is different from EvidenceScope (per-evidence source-defined scope metadata)
+// Note: This is different from EvidenceScope (per-evidence source-defined methodology metadata)
 interface AnalysisContext {
   id: string;                // e.g., "CTX_TSE", "CTX_WTW"
   name: string;              // Human-readable name
@@ -2448,7 +2426,6 @@ interface ClaimUnderstanding {
   analysisContexts: AnalysisContext[];
   requiresSeparateAnalysis: boolean;
   backgroundDetails: string; // Article background details (NOT an AnalysisContext)
-  analysisContext?: string; // Legacy background details field (temporary)
 
   mainThesis: string;
   articleThesis: string;
@@ -2547,7 +2524,6 @@ interface ClaimVerdict {
   riskTier: "A" | "B" | "C";
   reasoning: string;
   supportingEvidenceIds: string[];
-  supportingFactIds?: string[]; // Legacy field name (temporary)
   keyFactorId?: string; // Maps claim to KeyFactor for aggregation
   contextId?: string;
   startOffset?: number;
@@ -2586,11 +2562,9 @@ interface VerdictSummary {
   nuancedAnswer: string;
   keyFactors: KeyFactor[];
 
-  hasMultipleProceedings: boolean;
   hasMultipleContexts?: boolean;
-  AnalysisContextAnswers?: AnalysisContextAnswer[];
-  proceedingAnswers?: AnalysisContextAnswer[];
-  proceedingSummary?: string;
+  analysisContextAnswers?: AnalysisContextAnswer[];
+  analysisContextSummary?: string;
   calibrationNote?: string;
   hasContestedFactors?: boolean;
 }
@@ -2599,9 +2573,8 @@ interface ArticleAnalysis {
   inputType: InputType;
   verdictSummary?: VerdictSummary;
 
-  hasMultipleProceedings: boolean;
-  hasMultipleContexts?: boolean;
-  proceedings?: AnalysisContext[];
+  hasMultipleContexts: boolean;
+  analysisContexts?: AnalysisContext[];
 
   articleThesis: string;
   logicalFallacies: Array<{
@@ -2615,7 +2588,7 @@ interface ArticleAnalysis {
   claimsAverageVerdict: number;
 
   // ARTICLE VERDICT (LLM's independent assessment of thesis/conclusion)
-  // May differ from claims average! E.g., true facts used to support false conclusion
+  // May differ from claims average! E.g., true evidence used to support false conclusion
   articleTruthPercentage: number;
   articleVerdict: number;
   articleVerdictReason?: string;
@@ -2755,24 +2728,24 @@ function dedupeWeightedAverageTruth(verdicts: ClaimVerdict[]): number {
 
 function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
-  facts: EvidenceItem[],
+  evidenceItems: EvidenceItem[],
   sources: FetchedSource[],
 ): ClaimVerdict[] {
   // PR-C: Normalize all trackRecordScores to 0-1 scale defensively
   const sourceScoreById = new Map(
     sources.map((s) => [s.id, s.trackRecordScore !== null ? normalizeTrackRecordScore(s.trackRecordScore) : null]),
   );
-  const factScoreById = new Map(
-    facts.map((f) => [f.id, sourceScoreById.get(f.sourceId) ?? null]),
+  const evidenceScoreById = new Map(
+    evidenceItems.map((item) => [item.id, sourceScoreById.get(item.sourceId) ?? null]),
   );
 
   return claimVerdicts.map((verdict) => {
     const supportingEvidenceIds =
       verdict.supportingEvidenceIds && verdict.supportingEvidenceIds.length > 0
         ? verdict.supportingEvidenceIds
-        : verdict.supportingFactIds ?? [];
+        : [];
     const scores = supportingEvidenceIds
-      .map((id) => factScoreById.get(id))
+      .map((id) => evidenceScoreById.get(id))
       .filter((score): score is number => typeof score === "number");
 
     if (scores.length === 0) return verdict;
@@ -3014,8 +2987,8 @@ function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; cen
     /\b(fair|unfair|valid|invalid|correct|incorrect|effective|ineffective|proper|improper|lawful|unlawful|legal|illegal|constitutional|unconstitutional|justified|unjustified|appropriate|inappropriate|legitimate|illegitimate|reasonable|unreasonable|accurate|inaccurate|true|false|successful|failed)\b/.test(thesisLower) ||
     // Evaluative question patterns ("was X fair?", "is X correct?", "did X work?")
     /\b(was|is|were|are)\s+.{3,50}\s+(fair|valid|correct|effective|proper|lawful|legal|justified|appropriate|legitimate|reasonable|accurate|true|successful)\b/.test(thesisLower) ||
-    // "based on" patterns (based on law, based on evidence, based on facts)
-    /\bbased\s+on\s+(law|evidence|facts|data|standards|rules|procedures)\b/.test(thesisLower);
+    // "based on" patterns (based on law, evidence, data, records)
+    /\bbased\s+on\s+(law|evidence|data|records|standards|rules|procedures)\b/.test(thesisLower);
   const STOP_WORDS = new Set([
     "the",
     "a",
@@ -3131,39 +3104,39 @@ function applyThesisRelevancePolicyBToSubClaims<T extends { id?: any; dependsOn?
   return kept as any;
 }
 
-function enforceMinimumDirectClaimsPerScope(
+function enforceMinimumDirectClaimsPerContext(
   understanding: ClaimUnderstanding,
   analysisInput: string,
 ): ClaimUnderstanding {
   const claims = Array.isArray(understanding.subClaims) ? understanding.subClaims : [];
-  const scopes = Array.isArray(understanding.analysisContexts) ? understanding.analysisContexts : [];
+  const contexts = Array.isArray(understanding.analysisContexts) ? understanding.analysisContexts : [];
   if (claims.length === 0) return understanding;
 
   const isCompound = isCompoundLikeText(analysisInput) || analysisInput.includes("\n");
   if (!isCompound) return understanding;
 
-  const scopeIds = scopes.length > 0 ? scopes.map((s) => s.id) : [""];
-  const byScope = new Map<string, ClaimUnderstanding["subClaims"]>();
-  for (const scopeId of scopeIds) byScope.set(scopeId, []);
+  const contextIds = contexts.length > 0 ? contexts.map((c) => c.id) : [""];
+  const byContext = new Map<string, ClaimUnderstanding["subClaims"]>();
+  for (const contextId of contextIds) byContext.set(contextId, []);
 
   for (const claim of claims) {
-    const scopeId = scopeIds.length === 1 ? scopeIds[0] : (claim.contextId || "");
-    if (!byScope.has(scopeId)) continue;
-    byScope.get(scopeId)!.push(claim);
+    const contextId = contextIds.length === 1 ? contextIds[0] : (claim.contextId || "");
+    if (!byContext.has(contextId)) continue;
+    byContext.get(contextId)!.push(claim);
   }
 
-  for (const [scopeId, scopeClaims] of byScope.entries()) {
-    const direct = scopeClaims.filter((c) => c.thesisRelevance === "direct");
-    if (direct.length >= MIN_DIRECT_CLAIMS_PER_SCOPE) continue;
+  for (const [contextId, contextClaims] of byContext.entries()) {
+    const direct = contextClaims.filter((c) => c.thesisRelevance === "direct");
+    if (direct.length >= MIN_DIRECT_CLAIMS_PER_CONTEXT) continue;
 
-    const eligible = scopeClaims.filter((c) => {
+    const eligible = contextClaims.filter((c) => {
       if (c.thesisRelevance === "direct") return false;
       if (c.claimRole === "attribution" || c.claimRole === "source" || c.claimRole === "timing") return false;
       if (c.checkWorthiness === "low") return false;
       return true;
     });
 
-    const needed = Math.max(0, MIN_DIRECT_CLAIMS_PER_SCOPE - direct.length);
+    const needed = Math.max(0, MIN_DIRECT_CLAIMS_PER_CONTEXT - direct.length);
     const toPromote = eligible.slice(0, needed);
     for (const claim of toPromote) {
       claim.thesisRelevance = "direct";
@@ -3173,56 +3146,56 @@ function enforceMinimumDirectClaimsPerScope(
   return understanding;
 }
 
-function ensureUnscopedClaimsScope(
+function ensureUnassignedClaimsContext(
   understanding: ClaimUnderstanding,
 ): ClaimUnderstanding {
-  const scopes = Array.isArray((understanding as any).analysisContexts)
+  const contexts = Array.isArray((understanding as any).analysisContexts)
     ? ((understanding as any).analysisContexts as any[])
     : [];
   const claims = Array.isArray((understanding as any).subClaims)
     ? ((understanding as any).subClaims as any[])
     : [];
-  if (scopes.length === 0 || claims.length === 0) return understanding;
+  if (contexts.length === 0 || claims.length === 0) return understanding;
 
-  // Only introduce the special scope when there are already 2+ scopes.
-  // (This avoids turning a single-scope run into an artificial multi-scope run.)
-  if (scopes.length <= 1) return understanding;
+  // Only apply this when there are already 2+ contexts.
+  // (This avoids turning a single-context run into an artificial multi-context run.)
+  if (contexts.length <= 1) return understanding;
 
-  // UNSCOPED_ID is now imported from ./analyzer/analysis-contexts
+  // UNASSIGNED_CONTEXT_ID is now imported from ./analyzer/analysis-contexts
 
-  const hasUnscopedClaims = claims.some((c) => {
+  const hasUnassignedClaims = claims.some((c) => {
     const tr = String(c?.thesisRelevance || "direct");
     const pid = String(c?.contextId || "").trim();
     return tr !== "irrelevant" && !pid;
   });
-  if (!hasUnscopedClaims) return understanding;
+  if (!hasUnassignedClaims) return understanding;
 
-  // Deterministic backstop: instead of introducing a new "General" scope (which can vary between
-  // semantically equivalent inputs), assign unscoped claims to the *best matching existing scope*.
+  // Deterministic backstop: instead of introducing a new "General" context (which can vary between
+  // semantically equivalent inputs), assign unassigned claims to the *best matching existing context*.
   // This preserves all claims while improving input neutrality and inverse-pair symmetry.
-  const candidates = scopes
-    .map((s) => ({
-      id: String(s?.id || "").trim(),
+  const candidates = contexts
+    .map((ctx) => ({
+      id: String(ctx?.id || "").trim(),
       signature: [
-        String(s?.name || ""),
-        String((s as any)?.assessedStatement || ""),
-        String(s?.subject || ""),
-        String((s as any)?.metadata?.institution || ""),
-        String((s as any)?.metadata?.court || ""),
-        String((s as any)?.metadata?.jurisdiction || ""),
-        String((s as any)?.metadata?.boundaries || ""),
-        String((s as any)?.metadata?.methodology || ""),
-        String((s as any)?.metadata?.standardApplied || ""),
+        String(ctx?.name || ""),
+        String((ctx as any)?.assessedStatement || ""),
+        String(ctx?.subject || ""),
+        String((ctx as any)?.metadata?.institution || ""),
+        String((ctx as any)?.metadata?.court || ""),
+        String((ctx as any)?.metadata?.jurisdiction || ""),
+        String((ctx as any)?.metadata?.boundaries || ""),
+        String((ctx as any)?.metadata?.methodology || ""),
+        String((ctx as any)?.metadata?.standardApplied || ""),
       ]
         .filter(Boolean)
         .join(" "),
     }))
-    .filter((c) => c.id && c.id !== UNSCOPED_ID)
+    .filter((c) => c.id && c.id !== UNASSIGNED_CONTEXT_ID)
     .sort((a, b) => a.id.localeCompare(b.id));
 
   if (candidates.length === 0) return understanding;
 
-  const pickBestScopeId = (claimText: string): string => {
+  const pickBestContextId = (claimText: string): string => {
     const text = String(claimText || "").trim();
     let bestId = candidates[0].id;
     let bestScore = -1;
@@ -3243,62 +3216,62 @@ function ensureUnscopedClaimsScope(
     if (tr === "irrelevant") continue;
     const pid = String(c?.contextId || "").trim();
     if (pid) continue;
-    c.contextId = pickBestScopeId(String(c?.text || ""));
+    c.contextId = pickBestContextId(String(c?.text || ""));
   }
 
-  (understanding as any).requiresSeparateAnalysis = scopes.length > 1;
+  (understanding as any).requiresSeparateAnalysis = contexts.length > 1;
   return understanding;
 }
 
-function pruneScopesByCoverage(
+function pruneContextsByCoverage(
   understanding: ClaimUnderstanding,
-  facts: EvidenceItem[],
+  evidenceItems: EvidenceItem[],
 ): ClaimUnderstanding {
-  const scopes = Array.isArray((understanding as any).analysisContexts)
+  const contexts = Array.isArray((understanding as any).analysisContexts)
     ? ((understanding as any).analysisContexts as any[])
     : [];
-  if (scopes.length === 0) return understanding;
-  // Single-scope runs often leave contextId empty on facts/claims (because there is no
-  // scope choice to make). Never prune the only scope in that case; doing so would lose metadata
+  if (contexts.length === 0) return understanding;
+  // Single-context runs often leave contextId empty on evidence/claims (because there is no
+  // context choice to make). Never prune the only context in that case; doing so would lose metadata
   // and fragment the analysis.
-  if (scopes.length === 1) return understanding;
+  if (contexts.length === 1) return understanding;
 
-  const factsPerScope = new Map<string, number>();
-  for (const f of facts || []) {
-    const pid = String((f as any)?.contextId || "").trim();
+  const evidenceItemsPerContext = new Map<string, number>();
+  for (const item of evidenceItems || []) {
+    const pid = String((item as any)?.contextId || "").trim();
     if (!pid) continue;
-    factsPerScope.set(pid, (factsPerScope.get(pid) || 0) + 1);
+    evidenceItemsPerContext.set(pid, (evidenceItemsPerContext.get(pid) || 0) + 1);
   }
 
   const claims = Array.isArray((understanding as any).subClaims)
     ? ((understanding as any).subClaims as any[])
     : [];
-  const claimsPerScope = new Map<string, number>();
+  const claimsPerContext = new Map<string, number>();
   for (const c of claims) {
     const pid = String((c as any)?.contextId || "").trim();
     if (!pid) continue;
-    claimsPerScope.set(pid, (claimsPerScope.get(pid) || 0) + 1);
+    claimsPerContext.set(pid, (claimsPerContext.get(pid) || 0) + 1);
   }
 
   const keep: any[] = [];
   const removed = new Set<string>();
-  for (const s of scopes) {
+  for (const s of contexts) {
     const id = String(s?.id || "").trim();
     if (!id) continue;
-    const hasFacts = (factsPerScope.get(id) || 0) > 0;
-    const hasAnyClaims = (claimsPerScope.get(id) || 0) > 0;
+    const hasEvidenceItems = (evidenceItemsPerContext.get(id) || 0) > 0;
+    const hasAnyClaims = (claimsPerContext.get(id) || 0) > 0;
 
-    // Keep a scope if it has ANY claims (direct or tangential) or ANY facts.
-    // Tangential claims are displayed (Policy B), so a scope that contains only tangential
-    // claims is not "empty" and must remain to preserve scoped display context.
-    if (hasFacts || hasAnyClaims) keep.push(s);
+    // Keep a context if it has ANY claims (direct or tangential) or ANY evidence.
+    // Tangential claims are displayed (Policy B), so a context that contains only tangential
+    // claims is not "empty" and must remain to preserve display context.
+    if (hasEvidenceItems || hasAnyClaims) keep.push(s);
     else removed.add(id);
   }
 
   if (removed.size === 0) return understanding;
 
-  // Clear orphaned claim assignments to removed scopes.
-  // (These scopes should be truly empty: no facts and no claims.)
+  // Clear orphaned claim assignments to removed contexts.
+  // (These contexts should be truly empty: no evidence and no claims.)
   if (Array.isArray((understanding as any).subClaims)) {
     for (const c of (understanding as any).subClaims as any[]) {
       const pid = String(c?.contextId || "").trim();
@@ -3313,35 +3286,35 @@ function pruneScopesByCoverage(
 
 function validateContextReferences(
   understanding: ClaimUnderstanding,
-  facts: EvidenceItem[],
+  evidenceItems: EvidenceItem[],
 ): void {
   const contexts = understanding.analysisContexts || [];
   const validIds = new Set(contexts.map((c: any) => String(c?.id || "")).filter(Boolean));
   if (validIds.size === 0) return;
 
-  const invalidFacts = (facts || []).filter(
-    (f) => f.contextId && !validIds.has(String(f.contextId)),
+  const invalidEvidenceItems = (evidenceItems || []).filter(
+    (item) => item.contextId && !validIds.has(String(item.contextId)),
   );
   const invalidClaims = (understanding.subClaims || []).filter(
     (c: any) => c.contextId && !validIds.has(String(c.contextId)),
   );
 
-  if (invalidFacts.length === 0 && invalidClaims.length === 0) return;
+  if (invalidEvidenceItems.length === 0 && invalidClaims.length === 0) return;
 
   debugLog("validateContextReferences: invalid contextId references", {
-    invalidFactRefs: invalidFacts.slice(0, 8).map((f) => ({
-      id: f.id,
-      contextId: f.contextId,
+    invalidEvidenceRefs: invalidEvidenceItems.slice(0, 8).map((item) => ({
+      id: item.id,
+      contextId: item.contextId,
     })),
     invalidClaimRefs: invalidClaims.slice(0, 8).map((c: any) => ({
       id: c.id,
       contextId: c.contextId,
     })),
-    totalInvalidFacts: invalidFacts.length,
+    totalInvalidEvidenceItems: invalidEvidenceItems.length,
     totalInvalidClaims: invalidClaims.length,
   });
   console.warn(
-    `[Analyzer] WARN: Invalid contextId references found (facts=${invalidFacts.length}, claims=${invalidClaims.length}).`,
+    `[Analyzer] WARN: Invalid contextId references found (evidenceItems=${invalidEvidenceItems.length}, claims=${invalidClaims.length}).`,
   );
 }
 
@@ -3391,7 +3364,6 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA),
   requiresSeparateAnalysis: z.boolean(),
   backgroundDetails: z.string().optional(), // Article background details (preferred)
-  analysisContext: z.string(), // Legacy background details field (NOT an AnalysisContext)
 
   mainThesis: z.string(),
   articleThesis: z.string(),
@@ -3456,7 +3428,6 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
   analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA).default([]),
   requiresSeparateAnalysis: z.boolean().default(false),
   backgroundDetails: z.string().default(""),
-  analysisContext: z.string().default(""), // Legacy background details field
 
   mainThesis: z.string().default(""),
   articleThesis: z.string().default(""),
@@ -3487,20 +3458,20 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
     .default([]),
 });
 
-// Supplemental claim backfill should ensure each scope has at least one substantive/core claim,
+// Supplemental claim backfill should ensure each context has at least one substantive/core claim,
 // but MUST NOT force “central” marking. Centrality is determined by the LLM + guardrails.
 // Raise minimums to avoid collapsing compound inputs into a single claim.
 const MIN_CORE_CLAIMS_PER_PROCEEDING = 2;
 const MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE = 3;
 const SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS = 2;
 const SHORT_SIMPLE_INPUT_MAX_CHARS = 60;
-const MIN_DIRECT_CLAIMS_PER_SCOPE = 2;
+const MIN_DIRECT_CLAIMS_PER_CONTEXT = 2;
 
 function expandClaimsForVerdicts(
   understanding: ClaimUnderstanding,
   directClaims: ClaimUnderstanding["subClaims"],
 ): ClaimUnderstanding["subClaims"] {
-  if (directClaims.length >= MIN_DIRECT_CLAIMS_PER_SCOPE) return directClaims;
+  if (directClaims.length >= MIN_DIRECT_CLAIMS_PER_CONTEXT) return directClaims;
 
   const extraClaims = (understanding.subClaims || []).filter((c: any) => {
     if (directClaims.some((d) => d.id === c.id)) return false;
@@ -3510,7 +3481,7 @@ function expandClaimsForVerdicts(
     return true;
   });
 
-  const needed = Math.max(0, MIN_DIRECT_CLAIMS_PER_SCOPE - directClaims.length);
+  const needed = Math.max(0, MIN_DIRECT_CLAIMS_PER_CONTEXT - directClaims.length);
   return directClaims.concat(extraClaims.slice(0, needed));
 }
 
@@ -3669,7 +3640,7 @@ async function understandClaim(
     ids: (preDetectedContexts || []).map((s: any) => String(s?.id || "")).filter(Boolean),
   });
 
-  const systemPrompt = `You are a professional fact-checker analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect background details if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
+  const systemPrompt = `You are a professional evidence analyst analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect background details if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
 
 TERMINOLOGY (critical):
 - Background details: Optional narrative frame or topic of the input. Descriptive only and NOT a reason to split analysis. Output as backgroundDetails.
@@ -3782,7 +3753,7 @@ Example 2: "An internal review found 10 people were harmed by Product X"
 **WHY THIS MATTERS:**
 - SC-A (attribution) might be TRUE (yes, he said it)
 - SC-B (content) might be FALSE (what he said is wrong)
-- If you only verify SC-A, you're NOT fact-checking the article's actual claims!
+- If you only verify SC-A, you're NOT verifying the article's actual claims!
 - The article's credibility depends on SC-B, not SC-A.
 
 ### Claim Dependencies (dependsOn):
@@ -3808,7 +3779,7 @@ NOTE: Broad institutional claims ARE verifiable (checkWorthiness: HIGH):
 - "The regulator has acted on weak evidence in the past" → Can check documented cases, audits, expert analyses
 - "The government has lied about X" → Can check historical record, declassified documents
 - "Company X has a history of fraud" → Can check court records, SEC filings, news archives
-These are not opinions - they're historical assertions that can be fact-checked.
+These are not opinions - they're historical assertions that can be verified.
 
 **2. harmPotential** - Does it impact high-stakes areas?
 - HIGH: Public health, safety, democratic integrity, financial markets, legal outcomes
@@ -3915,7 +3886,7 @@ Only assign centrality: "high" when the claim:
 - ❌ "Study used methodology M" (methodological detail - NOT central unless methodology IS the main claim)
 - ❌ "The [analysis method] is valid/accurate/complete" (methodology validation - NOT central, the claim is about the SUBJECT, not the method)
 - ❌ "The study/analysis framework is appropriate" (meta-analysis about methods - NOT central)
-- ❌ "The analysis excludes/includes factor X" (methodological scope - NOT central)
+- ❌ "The analysis excludes/includes factor X" (methodological boundary - NOT central)
 - ❌ Supporting evidence for the main thesis (evidence - NOT central, only the thesis itself is central)
 
 **CRITICAL FOR COMPARATIVE CLAIMS**: If the main claim is "X is better/more/faster than Y", then:
@@ -3924,7 +3895,7 @@ Only assign centrality: "high" when the claim:
 - ✓ CENTRAL: "Expert consensus supports X over Y" (direct evaluative claim)
 - ❌ NOT CENTRAL: "The methodology for comparing X and Y is valid" (meta-analysis)
 - ❌ NOT CENTRAL: "The analysis framework is appropriate" (meta-analysis)
-- ❌ NOT CENTRAL: "The comparison includes/excludes certain factors" (methodological scope)
+- ❌ NOT CENTRAL: "The comparison includes/excludes certain factors" (methodological boundary)
 
 **IMPORTANT**: For comparative claims, EACH distinct aspect of the comparison that directly addresses the thesis should have centrality="high". For "Technology A vs Technology B efficiency", claims about end-to-end efficiency, production efficiency, AND expert consensus can all be central because they address the thesis from different angles.
 
@@ -3933,7 +3904,7 @@ Only assign centrality: "high" when the claim:
 - ✓ "The product causes serious side effects" (PRIMARY factual thesis)
 - ✓ "The policy violated constitutional rights" (PRIMARY legal thesis)
 
-**Rule of thumb**: In an analysis of "Was X fair?", only the fairness conclusion itself is central. All supporting facts, sources, dates, and background are NOT central.
+**Rule of thumb**: In an analysis of "Was X fair?", only the fairness conclusion itself is central. All supporting evidence items, sources, dates, and background are NOT central.
 
 NOT "high" for:
 - Supporting evidence (even if important)
@@ -4302,11 +4273,11 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
 
 ### FINAL OUTPUT CHECKLIST (MANDATORY)
 - If the input is a comparative efficiency/performance/effectiveness claim: did you output **2+** \`analysisContexts\` and set \`requiresSeparateAnalysis=true\`?
-- If \`analysisContexts\` has 2+ items: did you assign each core claim a non-empty \`contextId\` (avoid leaving claims unscoped)?
+- If \`analysisContexts\` has 2+ items: did you assign each core claim a non-empty \`contextId\` (avoid leaving claims unassigned)?
 - Did you avoid adding off-thesis dimensions (do not invent unrelated metrics that are not in the user's claim)?`;
 
 // Use normalized analysisInput (yes/no→statement) for consistent LLM analysis
-  const userPrompt = `Analyze for fact-checking:\n\n"${analysisInputForLLM}"`;
+  const userPrompt = `Analyze for verification:\n\n"${analysisInputForLLM}"`;
 
   function extractFirstJsonObject(text: string): string | null {
     const start = text.indexOf("{");
@@ -4400,7 +4371,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
       }
       debugLog("understandClaim: recovered Value from schema-mismatch error", {
         detectedInputType: sp.data.detectedInputType,
-        proceedings: sp.data.analysisContexts?.length ?? 0,
+        analysisContexts: sp.data.analysisContexts?.length ?? 0,
         requiresSeparateAnalysis: sp.data.requiresSeparateAnalysis,
         subClaims: sp.data.subClaims?.length ?? 0,
       });
@@ -4413,7 +4384,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
 
   const tryJsonTextFallback = async () => {
     debugLog("understandClaim: FALLBACK JSON TEXT ATTEMPT");
-    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- backgroundDetails is the broader narrative frame or topic of the input (descriptive only).\n- analysisContexts represents AnalysisContexts (top-level bounded analytical frames).\n- analysisContext (singular) is a legacy backgroundDetails field; keep it empty or mirror backgroundDetails.\n- EvidenceScope is per-evidence source metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- analysisContexts\n- requiresSeparateAnalysis\n- backgroundDetails\n- analysisContext (legacy backgroundDetails string)\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
+    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- backgroundDetails is the broader narrative frame or topic of the input (descriptive only).\n- analysisContexts represents AnalysisContexts (top-level bounded analytical frames).\n- EvidenceScope is per-evidence source metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- analysisContexts\n- requiresSeparateAnalysis\n- backgroundDetails\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
     const llmTimeoutMsRaw =
       pipelineConfig?.understandLlmTimeoutMs ??
       DEFAULT_PIPELINE_CONFIG.understandLlmTimeoutMs ??
@@ -4482,7 +4453,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
   if (!parsed) {
     // Retry once with a smaller, schema-focused prompt (providers sometimes fail on long prompts + strict schemas).
     // v2.6.30: Changed detectedInputType to "claim | article" - yes/no inputs are normalized to claims at entry point
-    const retryPrompt = `You are a fact-checking analyst.
+    const retryPrompt = `You are a verification analyst.
 
 Return ONLY a single JSON object that EXACTLY matches the expected schema.
 - No markdown, no prose, no code fences.
@@ -4535,44 +4506,36 @@ Now analyze the input and output JSON only.`;
   if (!parsed) throw new Error("Failed to understand claim: structured output did not match schema");
 
   if (typeof parsed.backgroundDetails !== "string" || parsed.backgroundDetails.trim().length === 0) {
-    if (typeof parsed.analysisContext === "string" && parsed.analysisContext.trim().length > 0) {
-      warnLegacyField("understandClaim", "analysisContext");
-      parsed.backgroundDetails = parsed.analysisContext;
-    } else {
-      parsed.backgroundDetails = "";
-    }
-  }
-  if (typeof parsed.analysisContext !== "string" || parsed.analysisContext.trim().length === 0) {
-    parsed.analysisContext = parsed.backgroundDetails;
+    parsed.backgroundDetails = "";
   }
 
-  // Ensure no orphaned scope assignments: if any subClaim uses contextId, that ID must
+  // Ensure no orphaned context assignments: if any subClaim uses contextId, that ID must
   // exist in analysisContexts. Some providers may emit claim assignments that reference IDs
   // they didn't include in analysisContexts; we reconcile deterministically.
-  const reconcileScopesWithClaimAssignments = (u: ClaimUnderstanding) => {
-    const scopes = Array.isArray((u as any).analysisContexts) ? (u as any).analysisContexts : [];
-    const scopeIds = new Set(scopes.map((s: any) => String(s?.id || "")).filter(Boolean));
+  const reconcileContextsWithClaimAssignments = (u: ClaimUnderstanding) => {
+    const contexts = Array.isArray((u as any).analysisContexts) ? (u as any).analysisContexts : [];
+    const contextIds = new Set(contexts.map((s: any) => String(s?.id || "")).filter(Boolean));
     const claims = Array.isArray((u as any).subClaims) ? (u as any).subClaims : [];
 
     const missing = new Set<string>();
     for (const c of claims as any[]) {
       const rp = String(c?.contextId || "").trim();
-      if (rp && !scopeIds.has(rp)) missing.add(rp);
+      if (rp && !contextIds.has(rp)) missing.add(rp);
     }
     // IMPORTANT: Keep requiresSeparateAnalysis consistent with the current context list.
     // Some providers may emit requiresSeparateAnalysis=false even when analysisContexts has 2+ items,
     // which can lead to downstream divergence (input neutrality failures).
-    (u as any).requiresSeparateAnalysis = scopes.length > 1;
+    (u as any).requiresSeparateAnalysis = contexts.length > 1;
     if (missing.size === 0) return u;
 
     for (const id of Array.from(missing)) {
       const exemplar = (claims as any[]).find((c) => String(c?.contextId || "").trim() === id);
       const rawName = String(exemplar?.text || "").trim();
-      const name = rawName ? rawName.slice(0, 120) : `${id} scope`;
+      const name = rawName ? rawName.slice(0, 120) : `${id} context`;
       // Extract short name: remove CTX_ prefix if present, or use ID as-is
       const withoutPrefix = id.replace(/^CTX_/, "").trim();
-      const shortName = (withoutPrefix || id).slice(0, 12) || "SCOPE";
-      scopes.push({
+      const shortName = (withoutPrefix || id).slice(0, 12) || "CONTEXT";
+      contexts.push({
         id,
         name,
         shortName,
@@ -4582,21 +4545,21 @@ Now analyze the input and output JSON only.`;
         outcome: "unknown",
         metadata: {},
       });
-      scopeIds.add(id);
+      contextIds.add(id);
     }
 
     // If any claim still references a non-existent ID (shouldn't happen), clear it.
     for (const c of claims as any[]) {
       const rp = String(c?.contextId || "").trim();
-      if (rp && !scopeIds.has(rp)) c.contextId = "";
+      if (rp && !contextIds.has(rp)) c.contextId = "";
     }
 
-    (u as any).analysisContexts = scopes;
-    (u as any).requiresSeparateAnalysis = scopes.length > 1;
+    (u as any).analysisContexts = contexts;
+    (u as any).requiresSeparateAnalysis = contexts.length > 1;
     return u;
   };
 
-  parsed = reconcileScopesWithClaimAssignments(parsed);
+  parsed = reconcileContextsWithClaimAssignments(parsed);
 
   // =========================================================================
   // POST-PROCESSING: Use early-normalized input for input neutrality
@@ -4630,9 +4593,9 @@ Now analyze the input and output JSON only.`;
   // Canonicalize contexts early so:
   // - IDs are stable (P1/P2/...) instead of model-invented IDs
   // - downstream research queries don't drift because the model changed labels/dates
-  // v2.6.23: Use analysisInput (normalized statement) for consistent scope canonicalization
-  // This ensures any input phrasing yields identical scope detection and research queries
-  parsed = canonicalizeScopes(analysisInput, parsed);
+  // v2.6.23: Use analysisInput (normalized statement) for consistent context canonicalization
+  // This ensures any input phrasing yields identical context detection and research queries
+  parsed = canonicalizeContexts(analysisInput, parsed);
   // Ensure flag consistency after canonicalization (some providers drift this field).
   parsed.requiresSeparateAnalysis = (parsed.analysisContexts?.length ?? 0) > 1;
 
@@ -4646,7 +4609,7 @@ Now analyze the input and output JSON only.`;
     parsed.detectedInputType = "claim";
   }
 
-  debugLog("understandClaim: scopes after canonicalize", {
+  debugLog("understandClaim: contexts after canonicalize", {
     detectedInputType: parsed.detectedInputType,
     requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
     count: parsed.analysisContexts?.length ?? 0,
@@ -4659,7 +4622,7 @@ Now analyze the input and output JSON only.`;
   // into a single generic context.
   //
   // v2.6.39: Gate seed forcing to only apply when BOTH conditions are true:
-  // - deterministic mode is enabled (reproducible runs need consistent scope splits)
+  // - deterministic mode is enabled (reproducible runs need consistent context splits)
   // - input is comparative-like (boundary-sensitive, e.g., "X before vs after Y")
   // In non-deterministic/exploratory runs, let the model + evidence-based refinement decide contexts.
   // v2.9: Use cached inputClassification if available, fall back to inline heuristics
@@ -4675,8 +4638,8 @@ Now analyze the input and output JSON only.`;
 
   if (shouldForceSeedContexts) {
     const seedContexts = preDetectedContexts.map((s, idx) => {
-      const rawId = String(s.id || `SCOPE_SEED_${idx + 1}`);
-      const short = rawId.replace(/^SCOPE_/, "").slice(0, 12) || `CTX${idx + 1}`;
+      const rawId = String(s.id || `CTX_SEED_${idx + 1}`);
+      const short = rawId.replace(/^CTX_/, "").slice(0, 12) || `CTX${idx + 1}`;
       return {
         id: rawId,
         name: String(s.name || rawId),
@@ -4691,11 +4654,11 @@ Now analyze the input and output JSON only.`;
     });
     parsed.analysisContexts = seedContexts as any;
     parsed.requiresSeparateAnalysis = true;
-    // Assign unscoped claims to the first seed scope so they aren't dropped in multi-scope flows.
-    const firstScopeId = seedContexts[0]?.id || "";
-    if (firstScopeId && Array.isArray(parsed.subClaims)) {
+    // Assign unassigned claims to the first seed context so they aren't dropped in multi-context flows.
+    const firstContextId = seedContexts[0]?.id || "";
+    if (firstContextId && Array.isArray(parsed.subClaims)) {
       for (const c of parsed.subClaims as any[]) {
-        if (!String(c?.contextId || "").trim()) c.contextId = firstScopeId;
+        if (!String(c?.contextId || "").trim()) c.contextId = firstContextId;
       }
     }
     debugLog("understandClaim: applied heuristic seed contexts (deterministic + comparative)", {
@@ -4712,28 +4675,28 @@ Now analyze the input and output JSON only.`;
     });
   }
 
-  // If the model under-split scopes for a claim, do a single best-effort retry
-  // focused ONLY on scope detection. v2.6.30: Simplified - single input type after normalization
+  // If the model under-split contexts for a claim, do a single best-effort retry
+  // focused ONLY on context detection. v2.6.30: Simplified - single input type after normalization
   if (
     deterministic &&
     parsed.detectedInputType === "claim" &&
     (parsed.analysisContexts?.length ?? 0) <= 1
   ) {
-    // v2.6.23: Use normalized analysisInput for scope detection to maintain input neutrality.
+    // v2.6.23: Use normalized analysisInput for context detection to maintain input neutrality.
       // When deterministic mode is enabled, yes/no forms are normalized to statements earlier (lines 2507-2528).
-    // Using the same normalized form here ensures scope detection aligns with claim analysis,
-    // preventing scope-to-statement misalignment and maintaining input neutrality.
+    // Using the same normalized form here ensures context detection aligns with claim analysis,
+    // preventing context-to-statement misalignment and maintaining input neutrality.
     const supplementalInput = parsed.impliedClaim || analysisInput;
-    const supplemental = await requestSupplementalScopes(supplementalInput, model, parsed, pipelineConfig);
+    const supplemental = await requestSupplementalContexts(supplementalInput, model, parsed, pipelineConfig);
     if (supplemental?.analysisContexts && supplemental.analysisContexts.length > 1) {
       parsed = {
         ...parsed,
         requiresSeparateAnalysis: true,
         analysisContexts: supplemental.analysisContexts,
       };
-      // v2.6.23: Use analysisInput (normalized statement) for consistent scope canonicalization
-      parsed = canonicalizeScopes(analysisInput, parsed);
-      debugLog("understandClaim: supplemental scopes applied", {
+      // v2.6.23: Use analysisInput (normalized statement) for consistent context canonicalization
+      parsed = canonicalizeContexts(analysisInput, parsed);
+      debugLog("understandClaim: supplemental contexts applied", {
         detectedInputType: parsed.detectedInputType,
         requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
         count: parsed.analysisContexts?.length ?? 0,
@@ -4746,7 +4709,7 @@ Now analyze the input and output JSON only.`;
   // v2.6.32: IMPORTANT drift reducer
   // Do NOT branch on model output (e.g., parsed.subClaims length). That can cause meaning-equivalent inputs
   // to take different paths depending on what the model happened to return, which amplifies drift in:
-  // - scope splitting
+  // - context splitting
   // - claim decomposition
   // - research query generation
   //
@@ -4827,11 +4790,11 @@ Now analyze the input and output JSON only.`;
       );
       if (supplementalClaims.length === 0) break;
       parsed.subClaims.push(...supplementalClaims);
-      console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance scope coverage`);
+      console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance context coverage`);
       // Supplemental claims may introduce new contextId values. Ensure analysisContexts
-      // covers all referenced scope IDs, then re-canonicalize for stable IDs.
-      parsed = reconcileScopesWithClaimAssignments(parsed);
-      parsed = canonicalizeScopes(analysisInput, parsed);
+      // covers all referenced context IDs, then re-canonicalize for stable IDs.
+      parsed = reconcileContextsWithClaimAssignments(parsed);
+      parsed = canonicalizeContexts(analysisInput, parsed);
       // Supplemental claims can reintroduce over-centrality and role drift; re-normalize deterministically.
       normalizeSubClaimsImportance(parsed.subClaims as any);
       break;
@@ -4841,8 +4804,8 @@ Now analyze the input and output JSON only.`;
   // Heuristic fallback: if we still have too few claims for non-trivial inputs, derive atomic claims
   // directly from the input text to avoid collapsing complex statements into a single claim.
   if (!isShortSimpleInput && (parsed.subClaims?.length || 0) < MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE) {
-    const scopes = parsed.analysisContexts || [];
-    const singleScopeId = scopes.length === 1 ? scopes[0].id : "";
+    const contexts = parsed.analysisContexts || [];
+    const singleContextId = contexts.length === 1 ? contexts[0].id : "";
     const candidateSources = [
       parsed.originalInputDisplay,
       analysisInput,
@@ -4856,7 +4819,7 @@ Now analyze the input and output JSON only.`;
     const heuristicClaims = buildHeuristicSubClaims(
       sourceText,
       parsed.subClaims as any,
-      singleScopeId,
+      singleContextId,
     );
     if (heuristicClaims.length > 0) {
       parsed.subClaims.push(...heuristicClaims);
@@ -4875,7 +4838,7 @@ Now analyze the input and output JSON only.`;
   const relevanceValidatedClaims = validateThesisRelevance(validatedClaims as any, pipelineConfig);
   const claimsWithThesisRelevanceInvariant = enforceThesisRelevanceInvariants(relevanceValidatedClaims as any, thesis);
   const claimsPolicyB = applyThesisRelevancePolicyBToSubClaims(claimsWithThesisRelevanceInvariant as any);
-  const withMinimumDirect = enforceMinimumDirectClaimsPerScope(
+  const withMinimumDirect = enforceMinimumDirectClaimsPerContext(
     { ...parsed, subClaims: claimsPolicyB } as ClaimUnderstanding,
     analysisInput,
   );
@@ -4888,10 +4851,10 @@ async function requestSupplementalSubClaims(
   understanding: ClaimUnderstanding,
   pipelineConfig?: PipelineConfig,
 ): Promise<ClaimUnderstanding["subClaims"]> {
-  const scopes = understanding.analysisContexts || [];
-  const hasScopes = scopes.length > 0;
-  const isMultiScope = scopes.length > 1;
-  const singleScopeId = scopes.length === 1 ? scopes[0].id : "";
+  const contexts = understanding.analysisContexts || [];
+  const hasScopes = contexts.length > 0;
+  const isMultiContext = contexts.length > 1;
+  const singleContextId = contexts.length === 1 ? contexts[0].id : "";
 
   const normalizeText = (text: string) =>
     text.toLowerCase().replace(/\s+/g, " ").trim();
@@ -4902,7 +4865,7 @@ async function requestSupplementalSubClaims(
   const existingTextGlobal = new Set<string>();
 
   const coverageTargets = hasScopes
-    ? scopes.map((s) => ({ id: s.id, name: s.name }))
+    ? contexts.map((s) => ({ id: s.id, name: s.name }))
     : [{ id: "", name: "General" }];
 
   for (const target of coverageTargets) {
@@ -4917,11 +4880,11 @@ async function requestSupplementalSubClaims(
       existingTextGlobal.add(normalized);
     }
 
-    // For single-scope (or no-scope) runs, treat all claims as belonging to the
-    // single/default scope to avoid brittle ID mismatches.
-    const procId = isMultiScope ? (claim.contextId || "") : (singleScopeId || "");
+    // For single-context (or no-context) runs, treat all claims as belonging to the
+    // single/default context to avoid brittle ID mismatches.
+    const procId = isMultiContext ? (claim.contextId || "") : (singleContextId || "");
 
-    if (isMultiScope && !procId) continue;
+    if (isMultiContext && !procId) continue;
     if (!claimsByProc.has(procId)) continue;
 
     claimsByProc.get(procId)!.push(claim);
@@ -4968,7 +4931,7 @@ async function requestSupplementalSubClaims(
     })
     .join("\n");
 
-  const systemPrompt = `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
+  const systemPrompt = `You are a verification assistant. Add missing subClaims ONLY for the listed contexts.
  - Return ONLY new claims (do not repeat existing ones).
 - Each claim must be tied to a single AnalysisContext via contextId.${hasScopes ? "" : " Use an empty string if no AnalysisContexts are listed."}
  - Use claimRole="core" and checkWorthiness="high".
@@ -5042,10 +5005,10 @@ async function requestSupplementalSubClaims(
 
   const supplementalClaims: ClaimUnderstanding["subClaims"] = [];
   for (const claim of supplemental.subClaims) {
-    // For single-scope/no-scope runs, force all supplemental claims onto the default scope.
+    // For single-context/no-context runs, force all supplemental claims onto the default context.
     // This avoids dropping good claims due to model-invented IDs.
-    let procId = isMultiScope ? (claim?.contextId || "") : (singleScopeId || "");
-    if (isMultiScope && !procId) {
+    let procId = isMultiContext ? (claim?.contextId || "") : (singleContextId || "");
+    if (isMultiContext && !procId) {
       continue;
     }
     if (!allowedProcIds.has(procId)) {
@@ -5117,7 +5080,7 @@ async function requestSupplementalSubClaims(
  * Best-effort: ask the model to (re)consider whether there are multiple distinct AnalysisContexts.
  * This is intentionally generic and only applied when the initial understanding appears under-split.
  */
-async function requestSupplementalScopes(
+async function requestSupplementalContexts(
   input: string,
   model: any,
   understanding: ClaimUnderstanding,
@@ -5128,7 +5091,7 @@ async function requestSupplementalScopes(
     : 0;
   if (currentCount > 1) return null;
 
-  const systemPrompt = `You are a fact-checking assistant.
+  const systemPrompt = `You are a verification assistant.
 
 Return ONLY a single JSON object with keys:
 - analysisContexts: array
@@ -5196,42 +5159,42 @@ Use empty strings "" and empty arrays [] when unknown.`;
       analysisContexts: sp.data.analysisContexts,
     };
   } catch (err: any) {
-    debugLog("requestSupplementalScopes: FAILED", err?.message || String(err));
+    debugLog("requestSupplementalContexts: FAILED", err?.message || String(err));
     return null;
   }
 }
 
 /**
- * Extract outcome-related claims from facts discovered during research.
+ * Extract outcome-related claims from evidence discovered during research.
  * This addresses cases where specific outcomes (e.g., an N-year term) are mentioned
  * in research but weren't in the original input, so no claim was created initially.
  */
-async function extractOutcomeClaimsFromFacts(
+async function extractOutcomeClaimsFromEvidence(
   state: ResearchState,
   model: any,
 ): Promise<ClaimUnderstanding["subClaims"]> {
   if (!state.understanding || state.evidenceItems.length === 0) return [];
 
   const understanding = state.understanding;
-  const scopes = understanding.analysisContexts || [];
+  const contexts = understanding.analysisContexts || [];
   const existingClaims = understanding.subClaims || [];
   const existingClaimTexts = new Set(existingClaims.map((c) => c.text.toLowerCase().trim()));
 
-  // Extract evidence text for LLM analysis (legacy variable name: factsText)
-  const factsText = state.evidenceItems
-    .slice(0, 50) // Limit to first 50 facts to avoid token limits
+  // Extract evidence text for LLM analysis
+  const evidenceText = state.evidenceItems
+    .slice(0, 50) // Limit to first 50 evidence items to avoid token limits
     .map((f, idx) => `E${idx + 1}: ${f.statement}`)
     .join("\n");
 
-  if (!factsText || factsText.length < 100) return [];
+  if (!evidenceText || evidenceText.length < 100) return [];
 
-  // Check if any facts mention outcomes (quick heuristic check before LLM call)
+  // Check if any evidence items mention outcomes (quick heuristic check before LLM call)
   const outcomeKeywords = /\b(\d+\s*(?:year|month|day)\s*(?:sentence|prison|jail|ban|ineligible|suspended|fine|penalty|sanction)|sentenced|convicted|acquitted|fined|banned|ineligible)\b/i;
-  if (!outcomeKeywords.test(factsText)) {
+  if (!outcomeKeywords.test(evidenceText)) {
     return [];
   }
 
-  const systemPrompt = `You are a fact-checking assistant. Extract specific outcomes, penalties, or consequences mentioned in the facts that should be evaluated as separate claims.
+  const systemPrompt = `You are an evidence-analysis assistant. Extract specific outcomes, penalties, or consequences mentioned in the evidence items that should be evaluated as separate claims.
 
 Return ONLY a JSON object with an "outcomes" array. Each outcome should have:
 - "outcome": The specific outcome mentioned (e.g., "27-year prison sentence", "8-year ineligibility", "$1M fine")
@@ -5246,13 +5209,13 @@ Only extract outcomes that:
 Return empty array if no such outcomes are found.`;
 
   const userPrompt = `EVIDENCE DISCOVERED DURING RESEARCH (unverified extracted statements):
-${factsText}
+${evidenceText}
 
 EXISTING CLAIMS (DO NOT DUPLICATE):
 ${existingClaims.map((c) => `- ${c.id}: ${c.text}`).join("\n")}
 
-SCOPES:
-${scopes.map((s) => `- ${s.id}: ${s.name}`).join("\n")}
+CONTEXTS:
+${contexts.map((s) => `- ${s.id}: ${s.name}`).join("\n")}
 
 Extract outcomes that need separate evaluation claims.`;
 
@@ -5322,7 +5285,7 @@ Extract outcomes that need separate evaluation claims.`;
 
     return outcomeClaims;
   } catch (err: any) {
-    debugLog("extractOutcomeClaimsFromFacts: FAILED", err?.message || String(err));
+    debugLog("extractOutcomeClaimsFromEvidence: FAILED", err?.message || String(err));
     return [];
   }
 }
@@ -5333,11 +5296,11 @@ Extract outcomes that need separate evaluation claims.`;
  * This addresses the issue where outcome is shown as "pending" or "unknown" in the UI
  * even though the actual outcome was found in the evidence.
  */
-async function enrichScopesWithOutcomes(state: ResearchState, model: any): Promise<void> {
+async function enrichContextsWithOutcomes(state: ResearchState, model: any): Promise<void> {
   if (!state.understanding?.analysisContexts?.length) return;
 
-  const facts = state.evidenceItems || [];
-  if (facts.length === 0) return;
+  const evidenceItems = state.evidenceItems || [];
+  if (evidenceItems.length === 0) return;
   const deterministic = state.pipelineConfig?.deterministic ?? DEFAULT_PIPELINE_CONFIG.deterministic;
 
   for (const proc of state.understanding.analysisContexts) {
@@ -5353,14 +5316,14 @@ async function enrichScopesWithOutcomes(state: ResearchState, model: any): Promi
 
     if (!isVagueOutcome) continue;
 
-    // Get facts related to this scope
-    const relevantFacts = facts.filter(f =>
-      !f.contextId || f.contextId === proc.id
+    // Get evidence items related to this context
+    const relevantEvidenceItems = evidenceItems.filter(item =>
+      !item.contextId || item.contextId === proc.id
     );
 
-    if (relevantFacts.length === 0) continue;
+    if (relevantEvidenceItems.length === 0) continue;
 
-    const factsText = relevantFacts.map(f => `- ${f.statement}`).join("\n").slice(0, 4000);
+    const evidenceText = relevantEvidenceItems.map(item => `- ${item.statement}`).join("\n").slice(0, 4000);
 
     try {
       // Use LLM to extract outcome - generic, not domain-specific
@@ -5369,9 +5332,9 @@ async function enrichScopesWithOutcomes(state: ResearchState, model: any): Promi
         temperature: deterministic ? 0 : undefined,
         messages: [
           { role: "system", content: "You extract specific outcomes from evidence. Return ONLY the outcome phrase, nothing else." },
-          { role: "user", content: `Given these facts about "${proc.name}" (${proc.subject || ""}):
+          { role: "user", content: `Given this evidence about "${proc.name}" (${proc.subject || ""}):
 
-${factsText}
+${evidenceText}
 
 What is the specific, concrete outcome or result mentioned?
 - Return ONLY the outcome in a short phrase (e.g., "8-year penalty", "approved", "rejected", "settled for $X")
@@ -5383,7 +5346,7 @@ What is the specific, concrete outcome or result mentioned?
 
       const outcome = text.trim();
       if (outcome && outcome !== "NONE" && outcome.length < 100) {
-        console.log(`[Analyzer] Enriched scope "${proc.name}" outcome: "${proc.outcome}" → "${outcome}"`);
+        console.log(`[Analyzer] Enriched context "${proc.name}" outcome: "${proc.outcome}" → "${outcome}"`);
         proc.outcome = outcome;
         // Update status if we found a concrete outcome
         if (proc.status === "pending" || proc.status === "ongoing" || proc.status === "unknown") {
@@ -5391,8 +5354,8 @@ What is the specific, concrete outcome or result mentioned?
         }
       }
     } catch (err: any) {
-      debugLog("enrichScopesWithOutcomes: LLM call failed", err?.message || String(err));
-      // Continue with other proceedings
+      debugLog("enrichContextsWithOutcomes: LLM call failed", err?.message || String(err));
+      // Continue with other contexts
     }
   }
 }
@@ -5443,7 +5406,7 @@ interface ResearchDecision {
   queries?: string[];
   category?: string;
   isContradictionSearch?: boolean;
-  targetProceedingId?: string;
+  targetContextId?: string;
   targetClaimId?: string;
   /** If true, search should use date filtering for recency */
   recencyMatters?: boolean;
@@ -5519,8 +5482,8 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     });
   }
 
-  const scopes = understanding.analysisContexts || [];
-  const scopesWithFacts = new Set(
+  const contexts = understanding.analysisContexts || [];
+  const contextsWithEvidence = new Set(
     state.evidenceItems
       .map((f: EvidenceItem) => f.contextId)
       .filter(Boolean),
@@ -5531,18 +5494,18 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   const inverseClaimSearchRequired = !!inverseClaimCandidate;
 
   if (
-    state.evidenceItems.length >= config.minFactsRequired &&
+    state.evidenceItems.length >= config.minEvidenceItemsRequired &&
     categories.length >= CONFIG.minCategories &&
     state.contradictionSearchPerformed &&
     (!inverseClaimSearchRequired || state.inverseClaimSearchPerformed) &&
-    (scopes.length === 0 ||
-      scopes.every((p: AnalysisContext) =>
-        scopesWithFacts.has(p.id),
+    (contexts.length === 0 ||
+      contexts.every((p: AnalysisContext) =>
+        contextsWithEvidence.has(p.id),
       ))
   ) {
     // =========================================================================
     // CENTRAL CLAIM EVIDENCE COVERAGE (NEW)
-    // For each CENTRAL core claim, try to obtain at least one evidence or counter-evidence fact.
+    // For each CENTRAL core claim, try to obtain at least one evidence or counter-evidence item.
     // This is best-effort and bounded: at most 1 targeted search per central claim.
     // =========================================================================
     const normalizeText = (text: string) =>
@@ -5558,7 +5521,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       const claimProc = String(claim?.contextId || "");
 
       return state.evidenceItems.some((f: EvidenceItem) => {
-        // If we have proceeding context, prefer matching within that scope.
+        // If we have proceeding context, prefer matching within that context.
         if (claimProc && f.contextId && f.contextId !== claimProc) return false;
         const factLower = String(f.statement || "").toLowerCase();
         // Entity overlap
@@ -5596,7 +5559,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         complete: false,
         category: "central_claim",
         targetClaimId: c.id,
-        targetProceedingId: c.contextId || undefined,
+        targetContextId: c.contextId || undefined,
         focus: `Central claim evidence: ${basis.slice(0, 80)}`,
         queries: [
           `${qBase} evidence`,
@@ -5610,40 +5573,40 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     // =========================================================================
     // CLAIM-LEVEL RECENCY CHECK (v2.6.22)
     // Before marking complete, check if any claims appear to be about recent events
-    // but have zero supporting facts. This catches cases like DOGE (Jan-May 2025)
-    // where the thesis-level recency check passed but individual claims need facts.
+    // but have zero supporting evidence. This catches cases like DOGE (Jan-May 2025)
+    // where the thesis-level recency check passed but individual claims need evidence.
     // =========================================================================
-    const claimsWithoutFacts = directClaimsForResearch.filter((claim: any) => {
+    const claimsWithoutEvidence = directClaimsForResearch.filter((claim: any) => {
       // Check if this claim appears to be about recent events
       const claimText = claim.text || "";
       const isRecentClaim = isRecencySensitive(claimText, undefined);
 
-      // Check if this claim has any supporting facts
-      // Facts are linked via relatedClaimId or by matching claim text/entities
+      // Check if this claim has any supporting evidence
+      // Evidence items are linked via relatedClaimId or by matching claim text/entities
       const claimEntities = (claim.keyEntities || []).map((e: string) => e.toLowerCase());
-      const hasFacts = state.evidenceItems.some((f: EvidenceItem) => {
-        // Direct match via claim text in fact
-        const factLower = f.statement.toLowerCase();
+      const hasEvidence = state.evidenceItems.some((item: EvidenceItem) => {
+        // Direct match via claim text in evidence item
+        const evidenceLower = item.statement.toLowerCase();
         const claimLower = claimText.toLowerCase();
 
-        // Check if any key entity from the claim appears in the fact
+        // Check if any key entity from the claim appears in the evidence item
         const hasEntityOverlap = claimEntities.some((entity: string) =>
-          entity.length > 3 && factLower.includes(entity)
+          entity.length > 3 && evidenceLower.includes(entity)
         );
 
         // Check for significant word overlap (at least 2 meaningful words)
         const claimWords = claimLower.split(/\s+/).filter((w: string) => w.length > 4);
-        const wordOverlap = claimWords.filter((w: string) => factLower.includes(w)).length;
+        const wordOverlap = claimWords.filter((w: string) => evidenceLower.includes(w)).length;
 
         return hasEntityOverlap || wordOverlap >= 2;
       });
 
-      return isRecentClaim && !hasFacts;
+      return isRecentClaim && !hasEvidence;
     });
 
-    // If there are recent claims without facts, don't mark complete yet - search for them
-    if (claimsWithoutFacts.length > 0 && !state.recentClaimsSearched) {
-      const claimToSearch = claimsWithoutFacts[0]; // Search for first ungrounded recent claim
+    // If there are recent claims without evidence, don't mark complete yet - search for them
+    if (claimsWithoutEvidence.length > 0 && !state.recentClaimsSearched) {
+      const claimToSearch = claimsWithoutEvidence[0]; // Search for first ungrounded recent claim
       const claimEntities = (claimToSearch.keyEntities || []).slice(0, 4).join(" ");
       const claimTerms = (claimToSearch.text || "")
         .toLowerCase()
@@ -5654,7 +5617,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         .join(" ");
 
       debugLog("Claim-level recency check: Found ungrounded recent claims", {
-        count: claimsWithoutFacts.length,
+        count: claimsWithoutEvidence.length,
         firstClaim: claimToSearch.text?.substring(0, 100),
         entities: claimEntities,
       });
@@ -5677,36 +5640,36 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     return { complete: true };
   }
 
-  // Research each scope
+  // Research each context
   if (
-    scopes.length > 0 &&
-    state.iterations.length < scopes.length * 2
+    contexts.length > 0 &&
+    state.iterations.length < contexts.length * 2
   ) {
-    for (const scope of scopes) {
-      const scopeFacts = state.evidenceItems.filter(
-        (f) => f.contextId === scope.id,
+    for (const context of contexts) {
+      const contextEvidenceItems = state.evidenceItems.filter(
+        (f) => f.contextId === context.id,
       );
-      if (scopeFacts.length < 2) {
-        const scopeKey = [scope.institution || scope.court, scope.shortName, scope.name]
+      if (contextEvidenceItems.length < 2) {
+        const contextKey = [context.institution || context.court, context.shortName, context.name]
           .filter(Boolean)
           .join(" ")
           .trim();
         // Build base queries
         const baseQueries = [
-          `${entityStr} ${scopeKey}`.trim(),
-          `${entityStr} ${scope.court || ""} official decision documents`.trim(),
-          `${entityStr} ${scope.shortName || scope.name} evidence procedure`.trim(),
-          `${entityStr} ${scopeKey} outcome`.trim(),
+          `${entityStr} ${contextKey}`.trim(),
+          `${entityStr} ${context.court || ""} official decision documents`.trim(),
+          `${entityStr} ${context.shortName || context.name} evidence procedure`.trim(),
+          `${entityStr} ${contextKey} outcome`.trim(),
         ];
         // Add date-variant queries for recency-sensitive topics
         const queries = recencyMatters ? [
           ...baseQueries,
-          `${entityStr} ${scopeKey} ${currentYear} latest`.trim(),
+          `${entityStr} ${contextKey} ${currentYear} latest`.trim(),
         ] : baseQueries;
         return {
           complete: false,
-          focus: `${scope.name} - ${scopeKey || "scope"}`,
-          targetProceedingId: scope.id,
+          focus: `${context.name} - ${contextKey || "context"}`,
+          targetContextId: context.id,
           category: "evidence",
           queries,
           recencyMatters,
@@ -5742,7 +5705,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     // For recency-sensitive topics, add date-specific queries
     const baseQueries = [
       `${entityStr} evidence documents`,
-      `${entityStr} facts findings`,
+      `${entityStr} evidence findings`,
     ];
 
     const queries = recencyMatters ? [
@@ -5753,7 +5716,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
 
     return {
       complete: false,
-      focus: recencyMatters ? "Recent evidence and facts (prioritizing current data)" : "Evidence and facts",
+      focus: recencyMatters ? "Recent evidence (prioritizing current data)" : "Evidence",
       category: "evidence",
       queries,
       recencyMatters,
@@ -5803,16 +5766,16 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   }
 
   // NEW v2.6.18: Search for decision-makers and potential conflicts of interest
-  if (!state.decisionMakerSearchPerformed && scopes.length > 0) {
-    // Extract decision-maker names from all scopes
-    const decisionMakerNames = scopes
+  if (!state.decisionMakerSearchPerformed && contexts.length > 0) {
+    // Extract decision-maker names from all contexts
+    const decisionMakerNames = contexts
       .flatMap((s: AnalysisContext) => s.decisionMakers?.map(dm => dm.name) || [])
       .filter((name, index, arr) => arr.indexOf(name) === index); // unique names
 
     if (decisionMakerNames.length > 0) {
       const baseQueries = [
         `${decisionMakerNames[0]} conflict of interest ${entityStr}`,
-        `${decisionMakerNames[0]} impartiality bias ${scopes[0]?.court || ""}`,
+        `${decisionMakerNames[0]} impartiality bias ${contexts[0]?.court || ""}`,
         ...(decisionMakerNames.length > 1 ? [`${decisionMakerNames.slice(0, 2).join(" ")} role multiple trials`] : []),
       ];
       // Add date-variant for recency-sensitive conflict searches
@@ -6067,13 +6030,13 @@ async function fetchSource(
 
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
 // Using empty string "" instead of optional for string fields.
-const FACT_SCHEMA = z.object({
-  facts: z.array(
+const EVIDENCE_SCHEMA = z.object({
+  evidenceItems: z.array(
     z.object({
-      fact: z.string(),
+      statement: z.string(),
       category: z.enum([
         "legal_provision",
-        "evidence",         // Legacy value - still accepted for backward compatibility
+        "evidence",
         "direct_evidence",  // NEW v2.8: Preferred value (avoids tautology)
         "expert_quote",
         "statistic",
@@ -6085,7 +6048,7 @@ const FACT_SCHEMA = z.object({
       contextId: z.string(), // empty string if not applicable
       isContestedClaim: z.boolean(),
       claimSource: z.string(), // empty string if not applicable
-      // NEW v2.6.29: Does this fact support or contradict the ORIGINAL user claim?
+      // NEW v2.6.29: Does this evidence item support or contradict the ORIGINAL user claim?
       claimDirection: z.enum(["supports", "contradicts", "neutral"]),
       // NEW: Source authority classification
       sourceAuthority: z.enum(["primary", "secondary", "opinion", "contested"]).optional(),
@@ -6101,7 +6064,7 @@ const FACT_SCHEMA = z.object({
         name: z.string(),           // Short label (e.g., "WTW", "TTW", "Lifecycle-A")
         methodology: z.string(),    // Standard/method (empty string if not applicable)
         boundaries: z.string(),     // What's included/excluded (empty string if not applicable)
-        geographic: z.string(),     // Geographic scope (empty string if not applicable)
+        geographic: z.string(),     // Geographic coverage (empty string if not applicable)
         temporal: z.string(),       // Time period (empty string if not applicable)
         // NEW v2.8 (Phase 2.5): Source type classification for better reliability calibration
         sourceType: z.enum([
@@ -6120,10 +6083,6 @@ const FACT_SCHEMA = z.object({
   ),
 });
 
-function warnLegacyField(source: string, field: string): void {
-  console.warn(`[${source}] Legacy field "${field}" detected; expected v3 field names.`);
-}
-
 function normalizeEvidenceId(id: string, source: string): string {
   if (!id || typeof id !== "string") return "";
   const normalized = id.replace(/(^|-)F(\d+)/g, "$1E$2");
@@ -6141,16 +6100,13 @@ function normalizeEvidenceIdList(ids: string[], source: string): string[] {
 
 type RawEvidenceItem = {
   statement?: string;
-  fact?: string;
   category?: string;
   specificity?: "high" | "medium" | "low";
   sourceExcerpt?: string;
-  excerpt?: string;
   contextId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
   claimDirection?: "supports" | "contradicts" | "neutral";
-  direction?: "supports" | "contradicts" | "neutral";
   sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
   evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
   probativeValue?: "high" | "medium" | "low";
@@ -6158,32 +6114,24 @@ type RawEvidenceItem = {
 };
 
 function normalizeEvidenceItems(raw: any, source: string): RawEvidenceItem[] {
-  const rawItems = Array.isArray(raw?.evidenceItems) && raw.evidenceItems.length > 0
-    ? raw.evidenceItems
-    : (Array.isArray(raw?.facts) ? raw.facts : []);
-
-  if (rawItems === raw?.facts) warnLegacyField(source, "facts");
+  const rawItems = Array.isArray(raw?.evidenceItems) ? raw.evidenceItems : [];
 
   if (!Array.isArray(rawItems)) return [];
 
   const normalized = rawItems.map((item: any) => ({
-    statement: item.statement ?? item.fact ?? "",
+    statement: item.statement ?? "",
     category: item.category ?? "evidence",
     specificity: item.specificity ?? "medium",
-    sourceExcerpt: item.sourceExcerpt ?? item.excerpt ?? "",
+    sourceExcerpt: item.sourceExcerpt ?? "",
     contextId: item.contextId ?? "",
     isContestedClaim: item.isContestedClaim ?? false,
     claimSource: item.claimSource ?? "",
-    claimDirection: item.claimDirection ?? item.direction ?? "neutral",
+    claimDirection: item.claimDirection ?? "neutral",
     sourceAuthority: item.sourceAuthority,
     evidenceBasis: item.evidenceBasis,
     probativeValue: item.probativeValue,
     evidenceScope: item.evidenceScope,
   }));
-
-  if (rawItems.some((item: any) => item.fact && !item.statement)) warnLegacyField(source, "fact");
-  if (rawItems.some((item: any) => item.excerpt && !item.sourceExcerpt)) warnLegacyField(source, "excerpt");
-  if (rawItems.some((item: any) => item.direction && !item.claimDirection)) warnLegacyField(source, "direction");
 
   return normalized;
 }
@@ -6192,34 +6140,30 @@ function normalizeSupportingEvidenceIds(raw: any, source: string): string[] {
   if (Array.isArray(raw?.supportingEvidenceIds) && raw.supportingEvidenceIds.length > 0) {
     return normalizeEvidenceIdList(raw.supportingEvidenceIds, source);
   }
-  if (Array.isArray(raw?.supportingFactIds) && raw.supportingFactIds.length > 0) {
-    warnLegacyField(source, "supportingFactIds");
-    return normalizeEvidenceIdList(raw.supportingFactIds, source);
-  }
   return [];
 }
 
-async function extractFacts(
+async function extractEvidence(
   source: FetchedSource,
   focus: string,
   model: any,
-  scopes: AnalysisContext[],
-  targetProceedingId?: string,
+  contexts: AnalysisContext[],
+  targetContextId?: string,
   originalClaim?: string,
   fromOppositeClaimSearch?: boolean,
   pipelineConfig?: PipelineConfig,
 ): Promise<EvidenceItem[]> {
-  console.log(`[Analyzer] extractFacts called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
-  console.log(`[Analyzer] extractFacts: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
+  console.log(`[Analyzer] extractEvidence called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
+  console.log(`[Analyzer] extractEvidence: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
 
   if (!source.fetchSuccess || !source.fullText) {
-    console.warn(`[Analyzer] extractFacts: Skipping ${source.id} - no content (fetchSuccess=${source.fetchSuccess}, hasText=${!!source.fullText})`);
+    console.warn(`[Analyzer] extractEvidence: Skipping ${source.id} - no content (fetchSuccess=${source.fetchSuccess}, hasText=${!!source.fullText})`);
     return [];
   }
 
   const contextsList =
-    scopes.length > 0
-      ? `\n\nKNOWN CONTEXTS:\n${scopes.map((p: AnalysisContext) => `- ${p.id}: ${p.name}`).join("\n")}`
+    contexts.length > 0
+      ? `\n\nKNOWN CONTEXTS:\n${contexts.map((p: AnalysisContext) => `- ${p.id}: ${p.name}`).join("\n")}`
       : "";
 
   // Get current date for temporal reasoning
@@ -6235,19 +6179,19 @@ async function extractFacts(
     ? `\n\n## ORIGINAL USER CLAIM (for claimDirection evaluation)
 The user's original claim is: "${originalClaim}"
 
-For EVERY extracted fact, evaluate claimDirection:
-- **"supports"**: This fact provides evidence that SUPPORTS the user's claim being TRUE
-- **"contradicts"**: This fact provides evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- **"neutral"**: This fact is contextual/background information that doesn't directly support or contradict the claim
+For EVERY extracted evidence item, evaluate claimDirection:
+- **"supports"**: This evidence item provides evidence that SUPPORTS the user's claim being TRUE
+- **"contradicts"**: This evidence item provides evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
+- **"neutral"**: This evidence item is contextual/background information that doesn't directly support or contradict the claim
 
 CRITICAL: Be precise about direction! If the user claims "X is better than Y" and the source says "Y is better than X", that is CONTRADICTING evidence, not supporting evidence.`
     : "";
 
-  const systemPrompt = `Extract SPECIFIC facts. Focus: ${focus}
- ${targetProceedingId ? `Target context: ${targetProceedingId}` : ""}
+  const systemPrompt = `Extract SPECIFIC evidence items. Focus: ${focus}
+ ${targetContextId ? `Target context: ${targetContextId}` : ""}
 Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.
-If the source contains facts relevant to MULTIPLE known contexts, include them (do not restrict to only the target),
+If the source contains evidence items relevant to MULTIPLE known contexts, include them (do not restrict to only the target),
 and set contextId accordingly. Do not omit key numeric outcomes (durations, amounts, counts) when present.
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${originalClaimSection}
@@ -6256,22 +6200,22 @@ and set contextId accordingly. Do not omit key numeric outcomes (durations, amou
 
 Evidence documents often define their EvidenceScope (methodology/boundaries/geography/temporal). Extract this when present:
 
-**Look for explicit scope definitions**:
+**Look for explicit EvidenceScope definitions**:
 - Methodology: "This study uses a specific analysis method", "Based on ISO 14040 LCA"
 - Boundaries: "From initial inputs to final outcomes", "Excluding upstream production"
-- Geographic: "Region A market", "Region B regulations", "national scope"
+- Geographic: "Region A market", "Region B regulations", "national coverage"
 - Temporal: "2020-2025 data", "FY2024", "as of March 2024"
 
 **Set evidenceScope when the source defines its analytical frame**:
 - name: Short label (e.g., "Broad boundary", "Narrow boundary", "EU-LCA", "Agency report")
 - methodology: Standard referenced (empty string if none)
 - boundaries: What's included/excluded (empty string if not specified)
-- geographic: Geographic scope (empty string if not specified)
+- geographic: Geographic coverage (empty string if not specified)
 - temporal: Time period (empty string if not specified)
 
 **IMPORTANT**: Different sources may use different EvidenceScopes. A "40% reported value" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing EvidenceScope enables accurate comparisons.${contextsList}`;
 
-  debugLog(`extractFacts: Calling LLM for ${source.id}`, {
+  debugLog(`extractEvidence: Calling LLM for ${source.id}`, {
     textLength: source.fullText.length,
     title: source.title?.substring(0, 50),
     focus: focus.substring(0, 100),
@@ -6298,25 +6242,25 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
         },
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
-      output: Output.object({ schema: FACT_SCHEMA }),
+      output: Output.object({ schema: EVIDENCE_SCHEMA }),
       }),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`extractFacts LLM timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
+        setTimeout(() => reject(new Error(`extractEvidence LLM timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
       ),
     ]);
     const elapsed = Date.now() - startTime;
 
-    debugLog(`extractFacts: LLM returned for ${source.id} in ${elapsed}ms`);
-    debugLog(`extractFacts: Result keys`, result ? Object.keys(result) : "null");
+    debugLog(`extractEvidence: LLM returned for ${source.id} in ${elapsed}ms`);
+    debugLog(`extractEvidence: Result keys`, result ? Object.keys(result) : "null");
 
     if (elapsed < 2000) {
-      debugLog(`extractFacts: WARNING - LLM responded suspiciously fast (${elapsed}ms) for ${source.fullText.length} chars`);
+      debugLog(`extractEvidence: WARNING - LLM responded suspiciously fast (${elapsed}ms) for ${source.fullText.length} chars`);
     }
 
     // Handle different AI SDK versions - safely extract structured output
     const rawOutput = extractStructuredOutput(result);
     if (!rawOutput) {
-      debugLog(`extractFacts: No structured output for ${source.id}`, {
+      debugLog(`extractEvidence: No structured output for ${source.id}`, {
         resultType: typeof result,
         resultKeys: result ? Object.keys(result) : "null",
         resultPreview: result && typeof result === 'object' ? JSON.stringify(result).substring(0, 500) : "N/A",
@@ -6324,13 +6268,13 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       return [];
     }
 
-    const parsed = FACT_SCHEMA.safeParse(rawOutput);
+    const parsed = EVIDENCE_SCHEMA.safeParse(rawOutput);
     if (!parsed.success) {
-      console.warn(`[Analyzer] extractFacts: structured output validation failed for ${source.id}`, parsed.error?.message);
+      console.warn(`[Analyzer] extractEvidence: structured output validation failed for ${source.id}`, parsed.error?.message);
     }
 
-    const extractedItems = normalizeEvidenceItems(rawOutput, `Analyzer.extractFacts:${source.id}`);
-    console.log(`[Analyzer] extractFacts: Raw extraction has ${extractedItems.length} evidence items`);
+    const extractedItems = normalizeEvidenceItems(rawOutput, `Analyzer.extractEvidence:${source.id}`);
+    console.log(`[Analyzer] extractEvidence: Raw extraction has ${extractedItems.length} evidence items`);
 
     if (!extractedItems || extractedItems.length === 0) {
       console.warn(`[Analyzer] Invalid evidence extraction from ${source.id} - no evidence items returned`);
@@ -6341,12 +6285,12 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       .filter((item) => item.specificity !== "low" && (item.sourceExcerpt?.length ?? 0) >= 20);
 
     // Conservative safeguard: avoid treating high-impact outcomes (sentencing/conviction/prison terms)
-    // as "facts" when they come from low/unknown-reliability sources.
+    // as evidence when they come from low/unknown-reliability sources.
     // These claims are easy to get wrong and can dominate the analysis.
     // PR-C: Normalize trackRecordScore to 0-1 scale before using in comparison
     const track = typeof source.trackRecordScore === "number" ? normalizeTrackRecordScore(source.trackRecordScore) : null;
     // Only apply this safeguard when we have an explicit reliability score.
-    // If no source bundle is configured, trackRecordScore is null (unknown) and we should NOT discard facts.
+    // If no source bundle is configured, trackRecordScore is null (unknown) and we should NOT discard evidence items.
     if (typeof track === "number" && track < 0.6) {
       const before = filteredEvidenceItems.length;
       filteredEvidenceItems = filteredEvidenceItems.filter((item) => {
@@ -6362,22 +6306,22 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       });
       if (before !== filteredEvidenceItems.length) {
         console.warn(
-          `[Analyzer] extractFacts: filtered ${before - filteredEvidenceItems.length} high-impact outcome evidence items from low/unknown trackRecord source ${source.id} (track=${track})`,
+          `[Analyzer] extractEvidence: filtered ${before - filteredEvidenceItems.length} high-impact outcome evidence items from low/unknown trackRecord source ${source.id} (track=${track})`,
         );
       }
     }
 
-    console.log(`[Analyzer] extractFacts: After filtering (non-low specificity, excerpt >= 20 chars): ${filteredEvidenceItems.length} evidence items`);
+    console.log(`[Analyzer] extractEvidence: After filtering (non-low specificity, excerpt >= 20 chars): ${filteredEvidenceItems.length} evidence items`);
 
     if (filteredEvidenceItems.length === 0 && extractedItems.length > 0) {
-      console.warn(`[Analyzer] extractFacts: All ${extractedItems.length} evidence items were filtered out!`);
+      console.warn(`[Analyzer] extractEvidence: All ${extractedItems.length} evidence items were filtered out!`);
       extractedItems.forEach((item, i) => {
         console.warn(`[Analyzer]   Evidence item ${i}: specificity="${item.specificity}", excerptLen=${item.sourceExcerpt?.length ?? 0}`);
       });
     }
 
-    // Map facts with provenance metadata
-    const factsWithProvenance = filteredEvidenceItems.map((item, i) => ({
+    // Map evidence items with provenance metadata
+    const evidenceItemsWithProvenance = filteredEvidenceItems.map((item, i) => ({
         id: `${source.id}-E${i + 1}`,
         statement: item.statement ?? "",
         category: (item.category ?? "evidence") as EvidenceItem["category"],
@@ -6386,7 +6330,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
         sourceUrl: source.url,
         sourceTitle: source.title,
         sourceExcerpt: item.sourceExcerpt ?? "",
-        contextId: item.contextId || targetProceedingId,
+        contextId: item.contextId || targetContextId,
         isContestedClaim: item.isContestedClaim,
         claimSource: item.claimSource,
         claimDirection: item.claimDirection,
@@ -6399,17 +6343,17 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 
     // Phase 1.5: claimDirection validation telemetry
     // Track how often claimDirection is missing to inform future requirement enforcement
-    const missingClaimDirection = factsWithProvenance.filter(f => !f.claimDirection || f.claimDirection === undefined);
+    const missingClaimDirection = evidenceItemsWithProvenance.filter(item => !item.claimDirection || item.claimDirection === undefined);
     if (missingClaimDirection.length > 0) {
       console.warn(
-        `[Telemetry] claimDirection missing: ${missingClaimDirection.length}/${factsWithProvenance.length} facts ` +
-        `(${Math.round(100 * missingClaimDirection.length / factsWithProvenance.length)}%) ` +
+        `[Telemetry] claimDirection missing: ${missingClaimDirection.length}/${evidenceItemsWithProvenance.length} evidence items ` +
+        `(${Math.round(100 * missingClaimDirection.length / evidenceItemsWithProvenance.length)}%) ` +
         `from source ${source.id}`
       );
-      console.warn(`[Telemetry] Missing claimDirection fact IDs: ${missingClaimDirection.map(f => f.id).join(", ")}`);
-    } else if (factsWithProvenance.length > 0) {
+      console.warn(`[Telemetry] Missing claimDirection evidence item IDs: ${missingClaimDirection.map(item => item.id).join(", ")}`);
+    } else if (evidenceItemsWithProvenance.length > 0) {
       console.log(
-        `[Telemetry] claimDirection coverage: 100% (${factsWithProvenance.length}/${factsWithProvenance.length}) ` +
+        `[Telemetry] claimDirection coverage: 100% (${evidenceItemsWithProvenance.length}/${evidenceItemsWithProvenance.length}) ` +
         `from source ${source.id}`
       );
     }
@@ -6420,22 +6364,22 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
     const probativeFilterEnabled =
       pipelineConfig?.probativeFilterEnabled ??
       DEFAULT_PIPELINE_CONFIG.probativeFilterEnabled;
-    let filteredByProbativeValue = factsWithProvenance as typeof factsWithProvenance;
+    let filteredByProbativeValue = evidenceItemsWithProvenance as typeof evidenceItemsWithProvenance;
 
-    if (probativeFilterEnabled && factsWithProvenance.length > 0) {
+    if (probativeFilterEnabled && evidenceItemsWithProvenance.length > 0) {
   // v2.9: LLM Evidence Quality Assessment
       const useLLMEvidenceQuality = isLLMEnabled("evidence");
       let llmFilterSuccess = false;
 
       if (useLLMEvidenceQuality) {
         try {
-          debugLog("extractFacts: LLM evidence quality assessment starting", {
+          debugLog("extractEvidence: LLM evidence quality assessment starting", {
             sourceId: source.id,
-            itemCount: factsWithProvenance.length,
+            itemCount: evidenceItemsWithProvenance.length,
           });
 
           // Convert EvidenceItem to EvidenceItemInput format for the service
-          const evidenceInputs: EvidenceItemInput[] = factsWithProvenance.map((item: any) => ({
+          const evidenceInputs: EvidenceItemInput[] = evidenceItemsWithProvenance.map((item: any) => ({
             evidenceId: item.id,
             statement: item.statement,
             excerpt: item.sourceExcerpt,
@@ -6457,11 +6401,11 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
             qualityMap.set(result.evidenceId, result);
           }
 
-          const llmKept: typeof factsWithProvenance = [];
-          const llmFiltered: typeof factsWithProvenance = [];
+          const llmKept: typeof evidenceItemsWithProvenance = [];
+          const llmFiltered: typeof evidenceItemsWithProvenance = [];
           const llmFilterReasons: Record<string, number> = {};
 
-          for (const item of factsWithProvenance as any[]) {
+          for (const item of evidenceItemsWithProvenance as any[]) {
             const quality = qualityMap.get(item.id);
             if (!quality || quality.qualityAssessment === "filter") {
               llmFiltered.push(item);
@@ -6477,8 +6421,8 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
           // Log LLM filter statistics
           if (llmFiltered.length > 0) {
             console.log(
-              `[Evidence Filter] LLM quality filter for ${source.id}: kept ${llmKept.length}/${factsWithProvenance.length} ` +
-              `(${Math.round(100 * llmKept.length / factsWithProvenance.length)}%), filtered ${llmFiltered.length} items`
+              `[Evidence Filter] LLM quality filter for ${source.id}: kept ${llmKept.length}/${evidenceItemsWithProvenance.length} ` +
+              `(${Math.round(100 * llmKept.length / evidenceItemsWithProvenance.length)}%), filtered ${llmFiltered.length} items`
             );
             console.log(
               `[Evidence Filter] LLM filter reasons: ${Object.entries(llmFilterReasons)
@@ -6491,7 +6435,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 
           filteredByProbativeValue = llmKept;
           llmFilterSuccess = true;
-          debugLog("extractFacts: LLM evidence quality assessment complete", {
+          debugLog("extractEvidence: LLM evidence quality assessment complete", {
             sourceId: source.id,
             kept: llmKept.length,
             filtered: llmFiltered.length,
@@ -6502,7 +6446,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
             `[Evidence Filter] LLM evidence quality assessment failed for ${source.id}, falling back to heuristics:`,
             err instanceof Error ? err.message : String(err)
           );
-          debugLog("extractFacts: LLM evidence quality assessment failed", {
+          debugLog("extractEvidence: LLM evidence quality assessment failed", {
             sourceId: source.id,
             error: err instanceof Error ? err.message : String(err),
           });
@@ -6512,7 +6456,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       // Heuristic filtering (default or fallback from LLM failure)
       if (!llmFilterSuccess) {
         const { kept, filtered, stats } = filterByProbativeValue(
-          factsWithProvenance as EvidenceItem[],
+          evidenceItemsWithProvenance as EvidenceItem[],
           { ...DEFAULT_FILTER_CONFIG },
         );
 
@@ -6539,7 +6483,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
           console.log(`[Evidence Filter] Probative filter for ${source.id}: all ${stats.kept} items passed`);
         }
 
-        filteredByProbativeValue = kept as typeof factsWithProvenance;
+        filteredByProbativeValue = kept as typeof evidenceItemsWithProvenance;
       }
     }
 
@@ -6558,7 +6502,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
     return filteredByProbativeValue;
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    debugLog(`extractFacts: ERROR for ${source.id}`, {
+    debugLog(`extractEvidence: ERROR for ${source.id}`, {
       error: errorMsg,
       stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5).join('\n') : undefined,
     });
@@ -6570,7 +6514,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 
     // Check for OpenAI schema validation errors
     if (errorMsg.includes("Invalid schema") || errorMsg.includes("required")) {
-      debugLog("❌ OpenAI SCHEMA VALIDATION ERROR - check for .optional() fields in FACT_SCHEMA");
+      debugLog("❌ OpenAI SCHEMA VALIDATION ERROR - check for .optional() fields in EVIDENCE_SCHEMA");
     }
 
     return [];
@@ -6628,7 +6572,7 @@ const EVIDENCE_QUALITY_SCHEMA_LENIENT = z
   .catch(DEFAULT_EVIDENCE_QUALITY);
 
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
-const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
+const VERDICTS_SCHEMA_MULTI_CONTEXT = z.object({
   verdictSummary: z.object({
     answer: z.number().min(0).max(100),
     confidence: z.number().min(0).max(100),
@@ -6637,7 +6581,7 @@ const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
     keyFactors: z.array(KEY_FACTOR_SCHEMA),
     calibrationNote: z.string(), // empty string if not applicable
   }),
-  proceedingAnswers: z.array(
+  analysisContextAnswers: z.array(
     z.object({
       contextId: z.string(),
       contextName: z.string(),
@@ -6647,7 +6591,7 @@ const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
       keyFactors: z.array(KEY_FACTOR_SCHEMA),
     }),
   ),
-  proceedingSummary: z.string(),
+  analysisContextSummary: z.string(),
   claimVerdicts: z.array(
     z.object({
       claimId: z.string(),
@@ -6656,7 +6600,6 @@ const VERDICTS_SCHEMA_MULTI_SCOPE = z.object({
       riskTier: z.enum(["A", "B", "C"]),
       reasoning: z.string(),
       supportingEvidenceIds: z.array(z.string()).optional(),
-      supportingFactIds: z.array(z.string()).catch([]),
       contextId: z.string(), // empty string if not applicable
       // v2.8.4: Explicit rating direction confirmation - LLM states what it's rating
       // "claim_supported" = evidence supports the claim being TRUE (verdict should be 58-100)
@@ -6713,7 +6656,7 @@ const VERDICT_SUMMARY_SCHEMA_LENIENT = z
   })
   .catch(DEFAULT_VERDICT_SUMMARY_LENIENT);
 
-const DEFAULT_PROCEEDING_ANSWER_LENIENT = {
+const DEFAULT_CONTEXT_ANSWER_LENIENT = {
   contextId: "",
   contextName: "",
   answer: 50,
@@ -6722,7 +6665,7 @@ const DEFAULT_PROCEEDING_ANSWER_LENIENT = {
   keyFactors: [] as KeyFactor[],
 };
 
-const PROCEEDING_ANSWER_SCHEMA_LENIENT = z
+const CONTEXT_ANSWER_SCHEMA_LENIENT = z
   .object({
     contextId: z.string().catch(""),
     contextName: z.string().catch(""),
@@ -6731,21 +6674,20 @@ const PROCEEDING_ANSWER_SCHEMA_LENIENT = z
     shortAnswer: z.string().catch(""),
     keyFactors: z.array(KEY_FACTOR_SCHEMA_LENIENT).catch([]),
   })
-  .catch(DEFAULT_PROCEEDING_ANSWER_LENIENT);
+  .catch(DEFAULT_CONTEXT_ANSWER_LENIENT);
 
-const DEFAULT_CLAIM_VERDICT_MULTI_SCOPE_LENIENT = {
+const DEFAULT_CLAIM_VERDICT_MULTI_CONTEXT_LENIENT = {
   claimId: "",
   verdict: 50,
   confidence: 50,
   riskTier: "B" as const,
   reasoning: "",
   supportingEvidenceIds: [] as string[],
-  supportingFactIds: [] as string[],
   contextId: "",
   ratingConfirmation: "mixed" as const,
 };
 
-const CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT = z
+const CLAIM_VERDICT_SCHEMA_MULTI_CONTEXT_LENIENT = z
   .object({
     claimId: z.string().catch(""),
     verdict: z.number().min(0).max(100).catch(50),
@@ -6755,23 +6697,22 @@ const CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT = z
     // v2.8.4: Rating direction confirmation with fallback
     ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]).catch("mixed"),
     supportingEvidenceIds: z.array(z.string()).catch([]),
-    supportingFactIds: z.array(z.string()).catch([]),
     contextId: z.string().catch(""),
     evidenceQuality: EVIDENCE_QUALITY_SCHEMA_LENIENT.optional(),
   })
-  .catch(DEFAULT_CLAIM_VERDICT_MULTI_SCOPE_LENIENT);
+  .catch(DEFAULT_CLAIM_VERDICT_MULTI_CONTEXT_LENIENT);
 
-const VERDICTS_SCHEMA_MULTI_SCOPE_LENIENT = z
+const VERDICTS_SCHEMA_MULTI_CONTEXT_LENIENT = z
   .object({
     verdictSummary: VERDICT_SUMMARY_SCHEMA_LENIENT,
-    proceedingAnswers: z.array(PROCEEDING_ANSWER_SCHEMA_LENIENT).catch([]),
-    proceedingSummary: z.string().catch(""),
-    claimVerdicts: z.array(CLAIM_VERDICT_SCHEMA_MULTI_SCOPE_LENIENT).catch([]),
+    analysisContextAnswers: z.array(CONTEXT_ANSWER_SCHEMA_LENIENT).catch([]),
+    analysisContextSummary: z.string().catch(""),
+    claimVerdicts: z.array(CLAIM_VERDICT_SCHEMA_MULTI_CONTEXT_LENIENT).catch([]),
   })
   .catch({
     verdictSummary: DEFAULT_VERDICT_SUMMARY_LENIENT,
-    proceedingAnswers: [],
-    proceedingSummary: "",
+    analysisContextAnswers: [],
+    analysisContextSummary: "",
     claimVerdicts: [],
   });
 
@@ -6791,7 +6732,6 @@ const VERDICTS_SCHEMA_SIMPLE = z.object({
       riskTier: z.enum(["A", "B", "C"]),
       reasoning: z.string(),
       supportingEvidenceIds: z.array(z.string()).optional(),
-      supportingFactIds: z.array(z.string()).catch([]),
       // v2.8.4: Explicit rating direction confirmation
       ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
       evidenceQuality: EVIDENCE_QUALITY_SCHEMA.optional(),
@@ -6808,7 +6748,6 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
       riskTier: z.enum(["A", "B", "C"]),
       reasoning: z.string(),
       supportingEvidenceIds: z.array(z.string()).optional(),
-      supportingFactIds: z.array(z.string()).catch([]),
       // v2.8.4: Explicit rating direction confirmation
       ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
       // Contestation fields
@@ -6844,45 +6783,45 @@ async function generateVerdicts(
 }> {
   const understanding = state.understanding!;
   const inputIsClaim = isClaimInput(understanding);
-  const hasMultipleProceedings =
+  const hasMultipleContexts =
     understanding.requiresSeparateAnalysis &&
     understanding.analysisContexts.length > 1;
 
-  // PR-F: Exclude CTX_UNSCOPED claims from verdict calculations (fixes Blocker F)
-  // Only include direct claims that are NOT unscoped (unscoped is display-only)
+  // PR-F: Exclude CTX_UNASSIGNED claims from verdict calculations (fixes Blocker F)
+  // Only include direct claims that are NOT unassigned (unassigned is display-only)
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
     (c: any) =>
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
-      c?.contextId !== UNSCOPED_ID
+      c?.contextId !== UNASSIGNED_CONTEXT_ID
   );
   const claimsForVerdicts = expandClaimsForVerdicts(
     understanding,
     directClaimsForVerdicts,
   );
 
-  // PR-F: Exclude CTX_UNSCOPED facts from verdict calculations (fixes Blocker F)
-  // UNSCOPED facts are display-only and should NOT affect overall verdict
-  const factsForVerdicts = state.evidenceItems.filter(
-    (f: EvidenceItem) => f.contextId !== UNSCOPED_ID
+  // PR-F: Exclude CTX_UNASSIGNED evidence items from verdict calculations (fixes Blocker F)
+  // UNASSIGNED evidence items are display-only and should NOT affect overall verdict
+  const evidenceItemsForVerdicts = state.evidenceItems.filter(
+    (f: EvidenceItem) => f.contextId !== UNASSIGNED_CONTEXT_ID
   );
 
-  const factsFormatted = factsForVerdicts
+  const evidenceItemsFormatted = evidenceItemsForVerdicts
     .map((f: EvidenceItem) => {
-      let factLine = `[${f.id}]`;
-      if (f.contextId) factLine += ` (${f.contextId})`;
-      // v2.6.31: Add direction labels so LLM knows which facts support vs contradict the claim
+      let evidenceLine = `[${f.id}]`;
+      if (f.contextId) evidenceLine += ` (${f.contextId})`;
+      // v2.6.31: Add direction labels so LLM knows which evidence items support vs contradict the claim
       if (f.claimDirection === "contradicts") {
-        factLine += ` [COUNTER-EVIDENCE]`;
+        evidenceLine += ` [COUNTER-EVIDENCE]`;
       } else if (f.claimDirection === "supports") {
-        factLine += ` [SUPPORTING]`;
+        evidenceLine += ` [SUPPORTING]`;
       } else if (f.fromOppositeClaimSearch) {
         // Provenance metadata (not evidence direction)
-        factLine += ` [OPPOSITE-SEARCH]`;
+        evidenceLine += ` [OPPOSITE-SEARCH]`;
       }
       if (f.isContestedClaim)
-        factLine += ` [CONTESTED by ${f.claimSource || "critics"}]`;
-      factLine += ` ${f.statement} (Source: ${f.sourceTitle})`;
-      return factLine;
+        evidenceLine += ` [CONTESTED by ${f.claimSource || "critics"}]`;
+      evidenceLine += ` ${f.statement} (Source: ${f.sourceTitle})`;
+      return evidenceLine;
     })
     .join("\n");
 
@@ -6893,21 +6832,21 @@ async function generateVerdicts(
     )
     .join("\n");
 
-  if (inputIsClaim && hasMultipleProceedings) {
-    const result = await generateMultiScopeVerdicts(
+  if (inputIsClaim && hasMultipleContexts) {
+    const result = await generateMultiContextVerdicts(
       state,
       understanding,
-      factsFormatted,
+      evidenceItemsFormatted,
       claimsFormatted,
       model,
       understanding.detectedInputType,
     );
     return result;
   } else if (inputIsClaim) {
-    const result = await generateSingleScopeVerdicts(
+    const result = await generateSingleContextVerdicts(
       state,
       understanding,
-      factsFormatted,
+      evidenceItemsFormatted,
       claimsFormatted,
       model,
       understanding.detectedInputType,
@@ -6917,7 +6856,7 @@ async function generateVerdicts(
     const result = await generateClaimVerdicts(
       state,
       understanding,
-      factsFormatted,
+      evidenceItemsFormatted,
       claimsFormatted,
       model,
     );
@@ -6925,10 +6864,10 @@ async function generateVerdicts(
   }
 }
 
-async function generateMultiScopeVerdicts(
+async function generateMultiContextVerdicts(
   state: ResearchState,
   understanding: ClaimUnderstanding,
-  factsFormatted: string,
+  evidenceItemsFormatted: string,
   claimsFormatted: string,
   model: any,
   analysisInputType: InputType,
@@ -6959,12 +6898,12 @@ async function generateMultiScopeVerdicts(
     understanding.originalInputDisplay ||
     understanding.mainThesis ||
     analysisInput;
-  // PR-F: Exclude CTX_UNSCOPED claims from verdict calculations (fixes Blocker F)
-  // Only include direct claims that are NOT unscoped (unscoped is display-only)
+  // PR-F: Exclude CTX_UNASSIGNED claims from verdict calculations (fixes Blocker F)
+  // Only include direct claims that are NOT unassigned (unassigned is display-only)
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
     (c: any) =>
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
-      c?.contextId !== UNSCOPED_ID
+      c?.contextId !== UNASSIGNED_CONTEXT_ID
   );
   const claimsForVerdicts = expandClaimsForVerdicts(
     understanding,
@@ -6972,7 +6911,7 @@ async function generateMultiScopeVerdicts(
   );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
-  const systemPromptBase = `You are a professional fact-checker rendering evidence-based verdicts. Your role is to rate the truthfulness of claims by critically weighing evidence quality across AnalysisContexts, ensuring EvidenceScope compatibility when comparing facts, distinguishing causation from correlation, and assessing source credibility.
+  const systemPromptBase = `You are a professional evidence analyst rendering evidence-based verdicts. Your role is to rate the truthfulness of claims by critically weighing evidence quality across AnalysisContexts, ensuring EvidenceScope compatibility when comparing evidence items, distinguishing causation from correlation, and assessing source credibility.
 
 ## CRITICAL: OUTPUT STRUCTURE - verdictSummary
 
@@ -7008,7 +6947,7 @@ CRITICAL: The "answer" field must be a NUMBER (not a string), and must reflect t
 
 Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
-- **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?
+- **Check EvidenceScope alignment**: Are evidence items being compared from compatible EvidenceScopes?
 - **Flag EvidenceScope mismatches**: Different EvidenceScopes are NOT directly comparable
 - **Note in reasoning**: When EvidenceScope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
 
@@ -7089,15 +7028,15 @@ ${contextsFormatted}
      * DO NOT generate meta-methodology factors like "Was the analysis done correctly?" - focus on the CLAIM ITSELF
 
 2. KEY FACTOR SCORING RULES - VERY IMPORTANT:
-   - supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge of widely-reported facts)
+   - supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge of widely-reported information)
    - supports="no": Factor refutes the claim with counter-evidence (NOT just disputed/contested)
    - supports="neutral": Use ONLY when you genuinely have no information about this factor
 
-   ${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events, established procedures/standards, and widely-reported facts, you ALREADY KNOW the relevant information - use it!
+   ${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events, established procedures/standards, and widely-reported information, you ALREADY KNOW the relevant information - use it!
    DO NOT mark factors as "neutral" if you know the answer from your training data.
-   Example: If you know a process followed standard procedures, mark it "yes" even if sources don't explicitly state it.` : "Use ONLY the provided facts and sources."}
+   Example: If you know a process followed standard procedures, mark it "yes" even if sources don't explicitly state it.` : "Use ONLY the provided evidence and sources."}
 
-   CRITICAL: Being "contested" or "disputed" by stakeholders = supports="yes" (if facts support it), NOT "neutral"
+   CRITICAL: Being "contested" or "disputed" by stakeholders = supports="yes" (if evidence supports it), NOT "neutral"
    Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
 
 3. Mark contested factors:
@@ -7113,7 +7052,7 @@ ${contextsFormatted}
        - RIGHT: "Due process adherence" contested by "international observers" or "defense counsel"
    - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
      * **CRITICAL: factualBasis classification determines weight in aggregation**
-     * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., audits showing violations, logs contradicting timeline, datasets contradicting measurements, official reports documenting non-compliance)
+     * "established" = Opposition cites SPECIFIC DOCUMENTED EVIDENCE that contradicts (e.g., audits showing violations, logs contradicting timeline, datasets contradicting measurements, official reports documenting non-compliance)
      * "disputed" = Opposition has some factual counter-evidence but it's debatable or incomplete
      * "opinion" = Opposition has NO factual counter-evidence - just claims, rhetoric, political statements, or actions without documentation
        - **Use "opinion" for**: Political criticism without specifics, "says it was unfair" without citing violated procedures, "claims bias" without evidence
@@ -7146,7 +7085,7 @@ ${contextsFormatted}
    **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Those are the DIRECT thesis-relevant claims. Every listed claim must have a corresponding entry in claimVerdicts. Do NOT add verdicts for tangential/irrelevant claims that are not listed.
 
    - For each context, ensure ALL claims with that contextId (or claims that logically belong to that context) have verdicts
-   - If a claim doesn't have a contextId, assign it to the most relevant scope based on the claim content
+   - If a claim doesn't have a contextId, assign it to the most relevant context based on the claim content
 
    **CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
    - The verdict MUST rate whether THE CLAIM AS STATED is true
@@ -7167,7 +7106,7 @@ ${contextsFormatted}
      * 0-14: FALSE (direct contradiction)
 
    CRITICAL: Stakeholder contestation ("critics say it was unfair") is NOT the same as counter-evidence.
-   Use the TRUE/MOSTLY-TRUE band (>=72%), not the UNVERIFIED band (43-57%), if you know the facts support the claim despite stakeholder opposition.
+   Use the TRUE/MOSTLY-TRUE band (>=72%), not the UNVERIFIED band (43-57%), if you know the evidence supports the claim despite stakeholder opposition.
 
 ${getKnowledgeInstruction(
   state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
@@ -7184,7 +7123,7 @@ ${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 - keyFactors: provide 3–5 items max (overall + per context).
 - keyFactors.factor: <= 12 words. keyFactors.explanation: <= 1 sentence.
 - claimVerdicts.reasoning: <= 2 short sentences.
-- supportingFactIds: include up to 5 IDs per claim (or [] if unclear).
+- supportingEvidenceIds: include up to 5 IDs per claim (or [] if unclear).
 - calibrationNote: keep very short (or "" if not applicable).`;
 
   const systemPrompt = systemPromptBase + brevityRules;
@@ -7199,14 +7138,14 @@ ${contextsFormatted}
 ${claimsFormatted}
 
 ## EVIDENCE (UNVERIFIED EXTRACTED STATEMENTS)
-${factsFormatted}
+${evidenceItemsFormatted}
 
 Provide SEPARATE answers for each context.`;
 
-  let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE> | null = null;
+  let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null = null;
 
   // Retry once in "extreme compact" mode to reduce the chance of truncated JSON output.
-  // This is especially important when many facts/claims exist (deep mode).
+  // This is especially important when many evidence items/claims exist (deep mode).
   const attempts: Array<{ label: string; extraSystem: string }> = [
     { label: "primary", extraSystem: "" },
     {
@@ -7221,14 +7160,14 @@ Provide SEPARATE answers for each context.`;
     },
   ];
 
-  const normalizeMultiScopeOutput = (obj: any) => {
+  const normalizeMultiContextOutput = (obj: any) => {
     if (!obj || typeof obj !== "object") return obj;
 
     // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
     // The LLM sometimes returns {"$PARAMETER_NAME": {actual data}} instead of {actual data}
     let result = obj;
     if (result.$PARAMETER_NAME && typeof result.$PARAMETER_NAME === 'object') {
-      console.log("[normalizeMultiScopeOutput] Unwrapping $PARAMETER_NAME wrapper");
+      console.log("[normalizeMultiContextOutput] Unwrapping $PARAMETER_NAME wrapper");
       result = result.$PARAMETER_NAME;
     }
 
@@ -7236,19 +7175,11 @@ Provide SEPARATE answers for each context.`;
     const wrapperKeys = ['$PARAMETER_NAME', 'data', 'result', 'output', 'response'];
     for (const key of wrapperKeys) {
       if (result[key] && typeof result[key] === 'object' &&
-          (result[key].verdictSummary || result[key].proceedingAnswers || result[key].claimVerdicts)) {
-        console.log(`[normalizeMultiScopeOutput] Unwrapping ${key} wrapper`);
+          (result[key].verdictSummary || result[key].analysisContextAnswers || result[key].claimVerdicts)) {
+        console.log(`[normalizeMultiContextOutput] Unwrapping ${key} wrapper`);
         result = result[key];
         break;
       }
-    }
-
-    // Normalize field names (AnalysisContextAnswers -> proceedingAnswers)
-    if (
-      Array.isArray((result as any).AnalysisContextAnswers) &&
-      !Array.isArray((result as any).proceedingAnswers)
-    ) {
-      result = { ...result, proceedingAnswers: (result as any).AnalysisContextAnswers };
     }
 
     // CRITICAL FIX: Coerce string values to numbers (LLM sometimes returns "65" instead of 65)
@@ -7269,9 +7200,9 @@ Provide SEPARATE answers for each context.`;
       };
     }
 
-    // Coerce proceedingAnswers numeric fields
-    if (Array.isArray(result.proceedingAnswers)) {
-      result.proceedingAnswers = result.proceedingAnswers.map((pa: any) => ({
+    // Coerce analysisContextAnswers numeric fields
+    if (Array.isArray(result.analysisContextAnswers)) {
+      result.analysisContextAnswers = result.analysisContextAnswers.map((pa: any) => ({
         ...pa,
         answer: coerceToNumber(pa.answer),
         confidence: coerceToNumber(pa.confidence),
@@ -7284,7 +7215,7 @@ Provide SEPARATE answers for each context.`;
         ...cv,
         verdict: coerceToNumber(cv.verdict),
         confidence: coerceToNumber(cv.confidence),
-        supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "normalizeMultiScopeOutput"),
+        supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "normalizeMultiContextOutput"),
       }));
     }
 
@@ -7294,7 +7225,7 @@ Provide SEPARATE answers for each context.`;
   const recoverFromNoObjectGeneratedError = (
     err: any,
     attemptLabel: string,
-  ): z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE> | null => {
+  ): z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null => {
     if (!NoObjectGeneratedError.isInstance(err)) return null;
 
     const cause = (err as any)?.cause as any;
@@ -7306,13 +7237,13 @@ Provide SEPARATE answers for each context.`;
       candidates.push(cause.message);
 
     for (const c of candidates) {
-      const obj = normalizeMultiScopeOutput(tryParseFirstJsonObject(c));
+      const obj = normalizeMultiContextOutput(tryParseFirstJsonObject(c));
       if (!obj) continue;
 
       // Try strict first; if it still fails, accept a leniently-normalized version.
-      const strict = VERDICTS_SCHEMA_MULTI_SCOPE.safeParse(obj);
+      const strict = VERDICTS_SCHEMA_MULTI_CONTEXT.safeParse(obj);
       if (strict.success) {
-        debugLog("generateMultiScopeVerdicts: RECOVERED strict object from NoObjectGeneratedError", {
+        debugLog("generateMultiContextVerdicts: RECOVERED strict object from NoObjectGeneratedError", {
           attempt: attemptLabel,
           finishReason: err.finishReason,
           hadText: !!err.text,
@@ -7320,9 +7251,9 @@ Provide SEPARATE answers for each context.`;
         return strict.data;
       }
 
-      const lenient = VERDICTS_SCHEMA_MULTI_SCOPE_LENIENT.safeParse(obj);
+      const lenient = VERDICTS_SCHEMA_MULTI_CONTEXT_LENIENT.safeParse(obj);
       if (lenient.success) {
-        debugLog("generateMultiScopeVerdicts: RECOVERED lenient object from NoObjectGeneratedError", {
+        debugLog("generateMultiContextVerdicts: RECOVERED lenient object from NoObjectGeneratedError", {
           attempt: attemptLabel,
           finishReason: err.finishReason,
           hadText: !!err.text,
@@ -7330,7 +7261,7 @@ Provide SEPARATE answers for each context.`;
         return lenient.data as any;
       }
 
-      debugLog("generateMultiScopeVerdicts: Recovered JSON but schema parse failed", {
+      debugLog("generateMultiContextVerdicts: Recovered JSON but schema parse failed", {
         attempt: attemptLabel,
         finishReason: err.finishReason,
         strictIssues: strict.success ? [] : strict.error.issues?.slice(0, 10),
@@ -7342,9 +7273,9 @@ Provide SEPARATE answers for each context.`;
   };
 
   const tryJsonTextFallback = async (): Promise<
-    z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE> | null
+    z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null
   > => {
-    debugLog("generateMultiScopeVerdicts: FALLBACK JSON TEXT ATTEMPT");
+    debugLog("generateMultiContextVerdicts: FALLBACK JSON TEXT ATTEMPT");
     const system =
       systemPrompt +
       `
@@ -7354,8 +7285,8 @@ Return ONLY a single JSON object. Do NOT include markdown. Do NOT include any te
 
 The JSON object MUST include these top-level keys:
 - verdictSummary
-- AnalysisContextAnswers (preferred) or proceedingAnswers (legacy field name)
-- proceedingSummary (legacy field name)
+- analysisContextAnswers
+- analysisContextSummary
 - claimVerdicts`;
 
     try {
@@ -7373,34 +7304,34 @@ The JSON object MUST include these top-level keys:
 
       const txt = result?.text as string | undefined;
       if (!txt || typeof txt !== "string") {
-        debugLog("generateMultiScopeVerdicts: JSON fallback missing text", {
+        debugLog("generateMultiContextVerdicts: JSON fallback missing text", {
           resultKeys: result ? Object.keys(result) : [],
         });
         return null;
       }
 
-      const obj = normalizeMultiScopeOutput(tryParseFirstJsonObject(txt));
+      const obj = normalizeMultiContextOutput(tryParseFirstJsonObject(txt));
       if (!obj) {
-        debugLog("generateMultiScopeVerdicts: JSON fallback could not find JSON object", {
+        debugLog("generateMultiContextVerdicts: JSON fallback could not find JSON object", {
           textSnippet: txt.slice(0, 800),
         });
         return null;
       }
 
-      const strict = VERDICTS_SCHEMA_MULTI_SCOPE.safeParse(obj);
+      const strict = VERDICTS_SCHEMA_MULTI_CONTEXT.safeParse(obj);
       if (strict.success) return strict.data;
 
-      const lenient = VERDICTS_SCHEMA_MULTI_SCOPE_LENIENT.safeParse(obj);
+      const lenient = VERDICTS_SCHEMA_MULTI_CONTEXT_LENIENT.safeParse(obj);
       if (lenient.success) return lenient.data as any;
 
-      debugLog("generateMultiScopeVerdicts: JSON fallback safeParse failed", {
+      debugLog("generateMultiContextVerdicts: JSON fallback safeParse failed", {
         strictIssues: strict.error.issues?.slice(0, 10),
         lenientIssues: lenient.error.issues?.slice(0, 10),
       });
       return null;
     } catch (err: any) {
       const errMsg = err?.message || String(err);
-      debugLog("generateMultiScopeVerdicts: JSON fallback ERROR", {
+      debugLog("generateMultiContextVerdicts: JSON fallback ERROR", {
         error: errMsg,
         stack: err instanceof Error ? err.stack?.split("\n").slice(0, 8).join("\n") : undefined,
       });
@@ -7411,8 +7342,8 @@ The JSON object MUST include these top-level keys:
 
   for (const attempt of attempts) {
     if (
-      Array.isArray(parsed?.proceedingAnswers) &&
-      parsed.proceedingAnswers.length > 0
+      Array.isArray(parsed?.analysisContextAnswers) &&
+      parsed.analysisContextAnswers.length > 0
     )
       break;
 
@@ -7424,9 +7355,9 @@ The JSON object MUST include these top-level keys:
           { role: "user", content: userPrompt },
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
-        // Explicit maxOutputTokens avoids relying on SDK/provider defaults (which can be too low for multi-scope verdicts).
+        // Explicit maxOutputTokens avoids relying on SDK/provider defaults (which can be too low for multi-context verdicts).
         maxOutputTokens: 4096,
-        output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_SCOPE }),
+        output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_CONTEXT }),
       });
       state.llmCalls++;
       recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
@@ -7434,15 +7365,15 @@ The JSON object MUST include these top-level keys:
       // Handle different AI SDK versions - safely extract structured output
       const rawOutput = extractStructuredOutput(result);
       if (rawOutput) {
-        parsed = normalizeMultiScopeOutput(rawOutput) as z.infer<typeof VERDICTS_SCHEMA_MULTI_SCOPE>;
-        debugLog("generateMultiScopeVerdicts: SUCCESS", {
+        parsed = normalizeMultiContextOutput(rawOutput) as z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT>;
+        debugLog("generateMultiContextVerdicts: SUCCESS", {
           attempt: attempt.label,
           hasVerdictSummary: !!parsed.verdictSummary,
-          proceedingAnswersCount: parsed.proceedingAnswers?.length,
+          analysisContextAnswersCount: parsed.analysisContextAnswers?.length,
           claimVerdictsCount: parsed.claimVerdicts?.length,
         });
       } else {
-        debugLog("generateMultiScopeVerdicts: No rawOutput returned", {
+        debugLog("generateMultiContextVerdicts: No rawOutput returned", {
           attempt: attempt.label,
           resultKeys: result ? Object.keys(result) : [],
         });
@@ -7450,7 +7381,7 @@ The JSON object MUST include these top-level keys:
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       const isNoObj = NoObjectGeneratedError.isInstance(err);
-      debugLog("generateMultiScopeVerdicts: ERROR", {
+      debugLog("generateMultiContextVerdicts: ERROR", {
         attempt: attempt.label,
         error: errMsg,
         name: err instanceof Error ? err.name : typeof err,
@@ -7471,7 +7402,7 @@ The JSON object MUST include these top-level keys:
 
       // Check for OpenAI schema validation errors
       if (errMsg.includes("Invalid schema") || errMsg.includes("required")) {
-        debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_SCOPE");
+        debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_CONTEXT");
       }
       state.llmCalls++;
 
@@ -7479,8 +7410,8 @@ The JSON object MUST include these top-level keys:
       const recovered = recoverFromNoObjectGeneratedError(err, attempt.label);
       if (
         recovered &&
-        Array.isArray(recovered.proceedingAnswers) &&
-        recovered.proceedingAnswers.length > 0
+        Array.isArray(recovered.analysisContextAnswers) &&
+        recovered.analysisContextAnswers.length > 0
       ) {
         parsed = recovered;
       }
@@ -7490,18 +7421,18 @@ The JSON object MUST include these top-level keys:
   // If structured output failed, try a last-ditch "JSON text" call and parse ourselves.
   if (
     !parsed ||
-    !Array.isArray(parsed.proceedingAnswers) ||
-    parsed.proceedingAnswers.length === 0
+    !Array.isArray(parsed.analysisContextAnswers) ||
+    parsed.analysisContextAnswers.length === 0
   ) {
     const fallbackParsed = await tryJsonTextFallback();
     if (
       fallbackParsed &&
-      Array.isArray(fallbackParsed.proceedingAnswers) &&
-      fallbackParsed.proceedingAnswers.length > 0
+      Array.isArray(fallbackParsed.analysisContextAnswers) &&
+      fallbackParsed.analysisContextAnswers.length > 0
     ) {
       parsed = fallbackParsed;
-      debugLog("generateMultiScopeVerdicts: JSON text fallback SUCCESS", {
-        proceedingAnswersCount: parsed.proceedingAnswers?.length,
+      debugLog("generateMultiContextVerdicts: JSON text fallback SUCCESS", {
+        analysisContextAnswersCount: parsed.analysisContextAnswers?.length,
         claimVerdictsCount: parsed.claimVerdicts?.length,
       });
     }
@@ -7510,12 +7441,12 @@ The JSON object MUST include these top-level keys:
   // Fallback if structured output failed
   if (
     !parsed ||
-    !Array.isArray(parsed.proceedingAnswers) ||
-    parsed.proceedingAnswers.length === 0
+    !Array.isArray(parsed.analysisContextAnswers) ||
+    parsed.analysisContextAnswers.length === 0
   ) {
-    debugLog("generateMultiScopeVerdicts: Using FALLBACK (parsed failed)", {
+    debugLog("generateMultiContextVerdicts: Using FALLBACK (parsed failed)", {
       hasParsed: !!parsed,
-      hasProceedingAnswers: !!parsed?.proceedingAnswers,
+      hasAnalysisContextAnswers: !!parsed?.analysisContextAnswers,
     });
 
     const fallbackVerdicts: ClaimVerdict[] = claimsForVerdicts.map(
@@ -7554,20 +7485,8 @@ The JSON object MUST include these top-level keys:
       nuancedAnswer:
         "Verdict generation failed due to a structured-output error (often caused by truncated JSON). Manual review recommended.",
       keyFactors: [],
-      hasMultipleProceedings: true,
       hasMultipleContexts: true,
-      proceedingAnswers: understanding.analysisContexts.map(
-        (p: AnalysisContext) => ({
-          contextId: p.id,
-          contextName: p.name,
-          answer: 50,
-          truthPercentage: 50,
-          confidence: 50,
-          shortAnswer: "Analysis failed",
-          keyFactors: [],
-        }),
-      ),
-      AnalysisContextAnswers: understanding.analysisContexts.map(
+      analysisContextAnswers: understanding.analysisContexts.map(
         (p: AnalysisContext) => ({
           contextId: p.id,
           contextName: p.name,
@@ -7587,9 +7506,8 @@ The JSON object MUST include these top-level keys:
     const articleAnalysis: ArticleAnalysis = {
       inputType: analysisInputType,
       verdictSummary,
-      hasMultipleProceedings: true,
       hasMultipleContexts: true,
-      proceedings: understanding.analysisContexts,
+      analysisContexts: understanding.analysisContexts,
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
       claimsAverageTruthPercentage: 50,
@@ -7617,7 +7535,7 @@ The JSON object MUST include these top-level keys:
   // v2.6.31: Inversion detection for context answers must reference the substantive claim being evaluated
   // (the normalized analysis input), not the context name/id.
   const contextVerdictClaimText = resolveAnalysisPromptInput(understanding, state);
-  let correctedAnalysisContextAnswers = parsed.proceedingAnswers.map((pa: any) => {
+  let correctedAnalysisContextAnswers = parsed.analysisContextAnswers.map((pa: any) => {
     const factors = pa.keyFactors as KeyFactor[];
     const ctxMeta = understanding.analysisContexts.find(
       (p: any) => p.id === pa.contextId,
@@ -7646,8 +7564,8 @@ The JSON object MUST include these top-level keys:
       (f) => f.supports === "neutral" && f.isContested,
     ).length;
 
-    // Debug: Log factor details for this scope
-    debugLog(`Factor analysis for scope ${pa.contextId}`, {
+    // Debug: Log factor details for this context
+    debugLog(`Factor analysis for context ${pa.contextId}`, {
       answerTruthPct: pa.answer,
       factorCounts: {
         positive: positiveFactors,
@@ -7730,7 +7648,7 @@ The JSON object MUST include these top-level keys:
       answer: clampedTruthPct,
       confidence: correctedConfidence,
       truthPercentage: clampedTruthPct,
-      shortAnswer: sanitizeScopeShortAnswer(String(pa.shortAnswer || ""), ctxStatus),
+      shortAnswer: sanitizeContextShortAnswer(String(pa.shortAnswer || ""), ctxStatus),
       factorAnalysis,
     } as AnalysisContextAnswer;
   });
@@ -7776,7 +7694,7 @@ The JSON object MUST include these top-level keys:
   );
 
   if (missingClaims.length > 0) {
-    debugLog(`generateMultiScopeVerdicts: Missing verdicts for ${missingClaims.length} claims`, {
+    debugLog(`generateMultiContextVerdicts: Missing verdicts for ${missingClaims.length} claims`, {
       missingClaimIds: missingClaims.map((c: any) => c.id),
       totalClaims: directClaimsForVerdicts.length,
       verdictsGenerated: parsed.claimVerdicts.length,
@@ -7888,7 +7806,7 @@ The JSON object MUST include these top-level keys:
     const supportingEvidenceIds =
       cv.supportingEvidenceIds && cv.supportingEvidenceIds.length > 0
         ? cv.supportingEvidenceIds
-        : cv.supportingFactIds ?? [];
+        : [];
     const claimFacts = state.evidenceItems.filter((f) => supportingEvidenceIds.includes(f.id));
     const isCounterClaim = claim?.isCounterClaim ?? detectCounterClaim(
       claim?.text || cv.claimId || "",
@@ -7988,11 +7906,9 @@ The JSON object MUST include these top-level keys:
     shortAnswer: parsed.verdictSummary.shortAnswer,
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer,
     keyFactors: prunedSummaryKeyFactors, // v2.8.6: Use pruned keyFactors
-    hasMultipleProceedings: true,
     hasMultipleContexts: hasMultipleContexts,
-    proceedingAnswers: correctedAnalysisContextAnswers,
-    AnalysisContextAnswers: correctedAnalysisContextAnswers,
-    proceedingSummary: parsed.proceedingSummary,
+    analysisContextAnswers: correctedAnalysisContextAnswers,
+    analysisContextSummary: parsed.analysisContextSummary,
     calibrationNote,
     hasContestedFactors,
   };
@@ -8003,9 +7919,8 @@ The JSON object MUST include these top-level keys:
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
     verdictSummary,
-    hasMultipleProceedings: true,
     hasMultipleContexts: hasMultipleContexts,
-    proceedings: understanding.analysisContexts, // v2.6.39: Contexts include assessmentQuestion from LLM
+    analysisContexts: understanding.analysisContexts, // v2.6.39: Contexts include assessedStatement from LLM
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
     logicalFallacies: [],
 
@@ -8025,13 +7940,13 @@ The JSON object MUST include these top-level keys:
 
   // v2.8.6: Prune tangential claims with no/low evidence
   const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts, {
-    facts: state.evidenceItems,
+    evidenceItems: state.evidenceItems,
     minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
       DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
     requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
       DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
   });
-  console.log(`[Analyzer] MultiScope: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredSummaryKeyFactors.length - prunedSummaryKeyFactors.length} baseless factors`);
+  console.log(`[Analyzer] MultiContext: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredSummaryKeyFactors.length - prunedSummaryKeyFactors.length} baseless factors`);
 
   return {
     claimVerdicts: prunedClaimVerdicts,
@@ -8040,10 +7955,10 @@ The JSON object MUST include these top-level keys:
   };
 }
 
-async function generateSingleScopeVerdicts(
+async function generateSingleContextVerdicts(
   state: ResearchState,
   understanding: ClaimUnderstanding,
-  factsFormatted: string,
+  evidenceItemsFormatted: string,
   claimsFormatted: string,
   model: any,
   analysisInputType: InputType,
@@ -8064,12 +7979,12 @@ async function generateSingleScopeVerdicts(
     understanding.originalInputDisplay ||
     understanding.mainThesis ||
     analysisInput;
-  // PR-F: Exclude CTX_UNSCOPED claims from verdict calculations (fixes Blocker F)
-  // Only include direct claims that are NOT unscoped (unscoped is display-only)
+  // PR-F: Exclude CTX_UNASSIGNED claims from verdict calculations (fixes Blocker F)
+  // Only include direct claims that are NOT unassigned (unassigned is display-only)
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
     (c: any) =>
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
-      c?.contextId !== UNSCOPED_ID
+      c?.contextId !== UNASSIGNED_CONTEXT_ID
   );
   const claimsForVerdicts = expandClaimsForVerdicts(
     understanding,
@@ -8154,7 +8069,7 @@ When a claim contains causal language ("due to", "caused by", "because of", "lin
 
 Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
-- **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?
+- **Check EvidenceScope alignment**: Are evidence items being compared from compatible EvidenceScopes?
 - **Flag EvidenceScope mismatches**: Different EvidenceScopes are NOT directly comparable
 - **Note in reasoning**: When EvidenceScope affects interpretation, mention it
 
@@ -8176,8 +8091,8 @@ Key factors must address the SUBSTANCE of the original claim:
 - supports="no": Factor refutes the claim with counter-evidence (NOT just disputed/contested)
 - supports="neutral": Use ONLY when you genuinely have no information about this factor
 
-${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events and widely-reported facts, use what you know!
-DO NOT mark factors as "neutral" if you know the answer from your training data.` : "Use ONLY the provided facts and sources."}
+${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events and widely-reported information, use what you know!
+DO NOT mark factors as "neutral" if you know the answer from your training data.` : "Use ONLY the provided evidence and sources."}
 
 CRITICAL: Being "contested" by stakeholders does NOT make something neutral.
 Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
@@ -8192,7 +8107,7 @@ Example: "Critics claim X was unfair" but X followed proper procedures = "yes", 
   * **NO CIRCULAR CONTESTATION**: The entity that made the decision CANNOT contest it
   * Example: If evaluating "Was Court X's trial fair?", contestedBy CANNOT be "Court X" or "Court X judiciary"
 - factualBasis: Does opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS (audits, logs, datasets)
+  * "established" = Opposition cites SPECIFIC DOCUMENTED EVIDENCE (audits, logs, datasets)
   * "disputed" = Opposition has some factual counter-evidence but debatable
   * "opinion" = NO factual counter-evidence (just claims, political statements, executive orders)
   * "unknown" = Cannot determine
@@ -8223,7 +8138,7 @@ CRITICAL - factualBasis MUST be "opinion" for:
   * 0-14: FALSE (direct contradiction)
 
 CRITICAL: Stakeholder contestation is NOT counter-evidence.
-Use the TRUE/MOSTLY-TRUE band (>=72%) if you know the facts support the claim despite stakeholder opposition.
+Use the TRUE/MOSTLY-TRUE band (>=72%) if you know the evidence supports the claim despite stakeholder opposition.
 
 ${getKnowledgeInstruction(
   state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
@@ -8239,7 +8154,7 @@ ${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 ${claimsFormatted}
 
 ## EVIDENCE (UNVERIFIED EXTRACTED STATEMENTS)
-${factsFormatted}`;
+${evidenceItemsFormatted}`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_SIMPLE> | null = null;
 
@@ -8263,7 +8178,7 @@ ${factsFormatted}`;
       // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
       // The LLM sometimes returns {"$PARAMETER_NAME": {actual data}} instead of {actual data}
       if (rawOutput.$PARAMETER_NAME && typeof rawOutput.$PARAMETER_NAME === 'object') {
-        console.log("[generateSingleScopeVerdicts] Unwrapping $PARAMETER_NAME wrapper");
+        console.log("[generateSingleContextVerdicts] Unwrapping $PARAMETER_NAME wrapper");
         rawOutput = rawOutput.$PARAMETER_NAME;
       }
       // Also check for other common wrapper patterns
@@ -8271,7 +8186,7 @@ ${factsFormatted}`;
       for (const key of wrapperKeys) {
         if (rawOutput[key] && typeof rawOutput[key] === 'object' &&
             (rawOutput[key].verdictSummary || rawOutput[key].claimVerdicts)) {
-          console.log(`[generateSingleScopeVerdicts] Unwrapping ${key} wrapper`);
+          console.log(`[generateSingleContextVerdicts] Unwrapping ${key} wrapper`);
           rawOutput = rawOutput[key];
           break;
         }
@@ -8294,13 +8209,13 @@ ${factsFormatted}`;
           ...cv,
           verdict: typeof cv.verdict === 'string' ? parseFloat(cv.verdict) : cv.verdict,
           confidence: typeof cv.confidence === 'string' ? parseFloat(cv.confidence) : cv.confidence,
-          supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateSingleScopeVerdicts"),
+          supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateSingleContextVerdicts"),
         })),
       };
 
       // Debug: Log what we received vs what we're using
-      console.log("[Analyzer] generateSingleScopeVerdicts: Raw verdictSummary.answer =", rawOutput.verdictSummary?.answer, "type =", typeof rawOutput.verdictSummary?.answer);
-      console.log("[Analyzer] generateSingleScopeVerdicts: Coerced verdictSummary.answer =", coercedOutput.verdictSummary?.answer);
+      console.log("[Analyzer] generateSingleContextVerdicts: Raw verdictSummary.answer =", rawOutput.verdictSummary?.answer, "type =", typeof rawOutput.verdictSummary?.answer);
+      console.log("[Analyzer] generateSingleContextVerdicts: Coerced verdictSummary.answer =", coercedOutput.verdictSummary?.answer);
 
       parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
     }
@@ -8354,7 +8269,6 @@ ${factsFormatted}`;
       nuancedAnswer:
         "Verdict generation failed due to a structured-output error (often caused by truncated JSON). Manual review recommended.",
       keyFactors: [],
-      hasMultipleProceedings: false,
       hasMultipleContexts: false,
     };
 
@@ -8362,11 +8276,12 @@ ${factsFormatted}`;
     const centralSupported = fallbackVerdicts.filter(
       (v) => v.isCentral && v.truthPercentage >= 72,
     ).length;
+    const fallbackContexts = understanding.analysisContexts || [];
     const articleAnalysis: ArticleAnalysis = {
       inputType: analysisInputType,
       verdictSummary,
-      hasMultipleProceedings: false,
       hasMultipleContexts: false,
+      analysisContexts: fallbackContexts,
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
       claimsAverageTruthPercentage: 50,
@@ -8458,10 +8373,10 @@ ${factsFormatted}`;
       }
 
       // v2.8.4: Use LLM-provided isCounterClaim, fall back to regex detection
-      const supportingEvidenceIds =
-        cv.supportingEvidenceIds && cv.supportingEvidenceIds.length > 0
-          ? cv.supportingEvidenceIds
-          : cv.supportingFactIds ?? [];
+        const supportingEvidenceIds =
+          cv.supportingEvidenceIds && cv.supportingEvidenceIds.length > 0
+            ? cv.supportingEvidenceIds
+            : [];
       const claimFacts = state.evidenceItems.filter(f =>
         supportingEvidenceIds.includes(f.id)
       );
@@ -8541,25 +8456,25 @@ ${factsFormatted}`;
   const evidencedNegatives = prunedKeyFactors.filter(
     (f: KeyFactor) => f.supports === "no" && f.factualBasis === "established",
   ).length;
-  // v2.6.43: Fixed to match multi-scope path - only count contested negatives WITHOUT established counter-evidence
+  // v2.6.43: Fixed to match multi-context path - only count contested negatives WITHOUT established counter-evidence
   // If factualBasis is "established", the negative should NOT be discounted just because it's labeled contested.
   const contestedNegatives = prunedKeyFactors.filter(
     (f: KeyFactor) => f.supports === "no" && f.isContested && f.factualBasis !== "established",
   ).length;
 
   // DEBUG: Log raw values from LLM before normalization
-  console.log("[generateSingleScopeVerdicts] Raw verdictSummary.answer =", parsed.verdictSummary.answer, "type =", typeof parsed.verdictSummary.answer);
-  console.log("[generateSingleScopeVerdicts] Raw verdictSummary.confidence =", parsed.verdictSummary.confidence, "type =", typeof parsed.verdictSummary.confidence);
+  console.log("[generateSingleContextVerdicts] Raw verdictSummary.answer =", parsed.verdictSummary.answer, "type =", typeof parsed.verdictSummary.answer);
+  console.log("[generateSingleContextVerdicts] Raw verdictSummary.confidence =", parsed.verdictSummary.confidence, "type =", typeof parsed.verdictSummary.confidence);
 
   let answerTruthPct = normalizePercentage(parsed.verdictSummary.answer);
   let correctedConfidence = normalizePercentage(parsed.verdictSummary.confidence);
 
   // DEBUG: Log normalized values
-  console.log("[generateSingleScopeVerdicts] Normalized answerTruthPct =", answerTruthPct);
-  console.log("[generateSingleScopeVerdicts] Normalized correctedConfidence =", correctedConfidence);
+  console.log("[generateSingleContextVerdicts] Normalized answerTruthPct =", answerTruthPct);
+  console.log("[generateSingleContextVerdicts] Normalized correctedConfidence =", correctedConfidence);
 
   // v2.6.20: Removed factor-based boost to ensure input neutrality
-  debugLog("generateSingleScopeVerdicts: No factor-based boost applied", {
+  debugLog("generateSingleContextVerdicts: No factor-based boost applied", {
     answerTruthPct,
     positiveFactors,
     evidencedNegatives,
@@ -8568,7 +8483,7 @@ ${factsFormatted}`;
 
   // PR-C: Clamp truth percentage to valid range (defensive)
   const clampedAnswerTruthPct = clampTruthPercentage(answerTruthPct);
-  console.log("[generateSingleScopeVerdicts] Final clampedAnswerTruthPct =", clampedAnswerTruthPct);
+  console.log("[generateSingleContextVerdicts] Final clampedAnswerTruthPct =", clampedAnswerTruthPct);
   const verdictSummary: VerdictSummary = {
     displayText: displayText,
     answer: clampedAnswerTruthPct,
@@ -8577,7 +8492,6 @@ ${factsFormatted}`;
     shortAnswer: parsed.verdictSummary.shortAnswer || "",
     nuancedAnswer: parsed.verdictSummary.nuancedAnswer || "",
     keyFactors: prunedKeyFactors, // v2.8.6: Use pruned keyFactors
-    hasMultipleProceedings: false,
     hasMultipleContexts: false,
     hasContestedFactors,
   };
@@ -8588,8 +8502,8 @@ ${factsFormatted}`;
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
     verdictSummary,
-    hasMultipleProceedings: false,
     hasMultipleContexts: false,
+    analysisContexts: understanding.analysisContexts || [],
     articleThesis: understanding.impliedClaim || understanding.articleThesis,
     logicalFallacies: [],
 
@@ -8610,13 +8524,13 @@ ${factsFormatted}`;
 
   // v2.8.6: Prune tangential claims with no/low evidence
   const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts, {
-    facts: state.evidenceItems,
+    evidenceItems: state.evidenceItems,
     minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
       DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
     requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
       DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
   });
-  console.log(`[Analyzer] SingleScope: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredKeyFactors.length - prunedKeyFactors.length} baseless factors`);
+  console.log(`[Analyzer] SingleContext: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredKeyFactors.length - prunedKeyFactors.length} baseless factors`);
 
   return {
     claimVerdicts: prunedClaimVerdicts,
@@ -8628,7 +8542,7 @@ ${factsFormatted}`;
 async function generateClaimVerdicts(
   state: ResearchState,
   understanding: ClaimUnderstanding,
-  factsFormatted: string,
+  evidenceItemsFormatted: string,
   claimsFormatted: string,
   model: any,
 ): Promise<{
@@ -8638,12 +8552,12 @@ async function generateClaimVerdicts(
   // Detect if topic involves procedural/legal/institutional analysis
   // This determines whether to generate Key Factors (unified analysis mode)
   const isProceduralTopic = detectProceduralTopic(understanding, state.originalText);
-  // PR-F: Exclude CTX_UNSCOPED claims from verdict calculations (fixes Blocker F)
-  // Only include direct claims that are NOT unscoped (unscoped is display-only)
+  // PR-F: Exclude CTX_UNASSIGNED claims from verdict calculations (fixes Blocker F)
+  // Only include direct claims that are NOT unassigned (unassigned is display-only)
   const directClaimsForVerdicts = (understanding.subClaims || []).filter(
     (c: any) =>
       (!c?.thesisRelevance || c.thesisRelevance === "direct") &&
-      c?.contextId !== UNSCOPED_ID
+      c?.contextId !== UNASSIGNED_CONTEXT_ID
   );
   const claimsForVerdicts = expandClaimsForVerdicts(
     understanding,
@@ -8786,7 +8700,7 @@ When a claim uses causal language (e.g., "caused by", "due to", "because of"):
 Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
 
 **When evaluating claims with EvidenceScope-specific evidence**:
-1. **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?
+1. **Check EvidenceScope alignment**: Are evidence items being compared from compatible EvidenceScopes?
 2. **Flag EvidenceScope mismatches**: If Source A uses a broad boundary and Source B uses a narrow boundary, these are NOT directly comparable
 3. **Note in reasoning**: When EvidenceScope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
 4. **Don't treat EvidenceScope differences as contradictions**: "40% efficient (broad boundary)" and "60% efficient (narrow boundary)" can BOTH be correct under different EvidenceScopes
@@ -8800,10 +8714,10 @@ Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence sourc
 ## ARTICLE VERDICT ANALYSIS (CRITICAL - Article Verdict Problem)
 
 The article's overall credibility is NOT simply the average of individual claim verdicts!
-An article with mostly accurate facts can still be MISLEADING if:
+An article with mostly accurate evidence items can still be MISLEADING if:
 1. The main conclusion doesn't follow from the evidence
 2. There are logical fallacies (correlation ≠ causation, cherry-picking, etc.)
-3. The framing creates a false impression despite accurate individual facts
+3. The framing creates a false impression despite accurate individual evidence items
 
 AFTER analyzing individual claims, evaluate the article as a whole:
 
@@ -8815,7 +8729,7 @@ AFTER analyzing individual claims, evaluate the article as a whole:
    - False equivalence
    - Appeal to authority without substance
    - Hasty generalization
-4. Even if individual facts are accurate, is the article's framing MISLEADING?
+4. Even if individual evidence items are accurate, is the article's framing MISLEADING?
 5. Are CENTRAL claims (marked [CENTRAL]) true? If central claims are FALSE but supporting claims are TRUE, the article is MISLEADING.
 
 6. **Central-claim dominance rule (generic)**:
@@ -8853,7 +8767,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   // LLM should independently identify claims lacking scientific basis based on evidence quality
   systemPrompt += `\n\nEVIDENCE QUALITY GUIDANCE:
 - Claims that rely on mechanisms contradicting established physics, chemistry, or biology should be treated with skepticism
-- Claims lacking peer-reviewed scientific evidence, or relying on anecdotes/testimonials, are OPINION not established fact
+- Claims lacking peer-reviewed scientific evidence, or relying on anecdotes/testimonials, are OPINION not established evidence
 - If a claim's mechanism has no scientific basis, it should be in the MOSTLY-FALSE/FALSE bands (0-28%)
 - However, do NOT place claims in the FALSE band (0-14%) unless directly contradicted by strong evidence`;
 
@@ -8866,7 +8780,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
         { role: "system", content: systemPrompt },
         {
           role: "user",
-          content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${factsFormatted}`,
+          content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${evidenceItemsFormatted}`,
         },
       ],
       temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
@@ -8968,8 +8882,8 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "article",
-      hasMultipleProceedings: false,
       hasMultipleContexts: false,
+      analysisContexts: understanding.analysisContexts || [],
       articleThesis: understanding.articleThesis,
       logicalFallacies: [],
       claimsAverageTruthPercentage: 50,
@@ -9070,10 +8984,10 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
       }
 
       // v2.8.4: Use LLM-provided isCounterClaim, fall back to regex detection
-      const supportingEvidenceIds =
-        cv.supportingEvidenceIds && cv.supportingEvidenceIds.length > 0
-          ? cv.supportingEvidenceIds
-          : cv.supportingFactIds ?? [];
+        const supportingEvidenceIds =
+          cv.supportingEvidenceIds && cv.supportingEvidenceIds.length > 0
+            ? cv.supportingEvidenceIds
+            : [];
       const claimFacts = state.evidenceItems.filter(f =>
         supportingEvidenceIds.includes(f.id)
       );
@@ -9150,7 +9064,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
       const validationResults = await textAnalysisService.validateVerdicts({
         thesis: understanding.impliedClaim || understanding.articleThesis || "",
         claimVerdicts: claimVerdictsForValidation,
-        evidenceSummary: factsFormatted?.slice(0, 2000) || "",
+        evidenceSummary: evidenceItemsFormatted?.slice(0, 2000) || "",
         mode: "full",
       });
 
@@ -9286,7 +9200,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   const nonCentralClaims = independentVerdicts.filter((v) => !v.isCentral);
   const nonCentralSupported = nonCentralClaims.filter((v) => v.truthPercentage >= 72);
 
-  // Detect Article Verdict Problem pattern: accurate supporting facts but false central claim
+  // Detect Article Verdict Problem pattern: accurate supporting evidence but false central claim
   const hasMisleadingPattern =
     centralRefuted.length > 0 &&
     nonCentralSupported.length >= 2 &&
@@ -9306,12 +9220,12 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   }
 
   // Article Verdict Problem Override: Central claim refuted = article MISLEADING
-  // This catches the "Coffee cures cancer" pattern where supporting facts are true
+  // This catches the "Coffee cures cancer" pattern where supporting evidence is true
   // but the main conclusion is false
   if (hasMisleadingPattern && articleTruthPct > 35) {
     console.log(`[Analyzer] Article Verdict Problem detected: ${centralRefuted.length} central claims refuted, ${nonCentralSupported.length} supporting claims true, but avg=${claimsAvgTruthPct}%. Overriding to MISLEADING.`);
     articleTruthPct = 35; // MISLEADING range (29-42%)
-    articleVerdictOverrideReason = `Central claim(s) refuted despite ${nonCentralSupported.length} accurate supporting facts - article draws unsupported conclusions`;
+    articleVerdictOverrideReason = `Central claim(s) refuted despite ${nonCentralSupported.length} accurate supporting evidence - article draws unsupported conclusions`;
   }
 
   // Check if article verdict differs significantly from claims average
@@ -9372,7 +9286,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
 
   // v2.8.6: Prune tangential claims with no/low evidence and opinion-only factors
   const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts, {
-    facts: state.evidenceItems,
+    evidenceItems: state.evidenceItems,
     minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
       DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
     requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
@@ -9388,11 +9302,10 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
 
   return {
     claimVerdicts: prunedClaimVerdicts,
-    articleAnalysis: {
-      inputType: understanding.detectedInputType,
-      hasMultipleProceedings: false,
-      hasMultipleContexts: false,
-      articleThesis: understanding.articleThesis,
+      articleAnalysis: {
+        inputType: understanding.detectedInputType,
+        hasMultipleContexts: false,
+        articleThesis: understanding.articleThesis,
       logicalFallacies: parsed.articleAnalysis.logicalFallacies,
 
       // Claims summary
@@ -9406,7 +9319,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
         ? articleVerdictOverrideReason
         : verdictDiffers
           ? articleTruthPct < claimsAvgTruthPct
-            ? "Article uses facts misleadingly or draws unsupported conclusions"
+            ? "Article uses evidence misleadingly or draws unsupported conclusions"
             : "Article's conclusion is better supported than individual claims suggest"
           : undefined,
 
@@ -9433,7 +9346,7 @@ async function generateTwoPanelSummary(
   model: any,
 ): Promise<TwoPanelSummary> {
   const understanding = state.understanding!;
-  const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
+  const hasMultipleContexts = articleAnalysis.hasMultipleContexts;
 
   const rawInputDisplay = String(
     understanding.originalInputDisplay || state.originalInput || "",
@@ -9453,7 +9366,7 @@ async function generateTwoPanelSummary(
     state.originalText.split("\n")[0]?.trim().slice(0, 100) ||
     "Analyzed Content";
 
-  if (hasMultipleProceedings) {
+  if (hasMultipleContexts) {
     title += ` (${understanding.analysisContexts.length} contexts)`;
   }
 
@@ -9476,7 +9389,7 @@ async function generateTwoPanelSummary(
       ? displaySummary
       : (understanding.subClaims[0]?.text || "Analysis of provided content"),
     keyFindings: understanding.subClaims.slice(0, 4).map((c: any) => c.text),
-    reasoning: hasMultipleProceedings
+    reasoning: hasMultipleContexts
       ? `Covers ${understanding.analysisContexts.length} contexts: ${understanding.analysisContexts.map((p: AnalysisContext) => p.shortName).join(", ")}`
       : `Examined ${understanding.subClaims.length} claims`,
     conclusion:
@@ -9600,8 +9513,8 @@ function generateMethodologyAssessment(
 ): string {
   const parts: string[] = [];
   parts.push("Unified analysis mode");
-  if (articleAnalysis.hasMultipleProceedings)
-    parts.push(`Multi-scope (${articleAnalysis.proceedings?.length})`);
+  if (articleAnalysis.hasMultipleContexts)
+    parts.push(`Multi-context (${articleAnalysis.analysisContexts?.length})`);
   if (articleAnalysis.verdictSummary?.hasContestedFactors)
     parts.push("Contested factors flagged");
   parts.push(`${state.searchQueries.length} searches`);
@@ -9619,7 +9532,7 @@ async function generateReport(
 ): Promise<string> {
   const understanding = state.understanding!;
   const analysisMode = state.pipelineConfig?.analysisMode ?? DEFAULT_PIPELINE_CONFIG.analysisMode;
-  const hasMultipleProceedings = articleAnalysis.hasMultipleProceedings;
+  const hasMultipleContexts = articleAnalysis.hasMultipleContexts;
   const useRich = CONFIG.reportStyle === "rich";
   const iconPositive = useRich ? "✅" : "";
   const iconNegative = useRich ? "❌" : "";
@@ -9820,7 +9733,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const tieringEnabled = pipelineConfig.llmTiering;
 
   const understandModelInfo = getModelForTask("understand", undefined, pipelineConfig);
-  const extractFactsModelInfo = getModelForTask("extract_evidence", undefined, pipelineConfig);
+  const extractEvidenceModelInfo = getModelForTask("extract_evidence", undefined, pipelineConfig);
   const verdictModelInfo = getModelForTask("verdict", undefined, pipelineConfig);
 
   const provider = verdictModelInfo.provider;
@@ -9828,14 +9741,14 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const model = verdictModelInfo.model;
 
   debugLog(
-    `LLM Provider: ${provider}; Models: understand=${understandModelInfo.modelName}, extract=${extractFactsModelInfo.modelName}, verdict=${verdictModelInfo.modelName}`,
+    `LLM Provider: ${provider}; Models: understand=${understandModelInfo.modelName}, extract=${extractEvidenceModelInfo.modelName}, verdict=${verdictModelInfo.modelName}`,
   );
   console.log(
-    `[Analyzer] Using LLM provider: ${provider}; understand=${understandModelInfo.modelName}, extract=${extractFactsModelInfo.modelName}, verdict=${verdictModelInfo.modelName}`,
+    `[Analyzer] Using LLM provider: ${provider}; understand=${understandModelInfo.modelName}, extract=${extractEvidenceModelInfo.modelName}, verdict=${verdictModelInfo.modelName}`,
   );
 
   const llmLabel = tieringEnabled
-    ? `${provider} (understand=${understandModelInfo.modelName}, extract=${extractFactsModelInfo.modelName}, verdict=${verdictModelInfo.modelName})`
+    ? `${provider} (understand=${understandModelInfo.modelName}, extract=${extractEvidenceModelInfo.modelName}, verdict=${verdictModelInfo.modelName})`
     : `${provider}/${modelName}`;
 
   await emit(`Analysis mode: ${mode} (v${CONFIG.schemaVersion}) | LLM: ${llmLabel}`, 2);
@@ -9871,7 +9784,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // Initialize budget tracker (PR 6: p95 Hardening)
   const budget = getBudgetConfig(pipelineConfig);
   const budgetTracker = createBudgetTracker();
-  console.log(`[Budget] Initialized: maxIterationsPerScope=${budget.maxIterationsPerScope}, maxTotalIterations=${budget.maxTotalIterations}, maxTotalTokens=${budget.maxTotalTokens}`);
+  console.log(`[Budget] Initialized: maxIterationsPerContext=${budget.maxIterationsPerContext}, maxTotalIterations=${budget.maxTotalIterations}, maxTotalTokens=${budget.maxTotalTokens}`);
 
   // ==========================================================================
   // External Prompt File System: Load prompt and track version per job
@@ -9998,7 +9911,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       analysisContexts: [],
       requiresSeparateAnalysis: false,
       backgroundDetails: "",
-      analysisContext: "",
       mainThesis: textToAnalyze.slice(0, 200),
       articleThesis: textToAnalyze.slice(0, 200),
       subClaims: [
@@ -10052,9 +9964,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     iteration++;
 
     // PR 6: Budget enforcement - check GLOBAL total iteration limit
-    // CRITICAL FIX: Check global limit directly (not per-scope check with constant)
-    // Previous bug: used checkScopeIterationBudget with "GLOBAL_RESEARCH" constant,
-    // which applied maxIterationsPerScope (3) to entire research, causing premature termination
+    // CRITICAL FIX: Check global limit directly (not per-context check with constant)
+    // Previous bug: used checkContextIterationBudget with "GLOBAL_RESEARCH" constant,
+    // which applied maxIterationsPerContext (3) to entire research, causing premature termination
     if (state.budgetTracker.totalIterations >= state.budget.maxTotalIterations) {
       const reason = `Total iterations reached max: ${state.budgetTracker.totalIterations}/${state.budget.maxTotalIterations}`;
       console.warn(`[Budget] ${reason}`);
@@ -10067,7 +9979,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     }
 
     // Record this iteration (increments totalIterations counter)
-    // Note: Per-scope limits enforced separately when researching specific scopes
+    // Note: Per-context limits enforced separately when researching specific contexts
     recordIteration(state.budgetTracker, `ITER_${iteration}`);
 
     const baseProgress = Math.round(10 + (iteration / config.maxResearchIterations) * 50);
@@ -10075,15 +9987,15 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const decision = decideNextResearch(state);
     if (decision.complete) {
       await emit(
-        `Research complete: ${state.evidenceItems.length} facts, ${state.searchQueries.length} searches`,
+        `Research complete: ${state.evidenceItems.length} evidence items, ${state.searchQueries.length} searches`,
         baseProgress,
       );
       break;
     }
 
     let focusMsg = `Step 2.${iteration}: ${decision.focus}`;
-    if (decision.targetProceedingId)
-      focusMsg += ` [${decision.targetProceedingId}]`;
+    if (decision.targetContextId)
+      focusMsg += ` [${decision.targetContextId}]`;
     await emit(focusMsg, baseProgress);
 
     if (decision.isContradictionSearch)
@@ -10209,27 +10121,30 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             searchProvider: "Gemini-Grounded",
           });
 
-          // Extract facts from successfully fetched grounded sources
+          // Extract evidence items from successfully fetched grounded sources
           if (successfulSources.length > 0) {
             await emit(
-              `Extracting facts from ${successfulSources.length} grounded sources`,
+              `Extracting evidence items from ${successfulSources.length} grounded sources`,
               baseProgress + 6,
             );
             for (const source of successfulSources) {
-              const facts = await extractFacts(
+              const extractedEvidenceItems = await extractEvidence(
                 source,
                 decision.focus!,
-                extractFactsModelInfo.model,
+                extractEvidenceModelInfo.model,
                 state.understanding!.analysisContexts,
-                decision.targetProceedingId,
+                decision.targetContextId,
                 state.understanding?.impliedClaim || state.originalInput,
                 undefined, // fromOppositeClaimSearch
                 state.pipelineConfig,
               );
-              const uniqueFacts = deduplicateFacts(facts, state.evidenceItems);
-              state.evidenceItems.push(...uniqueFacts);
+              const uniqueEvidenceItems = deduplicateEvidenceItems(
+                extractedEvidenceItems,
+                state.evidenceItems,
+              );
+              state.evidenceItems.push(...uniqueEvidenceItems);
             }
-            console.log(`[Analyzer] Extracted facts from ${successfulSources.length} grounded sources`);
+            console.log(`[Analyzer] Extracted evidence items from ${successfulSources.length} grounded sources`);
           }
 
           // Continue to next iteration (skip standard search)
@@ -10379,30 +10294,33 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       state.contradictionSourcesFound = successfulSources.length;
 
     await emit(
-      `Extracting facts [LLM: ${extractFactsModelInfo.provider}/${extractFactsModelInfo.modelName}]`,
+      `Extracting evidence items [LLM: ${extractEvidenceModelInfo.provider}/${extractEvidenceModelInfo.modelName}]`,
       baseProgress + 8,
     );
     const extractStart = Date.now();
-    // v2.6.29: Mark facts from counter_evidence category as fromOppositeClaimSearch
+    // v2.6.29: Mark evidence items from counter_evidence category as fromOppositeClaimSearch
     const isOppositeClaimSearch = decision.category === "counter_evidence";
     for (const source of successfulSources) {
-      const facts = await extractFacts(
+      const extractedEvidenceItems = await extractEvidence(
         source,
         decision.focus!,
-        extractFactsModelInfo.model,
+        extractEvidenceModelInfo.model,
         state.understanding!.analysisContexts,
-        decision.targetProceedingId,
+        decision.targetContextId,
         state.understanding?.impliedClaim || state.originalInput,
         isOppositeClaimSearch,
         state.pipelineConfig,
       );
-      // v2.6.29: Deduplicate facts before adding to avoid near-duplicates
-      const uniqueFacts = deduplicateFacts(facts, state.evidenceItems);
-      state.evidenceItems.push(...uniqueFacts);
-      state.llmCalls++; // Each extractFacts call is 1 LLM call
+      // v2.6.29: Deduplicate evidence items before adding to avoid near-duplicates
+      const uniqueEvidenceItems = deduplicateEvidenceItems(
+        extractedEvidenceItems,
+        state.evidenceItems,
+      );
+      state.evidenceItems.push(...uniqueEvidenceItems);
+      state.llmCalls++; // Each extractEvidence call is 1 LLM call
     }
     const extractElapsed = Date.now() - extractStart;
-    console.log(`[Analyzer] Fact extraction for iteration ${iteration} completed in ${extractElapsed}ms for ${successfulSources.length} sources`);
+    console.log(`[Analyzer] Evidence extraction for iteration ${iteration} completed in ${extractElapsed}ms for ${successfulSources.length} sources`);
 
     state.iterations.push({
       number: iteration,
@@ -10412,33 +10330,37 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       evidenceItemsExtracted: state.evidenceItems.length,
     });
     await emit(
-      `Iteration ${iteration}: ${state.evidenceItems.length} facts from ${state.sources.length} sources (${extractElapsed}ms)`,
+      `Iteration ${iteration}: ${state.evidenceItems.length} evidence items from ${state.sources.length} sources (${extractElapsed}ms)`,
       baseProgress + 12,
     );
   }
 
   // Phase 1.5: Aggregate claimDirection telemetry across all iterations
   if (state.evidenceItems.length > 0) {
-    const totalFacts = state.evidenceItems.length;
-    const factsWithClaimDirection = state.evidenceItems.filter(f => f.claimDirection && f.claimDirection !== undefined).length;
-    const missingRate = Math.round(100 * (totalFacts - factsWithClaimDirection) / totalFacts);
+    const totalEvidenceItems = state.evidenceItems.length;
+    const evidenceItemsWithClaimDirection = state.evidenceItems.filter(
+      (item) => item.claimDirection && item.claimDirection !== undefined,
+    ).length;
+    const missingRate = Math.round(
+      100 * (totalEvidenceItems - evidenceItemsWithClaimDirection) / totalEvidenceItems,
+    );
 
-    if (factsWithClaimDirection < totalFacts) {
+    if (evidenceItemsWithClaimDirection < totalEvidenceItems) {
       console.warn(
-        `[Telemetry] AGGREGATE claimDirection: ${factsWithClaimDirection}/${totalFacts} have direction ` +
+        `[Telemetry] AGGREGATE claimDirection: ${evidenceItemsWithClaimDirection}/${totalEvidenceItems} have direction ` +
         `(${missingRate}% missing)`
       );
     } else {
       console.log(
-        `[Telemetry] AGGREGATE claimDirection: 100% coverage (${totalFacts}/${totalFacts} facts)`
+        `[Telemetry] AGGREGATE claimDirection: 100% coverage (${totalEvidenceItems}/${totalEvidenceItems} evidence items)`
       );
     }
 
     // Break down by direction value
     const byDirection = {
-      supports: state.evidenceItems.filter(f => f.claimDirection === "supports").length,
-      contradicts: state.evidenceItems.filter(f => f.claimDirection === "contradicts").length,
-      neutral: state.evidenceItems.filter(f => f.claimDirection === "neutral").length,
+      supports: state.evidenceItems.filter((item) => item.claimDirection === "supports").length,
+      contradicts: state.evidenceItems.filter((item) => item.claimDirection === "contradicts").length,
+      neutral: state.evidenceItems.filter((item) => item.claimDirection === "neutral").length,
     };
     console.log(
       `[Telemetry] claimDirection breakdown: ` +
@@ -10446,33 +10368,33 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     );
   }
 
-  // STEP 4.4: Evidence-driven scope refinement (fixes under-split / asymmetric scope detection)
+  // STEP 4.4: Evidence-driven context refinement (fixes under-split / asymmetric context detection)
   await emit(
-    `Refining scopes from evidence [LLM: ${extractFactsModelInfo.provider}/${extractFactsModelInfo.modelName}]`,
+    `Refining contexts from evidence [LLM: ${extractEvidenceModelInfo.provider}/${extractEvidenceModelInfo.modelName}]`,
     60,
   );
-  const scopeRefineStart = Date.now();
-  const scopeRefine = await refineScopesFromEvidence(state, extractFactsModelInfo.model);
-  state.llmCalls += scopeRefine.llmCalls;
-  if (scopeRefine.updated) {
-    debugLog("refineScopesFromEvidence: applied", {
-      scopeCount: state.understanding?.analysisContexts?.length ?? 0,
-      scopeIds: (state.understanding?.analysisContexts || []).map((p: any) => p.id),
+  const contextRefineStart = Date.now();
+  const contextRefine = await refineContextsFromEvidence(state, extractEvidenceModelInfo.model);
+  state.llmCalls += contextRefine.llmCalls;
+  if (contextRefine.updated) {
+    debugLog("refineContextsFromEvidence: applied", {
+      contextCount: state.understanding?.analysisContexts?.length ?? 0,
+      contextIds: (state.understanding?.analysisContexts || []).map((p: any) => p.id),
       requiresSeparateAnalysis: state.understanding?.requiresSeparateAnalysis,
       subClaimsCount: state.understanding?.subClaims?.length ?? 0,
     });
   }
-  debugLog(`refineScopesFromEvidence: completed in ${Date.now() - scopeRefineStart}ms`, {
-    updated: scopeRefine.updated,
-    llmCalls: scopeRefine.llmCalls,
+  debugLog(`refineContextsFromEvidence: completed in ${Date.now() - contextRefineStart}ms`, {
+    updated: contextRefine.updated,
+    llmCalls: contextRefine.llmCalls,
   });
 
-  // STEP 4.5: Post-research outcome extraction - extract outcomes from facts and create claims
+  // STEP 4.5: Post-research outcome extraction - extract outcomes from evidence and create claims
   await emit(
-    `Extracting outcomes from research [LLM: ${extractFactsModelInfo.provider}/${extractFactsModelInfo.modelName}]`,
+    `Extracting outcomes from research [LLM: ${extractEvidenceModelInfo.provider}/${extractEvidenceModelInfo.modelName}]`,
     62,
   );
-  const outcomeClaims = await extractOutcomeClaimsFromFacts(state, extractFactsModelInfo.model);
+  const outcomeClaims = await extractOutcomeClaimsFromEvidence(state, extractEvidenceModelInfo.model);
   if (outcomeClaims.length > 0) {
     state.understanding!.subClaims.push(...outcomeClaims);
     normalizeSubClaimsImportance(state.understanding!.subClaims as any);
@@ -10488,20 +10410,20 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     await emit(`Added ${outcomeClaims.length} outcome-related claims`, 63);
   }
 
-  // STEP 4.6: Enrich scopes with outcomes discovered in evidence (generic LLM-based)
-  // This updates "pending"/"unknown" outcomes with actual outcomes found in facts
+  // STEP 4.6: Enrich contexts with outcomes discovered in evidence (generic LLM-based)
+  // This updates "pending"/"unknown" outcomes with actual outcomes found in evidence
   await emit(
-    `Enriching scopes with discovered outcomes [LLM: ${extractFactsModelInfo.provider}/${extractFactsModelInfo.modelName}]`,
+    `Enriching contexts with discovered outcomes [LLM: ${extractEvidenceModelInfo.provider}/${extractEvidenceModelInfo.modelName}]`,
     64,
   );
-  await enrichScopesWithOutcomes(state, extractFactsModelInfo.model);
+  await enrichContextsWithOutcomes(state, extractEvidenceModelInfo.model);
 
   // Deterministic backstop for the Context Relevance Requirement:
-  // 1) if we're already in multi-scope mode, place any unassigned (direct/tangential) claims into a special UNSCOPED scope
-  // 2) prune scopes that have zero claims AND zero facts, and recompute requiresSeparateAnalysis.
-  state.understanding = ensureUnscopedClaimsScope(state.understanding!);
-  state.understanding = pruneScopesByCoverage(state.understanding!, state.evidenceItems);
-  state.understanding = ensureAtLeastOneScope(state.understanding!);
+  // 1) if we're already in multi-context mode, place any unassigned (direct/tangential) claims into a special UNASSIGNED context
+  // 2) prune contexts that have zero claims AND zero evidence, and recompute requiresSeparateAnalysis.
+  state.understanding = ensureUnassignedClaimsContext(state.understanding!);
+  state.understanding = pruneContextsByCoverage(state.understanding!, state.evidenceItems);
+  state.understanding = ensureAtLeastOneContext(state.understanding!);
   validateContextReferences(state.understanding!, state.evidenceItems);
 
   // P0: Normalize evidence classifications with fallback tracking before verdict generation
@@ -10566,9 +10488,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     searchConfig.provider,
   );
 
-  // Safety: ensure we never emit a result with zero scopes, even if scope refinement was
-  // skipped/rejected and the initial understanding produced no scopes.
-  state.understanding = ensureAtLeastOneScope(state.understanding!);
+  // Safety: ensure we never emit a result with zero contexts, even if context refinement was
+  // skipped/rejected and the initial understanding produced no contexts.
+  state.understanding = ensureAtLeastOneContext(state.understanding!);
 
   // PR 6: Log budget stats and warn if exceeded
   const budgetStats = getBudgetStats(state.budgetTracker, state.budget);
@@ -10600,12 +10522,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       searchProvider: searchConfig.provider,
       inputType: input.inputType,
       detectedInputType: state.understanding!.detectedInputType,
-      hasMultipleProceedings: articleAnalysis.hasMultipleProceedings,
       hasMultipleContexts: articleAnalysis.hasMultipleContexts,
-      hasMultipleScopes: articleAnalysis.hasMultipleContexts,  // Alias (use hasMultipleContexts)
-      proceedingCount: state.understanding!.analysisContexts.length,
       contextCount: state.understanding!.analysisContexts.length,
-      scopeCount: state.understanding!.analysisContexts.length,  // Alias
       hasContestedFactors:
         articleAnalysis.verdictSummary?.hasContestedFactors || false,
       // NEW v2.4.5: Pseudoscience detection (pattern-based checks removed)
@@ -10640,16 +10558,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       })(),
     },
     verdictSummary: verdictSummary || null,
-    // Primary: "scopes" (unified terminology for bounded analytical frames)
     analysisContexts: state.understanding!.analysisContexts,
-    scopes: state.understanding!.analysisContexts,
-    // Backward compatibility alias
-    proceedings: state.understanding!.analysisContexts,
     twoPanelSummary,
     articleAnalysis,
     claimVerdicts: finalClaimVerdicts,
     understanding: state.understanding,
-    facts: state.evidenceItems,
+    evidenceItems: state.evidenceItems,
     // Enhanced source data (v2.4.3)
     sources: state.sources.map((s: FetchedSource) => ({
       id: s.id,
@@ -10682,7 +10596,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     classificationFallbacks: state.fallbackTracker.hasFallbacks() ? state.fallbackTracker.getSummary() : undefined,
     qualityGates: {
       passed:
-        state.evidenceItems.length >= config.minFactsRequired &&
+        state.evidenceItems.length >= config.minEvidenceItemsRequired &&
         state.contradictionSearchPerformed &&
         gate4Stats.publishable > 0,
       // Gate 1: Claim Validation (characterization / telemetry; should not hard-filter opinion/prediction claims)
@@ -10703,7 +10617,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         centralKept: gate4Stats.centralKept,
       },
       summary: {
-        totalFacts: state.evidenceItems.length,
+        totalEvidenceItems: state.evidenceItems.length,
         totalSources: state.sources.length,
         searchesPerformed: state.searchQueries.length,
         contradictionSearchPerformed: state.contradictionSearchPerformed,
@@ -10718,3 +10632,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   return { resultJson, reportMarkdown };
 }
+
+
+

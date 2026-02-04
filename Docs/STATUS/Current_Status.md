@@ -309,7 +309,6 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 
 3. **Terminology Clarity**
    - AnalysisContext vs EvidenceScope clearly distinguished
-   - Legacy `detectedScopes` naming preserved with documentation notes
    - Backward compatibility maintained
 
 4. **Multi-Phase Implementation**

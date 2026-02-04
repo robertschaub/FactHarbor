@@ -120,7 +120,7 @@ interface AnalysisContext {
 
 Analysis contexts are determined from:
 1. **Input analysis** (understandClaim phase): Explicit or implied analysis contexts in user query
-2. **Evidence extraction** (extractFacts phase): Sources may define their own EvidenceScope via `evidenceScope`
+2. **Evidence extraction** (extractEvidence phase): Sources may define their own EvidenceScope via `evidenceScope`
 3. **Claim decomposition**: Claims tagged with `contextId` (legacy: `relatedProceedingId`)
 
 ### EvidenceScope vs AnalysisContext
@@ -172,11 +172,11 @@ flowchart TD
 - `validateContestation()` in `aggregation.ts`: KeyFactor-level validation (orchestrated pipeline)
 - `detectClaimContestation()` in `aggregation.ts`: Claim-level heuristic (canonical pipeline)
 
-### Fact Categorization
+### Evidence Item Categorization
 
-**File**: `apps/web/src/lib/analyzer.ts` (ExtractedFact interface, line ~1800)
+**File**: `apps/web/src/lib/analyzer/types.ts` (EvidenceItem interface)
 
-Facts are categorized during extraction:
+Evidence items are categorized during extraction:
 - `category: "evidence"` - Supporting evidence
 - `category: "criticism"` - Counter-evidence or opposing views
 - `category: "expert_quote"` - Expert testimony
@@ -187,9 +187,9 @@ Facts are categorized during extraction:
 ### Contestation Fields
 
 ```typescript
-interface ExtractedFact {
+interface EvidenceItem {
   category: "legal_provision" | "evidence" | "expert_quote" | "statistic" | "event" | "criticism";
-  isContestedClaim?: boolean;  // True if this fact contests a claim
+  isContestedClaim?: boolean;  // True if this evidence item contests a claim
   claimSource?: string;         // Who makes the contested claim
 }
 ```
@@ -201,12 +201,12 @@ interface ExtractedFact {
 Counter-evidence is scoped to relevant analysis contexts:
 
 ```typescript
-// Count contradicting facts (criticism category)
-// Only count criticism facts that are:
+// Count contradicting evidence items (criticism category)
+// Only count criticism items that are:
 // 1. In the same context as the verdict, OR
 // 2. Not scoped to any specific context (general criticism)
-const contradictingFactCount = facts.filter(f =>
-  !verdict.supportingFactIds.includes(f.id) &&
+const contradictingFactCount = evidenceItems.filter(f =>
+  !verdict.supportingEvidenceIds.includes(f.id) &&
   f.category === "criticism" &&
   (!f.contextId || f.contextId === verdict.contextId)
 ).length;
@@ -522,7 +522,7 @@ Claims about proportionality/appropriateness without comparative evidence are fo
 
 ```typescript
 const isEvaluativeOutcome = hasNumber && EVALUATIVE_OUTCOME_RE.test(claimText);
-const hasBenchmarkEvidence = hasComparativeBenchmarkEvidenceFromFacts(factsById, cv.supportingFactIds);
+const hasBenchmarkEvidence = hasComparativeBenchmarkEvidenceFromFacts(factsById, cv.supportingEvidenceIds);
 
 if (isEvaluativeOutcome && !hasBenchmarkEvidence) {
   truthPct = 50;  // Uncertain

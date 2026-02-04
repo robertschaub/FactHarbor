@@ -32,7 +32,7 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 
 ### EvidenceItem (formerly ExtractedFact)
 - **EvidenceItem** = Extracted evidence from a source (NOT a verified fact)
-- **Legacy name**: `ExtractedFact` - still works as deprecated alias
+- **Legacy name**: `ExtractedFact` - removed in v3.1 breaking change
 - **Key fields**:
   - `statement` (legacy: `fact`) - the extracted statement text
   - `category` - type of evidence (direct_evidence, statistic, expert_quote, etc.)
@@ -65,7 +65,7 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 
 ### Pipeline Integrity
 - **No stage skipping**: Understand → Research → Verdict (all required)
-- **Evidence transparency**: Every verdict must cite supporting or opposing facts
+- **Evidence transparency**: Every verdict must cite supporting or opposing evidence items
 - **Quality gates**: Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 
 ---

@@ -347,7 +347,7 @@ export interface ResearchIteration {
 /**
  * Evidence item extracted from a source.
  *
- * CRITICAL: This is NOT a verified fact. It is unverified material (statement,
+ * CRITICAL: This is NOT verified evidence. It is unverified material (statement,
  * statistic, quote, etc.) extracted from a source to be evaluated against claims.
  *
  * The name "EvidenceItem" clarifies this semantic distinction:
@@ -482,7 +482,7 @@ export interface ArticleAnalysis {
    * Multi-context indicator and per-context metadata array.
    */
   hasMultipleContexts: boolean; // true when contexts answer different questions
-  analysisContexts: AnalysisContext[];
+  analysisContexts?: AnalysisContext[];
   verdictSummary?: any; // v2.6.38: Added for orchestrated pipeline verdict summary
 
   articleThesis: string;

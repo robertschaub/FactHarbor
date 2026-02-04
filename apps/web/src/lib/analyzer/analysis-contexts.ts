@@ -9,7 +9,7 @@
 import {
   detectInstitutionCode,
   extractAllCapsToken,
-  inferScopeTypeLabel,
+  inferContextTypeLabel,
   inferToAcronym,
   contextTypeRank,
 } from "./config";
@@ -25,11 +25,8 @@ import type { PipelineConfig } from "../config-schemas";
 // ============================================================================
 
 /**
- * Detected AnalysisContext from scope detection (heuristic or LLM).
+ * Detected AnalysisContext from context detection (heuristic or LLM).
  * This represents a top-level bounded analytical frame.
- *
- * TERMINOLOGY: "Scope" in this file historically referred to AnalysisContext.
- * This module name now reflects AnalysisContext for clarity. See types.ts:98-126 for definitions.
  */
 export interface DetectedAnalysisContext {
   id: string;
@@ -37,12 +34,6 @@ export interface DetectedAnalysisContext {
   type: string;
   metadata?: Record<string, any>;
 }
-
-/**
- * @deprecated Use DetectedAnalysisContext instead.
- * "Scope" here refers to AnalysisContext (top-level analytical frame), NOT EvidenceScope.
- */
-export type DetectedScope = DetectedAnalysisContext;
 
 /**
  * Schema for AnalysisContext detection output from LLM.
@@ -77,63 +68,63 @@ export type ContextDetectionOutput = z.infer<typeof ContextDetectionOutputSchema
 // ============================================================================
 
 /**
- * Reserved scope ID for facts that don't map to any detected scope.
+ * Reserved context ID for evidence items that don't map to any detected context.
  * Exported for use in tests and other modules.
  */
-export const UNSCOPED_ID = "CTX_UNSCOPED";
+export const UNASSIGNED_CONTEXT_ID = "CTX_UNASSIGNED";
 
 // ============================================================================
-// HEURISTIC SCOPE PRE-DETECTION (v2.8)
+// HEURISTIC CONTEXT PRE-DETECTION (v2.8)
 // ============================================================================
 
 /**
  * Module-level compiled patterns (cached, initialized with defaults)
- * Can be reset via setScopeHeuristicsLexicon() for testing
+ * Can be reset via setContextHeuristicsLexicon() for testing
  */
 let _patterns = getAggregationPatterns();
 
 /**
- * Reset scope heuristic patterns to defaults.
+ * Reset context heuristic patterns to defaults.
  */
-export function setScopeHeuristicsLexicon(): void {
+export function setContextHeuristicsLexicon(): void {
   _patterns = getAggregationPatterns();
 }
 
 /**
  * Get current patterns (for testing)
  */
-export function getScopeHeuristicsPatternsConfig() {
+export function getContextHeuristicsPatternsConfig() {
   return _patterns;
 }
 
 /**
  * Detect potential analysis contexts from input text using heuristic patterns.
- * Returns suggested scopes to guide LLM, or null if no patterns match.
+ * Returns suggested contexts to guide LLM, or null if no patterns match.
  *
- * v2.8: Code-level scope pre-detection for comparison claims, legal/trial fairness, etc.
+ * v2.8: Code-level context pre-detection for comparison claims, legal/trial fairness, etc.
  *
  * This function is GENERIC BY DESIGN - it uses abstract patterns, not domain-specific keywords.
  *
- * @param text - Input text to analyze for scope patterns
- * @returns Array of detected scopes or null if no patterns match
+ * @param text - Input text to analyze for context patterns
+ * @returns Array of detected contexts or null if no patterns match
  */
-export function detectContextsHeuristic(text: string, config?: PipelineConfig): DetectedScope[] | null {
-  const scopes: DetectedScope[] = [];
+export function detectContextsHeuristic(text: string, config?: PipelineConfig): DetectedAnalysisContext[] | null {
+  const contexts: DetectedAnalysisContext[] = [];
 
   // Pattern 1: Comparison claims (efficiency, performance, impact)
-  const hasComparison = matchesAnyPattern(text, _patterns.scopeComparisonPatterns);
-  const hasEfficiencyKeywords = matchesAnyPattern(text, _patterns.scopeEfficiencyKeywords);
+  const hasComparison = matchesAnyPattern(text, _patterns.contextComparisonPatterns);
+  const hasEfficiencyKeywords = matchesAnyPattern(text, _patterns.contextEfficiencyKeywords);
 
   if (hasComparison && hasEfficiencyKeywords) {
-    scopes.push(
+    contexts.push(
       {
-        id: "SCOPE_PRODUCTION",
+        id: "CTX_PRODUCTION",
         name: "Production/Creation Phase Analysis",
         type: "methodological",
         metadata: { phase: "production", boundaries: "upstream" }
       },
       {
-        id: "SCOPE_USAGE",
+        id: "CTX_USAGE",
         name: "Usage/Operation Phase Analysis",
         type: "methodological",
         metadata: { phase: "usage", boundaries: "downstream" }
@@ -142,29 +133,29 @@ export function detectContextsHeuristic(text: string, config?: PipelineConfig): 
   }
 
   // Pattern 2: Legal/trial fairness claims
-  const hasLegalFairness = matchesAnyPattern(text, _patterns.scopeLegalFairnessPatterns);
-  const hasLegalProcess = matchesAnyPattern(text, _patterns.scopeLegalProcessKeywords);
+  const hasLegalFairness = matchesAnyPattern(text, _patterns.contextLegalFairnessPatterns);
+  const hasLegalProcess = matchesAnyPattern(text, _patterns.contextLegalProcessKeywords);
   const fairnessCue = /\b(fair|unfair|appropriate|proper|just|legitimate)\b/i;
 
   if (hasLegalFairness || (hasLegalProcess && fairnessCue.test(text))) {
-    scopes.push(
+    contexts.push(
       {
-        id: "SCOPE_LEGAL_PROC",
+        id: "CTX_LEGAL_PROC",
         name: "Legal Procedures and Compliance",
         type: "legal",
         metadata: { focus: "procedural compliance" }
       },
       {
-        id: "SCOPE_OUTCOMES",
+        id: "CTX_OUTCOMES",
         name: "Outcomes and Consequences",
         type: "general",
         metadata: { focus: "results and impact" }
       }
     );
 
-    if (matchesAnyPattern(text, _patterns.scopeInternationalCuePatterns)) {
-      scopes.push({
-        id: "SCOPE_INTL_PERSPECTIVE",
+    if (matchesAnyPattern(text, _patterns.contextInternationalCuePatterns)) {
+      contexts.push({
+        id: "CTX_INTL_PERSPECTIVE",
         name: "International Perspectives and Criticism",
         type: "general",
         metadata: { focus: "external assessment" }
@@ -173,17 +164,17 @@ export function detectContextsHeuristic(text: string, config?: PipelineConfig): 
   }
 
   // Pattern 3: Environmental/health comparisons
-  const hasEnvHealth = matchesAnyPattern(text, _patterns.scopeEnvHealthPatterns);
+  const hasEnvHealth = matchesAnyPattern(text, _patterns.contextEnvHealthPatterns);
   if (hasComparison && hasEnvHealth) {
-    scopes.push(
+    contexts.push(
       {
-        id: "SCOPE_DIRECT",
+        id: "CTX_DIRECT",
         name: "Direct/Immediate Effects",
         type: "scientific",
         metadata: { timeframe: "immediate" }
       },
       {
-        id: "SCOPE_LIFECYCLE",
+        id: "CTX_LIFECYCLE",
         name: "Full Lifecycle Assessment",
         type: "scientific",
         metadata: { timeframe: "complete" }
@@ -191,7 +182,7 @@ export function detectContextsHeuristic(text: string, config?: PipelineConfig): 
     );
   }
 
-  return scopes.length > 0 ? scopes : null;
+  return contexts.length > 0 ? contexts : null;
 }
 
 /**
@@ -200,9 +191,9 @@ export function detectContextsHeuristic(text: string, config?: PipelineConfig): 
  */
 export async function detectContextsLLM(
   text: string,
-  heuristicSeeds: DetectedScope[] | null,
+  heuristicSeeds: DetectedAnalysisContext[] | null,
   config: PipelineConfig,
-): Promise<DetectedScope[]> {
+): Promise<DetectedAnalysisContext[]> {
   const modelInfo = getModelForTask("understand", undefined, config);
 
   const seedHint = heuristicSeeds?.length
@@ -216,7 +207,7 @@ export async function detectContextsLLM(
     ? `\n\nCORE ENTITIES: ${entities.join(", ")}`
     : "";
 
-  const systemPrompt = `You identify distinct AnalysisContexts for a claim.\n\nCRITICAL TERMINOLOGY:\n- Use "AnalysisContext" to mean top-level bounded analytical frames.\n- Use "EvidenceScope" only for per-source metadata (methodology/boundaries/time/geo).\n- Do NOT use the word "scope" when referring to AnalysisContexts.\n\nINCOMPATIBILITY TEST: Split contexts ONLY if combining them would be MISLEADING because they evaluate fundamentally different things.\n\nWHEN TO SPLIT (only when clearly supported):\n- Different formal authorities (distinct institutional decision-makers)\n- Different measurement boundaries or system definitions\n- Different regulatory regimes or time periods that change the analytical frame\n\nDO NOT SPLIT ON:\n- Pro vs con viewpoints\n- Different evidence types\n- Incidental geographic/temporal mentions\n- Public perception or meta commentary\n\nOUTPUT REQUIREMENTS:\n- Provide contexts as JSON array under 'contexts'.\n- Each context must include id, name, type, confidence (0-1), reasoning, metadata.\n- Use neutral, generic names tied to the input (no domain-specific hardcoding).${seedHint}${entityHint}`;
+  const systemPrompt = `You identify distinct AnalysisContexts for a claim.\n\nCRITICAL TERMINOLOGY:\n- Use "AnalysisContext" to mean top-level bounded analytical frames.\n- Use "EvidenceScope" only for per-source metadata (methodology/boundaries/time/geo).\n- Avoid the bare word "context" unless you explicitly mean AnalysisContext.\n\nINCOMPATIBILITY TEST: Split contexts ONLY if combining them would be MISLEADING because they evaluate fundamentally different things.\n\nWHEN TO SPLIT (only when clearly supported):\n- Different formal authorities (distinct institutional decision-makers)\n- Different measurement boundaries or system definitions\n- Different regulatory regimes or time periods that change the analytical frame\n\nDO NOT SPLIT ON:\n- Pro vs con viewpoints\n- Different evidence types\n- Incidental geographic/temporal mentions\n- Public perception or meta commentary\n\nOUTPUT REQUIREMENTS:\n- Provide contexts as JSON array under 'contexts'.\n- Each context must include id, name, type, confidence (0-1), reasoning, metadata.\n- Use neutral, generic names tied to the input (no domain-specific hardcoding).${seedHint}${entityHint}`;
 
   const userPrompt = `Detect distinct AnalysisContexts for:\n\n${text}`;
 
@@ -268,7 +259,7 @@ export async function detectContextsLLM(
 export async function detectContextsHybrid(
   text: string,
   config: PipelineConfig,
-): Promise<DetectedScope[] | null> {
+): Promise<DetectedAnalysisContext[] | null> {
   const detectionEnabled =
     config.contextDetectionEnabled;
   if (detectionEnabled === false) return null;
@@ -284,37 +275,37 @@ export async function detectContextsHybrid(
 
   if (method === "llm") return llmContexts;
 
-  return mergeAndDeduplicateScopes(heuristic, llmContexts, config);
+  return mergeAndDeduplicateContexts(heuristic, llmContexts, config);
 }
 
-function mergeAndDeduplicateScopes(
-  heuristic: DetectedScope[] | null,
-  llmContexts: DetectedScope[],
+function mergeAndDeduplicateContexts(
+  heuristic: DetectedAnalysisContext[] | null,
+  llmContexts: DetectedAnalysisContext[],
   config: PipelineConfig,
-): DetectedScope[] {
-  const merged = new Map<string, DetectedScope>();
+): DetectedAnalysisContext[] {
+  const merged = new Map<string, DetectedAnalysisContext>();
 
-  for (const scope of heuristic || []) {
-    merged.set(scope.id, {
-      ...scope,
-      metadata: { ...(scope.metadata || {}), detectionMethod: "heuristic" },
+  for (const context of heuristic || []) {
+    merged.set(context.id, {
+      ...context,
+      metadata: { ...(context.metadata || {}), detectionMethod: "heuristic" },
     });
   }
 
-  for (const scope of llmContexts) {
-    merged.set(scope.id, scope);
+  for (const context of llmContexts) {
+    merged.set(context.id, context);
   }
 
   const threshold =
     config.contextDedupThreshold ??
     0.85;
-  const deduplicated: DetectedScope[] = [];
+  const deduplicated: DetectedAnalysisContext[] = [];
 
-  for (const scope of merged.values()) {
+  for (const context of merged.values()) {
     const isDuplicate = deduplicated.some(
-      (existing) => calculateTextSimilarity(scope.name, existing.name) >= threshold,
+      (existing) => calculateTextSimilarity(context.name, existing.name) >= threshold,
     );
-    if (!isDuplicate) deduplicated.push(scope);
+    if (!isDuplicate) deduplicated.push(context);
   }
 
   return deduplicated.sort((a, b) => {
@@ -347,24 +338,24 @@ function calculateTextSimilarity(text1: string, text2: string): number {
 /**
  * Backward-compatible synchronous wrapper for deterministic seed logic.
  */
-export function detectContexts(text: string): DetectedScope[] | null {
+export function detectContexts(text: string): DetectedAnalysisContext[] | null {
   return detectContextsHeuristic(text);
 }
 
 /**
- * Format detected scopes as a hint string for LLM prompts.
+ * Format detected contexts as a hint string for LLM prompts.
  *
- * @param scopes - Array of detected scopes
+ * @param contexts - Array of detected contexts
  * @param detailed - If true, include metadata and MUST instruction
- * @returns Formatted string for prompt injection (empty string if no scopes)
+ * @returns Formatted string for prompt injection (empty string if no contexts)
  */
-export function formatDetectedContextsHint(scopes: DetectedScope[] | null, detailed: boolean = false): string {
-  if (!scopes || scopes.length === 0) return '';
+export function formatDetectedContextsHint(contexts: DetectedAnalysisContext[] | null, detailed: boolean = false): string {
+  if (!contexts || contexts.length === 0) return '';
 
-  const lines = scopes.map(s =>
+  const lines = contexts.map(c =>
     detailed
-      ? `- ${s.id}: ${s.name} (${s.type}) ${JSON.stringify(s.metadata || {})}`
-      : `- ${s.id}: ${s.name} (${s.type})`
+      ? `- ${c.id}: ${c.name} (${c.type}) ${JSON.stringify(c.metadata || {})}`
+      : `- ${c.id}: ${c.name} (${c.type})`
   );
 
   const instruction = detailed
@@ -375,22 +366,22 @@ export function formatDetectedContextsHint(scopes: DetectedScope[] | null, detai
 }
 
 // ============================================================================
-// INPUT CANONICALIZATION FOR SCOPE DETECTION (v2.8.2)
+// INPUT CANONICALIZATION FOR CONTEXT DETECTION (v2.8.2)
 // ============================================================================
 
 /**
- * Canonicalize input text for scope detection to ensure consistent scope
+ * Canonicalize input text for context detection to ensure consistent context
  * identification regardless of input phrasing (question vs statement).
  *
  * This addresses the input neutrality issue where:
- * - "Was the legal proceeding fair?" detected 3 scopes
- * - "The legal proceeding was fair" detected 4 scopes
+ * - "Was the legal proceeding fair?" detected 3 contexts
+ * - "The legal proceeding was fair" detected 4 contexts
  *
  * The function normalizes both phrasings to the same canonical form for
- * scope detection purposes.
+ * context detection purposes.
  *
  * @param input - Raw or pre-normalized input text
- * @returns Canonical form for scope detection
+ * @returns Canonical form for context detection
  */
 export function canonicalizeInputForContextDetection(input: string): string {
   let text = input.trim();
@@ -422,7 +413,7 @@ export function canonicalizeInputForContextDetection(input: string): string {
           text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
         } else {
           // Heuristic: split before common predicate starters (adjectives, verbs)
-          const starterMatch = _patterns.scopePredicateStarters
+          const starterMatch = _patterns.contextPredicateStarters
             .map((pattern) => rest.match(pattern))
             .find((match) => match && typeof match.index === "number");
 
@@ -445,9 +436,9 @@ export function canonicalizeInputForContextDetection(input: string): string {
     }
   }
 
-  // 3. Remove filler words that don't affect scope detection
+  // 3. Remove filler words that don't affect context detection
   const fillerRe = new RegExp(
-    _patterns.scopeFillerWords.map((p) => p.source).join("|"),
+    _patterns.contextFillerWords.map((p) => p.source).join("|"),
     "gi",
   );
   text = text.replace(fillerRe, " ").replace(/\s+/g, " ").trim();
@@ -457,17 +448,17 @@ export function canonicalizeInputForContextDetection(input: string): string {
   const coreEntities = extractCoreEntities(text);
 
   // 5. Normalize case for consistency (lowercase for comparison)
-  const scopeKey = text.toLowerCase();
+  const contextKey = text.toLowerCase();
 
-  console.log(`[Scope Canonicalization] Input: "${input.substring(0, 60)}..."`);
-  console.log(`[Scope Canonicalization] Canonical: "${scopeKey.substring(0, 60)}..."`);
-  console.log(`[Scope Canonicalization] Core entities: ${coreEntities.join(', ')}`);
+  console.log(`[Context Canonicalization] Input: "${input.substring(0, 60)}..."`);
+  console.log(`[Context Canonicalization] Canonical: "${contextKey.substring(0, 60)}..."`);
+  console.log(`[Context Canonicalization] Core entities: ${coreEntities.join(', ')}`);
 
-  return scopeKey;
+  return contextKey;
 }
 
 /**
- * Extract core semantic entities from text for scope matching.
+ * Extract core semantic entities from text for context matching.
  * These are the key nouns/proper nouns that define what the input is about.
  *
  * CRITICAL: This function MUST receive the original-case text (before lowercasing)
@@ -484,13 +475,13 @@ function extractCoreEntities(text: string): string[] {
   entities.push(...properNouns.map(n => n.toLowerCase()));
 
   // Look for legal/institutional terms (case-insensitive)
-  const legalTerms = _patterns.scopeLegalTerms.filter((pattern) => pattern.test(text)).map((p) => {
+  const legalTerms = _patterns.contextLegalTerms.filter((pattern) => pattern.test(text)).map((p) => {
     const match = text.match(p);
     return match ? match[0] : "";
   }).filter(Boolean);
   entities.push(...legalTerms.map((t) => t.toLowerCase()));
 
-  const jurisdictions = _patterns.scopeJurisdictionIndicators.filter((pattern) => pattern.test(text)).map((p) => {
+  const jurisdictions = _patterns.contextJurisdictionIndicators.filter((pattern) => pattern.test(text)).map((p) => {
     const match = text.match(p);
     return match ? match[0] : "";
   }).filter(Boolean);
@@ -501,8 +492,8 @@ function extractCoreEntities(text: string): string[] {
 }
 
 /**
- * Generate a scope detection hint based on the original input text.
- * This helps guide the LLM to detect consistent scopes regardless of phrasing.
+ * Generate a context detection hint based on the original input text.
+ * This helps guide the LLM to detect consistent contexts regardless of phrasing.
  *
  * IMPORTANT: Pass the ORIGINAL text (not lowercased) so proper nouns are detected.
  */
@@ -513,25 +504,25 @@ export function generateContextDetectionHint(originalInput: string): string {
     return '';
   }
 
-  // Build a hint that emphasizes what scopes to look for
+  // Build a hint that emphasizes what contexts to look for
   const hint = `
 CONTEXT DETECTION HINT (for input neutrality):
-Focus on detecting scopes related to these core entities: ${entities.join(', ')}.
-Do NOT detect scopes based on:
+Focus on detecting contexts related to these core entities: ${entities.join(', ')}.
+Do NOT detect contexts based on:
 - Whether the input is phrased as a question or statement
-- Public perception/opinion scopes (unless explicitly mentioned in input)
-- Meta-level scopes about "trust" or "confidence" in institutions (unless core topic)
-Focus on concrete, factual scopes (legal proceedings, regulatory reviews, methodological frameworks).
+- Public perception/opinion contexts (unless explicitly mentioned in input)
+- Meta-level contexts about "trust" or "confidence" in institutions (unless core topic)
+Focus on concrete, factual contexts (legal proceedings, regulatory reviews, methodological frameworks).
 `;
   return hint;
 }
 
 // ============================================================================
-// DETERMINISTIC SCOPE ID GENERATION
+// DETERMINISTIC CONTEXT ID GENERATION
 // ============================================================================
 
 /**
- * Simple deterministic hash function for scope IDs.
+ * Simple deterministic hash function for context IDs.
  * Returns a consistent 8-character hex string for the same input.
  *
  * @param str - Input string to hash
@@ -550,31 +541,31 @@ function simpleHash(str: string): string {
 }
 
 /**
- * Generate a deterministic scope ID from scope properties.
- * Format: {INST}_{hash} or SCOPE_{hash}
+ * Generate a deterministic context ID from context properties.
+ * Format: {INST}_{hash} or CTX_{hash}
  *
  * Examples:
  * - TSE_a3f2 (has institution code)
  * - WTW_d9e8 (methodology acronym)
- * - SCOPE_f7a29b3c (no clear institution)
+ * - CTX_f7a29b3c (no clear institution)
  *
- * @param scope - Scope object with name, description, metadata
+ * @param context - AnalysisContext object with name, description, metadata
  * @param inst - Institution code (if detected)
  * @param idx - Index for fallback (only used if no other identifier available)
- * @returns Deterministic scope ID
+ * @returns Deterministic context ID
  */
-function generateDeterministicScopeId(
-  scope: any,
+function generateDeterministicContextId(
+  context: any,
   inst: string | null,
   idx: number
 ): string {
   // Create stable input for hashing
   const hashInput = JSON.stringify({
-    name: String(scope.name || "").toLowerCase().trim(),
-    description: String(scope.description || "").toLowerCase().trim().slice(0, 100),
-    court: String(scope.metadata?.court || "").toLowerCase().trim(),
-    institution: String(scope.metadata?.institution || "").toLowerCase().trim(),
-    subject: String(scope.subject || "").toLowerCase().trim().slice(0, 100),
+    name: String(context.name || "").toLowerCase().trim(),
+    description: String(context.description || "").toLowerCase().trim().slice(0, 100),
+    court: String(context.metadata?.court || "").toLowerCase().trim(),
+    institution: String(context.metadata?.institution || "").toLowerCase().trim(),
+    subject: String(context.subject || "").toLowerCase().trim().slice(0, 100),
   });
 
   // Generate 8-char hash
@@ -586,11 +577,11 @@ function generateDeterministicScopeId(
     return `${inst}_${shortHash}`;
   }
 
-  // Fallback: SCOPE_{hash}
-  return `SCOPE_${fullHash}`;
+  // Fallback: CTX_{hash}
+  return `CTX_${fullHash}`;
 }
 
-export function canonicalizeScopes(
+export function canonicalizeContexts(
   input: string,
   understanding: any,
 ): any {
@@ -603,8 +594,8 @@ export function canonicalizeScopes(
   // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
   // Use a lightweight, mostly-provider-invariant key: inferred type + institution code + court string.
   const sorted = [...contexts].sort((a: any, b: any) => {
-    const al = inferScopeTypeLabel(a);
-    const bl = inferScopeTypeLabel(b);
+    const al = inferContextTypeLabel(a);
+    const bl = inferContextTypeLabel(b);
     const ar = contextTypeRank(al);
     const br = contextTypeRank(bl);
     if (ar !== br) return ar - br;
@@ -624,10 +615,10 @@ export function canonicalizeScopes(
     );
 
   const canonicalContexts = sorted.map((p: any, idx: number) => {
-    const typeLabel = inferScopeTypeLabel(p);
+    const typeLabel = inferContextTypeLabel(p);
     const inst = detectInstitutionCode(p);
     // Generate deterministic ID (PR 3: Pipeline Redesign)
-    let newId = generateDeterministicScopeId(p, inst, idx);
+    let newId = generateDeterministicContextId(p, inst, idx);
     // Handle collisions (extremely rare with hash-based IDs)
     if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
     usedIds.add(newId);
@@ -637,11 +628,11 @@ export function canonicalizeScopes(
     const inferredShortFromName = extractAllCapsToken(rawName);
     const toAcronym = inferToAcronym(rawName);
 
-    // Preserve meaningful scope names from the model/evidence. Only synthesize a fallback
+    // Preserve meaningful context names from the model/evidence. Only synthesize a fallback
     // when the name is missing or obviously generic.
     const isGenericName =
       rawName.length === 0 ||
-      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context|scope)$/i.test(
+      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context)$/i.test(
         rawName,
       ) ||
       /^general$/i.test(rawName);
@@ -654,7 +645,7 @@ export function canonicalizeScopes(
         : `${typeLabel} context`;
     const name = isGenericName ? fallbackName : rawName;
 
-    // Prefer institution codes for legal scopes; otherwise infer an acronym from the name.
+    // Prefer institution codes for legal contexts; otherwise infer an acronym from the name.
     const shortName =
       (rawShort && rawShort.length <= 12 ? rawShort : "") ||
       (inst ? inst : toAcronym || inferredShortFromName) ||
@@ -665,7 +656,7 @@ export function canonicalizeScopes(
       // Keep human-friendly labels, but avoid overwriting meaningful model-provided names.
       name,
       shortName,
-      // Avoid presenting unanchored specifics as facts.
+      // Avoid presenting unanchored specifics as evidence.
       date: hasExplicitYear ? p.date : "",
       status: hasExplicitStatusAnchor ? p.status : "unknown",
     };
@@ -686,7 +677,7 @@ export function canonicalizeScopes(
   };
 }
 
-export function canonicalizeScopesWithRemap(
+export function canonicalizeContextsWithRemap(
   input: string,
   understanding: any,
 ): { understanding: any; idRemap: Map<string, string> } {
@@ -698,8 +689,8 @@ export function canonicalizeScopesWithRemap(
 
   // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
   const sorted = [...contexts].sort((a: any, b: any) => {
-    const al = inferScopeTypeLabel(a);
-    const bl = inferScopeTypeLabel(b);
+    const al = inferContextTypeLabel(a);
+    const bl = inferContextTypeLabel(b);
     const ar = contextTypeRank(al);
     const br = contextTypeRank(bl);
     if (ar !== br) return ar - br;
@@ -719,10 +710,10 @@ export function canonicalizeScopesWithRemap(
     );
 
   const canonicalContexts = sorted.map((p: any, idx: number) => {
-    const typeLabel = inferScopeTypeLabel(p);
+    const typeLabel = inferContextTypeLabel(p);
     const inst = detectInstitutionCode(p);
     // Generate deterministic ID (PR 3: Pipeline Redesign)
-    let newId = generateDeterministicScopeId(p, inst, idx);
+    let newId = generateDeterministicContextId(p, inst, idx);
     // Handle collisions (extremely rare with hash-based IDs)
     if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
     usedIds.add(newId);
@@ -733,7 +724,7 @@ export function canonicalizeScopesWithRemap(
     const toAcronym = inferToAcronym(rawName);
     const isGenericName =
       rawName.length === 0 ||
-      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context|scope)$/i.test(
+      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context)$/i.test(
         rawName,
       ) ||
       /^general$/i.test(rawName);
@@ -776,7 +767,7 @@ export function canonicalizeScopesWithRemap(
   };
 }
 
-export function ensureAtLeastOneScope(
+export function ensureAtLeastOneContext(
   understanding: any,
 ): any {
   if (!understanding) return understanding;
@@ -784,8 +775,8 @@ export function ensureAtLeastOneScope(
     ? understanding.analysisContexts
     : [];
   if (contexts.length > 0) return understanding;
-  // Generate a deterministic ID even for the fallback scope
-  const fallbackScope = {
+  // Generate a deterministic ID even for the fallback context
+  const fallbackContext = {
     name: understanding.impliedClaim
       ? understanding.impliedClaim.substring(0, 100)
       : "General context",
@@ -801,8 +792,8 @@ export function ensureAtLeastOneScope(
     ...understanding,
     analysisContexts: [
       {
-        ...fallbackScope,
-        id: generateDeterministicScopeId(fallbackScope, null, 0),
+        ...fallbackContext,
+        id: generateDeterministicContextId(fallbackContext, null, 0),
       },
     ],
     requiresSeparateAnalysis: false,
@@ -812,18 +803,3 @@ export function ensureAtLeastOneScope(
 // ============================================================================
 // CONTEXT HELPERS
 // ============================================================================
-
-/** Set context heuristics lexicon */
-export const setContextHeuristicsLexicon = setScopeHeuristicsLexicon;
-
-/** Get context heuristics patterns config */
-export const getContextHeuristicsPatternsConfig = getScopeHeuristicsPatternsConfig;
-
-/** Canonicalize contexts */
-export const canonicalizeContexts = canonicalizeScopes;
-
-/** Canonicalize contexts with ID remap */
-export const canonicalizeContextsWithRemap = canonicalizeScopesWithRemap;
-
-/** Ensure at least one context */
-export const ensureAtLeastOneContext = ensureAtLeastOneScope;

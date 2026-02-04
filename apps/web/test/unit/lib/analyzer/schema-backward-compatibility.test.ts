@@ -2,7 +2,7 @@
  * Schema Backward Compatibility Test Suite
  *
  * Tests that schema changes maintain backward compatibility with:
- * - Stored job results (ExtractedFact → EvidenceItem migration)
+ * - Stored job results (legacy evidence item migration)
  * - Stored CalcConfig profiles (new optional fields)
  *
  * @module analyzer/schema-backward-compatibility.test

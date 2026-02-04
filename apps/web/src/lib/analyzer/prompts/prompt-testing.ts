@@ -364,9 +364,7 @@ export function validateOutput(
         errors.push(`Expected at least ${value} subClaims, got ${subClaims?.length || 0}`);
       }
     } else if (key === 'contextCount') {
-      // NOTE: Support both analysisContexts (preferred) and detectedScopes (legacy understand schema).
-      // Legacy fields may still appear in LLM output; keep fallback until migration is fully validated.
-      const contexts = (obj.analysisContexts || obj.detectedScopes) as unknown[];
+      const contexts = obj.analysisContexts as unknown[];
       if (!Array.isArray(contexts) || contexts.length !== value) {
         errors.push(`Expected ${value} contexts, got ${contexts?.length || 0}`);
       }

@@ -6,7 +6,7 @@ function runTests() {
     distinctProceedings: [{ id: "CTX_A" }],
     understanding: { proceedingContext: "Narrative frame" },
     verdicts: [{ proceedingId: "CTX_A", proceedingName: "Context A" }],
-    facts: [{ id: "F1", relatedProceedingId: "CTX_A" }],
+    evidenceItems: [{ id: "E1", relatedProceedingId: "CTX_A" }],
     claims: [{ id: "C1", relatedProceedingId: "CTX_A" }]
   };
 
@@ -15,10 +15,10 @@ function runTests() {
   assert.equal(changed, true);
   assert.ok(Array.isArray(result.analysisContexts));
   assert.equal((result as any).analysisContexts[0].id, "CTX_A");
-  assert.equal((result as any).understanding.analysisContext, "Narrative frame");
+  assert.equal((result as any).understanding.backgroundDetails, "Narrative frame");
   assert.equal((result as any).verdicts[0].contextId, "CTX_A");
   assert.equal((result as any).verdicts[0].contextName, "Context A");
-  assert.equal((result as any).facts[0].contextId, "CTX_A");
+  assert.equal((result as any).evidenceItems[0].contextId, "CTX_A");
   assert.equal((result as any).claims[0].contextId, "CTX_A");
   assert.equal((result as any).distinctProceedings, undefined);
   assert.equal((result as any).understanding.proceedingContext, undefined);

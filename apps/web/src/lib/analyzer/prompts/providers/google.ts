@@ -56,7 +56,7 @@ Maintain clear distinctions:
 - Different perspectives on same matter → NOT separate AnalysisContexts`;
 }
 
-export function getGeminiExtractFactsVariant(): string {
+export function getGeminiExtractEvidenceVariant(): string {
   return `
 ## GEMINI OPTIMIZATION - EVIDENCE EXTRACTION
 

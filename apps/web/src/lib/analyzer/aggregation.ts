@@ -134,7 +134,6 @@ export function calculateWeightedVerdictAverage(
 interface PrunableClaimVerdict {
   thesisRelevance?: "direct" | "tangential" | "irrelevant";
   supportingEvidenceIds?: string[];
-  supportingFactIds?: string[]; // Legacy field name (temporary)
   factualBasis?: "established" | "disputed" | "opinion" | "unknown";
   claimId?: string;
   claimText?: string;
@@ -156,7 +155,7 @@ interface PrunableKeyFactor {
  */
 const MIN_EVIDENCE_FOR_TANGENTIAL = 2;
 
-interface PrunableFact {
+interface PrunableEvidenceItem {
   id: string;
   probativeValue?: "high" | "medium" | "low";
 }
@@ -168,18 +167,17 @@ interface PrunableFact {
 function hasSufficientQualityEvidence(
   claim: {
     supportingEvidenceIds?: string[];
-    supportingFactIds?: string[];
     thesisRelevance?: "direct" | "tangential" | "irrelevant";
     claimText?: string;
     claimId?: string;
   },
-  facts: PrunableFact[],
+  evidenceItems: PrunableEvidenceItem[],
   minEvidenceForTangential: number,
 ): boolean {
   const supportingEvidenceIds =
     claim.supportingEvidenceIds && claim.supportingEvidenceIds.length > 0
       ? claim.supportingEvidenceIds
-      : claim.supportingFactIds ?? [];
+      : [];
   const evidenceCount = supportingEvidenceIds.length;
 
   if (!claim.thesisRelevance || claim.thesisRelevance === "direct") {
@@ -190,20 +188,20 @@ function hasSufficientQualityEvidence(
     return false;
   }
 
-  const supportingFacts = facts.filter((f) => supportingEvidenceIds.includes(f.id));
+  const supportingEvidenceItems = evidenceItems.filter((item) => supportingEvidenceIds.includes(item.id));
 
-  const hasQualityFact = supportingFacts.some(
-    (f) => f.probativeValue === "high" || f.probativeValue === "medium",
+  const hasQualityEvidence = supportingEvidenceItems.some(
+    (item) => item.probativeValue === "high" || item.probativeValue === "medium",
   );
 
-  if (!hasQualityFact) {
+  if (!hasQualityEvidence) {
     console.log(
       `[Prune] Tangential claim has ${evidenceCount} evidence items but none are high-quality: ` +
       `"${(claim.claimText || claim.claimId || "unknown").substring(0, 60)}..."`,
     );
   }
 
-  return hasQualityFact;
+  return hasQualityEvidence;
 }
 
 /**
@@ -215,7 +213,7 @@ function hasSufficientQualityEvidence(
  *
  * A claim is pruned if:
  * - thesisRelevance is "tangential" or "irrelevant" AND
- * - supportingFactIds is empty or below minimum threshold
+ * - supportingEvidenceIds is empty or below minimum threshold
  *
  * Direct claims are NEVER pruned (they are the core of the analysis).
  *
@@ -225,7 +223,7 @@ function hasSufficientQualityEvidence(
 export function pruneTangentialBaselessClaims<T extends PrunableClaimVerdict>(
   claims: T[],
   options: {
-    facts?: PrunableFact[];
+    evidenceItems?: PrunableEvidenceItem[];
     minEvidenceForTangential?: number;
     requireQualityEvidence?: boolean;
   } = {},
@@ -235,7 +233,7 @@ export function pruneTangentialBaselessClaims<T extends PrunableClaimVerdict>(
     options.minEvidenceForTangential ?? MIN_EVIDENCE_FOR_TANGENTIAL,
   );
   const requireQuality = options.requireQualityEvidence ?? false;
-  const facts = options.facts ?? [];
+  const evidenceItems = options.evidenceItems ?? [];
 
   return claims.filter(claim => {
     // Direct claims are never pruned
@@ -247,18 +245,18 @@ export function pruneTangentialBaselessClaims<T extends PrunableClaimVerdict>(
     const supportingEvidenceIds =
       claim.supportingEvidenceIds && claim.supportingEvidenceIds.length > 0
         ? claim.supportingEvidenceIds
-        : claim.supportingFactIds ?? [];
+        : [];
     const evidenceCount = supportingEvidenceIds.length;
     if (evidenceCount < minEvidence) {
       console.log(`[Prune] Dropping tangential claim with insufficient evidence: "${(claim.claimText || claim.claimId || "unknown").substring(0, 60)}..." (${evidenceCount} evidence items, min=${minEvidence})`);
       return false;
     }
 
-    if (requireQuality && facts.length > 0) {
-      return hasSufficientQualityEvidence(claim, facts, minEvidence);
+    if (requireQuality && evidenceItems.length > 0) {
+      return hasSufficientQualityEvidence(claim, evidenceItems, minEvidence);
     }
 
-    if (requireQuality && facts.length === 0) {
+    if (requireQuality && evidenceItems.length === 0) {
       console.warn(
         `[Prune] Quality check enabled but no evidence items provided for claim: "${(claim.claimText || claim.claimId || "unknown").substring(0, 60)}..."`,
       );

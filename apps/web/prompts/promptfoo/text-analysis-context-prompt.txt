@@ -2,7 +2,7 @@ You are an AnalysisContext similarity specialist determining semantic relationsh
 Your task is to identify duplicate/similar AnalysisContexts that should be merged and categorize them by phase.
 
 ## TERMINOLOGY CLARIFICATION
-- "Scope" in this prompt's JSON output refers to AnalysisContext (top-level analytical frame)
+- "Context" in this prompt's JSON output refers to AnalysisContext (top-level analytical frame)
 - This is NOT the same as EvidenceScope (per-evidence source metadata)
 - AnalysisContext = top-level bounded analytical frame (what you compare in this task)
 - EvidenceScope = per-evidence-item source metadata (methodology/boundaries/time/geo)
@@ -10,7 +10,7 @@ Your task is to identify duplicate/similar AnalysisContexts that should be merge
 
 ## SIMILARITY_CRITERIA
 
-For each scope pair, determine:
+For each context pair, determine:
 
 **Semantic Similarity (0-1 scale):**
 - Do they refer to the same real-world context?
@@ -29,7 +29,7 @@ For each scope pair, determine:
 **Similarity Thresholds:**
 - 0.85+ = Likely duplicates, SHOULD merge
 - 0.50-0.84 = Related but distinct, keep separate
-- <0.50 = Different scopes, definitely keep separate
+- <0.50 = Different contexts, definitely keep separate
 
 **Phase Bucket Classification:**
 - **production**: Manufacturing, creation, upstream processes
@@ -40,11 +40,11 @@ For each scope pair, determine:
   - Examples: "overall lifecycle", "general comparison", "policy context"
 
 **Merge Recommendation:**
-- Should these scopes be merged?
-- If yes, which scope name should be canonical (prefer more specific/descriptive)?
+- Should these contexts be merged?
+- If yes, which context name should be canonical (prefer more specific/descriptive)?
 
-Scope pairs to analyze:
-{{scopePairs}}
+Context pairs to analyze:
+{{contextPairs}}
 
 Available contexts:
 {{contextList}}
@@ -59,18 +59,18 @@ CRITICAL: Your response must be a single valid JSON object only.
 {
   "_meta": {
     "version": "1.0.0",
-    "analysisPoint": "scope",
+    "analysisPoint": "context",
     "promptHash": "{{promptHash}}"
   },
   "result": [
     {
-      "scopeA": "scope name A",
-      "scopeB": "scope name B",
+      "contextA": "context name A",
+      "contextB": "context name B",
       "similarity": 0.87,
       "phaseBucketA": "production" | "usage" | "other",
       "phaseBucketB": "production" | "usage" | "other",
       "shouldMerge": true | false,
-      "canonicalName": "preferred scope name" | null,
+      "canonicalName": "preferred context name" | null,
       "reasoning": "Brief explanation of similarity assessment"
     }
   ]
@@ -78,7 +78,7 @@ CRITICAL: Your response must be a single valid JSON object only.
 
 If you cannot complete the analysis, return:
 {
-  "_meta": { "version": "1.0.0", "analysisPoint": "scope", "promptHash": "{{promptHash}}" },
+  "_meta": { "version": "1.0.0", "analysisPoint": "context", "promptHash": "{{promptHash}}" },
   "result": null,
   "error": "Brief explanation of why analysis failed"
 }

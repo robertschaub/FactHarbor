@@ -21,7 +21,7 @@ export interface TestCase {
   inputType: 'text' | 'url';
   expectedVerdict?: VerdictExpectation;
   expectedClaims?: ClaimExpectation[];
-  expectedScopes?: number;
+  expectedContexts?: number;
   description: string;
   difficulty: 'easy' | 'medium' | 'hard';
   tags: string[];
@@ -29,7 +29,7 @@ export interface TestCase {
 
 export type TestCategory =
   | 'simple-factual'
-  | 'multi-scope'
+  | 'multi-context'
   | 'comparative'
   | 'attribution-separation'
   | 'temporal'
@@ -71,7 +71,7 @@ export const BASELINE_TEST_CASES: TestCase[] = [
         centrality: 'high',
       },
     ],
-    description: 'Basic astronomical fact - should be TRUE with high confidence',
+    description: 'Basic astronomical statement - should be TRUE with high confidence',
     difficulty: 'easy',
     tags: ['astronomy', 'basic-science', 'well-established'],
   },
@@ -84,7 +84,7 @@ export const BASELINE_TEST_CASES: TestCase[] = [
       range: { min: 85, max: 100 },
       label: 'TRUE',
     },
-    description: 'Basic physics fact with context qualifier',
+    description: 'Basic physics statement with context qualifier',
     difficulty: 'easy',
     tags: ['physics', 'basic-science', 'well-established'],
   },
@@ -97,7 +97,7 @@ export const BASELINE_TEST_CASES: TestCase[] = [
       range: { min: 85, max: 100 },
       label: 'TRUE',
     },
-    description: 'Basic geography fact',
+    description: 'Basic geography statement',
     difficulty: 'easy',
     tags: ['geography', 'well-established'],
   },
@@ -123,61 +123,61 @@ export const BASELINE_TEST_CASES: TestCase[] = [
       range: { min: 85, max: 100 },
       label: 'TRUE',
     },
-    description: 'Basic biology fact',
+    description: 'Basic biology statement',
     difficulty: 'easy',
     tags: ['biology', 'basic-science', 'well-established'],
   },
 
   // -------------------------------------------------------------------------
-  // Category 2: Multi-Scope Analysis (5 cases)
+  // Category 2: Multi-Context Analysis (5 cases)
   // -------------------------------------------------------------------------
   {
-    id: 'multi-scope-01',
-    category: 'multi-scope',
+    id: 'multi-context-01',
+    category: 'multi-context',
     input: 'Well-to-wheel analysis shows hydrogen vehicles are 40% efficient, while tank-to-wheel shows 60% efficiency',
     inputType: 'text',
-    expectedScopes: 2,
-    description: 'Two distinct methodological scopes (WTW vs TTW)',
+    expectedContexts: 2,
+    description: 'Two distinct methodological contexts (WTW vs TTW)',
     difficulty: 'medium',
     tags: ['methodology', 'energy', 'comparative'],
   },
   {
-    id: 'multi-scope-02',
-    category: 'multi-scope',
+    id: 'multi-context-02',
+    category: 'multi-context',
     input: 'EU regulations require 95g CO2/km by 2025, while US EPA standards allow 140g CO2/mi',
     inputType: 'text',
-    expectedScopes: 2,
-    description: 'Two distinct regulatory scopes (EU vs US)',
+    expectedContexts: 2,
+    description: 'Two distinct regulatory contexts (EU vs US)',
     difficulty: 'medium',
     tags: ['regulation', 'geographic', 'comparative'],
   },
   {
-    id: 'multi-scope-03',
-    category: 'multi-scope',
+    id: 'multi-context-03',
+    category: 'multi-context',
     input: 'Clinical trials showed 90% efficacy in adults but only 70% in children',
     inputType: 'text',
-    expectedScopes: 2,
-    description: 'Two distinct population scopes',
+    expectedContexts: 2,
+    description: 'Two distinct population contexts',
     difficulty: 'medium',
     tags: ['medical', 'population-specific'],
   },
   {
-    id: 'multi-scope-04',
-    category: 'multi-scope',
+    id: 'multi-context-04',
+    category: 'multi-context',
     input: 'The 2020 study found positive results, but the 2023 replication failed to confirm',
     inputType: 'text',
-    expectedScopes: 2,
-    description: 'Two distinct temporal scopes',
+    expectedContexts: 2,
+    description: 'Two distinct temporal contexts',
     difficulty: 'medium',
     tags: ['temporal', 'scientific-replication'],
   },
   {
-    id: 'multi-scope-05',
-    category: 'multi-scope',
+    id: 'multi-context-05',
+    category: 'multi-context',
     input: 'Under GAAP accounting, the profit was $10M, but under IFRS it was $8M',
     inputType: 'text',
-    expectedScopes: 2,
-    description: 'Two distinct accounting methodology scopes',
+    expectedContexts: 2,
+    description: 'Two distinct accounting methodology contexts',
     difficulty: 'medium',
     tags: ['methodology', 'accounting', 'standards'],
   },
@@ -445,14 +445,14 @@ export const BASELINE_TEST_CASES: TestCase[] = [
   },
 
   // -------------------------------------------------------------------------
-  // Category 7: Methodology Scopes (2 cases)
+  // Category 7: Methodology Contexts (2 cases)
   // -------------------------------------------------------------------------
   {
     id: 'methodology-01',
     category: 'methodology',
     input: 'Life-cycle assessment shows electric cars reduce emissions by 40%',
     inputType: 'text',
-    description: 'Methodology-specific claim requiring scope detection',
+    description: 'Methodology-specific claim requiring context detection',
     difficulty: 'medium',
     tags: ['methodology', 'LCA', 'environment'],
   },

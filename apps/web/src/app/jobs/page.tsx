@@ -157,7 +157,7 @@ export default function JobsPage() {
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>📭</div>
           <h3 className={styles.emptyTitle}>No analysis jobs yet</h3>
-          <p className={styles.emptyText}>Start your first fact-check analysis</p>
+          <p className={styles.emptyText}>Start your first verification analysis</p>
           <Link href="/analyze" className={styles.emptyButton}>
             Start Analysis
           </Link>

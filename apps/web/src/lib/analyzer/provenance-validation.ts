@@ -1,7 +1,7 @@
 /**
  * FactHarbor Analyzer - Provenance Validation (PR 5: Phase 0 Ground Realism)
  *
- * Enforces the "Ground Realism" gate: Facts used for verdicts must come from
+ * Enforces the "Ground Realism" gate: Evidence used for verdicts must come from
  * fetched sources (real URLs/documents) with proper provenance metadata.
  *
  * Non-negotiable rule: Do NOT treat LLM-synthesized text as evidence.
@@ -40,7 +40,7 @@ export function getProvenancePatternsConfig() {
 // ============================================================================
 
 export interface ProvenanceValidationResult {
-  /** Whether the fact has valid provenance */
+  /** Whether the evidence item has valid provenance */
   isValid: boolean;
   /** Reason for rejection if invalid */
   failureReason?: string;
@@ -49,7 +49,7 @@ export interface ProvenanceValidationResult {
 }
 
 /**
- * Validate that a fact has proper provenance (real source URL + excerpt).
+ * Validate that an evidence item has proper provenance (real source URL + excerpt).
  *
  * Pass criteria:
  * - sourceUrl must be present and point to a real, fetchable URL
@@ -147,10 +147,10 @@ export function validateEvidenceProvenance(evidenceItem: EvidenceItem): Provenan
 }
 
 /**
- * Filter facts to only include those with valid provenance.
+ * Filter evidence items to only include those with valid provenance.
  *
  * This is the enforcement point for the "Ground Realism" gate:
- * facts without real sources cannot enter the verdict pipeline.
+ * evidence items without real sources cannot enter the verdict pipeline.
  */
 export function filterEvidenceByProvenance(
   evidenceItems: EvidenceItem[]

@@ -51,7 +51,7 @@
   padding: 8px 12px 12px;
 }
 
-.factItem + .factItem {
+.evidenceItem + .evidenceItem {
   margin-top: 8px;
 }
 

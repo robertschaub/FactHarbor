@@ -114,8 +114,8 @@ function readPipelineConfigFromEnv(): PipelineConfig {
   if (process.env.FH_LLM_EVIDENCE_QUALITY !== undefined) {
     config.llmEvidenceQuality = process.env.FH_LLM_EVIDENCE_QUALITY !== "false";
   }
-  if (process.env.FH_LLM_SCOPE_SIMILARITY !== undefined) {
-    config.llmScopeSimilarity = process.env.FH_LLM_SCOPE_SIMILARITY !== "false";
+  if (process.env.FH_LLM_CONTEXT_SIMILARITY !== undefined) {
+    config.llmContextSimilarity = process.env.FH_LLM_CONTEXT_SIMILARITY !== "false";
   }
   if (process.env.FH_LLM_VERDICT_VALIDATION !== undefined) {
     config.llmVerdictValidation = process.env.FH_LLM_VERDICT_VALIDATION !== "false";
@@ -131,13 +131,13 @@ function readPipelineConfigFromEnv(): PipelineConfig {
   if (process.env.FH_DETERMINISTIC !== undefined) {
     config.deterministic = process.env.FH_DETERMINISTIC !== "false";
   }
-  if (process.env.FH_SCOPE_DEDUP_THRESHOLD) {
-    config.scopeDedupThreshold = parseFloat(process.env.FH_SCOPE_DEDUP_THRESHOLD);
+  if (process.env.FH_CONTEXT_DEDUP_THRESHOLD) {
+    config.contextDedupThreshold = parseFloat(process.env.FH_CONTEXT_DEDUP_THRESHOLD);
   }
 
   // Budget controls
-  if (process.env.FH_MAX_ITERATIONS_PER_SCOPE) {
-    config.maxIterationsPerScope = parseInt(process.env.FH_MAX_ITERATIONS_PER_SCOPE, 10);
+  if (process.env.FH_MAX_ITERATIONS_PER_CONTEXT) {
+    config.maxIterationsPerContext = parseInt(process.env.FH_MAX_ITERATIONS_PER_CONTEXT, 10);
   }
   if (process.env.FH_MAX_TOTAL_ITERATIONS) {
     config.maxTotalIterations = parseInt(process.env.FH_MAX_TOTAL_ITERATIONS, 10);

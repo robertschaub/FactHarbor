@@ -139,14 +139,14 @@ export function recordGate4Stats(verdicts: any[]): void {
  */
 export function recordSchemaCompliance(compliance: {
   understand?: { success: boolean; retries: number; errorType?: string };
-  extractFacts?: Array<{ sourceId: string; success: boolean; retries: number; errorType?: string }>;
+  extractEvidence?: Array<{ sourceId: string; success: boolean; retries: number; errorType?: string }>;
   verdict?: { success: boolean; retries: number; errorType?: string };
 }): void {
   if (!currentMetrics) return;
 
   currentMetrics.setSchemaCompliance({
     understand: compliance.understand || { success: true, retries: 0 },
-    extractFacts: compliance.extractFacts || [],
+    extractEvidence: compliance.extractEvidence || [],
     verdict: compliance.verdict || { success: true, retries: 0 },
   });
 }
@@ -163,7 +163,7 @@ export function recordOutputQuality(result: any): void {
   const sources = result.sources || [];
 
   const claimsWithVerdicts = claims.filter((c: any) => c.verdict && c.verdict !== 'UNVERIFIED').length;
-  const totalFacts = claims.reduce((sum: number, c: any) => sum + (c.evidence?.length || 0), 0);
+  const totalEvidenceItems = claims.reduce((sum: number, c: any) => sum + (c.evidence?.length || 0), 0);
   const avgConfidence = claims.length > 0
     ? claims.reduce((sum: number, c: any) => sum + (c.verdictConfidence || 0), 0) / claims.length
     : 0;
@@ -173,7 +173,7 @@ export function recordOutputQuality(result: any): void {
     claimsWithVerdicts,
     scopesDetected: contexts.length,
     sourcesFound: sources.length,
-    evidenceItemsExtracted: totalFacts,
+    evidenceItemsExtracted: totalEvidenceItems,
     averageConfidence: avgConfidence,
   });
 }

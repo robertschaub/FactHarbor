@@ -1,41 +1,41 @@
 import React from "react";
 import styles from "../page.module.css";
 
-type ClaimsGroupedByScopeProps = {
+type ClaimsGroupedByContextProps = {
   claimVerdicts: any[];
-  scopes: any[];
+  contexts: any[];
   tangentialClaims: any[];
-  renderClaim: (claim: any, showCrossScope: boolean) => React.ReactNode;
+  renderClaim: (claim: any, showCrossContext: boolean) => React.ReactNode;
 };
 
-export function ClaimsGroupedByScope({
+export function ClaimsGroupedByContext({
   claimVerdicts,
-  scopes,
+  contexts,
   tangentialClaims,
   renderClaim,
-}: ClaimsGroupedByScopeProps) {
-  const claimsByScope = new Map<string, any[]>();
-  const tangentialByScope = new Map<string, any[]>();
+}: ClaimsGroupedByContextProps) {
+  const claimsByContext = new Map<string, any[]>();
+  const tangentialByContext = new Map<string, any[]>();
 
-  const normalizeScopeKey = (id: any): string => {
+  const normalizeContextKey = (id: any): string => {
     const raw = String(id || "").trim();
     return raw ? raw : "general";
   };
 
   for (const cv of claimVerdicts) {
-    const key = normalizeScopeKey(cv.contextId ?? cv.relatedProceedingId);
-    if (!claimsByScope.has(key)) claimsByScope.set(key, []);
-    claimsByScope.get(key)!.push(cv);
+    const key = normalizeContextKey(cv.contextId);
+    if (!claimsByContext.has(key)) claimsByContext.set(key, []);
+    claimsByContext.get(key)!.push(cv);
   }
 
   for (const c of tangentialClaims || []) {
-    const key = normalizeScopeKey(c?.contextId ?? c?.relatedProceedingId);
-    if (!tangentialByScope.has(key)) tangentialByScope.set(key, []);
-    tangentialByScope.get(key)!.push(c);
+    const key = normalizeContextKey(c?.contextId);
+    if (!tangentialByContext.has(key)) tangentialByContext.set(key, []);
+    tangentialByContext.get(key)!.push(c);
   }
 
-  const scopeIds = scopes.map((s: any) => s.id);
-  const hasScopes = scopeIds.length > 0;
+  const contextIds = contexts.map((c: any) => c.id);
+  const hasContexts = contextIds.length > 0;
   const groups: Array<{
     id: string;
     title: string;
@@ -43,9 +43,9 @@ export function ClaimsGroupedByScope({
     tangential: any[];
   }> = [];
 
-  const formatScopeTitle = (scope: any): string => {
-    const shortName = String(scope?.shortName || "").trim();
-    const name = String(scope?.name || "").trim();
+  const formatContextTitle = (context: any): string => {
+    const shortName = String(context?.shortName || "").trim();
+    const name = String(context?.name || "").trim();
     if (!shortName && !name) return "General";
     if (!shortName) return `⚖️ ${name}`;
     if (!name) return `⚖️ ${shortName}`;
@@ -53,28 +53,28 @@ export function ClaimsGroupedByScope({
     return `⚖️ ${shortName}: ${name}`;
   };
 
-  if (hasScopes) {
-    for (const scope of scopes) {
-      const claims = claimsByScope.get(scope.id) || [];
-      const tangential = tangentialByScope.get(scope.id) || [];
+  if (hasContexts) {
+    for (const context of contexts) {
+      const claims = claimsByContext.get(context.id) || [];
+      const tangential = tangentialByContext.get(context.id) || [];
       if (claims.length === 0 && tangential.length === 0) continue;
       groups.push({
-        id: scope.id,
-        title: formatScopeTitle(scope),
+        id: context.id,
+        title: formatContextTitle(context),
         claims,
         tangential,
       });
     }
 
-    // Add any scope IDs that appear in claims/tangentials but are not in the scopes list.
+    // Add any context IDs that appear in claims/tangentials but are not in the contexts list.
     const extraKeys = new Set<string>();
-    for (const k of claimsByScope.keys()) extraKeys.add(k);
-    for (const k of tangentialByScope.keys()) extraKeys.add(k);
+    for (const k of claimsByContext.keys()) extraKeys.add(k);
+    for (const k of tangentialByContext.keys()) extraKeys.add(k);
     for (const key of Array.from(extraKeys)) {
       if (key === "general") continue;
-      if (scopeIds.includes(key)) continue;
-      const claims = claimsByScope.get(key) || [];
-      const tangential = tangentialByScope.get(key) || [];
+      if (contextIds.includes(key)) continue;
+      const claims = claimsByContext.get(key) || [];
+      const tangential = tangentialByContext.get(key) || [];
       if (claims.length === 0 && tangential.length === 0) continue;
       groups.push({
         id: key,
@@ -86,19 +86,19 @@ export function ClaimsGroupedByScope({
   } else {
     const claimsByGroup = new Map<string, any[]>();
     for (const cv of claimVerdicts) {
-      const scopeId = normalizeScopeKey(cv.contextId ?? cv.relatedProceedingId);
-      if (!claimsByGroup.has(scopeId)) claimsByGroup.set(scopeId, []);
-      claimsByGroup.get(scopeId)!.push(cv);
+      const contextId = normalizeContextKey(cv.contextId);
+      if (!claimsByGroup.has(contextId)) claimsByGroup.set(contextId, []);
+      claimsByGroup.get(contextId)!.push(cv);
     }
 
-    for (const [scopeId, claims] of claimsByGroup.entries()) {
-      const tangential = tangentialByScope.get(scopeId) || [];
+    for (const [contextId, claims] of claimsByGroup.entries()) {
+      const tangential = tangentialByContext.get(contextId) || [];
       if (claims.length === 0 && tangential.length === 0) continue;
-      const scope = scopes.find((s: any) => s.id === scopeId);
-      const fallbackTitle = scopeId === "general" ? "General" : `Context ${scopeId}`;
+      const context = contexts.find((c: any) => c.id === contextId);
+      const fallbackTitle = contextId === "general" ? "General" : `Context ${contextId}`;
       groups.push({
-        id: scopeId,
-        title: scope ? formatScopeTitle(scope) : fallbackTitle,
+        id: contextId,
+        title: context ? formatContextTitle(context) : fallbackTitle,
         claims,
         tangential,
       });
@@ -107,8 +107,8 @@ export function ClaimsGroupedByScope({
 
   // Ensure a unified General group exists when there are any unscoped claims (direct or tangential).
   const hasGeneral = groups.some((g) => g.id === "general");
-  const generalClaims = claimsByScope.get("general") || [];
-  const generalTangential = tangentialByScope.get("general") || [];
+  const generalClaims = claimsByContext.get("general") || [];
+  const generalTangential = tangentialByContext.get("general") || [];
   if ((generalClaims.length > 0 || generalTangential.length > 0) && !hasGeneral) {
     groups.push({
       id: "general",
@@ -121,13 +121,13 @@ export function ClaimsGroupedByScope({
   return (
     <div>
       {groups.map((group) => (
-        <div key={group.id} className={styles.scopeGroup}>
-          <h4 className={styles.scopeGroupHeader}>{group.title}</h4>
+        <div key={group.id} className={styles.contextGroup}>
+          <h4 className={styles.contextGroupHeader}>{group.title}</h4>
           {group.claims.map((cv: any) => (
             <React.Fragment key={`${group.id}:${cv.claimId}`}>
               {renderClaim(
                 cv,
-                hasScopes && (!cv.contextId && !cv.relatedProceedingId || group.id === "general")
+                hasContexts && (!cv.contextId || group.id === "general")
               )}
             </React.Fragment>
           ))}

@@ -57,7 +57,7 @@ describe('Budget Model Knowledge Mode', () => {
 
     // Should include model knowledge instructions
     expect(prompt).toContain('Use your training data');
-    expect(prompt).toContain('If you know facts from training data');
+    expect(prompt).toContain('If you know well-established information from training data');
     
     // Should NOT include evidence-only instructions
     expect(prompt).not.toContain('EVIDENCE-ONLY');

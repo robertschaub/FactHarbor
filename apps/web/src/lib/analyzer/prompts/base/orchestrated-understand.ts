@@ -41,7 +41,7 @@ ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.eva
 
   // NOTE: Keep EvidenceScope terminology explicit; do not label it as AnalysisContext.
   // EvidenceScope is per-evidence metadata, not a top-level AnalysisContext.
-  return `You are a professional fact-checker analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect background details if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
+  return `You are a professional verification analyst analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect background details if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
 
 ## TERMINOLOGY (CRITICAL)
 

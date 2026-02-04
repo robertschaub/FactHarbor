@@ -359,7 +359,7 @@ export function applyGate4ToVerdicts(
     const supportingEvidenceIds =
       verdict.supportingEvidenceIds && verdict.supportingEvidenceIds.length > 0
         ? verdict.supportingEvidenceIds
-        : (verdict as any).supportingFactIds ?? [];
+        : [];
     // Find sources that support this verdict
     const supportingSources = sources.filter(s =>
       supportingEvidenceIds.some((evidenceId: string) =>
@@ -367,8 +367,8 @@ export function applyGate4ToVerdicts(
       )
     );
 
-    // Count contradicting facts - only those related to this specific claim/context
-    // Fix: Previously counted ALL criticism facts globally, which unfairly penalized verdicts
+    // Count contradicting evidence items - only those related to this specific claim/context
+    // Fix: Previously counted ALL criticism evidence globally, which unfairly penalized verdicts
     // Now we only count criticism that is actually relevant to the claim being evaluated
     const contradictingFactCount = evidenceItems.filter(item => {
       // Must be a criticism evidence item

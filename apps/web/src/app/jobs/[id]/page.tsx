@@ -22,11 +22,11 @@ import {
   percentageToClaimVerdict,
 } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
-import { ClaimsGroupedByScope } from "./components/ClaimsGroupedByScope";
+import { ClaimsGroupedByContext } from "./components/ClaimsGroupedByContext";
 import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
 import { MethodologySubGroup } from "./components/MethodologySubGroup";
 import { BackgroundBanner } from "./components/BackgroundBanner";
-import { groupFactsByMethodology } from "./utils/methodologyGrouping";
+import { groupEvidenceByMethodology } from "./utils/methodologyGrouping";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
 import FallbackReport from "@/components/FallbackReport";
@@ -309,14 +309,13 @@ export default function JobPage() {
   const verdictSummary = result?.verdictSummary;
   const classificationFallbacks = result?.classificationFallbacks;
   const hasMultipleContexts =
-    result?.meta?.hasMultipleContexts ?? result?.meta?.hasMultipleProceedings;
-  // Prefer "analysisContexts" (v2.7), fall back to legacy fields for compatibility
-  const scopes = result?.analysisContexts || result?.scopes || result?.proceedings || [];
+    result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
+  const contexts = result?.analysisContexts || [];
   const impliedClaim: string = (result?.understanding?.impliedClaim || "").trim();
   const hasContestedFactors = result?.meta?.hasContestedFactors;
   const searchQueries = result?.searchQueries || [];
   const researchStats = result?.researchStats;
-  const evidenceItems = result?.evidenceItems || result?.facts || []; // Access extracted evidence with legacy fallback
+  const evidenceItems = result?.evidenceItems || [];
   // Prefer job.pipelineVariant (available immediately) over result meta (only after completion)
   const pipelineVariant = job?.pipelineVariant || result?.meta?.pipelineVariant || "orchestrated";
 
@@ -342,8 +341,7 @@ export default function JobPage() {
   // Determine if any contestations have actual counter-evidence (CONTESTED)
   // Opinion-based contestations without evidence are not highlighted (almost anything can be doubted)
   // Include Key Factors from both question mode AND article mode (unified in v2.6.18)
-  const contextAnswers =
-    verdictSummary?.contextAnswers || verdictSummary?.proceedingAnswers || [];
+  const contextAnswers = verdictSummary?.analysisContextAnswers || [];
   const allKeyFactors: any[] = [
     ...(verdictSummary?.keyFactors || []),
     ...(contextAnswers.flatMap((p: any) => p.keyFactors || []) || []),
@@ -510,7 +508,7 @@ export default function JobPage() {
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
               {/* v2.6.31: Removed QUESTION badge - Input Neutrality: no separate paths for questions */}
-              {hasMultipleContexts && <Badge bg="#fff3e0" color="#e65100">🔀 {scopes.length} CONTEXTS</Badge>}
+              {hasMultipleContexts && <Badge bg="#fff3e0" color="#e65100">🔀 {contexts.length} CONTEXTS</Badge>}
               {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
               {result.meta.isPseudoscience && (
                 <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
@@ -568,9 +566,7 @@ export default function JobPage() {
               {(() => {
                 const backgroundDetails =
                   result?.understanding?.backgroundDetails ||
-                  result?.understanding?.analysisContext ||
-                  result?.rawJson?.backgroundDetails ||
-                  result?.rawJson?.articleFrame;
+                  result?.rawJson?.backgroundDetails;
                 return backgroundDetails ? (
                   <BackgroundBanner backgroundDetails={backgroundDetails} />
                 ) : null;
@@ -587,16 +583,16 @@ export default function JobPage() {
               {/* Input neutrality: same banner for all input styles */}
               {/* v2.6.31: Handle edge case where hasMultipleContexts is true but context answers are missing */}
               {hasMultipleContexts && contextAnswers.length > 0 ? (
-                <MultiScopeStatementBanner
+                <MultiContextStatementBanner
                   verdictSummary={verdictSummary}
-                  scopes={scopes}
+                  contexts={contexts}
                   articleThesis={twoPanelSummary?.articleSummary?.mainArgument}
                   articleAnalysis={articleAnalysis}
                   pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
                   fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
                 />
               ) : (
-                /* Single-scope OR multi-scope with missing context answers: show ArticleVerdictBanner as fallback */
+                /* Single-context OR multi-context with missing context answers: show ArticleVerdictBanner as fallback */
                 (articleAnalysis || verdictSummary) && (
                   <ArticleVerdictBanner
                     articleAnalysis={articleAnalysis}
@@ -615,12 +611,12 @@ export default function JobPage() {
                   {/* v2.6.31: Input Neutrality - same label for all inputs */}
                   <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
                   {hasMultipleContexts ? (
-                    <ClaimsGroupedByScope
+                    <ClaimsGroupedByContext
                       claimVerdicts={claimVerdicts}
-                      scopes={scopes}
+                      contexts={contexts}
                       tangentialClaims={tangentialSubClaims}
-                      renderClaim={(claim, showCrossScope) => (
-                        <ClaimCard claim={claim} showCrossScope={showCrossScope} />
+                      renderClaim={(claim, showCrossContext) => (
+                        <ClaimCard claim={claim} showCrossContext={showCrossContext} />
                       )}
                     />
                   ) : (
@@ -729,7 +725,7 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
           <StatCard label="Fetch Success" value={researchStats.sourcesSuccessful} icon="✅" />
           <StatCard
             label="Evidence Extracted"
-            value={researchStats.evidenceItemsExtracted ?? researchStats.factsExtracted ?? 0}
+            value={researchStats.evidenceItemsExtracted ?? 0}
             icon="📝"
           />
         </div>
@@ -816,16 +812,16 @@ function EvidencePanel({ evidenceItems, disableGrouping = false }: { evidenceIte
   );
 
   const renderEvidenceCard = (item: any, className: string, extraMeta?: ReactNode) => (
-    <div key={item.id || item.statement || item.fact} className={`${styles.factItem} ${className}`}>
-      <div className={styles.factText}>
-        {item.statement || item.fact}
+    <div key={item.id || item.statement} className={`${styles.evidenceItem} ${className}`}>
+      <div className={styles.evidenceText}>
+        {item.statement}
         {item.evidenceScope && (
           <EvidenceScopeTooltip evidenceScope={item.evidenceScope} />
         )}
       </div>
-      <div className={styles.factMeta}>
-        <span className={styles.factCategory}>{item.category}</span>
-        <span className={styles.factSource}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</span>
+      <div className={styles.evidenceMeta}>
+        <span className={styles.evidenceCategory}>{item.category}</span>
+        <span className={styles.evidenceSource}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</span>
         {extraMeta}
       </div>
     </div>
@@ -838,7 +834,7 @@ function EvidencePanel({ evidenceItems, disableGrouping = false }: { evidenceIte
       return items.map((item: any) => renderEvidenceCard(item, className, extraMeta?.(item)));
     }
 
-    const groups = groupFactsByMethodology(items);
+    const groups = groupEvidenceByMethodology(items);
     if (!groups) {
       return items.map((item: any) => renderEvidenceCard(item, className, extraMeta?.(item)));
     }
@@ -847,71 +843,71 @@ function EvidencePanel({ evidenceItems, disableGrouping = false }: { evidenceIte
       <MethodologySubGroup
         key={group.key}
         group={group}
-        renderFact={(item) => renderEvidenceCard(item, className, extraMeta?.(item))}
+        renderEvidenceItem={(item) => renderEvidenceCard(item, className, extraMeta?.(item))}
       />
     ));
   };
 
   return (
-    <div className={styles.factsPanel}>
-      <h3 className={styles.factsPanelTitle}>📊 Evidence Analysis</h3>
+    <div className={styles.evidencePanel}>
+      <h3 className={styles.evidencePanelTitle}>📊 Evidence Analysis</h3>
 
-      <div className={styles.factsStats}>
-        <span className={styles.factStatSupporting}>✅ {supportingEvidence.length} supporting</span>
-        <span className={styles.factStatContradicting}>❌ {contradictingEvidence.length} contradicting</span>
-        <span className={styles.factStatOpposite}>🔄 {oppositeClaimEvidence.length} opposite claim</span>
-        <span className={styles.factStatNeutral}>➖ {neutralEvidence.length} neutral</span>
+      <div className={styles.evidenceStats}>
+        <span className={styles.evidenceStatSupporting}>✅ {supportingEvidence.length} supporting</span>
+        <span className={styles.evidenceStatContradicting}>❌ {contradictingEvidence.length} contradicting</span>
+        <span className={styles.evidenceStatOpposite}>🔄 {oppositeClaimEvidence.length} opposite claim</span>
+        <span className={styles.evidenceStatNeutral}>➖ {neutralEvidence.length} neutral</span>
       </div>
 
       {/* NEW v2.6.29: Opposite Claim Evidence - displayed prominently */}
       {oppositeClaimEvidence.length > 0 && (
-        <div className={styles.factsSection}>
-          <h4 className={styles.factsSectionTitle} style={{ color: '#1565c0' }}>
+        <div className={styles.evidenceSection}>
+          <h4 className={styles.evidenceSectionTitle} style={{ color: '#1565c0' }}>
             🔄 Evidence for Opposite Claim ({oppositeClaimEvidence.length})
           </h4>
           <p className={styles.oppositeClaimNote}>
             These evidence items were found by searching for the opposite of the user's claim.
             They support the inverse position and count against the original claim.
           </p>
-          <div className={styles.factsList}>
-            {renderEvidenceList(oppositeClaimEvidence, styles.factItemOpposite, () => (
-              <span className={styles.factOppositeTag}>OPPOSITE CLAIM</span>
+          <div className={styles.evidenceList}>
+            {renderEvidenceList(oppositeClaimEvidence, styles.evidenceItemOpposite, () => (
+              <span className={styles.evidenceOppositeTag}>OPPOSITE CLAIM</span>
             ))}
           </div>
         </div>
       )}
 
       {contradictingEvidence.length > 0 && (
-        <div className={styles.factsSection}>
-          <h4 className={styles.factsSectionTitle} style={{ color: '#c62828' }}>
+        <div className={styles.evidenceSection}>
+          <h4 className={styles.evidenceSectionTitle} style={{ color: '#c62828' }}>
             ⚠️ Counter-Evidence ({contradictingEvidence.length})
           </h4>
-          <div className={styles.factsList}>
-            {renderEvidenceList(contradictingEvidence, styles.factItemContradicting)}
+          <div className={styles.evidenceList}>
+            {renderEvidenceList(contradictingEvidence, styles.evidenceItemContradicting)}
           </div>
         </div>
       )}
 
       {supportingEvidence.length > 0 && (
-        <div className={styles.factsSection}>
-          <h4 className={styles.factsSectionTitle} style={{ color: '#2e7d32' }}>
+        <div className={styles.evidenceSection}>
+          <h4 className={styles.evidenceSectionTitle} style={{ color: '#2e7d32' }}>
             ✓ Supporting Evidence ({supportingEvidence.length})
           </h4>
-          <div className={styles.factsList}>
-            {renderEvidenceList(supportingEvidence, styles.factItemSupporting)}
+          <div className={styles.evidenceList}>
+            {renderEvidenceList(supportingEvidence, styles.evidenceItemSupporting)}
           </div>
         </div>
       )}
 
       {neutralEvidence.length > 0 && (
-        <div className={styles.factsSection}>
-          <h4 className={styles.factsSectionTitle} style={{ color: '#757575' }}>
+        <div className={styles.evidenceSection}>
+          <h4 className={styles.evidenceSectionTitle} style={{ color: '#757575' }}>
             Background evidence ({neutralEvidence.length})
           </h4>
-          <div className={styles.factsList}>
-            {renderEvidenceList(neutralEvidence.slice(0, 5), styles.factItemNeutral)}
+          <div className={styles.evidenceList}>
+            {renderEvidenceList(neutralEvidence.slice(0, 5), styles.evidenceItemNeutral)}
             {neutralEvidence.length > 5 && (
-              <div className={styles.factMoreIndicator}>
+              <div className={styles.evidenceMoreIndicator}>
                 + {neutralEvidence.length - 5} more background evidence
               </div>
             )}
@@ -945,10 +941,10 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
 }
 
 // ============================================================================
-// Multi-Scope Verdict Banner (for statements with multiple scopes)
+// Multi-Context Verdict Banner (for statements with multiple contexts)
 // ============================================================================
 
-function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, articleAnalysis, pseudoscienceAnalysis, fallbackConfidence }: { verdictSummary: any; scopes: any[]; articleThesis?: string; articleAnalysis?: any; pseudoscienceAnalysis?: any; fallbackConfidence?: number }) {
+function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, articleAnalysis, pseudoscienceAnalysis, fallbackConfidence }: { verdictSummary: any; contexts: any[]; articleThesis?: string; articleAnalysis?: any; pseudoscienceAnalysis?: any; fallbackConfidence?: number }) {
   const overallTruth = getVerdictTruthPercentage(verdictSummary);
   // v2.6.31: Also check twoPanelSummary.factharborAnalysis.confidence via fallbackConfidence prop
   const overallConfidence = verdictSummary?.confidence ?? fallbackConfidence ?? 0;
@@ -960,8 +956,7 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
   const isUnreliableAverage = verdictReliability === "low";
 
   // Determine if any contestations have actual counter-evidence (CONTESTED)
-  const contextAnswers =
-    verdictSummary?.contextAnswers || verdictSummary?.proceedingAnswers || [];
+  const contextAnswers = verdictSummary?.analysisContextAnswers || [];
   const allKeyFactors: any[] = [
     ...(verdictSummary?.keyFactors || []),
     ...(contextAnswers.flatMap((p: any) => p.keyFactors || []) || []),
@@ -978,17 +973,17 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis?.pseudoscienceCategories || [];
 
   // Get the verdict reason (include summary as fallback)
-  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.proceedingSummary || verdictSummary?.summary || "";
+  const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.analysisContextSummary || verdictSummary?.summary || "";
 
   return (
-    <div className={styles.multiScopeBanner}>
-      <div className={styles.scopeNotice}>
-        <span className={styles.scopeIcon}>🔀</span>
+    <div className={styles.multiContextBanner}>
+      <div className={styles.contextNotice}>
+        <span className={styles.contextIcon}>🔀</span>
         <span
-          className={styles.scopeText}
+          className={styles.contextText}
           title='A "context" is a bounded analytical frame (AnalysisContext) that should be analyzed separately.'
         >
-          {scopes.length} distinct contexts analyzed separately
+          {contexts.length} distinct contexts analyzed separately
         </span>
         {hasEvidenceBasedContestations && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ Contains contested factors</Badge>
@@ -1031,8 +1026,8 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
         )}
 
         {verdictReason && (
-          <div className={styles.scopeSummary}>
-            <div className={styles.scopeSummaryText}>{verdictReason}</div>
+          <div className={styles.contextSummary}>
+            <div className={styles.contextSummaryText}>{verdictReason}</div>
           </div>
         )}
 
@@ -1066,7 +1061,7 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
           </div>
         )}
 
-        {/* v2.6.28: Show overall KEY FACTORS inside verdict box when no per-scope breakdown */}
+        {/* v2.6.28: Show overall KEY FACTORS inside verdict box when no per-context breakdown */}
         {contextAnswers.length === 0 && verdictSummary?.keyFactors?.length > 0 && (
           <div className={styles.keyFactorsSection}>
             <div className={styles.keyFactorsHeader}>KEY FACTORS</div>
@@ -1080,16 +1075,16 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
       </div>
 
         {contextAnswers.length > 0 && (
-        <div className={styles.scopesAnalysis}>
-          <h4 className={styles.scopesHeader} style={isUnreliableAverage ? { fontSize: '1.1rem', fontWeight: 700 } : undefined}>
+        <div className={styles.contextsAnalysis}>
+          <h4 className={styles.contextsHeader} style={isUnreliableAverage ? { fontSize: '1.1rem', fontWeight: 700 } : undefined}>
             {isUnreliableAverage && '⭐ '}📑 {isUnreliableAverage ? 'Individual Context Verdicts (Primary)' : 'Contexts'}
           </h4>
-          <div className={styles.scopesStack}>
+          <div className={styles.contextsStack}>
             {contextAnswers.map((pa: any) => {
-              const scopeId = pa.contextId ?? pa.proceedingId;
-              const scope = scopes.find((s: any) => s.id === scopeId);
-              const key = scopeId || pa.contextName || pa.proceedingName || scope?.id || "context";
-              return <ScopeCard key={key} scopeAnswer={pa} scope={scope} />;
+              const contextId = pa.contextId;
+              const context = contexts.find((c: any) => c.id === contextId);
+              const key = contextId || pa.contextName || context?.id || "context";
+              return <ContextCard key={key} contextAnswer={pa} context={context} />;
             })}
           </div>
         </div>
@@ -1098,13 +1093,13 @@ function MultiScopeStatementBanner({ verdictSummary, scopes, articleThesis, arti
   );
 }
 
-function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
-  const scopeTruth = getVerdictTruthPercentage(scopeAnswer);
-  const scopeConfidence = scopeAnswer?.confidence ?? 0;
-  const scopeVerdict = percentageToClaimVerdict(scopeTruth, scopeConfidence);
-  const color = CLAIM_VERDICT_COLORS[scopeVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+function ContextCard({ contextAnswer, context }: { contextAnswer: any; context: any }) {
+  const contextTruth = getVerdictTruthPercentage(contextAnswer);
+  const contextConfidence = contextAnswer?.confidence ?? 0;
+  const contextVerdict = percentageToClaimVerdict(contextTruth, contextConfidence);
+  const color = CLAIM_VERDICT_COLORS[contextVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
 
-  const factors = scopeAnswer.keyFactors || [];
+  const factors = contextAnswer.keyFactors || [];
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
   const negativeCount = factors.filter((f: any) => f.supports === "no").length;
   const neutralCount = factors.filter((f: any) => f.supports === "neutral").length;
@@ -1115,8 +1110,8 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
     (f.factualBasis === "established" || f.factualBasis === "disputed")
   ).length;
 
-  const subject = (scope?.subject || "").trim();
-  const rawOutcome = (scope?.outcome || "").trim().toLowerCase();
+  const subject = (context?.subject || "").trim();
+  const rawOutcome = (context?.outcome || "").trim().toLowerCase();
   // Don't display vague outcomes - only show if we have a concrete outcome
   const isVagueOutcome = !rawOutcome ||
     rawOutcome === "unknown" ||
@@ -1124,56 +1119,56 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
     rawOutcome.includes("investigation") ||
     rawOutcome.includes("ongoing") ||
     rawOutcome.includes("not yet");
-  const outcome = isVagueOutcome ? "" : scope?.outcome?.trim() || "";
-  const charges: string[] = Array.isArray(scope?.charges) ? scope.charges : [];
+  const outcome = isVagueOutcome ? "" : context?.outcome?.trim() || "";
+  const charges: string[] = Array.isArray(context?.charges) ? context.charges : [];
   const showAbout = !!subject || (charges.length > 0) || !!outcome;
 
   return (
-    <div className={styles.scopeCard} style={{ borderColor: color.border }}>
-      <div className={styles.scopeCardHeader}>
-        <div className={styles.scopeCardTitle}>
-          {scope?.name || scopeAnswer.contextName || scopeAnswer.proceedingName}
+    <div className={styles.contextCard} style={{ borderColor: color.border }}>
+      <div className={styles.contextCardHeader}>
+        <div className={styles.contextCardTitle}>
+          {context?.name || contextAnswer.contextName}
         </div>
-        {scope && (
-          <div className={styles.scopeCardMeta}>
-            {scope.court && <span>{scope.court} • </span>}
-            {scope.date && <span>{scope.date}</span>}
-            {scope.status && scope.status !== "unknown" && <span> • {scope.status}</span>}
+        {context && (
+          <div className={styles.contextCardMeta}>
+            {context.court && <span>{context.court} • </span>}
+            {context.date && <span>{context.date}</span>}
+            {context.status && context.status !== "unknown" && <span> • {context.status}</span>}
           </div>
         )}
         {/* v2.6.39: Show assessed statement to clarify what is being evaluated in this context */}
-        {scope?.assessedStatement && (
-          <div className={styles.scopeAssessmentQuestion}>
-            <span className={styles.scopeAssessmentLabel}>Assessed Statement:</span> {scope.assessedStatement}
+        {context?.assessedStatement && (
+          <div className={styles.contextAssessmentQuestion}>
+            <span className={styles.contextAssessmentLabel}>Assessed Statement:</span> {context.assessedStatement}
           </div>
         )}
         {showAbout && (
-          <div className={styles.scopeAboutInline}>
+          <div className={styles.contextAboutInline}>
             {subject && (
-              <span className={styles.scopeAboutItem}>
-                <span className={styles.scopeAboutLabel}>Subject:</span> {subject}
+              <span className={styles.contextAboutItem}>
+                <span className={styles.contextAboutLabel}>Subject:</span> {subject}
               </span>
             )}
             {charges.length > 0 && (
-              <span className={styles.scopeAboutItem}>
-                <span className={styles.scopeAboutLabel}>Charges:</span> {charges.slice(0, 3).join("; ")}{charges.length > 3 ? "…" : ""}
+              <span className={styles.contextAboutItem}>
+                <span className={styles.contextAboutLabel}>Charges:</span> {charges.slice(0, 3).join("; ")}{charges.length > 3 ? "…" : ""}
               </span>
             )}
             {outcome && (
-              <span className={styles.scopeAboutItem}>
-                <span className={styles.scopeAboutLabel}>Outcome:</span> {outcome}
+              <span className={styles.contextAboutItem}>
+                <span className={styles.contextAboutLabel}>Outcome:</span> {outcome}
               </span>
             )}
           </div>
         )}
       </div>
 
-      <div className={styles.scopeCardContent}>
-        <div className={styles.scopeAnswerRow}>
-          <span className={styles.scopeAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
-            {color.icon} {getVerdictLabel(scopeVerdict)}
+      <div className={styles.contextCardContent}>
+        <div className={styles.contextAnswerRow}>
+          <span className={styles.contextAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
+            {color.icon} {getVerdictLabel(contextVerdict)}
           </span>
-          <span className={styles.scopePercentage}>{scopeTruth}% <span style={{ fontSize: 11, color: "#999" }}>({scopeAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.contextPercentage}>{contextTruth}% <span style={{ fontSize: 11, color: "#999" }}>({contextAnswer.confidence}%  confidence)</span></span>
         </div>
 
         <div className={`${styles.factorsSummary} ${contestedCount > 0 ? styles.factorsSummaryContested : styles.factorsSummaryNormal}`}>
@@ -1187,10 +1182,10 @@ function ScopeCard({ scopeAnswer, scope }: { scopeAnswer: any; scope: any }) {
           {neutralCount > 0 && <span className={styles.factorsNeutral}>➖ {neutralCount} neutral</span>}
         </div>
 
-        {scopeAnswer.shortAnswer && (
-          <div className={styles.scopeShortAnswer}>
-            <span className={styles.scopeAssessmentLabel}>Assessment:</span>{" "}
-            {scopeAnswer.shortAnswer}
+        {contextAnswer.shortAnswer && (
+          <div className={styles.contextShortAnswer}>
+            <span className={styles.contextAssessmentLabel}>Assessment:</span>{" "}
+            {contextAnswer.shortAnswer}
           </div>
         )}
 
@@ -1496,7 +1491,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: { articleSummar
   );
 }
 
-function ClaimCard({ claim, showCrossScope = false }: { claim: any; showCrossScope?: boolean }) {
+function ClaimCard({ claim, showCrossContext = false }: { claim: any; showCrossContext?: boolean }) {
   const claimTruth = getClaimTruthPercentage(claim);
   const claimConfidence = claim?.confidence ?? 0;
   const claimVerdictLabel = percentageToClaimVerdict(claimTruth, claimConfidence);
@@ -1525,7 +1520,7 @@ function ClaimCard({ claim, showCrossScope = false }: { claim: any; showCrossSco
         {hasEvidenceBasedContestation && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
         )}
-        {showCrossScope && (
+        {showCrossContext && (
           <Badge bg="#eef2ff" color="#1e3a8a">Cross-context</Badge>
         )}
         {claim.isPseudoscience && (

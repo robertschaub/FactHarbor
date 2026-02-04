@@ -18,8 +18,8 @@ import {
   InputClassificationResult,
   EvidenceQualityRequest,
   EvidenceQualityResult,
-  ScopeSimilarityRequest,
-  ScopeSimilarityResult,
+  ContextSimilarityRequest,
+  ContextSimilarityResult,
   VerdictValidationRequest,
   VerdictValidationResult,
   AnalysisPoint,
@@ -40,7 +40,7 @@ import { recordMetrics } from "./text-analysis-service";
 
 const MetaSchema = z.object({
   version: z.string(),
-  analysisPoint: z.enum(["input", "evidence", "scope", "verdict"]),
+  analysisPoint: z.enum(["input", "evidence", "context", "verdict"]),
   promptHash: z.string(),
   processingMs: z.number().optional(),
 });
@@ -79,9 +79,9 @@ const EvidenceQualityResponseSchema = z.object({
   error: z.string().optional(),
 });
 
-const ScopeSimilarityResultSchema = z.object({
-  scopeA: z.string(),
-  scopeB: z.string(),
+const ContextSimilarityResultSchema = z.object({
+  contextA: z.string(),
+  contextB: z.string(),
   similarity: z.number(),
   phaseBucketA: z.enum(["production", "usage", "other"]),
   phaseBucketB: z.enum(["production", "usage", "other"]),
@@ -90,9 +90,9 @@ const ScopeSimilarityResultSchema = z.object({
   reasoning: z.string(),
 });
 
-const ScopeSimilarityResponseSchema = z.object({
+const ContextSimilarityResponseSchema = z.object({
   _meta: MetaSchema,
-  result: z.array(ScopeSimilarityResultSchema).nullable(),
+  result: z.array(ContextSimilarityResultSchema).nullable(),
   error: z.string().optional(),
 });
 
@@ -229,7 +229,7 @@ export class LLMTextAnalysisService implements ITextAnalysisService {
         return "understand";
       case "evidence":
         return "extract_evidence";
-      case "scope":
+      case "context":
         return "context_refinement";
       case "verdict":
         return "verdict";
@@ -386,39 +386,39 @@ export class LLMTextAnalysisService implements ITextAnalysisService {
   }
 
   /**
-   * Call 3: Analyze scope similarity for merging
+   * Call 3: Analyze context similarity for merging
    */
-  async analyzeScopeSimilarity(request: ScopeSimilarityRequest): Promise<ScopeSimilarityResult[]> {
+  async analyzeContextSimilarity(request: ContextSimilarityRequest): Promise<ContextSimilarityResult[]> {
     const startTime = Date.now();
     let retryCount = 0;
     let lastError: Error | null = null;
 
-    const scopePairsJson = JSON.stringify(request.scopePairs, null, 2);
+    const contextPairsJson = JSON.stringify(request.contextPairs, null, 2);
     const contextListJson = JSON.stringify(request.contextList, null, 2);
 
-    const promptData = await loadAndRenderPrompt("text-analysis-scope", {
-      SCOPE_PAIRS: scopePairsJson,
+    const promptData = await loadAndRenderPrompt("text-analysis-context", {
+      CONTEXT_PAIRS: contextPairsJson,
       CONTEXT_LIST: contextListJson,
       PROMPT_HASH: "",
     });
 
     if (!promptData) {
-      throw new Error("Failed to load scope similarity prompt");
+      throw new Error("Failed to load context similarity prompt");
     }
 
     const prompt = promptData.prompt.replace("${PROMPT_HASH}", promptData.promptHash);
 
     for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
       try {
-        const responseText = await this.callLLM("scope", prompt, 2000);
-        const parsed = parseJSONResponse(responseText, ScopeSimilarityResponseSchema, this.config);
+        const responseText = await this.callLLM("context", prompt, 2000);
+        const parsed = parseJSONResponse(responseText, ContextSimilarityResponseSchema, this.config);
 
         if (parsed.error || !parsed.result) {
           throw new Error(parsed.error || "No result in response");
         }
 
         recordMetrics({
-          analysisPoint: "scope",
+          analysisPoint: "context",
           success: true,
           latencyMs: Date.now() - startTime,
           retryCount,
@@ -436,7 +436,7 @@ export class LLMTextAnalysisService implements ITextAnalysisService {
     }
 
     recordMetrics({
-      analysisPoint: "scope",
+      analysisPoint: "context",
       success: false,
       latencyMs: Date.now() - startTime,
       retryCount,
@@ -444,7 +444,7 @@ export class LLMTextAnalysisService implements ITextAnalysisService {
       error: lastError?.message,
     });
 
-    throw lastError || new Error("Failed to analyze scope similarity after retries");
+    throw lastError || new Error("Failed to analyze context similarity after retries");
   }
 
   /**

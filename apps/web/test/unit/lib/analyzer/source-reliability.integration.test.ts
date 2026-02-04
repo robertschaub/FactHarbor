@@ -33,6 +33,17 @@ vi.mock("@/lib/source-reliability-cache", () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+const makeEvidenceItem = (id: string, sourceId: string): EvidenceItem => ({
+  id,
+  statement: `Evidence statement for ${id}`,
+  category: "evidence",
+  specificity: "high",
+  sourceId,
+  sourceUrl: "https://example.com",
+  sourceTitle: "Example Source",
+  sourceExcerpt: "Example excerpt",
+});
+
 describe("Source Reliability Integration", () => {
   beforeEach(() => {
     clearPrefetchedScores();
@@ -93,23 +104,9 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: EvidenceItem[] = [
-        {
-          id: "fact-1",
-          sourceId: "src-1",
-          claim: "Fact from Reuters",
-          excerpt: "...",
-          supportsClaim: true,
-          confidence: 85,
-        },
-        {
-          id: "fact-2",
-          sourceId: "src-2",
-          claim: "Fact from BBC",
-          excerpt: "...",
-          supportsClaim: true,
-          confidence: 80,
-        },
+      const evidenceItems: EvidenceItem[] = [
+        makeEvidenceItem("E1", "src-1"),
+        makeEvidenceItem("E2", "src-2"),
       ];
 
       const verdicts: ClaimVerdict[] = [
@@ -120,7 +117,7 @@ describe("Source Reliability Integration", () => {
           confidence: 75,
           verdict: 80,
           highlightColor: "green",
-          supportingEvidenceIds: ["fact-1", "fact-2"],
+          supportingEvidenceIds: ["E1", "E2"],
           reasoning: "Based on evidence",
           claimRole: "central",
           isCentral: true,
@@ -129,7 +126,7 @@ describe("Source Reliability Integration", () => {
       ];
 
       // Step 4: Apply evidence weighting
-      const weighted = applyEvidenceWeighting(verdicts, facts, sources);
+      const weighted = applyEvidenceWeighting(verdicts, evidenceItems, sources);
 
       // Verify weighting was applied
       expect(weighted[0].evidenceWeight).toBeDefined();
@@ -170,16 +167,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: EvidenceItem[] = [
-        {
-          id: "fact-1",
-          sourceId: "src-1",
-          claim: "Fact from unknown",
-          excerpt: "...",
-          supportsClaim: true,
-          confidence: 70,
-        },
-      ];
+      const evidenceItems: EvidenceItem[] = [makeEvidenceItem("E1", "src-1")];
 
       const verdicts: ClaimVerdict[] = [
         {
@@ -189,7 +177,7 @@ describe("Source Reliability Integration", () => {
           confidence: 75,
           verdict: 80,
           highlightColor: "green",
-          supportingEvidenceIds: ["fact-1"],
+          supportingEvidenceIds: ["E1"],
           reasoning: "Based on evidence",
           claimRole: "central",
           isCentral: false,
@@ -197,7 +185,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const weighted = applyEvidenceWeighting(verdicts, facts, sources);
+      const weighted = applyEvidenceWeighting(verdicts, evidenceItems, sources);
 
       // Unknown sources use DEFAULT_UNKNOWN_SOURCE_SCORE (0.5) which pulls verdict toward neutral
       // Formula: adjustedTruth = 50 + (80 - 50) * 0.5 = 50 + 15 = 65
@@ -245,9 +233,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: EvidenceItem[] = [
-        { id: "f1", sourceId: "src-1", claim: "...", excerpt: "...", supportsClaim: true, confidence: 90 },
-      ];
+      const evidenceItems: EvidenceItem[] = [makeEvidenceItem("E1", "src-1")];
 
       const verdicts: ClaimVerdict[] = [
         {
@@ -257,7 +243,7 @@ describe("Source Reliability Integration", () => {
           confidence: 80,
           verdict: 85,
           highlightColor: "green",
-          supportingEvidenceIds: ["f1"],
+          supportingEvidenceIds: ["E1"],
           reasoning: "High quality source",
           claimRole: "central",
           isCentral: true,
@@ -265,7 +251,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const weighted = applyEvidenceWeighting(verdicts, facts, sources);
+      const weighted = applyEvidenceWeighting(verdicts, evidenceItems, sources);
 
       // With 0.98 reliability: 50 + (85-50) * 0.98 = 50 + 34.3 = 84.3 ≈ 84
       expect(weighted[0].truthPercentage).toBeCloseTo(84, 0);
@@ -293,9 +279,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: EvidenceItem[] = [
-        { id: "f1", sourceId: "src-1", claim: "...", excerpt: "...", supportsClaim: true, confidence: 60 },
-      ];
+      const evidenceItems: EvidenceItem[] = [makeEvidenceItem("E1", "src-1")];
 
       const verdicts: ClaimVerdict[] = [
         {
@@ -305,7 +289,7 @@ describe("Source Reliability Integration", () => {
           confidence: 70,
           verdict: 90,
           highlightColor: "green",
-          supportingEvidenceIds: ["f1"],
+          supportingEvidenceIds: ["E1"],
           reasoning: "Single unreliable source",
           claimRole: "supporting",
           isCentral: false,
@@ -313,7 +297,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const weighted = applyEvidenceWeighting(verdicts, facts, sources);
+      const weighted = applyEvidenceWeighting(verdicts, evidenceItems, sources);
 
       // With 0.15 reliability: 50 + (90-50) * 0.15 = 50 + 6 = 56
       expect(weighted[0].truthPercentage).toBe(56);
@@ -357,9 +341,9 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const facts: EvidenceItem[] = [
-        { id: "f1", sourceId: "src-1", claim: "...", excerpt: "...", supportsClaim: true, confidence: 80 },
-        { id: "f2", sourceId: "src-2", claim: "...", excerpt: "...", supportsClaim: true, confidence: 60 },
+      const evidenceItems: EvidenceItem[] = [
+        makeEvidenceItem("E1", "src-1"),
+        makeEvidenceItem("E2", "src-2"),
       ];
 
       const verdicts: ClaimVerdict[] = [
@@ -370,7 +354,7 @@ describe("Source Reliability Integration", () => {
           confidence: 70,
           verdict: 75,
           highlightColor: "yellow",
-          supportingEvidenceIds: ["f1", "f2"],
+          supportingEvidenceIds: ["E1", "E2"],
           reasoning: "Mixed sources",
           claimRole: "central",
           isCentral: true,
@@ -378,7 +362,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const weighted = applyEvidenceWeighting(verdicts, facts, sources);
+      const weighted = applyEvidenceWeighting(verdicts, evidenceItems, sources);
 
       // Average score: (0.85 + 0.25) / 2 = 0.55
       expect(weighted[0].evidenceWeight).toBe(0.55);
@@ -471,9 +455,7 @@ describe("Source Reliability Integration", () => {
       expect(source.trackRecordScore).toBe(0.85);
 
       // Verify it can be used in weighting
-      const facts: EvidenceItem[] = [
-        { id: "f1", sourceId: "test-source", claim: "...", excerpt: "...", supportsClaim: true, confidence: 80 },
-      ];
+      const evidenceItems: EvidenceItem[] = [makeEvidenceItem("E1", "test-source")];
 
       const verdicts: ClaimVerdict[] = [
         {
@@ -483,7 +465,7 @@ describe("Source Reliability Integration", () => {
           confidence: 70,
           verdict: 80,
           highlightColor: "green",
-          supportingEvidenceIds: ["f1"],
+          supportingEvidenceIds: ["E1"],
           reasoning: "...",
           claimRole: "central",
           isCentral: false,
@@ -491,7 +473,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const weighted = applyEvidenceWeighting(verdicts, facts, [source]);
+      const weighted = applyEvidenceWeighting(verdicts, evidenceItems, [source]);
       expect(weighted[0].evidenceWeight).toBe(0.85);
     });
 
@@ -507,9 +489,7 @@ describe("Source Reliability Integration", () => {
         fetchSuccess: true,
       };
 
-      const facts: EvidenceItem[] = [
-        { id: "f1", sourceId: "unknown-source", claim: "...", excerpt: "...", supportsClaim: true, confidence: 70 },
-      ];
+      const evidenceItems: EvidenceItem[] = [makeEvidenceItem("E1", "unknown-source")];
 
       const verdicts: ClaimVerdict[] = [
         {
@@ -519,7 +499,7 @@ describe("Source Reliability Integration", () => {
           confidence: 65,
           verdict: 75,
           highlightColor: "yellow",
-          supportingEvidenceIds: ["f1"],
+          supportingEvidenceIds: ["E1"],
           reasoning: "...",
           claimRole: "supporting",
           isCentral: false,
@@ -527,7 +507,7 @@ describe("Source Reliability Integration", () => {
         },
       ];
 
-      const weighted = applyEvidenceWeighting(verdicts, facts, [source]);
+      const weighted = applyEvidenceWeighting(verdicts, evidenceItems, [source]);
 
       // Unknown sources use DEFAULT_UNKNOWN_SOURCE_SCORE (0.5) which pulls verdict toward neutral
       // Formula: adjustedTruth = 50 + (75 - 50) * 0.5 = 50 + 12.5 = 63 (rounded)

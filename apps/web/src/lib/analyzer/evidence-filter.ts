@@ -5,7 +5,7 @@
  * that slip through the LLM extraction layer.
  *
  * Two-layer enforcement strategy:
- * - Layer 1 (prompts): extract-facts-base.ts instructs LLM not to extract low-quality items
+ * - Layer 1 (prompts): extract-evidence-base.ts instructs LLM not to extract low-quality items
  * - Layer 2 (this file): Deterministic filter catches anything that slips through
  *
  * v2.10: Uses internal pattern set (no external lexicon config).

@@ -4,13 +4,13 @@ import type { MethodologyGroup } from "../utils/methodologyGrouping";
 
 type MethodologySubGroupProps = {
   group: MethodologyGroup;
-  renderFact: (fact: any) => React.ReactNode;
+  renderEvidenceItem: (evidenceItem: any) => React.ReactNode;
   defaultExpanded?: boolean;
 };
 
 export function MethodologySubGroup({
   group,
-  renderFact,
+  renderEvidenceItem,
   defaultExpanded = true,
 }: MethodologySubGroupProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -27,7 +27,7 @@ export function MethodologySubGroup({
           {group.icon}
         </span>
         <span className={styles.title}>{group.label}</span>
-        <span className={styles.count}>{group.facts.length}</span>
+        <span className={styles.count}>{group.evidenceItems.length}</span>
         <span
           className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ""}`}
           aria-hidden="true"
@@ -37,9 +37,9 @@ export function MethodologySubGroup({
       </button>
       {isExpanded && (
         <div className={styles.content}>
-          {group.facts.map((fact) => (
-            <div key={fact.id} className={styles.factItem}>
-              {renderFact(fact)}
+          {group.evidenceItems.map((evidenceItem) => (
+            <div key={evidenceItem.id} className={styles.evidenceItem}>
+              {renderEvidenceItem(evidenceItem)}
             </div>
           ))}
         </div>

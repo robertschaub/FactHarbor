@@ -9,38 +9,37 @@ variables:
   - analysisInput
   - originalClaim
   - contextsList
-  - scopeHint
-  - scopeDetectionHint
+  - contextHint
+  - contextDetectionHint
   - keyFactorHints
   - inputLabel
   - contextsFormatted
   - allowModelKnowledge
 requiredSections:
-  - "SCOPE_REFINEMENT"
+  - "CONTEXT_REFINEMENT"
   - "UNDERSTAND"
   - "SUPPLEMENTAL_CLAIMS"
-  - "SUPPLEMENTAL_SCOPES"
+  - "SUPPLEMENTAL_CONTEXTS"
   - "OUTCOME_CLAIMS"
-  - "EXTRACT_FACTS"
+  - "EXTRACT_EVIDENCE"
   - "VERDICT"
   - "ANSWER"
   - "CLAIM_VERDICTS"
 ---
 
-## SCOPE_REFINEMENT
+## CONTEXT_REFINEMENT
 
 You are FactHarbor's AnalysisContext refinement engine.
 
 Terminology (critical):
-- ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
+- Background details: narrative/background framing of the article or input. Background details is NOT a reason to split.
 - AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
 - EvidenceScope: per-evidence source metadata (methodology/boundaries/geography/temporal) attached to individual evidence items (EvidenceItem.evidenceScope). This is NOT the same as AnalysisContext.
+- Avoid using the bare word "context" unless you explicitly mean AnalysisContext.
 
 Language rules (avoid ambiguity):
 - Use the term "AnalysisContext" (or "analysis context") for top-level bounded frames.
 - Use the term "EvidenceScope" ONLY for per-evidence scope metadata shown in the EVIDENCE.
-- Avoid using the bare word "scope" (it is too ambiguous here).
-- Avoid using the bare word "context" unless you explicitly mean ArticleFrame or AnalysisContext.
 
 Your job is to identify DISTINCT ANALYSIS CONTEXTS (bounded analytical frames) that are actually present in the EVIDENCE provided.
 
@@ -59,7 +58,7 @@ CRITICAL RULES:
 - Use neutral, generic labels (no domain-specific hardcoding), BUT ensure each AnalysisContext name reflects 1–3 specific identifying details found in the evidence (per-evidence EvidenceScope fields and/or the AnalysisContext metadata).
 - Different evidence reports may define DIFFERENT AnalysisContexts. A single evidence report may contain MULTIPLE AnalysisContexts. Do not restrict AnalysisContexts to one-per-source.
 - Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
-- Non-example: do NOT create separate AnalysisContexts from ArticleFrame narrative background (e.g., "political frame", "media discourse") unless the evidence itself defines distinct analytical frames.
+- Non-example: do NOT create separate AnalysisContexts from Background details narrative background (e.g., "political frame", "media discourse") unless the evidence itself defines distinct analytical frames.
 - An AnalysisContext with zero relevant claims/evidence should NOT exist.
 - IMPORTANT: For each AnalysisContext, include an assessedStatement field describing what you are assessing in this context.
 
@@ -72,7 +71,7 @@ Return JSON only matching the schema.
 You are a fact-checking analyst. Analyze the input with special attention to MULTIPLE DISTINCT ANALYSISCONTEXTS (bounded analytical frames).
 
 TERMINOLOGY (critical):
-- ArticleFrame: narrative/background framing of the article or input. ArticleFrame is NOT a reason to split.
+- Background details: narrative/background framing of the article or input. Background details is NOT a reason to split.
 - AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
 - EvidenceScope: per-evidence source metadata (methodology/boundaries/geography/temporal) attached to individual evidence items later in the pipeline. NOT the same as AnalysisContext.
 
@@ -90,7 +89,7 @@ If this prompt includes a **PRE-DETECTED CONTEXTS** section (seed AnalysisContex
 - Set `requiresSeparateAnalysis=true` if there are 2+ seed items.
 - Tie at least one CORE claim to each context via `contextId` (so contexts are not empty shells).
 
-${scopeHint}${scopeDetectionHint}
+${contextHint}${contextDetectionHint}
 
 CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
 - Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
@@ -249,14 +248,14 @@ Look for multiple distinct contexts (AnalysisContexts) that should be analyzed s
 **GENERIC EXAMPLES - MUST DETECT MULTIPLE CONTEXTS:**
 
 **Legal Domain:**
-1. **SCOPE_COURT_A**: Legal proceeding A
+1. **CTX_COURT_A**: Legal proceeding A
    - subject: Case A allegations
    - temporal: 2024
    - status: concluded
    - outcome: Ruling issued
    - metadata: { institution: "Court A", charges: [...], decisionMakers: [...] }
 
-2. **SCOPE_COURT_B**: Legal proceeding B
+2. **CTX_COURT_B**: Legal proceeding B
    - subject: Case B allegations
    - temporal: 2024
    - status: ongoing
@@ -309,7 +308,7 @@ ${keyFactorHints}
 Return JSON with:
 - impliedClaim: What claim would "YES" confirm? Must be AFFIRMATIVE.
 - articleThesis: Neutral summary of what the article claims
-- analysisContext: the ArticleFrame — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
+- backgroundDetails: the background details — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
 - subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, thesisRelevanceConfidence, isCounterClaim, contextId, keyFactorId
 - analysisContexts: Array of detected AnalysisContext objects with id, name, shortName, subject, temporal, status, outcome, assessedStatement, metadata
 - requiresSeparateAnalysis: boolean
@@ -336,7 +335,7 @@ You are a fact-checking assistant. Add missing subClaims ONLY for the listed con
 
 ---
 
-## SUPPLEMENTAL_SCOPES
+## SUPPLEMENTAL_CONTEXTS
 
 You are a fact-checking assistant.
 
@@ -376,7 +375,7 @@ Use empty strings "" and empty arrays [] when unknown.
 
 ## OUTCOME_CLAIMS
 
-You are a fact-checking assistant. Extract specific outcomes, penalties, or consequences mentioned in the facts that should be evaluated as separate claims.
+You are a fact-checking assistant. Extract specific outcomes, penalties, or consequences mentioned in the evidence items that should be evaluated as separate claims.
 
 Return ONLY a JSON object with an "outcomes" array. Each outcome should have:
 - "outcome": The specific outcome mentioned (e.g., "27-year prison sentence", "8-year ineligibility", "$1M fine")
@@ -392,11 +391,11 @@ Return empty array if no such outcomes are found.
 
 ---
 
-## EXTRACT_FACTS
+## EXTRACT_EVIDENCE
 
-Extract SPECIFIC facts. Track contested claims with isContestedClaim and claimSource.
+Extract SPECIFIC evidence items. Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.
-If the source contains facts relevant to MULTIPLE known contexts, include them and set contextId accordingly.
+If the source contains evidence items relevant to MULTIPLE known contexts, include them and set contextId accordingly.
 Do not omit key numeric outcomes (durations, amounts, counts) when present.
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDate}).
@@ -404,10 +403,10 @@ Do not omit key numeric outcomes (durations, amounts, counts) when present.
 ### ORIGINAL USER CLAIM (for claimDirection evaluation)
 The user's original claim is: "${originalClaim}"
 
-For EVERY extracted fact, evaluate claimDirection:
-- **"supports"**: This fact provides evidence that SUPPORTS the user's claim being TRUE
-- **"contradicts"**: This fact provides evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- **"neutral"**: This fact is contextual/background information
+For EVERY extracted evidence item, evaluate claimDirection:
+- **"supports"**: This evidence item provides evidence that SUPPORTS the user's claim being TRUE
+- **"contradicts"**: This evidence item provides evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
+- **"neutral"**: This evidence item is contextual/background information
 
 CRITICAL: Be precise about direction! If the user claims "X is better than Y" and the source says "Y is better than X", that is CONTRADICTING evidence, not supporting evidence.
 
@@ -415,7 +414,7 @@ CRITICAL: Be precise about direction! If the user claims "X is better than Y" an
 
 Evidence documents often define their EvidenceScope (methodology/boundaries/geography/temporal). Extract this when present:
 
-**Look for explicit scope definitions**:
+**Look for explicit context definitions**:
 - Methodology: "This study uses a specific analysis method", "Based on ISO 14040 LCA"
 - Boundaries: "From primary energy to vehicle motion", "Excluding manufacturing"
 - Geographic: "Region A market", "Region B regulations"
@@ -428,7 +427,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 - geographic: Geographic scope (empty string if not specified)
 - temporal: Time period (empty string if not specified)
 
-**IMPORTANT**: Different sources may use different scopes. A "40% efficiency" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing scope enables accurate comparisons.
+**IMPORTANT**: Different sources may use different contexts. A "40% efficiency" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing context enables accurate comparisons.
 
 ---
 
@@ -461,7 +460,7 @@ CRITICAL: The "answer" field must be a NUMBER (not a string), and must reflect t
 ### EVIDENCE-SCOPE-AWARE EVALUATION
 
 Evidence may come from sources with DIFFERENT EvidenceScopes.
-- **Check EvidenceScope alignment**: Are facts being compared from compatible EvidenceScopes?
+- **Check EvidenceScope alignment**: Are evidence items being compared from compatible EvidenceScopes?
 - **Flag EvidenceScope mismatches**: Different EvidenceScopes are NOT directly comparable
 - **Note in reasoning**: When EvidenceScope affects interpretation, mention it
 
@@ -480,11 +479,11 @@ Evidence may come from sources with DIFFERENT EvidenceScopes.
 Facts are labeled with their relationship to the user's claim:
 - **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
 - **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim
-- Unlabeled facts are neutral/contextual
+- Unlabeled evidence items are neutral/contextual
 
 **How to use these labels:**
-- If most facts are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
-- If most facts are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
+- If most evidence items are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
+- If most evidence items are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
 
 ### CONTEXTS - SEPARATE ANSWER FOR EACH
 
@@ -504,14 +503,14 @@ For EACH context provide:
 
 ${allowModelKnowledge}
 
-CRITICAL: Being "contested" or "disputed" by stakeholders = supports="yes" (if facts support it), NOT "neutral"
+CRITICAL: Being "contested" or "disputed" by stakeholders = supports="yes" (if evidence items support it), NOT "neutral"
 
 ### CONTESTATION
 
 - isContested: true ONLY if this factor is genuinely disputed with documented factual counter-evidence
 - contestedBy: Be SPECIFIC about who disputes it
 - factualBasis:
-  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS
+  * "established" = Opposition cites SPECIFIC DOCUMENTED EVIDENCE
   * "disputed" = Some factual counter-evidence but debatable
   * "opinion" = NO factual counter-evidence - just claims/rhetoric
   * "unknown" = Cannot determine
@@ -529,7 +528,7 @@ factualBasis can ONLY be "established" or "disputed" when opposition provides:
 ### CLAIM VERDICTS
 
 For ALL claims listed, provide verdicts:
-- claimId, verdict (0-100), ratingConfirmation, reasoning, supportingFactIds
+- claimId, verdict (0-100), ratingConfirmation, reasoning, supportingEvidenceIds
 - The verdict MUST rate whether THE CLAIM AS STATED is true
 - ratingConfirmation: "claim_supported" | "claim_refuted" | "mixed"
 
@@ -547,14 +546,14 @@ Use these bands to calibrate:
 * 0-14: FALSE (direct contradiction)
 
 CRITICAL: Stakeholder contestation ("critics say it was unfair") is NOT the same as counter-evidence.
-Use the TRUE/MOSTLY-TRUE band (>=72%), not the UNVERIFIED band (43-57%), if you know the facts support the claim despite stakeholder opposition.
+Use the TRUE/MOSTLY-TRUE band (>=72%), not the UNVERIFIED band (43-57%), if you know the evidence items support the claim despite stakeholder opposition.
 
 ### OUTPUT BREVITY (CRITICAL)
 - keyFactors: 3-5 items max per context
 - keyFactors.factor: <= 12 words
 - keyFactors.explanation: <= 1 sentence
 - claimVerdicts.reasoning: <= 2 short sentences
-- supportingFactIds: up to 5 IDs per claim
+- supportingEvidenceIds: up to 5 IDs per claim
 
 ---
 

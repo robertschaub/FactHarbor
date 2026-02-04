@@ -81,8 +81,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 // Tier 2 operational config for analysis pipeline settings.
 // Hot-reloadable via Admin UI (defaults defined in code + UCM).
 
-// Accept CTX_ (preferred) and SCOPE_ (legacy) during terminology transition.
-const CONTEXT_PATTERN_ID_REGEX = /^(?:CTX|SCOPE)_[A-Z_]+$/;
+const CONTEXT_PATTERN_ID_REGEX = /^CTX_[A-Z_]+$/;
 
 export const PipelineConfigSchema = z.object({
   // === Model Selection ===
@@ -96,11 +95,7 @@ export const PipelineConfigSchema = z.object({
   llmInputClassification: z.boolean().describe("Use LLM for input classification (replaces heuristics)"),
   llmEvidenceQuality: z.boolean().describe("Use LLM for evidence quality assessment"),
 
-  // NEW: Correctly-named key (PRIMARY)
   llmContextSimilarity: z.boolean().optional().describe("Use LLM for AnalysisContext similarity analysis"),
-  // DEPRECATED: Old key kept for backward compatibility
-  /** @deprecated Use llmContextSimilarity instead - 'scope' here means AnalysisContext */
-  llmScopeSimilarity: z.boolean().optional().describe("Legacy key for AnalysisContext similarity analysis"),
 
   llmVerdictValidation: z.boolean().describe("Use LLM for verdict validation (inversion/harm detection)"),
 
@@ -171,7 +166,7 @@ export const PipelineConfigSchema = z.object({
   contextFactorHints: z
     .array(
       z.object({
-        scopeType: z.string(),
+        contextType: z.string(),
         evaluationCriteria: z.string(),
         factor: z.string(),
         category: z.string(),
@@ -181,8 +176,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Hints for LLM AnalysisContext-specific factor generation"),
 
   // === Context Prompt & Alignment Controls ===
-  contextPromptSelectionEnabled: z.boolean().optional().describe("Enable targeted fact selection for context refinement prompts"),
-  contextPromptMaxFacts: z.number().int().min(8).max(80).optional().describe("Max facts included in context refinement prompts"),
+  contextPromptSelectionEnabled: z.boolean().optional().describe("Enable targeted evidence selection for context refinement prompts"),
+  contextPromptMaxEvidenceItems: z.number().int().min(8).max(80).optional().describe("Max evidence items included in context refinement prompts"),
   contextDedupEnabled: z.boolean().optional().describe("Enable AnalysisContext deduplication"),
   contextNameAlignmentEnabled: z.boolean().optional().describe("Enable AnalysisContext name alignment"),
   contextNameAlignmentThreshold: z.number().min(0).max(1).optional().describe("Threshold for AnalysisContext name alignment (0-1)"),
@@ -205,13 +200,9 @@ export const PipelineConfigSchema = z.object({
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
 
-  // NEW: Correctly-named key (PRIMARY)
   maxIterationsPerContext: z.number().int().min(1).max(20).optional().describe("Max research iterations per AnalysisContext"),
-  // DEPRECATED: Old key kept for backward compatibility
-  /** @deprecated Use maxIterationsPerContext instead - 'scope' here means AnalysisContext */
-  maxIterationsPerScope: z.number().int().min(1).max(20).optional().describe("Legacy key for max research iterations per AnalysisContext"),
 
-  maxTotalIterations: z.number().int().min(1).max(50).describe("Max total iterations across all scopes"),
+  maxTotalIterations: z.number().int().min(1).max(50).describe("Max total iterations across all contexts"),
   maxTotalTokens: z.number().int().min(10000).max(2000000).describe("Max tokens per analysis"),
   maxTokensPerCall: z.number().int().min(1000).max(500000).optional().describe("Max tokens per LLM call"),
   enforceBudgets: z.boolean().describe("Hard enforce budget limits (false = soft limits for important claims)"),
@@ -233,9 +224,9 @@ export const PipelineConfigSchema = z.object({
     .describe("Threshold for auto-downgrading 'direct' to 'tangential' (default: 60)"),
 
   minEvidenceForTangential: z.number().int().min(0).max(10).optional()
-    .describe("Minimum supporting facts required for tangential claims to appear in report (default: 2)"),
+    .describe("Minimum supporting evidence items required for tangential claims to appear in report (default: 2)"),
   tangentialEvidenceQualityCheckEnabled: z.boolean().optional()
-    .describe("Require at least one high/medium probative fact for tangential claims (default: false)"),
+    .describe("Require at least one high/medium probative evidence item for tangential claims (default: false)"),
 
   maxOpinionFactors: z.number().int().min(0).max(20).optional()
     .describe("Maximum opinion-based keyFactors to include in report (0 = unlimited, monitor only)"),
@@ -247,20 +238,8 @@ export const PipelineConfigSchema = z.object({
     .optional()
     .describe("Default pipeline variant for new jobs"),
 }).transform((data) => {
-  // Runtime migration: Copy old keys to new keys if new keys don't exist
+  // Runtime migration warnings (no legacy field aliases in v3.1+)
   const warnings: string[] = [];
-
-  // llmScopeSimilarity → llmContextSimilarity
-  if (data.llmScopeSimilarity !== undefined && data.llmContextSimilarity === undefined) {
-    data.llmContextSimilarity = data.llmScopeSimilarity;
-    warnings.push("llmScopeSimilarity → llmContextSimilarity");
-  }
-
-  // maxIterationsPerScope → maxIterationsPerContext
-  if (data.maxIterationsPerScope !== undefined && data.maxIterationsPerContext === undefined) {
-    data.maxIterationsPerContext = data.maxIterationsPerScope;
-    warnings.push("maxIterationsPerScope → maxIterationsPerContext");
-  }
 
   if (data.llmProvider === undefined) {
     data.llmProvider = "anthropic";
@@ -273,8 +252,8 @@ export const PipelineConfigSchema = z.object({
   if (data.contextPromptSelectionEnabled === undefined) {
     data.contextPromptSelectionEnabled = true;
   }
-  if (data.contextPromptMaxFacts === undefined) {
-    data.contextPromptMaxFacts = 40;
+  if (data.contextPromptMaxEvidenceItems === undefined) {
+    data.contextPromptMaxEvidenceItems = 40;
   }
   if (data.contextDedupEnabled === undefined) {
     data.contextDedupEnabled = true;
@@ -377,7 +356,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   contextDetectionCustomPatterns: undefined,
   contextFactorHints: undefined,
   contextPromptSelectionEnabled: true,
-  contextPromptMaxFacts: 40,
+  contextPromptMaxEvidenceItems: 40,
   contextDedupEnabled: true,
   contextNameAlignmentEnabled: true,
   contextNameAlignmentThreshold: 0.3,
@@ -709,7 +688,7 @@ const PromptFrontmatterSchema = z.object({
     "monolithic-canonical",
     "monolithic-dynamic",
     "source-reliability",
-    "text-analysis",  // LLM text analysis prompts (input, evidence, scope, verdict)
+    "text-analysis",  // LLM text analysis prompts (input, evidence, context, verdict)
   ]),
   description: z.string().optional(),
   lastModified: z.string().optional(),

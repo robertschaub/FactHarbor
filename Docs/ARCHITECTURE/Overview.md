@@ -163,7 +163,7 @@ flowchart TB
 
             FETCHSRC[fetchSourceContent<br/>━━━━━━━━━━━━━<br/>• Parallel fetching<br/>• Timeout handling]
 
-            EXTRACT[extractFacts<br/>━━━━━━━━━━━━━<br/>• Parse sources<br/>• Extract facts]
+            EXTRACT[extractEvidence<br/>━━━━━━━━━━━━━<br/>• Parse sources<br/>• Extract evidence]
             LLM2[("🤖 LLM Call #2-N<br/>Per source")]
         end
 
@@ -222,7 +222,7 @@ flowchart TB
 - Discovers KeyFactors (optional decomposition questions)
 - Applies Gate 1: Claim Validation
 
-**Step 2: Research (decideNextResearch + extractFacts)**
+**Step 2: Research (decideNextResearch + extractEvidence)**
 - Iterative research cycle (typically 2-3 rounds)
 - Generates search queries targeting gaps
 - Fetches and parses sources (HTML, PDF)
@@ -305,7 +305,7 @@ erDiagram
         float evidenceWeight "Evidence weighting based on source scores"
         string riskTier "A (high) | B (medium) | C (low)"
         string reasoning "Explanation of verdict"
-        string_array supportingFactIds "Evidence IDs supporting this"
+        string_array supportingEvidenceIds "Evidence IDs supporting this"
         boolean dependencyFailed "True if prerequisite failed"
         string_array failedDependencies "Which deps failed"
         string keyFactorId "Key factor mapping (empty if none)"

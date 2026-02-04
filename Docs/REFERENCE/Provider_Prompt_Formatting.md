@@ -40,13 +40,13 @@ A one-size-fits-all approach leaves significant performance gains untapped.
 
 ```typescript
 // Base prompt (universal logic)
-const basePrompt = getExtractFactsBasePrompt();
+const basePrompt = getExtractEvidenceBasePrompt();
 
 // Provider variant (format optimization)
-const providerVariant = getAnthropicExtractFactsVariant();  // or OpenAI, Gemini, Mistral
+const providerVariant = getAnthropicExtractEvidenceVariant();  // or OpenAI, Gemini, Mistral
 
 // Config adaptation (tiering, knowledge mode)
-const configAdaptation = getTieringExtractFactsAdaptation(tier);
+const configAdaptation = getTieringExtractEvidenceAdaptation(tier);
 
 // Final composed prompt
 const finalPrompt = basePrompt + providerVariant + configAdaptation;
@@ -228,7 +228,7 @@ Extract verifiable facts from sources. Each fact needs:
 **Output**:
 ```json
 {
-  "fact": "Agency report documented Product A failure rate of 2.1% in 2023",
+  "statement": "Agency report documented Product A failure rate of 2.1% in 2023",
   "probativeValue": "high",
   "sourceUrl": "https://example.com/reports/2023",
   "sourceExcerpt": "The agency annual report documented a Product A failure rate of 2.1%..."

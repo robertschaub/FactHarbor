@@ -15,13 +15,13 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 ## Master Mapping Table
 
-| TypeScript Type | Prompt Term | LLM Output Field (v2.7) | LLM Output Field (Legacy) | Zod Schema |
+| TypeScript Type | Prompt Term | LLM Output Field (v3.1) | LLM Output Field (Legacy) | Zod Schema |
 |----------------|-------------|---------------------------|--------------------------|------------|
 | `AnalysisContext` | "AnalysisContext" or "Context" | `analysisContexts` | `distinctProceedings` | `AnalysisContextSchema` |
 | `EvidenceScope` | "EvidenceScope" or "Scope" | `evidenceScope` | `evidenceScope` | `EvidenceScopeSchema` |
 
 > **CRITICAL TERMINOLOGY (v2.6.39)**: "Scope" refers to `EvidenceScope` (per-evidence metadata), NOT `AnalysisContext`. Use "Context" for top-level analytical frames.
-| `ExtractedFact` | "Fact" | `facts` | `facts` | `ExtractedFactSchema` |
+| `EvidenceItem` | "Evidence" | `evidenceItems` | (none) | `EvidenceItemSchema` |
 | `ContextAnswer` | "Verdict" | (embedded in result) | (embedded in result) | `ContextAnswerSchema` |
 
 ---
@@ -80,9 +80,9 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 ---
 
-### EXTRACT_FACTS Phase
+### EXTRACT_EVIDENCE Phase
 
-**Purpose**: Extract verifiable facts from fetched sources
+**Purpose**: Extract verifiable evidence items from fetched sources
 
 **Input to LLM**:
 ```typescript
@@ -101,10 +101,10 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 **LLM Output Schema (v2.7)**:
 ```json
 {
-  "facts": [
+  "evidenceItems": [
     {
       "id": "string",
-      "fact": "string",
+      "statement": "string",
       "category": "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism",
       "specificity": "high" | "medium",
       "sourceExcerpt": "string (50-200 chars)",
@@ -125,7 +125,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 **Legacy Compatibility**:
 - Legacy field `relatedProceedingId` is still accepted when reading older jobs.
 
-**Zod Validation**: `ExtractedFactSchema` (in `types.ts`)
+**Zod Validation**: `EvidenceItemSchema` (in `types.ts`)
 
 **Key Mappings**:
 - Prompt: "EvidenceScope" → Output: `evidenceScope` object (nullable)
@@ -140,8 +140,8 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 **Input to LLM**:
 ```typescript
 {
-  facts: ExtractedFact[];              // All extracted facts
-  preliminaryContexts: AnalysisContext[];  // From UNDERSTAND phase
+  evidenceItems: EvidenceItem[];              // All extracted evidence items
+  preliminaryContexts: AnalysisContext[];     // From UNDERSTAND phase
 }
 ```
 
@@ -174,10 +174,16 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
       }
     }
   ],
-  "factScopeAssignments": [  // Legacy name: assigns facts to AnalysisContexts (not EvidenceScopes)
+  "evidenceContextAssignments": [
     {
-      "factId": "string",
+      "evidenceId": "string",
       "contextId": "string"    // References AnalysisContext.id
+    }
+  ],
+  "claimContextAssignments": [
+    {
+      "claimId": "string",
+      "contextId": "string"
     }
   ]
 }
@@ -185,7 +191,6 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 **Legacy Compatibility**:
 - Legacy fields `distinctProceedings` and `proceedingId` are still accepted when reading older jobs.
-- `factScopeAssignments` field name is legacy - it assigns facts to AnalysisContexts (the "Scope" in the name is historical)
 
 **Zod Validation**: `ContextRefinementSchema` (legacy: `ScopeRefinementSchema`) in `analyzer.ts`
 

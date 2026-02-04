@@ -9,7 +9,7 @@
 - Provider variants now contain only formatting guidance (Phase 3 format-only principle)
 
 ### Added
-- Legacy field naming documentation notes (`detectedScopes`, `facts`, `supportingFactIds`)
+- Terminology cleanup documentation (`analysisContexts`, `evidenceItems`, `supportingEvidenceIds`)
 - Lead Developer verification for all prompt changes
 
 ### Documentation

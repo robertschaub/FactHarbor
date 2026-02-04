@@ -2,7 +2,7 @@ export type MethodologyGroup = {
   key: string;
   label: string;
   icon: string;
-  facts: Array<{ id: string; evidenceScope?: any }>;
+  evidenceItems: Array<{ id: string; evidenceScope?: any }>;
 };
 
 type MethodologyInfo = {
@@ -10,8 +10,8 @@ type MethodologyInfo = {
   icon: string;
 };
 
-const resolveMethodologyInfo = (fact: any): MethodologyInfo => {
-  const scope = fact?.evidenceScope;
+const resolveMethodologyInfo = (evidenceItem: any): MethodologyInfo => {
+  const scope = evidenceItem?.evidenceScope;
   const methodology =
     typeof scope?.methodology === "string" ? scope.methodology.trim() : "";
   const name = typeof scope?.name === "string" ? scope.name.trim() : "";
@@ -31,30 +31,30 @@ export function getMethodologyIcon(info: MethodologyInfo): string {
   return info.icon;
 }
 
-export function groupFactsByMethodology(
-  facts: Array<{ id: string; evidenceScope?: any }>
+export function groupEvidenceByMethodology(
+  evidenceItems: Array<{ id: string; evidenceScope?: any }>
 ): MethodologyGroup[] | null {
-  if (!Array.isArray(facts) || facts.length === 0) return null;
+  if (!Array.isArray(evidenceItems) || evidenceItems.length === 0) return null;
 
   const groups = new Map<string, MethodologyGroup>();
 
-  for (const fact of facts) {
-    const info = resolveMethodologyInfo(fact);
+  for (const evidenceItem of evidenceItems) {
+    const info = resolveMethodologyInfo(evidenceItem);
     const key = info.label.toLowerCase();
     if (!groups.has(key)) {
       groups.set(key, {
         key,
         label: info.label,
         icon: getMethodologyIcon(info),
-        facts: [],
+        evidenceItems: [],
       });
     }
-    groups.get(key)!.facts.push(fact);
+    groups.get(key)!.evidenceItems.push(evidenceItem);
   }
 
   if (groups.size < 3) return null;
 
   return Array.from(groups.values()).sort(
-    (a, b) => b.facts.length - a.facts.length
+    (a, b) => b.evidenceItems.length - a.evidenceItems.length
   );
 }

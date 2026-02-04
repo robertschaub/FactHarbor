@@ -33,7 +33,7 @@ interface NeutralityConfig {
 interface VerdictResult {
   truthPercentage: number;
   claimCount: number;
-  scopeCount: number;
+  contextCount: number;
 }
 
 // ============================================================================
@@ -94,25 +94,21 @@ function extractVerdictResult(result: Awaited<ReturnType<typeof runFactHarborAna
     return {
       truthPercentage: verdictSummary.overallTruthPercentage,
       claimCount: result.resultJson.claimVerdicts?.length || 0,
-      scopeCount: (result.resultJson.understanding?.analysisContexts?.length ??
-        result.resultJson.understanding?.distinctProceedings?.length) ||
-        1,
+      contextCount: result.resultJson.understanding?.analysisContexts?.length || 1,
     };
   }
 
   // Fall back to averaging claim verdicts
   const verdicts = result.resultJson.claimVerdicts || [];
   if (verdicts.length === 0) {
-    return { truthPercentage: 50, claimCount: 0, scopeCount: 1 }; // Default to neutral
+    return { truthPercentage: 50, claimCount: 0, contextCount: 1 }; // Default to neutral
   }
 
   const sum = verdicts.reduce((acc, v) => acc + (v.truthPercentage || 50), 0);
   return {
     truthPercentage: sum / verdicts.length,
     claimCount: verdicts.length,
-    scopeCount: (result.resultJson.understanding?.analysisContexts?.length ??
-      result.resultJson.understanding?.distinctProceedings?.length) ||
-      1,
+    contextCount: result.resultJson.understanding?.analysisContexts?.length || 1,
   };
 }
 

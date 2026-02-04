@@ -70,7 +70,7 @@ Before output, verify:
 [ ] JSON is valid`;
 }
 
-export function getMistralExtractFactsVariant(): string {
+export function getMistralExtractEvidenceVariant(): string {
   return `
 ## MISTRAL OPTIMIZATION - EVIDENCE EXTRACTION
 

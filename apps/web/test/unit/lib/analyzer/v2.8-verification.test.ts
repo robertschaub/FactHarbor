@@ -2,7 +2,7 @@
  * v2.8 Verification Tests
  * 
  * Unit and integration tests to verify the v2.8 changes work correctly:
- * 1. Hydrogen input verifies 2+ scopes detected (production/usage phases)
+ * 1. Hydrogen input verifies 2+ contexts detected (production/usage phases)
  * 2. Weighting behavior for contested vs doubted claims
  * 3. Harm potential classification observed in end-to-end runs (LLM-derived)
  * 
@@ -31,34 +31,34 @@ import { loadEnvFile } from "@test/helpers/test-helpers";
 
 describe("v2.8 Verification - Unit Tests", () => {
   // ============================================================================
-  // TEST 1: Hydrogen - Multiple Methodology Scopes
+  // TEST 1: Hydrogen - Multiple Methodology Contexts
   // ============================================================================
-  describe("Hydrogen Efficiency - Scope Pre-Detection", () => {
-    it("should detect 2+ scopes for hydrogen vs electricity comparison", () => {
+  describe("Hydrogen Efficiency - Context Pre-Detection", () => {
+    it("should detect 2+ contexts for hydrogen vs electricity comparison", () => {
       const input = "Hydrogen cars use more energy than electric cars";
       
-      const scopes = detectContexts(input);
+      const contexts = detectContexts(input);
       
-      console.log("[v2.8 Unit Test] Hydrogen scopes:", scopes);
+      console.log("[v2.8 Unit Test] Hydrogen contexts:", contexts);
       
-      // PASS CRITERIA: Should detect production/usage scopes
-      expect(scopes).not.toBeNull();
-      expect(scopes!.length).toBeGreaterThanOrEqual(2);
+      // PASS CRITERIA: Should detect production/usage contexts
+      expect(contexts).not.toBeNull();
+      expect(contexts!.length).toBeGreaterThanOrEqual(2);
       
-      // Check for expected scope IDs
-      const scopeIds = scopes!.map(s => s.id);
-      expect(scopeIds).toContain("SCOPE_PRODUCTION");
-      expect(scopeIds).toContain("SCOPE_USAGE");
+      // Check for expected context IDs
+      const contextIds = contexts!.map(s => s.id);
+      expect(contextIds).toContain("CTX_PRODUCTION");
+      expect(contextIds).toContain("CTX_USAGE");
     });
 
-    it("should format scope hints correctly", () => {
-      const scopes = detectContexts("Using hydrogen is more efficient than electricity");
+    it("should format context hints correctly", () => {
+      const contexts = detectContexts("Using hydrogen is more efficient than electricity");
 
       // With energy keyword
-      const scopesWithEnergy = detectContexts("Hydrogen cars use more energy than electric cars");
-      expect(scopesWithEnergy).not.toBeNull();
+      const contextsWithEnergy = detectContexts("Hydrogen cars use more energy than electric cars");
+      expect(contextsWithEnergy).not.toBeNull();
 
-      const hint = formatDetectedContextsHint(scopesWithEnergy, true);
+      const hint = formatDetectedContextsHint(contextsWithEnergy, true);
 
       expect(hint).toContain("PRE-DETECTED CONTEXTS");
       expect(hint).toContain("MUST output at least these contexts");
@@ -141,10 +141,10 @@ describe("v2.8 Verification - Unit Tests", () => {
   });
 
   // ============================================================================
-  // TEST 5: Legal/Trial Scope Pre-Detection
+  // TEST 5: Legal/Trial Context Pre-Detection
   // ============================================================================
-  describe("Legal Scope Pre-Detection", () => {
-    it("should detect legal scopes for trial fairness claims", () => {
+  describe("Legal Context Pre-Detection", () => {
+    it("should detect legal contexts for trial fairness claims", () => {
       const inputs = [
         "The trial was fair and based on law",
         "Was the judgment fair and legitimate?",
@@ -152,18 +152,18 @@ describe("v2.8 Verification - Unit Tests", () => {
       ];
 
       for (const input of inputs) {
-        const scopes = detectContexts(input);
+        const contexts = detectContexts(input);
 
-        console.log(`[v2.8 Unit Test] "${input.substring(0, 40)}..." -> ${scopes?.length ?? 0} scopes`);
+        console.log(`[v2.8 Unit Test] "${input.substring(0, 40)}..." -> ${contexts?.length ?? 0} contexts`);
 
-        expect(scopes).not.toBeNull();
-        expect(scopes!.length).toBeGreaterThanOrEqual(2);
+        expect(contexts).not.toBeNull();
+        expect(contexts!.length).toBeGreaterThanOrEqual(2);
 
-        // Check for legal-type scope
-        const hasLegalScope = scopes!.some(s =>
-          s.type === "legal" || s.id === "SCOPE_LEGAL_PROC"
+        // Check for legal-type context
+        const hasLegalContext = contexts!.some(s =>
+          s.type === "legal" || s.id === "CTX_LEGAL_PROC"
         );
-        expect(hasLegalScope).toBe(true);
+        expect(hasLegalContext).toBe(true);
       }
     });
   });
@@ -638,7 +638,7 @@ describe("v2.8 Verification - Integration Tests", () => {
 
   describe("Hydrogen Efficiency - End-to-End", () => {
     it(
-      "should detect 2+ scopes in LLM output for hydrogen comparison",
+      "should detect 2+ contexts in LLM output for hydrogen comparison",
       async () => {
         if (!testsEnabled) {
           console.log("[v2.8 Integration] Skipping - no API keys");
@@ -653,13 +653,12 @@ describe("v2.8 Verification - Integration Tests", () => {
           inputType: "text",
         });
 
-        const scopes = result.resultJson.analysisContexts || 
-                       result.resultJson.scopes || 
-                       result.resultJson.understanding?.analysisContexts || 
+        const contexts = result.resultJson.analysisContexts ||
+                       result.resultJson.understanding?.analysisContexts ||
                        [];
 
-        console.log(`[v2.8 Integration] Scopes detected: ${scopes.length}`);
-        scopes.forEach((s: any, i: number) => {
+        console.log(`[v2.8 Integration] Contexts detected: ${contexts.length}`);
+        contexts.forEach((s: any, i: number) => {
           console.log(`  ${i + 1}. ${s.name} (${s.type || s.id})`);
         });
 
@@ -668,8 +667,8 @@ describe("v2.8 Verification - Integration Tests", () => {
           path.join(outputDir, "hydrogen-e2e-result.json"),
           JSON.stringify({
             input,
-            scopeCount: scopes.length,
-            scopes: scopes.map((s: any) => ({
+            contextCount: contexts.length,
+            contexts: contexts.map((s: any) => ({
               id: s.id,
               name: s.name,
               type: s.type,
@@ -680,15 +679,15 @@ describe("v2.8 Verification - Integration Tests", () => {
           }, null, 2)
         );
 
-        // SOFT CHECK: LLM may not always follow scope hints
+        // SOFT CHECK: LLM may not always follow context hints
         // The important thing is that the code provides the hints (verified in unit tests)
-        if (scopes.length < 2) {
-          console.warn("[v2.8 Integration] ⚠️ LLM detected fewer than 2 scopes - scope hints may need strengthening");
+        if (contexts.length < 2) {
+          console.warn("[v2.8 Integration] ⚠️ LLM detected fewer than 2 contexts - context hints may need strengthening");
           console.warn("  Unit tests verify the hint is correctly generated");
         }
         
         // Always pass - this is a verification/observation test
-        expect(scopes.length).toBeGreaterThanOrEqual(1);
+        expect(contexts.length).toBeGreaterThanOrEqual(1);
       },
       TEST_TIMEOUT_MS
     );

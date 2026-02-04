@@ -81,21 +81,7 @@ type AggregationPatternConfig = {
     internationalCuePatterns: string[];
     envHealthPatterns: string[];
   };
-  scopeHeuristics?: {
-    comparisonPatterns: string[];
-    efficiencyKeywords: string[];
-    legalFairnessPatterns: string[];
-    legalProcessKeywords: string[];
-    internationalCuePatterns: string[];
-    envHealthPatterns: string[];
-  };
   contextCanonicalization?: {
-    predicateStarters: string[];
-    fillerWords: string[];
-    legalTerms: string[];
-    jurisdictionIndicators: string[];
-  };
-  scopeCanonicalization?: {
     predicateStarters: string[];
     fillerWords: string[];
     legalTerms: string[];
@@ -319,16 +305,16 @@ export function getAggregationPatterns(
   pseudosciencePatterns: Record<string, RegExp[]>;
   pseudoscienceBrands: RegExp[];
   pseudoscienceDebunkedIndicators: RegExp[];
-  scopeComparisonPatterns: RegExp[];
-  scopeEfficiencyKeywords: RegExp[];
-  scopeLegalFairnessPatterns: RegExp[];
-  scopeLegalProcessKeywords: RegExp[];
-  scopeInternationalCuePatterns: RegExp[];
-  scopeEnvHealthPatterns: RegExp[];
-  scopePredicateStarters: RegExp[];
-  scopeFillerWords: RegExp[];
-  scopeLegalTerms: RegExp[];
-  scopeJurisdictionIndicators: RegExp[];
+  contextComparisonPatterns: RegExp[];
+  contextEfficiencyKeywords: RegExp[];
+  contextLegalFairnessPatterns: RegExp[];
+  contextLegalProcessKeywords: RegExp[];
+  contextInternationalCuePatterns: RegExp[];
+  contextEnvHealthPatterns: RegExp[];
+  contextPredicateStarters: RegExp[];
+  contextFillerWords: RegExp[];
+  contextLegalTerms: RegExp[];
+  contextJurisdictionIndicators: RegExp[];
   recencyKeywords: RegExp[];
   newsIndicatorKeywords: RegExp[];
   proceduralKeywords: RegExp[];
@@ -369,18 +355,16 @@ export function getAggregationPatterns(
     pseudosciencePatterns,
     pseudoscienceBrands: compilePatterns(lex.pseudoscience.brands),
     pseudoscienceDebunkedIndicators: compilePatterns(lex.pseudoscience.debunkedIndicators),
-    // Support both contextHeuristics (new) and scopeHeuristics (old) with new key taking precedence
-    scopeComparisonPatterns: compilePatterns((lex.contextHeuristics ?? lex.scopeHeuristics)!.comparisonPatterns),
-    scopeEfficiencyKeywords: compilePatterns((lex.contextHeuristics ?? lex.scopeHeuristics)!.efficiencyKeywords),
-    scopeLegalFairnessPatterns: compilePatterns((lex.contextHeuristics ?? lex.scopeHeuristics)!.legalFairnessPatterns),
-    scopeLegalProcessKeywords: compilePatterns((lex.contextHeuristics ?? lex.scopeHeuristics)!.legalProcessKeywords),
-    scopeInternationalCuePatterns: compilePatterns((lex.contextHeuristics ?? lex.scopeHeuristics)!.internationalCuePatterns),
-    scopeEnvHealthPatterns: compilePatterns((lex.contextHeuristics ?? lex.scopeHeuristics)!.envHealthPatterns),
-    // Support both contextCanonicalization (new) and scopeCanonicalization (old) with new key taking precedence
-    scopePredicateStarters: compilePatterns((lex.contextCanonicalization ?? lex.scopeCanonicalization)!.predicateStarters),
-    scopeFillerWords: compilePatterns((lex.contextCanonicalization ?? lex.scopeCanonicalization)!.fillerWords),
-    scopeLegalTerms: compilePatterns((lex.contextCanonicalization ?? lex.scopeCanonicalization)!.legalTerms),
-    scopeJurisdictionIndicators: compilePatterns((lex.contextCanonicalization ?? lex.scopeCanonicalization)!.jurisdictionIndicators),
+    contextComparisonPatterns: compilePatterns(lex.contextHeuristics!.comparisonPatterns),
+    contextEfficiencyKeywords: compilePatterns(lex.contextHeuristics!.efficiencyKeywords),
+    contextLegalFairnessPatterns: compilePatterns(lex.contextHeuristics!.legalFairnessPatterns),
+    contextLegalProcessKeywords: compilePatterns(lex.contextHeuristics!.legalProcessKeywords),
+    contextInternationalCuePatterns: compilePatterns(lex.contextHeuristics!.internationalCuePatterns),
+    contextEnvHealthPatterns: compilePatterns(lex.contextHeuristics!.envHealthPatterns),
+    contextPredicateStarters: compilePatterns(lex.contextCanonicalization!.predicateStarters),
+    contextFillerWords: compilePatterns(lex.contextCanonicalization!.fillerWords),
+    contextLegalTerms: compilePatterns(lex.contextCanonicalization!.legalTerms),
+    contextJurisdictionIndicators: compilePatterns(lex.contextCanonicalization!.jurisdictionIndicators),
     recencyKeywords: compilePatterns(lex.recencyHeuristics.recentKeywords),
     newsIndicatorKeywords: compilePatterns(lex.recencyHeuristics.newsIndicatorKeywords),
     proceduralKeywords: compilePatterns(lex.proceduralTopicHeuristics.proceduralKeywords),

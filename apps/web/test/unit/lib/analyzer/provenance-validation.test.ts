@@ -63,7 +63,7 @@ describe("validateEvidenceProvenance", () => {
   it("rejects evidence items with invalid URL patterns (localhost)", () => {
     const evidenceItem: EvidenceItem = {
       id: "S1-E1",
-      statement: "Test fact",
+      statement: "Test evidence statement",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -82,7 +82,7 @@ describe("validateEvidenceProvenance", () => {
   it("rejects evidence items with invalid URL patterns (chrome://)", () => {
     const evidenceItem: EvidenceItem = {
       id: "S1-E1",
-      statement: "Test fact",
+      statement: "Test evidence statement",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",
@@ -102,7 +102,7 @@ describe("validateEvidenceProvenance", () => {
   it("rejects evidence items with malformed URLs", () => {
     const evidenceItem: EvidenceItem = {
       id: "S1-E1",
-      statement: "Test fact",
+      statement: "Test evidence statement",
       category: "ruling",
       specificity: "high",
       sourceId: "S1",

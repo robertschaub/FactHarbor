@@ -16,7 +16,7 @@ const KEY_RENAMES: Record<string, string> = {
   relatedProceedingId: "contextId",
   proceedingId: "contextId",
   proceedingName: "contextName",
-  proceedingContext: "analysisContext"
+  proceedingContext: "backgroundDetails"
 };
 
 function renameKeysDeep(value: unknown): { value: unknown; changed: boolean } {

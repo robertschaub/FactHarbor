@@ -52,14 +52,14 @@ export const CONFIG = {
     maxSourcesPerIteration: 4, // v2.8.2: was 3
     maxTotalSources: 12, // v2.8.2: was 8
     articleMaxChars: 4000,
-    minFactsRequired: 6,
+    minEvidenceItemsRequired: 6,
   },
   deep: {
     maxResearchIterations: 5,
     maxSourcesPerIteration: 4,
     maxTotalSources: 20,
     articleMaxChars: 8000,
-    minFactsRequired: 12,
+    minEvidenceItemsRequired: 12,
   },
 
   minCategories: 2,
@@ -134,7 +134,7 @@ export function getDeterministicTemperature(
 }
 
 // ============================================================================
-// SCOPE/PROCEEDING UTILITIES
+// CONTEXT UTILITIES
 // ============================================================================
 
 /**
@@ -170,9 +170,9 @@ export function inferToAcronym(text: string): string {
 }
 
 /**
- * Infer scope type label from AnalysisContext data
+ * Infer context type label from AnalysisContext data
  */
-export function inferScopeTypeLabel(p: any): string {
+export function inferContextTypeLabel(p: any): string {
   const hay = [
     p?.name,
     p?.shortName,
@@ -196,10 +196,10 @@ export function inferScopeTypeLabel(p: any): string {
 }
 
 /**
- * Get rank for scope type (for stable ordering)
+ * Get rank for context type (for stable ordering)
  */
-export function scopeTypeRank(label: string): number {
-  // Stable ordering across runs: legal scopes first, then analytical, then general.
+export function contextTypeRank(label: string): number {
+  // Stable ordering across runs: legal contexts first, then analytical, then general.
   switch (label) {
     case "Electoral":
       return 1;
@@ -219,19 +219,6 @@ export function scopeTypeRank(label: string): number {
       return 9;
   }
 }
-
-// ============================================================================
-// FUNCTION ALIASES (Phase 1: Backward Compatibility)
-// ============================================================================
-// These aliases maintain backward compatibility while transitioning to
-// correct terminology. "Scope" in these function names refers to
-// AnalysisContext, NOT EvidenceScope. See types.ts:98-126 for definitions.
-
-/** Primary name for inferring context type label */
-export const inferContextTypeLabel = inferScopeTypeLabel;
-
-/** Primary name for context type ranking (alias already existed) */
-export const contextTypeRank = scopeTypeRank;
 
 /**
  * Detect institution code from AnalysisContext data
@@ -254,9 +241,9 @@ export function detectInstitutionCode(p: any): string {
 }
 
 /**
- * Sanitize scope short answer based on procedural status
+ * Sanitize context short answer based on procedural status
  */
-export function sanitizeScopeShortAnswer(shortAnswer: string, proceedingStatus: string): string {
+export function sanitizeContextShortAnswer(shortAnswer: string, proceedingStatus: string): string {
   if (!shortAnswer) return shortAnswer;
   if ((proceedingStatus || "").toLowerCase() !== "unknown") return shortAnswer;
 
@@ -269,6 +256,3 @@ export function sanitizeScopeShortAnswer(shortAnswer: string, proceedingStatus: 
   out = out.replace(/\bpending\b/gi, "unresolved");
   return out;
 }
-
-/** Primary name for sanitizing context short answer */
-export const sanitizeContextShortAnswer = sanitizeScopeShortAnswer;

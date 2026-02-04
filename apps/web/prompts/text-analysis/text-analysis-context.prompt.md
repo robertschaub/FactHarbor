@@ -4,7 +4,7 @@ pipeline: "text-analysis"
 description: "AnalysisContext similarity and phase bucket analysis"
 lastModified: "2026-01-31T00:00:00Z"
 variables:
-  - SCOPE_PAIRS
+  - CONTEXT_PAIRS
   - CONTEXT_LIST
   - PROMPT_HASH
 models:
@@ -17,7 +17,7 @@ requiredSections:
 ---
 
 ## TERMINOLOGY CLARIFICATION
-- "Scope" in this prompt's JSON output refers to AnalysisContext (top-level analytical frame)
+- "Context" in this prompt's JSON output refers to AnalysisContext (top-level analytical frame)
 - This is NOT the same as EvidenceScope (per-evidence source metadata)
 - See types.ts:98-126 for canonical definitions
 
@@ -70,7 +70,7 @@ For each AnalysisContext pair, determine:
 - If yes, which context name should be canonical (prefer more specific/descriptive)?
 
 Context pairs to analyze:
-${SCOPE_PAIRS}
+${CONTEXT_PAIRS}
 
 Available contexts:
 ${CONTEXT_LIST}
@@ -85,13 +85,13 @@ CRITICAL: Your response must be a single valid JSON object only.
 {
   "_meta": {
     "version": "1.0.0",
-    "analysisPoint": "scope",
+    "analysisPoint": "context",
     "promptHash": "${PROMPT_HASH}"
   },
   "result": [
     {
-      "scopeA": "context name A",
-      "scopeB": "context name B",
+      "contextA": "context name A",
+      "contextB": "context name B",
       "similarity": 0.87,
       "phaseBucketA": "production" | "usage" | "other",
       "phaseBucketB": "production" | "usage" | "other",
@@ -104,7 +104,7 @@ CRITICAL: Your response must be a single valid JSON object only.
 
 If you cannot complete the analysis, return:
 {
-  "_meta": { "version": "1.0.0", "analysisPoint": "scope", "promptHash": "${PROMPT_HASH}" },
+  "_meta": { "version": "1.0.0", "analysisPoint": "context", "promptHash": "${PROMPT_HASH}" },
   "result": null,
   "error": "Brief explanation of why analysis failed"
 }

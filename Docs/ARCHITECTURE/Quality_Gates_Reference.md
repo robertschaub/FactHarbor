@@ -205,7 +205,7 @@ Counter-evidence is scoped to relevant analysis contexts:
 // 1. In the same context as the verdict, OR
 // 2. Not scoped to any specific context (general criticism)
 const contradictingFactCount = facts.filter(f =>
-  !verdict.supportingFactIds.includes(f.id) &&
+  !verdict.supportingEvidenceIds.includes(f.id) &&
   f.category === "criticism" &&
   (!f.contextId || f.contextId === verdict.contextId)
 ).length;

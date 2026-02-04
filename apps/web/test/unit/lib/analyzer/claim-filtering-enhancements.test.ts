@@ -220,9 +220,9 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
       },
       {
         claimId: "c2",
-        claimText: "Direct claim with 1 fact",
+        claimText: "Direct claim with 1 evidence item",
         thesisRelevance: "direct" as const,
-        supportingEvidenceIds: ["f1"],
+        supportingEvidenceIds: ["E1"],
       },
     ];
 
@@ -233,7 +233,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
     expect(result.map((c) => c.claimId)).toEqual(["c1", "c2"]);
   });
 
-  it("should prune tangential claims with 0 facts", () => {
+  it("should prune tangential claims with 0 evidence items", () => {
     const claims = [
       {
         claimId: "c1",
@@ -251,13 +251,13 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
     );
   });
 
-  it("should prune tangential claims with 1 fact (threshold=2)", () => {
+  it("should prune tangential claims with 1 evidence item (threshold=2)", () => {
     const claims = [
       {
         claimId: "c1",
         claimText: "Tangential claim with insufficient evidence",
         thesisRelevance: "tangential" as const,
-        supportingEvidenceIds: ["f1"], // Only 1 fact, threshold is 2
+        supportingEvidenceIds: ["E1"], // Only 1 evidence item, threshold is 2
       },
     ];
 
@@ -269,19 +269,19 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
     );
   });
 
-  it("should KEEP tangential claims with 2+ facts", () => {
+  it("should KEEP tangential claims with 2+ evidence items", () => {
     const claims = [
       {
         claimId: "c1",
         claimText: "Tangential claim with sufficient evidence",
         thesisRelevance: "tangential" as const,
-        supportingEvidenceIds: ["f1", "f2"], // 2 facts = meets threshold
+        supportingEvidenceIds: ["E1", "E2"], // 2 evidence items = meets threshold
       },
       {
         claimId: "c2",
-        claimText: "Another tangential with 3 facts",
+        claimText: "Another tangential with 3 evidence items",
         thesisRelevance: "tangential" as const,
-        supportingEvidenceIds: ["f3", "f4", "f5"],
+        supportingEvidenceIds: ["E3", "E4", "E5"],
       },
     ];
 
@@ -297,7 +297,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Irrelevant claim",
         thesisRelevance: "irrelevant" as const,
-        supportingEvidenceIds: ["f1"], // Below threshold
+        supportingEvidenceIds: ["E1"], // Below threshold
       },
     ];
 
@@ -312,7 +312,7 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Tangential claim",
         thesisRelevance: "tangential" as const,
-        supportingEvidenceIds: ["f1", "f2", "f3"], // 3 facts
+        supportingEvidenceIds: ["E1", "E2", "E3"], // 3 evidence items
       },
     ];
 
@@ -324,27 +324,27 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
     expect(result).toHaveLength(0);
   });
 
-  it("should apply quality check when enabled with facts provided", () => {
+  it("should apply quality check when enabled with evidence items provided", () => {
     const claims = [
       {
         claimId: "c1",
-        claimText: "Tangential with 2 low-quality facts",
+        claimText: "Tangential with 2 low-quality evidence items",
         thesisRelevance: "tangential" as const,
-        supportingEvidenceIds: ["f1", "f2"],
+        supportingEvidenceIds: ["E1", "E2"],
       },
     ];
 
-    const facts = [
-      { id: "f1", probativeValue: "low" as const },
-      { id: "f2", probativeValue: "low" as const },
+    const evidenceItems = [
+      { id: "E1", probativeValue: "low" as const },
+      { id: "E2", probativeValue: "low" as const },
     ];
 
     const result = pruneTangentialBaselessClaims(claims, {
       requireQualityEvidence: true,
-      facts,
+      evidenceItems,
     });
 
-    // Should be pruned because no high/medium quality facts
+    // Should be pruned because no high/medium quality evidence
     expect(result).toHaveLength(0);
   });
 
@@ -354,18 +354,18 @@ describe("Enhancement 2: pruneTangentialBaselessClaims (threshold=2)", () => {
         claimId: "c1",
         claimText: "Tangential with quality evidence",
         thesisRelevance: "tangential" as const,
-        supportingEvidenceIds: ["f1", "f2"],
+        supportingEvidenceIds: ["E1", "E2"],
       },
     ];
 
-    const facts = [
-      { id: "f1", probativeValue: "high" as const },
-      { id: "f2", probativeValue: "low" as const },
+    const evidenceItems = [
+      { id: "E1", probativeValue: "high" as const },
+      { id: "E2", probativeValue: "low" as const },
     ];
 
     const result = pruneTangentialBaselessClaims(claims, {
       requireQualityEvidence: true,
-      facts,
+      evidenceItems,
     });
 
     // Should be kept because f1 is high quality
@@ -570,7 +570,7 @@ describe("pruneOpinionOnlyFactors", () => {
 
   it("should keep factors with 'established' factualBasis", () => {
     const keyFactors = [
-      { factualBasis: "established" as const, factor: "Documented fact" },
+      { factualBasis: "established" as const, factor: "Documented evidence" },
     ];
 
     const result = pruneOpinionOnlyFactors(keyFactors);
@@ -581,7 +581,7 @@ describe("pruneOpinionOnlyFactors", () => {
 
   it("should keep factors with 'disputed' factualBasis", () => {
     const keyFactors = [
-      { factualBasis: "disputed" as const, factor: "Contested fact" },
+      { factualBasis: "disputed" as const, factor: "Contested evidence" },
     ];
 
     const result = pruneOpinionOnlyFactors(keyFactors);

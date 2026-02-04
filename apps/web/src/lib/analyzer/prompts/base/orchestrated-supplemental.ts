@@ -20,7 +20,7 @@ export interface SupplementalClaimsVariables {
 export function getSupplementalClaimsPrompt(variables: SupplementalClaimsVariables): string {
   const { minCoreClaimsPerContext, hasScopes } = variables;
 
-  return `You are a fact-checking assistant. Add missing subClaims ONLY for the listed AnalysisContexts.
+  return `You are a verification assistant. Add missing subClaims ONLY for the listed AnalysisContexts.
 
 ## TASK
 Generate additional claims for AnalysisContexts that don't have enough coverage.
@@ -64,7 +64,7 @@ Return JSON with:
  * Get prompt for requesting supplemental AnalysisContext detection
  */
 export function getSupplementalScopesPrompt(): string {
-  return `You are a fact-checking assistant.
+  return `You are a verification assistant.
 
 ## TASK
 Detect whether the input contains multiple distinct AnalysisContexts that should be analyzed separately.
@@ -121,7 +121,7 @@ Use empty strings "" and empty arrays [] when unknown.
  * Get prompt for extracting outcome claims from research evidence items
  */
 export function getOutcomeClaimsExtractionPrompt(): string {
-  return `You are a fact-checking assistant.
+  return `You are a verification assistant.
 
 ## TASK
 Review the discovered evidence items and extract any OUTCOME-RELATED claims that weren't in the original input but should be evaluated.

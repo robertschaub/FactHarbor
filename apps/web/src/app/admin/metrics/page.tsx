@@ -224,7 +224,7 @@ export default function MetricsPage() {
               />
             </div>
             <p className={styles.metricDescription}>
-              Percentage of verdicts with high confidence (3+ sources, 5+ facts)
+              Percentage of verdicts with high confidence (3+ sources, 5+ evidence items)
             </p>
           </div>
         </div>

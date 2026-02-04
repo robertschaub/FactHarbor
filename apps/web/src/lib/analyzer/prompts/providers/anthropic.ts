@@ -28,7 +28,7 @@ Apply nuanced reasoning. Be direct and confident.
 </claude_optimization>`;
 }
 
-export function getAnthropicExtractFactsVariant(): string {
+export function getAnthropicExtractEvidenceVariant(): string {
   return `
 <claude_optimization>
 ## FORMAT
@@ -40,7 +40,7 @@ Use XML tags. Follow schema precisely.
 - All arrays as arrays (even if empty)
 
 ## STRENGTHS
-Use strong reading comprehension for implicit scope markers.
+Use strong reading comprehension for implicit context markers.
 </claude_optimization>`;
 }
 

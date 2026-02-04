@@ -110,25 +110,4 @@ describe("Config file loading (alpha)", () => {
     );
   });
 
-  it("migrates legacy keys and logs warnings", () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const legacyConfig = { ...DEFAULT_PIPELINE_CONFIG, llmScopeSimilarity: true };
-    delete (legacyConfig as { llmContextSimilarity?: boolean }).llmContextSimilarity;
-
-    const payload = {
-      schemaVersion: SCHEMA_VERSIONS.pipeline,
-      ...legacyConfig,
-    };
-
-    writeConfigFile(tempDir, "pipeline.default.json", JSON.stringify(payload, null, 2));
-
-    const result = loadDefaultConfigFromFile("pipeline");
-    expect(result).not.toBeNull();
-
-    const parsed = JSON.parse(result as string);
-    expect(parsed.llmContextSimilarity).toBe(true);
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Pipeline config keys migrated"),
-    );
-  });
 });

@@ -15,7 +15,7 @@ import {
 const TEXT_ANALYSIS_PROFILES = [
   "text-analysis-input",
   "text-analysis-evidence",
-  "text-analysis-scope",
+  "text-analysis-context",
   "text-analysis-verdict",
 ] as const;
 

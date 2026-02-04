@@ -21,7 +21,7 @@
   "contextDetectionMinConfidence": 0.7,
   "contextDetectionMaxContexts": 5,
   "contextPromptSelectionEnabled": true,
-  "contextPromptMaxFacts": 40,
+  "contextPromptMaxEvidenceItems": 40,
   "contextDedupEnabled": true,
   "contextNameAlignmentEnabled": true,
   "contextNameAlignmentThreshold": 0.3,

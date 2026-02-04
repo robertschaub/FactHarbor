@@ -90,14 +90,14 @@ export async function executeVerdictsInParallel<T>(
  * // Instead of:
  * const verdicts = [];
  * for (const claim of claims) {
- *   const verdict = await generateClaimVerdict(claim, facts, sources);
+ *   const verdict = await generateClaimVerdict(claim, evidenceItems, sources);
  *   verdicts.push(verdict);
  * }
  * 
  * // Use:
  * const verdicts = await generateClaimVerdictsParallel(
  *   claims,
- *   facts,
+ *   evidenceItems,
  *   sources,
  *   model,
  *   { maxConcurrency: 5 }
@@ -106,7 +106,7 @@ export async function executeVerdictsInParallel<T>(
  */
 export async function generateClaimVerdictsParallel(
   claims: any[],
-  facts: any[],
+  evidenceItems: any[],
   sources: any[],
   model: any,
   config: ParallelVerdictConfig = { maxConcurrency: 5 }
@@ -117,7 +117,7 @@ export async function generateClaimVerdictsParallel(
     execute: async () => {
       // This would call the existing generateClaimVerdict function
       // We'll need to extract it or make it accessible
-      return await generateSingleClaimVerdict(claim, facts, sources, model);
+      return await generateSingleClaimVerdict(claim, evidenceItems, sources, model);
     },
   }));
 
@@ -134,7 +134,7 @@ export async function generateClaimVerdictsParallel(
  */
 async function generateSingleClaimVerdict(
   claim: any,
-  facts: any[],
+  evidenceItems: any[],
   sources: any[],
   model: any
 ): Promise<any> {
@@ -207,7 +207,7 @@ export interface PerformanceComparison {
  */
 export async function benchmarkParallelVerdicts(
   claims: any[],
-  facts: any[],
+  evidenceItems: any[],
   sources: any[],
   model: any
 ): Promise<PerformanceComparison> {
@@ -217,7 +217,7 @@ export async function benchmarkParallelVerdicts(
   const seqStart = Date.now();
   const seqVerdicts = [];
   for (const claim of claims) {
-    const verdict = await generateSingleClaimVerdict(claim, facts, sources, model);
+    const verdict = await generateSingleClaimVerdict(claim, evidenceItems, sources, model);
     seqVerdicts.push(verdict);
   }
   const seqDuration = Date.now() - seqStart;
@@ -226,7 +226,7 @@ export async function benchmarkParallelVerdicts(
 
   // Parallel
   const parStart = Date.now();
-  const parVerdicts = await generateClaimVerdictsParallel(claims, facts, sources, model, {
+  const parVerdicts = await generateClaimVerdictsParallel(claims, evidenceItems, sources, model, {
     maxConcurrency: 5,
   });
   const parDuration = Date.now() - parStart;

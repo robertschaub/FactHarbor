@@ -75,7 +75,7 @@ const hasSpecificOutcome = extractNumericClaims(text);
 **Rule**: Every verdict must cite supporting or opposing facts.
 
 **Requirements**:
-- Track `supportingFactIds` for each verdict
+- Track `supportingEvidenceIds` for each verdict
 - Include counter-evidence (criticism category)
 - Show evidence sources with excerpts
 - Display quality gate decisions with reasons
@@ -83,7 +83,7 @@ const hasSpecificOutcome = extractNumericClaims(text);
 **Implementation**:
 ```typescript
 // GOOD - Track evidence explicitly
-verdict.supportingFactIds = facts
+verdict.supportingEvidenceIds = evidenceItems
   .filter(f => supportsVerdict(f, claim))
   .map(f => f.id);
 

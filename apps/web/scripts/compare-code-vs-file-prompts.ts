@@ -124,24 +124,24 @@ const TEST_CASES = {
       expected: { c3: { harmPotential: "high" } },
     },
   ],
-  scopeSimilarity: [
+  contextSimilarity: [
     {
-      name: "Similar scopes - should merge",
+      name: "Similar contexts - should merge",
       input: {
-        scopePairs: [{
-          scopeA: "US EPA vehicle emissions standards",
-          scopeB: "United States Environmental Protection Agency emissions regulations",
+        contextPairs: [{
+          contextA: "US EPA vehicle emissions standards",
+          contextB: "United States Environmental Protection Agency emissions regulations",
         }],
         contextList: ["regulatory", "environmental"],
       },
       expected: { shouldMerge: true },
     },
     {
-      name: "Different scopes - should not merge",
+      name: "Different contexts - should not merge",
       input: {
-        scopePairs: [{
-          scopeA: "Manufacturing phase emissions",
-          scopeB: "Vehicle operation emissions",
+        contextPairs: [{
+          contextA: "Manufacturing phase emissions",
+          contextB: "Vehicle operation emissions",
         }],
         contextList: ["lifecycle", "emissions"],
       },
@@ -347,20 +347,20 @@ async function main() {
   }
 
   // -------------------------------------------------------------------------
-  // Test 4: Scope Similarity
+  // Test 4: Context Similarity
   // -------------------------------------------------------------------------
   console.log("\n" + "=".repeat(80));
-  console.log("4. SCOPE SIMILARITY");
+  console.log("4. CONTEXT SIMILARITY");
   console.log("=".repeat(80));
 
-  for (const testCase of TEST_CASES.scopeSimilarity) {
+  for (const testCase of TEST_CASES.contextSimilarity) {
     totalTests++;
     console.log(`\n[TEST] ${testCase.name}`);
-    console.log(`  ScopeA: "${testCase.input.scopePairs[0].scopeA}"`);
-    console.log(`  ScopeB: "${testCase.input.scopePairs[0].scopeB}"`);
+    console.log(`  ContextA: "${testCase.input.contextPairs[0].contextA}"`);
+    console.log(`  ContextB: "${testCase.input.contextPairs[0].contextB}"`);
 
     // Run heuristic
-    const heuristicResult = await heuristic.analyzeScopeSimilarity(testCase.input);
+    const heuristicResult = await heuristic.analyzeContextSimilarity(testCase.input);
 
     for (const result of heuristicResult) {
       console.log(`  Similarity: ${(result.similarity * 100).toFixed(1)}%`);
@@ -373,20 +373,20 @@ async function main() {
         passedTests++;
       } else {
         console.log(`  ✗ FAIL: expected shouldMerge=${testCase.expected.shouldMerge}, got ${result.shouldMerge}`);
-        failures.push(`Scope Similarity - ${testCase.name}: expected shouldMerge=${testCase.expected.shouldMerge}, got ${result.shouldMerge}`);
+        failures.push(`Context Similarity - ${testCase.name}: expected shouldMerge=${testCase.expected.shouldMerge}, got ${result.shouldMerge}`);
       }
     }
   }
 
   // Show what LLM prompt looks like
-  const scopePromptData = await loadAndRenderPrompt("text-analysis-scope", {
-    SCOPE_PAIRS: JSON.stringify(TEST_CASES.scopeSimilarity[0].input.scopePairs, null, 2),
-    CONTEXT_LIST: JSON.stringify(TEST_CASES.scopeSimilarity[0].input.contextList),
+  const contextPromptData = await loadAndRenderPrompt("text-analysis-context", {
+    CONTEXT_PAIRS: JSON.stringify(TEST_CASES.contextSimilarity[0].input.contextPairs, null, 2),
+    CONTEXT_LIST: JSON.stringify(TEST_CASES.contextSimilarity[0].input.contextList),
     PROMPT_HASH: "",
   });
-  if (scopePromptData) {
-    console.log(`\n  [PROMPT] text-analysis-scope loaded (${scopePromptData.prompt.length} chars)`);
-    console.log(`  [PROMPT] Hash: ${scopePromptData.promptHash}`);
+  if (contextPromptData) {
+    console.log(`\n  [PROMPT] text-analysis-context loaded (${contextPromptData.prompt.length} chars)`);
+    console.log(`  [PROMPT] Hash: ${contextPromptData.promptHash}`);
   }
 
   // -------------------------------------------------------------------------
@@ -423,7 +423,7 @@ async function main() {
 │ isInverted          │ Keyword search in reasoning   │ Semantic contradiction check  │
 │ isCounterClaim      │ ❌ UNDEFINED (handled earlier) │ ❌ REMOVED from prompt        │
 │ harmPotential       │ Keyword matching              │ Semantic risk assessment      │
-│ scopeSimilarity     │ Jaccard word similarity       │ Semantic similarity           │
+│ contextSimilarity     │ Jaccard word similarity       │ Semantic similarity           │
 └─────────────────────┴───────────────────────────────┴───────────────────────────────┘
 
 IMPORTANT: isCounterClaim is now correctly:

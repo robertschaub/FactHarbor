@@ -182,7 +182,7 @@ const MODEL_ROUTING = {
 interface CachedClaimVerdict {
   claimFingerprint: string;     // SHA-256 of normalized text
   verdict: ClaimVerdict;
-  supportingFactIds: string[];
+  supportingEvidenceIds: string[];
   sources: string[];            // Source URLs
   computedAt: Date;
   expiresAt: Date;             // Claims expire after 90 days

@@ -9,40 +9,40 @@ variables:
   - analysisInput
   - originalClaim
   - contextsList
-  - scopeHint
-  - scopeDetectionHint
+  - contextHint
+  - contextDetectionHint
   - keyFactorHints
   - inputLabel
   - contextsFormatted
   - allowModelKnowledge
 requiredSections:
-  - "SCOPE_REFINEMENT"
+  - "CONTEXT_REFINEMENT"
   - "UNDERSTAND"
   - "SUPPLEMENTAL_CLAIMS"
-  - "SUPPLEMENTAL_SCOPES"
+  - "SUPPLEMENTAL_CONTEXTS"
   - "OUTCOME_CLAIMS"
-  - "EXTRACT_FACTS"
+  - "EXTRACT_EVIDENCE"
   - "VERDICT"
   - "ANSWER"
   - "CLAIM_VERDICTS"
 ---
 
-## SCOPE_REFINEMENT
+## CONTEXT_REFINEMENT
 
 You are organizing evidence into AnalysisContexts (bounded analytical frames requiring separate investigation).
 
-**Terminology**: AnalysisContext = top-level frame for separate analysis. EvidenceScope = per-evidence source metadata (attached to EvidenceItem). ArticleFrame = narrative background (NOT a context).
+**Terminology**: AnalysisContext = top-level frame for separate analysis. EvidenceScope = per-evidence source metadata (attached to EvidenceItem). Background details = narrative background (NOT a context).
 
 **RULES**:
-1. Every AnalysisContext MUST be (a) directly relevant to the input topic, (b) supported by ≥1 fact
+1. Every AnalysisContext MUST be (a) directly relevant to the input topic, (b) supported by ≥1 evidence item
 2. Split when evidence shows: different formal authorities, different measurement boundaries, different methodologies, or incompatible process phases
-3. Do NOT split for: viewpoints, evidence genres, incidental mentions without supporting facts
+3. Do NOT split for: viewpoints, evidence genres, incidental mentions without supporting evidence items
 4. **Incompatibility test**: If combining verdicts would be MISLEADING because they evaluate different things → split
 5. **Anti-duplication**: Don't keep redundant generic parent context if specific contexts cover it
 6. Include assessedStatement field: what is being assessed in this context
 7. When in doubt, use FEWER contexts
 
-Return JSON with: requiresSeparateAnalysis, analysisContexts[], factScopeAssignments[], claimScopeAssignments[]
+Return JSON with: requiresSeparateAnalysis, analysisContexts[], evidenceContextAssignments[], claimContextAssignments[]
 
 ---
 
@@ -52,7 +52,7 @@ You analyze inputs for fact-checking, identifying AnalysisContexts, extracting c
 
 **CURRENT DATE**: ${currentDateReadable} (${currentDate})
 
-${scopeHint}${scopeDetectionHint}
+${contextHint}${contextDetectionHint}
 
 ### CONTEXT DETECTION
 
@@ -88,7 +88,7 @@ ${keyFactorHints}
 
 ### OUTPUT
 
-Return JSON: impliedClaim, articleThesis, analysisContext (ArticleFrame), subClaims[], analysisContexts[], requiresSeparateAnalysis, researchQueries[], keyFactors[], riskTier
+Return JSON: impliedClaim, articleThesis, backgroundDetails, subClaims[], analysisContexts[], requiresSeparateAnalysis, researchQueries[], keyFactors[], riskTier
 
 ---
 
@@ -103,7 +103,7 @@ Add missing subClaims for listed contexts only.
 
 ---
 
-## SUPPLEMENTAL_SCOPES
+## SUPPLEMENTAL_CONTEXTS
 
 Detect if input needs 2+ AnalysisContexts.
 
@@ -115,7 +115,7 @@ Split only for genuinely distinct frames (not viewpoints). Schema: id, name, sho
 
 ## OUTCOME_CLAIMS
 
-Extract specific outcomes/penalties from facts for separate evaluation.
+Extract specific outcomes/penalties from evidence items for separate evaluation.
 
 Return JSON: { outcomes: [{ outcome, contextId, claimText }] }
 
@@ -123,15 +123,15 @@ Only quantifiable outcomes not already covered by existing claims.
 
 ---
 
-## EXTRACT_FACTS
+## EXTRACT_EVIDENCE
 
-Extract specific facts. Track contested claims. Only HIGH/MEDIUM specificity.
+Extract specific evidence items. Track contested claims. Only HIGH/MEDIUM specificity.
 
 **CURRENT DATE**: ${currentDateReadable} (${currentDate})
 
 **Original claim**: "${originalClaim}"
 
-**claimDirection** per fact: "supports" | "contradicts" | "neutral"
+**claimDirection** per evidence item: "supports" | "contradicts" | "neutral"
 
 **evidenceScope** when source defines boundaries: { name, methodology, boundaries, geographic, temporal }
 
@@ -154,7 +154,7 @@ Render evidence-based verdicts across AnalysisContexts.
 1. Rate the USER'S CLAIM as stated (not your analysis conclusion)
 2. Direction check: SUPPORTS → ≥58, CONTRADICTS → ≤42, MIXED → 43-57
 3. Evaluate SUBSTANCE not attribution
-4. [SUPPORTING] facts → higher verdict, [COUNTER-EVIDENCE] → lower verdict
+4. [SUPPORTING] evidence items → higher verdict, [COUNTER-EVIDENCE] → lower verdict
 
 ### CAUSAL CLAIMS
 
@@ -170,13 +170,13 @@ For each: contextId, contextName, answer (0-100), shortAnswer, keyFactors (3-5)
 
 - supports: "yes" (evidence supports), "no" (counter-evidence), "neutral" (no info)
 - isContested: true only with documented counter-evidence (not mere disagreement)
-- factualBasis: "established" (documented facts), "disputed" (debatable), "opinion" (rhetoric only)
+- factualBasis: "established" (documented evidence items), "disputed" (debatable), "opinion" (rhetoric only)
 
 ${allowModelKnowledge}
 
 ### CLAIM VERDICTS
 
-For ALL listed claims: claimId, verdict, ratingConfirmation, reasoning (≤2 sentences), supportingFactIds
+For ALL listed claims: claimId, verdict, ratingConfirmation, reasoning (≤2 sentences), supportingEvidenceIds
 
 **Central-claim dominance**: Refuted central claim (0-28%) should pull overall verdict to 15-28%.
 
@@ -195,7 +195,7 @@ Answer based on documented evidence.
 
 Return verdictSummary: answer (0-100), confidence, shortAnswer, nuancedAnswer, keyFactors[]
 
-Rate USER'S CLAIM direction. [SUPPORTING]/[COUNTER-EVIDENCE] labels indicate fact alignment.
+Rate USER'S CLAIM direction. [SUPPORTING]/[COUNTER-EVIDENCE] labels indicate evidence item alignment.
 
 ---
 

@@ -46,7 +46,7 @@ Output:
 Now analyze the input following these exact patterns.`;
 }
 
-export function getOpenAIExtractFactsVariant(): string {
+export function getOpenAIExtractEvidenceVariant(): string {
   return `
 ## GPT OPTIMIZATION - EVIDENCE EXTRACTION
 

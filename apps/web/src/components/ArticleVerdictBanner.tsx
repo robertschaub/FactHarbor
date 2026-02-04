@@ -3,7 +3,7 @@
  * 
  * Implements the Article Verdict Problem solution:
  * Shows article-level verdict that may differ from claim average
- * Highlights when article is misleading despite accurate supporting facts
+ * Highlights when article is misleading despite accurate supporting evidence
  * 
  * @version 2.2.0
  */

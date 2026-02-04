@@ -30,7 +30,7 @@ Evaluate each evidence item against these criteria:
   - Attribution without specifics: "some say/believe/argue/claim/think/suggest", "many people/experts/critics/scientists/researchers", "according to some"
   - Passive hedging: "it is said/believed/argued/thought/claimed", "purportedly", "supposedly", "allegedly", "reportedly"
   - Uncertainty markers: "opinions vary/differ", "the debate continues", "controversy exists", "it's unclear"
-- Contains verifiable claims: names, numbers, dates, specific facts
+- Contains verifiable claims: names, numbers, dates, specific evidence items
 - Clear attribution to source
 - **Minimum length**: Statement must be >= 25 characters (shorter = filter)
 

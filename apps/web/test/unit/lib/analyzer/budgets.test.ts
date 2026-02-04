@@ -1,7 +1,7 @@
 /**
  * Budget Tracking Test Suite (PR 6: p95 Hardening)
  *
- * Tests resource budgets and caps for multi-scope research operations.
+ * Tests resource budgets and caps for multi-context research operations.
  *
  * @module analyzer/budgets.test
  */
@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_BUDGET,
-  checkScopeIterationBudget,
+  checkContextIterationBudget,
   checkTokenBudget,
   createBudgetTracker,
   getBudgetConfig,
@@ -29,7 +29,7 @@ describe("Budget Configuration", () => {
   it("returns default budget when no env vars set", () => {
     const budget = getBudgetConfig();
 
-    expect(budget.maxIterationsPerScope).toBe(DEFAULT_BUDGET.maxIterationsPerScope);
+    expect(budget.maxIterationsPerContext).toBe(DEFAULT_BUDGET.maxIterationsPerContext);
     expect(budget.maxTotalIterations).toBe(DEFAULT_BUDGET.maxTotalIterations);
     expect(budget.maxTotalTokens).toBe(DEFAULT_BUDGET.maxTotalTokens);
     expect(budget.maxTokensPerCall).toBe(DEFAULT_BUDGET.maxTokensPerCall);
@@ -43,7 +43,7 @@ describe("Budget Configuration", () => {
     expect(tracker.totalIterations).toBe(0);
     expect(tracker.llmCalls).toBe(0);
     expect(tracker.budgetExceeded).toBe(false);
-    expect(tracker.iterationsByScope.size).toBe(0);
+    expect(tracker.iterationsByContext.size).toBe(0);
   });
 });
 
@@ -51,28 +51,28 @@ describe("Budget Configuration", () => {
 // ITERATION BUDGET TESTS
 // ============================================================================
 
-describe("Scope Iteration Budget", () => {
-  it("allows iterations within per-scope budget", () => {
+describe("Context Iteration Budget", () => {
+  it("allows iterations within per-context budget", () => {
     const budget = DEFAULT_BUDGET;
     const tracker = createBudgetTracker();
 
-    recordIteration(tracker, "SCOPE_A");
-    recordIteration(tracker, "SCOPE_A");
+    recordIteration(tracker, "CTX_A");
+    recordIteration(tracker, "CTX_A");
 
-    const check = checkScopeIterationBudget(tracker, budget, "SCOPE_A");
+    const check = checkContextIterationBudget(tracker, budget, "CTX_A");
     expect(check.allowed).toBe(true);
-    expect(tracker.iterationsByScope.get("SCOPE_A")).toBe(2);
+    expect(tracker.iterationsByContext.get("CTX_A")).toBe(2);
     expect(tracker.totalIterations).toBe(2);
   });
 
-  it("blocks iterations exceeding per-scope limit", () => {
-    const budget = { ...DEFAULT_BUDGET, maxIterationsPerScope: 2 };
+  it("blocks iterations exceeding per-context limit", () => {
+    const budget = { ...DEFAULT_BUDGET, maxIterationsPerContext: 2 };
     const tracker = createBudgetTracker();
 
-    recordIteration(tracker, "SCOPE_A");
-    recordIteration(tracker, "SCOPE_A");
+    recordIteration(tracker, "CTX_A");
+    recordIteration(tracker, "CTX_A");
 
-    const check = checkScopeIterationBudget(tracker, budget, "SCOPE_A");
+    const check = checkContextIterationBudget(tracker, budget, "CTX_A");
     expect(check.allowed).toBe(false);
     expect(check.reason).toContain("reached max iterations");
   });
@@ -81,24 +81,24 @@ describe("Scope Iteration Budget", () => {
     const budget = { ...DEFAULT_BUDGET, maxTotalIterations: 2 };
     const tracker = createBudgetTracker();
 
-    recordIteration(tracker, "SCOPE_A");
-    recordIteration(tracker, "SCOPE_B");
+    recordIteration(tracker, "CTX_A");
+    recordIteration(tracker, "CTX_B");
 
-    const check = checkScopeIterationBudget(tracker, budget, "SCOPE_C");
+    const check = checkContextIterationBudget(tracker, budget, "CTX_C");
     expect(check.allowed).toBe(false);
     expect(check.reason).toContain("Total iterations reached max");
   });
 
-  it("tracks iterations per scope independently", () => {
+  it("tracks iterations per context independently", () => {
     const budget = DEFAULT_BUDGET;
     const tracker = createBudgetTracker();
 
-    recordIteration(tracker, "SCOPE_A");
-    recordIteration(tracker, "SCOPE_A");
-    recordIteration(tracker, "SCOPE_B");
+    recordIteration(tracker, "CTX_A");
+    recordIteration(tracker, "CTX_A");
+    recordIteration(tracker, "CTX_B");
 
-    expect(tracker.iterationsByScope.get("SCOPE_A")).toBe(2);
-    expect(tracker.iterationsByScope.get("SCOPE_B")).toBe(1);
+    expect(tracker.iterationsByContext.get("CTX_A")).toBe(2);
+    expect(tracker.iterationsByContext.get("CTX_B")).toBe(1);
     expect(tracker.totalIterations).toBe(3);
   });
 });
@@ -222,9 +222,9 @@ describe("Budget Stats", () => {
     const tracker = createBudgetTracker();
 
     recordTokens(tracker, 5000);
-    recordIteration(tracker, "SCOPE_A");
-    recordIteration(tracker, "SCOPE_A");
-    recordIteration(tracker, "SCOPE_B");
+    recordIteration(tracker, "CTX_A");
+    recordIteration(tracker, "CTX_A");
+    recordIteration(tracker, "CTX_B");
 
     const stats = getBudgetStats(tracker, budget);
 
@@ -241,11 +241,11 @@ describe("Budget Stats", () => {
     const tracker = createBudgetTracker();
 
     recordTokens(tracker, 10000);
-    recordIteration(tracker, "SCOPE_A");
-    recordIteration(tracker, "SCOPE_A");
-    recordIteration(tracker, "SCOPE_B");
-    recordIteration(tracker, "SCOPE_B");
-    recordIteration(tracker, "SCOPE_C");
+    recordIteration(tracker, "CTX_A");
+    recordIteration(tracker, "CTX_A");
+    recordIteration(tracker, "CTX_B");
+    recordIteration(tracker, "CTX_B");
+    recordIteration(tracker, "CTX_C");
 
     const stats = getBudgetStats(tracker, budget);
 
@@ -278,27 +278,27 @@ describe("Budget Stats", () => {
 // ============================================================================
 
 describe("Budget Integration Scenarios", () => {
-  it("realistic multi-scope research scenario", () => {
-    // Use explicit budget with per-scope limit of 3 to test boundary behavior
+  it("realistic multi-context research scenario", () => {
+    // Use explicit budget with per-context limit of 3 to test boundary behavior
     const budget = {
       ...DEFAULT_BUDGET,
-      maxIterationsPerScope: 3,
+      maxIterationsPerContext: 3,
     };
     const tracker = createBudgetTracker();
 
-    // Simulate research on 3 scopes, 2-3 iterations each
+    // Simulate research on 3 contexts, 2-3 iterations each
     for (let i = 0; i < 2; i++) {
-      recordIteration(tracker, "SCOPE_A");
+      recordIteration(tracker, "CTX_A");
       recordLLMCall(tracker, 5000);
     }
 
     for (let i = 0; i < 3; i++) {
-      recordIteration(tracker, "SCOPE_B");
+      recordIteration(tracker, "CTX_B");
       recordLLMCall(tracker, 4000);
     }
 
     for (let i = 0; i < 2; i++) {
-      recordIteration(tracker, "SCOPE_C");
+      recordIteration(tracker, "CTX_C");
       recordLLMCall(tracker, 6000);
     }
 
@@ -309,11 +309,11 @@ describe("Budget Integration Scenarios", () => {
     expect(stats.llmCalls).toBe(7);
     expect(stats.budgetExceeded).toBe(false);
 
-    // SCOPE_A (2) and SCOPE_C (2) still within limit of 3
-    // SCOPE_B (3) has exactly hit the limit - next iteration blocked
-    expect(checkScopeIterationBudget(tracker, budget, "SCOPE_A").allowed).toBe(true);
-    expect(checkScopeIterationBudget(tracker, budget, "SCOPE_B").allowed).toBe(false); // Hit limit
-    expect(checkScopeIterationBudget(tracker, budget, "SCOPE_C").allowed).toBe(true);
+    // CTX_A (2) and CTX_C (2) still within limit of 3
+    // CTX_B (3) has exactly hit the limit - next iteration blocked
+    expect(checkContextIterationBudget(tracker, budget, "CTX_A").allowed).toBe(true);
+    expect(checkContextIterationBudget(tracker, budget, "CTX_B").allowed).toBe(false); // Hit limit
+    expect(checkContextIterationBudget(tracker, budget, "CTX_C").allowed).toBe(true);
   });
 
   it("budget exhaustion scenario", () => {
@@ -326,7 +326,7 @@ describe("Budget Integration Scenarios", () => {
 
     // Simulate exhausting total iterations budget
     for (let i = 0; i < 5; i++) {
-      recordIteration(tracker, `SCOPE_${i}`);
+      recordIteration(tracker, `CTX_${i}`);
       recordLLMCall(tracker, 3000);
     }
 
@@ -336,56 +336,56 @@ describe("Budget Integration Scenarios", () => {
     expect(stats.tokensUsed).toBe(15000);
 
     // Next iteration should be blocked
-    const check = checkScopeIterationBudget(tracker, budget, "SCOPE_NEW");
+    const check = checkContextIterationBudget(tracker, budget, "CTX_NEW");
     expect(check.allowed).toBe(false);
     expect(check.reason).toContain("Total iterations reached max");
   });
 
-  it("allows >3 global iterations across multiple scopes (PR-D fix)", () => {
+  it("allows >3 global iterations across multiple contexts (PR-D fix)", () => {
     // This test proves the fix for Blocker D (budget semantics mismatch)
     // BEFORE FIX: Using "GLOBAL_RESEARCH" constant caused 3-iteration cap
-    // AFTER FIX: Global limit (12) enforced independently of per-scope limit (3)
-    const budget = { ...DEFAULT_BUDGET, maxIterationsPerScope: 3, maxTotalIterations: 12 };
+    // AFTER FIX: Global limit (12) enforced independently of per-context limit (3)
+    const budget = { ...DEFAULT_BUDGET, maxIterationsPerContext: 3, maxTotalIterations: 12 };
     const tracker = createBudgetTracker();
 
-    // Simulate 4 scopes, 3 iterations each = 12 total
+    // Simulate 4 contexts, 3 iterations each = 12 total
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 3; j++) {
-        recordIteration(tracker, `SCOPE_${i}`);
+        recordIteration(tracker, `CTX_${i}`);
       }
     }
 
     expect(tracker.totalIterations).toBe(12);
-    expect(tracker.iterationsByScope.get("SCOPE_0")).toBe(3);
-    expect(tracker.iterationsByScope.get("SCOPE_1")).toBe(3);
-    expect(tracker.iterationsByScope.get("SCOPE_2")).toBe(3);
-    expect(tracker.iterationsByScope.get("SCOPE_3")).toBe(3);
+    expect(tracker.iterationsByContext.get("CTX_0")).toBe(3);
+    expect(tracker.iterationsByContext.get("CTX_1")).toBe(3);
+    expect(tracker.iterationsByContext.get("CTX_2")).toBe(3);
+    expect(tracker.iterationsByContext.get("CTX_3")).toBe(3);
 
-    // All scopes should be at their per-scope limit
+    // All contexts should be at their per-context limit
     for (let i = 0; i < 4; i++) {
-      const check = checkScopeIterationBudget(tracker, budget, `SCOPE_${i}`);
-      expect(check.allowed).toBe(false); // At per-scope limit
+      const check = checkContextIterationBudget(tracker, budget, `CTX_${i}`);
+      expect(check.allowed).toBe(false); // At per-context limit
       expect(check.reason).toContain("reached max iterations");
     }
   });
 
-  it("enforces global limit even when per-scope limits not reached", () => {
-    // Prove global limit is independent of per-scope limits
-    const budget = { ...DEFAULT_BUDGET, maxIterationsPerScope: 10, maxTotalIterations: 5 };
+  it("enforces global limit even when per-context limits not reached", () => {
+    // Prove global limit is independent of per-context limits
+    const budget = { ...DEFAULT_BUDGET, maxIterationsPerContext: 10, maxTotalIterations: 5 };
     const tracker = createBudgetTracker();
 
-    // 5 different scopes, 1 iteration each = 5 total (global limit)
+    // 5 different contexts, 1 iteration each = 5 total (global limit)
     for (let i = 0; i < 5; i++) {
-      recordIteration(tracker, `SCOPE_${i}`);
+      recordIteration(tracker, `CTX_${i}`);
     }
 
     expect(tracker.totalIterations).toBe(5);
 
-    // Per-scope limits NOT reached (only 1/10 per scope)
-    expect(tracker.iterationsByScope.get("SCOPE_0")).toBe(1);
+    // Per-context limits NOT reached (only 1/10 per context)
+    expect(tracker.iterationsByContext.get("CTX_0")).toBe(1);
 
     // But global limit IS reached
-    const check = checkScopeIterationBudget(tracker, budget, "SCOPE_5");
+    const check = checkContextIterationBudget(tracker, budget, "CTX_5");
     expect(check.allowed).toBe(false);
     expect(check.reason).toContain("Total iterations reached max");
   });

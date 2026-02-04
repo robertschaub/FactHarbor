@@ -1,9 +1,9 @@
 /**
  * Budget limits for research operations (PR 6: p95 Hardening)
  *
- * Prevents runaway costs on complex multi-scope inputs by tracking and limiting:
- * - Iterations per scope (prevent infinite loops)
- * - Total iterations across all scopes
+ * Prevents runaway costs on complex multi-context inputs by tracking and limiting:
+ * - Iterations per context (prevent infinite loops)
+ * - Total iterations across all contexts
  * - Total token usage (cost control)
  * - Tokens per LLM call (prevent single runaway calls)
  *
@@ -17,10 +17,10 @@ import type { PipelineConfig } from "../config-schemas";
 // ============================================================================
 
 export interface ResearchBudget {
-  /** Maximum research iterations per scope */
-  maxIterationsPerScope: number;
+  /** Maximum research iterations per context */
+  maxIterationsPerContext: number;
 
-  /** Maximum total research iterations across all scopes */
+  /** Maximum total research iterations across all contexts */
   maxTotalIterations: number;
 
   /** Maximum total tokens (input + output) for entire analysis */
@@ -37,10 +37,10 @@ export interface BudgetTracker {
   /** Tokens used so far */
   tokensUsed: number;
 
-  /** Iterations per scope */
-  iterationsByScope: Map<string, number>;
+  /** Iterations per context */
+  iterationsByContext: Map<string, number>;
 
-  /** Total iterations across all scopes */
+  /** Total iterations across all contexts */
   totalIterations: number;
 
   /** LLM calls made */
@@ -63,12 +63,12 @@ export interface BudgetTracker {
  * - 5% may hit budgets and terminate early with partial results
  * 
  * v2.8.2: Increased limits to address quality degradation.
- * Previous limits (3 per scope, 12 total) were causing premature
+ * Previous limits (3 per context, 12 total) were causing premature
  * termination with fewer searches and lower quality.
  */
 export const DEFAULT_BUDGET: ResearchBudget = {
-  maxIterationsPerScope: 5, // v2.8.2: was 3 - increased for better research depth
-  maxTotalIterations: 20, // v2.8.2: was 12 - increased for multi-scope analyses
+  maxIterationsPerContext: 5, // v2.8.2: was 3 - increased for better research depth
+  maxTotalIterations: 20, // v2.8.2: was 12 - increased for multi-context analyses
   maxTotalTokens: 750_000, // v2.8.2: was 500_000 - ~$2.25 max cost at Claude rates
   maxTokensPerCall: 100_000, // Prevent single runaway calls
   enforceHard: false, // v2.8.2: was true - warn but don't hard-stop
@@ -90,14 +90,8 @@ export const DEFAULT_BUDGET: ResearchBudget = {
  */
 export function getBudgetConfig(config?: PipelineConfig): ResearchBudget {
   if (config) {
-    // Support both maxIterationsPerContext (new) and maxIterationsPerScope (old) with new key taking precedence
-    const maxIterationsPerScope =
-      config.maxIterationsPerContext ??
-      config.maxIterationsPerScope ??
-      DEFAULT_BUDGET.maxIterationsPerScope;
-
     return {
-      maxIterationsPerScope,
+      maxIterationsPerContext: config.maxIterationsPerContext ?? DEFAULT_BUDGET.maxIterationsPerContext,
       maxTotalIterations: config.maxTotalIterations,
       maxTotalTokens: config.maxTotalTokens,
       maxTokensPerCall: config.maxTokensPerCall ?? DEFAULT_BUDGET.maxTokensPerCall,
@@ -118,7 +112,7 @@ export function getBudgetConfig(config?: PipelineConfig): ResearchBudget {
 export function createBudgetTracker(): BudgetTracker {
   return {
     tokensUsed: 0,
-    iterationsByScope: new Map(),
+    iterationsByContext: new Map(),
     totalIterations: 0,
     llmCalls: 0,
     budgetExceeded: false,
@@ -157,20 +151,19 @@ export function checkTokenBudget(
 }
 
 /**
- * Check if scope/context can perform another iteration.
- * Note: "Scope" in this function name refers to AnalysisContext, NOT EvidenceScope.
+ * Check if a context can perform another iteration.
  */
-export function checkScopeIterationBudget(
+export function checkContextIterationBudget(
   tracker: BudgetTracker,
   budget: ResearchBudget,
-  scopeId: string
+  contextId: string
 ): { allowed: boolean; reason?: string } {
-  const scopeIterations = tracker.iterationsByScope.get(scopeId) || 0;
+  const contextIterations = tracker.iterationsByContext.get(contextId) || 0;
 
-  if (scopeIterations >= budget.maxIterationsPerScope) {
+  if (contextIterations >= budget.maxIterationsPerContext) {
     return {
       allowed: false,
-      reason: `Scope ${scopeId} reached max iterations: ${scopeIterations} >= ${budget.maxIterationsPerScope}`,
+      reason: `Context ${contextId} reached max iterations: ${contextIterations} >= ${budget.maxIterationsPerContext}`,
     };
   }
 
@@ -184,19 +177,16 @@ export function checkScopeIterationBudget(
   return { allowed: true };
 }
 
-/** Primary name for checking context iteration budget */
-export const checkContextIterationBudget = checkScopeIterationBudget;
-
 // ============================================================================
 // RECORDING FUNCTIONS
 // ============================================================================
 
 /**
- * Record an iteration for a scope
+ * Record an iteration for a context
  */
-export function recordIteration(tracker: BudgetTracker, scopeId: string): void {
-  const current = tracker.iterationsByScope.get(scopeId) || 0;
-  tracker.iterationsByScope.set(scopeId, current + 1);
+export function recordIteration(tracker: BudgetTracker, contextId: string): void {
+  const current = tracker.iterationsByContext.get(contextId) || 0;
+  tracker.iterationsByContext.set(contextId, current + 1);
   tracker.totalIterations++;
 }
 

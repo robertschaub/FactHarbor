@@ -1,6 +1,6 @@
 # FactHarbor Text Analysis Prompts - Promptfoo Configuration
 # Tests the new LLM text analysis pipeline (v2.9) prompts
-# Covers: input classification, evidence quality, scope similarity, verdict validation
+# Covers: input classification, evidence quality, context similarity, verdict validation
 
 description: "FactHarbor Text Analysis Pipeline Evaluation"
 
@@ -356,25 +356,25 @@ tests:
         metric: expert_attribution_check
 
   # ==========================================================================
-  # SECTION 3: SCOPE SIMILARITY ANALYSIS
+  # SECTION 3: CONTEXT SIMILARITY ANALYSIS
   # ==========================================================================
 
   # --------------------------------------------------------------------------
-  # TEST 3.1: Duplicate Scopes (should merge)
+  # TEST 3.1: Duplicate Contexts (should merge)
   # --------------------------------------------------------------------------
-  - description: "Duplicate scopes - same entity, should recommend merge"
+  - description: "Duplicate contexts - same entity, should recommend merge"
     prompts:
-      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+      - file://prompts/promptfoo/text-analysis-context-prompt.txt
     vars:
       promptHash: "test-hash-14"
       contextList: |
         Available contexts:
         - EPA US emissions standards
         - US Environmental Protection Agency regulations
-      scopePairs: |
-        Scope Pair 1:
-        - Scope A: "EPA emissions standards for passenger vehicles"
-        - Scope B: "US EPA regulations on car emissions"
+      contextPairs: |
+        Context Pair 1:
+        - Context A: "EPA emissions standards for passenger vehicles"
+        - Context B: "US EPA regulations on car emissions"
     assert:
       - type: is-json
       - type: javascript
@@ -391,21 +391,21 @@ tests:
         metric: merge_recommended
 
   # --------------------------------------------------------------------------
-  # TEST 3.2: Different Scopes (should NOT merge)
+  # TEST 3.2: Different Contexts (should NOT merge)
   # --------------------------------------------------------------------------
-  - description: "Different scopes - different jurisdictions, should not merge"
+  - description: "Different contexts - different jurisdictions, should not merge"
     prompts:
-      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+      - file://prompts/promptfoo/text-analysis-context-prompt.txt
     vars:
       promptHash: "test-hash-15"
       contextList: |
         Available contexts:
         - US EPA standards
         - EU emissions regulations
-      scopePairs: |
-        Scope Pair 1:
-        - Scope A: "US EPA tailpipe emissions standards"
-        - Scope B: "European Union Euro 7 emissions regulations"
+      contextPairs: |
+        Context Pair 1:
+        - Context A: "US EPA tailpipe emissions standards"
+        - Context B: "European Union Euro 7 emissions regulations"
     assert:
       - type: is-json
       - type: javascript
@@ -426,17 +426,17 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Phase bucket - production phase classification"
     prompts:
-      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+      - file://prompts/promptfoo/text-analysis-context-prompt.txt
     vars:
       promptHash: "test-hash-16"
       contextList: |
         Available contexts:
         - Manufacturing emissions
         - Factory production metrics
-      scopePairs: |
-        Scope Pair 1:
-        - Scope A: "Battery manufacturing emissions in China"
-        - Scope B: "EV production CO2 footprint"
+      contextPairs: |
+        Context Pair 1:
+        - Context A: "Battery manufacturing emissions in China"
+        - Context B: "EV production CO2 footprint"
     assert:
       - type: is-json
       - type: javascript
@@ -451,17 +451,17 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Phase bucket - usage phase classification"
     prompts:
-      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+      - file://prompts/promptfoo/text-analysis-context-prompt.txt
     vars:
       promptHash: "test-hash-17"
       contextList: |
         Available contexts:
         - Vehicle operation metrics
         - Driving emissions data
-      scopePairs: |
-        Scope Pair 1:
-        - Scope A: "Tailpipe emissions during driving"
-        - Scope B: "Operating costs per mile"
+      contextPairs: |
+        Context Pair 1:
+        - Context A: "Tailpipe emissions during driving"
+        - Context B: "Operating costs per mile"
     assert:
       - type: is-json
       - type: javascript
@@ -476,16 +476,16 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Mixed phase buckets - production vs usage"
     prompts:
-      - file://prompts/promptfoo/text-analysis-scope-prompt.txt
+      - file://prompts/promptfoo/text-analysis-context-prompt.txt
     vars:
       promptHash: "test-hash-18"
       contextList: |
         Available contexts:
         - Full lifecycle analysis
-      scopePairs: |
-        Scope Pair 1:
-        - Scope A: "Battery manufacturing emissions"
-        - Scope B: "Vehicle operating emissions"
+      contextPairs: |
+        Context Pair 1:
+        - Context A: "Battery manufacturing emissions"
+        - Context B: "Vehicle operating emissions"
     assert:
       - type: is-json
       - type: javascript

@@ -18,7 +18,7 @@ describe("Text Analysis Service", () => {
   it("returns true for all analysis points", () => {
     expect(isLLMEnabled("input")).toBe(true);
     expect(isLLMEnabled("evidence")).toBe(true);
-    expect(isLLMEnabled("scope")).toBe(true);
+    expect(isLLMEnabled("context")).toBe(true);
     expect(isLLMEnabled("verdict")).toBe(true);
   });
 

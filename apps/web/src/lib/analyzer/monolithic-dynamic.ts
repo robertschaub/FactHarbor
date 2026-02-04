@@ -163,7 +163,7 @@ function extractStructuredOutput(result: any): any {
 // ============================================================================
 
 /**
- * Run fact-check analysis using a dynamic/experimental approach.
+ * Run claim verification analysis using a dynamic/experimental approach.
  *
  * This pipeline allows more flexibility in the analysis structure while
  * maintaining minimum safety requirements (citations, rawJson storage).
@@ -303,7 +303,7 @@ export async function runMonolithicDynamic(
   recordLLMCall(budgetTracker, 2000);
 
   const plan = extractStructuredOutput(planResult);
-  const queriesToRun = plan?.searchQueries || [`fact check: ${textToAnalyze.slice(0, 100)}`];
+  const queriesToRun = plan?.searchQueries || [`claim verification: ${textToAnalyze.slice(0, 100)}`];
 
   // Step 2: Research phase - gather sources
   const sourceContents: Array<{ url: string; title: string; content: string }> = [];

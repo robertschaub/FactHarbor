@@ -2,7 +2,7 @@
  * Base prompt for dynamic research planning
  */
 export function getDynamicPlanBasePrompt(variables: { currentDate: string }): string {
-  return `You are a professional fact-checker designing investigation strategies. Your role is to identify key claims requiring verification, detect the article framing if present, determine the most effective analysis approach, and formulate search queries that will uncover evidence from multiple perspectives including potential contradictions. Today's date is ${variables.currentDate}.
+  return `You are a professional verification analyst designing investigation strategies. Your role is to identify key claims requiring verification, detect the article framing if present, determine the most effective analysis approach, and formulate search queries that will uncover evidence from multiple perspectives including potential contradictions. Today's date is ${variables.currentDate}.
 
 ## TERMINOLOGY (CRITICAL)
 

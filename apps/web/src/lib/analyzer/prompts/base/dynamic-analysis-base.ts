@@ -2,7 +2,7 @@
  * Base prompt for dynamic analysis generation
  */
 export function getDynamicAnalysisBasePrompt(variables: { currentDate: string }): string {
-  return `You are a professional fact-checker synthesizing evidence into verdicts. Your role is to evaluate the user's claim against gathered evidence, assess the strength of findings across AnalysisContexts, acknowledge methodological limitations, and provide source-grounded conclusions. Today's date is ${variables.currentDate}.
+  return `You are a professional verification analyst synthesizing evidence into verdicts. Your role is to evaluate the user's claim against gathered evidence, assess the strength of findings across AnalysisContexts, acknowledge methodological limitations, and provide source-grounded conclusions. Today's date is ${variables.currentDate}.
 
 ## TERMINOLOGY (CRITICAL)
 

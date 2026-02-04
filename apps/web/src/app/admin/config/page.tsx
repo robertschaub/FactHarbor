@@ -189,8 +189,6 @@ interface PipelineConfig {
   llmInputClassification: boolean;
   llmEvidenceQuality: boolean;
   llmContextSimilarity?: boolean;
-  // Deprecated alias (legacy "scope" == AnalysisContext).
-  llmScopeSimilarity?: boolean;
   llmVerdictValidation: boolean;
   // Analysis behavior
   analysisMode: "quick" | "deep";
@@ -199,8 +197,6 @@ interface PipelineConfig {
   contextDedupThreshold?: number;
   // Budget controls
   maxIterationsPerContext?: number;
-  // Deprecated alias (legacy "scope" == AnalysisContext).
-  maxIterationsPerScope?: number;
   maxTotalIterations: number;
   maxTotalTokens: number;
   enforceBudgets: boolean;
@@ -433,7 +429,7 @@ function SearchConfigForm({
           />
           Enable Web Search
         </label>
-        <div className={styles.formHelp}>When disabled, analysis uses only LLM knowledge (not recommended for fact-checking)</div>
+        <div className={styles.formHelp}>When disabled, analysis uses only LLM knowledge (not recommended for verification)</div>
       </div>
 
       <div className={styles.formGroup}>
@@ -1315,13 +1311,12 @@ function PipelineConfigForm({
           <label className={styles.formLabel}>
             <input
               type="checkbox"
-              checked={config.llmContextSimilarity ?? config.llmScopeSimilarity ?? true}
+              checked={config.llmContextSimilarity ?? true}
               onChange={(e) => {
                 const next = e.target.checked;
                 onChange({
                   ...config,
                   llmContextSimilarity: next,
-                  llmScopeSimilarity: undefined,
                 });
               }}
               style={{ marginRight: 8 }}
@@ -1437,7 +1432,7 @@ function PipelineConfigForm({
           <input
             type="number"
             className={styles.formInput}
-            value={config.maxIterationsPerContext ?? config.maxIterationsPerScope ?? 5}
+            value={config.maxIterationsPerContext ?? 5}
             min={1}
             max={20}
             onChange={(e) => {
@@ -1445,7 +1440,6 @@ function PipelineConfigForm({
               onChange({
                 ...config,
                 maxIterationsPerContext: isNaN(v) ? 5 : v,
-                maxIterationsPerScope: undefined,
               });
             }}
           />

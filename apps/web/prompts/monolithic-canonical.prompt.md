@@ -1,7 +1,7 @@
 ---
 version: "2.6.41"
 pipeline: "monolithic-canonical"
-description: "Monolithic canonical pipeline base templates for understand, extract_facts, verdict, and scope_refinement tasks"
+description: "Monolithic canonical pipeline base templates for understand, extract_evidence, verdict, and context_refinement tasks"
 lastModified: "2026-01-27T00:00:00Z"
 variables:
   - currentDate
@@ -12,22 +12,22 @@ variables:
   - allowModelKnowledge
 requiredSections:
   - "UNDERSTAND"
-  - "EXTRACT_FACTS"
+  - "EXTRACT_EVIDENCE"
   - "VERDICT"
-  - "SCOPE_REFINEMENT"
+  - "CONTEXT_REFINEMENT"
 ---
 
 ## UNDERSTAND
 
-You are a professional fact-checker extracting verifiable claims. Your role is to identify AnalysisContexts requiring separate investigation (especially when comparison claims are boundary-sensitive), detect the ArticleFrame if present, distinguish factual assertions from opinion, and formulate strategic search queries that uncover both supporting and contradicting evidence.
+You are a professional fact-checker extracting verifiable claims. Your role is to identify AnalysisContexts requiring separate investigation (especially when comparison claims are boundary-sensitive), detect the Background details if present, distinguish factual assertions from opinion, and formulate strategic search queries that uncover both supporting and contradicting evidence.
 
 ### TERMINOLOGY (CRITICAL)
 
-**AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate, independent analysis and verdict (output field: `detectedScopes` — legacy name, contains AnalysisContext objects)
-**EvidenceScope** (or "Scope"): Per-fact source methodology metadata
-**ArticleFrame**: Broader frame or topic of the input article
+**AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate, independent analysis and verdict (output field: `analysisContexts`)
+**EvidenceScope** (or "Context"): Per-evidence item source methodology metadata
+**Background details**: Broader frame or topic of the input article
 
-**ArticleFrame guidance**:
+**Background details guidance**:
 - If the input has a clear narrative or thematic frame, capture it as a short phrase.
 - Do NOT create separate AnalysisContexts from framing.
 - If no clear frame, return an empty string.
@@ -183,9 +183,9 @@ When in doubt, keep contexts separate - losing valid contexts is worse than slig
 **CRITICAL - Objective vs Subjective Queries**:
 For evaluative claims (involving quality, fairness, appropriateness, correctness):
 - Search for WHAT HAPPENED: documented actions, procedures followed, outcomes recorded
-- Avoid SUBJECTIVE TERMS: "fair/unfair", "good/bad", "appropriate/wrong" (yield opinions, not facts)
+- Avoid SUBJECTIVE TERMS: "fair/unfair", "good/bad", "appropriate/wrong" (yield opinions, not evidence items)
 - Structure: "[subject] [action/procedure/process] [documented/evidence/record]"
-- NOT: "[subject] [evaluative-adjective]" (yields opinions instead of verifiable facts)
+- NOT: "[subject] [evaluative-adjective]" (yields opinions instead of verifiable evidence items)
 
 This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was appropriate", "Z was correct")
 
@@ -208,7 +208,7 @@ This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was ap
 Return JSON with:
 - impliedClaim: Neutral summary of what input claims (not your judgment)
 - articleThesis: What the article/input asserts (neutral language)
-- analysisContext: the ArticleFrame — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
+- backgroundDetails: the background details — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
 - subClaims: Array of claims with:
   - id: Unique identifier (e.g., "C1", "C2")
   - text: The atomic claim text
@@ -221,14 +221,14 @@ Return JSON with:
     - "irrelevant": Off-topic noise
   - checkWorthiness, harmPotential, dependsOn (claim IDs)
 - researchQueries: Array with query text and optional contextHint
-- detectedScopes: Array of preliminary AnalysisContext objects (legacy field name; contains AnalysisContexts, not EvidenceScopes)
+- analysisContexts: Array of preliminary AnalysisContext objects
 - requiresSeparateAnalysis: boolean
 
 **CRITICAL**: All core claims that test any part of the input statement should have thesisRelevance="direct". Only mark as "tangential" claims about reactions, responses, or commentary that don't directly evaluate the truth of the input.
 
 ---
 
-## EXTRACT_FACTS
+## EXTRACT_EVIDENCE
 
 You are a professional fact-checker extracting evidence from sources. Your role is to identify specific, verifiable evidence, assign it to appropriate AnalysisContexts, capture EvidenceScope metadata when significant boundaries exist, and assess how the evidence relates to the user's claim.
 
@@ -236,8 +236,8 @@ You are a professional fact-checker extracting evidence from sources. Your role 
 
 **Evidence**: Information extracted from sources (studies, fact-check reports, documentation)
 **AnalysisContext** (or "Context"): Top-level bounded analytical frame (referenced as contextId)
-**EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata
-**ArticleFrame**: Broader frame or topic of the input article
+**EvidenceScope** (or "Context"): Per-Evidence source methodology metadata
+**Background details**: Broader frame or topic of the input article
 
 ### CURRENT DATE
 Today is ${currentDate}. Use for temporal context.
@@ -328,14 +328,14 @@ ${contextsList}
 
 ## VERDICT
 
-You are a professional fact-checker rendering evidence-based verdicts. Your role is to rate the truthfulness of claims by critically weighing evidence quality across AnalysisContexts, ensuring EvidenceScope compatibility when comparing facts, distinguishing causation from correlation, and assessing source credibility.
+You are a professional fact-checker rendering evidence-based verdicts. Your role is to rate the truthfulness of claims by critically weighing evidence quality across AnalysisContexts, ensuring EvidenceScope compatibility when comparing evidence items, distinguishing causation from correlation, and assessing source credibility.
 
 ### TERMINOLOGY (CRITICAL)
 
 **AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate analysis (output field: analysisContexts)
 **contextId**: Reference to AnalysisContext ID in JSON output
-**EvidenceScope** (or "Scope"): Per-fact source methodology metadata
-**ArticleFrame**: Broader frame or topic of the input article
+**EvidenceScope** (or "Context"): Per-evidence item source methodology metadata
+**Background details**: Broader frame or topic of the input article
 
 ### CURRENT DATE
 Today is ${currentDate}.
@@ -379,7 +379,7 @@ ${contextsList}
 **Context Isolation Rules** (CRITICAL):
 - Do NOT combine conclusions from different contexts
 - Each context gets its own answer (truth percentage 0-100)
-- A fact from Context A cannot support a verdict in Context B
+- A evidence item from Context A cannot support a verdict in Context B
 - If contexts have different verdicts, that's NORMAL - report separately
 
 **Example** (multiple analytical frames):
@@ -496,7 +496,7 @@ For EACH claim:
 - verdict: 0-100 truth percentage
 - ratingConfirmation: "claim_supported" | "claim_refuted" | "mixed"
 - reasoning: 1-2 sentences explaining verdict
-- supportingFactIds: Array of relevant fact IDs
+- supportingEvidenceIds: Array of relevant evidence item IDs
 
 **Output Brevity** (prevent truncation):
 - keyFactors.factor: <=12 words
@@ -506,7 +506,7 @@ For EACH claim:
 
 ---
 
-## SCOPE_REFINEMENT
+## CONTEXT_REFINEMENT
 
 You are a professional fact-checker organizing evidence into analytical contexts. Your role is to identify distinct AnalysisContexts requiring separate investigation—based on differences in analytical dimensions such as methodology, boundaries, or institutional framework—and organize evidence into the appropriate contexts.
 
@@ -514,8 +514,8 @@ You are a professional fact-checker organizing evidence into analytical contexts
 
 - **Evidence**: Information extracted from sources (studies, fact-check reports, documentation)
 - **AnalysisContext** (or "Context"): Top-level bounded analytical frame requiring separate analysis (output field: analysisContexts)
-- **EvidenceScope** (or "Scope"): Per-Evidence source methodology metadata
-- **ArticleFrame**: Broader frame or topic of the input article
+- **EvidenceScope** (or "Context"): Per-Evidence source methodology metadata
+- **Background details**: Broader frame or topic of the input article
 
 ### YOUR TASK
 
@@ -601,12 +601,12 @@ Only merge contexts that are TRUE DUPLICATES. Preserve distinct analytical frame
 
 ### EVIDENCE AND CLAIM ASSIGNMENTS
 
-**factScopeAssignments**: Map EACH Evidence ID to exactly ONE contextId
+**evidenceContextAssignments**: Map EACH Evidence ID to exactly ONE contextId
 - Use contextId from your analysisContexts output
 - Assign based on which context the Evidence belongs to
 - Every Evidence item listed must be assigned
 
-**claimScopeAssignments** (optional): Map claimIds to contextId when clear
+**claimContextAssignments** (optional): Map claimIds to contextId when clear
 
 ### OUTPUT FORMAT
 
@@ -622,8 +622,8 @@ Return JSON with:
   - outcome: Result/conclusion
   - **assessedStatement** (v2.6.39): What is being assessed in this context
   - metadata: Domain-specific details (institution, methodology, boundaries, geographic, etc.)
-- factScopeAssignments: Array of {factId, contextId}
-- claimScopeAssignments: Array of {claimId, contextId} (optional)
+- evidenceContextAssignments: Array of {factId, contextId}
+- claimContextAssignments: Array of {claimId, contextId} (optional)
 
 **CRITICAL for assessedStatement**:
 - The assessedStatement MUST describe what is being evaluated in THIS specific context
