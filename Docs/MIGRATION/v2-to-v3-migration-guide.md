@@ -191,17 +191,17 @@ API responses now use the new field names. If you have external integrations, up
 
 ---
 
-## v3.1 (In Progress)
+## v3.1.0 (2026-02-04) ✅ COMPLETE
 
-The following changes are being implemented in v3.1:
+**Internal Changes (non-breaking):**
 
-| Item | Status | Description |
-|------|--------|-------------|
-| ID prefix F→E | ✅ DONE | Evidence IDs now use E1,E2 prefix |
-| Task name changes | ✅ DONE | `extract_facts` → `extract_evidence`, `scope_refinement` → `context_refinement` |
-| Pipeline config rename | ✅ DONE | `modelExtractFacts` → `modelExtractEvidence`, `extractFactsLlmTimeoutMs` → `extractEvidenceLlmTimeoutMs` |
+| Item | Description |
+|------|-------------|
+| ID prefix F→E | Evidence IDs now use E1,E2,E3 format (internal prompts only) |
+| Task name changes | `extract_facts` → `extract_evidence`, `scope_refinement` → `context_refinement` |
+| Pipeline config rename | `modelExtractFacts` → `modelExtractEvidence`, `extractFactsLlmTimeoutMs` → `extractEvidenceLlmTimeoutMs` |
 
-**Note:** v3.1 maintains backward compatibility with v3.0 during transition (dual-parsing for IDs, dual-read for metrics).
+**These are internal changes only** - no user code migration required.
 
 ---
 

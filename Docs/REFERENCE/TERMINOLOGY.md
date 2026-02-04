@@ -1,30 +1,33 @@
 # FactHarbor Terminology Reference
 
-**Version**: 2.6.42
-**Date**: 2026-02-02
+**Version**: 3.1.0
+**Date**: 2026-02-04
 **Audience**: Developers, Prompt Engineers, LLM Systems
-**Status**: Phase 2 Complete (probativeValue, sourceType, evidenceFilter integrated; EvidenceItem type active; legacy names preserved for backward compatibility)
+**Status**: v3.1 Complete - All terminology migrations finished, legacy aliases removed
 
 ---
 
 ## Purpose
 
-This document provides the **authoritative glossary** for FactHarbor's scope/context terminology across all layers: TypeScript code, JSON schema, database storage, and LLM prompts. Use this as the single source of truth when encountering ambiguous terms.
+This document provides the **authoritative glossary** for FactHarbor's terminology across all layers: TypeScript code, JSON schema, database storage, and LLM prompts. Use this as the single source of truth when encountering ambiguous terms.
 
 ---
 
-## Field Mapping Table (v2.7 → Legacy)
+## Field Mapping Table (v3.1)
 
-**Breaking Changes Approved**: Documented in code comments (types.ts) - legacy JSON field names preserved for backward compatibility
+**v3.0 Breaking Changes Applied**: Legacy JSON field names are NO longer accepted. All code uses new terminology.
 
-| Concept | TypeScript Type | JSON Field (v2.7) | JSON Field (Legacy) | Code Reference (v2.7) | Code Reference (Legacy) | Prompt Term |
-|---------|----------------|---------------------|--------------------|-----------------------|----------------------|-------------|
-| Top-level context | `AnalysisContext` | `analysisContexts` | `distinctProceedings` | `contextId` | `relatedProceedingId` | AnalysisContext |
-| Per-fact metadata | `EvidenceScope` | `evidenceScope` | `evidenceScope` | `evidenceScope` | `evidenceScope` | EvidenceScope |
-| Context answer | `ContextAnswer` | (embedded) | (embedded) | `contextId` | `proceedingId` | (internal) |
-| Narrative frame | `ArticleFrame` | `analysisContext` | `proceedingContext` | `analysisContext` | `proceedingContext` | ArticleFrame |
+| Concept | TypeScript Type | JSON Field (v3.1) | JSON Field (Legacy - removed) | Prompt Term |
+|---------|----------------|-------------------|-------------------------------|-------------|
+| Top-level context | `AnalysisContext` | `analysisContexts` | ~~`distinctProceedings`~~ | AnalysisContext |
+| Per-evidence metadata | `EvidenceScope` | `evidenceScope` | `evidenceScope` | EvidenceScope |
+| Context answer | `AnalysisContextAnswer` | `analysisContextAnswers` | ~~`contextAnswers`~~ | (internal) |
+| Narrative background | (string) | `backgroundDetails` | ~~`analysisContext`~~ | Background |
+| Evidence item | `EvidenceItem` | `evidenceItems` | ~~`facts`~~ | EvidenceItem |
+| Evidence statement | `statement` | `statement` | ~~`fact`~~ | statement |
+| Evidence ID prefix | `E1, E2, E3...` | `E1, E2, E3...` | ~~`F1, F2, F3...`~~ | E-prefix |
 
-**Migration Status**: ✅ Applied in v2.7.0 (legacy field names accepted for backward compatibility)
+**Schema Version**: 3.0.0 (all config schemas)
 
 ---
 
@@ -32,12 +35,13 @@ This document provides the **authoritative glossary** for FactHarbor's scope/con
 
 FactHarbor uses multiple "framing" concepts that work together hierarchically:
 
-### Level 1: ArticleFrame (Optional Context)
+### Level 1: Background Details (Optional Context)
 - **What:** Broader topic or narrative setting of the article
 - **When:** Only for articles with clear thematic frame (can be empty)
-- **Display:** Optional banner in UI showing general topic area
+- **Display:** Optional banner in UI labeled "Background"
 - **Example:** "Climate policy and decarbonization", "Brazilian democratic crisis 2023-2024"
-- **JSON field:** `analysisContext` (singular) - *Note: confusing name, consider renaming to `articleFrame` in v3.0*
+- **JSON field:** `backgroundDetails`
+- **UI Component:** `BackgroundBanner.tsx`
 
 ### Level 2: ArticleThesis (Main Claim)
 - **What:** What the article/input specifically asserts
@@ -58,6 +62,8 @@ FactHarbor uses multiple "framing" concepts that work together hierarchically:
 - **When:** Found during research phase
 - **Display:** Listed under each AnalysisContext with supporting/opposing indicators
 - **Assigned to:** One AnalysisContext via `contextId`
+- **JSON field:** `evidenceItems` (array of `EvidenceItem`)
+- **ID format:** `E1, E2, E3...` (E-prefix for Evidence)
 
 ### Level 5: EvidenceScope (Source Methodology - NOT Currently Displayed)
 - **What:** The analytical frame/methodology used BY THE SOURCE when producing evidence
@@ -99,7 +105,7 @@ export interface AnalysisContext {
 }
 ```
 
-**JSON field name** (v2.7):
+**JSON field name** (v3.1):
 ```json
 {
   "analysisContexts": [
@@ -112,11 +118,11 @@ export interface AnalysisContext {
 **Prompt terminology**:
 - Preferred: "AnalysisContext" or "Context"
 - Avoid: "Scope" (reserved for EvidenceScope)
-- Legacy: "Proceeding" (avoid in new prompts)
+- Removed: ~~"Proceeding"~~ (legacy term removed in v3.0)
 
 **Common confusion**:
-- ❌ NOT the same as EvidenceScope (per-evidence metadata)
-- ❌ NOT the same as ArticleFrame (narrative background)
+- AnalysisContext is NOT the same as EvidenceScope (per-evidence metadata)
+- AnalysisContext is NOT the same as backgroundDetails (narrative background)
 
 ---
 
@@ -142,10 +148,10 @@ export interface EvidenceScope {
   temporal?: string;
 }
 
-// Attached to evidence items (EvidenceItem, legacy name: ExtractedFact)
+// Attached to evidence items
 export interface EvidenceItem {
-  id: string;
-  statement: string;
+  id: string;           // E1, E2, E3... (E-prefix)
+  statement: string;    // The evidence statement
   evidenceScope?: EvidenceScope;
   // ...
 }
@@ -175,48 +181,49 @@ export interface EvidenceItem {
 - In explanations: "Per-evidence EvidenceScope" (to distinguish from AnalysisContext)
 
 **Common confusion**:
-- ❌ NOT a top-level scope requiring separate verdicts
-- ❌ Multiple evidence items can have the same EvidenceScope (many sources use WTW methodology)
-- ✅ IS metadata about **how the source computed** the data
+- EvidenceScope is NOT a top-level scope requiring separate verdicts
+- Multiple evidence items can have the same EvidenceScope (many sources use WTW methodology)
+- EvidenceScope IS metadata about **how the source computed** the data
 
 ---
 
-### 3. ArticleFrame (Narrative Background)
+### 3. Background Details (Narrative Background)
 
 **What it is**: The narrative/rhetorical framing or background context of the input article. This describes **how the article presents** the information, but is NOT a reason to split into separate AnalysisContexts.
 
 **Why it matters**: Helps understand the user's intent and article structure, but does NOT affect verdict logic.
 
 **Examples**:
-- "Article frames as political conspiracy"
-- "Journalistic investigation format"
-- "Opinion piece with legal commentary"
+- "Brazilian political crisis following January 8th events"
+- "Climate policy debate in European Union"
+- "Legal proceedings against former president"
 
 **Code representation**:
 ```typescript
-// No dedicated interface, stored as string
+// Stored as string in ClaimUnderstanding
 export interface ClaimUnderstanding {
-  analysisContext: string; // Narrative ArticleFrame
+  backgroundDetails: string; // Narrative background
   // ...
 }
 ```
 
-**JSON field name**:
+**JSON field name** (v3.1):
 ```json
 {
-  "analysisContext": "Article frames case as political persecution"
+  "backgroundDetails": "Brazilian political crisis following January 8th events"
 }
 ```
 
+**UI Display**: Shown in `BackgroundBanner.tsx` component with label "Background"
+
 **Prompt terminology**:
-- Preferred: "ArticleFrame"
-- Legacy: "proceedingContext" (only when referencing JSON field)
-- ⚠️ **CRITICAL**: This is NOT a "context" in the AnalysisContext sense!
+- Preferred: "backgroundDetails" or "Background"
+- Removed: ~~"ArticleFrame"~~, ~~"analysisContext" (singular)~~ (legacy terms)
 
 **Common confusion**:
-- ❌ NOT an AnalysisContext (not a reason to split analysis)
-- ❌ Does NOT get its own verdict
-- ✅ IS purely descriptive/informational
+- backgroundDetails is NOT an AnalysisContext (not a reason to split analysis)
+- backgroundDetails does NOT get its own verdict
+- backgroundDetails IS purely descriptive/informational
 
 ---
 
@@ -237,67 +244,50 @@ export interface ClaimUnderstanding {
 | **CONTESTED** | `"disputed"` | 0.5x (reduced) | "Defense presented conflicting expert testimony" |
 | **CONTESTED** | `"established"` | 0.3x (heavily reduced) | "Audit found violation of Regulation 47(b)" |
 
-**Code implementation** (v2.8):
-
-```typescript
-// In aggregation.ts
-
-// Orchestrated: KeyFactor-level validation
-export function validateContestation(keyFactors: KeyFactor[]): KeyFactor[];
-
-// Canonical: Claim-level heuristic detection  
-export function detectClaimContestation(claimText: string, reasoning?: string): ClaimContestationResult;
-```
-
 **Weight calculation** (in `getClaimWeight()`):
 ```typescript
 if (claim.isContested) {
   if (basis === "established") weight *= 0.3;  // Strong counter-evidence
   else if (basis === "disputed") weight *= 0.5; // Some counter-evidence
-  // "opinion"/"alleged"/"unknown" → full weight (just doubted)
+  // "opinion"/"alleged"/"unknown" -> full weight (just doubted)
 }
 ```
 
-**Prompt guidance** (in verdict prompts):
-```
-- factualBasis: "opinion" for political criticism without specifics
-- factualBasis: "established" for documented violations with specific citations
-- factualBasis: "disputed" for counter-evidence that is debatable
-```
-
 **Common confusion**:
-- ❌ "contested" does NOT mean "disputed politically" (that's "doubted")
-- ✅ "contested" means there IS documented counter-evidence
-- ❌ Political statements alone do NOT reduce claim weight
-- ✅ Only factual counter-evidence reduces claim weight
+- "contested" does NOT mean "disputed politically" (that's "doubted")
+- "contested" means there IS documented counter-evidence
+- Political statements alone do NOT reduce claim weight
+- Only factual counter-evidence reduces claim weight
 
 ---
 
 ## Terminology Mapping Tables
 
-### Table 1: Primary Entities
+### Table 1: Primary Entities (v3.1)
 
 | Concept | TypeScript Name | JSON Field | Prompt Term | UI Label | Database Column |
 |---------|-----------------|------------|-------------|----------|-----------------|
 | Top-level analytical frame | `AnalysisContext` | `analysisContexts` | "AnalysisContext" | "Contexts" | `ResultJson.analysisContexts` |
-| Per-fact source metadata | `EvidenceScope` | `evidenceScope` | "evidenceScope" | (not displayed separately) | `ResultJson.facts[].evidenceScope` |
-| Narrative background | (no interface) | `analysisContext` | "ArticleFrame" | "Article Context" | `ResultJson.understanding.analysisContext` |
+| Per-evidence source metadata | `EvidenceScope` | `evidenceScope` | "evidenceScope" | (not displayed separately) | `ResultJson.evidenceItems[].evidenceScope` |
+| Narrative background | (string) | `backgroundDetails` | "Background" | "Background" | `ResultJson.understanding.backgroundDetails` |
+| Evidence item | `EvidenceItem` | `evidenceItems` | "EvidenceItem" | "Evidence" | `ResultJson.evidenceItems` |
 
-### Table 2: Reference Fields
+### Table 2: Reference Fields (v3.1)
 
 | Field Purpose | TypeScript Field | JSON Field | Prompt Term | Valid Values |
 |---------------|------------------|------------|-------------|--------------|
-| Fact → AnalysisContext | `contextId?: string` | `contextId` | "contextId" | Must match `AnalysisContext.id` |
-| Claim → AnalysisContext | `contextId?: string` | `contextId` | "contextId" | Must match `AnalysisContext.id` |
-| Verdict → AnalysisContext | `contextId: string` | `contextId` | "contextId" | Must match `AnalysisContext.id` |
+| Evidence -> AnalysisContext | `contextId?: string` | `contextId` | "contextId" | Must match `AnalysisContext.id` |
+| Claim -> AnalysisContext | `contextId?: string` | `contextId` | "contextId" | Must match `AnalysisContext.id` |
+| Verdict -> AnalysisContext | `contextId: string` | `contextId` | "contextId" | Must match `AnalysisContext.id` |
+| Supporting evidence | `supportingEvidenceIds` | `supportingEvidenceIds` | "supportingEvidenceIds" | Array of E-prefix IDs |
 
 ### Table 3: Special Constants
 
 | Constant | Value | Meaning | When to Use |
 |----------|-------|---------|-------------|
-| `UNSCOPED_ID` | `"CTX_UNSCOPED"` | Fact doesn't map to any detected context | When fact is general/background |
+| `UNSCOPED_ID` | `"CTX_UNSCOPED"` | Evidence doesn't map to any detected context | When evidence is general/background |
 | `CTX_MAIN` | `"CTX_MAIN"` | Fallback context for single-context analysis | When no distinct contexts detected |
-| `CTX_GENERAL` | `"CTX_GENERAL"` | General context (cross-cutting) | When fact applies to all contexts |
+| `CTX_GENERAL` | `"CTX_GENERAL"` | General context (cross-cutting) | When evidence applies to all contexts |
 
 ---
 
@@ -306,61 +296,92 @@ if (claim.isContested) {
 ### In TypeScript Code
 
 ```typescript
-// ✅ CORRECT
-import { AnalysisContext, EvidenceScope } from './types';
+// CORRECT (v3.1)
+import { AnalysisContext, EvidenceScope, EvidenceItem } from './types';
 
 function processContexts(contexts: AnalysisContext[]) {
   // ...
 }
 
-// ❌ AVOID (legacy)
-function processProceedings(procs: DistinctProceeding[]) {
+function processEvidence(items: EvidenceItem[]) {
   // ...
 }
+
+// REMOVED in v3.0 - do not use:
+// ExtractedFact (use EvidenceItem)
+// DistinctProceeding (use AnalysisContext)
 ```
 
 ### In JSON Schema (Zod)
 
 ```typescript
-// ✅ CORRECT (matches persisted format)
+// CORRECT (v3.1 field names)
 const schema = z.object({
   analysisContexts: z.array(AnalysisContextSchema),
-  analysisContext: z.string(),
+  backgroundDetails: z.string(),
+  evidenceItems: z.array(EvidenceItemSchema),
 });
-
-// ✅ v2.7.0 field names; legacy names are accepted for backward compatibility
 ```
 
 ### In LLM Prompts
 
 ```typescript
-// ✅ CORRECT (with glossary)
+// CORRECT (v3.1 terminology)
 const prompt = `
 ## TERMINOLOGY
 
 **AnalysisContext**: Top-level bounded analytical frame (stored as analysisContexts)
-**EvidenceScope**: Per-fact source metadata (stored as fact.evidenceScope)
-**ArticleFrame**: Narrative background (stored as analysisContext)
+**EvidenceScope**: Per-evidence source metadata (stored as evidenceItem.evidenceScope)
+**Background**: Narrative background (stored as backgroundDetails)
+**EvidenceItem**: Individual evidence with id (E1, E2...) and statement
 
 Your task: Identify AnalysisContexts from evidence...
 `;
 
-// ❌ AVOID (ambiguous)
-const prompt = `Identify scopes from evidence...`;
-// ^ Which "scope"? AnalysisContext or EvidenceScope?
+// AVOID (legacy terms)
+const prompt = `Identify scopes from evidence...`;  // Which "scope"?
+const prompt = `Extract facts...`;  // Use "evidence" not "facts"
 ```
 
 ### In UI/Documentation
 
 ```typescript
-// ✅ CORRECT
+// CORRECT
 <h2>Analysis Contexts</h2>
 <p>This analysis involves 2 distinct analytical frames:</p>
 
-// ❌ AVOID (confusing)
-<h2>Proceedings</h2>
-// ^ Users don't know what "proceeding" means in non-legal domains
+<BackgroundBanner backgroundDetails={background} />
+
+// REMOVED in v3.0:
+// <ArticleFrameBanner articleFrame={...} />
 ```
+
+---
+
+## Internal Task Names (v3.1)
+
+| Task Name | Description | Used In |
+|-----------|-------------|---------|
+| `extract_evidence` | Extract evidence items from sources | llm.ts, model-tiering.ts |
+| `context_refinement` | Refine AnalysisContext assignments | llm.ts, model-tiering.ts |
+| `understand` | Initial claim understanding | llm.ts, model-tiering.ts |
+| `verdict` | Generate verdicts | llm.ts, model-tiering.ts |
+
+**Note:** Legacy task names `extract_facts` and `scope_refinement` were renamed in v3.1.
+
+---
+
+## Config Field Names (v3.1)
+
+| Config Field | Description | Default |
+|--------------|-------------|---------|
+| `contextDetectionMethod` | Method for detecting contexts | `"heuristic"` |
+| `contextDetectionEnabled` | Enable context detection | `true` |
+| `contextDetectionMinConfidence` | Minimum confidence threshold | `0.7` |
+| `contextDetectionMaxContexts` | Maximum contexts to detect | `5` |
+| `contextDedupThreshold` | Threshold for deduplication | `0.85` |
+
+**Note:** Legacy field names `scopeDetection*` and `scopeDedup*` were renamed in v3.0.
 
 ---
 
@@ -370,42 +391,42 @@ const prompt = `Identify scopes from evidence...`;
 
 ```
 START: Do the facts involve distinct analytical frames?
-  │
-  ├─ YES → Are the methodologies/boundaries INCOMPATIBLE?
-  │   │
-  │   ├─ YES → CREATE separate AnalysisContexts
-  │   │   └─ Example: WTW vs TTW (different system boundaries)
-  │   │
-  │   └─ NO → SINGLE AnalysisContext
-  │       └─ Example: Multiple studies using same WTW methodology
-  │
-  └─ NO → Are they different LEGAL proceedings analyzing different matters?
-      │
-      ├─ YES → CREATE separate AnalysisContexts
-      │   └─ Example: TSE electoral case vs STF criminal case
-      │
-      └─ NO → SINGLE AnalysisContext
-          └─ Example: Different viewpoints on same legal case
+  |
+  +-- YES -> Are the methodologies/boundaries INCOMPATIBLE?
+  |   |
+  |   +-- YES -> CREATE separate AnalysisContexts
+  |   |   Example: WTW vs TTW (different system boundaries)
+  |   |
+  |   +-- NO -> SINGLE AnalysisContext
+  |       Example: Multiple studies using same WTW methodology
+  |
+  +-- NO -> Are they different LEGAL proceedings analyzing different matters?
+      |
+      +-- YES -> CREATE separate AnalysisContexts
+      |   Example: TSE electoral case vs STF criminal case
+      |
+      +-- NO -> SINGLE AnalysisContext
+          Example: Different viewpoints on same legal case
 ```
 
 ### "Is this an EvidenceScope or AnalysisContext?"
 
 ```
 START: Where does this information come from?
-  │
-  ├─ FROM SOURCE DOCUMENT → EvidenceScope
-  │   └─ Example: "Study used ISO 14040 methodology"
-  │   └─ Attach to fact.evidenceScope
-  │
-  └─ FROM INPUT/USER → AnalysisContext?
-      │
-      ├─ Does it define a DISTINCT analytical frame?
-      │   │
-      │   ├─ YES → AnalysisContext
-      │   │   └─ Example: "Compare US EPA vs EU REACH"
-      │   │
-      │   └─ NO → ArticleFrame
-      │       └─ Example: "Article is written as opinion piece"
+  |
+  +-- FROM SOURCE DOCUMENT -> EvidenceScope
+  |   Example: "Study used ISO 14040 methodology"
+  |   Attach to evidenceItem.evidenceScope
+  |
+  +-- FROM INPUT/USER -> AnalysisContext?
+      |
+      +-- Does it define a DISTINCT analytical frame?
+          |
+          +-- YES -> AnalysisContext
+          |   Example: "Compare US EPA vs EU REACH"
+          |
+          +-- NO -> backgroundDetails
+              Example: "Article is written as opinion piece"
 ```
 
 ---
@@ -427,7 +448,7 @@ function getAnalysisContext(id: string): AnalysisContext { ... }
 function getEvidenceScope(evidence: EvidenceItem): EvidenceScope | null { ... }
 ```
 
-### Pitfall 2: Conflating ArticleFrame with AnalysisContext
+### Pitfall 2: Conflating backgroundDetails with AnalysisContext
 
 **Problem**:
 ```json
@@ -441,138 +462,84 @@ function getEvidenceScope(evidence: EvidenceItem): EvidenceScope | null { ... }
 **Solution**:
 ```json
 {
-  "analysisContext": "Article frames as conspiracy theory",
+  "backgroundDetails": "Article frames as conspiracy theory",
   "analysisContexts": [
-    { "name": "Central Bank Policy Proceeding" }
+    { "name": "Central Bank Policy Analysis" }
   ]
 }
 ```
 
-### Pitfall 3: Missing `relatedProceedingId` Validation
+### Pitfall 3: Using Legacy Field Names
 
-**Problem**:
+**Problem** (v3.0+ will fail):
 ```typescript
-// No check that ID exists
-fact.contextId = "CTX_FAKE";
+const facts = result.facts;  // REMOVED
+const context = understanding.analysisContext;  // RENAMED
 ```
 
 **Solution**:
 ```typescript
-const validIds = new Set(contexts.map(c => c.id));
-if (fact.contextId && !validIds.has(fact.contextId)) {
-  throw new Error(`Invalid context reference: ${fact.contextId}`);
-}
-```
-
-### Pitfall 4: Silent Fallbacks Hide Errors
-
-**Problem**:
-```typescript
-// LLM fails to return scopes, code silently uses default
-const scopes = llmOutput.analysisContexts || [{ id: "CTX_MAIN" }];
-```
-
-**Solution**:
-```typescript
-const scopes = llmOutput.analysisContexts;
-if (!scopes || scopes.length === 0) {
-  agentLog("WARN", "LLM did not detect scopes, using fallback CTX_MAIN");
-  return [{ id: "CTX_MAIN", name: "General Analysis" }];
-}
-```
-
----
-
-## Examples from Real Code
-
-### Example 1: Correct Multi-Context Handling
-
-```typescript
-// From: monolithic-canonical.ts
-const finalScopes = params.verdictData?.detectedScopes?.map((s: any) => ({
-  id: s.id,              // AnalysisContext ID
-  name: s.name,          // Human-readable name
-  subject: s.subject,    // What's being analyzed
-  metadata: { type: s.type }, // Domain-specific details
-})) || [{ id: "CTX_MAIN", name: "Main Analysis" }];
-
-// Each fact references its AnalysisContext
-facts.map(f => ({
-  ...f,
-  contextId: inferScopeForFact(f, finalScopes), // Maps to AnalysisContext.id
-}));
-```
-
-### Example 2: EvidenceScope Extraction
-
-```typescript
-// From: extract-facts-base.ts prompt
-`For EACH fact, extract the source's analytical frame when present:
-
-**evidenceScope** (attach to fact):
-- name: Short label (e.g., "WTW", "TTW")
-- methodology: Standard referenced (e.g., "ISO 14040")
-- boundaries: What's included/excluded
-- geographic: Geographic scope
-- temporal: Time period`
-```
-
-### Example 3: Terminology Glossary in Prompt
-
-```typescript
-// From: scope-refinement-base.ts
-`## TERMINOLOGY (CRITICAL)
-
-- **AnalysisContext**: Bounded analytical frame requiring separate analysis (output as distinctProceedings)
-- **ArticleFrame**: Narrative background framing - NOT a reason to split
-- **EvidenceScope**: Per-fact source methodology/boundaries - DIFFERENT from AnalysisContext`
+const evidenceItems = result.evidenceItems;  // v3.1
+const background = understanding.backgroundDetails;  // v3.1
 ```
 
 ---
 
 ## Validation Checklist
 
-Use this checklist when reviewing code that involves scopes/contexts:
+Use this checklist when reviewing code that involves contexts/evidence:
 
 - [ ] Is "scope" qualified as AnalysisContext or EvidenceScope?
-- [ ] Do JSON field names match legacy format (`distinctProceedings`, not `analysisContexts`)?
+- [ ] Do JSON field names use v3.1 names (`analysisContexts`, `evidenceItems`, `backgroundDetails`)?
 - [ ] Does prompt include terminology glossary header?
-- [ ] Are `relatedProceedingId` values validated against `distinctProceedings[]`?
+- [ ] Are `contextId` values validated against `analysisContexts[]`?
 - [ ] Are fallbacks logged (not silent)?
 - [ ] Does EvidenceScope capture source methodology (not create new AnalysisContexts)?
-- [ ] Is ArticleFrame separate from AnalysisContexts?
-- [ ] Are provider-specific prompts using consistent core terminology?
+- [ ] Is backgroundDetails separate from AnalysisContexts?
+- [ ] Are evidence IDs using E-prefix (`E1, E2, E3...`)?
 
 ---
 
-## Migration Notes
+## Migration History
 
-**Current State (2026-01-18)**: Legacy field names (`distinctProceedings`, `proceedingContext`) coexist with modern conceptual names (`AnalysisContext`, `ArticleFrame`).
+### v3.1.0 (2026-02-04)
 
-**Recent Fixes**:
-- **2026-01-18**: Eliminated "framework" terminology confusion in prompts. The term "framework" is now only used in descriptive English phrases (e.g., "regulatory frameworks", "procedural framework") and never as a reference to `AnalysisContext`. All architectural references now correctly use "context".
+**Internal Changes:**
+- Renamed task names: `extract_facts` -> `extract_evidence`, `scope_refinement` -> `context_refinement`
+- Renamed ID prefix: `F1, F2, F3` -> `E1, E2, E3`
+- Renamed config fields: `modelExtractFacts` -> `modelExtractEvidence`
 
-**Current State (v2.7.0)**: Refactor applied. New field names are active, with legacy names accepted for backward compatibility.
+### v3.0.0 (2026-02-04)
 
-**For New Code**:
-- Use `AnalysisContext` type in TypeScript
-- Use v2.7.0 field names in new work
-- Preserve backward compatibility for legacy records and older jobs
-- Add glossary to any new prompt files
-- Use "context" (not "framework") when referring to `AnalysisContext` in prompts
+**Breaking Changes:**
+- Renamed `facts[]` -> `evidenceItems[]`
+- Renamed `fact` -> `statement`
+- Renamed `analysisContext` (singular) -> `backgroundDetails`
+- Renamed `detectedScopes` -> `analysisContexts`
+- Renamed `factScopeAssignments` -> `evidenceContextAssignments`
+- Renamed `claimScopeAssignments` -> `claimContextAssignments`
+- Renamed `supportingFactIds` -> `supportingEvidenceIds`
+- Renamed config fields `scopeDetection*` -> `contextDetection*`
+- Removed type aliases: `ExtractedFact`, `DistinctProceeding`
+- Schema versions bumped to 3.0.0
+- File renames: `scopes.ts` -> `analysis-contexts.ts`, `ArticleFrameBanner.tsx` -> `BackgroundBanner.tsx`
 
-**For Legacy Code**:
-- Understand that `analysisContexts` = array of `AnalysisContext`
-- Keep legacy-field fallbacks when reading older data
-- Add comments explaining backward compatibility when needed
+### v2.7.0 (Previous)
+
+- Added new field names with legacy fallbacks
+- Legacy field names accepted for backward compatibility
 
 ---
 
 ## FAQ
 
-**Q: Why are TypeScript names different from JSON field names?**
+**Q: Why did we rename facts to evidenceItems?**
 
-A: Backward compatibility. The codebase evolved from "Proceeding" terminology to "AnalysisContext", so v2.7.0 introduced new JSON field names while still accepting legacy records (documented in types.ts comments).
+A: "Facts" implies certainty, while "evidence" correctly indicates these are claims with varying levels of support that require verification.
+
+**Q: Why did we rename analysisContext (singular) to backgroundDetails?**
+
+A: To eliminate confusion with `AnalysisContext` (the type) and `analysisContexts` (the array). The singular field stored narrative background, not an AnalysisContext.
 
 **Q: When should I use EvidenceScope vs AnalysisContext?**
 
@@ -580,83 +547,27 @@ A: If the information describes **how a source document computed its data** (met
 
 **Q: What's the difference between CTX_UNSCOPED and CTX_GENERAL?**
 
-A: `CTX_UNSCOPED` means the fact doesn't map to any detected context (background info). `CTX_GENERAL` means the fact applies across all contexts (cross-cutting evidence). In practice, both are grouped together in display.
+A: `CTX_UNSCOPED` means the evidence doesn't map to any detected context (background info). `CTX_GENERAL` means the evidence applies across all contexts (cross-cutting evidence). In practice, both are grouped together in display.
 
-**Q: Can a fact have BOTH relatedProceedingId AND evidenceScope?**
+**Q: Can an evidence item have BOTH contextId AND evidenceScope?**
 
-A: Yes! `contextId` says **which AnalysisContext the fact supports**, while `evidenceScope` says **how the source computed the data**. They're orthogonal concepts.
+A: Yes! `contextId` says **which AnalysisContext the evidence supports**, while `evidenceScope` says **how the source computed the data**. They're orthogonal concepts.
 
 **Q: Should prompts say "AnalysisContext", "Context", or "Framework"?**
 
-A: Use "AnalysisContext" for precision or "context" for brevity. **NEVER use "framework"** when referring to the architectural concept of `AnalysisContext`. The term "framework" is reserved for descriptive English phrases like "regulatory frameworks" or "procedural framework" (methodology descriptions).
-
----
-
-## Known Issues & Migration Status
-
-> **Source**: Extracted from [Terminology_Catalog_Five_Core_Terms.md](../ARCHIVE/REVIEWS/Terminology_Catalog_Five_Core_Terms.md)
-
-### Terminology Status Matrix
-
-| Term | Status | Notes |
-|------|--------|-------|
-| **AnalysisContext** | `[DEFER]` | ~40 locations use "Scope" when referring to AnalysisContext. Requires backward-compat aliases before renaming. |
-| **EvidenceScope** | `[CORRECT]` | Usage is correct throughout the codebase. No changes needed. |
-| **ArticleFrame** | `[DEFER]` | Field name `analysisContext` (singular) stores ArticleFrame. Known collision kept for backward compat; UI shows "Frame". |
-| **KeyFactor** | `[CORRECT]` | Well-documented and consistently used throughout. No changes needed. |
-| **EvidenceItem** | `[DEFER]` | Continue phased migration from `ExtractedFact`. JSON field `fact` kept for backward compat. |
-
-### Deferred Renames (Backward Compatibility Required)
-
-```
-scopes.ts:
-├─ DetectedScope → DetectedAnalysisContext
-├─ detectScopesHeuristic() → detectContextsHeuristic()
-├─ detectScopesLLM() → detectContextsLLM()
-└─ formatDetectedScopesHint() → formatDetectedContextsHint()
-
-config-schemas.ts:
-├─ scopeDetectionMethod → contextDetectionMethod
-├─ scopeDetectionEnabled → contextDetectionEnabled
-├─ scopeDetectionMinConfidence → contextDetectionMinConfidence
-└─ scopeDedupThreshold → contextDedupThreshold
-
-orchestrated.ts:
-├─ seedScopes → seedContexts
-├─ preDetectedScopes → preDetectedContexts
-└─ factScopeAssignments → factContextAssignments
-```
-
-### EvidenceItem Migration Status
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| Phase 0 | Add `EvidenceItem` type, keep `ExtractedFact` alias | ✅ Complete |
-| Phase 1 | Prompts use "Evidence" terminology | ✅ Complete |
-| Phase 2 | Add `probativeValue`, `sourceType` to EvidenceItem | ✅ Complete |
-| Phase 2.1 | File-by-file migration from ExtractedFact to EvidenceItem | 🔄 In Progress |
-| Phase 3 | Remove deprecated `ExtractedFact` alias | ⏳ Future |
-| Phase 4 | Rename JSON field `fact` to `statement` | ⏳ Future (breaking) |
-
-### Legend
-
-- `[CORRECT]` - Usage is correct, no change needed
-- `[DEFER]` - Known issue, deferred to maintain backward compatibility
-- `[FIX]` - Issue identified and corrected
+A: Use "AnalysisContext" for precision or "context" for brevity. **NEVER use "framework"** when referring to the architectural concept of `AnalysisContext`. The term "framework" is reserved for descriptive English phrases like "regulatory frameworks".
 
 ---
 
 ## Related Documentation
 
-- [Scope Definition Guidelines](../DEVELOPMENT/Scope_Definition_Guidelines.md) - EvidenceScope vs AnalysisContext decision guide
+- [v2-to-v3-migration-guide.md](../MIGRATION/v2-to-v3-migration-guide.md) - Migration guide for v3.0/v3.1
 - [AGENTS.md](../../AGENTS.md) - High-level rules for context detection
 - [types.ts](../../apps/web/src/lib/analyzer/types.ts) - TypeScript interface definitions
 - [Pipeline_TriplePath_Architecture.md](../ARCHITECTURE/Pipeline_TriplePath_Architecture.md) - Pipeline design
-- [Provider Prompt Formatting](Provider_Prompt_Formatting.md) - Provider-specific prompt optimizations
-- [Evidence Quality Filtering](../ARCHITECTURE/Evidence_Quality_Filtering.md) - Two-layer probative value enforcement
 
 ---
 
 **Document Maintainer**: Lead Developer
-**Last Reviewed**: 2026-02-02 (Added Known Issues & Migration Status from catalog)
-**Next Review**: 2026-04 (or after migration Phase 1)
+**Last Reviewed**: 2026-02-04 (Updated for v3.1)
+**Next Review**: 2026-05 (or after next major version)
