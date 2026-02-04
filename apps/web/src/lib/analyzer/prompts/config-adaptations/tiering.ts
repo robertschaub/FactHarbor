@@ -33,10 +33,10 @@ export function getTieringExtractFactsAdaptation(): string {
   return `
 ## FAST MODE
 
-**Task**: Extract 4-6 facts from source. Simple rules.
+**Task**: Extract 4-6 evidence items from source. Simple rules.
 
-**Per fact**:
-- fact: one sentence, ≤100 chars // Legacy field name for extracted statement
+**Per evidence item**:
+- fact: one sentence, ≤100 chars // Legacy field name for evidence item
 - category: evidence|expert_quote|statistic|event|legal_provision|criticism
   // NOTE: "evidence" is legacy value, system also accepts "direct_evidence"
 - specificity: high (has numbers/dates) or medium
@@ -46,9 +46,9 @@ export function getTieringExtractFactsAdaptation(): string {
 - evidenceScope: null (skip unless obvious)
 
 **Direction rule**:
-- Fact agrees with user claim → "supports"
-- Fact disagrees with user claim → "contradicts"
-- Just context → "neutral"`;
+- Evidence item agrees with user claim → "supports"
+- Evidence item disagrees with user claim → "contradicts"
+- Just background details → "neutral"`;
 }
 
 export function getTieringVerdictAdaptation(): string {
@@ -56,8 +56,8 @@ export function getTieringVerdictAdaptation(): string {
 ## FAST MODE
 
 **Process**:
-1. Count supporting facts
-2. Count contradicting facts
+1. Count supporting evidence items
+2. Count contradicting evidence items
 3. Pick verdict band:
    - More supporting → 72-100%
    - Balanced → 43-57%
@@ -78,6 +78,7 @@ export function getTieringVerdictAdaptation(): string {
  * Get simplified base prompt for budget models
  * Strips verbose sections from full prompts for faster processing
  */
+// NOTE: Budget understand prompt outputs legacy "detectedScopes" for compatibility with monolithic parsing.
 export function getBudgetUnderstandPrompt(currentDate: string): string {
   return `You are a fact-checker. Extract claims and generate search queries.
 
@@ -101,15 +102,15 @@ Date: ${currentDate}
 }
 
 export function getBudgetExtractFactsPrompt(currentDate: string, originalClaim: string): string {
-  return `You extract facts from sources. Date: ${currentDate}
+  return `You extract evidence items from sources. Date: ${currentDate}
 
 CLAIM TO VERIFY: ${originalClaim}
 
 ## TASK
-Extract 4-6 specific, verifiable facts from the source.
+Extract 4-6 specific, verifiable evidence items from the source.
 
 ## PER FACT
-- fact: one sentence (≤100 chars) // Legacy field name
+- fact: one sentence (≤100 chars) // Legacy field name for evidence item
 - category: evidence|expert_quote|statistic|event|legal_provision|criticism
   // NOTE: "evidence" is legacy, "direct_evidence" also accepted
 - specificity: high|medium
@@ -117,6 +118,8 @@ Extract 4-6 specific, verifiable facts from the source.
 - claimDirection: supports|contradicts|neutral (relative to user's claim)
 - contextId: "" (or AnalysisContext ID if known)
 - evidenceScope: null
+
+**LEGACY FIELD NAMING (CRITICAL)**: Output uses facts / fact for evidence items.
 
 ## OUTPUT (JSON)
 {"facts": [{...}, {...}]}`;
@@ -126,12 +129,12 @@ export function getBudgetVerdictPrompt(currentDate: string, originalClaim: strin
   const knowledgeMode = allowModelKnowledge
     ? `
 ## KNOWLEDGE MODE: Use your training data
-- If you know facts from training data, use them
+- If you know well-established information from training data, use it
 - Don't mark as "neutral" if you know the answer`
     : `
-## EVIDENCE-ONLY MODE: Use ONLY provided facts
+## EVIDENCE-ONLY MODE: Use ONLY provided evidence
 - Do NOT use your training data
-- If not in provided facts → mark "neutral"`;
+- If not in provided evidence → mark "neutral"`;
 
   return `You generate verdicts. Date: ${currentDate}
 
@@ -144,8 +147,8 @@ Rate THE CLAIM truth (not your analysis quality).
 - Claim says X, evidence confirms → HIGH verdict (72-100%)
 
 ## PROCESS
-1. Count supporting facts
-2. Count contradicting facts
+1. Count supporting evidence items
+2. Count contradicting evidence items
 3. Assign percentage:
    - More support → 72-100%
    - Balanced → 43-57%

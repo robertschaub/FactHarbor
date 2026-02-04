@@ -2,9 +2,9 @@
  * Supplemental prompts for ORCHESTRATED pipeline
  *
  * These prompts handle:
- * - Adding missing claims to under-covered contexts
- * - Re-evaluating context detection when initial pass under-splits
- * - Extracting outcome-related claims from research facts
+ * - Adding missing claims to under-covered AnalysisContexts
+ * - Re-evaluating AnalysisContext detection when initial pass under-splits
+ * - Extracting outcome-related claims from research evidence items
  *
  * @version 2.8.0 - Extracted from analyzer.ts inline prompts
  */
@@ -15,26 +15,26 @@ export interface SupplementalClaimsVariables {
 }
 
 /**
- * Get prompt for requesting supplemental subclaims for under-covered contexts
+ * Get prompt for requesting supplemental subclaims for under-covered AnalysisContexts
  */
 export function getSupplementalClaimsPrompt(variables: SupplementalClaimsVariables): string {
   const { minCoreClaimsPerContext, hasScopes } = variables;
 
-  return `You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
+  return `You are a fact-checking assistant. Add missing subClaims ONLY for the listed AnalysisContexts.
 
 ## TASK
-Generate additional claims for contexts that don't have enough coverage.
+Generate additional claims for AnalysisContexts that don't have enough coverage.
 
 ## RULES
 - Return ONLY new claims (do not repeat existing ones)
-- Each claim must be tied to a single context via contextId${hasScopes ? "" : ". Use an empty string if no contexts are listed."}
+- Each claim must be tied to a single AnalysisContext via contextId${hasScopes ? "" : ". Use an empty string if no AnalysisContexts are listed."}
 - Use claimRole="core" and checkWorthiness="high"
 - Set thesisRelevance="direct" for ALL supplemental claims you generate
 - Set harmPotential and centrality realistically
-- Default centrality to "medium" unless the claim is truly the primary thesis of that context
+- Default centrality to "medium" unless the claim is truly the primary thesis of that AnalysisContext
 - Set isCentral=true if centrality==="high"
 - Use dependsOn=[] unless a dependency is truly required
-- Ensure each listed context reaches at least ${minCoreClaimsPerContext} core claims
+- Ensure each listed AnalysisContext reaches at least ${minCoreClaimsPerContext} core claims
 
 ## CRITICAL: OUTCOME CLAIMS
 If specific outcomes, penalties, or consequences are mentioned (e.g., an N-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.
@@ -61,7 +61,7 @@ Return JSON with:
 }
 
 /**
- * Get prompt for requesting supplemental context detection
+ * Get prompt for requesting supplemental AnalysisContext detection
  */
 export function getSupplementalScopesPrompt(): string {
   return `You are a fact-checking assistant.
@@ -74,29 +74,29 @@ Return ONLY a single JSON object with keys:
 - analysisContexts: array
 - requiresSeparateAnalysis: boolean
 
-## CONTEXT DETECTION RULES
+## ANALYSISCONTEXT DETECTION RULES
 
-**SPLIT when there are clearly 2+ distinct contexts:**
+**SPLIT when there are clearly 2+ distinct AnalysisContexts:**
 - Different events, phases, or timelines
 - Different institutions or formal bodies
 - Different processes or proceedings
 - Different analytical methodologies/boundaries
 
-**NOT DISTINCT CONTEXTS:**
+**NOT DISTINCT ANALYSISCONTEXTS:**
 - Different perspectives on the same event
 - Pro vs con viewpoints on a single topic
 - Different stakeholder opinions on one matter
 
-## CONTEXT RELEVANCE REQUIREMENT (CRITICAL)
-- Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include contexts from unrelated domains just because they share a general category
-- When in doubt, use fewer contexts rather than including marginally relevant ones
-- A context with zero relevant claims/evidence should NOT exist
+## ANALYSISCONTEXT RELEVANCE REQUIREMENT (CRITICAL)
+- Every AnalysisContext MUST be directly relevant to the SPECIFIC TOPIC of the input
+- Do NOT include AnalysisContexts from unrelated domains just because they share a general category
+- When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones
+- An AnalysisContext with zero relevant claims/evidence should NOT exist
 
 **SAME SUBJECT/ENTITY RULE**: 
-- Contexts MUST be about the SAME SUBJECT as the thesis
-- If thesis is about "Person A's trial", do NOT include contexts about Person B, C, etc.
-- Different cases involving DIFFERENT PEOPLE are NOT relevant contexts
+- AnalysisContexts MUST be about the SAME SUBJECT as the thesis
+- If thesis is about "Person A's trial", do NOT include AnalysisContexts about Person B, C, etc.
+- Different cases involving DIFFERENT PEOPLE are NOT relevant AnalysisContexts
 
 ## SCHEMA
 Each analysisContexts item must include:
@@ -107,27 +107,27 @@ Each analysisContexts item must include:
 - temporal (string): Time period
 - status ("concluded"|"ongoing"|"pending"|"unknown")
 - outcome (string): Result or ""
-- assessedStatement (string): What is being assessed in this context (Assessment MUST summarize assessment of THIS)
+- assessedStatement (string): What is being assessed in this AnalysisContext (Assessment MUST summarize assessment of THIS)
 - metadata (object): Domain-specific fields (institution, methodology, boundaries, geographic, etc.)
 
 Use empty strings "" and empty arrays [] when unknown.
 
 ## DECISION GUIDE
-- If only 1 context exists → return empty array or 1-item array with requiresSeparateAnalysis=false
-- If 2+ distinct contexts exist → return full array with requiresSeparateAnalysis=true`;
+- If only 1 AnalysisContext exists → return empty array or 1-item array with requiresSeparateAnalysis=false
+- If 2+ distinct AnalysisContexts exist → return full array with requiresSeparateAnalysis=true`;
 }
 
 /**
- * Get prompt for extracting outcome claims from research facts
+ * Get prompt for extracting outcome claims from research evidence items
  */
 export function getOutcomeClaimsExtractionPrompt(): string {
   return `You are a fact-checking assistant.
 
 ## TASK
-Review the discovered facts and extract any OUTCOME-RELATED claims that weren't in the original input but should be evaluated.
+Review the discovered evidence items and extract any OUTCOME-RELATED claims that weren't in the original input but should be evaluated.
 
 ## OUTCOME CLAIMS TO EXTRACT
-Look for specific outcomes mentioned in facts:
+Look for specific outcomes mentioned in evidence items:
 - Sentences/penalties (e.g., "8-year ineligibility", "$1M fine")
 - Rulings/decisions (e.g., "conviction upheld", "appeal denied")
 - Quantitative impacts (e.g., "10,000 jobs lost", "30% efficiency gain")
@@ -155,7 +155,7 @@ Return JSON with:
 ## RULES
 - Only extract outcomes that are SIGNIFICANT to the thesis
 - Each outcome gets ONE claim about its appropriateness/proportionality
-- Tie claims to the correct contextId
+- Tie claims to the correct AnalysisContext via contextId
 - Use evaluative type (these are judgments about outcomes)
 - Set thesisRelevance="direct" for all outcome claims`;
 }
@@ -209,7 +209,7 @@ export function getSupplementalClaimsPromptForProvider(
 }
 
 /**
- * Get provider-optimized supplemental contexts prompt
+ * Get provider-optimized supplemental AnalysisContexts prompt
  */
 export function getSupplementalScopesPromptForProvider(
   provider: 'anthropic' | 'openai' | 'google' | 'mistral'
@@ -221,8 +221,8 @@ export function getSupplementalScopesPromptForProvider(
       return basePrompt + `
 
 <claude_optimization>
-- Use nuanced judgment for context boundary detection
-- Be conservative - when in doubt, fewer contexts is better
+- Use nuanced judgment for AnalysisContext boundary detection
+- Be conservative - when in doubt, fewer AnalysisContexts is better
 - Ensure metadata reflects evidence, not background knowledge
 </claude_optimization>`;
 
@@ -246,7 +246,7 @@ export function getSupplementalScopesPromptForProvider(
       return basePrompt + `
 
 ## MISTRAL GUIDANCE
-- Verify against the context detection rules
+- Verify against the AnalysisContext detection rules
 - Use the checklist before outputting
 - Ensure schema compliance`;
 

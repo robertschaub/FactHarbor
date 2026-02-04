@@ -214,7 +214,7 @@ function getBaseTemplate(context: PromptContext): string {
       return getVerdictBasePrompt({
         currentDate,
         originalClaim: variables.originalClaim || '',
-        contextsList: variables.contextsList || 'No contexts defined',
+        contextsList: variables.contextsList || 'No AnalysisContexts defined',
         allowModelKnowledge: context.config.allowModelKnowledge,
       });
 

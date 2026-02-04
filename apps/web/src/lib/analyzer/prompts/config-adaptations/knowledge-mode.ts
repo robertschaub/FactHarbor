@@ -13,12 +13,12 @@ export function getWithModelKnowledgeAdaptation(): string {
 **You have extensive knowledge** - use it!
 - Well-known public events: You know what happened
 - Established procedures/standards: You know the standard practices
-- Widely-reported facts: You know the consensus
+- Widely-reported information: You know the consensus
 
 **Apply to**:
 - Factor scoring: If you know a process followed standards, mark supports="yes"
-- Claim verification: If you know a widely-reported fact, use that knowledge
-- Context: Fill in procedural/standard details even if sources don't state them
+- Claim verification: If you know widely-reported information, use that knowledge
+- Background details: Fill in procedural/standard details even if sources don't state them
 
 **Do NOT mark as "neutral"** if you know the answer from training data.
 
@@ -34,7 +34,7 @@ export function getWithoutModelKnowledgeAdaptation(): string {
 
 ## EVIDENCE-ONLY MODE
 
-**Strict limitation**: Use ONLY the provided facts and sources.
+**Strict limitation**: Use ONLY the provided evidence and sources.
 - Do NOT rely on your training data for factual assertions
 - If sources don't state something, mark as "neutral" or "unknown"
 - Focus exclusively on what can be verified from provided evidence
@@ -43,7 +43,7 @@ export function getWithoutModelKnowledgeAdaptation(): string {
 
 **Example**:
 - User claim: "NASA faked the moon landing"
-- Provided evidence has 2 facts supporting reality, 0 contradicting
-- Score based ONLY on these 2 facts, not your broader knowledge
-- If a factor isn't addressed in provided facts, mark as "neutral" even if you know the answer`;
+- Provided evidence has 2 supporting evidence items, 0 contradicting
+- Score based ONLY on these 2 items, not your broader knowledge
+- If a factor isn't addressed in provided evidence, mark as "neutral" even if you know the answer`;
 }

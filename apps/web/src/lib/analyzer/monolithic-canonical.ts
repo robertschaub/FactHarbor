@@ -165,7 +165,9 @@ const ClaimExtractionSchema = z.object({
     .max(5)
     .describe("Search queries to find evidence (include both supporting and contradicting)"),
   subClaims: z.array(SubClaimSchema).optional(),
-  // Multi-scope detection fields
+  // Multi-scope detection fields (legacy name for backward compatibility)
+  // NOTE: "detectedScopes" is the understand-schema output; do not rename to analysisContexts
+  // until a coordinated breaking change across prompts, parsing, and UI.
   detectedScopes: z.array(z.object({
     id: z.string().describe("Short ID like 'CTX_A', 'CTX_B'"),
     name: z.string().describe("Human-readable name"),
@@ -211,6 +213,7 @@ const VerdictSchema = z.object({
   reasoning: z.string().describe("Detailed reasoning for the verdict (2-4 sentences)"),
   summary: z.string().describe("One-sentence summary"),
   keyFactIds: z.array(z.string()).describe("IDs of most important facts"),
+  // NOTE: Legacy "detectedScopes" retained for backward compatibility; not EvidenceScope.
   detectedScopes: z
     .array(
       z.object({
