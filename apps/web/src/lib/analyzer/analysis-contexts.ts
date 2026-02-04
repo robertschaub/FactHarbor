@@ -1,9 +1,9 @@
 /**
- * Scope canonicalization helpers.
+ * AnalysisContext canonicalization helpers.
  *
  * Extracted from the monolithic `analyzer.ts` to keep responsibilities separated.
  *
- * @module analyzer/scopes
+ * @module analyzer/analysis-contexts
  */
 
 import {
@@ -29,7 +29,7 @@ import type { PipelineConfig } from "../config-schemas";
  * This represents a top-level bounded analytical frame.
  *
  * TERMINOLOGY: "Scope" in this file historically referred to AnalysisContext.
- * The type is being renamed for clarity. See types.ts:98-126 for definitions.
+ * This module name now reflects AnalysisContext for clarity. See types.ts:98-126 for definitions.
  */
 export interface DetectedAnalysisContext {
   id: string;

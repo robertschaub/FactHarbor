@@ -11,8 +11,6 @@
  * @version 2.8.0 - Enhanced with comprehensive few-shot examples
  */
 
-// NOTE: Keep "detectedScopes" naming to match understand-base schema and monolithic parsing.
-// Do NOT switch to analysisContexts here until a coordinated breaking change.
 export function getOpenAIUnderstandVariant(): string {
   return `
 ## GPT OPTIMIZATION
@@ -23,7 +21,7 @@ export function getOpenAIUnderstandVariant(): string {
 Input: "Institution A ruled X was ineligible, while Institution B ruled differently on eligibility"
 Output:
 {
-  "detectedScopes": [
+  "analysisContexts": [
     {"id": "CTX_A", "name": "Institution A Eligibility Ruling", "type": "legal"},
     {"id": "CTX_B", "name": "Institution B Eligibility Ruling", "type": "legal"}
   ],
@@ -33,10 +31,10 @@ Output:
 ### REQUIRED OUTPUT FIELDS (All must be present)
 - impliedClaim: string (neutral summary)
 - articleThesis: string (what input asserts)
-- analysisContext: string — article framing/background details (NOT an AnalysisContext), or "".
+- backgroundDetails: string — article background details (NOT an AnalysisContext), or "".
 - subClaims: array with id, text, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn
 - researchQueries: array of 4-6 distinct search strings
-- detectedScopes: array (can be empty)
+- analysisContexts: array (can be empty)
 - requiresSeparateAnalysis: boolean
 
 ### RULES TO FOLLOW
@@ -56,10 +54,10 @@ export function getOpenAIExtractFactsVariant(): string {
 
 **Example - Evidence with Full EvidenceScope:**
 {
-  "facts": [
+  "evidenceItems": [
     {
       "id": "F1",
-      "fact": "Technology A achieves 40% full-cycle efficiency",
+      "statement": "Technology A achieves 40% full-cycle efficiency",
       "category": "statistic",
       "specificity": "high",
       "sourceExcerpt": "The full-cycle efficiency of Technology A is approximately 40%",
@@ -77,7 +75,7 @@ export function getOpenAIExtractFactsVariant(): string {
     },
     {
       "id": "F2",
-      "fact": "Technology B achieves 77% full-cycle efficiency",
+      "statement": "Technology B achieves 77% full-cycle efficiency",
       "category": "statistic",
       "specificity": "high",
       "sourceExcerpt": "Technology B demonstrates full-cycle efficiency of approximately 77%",
@@ -98,7 +96,7 @@ export function getOpenAIExtractFactsVariant(): string {
 
 ### REQUIRED FIELDS PER EVIDENCE ITEM
 - id: string (F1, F2, etc.)
-- fact: string (one sentence, under 100 chars preferred) ← JSON field name for backward compatibility
+- statement: string (one sentence, under 100 chars preferred)
 - category: "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
 - specificity: "high" | "medium" (never "low")
 - sourceExcerpt: string (50-200 chars, verbatim from source)
@@ -164,14 +162,14 @@ Do NOT artificially center at 50%. If evidence is clear, be decisive.
 
 ### SCHEMA COMPLIANCE
 - Use "" for empty strings, NEVER null
-- supportingFactIds must be array (even if empty: [])
+- supportingEvidenceIds must be array (even if empty: [])
 - Ensure contextId matches one from the known AnalysisContexts
 - factualBasis = "established" ONLY if documented counter-evidence exists`;
 }
 
-export function getOpenAIScopeRefinementVariant(): string {
+export function getOpenAIContextRefinementVariant(): string {
   return `
-## GPT OPTIMIZATION - SCOPE REFINEMENT
+## GPT OPTIMIZATION - CONTEXT REFINEMENT
 
 ### FEW-SHOT EXAMPLE
 
@@ -209,16 +207,16 @@ export function getOpenAIScopeRefinementVariant(): string {
       }
     }
   ],
-  "factScopeAssignments": [
-    {"factId": "F1", "contextId": "CTX_A"},
-    {"factId": "F2", "contextId": "CTX_B"}
+  "evidenceContextAssignments": [
+    {"evidenceId": "F1", "contextId": "CTX_A"},
+    {"evidenceId": "F2", "contextId": "CTX_B"}
   ]
 }
 
 ### PREVENT OVER-SPLITTING CHECKLIST
 For EACH proposed AnalysisContext, verify:
 1. [ ] Directly relevant to input's specific topic?
-2. [ ] Supported by ≥1 actual fact?
+2. [ ] Supported by ≥1 actual evidence item?
 3. [ ] Represents distinct analytical frame (not just perspective)?
 4. [ ] If removed, would analysis materially change?
 
@@ -227,14 +225,11 @@ If ANY answer is "no" → Don't create that AnalysisContext.
 ### REQUIRED FIELDS
 - requiresSeparateAnalysis: boolean
 - analysisContexts: array with id, name, shortName, subject, temporal, status, outcome, metadata
-- factScopeAssignments: array of {factId, contextId} covering ≥70% of facts
-- Each AnalysisContext must have ≥1 fact assigned
+- evidenceContextAssignments: array of {evidenceId, contextId} covering ≥70% of evidence items
+- Each AnalysisContext must have ≥1 evidence item assigned
 
 ### OUTPUT FORMAT
 - Use "" for unknown metadata fields, NEVER null
 - metadata must be object (can be empty {})
 - shortName: max 12 characters`;
 }
-
-/** Primary name for getting OpenAI AnalysisContext refinement variant */
-export const getOpenAIContextRefinementVariant = getOpenAIScopeRefinementVariant;

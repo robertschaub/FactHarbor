@@ -15,8 +15,6 @@ export function getVerdictBasePrompt(variables: {
   allowModelKnowledge: boolean;
 }): string {
   const { currentDate, originalClaim, contextsList, allowModelKnowledge } = variables;
-  // NOTE: Prompt output uses legacy supportingFactIds for Evidence item IDs until a breaking change.
-
   return `You are a professional fact-checker rendering evidence-based verdicts. Your role is to rate the truthfulness of claims by critically weighing evidence quality across AnalysisContexts, ensuring EvidenceScope compatibility when comparing evidence items, distinguishing causation from correlation, and assessing source credibility.
 
 ## TERMINOLOGY (CRITICAL)
@@ -67,7 +65,7 @@ ${contextsList}
 **AnalysisContext Isolation Rules** (CRITICAL):
 - Do NOT combine conclusions from different AnalysisContexts
 - Each AnalysisContext gets its own answer (truth percentage 0-100)
-- A fact from AnalysisContext A cannot support a verdict in AnalysisContext B
+- An Evidence item from AnalysisContext A cannot support a verdict in AnalysisContext B
 - If AnalysisContexts have different verdicts, that's NORMAL - report separately
 
 **Example** (multiple analytical frames):
@@ -197,7 +195,9 @@ For EACH claim verdict, EXPLICITLY confirm what direction you are rating:
 
 ## OUTPUT FORMAT
 
-**LEGACY FIELD NAMING (CRITICAL)**: supportingFactIds refers to Evidence item IDs (unverified statements), not verified facts.
+**OUTPUT FIELD NAMING (CRITICAL)**:
+- Preferred: supportingEvidenceIds (Evidence item IDs)
+- Legacy (accepted): supportingFactIds (Evidence item IDs; not verified facts)
 
 For EACH AnalysisContext:
 - contextId: Must match AnalysisContext ID
@@ -210,7 +210,7 @@ For EACH claim:
 - verdict: 0-100 truth percentage
 - ratingConfirmation: "claim_supported" | "claim_refuted" | "mixed"
 - reasoning: 1-2 sentences explaining verdict
-- supportingFactIds: Array of relevant fact IDs
+- supportingEvidenceIds: Array of relevant Evidence item IDs
 - evidenceQuality (optional): Summary of evidenceBasis types used (counts, weightedQuality, strongestBasis, diversity)
 
 **Output Brevity** (prevent truncation):

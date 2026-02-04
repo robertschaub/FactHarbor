@@ -14,7 +14,7 @@ import {
   detectScopes, 
   formatDetectedScopesHint,
   UNSCOPED_ID 
-} from '@/lib/analyzer/scopes';
+} from '@/lib/analyzer/analysis-contexts';
 
 describe('Scope Detection - Generic by Design', () => {
   describe('Proper Noun Detection', () => {

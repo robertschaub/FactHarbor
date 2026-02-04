@@ -17,7 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { detectScopes, formatDetectedScopesHint } from "@/lib/analyzer/scopes";
+import { detectScopes, formatDetectedScopesHint } from "@/lib/analyzer/analysis-contexts";
 import {
   getClaimWeight,
   calculateWeightedVerdictAverage,

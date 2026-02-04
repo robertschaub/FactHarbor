@@ -162,7 +162,7 @@ export function getClaudePrefill(taskType: string): string {
     case 'understand':
       return '{"impliedClaim":';
     case 'extract_facts':
-      return '{"facts":[';
+      return '{"evidenceItems":[';
     case 'verdict':
       return '{"contextId":';
     case 'scope_refinement':

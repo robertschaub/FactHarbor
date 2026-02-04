@@ -9,7 +9,7 @@
  * @module analyzer/provenance-validation
  */
 
-import type { ExtractedFact, FetchedSource } from "./types";
+import type { EvidenceItem, FetchedSource } from "./types";
 import { getEvidencePatterns } from "./lexicon-utils";
 
 // ============================================================================
@@ -58,9 +58,9 @@ export interface ProvenanceValidationResult {
  *
  * This function enforces the "Ground Realism" gate from the handover document.
  */
-export function validateFactProvenance(fact: ExtractedFact): ProvenanceValidationResult {
+export function validateEvidenceProvenance(evidenceItem: EvidenceItem): ProvenanceValidationResult {
   // 1. Check sourceUrl is present
-  if (!fact.sourceUrl || typeof fact.sourceUrl !== "string") {
+  if (!evidenceItem.sourceUrl || typeof evidenceItem.sourceUrl !== "string") {
     return {
       isValid: false,
       failureReason: "Missing sourceUrl",
@@ -68,7 +68,7 @@ export function validateFactProvenance(fact: ExtractedFact): ProvenanceValidatio
     };
   }
 
-  const url = fact.sourceUrl.trim();
+  const url = evidenceItem.sourceUrl.trim();
 
   // 2. Check sourceUrl is not empty
   if (url.length === 0) {
@@ -109,7 +109,7 @@ export function validateFactProvenance(fact: ExtractedFact): ProvenanceValidatio
   }
 
   // 5. Check sourceExcerpt is present
-  if (!fact.sourceExcerpt || typeof fact.sourceExcerpt !== "string") {
+  if (!evidenceItem.sourceExcerpt || typeof evidenceItem.sourceExcerpt !== "string") {
     return {
       isValid: false,
       failureReason: "Missing sourceExcerpt",
@@ -117,7 +117,7 @@ export function validateFactProvenance(fact: ExtractedFact): ProvenanceValidatio
     };
   }
 
-  const excerpt = fact.sourceExcerpt.trim();
+  const excerpt = evidenceItem.sourceExcerpt.trim();
 
   // 6. Check sourceExcerpt is substantive
   if (excerpt.length < _patterns.provenanceMinSourceExcerptLength) {
@@ -152,48 +152,48 @@ export function validateFactProvenance(fact: ExtractedFact): ProvenanceValidatio
  * This is the enforcement point for the "Ground Realism" gate:
  * facts without real sources cannot enter the verdict pipeline.
  */
-export function filterFactsByProvenance(
-  facts: ExtractedFact[]
+export function filterEvidenceByProvenance(
+  evidenceItems: EvidenceItem[]
 ): {
-  validFacts: ExtractedFact[];
-  invalidFacts: Array<ExtractedFact & { provenanceValidation: ProvenanceValidationResult }>;
+  validEvidenceItems: EvidenceItem[];
+  invalidEvidenceItems: Array<EvidenceItem & { provenanceValidation: ProvenanceValidationResult }>;
   stats: { total: number; valid: number; invalid: number };
 } {
-  const validFacts: ExtractedFact[] = [];
-  const invalidFacts: Array<ExtractedFact & { provenanceValidation: ProvenanceValidationResult }> = [];
+  const validEvidenceItems: EvidenceItem[] = [];
+  const invalidEvidenceItems: Array<EvidenceItem & { provenanceValidation: ProvenanceValidationResult }> = [];
 
-  for (const fact of facts) {
-    const validation = validateFactProvenance(fact);
+  for (const evidenceItem of evidenceItems) {
+    const validation = validateEvidenceProvenance(evidenceItem);
 
     if (validation.isValid) {
-      validFacts.push(fact);
+      validEvidenceItems.push(evidenceItem);
     } else {
-      invalidFacts.push({
-        ...fact,
+      invalidEvidenceItems.push({
+        ...evidenceItem,
         provenanceValidation: validation,
       });
       console.warn(
-        `[Provenance] Rejected fact ${fact.id}: ${validation.failureReason}`,
+        `[Provenance] Rejected evidence item ${evidenceItem.id}: ${validation.failureReason}`,
         {
-          factPreview: fact.fact.substring(0, 80),
-          sourceUrl: fact.sourceUrl,
-          excerptLength: fact.sourceExcerpt?.length || 0,
+          evidencePreview: evidenceItem.statement.substring(0, 80),
+          sourceUrl: evidenceItem.sourceUrl,
+          excerptLength: evidenceItem.sourceExcerpt?.length || 0,
         }
       );
     }
   }
 
   const stats = {
-    total: facts.length,
-    valid: validFacts.length,
-    invalid: invalidFacts.length,
+    total: evidenceItems.length,
+    valid: validEvidenceItems.length,
+    invalid: invalidEvidenceItems.length,
   };
 
   console.log(
-    `[Provenance] Validation: ${stats.valid}/${stats.total} facts have valid provenance, ${stats.invalid} rejected`
+    `[Provenance] Validation: ${stats.valid}/${stats.total} evidence items have valid provenance, ${stats.invalid} rejected`
   );
 
-  return { validFacts, invalidFacts, stats };
+  return { validEvidenceItems, invalidEvidenceItems, stats };
 }
 
 // ============================================================================

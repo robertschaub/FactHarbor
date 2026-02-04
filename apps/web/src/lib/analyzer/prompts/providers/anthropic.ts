@@ -64,7 +64,7 @@ Trust your judgment. Be decisive. Don't over-hedge.
 </claude_optimization>`;
 }
 
-export function getAnthropicScopeRefinementVariant(): string {
+export function getAnthropicContextRefinementVariant(): string {
   return `
 <claude_optimization>
 ## FORMAT
@@ -79,6 +79,3 @@ Use XML tags. Follow schema precisely.
 Use strong comprehension for metadata extraction.
 </claude_optimization>`;
 }
-
-/** Primary name for getting Anthropic AnalysisContext refinement variant */
-export const getAnthropicContextRefinementVariant = getAnthropicScopeRefinementVariant;

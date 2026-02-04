@@ -11,7 +11,7 @@
 
 import { CONFIG } from "./config";
 import { getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
-import type { ClaimVerdict, ExtractedFact, FetchedSource } from "./types";
+import type { ClaimVerdict, EvidenceItem, FetchedSource } from "./types";
 import { batchGetCachedData, setCachedScore, setCacheTtlDays, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
 import { getSRConfig, scoreToFactualRating, setSRConfig } from "../source-reliability-config";
 import type { SourceReliabilityConfig } from "../config-schemas";
@@ -284,7 +284,7 @@ export function getTrackRecordData(url: string): CachedReliabilityData | null {
 // LLM EVALUATION (Internal API Call)
 // ============================================================================
 
-interface EvidenceItem {
+interface SourceReliabilityEvidenceItem {
   claim: string;
   basis: string;
   recency?: string;
@@ -304,7 +304,7 @@ interface EvaluationResult {
     politicalBias: string;
     otherBias?: string | null;
   };
-  evidenceCited?: EvidenceItem[];
+  evidenceCited?: SourceReliabilityEvidenceItem[];
   caveats?: string[];
   identifiedEntity?: string | null;
 }
@@ -450,7 +450,7 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
  */
 export function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
-  facts: ExtractedFact[],
+  evidenceItems: EvidenceItem[],
   sources: FetchedSource[]
 ): ClaimVerdict[] {
   // Build source reliability data map
@@ -467,15 +467,18 @@ export function applyEvidenceWeighting(
     ])
   );
 
-  // Map facts to their source reliability data
-  const factDataById = new Map(
-    facts.map((f) => [f.id, sourceDataById.get(f.sourceId) ?? null])
+  // Map evidence items to their source reliability data
+  const evidenceDataById = new Map(
+    evidenceItems.map((item) => [item.id, sourceDataById.get(item.sourceId) ?? null])
   );
 
   return claimVerdicts.map((verdict) => {
-    const factIds = verdict.supportingFactIds ?? [];
-    const reliabilityData = factIds
-      .map((id) => factDataById.get(id))
+    const supportingEvidenceIds: string[] =
+      verdict.supportingEvidenceIds && verdict.supportingEvidenceIds.length > 0
+        ? verdict.supportingEvidenceIds
+        : (verdict as any).supportingFactIds ?? [];
+    const reliabilityData = supportingEvidenceIds
+      .map((id) => evidenceDataById.get(id))
       .filter((data): data is SourceReliabilityData | null => true);
 
     // Calculate effective weights for each source
@@ -491,7 +494,7 @@ export function applyEvidenceWeighting(
       return calculateEffectiveWeight(data);
     });
 
-    // If no facts/sources, return verdict unchanged
+    // If no evidence/sources, return verdict unchanged
     if (weights.length === 0) return verdict;
 
     // Calculate average effective weight
@@ -566,7 +569,7 @@ export function scoreToCredibilityLevel(score: number): CredibilityLevel7Band {
 
 export function calculateOverallCredibility(
   sources: FetchedSource[],
-  _facts: ExtractedFact[]
+  _facts: EvidenceItem[]
 ): {
   averageScore: number;
   knownSourceCount: number;

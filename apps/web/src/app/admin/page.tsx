@@ -117,7 +117,7 @@ export default function AdminPage() {
               )}
             </div>
             <div style={{ fontSize: 13, color: "#555" }}>
-              Highest quality multi-stage pipeline. Best for complex claims and multi-scope analysis.
+              Highest quality multi-stage pipeline. Best for complex claims and multi-context analysis.
             </div>
             <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666" }}>
               <span title="Quality">⭐⭐⭐⭐⭐</span>

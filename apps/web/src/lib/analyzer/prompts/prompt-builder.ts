@@ -10,7 +10,7 @@
 import { getUnderstandBasePrompt } from './base/understand-base';
 import { getExtractFactsBasePrompt } from './base/extract-facts-base';
 import { getVerdictBasePrompt } from './base/verdict-base';
-import { getScopeRefinementBasePrompt } from './base/scope-refinement-base';
+import { getContextRefinementBasePrompt } from './base/context-refinement-base';
 import { getDynamicPlanBasePrompt } from './base/dynamic-plan-base';
 import { getDynamicAnalysisBasePrompt } from './base/dynamic-analysis-base';
 import {
@@ -28,28 +28,28 @@ import {
   getAnthropicUnderstandVariant,
   getAnthropicExtractFactsVariant,
   getAnthropicVerdictVariant,
-  getAnthropicScopeRefinementVariant,
+  getAnthropicContextRefinementVariant,
 } from './providers/anthropic';
 
 import {
   getOpenAIUnderstandVariant,
   getOpenAIExtractFactsVariant,
   getOpenAIVerdictVariant,
-  getOpenAIScopeRefinementVariant,
+  getOpenAIContextRefinementVariant,
 } from './providers/openai';
 
 import {
   getGeminiUnderstandVariant,
   getGeminiExtractFactsVariant,
   getGeminiVerdictVariant,
-  getGeminiScopeRefinementVariant,
+  getGeminiContextRefinementVariant,
 } from './providers/google';
 
 import {
   getMistralUnderstandVariant,
   getMistralExtractFactsVariant,
   getMistralVerdictVariant,
-  getMistralScopeRefinementVariant,
+  getMistralContextRefinementVariant,
 } from './providers/mistral';
 
 import {
@@ -219,7 +219,7 @@ function getBaseTemplate(context: PromptContext): string {
       });
 
     case 'scope_refinement':
-      return getScopeRefinementBasePrompt();
+      return getContextRefinementBasePrompt();
 
     case 'dynamic_plan':
       return getDynamicPlanBasePrompt({ currentDate });
@@ -273,7 +273,7 @@ function getProviderVariant(context: PromptContext): string {
       understand: getAnthropicUnderstandVariant,
       extract_facts: getAnthropicExtractFactsVariant,
       verdict: getAnthropicVerdictVariant,
-      scope_refinement: getAnthropicScopeRefinementVariant,
+      scope_refinement: getAnthropicContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
@@ -281,7 +281,7 @@ function getProviderVariant(context: PromptContext): string {
       understand: getOpenAIUnderstandVariant,
       extract_facts: getOpenAIExtractFactsVariant,
       verdict: getOpenAIVerdictVariant,
-      scope_refinement: getOpenAIScopeRefinementVariant,
+      scope_refinement: getOpenAIContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
@@ -289,7 +289,7 @@ function getProviderVariant(context: PromptContext): string {
       understand: getGeminiUnderstandVariant,
       extract_facts: getGeminiExtractFactsVariant,
       verdict: getGeminiVerdictVariant,
-      scope_refinement: getGeminiScopeRefinementVariant,
+      scope_refinement: getGeminiContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
@@ -297,7 +297,7 @@ function getProviderVariant(context: PromptContext): string {
       understand: getMistralUnderstandVariant,
       extract_facts: getMistralExtractFactsVariant,
       verdict: getMistralVerdictVariant,
-      scope_refinement: getMistralScopeRefinementVariant,
+      scope_refinement: getMistralContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },

@@ -10,16 +10,14 @@
  * GENERIC BY DESIGN - No domain-specific examples or hardcoded keywords
  */
 
-// NOTE: The understand schema uses legacy "detectedScopes" for backward compatibility with monolithic parsing.
-// Do NOT rename to analysisContexts here until a coordinated breaking change; this is unrelated to EvidenceScope.
-// NOTE: The output field analysisContext (singular) is article framing/background details, not AnalysisContext.
+// NOTE: Preferred output uses analysisContexts + backgroundDetails; legacy fields are accepted in parsing.
 export function getUnderstandBasePrompt(variables: {
   currentDate: string;
   isRecent?: boolean;
 }): string {
   const { currentDate, isRecent = false } = variables;
 
-  return `You are a professional fact-checker extracting verifiable claims. Your role is to identify AnalysisContexts requiring separate investigation (especially when comparison claims are boundary-sensitive), detect the article framing if present, distinguish factual assertions from opinion, and formulate strategic search queries that uncover both supporting and contradicting evidence.
+  return `You are a professional fact-checker extracting verifiable claims. Your role is to identify AnalysisContexts requiring separate investigation (especially when comparison claims are boundary-sensitive), detect background details if present, distinguish factual assertions from opinion, and formulate strategic search queries that uncover both supporting and contradicting evidence.
 
 ## TERMINOLOGY (CRITICAL)
 
@@ -190,7 +188,7 @@ This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was ap
 Return JSON with:
 - impliedClaim: Neutral summary of what input claims (not your judgment)
 - articleThesis: What the article/input asserts (neutral language)
-- analysisContext: Article narrative background details (NOT an AnalysisContext)
+- backgroundDetails: Article background details (NOT an AnalysisContext)
 - subClaims: Array of claims with:
   - id: Unique identifier (e.g., "C1", "C2")
   - text: The atomic claim text
@@ -203,7 +201,7 @@ Return JSON with:
     - "irrelevant": Off-topic noise
   - checkWorthiness, harmPotential, dependsOn (claim IDs)
 - researchQueries: Array with query text and optional AnalysisContext hint (contextHint)
-- detectedScopes: Array of AnalysisContexts (legacy field name for top-level analytical frames)
+- analysisContexts: Array of AnalysisContexts (top-level analytical frames)
 - requiresSeparateAnalysis: boolean (true if multiple AnalysisContexts)
 
 **CRITICAL**: All core claims that test any part of the input statement should have thesisRelevance="direct". Only mark as "tangential" claims about reactions, responses, or commentary that don't directly evaluate the truth of the input.`;

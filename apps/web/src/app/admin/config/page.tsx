@@ -1262,7 +1262,7 @@ function PipelineConfigForm({
           <div className={styles.formHelp}>Initial claim comprehension. Medium quality OK. Default: claude-sonnet-4</div>
         </div>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Extract Facts Model</label>
+          <label className={styles.formLabel}>Extract Evidence Model</label>
           <input
             type="text"
             className={styles.formInput}

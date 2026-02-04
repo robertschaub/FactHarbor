@@ -173,7 +173,7 @@ export function recordOutputQuality(result: any): void {
     claimsWithVerdicts,
     scopesDetected: contexts.length,
     sourcesFound: sources.length,
-    factsExtracted: totalFacts,
+    evidenceItemsExtracted: totalFacts,
     averageConfidence: avgConfidence,
   });
 }

@@ -16,8 +16,6 @@ export function getExtractFactsBasePrompt(variables: {
   contextsList?: string;
 }): string {
   const { currentDate, originalClaim, contextsList = 'No AnalysisContexts defined yet' } = variables;
-  // NOTE: Prompt output uses legacy "facts"/"fact" field names for Evidence items until a breaking change.
-
   return `You are a professional fact-checker extracting evidence from sources. Your role is to identify specific, verifiable evidence, assign it to appropriate AnalysisContexts, capture EvidenceScope metadata when significant boundaries exist, and assess how the evidence relates to the user's claim.
 
 ## TERMINOLOGY (CRITICAL)
@@ -25,7 +23,9 @@ export function getExtractFactsBasePrompt(variables: {
 **AnalysisContext**: Top-level analytical frame requiring separate verdict (e.g., "System A" vs "System B").
 **EvidenceScope**: Per-evidence source methodology metadata.
 
-**LEGACY FIELD NAMING (CRITICAL)**: Output uses legacy JSON field names facts / fact.
+**OUTPUT FIELD NAMING (CRITICAL)**:
+- Preferred: \`evidenceItems[]\` with \`statement\` fields
+- Legacy (accepted): \`facts[]\` with \`fact\` fields
 These represent Evidence items (unverified statements), NOT verified facts.
 
 ## CURRENT DATE
@@ -188,9 +188,9 @@ Only extract Evidence items that have **PROBATIVE VALUE** for the analysis. Prob
 
 ## OUTPUT FORMAT (REQUIRED FIELDS)
 
-Return JSON with facts array (JSON field name for backward compatibility). Each evidence item MUST include:
+Return JSON with \`evidenceItems\` array (preferred). Each evidence item MUST include:
 - id: string (F1, F2, etc.)
-- fact: string (one sentence, ≤100 chars) ← JSON field name for backward compatibility
+- statement: string (one sentence, ≤100 chars)
 - category: "direct_evidence" | "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
 - specificity: "high" | "medium"
 - sourceExcerpt: string (50-200 chars, verbatim from source)
@@ -199,5 +199,7 @@ Return JSON with facts array (JSON field name for backward compatibility). Each 
 - probativeValue: "high" | "medium"
 - sourceAuthority: "primary" | "secondary" | "opinion" | "contested" (REQUIRED)
 - evidenceBasis: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific" (REQUIRED)
-- evidenceScope: object with {name, methodology, boundaries, geographic, temporal} OR null`;
+- evidenceScope: object with {name, methodology, boundaries, geographic, temporal} OR null
+
+**Legacy compatibility**: If you must use legacy names, output \`facts[]\` with \`fact\` instead of \`evidenceItems[]\` with \`statement\`.`;
 }

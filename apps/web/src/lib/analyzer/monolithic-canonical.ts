@@ -28,15 +28,15 @@ import {
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
 import { percentageToClaimVerdict, getHighlightColor } from "./truth-scale";
-import { filterFactsByProvenance, setProvenanceLexicon } from "./provenance-validation";
-import type { ExtractedFact } from "./types";
+import { filterEvidenceByProvenance, setProvenanceLexicon } from "./provenance-validation";
+import type { EvidenceItem } from "./types";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { loadPipelineConfig, loadSearchConfig, type PipelineConfig } from "@/lib/config-loader";
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
 import { calculateWeightedVerdictAverage } from "./aggregation";
-import { detectScopes, formatDetectedScopesHint, setContextHeuristicsLexicon } from "./scopes";
+import { detectScopes, formatDetectedScopesHint, setContextHeuristicsLexicon } from "./analysis-contexts";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
@@ -165,6 +165,15 @@ const ClaimExtractionSchema = z.object({
     .max(5)
     .describe("Search queries to find evidence (include both supporting and contradicting)"),
   subClaims: z.array(SubClaimSchema).optional(),
+  // Preferred v3 field names
+  analysisContexts: z.array(z.object({
+    id: z.string().describe("Short ID like 'CTX_A', 'CTX_B'"),
+    name: z.string().describe("Human-readable name"),
+    type: z.enum(["legal", "scientific", "methodological", "general"]),
+  })).optional().describe("Distinct AnalysisContexts detected (preferred field)"),
+  backgroundDetails: z.string().optional().describe("Article background details (NOT an AnalysisContext)"),
+  // Legacy fields (accepted during transition)
+  analysisContext: z.string().optional().describe("Legacy background details field"),
   // Multi-scope detection fields (legacy name for backward compatibility)
   // NOTE: "detectedScopes" is the understand-schema output; do not rename to analysisContexts
   // until a coordinated breaking change across prompts, parsing, and UI.
@@ -176,32 +185,63 @@ const ClaimExtractionSchema = z.object({
   requiresSeparateAnalysis: z.boolean().optional().describe("True if input involves multiple distinct AnalysisContexts that should be analyzed separately"),
 });
 
-/**
- * Legacy schema name: FactExtractionSchema
- * Extracts evidence items (unverified statements) from sources.
- * Field names are legacy: "facts" contains ExtractedFact objects (evidence items),
- * "fact" field contains the extracted statement text.
- */
-const FactExtractionSchema = z.object({
-  facts: z.array(
+const EvidenceExtractionSchema = z.object({
+  // Preferred v3 field name
+  evidenceItems: z.array(
     z.object({
-      fact: z.string().describe("The factual statement extracted"), // Legacy field name for statement
-      sourceUrl: z.string(),
-      sourceTitle: z.string(),
-      excerpt: z.string().describe("Relevant quote from source (50-200 chars)"),
+      statement: z.string().optional(),
+      fact: z.string().optional(),
+      sourceUrl: z.string().optional(),
+      sourceTitle: z.string().optional(),
+      sourceExcerpt: z.string().optional(),
+      excerpt: z.string().optional(),
       category: z.enum([
-        "evidence",        // Legacy value - still accepted for backward compatibility
-        "direct_evidence", // NEW v2.8: Preferred value (avoids tautology)
+        "evidence",
+        "direct_evidence",
         "expert_quote",
         "statistic",
         "event",
         "legal_provision",
         "criticism",
-      ]),
-      direction: z.enum(["supports", "contradicts", "neutral"]),
-      probativeValue: z.enum(["high", "medium", "low"]).optional().describe("Probative value assessment"),
+      ]).optional(),
+      claimDirection: z.enum(["supports", "contradicts", "neutral"]).optional(),
+      direction: z.enum(["supports", "contradicts", "neutral"]).optional(),
+      probativeValue: z.enum(["high", "medium", "low"]).optional(),
+      specificity: z.enum(["high", "medium"]).optional(),
+      contextId: z.string().optional(),
+      evidenceScope: z.any().optional(),
+      sourceAuthority: z.enum(["primary", "secondary", "opinion", "contested"]).optional(),
+      evidenceBasis: z.enum(["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"]).optional(),
     })
-  ),
+  ).optional(),
+  // Legacy field name
+  facts: z.array(
+    z.object({
+      statement: z.string().optional(),
+      fact: z.string().optional(),
+      sourceUrl: z.string().optional(),
+      sourceTitle: z.string().optional(),
+      sourceExcerpt: z.string().optional(),
+      excerpt: z.string().optional(),
+      category: z.enum([
+        "evidence",
+        "direct_evidence",
+        "expert_quote",
+        "statistic",
+        "event",
+        "legal_provision",
+        "criticism",
+      ]).optional(),
+      claimDirection: z.enum(["supports", "contradicts", "neutral"]).optional(),
+      direction: z.enum(["supports", "contradicts", "neutral"]).optional(),
+      probativeValue: z.enum(["high", "medium", "low"]).optional(),
+      specificity: z.enum(["high", "medium"]).optional(),
+      contextId: z.string().optional(),
+      evidenceScope: z.any().optional(),
+      sourceAuthority: z.enum(["primary", "secondary", "opinion", "contested"]).optional(),
+      evidenceBasis: z.enum(["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"]).optional(),
+    })
+  ).optional(),
   needsMoreResearch: z.boolean().describe("True if more searches would help"),
   suggestedQuery: z.string().optional().describe("Next search query if more research needed"),
 });
@@ -212,14 +252,26 @@ const VerdictSchema = z.object({
   confidence: z.number().min(0).max(100).describe("Confidence in the verdict"),
   reasoning: z.string().describe("Detailed reasoning for the verdict (2-4 sentences)"),
   summary: z.string().describe("One-sentence summary"),
-  keyFactIds: z.array(z.string()).describe("IDs of most important facts"),
+  keyEvidenceIds: z.array(z.string()).optional().describe("IDs of most important evidence items"),
+  keyFactIds: z.array(z.string()).optional().describe("Legacy: IDs of most important facts"),
+  analysisContexts: z
+    .array(
+      z.object({
+        id: z.string().describe("Unique short ID, e.g., 'CTX_TSE'"),
+        name: z.string().describe("Human-readable name, e.g., 'TSE Electoral Case'"),
+        subject: z.string().describe("The specific subject of this context"),
+        type: z.enum(["legal", "scientific", "methodological", "general"]),
+      })
+    )
+    .optional()
+    .describe("List of distinct analytical frames detected (preferred field)"),
   // NOTE: Legacy "detectedScopes" retained for backward compatibility; not EvidenceScope.
   detectedScopes: z
     .array(
       z.object({
         id: z.string().describe("Unique short ID, e.g., 'CTX_TSE'"),
         name: z.string().describe("Human-readable name, e.g., 'TSE Electoral Case'"),
-        subject: z.string().describe("The specific subject of this scope"),
+        subject: z.string().describe("The specific subject of this context"),
         type: z.enum(["legal", "scientific", "methodological", "general"]),
       })
     )
@@ -245,6 +297,77 @@ function extractStructuredOutput(result: any): any {
   if (result.object !== undefined) return result.object;
 
   return null;
+}
+
+function warnLegacyField(source: string, field: string): void {
+  console.warn(`[${source}] Legacy field "${field}" detected; expected v3 field names.`);
+}
+
+function normalizeAnalysisContexts(raw: any, source: string): any[] {
+  if (Array.isArray(raw?.analysisContexts) && raw.analysisContexts.length > 0) {
+    return raw.analysisContexts;
+  }
+  if (Array.isArray(raw?.detectedScopes) && raw.detectedScopes.length > 0) {
+    warnLegacyField(source, "detectedScopes");
+    return raw.detectedScopes;
+  }
+  return [];
+}
+
+function normalizeBackgroundDetails(raw: any, source: string): string {
+  if (typeof raw?.backgroundDetails === "string") return raw.backgroundDetails;
+  if (typeof raw?.analysisContext === "string") {
+    warnLegacyField(source, "analysisContext");
+    return raw.analysisContext;
+  }
+  return "";
+}
+
+type EvidenceExtractionOutput = {
+  evidenceItems: Array<Record<string, any>>;
+  needsMoreResearch: boolean;
+  suggestedQuery?: string;
+};
+
+function normalizeEvidenceExtraction(raw: any, source: string): EvidenceExtractionOutput {
+  const rawItems = Array.isArray(raw?.evidenceItems) && raw.evidenceItems.length > 0
+    ? raw.evidenceItems
+    : (Array.isArray(raw?.facts) ? raw.facts : []);
+  if (rawItems === raw?.facts) warnLegacyField(source, "facts");
+
+  const evidenceItems = rawItems.map((item: any) => ({
+    statement: item.statement ?? item.fact ?? "",
+    sourceUrl: item.sourceUrl ?? "",
+    sourceTitle: item.sourceTitle ?? "",
+    sourceExcerpt: item.sourceExcerpt ?? item.excerpt ?? "",
+    category: item.category ?? "evidence",
+    claimDirection: item.claimDirection ?? item.direction ?? "neutral",
+    probativeValue: item.probativeValue,
+    specificity: item.specificity,
+    contextId: item.contextId,
+    evidenceScope: item.evidenceScope,
+    sourceAuthority: item.sourceAuthority,
+    evidenceBasis: item.evidenceBasis,
+  }));
+
+  if (rawItems.some((item: any) => item.fact && !item.statement)) warnLegacyField(source, "fact");
+  if (rawItems.some((item: any) => item.excerpt && !item.sourceExcerpt)) warnLegacyField(source, "excerpt");
+  if (rawItems.some((item: any) => item.direction && !item.claimDirection)) warnLegacyField(source, "direction");
+
+  return {
+    evidenceItems,
+    needsMoreResearch: !!raw?.needsMoreResearch,
+    suggestedQuery: raw?.suggestedQuery,
+  };
+}
+
+function normalizeKeyEvidenceIds(raw: any, source: string): string[] {
+  if (Array.isArray(raw?.keyEvidenceIds) && raw.keyEvidenceIds.length > 0) return raw.keyEvidenceIds;
+  if (Array.isArray(raw?.keyFactIds) && raw.keyFactIds.length > 0) {
+    warnLegacyField(source, "keyFactIds");
+    return raw.keyFactIds;
+  }
+  return [];
 }
 
 /**
@@ -316,7 +439,12 @@ async function extractClaim(
   });
 
   const output = extractStructuredOutput(result);
-  return ClaimExtractionSchema.parse(output) as z.infer<typeof ClaimExtractionSchema>;
+  const parsed = ClaimExtractionSchema.parse(output) as z.infer<typeof ClaimExtractionSchema>;
+  return {
+    ...parsed,
+    analysisContexts: normalizeAnalysisContexts(parsed, "MonolithicCanonical.extractClaim"),
+    backgroundDetails: normalizeBackgroundDetails(parsed, "MonolithicCanonical.extractClaim"),
+  } as z.infer<typeof ClaimExtractionSchema>;
 }
 
 /**
@@ -331,7 +459,7 @@ async function extractFacts(
   existingFactCount: number,
   pipelineConfig: PipelineConfig | null,
   onEvent?: (msg: string, progress: number) => void | Promise<void>
-): Promise<z.infer<typeof FactExtractionSchema>> {
+): Promise<EvidenceExtractionOutput> {
   if (onEvent) await onEvent("Extracting facts from sources", 40);
 
   const sourceSummary = sourceContents
@@ -354,7 +482,7 @@ async function extractFacts(
     },
   });
 
-  const outputConfig = Output.object({ schema: FactExtractionSchema });
+  const outputConfig = Output.object({ schema: EvidenceExtractionSchema });
 
   const result = await generateText({
     model,
@@ -373,16 +501,17 @@ async function extractFacts(
   });
 
   const output = extractStructuredOutput(result);
-  const parsed = FactExtractionSchema.parse(output) as z.infer<typeof FactExtractionSchema>;
+  const parsed = EvidenceExtractionSchema.parse(output) as z.infer<typeof EvidenceExtractionSchema>;
+  const normalized = normalizeEvidenceExtraction(parsed, "MonolithicCanonical.extractFacts");
 
   // v2.9: LLM Text Analysis - Evidence Quality Assessment
   const useLLMEvidenceQuality = isLLMEnabled("evidence");
-  if (useLLMEvidenceQuality && parsed.facts.length > 0) {
+  if (useLLMEvidenceQuality && normalized.evidenceItems.length > 0) {
     try {
-      const evidenceInputs: EvidenceItemInput[] = parsed.facts.map((f, idx) => ({
+      const evidenceInputs: EvidenceItemInput[] = normalized.evidenceItems.map((f, idx) => ({
         evidenceId: `E${idx + 1}`,
-        statement: f.fact,
-        excerpt: f.excerpt,
+        statement: f.statement,
+        excerpt: f.sourceExcerpt,
         sourceUrl: f.sourceUrl,
         category: f.category,
       }));
@@ -402,26 +531,26 @@ async function extractFacts(
       }
 
       // Filter out "filter" quality items
-      const filteredFacts = parsed.facts.filter((_, idx) => {
+      const filteredEvidence = normalized.evidenceItems.filter((_, idx) => {
         const qr = qualityMap.get(`E${idx + 1}`);
         return !qr || qr.qualityAssessment !== "filter";
       });
 
-      const filteredCount = parsed.facts.length - filteredFacts.length;
+      const filteredCount = normalized.evidenceItems.length - filteredEvidence.length;
       if (filteredCount > 0) {
-        console.log(`[MonolithicCanonical] Evidence quality filter: removed ${filteredCount}/${parsed.facts.length} low-quality facts`);
+        console.log(`[MonolithicCanonical] Evidence quality filter: removed ${filteredCount}/${normalized.evidenceItems.length} low-quality evidence items`);
       }
 
       return {
-        ...parsed,
-        facts: filteredFacts,
+        ...normalized,
+        evidenceItems: filteredEvidence,
       };
     } catch (err) {
-      console.log("[MonolithicCanonical] Evidence quality assessment failed, using all facts:", err instanceof Error ? err.message : String(err));
+      console.log("[MonolithicCanonical] Evidence quality assessment failed, using all evidence items:", err instanceof Error ? err.message : String(err));
     }
   }
 
-  return parsed;
+  return normalized;
 }
 
 /**
@@ -432,7 +561,7 @@ async function generateVerdict(
   claim: string,
   claimType: string | null,
   limitationNote: string | null,
-  facts: ExtractedFact[],
+  facts: EvidenceItem[],
   pipelineConfig: PipelineConfig | null,
   onEvent?: (msg: string, progress: number) => void | Promise<void>
 ): Promise<z.infer<typeof VerdictSchema>> {
@@ -441,7 +570,7 @@ async function generateVerdict(
   const factsSummary = facts
     .map(
       (f) =>
-        `[${f.id}] ${(f.claimDirection || "neutral").toUpperCase()}: ${f.fact}\n   Category: ${f.category}\n   Source: ${f.sourceTitle}`
+        `[${f.id}] ${(f.claimDirection || "neutral").toUpperCase()}: ${f.statement}\n   Category: ${f.category}\n   Source: ${f.sourceTitle}`
     )
     .join("\n\n");
 
@@ -483,6 +612,10 @@ async function generateVerdict(
 
   const output = extractStructuredOutput(result);
   let parsed = VerdictSchema.parse(output) as z.infer<typeof VerdictSchema>;
+  parsed = {
+    ...parsed,
+    keyEvidenceIds: normalizeKeyEvidenceIds(parsed, "MonolithicCanonical.generateVerdict"),
+  };
 
   // v2.9: LLM Text Analysis - Verdict Validation
   const useLLMVerdictValidation = isLLMEnabled("verdict");
@@ -595,7 +728,7 @@ export async function runMonolithicCanonical(
   }
 
   // State tracking
-  const facts: ExtractedFact[] = [];
+  const facts: EvidenceItem[] = [];
   const sources: MonolithicSource[] = [];
   const searchQueriesWithResults: Array<{ query: string; resultsCount: number }> = [];
   let searchCount = 0;
@@ -879,9 +1012,9 @@ export async function runMonolithicCanonical(
         // Add new facts with IDs
         const urlToSourceId = new Map(sources.map((s) => [s.url, s.id]));
         const urlToContent = new Map(sources.map((s) => [s.url, s.content]));
-        for (const f of extraction.facts) {
+        for (const f of extraction.evidenceItems) {
           const content = urlToContent.get(f.sourceUrl) || "";
-          if (!excerptAppearsInContent(f.excerpt, content)) {
+          if (!excerptAppearsInContent(f.sourceExcerpt, content)) {
             console.warn(
               `[MonolithicCanonical] Dropping fact with non-verifiable excerpt (not found in fetched content): ${f.sourceUrl}`,
             );
@@ -889,14 +1022,17 @@ export async function runMonolithicCanonical(
           }
           facts.push({
             id: `F${facts.length + 1}`,
-            fact: f.fact,
+            statement: f.statement,
             sourceId: urlToSourceId.get(f.sourceUrl) || `S-${f.sourceUrl.substring(0, 10)}`,
             sourceUrl: f.sourceUrl,
             sourceTitle: f.sourceTitle,
-            sourceExcerpt: f.excerpt,
+            sourceExcerpt: f.sourceExcerpt,
             category: f.category,
-            claimDirection: f.direction,
+            claimDirection: f.claimDirection,
             probativeValue: f.probativeValue,  // v2.8: LLM assessment of evidence quality
+            evidenceScope: f.evidenceScope,
+            sourceAuthority: f.sourceAuthority,
+            evidenceBasis: f.evidenceBasis,
             specificity: "medium",
           });
         }
@@ -927,7 +1063,7 @@ export async function runMonolithicCanonical(
       confidence: 30,
       riskTier: "C",
       reasoning: "Insufficient verifiable evidence to assess this claim.",
-      supportingFactIds: [],
+      supportingEvidenceIds: [],
       highlightColor: getHighlightColor(50),
       // v2.8: No contestation detected for fallback (insufficient evidence)
       isContested: false,
@@ -958,10 +1094,10 @@ export async function runMonolithicCanonical(
   }
 
   // Harden with Provenance Validation
-  const provenanceResult = filterFactsByProvenance(facts);
-  const validatedFacts = provenanceResult.validFacts;
+  const provenanceResult = filterEvidenceByProvenance(facts);
+  const validatedEvidenceItems = provenanceResult.validEvidenceItems;
 
-  if (validatedFacts.length === 0) {
+  if (validatedEvidenceItems.length === 0) {
     throw new Error("Facts failed provenance validation. Falling back to orchestrated pipeline.");
   }
 
@@ -977,7 +1113,7 @@ export async function runMonolithicCanonical(
       entry.text,
       claimType,
       limitationNote,
-      validatedFacts,
+      validatedEvidenceItems,
       pipelineConfig,
       input.onEvent
     );
@@ -1037,7 +1173,7 @@ export async function runMonolithicCanonical(
       confidence: adjustedConfidence,
       riskTier: adjustedConfidence >= 70 ? "A" : adjustedConfidence >= 40 ? "B" : "C",
       reasoning: v.reasoning,
-      supportingFactIds: validatedFacts.map((f) => f.id),
+      supportingEvidenceIds: validatedEvidenceItems.map((f) => f.id),
       highlightColor: getHighlightColor(adjustedVerdict),
       // v2.8: Contestation info for weighted aggregation (LLM-only)
       isContested: false,
@@ -1095,7 +1231,7 @@ export async function runMonolithicCanonical(
     monolithicBudget,
     claim: claimData.mainClaim,
     claimType,
-    facts: validatedFacts,
+    facts: validatedEvidenceItems,
     sources,
     searchQueriesWithResults,
     verdict: aggregatedVerdict,
@@ -1124,7 +1260,7 @@ export async function runMonolithicCanonical(
  * Returns the most relevant scope ID, or the first scope as default.
  */
 function inferScopeForFact(
-  fact: ExtractedFact,
+  fact: EvidenceItem,
   scopes: Array<{ id: string; name: string; subject: string }>
 ): string {
   if (scopes.length <= 1) {
@@ -1132,7 +1268,7 @@ function inferScopeForFact(
   }
 
   // Combine fact content for matching
-  const factContent = `${fact.fact} ${fact.sourceTitle || ""} ${fact.sourceExcerpt || ""}`.toLowerCase();
+  const factContent = `${fact.statement} ${fact.sourceTitle || ""} ${fact.sourceExcerpt || ""}`.toLowerCase();
 
   // Score each scope by keyword matches
   let bestScope = scopes[0];
@@ -1178,7 +1314,7 @@ function buildResultJson(params: {
   monolithicBudget: MonolithicBudget;
   claim: string;
   claimType: string;
-  facts: ExtractedFact[];
+  facts: EvidenceItem[];
   sources: MonolithicSource[];
   searchQueriesWithResults: Array<{ query: string; resultsCount: number }>;
   verdict: number;
@@ -1198,7 +1334,7 @@ function buildResultJson(params: {
     confidence: number;
     riskTier: string;
     reasoning: string;
-    supportingFactIds: string[];
+    supportingEvidenceIds: string[];
     highlightColor: string;
   }>;
 }): any {
@@ -1229,9 +1365,13 @@ function buildResultJson(params: {
   const highlightColor = getHighlightColor(verdict);
 
   // Map LLM-detected scopes if available, otherwise fallback to CTX_MAIN
+  const normalizedContexts = normalizeAnalysisContexts(
+    params.verdictData ?? {},
+    "MonolithicCanonical.buildResultJson",
+  );
   const finalScopes =
-    params.verdictData?.detectedScopes && params.verdictData.detectedScopes.length > 0
-      ? params.verdictData.detectedScopes.map((s: any) => ({
+    normalizedContexts.length > 0
+      ? normalizedContexts.map((s: any) => ({
           id: s.id,
           name: s.name,
           shortName: s.name.substring(0, 10),
@@ -1270,7 +1410,7 @@ function buildResultJson(params: {
             confidence,
             riskTier: confidence >= 70 ? "A" : confidence >= 40 ? "B" : "C",
             reasoning,
-            supportingFactIds: facts.map((f) => f.id),
+            supportingEvidenceIds: facts.map((f) => f.id),
             highlightColor,
             // v2.8: Default contestation for fallback
             isContested: false,
@@ -1305,6 +1445,7 @@ function buildResultJson(params: {
         maxSearches: monolithicBudget.maxSearches,
         fetches: sources.length,
         maxFetches: monolithicBudget.maxFetches,
+        evidenceItemsExtracted: facts.length,
         factsExtracted: facts.length,
       },
       budgetStats: {
@@ -1335,7 +1476,7 @@ function buildResultJson(params: {
         confidence,
         centralClaimSummary: claim,
         factCheckSummary: reasoning,
-        keyFindings: facts.slice(0, 5).map((f) => f.fact),
+        keyFindings: facts.slice(0, 5).map((f) => f.statement),
         overallVerdict: verdict,
       },
     },
@@ -1350,9 +1491,21 @@ function buildResultJson(params: {
     })),
     // Create lookup after sources are defined (using closure over sources array)
     // Associate facts with scopes using content-based matching
+    evidenceItems: facts.map((f) => ({
+      id: f.id,
+      statement: f.statement,
+      category: f.category,
+      specificity: f.specificity,
+      sourceId: f.sourceId,
+      sourceUrl: f.sourceUrl,
+      sourceTitle: f.sourceTitle,
+      sourceExcerpt: f.sourceExcerpt,
+      claimDirection: f.claimDirection,
+      contextId: inferScopeForFact(f, finalScopes),
+    })),
     facts: facts.map((f) => ({
       id: f.id,
-      fact: f.fact,
+      statement: f.statement,
       category: f.category,
       specificity: f.specificity,
       sourceId: f.sourceId,
@@ -1376,7 +1529,7 @@ function buildResultJson(params: {
 
 function generateReportMarkdown(result: any, verdictData: any): string {
   const verdict = result.verdictSummary;
-  const facts = result.facts || [];
+  const evidenceItems = result.evidenceItems ?? result.facts ?? [];
   const sources = result.sources || [];
 
   let report = `# FactHarbor Analysis Report
@@ -1392,19 +1545,19 @@ ${verdict.summary}
 
 ${verdictData?.reasoning ? `### Reasoning\n\n${verdictData.reasoning}` : ""}
 
-## Evidence (${facts.length} facts)
+## Evidence (${evidenceItems.length} items)
 
 `;
 
-  for (const fact of facts) {
+  for (const item of evidenceItems) {
     const direction =
-      fact.claimDirection === "supports"
+      item.claimDirection === "supports"
         ? "✅"
-        : fact.claimDirection === "contradicts"
+        : item.claimDirection === "contradicts"
           ? "❌"
           : "➖";
-    report += `${direction} **${fact.category}**: ${fact.fact}\n`;
-    report += `   _Source: [${fact.sourceTitle}](${fact.sourceUrl})_\n\n`;
+    report += `${direction} **${item.category}**: ${item.statement}\n`;
+    report += `   _Source: [${item.sourceTitle}](${item.sourceUrl})_\n\n`;
   }
 
   report += `## Sources (${sources.length})\n\n`;

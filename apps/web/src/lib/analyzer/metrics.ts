@@ -104,7 +104,7 @@ export interface AnalysisMetrics {
     claimsWithVerdicts: number;
     scopesDetected: number;
     sourcesFound: number;
-    factsExtracted: number;
+    evidenceItemsExtracted: number;
     averageConfidence: number;
   };
   

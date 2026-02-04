@@ -41,14 +41,13 @@ ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.eva
 
   // NOTE: Keep EvidenceScope terminology explicit; do not label it as AnalysisContext.
   // EvidenceScope is per-evidence metadata, not a top-level AnalysisContext.
-  // NOTE: The output field analysisContext (singular) is article framing/background details, not AnalysisContext.
-  return `You are a professional fact-checker analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect the article framing if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
+  return `You are a professional fact-checker analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect background details if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
 
 ## TERMINOLOGY (CRITICAL)
 
 - **AnalysisContext**: Top-level bounded analytical frame that should be analyzed separately (output field: analysisContexts)
 - **EvidenceScope**: Per-evidence item source methodology metadata
-- **Article framing**: Broader frame or topic of the input article
+- **Background details**: Broader frame or topic of the input article (NOT an AnalysisContext)
 
 ## NOT DISTINCT ANALYSISCONTEXTS
 - Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate AnalysisContexts by themselves.
@@ -222,7 +221,7 @@ For EACH sub-claim, determine if it tests the OPPOSITE of the main thesis:
 Return JSON with:
 - impliedClaim: What claim would "YES" confirm? Must be AFFIRMATIVE.
 - articleThesis: Neutral summary of what the article claims
-- analysisContext: Article narrative background details (NOT an AnalysisContext)
+- backgroundDetails: Article background details (NOT an AnalysisContext)
 - subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, isCounterClaim, contextId, keyFactorId
 - analysisContexts: Array of detected AnalysisContext objects, each with:
   - id, name, shortName, subject, temporal, status, outcome, metadata

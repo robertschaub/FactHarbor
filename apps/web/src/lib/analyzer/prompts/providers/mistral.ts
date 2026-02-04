@@ -11,8 +11,6 @@
  * @version 2.8.0 - Enhanced with comprehensive step-by-step processes
  */
 
-// NOTE: Keep "detectedScopes" naming to match understand-base schema and monolithic parsing.
-// Do NOT switch to analysisContexts here until a coordinated breaking change.
 export function getMistralUnderstandVariant(): string {
   return `
 ## MISTRAL OPTIMIZATION
@@ -22,7 +20,7 @@ export function getMistralUnderstandVariant(): string {
 **Step 1:** Read input completely
 
 **Step 2:** Identify input type
-- Statement about facts → "claim"
+- Factual statement → "claim"
 - News article/long text → "article"
 
 **Step 3:** Extract claims using this template
@@ -42,8 +40,8 @@ Look for:
 - Different institutions or formal bodies
 - Different methodologies or standards
 - Different regulatory or governance frameworks
-If found: Create detectedScopes array
-If not: Leave detectedScopes empty
+If found: Create analysisContexts array
+If not: Leave analysisContexts empty
 
 **Step 5:** Generate 4-6 search queries
 - 2 queries to find supporting evidence
@@ -88,7 +86,7 @@ export function getMistralExtractFactsVariant(): string {
 **Step 3:** For EACH evidence item, fill this template
 {
   "id": "F{n}",
-  "fact": "[one sentence, ≤100 chars]",
+  "statement": "[one sentence, ≤100 chars]",
   "category": "[pick one: evidence | expert_quote | statistic | event | legal_provision | criticism]",
   "specificity": "[high | medium]",
   "sourceExcerpt": "[copy 50-200 chars verbatim from source]",
@@ -204,9 +202,9 @@ For each verdict:
 - "unknown": Cannot determine`;
 }
 
-export function getMistralScopeRefinementVariant(): string {
+export function getMistralContextRefinementVariant(): string {
   return `
-## MISTRAL OPTIMIZATION - SCOPE REFINEMENT
+## MISTRAL OPTIMIZATION - CONTEXT REFINEMENT
 
 ### STEP-BY-STEP PROCESS
 
@@ -253,7 +251,7 @@ If ANY unchecked → Skip this boundary
 **Step 4:** Assign ALL evidence items to AnalysisContexts
 
 For each evidence item:
-- factId: "[F1, F2, etc.]" ← JSON field name for backward compatibility
+- evidenceId: "[F1, F2, etc.]" (use Evidence item IDs)
 - contextId: "[CTX_XXX]"
 
 Ensure:
@@ -268,10 +266,7 @@ Ensure:
 [ ] Each AnalysisContext has all required fields
 [ ] shortName ≤12 characters
 [ ] metadata uses "" for unknown fields (not null)
-[ ] factScopeAssignments covers ≥70% of evidence items
+[ ] evidenceContextAssignments covers ≥70% of evidence items
 [ ] Each AnalysisContext has ≥1 evidence item assigned
 [ ] JSON is valid`;
 }
-
-/** Primary name for getting Mistral AnalysisContext refinement variant */
-export const getMistralContextRefinementVariant = getMistralScopeRefinementVariant;

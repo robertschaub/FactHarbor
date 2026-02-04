@@ -15,7 +15,7 @@ import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { runFactHarborAnalysis } from "@/lib/analyzer";
-import { UNSCOPED_ID } from "@/lib/analyzer/scopes";
+import { UNSCOPED_ID } from "@/lib/analyzer/analysis-contexts";
 import { loadEnvFile } from "@test/helpers/test-helpers";
 
 // ============================================================================

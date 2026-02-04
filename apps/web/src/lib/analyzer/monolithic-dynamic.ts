@@ -20,8 +20,8 @@ import { z } from "zod";
 import { getModel, getModelForTask } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
-import { filterFactsByProvenance, setProvenanceLexicon } from "./provenance-validation";
-import type { ExtractedFact } from "./types";
+import { filterEvidenceByProvenance, setProvenanceLexicon } from "./provenance-validation";
+import type { EvidenceItem } from "./types";
 import {
   createBudgetTracker,
   getBudgetConfig,
@@ -34,7 +34,7 @@ import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-bui
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
-import { setContextHeuristicsLexicon } from "./scopes";
+import { setContextHeuristicsLexicon } from "./analysis-contexts";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
@@ -468,9 +468,9 @@ Provide your dynamic analysis.`,
     citationTimestamps.set(c.url, c.accessedAt);
   }
 
-  const citationsAsFacts: ExtractedFact[] = citations.map((c, i) => ({
+  const citationsAsEvidenceItems: EvidenceItem[] = citations.map((c, i) => ({
     id: `C${i + 1}`,
-    fact: c.excerpt,
+    statement: c.excerpt,
     sourceId: `S${i + 1}`,
     sourceUrl: c.url,
     sourceTitle: c.title,
@@ -481,7 +481,7 @@ Provide your dynamic analysis.`,
   }));
 
   // Validate citations have valid provenance (real URLs)
-  const provenanceResult = filterFactsByProvenance(citationsAsFacts);
+  const provenanceResult = filterEvidenceByProvenance(citationsAsEvidenceItems);
 
   // Preserve source reliability data from original citations
   const citationReliability = new Map<string, { score: number | null; confidence: number | null; consensus: boolean | null }>();
@@ -493,7 +493,7 @@ Provide your dynamic analysis.`,
     });
   }
 
-  const finalCitations: Citation[] = provenanceResult.validFacts.map((f) => {
+  const finalCitations: Citation[] = provenanceResult.validEvidenceItems.map((f) => {
     const reliability = citationReliability.get(f.sourceUrl);
     return {
       url: f.sourceUrl,

@@ -36,7 +36,7 @@ export function getTieringExtractFactsAdaptation(): string {
 **Task**: Extract 4-6 evidence items from source. Simple rules.
 
 **Per evidence item**:
-- fact: one sentence, ≤100 chars // Legacy field name for evidence item
+- statement: one sentence, ≤100 chars
 - category: evidence|expert_quote|statistic|event|legal_provision|criticism
   // NOTE: "evidence" is legacy value, system also accepts "direct_evidence"
 - specificity: high (has numbers/dates) or medium
@@ -78,7 +78,6 @@ export function getTieringVerdictAdaptation(): string {
  * Get simplified base prompt for budget models
  * Strips verbose sections from full prompts for faster processing
  */
-// NOTE: Budget understand prompt outputs legacy "detectedScopes" for compatibility with monolithic parsing.
 export function getBudgetUnderstandPrompt(currentDate: string): string {
   return `You are a fact-checker. Extract claims and generate search queries.
 
@@ -94,9 +93,10 @@ Date: ${currentDate}
 {
   "impliedClaim": "neutral summary of input",
   "articleThesis": "what input asserts",
+  "backgroundDetails": "",
   "subClaims": [{"id": "SC1", "text": "...", "claimRole": "core|attribution|source|timing", "centrality": "high|medium|low", "isCentral": true/false, "dependsOn": []}],
   "researchQueries": ["query1", "query2", ...],
-  "detectedScopes": [],
+  "analysisContexts": [],
   "requiresSeparateAnalysis": false
 }`;
 }
@@ -109,8 +109,8 @@ CLAIM TO VERIFY: ${originalClaim}
 ## TASK
 Extract 4-6 specific, verifiable evidence items from the source.
 
-## PER FACT
-- fact: one sentence (≤100 chars) // Legacy field name for evidence item
+## PER EVIDENCE ITEM
+- statement: one sentence (≤100 chars)
 - category: evidence|expert_quote|statistic|event|legal_provision|criticism
   // NOTE: "evidence" is legacy, "direct_evidence" also accepted
 - specificity: high|medium
@@ -119,10 +119,10 @@ Extract 4-6 specific, verifiable evidence items from the source.
 - contextId: "" (or AnalysisContext ID if known)
 - evidenceScope: null
 
-**LEGACY FIELD NAMING (CRITICAL)**: Output uses facts / fact for evidence items.
+**OUTPUT FIELD NAMING**: Use \`evidenceItems[]\` with \`statement\` (preferred). Legacy \`facts[]\` with \`fact\` is accepted.
 
 ## OUTPUT (JSON)
-{"facts": [{...}, {...}]}`;
+{"evidenceItems": [{...}, {...}]}`;
 }
 
 export function getBudgetVerdictPrompt(currentDate: string, originalClaim: string, allowModelKnowledge: boolean): string {

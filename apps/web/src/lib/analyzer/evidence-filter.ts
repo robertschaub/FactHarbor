@@ -169,13 +169,13 @@ export function filterByProbativeValue(
     let filterReason = "";
 
     // 1. Minimum statement length
-    if (item.fact.length < cfg.minStatementLength) {
+    if (item.statement.length < cfg.minStatementLength) {
       shouldFilter = true;
       filterReason = "statement_too_short";
     }
 
     // 2. Vague phrase count
-    else if (countVaguePhrases(item.fact, patterns.vaguePhrases) > cfg.maxVaguePhraseCount) {
+    else if (countVaguePhrases(item.statement, patterns.vaguePhrases) > cfg.maxVaguePhraseCount) {
       shouldFilter = true;
       filterReason = "excessive_vague_phrases";
     }
@@ -196,7 +196,7 @@ export function filterByProbativeValue(
     // Note: Use (item.sourceExcerpt ?? "") to handle undefined when requireSourceExcerpt is false
     else if (item.category === "statistic" && cfg.categoryRules.statistic.requireNumber) {
       const excerpt = item.sourceExcerpt ?? "";
-      if (!containsNumber(item.fact) && !containsNumber(excerpt)) {
+      if (!containsNumber(item.statement) && !containsNumber(excerpt)) {
         shouldFilter = true;
         filterReason = "statistic_without_number";
       } else if (excerpt.length < cfg.categoryRules.statistic.minExcerptLength) {
@@ -207,7 +207,7 @@ export function filterByProbativeValue(
 
     else if (item.category === "expert_quote" && cfg.categoryRules.expert_quote.requireAttribution) {
       const excerpt = item.sourceExcerpt ?? "";
-      if (!hasAttribution(item.fact, patterns.attributionPatterns) && !hasAttribution(excerpt, patterns.attributionPatterns)) {
+      if (!hasAttribution(item.statement, patterns.attributionPatterns) && !hasAttribution(excerpt, patterns.attributionPatterns)) {
         shouldFilter = true;
         filterReason = "expert_quote_without_attribution";
       }
@@ -215,7 +215,7 @@ export function filterByProbativeValue(
 
     else if (item.category === "event" && cfg.categoryRules.event.requireTemporalAnchor) {
       const excerpt = item.sourceExcerpt ?? "";
-      if (!hasTemporalAnchor(item.fact) && !hasTemporalAnchor(excerpt)) {
+      if (!hasTemporalAnchor(item.statement) && !hasTemporalAnchor(excerpt)) {
         shouldFilter = true;
         filterReason = "event_without_temporal_anchor";
       }
@@ -223,7 +223,7 @@ export function filterByProbativeValue(
 
     else if (item.category === "legal_provision" && cfg.categoryRules.legal_provision.requireCitation) {
       const excerpt = item.sourceExcerpt ?? "";
-      if (!hasCitation(item.fact, patterns.citationPatterns) && !hasCitation(excerpt, patterns.citationPatterns)) {
+      if (!hasCitation(item.statement, patterns.citationPatterns) && !hasCitation(excerpt, patterns.citationPatterns)) {
         shouldFilter = true;
         filterReason = "legal_provision_without_citation";
       }
@@ -247,7 +247,7 @@ export function filterByProbativeValue(
 
     // Check against already-kept items
     for (const keptItem of dedupedKept) {
-      const similarity = calculateSimilarity(item.fact, keptItem.fact);
+      const similarity = calculateSimilarity(item.statement, keptItem.statement);
       if (similarity >= cfg.deduplicationThreshold) {
         isDuplicate = true;
         duplicates.push(item);

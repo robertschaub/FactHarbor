@@ -8,7 +8,7 @@
  * @module analyzer/verdict-corrections
  */
 
-import type { ExtractedFact } from "./types";
+import type { EvidenceItem } from "./types";
 import { debugLog } from "./debug";
 import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 
@@ -137,7 +137,7 @@ export function detectCounterClaim(
   claimText: string,
   userThesis: string,
   claimTruthPercentage?: number,
-  claimFacts?: ExtractedFact[],
+  claimFacts?: EvidenceItem[],
 ): boolean {
   const claimLower = claimText.toLowerCase();
   const thesisLower = userThesis.toLowerCase();
@@ -471,7 +471,7 @@ export function detectCounterClaim(
   // Evidence-based fallback (guarded):
   // Only use evidence direction when the claim itself is clearly true-ish or clearly false-ish.
   //
-  // Rationale: `supportingFactIds` for a claim can include refuting evidence.
+  // Rationale: `supportingEvidenceIds` for a claim can include refuting evidence.
   // If the user's thesis is false, many refutations will be labeled "contradicts" relative
   // to the thesis, which MUST NOT automatically make same-direction (thesis-aligned) claims
   // look like counter-claims.

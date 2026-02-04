@@ -269,7 +269,7 @@ export default function AnalyzePage() {
         <div className={styles.stepsGrid}>
           {[
             { icon: "🔍", title: "Research", desc: "Searches multiple sources" },
-            { icon: "📊", title: "Extract", desc: "Identifies claims & facts" },
+            { icon: "📊", title: "Extract", desc: "Identifies claims & evidence" },
             { icon: "⚖️", title: "Analyze", desc: "Weighs evidence" },
             { icon: "📋", title: "Report", desc: "Transparent verdict" },
           ].map((step, i) => (

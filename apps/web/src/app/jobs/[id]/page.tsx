@@ -25,7 +25,7 @@ import styles from "./page.module.css";
 import { ClaimsGroupedByScope } from "./components/ClaimsGroupedByScope";
 import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
 import { MethodologySubGroup } from "./components/MethodologySubGroup";
-import { ArticleFrameBanner } from "./components/ArticleFrameBanner";
+import { BackgroundBanner } from "./components/BackgroundBanner";
 import { groupFactsByMethodology } from "./utils/methodologyGrouping";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
@@ -316,7 +316,7 @@ export default function JobPage() {
   const hasContestedFactors = result?.meta?.hasContestedFactors;
   const searchQueries = result?.searchQueries || [];
   const researchStats = result?.researchStats;
-  const facts = result?.facts || []; // NEW v2.6.29: Access extracted facts for counter-evidence display
+  const evidenceItems = result?.evidenceItems || result?.facts || []; // Access extracted evidence with legacy fallback
   // Prefer job.pipelineVariant (available immediately) over result meta (only after completion)
   const pipelineVariant = job?.pipelineVariant || result?.meta?.pipelineVariant || "orchestrated";
 
@@ -566,12 +566,13 @@ export default function JobPage() {
               )}
 
               {(() => {
-                const articleFrame =
-                  pipelineVariant === "monolithic_dynamic"
-                    ? result?.rawJson?.articleFrame
-                    : result?.understanding?.analysisContext;
-                return articleFrame ? (
-                  <ArticleFrameBanner articleFrame={articleFrame} />
+                const backgroundDetails =
+                  result?.understanding?.backgroundDetails ||
+                  result?.understanding?.analysisContext ||
+                  result?.rawJson?.backgroundDetails ||
+                  result?.rawJson?.articleFrame;
+                return backgroundDetails ? (
+                  <BackgroundBanner backgroundDetails={backgroundDetails} />
                 ) : null;
               })()}
 
@@ -652,10 +653,10 @@ export default function JobPage() {
       {tab === "sources" && hasV22Data && (
         <div className={styles.contentCard}>
           <SourcesPanel searchQueries={searchQueries} sources={sources} researchStats={researchStats} searchProvider={result?.meta?.searchProvider} />
-          {/* NEW v2.6.29: Display facts with counter-evidence marking */}
-          {facts.length > 0 && (
-            <FactsPanel
-              facts={facts}
+          {/* NEW v2.6.29: Display evidence with counter-evidence marking */}
+          {evidenceItems.length > 0 && (
+            <EvidencePanel
+              evidenceItems={evidenceItems}
               disableGrouping={pipelineVariant === "monolithic_dynamic"}
             />
           )}
@@ -726,7 +727,11 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
           <StatCard label="Results Found" value={researchStats.totalResults} icon="📋" />
           <StatCard label="Sources Fetched" value={researchStats.sourcesFetched} icon="🌐" />
           <StatCard label="Fetch Success" value={researchStats.sourcesSuccessful} icon="✅" />
-          <StatCard label="Evidence Extracted" value={researchStats.factsExtracted} icon="📝" />
+          <StatCard
+            label="Evidence Extracted"
+            value={researchStats.evidenceItemsExtracted ?? researchStats.factsExtracted ?? 0}
+            icon="📝"
+          />
         </div>
       )}
 
@@ -795,57 +800,54 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }:
 }
 
 // ============================================================================
-// Evidence Panel (legacy field name: facts) - NEW v2.6.29: Display extracted evidence with counter-evidence marking
+// Evidence Panel - NEW v2.6.29: Display extracted evidence with counter-evidence marking
 // ============================================================================
 
-function FactsPanel({ facts, disableGrouping = false }: { facts: any[]; disableGrouping?: boolean }) {
-  if (!facts || facts.length === 0) return null;
+function EvidencePanel({ evidenceItems, disableGrouping = false }: { evidenceItems: any[]; disableGrouping?: boolean }) {
+  if (!evidenceItems || evidenceItems.length === 0) return null;
 
-  // Group facts by claim direction and source type
-  const supportingFacts = facts.filter((f: any) => f.claimDirection === "supports" && !f.fromOppositeClaimSearch);
-  const contradictingFacts = facts.filter((f: any) => f.claimDirection === "contradicts" && !f.fromOppositeClaimSearch);
+  // Group evidence items by claim direction and source type
+  const supportingEvidence = evidenceItems.filter((f: any) => f.claimDirection === "supports" && !f.fromOppositeClaimSearch);
+  const contradictingEvidence = evidenceItems.filter((f: any) => f.claimDirection === "contradicts" && !f.fromOppositeClaimSearch);
   // NEW v2.6.29: Evidence from opposite claim search - evidence that supports the inverse claim
-  const oppositeClaimFacts = facts.filter((f: any) => f.fromOppositeClaimSearch === true);
-  const neutralFacts = facts.filter((f: any) =>
+  const oppositeClaimEvidence = evidenceItems.filter((f: any) => f.fromOppositeClaimSearch === true);
+  const neutralEvidence = evidenceItems.filter((f: any) =>
     (f.claimDirection === "neutral" || !f.claimDirection) && !f.fromOppositeClaimSearch
   );
 
-  // Legacy function name: renders an evidence item card
-  // The "fact" parameter is actually an ExtractedFact (evidence item)
-  const renderFactCard = (fact: any, className: string, extraMeta?: ReactNode) => (
-    <div key={fact.id || fact.fact} className={`${styles.factItem} ${className}`}>
+  const renderEvidenceCard = (item: any, className: string, extraMeta?: ReactNode) => (
+    <div key={item.id || item.statement || item.fact} className={`${styles.factItem} ${className}`}>
       <div className={styles.factText}>
-        {fact.fact}
-        {fact.evidenceScope && (
-          <EvidenceScopeTooltip evidenceScope={fact.evidenceScope} />
+        {item.statement || item.fact}
+        {item.evidenceScope && (
+          <EvidenceScopeTooltip evidenceScope={item.evidenceScope} />
         )}
       </div>
       <div className={styles.factMeta}>
-        <span className={styles.factCategory}>{fact.category}</span>
-        <span className={styles.factSource}>{decodeHtmlEntities(fact.sourceTitle || 'Unknown')}</span>
+        <span className={styles.factCategory}>{item.category}</span>
+        <span className={styles.factSource}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</span>
         {extraMeta}
       </div>
     </div>
   );
 
-  // Legacy function name: renders a list of evidence items (facts array contains ExtractedFact objects)
-  // Groups by methodology/EvidenceScope when applicable
-  const renderFactList = (factList: any[], className: string, extraMeta?: (fact: any) => ReactNode) => {
-    if (factList.length === 0) return null;
+  // Renders a list of evidence items, grouping by methodology/EvidenceScope when applicable
+  const renderEvidenceList = (items: any[], className: string, extraMeta?: (item: any) => ReactNode) => {
+    if (items.length === 0) return null;
     if (disableGrouping) {
-      return factList.map((fact: any) => renderFactCard(fact, className, extraMeta?.(fact)));
+      return items.map((item: any) => renderEvidenceCard(item, className, extraMeta?.(item)));
     }
 
-    const groups = groupFactsByMethodology(factList);
+    const groups = groupFactsByMethodology(items);
     if (!groups) {
-      return factList.map((fact: any) => renderFactCard(fact, className, extraMeta?.(fact)));
+      return items.map((item: any) => renderEvidenceCard(item, className, extraMeta?.(item)));
     }
 
     return groups.map((group) => (
       <MethodologySubGroup
         key={group.key}
         group={group}
-        renderFact={(fact) => renderFactCard(fact, className, extraMeta?.(fact))}
+        renderFact={(item) => renderEvidenceCard(item, className, extraMeta?.(item))}
       />
     ));
   };
@@ -855,62 +857,62 @@ function FactsPanel({ facts, disableGrouping = false }: { facts: any[]; disableG
       <h3 className={styles.factsPanelTitle}>📊 Evidence Analysis</h3>
 
       <div className={styles.factsStats}>
-        <span className={styles.factStatSupporting}>✅ {supportingFacts.length} supporting</span>
-        <span className={styles.factStatContradicting}>❌ {contradictingFacts.length} contradicting</span>
-        <span className={styles.factStatOpposite}>🔄 {oppositeClaimFacts.length} opposite claim</span>
-        <span className={styles.factStatNeutral}>➖ {neutralFacts.length} neutral</span>
+        <span className={styles.factStatSupporting}>✅ {supportingEvidence.length} supporting</span>
+        <span className={styles.factStatContradicting}>❌ {contradictingEvidence.length} contradicting</span>
+        <span className={styles.factStatOpposite}>🔄 {oppositeClaimEvidence.length} opposite claim</span>
+        <span className={styles.factStatNeutral}>➖ {neutralEvidence.length} neutral</span>
       </div>
 
       {/* NEW v2.6.29: Opposite Claim Evidence - displayed prominently */}
-      {oppositeClaimFacts.length > 0 && (
+      {oppositeClaimEvidence.length > 0 && (
         <div className={styles.factsSection}>
           <h4 className={styles.factsSectionTitle} style={{ color: '#1565c0' }}>
-            🔄 Evidence for Opposite Claim ({oppositeClaimFacts.length})
+            🔄 Evidence for Opposite Claim ({oppositeClaimEvidence.length})
           </h4>
           <p className={styles.oppositeClaimNote}>
-            These facts were found by searching for the opposite of the user's claim.
+            These evidence items were found by searching for the opposite of the user's claim.
             They support the inverse position and count against the original claim.
           </p>
           <div className={styles.factsList}>
-            {renderFactList(oppositeClaimFacts, styles.factItemOpposite, () => (
+            {renderEvidenceList(oppositeClaimEvidence, styles.factItemOpposite, () => (
               <span className={styles.factOppositeTag}>OPPOSITE CLAIM</span>
             ))}
           </div>
         </div>
       )}
 
-      {contradictingFacts.length > 0 && (
+      {contradictingEvidence.length > 0 && (
         <div className={styles.factsSection}>
           <h4 className={styles.factsSectionTitle} style={{ color: '#c62828' }}>
-            ⚠️ Counter-Evidence ({contradictingFacts.length})
+            ⚠️ Counter-Evidence ({contradictingEvidence.length})
           </h4>
           <div className={styles.factsList}>
-            {renderFactList(contradictingFacts, styles.factItemContradicting)}
+            {renderEvidenceList(contradictingEvidence, styles.factItemContradicting)}
           </div>
         </div>
       )}
 
-      {supportingFacts.length > 0 && (
+      {supportingEvidence.length > 0 && (
         <div className={styles.factsSection}>
           <h4 className={styles.factsSectionTitle} style={{ color: '#2e7d32' }}>
-            ✓ Supporting Evidence ({supportingFacts.length})
+            ✓ Supporting Evidence ({supportingEvidence.length})
           </h4>
           <div className={styles.factsList}>
-            {renderFactList(supportingFacts, styles.factItemSupporting)}
+            {renderEvidenceList(supportingEvidence, styles.factItemSupporting)}
           </div>
         </div>
       )}
 
-      {neutralFacts.length > 0 && (
+      {neutralEvidence.length > 0 && (
         <div className={styles.factsSection}>
           <h4 className={styles.factsSectionTitle} style={{ color: '#757575' }}>
-            Background context ({neutralFacts.length})
+            Background evidence ({neutralEvidence.length})
           </h4>
           <div className={styles.factsList}>
-            {renderFactList(neutralFacts.slice(0, 5), styles.factItemNeutral)}
-            {neutralFacts.length > 5 && (
+            {renderEvidenceList(neutralEvidence.slice(0, 5), styles.factItemNeutral)}
+            {neutralEvidence.length > 5 && (
               <div className={styles.factMoreIndicator}>
-                + {neutralFacts.length - 5} more background items
+                + {neutralEvidence.length - 5} more background evidence
               </div>
             )}
           </div>
@@ -1524,7 +1526,7 @@ function ClaimCard({ claim, showCrossScope = false }: { claim: any; showCrossSco
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
         )}
         {showCrossScope && (
-          <Badge bg="#eef2ff" color="#1e3a8a">Cross-scope</Badge>
+          <Badge bg="#eef2ff" color="#1e3a8a">Cross-context</Badge>
         )}
         {claim.isPseudoscience && (
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>

@@ -1,5 +1,5 @@
 /**
- * Base prompt template for SCOPE_REFINEMENT phase
+ * Base prompt template for CONTEXT_REFINEMENT phase
  *
  * This prompt instructs the LLM to:
  * - Refine EvidenceScope metadata attached to Evidence items
@@ -9,18 +9,18 @@
  * - Apply strict relevance requirements
  */
 
-export function getScopeRefinementBasePrompt(): string {
-  // NOTE: Output uses legacy factScopeAssignments/claimScopeAssignments names until a breaking change.
+export function getContextRefinementBasePrompt(): string {
   return `You are a professional fact-checker organizing evidence into AnalysisContexts. Your role is to identify distinct AnalysisContexts requiring separate investigation—based on differences in analytical dimensions such as methodology, boundaries, or institutional framework—and organize evidence into the appropriate AnalysisContexts.
 
 ## TERMINOLOGY (CRITICAL)
 
 **AnalysisContext**: Top-level analytical frame requiring separate verdict (e.g., "System A" vs "System B").
 **EvidenceScope**: Per-evidence source methodology metadata.
+**Background details**: Descriptive narrative framing only; NOT a reason to split into separate AnalysisContexts.
 
 ## YOUR TASK
 
-Use the provided Evidence items (and any EvidenceScope metadata) to decide whether the evidence implies ONE or MULTIPLE distinct AnalysisContexts.
+Use the provided Evidence items (and any EvidenceScope metadata) to decide whether the evidence implies ONE or MULTIPLE distinct AnalysisContexts. Only create an AnalysisContext if you can point to specific Evidence items that require a different analytical question or boundary; otherwise return a single AnalysisContext.
 
 **Key idea**: An AnalysisContext exists only when evidence points to a distinct analytical frame that would require a separate verdict.
 - If evidence items share compatible boundaries and answer the same analytical question → return ONE AnalysisContext.
@@ -115,15 +115,12 @@ Only merge AnalysisContexts that are TRUE DUPLICATES. Preserve distinct analytic
 
 ## EVIDENCE AND CLAIM ASSIGNMENTS
 
-**LEGACY FIELD NAMING (CRITICAL)**: factScopeAssignments is a legacy field name.
-It maps Evidence IDs to contextId; treat these as Evidence items, not verified facts.
-
-**factScopeAssignments**: Map EACH Evidence ID to exactly ONE contextId
+**evidenceContextAssignments**: Map EACH Evidence ID to exactly ONE contextId
 - Use contextId from your analysisContexts output
 - Assign based on which AnalysisContext the Evidence belongs to
 - Every Evidence item listed must be assigned
 
-**claimScopeAssignments** (optional): Map claimIds to contextId when clear
+**claimContextAssignments** (optional): Map claimIds to contextId when clear
 
 ## OUTPUT FORMAT
 
@@ -139,8 +136,8 @@ Return JSON with:
   - outcome: Result/conclusion
   - **assessedStatement** (v2.6.39): What is being assessed in this AnalysisContext
   - metadata: Domain-specific details (institution, methodology, boundaries, geographic, etc.)
-- factScopeAssignments: Array of {factId, contextId}
-- claimScopeAssignments: Array of {claimId, contextId} (optional)
+- evidenceContextAssignments: Array of {evidenceId, contextId}
+- claimContextAssignments: Array of {claimId, contextId} (optional)
 
 **CRITICAL for assessedStatement**:
 - The assessedStatement MUST describe what is being evaluated in THIS specific AnalysisContext
@@ -176,6 +173,3 @@ Use appropriate fields based on the domain. Examples:
 
 **PRESERVE DISTINCT ANALYSISCONTEXTS**: Better to have more AnalysisContexts than lose valid analytical frames.`;
 }
-
-/** Primary name for getting context refinement base prompt */
-export const getContextRefinementBasePrompt = getScopeRefinementBasePrompt;

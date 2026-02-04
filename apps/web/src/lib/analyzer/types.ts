@@ -102,13 +102,12 @@ export interface VerdictValidationResult {
  *
  * "AnalysisContext" (top-level bounded analytical frame)
  *   = A bounded analytical frame that should be analyzed separately.
- *   = Formerly called "Proceeding" in the codebase.
  *   = Stored in `analysisContexts` field.
  *   = Shown in UI as "Contexts".
  *
- * "ArticleFrame"
+ * "Background details"
  *   = Broader frame or topic of the input article.
- *   = Stored in `analysisContext` field (singular - legacy name, NOT an AnalysisContext!).
+ *   = Stored in `backgroundDetails` field.
  *
  * "EvidenceScope" (per-evidence source scope)
  *   = Methodology/boundaries defined BY a source document.
@@ -119,9 +118,7 @@ export interface VerdictValidationResult {
  * SUMMARY:
  *   - Top-level split unit = AnalysisContext (stored in `analysisContexts` plural)
  *   - "EvidenceScope" = per-evidence source methodology/boundaries
- *   - "ArticleFrame" = broader topic (stored in `analysisContext` singular - naming collision!)
- *
- * WATCH OUT: `analysisContext` (singular) ≠ AnalysisContext type! It stores ArticleFrame.
+ *   - "Background details" = broader topic (stored in `backgroundDetails`)
  * ============================================================================
  */
 
@@ -225,12 +222,6 @@ export type SourceType =
   | "organization_report"    // NGO, think tank, or organization publication
   | "other";                 // Other sources not fitting above categories
 
-/**
- * @deprecated Use AnalysisContext instead
- * Kept for backward compatibility only
- */
-export type DistinctProceeding = AnalysisContext;
-
 export interface KeyFactor {
   factor: string;
   supports: "yes" | "no" | "neutral";
@@ -252,11 +243,10 @@ export interface FactorAnalysis {
 /**
  * The verdict/answer for a single AnalysisContext (top-level bounded analytical frame)
  *
- * Note: Field names use v2.7 terminology.
  */
-export interface ContextAnswer {
-  contextId: string;      // Context ID
-  contextName: string;    // Context name
+export interface AnalysisContextAnswer {
+  contextId: string;      // AnalysisContext ID
+  contextName: string;    // AnalysisContext name
   // Answer truth percentage (0-100)
   answer: number;
   confidence: number;
@@ -266,11 +256,6 @@ export interface ContextAnswer {
   keyFactors: KeyFactor[];
   factorAnalysis?: FactorAnalysis;
 }
-
-/**
- * @deprecated Use ContextAnswer instead
- */
-export type ProceedingAnswer = ContextAnswer;
 
 // ============================================================================
 // SEARCH & RESEARCH TYPES
@@ -291,7 +276,7 @@ export interface ResearchState {
   inputType: "text" | "url";
   understanding: ClaimUnderstanding | null;
   iterations: ResearchIteration[];
-  facts: ExtractedFact[];
+  evidenceItems: EvidenceItem[];
   sources: FetchedSource[];
   contradictionSearchPerformed: boolean;
   contradictionSourcesFound: number;
@@ -314,14 +299,9 @@ export interface ClaimUnderstanding {
   requiresSeparateAnalysis: boolean;
 
   /**
-   * ArticleFrame: Broader frame or topic of the input article.
-   *
-   * LEGACY FIELD NAME: "analysisContext" (singular) — kept for backward
-   * compatibility with stored job JSON. Do NOT confuse with `analysisContexts`
-   * (plural) which holds the array of AnalysisContext objects.
-   * Consider renaming to `articleFrame` in a future major version (v3.0).
+   * Background details: Broader frame or topic of the input article.
    */
-  analysisContext: string;
+  backgroundDetails: string;
 
   articleThesis: string;
   subClaims: Array<{
@@ -361,7 +341,7 @@ export interface ResearchIteration {
   focus: string;
   queries: string[];
   sourcesFound: number;
-  factsExtracted: number;
+  evidenceItemsExtracted: number;
 }
 
 /**
@@ -376,21 +356,20 @@ export interface ResearchIteration {
  *
  * IMPORTANT:
  * - The system verifies claims; it does not assume extracted items are true.
- * - JSON field names (like "fact") are kept for backward compatibility.
  *
  * @since v2.8 (Phase 2 of terminology migration)
  */
 export interface EvidenceItem {
   id: string;
   /**
-   * The extracted statement text (legacy field name: `fact`).
+   * The extracted statement text.
    * This represents an unverified evidence statement from a source.
    */
-  fact: string;
+  statement: string;
   category:
     | "legal_provision"
-    | "evidence"         // Legacy value - still accepted for backward compatibility
-    | "direct_evidence"  // NEW v2.8: Preferred value (avoids tautology with "Evidence" entity name)
+    | "evidence"
+    | "direct_evidence"
     | "expert_quote"
     | "statistic"
     | "event"
@@ -403,70 +382,13 @@ export interface EvidenceItem {
   contextId?: string;
   isContestedClaim?: boolean;
   claimSource?: string;
-  // NEW v2.6.29: Claim direction - does this fact support or contradict the ORIGINAL user claim?
-  // "supports" = fact supports the user's claim being true
-  // "contradicts" = fact contradicts the user's claim (supports the OPPOSITE)
-  // "neutral" = fact is contextual/background, doesn't directly support or contradict
+  // Claim direction - does this evidence support or contradict the ORIGINAL user claim?
+  // "supports" = evidence supports the user's claim being true
+  // "contradicts" = evidence contradicts the user's claim (supports the OPPOSITE)
+  // "neutral" = background, doesn't directly support or contradict
   claimDirection?: "supports" | "contradicts" | "neutral";
-  // NEW v2.6.29: True if this fact was found from searching for the OPPOSITE claim
-  // (e.g., if user claimed "X > Y", this fact came from searching "Y > X")
-  fromOppositeClaimSearch?: boolean;
-  // EvidenceScope: Captures the methodology/boundaries of the source document
-  // (e.g., WTW vs TTW, EU vs US standards, different time periods)
-  evidenceScope?: EvidenceScope;
-  // NEW: Source authority classification (LLM)
-  sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
-  // NEW: Evidence basis classification (LLM)
-  evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
-  // NEW v2.8: Probative value - LLM assessment of evidence quality
-  // "high" = concrete, specific, well-sourced
-  // "medium" = adequate but less specific or weaker sourcing
-  // "low" = vague, poorly sourced, or borderline probative
-  probativeValue?: "high" | "medium" | "low";
-  // NEW v2.8: Extraction confidence - how confident the LLM is in this extraction (0-100)
-  extractionConfidence?: number;
-}
-
-/**
- * @deprecated Use `EvidenceItem` instead. The name "ExtractedFact" is misleading
- * because these are unverified evidence items, not verified facts.
- *
- * This alias is kept for backward compatibility during the Phase 2 migration.
- * All new code should use `EvidenceItem`.
- *
- * @see EvidenceItem
- * @since Legacy (pre-v2.8)
- */
-export interface ExtractedFact extends EvidenceItem {
-  id: string;
-  /**
-   * The extracted statement text (legacy field name: `fact`).
-   * This represents an unverified evidence statement from a source.
-   */
-  fact: string;
-  category:
-    | "legal_provision"
-    | "evidence"         // Legacy value - still accepted for backward compatibility
-    | "direct_evidence"  // NEW v2.8: Preferred value (avoids tautology with "Evidence" entity name)
-    | "expert_quote"
-    | "statistic"
-    | "event"
-    | "criticism";
-  specificity: "high" | "medium";
-  sourceId: string;
-  sourceUrl: string;
-  sourceTitle: string;
-  sourceExcerpt: string;
-  contextId?: string;
-  isContestedClaim?: boolean;
-  claimSource?: string;
-  // NEW v2.6.29: Claim direction - does this fact support or contradict the ORIGINAL user claim?
-  // "supports" = fact supports the user's claim being true
-  // "contradicts" = fact contradicts the user's claim (supports the OPPOSITE)
-  // "neutral" = fact is contextual/background, doesn't directly support or contradict
-  claimDirection?: "supports" | "contradicts" | "neutral";
-  // NEW v2.6.29: True if this fact was found from searching for the OPPOSITE claim
-  // (e.g., if user claimed "X > Y", this fact came from searching "Y > X")
+  // True if this evidence item was found from searching for the OPPOSITE claim
+  // (e.g., if user claimed "X > Y", this evidence item came from searching "Y > X")
   fromOppositeClaimSearch?: boolean;
   // EvidenceScope: Captures the methodology/boundaries of the source document
   // (e.g., WTW vs TTW, EU vs US standards, different time periods)
@@ -524,10 +446,10 @@ export interface ClaimVerdict {
   riskTier: "A" | "B" | "C";
   reasoning: string;
   /**
-   * IDs of supporting evidence items (legacy field name: `supportingFactIds`).
-   * These point into the analysis `facts[]` array (which contains extracted evidence items).
+   * IDs of supporting evidence items.
+   * These point into the analysis `evidenceItems[]` array.
    */
-  supportingFactIds: string[];
+  supportingEvidenceIds: string[];
   keyFactorId?: string;
   contextId?: string;
   startOffset?: number;
@@ -558,11 +480,9 @@ export interface ArticleAnalysis {
 
   /**
    * Multi-context indicator and per-context metadata array.
-   * JSON field names kept for backward compatibility.
    */
-  hasMultipleProceedings: boolean;
-  hasMultipleContexts?: boolean; // v2.6.38: New field for UI - true when contexts answer different questions
-  proceedings?: AnalysisContext[];  // AnalysisContexts (field name kept for backward compat)
+  hasMultipleContexts: boolean; // true when contexts answer different questions
+  analysisContexts: AnalysisContext[];
   verdictSummary?: any; // v2.6.38: Added for orchestrated pipeline verdict summary
 
   articleThesis: string;
@@ -643,9 +563,8 @@ export interface ResearchDecision {
   isContradictionSearch?: boolean;
   /**
    * Target context ID for focused research.
-   * JSON field name "targetProceedingId" kept for backward compatibility.
    */
-  targetProceedingId?: string;
+  targetContextId?: string;
 }
 
 // ============================================================================

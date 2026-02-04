@@ -15,7 +15,7 @@ import type {
   VerdictValidationResult,
   ClaimVerdict,
   FetchedSource,
-  ExtractedFact,
+  EvidenceItem,
 } from "./types";
 import { getEvidencePatterns, matchesAnyPattern, countPatternMatches } from "./lexicon-utils";
 
@@ -150,7 +150,7 @@ export function validateClaimGate1(
 export function validateVerdictGate4(
   verdictId: string,
   sources: Array<{url: string; trackRecordScore?: number | null}>,
-  supportingFactIds: string[],
+  supportingEvidenceIds: string[],
   contradictingFactCount: number,
   verdictReasoning: string,
   isCentral: boolean = false
@@ -168,9 +168,9 @@ export function validateVerdictGate4(
     : 0;
 
   // 3. Calculate evidence agreement
-  const totalEvidence = supportingFactIds.length + contradictingFactCount;
+  const totalEvidence = supportingEvidenceIds.length + contradictingFactCount;
   const evidenceAgreement = totalEvidence > 0
-    ? supportingFactIds.length / totalEvidence
+    ? supportingEvidenceIds.length / totalEvidence
     : 0;
 
   // 4. Count uncertainty factors in reasoning (using internal patterns)
@@ -332,7 +332,7 @@ export function applyGate1ToClaims<T extends { id: string; text: string; isCentr
 export function applyGate4ToVerdicts(
   verdicts: ClaimVerdict[],
   sources: FetchedSource[],
-  facts: ExtractedFact[]
+  evidenceItems: EvidenceItem[]
 ): {
   validatedVerdicts: (ClaimVerdict & { gate4Validation: VerdictValidationResult })[];
   validationResults: VerdictValidationResult[];
@@ -356,36 +356,40 @@ export function applyGate4ToVerdicts(
   let centralKept = 0;
 
   for (const verdict of verdicts) {
+    const supportingEvidenceIds =
+      verdict.supportingEvidenceIds && verdict.supportingEvidenceIds.length > 0
+        ? verdict.supportingEvidenceIds
+        : (verdict as any).supportingFactIds ?? [];
     // Find sources that support this verdict
     const supportingSources = sources.filter(s =>
-      verdict.supportingFactIds.some(factId =>
-        facts.some(f => f.id === factId && f.sourceId === s.id)
+      supportingEvidenceIds.some((evidenceId: string) =>
+        evidenceItems.some(item => item.id === evidenceId && item.sourceId === s.id)
       )
     );
 
     // Count contradicting facts - only those related to this specific claim/context
     // Fix: Previously counted ALL criticism facts globally, which unfairly penalized verdicts
     // Now we only count criticism that is actually relevant to the claim being evaluated
-    const contradictingFactCount = facts.filter(f => {
-      // Must be a criticism fact
-      if (f.category !== "criticism") return false;
-      // Must not be a supporting fact for this verdict
-      if (verdict.supportingFactIds.includes(f.id)) return false;
+    const contradictingFactCount = evidenceItems.filter(item => {
+      // Must be a criticism evidence item
+      if (item.category !== "criticism") return false;
+      // Must not be a supporting evidence item for this verdict
+      if (supportingEvidenceIds.includes(item.id)) return false;
     // Must be related to the same context as the verdict (if both have context IDs)
     // If verdict has no context ID, only count criticism from same sources
-    if (verdict.contextId && f.contextId) {
-      return f.contextId === verdict.contextId;
+    if (verdict.contextId && item.contextId) {
+      return item.contextId === verdict.contextId;
       }
       // If no proceeding context, only count criticism from sources that also support this verdict
       // This indicates internal contradiction within the same source
       const supportingSourceIds = supportingSources.map(s => s.id);
-      return supportingSourceIds.includes(f.sourceId);
+      return supportingSourceIds.includes(item.sourceId);
     }).length;
 
     const validation = validateVerdictGate4(
       verdict.claimId,
       supportingSources,
-      verdict.supportingFactIds,
+      supportingEvidenceIds,
       contradictingFactCount,
       verdict.reasoning,
       verdict.isCentral

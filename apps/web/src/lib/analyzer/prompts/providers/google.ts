@@ -11,8 +11,6 @@
  * @version 2.8.0 - Enhanced with strict length limits and verbosity prevention
  */
 
-// NOTE: Keep "detectedScopes" naming to match understand-base schema and monolithic parsing.
-// Do NOT switch to analysisContexts here until a coordinated breaking change.
 export function getGeminiUnderstandVariant(): string {
   return `
 ## GEMINI OPTIMIZATION
@@ -49,7 +47,7 @@ Before outputting, verify each claim has:
 - Keep all text fields concise
 - No explanatory prose in output
 - Use short phrases, not sentences where possible
-- detectedScopes structure: {id, name, type} only
+- analysisContexts structure: {id, name, type} only
 
 ### ANALYSISCONTEXT BOUNDARIES
 Maintain clear distinctions:
@@ -65,7 +63,7 @@ export function getGeminiExtractFactsVariant(): string {
 ### OUTPUT LENGTH LIMITS (CRITICAL)
 | Field | Maximum |
 |-------|---------|
-| fact (JSON field) | 100 characters |
+| statement (JSON field) | 100 characters |
 | sourceExcerpt | 50-200 characters |
 | category | exact enum value |
 
@@ -83,7 +81,7 @@ export function getGeminiExtractFactsVariant(): string {
 ### SCHEMA CHECKLIST (Verify before output)
 Each evidence item MUST have:
 - [ ] id: string (F1, F2, etc.)
-- [ ] fact: string (≤100 chars, one sentence) ← JSON field name for backward compatibility
+- [ ] statement: string (≤100 chars, one sentence)
 - [ ] category: "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
 - [ ] specificity: "high" | "medium" (NEVER "low")
 - [ ] sourceExcerpt: string (50-200 chars, verbatim quote)
@@ -137,8 +135,8 @@ Before each verdict, answer these 4 questions:
 ### NUMBERED VERDICT PROCESS
 For each AnalysisContext:
 1. Identify user's claim for this AnalysisContext
-2. List supporting facts (count them)
-3. List contradicting facts (count them)
+2. List supporting evidence items (count them)
+3. List contradicting evidence items (count them)
 4. Compare counts to determine verdict band:
    - More supporting → 72-100%
    - Balanced → 43-57%
@@ -154,7 +152,7 @@ For each AnalysisContext:
 - [ ] keyFactors array has 3-5 items
 - [ ] Each keyFactor has: factor (≤12 words), explanation (≤20 words), supports, isContested, contestedBy, factualBasis
 - [ ] Use "" for empty strings (NEVER null)
-- [ ] supportingFactIds is array (even if empty: [])
+- [ ] supportingEvidenceIds is array (even if empty: [])
 
 ### ENUM VALUES (Use exact strings)
 - supports: "yes" | "no" | "neutral"
@@ -162,9 +160,9 @@ For each AnalysisContext:
 - status: "concluded" | "ongoing" | "pending" | "unknown"`;
 }
 
-export function getGeminiScopeRefinementVariant(): string {
+export function getGeminiContextRefinementVariant(): string {
   return `
-## GEMINI OPTIMIZATION - SCOPE REFINEMENT
+## GEMINI OPTIMIZATION - CONTEXT REFINEMENT
 
 ### LENGTH LIMITS
 | Field | Maximum |
@@ -175,7 +173,7 @@ export function getGeminiScopeRefinementVariant(): string {
 | outcome | 100 characters |
 
 ### NUMBERED REFINEMENT PROCESS
-1. Read all facts provided
+1. Read all evidence items provided
 2. Identify potential AnalysisContext boundaries:
    - Methodology markers (different standards, frameworks)
    - Institutional markers (different bodies, agencies)
@@ -199,8 +197,8 @@ analysisContexts array - each item must have:
 - [ ] outcome: string (≤100 chars)
 - [ ] metadata: object (can be {})
 
-factScopeAssignments array:
-- [ ] Each item: {factId: string, contextId: string}
+evidenceContextAssignments array:
+- [ ] Each item: {evidenceId: string, contextId: string}
 - [ ] Coverage: ≥70% of evidence items assigned
 - [ ] Each AnalysisContext: ≥1 evidence item assigned
 
@@ -210,6 +208,3 @@ factScopeAssignments array:
 - Arrays must be arrays (not single values)
 - Keep all text fields within length limits`;
 }
-
-/** Primary name for getting Gemini AnalysisContext refinement variant */
-export const getGeminiContextRefinementVariant = getGeminiScopeRefinementVariant;

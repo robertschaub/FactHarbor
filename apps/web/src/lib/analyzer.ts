@@ -23,7 +23,7 @@ export type {
   AnalysisInput,
   ResearchState,
   ClaimUnderstanding,
-  ExtractedFact,
+  EvidenceItem,
   FetchedSource,
   ClaimVerdict,
   ArticleAnalysis,

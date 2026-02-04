@@ -67,7 +67,7 @@ describe('Provider Variants', () => {
     it('understand prompt has example', () => {
       const prompt = generateTestPrompt('understand', 'openai');
       expect(prompt).toMatch(/example|Example/i);
-      expect(prompt).toContain('"detectedScopes"'); // Multi-context detection example still present
+      expect(prompt).toContain('"analysisContexts"'); // Multi-context detection example present
     });
 
     it('extract_facts prompt has example', () => {
