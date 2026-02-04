@@ -89,7 +89,7 @@ export const PipelineConfigSchema = z.object({
   llmProvider: z.enum(["anthropic", "openai", "google", "mistral"]).optional().describe("Primary LLM provider for analysis"),
   llmTiering: z.boolean().describe("Enable tiered model selection for cost optimization"),
   modelUnderstand: z.string().min(1).describe("Model for UNDERSTAND phase (claim comprehension)"),
-  modelExtractFacts: z.string().min(1).describe("Model for EXTRACT_FACTS phase"),
+  modelExtractEvidence: z.string().min(1).describe("Model for EXTRACT_EVIDENCE phase"),
   modelVerdict: z.string().min(1).describe("Model for VERDICT phase (final verdicts)"),
 
   // === LLM Text Analysis Feature Flags ===
@@ -191,7 +191,13 @@ export const PipelineConfigSchema = z.object({
   // === LLM Limits & Gates ===
   understandMaxChars: z.number().int().min(1000).max(50000).optional().describe("Max characters sent to UNDERSTAND prompt"),
   understandLlmTimeoutMs: z.number().int().min(10000).max(1200000).optional().describe("Timeout for UNDERSTAND LLM calls (ms)"),
-  extractFactsLlmTimeoutMs: z.number().int().min(10000).max(1200000).optional().describe("Timeout for EXTRACT_FACTS LLM calls (ms)"),
+  extractEvidenceLlmTimeoutMs: z
+    .number()
+    .int()
+    .min(10000)
+    .max(1200000)
+    .optional()
+    .describe("Timeout for EXTRACT_EVIDENCE LLM calls (ms)"),
   probativeFilterEnabled: z.boolean().optional().describe("Enable probative value filtering"),
   provenanceValidationEnabled: z.boolean().optional().describe("Enable provenance validation gate"),
   pdfParseTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for PDF parsing (ms)"),
@@ -288,8 +294,8 @@ export const PipelineConfigSchema = z.object({
   if (data.understandLlmTimeoutMs === undefined) {
     data.understandLlmTimeoutMs = 600000;
   }
-  if (data.extractFactsLlmTimeoutMs === undefined) {
-    data.extractFactsLlmTimeoutMs = 300000;
+  if (data.extractEvidenceLlmTimeoutMs === undefined) {
+    data.extractEvidenceLlmTimeoutMs = 300000;
   }
   if (data.monolithicCanonicalTimeoutMs === undefined) {
     data.monolithicCanonicalTimeoutMs = 180000;
@@ -342,7 +348,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   llmProvider: "anthropic",
   llmTiering: false, // v2.9.0: Default to off for backwards compatibility
   modelUnderstand: "claude-3-5-haiku-20241022",
-  modelExtractFacts: "claude-3-5-haiku-20241022",
+  modelExtractEvidence: "claude-3-5-haiku-20241022",
   modelVerdict: "claude-sonnet-4-20250514",
 
   // LLM text analysis (all enabled by default per v2.8.3)
@@ -378,7 +384,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   evidenceScopeAlmostEqualThreshold: 0.7,
   understandMaxChars: 12000,
   understandLlmTimeoutMs: 600000,
-  extractFactsLlmTimeoutMs: 300000,
+  extractEvidenceLlmTimeoutMs: 300000,
   monolithicCanonicalTimeoutMs: 180000,
   monolithicDynamicTimeoutMs: 150000,
   thesisRelevanceValidationEnabled: true,

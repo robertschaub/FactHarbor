@@ -35,7 +35,7 @@ describe("tiered model routing", () => {
       llmProvider: "anthropic",
       llmTiering: true,
       modelUnderstand: "claude-3-5-haiku-20241022",
-      modelExtractFacts: "claude-3-5-haiku-20241022",
+      modelExtractEvidence: "claude-3-5-haiku-20241022",
       modelVerdict: "claude-sonnet-4-20250514",
     });
     expect(getModelForTask("understand", undefined, config).modelName).toBe("claude-3-5-haiku-20241022");

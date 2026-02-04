@@ -183,7 +183,7 @@ interface PipelineConfig {
   llmProvider: "anthropic" | "openai" | "google" | "mistral";
   llmTiering: boolean;
   modelUnderstand: string;
-  modelExtractFacts: string;
+  modelExtractEvidence: string;
   modelVerdict: string;
   // LLM Text Analysis feature flags
   llmInputClassification: boolean;
@@ -314,7 +314,7 @@ const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   llmProvider: "anthropic",
   llmTiering: false,
   modelUnderstand: "claude-3-5-haiku-20241022",
-  modelExtractFacts: "claude-3-5-haiku-20241022",
+  modelExtractEvidence: "claude-3-5-haiku-20241022",
   modelVerdict: "claude-sonnet-4-20250514",
   llmInputClassification: true,
   llmEvidenceQuality: true,
@@ -1264,8 +1264,8 @@ function PipelineConfigForm({
           <input
             type="text"
             className={styles.formInput}
-            value={config.modelExtractFacts}
-            onChange={(e) => updateField("modelExtractFacts", e.target.value)}
+            value={config.modelExtractEvidence}
+            onChange={(e) => updateField("modelExtractEvidence", e.target.value)}
           />
           <div className={styles.formHelp}>Evidence extraction from sources. Can use cheaper model. Default: claude-haiku-3.5</div>
         </div>

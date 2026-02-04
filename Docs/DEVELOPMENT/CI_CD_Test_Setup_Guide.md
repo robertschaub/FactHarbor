@@ -321,7 +321,7 @@ CI/CD → Schedules → New schedule:
    ```bash
    # In CI pipeline config (UCM)
    modelUnderstand=gpt-4o-mini
-   modelExtractFacts=gpt-4o-mini
+   modelExtractEvidence=gpt-4o-mini
    ```
 
 3. **Parallel Execution Limits**

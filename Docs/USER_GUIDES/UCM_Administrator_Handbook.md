@@ -317,7 +317,7 @@ Every configuration version is identified by its **content hash** - a SHA-256 fi
 |-------|------|---------|-------------------|
 | `llmTiering` | boolean | false | Use different models for different tasks (cost optimization) |
 | `modelUnderstand` | string | claude-3-5-haiku | Model for claim understanding phase |
-| `modelExtractFacts` | string | claude-3-5-haiku | Model for fact extraction |
+| `modelExtractEvidence` | string | claude-3-5-haiku | Model for evidence extraction |
 | `modelVerdict` | string | claude-sonnet-4 | Model for final verdict generation |
 | `analysisMode` | "quick"/"deep" | quick | Research depth and iteration limits |
 | `allowModelKnowledge` | boolean | false | Allow LLM to use training data vs evidence-only |
@@ -733,7 +733,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
   "llmTiering": true,
   "analysisMode": "quick",
   "modelUnderstand": "claude-3-5-haiku-20241022",
-  "modelExtractFacts": "claude-3-5-haiku-20241022",
+  "modelExtractEvidence": "claude-3-5-haiku-20241022",
   "modelVerdict": "claude-3-5-haiku-20241022",
   "maxIterationsPerContext": 3,
   "maxTotalIterations": 10
@@ -746,7 +746,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
   "llmTiering": false,
   "analysisMode": "deep",
   "modelUnderstand": "claude-sonnet-4-20250514",
-  "modelExtractFacts": "claude-sonnet-4-20250514",
+  "modelExtractEvidence": "claude-sonnet-4-20250514",
   "modelVerdict": "claude-sonnet-4-20250514",
   "maxIterationsPerContext": 8,
   "maxTotalIterations": 30
@@ -759,7 +759,7 @@ Every analysis job captures a complete configuration snapshot. Access it at:
   "llmTiering": true,
   "analysisMode": "deep",
   "modelUnderstand": "claude-3-5-haiku-20241022",
-  "modelExtractFacts": "claude-3-5-haiku-20241022",
+  "modelExtractEvidence": "claude-3-5-haiku-20241022",
   "modelVerdict": "claude-sonnet-4-20250514",
   "maxIterationsPerContext": 5,
   "maxTotalIterations": 20

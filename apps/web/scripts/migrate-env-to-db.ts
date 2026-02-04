@@ -100,8 +100,8 @@ function readPipelineConfigFromEnv(): PipelineConfig {
   if (process.env.FH_MODEL_UNDERSTAND) {
     config.modelUnderstand = process.env.FH_MODEL_UNDERSTAND;
   }
-  if (process.env.FH_MODEL_EXTRACT_FACTS) {
-    config.modelExtractFacts = process.env.FH_MODEL_EXTRACT_FACTS;
+  if (process.env.FH_MODEL_EXTRACT_EVIDENCE) {
+    config.modelExtractEvidence = process.env.FH_MODEL_EXTRACT_EVIDENCE;
   }
   if (process.env.FH_MODEL_VERDICT) {
     config.modelVerdict = process.env.FH_MODEL_VERDICT;

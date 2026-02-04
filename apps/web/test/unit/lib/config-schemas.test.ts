@@ -180,7 +180,7 @@ describe("PipelineConfigSchema", () => {
 
   it("rejects empty model names", () => {
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, modelUnderstand: "" }).success).toBe(false);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, modelExtractFacts: "" }).success).toBe(false);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, modelExtractEvidence: "" }).success).toBe(false);
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, modelVerdict: "" }).success).toBe(false);
   });
 });
@@ -448,7 +448,7 @@ describe("Default Config Values", () => {
   describe("DEFAULT_PIPELINE_CONFIG", () => {
     it("has correct model defaults from .env.example", () => {
       expect(DEFAULT_PIPELINE_CONFIG.modelUnderstand).toBe("claude-3-5-haiku-20241022");
-      expect(DEFAULT_PIPELINE_CONFIG.modelExtractFacts).toBe("claude-3-5-haiku-20241022");
+      expect(DEFAULT_PIPELINE_CONFIG.modelExtractEvidence).toBe("claude-3-5-haiku-20241022");
       expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("claude-sonnet-4-20250514");
     });
 

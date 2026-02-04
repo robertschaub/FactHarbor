@@ -68,7 +68,7 @@ function modelOverrideForTask(task: ModelTask, config?: PipelineConfig): string 
       return config.modelUnderstand;
     case "extract_evidence":
     case "context_refinement":
-      return config.modelExtractFacts;
+      return config.modelExtractEvidence;
     case "verdict":
       return config.modelVerdict;
     case "report":

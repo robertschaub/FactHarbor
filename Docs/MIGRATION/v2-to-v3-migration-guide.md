@@ -199,6 +199,7 @@ The following changes are being implemented in v3.1:
 |------|--------|-------------|
 | ID prefix F→E | ✅ DONE | Evidence IDs now use E1,E2 prefix |
 | Task name changes | ✅ DONE | `extract_facts` → `extract_evidence`, `scope_refinement` → `context_refinement` |
+| Pipeline config rename | ✅ DONE | `modelExtractFacts` → `modelExtractEvidence`, `extractFactsLlmTimeoutMs` → `extractEvidenceLlmTimeoutMs` |
 
 **Note:** v3.1 maintains backward compatibility with v3.0 during transition (dual-parsing for IDs, dual-read for metrics).
 

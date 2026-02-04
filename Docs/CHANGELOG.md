@@ -77,7 +77,7 @@
 
 ### Changed
 - 13 unique settings now hot-reloadable via UCM
-- Model selection (`llmTiering`, `modelUnderstand`, `modelExtractFacts`, `modelVerdict`)
+- Model selection (`llmTiering`, `modelUnderstand`, `modelExtractEvidence`, `modelVerdict`)
 - LLM flags (`llmInputClassification`, `llmEvidenceQuality`, etc.)
 - Budget controls (`maxIterationsPerContext`, `maxTotalIterations`, etc.)
 - Analysis settings (`analysisMode`, `deterministic`, `allowModelKnowledge`, etc.)

@@ -460,7 +460,7 @@ See: [Knowledge_Transfer_UCM_Terminology.md](../Knowledge_Transfer_UCM_Terminolo
   - Passes `pipelineConfig` through entire call chain (11 functions updated)
   - TypeScript compilation: ✅ No errors
 - **Migration Complete for High-Value Settings**: 13 unique settings now hot-reloadable
-  - Model: `llmTiering`, `modelUnderstand`, `modelExtractFacts`, `modelVerdict`
+  - Model: `llmTiering`, `modelUnderstand`, `modelExtractEvidence`, `modelVerdict`
   - LLM Flags: `llmInputClassification`, `llmEvidenceQuality`, `llmContextSimilarity` (legacy: `llmScopeSimilarity`), `llmVerdictValidation`
   - Budgets: `maxIterationsPerContext` (legacy: `maxIterationsPerScope`), `maxTotalIterations`, `maxTotalTokens`, `enforceBudgets`
   - Analysis: `analysisMode`, `deterministic`, `allowModelKnowledge`, `contextDedupThreshold` (legacy: `scopeDedupThreshold`)
@@ -808,4 +808,3 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 **Last Updated**: February 4, 2026
 **Actual Version**: 2.10.2 (Code) | 2.7.0 (Schema)
 **Document Status**: Reflects UCM Integration + Prompt Optimization v2.8.1 complete
-

@@ -6280,8 +6280,8 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
   try {
     const startTime = Date.now();
     const llmTimeoutMsRaw =
-      pipelineConfig?.extractFactsLlmTimeoutMs ??
-      DEFAULT_PIPELINE_CONFIG.extractFactsLlmTimeoutMs ??
+      pipelineConfig?.extractEvidenceLlmTimeoutMs ??
+      DEFAULT_PIPELINE_CONFIG.extractEvidenceLlmTimeoutMs ??
       300000;
     const llmTimeoutMs = Number.isFinite(llmTimeoutMsRaw)
       ? Math.max(60000, Math.min(3600000, llmTimeoutMsRaw))
