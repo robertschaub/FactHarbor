@@ -1,27 +1,82 @@
 /**
  * Config Validation Warnings API
  *
+ * GET /api/admin/config/warnings
  * GET /api/admin/config/warnings?pipeline=[hash]&search=[hash]
- * Returns validation warnings for current or specified configs
+ *
+ * Returns validation warnings for current active configs or specified config hashes.
+ * If no query params provided, validates the active default configs.
  *
  * Part of UCM v2.9.0 Phase 4: Admin UI
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { loadPipelineConfig, loadSearchConfig, DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG } from '@/lib/config-loader';
+import { loadPipelineConfig, loadSearchConfig } from '@/lib/config-loader';
+import { getConfigBlob } from '@/lib/config-storage';
+import { PipelineConfigSchema, SearchConfigSchema, type PipelineConfig, type SearchConfig } from '@/lib/config-schemas';
 import { getAllConfigWarnings, groupWarningsBySeverity, hasCriticalWarnings } from '@/lib/config-validation-warnings';
 
 export async function GET(request: NextRequest) {
   try {
-    // Load current configs (or specified versions)
-    const pipelineResult = await loadPipelineConfig("default");
-    const searchResult = await loadSearchConfig("default");
+    const { searchParams } = new URL(request.url);
+    const pipelineHash = searchParams.get('pipeline');
+    const searchHash = searchParams.get('search');
+
+    let pipelineConfig: PipelineConfig;
+    let searchConfig: SearchConfig;
+    let resolvedPipelineHash: string;
+    let resolvedSearchHash: string;
+
+    // Load pipeline config (by hash or active default)
+    if (pipelineHash) {
+      const blob = await getConfigBlob(pipelineHash);
+      if (!blob) {
+        return NextResponse.json(
+          { error: `Pipeline config not found for hash: ${pipelineHash}` },
+          { status: 404 }
+        );
+      }
+      const parsed = PipelineConfigSchema.safeParse(JSON.parse(blob.content));
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: `Invalid pipeline config: ${parsed.error.message}` },
+          { status: 400 }
+        );
+      }
+      pipelineConfig = parsed.data;
+      resolvedPipelineHash = pipelineHash;
+    } else {
+      const result = await loadPipelineConfig("default");
+      pipelineConfig = result.config;
+      resolvedPipelineHash = result.contentHash;
+    }
+
+    // Load search config (by hash or active default)
+    if (searchHash) {
+      const blob = await getConfigBlob(searchHash);
+      if (!blob) {
+        return NextResponse.json(
+          { error: `Search config not found for hash: ${searchHash}` },
+          { status: 404 }
+        );
+      }
+      const parsed = SearchConfigSchema.safeParse(JSON.parse(blob.content));
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: `Invalid search config: ${parsed.error.message}` },
+          { status: 400 }
+        );
+      }
+      searchConfig = parsed.data;
+      resolvedSearchHash = searchHash;
+    } else {
+      const result = await loadSearchConfig("default");
+      searchConfig = result.config;
+      resolvedSearchHash = result.contentHash;
+    }
 
     // Get all warnings
-    const warnings = getAllConfigWarnings(
-      pipelineResult.config,
-      searchResult.config
-    );
+    const warnings = getAllConfigWarnings(pipelineConfig, searchConfig);
 
     // Group by severity
     const grouped = groupWarningsBySeverity(warnings);
@@ -34,8 +89,12 @@ export async function GET(request: NextRequest) {
       hasCritical,
       totalCount: warnings.length,
       configHashes: {
-        pipeline: pipelineResult.contentHash,
-        search: searchResult.contentHash,
+        pipeline: resolvedPipelineHash,
+        search: resolvedSearchHash,
+      },
+      requestedHashes: {
+        pipeline: pipelineHash || null,
+        search: searchHash || null,
       },
     });
   } catch (error) {

@@ -56,6 +56,7 @@ interface CacheEntry {
   parsed: SearchConfig | CalcConfig | PipelineConfig;
   loadedAt: number;
   pointerCheckedAt: number;
+  fromDefault: boolean;  // Track if this came from code defaults (not DB)
 }
 
 interface ResolvedConfig<T> {
@@ -63,6 +64,7 @@ interface ResolvedConfig<T> {
   contentHash: string;
   overrides: OverrideRecord[];
   fromCache: boolean;
+  fromDefault: boolean;  // True if using code defaults (no DB config)
 }
 
 // ============================================================================
@@ -112,39 +114,49 @@ async function getOrLoadContent<T extends SearchConfig | CalcConfig | PipelineCo
   profileKey: string,
   hash: string,
   defaultConfig: T,
-): Promise<{ content: T; fromCache: boolean }> {
+): Promise<{ content: T; fromCache: boolean; fromDefault: boolean }> {
   const key = getCacheKey(configType, profileKey);
   const cached = cache.get(key);
   const now = Date.now();
 
-  // Check content cache
+  // Check content cache - preserve fromDefault flag from cached entry
   if (cached && cached.hash === hash && now - cached.loadedAt < CACHE_CONFIG.contentTTL) {
-    return { content: cached.parsed as T, fromCache: true };
+    return { content: cached.parsed as T, fromCache: true, fromDefault: cached.fromDefault };
   }
 
   // Load from DB
   const blob = await getConfigBlob(hash);
   if (!blob) {
     console.warn(`[Config-Loader] Blob not found for hash ${hash}, using default`);
-    return { content: defaultConfig, fromCache: false };
+    // Cache the default so we preserve fromDefault=true on subsequent reads
+    cache.set(key, {
+      hash,
+      content: JSON.stringify(defaultConfig),
+      parsed: defaultConfig,
+      loadedAt: now,
+      pointerCheckedAt: now,
+      fromDefault: true,
+    });
+    return { content: defaultConfig, fromCache: false, fromDefault: true };
   }
 
   try {
     const parsed = JSON.parse(blob.content) as T;
 
-    // Update cache
+    // Update cache - this is from DB, so fromDefault=false
     cache.set(key, {
       hash,
       content: blob.content,
       parsed,
       loadedAt: now,
       pointerCheckedAt: now,
+      fromDefault: false,
     });
 
-    return { content: parsed, fromCache: false };
+    return { content: parsed, fromCache: false, fromDefault: false };
   } catch (err) {
     console.error(`[Config-Loader] Failed to parse config for ${configType}/${profileKey}:`, err);
-    return { content: defaultConfig, fromCache: false };
+    return { content: defaultConfig, fromCache: false, fromDefault: true };
   }
 }
 
@@ -168,17 +180,17 @@ export async function loadSearchConfig(
     if (!hash) {
       // No config in DB, use default
       console.log(`[Config-Loader] No search config found, using defaults`);
-      // Still record usage for defaults so job page shows what was used
+      // Record usage with sentinel to indicate defaults were used
       if (jobId) {
-        await recordConfigUsage(jobId, configType, profileKey, "default").catch((err) => {
+        await recordConfigUsage(jobId, configType, profileKey, "__DEFAULT__").catch((err) => {
           console.warn(`[Config-Loader] Failed to record default config usage: ${err?.message}`);
         });
       }
-      return { config: DEFAULT_SEARCH_CONFIG, contentHash: "default", overrides: [], fromCache: false };
+      return { config: DEFAULT_SEARCH_CONFIG, contentHash: "__DEFAULT__", overrides: [], fromCache: false, fromDefault: true };
     }
 
     // Get content (from cache or DB)
-    const { content, fromCache } = await getOrLoadContent(
+    const { content, fromCache, fromDefault } = await getOrLoadContent(
       configType,
       profileKey,
       hash,
@@ -190,10 +202,10 @@ export async function loadSearchConfig(
       await recordConfigUsage(jobId, configType, profileKey, hash);
     }
 
-    return { config: content, contentHash: hash, overrides: [], fromCache };
+    return { config: content, contentHash: hash, overrides: [], fromCache, fromDefault };
   } catch (err) {
     console.error(`[Config-Loader] Error loading search config:`, err);
-    return { config: DEFAULT_SEARCH_CONFIG, contentHash: "error-fallback", overrides: [], fromCache: false };
+    return { config: DEFAULT_SEARCH_CONFIG, contentHash: "__ERROR_FALLBACK__", overrides: [], fromCache: false, fromDefault: true };
   }
 }
 
@@ -213,17 +225,17 @@ export async function loadCalcConfig(
     if (!hash) {
       // No config in DB, use default
       console.log(`[Config-Loader] No calc config found, using defaults`);
-      // Still record usage for defaults so job page shows what was used
+      // Record usage with sentinel to indicate defaults were used
       if (jobId) {
-        await recordConfigUsage(jobId, configType, profileKey, "default").catch((err) => {
+        await recordConfigUsage(jobId, configType, profileKey, "__DEFAULT__").catch((err) => {
           console.warn(`[Config-Loader] Failed to record default config usage: ${err?.message}`);
         });
       }
-      return { config: DEFAULT_CALC_CONFIG, contentHash: "default", overrides: [], fromCache: false };
+      return { config: DEFAULT_CALC_CONFIG, contentHash: "__DEFAULT__", overrides: [], fromCache: false, fromDefault: true };
     }
 
     // Get content
-    const { content, fromCache } = await getOrLoadContent(
+    const { content, fromCache, fromDefault } = await getOrLoadContent(
       configType,
       profileKey,
       hash,
@@ -235,10 +247,10 @@ export async function loadCalcConfig(
       await recordConfigUsage(jobId, configType, profileKey, hash);
     }
 
-    return { config: content, contentHash: hash, overrides: [], fromCache };
+    return { config: content, contentHash: hash, overrides: [], fromCache, fromDefault };
   } catch (err) {
     console.error(`[Config-Loader] Error loading calc config:`, err);
-    return { config: DEFAULT_CALC_CONFIG, contentHash: "error-fallback", overrides: [], fromCache: false };
+    return { config: DEFAULT_CALC_CONFIG, contentHash: "__ERROR_FALLBACK__", overrides: [], fromCache: false, fromDefault: true };
   }
 }
 
@@ -258,17 +270,17 @@ export async function loadPipelineConfig(
     if (!hash) {
       // No config in DB, use default
       console.log(`[Config-Loader] No pipeline config found, using defaults`);
-      // Still record usage for defaults so job page shows what was used
+      // Record usage with sentinel to indicate defaults were used
       if (jobId) {
-        await recordConfigUsage(jobId, configType, profileKey, "default").catch((err) => {
+        await recordConfigUsage(jobId, configType, profileKey, "__DEFAULT__").catch((err) => {
           console.warn(`[Config-Loader] Failed to record default config usage: ${err?.message}`);
         });
       }
-      return { config: DEFAULT_PIPELINE_CONFIG, contentHash: "default", overrides: [], fromCache: false };
+      return { config: DEFAULT_PIPELINE_CONFIG, contentHash: "__DEFAULT__", overrides: [], fromCache: false, fromDefault: true };
     }
 
     // Get content
-    const { content, fromCache } = await getOrLoadContent(
+    const { content, fromCache, fromDefault } = await getOrLoadContent(
       configType,
       profileKey,
       hash,
@@ -280,10 +292,10 @@ export async function loadPipelineConfig(
       await recordConfigUsage(jobId, configType, profileKey, hash);
     }
 
-    return { config: content, contentHash: hash, overrides: [], fromCache };
+    return { config: content, contentHash: hash, overrides: [], fromCache, fromDefault };
   } catch (err) {
     console.error(`[Config-Loader] Error loading pipeline config:`, err);
-    return { config: DEFAULT_PIPELINE_CONFIG, contentHash: "error-fallback", overrides: [], fromCache: false };
+    return { config: DEFAULT_PIPELINE_CONFIG, contentHash: "__ERROR_FALLBACK__", overrides: [], fromCache: false, fromDefault: true };
   }
 }
 
@@ -440,6 +452,7 @@ export async function loadPromptConfig(
       parsed: {} as SearchConfig, // Not used for prompts, but cache type requires it
       loadedAt: now,
       pointerCheckedAt: now,
+      fromDefault: false, // Prompts loaded from DB are not defaults
     });
 
     // Record usage
@@ -512,12 +525,12 @@ export async function getAnalyzerConfig(options: {
     loadCalcConfig("default", options.jobId),
   ]);
 
-  // Determine overall source
+  // Determine overall source using fromDefault flag
   let source: AnalyzerConfig["source"] = "default";
   const sources = [
-    pipelineResult.contentHash === "default" ? "default" : "database",
-    searchResult.contentHash === "default" ? "default" : "database",
-    calcResult.contentHash === "default" ? "default" : "database",
+    pipelineResult.fromDefault ? "default" : "database",
+    searchResult.fromDefault ? "default" : "database",
+    calcResult.fromDefault ? "default" : "database",
   ];
 
   if (sources.every((s) => s === "database")) {

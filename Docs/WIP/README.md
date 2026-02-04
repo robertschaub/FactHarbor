@@ -1,6 +1,6 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-04
+**Last Updated**: 2026-02-05
 **Status**: Cleaned up - Historical work moved to ARCHIVE
 
 ---
@@ -16,6 +16,22 @@ For completed work, historical documents, and reference materials, see:
 ---
 
 ## 📋 Active Future Proposals
+
+### UCM Flaw Review (2026-02-05)
+**Status:** ✅ All Issues Resolved
+- **Document:** [UCM_Flaw_Review_2026-02-05.md](UCM_Flaw_Review_2026-02-05.md)
+- **Type:** Review / Proposal
+- **Scope:** Unified Config Management (config loader/storage/admin API)
+- **Completed:** 2026-02-05
+
+**Resolutions:**
+- ✅ Warnings API now accepts hash query params
+- ✅ Default configs use `__DEFAULT__` sentinel + `fromDefault` flag
+- ✅ Cache preserves `fromDefault` provenance
+- ✅ Content hash uniqueness documented as design decision
+- ✅ Snapshot version now from centralized `version.ts`
+
+**Ready to move to ARCHIVE.**
 
 ### Shadow Mode: Self-Learning Prompt Optimization System
 **Status:** 🔬 Design Ready (Awaiting Prioritization)

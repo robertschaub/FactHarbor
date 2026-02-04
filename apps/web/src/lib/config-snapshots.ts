@@ -13,6 +13,7 @@
 
 import type { PipelineConfig, SearchConfig, SourceReliabilityConfig } from "./config-schemas";
 import { getDb } from "./config-storage";
+import { ANALYZER_VERSION } from "./version";
 
 // ============================================================================
 // TYPES
@@ -102,7 +103,7 @@ export async function captureConfigSnapshot(
         srSummary.defaultScore,
         srSummary.confidenceThreshold,
         now,
-        "2.9.0", // Analyzer version
+        ANALYZER_VERSION,
       ],
     );
   } catch (error) {
