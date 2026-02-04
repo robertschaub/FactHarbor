@@ -1,0 +1,51 @@
+TASK: Lexicon-to-LLM Migration FULL IMPLEMENTATION - Phases 1, 2, 3 (automated), 4, Commit
+
+CONTEXT: Migrating from pattern-based to LLM-based classification. Implement ALL phases including pattern removal. Manual validation SKIPPED - use quick automated tests instead.
+
+PHASE 1: MODIFY THESE 4 PROMPT FILES:
+
+1. apps/web/src/lib/analyzer/prompts/extract-keyfactors.ts
+   → Add factualBasis classification (established/disputed/opinion/unknown) with examples and decision tree
+
+2. apps/web/src/lib/analyzer/prompts/understand-claim.ts
+   → Add harmPotential assessment (high/medium/low) with examples
+
+3. apps/web/src/lib/analyzer/prompts/extract-facts-base.ts
+   → Add sourceAuthority classification (primary/secondary/opinion/contested) with guidance
+
+4. apps/web/src/lib/analyzer/prompts/generate-verdicts.ts
+   → Add evidence quality guidance and contestation logic
+
+PHASE 2: UPDATE SCHEMAS (apps/web/src/lib/analyzer/types.ts):
+
+1. Add to EvidenceItem: sourceAuthority, evidenceBasis
+2. Add to ClaimVerdict: evidenceQuality (counts, weightedQuality, strongestBasis, diversity)
+3. Verify existing: factualBasis, harmPotential, isContested, contestedBy
+
+PHASE 3: QUICK AUTOMATED VALIDATION (replace manual testing):
+
+1. Run build: npm -w apps/web run build
+2. Run existing tests: npm -w apps/web run test (if available)
+3. Quick smoke test: Start dev server, verify no runtime errors
+4. Check: LLM prompts now include classification guidance, schemas compile
+
+PHASE 4: REMOVE PATTERN CODE:
+
+1. aggregation.ts: Remove validateContestation() pattern logic - trust LLM factualBasis
+2. aggregation.ts: Remove detectClaimContestation() function entirely
+3. aggregation.ts: Remove detectHarmPotential() function and all calls
+4. orchestrated.ts: Remove detectPseudoscience(), escalatePseudoscienceVerdict(), calculateArticleVerdictWithPseudoscience()
+5. Remove opinionSourcePatterns logic from validateContestation() and detectClaimContestation()
+
+COMMIT: After Phase 4, create git commit with message including "Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+
+DETAILED GUIDANCE: See Docs/WIP/lexicon-to-llm-migration.md sections 1-6 and Docs/WIP/GPT_Prompt_LLM_Migration_Phase1.md
+
+REQUIREMENTS:
+- Include ✅/❌ examples, NO real-world names
+- All new schema fields MUST be optional (backward compatible)
+- Test build after each phase
+- DO NOT skip Phase 4 - remove patterns completely
+
+TIME: 6-9 hours (Phase 1: 2-3h, Phase 2: 1-2h, Phase 3: 0.5h, Phase 4: 2-3h, Commit: 0.5h)
+SUCCESS: Build passes, prompts enhanced, schemas updated, pattern code removed, committed
