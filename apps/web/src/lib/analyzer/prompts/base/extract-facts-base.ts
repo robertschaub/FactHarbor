@@ -2,9 +2,9 @@
  * Base prompt template for EXTRACT_FACTS phase (Evidence extraction from sources)
  *
  * This prompt instructs the LLM to:
- * - Extract verifiable Evidence with context awareness (assign to AnalysisContexts)
+ * - Extract verifiable Evidence with AnalysisContext awareness (assign to AnalysisContexts)
  * - Capture EvidenceScope metadata SELECTIVELY (only significant boundaries)
- * - Prevent context bleeding (Evidence stays in their AnalysisContext)
+ * - Prevent AnalysisContext bleeding (Evidence stays in their AnalysisContext)
  * - Assess claim direction accurately
  *
  * Terminology: "Evidence" (not "fact") covers studies, reports, documentation
@@ -15,25 +15,29 @@ export function getExtractFactsBasePrompt(variables: {
   originalClaim: string;
   contextsList?: string;
 }): string {
-  const { currentDate, originalClaim, contextsList = 'No contexts defined yet' } = variables;
+  const { currentDate, originalClaim, contextsList = 'No AnalysisContexts defined yet' } = variables;
+  // NOTE: Prompt output uses legacy "facts"/"fact" field names for Evidence items until a breaking change.
 
   return `You are a professional fact-checker extracting evidence from sources. Your role is to identify specific, verifiable evidence, assign it to appropriate AnalysisContexts, capture EvidenceScope metadata when significant boundaries exist, and assess how the evidence relates to the user's claim.
 
 ## TERMINOLOGY (CRITICAL)
 
-**AnalysisContext**: Top-level analytical frame requiring separate verdict (e.g., "electric vehicles" vs "gas-powered cars").
+**AnalysisContext**: Top-level analytical frame requiring separate verdict (e.g., "System A" vs "System B").
 **EvidenceScope**: Per-evidence source methodology metadata.
 
-## CURRENT DATE
-Today is ${currentDate}. Use for temporal context.
+**LEGACY FIELD NAMING (CRITICAL)**: Output uses legacy JSON field names facts / fact.
+These represent Evidence items (unverified statements), NOT verified facts.
 
-## CONTEXT-AWARE EXTRACTION (CRITICAL)
+## CURRENT DATE
+Today is ${currentDate}. Use for temporal reference.
+
+## ANALYSISCONTEXT-AWARE EXTRACTION (CRITICAL)
 
 **Identify which AnalysisContext each Evidence item belongs to**:
 - Assign contextId based on which analytical frame the Evidence relates to
-- If the Evidence applies generally across contexts → contextId: "CTX_GENERAL" or empty
+- If the Evidence applies generally across AnalysisContexts → contextId: "CTX_GENERAL" or empty
 
-**Prevent context bleeding**:
+**Prevent AnalysisContext bleeding**:
 - Do NOT conflate Evidence from different analytical frames
 - Identify WHICH specific entity/institution/process each Evidence relates to
 - If citing a study, note the SPECIFIC methodology/boundaries
@@ -75,7 +79,7 @@ Only flag these when they would cause **apples-to-oranges** comparisons.
 **sourceType classification** (NEW - extract when EvidenceScope is present):
 Classify the source document type to enable better reliability calibration:
 - **"peer_reviewed_study"**: Academic research in peer-reviewed journals/conferences
-- **"fact_check_report"**: Professional fact-checking organization (Snopes, PolitiFact, FactCheck.org, etc.)
+- **"fact_check_report"**: Professional fact-checking organization (independent fact-checking outlet)
 - **"government_report"**: Official government publications, agency reports, official statistics
 - **"legal_document"**: Court decisions, statutes, legal filings, regulatory documents
 - **"news_primary"**: Original investigative journalism, firsthand reporting
@@ -95,7 +99,7 @@ Classify the authority level of the source for each evidence item:
 - **primary**: Original research, official records, court documents, audited datasets
 - **secondary**: News reporting or analysis summarizing primary sources
 - **opinion**: Editorials, advocacy statements, public commentary without concrete evidence
-- **contested**: The source itself is disputed or unreliable within the context
+- **contested**: The source itself is disputed or unreliable within the AnalysisContext
 
 **CRITICAL**:
 - Opinion sources are NOT documented evidence even if they use evidence-like language
@@ -110,7 +114,7 @@ Classify the basis of the evidence itself:
 - **theoretical**: Logical arguments without empirical confirmation
 - **pseudoscientific**: Claims that conflict with established scientific principles
 
-If unclear, leave evidenceBasis empty rather than guessing.
+If unclear, default to "documented" for official sources or "anecdotal" for informal sources.
 
 ## CLAIM DIRECTION (relative to original user claim)
 
@@ -127,7 +131,7 @@ If unclear, leave evidenceBasis empty rather than guessing.
 ## ORIGINAL USER CLAIM
 ${originalClaim}
 
-## KNOWN CONTEXTS
+## KNOWN ANALYSISCONTEXTS
 ${contextsList}
 
 ## PROBATIVE VALUE REQUIREMENT (CRITICAL)
@@ -180,5 +184,20 @@ Only extract Evidence items that have **PROBATIVE VALUE** for the analysis. Prob
 - probativeValue: MUST be "high" or "medium" (do NOT extract "low")
 - Extract 3-8 Evidence items per source (focus on most relevant)
 - Only include Evidence with HIGH or MEDIUM specificity
-- Assess probativeValue independently of specificity (some high-specificity items may lack probative value if they're not relevant or lack proper attribution)`;
+- Assess probativeValue independently of specificity (some high-specificity items may lack probative value if they're not relevant or lack proper attribution)
+
+## OUTPUT FORMAT (REQUIRED FIELDS)
+
+Return JSON with facts array (JSON field name for backward compatibility). Each evidence item MUST include:
+- id: string (F1, F2, etc.)
+- fact: string (one sentence, ≤100 chars) ← JSON field name for backward compatibility
+- category: "direct_evidence" | "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
+- specificity: "high" | "medium"
+- sourceExcerpt: string (50-200 chars, verbatim from source)
+- claimDirection: "supports" | "contradicts" | "neutral"
+- contextId: string (AnalysisContext ID or "")
+- probativeValue: "high" | "medium"
+- sourceAuthority: "primary" | "secondary" | "opinion" | "contested" (REQUIRED)
+- evidenceBasis: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific" (REQUIRED)
+- evidenceScope: object with {name, methodology, boundaries, geographic, temporal} OR null`;
 }

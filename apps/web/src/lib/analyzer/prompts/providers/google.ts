@@ -11,6 +11,8 @@
  * @version 2.8.0 - Enhanced with strict length limits and verbosity prevention
  */
 
+// NOTE: Keep "detectedScopes" naming to match understand-base schema and monolithic parsing.
+// Do NOT switch to analysisContexts here until a coordinated breaking change.
 export function getGeminiUnderstandVariant(): string {
   return `
 ## GEMINI OPTIMIZATION
@@ -49,62 +51,63 @@ Before outputting, verify each claim has:
 - Use short phrases, not sentences where possible
 - detectedScopes structure: {id, name, type} only
 
-### CONTEXT BOUNDARIES
+### ANALYSISCONTEXT BOUNDARIES
 Maintain clear distinctions:
-- Different institutions/processes → separate contexts
-- Different methodologies → separate contexts
-- Different perspectives on same matter → NOT separate contexts`;
+- Different institutions/processes → separate AnalysisContexts
+- Different methodologies → separate AnalysisContexts
+- Different perspectives on same matter → NOT separate AnalysisContexts`;
 }
 
 export function getGeminiExtractFactsVariant(): string {
   return `
-## GEMINI OPTIMIZATION - FACT EXTRACTION
+## GEMINI OPTIMIZATION - EVIDENCE EXTRACTION
 
 ### OUTPUT LENGTH LIMITS (CRITICAL)
 | Field | Maximum |
 |-------|---------|
-| fact | 100 characters |
+| fact (JSON field) | 100 characters |
 | sourceExcerpt | 50-200 characters |
 | category | exact enum value |
 
 ### NUMBERED EXTRACTION PROCESS
 1. Read source content completely
-2. Identify 4-6 most relevant facts
-3. For each fact:
+2. Identify 4-6 most relevant evidence items
+3. For each evidence item:
    a. Write concise statement (≤100 chars)
    b. Copy verbatim excerpt from source (50-200 chars)
    c. Determine if supports/contradicts/neutral to claim
    d. Extract evidenceScope if source defines methodology
-4. Count your facts (min 3, max 8)
+4. Count your evidence items (min 3, max 8)
 5. Output JSON
 
 ### SCHEMA CHECKLIST (Verify before output)
-Each fact MUST have:
+Each evidence item MUST have:
 - [ ] id: string (F1, F2, etc.)
-- [ ] fact: string (≤100 chars, one sentence) // Legacy field name for extracted statement
+- [ ] fact: string (≤100 chars, one sentence) ← JSON field name for backward compatibility
 - [ ] category: "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
-  // NOTE: "evidence" is legacy value, type system also accepts "direct_evidence" (Phase 1.5 will migrate prompts)
 - [ ] specificity: "high" | "medium" (NEVER "low")
 - [ ] sourceExcerpt: string (50-200 chars, verbatim quote)
 - [ ] claimDirection: "supports" | "contradicts" | "neutral"
 - [ ] contextId: string (AnalysisContext ID or "")
 - [ ] evidenceScope: object OR null (NEVER missing/undefined)
+- [ ] sourceAuthority: "primary" | "secondary" | "opinion" | "contested"
+- [ ] evidenceBasis: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific"
 
 ### EVIDENCE SCOPE FORMAT
 When source defines analytical frame:
 {
-  "name": "short label (e.g., WTW)",
-  "methodology": "standard used (e.g., ISO 14040)",
+  "name": "short label (e.g., Boundary A)",
+  "methodology": "standard used (e.g., Standard X)",
   "boundaries": "what's included/excluded",
-  "geographic": "region (e.g., EU, USA)",
+  "geographic": "region (e.g., Region X)",
   "temporal": "time period (e.g., 2024)"
 }
 When not defined: null (not {} or missing)
 
 ### VERBOSITY PREVENTION
-- One sentence per fact, no explanations
-- Numbers and dates IN the fact statement
-- Avoid repeating information across facts`;
+- One sentence per evidence item, no explanations
+- Numbers and dates IN the evidence statement
+- Avoid repeating information across evidence items`;
 }
 
 export function getGeminiVerdictVariant(): string {
@@ -145,7 +148,7 @@ For each AnalysisContext:
 7. Generate 3-5 keyFactors
 
 ### SCHEMA CHECKLIST
-- [ ] contextId matches one from the known contexts
+- [ ] contextId matches one from the known AnalysisContexts
 - [ ] answer is integer 0-100
 - [ ] shortAnswer is complete sentence (≤25 words)
 - [ ] keyFactors array has 3-5 items
@@ -173,16 +176,16 @@ export function getGeminiScopeRefinementVariant(): string {
 
 ### NUMBERED REFINEMENT PROCESS
 1. Read all facts provided
-2. Identify potential context boundaries:
+2. Identify potential AnalysisContext boundaries:
    - Methodology markers (different standards, frameworks)
    - Institutional markers (different bodies, agencies)
    - Temporal markers (different time periods, phases)
 3. For each potential AnalysisContext, verify:
    - [ ] Directly relevant to input topic?
-   - [ ] Supported by ≥1 fact?
+   - [ ] Supported by ≥1 evidence item?
    - [ ] Genuinely distinct analytical frame?
-4. Create only verified scopes
-5. Assign ALL facts to scopes
+4. Create only verified AnalysisContexts
+5. Assign ALL evidence items to AnalysisContexts
 6. Output JSON
 
 ### SCHEMA CHECKLIST
@@ -198,8 +201,8 @@ analysisContexts array - each item must have:
 
 factScopeAssignments array:
 - [ ] Each item: {factId: string, contextId: string}
-- [ ] Coverage: ≥70% of facts assigned
-- [ ] Each context: ≥1 fact assigned
+- [ ] Coverage: ≥70% of evidence items assigned
+- [ ] Each AnalysisContext: ≥1 evidence item assigned
 
 ### OUTPUT FORMAT
 - Use "" for unknown fields (NEVER null for strings)
@@ -208,5 +211,5 @@ factScopeAssignments array:
 - Keep all text fields within length limits`;
 }
 
-/** Primary name for getting Gemini context refinement variant */
+/** Primary name for getting Gemini AnalysisContext refinement variant */
 export const getGeminiContextRefinementVariant = getGeminiScopeRefinementVariant;

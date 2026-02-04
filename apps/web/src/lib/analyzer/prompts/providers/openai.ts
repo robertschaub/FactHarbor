@@ -11,19 +11,21 @@
  * @version 2.8.0 - Enhanced with comprehensive few-shot examples
  */
 
+// NOTE: Keep "detectedScopes" naming to match understand-base schema and monolithic parsing.
+// Do NOT switch to analysisContexts here until a coordinated breaking change.
 export function getOpenAIUnderstandVariant(): string {
   return `
 ## GPT OPTIMIZATION
 
 ### FEW-SHOT EXAMPLES (Follow these patterns exactly)
 
-**Example - Multi-Context Detection:**
-Input: "The TSE court in Brazil ruled he was ineligible, while SCOTUS in the US ruled differently on ballot access"
+**Example - Multi-AnalysisContext Detection:**
+Input: "Institution A ruled X was ineligible, while Institution B ruled differently on eligibility"
 Output:
 {
   "detectedScopes": [
-    {"id": "CTX_TSE", "name": "Brazil TSE Electoral Ruling", "type": "legal"},
-    {"id": "CTX_SCOTUS", "name": "USA SCOTUS Ballot Access Ruling", "type": "legal"}
+    {"id": "CTX_A", "name": "Institution A Eligibility Ruling", "type": "legal"},
+    {"id": "CTX_B", "name": "Institution B Eligibility Ruling", "type": "legal"}
   ],
   "requiresSeparateAnalysis": true
 }
@@ -31,7 +33,7 @@ Output:
 ### REQUIRED OUTPUT FIELDS (All must be present)
 - impliedClaim: string (neutral summary)
 - articleThesis: string (what input asserts)
-- analysisContext: string — the ArticleFrame (broader frame/topic), or "". NOT an AnalysisContext despite the field name.
+- analysisContext: string — article framing/background details (NOT an AnalysisContext), or "".
 - subClaims: array with id, text, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn
 - researchQueries: array of 4-6 distinct search strings
 - detectedScopes: array (can be empty)
@@ -40,7 +42,7 @@ Output:
 ### RULES TO FOLLOW
 1. Only 1-4 claims should have "high" centrality
 2. Generate 4-6 DISTINCT search queries (no redundancy)
-3. Look for institutional/methodology differences for context detection
+3. Look for institutional/methodology differences for AnalysisContext detection
 4. Use "" for empty strings, never null
 
 Now analyze the input following these exact patterns.`;
@@ -48,11 +50,11 @@ Now analyze the input following these exact patterns.`;
 
 export function getOpenAIExtractFactsVariant(): string {
   return `
-## GPT OPTIMIZATION - FACT EXTRACTION
+## GPT OPTIMIZATION - EVIDENCE EXTRACTION
 
 ### FEW-SHOT EXAMPLE (Follow this pattern)
 
-**Example - Fact with Full EvidenceScope:**
+**Example - Evidence with Full EvidenceScope:**
 {
   "facts": [
     {
@@ -63,6 +65,8 @@ export function getOpenAIExtractFactsVariant(): string {
       "sourceExcerpt": "The full-cycle efficiency of Technology A is approximately 40%",
       "claimDirection": "contradicts",
       "contextId": "CTX_FULL",
+      "sourceAuthority": "primary",
+      "evidenceBasis": "scientific",
       "evidenceScope": {
         "name": "Full-Cycle",
         "methodology": "End-to-end analysis",
@@ -79,6 +83,8 @@ export function getOpenAIExtractFactsVariant(): string {
       "sourceExcerpt": "Technology B demonstrates full-cycle efficiency of approximately 77%",
       "claimDirection": "supports",
       "contextId": "CTX_FULL",
+      "sourceAuthority": "primary",
+      "evidenceBasis": "scientific",
       "evidenceScope": {
         "name": "Full-Cycle",
         "methodology": "End-to-end analysis",
@@ -90,16 +96,17 @@ export function getOpenAIExtractFactsVariant(): string {
   ]
 }
 
-### REQUIRED FIELDS PER FACT
+### REQUIRED FIELDS PER EVIDENCE ITEM
 - id: string (F1, F2, etc.)
-- fact: string (one sentence, under 100 chars preferred) // Legacy field name for extracted statement
+- fact: string (one sentence, under 100 chars preferred) ← JSON field name for backward compatibility
 - category: "evidence" | "expert_quote" | "statistic" | "event" | "legal_provision" | "criticism"
-  // NOTE: "evidence" is legacy value, type system also accepts "direct_evidence" (Phase 1.5 will migrate prompts)
 - specificity: "high" | "medium" (never "low")
 - sourceExcerpt: string (50-200 chars, verbatim from source)
 - claimDirection: "supports" | "contradicts" | "neutral"
 - contextId: string (AnalysisContext ID or "")
 - evidenceScope: object with name, methodology, boundaries, geographic, temporal (or null if not defined)
+- sourceAuthority: "primary" | "secondary" | "opinion" | "contested" (REQUIRED for each evidence item)
+- evidenceBasis: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific" (REQUIRED)
 
 ### CLAIM DIRECTION RULES
 - User claims "X is better than Y" + Source says "Y outperforms X" → "contradicts"
@@ -109,8 +116,8 @@ export function getOpenAIExtractFactsVariant(): string {
 ### OUTPUT FORMAT
 - Use "" for empty strings, NEVER null for string fields
 - evidenceScope: Include full object when source defines analytical frame, null otherwise
-- Extract 4-6 high-quality facts (quality over quantity)
-- Each fact must be independently verifiable`;
+- Extract 4-6 high-quality evidence items (quality over quantity)
+- Each evidence item must be independently verifiable`;
 }
 
 export function getOpenAIVerdictVariant(): string {
@@ -158,7 +165,7 @@ Do NOT artificially center at 50%. If evidence is clear, be decisive.
 ### SCHEMA COMPLIANCE
 - Use "" for empty strings, NEVER null
 - supportingFactIds must be array (even if empty: [])
-- Ensure contextId matches one from the known contexts
+- Ensure contextId matches one from the known AnalysisContexts
 - factualBasis = "established" ONLY if documented counter-evidence exists`;
 }
 
@@ -168,60 +175,60 @@ export function getOpenAIScopeRefinementVariant(): string {
 
 ### FEW-SHOT EXAMPLE
 
-**Input:** Facts about Technology A vs Technology B efficiency from multiple studies
+**Input:** Evidence about System A vs System B efficiency from multiple studies
 **Output:**
 {
   "requiresSeparateAnalysis": true,
   "analysisContexts": [
     {
-      "id": "CTX_FULL",
-      "name": "Full-Cycle Efficiency Analysis",
-      "shortName": "FULL",
-      "subject": "Complete process chain efficiency comparison",
+      "id": "CTX_A",
+      "name": "Boundary A Efficiency Analysis",
+      "shortName": "A",
+      "subject": "Boundary A efficiency comparison",
       "temporal": "2020-2024",
       "status": "concluded",
       "outcome": "Studies show efficiency differences",
       "metadata": {
-        "methodology": "Well-to-Wheel",
-        "boundaries": "Primary energy to vehicle motion",
-        "geographic": "EU"
+        "methodology": "Method A",
+        "boundaries": "Boundary A",
+        "geographic": "Region X"
       }
     },
     {
-      "id": "CTX_TTW",
-      "name": "Tank-to-Wheel Efficiency Analysis",
-      "shortName": "TTW",
-      "subject": "Vehicle operation efficiency comparison",
+      "id": "CTX_B",
+      "name": "Boundary B Efficiency Analysis",
+      "shortName": "B",
+      "subject": "Boundary B efficiency comparison",
       "temporal": "2020-2024",
       "status": "concluded",
       "outcome": "Studies show efficiency differences",
       "metadata": {
-        "methodology": "Tank-to-Wheel",
-        "boundaries": "Fuel tank to vehicle motion",
-        "geographic": "EU"
+        "methodology": "Method B",
+        "boundaries": "Boundary B",
+        "geographic": "Region X"
       }
     }
   ],
   "factScopeAssignments": [
-    {"factId": "F1", "contextId": "CTX_WTW"},
-    {"factId": "F2", "contextId": "CTX_TTW"}
+    {"factId": "F1", "contextId": "CTX_A"},
+    {"factId": "F2", "contextId": "CTX_B"}
   ]
 }
 
 ### PREVENT OVER-SPLITTING CHECKLIST
-For EACH proposed context, verify:
+For EACH proposed AnalysisContext, verify:
 1. [ ] Directly relevant to input's specific topic?
 2. [ ] Supported by ≥1 actual fact?
 3. [ ] Represents distinct analytical frame (not just perspective)?
 4. [ ] If removed, would analysis materially change?
 
-If ANY answer is "no" → Don't create that context.
+If ANY answer is "no" → Don't create that AnalysisContext.
 
 ### REQUIRED FIELDS
 - requiresSeparateAnalysis: boolean
 - analysisContexts: array with id, name, shortName, subject, temporal, status, outcome, metadata
 - factScopeAssignments: array of {factId, contextId} covering ≥70% of facts
-- Each context must have ≥1 fact assigned
+- Each AnalysisContext must have ≥1 fact assigned
 
 ### OUTPUT FORMAT
 - Use "" for unknown metadata fields, NEVER null
@@ -229,5 +236,5 @@ If ANY answer is "no" → Don't create that context.
 - shortName: max 12 characters`;
 }
 
-/** Primary name for getting OpenAI context refinement variant */
+/** Primary name for getting OpenAI AnalysisContext refinement variant */
 export const getOpenAIContextRefinementVariant = getOpenAIScopeRefinementVariant;

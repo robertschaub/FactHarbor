@@ -11,6 +11,8 @@
  * @version 2.8.0 - Enhanced with comprehensive step-by-step processes
  */
 
+// NOTE: Keep "detectedScopes" naming to match understand-base schema and monolithic parsing.
+// Do NOT switch to analysisContexts here until a coordinated breaking change.
 export function getMistralUnderstandVariant(): string {
   return `
 ## MISTRAL OPTIMIZATION
@@ -29,13 +31,13 @@ For each claim found:
 - text: [the claim statement]
 - claimRole: [pick one: "attribution" | "source" | "timing" | "core"]
 - centrality: [pick one]
-  - "low" → background/context claims
-  - "medium" → supporting context
+  - "low" → background detail claims
+  - "medium" → supporting details
   - "high" → core verifiable assertions (expect 1-4 max)
 - isCentral: true if centrality="high", else false
 - dependsOn: [array of claim IDs this depends on, or []]
 
-**Step 4:** Detect context boundaries
+**Step 4:** Detect AnalysisContext boundaries
 Look for:
 - Different institutions or formal bodies
 - Different methodologies or standards
@@ -46,7 +48,7 @@ If not: Leave detectedScopes empty
 **Step 5:** Generate 4-6 search queries
 - 2 queries to find supporting evidence
 - 2 queries to find contradicting evidence
-- 1-2 queries for context/background
+- 1-2 queries for background details
 
 **Step 6:** Output JSON
 
@@ -72,35 +74,36 @@ Before output, verify:
 
 export function getMistralExtractFactsVariant(): string {
   return `
-## MISTRAL OPTIMIZATION - FACT EXTRACTION
+## MISTRAL OPTIMIZATION - EVIDENCE EXTRACTION
 
 ### STEP-BY-STEP PROCESS
 
 **Step 1:** Read source content completely
 
-**Step 2:** Identify extractable facts
+**Step 2:** Identify extractable evidence items
 - Look for: numbers, dates, names, specific events
-- Minimum: 3 facts
-- Maximum: 8 facts
+- Minimum: 3 evidence items
+- Maximum: 8 evidence items
 
-**Step 3:** For EACH fact, fill this template
+**Step 3:** For EACH evidence item, fill this template
 {
   "id": "F{n}",
-  "fact": "[one sentence, ≤100 chars]",  // Legacy field name for extracted statement
+  "fact": "[one sentence, ≤100 chars]",
   "category": "[pick one: evidence | expert_quote | statistic | event | legal_provision | criticism]",
-  // NOTE: "evidence" is legacy value, type system also accepts "direct_evidence" (Phase 1.5 will migrate prompts)
   "specificity": "[high | medium]",
   "sourceExcerpt": "[copy 50-200 chars verbatim from source]",
   "claimDirection": "[pick one: supports | contradicts | neutral]",
   "contextId": "[AnalysisContext ID or empty string]",
+  "sourceAuthority": "[pick one: primary | secondary | opinion | contested]",
+  "evidenceBasis": "[pick one: scientific | documented | anecdotal | theoretical | pseudoscientific]",
   "evidenceScope": [object or null]
 }
 
 **Step 4:** Determine claimDirection
 - Read user's original claim
-- Does this fact support the claim being TRUE? → "supports"
-- Does this fact support the claim being FALSE? → "contradicts"
-- Neither, just context? → "neutral"
+- Does this evidence support the claim being TRUE? → "supports"
+- Does this evidence support the claim being FALSE? → "contradicts"
+- Neither, just background details? → "neutral"
 
 **Step 5:** Extract evidenceScope (if applicable)
 Does the source define its analytical frame?
@@ -111,21 +114,23 @@ Does the source define its analytical frame?
 
 ### EVIDENCESCOPE TEMPLATE
 {
-  "name": "[short label, e.g., WTW]",
-  "methodology": "[standard used, e.g., ISO 14040]",
+  "name": "[short label, e.g., Boundary A]",
+  "methodology": "[standard used, e.g., Standard X]",
   "boundaries": "[what included/excluded]",
-  "geographic": "[region, e.g., EU]",
+  "geographic": "[region, e.g., Region X]",
   "temporal": "[time period, e.g., 2024]"
 }
 Use "" for unknown fields, not null.
 
 ### VALIDATION CHECKLIST
-[ ] 3-8 facts extracted
-[ ] Each fact ≤100 characters
+[ ] 3-8 evidence items extracted
+[ ] Each evidence item ≤100 characters
 [ ] Each sourceExcerpt is 50-200 chars
 [ ] Each sourceExcerpt is verbatim from source
-[ ] No duplicate information across facts
+[ ] No duplicate information across evidence items
 [ ] claimDirection matches evidence relationship to user's claim
+[ ] sourceAuthority classified for each evidence item
+[ ] evidenceBasis classified for each evidence item
 [ ] JSON is valid`;
 }
 
@@ -140,9 +145,9 @@ Write it down: "[claim]"
 
 **Step 2:** For each AnalysisContext, process separately:
 
-**Step 2a:** List facts for this AnalysisContext only
-- Count SUPPORTING facts: ___
-- Count COUNTER-EVIDENCE facts: ___
+**Step 2a:** List evidence items for this AnalysisContext only
+- Count SUPPORTING evidence items: ___
+- Count COUNTER-EVIDENCE items: ___
 
 **Step 2b:** Determine evidence direction
 - More supporting → claim is TRUE → 72-100%
@@ -205,7 +210,7 @@ export function getMistralScopeRefinementVariant(): string {
 
 ### STEP-BY-STEP PROCESS
 
-**Step 1:** Read all facts and identify potential boundaries
+**Step 1:** Read all evidence items and identify potential boundaries
 
 Look for these markers:
 | Marker Type | Examples |
@@ -218,7 +223,7 @@ Look for these markers:
 
 Boundary: ____________
 [ ] Directly relevant to input's specific topic?
-[ ] Supported by ≥1 fact from the evidence?
+[ ] Supported by ≥1 evidence item?
 [ ] Represents distinct analytical frame (not just perspective)?
 
 If ALL boxes checked → Create AnalysisContext
@@ -245,28 +250,28 @@ If ANY unchecked → Skip this boundary
   }
 }
 
-**Step 4:** Assign ALL facts to contexts
+**Step 4:** Assign ALL evidence items to AnalysisContexts
 
-For each fact:
-- factId: "[F1, F2, etc.]"
+For each evidence item:
+- factId: "[F1, F2, etc.]" ← JSON field name for backward compatibility
 - contextId: "[CTX_XXX]"
 
 Ensure:
-- Each fact → exactly one contextId
-- ≥70% of facts assigned
-- Each context has ≥1 fact
+- Each evidence item → exactly one contextId
+- ≥70% of evidence items assigned
+- Each AnalysisContext has ≥1 evidence item
 
 **Step 5:** Output JSON
 
 ### VALIDATION CHECKLIST
-[ ] requiresSeparateAnalysis matches context count (true if >1)
-[ ] Each context has all required fields
+[ ] requiresSeparateAnalysis matches AnalysisContext count (true if >1)
+[ ] Each AnalysisContext has all required fields
 [ ] shortName ≤12 characters
 [ ] metadata uses "" for unknown fields (not null)
-[ ] factScopeAssignments covers ≥70% of facts
-[ ] Each context has ≥1 fact assigned
+[ ] factScopeAssignments covers ≥70% of evidence items
+[ ] Each AnalysisContext has ≥1 evidence item assigned
 [ ] JSON is valid`;
 }
 
-/** Primary name for getting Mistral context refinement variant */
+/** Primary name for getting Mistral AnalysisContext refinement variant */
 export const getMistralContextRefinementVariant = getMistralScopeRefinementVariant;
