@@ -245,12 +245,12 @@ This improves:
 
 ### Prompt Optimization Baseline (v2.8.0)
 
-**Automatic 20-30% cost reduction** across all providers and models:
+**Automatic estimated 20-30% cost reduction** across all providers and models:
 
-As of February 2026 (version 2.8.0), all prompts have been optimized to reduce token usage by 20-30% while maintaining quality. This optimization:
+As of February 2026 (version 2.8.0), all prompts have been optimized to reduce token usage by an estimated 20-30% while maintaining quality. This optimization:
 - ✅ Applies automatically to all LLM providers (Anthropic, OpenAI, Google, Mistral)
 - ✅ Works with both tiered and non-tiered model configurations
-- ✅ Reduces costs by ~20-30% per analysis compared to previous versions
+- ✅ Reduces costs by an estimated ~20-30% per analysis compared to previous versions
 - ✅ Maintains analytical quality and accuracy
 
 **No configuration required** - all users benefit from these savings automatically.
@@ -265,12 +265,12 @@ Use cheaper models for simple tasks, premium models for complex reasoning:
 
 | Task | Recommended Model | Cost Saving (vs Sonnet baseline) |
 |------|------------------|-----------------------------------|
-| Claim extraction | Claude Haiku | ~75% cheaper (70% model + 20-30% prompt optimization) |
-| Fact extraction | Claude Haiku | ~75% cheaper (70% model + 20-30% prompt optimization) |
-| Understanding | Claude Haiku | ~75% cheaper (70% model + 20-30% prompt optimization) |
-| Verdict generation | Claude Sonnet | 20-30% cheaper (prompt optimization only) |
+| Claim extraction | Claude Haiku | ~75% cheaper (70% model + estimated 20-30% prompt optimization) |
+| Fact extraction | Claude Haiku | ~75% cheaper (70% model + estimated 20-30% prompt optimization) |
+| Understanding | Claude Haiku | ~75% cheaper (70% model + estimated 20-30% prompt optimization) |
+| Verdict generation | Claude Sonnet | estimated 20-30% cheaper (prompt optimization only) |
 
-Note: Prompt optimization savings (20-30%) apply to ALL models and providers automatically.
+Note: Prompt optimization savings (estimated 20-30%) apply to ALL models and providers automatically.
 
 Tiered model routing is configured via the **pipeline config** in Unified Configuration Management (UCM). Adjust the tiering toggle and per-task model names in the pipeline config editor (Admin UI → Config → Pipeline).
 

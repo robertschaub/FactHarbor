@@ -302,7 +302,7 @@ You can also test the API directly at: http://localhost:5000/swagger
 
 2. **Submit a test analysis**:
    - Start with simple text (avoid URLs for your first test)
-   - Example: "COVID-19 vaccines are safe and effective"
+   - Example: "Organization A announced Policy B on Date C"
    - Click **"Run Analysis"**
 
 3. **Observe progress**:
@@ -312,6 +312,7 @@ You can also test the API directly at: http://localhost:5000/swagger
 4. **View results**:
    - Report tab: Human-readable markdown
    - JSON tab: Structured analysis data
+   - If you see a "Classification Fallbacks" warning, see [Evidence Quality Filtering - Classification Fallbacks](../ARCHITECTURE/Evidence_Quality_Filtering.md#10-classification-fallbacks)
 
 ### Verification
 

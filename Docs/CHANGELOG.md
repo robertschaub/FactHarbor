@@ -1,5 +1,25 @@
 # FactHarbor Changelog
 
+## 2026-02-04 - Prompt Optimization v2.8.0-2.8.1 Complete
+
+### Changed
+- Anthropic provider variant slimmed to format-only (~84 lines, 52% reduction)
+- All prompt examples genericized (replaced domain-specific terms with placeholders)
+- AnalysisContext vs EvidenceScope terminology clarified in all base prompts
+- Provider variants now contain only formatting guidance (Phase 3 format-only principle)
+
+### Added
+- Legacy field naming documentation notes (`detectedScopes`, `facts`, `supportingFactIds`)
+- Lead Developer verification for all prompt changes
+
+### Documentation
+- Created consolidated [Prompt Optimization Summary](WIP/Prompt_Optimization_Investigation.md)
+- Archived detailed reviews to [ARCHIVE/REVIEWS/](ARCHIVE/REVIEWS/)
+  - Prompt_Optimization_Code_Review.md
+  - Prompt_Optimization_Architecture_Review.md
+
+---
+
 ## 2026-02-02 - UCM Terminology Cleanup + Phase 2
 
 ### Added
@@ -118,5 +138,5 @@
 
 ---
 
-**Last Updated**: 2026-02-02
+**Last Updated**: 2026-02-04
 **Document Status**: Active changelog, updated with each significant release

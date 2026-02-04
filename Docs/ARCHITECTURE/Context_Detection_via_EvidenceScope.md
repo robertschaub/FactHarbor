@@ -1,8 +1,12 @@
 # Context Detection via EvidenceScope
 
 **Version**: 2.6.42
-**Status**: Implemented
+**Status**: Implemented (See consolidated guide for current reference)
 **Date**: February 3, 2026
+
+---
+
+> **📘 Note**: This document has been superseded by the consolidated [Context and EvidenceScope Detection Guide](Context_and_EvidenceScope_Detection_Guide.md), which combines information from multiple sources into a single reference. This document is retained for historical context and implementation details.
 
 ---
 

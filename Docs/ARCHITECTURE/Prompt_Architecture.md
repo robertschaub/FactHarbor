@@ -93,19 +93,23 @@ apps/web/src/lib/analyzer/prompts/
 ### Anthropic (Claude)
 
 - **XML-structured prompts** - Claude excels with XML tags for clarity
-- **Thinking blocks** - Explicit reasoning steps (`<thinking_process>`)
-- **Prefill technique** - For structured output guidance
+- **Format-only variants** - Content guidance stays in base prompts
+- **Output structure hints** - JSON validity and empty-string rules
 - **Nuanced reasoning** - Trust judgment on complex assessments
 
 ```typescript
-// Example: Claude-optimized prompt structure
+// Example: Claude-optimized prompt structure (format-only)
 <claude_optimization>
-<thinking_process>
-Before generating output, work through these steps internally:
-1. What type of input is this?
-2. Identify the core factual assertions
-...
-</thinking_process>
+## FORMAT
+Use XML tags. Follow schema precisely.
+
+## OUTPUT
+- Valid JSON matching schema
+- Empty strings "" for missing optional fields
+- All arrays as arrays (even if empty)
+
+## STRENGTHS
+Apply nuanced reasoning. Be direct and confident.
 </claude_optimization>
 ```
 
@@ -212,21 +216,21 @@ const understandPrompt = buildPrompt({
 
 ## Prompt Content Improvements
 
-### v2.8.0: Token Optimization - 20-30% Reduction (Feb 3, 2026)
+### v2.8.0: Token Optimization - Estimated 20-30% Reduction (Feb 3, 2026)
 
-**Achievement**: Reduced prompt token counts by 20-30% through two-phase optimization while maintaining quality.
+**Achievement**: Estimated 20-30% reduction in prompt token counts through two-phase optimization while maintaining quality.
 
 **Phase 1 Changes** (Commit c1a768c):
 - Removed attribution duplication from provider variants (4 files)
 - Inlined terminology definitions from 6 lines to 2 lines (3 files)
 - Removed legacy schema field explanations (3 files)
-- **Token savings**: ~550-700 tokens per prompt (15-20% reduction)
+- **Token savings**: ~550-700 tokens per prompt (estimated 15-20% reduction)
 
 **Phase 2 Changes** (Commit 2ae2a42):
 - Condensed centrality assignment rules from 36 to 20 lines
 - Simplified multi-context "Do NOT Split" guidance from 13 to 7 bullets
-- **Additional token savings**: ~230 tokens per prompt (5-10% reduction)
-- **Cumulative reduction**: 20-30% across all prompts
+- **Additional token savings**: ~230 tokens per prompt (estimated 5-10% reduction)
+- **Cumulative reduction**: estimated 20-30% across all prompts
 
 **Files Modified**:
 - **Provider variants** (Phase 1): `providers/{anthropic,openai,google,mistral}.ts`
@@ -246,7 +250,7 @@ const understandPrompt = buildPrompt({
 - ✅ Quality tests created: `prompt-quality.test.ts`
 
 **Impact**:
-- Reduced LLM API costs by ~20-30% per analysis
+- Estimated LLM API cost reduction of ~20-30% per analysis
 - Faster prompt processing and response times
 - Maintained analytical quality and accuracy
 - Improved prompt readability through condensation

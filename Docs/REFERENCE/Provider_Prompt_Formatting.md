@@ -1,6 +1,6 @@
 # Provider-Specific Prompt Formatting
 
-**Version**: 2.8.0 (Optimized - 20-30% token reduction)
+**Version**: 2.8.0 (Optimized - estimated 20-30% token reduction)
 **Date**: 2026-02-03
 **Status**: Implemented
 **Related**: [Evidence Quality Filtering](../ARCHITECTURE/Evidence_Quality_Filtering.md)
@@ -54,12 +54,12 @@ const finalPrompt = basePrompt + providerVariant + configAdaptation;
 
 ### v2.8.0 Optimization Improvements (Feb 2026)
 
-**Token Reduction**: All provider variants and base prompts optimized for 20-30% token reduction while maintaining quality.
+**Token Reduction**: All provider variants and base prompts optimized for an estimated 20-30% token reduction while maintaining quality.
 
 **Changes Applied**:
-- **Provider variants**: Removed attribution duplication, condensed examples (~15-20% reduction)
-- **Base prompts**: Inlined terminology, simplified guidance (~5-10% additional reduction)
-- **Impact**: Reduced API costs by 20-30% across all providers automatically
+- **Provider variants**: Removed attribution duplication, condensed examples (estimated ~15-20% reduction)
+- **Base prompts**: Inlined terminology, simplified guidance (estimated ~5-10% additional reduction)
+- **Impact**: Estimated API cost reduction of 20-30% across all providers automatically
 
 **Provider Variant Lengths** (approximate, post-optimization):
 - **Anthropic variants**: ~400-600 tokens each (down from ~600-800 tokens)
@@ -120,39 +120,30 @@ Prompts are composed for 7 task types:
 
 **Optimizations**:
 - ✅ **XML-structured prompts** - Claude excels with XML tags for clarity
-- ✅ **Thinking blocks** - Explicit `<thinking_process>` sections for reasoning
-- ✅ **Prefill technique** - Structured output guidance with examples
+- ✅ **Format-only variants** - Content guidance stays in base prompts
+- ✅ **Output structure hints** - JSON validity and empty-string rules
 - ✅ **Nuanced reasoning** - Trust Claude's judgment on complex assessments
 - ✅ **AnalysisContext detection** - Strong at detecting implicit context boundaries
 
 **Example Optimization**:
 ```xml
 <claude_optimization>
-## REASONING APPROACH
-<thinking_process>
-Before generating output, work through these steps internally:
-1. What type of input is this? (claim vs article)
-2. Identify the core factual assertions that need verification
-3. Are there multiple analytical frames?
-4. Which claims require attribution separation?
-5. What search queries would find supporting AND contradicting evidence?
-</thinking_process>
+## FORMAT
+Use XML tags. Follow schema precisely.
 
-## ATTRIBUTION SEPARATION (CRITICAL)
-<attribution_rule>
-ALWAYS separate attribution claims from content claims:
-- Input: "Expert X claims Y is dangerous"
-- Output TWO claims:
-  1. "Expert X made statements about Y" (attribution, LOW centrality)
-  2. "Y is dangerous" (core, HIGH centrality)
-</attribution_rule>
+## OUTPUT
+- Valid JSON matching schema
+- Empty strings "" for missing optional fields
+- All arrays as arrays (even if empty)
+
+## STRENGTHS
+Apply nuanced reasoning. Be direct and confident.
 </claude_optimization>
 ```
 
 **Why This Works**:
 - Claude's training prioritizes XML tag recognition
-- Thinking blocks align with Claude's internal reasoning process
-- Attribution separation leverages Claude's nuanced understanding
+- Format-only structure reduces duplication and keeps guidance centralized
 
 ### 3.2 OpenAI GPT-4
 
@@ -232,21 +223,21 @@ Extract verifiable facts from sources. Each fact needs:
 
 ### ✅ Good Example
 
-**Input Source**: "The WHO report found COVID-19 mortality rate of 2.1% in 2023"
+**Input Source**: "The agency report found Product A failure rate of 2.1% in 2023"
 
 **Output**:
 ```json
 {
-  "fact": "WHO report documented COVID-19 mortality rate of 2.1% in 2023",
+  "fact": "Agency report documented Product A failure rate of 2.1% in 2023",
   "probativeValue": "high",
-  "sourceUrl": "https://who.int/reports/2023",
-  "sourceExcerpt": "The World Health Organization annual report documented a COVID-19 mortality rate of 2.1%..."
+  "sourceUrl": "https://example.com/reports/2023",
+  "sourceExcerpt": "The agency annual report documented a Product A failure rate of 2.1%..."
 }
 ```
 
 ### ❌ Bad Example
 
-**Input Source**: "Some experts say COVID-19 is concerning"
+**Input Source**: "Some experts say Product A is concerning"
 
 **Output**: *DO NOT EXTRACT* (vague attribution, no concrete fact)
 
@@ -254,7 +245,7 @@ Extract verifiable facts from sources. Each fact needs:
 
 **High probativeValue**:
 - Specific data with attribution ("Study X found Y%")
-- Expert testimony with credentials ("Dr. Smith, Harvard professor...")
+- Expert testimony with credentials ("Dr. Smith, university professor...")
 - Official documents with citations ("Court ruling 2023-456...")
 
 **Medium probativeValue**:

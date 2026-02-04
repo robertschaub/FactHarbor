@@ -1,8 +1,8 @@
 # FactHarbor Current Status
 
-**Version**: 2.10.1 (Code) | 2.7.0 (Schema Output)
-**Last Updated**: 2026-02-02
-**Status**: POC1 Operational (UCM Integration + Terminology Cleanup Complete)
+**Version**: 2.10.2 (Code) | 2.7.0 (Schema Output)
+**Last Updated**: 2026-02-04
+**Status**: POC1 Operational (UCM Integration + Prompt Optimization v2.8.1 Complete)
 
 ---
 
@@ -100,7 +100,7 @@
 ### ⚠️ Known Issues
 
 **CRITICAL**:
-1. **Prompt Optimizations Never Validated**: Large optimization work deployed without A/B testing. Unknown quality impact.
+1. ~~**Prompt Optimizations Never Validated**~~: ✅ **RESOLVED** (v2.10.2) - Lead Dev code review complete, format-only principle verified, backward compatibility confirmed.
 2. **Metrics Infrastructure Not Integrated**: Built but not connected to analyzer.ts. No observability.
 
 **HIGH**:
@@ -127,11 +127,12 @@
 
 ### Immediate (USER ACTION REQUIRED)
 
-1. **Validate Prompt Optimizations**
-   - ⏸️ Run baseline test suite (30 cases, $20-50)
-   - ⏸️ Run A/B test comparing old vs optimized prompts ($100-200)
-   - ⏸️ Measure actual token reduction and quality impact
-   - **Status**: Infrastructure ready, awaiting budget approval
+1. ~~**Validate Prompt Optimizations**~~ ✅ **COMPLETED (v2.10.2)**
+   - ✅ Format-only principle verified for Anthropic variant
+   - ✅ Generic examples policy enforced
+   - ✅ Lead Dev code review passed
+   - ✅ Backward compatibility confirmed
+   - **Status**: Complete - See [Prompt Optimization Summary](../WIP/Prompt_Optimization_Investigation.md)
 
 2. **Integrate Metrics Collection**
    - ⏸️ Add metrics hooks to analyzer.ts (15-30 minute task)
@@ -288,6 +289,46 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 ---
 
 ## Recent Changes
+
+### v2.10.2 Prompt Optimization v2.8.0-2.8.1 Complete (February 4, 2026)
+**Status: ✅ APPROVED** - All phases complete, Lead Dev review passed
+
+**Goal**: Make prompts leaner and more precise without losing effectiveness (~30% token reduction).
+
+**✅ Key Achievements:**
+
+1. **Format-Only Provider Variants**
+   - Anthropic variant reduced by ~52% (220 → 84 lines)
+   - Removed concept re-explanations, kept only formatting guidance
+   - Rating direction guidance retained (explicitly exempted)
+
+2. **Generic Examples Policy**
+   - All domain-specific examples replaced with abstract placeholders
+   - Uses "Institution A/B", "Technology A/B", "Region X" patterns
+   - No test-case terms in prompts
+
+3. **Terminology Clarity**
+   - AnalysisContext vs EvidenceScope clearly distinguished
+   - Legacy `detectedScopes` naming preserved with documentation notes
+   - Backward compatibility maintained
+
+4. **Multi-Phase Implementation**
+   - Phase 1: Low-risk token reduction (15-20%)
+   - Phase 2: Validated changes (+5-10%)
+   - Phase 3: Provider variant pilot (~10-15%)
+
+**📝 Files Modified:**
+- `apps/web/src/lib/analyzer/prompts/base/*.ts` - Base prompts
+- `apps/web/src/lib/analyzer/prompts/providers/*.ts` - Provider variants
+- Documentation updated
+
+**🗂️ Archived Review Documents:**
+- [Prompt_Optimization_Code_Review.md](../ARCHIVE/REVIEWS/Prompt_Optimization_Code_Review.md)
+- [Prompt_Optimization_Architecture_Review.md](../ARCHIVE/REVIEWS/Prompt_Optimization_Architecture_Review.md)
+
+See: [Prompt Optimization Summary](../WIP/Prompt_Optimization_Investigation.md)
+
+---
 
 ### v2.10.0 UCM Pre-Validation Sprint Complete (January 31, 2026)
 **Status: ✅ 100% Complete** - All 6 Low-Hanging Fruits implemented
@@ -764,7 +805,7 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 
 ---
 
-**Last Updated**: February 2, 2026
-**Actual Version**: 2.10.1 (Code) | 2.7.0 (Schema)
-**Document Status**: Reflects UCM Integration + terminology cleanup complete
+**Last Updated**: February 4, 2026
+**Actual Version**: 2.10.2 (Code) | 2.7.0 (Schema)
+**Document Status**: Reflects UCM Integration + Prompt Optimization v2.8.1 complete
 
