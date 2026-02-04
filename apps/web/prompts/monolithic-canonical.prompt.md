@@ -414,7 +414,7 @@ Evidence items may have different EvidenceScope values (per-evidence source meth
 
 ### COUNTER-EVIDENCE HANDLING
 
-Facts are labeled:
+Evidence items are labeled:
 - **[SUPPORTING]**: Supports user's claim being TRUE
 - **[COUNTER-EVIDENCE]**: Contradicts user's claim (supports OPPOSITE)
 - Unlabeled: Neutral/contextual
@@ -622,7 +622,7 @@ Return JSON with:
   - outcome: Result/conclusion
   - **assessedStatement** (v2.6.39): What is being assessed in this context
   - metadata: Domain-specific details (institution, methodology, boundaries, geographic, etc.)
-- evidenceContextAssignments: Array of {factId, contextId}
+- evidenceContextAssignments: Array of {evidenceId, contextId}
 - claimContextAssignments: Array of {claimId, contextId} (optional)
 
 **CRITICAL for assessedStatement**:

@@ -46,26 +46,43 @@ Today is ${currentDate}. Use for temporal reference.
 
 **Purpose**: Flag when Evidence items answer DIFFERENT QUESTIONS due to incompatible analytical boundaries.
 
-**THE SINGLE TEST**: Ask yourself:
-"If I combined or averaged findings from this source with findings from other sources, 
-would the result be MISLEADING because they measure or analyze fundamentally different things?"
+### DECISION TREE: When to Extract EvidenceScope
 
-- **YES** → Extract EvidenceScope (document what makes it incompatible)
-- **NO** → Don't extract (the boundaries are compatible enough)
+**STEP 1 - Does the source EXPLICITLY define boundaries?**
+The source must contain explicit statements about scope, methodology, or limitations.
+- YES → Continue to Step 2
+- NO → Do NOT extract EvidenceScope (don't invent boundaries)
 
-**WHAT MAKES BOUNDARIES INCOMPATIBLE**:
-Look for **explicit statements** in sources about:
-- What is INCLUDED vs EXCLUDED from the analysis (boundaries, delimitations, limitations, inclusion criteria)
-- What system, process, or entity was examined
-- What standards or methodology defined the measurement
+**STEP 2 - Would combining this with other evidence be MISLEADING?**
+Ask: "If I averaged or combined findings from this source with other sources, would the result mislead because they measure fundamentally different things?"
+- YES → Continue to Step 3
+- NO → Do NOT extract EvidenceScope (boundaries are compatible)
 
-Only flag these when they would cause **apples-to-oranges** comparisons.
+**STEP 3 - Is this a significant methodological difference?**
+The boundary must materially affect the findings. Examples of SIGNIFICANT differences:
+- Different measurement systems (e.g., WTW vs TTW lifecycle analysis)
+- Different geographic/legal jurisdictions (e.g., US vs EU regulations)
+- Different time periods that affect validity (e.g., pre-2020 vs post-2020 data)
+- Different study populations or inclusion criteria
 
-**CONSTRAINTS**:
-- **Most analyses**: 0-1 significant boundary patterns
-- **Complex comparisons**: 2-3 patterns maximum
-- **If source doesn't explicitly state boundaries**: Don't invent them
-- **If all sources use similar boundaries**: Nothing to flag
+Examples of NON-SIGNIFICANT differences (do NOT flag):
+- Minor variations in sample size
+- Different authors or institutions
+- Different publication dates if methodology is similar
+
+- SIGNIFICANT → Extract EvidenceScope with all relevant fields
+- NOT SIGNIFICANT → Do NOT extract EvidenceScope
+
+### EXPECTED FREQUENCY
+
+| Analysis Type | Expected EvidenceScope Count |
+|---------------|------------------------------|
+| Simple claim (single methodology) | 0 |
+| Comparative claim (similar methods) | 0-1 |
+| Cross-methodology comparison | 1-2 |
+| Complex multi-jurisdictional analysis | 2-3 max |
+
+**If you're extracting EvidenceScope for >3 evidence items in a single source, you're likely over-extracting.**
 
 **evidenceScope fields** (when extracted):
 - name: Short label for this analytical boundary

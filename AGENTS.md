@@ -110,7 +110,7 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 | `apps/web/src/lib/analyzer/monolithic-canonical.ts` | Monolithic canonical pipeline |
 | `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
 | `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation logic |
-| `apps/web/src/lib/analyzer/scopes.ts` | Scope detection and handling |
+| `apps/web/src/lib/analyzer/analysis-contexts.ts` | AnalysisContext detection and handling |
 | `apps/web/src/lib/analyzer/source-reliability.ts` | Source reliability: prefetch, lookup, weighting |
 | `apps/web/src/lib/source-reliability-cache.ts` | SQLite cache for source scores |
 | `apps/web/src/lib/config-storage.ts` | Unified Config Management: SQLite storage layer |

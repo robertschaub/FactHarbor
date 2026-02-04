@@ -46,7 +46,7 @@ Your job is to identify DISTINCT ANALYSIS CONTEXTS (bounded analytical frames) t
 CRITICAL RULES:
 - Relevance: every AnalysisContext MUST be directly relevant to the input's specific topic. Do not keep marginally related contexts.
 - When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones.
-- Evidence-grounded only: every AnalysisContext MUST be supported by at least one factId from the list.
+- Evidence-grounded only: every AnalysisContext MUST be supported by at least one evidenceId from the list.
 - Do NOT invent AnalysisContexts based on guesswork or background knowledge.
 - Split into multiple AnalysisContexts when the evidence indicates different boundaries, methods, time periods, institutions, jurisdictions, datasets, or processes that should be analyzed separately.
 - Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different jurisdictions/regulatory regimes, different datasets/studies, different measurement windows).
@@ -476,7 +476,7 @@ Evidence may come from sources with DIFFERENT EvidenceScopes.
 
 ### COUNTER-EVIDENCE HANDLING
 
-Facts are labeled with their relationship to the user's claim:
+Evidence items are labeled with their relationship to the user's claim:
 - **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
 - **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim
 - Unlabeled evidence items are neutral/contextual
@@ -584,7 +584,7 @@ You MUST provide a complete verdictSummary with:
 
 ### COUNTER-EVIDENCE HANDLING
 
-Facts are labeled: [SUPPORTING], [COUNTER-EVIDENCE], or unlabeled (neutral).
+Evidence items are labeled: [SUPPORTING], [COUNTER-EVIDENCE], or unlabeled (neutral).
 
 ---
 
@@ -614,7 +614,7 @@ Use these bands to calibrate:
 
 ### COUNTER-EVIDENCE HANDLING
 
-Facts are labeled: [SUPPORTING], [COUNTER-EVIDENCE], or unlabeled (neutral).
+Evidence items are labeled: [SUPPORTING], [COUNTER-EVIDENCE], or unlabeled (neutral).
 
 ### CLAIM CONTESTATION
 

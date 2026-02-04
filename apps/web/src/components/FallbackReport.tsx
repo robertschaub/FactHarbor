@@ -1,14 +1,35 @@
 /**
  * FallbackReport Component
- * Displays classification fallback warnings in analysis results
+ * Displays quality issues: classification fallbacks AND analysis warnings
+ * (verdict direction mismatches, structured output failures, budget exceeded, etc.)
  */
 
 import React from 'react';
 import styles from './FallbackReport.module.css';
 import type { FallbackSummary } from '@/lib/analyzer/classification-fallbacks';
 
+// Analysis warning types (matches types.ts)
+export type AnalysisWarningSeverity = "error" | "warning" | "info";
+export type AnalysisWarningType =
+  | "verdict_direction_mismatch"
+  | "structured_output_failure"
+  | "evidence_filter_degradation"
+  | "search_fallback"
+  | "budget_exceeded"
+  | "classification_fallback"
+  | "low_evidence_count"
+  | "context_without_evidence";
+
+export interface AnalysisWarning {
+  type: AnalysisWarningType;
+  severity: AnalysisWarningSeverity;
+  message: string;
+  details?: Record<string, any>;
+}
+
 interface FallbackReportProps {
   summary: FallbackSummary | undefined;
+  analysisWarnings?: AnalysisWarning[];  // P1: Analysis warnings
 }
 
 const fieldDefaults: Record<string, string> = {
@@ -19,17 +40,46 @@ const fieldDefaults: Record<string, string> = {
   isContested: 'false'
 };
 
-export function FallbackReport({ summary }: FallbackReportProps) {
-  // Don't render if no fallbacks
-  if (!summary || summary.totalFallbacks === 0) {
+const WARNING_TYPE_LABELS: Record<AnalysisWarningType, string> = {
+  verdict_direction_mismatch: "Verdict Direction Mismatch",
+  structured_output_failure: "Structured Output Failure",
+  evidence_filter_degradation: "Evidence Filter Degradation",
+  search_fallback: "Search Fallback",
+  budget_exceeded: "Budget Exceeded",
+  classification_fallback: "Classification Fallback",
+  low_evidence_count: "Low Evidence Count",
+  context_without_evidence: "Context Without Evidence",
+};
+
+const SEVERITY_ICONS: Record<AnalysisWarningSeverity, string> = {
+  error: "❌",
+  warning: "⚠️",
+  info: "ℹ️",
+};
+
+export function FallbackReport({ summary, analysisWarnings = [] }: FallbackReportProps) {
+  const hasFallbacks = summary && summary.totalFallbacks > 0;
+  const hasWarnings = analysisWarnings.length > 0;
+
+  // Don't render if nothing to show
+  if (!hasFallbacks && !hasWarnings) {
     return null;
   }
 
-  const fieldsWithFallbacks = Object.entries(summary.fallbacksByField)
-    .filter(([_, count]) => count > 0);
+  const fieldsWithFallbacks = hasFallbacks
+    ? Object.entries(summary.fallbacksByField).filter(([_, count]) => count > 0)
+    : [];
+
+  // Determine overall severity (errors > warnings > info)
+  const hasErrors = analysisWarnings.some(w => w.severity === "error");
+  const hasWarningLevel = analysisWarnings.some(w => w.severity === "warning");
+  const overallSeverity = hasErrors ? "error" : (hasWarningLevel || hasFallbacks) ? "warning" : "info";
+
+  // Count total issues
+  const totalIssues = (summary?.totalFallbacks || 0) + analysisWarnings.length;
 
   return (
-    <div className={styles.fallbackReport}>
+    <div className={`${styles.fallbackReport} ${hasErrors ? styles.hasErrors : ''}`}>
       <div className={styles.header}>
         <svg
           className={styles.icon}
@@ -45,62 +95,98 @@ export function FallbackReport({ summary }: FallbackReportProps) {
         </svg>
         <div className={styles.content}>
           <h3 className={styles.title}>
-            Classification Fallbacks Occurred
+            Analysis Quality Issues ({totalIssues})
           </h3>
-          <p className={styles.description}>
-            The LLM failed to classify {summary.totalFallbacks} field(s).
-            Safe defaults were used to ensure analysis completion.
-          </p>
 
-          {/* Fallbacks by field */}
-          <div className={styles.fieldSummary}>
-            <h4 className={styles.fieldSummaryTitle}>By Field:</h4>
-            <ul className={styles.fieldList}>
-              {fieldsWithFallbacks.map(([field, count]) => (
-                <li key={field}>
-                  <strong>{field}:</strong> {count} fallback{count > 1 ? 's' : ''} (default: <code>{fieldDefaults[field]}</code>)
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Details accordion */}
-          {summary.fallbackDetails.length > 0 && (
-            <details className={styles.details}>
-              <summary className={styles.detailsSummary}>
-                View Details ({summary.fallbackDetails.length} items)
-              </summary>
-              <div className={styles.detailsContent}>
-                {summary.fallbackDetails.map((fb, index) => (
-                  <div key={index} className={styles.detailItem}>
-                    <div>
-                      <span className={styles.detailField}>{fb.field}</span>
-                      {' at '}
-                      <span className={styles.detailLocation}>{fb.location}</span>
-                    </div>
-                    <div className={styles.detailText}>
-                      &quot;{fb.text.substring(0, 80)}{fb.text.length > 80 ? '...' : ''}&quot;
-                    </div>
-                    <div className={styles.detailMeta}>
-                      <span>
-                        Reason: {fb.reason === 'missing'
-                          ? 'LLM did not provide value'
-                          : fb.reason === 'llm_error'
-                            ? 'LLM error during classification'
-                            : 'Invalid value'}
-                      </span>
-                      {' | '}
-                      <span>Default: <code>{fb.defaultUsed}</code></span>
-                    </div>
+          {/* Analysis Warnings Section */}
+          {hasWarnings && (
+            <div className={styles.warningsSection}>
+              {analysisWarnings.map((warning, index) => (
+                <div
+                  key={index}
+                  className={`${styles.warningItem} ${styles[`severity_${warning.severity}`]}`}
+                >
+                  <span className={styles.warningIcon}>{SEVERITY_ICONS[warning.severity]}</span>
+                  <div className={styles.warningContent}>
+                    <span className={styles.warningType}>
+                      {WARNING_TYPE_LABELS[warning.type] || warning.type}
+                    </span>
+                    <p className={styles.warningMessage}>{warning.message}</p>
+                    {warning.details && Object.keys(warning.details).length > 0 && (
+                      <details className={styles.warningDetails}>
+                        <summary>Details</summary>
+                        <pre className={styles.detailsJson}>
+                          {JSON.stringify(warning.details, null, 2)}
+                        </pre>
+                      </details>
+                    )}
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Classification Fallbacks Section */}
+          {hasFallbacks && (
+            <>
+              <div className={styles.fallbacksSection}>
+                <h4 className={styles.sectionTitle}>Classification Fallbacks</h4>
+                <p className={styles.description}>
+                  The LLM failed to classify {summary.totalFallbacks} field(s).
+                  Safe defaults were used.
+                </p>
+
+                {/* Fallbacks by field */}
+                <div className={styles.fieldSummary}>
+                  <ul className={styles.fieldList}>
+                    {fieldsWithFallbacks.map(([field, count]) => (
+                      <li key={field}>
+                        <strong>{field}:</strong> {count} fallback{count > 1 ? 's' : ''} (default: <code>{fieldDefaults[field]}</code>)
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Details accordion */}
+                {summary.fallbackDetails.length > 0 && (
+                  <details className={styles.details}>
+                    <summary className={styles.detailsSummary}>
+                      View Details ({summary.fallbackDetails.length} items)
+                    </summary>
+                    <div className={styles.detailsContent}>
+                      {summary.fallbackDetails.map((fb, index) => (
+                        <div key={index} className={styles.detailItem}>
+                          <div>
+                            <span className={styles.detailField}>{fb.field}</span>
+                            {' at '}
+                            <span className={styles.detailLocation}>{fb.location}</span>
+                          </div>
+                          <div className={styles.detailText}>
+                            &quot;{fb.text.substring(0, 80)}{fb.text.length > 80 ? '...' : ''}&quot;
+                          </div>
+                          <div className={styles.detailMeta}>
+                            <span>
+                              Reason: {fb.reason === 'missing'
+                                ? 'LLM did not provide value'
+                                : fb.reason === 'llm_error'
+                                  ? 'LLM error during classification'
+                                  : 'Invalid value'}
+                            </span>
+                            {' | '}
+                            <span>Default: <code>{fb.defaultUsed}</code></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
               </div>
-            </details>
+            </>
           )}
 
           <div className={styles.note}>
-            <strong>Note:</strong> Frequent fallbacks indicate LLM reliability issues.
-            Consider reviewing prompts or adjusting timeout settings.
+            <strong>Note:</strong> These issues may affect result accuracy.
+            {hasFallbacks && " Frequent fallbacks indicate LLM reliability issues."}
           </div>
         </div>
       </div>

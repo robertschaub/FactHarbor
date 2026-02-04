@@ -308,6 +308,7 @@ export default function JobPage() {
   const claimVerdicts = result?.claimVerdicts || [];
   const verdictSummary = result?.verdictSummary;
   const classificationFallbacks = result?.classificationFallbacks;
+  const analysisWarnings = result?.analysisWarnings || [];  // P1: Analysis warnings for UI
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
   const contexts = result?.analysisContexts || [];
@@ -604,7 +605,7 @@ export default function JobPage() {
                 )
               )}
 
-              <FallbackReport summary={classificationFallbacks} />
+              <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} />
 
               {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
                 <div className={styles.claimsSection}>

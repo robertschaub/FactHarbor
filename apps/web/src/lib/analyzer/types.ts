@@ -576,3 +576,63 @@ export type AnalysisInput = {
   inputValue: string;
   onEvent?: (message: string, progress: number) => void;
 };
+
+// ============================================================================
+// ANALYSIS WARNINGS TYPES (v3.1)
+// ============================================================================
+
+/**
+ * Severity levels for analysis warnings.
+ * - error: Critical issue that may invalidate results
+ * - warning: Significant issue that degrades quality
+ * - info: Informational note about processing
+ */
+export type AnalysisWarningSeverity = "error" | "warning" | "info";
+
+/**
+ * Types of analysis warnings.
+ */
+export type AnalysisWarningType =
+  | "verdict_direction_mismatch"    // Verdict percentage contradicts evidence direction
+  | "structured_output_failure"     // LLM structured output failed, using fallback
+  | "evidence_filter_degradation"   // LLM evidence filter failed, using heuristics
+  | "search_fallback"               // Grounded search failed, using standard search
+  | "budget_exceeded"               // Analysis terminated early due to budget
+  | "classification_fallback"       // Classification fields defaulted due to LLM failure
+  | "low_evidence_count"            // Insufficient evidence for reliable verdict
+  | "context_without_evidence";     // AnalysisContext has claims but no evidence
+
+/**
+ * Analysis warning structure for surfacing quality issues to UI.
+ */
+export interface AnalysisWarning {
+  type: AnalysisWarningType;
+  severity: AnalysisWarningSeverity;
+  message: string;
+  /** Optional details for debugging */
+  details?: {
+    claimId?: string;
+    contextId?: string;
+    expectedDirection?: "supports" | "contradicts" | "high" | "low";  // Evidence direction or verdict direction
+    actualVerdictPct?: number;
+    evidenceSupportPct?: number;
+    correctedVerdictPct?: number;
+    [key: string]: any;
+  };
+}
+
+/**
+ * Verdict direction mismatch details for P0 validation.
+ */
+export interface VerdictDirectionMismatch {
+  claimId: string;
+  claimText: string;
+  verdictPct: number;
+  evidenceSupportCount: number;
+  evidenceContradictCount: number;
+  evidenceNeutralCount: number;
+  expectedDirection: "high" | "low";  // Based on evidence majority
+  actualDirection: "high" | "low";    // Based on verdict percentage
+  wasCorrect: boolean;                // True if directions match
+  correctedVerdictPct?: number;       // If auto-corrected, new value
+}

@@ -101,7 +101,7 @@ import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { getAnalyzerConfig, type PipelineConfig, type SearchConfig } from "@/lib/config-loader";
 import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
-import type { EvidenceItem } from "./types";
+import type { EvidenceItem, AnalysisWarning, VerdictDirectionMismatch } from "./types";
 import {
   getTextAnalysisService,
   isLLMEnabled,
@@ -2415,6 +2415,10 @@ interface ResearchState {
   searchConfig: SearchConfig;
   // P0: Fallback tracking for LLM classification reliability
   fallbackTracker: FallbackTracker;
+  // P0: Analysis warnings for verdict direction validation and other issues
+  analysisWarnings: AnalysisWarning[];
+  // P3: Track evidence filter LLM failures (degradation to heuristic)
+  evidenceFilterLlmFailures: number;
 }
 
 interface ClaimUnderstanding {
@@ -2764,6 +2768,172 @@ function applyEvidenceWeighting(
       highlightColor: getHighlightColor7Point(clampedTruth),
     };
   });
+}
+
+/**
+ * P0: Validate verdict direction against evidence direction.
+ * Detects when LLM returns HIGH verdict (>=72%) but majority of evidence contradicts the claim.
+ *
+ * @param claimVerdicts - Verdicts to validate
+ * @param evidenceItems - All evidence items
+ * @param options - Validation options
+ * @returns Object with validated verdicts and any direction mismatches found
+ */
+function validateVerdictDirections(
+  claimVerdicts: ClaimVerdict[],
+  evidenceItems: EvidenceItem[],
+  options: {
+    /** Threshold for evidence majority (default 0.6 = 60%) */
+    majorityThreshold?: number;
+    /** Whether to auto-correct mismatched verdicts (default false) */
+    autoCorrect?: boolean;
+    /** Minimum evidence count to trigger validation (default 2) */
+    minEvidenceCount?: number;
+  } = {},
+): {
+  validatedVerdicts: ClaimVerdict[];
+  mismatches: VerdictDirectionMismatch[];
+  warnings: AnalysisWarning[];
+} {
+  const {
+    majorityThreshold = 0.6,
+    autoCorrect = false,
+    minEvidenceCount = 2,
+  } = options;
+
+  const mismatches: VerdictDirectionMismatch[] = [];
+  const warnings: AnalysisWarning[] = [];
+
+  const validatedVerdicts = claimVerdicts.map((verdict) => {
+    // Get evidence items linked to this claim
+    const supportingIds = verdict.supportingEvidenceIds || [];
+    const linkedEvidence = evidenceItems.filter((e) => supportingIds.includes(e.id));
+
+    // Skip validation if not enough evidence
+    if (linkedEvidence.length < minEvidenceCount) {
+      return verdict;
+    }
+
+    // Count evidence by direction
+    const supportCount = linkedEvidence.filter((e) => e.claimDirection === "supports").length;
+    const contradictCount = linkedEvidence.filter((e) => e.claimDirection === "contradicts").length;
+    const neutralCount = linkedEvidence.filter((e) => e.claimDirection === "neutral" || !e.claimDirection).length;
+    const totalDirectional = supportCount + contradictCount;
+
+    // Skip if no directional evidence
+    if (totalDirectional === 0) {
+      return verdict;
+    }
+
+    // Determine expected direction based on evidence majority
+    const supportRatio = supportCount / totalDirectional;
+    const contradictRatio = contradictCount / totalDirectional;
+
+    // Evidence suggests claim should be TRUE (high verdict)
+    const evidenceSuggestsHigh = supportRatio >= majorityThreshold;
+    // Evidence suggests claim should be FALSE (low verdict)
+    const evidenceSuggestsLow = contradictRatio >= majorityThreshold;
+
+    // Determine actual direction from verdict
+    const verdictIsHigh = verdict.truthPercentage >= 72; // MOSTLY-TRUE or higher
+    const verdictIsLow = verdict.truthPercentage < 43; // LEANING-FALSE or lower
+
+    // Check for mismatch
+    const hasDirectionMismatch =
+      (evidenceSuggestsLow && verdictIsHigh) || // Counter-evidence but HIGH verdict
+      (evidenceSuggestsHigh && verdictIsLow);    // Support evidence but LOW verdict
+
+    if (hasDirectionMismatch) {
+      const expectedDirection = evidenceSuggestsHigh ? "high" : "low";
+      const actualDirection = verdictIsHigh ? "high" : "low";
+
+      const mismatch: VerdictDirectionMismatch = {
+        claimId: verdict.claimId,
+        claimText: verdict.claimText || "",
+        verdictPct: verdict.truthPercentage,
+        evidenceSupportCount: supportCount,
+        evidenceContradictCount: contradictCount,
+        evidenceNeutralCount: neutralCount,
+        expectedDirection,
+        actualDirection,
+        wasCorrect: false,
+      };
+
+      // Log the mismatch
+      console.warn(`[VerdictValidation] Direction mismatch detected for claim ${verdict.claimId}:`, {
+        verdictPct: verdict.truthPercentage,
+        supportCount,
+        contradictCount,
+        expectedDirection,
+        actualDirection,
+      });
+
+      // Auto-correct if enabled
+      if (autoCorrect) {
+        let correctedPct: number;
+        if (evidenceSuggestsLow && verdictIsHigh) {
+          // Evidence contradicts but verdict is HIGH - pull down to LEANING-FALSE range
+          correctedPct = Math.min(35, 100 - verdict.truthPercentage);
+        } else {
+          // Evidence supports but verdict is LOW - pull up to LEANING-TRUE range
+          correctedPct = Math.max(65, 100 - verdict.truthPercentage);
+        }
+        mismatch.correctedVerdictPct = correctedPct;
+
+        mismatches.push(mismatch);
+
+        // Add warning
+        warnings.push({
+          type: "verdict_direction_mismatch",
+          severity: "warning",
+          message: `Verdict for "${verdict.claimText?.substring(0, 50)}..." was ${verdict.truthPercentage}% but ${Math.round(contradictRatio * 100)}% of evidence contradicts it. Auto-corrected to ${correctedPct}%.`,
+          details: {
+            claimId: verdict.claimId,
+            expectedDirection,
+            actualVerdictPct: verdict.truthPercentage,
+            evidenceSupportPct: Math.round(supportRatio * 100),
+            correctedVerdictPct: correctedPct,
+          },
+        });
+
+        return {
+          ...verdict,
+          truthPercentage: correctedPct,
+          verdict: correctedPct,
+          highlightColor: getHighlightColor7Point(correctedPct),
+          // Add flag to indicate this was auto-corrected
+          verdictDirectionCorrected: true,
+          originalVerdictPct: verdict.truthPercentage,
+        } as ClaimVerdict;
+      }
+
+      mismatches.push(mismatch);
+
+      // Add warning (without correction)
+      warnings.push({
+        type: "verdict_direction_mismatch",
+        severity: "warning",
+        message: `Verdict for "${verdict.claimText?.substring(0, 50)}..." is ${verdict.truthPercentage}% but ${Math.round(contradictRatio * 100)}% of evidence contradicts it. Manual review recommended.`,
+        details: {
+          claimId: verdict.claimId,
+          expectedDirection,
+          actualVerdictPct: verdict.truthPercentage,
+          evidenceSupportPct: Math.round(supportRatio * 100),
+        },
+      });
+    }
+
+    return verdict;
+  });
+
+  if (mismatches.length > 0) {
+    debugLog("validateVerdictDirections: Found mismatches", {
+      count: mismatches.length,
+      claimIds: mismatches.map((m) => m.claimId),
+    });
+  }
+
+  return { validatedVerdicts, mismatches, warnings };
 }
 
 /**
@@ -6152,6 +6322,7 @@ async function extractEvidence(
   originalClaim?: string,
   fromOppositeClaimSearch?: boolean,
   pipelineConfig?: PipelineConfig,
+  extractionStats?: { llmFilterFailed?: boolean },  // P3: Track LLM filter failures
 ): Promise<EvidenceItem[]> {
   console.log(`[Analyzer] extractEvidence called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
   console.log(`[Analyzer] extractEvidence: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
@@ -6450,6 +6621,10 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
             sourceId: source.id,
             error: err instanceof Error ? err.message : String(err),
           });
+          // P3: Track LLM filter failure for warning generation
+          if (extractionStats) {
+            extractionStats.llmFilterFailed = true;
+          }
         }
       }
 
@@ -7524,6 +7699,16 @@ The JSON object MUST include these top-level keys:
       },
     };
 
+    // P1: Track structured output failure
+    state.analysisWarnings.push({
+      type: "structured_output_failure",
+      severity: "error",
+      message: "Multi-context verdict generation failed due to structured output error. Using fallback verdicts (50% uncertain).",
+      details: {
+        fallbackClaimCount: fallbackVerdicts.length,
+      },
+    });
+
     return { claimVerdicts: fallbackVerdicts, articleAnalysis, verdictSummary };
   }
 
@@ -7868,16 +8053,43 @@ The JSON object MUST include these top-level keys:
     state.sources,
   );
 
+  // P0: Validate verdict direction against evidence direction (multi-context path)
+  const {
+    validatedVerdicts: directionValidatedVerdicts,
+    mismatches: verdictMismatches,
+    warnings: verdictDirectionWarnings,
+  } = validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
+    majorityThreshold: 0.6,
+    autoCorrect: true, // Auto-correct mismatches for better accuracy
+    minEvidenceCount: 2,
+  });
+
+  // Add any direction mismatch warnings to state
+  if (verdictDirectionWarnings.length > 0) {
+    state.analysisWarnings.push(...verdictDirectionWarnings);
+    debugLog("Multi-context verdicts: Direction validation warnings", {
+      count: verdictDirectionWarnings.length,
+      mismatches: verdictMismatches.map((m) => ({
+        claimId: m.claimId,
+        original: m.verdictPct,
+        corrected: m.correctedVerdictPct,
+      })),
+    });
+  }
+
+  // Use direction-validated verdicts for pattern calculation
+  const finalVerdicts = directionValidatedVerdicts;
+
   const claimPattern = {
-    total: weightedClaimVerdicts.length,
-    supported: weightedClaimVerdicts.filter((v) => v.truthPercentage >= 72)
+    total: finalVerdicts.length,
+    supported: finalVerdicts.filter((v) => v.truthPercentage >= 72)
       .length,
-    uncertain: weightedClaimVerdicts.filter(
+    uncertain: finalVerdicts.filter(
       (v) => v.truthPercentage >= 43 && v.truthPercentage < 72,
     ).length,
-    refuted: weightedClaimVerdicts.filter((v) => v.truthPercentage < 43).length,
-    centralClaimsTotal: weightedClaimVerdicts.filter((v) => v.isCentral).length,
-    centralClaimsSupported: weightedClaimVerdicts.filter(
+    refuted: finalVerdicts.filter((v) => v.truthPercentage < 43).length,
+    centralClaimsTotal: finalVerdicts.filter((v) => v.isCentral).length,
+    centralClaimsSupported: finalVerdicts.filter(
       (v) => v.isCentral && v.truthPercentage >= 72,
     ).length,
   };
@@ -7914,7 +8126,7 @@ The JSON object MUST include these top-level keys:
   };
 
   // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence)
-  const claimsAvgTruthPct = calculateWeightedVerdictAverage(weightedClaimVerdicts);
+  const claimsAvgTruthPct = calculateWeightedVerdictAverage(finalVerdicts);
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
@@ -7938,15 +8150,15 @@ The JSON object MUST include these top-level keys:
     claimPattern,
   };
 
-  // v2.8.6: Prune tangential claims with no/low evidence
-  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts, {
+  // v2.8.6: Prune tangential claims with no/low evidence (using direction-validated verdicts)
+  const prunedClaimVerdicts = pruneTangentialBaselessClaims(finalVerdicts, {
     evidenceItems: state.evidenceItems,
     minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
       DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
     requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
       DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
   });
-  console.log(`[Analyzer] MultiContext: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredSummaryKeyFactors.length - prunedSummaryKeyFactors.length} baseless factors`);
+  console.log(`[Analyzer] MultiContext: Pruned ${finalVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredSummaryKeyFactors.length - prunedSummaryKeyFactors.length} baseless factors`);
 
   return {
     claimVerdicts: prunedClaimVerdicts,
@@ -8298,6 +8510,16 @@ ${evidenceItemsFormatted}`;
       },
     };
 
+    // P1: Track structured output failure
+    state.analysisWarnings.push({
+      type: "structured_output_failure",
+      severity: "error",
+      message: "Single-context verdict generation failed due to structured output error. Using fallback verdicts (50% uncertain).",
+      details: {
+        fallbackClaimCount: fallbackVerdicts.length,
+      },
+    });
+
     return { claimVerdicts: fallbackVerdicts, articleAnalysis, verdictSummary };
   }
 
@@ -8419,16 +8641,43 @@ ${evidenceItemsFormatted}`;
     state.sources,
   );
 
+  // P0: Validate verdict direction against evidence direction (single-context path)
+  const {
+    validatedVerdicts: directionValidatedVerdicts,
+    mismatches: verdictMismatches,
+    warnings: verdictDirectionWarnings,
+  } = validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
+    majorityThreshold: 0.6,
+    autoCorrect: true, // Auto-correct mismatches for better accuracy
+    minEvidenceCount: 2,
+  });
+
+  // Add any direction mismatch warnings to state
+  if (verdictDirectionWarnings.length > 0) {
+    state.analysisWarnings.push(...verdictDirectionWarnings);
+    debugLog("Single-context verdicts: Direction validation warnings", {
+      count: verdictDirectionWarnings.length,
+      mismatches: verdictMismatches.map((m) => ({
+        claimId: m.claimId,
+        original: m.verdictPct,
+        corrected: m.correctedVerdictPct,
+      })),
+    });
+  }
+
+  // Use direction-validated verdicts for pattern calculation
+  const finalVerdicts = directionValidatedVerdicts;
+
   const claimPattern = {
-    total: weightedClaimVerdicts.length,
-    supported: weightedClaimVerdicts.filter((v) => v.truthPercentage >= 72)
+    total: finalVerdicts.length,
+    supported: finalVerdicts.filter((v) => v.truthPercentage >= 72)
       .length,
-    uncertain: weightedClaimVerdicts.filter(
+    uncertain: finalVerdicts.filter(
       (v) => v.truthPercentage >= 43 && v.truthPercentage < 72,
     ).length,
-    refuted: weightedClaimVerdicts.filter((v) => v.truthPercentage < 43).length,
-    centralClaimsTotal: weightedClaimVerdicts.filter((v) => v.isCentral).length,
-    centralClaimsSupported: weightedClaimVerdicts.filter(
+    refuted: finalVerdicts.filter((v) => v.truthPercentage < 43).length,
+    centralClaimsTotal: finalVerdicts.filter((v) => v.isCentral).length,
+    centralClaimsSupported: finalVerdicts.filter(
       (v) => v.isCentral && v.truthPercentage >= 72,
     ).length,
   };
@@ -8497,7 +8746,7 @@ ${evidenceItemsFormatted}`;
   };
 
   // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence)
-  const claimsAvgTruthPct = calculateWeightedVerdictAverage(weightedClaimVerdicts);
+  const claimsAvgTruthPct = calculateWeightedVerdictAverage(finalVerdicts);
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
@@ -8522,15 +8771,15 @@ ${evidenceItemsFormatted}`;
     claimPattern,
   };
 
-  // v2.8.6: Prune tangential claims with no/low evidence
-  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts, {
+  // v2.8.6: Prune tangential claims with no/low evidence (using direction-validated verdicts)
+  const prunedClaimVerdicts = pruneTangentialBaselessClaims(finalVerdicts, {
     evidenceItems: state.evidenceItems,
     minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
       DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
     requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
       DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
   });
-  console.log(`[Analyzer] SingleContext: Pruned ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredKeyFactors.length - prunedKeyFactors.length} baseless factors`);
+  console.log(`[Analyzer] SingleContext: Pruned ${finalVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredKeyFactors.length - prunedKeyFactors.length} baseless factors`);
 
   return {
     claimVerdicts: prunedClaimVerdicts,
@@ -8902,6 +9151,16 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
       },
     };
 
+    // P1: Track structured output failure
+    state.analysisWarnings.push({
+      type: "structured_output_failure",
+      severity: "error",
+      message: "Claim verdict generation failed due to structured output error. Using fallback verdicts (50% uncertain).",
+      details: {
+        fallbackClaimCount: fallbackVerdicts.length,
+      },
+    });
+
     return { claimVerdicts: fallbackVerdicts, articleAnalysis };
   }
 
@@ -9130,10 +9389,37 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
     state.sources,
   );
 
-  // DEPENDENCY PROPAGATION: If a prerequisite claim is false, flag dependent claims
-  const verdictMap = new Map(weightedClaimVerdicts.map((v) => [v.claimId, v]));
+  // P0: Validate verdict direction against evidence direction (claim verdicts path)
+  const {
+    validatedVerdicts: directionValidatedVerdicts,
+    mismatches: verdictMismatches,
+    warnings: verdictDirectionWarnings,
+  } = validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
+    majorityThreshold: 0.6,
+    autoCorrect: true, // Auto-correct mismatches for better accuracy
+    minEvidenceCount: 2,
+  });
 
-  for (const verdict of weightedClaimVerdicts) {
+  // Add any direction mismatch warnings to state
+  if (verdictDirectionWarnings.length > 0) {
+    state.analysisWarnings.push(...verdictDirectionWarnings);
+    debugLog("Claim verdicts: Direction validation warnings", {
+      count: verdictDirectionWarnings.length,
+      mismatches: verdictMismatches.map((m) => ({
+        claimId: m.claimId,
+        original: m.verdictPct,
+        corrected: m.correctedVerdictPct,
+      })),
+    });
+  }
+
+  // Use direction-validated verdicts going forward
+  const finalVerdicts = directionValidatedVerdicts;
+
+  // DEPENDENCY PROPAGATION: If a prerequisite claim is false, flag dependent claims
+  const verdictMap = new Map(finalVerdicts.map((v) => [v.claimId, v]));
+
+  for (const verdict of finalVerdicts) {
     const claim = understanding.subClaims.find(
       (c: any) => c.id === verdict.claimId,
     );
@@ -9170,11 +9456,11 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   // Filter out claims with failed dependencies for verdict calculations
   // These claims are shown but don't contribute to the overall verdict to avoid double-counting
   // (the failed prerequisite already contributes its false verdict)
-  const independentVerdicts = weightedClaimVerdicts.filter((v) => !v.dependencyFailed);
+  const independentVerdicts = finalVerdicts.filter((v) => !v.dependencyFailed);
 
   // Calculate claim pattern using truth percentages (only independent claims)
   const claimPattern = {
-    total: weightedClaimVerdicts.length,
+    total: finalVerdicts.length,
     supported: independentVerdicts.filter((v) => v.truthPercentage >= 72)
       .length,
     uncertain: independentVerdicts.filter(
@@ -9186,7 +9472,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
       (v) => v.isCentral && v.truthPercentage >= 72,
     ).length,
     // Track excluded claims for transparency
-    dependencyFailedCount: weightedClaimVerdicts.filter((v) => v.dependencyFailed).length,
+    dependencyFailedCount: finalVerdicts.filter((v) => v.dependencyFailed).length,
   };
 
   // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence, only independent claims)
@@ -9238,7 +9524,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   if (understanding.keyFactors && understanding.keyFactors.length > 0) {
     for (const factor of understanding.keyFactors) {
       // Find all claims mapped to this factor
-      const factorClaims = weightedClaimVerdicts.filter(v => v.keyFactorId === factor.id);
+      const factorClaims = finalVerdicts.filter(v => v.keyFactorId === factor.id);
 
       if (factorClaims.length > 0) {
         // Aggregate verdicts for this factor
@@ -9284,8 +9570,8 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
 
   console.log(`[Analyzer] Key Factors aggregated: ${keyFactors.length} factors from ${understanding.keyFactors?.length || 0} discovered, ${hasContestedFactors ? "has" : "no"} contested factors`);
 
-  // v2.8.6: Prune tangential claims with no/low evidence and opinion-only factors
-  const prunedClaimVerdicts = pruneTangentialBaselessClaims(weightedClaimVerdicts, {
+  // v2.8.6: Prune tangential claims with no/low evidence and opinion-only factors (using direction-validated verdicts)
+  const prunedClaimVerdicts = pruneTangentialBaselessClaims(finalVerdicts, {
     evidenceItems: state.evidenceItems,
     minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
       DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
@@ -9298,7 +9584,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
       DEFAULT_PIPELINE_CONFIG.opinionAccumulationWarningThreshold,
   });
   const prunedKeyFactors = pruneOpinionOnlyFactors(monitoredKeyFactors);
-  console.log(`[Analyzer] Pruned: ${weightedClaimVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredKeyFactors.length - prunedKeyFactors.length} opinion-only factors`);
+  console.log(`[Analyzer] Pruned: ${finalVerdicts.length - prunedClaimVerdicts.length} tangential claims, ${monitoredKeyFactors.length - prunedKeyFactors.length} opinion-only factors`);
 
   return {
     claimVerdicts: prunedClaimVerdicts,
@@ -9618,7 +9904,7 @@ async function generateReport(
   report += `| LLM calls | ${state.llmCalls} |\n`;
   report += `| Sources fetched | ${state.sources.length} |\n`;
   report += `| Sources successful | ${state.sources.filter((s: FetchedSource) => s.fetchSuccess).length} |\n`;
-  report += `| Facts extracted | ${state.evidenceItems.length} |\n`;
+  report += `| Evidence extracted | ${state.evidenceItems.length} |\n`;
   report += `| Search provider | ${searchProvider} |\n`;
   report += `| Analysis mode | ${analysisMode} |\n\n`;
 
@@ -9845,6 +10131,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     pipelineConfig, // NEW v2.9.0: Hot-reload support
     searchConfig, // NEW v2.10.0: Hot-reload support
     fallbackTracker, // P0: LLM classification fallback tracking
+    analysisWarnings: [], // P0: Analysis warnings for verdict direction validation
+    evidenceFilterLlmFailures: 0, // P3: Track evidence filter LLM failures
   };
 
   // Handle URL
@@ -10128,6 +10416,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
               baseProgress + 6,
             );
             for (const source of successfulSources) {
+              // P3: Track LLM filter failures
+              const extractionStats: { llmFilterFailed?: boolean } = {};
               const extractedEvidenceItems = await extractEvidence(
                 source,
                 decision.focus!,
@@ -10137,7 +10427,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
                 state.understanding?.impliedClaim || state.originalInput,
                 undefined, // fromOppositeClaimSearch
                 state.pipelineConfig,
+                extractionStats,
               );
+              if (extractionStats.llmFilterFailed) {
+                state.evidenceFilterLlmFailures++;
+              }
               const uniqueEvidenceItems = deduplicateEvidenceItems(
                 extractedEvidenceItems,
                 state.evidenceItems,
@@ -10301,6 +10595,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // v2.6.29: Mark evidence items from counter_evidence category as fromOppositeClaimSearch
     const isOppositeClaimSearch = decision.category === "counter_evidence";
     for (const source of successfulSources) {
+      // P3: Track LLM filter failures
+      const extractionStats: { llmFilterFailed?: boolean } = {};
       const extractedEvidenceItems = await extractEvidence(
         source,
         decision.focus!,
@@ -10310,7 +10606,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         state.understanding?.impliedClaim || state.originalInput,
         isOppositeClaimSearch,
         state.pipelineConfig,
+        extractionStats,
       );
+      if (extractionStats.llmFilterFailed) {
+        state.evidenceFilterLlmFailures++;
+      }
       // v2.6.29: Deduplicate evidence items before adding to avoid near-duplicates
       const uniqueEvidenceItems = deduplicateEvidenceItems(
         extractedEvidenceItems,
@@ -10503,6 +10803,35 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     console.warn(
       `[Budget] ⚠️ Analysis terminated early due to budget limits: ${state.budgetTracker.exceedReason}`
     );
+    // P2: Add budget_exceeded warning to analysisWarnings for UI display
+    state.analysisWarnings.push({
+      type: "budget_exceeded",
+      severity: "warning",
+      message: `Analysis terminated early due to budget limits: ${state.budgetTracker.exceedReason}. Results may be incomplete.`,
+      details: {
+        tokensUsed: budgetStats.tokensUsed,
+        tokensPercent: budgetStats.tokensPercent,
+        iterationsUsed: budgetStats.totalIterations,
+        iterationsPercent: budgetStats.iterationsPercent,
+        reason: state.budgetTracker.exceedReason,
+      },
+    });
+  }
+
+  // P3: Add warning if evidence filter degraded to heuristics
+  if (state.evidenceFilterLlmFailures > 0) {
+    console.warn(
+      `[Evidence Filter] ⚠️ LLM evidence quality filter failed ${state.evidenceFilterLlmFailures} time(s), fell back to heuristics`
+    );
+    state.analysisWarnings.push({
+      type: "evidence_filter_degradation",
+      severity: "warning",
+      message: `Evidence quality filtering degraded from LLM to heuristic filtering ${state.evidenceFilterLlmFailures} time(s). Evidence quality assessment may be less accurate.`,
+      details: {
+        failureCount: state.evidenceFilterLlmFailures,
+        filterMethod: "heuristic",
+      },
+    });
   }
 
   // P0: Final verification - catch any classifications that bypassed entry-point normalization
@@ -10594,6 +10923,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     pseudoscienceAnalysis: null,
     // P0: Classification fallback tracking
     classificationFallbacks: state.fallbackTracker.hasFallbacks() ? state.fallbackTracker.getSummary() : undefined,
+    // P0: Analysis warnings (verdict direction mismatches, quality issues)
+    analysisWarnings: state.analysisWarnings.length > 0 ? state.analysisWarnings : undefined,
     qualityGates: {
       passed:
         state.evidenceItems.length >= config.minEvidenceItemsRequired &&

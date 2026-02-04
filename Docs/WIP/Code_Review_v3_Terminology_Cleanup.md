@@ -6,14 +6,14 @@
 **Created:** 2026-02-04
 **Completed:** 2026-02-04
 
-## Review Verdict: PASS (with minor documentation fixes needed)
+## Review Verdict: ✅ PASS - All findings resolved
 
-| Severity | Count |
-|----------|-------|
-| BLOCKER | 0 |
-| HIGH | 0 |
-| MEDIUM | 1 (TERMINOLOGY.md update) |
-| LOW | 1 (AGENTS.md Key Files table) |
+| Severity | Count | Status |
+|----------|-------|--------|
+| BLOCKER | 0 | - |
+| HIGH | 0 | - |
+| MEDIUM | 0 | ✅ F1 resolved |
+| LOW | 0 | ✅ F2 resolved |
 
 ---
 
@@ -246,14 +246,14 @@ AnalysisContext.metadata  ────>  frame-level methodology
 
 ### 3.0 Re-Check Results Summary
 
-| ID | Finding | Original Status | Re-Check Result |
-|----|---------|-----------------|-----------------|
-| P1 | AGENTS.md Key Files table outdated | To re-check | **CONFIRMED** - Still needs fix |
-| P2 | TERMINOLOGY.md outdated | To re-check | **CONFIRMED** - Still needs update |
-| P3 | ClaimsGroupedByScope.tsx naming | To re-check | **RESOLVED** - Renamed to ClaimsGroupedByContext.tsx |
-| P4 | ArticleFrame vs backgroundDetails mismatch | To re-check | **CONFIRMED** - TERMINOLOGY.md still uses ArticleFrame |
-| P5 | AnalysisContext.metadata vs EvidenceScope | To verify | **VERIFIED OK** - Prompts clearly distinguish |
-| P6 | "Scope" usage verification | To verify | **VERIFIED OK** - Only used for EvidenceScope |
+| ID | Finding | Original Status | Final Status |
+|----|---------|-----------------|--------------|
+| P1 | AGENTS.md Key Files table outdated | To re-check | ✅ **RESOLVED** - Updated to `analysis-contexts.ts` |
+| P2 | TERMINOLOGY.md outdated | To re-check | ✅ **RESOLVED** - Updated to v3.1.0 |
+| P3 | ClaimsGroupedByScope.tsx naming | To re-check | ✅ **RESOLVED** - Renamed to ClaimsGroupedByContext.tsx |
+| P4 | ArticleFrame vs backgroundDetails mismatch | To re-check | ✅ **RESOLVED** - TERMINOLOGY.md now uses "Background Details" |
+| P5 | AnalysisContext.metadata vs EvidenceScope | To verify | ✅ **VERIFIED OK** - Prompts clearly distinguish |
+| P6 | "Scope" usage verification | To verify | ✅ **VERIFIED OK** - Only used for EvidenceScope |
 
 ---
 
@@ -261,16 +261,11 @@ AnalysisContext.metadata  ────>  frame-level methodology
 
 **File:** [AGENTS.md:113](../../AGENTS.md#L113)
 
-**Issue:** Key Files table references renamed file:
-```
-| apps/web/src/lib/analyzer/scopes.ts | Scope detection and handling |
-```
-
-**Expected:** Should reference `analysis-contexts.ts` with description "AnalysisContext detection and handling"
+**Issue:** Key Files table referenced renamed file `scopes.ts`.
 
 **Severity:** [LOW] - Documentation inconsistency
 
-**Status:** ❌ **CONFIRMED** - Still needs fix
+**Status:** ✅ **RESOLVED** - Updated to `analysis-contexts.ts` with description "AnalysisContext detection and handling"
 
 ---
 
@@ -278,20 +273,11 @@ AnalysisContext.metadata  ────>  frame-level methodology
 
 **File:** [TERMINOLOGY.md](../REFERENCE/TERMINOLOGY.md)
 
-**Issue:** Document shows version 2.6.42 (dated 2026-02-02) and lists config renames as `[DEFER]`:
-```
-config-schemas.ts:
-├─ scopeDetectionMethod → contextDetectionMethod  [DEFER]
-├─ scopeDetectionEnabled → contextDetectionEnabled  [DEFER]
-├─ scopeDetectionMinConfidence → contextDetectionMinConfidence  [DEFER]
-└─ scopeDedupThreshold → contextDedupThreshold  [DEFER]
-```
-
-**Expected:** These were implemented in v3.0. Document should be updated to v3.0+ with status `[DONE]`.
+**Issue:** Document shows version 2.6.42 (dated 2026-02-02) and lists config renames as `[DEFER]`.
 
 **Severity:** [MEDIUM] - Documentation out of sync with implementation
 
-**Status:** ❌ **CONFIRMED** - Still needs update
+**Status:** ✅ **RESOLVED** - Updated to v3.1.0 with complete terminology documentation
 
 ---
 
@@ -309,20 +295,11 @@ config-schemas.ts:
 
 **Files:** TERMINOLOGY.md, types.ts, BackgroundBanner.tsx
 
-**Issue:** Inconsistent terminology across layers:
-
-| Layer | Term Used |
-|-------|-----------|
-| TERMINOLOGY.md | "ArticleFrame" (concept name) |
-| TypeScript field | `backgroundDetails` |
-| UI Component | `BackgroundBanner.tsx` |
-| types.ts comment | "Background details" |
-
-**Expected:** Conceptual name in TERMINOLOGY.md should be updated to "Background Details" to match implementation.
+**Issue:** Inconsistent terminology - TERMINOLOGY.md used "ArticleFrame" while code used "backgroundDetails".
 
 **Severity:** [LOW] - Documentation/naming alignment
 
-**Status:** ❌ **CONFIRMED** - TERMINOLOGY.md still uses "ArticleFrame"
+**Status:** ✅ **RESOLVED** - TERMINOLOGY.md now uses "Background Details" throughout (Level 1 renamed from "ArticleFrame")
 
 ---
 
@@ -369,7 +346,7 @@ The v3.0/v3.1 terminology cleanup has been **successfully implemented** in the c
 - Types well-documented with terminology explanation
 
 **Outstanding Items:**
-Two documentation files need updates (see findings below).
+~~Two documentation files need updates~~ - All resolved (2026-02-04)
 
 ### 4.2 Findings by Severity
 
@@ -383,26 +360,25 @@ Two documentation files need updates (see findings below).
 
 #### [MEDIUM]
 
-**F1: TERMINOLOGY.md requires v3.0 update**
+**F1: TERMINOLOGY.md requires v3.0 update** ✅ RESOLVED
 
-The reference document `Docs/REFERENCE/TERMINOLOGY.md` is outdated:
-- Shows version 2.6.42, should be 3.0+
-- Lists config renames as `[DEFER]` but they are implemented
-- Uses "ArticleFrame" concept name instead of "Background Details"
-- Field mapping table references legacy v2.7 names
+~~The reference document `Docs/REFERENCE/TERMINOLOGY.md` is outdated.~~
 
-**Suggested fix:** Update TERMINOLOGY.md to reflect v3.0 changes, update status markers from `[DEFER]` to `[DONE]`, align concept names with implementation.
+**Resolution (2026-02-04):** TERMINOLOGY.md updated to v3.1.0:
+- Version updated from 2.6.42 to 3.1.0
+- Status shows "v3.1 Complete - All terminology migrations finished"
+- Field mapping table updated with v3.1 field names and legacy strikethrough
+- "ArticleFrame" renamed to "Background Details" throughout
+- Config field names section added showing `contextDetection*` fields
+- Migration history section added documenting v3.0.0 and v3.1.0 changes
 
 #### [LOW]
 
-**F2: AGENTS.md Key Files table references old filename**
+**F2: AGENTS.md Key Files table references old filename** ✅ RESOLVED
 
-Line 113 in `AGENTS.md` references:
-```
-| apps/web/src/lib/analyzer/scopes.ts | Scope detection and handling |
-```
+~~Line 113 in `AGENTS.md` referenced old filename `scopes.ts`.~~
 
-**Suggested fix:** Update to:
+**Resolution (2026-02-04):** Updated to:
 ```
 | apps/web/src/lib/analyzer/analysis-contexts.ts | AnalysisContext detection and handling |
 ```

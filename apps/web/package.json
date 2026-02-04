@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
+    "postbuild": "npx tsx scripts/reseed-all-prompts.ts --quiet",
     "start": "next start -p 3000",
+    "reseed": "npx tsx scripts/reseed-all-prompts.ts",
+    "reseed:force": "npx tsx scripts/reseed-all-prompts.ts --force",
+    "reseed:prompts": "npx tsx scripts/reseed-all-prompts.ts --prompts",
+    "reseed:configs": "npx tsx scripts/reseed-all-prompts.ts --configs",
     "test": "vitest run",
     "test:llm": "vitest run test/unit/lib/llm-integration.test.ts",
     "test:jobs": "vitest run test/unit/lib/job-lifecycle.test.ts",
