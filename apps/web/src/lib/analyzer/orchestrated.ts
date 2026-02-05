@@ -1274,6 +1274,101 @@ function generateInverseClaimQuery(claim: string): string | null {
 }
 
 /**
+ * Pipeline Phase 1: Evidence gap types and severity
+ */
+interface EvidenceGap {
+  claimId: string;
+  claimText: string;
+  contextId: string;
+  gapType: "no_evidence" | "no_counter_evidence" | "low_quality" | "outdated";
+  severity: "critical" | "high" | "medium" | "low";
+  suggestedQueries: string[];
+  attemptedQueries: string[];
+}
+
+/**
+ * Pipeline Phase 1: Analyze evidence gaps for claims
+ * Returns a list of gaps with suggested queries to fill them
+ */
+function analyzeEvidenceGaps(
+  evidenceItems: EvidenceItem[],
+  understanding: ClaimUnderstanding,
+  searchQueries: Array<{ query: string; iteration: number }>,
+): EvidenceGap[] {
+  const gaps: EvidenceGap[] = [];
+
+  for (const claim of understanding.subClaims) {
+    // Find evidence items that might be relevant to this claim
+    const relevantEvidence = evidenceItems.filter((e) => {
+      // Check if evidence is assigned to same context
+      if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
+      // Check for text similarity
+      const similarity = calculateTextSimilarity(e.statement, claim.text);
+      return similarity > 0.3;
+    });
+
+    // Get queries that were attempted for this claim's context
+    const attemptedQueries = searchQueries
+      .filter((sq) => sq.query.toLowerCase().includes(claim.text.toLowerCase().split(" ").slice(0, 3).join(" ")))
+      .map((sq) => sq.query);
+
+    // Gap 1: No evidence at all
+    if (relevantEvidence.length === 0) {
+      const severity = claim.centrality === "high" ? "critical" : claim.centrality === "medium" ? "high" : "medium";
+      gaps.push({
+        claimId: claim.id,
+        claimText: claim.text,
+        contextId: claim.contextId || "",
+        gapType: "no_evidence",
+        severity,
+        suggestedQueries: [
+          claim.text,
+          `${claim.text} evidence study`,
+          `${claim.text.split(" ").slice(0, 5).join(" ")} official source`,
+        ],
+        attemptedQueries,
+      });
+      continue;
+    }
+
+    // Gap 2: No counter-evidence (bias risk) for non-low centrality claims
+    const hasCounterEvidence = relevantEvidence.some((e) => e.claimDirection === "contradicts");
+    if (!hasCounterEvidence && claim.centrality !== "low") {
+      const inverseQuery = generateInverseClaimQuery(claim.text);
+      gaps.push({
+        claimId: claim.id,
+        claimText: claim.text,
+        contextId: claim.contextId || "",
+        gapType: "no_counter_evidence",
+        severity: claim.centrality === "high" ? "high" : "medium",
+        suggestedQueries: inverseQuery ? [inverseQuery] : [`${claim.text} criticism controversy dispute`],
+        attemptedQueries: [],
+      });
+    }
+
+    // Gap 3: Low quality evidence only for HIGH centrality claims
+    const highQualityEvidence = relevantEvidence.filter((e) => e.probativeValue === "high");
+    if (highQualityEvidence.length === 0 && claim.centrality === "high") {
+      gaps.push({
+        claimId: claim.id,
+        claimText: claim.text,
+        contextId: claim.contextId || "",
+        gapType: "low_quality",
+        severity: "high",
+        suggestedQueries: [
+          `${claim.text} official source`,
+          `${claim.text} study research`,
+          `${claim.text.split(" ").slice(0, 4).join(" ")} peer reviewed`,
+        ],
+        attemptedQueries,
+      });
+    }
+  }
+
+  return gaps;
+}
+
+/**
  * NEW v2.6.29: Calculate similarity between two strings (Jaccard similarity on words)
  * Returns a value between 0 (completely different) and 1 (identical)
  */
@@ -1679,6 +1774,51 @@ function validateAndFixContextNameAlignment(
 
     return { ...(s as any), name: improved, metadata: nextMeta };
   });
+}
+
+/**
+ * Pipeline Phase 1: Normalize URL for deduplication
+ * Removes tracking params, normalizes www prefix, lowercases, removes hash fragments
+ */
+function normalizeUrlForDedup(url: string): string {
+  try {
+    const parsed = new URL(url);
+    // Remove common tracking params
+    const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'ref', 'source'];
+    for (const param of trackingParams) {
+      parsed.searchParams.delete(param);
+    }
+    // Remove hash fragment
+    parsed.hash = "";
+    // Normalize hostname: lowercase and remove www prefix
+    parsed.hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    return parsed.toString().toLowerCase();
+  } catch {
+    // If URL parsing fails, return lowercased original
+    return url.toLowerCase();
+  }
+}
+
+/**
+ * Pipeline Phase 1: Filter search results to exclude already-processed URLs
+ * Returns only new URLs and tracks them in the state
+ */
+function deduplicateSearchUrls<T extends { url: string }>(
+  results: T[],
+  state: { processedUrls: Set<string>; urlDeduplicationCount: number },
+): T[] {
+  const deduplicated: T[] = [];
+  for (const result of results) {
+    const normalized = normalizeUrlForDedup(result.url);
+    if (state.processedUrls.has(normalized)) {
+      state.urlDeduplicationCount++;
+      console.log(`[Analyzer] URL dedup: Skipping already-processed URL: ${result.url}`);
+      continue;
+    }
+    state.processedUrls.add(normalized);
+    deduplicated.push(result);
+  }
+  return deduplicated;
 }
 
 /**
@@ -2419,6 +2559,13 @@ interface ResearchState {
   analysisWarnings: AnalysisWarning[];
   // P3: Track evidence filter LLM failures (degradation to heuristic)
   evidenceFilterLlmFailures: number;
+  // Pipeline Phase 1: URL deduplication across iterations
+  processedUrls: Set<string>;
+  urlDeduplicationCount: number;
+  // Pipeline Phase 1: Gap-driven research tracking
+  lastIterationNovelEvidenceCount: number;
+  gapResearchIterations: number;
+  totalGapQueriesIssued: number;
 }
 
 interface ClaimUnderstanding {
@@ -6699,6 +6846,120 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
   }
 }
 
+/**
+ * Pipeline Phase 1: Parallel evidence extraction with bounded concurrency
+ * Uses Promise.allSettled for fault tolerance and dynamic backoff on throttling
+ */
+interface ParallelExtractionOptions {
+  focus: string;
+  model: any;
+  contexts: AnalysisContext[];
+  targetContextId?: string;
+  originalClaim?: string;
+  fromOppositeClaimSearch?: boolean;
+  pipelineConfig?: PipelineConfig;
+}
+
+interface ParallelExtractionResult {
+  evidenceItems: EvidenceItem[];
+  llmFilterFailures: number;
+  telemetry: {
+    totalSources: number;
+    successCount: number;
+    failureCount: number;
+    throttlingEvents: number;
+    durationMs: number;
+    concurrencyLevel: number;
+  };
+}
+
+const PARALLEL_EXTRACTION_LIMIT = 3;
+
+async function extractEvidenceParallel(
+  sources: FetchedSource[],
+  options: ParallelExtractionOptions,
+  existingEvidenceItems: EvidenceItem[],
+): Promise<ParallelExtractionResult> {
+  const startTime = Date.now();
+  const allEvidenceItems: EvidenceItem[] = [];
+  let llmFilterFailures = 0;
+  let successCount = 0;
+  let failureCount = 0;
+  let throttlingEvents = 0;
+  let currentLimit = PARALLEL_EXTRACTION_LIMIT;
+
+  // Process in batches with bounded concurrency
+  for (let i = 0; i < sources.length; i += currentLimit) {
+    const batch = sources.slice(i, i + currentLimit);
+
+    // Use allSettled for fault tolerance
+    const batchResults = await Promise.allSettled(
+      batch.map(async (source) => {
+        const extractionStats: { llmFilterFailed?: boolean } = {};
+        const items = await extractEvidence(
+          source,
+          options.focus,
+          options.model,
+          options.contexts,
+          options.targetContextId,
+          options.originalClaim,
+          options.fromOppositeClaimSearch,
+          options.pipelineConfig,
+          extractionStats,
+        );
+        return { items, llmFilterFailed: extractionStats.llmFilterFailed };
+      })
+    );
+
+    // Process results
+    for (const result of batchResults) {
+      if (result.status === "fulfilled") {
+        successCount++;
+        if (result.value.llmFilterFailed) {
+          llmFilterFailures++;
+        }
+        // Deduplicate against existing and already-collected items
+        const uniqueItems = deduplicateEvidenceItems(
+          result.value.items,
+          [...existingEvidenceItems, ...allEvidenceItems],
+        );
+        allEvidenceItems.push(...uniqueItems);
+      } else {
+        failureCount++;
+        const errorMsg = result.reason?.message || String(result.reason);
+        // Check for throttling errors (429, 503)
+        if (errorMsg.includes("429") || errorMsg.includes("503") || errorMsg.includes("rate limit")) {
+          throttlingEvents++;
+          // Reduce concurrency on throttling
+          currentLimit = Math.max(1, currentLimit - 1);
+          console.warn(`[Analyzer] Parallel extraction: Throttling detected, reducing concurrency to ${currentLimit}`);
+        } else {
+          console.error(`[Analyzer] Parallel extraction: Source failed: ${errorMsg}`);
+        }
+      }
+    }
+  }
+
+  const durationMs = Date.now() - startTime;
+  console.log(
+    `[Analyzer] Parallel extraction: ${successCount}/${sources.length} sources succeeded in ${durationMs}ms ` +
+    `(${throttlingEvents} throttling events, concurrency=${currentLimit})`
+  );
+
+  return {
+    evidenceItems: allEvidenceItems,
+    llmFilterFailures,
+    telemetry: {
+      totalSources: sources.length,
+      successCount,
+      failureCount,
+      throttlingEvents,
+      durationMs,
+      concurrencyLevel: currentLimit,
+    },
+  };
+}
+
 // ============================================================================
 // STEP 5: GENERATE VERDICTS - FIX: Calculate factorAnalysis from actual factors
 // ============================================================================
@@ -10136,6 +10397,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     fallbackTracker, // P0: LLM classification fallback tracking
     analysisWarnings: [], // P0: Analysis warnings for verdict direction validation
     evidenceFilterLlmFailures: 0, // P3: Track evidence filter LLM failures
+    processedUrls: new Set(), // Pipeline Phase 1: URL deduplication across iterations
+    urlDeduplicationCount: 0, // Pipeline Phase 1: Track deduplicated URL count
+    lastIterationNovelEvidenceCount: 0, // Pipeline Phase 1: Gap research stop condition
+    gapResearchIterations: 0, // Pipeline Phase 1: Gap research iteration counter
+    totalGapQueriesIssued: 0, // Pipeline Phase 1: Total gap queries issued
   };
 
   // Handle URL
@@ -10361,8 +10627,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         // Fetch the URLs provided by grounded search (don't use synthetic content)
         await emit(`Fetching ${groundedResult.sources.length} grounded sources`, baseProgress + 2);
 
-      const groundedUrlCandidates = groundedResult.sources
-          .filter(s => s.url && s.url.trim().length > 0)
+      // Pipeline Phase 1: Apply URL deduplication to grounded search results
+      const validGroundedSources = groundedResult.sources.filter(s => s.url && s.url.trim().length > 0);
+      const groundedUrlCandidates = deduplicateSearchUrls(validGroundedSources, state)
           .slice(0, searchConfig.maxSourcesPerIteration);
 
         if (groundedUrlCandidates.length === 0) {
@@ -10412,36 +10679,28 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             searchProvider: "Gemini-Grounded",
           });
 
-          // Extract evidence items from successfully fetched grounded sources
+          // Pipeline Phase 1: Parallel evidence extraction from grounded sources
           if (successfulSources.length > 0) {
             await emit(
-              `Extracting evidence items from ${successfulSources.length} grounded sources`,
+              `Extracting evidence items from ${successfulSources.length} grounded sources (parallel)`,
               baseProgress + 6,
             );
-            for (const source of successfulSources) {
-              // P3: Track LLM filter failures
-              const extractionStats: { llmFilterFailed?: boolean } = {};
-              const extractedEvidenceItems = await extractEvidence(
-                source,
-                decision.focus!,
-                extractEvidenceModelInfo.model,
-                state.understanding!.analysisContexts,
-                decision.targetContextId,
-                state.understanding?.impliedClaim || state.originalInput,
-                undefined, // fromOppositeClaimSearch
-                state.pipelineConfig,
-                extractionStats,
-              );
-              if (extractionStats.llmFilterFailed) {
-                state.evidenceFilterLlmFailures++;
-              }
-              const uniqueEvidenceItems = deduplicateEvidenceItems(
-                extractedEvidenceItems,
-                state.evidenceItems,
-              );
-              state.evidenceItems.push(...uniqueEvidenceItems);
-            }
-            console.log(`[Analyzer] Extracted evidence items from ${successfulSources.length} grounded sources`);
+            const parallelResult = await extractEvidenceParallel(
+              successfulSources,
+              {
+                focus: decision.focus!,
+                model: extractEvidenceModelInfo.model,
+                contexts: state.understanding!.analysisContexts,
+                targetContextId: decision.targetContextId,
+                originalClaim: state.understanding?.impliedClaim || state.originalInput,
+                fromOppositeClaimSearch: undefined,
+                pipelineConfig: state.pipelineConfig,
+              },
+              state.evidenceItems,
+            );
+            state.evidenceItems.push(...parallelResult.evidenceItems);
+            state.evidenceFilterLlmFailures += parallelResult.llmFilterFailures;
+            console.log(`[Analyzer] Parallel extraction from ${successfulSources.length} grounded sources: ${parallelResult.telemetry.durationMs}ms`);
           }
 
           // Continue to next iteration (skip standard search)
@@ -10521,20 +10780,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       }
     }
 
-    const seenUrls = new Set(state.sources.map((s: FetchedSource) => s.url));
-    const newResults = searchResults.filter((r) => !seenUrls.has(r.url));
-    // Preserve provider relevance ordering (avoid sorting by URL, which can discard top results).
-    // De-dupe by URL while keeping first occurrence.
-    const uniqueResults: Array<{ url: string; title: string; snippet?: string | null; query: string }> = [];
-    const used = new Set<string>();
-    for (const r of newResults as any[]) {
-      const url = String(r?.url || "");
-      if (!url) continue;
-      if (used.has(url)) continue;
-      used.add(url);
-      uniqueResults.push(r);
-      if (uniqueResults.length >= searchConfig.maxSourcesPerIteration) break;
-    }
+    // Pipeline Phase 1: URL deduplication with normalization across iterations
+    // First filter out results with empty URLs
+    const validUrlResults = searchResults.filter((r) => r.url && r.url.trim().length > 0);
+    // Apply cross-iteration deduplication using normalized URLs
+    const deduplicatedResults = deduplicateSearchUrls(validUrlResults, state);
+    // Preserve provider relevance ordering, limit to max sources per iteration
+    const uniqueResults = deduplicatedResults.slice(0, searchConfig.maxSourcesPerIteration);
 
     if (uniqueResults.length === 0) {
       state.iterations.push({
@@ -10591,39 +10843,34 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       state.contradictionSourcesFound = successfulSources.length;
 
     await emit(
-      `Extracting evidence items [LLM: ${extractEvidenceModelInfo.provider}/${extractEvidenceModelInfo.modelName}]`,
+      `Extracting evidence items (parallel) [LLM: ${extractEvidenceModelInfo.provider}/${extractEvidenceModelInfo.modelName}]`,
       baseProgress + 8,
     );
     const extractStart = Date.now();
     // v2.6.29: Mark evidence items from counter_evidence category as fromOppositeClaimSearch
     const isOppositeClaimSearch = decision.category === "counter_evidence";
-    for (const source of successfulSources) {
-      // P3: Track LLM filter failures
-      const extractionStats: { llmFilterFailed?: boolean } = {};
-      const extractedEvidenceItems = await extractEvidence(
-        source,
-        decision.focus!,
-        extractEvidenceModelInfo.model,
-        state.understanding!.analysisContexts,
-        decision.targetContextId,
-        state.understanding?.impliedClaim || state.originalInput,
-        isOppositeClaimSearch,
-        state.pipelineConfig,
-        extractionStats,
-      );
-      if (extractionStats.llmFilterFailed) {
-        state.evidenceFilterLlmFailures++;
-      }
-      // v2.6.29: Deduplicate evidence items before adding to avoid near-duplicates
-      const uniqueEvidenceItems = deduplicateEvidenceItems(
-        extractedEvidenceItems,
-        state.evidenceItems,
-      );
-      state.evidenceItems.push(...uniqueEvidenceItems);
-      state.llmCalls++; // Each extractEvidence call is 1 LLM call
-    }
+    // Pipeline Phase 1: Parallel evidence extraction
+    const parallelResult = await extractEvidenceParallel(
+      successfulSources,
+      {
+        focus: decision.focus!,
+        model: extractEvidenceModelInfo.model,
+        contexts: state.understanding!.analysisContexts,
+        targetContextId: decision.targetContextId,
+        originalClaim: state.understanding?.impliedClaim || state.originalInput,
+        fromOppositeClaimSearch: isOppositeClaimSearch,
+        pipelineConfig: state.pipelineConfig,
+      },
+      state.evidenceItems,
+    );
+    // Pipeline Phase 1: Track novel evidence count for gap research stop condition
+    const novelEvidenceCount = parallelResult.evidenceItems.length;
+    state.lastIterationNovelEvidenceCount = novelEvidenceCount;
+    state.evidenceItems.push(...parallelResult.evidenceItems);
+    state.evidenceFilterLlmFailures += parallelResult.llmFilterFailures;
+    state.llmCalls += parallelResult.telemetry.successCount; // Each successful extraction is 1 LLM call
     const extractElapsed = Date.now() - extractStart;
-    console.log(`[Analyzer] Evidence extraction for iteration ${iteration} completed in ${extractElapsed}ms for ${successfulSources.length} sources`);
+    console.log(`[Analyzer] Evidence extraction for iteration ${iteration} completed in ${extractElapsed}ms for ${successfulSources.length} sources (parallel, ${novelEvidenceCount} novel)`);
 
     state.iterations.push({
       number: iteration,
@@ -10636,6 +10883,117 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       `Iteration ${iteration}: ${state.evidenceItems.length} evidence items from ${state.sources.length} sources (${extractElapsed}ms)`,
       baseProgress + 12,
     );
+  }
+
+  // Pipeline Phase 1: Gap-driven research continuation
+  const MAX_GAP_ITERATIONS = 2;
+  const MAX_GAP_QUERIES_TOTAL = 8;
+  // TODO: Add enableGapDrivenResearch to PipelineConfig schema when ready
+  const enableGapDrivenResearch = true;
+
+  if (enableGapDrivenResearch && state.understanding) {
+    await emit("Analyzing evidence gaps", 55);
+    for (let gapIter = 0; gapIter < MAX_GAP_ITERATIONS; gapIter++) {
+      // Stop if prior iteration produced no novel evidence
+      if (gapIter > 0 && state.lastIterationNovelEvidenceCount === 0) {
+        console.log(`[Analyzer] Gap research: Stopping - prior iteration produced no novel evidence`);
+        break;
+      }
+
+      const gaps = analyzeEvidenceGaps(state.evidenceItems, state.understanding, state.searchQueries);
+      const criticalGaps = gaps.filter((g) => g.severity === "critical" || g.severity === "high");
+
+      if (criticalGaps.length === 0) {
+        console.log(`[Analyzer] Gap research: No critical/high gaps found after iteration ${gapIter}`);
+        break;
+      }
+
+      // Generate and bound queries
+      const gapQueries = criticalGaps.flatMap((g) => g.suggestedQueries);
+      const remainingBudget = Math.max(0, MAX_GAP_QUERIES_TOTAL - state.totalGapQueriesIssued);
+      const boundedQueries = gapQueries.slice(0, remainingBudget);
+
+      if (boundedQueries.length === 0) {
+        console.log(`[Analyzer] Gap research: Query budget exhausted (${state.totalGapQueriesIssued}/${MAX_GAP_QUERIES_TOTAL})`);
+        break;
+      }
+
+      console.log(`[Analyzer] Gap research iteration ${gapIter + 1}: ${criticalGaps.length} gaps, ${boundedQueries.length} queries`);
+      state.gapResearchIterations++;
+      state.totalGapQueriesIssued += boundedQueries.length;
+
+      // Execute gap-driven search (using first query as representative)
+      const gapSearchResults: any[] = [];
+      for (const query of boundedQueries.slice(0, 2)) { // Limit to 2 queries per gap iteration
+        try {
+          const searchResponse = await searchWebWithProvider({
+            query,
+            maxResults: searchConfig.maxResults,
+            domainWhitelist: searchConfig.domainWhitelist,
+            domainBlacklist: searchConfig.domainBlacklist,
+            timeoutMs: searchConfig.timeoutMs,
+            config: searchConfig,
+          });
+          const results = searchResponse.results;
+          gapSearchResults.push(...results.map((r: any) => ({ ...r, query })));
+          state.searchQueries.push({
+            query,
+            iteration: state.iterations.length + 1,
+            focus: "gap_research",
+            resultsCount: results.length,
+            timestamp: new Date().toISOString(),
+            searchProvider: searchConfig.provider,
+          });
+        } catch (err) {
+          console.warn(`[Analyzer] Gap research search failed: ${err}`);
+        }
+      }
+
+      // Deduplicate and fetch sources
+      const deduplicatedGapResults = deduplicateSearchUrls(
+        gapSearchResults.filter((r) => r.url && r.url.trim().length > 0),
+        state,
+      ).slice(0, searchConfig.maxSourcesPerIteration);
+
+      if (deduplicatedGapResults.length === 0) {
+        console.log(`[Analyzer] Gap research: No new URLs found`);
+        continue;
+      }
+
+      // Fetch and extract
+      const gapFetchPromises = deduplicatedGapResults.map((r: any, i: number) =>
+        fetchSource(r.url, `GS${state.sources.length + i + 1}`, "gap_research", r.query, state.pipelineConfig)
+      );
+      const gapFetchedSources = await Promise.all(gapFetchPromises);
+      const gapValidSources = gapFetchedSources.filter((s): s is FetchedSource => s !== null);
+      state.sources.push(...gapValidSources);
+
+      const gapSuccessfulSources = gapValidSources.filter((s) => s.fetchSuccess);
+      if (gapSuccessfulSources.length > 0) {
+        const gapExtractResult = await extractEvidenceParallel(
+          gapSuccessfulSources,
+          {
+            focus: "gap_research",
+            model: extractEvidenceModelInfo.model,
+            contexts: state.understanding!.analysisContexts,
+            originalClaim: state.understanding?.impliedClaim || state.originalInput,
+            pipelineConfig: state.pipelineConfig,
+          },
+          state.evidenceItems,
+        );
+        state.lastIterationNovelEvidenceCount = gapExtractResult.evidenceItems.length;
+        state.evidenceItems.push(...gapExtractResult.evidenceItems);
+        state.evidenceFilterLlmFailures += gapExtractResult.llmFilterFailures;
+        console.log(`[Analyzer] Gap research: Added ${gapExtractResult.evidenceItems.length} evidence items from ${gapSuccessfulSources.length} sources`);
+      }
+    }
+
+    if (state.gapResearchIterations > 0) {
+      console.log(
+        `[Telemetry] Gap research: ${state.gapResearchIterations} iterations, ` +
+        `${state.totalGapQueriesIssued} queries issued`
+      );
+    }
   }
 
   // Phase 1.5: Aggregate claimDirection telemetry across all iterations
@@ -10668,6 +11026,17 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     console.log(
       `[Telemetry] claimDirection breakdown: ` +
       `supports=${byDirection.supports}, contradicts=${byDirection.contradicts}, neutral=${byDirection.neutral}`
+    );
+  }
+
+  // Pipeline Phase 1: URL deduplication telemetry
+  if (state.urlDeduplicationCount > 0 || state.processedUrls.size > 0) {
+    const refetchRate = state.urlDeduplicationCount > 0
+      ? Math.round(100 * state.urlDeduplicationCount / (state.processedUrls.size + state.urlDeduplicationCount))
+      : 0;
+    console.log(
+      `[Telemetry] URL deduplication: ${state.processedUrls.size} unique URLs processed, ` +
+      `${state.urlDeduplicationCount} duplicates skipped (${refetchRate}% re-fetch rate avoided)`
     );
   }
 
