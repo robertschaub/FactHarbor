@@ -17,7 +17,6 @@ import { z } from "zod";
 import { generateText, Output } from "ai";
 import { getModelForTask, extractStructuredOutput } from "./llm";
 import { getDeterministicTemperature } from "./config";
-import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 import type { PipelineConfig } from "../config-schemas";
 
 // ============================================================================
@@ -78,111 +77,19 @@ export const UNASSIGNED_CONTEXT_ID = "CTX_UNASSIGNED";
 // ============================================================================
 
 /**
- * Module-level compiled patterns (cached, initialized with defaults)
- * Can be reset via setContextHeuristicsLexicon() for testing
- */
-let _patterns = getAggregationPatterns();
-
-/**
- * Reset context heuristic patterns to defaults.
- */
-export function setContextHeuristicsLexicon(): void {
-  _patterns = getAggregationPatterns();
-}
-
-/**
- * Get current patterns (for testing)
- */
-export function getContextHeuristicsPatternsConfig() {
-  return _patterns;
-}
-
-/**
  * Detect potential analysis contexts from input text using heuristic patterns.
  * Returns suggested contexts to guide LLM, or null if no patterns match.
  *
- * v2.8: Code-level context pre-detection for comparison claims, legal/trial fairness, etc.
- *
- * This function is GENERIC BY DESIGN - it uses abstract patterns, not domain-specific keywords.
+ * Currently relies on LLM for context detection - heuristic pre-detection
+ * is deferred to prompt guidance.
  *
  * @param text - Input text to analyze for context patterns
- * @returns Array of detected contexts or null if no patterns match
+ * @returns null (LLM handles context detection)
  */
-export function detectContextsHeuristic(text: string, config?: PipelineConfig): DetectedAnalysisContext[] | null {
-  const contexts: DetectedAnalysisContext[] = [];
-
-  // Pattern 1: Comparison claims (efficiency, performance, impact)
-  const hasComparison = matchesAnyPattern(text, _patterns.contextComparisonPatterns);
-  const hasEfficiencyKeywords = matchesAnyPattern(text, _patterns.contextEfficiencyKeywords);
-
-  if (hasComparison && hasEfficiencyKeywords) {
-    contexts.push(
-      {
-        id: "CTX_PRODUCTION",
-        name: "Production/Creation Phase Analysis",
-        type: "methodological",
-        metadata: { phase: "production", boundaries: "upstream" }
-      },
-      {
-        id: "CTX_USAGE",
-        name: "Usage/Operation Phase Analysis",
-        type: "methodological",
-        metadata: { phase: "usage", boundaries: "downstream" }
-      }
-    );
-  }
-
-  // Pattern 2: Legal/trial fairness claims
-  const hasLegalFairness = matchesAnyPattern(text, _patterns.contextLegalFairnessPatterns);
-  const hasLegalProcess = matchesAnyPattern(text, _patterns.contextLegalProcessKeywords);
-  const fairnessCue = /\b(fair|unfair|appropriate|proper|just|legitimate)\b/i;
-
-  if (hasLegalFairness || (hasLegalProcess && fairnessCue.test(text))) {
-    contexts.push(
-      {
-        id: "CTX_LEGAL_PROC",
-        name: "Legal Procedures and Compliance",
-        type: "legal",
-        metadata: { focus: "procedural compliance" }
-      },
-      {
-        id: "CTX_OUTCOMES",
-        name: "Outcomes and Consequences",
-        type: "general",
-        metadata: { focus: "results and impact" }
-      }
-    );
-
-    if (matchesAnyPattern(text, _patterns.contextInternationalCuePatterns)) {
-      contexts.push({
-        id: "CTX_INTL_PERSPECTIVE",
-        name: "International Perspectives and Criticism",
-        type: "general",
-        metadata: { focus: "external assessment" }
-      });
-    }
-  }
-
-  // Pattern 3: Environmental/health comparisons
-  const hasEnvHealth = matchesAnyPattern(text, _patterns.contextEnvHealthPatterns);
-  if (hasComparison && hasEnvHealth) {
-    contexts.push(
-      {
-        id: "CTX_DIRECT",
-        name: "Direct/Immediate Effects",
-        type: "scientific",
-        metadata: { timeframe: "immediate" }
-      },
-      {
-        id: "CTX_LIFECYCLE",
-        name: "Full Lifecycle Assessment",
-        type: "scientific",
-        metadata: { timeframe: "complete" }
-      }
-    );
-  }
-
-  return contexts.length > 0 ? contexts : null;
+export function detectContextsHeuristic(_text: string, _config?: PipelineConfig): DetectedAnalysisContext[] | null {
+  // Context detection is handled by the LLM in the UNDERSTAND phase
+  // via prompt guidance in orchestrated-understand.ts
+  return null;
 }
 
 /**
@@ -412,42 +319,22 @@ export function canonicalizeInputForContextDetection(input: string): string {
           const predicate = rest.slice(commaIdx + 1).trim();
           text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
         } else {
-          // Heuristic: split before common predicate starters (adjectives, verbs)
-          const starterMatch = _patterns.contextPredicateStarters
-            .map((pattern) => rest.match(pattern))
-            .find((match) => match && typeof match.index === "number");
-
-          if (starterMatch && typeof starterMatch.index === "number" && starterMatch.index > 0) {
-            const subject = rest.slice(0, starterMatch.index).trim();
-            const predicate = rest.slice(starterMatch.index).trim();
-            if (subject && predicate) {
-              text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-            }
-          } else {
-            // Safe fallback: use grammatical form that preserves meaning
-            // "Did the court follow procedures?" → "It is the case that the court follow procedures"
-            const copulas = new Set(["is", "are", "was", "were"]);
-            text = copulas.has(aux)
-              ? `it ${aux} the case that ${rest}`
-              : `it is the case that ${rest}`;
-          }
+          // Safe fallback: use grammatical form that preserves meaning
+          // "Did the court follow procedures?" → "It is the case that the court follow procedures"
+          const copulas = new Set(["is", "are", "was", "were"]);
+          text = copulas.has(aux)
+            ? `it ${aux} the case that ${rest}`
+            : `it is the case that ${rest}`;
         }
       }
     }
   }
 
-  // 3. Remove filler words that don't affect context detection
-  const fillerRe = new RegExp(
-    _patterns.contextFillerWords.map((p) => p.source).join("|"),
-    "gi",
-  );
-  text = text.replace(fillerRe, " ").replace(/\s+/g, " ").trim();
-
-  // 4. Extract core semantic entities BEFORE lowercasing
+  // 3. Extract core semantic entities BEFORE lowercasing
   // This preserves proper nouns for entity detection
   const coreEntities = extractCoreEntities(text);
 
-  // 5. Normalize case for consistency (lowercase for comparison)
+  // 4. Normalize case for consistency (lowercase for comparison)
   const contextKey = text.toLowerCase();
 
   console.log(`[Context Canonicalization] Input: "${input.substring(0, 60)}..."`);
@@ -463,32 +350,14 @@ export function canonicalizeInputForContextDetection(input: string): string {
  *
  * CRITICAL: This function MUST receive the original-case text (before lowercasing)
  * to properly detect proper nouns via capitalization patterns.
- *
- * Generic by Design: Uses regex patterns, not hardcoded keyword lists.
  */
 function extractCoreEntities(text: string): string[] {
-  const entities: string[] = [];
-
   // Look for proper nouns (capitalized words that aren't sentence-start)
   // Matches single words (Einstein) and multi-word names (Angela Merkel)
   const properNouns = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/g) || [];
-  entities.push(...properNouns.map(n => n.toLowerCase()));
 
-  // Look for legal/institutional terms (case-insensitive)
-  const legalTerms = _patterns.contextLegalTerms.filter((pattern) => pattern.test(text)).map((p) => {
-    const match = text.match(p);
-    return match ? match[0] : "";
-  }).filter(Boolean);
-  entities.push(...legalTerms.map((t) => t.toLowerCase()));
-
-  const jurisdictions = _patterns.contextJurisdictionIndicators.filter((pattern) => pattern.test(text)).map((p) => {
-    const match = text.match(p);
-    return match ? match[0] : "";
-  }).filter(Boolean);
-  entities.push(...jurisdictions.map((j) => j.toLowerCase()));
-
-  // Deduplicate
-  return [...new Set(entities)];
+  // Deduplicate and normalize to lowercase
+  return [...new Set(properNouns.map(n => n.toLowerCase()))];
 }
 
 /**

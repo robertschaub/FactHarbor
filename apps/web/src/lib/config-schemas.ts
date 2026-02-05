@@ -1160,11 +1160,8 @@ export function getSchemaVersion(configType: ConfigType): SchemaVersion {
     case "prompt":
       return "prompt.v1";
     case "search":
-      return "3.0.0";
     case "calculation":
-      return "3.0.0";
     case "pipeline":
-      return "3.0.0";
     case "sr":
       return "3.0.0";
   }

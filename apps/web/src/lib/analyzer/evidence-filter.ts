@@ -8,14 +8,11 @@
  * - Layer 1 (prompts): extract-evidence-base.ts instructs LLM not to extract low-quality items
  * - Layer 2 (this file): Deterministic filter catches anything that slips through
  *
- * v2.10: Uses internal pattern set (no external lexicon config).
- *
  * @module evidence-filter
  * @since v2.8 (Phase 1.5)
  */
 
 import type { EvidenceItem } from "./types";
-import { getEvidencePatterns, countPatternMatches, matchesAnyPattern } from "./lexicon-utils";
 
 /**
  * Configuration for probative value filtering
@@ -23,7 +20,6 @@ import { getEvidencePatterns, countPatternMatches, matchesAnyPattern } from "./l
 export interface ProbativeFilterConfig {
   // Statement quality
   minStatementLength: number;        // Default: 20 characters
-  maxVaguePhraseCount: number;       // Default: 2 (allow some vague phrases, but not excessive)
 
   // Source linkage
   requireSourceExcerpt: boolean;     // Default: true
@@ -36,12 +32,8 @@ export interface ProbativeFilterConfig {
   // Category-specific rules
   categoryRules: {
     statistic: { requireNumber: boolean; minExcerptLength: number };
-    expert_quote: { requireAttribution: boolean };
     event: { requireTemporalAnchor: boolean };
-    legal_provision: { requireCitation: boolean };
   };
-
-  // Pattern matching uses internal defaults (no external lexicon config)
 }
 
 /**
@@ -59,25 +51,15 @@ export interface FilterStats {
  */
 export const DEFAULT_FILTER_CONFIG: ProbativeFilterConfig = {
   minStatementLength: 20,
-  maxVaguePhraseCount: 2,
   requireSourceExcerpt: true,
   minExcerptLength: 30,
   requireSourceUrl: true,
   deduplicationThreshold: 0.85,
   categoryRules: {
     statistic: { requireNumber: true, minExcerptLength: 50 },
-    expert_quote: { requireAttribution: true },
     event: { requireTemporalAnchor: true },
-    legal_provision: { requireCitation: true },
   },
 };
-
-/**
- * Count vague phrases in a statement using lexicon patterns
- */
-function countVaguePhrases(statement: string, patterns: RegExp[]): number {
-  return countPatternMatches(statement, patterns);
-}
 
 /**
  * Check if a statement contains a number (for statistics category)
@@ -100,20 +82,6 @@ function hasTemporalAnchor(text: string): boolean {
   const relativePattern = /\b(last|this|next)\s+(year|month|week|decade|century)\b/i;
 
   return yearPattern.test(text) || monthPattern.test(text) || datePattern.test(text) || relativePattern.test(text);
-}
-
-/**
- * Check if text contains citation-like patterns (for legal provisions)
- */
-function hasCitation(text: string, patterns: RegExp[]): boolean {
-  return matchesAnyPattern(text, patterns);
-}
-
-/**
- * Check if text contains attribution to a named person/expert
- */
-function hasAttribution(text: string, patterns: RegExp[]): boolean {
-  return matchesAnyPattern(text, patterns);
 }
 
 /**
@@ -152,9 +120,6 @@ export function filterByProbativeValue(
     },
   };
 
-  // Compile patterns (cached)
-  const patterns = getEvidencePatterns();
-
   const kept: EvidenceItem[] = [];
   const filtered: EvidenceItem[] = [];
   const filterReasons: Record<string, number> = {};
@@ -180,25 +145,19 @@ export function filterByProbativeValue(
       filterReason = "statement_too_short";
     }
 
-    // 2. Vague phrase count
-    else if (countVaguePhrases(item.statement, patterns.vaguePhrases) > cfg.maxVaguePhraseCount) {
-      shouldFilter = true;
-      filterReason = "excessive_vague_phrases";
-    }
-
-    // 3. Source excerpt requirement
+    // 2. Source excerpt requirement
     else if (cfg.requireSourceExcerpt && (!item.sourceExcerpt || item.sourceExcerpt.length < cfg.minExcerptLength)) {
       shouldFilter = true;
       filterReason = "missing_or_short_excerpt";
     }
 
-    // 4. Source URL requirement
+    // 3. Source URL requirement
     else if (cfg.requireSourceUrl && !item.sourceUrl) {
       shouldFilter = true;
       filterReason = "missing_source_url";
     }
 
-    // 5. Category-specific rules
+    // 4. Category-specific rules
     // Note: Use (item.sourceExcerpt ?? "") to handle undefined when requireSourceExcerpt is false
     else if (item.category === "statistic" && cfg.categoryRules.statistic.requireNumber) {
       const excerpt = item.sourceExcerpt ?? "";
@@ -211,27 +170,11 @@ export function filterByProbativeValue(
       }
     }
 
-    else if (item.category === "expert_quote" && cfg.categoryRules.expert_quote.requireAttribution) {
-      const excerpt = item.sourceExcerpt ?? "";
-      if (!hasAttribution(item.statement, patterns.attributionPatterns) && !hasAttribution(excerpt, patterns.attributionPatterns)) {
-        shouldFilter = true;
-        filterReason = "expert_quote_without_attribution";
-      }
-    }
-
     else if (item.category === "event" && cfg.categoryRules.event.requireTemporalAnchor) {
       const excerpt = item.sourceExcerpt ?? "";
       if (!hasTemporalAnchor(item.statement) && !hasTemporalAnchor(excerpt)) {
         shouldFilter = true;
         filterReason = "event_without_temporal_anchor";
-      }
-    }
-
-    else if (item.category === "legal_provision" && cfg.categoryRules.legal_provision.requireCitation) {
-      const excerpt = item.sourceExcerpt ?? "";
-      if (!hasCitation(item.statement, patterns.citationPatterns) && !hasCitation(excerpt, patterns.citationPatterns)) {
-        shouldFilter = true;
-        filterReason = "legal_provision_without_citation";
       }
     }
 

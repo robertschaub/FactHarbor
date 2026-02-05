@@ -3,42 +3,19 @@
  *
  * Extracted from the monolithic `analyzer.ts` to keep responsibilities separated.
  *
- * v2.10: Uses internal pattern set (no external lexicon config).
- *
  * @module analyzer/verdict-corrections
  */
 
 import type { EvidenceItem } from "./types";
 import { debugLog } from "./debug";
-import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
-
-// ============================================================================
-// PATTERN CONFIGURATION
-// ============================================================================
-
-/**
- * Module-level compiled patterns (cached, initialized with defaults)
- */
-let _patterns = getAggregationPatterns();
-
-/**
- * Reset verdict correction patterns to defaults.
- */
-export function setVerdictCorrectionsLexicon(): void {
-  _patterns = getAggregationPatterns();
-}
-
-/**
- * Get current patterns (for testing)
- */
-export function getVerdictCorrectionsPatternsConfig() {
-  return _patterns;
-}
 
 /**
  * Detect and correct inverted verdicts.
  * The LLM sometimes rates "how correct is my analysis" (high) instead of "is the claim true" (low).
- * This function detects when reasoning contradicts the verdict and corrects it.
+ *
+ * Note: Pattern-based inversion detection has been removed. Verdict direction validation
+ * is now handled by validateVerdictDirections() in orchestrated.ts which uses evidence
+ * direction counts for more accurate detection.
  *
  * @returns corrected truth percentage, or original if no inversion detected
  */
@@ -47,74 +24,12 @@ export function detectAndCorrectVerdictInversion(
   reasoning: string,
   verdictPct: number,
 ): { correctedPct: number; wasInverted: boolean; inversionReason?: string } {
-  // Only check verdicts that are in the "true" range (>=50%)
-  if (verdictPct < 50) {
-    return { correctedPct: verdictPct, wasInverted: false };
-  }
-
-  // DEBUG: Log inputs to debug file
-  debugLog("[INVERSION DEBUG] Input values", {
-    claimText: claimText?.slice(0, 100),
-    reasoning: reasoning?.slice(0, 150),
+  // Verdict inversion is now handled by validateVerdictDirections() in orchestrated.ts
+  // which uses evidence direction counts rather than pattern matching
+  debugLog("detectAndCorrectVerdictInversion: No-op (handled by validateVerdictDirections)", {
+    claimText: claimText?.slice(0, 80),
     verdictPct,
   });
-
-  const claimLower = claimText.toLowerCase();
-  const reasoningLower = reasoning.toLowerCase();
-
-  // v2.9: Patterns sourced from internal pattern set (verdict correction).
-  // Pattern 1: Claim says "X was proportionate/justified/fair" but reasoning says "NOT proportionate/justified/fair"
-  // Pattern 2 (v2.8.3): REVERSE inversion - claim asserts NEGATIVE, reasoning shows POSITIVE
-
-  // Check if claim asserts something positive (UCM: verdictCorrection.positiveClaimPatterns)
-  const claimAssertsPositive = matchesAnyPattern(claimLower, _patterns.positiveClaimPatterns);
-
-  // Check if reasoning negates it (UCM: verdictCorrection.negativeReasoningPatterns)
-  const reasoningNegates = matchesAnyPattern(reasoningLower, _patterns.negativeReasoningPatterns);
-
-  // v2.8.3: Also check for REVERSE inversion - claim asserts NEGATIVE, reasoning shows POSITIVE
-  // Example: Claim says "Technology A has lower efficiency" but reasoning shows "Technology A uses 60% efficiently"
-  const claimAssertsNegative = matchesAnyPattern(claimLower, _patterns.negativeClaimPatterns);
-  const reasoningShowsPositive = matchesAnyPattern(reasoningLower, _patterns.positiveReasoningPatterns);
-
-  // DEBUG: Log pattern matching results
-  debugLog("[INVERSION DEBUG] Pattern matching results", {
-    claimAssertsPositive,
-    reasoningNegates,
-    claimAssertsNegative,
-    reasoningShowsPositive,
-    shouldInvert: (claimAssertsPositive && reasoningNegates && verdictPct >= 50) ||
-                  (claimAssertsNegative && reasoningShowsPositive && verdictPct >= 50),
-  });
-
-  debugLog("detectAndCorrectVerdictInversion: CHECK", {
-    claimText: claimText.slice(0, 80),
-    reasoningSnippet: reasoningLower.slice(0, 120),
-    verdictPct,
-    claimAssertsPositive,
-    reasoningNegates,
-    claimAssertsNegative,
-    reasoningShowsPositive,
-  });
-
-  // Invert if: (positive claim + negative reasoning) OR (negative claim + positive reasoning)
-  if ((claimAssertsPositive && reasoningNegates && verdictPct >= 50) ||
-      (claimAssertsNegative && reasoningShowsPositive && verdictPct >= 50)) {
-    // Invert the verdict: 72% → 28%, 85% → 15%, etc.
-    const correctedPct = 100 - verdictPct;
-    debugLog("detectAndCorrectVerdictInversion: INVERTED", {
-      claimText: claimText.slice(0, 100),
-      originalPct: verdictPct,
-      correctedPct,
-      reason: "Reasoning contradicts claim assertion",
-    });
-    return {
-      correctedPct,
-      wasInverted: true,
-      inversionReason:
-        "Reasoning indicates claim is false but verdict was high - inverted",
-    };
-  }
 
   return { correctedPct: verdictPct, wasInverted: false };
 }
@@ -147,55 +62,11 @@ export function detectCounterClaim(
   // If the claim is thesis-aligned, it cannot be a counter-claim.
   // =========================================================================
 
-  // v2.9: Evaluative term synonyms sourced from internal pattern set.
-
-  // Check if claim and thesis share aligned evaluative framing
-  function hasAlignedEvalTerms(claim: string, thesis: string): boolean {
-    for (const [, synonyms] of Object.entries(_patterns.evaluativeTermSynonyms)) {
-      const claimHasTerm = synonyms.some((s) => claim.includes(s));
-      const thesisHasTerm = synonyms.some((s) => thesis.includes(s));
-      // If both contain terms from the same synonym group (both positive), they're aligned
-      if (claimHasTerm && thesisHasTerm) {
-        // Make sure neither is negated
-        const claimNegated = synonyms.some((s) => {
-          const idx = claim.indexOf(s);
-          if (idx === -1) return false;
-          const before = claim.slice(Math.max(0, idx - 10), idx);
-          return /\bnot\b|\bno\b|\bun|\bin/.test(before);
-        });
-        const thesisNegated = synonyms.some((s) => {
-          const idx = thesis.indexOf(s);
-          if (idx === -1) return false;
-          const before = thesis.slice(Math.max(0, idx - 10), idx);
-          return /\bnot\b|\bno\b|\bun|\bin/.test(before);
-        });
-        // Both positive (neither negated) = aligned
-        if (!claimNegated && !thesisNegated) return true;
-        // Both negative = aligned (both saying "not fair")
-        if (claimNegated && thesisNegated) return true;
-      }
-    }
-    return false;
-  }
-
-  // Check if claim is about a supporting aspect of the thesis
-  // e.g., thesis: "trial was fair" → claim: "due process was followed" (supports fairness)
-  // v2.9: Patterns sourced from internal pattern set (counter-claim detection).
-  function isClaimAboutSupportingAspect(claim: string, thesis: string): boolean {
-    // If thesis is about fairness/justice/propriety, and claim is about procedural/evidential
-    // aspects that would SUPPORT such a conclusion, they're aligned
-    const fairnessThesis =
-      /\b(fair|just|equitable|impartial|proper|lawful|legal|constitutional)\b/.test(thesis);
-    if (fairnessThesis) {
-      // Use UCM patterns for supporting aspect detection
-      if (matchesAnyPattern(claim, _patterns.supportingAspectPatterns)) return true;
-    }
-    return false;
-  }
-
   /**
    * Check if a claim semantically supports/aligns with the thesis.
    * If aligned, the claim cannot be a counter-claim regardless of evidence directions.
+   *
+   * Uses comparative frame analysis to detect swapped/reversed comparatives.
    */
   function isClaimAlignedWithThesis(claim: string, thesis: string): boolean {
     // IMPORTANT: Don't treat swapped/reversed comparatives as "aligned" just because they share
@@ -253,25 +124,8 @@ export function detectCounterClaim(
       }
     }
 
-    // Check 1: Both use the same positive evaluative framing
-    if (hasAlignedEvalTerms(claim, thesis)) {
-      debugLog("detectCounterClaim: Thesis-aligned (same eval terms)", {
-        claim: claim.slice(0, 80),
-        thesis: thesis.slice(0, 80),
-      });
-      return true;
-    }
-
-    // Check 2: Claim is about an aspect that SUPPORTS the thesis conclusion
-    if (isClaimAboutSupportingAspect(claim, thesis)) {
-      debugLog("detectCounterClaim: Thesis-aligned (supporting aspect)", {
-        claim: claim.slice(0, 80),
-        thesis: thesis.slice(0, 80),
-      });
-      return true;
-    }
-
-    return false;
+    // If we can't detect explicit opposition, assume aligned
+    return true;
   }
 
   if (isClaimAlignedWithThesis(claimLower, thesisLower)) {
@@ -282,7 +136,12 @@ export function detectCounterClaim(
   // Text-based detection (preferred): compare claim text vs thesis text
   // =========================================================================
 
-  // v2.9: Stop words sourced from internal pattern set.
+  const STOP_WORDS = new Set([
+    "the", "a", "an", "and", "or", "but", "of", "to", "in", "on", "for",
+    "with", "at", "by", "from", "as", "into", "than", "over", "under",
+    "using", "use", "is", "are", "was", "were", "be", "been", "being",
+    "this", "that", "these", "those", "it", "its", "has", "have", "had",
+  ]);
 
   function tokenizePhrase(text: string): string[] {
     return text
@@ -291,7 +150,7 @@ export function detectCounterClaim(
       .split(/\s+/)
       .map((t) => t.trim())
       .filter(Boolean)
-      .filter((t) => t.length > 2 && !_patterns.counterClaimStopwords.has(t));
+      .filter((t) => t.length > 2 && !STOP_WORDS.has(t));
   }
 
   function overlapRatio(a: string, b: string): number {
@@ -414,57 +273,6 @@ export function detectCounterClaim(
         return true;
       }
     }
-  }
-
-  // Pattern: Claim explicitly states the opposite of the thesis
-  // Look for negation of key thesis terms
-  // Conservative heuristic:
-  // Only flag counter-claim when BOTH thesis and claim mention the same evaluative term,
-  // but with opposite polarity (e.g., "fair" vs "not fair"/"unfair").
-  // v2.9: Terms sourced from internal pattern set (counter-claim detection).
-
-  function getPolarityByTerm(
-    text: string,
-  ): Partial<Record<string, "positive" | "negative">> {
-    const out: Partial<Record<string, "positive" | "negative">> = {};
-    const t = text.toLowerCase();
-
-    // Detect explicit negation: "not <term>"
-    for (const term of _patterns.coreEvaluativeTerms) {
-      const negRe = new RegExp(`\\bnot\\s+${term}\\b`, "i");
-      if (negRe.test(t)) {
-        out[term] = "negative";
-      }
-    }
-
-    // Detect negative lexical forms: "unfair", "invalid", etc.
-    // (UCM: counterClaimDetection.negativeFormMappings)
-    for (const [negWord, posTerm] of Object.entries(_patterns.negativeFormMappings)) {
-      const negWordRe = new RegExp(`\\b${negWord}\\b`, "i");
-      if (negWordRe.test(t)) {
-        out[posTerm] = "negative";
-      }
-    }
-
-    // Detect positive mentions of the term only if we didn't already mark it negative.
-    for (const term of _patterns.coreEvaluativeTerms) {
-      if (out[term]) continue;
-      const posRe = new RegExp(`\\b${term}\\b`, "i");
-      if (posRe.test(t)) {
-        out[term] = "positive";
-      }
-    }
-
-    return out;
-  }
-
-  const thesisPolarity = getPolarityByTerm(thesisLower);
-  const claimPolarity = getPolarityByTerm(claimLower);
-  for (const term of _patterns.coreEvaluativeTerms) {
-    const tp = thesisPolarity[term];
-    const cp = claimPolarity[term];
-    if (!tp || !cp) continue;
-    if (tp !== cp) return true;
   }
 
   // =========================================================================

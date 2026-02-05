@@ -44,8 +44,8 @@ import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
-import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts, setQualityGatesLexicon } from "./quality-gates";
-import { filterEvidenceByProvenance, setProvenanceLexicon } from "./provenance-validation";
+import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts } from "./quality-gates";
+import { filterEvidenceByProvenance } from "./provenance-validation";
 import { filterByProbativeValue, calculateFalsePositiveRate, DEFAULT_FILTER_CONFIG } from "./evidence-filter";
 import {
   getBudgetConfig,
@@ -83,12 +83,11 @@ import {
   pruneOpinionOnlyFactors,
   monitorOpinionAccumulation,
 } from "./aggregation";
-import { detectContexts, detectContextsHybrid, formatDetectedContextsHint, setContextHeuristicsLexicon } from "./analysis-contexts";
+import { detectContexts, detectContextsHybrid, formatDetectedContextsHint } from "./analysis-contexts";
 import { getModelForTask } from "./llm";
 import {
   detectAndCorrectVerdictInversion,
   detectCounterClaim,
-  setVerdictCorrectionsLexicon,
 } from "./verdict-corrections";
 import {
   canonicalizeContexts,
@@ -113,37 +112,12 @@ import {
   type ContextPair,
 } from "./text-analysis-service";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "../config-schemas";
-import { getAggregationPatterns, matchesAnyPattern } from "./lexicon-utils";
 import { FallbackTracker } from "./classification-fallbacks";
 import { formatFallbackReportMarkdown } from "./format-fallback-report";
 
 // Configuration, helpers, and debug utilities imported from modular files above
 
 // NOTE: AnalysisContext canonicalization helpers extracted to ./analyzer/analysis-contexts
-
-// ============================================================================
-// UCM-Configurable Heuristics (Shared)
-// ============================================================================
-
-/**
- * Module-level compiled patterns (cached, initialized with defaults)
- * Can be reset via setOrchestratedHeuristicsLexicon() for testing
- */
-let _heuristicPatterns = getAggregationPatterns();
-
-/**
- * Reset orchestrated heuristics patterns to defaults.
- */
-export function setOrchestratedHeuristicsLexicon(): void {
-  _heuristicPatterns = getAggregationPatterns();
-}
-
-/**
- * Get current patterns (for testing)
- */
-export function getOrchestratedHeuristicsPatternsConfig() {
-  return _heuristicPatterns;
-}
 
 // ============================================================================
 // Classification Fallback Functions (P0: No Pattern Matching)
@@ -1893,16 +1867,6 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
     }
   }
 
-  // Check for recent temporal keywords
-  if (_heuristicPatterns.recencyKeywords.some((pattern) => pattern.test(lowerText))) {
-    return true;
-  }
-
-  // Check for news-related keywords that typically involve recent events (GENERIC - no person names)
-  if (_heuristicPatterns.newsIndicatorKeywords.some((pattern) => pattern.test(lowerText))) {
-    return true;
-  }
-
   // Check understanding for recent dates in contexts
   if (understanding?.analysisContexts) {
     for (const context of understanding.analysisContexts) {
@@ -3171,15 +3135,6 @@ function detectProceduralTopic(understanding: ClaimUnderstanding, originalText: 
     return true;
   }
 
-  // Check 4: Text contains procedural or governance keywords
-  const textToCheck = `${understanding.articleThesis} ${originalText}`.toLowerCase();
-  const keywordMatches = _heuristicPatterns.proceduralKeywords.filter((pattern) => pattern.test(textToCheck));
-
-  // If 3+ procedural keywords found, it's a procedural topic
-  if (keywordMatches.length >= 3) {
-    return true;
-  }
-
   return false;
 }
 
@@ -3243,25 +3198,6 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
 });
 
 /**
- * Detect if a claim is about an EXTERNAL REACTION to the subject being evaluated.
- *
- * Generic principle: When evaluating whether X is fair/valid/correct, claims about
- * how third parties REACTED to X are tangential - they don't evaluate X itself.
- *
- * Examples:
- * - Thesis: "Was the trial fair?" → Claim about sanctions imposed in response = tangential
- * - Thesis: "Was the policy effective?" → Claim about protests against the policy = tangential
- * - Thesis: "Was the decision correct?" → Claim about appeals filed = tangential (reaction)
- *
- * This is NOT domain-specific - it applies to any evaluative thesis.
- */
-function isExternalReactionClaim(claimText: string): boolean {
-  const text = claimText.toLowerCase();
-
-  return _heuristicPatterns.externalReactionPatterns.some((pattern) => pattern.test(text));
-}
-
-/**
  * Validate thesis relevance classifications and flag low-confidence cases.
  * Optionally downgrade "direct" to "tangential" when confidence is very low.
  * @exported for unit testing
@@ -3314,15 +3250,6 @@ function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; cen
 ): T[] {
   const thesisLower = (thesis || "").toLowerCase();
 
-  // Generic: Detect if thesis is EVALUATIVE (asking whether something is fair/valid/correct/effective)
-  // When evaluating X, claims about reactions TO X are tangential (they don't evaluate X itself)
-  const thesisIsEvaluative =
-    // Evaluative adjectives (fair, valid, correct, effective, proper, lawful, etc.)
-    /\b(fair|unfair|valid|invalid|correct|incorrect|effective|ineffective|proper|improper|lawful|unlawful|legal|illegal|constitutional|unconstitutional|justified|unjustified|appropriate|inappropriate|legitimate|illegitimate|reasonable|unreasonable|accurate|inaccurate|true|false|successful|failed)\b/.test(thesisLower) ||
-    // Evaluative question patterns ("was X fair?", "is X correct?", "did X work?")
-    /\b(was|is|were|are)\s+.{3,50}\s+(fair|valid|correct|effective|proper|lawful|legal|justified|appropriate|legitimate|reasonable|accurate|true|successful)\b/.test(thesisLower) ||
-    // "based on" patterns (based on law, evidence, data, records)
-    /\bbased\s+on\s+(law|evidence|data|records|standards|rules|procedures)\b/.test(thesisLower);
   const STOP_WORDS = new Set([
     "the",
     "a",
@@ -3382,19 +3309,6 @@ function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; cen
     let thesisRelevance =
       raw === "direct" || raw === "tangential" || raw === "irrelevant" ? raw : "direct";
     const isMarkedCentral = claim?.isCentral === true || claim?.centrality === "high";
-
-    // v2.6.33: Auto-detect external reaction claims and mark them tangential
-    // Generic: When evaluating X, claims about reactions TO X are tangential
-    if (thesisIsEvaluative && thesisRelevance === "direct") {
-      const claimText = String(claim?.text || "");
-      if (isExternalReactionClaim(claimText)) {
-        thesisRelevance = "tangential";
-        debugLog("enforceThesisRelevanceInvariants: External reaction claim → tangential", {
-          claimText: claimText.slice(0, 80),
-          thesis: thesisLower.slice(0, 80),
-        });
-      }
-    }
 
     // If a claim substantially overlaps the thesis text, it should be direct (not tangential).
     if (thesisRelevance === "tangential") {
@@ -10280,11 +10194,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     );
   }
 
-  setQualityGatesLexicon();
-  setProvenanceLexicon();
-  setVerdictCorrectionsLexicon();
-  setContextHeuristicsLexicon();
-  setOrchestratedHeuristicsLexicon();
   setSourceReliabilityConfig(srConfig);
 
   // ============================================================================

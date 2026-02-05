@@ -2,10 +2,8 @@
  * FactHarbor Analyzer - Quality Gates
  *
  * POC1 Quality Gates implementation:
- * - Gate 1: Claim Validation (factual vs opinion/prediction)
+ * - Gate 1: Claim Validation (content analysis)
  * - Gate 4: Verdict Confidence Assessment
- *
- * v2.10: Uses internal pattern set (no external lexicon config).
  *
  * @module analyzer/quality-gates
  */
@@ -17,94 +15,45 @@ import type {
   FetchedSource,
   EvidenceItem,
 } from "./types";
-import { getEvidencePatterns, matchesAnyPattern, countPatternMatches } from "./lexicon-utils";
-
-// ============================================================================
-// PATTERN CONFIGURATION
-// ============================================================================
-
-/**
- * Module-level compiled patterns (cached, initialized with defaults)
- */
-let _patterns = getEvidencePatterns();
-
-/**
- * Reset quality gate patterns to defaults.
- */
-export function setQualityGatesLexicon(): void {
-  _patterns = getEvidencePatterns();
-}
-
-/**
- * Get current patterns (for testing)
- */
-export function getQualityGatesPatterns() {
-  return _patterns;
-}
 
 // ============================================================================
 // GATE 1: CLAIM VALIDATION
 // ============================================================================
 
 /**
- * Gate 1: Validate if a claim is factual (verifiable) vs opinion/prediction
+ * Gate 1: Validate if a claim has sufficient content for analysis
  *
  * IMPORTANT: Central claims are ALWAYS passed through Gate 1, even if they
  * technically fail validation. This ensures important claims aren't lost.
+ *
+ * All claims are treated as potentially verifiable - the LLM-based analysis
+ * determines factuality through grounding factual components.
  */
 export function validateClaimGate1(
   claimId: string,
   claimText: string,
   isCentral: boolean = false
 ): ClaimValidationResult {
-  // Use module-level patterns (internal defaults)
-  const patterns = _patterns;
-
-  // 1. Calculate opinion score (0-1)
-  const opinionMatches = countPatternMatches(claimText, patterns.opinionMarkers);
-  const opinionScore = Math.min(opinionMatches / 3, 1);
-
-  // 2. Calculate specificity score (0-1)
-  const specificityMatches = countPatternMatches(claimText, patterns.specificityPatterns);
-  const specificityScore = Math.min(specificityMatches / 3, 1);
-
-  // 2b. Lightweight content-word count: helps keep verifiable, mechanism-style claims
+  // Content word count: helps keep verifiable, mechanism-style claims
   // that don't necessarily include numbers/dates (common in comparative decompositions).
   const contentWordCount = claimText
     .toLowerCase()
     .replace(/[^\w\s]/g, " ")
     .split(/\s+/)
-    .filter(w => w.length >= 4 && !patterns.stopwords.has(w))
+    .filter(w => w.length >= 4)
     .length;
-  const hasEnoughContent = contentWordCount >= 5;
 
-  // 3. Check for future predictions
-  const futureOriented = matchesAnyPattern(claimText, patterns.futureMarkers);
+  // All claims are treated as potentially verifiable (AMBIGUOUS)
+  // LLM analysis handles factuality through grounding
+  const claimType: "FACTUAL" | "OPINION" | "PREDICTION" | "AMBIGUOUS" = "AMBIGUOUS";
+  const isFactual = true; // All claims can be analyzed for factual components
+  const opinionScore = 0;
+  const specificityScore = 0;
+  const futureOriented = false;
 
-  // 4. Determine claim type
-  let claimType: "FACTUAL" | "OPINION" | "PREDICTION" | "AMBIGUOUS";
-  if (futureOriented) {
-    claimType = "PREDICTION";
-  } else if (opinionScore > 0.5) {
-    claimType = "OPINION";
-  } else if (specificityScore >= 0.3 && opinionScore <= 0.3) {
-    claimType = "FACTUAL";
-  } else {
-    claimType = "AMBIGUOUS";
-  }
-
-  // 5. Determine if it can be verified
-  //
-  // NOTE: "Opinion" / "Prediction" are still claims that can often be analyzed by
-  // grounding their *factual components* (timelines, procedures, quoted statements, laws, etc.).
-  // We keep this classification for downstream UI/prompting, but we DO NOT use it to hard-filter.
-  const isFactual = claimType === "FACTUAL" || claimType === "AMBIGUOUS";
-
-  // 6. Pass criteria
-  //
-  // We only filter extremely content-poor claims (noise), not opinions/predictions.
+  // Pass criteria: filter only extremely content-poor claims (noise)
   // Central claims are still always kept.
-  const isContentPoor = contentWordCount < 3 && specificityScore < 0.3;
+  const isContentPoor = contentWordCount < 3;
   const wouldPass = !isContentPoor;
 
   // CRITICAL: Central claims always pass Gate 1
@@ -173,8 +122,8 @@ export function validateVerdictGate4(
     ? supportingEvidenceIds.length / totalEvidence
     : 0;
 
-  // 4. Count uncertainty factors in reasoning (using internal patterns)
-  const uncertaintyFactors = countPatternMatches(verdictReasoning, _patterns.uncertaintyMarkers);
+  // 4. Uncertainty factors (informational only, not used in decisions)
+  const uncertaintyFactors = 0;
 
   // 5. Determine confidence tier
   let confidenceTier: "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";

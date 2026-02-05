@@ -69,7 +69,7 @@ ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.eva
   - Similar issues
   - The same time period
 - Example: If analyzing "Was X's trial fair?", an AnalysisContext about Y's trial (even in same court) is IRRELEVANT
-- **THIRD-PARTY REACTIONS WITH LOW PROBATIVE VALUE ARE NOISE**: Third-party reactions are only valid if they provide high or medium probativeValue evidence directly about X. Low probativeValue or mere reactions are NOISE
+- **REACTIONS ≠ EVALUATIONS**: Claims about how others REACTED to the subject do NOT evaluate the subject itself. When thesis asks "Was X fair/valid/correct?", claims about criticism, condemnation, praise, sanctions, or responses TO X are tangential - they tell us what people THINK about X, not whether X was actually fair/valid/correct
 
 ${recencySection}## TEMPORAL REASONING
 
@@ -177,7 +177,26 @@ Claims with claimRole "source", "attribution", or "timing" should ALWAYS have ce
 - **"tangential"**: Related background details but does NOT test the thesis → displayed but excluded from verdict
 - **"irrelevant"**: Not meaningfully about the input's specific topic → dropped
 
-**CRITICAL**: Foreign government responses to domestic proceedings are ALWAYS tangential.
+### CRITICAL: REACTIONS ≠ EVALUATIONS
+
+**Claims about REACTIONS to X do NOT evaluate X itself.**
+
+When the thesis asks "Was X fair/valid/correct?", the following are ALWAYS tangential or irrelevant:
+- Third-party criticism, condemnation, praise, or support
+- Responses, sanctions, measures, or actions taken IN RESPONSE to X
+- Opinions on whether responses/reactions were "justified" or "appropriate"
+- What critics, observers, or the public think ABOUT X
+
+These claims tell us how people REACTED to X, not whether X was actually fair/valid/correct.
+
+**EXAMPLE**: If thesis is "Was decision X legally sound?":
+- ❌ TANGENTIAL: "Critics condemned decision X" - Opinion about X, not evaluation of X
+- ❌ TANGENTIAL: "The response to X was justified" - Evaluates the RESPONSE, not X
+- ❌ TANGENTIAL: "Sanctions were imposed following X" - Action taken in response, not evaluation of X
+- ✅ DIRECT: "X followed proper procedures" - Tests whether X was procedurally sound
+- ✅ DIRECT: "X was based on sufficient evidence" - Tests the factual basis of X
+
+**Reactions tell us what people THINK about X. Direct claims tell us whether X was actually fair/valid/correct.**
 
 ## MULTI-ANALYSISCONTEXT DETECTION
 

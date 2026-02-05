@@ -28,7 +28,7 @@ import {
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
 import { percentageToClaimVerdict, getHighlightColor } from "./truth-scale";
-import { filterEvidenceByProvenance, setProvenanceLexicon } from "./provenance-validation";
+import { filterEvidenceByProvenance } from "./provenance-validation";
 import type { EvidenceItem } from "./types";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
@@ -36,7 +36,7 @@ import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { loadPipelineConfig, loadSearchConfig, type PipelineConfig } from "@/lib/config-loader";
 import { normalizeClaimText, deriveCandidateClaimTexts } from "./claim-decomposition";
 import { calculateWeightedVerdictAverage } from "./aggregation";
-import { detectContexts, formatDetectedContextsHint, setContextHeuristicsLexicon } from "./analysis-contexts";
+import { detectContexts, formatDetectedContextsHint } from "./analysis-contexts";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
@@ -638,8 +638,6 @@ export async function runMonolithicCanonical(
     );
   }
 
-  setProvenanceLexicon();
-  setContextHeuristicsLexicon();
   setSourceReliabilityConfig(srConfig);
 
   // v2.6.35: Clear source reliability cache at start of analysis

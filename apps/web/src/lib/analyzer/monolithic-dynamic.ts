@@ -20,7 +20,7 @@ import { z } from "zod";
 import { getModel, getModelForTask } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
-import { filterEvidenceByProvenance, setProvenanceLexicon } from "./provenance-validation";
+import { filterEvidenceByProvenance } from "./provenance-validation";
 import type { EvidenceItem } from "./types";
 import {
   createBudgetTracker,
@@ -34,7 +34,6 @@ import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-bui
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
-import { setContextHeuristicsLexicon } from "./analysis-contexts";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
@@ -198,8 +197,6 @@ export async function runMonolithicDynamic(
     );
   }
 
-  setProvenanceLexicon();
-  setContextHeuristicsLexicon();
   setSourceReliabilityConfig(srConfig);
 
   // v2.6.35: Clear source reliability cache at start of analysis

@@ -10,30 +10,6 @@
  */
 
 import type { EvidenceItem, FetchedSource } from "./types";
-import { getEvidencePatterns } from "./lexicon-utils";
-
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
-/**
- * Module-level compiled patterns (cached, initialized with defaults)
- */
-let _patterns = getEvidencePatterns();
-
-/**
- * Reset provenance patterns to defaults.
- */
-export function setProvenanceLexicon(): void {
-  _patterns = getEvidencePatterns();
-}
-
-/**
- * Get current patterns (for testing)
- */
-export function getProvenancePatternsConfig() {
-  return _patterns;
-}
 
 // ============================================================================
 // PROVENANCE VALIDATION
@@ -97,18 +73,7 @@ export function validateEvidenceProvenance(evidenceItem: EvidenceItem): Provenan
     };
   }
 
-  // 4. Check sourceUrl is not a synthetic/internal URL (after URL parsing)
-  for (const pattern of _patterns.provenanceInvalidUrlPatterns) {
-    if (pattern.test(url)) {
-      return {
-        isValid: false,
-        failureReason: `Invalid URL pattern: ${url}`,
-        severity: "error",
-      };
-    }
-  }
-
-  // 5. Check sourceExcerpt is present
+  // 4. Check sourceExcerpt is present
   if (!evidenceItem.sourceExcerpt || typeof evidenceItem.sourceExcerpt !== "string") {
     return {
       isValid: false,
@@ -119,24 +84,13 @@ export function validateEvidenceProvenance(evidenceItem: EvidenceItem): Provenan
 
   const excerpt = evidenceItem.sourceExcerpt.trim();
 
-  // 6. Check sourceExcerpt is substantive
-  if (excerpt.length < _patterns.provenanceMinSourceExcerptLength) {
+  // 5. Check sourceExcerpt is not empty
+  if (excerpt.length === 0) {
     return {
       isValid: false,
-      failureReason: `sourceExcerpt too short (${excerpt.length} chars, need >=${_patterns.provenanceMinSourceExcerptLength})`,
+      failureReason: "sourceExcerpt is empty",
       severity: "error",
     };
-  }
-
-  // 7. Check sourceExcerpt is not synthetic LLM text
-  for (const pattern of _patterns.provenanceSyntheticContentPatterns) {
-    if (pattern.test(excerpt)) {
-      return {
-        isValid: false,
-        failureReason: "sourceExcerpt appears to be LLM-generated synthesis, not a real source quote",
-        severity: "error",
-      };
-    }
   }
 
   // All checks passed
@@ -228,30 +182,6 @@ export function validateSourceProvenance(source: FetchedSource): SourceProvenanc
         hasGroundingMetadata: false,
         failureReason: "Grounded search source missing URL (no grounding metadata)",
       };
-    }
-
-    // Check if URL looks synthetic
-    for (const pattern of _patterns.provenanceInvalidUrlPatterns) {
-      if (pattern.test(source.url)) {
-        return {
-          hasProvenance: false,
-          hasGroundingMetadata: false,
-          failureReason: `Grounded search source has invalid URL: ${source.url}`,
-        };
-      }
-    }
-
-    // Check if fullText is just LLM synthesis (not actual source content)
-    if (source.fullText && source.fullText.length > 0) {
-      for (const pattern of _patterns.provenanceSyntheticContentPatterns) {
-        if (pattern.test(source.fullText)) {
-          return {
-            hasProvenance: false,
-            hasGroundingMetadata: false,
-            failureReason: "Grounded search source fullText appears to be LLM synthesis",
-          };
-        }
-      }
     }
 
     // Grounded search source passed validation
