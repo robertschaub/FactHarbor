@@ -53,23 +53,12 @@ ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.eva
 - Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate AnalysisContexts by themselves.
 - Pro vs con viewpoints are NOT AnalysisContexts.
 
-## ANALYSISCONTEXT RELEVANCE REQUIREMENT (CRITICAL)
-- Every AnalysisContext MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include AnalysisContexts from unrelated domains just because they share a general category
-- Each AnalysisContext must have a clear, direct connection to the input's subject matter
-- When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones
-- An AnalysisContext with zero relevant claims/evidence should NOT exist
+## ANALYSISCONTEXT RELEVANCE (CRITICAL)
 
-**SAME SUBJECT/ENTITY RULE**:
-- AnalysisContexts MUST be about the SAME SUBJECT as the thesis
-- If thesis is about "Person A's trial", do NOT include AnalysisContexts about Person B, C, etc.
-- Different cases involving DIFFERENT PEOPLE are NOT relevant AnalysisContexts, even if they share:
-  - The same institution
-  - The same region/country
-  - Similar issues
-  - The same time period
-- Example: If analyzing "Was X's trial fair?", an AnalysisContext about Y's trial (even in same court) is IRRELEVANT
-- **REACTIONS ≠ EVALUATIONS**: Claims about how others REACTED to the subject do NOT evaluate the subject itself. When thesis asks "Was X fair/valid/correct?", claims about criticism, condemnation, praise, sanctions, or responses TO X are tangential - they tell us what people THINK about X, not whether X was actually fair/valid/correct
+**SAME QUESTION RULE**: Every AnalysisContext must answer the user's original question.
+- ✅ VALID: "Was X fair under framework A?" (answers user's question about X)
+- ❌ INVALID: "Was Y's response to X appropriate?" (different question)
+- ❌ Third-party reactions/responses/sanctions are NEVER valid AnalysisContexts when evaluating X itself
 
 ${recencySection}## TEMPORAL REASONING
 
@@ -208,10 +197,11 @@ Look for multiple distinct AnalysisContexts that should be analyzed separately.
 
 ### What is NOT a distinct AnalysisContext:
 - Different perspectives/viewpoints on the SAME event (political views, stakeholder opinions, pro vs con)
+- **THIRD-PARTY REACTIONS** (see ANALYSISCONTEXT RELEVANCE REQUIREMENT above): Foreign government responses, sanctions, criticism, condemnation → These answer DIFFERENT QUESTIONS
 
 ### Split Rules:
 
-**Do NOT Split**: Viewpoints, incidental temporal mentions, multiple sources on same topic
+**Do NOT Split**: Viewpoints, incidental temporal mentions, multiple sources on same topic, **third-party reactions/responses**
 
 **DO Split**: Different measurement boundaries (Method A vs Method B), time AS primary subject (2000s vs 1970s events), geographic/institutional analytical boundaries requiring different evidence
 

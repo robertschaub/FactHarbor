@@ -62,8 +62,9 @@ When input compares two things (X vs Y, X is better/more efficient than Y):
 
 **Do NOT Split For**:
 - Viewpoints/opinions on same matter (different perspectives ≠ distinct AnalysisContexts)
-- Incidental temporal/geographic mentions (e.g., "in 2020, court ruled..." unless time IS the subject)
-- Multiple sources analyzing same AnalysisContext (studies/reports on one topic)
+- Incidental temporal/geographic mentions (e.g., "in 2020..." unless time IS the subject)
+- Multiple sources analyzing same AnalysisContext
+- Third-party reactions/responses to X (when evaluating X itself)
 
 **DO Split For** (distinct analytical boundaries):
 - Different measurement frameworks (e.g., Method A vs Method B efficiency)

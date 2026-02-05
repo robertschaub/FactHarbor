@@ -644,6 +644,7 @@ Language rules (avoid ambiguity):
 Your job: Identify the DISTINCT AnalysisContexts that are REQUIRED by the evidence. Create a separate AnalysisContext ONLY when the evidence clearly indicates a different analytical frame (methodology/boundary/jurisdiction/etc.) that would require its own verdict. If the evidence does NOT show distinct frames, return a single AnalysisContext.
 
 CRITICAL RULES:
+- SAME QUESTION: every AnalysisContext must answer the user's original question. Third-party reactions/responses to X are INVALID when evaluating X itself.
 - Relevance: every AnalysisContext MUST be directly relevant to the input's specific topic. Do not keep marginally related contexts.
 - When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones.
 - Evidence-grounded only: every AnalysisContext MUST be supported by at least one evidenceId from the list.

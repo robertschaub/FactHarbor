@@ -95,18 +95,12 @@ Only merge AnalysisContexts that are TRUE DUPLICATES. Preserve distinct analytic
 
 ## RELEVANCE REQUIREMENT (CRITICAL)
 
-**Every AnalysisContext MUST be**:
-- Directly relevant to the input's specific topic
-- Supported by at least one Evidence item from the provided Evidence
-- A distinct analytical frame (not just a different perspective)
+**SAME QUESTION RULE**: Every AnalysisContext must answer the user's original question.
+- ✅ VALID: "Was X fair under framework A?" (answers user's question about X)
+- ❌ INVALID: "Was Y's response to X appropriate?" (different question)
+- ❌ Third-party reactions/responses/sanctions are NEVER valid AnalysisContexts when evaluating X itself
 
-**When in doubt**: Use FEWER AnalysisContexts rather than including marginally relevant ones.
-
-**SAME SUBJECT/ENTITY RULE**:
-- AnalysisContexts MUST be about the SAME SUBJECT as the thesis
-- If thesis is about "Person A's trial", do NOT include AnalysisContexts about Person B, C, etc.
-- Different cases involving DIFFERENT PEOPLE are NOT relevant AnalysisContexts, even if they share the same institution or similar issues
-- **THIRD-PARTY REACTIONS WITH LOW PROBATIVE VALUE ARE NOISE**: Third-party reactions are only valid if they provide evidence with high or medium probativeValue directly about X. Low probativeValue evidence (vague claims, opinions, mere reactions like sanctions/condemnations) is NOISE.
+**When in doubt**: Use FEWER AnalysisContexts. Third-party reactions are NOISE.
 
 ## EVIDENCE-GROUNDED ONLY
 
