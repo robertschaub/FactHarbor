@@ -195,6 +195,8 @@ For EACH claim verdict, EXPLICITLY confirm what direction you are rating:
 
 ## OUTPUT FORMAT
 
+See OUTPUT_SCHEMAS.md for complete TypeScript interfaces and validation rules.
+
 **OUTPUT FIELD NAMING (CRITICAL)**:
 - Preferred: supportingEvidenceIds (Evidence item IDs)
 

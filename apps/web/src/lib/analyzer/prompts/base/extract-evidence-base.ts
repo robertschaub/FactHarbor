@@ -212,6 +212,8 @@ Only extract Evidence items that have **PROBATIVE VALUE** for the analysis. Prob
 
 ## OUTPUT FORMAT (REQUIRED FIELDS)
 
+See OUTPUT_SCHEMAS.md for complete TypeScript interfaces and validation rules.
+
 Return JSON with \`evidenceItems\` array (preferred). Each evidence item MUST include:
 - id: string (E1, E2, etc.)
 - statement: string (one sentence, ≤100 chars)

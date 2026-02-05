@@ -185,6 +185,8 @@ This applies to any claim that asserts a judgment (e.g., "X was fair", "Y was ap
 
 ## OUTPUT FORMAT
 
+See OUTPUT_SCHEMAS.md for complete TypeScript interfaces and validation rules.
+
 Return JSON with:
 - impliedClaim: Neutral summary of what input claims (not your judgment)
 - articleThesis: What the article/input asserts (neutral language)
