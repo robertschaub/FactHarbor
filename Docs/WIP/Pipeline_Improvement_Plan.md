@@ -730,6 +730,23 @@ Please reply with **GO** or **NO-GO** and any required changes.
 
 ---
 
-**Document Status:** ✅ PHASE 1 COMPLETE
+## 10. Code Review Fixes (2026-02-05)
+
+Following implementation, a code review identified 5 minor issues that were addressed:
+
+| # | Finding | Fix | Location |
+|---|---------|-----|----------|
+| 1 | Similarity threshold 0.3 too permissive | Raised to 0.4, added `CLAIM_EVIDENCE_SIMILARITY_THRESHOLD` constant | orchestrated.ts |
+| 2 | Gap research budget undocumented | Added comprehensive design decision comment block | orchestrated.ts:10922-10940 |
+| 3 | LLM call counting incomplete | Added `llmCallCount` to telemetry; fixed missing tracking in grounded search and gap research | orchestrated.ts |
+| 4 | Concurrency limit hardcoded | Added `parallelExtractionLimit` to PipelineConfig (1-10, default: 3) | config-schemas.ts, orchestrated.ts |
+| 5 | Temporal confidence threshold 0.5 low | Raised to 0.6, added `TEMPORAL_CONTEXT_CONFIDENCE_THRESHOLD` constant | orchestrated.ts |
+
+**Commit:** `fix(pipeline): address code review findings for Phase 1`
+
+---
+
+**Document Status:** ✅ PHASE 1 COMPLETE + CODE REVIEW FIXES
 **Sign-off:** Principal Software Architect (2026-02-05)
 **Implementation Completed:** 2026-02-05
+**Code Review Fixes:** 2026-02-05
