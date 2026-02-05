@@ -91,6 +91,52 @@ export interface VerdictValidationResult {
   validatedAt: Date;
 }
 
+/**
+ * Gate 1 Statistics: Claim validation results summary
+ * Tracks how many claims passed factual validation vs were filtered
+ */
+export interface Gate1Stats {
+  total: number;          // Total claims evaluated
+  passed: number;         // Claims that passed validation
+  filtered: number;       // Claims filtered out (opinion, prediction, etc.)
+  centralKept: number;    // Central claims kept despite failing validation
+}
+
+/**
+ * Gate 4 Statistics: Verdict confidence distribution
+ * Tracks confidence tiers for all generated verdicts
+ */
+export interface Gate4Stats {
+  total: number;          // Total verdicts generated
+  publishable: number;    // Verdicts with HIGH or MEDIUM confidence
+  highConfidence: number; // HIGH confidence count
+  mediumConfidence: number; // MEDIUM confidence count
+  lowConfidence: number;  // LOW confidence count
+  insufficient: number;   // INSUFFICIENT evidence count
+  centralKept: number;    // Central claims kept despite insufficient confidence
+}
+
+/**
+ * Quality Gates Summary: High-level analysis metrics
+ */
+export interface QualityGatesSummary {
+  totalEvidenceItems: number;
+  totalSources: number;
+  searchesPerformed: number;
+  contradictionSearchPerformed: boolean;
+}
+
+/**
+ * QualityGates: Aggregate quality gate status for an analysis
+ * Used by QualityGatesPanel component for UI display
+ */
+export interface QualityGates {
+  passed: boolean;              // Overall pass/fail status
+  gate1Stats?: Gate1Stats;      // Claim validation stats
+  gate4Stats?: Gate4Stats;      // Verdict confidence stats
+  summary?: QualityGatesSummary; // High-level metrics
+}
+
 // ============================================================================
 // ANALYSIS CONTEXT & EVIDENCE SCOPE TYPES
 // ============================================================================

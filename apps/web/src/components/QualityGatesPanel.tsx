@@ -6,52 +6,27 @@
 
 import React from 'react';
 import styles from './QualityGatesPanel.module.css';
+import type { QualityGates } from '@/lib/analyzer/types';
 
-interface Gate1Stats {
-  total: number;
-  passed: number;
-  filtered: number;
-  centralKept: number;
-}
-
-interface Gate4Stats {
-  total: number;
-  publishable: number;
-  highConfidence: number;
-  mediumConfidence: number;
-  lowConfidence: number;
-  insufficient: number;
-  centralKept: number;
-}
-
-interface QualityGatesSummary {
-  totalEvidenceItems: number;
-  totalSources: number;
-  searchesPerformed: number;
-  contradictionSearchPerformed: boolean;
-}
-
-export interface QualityGates {
-  passed: boolean;
-  gate1Stats?: Gate1Stats;
-  gate4Stats?: Gate4Stats;
-  summary?: QualityGatesSummary;
-}
+// Re-export for consumers that imported from this file
+export type { QualityGates } from '@/lib/analyzer/types';
 
 interface QualityGatesPanelProps {
   qualityGates: QualityGates | undefined;
   collapsed?: boolean;
 }
 
-function ConfidenceBar({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
+type ConfidenceLevel = 'high' | 'medium' | 'low' | 'insufficient';
+
+function ConfidenceBar({ label, count, total, level }: { label: string; count: number; total: number; level: ConfidenceLevel }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <div className={styles.confidenceRow}>
       <span className={styles.confidenceLabel}>{label}</span>
       <div className={styles.confidenceBarContainer}>
         <div
-          className={styles.confidenceBarFill}
-          style={{ width: `${pct}%`, backgroundColor: color }}
+          className={`${styles.confidenceBarFill} ${styles[level]}`}
+          style={{ width: `${pct}%` }}
         />
       </div>
       <span className={styles.confidenceCount}>{count} ({pct}%)</span>
@@ -124,25 +99,25 @@ export function QualityGatesPanel({ qualityGates, collapsed = true }: QualityGat
                   label="High"
                   count={gate4Stats.highConfidence}
                   total={totalVerdicts}
-                  color="#22c55e"
+                  level="high"
                 />
                 <ConfidenceBar
                   label="Medium"
                   count={gate4Stats.mediumConfidence}
                   total={totalVerdicts}
-                  color="#eab308"
+                  level="medium"
                 />
                 <ConfidenceBar
                   label="Low"
                   count={gate4Stats.lowConfidence}
                   total={totalVerdicts}
-                  color="#f97316"
+                  level="low"
                 />
                 <ConfidenceBar
                   label="Insufficient"
                   count={gate4Stats.insufficient}
                   total={totalVerdicts}
-                  color="#ef4444"
+                  level="insufficient"
                 />
               </div>
               <div className={styles.publishableNote}>

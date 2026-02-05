@@ -201,6 +201,12 @@ export const PipelineConfigSchema = z.object({
   parallelExtractionLimit: z.number().int().min(1).max(10).optional()
     .describe("Max concurrent evidence extraction calls (1-10). Lower values reduce rate limiting risk. Consider provider-specific limits."),
 
+  // === Pipeline Thresholds ===
+  evidenceSimilarityThreshold: z.number().min(0.2).max(0.8).optional()
+    .describe("Similarity threshold for matching evidence to claims (0.2-0.8). Default: 0.4"),
+  temporalConfidenceThreshold: z.number().min(0.3).max(0.9).optional()
+    .describe("Min confidence for temporalContext to affect recency filters (0.3-0.9). Default: 0.6"),
+
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
 
@@ -210,6 +216,14 @@ export const PipelineConfigSchema = z.object({
   maxTotalTokens: z.number().int().min(10000).max(2000000).describe("Max tokens per analysis"),
   maxTokensPerCall: z.number().int().min(1000).max(500000).optional().describe("Max tokens per LLM call"),
   enforceBudgets: z.boolean().describe("Hard enforce budget limits (false = soft limits for important claims)"),
+
+  // === Gap-Driven Research (Pipeline Phase 1) ===
+  gapResearchEnabled: z.boolean().optional()
+    .describe("Enable gap-driven research to fill evidence gaps for HIGH centrality claims"),
+  gapResearchMaxIterations: z.number().int().min(1).max(10).optional()
+    .describe("Max gap research iterations after main research completes"),
+  gapResearchMaxQueries: z.number().int().min(1).max(20).optional()
+    .describe("Max total queries issued during gap research (separate from main research budget)"),
 
   // === Pipeline Runtime Timeouts ===
   monolithicCanonicalTimeoutMs: z.number().int().min(60000).max(600000).optional().describe(
@@ -319,6 +333,21 @@ export const PipelineConfigSchema = z.object({
   if (data.parallelExtractionLimit === undefined) {
     data.parallelExtractionLimit = 3; // Conservative default to avoid rate limiting
   }
+  if (data.evidenceSimilarityThreshold === undefined) {
+    data.evidenceSimilarityThreshold = 0.4;
+  }
+  if (data.temporalConfidenceThreshold === undefined) {
+    data.temporalConfidenceThreshold = 0.6;
+  }
+  if (data.gapResearchEnabled === undefined) {
+    data.gapResearchEnabled = true; // Enabled by default for Pipeline Phase 1
+  }
+  if (data.gapResearchMaxIterations === undefined) {
+    data.gapResearchMaxIterations = 2;
+  }
+  if (data.gapResearchMaxQueries === undefined) {
+    data.gapResearchMaxQueries = 8;
+  }
 
   if (warnings.length > 0) {
     console.warn(`[DEPRECATED] Pipeline config keys migrated: ${warnings.join(", ")}`);
@@ -385,12 +414,21 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   pdfParseTimeoutMs: 60000,
   parallelExtractionLimit: 3, // Conservative default; can increase for providers with higher rate limits
 
+  // Pipeline thresholds
+  evidenceSimilarityThreshold: 0.4,
+  temporalConfidenceThreshold: 0.6,
+
   // Budget controls
   maxIterationsPerContext: 5, // NEW: Use new key name
   maxTotalIterations: 20,
   maxTotalTokens: 750000,
   maxTokensPerCall: 100000,
   enforceBudgets: false,
+
+  // Gap-driven research (Pipeline Phase 1)
+  gapResearchEnabled: true,
+  gapResearchMaxIterations: 2,
+  gapResearchMaxQueries: 8,
 
   // Pipeline selection
   defaultPipelineVariant: "orchestrated",

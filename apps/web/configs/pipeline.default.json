@@ -46,5 +46,10 @@
   "maxTotalTokens": 750000,
   "maxTokensPerCall": 100000,
   "enforceBudgets": false,
-  "defaultPipelineVariant": "orchestrated"
+  "defaultPipelineVariant": "orchestrated",
+  "evidenceSimilarityThreshold": 0.4,
+  "temporalConfidenceThreshold": 0.6,
+  "gapResearchEnabled": true,
+  "gapResearchMaxIterations": 2,
+  "gapResearchMaxQueries": 8
 }

@@ -80,6 +80,19 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
    - Added `llmCallCount` to telemetry for accurate budget tracking
    - Added comprehensive gap research budget documentation
 
+5. **Phase 2 Quick Win: Configurable Thresholds (P2)**
+   - Made `evidenceSimilarityThreshold` configurable (0.2-0.8, default: 0.4)
+   - Made `temporalConfidenceThreshold` configurable (0.3-0.9, default: 0.6)
+   - Added gap research config to UCM: `gapResearchEnabled`, `gapResearchMaxIterations`, `gapResearchMaxQueries`
+   - Updated `pipeline.default.json` with all new fields for DB seeding
+   - Wired configurable values into orchestrated.ts (replaces hardcoded constants)
+
+6. **QualityGatesPanel Refinements**
+   - Moved shared types (`QualityGates`, `Gate1Stats`, `Gate4Stats`) to `types.ts`
+   - Added CSS semantic variables (`.panel` scoped: `--color-success`, `--color-warning`, etc.)
+   - Replaced inline `color` prop with `level` CSS classes for confidence bars
+   - Added type re-export for backwards compatibility
+
 **Files Created**:
 - `apps/web/src/components/QualityGatesPanel.tsx`
 - `apps/web/src/components/QualityGatesPanel.module.css`
@@ -90,12 +103,16 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 - `apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts` (EvidenceScope decision tree)
 - `apps/web/src/lib/analyzer/prompts/config-adaptations/tiering.ts` (terminology)
 - `apps/web/src/lib/analyzer/prompts/prompt-builder.ts` (terminology)
-- `apps/web/src/lib/analyzer/orchestrated.ts` (pipeline improvements)
+- `apps/web/src/lib/analyzer/orchestrated.ts` (pipeline improvements + threshold wiring)
+- `apps/web/src/lib/analyzer/types.ts` (QualityGates shared types)
+- `apps/web/src/lib/config-schemas.ts` (new threshold + gap research fields)
+- `apps/web/configs/pipeline.default.json` (UCM default with new fields)
 - Multiple Docs/* files (terminology sweep)
 
 **Docs Updated**:
 - Analysis Quality Review plan archived
 - Pipeline_Improvement_Plan.md Phase 1 marked complete
+- Pipeline_Phase2_Plan.md P2 configurable thresholds marked complete
 
 ---
 

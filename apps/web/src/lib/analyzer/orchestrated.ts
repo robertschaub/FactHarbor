@@ -1294,6 +1294,7 @@ function analyzeEvidenceGaps(
   evidenceItems: EvidenceItem[],
   understanding: ClaimUnderstanding,
   searchQueries: Array<{ query: string; iteration: number }>,
+  evidenceSimilarityThreshold: number = 0.4,
 ): EvidenceGap[] {
   const gaps: EvidenceGap[] = [];
 
@@ -1304,7 +1305,7 @@ function analyzeEvidenceGaps(
       if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
       // Check for text similarity
       const similarity = calculateTextSimilarity(e.statement, claim.text);
-      return similarity > CLAIM_EVIDENCE_SIMILARITY_THRESHOLD;
+      return similarity > evidenceSimilarityThreshold;
     });
 
     // Get queries that were attempted for this claim's context
@@ -6890,15 +6891,10 @@ interface ParallelExtractionResult {
   };
 }
 
-// Default parallel extraction limit (fallback if not in config)
-// Can be overridden via pipelineConfig.parallelExtractionLimit
-const DEFAULT_PARALLEL_EXTRACTION_LIMIT = 3;
-// Claim-evidence similarity threshold for gap analysis and coverage metrics
-// Raised from 0.3 to 0.4 per code review - 0.3 was too permissive
-const CLAIM_EVIDENCE_SIMILARITY_THRESHOLD = 0.4;
-// Temporal context confidence threshold for recency-based search adjustments
-// Set to 0.6 to require moderate-to-high confidence before adjusting search params
-const TEMPORAL_CONTEXT_CONFIDENCE_THRESHOLD = 0.6;
+const PARALLEL_EXTRACTION_LIMIT = 3;
+// NOTE: CLAIM_EVIDENCE_SIMILARITY_THRESHOLD and TEMPORAL_CONTEXT_CONFIDENCE_THRESHOLD
+// are now configurable via PipelineConfig.evidenceSimilarityThreshold (default: 0.4)
+// and PipelineConfig.temporalConfidenceThreshold (default: 0.6) respectively.
 
 async function extractEvidenceParallel(
   sources: FetchedSource[],
@@ -6911,9 +6907,7 @@ async function extractEvidenceParallel(
   let successCount = 0;
   let failureCount = 0;
   let throttlingEvents = 0;
-  // Use config value if available, otherwise fall back to default
-  const configLimit = options.pipelineConfig?.parallelExtractionLimit ?? DEFAULT_PARALLEL_EXTRACTION_LIMIT;
-  let currentLimit = configLimit;
+  let currentLimit = PARALLEL_EXTRACTION_LIMIT;
 
   // Process in batches with bounded concurrency
   for (let i = 0; i < sources.length; i += currentLimit) {
@@ -10763,7 +10757,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       let recencyMatters = decision.recencyMatters || isRecencySensitive(query, state.understanding || undefined);
       let dateRestrict: "y" | "m" | "w" | undefined = searchConfig.dateRestrict ?? undefined;
 
-      if (temporalContext?.isRecencySensitive && temporalContext.confidence > TEMPORAL_CONTEXT_CONFIDENCE_THRESHOLD) {
+      const temporalConfThreshold = state.pipelineConfig.temporalConfidenceThreshold ?? 0.6;
+      if (temporalContext?.isRecencySensitive && temporalContext.confidence > temporalConfThreshold) {
         // Use LLM-determined temporal context
         recencyMatters = true;
         if (!dateRestrict) {
@@ -10965,7 +10960,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         break;
       }
 
-      const gaps = analyzeEvidenceGaps(state.evidenceItems, state.understanding, state.searchQueries);
+      const gaps = analyzeEvidenceGaps(
+        state.evidenceItems,
+        state.understanding,
+        state.searchQueries,
+        state.pipelineConfig.evidenceSimilarityThreshold ?? 0.4
+      );
       const criticalGaps = gaps.filter((g) => g.severity === "critical" || g.severity === "high");
 
       if (criticalGaps.length === 0) {
@@ -11049,7 +11049,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         state.lastIterationNovelEvidenceCount = gapExtractResult.evidenceItems.length;
         state.evidenceItems.push(...gapExtractResult.evidenceItems);
         state.evidenceFilterLlmFailures += gapExtractResult.llmFilterFailures;
-        state.llmCalls += gapExtractResult.telemetry.llmCallCount;
         console.log(`[Analyzer] Gap research: Added ${gapExtractResult.evidenceItems.length} evidence items from ${gapSuccessfulSources.length} sources`);
       }
     }
@@ -11394,13 +11393,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     },
     // Pipeline Phase 1: Research metrics for gap reporting
     researchMetrics: (() => {
+      // Use configurable threshold from pipeline config
+      const similarityThreshold = state.pipelineConfig.evidenceSimilarityThreshold ?? 0.4;
+
       // Calculate coverage metrics
       const highCentralityClaims = state.understanding?.subClaims?.filter(c => c.centrality === "high") || [];
       const claimsWithEvidence = highCentralityClaims.filter(claim => {
         return state.evidenceItems.some(e => {
           if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
           const similarity = calculateTextSimilarity(e.statement, claim.text);
-          return similarity > CLAIM_EVIDENCE_SIMILARITY_THRESHOLD;
+          return similarity > similarityThreshold;
         });
       });
       const highCentralityCoverage = highCentralityClaims.length > 0
@@ -11413,7 +11415,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           if (e.claimDirection !== "contradicts") return false;
           if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
           const similarity = calculateTextSimilarity(e.statement, claim.text);
-          return similarity > CLAIM_EVIDENCE_SIMILARITY_THRESHOLD;
+          return similarity > similarityThreshold;
         });
       });
       const counterEvidenceRate = highCentralityClaims.length > 0
@@ -11429,7 +11431,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
       // Analyze gaps for reporting
       const gaps = state.understanding
-        ? analyzeEvidenceGaps(state.evidenceItems, state.understanding, state.searchQueries)
+        ? analyzeEvidenceGaps(state.evidenceItems, state.understanding, state.searchQueries, similarityThreshold)
         : [];
 
       return {

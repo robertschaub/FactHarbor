@@ -1,4 +1,15 @@
+/* Semantic color variables */
 .panel {
+  --color-success: #22c55e;
+  --color-success-light: #86efac;
+  --color-success-bg: rgba(34, 197, 94, 0.05);
+  --color-warning: #eab308;
+  --color-warning-alt: #f59e0b;
+  --color-caution: #f97316;
+  --color-error: #ef4444;
+  --color-error-light: #fca5a5;
+  --color-error-bg: rgba(239, 68, 68, 0.05);
+
   border-radius: 8px;
   margin-bottom: 16px;
   overflow: hidden;
@@ -6,13 +17,13 @@
 }
 
 .panel.passed {
-  border-color: #86efac;
-  background: linear-gradient(to right, rgba(34, 197, 94, 0.05), transparent);
+  border-color: var(--color-success-light);
+  background: linear-gradient(to right, var(--color-success-bg), transparent);
 }
 
 .panel.failed {
-  border-color: #fca5a5;
-  background: linear-gradient(to right, rgba(239, 68, 68, 0.05), transparent);
+  border-color: var(--color-error-light);
+  background: linear-gradient(to right, var(--color-error-bg), transparent);
 }
 
 .header {
@@ -43,11 +54,11 @@
 }
 
 .panel.passed .statusIcon {
-  color: #22c55e;
+  color: var(--color-success);
 }
 
 .panel.failed .statusIcon {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .title {
@@ -94,11 +105,11 @@
 }
 
 .statValue.yes {
-  color: #22c55e;
+  color: var(--color-success);
 }
 
 .statValue.no {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .statLabel {
@@ -155,6 +166,23 @@
   transition: width 0.3s ease;
 }
 
+/* Confidence level colors for progress bars */
+.confidenceBarFill.high {
+  background-color: var(--color-success);
+}
+
+.confidenceBarFill.medium {
+  background-color: var(--color-warning);
+}
+
+.confidenceBarFill.low {
+  background-color: var(--color-caution);
+}
+
+.confidenceBarFill.insufficient {
+  background-color: var(--color-error);
+}
+
 .confidenceCount {
   width: 70px;
   text-align: right;
@@ -172,7 +200,7 @@
 .centralNote {
   margin-left: 4px;
   font-style: italic;
-  color: #f59e0b;
+  color: var(--color-warning-alt);
 }
 
 .gate1Stats {
