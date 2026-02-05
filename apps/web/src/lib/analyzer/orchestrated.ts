@@ -6891,7 +6891,7 @@ interface ParallelExtractionResult {
   };
 }
 
-const PARALLEL_EXTRACTION_LIMIT = 3;
+const DEFAULT_PARALLEL_EXTRACTION_LIMIT = 3;
 // NOTE: CLAIM_EVIDENCE_SIMILARITY_THRESHOLD and TEMPORAL_CONTEXT_CONFIDENCE_THRESHOLD
 // are now configurable via PipelineConfig.evidenceSimilarityThreshold (default: 0.4)
 // and PipelineConfig.temporalConfidenceThreshold (default: 0.6) respectively.
@@ -6907,7 +6907,9 @@ async function extractEvidenceParallel(
   let successCount = 0;
   let failureCount = 0;
   let throttlingEvents = 0;
-  let currentLimit = PARALLEL_EXTRACTION_LIMIT;
+  // Use configurable limit from PipelineConfig, fallback to default
+  const configLimit = options.pipelineConfig?.parallelExtractionLimit ?? DEFAULT_PARALLEL_EXTRACTION_LIMIT;
+  let currentLimit = configLimit;
 
   // Process in batches with bounded concurrency
   for (let i = 0; i < sources.length; i += currentLimit) {
@@ -10931,13 +10933,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // ═══════════════════════════════════════════════════════════════════════════
   //
   // BUDGET DESIGN DECISION:
-  // Gap research uses a SEPARATE, bounded query budget (MAX_GAP_QUERIES_TOTAL)
+  // Gap research uses a SEPARATE, bounded query budget (gapResearchMaxQueries)
   // that runs AFTER the main research phase completes. This is intentional:
   //
   // 1. The main budget (state.budget/budgetTracker) controls the primary research
   //    phase including iteration limits and token caps
   // 2. Gap research is a supplemental "gap-filling" phase with its own limits
-  // 3. MAX_GAP_QUERIES_TOTAL is additive to main research, not shared
+  // 3. gapResearchMaxQueries is additive to main research, not shared
   // 4. This ensures critical HIGH centrality claims without evidence get
   //    targeted follow-up even if main budget is exhausted
   //
@@ -10946,14 +10948,14 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   //   - Deduct gap iterations from state.budgetTracker.totalIterations
   //
   // ═══════════════════════════════════════════════════════════════════════════
-  const MAX_GAP_ITERATIONS = 2;
-  const MAX_GAP_QUERIES_TOTAL = 8;
-  // TODO: Add enableGapDrivenResearch to PipelineConfig schema when ready
-  const enableGapDrivenResearch = true;
+  // Gap research configuration - now configurable via PipelineConfig
+  const maxGapIterations = state.pipelineConfig.gapResearchMaxIterations ?? 2;
+  const maxGapQueriesTotal = state.pipelineConfig.gapResearchMaxQueries ?? 8;
+  const enableGapDrivenResearch = state.pipelineConfig.gapResearchEnabled ?? true;
 
   if (enableGapDrivenResearch && state.understanding) {
     await emit("Analyzing evidence gaps", 55);
-    for (let gapIter = 0; gapIter < MAX_GAP_ITERATIONS; gapIter++) {
+    for (let gapIter = 0; gapIter < maxGapIterations; gapIter++) {
       // Stop if prior iteration produced no novel evidence
       if (gapIter > 0 && state.lastIterationNovelEvidenceCount === 0) {
         console.log(`[Analyzer] Gap research: Stopping - prior iteration produced no novel evidence`);
@@ -10975,11 +10977,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
       // Generate and bound queries
       const gapQueries = criticalGaps.flatMap((g) => g.suggestedQueries);
-      const remainingBudget = Math.max(0, MAX_GAP_QUERIES_TOTAL - state.totalGapQueriesIssued);
+      const remainingBudget = Math.max(0, maxGapQueriesTotal - state.totalGapQueriesIssued);
       const boundedQueries = gapQueries.slice(0, remainingBudget);
 
       if (boundedQueries.length === 0) {
-        console.log(`[Analyzer] Gap research: Query budget exhausted (${state.totalGapQueriesIssued}/${MAX_GAP_QUERIES_TOTAL})`);
+        console.log(`[Analyzer] Gap research: Query budget exhausted (${state.totalGapQueriesIssued}/${maxGapQueriesTotal})`);
         break;
       }
 
@@ -11049,6 +11051,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         state.lastIterationNovelEvidenceCount = gapExtractResult.evidenceItems.length;
         state.evidenceItems.push(...gapExtractResult.evidenceItems);
         state.evidenceFilterLlmFailures += gapExtractResult.llmFilterFailures;
+        state.llmCalls += gapExtractResult.telemetry.llmCallCount;
         console.log(`[Analyzer] Gap research: Added ${gapExtractResult.evidenceItems.length} evidence items from ${gapSuccessfulSources.length} sources`);
       }
     }
