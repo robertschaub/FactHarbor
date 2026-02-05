@@ -30,6 +30,7 @@ import { groupEvidenceByMethodology } from "./utils/methodologyGrouping";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
 import FallbackReport from "@/components/FallbackReport";
+import QualityGatesPanel from "@/components/QualityGatesPanel";
 
 type Job = {
   jobId: string;
@@ -309,6 +310,7 @@ export default function JobPage() {
   const verdictSummary = result?.verdictSummary;
   const classificationFallbacks = result?.classificationFallbacks;
   const analysisWarnings = result?.analysisWarnings || [];  // P1: Analysis warnings for UI
+  const qualityGates = result?.qualityGates;  // P1: Quality gates for UI
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
   const contexts = result?.analysisContexts || [];
@@ -606,6 +608,8 @@ export default function JobPage() {
               )}
 
               <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} />
+
+              <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
 
               {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
                 <div className={styles.claimsSection}>
