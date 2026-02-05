@@ -17,21 +17,40 @@ For completed work, historical documents, and reference materials, see:
 
 ## 📋 Active Future Proposals
 
+### Report Evidence Calculation Review (2026-02-05)
+**Status:** ✅ Critical Issues Fixed / 🧭 Design Decisions Pending
+- **Document:** [Report_Evidence_Calculation_Review_2026-02-05.md](Report_Evidence_Calculation_Review_2026-02-05.md)
+- **Type:** Review / Proposal
+- **Scope:** Evidence agreement, Gate 4 confidence, evidence weighting
+- **Completed:** 2026-02-05 (partial)
+
+**Fixed:**
+- ✅ Gate 4 now counts claimDirection="contradicts"
+- ✅ Evidence weighting consolidated to SR module
+- ✅ Documented truthPercentage adjustment order
+
+**Design Decisions Needed:**
+- 🧭 probativeValue weighting in agreement
+- 🧭 Unique sources vs evidence count in agreement
+
+**Related:** Docs/ARCHITECTURE/Calculations.md, Docs/ARCHITECTURE/Evidence_Quality_Filtering.md
+
 ### UCM Flaw Review (2026-02-05)
-**Status:** ✅ All Issues Resolved
+**Status:** 🧭 Draft Findings (Awaiting Prioritization)
 - **Document:** [UCM_Flaw_Review_2026-02-05.md](UCM_Flaw_Review_2026-02-05.md)
 - **Type:** Review / Proposal
 - **Scope:** Unified Config Management (config loader/storage/admin API)
-- **Completed:** 2026-02-05
+- **Effort:** 1-2 days (triage + fixes)
+- **Prerequisites:** Agreement on desired behavior for warnings API and default config audit tracking
 
-**Resolutions:**
-- ✅ Warnings API now accepts hash query params
-- ✅ Default configs use `__DEFAULT__` sentinel + `fromDefault` flag
-- ✅ Cache preserves `fromDefault` provenance
-- ✅ Content hash uniqueness documented as design decision
-- ✅ Snapshot version now from centralized `version.ts`
+**Key Findings:**
+- Warnings API ignores requested hashes
+- Default config usage recorded with a non-existent hash
+- Cached configs lose `fromDefault` provenance
+- Content hash uniqueness blocks identical configs across profiles
+- Snapshot analyzer version is hard-coded
 
-**Ready to move to ARCHIVE.**
+**Related:** Docs/ARCHITECTURE/Source_Reliability.md, Docs/ARCHITECTURE/Schema_Migration_Strategy.md
 
 ### Shadow Mode: Self-Learning Prompt Optimization System
 **Status:** 🔬 Design Ready (Awaiting Prioritization)

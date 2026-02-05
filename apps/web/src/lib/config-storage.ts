@@ -110,6 +110,7 @@ interface CacheEntry<T> {
   value: T;
   expiresAt: number;
   contentHash: string;
+  fromDefault?: boolean;
 }
 
 // Separate caches for different config types to support independent invalidation
@@ -138,11 +139,17 @@ function getCached<T>(cacheKey: string): CacheEntry<T> | null {
 /**
  * Set cached config with TTL
  */
-function setCache<T>(cacheKey: string, value: T, contentHash: string): void {
+function setCache<T>(
+  cacheKey: string,
+  value: T,
+  contentHash: string,
+  options: { fromDefault?: boolean } = {},
+): void {
   configCache.set(cacheKey, {
     value,
     expiresAt: Date.now() + CONFIG_CACHE_TTL_MS,
     contentHash,
+    fromDefault: options.fromDefault,
   });
 }
 
@@ -888,7 +895,7 @@ export async function getConfig<T extends keyof ConfigSchemaTypes>(
         config: cached.value.config,
         contentHash: cached.value.contentHash,
         fromCache: true,
-        fromDefault: false,
+        fromDefault: cached.fromDefault ?? false,
         overrides: cached.value.overrides,
       };
     }
@@ -911,7 +918,7 @@ export async function getConfig<T extends keyof ConfigSchemaTypes>(
         overrides: [] as OverrideRecord[],
       };
       // Cache the result
-      setCache(cacheKey, result, activeConfig.contentHash);
+      setCache(cacheKey, result, activeConfig.contentHash, { fromDefault: false });
       // Record usage if jobId provided
       if (options.jobId) {
         await recordConfigUsage(options.jobId, configType, profileKey, activeConfig.contentHash, []);
@@ -947,7 +954,7 @@ export async function getConfig<T extends keyof ConfigSchemaTypes>(
   };
 
   // 4. Cache the result
-  setCache(cacheKey, result, contentHash || "default");
+  setCache(cacheKey, result, contentHash || "default", { fromDefault });
 
   // 5. Record usage if jobId provided (for non-default configs)
   if (options.jobId && contentHash) {

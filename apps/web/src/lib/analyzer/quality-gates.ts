@@ -368,19 +368,20 @@ export function applyGate4ToVerdicts(
     );
 
     // Count contradicting evidence items - only those related to this specific claim/context
-    // Fix: Previously counted ALL criticism evidence globally, which unfairly penalized verdicts
-    // Now we only count criticism that is actually relevant to the claim being evaluated
+    // An item is contradicting if: category === "criticism" OR claimDirection === "contradicts"
+    // Must also be relevant to the claim being evaluated (same context or same sources)
     const contradictingFactCount = evidenceItems.filter(item => {
-      // Must be a criticism evidence item
-      if (item.category !== "criticism") return false;
+      // Must be contradicting evidence: either criticism category OR explicit contradiction direction
+      const isContradicting = item.category === "criticism" || item.claimDirection === "contradicts";
+      if (!isContradicting) return false;
       // Must not be a supporting evidence item for this verdict
       if (supportingEvidenceIds.includes(item.id)) return false;
-    // Must be related to the same context as the verdict (if both have context IDs)
-    // If verdict has no context ID, only count criticism from same sources
-    if (verdict.contextId && item.contextId) {
-      return item.contextId === verdict.contextId;
+      // Must be related to the same context as the verdict (if both have context IDs)
+      // If verdict has no context ID, only count contradiction from same sources
+      if (verdict.contextId && item.contextId) {
+        return item.contextId === verdict.contextId;
       }
-      // If no proceeding context, only count criticism from sources that also support this verdict
+      // If no context, only count contradiction from sources that also support this verdict
       // This indicates internal contradiction within the same source
       const supportingSourceIds = supportingSources.map(s => s.id);
       return supportingSourceIds.includes(item.sourceId);

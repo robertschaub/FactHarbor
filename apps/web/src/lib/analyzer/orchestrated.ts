@@ -2655,6 +2655,7 @@ import {
   prefetchSourceReliability,
   getTrackRecordScore,
   setSourceReliabilityConfig,
+  applyEvidenceWeighting as applyEvidenceWeightingSR,
 } from "./source-reliability";
 
 // Re-export for backward compatibility
@@ -2730,44 +2731,46 @@ function dedupeWeightedAverageTruth(verdicts: ClaimVerdict[]): number {
   return Math.round(weightedSum / totalWeight);
 }
 
+// ============================================================================
+// TRUTH PERCENTAGE ADJUSTMENT PIPELINE
+// ============================================================================
+//
+// Canonical order of adjustments to truthPercentage (each applied ONCE per claim):
+//
+// 1. EVIDENCE WEIGHTING (applyEvidenceWeighting)
+//    - Adjusts truth based on source reliability scores
+//    - Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
+//    - Unknown sources use DEFAULT_UNKNOWN_SOURCE_SCORE (0.5) with low confidence
+//
+// 2. DIRECTION VALIDATION (validateVerdictDirections)
+//    - Validates that verdict direction matches evidence direction
+//    - If 60%+ of evidence contradicts but verdict is HIGH, flags mismatch
+//    - Can auto-correct mismatched verdicts when enabled
+//
+// 3. GATE 4 CLASSIFICATION (applyGate4ToVerdicts)
+//    - Assigns confidence tier (HIGH/MEDIUM/LOW/INSUFFICIENT)
+//    - Based on: source count, quality average, evidence agreement
+//    - Does NOT modify truthPercentage, only adds metadata
+//
+// Each adjustment records metadata for audit trail (evidenceWeight, sourceReliabilityMeta, etc.)
+// ============================================================================
+
+/**
+ * Apply evidence weighting based on source reliability.
+ * Uses the shared SR module implementation for consistency.
+ *
+ * The SR version properly handles:
+ * - Unknown sources (uses DEFAULT_UNKNOWN_SOURCE_SCORE with low confidence)
+ * - trackRecordConfidence and consensus metadata
+ * - Consistent formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
+ */
 function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
   evidenceItems: EvidenceItem[],
   sources: FetchedSource[],
 ): ClaimVerdict[] {
-  // PR-C: Normalize all trackRecordScores to 0-1 scale defensively
-  const sourceScoreById = new Map(
-    sources.map((s) => [s.id, s.trackRecordScore !== null ? normalizeTrackRecordScore(s.trackRecordScore) : null]),
-  );
-  const evidenceScoreById = new Map(
-    evidenceItems.map((item) => [item.id, sourceScoreById.get(item.sourceId) ?? null]),
-  );
-
-  return claimVerdicts.map((verdict) => {
-    const supportingEvidenceIds =
-      verdict.supportingEvidenceIds && verdict.supportingEvidenceIds.length > 0
-        ? verdict.supportingEvidenceIds
-        : [];
-    const scores = supportingEvidenceIds
-      .map((id) => evidenceScoreById.get(id))
-      .filter((score): score is number => typeof score === "number");
-
-    if (scores.length === 0) return verdict;
-
-    const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-    const adjustedTruth = Math.round(50 + (verdict.truthPercentage - 50) * avg);
-    const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avg / 2));
-    // PR-C: Clamp truth percentage to valid range
-    const clampedTruth = clampTruthPercentage(adjustedTruth);
-    return {
-      ...verdict,
-      evidenceWeight: avg,
-      truthPercentage: clampedTruth,
-      confidence: adjustedConfidence,
-      verdict: clampedTruth,
-      highlightColor: getHighlightColor7Point(clampedTruth),
-    };
-  });
+  // Delegate to shared SR module implementation
+  return applyEvidenceWeightingSR(claimVerdicts, evidenceItems, sources);
 }
 
 /**

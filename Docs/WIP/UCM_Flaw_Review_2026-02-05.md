@@ -28,13 +28,14 @@ This document captures issues identified in UCM-related files. All issues have b
 - **Issue:** When no DB config exists, usage is recorded with `contentHash = "default"`, which does not correspond to a blob in `config_blobs`.
 - **Status:** ✅ **FIXED**
 - **Resolution:** Changed sentinel hash to `__DEFAULT__` to clearly indicate code defaults. Added `fromDefault: boolean` flag to `ResolvedConfig` interface for explicit tracking.
+  - **Follow-up:** `getConfigForJob()` now returns code defaults when the `__DEFAULT__` sentinel is recorded, so job audit retrieval works.
 
 ### 3) `fromDefault` loses accuracy after caching
 
 - **Location:** `apps/web/src/lib/config-loader.ts`
 - **Issue:** When a config is cached, the `fromDefault` provenance was lost on subsequent cache hits.
 - **Status:** ✅ **FIXED**
-- **Resolution:** Added `fromDefault: boolean` to `CacheEntry` interface. Cache now preserves and returns `fromDefault` flag accurately.
+- **Resolution:** Added `fromDefault: boolean` to `CacheEntry` interface. Cache now preserves and returns `fromDefault` flag accurately in both loader and storage-layer caches.
 
 ### 4) Content hash uniqueness blocks identical content across profiles
 
@@ -66,6 +67,7 @@ This document captures issues identified in UCM-related files. All issues have b
 - `apps/web/src/lib/config-loader.ts` - Added `fromDefault` tracking, changed sentinel hash
 - `apps/web/src/lib/config-snapshots.ts` - Use centralized version
 - `apps/web/src/lib/version.ts` - **NEW** - Centralized version constants
+- `apps/web/src/lib/config-storage.ts` - Preserve `fromDefault` in cache, handle `__DEFAULT__` in job lookup
 
 ---
 
