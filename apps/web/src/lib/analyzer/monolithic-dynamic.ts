@@ -45,6 +45,7 @@ import {
   setSourceReliabilityConfig,
   type CachedReliabilityData,
 } from "./source-reliability";
+import { percentageToArticleVerdict } from "./truth-scale";
 
 // ============================================================================
 // TYPES
@@ -611,7 +612,9 @@ Provide your dynamic analysis.`,
           // v2.6.35: Use adjusted scores
           overallVerdict: adjustedVerdictScore,
           overallConfidence: adjustedVerdictConfidence,
-          verdictLabel: analysis.verdict.label,
+          // v2.10.2: Use standardized verdict label based on score, not LLM-generated label
+          // This fixes "Context Needed" and other non-standard labels being displayed
+          verdictLabel: percentageToArticleVerdict(adjustedVerdictScore, adjustedVerdictConfidence),
           summary: analysis.summary,
           hasContestedFactors: false,
           isExperimental: true,
@@ -621,7 +624,7 @@ Provide your dynamic analysis.`,
       : {
           overallVerdict: 50,
           overallConfidence: 30,
-          verdictLabel: "Experimental Analysis",
+          verdictLabel: "UNVERIFIED",
           summary: analysis.summary,
           hasContestedFactors: false,
           isExperimental: true,
