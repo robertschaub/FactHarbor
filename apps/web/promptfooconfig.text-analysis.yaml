@@ -5,6 +5,23 @@
 description: "FactHarbor Text Analysis Pipeline Evaluation"
 
 # ============================================================================
+# PROMPTS
+# ============================================================================
+prompts:
+  - id: text-analysis-input
+    label: text-analysis-input
+    raw: file://prompts/promptfoo/text-analysis-input-prompt.txt
+  - id: text-analysis-evidence
+    label: text-analysis-evidence
+    raw: file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+  - id: text-analysis-context
+    label: text-analysis-context
+    raw: file://prompts/promptfoo/text-analysis-context-prompt.txt
+  - id: text-analysis-verdict
+    label: text-analysis-verdict
+    raw: file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+
+# ============================================================================
 # PROVIDERS
 # ============================================================================
 providers:
@@ -59,7 +76,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Simple factual claim - should be simple, factual, non-comparative"
     prompts:
-      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+      - text-analysis-input
     vars:
       inputText: "The Earth is approximately 4.5 billion years old"
       pipeline: "monolithic-canonical"
@@ -92,7 +109,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Comparative claim - should detect 'more efficient than' pattern"
     prompts:
-      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+      - text-analysis-input
     vars:
       inputText: "Electric vehicles are more efficient than hydrogen fuel cell cars"
       pipeline: "monolithic-canonical"
@@ -115,7 +132,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Compound claim with semicolon - should detect multiple claims"
     prompts:
-      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+      - text-analysis-input
     vars:
       inputText: "Biden won the 2020 election; inflation reached 40-year highs in 2022"
       pipeline: "monolithic-canonical"
@@ -138,7 +155,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Compound claim with 'and' joining independent predicates"
     prompts:
-      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+      - text-analysis-input
     vars:
       inputText: "The CEO resigned and the stock price dropped 15%"
       pipeline: "monolithic-canonical"
@@ -161,7 +178,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Non-compound 'and' - single predicate should NOT split"
     prompts:
-      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+      - text-analysis-input
     vars:
       inputText: "Cats and dogs are both mammals that make popular pets"
       pipeline: "monolithic-canonical"
@@ -182,7 +199,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Evaluative claim - should detect opinion/judgment"
     prompts:
-      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+      - text-analysis-input
     vars:
       inputText: "Tesla is the best electric vehicle company in the world"
       pipeline: "monolithic-canonical"
@@ -200,7 +217,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Predictive claim - should detect future prediction"
     prompts:
-      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+      - text-analysis-input
     vars:
       inputText: "AI will replace 50% of jobs by 2035"
       pipeline: "monolithic-canonical"
@@ -218,7 +235,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Complex claim requiring significant context"
     prompts:
-      - file://prompts/promptfoo/text-analysis-input-prompt.txt
+      - text-analysis-input
     vars:
       inputText: "The government's new healthcare policy will reduce costs for middle-class families while improving coverage for pre-existing conditions, but critics argue it will increase the national debt and reduce doctor choice"
       pipeline: "monolithic-canonical"
@@ -245,7 +262,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "High quality statistical evidence with specific numbers"
     prompts:
-      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+      - text-analysis-evidence
     vars:
       thesisText: "Electric vehicles produce less CO2 than gasoline cars"
       promptHash: "test-hash-9"
@@ -266,7 +283,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Low quality evidence with vague attribution"
     prompts:
-      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+      - text-analysis-evidence
     vars:
       thesisText: "Coffee is good for health"
       promptHash: "test-hash-10"
@@ -293,7 +310,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Medium quality evidence - meets some criteria"
     prompts:
-      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+      - text-analysis-evidence
     vars:
       thesisText: "Remote work improves productivity"
       promptHash: "test-hash-11"
@@ -315,7 +332,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Evidence that should be filtered (irrelevant)"
     prompts:
-      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+      - text-analysis-evidence
     vars:
       thesisText: "Electric vehicles are safer than gasoline cars"
       promptHash: "test-hash-12"
@@ -336,7 +353,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Expert quote - should require named expert with credentials"
     prompts:
-      - file://prompts/promptfoo/text-analysis-evidence-prompt.txt
+      - text-analysis-evidence
     vars:
       thesisText: "Climate change is accelerating"
       promptHash: "test-hash-13"
@@ -364,7 +381,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Duplicate contexts - same entity, should recommend merge"
     prompts:
-      - file://prompts/promptfoo/text-analysis-context-prompt.txt
+      - text-analysis-context
     vars:
       promptHash: "test-hash-14"
       contextList: |
@@ -395,7 +412,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Different contexts - different jurisdictions, should not merge"
     prompts:
-      - file://prompts/promptfoo/text-analysis-context-prompt.txt
+      - text-analysis-context
     vars:
       promptHash: "test-hash-15"
       contextList: |
@@ -426,7 +443,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Phase bucket - production phase classification"
     prompts:
-      - file://prompts/promptfoo/text-analysis-context-prompt.txt
+      - text-analysis-context
     vars:
       promptHash: "test-hash-16"
       contextList: |
@@ -451,7 +468,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Phase bucket - usage phase classification"
     prompts:
-      - file://prompts/promptfoo/text-analysis-context-prompt.txt
+      - text-analysis-context
     vars:
       promptHash: "test-hash-17"
       contextList: |
@@ -476,7 +493,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Mixed phase buckets - production vs usage"
     prompts:
-      - file://prompts/promptfoo/text-analysis-context-prompt.txt
+      - text-analysis-context
     vars:
       promptHash: "test-hash-18"
       contextList: |
@@ -510,7 +527,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Inversion detection - reasoning contradicts verdict"
     prompts:
-      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+      - text-analysis-verdict
     vars:
       mode: "full"
       thesisText: "Hydrogen cars are more efficient than electric cars"
@@ -541,7 +558,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Non-inverted verdict - reasoning matches verdict"
     prompts:
-      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+      - text-analysis-verdict
     vars:
       mode: "full"
       thesisText: "The Earth is approximately 4.5 billion years old"
@@ -566,7 +583,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "High harm potential - death/injury keywords"
     prompts:
-      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+      - text-analysis-verdict
     vars:
       mode: "harm_potential_only"
       thesisText: "The vaccine caused 10,000 deaths"
@@ -591,7 +608,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Medium harm potential - standard claim"
     prompts:
-      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+      - text-analysis-verdict
     vars:
       mode: "harm_potential_only"
       thesisText: "Coffee consumption reduces diabetes risk"
@@ -616,7 +633,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Contestation with documented counter-evidence"
     prompts:
-      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+      - text-analysis-verdict
     vars:
       mode: "contestation_only"
       thesisText: "Masks are ineffective at preventing COVID transmission"
@@ -648,7 +665,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Opinion doubt vs documented contestation"
     prompts:
-      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+      - text-analysis-verdict
     vars:
       mode: "contestation_only"
       thesisText: "The economic policy will create jobs"
@@ -675,7 +692,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "Causal claim contested on methodology grounds"
     prompts:
-      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+      - text-analysis-verdict
     vars:
       mode: "full"
       thesisText: "The new drug caused a 50% reduction in symptoms"
@@ -706,7 +723,7 @@ tests:
   # --------------------------------------------------------------------------
   - description: "High harm - fraud accusation"
     prompts:
-      - file://prompts/promptfoo/text-analysis-verdict-prompt.txt
+      - text-analysis-verdict
     vars:
       mode: "harm_potential_only"
       thesisText: "The company committed fraud by falsifying emissions data"

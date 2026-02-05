@@ -168,8 +168,14 @@ export function filterByProbativeValue(
     let shouldFilter = false;
     let filterReason = "";
 
+    // 0. Filter low probativeValue evidence (prompt says "do NOT extract low" but enforce here too)
+    if (item.probativeValue === "low") {
+      shouldFilter = true;
+      filterReason = "low_probative_value";
+    }
+
     // 1. Minimum statement length
-    if (item.statement.length < cfg.minStatementLength) {
+    else if (item.statement.length < cfg.minStatementLength) {
       shouldFilter = true;
       filterReason = "statement_too_short";
     }

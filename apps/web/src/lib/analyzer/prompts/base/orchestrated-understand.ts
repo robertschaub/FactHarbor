@@ -60,7 +60,7 @@ ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.eva
 - When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones
 - An AnalysisContext with zero relevant claims/evidence should NOT exist
 
-**SAME SUBJECT/ENTITY RULE**: 
+**SAME SUBJECT/ENTITY RULE**:
 - AnalysisContexts MUST be about the SAME SUBJECT as the thesis
 - If thesis is about "Person A's trial", do NOT include AnalysisContexts about Person B, C, etc.
 - Different cases involving DIFFERENT PEOPLE are NOT relevant AnalysisContexts, even if they share:
@@ -69,6 +69,7 @@ ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.eva
   - Similar issues
   - The same time period
 - Example: If analyzing "Was X's trial fair?", an AnalysisContext about Y's trial (even in same court) is IRRELEVANT
+- **THIRD-PARTY REACTIONS WITH LOW PROBATIVE VALUE ARE NOISE**: Third-party reactions are only valid if they provide high or medium probativeValue evidence directly about X. Low probativeValue or mere reactions are NOISE
 
 ${recencySection}## TEMPORAL REASONING
 
