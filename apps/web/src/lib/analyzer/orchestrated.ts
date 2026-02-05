@@ -2624,6 +2624,19 @@ interface ClaimUnderstanding {
     filtered: number;
     centralKept: number;
   };
+  // Pipeline Phase 1: Temporal context for recency-sensitive searches
+  temporalContext?: TemporalContext;
+}
+
+/**
+ * Pipeline Phase 1: Temporal context assessment from LLM understanding
+ * Determines if the claim requires recent information
+ */
+interface TemporalContext {
+  isRecencySensitive: boolean;
+  granularity: "week" | "month" | "year" | "none";
+  confidence: number; // 0-1
+  reason: string;
 }
 
 interface ResearchIteration {
@@ -10727,11 +10740,26 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const searchResults: Array<{ url: string; title: string; query: string }> =
       [];
     for (const query of decision.queries || []) {
-      // Use decision-level recencyMatters (based on original input) OR per-query detection
-      // This ensures date filtering is consistent across all queries in a recency-sensitive topic
-      const recencyMatters = decision.recencyMatters || isRecencySensitive(query, state.understanding || undefined);
-      const dateRestrict: "y" | "m" | "w" | undefined =
-        searchConfig.dateRestrict ?? (recencyMatters ? "y" : undefined);
+      // Pipeline Phase 1: Use LLM-derived temporalContext when available, fallback to pattern-based
+      const temporalContext = state.understanding?.temporalContext;
+      let recencyMatters = decision.recencyMatters || isRecencySensitive(query, state.understanding || undefined);
+      let dateRestrict: "y" | "m" | "w" | undefined = searchConfig.dateRestrict ?? undefined;
+
+      if (temporalContext?.isRecencySensitive && temporalContext.confidence > 0.5) {
+        // Use LLM-determined temporal context
+        recencyMatters = true;
+        if (!dateRestrict) {
+          switch (temporalContext.granularity) {
+            case "week": dateRestrict = "w"; break;
+            case "month": dateRestrict = "m"; break;
+            case "year": dateRestrict = "y"; break;
+            default: dateRestrict = undefined;
+          }
+        }
+      } else if (!dateRestrict && recencyMatters) {
+        // Fallback to pattern-based default (year)
+        dateRestrict = "y";
+      }
 
       // Get providers before search to show in event
       const searchProviders = getActiveSearchProviders(searchConfig).join("+");
@@ -11326,6 +11354,67 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         contradictionSearchPerformed: state.contradictionSearchPerformed,
       },
     },
+    // Pipeline Phase 1: Research metrics for gap reporting
+    researchMetrics: (() => {
+      // Calculate coverage metrics
+      const highCentralityClaims = state.understanding?.subClaims?.filter(c => c.centrality === "high") || [];
+      const claimsWithEvidence = highCentralityClaims.filter(claim => {
+        return state.evidenceItems.some(e => {
+          if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
+          const similarity = calculateTextSimilarity(e.statement, claim.text);
+          return similarity > 0.3;
+        });
+      });
+      const highCentralityCoverage = highCentralityClaims.length > 0
+        ? claimsWithEvidence.length / highCentralityClaims.length
+        : 1;
+
+      // Calculate counter-evidence rate for HIGH centrality claims
+      const claimsWithCounterEvidence = highCentralityClaims.filter(claim => {
+        return state.evidenceItems.some(e => {
+          if (e.claimDirection !== "contradicts") return false;
+          if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
+          const similarity = calculateTextSimilarity(e.statement, claim.text);
+          return similarity > 0.3;
+        });
+      });
+      const counterEvidenceRate = highCentralityClaims.length > 0
+        ? claimsWithCounterEvidence.length / highCentralityClaims.length
+        : 1;
+
+      // Evidence by context
+      const evidenceByContext: Record<string, number> = {};
+      for (const e of state.evidenceItems) {
+        const ctx = e.contextId || "unassigned";
+        evidenceByContext[ctx] = (evidenceByContext[ctx] || 0) + 1;
+      }
+
+      // Analyze gaps for reporting
+      const gaps = state.understanding
+        ? analyzeEvidenceGaps(state.evidenceItems, state.understanding, state.searchQueries)
+        : [];
+
+      return {
+        totalIterations: state.iterations.length,
+        evidenceCount: state.evidenceItems.length,
+        evidenceByContext,
+        coverageMetrics: {
+          highCentralityCoverage: Math.round(highCentralityCoverage * 100) / 100,
+          counterEvidenceRate: Math.round(counterEvidenceRate * 100) / 100,
+        },
+        evidenceGaps: gaps.map(g => ({
+          claimId: g.claimId,
+          gapType: g.gapType,
+          severity: g.severity,
+        })),
+        processedUrlCount: state.processedUrls.size,
+        deduplicatedUrlCount: state.urlDeduplicationCount,
+        novelEvidenceLastIteration: state.lastIterationNovelEvidenceCount,
+        gapResearchIterations: state.gapResearchIterations,
+        totalGapQueriesIssued: state.totalGapQueriesIssued,
+        temporalContext: state.understanding?.temporalContext,
+      };
+    })(),
   };
 
   // ============================================================================

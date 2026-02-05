@@ -80,6 +80,24 @@ ${recencySection}## TEMPORAL REASONING
 - Do NOT assume dates are in the future without checking against the current date
 - If a date seems inconsistent, verify it against the current date before making judgments
 
+## TEMPORAL CONTEXT ASSESSMENT (Pipeline Phase 1)
+
+Assess whether this claim requires recent information for accurate verification:
+
+**temporalContext** (include in output):
+- **isRecencySensitive**: true if current/recent data is needed for verification
+- **granularity**: "week" | "month" | "year" | "none"
+- **confidence**: 0-1 (how confident are you in this assessment)
+- **reason**: brief explanation (10-20 words)
+
+**Examples**:
+- "current inflation rate" → isRecencySensitive: true, granularity: "week", confidence: 0.95, reason: "Economic metrics change weekly"
+- "historical event in 1990" → isRecencySensitive: false, granularity: "none", confidence: 0.99, reason: "Historical event with fixed date"
+- "recent policy changes" → isRecencySensitive: true, granularity: "month", confidence: 0.8, reason: "Policy changes typically reported monthly"
+- "scientific consensus on established topic" → isRecencySensitive: false, granularity: "year", confidence: 0.7, reason: "Consensus evolves slowly"
+
+**If uncertain**, default to isRecencySensitive: false, granularity: "none".
+
 ## ARTICLE THESIS (articleThesis)
 
 The articleThesis should NEUTRALLY SUMMARIZE what the article claims, covering ALL main points.
@@ -231,6 +249,7 @@ Return JSON with:
 - researchQueries: 4-6 specific search queries
 - keyFactors: Array of KeyFactors (or empty array)
 - riskTier: "A" | "B" | "C"
+- temporalContext: { isRecencySensitive, granularity, confidence, reason } (see TEMPORAL CONTEXT ASSESSMENT)
 
 **CRITICAL for assessedStatement**:
 - The assessedStatement MUST describe what is being evaluated in THIS specific AnalysisContext
