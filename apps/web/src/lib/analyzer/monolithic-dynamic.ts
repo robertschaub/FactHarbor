@@ -581,15 +581,19 @@ Provide your dynamic analysis.`,
 
     // Dynamic analysis fields
     summary: analysis.summary || "Analysis completed",
-    verdict: analysis.verdict ? {
-      ...analysis.verdict,
-      // v2.6.35: Use source reliability adjusted scores
-      score: adjustedVerdictScore,
-      confidence: adjustedVerdictConfidence,
-      // Preserve original for transparency
-      originalScore: analysis.verdict.score ?? 50,
-      originalConfidence: analysis.verdict.confidence ?? 50,
-    } : null,
+    verdict: analysis.verdict
+      ? {
+          ...analysis.verdict,
+          // v2.6.35: Use source reliability adjusted scores
+          score: adjustedVerdictScore,
+          confidence: adjustedVerdictConfidence,
+          // v2.10.2: Standardize verdict labels to avoid non-canonical values (e.g., "Context Needed")
+          label: percentageToArticleVerdict(adjustedVerdictScore, adjustedVerdictConfidence),
+          // Preserve original for transparency
+          originalScore: analysis.verdict.score ?? 50,
+          originalConfidence: analysis.verdict.confidence ?? 50,
+        }
+      : null,
     findings: analysis.findings || [],
     methodology: analysis.methodology || plan?.analysisApproach || "Dynamic experimental analysis",
     limitations: analysis.limitations || [
