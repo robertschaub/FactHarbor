@@ -534,12 +534,3 @@ export async function getAllCachedScores(options: {
   };
 }
 
-/**
- * Close the database connection
- */
-export async function closeDb(): Promise<void> {
-  if (db) {
-    await db.close();
-    db = null;
-  }
-}

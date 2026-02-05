@@ -404,35 +404,3 @@ export async function extractTextFromUrl(
   }
 }
 
-/**
- * Batch extract text from multiple URLs
- */
-export async function extractTextFromUrls(
-  urls: string[],
-  options: {
-    timeoutMs?: number;
-    maxLength?: number;
-    concurrency?: number;
-  } = {}
-): Promise<Array<{ url: string; text: string; title: string; error?: string }>> {
-  const { concurrency = 3 } = options;
-  const results: Array<{ url: string; text: string; title: string; error?: string }> = [];
-  
-  // Process in batches
-  for (let i = 0; i < urls.length; i += concurrency) {
-    const batch = urls.slice(i, i + concurrency);
-    const batchResults = await Promise.all(
-      batch.map(async (url) => {
-        try {
-          const { text, title } = await extractTextFromUrl(url, options);
-          return { url, text, title };
-        } catch (err) {
-          return { url, text: "", title: "", error: String(err) };
-        }
-      })
-    );
-    results.push(...batchResults);
-  }
-  
-  return results;
-}

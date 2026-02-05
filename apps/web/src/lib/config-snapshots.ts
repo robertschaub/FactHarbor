@@ -181,50 +181,6 @@ export async function getConfigSnapshot(
   }
 }
 
-/**
- * Check if a config snapshot exists for a job
- *
- * @param jobId - Job identifier
- * @returns true if snapshot exists
- */
-export async function hasConfigSnapshot(jobId: string): Promise<boolean> {
-  const database = await getDb();
-
-  try {
-    const result = await database.get<{ count: number }>(
-      "SELECT COUNT(*) as count FROM job_config_snapshots WHERE job_id = ?",
-      [jobId],
-    );
-
-    return (result?.count ?? 0) > 0;
-  } catch (error) {
-    console.error(`[ConfigSnapshot] Failed to check snapshot for job ${jobId}:`, error);
-    return false;
-  }
-}
-
-/**
- * Get all jobs that have config snapshots
- *
- * @param limit - Max number of jobs to return
- * @returns Array of job IDs with snapshots
- */
-export async function getJobsWithSnapshots(limit: number = 100): Promise<string[]> {
-  const database = await getDb();
-
-  try {
-    const rows = await database.all<Array<{ job_id: string }>>(
-      "SELECT job_id FROM job_config_snapshots ORDER BY captured_utc DESC LIMIT ?",
-      [limit],
-    );
-
-    return rows.map((row: { job_id: string }) => row.job_id);
-  } catch (error) {
-    console.error("[ConfigSnapshot] Failed to get jobs with snapshots:", error);
-    return [];
-  }
-}
-
 // ============================================================================
 // UTILITY
 // ============================================================================

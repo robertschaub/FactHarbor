@@ -106,13 +106,6 @@ export function getGlobalFactCheckerSites(): string[] {
 }
 
 /**
- * Get global fact-checker keywords.
- */
-export function getGlobalFactCheckerKeywords(): string[] {
-  return staticConfig.global?.keywords || [];
-}
-
-/**
  * Country to languages mapping from config.
  * Supports multi-language countries (e.g., CH -> [German, French, Italian]).
  * 
@@ -150,14 +143,6 @@ const LANGUAGE_TO_COUNTRIES = buildLanguageToCountries();
  */
 export function getLanguagesForCountry(countryCode: string): string[] {
   return COUNTRY_TO_LANGUAGES[countryCode.toUpperCase()] || [];
-}
-
-/**
- * Get primary language for a country (first in the list).
- */
-export function getPrimaryLanguageForCountry(countryCode: string): string | null {
-  const languages = getLanguagesForCountry(countryCode);
-  return languages.length > 0 ? languages[0] : null;
 }
 
 // ============================================================================
