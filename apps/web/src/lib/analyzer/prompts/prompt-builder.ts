@@ -109,7 +109,7 @@ export interface PromptContext {
 /**
  * Main prompt builder function
  *
- * For budget models with tiering enabled, uses simplified prompts that:
+ * For fast-tier models with tiering enabled, uses simplified prompts that:
  * - Reduce token count by ~40%
  * - Skip verbose explanations
  * - Focus on direct task completion
@@ -117,7 +117,7 @@ export interface PromptContext {
 export function buildPrompt(context: PromptContext): string {
   const { task, config, variables } = context;
 
-  // For budget models with tiering, use ultra-simplified prompts for extraction tasks
+  // For fast-tier models with tiering, use ultra-simplified prompts for extraction tasks
   // This significantly reduces token count and speeds up responses
   const useBudgetPrompt = config.isLLMTiering && config.isBudgetModel &&
     ['understand', 'extract_evidence', 'verdict'].includes(task);
@@ -140,8 +140,8 @@ export function buildPrompt(context: PromptContext): string {
 }
 
 /**
- * Get ultra-simplified budget prompt for fast models
- * Used when tiering is enabled in pipeline config and model is a budget tier (Haiku/Flash/Mini)
+ * Get ultra-simplified prompt for fast-tier models
+ * Used when tiering is enabled in pipeline config and model is a fast tier (Haiku/Flash/Mini)
  */
 function getBudgetPrompt(context: PromptContext): string {
   const { task, provider, variables, config } = context;
@@ -164,14 +164,14 @@ function getBudgetPrompt(context: PromptContext): string {
       return getBaseTemplate(context) + getProviderVariant(context) + getConfigAdaptations(context);
   }
 
-  // Add minimal provider-specific hint for budget models
+  // Add minimal provider-specific hint for fast-tier models
   const providerHint = getBudgetProviderHint(provider, task);
 
   return basePrompt + providerHint;
 }
 
 /**
- * Get minimal provider hint for budget models
+ * Get minimal provider hint for fast-tier models
  * Much shorter than full provider variants
  */
 function getBudgetProviderHint(provider: ProviderType, task: TaskType): string {
@@ -314,7 +314,7 @@ function getConfigAdaptations(context: PromptContext): string {
   const { task, config, provider } = context;
   let adaptations = '';
 
-  // Add tiering adaptations for budget models
+  // Add tiering adaptations for fast-tier models
   if (config.isLLMTiering && config.isBudgetModel) {
     switch (task) {
       case 'understand':
@@ -347,7 +347,7 @@ function getConfigAdaptations(context: PromptContext): string {
 }
 
 /**
- * Helper: Detect if model is a budget model
+ * Helper: Detect if model is a fast-tier model
  */
 export function isBudgetModel(modelName: string): boolean {
   const budgetModels = [

@@ -231,7 +231,7 @@ Share only **stable infrastructure primitives** across pipelines; keep orchestra
 ### 3.2 Shared primitives (allowed to unify)
 All three variants reuse:
 - **Normalization**: one canonical normalization contract at entry
-- **Budgets/Caps**: common budget model for:
+- **Budgets/Caps**: common budget framework for:
   - tool-loop steps (for monolithic)
   - research iterations/sources (for orchestrated)
   - total tokens (where available)

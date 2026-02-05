@@ -1177,7 +1177,7 @@ npm run promptfoo:all            # Run all 38 tests
    - Explicit output format
 
 **Budget Model Optimization**:
-- Simplified prompts for budget models (Haiku, Flash, Mini)
+- Simplified prompts for fast-tier models (Haiku, Flash, Mini)
 - ~40% claimed token reduction (unvalidated)
 - Ultra-compact when `pipeline.llmTiering=true` (UCM-managed)
 - Minimal provider hints

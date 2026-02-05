@@ -1,5 +1,5 @@
 /**
- * Budget mode adaptations for LLM tiering configuration
+ * Tiering (fast-model) adaptations for LLM tiering configuration
  *
  * When tiering is enabled with cheaper/faster models (Haiku, Flash, Mini):
  * - Ultra-simplified instructions (minimize token count)
@@ -75,7 +75,7 @@ export function getTieringVerdictAdaptation(): string {
 }
 
 /**
- * Get simplified base prompt for budget models
+ * Get simplified base prompt for fast-tier models
  * Strips verbose sections from full prompts for faster processing
  */
 export function getBudgetUnderstandPrompt(currentDate: string): string {

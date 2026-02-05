@@ -264,7 +264,7 @@ Include explicit pre-output verification:
 
 ## Budget Model Optimization
 
-When pipeline config enables tiering, budget models receive simplified prompts:
+When pipeline config enables tiering, fast-tier models receive simplified prompts:
 
 ### Token Reduction (~40%)
 | Component | Full Prompt | Budget Prompt |
@@ -385,7 +385,7 @@ All provider optimizations are validated by `prompt-optimization.test.ts`:
 - ❌ Use same prompt for all providers
 - ❌ Skip schema compliance guidance
 - ❌ Assume LLMs handle null correctly (use "")
-- ❌ Send verbose prompts to budget models
+- ❌ Send verbose prompts to fast-tier models
 - ❌ Skip validation checklists
 
 ---

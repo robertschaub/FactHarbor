@@ -13,7 +13,7 @@ FactHarbor uses a modular prompt architecture that separates:
 
 1. **Base prompts** - Task-specific instructions (understand, extract facts, verdict)
 2. **Provider variants** - LLM-specific optimizations (Claude, GPT, Gemini, Mistral)
-3. **Configuration adaptations** - Runtime adjustments (budget models, knowledge mode)
+3. **Configuration adaptations** - Runtime adjustments (fast-tier models, knowledge mode)
 
 This separation ensures:
 - Consistent behavior across pipelines
@@ -45,7 +45,7 @@ apps/web/src/lib/analyzer/prompts/
 │   └── mistral.ts                # Mistral optimizations
 │
 └── config-adaptations/            # Configuration-based adaptations
-    ├── tiering.ts                # Budget model simplifications
+    ├── tiering.ts                # Fast-tier model simplifications
     ├── knowledge-mode.ts         # Model knowledge on/off
     └── structured-output.ts      # Output format guidance
 ```
@@ -77,7 +77,7 @@ apps/web/src/lib/analyzer/prompts/
 │  └────────┬─────────┘                                           │
 │           │                                                      │
 │  ┌────────▼─────────┐                                           │
-│  │ Config Adaptations│ ← Budget model, knowledge mode           │
+│  │ Config Adaptations│ ← Fast-tier model, knowledge mode        │
 │  │   (tiering)      │                                           │
 │  └────────┬─────────┘                                           │
 │           │                                                      │
@@ -157,11 +157,11 @@ Apply nuanced reasoning. Be direct and confident.
 
 When using tiered models (different models for different tasks):
 - Adjusts complexity expectations per task
-- Optimizes token usage for budget models
+- Optimizes token usage for fast-tier models
 
-### Budget Model Mode (`isBudgetModel`)
+### Fast-Tier Model Mode (`isBudgetModel`)
 
-For cost-effective models (Haiku, Mini, Flash):
+For fast-tier models (Haiku, Mini, Flash):
 - Simplified instructions
 - Reduced output expectations
 - Focused on core task completion

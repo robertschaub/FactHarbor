@@ -48,7 +48,7 @@ export function validatePipelineConfig(config: PipelineConfig): ConfigWarning[] 
       level: "info",
       title: "LLM Tiering Disabled",
       message: "All analysis tasks will use premium models (Sonnet/GPT-4), increasing costs by 50-70%.",
-      suggestion: "Enable llmTiering to use budget models (Haiku/Mini) for extraction tasks",
+      suggestion: "Enable llmTiering to use fast-tier models (Haiku/Mini) for extraction tasks",
       affectedFields: ["llmTiering"],
     });
   }

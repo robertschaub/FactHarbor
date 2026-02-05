@@ -44,34 +44,42 @@ Today is ${currentDate}. Use for temporal reference.
 
 ## EVIDENCESCOPE: INCOMPATIBLE ANALYTICAL BOUNDARIES (SELECTIVE)
 
-**Purpose**: Flag when Evidence items answer DIFFERENT QUESTIONS due to incompatible analytical boundaries.
+**Purpose**: Flag when Evidence items answer DIFFERENT QUESTIONS because the source defines a distinct analytical boundary.
 
-### DECISION TREE: When to Extract EvidenceScope
+### DECISION TREE: When to Extract EvidenceScope (Explicit)
 
-**STEP 1 - Does the source EXPLICITLY define boundaries?**
-The source must contain explicit statements about scope, methodology, or limitations.
-- YES → Continue to Step 2
-- NO → Do NOT extract EvidenceScope (don't invent boundaries)
+**STEP 1 — Boundary Signal Present?**
+Does the source explicitly state methodology/boundary/coverage details?
+- Examples of explicit signals:
+  - Methodology/framework names or standards
+  - Boundary definitions (what is included/excluded)
+  - Jurisdiction/region scope
+  - Time window of data
+  - Population inclusion/exclusion criteria
+- If **NO explicit signal**, do **NOT** extract EvidenceScope.
+- If **YES**, proceed.
 
-**STEP 2 - Would combining this with other evidence be MISLEADING?**
-Ask: "If I averaged or combined findings from this source with other sources, would the result mislead because they measure fundamentally different things?"
-- YES → Continue to Step 3
-- NO → Do NOT extract EvidenceScope (boundaries are compatible)
+**STEP 2 — Boundary Changes the Question?**
+Ask: “Would evidence from this source answer a **different analytical question** than evidence without these boundaries?”
+- If **NO** (same question, same boundary), do **NOT** extract EvidenceScope.
+- If **YES**, proceed.
 
-**STEP 3 - Is this a significant methodological difference?**
-The boundary must materially affect the findings. Examples of SIGNIFICANT differences:
-- Different measurement systems (e.g., WTW vs TTW lifecycle analysis)
-- Different geographic/legal jurisdictions (e.g., US vs EU regulations)
-- Different time periods that affect validity (e.g., pre-2020 vs post-2020 data)
-- Different study populations or inclusion criteria
+**STEP 3 — Material Impact?**
+Does the boundary materially change conclusions (not just precision)?
+- If **NO** (minor variations), do **NOT** extract EvidenceScope.
+- If **YES**, extract EvidenceScope with all relevant fields.
 
-Examples of NON-SIGNIFICANT differences (do NOT flag):
-- Minor variations in sample size
-- Different authors or institutions
-- Different publication dates if methodology is similar
+### WHAT COUNTS AS MATERIAL (extract EvidenceScope)
+- Different system boundaries (e.g., lifecycle vs use-phase)
+- Different legal/regulatory jurisdictions
+- Distinct time windows that change relevance/validity
+- Different populations or eligibility criteria that alter outcomes
 
-- SIGNIFICANT → Extract EvidenceScope with all relevant fields
-- NOT SIGNIFICANT → Do NOT extract EvidenceScope
+### WHAT DOES NOT COUNT (do NOT extract EvidenceScope)
+- Different authors/institutions with same method
+- Minor sample-size differences
+- Different publication dates with same methodology
+- Cosmetic wording differences
 
 ### EXPECTED FREQUENCY
 

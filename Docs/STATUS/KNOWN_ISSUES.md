@@ -30,7 +30,7 @@ This document tracks all known bugs, limitations, and technical debt in FactHarb
 **Description**:
 Large prompt optimization work (v2.8) was deployed without A/B testing:
 - Provider-specific formatting (Claude XML, GPT few-shot, Gemini format, Mistral step-by-step)
-- Claims ~40% token reduction for budget models
+- Claims ~40% token reduction for fast-tier models
 - 83 tests added but only validate syntax, not actual LLM behavior
 
 **Impact**:
@@ -459,7 +459,7 @@ const verdicts = await generateClaimVerdictsParallel(
 **Potential Savings**: 50-70% cost reduction
 
 **Description**:
-Model tiering system exists (budget models for extraction, premium for reasoning) but is not enabled.
+Model tiering system exists (fast-tier models for extraction, premium for reasoning) but is not enabled.
 
 **Solution**:
 1. Enable tiering in the pipeline config (UCM)
