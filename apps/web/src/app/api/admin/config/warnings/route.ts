@@ -11,6 +11,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+// Force dynamic rendering - this route uses request.url for query params
+export const dynamic = 'force-dynamic';
 import { loadPipelineConfig, loadSearchConfig } from '@/lib/config-loader';
 import { getConfigBlob } from '@/lib/config-storage';
 import { PipelineConfigSchema, SearchConfigSchema, type PipelineConfig, type SearchConfig } from '@/lib/config-schemas';
