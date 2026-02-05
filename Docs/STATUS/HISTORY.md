@@ -1,7 +1,7 @@
 # FactHarbor Development History
 
-**Last Updated**: February 2, 2026
-**Current Version**: 2.10.1 (Code) | 2.7.0 (Schema Output)
+**Last Updated**: February 5, 2026
+**Current Version**: 2.10.2 (Code) | 2.7.0 (Schema Output)
 **Schema Version**: 2.7.0
 
 ---
@@ -44,6 +44,60 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 ---
 
 ## Version History
+
+### v2.10.2 Analysis Quality Review + Pipeline Phase 1 (February 5, 2026)
+
+**Focus**: Quality visibility improvements, prompt clarity, and pipeline efficiency
+
+**Status**: ✅ COMPLETE
+
+**Major Changes**:
+
+1. **Analysis Quality Review (Complete)**
+   - **P0: Verdict Direction Validation** - `validateVerdictDirections()` with autoCorrect detects and fixes rating inversions
+   - **P1: Structured Output Failure Tracking** - `analysisWarnings` array in resultJson captures all degradations
+   - **P1: Quality Gates UI** - New `QualityGatesPanel` component displays gate pass/fail, evidence counts, confidence distribution
+   - **P2: Incomplete Analysis Flag** - `budget_exceeded` warning type for budget exhaustion visibility
+   - **P3: Evidence Filter Degradation** - `evidence_filter_degradation` warning type when LLM→heuristic fallback occurs
+
+2. **Prompt Clarity Improvements**
+   - **EvidenceScope Decision Tree** - 3-step explicit criteria replacing vague "0-1 boundary patterns" in `extract-evidence-base.ts`
+   - **Centralized Schema Reference** - New `OUTPUT_SCHEMAS.md` with TypeScript interfaces for all LLM phases
+   - **Fast-tier Terminology Cleanup** - "Budget mode/model" → "fast-tier model" throughout codebase
+
+3. **Pipeline Improvement Plan Phase 1 (Complete)**
+   - **Gap-Driven Research** - `analyzeEvidenceGaps()` + `continueResearchForGaps()` with bounded iterations
+   - **Counter-Evidence Enforcement** - Mandatory counter-evidence search for HIGH centrality claims
+   - **Parallel Evidence Extraction** - Bounded concurrency with budget reservation and throttling backoff
+   - **URL Deduplication** - `processedUrls` tracking reduces re-fetch rate to <5%
+   - **Enhanced Recency Detection** - `TemporalContext` schema with LLM hybrid approach
+   - **Research Metrics Output** - Coverage metrics and gap reporting in `researchMetrics`
+
+4. **Code Review Fixes**
+   - Raised `CLAIM_EVIDENCE_SIMILARITY_THRESHOLD` from 0.3 to 0.4
+   - Raised `TEMPORAL_CONTEXT_CONFIDENCE_THRESHOLD` from 0.5 to 0.6
+   - Added `parallelExtractionLimit` to PipelineConfig (1-10, default: 3)
+   - Added `llmCallCount` to telemetry for accurate budget tracking
+   - Added comprehensive gap research budget documentation
+
+**Files Created**:
+- `apps/web/src/components/QualityGatesPanel.tsx`
+- `apps/web/src/components/QualityGatesPanel.module.css`
+- `apps/web/src/lib/analyzer/prompts/OUTPUT_SCHEMAS.md`
+
+**Files Modified**:
+- `apps/web/src/app/jobs/[id]/page.tsx` (QualityGatesPanel integration)
+- `apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts` (EvidenceScope decision tree)
+- `apps/web/src/lib/analyzer/prompts/config-adaptations/tiering.ts` (terminology)
+- `apps/web/src/lib/analyzer/prompts/prompt-builder.ts` (terminology)
+- `apps/web/src/lib/analyzer/orchestrated.ts` (pipeline improvements)
+- Multiple Docs/* files (terminology sweep)
+
+**Docs Updated**:
+- Analysis Quality Review plan archived
+- Pipeline_Improvement_Plan.md Phase 1 marked complete
+
+---
 
 ### v2.10.1 UCM Integration + Terminology Cleanup (February 2, 2026)
 

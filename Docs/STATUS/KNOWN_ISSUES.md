@@ -1,7 +1,7 @@
 # FactHarbor Known Issues
 
-**Last Updated**: February 2, 2026
-**Current Version**: 2.6.41
+**Last Updated**: February 5, 2026
+**Current Version**: 2.10.2
 **Schema Version**: 2.7.0
 
 This document tracks all known bugs, limitations, and technical debt in FactHarbor POC1.
@@ -117,28 +117,26 @@ await finalizeMetrics();
 
 ### 3. Quality Gate Decisions Not Displayed in UI
 
-**Status**: ⚠️ DATA EXISTS, UI MISSING  
+**Status**: ✅ RESOLVED (February 5, 2026)
 **Severity**: HIGH (UX)
 
 **Description**:
 Quality gates are applied (Gate 1 and Gate 4) and stats are tracked in result JSON, but per-item gate decisions with reasons are not shown in UI or reports.
 
-**Impact**:
-- Users cannot see why specific claims were filtered (Gate 1)
-- Users cannot see why verdicts have low confidence (Gate 4)
-- Transparency goal not fully met
+**Resolution**:
+Implemented `QualityGatesPanel` component (v2.10.2) that displays:
+- Overall pass/fail status with visual indicators
+- Summary stats: evidence items, sources, searches, counter-search status
+- Gate 4 confidence distribution (HIGH/MEDIUM/LOW/INSUFFICIENT) with progress bars
+- Gate 1 claim validation stats (passed/filtered/central kept)
+- Collapsible panel for detailed view
 
-**Workaround**:
-Check JSON output directly to see gate stats.
+**Files Created**:
+- `apps/web/src/components/QualityGatesPanel.tsx`
+- `apps/web/src/components/QualityGatesPanel.module.css`
 
-**Solution**:
-Display gate information in results UI:
-- Show filtered claims with Gate 1 rejection reasons
-- Show confidence tiers (HIGH/MEDIUM/LOW/INSUFFICIENT) for verdicts
-- Add expandable sections explaining gate decisions
-
-**Files to Modify**:
-- `apps/web/src/app/jobs/[id]/page.tsx`
+**Files Modified**:
+- `apps/web/src/app/jobs/[id]/page.tsx` (integration)
 
 ---
 
@@ -475,19 +473,22 @@ Model tiering system exists (fast-tier models for extraction, premium for reason
 
 ## Summary Statistics
 
-**Total Issues**: 21
+**Total Issues**: 20 (1 resolved in v2.10.2)
 - Critical: 2
-- High: 5
+- High: 4 (1 resolved)
 - Medium: 5
 - Low: 3
 - Security: 3 (LOW for POC, HIGH for production)
 - Performance: 2 (ready to deploy)
 
+**Resolved in v2.10.2**:
+- ✅ Issue #3: Quality Gate Decisions Not Displayed in UI
+
 **By Category**:
-- Quality/Validation: 5 issues
+- Quality/Validation: 4 issues (1 resolved)
 - Performance/Cost: 5 issues
 - Security: 3 issues
-- UX/Display: 4 issues
+- UX/Display: 3 issues (1 resolved)
 - Architecture: 2 issues
 - Observability: 2 issues
 

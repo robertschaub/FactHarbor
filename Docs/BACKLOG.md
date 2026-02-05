@@ -1,6 +1,6 @@
 # FactHarbor Development Backlog
 
-**Last Updated**: 2026-02-04
+**Last Updated**: 2026-02-05
 **Status**: Active backlog items extracted from WIP folder cleanup
 **Owner**: Development Team
 
@@ -356,6 +356,30 @@ The following items have been completed and moved to ARCHIVE:
 - **Status**: Phases 1-4 complete
 - **Completion Date**: 2026-02-04
 - **Details**: [Documentation_Improvement_Plan_2026-02-03.md](ARCHIVE/Documentation_Improvement_Plan_2026-02-03.md)
+
+### ✅ Analysis Quality Review (COMPLETE)
+- **Status**: All P0-P4 items complete
+- **Completion Date**: 2026-02-05
+- **Details**: Plan file at `.claude/plans/glistening-churning-muffin.md`
+- **Key Deliverables**:
+  - Verdict direction validation with autoCorrect
+  - `QualityGatesPanel` UI component
+  - `analysisWarnings` array in resultJson
+  - EvidenceScope 3-step decision tree
+  - `OUTPUT_SCHEMAS.md` centralized reference
+  - "Budget mode" → "fast-tier model" terminology cleanup
+
+### ✅ Pipeline Improvement Plan Phase 1 (COMPLETE)
+- **Status**: Phase 1 complete with code review fixes
+- **Completion Date**: 2026-02-05
+- **Details**: [Pipeline_Improvement_Plan.md](WIP/Pipeline_Improvement_Plan.md)
+- **Key Deliverables**:
+  - Gap-driven research continuation
+  - Counter-evidence enforcement for HIGH claims
+  - Parallel evidence extraction (bounded concurrency)
+  - URL deduplication across iterations
+  - Enhanced recency detection with TemporalContext
+  - Research metrics output in resultJson
 
 ---
 

@@ -1,8 +1,8 @@
 # Prompt Architecture
 
-**Version**: 2.8.0
-**Last Updated**: February 3, 2026  
-**Audience**: Developers, Prompt Engineers  
+**Version**: 2.8.1
+**Last Updated**: February 5, 2026
+**Audience**: Developers, Prompt Engineers
 **Purpose**: Document the modular prompt composition system used across all pipelines
 
 ---
@@ -27,10 +27,11 @@ This separation ensures:
 ```
 apps/web/src/lib/analyzer/prompts/
 ├── prompt-builder.ts              # Central builder that composes prompts
+├── OUTPUT_SCHEMAS.md              # Centralized JSON schema reference (v2.10.2)
 │
 ├── base/                          # Task-specific base prompts
 │   ├── understand-base.ts         # Claim understanding (shared)
-│   ├── extract-facts-base.ts      # Fact extraction (shared)
+│   ├── extract-evidence-base.ts   # Evidence extraction (shared)
 │   ├── verdict-base.ts            # Verdict generation (shared)
 │   ├── scope-refinement-base.ts   # Context refinement (shared)
 │   ├── dynamic-plan-base.ts       # Dynamic pipeline planning
@@ -287,6 +288,7 @@ This ensures consistent behavior across all three pipelines while preventing bot
 
 ## Related Documentation
 
+- [OUTPUT_SCHEMAS.md](../../apps/web/src/lib/analyzer/prompts/OUTPUT_SCHEMAS.md) - Centralized JSON schema reference for all LLM phases
 - [LLM Configuration Guide](../USER_GUIDES/LLM_Configuration.md) - User-facing provider setup
 - [LLM Schema Mapping](../REFERENCE/LLM_Schema_Mapping.md) - TypeScript to LLM output mapping
 - [Pipeline Architecture](./Pipeline_TriplePath_Architecture.md) - Overall pipeline design
