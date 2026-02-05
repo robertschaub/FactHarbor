@@ -197,6 +197,10 @@ export const PipelineConfigSchema = z.object({
   provenanceValidationEnabled: z.boolean().optional().describe("Enable provenance validation gate"),
   pdfParseTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for PDF parsing (ms)"),
 
+  // === Parallel Extraction ===
+  parallelExtractionLimit: z.number().int().min(1).max(10).optional()
+    .describe("Max concurrent evidence extraction calls (1-10). Lower values reduce rate limiting risk. Consider provider-specific limits."),
+
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
 
@@ -312,6 +316,9 @@ export const PipelineConfigSchema = z.object({
   if (data.pdfParseTimeoutMs === undefined) {
     data.pdfParseTimeoutMs = 60000;
   }
+  if (data.parallelExtractionLimit === undefined) {
+    data.parallelExtractionLimit = 3; // Conservative default to avoid rate limiting
+  }
 
   if (warnings.length > 0) {
     console.warn(`[DEPRECATED] Pipeline config keys migrated: ${warnings.join(", ")}`);
@@ -376,6 +383,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   probativeFilterEnabled: true,
   provenanceValidationEnabled: true,
   pdfParseTimeoutMs: 60000,
+  parallelExtractionLimit: 3, // Conservative default; can increase for providers with higher rate limits
 
   // Budget controls
   maxIterationsPerContext: 5, // NEW: Use new key name

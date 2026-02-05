@@ -1304,7 +1304,7 @@ function analyzeEvidenceGaps(
       if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
       // Check for text similarity
       const similarity = calculateTextSimilarity(e.statement, claim.text);
-      return similarity > 0.3;
+      return similarity > CLAIM_EVIDENCE_SIMILARITY_THRESHOLD;
     });
 
     // Get queries that were attempted for this claim's context
@@ -6883,10 +6883,22 @@ interface ParallelExtractionResult {
     throttlingEvents: number;
     durationMs: number;
     concurrencyLevel: number;
+    // LLM call count for accurate budget tracking
+    // Currently equals successCount (1 LLM call per extraction)
+    // Separated for future-proofing if extractEvidence starts making multiple calls
+    llmCallCount: number;
   };
 }
 
-const PARALLEL_EXTRACTION_LIMIT = 3;
+// Default parallel extraction limit (fallback if not in config)
+// Can be overridden via pipelineConfig.parallelExtractionLimit
+const DEFAULT_PARALLEL_EXTRACTION_LIMIT = 3;
+// Claim-evidence similarity threshold for gap analysis and coverage metrics
+// Raised from 0.3 to 0.4 per code review - 0.3 was too permissive
+const CLAIM_EVIDENCE_SIMILARITY_THRESHOLD = 0.4;
+// Temporal context confidence threshold for recency-based search adjustments
+// Set to 0.6 to require moderate-to-high confidence before adjusting search params
+const TEMPORAL_CONTEXT_CONFIDENCE_THRESHOLD = 0.6;
 
 async function extractEvidenceParallel(
   sources: FetchedSource[],
@@ -6899,7 +6911,9 @@ async function extractEvidenceParallel(
   let successCount = 0;
   let failureCount = 0;
   let throttlingEvents = 0;
-  let currentLimit = PARALLEL_EXTRACTION_LIMIT;
+  // Use config value if available, otherwise fall back to default
+  const configLimit = options.pipelineConfig?.parallelExtractionLimit ?? DEFAULT_PARALLEL_EXTRACTION_LIMIT;
+  let currentLimit = configLimit;
 
   // Process in batches with bounded concurrency
   for (let i = 0; i < sources.length; i += currentLimit) {
@@ -6969,6 +6983,9 @@ async function extractEvidenceParallel(
       throttlingEvents,
       durationMs,
       concurrencyLevel: currentLimit,
+      // Currently 1:1 with successCount; separated for future-proofing
+      // if extractEvidence starts making multiple LLM calls
+      llmCallCount: successCount,
     },
   };
 }
@@ -10713,6 +10730,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             );
             state.evidenceItems.push(...parallelResult.evidenceItems);
             state.evidenceFilterLlmFailures += parallelResult.llmFilterFailures;
+            state.llmCalls += parallelResult.telemetry.llmCallCount;
             console.log(`[Analyzer] Parallel extraction from ${successfulSources.length} grounded sources: ${parallelResult.telemetry.durationMs}ms`);
           }
 
@@ -10745,7 +10763,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       let recencyMatters = decision.recencyMatters || isRecencySensitive(query, state.understanding || undefined);
       let dateRestrict: "y" | "m" | "w" | undefined = searchConfig.dateRestrict ?? undefined;
 
-      if (temporalContext?.isRecencySensitive && temporalContext.confidence > 0.5) {
+      if (temporalContext?.isRecencySensitive && temporalContext.confidence > TEMPORAL_CONTEXT_CONFIDENCE_THRESHOLD) {
         // Use LLM-determined temporal context
         recencyMatters = true;
         if (!dateRestrict) {
@@ -10896,7 +10914,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     state.lastIterationNovelEvidenceCount = novelEvidenceCount;
     state.evidenceItems.push(...parallelResult.evidenceItems);
     state.evidenceFilterLlmFailures += parallelResult.llmFilterFailures;
-    state.llmCalls += parallelResult.telemetry.successCount; // Each successful extraction is 1 LLM call
+    state.llmCalls += parallelResult.telemetry.llmCallCount;
     const extractElapsed = Date.now() - extractStart;
     console.log(`[Analyzer] Evidence extraction for iteration ${iteration} completed in ${extractElapsed}ms for ${successfulSources.length} sources (parallel, ${novelEvidenceCount} novel)`);
 
@@ -10913,7 +10931,26 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
   // Pipeline Phase 1: Gap-driven research continuation
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // BUDGET DESIGN DECISION:
+  // Gap research uses a SEPARATE, bounded query budget (MAX_GAP_QUERIES_TOTAL)
+  // that runs AFTER the main research phase completes. This is intentional:
+  //
+  // 1. The main budget (state.budget/budgetTracker) controls the primary research
+  //    phase including iteration limits and token caps
+  // 2. Gap research is a supplemental "gap-filling" phase with its own limits
+  // 3. MAX_GAP_QUERIES_TOTAL is additive to main research, not shared
+  // 4. This ensures critical HIGH centrality claims without evidence get
+  //    targeted follow-up even if main budget is exhausted
+  //
+  // If gap research should share the main budget instead, integrate via:
+  //   - Check checkTokenBudget() before gap queries
+  //   - Deduct gap iterations from state.budgetTracker.totalIterations
+  //
+  // ═══════════════════════════════════════════════════════════════════════════
   const MAX_GAP_ITERATIONS = 2;
   const MAX_GAP_QUERIES_TOTAL = 8;
   // TODO: Add enableGapDrivenResearch to PipelineConfig schema when ready
@@ -11012,6 +11049,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         state.lastIterationNovelEvidenceCount = gapExtractResult.evidenceItems.length;
         state.evidenceItems.push(...gapExtractResult.evidenceItems);
         state.evidenceFilterLlmFailures += gapExtractResult.llmFilterFailures;
+        state.llmCalls += gapExtractResult.telemetry.llmCallCount;
         console.log(`[Analyzer] Gap research: Added ${gapExtractResult.evidenceItems.length} evidence items from ${gapSuccessfulSources.length} sources`);
       }
     }
@@ -11362,7 +11400,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         return state.evidenceItems.some(e => {
           if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
           const similarity = calculateTextSimilarity(e.statement, claim.text);
-          return similarity > 0.3;
+          return similarity > CLAIM_EVIDENCE_SIMILARITY_THRESHOLD;
         });
       });
       const highCentralityCoverage = highCentralityClaims.length > 0
@@ -11375,7 +11413,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           if (e.claimDirection !== "contradicts") return false;
           if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
           const similarity = calculateTextSimilarity(e.statement, claim.text);
-          return similarity > 0.3;
+          return similarity > CLAIM_EVIDENCE_SIMILARITY_THRESHOLD;
         });
       });
       const counterEvidenceRate = highCentralityClaims.length > 0
