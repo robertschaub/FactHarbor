@@ -1,67 +1,87 @@
 # Documentation Consolidation & Cleanup - Tech Writer Instructions
 
-## 🔑 Access & Setup
+## 🔑 Access & Setup (AI Agent in VS Code)
 
-**You have direct access to all files and systems:**
+**You are an AI agent working in VS Code with access to:**
 
-### Required Access (Project Lead will provide)
+### Your Access (What You Can Do)
 
-- **Git Repository:** Full read/write access to the FactHarbor repository
-  - Clone URL: [Project lead will provide]
-  - Branch to work on: `main` (or as directed)
-  - You can commit, push, create branches as needed
-
-- **xWiki:** Admin or edit access to the xWiki instance
-  - URL: [Project lead will provide]
-  - Login credentials: [Project lead will provide]
-  - You can create, edit, delete, and reorganize pages
+- **Git Repository:** Full read/write access to local repository
+  - Working directory: `c:\DEV\FactHarbor`
+  - You can read, edit, create, and delete files
+  - You can use git commands (add, commit, status, diff)
+  - Project lead handles git push to remote
 
 - **Local File System:** Direct access to all documentation files
-  - `Docs/` directory in the git repository
-  - `Docs/WIP/`, `Docs/ARCHIVE/`, `Docs/STATUS/` subdirectories
+  - `Docs/` directory and all subdirectories
+  - `Docs/WIP/`, `Docs/ARCHIVE/`, `Docs/STATUS/`
   - All `.md`, `.xar`, and other documentation files
+
+- **Conversion Tools:** Python scripts for XAR ↔ Markdown
+  - Located in `Docs/xwiki-export/`
+  - You can run these scripts directly
+  - Python environment is already set up
+
+### What You CANNOT Access
+
+- **❌ xWiki:** You don't have access to the xWiki web interface
+  - **Project lead handles all xWiki imports/exports**
+  - You work only with local files (XAR and Markdown)
+
+### Your Workflow (AI Agent)
+
+**You work with files the project lead provides:**
+
+```
+Project Lead                          You (AI Agent)
+═══════════════════════════════════   ══════════════════════════════════
+
+1. Exports XAR from xWiki       →     2. Convert XAR to Markdown:
+   (provides .xar file)                  python xar_to_json.py input.xar
+                                         python json_to_md_tree.py *.json
+
+3. [You work offline]                 4. Edit Markdown files:
+                                         - Consolidate content
+                                         - Fix formatting
+                                         - Reorganize structure
+                                         - Update documentation
+
+5. [You work offline]                 6. Convert back to XAR:
+                                         python md_tree_to_json.py *_md/
+                                         python json_to_xar.py *_updated.json
+
+7. Reviews XAR                    ←   8. Deliver updated XAR file
+8. Imports to xWiki                      (notify project lead it's ready)
+```
 
 ### Initial Setup
 
-1. **Clone the repository:**
-   ```bash
-   git clone [repo-url]
-   cd FactHarbor
-   ```
+**You should already have:**
+- ✅ Access to `c:\DEV\FactHarbor` directory
+- ✅ Python 3.8+ installed and working
+- ✅ Git access (can run git commands)
+- ✅ Conversion scripts in `Docs/xwiki-export/`
 
-2. **Verify Python is installed** (for conversion tools):
-   ```bash
-   python --version  # Should be 3.8 or higher
-   ```
+**Read these files first:**
+- `Docs/xwiki-export/WORKFLOW.md` - How to use conversion tools
+- `Docs/ROLES_AND_RESPONSIBILITIES.md` - Division of labor
 
-3. **Navigate to conversion scripts:**
-   ```bash
-   cd Docs/xwiki-export
-   ls *.py  # Should see 6 Python scripts
-   ```
+### What You ARE Authorized To Do:
+- ✅ Read all files in `Docs/`
+- ✅ Edit Markdown files
+- ✅ Run conversion scripts (xar_to_json.py, json_to_md_tree.py, etc.)
+- ✅ Create inventory of documentation
+- ✅ Consolidate and reorganize Markdown content
+- ✅ Archive outdated files (move to `Docs/ARCHIVE/`)
+- ✅ Create new Markdown files
+- ✅ Delete duplicate/obsolete files
+- ✅ Commit changes to git (local)
 
-4. **Test access to xWiki:**
-   - Open the xWiki URL
-   - Log in with provided credentials
-   - Verify you can edit pages
-
-5. **Read the workflow documentation:**
-   - `Docs/xwiki-export/WORKFLOW.md` - How to use conversion tools
-   - `Docs/ROLES_AND_RESPONSIBILITIES.md` - Your role vs project lead's role
-
-**You are authorized to:**
-- ✅ Read, edit, create, and delete files in `Docs/`
-- ✅ Create, edit, delete, and reorganize xWiki pages
-- ✅ Run all conversion scripts
-- ✅ Commit changes to git (though final push may require project lead approval)
-- ✅ Archive outdated content
-- ✅ Reorganize directory structures
-
-**Consult with project lead before:**
+### Ask Project Lead Before:
 - ⚠️ Deleting content that seems important but unclear
 - ⚠️ Making decisions about technical accuracy
-- ⚠️ Changing official terminology or glossary terms
-- ⚠️ Pushing commits to remote (coordinate with project lead)
+- ⚠️ Changing official terminology
+- ⚠️ Any operation involving xWiki (you can't access it anyway)
 
 ---
 
@@ -98,28 +118,46 @@ All documentation should be:
 
 We have a complete XAR ↔ Markdown conversion workflow:
 
-### Extract from xWiki to Markdown
+### You Receive: XAR file from Project Lead
+
+**Project lead exports from xWiki and gives you the .xar file**
+
+### You Convert: XAR to Markdown
 ```bash
 cd Docs/xwiki-export
 
-# 1. Export current xWiki content as XAR (from xWiki admin UI)
-# 2. Convert XAR to Markdown
-python xar_to_json.py YourExport.xar
-python json_to_md_tree.py YourExport_fulltree.json
+# 1. Convert XAR to JSON
+python xar_to_json.py FactHarbor_Export.xar
 
-# Result: YourExport_md/ directory with all pages as .md files
+# 2. Convert JSON to Markdown tree
+python json_to_md_tree.py FactHarbor_Export_fulltree.json
+
+# Result: FactHarbor_Export_md/ directory with all pages as .md files
 ```
 
-### Edit Markdown and Import Back to xWiki
+### You Edit: Markdown Files
+
+Work directly with the Markdown files:
+- Consolidate duplicates
+- Update outdated content
+- Reorganize structure
+- Fix formatting
+
+### You Convert: Markdown Back to XAR
+
 ```bash
-# 1. Edit .md files in YourExport_md/
-# 2. Convert back to XAR
-python md_tree_to_json.py YourExport_md/
-python json_to_xar.py YourExport_fulltree_updated.json
+# 1. Merge Markdown changes to JSON
+python md_tree_to_json.py FactHarbor_Export_md/
 
-# 3. Import updated XAR into xWiki
-# Result: YourExport_updated.xar ready for import
+# 2. Convert JSON to XAR
+python json_to_xar.py FactHarbor_Export_fulltree_updated.json
+
+# Result: FactHarbor_Export_updated.xar
 ```
+
+### You Deliver: Updated XAR to Project Lead
+
+**Notify project lead that the updated .xar file is ready for import**
 
 **Full documentation:** See [`Docs/xwiki-export/WORKFLOW.md`](xwiki-export/WORKFLOW.md)
 

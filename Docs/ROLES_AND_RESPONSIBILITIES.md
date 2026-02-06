@@ -4,24 +4,32 @@
 
 This document clarifies who does what in the documentation consolidation project.
 
+**Important:** The "Tech Writer" is an AI agent working in VS Code with access to local files only. The project lead handles all xWiki operations.
+
 **Goal:** Consolidate all FactHarbor documentation into xWiki (master) with synchronized local Markdown files (version control).
 
 **Total Effort Estimate:**
-- **Tech Writer:** ~14-27 hours (hands-on work)
-- **Project Lead:** ~7-11 hours (review, decisions, approval)
+- **AI Agent (Tech Writer):** ~14-27 hours (hands-on Markdown work)
+- **Project Lead (You):** ~10-14 hours (xWiki operations, review, decisions, approval)
 
 ---
 
 ## 👔 Project Lead (You) - Strategic Oversight
 
-### Phase 1: Setup & Kickoff (~1-2 hours)
+### Phase 1: Setup & Kickoff (~2-3 hours)
 
 **Your Responsibilities:**
 
-- [ ] **Provide access**
-  - Grant tech writer access to xWiki (admin or edit permissions)
-  - Grant access to git repository (read/write)
-  - Provide login credentials if needed
+- [ ] **Export current xWiki content**
+  - Go to xWiki → Administration → Export
+  - Export all documentation as XAR file
+  - Place XAR in `Docs/xwiki-export/`
+  - Notify AI agent that XAR is ready
+
+- [ ] **Provide access** (AI agent already has local file access)
+  - No xWiki access needed (AI agent can't access web UI anyway)
+  - No git credentials needed (AI agent works locally)
+  - AI agent has access to `c:\DEV\FactHarbor` directory
 
 - [ ] **Brief tech writer**
   - Share `INSTRUCTIONS_FOR_TECH_WRITER.md`
@@ -60,7 +68,7 @@ This document clarifies who does what in the documentation consolidation project
 
 ---
 
-### Phase 3: Content Consolidation (~2-4 hours)
+### Phase 3: Content Consolidation (~3-5 hours)
 
 **Your Responsibilities:**
 
@@ -70,46 +78,61 @@ This document clarifies who does what in the documentation consolidation project
   - Decide on borderline keep/delete cases
 
 - [ ] **Review key pages** (~1-2 hours)
-  - Tech writer shares consolidated versions of critical pages
+  - AI agent shares consolidated Markdown files
   - You spot-check for accuracy (NOT grammar/formatting)
   - Flag any technical errors or outdated info
 
-**Tech Writer Does:**
+- [ ] **Import interim updates to xWiki** (~1 hour, optional)
+  - If you want to preview changes in xWiki
+  - Convert Markdown → XAR (AI agent does this)
+  - Import XAR to xWiki test space
+  - Review in xWiki interface
+  - Provide feedback to AI agent
+
+**AI Agent (Tech Writer) Does:**
 - Merge duplicate content
 - Update outdated information (with your input)
 - Standardize formatting and terminology
 - Fix broken links
-- Archive old versions
-- Import content to xWiki
-- Export to Markdown
+- Archive old versions (move files in `Docs/`)
+- Convert Markdown ↔ XAR (using provided scripts)
 
 **Deliverable from Tech Writer:** Draft xWiki pages for your review
 
 ---
 
-### Phase 4: Finalization & Handoff (~2 hours)
+### Phase 4: Finalization & Handoff (~3-4 hours)
 
 **Your Responsibilities:**
 
-- [ ] **Final review** (~1 hour)
+- [ ] **Import final XAR to xWiki** (~1 hour)
+  - AI agent provides final updated XAR file
+  - You import to xWiki → Administration → Import
+  - Select all pages and import
+  - Verify import succeeded
+
+- [ ] **Final review in xWiki** (~1 hour)
   - Browse the cleaned-up xWiki
   - Verify critical pages are correct
-  - Test a few links
+  - Test links and navigation
+  - Check diagrams render properly
 
-- [ ] **Test export workflow** (~30 min)
-  - Verify tech writer exported to Markdown correctly
-  - Ensure conversion tools work
+- [ ] **Export final xWiki to Markdown** (~30 min)
+  - Export complete xWiki as XAR (final version)
+  - Use conversion tools to create Markdown files
+  - This becomes the "clean" version for git
 
-- [ ] **Git commit** (~30 min)
-  - Review the Markdown files
-  - Commit to git with appropriate message
+- [ ] **Git commit** (~1 hour)
+  - Review the final Markdown files
+  - Commit to git with detailed message
   - Push to remote
+  - Clean up intermediate files
 
-**Tech Writer Does:**
-- Final import to xWiki
-- Export complete xWiki to Markdown using tools
-- Prepare final deliverables
-- Write maintenance guide
+**AI Agent (Tech Writer) Does:**
+- Provide final updated XAR file
+- Assist with any final Markdown conversions if needed
+- Prepare handoff documentation
+- Summarize what was changed
 
 **Deliverable from Tech Writer:**
 - Clean xWiki instance
