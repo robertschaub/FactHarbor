@@ -204,6 +204,7 @@ interface PipelineConfig {
   pdfParseTimeoutMs?: number;
   // Pipeline selection
   defaultPipelineVariant?: "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
+  recencyCueTerms?: string[];
 }
 
 // Source Reliability config type
@@ -326,6 +327,7 @@ const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   enforceBudgets: false,
   pdfParseTimeoutMs: 60000,
   defaultPipelineVariant: "orchestrated",
+  recencyCueTerms: [],
 };
 
 const DEFAULT_SR_CONFIG: SRConfig = {
@@ -4009,7 +4011,7 @@ export default function ConfigAdminPage() {
           )}
 
           {/* JSON Editor */}
-          {editConfig && selectedType !== "prompt" && (
+          {editConfig && (
             <div className={styles.formSection}>
               <h3 className={styles.formSectionTitle}>JSON Editor</h3>
               <div className={styles.formHelp} style={{ marginBottom: 8 }}>

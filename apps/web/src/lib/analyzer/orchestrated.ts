@@ -1489,29 +1489,35 @@ export function normalizeYesNoQuestionToStatement(input: string): string {
 function generateInverseClaimQuery(claim: string): string | null {
   if (!claim || claim.length < 10) return null;
 
-  const lowerClaim = claim.toLowerCase();
+  const normalizedClaim = String(claim)
+    .replace(/^it\s+(?:is|was)\s+the\s+case\s+that\s+/i, "")
+    .replace(/^the claim that\s+/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const lowerClaim = normalizedClaim.toLowerCase();
+  if (normalizedClaim.length < 10) return null;
 
   // Pattern 1a: "Using X for Y is more Z than [using] W" - swap X and W
   // Example: "Using Technology A for transport is more efficient than using Technology B"
   // -> "Using Technology B for transport is more efficient than Technology A"
   const usingPattern = /using\s+(\w+(?:\s+\w+)?)\s+(?:for\s+\w+\s+)?(?:is|are)\s+(?:more\s+)?(\w+)\s+than\s+(?:using\s+)?(\w+(?:\s+\w+)?)/i;
-  const usingMatch = claim.match(usingPattern);
+  const usingMatch = normalizedClaim.match(usingPattern);
   if (usingMatch) {
     const [, subjectA, adjective, subjectB] = usingMatch;
     // Generate proper inverse: swap subjects
-    return `${subjectB.trim()} is more ${adjective} than ${subjectA.trim()}`;
+    return `${subjectB.trim()} is more ${adjective} than ${subjectA.trim()} evidence data`;
   }
 
   // Pattern 1b: General comparative "X is/are [more] Z than Y" - swap X and Y
   const comparativePattern = /^(.+?)\s+(?:is|are)\s+(?:more\s+)?(\w+)\s+than\s+(.+)$/i;
-  const compMatch = claim.match(comparativePattern);
+  const compMatch = normalizedClaim.match(comparativePattern);
   if (compMatch) {
     const [, subjectA, adjective, subjectB] = compMatch;
     // Clean up subjects (remove "using" prefix if present)
     const cleanA = subjectA.replace(/^using\s+/i, '').trim();
     const cleanB = subjectB.replace(/^using\s+/i, '').trim();
     // Generate inverse: "B is more [adjective] than A"
-    return `${cleanB} is more ${adjective} than ${cleanA}`;
+    return `${cleanB} is more ${adjective} than ${cleanA} evidence data`;
   }
 
   // Pattern 2: Efficiency/performance claims without explicit comparison
@@ -1531,9 +1537,9 @@ function generateInverseClaimQuery(claim: string): string | null {
     if (lowerClaim.includes(word)) {
       const opposite = oppositeMappings[word] || `not ${word}`;
       // Extract the main subject (first noun phrase)
-      const subjectMatch = claim.match(/(?:using\s+)?(\w+(?:\s+\w+){0,2})/i);
+      const subjectMatch = normalizedClaim.match(/(?:using\s+)?(\w+(?:\s+\w+){0,2})/i);
       if (subjectMatch) {
-        return `${subjectMatch[1]} ${opposite} evidence study`;
+        return `${subjectMatch[1]} ${opposite} evidence data`;
       }
     }
   }
@@ -1541,16 +1547,22 @@ function generateInverseClaimQuery(claim: string): string | null {
   // Pattern 3: Simple negation for factual claims
   // For claims starting with "The X is/was/has", search for contradicting evidence
   const factualPattern = /^(?:the\s+)?(.+?)\s+(?:is|was|has|have|are|were)\s+(.+)/i;
-  const factMatch = claim.match(factualPattern);
+  const factMatch = normalizedClaim.match(factualPattern);
   if (factMatch) {
     const [, subject, predicate] = factMatch;
-    // Search for evidence that contradicts
-    return `${subject.trim()} not ${predicate.trim().split(' ').slice(0, 3).join(' ')}`;
+    const predicateHead = predicate.trim().split(" ").slice(0, 4).join(" ");
+    return `${subject.trim()} ${predicateHead} contradictory evidence`;
   }
 
-  // Fallback: extract key terms and add contradiction modifiers
-  const words = claim.split(/\s+/).filter(w => w.length > 3).slice(0, 4).join(' ');
-  return `${words} false incorrect evidence against`;
+  // Fallback: keep query grammatical and context-bound.
+  const words = normalizedClaim
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2)
+    .slice(0, 10)
+    .join(" ");
+  if (!words) return null;
+  return `${words} contradictory evidence primary source`;
 }
 
 /**
@@ -3226,6 +3238,8 @@ import {
   getTrackRecordScore,
   setSourceReliabilityConfig,
   applyEvidenceWeighting as applyEvidenceWeightingSR,
+  extractDomain,
+  isImportantSource,
 } from "./source-reliability";
 
 // Re-export for backward compatibility
@@ -11230,12 +11244,22 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       decision.category === "criticism" || decision.isContradictionSearch === true;
 
     const relevantResults: typeof uniqueResults = [];
-    const relevanceMode =
-      state.pipelineConfig.searchRelevanceLlmMode ??
-      (state.pipelineConfig.searchRelevanceLlmEnabled ? "on" : "off");
+    const relevanceMode = state.pipelineConfig.searchRelevanceLlmMode ?? "auto";
     const relevanceLlmMaxCalls = state.pipelineConfig.searchRelevanceLlmMaxCalls ?? 3;
 
     for (const result of uniqueResults) {
+      const domain = extractDomain(result.url || "");
+      if (domain && !isImportantSource(domain)) {
+        debugLog("Pre-filter rejected", {
+          url: result.url,
+          title: result.title,
+          reason: "low_importance_domain",
+          domain,
+          query: (result as any).query,
+        });
+        continue;
+      }
+
       const check = checkSearchResultRelevance(
         result,
         entityStrForRelevance,
