@@ -37,6 +37,22 @@ def sanitize_path_component(name: str) -> str:
         result = result.replace(char, replacement)
     return result.rstrip('. ')
 
+def should_skip_page(page_id: str) -> bool:
+    """Determine if a page should be skipped (system pages, preferences, etc.)."""
+    # System spaces to skip
+    system_spaces = ['CKEditor', 'Mail', 'Panels', 'XWiki']
+
+    # Check if page is in a system space
+    for space in system_spaces:
+        if page_id.startswith(f"{space}."):
+            return True
+
+    # Skip WebPreferences pages (configuration pages, usually empty)
+    if page_id.endswith('.WebPreferences'):
+        return True
+
+    return False
+
 def main():
     parser = argparse.ArgumentParser(
         description="Convert XAR to .xwiki file tree (one-step)"
@@ -100,9 +116,15 @@ def main():
             return 1
 
         created_count = 0
+        skipped_count = 0
         for node in nodes:
             page_id = node.get("pageId") or node.get("id")
             if not page_id:
+                continue
+
+            # Skip system pages and preferences
+            if should_skip_page(page_id):
+                skipped_count += 1
                 continue
 
             # Get content body (pure xWiki syntax)
@@ -124,6 +146,8 @@ def main():
             print(f"  [{created_count:3d}/{len(nodes)}] {page_id}")
 
         print(f"\n[SUCCESS] Created {created_count} .xwiki files")
+        if skipped_count > 0:
+            print(f"Skipped {skipped_count} system pages (WebPreferences, CKEditor, Mail, Panels, XWiki)")
         print(f"Location: {output_dir.absolute()}/")
         print(f"\nFiles are ready for:")
         print(f"  - Direct editing by AI agents")
