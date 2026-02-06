@@ -210,6 +210,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Recency window in months for time-sensitive evidence checks (default: 6)"),
   recencyConfidencePenalty: z.number().int().min(0).max(50).optional()
     .describe("Confidence penalty (percentage points) when time-sensitive claims lack recent evidence (default: 20)"),
+  searchRelevanceLlmEnabled: z.boolean().optional()
+    .describe("Enable LLM-based relevance classification for ambiguous search results (default: false)"),
+  searchRelevanceLlmMaxCalls: z.number().int().min(0).max(10).optional()
+    .describe("Max LLM relevance classifications per analysis (default: 3)"),
 
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
@@ -349,6 +353,12 @@ export const PipelineConfigSchema = z.object({
   if (data.recencyConfidencePenalty === undefined) {
     data.recencyConfidencePenalty = 20;
   }
+  if (data.searchRelevanceLlmEnabled === undefined) {
+    data.searchRelevanceLlmEnabled = false;
+  }
+  if (data.searchRelevanceLlmMaxCalls === undefined) {
+    data.searchRelevanceLlmMaxCalls = 3;
+  }
   if (data.gapResearchEnabled === undefined) {
     data.gapResearchEnabled = true; // Enabled by default for Pipeline Phase 1
   }
@@ -429,6 +439,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   temporalConfidenceThreshold: 0.6,
   recencyWindowMonths: 6,
   recencyConfidencePenalty: 20,
+  searchRelevanceLlmEnabled: false,
+  searchRelevanceLlmMaxCalls: 3,
 
   // Budget controls
   maxIterationsPerContext: 5, // NEW: Use new key name

@@ -446,11 +446,21 @@ function normalizeEvidenceClassifications<T extends {
 interface RelevanceCheck {
   isRelevant: boolean;
   reason?: string;
+  signals?: {
+    entityMatchCount: number;
+    contextMatchCount: number;
+    institutionMentioned: boolean;
+    entityTokens: string[];
+    contextTokens: string[];
+    institutionTokens: string[];
+  };
 }
 
 type RelevanceOptions = {
   requireContextMatch?: boolean;
 };
+
+type RelevanceClass = "primary_source" | "secondary_commentary" | "unrelated";
 
 function normalizeForMatch(text: string): string {
   return (text || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -631,25 +641,111 @@ function checkSearchResultRelevance(
     institutionTokens.length > 0 &&
     (containsAnyToken(combined, institutionTokens) || containsAnyToken(url, institutionTokens));
 
+  const signals = {
+    entityMatchCount,
+    contextMatchCount,
+    institutionMentioned,
+    entityTokens,
+    contextTokens,
+    institutionTokens,
+  };
+
   if (options.requireContextMatch) {
     if (institutionTokens.length > 0) {
-      if (institutionMentioned && passesEntityGate && passesContextOrMissing) return { isRelevant: true };
+      if (institutionMentioned && passesEntityGate && passesContextOrMissing) return { isRelevant: true, signals };
       if (!institutionMentioned && passesEntityGate && passesContextOrMissing && strongEntityMatchCount > 0) {
-        return { isRelevant: true };
+        return { isRelevant: true, signals };
       }
-      return { isRelevant: false, reason: "insufficient_context_match" };
+      return { isRelevant: false, reason: "insufficient_context_match", signals };
     }
-    if (passesEntityGate && passesContextOrMissing) return { isRelevant: true };
-    return { isRelevant: false, reason: "insufficient_context_match" };
+    if (passesEntityGate && passesContextOrMissing) return { isRelevant: true, signals };
+    return { isRelevant: false, reason: "insufficient_context_match", signals };
   }
 
-  if (passesEntityGate || passesContextGate) return { isRelevant: true };
-  if (entityTokens.length === 0 && contextTokens.length === 0) return { isRelevant: true };
+  if (passesEntityGate || passesContextGate) return { isRelevant: true, signals };
+  if (entityTokens.length === 0 && contextTokens.length === 0) return { isRelevant: true, signals };
 
   return {
     isRelevant: false,
     reason: entityTokens.length > 0 ? "entity_not_mentioned" : "context_not_mentioned",
+    signals,
   };
+}
+
+const SEARCH_RELEVANCE_SCHEMA = z.object({
+  classification: z.enum(["primary_source", "secondary_commentary", "unrelated"]),
+  confidence: z.number().min(0).max(100),
+  reason: z.string().max(400),
+});
+
+function buildRelevanceContextSummary(contexts: AnalysisContext[]): string {
+  if (!contexts || contexts.length === 0) return "No contexts available.";
+  return contexts
+    .map((ctx, idx) => {
+      const meta = ctx.metadata || {};
+      const institution = meta.institution || meta.court || "";
+      const jurisdiction = meta.jurisdiction || meta.geographic || "";
+      const methodology = meta.methodology || "";
+      return [
+        `Context ${idx + 1}: ${ctx.subject || ctx.name || ctx.shortName || "General"}`,
+        institution ? `Institution: ${institution}` : "",
+        jurisdiction ? `Jurisdiction: ${jurisdiction}` : "",
+        methodology ? `Methodology: ${methodology}` : "",
+      ]
+        .filter(Boolean)
+        .join(" | ");
+    })
+    .join("\n");
+}
+
+async function classifySearchResultRelevanceLLM(
+  result: WebSearchResult,
+  entityStr: string,
+  contexts: AnalysisContext[],
+  model: any,
+  pipelineConfig?: PipelineConfig,
+): Promise<{ classification: RelevanceClass; confidence: number; reason: string } | null> {
+  const systemPrompt = `You classify the relevance of a search result to a claim and its AnalysisContexts.
+Return JSON only. Classify as:
+- "primary_source": directly about the claim/context and contains primary evidence, official records, data, or first-hand documentation.
+- "secondary_commentary": discusses the topic but is commentary, reaction, analysis, or indirect discussion without primary evidence.
+- "unrelated": not about the claim or context.`;
+
+  const userPrompt = `CLAIM:
+"${entityStr}"
+
+ANALYSISCONTEXTS:
+${buildRelevanceContextSummary(contexts)}
+
+SEARCH RESULT:
+Title: ${result.title || "N/A"}
+Snippet: ${result.snippet || "N/A"}
+URL: ${result.url || "N/A"}
+
+Return JSON with: classification, confidence (0-100), reason.`;
+
+  try {
+    const response = await generateText({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: getDeterministicTemperature(0.1, pipelineConfig),
+      output: Output.object({ schema: SEARCH_RELEVANCE_SCHEMA }),
+    });
+
+    const parsed = extractStructuredOutput(response);
+    if (!parsed) return null;
+    const safe = SEARCH_RELEVANCE_SCHEMA.safeParse(parsed);
+    if (!safe.success) return null;
+    return safe.data;
+  } catch (err: any) {
+    debugLog("classifySearchResultRelevanceLLM: failed", {
+      error: err?.message || String(err),
+    });
+    return null;
+  }
 }
 
 /**
@@ -10794,6 +10890,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // STEP 2-4: Research with search tracking
   let iteration = 0;
+  let relevanceLlmCalls = 0;
   while (
     iteration < config.maxResearchIterations &&
     state.sources.length < config.maxTotalSources
@@ -11095,23 +11192,72 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const requireContextMatch =
       decision.category === "criticism" || decision.isContradictionSearch === true;
 
-    const relevantResults = uniqueResults.filter((result) => {
+    const relevantResults: typeof uniqueResults = [];
+    const relevanceLlmEnabled = state.pipelineConfig.searchRelevanceLlmEnabled ?? false;
+    const relevanceLlmMaxCalls = state.pipelineConfig.searchRelevanceLlmMaxCalls ?? 3;
+
+    for (const result of uniqueResults) {
       const check = checkSearchResultRelevance(
         result,
         entityStrForRelevance,
         analysisContexts,
         { requireContextMatch },
       );
-      if (!check.isRelevant) {
+
+      if (check.isRelevant) {
+        relevantResults.push(result);
+        continue;
+      }
+
+      const signals = check.signals;
+      const isAmbiguous =
+        !!signals &&
+        (signals.entityMatchCount > 0 ||
+          signals.contextMatchCount > 0 ||
+          signals.institutionMentioned);
+
+      if (
+        relevanceLlmEnabled &&
+        isAmbiguous &&
+        relevanceLlmCalls < relevanceLlmMaxCalls
+      ) {
+        relevanceLlmCalls += 1;
+        const llmDecision = await classifySearchResultRelevanceLLM(
+          result,
+          entityStrForRelevance,
+          analysisContexts,
+          understandModelInfo.model,
+          state.pipelineConfig,
+        );
+        state.llmCalls += 1;
+
+        if (llmDecision?.classification === "primary_source") {
+          debugLog("Pre-filter LLM keep", {
+            url: result.url,
+            title: result.title,
+            classification: llmDecision.classification,
+            confidence: llmDecision.confidence,
+          });
+          relevantResults.push(result);
+          continue;
+        }
+
         debugLog("Pre-filter rejected", {
           url: result.url,
           title: result.title,
-          reason: check.reason,
+          reason: `llm_${llmDecision?.classification || "unavailable"}`,
           query: (result as any).query,
         });
+        continue;
       }
-      return check.isRelevant;
-    });
+
+      debugLog("Pre-filter rejected", {
+        url: result.url,
+        title: result.title,
+        reason: check.reason,
+        query: (result as any).query,
+      });
+    }
 
     if (relevantResults.length === 0) {
       state.iterations.push({

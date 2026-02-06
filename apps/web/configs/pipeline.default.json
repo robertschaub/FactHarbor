@@ -51,6 +51,8 @@
   "temporalConfidenceThreshold": 0.6,
   "recencyWindowMonths": 6,
   "recencyConfidencePenalty": 20,
+  "searchRelevanceLlmEnabled": false,
+  "searchRelevanceLlmMaxCalls": 3,
   "gapResearchEnabled": true,
   "gapResearchMaxIterations": 2,
   "gapResearchMaxQueries": 8
