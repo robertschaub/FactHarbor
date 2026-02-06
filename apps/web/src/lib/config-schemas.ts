@@ -359,7 +359,7 @@ export const PipelineConfigSchema = z.object({
     data.searchRelevanceLlmEnabled = false;
   }
   if (data.searchRelevanceLlmMode === undefined) {
-    data.searchRelevanceLlmMode = "off";
+    data.searchRelevanceLlmMode = "auto";
   }
   if (data.searchRelevanceLlmMaxCalls === undefined) {
     data.searchRelevanceLlmMaxCalls = 3;
@@ -445,7 +445,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   recencyWindowMonths: 6,
   recencyConfidencePenalty: 20,
   searchRelevanceLlmEnabled: false,
-  searchRelevanceLlmMode: "off",
+  searchRelevanceLlmMode: "auto",
   searchRelevanceLlmMaxCalls: 3,
 
   // Budget controls

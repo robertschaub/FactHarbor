@@ -1,9 +1,9 @@
 # Generic Evidence Quality Enhancement Plan
 
 **Author:** Claude (Lead Architect)
-**Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.2 implemented with off/auto/on modes)
+**Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.2 implemented with default auto mode)
 **Created:** 2026-02-05
-**Updated:** 2026-02-06 (Phase 3 Task 3.2 implemented with auto mode)
+**Updated:** 2026-02-06 (Phase 3 Task 3.2 default auto mode)
 **Priority:** 🟡 MEDIUM (Phase 1 resolved critical issue; Phase 2 improves search quality)
 **Verification Report:** [Evidence_Quality_Verification_Report.md](Evidence_Quality_Verification_Report.md)
 
@@ -870,7 +870,7 @@ function validateEvidenceRecency(
 
 **Problem:** Heuristic pre-filter may miss subtle irrelevance patterns.
 
-**Implementation:** Add optional LLM classification step for edge cases where heuristics are uncertain, with off/auto/on modes (default-off via pipeline config).
+**Implementation:** Add optional LLM classification step for edge cases where heuristics are uncertain, with off/auto/on modes (default auto via pipeline config).
 
 ```typescript
 type RelevanceClass = "primary_source" | "secondary_commentary" | "unrelated";
@@ -1159,6 +1159,6 @@ be implemented first.
 
 ---
 
-**Plan Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.2 implemented with auto mode)
+**Plan Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.2 default auto mode)
 **Next Step:** Complete Phase 3 integration testing with time-sensitive claims
-**Document Version:** 2.5 (Phase 3 Task 3.2 auto mode)
+**Document Version:** 2.6 (Phase 3 Task 3.2 default auto mode)
