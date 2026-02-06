@@ -17,7 +17,7 @@
   - `Docs/WIP/`, `Docs/ARCHIVE/`, `Docs/STATUS/`
   - All `.md`, `.xar`, and other documentation files
 
-- **Conversion Tools:** Python scripts for XAR ↔ Markdown
+- **Conversion Tools:** Python scripts for XAR ↔ .xwiki tree
   - Located in `Docs/xwiki-export/`
   - You can run these scripts directly
   - Python environment is already set up
@@ -26,7 +26,7 @@
 
 - **❌ xWiki:** You don't have access to the xWiki web interface
   - **Project lead handles all xWiki imports/exports**
-  - You work only with local files (XAR and Markdown)
+  - You work only with local files (XAR and .xwiki)
 
 ### Your Workflow (AI Agent)
 
@@ -36,19 +36,18 @@
 Project Lead                          You (AI Agent)
 ═══════════════════════════════════   ══════════════════════════════════
 
-1. Exports XAR from xWiki       →     2. Convert XAR to Markdown:
-   (provides .xar file)                  python xar_to_json.py input.xar
-                                         python json_to_md_tree.py *.json
+1. Exports XAR from xWiki       →     2. Convert XAR to .xwiki tree:
+   (provides .xar file)                  python xar_to_xwiki_tree.py in.xar
 
-3. [You work offline]                 4. Edit Markdown files:
+3. [You work offline]                 4. Edit .xwiki files DIRECTLY:
+                                         (No conversion needed!)
                                          - Consolidate content
                                          - Fix formatting
                                          - Reorganize structure
                                          - Update documentation
 
 5. [You work offline]                 6. Convert back to XAR:
-                                         python md_tree_to_json.py *_md/
-                                         python json_to_xar.py *_updated.json
+                                         python xwiki_tree_to_xar.py tree/
 
 7. Reviews XAR                    ←   8. Deliver updated XAR file
 8. Imports to xWiki                      (notify project lead it's ready)
@@ -63,17 +62,18 @@ Project Lead                          You (AI Agent)
 - ✅ Conversion scripts in `Docs/xwiki-export/`
 
 **Read these files first:**
-- `Docs/xwiki-export/WORKFLOW.md` - How to use conversion tools
+- `Docs/xwiki-export/WORKFLOW.md` - How to use conversion tools (NEW simplified workflow)
 - `Docs/ROLES_AND_RESPONSIBILITIES.md` - Division of labor
+- `Docs/xwiki-pages/README.md` - Two-tree documentation structure
 
 ### What You ARE Authorized To Do:
 - ✅ Read all files in `Docs/`
-- ✅ Edit Markdown files
-- ✅ Run conversion scripts (xar_to_json.py, json_to_md_tree.py, etc.)
+- ✅ Edit .xwiki files directly (pure xWiki 2.1 syntax)
+- ✅ Run conversion scripts (xar_to_xwiki_tree.py, xwiki_tree_to_xar.py)
 - ✅ Create inventory of documentation
-- ✅ Consolidate and reorganize Markdown content
+- ✅ Consolidate and reorganize .xwiki content
 - ✅ Archive outdated files (move to `Docs/ARCHIVE/`)
-- ✅ Create new Markdown files
+- ✅ Create new .xwiki files
 - ✅ Delete duplicate/obsolete files
 - ✅ Commit changes to git (local)
 

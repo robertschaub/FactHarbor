@@ -1,253 +1,430 @@
-# XWiki ↔ Markdown Conversion Workflow
+# xWiki ↔ .xwiki Tree Conversion Workflow
 
-Complete workflow for editing xWiki content using Markdown files.
+**New simplified workflow using `.xwiki` files as master source.**
+
+## Overview
+
+**Master source:** `Docs/xwiki-pages/` - Git-tracked `.xwiki` files
+**Conversion:** One-step commands for XAR ↔ .xwiki tree
+**Editing:** AI agents edit `.xwiki` files directly (no conversion needed)
 
 ## Quick Start
 
+### Import from xWiki → .xwiki tree
+
 ```bash
-# 1. Convert XAR to JSON
-python xar_to_json.py FactHarbor_Spec_and_Impl_06.Feb.26.xar
+cd Docs/xwiki-export
 
-# 2. Convert JSON to Markdown tree
-python json_to_md_tree.py FactHarbor_Spec_and_Impl_06.Feb.26_fulltree.json
+# Convert XAR to .xwiki tree
+python xar_to_xwiki_tree.py FactHarbor_Export.xar
 
-# 3. Edit Markdown files in: FactHarbor_Spec_and_Impl_06.Feb.26_md/
-#    - Edit existing .md files
-#    - Add new .md files following the pageId format
-
-# 4. Merge Markdown changes back to JSON
-python md_tree_to_json.py FactHarbor_Spec_and_Impl_06.Feb.26_md/
-
-# 5. Convert updated JSON to XAR
-python json_to_xar.py FactHarbor_Spec_and_Impl_06.Feb.26_fulltree_updated.json
-
-# 6. Import the new XAR into xWiki
+# Result: Docs/xwiki-pages/FactHarbor/.../*.xwiki
 ```
 
-## Script Details
+### Edit .xwiki files directly
 
-### 1. `xar_to_json.py` - XAR → JSON
-
-Converts xWiki XAR export to JSON fulltree format.
-
-**Usage:**
 ```bash
-python xar_to_json.py input.xar
-python xar_to_json.py input.xar --output custom.json
-python xar_to_json.py input.xar --sort  # Sort pages by pageId
+# Open any file and edit
+code Docs/xwiki-pages/FactHarbor/Specification/WebHome.xwiki
+
+# Commit to git
+git add Docs/xwiki-pages/
+git commit -m "docs: update specification"
+```
+
+### Export to xWiki → XAR
+
+```bash
+cd Docs/xwiki-export
+
+# Convert .xwiki tree to XAR
+python xwiki_tree_to_xar.py ../xwiki-pages/
+
+# Result: xwiki-pages_updated.xar (ready for import to xWiki)
+```
+
+---
+
+## Tools
+
+### xar_to_xwiki_tree.py - Import from xWiki
+
+**Extract pages from XAR and save as .xwiki files.**
+
+```bash
+# Basic usage
+python xar_to_xwiki_tree.py input.xar
+
+# Custom output directory
+python xar_to_xwiki_tree.py input.xar --output custom_dir/
+
+# Example
+python xar_to_xwiki_tree.py FactHarbor_Spec_and_Impl_06.Feb.26.xar
 ```
 
 **Output:**
-- JSON file with all pages, metadata, and structure
-- Preserves: pageId, parentId, title, syntax, xobjects, content
+```
+Docs/xwiki-pages/
+└── FactHarbor/
+    ├── WebHome.xwiki
+    ├── Specification/
+    │   ├── WebHome.xwiki
+    │   ├── Architecture.xwiki
+    │   └── ...
+    └── ...
+```
 
----
+### xwiki_tree_to_xar.py - Export to xWiki
 
-### 2. `json_to_md_tree.py` - JSON → Markdown Tree
+**Package .xwiki files into importable XAR.**
 
-Converts JSON fulltree to Markdown files.
-
-**Usage:**
 ```bash
-python json_to_md_tree.py input_fulltree.json
-python json_to_md_tree.py input_fulltree.json --output-dir ./my_pages
+# Basic usage (creates <dirname>_updated.xar)
+python xwiki_tree_to_xar.py ../xwiki-pages/
+
+# Custom output file
+python xwiki_tree_to_xar.py ../xwiki-pages/ --output FactHarbor_Final.xar
+
+# Example
+python xwiki_tree_to_xar.py ../xwiki-pages/ --output FactHarbor_2026-02-06.xar
 ```
 
 **Output:**
-- Directory tree with `.md` files
-- `_metadata.json` - Preserves page metadata for round-trip
-- File structure: `FactHarbor/Specification/WebHome.md`
-
-**Conversion (xWiki → Markdown):**
-- Headers: `= H1 =` → `# H1`
-- Italic: `//text//` → `*text*`
-- Bold: `**text**` → `**text**`
-- Code: `##code##` → `` `code` ``
-- Code blocks: `{{code language="py"}}` → ` ```py `
-- Mermaid: `{{mermaid}}` → ` ```mermaid `
-- Links: `[[url||text]]` → `[text](url)`
-- Images: `[[image:url||alt="text"]]` → `![text](url)`
-
----
-
-### 3. Edit Markdown Files
-
-**Edit existing files:**
-- Open any `.md` file in your editor
-- Make changes using standard Markdown syntax
-- Mermaid diagrams work as ` ```mermaid ` blocks
-
-**Add new pages:**
-- Create new `.md` file following the path pattern
-- Example: `FactHarbor/NewFeature/Overview.md`
-  - Will become pageId: `FactHarbor.NewFeature.Overview`
-  - Parent will be: `FactHarbor.NewFeature`
-
-**Delete pages:**
-- Simply delete the `.md` file
-- Will be removed from JSON on merge
-
----
-
-### 4. `md_tree_to_json.py` - Markdown → JSON
-
-Merges Markdown changes back into JSON fulltree.
-
-**Usage:**
-```bash
-python md_tree_to_json.py markdown_dir/
-python md_tree_to_json.py markdown_dir/ --output custom_updated.json
+```
+Docs/xwiki-export/FactHarbor_2026-02-06.xar
+(Ready to import: xWiki → Administration → Import)
 ```
 
-**Output:**
-- Updated JSON fulltree with your Markdown changes
-- New pages added with proper pageId and parentId
-- Deleted pages removed
+---
 
-**Conversion (Markdown → xWiki):**
-- Headers: `# H1` → `= H1 =`
-- Italic: `*text*` → `//text//`
-- Bold: `**text**` → `**text**`
-- Code: `` `code` `` → `##code##`
-- Code blocks: ` ```py ` → `{{code language="py"}}`
-- Mermaid: ` ```mermaid ` → `{{mermaid}}` (with empty lines)
-- Links: `[text](url)` → `[[url||text]]`
-- Images: `![text](url)` → `[[image:url||alt="text"]]`
+## File Format
+
+### .xwiki Files
+
+**Pure xWiki 2.1 syntax - copy-paste ready for xWiki editor.**
+
+**Example:** `FactHarbor/Specification/WebHome.xwiki`
+```xwiki
+= Specification =
+
+This is the **specification** for FactHarbor.
+
+== Architecture ==
+
+The system architecture consists of:
+
+* Frontend (Next.js)
+* Backend (Node.js/Express)
+* Database (SQLite)
+
+{{mermaid}}
+graph TD
+  A[Frontend] --> B[API]
+  B --> C[Database]
+{{/mermaid}}
+```
+
+**No metadata headers!** PageId, parent, title derived from file path.
+
+### Metadata Derivation
+
+| File Path | PageId | Parent | Title |
+|-----------|--------|--------|-------|
+| `FactHarbor/WebHome.xwiki` | `FactHarbor.WebHome` | `None` | From heading |
+| `FactHarbor/Specification/WebHome.xwiki` | `FactHarbor.Specification.WebHome` | `FactHarbor.WebHome` | From heading |
+| `FactHarbor/Specification/Architecture.xwiki` | `FactHarbor.Specification.Architecture` | `FactHarbor.Specification.WebHome` | From heading |
+
+**Parent derivation:**
+- Remove last component of pageId
+- Replace with `WebHome`
+- `FactHarbor.Specification.Architecture` → parent: `FactHarbor.Specification.WebHome`
+
+**Title extraction:**
+- First xWiki heading: `= Title =` → "Title"
+- If no heading: use filename (without .xwiki extension)
 
 ---
 
-### 5. `json_to_xar.py` - JSON → XAR
+## xWiki 2.1 Syntax Reference
 
-Converts JSON fulltree back to importable XAR.
+### Headers
 
-**Usage:**
-```bash
-python json_to_xar.py updated_fulltree.json
-python json_to_xar.py updated_fulltree.json --output my_export.xar
+```xwiki
+= Header 1 =
+== Header 2 ==
+=== Header 3 ===
+==== Header 4 ====
+===== Header 5 =====
+====== Header 6 ======
 ```
 
-**Output:**
-- XAR file ready for xWiki import
-- Preserves all metadata, structure, and xobjects
+### Text Formatting
 
----
-
-## Complete Example
-
-```bash
-# Starting with: FactHarbor_Spec_and_Impl_06.Feb.26.xar
-
-# Step 1: XAR to JSON
-python xar_to_json.py FactHarbor_Spec_and_Impl_06.Feb.26.xar
-# Creates: FactHarbor_Spec_and_Impl_06.Feb.26_fulltree.json
-
-# Step 2: JSON to Markdown
-python json_to_md_tree.py FactHarbor_Spec_and_Impl_06.Feb.26_fulltree.json
-# Creates: FactHarbor_Spec_and_Impl_06.Feb.26_md/
-#   ├── _metadata.json
-#   ├── FactHarbor/
-#   │   ├── Specification/
-#   │   │   └── WebHome.md
-#   │   ├── Implementation_Roadmap/
-#   │   │   └── WebHome.md
-#   │   └── ...
-
-# Step 3: Edit files
-# - Edit FactHarbor/Specification/WebHome.md
-# - Add FactHarbor/NewPage.md
-# - Delete FactHarbor/OldPage.md
-
-# Step 4: Markdown back to JSON
-python md_tree_to_json.py FactHarbor_Spec_and_Impl_06.Feb.26_md/
-# Creates: FactHarbor_Spec_and_Impl_06.Feb.26_fulltree_updated.json
-
-# Step 5: JSON to XAR
-python json_to_xar.py FactHarbor_Spec_and_Impl_06.Feb.26_fulltree_updated.json
-# Creates: FactHarbor_Spec_and_Impl_06.Feb.26_updated.xar
-
-# Step 6: Import to xWiki
-# - Open xWiki → Administration → Import
-# - Upload: FactHarbor_Spec_and_Impl_06.Feb.26_updated.xar
-# - Select pages and import
+```xwiki
+**bold**
+//italic//
+__underline__
+--strike--
+##code##
 ```
 
-## Important Notes
+### Links
 
-### Metadata Preservation
+```xwiki
+[[Page Name>>Space.Page]]          Internal link
+[[http://example.com>>Link Text]]  External link
+[[image.png>>attach:image.png]]    Attachment link
+```
 
-The `_metadata.json` file is **critical** for round-trip conversion:
-- Preserves pageId, parentId, syntax, xobjects
-- Tracks which pages existed originally
-- Handles page hierarchy
+### Lists
 
-**Do not delete `_metadata.json`!**
+```xwiki
+* Bullet item
+** Nested item
+*** Deep nested item
 
-### Page Hierarchy
+1. Numbered item
+11. Nested numbered
+111. Deep nested
+```
 
-Pages follow the dot-separated pageId pattern:
-- `FactHarbor.Specification.Requirements.WebHome`
-- Becomes file: `FactHarbor/Specification/Requirements/WebHome.md`
-- Parent is: `FactHarbor.Specification.Requirements`
+### Code Blocks
+
+```xwiki
+{{{
+Code block
+Multi-line code
+}}}
+
+{{{javascript}}}
+const x = 42;
+console.log(x);
+{{{/javascript}}}
+```
 
 ### Mermaid Diagrams
 
-Mermaid diagrams convert automatically:
-- In Markdown: ` ```mermaid ... ``` `
-- In xWiki: `{{mermaid}}...{{/mermaid}}` with empty lines
+```xwiki
+{{mermaid}}
+graph TD
+  A[Start] --> B{Decision}
+  B -->|Yes| C[Action 1]
+  B -->|No| D[Action 2]
+{{/mermaid}}
+```
 
-### New Pages
+**Important:** Mermaid diagrams must have empty lines before and after in the .xwiki file.
 
-When you create a new `.md` file:
-1. Place it in the correct directory for its parent
-2. Use proper file path → pageId mapping
-3. The script auto-assigns pageId and parentId based on path
+### Tables
 
-Example:
-- Create: `FactHarbor/NewSection/Introduction.md`
-- Auto-assigned pageId: `FactHarbor.NewSection.Introduction`
-- Auto-assigned parentId: `FactHarbor.NewSection`
+```xwiki
+|= Header 1 |= Header 2 |= Header 3
+| Cell 1    | Cell 2    | Cell 3
+| Cell 4    | Cell 5    | Cell 6
+```
 
-## Troubleshooting
+### Macros
 
-### Missing metadata.json
+```xwiki
+{{info}}
+This is an info box.
+{{/info}}
 
-**Error:** `Manifest not found: _metadata.json`
+{{warning}}
+This is a warning box.
+{{/warning}}
 
-**Solution:** You must run `json_to_md_tree.py` first to create the metadata file.
-
-### Original JSON not found
-
-**Error:** `Original JSON not found`
-
-**Solution:** Keep the original `_fulltree.json` file in the same directory as the `_md/` folder.
-
-### Conversion issues
-
-If Markdown doesn't convert correctly:
-1. Check the xWiki syntax in original pages
-2. Complex macros may need manual adjustment
-3. File an issue with example content
-
-## Files Overview
-
-| Script | Purpose | Input | Output |
-|--------|---------|-------|--------|
-| `xar_to_json.py` | Extract XAR | .xar | .json |
-| `json_to_md_tree.py` | Export to Markdown | .json | .md tree |
-| `md_tree_to_json.py` | Import from Markdown | .md tree | .json |
-| `json_to_xar.py` | Package XAR | .json | .xar |
-
-## See Also
-
-- [README.md](README.md) - Current XAR exports
-- [GlobalMasterKnowledge_for_xWiki.md](../AGENTS/GlobalMasterKnowledge_for_xWiki.md) - Full xWiki rules
+{{error}}
+This is an error box.
+{{/error}}
+```
 
 ---
 
-**Questions?** Check the script help:
+## Complete Workflow Examples
+
+### Scenario 1: Initial Import from xWiki
+
+**You have:** xWiki instance with documentation
+**You want:** Git-tracked `.xwiki` files
+
 ```bash
-python xar_to_json.py --help
-python json_to_md_tree.py --help
-python md_tree_to_json.py --help
-python json_to_xar.py --help
+# 1. Export from xWiki (Web UI)
+# xWiki → Administration → Export → Select all pages → Download XAR
+
+# 2. Convert to .xwiki tree
+cd Docs/xwiki-export
+python xar_to_xwiki_tree.py ~/Downloads/FactHarbor_Export.xar
+
+# 3. Review and commit
+cd ../xwiki-pages
+ls -la FactHarbor/
+git add .
+git commit -m "docs: initial import from xWiki"
 ```
+
+### Scenario 2: AI Agent Updates Documentation
+
+**You have:** `.xwiki` files in `Docs/xwiki-pages/`
+**You want:** Edit documentation directly
+
+```bash
+# 1. Open and edit files
+code Docs/xwiki-pages/FactHarbor/Specification/Architecture.xwiki
+
+# 2. Make changes (pure xWiki syntax)
+# = Architecture =
+#
+# Updated content here...
+
+# 3. Commit changes
+git add Docs/xwiki-pages/FactHarbor/Specification/Architecture.xwiki
+git commit -m "docs: update architecture documentation"
+
+# 4. Export to XAR (optional - for xWiki sync)
+cd Docs/xwiki-export
+python xwiki_tree_to_xar.py ../xwiki-pages/ --output FactHarbor_Updated.xar
+
+# 5. Import to xWiki (Web UI)
+# xWiki → Administration → Import → Select FactHarbor_Updated.xar
+```
+
+### Scenario 3: Human Views Documentation
+
+**Option A: View in xWiki**
+```bash
+# 1. Generate XAR
+cd Docs/xwiki-export
+python xwiki_tree_to_xar.py ../xwiki-pages/
+
+# 2. Import to local xWiki instance
+# xWiki → Administration → Import
+
+# 3. Browse with full WYSIWYG rendering
+```
+
+**Option B: View as plain text**
+```bash
+# Open in VS Code with xWiki extension
+code Docs/xwiki-pages/FactHarbor/Specification/WebHome.xwiki
+
+# Or view on GitHub (limited formatting)
+# Commit and view in GitHub repository
+```
+
+### Scenario 4: Consolidate Documentation
+
+**You have:** Scattered docs in `Docs/WIP/`, `Docs/STATUS/`, etc.
+**You want:** Everything in `.xwiki` format
+
+```bash
+# 1. Create/edit .xwiki files directly
+cd Docs/xwiki-pages/FactHarbor
+
+# 2. Add new page
+mkdir -p "Implementation/Status Reports"
+cat > "Implementation/Status Reports/2026-02-06.xwiki" <<'EOF'
+= Status Report 2026-02-06 =
+
+== Progress ==
+
+* Completed XAR workflow implementation
+* Created .xwiki master source system
+
+== Next Steps ==
+
+* Documentation consolidation
+* Testing with AI agents
+EOF
+
+# 3. Move old content to archive
+mv Docs/WIP/old-status.md Docs/ARCHIVE/
+
+# 4. Commit consolidated structure
+git add Docs/xwiki-pages/
+git add Docs/ARCHIVE/
+git commit -m "docs: consolidate status reports into xWiki structure"
+```
+
+---
+
+## Best Practices
+
+### For AI Agents
+
+✅ **Edit .xwiki files directly** - No conversion needed
+✅ **Use pure xWiki 2.1 syntax** - Check reference above
+✅ **Test Mermaid diagrams** - Ensure empty lines before/after
+✅ **Commit frequently** - Version control is active
+✅ **Generate XAR when done** - For project lead to import to xWiki
+
+### For Project Lead
+
+✅ **Import changes to xWiki regularly** - Keep web UI in sync
+✅ **Export from xWiki occasionally** - Capture any manual edits in xWiki
+✅ **Review git diffs** - .xwiki files are plain text and diffable
+✅ **Archive old XAR snapshots** - Keep dated XAR files for rollback
+
+### Version Control
+
+✅ **Track all .xwiki files** - Full history in git
+✅ **Track dated XAR snapshots** - Major milestones only
+✅ **Ignore intermediate files** - Already in .gitignore
+✅ **Use descriptive commit messages** - "docs: update X" not "changes"
+
+---
+
+## Troubleshooting
+
+### Empty .xwiki files created
+
+**Problem:** Some pages have no content
+**Cause:** Original xWiki pages were empty
+**Solution:** Delete empty .xwiki files or add content
+
+### XAR import fails in xWiki
+
+**Problem:** Import shows errors
+**Cause:** Invalid xWiki syntax or missing parent pages
+**Solution:** Check .xwiki files for syntax errors, ensure parent pages exist
+
+### Title not extracted correctly
+
+**Problem:** Page title doesn't match expectation
+**Cause:** No heading in .xwiki file
+**Solution:** Add first heading: `= Page Title =`
+
+### Mermaid diagram doesn't render
+
+**Problem:** Diagram shows as text in xWiki
+**Cause:** Missing empty lines or syntax error
+**Solution:** Ensure empty lines before/after `{{mermaid}}` block
+
+---
+
+## Migration from Old Workflow
+
+**Old workflow (4 scripts):**
+```bash
+python xar_to_json.py input.xar
+python json_to_md_tree.py input_fulltree.json
+python md_tree_to_json.py input_md/
+python json_to_xar.py input_fulltree_updated.json
+```
+
+**New workflow (2 scripts):**
+```bash
+python xar_to_xwiki_tree.py input.xar
+python xwiki_tree_to_xar.py ../xwiki-pages/
+```
+
+**Benefits:**
+- ✅ Simpler (2 commands vs 4)
+- ✅ Faster (no Markdown conversion)
+- ✅ Direct editing (agents work with native format)
+- ✅ Copy-paste ready (can paste directly into xWiki editor)
+
+---
+
+**Last Updated:** 2026-02-06
+**Version:** 2.0 (Simplified .xwiki workflow)
