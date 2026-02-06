@@ -1892,6 +1892,9 @@ export default function ConfigAdminPage() {
   const [fileWriteAllowed, setFileWriteAllowed] = useState(false);
   const [fileWriteChecking, setFileWriteChecking] = useState(false);
   const [savingToFile, setSavingToFile] = useState(false);
+  const [jsonDraft, setJsonDraft] = useState("");
+  const [jsonDirty, setJsonDirty] = useState(false);
+  const [jsonError, setJsonError] = useState<string | null>(null);
 
   // Prompt edit state
   const [promptContent, setPromptContent] = useState<string>("");
@@ -2185,6 +2188,20 @@ export default function ConfigAdminPage() {
       // If activeConfig exists but wrong type, wait for fetchActiveConfig() to complete
     }
   }, [activeTab, activeConfig, editConfig, selectedType, loading]);
+
+  // Keep JSON editor in sync with current edit config (unless user is actively editing JSON)
+  useEffect(() => {
+    if (selectedType === "prompt") return;
+    if (!editConfig) {
+      setJsonDraft("");
+      setJsonDirty(false);
+      setJsonError(null);
+      return;
+    }
+    setJsonDraft(JSON.stringify(editConfig, null, 2));
+    setJsonDirty(false);
+    setJsonError(null);
+  }, [editConfig, selectedType]);
 
   // Fetch active config
   const fetchActiveConfig = useCallback(async () => {
@@ -3991,13 +4008,59 @@ export default function ConfigAdminPage() {
             />
           )}
 
-          {/* JSON Preview */}
-          {editConfig && (
+          {/* JSON Editor */}
+          {editConfig && selectedType !== "prompt" && (
             <div className={styles.formSection}>
-              <h3 className={styles.formSectionTitle}>JSON Preview</h3>
-              <pre className={styles.configContent} style={{ maxHeight: 300 }}>
-                {JSON.stringify(editConfig, null, 2)}
-              </pre>
+              <h3 className={styles.formSectionTitle}>JSON Editor</h3>
+              <div className={styles.formHelp} style={{ marginBottom: 8 }}>
+                Edit any config fields not exposed in the form above.
+              </div>
+              <textarea
+                className={styles.configContent}
+                style={{ maxHeight: 320, minHeight: 200, width: "100%" }}
+                value={jsonDraft}
+                onChange={(e) => {
+                  setJsonDraft(e.target.value);
+                  setJsonDirty(true);
+                  setJsonError(null);
+                }}
+              />
+              {jsonError && (
+                <div style={{ color: "#b91c1c", fontSize: 12, marginTop: 8 }}>
+                  JSON error: {jsonError}
+                </div>
+              )}
+              <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                <button
+                  className={`${styles.button} ${styles.buttonPrimary}`}
+                  disabled={!jsonDirty}
+                  onClick={() => {
+                    try {
+                      const parsed = JSON.parse(jsonDraft);
+                      setEditConfig(parsed);
+                      setValidation(null);
+                      setJsonDirty(false);
+                      setJsonError(null);
+                    } catch (err) {
+                      setJsonError(err instanceof Error ? err.message : String(err));
+                    }
+                  }}
+                >
+                  Apply JSON
+                </button>
+                <button
+                  className={`${styles.button} ${styles.buttonSecondary}`}
+                  disabled={!jsonDirty}
+                  onClick={() => {
+                    if (!editConfig) return;
+                    setJsonDraft(JSON.stringify(editConfig, null, 2));
+                    setJsonDirty(false);
+                    setJsonError(null);
+                  }}
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           )}
         </div>
