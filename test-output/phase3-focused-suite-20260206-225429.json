@@ -1,0 +1,154 @@
+{
+  "startedAt": "2026-02-06T22:49:21.0274063+01:00",
+  "completedAt": "2026-02-06T22:54:29.8408205+01:00",
+  "claims": [
+    {
+      "name": "historical_ww2",
+      "text": "Did World War II end in 1945?"
+    },
+    {
+      "name": "current_us_president",
+      "text": "Is Donald Trump currently the President of the United States?"
+    },
+    {
+      "name": "procedural_fairness_recent",
+      "text": "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?"
+    },
+    {
+      "name": "current_macro_indicator",
+      "text": "Is U.S. inflation currently below 3 percent?"
+    },
+    {
+      "name": "recent_health_status",
+      "text": "Did WHO declare mpox a public health emergency in 2024?"
+    },
+    {
+      "name": "stable_science",
+      "text": "Is aspirin effective for pain relief?"
+    }
+  ],
+  "submitted": [
+    {
+      "submittedAt": "2026-02-06T22:49:21.1102265+01:00",
+      "text": "Did World War II end in 1945?",
+      "name": "historical_ww2",
+      "jobId": "893848ce82d044f097cd72420ec1c0b6"
+    },
+    {
+      "submittedAt": "2026-02-06T22:49:21.1260349+01:00",
+      "text": "Is Donald Trump currently the President of the United States?",
+      "name": "current_us_president",
+      "jobId": "a865c2fc7bc740f1b32128d09b4b03db"
+    },
+    {
+      "submittedAt": "2026-02-06T22:49:21.1355418+01:00",
+      "text": "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?",
+      "name": "procedural_fairness_recent",
+      "jobId": "7abb2169e0cc46d7b76f4d6b1d4d6e67"
+    },
+    {
+      "submittedAt": "2026-02-06T22:49:21.1447541+01:00",
+      "text": "Is U.S. inflation currently below 3 percent?",
+      "name": "current_macro_indicator",
+      "jobId": "6d5f37676c2e4841a9ef5a24aa0bc818"
+    },
+    {
+      "submittedAt": "2026-02-06T22:49:21.1534174+01:00",
+      "text": "Did WHO declare mpox a public health emergency in 2024?",
+      "name": "recent_health_status",
+      "jobId": "4717a614e46c4bdca1e308236addf085"
+    },
+    {
+      "submittedAt": "2026-02-06T22:49:21.1636659+01:00",
+      "text": "Is aspirin effective for pain relief?",
+      "name": "stable_science",
+      "jobId": "a6388257de934c78b7c5cb896e222a87"
+    }
+  ],
+  "results": [
+    {
+      "name": "historical_ww2",
+      "jobId": "893848ce82d044f097cd72420ec1c0b6",
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "confidence": null,
+      "answer": null,
+      "sources": 0,
+      "evidenceItems": 0,
+      "updatedUtc": "2026-02-06T21:52:55.6003056"
+    },
+    {
+      "name": "current_us_president",
+      "jobId": "a865c2fc7bc740f1b32128d09b4b03db",
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "confidence": null,
+      "answer": null,
+      "sources": 0,
+      "evidenceItems": 0,
+      "updatedUtc": "2026-02-06T21:51:44.2928887"
+    },
+    {
+      "name": "procedural_fairness_recent",
+      "jobId": "7abb2169e0cc46d7b76f4d6b1d4d6e67",
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "confidence": null,
+      "answer": null,
+      "sources": 0,
+      "evidenceItems": 0,
+      "updatedUtc": "2026-02-06T21:52:21.706414"
+    },
+    {
+      "name": "current_macro_indicator",
+      "jobId": "6d5f37676c2e4841a9ef5a24aa0bc818",
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "confidence": null,
+      "answer": null,
+      "sources": 0,
+      "evidenceItems": 0,
+      "updatedUtc": "2026-02-06T21:53:14.2570224"
+    },
+    {
+      "name": "recent_health_status",
+      "jobId": "4717a614e46c4bdca1e308236addf085",
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "confidence": null,
+      "answer": null,
+      "sources": 0,
+      "evidenceItems": 0,
+      "updatedUtc": "2026-02-06T21:53:13.8615391"
+    },
+    {
+      "name": "stable_science",
+      "jobId": "a6388257de934c78b7c5cb896e222a87",
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "confidence": null,
+      "answer": null,
+      "sources": 0,
+      "evidenceItems": 0,
+      "updatedUtc": "2026-02-06T21:54:26.3985043"
+    }
+  ],
+  "logSignals": {
+    "preFilterRejectedCount": 59,
+    "preFilterLlmKeepCount": 0,
+    "recencyCheckCount": 4,
+    "recencyWarningCount": 0
+  }
+}

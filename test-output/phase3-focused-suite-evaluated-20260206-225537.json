@@ -1,0 +1,159 @@
+{
+  "generatedAt": "2026-02-06T22:55:37.6088183+01:00",
+  "suite": "phase3-focused",
+  "results": [
+    {
+      "name": "historical_ww2",
+      "jobId": "893848ce82d044f097cd72420ec1c0b6",
+      "status": "SUCCEEDED",
+      "answer": 95,
+      "confidence": 98,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "searches": 14,
+      "sourcesFetched": 13,
+      "evidenceItems": 22,
+      "sourceDomains": [
+        "en.wikipedia.org",
+        "encyclopedia.ushmm.org",
+        "www.archives.gov",
+        "www.genome.gov",
+        "www.nationalww2museum.org",
+        "www.npr.org",
+        "www.reddit.com",
+        "www.ushmm.org"
+      ],
+      "flaggedInverseQueries": [
+        "It not the case that evidence study",
+        "It not the case that research data",
+        "World ended 1945 false incorrect evidence against"
+      ]
+    },
+    {
+      "name": "current_us_president",
+      "jobId": "a865c2fc7bc740f1b32128d09b4b03db",
+      "status": "SUCCEEDED",
+      "answer": 88,
+      "confidence": 92,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "searches": 16,
+      "sourcesFetched": 4,
+      "evidenceItems": 12,
+      "sourceDomains": [
+        "henrykotula.com",
+        "publichealth.berkeley.edu",
+        "ustr.gov",
+        "www.cfr.org"
+      ],
+      "flaggedInverseQueries": [
+        "It not the case that evidence study",
+        "It not the case that research data",
+        "It not the case that 2026"
+      ]
+    },
+    {
+      "name": "procedural_fairness_recent",
+      "jobId": "7abb2169e0cc46d7b76f4d6b1d4d6e67",
+      "status": "SUCCEEDED",
+      "answer": 72,
+      "confidence": 80,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "searches": 13,
+      "sourcesFetched": 5,
+      "evidenceItems": 14,
+      "sourceDomains": [
+        "time.com",
+        "www.fairobserver.com",
+        "www.idea.int",
+        "www.lawfaremedia.org",
+        "www.theguardian.com"
+      ],
+      "flaggedInverseQueries": []
+    },
+    {
+      "name": "current_macro_indicator",
+      "jobId": "6d5f37676c2e4841a9ef5a24aa0bc818",
+      "status": "SUCCEEDED",
+      "answer": 88,
+      "confidence": 85,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "searches": 13,
+      "sourcesFetched": 6,
+      "evidenceItems": 11,
+      "sourceDomains": [
+        "budgetmodel.wharton.upenn.edu",
+        "www.clevelandfed.org",
+        "www.federalreservehistory.org",
+        "www.imf.org",
+        "www.wto.org"
+      ],
+      "flaggedInverseQueries": [
+        "It not the case that evidence study",
+        "It not the case that research data",
+        "It not the case that 2026"
+      ]
+    },
+    {
+      "name": "recent_health_status",
+      "jobId": "4717a614e46c4bdca1e308236addf085",
+      "status": "SUCCEEDED",
+      "answer": 95,
+      "confidence": 97,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "searches": 18,
+      "sourcesFetched": 13,
+      "evidenceItems": 24,
+      "sourceDomains": [
+        "africacdc.org",
+        "onlinelibrary.wiley.com",
+        "www.amnesty.org",
+        "www.dhs.gov",
+        "www.factcheck.org",
+        "www.nature.com",
+        "www.nejm.org",
+        "www.npr.org",
+        "www.thelancet.com",
+        "www.who.int"
+      ],
+      "flaggedInverseQueries": [
+        "It not the case that evidence study",
+        "It not the case that research data",
+        "It not the case that 2026",
+        "declared mpox public health false incorrect evidence against"
+      ]
+    },
+    {
+      "name": "stable_science",
+      "jobId": "a6388257de934c78b7c5cb896e222a87",
+      "status": "SUCCEEDED",
+      "answer": 83,
+      "confidence": 78,
+      "recencyWarning": false,
+      "warningTypes": [],
+      "searches": 17,
+      "sourcesFetched": 9,
+      "evidenceItems": 11,
+      "sourceDomains": [
+        "beva.onlinelibrary.wiley.com",
+        "pmc.ncbi.nlm.nih.gov",
+        "www.acog.org",
+        "www.fda.gov",
+        "www.ncbi.nlm.nih.gov",
+        "www.uspreventiveservicestaskforce.org"
+      ],
+      "flaggedInverseQueries": [
+        "Aspirin demonstrates statistically significant false incorrect evidence against"
+      ]
+    }
+  ],
+  "aggregate": {
+    "total": 6,
+    "succeeded": 6,
+    "recencyWarnings": 0,
+    "avgConfidence": 88.33
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "generatedAt": "2026-02-06T23:44:19.1579738+01:00",
+  "results": [
+    {
+      "name": "counter_query_quality",
+      "jobId": "d9e0cd49df4944b0822ece3a53c547e5",
+      "status": "SUCCEEDED",
+      "answer": 95,
+      "confidence": 98,
+      "recencyWarning": false,
+      "warningTypes": "",
+      "oldBadInverseCount": 0,
+      "newInverseCount": 3,
+      "sources": 13,
+      "evidence": 27
+    },
+    {
+      "name": "domain_gating_quality",
+      "jobId": "f20eb229c6a049ab899840caba6e4803",
+      "status": "SUCCEEDED",
+      "answer": 30,
+      "confidence": 78,
+      "recencyWarning": false,
+      "warningTypes": "",
+      "oldBadInverseCount": 0,
+      "newInverseCount": 3,
+      "sources": 4,
+      "evidence": 13
+    },
+    {
+      "name": "forced_recency_gap",
+      "jobId": "0afe854115f54d76a9a08059bd7fdd9e",
+      "status": "SUCCEEDED",
+      "answer": 50,
+      "confidence": 0,
+      "recencyWarning": true,
+      "warningTypes": "recency_evidence_gap",
+      "oldBadInverseCount": 0,
+      "newInverseCount": 3,
+      "sources": 6,
+      "evidence": 0
+    }
+  ],
+  "log": {
+    "preFilterRejected": 25,
+    "lowImportanceRejects": 0
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-02-07T00:11:05.9939968+01:00",
+  "probe": "controlled-skipplatforms",
+  "jobId": "7bab8614009947d2832351a0f806880a",
+  "result": "SUCCEEDED",
+  "lowImportanceRejects": 4,
+  "preFilterRejects": 10,
+  "tempHash": "61a1253389a4eaf825db33a6349871404997bdb840dfe1ba5d9ab98a485d4635",
+  "restoredHash": "c04e19cb5d006a43b6db87f13a2779c980c5b40064c8401a4c19a3bf58b74169",
+  "restoreOk": true
+}
