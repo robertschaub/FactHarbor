@@ -1,10 +1,10 @@
-= The Article Verdict Problem
+= The Article Verdict Problem =
 
 **Context:** Context-Aware Analysis Investigation 
 **Date:** December 23, 2025 
 **Status:** Solution Chosen for POC1 Testing
 
-== 🎯 Executive Summary
+== 🎯 Executive Summary ==
 
 **The Problem:** An article's overall credibility is not simply the average of its individual claim verdicts. An article with mostly accurate facts can still be misleading if the conclusion doesn't follow from the evidence.
 
@@ -18,17 +18,17 @@
 
 **Fallback Plan:** If Approach 1 shows <70% accuracy, implement Weighted Aggregation (Approach 4) or defer to POC2 with Hybrid approach (Approach 6).
 
-== 📋 The Core Problem
+== 📋 The Core Problem ==
 
-=== Problem Statement
+=== Problem Statement ===
 
 > "An analysis and verdict of the whole article is not the same as a summary of the analysis and verdicts of the parts (the claims)."
 
-=== Why This Matters
+=== Why This Matters ===
 
 **Example: The Misleading Article**
 
-```
+{{{
 Article: "Coffee Cures Cancer!"
 
 Individual Claims:
@@ -50,9 +50,9 @@ Reality:
 Correct Assessment:
 - Article verdict: MISLEADING / REFUTED
 - Reason: Makes unsupported causal claim from correlational evidence
-```
+}}}
 
-=== Why Simple Aggregation Fails
+=== Why Simple Aggregation Fails ===
 
 **Pattern 1: False Central Claim**
 - 4 supporting facts (all true) ✅✅✅✅
@@ -72,19 +72,19 @@ Correct Assessment:
 - Headline doesn't match content
 - Simple average misses the problem
 
-== ✅ Chosen Solution: Single-Pass Holistic Analysis (POC1)
+== ✅ Chosen Solution: Single-Pass Holistic Analysis (POC1) ==
 
-=== Approach Overview
+=== Approach Overview ===
 
 **How it works:**
 - AI analyzes the entire article in ONE API call
 - Evaluates both individual claims AND overall article credibility
 - No pipeline changes - just enhanced prompting
 
-=== AI Prompt Enhancement
+=== AI Prompt Enhancement ===
 
 **Add to existing prompt:**
-```
+{{{
 After analyzing individual claims, evaluate the article as a whole:
 
 1. What is the article's main argument or conclusion?
@@ -97,11 +97,11 @@ Provide:
 - Individual claim verdicts
 - Overall article verdict (may differ from claim average)
 - Explanation if article verdict differs from claim pattern
-```
+}}}
 
-=== Expected AI Output
+=== Expected AI Output ===
 
-```json
+{{code language="json"}}
 {
  "claims": [
  {"text": "Coffee contains antioxidants", "verdict": "SUPPORTED", "confidence": 95},
@@ -117,9 +117,9 @@ Provide:
  "reasoning": "Despite two accurate supporting facts, the main conclusion is unsupported"
  }
 }
-```
+{{/code}}
 
-=== Performance & Cost
+=== Performance & Cost ===
 
 **Performance:**
 - Same as baseline POC1 (single API call)
@@ -136,7 +136,7 @@ Provide:
 - Just prompt engineering
 - Easy to implement and test
 
-=== POC1 Testing Plan
+=== POC1 Testing Plan ===
 
 **Test Set: 30 Articles**
 - 10 straightforward (verdict = average works fine)
@@ -154,7 +154,7 @@ Provide:
 
 **Failure (<50%) → Defer to POC2 with more sophisticated approach**
 
-=== Why This Approach for POC1
+=== Why This Approach for POC1 ===
 
 **Advantages:**
 ✅ Zero additional cost (no extra API calls)
@@ -175,11 +175,11 @@ Provide:
 - Use results to inform POC2 design
 - Have fallback approaches ready
 
-== 📊 Complete Analysis: All Solution Approaches
+== 📊 Complete Analysis: All Solution Approaches ==
 
 We investigated 7 approaches for solving this problem. Here's the complete overview:
 
-=== Approach 1: Single-Pass Holistic Analysis ⭐ CHOSEN FOR POC1
+=== Approach 1: Single-Pass Holistic Analysis ⭐ CHOSEN FOR POC1 ===
 
 **Concept:** AI analyzes article and evaluates both claims and overall credibility in one call.
 
@@ -189,7 +189,7 @@ We investigated 7 approaches for solving this problem. Here's the complete overv
 
 **When to use:** POC1 testing - validate if AI can do this at all
 
-=== Approach 2: Two-Pass Sequential Analysis
+=== Approach 2: Two-Pass Sequential Analysis ===
 
 **Concept:** Pass 1 extracts claims, Pass 2 analyzes logical structure given the claims.
 
@@ -199,7 +199,7 @@ We investigated 7 approaches for solving this problem. Here's the complete overv
 
 **When to use:** POC2 if Approach 1 fails, or production for highest quality
 
-=== Approach 3: Structured Output with Explicit Relationships
+=== Approach 3: Structured Output with Explicit Relationships ===
 
 **Concept:** AI outputs claim relationships explicitly (main claim, supporting claims, dependencies, logical validity).
 
@@ -209,7 +209,7 @@ We investigated 7 approaches for solving this problem. Here's the complete overv
 
 **When to use:** POC1 if structured data valuable for UI/debugging
 
-=== Approach 4: Weighted Aggregation with Importance Scores
+=== Approach 4: Weighted Aggregation with Importance Scores ===
 
 **Concept:** AI assigns importance weight (0-1) to each claim. Article verdict = weighted average.
 
@@ -219,7 +219,7 @@ We investigated 7 approaches for solving this problem. Here's the complete overv
 
 **When to use:** POC1 fallback if Approach 1 doesn't work well
 
-=== Approach 5: Post-Processing Heuristics
+=== Approach 5: Post-Processing Heuristics ===
 
 **Concept:** Rule-based detection of logical issues after claim extraction (e.g., "if article contains 'causes' but only correlational evidence, flag causal fallacy").
 
@@ -229,7 +229,7 @@ We investigated 7 approaches for solving this problem. Here's the complete overv
 
 **When to use:** Add to any other approach for robustness
 
-=== Approach 6: Hybrid (Weighted Aggregation + Heuristics) ⭐ RECOMMENDED FOR POC2
+=== Approach 6: Hybrid (Weighted Aggregation + Heuristics) ⭐ RECOMMENDED FOR POC2 ===
 
 **Concept:** Combine AI-assigned weights with rule-based fallacy detection.
 
@@ -239,7 +239,7 @@ We investigated 7 approaches for solving this problem. Here's the complete overv
 
 **When to use:** POC2 for robust production-ready solution
 
-=== Approach 7: LLM-as-Judge (Verification Pass)
+=== Approach 7: LLM-as-Judge (Verification Pass) ===
 
 **Concept:** Pass 1 generates verdict, Pass 2 verifies if verdict matches article content.
 
@@ -249,7 +249,7 @@ We investigated 7 approaches for solving this problem. Here's the complete overv
 
 **When to use:** Production if quality is paramount
 
-=== Comparison Matrix
+=== Comparison Matrix ===
 
 | Approach | API Calls | Cost | Speed | Complexity | Reliability | Best For |
 |----------|-----------|------|-------|------------|-------------|----------|
@@ -261,7 +261,7 @@ We investigated 7 approaches for solving this problem. Here's the complete overv
 | 6. Hybrid ⭐ | 1 | 💰 Low | ⚡ Fast | 🟠 Med-High | ✅ High | POC2 |
 | 7. Judge | 2 | 💰💰 Med | 🐌 Slow | 🟡 Med | ✅ High | Production |
 
-=== Phased Recommendation
+=== Phased Recommendation ===
 
 **POC1 (Immediate):**
 - Test Approach 1 (Single-Pass Holistic)
@@ -278,9 +278,9 @@ We investigated 7 approaches for solving this problem. Here's the complete overv
 - If quality acceptable: Keep Approach 6
 - Target 90%+ accuracy
 
-== 🎯 Decision Framework
+== 🎯 Decision Framework ==
 
-=== POC1 Evaluation Criteria
+=== POC1 Evaluation Criteria ===
 
 After testing with 30 articles:
 
@@ -299,7 +299,7 @@ After testing with 30 articles:
 - ❌ Defer to POC2 or post-POC2
 - ❌ Consider Approach 2 or 7 (two-pass) for production
 
-=== Why This Matters for POC1
+=== Why This Matters for POC1 ===
 
 **Testing this in POC1:**
 - Validates core capability (can AI do nuanced reasoning?)
@@ -314,9 +314,9 @@ After testing with 30 articles:
 
 **Decision:** Test it, mark as experimental, don't block POC1 success on it.
 
-== 📝 Implementation Notes
+== 📝 Implementation Notes ==
 
-=== What AKEL Must Do
+=== What AKEL Must Do ===
 
 **For POC1 (Approach 1):**
 1. Enhanced prompt with logical analysis section
@@ -326,16 +326,16 @@ After testing with 30 articles:
 
 **No architecture changes needed.**
 
-=== What Gets Displayed to Users
+=== What Gets Displayed to Users ===
 
 **Output Format:**
-```
+{{{
 ANALYSIS SUMMARY (4-6 sentences, context-aware):
-"This article argues that coffee cures cancer based on evidence about 
-antioxidants. We analyzed 3 claims: two supporting facts about coffee's 
-chemical properties are well-supported, but the main causal claim is 
-refuted by current evidence. The article confuses correlation with 
-causation. Overall assessment: MISLEADING - makes an unsupported 
+"This article argues that coffee cures cancer based on evidence about
+antioxidants. We analyzed 3 claims: two supporting facts about coffee's
+chemical properties are well-supported, but the main causal claim is
+refuted by current evidence. The article confuses correlation with
+causation. Overall assessment: MISLEADING - makes an unsupported
 medical claim despite citing some accurate facts."
 
 CLAIMS VERDICTS:
@@ -345,9 +345,9 @@ CLAIMS VERDICTS:
 
 ARTICLE VERDICT: MISLEADING
 The article's main conclusion is not supported by the evidence presented.
-```
+}}}
 
-=== Error Handling
+=== Error Handling ===
 
 **If AI fails to provide article-level analysis:**
 - Fall back to claim-average verdict
@@ -359,9 +359,9 @@ The article's main conclusion is not supported by the evidence presented.
 - Consider adding confidence threshold
 - Track false positive rate
 
-== 🔬 Testing Strategy
+== 🔬 Testing Strategy ==
 
-=== Test Set Composition
+=== Test Set Composition ===
 
 **Category 1: Straightforward Articles (10 articles)**
 - Clear claims with matching overall message
@@ -379,7 +379,7 @@ The article's main conclusion is not supported by the evidence presented.
 - Multiple valid interpretations
 - Tests nuance handling
 
-=== Success Metrics
+=== Success Metrics ===
 
 **Quantitative:**
 - ≥70% accuracy on Category 2 (misleading articles)
@@ -391,7 +391,7 @@ The article's main conclusion is not supported by the evidence presented.
 - False positives are explainable
 - False negatives reveal clear AI limitations
 
-=== Documentation
+=== Documentation ===
 
 **For each test case, record:**
 - Article summary
@@ -401,9 +401,9 @@ The article's main conclusion is not supported by the evidence presented.
 - Human judgment (correct/incorrect)
 - Notes on why AI succeeded/failed
 
-== 💡 Key Insights
+== 💡 Key Insights ==
 
-=== What This Tests
+=== What This Tests ===
 
 **Core Capability:**
 Can AI understand that article credibility depends on:
@@ -416,7 +416,7 @@ Can AI understand that article credibility depends on:
 - Simple averages
 - Keyword matching
 
-=== Why This Is Important
+=== Why This Is Important ===
 
 **For FactHarbor's Mission:**
 - Prevents misleading "mostly accurate" verdicts
@@ -428,7 +428,7 @@ Can AI understand that article credibility depends on:
 - If AI can do this, everything else is easier
 - If AI can't, we know early and adjust
 
-=== Strategic Value
+=== Strategic Value ===
 
 **If Approach 1 works (≥70% accuracy):**
 - ✅ Solved complex problem with zero architecture changes
@@ -441,9 +441,9 @@ Can AI understand that article credibility depends on:
 - ✅ Informed decision for POC2
 - ✅ Can plan proper solution (Approach 6 or 7)
 
-== 🎓 Lessons Learned
+== 🎓 Lessons Learned ==
 
-=== From Investigation
+=== From Investigation ===
 
 **AI Capabilities:**
 - Modern LLMs (Sonnet 4.5) can do nuanced reasoning
@@ -460,7 +460,7 @@ Can AI understand that article credibility depends on:
 - Test simplest approach first
 - Have fallback plans ready
 
-=== For POC1
+=== For POC1 ===
 
 **Keep It Simple:**
 - Test Approach 1 with minimal changes
@@ -476,7 +476,7 @@ Can AI understand that article credibility depends on:
 - Understand patterns
 - Inform future improvements
 
-== ✅ Summary
+== ✅ Summary ==
 
 **Problem:** Article credibility ≠ average of claim verdicts
 

@@ -678,7 +678,7 @@ Risk Tier C (Low Risk - Safe to Publish):
 6. Recommends: AI_GENERATED publication mode
 
 **Output:**
-```json
+{{code language="json"}}
 {
   "article_id": "a1",
   "overall_assessment": {
@@ -701,7 +701,7 @@ Risk Tier C (Low Risk - Safe to Publish):
     "suggested_disclaimers": []
   }
 }
-```
+{{/code}}
 
 ==== What Cache-Only Mode Provides: ====
 

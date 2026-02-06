@@ -95,14 +95,14 @@ These rules apply to all FactHarbor users, content, and processes.
 * Cross-check details
 === 4.2 Corrections ===
 Correct errors promptly and prominently:
-```
+{{{
 CORRECTION: [Date] - [What was wrong and correction]
-```
+}}}
 === 4.3 Updates ===
 When new information emerges:
-```
+{{{
 UPDATE: [Date] - [New information]
-```
+}}}
 == 5. Conflicts of Interest ==
 === 5.1 Commercial Interests Prohibited ===
 Contributors with direct commercial interests in claim outcomes cannot contribute to those claims.
@@ -118,9 +118,9 @@ Disclose:
 * Prior public positions on exact claim
 * Ideological commitments affecting judgment
 Format:
-```
+{{{
 COI: [Clear description]
-```
+}}}
 === 5.3 When to Recuse ===
 * Direct commercial interest (always)
 * Cannot evaluate objectively

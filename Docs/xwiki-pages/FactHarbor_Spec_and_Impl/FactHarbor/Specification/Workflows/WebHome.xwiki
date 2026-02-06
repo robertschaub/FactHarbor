@@ -34,9 +34,9 @@ This extraction ensures:
 * Claims are properly isolated for independent verification
 * Context is preserved for accurate interpretation
 
-```
+{{{
 User submits → Duplicate detection → Categorization → Processing queue → User receives ID
-```
+}}}
 **Timeline**: Seconds
 **No approval needed**
 
@@ -45,7 +45,7 @@ User submits → Duplicate detection → Categorization → Processing queue →
 {{include reference="FactHarbor.Specification.Diagrams.Claim and Scenario Workflow.WebHome"/}}
 
 == 3. Automated Analysis Workflow ==
-```
+{{{
 Claim from queue
 ↓
 Evidence gathering (AKEL)
@@ -61,7 +61,7 @@ Risk assessment
 Quality gates (confidence > 40%? risk < 80%?)
 ↓
 Publish OR Flag for improvement
-```
+}}}
 **Timeline**: 10-30 seconds
 **90%+ published automatically**
 == 3.5 Evidence and Verdict Workflow ==
@@ -71,9 +71,9 @@ Publish OR Flag for improvement
 **High Risk (<10%)**: Risk > 80% → Moderator review
 **Low Quality**: Confidence < 40% → Improvement queue → Re-process
 == 5. User Contribution Workflow ==
-```
+{{{
 Contributor edits → System validates → Applied immediately → Logged → Reputation earned
-```
+}}}
 **No approval required** (Wikipedia model)
 **New contributors** (<50 reputation): Limited to minor edits
 == 5.5 Quality and Audit Workflow ==
@@ -81,9 +81,9 @@ Contributor edits → System validates → Applied immediately → Logged → Re
 {{include reference="FactHarbor.Specification.Diagrams.Quality and Audit Workflow.WebHome"/}}
 
 == 6. Flagging Workflow ==
-```
+{{{
 User flags issue → Categorize (abuse/quality) → Automated or manual resolution
-```
+}}}
 **Quality issues**: Add to improvement queue → System fix → Auto re-process
 **Abuse**: Moderator review → Action taken
 == 7. Moderation Workflow ==
@@ -92,21 +92,21 @@ User flags issue → Categorize (abuse/quality) → Automated or manual resoluti
 **Appeal process**: Different moderator → Governing Team if needed
 == 8. System Improvement Workflow ==
 **Weekly cycle**:
-```
+{{{
 Monday: Review error patterns
 Tuesday-Wednesday: Develop fixes
 Thursday: Test improvements
 Friday: Deploy & re-process
 Weekend: Monitor metrics
-```
+}}}
 **Error capture**:
-```
+{{{
 Error detected → Categorize → Root cause → Improvement queue → Pattern analysis
-```
+}}}
 **A/B Testing**:
-```
+{{{
 New algorithm → Split traffic (90% control, 10% test) → Run 1 week → Compare metrics → Deploy if better
-```
+}}}
 == 9. Quality Monitoring Workflow ==
 **Continuous**: Every hour calculate metrics, detect anomalies
 **Daily**: Update source track records, aggregate error patterns

@@ -158,7 +158,7 @@ Moderator review of flagged source scores:
 * Simpler testing
 * Clear audit trail
 **Example Timeline**:
-```
+{{{
 Sunday 2 AM: Calculate source scores for past week
  → NYT score: 0.87 (up from 0.85)
  → Blog X score: 0.52 (down from 0.61)
@@ -168,7 +168,7 @@ Monday-Saturday: Claims processed using these scores
 Next Sunday 2 AM: Recalculate scores including this week's claims
  → NYT score: 0.89 (trending up)
  → Blog X score: 0.48 (trending down)
-```
+}}}
 === 1.4 Scenario ===
 
 {{warning}}
@@ -354,12 +354,12 @@ Fields: entity_id, reported_by, issue_type, status, resolution_note
 * **QualityMetric**: Time-series data (each record is a point in time, not a version)
 * **ErrorPattern**: System improvement queue (status tracked, not versioned)
 **Example**:
-```
+{{{
 Claim V1: "The sky is blue"
- → User edits → 
+ → User edits →
 Claim V2: "The sky is blue during daytime"
  → EDIT table stores: {before: "The sky is blue", after: "The sky is blue during daytime"}
-```
+}}}
 == 2.5. Storage vs Computation Strategy ==
 **Critical architectural decision**: What to persist in databases vs compute dynamically?
 **Trade-off**:

@@ -87,7 +87,7 @@ Details of the process steps are aligned with the [[Open Source Model and Licens
 === 5.3 Propose Solution (RFC) ===
 **Create Request for Comments (RFC)**:
 **RFC Template**:
-```
+{{{
 ## Problem Statement
 What systematic issue exists? What metrics show it?
 ## Proposed Solution
@@ -102,7 +102,7 @@ How will we know this works? What metrics will improve?
 How will this be validated before full deployment?
 ## Rollback Plan
 If this doesn't work, how do we revert?
-```
+}}}
 === 5.4 Community Discussion ===
 **RFC review period**: 7-appropriate time period (based on impact)
 **Participants**:

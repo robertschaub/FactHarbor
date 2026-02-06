@@ -78,10 +78,10 @@ This page defines user roles and publication modes in FactHarbor.
 * Act as editorial gatekeepers
 
 **Critical Distinction:**
-```
+{{{
 Moderators handle: ABUSE (spam, harassment, violations)
 Moderators DO NOT handle: CONTENT QUALITY (that's automated)
-```
+}}}
 
 === 1.4 Domain Trusted Contributors (Optional, Task-Specific) ===
 
