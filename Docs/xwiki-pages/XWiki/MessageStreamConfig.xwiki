@@ -1,3 +1,0 @@
-{{velocity}}
-$response.sendRedirect($xwiki.getURL('XWiki.XWikiPreferences', 'admin', 'section=MessageStream'))
-{{/velocity}}
