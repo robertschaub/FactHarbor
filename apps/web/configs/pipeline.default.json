@@ -49,6 +49,8 @@
   "defaultPipelineVariant": "orchestrated",
   "evidenceSimilarityThreshold": 0.4,
   "temporalConfidenceThreshold": 0.6,
+  "recencyWindowMonths": 6,
+  "recencyConfidencePenalty": 20,
   "gapResearchEnabled": true,
   "gapResearchMaxIterations": 2,
   "gapResearchMaxQueries": 8

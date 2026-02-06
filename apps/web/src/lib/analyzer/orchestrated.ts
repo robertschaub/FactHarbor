@@ -42,7 +42,7 @@
 import { z } from "zod";
 import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
-import { searchWebWithProvider, getActiveSearchProviders } from "@/lib/web-search";
+import { searchWebWithProvider, getActiveSearchProviders, type WebSearchResult } from "@/lib/web-search";
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
 import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts } from "./quality-gates";
 import { filterEvidenceByProvenance } from "./provenance-validation";
@@ -441,6 +441,215 @@ function normalizeEvidenceClassifications<T extends {
       evidenceBasis: evidenceBasis as "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific"
     };
   });
+}
+
+interface RelevanceCheck {
+  isRelevant: boolean;
+  reason?: string;
+}
+
+type RelevanceOptions = {
+  requireContextMatch?: boolean;
+};
+
+function normalizeForMatch(text: string): string {
+  return (text || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+const COMMON_STOPWORDS = new Set([
+  "a", "an", "and", "are", "as", "at", "be", "been", "being", "but", "by",
+  "for", "from", "how", "if", "in", "into", "is", "it", "its", "of", "on", "or",
+  "that", "the", "their", "them", "then", "these", "they", "this", "those", "to",
+  "was", "we", "were", "what", "when", "where", "which", "who", "why", "with",
+  "you", "your"
+]);
+
+function tokenizeForMatch(text: string, minLength = 4): string[] {
+  const normalized = normalizeForMatch(text);
+  if (!normalized) return [];
+  const tokens = normalized
+    .split(/\s+/)
+    .filter((t) => t.length >= minLength && !COMMON_STOPWORDS.has(t));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of tokens) {
+    if (!seen.has(t)) {
+      seen.add(t);
+      out.push(t);
+    }
+  }
+  return out;
+}
+
+function hasToken(haystack: string, token: string): boolean {
+  if (!haystack || !token) return false;
+  const escaped = token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&");
+  const exactPattern = new RegExp(`\\b${escaped}\\b`, "i");
+  if (exactPattern.test(haystack)) return true;
+
+  if (token.length >= 5) {
+    const pluralPattern = new RegExp(`\\b${escaped}(s|es)\\b`, "i");
+    if (pluralPattern.test(haystack)) return true;
+    if (token.endsWith("s")) {
+      const singular = token.slice(0, -1);
+      if (singular.length >= 4) {
+        const singularPattern = new RegExp(`\\b${singular}\\b`, "i");
+        if (singularPattern.test(haystack)) return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function containsAnyToken(haystack: string, tokens: string[]): boolean {
+  if (!haystack || tokens.length === 0) return false;
+  for (const t of tokens) {
+    if (hasToken(haystack, t)) return true;
+  }
+  return false;
+}
+
+function countTokenMatches(haystack: string, url: string, tokens: string[]): number {
+  if ((!haystack && !url) || tokens.length === 0) return 0;
+  let count = 0;
+  for (const t of tokens) {
+    if (hasToken(haystack, t) || hasToken(url, t)) count += 1;
+  }
+  return count;
+}
+
+function extractContextTokens(contexts: AnalysisContext[]): string[] {
+  if (!Array.isArray(contexts) || contexts.length === 0) return [];
+  const rawCore: string[] = [];
+  const rawFallback: string[] = [];
+  const metadataExcludeKeys = new Set(["geographic", "jurisdiction", "boundaries"]);
+
+  for (const ctx of contexts) {
+    if (!ctx) continue;
+    if (ctx.subject) {
+      rawCore.push(ctx.subject);
+    } else if (ctx.assessedStatement) {
+      rawCore.push(ctx.assessedStatement);
+    }
+
+    if (ctx.name) rawFallback.push(ctx.name);
+    if (ctx.shortName) rawFallback.push(ctx.shortName);
+
+    const meta = ctx.metadata || {};
+    for (const [key, value] of Object.entries(meta)) {
+      if (metadataExcludeKeys.has(key)) continue;
+      if (typeof value === "string" && value.trim()) {
+        rawFallback.push(value);
+      } else if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
+        rawFallback.push(value.join(" "));
+      }
+    }
+  }
+
+  const coreTokens = tokenizeForMatch(rawCore.join(" "), 4);
+  if (coreTokens.length > 0) return coreTokens;
+  return tokenizeForMatch(rawFallback.join(" "), 4);
+}
+
+function extractInstitutionTokens(contexts: AnalysisContext[]): string[] {
+  if (!Array.isArray(contexts) || contexts.length === 0) return [];
+  const raw: string[] = [];
+  for (const ctx of contexts) {
+    if (!ctx) continue;
+    if (ctx.shortName) raw.push(ctx.shortName);
+    const meta = ctx.metadata || {};
+    if (meta.institution) raw.push(meta.institution);
+    if (meta.court) raw.push(meta.court);
+    if (meta.regulatoryBody) raw.push(meta.regulatoryBody);
+  }
+  // Allow shorter tokens to capture acronyms/initialisms
+  return tokenizeForMatch(raw.join(" "), 2);
+}
+
+/**
+ * Build context-aware criticism queries that focus on relevant actors/jurisdictions.
+ * Prevents unrelated third-party reactions from contaminating evidence.
+ */
+function buildContextAwareCriticismQueries(
+  entityStr: string,
+  contexts: AnalysisContext[],
+  currentYear: number
+): string[] {
+  const ctx = contexts.find(c => c.metadata?.jurisdiction || c.metadata?.institution || c.metadata?.geographic);
+  const jurisdiction = ctx?.metadata?.jurisdiction || ctx?.metadata?.geographic || "";
+  const institution = ctx?.metadata?.institution || ctx?.metadata?.court || "";
+
+  const queries = (jurisdiction || institution)
+    ? [
+        `${entityStr} ${jurisdiction} ${institution} criticism official review`,
+        `${entityStr} ${jurisdiction} appeals challenges objections ${currentYear}`,
+        `${entityStr} ${institution} internal review findings`,
+      ]
+    : [
+        `${entityStr} criticism documented evidence ${currentYear}`,
+        `${entityStr} official response challenges`,
+      ];
+
+  return queries.map((q) => q.replace(/\s+/g, " ").trim()).filter(Boolean);
+}
+
+/**
+ * Quick heuristic check for obvious irrelevance.
+ * Does NOT replace LLM extraction - just filters clear noise.
+ */
+function checkSearchResultRelevance(
+  result: WebSearchResult,
+  entityStr: string,
+  contexts: AnalysisContext[],
+  options: RelevanceOptions = {}
+): RelevanceCheck {
+  const title = (result.title || "").toLowerCase();
+  const snippet = (result.snippet || "").toLowerCase();
+  const url = (result.url || "").toLowerCase();
+  const combined = `${title} ${snippet}`.trim();
+
+  const entityTokens = tokenizeForMatch(entityStr, 3);
+  const contextTokens = extractContextTokens(contexts);
+  const institutionTokens = extractInstitutionTokens(contexts);
+
+  const entityMatchCount = countTokenMatches(combined, url, entityTokens);
+  const contextMatchCount = countTokenMatches(combined, url, contextTokens);
+  const contextMinMatches = contextTokens.length >= 4 ? 2 : 1;
+  const strongEntityTokens = entityTokens.filter((t) => t.length >= 7);
+  const strongEntityMatchCount = countTokenMatches(combined, url, strongEntityTokens);
+  const entityMinMatches = entityTokens.length >= 4 ? 2 : 1;
+  const passesEntityGate =
+    strongEntityTokens.length > 0
+      ? strongEntityMatchCount > 0
+      : entityMatchCount >= entityMinMatches;
+  const hasContextTokens = contextTokens.length > 0;
+  const passesContextGate = hasContextTokens && contextMatchCount >= contextMinMatches;
+  const passesContextOrMissing = !hasContextTokens || contextMatchCount >= contextMinMatches;
+
+  const institutionMentioned =
+    institutionTokens.length > 0 &&
+    (containsAnyToken(combined, institutionTokens) || containsAnyToken(url, institutionTokens));
+
+  if (options.requireContextMatch) {
+    if (institutionTokens.length > 0) {
+      if (institutionMentioned && passesEntityGate && passesContextOrMissing) return { isRelevant: true };
+      if (!institutionMentioned && passesEntityGate && passesContextOrMissing && strongEntityMatchCount > 0) {
+        return { isRelevant: true };
+      }
+      return { isRelevant: false, reason: "insufficient_context_match" };
+    }
+    if (passesEntityGate && passesContextOrMissing) return { isRelevant: true };
+    return { isRelevant: false, reason: "insufficient_context_match" };
+  }
+
+  if (passesEntityGate || passesContextGate) return { isRelevant: true };
+  if (entityTokens.length === 0 && contextTokens.length === 0) return { isRelevant: true };
+
+  return {
+    isRelevant: false,
+    reason: entityTokens.length > 0 ? "entity_not_mentioned" : "context_not_mentioned",
+  };
 }
 
 /**
@@ -1879,6 +2088,130 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
   }
 
   return false;
+}
+
+const MONTH_NAME_TO_INDEX: Record<string, number> = {
+  jan: 0,
+  january: 0,
+  feb: 1,
+  february: 1,
+  mar: 2,
+  march: 2,
+  apr: 3,
+  april: 3,
+  may: 4,
+  jun: 5,
+  june: 5,
+  jul: 6,
+  july: 6,
+  aug: 7,
+  august: 7,
+  sep: 8,
+  sept: 8,
+  september: 8,
+  oct: 9,
+  october: 9,
+  nov: 10,
+  november: 10,
+  dec: 11,
+  december: 11,
+};
+
+function pushDateCandidate(dates: Date[], seen: Set<string>, date: Date | null) {
+  if (!date || Number.isNaN(date.getTime())) return;
+  const key = date.toISOString().slice(0, 10);
+  if (seen.has(key)) return;
+  seen.add(key);
+  dates.push(date);
+}
+
+function extractTemporalDateCandidates(text: string, currentDate: Date): Date[] {
+  const dates: Date[] = [];
+  const seen = new Set<string>();
+  const lower = String(text || "").toLowerCase();
+  if (!lower) return dates;
+
+  const currentYear = currentDate.getFullYear();
+  const maxYear = currentYear + 1;
+
+  const isoPattern = /\b(20\d{2})[\/\-.](\d{1,2})[\/\-.](\d{1,2})\b/g;
+  for (const match of lower.matchAll(isoPattern)) {
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    const day = Number(match[3]);
+    if (year < 1900 || year > maxYear) continue;
+    pushDateCandidate(dates, seen, new Date(year, month, day));
+  }
+
+  const monthPattern = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(20\d{2})\b/g;
+  for (const match of lower.matchAll(monthPattern)) {
+    const monthToken = match[1];
+    const year = Number(match[2]);
+    const monthIndex = MONTH_NAME_TO_INDEX[monthToken];
+    if (monthIndex == null || year < 1900 || year > maxYear) continue;
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+    pushDateCandidate(dates, seen, new Date(year, monthIndex, lastDay));
+  }
+
+  const quarterPattern = /\bq([1-4])\s*(20\d{2})\b/g;
+  for (const match of lower.matchAll(quarterPattern)) {
+    const quarter = Number(match[1]);
+    const year = Number(match[2]);
+    if (year < 1900 || year > maxYear) continue;
+    const monthIndex = quarter * 3 - 1;
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+    pushDateCandidate(dates, seen, new Date(year, monthIndex, lastDay));
+  }
+
+  const rangePattern = /\b(19|20)\d{2}\s*[-–]\s*(19|20)\d{2}\b/g;
+  for (const match of lower.matchAll(rangePattern)) {
+    const endYear = Number(match[2]);
+    if (endYear < 1900 || endYear > maxYear) continue;
+    pushDateCandidate(dates, seen, new Date(endYear, 11, 31));
+  }
+
+  const yearPattern = /\b(19|20)\d{2}\b/g;
+  for (const match of lower.matchAll(yearPattern)) {
+    const year = Number(match[0]);
+    if (year < 1900 || year > maxYear) continue;
+    pushDateCandidate(dates, seen, new Date(year, 11, 31));
+  }
+
+  return dates;
+}
+
+function validateEvidenceRecency(
+  evidenceItems: EvidenceItem[],
+  currentDate: Date,
+  windowMonths: number
+): { hasRecentEvidence: boolean; latestEvidenceDate?: string; signalsCount: number; dateCandidates: number } {
+  const temporalSignals: string[] = [];
+  for (const item of evidenceItems || []) {
+    if (item?.evidenceScope?.temporal) temporalSignals.push(item.evidenceScope.temporal);
+    if (item?.sourceTitle) temporalSignals.push(item.sourceTitle);
+    if (item?.sourceUrl) temporalSignals.push(item.sourceUrl);
+  }
+
+  const dates: Date[] = [];
+  for (const signal of temporalSignals) {
+    dates.push(...extractTemporalDateCandidates(signal, currentDate));
+  }
+
+  let latestDate: Date | undefined;
+  for (const d of dates) {
+    if (!latestDate || d > latestDate) latestDate = d;
+  }
+
+  const cutoff = new Date(currentDate);
+  cutoff.setMonth(cutoff.getMonth() - Math.max(1, windowMonths));
+  const hasRecentEvidence = !!latestDate && latestDate >= cutoff;
+
+  return {
+    hasRecentEvidence,
+    latestEvidenceDate: latestDate ? latestDate.toISOString() : undefined,
+    signalsCount: temporalSignals.length,
+    dateCandidates: dates.length,
+  };
 }
 
 function getKnowledgeInstruction(
@@ -5977,11 +6310,15 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       `${entityStr} criticism concerns`,
       `${entityStr} controversy disputed unfair`,
     ];
+    const contextAwareQueries = buildContextAwareCriticismQueries(
+      entityStr,
+      contexts,
+      currentYear,
+    );
     // Add date-variant for recent controversies/criticism
-    const queries = recencyMatters ? [
-      ...baseQueries,
-      `${entityStr} criticism ${currentYear}`,
-    ] : baseQueries;
+    const queries = recencyMatters
+      ? [...baseQueries, ...contextAwareQueries]
+      : [...baseQueries, ...contextAwareQueries.slice(0, 2)];
     return {
       complete: false,
       focus: "Criticism and opposing views",
@@ -6617,9 +6954,10 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
     let filteredByProbativeValue = evidenceItemsWithProvenance as typeof evidenceItemsWithProvenance;
 
     if (probativeFilterEnabled && evidenceItemsWithProvenance.length > 0) {
-  // v2.9: LLM Evidence Quality Assessment
+      // v2.9: LLM Evidence Quality Assessment (optional pre-filter)
       const useLLMEvidenceQuality = isLLMEnabled("evidence");
       let llmFilterSuccess = false;
+      let candidateEvidenceItems = evidenceItemsWithProvenance as EvidenceItem[];
 
       if (useLLMEvidenceQuality) {
         try {
@@ -6683,7 +7021,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
             console.log(`[Evidence Filter] LLM quality filter for ${source.id}: all ${llmKept.length} items passed`);
           }
 
-          filteredByProbativeValue = llmKept;
+          candidateEvidenceItems = llmKept as EvidenceItem[];
           llmFilterSuccess = true;
           debugLog("extractEvidence: LLM evidence quality assessment complete", {
             sourceId: source.id,
@@ -6707,38 +7045,44 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
         }
       }
 
-      // Heuristic filtering (default or fallback from LLM failure)
-      if (!llmFilterSuccess) {
-        const { kept, filtered, stats } = filterByProbativeValue(
-          evidenceItemsWithProvenance as EvidenceItem[],
-          { ...DEFAULT_FILTER_CONFIG },
+      // Deterministic filtering (always apply; LLM filter is a pre-filter, not a replacement)
+      const { kept, filtered, stats } = filterByProbativeValue(
+        candidateEvidenceItems as EvidenceItem[],
+        { ...DEFAULT_FILTER_CONFIG },
+      );
+      debugLog("Evidence filter stats", {
+        sourceId: source.id,
+        total: stats.total,
+        kept: stats.kept,
+        filtered: stats.filtered,
+        reasons: stats.filterReasons,
+      });
+
+      // Log filter statistics
+      if (stats.filtered > 0) {
+        const falsePositiveRate = calculateFalsePositiveRate(filtered);
+        console.log(
+          `[Evidence Filter] Probative filter for ${source.id}: kept ${stats.kept}/${stats.total} ` +
+          `(${Math.round(100 * stats.kept / stats.total)}%), filtered ${stats.filtered} items`
+        );
+        console.log(
+          `[Evidence Filter] Filter reasons: ${Object.entries(stats.filterReasons)
+            .map(([reason, count]) => `${reason}=${count}`)
+            .join(", ")}`
         );
 
-        // Log filter statistics
-        if (stats.filtered > 0) {
-          const falsePositiveRate = calculateFalsePositiveRate(filtered);
-          console.log(
-            `[Evidence Filter] Probative filter for ${source.id}: kept ${stats.kept}/${stats.total} ` +
-            `(${Math.round(100 * stats.kept / stats.total)}%), filtered ${stats.filtered} items`
+        if (falsePositiveRate > 0.05) {
+          const llmPrefix = llmFilterSuccess ? " (LLM quality pre-filter applied)" : "";
+          console.warn(
+            `[Evidence Filter] ⚠️ High false positive rate${llmPrefix}: ${Math.round(falsePositiveRate * 100)}% ` +
+            `of filtered items had probativeValue="high"`
           );
-          console.log(
-            `[Evidence Filter] Filter reasons: ${Object.entries(stats.filterReasons)
-              .map(([reason, count]) => `${reason}=${count}`)
-              .join(", ")}`
-          );
-
-          if (falsePositiveRate > 0.05) {
-            console.warn(
-              `[Evidence Filter] ⚠️ High false positive rate: ${Math.round(falsePositiveRate * 100)}% ` +
-              `of filtered items had probativeValue="high"`
-            );
-          }
-        } else {
-          console.log(`[Evidence Filter] Probative filter for ${source.id}: all ${stats.kept} items passed`);
         }
-
-        filteredByProbativeValue = kept as typeof evidenceItemsWithProvenance;
+      } else {
+        console.log(`[Evidence Filter] Probative filter for ${source.id}: all ${stats.kept} items passed`);
       }
+
+      filteredByProbativeValue = kept as typeof evidenceItemsWithProvenance;
     }
 
     // Apply Ground Realism gate (PR 5): Evidence items must have real sources, not LLM synthesis
@@ -10661,8 +11005,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // =========================================================================
 
     // Perform searches and track them
-    const searchResults: Array<{ url: string; title: string; query: string }> =
-      [];
+    const searchResults: Array<WebSearchResult & { query: string }> = [];
     for (const query of decision.queries || []) {
       // Pipeline Phase 1: Use LLM-derived temporalContext when available, fallback to pattern-based
       const temporalContext = state.understanding?.temporalContext;
@@ -10741,7 +11084,36 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Preserve provider relevance ordering, limit to max sources per iteration
     const uniqueResults = deduplicatedResults.slice(0, searchConfig.maxSourcesPerIteration);
 
-    if (uniqueResults.length === 0) {
+    // Task 2.2: Heuristic relevance pre-filter to remove obvious irrelevance before extraction
+    const analysisContexts = state.understanding?.analysisContexts || [];
+    const entityStrForRelevance =
+      state.understanding?.impliedClaim ||
+      state.understanding?.articleThesis ||
+      state.originalInput ||
+      "";
+
+    const requireContextMatch =
+      decision.category === "criticism" || decision.isContradictionSearch === true;
+
+    const relevantResults = uniqueResults.filter((result) => {
+      const check = checkSearchResultRelevance(
+        result,
+        entityStrForRelevance,
+        analysisContexts,
+        { requireContextMatch },
+      );
+      if (!check.isRelevant) {
+        debugLog("Pre-filter rejected", {
+          url: result.url,
+          title: result.title,
+          reason: check.reason,
+          query: (result as any).query,
+        });
+      }
+      return check.isRelevant;
+    });
+
+    if (relevantResults.length === 0) {
       state.iterations.push({
         number: iteration,
         focus: decision.focus!,
@@ -10752,10 +11124,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       continue;
     }
 
-    await emit(`Fetching ${uniqueResults.length} sources`, baseProgress + 3);
+    await emit(`Fetching ${relevantResults.length} sources`, baseProgress + 3);
 
     // Prefetch source reliability scores (async batch operation)
-    const urlsToFetch = uniqueResults.map((r: any) => r.url);
+    const urlsToFetch = relevantResults.map((r: any) => r.url);
     const domainsToFetch = urlsToFetch.map((u: string) => {
       try {
         return new URL(u).hostname.replace(/^www\./, '');
@@ -10771,7 +11143,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // v2.9.0: Use SR service interface
     await srService.prefetch(urlsToFetch);
 
-    const fetchPromises = uniqueResults.map((r: any, i: number) =>
+    const fetchPromises = relevantResults.map((r: any, i: number) =>
       fetchSource(
         r.url,
         `S${state.sources.length + i + 1}`,
@@ -11088,11 +11460,28 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // STEP 5: Verdicts
   await emit(`Step 3: Generating verdicts [LLM: ${provider}/${modelName}]`, 65);
   const verdictStart = Date.now();
-  const {
-    claimVerdicts,
-    articleAnalysis,
-    verdictSummary,
-  } = await generateVerdicts(state, model);
+  let claimVerdicts: ClaimVerdict[];
+  let articleAnalysis: ArticleAnalysis;
+  let verdictSummary: VerdictSummary | undefined;
+  try {
+    ({ claimVerdicts, articleAnalysis, verdictSummary } = await generateVerdicts(state, model));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    debugLog("runFactHarborAnalysis: generateVerdicts ERROR", {
+      error: msg,
+      name: err instanceof Error ? err.name : typeof err,
+      stack: err instanceof Error ? err.stack?.split("\n").slice(0, 20).join("\n") : undefined,
+    });
+
+    // Generic backstop: some provider/SDK failures manifest as transient TypeErrors.
+    // Retry once to avoid failing the entire job on an intermittent structured-output issue.
+    if (err instanceof TypeError) {
+      await emit("Verdict generation hit an internal error; retrying once", 66);
+      ({ claimVerdicts, articleAnalysis, verdictSummary } = await generateVerdicts(state, model));
+    } else {
+      throw err;
+    }
+  }
   const verdictElapsed = Date.now() - verdictStart;
   console.log(`[Analyzer] Verdict generation completed in ${verdictElapsed}ms`);
 
@@ -11103,6 +11492,58 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       state.fallbackTracker,
       "KeyFactor"
     );
+  }
+
+  // Phase 3: Recency validation for time-sensitive claims
+  const temporalContext = state.understanding?.temporalContext;
+  const temporalConfThreshold = state.pipelineConfig.temporalConfidenceThreshold ?? 0.6;
+  const recencyBasis =
+    state.understanding?.impliedClaim ||
+    state.understanding?.articleThesis ||
+    state.originalInput ||
+    "";
+  const recencyMatters =
+    (temporalContext?.isRecencySensitive && temporalContext.confidence >= temporalConfThreshold) ||
+    (recencyBasis ? isRecencySensitive(recencyBasis, state.understanding || undefined) : false);
+
+  if (recencyMatters) {
+    const windowMonths = state.pipelineConfig.recencyWindowMonths ?? 6;
+    const penalty = state.pipelineConfig.recencyConfidencePenalty ?? 20;
+    const recencyCheck = validateEvidenceRecency(state.evidenceItems, new Date(), windowMonths);
+    debugLog("Recency evidence check", {
+      recencyMatters,
+      windowMonths,
+      penalty,
+      hasRecentEvidence: recencyCheck.hasRecentEvidence,
+      latestEvidenceDate: recencyCheck.latestEvidenceDate,
+      signalsCount: recencyCheck.signalsCount,
+      dateCandidates: recencyCheck.dateCandidates,
+    });
+
+    if (!recencyCheck.hasRecentEvidence && penalty > 0) {
+      const applyPenalty = (value?: number | string | null) =>
+        Math.max(0, normalizePercentage(value) - penalty);
+
+      if (verdictSummary?.confidence != null) {
+        verdictSummary.confidence = applyPenalty(verdictSummary.confidence);
+      }
+      if (articleAnalysis?.verdictSummary?.confidence != null) {
+        articleAnalysis.verdictSummary.confidence = applyPenalty(articleAnalysis.verdictSummary.confidence);
+      }
+
+      state.analysisWarnings.push({
+        type: "recency_evidence_gap",
+        severity: "warning",
+        message: `Time-sensitive claim lacks recent evidence (no signals within last ${windowMonths} months). Confidence reduced by ${penalty} points.`,
+        details: {
+          windowMonths,
+          penalty,
+          latestEvidenceDate: recencyCheck.latestEvidenceDate,
+          signalsCount: recencyCheck.signalsCount,
+          dateCandidates: recencyCheck.dateCandidates,
+        },
+      });
+    }
   }
 
   // Apply Gate 4: Verdict Confidence Assessment
@@ -11377,6 +11818,3 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   return { resultJson, reportMarkdown };
 }
-
-
-

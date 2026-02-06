@@ -20,6 +20,7 @@ import type { EvidenceItem } from "./types";
 export interface ProbativeFilterConfig {
   // Statement quality
   minStatementLength: number;        // Default: 20 characters
+  maxVaguePhraseCount: number;       // Default: 2 (filter if > this count)
 
   // Source linkage
   requireSourceExcerpt: boolean;     // Default: true
@@ -32,7 +33,9 @@ export interface ProbativeFilterConfig {
   // Category-specific rules
   categoryRules: {
     statistic: { requireNumber: boolean; minExcerptLength: number };
+    expert_quote: { requireAttribution: boolean };
     event: { requireTemporalAnchor: boolean };
+    legal_provision: { requireCitation: boolean };
   };
 }
 
@@ -51,15 +54,75 @@ export interface FilterStats {
  */
 export const DEFAULT_FILTER_CONFIG: ProbativeFilterConfig = {
   minStatementLength: 20,
+  maxVaguePhraseCount: 2,
   requireSourceExcerpt: true,
   minExcerptLength: 30,
   requireSourceUrl: true,
   deduplicationThreshold: 0.85,
   categoryRules: {
     statistic: { requireNumber: true, minExcerptLength: 50 },
+    expert_quote: { requireAttribution: true },
     event: { requireTemporalAnchor: true },
+    legal_provision: { requireCitation: true },
   },
 };
+
+/**
+ * Count vague phrase patterns in a statement.
+ * Used to filter low-probative, non-specific claims that lack attribution.
+ */
+function countVaguePhrases(text: string): number {
+  if (!text) return 0;
+
+  const patterns: RegExp[] = [
+    /\bsome\s+say\b/gi,
+    /\bsome\s+experts\s+(?:argue|say|claim|believe)\b/gi,
+    /\bmany\s+people\s+(?:believe|claim|say|think|argue)\b/gi,
+    /\bmany\s+experts\s+(?:believe|claim|say|think|argue)\b/gi,
+    /\bit\s+is\s+(?:said|believed|reported|claimed|alleged)\b/gi,
+    /\b(?:reportedly|allegedly)\b/gi,
+    /\bopinions\s+vary\b/gi,
+    /\bthe\s+debate\s+continues\b/gi,
+  ];
+
+  let count = 0;
+  for (const pattern of patterns) {
+    const matches = text.match(pattern);
+    if (matches) count += matches.length;
+  }
+  return count;
+}
+
+/**
+ * Check if an expert_quote includes attribution in statement or excerpt.
+ */
+function hasAttribution(text: string): boolean {
+  if (!text) return false;
+
+  const patterns: RegExp[] = [
+    /\b(?:Dr|Prof|Professor|Ms|Mr|Mrs)\.?\s+[A-Z][\w-]+\b/,
+    /\baccording\s+to\s+[A-Z][\w-]+(?:\s+[A-Z][\w-]+){0,2}\b/i,
+    /\b[A-Z][\w-]+(?:\s+[A-Z][\w-]+){0,2}\s+(?:said|stated|argued|commented|explained|claimed|noted|wrote|warned|added|concluded)\b/i,
+  ];
+
+  return patterns.some((p) => p.test(text));
+}
+
+/**
+ * Check if a legal_provision includes a citation in statement or excerpt.
+ */
+function hasLegalCitation(text: string): boolean {
+  if (!text) return false;
+
+  const patterns: RegExp[] = [
+    /\b(?:section|sec\.?)\s+\d+[a-z0-9-]*\b/i,
+    /\b(?:article|art\.?)\s+\d+[a-z0-9-]*\b/i,
+    /§\s*\d+[a-z0-9-]*/i,
+    /\b[A-Z][\w-]+(?:\s+[A-Z][\w-]+){0,2}\s+v\.?\s+[A-Z][\w-]+(?:\s+[A-Z][\w-]+){0,2}\b/,
+  ];
+
+  return patterns.some((p) => p.test(text));
+}
 
 /**
  * Check if a statement contains a number (for statistics category)
@@ -133,31 +196,46 @@ export function filterByProbativeValue(
     let shouldFilter = false;
     let filterReason = "";
 
-    // 0. Filter low probativeValue evidence (prompt says "do NOT extract low" but enforce here too)
-    if (item.probativeValue === "low") {
+    // 0. Filter opinion sources deterministically (opinions are not probative evidence for verification)
+    if (item.sourceAuthority === "opinion") {
+      shouldFilter = true;
+      filterReason = "opinion_source";
+    }
+
+    // 1. Filter low probativeValue evidence (prompt says "do NOT extract low" but enforce here too)
+    else if (item.probativeValue === "low") {
       shouldFilter = true;
       filterReason = "low_probative_value";
     }
 
-    // 1. Minimum statement length
+    // 2. Minimum statement length
     else if (item.statement.length < cfg.minStatementLength) {
       shouldFilter = true;
       filterReason = "statement_too_short";
     }
 
-    // 2. Source excerpt requirement
+    // 3. Filter statements with excessive vague phrases
+    else if (
+      cfg.maxVaguePhraseCount >= 0 &&
+      countVaguePhrases(item.statement) > cfg.maxVaguePhraseCount
+    ) {
+      shouldFilter = true;
+      filterReason = "excessive_vague_phrases";
+    }
+
+    // 4. Source excerpt requirement
     else if (cfg.requireSourceExcerpt && (!item.sourceExcerpt || item.sourceExcerpt.length < cfg.minExcerptLength)) {
       shouldFilter = true;
       filterReason = "missing_or_short_excerpt";
     }
 
-    // 3. Source URL requirement
+    // 5. Source URL requirement
     else if (cfg.requireSourceUrl && !item.sourceUrl) {
       shouldFilter = true;
       filterReason = "missing_source_url";
     }
 
-    // 4. Category-specific rules
+    // 6. Category-specific rules
     // Note: Use (item.sourceExcerpt ?? "") to handle undefined when requireSourceExcerpt is false
     else if (item.category === "statistic" && cfg.categoryRules.statistic.requireNumber) {
       const excerpt = item.sourceExcerpt ?? "";
@@ -170,11 +248,27 @@ export function filterByProbativeValue(
       }
     }
 
+    else if (item.category === "expert_quote" && cfg.categoryRules.expert_quote.requireAttribution) {
+      const combined = `${item.statement} ${item.sourceExcerpt ?? ""}`.trim();
+      if (!hasAttribution(combined)) {
+        shouldFilter = true;
+        filterReason = "expert_quote_without_attribution";
+      }
+    }
+
     else if (item.category === "event" && cfg.categoryRules.event.requireTemporalAnchor) {
       const excerpt = item.sourceExcerpt ?? "";
       if (!hasTemporalAnchor(item.statement) && !hasTemporalAnchor(excerpt)) {
         shouldFilter = true;
         filterReason = "event_without_temporal_anchor";
+      }
+    }
+
+    else if (item.category === "legal_provision" && cfg.categoryRules.legal_provision.requireCitation) {
+      const combined = `${item.statement} ${item.sourceExcerpt ?? ""}`.trim();
+      if (!hasLegalCitation(combined)) {
+        shouldFilter = true;
+        filterReason = "legal_provision_without_citation";
       }
     }
 

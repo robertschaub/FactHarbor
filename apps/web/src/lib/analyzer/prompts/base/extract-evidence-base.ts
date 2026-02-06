@@ -128,6 +128,8 @@ Classify the authority level of the source for each evidence item:
 **CRITICAL**:
 - Opinion sources are NOT documented evidence even if they use evidence-like language
 - If the source lacks concrete records, measurements, or verifiable documentation, classify as **opinion**
+- If you classify an item as **opinion**, it MUST have **probativeValue="low"** and MUST NOT be returned (this pipeline only accepts high/medium probative evidence)
+- If an item is actually probative (cites records, measurements, filings, datasets), it should usually be **primary** or **secondary**, not opinion
 
 ## EVIDENCE BASIS (NEW - classify for each evidence item)
 
@@ -173,6 +175,7 @@ Only extract Evidence items that have **PROBATIVE VALUE** for the analysis. Prob
 **DO NOT extract**:
 - Vague assertions without specifics ("some say", "many believe", "it is widely thought")
 - Meta-commentary without substance ("this is debated", "opinions vary", "controversy exists")
+- Third-party reactions/characterizations without documentary support (e.g., "Entity Y called X unfair" with no cited records) → classify as opinion + low probative, and omit
 - Statements without attributable source or excerpt
 - Redundant/duplicate information (exact or near-exact paraphrases)
 - Predictions or speculation without supporting evidence

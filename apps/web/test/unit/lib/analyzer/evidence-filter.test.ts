@@ -48,6 +48,20 @@ function createEvidenceItem(overrides: Partial<EvidenceItem> = {}): EvidenceItem
 
 describe('filterByProbativeValue', () => {
   describe('statement quality filtering', () => {
+    describe('sourceAuthority filtering', () => {
+      it('should filter opinion sources regardless of probativeValue', () => {
+        const evidence = [
+          createEvidenceItem({ sourceAuthority: 'opinion', probativeValue: 'high' }),
+        ];
+
+        const result = filterByProbativeValue(evidence);
+
+        expect(result.kept).toHaveLength(0);
+        expect(result.filtered).toHaveLength(1);
+        expect(result.stats.filterReasons.opinion_source).toBe(1);
+      });
+    });
+
     describe('minimum statement length', () => {
       it('should filter statements below minimum length (20 chars)', () => {
         const evidence = [

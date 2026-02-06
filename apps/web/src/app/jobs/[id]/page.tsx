@@ -319,8 +319,19 @@ export default function JobPage() {
   const searchQueries = result?.searchQueries || [];
   const researchStats = result?.researchStats;
   const evidenceItems = result?.evidenceItems || [];
-  // Prefer job.pipelineVariant (available immediately) over result meta (only after completion)
-  const pipelineVariant = job?.pipelineVariant || result?.meta?.pipelineVariant || "orchestrated";
+  // Pipeline: preserve what the job requested, but prefer the pipeline that actually executed.
+  // This avoids schema/UI mismatches when monolithic pipelines fall back to orchestrated.
+  const requestedPipelineVariant =
+    job?.pipelineVariant ||
+    result?.meta?.pipelineVariantRequested ||
+    result?.meta?.pipelineVariant ||
+    "orchestrated";
+  const pipelineFallback = !!result?.meta?.pipelineFallback;
+  const fallbackReason: string | undefined = result?.meta?.fallbackReason || undefined;
+  const executedPipelineVariant = pipelineFallback
+    ? "orchestrated"
+    : (result?.meta?.pipelineVariant || requestedPipelineVariant);
+  const pipelineVariant = executedPipelineVariant;
 
   // v2.8.2: For dynamic pipeline, use citations array; for canonical pipelines, use sources array
   // Dynamic pipeline stores fetched sources as citations with different structure
@@ -518,9 +529,24 @@ export default function JobPage() {
                   🔬 PSEUDOSCIENCE
                 </Badge>
               )}
-              {researchStats && (
-                <Badge bg="#e8f5e9" color="#2e7d32" title={result.meta.searchProvider || "Web Search"}>
-                  🔍 {researchStats.totalSearches} searches
+              {(() => {
+                const totalSearches =
+                  researchStats?.totalSearches ??
+                  result?.meta?.dynamicStats?.searches ??
+                  null;
+                return typeof totalSearches === "number" && totalSearches > 0 ? (
+                  <Badge bg="#e8f5e9" color="#2e7d32" title={result.meta.searchProvider || "Web Search"}>
+                    🔍 {totalSearches} searches
+                  </Badge>
+                ) : null;
+              })()}
+              {pipelineFallback && requestedPipelineVariant !== pipelineVariant && (
+                <Badge
+                  bg="#fff3e0"
+                  color="#e65100"
+                  title={fallbackReason ? `Fallback reason: ${fallbackReason}` : "Pipeline fallback occurred"}
+                >
+                  ↩️ Fallback
                 </Badge>
               )}
             </div>

@@ -646,7 +646,8 @@ export type AnalysisWarningType =
   | "budget_exceeded"               // Analysis terminated early due to budget
   | "classification_fallback"       // Classification fields defaulted due to LLM failure
   | "low_evidence_count"            // Insufficient evidence for reliable verdict
-  | "context_without_evidence";     // AnalysisContext has claims but no evidence
+  | "context_without_evidence"      // AnalysisContext has claims but no evidence
+  | "recency_evidence_gap";         // Time-sensitive claim lacks recent evidence
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

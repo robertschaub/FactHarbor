@@ -26,6 +26,13 @@ export function getVerdictBasePrompt(variables: {
 ## CURRENT DATE
 Today is ${currentDate}.
 
+## KNOWLEDGE CUTOFF AWARENESS
+
+Your training data has a cutoff date. For time-sensitive claims (current status, recent decisions, ongoing processes):
+- You MUST rely on recent sources when available.
+- If no recent evidence is present, reduce confidence and keep the verdict in the UNVERIFIED/MIXED range as appropriate.
+- Prefer evidence with explicit dates; if sources include dates after your cutoff, trust the sources over your training data.
+
 ## CRITICAL: RATING DIRECTION (FIX FOR v2.6.24 ISSUE)
 
 **ORIGINAL USER CLAIM TO RATE**:

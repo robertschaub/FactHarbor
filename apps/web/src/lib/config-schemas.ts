@@ -206,6 +206,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Similarity threshold for matching evidence to claims (0.2-0.8). Default: 0.4"),
   temporalConfidenceThreshold: z.number().min(0.3).max(0.9).optional()
     .describe("Min confidence for temporalContext to affect recency filters (0.3-0.9). Default: 0.6"),
+  recencyWindowMonths: z.number().int().min(1).max(24).optional()
+    .describe("Recency window in months for time-sensitive evidence checks (default: 6)"),
+  recencyConfidencePenalty: z.number().int().min(0).max(50).optional()
+    .describe("Confidence penalty (percentage points) when time-sensitive claims lack recent evidence (default: 20)"),
 
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
@@ -339,6 +343,12 @@ export const PipelineConfigSchema = z.object({
   if (data.temporalConfidenceThreshold === undefined) {
     data.temporalConfidenceThreshold = 0.6;
   }
+  if (data.recencyWindowMonths === undefined) {
+    data.recencyWindowMonths = 6;
+  }
+  if (data.recencyConfidencePenalty === undefined) {
+    data.recencyConfidencePenalty = 20;
+  }
   if (data.gapResearchEnabled === undefined) {
     data.gapResearchEnabled = true; // Enabled by default for Pipeline Phase 1
   }
@@ -417,6 +427,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Pipeline thresholds
   evidenceSimilarityThreshold: 0.4,
   temporalConfidenceThreshold: 0.6,
+  recencyWindowMonths: 6,
+  recencyConfidencePenalty: 20,
 
   // Budget controls
   maxIterationsPerContext: 5, // NEW: Use new key name

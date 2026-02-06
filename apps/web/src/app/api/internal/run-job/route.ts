@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { runFactHarborAnalysis } from "@/lib/analyzer";
 import { runMonolithicCanonical } from "@/lib/analyzer/monolithic-canonical";
 import { runMonolithicDynamic } from "@/lib/analyzer/monolithic-dynamic";
+import { debugLog } from "@/lib/analyzer/debug";
 
 type PipelineVariant = "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
 
@@ -195,7 +196,10 @@ async function runJobBackground(jobId: string) {
 
     // Record pipeline metadata in result
     if (result?.resultJson?.meta) {
-      result.resultJson.meta.pipelineVariant = pipelineVariant;
+      // Preserve what was requested, but record what actually executed.
+      // This avoids UI/schema mismatches when a monolithic pipeline falls back to orchestrated.
+      result.resultJson.meta.pipelineVariantRequested = pipelineVariant;
+      result.resultJson.meta.pipelineVariant = usedFallback ? "orchestrated" : pipelineVariant;
       result.resultJson.meta.pipelineFallback = usedFallback;
       if (fallbackReason) {
         result.resultJson.meta.fallbackReason = fallbackReason;
@@ -213,6 +217,13 @@ async function runJobBackground(jobId: string) {
     });
   } catch (e: any) {
     const msg = e?.message ?? String(e);
+    const stack = typeof e?.stack === "string" ? e.stack : null;
+
+    debugLog("runJobBackground: ERROR", {
+      jobId,
+      message: msg,
+      stack: stack ? stack.split("\n").slice(0, 30).join("\n") : undefined,
+    });
     try {
       await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
         status: "FAILED",
@@ -220,6 +231,15 @@ async function runJobBackground(jobId: string) {
         level: "error",
         message: msg,
       });
+
+      if (stack) {
+        await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
+          status: "FAILED",
+          progress: 100,
+          level: "error",
+          message: `Stack (truncated):\n${stack.split("\n").slice(0, 30).join("\n")}`,
+        });
+      }
     } catch {}
   } finally {
     // Release slot + running marker, then drain queue.
