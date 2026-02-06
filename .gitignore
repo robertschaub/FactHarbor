@@ -24,10 +24,19 @@ Docs/xWiki-work/*.xml
 !Docs/xWiki-work/.gitkeep
 
 # xwiki-export intermediate files
-# Track .xar packages and README.md, ignore unpacked XML and temp files
+# Track: final .xar packages (not *_updated.xar), conversion scripts, WORKFLOW.md, README.md
+# Ignore: JSON fulltrees, MD trees, unpacked XML, temp files, updated XARs
+Docs/xwiki-export/*_fulltree.json
+Docs/xwiki-export/*_fulltree_updated.json
+Docs/xwiki-export/*_md/
+Docs/xwiki-export/*_updated.xar
 Docs/xwiki-export/*.xml
 Docs/xwiki-export/package*.xml
 Docs/xwiki-export/temp*/
+
+# Local devserver artifacts (agent runs / redirected output)
+apps/web/devserver.out
+apps/web/devserver.err
 
 # Node / Next.js
 node_modules/
