@@ -17,7 +17,8 @@ import { z } from "zod";
 import { generateText, Output } from "ai";
 import { getModelForTask, extractStructuredOutput } from "./llm";
 import { getDeterministicTemperature } from "./config";
-import type { PipelineConfig } from "../config-schemas";
+import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
+import { splitByConfigurableHeuristics } from "./normalization-heuristics";
 
 // ============================================================================
 // TYPES
@@ -245,7 +246,7 @@ function calculateTextSimilarity(text1: string, text2: string): number {
 /**
  * Backward-compatible synchronous wrapper for deterministic seed logic.
  */
-export function detectContexts(text: string): DetectedAnalysisContext[] | null {
+export function detectContexts(text: string, _config?: PipelineConfig): DetectedAnalysisContext[] | null {
   return detectContextsHeuristic(text);
 }
 
@@ -290,7 +291,7 @@ export function formatDetectedContextsHint(contexts: DetectedAnalysisContext[] |
  * @param input - Raw or pre-normalized input text
  * @returns Canonical form for context detection
  */
-export function canonicalizeInputForContextDetection(input: string): string {
+export function canonicalizeInputForContextDetection(input: string, pipelineConfig?: PipelineConfig): string {
   let text = input.trim();
 
   // 1. Remove question marks and trailing punctuation
@@ -319,12 +320,17 @@ export function canonicalizeInputForContextDetection(input: string): string {
           const predicate = rest.slice(commaIdx + 1).trim();
           text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
         } else {
-          // Safe fallback: use grammatical form that preserves meaning
-          // "Did the court follow procedures?" → "It is the case that the court follow procedures"
-          const copulas = new Set(["is", "are", "was", "were"]);
-          text = copulas.has(aux)
-            ? `it ${aux} the case that ${rest}`
-            : `it is the case that ${rest}`;
+          const split = splitByConfigurableHeuristics(rest, pipelineConfig ?? DEFAULT_PIPELINE_CONFIG);
+
+          // Final fallback: use "It is the case that" form
+          if (!split) {
+            const copulas = new Set(["is", "are", "was", "were"]);
+            text = copulas.has(aux)
+              ? `it ${aux} the case that ${rest}`
+              : `it is the case that ${rest}`;
+          } else {
+            text = `${split.subject} ${aux} ${split.predicate}`.replace(/\s+/g, " ").trim();
+          }
         }
       }
     }

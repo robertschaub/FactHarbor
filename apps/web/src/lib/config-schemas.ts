@@ -212,6 +212,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Confidence penalty (percentage points) when time-sensitive claims lack recent evidence (default: 20)"),
   recencyCueTerms: z.array(z.string().min(1)).max(50).optional()
     .describe("Configurable recency cue terms for time-sensitive detection (default: empty)"),
+  normalizationPredicateStarters: z.array(z.string().min(1)).max(300).optional()
+    .describe("Configurable predicate starter terms for yes/no normalization splitting (default: empty)"),
+  normalizationAdjectiveSuffixes: z.array(z.string().min(1)).max(30).optional()
+    .describe("Configurable adjective suffixes for yes/no normalization splitting (default: empty)"),
   searchRelevanceLlmEnabled: z.boolean().optional()
     .describe("Enable LLM-based relevance classification for ambiguous search results (default: false)"),
   searchRelevanceLlmMode: z.enum(["off", "auto", "on"]).optional()
@@ -360,6 +364,12 @@ export const PipelineConfigSchema = z.object({
   if (data.recencyCueTerms === undefined) {
     data.recencyCueTerms = [];
   }
+  if (data.normalizationPredicateStarters === undefined) {
+    data.normalizationPredicateStarters = [];
+  }
+  if (data.normalizationAdjectiveSuffixes === undefined) {
+    data.normalizationAdjectiveSuffixes = [];
+  }
   if (data.searchRelevanceLlmEnabled === undefined) {
     data.searchRelevanceLlmEnabled = false;
   }
@@ -450,6 +460,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   recencyWindowMonths: 6,
   recencyConfidencePenalty: 20,
   recencyCueTerms: [],
+  normalizationPredicateStarters: [],
+  normalizationAdjectiveSuffixes: [],
   searchRelevanceLlmEnabled: false,
   searchRelevanceLlmMode: "auto",
   searchRelevanceLlmMaxCalls: 3,

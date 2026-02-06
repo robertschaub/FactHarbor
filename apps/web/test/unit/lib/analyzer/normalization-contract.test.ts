@@ -10,10 +10,23 @@
  */
 
 import { describe, expect, it } from "vitest";
+import fs from "fs";
+import path from "path";
 
 // Import the normalization function directly for unit testing
 // We can't easily spy on internal function calls, so we test the normalization logic directly
 import { normalizeYesNoQuestionToStatement } from "@/lib/analyzer";
+
+const pipelineDefaultPath = path.resolve(process.cwd(), "configs/pipeline.default.json");
+const pipelineDefaultConfig = JSON.parse(fs.readFileSync(pipelineDefaultPath, "utf-8"));
+const normalizationConfig = {
+  normalizationPredicateStarters: pipelineDefaultConfig.normalizationPredicateStarters || [],
+  normalizationAdjectiveSuffixes: pipelineDefaultConfig.normalizationAdjectiveSuffixes || [],
+};
+
+function normalize(input: string): string {
+  return normalizeYesNoQuestionToStatement(input, normalizationConfig as any);
+}
 
 // ============================================================================
 // TEST DATA
@@ -58,7 +71,7 @@ describe("Normalization Contract", () => {
   describe("normalizeYesNoQuestionToStatement", () => {
     it("converts question form to statement form", () => {
       for (const pair of NORMALIZATION_PAIRS) {
-        const result = normalizeYesNoQuestionToStatement(pair.question);
+        const result = normalize(pair.question);
         // The exact transformation may vary slightly, but it should be a statement (no ?)
         expect(result.endsWith("?")).toBe(false);
         console.log(`  "${pair.question}" -> "${result}"`);
@@ -73,7 +86,7 @@ describe("Normalization Contract", () => {
       ];
 
       for (const statement of statements) {
-        const result = normalizeYesNoQuestionToStatement(statement);
+        const result = normalize(statement);
         // Statement should remain largely unchanged (may trim trailing period)
         expect(result.endsWith("?")).toBe(false);
         console.log(`  "${statement}" -> "${result}"`);
@@ -84,29 +97,29 @@ describe("Normalization Contract", () => {
       // The normalization function preserves statements as-is
       // Trailing period removal happens at the entry point (runFactHarborAnalysis)
       const input = "The court judgment was fair.";
-      const result = normalizeYesNoQuestionToStatement(input);
+      const result = normalize(input);
       // Statement inputs pass through unchanged
       expect(result).toBe(input);
     });
 
     it("removes trailing question marks from questions", () => {
       const input = "Was the court judgment fair?";
-      const result = normalizeYesNoQuestionToStatement(input);
+      const result = normalize(input);
       // Question mark should be removed
       expect(result.endsWith("?")).toBe(false);
     });
 
     it("handles edge cases gracefully", () => {
       // Empty input
-      const empty = normalizeYesNoQuestionToStatement("");
+      const empty = normalize("");
       expect(empty).toBe("");
 
       // Single word
-      const singleWord = normalizeYesNoQuestionToStatement("True?");
+      const singleWord = normalize("True?");
       expect(singleWord.endsWith("?")).toBe(false);
 
       // Already a statement without period
-      const noPeriod = normalizeYesNoQuestionToStatement("The sky is blue");
+      const noPeriod = normalize("The sky is blue");
       expect(noPeriod).toBe("The sky is blue");
     });
   });
@@ -128,8 +141,8 @@ describe("Normalization Contract", () => {
       ];
 
       for (const pair of pairs) {
-        const qNorm = normalizeYesNoQuestionToStatement(pair.question);
-        const sNorm = normalizeYesNoQuestionToStatement(pair.statement);
+        const qNorm = normalize(pair.question);
+        const sNorm = normalize(pair.statement);
 
         // Both should be statements (no question mark)
         expect(qNorm.endsWith("?")).toBe(false);
@@ -149,6 +162,66 @@ describe("Normalization Contract", () => {
     });
   });
 
+  describe("Regression: no broken grammar from fallback", () => {
+    const REGRESSION_CASES = [
+      {
+        question: "Is aspirin effective for pain relief?",
+        expected: "Aspirin is effective for pain relief",
+      },
+      {
+        question: "Is U.S. inflation currently below 3 percent?",
+        expected: "U.S. inflation is currently below 3 percent",
+      },
+      {
+        question: "Is Donald Trump currently the President of the United States?",
+        expected: "Donald Trump is currently the President of the United States",
+      },
+      {
+        question: "Has the vaccine been proven effective?",
+        expected: "The vaccine has been proven effective",
+      },
+      {
+        question: "Is the policy controversial?",
+        expected: "The policy is controversial",
+      },
+      {
+        question: "Was the decision appropriate?",
+        expected: "The decision was appropriate",
+      },
+      {
+        question: "Are electric vehicles really better for the environment?",
+        expected: "Electric vehicles are really better for the environment",
+      },
+    ];
+
+    for (const { question, expected } of REGRESSION_CASES) {
+      it(`"${question}" → "${expected}"`, () => {
+        const result = normalize(question);
+        expect(result).toBe(expected);
+      });
+    }
+
+    it("never produces 'It is the case that' for common question patterns", () => {
+      const commonQuestions = [
+        "Is aspirin effective for pain relief?",
+        "Is the economy currently stable?",
+        "Was the ruling justified?",
+        "Are vaccines safe for children?",
+        "Is climate change real?",
+        "Were the elections fair?",
+        "Is remote work beneficial for productivity?",
+      ];
+
+      for (const question of commonQuestions) {
+        const result = normalize(question);
+        expect(result).not.toContain("It is the case that");
+        expect(result).not.toContain("It was the case that");
+        expect(result).not.toContain("It are the case that");
+        expect(result).not.toContain("It were the case that");
+      }
+    });
+  });
+
   describe("Contract verification", () => {
     it("auxiliary verbs are correctly identified", () => {
       const auxiliaries = [
@@ -159,7 +232,7 @@ describe("Normalization Contract", () => {
 
       for (const aux of auxiliaries) {
         const question = `${aux.charAt(0).toUpperCase() + aux.slice(1)} the test passing?`;
-        const result = normalizeYesNoQuestionToStatement(question);
+        const result = normalize(question);
 
         // Should be normalized (no question mark)
         expect(result.endsWith("?")).toBe(false);
@@ -174,7 +247,7 @@ describe("Normalization Contract", () => {
       ];
 
       for (const statement of statements) {
-        const result = normalizeYesNoQuestionToStatement(statement);
+        const result = normalize(statement);
         // Statement should remain the same or very similar
         expect(result.length).toBeGreaterThan(0);
         expect(result.endsWith("?")).toBe(false);

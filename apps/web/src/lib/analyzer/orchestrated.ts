@@ -1375,7 +1375,7 @@ Return:
   return { updated: true, llmCalls: 1 };
 }
 
-export function normalizeYesNoQuestionToStatement(input: string): string {
+export function normalizeYesNoQuestionToStatement(input: string, pipelineConfig?: PipelineConfig): string {
   const trimmed = input.trim().replace(/\?+$/, "");
 
   // Handle the common yes/no forms in a way that is stable and avoids bad grammar.
@@ -1412,170 +1412,11 @@ export function normalizeYesNoQuestionToStatement(input: string): string {
     return out;
   }
 
-  // Heuristic: split before common predicate starters.
-  // Keep this generic (no domain-specific terms) but broad enough to handle common yes/no question shapes:
-  // - evaluation adjectives ("fair", "true", ...)
-  // - common verbs ("cause", "increase", ...)
-  const predicateStarters = [
-    // evaluation adjectives
-    "fair",
-    "true",
-    "false",
-    "accurate",
-    "correct",
-    "legitimate",
-    "legal",
-    "valid",
-    "based",
-    "justified",
-    "reasonable",
-    "biased",
-    "effective",
-    "ineffective",
-    "efficient",
-    "inefficient",
-    "successful",
-    "safe",
-    "dangerous",
-    "harmful",
-    "beneficial",
-    "helpful",
-    "healthy",
-    "good",
-    "bad",
-    "better",
-    "worse",
-    "necessary",
-    "sufficient",
-    "important",
-    "significant",
-    "relevant",
-    "possible",
-    "impossible",
-    "likely",
-    "unlikely",
-    "able",
-    "unable",
-    "capable",
-    "reliable",
-    "unreliable",
-    "responsible",
-    "available",
-    "popular",
-    "common",
-    "rare",
-    "appropriate",
-    "inappropriate",
-    "adequate",
-    "inadequate",
-    "compatible",
-    "sustainable",
-    "affordable",
-    "expensive",
-    "cheap",
-    "guilty",
-    "innocent",
-    "wrong",
-    "right",
-    "real",
-    "fake",
-    // temporal/degree adverbs that start predicate phrases
-    "currently",
-    "still",
-    "already",
-    "actually",
-    "really",
-    "truly",
-    "generally",
-    "typically",
-    "usually",
-    "always",
-    "never",
-    "often",
-    // past participles as predicate adjectives
-    "proven",
-    "known",
-    "considered",
-    "expected",
-    "required",
-    "allowed",
-    "permitted",
-    "connected",
-    "linked",
-    "related",
-    "involved",
-    "affected",
-    "qualified",
-    "prepared",
-    "committed",
-    "designed",
-    "intended",
-    "supposed",
-    "used",
-    "made",
-    "seen",
-    "found",
-    "been",
-    // prepositions starting predicate phrases (e.g. "below 3 percent")
-    "below",
-    "above",
-    "under",
-    "over",
-    "within",
-    "behind",
-    "ahead",
-    "worth",
-    "about",
-    // generic verb starters (helps convert "Did/Does/Can X cause Y?" -> "X did/does/can cause Y")
-    "cause",
-    "causes",
-    "caused",
-    "increase",
-    "increases",
-    "increased",
-    "decrease",
-    "decreases",
-    "decreased",
-    "improve",
-    "improves",
-    "improved",
-    "reduce",
-    "reduces",
-    "reduced",
-    "prevent",
-    "prevents",
-    "prevented",
-    "lead",
-    "leads",
-    "led",
-    "result",
-    "results",
-    "resulted",
-  ];
-  const starterRe = new RegExp(`\\b(${predicateStarters.join("|")})\\b`, "i");
-  const starterMatch = rest.match(starterRe);
-  if (starterMatch && typeof starterMatch.index === "number" && starterMatch.index > 0) {
-    const subject = rest.slice(0, starterMatch.index).trim();
-    const predicate = rest.slice(starterMatch.index).trim();
-    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
-    if (subject && predicate) {
-      const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-      return out;
-    }
-  }
-
-  // Secondary heuristic: detect adjectives by common English suffixes.
-  // Catches words like "controversial", "problematic", "influential" not in the explicit list.
-  const adjSuffixRe = /\b(\w{5,}(?:ive|ful|less|ous|ble|ible|ial|ent|ant|ical|ary|ory))\b/i;
-  const suffixMatch = rest.match(adjSuffixRe);
-  if (suffixMatch && typeof suffixMatch.index === "number" && suffixMatch.index > 0) {
-    const subject = rest.slice(0, suffixMatch.index).trim();
-    const predicate = rest.slice(suffixMatch.index).trim();
-    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
-    if (subject && predicate) {
-      const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-      return out;
-    }
+  const split = splitByConfigurableHeuristics(rest, pipelineConfig);
+  if (split) {
+    const capSubject = split.subject.charAt(0).toUpperCase() + split.subject.slice(1);
+    const out = `${capSubject} ${aux} ${split.predicate}`.replace(/\s+/g, " ").trim();
+    return out;
   }
 
   // Fallback: don't guess a subject/predicate split; keep the remainder intact and use a stable grammatical form.
@@ -3352,6 +3193,7 @@ import {
   extractDomain,
   isImportantSource,
 } from "./source-reliability";
+import { splitByConfigurableHeuristics } from "./normalization-heuristics";
 
 // Re-export for backward compatibility
 export { prefetchSourceReliability, getTrackRecordScore };
@@ -10848,7 +10690,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // Normalize to statement form for ALL analysis
   // Also strip trailing period from statements to ensure identical text for both input phrasings
   let normalizedInputValue = needsNormalizationEntry
-    ? normalizeYesNoQuestionToStatement(rawInputValue)
+    ? normalizeYesNoQuestionToStatement(rawInputValue, pipelineConfig)
     : rawInputValue;
 
   // CRITICAL: Remove trailing period from ALL inputs for exact text matching
