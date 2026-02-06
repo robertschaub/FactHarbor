@@ -1,0 +1,17 @@
+{{mermaid}}
+graph TD
+ A[General Assembly] -->|Elects| B[Governing Team 3-7]
+ B -->|Oversees| C[Team Members full-time]
+ C -->|Technical Coordinator| D[AKEL & Infrastructure]
+ C -->|Community Coordinator| E[Moderators part-time]
+ E -->|Moderate| F[Content]
+ G[Contributors] -->|Create/Edit| F
+ H[Readers] -->|View/Flag| F
+ G -->|Earn| I[Reputation Points]
+ I -->|Unlocks| J[Permissions]
+ style A fill:#e1f5ff
+ style B fill:#ffe1f5
+ style D fill:#fff5e1
+{{/mermaid}}
+
+Simplified structure: General Assembly → Governing Team → Team Members. Users progress through reputation.

@@ -1,0 +1,375 @@
+= Workplace Culture =
+**How we work together to build FactHarbor.**
+== 1. Our Inspiration ==
+FactHarbor's workplace culture draws from three complementary sources:
+**Best Workplace Blueprint** (Schaub Group):
+* User-centered collaboration
+* Empowered, self-organizing teams
+* Iterative improvement
+* Enabling leadership
+* Experimentation and learning
+* Transparency and trust
+**Sociocracy 3.0**:
+* Consent-based decisions
+* Clear domains
+* Empirical approach
+* Continuous improvement
+* Equivalence
+* Accountability
+**AI-First Philosophy**:
+* Automation over bureaucracy
+* Systems thinking
+* Metrics-driven improvement
+* Scale through code
+**Together**: A collaborative, transparent, learning culture that enables both humans and AI to thrive.
+== 2. We Engage with Our Users ==
+**From BWB**: "We connect with users and empathize with them, listen to their needs, and learn from their insights."
+=== 2.1 FactHarbor Application ===
+**Our users**:
+* Internal: Contributors, moderators, team members
+* External: Claim submitters, information seekers, researchers, journalists
+**How we engage**:
+* ✅ User feedback continuously monitored (helpful/unhelpful ratings)
+* ✅ Community forums for discussion
+* ✅ Regular user surveys
+* ✅ Feedback loops inform system improvements
+* ✅ Transparent communication about changes
+* ✅ Public roadmap
+**User journey consideration**:
+* Claim submission → AKEL processing → Verdict → Evidence exploration
+* Every step designed for clarity and trust
+* User privacy prioritized
+* Accessibility important
+**User-driven improvement**:
+* User feedback patterns → System improvements (not ad-hoc fixes)
+* Example: "Users find evidence unclear" → Improve evidence presentation algorithm
+* Example: "Users confused by confidence scores" → Better explanation system
+=== 2.2 Internal Users (Contributors) ===
+**We support contributors**:
+* Clear onboarding documentation
+* Welcoming community
+* Responsive to questions
+* Recognize contributions
+* Safe to experiment and learn
+**We learn from contributors**:
+* RFC feedback shapes decisions
+* Community insights improve processes
+* Diverse perspectives strengthen the system
+== 3. We Build Networks of Empowered Teams ==
+**From BWB**: "Teams self-organize and wield decision-making power... Networks of teams align around shared strategic goals with agreed priorities."
+=== 3.1 FactHarbor Application ===
+**Self-organizing within domains**:
+* Technical Coordinator: Autonomous over AKEL performance
+* Community Coordinator: Autonomous over community processes
+* Moderators: Autonomous in handling flagged items
+**Decision-making power** (see [[Consent-Based Decision Making>>FactHarbor.Organisation.How-We-Work-Together.Consent-Based-Decision-Making]]):
+* Consent-based decisions for system changes
+* No hierarchy - decisions by domain expertise
+* Clear escalation for cross-domain issues
+**Empowerment through**:
+* Clear domain boundaries (S3 pattern)
+* Authority to make decisions within domain
+* Support and resources to succeed
+* Trust by default
+**Networks alignment**:
+* Shared goal: Make FactHarbor's claim evaluation excellent
+* Regular coordination meetings
+* Cross-domain collaboration on complex issues
+* Transparent decision documentation
+=== 3.2 Ownership and Accountability ===
+**Team members own outcomes**:
+* Technical Coordinator accountable for AKEL performance metrics
+* Community Coordinator accountable for contributor satisfaction
+* Moderators accountable for healthy community
+**Recognition for achievements**:
+* Public recognition of contributions
+* Performance metrics show impact
+* Success celebrated as team achievement
+=== 3.3 Small, Focused Team ===
+**By design**: full-timeE + part-time moderators
+**Why small?**
+* Automation does most work
+* Less coordination overhead
+* Clearer communication
+* Each person's impact visible
+**Scaling through**:
+* Better algorithms (not more people)
+* Improved processes
+* Community contributions
+== 4. We Work in Iterations ==
+**From BWB**: "We operate in iterative cycles, allowing us to make early adjustments and minimize the risk and impact of errors."
+=== 4.1 FactHarbor Application ===
+**Sprint cycles** (2 weeks):
+* Select improvement priorities
+* Implement and test
+* Review and retrospect
+* Adjust and iterate
+**Feedback loops** (see [[Continuous Improvement>>FactHarbor.Organisation.How-We-Work-Together.Continuous-Improvement]]):
+* Daily: Monitor metrics
+* Weekly: Review trends
+* Monthly: Comprehensive analysis
+* Quarterly: Strategic review
+**Early adjustments**:
+* Canary deployments (1% → 5% → 25% → 100%)
+* Quick rollback if issues
+* A/B testing for validation
+* Frequent small changes > big releases
+**Quality embedded in every increment**:
+* Automated testing
+* Code review
+* Performance validation
+* Metrics monitoring
+=== 4.2 Learning from Errors ===
+**Errors are learning opportunities**:
+* Blameless retrospectives
+* Document what went wrong
+* Identify systematic causes
+* Improve to prevent recurrence
+**Safe to fail**:
+* Test environments for experimentation
+* Rollback plans for all changes
+* Low-risk experimentation encouraged
+* Failures documented and shared
+== 5. We Are Visionary Leaders and Enablers ==
+**From BWB**: "Leaders create an enabling environment, removing impediments and empowering individuals and teams to self-organize... viewing failure and mistakes as opportunities for continuous growth and learning."
+=== 5.1 FactHarbor Application ===
+**Enabling environment**:
+* Clear documentation and onboarding
+* Tools and infrastructure provided
+* Support readily available
+* Resources allocated appropriately
+**Removing impediments**:
+* Technical Coordinator: Removes technical blockers
+* Community Coordinator: Removes process blockers
+* Governing Team: Removes strategic/policy blockers
+**Empowerment through clarity**:
+* Clear domains (S3 pattern)
+* Clear decision processes
+* Clear success metrics
+* Clear escalation paths
+**Psychological safety**:
+* ✅ Safe to ask questions
+* ✅ Safe to admit mistakes
+* ✅ Safe to disagree (with data)
+* ✅ Safe to experiment
+* ✅ Safe to fail (and learn)
+**Not safe**:
+* ❌ Harassment or discrimination
+* ❌ Ignoring feedback
+* ❌ Circumventing processes for convenience
+* ❌ Hiding problems
+=== 5.2 Leadership Philosophy ===
+**Leadership is service**:
+* Leaders serve the team
+* Leaders remove obstacles
+* Leaders enable success
+* Leaders develop people
+**Not command-and-control**:
+* No "my way or highway"
+* No hoarding information
+* No blame culture
+* No micromanagement
+**"Go to Gemba"** (BWB principle):
+* Leaders actively observe work
+* Understand challenges firsthand
+* Learn from doing
+* Coach and support
+=== 5.3 Continuous Growth and Learning ===
+**Individual growth**:
+* Learn new technologies
+* Develop new skills
+* Expand domain knowledge
+* Take on stretch challenges
+**Team learning**:
+* Retrospectives
+* Knowledge sharing
+* Documentation
+* Mentoring
+**Organizational learning**:
+* System improvements documented
+* Failures analyzed
+* Successes replicated
+* Knowledge base maintained
+== 6. We Foster Change ==
+**From BWB**: "We create environments that encourage experimentation and hypothesis exploration. We embrace changes grounded in evidence and tested hypotheses."
+=== 6.1 FactHarbor Application ===
+**Experimentation encouraged**:
+* RFC process enables anyone to propose
+* Test environments available
+* A/B testing supported
+* "Good enough for now, safe enough to try"
+**Evidence-based change**:
+* Measure before and after
+* Data drives decisions
+* Hypotheses tested, not assumed
+* Metrics validate success
+**Change process**:
+1. Identify issue (data-driven)
+2. Hypothesize solution
+3. Design experiment
+4. Test thoroughly
+5. Deploy gradually
+6. Measure impact
+7. Learn and iterate
+**Not change for change's sake**:
+* Clear problem being solved
+* Expected improvement defined
+* Success measurable
+* Rollback if unsuccessful
+=== 6.2 Innovation Culture ===
+**Encourage**:
+* ✅ Trying new approaches
+* ✅ Challenging assumptions
+* ✅ Learning from other domains
+* ✅ Cross-pollinating ideas
+**But maintain**:
+* ✅ Testing before deployment
+* ✅ Measuring impact
+* ✅ Documentation
+* ✅ Code quality
+=== 6.3 Adaptation ===
+**System adapts to**:
+* New domains (medical, legal, etc.)
+* New evidence types
+* New attack vectors
+* User needs
+* Scale requirements
+**Culture of adaptation**:
+* Nothing is sacred (except principles)
+* Processes evolve
+* Tools change
+* Structures adapt
+== 7. We Practice Transparency and Build Trust ==
+**From BWB**: "We actively share information... We proactively communicate about the fulfillment of our promises and commitments... We recognize our limitations and mistakes and persistently strive for improvement."
+=== 7.1 FactHarbor Application ===
+**Transparency in decisions**:
+* Decision records documented
+* Rationale explained
+* Trade-offs acknowledged
+* Open to questions
+**Transparency in metrics** (see [[System Performance Metrics>>FactHarbor.Specification.System-Performance-Metrics]]):
+* Performance dashboards public
+* Success/failure metrics visible
+* Improvement progress tracked
+* Problems acknowledged
+**Transparency in code**:
+* Open source (where possible)
+* Algorithm parameters documented
+* Changes tracked in git
+* Auditable by anyone
+**Transparency in governance**:
+* Governance structure documented
+* Meeting minutes published
+* Policies openly accessible
+* Decision processes clear
+=== 7.2 Communication ===
+**Proactive communication**:
+* Regular updates on progress
+* Advance notice of changes
+* Explanation of decisions
+* Status of commitments
+**Honest communication**:
+* Acknowledge limitations
+* Admit mistakes openly
+* Share both successes and failures
+* Don't hide problems
+**Responsive communication**:
+* Answer questions promptly
+* Engage with feedback
+* Clarify misunderstandings
+* Address concerns
+=== 7.3 Trust Building ===
+**Trust through**:
+* ✅ Consistent behavior
+* ✅ Keeping commitments
+* ✅ Admitting mistakes
+* ✅ Sharing information
+* ✅ Including people in decisions
+* ✅ Demonstrating competence
+**Trust eroded by**:
+* ❌ Hiding information
+* ❌ Breaking commitments
+* ❌ Blaming others
+* ❌ Inconsistent decisions
+* ❌ Ignoring feedback
+== 8. Integrating All Three Frameworks ==
+=== 8.1 How They Complement ===
+**Best Workplace Blueprint** provides:
+* Human-centered values
+* Leadership principles
+* Cultural practices
+**Sociocracy 3.0** provides:
+* Decision-making patterns
+* Organizational structures
+* Governance frameworks
+**AI-First Philosophy** provides:
+* Automation principles
+* Scalability approach
+* Systems thinking
+**Together**: Culture + Patterns + Technology = Effective Organization
+=== 8.2 Practical Example ===
+**Scenario**: AKEL processing time increasing
+**BWB perspective**:
+* Engage users: Check if users experiencing delays
+* Work iteratively: Quick fixes first, then systematic
+* Transparency: Communicate problem and progress
+* Learning: What can we learn from this?
+**S3 perspective**:
+* Domain clarity: Technical Coordinator owns this
+* Consent decision: Proposed solution needs team consent
+* Empiricism: Test solutions, measure impact
+* Continuous improvement: Part of ongoing cycle
+**AI-First perspective**:
+* Fix the system: Optimize algorithm, not override
+* Metrics-driven: What metrics show the problem?
+* Automation: Solution must scale
+* Monitor: Watch metrics after fix
+**Result**: Comprehensive, principled approach to problem-solving.
+== 9. Working Remotely (Future) ==
+**FactHarbor may operate as remote-first or hybrid organization.**
+**BWB principles applied remotely**:
+* Engagement: Video calls, async communication
+* Empowerment: Trust-based work
+* Iterations: Sprint structure works remotely
+* Transparency: Even more important when distributed
+* Change: Remote tools and processes
+**Best practices** (to be developed as team grows):
+* Documented communication preferred
+* Overlap hours for collaboration
+* Async-first with sync as needed
+* Regular video check-ins
+* Virtual retrospectives
+== 10. Living Document ==
+**This culture page evolves**:
+* Quarterly review: Does this reflect reality?
+* Feedback welcome: Suggest improvements
+* Updated as we learn: Culture grows with us
+**Culture is practiced, not proclaimed**:
+* These aren't just words
+* Actions matter more than statements
+* Everyone accountable for culture
+* Leaders exemplify these values
+== 11. For New Team Members ==
+**If you're new to FactHarbor**:
+**Expect**:
+* Transparency in decisions and metrics
+* Autonomy within your domain
+* Support and resources
+* Learning opportunities
+* Safe environment for experimentation
+* Data-driven decisions
+* Iterative improvement
+**Contribute by**:
+* Asking questions
+* Proposing improvements (RFCs)
+* Supporting team decisions
+* Sharing knowledge
+* Taking ownership
+* Learning continuously
+* Upholding these values
+== 12. Related Pages ==
+* [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] - Why we automate
+* [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - How we govern
+* [[Continuous Improvement>>FactHarbor.Organisation.How-We-Work-Together.Continuous-Improvement]] - How we improve
+* [[Consent-Based Decision Making>>FactHarbor.Organisation.How-We-Work-Together.Consent-Based-Decision-Making]] - How we decide
+* [[Contributor Processes>>FactHarbor.Organisation.Contributor-Processes]] - How to contribute

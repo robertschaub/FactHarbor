@@ -1,0 +1,50 @@
+= Roles & Bodies =
+== 1. Overview ==
+This page summarises the main roles and bodies that appear in the Organisation domain.
+In a small organisation, one person may hold several of these roles at the same time.
+== 2. Executive Roles (Leads) ==
+* **Executive Lead** – Ensures coherence across all domains, oversees implementation of Governance decisions, and represents the organisation externally where appropriate.
+* **Research & Development Lead** – Owns the technical architecture, data model, and quality of reasoning ALGORITHMS and models (the systems that evaluate claims, not the evaluation outputs).
+* **Organisation Lead** – Maintains organisational documentation, governance rules, contributor processes, and the XWiki structure.
+* **PR & Care & Marketing Lead** – Oversees communication, user support, campaigns, and community-facing material while respecting neutrality rules.
+* **Finance & Compliance Lead** – Maintains the financial ledger, budgeting, reporting, and the conflict-of-interest register.
+== 3. Governance Bodies ==
+* **Governing Team** – Strategic oversight, compliance monitoring, and resolution of escalated issues.
+* **Governance Steward** – Safeguards neutrality, transparency, and fairness of procedures.
+== 4. Support Roles ==
+Examples of support roles that may be added as the project grows:
+* **Infrastructure Manager** – Coordinates hosting, deployment, monitoring, and backups.
+* **Repository Steward** – Keeps repositories structured, tagged, and consistent.
+* **Process Support Specialist** – Helps contributors follow defined workflows and improves processes.
+* **Onboarding Coordinator** – Supports new contributors with documentation and introductory sessions.
+== 5. Advisory Roles ==
+* **Legal Advisor**
+* **Ethics Advisor**
+* **Scientific / Domain Advisors**
+These advisory roles provide input and critique but do not replace the formal responsibilities of the Governing Team or Executives.
+== 5.5 Domain Concept (from Sociocracy 3.0) ==
+Each role has a **domain** - a clearly defined area of authority and responsibility.
+**Domain definition includes**:
+* **Purpose**: Why this domain exists
+* **Responsibilities**: What this role is accountable for
+* **Dependencies**: What this role needs from others
+* **Authority**: What decisions this role can make autonomously
+* **Constraints**: What boundaries limit this authority
+**Examples**:
+**Technical Coordinator Domain**:
+* Purpose: Ensure AKEL performs optimally
+* Responsibilities: System performance, infrastructure, algorithm improvements
+* Dependencies: Performance metrics from monitoring, improvement suggestions from community
+* Authority: Approve technical changes that don't affect policy
+* Constraints: Must use consent-based decision for policy-affecting changes
+**Community Coordinator Domain**:
+* Purpose: Enable effective community contribution
+* Responsibilities: Documentation, onboarding, feedback loops, community health
+* Dependencies: User feedback, contribution patterns
+* Authority: Approve community process changes
+* Constraints: Cannot change technical systems or policies
+**Key principle**: Clear domains prevent overlaps, enable autonomous decisions, and clarify escalation paths.
+== 6. Principles for Role Design ==
+* Responsibilities must be written down and accessible.
+* The same person may hold several roles, but conflicts of interest must be declared.
+* For sensitive areas (finance, governance, moderation) there should always be at least one other person able to review or approve critical actions.

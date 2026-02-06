@@ -1,0 +1,388 @@
+= Ideal Customer Profile =
+
+This page defines FactHarbor's ideal customer segments and partner profiles to guide product development, marketing, and partnership strategy.
+
+== 1. Purpose ==
+
+Understanding who benefits most from FactHarbor helps us:
+* **Product Development**: Prioritize features that serve core user needs
+* **Marketing**: Communicate value effectively to target audiences
+* **Partnerships**: Identify and cultivate strategic relationships
+* **Resource Allocation**: Focus limited resources on highest-impact activities
+
+**Philosophy**: FactHarbor serves users who want to **understand**, not just believe. Our ideal customers share a frustration with binary "true/false" verdicts and value transparent reasoning they can inspect.
+
+== 2. Primary User Segments ==
+
+=== 2.1 Journalists & Newsrooms ===
+
+**Profile**:
+* Working journalists at news organizations (local to international)
+* Fact-checkers and verification specialists
+* Editorial teams producing investigative or political content
+
+**Core Needs** (from User Needs documentation):
+* **UN-4**: Fast social media fact-checking (≤15 seconds to initial verdict)
+* **UN-14**: API integration into professional workflows
+* **UN-5/UN-6**: Source provenance and publisher reliability tracking
+* **UN-7**: Evidence transparency for editorial review
+
+**Key Pain Points**:
+* Time pressure with breaking news and viral content
+* Need to verify claims quickly without sacrificing accuracy
+* Difficulty tracing claims to original sources
+* Binary fact-check verdicts lack nuance for complex stories
+
+**Value Proposition**:
+FactHarbor provides structured, scenario-based analysis that reveals **how** conclusions are reached, saving time while providing the context needed for accurate reporting.
+
+**Success Indicators**:
+* Reduced time spent on claim verification
+* Ability to cite FactHarbor analyses in published work
+* Improved editorial confidence in complex stories
+
+=== 2.2 Researchers & Academics ===
+
+**Profile**:
+* University researchers (political science, communications, media studies)
+* Think tank analysts
+* PhD students studying misinformation
+* Data scientists working on verification systems
+
+**Core Needs**:
+* **UN-7**: Complete evidence transparency
+* **UN-9**: Methodology transparency (auditable reasoning)
+* **UN-13**: Ability to cite FactHarbor verdicts in academic work
+* **UN-15**: Verdict evolution timeline (how assessments change with new evidence)
+
+**Key Pain Points**:
+* Existing fact-checks are methodologically opaque
+* Need structured data for quantitative analysis
+* Difficulty comparing how claims are assessed across sources
+* Binary verdicts hide important uncertainty
+
+**Value Proposition**:
+FactHarbor provides **transparent, structured methodology** that can be cited, analyzed, and built upon. The Evidence Model approach creates reusable data for academic research.
+
+**Success Indicators**:
+* Academic papers citing FactHarbor methodology
+* Researchers using FactHarbor data in studies
+* Methodology validation by academic institutions
+
+=== 2.3 Educators ===
+
+**Profile**:
+* University professors (media literacy, critical thinking, journalism)
+* High school teachers (civics, social studies, media studies)
+* Librarians and information literacy specialists
+* Corporate trainers (media literacy programs)
+
+**Core Needs**:
+* **UN-3**: Article summaries with FactHarbor analysis for teaching materials
+* **UN-8**: Understanding disagreement and consensus (why experts differ)
+* **UN-9**: Methodology transparency for pedagogical purposes
+* **UN-7**: Evidence transparency to teach source evaluation
+
+**Key Pain Points**:
+* Fact-checks don't show reasoning process for teaching
+* Hard to teach critical thinking with black-box verdicts
+* Need tools that demonstrate **how** to evaluate claims
+* Limited resources for curriculum development
+
+**Value Proposition**:
+FactHarbor teaches the **process** of evidence evaluation, not just the answer. Students see explicit assumptions, multiple scenarios, and how confidence levels are determined.
+
+**Success Indicators**:
+* Educators integrating FactHarbor into curricula
+* Student engagement with evidence exploration features
+* Educational institution partnerships
+
+=== 2.4 Policy Analysts ===
+
+**Profile**:
+* Government policy advisors
+* NGO research staff
+* Legislative aides
+* Regulatory analysts
+
+**Core Needs**:
+* **UN-2/UN-3**: Context-dependent analysis (claims true under some conditions, false under others)
+* **UN-8**: Understanding why reasonable people disagree
+* **UN-1**: Trust assessment with explicit confidence ranges
+* **UN-17**: In-article claim highlighting for briefing documents
+
+**Key Pain Points**:
+* Policy questions rarely have simple true/false answers
+* Need to understand stakeholder perspectives and their evidence
+* Difficulty synthesizing information from multiple sources
+* Risk of appearing biased when presenting controversial topics
+
+**Value Proposition**:
+FactHarbor's **scenario-based analysis** explicitly maps how conclusions depend on assumptions, enabling policy analysts to present balanced, well-sourced briefings.
+
+**Success Indicators**:
+* Policy briefs citing FactHarbor analyses
+* Repeat usage for complex policy questions
+* Feedback on improved briefing quality
+
+=== 2.5 Content Consumers (General Public) ===
+
+**Profile**:
+* Social media users seeking to verify viral claims
+* Engaged citizens following news and politics
+* People making decisions based on contested information
+* Anyone who has been frustrated by oversimplified fact-checks
+
+**Core Needs**:
+* **UN-1**: Trust assessment at a glance (immediate visual understanding)
+* **UN-4**: Fast social media fact-checking
+* **UN-12**: Ability to submit unchecked claims
+* **UN-17**: In-article claim highlighting when reading content
+
+**Key Pain Points**:
+* Don't trust fact-checkers' authority
+* Want to understand reasoning, not just accept verdicts
+* Time-constrained but want to make informed decisions
+* Frustrated by partisan accusations about fact-checkers
+
+**Value Proposition**:
+FactHarbor shows **reasoning you can inspect**. Trust comes from transparent methodology, not authority. You can form your own judgment based on visible evidence.
+
+**Success Indicators**:
+* User retention (return visits)
+* Time spent exploring evidence details
+* Claims submitted for verification
+* User satisfaction with transparency
+
+== 3. B2B Partner Segments ==
+
+=== 3.1 Media Organizations ===
+
+**Priority**: HIGH (Tier 1)
+
+**Target Partners**:
+* Swiss Broadcasting (SRG SSR, SRF, RTS, RSI)
+* Major newspapers (Tamedia, NZZ)
+* Regional news organizations
+* Digital-first news outlets
+
+**Partnership Value**:
+* **For Partners**: Automated initial analysis saves journalist time; structured evidence for reader transparency
+* **For FactHarbor**: Validation, use cases, credibility, potential funding
+
+**Engagement Model**:
+* API integration for newsroom tools
+* Embedded analysis widgets
+* Co-branded fact-checking initiatives
+* Pilot programs for election coverage
+
+=== 3.2 Fact-Checking Organizations ===
+
+**Priority**: HIGH (Tier 1)
+
+**Target Partners**:
+* IFCN (International Fact-Checking Network) members
+* EFCSN (European Fact-Checking Standards Network) members
+* dpa Fact-Checking (DACH region)
+* Correctiv (Germany)
+* Full Fact (UK)
+
+**Partnership Value**:
+* **For Partners**: Technology platform, scalability, methodology alignment
+* **For FactHarbor**: Credibility, network access, ecosystem integration
+
+**Engagement Model**:
+* Open-source technology sharing
+* ClaimReview schema collaboration
+* Joint methodology development
+* Cross-referencing and data sharing
+
+=== 3.3 Academic Institutions ===
+
+**Priority**: HIGH (Tier 1)
+
+**Target Partners**:
+* ETH Zurich / University of Zurich (Swiss, research collaboration)
+* Duke Reporters' Lab (ClaimReview, Tech & Check)
+* Harvard Shorenstein Center (network access)
+* Stanford Internet Observatory (misinformation research)
+* Oxford Reuters Institute (journalism research)
+
+**Partnership Value**:
+* **For Partners**: Research platform, real-world data, novel methodology to study
+* **For FactHarbor**: Academic validation, grant access (Innosuisse), publications
+
+**Engagement Model**:
+* Research partnerships
+* Student thesis projects
+* Co-authored publications
+* Conference presentations
+* Joint grant applications
+
+=== 3.4 Funding Organizations ===
+
+**Priority**: MEDIUM (Tier 2)
+
+**Target Partners**:
+* Knight Foundation (journalism innovation)
+* Google News Initiative (fact-checking fund)
+* Swiss Innosuisse (research/innovation grants)
+* Gebert Rüf Foundation (Swiss innovation)
+* Prototype Fund Switzerland
+
+**Partnership Value**:
+* **For Partners**: Support innovative, transparent approach to misinformation
+* **For FactHarbor**: Operational funding, validation, network access
+
+**Engagement Model**:
+* Grant applications
+* Progress reporting
+* Impact documentation
+* Network participation
+
+== 4. Common Customer Characteristics ==
+
+=== 4.1 Unifying Frustrations ===
+
+All ideal customers share frustration with:
+* Binary "true/false" verdicts that hide complexity
+* Opaque methodology ("trust us" authority model)
+* Lack of explicit assumptions and confidence ranges
+* Inability to see evidence and reasoning process
+* No way to understand why experts disagree
+
+=== 4.2 Unifying Values ===
+
+All ideal customers value:
+* **Transparency**: Visible reasoning chains and methodology
+* **Nuance**: Context-dependent truth (scenarios)
+* **Independence**: Forming own judgment from evidence
+* **Integrity**: Non-profit, open-source, no hidden agenda
+* **Accessibility**: Understanding without specialized expertise
+
+=== 4.3 Decision Criteria ===
+
+When evaluating fact-checking tools, ideal customers prioritize:
+1. **Methodology Transparency**: Can I see how conclusions are reached?
+2. **Evidence Quality**: Are sources traceable and credible?
+3. **Nuance Handling**: Does it acknowledge complexity?
+4. **Speed & Usability**: Can I use it in my workflow?
+5. **Trust & Independence**: Is there hidden bias or agenda?
+
+== 5. Customer Journey ==
+
+=== 5.1 Awareness ===
+
+**How they find us**:
+* Academic publications citing FactHarbor
+* Referrals from fact-checking organizations
+* Search engine results (ClaimReview schema visibility)
+* Media coverage of misinformation topics
+* Social media discussions about fact-checking
+
+=== 5.2 Evaluation ===
+
+**What they assess**:
+* Methodology documentation (open and detailed?)
+* Sample analyses (quality and transparency?)
+* Open-source code (auditable?)
+* Non-profit status (trustworthy?)
+* User experience (usable?)
+
+=== 5.3 Adoption ===
+
+**How they start**:
+* Submit a claim they're curious about
+* Explore an existing analysis in depth
+* Review methodology documentation
+* Test with a known case to validate quality
+* Integrate API into existing workflow
+
+=== 5.4 Retention ===
+
+**Why they return**:
+* Consistent quality and transparency
+* Time savings in verification workflow
+* Unique value (scenario analysis not available elsewhere)
+* Trust in methodology
+* Community participation
+
+== 6. Anti-Personas (Not Our Target) ==
+
+=== 6.1 Confirmation Seekers ===
+
+**Profile**: Users who want verdicts that confirm their existing beliefs
+
+**Why Not Ideal**:
+* Will be frustrated by nuanced, scenario-based analysis
+* May reject conclusions that don't match expectations
+* Not looking for transparent reasoning—looking for validation
+
+**How to Handle**:
+* Don't compromise methodology to satisfy them
+* The transparency may eventually convert some
+
+=== 6.2 Speed-Only Users ===
+
+**Profile**: Users who only want instant answers, no interest in evidence
+
+**Why Not Ideal**:
+* Don't value FactHarbor's core differentiator (transparency)
+* Would be better served by simpler binary fact-checkers
+* Won't engage with evidence or scenarios
+
+**How to Handle**:
+* Provide quick summary views (UN-1: trust at a glance)
+* Make deeper exploration available but not required
+
+=== 6.3 Bad-Faith Actors ===
+
+**Profile**: Users seeking to game or manipulate the system
+
+**Why Not Ideal**:
+* Waste resources
+* Damage system integrity
+* Not genuine users
+
+**How to Handle**:
+* AKEL detection of manipulation patterns
+* Moderation for flagged escalations
+* Transparent ban policies
+
+== 7. Metrics and Validation ==
+
+=== 7.1 Segment Metrics ===
+
+Track for each segment:
+* **Acquisition**: How many from each segment?
+* **Activation**: Do they complete first analysis?
+* **Engagement**: Do they explore evidence?
+* **Retention**: Do they return?
+* **Referral**: Do they recommend others?
+
+=== 7.2 Segment-Specific Success Indicators ===
+
+| Segment | Key Success Metric |
+|---------|-------------------|
+| Journalists | API calls per newsroom; time saved per verification |
+| Researchers | Papers citing FactHarbor; data downloads |
+| Educators | Curricula integrations; student engagement |
+| Policy Analysts | Briefings citing FactHarbor; repeat usage |
+| Content Consumers | Retention rate; evidence exploration rate |
+
+=== 7.3 Partnership Metrics ===
+
+| Partner Type | Success Metric |
+|-------------|----------------|
+| Media | Integration count; co-published analyses |
+| Fact-Checkers | Data sharing volume; methodology alignment |
+| Academic | Papers published; grants received |
+| Funders | Grants awarded; renewal rate |
+
+== 8. Related Pages ==
+
+* [[User Needs>>FactHarbor.Specification.Requirements.User Needs.WebHome]] - Detailed user need definitions
+* [[Requirements>>FactHarbor.Specification.Requirements.WebHome]] - How user needs map to requirements
+* [[Partnership Strategy>>FactHarbor.Organisation.Partnership-Strategy]] - Partnership opportunity details
+* [[Funding & Partnerships>>FactHarbor.Organisation.Funding-Partnerships]] - Funding sources and contacts
+* [[Organisational Model>>FactHarbor.Organisation.Organisational-Model]] - How FactHarbor is structured

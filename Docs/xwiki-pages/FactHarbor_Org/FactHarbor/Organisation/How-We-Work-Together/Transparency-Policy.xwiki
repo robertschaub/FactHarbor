@@ -1,0 +1,245 @@
+= Transparency Policy =
+== 1. Purpose and Scope ==
+This Transparency Policy defines FactHarbor's commitment to openness in all aspects of operations, governance, and finances. It establishes what information is public by default, what may be kept private, and the processes for requesting information.
+**This policy applies to:**
+* FactHarbor Organisation (legal entity)
+* All FactHarbor projects and services
+* Governing Team, staff, and contractors
+* All decision-making processes
+== 2. Core Principle: Default to Public ==
+**Default Rule:** All organisational information is public unless it meets a specific exception.
+This principle reflects FactHarbor's mission: a project claiming to support well-grounded, manipulation-resistant judgments must itself be transparent and accountable.
+== 3. What Must Be Public ==
+=== 3.1 Financial Information ===
+Published annually (within 6 months of fiscal year end):
+* **Complete financial statements** (audited where possible)
+* **Tax filings** (Swiss tax filings per cantonal requirements)
+* **Income statement** showing:
+ * Grants and donations (aggregate)
+ * Sponsorships and contracts (aggregate)
+ * Other revenue sources
+* **Expense statement** showing:
+ * Program expenses by category
+ * Administrative costs
+ * Fundraising costs
+* **Compensation ranges** by role (not individual salaries)
+* **Major funding relationships** (>$50,000 per year or >10% of budget)
+=== 3.2 Governance Information ===
+Published continuously (promptly of changes):
+* **Governance documents**:
+ * Verein statutes (bylaws)
+ * Operating procedures
+ * Decision-making authority matrix
+ * Conflict of interest policy
+* **Governing Team information**:
+ * Current board composition
+ * Governing Team member bios and affiliations
+ * Meeting schedules
+ * Governing Team meeting minutes (with limited exceptions - see section 4)
+ * Governing Team decisions and resolutions
+* **Policy changes**:
+ * All policy updates with rationale
+ * Effective dates
+ * Community input periods
+* **Organisational structure**:
+ * Reporting relationships
+ * Key staff roles (not individual names unless they choose)
+ * Advisory bodies and committees
+=== 3.3 Operational Information ===
+Published regularly:
+* **Transparency Reports** (twice yearly):
+ * Government requests for user data
+ * Content moderation statistics
+ * Takedown requests (DMCA, legal)
+ * Policy violation reports
+ * Security incident disclosures (after resolution)
+* **Technical Performance**:
+ * AKEL performance metrics
+ * Quality gate pass rates
+ * Risk tier distribution statistics
+ * System uptime and availability
+* **Content Statistics**:
+ * Number of claims, scenarios, verdicts
+ * Publication mode distribution
+ * Review and audit rates
+* **Partnership Information**:
+ * Major partnerships and collaborations
+ * Funding relationships
+ * Technical dependencies
+=== 3.4 Source Code and Technical Specifications ===
+Published continuously:
+* All source code per open source licenses (MIT, AGPL, CC BY-SA)
+* Technical architecture documentation
+* Protocol and data model specifications
+* API documentation
+* Quality gate algorithms and parameters
+* Risk tier assignment criteria
+== 4. What May Be Private ==
+Information may be withheld ONLY when disclosure would:
+=== 4.1 Individual Privacy (Highest Priority) ===
+Private:
+* User personal data (emails, IP addresses, phone numbers)
+* Contributor real names (if pseudonymous)
+* Personnel files and reviews
+* Individual salaries (publish ranges only)
+* Medical or family information
+* Background checks
+=== 4.2 Security ===
+Temporarily private (with time limits):
+* Unpatched security vulnerabilities (public after patch + 30-90 days)
+* Active security incidents (public after resolution)
+* Penetration test results (sanitized version public after fixes)
+* Authentication credentials and API keys
+* Infrastructure-specific security configurations
+=== 4.3 Legal ===
+Private while active:
+* Ongoing litigation details (summary public, details after resolution)
+* Attorney-client privileged communications
+* Settlement negotiations
+* Subpoenas with gag orders (challenge orders exceeding 1 year)
+* Whistleblower identity (protected permanently unless they consent)
+=== 4.4 Operational ===
+Private with conditions:
+* Donor information (unless donor consents to publication)
+* Abuse investigation details (protect victims)
+* Governing Team discussions on personnel matters (outcomes public)
+* Strategic plans that would create competitive disadvantage (time-limited: public after 12 months or execution)
+== 5. Time Limits on Privacy ==
+All private information has an expiration date:
+* **Security vulnerabilities**: Public 30-90 days after patch
+* **Security incidents**: Public immediately after resolution (sanitized)
+* **Governing Team personnel discussions**: Outcomes public, process private for 1 year then reviewed
+* **Strategic plans**: Public after execution or 12 months, whichever comes first
+* **Legal matters**: Public after resolution
+* **Donor information**: May be withheld permanently only with donor objection
+**Annual Review:** All information marked "private" is reviewed annually. If exception no longer applies, information becomes public.
+== 6. Transparency Reports ==
+Published **twice yearly** (January and July):
+=== 6.1 Government Requests ===
+* Number of requests for user data (by type)
+* Number of requests complied with
+* Number of requests challenged
+* Number of users affected
+* Types of data requested
+=== 6.2 Content Moderation ===
+* Total moderation actions by category
+* Publication mode changes (Mode 1 → 2, etc.)
+* Quality gate failures by gate
+* Community flags and expert reviews
+* Takedown requests and responses
+=== 6.3 Security ===
+* Security incidents (after resolution)
+* Vulnerability reports received
+* Bounties paid
+* Patches deployed
+* Audit findings (sanitized)
+=== 6.4 Performance ===
+* AKEL performance metrics
+* User growth and engagement
+* Content growth
+* Community contributions
+* System availability
+== 7. Information Request Process ==
+=== 7.1 Submitting a Request ===
+Anyone may request organisational information:
+1. **Email**: [Transparency contact to be established]
+2. **Include**:
+ * Specific information requested
+ * Rationale for request
+ * Preferred format (if applicable)
+3. **Expect**: Initial response within 14 business days
+=== 7.2 Request Evaluation ===
+Requests are evaluated against:
+* Is information already public? (link provided)
+* Does exception in Section 4 apply?
+* Can information be disclosed with redactions?
+* Is time limit on privacy expired?
+=== 7.3 Response Types ===
+* **Granted**: Information provided promptly
+* **Partially Granted**: Information with redactions provided, explanation of redactions
+* **Denied**: Written explanation of which exception applies
+* **Deferred**: If time-limited exception, date when information will become public
+== 8. Appeals Process ==
+If request is denied:
+=== 8.1 First Appeal ===
+1. Submit appeal to **Transparency Committee** (if established) or Governing Team
+2. Include:
+ * Original request
+ * Denial reason
+ * Additional context or rationale
+3. Decision promptly
+=== 8.2 Final Appeal ===
+1. Appeal to **Full Governing Team** of Leads
+2. Governing Team reviews at next scheduled meeting
+3. Governing Team decision is final
+4. Rationale published (unless it would disclose the private information)
+== 9. Community Input ==
+=== 9.1 Policy Changes ===
+Before making material changes to transparency commitments:
+1. **Proposal published** with rationale
+2. **Public comment period** (minimum 30 days)
+3. **Community input** considered
+4. **Decision rationale** published with final policy
+=== 9.2 Ongoing Input ===
+Community may:
+* Request additional transparency commitments
+* Suggest improvements to reporting
+* Identify information that should be public
+* Challenge exceptions
+Submit suggestions to: [Transparency contact to be established]
+== 10. Compliance and Oversight ==
+=== 10.1 Internal Oversight ===
+* **Transparency Officer** (staff or board designee):
+ * Reviews all privacy classifications
+ * Manages information requests
+ * Prepares transparency reports
+* **Annual Transparency Audit**:
+ * Reviews all "private" classifications
+ * Checks compliance with publication schedules
+ * Assesses process effectiveness
+=== 10.2 Public Reporting ===
+Annual transparency compliance report includes:
+* Number of information requests received
+* Request grant/deny statistics
+* Exception usage (how often each applied)
+* Privacy expiration reviews
+* Improvements made to process
+=== 10.3 Independent Audit ===
+When feasible (budget permitting):
+* Independent third-party transparency audit
+* Results published
+* Recommendations implemented or explanations provided
+== 11. Enforcement ==
+=== 11.1 Violations ===
+Violation of this policy includes:
+* Withholding information that should be public
+* Failing to publish required reports on schedule
+* Misclassifying public information as private
+* Extending privacy beyond time limits without review
+=== 11.2 Consequences ===
+* Internal violations: Performance review, retraining, or disciplinary action
+* Governing Team violations: Governing Team review, potential removal
+* Persistent violations: Independent investigation
+=== 11.3 Whistleblower Protection ===
+Anyone may report transparency violations to:
+* [Transparency contact to be established]
+* Any board member directly
+* External parties (regulators, media)
+Whistleblowers are protected from retaliation. Reports may be anonymous.
+== 12. Updates to This Policy ==
+Changes to this Transparency Policy:
+* Require Governing Team approval
+* Must include 30-day public comment period
+* Are published with rationale
+* Take effect 30 days after final publication
+**Version History:**
+* 0.9.28 (2025-12-17): Initial policy based on best practices from Wikimedia Foundation and Mozilla Foundation
+== 13. Contact ==
+**Transparency Requests**: [Transparency contact to be established]
+**Appeals**: [Governing Team contact to be established]
+**Whistleblower Reports**: [To be established - secure channel]
+== 14. Related Policies ==
+* [[Open Source Model and Licensing>>FactHarbor.Organisation.Open Source Model and Licensing]]
+* [[Privacy Policy>>FactHarbor.Organisation.How-We-Work-Together.Privacy-Policy]]
+* [[Governance>>FactHarbor.Organisation.Governance.WebHome]]
+* [[Finance & Compliance>>FactHarbor.Organisation.Finance-Compliance]]

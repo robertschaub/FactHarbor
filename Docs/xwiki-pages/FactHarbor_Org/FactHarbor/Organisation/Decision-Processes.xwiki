@@ -1,0 +1,125 @@
+= Decision Processes =
+== 1. Overview ==
+This page describes the main types of decisions in FactHarbor and how they are escalated and documented.
+== 2. Types of Decisions ==
+* **Operational decisions** – day-to-day actions within an agreed budget or scope.
+* **Strategic decisions** – long-term direction, major priorities, and partnerships.
+* **Governance decisions** – changes to rules, roles, and organisational structures.
+* **Exceptional decisions** – sensitive topics, serious conflicts, or rule violations.
+== 2.5 Automation Boundary ==
+**Critical distinction**: What AKEL decides vs. what humans decide.
+=== 2.5.1 Automated Decisions (AKEL) ===
+**All content decisions are automated**:
+* ✅ Claim verdicts and confidence scores
+* ✅ Evidence assessment and relevance scoring
+* ✅ Source track record scoring
+* ✅ Risk tier classification
+* ✅ Scenario extraction
+* ✅ Publication decisions
+* ✅ Contradiction detection
+**Why automated?**
+* Scale: Cannot manually process millions of claims
+* Consistency: Algorithms apply rules uniformly
+* Transparency: Code can be audited
+* No bias: No human subjective judgment
+* 24/7: Always available
+**Human role**: Monitor aggregate metrics, identify systematic issues, improve algorithms.
+=== 2.5.2 Human Decisions ===
+**System decisions (not content)**:
+**Strategic** (General Assembly, 2/3 majority):
+* Mission and values changes
+* Risk tier policy definitions
+* Major architectural changes
+* Budget allocation >CHF 50,000
+* Organizational structure
+* Dissolution
+**Tactical** (Governing Team, consent-based):
+* Algorithm parameter adjustments (within policy)
+* Policy updates and clarifications
+* Infrastructure investments
+* Hiring and role assignments
+* Partnership agreements
+* Community guidelines
+**Operational** (Domain owners, autonomous):
+* Technical Coordinator: AKEL optimizations, infrastructure changes
+* Community Coordinator: Process improvements, documentation
+* Moderators: Handling AKEL-flagged items
+**Emergency** (Any team member, ratified later):
+* Critical security vulnerabilities
+* Legal compliance requirements
+* Immediate safety threats
+=== 2.5.3 Principle: Fix the System, Not the Data ===
+**When AKEL makes what appears to be a wrong decision**:
+❌ **Don't do this**:
+* Manually override that specific verdict
+* Adjust that source's score manually
+* Create special case for that claim
+✅ **Do this instead**:
+1. Investigate: Is this a systematic issue?
+2. Analyze: What pattern caused this?
+3. Improve: Change algorithm/policy systematically
+4. Test: Validate on historical data
+5. Deploy: Roll out improved system
+6. Monitor: Check if metrics improve
+**Example**:
+* ❌ Bad: "AKEL rated this credible source too low. I'll manually boost it from 0.6 to 0.8."
+* ✅ Good: "AKEL consistently under-rates peer-reviewed medical journals. Let's adjust the scoring algorithm to weight peer-review certification +15% for medical sources. Test on 1000 historical claims first."
+== 3. Principles ==
+* Decide at the lowest reasonable level.
+* Involve the people who are affected.
+* Record context, reasoning, and outcome for significant decisions.
+* Keep escalation paths clear and predictable.
+=== 3.5 Decision Methods ===
+Different types of decisions use different methods:
+**Consent-Based Decision Making** (from Sociocracy 3.0):
+* **Use for**: Algorithm changes, policy updates, process changes, role assignments
+* **Process**: Proposal → Questions → Reactions → Amend → Consent round
+* **Criteria**: No principled objections (not consensus)
+* **See**: [[Consent-Based Decision Making>>FactHarbor.Organisation.How-We-Work-Together.Consent-Based-Decision-Making]]
+**Voting**:
+* **Use for**: Strategic decisions, when consent fails
+* **General Assembly**: 2/3 majority for major decisions
+* **Governing Team**: Simple majority for tactical decisions
+* **Emergency**: Simple majority, ratified later
+**Autonomous**:
+* **Use for**: Decisions within defined domain boundaries
+* **Technical Coordinator**: Technical changes within domain
+* **Community Coordinator**: Community process changes
+* **Moderators**: Handling flagged items
+* **Accountability**: Document decision, report to Governing Team quarterly
+**RFC Process** (for technical/policy proposals):
+* **Use for**: Significant system changes
+* **Process**: 
+ 1. Create RFC (Request for Comments)
+ 2. Community discussion (7-appropriate time period)
+ 3. Revise based on feedback
+ 4. Decision by appropriate authority (consent or voting)
+ 5. Document and implement
+== 4. Escalation Paths ==
+Examples (to be adapted as the organisation grows):
+* Content and modelling issues – Contributor → Contributor → Organisation Lead → Executive Lead → Governing Team.
+* Behaviour and moderation issues – Moderator → Governance Steward → Executive Lead → Governing Team.
+* Finance and compliance issues – Finance & Compliance Lead → Governance Steward → Governing Team.
+== 5. Documentation ==
+For significant decisions, at minimum record:
+* date and time
+* people involved and responsible role/body
+* options considered
+* reasoning and trade-offs
+* final decision and expected impact
+* follow-up actions and deadlines.
+=== 5.1 Decision Record Template ===
+For formal decisions, use the following template:
+**Decision Record: [Title/Topic]**
+* **Date:** YYYY-MM-DD
+* **Decider(s):** [Names/Roles]
+* **Context:** [What is the issue? What constraints exist?]
+* **Options Considered:**
+ * Option A: ...
+ * Option B: ...
+* **Decision:** [The chosen path]
+* **Reasoning:** [Why this option? Trade-offs accepted?]
+* **Consequences:** [Expected impact, risks, follow-up tasks]
+== 6. Integration with Tools ==
+Over time, decision logs may be maintained in dedicated tools (e.g. XWiki pages, issue trackers, or lightweight registers.
+Whatever the tool, Governance must be able to reconstruct how important decisions were made.

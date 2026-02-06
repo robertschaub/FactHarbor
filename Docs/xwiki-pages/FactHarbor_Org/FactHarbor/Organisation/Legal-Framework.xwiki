@@ -1,0 +1,48 @@
+= Legal Framework =
+== 1. Purpose ==
+The Legal Framework page summarises the main legal aspects that affect FactHarbor as a small organisation and open-source project.
+== 2. Organisational Form ==
+The precise legal form (e.g. association, foundation, company, or hybrid) will be chosen based on jurisdiction, funding needs, and governance requirements.
+Regardless of the final form, the organisation should support:
+* transparent governance
+* open collaboration and community involvement
+* clear rules for asset ownership (code, data, documentation).
+== 3. Future Non-Profit Entity and Mission-Lock ==
+In the medium term, FactHarbor is intended to be operated by a **mission-locked non-profit entity**, for example a Swiss Verein or a comparable legal form in another jurisdiction.
+The key design intentions are:
+* **Mission-locked purpose**
+ * The legal entity exists to pursue the FactHarbor mission: helping people understand complex, unclear, and contested information on an evidence-based foundation.
+ * All activities and uses of funds must remain compatible with this public-interest purpose.
+* **No profit distribution**
+ * Any surplus is reinvested into the mission (infrastructure, development, organisational work, community support).
+ * There is no distribution of profits to founders, members, or donors.
+ * Fair, market-aligned salaries and reimbursements for work are allowed where they fit the legal form and funding situation.
+* **Independence from funders**
+ * Funders (donors, grant-makers, customers) cannot unilaterally override the Governing Team or the mission.
+ * Governance rules should prevent capture by a single sponsor or interest group.
+* **Asset and IP stewardship**
+ * Critical assets (domains, repositories, trade names, trademarks where applicable) are held by the non-profit entity, not by individuals.
+ * Open source and open content licences remain the primary tools for protecting long-term use and auditability.
+ * Where early assets were held by the Founder or an initial entity, a transparent **Asset Transfer Protocol** must document how they are transferred to the non-profit.
+* **Dissolution and continuity**
+ * If the non-profit is dissolved, remaining assets should be transferred to another mission-compatible, non-profit organisation.
+ * The goal is that the knowledge and artefacts created by FactHarbor remain usable and accessible as far as legally and technically possible.
+These principles are design guidelines.
+The concrete implementation (legal form, statutes, contracts) must be reviewed and adapted by qualified legal counsel before being used in practice.
+== 4. Intellectual Property and Licences ==
+* Code, documentation, and data are licensed as described on the [[Open Source Model and Licensing>>FactHarbor.Organisation.Open Source Model and Licensing]] page.
+* Contributors retain copyright to their contributions but grant the organisation and the public the rights described in the relevant licences.
+* Contribution processes should include clear licence notices so that contributors know what they agree to.
+== 5. Data Protection ==
+FactHarbor must respect applicable data-protection laws (e.g. GDPR or local equivalents). Key principles:
+* minimisation of personal data stored
+* clear consent and privacy notices where required
+* secure handling of donor and user data
+* the ability to respond to access and deletion requests where applicable.
+== 6. Contracts and External Partners ==
+Where contracts with funders, hosting providers, or partners are required:
+* they must not compromise FactHarbor’s independence and neutrality
+* they must be documented and accessible to the Governing Team
+* conflicts of interest must be disclosed.
+== 7. Future Work ==
+More detailed legal material (e.g. draft statutes, terms of use, privacy notice) will be developed in collaboration with legal advisors and stored as separate documents or pages.

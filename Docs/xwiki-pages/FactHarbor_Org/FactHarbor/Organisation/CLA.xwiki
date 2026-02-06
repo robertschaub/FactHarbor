@@ -1,0 +1,42 @@
+= Contributor License Agreement (CLA) =
+== 1. Purpose ==
+This agreement ensures that FactHarbor has the legal standing to defend the project, maintain its open nature, and properly attribute contributions while respecting different contributor types.
+== 2. Contributor Types ==
+FactHarbor recognizes two types of contributors with different copyright arrangements:
+=== 2.1 Unpaid Volunteers (Community Contributors) ===
+**Copyright Retention**: You retain full copyright ownership of your contributions.
+**License Grant**: You grant FactHarbor (the Organisation) a perpetual, worldwide, non-exclusive, royalty-free license to:
+* Use, reproduce, modify, and distribute your contributions
+* Sublicense your contributions under the project's open source licenses
+* Enforce intellectual property rights on behalf of the project
+**Attribution**: Your contributions will be attributed to you in project documentation and version control systems.
+=== 2.2 Paid Contributors (Employees, Contractors, Sponsored Work) ===
+**Copyright Assignment**: Copyright ownership transfers to FactHarbor Organisation upon contribution.
+**Rationale**: This ensures clear ownership for commercially sponsored work and simplifies long-term project governance.
+**Compensation**: Paid contributors receive agreed compensation for their work.
+**Attribution**: Contributions are still attributed to the individual contributor in version control and documentation.
+== 3. Common Terms (All Contributors) ==
+=== 3.1 Grant of License ===
+All contributions are made available under the project's designated open source licenses (see [[Open Source Model and Licensing>>FactHarbor.Organisation.Open Source Model and Licensing]]).
+=== 3.2 Right to Enforce ===
+You grant FactHarbor the specific right to enforce intellectual property rights related to your contributions, including the right to take legal action against license violations.
+=== 3.3 Originality ===
+You represent that your contribution is your original work, or that you have the legal right to submit it under these terms.
+=== 3.4 Support Well-grounded, Independent Judgments ===
+Your contributions should support the project's goal of providing transparent, evidence-based analysis rather than promoting predetermined conclusions.
+== 4. Determining Contributor Type ==
+**Default**: Contributors are considered unpaid volunteers unless they have a written agreement specifying paid status.
+**Paid Status Indicators**:
+* Employment contract with FactHarbor Organisation or a sponsoring entity
+* Written contracting agreement specifying payment for contributions
+* Grant or sponsorship agreement designating work as paid
+**Transparency**: Contributor type and any material sponsorship relationships should be disclosed in contribution metadata where applicable.
+== 5. Relation to Open Source Licenses ==
+This CLA works in conjunction with the project's open source licenses:
+* **For Users**: The open source license (e.g., MIT, Apache 2.0) governs how you can use FactHarbor
+* **For Contributors**: This CLA governs the legal relationship between contributors and the FactHarbor Organisation
+* **Compatibility**: The CLA ensures the Organisation can maintain and enforce the open source license
+See [[Open Source Model and Licensing>>FactHarbor.Organisation.Open Source Model and Licensing]] for details on specific licenses used by different components.
+== 6. Acceptance ==
+By submitting a contribution to FactHarbor (via pull request, patch, or other mechanism), you acknowledge that you have read, understood, and agree to these terms.
+For questions about contributor classification or this agreement, contact the FactHarbor Organisation governance team.

@@ -1,0 +1,89 @@
+= Core Problems FactHarbor Solves =
+(% class="box infomessage" %)
+(((
+**Our Mission**
+FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+)))
+== 1. Core Problems ==
+=== 1.1 Problem 1 — Misinformation & Manipulation ===
+Falsehoods and distortions spread rapidly through:
+* Political propaganda
+* Social media amplification
+* Coordinated influence networks
+* AI-generated fake content
+Users need a structured system that resists manipulation and makes reasoning transparent.
+=== 1.2 Problem 2 — Missing Context Behind Claims ===
+Most claims change meaning drastically depending on:
+* Definitions
+* Assumptions
+* Boundaries
+* Interpretation
+FactHarbor reveals and compares these variations.
+=== 1.3 Problem 3 — "Binary Fact Checks" Fail ===
+Most fact-checking simplifies complex claims into:
+* True
+* Mostly True
+* False
+This hides legitimate contextual differences.
+FactHarbor replaces binary judgment with scenario-based, likelihood-driven evaluation.
+=== 1.4 Problem 4 — Good Evidence Is Hard to Find ===
+High-quality evidence exists — but users often cannot:
+* Locate it
+* Assess its reliability
+* Understand how it fits into a scenario
+* Compare it with competing evidence
+FactHarbor aggregates, assesses, and organizes evidence with full transparency.
+=== 1.5 Problem 5 — Claims Evolve Over Time ===
+Research and understanding change:
+* New studies emerge
+* Old studies are retracted
+* Consensus shifts
+FactHarbor provides:
+* Full entity versioning
+* Verdict timelines
+* Automatic re-evaluation when inputs change
+=== 1.6 Problem 6 — Users Cannot See Why People Disagree ===
+People often assume others are ignorant or dishonest, when disagreements typically arise from:
+* Different definitions
+* Different implicit assumptions
+* Different evidence
+* Different contexts
+FactHarbor exposes these underlying structures so disagreements become understandable, not divisive.
+== 2. Core Concepts ==
+=== 2.1 Claim ===
+A user- or AI-submitted statement whose meaning is often ambiguous and requires structured interpretation.
+A claim does not receive a single verdict — it branches into scenarios that clarify its meaning.
+=== 2.2 Scenario ===
+A structured interpretation that clarifies what the claim means under a specific set of:
+* Boundaries
+* Definitions
+* Assumptions
+* Contextual conditions
+Multiple scenarios allow claims to be understood fairly and without political or ideological bias.
+=== 2.3 Evidence ===
+Information that supports or contradicts a scenario.
+Evidence includes empirical studies, experimental data, expert consensus, historical records, contextual background, and absence-of-evidence signals.
+Evidence evolves through versioning and includes reliability assessment.
+=== 2.4 Verdict ===
+A likelihood estimate for a claim within a specific scenario based on evidence quality, quantity, methodology, uncertainty factors, and comparison with competing scenarios.
+Each verdict is versioned and includes a historical timeline.
+=== 2.5 AI Knowledge Extraction Layer (AKEL) ===
+The AI subsystem that interprets claims, proposes scenario drafts, retrieves evidence, classifies sources, drafts verdicts, detects contradictions, and triggers re-evaluation when inputs change.
+AKEL outputs follow risk-based publication model with quality gates and audit oversight.
+=== 2.6 Decentralized Federation Model ===
+FactHarbor supports a decentralized, multi-node architecture where each node stores its own data and synchronizes via federation protocol.
+This increases resilience, autonomy, and scalability.
+== 3. Vision for Impact ==
+FactHarbor aims to:
+* **Reduce polarization** by revealing legitimate grounds for disagreement
+* **Combat misinformation** by providing structured, transparent evaluation
+* **Empower users** to make informed judgments based on evidence
+* **Support deliberative democracy** by clarifying complex policy questions
+* **Enable federated knowledge** so no single entity controls the truth
+* **Resist manipulation** through transparent reasoning and quality oversight
+* **Evolve with research** by maintaining versioned, updatable knowledge
+== 4. Related Pages ==
+* [[Requirements (Roles)>>FactHarbor.Specification.Requirements.WebHome]]
+* [[AKEL (AI Knowledge Extraction Layer)>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]
+* [[Functional Requirements>>FactHarbor.Specification.Requirements.WebHome]]
+* [[Federation & Decentralization>>FactHarbor.Specification.Federation & Decentralization.WebHome]]

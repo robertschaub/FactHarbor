@@ -1,0 +1,21 @@
+= Transition Model =
+(% class="box warningmessage" %)
+(((
+**Current Status: Phase 0 (Pre-Alpha / Founder Mode)**
+FactHarbor is currently in an early setup phase. Processes described here are being established.
+)))
+== 1. Purpose ==
+The Transition Model explains how FactHarbor evolves from an early experimental phase to a more stable organisation and, eventually, to a federated ecosystem.
+== 2. Phases (Illustrative) ==
+* **Prototype / Proof of Concept** – Very small core team; focus on validating the basic approach.
+* **Beta** – More users and contributors; governance and processes become clearer and more formal.
+* **Release 1.x** – Stable operation, documented contributor processes, and clearer separation of roles.
+* **Federated Phase** – Multiple instances or partners adopt the model; shared governance principles across a network.
+The exact naming and number of phases can be adapted later, but the idea of deliberate transitions should remain.
+== 3. Transition Principles ==
+* Preserve mission and neutrality during growth.
+* Document which responsibilities move from individuals to shared bodies.
+* Make role changes and new structures transparent to contributors and users.
+* Keep early experimental material accessible as historical context.
+== 4. Practical Use ==
+This page is intentionally lightweight. More detailed transition plans and roadmaps will be held in project management tools or dedicated XWiki pages when needed.

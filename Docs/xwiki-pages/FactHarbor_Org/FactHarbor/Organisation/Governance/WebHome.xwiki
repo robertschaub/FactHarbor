@@ -1,0 +1,171 @@
+= Governance =
+FactHarbor governance is **simple, transparent, flat, and focused on enabling automation**.
+{{include reference="FactHarbor.Organisation.Diagrams.Governance Structure.WebHome"/}}
+== 1. Governance Philosophy ==
+**Core Principles**:
+* **Automation over bureaucracy**: Minimize manual processes
+* **Transparency by default**: Open decision-making
+* **Community input**: Listen but decide decisively
+* **Measured outcomes**: Data drives decisions
+* **Adaptive structure**: Evolve as needed
+== 2. Organizational Structure ==
+**Flat Cooperative Model**:
+* Small organization with collaborative teamwork
+* No hierarchical management layers
+* Decisions by consensus when possible, voting when needed
+* Everyone contributes across multiple areas
+**General Assembly** → **Governing Team** → **Team Members** 
+=== 2.1 General Assembly (All Members) ===
+Decides: Governing Team election, statutes, major strategic changes, budget
+Meets: Annually
+=== 2.2 Governing Team ===
+Decides: Strategy, policy, budget allocation, hiring
+Meets: Quarterly
+Size: small group (Facilitator, Coordinator, Treasurer + others)
+=== 2.3 Team Members ===
+* **Technical Coordinator**: AKEL & infrastructure
+* **Community Coordinator**: Moderators & contributors
+* **Moderators** (part-time): Handle abuse/disputes
+== 3. Decision Authority ==
+**Day-to-day**: Technical Coordinator + Community Coordinator
+**Tactical**: Governing Team (simple majority)
+**Strategic**: General Assembly (2/3 majority)
+== 4. Policy Development ==
+**RFC Process** (Request for Comments):
+1. Anyone drafts proposal
+2. Community discussion 
+3. Governing Team reviews and votes
+4. Decision published
+**Emergency changes**: Technical Coordinator can act immediately, Governing Team ratifies later
+== 5. Financial Governance ==
+* Annual budget approved by General Assembly
+* Two-signature requirement for >CHF 5,000
+* Governing Team approval for >CHF 20,000
+* Quarterly financial reports
+* Annual independent audit
+== 6. Automation Governance ==
+**Core Principle**: AKEL makes content decisions. Humans make system decisions.
+=== 6.1 Decision Boundary ===
+**What AKEL Decides (Automated)**:
+* All claim verdicts and confidence scores
+* All evidence assessments and relevance scores
+* All source track record scores
+* All risk tier classifications
+* All publication decisions
+* All scenario extractions
+**Rationale**: These decisions must be automated for scale, consistency, transparency, and to avoid human bias. Humans cannot process millions of claims reliably.
+**Human Role**: Monitor aggregate performance metrics, identify systematic issues, improve algorithms.
+**What Humans Decide**:
+**Strategic Decisions** (General Assembly, 2/3 majority):
+* Mission and values
+* Risk tier policy definitions
+* Major architectural changes
+* Budget allocation
+* Dissolution
+**Tactical Decisions** (Governing Team, simple majority):
+* Algorithm parameter ranges (within policy)
+* Infrastructure investments
+* Hiring and role assignments
+* Community policies
+* Partnership agreements
+**Operational Decisions** (Domain Owners, autonomous):
+* Technical Coordinator: AKEL performance optimizations, infrastructure changes
+* Community Coordinator: Community process improvements, documentation
+* Moderators: Handling AKEL-flagged items, detection improvement proposals
+**Emergency Decisions** (any team member, ratified by Governing Team):
+* Critical security issues
+* Legal compliance requirements
+* Immediate safety concerns
+=== 6.2 Principle: Fix the System, Not the Data ===
+**When AKEL makes a "wrong" decision**:
+* ❌ Do NOT manually override that specific verdict
+* ✅ DO investigate: Is this a systematic issue?
+* ✅ DO improve: Change algorithm/policy to handle such cases better
+* ✅ DO test: Validate improvement on historical data
+* ✅ DO deploy: Roll out improved system
+* ✅ DO monitor: Check if metrics improve
+**Example**:
+* Bad: "AKEL rated this source too low, I'll manually boost it"
+* Good: "AKEL consistently under-rates peer-reviewed sources. Let's adjust the scoring algorithm to weight peer-review more heavily."
+=== 6.3 Governance of AKEL ===
+**Quarterly Performance Review**:
+* Who: Governing Team + Technical Coordinator
+* What: Review AKEL performance metrics, bias audits, user feedback patterns
+* Output: Performance report, improvement priorities, policy updates if needed
+**Performance Metrics Monitored**:
+* Processing speed (P50, P95, P99)
+* Success rate and error rate
+* Evidence completeness
+* Confidence score distribution
+* User feedback (helpful/unhelpful ratio)
+* Bias indicators (by domain, source type, etc.)
+**Triggers for Policy Review**:
+* Metrics outside acceptable ranges
+* Systematic bias detected
+* Major user complaints about fairness
+* Legal/compliance concerns
+* New domains requiring special handling
+**Algorithm Change Process**:
+1. Identify issue from metrics
+2. Propose solution (RFC - Request for Comments)
+3. Test in staging environment
+4. Measure impact on historical data
+5. Technical Coordinator approves (or escalates to Governing Team for policy changes)
+6. Deploy with monitoring
+7. Evaluate results
+=== 6.4 Human Intervention Criteria ===
+**Legitimate reasons to intervene**:
+* ✅ AKEL explicitly flags item for human review
+* ✅ System metrics show performance degradation
+* ✅ Legal/safety issue requires immediate action
+* ✅ User reports reveal systematic bias pattern
+**Illegitimate reasons** (system improvement needed instead):
+* ❌ "I disagree with this verdict" → Improve algorithm
+* ❌ "This source should rank higher" → Improve scoring rules
+* ❌ "Manual quality gate before publication" → Defeats purpose of automation
+* ❌ "I know better than the algorithm" → Then improve the algorithm
+=== 6.5 Consent-Based Decision Making ===
+**For system changes**, use consent not consensus (from Sociocracy 3.0):
+**Consent** = No principled objections
+* Faster than consensus
+* Respects concerns without requiring full agreement
+* "I can live with this and support it"
+**Process**:
+1. Proposal presented (RFC)
+2. Clarifying questions
+3. Reactions and concerns
+4. Proposer integrates feedback
+5. Consent round: Any principled objections?
+6. If no objections → Decision made
+7. If objections → Integrate and repeat
+**Use for**:
+* Algorithm changes
+* Policy updates
+* Infrastructure investments
+* Process changes
+**Not for**:
+* Strategic decisions (use voting)
+* Emergency decisions (use autonomous authority)
+== 7. Transparency & Accountability ==
+**Always public**: Policies, structure, board membership, financials, quality metrics, major decisions
+**Published quarterly**: Activity reports, metrics, moderation stats
+**Internal documentation**: All meetings, decisions, actions retained indefinitely
+== 7. Conflict Resolution ==
+**User disputes**: Moderator → Appeal to different moderator → Governing Team (final)
+**Timeline**: Reasonable timeframe
+== 8. Moderation Oversight ==
+**Moderator requirements**: high reputation, 6+ months active, clean record
+**Review**: Quarterly by Community Coordinator, annually by Governing Team
+**Appeal**: Any user can appeal promptly
+== 9. Code of Conduct ==
+**Governing Team**: Act in org interest, disclose conflicts, maintain confidentiality
+**Team Members**: Follow procedures, professional conduct, document decisions
+**Moderators**: Impartial decisions, respect privacy, respond timely
+== 10. Amendment Process ==
+**Minor changes**: Governing Team decision
+**Major changes**: General Assembly (2/3 vote)
+**Emergency**: Governing Team can act, must ratify at next Assembly
+== 11. Related Pages ==
+* [[Organisational Model>>FactHarbor.Organisation.Organisational-Model]]
+* [[Legal Framework>>FactHarbor.Organisation.Legal-Framework]]
+* [[Transparency Policy>>FactHarbor.Organisation.How-We-Work-Together.Transparency-Policy]]

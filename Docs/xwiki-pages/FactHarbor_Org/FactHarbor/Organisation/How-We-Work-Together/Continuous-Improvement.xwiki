@@ -1,0 +1,373 @@
+= Continuous Improvement =
+**From Sociocracy 3.0**: Empirical approach to improving FactHarbor systems.
+== 1. Philosophy ==
+**Continuous improvement** means:
+* We're never "done" - systems always improve
+* Learn from data, not opinions
+* Small experiments, frequent iteration
+* Measure everything
+* Build, measure, learn, repeat
+**Inspired by**:
+* Sociocracy 3.0 empiricism principle
+* Agile/lean methodologies
+* Scientific method
+* DevOps continuous deployment
+== 2. What We Improve ==
+=== 2.1 AKEL Performance ===
+**Processing speed**:
+* Faster claim parsing
+* Optimized evidence extraction
+* Efficient source lookups
+* Reduced latency
+**Quality**:
+* Better evidence detection
+* More accurate verdicts
+* Improved source scoring
+* Enhanced contradiction detection
+**Reliability**:
+* Fewer errors
+* Better error handling
+* Graceful degradation
+* Faster recovery
+=== 2.2 Policies ===
+**Risk tier definitions**:
+* Clearer criteria
+* Better domain coverage
+* Edge case handling
+**Evidence weighting**:
+* More appropriate weights by domain
+* Better peer-review recognition
+* Improved recency handling
+**Source scoring**:
+* More nuanced credibility assessment
+* Better handling of new sources
+* Domain-specific adjustments
+=== 2.3 Infrastructure ===
+**Performance**:
+* Database optimization
+* Caching strategies
+* Network efficiency
+* Resource utilization
+**Scalability**:
+* Handle more load
+* Geographic distribution
+* Cost efficiency
+**Monitoring**:
+* Better dashboards
+* Faster alerts
+* More actionable metrics
+=== 2.4 Processes ===
+**Contributor workflows**:
+* Easier onboarding
+* Clearer documentation
+* Better tools
+**Decision-making**:
+* Faster decisions
+* Better documentation
+* Clearer escalation
+== 3. Improvement Cycle ==
+=== 3.1 Observe ===
+**Continuously monitor**:
+* Performance metrics dashboards
+* User feedback patterns
+* AKEL processing logs
+* Error reports
+* Community discussions
+**Look for**:
+* Metrics outside acceptable ranges
+* Systematic patterns in errors
+* User pain points
+* Opportunities for optimization
+=== 3.2 Analyze ===
+**Dig deeper**:
+* Why is this metric problematic?
+* Is this a systematic issue or one-off?
+* What's the root cause?
+* What patterns exist?
+* How widespread is this?
+**Tools**:
+* Data analysis (SQL queries, dashboards)
+* Code profiling
+* A/B test results
+* User interviews
+* Historical comparison
+=== 3.3 Hypothesize ===
+**Propose explanation**:
+* "We believe X is happening because Y"
+* "If we change Z, we expect W to improve"
+* "The root cause is likely A, not B"
+**Make testable**:
+* What would prove this hypothesis?
+* What would disprove it?
+* What metrics would change?
+=== 3.4 Design Solution ===
+**Propose specific change**:
+* Algorithm adjustment
+* Policy clarification
+* Infrastructure upgrade
+* Process refinement
+**Consider**:
+* Trade-offs
+* Risks
+* Rollback plan
+* Success metrics
+=== 3.5 Test ===
+**Before full deployment**:
+* Test environment deployment
+* Historical data validation
+* A/B testing if feasible
+* Load testing if infrastructure
+**Measure**:
+* Did metrics improve as expected?
+* Any unexpected side effects?
+* Is the improvement statistically significant?
+=== 3.6 Deploy ===
+**Gradual rollout**:
+* Deploy to small % of traffic first
+* Monitor closely
+* Increase gradually if successful
+* Rollback if problems
+**Deployment strategies**:
+* Canary (1% → 5% → 25% → 100%)
+* Blue-green (instant swap with rollback ready)
+* Feature flags (enable for specific users first)
+=== 3.7 Evaluate ===
+**After deployment**:
+* Review metrics - did they improve?
+* User feedback - positive or negative?
+* Unexpected effects - any surprises?
+* Lessons learned - what would we do differently?
+=== 3.8 Iterate ===
+**Based on results**:
+* If successful: Document, celebrate, move to next improvement
+* If partially successful: Refine and iterate
+* If unsuccessful: Rollback, analyze why, try different approach
+**Document learnings**: Update RFC with actual outcomes.
+== 4. Improvement Cadence ==
+=== 4.1 Continuous (Ongoing) ===
+**Daily/Weekly**:
+* Monitor dashboards
+* Review user feedback
+* Identify emerging issues
+* Quick fixes and patches
+**Who**: Technical Coordinator, Community Coordinator
+=== 4.2 Sprint Cycles (2 weeks) ===
+**Every 2 weeks**:
+* Sprint planning: Select improvements to tackle
+* Implementation: Build and test
+* Sprint review: Demo what was built
+* Retrospective: How can we improve the improvement process?
+**Who**: Core team + regular contributors
+=== 4.3 Quarterly Reviews (3 months) ===
+**Every quarter**:
+* Comprehensive performance review
+* Policy effectiveness assessment
+* Strategic improvement priorities
+* Architectural decisions
+**Who**: Governing Team + Technical Coordinator
+**Output**: Quarterly report, next quarter priorities
+=== 4.4 Annual Planning (Yearly) ===
+**Annually**:
+* Major strategic direction
+* Significant architectural changes
+* Multi-quarter initiatives
+* Budget allocation
+**Who**: General Assembly
+== 5. Metrics-Driven Improvement ==
+=== 5.1 Key Performance Indicators (KPIs) ===
+**AKEL Performance**:
+* Processing time (P50, P95, P99)
+* Success rate
+* Evidence completeness
+* Confidence distribution
+**Content Quality**:
+* User feedback (helpful/unhelpful ratio)
+* Contradiction rate
+* Source diversity
+* Scenario coverage
+**System Health**:
+* Uptime
+* Error rate
+* Response time
+* Resource utilization
+**See**: [[System Performance Metrics>>FactHarbor.Specification.System-Performance-Metrics]]
+=== 5.2 Targets and Thresholds ===
+**For each metric**:
+* Target: Where we want to be
+* Acceptable range: What's OK
+* Alert threshold: When to intervene
+* Critical threshold: Emergency
+**Example**:
+* Processing time P95
+ * Target: 15 seconds
+ * Acceptable: 10-18 seconds
+ * Alert: >20 seconds
+ * Critical: >30 seconds
+=== 5.3 Metric-Driven Decisions ===
+**Improvements prioritized by**:
+* Impact on metrics
+* Effort required
+* Risk level
+* Strategic importance
+**Not by**:
+* Personal preferences
+* Loudest voice
+* Political pressure
+* Gut feeling
+== 6. Experimentation ==
+=== 6.1 A/B Testing ===
+**When feasible**:
+* Run two versions simultaneously
+* Randomly assign users/claims
+* Measure comparative performance
+* Choose winner based on data
+**Good for**:
+* Algorithm parameter tuning
+* UI/UX changes
+* Policy variations
+=== 6.2 Canary Deployments ===
+**Small-scale first**:
+* Deploy to 1% of traffic
+* Monitor closely for issues
+* Gradually increase if successful
+* Full rollback if problems
+**Benefits**:
+* Limits blast radius of failures
+* Real-world validation
+* Quick feedback loop
+=== 6.3 Feature Flags ===
+**Controlled rollout**:
+* Deploy code but disable by default
+* Enable for specific users/scenarios
+* Gather feedback before full release
+* Easy enable/disable without redeployment
+== 7. Retrospectives ==
+=== 7.1 Sprint Retrospectives (Every 2 weeks) ===
+**Questions**:
+* What went well?
+* What could be improved?
+* What will we commit to improving?
+**Format** (30 minutes):
+* Gather data: Everyone writes thoughts (5 min)
+* Generate insights: Discuss patterns (15 min)
+* Decide actions: Pick 1-3 improvements (10 min)
+**Output**: 1-3 concrete actions for next sprint
+=== 7.2 Project Retrospectives (After major changes) ===
+**After significant changes**:
+* What was the goal?
+* What actually happened?
+* What went well?
+* What went poorly?
+* What did we learn?
+* What would we do differently?
+**Document**: Update project documentation with learnings
+=== 7.3 Incident Retrospectives (After failures) ===
+**After incidents/failures**:
+* Timeline: What happened when?
+* Root cause: Why did it happen?
+* Impact: What was affected?
+* Response: How did we handle it?
+* Prevention: How do we prevent this?
+**Blameless**: Focus on systems, not individuals.
+**Output**: Action items to prevent recurrence
+== 8. Knowledge Management ==
+=== 8.1 Documentation ===
+**Keep updated**:
+* Architecture docs
+* API documentation
+* Operational runbooks
+* Decision records
+* Retrospective notes
+**Principle**: Future you/others need to understand why decisions were made.
+=== 8.2 Decision Records ===
+**For significant decisions, document**:
+* What was decided?
+* What problem does this solve?
+* What alternatives were considered?
+* What are the trade-offs?
+* What are the success metrics?
+* Review date?
+**See**: [[Decision Processes>>FactHarbor.Organisation.Decision-Processes]]
+=== 8.3 Learning Library ===
+**Collect**:
+* Failed experiments (what didn't work)
+* Successful patterns (what worked well)
+* External research relevant to FactHarbor
+* Best practices from similar systems
+**Share**: Make accessible to all contributors
+== 9. Continuous Improvement of Improvement ==
+**Meta-improvement**: Improve how we improve.
+**Questions to ask**:
+* Is our improvement cycle effective?
+* Are we measuring the right things?
+* Are decisions actually data-driven?
+* Is knowledge being captured?
+* Are retrospectives actionable?
+* Are improvements sustained?
+**Annually review**: How can our improvement process itself improve?
+== 10. Cultural Practices ==
+=== 10.1 Safe to Fail ===
+**Encourage experimentation**:
+* ✅ Try new approaches
+* ✅ Test hypotheses
+* ✅ Learn from failures
+* ✅ Share what didn't work
+**Not blame**:
+* ❌ "Who broke it?"
+* ❌ "Why didn't you know?"
+* ❌ "This was a stupid idea"
+**Instead**:
+* ✅ "What did we learn?"
+* ✅ "How can we prevent this?"
+* ✅ "What will we try next?"
+=== 10.2 Data Over Opinions ===
+**Settle debates with**:
+* ✅ Metrics and measurements
+* ✅ A/B test results
+* ✅ User feedback data
+* ✅ Performance benchmarks
+**Not with**:
+* ❌ "I think..."
+* ❌ "In my experience..."
+* ❌ "I've seen this before..."
+* ❌ "Trust me..."
+=== 10.3 Bias Toward Action ===
+**Good enough for now, safe enough to try**:
+* Don't wait for perfect solution
+* Test and learn
+* Iterate quickly
+* Prefer reversible decisions
+**But not reckless**:
+* Do test before deploying
+* Do monitor after deploying
+* Do have rollback plan
+* Do document decisions
+== 11. Tools and Infrastructure ==
+**Support continuous improvement with**:
+**Monitoring**:
+* Real-time dashboards
+* Alerting systems
+* Log aggregation
+* Performance profiling
+**Testing**:
+* Automated testing (unit, integration, regression)
+* Test environments
+* A/B testing framework
+* Load testing tools
+**Deployment**:
+* CI/CD pipelines
+* Canary deployment support
+* Feature flag system
+* Quick rollback capability
+**Collaboration**:
+* RFC repository
+* Decision log
+* Knowledge base
+* Retrospective notes
+---
+**Remember**: Continuous improvement means we're always learning, always testing, always getting better.
+== 12. Related Pages ==
+* [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] - Why we automate
+* [[System Performance Metrics>>FactHarbor.Specification.System-Performance-Metrics]] - What we measure
+* [[Contributor Processes>>FactHarbor.Organisation.Contributor-Processes]] - How to propose improvements
+* [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - How improvements are approved

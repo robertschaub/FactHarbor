@@ -1,0 +1,478 @@
+= Privacy Policy =
+**Effective Date:** [To be determined before production launch] 
+**Last Updated:** December 17, 2025 (V0.9.29 - Legal Compliance Update)
+== 1. Introduction ==
+FactHarbor is committed to protecting your privacy while maintaining the transparency necessary for our mission of supporting well-grounded, manipulation-resistant judgments.
+This Privacy Policy explains:
+* What information we collect and why
+* How we use and protect that information
+* Your rights and choices
+* How we balance privacy with transparency
+**Important:** By using FactHarbor services, you agree to this Privacy Policy.
+== 2. Who We Are ==
+FactHarbor is a Swiss non-profit association (Verein) under Swiss law, pursuing tax-exempt status. Our mission is to create a transparent, community-driven platform for evaluating factual claims.
+**Initial Phase:** FactHarbor is a small organization starting with one person, with team growth expected. Contact methods will be established before launch.
+**Contact:**
+* General inquiries: [To be established]
+* Privacy and data requests: [To be established]
+* Data Protection Officer: [To be designated if serving EU users]
+* Swiss Representative: [To be designated before launch]
+== 3. What Information We Collect ==
+=== 3.1 Information You Provide ===
+**Account Information** (if you register):
+* Username (required)
+* Email address (required)
+* Optional profile information you choose to add
+**Contributions** (if you contribute):
+* Content you create (claims, scenarios, verdicts, reviews)
+* Edits and modifications
+* Comments and discussions
+* Flags and quality reports
+**Communications**:
+* Messages you send to us
+* Survey responses
+* Feedback submissions
+=== 3.2 Information We Collect Automatically ===
+**Technical Data**:
+* IP address
+* Browser type and version
+* Operating system
+* Device information
+* Referrer URL
+* Pages viewed and time spent
+**Usage Data**:
+* Features you use
+* Actions you take
+* Search queries
+* Interaction patterns
+**Cookies and Similar Technologies**:
+* Session cookies (essential for functionality)
+* Preference cookies (remember your settings)
+* Analytics cookies (understand usage patterns)
+See Section 8 for cookie management.
+=== 3.3 Information We DO NOT Collect ===
+We do not collect:
+* Financial information (no payment processing currently)
+* Biometric data
+* Precise geolocation (only general location from IP)
+* Social security numbers or government IDs
+* Unnecessary personal information
+== 4. How We Use Your Information ==
+We use collected information only for these purposes:
+=== 4.1 Provide Services ===
+* Create and maintain your account
+* Display your public contributions
+* Enable community features
+* Personalise your experience
+=== 4.2 Maintain Quality and Safety ===
+* Detect and prevent abuse
+* Enforce our Terms of Service
+* Identify and address quality issues
+* Prevent spam and manipulation
+=== 4.3 Improve Services ===
+* Understand how FactHarbor is used
+* Identify bugs and issues
+* Test new features
+* Improve algorithms and quality gates
+=== 4.4 Communicate ===
+* Send important service updates
+* Respond to your requests
+* Notify you of policy changes
+* Send opt-in newsletters (if you subscribe)
+=== 4.5 Comply with Law ===
+* Respond to valid legal requests
+* Enforce legal rights
+* Prevent fraud or illegal activity
+== 5. Public Information ==
+**Important:** Much of your activity on FactHarbor is public by design. This transparency is essential to our mission.
+=== 5.1 Always Public ===
+* **Contributions**: All content you create is permanently public
+* **Edit history**: All changes are tracked and visible
+* **Username**: Your username is visible on your contributions
+* **Contribution metadata**: Timestamps, edit summaries
+=== 5.2 Public if You Choose ===
+* Profile information you add
+* Real name (if you provide it)
+* Social media links
+* Biography
+=== 5.3 Private (Not Public) ===
+* Email address
+* IP address (if you're logged in)
+* Private messages (if feature exists)
+* Account settings and preferences
+**Key Principle:** Transparency of contributions builds trust. Your work is attributed to your username, and edit history ensures accountability.
+== 6. How We Share Information ==
+=== 6.1 We Never ===
+* **Sell** your information
+* **Rent** your information
+* Share your information for **marketing** purposes
+* Share with **data brokers**
+=== 6.2 We May Share With ===
+**Service Providers**:
+* Hosting services (server infrastructure)
+* Email services (for communications)
+* Analytics providers (aggregated data only)
+* Security services (DDoS protection, etc.)
+All service providers are bound by contract to protect your data.
+**Legal Requirements**:
+* Valid subpoenas or court orders
+* Government requests (where legally required)
+* Emergency situations (to prevent harm)
+See Section 12 for transparency about government requests.
+**Public Data Releases**:
+* Anonymized, aggregated statistics
+* Research datasets (with privacy protections)
+* Full public contribution history (attributions maintained)
+=== 6.3 We Do Not Share ===
+* Your email address (except as required by law)
+* Your IP address (except as required by law)
+* Your private messages
+* Your account settings
+== 7. How Long We Keep Information ==
+We follow **data minimization** principles - keeping data only as long as necessary.
+=== 7.1 Detailed Retention Periods ===
+| Data Type | Retention Period | Rationale |
+|-----------|------------------|-----------|
+| **Account Data** | Active + 90 days after deletion | User may wish to restore account |
+| **Email Addresses** | Active + 90 days after deletion | Required for communication during active period |
+| **IP Addresses (logged in)** | 90 days | Fraud detection, abuse prevention |
+| **IP Addresses (logged out)** | 30 days | Basic security, rate limiting |
+| **Web Server Logs** | 30 days | Technical troubleshooting |
+| **Error Logs** | 90 days | Bug investigation and fixing |
+| **Security Logs** | 1 year | Security incident investigation, required for compliance |
+| **Support Emails** | 2 years | Service improvement, warranty claims |
+| **Public Contributions** | **Permanent** | Transparency requirement, attribution |
+| **Contribution Metadata** | **Permanent** | Audit trail, quality assurance |
+| **AKEL Evaluation Logs** | 5 years | Algorithmic accountability, appeals |
+| **Financial Records** | 10 years | Swiss legal requirement (OR Art. 958f) |
+| **Tax Documents** | 10 years | Swiss legal requirement |
+=== 7.2 Retention Justification ===
+Each retention period is based on:
+* **Legal requirements** (financial records, security logs)
+* **Operational necessity** (abuse prevention, appeals)
+* **Data minimization** (shortest possible while meeting needs)
+* **Transparency mission** (public contributions permanent)
+=== 7.3 Longer Retention ===
+We may retain data longer if:
+* Required by law
+* Necessary for ongoing investigation
+* Needed to enforce Terms of Service
+* You explicitly consent
+=== 7.4 What Happens When You Delete Your Account ===
+When you delete your account:
+**Immediately**:
+* Account deactivated
+* Email address deleted
+* Profile information removed
+* You cannot log in
+**Within 90 days**:
+* All personal data deleted or anonymized
+* Username may remain on contributions (for attribution)
+* Contributions remain public (transparency requirement)
+**Permanent**:
+* Your public contributions remain (anonymized to deleted user if requested)
+* Edit history preserved (essential for trust)
+== 8. Cookies and Tracking ==
+=== 8.1 Types of Cookies We Use ===
+**Essential Cookies** (cannot be disabled):
+* Session management (keep you logged in)
+* Security features (CSRF protection)
+* Load balancing
+**Functional Cookies** (can be disabled):
+* Language preferences
+* Display settings
+* User interface choices
+**Analytics Cookies** (can be disabled):
+* Page views and usage patterns
+* Feature effectiveness
+* Performance monitoring
+**We Do NOT Use**:
+* Advertising cookies
+* Third-party tracking cookies
+* Cross-site tracking
+=== 8.2 Managing Cookies ===
+**Cookie Consent Banner:**
+On your first visit, we display a cookie consent banner allowing you to:
+* Accept all cookies
+* Accept only essential cookies
+* Customize preferences (analytics, functional)
+**Consent Requirements:**
+* **Essential cookies**: No consent required (necessary for functionality)
+* **Functional & Analytics cookies**: **Opt-in consent required** (not pre-checked)
+* **Withdrawal**: As easy as giving consent (click banner icon anytime)
+**Your Choices:**
+* Accept all non-essential cookies
+* Reject all non-essential cookies 
+* Customize by category
+* Change preferences anytime via cookie settings
+**Browser Controls:**
+You can also block cookies via browser settings, but this may affect functionality.
+**No Consent = No Non-Essential Cookies:**
+If you reject non-essential cookies, we only use cookies necessary for the service to function.
+**Implementation Note:** We use opt-in (not pre-checked boxes) for all non-essential cookies, in compliance with Swiss and EU law.
+== 9. Your Rights and Choices ==
+You have these rights regarding your personal data:
+=== 9.1 Access ===
+* Request a copy of your personal data
+* Review what we have about you
+* Export your data in machine-readable format
+=== 9.2 Correction ===
+* Update your account information
+* Correct inaccurate data
+* Complete incomplete data
+=== 9.3 Deletion ===
+* Delete your account
+* Remove specific personal information
+* Request anonymization of contributions
+=== 9.4 Data Portability ===
+You have the right to receive your personal data in a structured, commonly used, and machine-readable format.
+**What You Can Export:**
+* Account information (JSON, CSV)
+* Your contributions (JSON, XML, Markdown)
+* Contribution history (CSV)
+* Profile settings (JSON)
+* Communication preferences (JSON)
+**Formats Available:**
+* **JSON** - Structured, machine-readable, most complete
+* **CSV** - Spreadsheet-compatible, for tabular data
+* **XML** - Alternative structured format
+* **Markdown** - Human-readable for text content
+**Export Process:**
+1. Log in to your account
+2. Go to Settings > Data Export
+3. Select data types and format
+4. Receive download link via email (within 48 hours)
+5. Download expires after 7 days
+**What's NOT Included:**
+* Other users' data (privacy protection)
+* Internal security logs (security reasons)
+* Algorithmic scores (proprietary, but results are included)
+**Transfer to Other Services:**
+While we provide machine-readable formats, each service has different import capabilities. We cannot guarantee compatibility with specific third-party services.
+**API Access (Future):**
+We plan to offer API access for automated data exports for users who need regular portability.
+=== 9.5 Object ===
+* Object to certain processing
+* Opt out of analytics cookies
+* Unsubscribe from emails
+=== 9.6 Lodge Complaint ===
+* File complaint with us
+* Contact Swiss FDPIC (www.edoeb.admin.ch)
+* EU residents: contact local data protection authority
+* Seek legal remedies
+=== 9.7 How to Exercise Your Rights ===
+Contact: [Method to be established before launch]
+Include:
+* Your username
+* Specific request
+* validation information
+We respond promptly.
+== 10. Data Security and Compliance ==
+We protect your information with industry-standard security measures:
+=== 10.1 Technical Measures ===
+* **Encryption in transit**: TLS/HTTPS for all connections
+* **Encryption at rest**: Sensitive data encrypted in databases
+* **Access controls**: Role-based access to systems
+* **Authentication**: Strong password requirements, optional 2FA
+* **Secure development**: Security reviews, code audits
+* **Penetration testing**: Regular security assessments
+=== 10.2 Organisational Measures ===
+* **Team Members training**: Security awareness programs
+* **Access logging**: All admin actions logged
+* **Incident response**: Documented procedures
+* **Vendor assessment**: Security review of third parties
+* **Data minimization**: Collect only what's needed
+=== 10.3 Data Protection Impact Assessment (DPIA) ===
+For high-risk processing activities, we conduct Data Protection Impact Assessments (DPIA) as required by Swiss FADP Article 22, including:
+* Description of processing operations
+* Assessment of necessity and proportionality
+* Evaluation of risks to user rights
+* Mitigation measures
+* Documentation and regular review
+**High-risk activities include:**
+* AI-powered automated decision systems (AKEL)
+* Large-scale content moderation
+* Processing of sensitive personal data (political opinions, health information)
+* Systematic monitoring of user behavior
+=== 10.4 Processing Activities Register ===
+We maintain a comprehensive register of all processing activities as required by Swiss FADP Article 12, including:
+* Controller identification and contact details
+* Purposes of processing
+* Categories of data subjects and personal data
+* Categories of recipients
+* Retention periods
+* Description of security measures
+* Details of international data transfers
+This register is available for inspection by the Swiss Federal Data Protection and Information Commissioner (FDPIC) upon request.
+=== 10.5 Data Protection Officer (DPO) ===
+**If we serve users in the European Union**, we will appoint a Data Protection Officer (DPO) as required by EU GDPR Article 37.
+The DPO will:
+* Advise on data protection compliance
+* Monitor FADP and GDPR compliance
+* Serve as contact point for FDPIC and EU authorities
+* Conduct privacy audits
+* Handle data subject requests
+Contact: [To be established if appointed]
+**Note:** Swiss law does not require a DPO for organizations of our size, but we commit to appointing one if we process data of EU residents to ensure full GDPR compliance.
+=== 10.6 Limitations ===
+No system is 100% secure. While we implement strong protections:
+* We cannot guarantee absolute security
+* You are responsible for your password security
+* Public contributions are permanently public
+== 11. Data Breaches ==
+If we experience a data breach:
+=== 11.1 Our Response ===
+**Immediately (without undue delay):**
+* Contain the breach
+* Assess scope and impact
+* **Notify Swiss FDPIC immediately** if breach likely results in high risk to data subjects (as required by FADP Article 24)
+* Begin investigation
+**Within 72 hours:**
+* Complete detailed assessment
+* Notify affected users if high risk confirmed
+* Provide details on what was compromised
+* Explain steps we're taking
+* Advise on protective actions
+=== 11.2 Transparency ===
+* Public incident report published (after resolution)
+* Root cause analysis shared
+* Improvements implemented
+* Follow-up report after resolution
+== 12. Government Requests and Transparency ==
+=== 12.1 Our Principles ===
+* We require valid legal process
+* We notify users unless prohibited by law
+* We challenge overly broad requests
+* We publish transparency reports
+=== 12.2 What We Require ===
+* **User data requests**: Court order or warrant
+* **Content removal**: Valid legal basis, not just request
+* **Emergency disclosure**: Credible threat to life/safety
+=== 12.3 User Notification ===
+We notify affected users unless:
+* Legally prohibited (gag order)
+* Would interfere with investigation
+* User is the subject of investigation
+We challenge gag orders exceeding 1 year.
+=== 12.4 Transparency Reports ===
+Published twice yearly:
+* Number of requests by type
+* Compliance rate
+* Users affected
+* Challenges filed
+== 13. International Data Transfers ==
+FactHarbor may transfer personal data internationally for the following purposes:
+* Cloud hosting services (servers may be in EU, Switzerland, US)
+* AI model providers (if using hosted models)
+* Content delivery networks
+* Email and communication services
+=== 13.1 Legal Basis for Transfers ===
+**European Economic Area (EEA):**
+Switzerland has an EU adequacy decision (confirmed January 15, 2024), allowing free data flow between Switzerland and EEA countries without additional safeguards.
+**United States:**
+We transfer data only to companies certified under the Swiss-US Data Privacy Framework (effective September 15, 2024) or use Standard Contractual Clauses (SCCs) approved by the Swiss Federal Council.
+**Other Countries:**
+For countries without adequacy decision, we use:
+* Swiss/EU Standard Contractual Clauses (SCCs), or
+* Binding Corporate Rules, or
+* Explicit user consent for specific transfers
+=== 13.2 Safeguards ===
+All international transfers include:
+* Contractual data protection obligations
+* Technical encryption measures (TLS/HTTPS)
+* Access controls and logging
+* Regular compliance audits
+* validation of recipient's data protection capabilities
+=== 13.3 Disclosure to Users ===
+We will inform you before your data is transferred to:
+* Countries without adequacy decision from Switzerland or EU
+* Processors outside Switzerland/EEA
+* Government authorities in foreign jurisdictions (if legally compelled)
+=== 13.4 Your Rights ===
+You may:
+* Object to specific international transfers
+* Request information about transfer safeguards
+* Lodge complaints with Swiss FDPIC or your local data protection authority
+Contact: [Data requests contact to be established] with concerns about international transfers.
+== 14. Children's Privacy ==
+FactHarbor is not intended for children and we take children's privacy very seriously.
+=== 14.1 Age Requirements ===
+FactHarbor is not intended for children under:
+* **13 years old** (US COPPA)
+* **16 years old** (EU GDPR, or lower age set by EU member state)
+* **13 years old** (Swiss FADP - default age of consent for most processing)
+=== 14.2 No Knowing Collection ===
+We do not knowingly collect personal data from children below these ages. If you believe a child has provided us data, contact [Privacy contact to be established] immediately.
+=== 14.3 Discovery and Deletion ===
+If we learn a user is below the age requirement:
+1. We immediately suspend the account
+2. We delete all personal data promptly
+3. We notify the account holder (if email provided)
+4. We document the deletion for compliance
+=== 14.4 Parental Rights ===
+Parents or guardians may:
+* Request information about data collected from their child
+* Request immediate deletion of that data
+* Prohibit further collection from their child
+Contact: [Privacy contact to be established] with subject "Child Data Request"
+=== 14.5 validation ===
+We may request verification of parental/guardian status before processing requests.
+=== 14.6 Public Contributions ===
+Content contributed by underage users (before age verification) will be:
+* Attributed to "Deleted User [ID]"
+* Content remains for transparency (anonymized)
+* No personal data retained
+== 15. Changes to This Policy ==
+We may update this Privacy Policy:
+* Material changes require 30-day notice
+* Notice via email or prominent site banner
+* Continued use after notice = acceptance
+* Previous versions archived and accessible
+== 16. Contact Us ==
+**Before Launch:**
+Contact infrastructure will be established before any user data collection begins.
+**After Launch, contact points will include:**
+* General privacy questions
+* Data subject access requests (FADP/GDPR)
+* Data Protection Officer (if serving EU users)
+* Swiss Representative (required for FADP)
+* Security incident reporting
+**Mailing Address**: [To be determined based on Verein registration]
+**Note:** As a small organization, contact functions may be handled by the same individual initially, but legal requirements for response times and procedures will be met.
+== 17. Governing Law and Jurisdiction ==
+=== 17.1 Applicable Law ===
+This Privacy Policy is governed by:
+* **Swiss Federal Act on Data Protection (FADP)** - Primary data protection law
+* **Swiss Civil Code (ZGB)** - For Verein organizational matters
+* **EU General Data Protection Regulation (GDPR)** - When processing data of EU/EEA residents
+* **Swiss Telecommunications Act** - For electronic communications
+=== 17.2 Jurisdiction ===
+For disputes arising from this policy:
+**Primary Jurisdiction:** Swiss courts (canton to be determined based on Verein location)
+**Data Protection Disputes:**
+* First, contact [DPO contact to be established if needed] or [Privacy contact to be established]
+* File complaint with Swiss FDPIC (www.edoeb.admin.ch)
+* EU residents may file with local data protection authority
+* Legal action available in Swiss courts or (for EU residents) in EU member state courts
+**Alternative Dispute Resolution:**
+We are committed to resolving disputes amicably through:
+* Internal escalation process
+* Mediation before litigation
+* Transparent decision rationale
+=== 17.3 International Users ===
+* **EU/EEA users**: May enforce GDPR rights in EU courts
+* **US users**: Subject to Swiss law, may invoke Swiss-US Data Privacy Framework
+* **Other jurisdictions**: Swiss law applies, local rights respected where possible
+=== 17.4 Severability ===
+If any provision of this Privacy Policy is found invalid or unenforceable, the remaining provisions continue in full force.
+== 18. Effective Date and Version ==
+**Version**: 0.9.29 (Legal Compliance Update) 
+**Effective Date**: [To be determined before launch] 
+**Last Updated**: December 17, 2025
+This is a draft policy. Final version will be published before any user data collection begins.
+== 19. Related Policies ==
+* [[Transparency Policy>>FactHarbor.Organisation.How-We-Work-Together.Transparency-Policy]]
+* [[Open Source Model and Licensing>>FactHarbor.Organisation.Open Source Model and Licensing]]
+* [[Operational Readiness Checklist>>FactHarbor.Organisation.Operational-Readiness-Checklist]]
+* [[Terms of Service>>FactHarbor.Organisation.How-We-Work-Together.Terms-of-Service]] (to be created)
+* [[Security Policy>>FactHarbor.Organisation.How-We-Work-Together.Security-Policy]] (to be created)

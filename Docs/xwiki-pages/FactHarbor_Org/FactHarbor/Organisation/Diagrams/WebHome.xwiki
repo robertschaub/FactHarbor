@@ -1,0 +1,7 @@
+= Diagrams =
+This page acts as an index for diagrams that belong to the Organisation domain.
+The following diagrams are available:
+* [[Claim and Scenario Lifecycle (Overview)>>FactHarbor.Organisation.Diagrams.Claim and Scenario Lifecycle (Overview).WebHome]]
+* [[Governance Structure>>FactHarbor.Organisation.Diagrams.Governance Structure.WebHome]]
+* [[Domain Interaction Map>>FactHarbor.Organisation.Diagrams.Domain Interaction Map.WebHome]]
+New diagrams should follow the global diagram rules (Mermaid default, wrapper pages).

@@ -1,0 +1,279 @@
+= Organisational Model =
+FactHarbor operates as a **Swiss Verein** (non-profit association) with a **simple, flat structure** focused on automation over bureaucracy.
+== 1. Legal Structure ==
+**Entity Type**: Swiss Verein (Association) 
+**Jurisdiction**: Switzerland 
+**Governed By**: Swiss Civil Code (Art. 60-79)
+**Key Characteristics**:
+* Non-profit purpose
+* Member-based governance
+* Democratic decision-making
+* Limited liability
+* Tax-exempt status (if public benefit)
+== 2. Governance Structure ==
+=== 2.1 General Assembly ===
+**Composition**: All Verein members
+**Powers**:
+* Elect Governing Team
+* Approve annual budget
+* Amend statutes
+* Decide on major strategic changes
+* Dissolve organization
+**Meetings**: Annually (+ extraordinary as needed)
+=== 2.2 Governing Team ===
+**Size**: small group
+**Composition**:
+* Facilitator (chair)
+* Coordinator
+* Treasurer
+* 0-4 additional team members
+**Term**: 2 years (renewable)
+**Powers**:
+* Strategic direction
+* Budget approval
+* Policy decisions
+* Hiring/firing key staff
+* Represent organization externally
+**Meetings**: Quarterly (minimum)
+=== 2.3 Team Member Roles ===
+**Philosophy**: Minimal team, automation-first. Team members improve the SYSTEM, not the DATA.
+**Core Principle**: AKEL makes content decisions. Humans monitor system performance and improve algorithms.
+**Essential Roles**:
+**Technical Coordinator** (1 FTE):
+* **Domain**: AKEL performance and infrastructure
+* **Monitors**: Processing speed, error rates, resource utilization, algorithm performance metrics
+* **Improves**: Algorithms, infrastructure optimization, processing efficiency
+* **Does NOT**: Review individual claim verdicts, override AKEL decisions
+* **Authority**: Approve technical changes within domain boundaries
+* **Decision Method**: Autonomous within domain, consent for cross-domain changes
+**Community Coordinator** (1 FTE):
+* **Domain**: Community health and feedback loop optimization
+* **Monitors**: User feedback patterns, contribution quality trends, community engagement
+* **Improves**: Onboarding processes, documentation, feedback mechanisms, community guidelines
+* **Does NOT**: Moderate individual disputes (AKEL handles), make content decisions
+* **Authority**: Approve community process changes
+* **Decision Method**: Autonomous within domain
+**Moderators** (part-time):
+* **Domain**: Handle AKEL-flagged escalations and system gaming
+* **Monitors**: Items AKEL marks for human review (abuse, manipulation attempts)
+* **Improves**: Detection algorithms based on observed patterns
+* **Does NOT**: Routine content review, override AKEL verdicts
+* **Authority**: Handle flagged items, propose detection improvements
+* **Decision Method**: Autonomous for flagged items, propose improvements to Technical Coordinator
+**Optional Contractors** (as needed):
+* Developers: Specific feature development
+* Data Scientists: Algorithm research and optimization
+* Legal Counsel: Compliance and legal review
+* Accountant: Annual audits
+**Total Core Staff**: full-timeE + part-time moderators
+**Key Distinction**:
+* ✅ Team members monitor AGGREGATE metrics and improve SYSTEMS
+* ❌ Team members do NOT review individual claims or override AKEL
+* ✅ When metrics show problems, fix the ALGORITHM
+* ❌ Do NOT manually correct individual outputs
+=== 2.3.5 Team Roles Diagram ===
+{{include reference="FactHarbor.Specification.Diagrams.Human User Roles.WebHome"/}}
+== 3. Decision-Making ==
+=== 3.1 Routine Operations ===
+**Handled by**: Technical Coordinator + Community Coordinator
+**Scope**:
+* Day-to-day operations
+* Content moderation (via moderators)
+* Technical maintenance
+* Minor policy clarifications
+**Transparency**: All decisions documented
+=== 3.2 Strategic Decisions ===
+**Handled by**: Governing Team
+**Scope**:
+* Budget allocation
+* Major feature additions
+* Policy changes
+* Partnerships
+* Hiring
+**Process**: Majority vote (quorum: 50%+1)
+=== 3.3 Major Changes ===
+**Handled by**: General Assembly
+**Scope**:
+* Statute amendments
+* Dissolution
+* Merger/acquisition
+* Major strategic pivots
+**Process**: 2/3 majority vote
+== 4. User Community Roles ==
+{{include reference="FactHarbor.Organisation.Diagrams.Governance Structure.WebHome"/}}
+=== 4.1 Readers ===
+**Rights**:
+* Browse content
+* Flag issues
+* Submit claims
+**Responsibilities**:
+* Respect community standards
+* Provide constructive feedback
+=== 4.2 Contributors ===
+**Reputation system** replaces role hierarchy. Earn through quality contributions.
+**Requirements**:
+* Register account
+* Accept terms of service
+* Build reputation through contributions
+**Rights**:
+* Edit claims, evidence, scenarios
+* Participate in discussions
+* Earn reputation points
+**Responsibilities**:
+* Maintain neutrality
+* Cite sources
+* Accept feedback graciously
+=== 4.3 Moderators ===
+**Selection**:
+* Appointed by Governing Team
+* Must have high reputation
+* Must have clean track record
+**Rights**:
+* Review flagged content
+* Hide harmful content
+* Issue warnings/bans
+* Resolve disputes
+**Responsibilities**:
+* Impartiality
+* Transparency
+* Documented decisions
+* Timely response
+**Oversight**:
+* Governing Team reviews moderator actions
+* Can overturn decisions
+* Annual performance review
+== 5. Membership ==
+=== 5.1 Verein Membership ===
+**Who can join**:
+* Anyone supporting FactHarbor's mission
+* Age 18+
+* Accept statutes
+**Membership fee**: Symbolic (e.g., CHF 20/year)
+**Rights**:
+* Vote in General Assembly
+* Stand for Governing Team election
+* Access to member-only information
+* Participate in strategic discussions
+**Termination**:
+* Voluntary resignation
+* Non-payment of dues (after warning)
+* Serious violation of principles
+* Decision by General Assembly
+=== 5.2 Contributor Status ===
+**Separate from membership**: Can be contributor without being member
+**Based on**: Activity and reputation
+**No fees**: Open to all
+== 6. Funding Model ==
+=== 6.1 Revenue Sources ===
+**Primary**:
+* Grants from foundations
+* Donations from individuals
+* Institutional partnerships
+**Secondary**:
+* API access fees (commercial users)
+* Data licensing (with open data commitment)
+* Training/consulting services
+**Prohibited**:
+* Advertising
+* Selling user data
+* Pay-for-rating
+* Conflicts of interest
+=== 6.2 Budget Transparency ===
+**Publicly disclosed**:
+* Annual financial statements
+* Major funding sources (>10% of budget)
+* Team Members compensation ranges
+* Major expenses
+**Published**: On website, annually
+== 7. Conflict of Interest Policy ==
+=== 7.1 Governing Team Members & Team Members ===
+**Must disclose**:
+* Financial interests
+* Employment relationships
+* Family connections
+* Other potential conflicts
+**Must recuse** from decisions where conflicted
+=== 7.2 Contributors ===
+**Prohibited**:
+* Direct financial stake in claim outcomes
+* Paid to promote/attack specific claims
+**Required**:
+* Disclosure of other potential conflicts
+* In evaluation history, not in account
+== 8. Accountability Mechanisms ==
+=== 8.1 Internal ===
+* Governing Team oversight of staff
+* Regular audits (financial, security)
+* Performance metrics published
+* Community feedback channels
+* Moderator appeal process
+=== 8.2 External ===
+* Annual report to members
+* Public financial statements
+* Independent audits
+* Media scrutiny
+* Academic research welcome
+=== 8.3 Transparency Commitments ===
+* Open source code
+* Public data exports
+* Documented decisions
+* Algorithm transparency
+* Quality metrics dashboard
+== 9. Dispute Resolution ==
+=== 9.1 User Disputes ===
+**Level 1**: Moderator decision 
+**Level 2**: Appeal to different moderator 
+**Level 3**: Governing Team review (final)
+**Timeline**: Reasonable timeframe
+=== 9.2 Team Members/Governing Team Disputes ===
+**Internal**: Direct discussion 
+**Mediation**: If needed, external mediator 
+**Arbitration**: If unresolved, Swiss arbitration
+=== 9.3 Legal Disputes ===
+**Jurisdiction**: Swiss courts 
+**Applicable law**: Swiss law 
+**Venue**: Zürich
+== 10. Succession Planning ==
+=== 10.1 Governing Team Succession ===
+* Staggered terms (not all expire simultaneously)
+* Nominating committee identifies candidates
+* General Assembly elects
+* Transitional handover period
+=== 10.2 Team Members Succession ===
+* Key staff document their processes
+* Cross-training where possible
+* External recruitment if needed
+* Contractor support during transitions
+=== 10.3 Organizational Continuity ===
+* Documented procedures
+* Automated systems reduce key person risk
+* Regular backups and documentation
+* Emergency response plan
+== 11. Evolution & Adaptation ==
+=== 11.1 Regular Reviews ===
+**Annually**:
+* Structure assessment
+* Process improvements
+* Policy updates
+* Strategic planning
+**Periodically**:
+* Comprehensive review
+* Major reforms if needed
+* Statutes amendments
+=== 11.2 Community Input ===
+* Open RFC (Request for Comments) process
+* Public discussion forums
+* Surveys and feedback
+* Trial periods for major changes
+=== 11.3 Emergency Changes ===
+**Governing Team can act quickly** for:
+* Security issues
+* Legal compliance
+* Critical bugs
+* Abuse crises
+**Must be ratified** by General Assembly at next meeting
+== 12. Related Pages ==
+* [[Governance>>FactHarbor.Organisation.Governance.WebHome]]
+* [[Legal Framework>>FactHarbor.Organisation.Legal-Framework]]
+* [[Open Source Model>>FactHarbor.Organisation.Open Source Model and Licensing]]
+* [[Transparency Policy>>FactHarbor.Organisation.How-We-Work-Together.Transparency-Policy]]

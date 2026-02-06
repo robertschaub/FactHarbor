@@ -1,0 +1,216 @@
+= Consent-Based Decision Making =
+**From Sociocracy 3.0**: A decision-making method for system changes and policies.
+== 1. What is Consent? ==
+**Consent** = No principled objections to a proposal.
+**This is NOT**:
+* ❌ Consensus (everyone must agree)
+* ❌ Majority voting (51% wins)
+* ❌ Unanimity (everyone must enthusiastically support)
+**This IS**:
+* ✅ "I can live with this and support it"
+* ✅ "Good enough for now, safe enough to try"
+* ✅ Respects concerns without requiring full agreement
+== 2. Why Consent over Consensus? ==
+**Consensus problems**:
+* Takes too long
+* One person can block everything
+* Encourages compromise that satisfies no one
+* Discourages bold proposals
+**Consent advantages**:
+* ✅ Faster decisions
+* ✅ Respects principled objections
+* ✅ Encourages experimentation
+* ✅ "Good enough for now" mindset
+* ✅ Can evolve decisions over time
+**Example**:
+* Consensus: "Everyone must love this algorithm change" → Takes weeks, diluted solution
+* Consent: "Can everyone support trying this?" → Decision in days, learn from results
+== 3. What is a Principled Objection? ==
+**Principled objection** = Shows that proposal would:
+* Harm the organization
+* Violate core principles
+* Create unacceptable risk
+* Block achieving objectives
+**Valid objections**:
+* ✅ "This would violate our transparency principle"
+* ✅ "This creates security vulnerability"
+* ✅ "Our metrics show this will worsen performance"
+* ✅ "This conflicts with existing policy X"
+**Invalid objections** (preferences, not principles):
+* ❌ "I don't like this approach"
+* ❌ "I would do it differently"
+* ❌ "This is not perfect"
+* ❌ "I'm uncomfortable with change"
+**Key question**: "Does this make things worse, or just not as good as your preferred solution?"
+== 4. Consent Decision-Making Process ==
+=== Step 1: Proposal Presentation ===
+**Proposer presents**:
+* What problem are we solving?
+* What is the proposal?
+* Why this approach?
+* What are the trade-offs?
+**Time**: 5-10 minutes
+=== Step 2: Clarifying Questions ===
+**Purpose**: Understand the proposal, not evaluate it yet
+**Questions like**:
+* "How does this affect X?"
+* "What happens if Y?"
+* "Can you explain Z?"
+**NOT yet**:
+* Concerns
+* Suggestions
+* Opinions
+**Time**: 5-15 minutes
+=== Step 3: Reactions & Brief Discussion ===
+**Each person shares**:
+* Initial thoughts
+* Potential concerns
+* Suggested improvements
+**Proposer listens**, doesn't defend yet.
+**Time**: 10-20 minutes
+=== Step 4: Amend & Clarify ===
+**Proposer**:
+* Integrates feedback
+* Clarifies misunderstandings
+* May amend proposal
+* Or explains why not
+**Time**: 5-10 minutes
+=== Step 5: Consent Round ===
+**Each person states**:
+* "I consent" (no principled objections)
+* "I have an objection: [specific concern]"
+**Go around circle systematically**.
+**Time**: 5 minutes
+=== Step 6: Integrate Objections ===
+**If objections raised**:
+* Discuss each objection
+* Is it principled? (facilitator decides if unclear)
+* How can we integrate it?
+* Amend proposal
+**Then repeat consent round**.
+**Time**: Variable (10-30 minutes per objection)
+=== Step 7: Celebrate & Document ===
+**When consent achieved**:
+* ✅ Decision documented
+* ✅ Next steps assigned
+* ✅ Timeline set
+* ✅ Success metrics defined
+* ✅ Review date scheduled
+**Decision record created** (see [[Decision Processes>>FactHarbor.Organisation.Decision-Processes]]).
+== 5. When to Use Consent ==
+**Use consent for**:
+* ✅ Algorithm changes
+* ✅ Policy updates
+* ✅ Infrastructure investments
+* ✅ Process changes
+* ✅ Role assignments
+* ✅ Community guidelines
+**Don't use consent for**:
+* ❌ Strategic decisions → Use voting (Governing Team or General Assembly)
+* ❌ Emergency decisions → Use autonomous authority
+* ❌ Routine operations → Use autonomous authority within domain
+* ❌ Content decisions → AKEL decides (not humans at all)
+== 6. Roles in Consent Process ==
+=== Proposer ===
+* Presents proposal
+* Answers questions
+* Integrates feedback
+* Amends as needed
+=== Facilitator ===
+* Guides process
+* Keeps time
+* Determines if objections are principled
+* Ensures everyone heard
+* Remains neutral
+=== Participants ===
+* Listen actively
+* Ask clarifying questions
+* Share concerns honestly
+* Support decision once made
+== 7. Tips for Good Proposals ==
+**Make proposals**:
+* ✅ Specific and actionable
+* ✅ Time-bound (try for 3 months, then review)
+* ✅ Measurable (how do we know if it works?)
+* ✅ Reversible if possible
+* ✅ Good enough for now, safe enough to try
+**Avoid**:
+* ❌ Vague aspirations
+* ❌ Permanent, unchangeable decisions
+* ❌ Trying to be perfect
+* ❌ Solving every possible edge case
+**Example of good proposal**:
+"Let's adjust the source scoring algorithm to weight peer-review 20% higher for 3 months and monitor the quality metrics. If evidence completeness doesn't improve by >10%, we'll revert."
+== 8. Tips for Good Objections ==
+**Raise objections that**:
+* ✅ Are specific: "This will cause X problem"
+* ✅ Are principled: "This violates Y principle"
+* ✅ Suggest alternatives: "What if we instead..."
+* ✅ Are about harm, not perfection
+**Avoid objections that are**:
+* ❌ Personal preferences
+* ❌ Fear of change
+* ❌ Desire for perfect solution
+* ❌ "Not invented here" syndrome
+**Ask yourself**: "Will this harm the organization, or just not be my preferred approach?"
+== 9. After the Decision ==
+**Everyone who participated must**:
+* ✅ Support the decision publicly
+* ✅ Give it a genuine try
+* ✅ Provide constructive feedback
+* ✅ Not undermine the decision
+**Can you still disagree?**: Yes, internally. But externally, support it.
+**Can you revisit?**: Yes, at the scheduled review date, or if metrics show problems.
+== 10. Examples ==
+=== Example 1: Algorithm Change ===
+**Proposal**: "Increase evidence extraction timeout from 5s to 10s to capture more evidence from slow sites."
+**Process**:
+1. Presentation: Explained problem (missing evidence), solution, trade-off (slower processing)
+2. Questions: "How many claims affected?" "What's CPU impact?"
+3. Reactions: Concern about processing time, suggestion to A/B test first
+4. Amended: Added A/B test requirement, success metric
+5. Consent round: All consent
+6. Result: Approved with A/B test requirement
+=== Example 2: Policy Change ===
+**Proposal**: "Add new risk tier A+ for medical life-or-death claims requiring expert review."
+**Process**:
+1. Presentation: Explained need, proposed criteria
+2. Questions: "Who are experts?" "How many claims affected?"
+3. Reactions: Objection - "This creates human approval gate, violates automation principle"
+4. Discussion: Valid principled objection
+5. Amended: "A+ tier requires AKEL to be more conservative (higher evidence bar), not human approval"
+6. Consent round: All consent
+7. Result: Approved with automation preserved
+=== Example 3: Failed Consensus, Successful Consent ===
+**Scenario**: Choosing between two database optimization approaches
+**Consensus attempt**:
+* Team split 50/50
+* Argued for weeks
+* No decision
+**Consent approach**:
+* Proposer: "Let's try approach A for 2 months, monitor query times. If not 20% faster, we try B."
+* Consent round: Team B supporters say "I prefer B, but can support trying A first with clear metrics."
+* Result: Decision in one meeting
+== 11. Common Pitfalls ==
+**Pitfall 1**: "Silent consent"
+* Problem: People consent but don't actually support
+* Solution: Facilitator explicitly asks each person
+**Pitfall 2**: "Too perfect"
+* Problem: Trying to address every edge case before deciding
+* Solution: "Good enough for now, safe enough to try"
+**Pitfall 3**: "Preference as objection"
+* Problem: Personal preferences disguised as principled objections
+* Solution: Facilitator asks "How does this harm the organization?"
+**Pitfall 4**: "Never revisiting"
+* Problem: Treat consent decisions as permanent
+* Solution: Always include review date in decision
+== 12. Integration with FactHarbor ==
+**Applied to**:
+* Technical Coordinator decisions (within domain) → Autonomous
+* Cross-domain technical decisions → Consent with affected coordinators
+* Policy changes → Consent with Governing Team
+* Major strategic changes → Voting (General Assembly)
+**See also**:
+* [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - Overall governance structure
+* [[Decision Processes>>FactHarbor.Organisation.Decision-Processes]] - Types of decisions
+* [[Contributor Processes>>FactHarbor.Organisation.Contributor-Processes]] - How to propose changes

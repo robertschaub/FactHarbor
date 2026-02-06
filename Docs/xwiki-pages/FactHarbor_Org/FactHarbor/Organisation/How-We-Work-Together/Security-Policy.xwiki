@@ -1,0 +1,123 @@
+= Security Policy =
+**Last Updated:** December 17, 2025
+== 1. Purpose ==
+This Security Policy outlines how FactHarbor protects user data and maintains platform security.
+== 2. Security Principles ==
+* **Defense in depth**: Multiple layers of security controls
+* **Least privilege**: Minimal access rights by default
+* **Transparency**: Open about security practices
+* **Continuous improvement**: Regular security assessments
+== 3. Data Protection ==
+=== 3.1 Encryption ===
+* All connections use TLS/HTTPS
+* Sensitive data encrypted at rest
+* Secure key management practices
+=== 3.2 Access Controls ===
+* Role-based access control (RBAC)
+* Strong authentication requirements
+* Two-factor authentication available
+* Regular access reviews
+=== 3.3 Data Minimization ===
+* Collect only necessary data
+* Automatic deletion per retention schedule
+* Regular data cleanup processes
+== 4. Infrastructure Security ==
+=== 4.1 Hosting ===
+* Secure hosting environment
+* Regular security updates
+* Network security controls
+* DDoS protection
+=== 4.2 Monitoring ===
+* Security event logging
+* Anomaly detection
+* Regular log reviews
+* Incident alerting
+=== 4.3 Backups ===
+* Regular automated backups
+* Encrypted backup storage
+* Tested restoration procedures
+== 5. Application Security ==
+=== 5.1 Secure Development ===
+* Security code reviews
+* Dependency vulnerability scanning
+* Secure coding practices
+* Regular security testing
+=== 5.2 Authentication ===
+* Strong password requirements
+* Password hashing (bcrypt or better)
+* Account lockout protection
+* Session management
+=== 5.3 Input Validation ===
+* All user input validated
+* Protection against injection attacks
+* Content security policies
+* XSS prevention
+== 6. Vulnerability Management ==
+=== 6.1 Vulnerability Disclosure ===
+**How to Report:**
+* Email: [Security contact to be established]
+* Provide detailed description
+* Include reproduction steps if possible
+* We respond within reasonable timeframe
+**What to Expect:**
+* Acknowledgment of report
+* Investigation and validation
+* Fix development and deployment
+* Public disclosure after fix (coordinated)
+=== 6.2 Bug Bounty ===
+* May be established in the future
+* Details to be announced
+=== 6.3 Responsible Disclosure ===
+We request:
+* Reasonable time to fix vulnerabilities
+* No public disclosure before fix
+* No exploitation of vulnerabilities
+* Good faith security research
+== 7. Incident Response ==
+=== 7.1 Incident Handling ===
+* Immediate containment
+* Investigation and assessment
+* User notification (if required)
+* Regulator notification (if required)
+* Public transparency report
+=== 7.2 Data Breaches ===
+Per [[Privacy Policy>>FactHarbor.Organisation.How-We-Work-Together.Privacy-Policy]]:
+* Immediate FDPIC notification (if high risk)
+* User notification (if required)
+* Public incident report
+* Root cause analysis
+== 8. Compliance ==
+=== 8.1 Standards ===
+* Swiss FADP compliance
+* EU GDPR compliance (if serving EU users)
+* Industry best practices
+=== 8.2 Audits ===
+* Regular internal security reviews
+* External audits when feasible
+* Penetration testing
+* Compliance assessments
+== 9. User Responsibilities ==
+=== 9.1 Account Security ===
+* Use strong, unique passwords
+* Enable two-factor authentication
+* Keep credentials confidential
+* Report suspicious activity
+=== 9.2 Security Awareness ===
+* Verify official communications
+* Be cautious of phishing
+* Report security concerns
+* Follow security guidelines
+== 10. Third-Party Services ==
+* Vet security practices of partners
+* Contractual security requirements
+* Regular vendor assessments
+* Data protection agreements
+== 11. Updates to This Policy ==
+This Security Policy may be updated as security practices evolve. Major changes will be announced.
+== 12. Contact ==
+**Security Issues:** [Contact to be established]
+**Related Policies:**
+* [[Privacy Policy>>FactHarbor.Organisation.How-We-Work-Together.Privacy-Policy]]
+* [[Transparency Policy>>FactHarbor.Organisation.How-We-Work-Together.Transparency-Policy]]
+**Version:** Draft 
+**Status:** To be finalized before launch
