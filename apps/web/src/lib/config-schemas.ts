@@ -210,6 +210,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Recency window in months for time-sensitive evidence checks (default: 6)"),
   recencyConfidencePenalty: z.number().int().min(0).max(50).optional()
     .describe("Confidence penalty (percentage points) when time-sensitive claims lack recent evidence (default: 20)"),
+  recencyCueTerms: z.array(z.string().min(1)).max(50).optional()
+    .describe("Configurable recency cue terms for time-sensitive detection (default: empty)"),
   searchRelevanceLlmEnabled: z.boolean().optional()
     .describe("Enable LLM-based relevance classification for ambiguous search results (default: false)"),
   searchRelevanceLlmMode: z.enum(["off", "auto", "on"]).optional()
@@ -355,6 +357,9 @@ export const PipelineConfigSchema = z.object({
   if (data.recencyConfidencePenalty === undefined) {
     data.recencyConfidencePenalty = 20;
   }
+  if (data.recencyCueTerms === undefined) {
+    data.recencyCueTerms = [];
+  }
   if (data.searchRelevanceLlmEnabled === undefined) {
     data.searchRelevanceLlmEnabled = false;
   }
@@ -444,6 +449,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   temporalConfidenceThreshold: 0.6,
   recencyWindowMonths: 6,
   recencyConfidencePenalty: 20,
+  recencyCueTerms: [],
   searchRelevanceLlmEnabled: false,
   searchRelevanceLlmMode: "auto",
   searchRelevanceLlmMaxCalls: 3,

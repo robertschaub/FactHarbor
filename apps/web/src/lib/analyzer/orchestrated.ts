@@ -2158,7 +2158,11 @@ function deduplicateEvidenceItems(
  * Returns true if dates, recent keywords, or temporal indicators suggest recency matters
  * v2.6.23: Removed domain-specific person names to comply with Generic by Design principle
  */
-function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): boolean {
+function isRecencySensitive(
+  text: string,
+  understanding?: ClaimUnderstanding,
+  cueTerms?: string[],
+): boolean {
   const lowerText = text.toLowerCase();
 
   // Check for recent date mentions (within last 3 years from current date - extended for better coverage)
@@ -2178,6 +2182,16 @@ function isRecencySensitive(text: string, understanding?: ClaimUnderstanding): b
     for (const context of understanding.analysisContexts) {
       const dateStr = context.date || context.temporal || "";
       if (dateStr && recentYears.some(year => dateStr.includes(String(year)))) {
+        return true;
+      }
+    }
+  }
+
+  if (Array.isArray(cueTerms) && cueTerms.length > 0) {
+    for (const term of cueTerms) {
+      if (!term) continue;
+      const needle = term.toLowerCase();
+      if (needle && lowerText.includes(needle)) {
         return true;
       }
     }
@@ -2314,8 +2328,9 @@ function getKnowledgeInstruction(
   allowModelKnowledge: boolean,
   text?: string,
   understanding?: ClaimUnderstanding,
+  cueTerms?: string[],
 ): string {
-  const recencyMatters = text ? isRecencySensitive(text, understanding) : false;
+  const recencyMatters = text ? isRecencySensitive(text, understanding, cueTerms) : false;
 
   if (allowModelKnowledge) {
     const recencyGuidance = recencyMatters ? `
@@ -4276,7 +4291,11 @@ async function understandClaim(
     analysisInput.length > understandMaxChars ? analysisInput.slice(0, understandMaxChars) : analysisInput;
 
   // Detect recency sensitivity for this analysis (using normalized input)
-  const recencyMatters = isRecencySensitive(analysisInput, undefined);
+  const recencyMatters = isRecencySensitive(
+    analysisInput,
+    undefined,
+    pipelineConfig?.recencyCueTerms,
+  );
 
   // v2.9: LLM Text Analysis - Classify input and decompose claims
   let inputClassification: InputClassificationResult | null = null;
@@ -6148,7 +6167,8 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   // v2.6.25: Use impliedClaim (normalized) for consistent recency detection across input styles
   const recencyMatters = isRecencySensitive(
     understanding.impliedClaim || understanding.articleThesis || state.originalInput || "",
-    understanding
+    understanding,
+    state.pipelineConfig?.recencyCueTerms,
   );
 
   // Get current year for date-specific queries
@@ -6244,7 +6264,11 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
           `${qBase} study`,
           `${qBase} criticism`,
         ],
-        recencyMatters: isRecencySensitive(basis, understanding),
+        recencyMatters: isRecencySensitive(
+          basis,
+          understanding,
+          state.pipelineConfig?.recencyCueTerms,
+        ),
       };
     }
 
@@ -6257,7 +6281,11 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     const claimsWithoutEvidence = directClaimsForResearch.filter((claim: any) => {
       // Check if this claim appears to be about recent events
       const claimText = claim.text || "";
-      const isRecentClaim = isRecencySensitive(claimText, undefined);
+      const isRecentClaim = isRecencySensitive(
+        claimText,
+        undefined,
+        state.pipelineConfig?.recencyCueTerms,
+      );
 
       // Check if this claim has any supporting evidence
       // Evidence items are linked via relatedClaimId or by matching claim text/entities
@@ -7932,6 +7960,7 @@ ${getKnowledgeInstruction(
   state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
   state.originalInput,
   understanding,
+  state.pipelineConfig?.recencyCueTerms,
 )}
 ${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 
@@ -9001,6 +9030,7 @@ ${getKnowledgeInstruction(
   state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
   state.originalInput,
   understanding,
+  state.pipelineConfig?.recencyCueTerms,
 )}
 ${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 
@@ -9648,6 +9678,7 @@ ${getKnowledgeInstruction(
   state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
   state.originalInput,
   understanding,
+  state.pipelineConfig?.recencyCueTerms,
 )}
 ${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 
@@ -11106,7 +11137,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     for (const query of decision.queries || []) {
       // Pipeline Phase 1: Use LLM-derived temporalContext when available, fallback to pattern-based
       const temporalContext = state.understanding?.temporalContext;
-      let recencyMatters = decision.recencyMatters || isRecencySensitive(query, state.understanding || undefined);
+      let recencyMatters =
+        decision.recencyMatters ||
+        isRecencySensitive(
+          query,
+          state.understanding || undefined,
+          state.pipelineConfig?.recencyCueTerms,
+        );
       let dateRestrict: "y" | "m" | "w" | undefined = searchConfig.dateRestrict ?? undefined;
 
       const temporalConfThreshold = state.pipelineConfig.temporalConfidenceThreshold ?? 0.6;
@@ -11652,7 +11689,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     "";
   const recencyMatters =
     (temporalContext?.isRecencySensitive && temporalContext.confidence >= temporalConfThreshold) ||
-    (recencyBasis ? isRecencySensitive(recencyBasis, state.understanding || undefined) : false);
+    (recencyBasis
+      ? isRecencySensitive(
+        recencyBasis,
+        state.understanding || undefined,
+        state.pipelineConfig?.recencyCueTerms,
+      )
+      : false);
 
   if (recencyMatters) {
     const windowMonths = state.pipelineConfig.recencyWindowMonths ?? 6;
