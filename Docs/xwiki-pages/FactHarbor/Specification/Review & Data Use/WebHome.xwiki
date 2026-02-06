@@ -1,0 +1,23 @@
+= Review & Data Use =
+This page describes the Review & Data Use model, defining User roles and how review actions are logged.
+== 1. User & Role Concepts ==
+* **USER**: Base entity for all users (human or technical).
+* **TECHNICAL_USER**: Strictly technical identities (services, federation components, background jobs).
+* **CONTRIBUTING_USER**: Users that can contribute content (claims, scenarios, evidence).
+** **TRUSTED_CONTRIBUTOR**: Additional trust / certification properties.
+** **REVIEWER**: Can perform review actions on versioned entities.
+** **EXPERT**: Contributor with domain‑specific expertise / higher authority.
+* **FEDERATION_NODE**: Technical entity representing a participating node in the federation.
+* **FEDERATION_ADMIN**: Administers one or more federation nodes; not necessarily a content contributor.
+== 2. Review Actions ==
+The system logs every significant action:
+* **REVIEW_ACTION** logs *who* did *what* on *which* versioned entity.
+* Fields: ``ReviewActionID``, ``UserID``, ``EntityType``, ``EntityVersionID``, ``ActionType``, ``Timestamp``.
+* Each entry targets a specific **VERSIONED** entity (e.g., ClaimVersion, ScenarioVersion).
+* **Claim Clusters** may also be targets of review actions (e.g., curation or moderation).
+== 3. Review & Data Use ERD ==
+=== 3.1 User Roles ===
+{{include reference="FactHarbor.Specification.Diagrams.Human User Roles.WebHome"/}}
+{{include reference="FactHarbor.Specification.Diagrams.Technical and System Users.WebHome"/}}
+== 4. User Class Diagram ==
+{{include reference="FactHarbor.Specification.Diagrams.User Class Diagram.WebHome"/}}

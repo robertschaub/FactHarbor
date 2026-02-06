@@ -1,0 +1,193 @@
+= Design Decisions =
+This page explains key architectural choices in FactHarbor and why simpler alternatives were chosen over complex solutions.
+**Philosophy**: Start simple, add complexity only when metrics prove necessary.
+== 1. Single Primary Database (PostgreSQL) ==
+**Decision**: Use PostgreSQL for all data initially, not multiple specialized databases
+**Alternatives considered**:
+* ❌ PostgreSQL + TimescaleDB + Elasticsearch from day one
+* ❌ Multiple specialized databases (graph, document, time-series)
+* ❌ Microservices with separate databases
+**Why PostgreSQL alone**:
+* Modern PostgreSQL handles most workloads excellently
+* Built-in full-text search often sufficient
+* Time-series extensions available (pg_timeseries)
+* Simpler deployment and maintenance
+* Lower infrastructure costs
+* Easier to reason about
+**When to add specialized databases**:
+* Elasticsearch: When PostgreSQL search consistently >500ms
+* TimescaleDB: When metrics queries consistently >1s
+* Graph DB: If relationship queries become complex
+**Evidence**: Research shows single-DB architectures work well until 10,000+ users (Vertabelo, AWS patterns)
+== 2. Three-Layer Architecture ==
+**Decision**: Organize system into 3 layers (Interface, Processing, Data)
+**Alternatives considered**:
+* ❌ 7 layers (Ingestion, AKEL, Quality, Publication, Improvement, UI, Moderation)
+* ❌ Pure microservices (20+ services)
+* ❌ Monolithic single-layer
+**Why 3 layers**:
+* Clear separation of concerns
+* Easy to understand and explain
+* Maintainable by small team
+* Can scale each layer independently
+* Reduces cognitive load
+**Research**: Modern architecture best practices recommend 3-4 layers maximum for maintainability
+== 3. Deferred Federation ==
+**Decision**: Single-node architecture for V1.0, federation only in V2.0+
+**Alternatives considered**:
+* ❌ Federated from day one
+* ❌ P2P architecture
+* ❌ Blockchain-based
+**Why defer federation**:
+* Adds massive complexity (sync, conflicts, identity, governance)
+* Not needed for first 10,000 users
+* Core product must be proven first
+* Most successful platforms start centralized (Wikipedia, Reddit, GitHub)
+* Can add federation later (see: Mastodon, Matrix)
+**When to implement**:
+* 10,000+ users on single node
+* Users explicitly request decentralization
+* Geographic distribution becomes necessary
+* Censorship becomes real problem
+**Evidence**: Research shows premature federation increases failure risk (InfoQ MVP architecture)
+== 4. Parallel AKEL Processing ==
+**Decision**: Process evidence/sources/scenarios in parallel, not sequentially
+**Alternatives considered**:
+* ❌ Pure sequential pipeline (15-30 seconds)
+* ❌ Fully async/event-driven (complex orchestration)
+* ❌ Microservices per stage
+**Why parallel**:
+* 40% faster (10-18s vs 15-30s)
+* Better resource utilization
+* Same code complexity
+* Improves user experience
+**Implementation**: Simple parallelization within single AKEL worker
+**Evidence**: LLM orchestration research (2024-2025) strongly recommends pipeline parallelization
+== 5. Simple Manual Roles ==
+**Decision**: Manual role assignment for V1.0 (Reader, Contributor, Moderator, Admin)
+**Alternatives considered**:
+* ❌ Complex reputation point system from day one
+* ❌ Automated privilege escalation
+* ❌ Reputation decay algorithms
+* ❌ Trust graphs
+**Why simple roles**:
+* Complex reputation not needed until 100+ active contributors
+* Manual review builds better community initially
+* Easier to implement and maintain
+* Can add automation later when needed
+**When to add complexity**:
+* 100+ active contributors
+* Manual role management becomes bottleneck
+* Clear abuse patterns emerge requiring automation
+**Evidence**: Successful communities (Wikipedia, Stack Overflow) started simple and added complexity gradually
+== 6. One-to-Many Scenarios ==
+**Decision**: Scenarios belong to single claims (one-to-many) for V1.0
+**Alternatives considered**:
+* ❌ Many-to-many with junction table
+* ❌ Scenarios as separate first-class entities
+* ❌ Hierarchical scenario taxonomy
+**Why one-to-many**:
+* Simpler queries (no junction table)
+* Easier to understand
+* Sufficient for most use cases
+* Can add many-to-many in V2.0 if requested
+**When to add many-to-many**:
+* Users request "apply this scenario to other claims"
+* Clear use cases for scenario reuse emerge
+* Performance doesn't degrade
+**Trade-off**: Slight duplication of scenarios vs. simpler mental model
+== 7. Two-Tier Edit History ==
+**Decision**: Hot audit trail (PostgreSQL) + Cold debug logs (S3 archive)
+**Alternatives considered**:
+* ❌ Everything in PostgreSQL forever
+* ❌ Everything archived immediately
+* ❌ Complex versioning system from day one
+**Why two-tier**:
+* 90% reduction in hot database size
+* Full traceability maintained
+* Faster queries (hot data only)
+* Lower storage costs (S3 cheaper)
+**Implementation**:
+* Hot: Human edits, moderation actions, major AKEL updates
+* Cold: All AKEL processing logs (archived after 90 days)
+**Evidence**: Standard pattern for high-volume audit systems
+== 8. Denormalized Cache Fields ==
+**Decision**: Store summary data in claim records (evidence_summary, source_names, scenario_count)
+**Alternatives considered**:
+* ❌ Fully normalized (join every time)
+* ❌ Fully denormalized (duplicate everything)
+* ❌ External cache only (Redis)
+**Why selective denormalization**:
+* 70% fewer joins on common queries
+* Much faster claim list/search pages
+* Trade-off: Small storage increase (~10%)
+* Read-heavy system (95% reads) benefits greatly
+**Update strategy**:
+* Immediate: On user-visible edits
+* Deferred: Background job every hour
+* Invalidation: On source data changes
+**Evidence**: Content management best practices recommend denormalization for read-heavy systems
+== 9. Multi-Provider LLM Orchestration ==
+**Decision**: Abstract LLM calls behind interface, support multiple providers
+**Alternatives considered**:
+* ❌ Hard-coded to single LLM provider
+* ❌ Switch providers manually
+* ❌ Complex multi-agent system
+**Why orchestration**:
+* No vendor lock-in
+* Cost optimization (use cheap models for simple tasks)
+* Cross-checking (compare outputs)
+* Resilience (automatic fallback)
+**Implementation**: Simple routing layer, task-based provider selection
+**Evidence**: Modern LLM app architecture (2024-2025) strongly recommends orchestration
+== 10. Source Scoring Separation ==
+**Decision**: Separate source scoring (weekly batch) from claim analysis (real-time)
+**Alternatives considered**:
+* ❌ Update source scores during claim analysis
+* ❌ Real-time score calculation
+* ❌ Complex feedback loops
+**Why separate**:
+* Prevents circular dependencies
+* Predictable behavior
+* Easier to reason about
+* Simpler testing
+* Clear audit trail
+**Implementation**:
+* Sunday 2 AM: Calculate scores from past week
+* Monday-Saturday: Claims use those scores
+* Never update scores during analysis
+**Evidence**: Standard pattern to prevent feedback loops in ML systems
+== 11. Simple Versioning ==
+**Decision**: Basic audit trail only for V1.0 (before/after values, who/when/why)
+**Alternatives considered**:
+* ❌ Full Git-like versioning from day one
+* ❌ Branching and merging
+* ❌ Time-travel queries
+* ❌ Automatic conflict resolution
+**Why simple**:
+* Sufficient for accountability and basic rollback
+* Complex versioning not requested by users yet
+* Can add later if needed
+* Easier to implement and maintain
+**When to add complexity**:
+* Users request "see version history"
+* Users request "restore previous version"
+* Need for branching emerges
+**Evidence**: "You Aren't Gonna Need It" (YAGNI) principle from Extreme Programming
+== Design Philosophy ==
+**Guiding Principles**:
+1. **Start Simple**: Build minimum viable features
+2. **Measure First**: Add complexity only when metrics prove necessity
+3. **User-Driven**: Let user requests guide feature additions
+4. **Iterate**: Evolve based on real-world usage
+5. **Fail Fast**: Simple systems fail in simple ways
+**Inspiration**:
+* "Premature optimization is the root of all evil" - Donald Knuth
+* "You Aren't Gonna Need It" - Extreme Programming
+* "Make it work, make it right, make it fast" - Kent Beck
+**Result**: FactHarbor V1.0 is 35% simpler than original design while maintaining all core functionality and actually becoming more scalable.
+== Related Pages ==
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]]
+* [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]]
+* [[Data Model>>FactHarbor.Specification.Data Model.WebHome]]
+* [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]

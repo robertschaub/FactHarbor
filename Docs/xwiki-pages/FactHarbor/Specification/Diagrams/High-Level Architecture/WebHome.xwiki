@@ -1,0 +1,80 @@
+{{info}}
+**Current Implementation (v2.6.33)** - Two-service architecture: Next.js web app for UI and analysis, .NET API for job persistence.
+{{/info}}
+
+= High-Level Architecture =
+
+{{mermaid}}
+
+graph TB
+    subgraph Client[Client Layer]
+        BROWSER[Web Browser]
+    end
+
+    subgraph NextJS[Next.js Web App]
+        ANALYZE[analyze page]
+        JOBS[jobs page]
+        JOBVIEW[jobs id page]
+        ANALYZE_API[api fh analyze]
+        JOBS_API[api fh jobs]
+        RUN_JOB[api internal run-job]
+        ORCH[orchestrated.ts]
+        CANON[monolithic-canonical.ts]
+        SHARED[Shared Modules]
+        WEBSEARCH[web-search.ts]
+        MBFC[source-reliability.ts]
+    end
+
+    subgraph DotNet[.NET API]
+        DOTNET_API[ASP.NET Core API]
+        JOBS_CTRL[JobsController]
+        HEALTH_CTRL[HealthController]
+        SQLITE[(SQLite factharbor.db)]
+    end
+
+    subgraph External[External Services]
+        LLM[LLM Providers]
+        SEARCH[Search Providers]
+    end
+
+    BROWSER --> ANALYZE
+    BROWSER --> JOBS
+    BROWSER --> JOBVIEW
+    ANALYZE --> ANALYZE_API
+    ANALYZE_API --> DOTNET_API
+    DOTNET_API --> SQLITE
+    RUN_JOB --> ORCH
+    RUN_JOB --> CANON
+    ORCH --> SHARED
+    CANON --> SHARED
+    ORCH --> LLM
+    CANON --> LLM
+    ORCH --> WEBSEARCH
+    WEBSEARCH --> SEARCH
+    SHARED --> MBFC
+
+{{/mermaid}}
+
+== Component Summary ==
+
+|= Component |= Technology |= Purpose
+| **Web App** | Next.js 14 | UI, API routes, AKEL pipeline
+| **API** | ASP.NET Core | Job persistence, health checks
+| **Database** | SQLite | Jobs, events, results (JSON blob)
+| **LLM** | AI SDK | Multi-provider LLM abstraction
+| **Search** | Google CSE / SerpAPI | Web search for evidence
+
+== Key Files ==
+
+|= File |= Lines |= Purpose
+| ##orchestrated.ts## | ~9000 | Main orchestrated pipeline
+| ##monolithic-canonical.ts## | ~1100 | Monolithic canonical pipeline
+| ##scopes.ts## | ~600 | Scope detection
+| ##aggregation.ts## | ~300 | Verdict aggregation
+
+== Environment Variables ==
+
+|= Variable |= Default |= Purpose
+| ##LLM_PROVIDER## | anthropic | Primary LLM provider
+| ##FH_SEARCH_ENABLED## | true | Enable web search
+| ##FH_DETERMINISTIC## | true | Zero temperature

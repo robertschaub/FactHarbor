@@ -1,0 +1,298 @@
+= System Performance Metrics =
+**What we monitor to ensure AKEL performs well.**
+== 1. Purpose ==
+These metrics tell us:
+* ✅ Is AKEL performing within acceptable ranges?
+* ✅ Where should we focus improvement efforts?
+* ✅ When do humans need to intervene?
+* ✅ Are our changes improving things?
+**Principle**: Measure to improve, not to judge.
+== 2. Metric Categories ==
+=== 2.1 AKEL Performance ===
+**Processing speed and reliability**
+=== 2.2 Content Quality ===
+**Output quality and user satisfaction**
+=== 2.3 System Health ===
+**Infrastructure and operational metrics**
+=== 2.4 User Experience ===
+**How users interact with the system**
+== 3. AKEL Performance Metrics ==
+=== 3.1 Processing Time ===
+**Metric**: Time from claim submission to verdict publication
+**Measurements**:
+* P50 (median): 50% of claims processed within X seconds
+* P95: 95% of claims processed within Y seconds
+* P99: 99% of claims processed within Z seconds
+**Targets**:
+* P50: ≤ 12 seconds
+* P95: ≤ 18 seconds
+* P99: ≤ 25 seconds
+**Alert thresholds**:
+* P95 > 20 seconds: Monitor closely
+* P95 > 25 seconds: Investigate immediately
+* P95 > 30 seconds: Emergency - intervention required
+**Why it matters**: Slow processing = poor user experience
+**Improvement ideas**:
+* Optimize evidence extraction
+* Better caching
+* Parallel processing
+* Database query optimization
+=== 3.2 Success Rate ===
+**Metric**: % of claims successfully processed without errors
+**Target**: ≥ 99%
+**Alert thresholds**:
+* 98-99%: Monitor
+* 95-98%: Investigate
+* <95%: Emergency
+**Common failure causes**:
+* Timeout (evidence extraction took too long)
+* Parse error (claim text unparsable)
+* External API failure (source unavailable)
+* Resource exhaustion (memory/CPU)
+**Why it matters**: Errors frustrate users and reduce trust
+=== 3.3 Evidence Completeness ===
+**Metric**: % of claims where AKEL found sufficient evidence
+**Measurement**: Claims with ≥3 pieces of evidence from ≥2 distinct sources
+**Target**: ≥ 80%
+**Alert thresholds**:
+* 75-80%: Monitor
+* 70-75%: Investigate
+* <70%: Intervention needed
+**Why it matters**: Incomplete evidence = low confidence verdicts
+**Improvement ideas**:
+* Better search algorithms
+* More source integrations
+* Improved relevance scoring
+=== 3.4 Source Diversity ===
+**Metric**: Average number of distinct sources per claim
+**Target**: ≥ 3.0 sources per claim
+**Alert thresholds**:
+* 2.5-3.0: Monitor
+* 2.0-2.5: Investigate
+* <2.0: Intervention needed
+**Why it matters**: Multiple sources increase confidence and reduce bias
+=== 3.5 Scenario Coverage ===
+**Metric**: % of claims with at least one scenario extracted
+**Target**: ≥ 75%
+**Why it matters**: Scenarios provide context for verdicts
+== 4. Content Quality Metrics ==
+=== 4.1 Confidence Distribution ===
+**Metric**: Distribution of confidence scores across claims
+**Target**: Roughly normal distribution
+* ~10% very low confidence (0.0-0.3)
+* ~20% low confidence (0.3-0.5)
+* ~40% medium confidence (0.5-0.7)
+* ~20% high confidence (0.7-0.9)
+* ~10% very high confidence (0.9-1.0)
+**Alert thresholds**:
+* >30% very low confidence: Evidence extraction issues
+* >30% very high confidence: Too aggressive/overconfident
+* Heavily skewed distribution: Systematic bias
+**Why it matters**: Confidence should reflect actual uncertainty
+=== 4.2 Contradiction Rate ===
+**Metric**: % of claims with internal contradictions detected
+**Target**: ≤ 5%
+**Alert thresholds**:
+* 5-10%: Monitor
+* 10-15%: Investigate
+* >15%: Intervention needed
+**Why it matters**: High contradiction rate suggests poor evidence quality or logic errors
+=== 4.3 User Feedback Ratio ===
+**Metric**: Helpful vs unhelpful user ratings
+**Target**: ≥ 70% helpful
+**Alert thresholds**:
+* 60-70%: Monitor
+* 50-60%: Investigate
+* <50%: Emergency
+**Why it matters**: Direct measure of user satisfaction
+=== 4.4 False Positive/Negative Rate ===
+**Metric**: When humans review flagged items, how often was AKEL right?
+**Measurement**:
+* False positive: AKEL flagged for review, but actually fine
+* False negative: Missed something that should've been flagged
+**Target**:
+* False positive rate: ≤ 20%
+* False negative rate: ≤ 5%
+**Why it matters**: Balance between catching problems and not crying wolf
+== 5. System Health Metrics ==
+=== 5.1 Uptime ===
+**Metric**: % of time system is available and functional
+**Target**: ≥ 99.9% (less than 45 minutes downtime per month)
+**Alert**: Immediate notification on any downtime
+**Why it matters**: Users expect 24/7 availability
+=== 5.2 Error Rate ===
+**Metric**: Errors per 1000 requests
+**Target**: ≤ 1 error per 1000 requests (0.1%)
+**Alert thresholds**:
+* 1-5 per 1000: Monitor
+* 5-10 per 1000: Investigate
+* >10 per 1000: Emergency
+**Why it matters**: Errors disrupt user experience
+=== 5.3 Database Performance ===
+**Metrics**:
+* Query response time (P95)
+* Connection pool utilization
+* Slow query frequency
+**Targets**:
+* P95 query time: ≤ 50ms
+* Connection pool: ≤ 80% utilized
+* Slow queries (>1s): ≤ 10 per hour
+**Why it matters**: Database bottlenecks slow entire system
+=== 5.4 Cache Hit Rate ===
+**Metric**: % of requests served from cache vs. database
+**Target**: ≥ 80%
+**Why it matters**: Higher cache hit rate = faster responses, less DB load
+=== 5.5 Resource Utilization ===
+**Metrics**:
+* CPU utilization
+* Memory utilization
+* Disk I/O
+* Network bandwidth
+**Targets**:
+* Average CPU: ≤ 60%
+* Peak CPU: ≤ 85%
+* Memory: ≤ 80%
+* Disk I/O: ≤ 70%
+**Alert**: Any metric consistently >85%
+**Why it matters**: Headroom for traffic spikes, prevents resource exhaustion
+== 6. User Experience Metrics ==
+=== 6.1 Time to First Verdict ===
+**Metric**: Time from user submitting claim to seeing initial verdict
+**Target**: ≤ 15 seconds
+**Why it matters**: User perception of speed
+=== 6.2 Claim Submission Rate ===
+**Metric**: Claims submitted per day/hour
+**Monitoring**: Track trends, detect anomalies
+**Why it matters**: Understand usage patterns, capacity planning
+=== 6.3 User Retention ===
+**Metric**: % of users who return after first visit
+**Target**: ≥ 30% (1-week retention)
+**Why it matters**: Indicates system usefulness
+=== 6.4 Feature Usage ===
+**Metrics**:
+* % of users who explore evidence
+* % who check scenarios
+* % who view source track records
+**Why it matters**: Understand how users interact with system
+== 7. Metric Dashboard ==
+=== 7.1 Real-Time Dashboard ===
+**Always visible**:
+* Current processing time (P95)
+* Success rate (last hour)
+* Error rate (last hour)
+* System health status
+**Update frequency**: Every 30 seconds
+=== 7.2 Daily Dashboard ===
+**Reviewed daily**:
+* All AKEL performance metrics
+* Content quality metrics
+* System health trends
+* User feedback summary
+=== 7.3 Weekly Reports ===
+**Reviewed weekly**:
+* Trends over time
+* Week-over-week comparisons
+* Improvement priorities
+* Outstanding issues
+=== 7.4 Monthly/Quarterly Reports ===
+**Comprehensive analysis**:
+* Long-term trends
+* Seasonal patterns
+* Strategic metrics
+* Goal progress
+== 8. Alert System ==
+=== 8.1 Alert Levels ===
+**Info**: Metric outside target, but within acceptable range
+* Action: Note in daily review
+* Example: P95 processing time 19s (target 18s, acceptable <20s)
+**Warning**: Metric outside acceptable range
+* Action: Investigate within 24 hours
+* Example: Success rate 97% (acceptable >98%)
+**Critical**: Metric severely degraded
+* Action: Investigate immediately
+* Example: Error rate 2% (acceptable <0.5%)
+**Emergency**: System failure or severe degradation
+* Action: Page on-call, all hands
+* Example: Uptime <95%, P95 >30s
+=== 8.2 Alert Channels ===
+**Slack/Discord**: All alerts
+**Email**: Warning and above
+**SMS**: Critical and emergency only
+**PagerDuty**: Emergency only
+=== 8.3 On-Call Rotation ===
+**Technical Coordinator**: Primary on-call
+**Backup**: Designated team member
+**Responsibilities**:
+* Respond to alerts within SLA
+* Investigate and diagnose issues
+* Implement fixes or escalate
+* Document incidents
+== 9. Metric-Driven Improvement ==
+=== 9.1 Prioritization ===
+**Focus improvements on**:
+* Metrics furthest from target
+* Metrics with biggest user impact
+* Metrics easiest to improve
+* Strategic priorities
+=== 9.2 Success Criteria ===
+**Every improvement project should**:
+* Target specific metrics
+* Set concrete improvement goals
+* Measure before and after
+* Document learnings
+**Example**: "Reduce P95 processing time from 20s to 16s by optimizing evidence extraction"
+=== 9.3 A/B Testing ===
+**When feasible**:
+* Run two versions
+* Measure metric differences
+* Choose based on data
+* Roll out winner
+== 10. Bias and Fairness Metrics ==
+=== 10.1 Domain Balance ===
+**Metric**: Confidence distribution by domain
+**Target**: Similar distributions across domains
+**Alert**: One domain consistently much lower/higher confidence
+**Why it matters**: Ensure no systematic domain bias
+=== 10.2 Source Type Balance ===
+**Metric**: Evidence distribution by source type
+**Target**: Diverse source types represented
+**Alert**: Over-reliance on one source type
+**Why it matters**: Prevent source type bias
+=== 10.3 Geographic Balance ===
+**Metric**: Source geographic distribution
+**Target**: Multiple regions represented
+**Alert**: Over-concentration in one region
+**Why it matters**: Reduce geographic/cultural bias
+== 11. Experimental Metrics ==
+**New metrics to test**:
+* User engagement time
+* Evidence exploration depth
+* Cross-reference usage
+* Mobile vs desktop usage
+**Process**:
+1. Define metric hypothesis
+2. Implement tracking
+3. Collect data for 1 month
+4. Evaluate usefulness
+5. Add to standard set or discard
+== 12. Anti-Patterns ==
+**Don't**:
+* ❌ Measure too many things (focus on what matters)
+* ❌ Set unrealistic targets (demotivating)
+* ❌ Ignore metrics when inconvenient
+* ❌ Game metrics (destroys their value)
+* ❌ Blame individuals for metric failures
+* ❌ Let metrics become the goal (they're tools)
+**Do**:
+* ✅ Focus on actionable metrics
+* ✅ Set ambitious but achievable targets
+* ✅ Respond to metric signals
+* ✅ Continuously validate metrics still matter
+* ✅ Use metrics for system improvement, not people evaluation
+* ✅ Remember: metrics serve users, not the other way around
+== 13. Related Pages ==
+* [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] - Why we monitor systems, not outputs
+* [[Continuous Improvement>>FactHarbor.Organisation.How-We-Work-Together.Continuous-Improvement]] - How we use metrics to improve
+* [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - Quarterly performance reviews
+---
+**Remember**: We measure the SYSTEM, not individual outputs. Metrics drive IMPROVEMENT, not judgment.

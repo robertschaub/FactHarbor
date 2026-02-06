@@ -1,0 +1,100 @@
+= Implementation Roadmap =
+
+**FactHarbor development follows a phased approach from Proof of Concept to production launch.**
+
+== Development Phases ==
+
+{{info}}
+**Detailed Requirement Mapping:** See [[Requirements Roadmap Matrix>>FactHarbor.Roadmap.Requirements-Roadmap-Matrix.WebHome]] for complete phase-to-requirement mapping, implementation levels, and User Needs fulfillment by phase.
+{{/info}}
+
+* [[POC1: Core Workflow with Quality Gates>>FactHarbor.Roadmap.POC1.WebHome]]
+* [[POC2: Robust Quality & Reliability>>FactHarbor.Roadmap.POC2.WebHome]]
+* [[Beta 0: User Testing & Production Readiness>>FactHarbor.Roadmap.Beta0.WebHome]]
+* [[V1.0: Public Launch>>FactHarbor.Roadmap.V10.WebHome]]
+* [[Future Milestones (POC2, Beta0, V1.0)>>FactHarbor.Roadmap.Future Milestones]]
+
+== Philosophy ==
+
+**Validate AI automation quality BEFORE building production features**
+
+Each phase builds on proven capabilities from the previous phase. We never skip ahead - if AI quality is insufficient, we improve prompts and algorithms rather than adding manual workarounds.
+
+== Development Phases Overview ==
+
+**POC1: Core Workflow with Quality Gates**
+
+Build:
+* Automated claim analysis
+* Confidence scoring
+* Source evaluation
+* Browse/search interface
+* User flagging system
+
+* **LLM Provider Abstraction (NFR-14):** Provider-agnostic AI access
+ * POC1: Anthropic Claude API primary (Haiku Stage 1, Sonnet Stages 2 & 3)
+ * Architecture: Abstract LLMProvider interface, environment config, basic failover
+ * Future: OpenAI/Google secondary providers, admin API, cost comparison (POC2/Beta)
+
+**Goal**: Prove AI quality before adding user editing
+
+**User Needs fulfilled in POC1**: UN-1, UN-2, UN-3, UN-4, UN-5, UN-6, UN-7, UN-8, UN-9, UN-12
+
+**POC2/Beta 0: User Contributions**
+
+Add only if needed:
+* Simple editing (Wikipedia-style)
+* Reputation system
+* Basic moderation
+* In-article claim highlighting (FR13)
+
+**Additional User Needs fulfilled**: UN-13, UN-17
+
+**V1.0+: Continuous Improvement**
+
+* Continuous quality improvement
+* Feature additions based on real usage
+* Scale infrastructure
+
+**Additional User Needs fulfilled**: UN-14 (API access)
+
+**Deferred Beyond V1.0**:
+* Federation (until multiple successful instances exist)
+* Complex contribution workflows (focus on automation)
+* Extensive role hierarchy (keep simple)
+
+== Success Metrics Framework ==
+
+**Note**: Each phase defines specific success criteria in detail. This section provides the overall metrics framework.
+
+**System Quality**:
+* Error rate by category (target: continuous improvement)
+* Average confidence score (target: increase)
+* Source quality distribution (target: more high-quality)
+* Contradiction detection rate (target: increase)
+
+**Efficiency**:
+* Claims processed per hour (target: increase)
+* Human hours per claim (target: decrease)
+* Automation coverage (target: >90%)
+* Re-work rate (target: <5%)
+
+**User Satisfaction**:
+* User flag rate (issues found)
+* Correction acceptance rate (flags valid)
+* Return user rate
+* Trust indicators (surveys)
+
+**User Needs Metrics**:
+* UN-1: % users who understand trust scores
+* UN-4: Time to verify social media claim
+* UN-7: % users who access evidence details
+* UN-8: % users who view multiple scenarios
+* UN-15: % users who check evolution timeline
+* UN-17: % users who enable in-article highlighting; avg. time spent on highlighted vs. non-highlighted articles
+
+== Status ==
+
+**Current Phase:** POC1 Specification Complete 
+**Next Action:** Begin POC1 Implementation 
+**Version:** V0.9.70

@@ -1,0 +1,51 @@
+{{warning}}
+**Not Implemented (v2.6.33)** - User authentication and role system is **not yet implemented**. Current system has no user accounts - all users are anonymous. This diagram shows the **target architecture**.
+{{/warning}}
+
+= Target User Role Hierarchy =
+
+{{mermaid}}
+
+graph TD
+    READER[Reader] --> |Registers| CONTRIBUTOR[Contributor]
+    CONTRIBUTOR --> |Earns Reputation| TRUSTED[Trusted Contributor]
+    CONTRIBUTOR --> |Appointed| MODERATOR[Moderator]
+    READER --> |Can| R1[Browse Search]
+    READER --> |Can| R2[Flag Issues]
+    READER --> |Can| R3[Submit Claims]
+    CONTRIBUTOR --> |Can| C1[Edit Claims]
+    CONTRIBUTOR --> |Can| C2[Add Evidence]
+    CONTRIBUTOR --> |Can| C3[Improve Content]
+    TRUSTED --> |Can| T1[Approve Changes]
+    TRUSTED --> |Can| T2[Mentor New Contributors]
+    MODERATOR --> |Can| M1[Review Flags]
+    MODERATOR --> |Can| M2[Hide Harmful Content]
+    MODERATOR --> |Can| M3[Resolve Disputes]
+
+{{/mermaid}}
+
+= Role Descriptions =
+
+|= Role |= Purpose |= Current Status
+| **Reader** | Anonymous browsing and submission | Implemented (all users)
+| **Contributor** | Edit claims, add evidence | Not implemented
+| **Trusted Contributor** | Approve changes, mentor | Not implemented
+| **Moderator** | Handle abuse, resolve disputes | Not implemented
+
+= Current Implementation =
+
+All users are anonymous **Readers**:
+* Can submit text/URLs for analysis
+* Can view analysis results
+* No persistent accounts
+* No role-based permissions
+
+= Target Design Principles =
+
+**Simplified flat role structure**:
+* **Reader**: Default role, no login required
+* **Contributor**: Registers and earns reputation through contributions
+* **Trusted Contributor**: Substantial reputation unlocks additional permissions
+* **Moderator**: Appointed by Governing Team, handles abuse/disputes
+
+**No hierarchy** - roles represent responsibility levels, not management structure.

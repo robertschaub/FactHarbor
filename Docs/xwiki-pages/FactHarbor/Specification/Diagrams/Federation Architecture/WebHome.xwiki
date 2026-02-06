@@ -1,0 +1,36 @@
+{{warning}}
+**Not Implemented (v2.6.33)** - Federation is planned for V1.0+. Current implementation is single-instance only.
+{{/warning}}
+
+= Federation Architecture (Future) =
+
+{{mermaid}}
+
+graph LR
+    FH1[FactHarbor Instance 1]
+    FH2[FactHarbor Instance 2]
+    FH3[FactHarbor Instance 3]
+    FH1 -.->|V1.0+ Sync claims| FH2
+    FH2 -.->|V1.0+ Sync claims| FH3
+    FH3 -.->|V1.0+ Sync claims| FH1
+    U1[Users] --> FH1
+    U2[Users] --> FH2
+    U3[Users] --> FH3
+
+{{/mermaid}}
+
+**Federation Architecture** - Future (V1.0+): Independent FactHarbor instances can sync claims for broader reach while maintaining local control.
+
+== Target Features ==
+
+|= Feature |= Purpose |= Status
+| **Claim synchronization** | Share verified claims across instances | Not implemented
+| **Cross-node audits** | Distributed quality assurance | Not implemented
+| **Local control** | Each instance maintains autonomy | N/A
+| **Contradiction detection** | Cross-instance contradiction checking | Not implemented
+
+== Current Implementation ==
+
+* Single-instance deployment only
+* No inter-instance communication
+* All data stored locally in SQLite

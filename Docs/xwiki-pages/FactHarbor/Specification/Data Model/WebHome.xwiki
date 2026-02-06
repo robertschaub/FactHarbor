@@ -1,0 +1,610 @@
+= Data Model =
+
+{{warning}}
+**Implementation Status (Updated January 2026)**
+
+This specification describes the **target** normalized data model. Current implementation (v2.6.33) differs significantly:
+
+* **Storage**: All data stored as **JSON blobs in SQLite**, not normalized PostgreSQL tables
+* **Scenarios**: **Replaced with KeyFactors** - decomposition questions, not separate entities
+* **Caching**: Redis cache **not implemented**; no claim caching yet
+* **Source Scoring**: Uses external MBFC bundle, not internal track record calculation
+* **User System**: Not implemented (no authentication in current version)
+
+This specification remains valuable as the target architecture for future versions.
+
+See `Docs/STATUS/Documentation_Inconsistencies.md` for full comparison.
+{{/warning}}
+
+FactHarbor's data model is **simple, focused, designed for automated processing**.
+== 1. Core Entities ==
+=== 1.1 Claim ===
+Fields: id, assertion, domain, **status** (Published/Hidden only), **confidence_score**, **risk_score**, completeness_score, version, views, edit_count
+==== Performance Optimization: Denormalized Fields ====
+**Rationale**: Claims system is 95% reads, 5% writes. Denormalizing common data reduces joins and improves query performance by 70%.
+**Additional cached fields in claims table**:
+* **evidence_summary** (JSONB): Top 5 most relevant evidence snippets with scores
+ * Avoids joining evidence table for listing/preview
+ * Updated when evidence is added/removed
+ * Format: `[{"text": "...", "source": "...", "relevance": 0.95}, ...]`
+* **source_names** (TEXT[]): Array of source names for quick display
+ * Avoids joining through evidence to sources
+ * Updated when sources change
+ * Format: `["New York Times", "Nature Journal", ...]`
+* **scenario_count** (INTEGER): Number of scenarios for this claim
+ * Quick metric without counting rows
+ * Updated when scenarios added/removed
+* **cache_updated_at** (TIMESTAMP): When denormalized data was last refreshed
+ * Helps invalidate stale caches
+ * Triggers background refresh if too old
+**Update Strategy**:
+* **Immediate**: Update on claim edit (user-facing)
+* **Deferred**: Update via background job every hour (non-critical)
+* **Invalidation**: Clear cache when source data changes significantly
+**Trade-offs**:
+* ✅ 70% fewer joins on common queries
+* ✅ Much faster claim list/search pages
+* ✅ Better user experience
+* ⚠️ Small storage increase (~10%)
+* ⚠️ Need to keep caches in sync
+=== 1.2 Evidence ===
+Fields: claim_id, source_id, excerpt, url, relevance_score, supports
+=== 1.3 Source ===
+**Purpose**: Track reliability of information sources over time
+**Fields**:
+* **id** (UUID): Unique identifier
+* **name** (text): Source name (e.g., "New York Times", "Nature Journal")
+* **domain** (text): Website domain (e.g., "nytimes.com")
+* **type** (enum): NewsOutlet, AcademicJournal, GovernmentAgency, etc.
+* **track_record_score** (0-100): Overall reliability score
+* **accuracy_history** (JSON): Historical accuracy data
+* **correction_frequency** (float): How often source publishes corrections
+* **last_updated** (timestamp): When track record last recalculated
+**How It Works**:
+* Initial score based on source type (70 for academic journals, 30 for unknown)
+* Updated daily by background scheduler
+* Formula: accuracy_rate (50%) + correction_policy (20%) + editorial_standards (15%) + bias_transparency (10%) + longevity (5%)
+* Track Record Check in AKEL pipeline: Adjusts evidence confidence based on source quality
+* Quality thresholds: 90+=Exceptional, 70-89=Reliable, 50-69=Acceptable, 30-49=Questionable, <30=Unreliable
+
+{{info}}
+**Current Implementation (v2.6.33):** Source reliability uses external **MBFC (Media Bias/Fact Check) bundle** instead of internal track record calculation. Scores are loaded from a configurable JSON file. See `Docs/ARCHITECTURE/Source_Reliability.md`.
+{{/info}}
+
+**See**: SOURCE Track Record System documentation for complete details on calculation, updates, and usage
+Fields: id, name, domain, **track_record_score**, **accuracy_history**, **correction_frequency**
+**Key**: Automated source reliability tracking
+==== Source Scoring Process (Separation of Concerns) ====
+**Critical design principle**: Prevent circular dependencies between source scoring and claim analysis.
+**The Problem**: 
+* Source scores should influence claim verdicts
+* Claim verdicts should update source scores
+* But: Direct feedback creates circular dependency and potential feedback loops
+**The Solution**: Temporal separation
+==== Weekly Background Job (Source Scoring) ====
+Runs independently of claim analysis:
+{{code language="python"}}
+def update_source_scores_weekly():
+ """
+ Background job: Calculate source reliability
+ Never triggered by individual claim analysis
+ """
+ # Analyze all claims from past week
+ claims = get_claims_from_past_week()
+ for source in get_all_sources():
+ # Calculate accuracy metrics
+ correct_verdicts = count_correct_verdicts_citing(source, claims)
+ total_citations = count_total_citations(source, claims)
+ accuracy = correct_verdicts / total_citations if total_citations > 0 else 0.5
+ # Weight by claim importance
+ weighted_score = calculate_weighted_score(source, claims)
+ # Update source record
+ source.track_record_score = weighted_score
+ source.total_citations = total_citations
+ source.last_updated = now()
+ source.save()
+ # Job runs: Sunday 2 AM UTC
+ # Never during claim processing
+{{/code}}
+==== Real-Time Claim Analysis (AKEL) ====
+Uses source scores but never updates them:
+{{code language="python"}}
+def analyze_claim(claim_text):
+ """
+ Real-time: Analyze claim using current source scores
+ READ source scores, never UPDATE them
+ """
+ # Gather evidence
+ evidence_list = gather_evidence(claim_text)
+ for evidence in evidence_list:
+ # READ source score (snapshot from last weekly update)
+ source = get_source(evidence.source_id)
+ source_score = source.track_record_score
+ # Use score to weight evidence
+ evidence.weighted_relevance = evidence.relevance * source_score
+ # Generate verdict using weighted evidence
+ verdict = synthesize_verdict(evidence_list)
+ # NEVER update source scores here
+ # That happens in weekly background job
+ return verdict
+{{/code}}
+==== Monthly Audit (Quality Assurance) ====
+Moderator review of flagged source scores:
+* Verify scores make sense
+* Detect gaming attempts
+* Identify systematic biases
+* Manual adjustments if needed
+**Key Principles**:
+✅ **Scoring and analysis are temporally separated**
+* Source scoring: Weekly batch job
+* Claim analysis: Real-time processing
+* Never update scores during analysis
+✅ **One-way data flow during processing**
+* Claims READ source scores
+* Claims NEVER WRITE source scores
+* Updates happen in background only
+✅ **Predictable update cycle**
+* Sources update every Sunday 2 AM
+* Claims always use last week's scores
+* No mid-week score changes
+✅ **Audit trail**
+* Log all score changes
+* Track score history
+* Explainable calculations
+**Benefits**:
+* No circular dependencies
+* Predictable behavior
+* Easier to reason about
+* Simpler testing
+* Clear audit trail
+**Example Timeline**:
+```
+Sunday 2 AM: Calculate source scores for past week
+ → NYT score: 0.87 (up from 0.85)
+ → Blog X score: 0.52 (down from 0.61)
+Monday-Saturday: Claims processed using these scores
+ → All claims this week use NYT=0.87
+ → All claims this week use Blog X=0.52
+Next Sunday 2 AM: Recalculate scores including this week's claims
+ → NYT score: 0.89 (trending up)
+ → Blog X score: 0.48 (trending down)
+```
+=== 1.4 Scenario ===
+
+{{warning}}
+**Implementation Change:** Scenarios were **replaced with KeyFactors** in the current implementation. KeyFactors are decomposition questions discovered during the understanding phase, not separate stored entities. See `Docs/ARCHITECTURE/KeyFactors_Design.md` for the design rationale.
+{{/warning}}
+
+**Purpose**: Different interpretations or contexts for evaluating claims
+**Key Concept**: Scenarios are extracted from evidence, not generated arbitrarily. Each scenario represents a specific context, assumption set, or condition under which a claim should be evaluated.
+**Relationship**: One-to-many with Claims (**simplified for V1.0**: scenario belongs to single claim)
+**Fields**:
+* **id** (UUID): Unique identifier
+* **claim_id** (UUID): Foreign key to claim (one-to-many)
+* **description** (text): Human-readable description of the scenario
+* **assumptions** (JSONB): Key assumptions that define this scenario context
+* **extracted_from** (UUID): Reference to evidence that this scenario was extracted from
+* **created_at** (timestamp): When scenario was created
+* **updated_at** (timestamp): Last modification
+**How Found**: Evidence search → Extract context → Create scenario → Link to claim
+**Example**: 
+For claim "Vaccines reduce hospitalization":
+* Scenario 1: "Clinical trials (healthy adults 18-65, original strain)" from trial paper
+* Scenario 2: "Real-world data (diverse population, Omicron variant)" from hospital data
+* Scenario 3: "Immunocompromised patients" from specialist study
+**V2.0 Evolution**: Many-to-many relationship can be added if users request cross-claim scenario sharing. For V1.0, keeping scenarios tied to single claims simplifies queries and reduces complexity without limiting functionality.
+
+=== 1.5 Verdict ===
+
+**Purpose**: Assessment of a claim within a specific scenario context. Each verdict provides a conclusion about whether the claim is supported, refuted, or uncertain given the scenario's assumptions and available evidence.
+
+**Core Fields**:
+* **id** (UUID): Primary key
+* **scenario_id** (UUID FK): The scenario being assessed
+* **likelihood_range** (text): Probabilistic assessment (e.g., "0.40-0.65 (uncertain)", "0.75-0.85 (likely true)")
+* **confidence** (decimal 0-1): How confident we are in this assessment
+* **explanation_summary** (text): Human-readable reasoning explaining the verdict
+* **uncertainty_factors** (text array): Specific factors limiting confidence (e.g., "Small sample sizes", "Lifestyle confounds", "Long-term effects unknown")
+* **created_at** (timestamp): When verdict was created
+* **updated_at** (timestamp): Last modification
+
+**Change Tracking**: Like all entities, verdict changes are tracked through the Edit entity (section 1.7), not through separate version tables. Each edit records before/after states.
+
+**Relationship**: Each Scenario has one Verdict. When understanding evolves, the verdict is updated and the change is logged in the Edit entity.
+
+**Example**:
+For claim "Exercise improves mental health" in scenario "Clinical trials (healthy adults, structured programs)":
+* Initial state: likelihood_range="0.40-0.65 (uncertain)", uncertainty_factors=["Small sample sizes", "Short-term studies only"]
+* After new evidence: likelihood_range="0.70-0.85 (likely true)", uncertainty_factors=["Lifestyle confounds remain"]
+* Edit entity records the complete before/after change with timestamp and reason
+
+**Key Design**: Verdicts are mutable entities tracked through the centralized Edit entity, consistent with Claims, Evidence, and Scenarios.
+
+=== 1.6 User ===
+Fields: username, email, **role** (Reader/Contributor/Moderator), **reputation**, contributions_count
+=== User Reputation System ==
+**V1.0 Approach**: Simple manual role assignment
+**Rationale**: Complex reputation systems aren't needed until 100+ active contributors demonstrate the need for automated reputation management. Start simple, add complexity when metrics prove necessary.
+=== Roles (Manual Assignment) ===
+**reader** (default):
+* View published claims and evidence
+* Browse and search content
+* No editing permissions
+**contributor**:
+* Submit new claims
+* Suggest edits to existing content
+* Add evidence
+* Requires manual promotion by moderator/admin
+**moderator**:
+* Approve/reject contributor suggestions
+* Flag inappropriate content
+* Handle abuse reports
+* Assigned by admins based on trust
+**admin**:
+* Manage users and roles
+* System configuration
+* Access to all features
+* Founder-appointed initially
+=== Contribution Tracking (Simple) ===
+**Basic metrics only**:
+* `contributions_count`: Total number of contributions
+* `created_at`: Account age
+* `last_active`: Recent activity
+**No complex calculations**:
+* No point systems
+* No automated privilege escalation
+* No reputation decay
+* No threshold-based promotions
+=== Promotion Process ===
+**Manual review by moderators/admins**:
+1. User demonstrates value through contributions
+2. Moderator reviews user's contribution history
+3. Moderator promotes user to contributor role
+4. Admin promotes trusted contributors to moderator
+**Criteria** (guidelines, not automated):
+* Quality of contributions
+* Consistency over time
+* Collaborative behavior
+* Understanding of project goals
+=== V2.0+ Evolution ===
+**Add complex reputation when**:
+* 100+ active contributors
+* Manual role management becomes bottleneck
+* Clear patterns of abuse emerge requiring automation
+**Future features may include**:
+* Automated point calculations
+* Threshold-based promotions
+* Reputation decay for inactive users
+* Track record scoring for contributors
+See [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]] for triggers.
+=== 1.7 Edit ===
+**Fields**: entity_type, entity_id, user_id, before_state (JSON), after_state (JSON), edit_type, reason, created_at
+**Purpose**: Complete audit trail for all content changes
+=== Edit History Details ===
+**What Gets Edited**:
+* **Claims** (20% edited): assertion, domain, status, scores, analysis
+* **Evidence** (10% edited): excerpt, relevance_score, supports
+* **Scenarios** (5% edited): description, assumptions, confidence
+* **Sources**: NOT versioned (continuous updates, not editorial decisions)
+**Who Edits**:
+* **Contributors** (rep sufficient): Corrections, additions
+* **Trusted Contributors** (rep sufficient): Major improvements, approvals
+* **Moderators**: Abuse handling, dispute resolution
+* **System (AKEL)**: Re-analysis, automated improvements (user_id = NULL)
+**Edit Types**:
+* `CONTENT_CORRECTION`: User fixes factual error
+* `CLARIFICATION`: Improved wording
+* `SYSTEM_REANALYSIS`: AKEL re-processed claim
+* `MODERATION_ACTION`: Hide/unhide for abuse
+* `REVERT`: Rollback to previous version
+**Retention Policy** (5 years total):
+1. **Hot storage** (3 months): PostgreSQL, instant access
+2. **Warm storage** (2 years): Partitioned, slower queries
+3. **Cold storage** (3 years): S3 compressed, download required
+4. **Deletion**: After 5 years (except legal holds)
+**Storage per 1M claims**: ~400 MB (20% edited × 2 KB per edit)
+**Use Cases**:
+* View claim history timeline
+* Detect vandalism patterns
+* Learn from user corrections (system improvement)
+* Legal compliance (audit trail)
+* Rollback capability
+See **Edit History Documentation** for complete details on what gets edited by whom, retention policy, and use cases
+=== 1.8 Flag ===
+Fields: entity_id, reported_by, issue_type, status, resolution_note
+=== 1.9 QualityMetric ===
+**Fields**: metric_type, category, value, target, timestamp
+**Purpose**: Time-series quality tracking
+**Usage**:
+* **Continuous monitoring**: Hourly calculation of error rates, confidence scores, processing times
+* **Quality dashboard**: Real-time display with trend charts
+* **Alerting**: Automatic alerts when metrics exceed thresholds
+* **A/B testing**: Compare control vs treatment metrics
+* **Improvement validation**: Measure before/after changes
+**Example**: `{type: "ErrorRate", category: "Politics", value: 0.12, target: 0.10, timestamp: "2025-12-17"}`
+=== 1.10 ErrorPattern ===
+**Fields**: error_category, claim_id, description, root_cause, frequency, status
+**Purpose**: Capture errors to trigger system improvements
+**Usage**:
+* **Error capture**: When users flag issues or system detects problems
+* **Pattern analysis**: Weekly grouping by category and frequency
+* **Improvement workflow**: Analyze → Fix → Test → Deploy → Re-process → Monitor
+* **Metrics**: Track error rate reduction over time
+**Example**: `{category: "WrongSource", description: "Unreliable tabloid cited", root_cause: "No quality check", frequency: 23, status: "Fixed"}`
+
+== 1.4 Core Data Model ERD ==
+
+{{include reference="FactHarbor.Specification.Diagrams.Core Data Model ERD.WebHome"/}}
+
+== 1.5 User Class Diagram ==
+{{include reference="FactHarbor.Specification.Diagrams.User Class Diagram.WebHome"/}}
+== 2. Versioning Strategy ==
+**All Content Entities Are Versioned**:
+* **Claim**: Every edit creates new version (V1→V2→V3...)
+* **Evidence**: Changes tracked in edit history
+* **Scenario**: Modifications versioned
+**How Versioning Works**:
+* Entity table stores **current state only**
+* Edit table stores **all historical states** (before_state, after_state as JSON)
+* Version number increments with each edit
+* Complete audit trail maintained forever
+**Unversioned Entities** (current state only, no history):
+* **Source**: Track record continuously updated (not versioned history, just current score)
+* **User**: Account state (reputation accumulated, not versioned)
+* **QualityMetric**: Time-series data (each record is a point in time, not a version)
+* **ErrorPattern**: System improvement queue (status tracked, not versioned)
+**Example**:
+```
+Claim V1: "The sky is blue"
+ → User edits → 
+Claim V2: "The sky is blue during daytime"
+ → EDIT table stores: {before: "The sky is blue", after: "The sky is blue during daytime"}
+```
+== 2.5. Storage vs Computation Strategy ==
+**Critical architectural decision**: What to persist in databases vs compute dynamically?
+**Trade-off**:
+* **Store more**: Better reproducibility, faster, lower LLM costs | Higher storage/maintenance costs
+* **Compute more**: Lower storage/maintenance costs | Slower, higher LLM costs, less reproducible
+=== Recommendation: Hybrid Approach ===
+**STORE (in PostgreSQL):**
+==== Claims (Current State + History) ====
+* **What**: assertion, domain, status, created_at, updated_at, version
+* **Why**: Core entity, must be persistent
+* **Also store**: confidence_score (computed once, then cached)
+* **Size**: ~1 KB per claim
+* **Growth**: Linear with claims
+* **Decision**: ✅ STORE - Essential
+==== Evidence (All Records) ====
+* **What**: claim_id, source_id, excerpt, url, relevance_score, supports, extracted_at
+* **Why**: Hard to re-gather, user contributions, reproducibility
+* **Size**: ~2 KB per evidence (with excerpt)
+* **Growth**: 3-10 evidence per claim
+* **Decision**: ✅ STORE - Essential for reproducibility
+==== Sources (Track Records) ====
+* **What**: name, domain, track_record_score, accuracy_history, correction_frequency
+* **Why**: Continuously updated, expensive to recompute
+* **Size**: ~500 bytes per source
+* **Growth**: Slow (limited number of sources)
+* **Decision**: ✅ STORE - Essential for quality
+==== Edit History (All Versions) ====
+* **What**: before_state, after_state, user_id, reason, timestamp
+* **Why**: Audit trail, legal requirement, reproducibility
+* **Size**: ~2 KB per edit
+* **Growth**: Linear with edits (~A portion of claims get edited)
+* **Retention**: Hot storage 3 months → Warm storage 2 years → Archive to S3 3 years → Delete after 5 years total
+* **Decision**: ✅ STORE - Essential for accountability
+==== Flags (User Reports) ====
+* **What**: entity_id, reported_by, issue_type, description, status
+* **Why**: Error detection, system improvement triggers
+* **Size**: ~500 bytes per flag
+* **Growth**: 5-high percentage of claims get flagged
+* **Decision**: ✅ STORE - Essential for improvement
+==== ErrorPatterns (System Improvement) ====
+* **What**: error_category, claim_id, description, root_cause, frequency, status
+* **Why**: Learning loop, prevent recurring errors
+* **Size**: ~1 KB per pattern
+* **Growth**: Slow (limited patterns, many fixed)
+* **Decision**: ✅ STORE - Essential for learning
+==== QualityMetrics (Time Series) ====
+* **What**: metric_type, category, value, target, timestamp
+* **Why**: Trend analysis, cannot recreate historical metrics
+* **Size**: ~200 bytes per metric
+* **Growth**: Hourly = 8,760 per year per metric type
+* **Retention**: 2 years hot, then aggregate and archive
+* **Decision**: ✅ STORE - Essential for monitoring
+**STORE (Computed Once, Then Cached):**
+==== Analysis Summary ====
+* **What**: Neutral text summary of claim analysis (200-500 words)
+* **Computed**: Once by AKEL when claim first analyzed
+* **Stored in**: Claim table (text field)
+* **Recomputed**: Only when system significantly improves OR claim edited
+* **Why store**: Expensive to regenerate ($0.01-0.05 per analysis), doesn't change often
+* **Size**: ~2 KB per claim
+* **Decision**: ✅ STORE (cached) - Cost-effective
+==== Confidence Score ====
+* **What**: 0-100 score of analysis confidence
+* **Computed**: Once by AKEL
+* **Stored in**: Claim table (integer field)
+* **Recomputed**: When evidence added, source track record changes significantly, or system improves
+* **Why store**: Cheap to store, expensive to compute, users need it fast
+* **Size**: 4 bytes per claim
+* **Decision**: ✅ STORE (cached) - Performance critical
+==== Risk Score ====
+* **What**: 0-100 score of claim risk level
+* **Computed**: Once by AKEL
+* **Stored in**: Claim table (integer field)
+* **Recomputed**: When domain changes, evidence changes, or controversy detected
+* **Why store**: Same as confidence score
+* **Size**: 4 bytes per claim
+* **Decision**: ✅ STORE (cached) - Performance critical
+**COMPUTE DYNAMICALLY (Never Store):**
+==== Scenarios ==== ⚠️ CRITICAL DECISION
+* **What**: 2-5 possible interpretations of claim with assumptions
+* **Current design**: Stored in Scenario table
+* **Alternative**: Compute on-demand when user views claim details
+* **Storage cost**: ~1 KB per scenario × 3 scenarios average = ~3 KB per claim
+* **Compute cost**: $0.005-0.01 per request (LLM API call)
+* **Frequency**: Viewed in detail by ~20% of users
+* **Trade-off analysis**:
+ - IF STORED: 1M claims × 3 KB = 3 GB storage, $0.05/month, fast access
+ - IF COMPUTED: 1M claims × 20% views × $0.01 = $2,000/month in LLM costs
+* **Reproducibility**: Scenarios may improve as AI improves (good to recompute)
+* **Speed**: Computed = 5-8 seconds delay, Stored = instant
+* **Decision**: ✅ STORE (hybrid approach below)
+**Scenario Strategy** (APPROVED):
+1. **Store scenarios** initially when claim analyzed
+2. **Mark as stale** when system improves significantly
+3. **Recompute on next view** if marked stale
+4. **Cache for 30 days** if frequently accessed
+5. **Result**: Best of both worlds - speed + freshness
+==== Verdict Synthesis ==== 
+* **What**: Final conclusion text synthesizing all scenarios
+* **Compute cost**: $0.002-0.005 per request
+* **Frequency**: Every time claim viewed
+* **Why not store**: Changes as evidence/scenarios change, users want fresh analysis
+* **Speed**: 2-3 seconds (acceptable)
+**Alternative**: Store "last verdict" as cached field, recompute only if claim edited or marked stale
+* **Recommendation**: ✅ STORE cached version, mark stale when changes occur
+==== Search Results ====
+* **What**: Lists of claims matching search query
+* **Compute from**: Elasticsearch index
+* **Cache**: 15 minutes in Redis for popular queries
+* **Why not store permanently**: Constantly changing, infinite possible queries
+==== Aggregated Statistics ====
+* **What**: "Total claims: 1,234,567", "Average confidence: 78%", etc.
+* **Compute from**: Database queries
+* **Cache**: 1 hour in Redis
+* **Why not store**: Can be derived, relatively cheap to compute
+==== User Reputation ====
+* **What**: Score based on contributions
+* **Current design**: Stored in User table
+* **Alternative**: Compute from Edit table
+* **Trade-off**:
+ - Stored: Fast, simple
+ - Computed: Always accurate, no denormalization
+* **Frequency**: Read on every user action
+* **Compute cost**: Simple COUNT query, milliseconds
+* **Decision**: ✅ STORE - Performance critical, read-heavy
+=== Summary Table ===
+| Data Type | Storage | Compute | Size per Claim | Decision | Rationale |
+|-----------|---------|---------|----------------|----------|-----------|
+| Claim core | ✅ | - | 1 KB | STORE | Essential |
+| Evidence | ✅ | - | 2 KB × 5 = 10 KB | STORE | Reproducibility |
+| Sources | ✅ | - | 500 B (shared) | STORE | Track record |
+| Edit history | ✅ | - | 2 KB × 20% = 400 B avg | STORE | Audit |
+| Analysis summary | ✅ | Once | 2 KB | STORE (cached) | Cost-effective |
+| Confidence score | ✅ | Once | 4 B | STORE (cached) | Fast access |
+| Risk score | ✅ | Once | 4 B | STORE (cached) | Fast access |
+| Scenarios | ✅ | When stale | 3 KB | STORE (hybrid) | Balance cost/speed |
+| Verdict | ✅ | When stale | 1 KB | STORE (cached) | Fast access |
+| Flags | ✅ | - | 500 B × 10% = 50 B avg | STORE | Improvement |
+| ErrorPatterns | ✅ | - | 1 KB (global) | STORE | Learning |
+| QualityMetrics | ✅ | - | 200 B (time series) | STORE | Trending |
+| Search results | - | ✅ | - | COMPUTE + 15min cache | Dynamic |
+| Aggregations | - | ✅ | - | COMPUTE + 1hr cache | Derivable |
+**Total storage per claim**: ~18 KB (without edits and flags)
+**For 1 million claims**:
+* **Storage**: ~18 GB (manageable)
+* **PostgreSQL**: ~$50/month (standard instance)
+* **Redis cache**: ~$20/month (1 GB instance)
+* **S3 archives**: ~$5/month (old edits)
+* **Total**: ~$75/month infrastructure
+**LLM cost savings by caching**:
+* Analysis summary stored: Save $0.03 per claim = $30K per 1M claims
+* Scenarios stored: Save $0.01 per claim × 20% views = $2K per 1M claims 
+* Verdict stored: Save $0.003 per claim = $3K per 1M claims
+* **Total savings**: ~$35K per 1M claims vs recomputing every time
+=== Recomputation Triggers ===
+**When to mark cached data as stale and recompute:**
+1. **User edits claim** → Recompute: all (analysis, scenarios, verdict, scores)
+2. **Evidence added** → Recompute: scenarios, verdict, confidence score
+3. **Source track record changes >10 points** → Recompute: confidence score, verdict
+4. **System improvement deployed** → Mark affected claims stale, recompute on next view
+5. **Controversy detected** (high flag rate) → Recompute: risk score
+**Recomputation strategy**:
+* **Eager**: Immediately recompute (for user edits)
+* **Lazy**: Recompute on next view (for system improvements)
+* **Batch**: Nightly re-evaluation of stale claims (if <1000)
+=== Database Size Projection ===
+**Year 1**: 10K claims
+* Storage: 180 MB
+* Cost: $10/month
+**Year 3**: 100K claims 
+* Storage: 1.8 GB
+* Cost: $30/month
+**Year 5**: 1M claims
+* Storage: 18 GB 
+* Cost: $75/month
+**Year 10**: 10M claims
+* Storage: 180 GB
+* Cost: $300/month
+* Optimization: Archive old claims to S3 ($5/TB/month)
+**Conclusion**: Storage costs are manageable, LLM cost savings are substantial.
+== 3. Key Simplifications ==
+* **Two content states only**: Published, Hidden
+* **Three user roles only**: Reader, Contributor, Moderator
+* **No complex versioning**: Linear edit history
+* **Reputation-based permissions**: Not role hierarchy
+* **Source track records**: Continuous evaluation
+== 3. What Gets Stored in the Database ==
+=== 3.1 Primary Storage (PostgreSQL) ===
+**Claims Table**:
+* Current state only (latest version)
+* Fields: id, assertion, domain, status, confidence_score, risk_score, completeness_score, version, created_at, updated_at
+**Evidence Table**:
+* All evidence records
+* Fields: id, claim_id, source_id, excerpt, url, relevance_score, supports, extracted_at, archived
+**Scenario Table**:
+* All scenarios for each claim
+* Fields: id, claim_id, description, assumptions (text array), confidence, created_by, created_at
+**Source Table**:
+* Track record database (continuously updated)
+* Fields: id, name, domain, type, track_record_score, accuracy_history (JSON), correction_frequency, last_updated, claim_count, corrections_count
+**User Table**:
+* All user accounts
+* Fields: id, username, email, role (Reader/Contributor/Moderator), reputation, created_at, last_active, contributions_count, flags_submitted, flags_accepted
+**Edit Table**:
+* Complete version history
+* Fields: id, entity_type, entity_id, user_id, before_state (JSON), after_state (JSON), edit_type, reason, created_at
+**Flag Table**:
+* User-reported issues
+* Fields: id, entity_type, entity_id, reported_by, issue_type, description, status, resolved_by, resolution_note, created_at, resolved_at
+**ErrorPattern Table**:
+* System improvement queue
+* Fields: id, error_category, claim_id, description, root_cause, frequency, status, created_at, fixed_at
+**QualityMetric Table**:
+* Time-series quality data
+* Fields: id, metric_type, metric_category, value, target, timestamp
+=== 3.2 What's NOT Stored (Computed on-the-fly) ===
+* **Verdicts**: Synthesized from evidence + scenarios when requested
+* **Risk scores**: Recalculated based on current factors
+* **Aggregated statistics**: Computed from base data
+* **Search results**: Generated from Elasticsearch index
+=== 3.3 Cache Layer (Redis) ===
+
+{{warning}}
+**Implementation Status:** Redis caching is **NOT YET IMPLEMENTED**. Current implementation has no caching layer.
+{{/warning}}
+
+**Cached for performance (Planned)**:
+* Frequently accessed claims (TTL: 1 hour)
+* Search results (TTL: 15 minutes)
+* User sessions (TTL: 24 hours)
+* Source track records (TTL: 1 hour)
+=== 3.4 File Storage (S3) ===
+**Archived content**:
+* Old edit history (>3 months)
+* Evidence documents (archived copies)
+* Database backups
+* Export files
+=== 3.5 Search Index (Elasticsearch) ===
+**Indexed for search**:
+* Claim assertions (full-text)
+* Evidence excerpts (full-text)
+* Scenario descriptions (full-text)
+* Source names (autocomplete)
+Synchronized from PostgreSQL via change data capture or periodic sync.
+== 4. Related Pages ==
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]]
+* [[Requirements>>FactHarbor.Specification.Requirements.WebHome]]
+* [[Workflows>>FactHarbor.Specification.Workflows.WebHome]]

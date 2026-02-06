@@ -1,0 +1,71 @@
+{{info}}
+**Current Implementation (v2.6.33)** - Uses Vercel AI SDK for multi-provider abstraction. Provider selected via ##LLM_PROVIDER## environment variable.
+{{/info}}
+
+= LLM Abstraction Architecture =
+
+{{mermaid}}
+
+graph TB
+    subgraph Pipelines[Triple-Path Pipelines]
+        ORCH[Orchestrated orchestrated.ts]
+        CANON[Monolithic Canonical]
+        DYN[Monolithic Dynamic]
+    end
+
+    subgraph AISDK[Vercel AI SDK]
+        SDK[AI SDK Core generateText generateObject]
+        STREAM[Streaming Support streamText]
+    end
+
+    subgraph Providers[LLM Providers]
+        ANT[Anthropic Claude 3.5 Sonnet DEFAULT]
+        OAI[OpenAI GPT-4o]
+        GOO[Google Gemini 1.5]
+        MIS[Mistral Large]
+    end
+
+    subgraph Config[Configuration]
+        ENV[Environment Variables LLM_PROVIDER FH_DETERMINISTIC]
+    end
+
+    ORCH --> SDK
+    CANON --> SDK
+    DYN --> SDK
+    SDK --> ANT
+    SDK --> OAI
+    SDK --> GOO
+    SDK --> MIS
+    ENV --> SDK
+
+{{/mermaid}}
+
+== Current Implementation ==
+
+|= Feature |= Status |= Notes
+| **Multi-provider support** | Implemented | Anthropic, OpenAI, Google, Mistral
+| **Provider selection** | Implemented | Via ##LLM_PROVIDER## env var
+| **Deterministic mode** | Implemented | ##FH_DETERMINISTIC=true## sets temperature 0
+| **Automatic failover** | Not implemented | Manual provider switch only
+| **Per-stage provider** | Not implemented | Single provider for all stages
+
+== Environment Variables ==
+
+|= Variable |= Default |= Options
+| ##LLM_PROVIDER## | anthropic | anthropic, openai, google, mistral
+| ##FH_DETERMINISTIC## | true | true = temperature 0, false = default
+
+== Provider Details ==
+
+|= Provider |= Model |= Use Case
+| **Anthropic** | Claude 3.5 Sonnet | Default, best reasoning
+| **OpenAI** | GPT-4o | Alternative, fast
+| **Google** | Gemini 1.5 Pro | Alternative, long context
+| **Mistral** | Large | Alternative, EU data residency
+
+== Future Enhancements ==
+
+* **Automatic failover**: Chain providers for resilience
+* **Per-stage optimization**: Different providers per pipeline stage
+* **Cost tracking**: Monitor and optimize LLM costs
+* **Local models**: Ollama/vLLM for on-premises deployment

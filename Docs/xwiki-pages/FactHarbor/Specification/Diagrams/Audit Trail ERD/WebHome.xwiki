@@ -1,0 +1,95 @@
+{{warning}}
+**Implementation Status (v2.6.33)** - Full audit trail with EDIT table is **not yet implemented**. Current implementation uses ##JobEvents## table for job execution logs and JSON blob storage (no versioned entities).
+{{/warning}}
+
+= Current Implementation =
+
+{{mermaid}}
+
+erDiagram
+    JOBS ||--o{ JOB_EVENTS : logs
+
+    JOBS {
+        int JobId_PK
+        string Status
+        datetime CreatedAt
+        datetime UpdatedAt
+        json ResultJson
+        text ReportMarkdown
+    }
+
+    JOB_EVENTS {
+        int Id_PK
+        int JobId_FK
+        datetime TsUtc
+        string Level
+        string Message
+    }
+
+{{/mermaid}}
+
+**Current audit capabilities:**
+* Job creation and completion timestamps
+* Job execution events (start, progress, errors)
+* No entity-level versioning
+* No user attribution (no user system)
+
+= Target Architecture (Future) =
+
+{{mermaid}}
+
+erDiagram
+    USERS ||--o{ EDITS : makes
+    CLAIMS ||--o{ EDITS : tracks
+    EVIDENCE ||--o{ EDITS : tracks
+    SOURCES ||--o{ EDITS : tracks
+    KEY_FACTORS ||--o{ EDITS : tracks
+
+    USERS {
+        uuid id_PK
+        text name
+        text email
+    }
+
+    CLAIMS {
+        uuid id_PK
+        text text
+    }
+
+    EVIDENCE {
+        uuid id_PK
+        uuid claim_id_FK
+    }
+
+    SOURCES {
+        uuid id_PK
+        text name
+    }
+
+    KEY_FACTORS {
+        uuid id_PK
+        uuid claim_id_FK
+        text question
+    }
+
+    EDITS {
+        uuid id_PK
+        text entity_type
+        uuid entity_id
+        uuid user_id_FK
+        text change_type
+        boolean is_automated
+        jsonb changes
+        text reason
+        timestamp created_at
+    }
+
+{{/mermaid}}
+
+**Target features:**
+* Full entity versioning (Claims, Evidence, Sources, KeyFactors)
+* User attribution for all changes
+* AKEL vs human edit distinction
+* Hot/cold storage tiering (PostgreSQL + S3)
+
+See [[Data Model>>FactHarbor.Specification.Data Model.WebHome]] for complete target architecture.

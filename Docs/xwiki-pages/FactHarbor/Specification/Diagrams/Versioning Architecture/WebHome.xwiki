@@ -1,0 +1,39 @@
+{{warning}}
+**Not Implemented (v2.6.33)** - Entity versioning is **not yet implemented**. Current implementation stores analysis results as immutable JSON blobs. This diagram shows the **target architecture**.
+{{/warning}}
+
+= Target Versioning Architecture =
+
+{{mermaid}}
+
+graph LR
+    CLAIM[Claim] -->|edited| EDIT[Edit Record]
+    EDIT -->|stores| BEFORE[Before State]
+    EDIT -->|stores| AFTER[After State]
+    EDIT -->|tracks| WHO[Who Changed]
+    EDIT -->|tracks| WHEN[When Changed]
+    EDIT -->|tracks| WHY[Why Changed]
+    EDIT -->|if needed| RESTORE[Manual Restore]
+    RESTORE -->|create new| CLAIM
+
+{{/mermaid}}
+
+= Current vs Target =
+
+|= Feature |= Current (v2.6.33) |= Target
+| Edit tracking | No | Yes via EDIT table
+| Before/after states | No | Yes JSON storage
+| User attribution | No (anonymous) | Yes with user system
+| Restore capability | No | Yes create new edit
+
+= Target Details =
+
+**V1.0 Target**: Simple edit history sufficient for accountability and basic rollback.
+* Track who, what, when, why for each change
+* Store before/after values in edits table
+* Manual restore if needed (create new edit with old values)
+
+**V2.0+ Future**: Add complex versioning if users request:
+* Version history browsing
+* Restore previous version
+* Diff between versions

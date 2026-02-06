@@ -1,0 +1,61 @@
+== FactHarbor Analysis Summary ==
+
+**Claim**: "Bolsonaro's trials were fair and based on Brazilian law"
+
+----
+
+=== Two Separate Proceedings Analyzed ===
+
+|=Proceeding|=Court|=Year|=Charge|=Outcome
+|Electoral Ineligibility|TSE|2023|Abuse of power, media misuse|8-year ban (5-2 vote)
+|Criminal Conviction|STF|2025|Attempted coup, criminal organization|27 years prison (4-1 vote)
+
+----
+
+=== Verdicts ===
+
+|=Dimension|=Verdict|=Confidence
+|**Legal Basis**|STRONGLY SUPPORTED|85%
+|**Procedural Fairness**|LARGELY SUPPORTED with caveats|70%
+
+----
+
+=== Key Findings ===
+
+**✅ Supporting Fairness:**
+
+* Clear legal framework (Electoral Code, Criminal Code Title XII)
+* Law 14.197/2021 used for prosecution was enacted //under Bolsonaro's own presidency//
+* Extensive evidence (884-page police report, 73 witnesses, coup decree drafts found)
+* Full defense presented, public trial, right to appeal granted
+* Multiple judges reviewed evidence (not single-judge decision)
+
+**⚠️ Legitimate Concerns:**
+
+* Justice Alexandre de Moraes was a //target of the assassination plot// yet presided (appearance of bias)
+* 27-year sentence is very heavy by international standards
+* Political polarization complicates neutral perception
+* US pressure (50% tariffs, sanctions on judges) creates diplomatic complications
+* Timing during Lula presidency raises perception issues
+
+----
+
+=== International Expert Assessment ===
+
+|=Source|=Position
+|Harvard Prof. Steven Levitsky|"Milestone of institutional resilience"
+|The Economist|"Solidity of Brazil's judiciary"
+|NY City Bar Association|Condemned US pressure, affirmed judicial independence
+|Folha de S. Paulo (Brazilian liberal paper)|"**Fair conviction, high punishment**"
+|Trump Administration|Called it "witch hunt"
+
+----
+
+=== Balanced Conclusion ===
+
+**Both statements can be simultaneously true:**
+
+1. The trials followed established Brazilian law with extensive evidence
+1. There are legitimate concerns about perception of judicial neutrality and sentence severity
+
+**Analysis ID**: FH-BOLSO-TRIAL-2025-12-15

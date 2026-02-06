@@ -1,0 +1,46 @@
+{{info}}
+**Current Status: Level 0 (POC/Demo)** - v2.6.33. FactHarbor is currently at POC level with full AKEL automation but limited production features.
+{{/info}}
+
+= Automation Maturity Progression =
+
+{{mermaid}}
+
+graph TD
+    POC[Level 0 POC Demo CURRENT]
+    R05[Level 0.5 Limited Production]
+    R10[Level 1.0 Full Production]
+    R20[Level 2.0+ Distributed Intelligence]
+
+    POC --> R05
+    R05 --> R10
+    R10 --> R20
+
+{{/mermaid}}
+
+== Level Descriptions ==
+
+|= Level |= Name |= Key Features
+| **Level 0** | POC/Demo (CURRENT) | All content auto-analyzed, AKEL generates verdicts, no risk tier filtering, single-user demo mode
+| **Level 0.5** | Limited Production | Multi-user support, risk tier classification, basic sampling audit, algorithm improvement focus
+| **Level 1.0** | Full Production | All tiers auto-published, clear risk labels, reduced sampling, mature algorithms
+| **Level 2.0+** | Distributed | Federated multi-node, cross-node audits, advanced patterns, strategic sampling only
+
+= Current Implementation (v2.6.33) =
+
+|= Feature |= POC Target |= Actual Status
+| AKEL auto-analysis | Yes | Implemented
+| Verdict generation | Yes | Implemented (7-point scale)
+| Quality Gates | Basic | Gates 1 and 4 implemented
+| Risk tiers | Yes | Not implemented
+| Sampling audits | High sampling | Not implemented
+| User system | Demo only | Anonymous only
+
+= Key Principles =
+
+**Across All Levels:**
+* AKEL makes all publication decisions
+* No human approval gates
+* Humans monitor metrics and improve algorithms
+* Risk tiers guide audit priorities, not publication
+* Sampling audits inform improvements

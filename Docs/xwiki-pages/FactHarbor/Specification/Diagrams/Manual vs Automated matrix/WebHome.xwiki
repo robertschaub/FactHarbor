@@ -1,0 +1,47 @@
+{{info}}
+**Design Philosophy** - This matrix shows the intended division of responsibilities between AKEL and humans. v2.6.33 implements the automated claim evaluation; human responsibilities require the user system (not yet implemented).
+{{/info}}
+
+= Manual vs Automated Matrix =
+
+{{mermaid}}
+
+graph TD
+    subgraph Automated[Automated by AKEL]
+        A1[Claim Evaluation]
+        A2[Quality Assessment]
+        A3[Content Management]
+    end
+    subgraph Human[Human Responsibilities]
+        H1[Algorithm Improvement]
+        H2[Policy Governance]
+        H3[Exception Handling]
+        H4[Strategic Decisions]
+    end
+
+{{/mermaid}}
+
+= Automated by AKEL =
+
+|= Function |= Details |= Status
+| **Claim Evaluation** | Evidence extraction, source scoring, verdict generation, risk classification, publication | Implemented
+| **Quality Assessment** | Contradiction detection, confidence scoring, pattern recognition, anomaly flagging | Partial (Gates 1 and 4)
+| **Content Management** | KeyFactor generation, evidence linking, source tracking | Implemented
+
+= Human Responsibilities =
+
+|= Function |= Details |= Status
+| **Algorithm Improvement** | Monitor metrics, identify issues, propose fixes, test, deploy | Via code changes
+| **Policy Governance** | Set criteria, define risk tiers, establish thresholds, update guidelines | Not implemented (env vars only)
+| **Exception Handling** | Review flagged items, handle abuse, address safety, manage legal | Not implemented
+| **Strategic Decisions** | Budget, hiring, major policy, partnerships | N/A
+
+= Key Principles =
+
+**Never Manual:**
+* Individual claim approval
+* Routine content review
+* Verdict overrides (fix algorithm instead)
+* Publication gates
+
+**Key Principle:** AKEL handles all content decisions. Humans improve the system, not the data.

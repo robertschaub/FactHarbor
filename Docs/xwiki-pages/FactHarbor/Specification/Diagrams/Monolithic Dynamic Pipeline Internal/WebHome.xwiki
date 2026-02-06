@@ -1,0 +1,154 @@
+{{warning}}
+**Experimental (v2.6.33)** - Flexible output structure not bound to canonical schema. File: ##monolithic-dynamic.ts## (~550 lines). Labeled as "Experimental" in UI.
+{{/warning}}
+
+= Monolithic Dynamic Pipeline Internal Flow =
+
+{{mermaid}}
+
+flowchart TB
+    subgraph Entry[Entry Point]
+        INPUT[runMonolithicDynamic]
+        BUDGET[Initialize Budget maxIterations 4 maxSearches 6]
+        TIMEOUT[Start timeout 2.5 minutes]
+    end
+
+    subgraph Analysis[Single LLM Analysis]
+        PROMPT[Build dynamic analysis prompt]
+        LLM[LLM Call DynamicAnalysisSchema]
+        SEARCH[searchWebWithProvider]
+        FETCH[fetchSourceContent]
+    end
+
+    subgraph Safety[Safety Contract Enforcement]
+        CITATIONS[Extract citations array]
+        RAW[Store rawJson]
+        VALIDATE[Validate minimum fields]
+    end
+
+    subgraph Transform[Output Transform]
+        DYNAMIC[Build DynamicAnalysisResult]
+        REPORT[Generate experimental report]
+    end
+
+    subgraph Output[Output]
+        RESULT[resultJson dynamic structure]
+        MARKDOWN[reportMarkdown experimental label]
+    end
+
+    INPUT --> BUDGET
+    BUDGET --> TIMEOUT
+    TIMEOUT --> PROMPT
+
+    PROMPT --> LLM
+    LLM --> SEARCH
+    SEARCH --> FETCH
+    FETCH --> LLM
+
+    LLM --> CITATIONS
+    CITATIONS --> RAW
+    RAW --> VALIDATE
+
+    VALIDATE --> DYNAMIC
+    DYNAMIC --> REPORT
+    REPORT --> RESULT
+    REPORT --> MARKDOWN
+
+{{/mermaid}}
+
+= Key Characteristics =
+
+|= Feature |= Description
+| **Flexible Output** | LLM can structure analysis freely
+| **Experimental** | Labeled as experimental in UI
+| **Safety Contract** | Must always include citations[] and rawJson
+| **Shorter Budget** | More restrictive limits than canonical
+| **No Fallback** | Does not fall back to other pipelines
+
+= Budget Configuration =
+
+|= Parameter |= Value |= Comparison to Canonical
+| maxIterations | 4 | vs 5 (20% less)
+| maxSearches | 6 | vs 8 (25% less)
+| maxFetches | 8 | vs 10 (20% less)
+| timeoutMs | 150000 | vs 180000 (2.5 min vs 3 min)
+
+= Minimum Safety Contract =
+
+**Required fields (always present):**
+
+|= Field |= Type |= Purpose
+| ##citations## | Array | Source URLs with excerpts (provenance)
+| ##rawJson## | Any | Full LLM output for auditing
+
+**Optional fields (LLM decides):**
+
+|= Field |= Type |= Purpose
+| ##summary## | String | Analysis summary
+| ##verdict## | Object | label, score, confidence, reasoning
+| ##findings## | Array | Key findings with support levels
+| ##methodology## | String | Analysis approach description
+| ##limitations## | Array | Known analysis limitations
+
+= Output Schema =
+
+{{mermaid}}
+
+erDiagram
+    DYNAMIC_RESULT ||--o{ CITATION : has
+    DYNAMIC_RESULT ||--o| VERDICT : may_have
+    DYNAMIC_RESULT ||--o{ FINDING : may_have
+
+    DYNAMIC_RESULT {
+        array citations_required
+        any rawJson_required
+        string summary
+        string methodology
+        array limitations
+    }
+
+    CITATION {
+        string url_required
+        string title
+        string excerpt_required
+        string accessedAt
+    }
+
+    VERDICT {
+        string label
+        number score_0_to_100
+        number confidence_0_to_100
+        string reasoning
+    }
+
+    FINDING {
+        string point
+        string support_strong_moderate_weak_none
+        array sources
+        string notes
+    }
+
+{{/mermaid}}
+
+= Differences from Other Pipelines =
+
+|= Aspect |= Orchestrated |= Mono Canonical |= Mono Dynamic
+| Schema | Canonical fixed | Canonical fixed | Flexible
+| UI | Jobs page | Jobs page | Dynamic viewer
+| Fallback | Default | To Orchestrated | None
+| Budget | Generous | Moderate | Restrictive
+| Label | Standard | Standard | Experimental
+| Code | ~9000 lines | ~1100 lines | ~550 lines
+
+= Use Cases =
+
+**When to use Dynamic:**
+* Exploratory analysis of novel claim types
+* Research where canonical structure is limiting
+* Comparing LLM reasoning approaches
+* Debugging LLM behavior
+
+**When NOT to use:**
+* Production fact-checking
+* Results that need UI rendering
+* Comparing results across pipelines

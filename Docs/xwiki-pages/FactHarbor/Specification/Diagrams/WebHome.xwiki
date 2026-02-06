@@ -1,0 +1,53 @@
+= Diagrams =
+
+This section contains visual representations of the FactHarbor system architecture.
+
+{{info}}
+All diagrams use **Mermaid syntax** for maintainability. Each diagram indicates whether it shows **current implementation** or **target architecture**.
+{{/info}}
+
+== Core Architecture (v2.6.33 - Implemented) ==
+
+|= Diagram |= Description |= Status
+| [[High-Level Architecture>>FactHarbor.Specification.Diagrams.High-Level Architecture.WebHome]] | Two-service architecture (Next.js + .NET) | Current
+| [[AKEL Triple-Path Architecture>>FactHarbor.Specification.Diagrams.AKEL Architecture.WebHome]] | Triple-Path pipeline dispatch overview | Current
+| [[Core Data Model ERD>>FactHarbor.Specification.Diagrams.Core Data Model ERD.WebHome]] | JSON blob data model | Current
+| [[Storage Architecture>>FactHarbor.Specification.Diagrams.Storage Architecture.WebHome]] | SQLite storage | Current
+| [[LLM Abstraction>>FactHarbor.Specification.Diagrams.LLM Abstraction Architecture.WebHome]] | AI SDK multi-provider | Current
+
+== Pipeline Internals (v2.6.33 - Implemented) ==
+
+|= Diagram |= Description |= File
+| [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]] | 5-step staged workflow (default) | ##orchestrated.ts##
+| [[Monolithic Canonical Internal>>FactHarbor.Specification.Diagrams.Monolithic Canonical Pipeline Internal.WebHome]] | Single-context with canonical output | ##monolithic-canonical.ts##
+| [[Monolithic Dynamic Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] | Flexible experimental output | ##monolithic-dynamic.ts##
+
+== Workflows (v2.6.33 - Implemented) ==
+
+|= Diagram |= Description |= Status
+| [[Claim Analysis Workflow>>FactHarbor.Specification.Diagrams.Claim and Scenario Workflow.WebHome]] | Understanding to Research to Verdict | Current
+| [[Evidence and Verdict>>FactHarbor.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]] | 7-point verdict scale | Current
+| [[Quality Gates>>FactHarbor.Specification.Diagrams.Quality and Audit Workflow.WebHome]] | Gates 1 and 4 | Current
+
+== Target Architecture (Future) ==
+
+|= Diagram |= Description |= Status
+| [[Audit Trail ERD>>FactHarbor.Specification.Diagrams.Audit Trail ERD.WebHome]] | Entity versioning | Future
+| [[Versioning Architecture>>FactHarbor.Specification.Diagrams.Versioning Architecture.WebHome]] | Edit history and restore | Future
+| [[Human User Roles>>FactHarbor.Specification.Diagrams.Human User Roles.WebHome]] | User role hierarchy | Future
+| [[User Class Diagram>>FactHarbor.Specification.Diagrams.User Class Diagram.WebHome]] | User class structure | Future
+| [[Technical Users>>FactHarbor.Specification.Diagrams.Technical and System Users.WebHome]] | System services | Future
+| [[Federation Architecture>>FactHarbor.Specification.Diagrams.Federation Architecture.WebHome]] | Multi-instance sync | Future (V1.0+)
+
+== Design Philosophy ==
+
+|= Diagram |= Description |= Status
+| [[Manual vs Automated Matrix>>FactHarbor.Specification.Diagrams.Manual vs Automated matrix.WebHome]] | Human vs AKEL responsibilities | Design
+
+== Roadmap ==
+
+|= Diagram |= Description |= Status
+| [[Automation Level>>FactHarbor.Specification.Diagrams.Automation Level.WebHome]] | Maturity progression (Current: POC) | Roadmap
+| [[Automation Roadmap>>FactHarbor.Specification.Diagrams.Automation Roadmap.WebHome]] | QA evolution | Roadmap
+
+[[Back to Specification>>FactHarbor.Specification.WebHome]]

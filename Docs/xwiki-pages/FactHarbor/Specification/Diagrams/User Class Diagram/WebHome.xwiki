@@ -1,0 +1,61 @@
+{{warning}}
+**Not Implemented (v2.6.33)** - User class hierarchy is **not yet implemented**. This diagram shows the **target architecture**. Current system has anonymous users only.
+{{/warning}}
+
+= Target User Class Diagram =
+
+{{mermaid}}
+
+classDiagram
+    class User {
+        +UUID id
+        +String username
+        +String email
+        +Role role
+        +Int reputation
+        +Timestamp created_at
+        +contribute()
+        +flag_issue()
+        +earn_reputation()
+    }
+    class Reader {
+        +browse()
+        +search()
+        +flag_content()
+    }
+    class Contributor {
+        +edit_claims()
+        +add_evidence()
+        +suggest_improvements()
+    }
+    class Moderator {
+        +review_flags()
+        +hide_content()
+        +resolve_disputes()
+    }
+    User --> Reader : default role
+    User --> Contributor : registers and earns reputation
+    User --> Moderator : appointed
+
+{{/mermaid}}
+
+= Role Permissions =
+
+|= Role |= Capabilities |= Requirements
+| **Reader** | Browse, search, flag content | Default (no login)
+| **Contributor** | Edit claims, add evidence, suggest improvements | Registration + sufficient reputation
+| **Moderator** | Review flags, hide content, resolve disputes | Appointed by Governing Team
+
+= Current Implementation =
+
+* All users are anonymous Readers
+* No authentication system
+* No reputation tracking
+* No role-based permissions
+
+= Target Design =
+
+**Simplified flat role structure**:
+* Three roles only: Reader (default), Contributor (earned), Moderator (appointed)
+* Reputation system replaces role hierarchy
+* Progressive permissions based on reputation, not titles

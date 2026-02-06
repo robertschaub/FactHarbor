@@ -1,0 +1,282 @@
+= Frequently Asked Questions (FAQ) =
+Common questions about FactHarbor's design, functionality, and approach.
+== 1. How do claims get evaluated in FactHarbor? ==
+=== 1.1 User Submission ===
+**Who**: Anyone can submit claims
+**Process**: User submits claim text + source URLs
+**Speed**: Typically <20 seconds to verdict
+=== 1.2 AKEL Processing (Automated) ===
+**What**: AI Knowledge Extraction Layer analyzes claim
+**Steps**:
+* Parse claim into testable components
+* Extract evidence from provided sources
+* Score source credibility
+* Generate verdict with confidence level
+* Assign risk tier
+* Publish automatically
+**Authority**: AKEL makes all content decisions
+**Scale**: Can process millions of claims
+=== 1.3 Continuous Improvement (Human Role) ===
+**What**: Humans improve the system, not individual verdicts
+**Activities**:
+* Monitor aggregate performance metrics
+* Identify systematic errors
+* Propose algorithm improvements
+* Update policies and rules
+* Test changes before deployment
+**NOT**: Reviewing individual claims for approval
+**Focus**: Fix the system, not the data
+=== 1.4 Exception Handling ===
+**When AKEL flags for review**:
+* Low confidence verdict
+* Detected manipulation attempt
+* Unusual pattern requiring attention
+**Moderator role**:
+* Reviews flagged items
+* Takes action on abuse/manipulation
+* Proposes detection improvements
+* Does NOT override verdicts
+=== 1.5 Why This Model Works ===
+**Scale**: Automation handles volume humans cannot
+**Consistency**: Same rules applied uniformly
+**Transparency**: Algorithms can be audited
+**Improvement**: Systematic fixes benefit all claims
+== 2. What prevents FactHarbor from becoming another echo chamber? ==
+FactHarbor includes multiple safeguards against echo chambers and filter bubbles:
+**Mandatory Contradiction Search**:
+* AI must actively search for counter-evidence, not just confirmations
+* System checks for echo chamber patterns in source clusters
+* Flags tribal or ideological source clustering
+* Requires diverse perspectives across political/ideological spectrum
+**Multiple Scenarios**:
+* Claims are evaluated under different interpretations
+* Reveals how assumptions change conclusions
+* Makes disagreements understandable, not divisive
+**Transparent Reasoning**:
+* All assumptions, definitions, and boundaries are explicit
+* Evidence chains are traceable
+* Uncertainty is quantified, not hidden
+**Audit System**:
+* Human auditors check for bubble patterns
+* Feedback loop improves AI search diversity
+* Community can flag missing perspectives
+**Federation**:
+* Multiple independent nodes with different perspectives
+* No single entity controls "the truth"
+* Cross-node contradiction detection
+== 3. How does FactHarbor handle claims that are "true in one context but false in another"? ==
+This is exactly what FactHarbor is designed for:
+**Scenarios capture contexts**:
+* Each scenario defines specific boundaries, definitions, and assumptions
+* The same claim can have different verdicts in different scenarios
+* Example: "Coffee is healthy" depends on:
+ ** Definition of "healthy" (reduces disease risk? improves mood? affects specific conditions?)
+ ** Population (adults? pregnant women? people with heart conditions?)
+ ** Consumption level (1 cup/day? 5 cups/day?)
+ ** Time horizon (short-term? long-term?)
+**Truth Landscape**:
+* Shows all scenarios and their verdicts side-by-side
+* Users see *why* interpretations differ
+* No forced consensus when legitimate disagreement exists
+**Explicit Assumptions**:
+* Every scenario states its assumptions clearly
+* Users can compare how changing assumptions changes conclusions
+* Makes context-dependence visible, not hidden
+== 4. What makes FactHarbor different from traditional fact-checking sites? ==
+**Traditional Fact-Checking**:
+* Binary verdicts: True / Mostly True / False
+* Single interpretation chosen by fact-checker
+* Often hides legitimate contextual differences
+* Limited ability to show *why* people disagree
+**FactHarbor**:
+* **Multi-scenario**: Shows multiple valid interpretations
+* **Likelihood-based**: Ranges with uncertainty, not binary labels
+* **Transparent assumptions**: Makes boundaries and definitions explicit
+* **Version history**: Shows how understanding evolves
+* **Contradiction search**: Actively seeks opposing evidence
+* **Federated**: No single authority controls truth
+== 5. How do you prevent manipulation or coordinated misinformation campaigns? ==
+**Quality Gates**:
+* Automated checks before AI-generated content publishes
+* Source quality verification
+* Mandatory contradiction search
+* Bubble detection for coordinated campaigns
+**Audit System**:
+* Stratified sampling catches manipulation patterns
+* Trusted Contributor auditors validate AI research quality
+* Failed audits trigger immediate review
+**Transparency**:
+* All reasoning chains are visible
+* Evidence sources are traceable
+* AKEL involvement clearly labeled
+* Version history preserved
+**Moderation**:
+* Moderators handle abuse, spam, coordinated manipulation
+* Content can be flagged by community
+* Audit trail maintained even if content hidden
+**Federation**:
+* Multiple nodes with independent governance
+* No single point of control
+* Cross-node contradiction detection
+* Trust model prevents malicious node influence
+== 6. What happens when new evidence contradicts an existing verdict? ==
+FactHarbor is designed for evolving knowledge:
+**Automatic Re-evaluation**:
+1. New evidence arrives
+2. System detects affected scenarios and verdicts
+3. AKEL proposes updated verdicts
+4. Contributors/experts validate
+5. New verdict version published
+6. Old versions remain accessible
+**Version History**:
+* Every verdict has complete history
+* Users can see "as of date X, what did we know?"
+* Timeline shows how understanding evolved
+**Transparent Updates**:
+* Reason for re-evaluation documented
+* New evidence clearly linked
+* Changes explained, not hidden
+**User Notifications**:
+* Users following claims are notified of updates
+* Can compare old vs new verdicts
+* Can see which evidence changed conclusions
+== 7. Who can submit claims to FactHarbor? ==
+**Anyone** - even without login:
+**Readers** (no login required):
+* Browse and search all published content
+* Submit text for analysis
+* New claims added automatically unless duplicates exist
+* System deduplicates and normalizes
+**Contributors** (logged in):
+* Everything Readers can do
+* Submit evidence sources
+* Suggest scenarios
+* Participate in discussions
+**Workflow**:
+1. User submits text (as Reader or Contributor)
+2. AKEL extracts claims
+3. Checks for existing duplicates
+4. Normalizes claim text
+5. Assigns risk tier
+6. Generates scenarios (draft)
+7. Runs quality gates
+8. Publishes as AI-Generated (Mode 2) if passes
+== 8. What are "risk tiers" and why do they matter? ==
+Risk tiers determine review requirements and publication workflow:
+**Tier A (High Risk)**:
+* **Domains**: Medical, legal, elections, safety, security, major financial
+* **Publication**: AI can publish with warnings, expert review required for "AKEL-Generated" status
+* **Audit rate**: Recommendation 30-50%
+* **Why**: Potential for significant harm if wrong
+**Tier B (Medium Risk)**:
+* **Domains**: Complex policy, science causality, contested issues
+* **Publication**: AI can publish immediately with clear labeling
+* **Audit rate**: Recommendation 10-20%
+* **Why**: Nuanced but lower immediate harm risk
+**Tier C (Low Risk)**:
+* **Domains**: Definitions, established facts, historical data
+* **Publication**: AI publication default
+* **Audit rate**: Recommendation 5-10%
+* **Why**: Well-established, low controversy
+**Assignment**:
+* AKEL suggests tier based on domain, keywords, impact
+* Moderators and Trusted Contributors can override
+* Risk tiers reviewed based on audit outcomes
+== 9. How does federation work and why is it important? ==
+**Federation Model**:
+* Multiple independent FactHarbor nodes
+* Each node has own database, AKEL, governance
+* Nodes exchange claims, scenarios, evidence, verdicts
+* No central authority
+**Why Federation Matters**:
+* **Resilience**: No single point of failure or censorship
+* **Autonomy**: Communities govern themselves
+* **Scalability**: Add nodes to handle more users
+* **Specialization**: Domain-focused nodes (health, energy, etc.)
+* **Trust diversity**: Multiple perspectives, not single truth source
+**How Nodes Exchange Data**:
+1. Local node creates versions
+2. Builds signed bundle
+3. Pushes to trusted neighbor nodes
+4. Remote nodes validate signatures and lineage
+5. Accept or branch versions
+6. Local re-evaluation if needed
+**Trust Model**:
+* Trusted nodes → auto-import
+* Neutral nodes → import with review
+* Untrusted nodes → manual only
+== 10. Can experts disagree in FactHarbor? ==
+**Yes - and that's a feature, not a bug**:
+**Multiple Scenarios**:
+* Trusted Contributors can create different scenarios with different assumptions
+* Each scenario gets its own verdict
+* Users see *why* experts disagree (different definitions, boundaries, evidence weighting)
+**Parallel Verdicts**:
+* Same scenario, different expert interpretations
+* Both verdicts visible with expert attribution
+* No forced consensus
+**Transparency**:
+* Trusted Contributor reasoning documented
+* Assumptions stated explicitly
+* Evidence chains traceable
+* Users can evaluate competing expert opinions
+**Federation**:
+* Different nodes can have different expert conclusions
+* Cross-node branching allowed
+* Users can see how conclusions vary across nodes
+== 11. What prevents AI from hallucinating or making up facts? ==
+**Multiple Safeguards**:
+**Quality Gate 4: Structural Integrity**:
+* Fact-checking against sources
+* No hallucinations allowed
+* Logic chain must be valid and traceable
+* References must be accessible and verifiable
+**Evidence Requirements**:
+* Primary sources required
+* Citations must be complete
+* Sources must be accessible
+* Reliability scored
+**Audit System**:
+* Human auditors check AI-generated content
+* Hallucinations caught and fed back into training
+* Patterns of errors trigger system improvements
+**Transparency**:
+* All reasoning chains visible
+* Sources linked
+* Users can verify claims against sources
+* AKEL outputs clearly labeled
+**Human Oversight**:
+* Tier A marked as highest risk
+* Audit sampling catches errors
+* Community can flag issues
+== 12. How does FactHarbor make money / is it sustainable? ==
+[ToDo: Business model and sustainability to be defined]
+Potential models under consideration:
+* Non-profit foundation with grants and donations
+* Institutional subscriptions (universities, research organizations, media)
+* API access for third-party integrations
+* Premium features for power users
+* Federated node hosting services
+Core principle: **Public benefit** mission takes priority over profit.
+== 13. Related Pages ==
+* [[Requirements (Roles)>>FactHarbor.Specification.Requirements.WebHome]]
+* [[AKEL (AI Knowledge Extraction Layer)>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]
+* [[Automation>>FactHarbor.Specification.Automation.WebHome]]
+* [[Federation & Decentralization>>FactHarbor.Specification.Federation & Decentralization.WebHome]]
+* [[Mission & Purpose>>FactHarbor.Organisation.Core Problems FactHarbor Solves.WebHome]]
+== 20. Glossary / Key Terms ==
+=== Phase 0 vs POC v1 ===
+These terms refer to the same stage of FactHarbor's development:
+* **Phase 0** - Organisational perspective: Pre-alpha stage with founder-led governance
+* **POC v1** - Technical perspective: Proof of Concept demonstrating AI-generated publication
+Both describe the current development stage where the platform is being built and initially validated.
+=== Beta 0 ===
+The next development stage after POC, featuring:
+* External testers
+* Basic federation experiments
+* Enhanced automation
+=== Release 1.0 ===
+The first public release featuring:
+* Full federation support
+* 2000+ concurrent users
+* Production-grade infrastructure

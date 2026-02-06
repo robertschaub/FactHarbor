@@ -1,0 +1,88 @@
+{{info}}
+**Current Implementation (v2.6.33)** - Triple-Path Pipeline Architecture. Three pipeline variants share common modules for scope detection, aggregation, and claim processing.
+{{/info}}
+
+= Triple-Path Pipeline Architecture =
+
+{{mermaid}}
+
+graph TB
+    subgraph Input[User Input]
+        URL[URL Input]
+        TEXT[Text Input]
+    end
+
+    subgraph Shared[Shared Modules]
+        SCOPES[scopes.ts Scope Detection]
+        AGG[aggregation.ts Verdict Aggregation]
+        CLAIM_D[claim-decomposition.ts]
+    end
+
+    subgraph Dispatch[Pipeline Dispatch]
+        SELECT{Select Pipeline}
+    end
+
+    subgraph Pipelines[Pipeline Implementations]
+        ORCH[Orchestrated Pipeline]
+        CANON[Monolithic Canonical]
+        DYN[Monolithic Dynamic]
+    end
+
+    subgraph LLM[LLM Layer]
+        PROVIDER[AI SDK Provider]
+    end
+
+    subgraph Output[Result]
+        RESULT[AnalysisResult JSON]
+        REPORT[Markdown Report]
+    end
+
+    URL --> SELECT
+    TEXT --> SELECT
+    SELECT -->|orchestrated| ORCH
+    SELECT -->|monolithic_canonical| CANON
+    SELECT -->|monolithic_dynamic| DYN
+    SCOPES --> ORCH
+    SCOPES --> CANON
+    AGG --> ORCH
+    AGG --> CANON
+    CLAIM_D --> ORCH
+    CLAIM_D --> CANON
+    ORCH --> PROVIDER
+    CANON --> PROVIDER
+    DYN --> PROVIDER
+    ORCH --> RESULT
+    CANON --> RESULT
+    DYN --> RESULT
+    RESULT --> REPORT
+
+{{/mermaid}}
+
+== Pipeline Variants ==
+
+|= Variant |= File |= Approach |= Output Schema
+| **Orchestrated** | ##orchestrated.ts## | Multi-step workflow with explicit stages | Canonical (structured)
+| **Monolithic Canonical** | ##monolithic-canonical.ts## | Single LLM tool-loop call | Canonical (structured)
+| **Monolithic Dynamic** | ##monolithic-dynamic.ts## | Single LLM tool-loop call | Dynamic (flexible)
+
+== Shared Modules ==
+
+|= Module |= Purpose
+| ##scopes.ts## | Heuristic scope pre-detection before LLM
+| ##aggregation.ts## | Verdict weighting, contestation validation
+| ##claim-decomposition.ts## | Claim text parsing and normalization
+
+== Orchestrated Pipeline Steps ==
+
+1. **Understand** - Detect input type, extract claims, identify dependencies
+2. **Research** (iterative) - Generate queries, fetch sources, extract facts
+3. **Verdict Generation** - Generate claim and article verdicts
+4. **Summary** - Build two-panel summary
+5. **Report** - Generate markdown report
+
+== Detailed Pipeline Diagrams ==
+
+For internal implementation details of each pipeline variant:
+* [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]] - 5-step staged workflow (~9000 lines)
+* [[Monolithic Canonical Internal>>FactHarbor.Specification.Diagrams.Monolithic Canonical Pipeline Internal.WebHome]] - Single-context canonical output (~1100 lines)
+* [[Monolithic Dynamic Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] - Flexible experimental output (~550 lines)

@@ -1,0 +1,470 @@
+= POC1: Core Workflow with Quality Gates =
+
+**Version:** 0.9.86-POC1 
+**Phase:** Proof of Concept 1 - Core Workflow Validation 
+**Status:** Production Specification 
+**Based on:** FactHarbor V0.9.69 + Quality Gate Enhancements
+
+{{warning}}
+**Implementation Status (Updated January 2026)**
+
+This specification describes the original POC1 design. Key implementation changes:
+
+* **Verdict Scale**: Now uses **7-point symmetric scale** (TRUE → FALSE) instead of 5-point
+* **Scenarios**: Replaced with **KeyFactors** (see `Docs/ARCHITECTURE/KeyFactors_Design.md`)
+* **Quality Gates**: Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence) implemented
+* **Cache Architecture**: Redis caching **not yet implemented**
+* **Data Model**: Using JSON blob storage, not normalized PostgreSQL tables
+
+See `Docs/STATUS/Documentation_Inconsistencies.md` for full comparison.
+{{/warning}}
+
+---
+
+== Purpose ==
+
+This specification defines POC1 scope and requirements. POC1 proves that the AKEL workflow can produce credible, quality-assured outputs by demonstrating:
+
+1. **Automated Claim Extraction** - AKEL reliably identifies fact-checkable claims from articles
+2. **Evidence-Based Verdicts** - AKEL generates verdicts supported by real evidence
+3. **Quality Validation** - Quality gates prevent hallucinations and low-confidence outputs
+4. **Core Workflow Viability** - The Article → Claims → Evidence → Verdicts pipeline works
+
+---
+
+== Success Criteria ==
+
+**POC1 is successful when:**
+
+* ✅ Process 20 test articles without failures
+* ✅ Extract claims that are verifiably factual (not opinions)
+* ✅ Generate verdicts with supporting evidence (minimum 2 sources per verdict)
+* ✅ Hallucination rate below 10% (manual verification)
+* ✅ Quality gates effectively filter non-publishable content
+
+---
+
+== Scope ==
+
+=== In POC1 ===
+
+**Core Functionality:**
+* Article processing and claim extraction
+* Evidence collection and source assessment
+* Verdict generation with quality validation
+* Basic UI to display results
+* Manual quality metrics tracking
+
+**Quality Assurance:**
+* Gate 1: Claim Extraction Validation
+* Gate 4: Verdict Confidence Assessment
+* Quality metrics dashboard (manual)
+
+=== Deferred to POC2 and Later ===
+
+**POC2 (Quality & Reliability):**
+* ~~FR8: Time Evolution (Dropped - Not in V1.0)~~
+* FR10: Human Contributor Override
+* Full NFR11 (Gates 2 & 3)
+* Evidence deduplication (FR54)
+* Quality metrics dashboard (automated)
+
+**Beta 0 (User Testing):**
+* FR11: Audit Trail
+* FR13: In-Article Claim Highlighting
+* NFR13: Public quality metrics
+* FR47: Archive.org Integration
+
+**V1.0 and Later:**
+* User accounts and authentication
+* Corrections system (FR45)
+* Search engine optimization (FR44)
+* Image/video verification (FR46, FR51)
+* API endpoints (UN-14)
+* Security hardening (NFR12)
+* A/B testing (FR49)
+
+---
+
+== Requirements ==
+
+=== NFR11: AKEL Quality Assurance Framework (POC1 Lite Version) ===
+
+**Importance:** CRITICAL 
+**Phase:** POC1 (2-gate subset), POC2 (full 4-gate system) 
+**Purpose:** Validate AKEL outputs before displaying to users
+
+POC1 implements **2 critical gates** from the full NFR11 specification:
+
+==== Gate 1: Claim Extraction Validation ====
+
+**Purpose:** Ensure extracted claims are factual assertions that can be verified
+
+**Validation Checks:**
+
+|= Check |= Purpose |= Pass Criteria
+| **Factuality Test** | Can this claim be proven true/false? | Claim must be verifiable
+| **Opinion Detection** | Contains subjective language? | Opinion score ≤ 0.3
+| **Specificity Check** | Contains concrete details? | Specificity score ≥ 0.3
+| **Future Prediction** | About future events? | Must be about past/present
+
+**Claim Classification:**
+
+* ✅ **FACTUAL** - Verifiable with evidence (proceed to verification)
+* ❌ **OPINION** - Subjective judgment (exclude from analysis)
+* ❌ **PREDICTION** - Future-oriented claim (exclude from analysis)
+* ❌ **AMBIGUOUS** - Too vague to verify (exclude from analysis)
+
+**Implementation Logic:**
+
+The system evaluates each extracted claim by:
+1. Checking if the claim can be verified using evidence
+2. Detecting opinion markers (e.g., "I think", "beautiful", "should")
+3. Counting specific elements (proper nouns, numbers, dates, locations)
+4. Detecting future-oriented language (e.g., "will", "predicted", "expects")
+
+**Pass Criteria:**
+* Must be factual (verifiable)
+* Opinion score ≤ 0.3
+* Specificity score ≥ 0.3
+* Claim type = FACTUAL
+
+**Failure Actions:**
+* Non-factual claims are **excluded** from further analysis
+* User sees clear explanation of why claim was excluded
+* No scenarios or verdicts generated for failed claims
+
+**Example Outcomes:**
+
+✅ **Pass:** "France's GDP was $2.7 trillion in 2023"
+* Factual: Yes
+* Opinion markers: None
+* Specific elements: France, $2.7 trillion, 2023
+* Type: FACTUAL
+
+❌ **Fail:** "France has a beautiful culture"
+* Factual: No (subjective)
+* Opinion markers: "beautiful"
+* Type: OPINION
+
+==== Gate 4: Verdict Confidence Assessment ====
+
+**Purpose:** Only display verdicts with sufficient evidence and confidence
+
+**Validation Checks:**
+
+|= Metric |= Minimum Required |= Purpose
+| **Evidence Count** | ≥ 2 sources | Multiple source confirmation
+| **Source Quality** | Average ≥ 0.6 | Reliable sources only
+| **Evidence Agreement** | ≥ 60% supporting | Majority consensus required
+| **Uncertainty Factors** | ≤ 3 hedging statements | Confident assertions
+| **Confidence Tier** | MEDIUM or HIGH | Sufficient confidence level
+
+**Confidence Tiers:**
+
+|= Tier |= Evidence |= Avg Quality |= Agreement |= Publishable?
+| **HIGH** | 3+ sources | ≥ 0.7 | ≥ 80% | ✅ Yes
+| **MEDIUM** | 2+ sources | ≥ 0.6 | ≥ 60% | ✅ Yes
+| **LOW** | 2+ sources | ≥ 0.5 | ≥ 40% | ❌ No (needs review)
+| **INSUFFICIENT** | < 2 sources | Any | Any | ❌ No (more research needed)
+
+**Implementation Logic:**
+
+The system evaluates each verdict by:
+1. Counting supporting and contradicting evidence sources
+2. Calculating average reliability score across all sources
+3. Computing evidence agreement (% supporting vs contradicting)
+4. Counting uncertainty markers in verdict text (e.g., "may", "possibly")
+5. Assigning confidence tier based on thresholds
+
+**Failure Actions:**
+* LOW or INSUFFICIENT verdicts are **not displayed** to users
+* System logs these cases for manual review
+* Claims marked as "Insufficient evidence for verdict"
+
+**Example Outcomes:**
+
+✅ **HIGH Confidence (Publishable):**
+* 4 sources (all reliable news organizations)
+* Average source quality: 0.8
+* Evidence agreement: 90% supporting
+* Uncertainty factors: 0
+* Result: Display verdict with "High Confidence" badge
+
+❌ **INSUFFICIENT (Not Publishable):**
+* 1 source
+* Average source quality: 0.7
+* Evidence agreement: 100% (only 1 source)
+* Result: Verdict blocked, needs more evidence
+
+=== NFR11: Acceptance Criteria ===
+
+**For POC1 Success:**
+
+|= Criterion |= Target |= Measurement
+| Claim validation accuracy | ≥ 90% | Manual review of 100 claims
+| False positive rate (bad claims passed) | ≤ 5% | Count of opinion/prediction claims that passed
+| Verdict publication rate | 60-80% | % of verdicts meeting quality thresholds
+| Hallucination rate | < 10% | Manual verification of evidence accuracy
+| Zero-evidence verdicts | 0% | Automated enforcement by Gate 4
+
+**Quality Gate Bypass:**
+
+For POC1 testing and debugging **only**:
+* Manual override switch to bypass quality gates
+* **Must be removed** before POC2
+* All bypasses logged for review
+
+---
+
+=== FR7: Automated Verdicts (Enhanced with Quality Gates) ===
+
+**Importance:** CRITICAL 
+**Phase:** POC1 (enhanced), V1.0 (complete) 
+**Purpose:** Generate evidence-based verdicts automatically
+
+**POC1 Enhancements:**
+
+**Integration with Quality Gates:**
+* Verdicts must pass Gate 4 before display
+* Low-confidence verdicts are held for review
+* Users see confidence tier for each verdict
+
+**Evidence Requirements:**
+* Minimum 2 sources per verdict (enforced by Gate 4)
+* Sources must have quality score ≥ 0.6
+* Mix of supporting and contradicting evidence preferred
+
+**Verdict Structure:**
+
+Each verdict includes:
+* **Assessment:** ~~TRUE / FALSE / PARTIALLY TRUE / DISPUTED / UNVERIFIABLE~~
+  //**Current Implementation (v2.6.33):** 7-point symmetric scale://
+  * TRUE (86-100%) / MOSTLY-TRUE (72-85%) / LEANING-TRUE (58-71%)
+  * MIXED (43-57%, high confidence) / UNVERIFIED (43-57%, low confidence)  
+  * LEANING-FALSE (29-42%) / MOSTLY-FALSE (15-28%) / FALSE (0-14%)
+* **Confidence Tier:** HIGH / MEDIUM
+* **Summary:** 2-3 sentence explanation
+* **Supporting Evidence:** List of sources with quotes
+* **Contradicting Evidence:** Opposing viewpoints (if any)
+* **Context:** Additional clarifying information
+* **Quality Indicators:** Evidence count, source quality, agreement percentage
+
+**Example Verdict Output:**
+
+{{info}}
+**Verdict:** PARTIALLY TRUE (Medium Confidence)
+
+The claim that "France's GDP was $2.7 trillion in 2023" is partially accurate. According to World Bank data, France's GDP was approximately $2.78 trillion in 2023, slightly higher than claimed.
+
+**Supporting Evidence (3 sources):**
+* World Bank: $2.78 trillion (Quality: 0.9)
+* IMF: $2.76 trillion (Quality: 0.9)
+* OECD: $2.77 trillion (Quality: 0.8)
+
+**Evidence Agreement:** 100% (all sources support)
+{{/info}}
+
+---
+
+=== FR4: Analysis Summary (Enhanced with Quality Indicators) ===
+
+**Importance:** HIGH 
+**Phase:** POC2 (full), POC1 (basic) 
+**Purpose:** Provide article-level summary for readers
+
+**POC1 Implementation:**
+
+Basic summary showing:
+* Total claims extracted
+* Claims analyzed (passed Gate 1)
+* Claims excluded (failed Gate 1) with reasons
+* Verdicts generated (passed Gate 4)
+* Verdicts held (failed Gate 4)
+* Overall quality metrics
+
+**Summary Display:**
+
+{{info}}
+**Analysis Summary**
+
+**Claims:** 8 extracted, 6 analyzed, 2 excluded
+* Excluded: 1 opinion, 1 prediction
+
+**Verdicts:** 4 published, 2 held for review
+* High confidence: 2
+* Medium confidence: 2
+* Insufficient evidence: 2 (needs review)
+
+**Quality Metrics:**
+* Average source quality: 0.75
+* Evidence agreement: 78%
+* Analysis confidence: MEDIUM
+{{/info}}
+
+---
+
+== Workflow ==
+
+=== POC1 Workflow Diagram ===
+
+{{code language="none"}}
+Article Input
+ ↓
+[Claim Extraction]
+ ↓
+[Gate 1: Claim Validation] ← Quality Gate
+ ├─ PASS → [Evidence Collection]
+ └─ FAIL → [Exclude from Analysis]
+ ↓
+ [Verdict Generation]
+ ↓
+ [Gate 4: Verdict Confidence] ← Quality Gate
+ ├─ PASS → [Display to User]
+ └─ FAIL → [Hold for Review]
+{{/code}}
+
+**Key Stages:**
+
+1. **Article Input:** User provides article URL or text
+2. **Claim Extraction:** AKEL identifies factual claims (FR1)
+3. **Gate 1 Validation:** Check if claims are fact-checkable
+4. **Evidence Collection:** Gather supporting/contradicting sources (FR5)
+5. **Verdict Generation:** Synthesize evidence into verdict (FR7)
+6. **Gate 4 Validation:** Verify verdict has sufficient confidence
+7. **Display or Hold:** Show verdict to user or flag for review
+
+---
+
+== Data Model Extensions ==
+
+=== ClaimValidationResult ===
+
+**Purpose:** Track Gate 1 validation outcomes
+
+**Fields:**
+
+|= Field |= Type |= Purpose
+| `claimId` | string | Reference to claim
+| `isFactual` | boolean | Can be verified?
+| `opinionScore` | number (0-1) | Opinion detection score
+| `specificityScore` | number (0-1) | Specificity level
+| `futureOriented` | boolean | About future events?
+| `claimType` | enum | FACTUAL / OPINION / PREDICTION / AMBIGUOUS
+| `passed` | boolean | Passed Gate 1?
+| `failureReason` | string | Why it failed (if applicable)
+| `validatedAt` | timestamp | Validation time
+
+---
+
+=== VerdictValidationResult ===
+
+**Purpose:** Track Gate 4 validation outcomes
+
+**Fields:**
+
+|= Field |= Type |= Purpose
+| `verdictId` | string | Reference to verdict
+| `evidenceCount` | number | Total sources
+| `averageSourceQuality` | number (0-1) | Mean quality across sources
+| `evidenceAgreement` | number (0-1) | % supporting vs contradicting
+| `uncertaintyFactors` | number | Count of hedging statements
+| `confidenceTier` | enum | HIGH / MEDIUM / LOW / INSUFFICIENT
+| `publishable` | boolean | Can display to users?
+| `failureReasons` | string[] | Why not publishable (if applicable)
+| `validatedAt` | timestamp | Validation time
+
+---
+
+=== QualityMetrics ===
+
+**Purpose:** Track POC1 quality performance (manual tracking)
+
+**Metrics to Track:**
+
+|= Metric |= Measurement Method |= Target
+| Claims extracted per article | Automated count | 5-15 per article
+| Claims passing Gate 1 | Automated count | 60-80% pass rate
+| Verdicts passing Gate 4 | Automated count | 60-80% pass rate
+| Hallucination rate | Manual review | < 10%
+| Evidence accuracy | Manual verification | > 90%
+| User-reported issues | Manual tracking | < 5% of verdicts
+
+**Manual Quality Review Process:**
+
+1. Select random sample of 20 verdicts
+2. Verify evidence sources are real and accurately quoted
+3. Check verdict assessment matches evidence
+4. Document any hallucinations or errors
+5. Calculate quality metrics
+6. Adjust thresholds if needed
+
+---
+
+== Cache Architecture ==
+
+{{warning}}
+**Implementation Status:** This Redis cache architecture is **NOT YET IMPLEMENTED**. Current implementation stores all data as JSON blobs in SQLite. See `Docs/STATUS/Current_Status.md` for caching roadmap.
+{{/warning}}
+
+**Redis Cache Design (Planned):**
+* Key: {{code}}claim:v1norm1:{language}:{sha256(canonical_claim)}{{/code}}
+* Value: Complete ClaimAnalysis JSON (~15KB, ~5KB compressed)
+* TTL: 90 days
+* Invalidation: Time-based, event-based, version-based
+
+**Canonicalization Algorithm:** Specified in API v0.4.1 Section 5.1.1
+* Unicode normalization (NFC)
+* Lowercase + punctuation removal
+* Whitespace normalization
+* Numeric normalization (95% → 95 percent)
+* Common abbreviations (COVID-19 → covid)
+* NO entity normalization (v1 limitation)
+
+**Cache Hit Rate Projections:**
+* Articles 0-100: 10% hit rate
+* Articles 100-1,000: 40% hit rate
+* Articles 1,000-10,000: 70% hit rate (**TARGET**)
+* Articles 10,000+: 80-90% hit rate
+
+**Cost Impact:**
+* 70% hit rate: $0.16/article (break-even with monolithic)
+* 80% hit rate: $0.11/article (27% savings)
+* 90% hit rate: $0.07/article (53% savings)
+
+== Implementation Checklist ==
+
+=== Phase 1: Setup (Phase: Core Workflow (Weeks 1-2) ===
+
+* [ ] Implement claim extraction (FR1)
+* [ ] Implement evidence collection (FR5)
+* [ ] Implement verdict generation (FR7)
+* [ ] Test with 5 sample articles
+
+=== Phase 3: Quality Gates (Phase: Testing & Refinement (Phase: Quality Metrics (Phase: Documentation (Phase:**
+
+=== Functional Requirements ===
+
+* ✅ **20 articles processed** without system failures
+* ✅ **Claim extraction works** - average 5-15 claims per article
+* ✅ **Quality gates effective** - 60-80% of claims/verdicts pass validation
+* ✅ **Verdicts have evidence** - 0% verdicts with < 2 sources
+
+=== Quality Requirements ===
+
+* ✅ **Hallucination rate < 10%** - verified through manual review
+* ✅ **Evidence accuracy > 90%** - sources are real and quoted correctly
+* ✅ **Opinion detection works** - < 5% opinion/prediction claims passed Gate 1
+* ✅ **Confidence tiers accurate** - HIGH verdicts are indeed higher quality
+
+=== Technical Requirements ===
+
+* ✅ **Performance acceptable** - verdicts generated in < 60 seconds per article
+* ✅ **API integration stable** - < 5% API call failures
+* ✅ **Code quality** - documented, testable, maintainable
+
+---
+
+---
+
+_End of POC1 Specification_

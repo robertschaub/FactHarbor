@@ -1,0 +1,387 @@
+= Architecture =
+FactHarbor's architecture is designed for **simplicity, automation, and continuous improvement**.
+== 1. Core Principles ==
+* **AI-First**: AKEL (AI) is the primary system, humans supplement
+* **Publish by Default**: No centralized approval (removed in V0.9.50), publish with confidence scores
+* **System Over Data**: Fix algorithms, not individual outputs
+* **Measure Everything**: Quality metrics drive improvements
+* **Scale Through Automation**: Minimal human intervention
+* **Start Simple**: Add complexity only when metrics prove necessary
+== 2. High-Level Architecture ==
+{{include reference="FactHarbor.Specification.Diagrams.High-Level Architecture.WebHome"/}}
+=== 2.1 Three-Layer Architecture ===
+FactHarbor uses a clean three-layer architecture:
+==== Interface Layer ====
+Handles all user and system interactions:
+* **Web UI**: Browse claims, view evidence, submit feedback
+* **REST API**: Programmatic access for integrations
+* **Authentication & Authorization**: User identity and permissions
+* **Rate Limiting**: Protect against abuse
+==== Processing Layer ====
+Core business logic and AI processing:
+* **AKEL Pipeline**: AI-driven claim analysis (parallel processing)
+ * Parse and extract claim components
+ * Gather evidence from multiple sources
+ * Check source track records
+ * Extract scenarios from evidence
+ * Synthesize verdicts
+ * Calculate risk scores
+
+* **LLM Abstraction Layer**: Provider-agnostic AI access
+ * Multi-provider support (Anthropic, OpenAI, Google, local models)
+ * Automatic failover and rate limit handling
+ * Per-stage model configuration
+ * Cost optimization through provider selection
+ * No vendor lock-in
+* **Background Jobs**: Automated maintenance tasks
+ * Source track record updates (weekly)
+ * Cache warming and invalidation
+ * Metrics aggregation
+ * Data archival
+* **Quality Monitoring**: Automated quality checks
+ * Anomaly detection
+ * Contradiction detection
+ * Completeness validation
+* **Moderation Detection**: Automated abuse detection
+ * Spam identification
+ * Manipulation detection
+ * Flag suspicious activity
+==== Data & Storage Layer ====
+Persistent data storage and caching:
+* **PostgreSQL**: Primary database for all core data
+ * Claims, evidence, sources, users
+ * Scenarios, edits, audit logs
+ * Built-in full-text search
+ * Time-series capabilities for metrics
+* **Redis**: High-speed caching layer
+ * Session data
+ * Frequently accessed claims
+ * API rate limiting
+* **S3 Storage**: Long-term archival
+ * Old edit history (90+ days)
+ * AKEL processing logs
+ * Backup snapshots
+**Optional future additions** (add only when metrics prove necessary):
+* **Elasticsearch**: If PostgreSQL full-text search becomes slow
+* **TimescaleDB**: If metrics queries become a bottleneck
+
+
+=== 2.2 LLM Abstraction Layer ===
+
+{{include reference="Test.FactHarbor.Specification.Diagrams.LLM Abstraction Architecture.WebHome"/}}
+
+**Purpose:** FactHarbor uses a provider-agnostic abstraction layer for all AI interactions, avoiding vendor lock-in and enabling flexible provider selection.
+
+**Multi-Provider Support:**
+* **Primary:** Anthropic Claude API (Haiku for extraction, Sonnet for analysis)
+* **Secondary:** OpenAI GPT API (automatic failover)
+* **Tertiary:** Google Vertex AI / Gemini
+* **Future:** Local models (Llama, Mistral) for on-premises deployments
+
+**Provider Interface:**
+* Abstract `LLMProvider` interface with `complete()`, `stream()`, `getName()`, `getCostPer1kTokens()`, `isAvailable()` methods
+* Per-stage model configuration (Stage 1: Haiku, Stage 2 & 3: Sonnet)
+* Environment variable and database configuration
+* Adapter pattern implementation (AnthropicProvider, OpenAIProvider, GoogleProvider)
+
+**Configuration:**
+* Runtime provider switching without code changes
+* Admin API for provider management (`POST /admin/v1/llm/configure`)
+* Per-stage cost optimization (use cheaper models for extraction, quality models for analysis)
+* Support for rate limit handling and cost tracking
+
+**Failover Strategy:**
+* Automatic fallback: Primary → Secondary → Tertiary
+* Circuit breaker pattern for unavailable providers
+* Health checking and provider availability monitoring
+* Graceful degradation when all providers unavailable
+
+**Cost Optimization:**
+* Track and compare costs across providers per request
+* Enable A/B testing of different models for quality/cost tradeoffs
+* Per-stage provider selection for optimal cost-efficiency
+* Cost comparison: Anthropic ($0.114), OpenAI ($0.065), Google ($0.072) per article at 0% cache
+
+**Architecture Pattern:**
+
+{{code}}
+AKEL Stages          LLM Abstraction       Providers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Stage 1 Extract  ──→ Provider Interface ──→ Anthropic (PRIMARY)
+Stage 2 Analyze  ──→ Configuration      ──→ OpenAI (SECONDARY)
+Stage 3 Holistic ──→ Failover Handler   ──→ Google (TERTIARY)
+                                         └→ Local Models (FUTURE)
+{{/code}}
+
+**Benefits:**
+* **No Vendor Lock-In:** Switch providers based on cost, quality, or availability without code changes
+* **Resilience:** Automatic failover ensures service continuity during provider outages
+* **Cost Efficiency:** Use optimal provider per task (cheap for extraction, quality for analysis)
+* **Quality Assurance:** Cross-provider output verification for critical claims
+* **Regulatory Compliance:** Use specific providers for data residency requirements
+* **Future-Proofing:** Easy integration of new models as they become available
+
+**Cross-References:**
+* [[Requirements>>FactHarbor.Specification.Requirements.WebHome#NFR-14]]: NFR-14 (formal requirement)
+* [[POC Requirements>>FactHarbor.Specification.POC.Requirements#NFR-POC-11]]: NFR-POC-11 (POC1 implementation)
+* [[API Specification>>FactHarbor.Specification.POC.API-and-Schemas.WebHome#Section-6]]: Section 6 (implementation details)
+* [[Design Decisions>>FactHarbor.Specification.Design-Decisions#Section-9]]: Section 9 (design rationale)
+
+
+=== 2.2 Design Philosophy ===
+**Start Simple, Evolve Based on Metrics**
+The architecture deliberately starts simple:
+* Single primary database (PostgreSQL handles most workloads initially)
+* Three clear layers (easy to understand and maintain)
+* Automated operations (minimal human intervention)
+* Measure before optimizing (add complexity only when proven necessary)
+See [[Design Decisions>>FactHarbor.Specification.Design-Decisions]] and [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]] for detailed rationale.
+== 3. AKEL Architecture ==
+{{include reference="FactHarbor.Specification.Diagrams.AKEL Architecture.WebHome"/}}
+See [[AI Knowledge Extraction Layer (AKEL)>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] for detailed information.
+
+== 3.5 Claim Processing Architecture ==
+
+FactHarbor's claim processing architecture is designed to handle both single-claim and multi-claim submissions efficiently.
+
+=== Multi-Claim Handling ===
+
+Users often submit:
+* **Text with multiple claims**: Articles, statements, or paragraphs containing several distinct factual claims
+* **Web pages**: URLs that are analyzed to extract all verifiable claims
+* **Single claims**: Simple, direct factual statements
+
+The first processing step is always **Claim Extraction**: identifying and isolating individual verifiable claims from submitted content.
+
+=== Processing Phases ===
+
+**POC Implementation (Two-Phase):**
+
+Phase 1 - Claim Extraction:
+* LLM analyzes submitted content
+* Extracts all distinct, verifiable claims
+* Returns structured list of claims with context
+
+Phase 2 - Parallel Analysis:
+* Each claim processed independently by LLM
+* Single call per claim generates: Evidence, Scenarios, Sources, Verdict, Risk
+* Parallelized across all claims
+* Results aggregated for presentation
+
+**Production Implementation (Three-Phase):**
+
+Phase 1 - Extraction + Validation:
+* Extract claims from content
+* Validate clarity and uniqueness
+* Filter vague or duplicate claims
+
+Phase 2 - Evidence Gathering (Parallel):
+* Independent evidence gathering per claim
+* Source validation and scenario generation
+* Quality gates prevent poor data from advancing
+
+Phase 3 - Verdict Generation (Parallel):
+* Generate verdict from validated evidence
+* Confidence scoring and risk assessment
+* Low-confidence cases routed to human review
+
+=== Architectural Benefits ===
+
+**Scalability:**
+* Process 100 claims with ~3x latency of single claim
+* Parallel processing across independent claims
+* Linear cost scaling with claim count
+=== 2.3 Design Philosophy ===
+**Quality:**
+* Validation gates between phases
+* Errors isolated to individual claims
+* Clear observability per processing step
+
+**Flexibility:**
+* Each phase optimizable independently
+* Can use different model sizes per phase
+* Easy to add human review at decision points
+
+== 4. Storage Architecture ==
+{{include reference="FactHarbor.Specification.Diagrams.Storage Architecture.WebHome"/}}
+See [[Storage Strategy>>FactHarbor.Specification.Architecture.WebHome]] for detailed information.
+== 4.5 Versioning Architecture ==
+{{include reference="FactHarbor.Specification.Diagrams.Versioning Architecture.WebHome"/}}
+== 5. Automated Systems in Detail ==
+FactHarbor relies heavily on automation to achieve scale and quality. Here's how each automated system works:
+=== 5.1 AKEL (AI Knowledge Evaluation Layer) ===
+**What it does**: Primary AI processing engine that analyzes claims automatically
+**Inputs**:
+* User-submitted claim text
+* Existing evidence and sources
+* Source track record database
+**Processing steps**:
+1. **Parse & Extract**: Identify key components, entities, assertions
+2. **Gather Evidence**: Search web and database for relevant sources
+3. **Check Sources**: Evaluate source reliability using track records
+4. **Extract Scenarios**: Identify different contexts from evidence
+5. **Synthesize Verdict**: Compile evidence assessment per scenario
+6. **Calculate Risk**: Assess potential harm and controversy
+**Outputs**:
+* Structured claim record
+* Evidence links with relevance scores
+* Scenarios with context descriptions
+* Verdict summary per scenario
+* Overall confidence score
+* Risk assessment
+**Timing**: 10-18 seconds total (parallel processing)
+=== 5.2 Background Jobs ===
+**Source Track Record Updates** (Weekly):
+* Analyze claim outcomes from past week
+* Calculate source accuracy and reliability
+* Update source_track_record table
+* Never triggered by individual claims (prevents circular dependencies)
+**Cache Management** (Continuous):
+* Warm cache for popular claims
+* Invalidate cache on claim updates
+* Monitor cache hit rates
+**Metrics Aggregation** (Hourly):
+* Roll up detailed metrics
+* Calculate system health indicators
+* Generate performance reports
+**Data Archival** (Daily):
+* Move old AKEL logs to S3 (90+ days)
+* Archive old edit history
+* Compress and backup data
+=== 5.3 Quality Monitoring ===
+**Automated checks run continuously**:
+* **Anomaly Detection**: Flag unusual patterns
+ * Sudden confidence score changes
+ * Unusual evidence distributions
+ * Suspicious source patterns
+* **Contradiction Detection**: Identify conflicts
+ * Evidence that contradicts other evidence
+ * Claims with internal contradictions
+ * Source track record anomalies
+* **Completeness Validation**: Ensure thoroughness
+ * Sufficient evidence gathered
+ * Multiple source types represented
+ * Key scenarios identified
+=== 5.4 Moderation Detection ===
+**Automated abuse detection**:
+* **Spam Identification**: Pattern matching for spam claims
+* **Manipulation Detection**: Identify coordinated editing
+* **Gaming Detection**: Flag attempts to game source scores
+* **Suspicious Activity**: Log unusual behavior patterns
+**Human Review**: Moderators review flagged items, system learns from decisions
+== 6. Scalability Strategy ==
+=== 6.1 Horizontal Scaling ===
+Components scale independently:
+* **AKEL Workers**: Add more processing workers as claim volume grows
+* **Database Read Replicas**: Add replicas for read-heavy workloads
+* **Cache Layer**: Redis cluster for distributed caching
+* **API Servers**: Load-balanced API instances
+=== 6.2 Vertical Scaling ===
+Individual components can be upgraded:
+* **Database Server**: Increase CPU/RAM for PostgreSQL
+* **Cache Memory**: Expand Redis memory
+* **Worker Resources**: More powerful AKEL worker machines
+=== 6.3 Performance Optimization ===
+Built-in optimizations:
+* **Denormalized Data**: Cache summary data in claim records (70% fewer joins)
+* **Parallel Processing**: AKEL pipeline processes in parallel (40% faster)
+* **Intelligent Caching**: Redis caches frequently accessed data
+* **Background Processing**: Non-urgent tasks run asynchronously
+== 7. Monitoring & Observability ==
+=== 7.1 Key Metrics ===
+System tracks:
+* **Performance**: AKEL processing time, API response time, cache hit rate
+* **Quality**: Confidence score distribution, evidence completeness, contradiction rate
+* **Usage**: Claims per day, active users, API requests
+* **Errors**: Failed AKEL runs, API errors, database issues
+=== 7.2 Alerts ===
+Automated alerts for:
+* Processing time >30 seconds (threshold breach)
+* Error rate >1% (quality issue)
+* Cache hit rate <80% (cache problem)
+* Database connections >80% capacity (scaling needed)
+=== 7.3 Dashboards ===
+Real-time monitoring:
+* **System Health**: Overall status and key metrics
+* **AKEL Performance**: Processing time breakdown
+* **Quality Metrics**: Confidence scores, completeness
+* **User Activity**: Usage patterns, peak times
+== 8. Security Architecture ==
+=== 8.1 Authentication & Authorization ===
+* **User Authentication**: Secure login with password hashing
+* **Role-Based Access**: Reader, Contributor, Moderator, Admin
+* **API Keys**: For programmatic access
+* **Rate Limiting**: Prevent abuse
+=== 8.2 Data Security ===
+* **Encryption**: TLS for transport, encrypted storage for sensitive data
+* **Audit Logging**: Track all significant changes
+* **Input Validation**: Sanitize all user inputs
+* **SQL Injection Protection**: Parameterized queries
+=== 8.3 Abuse Prevention ===
+* **Rate Limiting**: Prevent flooding and DDoS
+* **Automated Detection**: Flag suspicious patterns
+* **Human Review**: Moderators investigate flagged content
+* **Ban Mechanisms**: Block abusive users/IPs
+== 9. Deployment Architecture ==
+=== 9.1 Production Environment ===
+**Components**:
+* Load Balancer (HAProxy or cloud LB)
+* Multiple API servers (stateless)
+* AKEL worker pool (auto-scaling)
+* PostgreSQL primary + read replicas
+* Redis cluster
+* S3-compatible storage
+**Regions**: Single region for V1.0, multi-region when needed
+=== 9.2 Development & Staging ===
+**Development**: Local Docker Compose setup
+**Staging**: Scaled-down production replica
+**CI/CD**: Automated testing and deployment
+=== 9.3 Disaster Recovery ===
+* **Database Backups**: Daily automated backups to S3
+* **Point-in-Time Recovery**: Transaction log archival
+* **Replication**: Real-time replication to standby
+* **Recovery Time Objective**: <4 hours
+
+=== 9.5 Federation Architecture Diagram ===
+
+{{include reference="FactHarbor.Specification.Diagrams.Federation Architecture.WebHome"/}}
+
+== 10. Future Architecture Evolution ==
+=== 10.1 When to Add Complexity ===
+See [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]] for specific triggers.
+**Elasticsearch**: When PostgreSQL search consistently >500ms
+**TimescaleDB**: When metrics queries consistently >1s 
+**Federation**: When 10,000+ users and explicit demand
+**Complex Reputation**: When 100+ active contributors
+=== 10.2 Federation (V2.0+) ===
+**Deferred until**:
+* Core product proven with 10,000+ users
+* User demand for decentralization
+* Single-node limits reached
+See [[Federation & Decentralization>>FactHarbor.Specification.Federation & Decentralization.WebHome]] for future plans.
+== 11. Technology Stack Summary ==
+**Backend**:
+* Python (FastAPI or Django)
+* PostgreSQL (primary database)
+* Redis (caching)
+**Frontend**:
+* Modern JavaScript framework (React, Vue, or Svelte)
+* Server-side rendering for SEO
+**AI/LLM**:
+* Multi-provider orchestration (Claude, GPT-4, local models)
+* Fallback and cross-checking support
+**Infrastructure**:
+* Docker containers
+* Kubernetes or cloud platform auto-scaling
+* S3-compatible object storage
+**Monitoring**:
+* Prometheus + Grafana
+* Structured logging (ELK or cloud logging)
+* Error tracking (Sentry)
+== 12. Related Pages ==
+* [[AI Knowledge Extraction Layer (AKEL)>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]
+* [[Storage Strategy>>FactHarbor.Specification.Architecture.WebHome]]
+* [[Data Model>>FactHarbor.Specification.Data Model.WebHome]]
+* [[API Layer>>FactHarbor.Specification.Architecture.WebHome]]
+* [[Design Decisions>>FactHarbor.Specification.Design-Decisions]]
+* [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]]

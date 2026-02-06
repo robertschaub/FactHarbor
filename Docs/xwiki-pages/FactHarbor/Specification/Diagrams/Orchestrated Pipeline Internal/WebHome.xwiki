@@ -1,0 +1,125 @@
+{{info}}
+**Current Implementation (v2.6.33)** - The default pipeline with TypeScript-orchestrated staged workflow. File: ##orchestrated.ts## (~9000 lines)
+{{/info}}
+
+= Orchestrated Pipeline Internal Flow =
+
+{{mermaid}}
+
+flowchart TB
+    subgraph Entry[Entry Point]
+        INPUT[runFactHarborAnalysis]
+        NORM[Input Normalization]
+        BUDGET[Initialize Budget Tracker]
+    end
+
+    subgraph Step1[Step 1: Understand]
+        UC[understandClaim]
+        LLM1[LLM Call]
+        SCOPE[detectScopes heuristic]
+        CLAIMS[Extract SubClaims]
+        QUERIES[Generate researchQueries]
+    end
+
+    subgraph Step2[Step 2: Research Loop]
+        DECIDE[decideNextResearch]
+        SEARCH[searchWebWithProvider]
+        FETCH[fetchSourceContent parallel]
+        EXTRACT[extractFacts per source]
+        LLM2[LLM Calls]
+        BUDGET_CHECK{Budget exceeded?}
+    end
+
+    subgraph Step3[Step 3: Verdict Generation]
+        CLAIM_V[generateClaimVerdicts]
+        ARTICLE_V[generateArticleVerdict]
+        LLM3[LLM Call]
+        WEIGHT[calculateWeightedVerdictAverage]
+        CONTEST[detectClaimContestation]
+        HARM[detectHarmPotential]
+    end
+
+    subgraph Step4[Step 4: Summary]
+        SUMMARY[generateTwoPanelSummary]
+    end
+
+    subgraph Step5[Step 5: Report]
+        REPORT[generateReport markdown]
+    end
+
+    subgraph Output[Output]
+        RESULT[AnalysisResult JSON]
+        MARKDOWN[Report Markdown]
+    end
+
+    INPUT --> NORM
+    NORM --> BUDGET
+    BUDGET --> UC
+
+    UC --> LLM1
+    LLM1 --> SCOPE
+    SCOPE --> CLAIMS
+    CLAIMS --> QUERIES
+
+    QUERIES --> DECIDE
+    DECIDE --> SEARCH
+    SEARCH --> FETCH
+    FETCH --> EXTRACT
+    EXTRACT --> LLM2
+    LLM2 --> BUDGET_CHECK
+    BUDGET_CHECK -->|No| DECIDE
+    BUDGET_CHECK -->|Yes| CLAIM_V
+
+    CLAIM_V --> WEIGHT
+    WEIGHT --> CONTEST
+    CONTEST --> HARM
+    HARM --> ARTICLE_V
+    ARTICLE_V --> LLM3
+
+    LLM3 --> SUMMARY
+    SUMMARY --> REPORT
+    REPORT --> RESULT
+    REPORT --> MARKDOWN
+
+{{/mermaid}}
+
+= Key Functions =
+
+|= Phase |= Function |= Purpose |= LLM Calls
+| Entry | ##runFactHarborAnalysis## | Main entry point | 0
+| Entry | ##normalizeYesNoQuestionToStatement## | Input neutrality normalization | 0
+| Step 1 | ##understandClaim## | Claim extraction and classification | 1
+| Step 1 | ##detectScopes## | Heuristic scope pre-detection | 0
+| Step 2 | ##decideNextResearch## | Generate search queries | 1 per iteration
+| Step 2 | ##searchWebWithProvider## | Web search (Google CSE or SerpAPI) | 0
+| Step 2 | ##fetchSourceContent## | Parallel source fetching | 0
+| Step 2 | ##extractFacts## | Extract facts from sources | 1 per source
+| Step 3 | ##generateClaimVerdicts## | Per-claim verdicts | 1
+| Step 3 | ##generateArticleVerdict## | Overall verdict | 1
+| Step 4 | ##generateTwoPanelSummary## | Format results for UI | 0
+| Step 5 | ##generateReport## | Markdown report generation | 0
+
+= Budget Controls =
+
+|= Parameter |= Default |= Environment Variable
+| Max iterations per scope | 3 | ##FH_RESEARCH_MAX_ITERATIONS_PER_SCOPE##
+| Max total iterations | 5 | ##FH_RESEARCH_MAX_TOTAL_ITERATIONS##
+| Max total tokens | 100000 | ##FH_RESEARCH_MAX_TOTAL_TOKENS##
+
+= Shared Modules Used =
+
+* ##scopes.ts## - detectScopes, canonicalizeScopes
+* ##aggregation.ts## - calculateWeightedVerdictAverage, detectClaimContestation, detectHarmPotential
+* ##claim-decomposition.ts## - normalizeClaimText, deriveCandidateClaimTexts
+* ##budgets.ts## - Budget tracking and enforcement
+* ##provenance-validation.ts## - Fact provenance validation
+
+= Output Schema =
+
+Produces **canonical schema** compatible with existing Jobs UI:
+* ##article## - Input metadata, thesis, scopes
+* ##claims## - Array of extracted claims with dependencies
+* ##claimVerdicts## - Per-claim verdicts with truthPercentage
+* ##articleVerdict## - Overall verdict
+* ##facts## - Extracted facts from sources
+* ##sources## - Source metadata with reliability scores

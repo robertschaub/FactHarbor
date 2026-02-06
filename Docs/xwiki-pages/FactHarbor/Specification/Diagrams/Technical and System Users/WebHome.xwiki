@@ -1,0 +1,64 @@
+{{warning}}
+**Partially Implemented (v2.6.33)** - Only AKEL system service is implemented. User system, moderators, background scheduler, and search indexer are **not yet implemented**.
+{{/warning}}
+
+= Target Technical Model =
+
+{{mermaid}}
+
+erDiagram
+    USER {
+        string UserID_PK
+        string role
+        int reputation
+    }
+    MODERATOR {
+        string ModeratorID_PK
+        string UserID_FK
+        string permissions
+    }
+    SYSTEM_SERVICE {
+        string ServiceID_PK
+        string ServiceName
+        string Purpose
+        string Status
+    }
+    AKEL {
+        string InstanceID_PK
+        string ServiceID_FK
+        string Version
+    }
+    BACKGROUND_SCHEDULER {
+        string SchedulerID_PK
+        string ServiceID_FK
+        string ScheduledTasks
+    }
+    SEARCH_INDEXER {
+        string IndexerID_PK
+        string ServiceID_FK
+        string LastSyncTime
+    }
+    USER ||--o| MODERATOR : appointed_as
+    MODERATOR ||--o{ SYSTEM_SERVICE : monitors
+    SYSTEM_SERVICE ||--|| AKEL : AI_processing
+    SYSTEM_SERVICE ||--|| BACKGROUND_SCHEDULER : periodic_tasks
+    SYSTEM_SERVICE ||--|| SEARCH_INDEXER : search_sync
+
+{{/mermaid}}
+
+= Implementation Status =
+
+|= Component |= Target Purpose |= Current Status
+| **USER** | User accounts with reputation | Not implemented (anonymous only)
+| **MODERATOR** | Appointed users with permissions | Not implemented
+| **AKEL** | AI processing engine | Implemented (Triple-Path pipeline)
+| **BACKGROUND_SCHEDULER** | Periodic tasks | Not implemented
+| **SEARCH_INDEXER** | Elasticsearch sync | Not implemented (no Elasticsearch)
+
+= Current Implementation =
+
+**v2.6.33 has only:**
+* AKEL pipeline for analysis
+* .NET API for job persistence
+* No background services
+* No search indexing (uses web search only)

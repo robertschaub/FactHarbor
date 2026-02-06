@@ -1,0 +1,100 @@
+{{warning}}
+**Implementation Status (v2.6.33)** - This diagram shows the **current implementation** data model. Storage is JSON blobs in SQLite, not normalized tables. Scenarios replaced by KeyFactors (optional decomposition questions). No user system implemented.
+{{/warning}}
+
+= Current Implementation Data Model =
+
+{{mermaid}}
+
+erDiagram
+    ARTICLE ||--o{ CLAIM : contains
+    ARTICLE ||--|| ARTICLE_VERDICT : has
+    CLAIM ||--|| CLAIM_VERDICT : has
+    CLAIM ||--o{ CLAIM : depends_on
+    CLAIM_VERDICT }o--o{ FACT : supported_by
+    SOURCE ||--o{ FACT : provides
+    ARTICLE ||--o{ ANALYSIS_CONTEXT : has
+
+    ARTICLE {
+        string id_PK
+        string inputType
+        string inputValue
+        string articleThesis
+        string detectedInputType
+        boolean hasMultipleScopes
+        json distinctScopes
+        string schemaVersion
+    }
+
+    CLAIM {
+        string id_PK
+        string articleId_FK
+        string text
+        string type
+        string claimRole
+        string_array dependsOn
+        string keyFactorId
+        boolean isCentral
+        string relatedScopeId
+    }
+
+    CLAIM_VERDICT {
+        string id_PK
+        string claimId_FK
+        string verdict
+        int truthPercentage
+        int confidence
+        string explanation
+        string_array supportingFactIds
+        string_array opposingFactIds
+    }
+
+    ARTICLE_VERDICT {
+        string articleId_FK
+        string verdict
+        int truthPercentage
+        int confidence
+        string summary
+    }
+
+    FACT {
+        string id_PK
+        string sourceId_FK
+        string text
+        string quote
+        string relevance
+        boolean supports
+    }
+
+    SOURCE {
+        string id_PK
+        string name
+        string domain
+        string url
+        float reliabilityScore
+        string bias
+    }
+
+    ANALYSIS_CONTEXT {
+        string id_PK
+        string articleId_FK
+        string name
+        string description
+        string methodology
+        string temporalPeriod
+    }
+
+{{/mermaid}}
+
+== Key Implementation Notes ==
+
+**7-Point Verdict Scale:**
+* TRUE (86-100%) / MOSTLY-TRUE (72-85%) / LEANING-TRUE (58-71%)
+* MIXED (43-57%, high confidence) / UNVERIFIED (43-57%, low confidence)
+* LEANING-FALSE (29-42%) / MOSTLY-FALSE (15-28%) / FALSE (0-14%)
+
+**KeyFactors:** Optional decomposition questions discovered during analysis - not stored as separate entities.
+
+**Storage:** All data stored as JSON blob in SQLite ##ResultJson## field.
+
+**See Also:** [[Target Data Model>>FactHarbor.Specification.Data Model.WebHome]] for normalized design.

@@ -1,0 +1,275 @@
+= Roles & Publication Modes =
+
+**Version:** 0.9.70 
+**Last Updated:** December 21, 2025 
+**Status:** CORRECTED - Automation Philosophy Consistent
+
+This page defines user roles and publication modes in FactHarbor.
+
+== 1. User Roles ==
+
+=== 1.1 Contributors ===
+
+**Who**: Community members who suggest system improvements
+
+**Responsibilities:**
+* Participate in sampling audits (analyze patterns, not individual outputs)
+* Suggest algorithm/prompt improvements based on findings
+* Document systematic issues observed
+* Contribute to system improvement discussions
+
+**Can:**
+* Edit published content (changes apply immediately, Wikipedia-style)
+* Flag quality issues (for sampling audit)
+* Earn reputation through contributions
+* Participate in RFC (Request for Comments) processes
+
+**Cannot:**
+* Approve content before publication
+* Override quality gates
+* Act as gatekeepers
+* Manually fix individual AI outputs
+
+**Note**: Contributors improve THE SYSTEM, not individual outputs.
+
+=== 1.2 Trusted Contributors ===
+
+**Who**: Contributors with proven track record and domain expertise
+
+**Responsibilities:**
+* Same as Contributors, plus:
+* Review complex algorithm changes
+* Provide domain expertise on contested claims
+* Mentor new contributors
+
+**Can:**
+* Everything Contributors can do, plus:
+* Participate in higher-level system design decisions
+* Review RFC proposals
+* Access more detailed system metrics
+
+**Cannot:**
+* Approve content before publication
+* Override quality gates
+* Act as gatekeepers
+
+**Important**: "Trusted" refers to judgment quality, NOT approval authority.
+
+=== 1.3 Moderators ===
+
+**Who**: Team members focused on community health and abuse prevention
+
+**Responsibilities:**
+* Handle abuse, spam, and harassment
+* Enforce community guidelines
+* Respond to user reports
+* Manage bans and appeals
+
+**Can:**
+* Hide abusive content
+* Ban users for policy violations
+* Review appeals
+* Escalate serious issues to Governing Team
+
+**Cannot:**
+* Approve content for publication
+* Review content quality before publication
+* Override quality gates for content
+* Act as editorial gatekeepers
+
+**Critical Distinction:**
+```
+Moderators handle: ABUSE (spam, harassment, violations)
+Moderators DO NOT handle: CONTENT QUALITY (that's automated)
+```
+
+=== 1.4 Domain Trusted Contributors (Optional, Task-Specific) ===
+
+**Who**: Subject matter specialists invited for specific high-stakes disputes
+
+**Not a permanent role**: Contacted externally when needed for contested claims in their domain
+
+**When used:**
+* Medical claims with life/safety implications
+* Legal interpretations with significant impact
+* Scientific claims with high controversy
+* Technical claims requiring specialized knowledge
+
+**Process:**
+* Moderator identifies need for expert input
+* Contact expert externally (don't require them to be users)
+* Trusted Contributor provides written opinion with sources
+* Opinion added to claim record
+* Trusted Contributor acknowledged in claim
+
+**Important**: This is CONSULTATION, not APPROVAL. Their opinion is added to the evidence, not used as a gate.
+
+**User Needs served**: UN-16 (Expert validation status)
+
+== 2. Publication Modes ==
+
+**Fulfills**: UN-1 (Trust indicators), UN-16 (Review status transparency)
+
+FactHarbor uses **TWO publication modes** (not three). Focus is on transparency and confidence scoring, not gatekeeping.
+
+=== 2.1 Mode 1: Draft-Only ===
+
+**Status**: Not visible to public
+
+**When Used:**
+* Quality gates failed
+* Confidence below threshold
+* Structural integrity issues
+* Insufficient evidence
+
+**What Happens:**
+* Content remains private
+* System logs failure reasons
+* Prompts/algorithms improved based on patterns
+* Content may be re-processed after improvements
+
+**NOT "pending human approval"** - it's blocked because it doesn't meet automated quality standards.
+
+=== 2.2 Mode 2: AI-Generated (Public) ===
+
+**Status**: Published and visible to all users
+
+**When Used:**
+* Quality gates passed
+* Confidence ≥ threshold
+* Meets structural requirements
+* Sufficient evidence found
+
+**Includes:**
+* Confidence score displayed (0-100%)
+* Risk tier badge (A/B/C)
+* Quality indicators
+* Clear "AI-Generated" labeling
+* Sampling audit status
+
+**Labels by Risk Tier:**
+* **Tier A (High Risk):** "⚠️ AI-Generated - High Impact Topic - Seek Professional Advice"
+* **Tier B (Medium Risk):** "🤖 AI-Generated - May Contain Errors"
+* **Tier C (Low Risk):** "🤖 AI-Generated"
+
+**User Contributions:**
+* User edits apply immediately (Wikipedia model)
+* All changes logged and versioned
+* May be selected for sampling audit
+* Reputation earned for quality contributions
+
+=== REMOVED: Mode 3 ===
+
+**V0.9.50 Decision:** No centralized approval workflow.
+
+**Rationale:**
+* Defeats automation purpose
+* Creates bottleneck
+* Inconsistent quality
+* Not scalable
+
+**What Replaced It:**
+* Better quality gates
+* Sampling audits for system improvement
+* Transparent confidence scoring
+* Risk-based warnings
+
+== 3. Content States ==
+
+=== 3.1 Published ===
+
+**Status**: Visible to all users
+
+**Includes:**
+* AI-generated analyses (default state after passing gates)
+* User-contributed content
+* Edited/improved content
+
+**Quality Indicators** (displayed with content):
+* **Confidence Score**: 0-100% (AI's confidence in analysis)
+* **Source Quality Score**: 0-100% (based on source track record)
+* **Controversy Flag**: If high dispute/edit activity
+* **Completeness Score**: % of expected fields filled
+* **Last Updated**: Date of most recent change
+* **Edit Count**: Number of revisions
+* **Review Status**: AI-generated / Enhanced by contributors
+
+**Automatic Warnings:**
+* Confidence < 60%: "Low confidence - use caution"
+* Source quality < 40%: "Sources may be unreliable"
+* High controversy: "Disputed - multiple interpretations exist"
+* Medical/Legal/Safety domain: "Seek professional advice"
+
+**User Needs served**: UN-1 (Trust score), UN-9 (Methodology transparency), ~~UN-15 (Evolution timeline - Deferred)~~, UN-16 (Review status)
+
+=== 3.2 Hidden ===
+
+**Status**: Not visible to regular users (only to moderators)
+
+**Reasons:**
+* Spam or advertising
+* Personal attacks or harassment
+* Illegal content
+* Privacy violations
+* Deliberate misinformation (verified)
+* Abuse or harmful content
+
+**Process:**
+* Automated detection flags for moderator review
+* Moderator confirms and hides
+* Original author notified with reason
+* Can appeal to board if disputes moderator decision
+
+**Note**: Content is hidden, not deleted (for audit trail)
+
+== 4. Role Evolution Path ==
+
+**Contributor Journey:**
+
+1. **Visitor** – Explores platform, reads documentation, may raise questions
+2. **New Contributor** – Submits first improvements (typo fixes, small clarifications, new issues)
+3. **Contributor** – Contributes regularly and follows project conventions
+4. **Trusted Contributor** – Has a track record of high-quality work and reliable judgment
+5. **Auditor** – Participates in sampling audits (pattern analysis)
+6. **Moderator** – Focuses on behavior, tone, and conflict moderation (not content quality)
+7. **Domain Expert** (optional) – Offers domain expertise without changing governance authority
+
+**Key Principle**: Low barrier to entry, transparent criteria for advancement, clear separation between content quality (automated) and behavior moderation (human).
+
+== 5. Principles ==
+
+* **Low barrier to entry** for new contributors
+* **Transparent criteria** for gaining and losing responsibilities
+* **Clear separation** between content quality (automated) and behavioral moderation (human)
+* **Documented processes** for escalation and appeal
+* **No gatekeeping** for content publication
+* **Immediate application** of contributions (Wikipedia model)
+
+== 6. Related Pages ==
+
+* [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] - AI system
+* [[Workflows>>FactHarbor.Specification.Workflows.WebHome]] - Process workflows
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] - System architecture
+* [[Decision Processes>>FactHarbor.Organisation.Decision-Processes.WebHome]] - Governance
+* [[Requirements>>FactHarbor.Specification.Requirements.WebHome]] - All requirements
+
+**V0.9.70 CHANGES:**
+
+**REMOVED:**
+- All references to "Mode 3" publication
+- "Contributors validate quality gates"
+- "Trusted Contributors validate outputs"
+- "Moderators finalize publication"
+
+**CLARIFIED:**
+- Contributors suggest system improvements (not approve outputs)
+- Moderators handle abuse only (not content quality)
+- Trusted Contributors provide consultation (not validation)
+- Domain experts provide opinions (not approval)
+- Only 2 publication modes (AI-Generated / Draft-Only)
+
+**ADDED:**
+- Clear role boundaries
+- Explicit "cannot" lists for each role
+- Publication mode details
+- Content state specifications

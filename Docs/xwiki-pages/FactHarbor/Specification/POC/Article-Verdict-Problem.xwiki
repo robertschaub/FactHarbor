@@ -1,0 +1,503 @@
+= The Article Verdict Problem
+
+**Context:** Context-Aware Analysis Investigation 
+**Date:** December 23, 2025 
+**Status:** Solution Chosen for POC1 Testing
+
+== 🎯 Executive Summary
+
+**The Problem:** An article's overall credibility is not simply the average of its individual claim verdicts. An article with mostly accurate facts can still be misleading if the conclusion doesn't follow from the evidence.
+
+**Investigation Scope:** 7 solution approaches analyzed for performance, cost, and complexity.
+
+**Chosen Solution:** Single-Pass Holistic Analysis (Approach 1) for POC1 testing
+- Enhance AI prompt to evaluate logical structure
+- Zero additional cost or architecture changes
+- Test with 30 articles to validate approach
+- Mark as experimental - doesn't block POC1 success
+
+**Fallback Plan:** If Approach 1 shows <70% accuracy, implement Weighted Aggregation (Approach 4) or defer to POC2 with Hybrid approach (Approach 6).
+
+== 📋 The Core Problem
+
+=== Problem Statement
+
+> "An analysis and verdict of the whole article is not the same as a summary of the analysis and verdicts of the parts (the claims)."
+
+=== Why This Matters
+
+**Example: The Misleading Article**
+
+```
+Article: "Coffee Cures Cancer!"
+
+Individual Claims:
+[1] Coffee contains antioxidants → ✅ WELL-SUPPORTED (95%)
+[2] Antioxidants fight cancer → ✅ WELL-SUPPORTED (85%)
+[3] Therefore, coffee cures cancer → ❌ REFUTED (10%)
+
+Simple Aggregation:
+- Verdict counts: 2 supported, 1 refuted
+- Average confidence: 63% (2/3 claims somewhat supported)
+- Naive conclusion: "Mostly accurate article"
+
+Reality:
+- The MAIN CLAIM (coffee cures cancer) is FALSE
+- Article commits logical fallacy (correlation ≠ causation)
+- Article is MISLEADING despite containing accurate facts
+- Readers could be harmed by false medical claim
+
+Correct Assessment:
+- Article verdict: MISLEADING / REFUTED
+- Reason: Makes unsupported causal claim from correlational evidence
+```
+
+=== Why Simple Aggregation Fails
+
+**Pattern 1: False Central Claim**
+- 4 supporting facts (all true) ✅✅✅✅
+- 1 main conclusion (false) ❌
+- Simple average: 80% accurate
+- Reality: Core argument is false → Article is MISLEADING
+
+**Pattern 2: Accurate Facts, Wrong Conclusion**
+- All individual facts are verifiable
+- Conclusion doesn't follow from facts
+- Logical fallacy (e.g., correlation → causation)
+- Simple average looks good, article is dangerous
+
+**Pattern 3: Misleading Framing**
+- Facts are accurate
+- Selective presentation creates false impression
+- Headline doesn't match content
+- Simple average misses the problem
+
+== ✅ Chosen Solution: Single-Pass Holistic Analysis (POC1)
+
+=== Approach Overview
+
+**How it works:**
+- AI analyzes the entire article in ONE API call
+- Evaluates both individual claims AND overall article credibility
+- No pipeline changes - just enhanced prompting
+
+=== AI Prompt Enhancement
+
+**Add to existing prompt:**
+```
+After analyzing individual claims, evaluate the article as a whole:
+
+1. What is the article's main argument or conclusion?
+2. Does this conclusion logically follow from the evidence presented?
+3. Are there logical fallacies? (correlation→causation, cherry-picking, etc.)
+4. Even if individual facts are accurate, is the article's framing misleading?
+5. Should the article verdict differ from the average of claim verdicts?
+
+Provide:
+- Individual claim verdicts
+- Overall article verdict (may differ from claim average)
+- Explanation if article verdict differs from claim pattern
+```
+
+=== Expected AI Output
+
+```json
+{
+ "claims": [
+ {"text": "Coffee contains antioxidants", "verdict": "SUPPORTED", "confidence": 95},
+ {"text": "Antioxidants fight cancer", "verdict": "SUPPORTED", "confidence": 85},
+ {"text": "Coffee cures cancer", "verdict": "REFUTED", "confidence": 10}
+ ],
+ "article_analysis": {
+ "main_argument": "Coffee cures cancer",
+ "logical_assessment": "Article makes causal claim not supported by evidence",
+ "fallacy_detected": "correlation presented as causation",
+ "article_verdict": "MISLEADING",
+ "differs_from_claims": true,
+ "reasoning": "Despite two accurate supporting facts, the main conclusion is unsupported"
+ }
+}
+```
+
+=== Performance & Cost
+
+**Performance:**
+- Same as baseline POC1 (single API call)
+- Fast response time
+- No additional latency
+
+**Cost:**
+- Same as baseline POC1
+- ~$0.015-0.025 per analysis
+- No cost increase (just longer prompt)
+
+**Architecture:**
+- Zero changes to system architecture
+- Just prompt engineering
+- Easy to implement and test
+
+=== POC1 Testing Plan
+
+**Test Set: 30 Articles**
+- 10 straightforward (verdict = average works fine)
+- 10 misleading (accurate facts, wrong conclusion)
+- 10 complex/nuanced cases
+
+**Success Criteria:**
+- AI correctly identifies ≥70% of misleading articles
+- AI doesn't over-flag straightforward articles
+- Reasoning is comprehensible
+
+**Success → Ship it in POC2 as standard feature**
+
+**Partial Success (50-70%) → Try Approach 4 (Weighted Aggregation) or plan Approach 6 (Hybrid) for POC2**
+
+**Failure (<50%) → Defer to POC2 with more sophisticated approach**
+
+=== Why This Approach for POC1
+
+**Advantages:**
+✅ Zero additional cost (no extra API calls)
+✅ No architecture changes (just prompt)
+✅ Fast to implement and test
+✅ Fail-fast learning (find out if AI can do this)
+✅ If it works → problem solved with minimal effort
+✅ If it fails → informed decision for POC2
+
+**Risks:**
+⚠️ AI might miss subtle logical issues
+⚠️ Relies entirely on AI's reasoning capability
+⚠️ Less structured than multi-pass approaches
+
+**Mitigation:**
+- Mark as "experimental" in POC1
+- Don't block POC1 success on this feature
+- Use results to inform POC2 design
+- Have fallback approaches ready
+
+== 📊 Complete Analysis: All Solution Approaches
+
+We investigated 7 approaches for solving this problem. Here's the complete overview:
+
+=== Approach 1: Single-Pass Holistic Analysis ⭐ CHOSEN FOR POC1
+
+**Concept:** AI analyzes article and evaluates both claims and overall credibility in one call.
+
+**Pros:** Simplest, fastest, cheapest, no architecture changes
+**Cons:** Relies on AI capability, might miss subtle issues
+**Cost:** ~$0.020/analysis | **Speed:** Fast | **Complexity:** LOW
+
+**When to use:** POC1 testing - validate if AI can do this at all
+
+=== Approach 2: Two-Pass Sequential Analysis
+
+**Concept:** Pass 1 extracts claims, Pass 2 analyzes logical structure given the claims.
+
+**Pros:** More focused analysis, better debugging, higher reliability
+**Cons:** Slower (two API calls), more expensive, more complex
+**Cost:** ~$0.030/analysis | **Speed:** Slower | **Complexity:** MEDIUM
+
+**When to use:** POC2 if Approach 1 fails, or production for highest quality
+
+=== Approach 3: Structured Output with Explicit Relationships
+
+**Concept:** AI outputs claim relationships explicitly (main claim, supporting claims, dependencies, logical validity).
+
+**Pros:** Explicit structure, easier to validate, single API call
+**Cons:** Complex prompt, relies on AI identifying relationships correctly
+**Cost:** ~$0.023/analysis | **Speed:** Fast | **Complexity:** MEDIUM
+
+**When to use:** POC1 if structured data valuable for UI/debugging
+
+=== Approach 4: Weighted Aggregation with Importance Scores
+
+**Concept:** AI assigns importance weight (0-1) to each claim. Article verdict = weighted average.
+
+**Pros:** Simple math, easy to explain, single API call
+**Cons:** Reduces to number (loses nuance), doesn't identify fallacies explicitly
+**Cost:** ~$0.020/analysis | **Speed:** Fast | **Complexity:** LOW
+
+**When to use:** POC1 fallback if Approach 1 doesn't work well
+
+=== Approach 5: Post-Processing Heuristics
+
+**Concept:** Rule-based detection of logical issues after claim extraction (e.g., "if article contains 'causes' but only correlational evidence, flag causal fallacy").
+
+**Pros:** Cheapest, deterministic, explainable, no extra API calls
+**Cons:** Brittle rules, high maintenance, false positives/negatives
+**Cost:** ~$0.018/analysis | **Speed:** Fast | **Complexity:** MEDIUM
+
+**When to use:** Add to any other approach for robustness
+
+=== Approach 6: Hybrid (Weighted Aggregation + Heuristics) ⭐ RECOMMENDED FOR POC2
+
+**Concept:** Combine AI-assigned weights with rule-based fallacy detection.
+
+**Pros:** Best of both worlds, robust, still single API call, cost-effective
+**Cons:** More complex than single approach, need to tune interaction
+**Cost:** ~$0.020/analysis | **Speed:** Fast | **Complexity:** MED-HIGH
+
+**When to use:** POC2 for robust production-ready solution
+
+=== Approach 7: LLM-as-Judge (Verification Pass)
+
+**Concept:** Pass 1 generates verdict, Pass 2 verifies if verdict matches article content.
+
+**Pros:** AI checks AI, high reliability, catches mistakes
+**Cons:** Slower (two calls), more expensive, verification might also err
+**Cost:** ~$0.030/analysis | **Speed:** Slower | **Complexity:** MEDIUM
+
+**When to use:** Production if quality is paramount
+
+=== Comparison Matrix
+
+| Approach | API Calls | Cost | Speed | Complexity | Reliability | Best For |
+|----------|-----------|------|-------|------------|-------------|----------|
+| 1. Single-Pass ⭐ | 1 | 💰 Low | ⚡ Fast | 🟢 Low | ⚠️ Medium | POC1 |
+| 2. Two-Pass | 2 | 💰💰 Med | 🐌 Slow | 🟡 Med | ✅ High | POC2/Prod |
+| 3. Structured | 1 | 💰 Low | ⚡ Fast | 🟡 Med | ✅ High | POC1 |
+| 4. Weighted | 1 | 💰 Low | ⚡ Fast | 🟢 Low | ⚠️ Medium | POC1 |
+| 5. Heuristics | 1 | 💰 Lowest | ⚡⚡ Fastest | 🟡 Med | ⚠️ Medium | Any |
+| 6. Hybrid ⭐ | 1 | 💰 Low | ⚡ Fast | 🟠 Med-High | ✅ High | POC2 |
+| 7. Judge | 2 | 💰💰 Med | 🐌 Slow | 🟡 Med | ✅ High | Production |
+
+=== Phased Recommendation
+
+**POC1 (Immediate):**
+- Test Approach 1 (Single-Pass Holistic)
+- Mark as experimental
+- Gather data on AI capability
+
+**POC2 (If POC1 validates approach):**
+- Upgrade to Approach 6 (Hybrid)
+- Add heuristics for robustness
+- Target 85%+ accuracy
+
+**Production (Post-POC2):**
+- If quality issues: Consider Approach 7 (LLM-as-Judge)
+- If quality acceptable: Keep Approach 6
+- Target 90%+ accuracy
+
+== 🎯 Decision Framework
+
+=== POC1 Evaluation Criteria
+
+After testing with 30 articles:
+
+**If AI Accuracy ≥70%:**
+- ✅ Approach validated!
+- ✅ Ship as standard feature in POC2
+- ✅ Consider adding heuristics (Approach 6) for robustness
+
+**If AI Accuracy 50-70%:**
+- ⚠️ Promising but needs improvement
+- ⚠️ Try Approach 4 (Weighted Aggregation) in POC1
+- ⚠️ Plan Approach 6 (Hybrid) for POC2
+
+**If AI Accuracy <50%:**
+- ❌ Current AI can't do this reliably
+- ❌ Defer to POC2 or post-POC2
+- ❌ Consider Approach 2 or 7 (two-pass) for production
+
+=== Why This Matters for POC1
+
+**Testing this in POC1:**
+- Validates core capability (can AI do nuanced reasoning?)
+- Informs POC2 architecture decisions
+- Zero cost to try (just prompt enhancement)
+- Fail-fast principle (test hardest part first)
+
+**Not testing this in POC1:**
+- Keeps POC1 scope minimal
+- Focuses on core claim extraction
+- But misses early learning opportunity
+
+**Decision:** Test it, mark as experimental, don't block POC1 success on it.
+
+== 📝 Implementation Notes
+
+=== What AKEL Must Do
+
+**For POC1 (Approach 1):**
+1. Enhanced prompt with logical analysis section
+2. Parse AI output for both claim-level and article-level verdicts
+3. Display both verdicts to user
+4. Track accuracy on test set
+
+**No architecture changes needed.**
+
+=== What Gets Displayed to Users
+
+**Output Format:**
+```
+ANALYSIS SUMMARY (4-6 sentences, context-aware):
+"This article argues that coffee cures cancer based on evidence about 
+antioxidants. We analyzed 3 claims: two supporting facts about coffee's 
+chemical properties are well-supported, but the main causal claim is 
+refuted by current evidence. The article confuses correlation with 
+causation. Overall assessment: MISLEADING - makes an unsupported 
+medical claim despite citing some accurate facts."
+
+CLAIMS VERDICTS:
+[1] Coffee contains antioxidants: WELL-SUPPORTED (95%)
+[2] Antioxidants fight cancer: WELL-SUPPORTED (85%)
+[3] Coffee cures cancer: REFUTED (10%)
+
+ARTICLE VERDICT: MISLEADING
+The article's main conclusion is not supported by the evidence presented.
+```
+
+=== Error Handling
+
+**If AI fails to provide article-level analysis:**
+- Fall back to claim-average verdict
+- Log failure for analysis
+- Don't break the analysis
+
+**If AI over-flags straightforward articles:**
+- Review prompt tuning
+- Consider adding confidence threshold
+- Track false positive rate
+
+== 🔬 Testing Strategy
+
+=== Test Set Composition
+
+**Category 1: Straightforward Articles (10 articles)**
+- Clear claims with matching overall message
+- Verdict = average should work fine
+- Tests that we don't over-flag
+
+**Category 2: Misleading Articles (10 articles)**
+- Accurate facts, unsupported conclusion
+- Logical fallacies present
+- Verdict ≠ average
+- Core test of capability
+
+**Category 3: Complex/Nuanced (10 articles)**
+- Gray areas
+- Multiple valid interpretations
+- Tests nuance handling
+
+=== Success Metrics
+
+**Quantitative:**
+- ≥70% accuracy on Category 2 (misleading articles)
+- ≤30% false positives on Category 1 (straightforward)
+- ≥50% accuracy on Category 3 (complex)
+
+**Qualitative:**
+- Reasoning is comprehensible to humans
+- False positives are explainable
+- False negatives reveal clear AI limitations
+
+=== Documentation
+
+**For each test case, record:**
+- Article summary
+- AI's claim verdicts
+- AI's article verdict
+- AI's reasoning
+- Human judgment (correct/incorrect)
+- Notes on why AI succeeded/failed
+
+== 💡 Key Insights
+
+=== What This Tests
+
+**Core Capability:**
+Can AI understand that article credibility depends on:
+1. Logical structure (does conclusion follow?)
+2. Claim importance (main vs. supporting)
+3. Reasoning quality (sound vs. fallacious)
+
+**Not just:**
+- Accuracy of individual facts
+- Simple averages
+- Keyword matching
+
+=== Why This Is Important
+
+**For FactHarbor's Mission:**
+- Prevents misleading "mostly accurate" verdicts
+- Catches dangerous misinformation (medical, financial)
+- Provides nuanced analysis users can trust
+
+**For POC Validation:**
+- Tests most challenging capability
+- If AI can do this, everything else is easier
+- If AI can't, we know early and adjust
+
+=== Strategic Value
+
+**If Approach 1 works (≥70% accuracy):**
+- ✅ Solved complex problem with zero architecture changes
+- ✅ No cost increase
+- ✅ Differentiation from competitors who only check facts
+- ✅ Foundation for more sophisticated features
+
+**If Approach 1 doesn't work:**
+- ✅ Learned AI limitations early
+- ✅ Informed decision for POC2
+- ✅ Can plan proper solution (Approach 6 or 7)
+
+== 🎓 Lessons Learned
+
+=== From Investigation
+
+**AI Capabilities:**
+- Modern LLMs (Sonnet 4.5) can do nuanced reasoning
+- But reliability varies significantly
+- Need to test, not assume
+
+**Cost-Performance Trade-offs:**
+- Single-pass approaches: Fast and cheap but less reliable
+- Multi-pass approaches: Slower and expensive but more robust
+- Hybrid approaches: Best balance for production
+
+**Architecture Decisions:**
+- Don't over-engineer before validating need
+- Test simplest approach first
+- Have fallback plans ready
+
+=== For POC1
+
+**Keep It Simple:**
+- Test Approach 1 with minimal changes
+- Mark as experimental
+- Use results to guide POC2
+
+**Fail Fast:**
+- 30-article test set reveals capability quickly
+- Better to learn in POC1 than after building complex architecture
+
+**Document Everything:**
+- Track AI failures
+- Understand patterns
+- Inform future improvements
+
+== ✅ Summary
+
+**Problem:** Article credibility ≠ average of claim verdicts
+
+**Investigation:** 7 approaches analyzed for cost, speed, reliability
+
+**Chosen Solution:** Single-Pass Holistic Analysis (Approach 1)
+- Test in POC1 with enhanced prompt
+- Zero cost increase, no architecture changes
+- Validate if AI can do nuanced reasoning
+
+**Success Criteria:** ≥70% accuracy detecting misleading articles
+
+**Fallback Plans:**
+- POC1: Try Approach 4 (Weighted Aggregation)
+- POC2: Implement Approach 6 (Hybrid)
+- Production: Consider Approach 7 (LLM-as-Judge)
+
+**Next Steps:**
+1. Create 30-article test set
+2. Enhance AI prompt
+3. Test and measure accuracy
+4. Use results to inform POC2 design
+
+**This is POC1's key experimental feature!** 🎯

@@ -1,0 +1,1706 @@
+= POC1 API & Schemas Specification =
+
+----
+
+== Version History ==
+
+|=Version|=Date|=Changes
+|0.4.1|2025-12-24|Applied 9 critical fixes: file format notice, verdict taxonomy, canonicalization algorithm, Stage 1 cost policy, BullMQ fix, language in cache key, historical claims TTL, idempotency, copyright policy
+|0.4|2025-12-24|**BREAKING:** 3-stage pipeline with claim-level caching, user tier system, cache-only mode for free users, Redis cache architecture
+|0.3.1|2025-12-24|Fixed single-prompt strategy, SSE clarification, schema canonicalization, cost constraints
+|0.3|2025-12-24|Added complete API endpoints, LLM config, risk tiers, scraping details
+
+----
+
+== POC1 Codegen Contract (Canonical) ==
+
+{{info}}
+This section is the **authoritative, code-generation-ready contract** for POC1.  
+If any other page conflicts with this section, **this section wins**.
+{{/info}}
+
+=== Canonical outputs ===
+* **result.json**: schema-validated, machine-readable output
+* **report.md**: deterministic template rendering from ``result.json`` (LLM must not free-write the final report)
+
+=== Locked enums ===
+**Scenario verdict** (``ScenarioVerdict.verdict_label``):
+* ``Highly likely`` | ``Likely`` | ``Unclear`` | ``Unlikely`` | ``Highly unlikely`` | ``Unsubstantiated``
+
+**Claim verdict** (``ClaimVerdict.verdict_label``):
+* ``Supported`` | ``Refuted`` | ``Inconclusive``
+
+**Mapping rule (summary):**
+* Primary-interpretation scenario:
+** ``Highly likely`` / ``Likely`` ⇒ ``Supported``
+** ``Highly unlikely`` / ``Unlikely`` ⇒ ``Refuted``
+** ``Unclear`` / ``Unsubstantiated`` ⇒ ``Inconclusive``
+* If scenarios materially disagree (assumption-dependent outcomes) ⇒ ``Inconclusive`` (explain why)
+
+=== Deterministic claim normalization (cache key) ===
+* Normalization version: ``v1norm1``
+* Cache namespace: ``claim:v1norm1:{language}:{sha256(canonical_claim_text)}``
+* Normative reference implementation is defined in section **5.1.1** (no ellipses; must match exactly).
+
+=== Idempotency ===
+Clients SHOULD send:
+* Header: ``Idempotency-Key: <client-generated-uuid>`` (preferred)
+or
+* Body: ``client.request_id``
+
+Server rules:
+* Same key + same request body ⇒ return existing job (``200``) and include ``idempotent=true``.
+* Same key + different request body ⇒ ``409`` ``VALIDATION_ERROR``.
+
+Idempotency TTL: 24 hours.
+
+=== Minimal OpenAPI 3.1 (authoritative for codegen) ===
+{{code language="yaml"}}
+openapi: 3.1.0
+info:
+  title: FactHarbor POC1 API
+  version: 0.9.106
+servers:
+  - url: /
+paths:
+  /v1/analyze:
+    post:
+      summary: Create analysis job
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobCreated'
+        '4XX':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /v1/jobs/{job_id}:
+    get:
+      summary: Get job status
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    delete:
+      summary: Cancel job (best-effort) and delete artifacts
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: No Content }
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /v1/jobs/{job_id}/events:
+    get:
+      summary: Job progress via SSE (no token streaming)
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: text/event-stream
+  /v1/jobs/{job_id}/result:
+    get:
+      summary: Get final JSON result
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+        '409':
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /v1/jobs/{job_id}/report:
+    get:
+      summary: Download report (markdown)
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: text/markdown
+        '409':
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /v1/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    AnalyzeRequest:
+      type: object
+      properties:
+        input_url: { type: ['string', 'null'] }
+        input_text: { type: ['string', 'null'] }
+        options:
+          type: object
+          properties:
+            max_claims: { type: integer, minimum: 1, maximum: 50, default: 5 }
+            cache_preference:
+              type: string
+              enum: [prefer_cache, allow_partial, cache_only, skip_cache]
+              default: prefer_cache
+            browsing:
+              type: string
+              enum: [on, off]
+              default: on
+            output_report: { type: boolean, default: true }
+        client:
+          type: object
+          properties:
+            request_id: { type: string }
+    JobCreated:
+      type: object
+      required: [job_id, status, created_at, links]
+      properties:
+        job_id: { type: string }
+        status: { type: string }
+        created_at: { type: string }
+        links:
+          type: object
+          properties:
+            self: { type: string }
+            events: { type: string }
+            result: { type: string }
+            report: { type: string }
+    Job:
+      type: object
+      required: [job_id, status, created_at, updated_at]
+      properties:
+        job_id: { type: string }
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELED]
+        created_at: { type: string }
+        updated_at: { type: string }
+    AnalysisResult:
+      type: object
+      properties:
+        job_id: { type: string }
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: object }
+{{/code}}
+
+----
+
+== 1. Core Objective (POC1) ==
+
+The primary technical goal of POC1 is to validate **Approach 1 (Single-Pass Holistic Analysis)** while implementing **claim-level caching** to achieve cost sustainability.
+
+The system must prove that AI can identify an article's **Main Thesis** and determine if supporting claims logically support that thesis without committing fallacies.
+
+=== Success Criteria: ===
+
+* Test with 30 diverse articles
+* Target: ≥70% accuracy detecting misleading articles
+* Cost: <$0.25 per NEW analysis (uncached)
+* Cost: $0.00 for cached claim reuse
+* Cache hit rate: ≥50% after 1,000 articles
+* Processing time: <2 minutes (standard depth)
+
+=== Economic Model: ===
+
+* **Free tier:** $10 credit per month (~~40-140 articles depending on cache hits)
+* **After limit:** Cache-only mode (instant, free access to cached claims)
+* **Paid tier:** Unlimited new analyses
+
+----
+
+== 2. Architecture Overview ==
+
+=== 2.1 3-Stage Pipeline with Caching ===
+
+FactHarbor POC1 uses a **3-stage architecture** designed for claim-level caching and cost efficiency:
+
+{{mermaid}}
+graph TD
+ A[Article Input] --> B[Stage 1: Extract Claims]
+ B --> C{For Each Claim}
+ C --> D[Check Cache]
+ D -->|Cache HIT| E[Return Cached Verdict]
+ D -->|Cache MISS| F[Stage 2: Analyze Claim]
+ F --> G[Store in Cache]
+ G --> E
+ E --> H[Stage 3: Holistic Assessment]
+ H --> I[Final Report]
+{{/mermaid}}
+
+==== Stage 1: Claim Extraction (FAST model, no cache) ====
+
+* **Input:** Article text
+* **Output:** 5 canonical claims (normalized, deduplicated)
+* **Model:** Provider-default FAST model (default, configurable via LLM abstraction layer)
+* **Cost:** $0.003 per article
+* **Cache strategy:** No caching (article-specific)
+
+==== Stage 2: Claim Analysis (REASONING model, CACHED) ====
+
+* **Input:** Single canonical claim
+* **Output:** Scenarios + Evidence + Verdicts
+* **Model:** Provider-default REASONING model (default, configurable via LLM abstraction layer)
+* **Cost:** $0.081 per NEW claim
+* **Cache strategy:** Redis, 90-day TTL
+* **Cache key:** claim:v1norm1:{language}:{sha256(canonical_claim)}
+
+==== Stage 3: Holistic Assessment (REASONING model, no cache) ====
+
+* **Input:** Article + Claim verdicts (from cache or Stage 2)
+* **Output:** Article verdict + Fallacies + Logic quality
+* **Model:** Provider-default REASONING model (default, configurable via LLM abstraction layer)
+* **Cost:** $0.030 per article
+* **Cache strategy:** No caching (article-specific)
+
+
+
+**Note:** Stage 3 implements **Approach 1 (Single-Pass Holistic Analysis)** from the [[Article Verdict Problem>>Test.FactHarbor.Specification.POC.Article-Verdict-Problem]]. While claim analysis (Stage 2) is cached for efficiency, the holistic assessment maintains the integrated evaluation philosophy of Approach 1.
+
+=== Total Cost Formula: ===
+
+{{{Cost = $0.003 (extraction) + (N_new_claims × $0.081) + $0.030 (holistic)
+
+Examples:
+- 0 new claims (100% cache hit): $0.033
+- 1 new claim (80% cache hit): $0.114
+- 3 new claims (40% cache hit): $0.276
+- 5 new claims (0% cache hit): $0.438
+}}}
+
+----
+
+=== 2.2 User Tier System ===
+
+|=Tier|=Monthly Credit|=After Limit|=Cache Access|=Analytics
+|**Free**|$10|Cache-only mode|✅ Full|Basic
+|**Pro** (future)|$50|Continues|✅ Full|Advanced
+|**Enterprise** (future)|Custom|Continues|✅ Full + Priority|Full
+
+**Free Tier Economics:**
+
+* $10 credit = 40-140 articles analyzed (depending on cache hit rate)
+* Average 70 articles/month at 70% cache hit rate
+* After limit: Cache-only mode
+
+----
+
+=== 2.3 Cache-Only Mode (Free Tier Feature) ===
+
+When free users reach their $10 monthly limit, they enter **Cache-Only Mode**:
+
+
+
+==== Stage 3: Holistic Assessment - Complete Specification ====
+
+===== 3.3.1 Overview =====
+
+**Purpose:** Synthesize individual claim analyses into an overall article assessment, identifying logical fallacies, reasoning quality, and publication readiness.
+
+**Approach:** **Single-Pass Holistic Analysis** (Approach 1 from Comparison Matrix)
+
+**Why This Approach for POC1:**
+* ✅ **1 API call** (vs 2 for Two-Pass or Judge)
+* ✅ **Low cost** ($0.030 per article)
+* ✅ **Fast** (4-6 seconds)
+* ✅ **Low complexity** (simple implementation)
+* ⚠️ **Medium reliability** (acceptable for POC1, will improve in POC2/Production)
+
+**Alternative Approaches Considered:**
+
+|= Approach |= API Calls |= Cost |= Speed |= Complexity |= Reliability |= Best For
+| **1. Single-Pass** ⭐ | 1 | 💰 Low | ⚡ Fast | 🟢 Low | ⚠️ Medium | **POC1**
+| 2. Two-Pass | 2 | 💰💰 Med | 🐢 Slow | 🟡 Med | ✅ High | POC2/Prod
+| 3. Structured | 1 | 💰 Low | ⚡ Fast | 🟡 Med | ✅ High | POC1 (alternative)
+| 4. Weighted | 1 | 💰 Low | ⚡ Fast | 🟢 Low | ⚠️ Medium | POC1 (alternative)
+| 5. Heuristics | 1 | 💰 Lowest | ⚡⚡ Fastest | 🟡 Med | ⚠️ Medium | Any
+| 6. Hybrid | 1 | 💰 Low | ⚡ Fast | 🔴 Med-High | ✅ High | POC2
+| 7. Judge | 2 | 💰💰 Med | 🐢 Slow | 🟡 Med | ✅ High | Production
+
+**POC1 Choice:** Approach 1 (Single-Pass) for speed and simplicity. Will upgrade to Approach 2 (Two-Pass) or 6 (Hybrid) in POC2 for higher reliability.
+
+===== 3.3.2 What Stage 3 Evaluates =====
+
+Stage 3 performs **integrated holistic analysis** considering:
+
+**1. Claim-Level Aggregation:**
+* Verdict distribution (how many TRUE vs FALSE vs DISPUTED)
+* Average confidence across all claims
+* Claim interdependencies (do claims support/contradict each other?)
+* Critical claim identification (which claims are most important?)
+
+**2. Contextual Factors:**
+* **Source credibility**: Is the article from a reputable publisher?
+* **Author expertise**: Does the author have relevant credentials?
+* **Publication date**: Is information current or outdated?
+* **Claim coherence**: Do claims form a logical narrative?
+* **Missing context**: Are important caveats or qualifications missing?
+
+**3. Logical Fallacies:**
+* **Cherry-picking**: Selective evidence presentation
+* **False equivalence**: Treating unequal things as equal
+* **Straw man**: Misrepresenting opposing arguments
+* **Ad hominem**: Attacking person instead of argument
+* **Slippery slope**: Assuming extreme consequences without justification
+* **Circular reasoning**: Conclusion assumes premise
+* **False dichotomy**: Presenting only two options when more exist
+
+**4. Reasoning Quality:**
+* **Evidence strength**: Quality and quantity of supporting evidence
+* **Logical coherence**: Arguments follow logically
+* **Transparency**: Assumptions and limitations acknowledged
+* **Nuance**: Complexity and uncertainty appropriately addressed
+
+**5. Publication Readiness:**
+* **Risk tier assignment**: A (high risk), B (medium), or C (low risk)
+* **Publication mode**: DRAFT_ONLY, AI_GENERATED, or HUMAN_REVIEWED
+* **Required disclaimers**: What warnings should accompany this content?
+
+===== 3.3.3 Implementation: Single-Pass Approach =====
+
+**Input:**
+* Original article text (full content)
+* Stage 2 claim analyses (array of ClaimAnalysis objects)
+* Article metadata (URL, title, author, date, source)
+
+**Processing:**
+
+{{code language="python"}}
+# Pseudo-code for Stage 3 (Single-Pass)
+
+def stage3_holistic_assessment(article, claim_analyses, metadata):
+    """
+    Single-pass holistic assessment using Provider-default REASONING model.
+    
+    Approach 1: One comprehensive prompt that asks the LLM to:
+    1. Review all claim verdicts
+    2. Identify patterns and dependencies
+    3. Detect logical fallacies
+    4. Assess reasoning quality
+    5. Determine credibility score and risk tier
+    6. Generate publication recommendations
+    """
+    
+    # Construct comprehensive prompt
+    prompt = f"""
+You are analyzing an article for factual accuracy and logical reasoning.
+
+ARTICLE METADATA:
+- Title: {metadata['title']}
+- Source: {metadata['source']}
+- Date: {metadata['date']}
+- Author: {metadata['author']}
+
+ARTICLE TEXT:
+{article}
+
+INDIVIDUAL CLAIM ANALYSES:
+{format_claim_analyses(claim_analyses)}
+
+YOUR TASK:
+Perform a holistic assessment considering:
+
+1. CLAIM AGGREGATION:
+   - Review the verdict for each claim
+   - Identify any interdependencies between claims
+   - Determine which claims are most critical to the article's thesis
+
+2. CONTEXTUAL EVALUATION:
+   - Assess source credibility
+   - Evaluate author expertise
+   - Consider publication timeliness
+   - Identify missing context or important caveats
+
+3. LOGICAL FALLACIES:
+   - Identify any logical fallacies present
+   - For each fallacy, provide:
+     * Type of fallacy
+     * Where it occurs in the article
+     * Why it's problematic
+     * Severity (minor/moderate/severe)
+
+4. REASONING QUALITY:
+   - Evaluate evidence strength
+   - Assess logical coherence
+   - Check for transparency in assumptions
+   - Evaluate handling of nuance and uncertainty
+
+5. CREDIBILITY SCORING:
+   - Calculate overall credibility score (0.0-1.0)
+   - Assign risk tier:
+     * A (high risk): ≤0.5 credibility OR severe fallacies
+     * B (medium risk): 0.5-0.8 credibility OR moderate issues
+     * C (low risk): >0.8 credibility AND no significant issues
+   
+6. PUBLICATION RECOMMENDATIONS:
+   - Determine publication mode:
+     * DRAFT_ONLY: Tier A, multiple severe issues
+     * AI_GENERATED: Tier B/C, acceptable quality with disclaimers
+     * HUMAN_REVIEWED: Complex or borderline cases
+   - List required disclaimers
+   - Explain decision rationale
+
+OUTPUT FORMAT:
+Return a JSON object matching the ArticleAssessment schema.
+"""
+    
+    # Call LLM
+    response = llm_client.complete(
+        model="claude-sonnet-4-5-20250929",
+        prompt=prompt,
+        max_tokens=4000,
+        response_format="json"
+    )
+    
+    # Parse and validate response
+    assessment = parse_json(response.content)
+    validate_article_assessment_schema(assessment)
+    
+    return assessment
+{{/code}}
+
+**Prompt Engineering Notes:**
+
+1. **Structured Instructions**: Break down task into 6 clear sections
+2. **Context-Rich**: Provide article + all claim analyses + metadata
+3. **Explicit Criteria**: Define credibility scoring and risk tiers precisely
+4. **JSON Schema**: Request structured output matching ArticleAssessment schema
+5. **Examples** (in production): Include 2-3 example assessments for consistency
+
+===== 3.3.4 Credibility Scoring Algorithm =====
+
+**Base Score Calculation:**
+
+{{code language="python"}}
+def calculate_credibility_score(claim_analyses, fallacies, contextual_factors):
+    """
+    Calculate overall credibility score (0.0-1.0).
+    
+    This is a GUIDELINE for the LLM, not strict code.
+    The LLM has flexibility to adjust based on context.
+    """
+    
+    # 1. Claim Verdict Score (60% weight)
+    verdict_weights = {
+        "TRUE": 1.0,
+        "PARTIALLY_TRUE": 0.7,
+        "DISPUTED": 0.5,
+        "UNSUPPORTED": 0.3,
+        "FALSE": 0.0,
+        "UNVERIFIABLE": 0.4
+    }
+    
+    claim_scores = [
+        verdict_weights[c.verdict.label] * c.verdict.confidence 
+        for c in claim_analyses
+    ]
+    avg_claim_score = sum(claim_scores) / len(claim_scores)
+    claim_component = avg_claim_score * 0.6
+    
+    # 2. Fallacy Penalty (20% weight)
+    fallacy_penalties = {
+        "minor": -0.05,
+        "moderate": -0.15,
+        "severe": -0.30
+    }
+    
+    fallacy_score = 1.0
+    for fallacy in fallacies:
+        fallacy_score += fallacy_penalties[fallacy.severity]
+    
+    fallacy_score = max(0.0, min(1.0, fallacy_score))
+    fallacy_component = fallacy_score * 0.2
+    
+    # 3. Contextual Factors (20% weight)
+    context_adjustments = {
+        "source_credibility": {"positive": +0.1, "neutral": 0, "negative": -0.1},
+        "author_expertise": {"positive": +0.1, "neutral": 0, "negative": -0.1},
+        "timeliness": {"positive": +0.05, "neutral": 0, "negative": -0.05},
+        "transparency": {"positive": +0.05, "neutral": 0, "negative": -0.05}
+    }
+    
+    context_score = 1.0
+    for factor in contextual_factors:
+        adjustment = context_adjustments.get(factor.factor, {}).get(factor.impact, 0)
+        context_score += adjustment
+    
+    context_score = max(0.0, min(1.0, context_score))
+    context_component = context_score * 0.2
+    
+    # 4. Combine components
+    final_score = claim_component + fallacy_component + context_component
+    
+    # 5. Apply confidence modifier
+    avg_confidence = sum(c.verdict.confidence for c in claim_analyses) / len(claim_analyses)
+    final_score = final_score * (0.8 + 0.2 * avg_confidence)
+    
+    return max(0.0, min(1.0, final_score))
+{{/code}}
+
+**Note:** This algorithm is a **guideline** provided to the LLM in the system prompt. The LLM has flexibility to adjust based on specific article context, but should generally follow this structure for consistency.
+
+===== 3.3.5 Risk Tier Assignment =====
+
+**Automatic Risk Tier Rules:**
+
+{{code}}
+Risk Tier A (High Risk - Requires Review):
+- Credibility score ≤ 0.5, OR
+- Any severe fallacies detected, OR
+- Multiple (3+) moderate fallacies, OR
+- 50%+ of claims are FALSE or UNSUPPORTED
+
+Risk Tier B (Medium Risk - May Publish with Disclaimers):
+- Credibility score 0.5-0.8, OR
+- 1-2 moderate fallacies, OR
+- 20-49% of claims are DISPUTED or PARTIALLY_TRUE
+
+Risk Tier C (Low Risk - Safe to Publish):
+- Credibility score > 0.8, AND
+- No severe or moderate fallacies, AND
+- <20% disputed/problematic claims, AND
+- No critical missing context
+{{/code}}
+
+===== 3.3.6 Output: ArticleAssessment Schema =====
+
+(See Stage 3 Output Schema section above for complete JSON schema)
+
+===== 3.3.7 Performance Metrics =====
+
+**POC1 Targets:**
+* **Processing time**: 4-6 seconds per article
+* **Cost**: $0.030 per article (Sonnet 4.5 tokens)
+* **Quality**: 70-80% agreement with human reviewers (acceptable for POC)
+* **API calls**: 1 per article
+
+**Future Improvements (POC2/Production):**
+* Upgrade to Two-Pass (Approach 2): +15% accuracy, +$0.020 cost
+* Add human review sampling: 10% of Tier B articles
+* Implement Judge approach (Approach 7) for Tier A: Highest quality
+
+===== 3.3.8 Example Stage 3 Execution =====
+
+**Input:**
+* Article: "Biden won the 2020 election"
+* Claim analyses: [{claim: "Biden won", verdict: "TRUE", confidence: 0.95}]
+
+**Stage 3 Processing:**
+1. Analyzes single claim with high confidence
+2. Checks for contextual factors (source credibility)
+3. Searches for logical fallacies (none found)
+4. Calculates credibility: 0.6 * 0.95 + 0.2 * 1.0 + 0.2 * 1.0 = 0.97
+5. Assigns risk tier: C (low risk)
+6. Recommends: AI_GENERATED publication mode
+
+**Output:**
+```json
+{
+  "article_id": "a1",
+  "overall_assessment": {
+    "credibility_score": 0.97,
+    "risk_tier": "C",
+    "summary": "Article makes single verifiable claim with strong evidence support",
+    "confidence": 0.95
+  },
+  "claim_aggregation": {
+    "total_claims": 1,
+    "verdict_distribution": {"TRUE": 1},
+    "avg_confidence": 0.95
+  },
+  "contextual_factors": [
+    {"factor": "source_credibility", "impact": "positive", "description": "Reputable news source"}
+  ],
+  "recommendations": {
+    "publication_mode": "AI_GENERATED",
+    "requires_review": false,
+    "suggested_disclaimers": []
+  }
+}
+```
+
+==== What Cache-Only Mode Provides: ====
+
+✅ **Claim Extraction (Platform-Funded):**
+
+* Stage 1 extraction runs at $0.003 per article
+* **Cost: Absorbed by platform** (not charged to user credit)
+* Rationale: Extraction is necessary to check cache, and cost is negligible
+* Rate limit: Max 50 extractions/day in cache-only mode (prevents abuse)
+
+✅ **Instant Access to Cached Claims:**
+
+* Any claim that exists in cache → Full verdict returned
+* Cost: $0 (no LLM calls)
+* Response time: <100ms
+
+✅ **Partial Article Analysis:**
+
+* Check each claim against cache
+* Return verdicts for ALL cached claims
+* For uncached claims: Return "status": "cache_miss"
+
+✅ **Cache Coverage Report:**
+
+* "3 of 5 claims available in cache (60% coverage)"
+* Links to cached analyses
+* Estimated cost to complete: $0.162 (2 new claims)
+
+❌ **Not Available in Cache-Only Mode:**
+
+* New claim analysis (Stage 2 LLM calls blocked)
+* Full holistic assessment (Stage 3 blocked if any claims missing)
+
+==== User Experience Example: ====
+
+{{{{
+ "status": "cache_only_mode",
+ "message": "Monthly credit limit reached. Showing cached results only.",
+ "cache_coverage": {
+ "claims_total": 5,
+ "claims_cached": 3,
+ "claims_missing": 2,
+ "coverage_percent": 60
+ },
+ "cached_claims": [
+ {"claim_id": "C1", "verdict": "Likely", "confidence": 0.82},
+ {"claim_id": "C2", "verdict": "Highly Likely", "confidence": 0.91},
+ {"claim_id": "C4", "verdict": "Unclear", "confidence": 0.55}
+ ],
+ "missing_claims": [
+ {"claim_id": "C3", "claim_text": "...", "estimated_cost": "$0.081"},
+ {"claim_id": "C5", "claim_text": "...", "estimated_cost": "$0.081"}
+ ],
+ "upgrade_options": {
+ "top_up": "$5 for 20-70 more articles",
+ "pro_tier": "$50/month unlimited"
+ }
+}
+}}}
+
+**Design Rationale:**
+
+* Free users still get value (cached claims often answer their question)
+* Demonstrates FactHarbor's value (partial results encourage upgrade)
+* Sustainable for platform (no additional cost)
+* Fair to all users (everyone contributes to cache)
+
+----
+
+
+
+== 6. LLM Abstraction Layer ==
+
+=== 6.1 Design Principle ===
+
+**FactHarbor uses provider-agnostic LLM abstraction** to avoid vendor lock-in and enable:
+
+* **Provider switching:** Change LLM providers without code changes
+* **Cost optimization:** Use different providers for different stages
+* **Resilience:** Automatic fallback if primary provider fails
+* **Cross-checking:** Compare outputs from multiple providers
+* **A/B testing:** Test new models without deployment changes
+
+**Implementation:** All LLM calls go through an abstraction layer that routes to configured providers.
+
+----
+
+=== 6.2 LLM Provider Interface ===
+
+**Abstract Interface:**
+
+{{{
+interface LLMProvider {
+  // Core methods
+  complete(prompt: string, options: CompletionOptions): Promise<CompletionResponse>
+  stream(prompt: string, options: CompletionOptions): AsyncIterator<StreamChunk>
+  
+  // Provider metadata
+  getName(): string
+  getMaxTokens(): number
+  getCostPer1kTokens(): { input: number, output: number }
+  
+  // Health check
+  isAvailable(): Promise<boolean>
+}
+
+interface CompletionOptions {
+  model?: string
+  maxTokens?: number
+  temperature?: number
+  stopSequences?: string[]
+  systemPrompt?: string
+}
+}}}
+
+----
+
+=== 6.3 Supported Providers (POC1) ===
+
+**Primary Provider (Default):**
+
+* **Anthropic Claude API**
+  * Models (examples; not normative): Provider-default FAST model, Provider-default REASONING model, Provider-default HEAVY model (optional)
+  * Used by default in POC1
+  * Best quality for holistic analysis
+
+**Secondary Providers (Future):**
+
+* **OpenAI API**
+  * Models: GPT-4o, GPT-4o-mini
+  * For cost comparison
+  
+* **Google Vertex AI**
+  * Models: Gemini 1.5 Pro, Gemini 1.5 Flash
+  * For diversity in evidence gathering
+
+* **Local Models** (Post-POC)
+  * Models: Llama 3.1, Mistral
+  * For privacy-sensitive deployments
+
+----
+
+=== 6.4 Provider Configuration ===
+
+**Environment Variables:**
+
+{{{
+# Primary provider
+LLM_PRIMARY_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Fallback provider
+LLM_FALLBACK_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+
+# Provider selection per stage
+LLM_STAGE1_PROVIDER=anthropic
+LLM_STAGE1_MODEL=claude-haiku-4
+LLM_STAGE2_PROVIDER=anthropic
+LLM_STAGE2_MODEL=claude-sonnet-4-5-20250929
+LLM_STAGE3_PROVIDER=anthropic
+LLM_STAGE3_MODEL=claude-sonnet-4-5-20250929
+
+# Cost limits
+LLM_MAX_COST_PER_REQUEST=1.00
+}}}
+
+**Database Configuration (Alternative):**
+
+{{{{
+{
+  "providers": [
+    {
+      "name": "anthropic",
+      "api_key_ref": "vault://anthropic-api-key",
+      "enabled": true,
+      "priority": 1
+    },
+    {
+      "name": "openai",
+      "api_key_ref": "vault://openai-api-key",
+      "enabled": true,
+      "priority": 2
+    }
+  ],
+  "stage_config": {
+    "stage1": {
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 4096,
+      "temperature": 0.0
+    },
+    "stage2": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 16384,
+      "temperature": 0.3
+    },
+    "stage3": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  }
+}
+}}}
+
+----
+
+=== 6.5 Stage-Specific Models (POC1 Defaults) ===
+
+**Stage 1: Claim Extraction**
+
+* **Default:** Anthropic Provider-default FAST model
+* **Alternative:** OpenAI GPT-4o-mini, Google Gemini 1.5 Flash
+* **Rationale:** Fast, cheap, simple task
+* **Cost:** ~$0.003 per article
+
+**Stage 2: Claim Analysis** (CACHEABLE)
+
+* **Default:** Anthropic Provider-default REASONING model
+* **Alternative:** OpenAI GPT-4o, Google Gemini 1.5 Pro
+* **Rationale:** High-quality analysis, cached 90 days
+* **Cost:** ~$0.081 per NEW claim
+
+**Stage 3: Holistic Assessment**
+
+* **Default:** Anthropic Provider-default REASONING model
+* **Alternative:** OpenAI GPT-4o, Provider-default HEAVY model (optional) (for high-stakes)
+* **Rationale:** Complex reasoning, logical fallacy detection
+* **Cost:** ~$0.030 per article
+
+**Cost Comparison (Example):**
+
+|=Stage|=Anthropic (Default)|=OpenAI Alternative|=Google Alternative
+|Stage 1|Provider-default FAST model ($0.003)|GPT-4o-mini ($0.002)|Gemini Flash ($0.002)
+|Stage 2|Provider-default REASONING model ($0.081)|GPT-4o ($0.045)|Gemini Pro ($0.050)
+|Stage 3|Provider-default REASONING model ($0.030)|GPT-4o ($0.018)|Gemini Pro ($0.020)
+|**Total (0% cache)**|**$0.114**|**$0.065**|**$0.072**
+
+**Note:** POC1 uses Anthropic exclusively for consistency. Multi-provider support planned for POC2.
+
+----
+
+=== 6.6 Failover Strategy ===
+
+**Automatic Failover:**
+
+{{{
+async function completeLLM(stage: string, prompt: string): Promise<string> {
+  const primaryProvider = getProviderForStage(stage)
+  const fallbackProvider = getFallbackProvider()
+  
+  try {
+    return await primaryProvider.complete(prompt)
+  } catch (error) {
+    if (error.type === 'rate_limit' || error.type === 'service_unavailable') {
+      logger.warn(`Primary provider failed, using fallback`)
+      return await fallbackProvider.complete(prompt)
+    }
+    throw error
+  }
+}
+}}}
+
+**Fallback Priority:**
+
+1. **Primary:** Configured provider for stage
+2. **Secondary:** Fallback provider (if configured)
+3. **Cache:** Return cached result (if available for Stage 2)
+4. **Error:** Return 503 Service Unavailable
+
+----
+
+=== 6.7 Provider Selection API ===
+
+**Admin Endpoint:** POST /admin/v1/llm/configure
+
+**Update provider for specific stage:**
+
+{{{{
+{
+  "stage": "stage2",
+  "provider": "openai",
+  "model": "gpt-4o",
+  "max_tokens": 16384,
+  "temperature": 0.3
+}
+}}}
+
+**Response:** 200 OK
+
+{{{{
+{
+  "message": "LLM configuration updated",
+  "stage": "stage2",
+  "previous": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-5-20250929"
+  },
+  "current": {
+    "provider": "openai",
+    "model": "gpt-4o"
+  },
+  "cost_impact": {
+    "previous_cost_per_claim": 0.081,
+    "new_cost_per_claim": 0.045,
+    "savings_percent": 44
+  }
+}
+}}}
+
+**Get current configuration:**
+
+GET /admin/v1/llm/config
+
+{{{{
+{
+  "providers": ["anthropic", "openai"],
+  "primary": "anthropic",
+  "fallback": "openai",
+  "stages": {
+    "stage1": {
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5-20251001",
+      "cost_per_request": 0.003
+    },
+    "stage2": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5-20250929",
+      "cost_per_new_claim": 0.081
+    },
+    "stage3": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5-20250929",
+      "cost_per_request": 0.030
+    }
+  }
+}
+}}}
+
+----
+
+=== 6.8 Implementation Notes ===
+
+**Provider Adapter Pattern:**
+
+{{{
+class AnthropicProvider implements LLMProvider {
+  async complete(prompt: string, options: CompletionOptions) {
+    const response = await anthropic.messages.create({
+      model: options.model || 'claude-sonnet-4-5-20250929',
+      max_tokens: options.maxTokens || 4096,
+      messages: [{ role: 'user', content: prompt }],
+      system: options.systemPrompt
+    })
+    return response.content[0].text
+  }
+}
+
+class OpenAIProvider implements LLMProvider {
+  async complete(prompt: string, options: CompletionOptions) {
+    const response = await openai.chat.completions.create({
+      model: options.model || 'gpt-4o',
+      max_tokens: options.maxTokens || 4096,
+      messages: [
+        { role: 'system', content: options.systemPrompt },
+        { role: 'user', content: prompt }
+      ]
+    })
+    return response.choices[0].message.content
+  }
+}
+}}}
+
+**Provider Registry:**
+
+{{{
+const providers = new Map<string, LLMProvider>()
+providers.set('anthropic', new AnthropicProvider())
+providers.set('openai', new OpenAIProvider())
+providers.set('google', new GoogleProvider())
+
+function getProvider(name: string): LLMProvider {
+  return providers.get(name) || providers.get(config.primaryProvider)
+}
+}}}
+
+----
+
+== 3. REST API Contract ==
+
+=== 3.1 User Credit Tracking ===
+
+**Endpoint:** GET /v1/user/credit
+
+**Response:** 200 OK
+
+{{{{
+ "user_id": "user_abc123",
+ "tier": "free",
+ "credit_limit": 10.00,
+ "credit_used": 7.42,
+ "credit_remaining": 2.58,
+ "reset_date": "2025-02-01T00:00:00Z",
+ "cache_only_mode": false,
+ "usage_stats": {
+ "articles_analyzed": 67,
+ "claims_from_cache": 189,
+ "claims_newly_analyzed": 113,
+ "cache_hit_rate": 0.626
+ }
+}
+}}}
+
+----
+
+
+
+==== Stage 2 Output Schema: ClaimAnalysis ====
+
+**Complete schema for each claim's analysis result:**
+
+{{code language="json"}}
+{
+  "claim_id": "claim_abc123",
+  "claim_text": "Biden won the 2020 election",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_1",
+      "description": "Interpreting 'won' as Electoral College victory",
+      "verdict": {
+        "label": "TRUE",
+        "confidence": 0.95,
+        "explanation": "Joe Biden won 306 electoral votes vs Trump's 232"
+      },
+      "evidence": {
+        "supporting": [
+          {
+            "text": "Biden certified with 306 electoral votes",
+            "source_url": "https://www.archives.gov/electoral-college/2020",
+            "source_title": "2020 Electoral College Results",
+            "credibility_score": 0.98
+          }
+        ],
+        "opposing": []
+      }
+    }
+  ],
+  "recommended_scenario": "scenario_1",
+  "metadata": {
+    "analysis_timestamp": "2024-12-24T18:00:00Z",
+    "model_used": "claude-sonnet-4-5-20250929",
+    "processing_time_seconds": 8.5
+  }
+}
+{{/code}}
+
+**Required Fields:**
+* **claim_id**: Unique identifier matching Stage 1 output
+* **claim_text**: The exact claim being analyzed
+* **scenarios**: Array of interpretation scenarios (minimum 1)
+ * **scenario_id**: Unique ID for this scenario
+ * **description**: Clear interpretation of the claim
+ * **verdict**: Verdict object with label, confidence, explanation
+ * **evidence**: Supporting and opposing evidence arrays
+* **recommended_scenario**: ID of the primary/recommended scenario
+* **metadata**: Processing metadata (timestamp, model, timing)
+
+**Optional Fields:**
+* Additional context, warnings, or quality scores
+
+**Minimum Viable Example:**
+
+{{code language="json"}}
+{
+  "claim_id": "c1",
+  "claim_text": "The sky is blue",
+  "scenarios": [{
+    "scenario_id": "s1",
+    "description": "Under clear daytime conditions",
+    "verdict": {"label": "TRUE", "confidence": 0.99, "explanation": "Rayleigh scattering"},
+    "evidence": {"supporting": [], "opposing": []}
+  }],
+  "recommended_scenario": "s1",
+  "metadata": {"analysis_timestamp": "2024-12-24T18:00:00Z"}
+}
+{{/code}}
+
+
+
+==== Stage 3 Output Schema: ArticleAssessment ====
+
+**Complete schema for holistic article-level assessment:**
+
+{{code language="json"}}
+{
+  "article_id": "article_xyz789",
+  "overall_assessment": {
+    "credibility_score": 0.72,
+    "risk_tier": "B",
+    "summary": "Article contains mostly accurate claims with one disputed claim requiring expert review",
+    "confidence": 0.85
+  },
+  "claim_aggregation": {
+    "total_claims": 5,
+    "verdict_distribution": {
+      "TRUE": 3,
+      "PARTIALLY_TRUE": 1,
+      "DISPUTED": 1,
+      "FALSE": 0,
+      "UNSUPPORTED": 0,
+      "UNVERIFIABLE": 0
+    },
+    "avg_confidence": 0.82
+  },
+  "contextual_factors": [
+    {
+      "factor": "Source credibility",
+      "impact": "positive",
+      "description": "Published by reputable news organization"
+    },
+    {
+      "factor": "Claim interdependence",
+      "impact": "neutral",
+      "description": "Claims are independent; no logical chains"
+    }
+  ],
+  "recommendations": {
+    "publication_mode": "AI_GENERATED",
+    "requires_review": false,
+    "review_reason": null,
+    "suggested_disclaimers": [
+      "One claim (Claim 4) has conflicting expert opinions"
+    ]
+  },
+  "metadata": {
+    "holistic_timestamp": "2024-12-24T18:00:10Z",
+    "model_used": "claude-sonnet-4-5-20250929",
+    "processing_time_seconds": 4.2,
+    "cache_used": false
+  }
+}
+{{/code}}
+
+**Required Fields:**
+* **article_id**: Unique identifier for this article
+* **overall_assessment**: Top-level assessment
+ * **credibility_score**: 0.0-1.0 composite score
+ * **risk_tier**: A, B, or C (per AKEL quality gates)
+ * **summary**: Human-readable assessment
+ * **confidence**: How confident the holistic assessment is
+* **claim_aggregation**: Statistics across all claims
+ * **total_claims**: Count of claims analyzed
+ * **verdict_distribution**: Count per verdict label
+ * **avg_confidence**: Average confidence across verdicts
+* **contextual_factors**: Array of contextual considerations
+* **recommendations**: Publication decision support
+ * **publication_mode**: DRAFT_ONLY, AI_GENERATED, or HUMAN_REVIEWED
+ * **requires_review**: Boolean flag
+ * **suggested_disclaimers**: Array of disclaimer texts
+* **metadata**: Processing metadata
+
+**Minimum Viable Example:**
+
+{{code language="json"}}
+{
+  "article_id": "a1",
+  "overall_assessment": {
+    "credibility_score": 0.95,
+    "risk_tier": "C",
+    "summary": "All claims verified as true",
+    "confidence": 0.98
+  },
+  "claim_aggregation": {
+    "total_claims": 1,
+    "verdict_distribution": {"TRUE": 1},
+    "avg_confidence": 0.99
+  },
+  "contextual_factors": [],
+  "recommendations": {
+    "publication_mode": "AI_GENERATED",
+    "requires_review": false,
+    "suggested_disclaimers": []
+  },
+  "metadata": {"holistic_timestamp": "2024-12-24T18:00:00Z"}
+}
+{{/code}}
+
+=== 3.2 Create Analysis Job (3-Stage) ===
+
+**Endpoint:** POST /v1/analyze
+
+==== Idempotency Support: ====
+
+To prevent duplicate job creation on network retries, clients SHOULD include **either**:
+
+* Header: ``Idempotency-Key: <client-generated-uuid>`` (preferred)
+* OR body: ``client.request_id``
+
+**Example request (header):**
+{{code language="text"}}
+POST /v1/analyze
+Authorization: Bearer <API_KEY>
+Idempotency-Key: 0f3c6c0e-2d2b-4b4a-9d6f-1a1f6b0c9f7e
+Content-Type: application/json
+{{/code}}
+
+**Example request (body):**
+{{code language="json"}}
+{
+  "input_url": "https://example.org/article",
+  "options": { "max_claims": 5, "cache_preference": "prefer_cache" },
+  "client": { "request_id": "0f3c6c0e-2d2b-4b4a-9d6f-1a1f6b0c9f7e" }
+}
+{{/code}}
+
+**Server behavior:**
+* Same idempotency key + same request body ⇒ return existing job (``200``) and include:
+  ``idempotent=true`` and ``original_request_at``.
+* Same key + different body ⇒ ``409`` with ``VALIDATION_ERROR`` describing the mismatch.
+
+**Idempotency TTL:** 24 hours (minimum).
+
+==== Request Body: ====
+
+{{{{
+ "input_type": "url",
+ "input_url": "https://example.com/medical-report-01",
+ "input_text": null,
+ "options": {
+ "browsing": "on",
+ "depth": "standard",
+ "max_claims": 5,
+
+* **cache_preference** (optional): Cache usage preference
+ * **Type:** string
+ * **Enum:** {{code}}["prefer_cache", "allow_partial", "skip_cache"]{{/code}}
+ * **Default:** {{code}}"prefer_cache"{{/code}}
+ * **Semantics:**
+  * {{code}}"prefer_cache"{{/code}}: Use full cache if available, otherwise run all stages
+  * {{code}}"allow_partial"{{/code}}: Use cached Stage 2 results if available, rerun only Stage 3
+  * {{code}}"skip_cache"{{/code}}: Always rerun all stages (ignore cache)
+ * **Behavior:** When set to {{code}}"allow_partial"{{/code}} and Stage 2 cached results exist:
+  * Stage 1 & 2 are skipped
+  * Stage 3 (holistic assessment) runs fresh with cached claim analyses
+  * Response includes {{code}}"cache_used": true{{/code}} and {{code}}"stages_cached": ["stage1", "stage2"]{{/code}}
+
+ "scenarios_per_claim": 2,
+ "max_evidence_per_scenario": 6,
+ "context_aware_analysis": true
+ },
+ "client": {
+ "request_id": "optional-client-tracking-id",
+ "source_label": "optional"
+ }
+}
+}}}
+
+**Options:**
+
+* browsing: on | off (retrieve web sources or just output queries)
+* depth: standard | deep (evidence thoroughness)
+* max_claims: 1-10 (default: **5** for cost control)
+* scenarios_per_claim: 1-5 (default: **2** for cost control)
+* max_evidence_per_scenario: 3-10 (default: **6**)
+* context_aware_analysis: true | false (experimental)
+
+**Response:** 202 Accepted
+
+{{{{
+ "job_id": "01J...ULID",
+ "status": "QUEUED",
+ "created_at": "2025-12-24T10:31:00Z",
+ "estimated_cost": 0.114,
+ "cost_breakdown": {
+ "stage1_extraction": 0.003,
+ "stage2_new_claims": 0.081,
+ "stage2_cached_claims": 0.000,
+ "stage3_holistic": 0.030
+ },
+ "cache_info": {
+ "claims_to_extract": 5,
+ "estimated_cache_hits": 4,
+ "estimated_new_claims": 1
+ },
+ "links": {
+ "self": "/v1/jobs/01J...ULID",
+ "result": "/v1/jobs/01J...ULID/result",
+ "report": "/v1/jobs/01J...ULID/report",
+ "events": "/v1/jobs/01J...ULID/events"
+ }
+}
+}}}
+
+**Error Responses:**
+
+402 Payment Required - Free tier limit reached, cache-only mode
+
+{{{{
+ "error": "credit_limit_reached",
+ "message": "Monthly credit limit reached. Entering cache-only mode.",
+ "cache_only_mode": true,
+ "credit_remaining": 0.00,
+ "reset_date": "2025-02-01T00:00:00Z",
+ "action": "Resubmit with cache_preference=allow_partial for cached results"
+}
+}}}
+
+----
+
+== 4. Data Schemas ==
+
+=== 4.1 Stage 1 Output: ClaimExtraction ===
+
+{{{{
+ "job_id": "01J...ULID",
+ "stage": "stage1_extraction",
+ "article_metadata": {
+ "title": "Article title",
+ "source_url": "https://example.com/article",
+ "extracted_text_length": 5234,
+ "language": "en"
+ },
+ "claims": [
+ {
+ "claim_id": "C1",
+ "claim_text": "Original claim text from article",
+ "canonical_claim": "Normalized, deduplicated phrasing",
+ "claim_hash": "sha256:abc123...",
+ "is_central_to_thesis": true,
+ "claim_type": "causal",
+ "evaluability": "evaluable",
+ "risk_tier": "B",
+ "domain": "public_health"
+ }
+ ],
+ "article_thesis": "Main argument detected",
+ "cost": 0.003
+}
+}}}
+
+----
+
+=== 4.5 Verdict Label Taxonomy ===
+
+FactHarbor uses **three distinct verdict taxonomies** depending on analysis level:
+
+==== 4.5.1 Scenario Verdict Labels (Stage 2) ====
+
+Used for individual scenario verdicts within a claim.
+
+**Enum Values:**
+
+* Highly Likely - Probability 0.85-1.0, high confidence
+* Likely - Probability 0.65-0.84, moderate-high confidence
+* Unclear - Probability 0.35-0.64, or low confidence
+* Unlikely - Probability 0.16-0.34, moderate-high confidence
+* Highly Unlikely - Probability 0.0-0.15, high confidence
+* Unsubstantiated - Insufficient evidence to determine probability
+
+==== 4.5.2 Claim Verdict Labels (Rollup) ====
+
+Used when summarizing a claim across all scenarios.
+
+**Enum Values:**
+
+* Supported - Majority of scenarios are Likely or Highly Likely
+* Refuted - Majority of scenarios are Unlikely or Highly Unlikely
+* Inconclusive - Mixed scenarios or majority Unclear/Unsubstantiated
+
+**Mapping Logic:**
+
+* If ≥60% scenarios are (Highly Likely | Likely) → Supported
+* If ≥60% scenarios are (Highly Unlikely | Unlikely) → Refuted
+* Otherwise → Inconclusive
+
+==== 4.5.3 Article Verdict Labels (Stage 3) ====
+
+Used for holistic article-level assessment.
+
+**Enum Values:**
+
+* WELL-SUPPORTED - Article thesis logically follows from supported claims
+* MISLEADING - Claims may be true but article commits logical fallacies
+* REFUTED - Central claims are refuted, invalidating thesis
+* UNCERTAIN - Insufficient evidence or highly mixed claim verdicts
+
+**Note:** Article verdict considers **claim centrality** (central claims override supporting claims).
+
+==== 4.5.4 API Field Mapping ====
+
+|=Level|=API Field|=Enum Name
+|Scenario|scenarios[].verdict.label|scenario_verdict_label
+|Claim|claims[].rollup_verdict (optional)|claim_verdict_label
+|Article|article_holistic_assessment.overall_verdict|article_verdict_label
+
+----
+
+== 5. Cache Architecture ==
+
+=== 5.1 Redis Cache Design ===
+
+**Technology:** Redis 7.0+ (in-memory key-value store)
+
+**Cache Key Schema:**
+
+{{{claim:v1norm1:{language}:{sha256(canonical_claim)}
+}}}
+
+**Example:**
+
+{{{Claim (English): "COVID vaccines are 95% effective"
+Canonical: "covid vaccines are 95 percent effective"
+Language: "en"
+SHA256: abc123...def456
+Key: claim:v1norm1:en:abc123...def456
+}}}
+
+**Rationale:** Prevents cross-language collisions and enables per-language cache analytics.
+
+**Data Structure:**
+
+{{{SET claim:v1norm1:en:abc123...def456 '{...ClaimAnalysis JSON...}'
+EXPIRE claim:v1norm1:en:abc123...def456 7776000 # 90 days
+}}}
+
+----
+
+=== 5.1.1 Canonical Claim Normalization (v1norm1) ===
+
+The cache key depends on deterministic claim normalization. **All implementations MUST follow this algorithm exactly.**
+
+**Normalization version:** ``v1norm1``
+
+**Algorithm (v1norm1):**
+1. Unicode normalize: NFD
+2. Lowercase
+3. Strip diacritics
+4. Normalize apostrophes: ``’`` and ``‘`` → ``'``
+5. Replace percent sign: ``%`` → `` percent``
+6. Collapse whitespace
+7. Remove punctuation **except apostrophes**
+8. Expand contractions (fixed list below)
+9. Remove remaining apostrophes
+10. Collapse whitespace again
+
+{{code language="python"}}
+import re
+import unicodedata
+
+# Canonical claim normalization for deduplication.
+# Version: v1norm1
+#
+# IMPORTANT:
+# - Any change to these rules REQUIRES a new normalization version.
+# - Cache keys MUST include the normalization version to avoid collisions.
+
+CONTRACTIONS_V1NORM1 = {
+    "don't": "do not",
+    "doesn't": "does not",
+    "didn't": "did not",
+    "can't": "cannot",
+    "won't": "will not",
+    "shouldn't": "should not",
+    "wouldn't": "would not",
+    "isn't": "is not",
+    "aren't": "are not",
+    "wasn't": "was not",
+    "weren't": "were not",
+    "haven't": "have not",
+    "hasn't": "has not",
+    "hadn't": "had not",
+    "it's": "it is",
+    "that's": "that is",
+    "there's": "there is",
+    "i'm": "i am",
+    "we're": "we are",
+    "they're": "they are",
+    "you're": "you are",
+    "i've": "i have",
+    "we've": "we have",
+    "they've": "they have",
+    "you've": "you have",
+    "i'll": "i will",
+    "we'll": "we will",
+    "they'll": "they will",
+    "you'll": "you will",
+}
+
+def normalize_claim(text: str) -> str:
+    if text is None:
+        return ""
+
+    # 1) Unicode normalization (NFD)
+    text = unicodedata.normalize("NFD", text)
+
+    # 2) Lowercase
+    text = text.lower()
+
+    # 3) Strip diacritics
+    text = "".join(c for c in text if unicodedata.category(c) != "Mn")
+
+    # 4) Normalize apostrophes
+    text = text.replace("’", "'").replace("‘", "'")
+
+    # 5) Normalize percent sign
+    text = text.replace("%", " percent")
+
+    # 6) Collapse whitespace
+    text = re.sub(r"\s+", " ", text).strip()
+
+    # 7) Remove punctuation except apostrophes
+    text = re.sub(r"[^\w\s']", "", text)
+
+    # 8) Expand contractions
+    for k, v in CONTRACTIONS_V1NORM1.items():
+        text = re.sub(rf"\b{re.escape(k)}\b", v, text)
+
+    # 9) Remove remaining apostrophes (after contraction expansion)
+    text = text.replace("'", "")
+
+    # 10) Final whitespace normalization
+    text = re.sub(r"\s+", " ", text).strip()
+
+    return text
+{{/code}}
+
+**Canonical claim hash input (normative):**
+* ``claim_hash = sha256_hex_lower( "v1norm1|<language>|" + canonical_claim_text )``
+* Cache key: ``claim:v1norm1:<language>:<claim_hash>``
+
+**Normalization Examples:**
+
+|= Input |= Normalized Output
+| "Biden won the 2020 election" | {{code}}biden won the 2020 election{{/code}}
+| "Biden won the 2020 election!" | {{code}}biden won the 2020 election{{/code}}
+| "Biden  won   the 2020  election" | {{code}}biden won the 2020 election{{/code}}
+| "Biden didn't win the 2020 election" | {{code}}biden did not win the 2020 election{{/code}}
+| "BIDEN WON THE 2020 ELECTION" | {{code}}biden won the 2020 election{{/code}}
+
+**Versioning:** Algorithm version is {{code}}v1norm1{{/code}}. Changes to the algorithm require a new version identifier.
+
+=== 5.1.2 Copyright & Data Retention Policy ===
+
+**Evidence Excerpt Storage:**
+
+To comply with copyright law and fair use principles:
+
+**What We Store:**
+
+* **Metadata only:** Title, author, publisher, URL, publication date
+* **Short excerpts:** Max 25 words per quote, max 3 quotes per evidence item
+* **Summaries:** AI-generated bullet points (not verbatim text)
+* **No full articles:** Never store complete article text beyond job processing
+
+**Total per Cached Claim:**
+
+* Scenarios: 2 per claim
+* Evidence items: 6 per scenario (12 total)
+* Quotes: 3 per evidence × 25 words = 75 words per item
+* **Maximum stored verbatim text:** ~~900 words per claim (12 × 75)
+
+**Retention:**
+
+* Cache TTL: 90 days
+* Job outputs: 24 hours (then archived or deleted)
+* No persistent full-text article storage
+
+**Rationale:**
+
+* Short excerpts for citation = fair use
+* Summaries are transformative (not copyrightable)
+* Limited retention (90 days max)
+* No commercial republication of excerpts
+
+**DMCA Compliance:**
+
+* Cache invalidation endpoint available for rights holders
+* Contact: dmca@factharbor.org
+
+----
+
+== Summary ==
+
+This WYSIWYG preview shows the **structure and key sections** of the 1,515-line API specification.
+
+**Full specification includes:**
+
+* Complete API endpoints (7 total)
+* All data schemas (ClaimExtraction, ClaimAnalysis, HolisticAssessment, Complete)
+* Quality gates & validation rules
+* LLM configuration for all 3 stages
+* Implementation notes with code samples
+* Testing strategy
+* Cross-references to other pages
+
+**The complete specification is available in:**
+
+* this page (authoritative canonical contract) (45 KB standalone)
+* Export files (TEST/PRODUCTION) for xWiki import

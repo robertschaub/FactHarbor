@@ -1,0 +1,97 @@
+= Tools Decisions =
+
+== Purpose ==
+
+This page documents the deliberate tool choices for FactHarbor from **POC1 to Beta**. The guiding principles are:
+
+* minimal setup and cognitive load for POC1
+* no rewrites when moving to Beta
+* clear, incremental upgrade paths
+
+----
+
+== Phase 1 — POC1 (Local, Low Infrastructure) ==
+
+=== Principles ===
+
+* Local-first development
+* No mandatory container or cloud infrastructure
+* Same architectural shape as later phases
+
+=== Backend ===
+
+* (((
+**ASP.NET Core (.NET 8)**
+
+* Role: system of record (jobs, status, results, events)
+* Reason: strong typing, long-term stability, C# expertise
+)))
+* (((
+**SQLite (EF Core provider)**
+
+* Role: local persistence
+* Reason: zero setup, file-based, smooth transition to PostgreSQL
+)))
+
+=== Frontend & Orchestration ===
+
+* (((
+**Next.js (TypeScript)**
+
+* Role: UI and AI orchestration
+* Reason: fast iteration, strong ecosystem, good AI tooling
+)))
+* (((
+**Vercel AI SDK**
+
+* Role: LLM abstraction
+* Reason: OpenAI-first, Claude-ready, provider switching without rewrites
+)))
+
+=== AI Providers ===
+
+* OpenAI (default)
+* Anthropic (optional, later)
+
+=== Editors ===
+
+* Visual Studio 2022 — primary for .NET API
+* Cursor or VS Code — primary for Next.js / TypeScript
+
+----
+
+== Phase 2 — Transition to Beta ==
+
+=== Changes (No Rewrite) ===
+
+* SQLite → PostgreSQL
+* Local execution → hosted environments
+* Add authentication, quotas, persistence hardening
+
+=== Additional Tools Introduced ===
+
+* Docker (optional, mainly for DB parity)
+* Managed PostgreSQL
+* GitHub Actions (CI)
+* Hosting:
+** Next.js → Vercel
+** .NET API → Azure App Service or Container Apps
+
+----
+
+== Explicitly Deferred ==
+
+* Kubernetes
+* Microservice decomposition
+* Complex distributed queues
+* Multi-region deployment
+
+These are intentionally deferred to reduce early risk.
+
+----
+
+== Summary ==
+
+* Architecture is stable from POC1 onward
+* Infrastructure is phased, not front-loaded
+* Tool choices prioritize clarity and durability over novelty

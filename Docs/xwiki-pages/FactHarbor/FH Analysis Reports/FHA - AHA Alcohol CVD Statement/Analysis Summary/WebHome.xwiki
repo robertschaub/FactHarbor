@@ -1,0 +1,37 @@
+== FactHarbor Analysis Summary ==
+
+**Document**: AHA Scientific Statement on Alcohol and Cardiovascular Disease (2025)
+
+----
+
+=== Source Assessment ===
+
+**Credibility**: VERY HIGH – Official AHA statement, peer-reviewed, expert panel, published in top journal (//Circulation//)
+
+----
+
+=== Analysis Findings ===
+
+|=Claim in Document|=FactHarbor Verdict|=Confidence
+|Heavy drinking harms heart health|STRONGLY SUPPORTED|95%
+|Moderate drinking benefits uncertain|WELL SUPPORTED|85%
+|Prior "cardioprotective" claims overstated|SUPPORTED|80%
+|More research needed|APPROPRIATE|N/A
+
+----
+
+=== Assessment ===
+
+✅ **Strengths**: Transparent about methodological limitations, incorporates newer Mendelian randomization evidence, appropriately cautious, avoids overstatement
+
+✅ **Methodology**: Sound synthesis of observational and genetic evidence
+
+⚠️ **Limitation**: Still relies heavily on observational data; RCT evidence limited
+
+----
+
+=== Verdict on the Statement Itself ===
+
+**WELL-SUPPORTED SCIENTIFIC SYNTHESIS** – The AHA statement is credible, balanced, and appropriately reflects the current state of evidence. It correctly signals a shift away from previous assumptions about moderate drinking benefits without overclaiming in either direction.
+
+**Analysis ID**: FH-AHA-ALCO-2025-12-17

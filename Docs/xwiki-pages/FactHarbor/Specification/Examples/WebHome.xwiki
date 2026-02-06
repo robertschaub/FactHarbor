@@ -1,0 +1,209 @@
+= Data Examples =
+The following examples illustrate complete, realistic FactHarbor data objects
+across Claims, Scenarios, Evidence, ScenarioEvidenceLinks, Verdicts, and
+Re-evaluation behavior.
+Each field is annotated with:
+* **[A]** — fully automatable
+* **[M]** — AI-draft, human validation needed
+* **[H]** — human-only
+* **[F]** — federation metadata (optional)
+These examples conform to:
+* Data Model (Ch. 5)
+* Workflows (Ch. 6)
+* Requirements (Ch. 2)
+* Architecture (Ch. 3)
+* AKEL (Ch. 4)
+= Example A — “Hydrogen cars are more energy efficient than EVs.” =
+A clearly empirical, technical, domain-specific claim.
+== 1. Claim (ClaimID: C_H2EV) ==
+(% style="width:100%" %)
+|=Field|=Value|=Notes
+|ClaimID|C_H2EV|
+|VersionID|v1|
+|Text|“Hydrogen cars are more energy efficient than battery electric vehicles (EVs).”|[H]
+|Domain|energy_transport|[A]
+|ClaimType|literal|[A]
+|Evaluability|empirical|[A]
+|RiskTier|medium|[A]
+|ClusterID|CL_EnergyEff|[A]
+|Status|active|
+== 2. Scenario S_H2EV_01 — “Well-to-wheel efficiency, EU grid mix” ==
+(% style="width:100%" %)
+|=Field|=Value
+|ScenarioID|S_H2EV_01
+|VersionID|v1
+|ClaimID|C_H2EV
+|Definitions|//“Well-to-wheel efficiency” = total chain efficiency.// [H]
+|Assumptions|EU 2020–24 grid mix, electrolysis 69%, compression losses 10%, fuel cell 55%. [M]
+|ContextBoundary|Europe, 2020–2024 technology|[H]
+|EvaluationMethod|Comparative WTW energy analysis|[A]
+|RiskTier|low
+|Status|active|
+== 3. Evidence ==
+=== 3.1 Evidence E1 ===
+Peer-reviewed energy-systems paper.
+(% style="width:100%" %)
+|=Field|=Value
+|EvidenceID|E_H2EV_Paper1
+|VersionID|v1
+|Type|scientific_paper
+|Category|empirical
+|Reliability|high
+|Provenance|Journal publication + DOI
+|ExtractionMethod|AKEL + human verification
+|Status|verified|
+=== 3.2 Evidence E2 ===
+Official EU dataset.
+(% style="width:100%" %)
+|=Field|=Value
+|EvidenceID|E_H2EV_Dataset
+|VersionID|v1
+|Type|dataset
+|Category|empirical
+|Reliability|medium
+|Provenance|EU Energy Stats 2023
+|ExtractionMethod|API import
+|Status|verified|
+== 4. ScenarioEvidenceLinks ==
+(% style="width:100%" %)
+|=(% style="width:30%" %)Scenario|=(% style="width:40%" %)Evidence|=(% style="width:30%" %)RelevanceScore / Notes
+|S_H2EV_01 v1|E_H2EV_Paper1 v1|0.92 [M]
+|S_H2EV_01 v1|E_H2EV_Dataset v1|0.77 [M]
+== 5. Verdict ==
+=== 5.1 Verdict V_H2EV_01 v1 ===
+(% style="width:100%" %)
+|=Field|=Value
+|VerdictID|V_H2EV_01
+|VersionID|v1
+|ClaimID|C_H2EV
+|ScenarioID|S_H2EV_01
+|EvidenceVersionSet|[E_H2EV_Paper1:v1, E_H2EV_Dataset:v1]
+|LikelihoodRange|0.10–0.25|
+|ExplanationSummary|EVs convert grid electricity to motion more efficiently than hydrogen fuel cell vehicles under EU assumptions.|
+|ReasoningChain|Step-by-step efficiency-chain comparison|
+|UncertaintyFactors|Variability in grid mix, future electrolysis improvements|
+|Status|current|
+== 6. Notes ==
+* Many fields automatable (claim classification, domain, initial scenario structure, metadata extraction).
+* Definitions and boundaries require human reasoning.
+= Example B — “Regular cold-water exposure (<14°C) for sufficient months improves health.” =
+A complex lifestyle/health claim requiring careful scenario boundaries.
+== 7. Claim (C_CW_Health) ==
+(% style="width:100%" %)
+|=Field|=Value
+|Text|“Regular cold-water exposure below 14°C for at least 6 months improves health.”|
+|Domain|health_lifestyle|
+|ClaimType|literal|
+|Evaluability|empirical|
+|RiskTier|high|
+== 8. Scenario S_CW_01 — “Short daily immersions in healthy adults” ==
+(% style="width:100%" %)
+|=Field|=Value
+|ScenarioID|S_CW_01
+|VersionID|v1
+|Definitions|“Regular exposure” = 3–7×/week, 2–4 minutes|
+|Assumptions|Healthy adults, no cardiovascular risk|
+|ContextBoundary|6+ months, 8–14°C|
+|EvaluationMethod|Health outcome comparison|
+|RiskTier|high|
+== 9. Evidence ==
+=== 9.1 Evidence E1 — Dutch cold-shower RCT ===
+(% style="width:100%" %)
+|=Field|=Value
+|Type|scientific_paper|
+|Category|empirical|
+|Reliability|high|
+|ExtractionMethod|AKEL + human validation|
+=== 9.2 Evidence E2 — Meta-analysis on immersion effects ===
+(% style="width:100%" %)
+|=Field|=Value
+|Category|empirical|
+|Reliability|medium|
+== 10. ScenarioEvidenceLinks ==
+(% style="width:100%" %)
+|=Scenario|=Evidence|=Score
+|S_CW_01|E1|0.82
+|S_CW_01|E2|0.75
+== 11. Verdict ==
+(% style="width:100%" %)
+|=Field|=Value
+|LikelihoodRange|0.40–0.65 (uncertain)|
+|ExplanationSummary|Some benefits (mood, perceived recovery), but long-term health improvement unclear.|
+|UncertaintyFactors|Small sample sizes, lifestyle confounds|
+== 12. Notes ==
+* Medical ethics → high human involvement.
+* AKEL helpful for metadata, summaries, and links.
+= Example C — “Hillary Clinton communicates with Eleanor Roosevelt.” =
+A belief/metaphorical/non-falsifiable claim.
+== 13. Claim (C_HC_ER) ==
+(% style="width:100%" %)
+|=Field|=Value
+|Text|“Hillary Clinton communicates with Eleanor Roosevelt.”|
+|Domain|politics_private_beliefs|
+|ClaimType|metaphorical|
+|Evaluability|non-falsifiable|
+|RiskTier|low|
+== 14. Scenario S_ER_01 — Literal paranormal interpretation ==
+(% style="width:100%" %)
+|=Field|=Value
+|Definitions|“Communicate” = literal paranormal communication [H]|
+|Assumptions|Paranormal abilities exist [H]|
+|EvaluationMethod|Not empirically testable|
+|RiskTier|low|
+|Evaluability|non-falsifiable|
+== 15. Evidence ==
+Minimal placeholder:
+(% style="width:100%" %)
+|=Field|=Value
+|EvidenceID|E_None|
+|Type|none|
+|Category|none|
+|Reliability|low|
+== 16. Verdict ==
+LikelihoodRange: **undefined** 
+Status: **non-evaluable** 
+Reasoning: claim is non-falsifiable.
+= Example D — “Hillary Clinton is a witch.” =
+Clearly rhetorical/metaphorical.
+== 17. Claim (C_HC_Witch) ==
+(% style="width:100%" %)
+|=Field|=Value
+|Text|“Hillary Clinton is a witch.”|
+|Domain|rhetoric|
+|ClaimType|rhetorical|
+|Evaluability|non-falsifiable|
+|RiskTier|low|
+== 18. Scenario S_Witch_01 — Literal interpretation ==
+(% style="width:100%" %)
+|=Field|=Value
+|Definitions|Supernatural definition of “witch”|
+|Assumptions|Supernatural powers exist|
+|EvaluationMethod|Non-testable|
+|Evaluability|non-falsifiable|
+== 19. Evidence ==
+None required.
+== 20. Verdict ==
+Likelihood: **undefined** 
+Reasoning: rhetorical, not empirical.
+= Automation Summary Across Examples =
+== 21. Fully Automatable [A] ==
+* Claim normalization 
+* Claim clustering 
+* Evidence metadata extraction 
+* Initial scenario scaffolding 
+* Reliability heuristics 
+* Relevance ranking 
+* Draft verdicts 
+* Trigger detection 
+== 22. Mixed [M] ==
+* Assumptions 
+* Context boundaries 
+* Relevance scoring 
+* Reasoning chain 
+* Uncertainty factors 
+== 23. Human-only [H] ==
+* Definitions 
+* Ethical constraints 
+* High-risk scenario approval 
+* Interpretation of meaning 
+* Final verdict approval

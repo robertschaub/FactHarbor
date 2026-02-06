@@ -1,0 +1,61 @@
+= POC Specification =
+
+**This section contains detailed specifications for FactHarbor POC phases.**
+
+**Core Philosophy:** Prove the AKEL automation works before building production features. Each POC phase validates critical technical capabilities.
+
+{{warning}}
+**Critical Innovation in POC1 Context-Aware Analysis:**
+
+POC1 tests whether AI can understand that an article's overall credibility is not simply the average of its individual claim verdicts. An article with mostly accurate facts can still be misleading if it draws unsupported conclusions.
+
+See [[Article Verdict Problem>>FactHarbor.Specification.POC.Article-Verdict-Problem]] for full discussion.
+{{/warning}}
+
+== POC Phase Navigation ==
+
+* **[[POC Requirements>>FactHarbor.Specification.POC.Requirements]]** Complete POC1 & POC2 specification (v4.0)
+* **[[POC Summary>>FactHarbor.Specification.POC.Summary]]** Executive overview
+* **[[Article Verdict Problem>>FactHarbor.Specification.POC.Article-Verdict-Problem]]** Why context-aware analysis matters
+
+== Roadmap Navigation ==
+
+* **[[POC1 Roadmap>>FactHarbor.Roadmap.POC1.WebHome]]** Core Workflow with Quality Gates
+* **[[POC2 Roadmap>>FactHarbor.Roadmap.POC2.WebHome]]** Robust Quality & Reliability
+* **[[Requirements Roadmap Matrix>>FactHarbor.Roadmap.Requirements-Roadmap-Matrix.WebHome]]** Phase assignments
+
+== Key Specifications ==
+
+**POC1 Goal:** Prove AI can extract claims and evaluate them with context-aware analysis
+
+**POC1 Output:** 5 components
+1. Analysis Summary (context-aware, 4-6 sentences)
+2. Claims Identification (3-5 claims)
+3. Claims Verdicts (verdict + confidence + reasoning)
+4. Article Summary (optional)
+5. Usage Statistics (cost tracking)
+
+**POC1 Philosophy:** 
+* Context-aware analysis (article ≠ sum of claims)
+* Cost efficiency tracking (viable at scale)
+* Fail-fast learning (test critical capabilities)
+
+**POC1 Success Criteria:**
+* AI quality ≥70% (including context-aware assessment)
+* Cost per analysis <$0.05 (target)
+* Minimal manual editing (<30%)
+
+**POC1 → POC2 Decision Gate:** GO / NO-GO / ITERATE
+
+See [[POC Requirements>>FactHarbor.Specification.POC.Requirements]] for complete specification.
+
+== POC vs. Full System ==
+
+|= Feature |= POC1 |= POC2 |= Full System
+| Scenarios | ❌ Deferred | ✅ Multiple | ✅ + Persistence
+| Evidence Display | ❌ None | ✅ With sources | ✅ + Quality scoring
+| Quality Gates | 🟡 4 simplified | ✅ 6 comprehensive | ✅ + ML validation
+| Database | ❌ Stateless | ✅ PostgreSQL | ✅ + Redis + S3
+| User Contributions | ❌ Read-only | ✅ Enabled | ✅ + Reputation
+
+**

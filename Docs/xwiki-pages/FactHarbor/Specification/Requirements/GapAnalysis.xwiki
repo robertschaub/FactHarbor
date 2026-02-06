@@ -1,0 +1,446 @@
+= Gap Analysis =
+
+**Status:** ✅ Analysis Complete 
+**Purpose:** Identify features NOT YET planned for releases up to V1.0
+
+{{info}}
+**Scope:** This analysis only includes gaps - features that are NOT addressed in existing requirements (FR1-FR54, NFR1-NFR13, UN-1 to UN-28) or planned future requirements.
+
+**Already Planned for V1.0:** ClaimReview Schema (FR44) is NOT listed here as it's already planned for V1.0.
+
+**Deferred to V1.5:** Image/Video Verification (FR46, FR51) and Archive.org (FR47) have been moved to V1.5, so they ARE included in this Gap Analysis.
+
+**Requirement Numbers:** Proposed new requirements use numbers that avoid conflicts: FR55-FR84, NFR14-NFR18, UN-29 to UN-36
+{{/info}}
+
+== 1. Analysis Framework ==
+
+=== 1.1 Importance Formula ===
+
+**Importance = f(risk, impact, strategy)**
+
+* **Risk:** What are the consequences if we don't have this feature?
+* **Impact:** How many users affected? How severe?
+* **Strategy:** How well does this align with FactHarbor's mission and strategic goals?
+
+**Importance Levels:**
+* **VERY HIGH:** Critical to mission, high risk if missing, affects majority of users
+* **HIGH:** Important for success, significant impact, strong strategic alignment
+* **MEDIUM:** Valuable but not critical, moderate impact
+* **LOW:** Nice-to-have, limited impact
+
+=== 1.2 Urgency Formula ===
+
+**Urgency = f(fail fast and learn, legal, promises made)**
+
+* **Fail fast and learn:** Do we need to validate assumptions quickly?
+* **Legal:** Are there legal requirements or external deadlines?
+* **Promises made:** Have we committed this to stakeholders, funders, or partners?
+
+**Urgency Levels:**
+* **HIGH:** External deadlines, legal requirements, or critical testing needed
+* **MEDIUM:** Strategic opportunity, growing trends, competitive pressure
+* **LOW:** No external pressure, can add anytime
+
+=== 1.3 Context Matters ===
+
+**Important principle:** Importance and urgency change based on milestone context.
+
+* **POC:** Only basic features urgent
+* **Beta:** More features become urgent for user testing
+* **Release:** Legal/compliance becomes critical
+
+**Priorities are not absolute - they're contextual.**
+
+== 2. Gap Categories ==
+
+We identified **15 true gaps** (features NOT in current roadmap) across **7 categories**:
+
+=== Category 1: Accessibility & Inclusivity ===
+* Gap 1.1: WCAG 2.1 Compliance
+* Gap 1.2: Multilingual Support
+
+=== Category 2: Platform Integration & Distribution ===
+* Gap 2.1: Browser Extensions
+* Gap 2.2: Embeddable Widgets
+
+=== Category 3: Media Verification ===
+* Gap 3.1: Image Verification
+* Gap 3.2: Video Verification
+* Gap 3.3: Audio Verification
+
+=== Category 4: Mobile & Offline Access ===
+* Gap 3.1: Mobile Apps / PWA
+* Gap 3.2: Offline Access
+
+=== Category 5: Education & Media Literacy ===
+* Gap 4.1: Educational Resources
+* Gap 4.2: Media Literacy Integration
+
+=== Category 6: Collaboration & Community ===
+* Gap 5.1: Professional Collaboration Tools
+* Gap 5.2: Community Discussion
+
+=== Category 7: Advanced Features ===
+* Gap 6.1: User Analytics
+* Gap 6.2: Personalization
+
+== 3. Critical Gaps (VERY HIGH Importance) ==
+
+=== 3.1 Gap: WCAG 2.1 Accessibility Compliance ===
+
+**Status:** ❌ Not addressed in current requirements 
+**Importance:** VERY HIGH 
+**Urgency:** HIGH (legal requirement)
+
+**Why Important:**
+* **Risk:** CRITICAL
+ * Legal liability (European Accessibility Act enforced June 28, 2025)
+ * Lawsuits, fines up to $250,000 (Accessible Canada Act)
+ * Cannot operate in EU market without compliance
+ * Retrofitting is 100x more expensive than building in from start
+* **Impact:** 15-20% of population (1+ billion people) excluded without accessibility
+ * Affects blind, low-vision, deaf, motor impairments, cognitive disabilities
+ * "86% of companies report improved customer satisfaction after implementing accessibility" (Forrester)
+* **Strategy:** CRITICAL ALIGNMENT
+ * Mission is "a world where decisions are grounded in evidence" - not "for sighted people only"
+ * Non-profit public interest mission requires serving ALL publics
+
+**Why Urgent:**
+* **Fail fast:** HIGH - Legal deadlines approaching (EU Accessibility Act June 2025)
+* **Legal:** CRITICAL - Required by law in EU, Canada, US (Section 508, ADA)
+* **Promises:** HIGH if mission emphasizes "public interest" or "for all"
+
+**Missing Requirements:**
+* WCAG 2.1 Level AA compliance (minimum legal standard)
+* Screen reader compatibility
+* Keyboard-only navigation
+* Sufficient color contrast ratios
+* Alternative text for all images
+* Closed captions for videos
+* Accessible forms and error messages
+
+**Recommended:**
+* **NFR14: Accessibility Compliance** - Platform must conform to WCAG 2.1 Level AA standards
+* **NFR15: Assistive Technology Support** - Compatible with screen readers, voice navigation, keyboard-only usage
+* **FR55: Accessibility Settings** - User-configurable contrast, text size, reduced motion options
+
+**When to Address:** Build in from MVP/POC1 - retrofitting is 100x more expensive
+
+**Research Evidence:**
+* "1 in 4 adults in the US has a disability" (CDC 2023)
+* "Legal actions increased 14% in 2023" (Forrester accessibility report)
+* European Accessibility Act mandatory June 28, 2025
+
+=== 3.2 Gap: Educational Resources & Onboarding ===
+
+**Status:** ❌ Not addressed 
+**Importance:** VERY HIGH 
+**Urgency:** MEDIUM
+
+**Why Important:**
+* **Risk:** HIGH - Users won't understand methodology, will distrust results
+* **Impact:** VERY HIGH - Affects all users, especially first-time visitors
+* **Strategy:** CRITICAL - Transparency requires education
+
+**Why Urgent:**
+* **Fail fast:** MEDIUM - Need to test what educational content resonates
+* **Legal:** None
+* **Promises:** HIGH if emphasizing "transparent" methodology
+
+**Missing Requirements:**
+* Interactive first-time user tutorial
+* Video explanations of how AKEL works
+* Glossary of terms (scenario, verdict, evidence quality)
+* FAQ addressing common questions
+* Educational resources hub
+* Teacher/educator curriculum materials
+
+**Recommended:**
+* **UN-34: Learn How to Fact-Check** - Educational resources for understanding methodology
+* **FR67: Onboarding Tutorial** - Interactive first-time user walkthrough
+* **FR68: Educational Resources Hub** - Guides, videos, FAQs, glossary
+* **FR69: Curriculum Materials** - Resources for educators to use FactHarbor in classrooms
+
+**When to Address:** Beta 0 (before public users)
+
+**Research Evidence:**
+* "Users need 3+ exposures to new concept before trusting it" (UX research)
+* Educational fact-checking platforms have 3x higher user retention (MediaWise 2024)
+
+== 4. High Importance Gaps ==
+
+=== 4.1 Gap: Browser Extensions ===
+
+**Status:** ❌ Not addressed 
+**Importance:** HIGH 
+**Urgency:** MEDIUM
+
+**Why Important:**
+* **Risk:** MEDIUM - Competitive disadvantage, reduced adoption
+* **Impact:** MEDIUM-HIGH - Significantly improves UX for active fact-checkers
+* **Strategy:** HIGH ALIGNMENT - Meet users where misinformation spreads (in their browsers)
+
+**Why Urgent:**
+* **Fail fast:** MEDIUM - Should validate that users actually want browser extensions
+* **Legal:** None
+* **Promises:** LOW unless explicitly promised to early adopters
+
+**Missing Requirements:**
+* Chrome/Firefox/Safari browser extensions
+* Right-click context menu for selected text
+* Inline highlighting of claims on any webpage
+* Quick verdict tooltips without leaving page
+* Save/bookmark fact-checks
+
+**Recommended:**
+* **UN-29: In-Context Fact-Checking** - Browser extension for real-time verification
+* **FR58: Browser Extensions** - Chrome, Firefox, Safari with context menu
+* **FR59: Cross-Site Highlighting** - Highlight and analyze claims on any website
+
+**When to Address:** Test web platform first, then build extension MVP if user demand validated
+
+**Research Evidence:**
+* "3-click verification: Select → Right-click → Verify" is standard UX pattern
+* Extensions like UnCovered, Pino, InVID/WeVerify widely adopted
+* NewsGuard browser extension demonstrates market acceptance
+
+=== 4.2 Gap: Multilingual Support ===
+
+**Status:** ❌ Not addressed 
+**Importance:** HIGH 
+**Urgency:** MEDIUM
+
+**Why Important:**
+* **Risk:** HIGH - Mission limited to English speakers (~20% of world)
+* **Impact:** VERY HIGH - Excludes 80% of world population
+* **Strategy:** CRITICAL ALIGNMENT - Vision of "a world where decisions are grounded in evidence" - not just English-speaking world
+
+**Why Urgent:**
+* **Fail fast:** MEDIUM - Test which languages users need, validate translation quality early
+* **Legal:** None
+* **Promises:** MEDIUM-HIGH if mission statement emphasizes "global" or "world"
+
+**Missing Requirements:**
+* Interface available in multiple languages
+* Content translation/analysis in non-English languages
+* Right-to-left (RTL) language support (Arabic, Hebrew)
+* Locale-specific formatting (dates, numbers, currencies)
+* Character encoding for non-Latin scripts
+
+**Recommended:**
+* **FR56: Multilingual Interface** - UI in 10+ languages
+* **FR57: Multilingual Content Analysis** - AKEL analyzes claims in multiple languages
+* **NFR16: Internationalization (i18n)** - RTL support, character encodings, locale formatting
+
+**When to Address:** Post-V1.0 (after English version stable)
+
+**Research Evidence:**
+* Only 25% of internet users speak English (Internet World Stats)
+* Misinformation spreads in all languages, many underserved
+
+=== 4.3 Gap: Mobile Apps (Native) ===
+
+**Status:** ❌ Not addressed (PWA might be planned) 
+**Importance:** HIGH 
+**Urgency:** MEDIUM
+
+**Why Important:**
+* **Risk:** MEDIUM-HIGH - 60% of web traffic is mobile, but not addressing native app expectations
+* **Impact:** HIGH - Affects majority of users who expect native mobile experience
+* **Strategy:** MEDIUM-HIGH - Mobile-first is standard for modern platforms
+
+**Why Urgent:**
+* **Fail fast:** MEDIUM - Test if responsive web is sufficient or if native apps needed
+* **Legal:** None
+* **Promises:** LOW unless explicitly promised
+
+**Missing Requirements:**
+* iOS native app
+* Android native app
+* Offline capabilities
+* Push notifications
+* Camera integration for on-the-spot verification
+
+**Recommended:**
+* **UN-32: Mobile-Native Experience** - Native apps for iOS/Android
+* **FR66: Native Mobile Apps** - Full mobile capabilities
+* **NFR17: Progressive Web App** - Installable, offline, push notifications
+
+**When to Address:** Post-V1.0 (test web-first, then native if needed)
+
+=== 4.2 Gap: Media Verification (Images, Videos, Audio) ===
+
+**Status:** ❌ Not addressed for V1.0 (deferred to V1.5) 
+**Importance:** VERY HIGH 
+**Urgency:** MEDIUM
+
+**Why Important:**
+* **Risk:** HIGH - Cannot address major category of misinformation (visual/audio)
+* **Impact:** VERY HIGH - Visual misinformation is primary vector
+* **Strategy:** CRITICAL ALIGNMENT - Mission incomplete without multimedia fact-checking
+
+**Why Urgent:**
+* **Fail fast:** VERY HIGH - Should test approach quickly (partner vs. build?)
+* **Legal:** None
+* **Promises:** MEDIUM (depends on mission statements)
+
+**Missing Requirements:**
+* Reverse image search integration
+* Video frame extraction and analysis
+* Audio deepfake detection
+* EXIF metadata extraction
+* Synthetic media detection (AI-generated content)
+
+**Recommended:**
+* **UN-31: Media Verification** - Image, video, audio fact-checking
+* **FR63: Image Verification** - Reverse search, EXIF, synthetic detection
+* **FR64: Video Verification** - Frame analysis, metadata, deepfake detection
+* **FR65: Audio Verification** - Voice deepfakes, audio forensics
+
+**When to Address:** V1.5 (pilot with existing tools like InVID, TinEye before building in-house)
+
+**Note:** Originally planned as FR46, FR51, FR47 for V1.0, now deferred to V1.5 to focus V1.0 on core text-based fact-checking.
+
+**Research Evidence:**
+* "Most deception relies on decontextualization" of images (Cazzamatta 2025)
+* "Deepfakes targeting political figures raise concerns" (Corsi et al. 2024)
+* InVID/WeVerify used by professional fact-checkers (AFP 2024)
+
+== 5. Medium Importance Gaps ==
+
+=== 5.1 Gap: Embeddable Widgets ===
+
+**Status:** ❌ Not addressed 
+**Importance:** MEDIUM 
+**Urgency:** LOW
+
+**Missing Requirements:**
+* JavaScript widget for embedding fact-checks in third-party sites
+* WordPress plugin
+* Customizable styling to match publisher branding
+
+**Recommended:**
+* **FR61: Embeddable Widgets** - JavaScript widgets for third-party sites
+* **FR62: CMS Plugins** - WordPress, Drupal, Ghost plugins
+
+**When to Address:** Post-V1.0 (after core platform stable)
+
+=== 5.2 Gap: Educational Partnerships ===
+
+**Status:** ❌ Not addressed 
+**Importance:** MEDIUM 
+**Urgency:** LOW
+
+**Missing Requirements:**
+* Curriculum materials for K-12 and university educators
+* Classroom discussion guides
+* Student exercises and assignments
+* Teacher training materials
+
+**Recommended:**
+* Include in **FR69: Curriculum Materials**
+
+**When to Address:** V2.0+ (after platform established)
+
+=== 5.3 Gap: Professional Collaboration Tools ===
+
+**Status:** ❌ Not addressed 
+**Importance:** MEDIUM 
+**Urgency:** LOW
+
+**Missing Requirements:**
+* Shared workspaces for fact-checking teams
+* Assignment and workflow management
+* Internal notes and discussion threads
+* Collaborative editing
+
+**Recommended:**
+* **FR72: Collaboration Workspace** - Team features for professional fact-checkers
+
+**When to Address:** Post-V1.0 (for professional fact-checkers)
+
+=== 5.4 Gap: Community Discussion ===
+
+**Status:** ❌ Not addressed 
+**Importance:** MEDIUM 
+**Urgency:** LOW
+
+**Missing Requirements:**
+* Public comment threads on fact-checks
+* Community forums
+* Upvoting/downvoting
+
+**Recommended:**
+* **FR75: Community Discussion** - Forums and comment threads
+
+**When to Address:** V2.0+ (requires moderation capacity)
+
+=== 5.5 Gap: User Analytics ===
+
+**Status:** ❌ Not addressed 
+**Importance:** MEDIUM 
+**Urgency:** LOW
+
+**Missing Requirements:**
+* Anonymous usage analytics
+* A/B testing framework
+* User satisfaction surveys
+* Funnel analysis
+
+**Recommended:**
+* **FR78: Analytics Dashboard** - Usage tracking and insights
+
+**When to Address:** Beta 0 (to measure product-market fit)
+
+=== 5.6 Gap: Personalization ===
+
+**Status:** ❌ Not addressed 
+**Importance:** MEDIUM 
+**Urgency:** LOW
+
+**Missing Requirements:**
+* Saved searches
+* Custom feeds based on topics of interest
+* Personalized recommendations
+* User preference settings
+
+**Recommended:**
+* **FR81: User Personalization** - Custom feeds, saved searches, preferences
+
+**When to Address:** V2.0+ (after core platform stable)
+
+== 6. Summary: What to Address When ==
+
+=== POC/Beta 0 (Urgent) ===
+* **NFR14-NFR15, FR55:** Accessibility (legal requirement)
+* **UN-34, FR67-FR69:** Educational resources (transparency requires education)
+
+=== V1.0 (Important) ===
+* **UN-29, FR58-FR59:** Browser extensions (competitive necessity)
+* **FR56-FR57, NFR16:** Multilingual support (mission alignment)
+* **UN-32, FR66, NFR17:** Mobile experience (user expectation)
+
+=== Post-V1.0 (Valuable) ===
+* **FR61-FR62:** Embeddable widgets
+* **FR72:** Professional collaboration
+* **FR75:** Community discussion
+* **FR78:** Analytics
+* **FR81:** Personalization
+
+== 7. Requirement Summary ==
+
+**Existing Requirements (From Baseline):**
+* Functional: FR1 through FR54 (includes ClaimReview FR44; FR46, FR51, FR47 moved to V1.5)
+* Non-Functional: NFR1 through NFR13
+* User Needs: UN-1 through UN-28
+
+**Proposed New Requirements (From This Gap Analysis):**
+* Functional: FR55 through FR84 (30 new)
+* Non-Functional: NFR14 through NFR18 (5 new)
+* User Needs: UN-29 through UN-36 (8 new)
+
+**Total After Implementation:**
+* Functional: FR1-FR84 (84 total)
+* Non-Functional: NFR1-NFR18 (18 total)
+* User Needs: UN-1 through UN-36 (36 total)

@@ -1,0 +1,57 @@
+= Storage Architecture =
+
+== Current Implementation (v2.6.33) ==
+
+{{mermaid}}
+
+graph TB
+    subgraph Current[Current Implementation]
+        APP[Application Next.js and .NET API]
+        SQLITE[(SQLite factharbor.db)]
+        FILES[Local Files MBFC bundle]
+    end
+
+    APP --> SQLITE
+    APP --> FILES
+
+{{/mermaid}}
+
+**Current Storage Model:**
+* **SQLite** - Single file database (##factharbor.db##)
+* **JSON Blobs** - Analysis results stored in ##ResultJson## column
+* **No Caching** - No Redis or in-memory cache
+* **Local Files** - MBFC bundle, configuration
+
+|= Table |= Purpose |= Key Fields
+| ##Jobs## | Job metadata and results | JobId, Status, Progress, ResultJson, ReportMarkdown
+| ##JobEvents## | Job execution log | JobId, TsUtc, Level, Message
+
+== Target Architecture (Future) ==
+
+{{mermaid}}
+
+graph TB
+    subgraph Target[Target Architecture Future]
+        APP2[Application API and AKEL]
+        REDIS[(Redis Cache)]
+        PG[(PostgreSQL Primary Database)]
+        S3[(S3 Storage Archives)]
+    end
+
+    APP2 --> REDIS
+    REDIS --> PG
+    APP2 --> PG
+    PG --> S3
+
+{{/mermaid}}
+
+**Target Features (Not Yet Implemented):**
+* **Redis Caching** - Hot data, sessions, rate limiting
+* **PostgreSQL** - Normalized tables for Claims, Evidence, Sources
+* **S3 Storage** - Archives, backups, old edit history
+
+== Migration Path ==
+
+1. **Current** to **Phase 1**: Add Redis for caching (optional)
+2. **Phase 1** to **Phase 2**: Migrate to PostgreSQL for normalized data
+3. **Phase 2** to **Phase 3**: Add S3 for archives and backups

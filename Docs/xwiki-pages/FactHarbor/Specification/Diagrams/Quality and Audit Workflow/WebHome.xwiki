@@ -1,0 +1,82 @@
+{{info}}
+**Current Implementation (v2.6.33)** - Only Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence) are implemented. Gates 2-3 are planned for future.
+{{/info}}
+
+= Quality Gates Flow =
+
+{{mermaid}}
+
+flowchart TB
+    subgraph Input[Input]
+        CLAIM[Extracted Claim]
+    end
+
+    subgraph Gate1[Gate 1 Claim Validation]
+        G1_CHECK{Is claim factual}
+        G1_OPINION[Opinion Detection]
+        G1_SPECIFIC[Specificity Check]
+        G1_FUTURE[Future Prediction]
+    end
+
+    subgraph Research[Research]
+        EVIDENCE[Gather Evidence]
+    end
+
+    subgraph Gate4[Gate 4 Verdict Confidence]
+        G4_COUNT{Evidence Count}
+        G4_QUALITY{Source Quality}
+        G4_AGREE{Evidence Agreement}
+        G4_TIER[Assign Confidence Tier]
+    end
+
+    subgraph Output[Output]
+        PUBLISH[Publish Verdict]
+        EXCLUDE[Exclude]
+        LOWCONF[Flag for Review]
+    end
+
+    CLAIM --> G1_CHECK
+    G1_CHECK --> G1_OPINION
+    G1_OPINION --> G1_SPECIFIC
+    G1_SPECIFIC --> G1_FUTURE
+    G1_FUTURE -->|Pass| EVIDENCE
+    G1_FUTURE -->|Fail| EXCLUDE
+    EVIDENCE --> G4_COUNT
+    G4_COUNT -->|2 or more| G4_QUALITY
+    G4_COUNT -->|less than 2| LOWCONF
+    G4_QUALITY -->|0.6 or more| G4_AGREE
+    G4_QUALITY -->|less than 0.6| LOWCONF
+    G4_AGREE -->|60 percent or more| G4_TIER
+    G4_AGREE -->|less than 60 percent| LOWCONF
+    G4_TIER -->|HIGH or MEDIUM| PUBLISH
+    G4_TIER -->|LOW| LOWCONF
+
+{{/mermaid}}
+
+= Gate Details =
+
+== Gate 1: Claim Validation ==
+
+**Purpose:** Ensure extracted claims are factual assertions that can be verified.
+
+|= Check |= Purpose |= Pass Criteria
+| Factuality Test | Can this claim be proven true/false? | Must be verifiable
+| Opinion Detection | Contains subjective language? | Opinion score 0.3 or less
+| Specificity Check | Contains concrete details? | Specificity score 0.3 or more
+| Future Prediction | About future events? | Must be about past/present
+
+== Gate 4: Verdict Confidence Assessment ==
+
+**Purpose:** Only display verdicts with sufficient evidence and confidence.
+
+|= Tier |= Evidence |= Avg Quality |= Agreement |= Publishable?
+| **HIGH** | 3+ sources | 0.7 or more | 80% or more | Yes
+| **MEDIUM** | 2+ sources | 0.6 or more | 60% or more | Yes
+| **LOW** | 2+ sources | 0.5 or more | 40% or more | Needs review
+| **INSUFFICIENT** | Less than 2 sources | Any | Any | More research needed
+
+= Not Yet Implemented =
+
+**Gate 2: Contradiction Search** (planned) - Counter-evidence actively searched
+
+**Gate 3: Uncertainty Quantification** (planned) - Data gaps identified and disclosed
