@@ -1399,6 +1399,26 @@ function PipelineConfigForm({
         </div>
       </div>
 
+      {/* Recency Detection */}
+      <h3 className={styles.formSectionTitle}>Recency Detection</h3>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Recency Cue Terms</label>
+        <input
+          type="text"
+          className={styles.formInput}
+          value={(config.recencyCueTerms || []).join(", ")}
+          onChange={(e) =>
+            updateField(
+              "recencyCueTerms",
+              e.target.value.split(",").map(s => s.trim()).filter(Boolean),
+            )
+          }
+        />
+        <div className={styles.formHelp}>
+          Comma-separated terms that signal time-sensitive claims. Leave empty to rely on dates and temporal context.
+        </div>
+      </div>
+
       {/* Retrieval */}
       <h3 className={styles.formSectionTitle}>Retrieval</h3>
       <div className={styles.formGroup}>
