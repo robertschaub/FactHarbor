@@ -1417,6 +1417,7 @@ export function normalizeYesNoQuestionToStatement(input: string): string {
   // - evaluation adjectives ("fair", "true", ...)
   // - common verbs ("cause", "increase", ...)
   const predicateStarters = [
+    // evaluation adjectives
     "fair",
     "true",
     "false",
@@ -1429,6 +1430,102 @@ export function normalizeYesNoQuestionToStatement(input: string): string {
     "justified",
     "reasonable",
     "biased",
+    "effective",
+    "ineffective",
+    "efficient",
+    "inefficient",
+    "successful",
+    "safe",
+    "dangerous",
+    "harmful",
+    "beneficial",
+    "helpful",
+    "healthy",
+    "good",
+    "bad",
+    "better",
+    "worse",
+    "necessary",
+    "sufficient",
+    "important",
+    "significant",
+    "relevant",
+    "possible",
+    "impossible",
+    "likely",
+    "unlikely",
+    "able",
+    "unable",
+    "capable",
+    "reliable",
+    "unreliable",
+    "responsible",
+    "available",
+    "popular",
+    "common",
+    "rare",
+    "appropriate",
+    "inappropriate",
+    "adequate",
+    "inadequate",
+    "compatible",
+    "sustainable",
+    "affordable",
+    "expensive",
+    "cheap",
+    "guilty",
+    "innocent",
+    "wrong",
+    "right",
+    "real",
+    "fake",
+    // temporal/degree adverbs that start predicate phrases
+    "currently",
+    "still",
+    "already",
+    "actually",
+    "really",
+    "truly",
+    "generally",
+    "typically",
+    "usually",
+    "always",
+    "never",
+    "often",
+    // past participles as predicate adjectives
+    "proven",
+    "known",
+    "considered",
+    "expected",
+    "required",
+    "allowed",
+    "permitted",
+    "connected",
+    "linked",
+    "related",
+    "involved",
+    "affected",
+    "qualified",
+    "prepared",
+    "committed",
+    "designed",
+    "intended",
+    "supposed",
+    "used",
+    "made",
+    "seen",
+    "found",
+    "been",
+    // prepositions starting predicate phrases (e.g. "below 3 percent")
+    "below",
+    "above",
+    "under",
+    "over",
+    "within",
+    "behind",
+    "ahead",
+    "worth",
+    "about",
     // generic verb starters (helps convert "Did/Does/Can X cause Y?" -> "X did/does/can cause Y")
     "cause",
     "causes",
@@ -1460,6 +1557,20 @@ export function normalizeYesNoQuestionToStatement(input: string): string {
   if (starterMatch && typeof starterMatch.index === "number" && starterMatch.index > 0) {
     const subject = rest.slice(0, starterMatch.index).trim();
     const predicate = rest.slice(starterMatch.index).trim();
+    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
+    if (subject && predicate) {
+      const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
+      return out;
+    }
+  }
+
+  // Secondary heuristic: detect adjectives by common English suffixes.
+  // Catches words like "controversial", "problematic", "influential" not in the explicit list.
+  const adjSuffixRe = /\b(\w{5,}(?:ive|ful|less|ous|ble|ible|ial|ent|ant|ical|ary|ory))\b/i;
+  const suffixMatch = rest.match(adjSuffixRe);
+  if (suffixMatch && typeof suffixMatch.index === "number" && suffixMatch.index > 0) {
+    const subject = rest.slice(0, suffixMatch.index).trim();
+    const predicate = rest.slice(suffixMatch.index).trim();
     const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
     if (subject && predicate) {
       const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
