@@ -212,6 +212,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Confidence penalty (percentage points) when time-sensitive claims lack recent evidence (default: 20)"),
   searchRelevanceLlmEnabled: z.boolean().optional()
     .describe("Enable LLM-based relevance classification for ambiguous search results (default: false)"),
+  searchRelevanceLlmMode: z.enum(["off", "auto", "on"]).optional()
+    .describe("LLM relevance classification mode: off | auto | on (default: off)"),
   searchRelevanceLlmMaxCalls: z.number().int().min(0).max(10).optional()
     .describe("Max LLM relevance classifications per analysis (default: 3)"),
 
@@ -356,6 +358,9 @@ export const PipelineConfigSchema = z.object({
   if (data.searchRelevanceLlmEnabled === undefined) {
     data.searchRelevanceLlmEnabled = false;
   }
+  if (data.searchRelevanceLlmMode === undefined) {
+    data.searchRelevanceLlmMode = "off";
+  }
   if (data.searchRelevanceLlmMaxCalls === undefined) {
     data.searchRelevanceLlmMaxCalls = 3;
   }
@@ -440,6 +445,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   recencyWindowMonths: 6,
   recencyConfidencePenalty: 20,
   searchRelevanceLlmEnabled: false,
+  searchRelevanceLlmMode: "off",
   searchRelevanceLlmMaxCalls: 3,
 
   // Budget controls

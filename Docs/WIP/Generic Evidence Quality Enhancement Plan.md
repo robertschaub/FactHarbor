@@ -1,9 +1,9 @@
 # Generic Evidence Quality Enhancement Plan
 
 **Author:** Claude (Lead Architect)
-**Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.1 complete; Task 3.2 implemented default-off)
+**Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.2 implemented with off/auto/on modes)
 **Created:** 2026-02-05
-**Updated:** 2026-02-06 (Phase 3 Task 3.2 implemented, default-off)
+**Updated:** 2026-02-06 (Phase 3 Task 3.2 implemented with auto mode)
 **Priority:** 🟡 MEDIUM (Phase 1 resolved critical issue; Phase 2 improves search quality)
 **Verification Report:** [Evidence_Quality_Verification_Report.md](Evidence_Quality_Verification_Report.md)
 
@@ -812,7 +812,7 @@ if (result.meta) {
 
 **Priority** : MEDIUM
 **Duration** : 4 days
-**Status** : ⏳ **IN PROGRESS** (Task 3.1 implemented; Task 3.2 implemented default-off)
+**Status** : ⏳ **IN PROGRESS** (Task 3.1 implemented; Task 3.2 implemented with auto mode)
 **Depends On** : Phase 2 verified
 
 ---
@@ -870,7 +870,7 @@ function validateEvidenceRecency(
 
 **Problem:** Heuristic pre-filter may miss subtle irrelevance patterns.
 
-**Implementation:** Add optional LLM classification step for edge cases where heuristics are uncertain (default-off via pipeline config).
+**Implementation:** Add optional LLM classification step for edge cases where heuristics are uncertain, with off/auto/on modes (default-off via pipeline config).
 
 ```typescript
 type RelevanceClass = "primary_source" | "secondary_commentary" | "unrelated";
@@ -893,7 +893,7 @@ async function classifySearchResultRelevance(
 - [x] Task 3.1: Knowledge gap handling in verdict prompt
 - [x] Task 3.1: Evidence recency validation function
 - [x] Task 3.1: Confidence penalty for time-sensitive claims without recent evidence
-- [x] Task 3.2: LLM-based relevance classification (optional enhancement, default-off)
+- [x] Task 3.2: LLM-based relevance classification (optional enhancement, off/auto/on)
 - [ ] Integration testing with time-sensitive claims
 
 **Expected impact** : Handles time-sensitive claims correctly, completes relevance filtering.
@@ -1159,6 +1159,6 @@ be implemented first.
 
 ---
 
-**Plan Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.2 implemented, default-off)
+**Plan Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.2 implemented with auto mode)
 **Next Step:** Complete Phase 3 integration testing with time-sensitive claims
-**Document Version:** 2.4 (Phase 3 Task 3.2 implemented default-off)
+**Document Version:** 2.5 (Phase 3 Task 3.2 auto mode)

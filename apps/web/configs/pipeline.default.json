@@ -52,6 +52,7 @@
   "recencyWindowMonths": 6,
   "recencyConfidencePenalty": 20,
   "searchRelevanceLlmEnabled": false,
+  "searchRelevanceLlmMode": "off",
   "searchRelevanceLlmMaxCalls": 3,
   "gapResearchEnabled": true,
   "gapResearchMaxIterations": 2,

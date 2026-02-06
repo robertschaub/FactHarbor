@@ -11193,7 +11193,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       decision.category === "criticism" || decision.isContradictionSearch === true;
 
     const relevantResults: typeof uniqueResults = [];
-    const relevanceLlmEnabled = state.pipelineConfig.searchRelevanceLlmEnabled ?? false;
+    const relevanceMode =
+      state.pipelineConfig.searchRelevanceLlmMode ??
+      (state.pipelineConfig.searchRelevanceLlmEnabled ? "on" : "off");
     const relevanceLlmMaxCalls = state.pipelineConfig.searchRelevanceLlmMaxCalls ?? 3;
 
     for (const result of uniqueResults) {
@@ -11216,11 +11218,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           signals.contextMatchCount > 0 ||
           signals.institutionMentioned);
 
-      if (
-        relevanceLlmEnabled &&
-        isAmbiguous &&
-        relevanceLlmCalls < relevanceLlmMaxCalls
-      ) {
+      const allowLlm =
+        relevanceMode === "on" ||
+        (relevanceMode === "auto" && isAmbiguous && relevantResults.length === 0);
+
+      if (allowLlm && relevanceLlmCalls < relevanceLlmMaxCalls) {
         relevanceLlmCalls += 1;
         const llmDecision = await classifySearchResultRelevanceLLM(
           result,
