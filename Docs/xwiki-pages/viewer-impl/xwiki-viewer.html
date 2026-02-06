@@ -54,6 +54,9 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);heig
 .file-info{display:flex;align-items:center;gap:8px;min-width:0}
 .filename{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file-size{font-size:10px;color:var(--text-dim);white-space:nowrap}
+.copy-path-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);padding:2px;border-radius:3px;display:inline-flex;align-items:center;transition:all .15s;flex-shrink:0}
+.copy-path-btn:hover{color:var(--accent);background:var(--accent-dim)}
+.copy-path-btn svg{width:12px;height:12px}
 .watch-badge{display:none;align-items:center;gap:4px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6aaa6a;background:rgba(106,170,106,.12);padding:2px 7px;border-radius:10px;white-space:nowrap}
 .watch-badge .pulse{width:5px;height:5px;background:#6aaa6a;border-radius:50%;animation:pulse 2s ease infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -271,6 +274,9 @@ body.view-preview .preview-pane{width:100%}
   <div class="spacer"></div>
   <div class="file-info" id="fileInfo" style="display:none">
     <span class="filename" id="filename"></span>
+    <button type="button" class="copy-path-btn" id="btnCopyPath" onclick="copyPagePath()" title="Copy path relative to project root">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
     <span class="file-size" id="fileSize"></span>
     <span class="watch-badge" id="watchBadge"><span class="pulse"></span>Watching</span>
   </div>
@@ -431,7 +437,7 @@ class XWikiParser {
 
       if(line.trim()===''){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false}pendingParams=null;i++;continue}
       if(/^----\s*$/.test(line)){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false}html+='<hr>\n';pendingParams=null;i++;continue}
-      const hm=line.match(/^(={1,6})\s+(.+?)\s+\1\s*$/);
+      const hm=line.match(/^(={1,6})\s+(.+?)\s+\1\s*$/)||line.match(/^(={1,6})\s+(.+?)\s*$/);
       if(hm){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false}const lv=hm[1].length,rt=hm[2],id=this.slug(rt);this.headings.push({level:lv,text:rt,id});const attrs=pendingParams?this.buildAttrs(pendingParams):'';html+=`<h${lv} id="${id}"${attrs}>${this.inl(rt)}</h${lv}>\n`;pendingParams=null;i++;continue}
       if(line.trim().startsWith('|')){if(inList){html+=this.cls(listStack);listStack=[];inList=false}inTable=true;tableRows.push(line);i++;continue}else if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false}
       const ul=line.match(/^(\*+)\s+(.*)/);
@@ -913,6 +919,7 @@ async function loadPage(ref, addHistory=true){
 
     const hasHandle = !!page.handle;
     document.getElementById('filename').textContent = page.name;
+    document.getElementById('filename').title = getPageRelPath(page);
     document.getElementById('fileSize').textContent = formatSize(file.size);
     document.getElementById('fileInfo').style.display = 'flex';
     document.getElementById('btnReload').disabled = !hasHandle;
@@ -926,6 +933,8 @@ async function loadPage(ref, addHistory=true){
     updateNavButtons();
     updateBreadcrumb(page);
     highlightTreeItem(ref);
+    document.querySelector('.preview-wrap').scrollTop = 0;
+    editorEl.scrollTop = 0;
     renderPreview();
   } catch(e){ console.warn('Load error:',e); showToast('Could not load page'); }
 }
@@ -1106,6 +1115,22 @@ function highlightTreeItem(ref){
   document.querySelectorAll('.tree-page').forEach(el=>{
     el.classList.toggle('active', el.dataset.ref === ref);
   });
+  // Expand parent folders and scroll into view
+  const active = document.querySelector(`.tree-page[data-ref="${CSS.escape(ref)}"]`);
+  if(!active) return;
+  let parent = active.parentElement;
+  while(parent && parent.id !== 'treeBody'){
+    if(parent.classList.contains('tree-group') && parent.classList.contains('collapsed')){
+      parent.classList.remove('collapsed');
+      const folderItem = parent.previousElementSibling;
+      if(folderItem){
+        const arrow = folderItem.querySelector('.ti-arrow');
+        if(arrow) arrow.classList.add('open');
+      }
+    }
+    parent = parent.parentElement;
+  }
+  active.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 
 function filterTree(query){
@@ -1589,6 +1614,34 @@ function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g
 function escAttr(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
 let toastTimer=null;
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500)}
+
+function getPageRelPath(page){
+  const folderName = dirHandle ? dirHandle.name : '';
+  // Build path: Docs/xwiki-pages/<folderName>/<relPath>
+  // Avoid duplication if folder is already 'xwiki-pages' or 'Docs'
+  const parts = [];
+  const fnLow = folderName.toLowerCase();
+  if(fnLow === 'xwiki-pages'){
+    parts.push('Docs','xwiki-pages');
+  } else if(fnLow === 'docs'){
+    parts.push('Docs','xwiki-pages');
+  } else {
+    parts.push('Docs','xwiki-pages');
+    if(folderName) parts.push(folderName);
+  }
+  parts.push(page.relPath);
+  return parts.join('/');
+}
+
+function copyPagePath(){
+  if(!currentPageRef) return;
+  const page = pageIndex[currentPageRef];
+  if(!page) return;
+  const path = getPageRelPath(page);
+  navigator.clipboard.writeText(path).then(()=>showToast('Copied: '+path)).catch(()=>{
+    const tmp=document.createElement('input');tmp.value=path;document.body.appendChild(tmp);tmp.select();document.execCommand('copy');document.body.removeChild(tmp);showToast('Copied: '+path);
+  });
+}
 
 // =================================================================
 // Init

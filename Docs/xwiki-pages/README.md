@@ -2,6 +2,12 @@
 
 **This directory contains the MASTER source for all FactHarbor documentation in two separate trees.**
 
+> **TL;DR:** All docs live here as `.xwiki` files in two trees (`FactHarbor_Spec_and_Impl/` and `FactHarbor_Org/`). Edit files directly, commit to git. To preview locally with full WYSIWYG rendering, run:
+> ```
+> Docs\xwiki-pages\View.cmd
+> ```
+> To sync with xWiki, export/import XARs via `Docs/xwiki-export/` scripts.
+
 ## Overview
 
 - **Format:** `.xwiki` files containing pure xWiki 2.1 syntax
@@ -196,11 +202,98 @@ python xwiki_tree_to_xar.py ../xwiki-pages/FactHarbor_Org/
 
 **Full reference:** See [Docs/xwiki-export/WORKFLOW_NEW.md](../xwiki-export/WORKFLOW_NEW.md)
 
-## Viewer Options
+## XWiki Viewer (Local WYSIWYG Preview)
 
-**For human readers:**
+A standalone HTML viewer that renders `.xwiki` files with full WYSIWYG preview, directly from your local folder - no xWiki server needed.
 
-1. **xWiki itself** - Import XAR to xWiki instance for full WYSIWYG viewing
+### Quick Start
+
+```
+# From the project root - just double-click or run:
+Docs\xwiki-pages\View.cmd
+```
+
+This starts a local HTTP server and opens the viewer in Chrome (or Edge). The browser's folder picker will open automatically - select one of the wiki trees (e.g. `FactHarbor_Spec_and_Impl` or `FactHarbor_Org`).
+
+### Launcher Options
+
+The underlying PowerShell script (`viewer-impl/Open-XWikiViewer.ps1`) supports options:
+
+```powershell
+# Default: Chrome, port 8471, auto-open folder picker
+powershell -ExecutionPolicy Bypass -File "Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1"
+
+# Use Edge instead of Chrome
+powershell -ExecutionPolicy Bypass -File "Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1" -Browser edge
+
+# Use a custom port
+powershell -ExecutionPolicy Bypass -File "Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1" -Port 9000
+
+# Don't auto-trigger the folder picker
+powershell -ExecutionPolicy Bypass -File "Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1" -NoAutoOpen
+```
+
+Press `Ctrl+C` in the terminal to stop the server. The script automatically cleans up any previous server processes on startup.
+
+### Viewer Features
+
+| Feature | Description |
+|---------|-------------|
+| **Split View** | Side-by-side source editor and rendered preview |
+| **File Tree** | Sidebar with all pages; click folders to open their WebHome |
+| **Page Search** | Filter pages by name in the sidebar search box |
+| **Wiki Links** | `[[label>>Page]]` links resolve to local pages; click to navigate |
+| **Include** | `{{include reference="..."}}` renders the included page inline |
+| **Navigation** | Back/forward buttons, breadcrumbs, click-through between pages |
+| **File Watching** | Live-reload when a file changes on disk (requires File System Access API) |
+| **View Modes** | Toggle between Source, Split, and Preview |
+
+### Supported XWiki 2.1 Syntax
+
+| Syntax | Renders as |
+|--------|------------|
+| `= Heading =` ... `====== H6 ======` | Headings (levels 1-6) |
+| `**bold**` | **bold** |
+| `//italic//` | *italic* |
+| `--strikethrough--` | ~~strikethrough~~ |
+| `##code##` or `` `code` `` | `inline code` |
+| `[[label>>PageRef]]` | Wiki link (resolved against folder tree) |
+| `[[label>>https://...]]` | External link |
+| `* item` / `1. item` | Bullet / numbered lists |
+| `1. ((( rich content )))` | Rich list items (multi-paragraph) |
+| `(% class="box infomessage" %)` | Parameter blocks (CSS class/style) |
+| `((( ... )))` | Groups / div containers |
+| `{{{ verbatim }}}` | Preformatted text (no formatting) |
+| `{{code language="js"}}...{{/code}}` | Code blocks with language label |
+| `{{mermaid}}...{{/mermaid}}` | Mermaid diagrams |
+| `{{info}}...{{/info}}` | Info / warning / error / success boxes |
+| `{{include reference="..."}}` | Include another page inline |
+| `{{toc/}}` | Table of contents |
+| `\|=Header\|...\|` | Tables |
+| `> quote` | Blockquotes |
+| `----` | Horizontal rule |
+
+### How It Works
+
+The viewer is a single self-contained HTML file (`xwiki-viewer.html`) with no build step:
+
+1. **Open a folder** via the browser's File System Access API (Chrome/Edge) or the `webkitdirectory` fallback (Firefox)
+2. **Scans recursively** for `.xwiki`, `.wiki`, `.txt`, `.md` files
+3. **Builds a page index** using the folder structure as the XWiki space hierarchy
+4. **Resolves wiki links** with fuzzy matching (handles case differences, path variations)
+5. **Renders includes** by fetching and parsing referenced pages inline (with circular reference detection)
+
+### VS Code Integration
+
+The project's `.vscode/tasks.json` includes three XWiki Viewer tasks. Use **Terminal → Run Task** and select:
+
+- **XWiki Viewer: Open** — starts server + opens Chrome
+- **XWiki Viewer: Open (Edge)** — starts server + opens Edge
+- **XWiki Viewer: Quick Open (no server)** — opens via `file://` directly
+
+### Viewer Options (Other)
+
+1. **xWiki itself** - Import XAR to xWiki instance for full server-side rendering
 2. **VS Code** - Edit plain text with syntax highlighting
 3. **GitHub** - View in repository (limited formatting)
 

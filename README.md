@@ -57,6 +57,10 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 - **[Backlog](Docs/STATUS/Backlog.md)** - Prioritized task list
 - **[Improvement Recommendations](Docs/STATUS/Improvement_Recommendations.md)** - Comprehensive analysis of potential enhancements
 
+### xWiki Documentation (Master Source)
+- **[xWiki Pages](Docs/xwiki-pages/)** - Master documentation in xWiki 2.1 format (113 pages across two trees)
+- **[XWiki Viewer](Docs/xwiki-pages/README.md#xwiki-viewer-local-wysiwyg-preview)** - Local WYSIWYG preview: `Docs\xwiki-pages\View.cmd`
+
 ### Project Documentation
 - **[AGENTS.md](AGENTS.md)** - Rules for AI coding assistants
 - **[QUICKSTART.md](QUICKSTART.md)** - Quick setup guide for metrics & testing
