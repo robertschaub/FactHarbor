@@ -48,6 +48,12 @@ This specification is organized into the following sections:
 * [[Workflows>>FactHarbor.Specification.Workflows.WebHome]] - Process workflows
 === Diagrams ===
 * [[Diagrams>>FactHarbor.Specification.Diagrams.WebHome]] - Visual architecture and workflow diagrams
+=== Implementation ===
+* [[Implementation>>FactHarbor.Specification.Implementation.WebHome]] - POC1 implementation architecture, pipeline design, and core systems
+=== Development ===
+* [[Development>>FactHarbor.Specification.Development.WebHome]] - Coding guidelines, testing strategy, and deployment
+=== Reference ===
+* [[Reference>>FactHarbor.Specification.Reference.WebHome]] - Terminology, schemas, and prompt engineering guidelines
 === Additional Resources ===
 * [[Data Examples>>FactHarbor.Specification.Examples.WebHome]] - Sample data structures
 * [[FAQ>>FactHarbor.Specification.FAQ.WebHome]] - Frequently asked questions

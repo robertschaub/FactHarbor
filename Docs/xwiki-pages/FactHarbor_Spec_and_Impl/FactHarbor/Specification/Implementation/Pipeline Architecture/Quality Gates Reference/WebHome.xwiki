@@ -1,0 +1,504 @@
+= Quality Gates Reference =
+
+**Version**: 1.0
+**Status**: Consolidated Reference
+**Date**: February 3, 2026
+
+----
+
+== 1. Overview ==
+
+Quality Gates are checkpoints in the FactHarbor analysis pipeline that enforce minimum standards for claim evaluation and verdict confidence. They ensure that:
+
+* Only verifiable claims are analyzed (Gate 1)
+* Verdicts have sufficient supporting evidence (Gate 4)
+* Results meet minimum quality thresholds before publication
+
+**Target Audience**: Developers, prompt engineers, and quality assurance reviewers.
+
+**Implemented Gates**: Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence Assessment)
+
+**Replaces scattered documentation in**:
+* Overview.md (Quality Gates section)
+* Calculations.md (Gate 4 sections)
+* Pipeline_TriplePath_Architecture.md (quality gates mentions)
+
+----
+
+== 2. Gate Architecture ==
+
+=== 2.1 Pipeline Integration ===
+
+{{mermaid}}
+flowchart TB
+    subgraph UNDERSTAND["Phase 1: UNDERSTAND"]
+        Input[User Input] --> ClaimExtraction[Claim Extraction]
+        ClaimExtraction --> GATE1["Gate 1: Claim Validation<br/>━━━━━━━━━━━━━<br/>Filter opinions,<br/>predictions,<br/>low-specificity"]
+        GATE1 -->|Pass| ValidClaims[Valid Claims]
+        GATE1 -.->|Fail| ExcludedClaims[Excluded Claims<br/>with reasons]
+    end
+
+    subgraph RESEARCH["Phase 2: RESEARCH"]
+        ValidClaims --> Search[Web Search]
+        Search --> Sources[Source Documents]
+        Sources --> FactExtraction[Fact Extraction]
+    end
+
+    subgraph VERDICT["Phase 3: VERDICT GENERATION"]
+        FactExtraction --> VerdictGeneration[Verdict Generation]
+        VerdictGeneration --> GATE4["Gate 4: Confidence Assessment<br/>━━━━━━━━━━━━━<br/>Check source count,<br/>fact count,<br/>reasoning quality"]
+        GATE4 -->|Pass| PublishableVerdicts[Publishable Verdicts]
+        GATE4 -->|Warn| LowConfidenceVerdicts[Low Confidence<br/>Verdicts]
+    end
+
+    style GATE1 fill:#fff9c4
+    style GATE4 fill:#fff9c4
+    style ExcludedClaims fill:#ffcdd2
+    style ValidClaims fill:#c8e6c9
+    style PublishableVerdicts fill:#c8e6c9
+    style LowConfidenceVerdicts fill:#ffecb3
+{{/mermaid}}
+
+=== 2.2 Gate States ===
+
+|= State |= Description |= Action
+| **Pass** | Meets all criteria | Proceed normally
+| **Warn** | Below recommended threshold but above minimum | Proceed with warning flag
+| **Fail** | Does not meet minimum criteria | Exclude from analysis or mark as insufficient
+
+=== 2.3 Result Metadata ===
+
+Every analysis result includes gate statistics:
+
+{{code language="typescript"}}
+interface QualityGates {
+  gate1Stats: {
+    totalClaims: number;
+    validClaims: number;
+    excludedClaims: number;
+    exclusionReasons: { claimId: string; reason: string }[];
+  };
+  gate4Stats: {
+    totalVerdicts: number;
+    highConfidence: number;
+    mediumConfidence: number;
+    lowConfidence: number;
+    insufficient: number;
+  };
+}
+{{/code}}
+
+----
+
+== 3. Gate 1: Claim Validation ==
+
+=== 3.1 Purpose ===
+
+Filter out non-verifiable claims before research begins, preventing wasted resources on opinions, predictions, or vague statements.
+
+=== 3.2 Criteria ===
+
+**Claims are EXCLUDED if**:
+1. **Opinion/Editorial**: Subjective judgment without factual basis
+1*. Example: "Policy X is the best approach"
+1*. Action: Exclude unless claim is central to thesis
+
+1. **Prediction/Speculation**: Future-oriented claims that cannot be verified
+1*. Example: "Technology Y will dominate the market by 2030"
+1*. Action: Exclude unless claim is central to thesis
+
+1. **Low Specificity**: Vague statements without concrete assertions
+1*. Example: "Some experts believe..."
+1*. Action: Exclude unless claim is central to thesis
+
+**Claims are KEPT if**:
+* **Factual assertion**: Verifiable statement about past/present
+* **Central claim**: Core thesis claim (kept regardless of specificity)
+* **Attribution claim**: Claims about what someone said/did
+
+=== 3.3 Implementation ===
+
+**File**: ##apps/web/src/lib/analyzer/orchestrated.ts##
+**Function**: Applied during ##understandClaim()## phase
+**Phase**: UNDERSTAND (Phase 1)
+
+**Exclusion Process**:
+1. LLM extracts claims and marks each with role and type
+1. Deterministic filter applies Gate 1 criteria
+1. Excluded claims logged with reasons
+1. Valid claims proceed to research phase
+
+=== 3.4 Configuration ===
+
+**UCM Pipeline Config**:
+{{code language="json"}}
+{
+  "gate1Enabled": true,  // Enable/disable Gate 1
+  "gate1KeepCentralClaims": true  // Keep central claims regardless of specificity
+}
+{{/code}}
+
+=== 3.5 Examples ===
+
+**Example 1: Opinion Excluded**
+{{code}}
+Claim: "The Supreme Court's decision was unjust."
+Role: evaluative
+Result: EXCLUDED (opinion - no factual basis)
+Reason: "Evaluative opinion without factual assertion"
+{{/code}}
+
+**Example 2: Central Claim Kept**
+{{code}}
+Claim: "The policy will significantly improve outcomes."
+Role: core
+Result: KEPT (central to thesis, despite low specificity)
+Reason: "Central claim kept for analysis"
+{{/code}}
+
+**Example 3: Factual Assertion Kept**
+{{code}}
+Claim: "The court ruled in favor of Party A on January 15, 2025."
+Role: core
+Type: factual
+Result: KEPT (verifiable factual assertion)
+{{/code}}
+
+----
+
+== 4. Gate 4: Verdict Confidence Assessment ==
+
+=== 4.1 Purpose ===
+
+Ensure verdicts have sufficient supporting evidence before publication, preventing low-confidence judgments from misleading users.
+
+=== 4.2 Confidence Tiers ===
+
+|= Tier |= Criteria |= Interpretation
+| **HIGH** | 3+ sources AND 5+ facts AND reasoning >100 chars | Strong evidence base, high reliability
+| **MEDIUM** | 2+ sources AND 3+ facts AND reasoning >50 chars | Adequate evidence, moderate reliability
+| **LOW** | 1+ sources AND 1+ facts | Minimal evidence, low reliability
+| **INSUFFICIENT** | <1 source OR <1 fact | Insufficient evidence for verdict
+
+=== 4.3 Implementation ===
+
+**File**: ##apps/web/src/lib/analyzer/orchestrated.ts##
+**Function**: ##validateVerdictGate4()##
+**Phase**: VERDICT GENERATION (Phase 3)
+
+**Validation Process**:
+1. Count sources supporting verdict
+1. Count facts extracted from sources
+1. Measure reasoning length
+1. Assign confidence tier
+1. Apply context scoping for counter-evidence
+1. Flag verdicts below threshold
+
+=== 4.4 Context Scoping ===
+
+Counter-evidence is scoped to relevant analysis contexts:
+
+{{code language="typescript"}}
+// Only count criticism facts that are:
+// 1. In the same context as the verdict, OR
+// 2. Not scoped to any specific context (general criticism)
+const contradictingFactCount = facts.filter(f =>
+  !verdict.supportingEvidenceIds.includes(f.id) &&
+  f.category === "criticism" &&
+  (!f.contextId || f.contextId === verdict.contextId)
+).length;
+{{/code}}
+
+This prevents criticism of one analysis context from penalizing claims about a different analysis context.
+
+=== 4.5 Central Claim Exception ===
+
+**Central claims remain publishable even if confidence is low**, because they are core to the thesis and users need to see the verdict regardless of evidence sufficiency.
+
+**Rationale**: Users submitted the input to understand the truth of central claims. Hiding low-confidence verdicts would be misleading.
+
+=== 4.6 Configuration ===
+
+**UCM Pipeline Config**:
+{{code language="json"}}
+{
+  "gate4Enabled": true,  // Enable/disable Gate 4
+  "gate4MinSources": 2,  // Minimum sources for MEDIUM confidence
+  "gate4MinFacts": 3,    // Minimum facts for MEDIUM confidence
+  "gate4MinReasoningLength": 50  // Minimum reasoning length for MEDIUM
+}
+{{/code}}
+
+=== 4.7 Examples ===
+
+**Example 1: HIGH Confidence**
+{{code}}
+Verdict: "MOSTLY-TRUE" (85%)
+Sources: 4 (Reuters, AP, BBC, Government site)
+Facts: 12
+Reasoning: 150 chars
+Result: HIGH confidence tier
+Action: Publish with full confidence
+{{/code}}
+
+**Example 2: LOW Confidence (Central Claim)**
+{{code}}
+Verdict: "UNVERIFIED" (50%)
+Sources: 1 (Blog post)
+Facts: 2
+Reasoning: 80 chars
+Claim: Central
+Result: LOW confidence tier
+Action: Publish with warning (central claim exception)
+{{/code}}
+
+**Example 3: INSUFFICIENT (Non-Central)**
+{{code}}
+Verdict: "UNVERIFIED" (50%)
+Sources: 0
+Facts: 0
+Reasoning: 30 chars
+Claim: Non-central
+Result: INSUFFICIENT
+Action: Exclude from report or mark as "No evidence found"
+{{/code}}
+
+----
+
+== 5. Confidence Impact on Verdict Calculation ==
+
+=== 5.1 Truth Percentage Modulation ===
+
+Confidence modulates the final truth percentage within each verdict band:
+
+**Via ##truthFromBand()## function**:
+{{code language="typescript"}}
+function truthFromBand(band: "strong" | "partial" | "uncertain" | "refuted", confidence: number): number {
+  const conf = normalizePercentage(confidence) / 100;
+  switch (band) {
+    case "strong":    return Math.round(72 + 28 * conf);  // 72-100%
+    case "partial":   return Math.round(50 + 35 * conf);  // 50-85%
+    case "uncertain": return Math.round(35 + 30 * conf);  // 35-65%
+    case "refuted":   return Math.round(28 * (1 - conf)); // 0-28%
+  }
+}
+{{/code}}
+
+=== 5.2 Example Impact ===
+
+**"strong" band with varying confidence**:
+* **High confidence** (90%): 72 + 28x0.9 = 97% -> **TRUE**
+* **Medium confidence** (60%): 72 + 28x0.6 = 89% -> **TRUE**
+* **Low confidence** (30%): 72 + 28x0.3 = 80% -> **MOSTLY-TRUE**
+
+Same evidence band, but lower confidence pulls verdict down within the band.
+
+=== 5.3 MIXED vs UNVERIFIED Distinction ===
+
+Confidence determines whether 43-57% range is **MIXED** or **UNVERIFIED**:
+
+{{code language="typescript"}}
+// Confidence threshold to distinguish MIXED from UNVERIFIED
+const MIXED_CONFIDENCE_THRESHOLD = 60;
+
+if (truthPercentage >= 43 && truthPercentage <= 57) {
+  return confidence >= 60 ? "MIXED" : "UNVERIFIED";
+}
+{{/code}}
+
+* **MIXED** (confidence >= 60%): Evidence on both sides, high confidence in mixed state
+* **UNVERIFIED** (confidence < 60%): Insufficient evidence, low confidence
+
+----
+
+== 6. Gate Statistics and Reporting ==
+
+=== 6.1 Gate Stats in Result JSON ===
+
+Every analysis result includes gate statistics:
+
+{{code language="json"}}
+{
+  "qualityGates": {
+    "gate1Stats": {
+      "totalClaims": 15,
+      "validClaims": 12,
+      "excludedClaims": 3,
+      "exclusionReasons": [
+        { "claimId": "C3", "reason": "Opinion without factual basis" },
+        { "claimId": "C7", "reason": "Prediction about future events" },
+        { "claimId": "C11", "reason": "Low specificity, non-central" }
+      ]
+    },
+    "gate4Stats": {
+      "totalVerdicts": 12,
+      "highConfidence": 8,
+      "mediumConfidence": 3,
+      "lowConfidence": 1,
+      "insufficient": 0
+    }
+  }
+}
+{{/code}}
+
+=== 6.2 UI Display (Current Status) ===
+
+**Current**: Gate stats included in JSON but not displayed in UI with per-item reasons
+
+**Planned**: UI enhancements to show:
+* Excluded claims with reasons in report
+* Confidence tier badges on verdicts
+* Warning indicators for low-confidence verdicts
+
+----
+
+== 7. Proposed Gates (Not Yet Implemented) ==
+
+=== 7.1 Gate 2: Source Quality (Proposed) ===
+
+**Purpose**: Filter low-quality sources before fact extraction
+**Criteria**:
+* Source reliability score > threshold
+* Domain not in blocklist
+* Content length > minimum
+
+**Status**: Proposed but not implemented (Source Reliability system exists but not integrated as gate)
+
+=== 7.2 Gate 3: Evidence Relevance (Proposed) ===
+
+**Purpose**: Filter tangential or low-probative-value evidence
+**Criteria**:
+* Thesis relevance score > threshold
+* Recency appropriate for claim
+* Geographic/jurisdictional match
+
+**Status**: Proposed but not implemented (Evidence filtering exists but not formalized as gate)
+
+----
+
+== 8. Debugging and Diagnostics ==
+
+=== 8.1 Checking Gate Stats ===
+
+**In Result JSON**:
+{{code language="javascript"}}
+const result = await analyzeJob(jobId);
+console.log('Gate 1 excluded:', result.qualityGates.gate1Stats.excludedClaims);
+console.log('Gate 4 confidence:', result.qualityGates.gate4Stats);
+{{/code}}
+
+**In Report Markdown**:
+Search for "Quality Gates" section (planned feature)
+
+=== 8.2 Common Issues ===
+
+**Issue 1: Too many claims excluded by Gate 1**
+* **Symptom**: Most claims marked as excluded
+* **Cause**: Input is primarily opinion/editorial
+* **Solution**: Clarify that Gate 1 is working correctly; input may not be fact-checkable
+
+**Issue 2: All verdicts marked LOW confidence**
+* **Symptom**: gate4Stats shows all verdicts in LOW tier
+* **Cause**: Search returning few sources or sources have little relevant content
+* **Solution**: Check search provider credentials, improve search queries, adjust Gate 4 thresholds
+
+**Issue 3: Central claims excluded by Gate 1**
+* **Symptom**: Core thesis claims not appearing in results
+* **Cause**: ##gate1KeepCentralClaims=false## in config
+* **Solution**: Enable central claim exception in UCM Pipeline config
+
+----
+
+== 9. Configuration Reference ==
+
+=== 9.1 UCM Pipeline Config ===
+
+{{code language="json"}}
+{
+  // Gate 1: Claim Validation
+  "gate1Enabled": true,
+  "gate1KeepCentralClaims": true,
+
+  // Gate 4: Verdict Confidence Assessment
+  "gate4Enabled": true,
+  "gate4MinSources": 2,
+  "gate4MinFacts": 3,
+  "gate4MinReasoningLength": 50,
+
+  // Confidence thresholds
+  "mixedConfidenceThreshold": 60  // MIXED vs UNVERIFIED distinction
+}
+{{/code}}
+
+=== 9.2 Default Values ===
+
+|= Setting |= Default |= Rationale
+| ##gate1Enabled## | ##true## | Quality control essential
+| ##gate1KeepCentralClaims## | ##true## | Users need to see core thesis verdicts
+| ##gate4Enabled## | ##true## | Prevent low-quality verdicts
+| ##gate4MinSources## | ##2## | Balance between quality and coverage
+| ##gate4MinFacts## | ##3## | Minimum for reasonable confidence
+| ##gate4MinReasoningLength## | ##50## | Ensure non-trivial reasoning
+| ##mixedConfidenceThreshold## | ##60## | Clear distinction between mixed/unverified
+
+----
+
+== 10. Testing Quality Gates ==
+
+=== 10.1 Unit Tests ===
+
+**File**: ##apps/web/src/lib/analyzer/__tests__/quality-gates.test.ts##
+
+**Coverage**:
+* Gate 1 exclusion scenarios (opinion, prediction, low-specificity)
+* Gate 1 central claim exception
+* Gate 4 confidence tier assignment
+* Gate 4 context scoping
+* Gate 4 central claim exception
+
+=== 10.2 Integration Tests ===
+
+**Test Analysis Inputs**:
+1. **High-quality factual article** -> Expect: Most claims pass Gate 1, high Gate 4 confidence
+1. **Opinion editorial** -> Expect: Most claims excluded by Gate 1
+1. **Low-source analysis** -> Expect: Low Gate 4 confidence tiers
+
+=== 10.3 Manual Testing ===
+
+**Steps**:
+1. Run analysis on test input
+1. Check result JSON for ##qualityGates## object
+1. Verify exclusion reasons match expected criteria
+1. Verify confidence tiers match source/fact counts
+
+----
+
+== 11. Related Documentation ==
+
+* Calculations.md (see Calculations.md in local docs) - Verdict calculation methodology, confidence modulation
+* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - Architecture overview, pipeline flow
+* [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] - Pipeline variants and quality gate enforcement
+* Evidence_Quality_Filtering.md (see Evidence_Quality_Filtering.md in local docs) - Evidence filtering (related to proposed Gate 3)
+
+----
+
+== 12. Conclusion ==
+
+Quality Gates ensure that FactHarbor maintains high standards for claim evaluation and verdict confidence. The current implementation (Gate 1 and Gate 4) provides:
+
+1. **Input quality control** (Gate 1) - Only verifiable claims analyzed
+1. **Output quality control** (Gate 4) - Verdicts backed by sufficient evidence
+1. **Transparency** - Gate stats included in every result
+1. **Configurability** - Thresholds adjustable via UCM
+
+**Key Takeaways**:
+* Gate 1 filters non-verifiable claims before research
+* Gate 4 assesses verdict confidence based on evidence
+* Central claims receive special treatment (kept regardless of quality)
+* Confidence modulates verdict truth percentages
+* Gate stats available in result JSON for debugging
+
+----
+
+**Last Updated**: February 3, 2026
+**Document Status**: Consolidated reference - combines scattered gate documentation

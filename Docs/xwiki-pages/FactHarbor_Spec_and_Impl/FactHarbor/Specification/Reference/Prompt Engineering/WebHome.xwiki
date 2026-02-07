@@ -1,0 +1,13 @@
+= Prompt Engineering =
+
+Guidelines and formatting rules for LLM prompts used in FactHarbor's AKEL pipeline.
+
+== Reference ==
+
+* [[Provider-Specific Formatting>>FactHarbor.Specification.Reference.Prompt Engineering.Provider-Specific Formatting.WebHome]] - Formatting rules specific to each LLM provider (Anthropic, OpenAI, Google)
+* [[Prompt Guidelines>>FactHarbor.Specification.Reference.Prompt Engineering.Prompt Guidelines.WebHome]] - General prompt engineering best practices and standards
+
+== Related ==
+
+* [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] - AI Knowledge Extraction Layer
+* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - LLM abstraction layer details

@@ -98,3 +98,15 @@ Dive into the Architecture, Data Models, API definitions, and detailed algorithm
 * //(Draft content available in [[Holding Page>>FactHarbor.Specification.WebHome]])//
 )))
 )))
+
+(((
+(% class="box" %)
+(((
+== [[User Guides>>FactHarbor.User Guides.WebHome]] ==
+
+**//Operational Guides.//**
+Getting started, admin interface, LLM configuration, testing, and data export guides.
+
+* [[Go to User Guides>>FactHarbor.User Guides.WebHome]]
+)))
+)))

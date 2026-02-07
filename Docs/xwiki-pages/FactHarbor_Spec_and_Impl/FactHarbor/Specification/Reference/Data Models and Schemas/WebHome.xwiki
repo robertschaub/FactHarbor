@@ -1,0 +1,13 @@
+= Data Models and Schemas =
+
+Schema definitions and mappings used in FactHarbor's data pipeline.
+
+== Schemas ==
+
+* [[LLM Schema Mapping>>FactHarbor.Specification.Reference.Data Models and Schemas.LLM Schema Mapping.WebHome]] - How LLM responses map to FactHarbor data structures
+* [[Metrics Schema>>FactHarbor.Specification.Reference.Data Models and Schemas.Metrics Schema.WebHome]] - Performance and quality metrics schema definitions
+
+== Related ==
+
+* [[Data Model>>FactHarbor.Specification.Data Model.WebHome]] - Core data model specification
+* [[Schema Migration Strategy>>FactHarbor.Specification.Implementation.Schema Migration Strategy.WebHome]] - Migration patterns

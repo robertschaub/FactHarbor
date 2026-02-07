@@ -1,0 +1,9 @@
+= Development Guidelines =
+
+Coding standards, scope definition practices, and testing strategy for FactHarbor development.
+
+== Guidelines ==
+
+* [[Coding Guidelines>>FactHarbor.Specification.Development.Guidelines.Coding Guidelines.WebHome]] - Code style, naming conventions, and best practices
+* [[Scope Definition Guidelines>>FactHarbor.Specification.Development.Guidelines.Scope Definition Guidelines.WebHome]] - How to define and use EvidenceScope in claims
+* [[Testing Strategy>>FactHarbor.Specification.Development.Guidelines.Testing Strategy.WebHome]] - Test pyramid, promptfoo testing, and quality assurance

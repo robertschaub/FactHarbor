@@ -1,3 +1,15 @@
+> **MOVED TO xWiki** (2026-02-06)
+> 
+> This document has been consolidated into the xWiki documentation system.
+> The xWiki version is now the authoritative source.
+> 
+> **xWiki file**: `Docs/xwiki-pages/FactHarbor_Spec_and_Impl/FactHarbor/Specification/Reference/Prompt Engineering/Provider-Specific Formatting/WebHome.xwiki`
+> 
+> This .md file is kept for reference only. Do not edit - edit the .xwiki file instead.
+
+---
+
+
 # Provider-Specific Prompt Formatting
 
 **Version**: 2.8.0 (Optimized - estimated 20-30% token reduction)

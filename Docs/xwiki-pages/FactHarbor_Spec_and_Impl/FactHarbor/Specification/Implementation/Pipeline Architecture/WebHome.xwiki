@@ -1,0 +1,14 @@
+= Pipeline Architecture =
+
+FactHarbor's claim analysis pipeline supports three architectural variants, each optimized for different use cases.
+
+== Pipeline Variants ==
+
+* [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] - Monolithic Canonical, Monolithic Dynamic, and Orchestrated pipeline designs
+* [[Context and EvidenceScope Detection>>FactHarbor.Specification.Implementation.Pipeline Architecture.Context and EvidenceScope Detection.WebHome]] - How claims are contextualized and evidence scopes are detected
+* [[Quality Gates Reference>>FactHarbor.Specification.Implementation.Pipeline Architecture.Quality Gates Reference.WebHome]] - Gate 1 (input validation) and Gate 4 (output quality) reference
+
+== Related ==
+
+* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - Full system architecture
+* [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] - AI Knowledge Extraction Layer details

@@ -5,6 +5,10 @@
 **Status:** Approved - Ready for Implementation\\
 **Target:** Pre-release beta with logged-in users, $0-5/month budget
 
+
+{{info}}
+FactHarbor is currently in **local POC development**. This guide is a **future deployment plan** and is not required for the current phase.
+{{/info}}
 ----
 
 == Executive Summary ==
@@ -465,6 +469,8 @@ const result = await anthropic.messages.create({
 {{/code}}
 
 ==== 5.4 Claim Caching (70% Cost Savings) ====
+
+{{warning}}This feature is planned but not implemented in current code.{{/warning}}
 
 See "Separated Architecture Implementation Guide" for full details.
 

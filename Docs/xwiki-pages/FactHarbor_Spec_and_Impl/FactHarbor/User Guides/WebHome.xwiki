@@ -1,0 +1,22 @@
+= User Guides =
+
+Operational guides for FactHarbor users and administrators.
+
+== Getting Started ==
+
+* [[Getting Started>>FactHarbor.User Guides.Getting Started.WebHome]] - Quick start guide for new users
+
+== Administration ==
+
+* [[Admin Interface>>FactHarbor.User Guides.Admin Interface.WebHome]] - Admin panel and management interface
+* [[LLM Configuration>>FactHarbor.User Guides.LLM Configuration.WebHome]] - Configuring LLM providers and models
+
+== Testing and Export ==
+
+* [[Promptfoo Testing>>FactHarbor.User Guides.Promptfoo Testing.WebHome]] - Using promptfoo for prompt testing and evaluation
+* [[Source Reliability Export>>FactHarbor.User Guides.Source Reliability Export.WebHome]] - Exporting source reliability data
+
+== Related ==
+
+* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - System architecture
+* [[Terminology>>FactHarbor.Specification.Reference.Terminology.WebHome]] - Glossary of terms
