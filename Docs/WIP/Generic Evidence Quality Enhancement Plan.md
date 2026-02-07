@@ -1,16 +1,56 @@
 # Generic Evidence Quality Enhancement Plan
 
 **Author:** Claude (Lead Architect)
-**Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.2 implemented with default auto mode)
+**Status:** ⚠️ STABILIZATION IN PROGRESS (Phase 1 complete; Phase 2 implemented but verification re-opened)
 **Created:** 2026-02-05
-**Updated:** 2026-02-06 (Phase 3 Task 3.2 default auto mode)
-**Priority:** 🟡 MEDIUM (Phase 1 resolved critical issue; Phase 2 improves search quality)
+**Updated:** 2026-02-07 (state synchronized after live-run regressions)
+**Priority:** 🔴 HIGH (report quality stability and context recall still below target)
 **Verification Report:** [Evidence_Quality_Verification_Report.md](Evidence_Quality_Verification_Report.md)
 
 **Issues Addressed:**
 
 1. ✅ Opinion vs evidence confusion - **RESOLVED** via deterministic filtering (91% → 0% opinion contamination)
-2. ⏳ LMs don't know the present - **Phase 3** (knowledge gap handling)
+2. ⏳ LMs don't know the present - **Phase 3 PARTIAL** (config + gating implemented; full validation pending)
+3. ⚠️ Report stability/context recall for sensitive procedural claims - **OPEN** (under active remediation)
+
+---
+
+## Current Implementation State (2026-02-07)
+
+### Completed So Far
+
+1. **Phase 1 completed and verified**
+   - Deterministic evidence filtering is enforced even when upstream LLM filtering succeeds.
+   - Opinion evidence items are removed deterministically; low-probative evidence is filtered reliably.
+2. **Phase 2 implementation delivered in code**
+   - `buildContextAwareCriticismQueries()` added in `orchestrated.ts`.
+   - `checkSearchResultRelevance()` heuristic pre-filter added before extraction.
+   - Filter telemetry logging (`stats.filterReasons`) added for observability.
+3. **Phase 3 foundations delivered**
+   - LLM relevance mode supports `off | auto | on`; default behavior is `auto`.
+   - Normalization heuristics moved to UCM-backed config and made editable.
+4. **Report-quality hardening delivered**
+   - Question-to-statement normalization logic improved and regression-tested.
+   - Context drift recovery improvements were added in orchestrated research flow.
+
+### Still Open / Unstable
+
+1. **Verdict stability remains inconsistent on some recency-sensitive procedural claims**
+   - Repeated runs show high variance in truth percentage and confidence.
+2. **Context recall remains below expectation in some legal/procedural inputs**
+   - Some runs collapse to a single context where evidence suggests multiple distinct legal contexts.
+3. **Dynamic pipeline remains conservative/near-neutral on disputed legal-process claims**
+   - Orchestrated and Dynamic are not yet consistently converging on expected range.
+4. **Rare failure path still observed historically**
+   - `"Cannot read properties of undefined (reading 'value')"` requires final verification after resilience updates.
+
+### Remaining Work Before Marking Plan Complete
+
+1. Reproduce failing sensitive-claim behavior with deterministic artifacts (`resultJson`, `reportMarkdown`, `JobEvents`, debug log tail).
+2. Improve multi-context recall without domain-specific rules (generic context extraction + context anchoring).
+3. Tune pre-filter/relevance gating to reduce false negatives while keeping irrelevant-source rejection.
+4. Validate across repeated runs (orchestrated + dynamic) and confirm reduced variance.
+5. Publish final verification evidence and only then mark Phase 2/3 complete.
 
 ---
 
@@ -598,11 +638,11 @@ This phase is light and does **not require schema changes**.
 
 ---
 
-### Phase 2: Search Quality (Reduce Noise) ✅ VERIFIED
+### Phase 2: Search Quality (Reduce Noise) ⚠️ IMPLEMENTED, VERIFICATION RE-OPENED
 
 **Priority** : HIGH
 **Duration** : 3 days
-**Status** : ✅ **VERIFIED**
+**Status** : ⚠️ **IMPLEMENTED; STABILIZATION/RE-VALIDATION IN PROGRESS**
 **Depends On** : Phase 1 complete ✅
 
 ---
@@ -801,10 +841,12 @@ if (result.meta) {
 - [x] Task 2.1: Context-aware criticism queries
 - [x] Task 2.2: Relevance pre-filter (heuristic)
 - [x] Task 2.3: Filter telemetry logging
-- [x] Integration testing with 3+ diverse claims
-- [x] Verify no false positives (valid evidence not filtered)
+- [x] UCM support for relevance mode (`off|auto|on`) with default `auto`
+- [ ] Repeated-run stability validation on sensitive claims (orchestrated + dynamic)
+- [ ] False-positive audit (<5% valid evidence filtered)
+- [ ] Context recall audit (multi-context legal/procedural claims)
 
-**Expected impact** : Reduces irrelevant search results by 60-80%, improves evidence quality.
+**Expected impact** : Reduces irrelevant search results and improves evidence quality, while preserving context coverage.
 
 ---
 
@@ -812,8 +854,8 @@ if (result.meta) {
 
 **Priority** : MEDIUM
 **Duration** : 4 days
-**Status** : ⏳ **IN PROGRESS** (Task 3.1 implemented; Task 3.2 implemented with auto mode)
-**Depends On** : Phase 2 verified
+**Status** : ⏳ **IN PROGRESS** (partial implementation complete; integration validation pending)
+**Depends On** : Phase 2 stabilization
 
 ---
 
@@ -962,14 +1004,16 @@ This protocol is designed to be domain‑agnostic and repeatable.
 
 **Baseline measurements from database analysis (2026-02-05):**
 
-| Metric                                          | Baseline (Measured) | Target | Current (2026-02-06) | Status |
+| Metric                                          | Baseline (Measured) | Target | Current (2026-02-07) | Status |
 | ------------------------------------------------- | ------------------- | -------- | -------------------- | ------ |
 | Opinion evidence items extracted with high/medium probativeValue | **91%** (10/11) | 0% | **0%** | ✅ ACHIEVED |
 | Opinion evidence items present after deterministic filtering     | **Present**     | 0% | **0** | ✅ ACHIEVED |
-| Irrelevant search results fetched               | ~40%                | <10%   | ~40% (Phase 2) | ⏳ PENDING |
-| Time-sensitive claims with old evidence flagged | 0%                  | 100%   | 0% (Phase 3) | ⏳ PENDING |
+| Irrelevant search results fetched               | ~40%                | <10%   | Improving, requires fresh measurement | ⏳ RE-MEASURE |
+| Time-sensitive claims with old evidence flagged | 0%                  | 100%   | Partial implementation; full metric pending | ⏳ PENDING |
 | Evidence contamination rate (opinion/third-party commentary influencing verdicts) | **Present** | 0% | **0%** | ✅ ACHIEVED |
-| Job failures due to intermittent provider/SDK errors            | **Present** (rare) | ~0% | Improved (stack traces logged) | ✅ IMPROVED |
+| Sensitive-claim verdict variance across repeated runs            | High | Low | Still high on selected claims | ⚠️ OPEN |
+| Multi-context recall for legal/procedural claims                | Inconsistent | Stable multi-context where applicable | Inconsistent | ⚠️ OPEN |
+| Job failures due to intermittent provider/SDK errors            | **Present** (rare) | ~0% | Improved, final verification pending | ⏳ VERIFY |
 
 **Phase 1 Verification (2026-02-06):**
 - Public health safety analysis: 19 primary, 3 secondary, **0 opinion** ✅
@@ -1155,10 +1199,10 @@ be implemented first.
 | -------------- | ------------------- | --------------- | ---------- | ----------------------------------------------------------- |
 | Claude Opus 4.5 | Principal Architect | ✅ APPROVED     | 2026-02-05 | Validated via database analysis; approved with decisions above |
 | Claude Opus 4.5 | Lead Developer      | ✅ PHASE 1 DONE | 2026-02-06 | Phase 1 implemented and verified (see verification report) |
-|                | Senior Developer    | ✅ PHASE 2 VERIFIED | 2026-02-06 | Phase 2 verified with diverse integration tests           |
+| Senior Developer | Senior Developer    | ⚠️ PHASE 2 RE-OPENED | 2026-02-07 | Additional stabilization required after live-run variance |
 
 ---
 
-**Plan Status:** ⏳ PHASE 3 IN PROGRESS (Task 3.2 default auto mode)
-**Next Step:** Complete Phase 3 integration testing with time-sensitive claims
-**Document Version:** 2.6 (Phase 3 Task 3.2 default auto mode)
+**Plan Status:** ⚠️ STABILIZATION IN PROGRESS (Phase 2 re-validation + Phase 3 integration)
+**Next Step:** Execute targeted remediation for multi-context recall and sensitive-claim stability, then re-run live verification set.
+**Document Version:** 2.7 (stabilization update and remaining-work plan)
