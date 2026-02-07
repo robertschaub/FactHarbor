@@ -1,61 +1,65 @@
-{{warning}}
-**Not Implemented (v2.6.33)** - User class hierarchy is **not yet implemented**. This diagram shows the **target architecture**. Current system has anonymous users only.
-{{/warning}}
-
-= Target User Class Diagram =
+= User Class Diagram =
 
 {{mermaid}}
 
 classDiagram
-    class User {
-        +UUID id
-        +String username
-        +String email
-        +Role role
-        +Int reputation
-        +Timestamp created_at
-        +contribute()
-        +flag_issue()
-        +earn_reputation()
-    }
-    class Reader {
+    class BaseUser {
+        +view_results()
         +browse()
         +search()
-        +flag_content()
     }
-    class Contributor {
-        +edit_claims()
-        +add_evidence()
-        +suggest_improvements()
+    class Reader {
+        <<guest>>
+        +browse()
+        +search()
+        +view_results()
+    }
+    class RegisteredUser {
+        +UUID id
+        +String username
+        +Role role
+        +Timestamp created_at
+        +submit_url()
+        +flag_issue()
+        +view_submission_history()
+    }
+    class UCMAdministrator {
+        +manage_config()
+        +view_audit_trail()
+        +activate_config_version()
+        +trigger_reanalysis()
+        +view_system_metrics()
     }
     class Moderator {
         +review_flags()
         +hide_content()
-        +resolve_disputes()
+        +ban_user()
     }
-    User --> Reader : default role
-    User --> Contributor : registers and earns reputation
-    User --> Moderator : appointed
+    BaseUser <|-- Reader : anonymous
+    BaseUser <|-- RegisteredUser : logged in
+    RegisteredUser <|-- UCMAdministrator : appointed
+    RegisteredUser <|-- Moderator : appointed
 
 {{/mermaid}}
 
 = Role Permissions =
 
 |= Role |= Capabilities |= Requirements
-| **Reader** | Browse, search, flag content | Default (no login)
-| **Contributor** | Edit claims, add evidence, suggest improvements | Registration + sufficient reputation
-| **Moderator** | Review flags, hide content, resolve disputes | Appointed by Governing Team
+| **Reader (Guest)** | Browse, search, view results | No login required
+| **User (Registered)** | Everything Reader can + submit URLs/text (rate-limited), flag content | Free account required
+| **UCM Administrator** | Everything User can + manage UCM config, view audit trail, trigger re-analysis | Appointed by Governing Team
+| **Moderator** | Everything User can + review flags, hide content, ban users | Appointed by Governing Team
 
 = Current Implementation =
 
-* All users are anonymous Readers
-* No authentication system
-* No reputation tracking
-* No role-based permissions
+* All users are anonymous Readers (no authentication system yet)
+* UCM config management via CLI/direct DB access
+* No moderator tooling
+* No rate limiting (single-user development mode)
 
-= Target Design =
+= Design Principles =
 
-**Simplified flat role structure**:
-* Three roles only: Reader (default), Contributor (earned), Moderator (appointed)
-* Reputation system replaces role hierarchy
-* Progressive permissions based on reputation, not titles
+* **No data editing roles** — analysis outputs are immutable
+* **UCM Administrator** improves the system through configuration, not by editing individual outputs
+* **Submission requires login** — LLM inference and web search are not free; rate limits control costs
+* **Four roles**: Reader (guest), User (registered), UCM Administrator (appointed), Moderator (appointed)

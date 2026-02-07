@@ -168,7 +168,7 @@ if (process.env.NODE_ENV === 'development') {
 * Use parallel fetching where possible
 * Implement timeout limits (5s per source fetch)
 * Use exponential backoff for retries
-* Cache static data (source reliability bundles)
+* Cache evaluated data (source reliability scores via SR Service)
 
 ----
 

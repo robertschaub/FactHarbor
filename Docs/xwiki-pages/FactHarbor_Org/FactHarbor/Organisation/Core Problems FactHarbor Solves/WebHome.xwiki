@@ -81,7 +81,7 @@ FactHarbor aims to:
 * **Support deliberative democracy** by clarifying complex policy questions
 * **Enable federated knowledge** so no single entity controls the truth
 * **Resist manipulation** through transparent reasoning and quality oversight
-* **Evolve with research** by maintaining versioned, updatable knowledge
+* **Evolve with research** by continuously improving analysis through UCM configuration
 == 4. Related Pages ==
 * [[Requirements (Roles)>>FactHarbor.Specification.Requirements.WebHome]]
 * [[AKEL (AI Knowledge Extraction Layer)>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]

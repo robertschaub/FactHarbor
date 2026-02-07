@@ -101,9 +101,10 @@ Public-facing metrics:
 
 == Related Pages ==
 
-* [[Beta 0>>FactHarbor pre10 V0\.9\.70.Roadmap.Beta0.WebHome]] - Previous phase
-* [[Roadmap Overview>>FactHarbor pre10 V0\.9\.70.Roadmap.WebHome]]
-* [[Requirements>>FactHarbor pre10 V0\.9\.70.Specification.Requirements.WebHome]]
+* [[POC to Alpha Transition>>FactHarbor.Roadmap.POC to Alpha Transition.WebHome]] — Phase redefinition
+* [[Beta>>FactHarbor.Roadmap.Beta0.WebHome]] — Previous phase
+* [[Roadmap Overview>>FactHarbor.Roadmap.WebHome]]
+* [[Requirements>>FactHarbor.Specification.Requirements.WebHome]]
 
-**Document Status:** ✅ V1.0 Specification Complete 
+**Document Status:** V1.0 Specification
 **Version:** V0.9.70

@@ -143,7 +143,7 @@ erDiagram
 
     EVIDENCE {
         string id PK
-        string fact
+        string statement
         string category
         string sourceExcerpt
         boolean isContestedClaim
@@ -295,13 +295,13 @@ Contestation attaches to KeyFactors (not Claims) because:
 ```typescript
 interface KeyFactor {
   factor: string;
-  question: string;
   supports: "yes" | "no" | "neutral";
   explanation: string;
 
   // Contestation
   isContested: boolean;
   contestedBy: string;           // e.g. "stakeholder group", "opposition coalition", "industry association"
+  contestationReason: string;    // Why it is contested
   factualBasis: "established" | "disputed" | "opinion" | "unknown";
 }
 ```

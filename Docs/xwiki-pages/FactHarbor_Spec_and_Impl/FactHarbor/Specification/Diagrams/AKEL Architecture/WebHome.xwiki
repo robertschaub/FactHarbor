@@ -1,5 +1,5 @@
 {{info}}
-**Current Implementation (v2.6.33)** - Triple-Path Pipeline Architecture. Three pipeline variants share common modules for scope detection, aggregation, and claim processing.
+**Current Implementation (v2.10.2)** - Triple-Path Pipeline Architecture. Three pipeline variants share common modules for AnalysisContext detection, aggregation, and claim processing.
 {{/info}}
 
 = Triple-Path Pipeline Architecture =
@@ -13,7 +13,7 @@ graph TB
     end
 
     subgraph Shared[Shared Modules]
-        SCOPES[scopes.ts Scope Detection]
+        CONTEXTS[analysis-contexts.ts Context Detection]
         AGG[aggregation.ts Verdict Aggregation]
         CLAIM_D[claim-decomposition.ts]
     end
@@ -42,8 +42,8 @@ graph TB
     SELECT -->|orchestrated| ORCH
     SELECT -->|monolithic_canonical| CANON
     SELECT -->|monolithic_dynamic| DYN
-    SCOPES --> ORCH
-    SCOPES --> CANON
+    CONTEXTS --> ORCH
+    CONTEXTS --> CANON
     AGG --> ORCH
     AGG --> CANON
     CLAIM_D --> ORCH
@@ -68,14 +68,14 @@ graph TB
 == Shared Modules ==
 
 |= Module |= Purpose
-| ##scopes.ts## | Heuristic scope pre-detection before LLM
+| ##analysis-contexts.ts## | Heuristic context pre-detection before LLM
 | ##aggregation.ts## | Verdict weighting, contestation validation
 | ##claim-decomposition.ts## | Claim text parsing and normalization
 
 == Orchestrated Pipeline Steps ==
 
 1. **Understand** - Detect input type, extract claims, identify dependencies
-2. **Research** (iterative) - Generate queries, fetch sources, extract facts
+2. **Research** (iterative) - Generate queries, fetch sources, extract evidence
 3. **Verdict Generation** - Generate claim and article verdicts
 4. **Summary** - Build two-panel summary
 5. **Report** - Generate markdown report
@@ -83,6 +83,6 @@ graph TB
 == Detailed Pipeline Diagrams ==
 
 For internal implementation details of each pipeline variant:
-* [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]] - 5-step staged workflow (~9000 lines)
+* [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]] - 7-step staged workflow (~12,000 lines)
 * [[Monolithic Canonical Internal>>FactHarbor.Specification.Diagrams.Monolithic Canonical Pipeline Internal.WebHome]] - Single-context canonical output (~1100 lines)
 * [[Monolithic Dynamic Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] - Flexible experimental output (~550 lines)

@@ -1,39 +1,40 @@
-{{warning}}
-**Not Implemented (v2.6.33)** - Entity versioning is **not yet implemented**. Current implementation stores analysis results as immutable JSON blobs. This diagram shows the **target architecture**.
-{{/warning}}
-
-= Target Versioning Architecture =
+= UCM Configuration Versioning Architecture =
 
 {{mermaid}}
 
 graph LR
-    CLAIM[Claim] -->|edited| EDIT[Edit Record]
-    EDIT -->|stores| BEFORE[Before State]
-    EDIT -->|stores| AFTER[After State]
-    EDIT -->|tracks| WHO[Who Changed]
-    EDIT -->|tracks| WHEN[When Changed]
-    EDIT -->|tracks| WHY[Why Changed]
-    EDIT -->|if needed| RESTORE[Manual Restore]
-    RESTORE -->|create new| CLAIM
+    ADMIN[UCM Administrator] -->|creates| BLOB[Config Blob - immutable]
+    BLOB -->|content-addressed| STORE[(config_blobs)]
+    ADMIN -->|activates| ACTIVE[config_active]
+    ACTIVE -->|points to| BLOB
+    JOB[Analysis Job] -->|snapshots at start| USAGE[config_usage]
+    USAGE -->|references| BLOB
+    REPORT[Analysis Report] -->|cites| USAGE
 
 {{/mermaid}}
 
-= Current vs Target =
+= How UCM Config Versioning Works =
 
-|= Feature |= Current (v2.6.33) |= Target
-| Edit tracking | No | Yes via EDIT table
-| Before/after states | No | Yes JSON storage
-| User attribution | No (anonymous) | Yes with user system
-| Restore capability | No | Yes create new edit
+|= Concept |= Description
+| **config_blobs** | Immutable, content-addressed config versions. Each change creates a new blob; old blobs are never deleted.
+| **config_active** | Pointer to the currently active config blob per config type. Changing this activates a new config version.
+| **config_usage** | Links each analysis job to the exact config snapshot used. Enables reproducibility.
+| **Immutability** | Analysis outputs are never edited. To improve results, update UCM config and re-analyse.
 
-= Target Details =
+= Current Implementation (v2.10.2) =
 
-**V1.0 Target**: Simple edit history sufficient for accountability and basic rollback.
-* Track who, what, when, why for each change
-* Store before/after values in edits table
-* Manual restore if needed (create new edit with old values)
+|= Feature |= Status
+| UCM config storage | Implemented (##config.db## SQLite)
+| Config hot-reload | Implemented (60s TTL)
+| Per-job config snapshots | Implemented (##job_config_snapshots##)
+| Content-addressed blobs | Implemented (hash-based deduplication)
+| Config activation tracking | Implemented (##config_active## table)
+| Admin UI for config management | Not yet implemented (CLI/direct DB)
 
-**V2.0+ Future**: Add complex versioning if users request:
-* Version history browsing
-* Restore previous version
-* Diff between versions
+= Design Principles =
+
+* **Every config change creates a new immutable blob** — no in-place mutation
+* **Every analysis job records the config snapshot** used at time of execution
+* **Reports can be reproduced** by re-running with the same config snapshot
+* **Config history is the audit trail** — who changed what, when, and why
+* **Analysis data is never edited** — "improve the system, not the data"

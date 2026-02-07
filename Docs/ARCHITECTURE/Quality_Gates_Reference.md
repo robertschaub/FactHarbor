@@ -53,12 +53,12 @@ flowchart TB
     subgraph RESEARCH["Phase 2: RESEARCH"]
         ValidClaims --> Search[Web Search]
         Search --> Sources[Source Documents]
-        Sources --> FactExtraction[Fact Extraction]
+        Sources --> FactExtraction[Evidence Extraction]
     end
 
     subgraph VERDICT["Phase 3: VERDICT GENERATION"]
         FactExtraction --> VerdictGeneration[Verdict Generation]
-        VerdictGeneration --> GATE4["Gate 4: Confidence Assessment<br/>━━━━━━━━━━━━━<br/>Check source count,<br/>fact count,<br/>reasoning quality"]
+        VerdictGeneration --> GATE4["Gate 4: Confidence Assessment<br/>━━━━━━━━━━━━━<br/>Check source count,<br/>evidence count,<br/>reasoning quality"]
         GATE4 -->|Pass| PublishableVerdicts[Publishable Verdicts]
         GATE4 -->|Warn| LowConfidenceVerdicts[Low Confidence<br/>Verdicts]
     end
@@ -86,10 +86,10 @@ Every analysis result includes gate statistics:
 ```typescript
 interface QualityGates {
   gate1Stats: {
-    totalClaims: number;
-    validClaims: number;
-    excludedClaims: number;
-    exclusionReasons: { claimId: string; reason: string }[];
+    total: number;        // Total claims evaluated
+    passed: number;       // Claims that passed validation
+    filtered: number;     // Claims filtered out
+    centralKept: number;  // Central claims kept regardless
   };
   gate4Stats: {
     totalVerdicts: number;
@@ -97,6 +97,7 @@ interface QualityGates {
     mediumConfidence: number;
     lowConfidence: number;
     insufficient: number;
+    unpublishable: number;
   };
 }
 ```
@@ -189,10 +190,10 @@ Ensure verdicts have sufficient supporting evidence before publication, preventi
 
 | Tier | Criteria | Interpretation |
 |------|----------|----------------|
-| **HIGH** | 3+ sources AND 5+ facts AND reasoning >100 chars | Strong evidence base, high reliability |
-| **MEDIUM** | 2+ sources AND 3+ facts AND reasoning >50 chars | Adequate evidence, moderate reliability |
-| **LOW** | 1+ sources AND 1+ facts | Minimal evidence, low reliability |
-| **INSUFFICIENT** | <1 source OR <1 fact | Insufficient evidence for verdict |
+| **HIGH** | 3+ sources AND 5+ evidence items AND reasoning >100 chars | Strong evidence base, high reliability |
+| **MEDIUM** | 2+ sources AND 3+ evidence items AND reasoning >50 chars | Adequate evidence, moderate reliability |
+| **LOW** | 1+ sources AND 1+ evidence items | Minimal evidence, low reliability |
+| **INSUFFICIENT** | <1 source OR <1 evidence item | Insufficient evidence for verdict |
 
 ### 4.3 Implementation
 

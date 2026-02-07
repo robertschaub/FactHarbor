@@ -1,8 +1,8 @@
 = Requirements Roadmap Matrix =
 
-**Last Updated:** 2025-12-23 
-**Version:** 4.0 (COMPLETE) 
-**Status:** Authoritative Source 
+**Last Updated:** 2026-02-07
+**Version:** 4.1 (Updated phase definitions)
+**Status:** Authoritative Source
 
 {{info}}
 **Purpose:** This is the single source of truth for:
@@ -17,13 +17,13 @@ All other documents reference this matrix rather than duplicating information.
 == Phase Definitions ==
 
 |= Phase |= Goal |= Key Focus
-| **POC1** | Prove AI can analyze claims automatically | Core workflow + quality gates + context-aware analysis (experimental)
-| **POC2** | Improve reliability and robustness | Quality improvements, deduplication
-| **Beta 0** | User testing with limited audience | Production readiness, user features, security
+| **POC** | Prove AI can analyze claims automatically | Core workflow + quality gates + AnalysisContext detection (**Feature-complete at v2.10.2**, pending baseline test)
+| **POC2** | Improve reliability and robustness | Merged into Alpha/Beta
+| **Alpha** | Quality measurement + optimization | Baseline testing, caching, quality improvements based on empirical data
+| **Beta** | User testing with limited audience | Production readiness, user features, security, PostgreSQL
 | **V1.0** | Public production launch | IFCN compliance, search visibility
-| **V1.1** | First major feature expansion | Advanced capabilities
-| **V1.5** | Media verification expansion | Image/video/audio verification, archive integration
-| **V2.0** | Advanced capabilities | Comprehensive toolset
+| **V1.x** | Feature expansion | Advanced capabilities, browser extensions
+| **V2.0+** | Advanced capabilities | Video verification, OSINT, federation
 
 **Phase Philosophy:** Each phase builds on proven capabilities from previous phases. We validate AI quality before adding production features.
 
@@ -164,7 +164,7 @@ See [[Gap Analysis>>FactHarbor.Specification.Requirements.GapAnalysis]] for feat
 **Requirements deferred beyond V1.5:**
 
 |= ID |= Title |= Notes
-| **FR8** | Time Evolution | Version history for claims and verdicts. Deferred - basic edit history only in V1.0
+| **FR8** | Time Evolution | Version history for claims and verdicts. Deferred - UCM config audit trail in V1.0
 
 == Requirements Summary by Phase ==
 
@@ -198,7 +198,7 @@ See [[Gap Analysis>>FactHarbor.Specification.Requirements.GapAnalysis]] for feat
 | **UN-12** | Submit Unchecked Claims | POC1 | FR7, FR1
 | **UN-13** | Cite FactHarbor Verdicts | Beta 0 | FR13, FR44
 | **UN-14** | API Access for Integration | V1.0 | Production API infrastructure
-| **UN-15** | Verdict Evolution Timeline | Deferred (Not in V1.0) | FR8 - Edit history only, NFR14 (modular design enables evolution)
+| **UN-15** | Verdict Evolution Timeline | Deferred (Not in V1.0) | FR8 - UCM config evolution tracking, NFR14 (modular design enables evolution)
 | **UN-16** | AI vs. Human Review Status | POC1 | NFR13
 | **UN-17** | In-Article Claim Highlighting | Beta 0 | FR13
 | **UN-26** | Search Engine Visibility | V1.0 | FR44

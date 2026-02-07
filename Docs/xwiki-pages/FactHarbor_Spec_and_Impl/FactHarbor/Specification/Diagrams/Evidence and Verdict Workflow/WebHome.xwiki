@@ -1,5 +1,5 @@
 {{info}}
-**Current Implementation (v2.6.33)** - Simplified model without versioning. Uses 7-point symmetric verdict scale.
+**Current Implementation (v2.10.2)** - Simplified model without versioning. Uses 7-point symmetric verdict scale.
 {{/info}}
 
 = Evidence and Verdict Data Model =
@@ -8,8 +8,8 @@
 
 erDiagram
     CLAIM ||--|| CLAIM_VERDICT : has
-    CLAIM_VERDICT }o--o{ FACT : supported_by
-    FACT }o--|| SOURCE : from
+    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : supported_by
+    EVIDENCE_ITEM }o--|| SOURCE : from
 
     CLAIM {
         string id_PK
@@ -27,20 +27,20 @@ erDiagram
         int truthPercentage
         int confidence
         string explanation
-        string_array supportingFactIds
-        string_array opposingFactIds
+        string_array supportingEvidenceIds
+        string_array opposingEvidenceIds
         string contestationStatus
         float harmPotential
     }
 
-    FACT {
+    EVIDENCE_ITEM {
         string id_PK
         string sourceId_FK
-        string text
-        string quote
-        string relevance
-        boolean supports
-        string extractedContext
+        string statement
+        string sourceExcerpt
+        string category
+        string claimDirection
+        string contextId
     }
 
     SOURCE {
@@ -61,7 +61,7 @@ erDiagram
 
 flowchart TB
     subgraph Research[Research Phase]
-        FACTS[Collected Facts]
+        EVIDENCE[Collected Evidence]
         SOURCES[Source Metadata]
     end
 
@@ -82,7 +82,7 @@ flowchart TB
         ARTICLE_V[Article Verdict]
     end
 
-    FACTS --> WEIGHT
+    EVIDENCE --> WEIGHT
     SOURCES --> WEIGHT
     WEIGHT --> CONTEST
     CONTEST --> HARM
@@ -113,6 +113,7 @@ flowchart TB
 
 == Source Reliability ==
 
-Source reliability scores come from external **MBFC (Media Bias/Fact Check) bundle**:
-* Pre-loaded reliability scores for known sources
-* Configurable via ##source-reliability.ts##
+Source reliability scores use **LLM + Cache architecture** (v2.2):
+* LLM-based assessment with in-memory caching
+* Batch prefetch → in-memory map → sync lookup
+* Configurable via UCM SR config (##source-reliability.ts##)

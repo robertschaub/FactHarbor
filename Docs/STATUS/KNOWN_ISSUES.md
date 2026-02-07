@@ -4,7 +4,7 @@
 **Current Version**: 2.10.2
 **Schema Version**: 2.7.0
 
-This document tracks all known bugs, limitations, and technical debt in FactHarbor POC1.
+This document tracks all known bugs, limitations, and technical debt in FactHarbor (POC Complete, Alpha Transition).
 
 ---
 
@@ -250,7 +250,7 @@ Every analysis recomputes all claim verdicts from scratch. No caching of normali
 **Solution**:
 Implement claim-level caching architecture (extensively documented in `Docs/ARCHITECTURE/Claim_Caching_*.md` but not implemented).
 
-**Status**: Planned feature, not implemented in POC1
+**Status**: Planned feature, not yet implemented
 
 ---
 

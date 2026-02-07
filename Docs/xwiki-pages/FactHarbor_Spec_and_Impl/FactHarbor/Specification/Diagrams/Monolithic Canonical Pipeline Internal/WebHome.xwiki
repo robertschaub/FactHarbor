@@ -15,15 +15,15 @@ flowchart TB
 
     subgraph Phase1[Phase 1: Claim Extraction]
         EXTRACT[LLM Call ClaimExtractionSchema]
-        SCOPES[detectScopes heuristic fallback]
+        SCOPES[detectContexts heuristic fallback]
         CLAIMS[Build subClaims array]
     end
 
     subgraph Phase2[Phase 2: Research Loop]
         SEARCH[searchWebWithProvider]
         FETCH[fetchSourceContent parallel]
-        FACTS[LLM Call FactExtractionSchema]
-        PROVENANCE[filterFactsByProvenance]
+        EXTRACT_EV[LLM Call EvidenceExtractionSchema]
+        PROVENANCE[filterEvidenceByProvenance]
         ITER_CHECK{Iteration limit?}
     end
 
@@ -57,8 +57,8 @@ flowchart TB
 
     CLAIMS --> SEARCH
     SEARCH --> FETCH
-    FETCH --> FACTS
-    FACTS --> PROVENANCE
+    FETCH --> EXTRACT_EV
+    EXTRACT_EV --> PROVENANCE
     PROVENANCE --> ITER_CHECK
     ITER_CHECK -->|No| SEARCH
     ITER_CHECK -->|Yes| VERDICT
@@ -97,16 +97,16 @@ flowchart TB
 = Zod Schemas Used =
 
 |= Schema |= Purpose
-| ##ClaimExtractionSchema## | Extract mainClaim, claimType, searchQueries, subClaims, detectedScopes
-| ##FactExtractionSchema## | Extract facts with source attribution
+| ##ClaimExtractionSchema## | Extract mainClaim, claimType, searchQueries, subClaims, analysisContexts
+| ##EvidenceExtractionSchema## | Extract evidence items with source attribution
 | ##VerdictSchema## | Generate verdicts with truthPercentage, confidence
 
 = Shared Modules Used =
 
-* ##scopes.ts## - detectScopes, formatDetectedScopesHint (heuristic fallback)
+* ##analysis-contexts.ts## - detectContexts, formatDetectedContextsHint (heuristic fallback)
 * ##aggregation.ts## - calculateWeightedVerdictAverage, detectHarmPotential, detectClaimContestation
 * ##claim-decomposition.ts## - normalizeClaimText, deriveCandidateClaimTexts
-* ##provenance-validation.ts## - filterFactsByProvenance
+* ##provenance-validation.ts## - filterEvidenceByProvenance
 * ##budgets.ts## - createBudgetTracker, getBudgetConfig, recordLLMCall
 
 = Differences from Orchestrated =
@@ -117,4 +117,4 @@ flowchart TB
 | Research | Iterative decide-search-extract | Tool loop with budget limits
 | Schema | Built-in TypeScript types | Zod schema validation
 | Fallback | None (default) | Falls back to Orchestrated on failure
-| Code Size | ~9000 lines | ~1100 lines
+| Code Size | ~12000 lines | ~1100 lines

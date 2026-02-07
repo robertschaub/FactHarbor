@@ -32,9 +32,9 @@ All diagrams use **Mermaid syntax** for maintainability. Each diagram indicates 
 == Target Architecture (Future) ==
 
 |= Diagram |= Description |= Status
-| [[Audit Trail ERD>>FactHarbor.Specification.Diagrams.Audit Trail ERD.WebHome]] | Entity versioning | Future
-| [[Versioning Architecture>>FactHarbor.Specification.Diagrams.Versioning Architecture.WebHome]] | Edit history and restore | Future
-| [[Human User Roles>>FactHarbor.Specification.Diagrams.Human User Roles.WebHome]] | User role hierarchy | Future
+| [[Audit Trail ERD>>FactHarbor.Specification.Diagrams.Audit Trail ERD.WebHome]] | UCM config audit trail | Future
+| [[Versioning Architecture>>FactHarbor.Specification.Diagrams.Versioning Architecture.WebHome]] | UCM config versioning | Current (config.db)
+| [[Human User Roles>>FactHarbor.Specification.Diagrams.Human User Roles.WebHome]] | Reader + UCM Administrator | Future
 | [[User Class Diagram>>FactHarbor.Specification.Diagrams.User Class Diagram.WebHome]] | User class structure | Future
 | [[Technical Users>>FactHarbor.Specification.Diagrams.Technical and System Users.WebHome]] | System services | Future
 | [[Federation Architecture>>FactHarbor.Specification.Diagrams.Federation Architecture.WebHome]] | Multi-instance sync | Future (V1.0+)

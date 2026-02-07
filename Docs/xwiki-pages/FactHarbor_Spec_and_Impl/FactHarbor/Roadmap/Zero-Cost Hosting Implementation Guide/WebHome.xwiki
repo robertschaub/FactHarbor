@@ -441,7 +441,7 @@ export class LLMRouter {
         // Simple extraction - use Haiku (cheap)
         return 'claude-haiku-4';
 
-      case 'EXTRACT_FACTS':
+      case 'EXTRACT_EVIDENCE':
         // Simple extraction - use Haiku (cheap)
         return 'claude-haiku-4';
 

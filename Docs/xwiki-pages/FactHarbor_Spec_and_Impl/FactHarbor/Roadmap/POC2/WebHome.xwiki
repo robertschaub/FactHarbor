@@ -242,10 +242,10 @@ Standard Flow: Context-Aware Enhancement:
 
 == Related Pages ==
 
-* [[POC1>>FactHarbor pre10 V0\.9\.70.Roadmap.POC1.WebHome]] - Previous phase
-* [[Beta 0>>FactHarbor pre10 V0\.9\.70.Roadmap.Beta0.WebHome]] - Next phase
-* [[Roadmap Overview>>FactHarbor pre10 V0\.9\.70.Roadmap.WebHome]]
-* [[Architecture>>FactHarbor pre10 V0\.9\.70.Specification.Architecture.WebHome]]
+* [[POC to Alpha Transition>>FactHarbor.Roadmap.POC to Alpha Transition.WebHome]] — Supersedes this document
+* [[POC1>>FactHarbor.Roadmap.POC1.WebHome]] — Previous phase
+* [[Beta>>FactHarbor.Roadmap.Beta0.WebHome]] — Follows Alpha in revised roadmap
+* [[Roadmap Overview>>FactHarbor.Roadmap.WebHome]]
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]]
 
-**Document Status:** ✅ POC2 Specification Complete - Waiting for POC1 Completion 
-**Version:** V0.9.70
+**Version:** V0.9.70 (original specification)

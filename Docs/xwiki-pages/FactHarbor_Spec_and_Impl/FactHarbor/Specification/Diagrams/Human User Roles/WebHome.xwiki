@@ -1,51 +1,44 @@
-{{warning}}
-**Not Implemented (v2.6.33)** - User authentication and role system is **not yet implemented**. Current system has no user accounts - all users are anonymous. This diagram shows the **target architecture**.
-{{/warning}}
-
-= Target User Role Hierarchy =
+= User Role Structure =
 
 {{mermaid}}
 
 graph TD
-    READER[Reader] --> |Registers| CONTRIBUTOR[Contributor]
-    CONTRIBUTOR --> |Earns Reputation| TRUSTED[Trusted Contributor]
-    CONTRIBUTOR --> |Appointed| MODERATOR[Moderator]
-    READER --> |Can| R1[Browse Search]
-    READER --> |Can| R2[Flag Issues]
-    READER --> |Can| R3[Submit Claims]
-    CONTRIBUTOR --> |Can| C1[Edit Claims]
-    CONTRIBUTOR --> |Can| C2[Add Evidence]
-    CONTRIBUTOR --> |Can| C3[Improve Content]
-    TRUSTED --> |Can| T1[Approve Changes]
-    TRUSTED --> |Can| T2[Mentor New Contributors]
-    MODERATOR --> |Can| M1[Review Flags]
+    READER[Reader - Guest/Anonymous] --> |Can| R1[Browse Published Analyses]
+    READER --> |Can| R2[Search Content]
+    READER --> |Can| R3[View Analysis Results]
+    USER[User - Registered] --> |Can| RU1[Everything Reader Can]
+    USER --> |Can| RU2[Submit URLs/Text - Rate-Limited]
+    USER --> |Can| RU3[Flag Issues]
+    UCM_ADMIN[UCM Administrator - Appointed] --> |Can| U1[Manage UCM Config]
+    UCM_ADMIN --> |Can| U2[View Config Audit Trail]
+    UCM_ADMIN --> |Can| U3[Trigger Re-Analysis]
+    UCM_ADMIN --> |Can| U4[View System Metrics]
+    MODERATOR[Moderator - Appointed] --> |Can| M1[Review Flags]
     MODERATOR --> |Can| M2[Hide Harmful Content]
-    MODERATOR --> |Can| M3[Resolve Disputes]
+    MODERATOR --> |Can| M3[Ban Abusive Users]
 
 {{/mermaid}}
 
 = Role Descriptions =
 
 |= Role |= Purpose |= Current Status
-| **Reader** | Anonymous browsing and submission | Implemented (all users)
-| **Contributor** | Edit claims, add evidence | Not implemented
-| **Trusted Contributor** | Approve changes, mentor | Not implemented
-| **Moderator** | Handle abuse, resolve disputes | Not implemented
+| **Reader (Guest)** | Anonymous browsing, searching, and viewing | Implemented (all users)
+| **User (Registered)** | Submit URLs/text for analysis (rate-limited) | Not yet implemented (no auth)
+| **UCM Administrator** | Manage UCM configuration, view audit trail | Partially implemented (CLI/direct DB)
+| **Moderator** | Handle abuse, enforce community guidelines | Not yet implemented
 
 = Current Implementation =
 
 All users are anonymous **Readers**:
-* Can submit text/URLs for analysis
 * Can view analysis results
-* No persistent accounts
-* No role-based permissions
+* Can browse and search published analyses
+* No persistent accounts (no authentication system yet)
+* No submission rate limiting (single-user development mode)
 
-= Target Design Principles =
+= Design Principles =
 
-**Simplified flat role structure**:
-* **Reader**: Default role, no login required
-* **Contributor**: Registers and earns reputation through contributions
-* **Trusted Contributor**: Substantial reputation unlocks additional permissions
-* **Moderator**: Appointed by Governing Team, handles abuse/disputes
-
-**No hierarchy** - roles represent responsibility levels, not management structure.
+* **No data editing** — analysis outputs are immutable
+* **Improve the system, not the data** — UCM Administrators tune configuration to improve quality
+* **Moderators handle abuse only** — not content quality (that is automated)
+* **Low barrier to entry** — anyone can browse and search without registration; submission requires a free account
+* **Rate-limited submissions** — LLM inference and web search are not free; registered users have configurable quotas

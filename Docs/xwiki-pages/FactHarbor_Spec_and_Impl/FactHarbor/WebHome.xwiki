@@ -56,21 +56,20 @@ Humans are system architects, not content judges. They design and refine the rul
 FactHarbor structures reasoning into transparent steps, moving beyond simple headlines:
 
 * **Claims & Clusters** – We group similar real-world statements into clusters to avoid duplicates and keep related claims together.
-* **Scenarios** – A claim might be true in one context but false in another. We define these contexts (assumptions, definitions) explicitly as Scenarios.
-* **Evidence** – Data and sources are linked to specific scenarios, not just to the claim in general.
-* **Verdicts** – We assign likelihoods (e.g., “Highly likely”, “Unsubstantiated”) to each scenario, based on the available evidence.
+* **AnalysisContexts** – A claim might be true in one context but false in another. An AnalysisContext is a bounded analytical frame — a specific set of assumptions, definitions, and scope — containing KeyFactors that break the claim into checkable sub-questions.
+* **Evidence** – Data and sources are linked to specific contexts, not just to the claim in general.
+* **Verdicts** – We assign likelihoods (e.g., "Highly likely", "Unsubstantiated") to each context, based on the available evidence.
 * **Truth Landscape** – The result is not a single word, but a landscape showing where a claim holds up, where it fails, and where the evidence is still unclear.
 
 == The Lifecycle: From Input to Verdict ==
 
 Data in FactHarbor flows through a structured, auditable process:
 
-* **Submission:** Text or URLs are submitted and normalised.
-* **Scenario Building:** AI proposes contexts; humans refine definitions and boundaries.
+* **Submission:** Registered users submit text or URLs; the system normalises the input.
+* **Context Detection:** AI identifies AnalysisContexts and KeyFactors; the pipeline researches each independently.
 * **Evidence Handling:** Evidence is retrieved, assessed for quality, and linked.
-* **Verdict Creation:** Drafting reasoning and likelihoods for each scenario.
+* **Verdict Creation:** Drafting reasoning and likelihoods for each AnalysisContext.
 * **Public Presentation:** The "Truth Landscape" is published for users to explore.
-* **Time Evolution:** When new evidence arrives, we re-evaluate. Everything is versioned.
 
 == Explore FactHarbor ==
 

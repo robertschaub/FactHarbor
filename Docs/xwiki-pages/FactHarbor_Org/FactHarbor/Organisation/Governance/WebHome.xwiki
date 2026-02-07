@@ -88,7 +88,7 @@ Size: small group (Facilitator, Coordinator, Treasurer + others)
 * Bad: "AKEL rated this source too low, I'll manually boost it"
 * Good: "AKEL consistently under-rates peer-reviewed sources. Let's adjust the scoring algorithm to weight peer-review more heavily."
 === 6.3 Governance of AKEL ===
-**Quarterly Performance Review**:
+**Periodic Performance Review**:
 * Who: Governing Team + Technical Coordinator
 * What: Review AKEL performance metrics, bias audits, user feedback patterns
 * Output: Performance report, improvement priorities, policy updates if needed
@@ -148,14 +148,14 @@ Size: small group (Facilitator, Coordinator, Treasurer + others)
 * Emergency decisions (use autonomous authority)
 == 7. Transparency & Accountability ==
 **Always public**: Policies, structure, board membership, financials, quality metrics, major decisions
-**Published quarterly**: Activity reports, metrics, moderation stats
+**Published periodically**: Activity reports, metrics, moderation stats
 **Internal documentation**: All meetings, decisions, actions retained indefinitely
 == 7. Conflict Resolution ==
 **User disputes**: Moderator → Appeal to different moderator → Governing Team (final)
 **Timeline**: Reasonable timeframe
 == 8. Moderation Oversight ==
 **Moderator requirements**: high reputation, 6+ months active, clean record
-**Review**: Quarterly by Community Coordinator, annually by Governing Team
+**Review**: Periodically by Community Coordinator and Governing Team
 **Appeal**: Any user can appeal promptly
 == 9. Code of Conduct ==
 **Governing Team**: Act in org interest, disclose conflicts, maintain confidentiality

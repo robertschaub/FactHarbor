@@ -1,4 +1,9 @@
 = Workflows =
+
+{{info}}
+**Implementation Status:** Only the Claim Submission (Section 2) and Automated Analysis (Section 3) workflows are implemented in the current POC. Sections 4-11 describe the **target production architecture** (Beta/V1.0). See [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] for the implemented pipeline.
+{{/info}}
+
 FactHarbor workflows are **simple, automated, focused on continuous improvement**.
 == 1. Core Principles ==
 * **Automated by default**: AI processes everything
@@ -10,7 +15,7 @@ FactHarbor workflows are **simple, automated, focused on continuous improvement*
 
 === 2.1 Claim Extraction ===
 
-When users submit content (text, articles, web pages), FactHarbor first extracts individual verifiable claims:
+When registered users submit content (text, articles, web pages), FactHarbor first extracts individual verifiable claims:
 
 **Input Types:**
 * Single claim: "The Earth is flat"
@@ -52,7 +57,7 @@ Evidence gathering (AKEL)
 ↓
 Source evaluation (track record check)
 ↓
-Scenario generation
+AnalysisContext detection + evidence routing
 ↓
 Verdict synthesis
 ↓
@@ -70,12 +75,12 @@ Publish OR Flag for improvement
 **Standard (90%+)**: Pass quality gates → Publish immediately with confidence scores
 **High Risk (<10%)**: Risk > 80% → Moderator review
 **Low Quality**: Confidence < 40% → Improvement queue → Re-process
-== 5. User Contribution Workflow ==
+== 5. UCM Configuration Workflow ==
 {{{
-Contributor edits → System validates → Applied immediately → Logged → Reputation earned
+UCM Administrator updates config → New immutable blob created → Activated → Jobs reference new config → Quality monitored
 }}}
-**No approval required** (Wikipedia model)
-**New contributors** (<50 reputation): Limited to minor edits
+**Analysis data is immutable** — quality improvements flow through UCM config changes
+**Every analysis job** records the UCM config snapshot used for reproducibility
 == 5.5 Quality and Audit Workflow ==
 
 {{include reference="FactHarbor.Specification.Diagrams.Quality and Audit Workflow.WebHome"/}}
@@ -91,13 +96,13 @@ User flags issue → Categorize (abuse/quality) → Automated or manual resoluti
 **Moderator queue**: Only high-risk or flagged content
 **Appeal process**: Different moderator → Governing Team if needed
 == 8. System Improvement Workflow ==
-**Weekly cycle**:
+**Improvement cycle**:
 {{{
-Monday: Review error patterns
-Tuesday-Wednesday: Develop fixes
-Thursday: Test improvements
-Friday: Deploy & re-process
-Weekend: Monitor metrics
+Review error patterns
+Develop fixes
+Test improvements
+Deploy & re-process
+Monitor metrics
 }}}
 **Error capture**:
 {{{
@@ -105,15 +110,15 @@ Error detected → Categorize → Root cause → Improvement queue → Pattern a
 }}}
 **A/B Testing**:
 {{{
-New algorithm → Split traffic (90% control, 10% test) → Run 1 week → Compare metrics → Deploy if better
+New algorithm → Split traffic (90% control, 10% test) → Run test period → Compare metrics → Deploy if better
 }}}
 == 9. Quality Monitoring Workflow ==
-**Continuous**: Every hour calculate metrics, detect anomalies
-**Daily**: Update source track records, aggregate error patterns
-**Weekly**: System improvement cycle, performance review
+**Continuous**: Calculate metrics, detect anomalies
+**Recurring**: Update source track records, aggregate error patterns
+**Periodic**: System improvement cycle, performance review
 == 10. Source Track Record Workflow ==
 **Initial score**: New source starts at 50 (neutral)
-**Daily updates**: Calculate accuracy, correction frequency, update score
+**Recurring updates**: Calculate accuracy, correction frequency, update score
 **Continuous**: All claims using source recalculated when score changes
 == 11. Re-Processing Workflow ==
 **Triggers**: System improvement deployed, source score updated, new evidence, error fixed

@@ -431,7 +431,7 @@ When multiple AnalysisContexts are detected, users see:
 ## Conclusion
 
 The principle-based approach to EvidenceScope detection is **implemented** in:
-- `apps/web/src/lib/analyzer/prompts/base/extract-facts-base.ts`
+- `apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts`
 - `apps/web/src/lib/analyzer/prompts/base/scope-refinement-base.ts`
 
 Key benefits:

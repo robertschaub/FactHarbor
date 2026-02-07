@@ -2,8 +2,8 @@
 Common questions about FactHarbor's design, functionality, and approach.
 == 1. How do claims get evaluated in FactHarbor? ==
 === 1.1 User Submission ===
-**Who**: Anyone can submit claims
-**Process**: User submits claim text + source URLs
+**Who**: Registered users (free account required; rate-limited due to LLM/search costs)
+**Process**: Registered user submits claim text + source URLs
 **Speed**: Typically <20 seconds to verdict
 === 1.2 AKEL Processing (Automated) ===
 **What**: AI Knowledge Extraction Layer analyzes claim
@@ -103,7 +103,7 @@ This is exactly what FactHarbor is designed for:
 * Bubble detection for coordinated campaigns
 **Audit System**:
 * Stratified sampling catches manipulation patterns
-* Trusted Contributor auditors validate AI research quality
+* UCM Administrators validate AI research quality via sampling audits
 * Failed audits trigger immediate review
 **Transparency**:
 * All reasoning chains are visible
@@ -141,24 +141,19 @@ FactHarbor is designed for evolving knowledge:
 * Can compare old vs new verdicts
 * Can see which evidence changed conclusions
 == 7. Who can submit claims to FactHarbor? ==
-**Anyone** - even without login:
-**Readers** (no login required):
-* Browse and search all published content
-* Submit text for analysis
-* New claims added automatically unless duplicates exist
-* System deduplicates and normalizes
-**Contributors** (logged in):
-* Everything Readers can do
-* Submit evidence sources
-* Suggest scenarios
-* Participate in discussions
+**Registered users** (free account required):
+* Submit URLs/text for analysis (rate-limited — LLM and web search usage is not free)
+* Flag quality issues
+* View own submission history
+* System deduplicates and normalizes submitted content
+**Readers (guests)** can browse, search, and view all published analyses without login.
 **Workflow**:
-1. User submits text (as Reader or Contributor)
+1. Registered user submits text or URL
 2. AKEL extracts claims
 3. Checks for existing duplicates
 4. Normalizes claim text
 5. Assigns risk tier
-6. Generates scenarios (draft)
+6. Detects AnalysisContexts and KeyFactors
 7. Runs quality gates
 8. Publishes as AI-Generated (Mode 2) if passes
 == 8. What are "risk tiers" and why do they matter? ==
@@ -180,7 +175,7 @@ Risk tiers determine review requirements and publication workflow:
 * **Why**: Well-established, low controversy
 **Assignment**:
 * AKEL suggests tier based on domain, keywords, impact
-* Moderators and Trusted Contributors can override
+* UCM Administrators can adjust risk tier rules via UCM config
 * Risk tiers reviewed based on audit outcomes
 == 9. How does federation work and why is it important? ==
 **Federation Model**:
@@ -208,15 +203,15 @@ Risk tiers determine review requirements and publication workflow:
 == 10. Can experts disagree in FactHarbor? ==
 **Yes - and that's a feature, not a bug**:
 **Multiple Scenarios**:
-* Trusted Contributors can create different scenarios with different assumptions
-* Each scenario gets its own verdict
-* Users see *why* experts disagree (different definitions, boundaries, evidence weighting)
-**Parallel Verdicts**:
-* Same scenario, different expert interpretations
-* Both verdicts visible with expert attribution
+* AKEL detects multiple AnalysisContexts with different assumptions
+* Each AnalysisContext gets its own verdict
+* Users see *why* assessments differ (different definitions, boundaries, evidence weighting)
+**Multiple AnalysisContexts**:
+* Same claim, different analytical frames
+* All context verdicts visible with methodology
 * No forced consensus
 **Transparency**:
-* Trusted Contributor reasoning documented
+* AnalysisContext reasoning documented
 * Assumptions stated explicitly
 * Evidence chains traceable
 * Users can evaluate competing expert opinions
@@ -265,18 +260,15 @@ Core principle: **Public benefit** mission takes priority over profit.
 * [[Federation & Decentralization>>FactHarbor.Specification.Federation & Decentralization.WebHome]]
 * [[Mission & Purpose>>FactHarbor.Organisation.Core Problems FactHarbor Solves.WebHome]]
 == 20. Glossary / Key Terms ==
-=== Phase 0 vs POC v1 ===
-These terms refer to the same stage of FactHarbor's development:
-* **Phase 0** - Organisational perspective: Pre-alpha stage with founder-led governance
-* **POC v1** - Technical perspective: Proof of Concept demonstrating AI-generated publication
-Both describe the current development stage where the platform is being built and initially validated.
-=== Beta 0 ===
-The next development stage after POC, featuring:
-* External testers
-* Basic federation experiments
-* Enhanced automation
-=== Release 1.0 ===
-The first public release featuring:
-* Full federation support
-* 2000+ concurrent users
-* Production-grade infrastructure
+
+=== POC (Proof of Concept) ===
+Feature-complete at v2.10.2. Core AKEL pipeline operational with quality gates, multi-provider LLM, and source reliability. Pending baseline quality test to declare complete.
+
+=== Alpha ===
+Quality measurement + optimization phase. Baseline testing, caching, quality improvements based on empirical data.
+
+=== Beta ===
+User testing and production readiness. External testers, PostgreSQL migration, user accounts, corrections system.
+
+=== V1.0 ===
+Public launch with IFCN compliance, ClaimReview schema, security audit, and public quality metrics.

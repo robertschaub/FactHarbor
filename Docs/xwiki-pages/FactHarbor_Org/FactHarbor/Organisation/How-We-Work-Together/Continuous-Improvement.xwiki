@@ -145,29 +145,29 @@
 **Document learnings**: Update RFC with actual outcomes.
 == 4. Improvement Cadence ==
 === 4.1 Continuous (Ongoing) ===
-**Daily/Weekly**:
+**Continuous**:
 * Monitor dashboards
 * Review user feedback
 * Identify emerging issues
 * Quick fixes and patches
 **Who**: Technical Coordinator, Community Coordinator
-=== 4.2 Sprint Cycles (2 weeks) ===
-**Every 2 weeks**:
+=== 4.2 Sprint Cycles ===
+**Each sprint**:
 * Sprint planning: Select improvements to tackle
 * Implementation: Build and test
 * Sprint review: Demo what was built
 * Retrospective: How can we improve the improvement process?
 **Who**: Core team + regular contributors
-=== 4.3 Quarterly Reviews (3 months) ===
-**Every quarter**:
+=== 4.3 Periodic Reviews ===
+**Periodically**:
 * Comprehensive performance review
 * Policy effectiveness assessment
 * Strategic improvement priorities
 * Architectural decisions
 **Who**: Governing Team + Technical Coordinator
-**Output**: Quarterly report, next quarter priorities
-=== 4.4 Annual Planning (Yearly) ===
-**Annually**:
+**Output**: Review report, next improvement priorities
+=== 4.4 Strategic Planning ===
+**At strategic intervals**:
 * Major strategic direction
 * Significant architectural changes
 * Multi-quarter initiatives
@@ -242,7 +242,7 @@
 * Gather feedback before full release
 * Easy enable/disable without redeployment
 == 7. Retrospectives ==
-=== 7.1 Sprint Retrospectives (Every 2 weeks) ===
+=== 7.1 Sprint Retrospectives ===
 **Questions**:
 * What went well?
 * What could be improved?
@@ -304,7 +304,7 @@
 * Is knowledge being captured?
 * Are retrospectives actionable?
 * Are improvements sustained?
-**Annually review**: How can our improvement process itself improve?
+**Periodically review**: How can our improvement process itself improve?
 == 10. Cultural Practices ==
 === 10.1 Safe to Fail ===
 **Encourage experimentation**:

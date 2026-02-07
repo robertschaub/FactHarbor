@@ -29,49 +29,57 @@ Each requirement references which User Needs it fulfills.
 
 **Fulfills**: UN-12 (Submit claims), UN-13 (Cite verdicts), UN-14 (API access)
 
-FactHarbor uses three simple roles plus a reputation system.
+FactHarbor uses four roles.
 
-=== 1.1 Reader ===
+=== 1.1 Reader (Guest) ===
 
-**Who**: Anyone (no login required)
+**Who**: Anonymous visitors (no login required)
 
 **Can**:
 * Browse and search claims
-* View scenarios, evidence, verdicts, and confidence scores
-* Flag issues or errors
+* View AnalysisContexts, evidence, verdicts, and confidence scores
 * Use filters, search, and visualization tools
-* Submit claims automatically (new claims added if not duplicates)
 
 **Cannot**:
-* Modify content
-* Access edit history details
+* Submit URLs/text for analysis (requires login)
+* Flag issues (requires login)
+* Modify analysis output data (data is immutable)
+* Manage UCM configuration
+
+=== 1.1b User (Registered) ===
+
+**Who**: Logged-in users (free account required)
+
+**Can**:
+* Everything Reader can do
+* Submit URLs/text for analysis (rate-limited — LLM and web search costs)
+* Flag issues or errors
+* View own submission history
+
+**Cannot**:
+* Modify analysis output data (data is immutable)
+* Manage UCM configuration
 
 **User Needs served**: UN-1 (Trust assessment), UN-2 (Claim verification), UN-3 (Article summary with FactHarbor analysis summary), UN-4 (Social media fact-checking), UN-5 (Source tracing), UN-7 (Evidence transparency), UN-8 (Understanding disagreement), UN-12 (Submit claims), UN-17 (In-article highlighting)
 
-=== 1.2 Contributor ===
+=== 1.2 UCM Administrator ===
 
-**Who**: Registered users (earns reputation through contributions)
+**Who**: Appointed by Governing Team to manage system configuration
 
 **Can**:
 * Everything a Reader can do
-* Edit claims, evidence, and scenarios
-* Add sources and citations
-* Suggest improvements to AI-generated content
-* Participate in discussions
-* Earn reputation points for quality contributions
-
-**Reputation System**:
-* New contributors: Limited edit privileges
-* Established contributors (established reputation): Full edit access
-* Trusted contributors (substantial reputation): Can approve certain changes
-* Reputation earned through: Accepted edits, helpful flags, quality contributions
-* Reputation lost through: Reverted edits, invalid flags, abuse
+* Manage UCM configuration (prompt templates, quality thresholds, model selection)
+* View config change history and audit trail
+* Activate/deactivate config versions
+* Trigger re-analysis with updated config
+* View detailed system metrics
 
 **Cannot**:
+* Edit individual analysis outputs (data is immutable)
 * Delete or hide content (only moderators)
-* Override moderation decisions
+* Override quality gates for specific analyses
 
-**User Needs served**: UN-13 (Cite and contribute)
+**Key Principle**: UCM Administrators improve the system through configuration, not by editing individual outputs.
 
 === 1.3 Moderator ===
 
@@ -80,7 +88,7 @@ FactHarbor uses three simple roles plus a reputation system.
 **Can**:
 * Review flagged content
 * Hide harmful or abusive content
-* Resolve disputes between contributors
+* Resolve disputes between users
 * Issue warnings or temporary bans
 * Make final decisions on content disputes
 * Access full audit logs
@@ -92,7 +100,7 @@ FactHarbor uses three simple roles plus a reputation system.
 
 **Note**: Small team (3-5 initially), supported by automated moderation tools.
 
-=== 1.4 Domain Trusted Contributors (Optional, Task-Specific) ===
+=== 1.4 Domain Experts (Optional, Task-Specific) ===
 
 **Who**: Subject matter specialists invited for specific high-stakes disputes
 
@@ -107,9 +115,8 @@ FactHarbor uses three simple roles plus a reputation system.
 **Process**:
 * Moderator identifies need for expert input
 * Contact expert externally (don't require them to be users)
-* Trusted Contributor provides written opinion with sources
-* Opinion added to claim record
-* Trusted Contributor acknowledged in claim
+* Expert provides written opinion with sources
+* Opinion may inform UCM config improvements for the domain
 
 **User Needs served**: UN-16 (Expert validation status)
 
@@ -125,17 +132,14 @@ FactHarbor uses two content states. Focus is on transparency and confidence scor
 
 **Includes**:
 * AI-generated analyses (default state)
-* User-contributed content
-* Edited/improved content
 
 **Quality Indicators** (displayed with content):
 * **Confidence Score**: 0-100% (AI's confidence in analysis)
 * **Source Quality Score**: 0-100% (based on source track record)
-* **Controversy Flag**: If high dispute/edit activity
+* **Controversy Flag**: If high dispute among sources
 * **Completeness Score**: % of expected fields filled
-* **Last Updated**: Date of most recent change
-* **Edit Count**: Number of revisions
-* **Review Status**: AI-generated / Human-reviewed / Expert-validated
+* **Analysis Date**: When the analysis was performed
+* **UCM Config Version**: Which configuration version produced this analysis
 
 **Automatic Warnings**:
 * Confidence < 60%: "Low confidence - use caution"
@@ -445,7 +449,7 @@ This section defines specific features that fulfill user needs.
 {{warning}}
 **Status:** Deferred (Not in V1.0)
 
-This requirement has been **dropped from the current architecture and design**. Versioned entities have been replaced with simple edit history tracking only. Full evolution timeline functionality is deferred to future releases beyond V1.0.
+This requirement has been **dropped from the current architecture and design**. UCM config versioning and per-job config snapshots provide basic tracking. Full evolution timeline functionality is deferred to future releases beyond V1.0.
 {{/warning}}
 
 **Fulfills**: UN-15 (Verdict evolution timeline)
@@ -680,8 +684,8 @@ Claim not supported by study; correlation ≠ causation
 
 **Fulfills**: UN-14 (API access to histories), UN-15 (Evolution tracking)
 
-* All edits logged
-* Version history public
+* All UCM config changes logged
+* UCM config version history public
 * Moderation decisions documented
 * System improvements tracked
 
@@ -833,10 +837,11 @@ Multi-layer AI quality gates to detect hallucinations, low-confidence results, a
 * **JWT tokens:** For user sessions (1-hour expiry)
 * **OAuth2:** For third-party integrations
 * **Role-Based Access Control (RBAC):**
- * Public: Read-only access to published claims
- * Contributor: Submit claims, provide evidence
- * Moderator: Review contributions, manage quality
- * Admin: System configuration, user management
+ * Reader (Guest): Browse, search, view published analyses
+ * User (Registered): Submit URLs/text (rate-limited), flag issues
+ * UCM Administrator: Manage UCM configuration, view audit trail
+ * Moderator: Handle abuse, manage community health
+ * Admin: System infrastructure, user management
 
 **CORS Policies:**
 * Whitelist approved domains only
@@ -905,13 +910,13 @@ Multi-layer AI quality gates to detect hallucinations, low-confidence results, a
 
 **Dependency Vulnerability Scanning:**
 * **Tools:** Snyk, Dependabot, npm audit, pip-audit
-* **Frequency:** Daily automated scans
+* **Frequency:** Automated scans (continuous)
 * **Action:** Patch critical vulnerabilities within 24 hours
 * **Policy:** No known high/critical CVEs in production
 
 **Security Audits:**
-* **Internal:** Quarterly security reviews
-* **External:** Annual penetration testing by certified firm
+* **Internal:** Periodic security reviews
+* **External:** Penetration testing by certified firm
 * **Bug Bounty:** Public bug bounty program (V1.1+)
 * **Compliance:** SOC 2 Type II certification target (V1.5)
 
@@ -941,9 +946,9 @@ Multi-layer AI quality gates to detect hallucinations, low-confidence results, a
 * Public disclosure policy (coordinated disclosure)
 
 **Backup & Recovery:**
-* Daily encrypted backups
+* Encrypted backups (automated)
 * 30-day retention period
-* Tested recovery procedures (quarterly)
+* Tested recovery procedures (periodic)
 * Disaster recovery plan (RTO: 4 hours, RPO: 1 hour)
 
 ---
@@ -1088,9 +1093,9 @@ Moderator override rate: 8%
 **Dashboard Location:** `/quality-metrics`
 
 **Update Frequency:**
-* **POC2:** Weekly manual updates
-* **Beta 0:** Daily automated updates
-* **V1.0:** Real-time metrics (updated hourly)
+* **POC2:** Manual updates
+* **Beta 0:** Automated updates
+* **V1.0:** Real-time metrics
 
 **Dashboard Sections:**
 
@@ -1130,7 +1135,7 @@ Average Sources per Claim: 4.2 ▲ (+0.3)
 
 📄 DETAILED REPORTS
 ─────────────────────────────────────────────────────────────
-• Monthly Quality Report (PDF)
+• Quality Report (PDF)
 • Methodology Documentation
 • AKEL Performance Analysis
 • Contributor Agreement Analysis
@@ -1158,7 +1163,7 @@ Average Sources per Claim: 4.2 ▲ (+0.3)
  * Hallucination rate exceeds 7% → Pause auto-publishing
  * IRR below 0.6 → Moderator training needed
 
-4. **Monthly Quality Reviews:**
+4. **Periodic Quality Reviews:**
  * Analyze trends
  * Identify systematic issues
  * Plan prompt improvements
@@ -1197,12 +1202,12 @@ Average Sources per Claim: 4.2 ▲ (+0.3)
 **Acceptance Criteria:**
 
 * ✅ All core metrics implemented and calculating correctly
-* ✅ Dashboard updates daily (Beta 0) or hourly (V1.0)
+* ✅ Dashboard updates automatically
 * ✅ Alerts trigger when metrics degrade beyond thresholds
-* ✅ Monthly quality report auto-generates
+* ✅ Quality report auto-generates
 * ✅ Dashboard is publicly accessible (no login required)
 * ✅ Mobile-responsive dashboard design
-* ✅ Metrics inform quarterly AKEL improvement planning
+* ✅ Metrics inform periodic AKEL improvement planning
 
 == 13. Requirements Traceability ==
 
@@ -1691,11 +1696,11 @@ Archived: [Archive.org URL] (Captured: [date])
 * **Appeal Process:** Fair review of moderation actions
 * **Escalation:** Serious threats escalated to authorities
 
-**5. Trusted Contributor Protection:**
+**5. UCM Administrator Protection:**
 
-* **Enhanced Privacy:** Additional protection for high-profile contributors
+* **Enhanced Privacy:** Additional protection for system administrators
 * **Verification:** Optional identity verification (not public)
-* **Legal Support:** Resources for contributors facing legal threats
+* **Legal Support:** Resources for administrators facing legal threats
 
 **Acceptance Criteria:**
 
@@ -1746,7 +1751,7 @@ Archived: [Archive.org URL] (Captured: [date])
 1. Hypothesis: "New prompt improves claim extraction"
 2. Design test: Control vs. Variant
 3. Define metrics: Extraction accuracy, completeness
-4. Run test: 7-14 days, minimum 100 claims each
+4. Run test: minimum 100 claims each
 5. Analyze results: Statistical significance?
 6. Decision: Deploy winner or iterate
 {{/code}}

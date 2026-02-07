@@ -99,16 +99,16 @@ FactHarbor's workplace culture draws from three complementary sources:
 == 4. We Work in Iterations ==
 **From BWB**: "We operate in iterative cycles, allowing us to make early adjustments and minimize the risk and impact of errors."
 === 4.1 FactHarbor Application ===
-**Sprint cycles** (2 weeks):
+**Sprint cycles**:
 * Select improvement priorities
 * Implement and test
 * Review and retrospect
 * Adjust and iterate
 **Feedback loops** (see [[Continuous Improvement>>FactHarbor.Organisation.How-We-Work-Together.Continuous-Improvement]]):
-* Daily: Monitor metrics
-* Weekly: Review trends
-* Monthly: Comprehensive analysis
-* Quarterly: Strategic review
+* Monitor metrics (continuous)
+* Review trends (recurring)
+* Comprehensive analysis (periodic)
+* Strategic review (periodic)
 **Early adjustments**:
 * Canary deployments (1% → 5% → 25% → 100%)
 * Quick rollback if issues
@@ -341,7 +341,7 @@ FactHarbor's workplace culture draws from three complementary sources:
 * Virtual retrospectives
 == 10. Living Document ==
 **This culture page evolves**:
-* Quarterly review: Does this reflect reality?
+* Periodic review: Does this reflect reality?
 * Feedback welcome: Suggest improvements
 * Updated as we learn: Culture grows with us
 **Culture is practiced, not proclaimed**:

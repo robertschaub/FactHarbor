@@ -336,7 +336,7 @@ interface EvidenceItem {
 
 **Files**:
 - `understand-base.ts` - Core understanding logic
-- `extract-facts-base.ts` - Evidence extraction rules
+- `extract-evidence-base.ts` - Evidence extraction rules
 - `verdict-base.ts` - Verdict evaluation criteria
 - `scope-refinement-base.ts` - AnalysisContext boundary detection
 

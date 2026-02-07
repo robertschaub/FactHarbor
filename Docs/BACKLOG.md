@@ -285,18 +285,18 @@ Add section on testing LLM classifications:
 - Measures improvement in consistency and quality
 
 **Phases**:
-1. **Phase 1: Logging** (0-4 weeks)
+1. **Phase 1: Logging**
    - Implement ClassificationLog table in SQLite
    - Wire logging in text-analysis service layer
    - Define Shadow Mode analysis job runner
 
-2. **Phase 2: Analysis** (1-3 months)
+2. **Phase 2: Analysis**
    - Build consistency analyzer
    - Build edge case detector
    - Build prompt element mapper
    - Generate improvement proposals
 
-3. **Phase 3: Testing** (1-2 months)
+3. **Phase 3: Testing**
    - Implement A/B testing framework
    - Validate prompt improvements
    - Deploy successful changes

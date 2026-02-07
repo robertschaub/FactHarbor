@@ -1,23 +1,29 @@
 = Review & Data Use =
-This page describes the Review & Data Use model, defining User roles and how review actions are logged.
+
 == 1. User & Role Concepts ==
-* **USER**: Base entity for all users (human or technical).
+
+* **READER**: Default role for anonymous visitors (guest). Can browse, search, and view published analyses.
+* **USER**: Registered role (requires login). Can submit URLs/text for analysis (rate-limited), flag issues, and view submission history.
+* **UCM_ADMINISTRATOR**: Appointed role. Manages UCM configuration (prompt templates, quality thresholds, model selection). All config changes are versioned and auditable.
+* **MODERATOR**: Appointed role. Handles abuse, spam, and harassment. Does NOT manage content quality (that is automated).
 * **TECHNICAL_USER**: Strictly technical identities (services, federation components, background jobs).
-* **CONTRIBUTING_USER**: Users that can contribute content (claims, scenarios, evidence).
-** **TRUSTED_CONTRIBUTOR**: Additional trust / certification properties.
-** **REVIEWER**: Can perform review actions on versioned entities.
-** **EXPERT**: Contributor with domain‑specific expertise / higher authority.
-* **FEDERATION_NODE**: Technical entity representing a participating node in the federation.
-* **FEDERATION_ADMIN**: Administers one or more federation nodes; not necessarily a content contributor.
-== 2. Review Actions ==
-The system logs every significant action:
-* **REVIEW_ACTION** logs *who* did *what* on *which* versioned entity.
-* Fields: ``ReviewActionID``, ``UserID``, ``EntityType``, ``EntityVersionID``, ``ActionType``, ``Timestamp``.
-* Each entry targets a specific **VERSIONED** entity (e.g., ClaimVersion, ScenarioVersion).
-* **Claim Clusters** may also be targets of review actions (e.g., curation or moderation).
-== 3. Review & Data Use ERD ==
-=== 3.1 User Roles ===
+* **FEDERATION_NODE**: Technical entity representing a participating node in the federation (future).
+
+== 2. UCM Configuration Actions ==
+
+The system logs every significant configuration change:
+* **CONFIG_CHANGE** logs who changed which config, when, and why.
+* Fields: ##ConfigBlobHash##, ##ConfigType##, ##ChangedBy##, ##ChangeReason##, ##Timestamp##.
+* Every analysis job records the config snapshot used via **config_usage**.
+* Reports reference the exact UCM configuration state at time of analysis.
+
+== 3. User Roles ==
+
+=== 3.1 Human Roles ===
 {{include reference="FactHarbor.Specification.Diagrams.Human User Roles.WebHome"/}}
+
+=== 3.2 Technical Roles ===
 {{include reference="FactHarbor.Specification.Diagrams.Technical and System Users.WebHome"/}}
+
 == 4. User Class Diagram ==
 {{include reference="FactHarbor.Specification.Diagrams.User Class Diagram.WebHome"/}}

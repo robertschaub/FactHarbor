@@ -64,22 +64,21 @@ This page explains key architectural choices in FactHarbor and why simpler alter
 **Implementation**: Simple parallelization within single AKEL worker
 **Evidence**: LLM orchestration research (2024-2025) strongly recommends pipeline parallelization
 == 5. Simple Manual Roles ==
-**Decision**: Manual role assignment for V1.0 (Reader, Contributor, Moderator, Admin)
+**Decision**: Manual role assignment for V1.0 (Reader, User, UCM Administrator, Moderator)
 **Alternatives considered**:
 * ❌ Complex reputation point system from day one
 * ❌ Automated privilege escalation
-* ❌ Reputation decay algorithms
 * ❌ Trust graphs
 **Why simple roles**:
-* Complex reputation not needed until 100+ active contributors
-* Manual review builds better community initially
+* Analysis data is immutable — no data-editing roles needed
+* UCM Administrators appointed by Governing Team (not earned through reputation)
 * Easier to implement and maintain
 * Can add automation later when needed
 **When to add complexity**:
-* 100+ active contributors
+* Submission volume requires automated quota management
 * Manual role management becomes bottleneck
 * Clear abuse patterns emerge requiring automation
-**Evidence**: Successful communities (Wikipedia, Stack Overflow) started simple and added complexity gradually
+**Evidence**: Starting simple and adding complexity when triggered by real needs
 == 6. One-to-Many Scenarios ==
 **Decision**: Scenarios belong to single claims (one-to-many) for V1.0
 **Alternatives considered**:
@@ -96,21 +95,23 @@ This page explains key architectural choices in FactHarbor and why simpler alter
 * Clear use cases for scenario reuse emerge
 * Performance doesn't degrade
 **Trade-off**: Slight duplication of scenarios vs. simpler mental model
-== 7. Two-Tier Edit History ==
-**Decision**: Hot audit trail (PostgreSQL) + Cold debug logs (S3 archive)
+== 7. UCM Configuration Audit Trail ==
+**Decision**: Immutable config blobs + per-job config snapshots for full reproducibility
 **Alternatives considered**:
-* ❌ Everything in PostgreSQL forever
-* ❌ Everything archived immediately
-* ❌ Complex versioning system from day one
-**Why two-tier**:
-* 90% reduction in hot database size
-* Full traceability maintained
-* Faster queries (hot data only)
-* Lower storage costs (S3 cheaper)
+* ❌ Mutable config with no history
+* ❌ Complex data versioning system (Edit entity tracking claim/evidence changes)
+* ❌ Human editing of analysis outputs
+**Why UCM config versioning**:
+* Analysis data is immutable — "improve the system, not the data"
+* Every config change creates a new content-addressed blob
+* Every analysis job references the config snapshot used
+* Full reproducibility: re-run any analysis with its original config
 **Implementation**:
-* Hot: Human edits, moderation actions, major AKEL updates
-* Cold: All AKEL processing logs (archived after 90 days)
-**Evidence**: Standard pattern for high-volume audit systems
+* config_blobs: Immutable config versions (content-addressed by hash)
+* config_active: Currently active config per type
+* config_usage: Per-job config snapshots
+* AKEL processing logs: Archived after 90 days to S3
+**Evidence**: Content-addressed storage is proven in version control systems (Git)
 == 8. Denormalized Cache Fields ==
 **Decision**: Store summary data in claim records (evidence_summary, source_names, scenario_count)
 **Alternatives considered**:
@@ -123,9 +124,9 @@ This page explains key architectural choices in FactHarbor and why simpler alter
 * Trade-off: Small storage increase (~10%)
 * Read-heavy system (95% reads) benefits greatly
 **Update strategy**:
-* Immediate: On user-visible edits
-* Deferred: Background job every hour
-* Invalidation: On source data changes
+* Immediate: On re-analysis (system-triggered)
+* Deferred: Background job
+* Invalidation: On source data or UCM config changes
 **Evidence**: Content management best practices recommend denormalization for read-heavy systems
 == 9. Multi-Provider LLM Orchestration ==
 **Decision**: Abstract LLM calls behind interface, support multiple providers
@@ -141,7 +142,7 @@ This page explains key architectural choices in FactHarbor and why simpler alter
 **Implementation**: Simple routing layer, task-based provider selection
 **Evidence**: Modern LLM app architecture (2024-2025) strongly recommends orchestration
 == 10. Source Scoring Separation ==
-**Decision**: Separate source scoring (weekly batch) from claim analysis (real-time)
+**Decision**: Separate source scoring (scheduled batch) from claim analysis (real-time)
 **Alternatives considered**:
 * ❌ Update source scores during claim analysis
 * ❌ Real-time score calculation

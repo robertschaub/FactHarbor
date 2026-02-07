@@ -1,7 +1,11 @@
 = FactHarbor POC1 Architecture Analysis =
 
-**Version:** 2.6.17  
-**Analysis Date:** January 2026  
+{{info}}
+**Historical Document (January 2026, v2.6.17).** This is a point-in-time architecture analysis. The system has evolved significantly since this analysis — see [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] for the current state (v2.10.2). Key changes: "distinctProceedings" is now "analysisContexts", "MBFC" source reliability is now LLM-based, AnalysisContext detection is fully implemented.
+{{/info}}
+
+**Version:** 2.6.17
+**Analysis Date:** January 2026
 **Document Purpose:** Technical diagrams, gap analysis, and optimization recommendations
 
 ----

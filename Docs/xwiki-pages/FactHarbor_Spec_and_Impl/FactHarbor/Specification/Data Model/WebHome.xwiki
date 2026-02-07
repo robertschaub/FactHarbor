@@ -1,25 +1,24 @@
 = Data Model =
 
 {{warning}}
-**Implementation Status (Updated January 2026)**
+**Implementation Status (v2.10.2)**
 
-This specification describes the **target** normalized data model. Current implementation (v2.6.33) differs significantly:
+This specification describes the **target** normalized data model. Current implementation differs:
 
-* **Storage**: All data stored as **JSON blobs in SQLite**, not normalized PostgreSQL tables
-* **Scenarios**: **Replaced with KeyFactors** - decomposition questions, not separate entities
-* **Caching**: Redis cache **not implemented**; no claim caching yet
-* **Source Scoring**: Uses external MBFC bundle, not internal track record calculation
-* **User System**: Not implemented (no authentication in current version)
+* **Storage**: JSON blobs in SQLite (not normalized PostgreSQL tables)
+* **AnalysisContexts + KeyFactors**: Bounded analytical frames and decomposition questions embedded in result JSON (not separate stored entities)
+* **Caching**: Redis cache not implemented; no claim caching yet
+* **Source Scoring**: LLM + Cache architecture (batch prefetch → in-memory map → sync lookup). See `Docs/ARCHITECTURE/Source_Reliability.md`.
+* **User System**: Not implemented (no authentication)
+* **Evidence**: Uses `EvidenceItem` with `statement` field. Evidence IDs use E-prefix (E1, E2, E3...).
 
 This specification remains valuable as the target architecture for future versions.
-
-See `Docs/STATUS/Documentation_Inconsistencies.md` for full comparison.
 {{/warning}}
 
 FactHarbor's data model is **simple, focused, designed for automated processing**.
 == 1. Core Entities ==
 === 1.1 Claim ===
-Fields: id, assertion, domain, **status** (Published/Hidden only), **confidence_score**, **risk_score**, completeness_score, version, views, edit_count
+Fields: id, assertion, domain, **status** (Published/Hidden only), **confidence_score**, **risk_score**, completeness_score, version, views
 ==== Performance Optimization: Denormalized Fields ====
 **Rationale**: Claims system is 95% reads, 5% writes. Denormalizing common data reduces joins and improves query performance by 70%.
 **Additional cached fields in claims table**:
@@ -38,9 +37,9 @@ Fields: id, assertion, domain, **status** (Published/Hidden only), **confidence_
  * Helps invalidate stale caches
  * Triggers background refresh if too old
 **Update Strategy**:
-* **Immediate**: Update on claim edit (user-facing)
-* **Deferred**: Update via background job every hour (non-critical)
-* **Invalidation**: Clear cache when source data changes significantly
+* **Immediate**: Update on re-analysis (system-triggered)
+* **Deferred**: Update via background job (non-critical)
+* **Invalidation**: Clear cache when source data or UCM config changes significantly
 **Trade-offs**:
 * ✅ 70% fewer joins on common queries
 * ✅ Much faster claim list/search pages
@@ -62,13 +61,13 @@ Fields: claim_id, source_id, excerpt, url, relevance_score, supports
 * **last_updated** (timestamp): When track record last recalculated
 **How It Works**:
 * Initial score based on source type (70 for academic journals, 30 for unknown)
-* Updated daily by background scheduler
+* Updated by background scheduler
 * Formula: accuracy_rate (50%) + correction_policy (20%) + editorial_standards (15%) + bias_transparency (10%) + longevity (5%)
 * Track Record Check in AKEL pipeline: Adjusts evidence confidence based on source quality
 * Quality thresholds: 90+=Exceptional, 70-89=Reliable, 50-69=Acceptable, 30-49=Questionable, <30=Unreliable
 
 {{info}}
-**Current Implementation (v2.6.33):** Source reliability uses external **MBFC (Media Bias/Fact Check) bundle** instead of internal track record calculation. Scores are loaded from a configurable JSON file. See `Docs/ARCHITECTURE/Source_Reliability.md`.
+**Current Implementation (v2.6.40+):** Source reliability uses a **Pure LLM + Cache architecture** (v2.2). Sources are batch-evaluated via LLM calls, cached in-memory, and used synchronously during analysis. Multi-model consensus (Claude + GPT) is supported. There is no weekly background job — scores are computed on-demand and cached with configurable TTL. See `Docs/ARCHITECTURE/Source_Reliability.md`.
 {{/info}}
 
 **See**: SOURCE Track Record System documentation for complete details on calculation, updates, and usage
@@ -81,16 +80,16 @@ Fields: id, name, domain, **track_record_score**, **accuracy_history**, **correc
 * Claim verdicts should update source scores
 * But: Direct feedback creates circular dependency and potential feedback loops
 **The Solution**: Temporal separation
-==== Weekly Background Job (Source Scoring) ====
+==== Background Job (Source Scoring) ====
 Runs independently of claim analysis:
 {{code language="python"}}
-def update_source_scores_weekly():
+def update_source_scores_batch():
  """
  Background job: Calculate source reliability
  Never triggered by individual claim analysis
  """
- # Analyze all claims from past week
- claims = get_claims_from_past_week()
+ # Analyze all claims from recent period
+ claims = get_recent_claims()
  for source in get_all_sources():
  # Calculate accuracy metrics
  correct_verdicts = count_correct_verdicts_citing(source, claims)
@@ -103,7 +102,7 @@ def update_source_scores_weekly():
  source.total_citations = total_citations
  source.last_updated = now()
  source.save()
- # Job runs: Sunday 2 AM UTC
+ # Runs as scheduled batch job
  # Never during claim processing
 {{/code}}
 ==== Real-Time Claim Analysis (AKEL) ====
@@ -117,7 +116,7 @@ def analyze_claim(claim_text):
  # Gather evidence
  evidence_list = gather_evidence(claim_text)
  for evidence in evidence_list:
- # READ source score (snapshot from last weekly update)
+ # READ source score (snapshot from last batch update)
  source = get_source(evidence.source_id)
  source_score = source.track_record_score
  # Use score to weight evidence
@@ -125,10 +124,10 @@ def analyze_claim(claim_text):
  # Generate verdict using weighted evidence
  verdict = synthesize_verdict(evidence_list)
  # NEVER update source scores here
- # That happens in weekly background job
+ # That happens in background batch job
  return verdict
 {{/code}}
-==== Monthly Audit (Quality Assurance) ====
+==== Periodic Audit (Quality Assurance) ====
 Moderator review of flagged source scores:
 * Verify scores make sense
 * Detect gaming attempts
@@ -136,7 +135,7 @@ Moderator review of flagged source scores:
 * Manual adjustments if needed
 **Key Principles**:
 ✅ **Scoring and analysis are temporally separated**
-* Source scoring: Weekly batch job
+* Source scoring: Scheduled batch job
 * Claim analysis: Real-time processing
 * Never update scores during analysis
 ✅ **One-way data flow during processing**
@@ -171,10 +170,6 @@ Next Sunday 2 AM: Recalculate scores including this week's claims
 }}}
 === 1.4 Scenario ===
 
-{{warning}}
-**Implementation Change:** Scenarios were **replaced with KeyFactors** in the current implementation. KeyFactors are decomposition questions discovered during the understanding phase, not separate stored entities. See `Docs/ARCHITECTURE/KeyFactors_Design.md` for the design rationale.
-{{/warning}}
-
 **Purpose**: Different interpretations or contexts for evaluating claims
 **Key Concept**: Scenarios are extracted from evidence, not generated arbitrarily. Each scenario represents a specific context, assumption set, or condition under which a claim should be evaluated.
 **Relationship**: One-to-many with Claims (**simplified for V1.0**: scenario belongs to single claim)
@@ -208,108 +203,63 @@ For claim "Vaccines reduce hospitalization":
 * **created_at** (timestamp): When verdict was created
 * **updated_at** (timestamp): Last modification
 
-**Change Tracking**: Like all entities, verdict changes are tracked through the Edit entity (section 1.7), not through separate version tables. Each edit records before/after states.
+**Immutability**: Analysis outputs (including verdicts) are immutable. To improve verdict quality, update UCM configuration and trigger re-analysis. Each analysis job records the UCM config snapshot used.
 
-**Relationship**: Each Scenario has one Verdict. When understanding evolves, the verdict is updated and the change is logged in the Edit entity.
+**Relationship**: Each Scenario has one Verdict. When a new analysis is triggered with updated UCM config, a new job produces new results.
 
 **Example**:
 For claim "Exercise improves mental health" in scenario "Clinical trials (healthy adults, structured programs)":
-* Initial state: likelihood_range="0.40-0.65 (uncertain)", uncertainty_factors=["Small sample sizes", "Short-term studies only"]
-* After new evidence: likelihood_range="0.70-0.85 (likely true)", uncertainty_factors=["Lifestyle confounds remain"]
-* Edit entity records the complete before/after change with timestamp and reason
+* Initial analysis: likelihood_range="0.40-0.65 (uncertain)", uncertainty_factors=["Small sample sizes", "Short-term studies only"]
+* Re-analysis with improved UCM config: likelihood_range="0.70-0.85 (likely true)", uncertainty_factors=["Lifestyle confounds remain"]
+* New analysis job references the updated UCM config snapshot
 
-**Key Design**: Verdicts are mutable entities tracked through the centralized Edit entity, consistent with Claims, Evidence, and Scenarios.
+**Key Design**: Analysis outputs are immutable. Quality improvements flow through UCM configuration changes, not data edits.
 
 === 1.6 User ===
-Fields: username, email, **role** (Reader/Contributor/Moderator), **reputation**, contributions_count
-=== User Reputation System ==
-**V1.0 Approach**: Simple manual role assignment
-**Rationale**: Complex reputation systems aren't needed until 100+ active contributors demonstrate the need for automated reputation management. Start simple, add complexity when metrics prove necessary.
-=== Roles (Manual Assignment) ===
-**reader** (default):
-* View published claims and evidence
-* Browse and search content
-* No editing permissions
-**contributor**:
-* Submit new claims
-* Suggest edits to existing content
-* Add evidence
-* Requires manual promotion by moderator/admin
-**moderator**:
-* Approve/reject contributor suggestions
-* Flag inappropriate content
+Fields: username, email, **role** (Reader/User/UCM Administrator/Moderator)
+
+=== Roles ===
+**reader** (guest, anonymous):
+* Browse and search published analyses
+* View analysis results and evidence
+
+**user** (registered, logged in):
+* Everything Reader can do
+* Submit URLs/text for analysis (rate-limited)
+* Flag quality issues
+* View own submission history
+
+**ucm_administrator** (appointed by Governing Team):
+* Manage UCM configuration (prompt templates, quality thresholds, model selection)
+* View config change history and audit trail
+* Activate/deactivate config versions
+* Trigger re-analysis with updated config
+* View system metrics
+
+**moderator** (appointed):
 * Handle abuse reports
-* Assigned by admins based on trust
-**admin**:
-* Manage users and roles
-* System configuration
-* Access to all features
-* Founder-appointed initially
-=== Contribution Tracking (Simple) ===
-**Basic metrics only**:
-* `contributions_count`: Total number of contributions
-* `created_at`: Account age
-* `last_active`: Recent activity
-**No complex calculations**:
-* No point systems
-* No automated privilege escalation
-* No reputation decay
-* No threshold-based promotions
-=== Promotion Process ===
-**Manual review by moderators/admins**:
-1. User demonstrates value through contributions
-2. Moderator reviews user's contribution history
-3. Moderator promotes user to contributor role
-4. Admin promotes trusted contributors to moderator
-**Criteria** (guidelines, not automated):
-* Quality of contributions
-* Consistency over time
-* Collaborative behavior
-* Understanding of project goals
-=== V2.0+ Evolution ===
-**Add complex reputation when**:
-* 100+ active contributors
-* Manual role management becomes bottleneck
-* Clear patterns of abuse emerge requiring automation
-**Future features may include**:
-* Automated point calculations
-* Threshold-based promotions
-* Reputation decay for inactive users
-* Track record scoring for contributors
-See [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]] for triggers.
-=== 1.7 Edit ===
-**Fields**: entity_type, entity_id, user_id, before_state (JSON), after_state (JSON), edit_type, reason, created_at
-**Purpose**: Complete audit trail for all content changes
-=== Edit History Details ===
-**What Gets Edited**:
-* **Claims** (20% edited): assertion, domain, status, scores, analysis
-* **Evidence** (10% edited): excerpt, relevance_score, supports
-* **Scenarios** (5% edited): description, assumptions, confidence
-* **Sources**: NOT versioned (continuous updates, not editorial decisions)
-**Who Edits**:
-* **Contributors** (rep sufficient): Corrections, additions
-* **Trusted Contributors** (rep sufficient): Major improvements, approvals
-* **Moderators**: Abuse handling, dispute resolution
-* **System (AKEL)**: Re-analysis, automated improvements (user_id = NULL)
-**Edit Types**:
-* `CONTENT_CORRECTION`: User fixes factual error
-* `CLARIFICATION`: Improved wording
-* `SYSTEM_REANALYSIS`: AKEL re-processed claim
-* `MODERATION_ACTION`: Hide/unhide for abuse
-* `REVERT`: Rollback to previous version
-**Retention Policy** (5 years total):
-1. **Hot storage** (3 months): PostgreSQL, instant access
-2. **Warm storage** (2 years): Partitioned, slower queries
-3. **Cold storage** (3 years): S3 compressed, download required
-4. **Deletion**: After 5 years (except legal holds)
-**Storage per 1M claims**: ~400 MB (20% edited × 2 KB per edit)
-**Use Cases**:
-* View claim history timeline
-* Detect vandalism patterns
-* Learn from user corrections (system improvement)
-* Legal compliance (audit trail)
-* Rollback capability
-See **Edit History Documentation** for complete details on what gets edited by whom, retention policy, and use cases
+* Hide harmful content
+* Ban users for policy violations
+* Does NOT manage content quality (that is automated)
+=== 1.7 UCM Config ===
+
+**Tables**:
+* **config_blobs**: Immutable, content-addressed config versions (hash-based deduplication)
+* **config_active**: Points to currently active config blob per config type
+* **config_usage**: Links each analysis job to the exact config snapshot used
+
+**Config Types Managed**:
+* Prompt templates (claim extraction, evidence gathering, verdict generation)
+* Quality gate thresholds (confidence minimums, source count requirements)
+* Model selection (which LLM for which pipeline phase)
+* Source reliability rules (domain mappings, scoring parameters)
+* Evidence quality filtering parameters
+
+**Audit Trail**:
+* Every config change creates a new immutable blob
+* Config blobs are never deleted — complete history preserved
+* Each analysis job records which config snapshot was active at execution time
+* Reports can be reproduced by re-running with the same config snapshot
 === 1.8 Flag ===
 Fields: entity_id, reported_by, issue_type, status, resolution_note
 === 1.9 QualityMetric ===
@@ -327,7 +277,7 @@ Fields: entity_id, reported_by, issue_type, status, resolution_note
 **Purpose**: Capture errors to trigger system improvements
 **Usage**:
 * **Error capture**: When users flag issues or system detects problems
-* **Pattern analysis**: Weekly grouping by category and frequency
+* **Pattern analysis**: Periodic grouping by category and frequency
 * **Improvement workflow**: Analyze → Fix → Test → Deploy → Re-process → Monitor
 * **Metrics**: Track error rate reduction over time
 **Example**: `{category: "WrongSource", description: "Unreliable tabloid cited", root_cause: "No quality check", frequency: 23, status: "Fixed"}`
@@ -339,26 +289,26 @@ Fields: entity_id, reported_by, issue_type, status, resolution_note
 == 1.5 User Class Diagram ==
 {{include reference="FactHarbor.Specification.Diagrams.User Class Diagram.WebHome"/}}
 == 2. Versioning Strategy ==
-**All Content Entities Are Versioned**:
-* **Claim**: Every edit creates new version (V1→V2→V3...)
-* **Evidence**: Changes tracked in edit history
-* **Scenario**: Modifications versioned
-**How Versioning Works**:
-* Entity table stores **current state only**
-* Edit table stores **all historical states** (before_state, after_state as JSON)
-* Version number increments with each edit
-* Complete audit trail maintained forever
-**Unversioned Entities** (current state only, no history):
-* **Source**: Track record continuously updated (not versioned history, just current score)
-* **User**: Account state (reputation accumulated, not versioned)
-* **QualityMetric**: Time-series data (each record is a point in time, not a version)
-* **ErrorPattern**: System improvement queue (status tracked, not versioned)
+
+**Analysis Data Is Immutable**:
+* **Claims, Evidence, Verdicts**: Created once per analysis job, never modified
+* **Sources**: Track record continuously updated (scoring data, not editorial content)
+* **QualityMetric**: Time-series data (each record is a point in time)
+* **ErrorPattern**: System improvement queue (status tracked)
+
+**UCM Configuration Is Versioned**:
+* Every config change creates a new immutable blob in ##config_blobs##
+* ##config_active## tracks which config version is currently in use
+* ##config_usage## links each analysis job to the config snapshot used
+* Complete config history preserved — blobs never deleted
+
 **Example**:
 {{{
-Claim V1: "The sky is blue"
- → User edits →
-Claim V2: "The sky is blue during daytime"
- → EDIT table stores: {before: "The sky is blue", after: "The sky is blue during daytime"}
+UCM Config V1: prompt_template = "Analyze the following claim..."
+ → UCM Administrator updates config →
+UCM Config V2: prompt_template = "Analyze the following claim with focus on source quality..."
+ → config_blobs stores both versions (content-addressed by hash)
+ → Reports reference which config version was used for their analysis
 }}}
 == 2.5. Storage vs Computation Strategy ==
 **Critical architectural decision**: What to persist in databases vs compute dynamically?
@@ -376,7 +326,7 @@ Claim V2: "The sky is blue during daytime"
 * **Decision**: ✅ STORE - Essential
 ==== Evidence (All Records) ====
 * **What**: claim_id, source_id, excerpt, url, relevance_score, supports, extracted_at
-* **Why**: Hard to re-gather, user contributions, reproducibility
+* **Why**: Hard to re-gather, reproducibility
 * **Size**: ~2 KB per evidence (with excerpt)
 * **Growth**: 3-10 evidence per claim
 * **Decision**: ✅ STORE - Essential for reproducibility
@@ -386,13 +336,13 @@ Claim V2: "The sky is blue during daytime"
 * **Size**: ~500 bytes per source
 * **Growth**: Slow (limited number of sources)
 * **Decision**: ✅ STORE - Essential for quality
-==== Edit History (All Versions) ====
-* **What**: before_state, after_state, user_id, reason, timestamp
-* **Why**: Audit trail, legal requirement, reproducibility
-* **Size**: ~2 KB per edit
-* **Growth**: Linear with edits (~A portion of claims get edited)
-* **Retention**: Hot storage 3 months → Warm storage 2 years → Archive to S3 3 years → Delete after 5 years total
-* **Decision**: ✅ STORE - Essential for accountability
+==== UCM Config History ====
+* **What**: config_blobs (immutable), config_active (activation pointers), config_usage (per-job snapshots)
+* **Why**: Audit trail, reproducibility, config rollback
+* **Size**: ~5 KB per config version
+* **Growth**: Linear with config changes (infrequent — admin-driven)
+* **Retention**: Config blobs never deleted (complete history)
+* **Decision**: ✅ STORE - Essential for reproducibility and audit
 ==== Flags (User Reports) ====
 * **What**: entity_id, reported_by, issue_type, description, status
 * **Why**: Error detection, system improvement triggers
@@ -409,7 +359,7 @@ Claim V2: "The sky is blue during daytime"
 * **What**: metric_type, category, value, target, timestamp
 * **Why**: Trend analysis, cannot recreate historical metrics
 * **Size**: ~200 bytes per metric
-* **Growth**: Hourly = 8,760 per year per metric type
+* **Growth**: Growth depends on collection frequency and metric type count
 * **Retention**: 2 years hot, then aggregate and archive
 * **Decision**: ✅ STORE - Essential for monitoring
 **STORE (Computed Once, Then Cached):**
@@ -463,7 +413,7 @@ Claim V2: "The sky is blue during daytime"
 * **Frequency**: Every time claim viewed
 * **Why not store**: Changes as evidence/scenarios change, users want fresh analysis
 * **Speed**: 2-3 seconds (acceptable)
-**Alternative**: Store "last verdict" as cached field, recompute only if claim edited or marked stale
+**Alternative**: Store "last verdict" as cached field, recompute only if marked stale by UCM config change
 * **Recommendation**: ✅ STORE cached version, mark stale when changes occur
 ==== Search Results ====
 * **What**: Lists of claims matching search query
@@ -475,23 +425,18 @@ Claim V2: "The sky is blue during daytime"
 * **Compute from**: Database queries
 * **Cache**: 1 hour in Redis
 * **Why not store**: Can be derived, relatively cheap to compute
-==== User Reputation ====
-* **What**: Score based on contributions
+==== User Role ====
+* **What**: Role assignment (Reader / UCM Administrator / Moderator)
 * **Current design**: Stored in User table
-* **Alternative**: Compute from Edit table
-* **Trade-off**:
- - Stored: Fast, simple
- - Computed: Always accurate, no denormalization
-* **Frequency**: Read on every user action
-* **Compute cost**: Simple COUNT query, milliseconds
-* **Decision**: ✅ STORE - Performance critical, read-heavy
+* **Notes**: Manual assignment by Governing Team. No reputation system — roles are appointed, not earned.
+* **Decision**: ✅ STORE - Simple role field
 === Summary Table ===
 | Data Type | Storage | Compute | Size per Claim | Decision | Rationale |
 |-----------|---------|---------|----------------|----------|-----------|
 | Claim core | ✅ | - | 1 KB | STORE | Essential |
 | Evidence | ✅ | - | 2 KB × 5 = 10 KB | STORE | Reproducibility |
 | Sources | ✅ | - | 500 B (shared) | STORE | Track record |
-| Edit history | ✅ | - | 2 KB × 20% = 400 B avg | STORE | Audit |
+| UCM config history | ✅ | - | 5 KB per version (infrequent) | STORE | Reproducibility |
 | Analysis summary | ✅ | Once | 2 KB | STORE (cached) | Cost-effective |
 | Confidence score | ✅ | Once | 4 B | STORE (cached) | Fast access |
 | Risk score | ✅ | Once | 4 B | STORE (cached) | Fast access |
@@ -516,15 +461,14 @@ Claim V2: "The sky is blue during daytime"
 * **Total savings**: ~$35K per 1M claims vs recomputing every time
 === Recomputation Triggers ===
 **When to mark cached data as stale and recompute:**
-1. **User edits claim** → Recompute: all (analysis, scenarios, verdict, scores)
-2. **Evidence added** → Recompute: scenarios, verdict, confidence score
-3. **Source track record changes >10 points** → Recompute: confidence score, verdict
-4. **System improvement deployed** → Mark affected claims stale, recompute on next view
-5. **Controversy detected** (high flag rate) → Recompute: risk score
+1. **UCM config updated** → Mark affected analyses stale, trigger re-analysis
+2. **Source track record changes >10 points** → Recompute: confidence score, verdict
+3. **New evidence sources available** → Trigger re-analysis for affected claims
+4. **Quality gate thresholds changed** → Re-evaluate existing verdicts against new thresholds
 **Recomputation strategy**:
-* **Eager**: Immediately recompute (for user edits)
-* **Lazy**: Recompute on next view (for system improvements)
-* **Batch**: Nightly re-evaluation of stale claims (if <1000)
+* **Eager**: Immediately re-analyse (for targeted UCM config changes)
+* **Lazy**: Re-analyse on next view (for broad system improvements)
+* **Batch**: Periodic re-evaluation of stale analyses
 === Database Size Projection ===
 **Year 1**: 10K claims
 * Storage: 180 MB
@@ -542,9 +486,9 @@ Claim V2: "The sky is blue during daytime"
 **Conclusion**: Storage costs are manageable, LLM cost savings are substantial.
 == 3. Key Simplifications ==
 * **Two content states only**: Published, Hidden
-* **Three user roles only**: Reader, Contributor, Moderator
-* **No complex versioning**: Linear edit history
-* **Reputation-based permissions**: Not role hierarchy
+* **Three user roles only**: Reader, UCM Administrator, Moderator
+* **Immutable analysis data**: No data editing or versioning — improve via UCM config
+* **UCM config versioning**: Content-addressed immutable blobs with per-job snapshots
 * **Source track records**: Continuous evaluation
 == 3. What Gets Stored in the Database ==
 === 3.1 Primary Storage (PostgreSQL) ===
@@ -562,10 +506,11 @@ Claim V2: "The sky is blue during daytime"
 * Fields: id, name, domain, type, track_record_score, accuracy_history (JSON), correction_frequency, last_updated, claim_count, corrections_count
 **User Table**:
 * All user accounts
-* Fields: id, username, email, role (Reader/Contributor/Moderator), reputation, created_at, last_active, contributions_count, flags_submitted, flags_accepted
-**Edit Table**:
-* Complete version history
-* Fields: id, entity_type, entity_id, user_id, before_state (JSON), after_state (JSON), edit_type, reason, created_at
+* Fields: id, username, email, role (Reader/UCM Administrator/Moderator), created_at, last_active
+**UCM Config Tables**:
+* config_blobs: Immutable config versions (hash, config_type, content, changed_by, change_reason, created_at)
+* config_active: Currently active config per type (config_type, blob_hash, activated_at, activated_by)
+* config_usage: Per-job config snapshots (job_id, config_type, blob_hash, snapshot_at)
 **Flag Table**:
 * User-reported issues
 * Fields: id, entity_type, entity_id, reported_by, issue_type, description, status, resolved_by, resolution_note, created_at, resolved_at
@@ -593,7 +538,7 @@ Claim V2: "The sky is blue during daytime"
 * Source track records (TTL: 1 hour)
 === 3.4 File Storage (S3) ===
 **Archived content**:
-* Old edit history (>3 months)
+* Old processing logs (>3 months)
 * Evidence documents (archived copies)
 * Database backups
 * Export files

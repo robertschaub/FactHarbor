@@ -1,209 +1,438 @@
 = Data Examples =
-The following examples illustrate complete, realistic FactHarbor data objects
-across Claims, Scenarios, Evidence, ScenarioEvidenceLinks, Verdicts, and
-Re-evaluation behavior.
-Each field is annotated with:
-* **[A]** — fully automatable
-* **[M]** — AI-draft, human validation needed
-* **[H]** — human-only
-* **[F]** — federation metadata (optional)
-These examples conform to:
-* Data Model (Ch. 5)
-* Workflows (Ch. 6)
-* Requirements (Ch. 2)
-* Architecture (Ch. 3)
-* AKEL (Ch. 4)
-= Example A — “Hydrogen cars are more energy efficient than EVs.” =
-A clearly empirical, technical, domain-specific claim.
-== 1. Claim (ClaimID: C_H2EV) ==
+
+{{info}}
+**Current Implementation (v2.10.2)** — These examples use the current data model entities: ARTICLE, CLAIM, EVIDENCE_ITEM, SOURCE, ANALYSIS_CONTEXT, CLAIM_VERDICT, and ARTICLE_VERDICT. All data is stored as JSON in SQLite. See [[Core Data Model ERD>>FactHarbor.Specification.Diagrams.Core Data Model ERD.WebHome]] for the entity diagram and [[Evidence and Verdict Workflow>>FactHarbor.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]] for the verdict generation flow.
+{{/info}}
+
+The following examples illustrate complete, realistic FactHarbor data objects across the current entity model. Each example shows the full pipeline output: from ARTICLE through CLAIMs, EVIDENCE_ITEMs, SOURCEs, ANALYSIS_CONTEXTs, to CLAIM_VERDICTs and the ARTICLE_VERDICT.
+
+**Entity quick reference:**
+
+|= Entity |= Purpose
+| **ARTICLE** | Top-level analysis container (one per user submission)
+| **CLAIM** | Extracted sub-claim with role, centrality, and context assignment
+| **EVIDENCE_ITEM** | Individual evidence statement extracted from a source
+| **SOURCE** | Fetched web source with reliability scoring
+| **ANALYSIS_CONTEXT** | Bounded analytical frame requiring a separate verdict
+| **CLAIM_VERDICT** | Per-claim verdict on the 7-point truth scale
+| **ARTICLE_VERDICT** | Aggregated overall verdict for the article
+
+= Example A — "Hydrogen cars are more energy efficient than EVs" =
+
+A clearly empirical, technical claim requiring multi-context analysis (different efficiency metrics lead to different verdicts).
+
+== 1. ARTICLE ==
+
 (% style="width:100%" %)
-|=Field|=Value|=Notes
-|ClaimID|C_H2EV|
-|VersionID|v1|
-|Text|“Hydrogen cars are more energy efficient than battery electric vehicles (EVs).”|[H]
-|Domain|energy_transport|[A]
-|ClaimType|literal|[A]
-|Evaluability|empirical|[A]
-|RiskTier|medium|[A]
-|ClusterID|CL_EnergyEff|[A]
-|Status|active|
-== 2. Scenario S_H2EV_01 — “Well-to-wheel efficiency, EU grid mix” ==
+|= Field |= Value
+| id | ##art_h2ev_001##
+| inputType | ##claim##
+| inputValue | ##Hydrogen cars are more energy efficient than battery electric vehicles (EVs).##
+| articleThesis | ##Hydrogen fuel cell vehicles are claimed to be more energy-efficient than battery EVs##
+| detectedInputType | ##claim##
+| requiresSeparateAnalysis | ##true##
+| analysisContexts | ##["ctx_wtw_eu", "ctx_ttw"]##
+| schemaVersion | ##2.7.0##
+
+== 2. ANALYSIS_CONTEXTs ==
+
+=== 2.1 CTX_WTW_EU — Well-to-Wheel Efficiency (EU Grid Mix) ===
+
 (% style="width:100%" %)
-|=Field|=Value
-|ScenarioID|S_H2EV_01
-|VersionID|v1
-|ClaimID|C_H2EV
-|Definitions|//“Well-to-wheel efficiency” = total chain efficiency.// [H]
-|Assumptions|EU 2020–24 grid mix, electrolysis 69%, compression losses 10%, fuel cell 55%. [M]
-|ContextBoundary|Europe, 2020–2024 technology|[H]
-|EvaluationMethod|Comparative WTW energy analysis|[A]
-|RiskTier|low
-|Status|active|
-== 3. Evidence ==
-=== 3.1 Evidence E1 ===
-Peer-reviewed energy-systems paper.
+|= Field |= Value
+| id | ##ctx_wtw_eu##
+| articleId | ##art_h2ev_001##
+| name | ##Well-to-Wheel Efficiency Analysis (EU)##
+| description | ##Total energy chain efficiency from primary energy source to vehicle motion, using European grid mix assumptions##
+| methodology | ##Comparative WTW energy analysis (ISO 14040 framework)##
+| temporalPeriod | ##2020–2024##
+
+=== 2.2 CTX_TTW — Tank-to-Wheel Efficiency ===
+
 (% style="width:100%" %)
-|=Field|=Value
-|EvidenceID|E_H2EV_Paper1
-|VersionID|v1
-|Type|scientific_paper
-|Category|empirical
-|Reliability|high
-|Provenance|Journal publication + DOI
-|ExtractionMethod|AKEL + human verification
-|Status|verified|
-=== 3.2 Evidence E2 ===
-Official EU dataset.
+|= Field |= Value
+| id | ##ctx_ttw##
+| articleId | ##art_h2ev_001##
+| name | ##Tank-to-Wheel Efficiency Comparison##
+| description | ##Energy conversion efficiency from stored energy (battery or hydrogen tank) to wheel motion only##
+| methodology | ##Drivetrain efficiency comparison##
+| temporalPeriod | ##2020–2024##
+
+== 3. CLAIMs ==
+
 (% style="width:100%" %)
-|=Field|=Value
-|EvidenceID|E_H2EV_Dataset
-|VersionID|v1
-|Type|dataset
-|Category|empirical
-|Reliability|medium
-|Provenance|EU Energy Stats 2023
-|ExtractionMethod|API import
-|Status|verified|
-== 4. ScenarioEvidenceLinks ==
+|= id |= text |= type |= claimRole |= isCentral |= contextId |= dependsOn |= keyFactorId
+| ##clm_01## | Hydrogen cars are more energy efficient than EVs | ##factual## | ##core## | ##true## | ##ctx_wtw_eu## | ##[]## | ##""##
+| ##clm_02## | Fuel cell vehicles convert hydrogen to electricity at ~55% efficiency | ##factual## | ##core## | ##false## | ##ctx_ttw## | ##[]## | ##kf_fc_eff##
+| ##clm_03## | Green hydrogen production via electrolysis achieves 60-70% efficiency | ##factual## | ##source## | ##false## | ##ctx_wtw_eu## | ##[]## | ##kf_h2_prod##
+| ##clm_04## | BEV drivetrains achieve 85-90% battery-to-wheel efficiency | ##factual## | ##core## | ##false## | ##ctx_ttw## | ##["clm_02"]## | ##kf_bev_eff##
+
+== 4. SOURCEs ==
+
 (% style="width:100%" %)
-|=(% style="width:30%" %)Scenario|=(% style="width:40%" %)Evidence|=(% style="width:30%" %)RelevanceScore / Notes
-|S_H2EV_01 v1|E_H2EV_Paper1 v1|0.92 [M]
-|S_H2EV_01 v1|E_H2EV_Dataset v1|0.77 [M]
-== 5. Verdict ==
-=== 5.1 Verdict V_H2EV_01 v1 ===
+|= id |= name |= domain |= url |= reliabilityScore |= bias
+| ##src_01## | Transport & Environment | ##transportenvironment.org## | ##https:~/~/www.transportenvironment.org/wp-content/uploads/2020/04/T%26E-BEV-efficiency-report-2020.pdf## | ##0.82## | ##environmental advocacy##
+| ##src_02## | US DOE Alternative Fuels Data Center | ##afdc.energy.gov## | ##https:~/~/afdc.energy.gov/vehicles/fuel-cell## | ##0.91## | ##neutral##
+| ##src_03## | Nature Energy — Ueckerdt et al. (2021) | ##nature.com## | ##https:~/~/www.nature.com/articles/s41560-021-00775-z## | ##0.95## | ##neutral##
+
+== 5. EVIDENCE_ITEMs ==
+
 (% style="width:100%" %)
-|=Field|=Value
-|VerdictID|V_H2EV_01
-|VersionID|v1
-|ClaimID|C_H2EV
-|ScenarioID|S_H2EV_01
-|EvidenceVersionSet|[E_H2EV_Paper1:v1, E_H2EV_Dataset:v1]
-|LikelihoodRange|0.10–0.25|
-|ExplanationSummary|EVs convert grid electricity to motion more efficiently than hydrogen fuel cell vehicles under EU assumptions.|
-|ReasoningChain|Step-by-step efficiency-chain comparison|
-|UncertaintyFactors|Variability in grid mix, future electrolysis improvements|
-|Status|current|
-== 6. Notes ==
-* Many fields automatable (claim classification, domain, initial scenario structure, metadata extraction).
-* Definitions and boundaries require human reasoning.
-= Example B — “Regular cold-water exposure (<14°C) for sufficient months improves health.” =
-A complex lifestyle/health claim requiring careful scenario boundaries.
-== 7. Claim (C_CW_Health) ==
+|= id |= sourceId |= statement |= sourceExcerpt |= category |= claimDirection |= contextId
+| ##ev_01## | ##src_03## | Well-to-wheel efficiency of hydrogen fuel cell vehicles is 25-35%, compared to 70-80% for battery EVs | ##"…the overall well-to-wheel efficiency of green hydrogen pathways is 2-3× lower than direct electrification…"## | ##statistic## | ##contradicts## | ##ctx_wtw_eu##
+| ##ev_02## | ##src_02## | Fuel cell stack efficiency ranges from 40-60% depending on load conditions | ##"Fuel cell system efficiency ranges from approximately 40 to 60 percent"## | ##direct_evidence## | ##supports## | ##ctx_ttw##
+| ##ev_03## | ##src_01## | BEV battery-to-wheel efficiency is approximately 77% including charging losses | ##"…battery electric vehicles achieve overall tank-to-wheel efficiency of approximately 77%, including charging losses…"## | ##statistic## | ##contradicts## | ##ctx_ttw##
+| ##ev_04## | ##src_03## | Hydrogen compression and transport add 10-15% energy losses | ##"…additional losses from compression, storage and transport reduce delivered hydrogen energy by 10-15%…"## | ##direct_evidence## | ##contradicts## | ##ctx_wtw_eu##
+
+== 6. CLAIM_VERDICTs ==
+
+=== 6.1 Verdict for clm_01 (core, WTW context) ===
+
 (% style="width:100%" %)
-|=Field|=Value
-|Text|“Regular cold-water exposure below 14°C for at least 6 months improves health.”|
-|Domain|health_lifestyle|
-|ClaimType|literal|
-|Evaluability|empirical|
-|RiskTier|high|
-== 8. Scenario S_CW_01 — “Short daily immersions in healthy adults” ==
+|= Field |= Value
+| id | ##cv_01##
+| claimId | ##clm_01##
+| verdict | ##FALSE##
+| truthPercentage | ##12##
+| confidence | ##88##
+| explanation | ##Well-to-wheel analysis consistently shows hydrogen fuel cell vehicles are significantly less energy-efficient than BEVs. The hydrogen pathway loses 65-75% of input energy through electrolysis, compression, and fuel cell conversion, while BEVs retain 70-80%.##
+| supportingEvidenceIds | ##[]##
+| opposingEvidenceIds | ##["ev_01", "ev_04"]##
+
+=== 6.2 Verdict for clm_02 (fuel cell efficiency) ===
+
 (% style="width:100%" %)
-|=Field|=Value
-|ScenarioID|S_CW_01
-|VersionID|v1
-|Definitions|“Regular exposure” = 3–7×/week, 2–4 minutes|
-|Assumptions|Healthy adults, no cardiovascular risk|
-|ContextBoundary|6+ months, 8–14°C|
-|EvaluationMethod|Health outcome comparison|
-|RiskTier|high|
-== 9. Evidence ==
-=== 9.1 Evidence E1 — Dutch cold-shower RCT ===
+|= Field |= Value
+| id | ##cv_02##
+| claimId | ##clm_02##
+| verdict | ##MOSTLY-TRUE##
+| truthPercentage | ##78##
+| confidence | ##85##
+| explanation | ##DOE data confirms fuel cell stack efficiency of 40-60%. The claim of ~55% is within the documented range under typical driving conditions.##
+| supportingEvidenceIds | ##["ev_02"]##
+| opposingEvidenceIds | ##[]##
+
+=== 6.3 Verdict for clm_04 (BEV efficiency) ===
+
 (% style="width:100%" %)
-|=Field|=Value
-|Type|scientific_paper|
-|Category|empirical|
-|Reliability|high|
-|ExtractionMethod|AKEL + human validation|
-=== 9.2 Evidence E2 — Meta-analysis on immersion effects ===
+|= Field |= Value
+| id | ##cv_04##
+| claimId | ##clm_04##
+| verdict | ##MOSTLY-TRUE##
+| truthPercentage | ##75##
+| confidence | ##82##
+| explanation | ##T&E data shows ~77% including charging losses, which falls within the claimed 85-90% range at the drivetrain level (before charging losses). The claim is largely accurate for tank-to-wheel measurement.##
+| supportingEvidenceIds | ##["ev_03"]##
+| opposingEvidenceIds | ##[]##
+
+== 7. ARTICLE_VERDICT ==
+
 (% style="width:100%" %)
-|=Field|=Value
-|Category|empirical|
-|Reliability|medium|
-== 10. ScenarioEvidenceLinks ==
+|= Field |= Value
+| articleId | ##art_h2ev_001##
+| verdict | ##FALSE##
+| truthPercentage | ##14##
+| confidence | ##86##
+| summary | ##Hydrogen fuel cell vehicles are significantly less energy-efficient than battery EVs on a well-to-wheel basis. While individual component efficiencies vary, the cumulative losses in the hydrogen pathway (electrolysis ~65%, compression ~85-90%, fuel cell ~55%) result in 25-35% overall efficiency, compared to 70-80% for BEVs.##
+
+== 8. Notes ==
+
+* This example demonstrates **multi-context analysis**: the same claim evaluated under two different analytical frames (WTW and TTW) yields different sub-verdicts.
+* The article-level verdict aggregates across contexts, weighted by centrality and evidence quality.
+* The ##dependsOn## field on ##clm_04## shows claim dependency tracking — if ##clm_02## failed verification, ##clm_04## would be affected.
+
+= Example B — "Regular cold-water exposure improves health" =
+
+A complex health claim requiring careful context boundaries.
+
+== 1. ARTICLE ==
+
 (% style="width:100%" %)
-|=Scenario|=Evidence|=Score
-|S_CW_01|E1|0.82
-|S_CW_01|E2|0.75
-== 11. Verdict ==
+|= Field |= Value
+| id | ##art_cw_001##
+| inputType | ##claim##
+| inputValue | ##Regular cold-water exposure below 14°C for at least 6 months improves health.##
+| articleThesis | ##Regular cold-water immersion is claimed to improve health outcomes##
+| detectedInputType | ##claim##
+| requiresSeparateAnalysis | ##true##
+| analysisContexts | ##["ctx_immune", "ctx_mental"]##
+| schemaVersion | ##2.7.0##
+
+== 2. ANALYSIS_CONTEXTs ==
+
+=== 2.1 CTX_IMMUNE — Immune System Effects ===
+
 (% style="width:100%" %)
-|=Field|=Value
-|LikelihoodRange|0.40–0.65 (uncertain)|
-|ExplanationSummary|Some benefits (mood, perceived recovery), but long-term health improvement unclear.|
-|UncertaintyFactors|Small sample sizes, lifestyle confounds|
-== 12. Notes ==
-* Medical ethics → high human involvement.
-* AKEL helpful for metadata, summaries, and links.
-= Example C — “Hillary Clinton communicates with Eleanor Roosevelt.” =
-A belief/metaphorical/non-falsifiable claim.
-== 13. Claim (C_HC_ER) ==
+|= Field |= Value
+| id | ##ctx_immune##
+| articleId | ##art_cw_001##
+| name | ##Cold Exposure and Immune Function##
+| description | ##Whether regular cold-water immersion measurably improves immune system markers in healthy adults##
+| methodology | ##Randomized controlled trials and systematic reviews##
+| temporalPeriod | ##2015–2024##
+
+=== 2.2 CTX_MENTAL — Mental Health Effects ===
+
 (% style="width:100%" %)
-|=Field|=Value
-|Text|“Hillary Clinton communicates with Eleanor Roosevelt.”|
-|Domain|politics_private_beliefs|
-|ClaimType|metaphorical|
-|Evaluability|non-falsifiable|
-|RiskTier|low|
-== 14. Scenario S_ER_01 — Literal paranormal interpretation ==
+|= Field |= Value
+| id | ##ctx_mental##
+| articleId | ##art_cw_001##
+| name | ##Cold Exposure and Mental Wellbeing##
+| description | ##Whether regular cold-water immersion improves mood, stress resilience, or mental health outcomes##
+| methodology | ##Clinical studies and self-report outcome measures##
+| temporalPeriod | ##2015–2024##
+
+== 3. CLAIMs ==
+
 (% style="width:100%" %)
-|=Field|=Value
-|Definitions|“Communicate” = literal paranormal communication [H]|
-|Assumptions|Paranormal abilities exist [H]|
-|EvaluationMethod|Not empirically testable|
-|RiskTier|low|
-|Evaluability|non-falsifiable|
-== 15. Evidence ==
-Minimal placeholder:
+|= id |= text |= type |= claimRole |= isCentral |= contextId |= dependsOn
+| ##clm_cw_01## | Regular cold-water exposure improves health | ##factual## | ##core## | ##true## | ##""## | ##[]##
+| ##clm_cw_02## | Cold-water immersion reduces sick days by 29% | ##factual## | ##core## | ##false## | ##ctx_immune## | ##[]##
+| ##clm_cw_03## | Cold exposure triggers norepinephrine release improving mood | ##factual## | ##core## | ##false## | ##ctx_mental## | ##[]##
+
+== 4. SOURCEs ==
+
 (% style="width:100%" %)
-|=Field|=Value
-|EvidenceID|E_None|
-|Type|none|
-|Category|none|
-|Reliability|low|
-== 16. Verdict ==
-LikelihoodRange: **undefined** 
-Status: **non-evaluable** 
-Reasoning: claim is non-falsifiable.
-= Example D — “Hillary Clinton is a witch.” =
-Clearly rhetorical/metaphorical.
-== 17. Claim (C_HC_Witch) ==
+|= id |= name |= domain |= url |= reliabilityScore |= bias
+| ##src_cw_01## | Buijze et al. (2016) — Dutch Cold Shower RCT | ##journals.plos.org## | ##https:~/~/journals.plos.org/plosone/article?id=10.1371/journal.pone.0161749## | ##0.88## | ##neutral##
+| ##src_cw_02## | Shevchuk (2008) — Adapted cold showers treatment | ##pubmed.ncbi.nlm.nih.gov## | ##https:~/~/pubmed.ncbi.nlm.nih.gov/17993252/## | ##0.72## | ##neutral##
+| ##src_cw_03## | Cochrane Review — Cold exposure interventions | ##cochranelibrary.com## | ##https:~/~/www.cochranelibrary.com/## | ##0.94## | ##neutral##
+
+== 5. EVIDENCE_ITEMs ==
+
 (% style="width:100%" %)
-|=Field|=Value
-|Text|“Hillary Clinton is a witch.”|
-|Domain|rhetoric|
-|ClaimType|rhetorical|
-|Evaluability|non-falsifiable|
-|RiskTier|low|
-== 18. Scenario S_Witch_01 — Literal interpretation ==
+|= id |= sourceId |= statement |= sourceExcerpt |= category |= claimDirection |= contextId
+| ##ev_cw_01## | ##src_cw_01## | 30-second cold showers reduced self-reported sick days by 29% over 90 days | ##"The cold shower group had a 29% reduction in sickness absence from work"## | ##statistic## | ##supports## | ##ctx_immune##
+| ##ev_cw_02## | ##src_cw_01## | Study used self-reported outcomes rather than clinical immune markers | ##"Primary outcome was self-reported sickness absence"## | ##criticism## | ##neutral## | ##ctx_immune##
+| ##ev_cw_03## | ##src_cw_02## | Cold exposure activates the sympathetic nervous system, increasing norepinephrine | ##"…cold hydrotherapy may activate the sympathetic nervous system and increase blood level of norepinephrine…"## | ##direct_evidence## | ##supports## | ##ctx_mental##
+| ##ev_cw_04## | ##src_cw_03## | Evidence for immune function improvement from cold exposure remains limited and low-quality | ##"…no high-quality evidence to support or refute the claimed immune benefits…"## | ##expert_quote## | ##contradicts## | ##ctx_immune##
+
+== 6. CLAIM_VERDICTs ==
+
+=== 6.1 Verdict for clm_cw_01 (core, overall) ===
+
 (% style="width:100%" %)
-|=Field|=Value
-|Definitions|Supernatural definition of “witch”|
-|Assumptions|Supernatural powers exist|
-|EvaluationMethod|Non-testable|
-|Evaluability|non-falsifiable|
-== 19. Evidence ==
-None required.
-== 20. Verdict ==
-Likelihood: **undefined** 
-Reasoning: rhetorical, not empirical.
-= Automation Summary Across Examples =
-== 21. Fully Automatable [A] ==
-* Claim normalization 
-* Claim clustering 
-* Evidence metadata extraction 
-* Initial scenario scaffolding 
-* Reliability heuristics 
-* Relevance ranking 
-* Draft verdicts 
-* Trigger detection 
-== 22. Mixed [M] ==
-* Assumptions 
-* Context boundaries 
-* Relevance scoring 
-* Reasoning chain 
-* Uncertainty factors 
-== 23. Human-only [H] ==
-* Definitions 
-* Ethical constraints 
-* High-risk scenario approval 
-* Interpretation of meaning 
-* Final verdict approval
+|= Field |= Value
+| id | ##cv_cw_01##
+| claimId | ##clm_cw_01##
+| verdict | ##MIXED##
+| truthPercentage | ##48##
+| confidence | ##62##
+| explanation | ##Evidence supports some benefits (reduced sick days, mood improvement) but long-term "health improvement" is not substantiated by high-quality evidence. Effects vary significantly by outcome measured.##
+| supportingEvidenceIds | ##["ev_cw_01", "ev_cw_03"]##
+| opposingEvidenceIds | ##["ev_cw_04"]##
+
+=== 6.2 Verdict for clm_cw_02 (sick days, immune context) ===
+
+(% style="width:100%" %)
+|= Field |= Value
+| id | ##cv_cw_02##
+| claimId | ##clm_cw_02##
+| verdict | ##LEANING-TRUE##
+| truthPercentage | ##62##
+| confidence | ##65##
+| explanation | ##The Dutch RCT found a 29% reduction, but the outcome was self-reported, the cold exposure was brief (30 seconds), and the Cochrane review found insufficient high-quality evidence for immune claims.##
+| supportingEvidenceIds | ##["ev_cw_01"]##
+| opposingEvidenceIds | ##["ev_cw_02", "ev_cw_04"]##
+
+=== 6.3 Verdict for clm_cw_03 (mood, mental context) ===
+
+(% style="width:100%" %)
+|= Field |= Value
+| id | ##cv_cw_03##
+| claimId | ##clm_cw_03##
+| verdict | ##MOSTLY-TRUE##
+| truthPercentage | ##74##
+| confidence | ##70##
+| explanation | ##Norepinephrine release from cold exposure is well-documented physiologically. The mood improvement mechanism is plausible and supported, though clinical outcomes data is limited.##
+| supportingEvidenceIds | ##["ev_cw_03"]##
+| opposingEvidenceIds | ##[]##
+
+== 7. ARTICLE_VERDICT ==
+
+(% style="width:100%" %)
+|= Field |= Value
+| articleId | ##art_cw_001##
+| verdict | ##MIXED##
+| truthPercentage | ##50##
+| confidence | ##64##
+| summary | ##Regular cold-water exposure shows some health benefits, particularly in mood and perceived illness reduction, but the broad claim "improves health" is not well-supported by high-quality evidence. Mental health benefits have stronger physiological backing than immune function claims.##
+
+== 8. Notes ==
+
+* This example shows **context-divergent verdicts**: immune context (LEANING-TRUE, 62%) vs mental context (MOSTLY-TRUE, 74%) produce different outcomes from the same broad claim.
+* Gate 4 Confidence Assessment: immune context verdict is MEDIUM (65% confidence, 3 sources), mental context is MEDIUM (70% confidence, 2 sources).
+* The ##criticism## category evidence (##ev_cw_02##) has a ##neutral## claimDirection — it questions methodology without directly contradicting the conclusion.
+
+= Example C — "Hillary Clinton communicates with Eleanor Roosevelt" =
+
+A non-falsifiable/metaphorical claim — demonstrates Gate 1 handling.
+
+== 1. ARTICLE ==
+
+(% style="width:100%" %)
+|= Field |= Value
+| id | ##art_hc_er_001##
+| inputType | ##claim##
+| inputValue | ##Hillary Clinton communicates with Eleanor Roosevelt.##
+| articleThesis | ##Hillary Clinton is claimed to communicate with the deceased Eleanor Roosevelt##
+| detectedInputType | ##claim##
+| requiresSeparateAnalysis | ##false##
+| analysisContexts | ##[]##
+| schemaVersion | ##2.7.0##
+
+== 2. CLAIMs ==
+
+(% style="width:100%" %)
+|= id |= text |= type |= claimRole |= isCentral |= contextId
+| ##clm_hc_01## | Hillary Clinton communicates with Eleanor Roosevelt | ##evaluative## | ##core## | ##true## | ##""##
+| ##clm_hc_02## | Clinton engaged in imaginary conversations as a reflective exercise guided by Jean Houston | ##factual## | ##attribution## | ##false## | ##""##
+
+== 3. SOURCEs ==
+
+(% style="width:100%" %)
+|= id |= name |= domain |= url |= reliabilityScore |= bias
+| ##src_hc_01## | Bob Woodward — The Choice (1996) | ##washingtonpost.com## | ##https:~/~/www.washingtonpost.com/## | ##0.85## | ##neutral##
+
+== 4. EVIDENCE_ITEMs ==
+
+(% style="width:100%" %)
+|= id |= sourceId |= statement |= sourceExcerpt |= category |= claimDirection |= contextId
+| ##ev_hc_01## | ##src_hc_01## | Clinton participated in guided visualization exercises with Jean Houston in which she imagined conversations with Eleanor Roosevelt | ##"At the urging of Jean Houston, Hillary held imaginary conversations with Eleanor Roosevelt as a personal reflection exercise"## | ##direct_evidence## | ##neutral## | ##""##
+
+== 5. CLAIM_VERDICTs ==
+
+=== 5.1 Verdict for clm_hc_01 (core — metaphorical) ===
+
+(% style="width:100%" %)
+|= Field |= Value
+| id | ##cv_hc_01##
+| claimId | ##clm_hc_01##
+| verdict | ##UNVERIFIED##
+| truthPercentage | ##50##
+| confidence | ##35##
+| explanation | ##The claim is ambiguous between literal paranormal communication (non-falsifiable) and documented reflective exercises (factual). Under the factual interpretation, Clinton did engage in imaginary conversations with Roosevelt, but these were guided visualization exercises, not literal communication.##
+| supportingEvidenceIds | ##[]##
+| opposingEvidenceIds | ##[]##
+
+=== 5.2 Verdict for clm_hc_02 (attribution — factual) ===
+
+(% style="width:100%" %)
+|= Field |= Value
+| id | ##cv_hc_02##
+| claimId | ##clm_hc_02##
+| verdict | ##TRUE##
+| truthPercentage | ##90##
+| confidence | ##80##
+| explanation | ##Bob Woodward's reporting in The Choice (1996) documents the Jean Houston guided exercises. This is well-sourced from a credible journalist.##
+| supportingEvidenceIds | ##["ev_hc_01"]##
+| opposingEvidenceIds | ##[]##
+
+== 6. ARTICLE_VERDICT ==
+
+(% style="width:100%" %)
+|= Field |= Value
+| articleId | ##art_hc_er_001##
+| verdict | ##UNVERIFIED##
+| truthPercentage | ##50##
+| confidence | ##35##
+| summary | ##The claim is ambiguous. Clinton did engage in guided imaginary conversations with Eleanor Roosevelt as a reflective exercise (documented by Woodward, 1996), but the broader claim of "communication" is non-falsifiable under a paranormal interpretation.##
+
+== 7. Notes ==
+
+* The core claim receives UNVERIFIED with low confidence (35%) — below the 60% threshold that distinguishes MIXED from UNVERIFIED.
+* Gate 4 Confidence Assessment: **INSUFFICIENT** (<2 sources directly addressing the core claim) — marked as DO NOT PUBLISH in a production context. However, the ##isCentral## flag means it is kept with caveats.
+* AKEL decomposes the ambiguous input into two claims: the non-falsifiable core and a factual attribution claim. This demonstrates how claim decomposition can extract verifiable sub-claims from non-falsifiable inputs.
+
+= Example D — "Hillary Clinton is a witch" =
+
+A rhetorical/metaphorical claim — demonstrates classification without meaningful evidence search.
+
+== 1. ARTICLE ==
+
+(% style="width:100%" %)
+|= Field |= Value
+| id | ##art_hc_w_001##
+| inputType | ##claim##
+| inputValue | ##Hillary Clinton is a witch.##
+| articleThesis | ##Hillary Clinton is claimed to be a witch##
+| detectedInputType | ##claim##
+| requiresSeparateAnalysis | ##false##
+| analysisContexts | ##[]##
+| schemaVersion | ##2.7.0##
+
+== 2. CLAIMs ==
+
+(% style="width:100%" %)
+|= id |= text |= type |= claimRole |= isCentral |= contextId
+| ##clm_w_01## | Hillary Clinton is a witch | ##evaluative## | ##core## | ##true## | ##""##
+
+== 3. SOURCEs ==
+
+No sources fetched — claim classified as non-verifiable rhetorical expression.
+
+== 4. EVIDENCE_ITEMs ==
+
+No evidence items — research phase skipped after Gate 1 assessment.
+
+== 5. CLAIM_VERDICTs ==
+
+(% style="width:100%" %)
+|= Field |= Value
+| id | ##cv_w_01##
+| claimId | ##clm_w_01##
+| verdict | ##UNVERIFIED##
+| truthPercentage | ##50##
+| confidence | ##15##
+| explanation | ##This is a rhetorical or metaphorical expression, not a factual claim. Under any literal interpretation it is non-falsifiable. No evidence search conducted.##
+| supportingEvidenceIds | ##[]##
+| opposingEvidenceIds | ##[]##
+
+== 6. ARTICLE_VERDICT ==
+
+(% style="width:100%" %)
+|= Field |= Value
+| articleId | ##art_hc_w_001##
+| verdict | ##UNVERIFIED##
+| truthPercentage | ##50##
+| confidence | ##15##
+| summary | ##This input is rhetorical in nature and not a factual claim suitable for evidence-based analysis. No verdict can be meaningfully assigned.##
+
+== 7. Notes ==
+
+* Gate 4 Confidence Assessment: **INSUFFICIENT** (0 sources) — marked as DO NOT PUBLISH.
+* Confidence is extremely low (15%) reflecting the absence of any evidence.
+* In practice, AKEL still processes such inputs but produces a minimal result with clear labeling. The ##isCentral## flag ensures the core claim is always represented in output.
+
+= AKEL Automation Summary =
+
+Based on the current implementation (v2.10.2), the following summarizes what AKEL automates end-to-end versus what requires human involvement in future production modes.
+
+== Fully Automated (current POC) ==
+
+* Claim extraction and decomposition (text → sub-claims with roles and centrality)
+* AnalysisContext detection (heuristic + LLM hybrid)
+* KeyFactor discovery (decomposition questions per claim)
+* Evidence extraction with source attribution and probative value scoring
+* Source reliability scoring (LLM + Cache architecture)
+* 7-layer evidence quality defense (provenance, tangential pruning, contestation validation)
+* Verdict generation on 7-point truth scale with confidence scoring
+* Quality gate enforcement (Gate 1: Claim Validation, Gate 4: Verdict Confidence)
+* Contestation detection (doubted vs contested status)
+* Harm potential assessment
+* Full markdown report generation
+
+== Requires Human Review (planned for Alpha/Production) ==
+
+* High-risk tier claims (medical, legal, elections) — human review before publication
+* Definition boundaries for ambiguous terms
+* Ethical constraints on sensitive topics
+* Final verdict approval for contested or high-risk claims
+* Publication mode decisions (Draft-Only vs AI-Generated vs Human-Reviewed)
+
+== See Also ==
+
+* [[Core Data Model ERD>>FactHarbor.Specification.Diagrams.Core Data Model ERD.WebHome]]
+* [[Evidence and Verdict Workflow>>FactHarbor.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]]
+* [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]
+* [[Quality Gates Reference>>FactHarbor.Specification.Implementation.Pipeline Architecture.Quality Gates.WebHome]]

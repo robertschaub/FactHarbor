@@ -1,19 +1,5 @@
 = POC Requirements =
 
-{{warning}}
-**Implementation Status (Updated January 2026)**
-
-This specification describes the original POC1 design. The current implementation (v2.6.33) has evolved in several key areas:
-
-* **Verdict Scale**: Expanded from 4-point to **7-point symmetric scale** (TRUE → MOSTLY-TRUE → LEANING-TRUE → MIXED/UNVERIFIED → LEANING-FALSE → MOSTLY-FALSE → FALSE)
-* **Scenarios**: Replaced with **KeyFactors** (decomposition questions discovered during analysis)
-* **Quality Gates**: Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence) implemented; Gates 2-3 deferred
-* **Caching**: Redis claim caching **not yet implemented**; all data stored as JSON blobs
-* **Data Model**: Normalized tables **not implemented**; using JSON blob storage in SQLite
-
-See `Docs/STATUS/Documentation_Inconsistencies.md` for full comparison.
-{{/warning}}
-
 {{info}}
 **POC1 Architecture:** 3-stage AKEL pipeline (Extract → Analyze → Holistic) with Redis caching, credit tracking, and LLM abstraction layer.
 
@@ -47,10 +33,6 @@ See [[POC1 API Specification>>FactHarbor.Specification.POC.API-and-Schemas.WebHo
 * Complete feature set
 
 === 1.2 Scenarios Deferred to POC2 ===
-
-{{info}}
-**Implementation Update (v2.6.33):** Scenarios were **replaced with KeyFactors** - decomposition questions discovered during the understanding phase. KeyFactors are optional, emergent, and do not require a separate entity. See `Docs/ARCHITECTURE/KeyFactors_Design.md` for rationale.
-{{/info}}
 
 **Intentional Simplification:**
 

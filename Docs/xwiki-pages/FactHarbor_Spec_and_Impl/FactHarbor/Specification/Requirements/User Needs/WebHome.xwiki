@@ -234,14 +234,14 @@ Additional information...
 {{warning}}
 **Status:** Deferred (Not in V1.0)
 
-Full verdict evolution timeline has been **dropped from V1.0**. The system will track edit history only. Versioned entities and full evolution tracking are deferred to future releases.
+Full verdict evolution timeline has been **dropped from V1.0**. The system tracks UCM config versions and per-job config snapshots. Full evolution tracking is deferred to future releases.
 {{/warning}}
 
 **As** an article reader, 
 **I want** to see how a claim's verdict has evolved over time with clear timestamps, 
 **so that** I can understand whether the current assessment is stable or recently changed based on new evidence.
 
-**Maps to**: ~~FR8 (Deferred)~~, Data Model (Versioned entities), NFR3 (Transparency)
+**Maps to**: ~~FR8 (Deferred)~~, Data Model (UCM config tracking), NFR3 (Transparency)
 
 === UN-16: AI vs. Human Review Status ===
 **As** an article reader, 
@@ -293,7 +293,7 @@ This section provides a consolidated view of how user needs drive system require
 |(% style="width:45%" %)Source (with track_record_score)|(% style="width:55%" %)UN-5, UN-6 (source reliability)
 |(% style="width:45%" %)Scenario|(% style="width:55%" %)UN-2, UN-3, UN-8 (context-dependent truth)
 |(% style="width:45%" %)Verdict (with likelihood_range, uncertainty_factors)|(% style="width:55%" %)UN-1, UN-2, UN-3, UN-8 (detailed assessment)
-|(% style="width:45%" %)Versioned entities|(% style="width:55%" %)UN-15 (evolution timeline)
+|(% style="width:45%" %)UCM config snapshots|(% style="width:55%" %)UN-15 (evolution timeline)
 |(% style="width:45%" %)AuthorType field|(% style="width:55%" %)UN-16 (AI vs. human status)
 
 == 9. User Need Gaps & Future Considerations ==

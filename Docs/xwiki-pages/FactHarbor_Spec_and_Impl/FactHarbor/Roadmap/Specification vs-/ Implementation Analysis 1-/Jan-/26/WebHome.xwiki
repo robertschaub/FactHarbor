@@ -3,7 +3,11 @@
 **Date:** January 2, 2026\\
 **Specification Source:** FactHarbor Spec and Impl 1.Jan.26.xar (xWiki export)\\
 **Implementation Version:** Current codebase (analyzer v2.6.17)\\
-**Analyst:** Claude Code
+**Analyst:** Claude Code
+
+{{info}}
+**Historical Document (January 2026, v2.6.17).** Many gaps identified here have since been resolved — see [[POC to Alpha Transition>>FactHarbor.Roadmap.POC to Alpha Transition.WebHome]] for current status (v2.10.2). Key changes: AnalysisContexts fully implemented, 7-point verdict scale adopted, LLM tiering enabled, evidence quality filtering added.
+{{/info}}
 
 ----
 

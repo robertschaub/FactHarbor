@@ -1,8 +1,8 @@
-{{warning}}
-**Implementation Status (v2.6.33)** - Full audit trail with EDIT table is **not yet implemented**. Current implementation uses ##JobEvents## table for job execution logs and JSON blob storage (no versioned entities).
-{{/warning}}
+{{info}}
+**Implementation Status (v2.10.2)** — Current implementation uses ##JobEvents## for job execution logs and UCM config tables for configuration versioning. Analysis output data is **immutable** and never edited. All audit tracking is on UCM configuration changes and job execution, not on data edits.
+{{/info}}
 
-= Current Implementation =
+= Current Implementation: Job Execution Audit =
 
 {{mermaid}}
 
@@ -31,65 +31,61 @@ erDiagram
 **Current audit capabilities:**
 * Job creation and completion timestamps
 * Job execution events (start, progress, errors)
-* No entity-level versioning
-* No user attribution (no user system)
+* Immutable analysis results (JSON blobs)
+* No user attribution needed (anonymous submission model)
 
-= Target Architecture (Future) =
+= UCM Configuration Audit Trail =
 
 {{mermaid}}
 
 erDiagram
-    USERS ||--o{ EDITS : makes
-    CLAIMS ||--o{ EDITS : tracks
-    EVIDENCE ||--o{ EDITS : tracks
-    SOURCES ||--o{ EDITS : tracks
-    KEY_FACTORS ||--o{ EDITS : tracks
+    CONFIG_BLOBS ||--o{ CONFIG_ACTIVE : activated_by
+    CONFIG_BLOBS ||--o{ CONFIG_USAGE : referenced_by
+    JOBS ||--o{ CONFIG_USAGE : uses
 
-    USERS {
-        uuid id_PK
-        text name
-        text email
+    CONFIG_BLOBS {
+        text hash_PK
+        text config_type
+        json content
+        text changed_by
+        text change_reason
+        datetime created_at
     }
 
-    CLAIMS {
-        uuid id_PK
-        text text
+    CONFIG_ACTIVE {
+        text config_type_PK
+        text blob_hash_FK
+        datetime activated_at
+        text activated_by
     }
 
-    EVIDENCE {
-        uuid id_PK
-        uuid claim_id_FK
+    CONFIG_USAGE {
+        int id_PK
+        int job_id_FK
+        text config_type
+        text blob_hash_FK
+        datetime snapshot_at
     }
 
-    SOURCES {
-        uuid id_PK
-        text name
-    }
-
-    KEY_FACTORS {
-        uuid id_PK
-        uuid claim_id_FK
-        text question
-    }
-
-    EDITS {
-        uuid id_PK
-        text entity_type
-        uuid entity_id
-        uuid user_id_FK
-        text change_type
-        boolean is_automated
-        jsonb changes
-        text reason
-        timestamp created_at
+    JOBS {
+        int JobId_PK
+        string Status
+        datetime CreatedAt
     }
 
 {{/mermaid}}
 
-**Target features:**
-* Full entity versioning (Claims, Evidence, Sources, KeyFactors)
-* User attribution for all changes
-* AKEL vs human edit distinction
-* Hot/cold storage tiering (PostgreSQL + S3)
+**UCM audit capabilities:**
+* Every config change stored as immutable blob (content-addressed by hash)
+* Activation history: which config was active when, changed by whom
+* Per-job config snapshots: every analysis references the exact config used
+* Full reproducibility: re-run any analysis with its original config
 
-See [[Data Model>>FactHarbor.Specification.Data Model.WebHome]] for complete target architecture.
+= Design Principles =
+
+* **Analysis data is immutable** — never edited after creation
+* **Improve the system, not the data** — quality improvements flow through UCM config changes
+* **Every report references its config** — via ##config_usage## linking job to config snapshot
+* **Config blobs are never deleted** — complete audit trail preserved
+
+See [[Data Model>>FactHarbor.Specification.Data Model.WebHome]] for complete architecture.

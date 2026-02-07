@@ -1,6 +1,6 @@
-{{warning}}
-**Implementation Status (v2.6.33)** - This diagram shows the **current implementation** data model. Storage is JSON blobs in SQLite, not normalized tables. Scenarios replaced by KeyFactors (optional decomposition questions). No user system implemented.
-{{/warning}}
+{{info}}
+This diagram shows the **current implementation** data model (v2.10.2). Storage is JSON blobs in SQLite. AnalysisContexts (bounded analytical frames) and KeyFactors (decomposition questions with contestation tracking) are embedded in result JSON, not separate stored entities. No user system implemented.
+{{/info}}
 
 = Current Implementation Data Model =
 
@@ -11,8 +11,8 @@ erDiagram
     ARTICLE ||--|| ARTICLE_VERDICT : has
     CLAIM ||--|| CLAIM_VERDICT : has
     CLAIM ||--o{ CLAIM : depends_on
-    CLAIM_VERDICT }o--o{ FACT : supported_by
-    SOURCE ||--o{ FACT : provides
+    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : supported_by
+    SOURCE ||--o{ EVIDENCE_ITEM : provides
     ARTICLE ||--o{ ANALYSIS_CONTEXT : has
 
     ARTICLE {
@@ -21,8 +21,8 @@ erDiagram
         string inputValue
         string articleThesis
         string detectedInputType
-        boolean hasMultipleScopes
-        json distinctScopes
+        boolean requiresSeparateAnalysis
+        json analysisContexts
         string schemaVersion
     }
 
@@ -35,7 +35,7 @@ erDiagram
         string_array dependsOn
         string keyFactorId
         boolean isCentral
-        string relatedScopeId
+        string contextId
     }
 
     CLAIM_VERDICT {
@@ -45,8 +45,8 @@ erDiagram
         int truthPercentage
         int confidence
         string explanation
-        string_array supportingFactIds
-        string_array opposingFactIds
+        string_array supportingEvidenceIds
+        string_array opposingEvidenceIds
     }
 
     ARTICLE_VERDICT {
@@ -57,13 +57,14 @@ erDiagram
         string summary
     }
 
-    FACT {
+    EVIDENCE_ITEM {
         string id_PK
         string sourceId_FK
-        string text
-        string quote
-        string relevance
-        boolean supports
+        string statement
+        string sourceExcerpt
+        string category
+        string claimDirection
+        string contextId
     }
 
     SOURCE {

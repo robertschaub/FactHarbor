@@ -362,7 +362,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 ** **Sustainability Angle:** Fact-checking prevents information pollution
 ** **Civic Tech:** Democracy and transparency focus
 * **Application:** https:~/~/prototypefund.opendata.ch/
-* **Next Steps:** Monitor next funding round (typically 1-2 per year), prepare application
+* **Next Steps:** Monitor next funding round (periodic), prepare application
 
 ==== **Swiss National Science Foundation (SNSF)** ====
 
@@ -717,7 +717,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 == 8. STRATEGIC PRIORITY MATRIX ==
 
-=== Tier 1: Immediate Action (Next 3 Months) ===
+=== Tier 1: Foundation ===
 
 **Critical for POC success and credibility:**
 
@@ -725,7 +725,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 **ClaimReview Implementation** (Google/Duke)
 
 * Technical: Essential for search visibility
-* Timeline: 2-4 weeks development
+* Scope: Moderate development effort
 * Impact: HIGH - enables discovery by users
 )))
 1. (((
@@ -750,7 +750,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 * Impact: MEDIUM - Swiss language fact-checking partner
 )))
 
-=== Tier 2: Near-Term Development (3-6 Months) ===
+=== Tier 2: Growth ===
 
 **Build partnerships and apply for funding:**
 
@@ -785,7 +785,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 * Impact: MEDIUM - proven technology partnership
 )))
 
-=== Tier 3: Medium-Term Growth (6-12 Months) ===
+=== Tier 3: Scale ===
 
 **Scale and expand reach:**
 
@@ -793,7 +793,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 **EFCSN Membership Application**
 
 * Requirement: Demonstrated fact-checking track record
-* Timeline: After 6+ months of operations
+* Timeline: After sufficient operational track record
 * Impact: MEDIUM - European credibility
 )))
 1. (((
@@ -965,7 +965,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 * **Likelihood:** MEDIUM (high standards, unproven track record)
 * **Impact:** HIGH (limits funding and credibility)
 * **Mitigation:**
-** Build 6+ months of quality fact-checks before applying
+** Build sufficient quality fact-check track record before applying
 ** Get endorsement from existing member (dpa, Full Fact)
 ** Demonstrate all 5 IFCN principles clearly
 ** Start with EFCSN (potentially easier for Swiss org)
@@ -987,7 +987,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 * **Mitigation:**
 ** Use existing tools (Full Fact WordPress plugin as reference)
 ** Consult Duke Reporters' Lab
-** Hire contractor if needed (1-2 weeks work)
+** Hire contractor if needed
 
 ==== Risk: Funding Competition ====
 
@@ -1015,39 +1015,53 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 == 12. RECOMMENDED ACTION PLAN ==
 
-=== Phase 1: Foundation (Months 1-3) ===
+=== Phase 1: Foundation ===
 
 **Goal: Establish credibility and core partnerships**
-
-**Week 1-2:**
 
 1. ✅ Implement ClaimReview schema in POC
 1. ✅ Create GitHub organization and publish initial code
 1. ✅ Draft IFCN signatory application (don't submit yet)
 
-**Week 3-4:** 4. 📧 Email Dr. Chengkai Li (UTA ClaimBuster) about research collaboration 5. 📧 Contact dpa Fact-Checking about Swiss partnership 6. 📞 Reach out to ETH Zurich NLP researchers
+1. 📧 Email Dr. Chengkai Li (UTA ClaimBuster) about research collaboration
+1. 📧 Contact dpa Fact-Checking about Swiss partnership
+1. 📞 Reach out to ETH Zurich NLP researchers
 
-**Month 2:** 7. 📝 Prepare Innosuisse application materials (with ETH partner) 8. 📧 Contact Duke Reporters' Lab about Tech & Check 9. 🔍 Monitor Knight Prototype Fund for next call
+1. 📝 Prepare Innosuisse application materials (with ETH partner)
+1. 📧 Contact Duke Reporters' Lab about Tech & Check
+1. 🔍 Monitor Knight Prototype Fund for next call
 
-**Month 3:** 10. ✅ Submit Innosuisse application (if ETH partnership confirmed) 11. 📧 Contact Full Fact about technology integration 12. 📝 Begin documenting 6 months of fact-checks for IFCN application
+1. ✅ Submit Innosuisse application (if ETH partnership confirmed)
+1. 📧 Contact Full Fact about technology integration
+1. 📝 Begin documenting fact-checks for IFCN application
 
-=== Phase 2: Growth (Months 4-6) ===
+=== Phase 2: Growth ===
 
 **Goal: Secure funding and expand partnerships**
 
-**Month 4:** 13. 📧 Outreach to SRF about pilot partnership 14. 🎓 Contact MediaWise about Swiss TFCN chapter 15. 📝 Apply for Prototype Fund Switzerland (if call open)
+1. 📧 Outreach to SRF about pilot partnership
+1. 🎓 Contact MediaWise about Swiss TFCN chapter
+1. 📝 Apply for Prototype Fund Switzerland (if call open)
 
-**Month 5:** 16. 🏛️ Submit EFCSN membership application 17. 📧 Contact EDMO about research partnership 18. 🤝 Attend #GlobalFact conference (if timing aligns)
+1. 🏛️ Submit EFCSN membership application
+1. 📧 Contact EDMO about research partnership
+1. 🤝 Attend #GlobalFact conference (if timing aligns)
 
-**Month 6:** 19. ✅ Submit IFCN signatory application (after 6 months operation) 20. 📝 Knight Prototype Fund application (if call open) 21. 📊 Publish first research findings/case studies
+1. ✅ Submit IFCN signatory application (after sufficient operational track record)
+1. 📝 Knight Prototype Fund application (if call open)
+1. 📊 Publish first research findings/case studies
 
-=== Phase 3: Scale (Months 7-12) ===
+=== Phase 3: Scale ===
 
 **Goal: Establish FactHarbor as infrastructure**
 
-**Month 7-9:** 22. 💰 Google News Initiative grant application (after IFCN signatory) 23. 🤝 Expand media partnerships (Tamedia, NZZ) 24. 📚 Develop educational curriculum with EJTA
+1. 💰 Google News Initiative grant application (after IFCN signatory)
+1. 🤝 Expand media partnerships (Tamedia, NZZ)
+1. 📚 Develop educational curriculum with EJTA
 
-**Month 10-12:** 25. 🌍 EU EDMO partnership discussion 26. 📊 Academic publication submission 27. 🎯 Strategic review and next-phase planning
+1. 🌍 EU EDMO partnership discussion
+1. 📊 Academic publication submission
+1. 🎯 Strategic review and next-phase planning
 
 ----
 
@@ -1055,28 +1069,28 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 === Partnership Metrics ===
 
-* Number of active partnerships: Target 10+ by Month 12
-* IFCN/EFCSN membership: Achieved by Month 12
-* Academic publications: 1+ submitted by Month 12
-* Media integrations: 2+ pilot partnerships by Month 12
+* Number of active partnerships: Target 10+
+* IFCN/EFCSN membership: Achieved
+* Academic publications: 1+ submitted
+* Media integrations: 2+ pilot partnerships
 
 === Funding Metrics ===
 
-* Total funding secured: Target CHF 500K+ (Year 1)
+* Total funding secured: Target CHF 500K+
 * Funding source diversity: 3+ different funders
 * Swiss funding: Innosuisse or Gebert Rüf secured
 
 === Technical Metrics ===
 
-* ClaimReview implementation: Month 1
-* API integrations: 2+ by Month 6
-* Open source contributors: 5+ by Month 12
+* ClaimReview implementation: Phase 1
+* API integrations: 2+
+* Open source contributors: 5+
 
 === Impact Metrics ===
 
-* Fact-checks published: 100+ by Month 6, 500+ by Month 12
-* User reach: 10K+ users by Month 12
-* Media citations: 5+ by Month 12
+* Fact-checks published: 100+, scaling to 500+
+* User reach: 10K+ users
+* Media citations: 5+
 
 ----
 
@@ -1142,16 +1156,16 @@ FactHarbor enters a mature but evolving fact-checking ecosystem with a unique va
 
 == APPENDIX B: FUNDING SUMMARY TABLE ==
 
-|=Funding Source|=Amount|=Timeline|=Requirements|=Priority
-|Innosuisse Innovation|CHF 500K/year|3-6 months|Swiss entity, research partner, 10% co-funding|**HIGH**
-|BRIDGE Proof of Concept|CHF 150-850K|3-6 months|Research partnership (SNSF + Innosuisse)|**HIGH**
-|Gebert Rüf InnoBooster|CHF 150K|Rolling|Prior funding proof, market potential|**MEDIUM**
-|Prototype Fund CH|CHF 100K|1-2/year|Open source, public interest, Swiss work permit|**HIGH**
-|Knight Prototype Fund|$50K|Rolling|Innovation focus|**MEDIUM**
-|Google News Initiative|$25-100K|Annual rounds|IFCN signatory or endorsement|**HIGH**
-|EFCSN/EU Grants|Varies|Various|European focus, consortium|**MEDIUM**
+|=Funding Source|=Amount|=Requirements|=Priority
+|Innosuisse Innovation|CHF 500K/year|Swiss entity, research partner, 10% co-funding|**HIGH**
+|BRIDGE Proof of Concept|CHF 150-850K|Research partnership (SNSF + Innosuisse)|**HIGH**
+|Gebert Rüf InnoBooster|CHF 150K|Prior funding proof, market potential|**MEDIUM**
+|Prototype Fund CH|CHF 100K|Open source, public interest, Swiss work permit|**HIGH**
+|Knight Prototype Fund|$50K|Innovation focus|**MEDIUM**
+|Google News Initiative|$25-100K|IFCN signatory or endorsement|**HIGH**
+|EFCSN/EU Grants|Varies|European focus, consortium|**MEDIUM**
 
-**Total Potential (Year 1):** CHF 500K-1M+ / $550K-1.1M+
+**Total Potential:** CHF 500K-1M+ / $550K-1.1M+
 
 ----
 

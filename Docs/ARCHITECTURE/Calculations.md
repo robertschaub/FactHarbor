@@ -29,7 +29,7 @@ FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%. Th
 
 ### Implementation
 
-**File**: `apps/web/src/lib/analyzer.ts`
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts`
 
 **Function**: `percentageToClaimVerdict` (line ~1544)
 ```typescript
@@ -121,7 +121,7 @@ interface AnalysisContext {
 Analysis contexts are determined from:
 1. **Input analysis** (understandClaim phase): Explicit or implied analysis contexts in user query
 2. **Evidence extraction** (extractEvidence phase): Sources may define their own EvidenceScope via `evidenceScope`
-3. **Claim decomposition**: Claims tagged with `contextId` (legacy: `relatedProceedingId`)
+3. **Claim decomposition**: Claims tagged with `contextId`
 
 ### EvidenceScope vs AnalysisContext
 
@@ -129,7 +129,7 @@ When evidence defines an EvidenceScope that differs from the AnalysisContext (e.
 
 ### Design Decision: evidenceScope Kept Separate
 
-The `evidenceScope` field on facts is intentionally kept separate from top-level analysis contexts. This enables:
+The `evidenceScope` field on evidence items is intentionally kept separate from top-level analysis contexts. This enables:
 - **Provenance tracking**: Distinguishes analysis context detected from input vs EvidenceScope defined by evidence
 - **Mismatch detection**: Identifies when EvidenceScope differs from the analysis context
 - **Verdict enrichment**: Notes EvidenceScope metadata without modifying detected analysis contexts
@@ -216,7 +216,7 @@ This prevents criticism of one analysis context from penalizing claims about a d
 
 ### Evidence-Based Contestation
 
-**File**: `apps/web/src/lib/analyzer.ts` (line ~5478)
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~5478)
 
 Contestation with documented evidence reduces verdict scores:
 
@@ -239,7 +239,7 @@ if (evidenceBasedContestation) {
 
 ```mermaid
 graph TD
-    Facts[Extracted Facts] --> ClaimVerdicts[Claim Verdicts]
+    Evidence[Evidence Items] --> ClaimVerdicts[Claim Verdicts]
     ClaimVerdicts --> WeightCalc[Weight Calculation<br/>━━━━━━━━━━━━━<br/>• centrality: 2.0x<br/>• harmPotential: 1.5x<br/>• contested: 0.3-0.5x]
     WeightCalc --> KeyFactors[Key Factor Verdicts]
     KeyFactors --> ContextAnswers[Context Answers]
@@ -301,7 +301,7 @@ const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avgEffectiveWe
 
 ### Level 2: Key Factor Verdicts
 
-**File**: `apps/web/src/lib/analyzer.ts` (line ~5543)
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~5543)
 
 Key factors aggregate claims mapped to them:
 
@@ -317,7 +317,7 @@ else supports = "neutral";
 
 ### Level 3: Context Answers
 
-**File**: `apps/web/src/lib/analyzer.ts` (line ~4700)
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~4700)
 
 Analysis contexts aggregate key factors with contestation correction:
 
@@ -336,7 +336,7 @@ if (answerTruthPct >= 72 && positiveFactors > effectiveNegatives) {
 
 ### Level 4: Overall Answer
 
-**File**: `apps/web/src/lib/analyzer.ts` (line ~4796)
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~4796)
 
 Overall answer averages analysis-context answers (de-duplicated):
 
@@ -481,7 +481,7 @@ De-duplication is applied at multiple levels:
 
 ## 7. Dependency Handling
 
-**File**: `apps/web/src/lib/analyzer.ts` (line ~5512)
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~5512)
 
 Claims can depend on other claims (e.g., "timing" depends on "attribution"):
 
@@ -502,7 +502,7 @@ if (failedDeps.length > 0) {
 
 ## 8. Pseudoscience Escalation
 
-**File**: `apps/web/src/lib/analyzer.ts` (line ~1108)
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~1108)
 
 Claims matching pseudoscience patterns (water memory, homeopathy, etc.) are automatically escalated:
 
@@ -516,7 +516,7 @@ if (claimPseudo.isPseudoscience) {
 
 ## 9. Benchmark Guard (Proportionality Claims)
 
-**File**: `apps/web/src/lib/analyzer.ts` (line ~4879)
+**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~4879)
 
 Claims about proportionality/appropriateness without comparative evidence are forced to "uncertain":
 
@@ -683,7 +683,7 @@ FactHarbor's calculation system:
 
 1. **Scales verdicts** using a symmetric 7-band reliability system (matches verdict scale)
 2. **Distinguishes counter-evidence** from contestation and applies penalties
-3. **Aggregates hierarchically** from facts → claims → factors → analysis contexts → overall
+3. **Aggregates hierarchically** from evidence → claims → factors → analysis contexts → overall
 4. **Modulates by confidence** using truth bands
 5. **De-duplicates near-identical claims** to prevent double-counting
 6. **Handles dependencies** to avoid cascading false prerequisites

@@ -1,7 +1,7 @@
 = LLM Schema Mapping Reference =
 
-**Version**: 2.6.33
-**Date**: 2026-01-20
+**Version**: 3.1.0
+**Date**: 2026-02-07
 **Purpose**: Complete mapping of TypeScript -> LLM Prompts -> JSON Schemas
 **Audience**: Prompt Engineers, LLM System Developers
 
@@ -15,15 +15,17 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 == Master Mapping Table ==
 
-|= TypeScript Type |= Prompt Term |= LLM Output Field (v3.1) |= LLM Output Field (Legacy) |= Zod Schema
-| ##AnalysisContext## | "AnalysisContext" or "Context" | ##analysisContexts## | ##distinctProceedings## | ##AnalysisContextSchema##
-| ##EvidenceScope## | "EvidenceScope" or "Scope" | ##evidenceScope## | ##evidenceScope## | ##EvidenceScopeSchema##
+|= TypeScript Type |= Prompt Term |= LLM Output Field |= Zod Schema
+| ##AnalysisContext## | "AnalysisContext" or "Context" | ##analysisContexts## | ##AnalysisContextSchema##
+| ##EvidenceScope## | "EvidenceScope" or "Scope" | ##evidenceScope## | ##EvidenceScopeSchema##
+| ##EvidenceItem## | "Evidence" | ##evidenceItems## | ##EvidenceItemSchema##
+| ##ContextAnswer## | "Verdict" | (embedded in result) | ##ContextAnswerSchema##
 
-> **CRITICAL TERMINOLOGY (v2.6.39)**: "Scope" refers to ##EvidenceScope## (per-evidence metadata), NOT ##AnalysisContext##. Use "Context" for top-level analytical frames.
+> **CRITICAL TERMINOLOGY**: "Scope" refers to ##EvidenceScope## (per-evidence metadata), NOT ##AnalysisContext##. Use "Context" for top-level analytical frames.
 
-|= TypeScript Type |= Prompt Term |= LLM Output Field (v3.1) |= LLM Output Field (Legacy) |= Zod Schema
-| ##EvidenceItem## | "Evidence" | ##evidenceItems## | (none) | ##EvidenceItemSchema##
-| ##ContextAnswer## | "Verdict" | (embedded in result) | (embedded in result) | ##ContextAnswerSchema##
+{{warning}}
+**v3.0 Breaking Change (February 2026):** All legacy JSON field names have been removed from the codebase. Legacy names (##distinctProceedings##, ##relatedProceedingId##, ##proceedingId##, ##supportingFactIds##, ##facts##, etc.) are **no longer accepted** by Zod schemas. Only the migration script (##apps/api/scripts/migrate-terminology-v2.7.ts##) handles old→new field renaming when reading historical job data from the database.
+{{/warning}}
 
 ----
 
@@ -75,7 +77,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 }
 {{/code}}
 
-**Zod Validation**: ##UnderstandingSchema## (in ##analyzer.ts##)
+**Zod Validation**: ##UnderstandingSchema## (in ##orchestrated.ts##)
 
 **Key Mappings**:
 * Prompt: "AnalysisContext" -> Output: ##analysisContexts## array
@@ -127,14 +129,11 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 }
 {{/code}}
 
-**Legacy Compatibility**:
-* Legacy field ##relatedProceedingId## is still accepted when reading older jobs.
-
 **Zod Validation**: ##EvidenceItemSchema## (in ##types.ts##)
 
 **Key Mappings**:
 * Prompt: "EvidenceScope" -> Output: ##evidenceScope## object (nullable)
-* Prompt: "contextId" -> Output: ##contextId## (legacy: ##relatedProceedingId##)
+* Prompt: "contextId" -> Output: ##contextId##
 
 ----
 
@@ -196,13 +195,10 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 }
 {{/code}}
 
-**Legacy Compatibility**:
-* Legacy fields ##distinctProceedings## and ##proceedingId## are still accepted when reading older jobs.
-
-**Zod Validation**: ##ContextRefinementSchema## (legacy: ##ScopeRefinementSchema##) in ##analyzer.ts##
+**Zod Validation**: ##ContextRefinementSchema## (in ##orchestrated.ts##)
 
 **Key Mappings**:
-* Prompt: "AnalysisContext" -> Output: ##analysisContexts## (legacy: ##distinctProceedings##)
+* Prompt: "AnalysisContext" -> Output: ##analysisContexts##
 * Prompt: "ArticleFrame" -> (explicitly NOT included in output)
 * Prompt: "EvidenceScope" -> (per-evidence metadata, not top-level context)
 
@@ -220,7 +216,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
   originalClaim: string;
   claimsList: string;          // Stringified claims
   contextsList: string;        // Stringified AnalysisContexts
-  factsList: string;           // Stringified facts
+  allEvidenceItems: string;    // Stringified evidence items
 }
 {{/code}}
 
@@ -268,10 +264,7 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 
 See [[Terminology>>FactHarbor.Specification.Reference.Terminology.WebHome]] for "Doubted vs Contested" distinction.
 
-**Legacy Compatibility**:
-* Legacy fields ##proceedingId##/##proceedingName## are still accepted when reading older jobs.
-
-**Zod Validation**: ##VerdictSchema## (in ##analyzer.ts##)
+**Zod Validation**: ##VerdictSchema## (in ##orchestrated.ts##)
 
 ----
 
@@ -281,18 +274,17 @@ See [[Terminology>>FactHarbor.Specification.Reference.Terminology.WebHome]] for 
 
 |= Layer |= Term |= Notes
 | Prompt | "AnalysisContext" or "Context" | Primary prompt term (NEVER "Scope")
-| LLM Output (v2.7) | ##analysisContexts## | JSON field name
-| LLM Output (Legacy) | ##distinctProceedings## | Backward compatibility
+| LLM Output | ##analysisContexts## | JSON field name (v3.1)
 | TypeScript | ##AnalysisContext## | Interface name
 | Database | (embedded in ResultJson) | Stored as JSON blob
 
 === EvidenceScope Bridges ===
 
 |= Layer |= Term |= Notes
-| Prompt | "EvidenceScope" or "Scope" | Per-fact metadata (NOT an AnalysisContext)
+| Prompt | "EvidenceScope" or "Scope" | Per-evidence metadata (NOT an AnalysisContext)
 | LLM Output | ##evidenceScope## | Consistent across versions
 | TypeScript | ##EvidenceScope## | Interface name
-| Database | (embedded in fact objects) | Part of ResultJson
+| Database | (embedded in evidence item objects) | Part of ResultJson
 
 ----
 
@@ -326,17 +318,17 @@ graph TD
 **Wrong** (Prompt says one thing, schema expects another):
 
 {{code language="typescript"}}
-// Prompt says: "Output as 'analysisContexts'"
-// But Zod schema expects: distinctProceedings
+// Prompt says: "Output as 'contexts'"
+// But Zod schema expects: analysisContexts
 
-// Result: Validation fails
+// Result: Validation fails — field names must match exactly
 {{/code}}
 
 **Correct** (Prompt and schema aligned):
 
 {{code language="typescript"}}
-// Prompt says: "Output as 'distinctProceedings'" (CURRENT)
-// Zod schema expects: distinctProceedings
+// Prompt says: "Output as 'analysisContexts'"
+// Zod schema expects: analysisContexts
 // Result: Validation succeeds
 {{/code}}
 
@@ -370,45 +362,7 @@ graph TD
 {{code}}
 ## TERMINOLOGY (CRITICAL)
 - **AnalysisContext** (or "Context"): Top-level analytical frame requiring separate verdict
-- **EvidenceScope** (or "Scope"): Per-fact source methodology metadata (NOT an AnalysisContext)
-{{/code}}
-
-----
-
-== Migration Notes (v2.6 -> v2.7) ==
-
-=== Phase 1: Update Prompts ===
-
-* Search for all instances of "distinctProceedings" in prompts
-* Replace with "analysisContexts"
-* Update prompt glossaries to use new terminology
-
-=== Phase 2: Update Zod Schemas ===
-
-{{code language="typescript"}}
-// Before (v2.6) - legacy naming
-const ScopeSchema = z.object({  // Note: "Scope" here meant AnalysisContext (legacy)
-  distinctProceedings: z.array(AnalysisContextSchema),
-  // ...
-});
-
-// After (v2.7+) - clear naming
-const ContextRefinementSchema = z.object({  // Renamed for clarity
-  analysisContexts: z.array(AnalysisContextSchema),
-  // ...
-});
-{{/code}}
-
-> **Note (v2.6.39)**: Legacy code may still use "Scope" to mean AnalysisContext. New code should use "Context" for AnalysisContext and "Scope" only for EvidenceScope.
-
-=== Phase 3: Update LLM Output Parsing ===
-
-{{code language="typescript"}}
-// Before
-const contexts = llmOutput.distinctProceedings;
-
-// After
-const contexts = llmOutput.analysisContexts;
+- **EvidenceScope** (or "Scope"): Per-evidence source methodology metadata (NOT an AnalysisContext)
 {{/code}}
 
 ----
@@ -436,5 +390,5 @@ When updating prompts or schemas:
 ----
 
 **Maintainer**: LLM Expert, Prompt Engineering Team
-**Last Updated**: 2026-01-20
+**Last Updated**: 2026-02-07
 **Next Review**: After next major version

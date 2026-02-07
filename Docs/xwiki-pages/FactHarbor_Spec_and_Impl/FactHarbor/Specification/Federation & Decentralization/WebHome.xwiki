@@ -109,5 +109,5 @@ Until then: **Focus on making the core product excellent** 🎯
 * [[Design Decisions>>FactHarbor.Specification.Design-Decisions]] - Why we defer complexity
 * [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]] - Federation triggers
 == Historical Note ==
-Previous versions (V0.9.50-0.9.58) included detailed federation specifications. These have been moved to future vision documents. The federation architecture is well-designed and ready to implement when the time comes—we're just not building it in V1.0.
-**See**: `/future-vision/federation-architecture.md` for complete technical specifications (when implemented).
+Earlier specification versions included detailed federation specifications. These have been moved to future vision documents. The federation architecture is well-designed and ready to implement when the time comes — not before V2.0+.
+**See**: [[Federation Architecture Diagram>>FactHarbor.Specification.Diagrams.Federation Architecture.WebHome]] for the target architecture.

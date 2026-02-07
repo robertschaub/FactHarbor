@@ -1,6 +1,10 @@
 {{warning title="Version 0.9.32 (Draft)"}}
 This document describes the **Specification** of FactHarbor. It is a working draft.
 {{/warning}}
+
+{{info}}
+**Terminology Update (v2.6.40+):** The specification uses "Scenario" for what is now implemented as **AnalysisContext** (bounded analytical frame) + **KeyFactor** (decomposition question with contestation tracking). "Evidence/Fact" is implemented as **EvidenceItem** (field: ##statement##). See [[Reference/Terminology>>FactHarbor.Specification.Reference.WebHome]] for the current mapping.
+{{/info}}
 = Specification =
 This section defines the technical architecture, data models, and functional requirements of FactHarbor.
 == 1. Mission ==
@@ -44,6 +48,7 @@ This specification is organized into the following sections:
 * [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] - System architecture and design
 * [[Automation>>FactHarbor.Specification.Automation.WebHome]] - Automated processes and workflows
 * [[Data Model>>FactHarbor.Specification.Data Model.WebHome]] - Database schema and entities
+* [[Media Source Database>>FactHarbor.Specification.Media Source Database.WebHome]] - Source credibility evaluation and tracking
 * [[Requirements>>FactHarbor.Specification.Requirements.WebHome]] - Functional and non-functional requirements
 * [[Workflows>>FactHarbor.Specification.Workflows.WebHome]] - Process workflows
 === Diagrams ===

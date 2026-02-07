@@ -242,7 +242,7 @@ All three variants reuse:
 {{mermaid}}
 flowchart TD
     subgraph SharedModules["📦 Shared Modules (apps/web/src/lib/analyzer/)"]
-        SCOPES[scopes.ts<br/>━━━━━━━━━━━━━<br/>• detectScopes<br/>• formatDetectedScopesHint<br/>• canonicalizeScopes]
+        SCOPES[analysis-contexts.ts<br/>━━━━━━━━━━━━━<br/>• detectContexts<br/>• formatDetectedContextsHint<br/>• canonicalizeContexts]
         AGG[aggregation.ts<br/>━━━━━━━━━━━━━<br/>• calculateWeightedVerdictAverage<br/>• validateContestation<br/>• detectClaimContestation<br/>• detectHarmPotential]
         CLAIM[claim-decomposition.ts<br/>━━━━━━━━━━━━━<br/>• normalizeClaimText<br/>• deriveCandidateClaimTexts]
     end
@@ -269,7 +269,7 @@ LLM-only text analysis (no heuristic fallback). See LLM Text Analysis Pipeline D
 {{mermaid}}
 flowchart TD
     subgraph TextAnalysisService["🧠 Text Analysis Service (apps/web/src/lib/analyzer/)"]
-        TYPES[text-analysis-types.ts<br/>━━━━━━━━━━━━━<br/>• ITextAnalysisService<br/>• InputClassificationResult<br/>• EvidenceQualityResult<br/>• ContextSimilarityResult (legacy: ScopeSimilarityResult)<br/>• VerdictValidationResult]
+        TYPES[text-analysis-types.ts<br/>━━━━━━━━━━━━━<br/>• ITextAnalysisService<br/>• InputClassificationResult<br/>• EvidenceQualityResult<br/>• ContextSimilarityResult<br/>• VerdictValidationResult]
 
         SERVICE[text-analysis-service.ts<br/>━━━━━━━━━━━━━<br/>• getTextAnalysisService<br/>• recordMetrics]
 
@@ -319,7 +319,7 @@ Every job result must include an envelope (even if the inner payload differs):
 * ##providerInfo##: model/provider identifiers used
 
 === 5.2 Canonical payload (existing UI) ===
-For ##orchestrated## and ##monolithic_canonical##, the payload must match the canonical entity model that the existing jobs UI expects (claim verdicts, verdict summary, proceeding answers, etc).
+For ##orchestrated## and ##monolithic_canonical##, the payload must match the canonical entity model that the existing jobs UI expects (claim verdicts, verdict summary, context answers, etc).
 
 === 5.3 Dynamic payload (minimum safety contract) ===
 For ##monolithic_dynamic##, allow flexible structure but require:

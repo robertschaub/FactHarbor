@@ -511,46 +511,7 @@ Use this checklist when reviewing code that involves contexts/evidence:
 
 ----
 
-== Migration History ==
-
-=== v3.1.0 (2026-02-04) ===
-
-**Internal Changes:**
-* Renamed task names: ##extract_facts## -> ##extract_evidence##, ##scope_refinement## -> ##context_refinement##
-* Renamed ID prefix: ##F1, F2, F3## -> ##E1, E2, E3##
-* Renamed config fields: ##modelExtractFacts## -> ##modelExtractEvidence##
-
-=== v3.0.0 (2026-02-04) ===
-
-**Breaking Changes:**
-* Renamed ##facts[]## -> ##evidenceItems[]##
-* Renamed ##fact## -> ##statement##
-* Renamed ##analysisContext## (singular) -> ##backgroundDetails##
-* Renamed ##detectedScopes## -> ##analysisContexts##
-* Renamed ##factScopeAssignments## -> ##evidenceContextAssignments##
-* Renamed ##claimScopeAssignments## -> ##claimContextAssignments##
-* Renamed ##supportingFactIds## -> ##supportingEvidenceIds##
-* Renamed config fields ##scopeDetection*## -> ##contextDetection*##
-* Removed type aliases: ##ExtractedFact##, ##DistinctProceeding##
-* Schema versions bumped to 3.0.0
-* File renames: ##scopes.ts## -> ##analysis-contexts.ts##, ##ArticleFrameBanner.tsx## -> ##BackgroundBanner.tsx##
-
-=== v2.7.0 (Previous) ===
-
-* Added new field names with legacy fallbacks
-* Legacy field names accepted for backward compatibility
-
-----
-
 == FAQ ==
-
-**Q: Why did we rename facts to evidenceItems?**
-
-A: "Facts" implies certainty, while "evidence" correctly indicates these are claims with varying levels of support that require verification.
-
-**Q: Why did we rename analysisContext (singular) to backgroundDetails?**
-
-A: To eliminate confusion with ##AnalysisContext## (the type) and ##analysisContexts## (the array). The singular field stored narrative background, not an AnalysisContext.
 
 **Q: When should I use EvidenceScope vs AnalysisContext?**
 

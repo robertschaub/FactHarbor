@@ -1,5 +1,26 @@
 # FactHarbor Changelog
 
+## 2026-02-07 - Documentation Consolidation + LLM Tiering + Evidence Quality
+
+### Added
+- LLM Tiering enabled: Haiku 3.5 for extract/understand, Sonnet 4 for verdict/context refinement
+- Context-claims consistency anchoring (prevents LLM holistic bias from overriding evidence-based claims)
+- Evidence quality verdict prompt refinement for procedural/legal claims
+
+### Changed
+- Contested factor weighting: reduced double-penalization (0.3x→0.5x for established, 0.5x→0.7x for disputed)
+- Article Verdict Problem Override: softened from hard 35% override to proportional blending
+- Context refinement task routed to premium model tier (was on budget tier)
+- Fixed stale Haiku model ID (claude-3-haiku-20240307 → claude-3-5-haiku-20241022)
+
+### Documentation
+- xWiki documentation consolidation: 21+ pages updated (Phase 3 of doc consolidation)
+- POC to Alpha Transition: xWiki conversion complete
+- Comprehensive documentation cleanup plan created and approved
+- Phase labels updated across STATUS/ docs (POC→Alpha transition)
+
+---
+
 ## 2026-02-04 - Prompt Optimization v2.8.0-2.8.1 Complete
 
 ### Changed

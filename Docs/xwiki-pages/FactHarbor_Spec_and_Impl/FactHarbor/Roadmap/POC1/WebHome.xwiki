@@ -34,35 +34,29 @@ POC1 validates that the core AKEL workflow (Article → Claims → Verdicts) can
 * Corrections system
 * Search engine optimization (ClaimReview schema)
 * Image verification
-* API endpoints
 * Archive.org integration
 * Security hardening
-* A/B testing
-* Gates 2 & 3 (Evidence relevance, Scenario coherence)
+* Gates 2 & 3 (Evidence relevance, AnalysisContext coherence)
 
-=== Experimental Features (POC1) ===
+{{info}}
+**Now Implemented in POC1:** The following items were originally deferred but have been implemented:
+* **API endpoints** — ASP.NET Core 8.0 API (`apps/api/`)
+* **A/B testing** — Built-in A/B testing framework (`apps/web/src/lib/analyzer/ab-testing.ts`)
+{{/info}}
 
-**Context-Aware Analysis** (Approach 1: Single-Pass Holistic)
+=== Context-Aware Analysis (Implemented) ===
 
-**Goal:** Test if AI can detect when an article's overall credibility differs from the average of its claim verdicts (e.g., accurate facts but misleading conclusion).
+{{info}}
+**Status: Production Feature.** Context-aware analysis was originally listed as experimental. It is now a core production feature implemented as **AnalysisContext detection** in the orchestrated pipeline.
+{{/info}}
 
-**Implementation:**
-* Enhanced AI prompt to evaluate logical structure
-* AI identifies article's main argument
-* AI assesses if conclusion follows from evidence
-* Article verdict may differ from claim average
+**What was implemented:**
+* Claims are decomposed into **AnalysisContexts** — bounded analytical frames that identify distinct verifiable aspects
+* Each AnalysisContext contains **KeyFactors** — specific questions to investigate, with contestation tracking
+* The pipeline evaluates evidence per-context, producing independent verdicts that are then aggregated
+* This is more sophisticated than the original "single-pass holistic" proposal — it uses structured multi-context decomposition rather than a simple prompt enhancement
 
-**Testing:**
-* 30-article test set (10 straightforward, 10 misleading, 10 complex)
-* Success criteria: ≥70% accuracy on misleading articles
-* Marked as experimental - doesn't block POC1 success
-
-**See:** [[Article Verdict Problem>>FactHarbor.Specification.POC.Article-Verdict-Problem]] for complete analysis
-
-**Decision:** 
-* If ≥70% accuracy → ship in POC2
-* If 50-70% → try weighted aggregation approach
-* If <50% → defer to POC2 with different approach
+**See:** [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] and [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] for details
 
 == 3. Requirements ==
 
@@ -95,7 +89,7 @@ AKEL must validate outputs before displaying to users. POC1 implements a **2-gat
 **Action if Failed:**
 
 * Flag as "Non-verifiable: Opinion/Prediction/Ambiguous"
-* Do NOT generate scenarios or verdicts
+* Do NOT generate analysis contexts or verdicts
 * Display explanation to user
 
 **Target:** 0% opinion statements processed as facts
@@ -225,49 +219,52 @@ POC1 is considered **SUCCESSFUL** if:
 
 == 5. Decision Gates ==
 
-**POC1 → POC2 Decision:**
+**POC → Alpha Decision:**
 
-* **IF** hallucination rate >10% → Pause, improve prompts before POC2
+* **IF** hallucination rate >10% → Pause, improve prompts before Alpha
 * **IF** majority of claims non-processable → Rethink claim extraction approach
 * **IF** quality gates too strict (excessive blocking) → Adjust thresholds
 * **IF** quality gates too loose (hallucinations pass) → Tighten criteria
 
-**Only proceed to POC2 if all success criteria met**
+**Only proceed to Alpha if all success criteria met**
 
 == 6. Architecture Notes ==
 
-**POC1 Simplified Architecture:**
+**Actual POC1 Architecture (Implemented):**
 
 {{code}}
-User Input → AKEL Processing → Quality Gates → Display
- (claim extraction (Gates 1 & 4)
- + verdicts)
+User Input → STEP 1: UNDERSTAND (claim decomposition, AnalysisContext detection)
+           → STEP 2-4: RESEARCH & EVIDENCE (web search, evidence extraction, quality filtering)
+           → STEP 4.4-4.6: CONTEXT REFINEMENT (supplemental claims/contexts)
+           → STEP 5: VERDICTS (per-context verdicts with 7-point truth scale)
+           → STEP 6: SUMMARY (aggregation across contexts)
+           → STEP 7: REPORT (final output with quality gates)
 {{/code}}
 
 **vs. Full System (Future):**
 
 {{code}}
-Input → Claim Extractor → Scenario Generator → Evidence Linker 
-→ Verdict Generator → All 4 Gates → Review Queue → Publication
+Above pipeline + Review Queue → Publication workflow → User contributions
 {{/code}}
 
-**POC1 Acceptable Simplifications:**
+**Current POC1 Simplifications (vs. full production):**
 
-* Single AKEL call (not multi-component pipeline)
-* No scenarios (implicit in verdicts)
-* Basic evidence linking
-* 2 gates instead of 4
-* No review queue
+* 2 quality gates (Gate 1 + Gate 4) instead of 4
+* No review queue or publication workflow
+* No user accounts or contribution system
+* SQLite storage (not PostgreSQL)
+* Single-instance deployment
 
-**See:** [[Architecture>>FactHarbor pre10 V0\.9\.70.Specification.Architecture.WebHome]] for details
+**See:** [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] for details
 
 == Related Pages ==
 
-* [[Roadmap Overview>>FactHarbor pre10 V0\.9\.70.Roadmap.WebHome]] - All phases
-* [[POC2 Requirements>>FactHarbor pre10 V0\.9\.70.Roadmap.POC2.WebHome]] - Next phase
-* [[Requirements>>FactHarbor pre10 V0\.9\.70.Specification.Requirements.WebHome]] - Full system requirements
-* [[Architecture>>FactHarbor pre10 V0\.9\.70.Specification.Architecture.WebHome]] - System architecture
-* [[NFR11 Full Specification>>FactHarbor.Specification.Requirements.WebHome#NFR11]] - Complete quality framework
+* [[POC to Alpha Transition>>FactHarbor.Roadmap.POC to Alpha Transition.WebHome]] — Phase redefinition and transition assessment
+* [[Roadmap Overview>>FactHarbor.Roadmap.WebHome]] — All phases
+* [[POC2 Requirements>>FactHarbor.Roadmap.POC2.WebHome]] — Superseded by POC to Alpha Transition
+* [[Requirements>>FactHarbor.Specification.Requirements.WebHome]] — Full system requirements
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] — System architecture
+* [[NFR11 Full Specification>>FactHarbor.Specification.Requirements.WebHome#NFR11]] — Complete quality framework
 
-**Document Status:** ✅ POC1 Specification Complete - Ready for Implementation 
-**Version:** V0.9.70
+**Document Status:** POC1 Feature-Complete (v2.10.2) — Pending baseline quality test to declare POC complete and enter Alpha
+**Version:** v2.10.2

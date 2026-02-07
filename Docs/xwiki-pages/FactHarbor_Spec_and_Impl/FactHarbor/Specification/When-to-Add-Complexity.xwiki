@@ -57,23 +57,23 @@ FactHarbor starts simple and adds complexity **only when metrics prove it's nece
 * Implement CDN for static content
 * Survey users about federation interest
 **Implementation effort**: ~ (major undertaking)
-== 4. Add Complex Reputation System ==
-**Current**: Simple manual roles (Reader, Contributor, Moderator, Admin)
-**Add Complex Reputation when**:
-* ✅ 100+ active contributors
+== 4. Add Advanced User Management ==
+**Current**: Simple manual roles (Reader, User, UCM Administrator, Moderator)
+**Add Advanced User Management when**:
+* ✅ Submission volume requires automated quota management
 * ✅ Manual role management becomes bottleneck (>5 hours/week)
 * ✅ Clear patterns of abuse require automated detection
-* ✅ Community requests reputation visibility
+* ✅ Multiple UCM Administrators need coordinated workflows
 **Metrics to monitor**:
-* Number of active contributors
+* Number of registered users and submission volume
 * Time spent on manual role management
 * Abuse incident rate
-* Contribution quality distribution
+* Submission quality distribution
 * Community feedback on roles
 **Before adding**:
 * Document current manual process thoroughly
 * Identify most time-consuming tasks
-* Prototype automated reputation algorithm
+* Prototype automated user management features
 * Get community feedback on proposal
 **Implementation effort**: ~
 == 5. Add Many-to-Many Scenarios ==
@@ -94,22 +94,22 @@ FactHarbor starts simple and adds complexity **only when metrics prove it's nece
 * Plan data migration strategy
 * Consider query performance impact
 **Implementation effort**: ~
-== 6. Add Full Versioning System ==
-**Current**: Simple audit trail (before/after values, who/when/why)
-**Add Full Versioning when**:
-* ✅ Users request "see complete version history"
-* ✅ Users request "restore to specific previous version"
-* ✅ Need for branching and merging emerges
-* ✅ Collaborative editing requires conflict resolution
+== 6. Add Full UCM Config Versioning System ==
+**Current**: Simple UCM config audit trail (immutable blobs, activation tracking)
+**Add Full Config Versioning when**:
+* ✅ UCM Administrators request "see complete config version history"
+* ✅ UCM Administrators request "restore to specific previous config version"
+* ✅ Need for config branching and merging emerges (e.g., A/B testing configs)
+* ✅ Collaborative config management requires conflict resolution
 **Metrics to monitor**:
-* User feature requests for versioning
-* Manual rollback frequency
-* Edit conflict rate
-* Storage costs of full history
+* UCM Administrator feature requests for config versioning
+* Manual config rollback frequency
+* Config change conflict rate
+* Storage costs of full config history
 **Before adding**:
-* Design branching/merging strategy
-* Plan storage optimization (delta compression)
-* Consider UI/UX for version history
+* Design config branching/merging strategy
+* Plan storage optimization (delta compression for config blobs)
+* Consider UI/UX for config version history
 * Estimate storage and performance impact
 **Implementation effort**: ~
 == 7. Add Graph Database ==
@@ -130,22 +130,22 @@ FactHarbor starts simple and adds complexity **only when metrics prove it's nece
 * Profile slow relationship queries
 * Evaluate Neo4j vs alternatives
 **Implementation effort**: ~
-== 8. Add Real-Time Collaboration ==
-**Current**: Asynchronous edits with eventual consistency
-**Add Real-Time Collaboration when**:
-* ✅ Users request simultaneous editing
-* ✅ Conflict resolution becomes frequent issue
-* ✅ Need for live updates during editing sessions
-* ✅ Collaborative workflows common
+== 8. Add Collaborative UCM Configuration Management ==
+**Current**: Single UCM Administrator manages configuration via direct access
+**Add Collaborative UCM Management when**:
+* ✅ Multiple UCM Administrators need concurrent config access
+* ✅ Config change coordination becomes frequent issue
+* ✅ Need for live updates during configuration sessions
+* ✅ Collaborative review of config changes common
 **Metrics to monitor**:
-* Edit conflict frequency
-* User feature requests
-* Collaborative editing patterns
-* Average edit session duration
+* Config change conflict frequency
+* UCM Administrator feature requests
+* Collaborative config review patterns
+* Average config management session duration
 **Before adding**:
-* Design conflict resolution strategy (Operational Transform or CRDT)
-* Consider WebSocket infrastructure
-* Plan UI/UX for real-time editing
+* Design config change conflict resolution strategy
+* Consider WebSocket infrastructure for live config preview
+* Plan UI/UX for collaborative config management
 * Estimate server resource requirements
 **Implementation effort**: ~
 == 9. Add Machine Learning Pipeline ==
@@ -214,9 +214,9 @@ FactHarbor starts simple and adds complexity **only when metrics prove it's nece
 * AKEL processing time
 * Search performance
 **Usage**:
-* Active users (daily, weekly, monthly)
-* Claims processed per day
-* Search queries per day
+* Active users (by period)
+* Claims processed (by period)
+* Search queries (by period)
 * Contribution rate
 **Costs**:
 * Infrastructure costs per user
@@ -229,12 +229,12 @@ FactHarbor starts simple and adds complexity **only when metrics prove it's nece
 * Source reliability trends
 * User satisfaction (surveys)
 **Community**:
-* Active contributors
+* Active users
 * Moderation workload
 * Feature requests by category
 * Abuse incident rate
-== Quarterly Review Process ==
-**Every quarter, review**:
+== Periodic Review Process ==
+**Regularly review**:
 1. **Metrics dashboard**: Are any triggers close to thresholds?
 2. **User feedback**: What features are most requested?
 3. **Performance**: What's slowing down?

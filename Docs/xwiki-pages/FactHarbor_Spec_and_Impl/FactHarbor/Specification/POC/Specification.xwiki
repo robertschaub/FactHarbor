@@ -5,20 +5,6 @@
 **Status:** Production Specification 
 **Based on:** FactHarbor V0.9.69 + Quality Gate Enhancements
 
-{{warning}}
-**Implementation Status (Updated January 2026)**
-
-This specification describes the original POC1 design. Key implementation changes:
-
-* **Verdict Scale**: Now uses **7-point symmetric scale** (TRUE → FALSE) instead of 5-point
-* **Scenarios**: Replaced with **KeyFactors** (see `Docs/ARCHITECTURE/KeyFactors_Design.md`)
-* **Quality Gates**: Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence) implemented
-* **Cache Architecture**: Redis caching **not yet implemented**
-* **Data Model**: Using JSON blob storage, not normalized PostgreSQL tables
-
-See `Docs/STATUS/Documentation_Inconsistencies.md` for full comparison.
-{{/warning}}
-
 ---
 
 == Purpose ==

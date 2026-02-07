@@ -1,4 +1,4 @@
-= Beta 0: User Testing & Production Readiness =
+= Beta: User Testing & Production Readiness =
 
 **Phase Goal:** Real user testing with corrections system and essential security
 
@@ -81,9 +81,11 @@ Beta 0 adds user-facing features and essential production infrastructure:
 
 == Related Pages ==
 
-* [[POC2>>FactHarbor pre10 V0\.9\.70.Roadmap.POC2.WebHome]] - Previous phase
-* [[V1.0>>FactHarbor pre10 V0\.9\.70.Roadmap.V10.WebHome]] - Next phase (launch)
-* [[Roadmap Overview>>FactHarbor pre10 V0\.9\.70.Roadmap.WebHome]]
+* [[POC to Alpha Transition>>FactHarbor.Roadmap.POC to Alpha Transition.WebHome]] — Phase redefinition
+* [[Alpha (previously POC2)>>FactHarbor.Roadmap.POC2.WebHome]] — Previous phase (superseded)
+* [[V1.0>>FactHarbor.Roadmap.V10.WebHome]] — Next phase (launch)
+* [[Roadmap Overview>>FactHarbor.Roadmap.WebHome]]
+* [[Storage Architecture>>FactHarbor.Specification.Diagrams.Storage Architecture.WebHome]] — PostgreSQL migration planned for Beta
 
-**Document Status:** ✅ Beta 0 Specification Complete 
+**Document Status:** Beta Specification
 **Version:** V0.9.70

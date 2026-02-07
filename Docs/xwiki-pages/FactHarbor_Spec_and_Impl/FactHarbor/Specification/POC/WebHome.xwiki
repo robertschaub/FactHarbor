@@ -51,11 +51,14 @@ See [[POC Requirements>>FactHarbor.Specification.POC.Requirements]] for complete
 
 == POC vs. Full System ==
 
-|= Feature |= POC1 |= POC2 |= Full System
-| Scenarios | ❌ Deferred | ✅ Multiple | ✅ + Persistence
-| Evidence Display | ❌ None | ✅ With sources | ✅ + Quality scoring
-| Quality Gates | 🟡 4 simplified | ✅ 6 comprehensive | ✅ + ML validation
-| Database | ❌ Stateless | ✅ PostgreSQL | ✅ + Redis + S3
-| User Contributions | ❌ Read-only | ✅ Enabled | ✅ + Reputation
+|= Feature |= POC1 (Actual) |= POC2 |= Full System
+| AnalysisContexts | ✅ Implemented (multi-context detection + KeyFactors) | ✅ + Persistence | ✅ + Enhanced
+| Evidence Display | ✅ With sources + quality scoring | ✅ Enhanced | ✅ + ML validation
+| Quality Gates | ✅ Gate 1 (Claim Validation) + Gate 4 (Verdict Confidence) | ✅ + Gates 2 & 3 | ✅ + ML validation
+| Database | 🟡 SQLite | ✅ PostgreSQL | ✅ + Redis + S3
+| User Submissions | ✅ URL/text submission | ✅ Enhanced | ✅ + Batch
+| LLM Providers | ✅ Multi-provider (Anthropic, OpenAI, Google, Mistral) | ✅ + Admin UI | ✅ + Cost optimization
+| A/B Testing | ✅ Implemented | ✅ Enhanced | ✅ + ML-driven
+| API | ✅ ASP.NET Core 8.0 | ✅ Enhanced | ✅ + Public API
 
 **

@@ -58,9 +58,9 @@ The FactHarbor analysis system implements a **comprehensive 7-layer defense stra
 ```
 analyzeOrchestrated()
   │
-  ├─ extractFacts() [for each source]
+  ├─ extractEvidence() [for each source]
   │   ├─ filterByProbativeValue()         ← Layer 1: Evidence Quality Filtering
-  │   └─ filterFactsByProvenance()        ← Layer 2: Provenance Validation
+  │   └─ filterEvidenceByProvenance()     ← Layer 2: Provenance Validation
   │
   ├─ generateVerdicts()
   │   └─ [LLM generates verdicts with thesisRelevance tagging]
@@ -84,7 +84,7 @@ analyzeOrchestrated()
 | **4** | Thesis Relevance Filtering | [aggregation.ts:257-258](../../apps/web/src/lib/analyzer/aggregation.ts#L257) | Give tangential claims weight=0 in verdict calc |
 | **5** | Opinion-Only Factor Pruning | [aggregation.ts:418-429](../../apps/web/src/lib/analyzer/aggregation.ts#L418) | Remove keyFactors with factualBasis="opinion" |
 | **6** | Contestation Validation | [aggregation.ts:40-222](../../apps/web/src/lib/analyzer/aggregation.ts#L40) | Downgrade opinion-based contestation, keep documented counter-evidence |
-| **7** | Context-Aware Routing | [scopes.ts](../../apps/web/src/lib/analyzer/scopes.ts) | Route claims to correct analytical context |
+| **7** | Context-Aware Routing | [analysis-contexts.ts](../../apps/web/src/lib/analyzer/analysis-contexts.ts) | Route claims to correct analytical context |
 
 ### Layer Protection Summary
 
@@ -117,7 +117,7 @@ For complete layer-by-layer details with code examples, see the [full investigat
 
 ### Layer 1: LLM Prompts (Soft Enforcement)
 
-**Location**: `apps/web/prompts/extract-facts-base.ts`
+**Location**: `apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts`
 
 **Mechanism**: Prompt instructions explicitly tell the LLM not to extract low-quality evidence:
 
@@ -545,7 +545,7 @@ function loadCalcConfig(storedJson: string): CalcConfig {
 [
   {
     id: "E1",
-    fact: "Some say climate change is caused by human activity",
+    statement: "Some say climate change is caused by human activity",
     category: "evidence",
     sourceUrl: "https://example.com/article",
     sourceExcerpt: "According to some experts, many believe that climate change..."
@@ -579,7 +579,7 @@ function loadCalcConfig(storedJson: string): CalcConfig {
 [
   {
     id: "E2",
-    fact: "Revenue increased significantly",
+    statement: "Revenue increased significantly",
     category: "statistic",
     sourceUrl: "https://example.com/report",
     sourceExcerpt: "The company reported increased revenue"
@@ -613,7 +613,7 @@ function loadCalcConfig(storedJson: string): CalcConfig {
 [
   {
     id: "E3",
-    fact: "The study published in Nature (2023) found a 25% increase in solar panel efficiency",
+    statement: "The study published in Nature (2023) found a 25% increase in solar panel efficiency",
     category: "statistic",
     sourceUrl: "https://nature.com/articles/12345",
     sourceExcerpt: "According to the peer-reviewed study published in Nature Journal, solar panel efficiency increased by 25% compared to 2022 baseline measurements",
@@ -628,7 +628,7 @@ function loadCalcConfig(storedJson: string): CalcConfig {
   keptItems: [
     {
       id: "E3",
-      fact: "The study published in Nature (2023) found a 25% increase in solar panel efficiency",
+      statement: "The study published in Nature (2023) found a 25% increase in solar panel efficiency",
       // All fields preserved
     }
   ],
@@ -897,7 +897,7 @@ maxVaguePhraseCount: 2  // Default: 2 vague phrases allowed
 
 ### Tuning Workflow
 
-1. **Baseline Measurement** (1-2 days)
+1. **Baseline Measurement**
    - Run analyses with default configuration
    - Collect filter stats logs
    - Calculate average FP rate and evidence retention

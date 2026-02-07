@@ -141,7 +141,7 @@ Apply nuanced reasoning. Be direct and confident.
 | Task | Pipeline(s) | Base Prompt File |
 |------|-------------|------------------|
 | `understand` | Canonical, Orchestrated | `understand-base.ts` |
-| `extract_evidence` | Canonical, Orchestrated | `extract-facts-base.ts` |
+| `extract_evidence` | Canonical, Orchestrated | `extract-evidence-base.ts` |
 | `verdict` | Canonical, Orchestrated | `verdict-base.ts` |
 | `context_refinement` | Orchestrated | `context-refinement-base.ts` |
 | `dynamic_plan` | Dynamic | `dynamic-plan-base.ts` |

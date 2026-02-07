@@ -1,4 +1,9 @@
 = Automation =
+
+{{warning}}
+**POC1 Implementation Status (February 2026):** This page describes the **target automation architecture** for FactHarbor at production maturity. In POC1 (v2.6.40+), the following are **implemented**: core AKEL claim analysis pipeline (7-step orchestrated), 2 quality gates (Gate 1 + Gate 4), multi-provider LLM support, A/B testing, and source reliability scoring. The following are **not yet implemented**: risk tiers (A/B/C), publication states, moderation system, human review queue, and automation level progression (Release 0.5/1.0/2.0).
+{{/warning}}
+
 **How FactHarbor scales through automated claim evaluation.**
 == 1. Automation Philosophy ==
 FactHarbor is **automation-first**: AKEL (AI Knowledge Extraction Layer) makes all content decisions. Humans monitor system performance and improve algorithms.
@@ -42,25 +47,24 @@ See [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] for
 
 FactHarbor delegates complex reasoning and analysis tasks to Large Language Models (LLMs). The architecture evolves from POC to production:
 
-=== POC: Two-Phase Approach ===
+=== Actual POC1 Implementation: 7-Step Orchestrated Pipeline ===
 
-**Phase 1: Claim Extraction**
-* Single LLM call to extract all claims from submitted content
-* Light structure, focused on identifying distinct verifiable claims
-* Output: List of claims with context
+1. **UNDERSTAND** — Claim decomposition, AnalysisContext detection, KeyFactor generation
+2. **RESEARCH** — Web search query generation and execution
+3. **EVIDENCE** — Source fetching, evidence extraction with quality filtering
+4. **CONTEXT REFINEMENT** — Supplemental claims/contexts discovery
+5. **VERDICTS** — Per-context verdict generation with 7-point truth scale
+6. **SUMMARY** — Multi-context aggregation and two-panel summary
+7. **REPORT** — Final markdown report with quality gate checks
 
-**Phase 2: Claim Analysis (Parallel)**
-* Single LLM call per claim (parallelizable)
-* Full structured output: Evidence, Scenarios, Sources, Verdict, Risk
-* Each claim analyzed independently
+**Characteristics:**
+* Multi-step workflow with explicit quality gates between phases
+* Multi-provider LLM support via Vercel AI SDK (Anthropic, OpenAI, Google, Mistral)
+* Model tiering: different models for understand, extract_evidence, and verdict phases
+* Iterative research with configurable search depth
+* 7-layer evidence quality defense
 
-**Advantages:**
-* Fast to implement ( to working POC)
-* Only 2-3 API calls total (1 + N claims)
-* Simple to debug (claim-level isolation)
-* Proves concept viability
-
-=== Production: Three-Phase Approach ===
+=== Target Production Three-Phase Approach ===
 
 **Phase 1: Claim Extraction + Validation**
 * Extract distinct verifiable claims
@@ -71,7 +75,7 @@ FactHarbor delegates complex reasoning and analysis tasks to Large Language Mode
 * For each claim independently:
  * Find supporting and contradicting evidence
  * Identify authoritative sources
- * Generate test scenarios
+ * Detect AnalysisContexts
 * Validation: Check evidence quality and source validity
 * Error containment: Issues in one claim don't affect others
 
@@ -94,7 +98,7 @@ FactHarbor delegates complex reasoning and analysis tasks to Large Language Mode
 All complex cognitive tasks are delegated to LLMs:
 * **Claim Extraction**: Understanding context, identifying distinct claims
 * **Evidence Finding**: Analyzing sources, assessing relevance
-* **Scenario Generation**: Creating testable hypotheses
+* **AnalysisContext Detection**: Identifying bounded analytical frames and KeyFactors
 * **Source Evaluation**: Assessing reliability and authority
 * **Verdict Generation**: Synthesizing evidence into conclusions
 * **Risk Assessment**: Evaluating potential impact

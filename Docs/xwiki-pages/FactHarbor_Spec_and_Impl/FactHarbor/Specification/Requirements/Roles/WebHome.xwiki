@@ -1,61 +1,73 @@
 = Roles & Publication Modes =
 
-**Version:** 0.9.70 
-**Last Updated:** December 21, 2025 
-**Status:** CORRECTED - Automation Philosophy Consistent
+**Version:** 0.10.0
+**Last Updated:** February 2026
+**Status:** Current
 
 This page defines user roles and publication modes in FactHarbor.
 
 == 1. User Roles ==
 
-=== 1.1 Contributors ===
+=== 1.1 Readers (Guest) ===
 
-**Who**: Community members who suggest system improvements
-
-**Responsibilities:**
-* Participate in sampling audits (analyze patterns, not individual outputs)
-* Suggest algorithm/prompt improvements based on findings
-* Document systematic issues observed
-* Contribute to system improvement discussions
+**Who**: Anonymous visitors (no registration required)
 
 **Can:**
-* Edit published content (changes apply immediately, Wikipedia-style)
-* Flag quality issues (for sampling audit)
-* Earn reputation through contributions
+* Browse and search published analyses
+* View analysis results and evidence
+* Read the Truth Landscape for any claim
+
+**Cannot:**
+* Submit URLs/text for analysis (requires login)
+* Flag quality issues (requires login)
+* Manage UCM configuration
+* Moderate content
+
+=== 1.2 Users (Registered) ===
+
+**Who**: Logged-in users with a registered account
+
+**Can:**
+* Everything Readers can do
+* Submit URLs/text for analysis (**rate-limited** — LLM and web search usage is not free)
+* Flag quality issues
+* View their own submission history
+
+**Rate Limits:**
+* Submission quotas per user per day/month (configurable via UCM)
+* Prevents abuse and controls operational costs (LLM inference + web search API fees)
+
+**Cannot:**
+* Modify analysis output data (data is immutable)
+* Manage UCM configuration
+* Moderate content
+
+=== 1.3 UCM Administrators ===
+
+**Who**: Appointed by Governing Team to manage system configuration
+
+**Responsibilities:**
+* Manage UCM configuration (prompt templates, quality thresholds, model selection, source reliability rules)
+* Monitor quality metrics and identify systematic improvement opportunities
+* Version and activate configuration changes
+* Trigger re-analysis when configuration improves
+* Review UCM config audit trail
+
+**Can:**
+* Create and activate UCM config versions
+* View config change history and audit trail
+* Trigger re-analysis with updated config
+* Access detailed system metrics
 * Participate in RFC (Request for Comments) processes
 
 **Cannot:**
-* Approve content before publication
-* Override quality gates
-* Act as gatekeepers
-* Manually fix individual AI outputs
+* Edit individual analysis outputs (data is immutable)
+* Override quality gates for specific analyses
+* Act as editorial gatekeepers
 
-**Note**: Contributors improve THE SYSTEM, not individual outputs.
+**Key Principle**: UCM Administrators improve THE SYSTEM through configuration, not individual outputs.
 
-=== 1.2 Trusted Contributors ===
-
-**Who**: Contributors with proven track record and domain expertise
-
-**Responsibilities:**
-* Same as Contributors, plus:
-* Review complex algorithm changes
-* Provide domain expertise on contested claims
-* Mentor new contributors
-
-**Can:**
-* Everything Contributors can do, plus:
-* Participate in higher-level system design decisions
-* Review RFC proposals
-* Access more detailed system metrics
-
-**Cannot:**
-* Approve content before publication
-* Override quality gates
-* Act as gatekeepers
-
-**Important**: "Trusted" refers to judgment quality, NOT approval authority.
-
-=== 1.3 Moderators ===
+=== 1.4 Moderators ===
 
 **Who**: Team members focused on community health and abuse prevention
 
@@ -83,9 +95,9 @@ Moderators handle: ABUSE (spam, harassment, violations)
 Moderators DO NOT handle: CONTENT QUALITY (that's automated)
 }}}
 
-=== 1.4 Domain Trusted Contributors (Optional, Task-Specific) ===
+=== 1.5 Domain Experts (Optional, Task-Specific) ===
 
-**Who**: Subject matter specialists invited for specific high-stakes disputes
+**Who**: Subject matter specialists consulted for specific high-stakes disputes
 
 **Not a permanent role**: Contacted externally when needed for contested claims in their domain
 
@@ -98,11 +110,10 @@ Moderators DO NOT handle: CONTENT QUALITY (that's automated)
 **Process:**
 * Moderator identifies need for expert input
 * Contact expert externally (don't require them to be users)
-* Trusted Contributor provides written opinion with sources
-* Opinion added to claim record
-* Trusted Contributor acknowledged in claim
+* Expert provides written opinion with sources
+* Opinion may inform UCM config improvements (e.g., domain-specific prompt adjustments)
 
-**Important**: This is CONSULTATION, not APPROVAL. Their opinion is added to the evidence, not used as a gate.
+**Important**: This is CONSULTATION, not APPROVAL. Expert input may lead to UCM config improvements that benefit all future analyses in that domain.
 
 **User Needs served**: UN-16 (Expert validation status)
 
@@ -152,27 +163,11 @@ FactHarbor uses **TWO publication modes** (not three). Focus is on transparency 
 * **Tier B (Medium Risk):** "🤖 AI-Generated - May Contain Errors"
 * **Tier C (Low Risk):** "🤖 AI-Generated"
 
-**User Contributions:**
-* User edits apply immediately (Wikipedia model)
-* All changes logged and versioned
-* May be selected for sampling audit
-* Reputation earned for quality contributions
-
-=== REMOVED: Mode 3 ===
-
-**V0.9.50 Decision:** No centralized approval workflow.
-
-**Rationale:**
-* Defeats automation purpose
-* Creates bottleneck
-* Inconsistent quality
-* Not scalable
-
-**What Replaced It:**
-* Better quality gates
-* Sampling audits for system improvement
-* Transparent confidence scoring
-* Risk-based warnings
+**System Improvement:**
+* Quality improvements flow through UCM configuration changes
+* All config changes versioned and auditable
+* Every analysis references the UCM config snapshot used
+* Sampling audits identify systematic issues for UCM config improvement
 
 == 3. Content States ==
 
@@ -182,17 +177,14 @@ FactHarbor uses **TWO publication modes** (not three). Focus is on transparency 
 
 **Includes:**
 * AI-generated analyses (default state after passing gates)
-* User-contributed content
-* Edited/improved content
 
 **Quality Indicators** (displayed with content):
 * **Confidence Score**: 0-100% (AI's confidence in analysis)
 * **Source Quality Score**: 0-100% (based on source track record)
-* **Controversy Flag**: If high dispute/edit activity
+* **Controversy Flag**: If high dispute among sources
 * **Completeness Score**: % of expected fields filled
-* **Last Updated**: Date of most recent change
-* **Edit Count**: Number of revisions
-* **Review Status**: AI-generated / Enhanced by contributors
+* **Analysis Date**: When the analysis was performed
+* **UCM Config Version**: Which configuration version produced this analysis
 
 **Automatic Warnings:**
 * Confidence < 60%: "Low confidence - use caution"
@@ -222,28 +214,26 @@ FactHarbor uses **TWO publication modes** (not three). Focus is on transparency 
 
 **Note**: Content is hidden, not deleted (for audit trail)
 
-== 4. Role Evolution Path ==
+== 4. Roles Overview ==
 
-**Contributor Journey:**
+**Four roles:**
 
-1. **Visitor** – Explores platform, reads documentation, may raise questions
-2. **New Contributor** – Submits first improvements (typo fixes, small clarifications, new issues)
-3. **Contributor** – Contributes regularly and follows project conventions
-4. **Trusted Contributor** – Has a track record of high-quality work and reliable judgment
-5. **Auditor** – Participates in sampling audits (pattern analysis)
-6. **Moderator** – Focuses on behavior, tone, and conflict moderation (not content quality)
-7. **Domain Expert** (optional) – Offers domain expertise without changing governance authority
+1. **Reader** (default, guest) – Anonymous visitors. Browse, search, view results. No registration required.
+2. **User** (registered) – Logged-in users. Submit URLs/text for analysis (rate-limited), flag issues. Registration required.
+3. **UCM Administrator** (appointed) – Manage system configuration to improve analysis quality. Appointed by Governing Team.
+4. **Moderator** (appointed) – Handle abuse, spam, harassment. Does NOT manage content quality (that is automated).
+5. **Domain Expert** (optional, task-specific) – Consulted externally for high-stakes disputes. Not a platform role.
 
-**Key Principle**: Low barrier to entry, transparent criteria for advancement, clear separation between content quality (automated) and behavior moderation (human).
+**Key Principle**: Analysis output data is immutable. Quality improvements flow through UCM configuration changes, not data edits.
 
 == 5. Principles ==
 
-* **Low barrier to entry** for new contributors
-* **Transparent criteria** for gaining and losing responsibilities
+* **Improve the system, not the data** — analysis outputs are immutable
+* **Low barrier to entry** — anyone can browse and search without registration; submission requires a free account
 * **Clear separation** between content quality (automated) and behavioral moderation (human)
-* **Documented processes** for escalation and appeal
+* **UCM-driven improvement** — quality improvements flow through configuration changes
 * **No gatekeeping** for content publication
-* **Immediate application** of contributions (Wikipedia model)
+* **Every report references its config** — full reproducibility via UCM config snapshots
 
 == 6. Related Pages ==
 
@@ -252,24 +242,3 @@ FactHarbor uses **TWO publication modes** (not three). Focus is on transparency 
 * [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] - System architecture
 * [[Decision Processes>>FactHarbor.Organisation.Decision-Processes.WebHome]] - Governance
 * [[Requirements>>FactHarbor.Specification.Requirements.WebHome]] - All requirements
-
-**V0.9.70 CHANGES:**
-
-**REMOVED:**
-- All references to "Mode 3" publication
-- "Contributors validate quality gates"
-- "Trusted Contributors validate outputs"
-- "Moderators finalize publication"
-
-**CLARIFIED:**
-- Contributors suggest system improvements (not approve outputs)
-- Moderators handle abuse only (not content quality)
-- Trusted Contributors provide consultation (not validation)
-- Domain experts provide opinions (not approval)
-- Only 2 publication modes (AI-Generated / Draft-Only)
-
-**ADDED:**
-- Clear role boundaries
-- Explicit "cannot" lists for each role
-- Publication mode details
-- Content state specifications

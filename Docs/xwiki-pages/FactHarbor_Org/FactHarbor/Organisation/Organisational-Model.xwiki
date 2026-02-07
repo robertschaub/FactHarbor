@@ -109,20 +109,19 @@ FactHarbor operates as a **Swiss Verein** (non-profit association) with a **simp
 **Responsibilities**:
 * Respect community standards
 * Provide constructive feedback
-=== 4.2 Contributors ===
-**Reputation system** replaces role hierarchy. Earn through quality contributions.
+=== 4.2 UCM Administrators ===
+**Appointed by Governing Team** to manage system configuration.
 **Requirements**:
-* Register account
-* Accept terms of service
-* Build reputation through contributions
+* Appointed by Governing Team
+* Technical understanding of UCM configuration
 **Rights**:
-* Edit claims, evidence, scenarios
-* Participate in discussions
-* Earn reputation points
+* Manage UCM configuration (prompt templates, quality thresholds, model selection)
+* View config audit trail and system metrics
+* Trigger re-analysis with updated config
 **Responsibilities**:
-* Maintain neutrality
-* Cite sources
-* Accept feedback graciously
+* Maintain system quality through configuration improvements
+* Document config change rationale
+* Monitor quality metrics after config changes
 === 4.3 Moderators ===
 **Selection**:
 * Appointed by Governing Team
@@ -251,12 +250,12 @@ FactHarbor operates as a **Swiss Verein** (non-profit association) with a **simp
 * Emergency response plan
 == 11. Evolution & Adaptation ==
 === 11.1 Regular Reviews ===
-**Annually**:
+**Periodic reviews**:
 * Structure assessment
 * Process improvements
 * Policy updates
 * Strategic planning
-**Periodically**:
+**Major reviews**:
 * Comprehensive review
 * Major reforms if needed
 * Statutes amendments

@@ -36,7 +36,7 @@ Vectors should NOT replace deterministic caching (exact hash or canonical text) 
 - Keep vector search off the critical path to honor NFR1 (minimal performance impact).
 - Ensure PII safety: embedding raw text can leak content. Prefer redaction or short snippets, and keep full text hashed.
 
-## Short-Term Recommendations (0-4 weeks)
+## Short-Term Recommendations
 
 1. Implement Phase 1 logging in SQLite as specified in `Docs/WIP/Shadow_Mode_Architecture.md`.
    - Add `ClassificationLog` table with `promptVersionHash` and `textHash`.
@@ -48,7 +48,7 @@ Vectors should NOT replace deterministic caching (exact hash or canonical text) 
 3. Define a Shadow Mode analysis job runner that reads SQLite logs and generates proposals.
    - Keep this fully offline and separate from production analysis.
 
-## Long-Term Recommendations (1-3 months)
+## Long-Term Recommendations
 
 1. Introduce an optional embeddings store for offline analysis only.
    - Store vectors for `textSnippet` or canonicalized claim text plus metadata.

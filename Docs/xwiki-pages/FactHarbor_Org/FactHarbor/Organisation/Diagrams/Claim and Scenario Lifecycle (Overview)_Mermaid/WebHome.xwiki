@@ -1,53 +1,49 @@
 {{mermaid}}
 flowchart TD
- classDef human fill:#fff,stroke:#333,stroke-width:1px;
- classDef ai fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,stroke-dasharray: 5 5;
- classDef phase fill:#f5f5f5,stroke:#999,stroke-width:1px;
- %% 1. Claim Submission
- subgraph Submission ["1. Claim Submission"]
- direction TB
- Input[User/Source Input] --> Normalise[AI/Human Normalisation]
- Normalise:::ai --> Cluster[Identify Claim Cluster]
- Cluster:::ai --> DraftScen[Draft Initial Scenarios]
- end
- %% 2. Scenario Building
- subgraph Scenarios ["2. Scenario Building"]
- direction TB
- DraftScen:::ai --> Defs[Define Assumptions & Boundaries]
- Defs:::ai --> Generation[AKEL Generates Scenarios]
- end
- %% 3. Evidence Handling
- subgraph Evidence ["3. Evidence Handling"]
- direction TB
- Retrieval[AI Retrieval & Summary] --> Assess[Human Quality Assessment]
- Retrieval:::ai --> Assess:::human
- Assess --> Link[Link Evidence to Scenarios]
- Link:::human
- end
- %% 4. Verdict Creation
- subgraph Verdicts ["4. Verdict Creation"]
- direction TB
- DraftVer[AI Draft Verdict] --> Refine[Human Refinement]
- DraftVer:::ai --> Refine:::human
- Refine --> Reason[Explain Reasoning]
- Reason:::human --> ApproveVer[Verdict Approval]
- end
- %% 5. Public Presentation
- subgraph Public ["5. Public Presentation"]
- direction TB
- Summary[Concise Summary]
- Landscape[Truth Landscape Comparison]
- DeepDive[Deep Dive Evidence Access]
- end
- %% Flow connections between phases
- Submission --> Scenarios
- Scenarios --> Evidence
- Evidence --> Verdicts
- Verdicts --> Public
- %% 6. Time Evolution (Feedback Loop)
- subgraph Evolution ["6. Time Evolution"]
- NewEv[New Evidence / Correction]
- end
- Public -.-> NewEv
- NewEv -.-> Evidence
+    classDef ai fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef phase fill:#f5f5f5,stroke:#999,stroke-width:1px;
+    classDef ucm fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    %% 1. Submission
+    subgraph Submission ["1. Submission"]
+        direction TB
+        Input[Registered User Submits URL/Text] --> Parse[AKEL Parses Input]
+        Parse:::ai --> Claims[Extract Claims]
+        Claims:::ai --> Contexts[Detect AnalysisContexts]
+    end
+    %% 2. Evidence Retrieval
+    subgraph Evidence ["2. Evidence Retrieval"]
+        direction TB
+        Search[AI Web Search]:::ai --> Fetch[Source Fetching]
+        Fetch:::ai --> Extract[Evidence Extraction]
+        Extract:::ai --> Quality[Quality Filtering]
+        Quality:::ai
+    end
+    %% 3. Verdict Generation
+    subgraph Verdicts ["3. Verdict Generation"]
+        direction TB
+        PerContext[Per-Context Verdicts]:::ai --> Aggregate[Cross-Context Aggregation]
+        Aggregate:::ai --> GateCheck[Quality Gate Check]
+        GateCheck:::ai
+    end
+    %% 4. Presentation
+    subgraph Public ["4. Public Presentation"]
+        direction TB
+        Summary[Analysis Summary]
+        TruthScale[7-Point Truth Scale]
+        EvidenceView[Evidence & Sources]
+    end
+    %% 5. UCM Feedback Loop
+    subgraph UCMLoop ["5. System Improvement"]
+        direction TB
+        Metrics[Monitor Quality Metrics]
+        UCMConfig[UCM Config Update]:::ucm
+    end
+    %% Flow
+    Submission --> Evidence
+    Evidence --> Verdicts
+    Verdicts --> Public
+    Public -.-> Metrics
+    UCMConfig -.->|improved config| Submission
 {{/mermaid}}
+
+Fully automated pipeline. No human editing of analysis data. System improvements flow through UCM configuration changes (dashed orange).

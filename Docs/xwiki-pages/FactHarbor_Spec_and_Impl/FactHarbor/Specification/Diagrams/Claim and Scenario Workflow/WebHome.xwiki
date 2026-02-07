@@ -1,5 +1,5 @@
 {{info}}
-**Current Implementation (v2.6.33)** - Scenarios have been replaced by **KeyFactors** - optional decomposition questions discovered during the understanding phase.
+**Current Implementation (v2.10.2)** — The pipeline uses **AnalysisContexts** (bounded analytical frames) and **KeyFactors** (decomposition questions with contestation tracking), discovered during the understanding phase.
 {{/info}}
 
 = Claim Analysis Workflow =
@@ -13,7 +13,7 @@ graph TB
         Extract{understandClaim LLM Analysis}
         Gate1{Gate 1 Claim Validation}
         DetectType[Detect Input Type]
-        DetectScopes[Detect Scopes]
+        DetectContexts[Detect Contexts]
         KeyFactors[Discover KeyFactors]
     end
 
@@ -21,7 +21,7 @@ graph TB
         Decide[decideNextResearch]
         Search[Web Search]
         Fetch[Fetch Sources]
-        Facts[extractFacts]
+        Facts[extractEvidence]
     end
 
     subgraph Step3[Step 3 Verdict]
@@ -38,8 +38,8 @@ graph TB
     Extract --> Gate1
     Gate1 -->|Pass Factual| DetectType
     Gate1 -->|Fail Opinion| Exclude[Exclude from analysis]
-    DetectType --> DetectScopes
-    DetectScopes --> KeyFactors
+    DetectType --> DetectContexts
+    DetectContexts --> KeyFactors
     KeyFactors --> Decide
     Decide --> Search
     Search --> Fetch

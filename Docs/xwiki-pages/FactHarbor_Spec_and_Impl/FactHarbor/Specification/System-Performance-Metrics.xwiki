@@ -182,19 +182,19 @@ These metrics tell us:
 * Error rate (last hour)
 * System health status
 **Update frequency**: Every 30 seconds
-=== 7.2 Daily Dashboard ===
-**Reviewed daily**:
+=== 7.2 Operational Dashboard ===
+**Reviewed regularly**:
 * All AKEL performance metrics
 * Content quality metrics
 * System health trends
 * User feedback summary
-=== 7.3 Weekly Reports ===
-**Reviewed weekly**:
+=== 7.3 Trend Reports ===
+**Periodic review**:
 * Trends over time
-* Week-over-week comparisons
+* Period-over-period comparisons
 * Improvement priorities
 * Outstanding issues
-=== 7.4 Monthly/Quarterly Reports ===
+=== 7.4 Strategic Reports ===
 **Comprehensive analysis**:
 * Long-term trends
 * Seasonal patterns
@@ -203,7 +203,7 @@ These metrics tell us:
 == 8. Alert System ==
 === 8.1 Alert Levels ===
 **Info**: Metric outside target, but within acceptable range
-* Action: Note in daily review
+* Action: Note in next review
 * Example: P95 processing time 19s (target 18s, acceptable <20s)
 **Warning**: Metric outside acceptable range
 * Action: Investigate within 24 hours
@@ -293,6 +293,6 @@ These metrics tell us:
 == 13. Related Pages ==
 * [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] - Why we monitor systems, not outputs
 * [[Continuous Improvement>>FactHarbor.Organisation.How-We-Work-Together.Continuous-Improvement]] - How we use metrics to improve
-* [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - Quarterly performance reviews
+* [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - Periodic performance reviews
 ---
 **Remember**: We measure the SYSTEM, not individual outputs. Metrics drive IMPROVEMENT, not judgment.

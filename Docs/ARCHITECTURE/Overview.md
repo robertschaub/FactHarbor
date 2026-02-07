@@ -238,7 +238,7 @@ flowchart TB
 - Iterative research cycle (typically 2-3 rounds)
 - Generates search queries targeting gaps
 - Fetches and parses sources (HTML, PDF)
-- Extracts facts from each source
+- Extracts evidence items from each source
 - Continues until research is complete or max rounds reached
 
 **Step 3: Verdict Generation (generateVerdicts)**
@@ -447,10 +447,10 @@ flowchart TB
         end
 
         subgraph Lib["Core Libraries"]
-            ANALYZER["analyzer.ts<br/>━━━━━━━━━━━━━<br/>AKEL Pipeline<br/>~6700 lines"]
+            ANALYZER["orchestrated.ts<br/>━━━━━━━━━━━━━<br/>AKEL Pipeline<br/>~12000 lines"]
             RETRIEVAL["retrieval.ts<br/>━━━━━━━━━━━━━<br/>URL content extraction"]
             WEBSEARCH["web-search.ts<br/>━━━━━━━━━━━━━<br/>Search abstraction"]
-            MBFC["source-reliability.ts<br/>━━━━━━━━━━━━━<br/>Source reliability"]
+            SR["source-reliability.ts<br/>━━━━━━━━━━━━━<br/>Source reliability"]
         end
     end
 
@@ -494,7 +494,7 @@ flowchart TB
 
     ANALYZER --> RETRIEVAL
     ANALYZER --> WEBSEARCH
-    ANALYZER --> MBFC
+    ANALYZER --> SR
 
     %% .NET internal
     ANALYZE_CTRL --> JOB_SVC
@@ -515,10 +515,10 @@ flowchart TB
 
 | File | Purpose | Size |
 |------|---------|------|
-| `apps/web/src/lib/analyzer.ts` | Core analysis engine (AKEL pipeline) | ~6700 lines |
+| `apps/web/src/lib/analyzer/orchestrated.ts` | Core analysis engine (AKEL pipeline) | ~12000 lines |
 | `apps/web/src/lib/retrieval.ts` | URL/PDF content extraction | ~500 lines |
 | `apps/web/src/lib/web-search.ts` | Search provider abstraction | ~300 lines |
-| `apps/web/src/lib/source-reliability.ts` | Source reliability scoring | ~200 lines |
+| `apps/web/src/lib/analyzer/source-reliability.ts` | Source reliability scoring | ~200 lines |
 | `apps/web/src/app/jobs/[id]/page.tsx` | Job results UI | ~800 lines |
 | `apps/api/Controllers/JobsController.cs` | Job CRUD API | ~200 lines |
 | `apps/api/Data/FhDbContext.cs` | Database context | ~100 lines |
@@ -606,7 +606,7 @@ See [Unified_Config_Management.md](../USER_GUIDES/Unified_Config_Management.md) 
 | **Job orchestration** | ✅ Implemented | API stores job + events in SQLite; Web runner updates via internal endpoints; SSE endpoint for live events |
 | **Quality Gates (POC)** | ⚠️ Partially implemented | Analyzer applies Gate 1 (claim validation) and Gate 4 (verdict confidence); gate stats included in result JSON; display of per-item gate reasons still missing in UI/report |
 | **Source reliability** | ⚠️ Partial | Static Source Reliability Bundle loaded; sources store trackRecordScore/category; no historical track record or provenance chain yet |
-| **Evidence model** | ⚠️ Partial | Claims + extracted facts + verdicts exist in result JSON; KeyFactors implemented; Scenario object is not yet explicit/persisted |
+| **Evidence model** | ⚠️ Partial | Claims + evidence items + verdicts exist in result JSON; KeyFactors implemented; AnalysisContext object is not yet explicitly persisted |
 | **KeyFactors** | ✅ Implemented | Discovered in Understanding, emergent and optional, claim-to-factor mapping via `keyFactorId`, aggregated from claim verdicts, displayed in reports (aggregation fixed 2026-01-06) |
 | **AuthN/AuthZ & rate limiting** | ❌ Missing | Public UI and endpoints are open; admin test endpoints are unauthenticated; CORS is permissive in API |
 | **Persistence (normalized)** | ❌ Missing | API persists job metadata + JSON/markdown results; no normalized tables for claims/evidence/sources/verdicts |
@@ -713,16 +713,17 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 - 7-point scale mapping
 - MIXED vs UNVERIFIED distinction
 - Counter-evidence handling
-- Aggregation hierarchy (Facts → Claims → KeyFactors → Contexts → Overall)
+- Aggregation hierarchy (Evidence → Claims → KeyFactors → Contexts → Overall)
 - Dependency handling
 - Pseudoscience escalation
 - Benchmark guard
 
 ### Cost Optimization Opportunities
 
-**Multi-Tier Model Strategy** (not yet implemented):
-- Use cheaper models (Claude Haiku) for extraction tasks
-- Use premium models (Claude Sonnet) for reasoning tasks
+**Multi-Tier Model Strategy** (implemented via UCM Pipeline Config):
+- Uses cheaper models (e.g., Claude Haiku, GPT-4o Mini) for extraction tasks
+- Uses premium models (e.g., Claude Sonnet, GPT-4o) for reasoning tasks
+- Configured via `modelUnderstand`, `modelExtractEvidence`, `modelVerdict` in Pipeline Config
 - Estimated savings: 50-70% on LLM costs
 
 **Claim Caching** (not yet implemented):
@@ -781,7 +782,7 @@ See `Docs/ARCHITECTURE/Calculations.md` for detailed verdict calculation methodo
 **Data Model:**
 - Normalized database tables for claims/evidence/sources/verdicts
 - Provenance chain tracking
-- Explicit Scenario object persistence
+- Explicit AnalysisContext object persistence
 
 ---
 

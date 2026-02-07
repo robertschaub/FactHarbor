@@ -524,28 +524,24 @@ it("ExtractedFact alias still works", () => {
 === Phase 2.1: Gradual Code Migration (In Progress) ===
 * File-by-file migration from ExtractedFact to EvidenceItem
 * Test files already migrated
-* Production code migration ongoing (~1-2 months)
+* Production code migration ongoing
 * **Output JSON schema still unchanged**
 
 === Phase 2.5: Source Type Prompts (Complete) ===
 * Add sourceType extraction to prompts
 * Additive change
 
-=== Phase 3: Field Renames (Planned for v3.0) ===
-* **Breaking change**: Output JSON schema changes
-* Rename ##facts[]## -> ##evidence[]##
-* Rename ##fact## field -> ##statement##
-* Rename ##supportingFactIds## -> ##supportingEvidenceIds##
-* Add schema versioning for backward compatibility
-* Remove deprecated aliases
+=== Phase 3: Field Renames (Complete — v3.0/v3.1) ===
+* **Breaking change applied**: All legacy JSON field names removed from codebase
+* Renamed ##facts[]## -> ##evidenceItems[]##
+* Renamed ##fact## field -> ##statement##
+* Renamed ##supportingFactIds## -> ##supportingEvidenceIds##
+* Renamed ##distinctProceedings## -> ##analysisContexts##
+* Renamed ##relatedProceedingId##/##proceedingId## -> ##contextId##
+* Schema versioning at 3.0.0
+* Migration script: ##apps/api/scripts/migrate-terminology-v2.7.ts##
 
-**Prerequisites for Phase 3**:
-1. All Priority 0-1 tasks complete
-1. Backward compatibility tests passing
-1. Schema migration strategy documented
-1. External API consumers audited
-1. Major version bump (v2.x -> v3.0)
-1. Transformation logic for legacy data tested
+See [[Terminology>>FactHarbor.Specification.Reference.Terminology.WebHome]] for full v3.0/v3.1 migration details.
 
 ----
 

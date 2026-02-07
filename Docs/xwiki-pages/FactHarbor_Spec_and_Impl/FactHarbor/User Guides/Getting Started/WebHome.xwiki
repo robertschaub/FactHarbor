@@ -2,7 +2,7 @@
 
 == Purpose ==
 
-This guide will help you set up and run FactHarbor POC1 on your local machine from scratch. It combines installation prerequisites with first-run configuration to ensure a smooth setup experience.
+This guide will help you set up and run FactHarbor on your local machine from scratch. It combines installation prerequisites with first-run configuration to ensure a smooth setup experience.
 
 ----
 
@@ -332,7 +332,7 @@ Your setup is successful when:
 * Refreshing the page shows saved results
 * ##/jobs## page lists your analysis
 
-**Congratulations! POC1 is now operational.**
+**Congratulations! FactHarbor is now operational.**
 
 ----
 

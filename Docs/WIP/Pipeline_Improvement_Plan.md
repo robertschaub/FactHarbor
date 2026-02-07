@@ -581,7 +581,7 @@ interface ExtractionTelemetry {
 
 ## 6. Phase 2+ Roadmap
 
-### Phase 2: Advanced Orchestration (3-4 weeks)
+### Phase 2: Advanced Orchestration
 
 | Item | Effort | Depends On |
 |------|--------|------------|
@@ -590,7 +590,7 @@ interface ExtractionTelemetry {
 | Hash-based evidence dedup | 3h | - |
 | Research decision logging | 4h | - |
 
-### Phase 3: Streaming & Visualization (2-3 weeks)
+### Phase 3: Streaming & Visualization
 
 | Item | Effort | Depends On |
 |------|--------|------------|

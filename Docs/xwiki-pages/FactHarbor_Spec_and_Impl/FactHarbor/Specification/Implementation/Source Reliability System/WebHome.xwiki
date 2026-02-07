@@ -1,5 +1,6 @@
 = FactHarbor Source Reliability =
 
+**User-facing name**: [[Media Source Database>>FactHarbor.Specification.Media Source Database.WebHome]]
 **Version**: 1.4 (Multi-Language Support)
 **Status**: Operational
 **Last Updated**: 2026-02-03 (v2.6.41)
@@ -88,9 +89,9 @@ flowchart TB
     end
 
     subgraph evaluation [LLM Evaluation - Sequential Refinement]
-        EVAL[/api/internal/evaluate-source]
+        EVAL["/api/internal/evaluate-source"]
         LLM1[Claude<br/>Initial Evaluation]
-    LLM2[OpenAI mini model<br/>Cross-check and Refine]
+        LLM2[OpenAI mini model<br/>Cross-check and Refine]
         FINAL[Final Result]
     end
 
@@ -479,7 +480,7 @@ Version 1.2 introduces significant improvements to scoring accuracy, especially 
 
 |= Feature |= Description
 | **Entity-Level Evaluation** | Prioritize organization reputation over domain-only metrics when the domain is a primary outlet for an established organization.
-| **SOURCE TYPE SCORE CAPS** | Deterministic ceiling enforcement: ##propaganda_outlet##/##known_disinformation## -> <=14%, ##state_controlled_media##/##platform_ugc## -> <=42%
+| **SOURCE TYPE SCORE CAPS** | Prompt-driven caps (UCM configurable): ##propaganda_outlet##/##known_disinformation## -> <=14%, ##state_controlled_media##/##platform_ugc## -> <=42%; code validates and warns but does not override
 | **Adaptive Evidence Queries** | Negative-signal queries (##propaganda##, ##disinformation##, ##false claims##) added when initial results are sparse
 | **Brand Variant Matching** | Improved relevance filtering: handles ##anti-spiegel## <-> ##antispiegel## <-> ##anti spiegel##, suffix stripping (##foxnews## -> ##fox news##)
 | **Mechanistic Confidence** | Formula-based confidence scoring: base 0.40 + factors (fact-checkers, recency, corroboration)
@@ -487,7 +488,7 @@ Version 1.2 introduces significant improvements to scoring accuracy, especially 
 | **Unified Thresholds** | Admin + pipeline + evaluator use same defaults (confidence: 0.8)
 | **AGENTS.md Compliant** | Abstract examples only (no real domain names in prompts)
 
-=== Source Type Caps (Enforced Deterministically) ===
+=== Source Type Caps (Prompt-Driven, UCM Configurable) ===
 
 {{code}}
 propaganda_outlet       → score ≤ 0.14 (highly_unreliable)
@@ -496,7 +497,7 @@ state_controlled_media  → score ≤ 0.42 (leaning_unreliable)
 platform_ugc            → score ≤ 0.42 (leaning_unreliable)
 {{/code}}
 
-These caps are enforced in post-processing after LLM evaluation, ensuring deterministic behavior regardless of LLM variance.
+These caps are defined in the SR prompt template (UCM configurable). The LLM is instructed to respect them during evaluation. Code-side validation (##SOURCE_TYPE_EXPECTED_CAPS## in ##source-reliability-config.ts##) adds a caveat if the LLM exceeds a cap but does **not** override the score (prompt is authoritative since v2.8.3).
 
 === Asymmetric Confidence Requirements ===
 
@@ -525,33 +526,23 @@ const config = getSRConfig();
 
 ----
 
-== v1.3 Sequential Refinement (January 2026) ==
+== Sequential Refinement Architecture ==
 
-Version 1.3 replaces the parallel consensus model with **sequential refinement** for more accurate entity-level evaluation and better handling of established organizations like public broadcasters.
+The source reliability system uses **sequential refinement** for accurate entity-level evaluation and robust handling of established organizations like public broadcasters.
 
-=== Architecture Change ===
+=== Architecture ===
 
-**Previous (v1.2) - Parallel Consensus:**
-{{code}}
-Evidence Pack → Claude (evaluate) → Result 1
-Evidence Pack → OpenAI model (evaluate) → Result 2
-Compare Results → Consensus or Fallback → Final
-{{/code}}
-
-**Problem**: Both models evaluated independently with the same prompt, often both missing entity-level context (e.g., a domain belonging to a major public broadcaster).
-
-**New (v1.3) - Sequential Refinement:**
 {{code}}
 Evidence Pack → Claude (Initial Evaluation) → Initial Result
                          ↓
 Evidence Pack + Initial Result → OpenAI mini model (Cross-check & Refine) → Final Result
 {{/code}}
 
-**Benefits**:
-* LLM2 can catch what LLM1 missed (especially entity recognition)
+**Key characteristics**:
+* The secondary model can catch what the initial model missed (especially entity recognition)
 * Explicit cross-checking of entity identification
 * Baseline score adjustments for known organization types (public broadcasters, wire services)
-* Better reasoning transparency (shows refinement logic)
+* Reasoning transparency through refinement logic
 
 === Refinement Process ===
 
@@ -579,9 +570,9 @@ Both LLM1 (initial evaluation) and LLM2 (refinement) use **shared prompt constan
 
 This ensures both models interpret evidence identically.
 
-=== Score Caps (Hard Limits) ===
+=== Score Caps (Prompt-Driven Defaults) ===
 
-Source type caps are **strictly enforced with no exceptions**:
+Source type caps are defined in the prompt template (UCM configurable). Default caps:
 
 |= Source Type |= Maximum Score |= Rating
 | ##propaganda_outlet## | 0.14 | highly_unreliable
@@ -605,9 +596,9 @@ The refinement stage follows strict adjustment criteria:
 
 ----
 
-== v1.4 Multi-Language Support (January 2026) ==
+== Multi-Language Support ==
 
-Version 1.4 adds automatic language detection and multi-language search queries to find regional fact-checker assessments.
+The system includes automatic language detection and multi-language search queries to find regional fact-checker assessments.
 
 === Problem Solved ===
 
@@ -673,11 +664,6 @@ The API response now includes refinement tracking:
 
 === Example: Public Broadcaster Evaluation ===
 
-**Before (v1.2 - Parallel Consensus)**:
-* Both models evaluated the source independently at ~60% (leaning_reliable)
-* Consensus achieved, but score may be too conservative for an established organization
-
-**After (v1.3 - Sequential Refinement)**:
 * Claude initial evaluation: 60% (leaning_reliable)
 * OpenAI mini-model cross-check: Identifies the source as an established public broadcaster, notes academic citations and institutional use in evidence, no negative evidence found
 * Final result: Score refined upward with ##refinementApplied: true## and detailed ##refinementNotes##
@@ -695,12 +681,12 @@ Access the Source Reliability admin page at: ##/admin/source-reliability##
 * **Cleanup**: Remove expired entries
 * **Authentication**: Requires ##FH_ADMIN_KEY## in production
 
-=== Admin Tasks (~15 min/week) ===
+=== Admin Tasks ===
 
-|= Task |= Time |= Frequency
-| Check LLM cost dashboard | 5 min | Weekly
-| Spot-check 2-3 recent scores | 8 min | Weekly
-| Review any flagged issues | 2 min | Weekly
+|= Task |= Estimated Time
+| Check LLM cost dashboard | 5 min
+| Spot-check 2-3 recent scores | 8 min
+| Review any flagged issues | 2 min
 
 ----
 

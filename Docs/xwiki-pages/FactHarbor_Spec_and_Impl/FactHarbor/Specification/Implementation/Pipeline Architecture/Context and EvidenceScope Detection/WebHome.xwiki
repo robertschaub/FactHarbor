@@ -34,13 +34,13 @@ This guide consolidates all information about FactHarbor's context detection sys
 * A distinct analytical frame requiring separate analysis
 * **Scope**: Top-level question or thesis being analyzed
 * **Example**: "Legal proceeding A fairness" vs "Legal proceeding B fairness" are distinct contexts
-* **Storage**: ##article.distinctContexts## array, ##claim.relatedContextId##, ##verdict.relatedContextId##
+* **Storage**: ##article.analysisContexts## array, ##claim.contextId##, ##verdict.contextId##
 
 **EvidenceScope** (Per-Evidence Source Methodology):
 * Metadata about a single evidence item's boundaries and methodology
-* **Scope**: Per-fact source constraints (methodology, boundaries, temporal, geographic)
+* **Scope**: Per-evidence source constraints (methodology, boundaries, temporal, geographic)
 * **Example**: "Study used Framework A with full system boundary"
-* **Storage**: ##fact.evidenceScope## object
+* **Storage**: ##evidenceItem.evidenceScope## object
 
 **Key Distinction**: AnalysisContext = "What question am I answering?" vs EvidenceScope = "What boundaries did this evidence source use?"
 
@@ -74,7 +74,7 @@ flowchart TD
 
     NOCTX --> EX2["Example: 'Is claim X true?'<br/>with sources from different orgs<br/>→ 1 AnalysisContext"]
 
-    SCOPE --> EX3["Example: Evidence fact has<br/>evidenceScope: {<br/>  methodology: 'Framework A',<br/>  boundaries: 'Full system'<br/>}"]
+    SCOPE --> EX3["Example: Evidence item has<br/>evidenceScope: {<br/>  methodology: 'Framework A',<br/>  boundaries: 'Full system'<br/>}"]
 
     style CTX fill:#c8e6c9
     style SCOPE fill:#fff9c4
@@ -128,14 +128,14 @@ flowchart TB
         Search --> Sources[Source Documents]
     end
 
-    subgraph EXTRACT["Phase 3: EXTRACT_FACTS"]
-        Sources --> Facts[Fact Extraction]
-        Facts --> ES[EvidenceScope Metadata<br/>━━━━━━━━━━━━━<br/>Per-fact boundaries captured]
+    subgraph EXTRACT["Phase 3: EXTRACT_EVIDENCE"]
+        Sources --> EV[Evidence Extraction]
+        EV --> ES[EvidenceScope Metadata<br/>━━━━━━━━━━━━━<br/>Per-evidence boundaries captured]
     end
 
     subgraph REFINE["Phase 4: CONTEXT_REFINEMENT"]
         InitialDetection --> Merge[Merge/Refine Contexts<br/>━━━━━━━━━━━━━<br/>Evidence-based discovery<br/>Overlap detection<br/>LLM-driven merge]
-        Facts --> Merge
+        EV --> Merge
         ES -.->|Informs context<br/>discovery| Merge
         Merge --> FinalContexts[Final Contexts<br/>━━━━━━━━━━━━━<br/>Max 5 contexts<br/>Warnings if 4-5]
     end
@@ -150,7 +150,7 @@ flowchart TB
 
 |= Phase |= Context Detection |= Uses Evidence? |= Source
 | **UNDERSTAND** | Initial detection from input text | No | Input analysis
-| **EXTRACT_FACTS** | EvidenceScope metadata capture | Yes | Source documents
+| **EXTRACT_EVIDENCE** | EvidenceScope metadata capture | Yes | Source documents
 | **CONTEXT_REFINEMENT** | Evidence-based discovery & merge | Yes | EvidenceScope patterns
 
 === 4.3 Data Flow ===
@@ -175,7 +175,7 @@ interface AnalysisContext {
 **Phase 3: EvidenceScope Capture**
 {{code language="typescript"}}
 // Input: Source document
-// Output: Per-fact EvidenceScope metadata
+// Output: Per-evidence EvidenceScope metadata
 interface EvidenceScope {
   name: string;         // "Framework A", "Court B"
   methodology: string;  // "Standard X", "Full system boundary"
@@ -187,7 +187,7 @@ interface EvidenceScope {
 
 **Phase 4: Context Refinement**
 {{code language="typescript"}}
-// Input: Initial contexts + extracted facts with EvidenceScope
+// Input: Initial contexts + extracted evidence with EvidenceScope
 // Process: Scan EvidenceScope patterns → validate → merge/create
 // Output: Final AnalysisContext list (max 5)
 {{/code}}
@@ -213,9 +213,9 @@ Instead of hardcoding specific terms or categories, FactHarbor uses **ONE univer
 1. **Incompatibility focus**: Only flag boundaries that would cause apples-to-oranges comparisons
 1. **Synonym recognition**: Sources use various terms (scope, delimitations, limitations, inclusion criteria)
 
-=== 5.3 EvidenceScope Detection Guidance (EXTRACT_FACTS Phase) ===
+=== 5.3 EvidenceScope Detection Guidance (EXTRACT_EVIDENCE Phase) ===
 
-**From**: ##apps/web/src/lib/analyzer/prompts/base/extract-facts-base.ts##
+**From**: ##apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts##
 
 {{code language="markdown"}}
 ## EVIDENCESCOPE: INCOMPATIBLE ANALYTICAL BOUNDARIES (SELECTIVE)
@@ -397,13 +397,13 @@ Covers 3 contexts: INST_A, INST_B, SCOPE_GENERAL
 === 8.1 Core Files ===
 
 **Context Detection Logic**:
-* ##apps/web/src/lib/analyzer/scopes.ts## - Heuristic pre-detection, ##detectScopes()##
+* ##apps/web/src/lib/analyzer/analysis-contexts.ts## - Heuristic pre-detection, ##detectContexts()##
 * ##apps/web/src/lib/analyzer/orchestrated.ts## - Orchestrated pipeline (primary)
 * ##apps/web/src/lib/analyzer/monolithic-canonical.ts## - Canonical monolithic pipeline
 * ##apps/web/src/lib/analyzer/monolithic-dynamic.ts## - Dynamic monolithic pipeline
 
 **Prompt Templates**:
-* ##apps/web/src/lib/analyzer/prompts/base/extract-facts-base.ts## - EvidenceScope detection guidance
+* ##apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts## - EvidenceScope detection guidance
 * ##apps/web/src/lib/analyzer/prompts/base/scope-refinement-base.ts## - Context discovery and merge guidance
 
 **Shared Modules**:
@@ -415,17 +415,17 @@ Covers 3 contexts: INST_A, INST_B, SCOPE_GENERAL
 **Context Detection**:
 {{code language="typescript"}}
 // Heuristic pre-detection (optional)
-detectScopes(inputText: string): DetectedScope[]
+detectContexts(inputText: string): DetectedContext[]
 
-// Format detected scopes for LLM hint
-formatDetectedScopesHint(scopes: DetectedScope[]): string
+// Format detected contexts for LLM hint
+formatDetectedContextsHint(contexts: DetectedContext[]): string
 {{/code}}
 
 **Context Refinement**:
 {{code language="typescript"}}
 // LLM-driven context refinement with evidence
 // Phase: CONTEXT_REFINEMENT
-// Input: Initial contexts + extracted facts with EvidenceScope
+// Input: Initial contexts + extracted evidence with EvidenceScope
 // Output: Final AnalysisContext list
 {{/code}}
 
