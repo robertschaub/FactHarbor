@@ -40,7 +40,7 @@ For completed work, historical documents, and reference materials, see:
 - **Document:** [UCM_Flaw_Review_2026-02-05.md](UCM_Flaw_Review_2026-02-05.md)
 - **Type:** Review / Proposal
 - **Scope:** Unified Config Management (config loader/storage/admin API)
-- **Effort:** 1-2 days (triage + fixes)
+
 - **Prerequisites:** Agreement on desired behavior for warnings API and default config audit tracking
 
 **Key Findings:**
@@ -86,6 +86,38 @@ For completed work, historical documents, and reference materials, see:
 **Recommendation:** Stay SQLite-only initially, proceed with vectors only if evidence of need emerges.
 
 **Related:** Shadow_Mode_Architecture.md
+
+### POC to Alpha Transition (2026-02-07)
+**Status:** ✅ APPROVED — Steps 4-5 complete (xWiki conversion done)
+- **Document:** [POC_to_Alpha_Transition.md](POC_to_Alpha_Transition.md)
+- **Type:** Assessment / Transition Plan
+- **Scope:** Assess POC completion, define Alpha transition, phase redefinition
+- **Remaining:** Run baseline quality test (Alpha 0.1 gate), integrate metrics
+
+### Storage, Database & Caching Strategy (2026-02-07)
+**Status:** 🧭 PARTIALLY APPROVED — DEFER decisions agreed
+- **Document:** [Storage_DB_Caching_Strategy.md](Storage_DB_Caching_Strategy.md)
+- **Type:** Architecture Assessment / Strategy
+- **Scope:** Database architecture, caching layers, PostgreSQL migration timing
+- **xWiki:** Storage Architecture page rewritten
+
+### Evidence Quality Enhancement Plan (2026-02-07)
+**Status:** 🔧 IN PROGRESS — Phase 3 Stabilization
+- **Document:** [Generic Evidence Quality Enhancement Plan.md](Generic%20Evidence%20Quality%20Enhancement%20Plan.md)
+- **Type:** Quality Improvement Plan
+- **Scope:** Opinion filtering, search quality, verdict accuracy, evidence quality controls
+
+### Reporting Improvement Exchange (2026-02-07)
+**Status:** 🔧 ACTIVE — Paired programming exchange
+- **Document:** [Reporting_Improvement_Exchange.md](Reporting_Improvement_Exchange.md)
+- **Type:** Working Exchange Document
+- **Scope:** Model strategy, LLM tiering, verdict accuracy, validation protocol
+
+### Documentation Cleanup Plan (2026-02-07)
+**Status:** ✅ APPROVED — Consolidated for execution
+- **Document:** [Documentation_Cleanup_Plan.md](Documentation_Cleanup_Plan.md)
+- **Type:** Cleanup Plan
+- **Scope:** .md + xWiki terminology, phase label, and accuracy updates
 
 ---
 
