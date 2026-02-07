@@ -449,6 +449,7 @@ interface RelevanceCheck {
   signals?: {
     entityMatchCount: number;
     contextMatchCount: number;
+    institutionMatchCount: number;
     institutionMentioned: boolean;
     entityTokens: string[];
     contextTokens: string[];
@@ -458,6 +459,8 @@ interface RelevanceCheck {
 
 type RelevanceOptions = {
   requireContextMatch?: boolean;
+  strictInstitutionMatch?: boolean;
+  allowInstitutionFallback?: boolean;
 };
 
 type RelevanceClass = "primary_source" | "secondary_commentary" | "unrelated";
@@ -527,6 +530,44 @@ function countTokenMatches(haystack: string, url: string, tokens: string[]): num
     if (hasToken(haystack, t) || hasToken(url, t)) count += 1;
   }
   return count;
+}
+
+function selectDiverseSearchResultsByQuery<T extends { query?: string }>(
+  results: T[],
+  maxSources: number,
+): T[] {
+  if (!Array.isArray(results) || results.length <= maxSources) return results;
+  const bucketOrder: string[] = [];
+  const buckets = new Map<string, T[]>();
+
+  for (const result of results) {
+    const bucketKey = String(result.query || "__default");
+    if (!buckets.has(bucketKey)) {
+      buckets.set(bucketKey, []);
+      bucketOrder.push(bucketKey);
+    }
+    buckets.get(bucketKey)!.push(result);
+  }
+
+  const selected: T[] = [];
+  let madeProgress = true;
+  while (selected.length < maxSources && madeProgress) {
+    madeProgress = false;
+    for (const bucketKey of bucketOrder) {
+      const bucket = buckets.get(bucketKey);
+      if (!bucket || bucket.length === 0) continue;
+      selected.push(bucket.shift()!);
+      madeProgress = true;
+      if (selected.length >= maxSources) break;
+    }
+  }
+
+  if (selected.length >= maxSources) return selected;
+  for (const result of results) {
+    if (selected.length >= maxSources) break;
+    if (!selected.includes(result)) selected.push(result);
+  }
+  return selected;
 }
 
 function extractContextTokens(contexts: AnalysisContext[]): string[] {
@@ -640,10 +681,13 @@ function checkSearchResultRelevance(
   const institutionMentioned =
     institutionTokens.length > 0 &&
     (containsAnyToken(combined, institutionTokens) || containsAnyToken(url, institutionTokens));
+  const institutionMatchCount = countTokenMatches(combined, url, institutionTokens);
+  const strictInstitutionMinMatches = 1;
 
   const signals = {
     entityMatchCount,
     contextMatchCount,
+    institutionMatchCount,
     institutionMentioned,
     entityTokens,
     contextTokens,
@@ -652,8 +696,24 @@ function checkSearchResultRelevance(
 
   if (options.requireContextMatch) {
     if (institutionTokens.length > 0) {
+      if (options.strictInstitutionMatch) {
+        if (
+          institutionMatchCount >= strictInstitutionMinMatches &&
+          passesEntityGate &&
+          passesContextOrMissing
+        ) {
+          return { isRelevant: true, signals };
+        }
+        return { isRelevant: false, reason: "institution_not_mentioned", signals };
+      }
       if (institutionMentioned && passesEntityGate && passesContextOrMissing) return { isRelevant: true, signals };
-      if (!institutionMentioned && passesEntityGate && passesContextOrMissing && strongEntityMatchCount > 0) {
+      if (
+        options.allowInstitutionFallback !== false &&
+        !institutionMentioned &&
+        passesEntityGate &&
+        passesContextOrMissing &&
+        strongEntityMatchCount > 0
+      ) {
         return { isRelevant: true, signals };
       }
       return { isRelevant: false, reason: "insufficient_context_match", signals };
@@ -862,6 +922,14 @@ async function refineContextsFromEvidence(
   if (!state.understanding) return { updated: false, llmCalls: 0 };
 
   const preRefineContexts = state.understanding.analysisContexts || [];
+  const preRefineEvidenceContextById = new Map<string, string>();
+  for (const item of state.evidenceItems || []) {
+    preRefineEvidenceContextById.set(String(item.id || ""), String((item as any).contextId || ""));
+  }
+  const preRefineClaimContextById = new Map<string, string>();
+  for (const claim of state.understanding.subClaims || []) {
+    preRefineClaimContextById.set(String(claim.id || ""), String((claim as any).contextId || ""));
+  }
 
   const evidenceItems = state.evidenceItems || [];
   // If we don't have enough evidence, skip refinement (avoid hallucinated contexts).
@@ -1242,6 +1310,160 @@ Return:
   };
 
   ensureContextsCoverAssignments();
+
+  // If refinement replaced the original anchor AnalysisContext with unrelated alternatives,
+  // recover the anchor deterministically and keep the most input-relevant contexts.
+  if (preRefineContexts.length === 1 && (state.understanding!.analysisContexts?.length ?? 0) >= 1) {
+    const anchor = preRefineContexts[0] as any;
+    const contextsNow = (state.understanding!.analysisContexts || []) as any[];
+    const anchorStillRepresented = contextsNow.some(
+      (ctx) => calculateContextSimilarity(ctx, anchor) >= 0.8,
+    );
+
+    if (!anchorStillRepresented) {
+      const inputTokens = tokenizeForMatch(analysisInput, 4);
+      const scoreContext = (ctx: any): number => {
+        const meta = (ctx?.metadata || {}) as Record<string, any>;
+        const ctxText = [
+          String(ctx?.name || ""),
+          String(ctx?.subject || ""),
+          String(ctx?.assessedStatement || ""),
+          String(meta.institution || ""),
+          String(meta.court || ""),
+          String(meta.regulatoryBody || ""),
+          String(meta.jurisdiction || ""),
+          String(meta.geographic || ""),
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        const relevanceScore = countTokenMatches(normalizeForMatch(ctxText), "", inputTokens);
+        let authorityScore = 0;
+        if (meta.court) authorityScore += 3;
+        if (meta.institution) authorityScore += 2;
+        if (Array.isArray(meta.decisionMakers) && meta.decisionMakers.length > 0) authorityScore += 2;
+        if (Array.isArray(meta.charges) && meta.charges.length > 0) authorityScore += 1;
+        return relevanceScore * 10 + authorityScore;
+      };
+
+      const targetCount = Math.max(2, contextsNow.length);
+      const ranked = [...contextsNow].sort((a, b) => scoreContext(b) - scoreContext(a));
+      const kept: any[] = [anchor];
+      for (const ctx of ranked) {
+        if (kept.length >= targetCount) break;
+        kept.push(ctx);
+      }
+      state.understanding!.analysisContexts = kept;
+      state.understanding!.requiresSeparateAnalysis = kept.length > 1;
+
+      let restoredEvidenceCount = 0;
+      for (const item of state.evidenceItems || []) {
+        if (preRefineEvidenceContextById.get(String(item.id || "")) === String(anchor.id || "")) {
+          (item as any).contextId = String(anchor.id || "");
+          restoredEvidenceCount += 1;
+        }
+      }
+      if (restoredEvidenceCount === 0 && (state.evidenceItems?.length ?? 0) > 0) {
+        const anchorTokens = extractContextTokens([anchor]);
+        let bestItem: any = null;
+        let bestScore = 0;
+        for (const item of state.evidenceItems || []) {
+          const haystack = normalizeForMatch(`${item.statement || ""} ${item.sourceTitle || ""}`);
+          const score = countTokenMatches(haystack, normalizeForMatch(String(item.sourceUrl || "")), anchorTokens);
+          if (score > bestScore) {
+            bestScore = score;
+            bestItem = item;
+          }
+        }
+        if (bestItem) {
+          (bestItem as any).contextId = String(anchor.id || "");
+          restoredEvidenceCount = 1;
+        }
+      }
+
+      let restoredClaimCount = 0;
+      for (const claim of state.understanding!.subClaims || []) {
+        if (preRefineClaimContextById.get(String(claim.id || "")) === String(anchor.id || "")) {
+          (claim as any).contextId = String(anchor.id || "");
+          restoredClaimCount += 1;
+        }
+      }
+
+      debugLog("refineContextsFromEvidence: restored anchor context after drift", {
+        anchorId: anchor.id,
+        retainedContextIds: kept.map((c) => c.id),
+        restoredEvidenceCount,
+        restoredClaimCount,
+      });
+    }
+  }
+
+  // Best-effort recovery for under-split contexts after evidence-driven refinement.
+  if ((state.understanding!.analysisContexts?.length ?? 0) <= 1) {
+    const supplemental = await requestSupplementalContexts(
+      analysisInput,
+      model,
+      state.understanding!,
+      state.pipelineConfig,
+    );
+    if (supplemental?.analysisContexts && supplemental.analysisContexts.length > 1) {
+      state.understanding = {
+        ...state.understanding!,
+        analysisContexts: supplemental.analysisContexts,
+        requiresSeparateAnalysis: true,
+      };
+
+      const canonSupplemental = canonicalizeContextsWithRemap(analysisInput, state.understanding!);
+      state.understanding = canonSupplemental.understanding;
+      const existingIds = new Set((state.understanding!.analysisContexts || []).map((ctx) => String(ctx.id || "")));
+      const defaultContextId = String((state.understanding!.analysisContexts || [])[0]?.id || "");
+
+      for (const item of state.evidenceItems || []) {
+        const cid = String((item as any).contextId || "");
+        if (!cid || !existingIds.has(cid)) {
+          (item as any).contextId = defaultContextId;
+        }
+      }
+      for (const claim of state.understanding!.subClaims || []) {
+        const cid = String((claim as any).contextId || "");
+        if (!cid || !existingIds.has(cid)) {
+          (claim as any).contextId = defaultContextId;
+        }
+      }
+
+      const evidenceCountByContext = new Map<string, number>();
+      for (const item of state.evidenceItems || []) {
+        const cid = String((item as any).contextId || "");
+        if (!cid) continue;
+        evidenceCountByContext.set(cid, (evidenceCountByContext.get(cid) || 0) + 1);
+      }
+
+      const allEvidence = state.evidenceItems || [];
+      for (const ctx of state.understanding!.analysisContexts || []) {
+        if ((evidenceCountByContext.get(ctx.id) || 0) > 0) continue;
+        const ctxTokens = extractContextTokens([ctx as any]);
+        let bestItem: any = null;
+        let bestScore = 0;
+        for (const item of allEvidence) {
+          const haystack = normalizeForMatch(`${item.statement || ""} ${item.sourceTitle || ""}`);
+          const score = countTokenMatches(haystack, normalizeForMatch(String(item.sourceUrl || "")), ctxTokens);
+          if (score > bestScore) {
+            bestScore = score;
+            bestItem = item;
+          }
+        }
+        if (bestItem) {
+          (bestItem as any).contextId = String(ctx.id || "");
+          evidenceCountByContext.set(ctx.id, 1);
+        }
+      }
+
+      debugLog("refineContextsFromEvidence: supplemental contexts applied post-refinement", {
+        contextCount: state.understanding!.analysisContexts.length,
+        contextIds: state.understanding!.analysisContexts.map((ctx: any) => ctx.id),
+      });
+    }
+  }
 
   const evidenceItemsPerContext = new Map<string, number>();
   for (const f of state.evidenceItems) {
@@ -6323,21 +6545,26 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         (f) => f.contextId === context.id,
       );
       if (contextEvidenceItems.length < 2) {
-        const contextKey = [context.institution || context.court, context.shortName, context.name]
+        const contextMeta = (context.metadata || {}) as Record<string, any>;
+        const contextAuthority = String(
+          contextMeta.institution || contextMeta.court || contextMeta.regulatoryBody || "",
+        ).trim();
+        const contextNameKey = tokenizeForMatch(String(context.name || ""), 4).slice(0, 4).join(" ");
+        const contextKey = [contextAuthority, context.shortName, contextNameKey]
           .filter(Boolean)
           .join(" ")
           .trim();
         // Build base queries
         const baseQueries = [
           `${entityStr} ${contextKey}`.trim(),
-          `${entityStr} ${context.court || ""} official decision documents`.trim(),
-          `${entityStr} ${context.shortName || context.name} evidence procedure`.trim(),
+          `${contextKey} official decision documents`.trim(),
+          `${contextKey} evidence procedure`.trim(),
           `${entityStr} ${contextKey} outcome`.trim(),
         ];
         // Add date-variant queries for recency-sensitive topics
         const queries = recencyMatters ? [
           ...baseQueries,
-          `${entityStr} ${contextKey} ${currentYear} latest`.trim(),
+          `${contextKey} ${currentYear} latest`.trim(),
         ] : baseQueries;
         return {
           complete: false,
@@ -6407,9 +6634,9 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       currentYear,
     );
     // Add date-variant for recent controversies/criticism
-    const queries = recencyMatters
-      ? [...baseQueries, ...contextAwareQueries]
-      : [...baseQueries, ...contextAwareQueries.slice(0, 2)];
+    const queries = contextAwareQueries.length > 0
+      ? (recencyMatters ? contextAwareQueries : contextAwareQueries.slice(0, 2))
+      : (recencyMatters ? baseQueries : baseQueries.slice(0, 2));
     return {
       complete: false,
       focus: "Criticism and opposing views",
@@ -6450,9 +6677,11 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       .filter((name, index, arr) => arr.indexOf(name) === index); // unique names
 
     if (decisionMakerNames.length > 0) {
+      const firstContextMeta = (contexts[0]?.metadata || {}) as Record<string, any>;
+      const firstContextAuthority = String(firstContextMeta.court || firstContextMeta.institution || "").trim();
       const baseQueries = [
         `${decisionMakerNames[0]} conflict of interest ${entityStr}`,
-        `${decisionMakerNames[0]} impartiality bias ${contexts[0]?.court || ""}`,
+        `${decisionMakerNames[0]} impartiality bias ${firstContextAuthority}`,
         ...(decisionMakerNames.length > 1 ? [`${decisionMakerNames.slice(0, 2).join(" ")} role multiple trials`] : []),
       ];
       // Add date-variant for recency-sensitive conflict searches
@@ -7695,7 +7924,7 @@ async function generateMultiContextVerdicts(
     .map(
       (s: AnalysisContext) =>
         `- **${s.id}**: ${s.name}
-  Institution: ${s.institution || s.court || "N/A"} | Date: ${s.temporal || s.date || "N/A"} | Status: ${s.status}
+  Institution: ${s.metadata?.institution || s.metadata?.court || s.metadata?.regulatoryBody || "N/A"} | Date: ${s.temporal || s.date || "N/A"} | Status: ${s.status}
   Subject: ${s.subject}
   **assessedStatement**: ${s.assessedStatement || "(assess the user's claim in this context)"}`,
     )
@@ -11104,20 +11333,27 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     for (const query of decision.queries || []) {
       // Pipeline Phase 1: Use LLM-derived temporalContext when available, fallback to pattern-based
       const temporalContext = state.understanding?.temporalContext;
+      const queryRecencySensitive = isRecencySensitive(
+        query,
+        state.understanding || undefined,
+        state.pipelineConfig?.recencyCueTerms,
+      );
+      const categoryUsesBroadRecency =
+        decision.category === "criticism" ||
+        decision.category === "counter_evidence" ||
+        decision.category === "central_claim" ||
+        decision.category === "conflict_of_interest";
       let recencyMatters =
-        decision.recencyMatters ||
-        isRecencySensitive(
-          query,
-          state.understanding || undefined,
-          state.pipelineConfig?.recencyCueTerms,
-        );
+        queryRecencySensitive ||
+        (!!decision.recencyMatters && categoryUsesBroadRecency);
       let dateRestrict: "y" | "m" | "w" | undefined = searchConfig.dateRestrict ?? undefined;
 
       const temporalConfThreshold = state.pipelineConfig.temporalConfidenceThreshold ?? 0.6;
       if (temporalContext?.isRecencySensitive && temporalContext.confidence > temporalConfThreshold) {
-        // Use LLM-determined temporal context
-        recencyMatters = true;
-        if (!dateRestrict) {
+        // Use LLM-determined temporal context where recency filtering meaningfully applies.
+        const applyTemporalRestriction = categoryUsesBroadRecency || queryRecencySensitive;
+        recencyMatters = recencyMatters || applyTemporalRestriction;
+        if (!dateRestrict && applyTemporalRestriction) {
           switch (temporalContext.granularity) {
             case "week": dateRestrict = "w"; break;
             case "month": dateRestrict = "m"; break;
@@ -11183,7 +11419,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Apply cross-iteration deduplication using normalized URLs
     const deduplicatedResults = deduplicateSearchUrls(validUrlResults, state);
     // Preserve provider relevance ordering, limit to max sources per iteration
-    const uniqueResults = deduplicatedResults.slice(0, searchConfig.maxSourcesPerIteration);
+    const uniqueResults = selectDiverseSearchResultsByQuery(
+      deduplicatedResults,
+      searchConfig.maxSourcesPerIteration,
+    );
 
     // Task 2.2: Heuristic relevance pre-filter to remove obvious irrelevance before extraction
     const analysisContexts = state.understanding?.analysisContexts || [];
@@ -11194,7 +11433,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       "";
 
     const requireContextMatch =
-      decision.category === "criticism" || decision.isContradictionSearch === true;
+      decision.category === "criticism" ||
+      decision.isContradictionSearch === true ||
+      !!decision.targetContextId;
+    const strictInstitutionMatch = !!decision.targetContextId;
+    const allowInstitutionFallback = !(
+      !!decision.targetContextId || decision.category === "criticism"
+    );
 
     const relevantResults: typeof uniqueResults = [];
     const relevanceMode = state.pipelineConfig.searchRelevanceLlmMode ?? "auto";
@@ -11217,7 +11462,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         result,
         entityStrForRelevance,
         analysisContexts,
-        { requireContextMatch },
+        { requireContextMatch, strictInstitutionMatch, allowInstitutionFallback },
       );
 
       if (check.isRelevant) {
@@ -11461,18 +11706,55 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       }
 
       // Deduplicate and fetch sources
-      const deduplicatedGapResults = deduplicateSearchUrls(
+      const deduplicatedGapResults = selectDiverseSearchResultsByQuery(
+        deduplicateSearchUrls(
         gapSearchResults.filter((r) => r.url && r.url.trim().length > 0),
         state,
-      ).slice(0, searchConfig.maxSourcesPerIteration);
+        ),
+        searchConfig.maxSourcesPerIteration,
+      );
 
-      if (deduplicatedGapResults.length === 0) {
-        console.log(`[Analyzer] Gap research: No new URLs found`);
+      const gapAnalysisContexts = state.understanding?.analysisContexts || [];
+      const gapEntity = state.understanding?.impliedClaim || state.originalInput || state.originalText || "";
+      const relevantGapResults: typeof deduplicatedGapResults = [];
+      for (const result of deduplicatedGapResults) {
+        const gapDomain = extractDomain(result.url || "");
+        if (gapDomain && !isImportantSource(gapDomain)) {
+          debugLog("Gap pre-filter rejected", {
+            url: result.url,
+            title: result.title,
+            reason: "low_importance_domain",
+            domain: gapDomain,
+            query: (result as any).query,
+          });
+          continue;
+        }
+
+        const check = checkSearchResultRelevance(
+          result,
+          gapEntity,
+          gapAnalysisContexts,
+          {},
+        );
+        if (!check.isRelevant) {
+          debugLog("Gap pre-filter rejected", {
+            url: result.url,
+            title: result.title,
+            reason: check.reason || "not_relevant",
+            query: (result as any).query,
+          });
+          continue;
+        }
+        relevantGapResults.push(result);
+      }
+
+      if (relevantGapResults.length === 0) {
+        console.log(`[Analyzer] Gap research: No relevant URLs found`);
         continue;
       }
 
       // Fetch and extract
-      const gapFetchPromises = deduplicatedGapResults.map((r: any, i: number) =>
+      const gapFetchPromises = relevantGapResults.map((r: any, i: number) =>
         fetchSource(r.url, `GS${state.sources.length + i + 1}`, "gap_research", r.query, state.pipelineConfig)
       );
       const gapFetchedSources = await Promise.all(gapFetchPromises);
