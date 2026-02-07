@@ -280,7 +280,28 @@ Every collaborative document MUST include:
 {Final decisions made, with rationale}
 ```
 
-### 4.3 Review Comment Format
+### 4.3 Write Lock Protocol
+
+**MANDATORY** when multiple agents edit shared documents concurrently.
+
+**Lock file:** `Docs/WIP/WRITE_LOCK.md`
+
+**Every agent MUST follow this sequence before writing to any shared `Docs/WIP/` document:**
+
+1. **Read** `WRITE_LOCK.md`
+2. **If LOCKED** → STOP. Report to user: "Lock held by {Holder} on {Target}. Waiting."
+3. **If UNLOCKED** → Set status to `LOCKED` with your role, timestamp, and target file
+4. **Re-read** the target file (it may have changed since you last read it)
+5. **Write** your changes
+6. **Release** → Set `WRITE_LOCK.md` back to `UNLOCKED`
+
+**Rules:**
+- One writer at a time per shared document
+- Release immediately after edit — do not hold across multiple tool calls
+- Stale locks (>10 min) may only be reset by the human user
+- Lock scope: one file per acquisition
+
+### 4.4 Review Comment Format
 
 When adding review comments:
 

@@ -28,6 +28,34 @@ And analyze the current source code.
 
 ## Tasks Pending:
 ---
+Re.: Versioning and data editing:
+We decided not to edit any anlysis output data, but instead edit and version UCM configuration to generically optimize analysis and reporting. Core principle is "improve the system not the data", FactHarbor does not do FactCHecking itselve, instead FactHarbor Searaches and Aggregetes and Evidence such as reports from Fact-Checkers and Studies and other evidence reports.
+Please investigate how best to describe and remove or replace all occurences in docs where versioning is mentioned.Also any diagrams and descriptions on data edits shall be removed or replaced by UCM (Unified Configuration Management) edits. In addition User Roles which existed for the purpose of data editing shall be replaced by a user role "UCM Administrator" with accodring explanation and entity and diagram updates. And describe that every UCM config change is versioned and every report references the UCM configuratios that were used to analyze and cerate the report.
+This is important because, it was a maior paradigm shift, so make sure there is no leftover describing data versioning and data edits.
+---
+Look into my findings and conclusions and propose fixes:
+There are much more counter-evidence found than evidence; search should aim equally to find evidence and counter-evidence, currently counter evidence get to much weight because many are found, and because some counter evidence overlap which may give even more weight.
+If a court and verdict was found to be impartial all together and by the law of a state governed by the rule of law, then an opposing vote of a court member should not get more weight that any other vote of the court members.
+---
+Documentation update incl xWiki Specs, Make a plan:
+1. Cleanup all .md files to reflect current state (especially architecture, backlog, status) also take into account WIP .md files content - but note, do not touch the files currently uncommited in working directory, except the ones you have created Docs\WIP\POC_to_Alpha_Transition.md
+Docs\WIP\Storage_DB_Caching_Strategy.md.
+2. After this is done, do a full update and cleanup of all the .xwiki files below Docs\xwiki-pages\FactHarbor_Spec_and_Impl\FactHarbor. But leave all requirements and "license and disclaimer" and FactHarbor Webhome untouched. Update The planning as just discussed, 
+Important: Make sure Entities, types and diagrams and their explanations reflect the curren state as in source-code. Keep future enhancements, but update everything to be an enhancemen or improvement based on current implementation - we don't have a plan for a major re-design, but to extend and adjust as discussed earlier in some oft the files.
+Now analyze and make a plan and write it to docs\wip.
+---
+Review Docs\WIP\Generic Evidence Quality Enhancement Plan.md and improve it - this is most essential!
+make youselve familiar with report problem mentioned earlier and  look into the database and logs, and use swagger, run analysis with your inputs for testing
+---
+First of all: It is important to that FactHarbor must never ever do specific adjustments just for one or some reports, everything MUST be generic and never biased! Follow the rules!
+
+Very Important thoughts, and basis for solutions:
+I very much assume the a major proble here is that LLM's are not aware that the current US governement lead by Trump is very often simply lying.
+a. Opinions from Governements should never just be trusted without strong evidence (they could even cheat and manufacture "evidence"), many governements are biased, quite some are autocratic or leaning autocratic.
+b. We should be aware and take measures of the situation that LLM's base only on past data maybe even with latest data from a year ago or so (I don't know exactly), and so they likely don'not know that a current govenment cannot be trusted. And also in other situations the might just don't know, e.g. with the bolsonaro case, whe I started with FactHarbor POC at the end of November 2025, LLM did not know about the verdict in the recent case.
+c. Evidence source must allways com from trusted sources and evidence with probativeValue=low should simply be discarded. Mybe we need to better define EvidenceItem, and better prompt the LLM to meka sure EvidenceItem gets the appropriate values.
+d. Web search must be used to enhance sight into the present.
+---
 Article Confidence:
 - Article verdict and Article confidence belong together, confidence is about how confident we are that the verdict is correct (thats the same principle at every level: Claim/Context/Article). Please check if this is implemented correctly.
 ---
