@@ -606,16 +606,27 @@ function extractContextTokens(contexts: AnalysisContext[]): string[] {
 function extractInstitutionTokens(contexts: AnalysisContext[]): string[] {
   if (!Array.isArray(contexts) || contexts.length === 0) return [];
   const raw: string[] = [];
+  const acronyms = new Set<string>();
   for (const ctx of contexts) {
     if (!ctx) continue;
-    if (ctx.shortName) raw.push(ctx.shortName);
+    if (ctx.shortName) {
+      raw.push(ctx.shortName);
+      const shortNameAcronyms = String(ctx.shortName).match(/\b[A-Z]{2,8}\b/g) || [];
+      for (const token of shortNameAcronyms) acronyms.add(token.toLowerCase());
+    }
     const meta = ctx.metadata || {};
-    if (meta.institution) raw.push(meta.institution);
-    if (meta.court) raw.push(meta.court);
-    if (meta.regulatoryBody) raw.push(meta.regulatoryBody);
+    for (const value of [meta.institution, meta.court, meta.regulatoryBody]) {
+      if (!value) continue;
+      const text = String(value);
+      raw.push(text);
+      const matches = text.match(/\b[A-Z]{2,8}\b/g) || [];
+      for (const token of matches) acronyms.add(token.toLowerCase());
+    }
   }
-  // Allow shorter tokens to capture acronyms/initialisms
-  return tokenizeForMatch(raw.join(" "), 2);
+  const lexicalTokens = tokenizeForMatch(raw.join(" "), 5);
+  const tokens = new Set<string>(lexicalTokens);
+  for (const token of acronyms) tokens.add(token);
+  return Array.from(tokens);
 }
 
 /**
@@ -682,7 +693,7 @@ function checkSearchResultRelevance(
     institutionTokens.length > 0 &&
     (containsAnyToken(combined, institutionTokens) || containsAnyToken(url, institutionTokens));
   const institutionMatchCount = countTokenMatches(combined, url, institutionTokens);
-  const strictInstitutionMinMatches = 1;
+  const strictInstitutionMinMatches = institutionTokens.length >= 3 ? 2 : 1;
 
   const signals = {
     entityMatchCount,
@@ -729,6 +740,100 @@ function checkSearchResultRelevance(
     isRelevant: false,
     reason: entityTokens.length > 0 ? "entity_not_mentioned" : "context_not_mentioned",
     signals,
+  };
+}
+
+function getStrongAnchorTokens(text: string): string[] {
+  return tokenizeForMatch(text || "", 7).slice(0, 10);
+}
+
+/**
+ * Remove low-evidence drift contexts that are not anchored to the primary subject/entity.
+ * Conservative by design:
+ * - only applies when at least one other context has anchor evidence
+ * - only drops contexts with <=2 evidence items and zero anchor token matches
+ */
+function pruneWeakAnchorContexts(
+  understanding: ClaimUnderstanding,
+  evidenceItems: EvidenceItem[],
+  analysisInput: string,
+): { understanding: ClaimUnderstanding; droppedContextIds: string[] } {
+  const contexts = Array.isArray(understanding.analysisContexts)
+    ? understanding.analysisContexts
+    : [];
+  if (contexts.length <= 1) {
+    return { understanding, droppedContextIds: [] };
+  }
+
+  const anchorTokens = getStrongAnchorTokens(analysisInput);
+  if (anchorTokens.length === 0) {
+    return { understanding, droppedContextIds: [] };
+  }
+
+  const contextStats = contexts.map((context) => {
+    const contextId = String(context.id || "");
+    const contextEvidence = evidenceItems.filter(
+      (item) => String(item?.contextId || "") === contextId,
+    );
+    const anchorHits = contextEvidence.reduce((sum, item) => {
+      const combined = `${item?.statement || ""} ${item?.sourceTitle || ""} ${item?.sourceExcerpt || ""}`.toLowerCase();
+      const url = String(item?.sourceUrl || "").toLowerCase();
+      return sum + countTokenMatches(combined, url, anchorTokens);
+    }, 0);
+    return {
+      contextId,
+      evidenceCount: contextEvidence.length,
+      anchorHits,
+    };
+  });
+
+  const maxAnchorHits = Math.max(...contextStats.map((s) => s.anchorHits), 0);
+  if (maxAnchorHits <= 0) {
+    return { understanding, droppedContextIds: [] };
+  }
+
+  const droppedContextIds = contextStats
+    .filter((s) => s.evidenceCount > 0 && s.evidenceCount <= 2 && s.anchorHits === 0)
+    .map((s) => s.contextId);
+
+  if (droppedContextIds.length === 0 || droppedContextIds.length >= contexts.length) {
+    return { understanding, droppedContextIds: [] };
+  }
+
+  const keptStats = contextStats
+    .filter((s) => !droppedContextIds.includes(s.contextId))
+    .sort((a, b) => {
+      if (b.anchorHits !== a.anchorHits) return b.anchorHits - a.anchorHits;
+      return b.evidenceCount - a.evidenceCount;
+    });
+  const fallbackContextId =
+    keptStats[0]?.contextId || String(contexts[0]?.id || "");
+
+  for (const item of evidenceItems) {
+    const contextId = String(item?.contextId || "");
+    if (contextId && droppedContextIds.includes(contextId)) {
+      (item as any).contextId = fallbackContextId;
+    }
+  }
+
+  for (const claim of understanding.subClaims || []) {
+    const contextId = String((claim as any)?.contextId || "");
+    if (contextId && droppedContextIds.includes(contextId)) {
+      (claim as any).contextId = fallbackContextId;
+    }
+  }
+
+  const nextContexts = contexts.filter(
+    (context) => !droppedContextIds.includes(String(context.id || "")),
+  );
+
+  return {
+    understanding: {
+      ...understanding,
+      analysisContexts: nextContexts,
+      requiresSeparateAnalysis: nextContexts.length > 1,
+    },
+    droppedContextIds,
   };
 }
 
@@ -1019,6 +1124,7 @@ Your job: Identify the DISTINCT AnalysisContexts that are REQUIRED by the eviden
 CRITICAL RULES:
 - SAME QUESTION: every AnalysisContext must answer the user's original question. Third-party reactions/responses to X are INVALID when evaluating X itself.
 - Relevance: every AnalysisContext MUST be directly relevant to the input's specific topic. Do not keep marginally related contexts.
+- Core-subject anchor rule: each AnalysisContext must stay anchored to the same primary subject/entity in the INPUT. If evidence only shares broad geography/institutional vocabulary but does not explicitly track the same subject/entity, reject that AnalysisContext as drift.
 - When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones.
 - Evidence-grounded only: every AnalysisContext MUST be supported by at least one evidenceId from the list.
 - Do NOT invent AnalysisContexts based on guesswork or background knowledge.
@@ -1026,6 +1132,7 @@ CRITICAL RULES:
 - Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different regulatory regimes, different datasets/studies, different measurement windows).
 - Also split when evidence clearly covers different phases/components/metrics that are not directly comparable (e.g., upstream vs downstream phases, production vs use-phase, system-wide vs component-level metrics, different denominators/normalizations).
 - **CRITICAL: Separate formal authority = separate contexts (evidence-gated)**: If evidence references decisions, rulings, or processes from DIFFERENT formal bodies (each with independent authority to make determinations on different matters), AND each authority has at least one supporting evidence item, these require separate AnalysisContexts. Do NOT split on incidental mentions without supporting evidence.
+- **CRITICAL: Multiple proceedings for same subject = separate contexts (evidence-gated)**: If evidence shows the same subject/entity is involved in multiple distinct proceedings (different authority, case type, legal track, or procedural mandate), create separate AnalysisContexts for each proceeding.
 - **CRITICAL: Different system boundaries = separate contexts (evidence-gated)**: If the input is a comparative claim and evidence uses different measurement boundaries or system definitions, AND each boundary has at least one supporting evidence item, these require separate AnalysisContexts. Do NOT split on incidental mentions.
 - **Anti-duplication rule**: If you create an authority-specific or boundary-specific context, do NOT also keep a redundant generic parent context UNLESS the parent context (a) answers a different question than the specific contexts, OR (b) has distinct evidence not covered by the specific contexts.
 - Do NOT split into AnalysisContexts just because there are pro vs con viewpoints. Viewpoints are not AnalysisContexts.
@@ -1763,6 +1870,10 @@ function analyzeEvidenceGaps(
   evidenceSimilarityThreshold: number = 0.4,
 ): EvidenceGap[] {
   const gaps: EvidenceGap[] = [];
+  const contextById = new Map<string, AnalysisContext>();
+  for (const context of understanding.analysisContexts || []) {
+    contextById.set(String(context.id || ""), context);
+  }
 
   for (const claim of understanding.subClaims) {
     // Find evidence items that might be relevant to this claim
@@ -1778,6 +1889,39 @@ function analyzeEvidenceGaps(
     const attemptedQueries = searchQueries
       .filter((sq) => sq.query.toLowerCase().includes(claim.text.toLowerCase().split(" ").slice(0, 3).join(" ")))
       .map((sq) => sq.query);
+    const context = contextById.get(String(claim.contextId || ""));
+    const contextMetadata = (context?.metadata || {}) as Record<string, any>;
+    const contextAuthority = String(
+      contextMetadata.court ||
+      contextMetadata.institution ||
+      contextMetadata.regulatoryBody ||
+      "",
+    ).trim();
+    const contextJurisdiction = String(
+      contextMetadata.jurisdiction || contextMetadata.geographic || "",
+    ).trim();
+    const contextSubject = String(context?.subject || context?.assessedStatement || "").trim();
+    const compactSubject = contextSubject
+      .split(/\s+/)
+      .slice(0, 8)
+      .join(" ");
+    const contextQueryBase = [
+      compactSubject,
+      contextAuthority,
+      contextJurisdiction,
+      claim.text.split(/\s+/).slice(0, 8).join(" "),
+    ]
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const compactClaim = claim.text
+      .split(/\s+/)
+      .slice(0, 8)
+      .join(" ");
+    const compactContext = [contextAuthority, contextJurisdiction]
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
 
     // Gap 1: No evidence at all
     if (relevantEvidence.length === 0) {
@@ -1789,9 +1933,9 @@ function analyzeEvidenceGaps(
         gapType: "no_evidence",
         severity,
         suggestedQueries: [
-          claim.text,
-          `${claim.text} evidence study`,
-          `${claim.text.split(" ").slice(0, 5).join(" ")} official source`,
+          contextQueryBase || claim.text,
+          `${contextQueryBase || compactClaim} documented evidence`,
+          `${compactContext || compactClaim} official decision record`,
         ],
         attemptedQueries,
       });
@@ -1808,7 +1952,9 @@ function analyzeEvidenceGaps(
         contextId: claim.contextId || "",
         gapType: "no_counter_evidence",
         severity: claim.centrality === "high" ? "high" : "medium",
-        suggestedQueries: inverseQuery ? [inverseQuery] : [`${claim.text} criticism controversy dispute`],
+        suggestedQueries: inverseQuery
+          ? [contextQueryBase ? `${contextQueryBase} ${inverseQuery}`.trim() : inverseQuery]
+          : [`${contextQueryBase || claim.text} contradictory evidence primary source`],
         attemptedQueries: [],
       });
     }
@@ -1823,9 +1969,9 @@ function analyzeEvidenceGaps(
         gapType: "low_quality",
         severity: "high",
         suggestedQueries: [
-          `${claim.text} official source`,
-          `${claim.text} study research`,
-          `${claim.text.split(" ").slice(0, 4).join(" ")} peer reviewed`,
+          `${contextQueryBase || claim.text} official source`,
+          `${contextQueryBase || claim.text} primary documentation`,
+          `${compactContext || compactClaim} legal analysis`,
         ],
         attemptedQueries,
       });
@@ -6576,6 +6722,28 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         };
       }
     }
+  }
+
+  // Cross-proceeding discovery pass:
+  // When only one context is detected, run one focused search for other formal proceedings
+  // involving the same subject/entity but different authority.
+  if (
+    contexts.length === 1 &&
+    state.iterations.length >= 2 &&
+    !state.sources.some((s) => s.category === "cross_context")
+  ) {
+    const crossQueries = [
+      `${entityStr} related proceeding different authority ruling`,
+      `${entityStr} parallel legal case court decision`,
+      ...(recencyMatters ? [`${entityStr} separate proceeding ${currentYear}`] : []),
+    ];
+    return {
+      complete: false,
+      focus: "Related proceedings (cross-authority)",
+      category: "cross_context",
+      queries: crossQueries,
+      recencyMatters,
+    };
   }
 
   if (
@@ -11436,7 +11604,10 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       decision.category === "criticism" ||
       decision.isContradictionSearch === true ||
       !!decision.targetContextId;
-    const strictInstitutionMatch = !!decision.targetContextId;
+    const strictInstitutionMatch =
+      !!decision.targetContextId ||
+      decision.category === "criticism" ||
+      decision.category === "counter_evidence";
     const allowInstitutionFallback = !(
       !!decision.targetContextId || decision.category === "criticism"
     );
@@ -11503,10 +11674,30 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           continue;
         }
 
+        if (!llmDecision) {
+          // LLM classifier unavailable or schema-mismatch: fall back to heuristic ambiguity check.
+          if (isAmbiguous) {
+            debugLog("Pre-filter keep (LLM unavailable fallback)", {
+              url: result.url,
+              title: result.title,
+              reason: "ambiguous_heuristic_fallback",
+            });
+            relevantResults.push(result);
+            continue;
+          }
+          debugLog("Pre-filter rejected", {
+            url: result.url,
+            title: result.title,
+            reason: check.reason || "llm_unavailable",
+            query: (result as any).query,
+          });
+          continue;
+        }
+
         debugLog("Pre-filter rejected", {
           url: result.url,
           title: result.title,
-          reason: `llm_${llmDecision?.classification || "unavailable"}`,
+          reason: `llm_${llmDecision.classification}`,
           query: (result as any).query,
         });
         continue;
@@ -11734,7 +11925,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           result,
           gapEntity,
           gapAnalysisContexts,
-          {},
+          {
+            requireContextMatch: true,
+            strictInstitutionMatch: true,
+            allowInstitutionFallback: false,
+          },
         );
         if (!check.isRelevant) {
           debugLog("Gap pre-filter rejected", {
@@ -11854,6 +12049,25 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     updated: contextRefine.updated,
     llmCalls: contextRefine.llmCalls,
   });
+
+  const anchorPruneInput =
+    state.understanding?.impliedClaim ||
+    state.originalInput ||
+    state.originalText ||
+    "";
+  const anchorPrune = pruneWeakAnchorContexts(
+    state.understanding!,
+    state.evidenceItems,
+    anchorPruneInput,
+  );
+  if (anchorPrune.droppedContextIds.length > 0) {
+    state.understanding = anchorPrune.understanding;
+    debugLog("Context drift guard: dropped low-anchor contexts", {
+      droppedContextIds: anchorPrune.droppedContextIds,
+      remainingContextIds: (state.understanding.analysisContexts || []).map((c: any) => c.id),
+      remainingContextCount: state.understanding.analysisContexts?.length ?? 0,
+    });
+  }
 
   // STEP 4.5: Post-research outcome extraction - extract outcomes from evidence and create claims
   await emit(

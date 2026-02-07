@@ -153,6 +153,9 @@ If unclear, default to "documented" for official sources or "anecdotal" for info
 - User claims: "X is better than Y"
 - Source says: "Y is better than X"
 - claimDirection: **"contradicts"** (not supports!)
+- Dimension matching rule: direction must match the SAME assessment dimension as the user claim.
+  - If the claim assesses process quality (fairness, legality, compliance, due process, methodological validity), evidence about underlying allegations/outcomes that does NOT discuss process quality should usually be **neutral**.
+  - Do not treat "someone said it was unfair/fair" as probative direction unless the statement cites concrete procedural records, standards, or documented violations.
 
 ## ORIGINAL USER CLAIM
 ${originalClaim}

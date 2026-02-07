@@ -39,6 +39,11 @@ Evaluate each evidence item against these criteria:
 - **Minimum excerpt length**: >= 20 characters (shorter = insufficient_excerpt issue)
 - URL or source reference provided (missing = missing_source_url issue)
 
+**Thesis-Dimension Relevance:**
+- Evidence must address the same assessment dimension as the thesis/question.
+- If thesis evaluates process quality (fairness, legality, due process, compliance, methodological validity), statements about adjacent background events or allegations without process-quality content should be downgraded to `low` or `filter`.
+- Reported reactions/opinions without documentary procedural support should be `filter`.
+
 **Category-Specific Rules:**
 - **Statistics**: Must contain actual numbers (percentages, counts, amounts) - no numbers = filter
 - **Expert quotes**: Must attribute to a named expert with credentials
