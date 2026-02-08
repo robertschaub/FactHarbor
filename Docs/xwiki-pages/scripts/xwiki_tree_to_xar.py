@@ -43,13 +43,16 @@ def path_to_page_id(file_path: Path, base_dir: Path) -> str:
     Convert file path to pageId.
     Docs/xwiki-pages/FactHarbor/Specification/WebHome.xwiki
     → FactHarbor.Specification.WebHome
+    Architecture Analysis 1.Jan.26 → Architecture Analysis 1\.Jan\.26
     """
     relative = file_path.relative_to(base_dir)
     parts = list(relative.parts)
     # Remove .xwiki extension from last part
     if parts[-1].endswith('.xwiki'):
         parts[-1] = parts[-1][:-6]  # Remove '.xwiki'
-    return ".".join(parts)
+    # Escape dots within path component names (dots are hierarchy separators in pageId)
+    escaped_parts = [part.replace('.', '\\.') for part in parts]
+    return ".".join(escaped_parts)
 
 def derive_parent(page_id: str) -> Optional[str]:
     """

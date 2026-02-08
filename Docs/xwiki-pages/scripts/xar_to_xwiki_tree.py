@@ -133,7 +133,11 @@ def main():
             content_body = node.get("content", {}).get("body", "")
 
             # Convert pageId to file path: FactHarbor.Specification.WebHome → FactHarbor/Specification/WebHome.xwiki
-            path_parts = page_id.split(".")
+            # Split on unescaped dots only (escaped dots \. are part of the name)
+            import re
+            path_parts = re.split(r'(?<!\\)\.', page_id)
+            # Unescape dots in each part: "Architecture Analysis 1\.Jan\.26" → "Architecture Analysis 1.Jan.26"
+            path_parts = [part.replace('\\.', '.') for part in path_parts]
             safe_parts = [sanitize_path_component(part) for part in path_parts]
             file_path = "/".join(safe_parts) + ".xwiki"
             xwiki_file = output_dir / file_path
