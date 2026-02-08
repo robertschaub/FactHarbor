@@ -1,0 +1,130 @@
+/* XWiki Preview Styles — extracted from viewer-impl/xwiki-viewer.html */
+/* Preview-only subset: content rendering styles */
+
+:root {
+  --pv-bg: #faf7f2;
+  --pv-text: #2e2b26;
+  --pv-heading: #1a1816;
+  --pv-muted: #7a756c;
+  --pv-link: #8b5c2a;
+  --pv-link-hover: #a06e38;
+  --pv-code-bg: #efeae2;
+  --pv-code-border: #ddd7cc;
+  --pv-border: #e0dbd2;
+  --pv-table-head: #f0ebe3;
+  --pv-table-stripe: #f6f3ee;
+  --pv-info-bg: #eaf2fa; --pv-info-border: #8db8dc;
+  --pv-warn-bg: #fdf5e0; --pv-warn-border: #d4b040;
+  --pv-err-bg: #fce8e8; --pv-err-border: #c86060;
+  --pv-ok-bg: #eaf5ea; --pv-ok-border: #6aaa6a;
+  --pv-toc-bg: #f4f0e8;
+  --pv-blockquote-border: #c9915a;
+  --radius: 6px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--pv-bg);
+  padding: 28px 40px 60px;
+  overflow-y: auto;
+}
+
+body::-webkit-scrollbar { width: 7px; }
+body::-webkit-scrollbar-thumb { background: #d4cfc6; border-radius: 3px; }
+
+.preview-content {
+  max-width: 760px;
+  margin: 0 auto;
+  font-family: 'Crimson Pro', serif;
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--pv-text);
+}
+.preview-content .xwiki-group { margin: .5em 0; }
+.preview-content .box { border-radius: var(--radius); padding: 12px 16px; margin: 1em 0; font-family: 'Outfit', sans-serif; font-size: .88em; line-height: 1.55; }
+.preview-content .box.successmessage { background: var(--pv-ok-bg); border-left: 4px solid var(--pv-ok-border); }
+.preview-content .box.infomessage { background: var(--pv-info-bg); border-left: 4px solid var(--pv-info-border); }
+.preview-content .box.warningmessage { background: var(--pv-warn-bg); border-left: 4px solid var(--pv-warn-border); }
+.preview-content .box.errormessage { background: var(--pv-err-bg); border-left: 4px solid var(--pv-err-border); }
+.preview-content .xwiki-include {
+  background: linear-gradient(135deg, #e8e4f8, #dde8f8);
+  border: 1px solid #b8c4e8;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin: 1em 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: .85em;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.preview-content .xwiki-include:hover { background: linear-gradient(135deg, #ddd8f0, #d0e0f8); border-color: #9aacd8; }
+.preview-content .xwiki-include .include-icon { font-size: 1.1em; }
+.preview-content .xwiki-include .include-label { color: #6070a0; font-weight: 600; font-size: .8em; text-transform: uppercase; letter-spacing: .5px; }
+.preview-content .xwiki-included-content { border: 1px solid var(--pv-border); border-radius: var(--radius); margin: 1em 0; background: #fafafa; }
+.preview-content .xwiki-included-header { background: linear-gradient(135deg, #f0f0f5, #e8e8f0); padding: 6px 12px; font-family: 'Outfit', sans-serif; font-size: .75em; font-weight: 600; color: #6070a0; cursor: pointer; border-bottom: 1px solid var(--pv-border); border-radius: var(--radius) var(--radius) 0 0; display: flex; align-items: center; gap: 6px; }
+.preview-content .xwiki-included-header:hover { background: linear-gradient(135deg, #e8e8f0, #e0e0e8); }
+.preview-content .xwiki-included-content > :not(.xwiki-included-header) { padding: 0 16px; }
+.preview-content .xwiki-included-content > :last-child { padding-bottom: 12px; }
+.preview-content .xwiki-include-error { background: #fce8e8; border: 1px solid #e0a0a0; border-radius: var(--radius); padding: 10px 14px; margin: 1em 0; font-family: 'Outfit', sans-serif; font-size: .85em; color: #804040; }
+.preview-content pre.xwiki-verbatim { background: #f5f0e6; border: 1px solid var(--pv-code-border); border-radius: var(--radius); padding: 12px 16px; overflow-x: auto; margin: 1em 0; white-space: pre-wrap; word-wrap: break-word; }
+.preview-content pre.xwiki-verbatim code { background: none; border: none; padding: 0; font-size: .82em; line-height: 1.6; }
+.preview-content li p { margin: .2em 0; }
+.preview-content li .xwiki-group { margin: .3em 0; }
+.preview-content h1 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.9em; color: var(--pv-heading); margin: 1.3em 0 .4em; line-height: 1.25; border-bottom: 2px solid var(--pv-border); padding-bottom: .25em; }
+.preview-content h2 { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.5em; color: var(--pv-heading); margin: 1.2em 0 .35em; border-bottom: 1px solid var(--pv-border); padding-bottom: .18em; }
+.preview-content h3 { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.2em; color: var(--pv-heading); margin: 1.1em 0 .3em; }
+.preview-content h4, .preview-content h5, .preview-content h6 { font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 1.05em; color: var(--pv-heading); margin: 1em 0 .3em; }
+.preview-content h1:first-child { margin-top: 0; }
+.preview-content p { margin: .5em 0; }
+.preview-content strong { font-weight: 600; }
+.preview-content em { font-style: italic; }
+.preview-content del { text-decoration: line-through; color: var(--pv-muted); }
+.preview-content sup { font-size: .75em; vertical-align: super; }
+.preview-content sub { font-size: .75em; vertical-align: sub; }
+.preview-content a { color: var(--pv-link); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.preview-content a:hover { color: var(--pv-link-hover); }
+.preview-content a.wiki-link { text-decoration-style: dotted; }
+.preview-content a.wiki-link.resolved { text-decoration-style: solid; }
+.preview-content a.wiki-link.unresolved { color: #b06040; text-decoration-style: wavy; text-decoration-color: rgba(176, 96, 64, .4); }
+.preview-content code { font-family: 'JetBrains Mono', monospace; font-size: .82em; background: var(--pv-code-bg); border: 1px solid var(--pv-code-border); border-radius: 3px; padding: 1px 5px; }
+.preview-content pre { background: var(--pv-code-bg); border: 1px solid var(--pv-code-border); border-radius: var(--radius); padding: 12px 16px; overflow-x: auto; margin: 1em 0; position: relative; }
+.preview-content pre code { background: none; border: none; padding: 0; font-size: .82em; line-height: 1.6; }
+.preview-content pre .lang-label { position: absolute; top: 5px; right: 9px; font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--pv-muted); opacity: .5; }
+.preview-content ul, .preview-content ol { margin: .5em 0 .5em 1.3em; }
+.preview-content li { margin: .2em 0; }
+.preview-content ul ul, .preview-content ol ol { margin: .1em 0 .1em 1.1em; }
+.preview-content hr { border: none; height: 1px; background: var(--pv-border); margin: 1.4em 0; }
+.preview-content blockquote { border-left: 3px solid var(--pv-blockquote-border); padding: .3em 0 .3em 1.1em; margin: .7em 0; color: var(--pv-muted); font-style: italic; }
+.preview-content img { max-width: 100%; height: auto; border-radius: var(--radius); margin: .7em 0; }
+.preview-content table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: .9em; font-family: 'Outfit', sans-serif; }
+.preview-content th { background: var(--pv-table-head); font-weight: 600; text-align: left; padding: 7px 10px; border: 1px solid var(--pv-border); font-size: .88em; }
+.preview-content td { padding: 7px 10px; border: 1px solid var(--pv-border); }
+.preview-content tr:nth-child(even) td { background: var(--pv-table-stripe); }
+.xwiki-cell-group { padding: 4px 0; }
+.xwiki-cell-group table { margin: .5em 0; font-size: 1em; }
+.xwiki-cell-group p { margin: .4em 0; }
+.xwiki-box { border-radius: var(--radius); padding: 12px 16px; margin: 1em 0; font-family: 'Outfit', sans-serif; font-size: .88em; line-height: 1.55; }
+.xwiki-box .box-title { font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+.xwiki-box.info { background: var(--pv-info-bg); border-left: 4px solid var(--pv-info-border); }
+.xwiki-box.warning { background: var(--pv-warn-bg); border-left: 4px solid var(--pv-warn-border); }
+.xwiki-box.error { background: var(--pv-err-bg); border-left: 4px solid var(--pv-err-border); }
+.xwiki-box.success { background: var(--pv-ok-bg); border-left: 4px solid var(--pv-ok-border); }
+.xwiki-toc { background: var(--pv-toc-bg); border: 1px solid var(--pv-border); border-radius: var(--radius); padding: 14px 20px; margin: 1em 0; font-family: 'Outfit', sans-serif; }
+.xwiki-toc .toc-title { font-weight: 700; font-size: .85em; text-transform: uppercase; letter-spacing: .7px; color: var(--pv-muted); margin-bottom: 6px; }
+.xwiki-toc ul { list-style: none; margin: 0; padding: 0; }
+.xwiki-toc li { margin: 2px 0; }
+.xwiki-toc li a { font-size: .85em; color: var(--pv-link); text-decoration: none; }
+.xwiki-toc li a:hover { text-decoration: underline; }
+.xwiki-toc .toc-h1, .xwiki-toc .toc-h2 { padding-left: 0; }
+.xwiki-toc .toc-h3 { padding-left: 14px; }
+.xwiki-toc .toc-h4 { padding-left: 28px; }
+.mermaid-container { margin: 1em 0; background: #fff; border: 1px solid var(--pv-border); border-radius: var(--radius); padding: 18px; overflow-x: auto; text-align: center; }
+.mermaid-container .mermaid-label { font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .9px; color: var(--pv-muted); text-align: right; margin-bottom: 6px; opacity: .5; }
+.mermaid-container svg { max-width: 100%; }
+.preview-content dl { margin: .5em 0; }
+.preview-content dt { font-weight: 600; margin-top: .4em; }
+.preview-content dd { margin-left: 1.4em; color: var(--pv-muted); }

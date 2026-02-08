@@ -1,0 +1,104 @@
+{
+  "name": "xwiki-preview",
+  "displayName": "XWiki Preview",
+  "description": "Live preview for XWiki 2.1 markup files",
+  "version": "1.0.0",
+  "publisher": "factharbor",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onLanguage:xwiki",
+    "workspaceContains:**/*.xwiki"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "xwiki",
+        "aliases": ["XWiki", "xwiki"],
+        "extensions": [".xwiki"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "xwikiPages",
+          "name": "XWiki Pages",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "xwiki.openPreview",
+        "title": "XWiki: Open Preview",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "xwiki.togglePreview",
+        "title": "XWiki: Toggle Preview"
+      },
+      {
+        "command": "xwiki.openPage",
+        "title": "XWiki: Open Page"
+      },
+      {
+        "command": "xwiki.refreshTree",
+        "title": "XWiki: Refresh Pages",
+        "icon": "$(refresh)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "xwiki.togglePreview",
+        "key": "ctrl+shift+v",
+        "when": "editorLangId == xwiki"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "xwiki.openPreview",
+          "when": "editorLangId == xwiki",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "xwiki.refreshTree",
+          "when": "view == xwikiPages",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "XWiki Preview",
+      "properties": {
+        "xwiki.preview.autoOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open preview when an .xwiki file is opened"
+        },
+        "xwiki.preview.updateDelay": {
+          "type": "number",
+          "default": 300,
+          "description": "Delay in milliseconds before updating the preview after a text change"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "package": "npx @vscode/vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.22.0",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.3.0"
+  }
+}
