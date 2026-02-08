@@ -435,4 +435,4 @@ Based on the current implementation (v2.10.2), the following summarizes what AKE
 * [[Core Data Model ERD>>FactHarbor.Specification.Diagrams.Core Data Model ERD.WebHome]]
 * [[Evidence and Verdict Workflow>>FactHarbor.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]]
 * [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]
-* [[Quality Gates Reference>>FactHarbor.Specification.Implementation.Pipeline Architecture.Quality Gates.WebHome]]
+* [[Quality Gates Reference>>FactHarbor.Specification.Implementation.Pipeline Architecture.Quality Gates Reference.WebHome]]

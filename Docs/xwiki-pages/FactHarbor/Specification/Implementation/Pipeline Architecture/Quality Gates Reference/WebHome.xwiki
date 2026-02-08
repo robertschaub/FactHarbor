@@ -19,9 +19,9 @@ Quality Gates are checkpoints in the FactHarbor analysis pipeline that enforce m
 **Implemented Gates**: Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence Assessment)
 
 **Replaces scattered documentation in**:
-* Overview.md (Quality Gates section)
-* Calculations.md (Gate 4 sections)
-* Pipeline_TriplePath_Architecture.md (quality gates mentions)
+* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] (Quality Gates section)
+* Calculations.md (Gate 4 sections, still in Docs/ARCHITECTURE/)
+* [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] (quality gates mentions)
 
 ----
 

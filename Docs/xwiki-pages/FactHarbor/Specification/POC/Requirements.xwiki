@@ -1426,7 +1426,7 @@ AI Quality ≥70% → GO (proceed to POC2)
 * Cost tracking includes provider name in logs
 * Stage 2 falls back to cache on provider failure
 
-**Implementation:** See [[POC1 API & Schemas Specification>>Test.FactHarbor.Specification.POC.API-and-Schemas.WebHome]] Section 6
+**Implementation:** See [[POC1 API & Schemas Specification>>FactHarbor.Specification.POC.API-and-Schemas.WebHome]] Section 6
 
 **Dependencies:**
 * NFR-14 (Main Requirements)

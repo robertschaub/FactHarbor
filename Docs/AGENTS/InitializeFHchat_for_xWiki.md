@@ -1,8 +1,20 @@
 # Initialize Chat for FactHarbor xWiki work
 
-**Version:** 0.6  
-**Date:** 2026-01-20  
+**Version:** 1.0
+**Date:** 2026-02-08
 **Purpose:** Initialize a new AI assistant chat session to work on xWiki FactHarbor documentation
+
+---
+
+> **NOTE: PRIMARY WORKFLOW HAS CHANGED**
+>
+> The primary workflow is now **direct `.xwiki` file editing** in `Docs/xwiki-pages/FactHarbor/`.
+> Agents edit `.xwiki` files directly, commit to git, and use scripts to convert to/from XAR.
+>
+> See **[AGENTS_xWiki.md](AGENTS_xWiki.md)** for the current workflow.
+> See **[Docs/xwiki-pages/README.md](../xwiki-pages/README.md)** for full documentation.
+>
+> The legacy Claude Projects JSON workflow below is kept for reference only.
 
 ---
 
@@ -14,7 +26,23 @@ This document initializes a **new AI assistant chat session** to safely work on 
 
 ---
 
-## How The Workflow Works
+## Current Workflow: Direct .xwiki Editing
+
+1. **Edit .xwiki files** directly in `Docs/xwiki-pages/FactHarbor/`
+2. **Commit to git** for version control
+3. **Convert to XAR** when ready for xWiki import:
+   ```bash
+   python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar
+   ```
+4. **Import XAR** to xWiki (Administration → Import)
+
+**Key Principle:** Git is the master source; xWiki is synchronized via XAR import/export.
+
+---
+
+## Legacy: Claude Projects JSON Workflow (Reference Only)
+
+### How It Worked
 
 1. **Export from XWiki** → Fulltree JSON snapshot (pages + diagrams)
 2. **AI Assistant** reads snapshot, proposes/applies improvements following strict rules
@@ -22,19 +50,7 @@ This document initializes a **new AI assistant chat session** to safely work on 
 4. **Convert back** → XAR file for XWiki import
 5. **Import to XWiki** → Changes are now in the master system
 
-**Key Principle:** XWiki is the master; AI chats are transient processors. All work must be exportable and importable back to XWiki without data loss.
-
----
-
-## Cursor IDE Workflow (xar-to-xar)
-
-When using **Cursor** instead of Claude Projects, a simpler xar-based workflow is used:
-
-### Workflow
-1. **You provide:** Drop .xar file in `Docs/` folder
-2. **Agent works:** Extracts internally, edits JSON content
-3. **You request:** "Export" (or "Export delta", "Export full")
-4. **Agent delivers:** New .xar file with version suffix in same folder
+### Legacy: Cursor IDE xar-to-xar Workflow
 
 ### Export Commands
 - `"Export"` or `"Export delta"` → Only changed pages since last export

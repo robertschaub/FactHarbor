@@ -22,9 +22,9 @@ All agents MUST read and adhere to these foundational documents before starting 
 | Document | Location | Purpose |
 |----------|----------|---------|
 | **AGENTS.md** | `/AGENTS.md` | Fundamental coding rules, architecture reference, safety rules |
-| **Coding Guidelines** | `/Docs/DEVELOPMENT/Coding_Guidelines.md` | Code quality standards, testing requirements, prompt engineering |
-| **Terminology Reference** | `/Docs/REFERENCE/TERMINOLOGY.md` | Authoritative glossary for all technical terms |
-| **Architecture Overview** | `/Docs/ARCHITECTURE/Overview.md` | System architecture, data models, component interactions |
+| **Coding Guidelines** | `/Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards, testing requirements, prompt engineering |
+| **Terminology Reference** | `/Docs/xwiki-pages/FactHarbor/Specification/Reference/Terminology/WebHome.xwiki` | Authoritative glossary for all technical terms |
+| **Architecture Overview** | `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture Overview/WebHome.xwiki` | System architecture, data models, component interactions |
 | **Current Status** | `/Docs/STATUS/Current_Status.md` | Current implementation status and known issues |
 
 ### 1.2 Area-to-Documents Mapping
@@ -33,16 +33,16 @@ When a task specifies an **Area**, read the corresponding documents:
 
 | Area | Required Documents |
 |------|-------------------|
-| **Prompts** | `/Docs/ARCHITECTURE/Prompt_Architecture.md`, `/Docs/REFERENCE/Provider_Prompt_Formatting.md`, `/Docs/REFERENCE/Provider_Prompt_Guidelines.md` |
+| **Prompts** | `/Docs/ARCHITECTURE/Prompt_Architecture.md`, `/Docs/xwiki-pages/FactHarbor/Specification/Reference/Prompt Engineering/Provider-Specific Formatting/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Specification/Reference/Prompt Engineering/Prompt Guidelines/WebHome.xwiki` |
 | **Calculations** | `/Docs/ARCHITECTURE/Calculations.md`, `/Docs/ARCHITECTURE/Evidence_Quality_Filtering.md` |
 | **Configuration** | `/Docs/USER_GUIDES/Unified_Config_Management.md`, `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
-| **Context-Detection** | `/Docs/DEVELOPMENT/Scope_Definition_Guidelines.md`, `/Docs/ARCHITECTURE/Context_Detection_via_EvidenceScope.md` |
-| **Source-Reliability** | `/Docs/ARCHITECTURE/Source_Reliability.md` |
-| **Pipeline** | `/Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md` |
-| **UI** | `/Docs/ARCHITECTURE/KeyFactors_Design.md` |
-| **Testing** | `/Docs/DEVELOPMENT/TESTING_STRATEGY.md`, `/Docs/USER_GUIDES/Promptfoo_Testing.md` |
-| **Schema** | `/Docs/ARCHITECTURE/Schema_Migration_Strategy.md`, `/Docs/REFERENCE/METRICS_SCHEMA.md` |
-| **Deployment** | `/Docs/DEPLOYMENT/Zero_Cost_Hosting_Guide.md` |
+| **Context-Detection** | `/Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Scope Definition Guidelines/WebHome.xwiki`, `/Docs/ARCHITECTURE/Context_Detection_via_EvidenceScope.md` |
+| **Source-Reliability** | `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/Source Reliability System/WebHome.xwiki` |
+| **Pipeline** | `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/Pipeline Architecture/TriplePath Architecture/WebHome.xwiki` |
+| **UI** | `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/KeyFactors Design/WebHome.xwiki` |
+| **Testing** | `/Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Testing Strategy/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/User Guides/Promptfoo Testing/WebHome.xwiki` |
+| **Schema** | `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/Schema Migration Strategy/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki` |
+| **Deployment** | `/Docs/xwiki-pages/FactHarbor/Roadmap/Zero-Cost Hosting Implementation Guide/WebHome.xwiki` |
 
 **If no Area is specified:** Agent should intelligently identify relevant documents based on the task description.
 
@@ -328,7 +328,7 @@ When adding review comments:
 
 ### 5.1 Terminology Precision
 
-**ALWAYS use correct terms as defined in `/Docs/REFERENCE/TERMINOLOGY.md`:**
+**ALWAYS use correct terms as defined in `/Docs/xwiki-pages/FactHarbor/Specification/Reference/Terminology/WebHome.xwiki`:**
 
 | Correct Term | NEVER Use | Meaning |
 |--------------|-----------|---------|
@@ -442,8 +442,8 @@ After any code change:
 
 Before marking any task complete:
 
-- [ ] Code follows `/Docs/DEVELOPMENT/Coding_Guidelines.md`
-- [ ] Terminology matches `/Docs/REFERENCE/TERMINOLOGY.md`
+- [ ] Code follows `/Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding Guidelines/WebHome.xwiki`
+- [ ] Terminology matches `/Docs/xwiki-pages/FactHarbor/Specification/Reference/Terminology/WebHome.xwiki`
 - [ ] No hardcoded domain-specific terms
 - [ ] Tests pass (run automated tests)
 - [ ] Documentation updated

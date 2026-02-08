@@ -81,7 +81,7 @@ FactHarbor/
 
 ## Proposed xWiki Structure (Enhanced)
 
-Add **3 new top-level sections** under FactHarbor_Spec_and_Impl/FactHarbor/Specification/:
+Add **3 new top-level sections** under FactHarbor/Specification/:
 
 ```
 Specification/
@@ -349,10 +349,10 @@ For each file group:
 
 1. **Prepare directory structure**:
    ```bash
-   mkdir -p Docs/xwiki-pages/FactHarbor_Spec_and_Impl/FactHarbor/Specification/Implementation
-   mkdir -p Docs/xwiki-pages/FactHarbor_Spec_and_Impl/FactHarbor/Specification/Development
-   mkdir -p Docs/xwiki-pages/FactHarbor_Spec_and_Impl/FactHarbor/Specification/Reference
-   mkdir -p Docs/xwiki-pages/FactHarbor_Spec_and_Impl/FactHarbor/User\ Guides
+   mkdir -p Docs/xwiki-pages/FactHarbor/Specification/Implementation
+   mkdir -p Docs/xwiki-pages/FactHarbor/Specification/Development
+   mkdir -p Docs/xwiki-pages/FactHarbor/Specification/Reference
+   mkdir -p Docs/xwiki-pages/FactHarbor/User\ Guides
    ```
 
 2. **Convert Markdown → xWiki** (manual or via tool):

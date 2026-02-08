@@ -6,7 +6,7 @@
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
-**POC note**: While FactHarbor is a local POC, **security/cost-control items are tracked as low urgency** (but often **high importance**). Reclassify to **high urgency** before any production/public exposure.
+**Phase note**: FactHarbor is transitioning from POC to Alpha. During POC/Alpha, **security/cost-control items are tracked as low urgency** (but often **high importance**). Reclassify to **high urgency** before any production/public exposure.
 
 **See Also**: `Docs/STATUS/Improvement_Recommendations.md` for detailed analysis and implementation guidance.
 
@@ -26,84 +26,84 @@
 | ✅ **UCM Pre-Validation Sprint (v2.10.0)**: Toast notifications, Export All Configs, Active Config Dashboard, Config Diff View, Default Value Indicators, Config Search by Hash. | Web UI / Config | 2026-01-31 | [CHANGELOG](../CHANGELOG.md) |
 | ✅ **Unified Configuration Management Foundation (v2.9.0)**: Extended config system to all core types (prompt, search, calculation, pipeline, sr) plus lexicons. Added prompt import/export/reseed APIs. 158 unit tests. Admin UI complete. | Architecture / Testing | 2026-01-30 | [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management_Implementation_Review.md) |
 | ✅ **LLM Text Analysis Pipeline**: Implemented 4 analysis points with hybrid LLM/heuristic architecture. Bug fix in v2.8.1 removed counter-claim detection from verdict prompt. | Analyzer / LLM | 2026-01-30 | [Deep Analysis](../ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md) |
-| ✅ **Promptfoo Test Coverage for Text Analysis**: Created 26 test cases covering all 4 text-analysis prompts (input classification, evidence quality, context similarity, verdict validation). Total promptfoo coverage now 38 test cases across 6 prompts. | Testing / LLM | 2026-01-30 | [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md) |
+| ✅ **Promptfoo Test Coverage for Text Analysis**: Created 26 test cases covering all 4 text-analysis prompts (input classification, evidence quality, context similarity, verdict validation). Total promptfoo coverage now 38 test cases across 6 prompts. | Testing / LLM | 2026-01-30 | [Promptfoo Testing Guide](../xwiki-pages/FactHarbor/User%20Guides/Promptfoo%20Testing/WebHome.xwiki) |
 
 ---
 
 ## Core Functionality & Quality
 
-| Description | Domain | Urgency | Importance | Effort | Reference |
-|---|---|---|---|---|---|
-| **LLM Text Analysis A/B Testing**: Run promptfoo text-analysis tests and compare heuristic vs LLM modes to validate quality improvements. Test infrastructure ready (26 cases). | Analyzer / Testing | med | high | 1-2 days + $20-50 API | [Promptfoo Testing](../USER_GUIDES/Promptfoo_Testing.md) |
-| Inverse-input symmetry hardening: keep `scripts/inverse-scope-regression.ps1` green; add 2–3 more inverse pairs; define "strict context symmetry" vs "best-effort" per test. | Analyzer | med | high | 3-4 days | Existing |
-| Evidence-driven context refinement guardrails: add lightweight instrumentation (how often refine is applied/rejected + reason) to prevent over-splitting into non-context "dimensions". | Analyzer | med | high | 2-3 days | Existing |
-| Central-claim evidence coverage pass: bounded "missing-evidence" retrieval pass for central claims with zero supporting/counter facts (best-effort; no loops; respect search budgets). | Analyzer / Search | med | high | 3-5 days | Existing |
-| **Parallel verdict generation**: Process claim verdicts in parallel (with concurrency limit) instead of sequentially. 50-80% speed improvement for multi-claim analyses. | Analyzer / Performance | med | high | 1-2 days | Improvements #5 |
-| **Tiered LLM model routing**: Use cheaper models (Haiku) for extraction tasks, premium models (Sonnet) for reasoning. 50-70% cost savings on LLM calls. | Analyzer / Cost | med | high | 3-4 days | Improvements #3 |
-| **Claim-level caching**: Cache normalized claim verdicts to reuse across analyses. 30-50% cost savings on repeat claims. Requires normalized DB schema. | Analyzer / Cost | med | high | 5-7 days | Improvements #4 |
-| **Quality Gate UI display**: Show Gate 1 and Gate 4 statistics and per-item failure reasons in the results UI. Core transparency requirement. | Web UI | med | high | 2-3 days | Improvements #6 |
-| Context guidelines note: short dev note defining what qualifies as a distinct "Context" vs a dimension; keep aligned with `AGENTS.md`. | Analyzer / Docs | med | med | 1 day | Existing |
+| Description | Domain | Urgency | Importance | Reference |
+|---|---|---|---|---|
+| **LLM Text Analysis A/B Testing**: Run promptfoo text-analysis tests and compare heuristic vs LLM modes to validate quality improvements. Test infrastructure ready (26 cases). | Analyzer / Testing | med | high | [Promptfoo Testing](../xwiki-pages/FactHarbor/User%20Guides/Promptfoo%20Testing/WebHome.xwiki) |
+| Inverse-input symmetry hardening: keep `scripts/inverse-scope-regression.ps1` green; add 2–3 more inverse pairs; define "strict context symmetry" vs "best-effort" per test. | Analyzer | med | high | Existing |
+| Evidence-driven context refinement guardrails: add lightweight instrumentation (how often refine is applied/rejected + reason) to prevent over-splitting into non-context "dimensions". | Analyzer | med | high | Existing |
+| Central-claim evidence coverage pass: bounded "missing-evidence" retrieval pass for central claims with zero supporting/counter facts (best-effort; no loops; respect search budgets). | Analyzer / Search | med | high | Existing |
+| **Parallel verdict generation**: Process claim verdicts in parallel (with concurrency limit) instead of sequentially. 50-80% speed improvement for multi-claim analyses. | Analyzer / Performance | med | high | Improvements #5 |
+| **Tiered LLM model routing**: Use cheaper models (Haiku) for extraction tasks, premium models (Sonnet) for reasoning. 50-70% cost savings on LLM calls. ✅ **Enabled** (v2.9.0: Haiku 3.5 for extract/understand, Sonnet 4 for verdict/context refinement). | Analyzer / Cost | ~~med~~ done | high | Improvements #3 |
+| **Claim-level caching**: Cache normalized claim verdicts to reuse across analyses. 30-50% cost savings on repeat claims. Requires normalized DB schema. | Analyzer / Cost | med | high | Improvements #4 |
+| **Quality Gate UI display**: Show Gate 1 and Gate 4 statistics and per-item failure reasons in the results UI. Core transparency requirement. | Web UI | med | high | Improvements #6 |
+| Context guidelines note: short dev note defining what qualifies as a distinct "Context" vs a dimension; keep aligned with `AGENTS.md`. | Analyzer / Docs | med | med | Existing |
 
 ---
 
 ## Security & Cost Control
-*(All items LOW urgency while POC/local only; HIGH urgency before production)*
+*(All items LOW urgency during POC/Alpha phase; HIGH urgency before production)*
 
-| Description | Domain | Urgency | Importance | Effort | Reference |
-|---|---|---|---|---|---|
-| **SSRF protections for URL fetching**: Block private IP ranges, cap redirects, cap response size, enforce timeouts. *(POC: low urgency)* | Security | low | high | 2-3 days | Improvements #1 |
-| **Secure admin endpoints**: Protect `/admin/test-config` and any endpoints that can trigger paid API calls with FH_ADMIN_KEY authentication. *(POC: low urgency)* | Security / Cost-Control | low | high | 1 day | Improvements #1 |
-| **Rate limiting / quotas**: Per-IP and/or per-key throttling; protect search + LLM calls. Prevent runaway costs. *(POC: low urgency)* | Security / Cost-Control | low | high | 2-3 days | Improvements #2 |
-| **Cost quotas and estimates**: Track per-job and per-day LLM/search quotas. Reject jobs exceeding limits. Show cost estimates before running. *(POC: low urgency)* | Cost-Control | low | high | 2-3 days | Improvements #2 |
+| Description | Domain | Urgency | Importance | Reference |
+|---|---|---|---|---|
+| **SSRF protections for URL fetching**: Block private IP ranges, cap redirects, cap response size, enforce timeouts. *(POC: low urgency)* | Security | low | high | Improvements #1 |
+| **Secure admin endpoints**: Protect `/admin/test-config` and any endpoints that can trigger paid API calls with FH_ADMIN_KEY authentication. *(POC: low urgency)* | Security / Cost-Control | low | high | Improvements #1 |
+| **Rate limiting / quotas**: Per-IP and/or per-key throttling; protect search + LLM calls. Prevent runaway costs. *(POC: low urgency)* | Security / Cost-Control | low | high | Improvements #2 |
+| **Cost quotas and estimates**: Track per-job and per-day LLM/search quotas. Reject jobs exceeding limits. Show cost estimates before running. *(POC: low urgency)* | Cost-Control | low | high | Improvements #2 |
 
 ---
 
 ## User Experience Enhancements
 
-| Description | Domain | Urgency | Importance | Effort | Reference |
-|---|---|---|---|---|---|
-| **Config admin: auto-save drafts to localStorage**: Protect against accidental page refresh. Recover unsaved drafts on reload. *(Skipped: medium risk of stale draft confusion)* | Web UI / UX | low | low | 0.5 day | UCM UX Review |
-| **Analysis templates/presets**: Domain-specific templates (health, legal, political) with curated search whitelists and KeyFactor hints. | Web UI / UX | low | med | 3-4 days | Improvements #8 |
-| **Interactive analysis refinement**: Allow users to add sources, challenge claims, refine searches, or add contexts as child jobs extending existing analysis. | Web UI / UX | low | med | 7-10 days | Improvements #7 |
-| **Comparative analysis mode**: Side-by-side comparison of two articles/claims. Show shared claims, unique claims, contradictions, consensus areas. | Analyzer / UX | low | med | 10-14 days | Improvements #9 |
-| **Real-time source quality feedback**: Aggregate multiple quality signals (MBFC, NewsGuard, Wikipedia citations, HTTPS, domain age) instead of single vendor. | Analyzer / Quality | low | med | 5-7 days | Improvements #10 |
-| **PDF report export**: Generate professional PDF reports with charts, graphs, confidence bars, optional branding. | Reporting | low | low | 3-5 days | Improvements #12 |
-| **Browser extension**: Right-click extension for "Analyze with FactHarbor", floating button on news sites. | Web UI / UX | low | low | 7-10 days | Improvements #13 |
-| **Multi-language support**: Support ES, DE, FR, PT with language-specific search and extraction. | Analyzer / i18n | low | med | 14-21 days | Improvements #11 |
+| Description | Domain | Urgency | Importance | Reference |
+|---|---|---|---|---|
+| **Config admin: auto-save drafts to localStorage**: Protect against accidental page refresh. Recover unsaved drafts on reload. *(Skipped: medium risk of stale draft confusion)* | Web UI / UX | low | low | UCM UX Review |
+| **Analysis templates/presets**: Domain-specific templates (health, legal, political) with curated search whitelists and KeyFactor hints. | Web UI / UX | low | med | Improvements #8 |
+| **Interactive analysis refinement**: Allow users to add sources, challenge claims, refine searches, or add contexts as child jobs extending existing analysis. | Web UI / UX | low | med | Improvements #7 |
+| **Comparative analysis mode**: Side-by-side comparison of two articles/claims. Show shared claims, unique claims, contradictions, consensus areas. | Analyzer / UX | low | med | Improvements #9 |
+| **Real-time source quality feedback**: Extend current LLM+Cache source reliability with additional signals (MBFC, NewsGuard, Wikipedia citations, HTTPS, domain age). | Analyzer / Quality | low | med | Improvements #10 |
+| **PDF report export**: Generate professional PDF reports with charts, graphs, confidence bars, optional branding. | Reporting | low | low | Improvements #12 |
+| **Browser extension**: Right-click extension for "Analyze with FactHarbor", floating button on news sites. | Web UI / UX | low | low | Improvements #13 |
+| **Multi-language support**: Support ES, DE, FR, PT with language-specific search and extraction. | Analyzer / i18n | low | med | Improvements #11 |
 
 ---
 
 ## Monitoring & Operations
 
-| Description | Domain | Urgency | Importance | Effort | Reference |
-|---|---|---|---|---|---|
-| **Observability dashboard**: Real-time metrics dashboard showing performance (p50/p95/p99), costs (LLM/search), quality (gate pass rates), usage (success rate), and errors. | Observability | low | high | 5-7 days | Improvements #17 |
-| **Error pattern detection & auto-recovery**: Automatically categorize errors, suggest fixes, apply recovery actions (retry with shorter prompt, skip source, fallback model). | Observability / Reliability | low | med | 3-5 days | Improvements #18 |
-| Persist metrics and cost estimates: tokens/search calls/cost estimation stored per job; basic admin view. | Observability | low | med | 3-4 days | Existing |
-| Error pattern tracking: persist structured error categories and frequency to inform prompt/code fixes. | Observability | low | med | 2-3 days | Existing |
+| Description | Domain | Urgency | Importance | Reference |
+|---|---|---|---|---|
+| **Observability dashboard**: Real-time metrics dashboard showing performance (p50/p95/p99), costs (LLM/search), quality (gate pass rates), usage (success rate), and errors. | Observability | low | high | Improvements #17 |
+| **Error pattern detection & auto-recovery**: Automatically categorize errors, suggest fixes, apply recovery actions (retry with shorter prompt, skip source, fallback model). | Observability / Reliability | low | med | Improvements #18 |
+| Persist metrics and cost estimates: tokens/search calls/cost estimation stored per job; basic admin view. | Observability | low | med | Existing |
+| Error pattern tracking: persist structured error categories and frequency to inform prompt/code fixes. | Observability | low | med | Existing |
 
 ---
 
 ## Technical Debt & Architecture
 
-| Description | Domain | Urgency | Importance | Effort | Reference |
-|---|---|---|---|---|---|
-| **Config storage seeding race condition**: `saveConfigBlob()` uses check-then-insert without transaction. Use `INSERT OR IGNORE` for multi-instance safety. *(POC: low urgency; HIGH before multi-worker deployment)* | Architecture / Reliability | low | high | 0.5 day | UCM Review |
-| **Cross-profile content hash policy**: Document or change behavior where identical content cannot exist across different profiles (may block copy/paste workflows). | Architecture / UX | low | med | 0.5 day | UCM Review |
-| **Remove dead API prompt tracking columns**: `PromptContentHash` and `PromptLoadedUtc` in `Jobs` table are never populated (web uses `config_usage` instead). Remove columns and migration 002, or decide to populate them. | Architecture / Cleanup | low | low | 0.5 day | UCM Review |
-| **Normalized database schema**: Create proper tables for Claims, Verdicts, Sources, Facts, ClaimFactSupport. Enables cross-analysis queries, trend analysis, citation networks. | Architecture / Data | low | med | 10-14 days | Improvements #15 |
-| **Comprehensive testing**: Unit tests (80% coverage), integration tests, E2E tests (Playwright), API tests (xUnit). | Testing / Quality | low | high | 14-21 days | Improvements #16 |
-| Analyzer modularization plan: `apps/web/src/lib/analyzer.ts` is monolithic (8234 lines); do incremental extraction only with safety rails. Split into understanding, research, verdict-generation, aggregation, report-generation modules. | Architecture | low | low | 5-7 days | Improvements #14 |
+| Description | Domain | Urgency | Importance | Reference |
+|---|---|---|---|---|
+| **Config storage seeding race condition**: `saveConfigBlob()` uses check-then-insert without transaction. Use `INSERT OR IGNORE` for multi-instance safety. *(POC: low urgency; HIGH before multi-worker deployment)* | Architecture / Reliability | low | high | UCM Review |
+| **Cross-profile content hash policy**: Document or change behavior where identical content cannot exist across different profiles (may block copy/paste workflows). | Architecture / UX | low | med | UCM Review |
+| **Remove dead API prompt tracking columns**: `PromptContentHash` and `PromptLoadedUtc` in `Jobs` table are never populated (web uses `config_usage` instead). Remove columns and migration 002, or decide to populate them. | Architecture / Cleanup | low | low | UCM Review |
+| **Normalized database schema**: Create proper tables for Claims, Verdicts, Sources, Facts, ClaimFactSupport. Enables cross-analysis queries, trend analysis, citation networks. | Architecture / Data | low | med | Improvements #15 |
+| **Comprehensive testing**: Unit tests (80% coverage), integration tests, E2E tests (Playwright), API tests (xUnit). | Testing / Quality | low | high | Improvements #16 |
+| Analyzer modularization plan: `apps/web/src/lib/analyzer.ts` is monolithic (8234 lines); do incremental extraction only with safety rails. Split into understanding, research, verdict-generation, aggregation, report-generation modules. | Architecture | low | low | Improvements #14 |
 
 ---
 
 ## Notes
 
-- **Quick wins** (6-9 days total effort):
-  1. Parallel verdict generation (1-2 days) → 50-80% faster
-  2. Quality Gate UI display (2-3 days) → transparency
-  3. Cost quotas (2-3 days) → financial safety *(low urgency for POC)*
-  4. Admin authentication (1 day) → security *(low urgency for POC)*
+- **Quick wins** (combined):
+  1. Parallel verdict generation → 50-80% faster
+  2. Quality Gate UI display → transparency
+  3. Cost quotas → financial safety *(low urgency for POC)*
+  4. Admin authentication → security *(low urgency for POC)*
 
 - **Cost optimization** (combined 70-85% reduction):
   - Tiered LLM routing: 50-70% savings
@@ -118,5 +118,5 @@
 
 - **Detailed Analysis**: `Docs/STATUS/Improvement_Recommendations.md`
 - **Current Status**: `Docs/STATUS/Current_Status.md`
-- **Architecture**: `Docs/ARCHITECTURE/Overview.md`
-- **Coding Guidelines**: `Docs/DEVELOPMENT/Coding_Guidelines.md`
+- **Architecture**: `Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture Overview/WebHome.xwiki`
+- **Coding Guidelines**: `Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding Guidelines/WebHome.xwiki`

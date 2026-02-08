@@ -13,7 +13,7 @@ This repository is a runnable POC scaffold:
 ### 1. Prerequisites
 - Node.js LTS, .NET SDK 8.x, Git
 - Visual Studio 2022 (for API), Cursor or VS Code (for Web)
-- See [Getting Started Guide](Docs/USER_GUIDES/Getting_Started.md) for detailed setup
+- See [Getting Started Guide](Docs/xwiki-pages/FactHarbor/User%20Guides/Getting%20Started/WebHome.xwiki) for detailed setup
 
 ### 2. Create local env files
 - `apps/web/.env.local` (copy from `.env.example`)
@@ -31,24 +31,27 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 
 ## Documentation
 
-### User Guides
-- **[Getting Started](Docs/USER_GUIDES/Getting_Started.md)** - Complete setup and first run guide
-- **[Admin Interface](Docs/USER_GUIDES/Admin_Interface.md)** - Admin dashboard and configuration testing
-- **[LLM Configuration](Docs/USER_GUIDES/LLM_Configuration.md)** - Configure AI providers and search
+> Stable reference documentation lives in **xWiki format** under `Docs/xwiki-pages/FactHarbor/`.
+> Active development docs and operational files remain as `.md`. See [AGENTS.md](AGENTS.md) for format rules.
+
+### xWiki Documentation (Master Source)
+- **[xWiki Pages](Docs/xwiki-pages/FactHarbor/)** - Master documentation: specification, architecture, user guides, organisation
+- **[xWiki Viewer](Docs/xwiki-pages/README.md#xwiki-viewer-local-wysiwyg-preview)** - Local WYSIWYG preview: `Docs\xwiki-pages\View.cmd`
+
+### User Guides (xWiki)
+- **[Getting Started](Docs/xwiki-pages/FactHarbor/User%20Guides/Getting%20Started/WebHome.xwiki)** - Complete setup and first run guide
+- **[Admin Interface](Docs/xwiki-pages/FactHarbor/User%20Guides/Admin%20Interface/WebHome.xwiki)** - Admin dashboard and configuration testing
+- **[LLM Configuration](Docs/xwiki-pages/FactHarbor/User%20Guides/LLM%20Configuration/WebHome.xwiki)** - Configure AI providers and search
 
 ### Architecture
-- **[Overview](Docs/ARCHITECTURE/Overview.md)** - System architecture, data models, component interactions
-- **[Calculations](Docs/ARCHITECTURE/Calculations.md)** - Verdict calculation methodology
-- **[KeyFactors Design](Docs/ARCHITECTURE/KeyFactors_Design.md)** - KeyFactors implementation details
-- **[Source Reliability](Docs/ARCHITECTURE/Source_Reliability.md)** - Source scoring system
-- **[Pipeline Architecture](Docs/ARCHITECTURE/Pipeline_TriplePath_Architecture.md)** - Triple-path pipeline design
+- **[Overview](Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture%20Overview/WebHome.xwiki)** - System architecture, data models, component interactions (xWiki)
+- **[Calculations](Docs/ARCHITECTURE/Calculations.md)** - Verdict calculation methodology (.md — active development)
+- **[Evidence Quality Filtering](Docs/ARCHITECTURE/Evidence_Quality_Filtering.md)** - Multi-layer filtering defense (.md — active development)
+- **[Source Reliability](Docs/xwiki-pages/FactHarbor/Specification/Implementation/Source%20Reliability%20System/WebHome.xwiki)** - Source scoring system (xWiki)
+- **[Pipeline Architecture](Docs/xwiki-pages/FactHarbor/Specification/Implementation/Pipeline%20Architecture/TriplePath%20Architecture/WebHome.xwiki)** - Triple-path pipeline design (xWiki)
 
 ### Development
-- **[Coding Guidelines](Docs/DEVELOPMENT/Coding_Guidelines.md)** - Code quality standards and principles
-- **[Compliance Audit](Docs/DEVELOPMENT/Compliance_Audit.md)** - Rules compliance review
-
-### Deployment
-- **[Zero Cost Hosting Guide](Docs/DEPLOYMENT/Zero_Cost_Hosting_Guide.md)** - Deploy on free tier infrastructure
+- **[Coding Guidelines](Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding%20Guidelines/WebHome.xwiki)** - Code quality standards and principles (xWiki)
 
 ### Status
 - **[Current Status](Docs/STATUS/Current_Status.md)** - What works, known issues, priorities
@@ -56,10 +59,6 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 - **[Development History](Docs/STATUS/HISTORY.md)** - Version history, architectural decisions, and investigations
 - **[Backlog](Docs/STATUS/Backlog.md)** - Prioritized task list
 - **[Improvement Recommendations](Docs/STATUS/Improvement_Recommendations.md)** - Comprehensive analysis of potential enhancements
-
-### xWiki Documentation (Master Source)
-- **[xWiki Pages](Docs/xwiki-pages/)** - Master documentation in xWiki 2.1 format (113 pages across two trees)
-- **[XWiki Viewer](Docs/xwiki-pages/README.md#xwiki-viewer-local-wysiwyg-preview)** - Local WYSIWYG preview: `Docs\xwiki-pages\View.cmd`
 
 ### Project Documentation
 - **[AGENTS.md](AGENTS.md)** - Rules for AI coding assistants
@@ -126,7 +125,7 @@ FH_ADMIN_KEY=your-secure-admin-key
 FH_INTERNAL_RUNNER_KEY=your-secure-runner-key
 ```
 
-See [LLM Configuration Guide](Docs/USER_GUIDES/LLM_Configuration.md) for complete configuration options.
+See [LLM Configuration Guide](Docs/xwiki-pages/FactHarbor/User%20Guides/LLM%20Configuration/WebHome.xwiki) for complete configuration options.
 
 ## Scripts
 

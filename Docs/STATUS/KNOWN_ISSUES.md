@@ -109,7 +109,7 @@ await finalizeMetrics();
 
 **References**:
 - Integration guide: `apps/web/src/lib/analyzer/metrics-integration.ts`
-- Schema docs: `Docs/REFERENCE/METRICS_SCHEMA.md`
+- Schema docs: `Docs/xwiki-pages/FactHarbor/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki`
 
 ---
 

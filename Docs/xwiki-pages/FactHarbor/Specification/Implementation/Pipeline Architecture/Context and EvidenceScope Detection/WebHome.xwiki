@@ -19,10 +19,10 @@ This guide consolidates all information about FactHarbor's context detection sys
 **Target Audience**: Developers working on context detection, prompt engineers, and technical reviewers.
 
 **Replaces scattered documentation in**:
-* Context_Detection_via_EvidenceScope.md (principle-based approach)
-* Overview.md Section 1.1 (architecture overview)
-* Calculations.md Section 2 (AnalysisContext definition)
-* Pipeline_TriplePath_Architecture.md (context routing)
+* Context_Detection_via_EvidenceScope.md (principle-based approach, still in Docs/ARCHITECTURE/)
+* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] Section 1.1
+* Calculations.md Section 2 (AnalysisContext definition, still in Docs/ARCHITECTURE/)
+* [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] (context routing)
 
 ----
 

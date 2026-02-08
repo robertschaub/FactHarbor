@@ -82,9 +82,9 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 ┌─────────────────────────────────────────────────────────────┐
 │                  apps/web (Next.js)                         │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │  src/lib/analyzer.ts - Main analysis engine         │   │
+│  │  src/lib/analyzer/orchestrated.ts - Main pipeline    │   │
 │  │  - understandClaim() → Research → generateVerdicts()│   │
-│  │  - Multi-scope detection & canonicalization         │   │
+│  │  - Multi-context detection & analysis               │   │
 │  │  - LLM calls via AI SDK (OpenAI/Anthropic/etc)      │   │
 │  └─────────────────────────────────────────────────────┘   │
 │  ┌─────────────────────────────────────────────────────┐   │
@@ -106,19 +106,25 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 
 | File | Purpose |
 |------|---------|
-| `apps/web/src/lib/analyzer/orchestrated.ts` | Main orchestrated pipeline (~9000 lines) |
+| `apps/web/src/lib/analyzer/orchestrated.ts` | Main orchestrated pipeline (~12000 lines) |
 | `apps/web/src/lib/analyzer/monolithic-canonical.ts` | Monolithic canonical pipeline |
 | `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
-| `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation logic |
+| `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation + claim weighting logic |
 | `apps/web/src/lib/analyzer/analysis-contexts.ts` | AnalysisContext detection and handling |
+| `apps/web/src/lib/analyzer/evidence-filter.ts` | Deterministic evidence quality filtering |
+| `apps/web/src/lib/analyzer/llm.ts` | LLM model selection + tiering per task |
+| `apps/web/src/lib/analyzer/model-tiering.ts` | Model tier definitions, cost calculations |
+| `apps/web/src/lib/analyzer/verdict-corrections.ts` | Counter-claim detection, verdict direction |
+| `apps/web/src/lib/analyzer/truth-scale.ts` | 7-point verdict scale + percentage mapping |
 | `apps/web/src/lib/analyzer/source-reliability.ts` | Source reliability: prefetch, lookup, weighting |
 | `apps/web/src/lib/source-reliability-cache.ts` | SQLite cache for source scores |
 | `apps/web/src/lib/config-storage.ts` | Unified Config Management: SQLite storage layer |
 | `apps/web/src/lib/config-loader.ts` | Config caching and effective config resolution |
+| `apps/web/configs/pipeline.default.json` | Default pipeline configuration |
 | `apps/web/src/app/jobs/[id]/page.tsx` | Job results UI |
 | `apps/api/Controllers/JobsController.cs` | Job CRUD API |
 | `Docs/ARCHITECTURE/Calculations.md` | Verdict calculation documentation |
-| `Docs/ARCHITECTURE/Source_Reliability.md` | Source reliability documentation |
+| `Docs/xwiki-pages/FactHarbor/Specification/Implementation/Source Reliability System/WebHome.xwiki` | Source reliability documentation |
 
 ---
 
@@ -148,6 +154,25 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 
 ---
 
+## Reading .xwiki Files
+
+Some documentation lives in xWiki 2.1 format (`.xwiki` files) under `Docs/xwiki-pages/FactHarbor/`.
+These are readable plain text with minor syntax differences from Markdown:
+
+- `= Heading =` (level 1), `== Heading ==` (level 2), etc. — instead of `#`, `##`
+- `**bold**` (same as Markdown), `//italic//` (instead of `*italic*`)
+- `{{info}}...{{/info}}` for info boxes — read the text inside
+- `{{warning}}...{{/warning}}` for warning boxes
+- `{{mermaid}}...{{/mermaid}}` for diagrams — same as ` ```mermaid ` blocks
+- `[[Link Text>>Space.Page]]` for internal wiki links
+- `{{code language="..."}}...{{/code}}` for code blocks
+
+When editing .xwiki files, preserve the existing syntax. Refer to `Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md` for full syntax rules.
+
+**Format rule**: Each document exists in exactly ONE authoritative format. If a `.md` file shows "Moved to xWiki", read the `.xwiki` file instead. Active development docs (Calculations, Evidence_Quality_Filtering, Prompt_Architecture, UCM guides) remain as `.md`.
+
+---
+
 ## Safety
 
 - Do not access production systems or real customer data
@@ -169,16 +194,18 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 
 ---
 
-## Current State (v2.6.41)
+## Current State (v2.10.2 project / v2.6.41 schema)
 
 ### Working Features
-- ✅ Multi-scope detection and display
+- ✅ Multi-context detection and analysis (AnalysisContext)
 - ✅ Input neutrality (question ≈ statement within ±5%)
-- ✅ Scope/context extraction from sources
+- ✅ AnalysisContext/EvidenceScope extraction from sources
 - ✅ Temporal reasoning (current date awareness)
 - ✅ Claim deduplication for fair aggregation
-- ✅ KeyFactors aggregation
+- ✅ KeyFactors discovery and aggregation
 - ✅ Triple-path pipeline (Orchestrated, Monolithic Canonical, Monolithic Dynamic)
+- ✅ LLM Tiering (Haiku 3.5 for extract/understand, Sonnet 4 for verdict/context refinement)
+- ✅ Evidence Quality Filtering (deterministic post-LLM filter for probative value)
 - ✅ Source Reliability (LLM evaluation with multi-model consensus, caching, evidence weighting, entity-level evaluation)
 - ✅ Source Reliability Hardening (SOURCE TYPE CAPS, asymmetric confidence gating, brand variant matching)
 - ✅ Unified Configuration Management (database-backed version control for search, calculation, and prompt configs)

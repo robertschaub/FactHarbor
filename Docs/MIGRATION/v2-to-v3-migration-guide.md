@@ -209,7 +209,7 @@ API responses now use the new field names. If you have external integrations, up
 
 If you encounter migration issues:
 1. Check this guide for common issues
-2. Review the [TERMINOLOGY.md](../REFERENCE/TERMINOLOGY.md) reference
+2. Review the [Terminology Reference](../xwiki-pages/FactHarbor/Specification/Reference/Terminology/WebHome.xwiki)
 3. File an issue at the project repository
 
 ---

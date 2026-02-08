@@ -13,10 +13,8 @@
 ### Import from xWiki → .xwiki tree
 
 ```bash
-cd Docs/xwiki-export
-
-# Convert XAR to .xwiki tree
-python xar_to_xwiki_tree.py FactHarbor_Export.xar
+# Convert XAR to .xwiki tree (from repo root)
+python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py FactHarbor_Export.xar --output Docs/xwiki-pages
 
 # Result: Docs/xwiki-pages/FactHarbor/.../*.xwiki
 ```
@@ -35,12 +33,10 @@ git commit -m "docs: update specification"
 ### Export to xWiki → XAR
 
 ```bash
-cd Docs/xwiki-export
+# Convert .xwiki tree to XAR (from repo root, pass xwiki-pages as base, NOT FactHarbor)
+python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar
 
-# Convert .xwiki tree to XAR
-python xwiki_tree_to_xar.py ../xwiki-pages/
-
-# Result: xwiki-pages_updated.xar (ready for import to xWiki)
+# Result: FactHarbor.xar (ready for import to xWiki)
 ```
 
 ---
@@ -52,14 +48,11 @@ python xwiki_tree_to_xar.py ../xwiki-pages/
 **Extract pages from XAR and save as .xwiki files.**
 
 ```bash
-# Basic usage
-python xar_to_xwiki_tree.py input.xar
-
-# Custom output directory
-python xar_to_xwiki_tree.py input.xar --output custom_dir/
+# Basic usage (from repo root)
+python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py input.xar --output Docs/xwiki-pages
 
 # Example
-python xar_to_xwiki_tree.py FactHarbor_Spec_and_Impl_06.Feb.26.xar
+python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py FactHarbor_Export.xar --output Docs/xwiki-pages
 ```
 
 **Output:**
@@ -79,20 +72,18 @@ Docs/xwiki-pages/
 **Package .xwiki files into importable XAR.**
 
 ```bash
-# Basic usage (creates <dirname>_updated.xar)
-python xwiki_tree_to_xar.py ../xwiki-pages/
+# Basic usage (from repo root, pass xwiki-pages as base, NOT FactHarbor)
+python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar
 
-# Custom output file
-python xwiki_tree_to_xar.py ../xwiki-pages/ --output FactHarbor_Final.xar
-
-# Example
-python xwiki_tree_to_xar.py ../xwiki-pages/ --output FactHarbor_2026-02-06.xar
+# With dated output for archiving
+python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output Docs/xwiki-export/FactHarbor_08.Feb.26.xar
 ```
+
+**Important:** Always pass `Docs/xwiki-pages` (the parent of `FactHarbor/`) as the base directory so page IDs get the correct `FactHarbor.` prefix.
 
 **Output:**
 ```
-Docs/xwiki-export/FactHarbor_2026-02-06.xar
-(Ready to import: xWiki → Administration → Import)
+FactHarbor.xar (ready to import: xWiki → Administration → Import)
 ```
 
 ---
@@ -130,18 +121,22 @@ graph TD
 
 | File Path | PageId | Parent | Title |
 |-----------|--------|--------|-------|
-| `FactHarbor/WebHome.xwiki` | `FactHarbor.WebHome` | `None` | From heading |
-| `FactHarbor/Specification/WebHome.xwiki` | `FactHarbor.Specification.WebHome` | `FactHarbor.WebHome` | From heading |
-| `FactHarbor/Specification/Architecture.xwiki` | `FactHarbor.Specification.Architecture` | `FactHarbor.Specification.WebHome` | From heading |
+| `FactHarbor/WebHome.xwiki` | `FactHarbor.WebHome` | `None` (root) | `FactHarbor` (dir name) |
+| `FactHarbor/Specification/WebHome.xwiki` | `FactHarbor.Specification.WebHome` | `FactHarbor.WebHome` | `Specification` (dir name) |
+| `FactHarbor/Specification/Architecture.xwiki` | `FactHarbor.Specification.Architecture` | `FactHarbor.Specification.WebHome` | From first heading |
 
 **Parent derivation:**
-- Remove last component of pageId
-- Replace with `WebHome`
-- `FactHarbor.Specification.Architecture` → parent: `FactHarbor.Specification.WebHome`
+- **WebHome pages**: Go up two levels (skip self + space name), append `.WebHome`
+  - `FactHarbor.Specification.WebHome` → parent: `FactHarbor.WebHome`
+  - `FactHarbor.WebHome` → parent: `None` (root)
+- **Non-WebHome pages**: Remove last component, append `.WebHome`
+  - `FactHarbor.Specification.Architecture` → parent: `FactHarbor.Specification.WebHome`
 
-**Title extraction:**
-- First xWiki heading: `= Title =` → "Title"
-- If no heading: use filename (without .xwiki extension)
+**Title derivation:**
+- **WebHome pages**: Title = parent directory name (space name in xWiki)
+  - `FactHarbor/Specification/WebHome.xwiki` → title: "Specification"
+- **Non-WebHome pages**: First xWiki heading (`= Title =`), fallback to filename
+- Escaped dots in directory names are unescaped: `Architecture Analysis 1.Jan.26` → title as-is
 
 ---
 
@@ -252,14 +247,11 @@ This is an error box.
 # 1. Export from xWiki (Web UI)
 # xWiki → Administration → Export → Select all pages → Download XAR
 
-# 2. Convert to .xwiki tree
-cd Docs/xwiki-export
-python xar_to_xwiki_tree.py ~/Downloads/FactHarbor_Export.xar
+# 2. Convert to .xwiki tree (from repo root)
+python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py ~/Downloads/FactHarbor_Export.xar --output Docs/xwiki-pages
 
 # 3. Review and commit
-cd ../xwiki-pages
-ls -la FactHarbor/
-git add .
+git add Docs/xwiki-pages/
 git commit -m "docs: initial import from xWiki"
 ```
 
@@ -281,9 +273,8 @@ code Docs/xwiki-pages/FactHarbor/Specification/Architecture.xwiki
 git add Docs/xwiki-pages/FactHarbor/Specification/Architecture.xwiki
 git commit -m "docs: update architecture documentation"
 
-# 4. Export to XAR (optional - for xWiki sync)
-cd Docs/xwiki-export
-python xwiki_tree_to_xar.py ../xwiki-pages/ --output FactHarbor_Updated.xar
+# 4. Export to XAR (optional - for xWiki sync, from repo root)
+python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output FactHarbor_Updated.xar
 
 # 5. Import to xWiki (Web UI)
 # xWiki → Administration → Import → Select FactHarbor_Updated.xar
@@ -291,11 +282,16 @@ python xwiki_tree_to_xar.py ../xwiki-pages/ --output FactHarbor_Updated.xar
 
 ### Scenario 3: Human Views Documentation
 
-**Option A: View in xWiki**
+**Option A: Local WYSIWYG viewer**
 ```bash
-# 1. Generate XAR
-cd Docs/xwiki-export
-python xwiki_tree_to_xar.py ../xwiki-pages/
+# Double-click or run from project root:
+Docs\xwiki-pages\View.cmd
+```
+
+**Option B: View in xWiki**
+```bash
+# 1. Generate XAR (from repo root)
+python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar
 
 # 2. Import to local xWiki instance
 # xWiki → Administration → Import
@@ -303,13 +299,10 @@ python xwiki_tree_to_xar.py ../xwiki-pages/
 # 3. Browse with full WYSIWYG rendering
 ```
 
-**Option B: View as plain text**
+**Option C: View as plain text**
 ```bash
-# Open in VS Code with xWiki extension
+# Open in VS Code
 code Docs/xwiki-pages/FactHarbor/Specification/WebHome.xwiki
-
-# Or view on GitHub (limited formatting)
-# Commit and view in GitHub repository
 ```
 
 ### Scenario 4: Consolidate Documentation
@@ -412,10 +405,10 @@ python md_tree_to_json.py input_md/
 python json_to_xar.py input_fulltree_updated.json
 ```
 
-**New workflow (2 scripts):**
+**New workflow (2 scripts, run from repo root):**
 ```bash
-python xar_to_xwiki_tree.py input.xar
-python xwiki_tree_to_xar.py ../xwiki-pages/
+python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py input.xar --output Docs/xwiki-pages
+python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar
 ```
 
 **Benefits:**
@@ -426,5 +419,5 @@ python xwiki_tree_to_xar.py ../xwiki-pages/
 
 ---
 
-**Last Updated:** 2026-02-06
-**Version:** 2.0 (Simplified .xwiki workflow)
+**Last Updated:** 2026-02-08
+**Version:** 2.1 (Updated paths, title derivation for WebHome pages)

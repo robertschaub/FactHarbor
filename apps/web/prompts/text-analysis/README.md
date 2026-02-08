@@ -78,7 +78,7 @@ apps/web/
     └── text-analysis-verdict-prompt.txt         # Verdict validation template
 ```
 
-See: [Promptfoo Testing Guide](../../../../Docs/USER_GUIDES/Promptfoo_Testing.md)
+See: [Promptfoo Testing Guide](../../../../Docs/xwiki-pages/FactHarbor/User%20Guides/Promptfoo%20Testing/WebHome.xwiki)
 
 ## Version History
 

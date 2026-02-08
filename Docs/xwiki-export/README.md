@@ -6,9 +6,11 @@ This folder contains dated XAR snapshots exported from xWiki.
 
 | File | Size | Contents |
 |------|------|----------|
-| `FactHarbor_Spec_and_Impl_08.Feb.26.xar` | 457 KB | Full FactHarbor tree (137 pages) |
+| `FactHarbor_08.Feb.26_16.55.xar` | 581 KB | Full FactHarbor tree (137 pages) — cross-links fixed |
 | `FactHarbor_Spec_and_Impl_06.Feb.26.xar` | 429 KB | Spec/Impl only (legacy, pre-merge) |
 | `FactHarbor_Org_06.Feb.26.xar` | 212 KB | Organisation only (legacy, pre-merge) |
+
+**Naming convention:** `FactHarbor_DD.Mon.YY_HH.MM.xar` (date + time of build)
 
 ## Master Source
 

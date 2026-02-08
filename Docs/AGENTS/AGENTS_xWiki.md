@@ -13,41 +13,50 @@ Before working on xWiki content, agents MUST read and follow:
 1. **[GlobalMasterKnowledge_for_xWiki.md](GlobalMasterKnowledge_for_xWiki.md)** (same folder)
    - Core rules and constraints (GLOBAL-R-*)
    - Document handling rules (DOC-R-*)
-   - Diagram rules (Draw.io, Mermaid, PlantUML)
-   - Cursor workflow rules (GLOBAL-R-034 to R-036)
+   - Diagram rules (Mermaid preferred)
 
-2. **[InitializeFHchat_for_xWiki.md](InitializeFHchat_for_xWiki.md)** (same folder)
-   - Workflow overview
-   - Cursor IDE xar-to-xar workflow
-   - Export commands and versioning
+2. **[Docs/xwiki-pages/README.md](../xwiki-pages/README.md)** (master documentation)
+   - Directory structure, workflow, file format
+   - Metadata derivation rules
 
 ---
 
-## Cursor Workflow (xar-to-xar)
+## Workflow: Direct .xwiki Editing
 
-1. User drops .xar in `Docs/`
-2. Agent extracts internally (to JSON)
-3. Agent makes requested edits to JSON content
-4. User says "Export" → Agent saves versioned .xar in same folder
+Agents edit `.xwiki` files directly — no conversion needed.
 
-### Export Commands
-- `"Export"` or `"Export delta"` → Changed pages only
-- `"Export full"` → Complete corpus
+### Edit Pages
 
-### Viewing Pages
-- `"Show page <pageId>"` → Display as rendered Markdown (WYSIWYG-like)
-- `"Show raw page <pageId>"` → Display raw xWiki 2.1 markup
+```bash
+# Edit any page (pure xWiki 2.1 syntax)
+code Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki
+code Docs/xwiki-pages/FactHarbor/Organisation/Governance/WebHome.xwiki
 
-### Markdown Conversion Commands
-- `"Import MD <filepath> as page <pageId>"` → Convert .md to xWiki and add to corpus
-- `"Export page <pageId> as MD"` → Convert xWiki page to standard .md file
+# Commit changes
+git add Docs/xwiki-pages/
+git commit -m "docs: update architecture and governance"
+```
 
-**Mermaid conversion:** Automatically handled in both directions:
-- MD ` ```mermaid ` ↔ xWiki `{{mermaid}}` (with required empty lines)
+### Preview Locally (WYSIWYG)
 
-### Versioning
-- Auto-increment patch on each export: 0.9.70 → 0.9.71
-- Exception: delta then full with no changes between = same version
+```bash
+# Double-click or run:
+Docs\xwiki-pages\View.cmd
+```
+
+### Export to XAR (for xWiki import)
+
+```bash
+# From repo root — pass xwiki-pages as base, NOT FactHarbor
+python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar
+```
+
+### Import from XAR (from xWiki export)
+
+```bash
+# From repo root
+python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py exported.xar --output Docs/xwiki-pages
+```
 
 ---
 
@@ -55,7 +64,6 @@ Before working on xWiki content, agents MUST read and follow:
 
 **Critical:** Empty lines required before AND after the mermaid block!
 
-Example:
 ```
 Text before diagram.
 
@@ -67,19 +75,19 @@ flowchart TD
 Text after diagram.
 ```
 
-Do NOT use `{{code language="mermaid"}}` – it doesn't work.
+Do NOT use `{{code language="mermaid"}}` — it doesn't work.
 
-**ERD Diagrams:** See **[Mermaid_ERD_Quick_Reference.md](Mermaid_ERD_Quick_Reference.md)** for critical syntax rules (no spaces in property definitions).
+**ERD Diagrams:** See **[Mermaid_ERD_Quick_Reference.md](Mermaid_ERD_Quick_Reference.md)** for critical syntax rules.
 
 ---
 
 ## Key Rules Summary
 
+- Edit `.xwiki` files directly — no JSON conversion needed
 - Mermaid preferred for new diagrams (DOC-R-028)
 - No changes without explicit request (GLOBAL-R-017)
 - Preserve xWiki markup exactly (GLOBAL-R-030)
-- Delta-only exports by default (GLOBAL-R-015)
-- Auto-version on export (GLOBAL-R-035)
+- Commit frequently to git for version control
 
 ---
 
@@ -87,6 +95,24 @@ Do NOT use `{{code language="mermaid"}}` – it doesn't work.
 
 | Path | Purpose |
 |------|---------|
-| `Docs/` | Input/output folder for .xar files |
-| `scripts xWiki/xwiki_xar_to_fulltree_generic.py` | xar → JSON |
-| `scripts xWiki/xwiki_fulltree_to_xar_ROBUST.py` | JSON → xar |
+| `Docs/xwiki-pages/FactHarbor/` | Master documentation tree (137 pages) |
+| `Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py` | XAR → .xwiki tree |
+| `Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py` | .xwiki tree → XAR |
+| `Docs/xwiki-pages/scripts/WORKFLOW.md` | Detailed workflow reference |
+| `Docs/xwiki-export/` | Dated XAR snapshots |
+
+---
+
+## Metadata Derivation (How Scripts Work)
+
+The conversion scripts derive pageId, parent, and title from file paths:
+
+- **WebHome pages**: Title = parent directory name (e.g., `FactHarbor/Specification/WebHome.xwiki` → title "Specification")
+- **Non-WebHome pages**: Title = first xWiki heading (`= Title =`)
+- **Escaped dots**: Directory names with dots (e.g., `Architecture Analysis 1.Jan.26`) are escaped in pageIds as `\.`
+
+See [Docs/xwiki-pages/README.md](../xwiki-pages/README.md) for full derivation table.
+
+---
+
+**Last Updated:** 2026-02-08

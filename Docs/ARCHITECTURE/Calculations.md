@@ -687,7 +687,7 @@ FactHarbor's calculation system:
 4. **Modulates by confidence** using truth bands
 5. **De-duplicates near-identical claims** to prevent double-counting
 6. **Handles dependencies** to avoid cascading false prerequisites
-7. **Applies quality gates** (Gate 1, Gate 4) for evidence sufficiency (see [Quality Gates Reference](Quality_Gates_Reference.md))
+7. **Applies quality gates** (Gate 1, Gate 4) for evidence sufficiency (see [Quality Gates Reference](../xwiki-pages/FactHarbor/Specification/Implementation/Pipeline%20Architecture/Quality%20Gates%20Reference/WebHome.xwiki))
 8. **Guards against unsupported judgments** (pseudoscience, proportionality without benchmarks)
 9. **Applies source reliability weighting** to adjust verdicts based on source credibility (v2.6.35+)
 
@@ -696,5 +696,5 @@ All calculations are designed to be **transparent**, **traceable**, and **determ
 ---
 
 *See also:*
-- *[Quality_Gates_Reference.md](Quality_Gates_Reference.md) for quality gates details*
-- *[Source_Reliability.md](Source_Reliability.md) for full Source Reliability system documentation*
+- *[Quality Gates Reference](../xwiki-pages/FactHarbor/Specification/Implementation/Pipeline%20Architecture/Quality%20Gates%20Reference/WebHome.xwiki) for quality gates details*
+- *[Source Reliability System](../xwiki-pages/FactHarbor/Specification/Implementation/Source%20Reliability%20System/WebHome.xwiki) for full Source Reliability system documentation*

@@ -210,8 +210,8 @@ FH_MAX_CONCURRENCY=5            # Parallel verdict limit
 
 ## 📚 Documentation
 
-- **Metrics Schema**: `Docs/REFERENCE/METRICS_SCHEMA.md`
-- **Testing Strategy**: `Docs/DEVELOPMENT/TESTING_STRATEGY.md`
+- **Metrics Schema**: `Docs/xwiki-pages/FactHarbor/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki`
+- **Testing Strategy**: `Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Testing Strategy/WebHome.xwiki`
 - **Implementation Summary**: `Docs/IMPLEMENTATION_SUMMARY.md`
 - **Investigation Report**: `Docs/INVESTIGATION/Report_Quality_Investigation.md`
 - **Current Status**: `Docs/STATUS/Implementation_Status_2026-01-19.md`

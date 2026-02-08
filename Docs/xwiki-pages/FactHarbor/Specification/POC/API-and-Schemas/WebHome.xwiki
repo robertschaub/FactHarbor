@@ -339,7 +339,7 @@ graph TD
 
 
 
-**Note:** Stage 3 implements **Approach 1 (Single-Pass Holistic Analysis)** from the [[Article Verdict Problem>>Test.FactHarbor.Specification.POC.Article-Verdict-Problem]]. While claim analysis (Stage 2) is cached for efficiency, the holistic assessment maintains the integrated evaluation philosophy of Approach 1.
+**Note:** Stage 3 implements **Approach 1 (Single-Pass Holistic Analysis)** from the [[Article Verdict Problem>>FactHarbor.Specification.POC.Article-Verdict-Problem]]. While claim analysis (Stage 2) is cached for efficiency, the holistic assessment maintains the integrated evaluation philosophy of Approach 1.
 
 === Total Cost Formula: ===
 

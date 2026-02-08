@@ -843,10 +843,10 @@ See: Promptfoo Testing Guide (in User Guides)
 * **KeyFactors Design**: [[KeyFactors Design>>FactHarbor.Specification.Implementation.KeyFactors Design.WebHome]] - KeyFactors implementation details
 * **Source Reliability**: [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] - Source scoring system
 * **Prompt Architecture**: Prompt_Architecture.md (see Prompt_Architecture.md in local docs) - Modular prompt composition system
-* **Promptfoo Testing**: Promptfoo_Testing.md (in User Guides) - Prompt testing guide
+* **Promptfoo Testing**: [[Promptfoo Testing>>FactHarbor.User Guides.Promptfoo Testing.WebHome]] - Prompt testing guide
 * **Pipeline Architecture**: [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] - Triple-path pipeline design
-* **Getting Started**: Getting_Started.md (in User Guides) - Setup and installation
-* **LLM Configuration**: LLM_Configuration.md (in User Guides) - Provider configuration
+* **Getting Started**: [[Getting Started>>FactHarbor.User Guides.Getting Started.WebHome]] - Setup and installation
+* **LLM Configuration**: [[LLM Configuration>>FactHarbor.User Guides.LLM Configuration.WebHome]] - Provider configuration
 
 === Key Environment Variables ===
 

@@ -447,7 +447,7 @@ Prompt examples must NEVER contain terms, phrases, or patterns from known test c
 * **AGENTS.md**: Core rules for AI coding assistants (project root)
 * **Docs/ARCHITECTURE/Calculations.md**: Verdict calculation methodology
 * **Docs/STATUS/Current_Status.md**: Current implementation status
-* **Docs/USER_GUIDES/Getting_Started.md**: Setup and first run
+* **[[Getting Started>>FactHarbor.User Guides.Getting Started.WebHome]]**: Setup and first run
 
 ----
 

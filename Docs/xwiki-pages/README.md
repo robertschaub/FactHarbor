@@ -99,16 +99,25 @@ graph TD
 
 | File Path | Derived Metadata |
 |-----------|------------------|
+| **File:** `FactHarbor/WebHome.xwiki` | |
+| - pageId: | `FactHarbor.WebHome` |
+| - parent: | `None` (root) |
+| - title: | `FactHarbor` (from directory name) |
+| - syntax: | `xwiki/2.1` |
 | **File:** `FactHarbor/Specification/WebHome.xwiki` | |
 | - pageId: | `FactHarbor.Specification.WebHome` |
 | - parent: | `FactHarbor.WebHome` |
-| - title: | Extracted from first heading |
+| - title: | `Specification` (from directory name) |
 | - syntax: | `xwiki/2.1` |
 | **File:** `FactHarbor/Organisation/Governance/WebHome.xwiki` | |
 | - pageId: | `FactHarbor.Organisation.Governance.WebHome` |
 | - parent: | `FactHarbor.Organisation.WebHome` |
-| - title: | Extracted from first heading |
+| - title: | `Governance` (from directory name) |
 | - syntax: | `xwiki/2.1` |
+
+**Title derivation rules:**
+- **WebHome pages**: Title = parent directory name (the space name in xWiki)
+- **Non-WebHome pages**: Title = first xWiki heading (`= Title =`), fallback to filename
 
 ## Benefits
 

@@ -73,7 +73,6 @@ interface RateLimitConfig {
 **Priority**: 🔴 CRITICAL (for production)  
 **Urgency**: LOW (while POC/local only)  
 **Importance**: HIGH  
-**Estimated Effort**: 2-3 days  
 **Added to Backlog**: Yes
 
 ---
@@ -112,7 +111,6 @@ interface JobCostEstimate {
 **Priority**: 🔴 CRITICAL (for production)  
 **Urgency**: LOW (while POC/local only)  
 **Importance**: HIGH  
-**Estimated Effort**: 2-3 days  
 **Added to Backlog**: Yes
 
 ---
@@ -163,7 +161,6 @@ const MODEL_ROUTING = {
 **Priority**: 🟠 HIGH  
 **Urgency**: MEDIUM  
 **Importance**: HIGH  
-**Estimated Effort**: 3-4 days  
 **Added to Backlog**: Yes
 
 ---
@@ -222,7 +219,6 @@ CREATE TABLE ClaimVerdictCache (
 **Priority**: 🟠 HIGH  
 **Urgency**: MEDIUM  
 **Importance**: HIGH  
-**Estimated Effort**: 5-7 days  
 **Added to Backlog**: Yes
 
 ---
@@ -266,7 +262,6 @@ const verdicts = await Promise.all(verdictPromises);
 **Priority**: 🟠 HIGH  
 **Urgency**: MEDIUM  
 **Importance**: HIGH  
-**Estimated Effort**: 1-2 days  
 **Added to Backlog**: Yes
 
 ---
@@ -339,7 +334,6 @@ function QualityGatesSection({ gate1Stats, gate4Stats }) {
 **Priority**: 🟠 HIGH  
 **Urgency**: MEDIUM  
 **Importance**: HIGH  
-**Estimated Effort**: 2-3 days  
 **Added to Backlog**: Yes
 
 ---
@@ -374,7 +368,6 @@ interface AnalysisRefinement {
 **Priority**: 🟡 MEDIUM  
 **Urgency**: LOW  
 **Importance**: MEDIUM  
-**Estimated Effort**: 7-10 days  
 **Added to Backlog**: Yes
 
 ---
@@ -437,7 +430,6 @@ const TEMPLATES = [
 **Priority**: 🟡 MEDIUM  
 **Urgency**: LOW  
 **Importance**: MEDIUM  
-**Estimated Effort**: 3-4 days  
 **Added to Backlog**: Yes
 
 ---
@@ -473,7 +465,6 @@ interface ComparativeAnalysis {
 **Priority**: 🟡 MEDIUM  
 **Urgency**: LOW  
 **Importance**: MEDIUM  
-**Estimated Effort**: 10-14 days  
 **Added to Backlog**: Yes
 
 ---
@@ -517,7 +508,6 @@ interface LiveSourceQuality {
 **Priority**: 🟡 MEDIUM  
 **Urgency**: LOW  
 **Importance**: MEDIUM  
-**Estimated Effort**: 5-7 days  
 **Added to Backlog**: Yes
 
 ---
@@ -548,7 +538,6 @@ const SUPPORTED_LANGUAGES = [
 **Priority**: 🟢 LOW  
 **Urgency**: LOW  
 **Importance**: MEDIUM  
-**Estimated Effort**: 14-21 days  
 **Added to Backlog**: Yes
 
 ---
@@ -562,7 +551,6 @@ const SUPPORTED_LANGUAGES = [
 **Priority**: 🟢 LOW  
 **Urgency**: LOW  
 **Importance**: LOW  
-**Estimated Effort**: 3-5 days  
 **Added to Backlog**: Yes
 
 ---
@@ -578,7 +566,6 @@ const SUPPORTED_LANGUAGES = [
 **Priority**: 🟢 LOW  
 **Urgency**: LOW  
 **Importance**: LOW  
-**Estimated Effort**: 7-10 days  
 **Added to Backlog**: Yes
 
 ---
@@ -612,7 +599,6 @@ apps/web/src/lib/analyzer/
 **Priority**: 🔧 TECHNICAL DEBT  
 **Urgency**: LOW  
 **Importance**: LOW  
-**Estimated Effort**: 5-7 days (risky, needs careful testing)  
 **Added to Backlog**: Yes (already tracked)
 
 ---
@@ -657,7 +643,6 @@ CREATE TABLE Verdicts (
 **Priority**: 🔧 TECHNICAL DEBT  
 **Urgency**: LOW  
 **Importance**: MEDIUM  
-**Estimated Effort**: 10-14 days  
 **Added to Backlog**: Yes
 
 ---
@@ -697,7 +682,6 @@ API Tests (C# xUnit):
 **Priority**: 🔧 TECHNICAL DEBT  
 **Urgency**: LOW  
 **Importance**: HIGH  
-**Estimated Effort**: 14-21 days (ongoing)  
 **Added to Backlog**: Yes
 
 ---
@@ -743,7 +727,6 @@ interface SystemMetrics {
 **Priority**: 🔧 OPERATIONS  
 **Urgency**: LOW  
 **Importance**: HIGH  
-**Estimated Effort**: 5-7 days  
 **Added to Backlog**: Yes
 
 ---
@@ -780,7 +763,6 @@ var patterns = new[] {
 **Priority**: 🔧 OPERATIONS  
 **Urgency**: LOW  
 **Importance**: MEDIUM  
-**Estimated Effort**: 3-5 days  
 **Added to Backlog**: Yes
 
 ---
@@ -789,10 +771,10 @@ var patterns = new[] {
 
 | Optimization | Savings | Effort | Priority |
 |--------------|---------|--------|----------|
-| **Tiered LLM Routing** | 50-70% on LLM costs | 3-4 days | 🟠 HIGH |
-| **Claim Caching** | 30-50% on repeat claims | 5-7 days | 🟠 HIGH |
-| **Parallel Verdicts** | 50-80% faster (time = $) | 1-2 days | 🟠 HIGH |
-| **Cost Quotas** | Prevents runaway costs | 2-3 days | 🔴 CRITICAL |
+| **Tiered LLM Routing** | 50-70% on LLM costs | 🟠 HIGH |
+| **Claim Caching** | 30-50% on repeat claims | 🟠 HIGH |
+| **Parallel Verdicts** | 50-80% faster (time = $) | 🟠 HIGH |
+| **Cost Quotas** | Prevents runaway costs | 🔴 CRITICAL |
 | **Search Optimization** | 20-30% on search costs | 2 days | 🟡 MEDIUM |
 
 **Combined Potential**: **70-85% cost reduction** with all optimizations implemented.
@@ -801,7 +783,7 @@ var patterns = new[] {
 
 ## Implementation Roadmap
 
-### Phase 1: Security & Stability (2-3 weeks)
+### Phase 1: Security & Stability
 *Note: LOW urgency while POC/local, becomes HIGH before production*
 
 1. SSRF Protection
@@ -812,21 +794,21 @@ var patterns = new[] {
 
 **Backlog Status**: Items added with appropriate urgency levels
 
-### Phase 2: Performance & Cost (3-4 weeks)
+### Phase 2: Performance & Cost
 
 6. Tiered LLM Routing (HIGH priority)
 7. Parallel Verdict Generation (HIGH priority)
 8. Claim Caching (HIGH priority)
 9. Observability Dashboard
 
-### Phase 3: User Experience (4-6 weeks)
+### Phase 3: User Experience
 
 10. Quality Gate UI Display
 11. Analysis Templates
 12. Live Source Quality
 13. Interactive Refinement
 
-### Phase 4: Scale & Maturity (6-8 weeks)
+### Phase 4: Scale & Maturity
 
 14. Normalized Database Schema
 15. Comprehensive Testing
@@ -837,12 +819,12 @@ var patterns = new[] {
 
 ## Quick Wins (Can Implement This Week)
 
-1. **Parallel Verdict Generation** (1-2 days) → 50-80% speed improvement
-2. **Quality Gate UI Display** (2-3 days) → Transparency
-3. **Cost Quotas** (2-3 days) → Financial safety (low urgency for POC)
+1. **Parallel Verdict Generation** → 50-80% speed improvement
+2. **Quality Gate UI Display** → Transparency
+3. **Cost Quotas** → Financial safety (low urgency for POC)
 4. **Admin Authentication** (1 day) → Security (low urgency for POC)
 
-**Total Effort**: ~6-9 days  
+  
 **Impact**: Massive improvement in speed, security, and transparency
 
 ---
@@ -851,9 +833,9 @@ var patterns = new[] {
 
 - **Current Status**: `Docs/STATUS/Current_Status.md`
 - **Backlog**: `Docs/STATUS/Backlog.md`
-- **Architecture**: `Docs/ARCHITECTURE/Overview.md`
+- **Architecture**: `Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture Overview/WebHome.xwiki`
 - **Calculations**: `Docs/ARCHITECTURE/Calculations.md`
-- **Coding Guidelines**: `Docs/DEVELOPMENT/Coding_Guidelines.md`
+- **Coding Guidelines**: `Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding Guidelines/WebHome.xwiki`
 
 ---
 

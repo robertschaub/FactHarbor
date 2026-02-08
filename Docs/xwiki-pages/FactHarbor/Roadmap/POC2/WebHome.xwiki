@@ -152,7 +152,7 @@ Input → AKEL Processing → All 4 Quality Gates → Display
 * No review queue
 * No federation architecture
 
-**See:** [[Architecture>>FactHarbor pre10 V0\.9\.70.Specification.Architecture.WebHome]] for details
+**See:** [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] for details
 
 == 5. Context-Aware Analysis (Conditional Feature) ==
 

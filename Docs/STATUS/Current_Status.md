@@ -2,7 +2,7 @@
 
 **Version**: 2.10.2 (Code) | 2.7.0 (Schema Output)
 **Last Updated**: 2026-02-04
-**Status**: POC1 Operational (UCM Integration + Prompt Optimization v2.8.1 Complete)
+**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Optimization v2.8.1 + LLM Tiering Enabled)
 
 ---
 
@@ -40,9 +40,9 @@
 - **probativeValue Field**: Quality assessment (high/medium/low) with admin-configurable weights
 - **SourceType Classification**: 9 source types with reliability calibration factors
 - **Schema Backward Compatibility**: Optional fields + deprecated aliases for smooth migration
-  - See: [Schema Migration Strategy](../ARCHITECTURE/Schema_Migration_Strategy.md)
+  - See: [Schema Migration Strategy](../xwiki-pages/FactHarbor/Specification/Implementation/Schema%20Migration%20Strategy/WebHome.xwiki)
 - **Provider-Specific Prompts**: Optimized formatting for Anthropic, OpenAI, Google, Mistral
-  - See: [Provider Prompt Formatting](../REFERENCE/Provider_Prompt_Formatting.md)
+  - See: [Provider Prompt Formatting](../xwiki-pages/FactHarbor/Specification/Reference/Prompt%20Engineering/Provider-Specific%20Formatting/WebHome.xwiki)
 
 **LLM Text Analysis Pipeline (v2.9+):**
 - **Four Analysis Points**: Input Classification, Evidence Quality, Context Similarity, Verdict Validation
@@ -76,7 +76,7 @@
 - ⚠️ **A/B Testing Framework**: Built but not executed (requires $100-200)
 - ⚠️ **Schema Retry Logic**: Implemented in separate module, not integrated
 - ⚠️ **Parallel Verdict Generation**: Built (50-80% speed improvement) but not integrated
-- ⚠️ **Tiered LLM Routing**: Built (50-70% cost reduction) but not integrated
+- ✅ **Tiered LLM Routing**: Enabled (Haiku 3.5 for extract/understand, Sonnet 4 for verdict/context refinement)
 
 **Promptfoo Testing Infrastructure (v2.8.2 - OPERATIONAL)**:
 - ✅ **38 Total Test Cases** across 3 configurations
@@ -87,7 +87,7 @@
   - Evidence Quality (5 tests): Quality levels, expert attribution, filtering
   - Context Similarity (5 tests): Duplicate detection, phase buckets, merge logic
   - Verdict Validation (8 tests): Inversion, harm potential, contestation
-- See: [Promptfoo Testing Guide](../USER_GUIDES/Promptfoo_Testing.md)
+- See: [Promptfoo Testing Guide](../xwiki-pages/FactHarbor/User%20Guides/Promptfoo%20Testing/WebHome.xwiki)
 
 **UI/UX:**
 - Analysis submission interface
@@ -550,7 +550,7 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 - **Search Provider Documentation**: Clarified that all pipelines require search credentials
   - Added Section 8 to Pipeline Architecture doc
   - Added troubleshooting for "No sources fetched" issue
-  - See: [Pipeline Architecture](../ARCHITECTURE/Pipeline_TriplePath_Architecture.md#8-search-provider-requirements)
+  - See: [Pipeline Architecture](../xwiki-pages/FactHarbor/Specification/Implementation/Pipeline%20Architecture/TriplePath%20Architecture/WebHome.xwiki)
 
 ### v2.8.3 LLM-Only Text Analysis (January 30, 2026)
 - **Contract Updated**: Text analysis is LLM-only for all 4 analysis points (no heuristic fallback)
@@ -729,11 +729,11 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 - **Complete Issue List**: `Docs/STATUS/KNOWN_ISSUES.md` - All known bugs with workarounds
 - **Development History**: `Docs/STATUS/HISTORY.md` - Full version history and architectural decisions
 - **Documentation**: `Docs/` folder (organized by category)
-- **Architecture**: `Docs/ARCHITECTURE/Overview.md`
+- **Architecture**: `Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture Overview/WebHome.xwiki`
 - **Calculations**: `Docs/ARCHITECTURE/Calculations.md`
-- **Getting Started**: `Docs/USER_GUIDES/Getting_Started.md`
-- **LLM Configuration**: `Docs/USER_GUIDES/LLM_Configuration.md`
-- **Coding Guidelines**: `Docs/DEVELOPMENT/Coding_Guidelines.md`
+- **Getting Started**: `Docs/xwiki-pages/FactHarbor/User Guides/Getting Started/WebHome.xwiki`
+- **LLM Configuration**: `Docs/xwiki-pages/FactHarbor/User Guides/LLM Configuration/WebHome.xwiki`
+- **Coding Guidelines**: `Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding Guidelines/WebHome.xwiki`
 
 ### Debugging
 
@@ -755,7 +755,7 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 | No progress updates | Check `FH_ADMIN_KEY` matches `Admin:Key` |
 | API not starting | DB is auto-created on startup; check API console for DB errors, and (local dev) delete `apps/api/factharbor.db` to recreate |
 | Search not working | Verify Web Search config is enabled in UCM (Admin → Config → Web Search) and the search API key is set |
-| No sources fetched | Configure `SERPAPI_API_KEY` or `GOOGLE_CSE_API_KEY`+`GOOGLE_CSE_ID`. See [LLM Configuration](../USER_GUIDES/LLM_Configuration.md#search-provider-issues) |
+| No sources fetched | Configure `SERPAPI_API_KEY` or `GOOGLE_CSE_API_KEY`+`GOOGLE_CSE_ID`. See [LLM Configuration](../xwiki-pages/FactHarbor/User%20Guides/LLM%20Configuration/WebHome.xwiki) |
 
 ---
 
@@ -780,13 +780,13 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 - Technical debt reduction
 
 **Priority Order:**
-1. **Quick Wins** (6-9 days):
+1. **Quick Wins**:
    - Parallel verdict generation (50-80% faster)
    - Quality Gate UI display (transparency)
    - Cost quotas (financial safety) - *LOW urgency for POC*
    - Admin authentication - *LOW urgency for POC*
 
-2. **High-Value Performance** (7-13 days):
+2. **High-Value Performance**:
    - Tiered LLM routing (50-70% cost savings)
    - Claim-level caching (30-50% savings on repeats)
    - Observability dashboard

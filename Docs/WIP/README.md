@@ -50,7 +50,7 @@ For completed work, historical documents, and reference materials, see:
 - Content hash uniqueness blocks identical configs across profiles
 - Snapshot analyzer version is hard-coded
 
-**Related:** Docs/ARCHITECTURE/Source_Reliability.md, Docs/ARCHITECTURE/Schema_Migration_Strategy.md
+**Related:** Docs/xwiki-pages/FactHarbor/Specification/Implementation/Source Reliability System/WebHome.xwiki, Docs/xwiki-pages/FactHarbor/Specification/Implementation/Schema Migration Strategy/WebHome.xwiki
 
 ### Shadow Mode: Self-Learning Prompt Optimization System
 **Status:** 🔬 Design Ready (Awaiting Prioritization)

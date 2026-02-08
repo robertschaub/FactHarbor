@@ -376,7 +376,7 @@ When updating prompts or schemas:
 * Provider-specific variants use same core terms
 * Example outputs in prompts match schema structure
 * Validation errors are descriptive (mention expected vs actual field names)
-* Documentation updated (this file, TERMINOLOGY.md)
+* Documentation updated (this file, [[Terminology>>FactHarbor.Specification.Reference.Terminology.WebHome]])
 
 ----
 
@@ -385,7 +385,7 @@ When updating prompts or schemas:
 * [[Terminology>>FactHarbor.Specification.Reference.Terminology.WebHome]] - Core definitions
 * Prompt_Engineering_Standards.md - How to write prompts
 * types.ts - TypeScript interfaces
-* Migration decision documented in ##types.ts## comments and ##TERMINOLOGY.md##
+* Migration decision documented in ##types.ts## comments and [[Terminology>>FactHarbor.Specification.Reference.Terminology.WebHome]]
 
 ----
 

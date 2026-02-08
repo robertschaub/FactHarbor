@@ -125,7 +125,7 @@ Redis adds value when:
 - **Pub/sub across instances** (e.g., config change notifications in a cluster)
 - **Distributed rate limiting** (per-user across multiple servers)
 
-**Trigger criteria** (following [When-to-Add-Complexity](../xwiki-pages/FactHarbor_Spec_and_Impl/FactHarbor/Specification/When-to-Add-Complexity.xwiki) philosophy):
+**Trigger criteria** (following [When-to-Add-Complexity](../xwiki-pages/FactHarbor/Specification/When-to-Add-Complexity.xwiki) philosophy):
 - Single-instance SQLite cache latency >100ms
 - Need for >1 application instance
 - Rate limiting required across instances
