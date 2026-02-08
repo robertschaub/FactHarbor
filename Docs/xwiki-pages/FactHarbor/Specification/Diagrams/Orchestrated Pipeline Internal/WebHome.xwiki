@@ -1,5 +1,7 @@
 {{info}}
-**Current Implementation (v2.10.2)** - The default pipeline with TypeScript-orchestrated staged workflow. File: ##orchestrated.ts## (~12,000 lines)
+**Current Implementation** - The default pipeline with TypeScript-orchestrated staged workflow. File: ##orchestrated.ts## (~13,300 lines)
+
+Updated 2026-02-08 per documentation audit report.
 {{/info}}
 
 = Orchestrated Pipeline Internal Flow =
@@ -25,6 +27,9 @@ flowchart TB
         DECIDE[decideNextResearch]
         SEARCH[searchWebWithProvider]
         FETCH[fetchSourceContent parallel]
+        PREFILTER[Relevance Pre-Filter]
+        ADAPTIVE{Candidates >= 5?}
+        FALLBACK[Adaptive Fallback: relax constraints + extra queries]
         EXTRACT[extractEvidence per source]
         LLM2[LLM Calls]
         BUDGET_CHECK{Budget exceeded?}
@@ -64,7 +69,11 @@ flowchart TB
     QUERIES --> DECIDE
     DECIDE --> SEARCH
     SEARCH --> FETCH
-    FETCH --> EXTRACT
+    FETCH --> PREFILTER
+    PREFILTER --> ADAPTIVE
+    ADAPTIVE -- Yes --> EXTRACT
+    ADAPTIVE -- No --> FALLBACK
+    FALLBACK --> EXTRACT
     EXTRACT --> LLM2
     LLM2 --> BUDGET_CHECK
     BUDGET_CHECK -->|No| DECIDE
@@ -93,6 +102,7 @@ flowchart TB
 | Step 2 | ##decideNextResearch## | Generate search queries | 1 per iteration
 | Step 2 | ##searchWebWithProvider## | Web search (Google CSE or SerpAPI) | 0
 | Step 2 | ##fetchSourceContent## | Parallel source fetching | 0
+| Step 2 | ##buildAdaptiveFallbackQueries## | Relax constraints when candidates < threshold | 0
 | Step 2 | ##extractEvidence## | Extract evidence from sources | 1 per source
 | Step 3 | ##generateClaimVerdicts## | Per-claim verdicts | 1
 | Step 3 | ##generateArticleVerdict## | Overall verdict | 1
@@ -106,13 +116,22 @@ flowchart TB
 | Max total iterations | 20 | ##maxTotalIterations##
 | Max total tokens | 750000 | ##maxTotalTokens##
 
+= Adaptive Fallback Parameters =
+
+|= Parameter |= Default |= Config Property
+| Min candidates before fallback | 5 | ##searchAdaptiveFallbackMinCandidates##
+| Max extra fallback queries | 2 | ##searchAdaptiveFallbackMaxQueries##
+
 = Shared Modules Used =
 
 * ##analysis-contexts.ts## - detectContexts, canonicalizeContexts
 * ##aggregation.ts## - calculateWeightedVerdictAverage, detectClaimContestation, detectHarmPotential
 * ##claim-decomposition.ts## - normalizeClaimText, deriveCandidateClaimTexts
 * ##budgets.ts## - Budget tracking and enforcement
-* ##provenance-validation.ts## - Evidence provenance validation
+* ##evidence-filter.ts## - Probative value filtering, false positive rate
+* ##quality-gates.ts## - Gate 1 (claim validation), Gate 4 (verdict confidence)
+* ##source-reliability.ts## - LLM-based source reliability with cache
+* ##verdict-corrections.ts## - Post-hoc verdict direction mismatch corrections
 
 = Output Schema =
 

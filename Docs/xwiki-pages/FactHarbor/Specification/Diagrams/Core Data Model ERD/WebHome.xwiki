@@ -1,5 +1,7 @@
 {{info}}
-This diagram shows the **current implementation** data model (v2.10.2). Storage is JSON blobs in SQLite. AnalysisContexts (bounded analytical frames) and KeyFactors (decomposition questions with contestation tracking) are embedded in result JSON, not separate stored entities. No user system implemented.
+This diagram shows the **current implementation** data model. Storage is JSON blobs in SQLite. AnalysisContexts (bounded analytical frames) and KeyFactors (decomposition questions with contestation tracking) are embedded in result JSON, not separate stored entities. No user system implemented.
+
+Updated 2026-02-08 per documentation audit report.
 {{/info}}
 
 = Current Implementation Data Model =
@@ -39,14 +41,16 @@ erDiagram
     }
 
     CLAIM_VERDICT {
-        string id_PK
         string claimId_FK
-        string verdict
-        int truthPercentage
-        int confidence
-        string explanation
+        number verdict
+        number truthPercentage
+        number confidence
+        string reasoning
         string_array supportingEvidenceIds
-        string_array opposingEvidenceIds
+        string ratingConfirmation
+        boolean isContested
+        string contestedBy
+        string factualBasis
     }
 
     ARTICLE_VERDICT {
@@ -65,24 +69,33 @@ erDiagram
         string category
         string claimDirection
         string contextId
+        string sourceAuthority
+        string probativeValue
+        string evidenceBasis
+        number extractionConfidence
     }
 
     SOURCE {
         string id_PK
-        string name
-        string domain
         string url
-        float reliabilityScore
-        string bias
+        string title
+        float trackRecordScore
+        float trackRecordConfidence
+        boolean trackRecordConsensus
+        string category
+        boolean fetchSuccess
     }
 
     ANALYSIS_CONTEXT {
         string id_PK
-        string articleId_FK
         string name
-        string description
-        string methodology
-        string temporalPeriod
+        string shortName
+        string subject
+        string temporal
+        string status
+        string outcome
+        string assessedStatement
+        json metadata
     }
 
 {{/mermaid}}
@@ -93,6 +106,8 @@ erDiagram
 * TRUE (86-100%) / MOSTLY-TRUE (72-85%) / LEANING-TRUE (58-71%)
 * MIXED (43-57%, high confidence) / UNVERIFIED (43-57%, low confidence)
 * LEANING-FALSE (29-42%) / MOSTLY-FALSE (15-28%) / FALSE (0-14%)
+
+**ratingConfirmation (v2.8.4):** LLM-provided verdict direction confirmation ("claim_supported" | "claim_refuted" | "mixed"). Used for direction mismatch validation.
 
 **KeyFactors:** Optional decomposition questions discovered during analysis - not stored as separate entities.
 

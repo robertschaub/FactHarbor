@@ -1,5 +1,7 @@
 {{info}}
-**Current Implementation (v2.10.2)** - Triple-Path Pipeline Architecture. Three pipeline variants share common modules for AnalysisContext detection, aggregation, and claim processing.
+**Current Implementation** - Triple-Path Pipeline Architecture. Three pipeline variants share common modules for AnalysisContext detection, aggregation, claim processing, evidence filtering, verdict corrections, and source reliability.
+
+Updated 2026-02-08 per documentation audit report.
 {{/info}}
 
 = Triple-Path Pipeline Architecture =
@@ -16,6 +18,12 @@ graph TB
         CONTEXTS[analysis-contexts.ts Context Detection]
         AGG[aggregation.ts Verdict Aggregation]
         CLAIM_D[claim-decomposition.ts]
+        EF[evidence-filter.ts ~330 lines]
+        QG[quality-gates.ts ~410 lines]
+        SR[source-reliability.ts ~620 lines]
+        VC[verdict-corrections.ts ~310 lines]
+        TS[truth-scale.ts ~280 lines]
+        BU[budgets.ts ~250 lines]
     end
 
     subgraph Dispatch[Pipeline Dispatch]
@@ -48,6 +56,17 @@ graph TB
     AGG --> CANON
     CLAIM_D --> ORCH
     CLAIM_D --> CANON
+    EF --> ORCH
+    QG --> ORCH
+    SR --> ORCH
+    SR --> CANON
+    SR --> DYN
+    VC --> ORCH
+    TS --> CANON
+    TS --> DYN
+    BU --> ORCH
+    BU --> CANON
+    BU --> DYN
     ORCH --> PROVIDER
     CANON --> PROVIDER
     DYN --> PROVIDER
@@ -60,17 +79,23 @@ graph TB
 
 == Pipeline Variants ==
 
-|= Variant |= File |= Approach |= Output Schema
-| **Orchestrated** | ##orchestrated.ts## | Multi-step workflow with explicit stages | Canonical (structured)
-| **Monolithic Canonical** | ##monolithic-canonical.ts## | Single LLM tool-loop call | Canonical (structured)
-| **Monolithic Dynamic** | ##monolithic-dynamic.ts## | Single LLM tool-loop call | Dynamic (flexible)
+|= Variant |= File |= Lines |= Approach |= Output Schema
+| **Orchestrated** | ##orchestrated.ts## | ~13,300 | Multi-step workflow with explicit stages | Canonical (structured)
+| **Monolithic Canonical** | ##monolithic-canonical.ts## | ~1,500 | Single LLM tool-loop call | Canonical (structured)
+| **Monolithic Dynamic** | ##monolithic-dynamic.ts## | ~735 | Single LLM tool-loop call | Dynamic (flexible)
 
 == Shared Modules ==
 
-|= Module |= Purpose
-| ##analysis-contexts.ts## | Heuristic context pre-detection before LLM
-| ##aggregation.ts## | Verdict weighting, contestation validation
-| ##claim-decomposition.ts## | Claim text parsing and normalization
+|= Module |= Lines |= Used By |= Purpose
+| ##analysis-contexts.ts## | | Orch, Canon | Heuristic context pre-detection before LLM
+| ##aggregation.ts## | | Orch, Canon | Verdict weighting, contestation validation
+| ##claim-decomposition.ts## | | Orch, Canon | Claim text parsing and normalization
+| ##evidence-filter.ts## | ~330 | Orch | Probative value filtering, false positive rate calculation
+| ##quality-gates.ts## | ~410 | Orch | Gate 1 (claim validation) and Gate 4 (verdict confidence)
+| ##source-reliability.ts## | ~620 | Orch, Canon, Dyn | LLM-based source reliability evaluation with cache
+| ##verdict-corrections.ts## | ~310 | Orch | Post-hoc verdict direction mismatch corrections
+| ##truth-scale.ts## | ~280 | Canon, Dyn | Percentage-to-verdict label mapping
+| ##budgets.ts## | ~250 | Orch, Canon, Dyn | Token/cost budget tracking and enforcement
 
 == Orchestrated Pipeline Steps ==
 
@@ -83,6 +108,6 @@ graph TB
 == Detailed Pipeline Diagrams ==
 
 For internal implementation details of each pipeline variant:
-* [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]] - 7-step staged workflow (~12,000 lines)
-* [[Monolithic Canonical Internal>>FactHarbor.Specification.Diagrams.Monolithic Canonical Pipeline Internal.WebHome]] - Single-context canonical output (~1100 lines)
-* [[Monolithic Dynamic Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] - Flexible experimental output (~550 lines)
+* [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]] - 7-step staged workflow (~13,300 lines)
+* [[Monolithic Canonical Internal>>FactHarbor.Specification.Diagrams.Monolithic Canonical Pipeline Internal.WebHome]] - Single-context canonical output (~1,500 lines)
+* [[Monolithic Dynamic Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] - Flexible experimental output (~735 lines)
