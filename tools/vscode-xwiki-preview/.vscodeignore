@@ -1,0 +1,7 @@
+.vscode/**
+node_modules/**
+src/extension.ts
+src/preview-panel.ts
+tsconfig.json
+**/*.map
+.gitignore
