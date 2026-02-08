@@ -1,6 +1,6 @@
 = Pipeline Architecture =
 
-FactHarbor's claim analysis pipeline supports three architectural variants, each optimized for different use cases.
+FactHarbor's AKEL claim analysis pipeline engine. The pipeline supports three architectural variants (Monolithic Canonical, Monolithic Dynamic, and Orchestrated), each optimized for different use cases. This section also covers context detection, evidence scope handling, and quality gate implementation.
 
 == Pipeline Variants ==
 

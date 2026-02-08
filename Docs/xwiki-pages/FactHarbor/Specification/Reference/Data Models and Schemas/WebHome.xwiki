@@ -1,6 +1,6 @@
 = Data Models and Schemas =
 
-Schema definitions and mappings used in FactHarbor's data pipeline.
+Schema definitions and mappings used in FactHarbor's data pipeline. These supplement the [[canonical Data Model>>FactHarbor.Specification.Data Model.WebHome]] with LLM-specific response mappings and metrics schema definitions.
 
 == Schemas ==
 

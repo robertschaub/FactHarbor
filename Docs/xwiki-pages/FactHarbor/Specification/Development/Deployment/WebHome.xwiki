@@ -1,6 +1,6 @@
 = Deployment =
 
-Deployment guides and infrastructure documentation for FactHarbor.
+Hosting, CI/CD, and environment configuration for deploying FactHarbor. Current strategy targets zero-cost or near-zero-cost hosting using free-tier cloud services during pre-release phases.
 
 == Hosting ==
 

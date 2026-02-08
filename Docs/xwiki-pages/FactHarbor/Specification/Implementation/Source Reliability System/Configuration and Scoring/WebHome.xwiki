@@ -1,0 +1,124 @@
+= Source Reliability: Configuration and Scoring =
+
+== Configuration ==
+
+Source Reliability is configured via UCM as a **separate SR config type** (schemaVersion ##3.0.0##). Edit it in
+**Admin -> Config -> Source Reliability**. This SR config is owned by the SR service and is separate
+from the main pipeline/search/calculation configs.
+
+=== SR Config Independence ===
+
+While SR config is stored in UCM alongside pipeline/search configs, it maintains
+operational independence:
+
+* **Schema versioning:** ##3.0.0## for SR (independent of pipeline config versioning)
+* **Hot reload:** SR config changes apply to new evaluations only
+* **No cascading invalidation:** SR updates don't trigger pipeline/search config reloads
+* **Separate domain:** SR uses ##getConfig("sr")## and ##setSourceReliabilityConfig()##
+
+This separation preserves modularity between orthogonal concerns.
+
+=== Core Settings (UCM) ===
+
+|= Field |= Default |= Description
+| ##enabled## | ##true## | Enable/disable source reliability
+| ##multiModel## | ##true## | Use multi-model consensus
+| ##openaiModel## | ##gpt-4o-mini## | Secondary model for consensus
+| ##confidenceThreshold## | ##0.8## | Min LLM confidence to accept score
+| ##consensusThreshold## | ##0.20## | Max score difference between models
+| ##defaultScore## | ##0.5## | Default score for unknown sources (neutral center)
+
+=== Cache & Filtering (UCM) ===
+
+|= Field |= Default |= Description
+| ##cacheTtlDays## | ##90## | Cache expiration in days
+| ##filterEnabled## | ##true## | Enable importance filter
+| ##skipPlatforms## | //(defaults in config)// | Platform domains to skip
+| ##skipTlds## | //(defaults in config)// | TLDs to skip
+
+=== Rate Limiting (UCM) ===
+
+|= Field |= Default |= Description
+| ##rateLimitPerIp## | ##10## | Max evaluations per minute per IP
+| ##domainCooldownSec## | ##60## | Seconds between same-domain evals
+
+=== Evaluator Evidence Grounding (UCM SR Config) ===
+
+These settings affect the internal evaluation endpoint (##/api/internal/evaluate-source##) and are configured in the SR UCM config (Admin -> Config -> Source Reliability):
+
+|= Field |= Default |= Description
+| ##evalUseSearch## | ##true## | Build an evidence pack from web search
+| ##evalSearchMaxResultsPerQuery## | ##3## | Max search results per query for the evidence pack
+| ##evalMaxEvidenceItems## | ##12## | Max evidence-pack items to include
+| ##evalSearchDateRestrict## | ##null## | Optional: ##y## | ##m## | ##w## (falls back to SearchConfig ##dateRestrict##)
+
+**Note:** These SR evaluation settings (##evalUseSearch##, ##evalSearchMaxResultsPerQuery##, etc.) are part of the SR UCM config domain and managed independently from the main pipeline/search configs.
+
+=== Environment Variables (infra only) ===
+
+|= Variable |= Default |= Description
+| ##FH_SR_CACHE_PATH## | ##./source-reliability.db## | SQLite database location
+
+=== Example SR Config (JSON) ===
+
+{{code language="json"}}
+{
+  "enabled": true,
+  "multiModel": true,
+  "openaiModel": "gpt-4o-mini",
+  "confidenceThreshold": 0.8,
+  "consensusThreshold": 0.2,
+  "defaultScore": 0.5,
+  "cacheTtlDays": 90,
+  "filterEnabled": true,
+  "evalUseSearch": true
+}
+{{/code}}
+
+----
+
+== Score Interpretation ==
+
+**7-band credibility scale (centered at 0.5)**
+
+|= Score |= Rating |= Key Criteria
+| 0.86-1.00 | Highly Reliable | Verified accuracy, recognized standards body, rigorous corrections
+| 0.72-0.85 | Reliable | Consistent accuracy, professional standards, rarely faulted
+| 0.58-0.71 | Leaning Reliable | Often accurate, occasional errors, corrects when notified
+| 0.43-0.57 | Mixed | Variable accuracy OR inconsistent quality by topic/author
+| 0.29-0.42 | Leaning Unreliable | Often inaccurate OR bias significantly affects reporting
+| 0.15-0.28 | Unreliable | Pattern of false claims OR ignores corrections
+| 0.00-0.14 | Highly Unreliable | Fabricates content OR documented disinformation source
+
+**Calibration:**
+* Default assumption is 0.5 (mixed). Adjust up or down based on evidence.
+* Do not inflate scores based on brand recognition or reputation alone.
+* "No negative findings" does not equal reliable. Absence of evidence lowers confidence; truly unknown sources should use insufficient_data.
+
+**Negative-side calibration (POC intent):**
+* **platform_ugc**: if a domain is primarily an open UGC platform without centralized editorial verification, it should generally land **below the mixed band** unless evidence shows consistent domain-level verification and corrections.
+* **state_controlled_media**: if evidence indicates editorial coordination/control, default below mixed unless evidence shows meaningful editorial independence and correction practices.
+* **propaganda_outlet / known_disinformation**: if evidence indicates repeated independent debunks / multiple independent assessors flagging systemic misinformation, score should land in **0.00-0.20** even if occasional factual content exists.
+
+**Weighting Rules (applied during evaluation):**
+1. **Recency Priority**: Last 24 months matter most. Historical reputation does not excuse recent failures.
+1. **Verification**: Fact-checker findings are strong reliability signals.
+1. **Visibility Cap**: Score capped by worst high-visibility failures.
+1. **Opinion Counts**: Misinformation in opinion/editorial degrades entire source score.
+1. **Bias Impact**: Bias affecting accuracy lowers score. Bias without factual issues is noted, not penalized.
+
+**Bias Assessment:**
+* Political spectrum: far_left | left | center_left | center | center_right | right | far_right
+* Other bias types: pro_government | anti_government | corporate_interest | sensationalist | ideological_other
+
+**Insufficient Data:**
+* Sources with no independent assessments return ##score: null## with ##factualRating: insufficient_data##
+
+**Impact on verdicts:**
+* Score >= 0.58: Preserves original verdict (credible source)
+* Score 0.43-0.57: Moderate pull toward neutral (mixed track record)
+* Score < 0.43: Strong pull toward neutral (skepticism)
+
+----
+
+**Navigation:** [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] | Prev: [[Architecture and Verdicts>>FactHarbor.Specification.Implementation.Source Reliability System.Architecture and Verdicts.WebHome]] | Next: [[Refinement and Multi-Language>>FactHarbor.Specification.Implementation.Source Reliability System.Refinement and Multi-Language.WebHome]]

@@ -1,0 +1,284 @@
+= Source Reliability: Refinement and Multi-Language =
+
+== v1.1 Prompt Improvements (January 2026) ==
+
+**Date**: 2026-01-24
+**Focus**: Prompt structure, quantification, and consistency across models
+
+Version 1.1 improved the LLM evaluation prompt for source reliability assessments to increase stability, consistency, and effectiveness across different models.
+
+=== Key Improvements ===
+
+|= # |= Improvement |= Impact |= Description
+| 1 | Restructured Prompt Hierarchy | High | Moved critical rules to top with visual indicator, ensuring LLMs see most important constraints first
+| 2 | Quantified "Insufficient Data" Thresholds | High | Added specific numeric thresholds (e.g., "Zero fact-checker assessments AND <=1 weak mention") to reduce inter-model disagreement
+| 3 | Mechanistic Confidence Scoring Formula | High | Created step-by-step calculation formula with base (0.40) + additive factors, making confidence reproducible across models
+| 4 | Numeric Negative Evidence Caps | Medium-High | Made caps explicit with numbers (e.g., "3+ failures -> score <= 0.42") to prevent lenient scoring
+| 5 | Quantified Recency Weighting | Medium | Converted subjective terms to multipliers (0-12mo: 1.0x, 12-24mo: 0.8x, 2-5yr: 0.5x, >5yr: 0.2x)
+| 6 | Evidence Quality Hierarchy | Medium | Created three-tier hierarchy (HIGH/MEDIUM/LOW weight) to prevent single weak sources from dominating
+| 7 | Enhanced Calibration Examples | Medium | Added confidence calculations and reasoning to examples, showing models exactly how to apply formulas
+| 8 | Improved Source Type Positioning | Low-Medium | Renamed section to "SOURCE TYPE CLASSIFICATION (classify FIRST, then evaluate within category)"
+| 9 | Enhanced System Message | Low-Medium | Made system message tactical with specific responsibilities (evidence-only, caps, formula)
+| 10 | Expanded Validation Checklist | Low-Medium | Added checklist items for all critical rules to help models catch errors before responding
+
+=== Mechanistic Confidence Formula ===
+
+**Base**: 0.40
+
+**ADD**:
+* +0.15 per independent fact-checker assessment (max +0.45 for 3+)
+* +0.10 if most evidence is within last 12 months
+* +0.10 if evidence shows consistent pattern (3+ sources agree)
+* +0.05 per additional corroborating source beyond first (max +0.15)
+
+**SUBTRACT**:
+* -0.15 if evidence is contradictory/mixed signals
+* -0.10 if evidence is mostly >2 years old
+
+**Final confidence**: clamp result to [0.0, 1.0]
+
+**THRESHOLD**: If calculated confidence < 0.50, strongly consider outputting ##score=null## and ##factualRating="insufficient_data"##
+
+=== Negative Evidence Caps (v1.1) ===
+
+|= Evidence Type |= Score Cap |= Rating Cap
+| Evidence of fabricated stories/disinformation | <= 0.14 | highly_unreliable
+| 3+ documented fact-checker failures | <= 0.42 | leaning_unreliable
+| 1-2 documented failures from reputable fact-checkers | <= 0.57 | mixed
+| Political/ideological bias WITHOUT documented failures | No cap | Note in bias field only
+
+=== Evidence Quality Hierarchy ===
+
+**HIGH WEIGHT** (can establish verdict alone):
+* Explicit fact-checker assessments (MBFC, Snopes, PolitiFact, etc.)
+* Documented corrections/retractions by the source
+* Journalism reviews from reputable organizations
+
+**MEDIUM WEIGHT** (support but don't establish alone):
+* Newsroom analyses of editorial standards
+* Academic studies on source reliability
+* Awards/recognition from journalism organizations
+
+**LOW WEIGHT** (context only, cannot trigger caps):
+* Single blog posts or forum discussions
+* Passing mentions without substantive analysis
+* Generic references without reliability details
+
+=== Expected Improvements ===
+
+|= Aspect |= Before |= After |= Expected Gain
+| Insufficient data detection | ~60% consistent | ~85% consistent | +25%
+| Confidence scoring variance | +/-0.20 typical | +/-0.10 typical | 50% reduction
+| Negative evidence cap application | ~70% correct | ~90% correct | +20%
+| Inter-model agreement | 75% within +/-0.15 | 85% within +/-0.10 | +10% tighter
+| Evidence grounding | Already high (~95%) | Maintained | Stable
+
+=== Backward Compatibility ===
+
+**Fully backward compatible**:
+* Output schema unchanged
+* Rating scale unchanged
+* All existing validation logic still applies
+* Cache compatibility maintained
+
+----
+
+== v1.2 Hardening (January 2026) ==
+
+Version 1.2 introduces significant improvements to scoring accuracy, especially for propaganda and misinformation sources.
+
+=== Key Changes ===
+
+|= Feature |= Description
+| **Entity-Level Evaluation** | Prioritize organization reputation over domain-only metrics when the domain is a primary outlet for an established organization.
+| **SOURCE TYPE SCORE CAPS** | Prompt-driven caps (UCM configurable): ##propaganda_outlet##/##known_disinformation## -> <=14%, ##state_controlled_media##/##platform_ugc## -> <=42%; code validates and warns but does not override
+| **Adaptive Evidence Queries** | Negative-signal queries (##propaganda##, ##disinformation##, ##false claims##) added when initial results are sparse
+| **Brand Variant Matching** | Improved relevance filtering: handles ##anti-spiegel## <-> ##antispiegel## <-> ##anti spiegel##, suffix stripping (##foxnews## -> ##fox news##)
+| **Mechanistic Confidence** | Formula-based confidence scoring: base 0.40 + factors (fact-checkers, recency, corroboration)
+| **Asymmetric Confidence Gating** | High scores require higher confidence (skeptical default)
+| **Unified Thresholds** | Admin + pipeline + evaluator use same defaults (confidence: 0.8)
+| **AGENTS.md Compliant** | Abstract examples only (no real domain names in prompts)
+
+=== Source Type Caps (Prompt-Driven, UCM Configurable) ===
+
+{{code}}
+propaganda_outlet       → score ≤ 0.14 (highly_unreliable)
+known_disinformation    → score ≤ 0.14 (highly_unreliable)
+state_controlled_media  → score ≤ 0.42 (leaning_unreliable)
+platform_ugc            → score ≤ 0.42 (leaning_unreliable)
+{{/code}}
+
+These caps are defined in the SR prompt template (UCM configurable). The LLM is instructed to respect them during evaluation. Code-side validation (##SOURCE_TYPE_EXPECTED_CAPS## in ##source-reliability-config.ts##) adds a caveat if the LLM exceeds a cap but does **not** override the score (prompt is authoritative since v2.8.3).
+
+=== Asymmetric Confidence Requirements ===
+
+High reliability scores require stronger evidence (skeptical default):
+
+|= Rating |= Min Confidence
+| highly_reliable | 0.85
+| reliable | 0.75
+| leaning_reliable | 0.65
+| mixed | 0.55
+| leaning_unreliable | 0.50
+| unreliable | 0.45
+| highly_unreliable | 0.40
+
+=== Shared Configuration ===
+
+All components now use ##apps/web/src/lib/source-reliability-config.ts## for unified defaults:
+
+{{code language="typescript"}}
+import { getSRConfig, scoreToFactualRating, SOURCE_TYPE_EXPECTED_CAPS } from "@/lib/source-reliability-config";
+
+const config = getSRConfig();
+// config.confidenceThreshold = 0.8 (unified)
+// config.consensusThreshold = 0.20
+{{/code}}
+
+----
+
+== Sequential Refinement Architecture ==
+
+The source reliability system uses **sequential refinement** for accurate entity-level evaluation and robust handling of established organizations like public broadcasters.
+
+=== Architecture ===
+
+{{code}}
+Evidence Pack → Claude (Initial Evaluation) → Initial Result
+                         ↓
+Evidence Pack + Initial Result → OpenAI mini model (Cross-check & Refine) → Final Result
+{{/code}}
+
+**Key characteristics**:
+* The secondary model can catch what the initial model missed (especially entity recognition)
+* Explicit cross-checking of entity identification
+* Baseline score adjustments for known organization types (public broadcasters, wire services)
+* Reasoning transparency through refinement logic
+
+=== Refinement Process ===
+
+The secondary OpenAI model (default: ##gpt-4o-mini##) receives:
+1. The original evidence pack
+1. The complete initial evaluation from Claude
+1. Instructions to cross-check, sharpen entity identification, and refine the score
+
+The refinement prompt includes guidance for:
+* **Entity identification**: Recognizing when a domain belongs to an established organization
+* **Organization type context**: Public broadcasters, wire services, legacy media characteristics
+* **Positive signals**: Academic citations, institutional use, professional reliance
+* **Established org handling**: Absence of explicit fact-checker ratings does NOT penalize established organizations (fact-checkers focus on problematic sources)
+
+=== Shared Prompt Sections ===
+
+Both LLM1 (initial evaluation) and LLM2 (refinement) use **shared prompt constants** for consistency:
+
+|= Section |= Purpose
+| Rating Scale | Score -> rating mapping (0.86+ = highly_reliable, etc.)
+| Evidence Signals | Positive/neutral signal definitions
+| Bias Values | Political and other bias enum values
+| Source Types | Classification definitions and triggers
+| Score Caps | Hard limits for severe source types
+
+This ensures both models interpret evidence identically.
+
+=== Score Caps (Prompt-Driven Defaults) ===
+
+Source type caps are defined in the prompt template (UCM configurable). Default caps:
+
+|= Source Type |= Maximum Score |= Rating
+| ##propaganda_outlet## | 0.14 | highly_unreliable
+| ##known_disinformation## | 0.14 | highly_unreliable
+| ##state_controlled_media## | 0.42 | leaning_unreliable
+| ##platform_ugc## | 0.42 | leaning_unreliable
+
+If evidence suggests a source has reformed, the correct action is to **reclassify the sourceType**, not exceed the cap.
+
+=== Refinement Adjustment Rules ===
+
+The refinement stage follows strict adjustment criteria:
+
+* **UPWARD adjustment** requires positive signals PRESENT in evidence:
+** Academic citations of the source as reference material
+** Professional/institutional use documented
+** Independent mentions treating it as authoritative
+* **DOWNWARD adjustment** if negative signals were missed or underweighted
+* **NO adjustment** if evidence is simply sparse (sparse does not equal positive)
+* Absence of negative evidence alone does NOT justify upward adjustment
+
+----
+
+== Multi-Language Support ==
+
+The system includes automatic language detection and multi-language search queries to find regional fact-checker assessments.
+
+=== Problem Solved ===
+
+English-only searches miss critical evidence from regional fact-checkers:
+
+|= Domain |= Issue with English-only
+| ##reitschuster.de## | CORRECTIV assessments not found
+| ##anti-spiegel.ru## | German-language propaganda site, German fact-checkers cover it
+| ##weltwoche.ch## | German/Swiss fact-checker coverage missed
+
+=== Language Detection ===
+
+The system detects the **actual publication language** (not TLD) by:
+
+1. Fetching the homepage (5s timeout)
+1. Checking ##<html lang="...">## attribute
+1. Checking ##<meta http-equiv="content-language">##
+1. Checking ##<meta property="og:locale">##
+1. If all fail: LLM analyzes content sample
+
+Results are cached per domain.
+
+=== Multi-Language Queries ===
+
+When a non-English language is detected:
+
+1. **LLM translates** key fact-checking terms (cached per language)
+1. **Dual-language searches** are performed:
+1*. English queries (always, for international coverage)
+1*. Translated queries (for regional fact-checkers)
+
+=== Supported Languages ===
+
+German, French, Spanish, Portuguese, Italian, Dutch, Polish, Russian, Swedish, Norwegian, Danish, Finnish, Czech, Hungarian, Turkish, Japanese, Chinese, Korean, Arabic.
+
+=== Regional Fact-Checkers (Tier 1) ===
+
+|= Language |= Fact-Checkers
+| German | CORRECTIV, Mimikama, dpa-Faktencheck, Faktenfinder (ARD)
+| French | AFP Factuel, Les Decodeurs (Le Monde), Liberation CheckNews
+| Spanish | Maldita.es, Newtral, EFE Verifica
+| Portuguese | Aos Fatos, Lupa, Poligrafo
+| Italian | Pagella Politica, ANSA Fact-checking
+| Dutch | Nu.nl Factcheck, Nieuwscheckers
+
+These regional fact-checkers have the same authority as IFCN signatories.
+
+=== Cost Impact ===
+
+|= Component |= Cost per Evaluation
+| Language detection (page fetch) | Free
+| Translation (LLM, cached) | ~$0.001 per new language
+| Additional searches | ~2-4 extra queries
+
+=== Response Fields ===
+
+The API response now includes refinement tracking:
+
+|= Field |= Type |= Description
+| ##refinementApplied## | boolean | Whether the score was adjusted by cross-check
+| ##refinementNotes## | string | Summary of cross-check findings
+| ##originalScore## | number | Score before refinement (if changed)
+
+=== Example: Public Broadcaster Evaluation ===
+
+* Claude initial evaluation: 60% (leaning_reliable)
+* OpenAI mini-model cross-check: Identifies the source as an established public broadcaster, notes academic citations and institutional use in evidence, no negative evidence found
+* Final result: Score refined upward with ##refinementApplied: true## and detailed ##refinementNotes##
+
+----
+
+**Navigation:** [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] | Prev: [[Configuration and Scoring>>FactHarbor.Specification.Implementation.Source Reliability System.Configuration and Scoring.WebHome]] | Next: [[Admin and Implementation>>FactHarbor.Specification.Implementation.Source Reliability System.Admin and Implementation.WebHome]]

@@ -4,6 +4,10 @@
 **POC1 Implementation Note (v2.6.40+):** The POC1 implementation uses ASP.NET Core 8.0 (C#) + Next.js 14+ (TypeScript) with SQLite and Vercel AI SDK. This specification describes the **target production architecture**. Sections that differ significantly from POC1 are marked with warning boxes.
 {{/warning}}
 
+{{info}}
+**See also:** [[Architecture Overview (Implementation)>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] for the current implementation architecture (v2.10.2) with system flows, component interactions, and implementation status.
+{{/info}}
+
 FactHarbor's architecture is designed for **simplicity, automation, and continuous improvement**.
 == 1. Core Principles ==
 * **AI-First**: AKEL (AI) is the primary system, humans supplement
@@ -139,7 +143,7 @@ VERDICT          ──→ Prompt Builder    ──→ Google (Gemini)
 **Cross-References:**
 * [[Requirements>>FactHarbor.Specification.Requirements.WebHome#NFR-14]]: NFR-14 (formal requirement)
 * [[POC Requirements>>FactHarbor.Specification.POC.Requirements#NFR-POC-11]]: NFR-POC-11 (POC1 implementation)
-* [[API Specification>>FactHarbor.Specification.POC.API-and-Schemas.WebHome#Section-6]]: Section 6 (implementation details)
+* [[API Specification — LLM Abstraction Layer>>FactHarbor.Specification.POC.API-and-Schemas.LLM Abstraction Layer.WebHome]]: LLM abstraction layer (implementation details)
 * [[Design Decisions>>FactHarbor.Specification.Design-Decisions#Section-9]]: Section 9 (design rationale)
 
 

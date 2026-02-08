@@ -1,5 +1,5 @@
-{{warning title="Version 0.9.32 (Draft)"}}
-This document describes the **Specification** of FactHarbor. It is a working draft.
+{{warning title="Version 2.10.2 (Alpha Transition)"}}
+This document describes the **Specification** of FactHarbor. It is a working draft. The project has completed the POC phase and is transitioning to Alpha (see [[POC to Alpha Transition>>FactHarbor.Roadmap.POC to Alpha Transition.WebHome]]).
 {{/warning}}
 
 {{info}}
@@ -53,6 +53,8 @@ This specification is organized into the following sections:
 * [[Workflows>>FactHarbor.Specification.Workflows.WebHome]] - Process workflows
 === Diagrams ===
 * [[Diagrams>>FactHarbor.Specification.Diagrams.WebHome]] - Visual architecture and workflow diagrams
+=== POC Specification ===
+* [[POC Specification>>FactHarbor.Specification.POC.WebHome]] - POC phase requirements, success criteria, and API contracts
 === Implementation ===
 * [[Implementation>>FactHarbor.Specification.Implementation.WebHome]] - POC1 implementation architecture, pipeline design, and core systems
 === Development ===

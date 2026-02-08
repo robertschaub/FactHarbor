@@ -1,0 +1,111 @@
+= Architecture Summary =
+
+=== Component Overview ===
+
+**FactHarbor POC1** uses a **separated services architecture** with two main components:
+
+1. **.NET API (apps/api)** - Job persistence, status tracking, SSE events
+1*. Technology: ASP.NET Core 8.0
+1*. Database: SQLite (POC/local). PostgreSQL is planned but not enabled in the current scaffold.
+1*. Responsibilities: Job CRUD, status updates, event streaming
+
+1. **Next.js Web App (apps/web)** - UI and analysis engine
+1*. Technology: Next.js 14+ (TypeScript, React, CSS Modules)
+1*. Core: Modular analyzer in ##src/lib/analyzer/## (orchestrated.ts, monolithic-canonical.ts, etc.)
+1*. Responsibilities: User interface, analysis execution, report generation
+
+> Note on terminology: FactHarbor also has a **planned** "separation" for **claim caching** (caching claim verdict generation while keeping article verdict synthesis dynamic). This is **planned but not implemented** in the current codebase.
+
+=== Internal Security Model ===
+
+**Shared Analyzer Modules:**
+
+The analyzer pipeline uses shared modules to ensure consistency across pipelines:
+
+{{mermaid}}
+flowchart TB
+    subgraph SHARED["Shared Utility Modules"]
+        AGG["aggregation.ts<br/>detectHarmPotential()<br/>detectClaimContestation()<br/>calculateWeightedVerdictAverage()"]
+        FILT["evidence-filter.ts<br/>filterByProbativeValue()<br/>countVaguePhrases()"]
+        VERD["verdict-corrections.ts<br/>detectAndCorrectVerdictInversion()"]
+        PROV["provenance-validation.ts<br/>filterEvidenceByProvenance()"]
+        CLAIM["claim-decomposition.ts<br/>deriveCandidateClaimTexts()<br/>normalizeClaimText()"]
+        SCOPE["analysis-contexts.ts<br/>detectContexts()"]
+        SR["source-reliability.ts<br/>calculateEffectiveWeight()"]
+    end
+
+    subgraph ORCH["Orchestrated Pipeline"]
+        O1["Full text analysis<br/>4 analysis points"]
+    end
+
+    subgraph MONO["Monolithic Pipelines"]
+        MC["Canonical"]
+        MD["Dynamic"]
+    end
+
+    ORCH --> SHARED
+    MONO --> PROV
+    MONO --> SR
+    MC --> AGG
+    MC --> CLAIM
+    MC --> SCOPE
+
+    style ORCH fill:#e3f2fd
+    style MC fill:#fff3e0
+    style MD fill:#f3e5f5
+{{/mermaid}}
+
+|= Module |= Key Exports |= Purpose
+| ##analysis-contexts.ts## | ##detectContexts()##, ##formatDetectedContextsHint()## | Heuristic context pre-detection
+| ##aggregation.ts## | ##validateContestation()##, ##detectClaimContestation()##, ##detectHarmPotential()## | Verdict weighting and contestation
+| ##claim-decomposition.ts## | ##normalizeClaimText()##, ##deriveCandidateClaimTexts()## | Claim text parsing
+| ##evidence-filter.ts## | ##filterByProbativeValue()##, ##countVaguePhrases()## | Evidence quality filtering
+| ##verdict-corrections.ts## | ##detectAndCorrectVerdictInversion()## | Verdict validation
+| ##provenance-validation.ts## | ##filterEvidenceByProvenance()## | Evidence provenance checks
+| ##source-reliability.ts## | ##calculateEffectiveWeight()## | Source reliability scoring
+| ##text-analysis-service.ts## | ##getTextAnalysisService()## | LLM-only text analysis
+
+See [[Terminology>>FactHarbor.Specification.Reference.Terminology.WebHome]] for "Doubted vs Contested" distinction.
+
+See also: Evidence Quality Filtering including Classification Fallbacks (see Evidence_Quality_Filtering.md in local docs).
+
+**Text Analysis Service (v2.9+):**
+
+The Text Analysis Service is **LLM-only** (no heuristic fallback):
+
+{{mermaid}}
+flowchart LR
+    subgraph TextAnalysis["🧠 Text Analysis"]
+        LLM[LLMService]
+    end
+
+    LLM --> ORCH[Orchestrated]
+    LLM --> CANON[Canonical]
+    LLM --> DYN[Dynamic]
+{{/mermaid}}
+
+|= Analysis Point |= Pipeline Phase
+| Input Classification | Understand
+| Evidence Quality | Research
+| Context Similarity | Organize
+| Verdict Validation | Aggregate
+
+See LLM Text Analysis Pipeline Deep Analysis (archived) for full specification.
+
+**Runner Route Protection:**
+* Runner route ##/api/internal/run-job## requires ##x-runner-key## when ##FH_INTERNAL_RUNNER_KEY## is set (and is required in production)
+* Must match ##FH_INTERNAL_RUNNER_KEY## environment variable
+
+**API Internal Endpoints:**
+* Internal update endpoints require ##X-Admin-Key## header
+* Must match ##Admin:Key## in ##appsettings.json##
+
+**Production Hardening Needed:**
+* SSRF protections for URL fetching
+* Rate limiting and quota enforcement
+* Authentication and authorization
+* CORS tightening
+
+----
+
+**Navigation:** [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] | Next: [[AKEL Pipeline Flow>>FactHarbor.Specification.Implementation.Architecture Overview.AKEL Pipeline Flow.WebHome]]

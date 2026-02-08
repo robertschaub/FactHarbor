@@ -1,0 +1,386 @@
+= Source Reliability: Admin and Implementation =
+
+== Admin Interface ==
+
+Access the Source Reliability admin page at: ##/admin/source-reliability##
+
+=== Features ===
+
+* **Cache Statistics**: Total entries, average scores, expired count
+* **Paginated Table**: View all cached scores with sorting
+* **Cleanup**: Remove expired entries
+* **Authentication**: Requires ##FH_ADMIN_KEY## in production
+
+=== Admin Tasks ===
+
+|= Task |= Estimated Time
+| Check LLM cost dashboard | 5 min
+| Spot-check 2-3 recent scores | 8 min
+| Review any flagged issues | 2 min
+
+----
+
+== Design Principles ==
+
+=== Evidence Over Authority ===
+
+Source credibility is **supplementary**, not primary:
+
+* Only evidence and counter-evidence matter - not who says it
+* Authority does NOT automatically give weight
+* A low-credibility source with documented evidence should be considered
+* A high-credibility source making unsupported claims should be questioned
+
+=== No Pre-seeded Data ===
+
+All sources are evaluated identically by LLM:
+* No hardcoded scores or external rating databases
+* No manipulation concerns from third-party data
+* Full transparency - every score comes from LLM evaluation
+
+=== No Categorical Bias ===
+
+Per review feedback, the system avoids categorical assumptions:
+* Domain type (.gov, .edu, .org) does NOT imply quality
+* Scores derived from demonstrated track record, not institutional prestige
+* Editorial independence matters - state control is a negative factor
+
+=== Entity-Level Evaluation ===
+
+When a domain is the primary digital outlet for a larger organization (e.g., a TV channel, newspaper, or media group), the evaluation must focus on the reliability of the entire organization.
+
+* **Evaluation focus**: If the domain name or the website's branding closely matches an organization name, the whole organization shall be rated.
+* **Legacy Media**: Public broadcasters and established legacy media should be evaluated based on their institutional standards and editorial oversight.
+* **Consistency**: This prevents high-quality organizations from being underrated due to narrow domain-focused metrics.
+
+=== Dynamic Assessment ===
+
+* Sources can gain or lose credibility over time
+* Cache expires after 90 days (configurable)
+* Re-evaluation happens automatically on cache miss
+
+=== Score Scale Contract ===
+
+**Canonical scale: 0.0-1.0, 7-band credibility scale**
+
+|= Score Range |= Rating |= Meaning
+| 0.86-1.00 | highly_reliable | Verified accuracy, recognized standards body
+| 0.72-0.85 | reliable | Consistent accuracy, professional standards
+| 0.58-0.71 | leaning_reliable | Often accurate, occasional errors
+| 0.43-0.57 | mixed | Variable accuracy, inconsistent quality
+| 0.29-0.42 | leaning_unreliable | Often inaccurate, bias affects reporting
+| 0.15-0.28 | unreliable | Pattern of false claims, ignores corrections
+| 0.00-0.14 | highly_unreliable | Fabricates content, documented disinformation
+
+**Key properties:**
+* **7 bands** for source credibility assessment
+* **0.5 = exact center** of the mixed band (0.43-0.57)
+* Above 0.58 = positive boost to verdict preservation
+* 0.43-0.57 = neutral zone (known sources with variable track record)
+* Below 0.43 = pulls verdict toward neutral (skepticism)
+* All stored scores use decimal 0.0-1.0
+* Defensive normalization handles 0-100 scale inputs
+
+----
+
+== Implementation Details ==
+
+=== Key Files ===
+
+|= File |= Purpose
+| ##apps/web/src/lib/analyzer/source-reliability.ts## | Prefetch, sync lookup, evidence weighting
+| ##apps/web/src/lib/source-reliability-cache.ts## | SQLite cache operations
+| ##apps/web/src/app/api/internal/evaluate-source/route.ts## | LLM evaluation endpoint
+| ##apps/web/src/app/admin/source-reliability/page.tsx## | Admin UI for cache management
+| ##apps/web/src/app/api/admin/source-reliability/route.ts## | Admin API endpoint
+
+=== Key Functions ===
+
+{{code language="typescript"}}
+// Phase 1: Call ONCE before analysis (async)
+export async function prefetchSourceReliability(urls: string[]): Promise<PrefetchResult>;
+interface PrefetchResult {
+  prefetched: number;
+  alreadyPrefetched: number;
+  cacheHits: number;
+  evaluated: number;
+  skipped: number;
+}
+
+// Phase 2: Call MANY times during analysis (sync, instant)
+export function getTrackRecordScore(url: string): number | null;
+export function getTrackRecordData(url: string): CachedReliabilityData | null;
+interface CachedReliabilityData {
+  score: number;
+  confidence: number;
+  consensusAchieved: boolean;
+  identifiedEntity?: string;
+}
+
+// Phase 3: Apply to verdicts (sync)
+export function applyEvidenceWeighting(
+  claimVerdicts: ClaimVerdict[],
+  facts: ExtractedFact[],
+  sources: FetchedSource[]
+): ClaimVerdict[];
+
+// Effective weight calculation (used by monolithic pipelines)
+export function calculateEffectiveWeight(data: SourceReliabilityData): number;
+interface SourceReliabilityData {
+  score: number;
+  confidence: number;
+  consensusAchieved: boolean;
+}
+
+// Utilities
+export function extractDomain(url: string): string | null;
+export function isImportantSource(domain: string): boolean;
+export function normalizeTrackRecordScore(score: number): number;
+export function clampTruthPercentage(value: number): number;
+export function clearPrefetchedScores(): void;
+
+// Configuration
+export const DEFAULT_UNKNOWN_SOURCE_SCORE: number; // 0.5 by default (neutral center)
+export const SR_CONFIG: SourceReliabilityConfig;
+{{/code}}
+
+=== Temporal Awareness (v2.6.35+) ===
+
+The LLM evaluation prompt includes the current date and temporal guidance to ensure assessments reflect **recent** source performance:
+
+{{code language="typescript"}}
+CURRENT DATE: ${currentDate}
+
+TEMPORAL AWARENESS (IMPORTANT):
+- Source reliability can change over time due to ownership changes, editorial shifts, or political transitions
+- Government sites (e.g., whitehouse.gov, state departments) may vary in reliability across administrations
+- News organizations can improve or decline in quality over time
+- Base your assessment on the source's RECENT track record (last 1-2 years when possible)
+- If a source has undergone recent changes, factor that into your assessment
+{{/code}}
+
+**Why This Matters**:
+* **Government sources** vary by administration (e.g., transparency changes across presidencies)
+* **Media outlets** can shift with ownership or editorial changes
+* **Historical reputation** may not reflect current performance
+* **Time-sensitive evaluations** prevent outdated assessments
+
+**Cache TTL enforces freshness**: 90-day default means scores are re-evaluated quarterly, capturing significant changes in source reliability over time.
+
+=== Pipeline Integration ===
+
+Source Reliability is integrated into all three FactHarbor analysis pipelines:
+
+|= Pipeline |= File |= Status |= Implementation
+| **Orchestrated** | ##orchestrated.ts## | Full | Prefetch + lookup + evidence weighting
+| **Monolithic Canonical** | ##monolithic-canonical.ts## | Full | Prefetch + lookup + verdict adjustment
+| **Monolithic Dynamic** | ##monolithic-dynamic.ts## | Full | Prefetch + lookup + verdict adjustment
+
+All pipelines follow the same pattern:
+1. **Clear** prefetched scores at analysis start
+1. **Prefetch** source reliability before fetching URLs
+1. **Lookup** scores synchronously when creating sources
+1. **Apply** weighting to verdicts
+
+=== Integration Points: Orchestrated Pipeline ===
+
+{{code language="typescript"}}
+// In orchestrated.ts - runFactHarborAnalysis()
+
+// 1. Clear at start of analysis
+clearPrefetchedScores();
+
+// 2. After search, before fetching sources
+const urlsToFetch = searchResults.map(r => r.url);
+await prefetchSourceReliability(urlsToFetch);
+
+// 3. During fetchSource() - sync lookup
+const trackRecord = getTrackRecordScore(url);
+const source: FetchedSource = {
+  // ...
+  trackRecordScore: trackRecord,
+};
+
+// 4. After generating verdicts
+const weightedVerdicts = applyEvidenceWeighting(
+  claimVerdicts,
+  state.facts,
+  state.sources
+);
+{{/code}}
+
+=== Integration Points: Monolithic Pipelines ===
+
+Both ##monolithic-canonical.ts## and ##monolithic-dynamic.ts## use the same integration pattern with slight differences:
+
+{{code language="typescript"}}
+// In monolithic-canonical.ts / monolithic-dynamic.ts
+
+// 1. Clear at start of analysis
+clearPrefetchedScores();
+
+// 2. Before each fetch batch, prefetch reliability
+if (SR_CONFIG.enabled && urlsToFetch.length > 0) {
+  await prefetchSourceReliability(urlsToFetch.map(r => r.url));
+}
+
+// 3. When creating source objects, include reliability data
+const reliabilityData = getTrackRecordData(result.url);
+sources.push({
+  // ...
+  trackRecordScore: reliabilityData?.score ?? null,
+  trackRecordConfidence: reliabilityData?.confidence ?? null,
+  trackRecordConsensus: reliabilityData?.consensusAchieved ?? null,
+});
+
+// 4. Apply score as weight to verdicts
+const avgSourceScore = sources.reduce((sum, s) => sum + s.trackRecordScore, 0) / sources.length;
+const adjustedVerdict = Math.round(50 + (v.verdict - 50) * avgSourceScore);
+const adjustedConfidence = Math.round(v.confidence * (0.5 + avgSourceScore / 2));
+{{/code}}
+
+=== Score = Weight ===
+
+With the 7-band scale, the LLM score directly represents reliability and is used as-is:
+
+{{code language="typescript"}}
+function calculateEffectiveWeight(data: SourceReliabilityData): number {
+  // Simple: score IS the weight
+  // Confidence already filtered out low-quality evaluations (threshold gate)
+  return data.score;
+}
+{{/code}}
+
+|= Component |= Purpose
+| **Score** | LLM-evaluated reliability (7-band scale) - used directly as weight
+| **Confidence** | Quality gate (threshold: ##sr.confidenceThreshold##, default 0.8) - scores below are rejected
+| **Consensus** | Multi-model agreement (diff <= ##sr.consensusThreshold##, default 0.20)
+
+**Key Design Decisions**:
+* **Score = Weight** - No transformation, what LLM says is what we use
+* **Confidence is a gate, not a modifier** - If evaluation passes threshold, we trust it
+* **Transparency** - A 70% score means 70% weight, no hidden calculations
+
+**Examples:**
+* Highly reliable source (95% score): 95% weight
+* Mixed reliability source (67% score): 67% weight
+* Unreliable source (27% score): 27% weight
+* Unknown source (50% default): 50% weight (neutral)
+
+=== Unknown Source Handling ===
+
+Sources not in the cache are assigned a default score:
+
+|= Field |= Default |= Purpose
+| ##defaultScore## | ##0.5## | Score assigned to unknown sources (neutral center, SR UCM config)
+
+This results in 50% weight (neutral), applying appropriate skepticism to unverified sources while not completely discounting their evidence.
+
+=== Multi-Model Consensus ===
+
+When ##sr.multiModel## is enabled (default):
+
+1. Build an optional **evidence pack** (web search results) if ##sr.evalUseSearch=true## and a search provider is configured
+1. Both Claude and the secondary OpenAI model evaluate the source using the same evidence pack
+1. Primary must return confidence >= ##sr.confidenceThreshold##; secondary must return a non-null score (if secondary fails, fallback to primary with reduced confidence)
+1. Score difference must be <= ##sr.consensusThreshold## (default 0.20)
+1. Final score = **"better founded"** model output (more grounded citations/recency to the evidence pack); tie-breaker = **lower score** (skeptical default)
+1. If consensus fails -> return ##null## (unknown reliability)
+
+{{code language="typescript"}}
+// Simplified consensus logic (POC)
+const evidencePack = await buildEvidencePack(domain);
+const claude = await evaluateWithModel(domain, "anthropic", evidencePack);
+const gpt = await evaluateWithModel(domain, "openai", evidencePack);
+
+if (!claude || !gpt) return null;
+
+const scoreDiff = Math.abs(claude.score - gpt.score);
+if (scoreDiff > consensusThreshold) return null;
+
+// Choose "better founded" output; tie-breaker lower score
+const chosen =
+  gpt.foundedness > claude.foundedness ? gpt :
+  claude.foundedness > gpt.foundedness ? claude :
+  (Math.min(claude.score, gpt.score) === claude.score ? claude : gpt);
+
+return { score: chosen.score, confidence: (claude.confidence + gpt.confidence) / 2 };
+{{/code}}
+
+----
+
+== Cost & Performance ==
+
+=== Cost Estimates ===
+
+|= Mode |= Monthly Cost
+| Multi-model (default) | $40-60
+| Single-model | $20-30
+
+The importance filter saves ~60% of LLM costs by skipping blog platforms and spam domains.
+
+=== Success Metrics ===
+
+|= Metric |= Target
+| Cache hit rate (warm) | > 80%
+| Blog skip rate | > 90%
+| Confidence pass rate | > 85%
+| Consensus rate | > 90%
+
+=== Rollback Options ===
+
+|= Issue |= Action
+| LLM costs too high | Set ##sr.multiModel=false## in UCM (Admin -> Config -> Source Reliability)
+| Still too expensive | Set ##sr.enabled=false## in UCM
+| Too many hallucinations | Raise ##sr.confidenceThreshold## to 0.9
+| Low consensus rate | Lower ##sr.consensusThreshold## (default 0.20)
+
+----
+
+== Troubleshooting ==
+
+|= Issue |= Solution
+| "Unauthorized" from evaluate endpoint | Set ##FH_INTERNAL_RUNNER_KEY## in ##.env.local##
+| No scores appearing | Verify ##sr.enabled=true## in UCM (Admin -> Config -> Source Reliability)
+| Low-confidence evaluations (shown as score N/A) | Ensure a search provider is configured so the evidence pack is populated; otherwise evaluations may return ##insufficient_data##
+| High LLM costs | Enable filter and use single model (##sr.multiModel=false##)
+| Consensus failures | Lower ##sr.consensusThreshold## (default 0.20)
+| Score not affecting verdict | Check ##applyEvidenceWeighting## is called, verify ##trackRecordScore## on sources
+| Admin page shows 401 | Enter admin key in the auth form, or set ##FH_ADMIN_KEY## in env
+
+----
+
+== Test Coverage ==
+
+The Source Reliability system has comprehensive test coverage:
+
+|= Test File |= Tests |= Coverage
+| ##source-reliability.test.ts## | 42 | Domain extraction, importance filter, evidence weighting
+| ##source-reliability-cache.test.ts## | 16 | SQLite operations, pagination, expiration
+| ##source-reliability.integration.test.ts## | 13 | End-to-end pipeline flow
+| ##evaluate-source.test.ts## | 19 | Rate limiting, consensus calculation
+| **Total** | **90** |
+
+Run tests:
+{{code language="bash"}}
+cd apps/web && npm test -- src/lib/analyzer/source-reliability.test.ts
+cd apps/web && npm test -- src/lib/source-reliability-cache.test.ts
+cd apps/web && npm test -- src/lib/analyzer/source-reliability.integration.test.ts
+cd apps/web && npm test -- src/app/api/internal/evaluate-source/evaluate-source.test.ts
+{{/code}}
+
+----
+
+== Historical Documentation ==
+
+For the original architecture proposal and review history, see:
+* Source_Reliability_Service_Proposal.md (archived)
+* Review documents (archived)
+
+== Related Documentation ==
+
+* Source_Reliability_Prompt_Improvements.md - Detailed changelog of LLM prompt improvements (2026-01-24)
+
+----
+
+**Navigation:** [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] | Prev: [[Refinement and Multi-Language>>FactHarbor.Specification.Implementation.Source Reliability System.Refinement and Multi-Language.WebHome]]

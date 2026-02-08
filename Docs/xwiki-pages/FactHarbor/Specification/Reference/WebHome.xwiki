@@ -6,12 +6,12 @@ Technical reference materials for FactHarbor including terminology, schemas, and
 
 * [[Terminology>>FactHarbor.Specification.Reference.Terminology.WebHome]] - Authoritative glossary of FactHarbor terms (v3.1)
 
-== Data Models and Schemas ==
+== [[Data Models and Schemas>>FactHarbor.Specification.Reference.Data Models and Schemas.WebHome]] ==
 
 * [[LLM Schema Mapping>>FactHarbor.Specification.Reference.Data Models and Schemas.LLM Schema Mapping.WebHome]] - LLM response schema mappings
 * [[Metrics Schema>>FactHarbor.Specification.Reference.Data Models and Schemas.Metrics Schema.WebHome]] - System performance metrics schema
 
-== Prompt Engineering ==
+== [[Prompt Engineering>>FactHarbor.Specification.Reference.Prompt Engineering.WebHome]] ==
 
 * [[Provider-Specific Formatting>>FactHarbor.Specification.Reference.Prompt Engineering.Provider-Specific Formatting.WebHome]] - Provider-specific prompt formatting rules
 * [[Prompt Guidelines>>FactHarbor.Specification.Reference.Prompt Engineering.Prompt Guidelines.WebHome]] - General prompt engineering guidelines

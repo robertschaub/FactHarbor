@@ -2,13 +2,13 @@
 
 This section contains development guidelines, coding standards, and deployment documentation for FactHarbor contributors.
 
-== Guidelines ==
+== [[Guidelines>>FactHarbor.Specification.Development.Guidelines.WebHome]] ==
 
 * [[Coding Guidelines>>FactHarbor.Specification.Development.Guidelines.Coding Guidelines.WebHome]] - Coding standards and conventions
 * [[Scope Definition Guidelines>>FactHarbor.Specification.Development.Guidelines.Scope Definition Guidelines.WebHome]] - EvidenceScope definition best practices
 * [[Testing Strategy>>FactHarbor.Specification.Development.Guidelines.Testing Strategy.WebHome]] - Testing methodology and promptfoo integration
 
-== Deployment ==
+== [[Deployment>>FactHarbor.Specification.Development.Deployment.WebHome]] ==
 
 * [[Zero-Cost Hosting Implementation Guide>>FactHarbor.Roadmap.Zero-Cost Hosting Implementation Guide.WebHome]] - Fly.io deployment for beta ($0-5/month)
 

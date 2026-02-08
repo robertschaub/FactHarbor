@@ -1,5 +1,5 @@
 {{warning}}
-**Not Implemented (v2.6.33)** - Federation is planned for V1.0+. Current implementation is single-instance only.
+**Not Implemented (v2.10.2)** — Federation is planned for V2.0+. Current implementation is single-instance only.
 {{/warning}}
 
 = Federation Architecture (Future) =

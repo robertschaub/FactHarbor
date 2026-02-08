@@ -13,6 +13,10 @@ This specification describes the **target** normalized data model. Current imple
 * **Evidence**: Uses `EvidenceItem` with `statement` field. Evidence IDs use E-prefix (E1, E2, E3...).
 
 This specification remains valuable as the target architecture for future versions.
+
+**Related pages:**
+* [[Data Models and Schemas (Reference)>>FactHarbor.Specification.Reference.Data Models and Schemas.WebHome]] — LLM schema mappings and metrics schema definitions
+* [[POC1 API & Schemas>>FactHarbor.Specification.POC.API-and-Schemas.WebHome]] — POC API contract and endpoint specifications
 {{/warning}}
 
 FactHarbor's data model is **simple, focused, designed for automated processing**.

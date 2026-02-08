@@ -12,6 +12,10 @@ The **Media Source Database** is FactHarbor's system for evaluating and tracking
 
 This is **not** a static list. Sources are evaluated on-demand by AI, cross-checked by a second model, and cached for 90 days. Any source on the internet can be evaluated — there is no pre-seeded database to go stale.
 
+{{info}}
+**Implementation Details:** See [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] for the technical implementation: LLM-powered scoring, batch prefetch architecture, cache strategy, and dual-model cross-checking.
+{{/info}}
+
 == Why It Exists ==
 
 Evidence is only as strong as its source. A claim backed by Reuters and peer-reviewed research is stronger than one backed by a known disinformation site. The Media Source Database makes this transparent:

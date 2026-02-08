@@ -14,6 +14,12 @@
 * [[Beta 0: User Testing & Production Readiness>>FactHarbor.Roadmap.Beta0.WebHome]]
 * [[V1.0: Public Launch>>FactHarbor.Roadmap.V10.WebHome]]
 
+== Supporting Resources ==
+
+* [[Development Guidance>>FactHarbor.Roadmap.Development Guidance.WebHome]] — Setup checklists, tool decisions, and environment configuration
+* [[Zero-Cost Hosting Implementation Guide>>FactHarbor.Roadmap.Zero-Cost Hosting Implementation Guide.WebHome]] — Hosting strategy using free-tier cloud services
+* [[Requirements Roadmap Matrix>>FactHarbor.Roadmap.Requirements-Roadmap-Matrix.WebHome]] — Complete phase-to-requirement mapping
+
 == Philosophy ==
 
 **Validate AI automation quality BEFORE building production features**

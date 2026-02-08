@@ -1,0 +1,165 @@
+= Data Models =
+
+=== Analysis Result Structure ===
+
+{{mermaid}}
+erDiagram
+    ARTICLE ||--o{ CLAIM : "contains"
+    ARTICLE ||--|| ARTICLE_VERDICT : "has"
+    CLAIM ||--|| CLAIM_VERDICT : "has"
+    CLAIM ||--o{ CLAIM : "depends on"
+    CLAIM_VERDICT }o--o{ EVIDENCE : "supported by"
+    SOURCE ||--o{ EVIDENCE : "provides"
+    ARTICLE ||--o{ SOURCE : "references"
+
+    ARTICLE {
+        string id PK "Unique identifier (job ID)"
+        string inputType "text | url"
+        string inputValue "Original URL or text"
+        string articleThesis "Main argument/thesis"
+        string detectedInputType "question | claim | article"
+        boolean isQuestion "True if input is a question"
+        datetime createdAt "Analysis timestamp"
+        json analysisContexts "Detected AnalysisContexts"
+        boolean requiresSeparateAnalysis "Multi-context flag"
+        json logicalFallacies "Detected fallacies array"
+        boolean isPseudoscience "Pseudoscience detection"
+        string_array pseudoscienceCategories "Categories if detected"
+        int llmCalls "Total LLM API calls"
+        json searchQueries "All search queries performed"
+        string schemaVersion "2.7.0"
+    }
+
+    CLAIM {
+        string id PK "SC1, SC2, C1, etc."
+        string articleId FK "Parent article"
+        string text "The claim statement"
+        string type "legal | procedural | factual | evaluative"
+        string claimRole "attribution | source | timing | core"
+        string_array dependsOn "IDs of prerequisite claims"
+        string_array keyEntities "Named entities in claim"
+        string keyFactorId "Key factor mapping (empty if none)"
+        boolean isCentral "Is this a central claim?"
+        string contextId "Linked AnalysisContext if any"
+        int startOffset "Position in original text"
+        int endOffset "End position in original text"
+        string approximatePosition "Descriptive position"
+    }
+
+    CLAIM_VERDICT {
+        string id PK "Same as claim ID"
+        string claimId FK "Reference to claim"
+        string llmVerdict "WELL-SUPPORTED | PARTIALLY-SUPPORTED | UNCERTAIN | REFUTED"
+        string verdict "TRUE | MOSTLY-TRUE | LEANING-TRUE | MIXED | UNVERIFIED | LEANING-FALSE | MOSTLY-FALSE | FALSE"
+        int confidence "0-100 LLM confidence"
+        int truthPercentage "0-100 calibrated truth score"
+        float evidenceWeight "Evidence weighting based on source scores"
+        string riskTier "A (high) | B (medium) | C (low)"
+        string reasoning "Explanation of verdict"
+        string_array supportingEvidenceIds "Evidence IDs supporting this"
+        boolean dependencyFailed "True if prerequisite failed"
+        string_array failedDependencies "Which deps failed"
+        string keyFactorId "Key factor mapping (empty if none)"
+        string contextId "Linked AnalysisContext if any"
+        string highlightColor "green | light-green | yellow | orange | dark-orange | red | dark-red"
+        boolean isPseudoscience "Pseudoscience flag"
+        string escalationReason "Why verdict was escalated"
+    }
+
+    ARTICLE_VERDICT {
+        string id PK "Same as article ID"
+        string articleId FK "Reference to article"
+        string llmArticleVerdict "Original LLM verdict"
+        int llmArticleConfidence "Original LLM confidence"
+        string articleVerdict "7-point scale verdict"
+        int articleTruthPercentage "0-100 calibrated score"
+        string articleVerdictReason "Why verdict differs from claims avg"
+        string articleVerdictReliability "high | low (v2.6.38)"
+        int claimsAverageTruthPercentage "Average of claim verdicts"
+        string claimsAverageVerdict "7-point average verdict"
+        int claimsTotal "Total claims analyzed"
+        int claimsSupported "Claims with truth >= 72%"
+        int claimsUncertain "Claims with truth 43-71%"
+        int claimsRefuted "Claims with truth < 43%"
+        int centralClaimsTotal "Number of central claims"
+        int centralClaimsSupported "Central claims supported"
+    }
+
+    EVIDENCE {
+        string id PK "S1-E1, S1-E2 format"
+        string sourceId FK "Reference to source"
+        string claimId FK "Optional: specific claim this supports"
+        string statement "The evidence statement extracted"
+        string category "legal_provision | evidence | expert_quote | statistic | event | criticism"
+        string specificity "high | medium"
+        string sourceExcerpt "Original text excerpt"
+        string contextId "Linked AnalysisContext if any"
+        boolean isContestedClaim "Is this a contested assertion"
+        string claimSource "Who made contested claim"
+    }
+
+    SOURCE {
+        string id PK "S1, S2, etc."
+        string articleId FK "Parent article"
+        string url "Full URL"
+        string title "Page/document title"
+        string domain "Extracted domain"
+        int trackRecordScore "0-100 reliability score or null"
+        string fullText "Extracted content"
+        datetime fetchedAt "When content was fetched"
+        string category "news | academic | government | legal"
+        boolean fetchSuccess "True if fetch succeeded"
+        string searchQuery "Which query found this"
+        string mimeType "text/html | application/pdf"
+    }
+{{/mermaid}}
+
+=== Job Lifecycle Data ===
+
+{{mermaid}}
+erDiagram
+    JOB ||--o{ JOB_EVENT : "has"
+    JOB ||--|| ANALYSIS_RESULT : "produces"
+
+    JOB {
+        string JobId PK "GUID"
+        string Status "QUEUED|RUNNING|SUCCEEDED|FAILED"
+        int Progress "0-100"
+        datetime CreatedUtc
+        datetime UpdatedUtc
+        string InputType "text|url"
+        string InputValue "URL or text content"
+        string InputPreview "First 100 chars"
+        json ResultJson "Full analysis result"
+        string ReportMarkdown "Formatted report"
+    }
+
+    JOB_EVENT {
+        long Id PK
+        string JobId FK
+        datetime TsUtc
+        string Level "info|warn|error"
+        string Message
+    }
+
+    ANALYSIS_RESULT {
+        string schemaVersion "2.7.0"
+        json meta "Providers, timing, gate stats, IDs"
+        json twoPanelSummary
+        json researchStats
+        json qualityGates
+        string inputType "question|claim|article"
+        boolean isQuestion
+        string articleThesis
+        int articleTruthPercentage "0-100"
+        string articleVerdict "7-point scale"
+        json claimPattern "total/supported/uncertain/refuted"
+        boolean isPseudoscience
+        int llmCalls "Total LLM invocations"
+        json searchQueries "All search queries"
+    }
+{{/mermaid}}
+
+----
+
+**Navigation:** [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] | Prev: [[AKEL Pipeline Flow>>FactHarbor.Specification.Implementation.Architecture Overview.AKEL Pipeline Flow.WebHome]] | Next: [[System Components>>FactHarbor.Specification.Implementation.Architecture Overview.System Components.WebHome]]

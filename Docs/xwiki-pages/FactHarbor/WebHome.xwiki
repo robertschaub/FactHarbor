@@ -94,7 +94,6 @@ Discover how we are organised, how decisions are made, and how you can contribut
 Dive into the Architecture, Data Models, API definitions, and detailed algorithms.
 
 * [[Go to Specification>>FactHarbor.Specification.WebHome]]
-* //(Draft content available in [[Holding Page>>FactHarbor.Specification.WebHome]])//
 )))
 )))
 
@@ -107,5 +106,41 @@ Dive into the Architecture, Data Models, API definitions, and detailed algorithm
 Getting started, admin interface, LLM configuration, testing, and data export guides.
 
 * [[Go to User Guides>>FactHarbor.User Guides.WebHome]]
+)))
+)))
+
+(((
+(% class="box" %)
+(((
+== [[Roadmap>>FactHarbor.Roadmap.WebHome]] ==
+
+**//Development Phases and Timeline.//**
+Project phases from POC through Alpha Transition, development guidance, and hosting strategy.
+
+* [[Go to Roadmap>>FactHarbor.Roadmap.WebHome]]
+)))
+)))
+
+(((
+(% class="box" %)
+(((
+== [[FH Analysis Reports>>FactHarbor.FH Analysis Reports.WebHome]] ==
+
+**//Sample Analyses from POC Development.//**
+Fact-checking reports across different domains and languages, demonstrating the evidence-based methodology.
+
+* [[Go to Analysis Reports>>FactHarbor.FH Analysis Reports.WebHome]]
+)))
+)))
+
+(((
+(% class="box" %)
+(((
+== [[License and Disclaimer>>FactHarbor.License and Disclaimer.WebHome]] ==
+
+**//Licensing, Attribution, and Legal.//**
+Open-source licensing terms, usage disclaimers, and attribution requirements.
+
+* [[Go to License and Disclaimer>>FactHarbor.License and Disclaimer.WebHome]]
 )))
 )))

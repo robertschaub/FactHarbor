@@ -1,0 +1,504 @@
+= Pipeline Architecture (POC1) =
+
+== 1. Core Objective (POC1) ==
+
+The primary technical goal of POC1 is to validate **Approach 1 (Single-Pass Holistic Analysis)** while implementing **claim-level caching** to achieve cost sustainability.
+
+The system must prove that AI can identify an article's **Main Thesis** and determine if supporting claims logically support that thesis without committing fallacies.
+
+=== Success Criteria: ===
+
+* Test with 30 diverse articles
+* Target: ≥70% accuracy detecting misleading articles
+* Cost: <$0.25 per NEW analysis (uncached)
+* Cost: $0.00 for cached claim reuse
+* Cache hit rate: ≥50% after 1,000 articles
+* Processing time: <2 minutes (standard depth)
+
+=== Economic Model: ===
+
+* **Free tier:** $10 credit per month (~~40-140 articles depending on cache hits)
+* **After limit:** Cache-only mode (instant, free access to cached claims)
+* **Paid tier:** Unlimited new analyses
+
+----
+
+== 2. Architecture Overview ==
+
+=== 2.1 3-Stage Pipeline with Caching ===
+
+FactHarbor POC1 uses a **3-stage architecture** designed for claim-level caching and cost efficiency:
+
+{{mermaid}}
+graph TD
+ A[Article Input] --> B[Stage 1: Extract Claims]
+ B --> C{For Each Claim}
+ C --> D[Check Cache]
+ D -->|Cache HIT| E[Return Cached Verdict]
+ D -->|Cache MISS| F[Stage 2: Analyze Claim]
+ F --> G[Store in Cache]
+ G --> E
+ E --> H[Stage 3: Holistic Assessment]
+ H --> I[Final Report]
+{{/mermaid}}
+
+==== Stage 1: Claim Extraction (FAST model, no cache) ====
+
+* **Input:** Article text
+* **Output:** 5 canonical claims (normalized, deduplicated)
+* **Model:** Provider-default FAST model (default, configurable via LLM abstraction layer)
+* **Cost:** $0.003 per article
+* **Cache strategy:** No caching (article-specific)
+
+==== Stage 2: Claim Analysis (REASONING model, CACHED) ====
+
+* **Input:** Single canonical claim
+* **Output:** Scenarios + Evidence + Verdicts
+* **Model:** Provider-default REASONING model (default, configurable via LLM abstraction layer)
+* **Cost:** $0.081 per NEW claim
+* **Cache strategy:** Redis, 90-day TTL
+* **Cache key:** claim:v1norm1:{language}:{sha256(canonical_claim)}
+
+==== Stage 3: Holistic Assessment (REASONING model, no cache) ====
+
+* **Input:** Article + Claim verdicts (from cache or Stage 2)
+* **Output:** Article verdict + Fallacies + Logic quality
+* **Model:** Provider-default REASONING model (default, configurable via LLM abstraction layer)
+* **Cost:** $0.030 per article
+* **Cache strategy:** No caching (article-specific)
+
+
+
+**Note:** Stage 3 implements **Approach 1 (Single-Pass Holistic Analysis)** from the [[Article Verdict Problem>>FactHarbor.Specification.POC.Article-Verdict-Problem]]. While claim analysis (Stage 2) is cached for efficiency, the holistic assessment maintains the integrated evaluation philosophy of Approach 1.
+
+=== Total Cost Formula: ===
+
+{{{Cost = $0.003 (extraction) + (N_new_claims × $0.081) + $0.030 (holistic)
+
+Examples:
+- 0 new claims (100% cache hit): $0.033
+- 1 new claim (80% cache hit): $0.114
+- 3 new claims (40% cache hit): $0.276
+- 5 new claims (0% cache hit): $0.438
+}}}
+
+----
+
+=== 2.2 User Tier System ===
+
+|=Tier|=Monthly Credit|=After Limit|=Cache Access|=Analytics
+|**Free**|$10|Cache-only mode|✅ Full|Basic
+|**Pro** (future)|$50|Continues|✅ Full|Advanced
+|**Enterprise** (future)|Custom|Continues|✅ Full + Priority|Full
+
+**Free Tier Economics:**
+
+* $10 credit = 40-140 articles analyzed (depending on cache hit rate)
+* Average 70 articles/month at 70% cache hit rate
+* After limit: Cache-only mode
+
+----
+
+=== 2.3 Cache-Only Mode (Free Tier Feature) ===
+
+When free users reach their $10 monthly limit, they enter **Cache-Only Mode**:
+
+
+
+==== Stage 3: Holistic Assessment - Complete Specification ====
+
+===== 3.3.1 Overview =====
+
+**Purpose:** Synthesize individual claim analyses into an overall article assessment, identifying logical fallacies, reasoning quality, and publication readiness.
+
+**Approach:** **Single-Pass Holistic Analysis** (Approach 1 from Comparison Matrix)
+
+**Why This Approach for POC1:**
+* ✅ **1 API call** (vs 2 for Two-Pass or Judge)
+* ✅ **Low cost** ($0.030 per article)
+* ✅ **Fast** (4-6 seconds)
+* ✅ **Low complexity** (simple implementation)
+* ⚠️ **Medium reliability** (acceptable for POC1, will improve in POC2/Production)
+
+**Alternative Approaches Considered:**
+
+|= Approach |= API Calls |= Cost |= Speed |= Complexity |= Reliability |= Best For
+| **1. Single-Pass** ⭐ | 1 | 💰 Low | ⚡ Fast | 🟢 Low | ⚠️ Medium | **POC1**
+| 2. Two-Pass | 2 | 💰💰 Med | 🐢 Slow | 🟡 Med | ✅ High | POC2/Prod
+| 3. Structured | 1 | 💰 Low | ⚡ Fast | 🟡 Med | ✅ High | POC1 (alternative)
+| 4. Weighted | 1 | 💰 Low | ⚡ Fast | 🟢 Low | ⚠️ Medium | POC1 (alternative)
+| 5. Heuristics | 1 | 💰 Lowest | ⚡⚡ Fastest | 🟡 Med | ⚠️ Medium | Any
+| 6. Hybrid | 1 | 💰 Low | ⚡ Fast | 🔴 Med-High | ✅ High | POC2
+| 7. Judge | 2 | 💰💰 Med | 🐢 Slow | 🟡 Med | ✅ High | Production
+
+**POC1 Choice:** Approach 1 (Single-Pass) for speed and simplicity. Will upgrade to Approach 2 (Two-Pass) or 6 (Hybrid) in POC2 for higher reliability.
+
+===== 3.3.2 What Stage 3 Evaluates =====
+
+Stage 3 performs **integrated holistic analysis** considering:
+
+**1. Claim-Level Aggregation:**
+* Verdict distribution (how many TRUE vs FALSE vs DISPUTED)
+* Average confidence across all claims
+* Claim interdependencies (do claims support/contradict each other?)
+* Critical claim identification (which claims are most important?)
+
+**2. Contextual Factors:**
+* **Source credibility**: Is the article from a reputable publisher?
+* **Author expertise**: Does the author have relevant credentials?
+* **Publication date**: Is information current or outdated?
+* **Claim coherence**: Do claims form a logical narrative?
+* **Missing context**: Are important caveats or qualifications missing?
+
+**3. Logical Fallacies:**
+* **Cherry-picking**: Selective evidence presentation
+* **False equivalence**: Treating unequal things as equal
+* **Straw man**: Misrepresenting opposing arguments
+* **Ad hominem**: Attacking person instead of argument
+* **Slippery slope**: Assuming extreme consequences without justification
+* **Circular reasoning**: Conclusion assumes premise
+* **False dichotomy**: Presenting only two options when more exist
+
+**4. Reasoning Quality:**
+* **Evidence strength**: Quality and quantity of supporting evidence
+* **Logical coherence**: Arguments follow logically
+* **Transparency**: Assumptions and limitations acknowledged
+* **Nuance**: Complexity and uncertainty appropriately addressed
+
+**5. Publication Readiness:**
+* **Risk tier assignment**: A (high risk), B (medium), or C (low risk)
+* **Publication mode**: DRAFT_ONLY, AI_GENERATED, or HUMAN_REVIEWED
+* **Required disclaimers**: What warnings should accompany this content?
+
+===== 3.3.3 Implementation: Single-Pass Approach =====
+
+**Input:**
+* Original article text (full content)
+* Stage 2 claim analyses (array of ClaimAnalysis objects)
+* Article metadata (URL, title, author, date, source)
+
+**Processing:**
+
+{{code language="python"}}
+# Pseudo-code for Stage 3 (Single-Pass)
+
+def stage3_holistic_assessment(article, claim_analyses, metadata):
+    """
+    Single-pass holistic assessment using Provider-default REASONING model.
+
+    Approach 1: One comprehensive prompt that asks the LLM to:
+    1. Review all claim verdicts
+    2. Identify patterns and dependencies
+    3. Detect logical fallacies
+    4. Assess reasoning quality
+    5. Determine credibility score and risk tier
+    6. Generate publication recommendations
+    """
+
+    # Construct comprehensive prompt
+    prompt = f"""
+You are analyzing an article for factual accuracy and logical reasoning.
+
+ARTICLE METADATA:
+- Title: {metadata['title']}
+- Source: {metadata['source']}
+- Date: {metadata['date']}
+- Author: {metadata['author']}
+
+ARTICLE TEXT:
+{article}
+
+INDIVIDUAL CLAIM ANALYSES:
+{format_claim_analyses(claim_analyses)}
+
+YOUR TASK:
+Perform a holistic assessment considering:
+
+1. CLAIM AGGREGATION:
+   - Review the verdict for each claim
+   - Identify any interdependencies between claims
+   - Determine which claims are most critical to the article's thesis
+
+2. CONTEXTUAL EVALUATION:
+   - Assess source credibility
+   - Evaluate author expertise
+   - Consider publication timeliness
+   - Identify missing context or important caveats
+
+3. LOGICAL FALLACIES:
+   - Identify any logical fallacies present
+   - For each fallacy, provide:
+     * Type of fallacy
+     * Where it occurs in the article
+     * Why it's problematic
+     * Severity (minor/moderate/severe)
+
+4. REASONING QUALITY:
+   - Evaluate evidence strength
+   - Assess logical coherence
+   - Check for transparency in assumptions
+   - Evaluate handling of nuance and uncertainty
+
+5. CREDIBILITY SCORING:
+   - Calculate overall credibility score (0.0-1.0)
+   - Assign risk tier:
+     * A (high risk): ≤0.5 credibility OR severe fallacies
+     * B (medium risk): 0.5-0.8 credibility OR moderate issues
+     * C (low risk): >0.8 credibility AND no significant issues
+
+6. PUBLICATION RECOMMENDATIONS:
+   - Determine publication mode:
+     * DRAFT_ONLY: Tier A, multiple severe issues
+     * AI_GENERATED: Tier B/C, acceptable quality with disclaimers
+     * HUMAN_REVIEWED: Complex or borderline cases
+   - List required disclaimers
+   - Explain decision rationale
+
+OUTPUT FORMAT:
+Return a JSON object matching the ArticleAssessment schema.
+"""
+
+    # Call LLM
+    response = llm_client.complete(
+        model="claude-sonnet-4-5-20250929",
+        prompt=prompt,
+        max_tokens=4000,
+        response_format="json"
+    )
+
+    # Parse and validate response
+    assessment = parse_json(response.content)
+    validate_article_assessment_schema(assessment)
+
+    return assessment
+{{/code}}
+
+**Prompt Engineering Notes:**
+
+1. **Structured Instructions**: Break down task into 6 clear sections
+2. **Context-Rich**: Provide article + all claim analyses + metadata
+3. **Explicit Criteria**: Define credibility scoring and risk tiers precisely
+4. **JSON Schema**: Request structured output matching ArticleAssessment schema
+5. **Examples** (in production): Include 2-3 example assessments for consistency
+
+===== 3.3.4 Credibility Scoring Algorithm =====
+
+**Base Score Calculation:**
+
+{{code language="python"}}
+def calculate_credibility_score(claim_analyses, fallacies, contextual_factors):
+    """
+    Calculate overall credibility score (0.0-1.0).
+
+    This is a GUIDELINE for the LLM, not strict code.
+    The LLM has flexibility to adjust based on context.
+    """
+
+    # 1. Claim Verdict Score (60% weight)
+    verdict_weights = {
+        "TRUE": 1.0,
+        "PARTIALLY_TRUE": 0.7,
+        "DISPUTED": 0.5,
+        "UNSUPPORTED": 0.3,
+        "FALSE": 0.0,
+        "UNVERIFIABLE": 0.4
+    }
+
+    claim_scores = [
+        verdict_weights[c.verdict.label] * c.verdict.confidence
+        for c in claim_analyses
+    ]
+    avg_claim_score = sum(claim_scores) / len(claim_scores)
+    claim_component = avg_claim_score * 0.6
+
+    # 2. Fallacy Penalty (20% weight)
+    fallacy_penalties = {
+        "minor": -0.05,
+        "moderate": -0.15,
+        "severe": -0.30
+    }
+
+    fallacy_score = 1.0
+    for fallacy in fallacies:
+        fallacy_score += fallacy_penalties[fallacy.severity]
+
+    fallacy_score = max(0.0, min(1.0, fallacy_score))
+    fallacy_component = fallacy_score * 0.2
+
+    # 3. Contextual Factors (20% weight)
+    context_adjustments = {
+        "source_credibility": {"positive": +0.1, "neutral": 0, "negative": -0.1},
+        "author_expertise": {"positive": +0.1, "neutral": 0, "negative": -0.1},
+        "timeliness": {"positive": +0.05, "neutral": 0, "negative": -0.05},
+        "transparency": {"positive": +0.05, "neutral": 0, "negative": -0.05}
+    }
+
+    context_score = 1.0
+    for factor in contextual_factors:
+        adjustment = context_adjustments.get(factor.factor, {}).get(factor.impact, 0)
+        context_score += adjustment
+
+    context_score = max(0.0, min(1.0, context_score))
+    context_component = context_score * 0.2
+
+    # 4. Combine components
+    final_score = claim_component + fallacy_component + context_component
+
+    # 5. Apply confidence modifier
+    avg_confidence = sum(c.verdict.confidence for c in claim_analyses) / len(claim_analyses)
+    final_score = final_score * (0.8 + 0.2 * avg_confidence)
+
+    return max(0.0, min(1.0, final_score))
+{{/code}}
+
+**Note:** This algorithm is a **guideline** provided to the LLM in the system prompt. The LLM has flexibility to adjust based on specific article context, but should generally follow this structure for consistency.
+
+===== 3.3.5 Risk Tier Assignment =====
+
+**Automatic Risk Tier Rules:**
+
+{{code}}
+Risk Tier A (High Risk - Requires Review):
+- Credibility score ≤ 0.5, OR
+- Any severe fallacies detected, OR
+- Multiple (3+) moderate fallacies, OR
+- 50%+ of claims are FALSE or UNSUPPORTED
+
+Risk Tier B (Medium Risk - May Publish with Disclaimers):
+- Credibility score 0.5-0.8, OR
+- 1-2 moderate fallacies, OR
+- 20-49% of claims are DISPUTED or PARTIALLY_TRUE
+
+Risk Tier C (Low Risk - Safe to Publish):
+- Credibility score > 0.8, AND
+- No severe or moderate fallacies, AND
+- <20% disputed/problematic claims, AND
+- No critical missing context
+{{/code}}
+
+===== 3.3.6 Output: ArticleAssessment Schema =====
+
+(See [[Data Schemas and Cache>>FactHarbor.Specification.POC.API-and-Schemas.Data Schemas and Cache.WebHome]] for complete JSON schema)
+
+===== 3.3.7 Performance Metrics =====
+
+**POC1 Targets:**
+* **Processing time**: 4-6 seconds per article
+* **Cost**: $0.030 per article (Sonnet 4.5 tokens)
+* **Quality**: 70-80% agreement with human reviewers (acceptable for POC)
+* **API calls**: 1 per article
+
+**Future Improvements (POC2/Production):**
+* Upgrade to Two-Pass (Approach 2): +15% accuracy, +$0.020 cost
+* Add human review sampling: 10% of Tier B articles
+* Implement Judge approach (Approach 7) for Tier A: Highest quality
+
+===== 3.3.8 Example Stage 3 Execution =====
+
+**Input:**
+* Article: "Biden won the 2020 election"
+* Claim analyses: [{claim: "Biden won", verdict: "TRUE", confidence: 0.95}]
+
+**Stage 3 Processing:**
+1. Analyzes single claim with high confidence
+2. Checks for contextual factors (source credibility)
+3. Searches for logical fallacies (none found)
+4. Calculates credibility: 0.6 * 0.95 + 0.2 * 1.0 + 0.2 * 1.0 = 0.97
+5. Assigns risk tier: C (low risk)
+6. Recommends: AI_GENERATED publication mode
+
+**Output:**
+{{code language="json"}}
+{
+  "article_id": "a1",
+  "overall_assessment": {
+    "credibility_score": 0.97,
+    "risk_tier": "C",
+    "summary": "Article makes single verifiable claim with strong evidence support",
+    "confidence": 0.95
+  },
+  "claim_aggregation": {
+    "total_claims": 1,
+    "verdict_distribution": {"TRUE": 1},
+    "avg_confidence": 0.95
+  },
+  "contextual_factors": [
+    {"factor": "source_credibility", "impact": "positive", "description": "Reputable news source"}
+  ],
+  "recommendations": {
+    "publication_mode": "AI_GENERATED",
+    "requires_review": false,
+    "suggested_disclaimers": []
+  }
+}
+{{/code}}
+
+==== What Cache-Only Mode Provides: ====
+
+✅ **Claim Extraction (Platform-Funded):**
+
+* Stage 1 extraction runs at $0.003 per article
+* **Cost: Absorbed by platform** (not charged to user credit)
+* Rationale: Extraction is necessary to check cache, and cost is negligible
+* Rate limit: Max 50 extractions/day in cache-only mode (prevents abuse)
+
+✅ **Instant Access to Cached Claims:**
+
+* Any claim that exists in cache → Full verdict returned
+* Cost: $0 (no LLM calls)
+* Response time: <100ms
+
+✅ **Partial Article Analysis:**
+
+* Check each claim against cache
+* Return verdicts for ALL cached claims
+* For uncached claims: Return "status": "cache_miss"
+
+✅ **Cache Coverage Report:**
+
+* "3 of 5 claims available in cache (60% coverage)"
+* Links to cached analyses
+* Estimated cost to complete: $0.162 (2 new claims)
+
+❌ **Not Available in Cache-Only Mode:**
+
+* New claim analysis (Stage 2 LLM calls blocked)
+* Full holistic assessment (Stage 3 blocked if any claims missing)
+
+==== User Experience Example: ====
+
+{{{{
+ "status": "cache_only_mode",
+ "message": "Monthly credit limit reached. Showing cached results only.",
+ "cache_coverage": {
+ "claims_total": 5,
+ "claims_cached": 3,
+ "claims_missing": 2,
+ "coverage_percent": 60
+ },
+ "cached_claims": [
+ {"claim_id": "C1", "verdict": "Likely", "confidence": 0.82},
+ {"claim_id": "C2", "verdict": "Highly Likely", "confidence": 0.91},
+ {"claim_id": "C4", "verdict": "Unclear", "confidence": 0.55}
+ ],
+ "missing_claims": [
+ {"claim_id": "C3", "claim_text": "...", "estimated_cost": "$0.081"},
+ {"claim_id": "C5", "claim_text": "...", "estimated_cost": "$0.081"}
+ ],
+ "upgrade_options": {
+ "top_up": "$5 for 20-70 more articles",
+ "pro_tier": "$50/month unlimited"
+ }
+}
+}}}
+
+**Design Rationale:**
+
+* Free users still get value (cached claims often answer their question)
+* Demonstrates FactHarbor's value (partial results encourage upgrade)
+* Sustainable for platform (no additional cost)
+* Fair to all users (everyone contributes to cache)
+
+----
+
+**Navigation:** [[API & Schemas>>FactHarbor.Specification.POC.API-and-Schemas.WebHome]] | Prev: [[Codegen Contract>>FactHarbor.Specification.POC.API-and-Schemas.Codegen Contract.WebHome]] | Next: [[LLM Abstraction Layer>>FactHarbor.Specification.POC.API-and-Schemas.LLM Abstraction Layer.WebHome]]

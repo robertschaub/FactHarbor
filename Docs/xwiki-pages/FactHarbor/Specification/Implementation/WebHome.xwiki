@@ -6,7 +6,7 @@ This section documents the **implementation details** of FactHarbor (POC Complet
 
 * [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - Comprehensive architecture (components, data flow, technology stack)
 
-== Pipeline Architecture ==
+== [[Pipeline Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.WebHome]] ==
 
 * [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] - Pipeline variants (Monolithic Canonical, Monolithic Dynamic, Orchestrated)
 * [[Context and EvidenceScope Detection>>FactHarbor.Specification.Implementation.Pipeline Architecture.Context and EvidenceScope Detection.WebHome]] - Context detection methodology and EvidenceScope system

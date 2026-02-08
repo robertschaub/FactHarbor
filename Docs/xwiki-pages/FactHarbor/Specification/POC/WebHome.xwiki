@@ -15,8 +15,10 @@ See [[Article Verdict Problem>>FactHarbor.Specification.POC.Article-Verdict-Prob
 == POC Phase Navigation ==
 
 * **[[POC Requirements>>FactHarbor.Specification.POC.Requirements]]** Complete POC1 & POC2 specification (v4.0)
+* **[[POC1 Specification>>FactHarbor.Specification.POC.Specification]]** POC1 scope, requirements, and quality gate definitions
 * **[[POC Summary>>FactHarbor.Specification.POC.Summary]]** Executive overview
 * **[[Article Verdict Problem>>FactHarbor.Specification.POC.Article-Verdict-Problem]]** Why context-aware analysis matters
+* **[[API & Schemas>>FactHarbor.Specification.POC.API-and-Schemas.WebHome]]** POC1 API contract and endpoint specifications
 
 == Roadmap Navigation ==
 

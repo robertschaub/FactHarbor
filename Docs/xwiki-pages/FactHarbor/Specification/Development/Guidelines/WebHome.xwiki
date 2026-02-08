@@ -1,6 +1,6 @@
 = Development Guidelines =
 
-Coding standards, scope definition practices, and testing strategy for FactHarbor development.
+Development standards for FactHarbor contributors and AI agents. Covers code style, naming conventions, how to define and use EvidenceScope in claims, and the testing strategy (unit tests, promptfoo LLM testing, quality gates).
 
 == Guidelines ==
 

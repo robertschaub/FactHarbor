@@ -1,7 +1,18 @@
 = Diagrams =
-This page acts as an index for diagrams that belong to the Organisation domain.
-The following diagrams are available:
+
+Visual diagrams for the Organisation domain, rendered using Mermaid.
+
+== Available Diagrams ==
+
 * [[Claim and Scenario Lifecycle (Overview)>>FactHarbor.Organisation.Diagrams.Claim and Scenario Lifecycle (Overview).WebHome]]
 * [[Governance Structure>>FactHarbor.Organisation.Diagrams.Governance Structure.WebHome]]
 * [[Domain Interaction Map>>FactHarbor.Organisation.Diagrams.Domain Interaction Map.WebHome]]
-New diagrams should follow the global diagram rules (Mermaid default, wrapper pages).
+
+== Diagram Pattern ==
+
+Each diagram uses a **wrapper + Mermaid** two-page pattern:
+
+* **Wrapper page** (e.g. ##Governance Structure/WebHome.xwiki##) — A short page with a title and a ##{{include}}## macro that pulls in the Mermaid source. This is what users navigate to.
+* **_Mermaid page** (e.g. ##Governance Structure_Mermaid/WebHome.xwiki##) — Contains only the ##{{mermaid}}## block. Kept separate so it can be ##{{include}}##d from multiple locations without duplicating the diagram source.
+
+New diagrams should follow this pattern. Always use Mermaid syntax (not images) so diagrams remain editable and version-controlled.
