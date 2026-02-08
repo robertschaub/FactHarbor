@@ -101,8 +101,8 @@ Attach these files to initialize the session. **Filenames may vary** - use newes
 ### 4. **Conversion Scripts (Optional - Reference Only)**
 - **Placeholders:** `<XAR_TO_JSON_SCRIPT>`, `<JSON_TO_XAR_SCRIPT>`
 - **Examples:**
-  - `xwiki_xar_to_fulltree_generic.py`
-  - `xwiki_fulltree_to_xar_ROBUST.py`
+  - `xar_to_fulltree.py`
+  - `fulltree_to_xar.py`
 - **Purpose:** Reference for understanding the data format; assistant does NOT modify these
 
 ---

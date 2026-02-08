@@ -28,9 +28,24 @@ And analyze the current source code.
 
 ## Tasks Pending:
 ---
+Cleanup all documentation (.md and .xWiki):
+
+Keep any content inside any page that either:
+-documents current implementation and intent, current status, future plans and ideas
+-current or envisioned future organisational aspects, future reccomended actions. 
+-discusses future implementation, intent and plans
+-decisions important to remember (brief summaries are sufficient)
+-past analysis reports that are still relevant for the future
+In other words: keep anything that reflects present, looks into the future or is still relevant for the future.
+
+Move any other (=historical) content  that does not fullfil any of the mentioned criteria to keep into an Archive folder; one Archive folder for .xWiki and one for .md file s, with sub-tree structure as from original location. 
+Pages that contain both current and historical content shall be splitted and the historical part shall be moved into a file with _arch suffix.
+I will review the archived files before final deletion.
+
+---
 Re.: Versioning and data editing:
 We decided not to edit any anlysis output data, but instead edit and version UCM configuration to generically optimize analysis and reporting. Core principle is "improve the system not the data", FactHarbor does not do FactCHecking itselve, instead FactHarbor Searaches and Aggregetes and Evidence such as reports from Fact-Checkers and Studies and other evidence reports.
-Please investigate how best to describe and remove or replace all occurences in docs where versioning is mentioned.Also any diagrams and descriptions on data edits shall be removed or replaced by UCM (Unified Configuration Management) edits. In addition User Roles which existed for the purpose of data editing shall be replaced by a user role "UCM Administrator" with accodring explanation and entity and diagram updates. And describe that every UCM config change is versioned and every report references the UCM configuratios that were used to analyze and cerate the report.
+Please investigate how best to describe and remove or replace all occurences in docs where versioning is mentioned. Also any diagrams and descriptions on data edits shall be removed or replaced by UCM (Unified Configuration Management) edits. In addition User Roles which existed for the purpose of data editing shall be replaced by a user role "UCM Administrator" with accodring explanation and entity and diagram updates. And describe that every UCM config change is versioned and every report references the UCM configuratios that were used to analyze and cerate the report.
 This is important because, it was a maior paradigm shift, so make sure there is no leftover describing data versioning and data edits.
 ---
 Look into my findings and conclusions and propose fixes:

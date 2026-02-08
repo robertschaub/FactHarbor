@@ -77,7 +77,7 @@ def main():
 
     # Get script directory
     script_dir = Path(__file__).parent
-    xar_to_json_script = script_dir / "xwiki_xar_to_fulltree_generic.py"
+    xar_to_json_script = script_dir / "xar_to_fulltree.py"
 
     if not xar_to_json_script.exists():
         print(f"Error: Converter not found: {xar_to_json_script}", file=sys.stderr)

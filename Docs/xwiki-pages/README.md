@@ -31,8 +31,8 @@ xwiki-pages/
 ├── scripts/                           (Conversion tools)
 │   ├── xar_to_xwiki_tree.py          (XAR → .xwiki tree)
 │   ├── xwiki_tree_to_xar.py          (.xwiki tree → XAR)
-│   ├── xwiki_xar_to_fulltree_generic.py  (dependency)
-│   ├── xwiki_fulltree_to_xar_ROBUST.py   (dependency)
+│   ├── xar_to_fulltree.py               (dependency: XAR → JSON)
+│   ├── fulltree_to_xar.py               (dependency: JSON → XAR)
 │   └── WORKFLOW.md                    (Detailed workflow reference)
 │
 ├── View.cmd                           (Local WYSIWYG viewer launcher)

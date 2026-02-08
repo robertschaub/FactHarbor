@@ -5,12 +5,12 @@ xwiki_tree_to_xar.py - Convert .xwiki file tree to XAR (one-step)
 Reads .xwiki files and creates importable XAR package.
 Derives metadata (pageId, parent, title) from file structure.
 
-Usage (from repo root):
-    python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages/FactHarbor
-    python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages/FactHarbor --output FactHarbor.xar
+Usage (from repo root - pass xwiki-pages as base, NOT FactHarbor):
+    python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages
+    python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar
 
 Input:
-    Docs/xwiki-pages/FactHarbor/  (single combined tree)
+    Docs/xwiki-pages/  (parent of FactHarbor/ tree, so pageIds get FactHarbor. prefix)
 
 Output:
     FactHarbor_updated.xar (ready for import to xWiki)
@@ -39,7 +39,7 @@ def extract_title_from_content(content: str, fallback: str) -> str:
     return fallback
 
 def path_to_page_id(file_path: Path, base_dir: Path) -> str:
-    """
+    r"""
     Convert file path to pageId.
     Docs/xwiki-pages/FactHarbor/Specification/WebHome.xwiki
     → FactHarbor.Specification.WebHome
@@ -54,18 +54,29 @@ def path_to_page_id(file_path: Path, base_dir: Path) -> str:
     escaped_parts = [part.replace('.', '\\.') for part in parts]
     return ".".join(escaped_parts)
 
+def split_page_id(page_id: str) -> List[str]:
+    """Split pageId on unescaped dots (escaped dots \\. are part of the name)."""
+    return re.split(r'(?<!\\)\.', page_id)
+
 def derive_parent(page_id: str) -> Optional[str]:
-    """
-    Derive parent from pageId.
+    r"""
+    Derive parent from pageId (handles escaped dots in names).
     FactHarbor.Specification.WebHome → FactHarbor.WebHome
     FactHarbor.WebHome → None (root)
+    FactHarbor.Roadmap.Architecture Analysis 1\.Jan\.26.WebHome → FactHarbor.Roadmap.WebHome
+    FactHarbor.Specification.SomePage → FactHarbor.Specification.WebHome
     """
-    parts = page_id.split(".")
-    if len(parts) <= 1:
-        return None
-    # Remove last part, change to WebHome
-    parent_parts = parts[:-1]
-    return ".".join(parent_parts) + ".WebHome"
+    parts = split_page_id(page_id)
+    if parts[-1] == "WebHome":
+        # WebHome's parent is the WebHome of the grandparent space
+        if len(parts) <= 2:
+            return None
+        return ".".join(parts[:-2]) + ".WebHome"
+    else:
+        # Non-WebHome pages: parent is the WebHome of the same space
+        if len(parts) <= 1:
+            return None
+        return ".".join(parts[:-1]) + ".WebHome"
 
 def scan_xwiki_tree(base_dir: Path) -> List[Dict]:
     """Scan directory tree and create node structures."""
@@ -88,7 +99,15 @@ def scan_xwiki_tree(base_dir: Path) -> List[Dict]:
         # Derive metadata from path
         page_id = path_to_page_id(xwiki_file, base_dir)
         parent_id = derive_parent(page_id)
-        title = extract_title_from_content(content_body, page_id.split(".")[-1])
+        page_id_parts = split_page_id(page_id)
+        filename = page_id_parts[-1]
+
+        # For WebHome pages, title = parent directory name (space name in xWiki)
+        # e.g. FactHarbor/Specification/WebHome.xwiki → title "Specification"
+        if filename == "WebHome" and len(page_id_parts) >= 2:
+            title = page_id_parts[-2].replace('\\.', '.')
+        else:
+            title = extract_title_from_content(content_body, filename.replace('\\.', '.'))
 
         # Create node structure (matching fulltree format)
         node = {
@@ -138,7 +157,7 @@ def main():
 
     # Get script directory
     script_dir = Path(__file__).parent
-    json_to_xar_script = script_dir / "xwiki_fulltree_to_xar_ROBUST.py"
+    json_to_xar_script = script_dir / "fulltree_to_xar.py"
 
     if not json_to_xar_script.exists():
         print(f"Error: Converter not found: {json_to_xar_script}", file=sys.stderr)

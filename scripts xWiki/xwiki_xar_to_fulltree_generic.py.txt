@@ -1,8 +1,0 @@
-# default: keeps XAR order (no sort)
-python xwiki_xar_to_fulltree_generic.py FactHarbor.Consolidated121225.xar
-
-# export page bodies too; export dir auto-defaults to <outputjsonbase>_pages
-python xwiki_xar_to_fulltree_generic.py FactHarbor.Consolidated121225.xar --export-pages
-
-# opt-in sorting
-python xwiki_xar_to_fulltree_generic.py FactHarbor.Consolidated121225.xar --sort

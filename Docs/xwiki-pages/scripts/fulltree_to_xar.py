@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-xwiki_fulltree_to_xar_ROBUST.py
+fulltree_to_xar.py
 Convert a "fulltree" JSON snapshot into an XWiki .xar file.
 Supports XObjects, flexible node IDs, and UTF-8 encoding.
 """
@@ -132,7 +132,7 @@ def json_fulltree_to_xar(input_path: str, output_path: str, wiki_name: str = "xw
 
 def main(argv: list[str]) -> None:
     if len(argv) < 2:
-        print("Usage: python xwiki_fulltree_to_xar_ROBUST.py input.json [out.xar]", file=sys.stderr)
+        print("Usage: python fulltree_to_xar.py input.json [out.xar]", file=sys.stderr)
         raise SystemExit(1)
     
     input_path = argv[1]

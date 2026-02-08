@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-xwiki_xar_to_fulltree_generic.py
+xar_to_fulltree.py
 
 Generic XWiki .xar -> JSON "fulltree" converter.
 
