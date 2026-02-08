@@ -37,7 +37,7 @@ Project Lead                          You (AI Agent)
 ═══════════════════════════════════   ══════════════════════════════════
 
 1. Exports XAR from xWiki       →     2. Convert XAR to .xwiki tree:
-   (provides .xar file)                  python xar_to_xwiki_tree.py in.xar
+   (provides .xar file)                  python scripts/xar_to_xwiki_tree.py in.xar
 
 3. [You work offline]                 4. Edit .xwiki files DIRECTLY:
                                          (No conversion needed!)
@@ -47,7 +47,7 @@ Project Lead                          You (AI Agent)
                                          - Update documentation
 
 5. [You work offline]                 6. Convert back to XAR:
-                                         python xwiki_tree_to_xar.py tree/
+                                         python scripts/xwiki_tree_to_xar.py ../xwiki-pages
 
 7. Reviews XAR                    ←   8. Deliver updated XAR file
 8. Imports to xWiki                      (notify project lead it's ready)
@@ -59,12 +59,12 @@ Project Lead                          You (AI Agent)
 - ✅ Access to `c:\DEV\FactHarbor` directory
 - ✅ Python 3.8+ installed and working
 - ✅ Git access (can run git commands)
-- ✅ Conversion scripts in `Docs/xwiki-export/`
+- ✅ Conversion scripts in `Docs/xwiki-pages/scripts/`
 
 **Read these files first:**
-- `Docs/xwiki-export/WORKFLOW.md` - How to use conversion tools (NEW simplified workflow)
+- `Docs/xwiki-pages/scripts/WORKFLOW.md` - How to use conversion tools
 - `Docs/ROLES_AND_RESPONSIBILITIES.md` - Division of labor
-- `Docs/xwiki-pages/README.md` - Two-tree documentation structure
+- `Docs/xwiki-pages/README.md` - Single-tree documentation structure
 
 ### What You ARE Authorized To Do:
 - ✅ Read all files in `Docs/`

@@ -4,14 +4,16 @@ xar_to_xwiki_tree.py - Convert XAR to .xwiki file tree (one-step)
 
 Extracts xWiki pages from XAR and saves as .xwiki files in folder tree.
 Files contain pure xWiki 2.1 syntax - ready to paste into xWiki editor.
+Automatically skips system pages (CKEditor, Mail, Panels, XWiki, WebPreferences).
 
-Usage:
-    python xar_to_xwiki_tree.py input.xar
-    python xar_to_xwiki_tree.py input.xar --output custom_directory/
+Usage (from repo root):
+    python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py input.xar
+    python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py input.xar --output Docs/xwiki-pages
 
-Output:
+Output structure:
     Docs/xwiki-pages/FactHarbor/Specification/WebHome.xwiki
-    (pageId: FactHarbor.Specification.WebHome)
+    Docs/xwiki-pages/FactHarbor/Organisation/WebHome.xwiki
+    (single combined tree matching xWiki page hierarchy)
 """
 
 import argparse

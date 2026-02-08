@@ -1,90 +1,76 @@
 # xWiki Pages - Master Documentation Source
 
-**This directory contains the MASTER source for all FactHarbor documentation in two separate trees.**
+**This directory contains the MASTER source for all FactHarbor documentation as a single tree matching xWiki.**
 
-> **TL;DR:** All docs live here as `.xwiki` files in two trees (`FactHarbor_Spec_and_Impl/` and `FactHarbor_Org/`). Edit files directly, commit to git. To preview locally with full WYSIWYG rendering, run:
+> **TL;DR:** All docs live here as `.xwiki` files in `FactHarbor/`. Edit files directly, commit to git. To preview locally with full WYSIWYG rendering, run:
 > ```
 > Docs\xwiki-pages\View.cmd
 > ```
-> To sync with xWiki, export/import XARs via `Docs/xwiki-export/` scripts.
+> To sync with xWiki, use scripts in `scripts/`.
 
 ## Overview
 
 - **Format:** `.xwiki` files containing pure xWiki 2.1 syntax
 - **Version Control:** All files are tracked in git
-- **Editing:** AI agents edit these files directly
-- **Structure:** Two separate folder trees for different documentation domains
+- **Editing:** AI agents edit these files directly (no conversion needed)
+- **Structure:** Single folder tree matching xWiki page hierarchy exactly
 
 ## Directory Structure
 
 ```
 xwiki-pages/
-├── FactHarbor_Spec_and_Impl/      (75 pages)
-│   └── FactHarbor/
-│       ├── Specification/          (Requirements, Architecture, Diagrams, etc.)
-│       ├── Roadmap/                (Implementation plans, guidance)
-│       ├── FH Analysis Reports/    (Analysis results)
-│       └── License and Disclaimer/
+├── FactHarbor/                        (137 pages - single combined tree)
+│   ├── Specification/                 (Requirements, Architecture, Diagrams, etc.)
+│   ├── Roadmap/                       (Implementation plans, guidance)
+│   ├── Organisation/                  (Governance, processes, policies)
+│   ├── FH Analysis Reports/           (Analysis results)
+│   ├── User Guides/                   (Getting started, admin, LLM config)
+│   ├── License and Disclaimer/
+│   └── WebHome.xwiki                  (FactHarbor root page)
 │
-└── FactHarbor_Org/                 (38 pages)
-    └── FactHarbor/
-        ├── Organisation/           (Governance, processes, policies)
-        └── License and Disclaimer/
+├── scripts/                           (Conversion tools)
+│   ├── xar_to_xwiki_tree.py          (XAR → .xwiki tree)
+│   ├── xwiki_tree_to_xar.py          (.xwiki tree → XAR)
+│   ├── xwiki_xar_to_fulltree_generic.py  (dependency)
+│   ├── xwiki_fulltree_to_xar_ROBUST.py   (dependency)
+│   ├── WORKFLOW.md                    (Detailed workflow reference)
+│   └── WORKFLOW_OLD.md                (Legacy 4-step Markdown workflow)
+│
+├── View.cmd                           (Local WYSIWYG viewer launcher)
+├── viewer-impl/                       (Viewer implementation)
+└── README.md                          (This file)
 ```
 
-## Two-Tree Workflow
+## Workflow
 
-### Why Two Trees?
+### For AI Agents (Direct Editing)
 
-**FactHarbor_Spec_and_Impl:** Technical documentation
-- Product specifications
-- Implementation roadmap
-- Architecture and design
-- Analysis reports
-
-**FactHarbor_Org:** Organizational documentation
-- Governance structure
-- Policies and procedures
-- Legal framework
-- Team processes
-
-### Working with Two Trees
-
-**Convert both XARs to .xwiki trees:**
+**Edit .xwiki files directly - no conversion needed:**
 ```bash
-cd Docs/xwiki-export
-
-# Spec and Implementation
-python xar_to_xwiki_tree.py FactHarbor_Spec_and_Impl_06.Feb.26.xar \
-    --output ../xwiki-pages/FactHarbor_Spec_and_Impl
-
-# Organization
-python xar_to_xwiki_tree.py FactHarbor_Org_06.Feb.26.xar \
-    --output ../xwiki-pages/FactHarbor_Org
-```
-
-**Edit files directly (no conversion!):**
-```bash
-# Edit technical docs
-code ../xwiki-pages/FactHarbor_Spec_and_Impl/FactHarbor/Specification/Architecture/WebHome.xwiki
-
-# Edit organizational docs
-code ../xwiki-pages/FactHarbor_Org/FactHarbor/Organisation/Governance/WebHome.xwiki
+# Edit any page
+code Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki
+code Docs/xwiki-pages/FactHarbor/Organisation/Governance/WebHome.xwiki
 
 # Commit changes
-git add ../xwiki-pages/
-git commit -m "docs: update specification and governance"
+git add Docs/xwiki-pages/
+git commit -m "docs: update architecture and governance"
 ```
 
-**Export back to XARs:**
-```bash
-# Export Spec and Implementation
-python xwiki_tree_to_xar.py ../xwiki-pages/FactHarbor_Spec_and_Impl/ \
-    --output FactHarbor_Spec_and_Impl_updated.xar
+### For Project Lead (xWiki Sync)
 
-# Export Organization
-python xwiki_tree_to_xar.py ../xwiki-pages/FactHarbor_Org/ \
-    --output FactHarbor_Org_updated.xar
+**Import from xWiki → git:**
+```bash
+# 1. Export XAR from xWiki (Administration → Export)
+# 2. Convert to .xwiki tree:
+python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py exported.xar --output Docs/xwiki-pages
+```
+
+**Export from git → xWiki:**
+```bash
+# 1. Convert tree to XAR (pass xwiki-pages as base, NOT FactHarbor):
+python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar
+
+# 2. Import XAR to xWiki (Administration → Import)
 ```
 
 ## File Format
@@ -113,81 +99,28 @@ graph TD
 
 | File Path | Derived Metadata |
 |-----------|------------------|
-| **File:** `FactHarbor_Spec_and_Impl/FactHarbor/Specification/WebHome.xwiki` | |
+| **File:** `FactHarbor/Specification/WebHome.xwiki` | |
 | - pageId: | `FactHarbor.Specification.WebHome` |
 | - parent: | `FactHarbor.WebHome` |
 | - title: | Extracted from first heading |
 | - syntax: | `xwiki/2.1` |
-| **File:** `FactHarbor_Org/FactHarbor/Organisation/Governance/WebHome.xwiki` | |
+| **File:** `FactHarbor/Organisation/Governance/WebHome.xwiki` | |
 | - pageId: | `FactHarbor.Organisation.Governance.WebHome` |
 | - parent: | `FactHarbor.Organisation.WebHome` |
 | - title: | Extracted from first heading |
 | - syntax: | `xwiki/2.1` |
 
-## Workflow
+## Benefits
 
-### For AI Agents (Direct Editing)
-
-**Edit .xwiki files directly:**
-```bash
-# Navigate to tree
-cd Docs/xwiki-pages/FactHarbor_Spec_and_Impl/FactHarbor/Specification
-
-# Open and edit
-code Architecture/WebHome.xwiki
-
-# Commit changes
-cd ../../../..
-git add xwiki-pages/
-git commit -m "docs: update architecture"
-```
-
-**Export to XAR (for xWiki import):**
-```bash
-cd Docs/xwiki-export
-
-# Export one tree
-python xwiki_tree_to_xar.py ../xwiki-pages/FactHarbor_Spec_and_Impl/
-
-# Or export both trees
-python xwiki_tree_to_xar.py ../xwiki-pages/FactHarbor_Spec_and_Impl/ --output Spec_updated.xar
-python xwiki_tree_to_xar.py ../xwiki-pages/FactHarbor_Org/ --output Org_updated.xar
-```
-
-### For Project Lead (xWiki Sync)
-
-**Import from xWiki:**
-```bash
-# 1. Export XAR from xWiki (Administration → Export)
-# 2. Convert to .xwiki tree:
-cd Docs/xwiki-export
-python xar_to_xwiki_tree.py FactHarbor_Spec_Export.xar --output ../xwiki-pages/FactHarbor_Spec_and_Impl
-python xar_to_xwiki_tree.py FactHarbor_Org_Export.xar --output ../xwiki-pages/FactHarbor_Org
-```
-
-**Export to xWiki:**
-```bash
-# 1. Convert .xwiki trees to XARs:
-cd Docs/xwiki-export
-python xwiki_tree_to_xar.py ../xwiki-pages/FactHarbor_Spec_and_Impl/
-python xwiki_tree_to_xar.py ../xwiki-pages/FactHarbor_Org/
-
-# 2. Import XARs to xWiki (Administration → Import)
-```
-
-## Benefits of This Approach
-
-✅ **Git-native:** All documentation version controlled as plain text
-✅ **Direct editing:** No conversion needed for editing
-✅ **Copy-paste ready:** Content can be pasted directly into xWiki editor
-✅ **AI-friendly:** Agents can read and edit without conversion overhead
-✅ **Human-readable:** Plain xWiki 2.1 syntax with Markdown-like simplicity
-✅ **Lossless sync:** Full round-trip to/from xWiki with all metadata preserved
-✅ **Separation of concerns:** Technical docs separate from organizational docs
+- **Git-native:** All documentation version controlled as plain text
+- **Direct editing:** No conversion needed for editing
+- **1:1 xWiki match:** Tree structure matches xWiki page hierarchy exactly
+- **Clean round-trip:** Export XAR → convert → edit → convert back → import
+- **Copy-paste ready:** Content can be pasted directly into xWiki editor
+- **AI-friendly:** Agents can read and edit without conversion overhead
+- **No duplication:** Single tree = no conflicting copies of shared pages
 
 ## xWiki 2.1 Syntax Reference
-
-**Common syntax elements:**
 
 | Element | xWiki Syntax | Preview |
 |---------|--------------|---------|
@@ -200,7 +133,7 @@ python xwiki_tree_to_xar.py ../xwiki-pages/FactHarbor_Org/
 | Code block | `{{{code}}}` | ```code``` |
 | Mermaid | `{{mermaid}}...{{/mermaid}}` | Diagram |
 
-**Full reference:** See [Docs/xwiki-export/WORKFLOW_NEW.md](../xwiki-export/WORKFLOW_NEW.md)
+**Full reference:** See [scripts/WORKFLOW.md](scripts/WORKFLOW.md)
 
 ## XWiki Viewer (Local WYSIWYG Preview)
 
@@ -213,27 +146,7 @@ A standalone HTML viewer that renders `.xwiki` files with full WYSIWYG preview, 
 Docs\xwiki-pages\View.cmd
 ```
 
-This starts a local HTTP server and opens the viewer in Chrome (or Edge). The browser's folder picker will open automatically - select one of the wiki trees (e.g. `FactHarbor_Spec_and_Impl` or `FactHarbor_Org`).
-
-### Launcher Options
-
-The underlying PowerShell script (`viewer-impl/Open-XWikiViewer.ps1`) supports options:
-
-```powershell
-# Default: Chrome, port 8471, auto-open folder picker
-powershell -ExecutionPolicy Bypass -File "Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1"
-
-# Use Edge instead of Chrome
-powershell -ExecutionPolicy Bypass -File "Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1" -Browser edge
-
-# Use a custom port
-powershell -ExecutionPolicy Bypass -File "Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1" -Port 9000
-
-# Don't auto-trigger the folder picker
-powershell -ExecutionPolicy Bypass -File "Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1" -NoAutoOpen
-```
-
-Press `Ctrl+C` in the terminal to stop the server. The script automatically cleans up any previous server processes on startup.
+This starts a local HTTP server and opens the viewer in Chrome (or Edge). The browser's folder picker will open automatically - select the `FactHarbor` folder.
 
 ### Viewer Features
 
@@ -248,69 +161,30 @@ Press `Ctrl+C` in the terminal to stop the server. The script automatically clea
 | **File Watching** | Live-reload when a file changes on disk (requires File System Access API) |
 | **View Modes** | Toggle between Source, Split, and Preview |
 
-### Supported XWiki 2.1 Syntax
-
-| Syntax | Renders as |
-|--------|------------|
-| `= Heading =` ... `====== H6 ======` | Headings (levels 1-6) |
-| `**bold**` | **bold** |
-| `//italic//` | *italic* |
-| `--strikethrough--` | ~~strikethrough~~ |
-| `##code##` or `` `code` `` | `inline code` |
-| `[[label>>PageRef]]` | Wiki link (resolved against folder tree) |
-| `[[label>>https://...]]` | External link |
-| `* item` / `1. item` | Bullet / numbered lists |
-| `1. ((( rich content )))` | Rich list items (multi-paragraph) |
-| `(% class="box infomessage" %)` | Parameter blocks (CSS class/style) |
-| `((( ... )))` | Groups / div containers |
-| `{{{ verbatim }}}` | Preformatted text (no formatting) |
-| `{{code language="js"}}...{{/code}}` | Code blocks with language label |
-| `{{mermaid}}...{{/mermaid}}` | Mermaid diagrams |
-| `{{info}}...{{/info}}` | Info / warning / error / success boxes |
-| `{{include reference="..."}}` | Include another page inline |
-| `{{toc/}}` | Table of contents |
-| `\|=Header\|...\|` | Tables |
-| `> quote` | Blockquotes |
-| `----` | Horizontal rule |
-
-### How It Works
-
-The viewer is a single self-contained HTML file (`xwiki-viewer.html`) with no build step:
-
-1. **Open a folder** via the browser's File System Access API (Chrome/Edge) or the `webkitdirectory` fallback (Firefox)
-2. **Scans recursively** for `.xwiki`, `.wiki`, `.txt`, `.md` files
-3. **Builds a page index** using the folder structure as the XWiki space hierarchy
-4. **Resolves wiki links** with fuzzy matching (handles case differences, path variations)
-5. **Renders includes** by fetching and parsing referenced pages inline (with circular reference detection)
-
 ### VS Code Integration
 
-The project's `.vscode/tasks.json` includes three XWiki Viewer tasks. Use **Terminal → Run Task** and select:
+The project's `.vscode/tasks.json` includes three XWiki Viewer tasks. Use **Terminal > Run Task** and select:
 
-- **XWiki Viewer: Open** — starts server + opens Chrome
-- **XWiki Viewer: Open (Edge)** — starts server + opens Edge
-- **XWiki Viewer: Quick Open (no server)** — opens via `file://` directly
-
-### Viewer Options (Other)
-
-1. **xWiki itself** - Import XAR to xWiki instance for full server-side rendering
-2. **VS Code** - Edit plain text with syntax highlighting
-3. **GitHub** - View in repository (limited formatting)
+- **XWiki Viewer: Open** - starts server + opens Chrome
+- **XWiki Viewer: Open (Edge)** - starts server + opens Edge
+- **XWiki Viewer: Quick Open (no server)** - opens via `file://` directly
 
 ## Maintenance
 
-**These directories are the MASTER:**
+**`FactHarbor/` is the MASTER source:**
 - All documentation changes should be made here
 - Changes are committed to git for version control
 - XAR files are generated from this source for xWiki import
 - xWiki is synchronized periodically via XAR import/export
 
-**Two separate trees maintained independently:**
-- `FactHarbor_Spec_and_Impl/` for technical documentation
-- `FactHarbor_Org/` for organizational documentation
+**What stays as .md files (NOT in xWiki):**
+- `Docs/WIP/` - Work in progress (frequently edited)
+- `Docs/STATUS/` - Status tracking
+- `Docs/BACKLOG.md` - Task backlog
+- Short/mid-term planning documents
 
 ---
 
-**Last Updated:** 2026-02-06
-**Total Pages:** 113 (75 Spec/Impl + 38 Org)
+**Last Updated:** 2026-02-08
+**Total Pages:** 137
 **Format:** xWiki 2.1

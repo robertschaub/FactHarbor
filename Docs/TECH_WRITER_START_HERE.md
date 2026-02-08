@@ -35,8 +35,8 @@ Consolidate all FactHarbor documentation into:
 ┌─────────────────────────────────────────────────────────────┐
 │ Project Lead          →  You (AI Agent)                     │
 ├─────────────────────────────────────────────────────────────┤
-│ 1. Exports XAR        →  2. Convert to .xwiki tree           │
-│                          python xar_to_xwiki_tree.py in.xar  │
+│ 1. Exports XAR        →  2. Convert to .xwiki tree                      │
+│                          python scripts/xar_to_xwiki_tree.py in.xar     │
 │                                                              │
 │ 3. [Waits]            →  4. Edit .xwiki files DIRECTLY       │
 │                          - No conversion needed!             │
@@ -44,8 +44,8 @@ Consolidate all FactHarbor documentation into:
 │                          - Fix formatting                    │
 │                          - Reorganize structure              │
 │                                                              │
-│ 5. [Waits]            →  6. Convert back to XAR              │
-│                          python xwiki_tree_to_xar.py tree/   │
+│ 5. [Waits]            →  6. Convert back to XAR                         │
+│                          python scripts/xwiki_tree_to_xar.py xwiki-pages│
 │                                                              │
 │ 7. Imports to xWiki   ←  8. Notify: XAR ready                │
 └─────────────────────────────────────────────────────────────┘
@@ -93,12 +93,12 @@ Consolidate all FactHarbor documentation into:
 
 ## 🛠️ Tools You'll Use
 
-**Conversion Scripts** (located in `Docs/xwiki-export/`):
+**Conversion Scripts** (located in `Docs/xwiki-pages/scripts/`):
 
 1. **xar_to_xwiki_tree.py** - One-step: XAR → .xwiki file tree
 2. **xwiki_tree_to_xar.py** - One-step: .xwiki file tree → XAR
 
-**Full Reference:** See [WORKFLOW.md](xwiki-export/WORKFLOW.md)
+**Full Reference:** See [WORKFLOW.md](xwiki-pages/scripts/WORKFLOW.md)
 
 **File Format:**
 
@@ -127,10 +127,10 @@ graph TD
 
 ### Phase 1: Inventory Current Documentation (2-4 hours)
 
-**Input:** `FactHarbor_Spec_and_Impl_06.Feb.26.xar` (already provided in `Docs/xwiki-export/`)
+**Input:** `.xwiki` tree already exists at `Docs/xwiki-pages/FactHarbor/` (137 pages)
 
 **Your Actions:**
-1. Convert XAR to Markdown
+1. Explore the .xwiki tree structure
 2. Scan all of `Docs/` directory
 3. Check `Docs/WIP/`, `Docs/ARCHIVE/`, `Docs/STATUS/`
 4. Categorize each doc as: Current / Outdated / Duplicate / Archive
@@ -245,22 +245,24 @@ FactHarbor/
 
 ## 🚀 Start Now: Phase 1
 
-The XAR files are ready in `Docs/xwiki-export/`:
-- `FactHarbor_Spec_and_Impl_06.Feb.26.xar` (already converted)
-- `FactHarbor_Org_06.Feb.26.xar` (already converted)
+The .xwiki tree is ready at `Docs/xwiki-pages/FactHarbor/` (137 pages).
 
 **Current structure:**
 ```bash
-Docs/xwiki-pages/
-├── FactHarbor_Spec_and_Impl/  (75 pages - Specification, Roadmap, Analysis Reports)
-└── FactHarbor_Org/             (38 pages - Organisation, governance, policies)
+Docs/xwiki-pages/FactHarbor/
+├── Specification/          (Requirements, Architecture, Diagrams, etc.)
+├── Roadmap/                (Implementation plans, guidance)
+├── Organisation/           (Governance, processes, policies)
+├── FH Analysis Reports/    (Analysis results)
+├── User Guides/            (Getting started, admin, LLM config)
+├── License and Disclaimer/
+└── WebHome.xwiki           (FactHarbor root page)
 ```
 
 **Your next steps:**
 
 1. **Explore the .xwiki files:**
-   - Open `Docs/xwiki-pages/FactHarbor_Spec_and_Impl/`
-   - Open `Docs/xwiki-pages/FactHarbor_Org/`
+   - Open `Docs/xwiki-pages/FactHarbor/`
    - Browse the page hierarchy
    - Understand what content exists
 
@@ -283,7 +285,7 @@ Docs/xwiki-pages/
 
 If you need more detail, these documents are available:
 
-- **[WORKFLOW.md](xwiki-export/WORKFLOW.md)** - Complete conversion tool reference
+- **[WORKFLOW.md](xwiki-pages/scripts/WORKFLOW.md)** - Complete conversion tool reference
 - **[ROLES_AND_RESPONSIBILITIES.md](ROLES_AND_RESPONSIBILITIES.md)** - Detailed role breakdown
 - **[INSTRUCTIONS_FOR_TECH_WRITER.md](INSTRUCTIONS_FOR_TECH_WRITER.md)** - Extended task descriptions
 

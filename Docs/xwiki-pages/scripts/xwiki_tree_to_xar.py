@@ -5,13 +5,12 @@ xwiki_tree_to_xar.py - Convert .xwiki file tree to XAR (one-step)
 Reads .xwiki files and creates importable XAR package.
 Derives metadata (pageId, parent, title) from file structure.
 
-Usage:
-    python xwiki_tree_to_xar.py Docs/xwiki-pages/
-    python xwiki_tree_to_xar.py Docs/xwiki-pages/ --output custom.xar
+Usage (from repo root):
+    python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages/FactHarbor
+    python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages/FactHarbor --output FactHarbor.xar
 
 Input:
-    Docs/xwiki-pages/FactHarbor/Specification/WebHome.xwiki
-    (derives pageId: FactHarbor.Specification.WebHome)
+    Docs/xwiki-pages/FactHarbor/  (single combined tree)
 
 Output:
     FactHarbor_updated.xar (ready for import to xWiki)
