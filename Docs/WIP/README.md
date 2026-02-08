@@ -1,6 +1,6 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-05
+**Last Updated**: 2026-02-08
 **Status**: Cleaned up - Historical work moved to ARCHIVE
 
 ---
@@ -35,22 +35,12 @@ For completed work, historical documents, and reference materials, see:
 
 **Related:** Docs/ARCHITECTURE/Calculations.md, Docs/ARCHITECTURE/Evidence_Quality_Filtering.md
 
-### UCM Flaw Review (2026-02-05)
-**Status:** 🧭 Draft Findings (Awaiting Prioritization)
-- **Document:** [UCM_Flaw_Review_2026-02-05.md](UCM_Flaw_Review_2026-02-05.md)
-- **Type:** Review / Proposal
-- **Scope:** Unified Config Management (config loader/storage/admin API)
-
-- **Prerequisites:** Agreement on desired behavior for warnings API and default config audit tracking
-
-**Key Findings:**
-- Warnings API ignores requested hashes
-- Default config usage recorded with a non-existent hash
-- Cached configs lose `fromDefault` provenance
-- Content hash uniqueness blocks identical configs across profiles
-- Snapshot analyzer version is hard-coded
-
-**Related:** Docs/xwiki-pages/FactHarbor/Specification/Implementation/Source Reliability System/WebHome.xwiki, Docs/xwiki-pages/FactHarbor/Specification/Implementation/Schema Migration Strategy/WebHome.xwiki
+### Generic Evidence Quality Principles
+**Status:** 🧭 PROPOSED — Awaiting Implementation
+- **Document:** [Generic_Evidence_Quality_Principles.md](Generic_Evidence_Quality_Principles.md)
+- **Type:** Quality Improvement / Principles
+- **Scope:** Evidence source classification, probativeValue enforcement, jurisdiction relevance
+- **Origin:** Extracted from Bolsonaro analysis investigation (archived)
 
 ### Shadow Mode: Self-Learning Prompt Optimization System
 **Status:** 🔬 Design Ready (Awaiting Prioritization)
@@ -121,29 +111,9 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Recently Completed Work (Moved to ARCHIVE)
+## Recently Completed Work
 
-The following items were completed and moved to ARCHIVE during the 2026-02-04 cleanup:
-
-### ✅ P0: Fallback Strategy (2026-02-03)
-- Implemented classification fallback tracking system
-- **Location:** [ARCHIVE/P0_Fallback_Strategy_FINAL.md](../ARCHIVE/P0_Fallback_Strategy_FINAL.md)
-
-### ✅ Lexicon-to-LLM Migration (2026-02-03)
-- Completed migration from pattern-based to LLM-based classification
-- **Location:** [ARCHIVE/lexicon-to-llm-migration.md](../ARCHIVE/lexicon-to-llm-migration.md)
-
-### ✅ Prompt Optimization v2.8.0-2.8.1 (2026-02-04)
-- Token reduction and prompt refinement completed
-- **Location:** [ARCHIVE/Prompt_Optimization_Investigation.md](../ARCHIVE/Prompt_Optimization_Investigation.md)
-
-### ✅ Documentation Improvement Plan (2026-02-04)
-- Phases 1-4 complete, comprehensive documentation consolidation
-- **Location:** [ARCHIVE/Documentation_Improvement_Plan_2026-02-03.md](../ARCHIVE/Documentation_Improvement_Plan_2026-02-03.md)
-
-### ✅ Post-Migration Robustness Proposals (2026-02-03)
-- P0 implemented, P1-P3 extracted to backlog
-- **Location:** [ARCHIVE/Post-Migration_Robustness_Proposals.md](../ARCHIVE/Post-Migration_Robustness_Proposals.md)
+Completed work has been moved to **[Docs/ARCHIVE/](../ARCHIVE/)**. See also `Docs/ARCHIVE/WIP/` for archived WIP items and `Docs/ARCHIVE/BACKLOG_completed_arch.md` for completed backlog items.
 
 ---
 

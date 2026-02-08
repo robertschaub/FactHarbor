@@ -5,7 +5,7 @@
 **Created:** 2026-02-05
 **Updated:** 2026-02-08 (Session 15: source-count alignment + context frame signal + anchor recovery)
 **Priority:** 🔴 HIGH (confidence collapse fixed; context-target and variance gates still failing)
-**Verification Report:** [Evidence_Quality_Verification_Report.md](Evidence_Quality_Verification_Report.md)
+**Verification Report:** [Evidence_Quality_Verification_Report.md](../ARCHIVE/WIP/Evidence_Quality_Verification_Report.md)
 
 **Issues Addressed:**
 
@@ -669,7 +669,7 @@ This phase is light and does **not require schema changes**.
 **Priority** : HIGH
 **Duration** : 2 days
 **Status** : ✅ **VERIFIED COMPLETE** (2026-02-06)
-**Verification** : See [Evidence_Quality_Verification_Report.md](Evidence_Quality_Verification_Report.md)
+**Verification** : See [Evidence_Quality_Verification_Report.md](../ARCHIVE/WIP/Evidence_Quality_Verification_Report.md)
 
 **Results:**
 | Metric | Before | After |

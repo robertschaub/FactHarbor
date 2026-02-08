@@ -33,8 +33,7 @@ xwiki-pages/
 │   ├── xwiki_tree_to_xar.py          (.xwiki tree → XAR)
 │   ├── xwiki_xar_to_fulltree_generic.py  (dependency)
 │   ├── xwiki_fulltree_to_xar_ROBUST.py   (dependency)
-│   ├── WORKFLOW.md                    (Detailed workflow reference)
-│   └── WORKFLOW_OLD.md                (Legacy 4-step Markdown workflow)
+│   └── WORKFLOW.md                    (Detailed workflow reference)
 │
 ├── View.cmd                           (Local WYSIWYG viewer launcher)
 ├── viewer-impl/                       (Viewer implementation)

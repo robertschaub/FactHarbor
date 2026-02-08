@@ -36,13 +36,14 @@ When a task specifies an **Area**, read the corresponding documents:
 | **Prompts** | `/Docs/ARCHITECTURE/Prompt_Architecture.md`, `/Docs/xwiki-pages/FactHarbor/Specification/Reference/Prompt Engineering/Provider-Specific Formatting/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Specification/Reference/Prompt Engineering/Prompt Guidelines/WebHome.xwiki` |
 | **Calculations** | `/Docs/ARCHITECTURE/Calculations.md`, `/Docs/ARCHITECTURE/Evidence_Quality_Filtering.md` |
 | **Configuration** | `/Docs/USER_GUIDES/Unified_Config_Management.md`, `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
-| **Context-Detection** | `/Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Scope Definition Guidelines/WebHome.xwiki`, `/Docs/ARCHITECTURE/Context_Detection_via_EvidenceScope.md` |
+| **Context-Detection** | `/Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Scope Definition Guidelines/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/Pipeline Architecture/Context and EvidenceScope Detection/WebHome.xwiki` |
 | **Source-Reliability** | `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/Source Reliability System/WebHome.xwiki` |
 | **Pipeline** | `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/Pipeline Architecture/TriplePath Architecture/WebHome.xwiki` |
 | **UI** | `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/KeyFactors Design/WebHome.xwiki` |
 | **Testing** | `/Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Testing Strategy/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/User Guides/Promptfoo Testing/WebHome.xwiki` |
 | **Schema** | `/Docs/xwiki-pages/FactHarbor/Specification/Implementation/Schema Migration Strategy/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki` |
 | **Deployment** | `/Docs/xwiki-pages/FactHarbor/Roadmap/Zero-Cost Hosting Implementation Guide/WebHome.xwiki` |
+| **Documentation** | `/Docs/AGENTS/TECH_WRITER_START_HERE.md`, `/Docs/xwiki-pages/README.md`, `/Docs/xwiki-pages/scripts/WORKFLOW.md` |
 
 **If no Area is specified:** Agent should intelligently identify relevant documents based on the task description.
 
