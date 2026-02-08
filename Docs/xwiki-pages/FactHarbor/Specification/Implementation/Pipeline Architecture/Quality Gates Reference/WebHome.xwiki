@@ -409,9 +409,73 @@ Search for "Quality Gates" section (planned feature)
 
 ----
 
-== 9. Configuration Reference ==
+== 9. Confidence Penalties ==
 
-=== 9.1 UCM Pipeline Config ===
+After Gate 4 assessment, two additional confidence penalty mechanisms may reduce overall confidence:
+
+=== 9.1 Recency Evidence Gap Penalty ===
+
+**Purpose**: Reduce confidence when time-sensitive claims lack recent evidence.
+
+**Trigger**: Topic is recency-sensitive (via LLM ##temporalContext## or heuristic detection) AND no evidence found within ##recencyWindowMonths## (default: 6 months).
+
+**Graduated Mode (v2.11, default: enabled)**:
+
+Instead of a flat penalty, the graduated system uses three independent factors:
+
+{{code}}
+effectivePenalty = round(maxPenalty × staleness × volatility × volume)
+{{/code}}
+
+**Factor 1: Staleness Curve** — How far outside the recency window is the evidence?
+
+* Evidence within window → multiplier = 0 (no penalty)
+* Evidence outside window → linear ramp from 0 to 1 over one additional window period
+* At 2× window → capped at 1.0
+* No dates found → 1.0 (full staleness)
+
+**Factor 2: Topic Volatility** — How time-critical is the topic? (from ##temporalContext.granularity##)
+
+|= Granularity |= Multiplier |= Example
+| ##week## | 1.0 | Breaking news
+| ##month## | 0.8 | Monthly-cycle topics
+| ##year## | 0.4 | Institutional / annual
+| ##none## | 0.2 | Enduring / structural
+| //undefined// | 0.7 | Fallback when LLM didn't assess
+
+**Factor 3: Evidence Volume** — More evidence (even if dated) attenuates the penalty.
+
+|= dateCandidates |= Multiplier
+| 0 | 1.0
+| 1-10 | 0.9
+| 11-25 | 0.7
+| 26+ | 0.5
+
+**Example — Institutional topic (SRG trustworthiness)**:
+* Evidence 14 months old, window = 6 months → staleness = 1.0 (capped)
+* Granularity = "year" → volatility = 0.4
+* 35 date candidates → volume = 0.5
+* **Effective penalty = round(20 × 1.0 × 0.4 × 0.5) = 4 points** (vs. 20 flat)
+
+**Backwards compatibility**: Set ##recencyGraduatedPenalty: false## to revert to flat binary penalty.
+
+=== 9.2 Low-Source Confidence Penalty ===
+
+**Purpose**: Reduce confidence when evidence base is thin.
+
+**Trigger**: Unique source count ≤ ##lowSourceThreshold## (default: 2).
+
+**Penalty**: Flat ##lowSourceConfidencePenalty## (default: 15 points).
+
+=== 9.3 Confidence Floor ===
+
+After all penalties, confidence cannot drop below ##minConfidenceFloor## (default: 10%).
+
+----
+
+== 10. Configuration Reference ==
+
+=== 10.1 UCM Pipeline Config ===
 
 {{code language="json"}}
 {
@@ -426,11 +490,23 @@ Search for "Quality Gates" section (planned feature)
   "gate4MinReasoningLength": 50,
 
   // Confidence thresholds
-  "mixedConfidenceThreshold": 60  // MIXED vs UNVERIFIED distinction
+  "mixedConfidenceThreshold": 60,
+
+  // Recency penalty
+  "recencyWindowMonths": 6,
+  "recencyConfidencePenalty": 20,
+  "recencyGraduatedPenalty": true,
+
+  // Low-source penalty
+  "lowSourceThreshold": 2,
+  "lowSourceConfidencePenalty": 15,
+
+  // Floor
+  "minConfidenceFloor": 10
 }
 {{/code}}
 
-=== 9.2 Default Values ===
+=== 10.2 Default Values ===
 
 |= Setting |= Default |= Rationale
 | ##gate1Enabled## | ##true## | Quality control essential
@@ -440,12 +516,18 @@ Search for "Quality Gates" section (planned feature)
 | ##gate4MinFacts## | ##3## | Minimum for reasonable confidence
 | ##gate4MinReasoningLength## | ##50## | Ensure non-trivial reasoning
 | ##mixedConfidenceThreshold## | ##60## | Clear distinction between mixed/unverified
+| ##recencyWindowMonths## | ##6## | Time-sensitive evidence window
+| ##recencyConfidencePenalty## | ##20## | Max penalty for recency gap
+| ##recencyGraduatedPenalty## | ##true## | Use graduated (multi-factor) penalty
+| ##lowSourceThreshold## | ##2## | Source count for thin-evidence penalty
+| ##lowSourceConfidencePenalty## | ##15## | Penalty for thin evidence base
+| ##minConfidenceFloor## | ##10## | Minimum confidence after all penalties
 
 ----
 
-== 10. Testing Quality Gates ==
+== 11. Testing Quality Gates ==
 
-=== 10.1 Unit Tests ===
+=== 11.1 Unit Tests ===
 
 **File**: ##apps/web/src/lib/analyzer/__tests__/quality-gates.test.ts##
 
@@ -456,14 +538,14 @@ Search for "Quality Gates" section (planned feature)
 * Gate 4 context scoping
 * Gate 4 central claim exception
 
-=== 10.2 Integration Tests ===
+=== 11.2 Integration Tests ===
 
 **Test Analysis Inputs**:
 1. **High-quality factual article** -> Expect: Most claims pass Gate 1, high Gate 4 confidence
 1. **Opinion editorial** -> Expect: Most claims excluded by Gate 1
 1. **Low-source analysis** -> Expect: Low Gate 4 confidence tiers
 
-=== 10.3 Manual Testing ===
+=== 11.3 Manual Testing ===
 
 **Steps**:
 1. Run analysis on test input
@@ -473,7 +555,7 @@ Search for "Quality Gates" section (planned feature)
 
 ----
 
-== 11. Related Documentation ==
+== 12. Related Documentation ==
 
 * Calculations.md (see Calculations.md in local docs) - Verdict calculation methodology, confidence modulation
 * [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - Architecture overview, pipeline flow
@@ -482,7 +564,7 @@ Search for "Quality Gates" section (planned feature)
 
 ----
 
-== 12. Conclusion ==
+== 13. Conclusion ==
 
 Quality Gates ensure that FactHarbor maintains high standards for claim evaluation and verdict confidence. The current implementation (Gate 1 and Gate 4) provides:
 
@@ -500,5 +582,5 @@ Quality Gates ensure that FactHarbor maintains high standards for claim evaluati
 
 ----
 
-**Last Updated**: February 3, 2026
+**Last Updated**: February 8, 2026
 **Document Status**: Consolidated reference - combines scattered gate documentation
