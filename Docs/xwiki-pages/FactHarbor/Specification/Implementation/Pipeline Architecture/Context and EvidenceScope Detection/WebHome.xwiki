@@ -235,7 +235,7 @@ would the result be MISLEADING because they measure or analyze fundamentally dif
 
 === 5.4 Context Discovery from EvidenceScope (CONTEXT_REFINEMENT Phase) ===
 
-**From**: ##apps/web/src/lib/analyzer/prompts/base/scope-refinement-base.ts##
+**From**: ##apps/web/src/lib/analyzer/prompts/base/context-refinement-base.ts##
 
 {{code language="markdown"}}
 ## CONTEXT DISCOVERY FROM EVIDENCESCOPE PATTERNS
@@ -295,7 +295,7 @@ different analytical frames that need separate verdicts?
 
 === 6.3 Merge Validation ===
 
-**From**: ##apps/web/src/lib/analyzer/prompts/base/scope-refinement-base.ts##
+**From**: ##apps/web/src/lib/analyzer/prompts/base/context-refinement-base.ts##
 
 For each potential merge:
 * Does merging preserve analytical integrity?
@@ -404,7 +404,7 @@ Covers 3 contexts: INST_A, INST_B, SCOPE_GENERAL
 
 **Prompt Templates**:
 * ##apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts## - EvidenceScope detection guidance
-* ##apps/web/src/lib/analyzer/prompts/base/scope-refinement-base.ts## - Context discovery and merge guidance
+* ##apps/web/src/lib/analyzer/prompts/base/context-refinement-base.ts## - Context discovery and merge guidance
 
 **Shared Modules**:
 * ##apps/web/src/lib/analyzer/aggregation.ts## - Context verdict aggregation

@@ -117,4 +117,4 @@ flowchart TB
 | Research | Iterative decide-search-extract | Tool loop with budget limits
 | Schema | Built-in TypeScript types | Zod schema validation
 | Fallback | None (default) | Falls back to Orchestrated on failure
-| Code Size | ~12000 lines | ~1100 lines
+| Code Size | ~13300 lines | ~1500 lines

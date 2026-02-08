@@ -138,7 +138,7 @@ erDiagram
 | Fallback | Default | To Orchestrated | None
 | Budget | Generous | Moderate | Restrictive
 | Label | Standard | Standard | Experimental
-| Code | ~12000 lines | ~1100 lines | ~550 lines
+| Code | ~13300 lines | ~1500 lines | ~735 lines
 
 = Use Cases =
 

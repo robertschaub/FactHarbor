@@ -738,7 +738,7 @@ fly dashboard
 
 |= Stage |= Model |= Tokens/Analysis |= Cost/1M tokens |= Cost/Analysis |= Total (500)
 | Extract Claims | Haiku | 2,000 | $0.80 | $0.0016 | $0.80
-| Extract Facts | Haiku | 5,000 | $0.80 | $0.0040 | $2.00
+| Extract Evidence | Haiku | 5,000 | $0.80 | $0.0040 | $2.00
 | Generate Verdict | Sonnet | 3,000 | $3.00 | $0.0090 | $4.50
 
 **Before caching:** $7.30/month\\

@@ -82,7 +82,7 @@ Persistent data storage and caching:
 
 === 2.2 LLM Abstraction Layer ===
 
-{{include reference="Test.FactHarbor.Specification.Diagrams.LLM Abstraction Architecture.WebHome"/}}
+{{include reference="FactHarbor.Specification.Diagrams.LLM Abstraction Architecture.WebHome"/}}
 
 {{warning}}
 **POC1 Implementation:** Uses **Vercel AI SDK** with multi-provider support (Anthropic, OpenAI, Google, Mistral). Configuration via UCM (Unified Config Management) Pipeline Config. Model tiering is implemented: separate models for UNDERSTAND, EXTRACT_EVIDENCE, and VERDICT phases.

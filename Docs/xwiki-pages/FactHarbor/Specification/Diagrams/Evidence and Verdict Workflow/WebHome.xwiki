@@ -45,10 +45,10 @@ erDiagram
 
     SOURCE {
         string id_PK
-        string name
+        string title
         string domain
         string url
-        float reliabilityScore
+        float trackRecordScore
         string bias
         string factualReporting
     }

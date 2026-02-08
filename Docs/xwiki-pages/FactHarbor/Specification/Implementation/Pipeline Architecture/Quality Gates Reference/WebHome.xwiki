@@ -41,11 +41,11 @@ flowchart TB
     subgraph RESEARCH["Phase 2: RESEARCH"]
         ValidClaims --> Search[Web Search]
         Search --> Sources[Source Documents]
-        Sources --> FactExtraction[Fact Extraction]
+        Sources --> EvidenceExtraction[Evidence Extraction]
     end
 
     subgraph VERDICT["Phase 3: VERDICT GENERATION"]
-        FactExtraction --> VerdictGeneration[Verdict Generation]
+        EvidenceExtraction --> VerdictGeneration[Verdict Generation]
         VerdictGeneration --> GATE4["Gate 4: Confidence Assessment<br/>━━━━━━━━━━━━━<br/>Check source count,<br/>fact count,<br/>reasoning quality"]
         GATE4 -->|Pass| PublishableVerdicts[Publishable Verdicts]
         GATE4 -->|Warn| LowConfidenceVerdicts[Low Confidence<br/>Verdicts]
@@ -356,7 +356,7 @@ Every analysis result includes gate statistics:
 
 === 7.1 Gate 2: Source Quality (Proposed) ===
 
-**Purpose**: Filter low-quality sources before fact extraction
+**Purpose**: Filter low-quality sources before evidence extraction
 **Criteria**:
 * Source reliability score > threshold
 * Domain not in blocklist

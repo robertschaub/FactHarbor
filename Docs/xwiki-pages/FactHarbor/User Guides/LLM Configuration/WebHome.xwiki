@@ -270,7 +270,7 @@ Use cheaper models for simple tasks, premium models for complex reasoning:
 
 |= Task |= Recommended Model |= Cost Saving (vs Sonnet baseline)
 | Claim extraction | Claude Haiku | ~75% cheaper (70% model + estimated 20-30% prompt optimization)
-| Fact extraction | Claude Haiku | ~75% cheaper (70% model + estimated 20-30% prompt optimization)
+| Evidence extraction | Claude Haiku | ~75% cheaper (70% model + estimated 20-30% prompt optimization)
 | Understanding | Claude Haiku | ~75% cheaper (70% model + estimated 20-30% prompt optimization)
 | Verdict generation | Claude Sonnet | estimated 20-30% cheaper (prompt optimization only)
 
@@ -280,7 +280,7 @@ Tiered model routing is configured via the **pipeline config** in Unified Config
 
 When enabled, FactHarbor routes models per pipeline task:
 * **Understand**: cheaper/faster model (provider default)
-* **Extract facts**: cheaper/faster model (provider default)
+* **Extract evidence**: cheaper/faster model (provider default)
 * **Verdict**: higher-quality model (provider default)
 
 Default per-provider routing (unless overridden in pipeline config):

@@ -160,7 +160,7 @@ Apply nuanced reasoning. Be direct and confident.
 **Example Optimization**:
 
 {{code language="markdown"}}
-## OpenAI Optimization - Extract Facts Task
+## OpenAI Optimization - Extract Evidence Task
 
 ### Step-by-Step Process
 
@@ -215,7 +215,7 @@ Apply nuanced reasoning. Be direct and confident.
 **Example Optimization**:
 
 {{code language="markdown"}}
-## Gemini Optimization - Extract Facts Task
+## Gemini Optimization - Extract Evidence Task
 
 ### 📋 What You'll Do
 
@@ -279,7 +279,7 @@ Extract verifiable facts from sources. Each fact needs:
 **Example Optimization**:
 
 {{code language="markdown"}}
-## Mistral Optimization - Extract Facts Task
+## Mistral Optimization - Extract Evidence Task
 
 ### Reasoning Chain (Chaîne de Raisonnement)
 
@@ -330,7 +330,7 @@ interface EvidenceItem {
 * ##understand-base.ts## - Core understanding logic
 * ##extract-evidence-base.ts## - Evidence extraction rules
 * ##verdict-base.ts## - Verdict evaluation criteria
-* ##scope-refinement-base.ts## - AnalysisContext boundary detection
+* ##context-refinement-base.ts## - AnalysisContext boundary detection
 
 **Content**:
 * Task requirements

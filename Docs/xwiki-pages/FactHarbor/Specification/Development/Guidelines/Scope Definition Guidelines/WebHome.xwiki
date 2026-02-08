@@ -197,7 +197,7 @@ interface AnalysisContext {
   id: string;                    // E.g., "CTX_WTW", "CTX_TTW"
   name: string;                  // E.g., "Well-to-Wheel Analysis"
   type: "methodological" | "geographical" | "temporal" | "institutional" | "outcome" | "legal";
-  description: string;           // Why this is a distinct frame
+  subject: string;               // What's being analyzed in this frame
   relevance: "high" | "medium" | "low";
   metadata?: {
     phase?: string;              // E.g., "production", "usage"
@@ -251,7 +251,7 @@ When an input involves MULTIPLE DISTINCT QUESTIONS that need separate answers, c
     id: "CTX_PRODUCTION",
     name: "Production Phase Efficiency",
     type: "methodological",
-    description: "Energy efficiency during vehicle and fuel production (upstream)",
+    subject: "Energy efficiency during vehicle and fuel production (upstream)",
     metadata: {
       phase: "production",
       boundaries: "upstream (cradle-to-gate)"
@@ -261,7 +261,7 @@ When an input involves MULTIPLE DISTINCT QUESTIONS that need separate answers, c
     id: "CTX_USAGE",
     name: "Usage Phase Efficiency",
     type: "methodological",
-    description: "Energy efficiency during actual vehicle operation (downstream)",
+    subject: "Energy efficiency during actual vehicle operation (downstream)",
     metadata: {
       phase: "usage",
       boundaries: "downstream (tank-to-wheel)"
@@ -286,7 +286,7 @@ When an input involves MULTIPLE DISTINCT QUESTIONS that need separate answers, c
     id: "CTX_FDA",
     name: "FDA Safety Assessment",
     type: "institutional",
-    description: "US FDA evaluation and approval status",
+    subject: "US FDA evaluation and approval status",
     metadata: {
       institution: "US FDA",
       geography: "United States"
@@ -296,7 +296,7 @@ When an input involves MULTIPLE DISTINCT QUESTIONS that need separate answers, c
     id: "CTX_EMA",
     name: "EMA Safety Assessment",
     type: "institutional",
-    description: "European Medicines Agency evaluation",
+    subject: "European Medicines Agency evaluation",
     metadata: {
       institution: "EMA",
       geography: "European Union"
@@ -321,7 +321,7 @@ When an input involves MULTIPLE DISTINCT QUESTIONS that need separate answers, c
     id: "CTX_HISTORICAL",
     name: "Historical Performance",
     type: "temporal",
-    description: "Stock performance 2020-2023 (past data)",
+    subject: "Stock performance 2020-2023 (past data)",
     metadata: {
       temporal: "2020-2023",
       boundaries: "historical data"
@@ -331,7 +331,7 @@ When an input involves MULTIPLE DISTINCT QUESTIONS that need separate answers, c
     id: "CTX_FUTURE",
     name: "Future Outlook",
     type: "temporal",
-    description: "Projected performance 2024-2026 (forecasts)",
+    subject: "Projected performance 2024-2026 (forecasts)",
     metadata: {
       temporal: "2024-2026",
       boundaries: "analyst forecasts"
@@ -579,7 +579,7 @@ function detectAnalysisContexts(input: string): AnalysisContext[] {
       id: "CTX_A",
       name: `${termA} Analysis`,
       type: "methodological",
-      description: `Assessment of ${termA}`,
+      subject: `Assessment of ${termA}`,
       relevance: "high",
     });
 
@@ -587,7 +587,7 @@ function detectAnalysisContexts(input: string): AnalysisContext[] {
       id: "CTX_B",
       name: `${termB} Analysis`,
       type: "methodological",
-      description: `Assessment of ${termB}`,
+      subject: `Assessment of ${termB}`,
       relevance: "high",
     });
 
@@ -603,7 +603,7 @@ function detectAnalysisContexts(input: string): AnalysisContext[] {
         id: generateContextId(part),
         name: `${part.aspect} Assessment`,
         type: "outcome",
-        description: `Evaluation of ${part.aspect}`,
+        subject: `Evaluation of ${part.aspect}`,
         relevance: part.importance,
       });
     }
@@ -616,7 +616,7 @@ function detectAnalysisContexts(input: string): AnalysisContext[] {
     id: "CTX_DEFAULT",
     name: "Primary Analysis",
     type: "methodological",
-    description: "Main analytical frame for this input",
+    subject: "Main analytical frame for this input",
     relevance: "high",
   });
 

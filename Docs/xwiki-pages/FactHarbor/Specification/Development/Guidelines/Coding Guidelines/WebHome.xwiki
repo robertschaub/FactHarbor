@@ -43,7 +43,7 @@ const hasSpecificOutcome = extractNumericClaims(text);
 **Hard requirements**:
 * **No separate analysis paths**: There must be **zero branching** in analysis logic based on whether the user wrote a question or a statement.
 * **Entry-point normalization**: If input is yes/no phrasing (including trailing ##?##), convert to an **affirmative statement** **before any analysis stage runs**.
-* **Single canonical analysis string**: All analysis steps (context detection, research, fact extraction, verdict generation, weighting, quality gates, inversion correction) must use the **normalized statement** only.
+* **Single canonical analysis string**: All analysis steps (context detection, research, evidence extraction, verdict generation, weighting, quality gates, inversion correction) must use the **normalized statement** only.
 * **Raw input is UI-only**: Preserve the original input (question or statement) **only for display**. It must not influence LLM prompts, research queries, context splitting, or scoring.
 * **No question-specific metadata**: Do not emit or persist flags/fields such as ##wasQuestionInput##, ##questionBeingAsked##, ##questionIntent##, ##QuestionAnswer##, ##calculateQuestionTruthPercentage##, etc.
 * **UI neutrality**: UI must not show question badges/labels or question-specific layouts. The same components and result fields must be used regardless of phrasing.
@@ -60,7 +60,7 @@ const hasSpecificOutcome = extractNumericClaims(text);
 
 **Required Stages**:
 1. **Understand** → Extract claims, detect context, assign risk tiers
-1. **Research** → Web search, fetch sources, extract facts
+1. **Research** → Web search, fetch sources, extract evidence
 1. **Verdict** → Generate verdicts, apply quality gates
 1. **Summary** → Format results
 1. **Report** → Generate markdown

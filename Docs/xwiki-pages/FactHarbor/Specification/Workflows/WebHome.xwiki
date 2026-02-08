@@ -45,7 +45,7 @@ User submits → Duplicate detection → Categorization → Processing queue →
 **Timeline**: Seconds
 **No approval needed**
 
-== 2.5 Claim and Scenario Workflow ==
+== 2.5 Claim Analysis Workflow ==
 
 {{include reference="FactHarbor.Specification.Diagrams.Claim and Scenario Workflow.WebHome"/}}
 

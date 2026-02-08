@@ -1,7 +1,9 @@
 = Data Examples =
 
 {{info}}
-**Current Implementation (v2.10.2)** — These examples use the current data model entities: ARTICLE, CLAIM, EVIDENCE_ITEM, SOURCE, ANALYSIS_CONTEXT, CLAIM_VERDICT, and ARTICLE_VERDICT. All data is stored as JSON in SQLite. See [[Core Data Model ERD>>FactHarbor.Specification.Diagrams.Core Data Model ERD.WebHome]] for the entity diagram and [[Evidence and Verdict Workflow>>FactHarbor.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]] for the verdict generation flow.
+**Current Implementation** — These examples use the current data model entities: ARTICLE, CLAIM, EVIDENCE_ITEM, SOURCE, ANALYSIS_CONTEXT, CLAIM_VERDICT, and ARTICLE_VERDICT. All data is stored as JSON in SQLite. See [[Core Data Model ERD>>FactHarbor.Specification.Diagrams.Core Data Model ERD.WebHome]] for the entity diagram and [[Evidence and Verdict Workflow>>FactHarbor.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]] for the verdict generation flow.
+
+**Note:** Examples include ##opposingEvidenceIds## (on CLAIM_VERDICT) and ##bias## (on SOURCE) which are planned Phase 2 fields not yet in the current code. The ##methodology## field on ANALYSIS_CONTEXT is stored within the ##metadata## JSON in the current implementation. Updated 2026-02-08 per documentation audit.
 {{/info}}
 
 The following examples illustrate complete, realistic FactHarbor data objects across the current entity model. Each example shows the full pipeline output: from ARTICLE through CLAIMs, EVIDENCE_ITEMs, SOURCEs, ANALYSIS_CONTEXTs, to CLAIM_VERDICTs and the ARTICLE_VERDICT.
@@ -43,9 +45,9 @@ A clearly empirical, technical claim requiring multi-context analysis (different
 | id | ##ctx_wtw_eu##
 | articleId | ##art_h2ev_001##
 | name | ##Well-to-Wheel Efficiency Analysis (EU)##
-| description | ##Total energy chain efficiency from primary energy source to vehicle motion, using European grid mix assumptions##
+| subject | ##Total energy chain efficiency from primary energy source to vehicle motion, using European grid mix assumptions##
 | methodology | ##Comparative WTW energy analysis (ISO 14040 framework)##
-| temporalPeriod | ##2020–2024##
+| temporal | ##2020–2024##
 
 === 2.2 CTX_TTW — Tank-to-Wheel Efficiency ===
 
@@ -54,9 +56,9 @@ A clearly empirical, technical claim requiring multi-context analysis (different
 | id | ##ctx_ttw##
 | articleId | ##art_h2ev_001##
 | name | ##Tank-to-Wheel Efficiency Comparison##
-| description | ##Energy conversion efficiency from stored energy (battery or hydrogen tank) to wheel motion only##
+| subject | ##Energy conversion efficiency from stored energy (battery or hydrogen tank) to wheel motion only##
 | methodology | ##Drivetrain efficiency comparison##
-| temporalPeriod | ##2020–2024##
+| temporal | ##2020–2024##
 
 == 3. CLAIMs ==
 
@@ -70,7 +72,7 @@ A clearly empirical, technical claim requiring multi-context analysis (different
 == 4. SOURCEs ==
 
 (% style="width:100%" %)
-|= id |= name |= domain |= url |= reliabilityScore |= bias
+|= id |= title |= domain |= url |= trackRecordScore |= bias
 | ##src_01## | Transport & Environment | ##transportenvironment.org## | ##https:~/~/www.transportenvironment.org/wp-content/uploads/2020/04/T%26E-BEV-efficiency-report-2020.pdf## | ##0.82## | ##environmental advocacy##
 | ##src_02## | US DOE Alternative Fuels Data Center | ##afdc.energy.gov## | ##https:~/~/afdc.energy.gov/vehicles/fuel-cell## | ##0.91## | ##neutral##
 | ##src_03## | Nature Energy — Ueckerdt et al. (2021) | ##nature.com## | ##https:~/~/www.nature.com/articles/s41560-021-00775-z## | ##0.95## | ##neutral##
@@ -95,7 +97,7 @@ A clearly empirical, technical claim requiring multi-context analysis (different
 | verdict | ##FALSE##
 | truthPercentage | ##12##
 | confidence | ##88##
-| explanation | ##Well-to-wheel analysis consistently shows hydrogen fuel cell vehicles are significantly less energy-efficient than BEVs. The hydrogen pathway loses 65-75% of input energy through electrolysis, compression, and fuel cell conversion, while BEVs retain 70-80%.##
+| reasoning | ##Well-to-wheel analysis consistently shows hydrogen fuel cell vehicles are significantly less energy-efficient than BEVs. The hydrogen pathway loses 65-75% of input energy through electrolysis, compression, and fuel cell conversion, while BEVs retain 70-80%.##
 | supportingEvidenceIds | ##[]##
 | opposingEvidenceIds | ##["ev_01", "ev_04"]##
 
@@ -108,7 +110,7 @@ A clearly empirical, technical claim requiring multi-context analysis (different
 | verdict | ##MOSTLY-TRUE##
 | truthPercentage | ##78##
 | confidence | ##85##
-| explanation | ##DOE data confirms fuel cell stack efficiency of 40-60%. The claim of ~55% is within the documented range under typical driving conditions.##
+| reasoning | ##DOE data confirms fuel cell stack efficiency of 40-60%. The claim of ~55% is within the documented range under typical driving conditions.##
 | supportingEvidenceIds | ##["ev_02"]##
 | opposingEvidenceIds | ##[]##
 
@@ -121,7 +123,7 @@ A clearly empirical, technical claim requiring multi-context analysis (different
 | verdict | ##MOSTLY-TRUE##
 | truthPercentage | ##75##
 | confidence | ##82##
-| explanation | ##T&E data shows ~77% including charging losses, which falls within the claimed 85-90% range at the drivetrain level (before charging losses). The claim is largely accurate for tank-to-wheel measurement.##
+| reasoning | ##T&E data shows ~77% including charging losses, which falls within the claimed 85-90% range at the drivetrain level (before charging losses). The claim is largely accurate for tank-to-wheel measurement.##
 | supportingEvidenceIds | ##["ev_03"]##
 | opposingEvidenceIds | ##[]##
 
@@ -167,9 +169,9 @@ A complex health claim requiring careful context boundaries.
 | id | ##ctx_immune##
 | articleId | ##art_cw_001##
 | name | ##Cold Exposure and Immune Function##
-| description | ##Whether regular cold-water immersion measurably improves immune system markers in healthy adults##
+| subject | ##Whether regular cold-water immersion measurably improves immune system markers in healthy adults##
 | methodology | ##Randomized controlled trials and systematic reviews##
-| temporalPeriod | ##2015–2024##
+| temporal | ##2015–2024##
 
 === 2.2 CTX_MENTAL — Mental Health Effects ===
 
@@ -178,9 +180,9 @@ A complex health claim requiring careful context boundaries.
 | id | ##ctx_mental##
 | articleId | ##art_cw_001##
 | name | ##Cold Exposure and Mental Wellbeing##
-| description | ##Whether regular cold-water immersion improves mood, stress resilience, or mental health outcomes##
+| subject | ##Whether regular cold-water immersion improves mood, stress resilience, or mental health outcomes##
 | methodology | ##Clinical studies and self-report outcome measures##
-| temporalPeriod | ##2015–2024##
+| temporal | ##2015–2024##
 
 == 3. CLAIMs ==
 
@@ -193,7 +195,7 @@ A complex health claim requiring careful context boundaries.
 == 4. SOURCEs ==
 
 (% style="width:100%" %)
-|= id |= name |= domain |= url |= reliabilityScore |= bias
+|= id |= title |= domain |= url |= trackRecordScore |= bias
 | ##src_cw_01## | Buijze et al. (2016) — Dutch Cold Shower RCT | ##journals.plos.org## | ##https:~/~/journals.plos.org/plosone/article?id=10.1371/journal.pone.0161749## | ##0.88## | ##neutral##
 | ##src_cw_02## | Shevchuk (2008) — Adapted cold showers treatment | ##pubmed.ncbi.nlm.nih.gov## | ##https:~/~/pubmed.ncbi.nlm.nih.gov/17993252/## | ##0.72## | ##neutral##
 | ##src_cw_03## | Cochrane Review — Cold exposure interventions | ##cochranelibrary.com## | ##https:~/~/www.cochranelibrary.com/## | ##0.94## | ##neutral##
@@ -218,7 +220,7 @@ A complex health claim requiring careful context boundaries.
 | verdict | ##MIXED##
 | truthPercentage | ##48##
 | confidence | ##62##
-| explanation | ##Evidence supports some benefits (reduced sick days, mood improvement) but long-term "health improvement" is not substantiated by high-quality evidence. Effects vary significantly by outcome measured.##
+| reasoning | ##Evidence supports some benefits (reduced sick days, mood improvement) but long-term "health improvement" is not substantiated by high-quality evidence. Effects vary significantly by outcome measured.##
 | supportingEvidenceIds | ##["ev_cw_01", "ev_cw_03"]##
 | opposingEvidenceIds | ##["ev_cw_04"]##
 
@@ -231,7 +233,7 @@ A complex health claim requiring careful context boundaries.
 | verdict | ##LEANING-TRUE##
 | truthPercentage | ##62##
 | confidence | ##65##
-| explanation | ##The Dutch RCT found a 29% reduction, but the outcome was self-reported, the cold exposure was brief (30 seconds), and the Cochrane review found insufficient high-quality evidence for immune claims.##
+| reasoning | ##The Dutch RCT found a 29% reduction, but the outcome was self-reported, the cold exposure was brief (30 seconds), and the Cochrane review found insufficient high-quality evidence for immune claims.##
 | supportingEvidenceIds | ##["ev_cw_01"]##
 | opposingEvidenceIds | ##["ev_cw_02", "ev_cw_04"]##
 
@@ -244,7 +246,7 @@ A complex health claim requiring careful context boundaries.
 | verdict | ##MOSTLY-TRUE##
 | truthPercentage | ##74##
 | confidence | ##70##
-| explanation | ##Norepinephrine release from cold exposure is well-documented physiologically. The mood improvement mechanism is plausible and supported, though clinical outcomes data is limited.##
+| reasoning | ##Norepinephrine release from cold exposure is well-documented physiologically. The mood improvement mechanism is plausible and supported, though clinical outcomes data is limited.##
 | supportingEvidenceIds | ##["ev_cw_03"]##
 | opposingEvidenceIds | ##[]##
 
@@ -291,7 +293,7 @@ A non-falsifiable/metaphorical claim — demonstrates Gate 1 handling.
 == 3. SOURCEs ==
 
 (% style="width:100%" %)
-|= id |= name |= domain |= url |= reliabilityScore |= bias
+|= id |= title |= domain |= url |= trackRecordScore |= bias
 | ##src_hc_01## | Bob Woodward — The Choice (1996) | ##washingtonpost.com## | ##https:~/~/www.washingtonpost.com/## | ##0.85## | ##neutral##
 
 == 4. EVIDENCE_ITEMs ==
@@ -311,7 +313,7 @@ A non-falsifiable/metaphorical claim — demonstrates Gate 1 handling.
 | verdict | ##UNVERIFIED##
 | truthPercentage | ##50##
 | confidence | ##35##
-| explanation | ##The claim is ambiguous between literal paranormal communication (non-falsifiable) and documented reflective exercises (factual). Under the factual interpretation, Clinton did engage in imaginary conversations with Roosevelt, but these were guided visualization exercises, not literal communication.##
+| reasoning | ##The claim is ambiguous between literal paranormal communication (non-falsifiable) and documented reflective exercises (factual). Under the factual interpretation, Clinton did engage in imaginary conversations with Roosevelt, but these were guided visualization exercises, not literal communication.##
 | supportingEvidenceIds | ##[]##
 | opposingEvidenceIds | ##[]##
 
@@ -324,7 +326,7 @@ A non-falsifiable/metaphorical claim — demonstrates Gate 1 handling.
 | verdict | ##TRUE##
 | truthPercentage | ##90##
 | confidence | ##80##
-| explanation | ##Bob Woodward's reporting in The Choice (1996) documents the Jean Houston guided exercises. This is well-sourced from a credible journalist.##
+| reasoning | ##Bob Woodward's reporting in The Choice (1996) documents the Jean Houston guided exercises. This is well-sourced from a credible journalist.##
 | supportingEvidenceIds | ##["ev_hc_01"]##
 | opposingEvidenceIds | ##[]##
 
@@ -384,7 +386,7 @@ No evidence items — research phase skipped after Gate 1 assessment.
 | verdict | ##UNVERIFIED##
 | truthPercentage | ##50##
 | confidence | ##15##
-| explanation | ##This is a rhetorical or metaphorical expression, not a factual claim. Under any literal interpretation it is non-falsifiable. No evidence search conducted.##
+| reasoning | ##This is a rhetorical or metaphorical expression, not a factual claim. Under any literal interpretation it is non-falsifiable. No evidence search conducted.##
 | supportingEvidenceIds | ##[]##
 | opposingEvidenceIds | ##[]##
 
