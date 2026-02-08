@@ -34,9 +34,31 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 > Stable reference documentation lives in **xWiki format** under `Docs/xwiki-pages/FactHarbor/`.
 > Active development docs and operational files remain as `.md`. See [AGENTS.md](AGENTS.md) for format rules.
 
+### Browse Documentation Locally
+
+The full FactHarbor specification, architecture, and user guides are stored as `.xwiki` files and can be browsed locally without a running xWiki server. Two options:
+
+**Option A: Browser viewer** (recommended for reading)
+```
+Docs\xwiki-pages\View.cmd
+```
+This launches a local HTTP server and opens a WYSIWYG viewer in your browser. It renders headings, tables, Mermaid diagrams, `{{info}}`/`{{warning}}` boxes, wiki links (clickable to navigate between pages), and `{{include}}` transclusions. The sidebar shows the full page tree with search. Start at the root `FactHarbor` page and follow the navigation links.
+
+**Option B: VS Code extension** (recommended while editing)
+```powershell
+code --install-extension tools/vscode-xwiki-preview/xwiki-preview-1.0.0.vsix
+```
+After installing, open any `.xwiki` file and press `Ctrl+Shift+V` to toggle a live preview panel. The extension also adds an **XWiki Pages** tree view in the Explorer sidebar.
+
+**Suggested reading order to get familiar with FactHarbor:**
+1. [Specification root](Docs/xwiki-pages/FactHarbor/Specification/WebHome.xwiki) — mission, purpose, core concepts, functional lifecycle
+2. [Architecture](Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki) — system architecture with embedded diagrams
+3. [Implementation Overview](Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture%20Overview/WebHome.xwiki) — current codebase architecture, data models, component interactions
+4. [POC Specification](Docs/xwiki-pages/FactHarbor/Specification/POC/WebHome.xwiki) — what POC1 proves, success criteria, scope
+
 ### xWiki Documentation (Master Source)
-- **[xWiki Pages](Docs/xwiki-pages/FactHarbor/)** - Master documentation: specification, architecture, user guides, organisation
-- **[xWiki Viewer](Docs/xwiki-pages/README.md#xwiki-viewer-local-wysiwyg-preview)** - Local WYSIWYG preview: `Docs\xwiki-pages\View.cmd`
+- **[xWiki Pages](Docs/xwiki-pages/FactHarbor/)** — Master documentation tree (specification, architecture, user guides, organisation)
+- **[xWiki Pages README](Docs/xwiki-pages/README.md)** — File format, sync workflow, syntax reference
 
 ### User Guides (xWiki)
 - **[Getting Started](Docs/xwiki-pages/FactHarbor/User%20Guides/Getting%20Started/WebHome.xwiki)** - Complete setup and first run guide
@@ -68,65 +90,6 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 - **[SECURITY.md](SECURITY.md)** - Security policy and reporting
 - **[LICENSE.md](LICENSE.md)** - Open source license
 
-## Key Features
-
-### Implemented & Operational
-- **Multi-LLM Support**: Anthropic, OpenAI, Google, Mistral
-- **Multi-Search Support**: Google CSE, SerpAPI, Gemini Grounded
-- **7-Point Verdict Scale**: TRUE to FALSE with confidence
-- **MIXED vs UNVERIFIED**: Distinguishes contested evidence from insufficient evidence
-- **Multi-Scope Detection**: Analyzes multiple contexts independently (legal, methodological, temporal)
-- **Quality Gates**: Claim validation (Gate 1) and verdict confidence (Gate 4)
-- **Dependency Tracking**: Claims can depend on other claims with automatic propagation
-- **Pseudoscience Detection**: Escalates debunked claims automatically
-- **KeyFactors**: Emergent decomposition questions for complex analyses
-- **Input Neutrality**: Question and statement forms yield equivalent results
-- **Real-Time Progress**: Server-Sent Events for live updates
-- **PDF/HTML Support**: Extract and analyze content from URLs
-- **Triple-Path Pipeline**: Orchestrated, Monolithic Canonical, Monolithic Dynamic modes
-
-### Built But Not Integrated
-- **Metrics Collection**: Complete observability infrastructure (database + dashboard)
-- **Testing Framework**: Baseline test suite (30 cases) + A/B testing
-- **Performance Optimizations**: Parallel verdicts (50-80% faster), Tiered LLM routing (50-70% cost savings)
-
-### Known Limitations
-- Metrics infrastructure not connected to analyzer
-- v2.8 prompt optimizations never validated with real API calls
-- Quality gate decisions not displayed in UI (data exists in JSON)
-- No claim caching (recomputes every analysis)
-- Security hardening needed before public deployment (SSRF, rate limiting, auth)
-
-## Architecture Notes
-
-- **Version**: 2.6.33 (code) | 2.7.0 (schema output)
-- **Database**: SQLite by default (`apps/api/factharbor.db`), PostgreSQL for production
-- **Job Flow**: API creates jobs → triggers Next runner (`/api/internal/run-job`) → runner writes progress/results back
-- **Separated Architecture**: API for persistence, Web for analysis
-- **Main Engine**: `apps/web/src/lib/analyzer.ts` (~6700 lines)
-- **Analysis Modes**: Quick (4 iterations, 12 sources) vs Deep (5 iterations, 20 sources)
-
-## Environment Variables
-
-### Required
-```bash
-# LLM Provider (choose one)
-ANTHROPIC_API_KEY=sk-ant-...  # Recommended
-# OPENAI_API_KEY=sk-...
-# GOOGLE_GENERATIVE_AI_API_KEY=AIza...
-# MISTRAL_API_KEY=...
-
-# Search Provider
-SERPAPI_API_KEY=...
-# Or: GOOGLE_CSE_API_KEY=... and GOOGLE_CSE_ID=...
-
-# Internal Keys (must match between web and API)
-FH_ADMIN_KEY=your-secure-admin-key
-FH_INTERNAL_RUNNER_KEY=your-secure-runner-key
-```
-
-See [LLM Configuration Guide](Docs/xwiki-pages/FactHarbor/User%20Guides/LLM%20Configuration/WebHome.xwiki) for complete configuration options.
-
 ## Scripts
 
 | Script | Purpose |
@@ -139,13 +102,8 @@ See [LLM Configuration Guide](Docs/xwiki-pages/FactHarbor/User%20Guides/LLM%20Co
 
 ## Getting Help
 
-- **Quick Start**: See [QUICKSTART.md](QUICKSTART.md) for rapid setup
-- **Current Issues**: See [Known Issues](Docs/STATUS/KNOWN_ISSUES.md) for complete bug list
-- **Development History**: See [HISTORY.md](Docs/STATUS/HISTORY.md) for architectural decisions and investigations
-- **Documentation**: See `Docs/` folder structure above
-- **Logs**: Check `apps/web/debug-analyzer.log` for analysis details
+- **Logs**: `apps/web/debug-analyzer.log` for analysis details
 - **Admin UI**: http://localhost:3000/admin/test-config for configuration testing
-- **Metrics Dashboard**: http://localhost:3000/admin/metrics (built but needs metrics integration)
 - **API Docs**: http://localhost:5000/swagger for API exploration
 
 ## License
