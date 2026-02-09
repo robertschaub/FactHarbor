@@ -183,6 +183,69 @@ describe("PipelineConfigSchema", () => {
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, modelExtractEvidence: "" }).success).toBe(false);
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, modelVerdict: "" }).success).toBe(false);
   });
+
+  it("validates recencyGraduatedPenalty boolean field", () => {
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, recencyGraduatedPenalty: true }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, recencyGraduatedPenalty: false }).success).toBe(true);
+    // Optional: should work without it (defaults to true via transform)
+    const withoutField = { ...DEFAULT_PIPELINE_CONFIG };
+    delete (withoutField as any).recencyGraduatedPenalty;
+    const result = PipelineConfigSchema.safeParse(withoutField);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.recencyGraduatedPenalty).toBe(true);
+    }
+  });
+
+  it("validates confidenceCalibration nested object", () => {
+    // Full object should pass
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      confidenceCalibration: {
+        enabled: true,
+        densityAnchor: { enabled: true, minConfidenceBase: 15, minConfidenceMax: 60, sourceCountThreshold: 5 },
+        bandSnapping: { enabled: true, strength: 0.7 },
+        verdictCoupling: { enabled: true, strongVerdictThreshold: 70, minConfidenceStrong: 50, minConfidenceNeutral: 25 },
+        contextConsistency: { enabled: true, maxConfidenceSpread: 25, reductionFactor: 0.5 },
+      },
+    }).success).toBe(true);
+
+    // Disabled should pass
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      confidenceCalibration: { enabled: false },
+    }).success).toBe(true);
+
+    // Optional: should work without it (defaults via transform)
+    const withoutField = { ...DEFAULT_PIPELINE_CONFIG };
+    delete (withoutField as any).confidenceCalibration;
+    const result = PipelineConfigSchema.safeParse(withoutField);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.confidenceCalibration).toBeDefined();
+      expect(result.data.confidenceCalibration!.enabled).toBe(true);
+    }
+  });
+
+  it("validates confidenceCalibration sub-field ranges", () => {
+    // strength out of range
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      confidenceCalibration: {
+        enabled: true,
+        bandSnapping: { enabled: true, strength: 1.5 },
+      },
+    }).success).toBe(false);
+
+    // reductionFactor out of range
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      confidenceCalibration: {
+        enabled: true,
+        contextConsistency: { enabled: true, maxConfidenceSpread: 25, reductionFactor: -0.1 },
+      },
+    }).success).toBe(false);
+  });
 });
 
 // ============================================================================
@@ -371,7 +434,7 @@ describe("parseTypedConfig function", () => {
     const content = JSON.stringify(DEFAULT_PIPELINE_CONFIG);
     const result = parseTypedConfig("pipeline", content);
     expect(result.llmTiering).toBe(false); // v2.9.0: Default to off for backwards compatibility
-    expect(result.modelVerdict).toBe("claude-sonnet-4-20250514");
+    expect(result.modelVerdict).toBe("claude-opus-4-6");
   });
 
   it("parses and returns typed SR config", () => {
@@ -447,9 +510,9 @@ describe("canonicalizeContent and computeContentHash", () => {
 describe("Default Config Values", () => {
   describe("DEFAULT_PIPELINE_CONFIG", () => {
     it("has correct model defaults from .env.example", () => {
-      expect(DEFAULT_PIPELINE_CONFIG.modelUnderstand).toBe("claude-3-5-haiku-20241022");
-      expect(DEFAULT_PIPELINE_CONFIG.modelExtractEvidence).toBe("claude-3-5-haiku-20241022");
-      expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("claude-sonnet-4-20250514");
+      expect(DEFAULT_PIPELINE_CONFIG.modelUnderstand).toBe("claude-haiku-4-5-20251001");
+      expect(DEFAULT_PIPELINE_CONFIG.modelExtractEvidence).toBe("claude-haiku-4-5-20251001");
+      expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("claude-opus-4-6");
     });
 
     it("has LLM text analysis enabled by default (v2.8.3)", () => {

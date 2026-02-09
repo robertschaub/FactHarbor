@@ -113,8 +113,8 @@ describe("v2.8 Verification - Unit Tests", () => {
 
       console.log(`[v2.8 Unit Test] Contested weight: ${contestedWeight}, Uncontested: ${uncontestedWeight}`);
       
-      // PASS CRITERIA: Contested (established) should be 0.3x
-      expect(contestedWeight).toBe(uncontestedWeight * 0.3);
+      // PASS CRITERIA: Contested (established) should be 0.5x (v2.9.0: reduced from 0.3x to avoid double-penalization)
+      expect(contestedWeight).toBe(uncontestedWeight * 0.5);
     });
 
     it("aggregation should not penalize doubted claims", () => {

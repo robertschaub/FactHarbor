@@ -54,7 +54,7 @@ describe('Aggregation Module (v2.10)', () => {
         factualBasis: 'established'
       });
 
-      expect(contested).toBe(uncontested * 0.3);
+      expect(contested).toBe(uncontested * 0.5);
     });
 
     it('reduces weight for contested claims with disputed counter-evidence', () => {
@@ -65,7 +65,7 @@ describe('Aggregation Module (v2.10)', () => {
         factualBasis: 'disputed'
       });
 
-      expect(contested).toBe(uncontested * 0.5);
+      expect(contested).toBe(uncontested * 0.7);
     });
 
     it('keeps full weight for "doubted" claims (opinion basis)', () => {
@@ -97,11 +97,11 @@ describe('Aggregation Module (v2.10)', () => {
         harmPotential: 'high',   // 1.5x
         confidence: 80,          // 0.8
         isContested: true,
-        factualBasis: 'disputed' // 0.5x
+        factualBasis: 'disputed' // 0.7x
       });
 
-      // 3.0 * 1.5 * 0.8 * 0.5 = 1.8
-      expect(weight).toBe(1.8);
+      // 3.0 * 1.5 * 0.8 * 0.7 = 2.52
+      expect(weight).toBe(2.52);
     });
   });
 
@@ -153,13 +153,13 @@ describe('Aggregation Module (v2.10)', () => {
           truthPercentage: 30,
           confidence: 100,
           isContested: true,
-          factualBasis: 'established' as const  // weight = 0.3
+          factualBasis: 'established' as const  // weight = 0.5
         }
       ];
 
-      // (90*1 + 30*0.3) / (1+0.3) = 99 / 1.3 ≈ 76
+      // (90*1 + 30*0.5) / (1+0.5) = 105 / 1.5 = 70
       const result = calculateWeightedVerdictAverage(claims);
-      expect(result).toBe(76);
+      expect(result).toBe(70);
     });
   });
 });
