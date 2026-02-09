@@ -9938,10 +9938,15 @@ ${evidenceItemsFormatted}`;
       parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
     }
   } catch (err) {
+    const errMessage = err instanceof Error ? err.message : String(err);
     console.warn(
-      "[Analyzer] Structured output failed for verdicts, using fallback:",
-      err,
+      `[Analyzer] Structured output failed for verdicts, using fallback: ${errMessage}`,
     );
+    debugLog("generateSingleContextVerdicts: structured output failed", {
+      error: errMessage,
+      name: err instanceof Error ? err.name : typeof err,
+      stack: err instanceof Error ? err.stack?.split("\n").slice(0, 10).join("\n") : undefined,
+    });
     state.llmCalls++;
   }
 

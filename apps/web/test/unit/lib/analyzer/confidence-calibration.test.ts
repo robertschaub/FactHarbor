@@ -264,11 +264,12 @@ describe("Layer 2: Confidence Band Snapping", () => {
         strength: 1.0,
         customBands: [
           { min: 0, max: 50, snapTo: 30 },
-          { min: 50, max: 101, snapTo: 70 },
+          { min: 50, max: 100, snapTo: 70 },
         ],
       };
       expect(snapConfidenceToBand(25, customConfig)).toBe(30);
       expect(snapConfidenceToBand(75, customConfig)).toBe(70);
+      expect(snapConfidenceToBand(100, customConfig)).toBe(70);
     });
   });
 
@@ -327,10 +328,10 @@ describe("Layer 3: Verdict-Confidence Coupling", () => {
     expect(result).toBe(40);
   });
 
-  it("should not change moderate verdicts (31-69) above neutral min", () => {
-    // verdict 65 is not strong (< 70) and not neutral (> 60)
+  it("should enforce interpolated floor for moderate verdicts (31-39, 61-69)", () => {
+    // For verdict=65, interpolated floor is 38 with default settings.
     const result = enforceVerdictConfidenceCoupling(65, 20, COUPLING_CONFIG);
-    expect(result).toBe(20);
+    expect(result).toBe(38);
   });
 
   it("should handle exactly-at-threshold verdict (70)", () => {
@@ -350,8 +351,8 @@ describe("Layer 3: Verdict-Confidence Coupling", () => {
       minConfidenceStrong: 60,
       minConfidenceNeutral: 30,
     };
-    // verdict 75 is not "strong" with threshold 80
-    expect(enforceVerdictConfidenceCoupling(75, 20, config)).toBe(20);
+    // verdict 75 is moderate (not strong with threshold 80) and gets interpolated floor.
+    expect(enforceVerdictConfidenceCoupling(75, 20, config)).toBe(53);
     // verdict 85 IS strong with threshold 80
     expect(enforceVerdictConfidenceCoupling(85, 20, config)).toBe(60);
   });
@@ -491,6 +492,20 @@ describe("calibrateConfidence (master function)", () => {
     expect(result.adjustments).toHaveLength(0);
   });
 
+  it("should bypass all layers when top-level enabled=false", () => {
+    const config: ConfidenceCalibrationConfig = {
+      ...DEFAULT_CALIBRATION_CONFIG,
+      enabled: false,
+    };
+    const result = calibrateConfidence(42, 85, richEvidence, sources5, [
+      makeContextAnswer({ confidence: 10 }),
+      makeContextAnswer({ confidence: 90 }),
+    ], config);
+    expect(result.calibratedConfidence).toBe(42);
+    expect(result.adjustments).toHaveLength(0);
+    expect(result.warnings).toHaveLength(0);
+  });
+
   it("should clamp to minimum 5", () => {
     const config: ConfidenceCalibrationConfig = {
       enabled: true,
@@ -553,6 +568,31 @@ describe("calibrateConfidence (master function)", () => {
     const result = calibrateConfidence(48, 50, [], [], [], config);
     expect(result.adjustments.some(a => a.type === "band_snapping")).toBe(true);
     expect(result.calibratedConfidence).toBe(49);
+  });
+
+  it("should preserve density floor after band snapping", () => {
+    const config: ConfidenceCalibrationConfig = {
+      ...DEFAULT_CALIBRATION_CONFIG,
+      densityAnchor: {
+        enabled: true,
+        minConfidenceBase: 46,
+        minConfidenceMax: 46,
+        sourceCountThreshold: 5,
+      },
+      bandSnapping: { enabled: true, strength: 1.0 },
+      verdictCoupling: { ...COUPLING_CONFIG, enabled: false },
+      contextConsistency: { ...CONSISTENCY_CONFIG, enabled: false },
+    };
+    const result = calibrateConfidence(
+      46,
+      55,
+      [makeEvidence({ sourceId: "src-0", probativeValue: "high", claimDirection: "supports" })],
+      [makeSource({ id: "src-0" })],
+      [],
+      config,
+    );
+    expect(result.calibratedConfidence).toBe(50);
+    expect(result.calibratedConfidence).toBeGreaterThanOrEqual(46);
   });
 
   it("should apply verdict coupling for strong verdict with low confidence", () => {

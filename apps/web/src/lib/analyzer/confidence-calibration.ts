@@ -178,8 +178,17 @@ export function snapConfidenceToBand(
   config: BandSnappingConfig,
 ): number {
   const bands = config.customBands ?? DEFAULT_CONFIDENCE_BANDS;
-  const band = bands.find(b => rawConfidence >= b.min && rawConfidence < b.max);
-  return band ? band.snapTo : rawConfidence;
+  const normalizedConfidence = Number.isFinite(rawConfidence)
+    ? Math.max(0, Math.min(100, rawConfidence))
+    : 50;
+  const lastBandIndex = bands.length - 1;
+  const band = bands.find((candidateBand, index) => {
+    if (index === lastBandIndex) {
+      return normalizedConfidence >= candidateBand.min && normalizedConfidence <= candidateBand.max;
+    }
+    return normalizedConfidence >= candidateBand.min && normalizedConfidence < candidateBand.max;
+  });
+  return band ? band.snapTo : normalizedConfidence;
 }
 
 /**
@@ -210,19 +219,43 @@ export function enforceVerdictConfidenceCoupling(
   confidence: number,
   config: VerdictCouplingConfig,
 ): number {
-  const threshold = config.strongVerdictThreshold;
-  const isStrongVerdict = verdict >= threshold || verdict <= (100 - threshold);
+  const normalizedVerdict = Number.isFinite(verdict)
+    ? Math.max(0, Math.min(100, verdict))
+    : 50;
+  const normalizedConfidence = Number.isFinite(confidence)
+    ? Math.max(0, Math.min(100, confidence))
+    : 50;
 
-  if (isStrongVerdict && confidence < config.minConfidenceStrong) {
-    return config.minConfidenceStrong;
+  const strongThresholdDistance = Math.max(1, Math.abs(config.strongVerdictThreshold - 50));
+  const verdictDistanceFromNeutral = Math.abs(normalizedVerdict - 50);
+
+  if (verdictDistanceFromNeutral >= strongThresholdDistance) {
+    return Math.max(normalizedConfidence, config.minConfidenceStrong);
   }
 
-  const isNeutralVerdict = verdict >= 40 && verdict <= 60;
-  if (isNeutralVerdict && confidence < config.minConfidenceNeutral) {
-    return config.minConfidenceNeutral;
+  const isNeutralVerdict = normalizedVerdict >= 40 && normalizedVerdict <= 60;
+  if (isNeutralVerdict && normalizedConfidence < config.minConfidenceNeutral) {
+    return Math.max(normalizedConfidence, config.minConfidenceNeutral);
   }
 
-  return confidence;
+  // Moderate verdicts (outside 40-60 but below strong threshold) get a linearly
+  // interpolated floor to avoid a hard cliff around the strong verdict boundary.
+  const neutralBoundaryDistance = 10; // 50±10 == [40, 60]
+  if (
+    verdictDistanceFromNeutral > neutralBoundaryDistance &&
+    verdictDistanceFromNeutral < strongThresholdDistance
+  ) {
+    const interpolationSpan = Math.max(1, strongThresholdDistance - neutralBoundaryDistance);
+    const interpolationRatio =
+      (verdictDistanceFromNeutral - neutralBoundaryDistance) / interpolationSpan;
+    const moderateFloor = Math.round(
+      config.minConfidenceNeutral +
+        (config.minConfidenceStrong - config.minConfidenceNeutral) * interpolationRatio,
+    );
+    return Math.max(normalizedConfidence, moderateFloor);
+  }
+
+  return normalizedConfidence;
 }
 
 // ============================================================================
@@ -288,9 +321,24 @@ export function calibrateConfidence(
   contextAnswers: AnalysisContextAnswer[],
   config: ConfidenceCalibrationConfig,
 ): CalibrationResult {
+  const normalizedRawConfidence = Number.isFinite(rawConfidence)
+    ? Math.max(0, Math.min(100, rawConfidence))
+    : 50;
+  const normalizedVerdict = Number.isFinite(verdict)
+    ? Math.max(0, Math.min(100, verdict))
+    : 50;
+  if (!config.enabled) {
+    return {
+      calibratedConfidence: normalizedRawConfidence,
+      adjustments: [],
+      warnings: [],
+    };
+  }
+
   const adjustments: CalibrationAdjustment[] = [];
   const warnings: string[] = [];
-  let workingConfidence = rawConfidence;
+  let workingConfidence = normalizedRawConfidence;
+  let densityFloor: number | null = null;
 
   // Layer 1: Evidence density anchor (minimum floor)
   if (config.densityAnchor.enabled) {
@@ -300,6 +348,7 @@ export function calibrateConfidence(
       config.densityAnchor.sourceCountThreshold,
     );
     const minFromDensity = calculateMinConfidenceFromDensity(densityScore, config.densityAnchor);
+    densityFloor = minFromDensity;
     if (workingConfidence < minFromDensity) {
       adjustments.push({
         type: "density_anchor",
@@ -314,14 +363,16 @@ export function calibrateConfidence(
   // Layer 2: Band snapping (jitter reduction)
   if (config.bandSnapping.enabled) {
     const blended = blendWithSnap(workingConfidence, config.bandSnapping);
+    const floorAdjusted =
+      densityFloor !== null ? Math.max(blended, densityFloor) : blended;
     if (blended !== workingConfidence) {
       adjustments.push({
         type: "band_snapping",
         before: workingConfidence,
-        after: blended,
+        after: floorAdjusted,
         reason: `Snapped to calibration band (strength=${config.bandSnapping.strength})`,
       });
-      workingConfidence = blended;
+      workingConfidence = floorAdjusted;
     }
   }
 
@@ -337,7 +388,7 @@ export function calibrateConfidence(
         type: "verdict_coupling",
         before: workingConfidence,
         after: coupled,
-        reason: `Verdict ${verdict}% requires min confidence ${coupled}%`,
+        reason: `Verdict ${normalizedVerdict}% requires min confidence ${coupled}%`,
       });
       workingConfidence = coupled;
     }
