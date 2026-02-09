@@ -664,7 +664,7 @@ export async function runMonolithicCanonical(
 
   // State tracking
   const evidenceItems: EvidenceItem[] = [];
-  const droppedEvidenceItems: EvidenceItem[] = []; // Track evidence dropped by excerpt validation for fallback
+  let droppedEvidenceCount = 0; // Track excerpt-validation rejections for diagnostics
   const sources: MonolithicSource[] = [];
   const searchQueriesWithResults: Array<{ query: string; resultsCount: number }> = [];
   let searchCount = 0;
@@ -951,7 +951,7 @@ export async function runMonolithicCanonical(
         for (const f of extraction.evidenceItems) {
           const content = urlToContent.get(f.sourceUrl) || "";
           const newEvidenceItem = {
-            id: `E${evidenceItems.length + droppedEvidenceItems.length + 1}`,
+            id: `E${evidenceItems.length + 1}`,
             statement: f.statement,
             sourceId: urlToSourceId.get(f.sourceUrl) || `S-${f.sourceUrl.substring(0, 10)}`,
             sourceUrl: f.sourceUrl,
@@ -970,8 +970,7 @@ export async function runMonolithicCanonical(
             console.warn(
               `[MonolithicCanonical] Dropping evidence item with non-verifiable excerpt (not found in fetched content): ${f.sourceUrl}`,
             );
-            // Track dropped evidence for potential fallback
-            droppedEvidenceItems.push(newEvidenceItem);
+            droppedEvidenceCount++;
             continue;
           }
           evidenceItems.push(newEvidenceItem);
@@ -989,56 +988,53 @@ export async function runMonolithicCanonical(
 
   // Step 3: Generate verdict
   if (evidenceItems.length === 0) {
-    // Check if we have dropped evidence to use as fallback
-    if (droppedEvidenceItems.length > 0) {
+    if (droppedEvidenceCount > 0) {
       console.warn(
-        `[MonolithicCanonical] Using ${droppedEvidenceItems.length} unvalidated evidence items as fallback (excerpt validation bypassed)`
+        `[MonolithicCanonical] All extracted evidence was rejected by excerpt validation (${droppedEvidenceCount} items). Returning insufficient-evidence fallback.`
       );
-      // Use dropped evidence with warning flag for lower confidence
-      evidenceItems.push(...droppedEvidenceItems);
-    } else {
-      // No evidence at all - return a safe, low-confidence result
-      const fallbackClaimVerdicts = claimsForVerdicts.map((claim) => ({
-        claimId: claim.id,
-        claimText: claim.text,
-        contextId: "CTX_MAIN",
-        isCentral: claim.isCentral,
-        centrality: claim.centrality,
-        harmPotential: claim.harmPotential,
-        verdict: 50,
-        truthPercentage: 50,
-        confidence: 30,
-        riskTier: "C",
-        reasoning: "Insufficient verifiable evidence to assess this claim.",
-        supportingEvidenceIds: [],
-        highlightColor: getHighlightColor(50),
-        // v2.8: No contestation detected for fallback (insufficient evidence)
-        isContested: false,
-        factualBasis: "unknown" as const,
-      }));
-      const resultJson = buildResultJson({
-        input,
-        startTime,
-        provider: understandModel.provider,
-        modelName: understandModel.modelName,
-        searchProvider: searchConfig.provider,
-        budgetTracker,
-        budgetConfig,
-        monolithicBudget,
-        claim: claimData.mainClaim,
-        claimType,
-        evidenceItems: [],
-        sources,
-        searchQueriesWithResults,
-        verdict: 50,
-        confidence: 30,
-        reasoning: "No verifiable evidence items could be extracted from sources within budget.",
-        summary: "Insufficient verifiable evidence",
-        claimVerdicts: fallbackClaimVerdicts,
-      });
-      const reportMarkdown = generateReportMarkdown(resultJson, null);
-      return { resultJson, reportMarkdown };
     }
+
+    // No verifiable evidence - return a safe, low-confidence result
+    const fallbackClaimVerdicts = claimsForVerdicts.map((claim) => ({
+      claimId: claim.id,
+      claimText: claim.text,
+      contextId: "CTX_MAIN",
+      isCentral: claim.isCentral,
+      centrality: claim.centrality,
+      harmPotential: claim.harmPotential,
+      verdict: 50,
+      truthPercentage: 50,
+      confidence: 30,
+      riskTier: "C",
+      reasoning: "Insufficient verifiable evidence to assess this claim.",
+      supportingEvidenceIds: [],
+      highlightColor: getHighlightColor(50),
+      // v2.8: No contestation detected for fallback (insufficient evidence)
+      isContested: false,
+      factualBasis: "unknown" as const,
+    }));
+    const resultJson = buildResultJson({
+      input,
+      startTime,
+      provider: understandModel.provider,
+      modelName: understandModel.modelName,
+      searchProvider: searchConfig.provider,
+      budgetTracker,
+      budgetConfig,
+      monolithicBudget,
+      claim: claimData.mainClaim,
+      claimType,
+      evidenceItems: [],
+      sources,
+      searchQueriesWithResults,
+      verdict: 50,
+      confidence: 30,
+      reasoning: "No verifiable evidence items could be extracted from sources within budget.",
+      summary: "Insufficient verifiable evidence",
+      claimVerdicts: fallbackClaimVerdicts,
+    });
+    const reportMarkdown = generateReportMarkdown(resultJson, null);
+    return { resultJson, reportMarkdown };
   }
 
   // Harden with Provenance Validation
@@ -1501,4 +1497,3 @@ ${verdictData?.reasoning ? `### Reasoning\n\n${verdictData.reasoning}` : ""}
 
   return report;
 }
-
