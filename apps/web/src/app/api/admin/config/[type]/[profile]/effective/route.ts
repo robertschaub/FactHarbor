@@ -37,12 +37,12 @@ interface RouteParams {
 /**
  * GET - Get effective config (base + overrides applied)
  */
-export async function GET(req: Request, { params }: RouteParams) {
+export async function GET(req: Request, context: RouteParams) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { type, profile } = await params;
+  const { type, profile } = await context.params;
 
   if (!isValidEffectiveType(type)) {
     return NextResponse.json(

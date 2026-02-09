@@ -33,12 +33,12 @@ interface RouteParams {
   params: Promise<{ type: string; profile: string }>;
 }
 
-export async function GET(req: Request, { params }: RouteParams) {
+export async function GET(req: Request, context: RouteParams) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { type } = await params;
+  const { type } = await context.params;
   if (!isValidConfigType(type)) {
     return NextResponse.json(
       { error: `Invalid config type: ${type}. Valid: ${VALID_CONFIG_TYPES.join(", ")}` },
@@ -60,12 +60,12 @@ export async function GET(req: Request, { params }: RouteParams) {
   });
 }
 
-export async function POST(req: Request, { params }: RouteParams) {
+export async function POST(req: Request, context: RouteParams) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { type, profile } = await params;
+  const { type, profile } = await context.params;
 
   if (!isValidConfigType(type)) {
     return NextResponse.json(

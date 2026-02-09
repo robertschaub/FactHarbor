@@ -38,8 +38,8 @@ interface RouteParams {
 /**
  * POST - Re-seed prompt from disk file
  */
-export async function POST(req: Request, { params }: RouteParams) {
-  const { type, profile } = await params;
+export async function POST(req: Request, context: RouteParams) {
+  const { type, profile } = await context.params;
 
   // 1. Auth check
   if (!isAuthorized(req)) {

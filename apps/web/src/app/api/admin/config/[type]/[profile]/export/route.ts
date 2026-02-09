@@ -43,13 +43,13 @@ interface RouteParams {
 /**
  * GET - Download prompt as file
  */
-export async function GET(req: Request, { params }: RouteParams) {
+export async function GET(req: Request, context: RouteParams) {
   // Enforce admin auth
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { type, profile } = await params;
+  const { type, profile } = await context.params;
 
   // Only prompts can be exported
   if (type !== "prompt") {

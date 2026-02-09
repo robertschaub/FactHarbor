@@ -38,12 +38,12 @@ interface RouteParams {
 /**
  * GET - Get active config for type/profile
  */
-export async function GET(req: Request, { params }: RouteParams) {
+export async function GET(req: Request, context: RouteParams) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { type, profile } = await params;
+  const { type, profile } = await context.params;
 
   if (!isValidConfigType(type)) {
     return NextResponse.json(
@@ -95,8 +95,8 @@ export async function GET(req: Request, { params }: RouteParams) {
 /**
  * PUT - Save new config version (validates but does not activate)
  */
-export async function PUT(req: Request, { params }: RouteParams) {
-  const { type, profile } = await params;
+export async function PUT(req: Request, context: RouteParams) {
+  const { type, profile } = await context.params;
 
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

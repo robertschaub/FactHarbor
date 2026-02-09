@@ -29,12 +29,12 @@ interface RouteParams {
 /**
  * GET - Get a specific config version by content hash
  */
-export async function GET(req: Request, { params }: RouteParams) {
+export async function GET(req: Request, context: RouteParams) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { type, profile, hash } = await params;
+  const { type, profile, hash } = await context.params;
 
   if (!isValidConfigType(type)) {
     return NextResponse.json(

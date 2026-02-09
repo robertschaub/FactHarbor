@@ -16,8 +16,8 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(req: Request, { params }: RouteParams) {
-  const { id: jobId } = await params;
+export async function GET(req: Request, context: RouteParams) {
+  const { id: jobId } = await context.params;
 
   if (!jobId) {
     return NextResponse.json({ error: "Missing job ID" }, { status: 400 });

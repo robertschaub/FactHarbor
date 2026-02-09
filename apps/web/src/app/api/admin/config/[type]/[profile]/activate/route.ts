@@ -29,8 +29,8 @@ interface RouteParams {
 /**
  * POST - Activate a specific config version
  */
-export async function POST(req: Request, { params }: RouteParams) {
-  const { type, profile } = await params;
+export async function POST(req: Request, context: RouteParams) {
+  const { type, profile } = await context.params;
 
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
