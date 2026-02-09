@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { getHealthState, resumeSystem, pauseSystem } from "@/lib/provider-health";
 import { fireWebhook } from "@/lib/provider-webhook";
 import { drainRunnerQueue } from "@/app/api/internal/run-job/route";
@@ -8,6 +9,19 @@ export const runtime = "nodejs";
 function getEnv(name: string): string | null {
   const v = process.env[name];
   return v && v.trim() ? v : null;
+}
+
+function secureCompare(expected: string, provided: string | null): boolean {
+  if (provided === null) return false;
+  const expectedBuffer = Buffer.from(expected);
+  const providedBuffer = Buffer.from(provided);
+  const maxLength = Math.max(expectedBuffer.length, providedBuffer.length);
+  const expectedPadded = Buffer.alloc(maxLength);
+  const providedPadded = Buffer.alloc(maxLength);
+  expectedBuffer.copy(expectedPadded);
+  providedBuffer.copy(providedPadded);
+  const matched = timingSafeEqual(expectedPadded, providedPadded);
+  return matched && expectedBuffer.length === providedBuffer.length;
 }
 
 /** GET — public: return current system health state (for UI banner polling) */
@@ -21,7 +35,7 @@ export async function POST(req: Request) {
   const expectedKey = getEnv("FH_ADMIN_KEY");
   if (expectedKey) {
     const got = req.headers.get("x-admin-key");
-    if (got !== expectedKey) {
+    if (!secureCompare(expectedKey, got)) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
   } else if (process.env.NODE_ENV === "production") {

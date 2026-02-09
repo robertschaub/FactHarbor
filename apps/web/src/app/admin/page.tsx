@@ -14,6 +14,8 @@ import type { PipelineVariant } from "@/lib/pipeline-variant";
 import { readDefaultPipelineVariant, writeDefaultPipelineVariant } from "@/lib/pipeline-variant";
 import toast from "react-hot-toast";
 
+const ADMIN_KEY_STORAGE_KEY = "factharbor_admin_key";
+
 type ProviderHealth = {
   state: string;
   consecutiveFailures: number;
@@ -36,11 +38,23 @@ export default function AdminPage() {
   const [health, setHealth] = useState<HealthState | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
   const [healthAction, setHealthAction] = useState<"resume" | "pause" | null>(null);
+  const [adminKey, setAdminKey] = useState("");
   const router = useRouter();
 
   // Load saved default pipeline on mount
   useEffect(() => {
     setDefaultPipeline(readDefaultPipelineVariant());
+  }, []);
+
+  useEffect(() => {
+    try {
+      const storedAdminKey = window.localStorage.getItem(ADMIN_KEY_STORAGE_KEY);
+      if (storedAdminKey) {
+        setAdminKey(storedAdminKey);
+      }
+    } catch {
+      // ignore localStorage errors
+    }
   }, []);
 
   // Poll system health
@@ -66,9 +80,13 @@ export default function AdminPage() {
   const handleHealthAction = async (action: "resume" | "pause") => {
     setHealthAction(action);
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (adminKey.trim()) {
+        headers["X-Admin-Key"] = adminKey.trim();
+      }
       const res = await fetch("/api/fh/system-health", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ action }),
       });
       if (res.ok) {
@@ -77,6 +95,10 @@ export default function AdminPage() {
         toast.success(`System ${action === "resume" ? "resumed" : "paused"} successfully`);
       } else {
         const data = await res.json().catch(() => ({ error: "Unknown error" }));
+        if (res.status === 401) {
+          toast.error("Unauthorized: set Admin Key before pause/resume.");
+          return;
+        }
         toast.error(`Failed to ${action}: ${data.error}`);
       }
     } catch (err) {
@@ -216,6 +238,41 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label
+                htmlFor="admin-key"
+                style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 4 }}
+              >
+                Admin Key (required for pause/resume in secured environments)
+              </label>
+              <input
+                id="admin-key"
+                type="password"
+                value={adminKey}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setAdminKey(nextValue);
+                  try {
+                    if (nextValue.trim()) {
+                      window.localStorage.setItem(ADMIN_KEY_STORAGE_KEY, nextValue);
+                    } else {
+                      window.localStorage.removeItem(ADMIN_KEY_STORAGE_KEY);
+                    }
+                  } catch {
+                    // ignore localStorage errors
+                  }
+                }}
+                placeholder="FH_ADMIN_KEY"
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: 6,
+                  border: "1px solid #ddd",
+                  fontSize: 13,
+                }}
+              />
             </div>
 
             <div style={{ display: "flex", gap: 8 }}>

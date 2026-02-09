@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import {
   getHealthState,
   resumeSystem,
@@ -14,13 +15,26 @@ function getEnv(name: string): string | null {
   return v && v.trim() ? v : null;
 }
 
+function secureCompare(expected: string, provided: string | null): boolean {
+  if (provided === null) return false;
+  const expectedBuffer = Buffer.from(expected);
+  const providedBuffer = Buffer.from(provided);
+  const maxLength = Math.max(expectedBuffer.length, providedBuffer.length);
+  const expectedPadded = Buffer.alloc(maxLength);
+  const providedPadded = Buffer.alloc(maxLength);
+  expectedBuffer.copy(expectedPadded);
+  providedBuffer.copy(providedPadded);
+  const matched = timingSafeEqual(expectedPadded, providedPadded);
+  return matched && expectedBuffer.length === providedBuffer.length;
+}
+
 function isAuthorized(req: Request): boolean {
   const expectedKey = getEnv("FH_ADMIN_KEY");
   if (!expectedKey) {
     // In dev, allow without key
     return process.env.NODE_ENV !== "production";
   }
-  return req.headers.get("x-admin-key") === expectedKey;
+  return secureCompare(expectedKey, req.headers.get("x-admin-key"));
 }
 
 /** GET — return current health state (for UI polling and admin dashboard) */
