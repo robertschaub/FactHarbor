@@ -28,7 +28,7 @@ export interface ProbativeFilterConfig {
   requireSourceUrl: boolean;         // Default: true
 
   // Deduplication (similarity threshold)
-  deduplicationThreshold: number;    // Default: 0.85 (0-1, higher = more similar required to dedupe)
+  deduplicationThreshold: number;    // Default: 0.75 (0-1, higher = more similar required to dedupe)
 
   // Category-specific rules
   categoryRules: {
@@ -58,7 +58,7 @@ export const DEFAULT_FILTER_CONFIG: ProbativeFilterConfig = {
   requireSourceExcerpt: true,
   minExcerptLength: 30,
   requireSourceUrl: true,
-  deduplicationThreshold: 0.85,
+  deduplicationThreshold: 0.75,
   categoryRules: {
     statistic: { requireNumber: true, minExcerptLength: 50 },
     expert_quote: { requireAttribution: true },

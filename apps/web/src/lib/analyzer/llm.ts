@@ -67,8 +67,9 @@ function modelOverrideForTask(task: ModelTask, config?: PipelineConfig): string 
     case "understand":
       return config.modelUnderstand;
     case "extract_evidence":
-    case "context_refinement":
       return config.modelExtractEvidence;
+    case "context_refinement":
+      return config.modelVerdict;
     case "verdict":
       return config.modelVerdict;
     case "report":
@@ -78,17 +79,19 @@ function modelOverrideForTask(task: ModelTask, config?: PipelineConfig): string 
 
 function defaultModelNameForTask(provider: "anthropic" | "google" | "mistral" | "openai", task: ModelTask): string {
   // Defaults are task-tiered (cheap/fast for extraction-ish steps, higher-quality for synthesis).
-  // They can be overridden per task via env vars.
+  // Anthropic defaults derive from DEFAULT_PIPELINE_CONFIG to stay consistent with config-schemas.ts.
+  // Other providers use provider-specific defaults until UCM-managed fallbacks are implemented (P1D).
+  const isPremiumTask = task === "verdict" || task === "report" || task === "context_refinement";
   switch (provider) {
     case "anthropic":
-      return task === "verdict" || task === "report" ? "claude-sonnet-4-20250514" : "claude-3-5-haiku-20241022";
+      return isPremiumTask ? DEFAULT_PIPELINE_CONFIG.modelVerdict : DEFAULT_PIPELINE_CONFIG.modelUnderstand;
     case "google":
-      return task === "verdict" || task === "report" ? "gemini-1.5-pro" : "gemini-1.5-flash";
+      return isPremiumTask ? "gemini-2.5-pro" : "gemini-2.5-flash";
     case "mistral":
-      return task === "verdict" || task === "report" ? "mistral-large-latest" : "mistral-small-latest";
+      return isPremiumTask ? "mistral-large-latest" : "mistral-small-latest";
     case "openai":
     default:
-      return task === "verdict" || task === "report" ? "gpt-4o" : "gpt-4o-mini";
+      return isPremiumTask ? "gpt-4.1" : "gpt-4.1-mini";
   }
 }
 
@@ -110,15 +113,16 @@ function buildModelInfo(provider: "anthropic" | "google" | "mistral" | "openai",
  */
 export function getModel(providerOverride?: string, config?: PipelineConfig): ModelInfo {
   const provider = resolveProvider(providerOverride, config);
-  // Preserve legacy single-model defaults.
+  // Legacy single-model defaults: premium model for all tasks when tiering is off.
+  // Anthropic derives from DEFAULT_PIPELINE_CONFIG for consistency.
   const modelName =
     provider === "anthropic"
-      ? "claude-sonnet-4-20250514"
+      ? DEFAULT_PIPELINE_CONFIG.modelVerdict
       : provider === "google"
-        ? "gemini-1.5-pro"
+        ? "gemini-2.5-pro"
         : provider === "mistral"
           ? "mistral-large-latest"
-          : "gpt-4o";
+          : "gpt-4.1";
   return buildModelInfo(provider, modelName);
 }
 

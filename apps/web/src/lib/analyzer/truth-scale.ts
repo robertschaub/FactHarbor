@@ -23,6 +23,28 @@
 
 import type { ClaimVerdict7Point, ArticleVerdict7Point } from "./types";
 
+/**
+ * Optional verdict band configuration for configurable thresholds.
+ * When not provided, functions use default 7-point scale values.
+ */
+export interface VerdictBandConfig {
+  TRUE: number;          // default 86
+  MOSTLY_TRUE: number;   // default 72
+  LEANING_TRUE: number;  // default 58
+  MIXED: number;         // default 43
+  LEANING_FALSE: number; // default 29
+  MOSTLY_FALSE: number;  // default 15
+}
+
+const DEFAULT_BANDS: VerdictBandConfig = {
+  TRUE: 86,
+  MOSTLY_TRUE: 72,
+  LEANING_TRUE: 58,
+  MIXED: 43,
+  LEANING_FALSE: 29,
+  MOSTLY_FALSE: 15,
+};
+
 // ============================================================================
 // PERCENTAGE CALCULATIONS
 // ============================================================================
@@ -38,15 +60,21 @@ function truthFromBand(
   confidence: number,
 ): number {
   const conf = normalizePercentage(confidence) / 100;
+  const b = DEFAULT_BANDS;
+  const mtUpper = b.TRUE - 1;
+  const mxMid = Math.floor((b.MIXED + b.LEANING_TRUE - 1) / 2);
+  const lfMid = Math.floor((b.LEANING_FALSE + b.MIXED - 1) / 2);
+  const ltMid = Math.ceil((b.LEANING_TRUE + b.MOSTLY_TRUE - 1) / 2);
+  const mfUpper = b.LEANING_FALSE - 1;
   switch (band) {
     case "strong":
-      return Math.round(72 + 28 * conf);
+      return Math.round(b.MOSTLY_TRUE + (100 - b.MOSTLY_TRUE) * conf);
     case "partial":
-      return Math.round(50 + 35 * conf);
+      return Math.round(mxMid + (mtUpper - mxMid) * conf);
     case "uncertain":
-      return Math.round(35 + 30 * conf);
+      return Math.round(lfMid + (ltMid - lfMid) * conf);
     case "refuted":
-      return Math.round(28 * (1 - conf));
+      return Math.round(mfUpper * (1 - conf));
   }
 }
 
@@ -77,41 +105,53 @@ export function calculateArticleTruthPercentage(
 // PERCENTAGE TO VERDICT MAPPING
 // ============================================================================
 
-// Confidence threshold to distinguish MIXED from UNVERIFIED
-const MIXED_CONFIDENCE_THRESHOLD = 60;
+// Default confidence threshold to distinguish MIXED from UNVERIFIED
+const DEFAULT_MIXED_CONFIDENCE_THRESHOLD = 60;
 
 /**
  * Map truth percentage to 7-point claim verdict
  * @param truthPercentage - The truth percentage (0-100)
- * @param confidence - Optional confidence score (0-100). Used to distinguish MIXED from UNVERIFIED in 43-57% range.
+ * @param confidence - Optional confidence score (0-100). Used to distinguish MIXED from UNVERIFIED.
+ * @param bands - Optional configurable band thresholds (from CalcConfig)
+ * @param mixedConfidenceThreshold - Optional threshold for MIXED vs UNVERIFIED (from CalcConfig)
  */
-export function percentageToClaimVerdict(truthPercentage: number, confidence?: number): ClaimVerdict7Point {
-  if (truthPercentage >= 86) return "TRUE";
-  if (truthPercentage >= 72) return "MOSTLY-TRUE";
-  if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) {
-    // Distinguish MIXED (high confidence, evidence on both sides) from UNVERIFIED (low confidence, insufficient evidence)
+export function percentageToClaimVerdict(
+  truthPercentage: number,
+  confidence?: number,
+  bands?: VerdictBandConfig,
+  mixedConfidenceThreshold?: number,
+): ClaimVerdict7Point {
+  const b = bands ?? DEFAULT_BANDS;
+  const mct = mixedConfidenceThreshold ?? DEFAULT_MIXED_CONFIDENCE_THRESHOLD;
+  if (truthPercentage >= b.TRUE) return "TRUE";
+  if (truthPercentage >= b.MOSTLY_TRUE) return "MOSTLY-TRUE";
+  if (truthPercentage >= b.LEANING_TRUE) return "LEANING-TRUE";
+  if (truthPercentage >= b.MIXED) {
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
-    return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
+    return conf >= mct ? "MIXED" : "UNVERIFIED";
   }
-  if (truthPercentage >= 29) return "LEANING-FALSE";
-  if (truthPercentage >= 15) return "MOSTLY-FALSE";
+  if (truthPercentage >= b.LEANING_FALSE) return "LEANING-FALSE";
+  if (truthPercentage >= b.MOSTLY_FALSE) return "MOSTLY-FALSE";
   return "FALSE";
 }
 
 export function percentageToArticleVerdict(
   truthPercentage: number,
   confidence?: number,
+  bands?: VerdictBandConfig,
+  mixedConfidenceThreshold?: number,
 ): ArticleVerdict7Point {
-  if (truthPercentage >= 86) return "TRUE";
-  if (truthPercentage >= 72) return "MOSTLY-TRUE";
-  if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) {
+  const b = bands ?? DEFAULT_BANDS;
+  const mct = mixedConfidenceThreshold ?? DEFAULT_MIXED_CONFIDENCE_THRESHOLD;
+  if (truthPercentage >= b.TRUE) return "TRUE";
+  if (truthPercentage >= b.MOSTLY_TRUE) return "MOSTLY-TRUE";
+  if (truthPercentage >= b.LEANING_TRUE) return "LEANING-TRUE";
+  if (truthPercentage >= b.MIXED) {
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
-    return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
+    return conf >= mct ? "MIXED" : "UNVERIFIED";
   }
-  if (truthPercentage >= 29) return "LEANING-FALSE";
-  if (truthPercentage >= 15) return "MOSTLY-FALSE";
+  if (truthPercentage >= b.LEANING_FALSE) return "LEANING-FALSE";
+  if (truthPercentage >= b.MOSTLY_FALSE) return "MOSTLY-FALSE";
   return "FALSE";
 }
 
@@ -185,6 +225,7 @@ export function getVerdictColor(verdict: string): {
  */
 export function getHighlightColor7Point(
   truthPercentage: number,
+  bands?: VerdictBandConfig,
 ):
   | "green"
   | "light-green"
@@ -193,13 +234,14 @@ export function getHighlightColor7Point(
   | "dark-orange"
   | "red"
   | "dark-red" {
+  const b = bands ?? DEFAULT_BANDS;
   const normalized = normalizePercentage(truthPercentage);
-  if (normalized >= 86) return "green";
-  if (normalized >= 72) return "light-green";
-  if (normalized >= 58) return "yellow";
-  if (normalized >= 43) return "orange";
-  if (normalized >= 29) return "dark-orange";
-  if (normalized >= 15) return "red";
+  if (normalized >= b.TRUE) return "green";
+  if (normalized >= b.MOSTLY_TRUE) return "light-green";
+  if (normalized >= b.LEANING_TRUE) return "yellow";
+  if (normalized >= b.MIXED) return "orange";
+  if (normalized >= b.LEANING_FALSE) return "dark-orange";
+  if (normalized >= b.MOSTLY_FALSE) return "red";
   return "dark-red";
 }
 
@@ -207,10 +249,11 @@ export function getHighlightColor7Point(
 /**
  * Simple 3-color highlight (legacy)
  */
-export function getHighlightColor(truthPercentage: number): "green" | "yellow" | "red" {
+export function getHighlightColor(truthPercentage: number, bands?: VerdictBandConfig): "green" | "yellow" | "red" {
+  const b = bands ?? DEFAULT_BANDS;
   const normalized = normalizePercentage(truthPercentage);
-  if (normalized >= 72) return "green";
-  if (normalized >= 43) return "yellow";
+  if (normalized >= b.MOSTLY_TRUE) return "green";
+  if (normalized >= b.MIXED) return "yellow";
   return "red";
 }
 

@@ -1,10 +1,10 @@
 {
   "schemaVersion": "3.0.0",
   "llmProvider": "anthropic",
-  "llmTiering": false,
-  "modelUnderstand": "claude-3-5-haiku-20241022",
-  "modelExtractEvidence": "claude-3-5-haiku-20241022",
-  "modelVerdict": "claude-sonnet-4-20250514",
+  "llmTiering": true,
+  "modelUnderstand": "claude-haiku-4-5-20251001",
+  "modelExtractEvidence": "claude-haiku-4-5-20251001",
+  "modelVerdict": "claude-opus-4-6",
   "llmInputClassification": true,
   "llmEvidenceQuality": true,
   "llmContextSimilarity": true,
@@ -51,6 +51,34 @@
   "temporalConfidenceThreshold": 0.6,
   "recencyWindowMonths": 6,
   "recencyConfidencePenalty": 20,
+  "recencyGraduatedPenalty": true,
+  "confidenceCalibration": {
+    "enabled": true,
+    "densityAnchor": {
+      "enabled": true,
+      "minConfidenceBase": 15,
+      "minConfidenceMax": 60,
+      "sourceCountThreshold": 5
+    },
+    "bandSnapping": {
+      "enabled": true,
+      "strength": 0.7
+    },
+    "verdictCoupling": {
+      "enabled": true,
+      "strongVerdictThreshold": 70,
+      "minConfidenceStrong": 50,
+      "minConfidenceNeutral": 25
+    },
+    "contextConsistency": {
+      "enabled": true,
+      "maxConfidenceSpread": 25,
+      "reductionFactor": 0.5
+    }
+  },
+  "minConfidenceFloor": 10,
+  "lowSourceThreshold": 2,
+  "lowSourceConfidencePenalty": 15,
   "recencyCueTerms": [
     "current",
     "currently",
@@ -208,9 +236,15 @@
     "ary",
     "ory"
   ],
-  "searchRelevanceLlmEnabled": false,
   "searchRelevanceLlmMode": "auto",
   "searchRelevanceLlmMaxCalls": 3,
+  "searchAdaptiveFallbackMinCandidates": 5,
+  "searchAdaptiveFallbackMaxQueries": 2,
+  "searchMaxResultsCriticism": 8,
+  "searchRetryBeforeFallback": true,
+  "contextClaimsAnchorDivergenceThreshold": 15,
+  "contextClaimsAnchorClaimsWeight": 0.6,
+  "probativeDeduplicationThreshold": 0.75,
   "gapResearchEnabled": true,
   "gapResearchMaxIterations": 2,
   "gapResearchMaxQueries": 8

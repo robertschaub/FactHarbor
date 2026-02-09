@@ -129,6 +129,25 @@ export {
 } from "./evidence-filter";
 
 // ============================================================================
+// CONFIDENCE CALIBRATION EXPORTS (Session 25)
+// ============================================================================
+
+export type {
+  CalibrationAdjustment,
+  CalibrationResult,
+  ConfidenceCalibrationConfig,
+} from "./confidence-calibration";
+export {
+  calculateEvidenceDensityScore,
+  snapConfidenceToBand,
+  enforceVerdictConfidenceCoupling,
+  checkContextConfidenceConsistency,
+  calibrateConfidence,
+  DEFAULT_CALIBRATION_CONFIG,
+  DEFAULT_CONFIDENCE_BANDS,
+} from "./confidence-calibration";
+
+// ============================================================================
 // LLM EXPORTS
 // ============================================================================
 

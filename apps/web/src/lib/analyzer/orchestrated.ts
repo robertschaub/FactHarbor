@@ -42,11 +42,12 @@
 import { z } from "zod";
 import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
-import { searchWebWithProvider, getActiveSearchProviders, type WebSearchResult } from "@/lib/web-search";
+import { searchWebWithProvider, getActiveSearchProviders, type WebSearchResult, type SearchProviderErrorInfo } from "@/lib/web-search";
+import { recordProviderFailure, recordProviderSuccess } from "@/lib/provider-health";
 import { searchWithGrounding, isGroundedSearchAvailable, convertToFetchedSources } from "@/lib/search-gemini-grounded";
 import { applyGate1Lite, applyGate1ToClaims, applyGate4ToVerdicts } from "./quality-gates";
 import { filterEvidenceByProvenance } from "./provenance-validation";
-import { filterByProbativeValue, calculateFalsePositiveRate, DEFAULT_FILTER_CONFIG } from "./evidence-filter";
+import { filterByProbativeValue, calculateFalsePositiveRate, DEFAULT_FILTER_CONFIG, type ProbativeFilterConfig } from "./evidence-filter";
 import {
   getBudgetConfig,
   createBudgetTracker,
@@ -97,8 +98,9 @@ import {
 } from "./analysis-contexts";
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
+import { calibrateConfidence, DEFAULT_CALIBRATION_CONFIG, type ConfidenceCalibrationConfig } from "./confidence-calibration";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
-import { getAnalyzerConfig, type PipelineConfig, type SearchConfig } from "@/lib/config-loader";
+import { getAnalyzerConfig, type PipelineConfig, type SearchConfig, type CalcConfig, DEFAULT_CALC_CONFIG } from "@/lib/config-loader";
 import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
 import type { EvidenceItem, AnalysisWarning, VerdictDirectionMismatch } from "./types";
 import {
@@ -448,6 +450,8 @@ interface RelevanceCheck {
   reason?: string;
   signals?: {
     entityMatchCount: number;
+    strongEntityMatchCount: number;
+    passesEntityGate: boolean;
     contextMatchCount: number;
     institutionMatchCount: number;
     institutionMentioned: boolean;
@@ -532,6 +536,20 @@ function countTokenMatches(haystack: string, url: string, tokens: string[]): num
   return count;
 }
 
+function normalizeContextAlias(raw: unknown): string {
+  const alias = String(raw || "").trim();
+  if (!alias) return "";
+  const upper = alias.toUpperCase();
+  if (/^CTX(?:[_-]?[A-Z0-9]+)?$/.test(upper)) return "";
+  if (/^CONTEXT(?:[_-]?[A-Z0-9]+)?$/.test(upper)) return "";
+  return alias;
+}
+
+function isGenericAliasToken(token: string): boolean {
+  const normalized = String(token || "").trim().toLowerCase();
+  return normalized === "ctx" || normalized === "context";
+}
+
 function selectDiverseSearchResultsByQuery<T extends { query?: string }>(
   results: T[],
   maxSources: number,
@@ -570,6 +588,41 @@ function selectDiverseSearchResultsByQuery<T extends { query?: string }>(
   return selected;
 }
 
+function buildAdaptiveFallbackQueries(params: {
+  entityText: string;
+  focus?: string;
+  category?: string;
+  originalQueries: string[];
+  maxQueries: number;
+  currentYear: number;
+}): string[] {
+  const { entityText, focus, category, originalQueries, maxQueries, currentYear } = params;
+  if (maxQueries <= 0) return [];
+
+  const entityAnchor = tokenizeForMatch(entityText, 3).slice(0, 6).join(" ");
+  const focusAnchor = tokenizeForMatch(String(focus || ""), 4).slice(0, 4).join(" ");
+  const baseAnchor = [entityAnchor, focusAnchor].filter(Boolean).join(" ").trim() || entityAnchor || focusAnchor;
+  if (!baseAnchor) return [];
+
+  const lowerCategory = String(category || "").toLowerCase();
+  const candidates =
+    lowerCategory === "criticism" || lowerCategory === "counter_evidence"
+      ? [
+          `${baseAnchor} criticism documented evidence`,
+          `${baseAnchor} independent review evidence ${currentYear}`,
+        ]
+      : [
+          `${baseAnchor} documented evidence`,
+          `${baseAnchor} independent analysis evidence ${currentYear}`,
+        ];
+
+  const existing = new Set((originalQueries || []).map((q) => String(q || "").trim().toLowerCase()));
+  return candidates
+    .map((q) => q.replace(/\s+/g, " ").trim())
+    .filter((q) => q.length > 0 && !existing.has(q.toLowerCase()))
+    .slice(0, maxQueries);
+}
+
 function extractContextTokens(contexts: AnalysisContext[]): string[] {
   if (!Array.isArray(contexts) || contexts.length === 0) return [];
   const rawCore: string[] = [];
@@ -585,7 +638,8 @@ function extractContextTokens(contexts: AnalysisContext[]): string[] {
     }
 
     if (ctx.name) rawFallback.push(ctx.name);
-    if (ctx.shortName) rawFallback.push(ctx.shortName);
+    const contextAlias = normalizeContextAlias(ctx.shortName);
+    if (contextAlias) rawFallback.push(contextAlias);
 
     const meta = ctx.metadata || {};
     for (const [key, value] of Object.entries(meta)) {
@@ -609,10 +663,13 @@ function extractInstitutionTokens(contexts: AnalysisContext[]): string[] {
   const acronyms = new Set<string>();
   for (const ctx of contexts) {
     if (!ctx) continue;
-    if (ctx.shortName) {
-      raw.push(ctx.shortName);
-      const shortNameAcronyms = String(ctx.shortName).match(/\b[A-Z]{2,8}\b/g) || [];
-      for (const token of shortNameAcronyms) acronyms.add(token.toLowerCase());
+    const contextAlias = normalizeContextAlias(ctx.shortName);
+    if (contextAlias) {
+      raw.push(contextAlias);
+      const shortNameAcronyms = String(contextAlias).match(/\b[A-Z]{2,8}\b/g) || [];
+      for (const token of shortNameAcronyms) {
+        if (!isGenericAliasToken(token)) acronyms.add(token.toLowerCase());
+      }
     }
     const meta = ctx.metadata || {};
     for (const value of [meta.institution, meta.court, meta.regulatoryBody]) {
@@ -620,7 +677,9 @@ function extractInstitutionTokens(contexts: AnalysisContext[]): string[] {
       const text = String(value);
       raw.push(text);
       const matches = text.match(/\b[A-Z]{2,8}\b/g) || [];
-      for (const token of matches) acronyms.add(token.toLowerCase());
+      for (const token of matches) {
+        if (!isGenericAliasToken(token)) acronyms.add(token.toLowerCase());
+      }
     }
   }
   const lexicalTokens = tokenizeForMatch(raw.join(" "), 5);
@@ -638,20 +697,32 @@ function buildContextAwareCriticismQueries(
   contexts: AnalysisContext[],
   currentYear: number
 ): string[] {
-  const ctx = contexts.find(c => c.metadata?.jurisdiction || c.metadata?.institution || c.metadata?.geographic);
-  const jurisdiction = ctx?.metadata?.jurisdiction || ctx?.metadata?.geographic || "";
-  const institution = ctx?.metadata?.institution || ctx?.metadata?.court || "";
+  // Collect jurisdiction/institution pairs from ALL contexts (not just the first)
+  // to ensure multi-context analyses generate criticism queries for each distinct frame.
+  const seen = new Set<string>();
+  const queries: string[] = [];
 
-  const queries = (jurisdiction || institution)
-    ? [
-        `${entityStr} ${jurisdiction} ${institution} criticism official review`,
-        `${entityStr} ${jurisdiction} appeals challenges objections ${currentYear}`,
-        `${entityStr} ${institution} internal review findings`,
-      ]
-    : [
-        `${entityStr} criticism documented evidence ${currentYear}`,
-        `${entityStr} official response challenges`,
-      ];
+  for (const ctx of contexts) {
+    const jurisdiction = ctx?.metadata?.jurisdiction || ctx?.metadata?.geographic || "";
+    const institution = ctx?.metadata?.institution || ctx?.metadata?.court || "";
+    if (!jurisdiction && !institution) continue;
+    const key = `${jurisdiction}|${institution}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    queries.push(
+      `${entityStr} ${jurisdiction} ${institution} criticism official review`,
+      `${entityStr} ${jurisdiction} appeals challenges objections ${currentYear}`,
+      `${entityStr} ${institution} internal review findings`,
+    );
+  }
+
+  if (queries.length === 0) {
+    // No context had jurisdiction/institution — fall back to generic queries
+    queries.push(
+      `${entityStr} criticism documented evidence ${currentYear}`,
+      `${entityStr} official response challenges`,
+    );
+  }
 
   return queries.map((q) => q.replace(/\s+/g, " ").trim()).filter(Boolean);
 }
@@ -697,6 +768,8 @@ function checkSearchResultRelevance(
 
   const signals = {
     entityMatchCount,
+    strongEntityMatchCount,
+    passesEntityGate,
     contextMatchCount,
     institutionMatchCount,
     institutionMentioned,
@@ -1210,6 +1283,9 @@ Return:
     return { updated: false, llmCalls: 1 };
   }
 
+  // Track whether LLM explicitly requested separate analysis
+  const llmRequestedSeparateAnalysis = !!next.requiresSeparateAnalysis && next.analysisContexts.length > 1;
+
   const evidenceAssignments = next.evidenceContextAssignments || [];
   const normalizedEvidenceAssignments = evidenceAssignments.map((a) => ({
     ...a,
@@ -1423,8 +1499,9 @@ Return:
   if (preRefineContexts.length === 1 && (state.understanding!.analysisContexts?.length ?? 0) >= 1) {
     const anchor = preRefineContexts[0] as any;
     const contextsNow = (state.understanding!.analysisContexts || []) as any[];
+    const anchorRecoverySim = CONTEXT_SIMILARITY_CONFIG.anchorRecoveryThreshold ?? 0.6;
     const anchorStillRepresented = contextsNow.some(
-      (ctx) => calculateContextSimilarity(ctx, anchor) >= 0.8,
+      (ctx) => calculateContextSimilarity(ctx, anchor) >= anchorRecoverySim,
     );
 
     if (!anchorStillRepresented) {
@@ -1617,7 +1694,8 @@ Return:
       const b = String(s?.metadata?.boundaries || "").trim();
       const g = String(s?.metadata?.geographic || "").trim();
       const t = String(s?.metadata?.temporal || s?.temporal || "").trim();
-      const key = [m, b, g, t].filter(Boolean).join("|");
+      const inst = String(s?.metadata?.institution || s?.metadata?.court || "").trim();
+      const key = [inst, m, b, g, t].filter(Boolean).join("|");
       if (key) contextFrameKeys.add(key);
     }
 
@@ -1646,9 +1724,49 @@ Return:
       ([, set]) => set.size > 0,
     ).length;
 
-    const hasStrongFrameSignal =
+    let hasStrongFrameSignal =
       contextFrameKeys.size >= 2 ||
       (distinctEvidenceScopeKeys.size >= 2 && contextsWithEvidenceScope >= 2);
+
+    // Text-based distinctness check: if any pair of contexts has clearly different
+    // names AND assessed statements, they represent genuinely distinct analytical
+    // frames even without structured evidenceScope metadata.
+    if (!hasStrongFrameSignal && contextsNow.length >= 2) {
+      for (let i = 0; i < contextsNow.length && !hasStrongFrameSignal; i++) {
+        for (let j = i + 1; j < contextsNow.length && !hasStrongFrameSignal; j++) {
+          const cA = contextsNow[i] as any;
+          const cB = contextsNow[j] as any;
+          const nameA = String(cA?.name || "").trim();
+          const nameB = String(cB?.name || "").trim();
+          const assessedA = String(cA?.assessedStatement || "").trim();
+          const assessedB = String(cB?.assessedStatement || "").trim();
+          if (nameA && nameB && assessedA && assessedB) {
+            const nSim = calculateTextSimilarity(nameA, nameB);
+            const aSim = calculateTextSimilarity(assessedA, assessedB);
+            if (nSim < 0.5 && aSim < 0.6) {
+              hasStrongFrameSignal = true;
+              debugLog("refineContextsFromEvidence: text distinctness provides strong frame signal", {
+                contextA: nameA,
+                contextB: nameB,
+                nameSimilarity: nSim,
+                assessedSimilarity: aSim,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // If the refinement LLM explicitly determined separate analysis is required AND
+    // contexts survived deduplication, trust the LLM's judgment as a frame signal.
+    // The LLM prompt includes explicit rules about multiple proceedings, different authorities,
+    // different system boundaries, etc. — its judgment is informed.
+    if (!hasStrongFrameSignal && llmRequestedSeparateAnalysis) {
+      hasStrongFrameSignal = true;
+      debugLog("refineContextsFromEvidence: LLM requiresSeparateAnalysis accepted as frame signal", {
+        contextCount: contextsNow.length,
+      });
+    }
 
     if (!hasStrongFrameSignal) {
       // Extra debug signal: if contexts are very similar by text/metadata, it's likely a dimension split.
@@ -2117,19 +2235,41 @@ function calculateContextSimilarity(a: AnalysisContext, b: AnalysisContext): num
   // - assessedStatement (20%): directly captures the analytical question for this context
   // - subject (10%): often overlaps across all contexts (thesis), so keep secondary
   // - geo/time (5%): noisy, keep minimal
+  const csCfg = CONTEXT_SIMILARITY_CONFIG;
   let similarity =
-    nameSim * 0.35 +
-    primarySim * 0.3 +
-    assessedSim * 0.2 +
-    subjectSim * 0.1 +
-    secondarySim * 0.05;
+    nameSim * csCfg.nameWeight +
+    primarySim * csCfg.primaryMetadataWeight +
+    assessedSim * csCfg.assessedStatementWeight +
+    subjectSim * csCfg.subjectWeight +
+    secondarySim * csCfg.secondaryMetadataWeight;
 
   // Generic near-duplicate override: if two contexts are essentially asking the same assessed question
   // (high assessedStatement similarity) and have at least mild agreement on identity signals, merge them.
   // This helps collapse redundant rephrasings like:
   // - "procedural compliance ..." vs "procedural compliance in Jurisdiction A ..."
-  if (assessedSim >= 0.75 && (nameSim >= 0.25 || primarySim >= 0.15)) {
-    similarity = Math.max(similarity, 0.92);
+  // BUT: protect contexts that have distinct institutional identity (different court, institution,
+  // or jurisdiction) — these represent genuinely separate analytical frames even when the assessed
+  // question is phrased similarly.
+  const institutionalKeys = ["court", "institution", "jurisdiction"];
+  let hasDistinctInstitution = false;
+  for (const k of institutionalKeys) {
+    const va = String((metaA as any)?.[k] ?? "").trim().toLowerCase();
+    const vb = String((metaB as any)?.[k] ?? "").trim().toLowerCase();
+    if (va && vb && va !== vb) {
+      hasDistinctInstitution = true;
+      break;
+    }
+  }
+  // Subject distinctness guard: if subjects are clearly different, don't force-merge
+  // even when assessed statements are similar (e.g., same question applied to different entities)
+  const subjectGuardThreshold = csCfg.nearDuplicateSubjectGuardThreshold ?? 0.5;
+  const hasDistinctSubject = subjectSim > 0 && subjectSim < subjectGuardThreshold;
+  // Name distinctness guard: if context names are clearly different, don't force-merge
+  // even when assessed statements are similar (e.g., "Criminal proceedings" vs "Electoral eligibility")
+  const nameGuardThreshold = csCfg.nearDuplicateNameGuardThreshold ?? 0.4;
+  const hasDistinctName = nameSim > 0 && nameSim < nameGuardThreshold;
+  if (assessedSim >= csCfg.nearDuplicateAssessedThreshold && (nameSim >= 0.25 || primarySim >= 0.15) && !hasDistinctInstitution && !hasDistinctSubject && !hasDistinctName) {
+    similarity = Math.max(similarity, csCfg.nearDuplicateForceScore);
   }
 
   return Math.min(1.0, similarity);
@@ -2470,11 +2610,12 @@ function isDuplicateEvidenceItem(
 function deduplicateEvidenceItems(
   newEvidenceItems: EvidenceItem[],
   existingEvidenceItems: EvidenceItem[],
+  threshold?: number,
 ): EvidenceItem[] {
   const result: EvidenceItem[] = [];
 
   for (const item of newEvidenceItems) {
-    if (!isDuplicateEvidenceItem(item, existingEvidenceItems) && !isDuplicateEvidenceItem(item, result)) {
+    if (!isDuplicateEvidenceItem(item, existingEvidenceItems, threshold) && !isDuplicateEvidenceItem(item, result, threshold)) {
       result.push(item);
     } else {
       // Log deduplication for debugging
@@ -2653,6 +2794,88 @@ function validateEvidenceRecency(
     latestEvidenceDate: latestDate ? latestDate.toISOString() : undefined,
     signalsCount: temporalSignals.length,
     dateCandidates: dates.length,
+  };
+}
+
+/**
+ * Calculate a graduated recency evidence gap penalty.
+ *
+ * Instead of a flat binary penalty, uses three independent factors:
+ * 1. Staleness curve: how far outside the recency window the evidence is
+ * 2. Topic volatility: how time-critical the topic is (from LLM granularity)
+ * 3. Evidence volume: more evidence (even if dated) attenuates the penalty
+ *
+ * Formula: effectivePenalty = round(maxPenalty × staleness × volatility × volume)
+ */
+export function calculateGraduatedRecencyPenalty(
+  latestEvidenceDate: string | undefined,
+  currentDate: Date,
+  windowMonths: number,
+  maxPenalty: number,
+  granularity: "week" | "month" | "year" | "none" | undefined,
+  dateCandidates: number,
+): {
+  effectivePenalty: number;
+  breakdown: {
+    monthsOld: number | null;
+    stalenessMultiplier: number;
+    volatilityMultiplier: number;
+    volumeMultiplier: number;
+    formula: string;
+  };
+} {
+  // --- Factor 1: Staleness Curve ---
+  let monthsOld: number | null = null;
+  let stalenessMultiplier = 1.0; // default: full staleness if no date at all
+
+  if (latestEvidenceDate) {
+    const latestDate = new Date(latestEvidenceDate);
+    if (!isNaN(latestDate.getTime())) {
+      const diffMs = currentDate.getTime() - latestDate.getTime();
+      monthsOld = diffMs / (30.44 * 24 * 60 * 60 * 1000);
+
+      if (monthsOld <= windowMonths) {
+        stalenessMultiplier = 0;
+      } else {
+        // Linear ramp from 0 to 1 over an additional windowMonths period
+        stalenessMultiplier = Math.min(1, Math.max(0, (monthsOld - windowMonths) / windowMonths));
+      }
+    }
+  }
+
+  // --- Factor 2: Topic Volatility ---
+  const VOLATILITY_MAP: Record<string, number> = {
+    week: 1.0,
+    month: 0.8,
+    year: 0.4,
+    none: 0.2,
+  };
+  const volatilityMultiplier = granularity ? (VOLATILITY_MAP[granularity] ?? 0.7) : 0.7;
+
+  // --- Factor 3: Evidence Volume Attenuation ---
+  let volumeMultiplier: number;
+  if (dateCandidates === 0) {
+    volumeMultiplier = 1.0;
+  } else if (dateCandidates <= 10) {
+    volumeMultiplier = 0.9;
+  } else if (dateCandidates <= 25) {
+    volumeMultiplier = 0.7;
+  } else {
+    volumeMultiplier = 0.5;
+  }
+
+  // --- Combined formula ---
+  const effectivePenalty = Math.round(maxPenalty * stalenessMultiplier * volatilityMultiplier * volumeMultiplier);
+
+  return {
+    effectivePenalty,
+    breakdown: {
+      monthsOld,
+      stalenessMultiplier,
+      volatilityMultiplier,
+      volumeMultiplier,
+      formula: `round(${maxPenalty} × ${stalenessMultiplier.toFixed(2)} × ${volatilityMultiplier.toFixed(2)} × ${volumeMultiplier.toFixed(2)}) = ${effectivePenalty}`,
+    },
   };
 }
 
@@ -2921,8 +3144,58 @@ type ArticleVerdict7Point =
   | "MOSTLY-FALSE" // 15-28%,  Score -2
   | "FALSE"; // 0-14%,   Score -3
 
-// Confidence threshold to distinguish MIXED from UNVERIFIED
-const MIXED_CONFIDENCE_THRESHOLD = 60;
+// Confidence threshold to distinguish MIXED from UNVERIFIED (default; overridden by CalcConfig at runtime)
+let MIXED_CONFIDENCE_THRESHOLD = DEFAULT_CALC_CONFIG.mixedConfidenceThreshold;
+
+/**
+ * Verdict band lower bounds derived from CalcConfig.verdictBands.
+ * Initialized with defaults; overwritten when calcConfig is loaded.
+ */
+let VERDICT_BANDS = {
+  TRUE: DEFAULT_CALC_CONFIG.verdictBands.true[0],
+  MOSTLY_TRUE: DEFAULT_CALC_CONFIG.verdictBands.mostlyTrue[0],
+  LEANING_TRUE: DEFAULT_CALC_CONFIG.verdictBands.leaningTrue[0],
+  MIXED: DEFAULT_CALC_CONFIG.verdictBands.mixed[0],
+  LEANING_FALSE: DEFAULT_CALC_CONFIG.verdictBands.leaningFalse[0],
+  MOSTLY_FALSE: DEFAULT_CALC_CONFIG.verdictBands.mostlyFalse[0],
+};
+
+/**
+ * Context similarity weights derived from CalcConfig.contextSimilarity.
+ * Initialized with defaults; overwritten when calcConfig is loaded.
+ */
+let CONTEXT_SIMILARITY_CONFIG = {
+  nameWeight: DEFAULT_CALC_CONFIG.contextSimilarity?.nameWeight ?? 0.35,
+  primaryMetadataWeight: DEFAULT_CALC_CONFIG.contextSimilarity?.primaryMetadataWeight ?? 0.3,
+  assessedStatementWeight: DEFAULT_CALC_CONFIG.contextSimilarity?.assessedStatementWeight ?? 0.2,
+  subjectWeight: DEFAULT_CALC_CONFIG.contextSimilarity?.subjectWeight ?? 0.1,
+  secondaryMetadataWeight: DEFAULT_CALC_CONFIG.contextSimilarity?.secondaryMetadataWeight ?? 0.05,
+  nearDuplicateAssessedThreshold: DEFAULT_CALC_CONFIG.contextSimilarity?.nearDuplicateAssessedThreshold ?? 0.85,
+  nearDuplicateForceScore: DEFAULT_CALC_CONFIG.contextSimilarity?.nearDuplicateForceScore ?? 0.92,
+  nearDuplicateSubjectGuardThreshold: DEFAULT_CALC_CONFIG.contextSimilarity?.nearDuplicateSubjectGuardThreshold ?? 0.5,
+  nearDuplicateNameGuardThreshold: DEFAULT_CALC_CONFIG.contextSimilarity?.nearDuplicateNameGuardThreshold ?? 0.4,
+  anchorRecoveryThreshold: DEFAULT_CALC_CONFIG.contextSimilarity?.anchorRecoveryThreshold ?? 0.6,
+  fallbackEvidenceCapPercent: DEFAULT_CALC_CONFIG.contextSimilarity?.fallbackEvidenceCapPercent ?? 40,
+};
+
+/**
+ * Claim clustering config derived from CalcConfig.claimClustering.
+ * Initialized with defaults; overwritten when calcConfig is loaded.
+ */
+let CLAIM_CLUSTERING_CONFIG = {
+  jaccardSimilarityThreshold: DEFAULT_CALC_CONFIG.claimClustering?.jaccardSimilarityThreshold ?? 0.6,
+  duplicateWeightShare: DEFAULT_CALC_CONFIG.claimClustering?.duplicateWeightShare ?? 0.5,
+};
+
+/**
+ * Fallback graduation config derived from CalcConfig.fallback.
+ * Initialized with defaults; overwritten when calcConfig is loaded.
+ */
+let FALLBACK_CONFIG = {
+  step1RelaxInstitution: DEFAULT_CALC_CONFIG.fallback?.step1RelaxInstitution ?? true,
+  step2RelevanceFloor: DEFAULT_CALC_CONFIG.fallback?.step2RelevanceFloor ?? 0.4,
+  step3BroadEnabled: DEFAULT_CALC_CONFIG.fallback?.step3BroadEnabled ?? true,
+};
 
 /**
  * Normalize truth percentage values (0-100)
@@ -2954,15 +3227,31 @@ function truthFromBand(
   confidence: number,
 ): number {
   const conf = normalizePercentage(confidence) / 100;
+  // Derive ranges from VERDICT_BANDS (configurable via CalcConfig)
+  // Band boundaries: adjacent lower bounds define each band's upper bound
+  const tr = VERDICT_BANDS.TRUE;          // default 86
+  const mt = VERDICT_BANDS.MOSTLY_TRUE;   // default 72
+  const lt = VERDICT_BANDS.LEANING_TRUE;  // default 58
+  const mx = VERDICT_BANDS.MIXED;         // default 43
+  const lf = VERDICT_BANDS.LEANING_FALSE; // default 29
+  const mtUpper = tr - 1;                                    // 85
+  const mxMid = Math.floor((mx + lt - 1) / 2);              // 50
+  const lfMid = Math.floor((lf + mx - 1) / 2);              // 35
+  const ltMid = Math.ceil((lt + mt - 1) / 2);               // 65
+  const mfUpper = lf - 1;                                    // 28
   switch (band) {
     case "strong":
-      return Math.round(72 + 28 * conf);
+      // MOSTLY-TRUE lower → 100: default 72 + 28*conf
+      return Math.round(mt + (100 - mt) * conf);
     case "partial":
-      return Math.round(50 + 35 * conf);
+      // MIXED midpoint → MOSTLY-TRUE upper: default 50 + 35*conf
+      return Math.round(mxMid + (mtUpper - mxMid) * conf);
     case "uncertain":
-      return Math.round(35 + 30 * conf);
+      // LEANING-FALSE midpoint → LEANING-TRUE midpoint: default 35 + 30*conf
+      return Math.round(lfMid + (ltMid - lfMid) * conf);
     case "refuted":
-      return Math.round(28 * (1 - conf));
+      // 0 → MOSTLY-FALSE upper (inverse): default 28*(1-conf)
+      return Math.round(mfUpper * (1 - conf));
   }
 }
 
@@ -3034,6 +3323,37 @@ export function clampTruthPercentage(value: number): number {
   return value;
 }
 
+function anchorVerdictTowardClaims(options: {
+  verdictPct: number;
+  claimsAvgPct: number;
+  divergenceThreshold: number;
+  claimsWeight: number;
+}): {
+  applied: boolean;
+  divergence: number;
+  anchoredPct: number;
+} {
+  const divergenceThreshold = Number.isFinite(options.divergenceThreshold)
+    ? Math.max(0, options.divergenceThreshold)
+    : 15;
+  const claimsWeight = Number.isFinite(options.claimsWeight)
+    ? Math.max(0, Math.min(1, options.claimsWeight))
+    : 0.6;
+  const divergence = Math.abs(options.verdictPct - options.claimsAvgPct);
+
+  if (divergence <= divergenceThreshold) {
+    return { applied: false, divergence, anchoredPct: options.verdictPct };
+  }
+
+  const anchoredPct = clampTruthPercentage(
+    Math.round(
+      (1 - claimsWeight) * options.verdictPct +
+      claimsWeight * options.claimsAvgPct,
+    ),
+  );
+  return { applied: true, divergence, anchoredPct };
+}
+
 
 /**
  * Map truth percentage to 7-point claim verdict
@@ -3041,16 +3361,15 @@ export function clampTruthPercentage(value: number): number {
  * @param confidence - Optional confidence score (0-100). Used to distinguish MIXED from UNVERIFIED in 43-57% range.
  */
 function percentageToClaimVerdict(truthPercentage: number, confidence?: number): ClaimVerdict7Point {
-  if (truthPercentage >= 86) return "TRUE";
-  if (truthPercentage >= 72) return "MOSTLY-TRUE";
-  if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) {
-    // Distinguish MIXED (high confidence, evidence on both sides) from UNVERIFIED (low confidence, insufficient evidence)
+  if (truthPercentage >= VERDICT_BANDS.TRUE) return "TRUE";
+  if (truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE) return "MOSTLY-TRUE";
+  if (truthPercentage >= VERDICT_BANDS.LEANING_TRUE) return "LEANING-TRUE";
+  if (truthPercentage >= VERDICT_BANDS.MIXED) {
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
     return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
   }
-  if (truthPercentage >= 29) return "LEANING-FALSE";
-  if (truthPercentage >= 15) return "MOSTLY-FALSE";
+  if (truthPercentage >= VERDICT_BANDS.LEANING_FALSE) return "LEANING-FALSE";
+  if (truthPercentage >= VERDICT_BANDS.MOSTLY_FALSE) return "MOSTLY-FALSE";
   return "FALSE";
 }
 
@@ -3064,15 +3383,15 @@ function percentageToVerdictSummary(
   truthPercentage: number,
   confidence?: number,
 ): VerdictSummary7Point {
-  if (truthPercentage >= 86) return "YES";
-  if (truthPercentage >= 72) return "MOSTLY-YES";
-  if (truthPercentage >= 58) return "LEANING-YES";
-  if (truthPercentage >= 43) {
+  if (truthPercentage >= VERDICT_BANDS.TRUE) return "YES";
+  if (truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE) return "MOSTLY-YES";
+  if (truthPercentage >= VERDICT_BANDS.LEANING_TRUE) return "LEANING-YES";
+  if (truthPercentage >= VERDICT_BANDS.MIXED) {
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
     return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
   }
-  if (truthPercentage >= 29) return "LEANING-NO";
-  if (truthPercentage >= 15) return "MOSTLY-NO";
+  if (truthPercentage >= VERDICT_BANDS.LEANING_FALSE) return "LEANING-NO";
+  if (truthPercentage >= VERDICT_BANDS.MOSTLY_FALSE) return "MOSTLY-NO";
   return "NO";
 }
 
@@ -3085,15 +3404,15 @@ function percentageToArticleVerdict(
   truthPercentage: number,
   confidence?: number,
 ): ArticleVerdict7Point {
-  if (truthPercentage >= 86) return "TRUE";
-  if (truthPercentage >= 72) return "MOSTLY-TRUE";
-  if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) {
+  if (truthPercentage >= VERDICT_BANDS.TRUE) return "TRUE";
+  if (truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE) return "MOSTLY-TRUE";
+  if (truthPercentage >= VERDICT_BANDS.LEANING_TRUE) return "LEANING-TRUE";
+  if (truthPercentage >= VERDICT_BANDS.MIXED) {
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
     return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
   }
-  if (truthPercentage >= 29) return "LEANING-FALSE";
-  if (truthPercentage >= 15) return "MOSTLY-FALSE";
+  if (truthPercentage >= VERDICT_BANDS.LEANING_FALSE) return "LEANING-FALSE";
+  if (truthPercentage >= VERDICT_BANDS.MOSTLY_FALSE) return "MOSTLY-FALSE";
   return "FALSE";
 }
 
@@ -3169,8 +3488,8 @@ function getHighlightColor7Point(
   truthPercentage: number,
 ): "green" | "yellow" | "red" {
   const normalized = normalizePercentage(truthPercentage);
-  if (normalized >= 72) return "green";
-  if (normalized >= 43) return "yellow";
+  if (normalized >= VERDICT_BANDS.MOSTLY_TRUE) return "green";
+  if (normalized >= VERDICT_BANDS.MIXED) return "yellow";
   return "red";
 }
 
@@ -3262,6 +3581,8 @@ interface SearchQuery {
   resultsCount: number;
   timestamp: string;
   searchProvider?: string;
+  /** Error message if the search provider returned a fatal error (429, quota exhaustion) */
+  error?: string;
 }
 
 interface ResearchState {
@@ -3295,6 +3616,8 @@ interface ResearchState {
   pipelineConfig: PipelineConfig;
   // NEW v2.10.0: Search config for hot-reload support
   searchConfig: SearchConfig;
+  // NEW v3.1: Calculation config for UCM-configurable weights, bands, gates
+  calcConfig: CalcConfig;
   // P0: Fallback tracking for LLM classification reliability
   fallbackTracker: FallbackTracker;
   // P0: Analysis warnings for verdict direction validation and other issues
@@ -3592,7 +3915,8 @@ function dedupeWeightedAverageTruth(verdicts: ClaimVerdict[]): number {
     return union.size === 0 ? 0 : intersection.size / union.size;
   };
 
-  // Cluster claims by similarity (threshold 0.6)
+  // Cluster claims by similarity (configurable threshold from CalcConfig)
+  const clusterThreshold = CLAIM_CLUSTERING_CONFIG.jaccardSimilarityThreshold;
   const clusters: ClaimVerdict[][] = [];
   for (const verdict of verdicts) {
     const tokens = tokenize(verdict.claimText);
@@ -3600,7 +3924,7 @@ function dedupeWeightedAverageTruth(verdicts: ClaimVerdict[]): number {
 
     for (const cluster of clusters) {
       const clusterTokens = tokenize(cluster[0].claimText);
-      if (jaccardSimilarity(tokens, clusterTokens) >= 0.6) {
+      if (jaccardSimilarity(tokens, clusterTokens) >= clusterThreshold) {
         cluster.push(verdict);
         addedToCluster = true;
         break;
@@ -3617,9 +3941,10 @@ function dedupeWeightedAverageTruth(verdicts: ClaimVerdict[]): number {
   let weightedSum = 0;
 
   for (const cluster of clusters) {
-    // Primary claim gets weight 1.0, duplicates share remaining weight
+    // Primary claim gets weight 1.0, duplicates share remaining weight (configurable)
     const primaryWeight = 1.0;
-    const duplicateWeight = cluster.length > 1 ? 0.5 / (cluster.length - 1) : 0;
+    const dupShare = CLAIM_CLUSTERING_CONFIG.duplicateWeightShare;
+    const duplicateWeight = cluster.length > 1 ? dupShare / (cluster.length - 1) : 0;
 
     // Sort by truthPercentage descending to pick primary
     const sorted = [...cluster].sort((a, b) => b.truthPercentage - a.truthPercentage);
@@ -3679,6 +4004,46 @@ function applyEvidenceWeighting(
 }
 
 /**
+ * Count claim direction votes by unique evidence source.
+ * One source contributes at most one directional vote:
+ * - supports if all directional items support
+ * - contradicts if all directional items contradict
+ * - neutral if source has conflicting directional items or only neutral items
+ */
+function countBySourceDeduped(evidence: EvidenceItem[]): {
+  supports: number;
+  contradicts: number;
+  neutral: number;
+  totalSources: number;
+} {
+  const perSource = new Map<string, { hasSupport: boolean; hasContradict: boolean }>();
+
+  for (const item of evidence) {
+    const sourceKey = String(item.sourceId || item.sourceUrl || item.id || "").trim() || item.id;
+    const direction = item.claimDirection || "neutral";
+    const current = perSource.get(sourceKey) ?? { hasSupport: false, hasContradict: false };
+
+    if (direction === "supports") current.hasSupport = true;
+    if (direction === "contradicts") current.hasContradict = true;
+
+    perSource.set(sourceKey, current);
+  }
+
+  let supports = 0;
+  let contradicts = 0;
+  let neutral = 0;
+
+  for (const vote of perSource.values()) {
+    if (vote.hasSupport && vote.hasContradict) neutral++;
+    else if (vote.hasSupport) supports++;
+    else if (vote.hasContradict) contradicts++;
+    else neutral++;
+  }
+
+  return { supports, contradicts, neutral, totalSources: perSource.size };
+}
+
+/**
  * P0: Validate verdict direction against evidence direction.
  * Detects when LLM returns HIGH verdict (>=72%) but majority of evidence contradicts the claim.
  *
@@ -3695,7 +4060,7 @@ function validateVerdictDirections(
     majorityThreshold?: number;
     /** Whether to auto-correct mismatched verdicts (default false) */
     autoCorrect?: boolean;
-    /** Minimum evidence count to trigger validation (default 2) */
+    /** Minimum unique directional source votes to trigger validation (default 2) */
     minEvidenceCount?: number;
   } = {},
 ): {
@@ -3722,14 +4087,15 @@ function validateVerdictDirections(
       return verdict;
     }
 
-    // Count evidence by direction
-    const supportCount = linkedEvidence.filter((e) => e.claimDirection === "supports").length;
-    const contradictCount = linkedEvidence.filter((e) => e.claimDirection === "contradicts").length;
-    const neutralCount = linkedEvidence.filter((e) => e.claimDirection === "neutral" || !e.claimDirection).length;
+    // Count direction by unique source (one source = one vote)
+    const dedupedCounts = countBySourceDeduped(linkedEvidence);
+    const supportCount = dedupedCounts.supports;
+    const contradictCount = dedupedCounts.contradicts;
+    const neutralCount = dedupedCounts.neutral;
     const totalDirectional = supportCount + contradictCount;
 
-    // Skip if no directional evidence
-    if (totalDirectional === 0) {
+    // Skip if no directional evidence or too few unique directional sources
+    if (totalDirectional === 0 || totalDirectional < minEvidenceCount) {
       return verdict;
     }
 
@@ -3743,8 +4109,8 @@ function validateVerdictDirections(
     const evidenceSuggestsLow = contradictRatio >= majorityThreshold;
 
     // Determine actual direction from verdict
-    const verdictIsHigh = verdict.truthPercentage >= 72; // MOSTLY-TRUE or higher
-    const verdictIsLow = verdict.truthPercentage < 43; // LEANING-FALSE or lower
+    const verdictIsHigh = verdict.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE;
+    const verdictIsLow = verdict.truthPercentage < VERDICT_BANDS.MIXED;
 
     // Check for mismatch
     const hasDirectionMismatch =
@@ -3772,6 +4138,8 @@ function validateVerdictDirections(
         verdictPct: verdict.truthPercentage,
         supportCount,
         contradictCount,
+        neutralCount,
+        totalSources: dedupedCounts.totalSources,
         expectedDirection,
         actualDirection,
       });
@@ -4489,11 +4857,11 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
 // Supplemental claim backfill should ensure each context has at least one substantive/core claim,
 // but MUST NOT force “central” marking. Centrality is determined by the LLM + guardrails.
 // Raise minimums to avoid collapsing compound inputs into a single claim.
-const MIN_CORE_CLAIMS_PER_PROCEEDING = 2;
-const MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE = 3;
-const SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS = 2;
-const SHORT_SIMPLE_INPUT_MAX_CHARS = 60;
-const MIN_DIRECT_CLAIMS_PER_CONTEXT = 2;
+let MIN_CORE_CLAIMS_PER_PROCEEDING = DEFAULT_CALC_CONFIG.claimDecomposition?.minCoreClaimsPerContext ?? 2;
+let MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE = DEFAULT_CALC_CONFIG.claimDecomposition?.minTotalClaimsWithSingleCore ?? 3;
+let SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS = DEFAULT_CALC_CONFIG.claimDecomposition?.supplementalRepromptMaxAttempts ?? 2;
+let SHORT_SIMPLE_INPUT_MAX_CHARS = DEFAULT_CALC_CONFIG.claimDecomposition?.shortSimpleInputMaxChars ?? 60;
+let MIN_DIRECT_CLAIMS_PER_CONTEXT = DEFAULT_CALC_CONFIG.claimDecomposition?.minDirectClaimsPerContext ?? 2;
 
 function expandClaimsForVerdicts(
   understanding: ClaimUnderstanding,
@@ -6465,15 +6833,27 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
 
   let entityStr = "";
 
-  // For claim inputs, always use the implied claim as primary search basis
-  if (isClaimLike && understanding.impliedClaim) {
-    entityStr = understanding.impliedClaim
-      .toLowerCase()
-      .replace(/[^\w\s]/g, " ")
-      .split(/\s+/)
-      .filter(word => word.length > 2 && !stopWords.has(word))
-      .slice(0, 8)
-      .join(" ");
+  // For claim inputs, prefer key entities as anchor terms to reduce evaluative phrasing noise.
+  if (isClaimLike) {
+    const entityHints = Array.from(
+      new Set(
+        entities
+          .map((value) => String(value || "").toLowerCase().trim())
+          .filter((word) => word.length > 2 && !stopWords.has(word)),
+      ),
+    ).slice(0, 8);
+
+    if (entityHints.length >= 2) {
+      entityStr = entityHints.join(" ");
+    } else if (understanding.impliedClaim) {
+      entityStr = understanding.impliedClaim
+        .toLowerCase()
+        .replace(/[^\w\s]/g, " ")
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !stopWords.has(word))
+        .slice(0, 8)
+        .join(" ");
+    }
   } else {
     // For articles/claims, use keyEntities
     entityStr = entities.join(" ");
@@ -6695,17 +7075,21 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         const contextAuthority = String(
           contextMeta.institution || contextMeta.court || contextMeta.regulatoryBody || "",
         ).trim();
-        const contextNameKey = tokenizeForMatch(String(context.name || ""), 4).slice(0, 4).join(" ");
-        const contextKey = [contextAuthority, context.shortName, contextNameKey]
+        const contextDescriptor =
+          String(context.subject || context.assessedStatement || context.name || "").trim();
+        const contextNameKey = tokenizeForMatch(contextDescriptor, 4).slice(0, 4).join(" ");
+        const contextAlias = normalizeContextAlias(context.shortName);
+        const contextKey = [contextAuthority, contextAlias, contextNameKey]
           .filter(Boolean)
           .join(" ")
           .trim();
+        const authorityKey = contextAuthority || contextKey;
         // Build base queries
         const baseQueries = [
           `${entityStr} ${contextKey}`.trim(),
-          `${contextKey} official decision documents`.trim(),
-          `${contextKey} evidence procedure`.trim(),
-          `${entityStr} ${contextKey} outcome`.trim(),
+          `${authorityKey} official decision documents`.trim(),
+          `${authorityKey} evidence procedure`.trim(),
+          `${entityStr} ${authorityKey} outcome`.trim(),
         ];
         // Add date-variant queries for recency-sensitive topics
         const queries = recencyMatters ? [
@@ -6732,11 +7116,22 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     state.iterations.length >= 2 &&
     !state.sources.some((s) => s.category === "cross_context")
   ) {
+    const primaryMeta = (contexts[0]?.metadata || {}) as Record<string, any>;
+    const primaryAuthority = String(
+      primaryMeta.institution || primaryMeta.court || primaryMeta.regulatoryBody || "",
+    ).trim();
     const crossQueries = [
       `${entityStr} related proceeding different authority ruling`,
       `${entityStr} parallel legal case court decision`,
+      `${entityStr} additional institution proceeding ruling`,
       ...(recencyMatters ? [`${entityStr} separate proceeding ${currentYear}`] : []),
     ];
+    if (primaryAuthority) {
+      crossQueries.push(
+        `${entityStr} separate proceeding different from ${primaryAuthority}`,
+        `${entityStr} other authority court ruling ${currentYear}`,
+      );
+    }
     return {
       complete: false,
       focus: "Related proceedings (cross-authority)",
@@ -7227,6 +7622,7 @@ async function extractEvidence(
   fromOppositeClaimSearch?: boolean,
   pipelineConfig?: PipelineConfig,
   extractionStats?: { llmFilterFailed?: boolean },  // P3: Track LLM filter failures
+  evidenceFilterConfig?: Partial<ProbativeFilterConfig>,
 ): Promise<EvidenceItem[]> {
   console.log(`[Analyzer] extractEvidence called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
   console.log(`[Analyzer] extractEvidence: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
@@ -7534,15 +7930,24 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       }
 
       // Deterministic filtering (always apply; LLM filter is a pre-filter, not a replacement)
+      const deduplicationThreshold =
+        pipelineConfig?.probativeDeduplicationThreshold ??
+        DEFAULT_PIPELINE_CONFIG.probativeDeduplicationThreshold ??
+        DEFAULT_FILTER_CONFIG.deduplicationThreshold;
       const { kept, filtered, stats } = filterByProbativeValue(
         candidateEvidenceItems as EvidenceItem[],
-        { ...DEFAULT_FILTER_CONFIG },
+        {
+          ...DEFAULT_FILTER_CONFIG,
+          ...evidenceFilterConfig,
+          deduplicationThreshold,
+        },
       );
       debugLog("Evidence filter stats", {
         sourceId: source.id,
         total: stats.total,
         kept: stats.kept,
         filtered: stats.filtered,
+        deduplicationThreshold,
         reasons: stats.filterReasons,
       });
 
@@ -7619,6 +8024,8 @@ interface ParallelExtractionOptions {
   originalClaim?: string;
   fromOppositeClaimSearch?: boolean;
   pipelineConfig?: PipelineConfig;
+  evidenceFilterConfig?: Partial<ProbativeFilterConfig>;
+  claimSimilarityThreshold?: number;
 }
 
 interface ParallelExtractionResult {
@@ -7676,6 +8083,7 @@ async function extractEvidenceParallel(
           options.fromOppositeClaimSearch,
           options.pipelineConfig,
           extractionStats,
+          options.evidenceFilterConfig,
         );
         return { items, llmFilterFailed: extractionStats.llmFilterFailed };
       })
@@ -7692,6 +8100,7 @@ async function extractEvidenceParallel(
         const uniqueItems = deduplicateEvidenceItems(
           result.value.items,
           [...existingEvidenceItems, ...allEvidenceItems],
+          options.claimSimilarityThreshold,
         );
         allEvidenceItems.push(...uniqueItems);
       } else {
@@ -8714,7 +9123,7 @@ The JSON object MUST include these top-level keys:
 
     const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
     const centralSupported = fallbackVerdicts.filter(
-      (v) => v.isCentral && v.truthPercentage >= 72,
+      (v) => v.isCentral && v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE,
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: analysisInputType,
@@ -8850,16 +9259,18 @@ The JSON object MUST include these top-level keys:
       contestedNegatives,
         });
 
-    if (answerTruthPct < 43 && positiveFactors > effectiveNegatives) {
-      correctedConfidence = Math.min(correctedConfidence, 72);
+    if (answerTruthPct < VERDICT_BANDS.MIXED && positiveFactors > effectiveNegatives) {
+      correctedConfidence = Math.min(correctedConfidence, VERDICT_BANDS.MOSTLY_TRUE);
       answerTruthPct = truthFromBand("partial", correctedConfidence);
-      factorAnalysis.verdictExplanation = `Corrected from <43: ${positiveFactors} positive > ${effectiveNegatives.toFixed(1)} effective negative`;
+      factorAnalysis.verdictExplanation = `Corrected from <${VERDICT_BANDS.MIXED}: ${positiveFactors} positive > ${effectiveNegatives.toFixed(1)} effective negative`;
     } else if (
-      answerTruthPct < 43 &&
+      answerTruthPct < VERDICT_BANDS.MIXED &&
       contestedNegatives > 0 &&
       contestedNegatives === negativeFactors
     ) {
-      correctedConfidence = Math.min(correctedConfidence, 68);
+      // Cap below MOSTLY_TRUE band: margin keeps contested-corrected results in LEANING_TRUE range
+      const contestedCapMargin = Math.max(1, Math.round((VERDICT_BANDS.MOSTLY_TRUE - VERDICT_BANDS.LEANING_TRUE) * 0.3));
+      correctedConfidence = Math.min(correctedConfidence, VERDICT_BANDS.MOSTLY_TRUE - contestedCapMargin);
       answerTruthPct = truthFromBand("partial", correctedConfidence);
       factorAnalysis.verdictExplanation = `Corrected: All ${negativeFactors} factors are contested`;
     }
@@ -8889,7 +9300,7 @@ The JSON object MUST include these top-level keys:
   }
 
   // Calculate average for display (UI can choose to de-emphasize when hasMultipleContexts=true)
-  const avgTruthPct = correctedAnalysisContextAnswers.length > 0
+  let avgTruthPct = correctedAnalysisContextAnswers.length > 0
     ? Math.round(correctedAnalysisContextAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) / correctedAnalysisContextAnswers.length)
     : 50;
   const avgConfidence = correctedAnalysisContextAnswers.length > 0
@@ -8933,7 +9344,7 @@ The JSON object MUST include these top-level keys:
       // Use context-level answer as fallback
       const fallbackConfidence = relatedContext?.confidence || 50;
       const fallbackVerdict = relatedContext
-        ? (relatedContext.answer >= 72
+        ? (relatedContext.answer >= VERDICT_BANDS.MOSTLY_TRUE
           ? truthFromBand("strong", fallbackConfidence)
           : truthFromBand("uncertain", fallbackConfidence))
         : 50;
@@ -8991,8 +9402,8 @@ The JSON object MUST include these top-level keys:
     if (ratingConfirmation) {
       const expectedLow = ratingConfirmation === "claim_refuted";
       const expectedHigh = ratingConfirmation === "claim_supported";
-      const actuallyHigh = truthPct >= 58;
-      const actuallyLow = truthPct <= 42;
+      const actuallyHigh = truthPct >= VERDICT_BANDS.LEANING_TRUE;
+      const actuallyLow = truthPct < VERDICT_BANDS.MIXED;
 
       // Mismatch: LLM says "refuted" but verdict is high, or "supported" but verdict is low
       if ((expectedLow && actuallyHigh) || (expectedHigh && actuallyLow)) {
@@ -9036,6 +9447,7 @@ The JSON object MUST include these top-level keys:
       understanding.impliedClaim || understanding.articleThesis || "",
       truthPct,
       claimFacts,
+      VERDICT_BANDS,
     );
 
     // v2.5.2: If the context has positive factors and no evidenced negatives,
@@ -9045,13 +9457,13 @@ The JSON object MUST include these top-level keys:
     if (!inversionCheck.wasInverted && !isCounterClaim && relatedContext && relatedContext.factorAnalysis) {
       const fa = relatedContext.factorAnalysis;
       // Check if context has positive factors and no evidenced negatives
-      const contextIsPositive = relatedContext?.answer >= 72;
+      const contextIsPositive = relatedContext?.answer >= VERDICT_BANDS.MOSTLY_TRUE;
 
       // If context is positive and claim is below threshold, boost it
-      // This applies to claims below 72% or with mixed/uncertain evidence
-      if (contextIsPositive && truthPct < 72) {
+      // This applies to claims below MOSTLY-TRUE or with mixed/uncertain evidence
+      if (contextIsPositive && truthPct < VERDICT_BANDS.MOSTLY_TRUE) {
         const originalTruth = truthPct;
-        truthPct = 72; // Minimum for MOSTLY-TRUE
+        truthPct = VERDICT_BANDS.MOSTLY_TRUE; // Minimum for MOSTLY-TRUE
         debugLog("claimVerdict: Corrected based on context factors", {
           claimId: cv.claimId,
           contextId: ctxId,
@@ -9120,15 +9532,15 @@ The JSON object MUST include these top-level keys:
 
   const claimPattern = {
     total: finalVerdicts.length,
-    supported: finalVerdicts.filter((v) => v.truthPercentage >= 72)
+    supported: finalVerdicts.filter((v) => v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE)
       .length,
     uncertain: finalVerdicts.filter(
-      (v) => v.truthPercentage >= 43 && v.truthPercentage < 72,
+      (v) => v.truthPercentage >= VERDICT_BANDS.MIXED && v.truthPercentage < VERDICT_BANDS.MOSTLY_TRUE,
     ).length,
-    refuted: finalVerdicts.filter((v) => v.truthPercentage < 43).length,
+    refuted: finalVerdicts.filter((v) => v.truthPercentage < VERDICT_BANDS.MIXED).length,
     centralClaimsTotal: finalVerdicts.filter((v) => v.isCentral).length,
     centralClaimsSupported: finalVerdicts.filter(
-      (v) => v.isCentral && v.truthPercentage >= 72,
+      (v) => v.isCentral && v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE,
     ).length,
   };
 
@@ -9139,7 +9551,7 @@ The JSON object MUST include these top-level keys:
   // PR-C: Clamp truth percentage to valid range (defensive)
   const clampedAvgTruthPct = clampTruthPercentage(avgTruthPct);
 
-  const summaryKeyFactors = parsed.verdictSummary.keyFactors || [];
+  const summaryKeyFactors = parsed.verdictSummary?.keyFactors || [];
   const monitoredSummaryKeyFactors = monitorOpinionAccumulation(summaryKeyFactors, {
     maxOpinionCount: state.pipelineConfig?.maxOpinionFactors ?? DEFAULT_PIPELINE_CONFIG.maxOpinionFactors,
     warningThresholdPercent: state.pipelineConfig?.opinionAccumulationWarningThreshold ??
@@ -9164,7 +9576,61 @@ The JSON object MUST include these top-level keys:
   };
 
   // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence)
-  const claimsAvgTruthPct = calculateWeightedVerdictAverage(finalVerdicts);
+  const claimsAvgTruthPct = calculateWeightedVerdictAverage(finalVerdicts, state.calcConfig.aggregation);
+
+  // v2.9.0: Context-claims consistency anchoring (multi-context path)
+  // When LLM context verdicts diverge significantly from evidence-based claims average,
+  // anchor context verdicts toward claims to prevent holistic LLM bias.
+  // Claims are more evidence-grounded (each backed by specific evidence items) while context
+  // verdicts are the LLM's holistic assessment which can be biased by prompt framing.
+  const contextClaimsAnchorDivergenceThreshold =
+    state.pipelineConfig.contextClaimsAnchorDivergenceThreshold ??
+    DEFAULT_PIPELINE_CONFIG.contextClaimsAnchorDivergenceThreshold ??
+    15;
+  const contextClaimsAnchorClaimsWeight =
+    state.pipelineConfig.contextClaimsAnchorClaimsWeight ??
+    DEFAULT_PIPELINE_CONFIG.contextClaimsAnchorClaimsWeight ??
+    0.6;
+  if (correctedAnalysisContextAnswers.length > 0 && finalVerdicts.length > 0) {
+    let anchoringApplied = false;
+    for (const ctxAnswer of correctedAnalysisContextAnswers) {
+      const contextClaims = finalVerdicts.filter(v => v.contextId === ctxAnswer.contextId);
+      if (contextClaims.length === 0) continue;
+      const contextClaimsAvg = calculateWeightedVerdictAverage(contextClaims, state.calcConfig.aggregation);
+      const anchorResult = anchorVerdictTowardClaims({
+        verdictPct: ctxAnswer.truthPercentage,
+        claimsAvgPct: contextClaimsAvg,
+        divergenceThreshold: contextClaimsAnchorDivergenceThreshold,
+        claimsWeight: contextClaimsAnchorClaimsWeight,
+      });
+      if (anchorResult.applied) {
+        const original = ctxAnswer.truthPercentage;
+        const anchored = anchorResult.anchoredPct;
+        ctxAnswer.truthPercentage = anchored;
+        ctxAnswer.answer = anchored;
+        anchoringApplied = true;
+        debugLog(`Context-claims anchoring applied`, {
+          contextId: ctxAnswer.contextId,
+          originalContextVerdict: original,
+          contextClaimsAvg,
+          anchoredVerdict: anchored,
+          divergence: anchorResult.divergence,
+          threshold: contextClaimsAnchorDivergenceThreshold,
+          claimsWeight: contextClaimsAnchorClaimsWeight,
+        });
+      }
+    }
+    if (anchoringApplied) {
+      avgTruthPct = Math.round(
+        correctedAnalysisContextAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) / correctedAnalysisContextAnswers.length
+      );
+      // Update verdictSummary to reflect anchored values
+      const anchoredClamped = clampTruthPercentage(avgTruthPct);
+      verdictSummary.answer = anchoredClamped;
+      verdictSummary.truthPercentage = anchoredClamped;
+      debugLog(`Context-claims anchoring: avgTruthPct updated to ${avgTruthPct}`);
+    }
+  }
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
@@ -9192,6 +9658,7 @@ The JSON object MUST include these top-level keys:
   const prunedClaimVerdicts = pruneTangentialBaselessClaims(finalVerdicts, {
     evidenceItems: state.evidenceItems,
     minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
+      state.calcConfig.tangentialPruning?.minEvidenceForTangential ??
       DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
     requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
       DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
@@ -9525,7 +9992,7 @@ ${evidenceItemsFormatted}`;
 
     const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
     const centralSupported = fallbackVerdicts.filter(
-      (v) => v.isCentral && v.truthPercentage >= 72,
+      (v) => v.isCentral && v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE,
     ).length;
     const fallbackContexts = understanding.analysisContexts || [];
     const articleAnalysis: ArticleAnalysis = {
@@ -9612,8 +10079,8 @@ ${evidenceItemsFormatted}`;
       if (ratingConfirmation) {
         const expectedLow = ratingConfirmation === "claim_refuted";
         const expectedHigh = ratingConfirmation === "claim_supported";
-        const actuallyHigh = truthPct >= 58;
-        const actuallyLow = truthPct <= 42;
+        const actuallyHigh = truthPct >= VERDICT_BANDS.LEANING_TRUE;
+        const actuallyLow = truthPct < VERDICT_BANDS.MIXED;
 
         if ((expectedLow && actuallyHigh) || (expectedHigh && actuallyLow)) {
           truthPct = 100 - truthPct;
@@ -9646,6 +10113,7 @@ ${evidenceItemsFormatted}`;
         understanding.impliedClaim || understanding.articleThesis || "",
         truthPct,
         claimFacts,
+        VERDICT_BANDS,
       );
 
       // PR-C: Clamp truth percentage to valid range
@@ -9709,19 +10177,19 @@ ${evidenceItemsFormatted}`;
 
   const claimPattern = {
     total: finalVerdicts.length,
-    supported: finalVerdicts.filter((v) => v.truthPercentage >= 72)
+    supported: finalVerdicts.filter((v) => v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE)
       .length,
     uncertain: finalVerdicts.filter(
-      (v) => v.truthPercentage >= 43 && v.truthPercentage < 72,
+      (v) => v.truthPercentage >= VERDICT_BANDS.MIXED && v.truthPercentage < VERDICT_BANDS.MOSTLY_TRUE,
     ).length,
-    refuted: finalVerdicts.filter((v) => v.truthPercentage < 43).length,
+    refuted: finalVerdicts.filter((v) => v.truthPercentage < VERDICT_BANDS.MIXED).length,
     centralClaimsTotal: finalVerdicts.filter((v) => v.isCentral).length,
     centralClaimsSupported: finalVerdicts.filter(
-      (v) => v.isCentral && v.truthPercentage >= 72,
+      (v) => v.isCentral && v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE,
     ).length,
   };
 
-  const keyFactors = parsed.verdictSummary.keyFactors || [];
+  const keyFactors = parsed.verdictSummary?.keyFactors || [];
 
   const monitoredKeyFactors = monitorOpinionAccumulation(keyFactors, {
     maxOpinionCount: state.pipelineConfig?.maxOpinionFactors ?? DEFAULT_PIPELINE_CONFIG.maxOpinionFactors,
@@ -9785,7 +10253,41 @@ ${evidenceItemsFormatted}`;
   };
 
   // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence)
-  const claimsAvgTruthPct = calculateWeightedVerdictAverage(finalVerdicts);
+  const claimsAvgTruthPct = calculateWeightedVerdictAverage(finalVerdicts, state.calcConfig.aggregation);
+
+  // v2.9.0: Single-context verdict-claims consistency anchoring
+  // When LLM's overall verdict diverges significantly from evidence-based claims average,
+  // blend toward claims to prevent holistic LLM bias.
+  let finalAnswerTruthPct = clampedAnswerTruthPct;
+  if (finalVerdicts.length > 0) {
+    const contextClaimsAnchorDivergenceThreshold =
+      state.pipelineConfig.contextClaimsAnchorDivergenceThreshold ??
+      DEFAULT_PIPELINE_CONFIG.contextClaimsAnchorDivergenceThreshold ??
+      15;
+    const contextClaimsAnchorClaimsWeight =
+      state.pipelineConfig.contextClaimsAnchorClaimsWeight ??
+      DEFAULT_PIPELINE_CONFIG.contextClaimsAnchorClaimsWeight ??
+      0.6;
+    const anchorResult = anchorVerdictTowardClaims({
+      verdictPct: clampedAnswerTruthPct,
+      claimsAvgPct: claimsAvgTruthPct,
+      divergenceThreshold: contextClaimsAnchorDivergenceThreshold,
+      claimsWeight: contextClaimsAnchorClaimsWeight,
+    });
+    if (anchorResult.applied) {
+      finalAnswerTruthPct = anchorResult.anchoredPct;
+      verdictSummary.answer = finalAnswerTruthPct;
+      verdictSummary.truthPercentage = finalAnswerTruthPct;
+      debugLog(`Single-context verdict-claims anchoring applied`, {
+        originalVerdict: clampedAnswerTruthPct,
+        claimsAvg: claimsAvgTruthPct,
+        anchoredVerdict: finalAnswerTruthPct,
+        divergence: anchorResult.divergence,
+        threshold: contextClaimsAnchorDivergenceThreshold,
+        claimsWeight: contextClaimsAnchorClaimsWeight,
+      });
+    }
+  }
 
   const articleAnalysis: ArticleAnalysis = {
     inputType: analysisInputType,
@@ -9799,9 +10301,9 @@ ${evidenceItemsFormatted}`;
     claimsAverageTruthPercentage: claimsAvgTruthPct,
     claimsAverageVerdict: claimsAvgTruthPct,
 
-  // Article verdict - CRITICAL: Use clamped value for consistency with verdictSummary
-    articleTruthPercentage: clampedAnswerTruthPct,
-    articleVerdict: clampedAnswerTruthPct,
+  // Article verdict - CRITICAL: Use anchored value for consistency with verdictSummary
+    articleTruthPercentage: finalAnswerTruthPct,
+    articleVerdict: finalAnswerTruthPct,
     // Avoid duplicating claims average in the UI; we show it as a dedicated row.
     articleVerdictReason: undefined,
     // v2.6.38: Single context always has high reliability (verdict is meaningful)
@@ -9814,6 +10316,7 @@ ${evidenceItemsFormatted}`;
   const prunedClaimVerdicts = pruneTangentialBaselessClaims(finalVerdicts, {
     evidenceItems: state.evidenceItems,
     minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
+      state.calcConfig.tangentialPruning?.minEvidenceForTangential ??
       DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
     requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
       DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
@@ -10167,7 +10670,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
 
     const centralTotal = fallbackVerdicts.filter((v) => v.isCentral).length;
     const centralSupported = fallbackVerdicts.filter(
-      (v) => v.isCentral && v.truthPercentage >= 72,
+      (v) => v.isCentral && v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE,
     ).length;
     const articleAnalysis: ArticleAnalysis = {
       inputType: "article",
@@ -10261,8 +10764,8 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
       if (ratingConfirmation) {
         const expectedLow = ratingConfirmation === "claim_refuted";
         const expectedHigh = ratingConfirmation === "claim_supported";
-        const actuallyHigh = truthPct >= 58;
-        const actuallyLow = truthPct <= 42;
+        const actuallyHigh = truthPct >= VERDICT_BANDS.LEANING_TRUE;
+        const actuallyLow = truthPct < VERDICT_BANDS.MIXED;
 
         if ((expectedLow && actuallyHigh) || (expectedHigh && actuallyLow)) {
           truthPct = 100 - truthPct;
@@ -10295,6 +10798,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
         understanding.impliedClaim || understanding.articleThesis || "",
         truthPct,
         claimFacts,
+        VERDICT_BANDS,
       );
 
       // v2.9.2: Pseudoscience detection removed - LLM should identify claims lacking scientific basis
@@ -10304,7 +10808,9 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
         cv.isContested &&
         (cv.factualBasis === "established" || cv.factualBasis === "disputed");
       if (evidenceBasedContestation) {
-        const penalty = cv.factualBasis === "established" ? 12 : 8;
+        const penalty = cv.factualBasis === "established"
+          ? Math.abs(state.calcConfig.contestationPenalties.established)
+          : Math.abs(state.calcConfig.contestationPenalties.disputed);
         truthPct = Math.max(0, truthPct - penalty);
       }
 
@@ -10469,7 +10975,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
       // Check if any dependency is false (truthPercentage < 43%)
       const failedDeps = dependencies.filter((depId: string) => {
         const depVerdict = verdictMap.get(depId);
-        return depVerdict && depVerdict.truthPercentage < 43;
+        return depVerdict && depVerdict.truthPercentage < VERDICT_BANDS.MIXED;
       });
 
       if (failedDeps.length > 0) {
@@ -10501,36 +11007,40 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   // Calculate claim pattern using truth percentages (only independent claims)
   const claimPattern = {
     total: finalVerdicts.length,
-    supported: independentVerdicts.filter((v) => v.truthPercentage >= 72)
+    supported: independentVerdicts.filter((v) => v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE)
       .length,
     uncertain: independentVerdicts.filter(
-      (v) => v.truthPercentage >= 43 && v.truthPercentage < 72,
+      (v) => v.truthPercentage >= VERDICT_BANDS.MIXED && v.truthPercentage < VERDICT_BANDS.MOSTLY_TRUE,
     ).length,
-    refuted: independentVerdicts.filter((v) => v.truthPercentage < 43).length,
+    refuted: independentVerdicts.filter((v) => v.truthPercentage < VERDICT_BANDS.MIXED).length,
     centralClaimsTotal: independentVerdicts.filter((v) => v.isCentral).length,
     centralClaimsSupported: independentVerdicts.filter(
-      (v) => v.isCentral && v.truthPercentage >= 72,
+      (v) => v.isCentral && v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE,
     ).length,
     // Track excluded claims for transparency
     dependencyFailedCount: finalVerdicts.filter((v) => v.dependencyFailed).length,
   };
 
   // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence, only independent claims)
-  const claimsAvgTruthPct = calculateWeightedVerdictAverage(independentVerdicts);
+  const claimsAvgTruthPct = calculateWeightedVerdictAverage(independentVerdicts, state.calcConfig.aggregation);
 
   // Article Verdict Problem: Check central claims specifically (using independent verdicts only)
   // If central claims are refuted but supporting claims are true, article is MISLEADING
   const centralClaims = independentVerdicts.filter((v) => v.isCentral);
-  const centralRefuted = centralClaims.filter((v) => v.truthPercentage < 43);
-  const centralSupported = centralClaims.filter((v) => v.truthPercentage >= 72);
+  const centralRefuted = centralClaims.filter((v) => v.truthPercentage < VERDICT_BANDS.MIXED);
+  const centralSupported = centralClaims.filter((v) => v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE);
   const nonCentralClaims = independentVerdicts.filter((v) => !v.isCentral);
-  const nonCentralSupported = nonCentralClaims.filter((v) => v.truthPercentage >= 72);
+  const nonCentralSupported = nonCentralClaims.filter((v) => v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE);
 
   // Detect Article Verdict Problem pattern: accurate supporting evidence but false central claim
+  // v2.9.0: Require MAJORITY of central claims refuted (not just any one), prevents false triggers
+  // on complex multi-claim analyses where one central claim has mixed evidence
+  const centralRefutedRatio = centralClaims.length > 0 ? centralRefuted.length / centralClaims.length : 0;
+  const avoCfg = state.calcConfig.articleVerdictOverride;
   const hasMisleadingPattern =
-    centralRefuted.length > 0 &&
+    centralRefutedRatio > (avoCfg?.centralRefutedRatioThreshold ?? 0.5) &&
     nonCentralSupported.length >= 2 &&
-    claimsAvgTruthPct >= 50; // Average looks OK but central claim is false
+    claimsAvgTruthPct >= 50; // Average looks OK but majority of central claims are false
 
   // Calculate article truth percentage from LLM's article verdict
   let articleTruthPct = calculateArticleTruthPercentage(
@@ -10546,12 +11056,16 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   }
 
   // Article Verdict Problem Override: Central claim refuted = article MISLEADING
-  // This catches the "Coffee cures cancer" pattern where supporting evidence is true
-  // but the main conclusion is false
-  if (hasMisleadingPattern && articleTruthPct > 35) {
-    console.log(`[Analyzer] Article Verdict Problem detected: ${centralRefuted.length} central claims refuted, ${nonCentralSupported.length} supporting claims true, but avg=${claimsAvgTruthPct}%. Overriding to MISLEADING.`);
-    articleTruthPct = 35; // MISLEADING range (29-42%)
-    articleVerdictOverrideReason = `Central claim(s) refuted despite ${nonCentralSupported.length} accurate supporting evidence - article draws unsupported conclusions`;
+  // v2.9.0: Blend toward misleading range instead of hard-overriding
+  // The refuted ratio determines the blend strength
+  const misleadingTarget = avoCfg?.misleadingTarget ?? 35;
+  const maxBlendStrength = avoCfg?.maxBlendStrength ?? 0.8;
+  if (hasMisleadingPattern && articleTruthPct > misleadingTarget) {
+    const blendStrength = Math.min(centralRefutedRatio, maxBlendStrength);
+    const blendedPct = Math.round(articleTruthPct * (1 - blendStrength) + misleadingTarget * blendStrength);
+    console.log(`[Analyzer] Article Verdict Problem detected: ${centralRefuted.length}/${centralClaims.length} central claims refuted (${Math.round(centralRefutedRatio * 100)}%), ${nonCentralSupported.length} supporting claims true, avg=${claimsAvgTruthPct}%. Blending ${articleTruthPct}→${blendedPct}.`);
+    articleTruthPct = blendedPct;
+    articleVerdictOverrideReason = `${centralRefuted.length}/${centralClaims.length} central claim(s) refuted despite ${nonCentralSupported.length} accurate supporting evidence`;
   }
 
   // Check if article verdict differs significantly from claims average
@@ -10574,17 +11088,17 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
 
         // Determine factor support based on average
         let supports: "yes" | "no" | "neutral";
-        if (factorAvgTruthPct >= 72) {
+        if (factorAvgTruthPct >= VERDICT_BANDS.MOSTLY_TRUE) {
           supports = "yes";
-        } else if (factorAvgTruthPct < 43) {
+        } else if (factorAvgTruthPct < VERDICT_BANDS.MIXED) {
           supports = "no";
         } else {
           supports = "neutral";
         }
 
         // Create explanation from aggregated claim verdicts
-        const supportedCount = factorClaims.filter(v => v.truthPercentage >= 72).length;
-        const refutedCount = factorClaims.filter(v => v.truthPercentage < 43).length;
+        const supportedCount = factorClaims.filter(v => v.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE).length;
+        const refutedCount = factorClaims.filter(v => v.truthPercentage < VERDICT_BANDS.MIXED).length;
         const explanation = `${supportedCount}/${factorClaims.length} claims support this factor, ${refutedCount} refute it. Average truth: ${factorAvgTruthPct}%.`;
 
         keyFactors.push({
@@ -10614,6 +11128,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   const prunedClaimVerdicts = pruneTangentialBaselessClaims(finalVerdicts, {
     evidenceItems: state.evidenceItems,
     minEvidenceForTangential: state.pipelineConfig?.minEvidenceForTangential ??
+      state.calcConfig.tangentialPruning?.minEvidenceForTangential ??
       DEFAULT_PIPELINE_CONFIG.minEvidenceForTangential,
     requireQualityEvidence: state.pipelineConfig?.tangentialEvidenceQualityCheckEnabled ??
       DEFAULT_PIPELINE_CONFIG.tangentialEvidenceQualityCheckEnabled,
@@ -10877,9 +11392,9 @@ async function generateReport(
 
   // Unified summary for all inputs (input neutrality)
     const verdictEmoji =
-      articleAnalysis.articleTruthPercentage >= 72
+      articleAnalysis.articleTruthPercentage >= VERDICT_BANDS.MOSTLY_TRUE
         ? iconPositive
-        : articleAnalysis.articleTruthPercentage >= 43
+        : articleAnalysis.articleTruthPercentage >= VERDICT_BANDS.MIXED
           ? iconNeutral
           : iconNegative;
 
@@ -10914,9 +11429,9 @@ async function generateReport(
   for (const cv of claimVerdicts) {
     // 7-level scale emoji mapping based on truthPercentage
     const emoji =
-      cv.truthPercentage >= 72
+      cv.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE
         ? iconPositive
-        : cv.truthPercentage >= 43
+        : cv.truthPercentage >= VERDICT_BANDS.MIXED
           ? iconNeutral
           : iconNegative;
 
@@ -11011,13 +11526,65 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const analyzerConfig = await getAnalyzerConfig({ jobId: input.jobId });
   const pipelineConfig = analyzerConfig.pipeline;
   const searchConfig = analyzerConfig.search;
+  const calcConfig = analyzerConfig.calc;
 
   debugLog("[Config] Loaded analyzer config", {
     source: analyzerConfig.source,
     pipelineHash: analyzerConfig.hashes.pipeline,
+    calcHash: analyzerConfig.hashes.calc,
     llmTiering: pipelineConfig.llmTiering,
     analysisMode: pipelineConfig.analysisMode,
   });
+
+  // Apply CalcConfig to module-level verdict scale
+  MIXED_CONFIDENCE_THRESHOLD = calcConfig.mixedConfidenceThreshold;
+  VERDICT_BANDS = {
+    TRUE: calcConfig.verdictBands.true[0],
+    MOSTLY_TRUE: calcConfig.verdictBands.mostlyTrue[0],
+    LEANING_TRUE: calcConfig.verdictBands.leaningTrue[0],
+    MIXED: calcConfig.verdictBands.mixed[0],
+    LEANING_FALSE: calcConfig.verdictBands.leaningFalse[0],
+    MOSTLY_FALSE: calcConfig.verdictBands.mostlyFalse[0],
+  };
+  // Apply CalcConfig to claim clustering
+  if (calcConfig.claimClustering) {
+    CLAIM_CLUSTERING_CONFIG = {
+      jaccardSimilarityThreshold: calcConfig.claimClustering.jaccardSimilarityThreshold,
+      duplicateWeightShare: calcConfig.claimClustering.duplicateWeightShare,
+    };
+  }
+  // Apply CalcConfig to context similarity weights
+  if (calcConfig.contextSimilarity) {
+    CONTEXT_SIMILARITY_CONFIG = {
+      nameWeight: calcConfig.contextSimilarity.nameWeight,
+      primaryMetadataWeight: calcConfig.contextSimilarity.primaryMetadataWeight,
+      assessedStatementWeight: calcConfig.contextSimilarity.assessedStatementWeight,
+      subjectWeight: calcConfig.contextSimilarity.subjectWeight,
+      secondaryMetadataWeight: calcConfig.contextSimilarity.secondaryMetadataWeight,
+      nearDuplicateAssessedThreshold: calcConfig.contextSimilarity.nearDuplicateAssessedThreshold,
+      nearDuplicateForceScore: calcConfig.contextSimilarity.nearDuplicateForceScore,
+      nearDuplicateSubjectGuardThreshold: calcConfig.contextSimilarity.nearDuplicateSubjectGuardThreshold ?? 0.5,
+      nearDuplicateNameGuardThreshold: calcConfig.contextSimilarity.nearDuplicateNameGuardThreshold ?? 0.4,
+      anchorRecoveryThreshold: calcConfig.contextSimilarity.anchorRecoveryThreshold ?? 0.6,
+      fallbackEvidenceCapPercent: calcConfig.contextSimilarity.fallbackEvidenceCapPercent ?? 40,
+    };
+  }
+  // Apply CalcConfig to fallback graduation
+  if (calcConfig.fallback) {
+    FALLBACK_CONFIG = {
+      step1RelaxInstitution: calcConfig.fallback.step1RelaxInstitution,
+      step2RelevanceFloor: calcConfig.fallback.step2RelevanceFloor,
+      step3BroadEnabled: calcConfig.fallback.step3BroadEnabled,
+    };
+  }
+  // Apply CalcConfig to claim decomposition limits
+  if (calcConfig.claimDecomposition) {
+    MIN_CORE_CLAIMS_PER_PROCEEDING = calcConfig.claimDecomposition.minCoreClaimsPerContext;
+    MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE = calcConfig.claimDecomposition.minTotalClaimsWithSingleCore;
+    SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS = calcConfig.claimDecomposition.supplementalRepromptMaxAttempts;
+    SHORT_SIMPLE_INPUT_MAX_CHARS = calcConfig.claimDecomposition.shortSimpleInputMaxChars;
+    MIN_DIRECT_CLAIMS_PER_CONTEXT = calcConfig.claimDecomposition.minDirectClaimsPerContext;
+  }
 
   let srConfig = DEFAULT_SR_CONFIG;
   try {
@@ -11165,6 +11732,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     budgetTracker, // NEW PR 6: p95 hardening
     pipelineConfig, // NEW v2.9.0: Hot-reload support
     searchConfig, // NEW v2.10.0: Hot-reload support
+    calcConfig, // NEW v3.1: UCM-configurable calculation weights, bands, gates
     fallbackTracker, // P0: LLM classification fallback tracking
     analysisWarnings: [], // P0: Analysis warnings for verdict direction validation
     evidenceFilterLlmFailures: 0, // P3: Track evidence filter LLM failures
@@ -11467,6 +12035,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
                 originalClaim: state.understanding?.impliedClaim || state.originalInput,
                 fromOppositeClaimSearch: undefined,
                 pipelineConfig: state.pipelineConfig,
+                evidenceFilterConfig: state.calcConfig.evidenceFilter,
+                claimSimilarityThreshold: state.calcConfig.deduplication.claimSimilarityThreshold,
               },
               state.evidenceItems,
             );
@@ -11543,9 +12113,14 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       );
 
       try {
+        // Use higher maxResults for criticism/counter_evidence queries for more diverse sources
+        const isCriticismQuery = decision.category === "criticism" || decision.category === "counter_evidence";
+        const effectiveMaxResults = isCriticismQuery
+          ? (state.pipelineConfig.searchMaxResultsCriticism ?? searchConfig.maxResults)
+          : searchConfig.maxResults;
         const searchResponse = await searchWebWithProvider({
           query,
-          maxResults: searchConfig.maxResults,
+          maxResults: effectiveMaxResults,
           dateRestrict,
           domainWhitelist: searchConfig.domainWhitelist,
           domainBlacklist: searchConfig.domainBlacklist,
@@ -11556,7 +12131,24 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         const actualProviders = searchResponse.providersUsed.join("+");
         console.log(`[Analyzer] Search used: ${actualProviders}, returned ${results.length} results`);
 
-        // Track the search with provider info
+        // Surface search provider errors as analysis warnings
+        if (searchResponse.errors && searchResponse.errors.length > 0) {
+          for (const err of searchResponse.errors) {
+            console.error(`[Analyzer] ❌ SEARCH PROVIDER ERROR: ${err.provider} (HTTP ${err.status ?? "N/A"}): ${err.message}`);
+            state.analysisWarnings.push({
+              type: "search_provider_error",
+              severity: "error",
+              message: `Search provider ${err.provider} returned fatal error: ${err.message}`,
+              details: { provider: err.provider, status: err.status, fatal: err.fatal },
+            });
+            if (err.fatal) recordProviderFailure("search", err.message);
+          }
+          await emit(`  ⚠️ Search provider error: ${searchResponse.errors.map(e => `${e.provider} HTTP ${e.status ?? "?"}`).join(", ")}`, baseProgress + 2);
+        } else if (results.length > 0) {
+          recordProviderSuccess("search");
+        }
+
+        // Track the search with provider info (include error if present)
         state.searchQueries.push({
           query,
           iteration,
@@ -11564,6 +12156,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           resultsCount: results.length,
           timestamp: new Date().toISOString(),
           searchProvider: searchConfig.provider,
+          ...(searchResponse.errors?.length ? { error: searchResponse.errors.map(e => e.message).join("; ") } : {}),
         });
 
         searchResults.push(...results.map((r: any) => ({ ...r, query })));
@@ -11577,6 +12170,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           resultsCount: 0,
           timestamp: new Date().toISOString(),
           searchProvider: searchConfig.provider,
+          error: String(err),
         });
       }
     }
@@ -11599,20 +12193,28 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       state.understanding?.articleThesis ||
       state.originalInput ||
       "";
+    const hasInstitutionalContext = analysisContexts.some((context: any) => {
+      const meta = context?.metadata || {};
+      return Boolean(meta.institution || meta.court || meta.regulatoryBody);
+    });
 
     const requireContextMatch =
       decision.category === "criticism" ||
       decision.isContradictionSearch === true ||
-      !!decision.targetContextId;
+      !!decision.targetContextId ||
+      (decision.category === "evidence" && hasInstitutionalContext);
     const strictInstitutionMatch =
       !!decision.targetContextId ||
       decision.category === "criticism" ||
-      decision.category === "counter_evidence";
+      decision.category === "counter_evidence" ||
+      (decision.category === "evidence" && hasInstitutionalContext);
     const allowInstitutionFallback = !(
-      !!decision.targetContextId || decision.category === "criticism"
+      !!decision.targetContextId ||
+      decision.category === "criticism" ||
+      (decision.category === "evidence" && hasInstitutionalContext)
     );
 
-    const relevantResults: typeof uniqueResults = [];
+    let relevantResults: typeof uniqueResults = [];
     const relevanceMode = state.pipelineConfig.searchRelevanceLlmMode ?? "auto";
     const relevanceLlmMaxCalls = state.pipelineConfig.searchRelevanceLlmMaxCalls ?? 3;
 
@@ -11650,7 +12252,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
       const allowLlm =
         relevanceMode === "on" ||
-        (relevanceMode === "auto" && isAmbiguous && relevantResults.length === 0);
+        (relevanceMode === "auto" && isAmbiguous);
 
       if (allowLlm && relevanceLlmCalls < relevanceLlmMaxCalls) {
         relevanceLlmCalls += 1;
@@ -11676,7 +12278,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
         if (!llmDecision) {
           // LLM classifier unavailable or schema-mismatch: fall back to heuristic ambiguity check.
-          if (isAmbiguous) {
+          const hasStrongEntityAnchor =
+            !!signals &&
+            (signals.strongEntityMatchCount > 0 || signals.passesEntityGate === true);
+          const hardContextMiss =
+            check.reason === "institution_not_mentioned" ||
+            check.reason === "insufficient_context_match";
+          if (isAmbiguous && hasStrongEntityAnchor && !hardContextMiss) {
             debugLog("Pre-filter keep (LLM unavailable fallback)", {
               url: result.url,
               title: result.title,
@@ -11708,6 +12316,328 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         title: result.title,
         reason: check.reason,
         query: (result as any).query,
+      });
+    }
+
+    const adaptiveMinCandidates = state.pipelineConfig.searchAdaptiveFallbackMinCandidates ?? 5;
+    const adaptiveMaxQueries = state.pipelineConfig.searchAdaptiveFallbackMaxQueries ?? 2;
+
+    // Search retry before fallback: retry original queries with modified terms
+    // before triggering the graduated fallback, to reduce search variance impact.
+    const shouldRetryBeforeFallback =
+      (state.pipelineConfig.searchRetryBeforeFallback ?? true) &&
+      adaptiveMinCandidates > 0 &&
+      (requireContextMatch || strictInstitutionMatch) &&
+      relevantResults.length < adaptiveMinCandidates &&
+      (decision.queries || []).length > 0;
+
+    if (shouldRetryBeforeFallback) {
+      const retryTerms = ["evidence", "analysis"];
+      const retrySuffix = retryTerms[iteration % retryTerms.length];
+      const retryQueries = (decision.queries || []).slice(0, 2).map(
+        (q: string) => `${q} ${retrySuffix}`,
+      );
+      debugLog("search_retry_before_fallback", { retryQueries, currentCandidates: relevantResults.length });
+
+      for (const query of retryQueries) {
+        try {
+          const searchResponse = await searchWebWithProvider({
+            query,
+            maxResults: searchConfig.maxResults,
+            dateRestrict: searchConfig.dateRestrict ?? undefined,
+            domainWhitelist: searchConfig.domainWhitelist,
+            domainBlacklist: searchConfig.domainBlacklist,
+            timeoutMs: searchConfig.timeoutMs,
+            config: searchConfig,
+          });
+          const results = searchResponse.results || [];
+
+          // Surface search provider errors
+          if (searchResponse.errors?.length) {
+            for (const sErr of searchResponse.errors) {
+              state.analysisWarnings.push({
+                type: "search_provider_error",
+                severity: "error",
+                message: `Search provider ${sErr.provider} returned fatal error: ${sErr.message}`,
+                details: { provider: sErr.provider, status: sErr.status, fatal: sErr.fatal },
+              });
+              if (sErr.fatal) recordProviderFailure("search", sErr.message);
+            }
+          } else if (results.length > 0) {
+            recordProviderSuccess("search");
+          }
+
+          state.searchQueries.push({
+            query,
+            iteration,
+            focus: `${decision.focus || "retry"} [retry_before_fallback]`,
+            resultsCount: results.length,
+            timestamp: new Date().toISOString(),
+            searchProvider: searchConfig.provider,
+            ...(searchResponse.errors?.length ? { error: searchResponse.errors.map(e => e.message).join("; ") } : {}),
+          });
+
+          // Evaluate retry results with ORIGINAL strictness (not relaxed)
+          for (const result of results) {
+            const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
+            const existingUrl = relevantResults.some(
+              (r) => normalizeUrlForDedup(String((r as any).url || "")) === normalizedUrl,
+            );
+            if (existingUrl) continue;
+
+            const taggedResult = { ...result, query } as typeof uniqueResults[number];
+            const check = checkSearchResultRelevance(
+              taggedResult,
+              entityStrForRelevance,
+              analysisContexts,
+              { requireContextMatch, strictInstitutionMatch, allowInstitutionFallback: true },
+            );
+            if (check.isRelevant) {
+              relevantResults.push(taggedResult);
+            }
+          }
+        } catch (err) {
+          debugLog("search_retry_query_failed", {
+            query,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    }
+
+    const adaptiveApplies =
+      adaptiveMinCandidates > 0 &&
+      (requireContextMatch || strictInstitutionMatch) &&
+      relevantResults.length < adaptiveMinCandidates;
+
+    if (adaptiveApplies) {
+      const initiallyKept = relevantResults.length;
+      const primaryResultCount = relevantResults.length;
+      const selectedUrlKeys = new Set(relevantResults.map((r) => normalizeUrlForDedup(String((r as any).url || ""))));
+
+      // Graduated fallback: 3 steps of increasing relaxation (RC1 fix)
+      // Step 1: Relax institution match only, keep context match.
+      // This allows results from different institutions about the same context.
+      if (FALLBACK_CONFIG.step1RelaxInstitution) {
+        for (const result of uniqueResults) {
+          const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
+          if (selectedUrlKeys.has(normalizedUrl)) continue;
+
+          const domain = extractDomain(result.url || "");
+          if (domain && !isImportantSource(domain)) continue;
+
+          const relaxed = checkSearchResultRelevance(
+            result,
+            entityStrForRelevance,
+            analysisContexts,
+            {
+              requireContextMatch: true,
+              strictInstitutionMatch: false,
+              allowInstitutionFallback: true,
+            },
+          );
+          if (relaxed.isRelevant) {
+            (result as any)._isFallback = true;
+            (result as any)._fallbackStep = 1;
+            relevantResults.push(result);
+            selectedUrlKeys.add(normalizedUrl);
+          }
+        }
+        debugLog("adaptive_fallback_step1", {
+          focus: decision.focus,
+          before: initiallyKept,
+          after: relevantResults.length,
+          added: relevantResults.length - initiallyKept,
+        });
+      }
+
+      // Step 2: Relax context match too, but apply relevance floor.
+      // Only accept results that still have meaningful entity overlap.
+      if (relevantResults.length < adaptiveMinCandidates) {
+        const step2Before = relevantResults.length;
+        for (const result of uniqueResults) {
+          const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
+          if (selectedUrlKeys.has(normalizedUrl)) continue;
+
+          const domain = extractDomain(result.url || "");
+          if (domain && !isImportantSource(domain)) continue;
+
+          const relaxed = checkSearchResultRelevance(
+            result,
+            entityStrForRelevance,
+            analysisContexts,
+            {
+              requireContextMatch: false,
+              strictInstitutionMatch: false,
+              allowInstitutionFallback: true,
+            },
+          );
+          if (relaxed.isRelevant) {
+            (result as any)._isFallback = true;
+            (result as any)._fallbackStep = 2;
+            relevantResults.push(result);
+            selectedUrlKeys.add(normalizedUrl);
+          }
+        }
+        debugLog("adaptive_fallback_step2", {
+          focus: decision.focus,
+          before: step2Before,
+          after: relevantResults.length,
+          added: relevantResults.length - step2Before,
+        });
+      }
+
+      let fallbackQueriesUsed: string[] = [];
+      // Step 3: Broad fallback queries (last resort, only if enabled).
+      if (relevantResults.length < adaptiveMinCandidates && adaptiveMaxQueries > 0 && FALLBACK_CONFIG.step3BroadEnabled) {
+        const step3Before = relevantResults.length;
+        const fallbackQueries = buildAdaptiveFallbackQueries({
+          entityText: entityStrForRelevance,
+          focus: decision.focus,
+          category: decision.category,
+          originalQueries: decision.queries || [],
+          maxQueries: adaptiveMaxQueries,
+          currentYear: new Date().getFullYear(),
+        });
+        fallbackQueriesUsed = fallbackQueries;
+
+        if (fallbackQueries.length > 0) {
+          await emit(
+            `🔁 Adaptive fallback step 3: broad search (${relevantResults.length}/${adaptiveMinCandidates} candidates)`,
+            baseProgress + 2,
+          );
+        }
+
+        const fallbackSearchResults: Array<WebSearchResult & { query: string }> = [];
+        for (const query of fallbackQueries) {
+          try {
+            const searchResponse = await searchWebWithProvider({
+              query,
+              maxResults: searchConfig.maxResults,
+              dateRestrict: searchConfig.dateRestrict ?? undefined,
+              domainWhitelist: searchConfig.domainWhitelist,
+              domainBlacklist: searchConfig.domainBlacklist,
+              timeoutMs: searchConfig.timeoutMs,
+              config: searchConfig,
+            });
+            const results = searchResponse.results || [];
+            fallbackSearchResults.push(...results.map((r: any) => ({ ...r, query })));
+
+            // Surface search provider errors
+            if (searchResponse.errors?.length) {
+              for (const sErr of searchResponse.errors) {
+                state.analysisWarnings.push({
+                  type: "search_provider_error",
+                  severity: "error",
+                  message: `Search provider ${sErr.provider} returned fatal error: ${sErr.message}`,
+                  details: { provider: sErr.provider, status: sErr.status, fatal: sErr.fatal },
+                });
+                if (sErr.fatal) recordProviderFailure("search", sErr.message);
+              }
+            } else if (results.length > 0) {
+              recordProviderSuccess("search");
+            }
+
+            state.searchQueries.push({
+              query,
+              iteration,
+              focus: `${decision.focus || "adaptive_fallback"} [adaptive_fallback]`,
+              resultsCount: results.length,
+              timestamp: new Date().toISOString(),
+              searchProvider: searchConfig.provider,
+              ...(searchResponse.errors?.length ? { error: searchResponse.errors.map(e => e.message).join("; ") } : {}),
+            });
+          } catch (err) {
+            state.searchQueries.push({
+              query,
+              iteration,
+              focus: `${decision.focus || "adaptive_fallback"} [adaptive_fallback]`,
+              resultsCount: 0,
+              timestamp: new Date().toISOString(),
+              searchProvider: searchConfig.provider,
+              error: String(err),
+            });
+            debugLog("Adaptive fallback query failed", {
+              query,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          }
+        }
+
+        if (fallbackSearchResults.length > 0) {
+          const fallbackCandidates = selectDiverseSearchResultsByQuery(
+            deduplicateSearchUrls(
+              fallbackSearchResults.filter((r) => r.url && r.url.trim().length > 0),
+              state,
+            ),
+            searchConfig.maxSourcesPerIteration,
+          );
+
+          for (const result of fallbackCandidates) {
+            const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
+            if (selectedUrlKeys.has(normalizedUrl)) continue;
+            const domain = extractDomain(result.url || "");
+            if (domain && !isImportantSource(domain)) continue;
+
+            const relaxed = checkSearchResultRelevance(
+              result,
+              entityStrForRelevance,
+              analysisContexts,
+              {
+                requireContextMatch: false,
+                strictInstitutionMatch: false,
+                allowInstitutionFallback: true,
+              },
+            );
+            if (relaxed.isRelevant) {
+              (result as any)._isFallback = true;
+              (result as any)._fallbackStep = 3;
+              relevantResults.push(result);
+              selectedUrlKeys.add(normalizedUrl);
+            }
+          }
+        }
+        debugLog("adaptive_fallback_step3", {
+          focus: decision.focus,
+          before: step3Before,
+          after: relevantResults.length,
+          added: relevantResults.length - step3Before,
+        });
+      }
+
+      // Apply fallback evidence cap: limit fallback-sourced results to capPercent of total
+      const capPercent = CONTEXT_SIMILARITY_CONFIG.fallbackEvidenceCapPercent ?? 40;
+      const fallbackResults = relevantResults.filter((r) => (r as any)._isFallback);
+      const maxFallbackCount = Math.max(1, Math.floor(relevantResults.length * capPercent / 100));
+      if (fallbackResults.length > maxFallbackCount) {
+        // Remove excess fallback results (keep earliest/most relevant, remove from end)
+        const toRemove = fallbackResults.length - maxFallbackCount;
+        // Sort fallback by step (higher step = less relevant), remove highest-step first
+        const sortedFallback = fallbackResults
+          .map((r, idx) => ({ r, idx: relevantResults.indexOf(r), step: (r as any)._fallbackStep || 3 }))
+          .sort((a, b) => b.step - a.step || b.idx - a.idx);
+        const removeIndices = new Set(sortedFallback.slice(0, toRemove).map((s) => s.idx));
+        const cappedResults = relevantResults.filter((_, idx) => !removeIndices.has(idx));
+        relevantResults.length = 0;
+        relevantResults.push(...cappedResults);
+        debugLog("adaptive_fallback_cap_applied", {
+          focus: decision.focus,
+          fallbackCount: fallbackResults.length,
+          maxFallback: maxFallbackCount,
+          removed: toRemove,
+          finalTotal: relevantResults.length,
+        });
+      }
+
+      debugLog("adaptive_fallback_triggered", {
+        focus: decision.focus,
+        category: decision.category,
+        minCandidates: adaptiveMinCandidates,
+        initialCandidates: initiallyKept,
+        primaryResults: primaryResultCount,
+        finalCandidates: relevantResults.length,
+        addedCandidates: Math.max(0, relevantResults.length - initiallyKept),
+        fallbackQueriesUsed,
       });
     }
 
@@ -11783,6 +12713,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         originalClaim: state.understanding?.impliedClaim || state.originalInput,
         fromOppositeClaimSearch: isOppositeClaimSearch,
         pipelineConfig: state.pipelineConfig,
+        evidenceFilterConfig: state.calcConfig.evidenceFilter,
+        claimSimilarityThreshold: state.calcConfig.deduplication.claimSimilarityThreshold,
       },
       state.evidenceItems,
     );
@@ -11883,6 +12815,22 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           });
           const results = searchResponse.results;
           gapSearchResults.push(...results.map((r: any) => ({ ...r, query })));
+
+          // Surface search provider errors
+          if (searchResponse.errors?.length) {
+            for (const sErr of searchResponse.errors) {
+              state.analysisWarnings.push({
+                type: "search_provider_error",
+                severity: "error",
+                message: `Search provider ${sErr.provider} returned fatal error: ${sErr.message}`,
+                details: { provider: sErr.provider, status: sErr.status, fatal: sErr.fatal },
+              });
+              if (sErr.fatal) recordProviderFailure("search", sErr.message);
+            }
+          } else if (results.length > 0) {
+            recordProviderSuccess("search");
+          }
+
           state.searchQueries.push({
             query,
             iteration: state.iterations.length + 1,
@@ -11890,9 +12838,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             resultsCount: results.length,
             timestamp: new Date().toISOString(),
             searchProvider: searchConfig.provider,
+            ...(searchResponse.errors?.length ? { error: searchResponse.errors.map(e => e.message).join("; ") } : {}),
           });
         } catch (err) {
           console.warn(`[Analyzer] Gap research search failed: ${err}`);
+          state.searchQueries.push({
+            query,
+            iteration: state.iterations.length + 1,
+            focus: "gap_research",
+            resultsCount: 0,
+            timestamp: new Date().toISOString(),
+            searchProvider: searchConfig.provider,
+            error: String(err),
+          });
         }
       }
 
@@ -11966,6 +12924,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             contexts: state.understanding!.analysisContexts,
             originalClaim: state.understanding?.impliedClaim || state.originalInput,
             pipelineConfig: state.pipelineConfig,
+            evidenceFilterConfig: state.calcConfig.evidenceFilter,
+            claimSimilarityThreshold: state.calcConfig.deduplication.claimSimilarityThreshold,
           },
           state.evidenceItems,
         );
@@ -12152,6 +13112,87 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     );
   }
 
+  // Phase 2.5: Confidence calibration (Session 25)
+  // Apply multi-layer deterministic calibration to reduce confidence instability.
+  // Runs BEFORE recency/low-source penalties so those can further reduce from calibrated baseline.
+  const calConfig = state.pipelineConfig.confidenceCalibration;
+  if (calConfig && calConfig.enabled !== false) {
+    const calibrationConfig: ConfidenceCalibrationConfig = {
+      enabled: true,
+      densityAnchor: {
+        enabled: calConfig.densityAnchor?.enabled !== false,
+        minConfidenceBase: calConfig.densityAnchor?.minConfidenceBase ?? 15,
+        minConfidenceMax: calConfig.densityAnchor?.minConfidenceMax ?? 60,
+        sourceCountThreshold: calConfig.densityAnchor?.sourceCountThreshold ?? 5,
+      },
+      bandSnapping: {
+        enabled: calConfig.bandSnapping?.enabled !== false,
+        strength: calConfig.bandSnapping?.strength ?? 0.7,
+        customBands: calConfig.bandSnapping?.customBands,
+      },
+      verdictCoupling: {
+        enabled: calConfig.verdictCoupling?.enabled !== false,
+        strongVerdictThreshold: calConfig.verdictCoupling?.strongVerdictThreshold ?? 70,
+        minConfidenceStrong: calConfig.verdictCoupling?.minConfidenceStrong ?? 50,
+        minConfidenceNeutral: calConfig.verdictCoupling?.minConfidenceNeutral ?? 25,
+      },
+      contextConsistency: {
+        enabled: calConfig.contextConsistency?.enabled !== false,
+        maxConfidenceSpread: calConfig.contextConsistency?.maxConfidenceSpread ?? 25,
+        reductionFactor: calConfig.contextConsistency?.reductionFactor ?? 0.5,
+      },
+    };
+
+    // Calibrate verdictSummary confidence
+    if (verdictSummary?.confidence != null) {
+      const contextAnswers = verdictSummary.analysisContextAnswers ?? [];
+      const calResult = calibrateConfidence(
+        verdictSummary.confidence,
+        verdictSummary.truthPercentage ?? verdictSummary.answer ?? 50,
+        state.evidenceItems,
+        state.sources,
+        contextAnswers,
+        calibrationConfig,
+      );
+      if (calResult.adjustments.length > 0) {
+        debugLog("Confidence calibration applied to verdictSummary", {
+          before: verdictSummary.confidence,
+          after: calResult.calibratedConfidence,
+          adjustments: calResult.adjustments,
+          warnings: calResult.warnings,
+        });
+        verdictSummary.confidence = calResult.calibratedConfidence;
+      }
+      if (calResult.warnings.length > 0) {
+        state.analysisWarnings.push({
+          type: "confidence_calibration",
+          severity: "info",
+          message: `Confidence calibrated: ${calResult.adjustments.map(a => a.type).join(", ")}`,
+          details: {
+            adjustments: calResult.adjustments,
+            warnings: calResult.warnings,
+          },
+        });
+      }
+    }
+
+    // Calibrate articleAnalysis verdictSummary confidence
+    if (articleAnalysis?.verdictSummary?.confidence != null) {
+      const contextAnswers = articleAnalysis.verdictSummary.analysisContextAnswers ?? [];
+      const calResult = calibrateConfidence(
+        articleAnalysis.verdictSummary.confidence,
+        articleAnalysis.verdictSummary.truthPercentage ?? articleAnalysis.verdictSummary.answer ?? 50,
+        state.evidenceItems,
+        state.sources,
+        contextAnswers,
+        calibrationConfig,
+      );
+      if (calResult.adjustments.length > 0) {
+        articleAnalysis.verdictSummary.confidence = calResult.calibratedConfidence;
+      }
+    }
+  }
+
   // Phase 3: Recency validation for time-sensitive claims
   const temporalContext = state.understanding?.temporalContext;
   const temporalConfThreshold = state.pipelineConfig.temporalConfidenceThreshold ?? 0.6;
@@ -12177,34 +13218,64 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     debugLog("Recency evidence check", {
       recencyMatters,
       windowMonths,
-      penalty,
+      maxPenalty: penalty,
+      graduatedEnabled: state.pipelineConfig.recencyGraduatedPenalty !== false,
       hasRecentEvidence: recencyCheck.hasRecentEvidence,
       latestEvidenceDate: recencyCheck.latestEvidenceDate,
       signalsCount: recencyCheck.signalsCount,
       dateCandidates: recencyCheck.dateCandidates,
+      granularity: temporalContext?.granularity,
     });
 
     if (!recencyCheck.hasRecentEvidence && penalty > 0) {
-      const applyPenalty = (value?: number | string | null) =>
-        Math.max(0, normalizePercentage(value) - penalty);
+      const confFloor = state.pipelineConfig.minConfidenceFloor ?? 10;
+      const useGraduated = state.pipelineConfig.recencyGraduatedPenalty !== false;
 
-      if (verdictSummary?.confidence != null) {
-        verdictSummary.confidence = applyPenalty(verdictSummary.confidence);
+      let effectivePenalty = penalty;
+      let penaltyBreakdown: Record<string, unknown> | undefined;
+
+      if (useGraduated) {
+        const result = calculateGraduatedRecencyPenalty(
+          recencyCheck.latestEvidenceDate,
+          new Date(),
+          windowMonths,
+          penalty,
+          temporalContext?.granularity,
+          recencyCheck.dateCandidates,
+        );
+        effectivePenalty = result.effectivePenalty;
+        penaltyBreakdown = result.breakdown;
+        debugLog("Graduated recency penalty", result);
       }
-      if (articleAnalysis?.verdictSummary?.confidence != null) {
-        articleAnalysis.verdictSummary.confidence = applyPenalty(articleAnalysis.verdictSummary.confidence);
+
+      if (effectivePenalty > 0) {
+        const applyPenalty = (value?: number | string | null) =>
+          Math.max(confFloor, normalizePercentage(value) - effectivePenalty);
+
+        if (verdictSummary?.confidence != null) {
+          verdictSummary.confidence = applyPenalty(verdictSummary.confidence);
+        }
+        if (articleAnalysis?.verdictSummary?.confidence != null) {
+          articleAnalysis.verdictSummary.confidence = applyPenalty(articleAnalysis.verdictSummary.confidence);
+        }
       }
 
       state.analysisWarnings.push({
         type: "recency_evidence_gap",
-        severity: "warning",
-        message: `Time-sensitive claim lacks recent evidence (no signals within last ${windowMonths} months). Confidence reduced by ${penalty} points.`,
+        severity: effectivePenalty > 0 ? "warning" : "info",
+        message: effectivePenalty > 0
+          ? `Time-sensitive claim lacks recent evidence (no signals within last ${windowMonths} months). Confidence reduced by ${effectivePenalty} points${useGraduated ? " (graduated)" : ""}.`
+          : `Time-sensitive claim evidence is outside ${windowMonths}-month window, but graduated penalty is 0 (topic volatility and evidence volume mitigate penalty).`,
         details: {
           windowMonths,
-          penalty,
+          maxPenalty: penalty,
+          effectivePenalty,
+          graduated: useGraduated,
           latestEvidenceDate: recencyCheck.latestEvidenceDate,
           signalsCount: recencyCheck.signalsCount,
           dateCandidates: recencyCheck.dateCandidates,
+          granularity: temporalContext?.granularity,
+          ...(penaltyBreakdown ? { penaltyBreakdown } : {}),
         },
       });
     }
@@ -12216,12 +13287,72 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const { validatedVerdicts, stats: gate4Stats } = applyGate4ToVerdicts(
     claimVerdicts,
     state.sources,
-    state.evidenceItems
+    state.evidenceItems,
+    {
+      ...state.calcConfig.qualityGates,
+      defaultTrackRecordScore: state.calcConfig.sourceReliability.defaultScore,
+    },
   );
   console.log(`[Analyzer] Gate 4 applied: ${gate4Stats.publishable}/${gate4Stats.total} publishable, HIGH=${gate4Stats.highConfidence}, MED=${gate4Stats.mediumConfidence}, LOW=${gate4Stats.lowConfidence}, INSUFF=${gate4Stats.insufficient}`);
 
   // Use validated verdicts going forward (includes gate4Validation metadata)
   const finalClaimVerdicts = validatedVerdicts;
+
+  // Fix 3: Low-source confidence penalty
+  // When evidence base is thin (≤ lowSourceThreshold unique sources), penalize confidence
+  // to prevent over-confident verdicts based on insufficient evidence.
+  // NOTE: Use state.sources (fetched sources) for consistency with the displayed source count
+  // in the report/UI, NOT state.evidenceItems (which only counts sources that produced evidence).
+  const lowSourceThreshold = state.pipelineConfig.lowSourceThreshold ?? 2;
+  const lowSourcePenalty = state.pipelineConfig.lowSourceConfidencePenalty ?? 15;
+  const uniqueSourceCount = state.sources.filter(s => s.fetchSuccess).length;
+  if (uniqueSourceCount <= lowSourceThreshold && uniqueSourceCount > 0 && lowSourcePenalty > 0) {
+    const confFloor = state.pipelineConfig.minConfidenceFloor ?? 10;
+    const applyLowSourcePenalty = (value: number) =>
+      Math.max(confFloor, value - lowSourcePenalty);
+
+    if (verdictSummary?.confidence != null) {
+      const before = verdictSummary.confidence;
+      verdictSummary.confidence = applyLowSourcePenalty(verdictSummary.confidence);
+      debugLog("Low-source confidence penalty applied to verdictSummary", {
+        uniqueSourceCount,
+        threshold: lowSourceThreshold,
+        penalty: lowSourcePenalty,
+        before,
+        after: verdictSummary.confidence,
+      });
+    }
+    if (articleAnalysis?.verdictSummary?.confidence != null) {
+      articleAnalysis.verdictSummary.confidence = applyLowSourcePenalty(articleAnalysis.verdictSummary.confidence);
+    }
+
+    state.analysisWarnings.push({
+      type: "low_source_count",
+      severity: "warning",
+      message: `Only ${uniqueSourceCount} unique source(s) found. Confidence reduced by ${lowSourcePenalty} points due to thin evidence base.`,
+      details: {
+        uniqueSourceCount,
+        threshold: lowSourceThreshold,
+        penalty: lowSourcePenalty,
+      },
+    });
+  }
+
+  // Fix 1: Confidence floor guard — ensure confidence never reaches 0 on successful verdicts
+  // Applied after all penalties (recency, low-source) as a final safety net
+  {
+    const confFloor = state.pipelineConfig.minConfidenceFloor ?? 10;
+    if (confFloor > 0 && verdictSummary?.confidence != null && verdictSummary.confidence < confFloor) {
+      debugLog("Confidence floor applied to verdictSummary", {
+        before: verdictSummary.confidence,
+        floor: confFloor,
+      });
+      verdictSummary.confidence = confFloor;
+    }
+    if (confFloor > 0 && articleAnalysis?.verdictSummary?.confidence != null && articleAnalysis.verdictSummary.confidence < confFloor) {
+      articleAnalysis.verdictSummary.confidence = confFloor;
+    }
+  }
 
   // STEP 6: Summary
   await emit("Step 4: Building summary", 75);

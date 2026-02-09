@@ -210,18 +210,68 @@ export const PipelineConfigSchema = z.object({
     .describe("Recency window in months for time-sensitive evidence checks (default: 6)"),
   recencyConfidencePenalty: z.number().int().min(0).max(50).optional()
     .describe("Confidence penalty (percentage points) when time-sensitive claims lack recent evidence (default: 20)"),
+  recencyGraduatedPenalty: z.boolean().optional()
+    .describe("Enable graduated recency penalty (default: true). When true, penalty scales with staleness, topic volatility, and evidence volume instead of flat binary application."),
+  confidenceCalibration: z.object({
+    enabled: z.boolean().default(true),
+    densityAnchor: z.object({
+      enabled: z.boolean().default(true),
+      minConfidenceBase: z.number().int().min(5).max(30).default(15),
+      minConfidenceMax: z.number().int().min(30).max(70).default(60),
+      sourceCountThreshold: z.number().int().min(1).max(10).default(5),
+    }).default({}),
+    bandSnapping: z.object({
+      enabled: z.boolean().default(true),
+      strength: z.number().min(0).max(1).default(0.7),
+      customBands: z.array(z.object({
+        min: z.number().int(),
+        max: z.number().int(),
+        snapTo: z.number().int(),
+      })).optional(),
+    }).default({}),
+    verdictCoupling: z.object({
+      enabled: z.boolean().default(true),
+      strongVerdictThreshold: z.number().int().min(60).max(80).default(70),
+      minConfidenceStrong: z.number().int().min(30).max(70).default(50),
+      minConfidenceNeutral: z.number().int().min(10).max(40).default(25),
+    }).default({}),
+    contextConsistency: z.object({
+      enabled: z.boolean().default(true),
+      maxConfidenceSpread: z.number().int().min(10).max(50).default(25),
+      reductionFactor: z.number().min(0).max(1).default(0.5),
+    }).default({}),
+  }).optional()
+    .describe("Confidence calibration system: multi-layer deterministic post-processing to reduce confidence instability"),
+  minConfidenceFloor: z.number().int().min(0).max(50).optional()
+    .describe("Minimum confidence floor for successful verdicts — prevents confidence from reaching 0 (default: 10)"),
+  lowSourceThreshold: z.number().int().min(1).max(10).optional()
+    .describe("Source count at or below which low-source confidence penalty applies (default: 2)"),
+  lowSourceConfidencePenalty: z.number().int().min(0).max(50).optional()
+    .describe("Confidence penalty (percentage points) when unique source count is at or below lowSourceThreshold (default: 15)"),
   recencyCueTerms: z.array(z.string().min(1)).max(50).optional()
     .describe("Configurable recency cue terms for time-sensitive detection (default: empty)"),
   normalizationPredicateStarters: z.array(z.string().min(1)).max(300).optional()
     .describe("Configurable predicate starter terms for yes/no normalization splitting (default: empty)"),
   normalizationAdjectiveSuffixes: z.array(z.string().min(1)).max(30).optional()
     .describe("Configurable adjective suffixes for yes/no normalization splitting (default: empty)"),
-  searchRelevanceLlmEnabled: z.boolean().optional()
-    .describe("Enable LLM-based relevance classification for ambiguous search results (default: false)"),
   searchRelevanceLlmMode: z.enum(["off", "auto", "on"]).optional()
-    .describe("LLM relevance classification mode: off | auto | on (default: off)"),
+    .describe("LLM relevance classification mode: off | auto | on (default: auto)"),
   searchRelevanceLlmMaxCalls: z.number().int().min(0).max(10).optional()
     .describe("Max LLM relevance classifications per analysis (default: 3)"),
+  searchAdaptiveFallbackMinCandidates: z.number().int().min(0).max(20).optional()
+    .describe("Min relevant candidates before adaptive fallback broadens constraints and search (default: 5, 0 disables)"),
+  searchAdaptiveFallbackMaxQueries: z.number().int().min(0).max(5).optional()
+    .describe("Max additional broad fallback queries when adaptive fallback triggers (default: 2)"),
+  searchMaxResultsCriticism: z.number().int().min(1).max(20).optional()
+    .describe("Max search results for criticism/counterevidence queries (default: 8)"),
+  searchRetryBeforeFallback: z.boolean().optional()
+    .describe("Retry original queries with modified terms before triggering adaptive fallback (default: true)"),
+  contextClaimsAnchorDivergenceThreshold: z.number().int().min(0).max(50).optional()
+    .describe("Min divergence between context verdict and claims average to trigger anchoring (default: 15)"),
+  contextClaimsAnchorClaimsWeight: z.number().min(0).max(1).optional()
+    .describe("Blend weight of claims average when anchoring verdicts (default: 0.6)"),
+  probativeDeduplicationThreshold: z.number().min(0.5).max(0.95).optional()
+    .describe("Deduplication threshold used by deterministic probative filter (default: 0.75)"),
 
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
@@ -361,6 +411,27 @@ export const PipelineConfigSchema = z.object({
   if (data.recencyConfidencePenalty === undefined) {
     data.recencyConfidencePenalty = 20;
   }
+  if (data.recencyGraduatedPenalty === undefined) {
+    data.recencyGraduatedPenalty = true;
+  }
+  if (data.confidenceCalibration === undefined) {
+    data.confidenceCalibration = {
+      enabled: true,
+      densityAnchor: { enabled: true, minConfidenceBase: 15, minConfidenceMax: 60, sourceCountThreshold: 5 },
+      bandSnapping: { enabled: true, strength: 0.7 },
+      verdictCoupling: { enabled: true, strongVerdictThreshold: 70, minConfidenceStrong: 50, minConfidenceNeutral: 25 },
+      contextConsistency: { enabled: true, maxConfidenceSpread: 25, reductionFactor: 0.5 },
+    };
+  }
+  if (data.minConfidenceFloor === undefined) {
+    data.minConfidenceFloor = 10;
+  }
+  if (data.lowSourceThreshold === undefined) {
+    data.lowSourceThreshold = 2;
+  }
+  if (data.lowSourceConfidencePenalty === undefined) {
+    data.lowSourceConfidencePenalty = 15;
+  }
   if (data.recencyCueTerms === undefined) {
     data.recencyCueTerms = [];
   }
@@ -370,14 +441,32 @@ export const PipelineConfigSchema = z.object({
   if (data.normalizationAdjectiveSuffixes === undefined) {
     data.normalizationAdjectiveSuffixes = [];
   }
-  if (data.searchRelevanceLlmEnabled === undefined) {
-    data.searchRelevanceLlmEnabled = false;
-  }
   if (data.searchRelevanceLlmMode === undefined) {
     data.searchRelevanceLlmMode = "auto";
   }
   if (data.searchRelevanceLlmMaxCalls === undefined) {
     data.searchRelevanceLlmMaxCalls = 3;
+  }
+  if (data.searchAdaptiveFallbackMinCandidates === undefined) {
+    data.searchAdaptiveFallbackMinCandidates = 5;
+  }
+  if (data.searchAdaptiveFallbackMaxQueries === undefined) {
+    data.searchAdaptiveFallbackMaxQueries = 2;
+  }
+  if (data.searchMaxResultsCriticism === undefined) {
+    data.searchMaxResultsCriticism = 8;
+  }
+  if (data.searchRetryBeforeFallback === undefined) {
+    data.searchRetryBeforeFallback = true;
+  }
+  if (data.contextClaimsAnchorDivergenceThreshold === undefined) {
+    data.contextClaimsAnchorDivergenceThreshold = 15;
+  }
+  if (data.contextClaimsAnchorClaimsWeight === undefined) {
+    data.contextClaimsAnchorClaimsWeight = 0.6;
+  }
+  if (data.probativeDeduplicationThreshold === undefined) {
+    data.probativeDeduplicationThreshold = 0.75;
   }
   if (data.gapResearchEnabled === undefined) {
     data.gapResearchEnabled = true; // Enabled by default for Pipeline Phase 1
@@ -402,9 +491,9 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Model selection
   llmProvider: "anthropic",
   llmTiering: false, // v2.9.0: Default to off for backwards compatibility
-  modelUnderstand: "claude-3-5-haiku-20241022",
-  modelExtractEvidence: "claude-3-5-haiku-20241022",
-  modelVerdict: "claude-sonnet-4-20250514",
+  modelUnderstand: "claude-haiku-4-5-20251001",
+  modelExtractEvidence: "claude-haiku-4-5-20251001",
+  modelVerdict: "claude-opus-4-6",
 
   // LLM text analysis (all enabled by default per v2.8.3)
   llmInputClassification: true,
@@ -459,12 +548,29 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   temporalConfidenceThreshold: 0.6,
   recencyWindowMonths: 6,
   recencyConfidencePenalty: 20,
+  recencyGraduatedPenalty: true,
+  confidenceCalibration: {
+    enabled: true,
+    densityAnchor: { enabled: true, minConfidenceBase: 15, minConfidenceMax: 60, sourceCountThreshold: 5 },
+    bandSnapping: { enabled: true, strength: 0.7 },
+    verdictCoupling: { enabled: true, strongVerdictThreshold: 70, minConfidenceStrong: 50, minConfidenceNeutral: 25 },
+    contextConsistency: { enabled: true, maxConfidenceSpread: 25, reductionFactor: 0.5 },
+  },
+  minConfidenceFloor: 10,
+  lowSourceThreshold: 2,
+  lowSourceConfidencePenalty: 15,
   recencyCueTerms: [],
   normalizationPredicateStarters: [],
   normalizationAdjectiveSuffixes: [],
-  searchRelevanceLlmEnabled: false,
   searchRelevanceLlmMode: "auto",
   searchRelevanceLlmMaxCalls: 3,
+  searchAdaptiveFallbackMinCandidates: 5,
+  searchAdaptiveFallbackMaxQueries: 2,
+  searchMaxResultsCriticism: 8,
+  searchRetryBeforeFallback: true,
+  contextClaimsAnchorDivergenceThreshold: 15,
+  contextClaimsAnchorClaimsWeight: 0.6,
+  probativeDeduplicationThreshold: 0.75,
 
   // Budget controls
   maxIterationsPerContext: 5, // NEW: Use new key name
@@ -541,7 +647,7 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   // Core settings
   enabled: true,
   multiModel: true,
-  openaiModel: "gpt-4o-mini",
+  openaiModel: "gpt-4.1-mini",
 
   // Thresholds
   confidenceThreshold: 0.8,
@@ -715,6 +821,57 @@ export const CalcConfigSchema = z.object({
   }),
 
   mixedConfidenceThreshold: z.number().int().min(0).max(100),
+
+  evidenceFilter: z.object({
+    minStatementLength: z.number().int().min(5).max(100),
+    maxVaguePhraseCount: z.number().int().min(0).max(10),
+    requireSourceExcerpt: z.boolean(),
+    minExcerptLength: z.number().int().min(10).max(200),
+    requireSourceUrl: z.boolean(),
+  }).optional(),
+
+  articleVerdictOverride: z.object({
+    misleadingTarget: z.number().int().min(0).max(100),
+    maxBlendStrength: z.number().min(0).max(1),
+    centralRefutedRatioThreshold: z.number().min(0).max(1),
+  }).optional(),
+
+  claimDecomposition: z.object({
+    minCoreClaimsPerContext: z.number().int().min(1).max(10),
+    minTotalClaimsWithSingleCore: z.number().int().min(1).max(10),
+    minDirectClaimsPerContext: z.number().int().min(1).max(10),
+    supplementalRepromptMaxAttempts: z.number().int().min(0).max(5),
+    shortSimpleInputMaxChars: z.number().int().min(20).max(200),
+  }).optional(),
+
+  contextSimilarity: z.object({
+    nameWeight: z.number().min(0).max(1),
+    primaryMetadataWeight: z.number().min(0).max(1),
+    assessedStatementWeight: z.number().min(0).max(1),
+    subjectWeight: z.number().min(0).max(1),
+    secondaryMetadataWeight: z.number().min(0).max(1),
+    nearDuplicateAssessedThreshold: z.number().min(0).max(1),
+    nearDuplicateForceScore: z.number().min(0).max(1),
+    nearDuplicateSubjectGuardThreshold: z.number().min(0).max(1).optional(),
+    nearDuplicateNameGuardThreshold: z.number().min(0).max(1).optional(),
+    anchorRecoveryThreshold: z.number().min(0).max(1).optional(),
+    fallbackEvidenceCapPercent: z.number().int().min(10).max(100).optional(),
+  }).optional(),
+
+  tangentialPruning: z.object({
+    minEvidenceForTangential: z.number().int().min(0).max(10),
+  }).optional(),
+
+  claimClustering: z.object({
+    jaccardSimilarityThreshold: z.number().min(0).max(1),
+    duplicateWeightShare: z.number().min(0).max(1),
+  }).optional(),
+
+  fallback: z.object({
+    step1RelaxInstitution: z.boolean(),
+    step2RelevanceFloor: z.number().min(0).max(1),
+    step3BroadEnabled: z.boolean(),
+  }).optional(),
 });
 
 export type CalcConfig = z.infer<typeof CalcConfigSchema>;
@@ -737,8 +894,8 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     },
     harmPotentialMultiplier: 1.5,
     contestationWeights: {
-      established: 0.3,
-      disputed: 0.5,
+      established: 0.5,
+      disputed: 0.7,
       opinion: 1.0,
     },
   },
@@ -768,6 +925,50 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     contextMergeThreshold: 0.7,
   },
   mixedConfidenceThreshold: 60,
+  evidenceFilter: {
+    minStatementLength: 20,
+    maxVaguePhraseCount: 2,
+    requireSourceExcerpt: true,
+    minExcerptLength: 30,
+    requireSourceUrl: true,
+  },
+  articleVerdictOverride: {
+    misleadingTarget: 35,
+    maxBlendStrength: 0.8,
+    centralRefutedRatioThreshold: 0.5,
+  },
+  claimDecomposition: {
+    minCoreClaimsPerContext: 2,
+    minTotalClaimsWithSingleCore: 3,
+    minDirectClaimsPerContext: 2,
+    supplementalRepromptMaxAttempts: 2,
+    shortSimpleInputMaxChars: 60,
+  },
+  contextSimilarity: {
+    nameWeight: 0.35,
+    primaryMetadataWeight: 0.3,
+    assessedStatementWeight: 0.2,
+    subjectWeight: 0.1,
+    secondaryMetadataWeight: 0.05,
+    nearDuplicateAssessedThreshold: 0.85,
+    nearDuplicateForceScore: 0.92,
+    nearDuplicateSubjectGuardThreshold: 0.5,
+    nearDuplicateNameGuardThreshold: 0.4,
+    anchorRecoveryThreshold: 0.6,
+    fallbackEvidenceCapPercent: 40,
+  },
+  tangentialPruning: {
+    minEvidenceForTangential: 2,
+  },
+  claimClustering: {
+    jaccardSimilarityThreshold: 0.6,
+    duplicateWeightShare: 0.5,
+  },
+  fallback: {
+    step1RelaxInstitution: true,
+    step2RelevanceFloor: 0.4,
+    step3BroadEnabled: true,
+  },
 };
 
 // ============================================================================

@@ -53,6 +53,7 @@ export function detectCounterClaim(
   userThesis: string,
   claimTruthPercentage?: number,
   claimEvidenceItems?: EvidenceItem[],
+  verdictBands?: { LEANING_TRUE: number; MIXED: number },
 ): boolean {
   const claimLower = claimText.toLowerCase();
   const thesisLower = userThesis.toLowerCase();
@@ -295,11 +296,13 @@ export function detectCounterClaim(
 
     // If claim is (leaning) true and its evidence contradicts the user's thesis,
     // it's likely evaluating the opposite position.
-    if (truthPct >= 58 && majorityContradicts) return true;
+    const leaningTrueThreshold = verdictBands?.LEANING_TRUE ?? 58;
+    const mixedUpperThreshold = (verdictBands?.MIXED ?? 43) - 1;
+    if (truthPct >= leaningTrueThreshold && majorityContradicts) return true;
 
     // If claim is (leaning) false and its evidence supports the user's thesis,
     // it's likely a counter-claim that was refuted.
-    if (truthPct <= 42 && majoritySupports) return true;
+    if (truthPct <= mixedUpperThreshold && majoritySupports) return true;
   }
 
   return false;

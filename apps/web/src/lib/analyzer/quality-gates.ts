@@ -5,8 +5,25 @@
  * - Gate 1: Claim Validation (content analysis)
  * - Gate 4: Verdict Confidence Assessment
  *
+ * v3.1: All thresholds read from CalcConfig (UCM-configurable).
+ *
  * @module analyzer/quality-gates
  */
+
+/**
+ * Quality gate configuration matching CalcConfig.qualityGates + CalcConfig.sourceReliability shape.
+ * All fields optional for backward compatibility.
+ */
+export interface QualityGateConfig {
+  gate1MinContentWords?: number;
+  gate4MinSourcesHigh?: number;
+  gate4MinSourcesMedium?: number;
+  gate4QualityThresholdHigh?: number;
+  gate4QualityThresholdMedium?: number;
+  gate4AgreementThresholdHigh?: number;
+  gate4AgreementThresholdMedium?: number;
+  defaultTrackRecordScore?: number;
+}
 
 import type {
   ClaimValidationResult,
@@ -32,8 +49,11 @@ import type {
 export function validateClaimGate1(
   claimId: string,
   claimText: string,
-  isCentral: boolean = false
+  isCentral: boolean = false,
+  gateConfig?: QualityGateConfig,
 ): ClaimValidationResult {
+  const minContentWords = gateConfig?.gate1MinContentWords ?? 3;
+
   // Content word count: helps keep verifiable, mechanism-style claims
   // that don't necessarily include numbers/dates (common in comparative decompositions).
   const contentWordCount = claimText
@@ -53,7 +73,7 @@ export function validateClaimGate1(
 
   // Pass criteria: filter only extremely content-poor claims (noise)
   // Central claims are still always kept.
-  const isContentPoor = contentWordCount < 3;
+  const isContentPoor = contentWordCount < minContentWords;
   const wouldPass = !isContentPoor;
 
   // CRITICAL: Central claims always pass Gate 1
@@ -102,15 +122,24 @@ export function validateVerdictGate4(
   supportingEvidenceIds: string[],
   contradictingFactCount: number,
   verdictReasoning: string,
-  isCentral: boolean = false
+  isCentral: boolean = false,
+  gateConfig?: QualityGateConfig,
 ): VerdictValidationResult {
+  const minSourcesHigh = gateConfig?.gate4MinSourcesHigh ?? 3;
+  const minSourcesMedium = gateConfig?.gate4MinSourcesMedium ?? 2;
+  const qualityHigh = gateConfig?.gate4QualityThresholdHigh ?? 0.7;
+  const qualityMedium = gateConfig?.gate4QualityThresholdMedium ?? 0.5;
+  const agreementHigh = gateConfig?.gate4AgreementThresholdHigh ?? 0.7;
+  const agreementMedium = gateConfig?.gate4AgreementThresholdMedium ?? 0.5;
+  const defaultScore = gateConfig?.defaultTrackRecordScore ?? 0.5;
+
   // 1. Count evidence sources
   const evidenceCount = sources.length;
 
   // 2. Calculate average source quality
   // Note: trackRecordScore is already 0-1 scale (see Source Reliability Bundle docs)
   const qualityScores = sources.map(s =>
-    s.trackRecordScore != null ? s.trackRecordScore : 0.5
+    s.trackRecordScore != null ? s.trackRecordScore : defaultScore
   );
   const averageSourceQuality = qualityScores.length > 0
     ? qualityScores.reduce((a, b) => a + b, 0) / qualityScores.length
@@ -128,11 +157,11 @@ export function validateVerdictGate4(
   // 5. Determine confidence tier
   let confidenceTier: "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
 
-  if (evidenceCount < 2) {
+  if (evidenceCount < minSourcesMedium) {
     confidenceTier = "INSUFFICIENT";
-  } else if (evidenceCount >= 3 && averageSourceQuality >= 0.7 && evidenceAgreement >= 0.8) {
+  } else if (evidenceCount >= minSourcesHigh && averageSourceQuality >= qualityHigh && evidenceAgreement >= agreementHigh) {
     confidenceTier = "HIGH";
-  } else if (evidenceCount >= 2 && averageSourceQuality >= 0.6 && evidenceAgreement >= 0.6) {
+  } else if (evidenceCount >= minSourcesMedium && averageSourceQuality >= qualityMedium && evidenceAgreement >= agreementMedium) {
     confidenceTier = "MEDIUM";
   } else {
     confidenceTier = "LOW";
@@ -145,14 +174,14 @@ export function validateVerdictGate4(
   // 7. Generate failure reasons if not publishable
   const failureReasons: string[] = [];
   if (!wouldPublish) {
-    if (evidenceCount < 2) {
-      failureReasons.push(`Insufficient sources (${evidenceCount}, need >=2)`);
+    if (evidenceCount < minSourcesMedium) {
+      failureReasons.push(`Insufficient sources (${evidenceCount}, need >=${minSourcesMedium})`);
     }
-    if (averageSourceQuality < 0.6) {
-      failureReasons.push(`Low source quality (${(averageSourceQuality * 100).toFixed(0)}%, need >=60%)`);
+    if (averageSourceQuality < qualityMedium) {
+      failureReasons.push(`Low source quality (${(averageSourceQuality * 100).toFixed(0)}%, need >=${(qualityMedium * 100).toFixed(0)}%)`);
     }
-    if (evidenceAgreement < 0.6) {
-      failureReasons.push(`Low evidence agreement (${(evidenceAgreement * 100).toFixed(0)}%, need >=60%)`);
+    if (evidenceAgreement < agreementMedium) {
+      failureReasons.push(`Low evidence agreement (${(evidenceAgreement * 100).toFixed(0)}%, need >=${(agreementMedium * 100).toFixed(0)}%)`);
     }
 
     if (isCentral && failureReasons.length > 0) {
@@ -235,7 +264,8 @@ export function applyGate1Lite<T extends { id: string; text: string; checkWorthi
  * IMPORTANT: Central claims are never filtered, only flagged
  */
 export function applyGate1ToClaims<T extends { id: string; text: string; isCentral: boolean }>(
-  claims: T[]
+  claims: T[],
+  gateConfig?: QualityGateConfig,
 ): {
   validatedClaims: (T & { gate1Validation?: ClaimValidationResult })[];
   validationResults: ClaimValidationResult[];
@@ -246,7 +276,7 @@ export function applyGate1ToClaims<T extends { id: string; text: string; isCentr
   let centralKept = 0;
 
   for (const claim of claims) {
-    const validation = validateClaimGate1(claim.id, claim.text, claim.isCentral);
+    const validation = validateClaimGate1(claim.id, claim.text, claim.isCentral, gateConfig);
     validationResults.push(validation);
 
     if (validation.passed) {
@@ -281,7 +311,8 @@ export function applyGate1ToClaims<T extends { id: string; text: string; isCentr
 export function applyGate4ToVerdicts(
   verdicts: ClaimVerdict[],
   sources: FetchedSource[],
-  evidenceItems: EvidenceItem[]
+  evidenceItems: EvidenceItem[],
+  gateConfig?: QualityGateConfig,
 ): {
   validatedVerdicts: (ClaimVerdict & { gate4Validation: VerdictValidationResult })[];
   validationResults: VerdictValidationResult[];
@@ -342,7 +373,8 @@ export function applyGate4ToVerdicts(
       supportingEvidenceIds,
       contradictingFactCount,
       verdict.reasoning,
-      verdict.isCentral
+      verdict.isCentral,
+      gateConfig,
     );
 
     validationResults.push(validation);

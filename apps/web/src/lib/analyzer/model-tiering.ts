@@ -53,15 +53,15 @@ export interface TieredRoutingConfig {
 export const ANTHROPIC_MODELS: Record<ModelTier, ModelConfig> = {
   budget: {
     provider: 'anthropic',
-    modelId: 'claude-3-haiku-20240307',
+    modelId: 'claude-haiku-4-5-20251001',
     tier: 'budget',
-    costPer1MTokens: { input: 0.25, output: 1.25 },
+    costPer1MTokens: { input: 1.00, output: 5.00 },
     maxTokens: 200000,
-    strengths: ['understand', 'extract_evidence', 'context_refinement'],
+    strengths: ['understand', 'extract_evidence'],
   },
   standard: {
     provider: 'anthropic',
-    modelId: 'claude-3-5-haiku-20241022',
+    modelId: 'claude-haiku-4-5-20251001',
     tier: 'standard',
     costPer1MTokens: { input: 1, output: 5 },
     maxTokens: 200000,
@@ -69,37 +69,37 @@ export const ANTHROPIC_MODELS: Record<ModelTier, ModelConfig> = {
   },
   premium: {
     provider: 'anthropic',
-    modelId: 'claude-sonnet-4-20250514',
+    modelId: 'claude-sonnet-4-5-20250929',
     tier: 'premium',
     costPer1MTokens: { input: 3, output: 15 },
     maxTokens: 200000,
-    strengths: ['verdict'],
+    strengths: ['verdict', 'context_refinement'],
   },
 };
 
 export const OPENAI_MODELS: Record<ModelTier, ModelConfig> = {
   budget: {
     provider: 'openai',
-    modelId: 'gpt-4o-mini',
+    modelId: 'gpt-4.1-mini',
     tier: 'budget',
-    costPer1MTokens: { input: 0.15, output: 0.6 },
-    maxTokens: 128000,
+    costPer1MTokens: { input: 0.40, output: 1.60 },
+    maxTokens: 1000000,
     strengths: ['understand', 'extract_evidence'],
   },
   standard: {
     provider: 'openai',
-    modelId: 'gpt-4o',
+    modelId: 'gpt-4.1',
     tier: 'standard',
-    costPer1MTokens: { input: 2.5, output: 10 },
-    maxTokens: 128000,
+    costPer1MTokens: { input: 2.00, output: 8.00 },
+    maxTokens: 1000000,
     strengths: ['context_refinement', 'supplemental'],
   },
   premium: {
     provider: 'openai',
-    modelId: 'gpt-4o',
+    modelId: 'gpt-4.1',
     tier: 'premium',
-    costPer1MTokens: { input: 2.5, output: 10 },
-    maxTokens: 128000,
+    costPer1MTokens: { input: 2.00, output: 8.00 },
+    maxTokens: 1000000,
     strengths: ['verdict', 'summary'],
   },
 };
@@ -107,26 +107,26 @@ export const OPENAI_MODELS: Record<ModelTier, ModelConfig> = {
 export const GOOGLE_MODELS: Record<ModelTier, ModelConfig> = {
   budget: {
     provider: 'google',
-    modelId: 'gemini-1.5-flash',
+    modelId: 'gemini-2.5-flash',
     tier: 'budget',
-    costPer1MTokens: { input: 0.075, output: 0.3 },
+    costPer1MTokens: { input: 0.15, output: 0.60 },
     maxTokens: 1000000,
     strengths: ['understand', 'extract_evidence'],
   },
   standard: {
     provider: 'google',
-    modelId: 'gemini-1.5-pro',
+    modelId: 'gemini-2.5-pro',
     tier: 'standard',
-    costPer1MTokens: { input: 1.25, output: 5 },
-    maxTokens: 2000000,
+    costPer1MTokens: { input: 1.25, output: 10 },
+    maxTokens: 1000000,
     strengths: ['context_refinement', 'supplemental'],
   },
   premium: {
     provider: 'google',
-    modelId: 'gemini-1.5-pro',
+    modelId: 'gemini-2.5-pro',
     tier: 'premium',
-    costPer1MTokens: { input: 1.25, output: 5 },
-    maxTokens: 2000000,
+    costPer1MTokens: { input: 1.25, output: 10 },
+    maxTokens: 1000000,
     strengths: ['verdict', 'summary'],
   },
 };
@@ -315,7 +315,7 @@ export function estimateTaskCost(
  * import { anthropic } from '@ai-sdk/anthropic';
  *
  * // Instead of:
- * const model = anthropic(process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514');
+ * const model = anthropic(process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929');
  *
  * // Use:
  * const modelConfig = getModelForTask('understand', 'anthropic');

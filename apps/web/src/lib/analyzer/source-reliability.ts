@@ -557,13 +557,18 @@ export type CredibilityLevel7Band =
 /**
  * Convert score to 7-band credibility level.
  */
-export function scoreToCredibilityLevel(score: number): CredibilityLevel7Band {
-  if (score >= 0.86) return "ESTABLISHED_AUTHORITY";
-  if (score >= 0.72) return "HIGH_CREDIBILITY";
-  if (score >= 0.58) return "GENERALLY_CREDIBLE";
-  if (score >= 0.43) return "MIXED_TRACK_RECORD";
-  if (score >= 0.29) return "QUESTIONABLE_CREDIBILITY";
-  if (score >= 0.15) return "LOW_CREDIBILITY";
+export function scoreToCredibilityLevel(
+  score: number,
+  bands?: { TRUE: number; MOSTLY_TRUE: number; LEANING_TRUE: number; MIXED: number; LEANING_FALSE: number; MOSTLY_FALSE: number },
+): CredibilityLevel7Band {
+  // Bands are on 0-100 scale; scores are 0-1 scale — divide by 100
+  const b = bands ?? { TRUE: 86, MOSTLY_TRUE: 72, LEANING_TRUE: 58, MIXED: 43, LEANING_FALSE: 29, MOSTLY_FALSE: 15 };
+  if (score >= b.TRUE / 100) return "ESTABLISHED_AUTHORITY";
+  if (score >= b.MOSTLY_TRUE / 100) return "HIGH_CREDIBILITY";
+  if (score >= b.LEANING_TRUE / 100) return "GENERALLY_CREDIBLE";
+  if (score >= b.MIXED / 100) return "MIXED_TRACK_RECORD";
+  if (score >= b.LEANING_FALSE / 100) return "QUESTIONABLE_CREDIBILITY";
+  if (score >= b.MOSTLY_FALSE / 100) return "LOW_CREDIBILITY";
   return "KNOWN_DISINFORMATION";
 }
 

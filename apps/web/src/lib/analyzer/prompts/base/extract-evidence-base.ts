@@ -130,6 +130,8 @@ Classify the authority level of the source for each evidence item:
 - If the source lacks concrete records, measurements, or verifiable documentation, classify as **opinion**
 - If you classify an item as **opinion**, it MUST have **probativeValue="low"** and MUST NOT be returned (this pipeline only accepts high/medium probative evidence)
 - If an item is actually probative (cites records, measurements, filings, datasets), it should usually be **primary** or **secondary**, not opinion
+- Foreign-government executive orders, sanctions notices, or policy statements about another jurisdiction's judicial process are **opinion** for judicial-fairness analysis unless they provide direct, verifiable procedural records.
+- Political or diplomatic position statements are not primary legal-process evidence for another jurisdiction's courts.
 
 ## EVIDENCE BASIS (NEW - classify for each evidence item)
 

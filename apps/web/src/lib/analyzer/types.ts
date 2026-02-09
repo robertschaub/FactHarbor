@@ -314,6 +314,8 @@ export interface SearchQuery {
   resultsCount: number;
   timestamp: string;
   searchProvider?: string;
+  /** Error message if the search provider returned a fatal error (429, quota exhaustion) */
+  error?: string;
 }
 
 export interface ResearchState {
@@ -643,11 +645,14 @@ export type AnalysisWarningType =
   | "structured_output_failure"     // LLM structured output failed, using fallback
   | "evidence_filter_degradation"   // LLM evidence filter failed, using heuristics
   | "search_fallback"               // Grounded search failed, using standard search
+  | "search_provider_error"         // Search provider returned fatal error (429, quota exhaustion)
   | "budget_exceeded"               // Analysis terminated early due to budget
   | "classification_fallback"       // Classification fields defaulted due to LLM failure
   | "low_evidence_count"            // Insufficient evidence for reliable verdict
   | "context_without_evidence"      // AnalysisContext has claims but no evidence
-  | "recency_evidence_gap";         // Time-sensitive claim lacks recent evidence
+  | "recency_evidence_gap"          // Time-sensitive claim lacks recent evidence
+  | "confidence_calibration"        // Confidence was adjusted by calibration system
+  | "low_source_count";             // Thin evidence base (few unique sources)
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

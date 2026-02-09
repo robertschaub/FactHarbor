@@ -4,10 +4,20 @@
  * Extracted from the monolithic `analyzer.ts` to keep responsibilities separated.
  *
  * v2.10: LLM-derived classification (contestation/harm) is used directly.
+ * v3.1: All weights and multipliers read from CalcConfig (UCM-configurable).
  *
  * @module analyzer/aggregation
  */
 
+/**
+ * Aggregation weight configuration, matching CalcConfig.aggregation shape.
+ * All fields optional for backward compatibility — defaults match original hardcoded values.
+ */
+export interface AggregationWeights {
+  centralityWeights?: { high: number; medium: number; low: number };
+  harmPotentialMultiplier?: number;
+  contestationWeights?: { established: number; disputed: number; opinion: number };
+}
 
 /**
  * Calculate claim weight based on centrality, confidence, harm potential, and contestation status.
@@ -15,8 +25,8 @@
  *
  * Base Weight = centralityMultiplier × harmMultiplier × (confidence / 100)
  * where:
- *   centralityMultiplier: high=3.0, medium=2.0, low=1.0
- *   harmMultiplier: high=1.5, medium=1.0, low=1.0
+ *   centralityMultiplier: from CalcConfig.aggregation.centralityWeights (default: high=3.0, medium=2.0, low=1.0)
+ *   harmMultiplier: from CalcConfig.aggregation.harmPotentialMultiplier (default: high=1.5, medium/low=1.0)
  *
  * HIGH HARM POTENTIAL (v2.7.0):
  * - Death claims, injury claims, safety claims get 1.5x additional weight
@@ -29,9 +39,9 @@
  * - "Contested" = someone disputes the claim WITH actual factual counter-evidence
  *   → These get REDUCED weight because the evidence base is genuinely uncertain
  *
- * Weight reduction for contested claims:
- * - factualBasis "established" (strong counter-evidence): 0.3x weight
- * - factualBasis "disputed" (some counter-evidence): 0.5x weight
+ * Weight reduction for contested claims (from CalcConfig.aggregation.contestationWeights):
+ * - factualBasis "established" (strong counter-evidence): default 0.5x weight
+ * - factualBasis "disputed" (some counter-evidence): default 0.7x weight
  * - factualBasis "opinion"/"unknown" (no counter-evidence): full weight
  */
 export function getClaimWeight(claim: {
@@ -41,20 +51,23 @@ export function getClaimWeight(claim: {
   harmPotential?: "high" | "medium" | "low";
   isContested?: boolean;
   factualBasis?: "established" | "disputed" | "opinion" | "unknown";
-}): number {
+}, weights?: AggregationWeights): number {
   // Only direct claims contribute to the verdict
   if (claim.thesisRelevance && claim.thesisRelevance !== "direct") return 0;
 
+  const cw = weights?.centralityWeights ?? { high: 3.0, medium: 2.0, low: 1.0 };
   const centralityMultiplier =
     claim.centrality === "high"
-      ? 3.0
+      ? cw.high
       : claim.centrality === "medium"
-        ? 2.0
-        : 1.0;
+        ? cw.medium
+        : cw.low;
 
   // v2.7.0: High harm potential claims (death, injury, safety) get extra weight
   // These are severe accusations that MUST be verified carefully
-  const harmMultiplier = claim.harmPotential === "high" ? 1.5 : 1.0;
+  const harmMultiplier = claim.harmPotential === "high"
+    ? (weights?.harmPotentialMultiplier ?? 1.5)
+    : 1.0;
 
   const confidenceNormalized = (claim.confidence ?? 50) / 100;
 
@@ -64,14 +77,15 @@ export function getClaimWeight(claim: {
   // v2.6.33: Reduce weight for CONTESTED claims (those with actual counter-evidence)
   // "Doubted" claims (opinion-based, no counter-evidence) keep normal weight.
   // Only claims with FACTUAL counter-evidence get reduced weight.
+  // v2.9.0: Reduced penalties — the claim's truthPercentage already reflects counter-evidence,
+  // so double-penalizing through weight AND low truth% was over-suppressing contested claims.
   if (claim.isContested) {
+    const ctw = weights?.contestationWeights ?? { established: 0.5, disputed: 0.7, opinion: 1.0 };
     const basis = claim.factualBasis || "unknown";
     if (basis === "established") {
-      // Strong factual counter-evidence exists - significantly reduce weight
-      weight *= 0.3;
+      weight *= ctw.established;
     } else if (basis === "disputed") {
-      // Some factual counter-evidence exists - moderately reduce weight
-      weight *= 0.5;
+      weight *= ctw.disputed;
     }
     // "opinion", "unknown" = just "doubted", no real evidence → keep full weight
   }
@@ -102,6 +116,7 @@ export function calculateWeightedVerdictAverage(
     isContested?: boolean;
     factualBasis?: "established" | "disputed" | "opinion" | "unknown";
   }>,
+  weights?: AggregationWeights,
 ): number {
   // Only direct claims contribute to the verdict
   const directClaims = claims.filter((c) => !c.thesisRelevance || c.thesisRelevance === "direct");
@@ -111,7 +126,7 @@ export function calculateWeightedVerdictAverage(
   let totalWeight = 0;
 
   for (const claim of directClaims) {
-    const weight = getClaimWeight(claim);
+    const weight = getClaimWeight(claim, weights);
     // Counter-claims evaluate the opposite position - invert their contribution
     // If counter-claim is TRUE (85%), it means user's thesis is FALSE (15%)
     const effectiveTruthPct = claim.isCounterClaim
