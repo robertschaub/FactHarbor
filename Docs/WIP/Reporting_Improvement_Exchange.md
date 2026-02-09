@@ -1085,4 +1085,96 @@ Session 27 established that all previous validation matrices (Sessions 10-26) ma
 
 ---
 
+## Session 28 — GPT Codex 5.3 (Senior Dev) — COMPLETE
+
+**Date:** 2026-02-09  
+**Task:** Clean 25-run orchestrated validation matrix with provider health verification  
+**Status:** Complete (clean run, no provider contamination)
+
+### Executed
+
+1. Confirmed contaminated artifacts moved to `artifacts/pre-search-fix/`.
+2. Verified SerpAPI quota before matrix (`SERPAPI_OK`, no 429).
+3. Restarted services, verified health endpoints (`/api/health`, `/health`, `/api/fh/system-health`).
+4. Ran full orchestrated matrix: **25/25** (`5 claims x 5 runs`), all succeeded.
+5. Validated post-run safety signals:
+   - `search_provider_error`: `0` runs
+   - `systemPaused`: `false` for all post-run checks
+6. Generated artifacts:
+   - `artifacts/session28_orchestrated_matrix.jsonl`
+   - `artifacts/session28_orchestrated_summary.json`
+   - `artifacts/session28_orchestrated_overall.json`
+   - `artifacts/session28_search_health.json`
+   - `artifacts/session14_vs_session28_delta.json`
+
+### Gate Results (Session 28)
+
+| Claim | Score Variance | Target | Pass | Confidence Delta | Target | Pass | Context Hit Rate | Pass |
+|---|---:|---:|:---:|---:|---:|:---:|---:|:---:|
+| Bolsonaro procedural fairness | 11 | <=15 | ✅ | 8 | <=15 | ✅ | 20% (expected 2) | ❌ |
+| Vaccine safety/efficacy | 39 | <=10 | ❌ | 9 | <=15 | ✅ | 0% (expected 1) | ❌ |
+| Government trustworthiness | 9 | <=15 | ✅ | 1 | <=15 | ✅ | 20% (expected 1) | ❌ |
+| Corporate compliance | 6 | <=15 | ✅ | 1 | <=15 | ✅ | 0% (expected 1-2) | ❌ |
+| Technology comparison | 26 | <=10 | ❌ | 24 | <=15 | ❌ | 0% (expected 1) | ❌ |
+
+Overall:
+- `claims_passing_all_3 = 0/5`
+- `search_provider_error_runs = 0`
+- `system_paused_runs = 0`
+- `clean_matrix = true`
+
+### Directional Delta vs Session 14 (contaminated baseline, reference only)
+
+- Improved strongly:
+  - Government trust: variance `50 -> 9`, confidence delta `11 -> 1`.
+  - Corporate compliance: confidence delta `10 -> 1`.
+  - Technology comparison: confidence delta `69 -> 24` (still failing target).
+- Regressed:
+  - Vaccine variance `9 -> 39`.
+  - Bolsonaro context hit still below required threshold.
+
+### Assessment
+
+- Session 28 is the first **clean** matrix and supersedes contaminated pre-25b measurements for stability tracking.
+- Primary blockers are now clearly structural/model-behavioral, not provider-outage contamination:
+  1. Context-hit failures across all 5 claims.
+  2. High score variance on vaccine and technology claims.
+  3. Technology confidence delta remains above threshold.
+
+---
+
+## Session 28b — GPT Codex 5.3 (Senior Dev) — Code Reviewer Findings (H1-H5) Remediation
+
+**Date:** 2026-02-09  
+**Task:** Address high-severity findings from consolidated code review  
+**Status:** Complete for H1-H5
+
+### Fixes Implemented
+
+| Finding | Resolution | Files |
+|---|---|---|
+| H1 (`confidenceCalibration.enabled` ignored) | Added top-level early return in `calibrateConfidence()` when disabled | `apps/web/src/lib/analyzer/confidence-calibration.ts` |
+| H2 (31–39 / 61–69 coupling gap) | Added interpolated moderate-floor coupling between neutral and strong zones | `apps/web/src/lib/analyzer/confidence-calibration.ts` |
+| H3 (Admin pause/resume missing auth header) | Added Admin Key input + persistence and sends `X-Admin-Key` on pause/resume POST | `apps/web/src/app/admin/page.tsx` |
+| H4 (secret compare via `===`) | Replaced string equality with timing-safe comparison helper using `timingSafeEqual` | `apps/web/src/app/api/internal/system-health/route.ts`, `apps/web/src/app/api/fh/system-health/route.ts` |
+| H5 (band boundary edge case) | Hardened `snapConfidenceToBand()` to include last-band upper bound and normalize input | `apps/web/src/lib/analyzer/confidence-calibration.ts` |
+
+### Additional Hardening Included
+
+- Preserved density floor after band snapping (prevents layer-order regression where snapping could undercut density anchor).
+- Added finite-number normalization in calibration path to reduce NaN/Infinity propagation risk.
+- Added targeted tests for:
+  - `enabled=false` bypass
+  - moderate coupling interpolation
+  - exact `100` custom-band upper bound
+  - density floor preservation after snapping
+
+### Verification
+
+- `npx vitest run test/unit/lib/analyzer/confidence-calibration.test.ts` → **60 passed**
+- `npx vitest run test/unit/app/api/internal/system-health/system-health.test.ts` → **14 passed**
+- Note: project-wide `tsc --noEmit` still reports pre-existing unrelated Next route type error in `run-job/route.ts`.
+
+---
+
 _Last updated: 2026-02-09. For full session details, see [Reporting_Improvement_Exchange_done.md](Reporting_Improvement_Exchange_done.md)._
