@@ -1,6 +1,7 @@
 import "./globals.css";
 import styles from "./layout.module.css";
 import { ConditionalFooter } from "@/components/ConditionalFooter";
+import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import { Toaster } from "react-hot-toast";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             },
           }}
         />
+        <SystemHealthBanner />
         <div className={styles.wrapper}>
           <header className={styles.header}>
             <div className={styles.logo}>FactHarbor POC1</div>

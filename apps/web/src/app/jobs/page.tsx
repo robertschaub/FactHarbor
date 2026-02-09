@@ -89,6 +89,7 @@ export default function JobsPage() {
       case "FAILED": return styles.statusFailed;
       case "RUNNING": return styles.statusRunning;
       case "QUEUED": return styles.statusPending;
+      case "PAUSED": return styles.statusPaused;
       default: return "";
     }
   };
@@ -99,6 +100,7 @@ export default function JobsPage() {
       case "FAILED": return styles.statusBadgeFailed;
       case "RUNNING": return styles.statusBadgeRunning;
       case "QUEUED": return styles.statusBadgePending;
+      case "PAUSED": return styles.statusBadgePaused;
       default: return "";
     }
   };
@@ -109,6 +111,7 @@ export default function JobsPage() {
       case "FAILED": return styles.progressPercentFailed;
       case "RUNNING": return styles.progressPercentRunning;
       case "QUEUED": return styles.progressPercentPending;
+      case "PAUSED": return styles.progressPercentPaused;
       default: return styles.progressPercentDefault;
     }
   };
@@ -177,6 +180,7 @@ export default function JobsPage() {
                   {job.status === "FAILED" && <span className={styles.statusIcon}>❌</span>}
                   {job.status === "RUNNING" && <span className={styles.statusIcon}>⏳</span>}
                   {job.status === "QUEUED" && <span className={styles.statusIcon}>🕐</span>}
+                  {job.status === "PAUSED" && <span className={styles.statusIcon}>⏸️</span>}
                 </div>
 
                 {/* Job info */}

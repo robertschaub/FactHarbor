@@ -140,6 +140,10 @@
   background-color: #fff3cd;
 }
 
+.statusPaused {
+  background-color: #fce4ec;
+}
+
 .jobInfo {
   flex: 1;
   min-width: 0;
@@ -182,6 +186,11 @@
 .statusBadgePending {
   background-color: #fff3cd;
   color: #ffc107;
+}
+
+.statusBadgePaused {
+  background-color: #fce4ec;
+  color: #c2185b;
 }
 
 .inputTypeBadge {
@@ -253,6 +262,10 @@
 
 .progressPercentPending {
   color: #ffc107;
+}
+
+.progressPercentPaused {
+  color: #c2185b;
 }
 
 .progressPercentDefault {
