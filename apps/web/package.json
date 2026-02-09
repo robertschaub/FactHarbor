@@ -48,6 +48,6 @@
     "@types/ws": "^8.18.1",
     "promptfoo": "^0.120.17",
     "typescript": "^5.5.4",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.18"
   }
 }
