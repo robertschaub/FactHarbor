@@ -168,26 +168,56 @@ def generate_viewer_html(template_path: Path) -> str:
         '<h1>FactHarbor Documentation</h1>'
     )
 
-    # 5. Patch loadPage() to support page.content
-    # Find the content-reading block and add content branch
+    # 5. Patch loadPage() to support page.content (bundle mode)
+    # Must replace the entire block through file.size since 'file' won't exist in bundle mode
     html = html.replace(
-        """    let file;
+        """    // Support both FS API handles and direct File objects (webkitdirectory fallback)
+    let file;
     if(page.handle){
       file = await page.handle.getFile();
     } else if(page.fileObj){
       file = page.fileObj;
     } else { showToast('Cannot read page'); return; }
 
-    const text = await file.text();""",
-        """    let text;
+    const text = await file.text();
+    editorEl.value = text;
+    lastContent = text;
+    lastMod = file.lastModified;
+    currentPageRef = ref;
+    currentFileHandle = page.handle || null;
+    currentSpace = page.segments.slice(0,-1);
+
+    const hasHandle = !!page.handle;
+    document.getElementById('filename').textContent = page.name;
+    document.getElementById('filename').title = getPageRelPath(page);
+    document.getElementById('fileSize').textContent = formatSize(file.size);""",
+        """    // Support bundle content, FS API handles, and direct File objects
+    let text, fileSize=0, fileMod=Date.now();
     if(page.content !== undefined){
       text = page.content;
+      fileSize = new Blob([text]).size;
     } else if(page.handle){
       const file = await page.handle.getFile();
       text = await file.text();
+      fileSize = file.size;
+      fileMod = file.lastModified;
     } else if(page.fileObj){
       text = await page.fileObj.text();
-    } else { showToast('Cannot read page'); return; }"""
+      fileSize = page.fileObj.size;
+      fileMod = page.fileObj.lastModified;
+    } else { showToast('Cannot read page'); return; }
+
+    editorEl.value = text;
+    lastContent = text;
+    lastMod = fileMod;
+    currentPageRef = ref;
+    currentFileHandle = page.handle || null;
+    currentSpace = page.segments.slice(0,-1);
+
+    const hasHandle = !!page.handle;
+    document.getElementById('filename').textContent = page.name;
+    document.getElementById('filename').title = getPageRelPath(page);
+    document.getElementById('fileSize').textContent = formatSize(fileSize);"""
     )
 
     # 6. Patch resolveIncludes() to support page.content
@@ -236,6 +266,10 @@ async function loadBundle(){
     // Attach content strings to page index entries
     for(const[ref,entry] of Object.entries(pageIndex)){
       entry.content = bundle.pages[ref] || '';
+    }
+    // Alias root WebHome under wrapper folder name so folder click works
+    if(bundle.tree[0] && pageIndex['WebHome'] && !pageIndex[bundle.tree[0].name+'.WebHome']){
+      pageIndex[bundle.tree[0].name+'.WebHome'] = pageIndex['WebHome'];
     }
     const count = Object.keys(pageIndex).length;
     document.getElementById('treeBody').innerHTML = renderTree(pageTree);
@@ -300,6 +334,9 @@ loadBundle();"""
 .view-toggle button[onclick*="split"] { display: none !important; }
 #dropOverlay { display: none !important; }
 #bundleMeta { display: none; color: var(--text-dim); font-size: .75em; margin-left: 8px; }
+/* Hide WebHome entries from tree — folders already load their WebHome on click */
+.tree-item.tree-page[data-ref$=".WebHome"],
+.tree-item.tree-page[data-ref="WebHome"] { display: none !important; }
 """
     html = html.replace('</style>', hide_css + '</style>')
 
@@ -364,6 +401,15 @@ def main():
     tree, pages = scan_tree(content_dir)
     root_ref = find_root_ref(pages)
     print(f'  Found {len(pages)} pages, root: {root_ref}')
+
+    # Wrap tree in a root folder so the project name appears in the sidebar
+    root_name = content_dir.name  # e.g. "FactHarbor"
+    tree = [{
+        'type': 'folder',
+        'name': root_name,
+        'segments': [root_name],
+        'children': tree
+    }]
 
     # Get commit hash
     commit_hash = _git_short_hash()
