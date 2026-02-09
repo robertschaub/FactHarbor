@@ -3,6 +3,15 @@ import { runFactHarborAnalysis } from "@/lib/analyzer";
 import { runMonolithicCanonical } from "@/lib/analyzer/monolithic-canonical";
 import { runMonolithicDynamic } from "@/lib/analyzer/monolithic-dynamic";
 import { debugLog } from "@/lib/analyzer/debug";
+import { classifyError } from "@/lib/error-classification";
+import {
+  recordProviderFailure,
+  recordProviderSuccess,
+  pauseSystem,
+  isSystemPaused,
+  getHealthState,
+} from "@/lib/provider-health";
+import { fireWebhook } from "@/lib/provider-webhook";
 
 type PipelineVariant = "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
 
@@ -215,6 +224,10 @@ async function runJobBackground(jobId: string) {
       level: "info",
       message: "Done",
     });
+
+    // Record provider success (job completed without fatal errors)
+    recordProviderSuccess("search");
+    recordProviderSuccess("llm");
   } catch (e: any) {
     const msg = e?.message ?? String(e);
     const stack = typeof e?.stack === "string" ? e.stack : null;
@@ -224,6 +237,30 @@ async function runJobBackground(jobId: string) {
       message: msg,
       stack: stack ? stack.split("\n").slice(0, 30).join("\n") : undefined,
     });
+
+    // Classify the error and record provider health
+    const classified = classifyError(e);
+    if (classified.shouldCountAsProviderFailure && classified.provider) {
+      const { circuitOpened } = recordProviderFailure(classified.provider, msg);
+      if (circuitOpened) {
+        const reason = `${classified.provider} provider failed ${classified.category}: ${msg.substring(0, 200)}`;
+        pauseSystem(reason);
+        // Fire webhook notification (fire-and-forget)
+        void fireWebhook({
+          type: "system_paused",
+          reason,
+          provider: classified.provider,
+          timestamp: new Date().toISOString(),
+          healthState: getHealthState(),
+        });
+        debugLog("runJobBackground: SYSTEM PAUSED due to provider failure", {
+          jobId,
+          provider: classified.provider,
+          category: classified.category,
+        });
+      }
+    }
+
     try {
       await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
         status: "FAILED",
@@ -257,7 +294,14 @@ async function runJobBackground(jobId: string) {
  * Drain the in-process runner queue, starting background jobs up to max concurrency.
  * Avoids holding any HTTP requests open (prevents API trigger timeouts + retries).
  */
-async function drainRunnerQueue() {
+/** Exported so the system-health resume endpoint can re-trigger queue drain. */
+export async function drainRunnerQueue() {
+  // Check if system is paused due to provider outage — don't start new jobs
+  if (isSystemPaused()) {
+    console.warn("[Runner] System is PAUSED — skipping queue drain. Jobs remain QUEUED until admin resumes.");
+    return;
+  }
+
   const apiBase = getApiBaseOrThrow();
   const adminKey = getAdminKeyOrNull();
   const maxConcurrency = getMaxConcurrency();
