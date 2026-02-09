@@ -1,78 +1,160 @@
 = Data Model =
 
-FactHarbor's data model centres on the analysis result — a structured representation of an article's claims, the evidence found, the verdicts generated, and the sources consulted. This page defines the core entities, the 7-point verdict scale, and the job lifecycle.
+FactHarbor's data model centres on the **analysis result** — a structured representation of how claims are decomposed, researched, and evaluated. This page defines the complete entity landscape derived from the source code, the 7-point verdict scale, and the job lifecycle.
 
-== Core Entity Model ==
+== Analysis Entity Model ==
+
+The core analysis pipeline produces a hierarchy of entities: the input is decomposed into contexts, factors, and claims (Step 1), evidence is gathered from web sources (Step 2), and verdicts are generated per-claim and aggregated per-context into an overall article analysis (Steps 3-5).
 
 {{mermaid}}
 erDiagram
-    ARTICLE ||--o{ CLAIM : "contains"
-    ARTICLE ||--|| ARTICLE_VERDICT : "has overall"
-    CLAIM ||--|| CLAIM_VERDICT : "evaluated as"
-    CLAIM ||--o{ CLAIM : "depends on"
-    CLAIM_VERDICT }o--o{ EVIDENCE : "supported by"
-    SOURCE ||--o{ EVIDENCE : "provides"
-    ARTICLE ||--o{ SOURCE : "references"
+    CLAIM_UNDERSTANDING ||--o{ ANALYSIS_CONTEXT : "detects"
+    CLAIM_UNDERSTANDING ||--o{ KEY_FACTOR : "discovers"
+    CLAIM_UNDERSTANDING ||--o{ SUB_CLAIM : "decomposes into"
 
-    ARTICLE {
-        string id PK "Job ID"
-        string inputType "text or url"
-        string articleThesis "Main argument"
-        string detectedInputType "question, claim, or article"
-        json analysisContexts "Detected contexts"
-        string schemaVersion "2.7.0"
+    SUB_CLAIM }o--o| ANALYSIS_CONTEXT : "scoped to"
+    SUB_CLAIM }o--o| KEY_FACTOR : "addresses"
+
+    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "supported by"
+    CLAIM_VERDICT }o--o| ANALYSIS_CONTEXT : "evaluated in"
+    CLAIM_VERDICT }o--o| KEY_FACTOR : "addresses"
+
+    EVIDENCE_ITEM }o--|| FETCHED_SOURCE : "from"
+
+    ARTICLE_ANALYSIS ||--o{ CLAIM_VERDICT : "aggregates"
+    ARTICLE_ANALYSIS ||--o{ CONTEXT_ANSWER : "per context"
+    CONTEXT_ANSWER }o--|| ANALYSIS_CONTEXT : "answers"
+
+    CLAIM_UNDERSTANDING {
+        string detectedInputType "claim or article"
+        string impliedClaim "Main assertion"
+        string articleThesis "Article thesis"
+        string riskTier "A B or C"
     }
 
-    CLAIM {
-        string id PK "SC1, C1, etc."
-        string text "The claim statement"
-        string type "legal, procedural, factual, evaluative"
+    ANALYSIS_CONTEXT {
+        string id PK "CTX_xxx"
+        string name "Full name"
+        string subject "What is analysed"
+        string status "concluded ongoing pending unknown"
+        json metadata "Domain-specific details"
+    }
+
+    KEY_FACTOR {
+        string question "Decomposition question"
+        string factor "Short label"
+        string category "procedural evidential methodological"
+        string supports "yes no neutral"
+        boolean isContested "Contested flag"
+        string factualBasis "established disputed opinion unknown"
+    }
+
+    SUB_CLAIM {
+        string id PK "SC1 C1 etc"
+        string text "Claim statement"
+        string type "legal procedural factual evaluative"
         boolean isCentral "Central claim flag"
-        string contextId "Linked AnalysisContext"
-        string_array dependsOn "Prerequisite claim IDs"
+        string centrality "high medium low"
+        string harmPotential "high medium low"
+        string contextId FK "Linked AnalysisContext"
+        string keyFactorId FK "Linked KeyFactor"
     }
 
     CLAIM_VERDICT {
+        string claimId PK "Claim identifier"
+        int truthPercentage "0-100 calibrated"
+        int confidence "0-100"
         string verdict "7-point scale label"
-        int truthPercentage "0-100 calibrated score"
-        int confidence "0-100 LLM confidence"
+        string riskTier "A B or C"
         string reasoning "Explanation"
-        string riskTier "A, B, or C"
         string_array supportingEvidenceIds "Evidence IDs"
+        string contextId FK "Linked AnalysisContext"
+        string keyFactorId FK "Linked KeyFactor"
     }
 
-    ARTICLE_VERDICT {
+    EVIDENCE_ITEM {
+        string id PK "S1-E1 format"
+        string statement "Extracted evidence text"
+        string category "legal_provision statistic event etc"
+        string sourceExcerpt "Original text excerpt"
+        string probativeValue "high medium low"
+        string sourceAuthority "primary secondary opinion contested"
+        string evidenceBasis "scientific documented anecdotal etc"
+        string contextId FK "Linked AnalysisContext"
+        string sourceId FK "Linked FetchedSource"
+    }
+
+    FETCHED_SOURCE {
+        string id PK "S1 S2 etc"
+        string url "Full URL"
+        string domain "Extracted domain"
+        float trackRecordScore "0.0-1.0 reliability"
+        float trackRecordConfidence "0.0-1.0 eval confidence"
+        boolean trackRecordConsensus "Multi-model consensus"
+        boolean fetchSuccess "Content retrieval success"
+    }
+
+    CONTEXT_ANSWER {
+        string contextId FK "CTX_xxx"
+        string contextName "Full name"
+        int truthPercentage "0-100"
+        int confidence "0-100"
+        string shortAnswer "Brief answer"
+    }
+
+    ARTICLE_ANALYSIS {
         string articleVerdict "7-point scale label"
         int articleTruthPercentage "0-100 calibrated"
         int claimsTotal "Total claims analysed"
-        int claimsSupported "Truth >= 72%"
-        int claimsRefuted "Truth < 43%"
-    }
-
-    EVIDENCE {
-        string id PK "S1-E1 format"
-        string statement "Extracted evidence"
-        string category "legal_provision, statistic, event, etc."
-        string sourceExcerpt "Original text excerpt"
-        string contextId "Linked AnalysisContext"
-    }
-
-    SOURCE {
-        string id PK "S1, S2, etc."
-        string url "Full URL"
-        string domain "Extracted domain"
-        int trackRecordScore "0-100 reliability"
-        boolean fetchSuccess "Content retrieval success"
+        int claimsSupported "Truth >= 72 pct"
+        int claimsRefuted "Truth < 43 pct"
+        boolean isPseudoscience "Pseudoscience detected"
     }
 {{/mermaid}}
 
-//The core entity chain: ARTICLE contains CLAIMs, each CLAIM has a CLAIM_VERDICT, verdicts are supported by EVIDENCE items, and each EVIDENCE comes from a SOURCE. Claims can depend on other claims (dependency chains). The ARTICLE also has an overall ARTICLE_VERDICT aggregated from individual claim verdicts.//
+//The complete analysis entity chain. Step 1 (Understand) produces CLAIM_UNDERSTANDING with detected ANALYSIS_CONTEXTs, KEY_FACTORs, and SUB_CLAIMs. Step 2 (Research) gathers EVIDENCE_ITEMs from FETCHED_SOURCEs. Steps 3-5 generate CLAIM_VERDICTs per claim, CONTEXT_ANSWERs per context, and an overall ARTICLE_ANALYSIS. All entities are embedded in the analysis result JSON blob — not separate database tables.//
 
-=== Key Concepts ===
+== Entity Descriptions ==
 
-* **AnalysisContext** — A bounded analytical frame for multi-perspective topics (e.g., "legal proceedings" vs. "public health impact" for the same article). Each context gets separate analysis, and results are aggregated per-context.
-* **KeyFactor** — A decomposition question that guides the analysis of complex claims (e.g., "Was due process followed?" for a legal claim). Claims map to KeyFactors, and KeyFactor verdicts aggregate into context answers.
-* **Dependency Chains** — Claims can depend on other claims. If a prerequisite claim fails (e.g., "Event occurred on date X"), dependent claims inherit the failure.
+|= Entity |= Purpose |= Source Interface |= Key Relationships
+| **ClaimUnderstanding** | Step 1 output: decomposition of input into structured claims, contexts, and factors | ##types.ts:335## | Parent of AnalysisContext[], KeyFactor[], SubClaim[]
+| **AnalysisContext** | Bounded analytical frame for multi-perspective topics (e.g., "legal proceedings" vs. "public health") | ##types.ts:188## | Referenced by SubClaim, ClaimVerdict, EvidenceItem, ContextAnswer
+| **KeyFactor** | Evaluation dimension — a question that must be answered to verify the thesis (e.g., "Was due process followed?") | ##types.ts:271## | Referenced by SubClaim, ClaimVerdict; aggregated in ContextAnswer
+| **SubClaim** | Atomic verifiable assertion decomposed from input; mapped to a context and factor | ##types.ts:335## (embedded) | Links to AnalysisContext, KeyFactor; becomes a ClaimVerdict
+| **ClaimVerdict** | Per-claim verdict with truth percentage, confidence, reasoning, and evidence references | ##types.ts:475## | References EvidenceItem[], AnalysisContext, KeyFactor
+| **EvidenceItem** | Extracted statement from a web source with quality metadata (probative value, authority, basis) | ##types.ts:410## | References FetchedSource, AnalysisContext
+| **FetchedSource** | Web source with URL, content, and source reliability score (0.0-1.0 from LLM evaluation) | ##types.ts:457## | Referenced by EvidenceItem[]
+| **ContextAnswer** | Per-context verdict aggregating claim verdicts and KeyFactor assessments within one analytical frame | ##types.ts:293## | References AnalysisContext; contains KeyFactor verdicts
+| **ArticleAnalysis** | Overall analysis summary: article-level verdict, claim pattern distribution, pseudoscience detection | ##types.ts:526## | Aggregates ClaimVerdict[], ContextAnswer[]
+
+=== Additional Entities ===
+
+* **EvidenceScope** (##types.ts:237##) — Per-evidence methodology metadata (methodology, boundaries, geographic scope, temporal scope). Embedded in EvidenceItem.
+* **ResearchState** (##types.ts:321##) — Top-level research container holding ClaimUnderstanding, EvidenceItem[], FetchedSource[], SearchQuery[], and iteration history.
+* **FactorAnalysis** (##types.ts:281##) — Aggregation metrics for KeyFactor verdicts: positive/negative/neutral/contested factor counts.
+
+== Quality Gate Entities ==
+
+Two quality gates produce validation entities that attach to the analysis result.
+
+|= Entity |= Gate |= Purpose |= Key Fields |= Source
+| **ClaimValidationResult** | Gate 1 | Per-claim factuality check | ##isFactual##, ##opinionScore##, ##specificityScore##, ##claimType## | ##types.ts:66##
+| **VerdictValidationResult** | Gate 4 | Per-verdict confidence assessment | ##evidenceCount##, ##averageSourceQuality##, ##evidenceAgreement##, ##confidenceTier## | ##types.ts:82##
+| **QualityGates** | Both | Aggregate pass/fail with Gate1Stats and Gate4Stats | ##passed##, ##gate1Stats##, ##gate4Stats## | ##types.ts:133##
+
+For detailed quality gate criteria and examples, see [[Quality Gates Deep Dive>>FactHarbor.Specification.Architecture.Deep Dive.Quality Gates.WebHome]].
+
+== Configuration Entities ==
+
+Four configuration profiles are stored as immutable JSON blobs in the UCM (Unified Config Management) system. Each analysis job records the exact config snapshot used for reproducibility.
+
+|= Config |= Purpose |= Key Settings |= Source
+| **PipelineConfig** | Pipeline operational settings | LLM provider selection, model tiering, budget controls, context detection, confidence calibration | ##config-schemas.ts:86##
+| **CalcConfig** | Calculation and aggregation | Verdict bands, centrality weights, contestation penalties, quality gate thresholds, deduplication | ##config-schemas.ts:751##
+| **SearchConfig** | Search provider settings | Provider selection, max results, timeout, domain whitelist/blacklist | ##config-schemas.ts:52##
+| **SourceReliabilityConfig** | Source reliability service | Multi-model consensus, confidence/consensus thresholds, cache TTL, platform skip lists | ##config-schemas.ts:598##
+
+For configuration storage and versioning, see [[Storage and Configuration>>FactHarbor.Specification.Architecture.Storage and Configuration.WebHome]].
 
 == 7-Point Verdict Scale ==
 
@@ -170,12 +252,13 @@ Analysis results are currently stored as **JSON blobs** in SQLite (via the .NET 
 | ##config.db## | Next.js better-sqlite3 | UCM configuration blobs, activation pointers, usage tracking
 | ##source-reliability.db## | Next.js better-sqlite3 | Source credibility evaluation cache
 
-**Target Evolution:** PostgreSQL for primary storage (enabling full-text search, user accounts), with the JSON blob approach preserved for backwards compatibility during migration. See [[Storage and Configuration>>FactHarbor.Specification.Architecture.Storage and Configuration.WebHome]] for details.
+**Target Evolution:** PostgreSQL for primary storage (enabling full-text search, user accounts), with the JSON blob approach preserved for backwards compatibility during migration. See [[Storage and Configuration>>FactHarbor.Specification.Architecture.Storage and Configuration.WebHome]] for details, and [[Target Data Model>>FactHarbor.Specification.Data Model.WebHome]] for the normalised design specification.
 
 == Deep Dives ==
 
 * [[Calculations and Verdicts>>FactHarbor.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Verdict calculation formulas, aggregation hierarchy, weighting factors
 * [[Confidence Calibration>>FactHarbor.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]] — 4-layer confidence system, penalty calculations
+* [[KeyFactors Design>>FactHarbor.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] — KeyFactor design decisions, contestation structure, conceptual target ERD
 
 ----
 
