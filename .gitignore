@@ -112,3 +112,6 @@ apps/web/prompt-versions.db*
 
 # GitHub Pages build output (generated, deploy via gh-pages branch)
 gh-pages-build/
+
+# Session benchmark artifacts (transient analysis outputs)
+artifacts/
