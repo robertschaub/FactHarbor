@@ -1166,7 +1166,7 @@ async function refineContextsFromEvidence(
   const seedContexts = detectionMethod === "heuristic"
     ? detectContexts(analysisInput) || []
     : (await detectContextsHybrid(analysisInput, pipelineCfg!)) || [];
-  const seedHint = seedContexts.length > 0 ? formatDetectedContextsHint(seedContexts, false) : "";
+  const seedHint = seedContexts.length > 0 ? formatDetectedContextsHint(seedContexts, true) : "";
 
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),

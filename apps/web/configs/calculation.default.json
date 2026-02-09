@@ -68,5 +68,21 @@
     "claimSimilarityThreshold": 0.85,
     "contextMergeThreshold": 0.7
   },
-  "mixedConfidenceThreshold": 60
+  "mixedConfidenceThreshold": 60,
+  "contextSimilarity": {
+    "nameWeight": 0.35,
+    "primaryMetadataWeight": 0.3,
+    "assessedStatementWeight": 0.2,
+    "subjectWeight": 0.1,
+    "secondaryMetadataWeight": 0.05,
+    "nearDuplicateAssessedThreshold": 0.85,
+    "nearDuplicateForceScore": 0.92,
+    "nearDuplicateSubjectGuardThreshold": 0.5,
+    "fallbackEvidenceCapPercent": 40
+  },
+  "fallback": {
+    "step1RelaxInstitution": true,
+    "step2RelevanceFloor": 0.4,
+    "step3BroadEnabled": true
+  }
 }

@@ -162,7 +162,7 @@ const ClaimExtractionSchema = z.object({
   searchQueries: z
     .array(z.string())
     .min(2)
-    .max(5)
+    .max(8)
     .describe("Search queries to find evidence (include both supporting and contradicting)"),
   subClaims: z.array(SubClaimSchema).optional(),
   analysisContexts: z.array(z.object({

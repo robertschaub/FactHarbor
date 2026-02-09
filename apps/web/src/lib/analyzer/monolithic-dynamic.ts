@@ -293,7 +293,7 @@ export async function runMonolithicDynamic(
     output: Output.object({
       schema: z.object({
         keyQuestions: z.array(z.string()).describe("Main questions to investigate"),
-        searchQueries: z.array(z.string()).min(3).max(5),
+        searchQueries: z.array(z.string()).min(3).max(8),
         analysisApproach: z.string().describe("Recommended approach for this content"),
       }),
     }),
