@@ -27,6 +27,36 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 WIKI_EXTS = {'.xwiki', '.wiki', '.txt', '.md'}
+SORT_FILE = '_sort'
+
+
+def _read_sort_order(directory: Path) -> List[str] | None:
+    """Read a _sort file from a directory, returning ordered names or None."""
+    sort_path = directory / SORT_FILE
+    if not sort_path.is_file():
+        return None
+    try:
+        lines = sort_path.read_text(encoding='utf-8').splitlines()
+        return [line.strip() for line in lines if line.strip() and not line.strip().startswith('#')]
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def _apply_sort_order(entries: List[Dict[str, Any]], sort_order: List[str] | None) -> None:
+    """Sort entries in-place: items in sort_order first (in that order), then rest alphabetically.
+    Folders always come before files within each group."""
+    if sort_order:
+        order_map = {name.lower(): i for i, name in enumerate(sort_order)}
+        entries.sort(key=lambda e: (
+            0 if e['type'] == 'folder' else 1,                          # folders first
+            0 if e['name'].lower().replace('.xwiki', '') in order_map    # listed items first
+                or e['name'].lower() in order_map else 1,
+            order_map.get(e['name'].lower().replace('.xwiki', ''),
+                          order_map.get(e['name'].lower(), float('inf'))),
+            e['name'].lower()
+        ))
+    else:
+        entries.sort(key=lambda e: (0 if e['type'] == 'folder' else 1, e['name'].lower()))
 
 
 def _now_iso() -> str:
@@ -78,8 +108,10 @@ def scan_tree(base_dir: Path, prefix: list | None = None) -> Tuple[List[Dict[str
     except OSError:
         return entries, pages
 
+    sort_order = _read_sort_order(base_dir)
+
     for item in items:
-        if item.name.startswith('.'):
+        if item.name.startswith('.') or item.name == SORT_FILE:
             continue
 
         if item.is_file() and item.suffix.lower() in WIKI_EXTS:
@@ -117,8 +149,8 @@ def scan_tree(base_dir: Path, prefix: list | None = None) -> Tuple[List[Dict[str
                 })
                 pages.update(sub_pages)
 
-    # Sort: folders first, then files, alphabetically (case-insensitive)
-    entries.sort(key=lambda e: (0 if e['type'] == 'folder' else 1, e['name'].lower()))
+    # Sort: respect _sort file if present, otherwise folders first then alphabetical
+    _apply_sort_order(entries, sort_order)
 
     return entries, pages
 

@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 interface XWikiNode {
   name: string;
   uri?: vscode.Uri;           // URI of WebHome.xwiki (for folders) or the .xwiki file (for leaves)
+  dirUri?: vscode.Uri;        // URI of the directory this node represents (for folders)
   children: Map<string, XWikiNode>;
   isFolder: boolean;
 }
@@ -96,6 +97,17 @@ export class XWikiTreeProvider implements vscode.TreeDataProvider<XWikiTreeItem>
     } catch { /* ignore permission errors */ }
   }
 
+  private async _readSortOrder(dirUri: vscode.Uri): Promise<string[] | null> {
+    try {
+      const sortUri = vscode.Uri.joinPath(dirUri, '_sort');
+      const data = await vscode.workspace.fs.readFile(sortUri);
+      const text = Buffer.from(data).toString('utf-8');
+      return text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+    } catch {
+      return null;
+    }
+  }
+
   private async _buildTree() {
     this._root = { name: '', children: new Map(), isFolder: true };
 
@@ -136,7 +148,8 @@ export class XWikiTreeProvider implements vscode.TreeDataProvider<XWikiTreeItem>
         for (let i = 0; i < segments.length - 1; i++) {
           const seg = segments[i];
           if (!current.children.has(seg)) {
-            current.children.set(seg, { name: seg, children: new Map(), isFolder: true });
+            const dirPath = [rootPath, ...segments.slice(0, i + 1)].join('/');
+            current.children.set(seg, { name: seg, children: new Map(), isFolder: true, dirUri: vscode.Uri.parse(dirPath) });
           }
           current = current.children.get(seg)!;
         }
@@ -163,11 +176,13 @@ export class XWikiTreeProvider implements vscode.TreeDataProvider<XWikiTreeItem>
     const fileName = segments[segments.length - 1];
     const baseName = fileName.replace(/\.xwiki$/i, '');
 
+    const xwikiPagesPath = parts.slice(0, xwikiIdx + 1).join('/');
     let current = this._root;
     for (let i = 0; i < segments.length - 1; i++) {
       const seg = segments[i];
       if (!current.children.has(seg)) {
-        current.children.set(seg, { name: seg, children: new Map(), isFolder: true });
+        const dirPath = [xwikiPagesPath, ...segments.slice(0, i + 1)].join('/');
+        current.children.set(seg, { name: seg, children: new Map(), isFolder: true, dirUri: vscode.Uri.parse(dirPath) });
       }
       current = current.children.get(seg)!;
     }
@@ -193,13 +208,38 @@ export class XWikiTreeProvider implements vscode.TreeDataProvider<XWikiTreeItem>
     }
 
     const items: XWikiTreeItem[] = [];
-    // Sort: folders first, then alphabetically
-    const sorted = [...node.children.entries()].sort((a, b) => {
-      if (a[1].isFolder !== b[1].isFolder) return a[1].isFolder ? -1 : 1;
-      return a[0].localeCompare(b[0]);
-    });
 
-    for (const [, child] of sorted) {
+    // Read _sort from the directory if available
+    let sortOrder: string[] | null = null;
+    if (node.dirUri) {
+      sortOrder = await this._readSortOrder(node.dirUri);
+    }
+
+    // Sort: respect _sort file if present, otherwise folders first then alphabetical
+    const childEntries = [...node.children.entries()];
+    if (sortOrder && sortOrder.length > 0) {
+      const orderMap = new Map<string, number>();
+      sortOrder.forEach((n, i) => orderMap.set(n.toLowerCase(), i));
+      childEntries.sort((a, b) => {
+        const aIsFolder = a[1].isFolder ? 0 : 1;
+        const bIsFolder = b[1].isFolder ? 0 : 1;
+        if (aIsFolder !== bIsFolder) return aIsFolder - bIsFolder;
+        const aIdx = orderMap.get(a[0].toLowerCase()) ?? Infinity;
+        const bIdx = orderMap.get(b[0].toLowerCase()) ?? Infinity;
+        const aListed = aIdx !== Infinity ? 0 : 1;
+        const bListed = bIdx !== Infinity ? 0 : 1;
+        if (aListed !== bListed) return aListed - bListed;
+        if (aIdx !== bIdx) return aIdx - bIdx;
+        return a[0].localeCompare(b[0]);
+      });
+    } else {
+      childEntries.sort((a, b) => {
+        if (a[1].isFolder !== b[1].isFolder) return a[1].isFolder ? -1 : 1;
+        return a[0].localeCompare(b[0]);
+      });
+    }
+
+    for (const [, child] of childEntries) {
       const hasChildren = child.children.size > 0;
       const state = hasChildren
         ? vscode.TreeItemCollapsibleState.Collapsed

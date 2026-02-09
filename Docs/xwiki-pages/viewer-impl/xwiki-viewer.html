@@ -1087,8 +1087,17 @@ function tryNavigateSpace(dotPath){
 // =================================================================
 async function scanDirectory(dirH, prefix=[]){
   const entries = [];
+  let sortOrder = null;
   for await(const entry of dirH.values()){
     if(entry.name.startsWith('.')) continue; // skip hidden
+    if(entry.name === '_sort' && entry.kind === 'file'){
+      try {
+        const f = await entry.getFile();
+        const text = await f.text();
+        sortOrder = text.split('\n').map(l=>l.trim()).filter(l=>l && !l.startsWith('#'));
+      } catch(e){ /* ignore */ }
+      continue;
+    }
     if(entry.kind === 'file'){
       const ext = '.'+entry.name.split('.').pop().toLowerCase();
       if(WIKI_EXTS.includes(ext)){
@@ -1119,12 +1128,34 @@ async function scanDirectory(dirH, prefix=[]){
       }
     }
   }
-  // Sort: folders first, then files, alphabetically
-  entries.sort((a,b)=>{
-    if(a.type!==b.type) return a.type==='folder'?-1:1;
-    return a.name.localeCompare(b.name, undefined, {sensitivity:'base'});
-  });
+  applySortOrder(entries, sortOrder);
   return entries;
+}
+
+function applySortOrder(entries, sortOrder){
+  if(sortOrder && sortOrder.length > 0){
+    const orderMap = {};
+    sortOrder.forEach((n,i)=>{ orderMap[n.toLowerCase()] = i; });
+    entries.sort((a,b)=>{
+      const aIsFolder = a.type==='folder' ? 0 : 1;
+      const bIsFolder = b.type==='folder' ? 0 : 1;
+      if(aIsFolder !== bIsFolder) return aIsFolder - bIsFolder;
+      const aName = a.name.toLowerCase().replace(/\.[^.]+$/,'');
+      const bName = b.name.toLowerCase().replace(/\.[^.]+$/,'');
+      const aIdx = aName in orderMap ? orderMap[aName] : (a.name.toLowerCase() in orderMap ? orderMap[a.name.toLowerCase()] : Infinity);
+      const bIdx = bName in orderMap ? orderMap[bName] : (b.name.toLowerCase() in orderMap ? orderMap[b.name.toLowerCase()] : Infinity);
+      const aListed = aIdx !== Infinity ? 0 : 1;
+      const bListed = bIdx !== Infinity ? 0 : 1;
+      if(aListed !== bListed) return aListed - bListed;
+      if(aIdx !== bIdx) return aIdx - bIdx;
+      return a.name.localeCompare(b.name, undefined, {sensitivity:'base'});
+    });
+  } else {
+    entries.sort((a,b)=>{
+      if(a.type!==b.type) return a.type==='folder'?-1:1;
+      return a.name.localeCompare(b.name, undefined, {sensitivity:'base'});
+    });
+  }
 }
 
 function buildPageIndex(tree, idx={}){
