@@ -29,7 +29,7 @@ During evidence extraction, LLMs may occasionally extract items that:
 
 === 1.3 Solution ===
 
-A **multi-layer defense strategy** combines LLM instruction (soft enforcement) with deterministic filtering (hard enforcement) across 7 layers.
+A **multi-layer defense strategy** combines LLM instruction (soft enforcement) with deterministic filtering (hard enforcement) across 7 layers. Layers 1-2 operate pre-verdict (evidence quality); Layers 3-7 operate post-verdict during aggregation. For the architect-level overview, see [[Quality and Trust>>FactHarbor.Specification.Architecture.Quality and Trust.WebHome]].
 
 ----
 

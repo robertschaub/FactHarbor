@@ -1,6 +1,6 @@
 = Quality and Trust =
 
-FactHarbor employs multiple quality mechanisms to ensure analysis results are trustworthy: quality gates validate input and output, a 7-layer evidence filtering system ensures evidence quality, source reliability scoring evaluates source credibility, and a confidence calibration pipeline prevents misleading confidence scores.
+FactHarbor employs multiple quality mechanisms to ensure analysis results are trustworthy: quality gates validate input and output, a defence-in-depth system ensures evidence and verdict quality, source reliability scoring evaluates source credibility, and a confidence calibration pipeline prevents misleading confidence scores.
 
 == Quality Gates ==
 
@@ -58,45 +58,57 @@ flowchart TB
 | **LOW** | 2+ | >= 0.5 | >= 40% | Flag for review
 | **INSUFFICIENT** | < 2 | Any | Any | More research needed
 
-== Evidence Quality: 7-Layer Defence ==
+== Evidence Quality: Defence in Depth ==
 
-Evidence goes through a multi-layer defence system to ensure only high-quality, relevant evidence supports verdicts.
+Evidence and verdicts are protected by a **two-phase defence** system. Phase 1 operates before verdict generation (ensuring only quality evidence reaches aggregation). Phase 2 operates after verdict generation (ensuring verdicts are sound).
 
 {{mermaid}}
 flowchart TB
     RAW["Raw Evidence\n(from LLM extraction)"]
-    L1["Layer 1: LLM Prompt Instructions\n(guide extraction quality)"]
-    L2["Layer 2: Deterministic Filter\n(min length, vague phrases, dedup)"]
-    L3["Layer 3: Category-Specific Rules\n(statistics need numbers,\nquotes need attribution)"]
-    L4["Layer 4: Probative Value Scoring\n(relevance to specific claim)"]
-    L5["Layer 5: Provenance Validation\n(URL required, excerpt required)"]
-    L6["Layer 6: Source Reliability\n(domain credibility weighting)"]
-    L7["Layer 7: Verdict Corrections\n(inversion detection,\ndirection mismatch fix)"]
-    CLEAN["Validated Evidence\n(supports verdicts)"]
 
-    RAW --> L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7 --> CLEAN
+    subgraph P1["Phase 1: Evidence Quality (Pre-Verdict)"]
+        L1["LLM Prompt Instructions\n(guide extraction quality)"]
+        L2["Deterministic Filter\n(min length, vague phrases, dedup,\ncategory rules, probative scoring)"]
+        L3["Provenance Validation\n(reject synthetic/LLM-generated content)"]
+    end
+
+    subgraph P2["Phase 2: Verdict Quality (Post-Verdict)"]
+        L4["Source Reliability Weighting\n(domain credibility 0.0-1.0)"]
+        L5["Aggregation Pruning\n(tangential, opinion-only,\ncontestation validation)"]
+        L6["Verdict Corrections\n(inversion detection,\ndirection mismatch fix)"]
+    end
+
+    CLEAN["Validated Verdict\n(published to report)"]
+
+    RAW --> L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> CLEAN
 
     style RAW fill:#ffcdd2,stroke:#b71c1c,color:#000
     style CLEAN fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style P1 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style P2 fill:#fff9c4,stroke:#f9a825,color:#000
     style L1 fill:#e3f2fd,stroke:#1565c0,color:#000
     style L2 fill:#e3f2fd,stroke:#1565c0,color:#000
     style L3 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L4 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L5 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L6 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L7 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style L4 fill:#fff9c4,stroke:#f9a825,color:#000
+    style L5 fill:#fff9c4,stroke:#f9a825,color:#000
+    style L6 fill:#fff9c4,stroke:#f9a825,color:#000
 {{/mermaid}}
 
-//Evidence passes through 7 layers: LLM-guided extraction (Layer 1) is followed by deterministic filtering (Layer 2), category-specific rules (Layer 3), relevance scoring (Layer 4), provenance checks (Layer 5), source credibility weighting (Layer 6), and verdict consistency corrections (Layer 7).//
+//Phase 1 (blue) filters evidence before verdict generation: LLM-guided extraction, deterministic quality filters, and provenance validation. Phase 2 (yellow) protects verdict quality: source reliability weighting, aggregation pruning of tangential/opinion-only claims, and verdict corrections.//
 
-|= Layer |= Type |= What It Filters
-| 1. LLM Prompt Instructions | Soft (LLM) | Guides extraction: require excerpts, avoid vague statements, cite sources
-| 2. Deterministic Filter | Hard (code) | Min 20 chars, 13 vague phrase patterns, Jaccard deduplication (0.85)
-| 3. Category-Specific Rules | Hard (code) | Statistics require numbers, quotes require attribution, events require dates
-| 4. Probative Value Scoring | Soft (scoring) | Relevance to the specific claim being evaluated
-| 5. Provenance Validation | Hard (code) | URL must be present, source excerpt must be provided
-| 6. Source Reliability | Soft (scoring) | Domain credibility score (0-100) weights evidence strength
-| 7. Verdict Corrections | Hard (code) | Detects and corrects verdicts that contradict their own evidence
+=== Phase 1: Evidence Quality (Pre-Verdict) ===
+
+|= Step |= Type |= What It Filters
+| LLM Prompt Instructions | Soft (LLM) | Guides extraction: require excerpts, avoid vague statements, cite sources
+| Deterministic Filter | Hard (code) | Min 20 chars, 13 vague phrase patterns, Jaccard deduplication (0.85), category-specific rules (statistics need numbers, quotes need attribution), probative value scoring
+| Provenance Validation | Hard (code) | Rejects synthetic/LLM-generated content, requires URL and source excerpt
+
+=== Phase 2: Verdict Quality (Post-Verdict) ===
+
+|= Step |= Type |= What It Filters
+| Source Reliability Weighting | Soft (scoring) | Domain credibility score (0.0-1.0) weights evidence strength in aggregation
+| Aggregation Pruning | Hard (code) | Removes tangential baseless claims, zero-weights tangential claims, prunes opinion-only KeyFactors, validates contestation factual basis
+| Verdict Corrections | Hard (code) | Detects and corrects verdicts that contradict their own evidence
 
 == Source Reliability ==
 
@@ -154,7 +166,7 @@ All calibration layers are configurable via UCM (##confidenceCalibration## secti
 == Deep Dives ==
 
 * [[Quality Gates>>FactHarbor.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] — Detailed Gate 1 and Gate 4 reference with examples
-* [[Evidence Quality Filtering>>FactHarbor.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] — Full 7-layer specification, filter rules, troubleshooting
+* [[Evidence Quality Filtering>>FactHarbor.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] — Detailed 7-layer filtering pipeline (code-level reference), filter rules, troubleshooting
 * [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] — Evaluation methodology, caching, multi-language support
 * [[Confidence Calibration>>FactHarbor.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]] — Layer-by-layer detail, formulas, configuration reference
 * [[Calculations and Verdicts>>FactHarbor.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Aggregation hierarchy, weighting formulas
