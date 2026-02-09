@@ -1,6 +1,6 @@
-{{warning title="Version 2.10.2 (Alpha Transition)"}}
-This document describes the **Specification** of FactHarbor. It is a working draft. The project has completed the POC phase and is transitioning to Alpha (see [[POC to Alpha Transition>>FactHarbor.Roadmap.POC to Alpha Transition.WebHome]]).
-{{/warning}}
+{{info title="Version 2.10.2"}}
+This document describes the **Specification** of FactHarbor. It is a working draft. See [[Project Status>>FactHarbor.Project Status.WebHome]] for current development phase.
+{{/info}}
 
 {{info}}
 **Terminology Update (v2.6.40+):** The specification uses "Scenario" for what is now implemented as **AnalysisContext** (bounded analytical frame) + **KeyFactor** (decomposition question with contestation tracking). "Evidence/Fact" is implemented as **EvidenceItem** (field: ##statement##). See [[Reference/Terminology>>FactHarbor.Specification.Reference.WebHome]] for the current mapping.
@@ -56,7 +56,7 @@ This specification is organized into the following sections:
 === POC Specification ===
 * [[POC Specification>>FactHarbor.Specification.POC.WebHome]] - POC phase requirements, success criteria, and API contracts
 === Implementation ===
-* [[Implementation>>FactHarbor.Specification.Implementation.WebHome]] - POC1 implementation architecture, pipeline design, and core systems
+* [[Implementation>>FactHarbor.Specification.Implementation.WebHome]] - Implementation architecture, pipeline design, and core systems
 === Development ===
 * [[Development>>FactHarbor.Specification.Development.WebHome]] - Coding guidelines, testing strategy, and deployment
 === Reference ===

@@ -1,3 +1,5 @@
+= FactHarbor =
+
 (% class="wikigeneratedid" %)
 (((
 (% class="box successmessage" %)
@@ -115,7 +117,7 @@ Getting started, admin interface, LLM configuration, testing, and data export gu
 == [[Roadmap>>FactHarbor.Roadmap.WebHome]] ==
 
 **//Development Phases and Timeline.//**
-Project phases from POC through Alpha Transition, development guidance, and hosting strategy.
+Development phases, guidance, and hosting strategy.
 
 * [[Go to Roadmap>>FactHarbor.Roadmap.WebHome]]
 )))
@@ -124,9 +126,21 @@ Project phases from POC through Alpha Transition, development guidance, and host
 (((
 (% class="box" %)
 (((
+== [[Project Status>>FactHarbor.Project Status.WebHome]] ==
+
+**//Current Phase and Capabilities.//**
+What's operational, development phases, and Alpha priorities.
+
+* [[Go to Project Status>>FactHarbor.Project Status.WebHome]]
+)))
+)))
+
+(((
+(% class="box" %)
+(((
 == [[FH Analysis Reports>>FactHarbor.FH Analysis Reports.WebHome]] ==
 
-**//Sample Analyses from POC Development.//**
+**//Sample Analyses.//**
 Fact-checking reports across different domains and languages, demonstrating the evidence-based methodology.
 
 * [[Go to Analysis Reports>>FactHarbor.FH Analysis Reports.WebHome]]
