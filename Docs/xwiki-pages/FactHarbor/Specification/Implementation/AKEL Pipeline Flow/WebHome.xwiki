@@ -113,4 +113,4 @@ flowchart TB
 
 ----
 
-**Navigation:** [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] | Prev: [[Architecture Summary>>FactHarbor.Specification.Implementation.Architecture Overview.Architecture Summary.WebHome]] | Next: [[Data Models>>FactHarbor.Specification.Implementation.Architecture Overview.Data Models.WebHome]]
+**Navigation:** [[Implementation>>FactHarbor.Specification.Implementation.WebHome]] | Related: [[Architecture>>FactHarbor.Specification.Architecture.WebHome]]

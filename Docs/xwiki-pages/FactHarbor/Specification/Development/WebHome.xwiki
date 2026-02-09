@@ -15,4 +15,4 @@ This section contains development guidelines, coding standards, and deployment d
 == Related ==
 
 * [[Development Guidance>>FactHarbor.Roadmap.Development Guidance.WebHome]] - Checklists and tool decisions
-* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - System architecture
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] - System architecture and key diagrams

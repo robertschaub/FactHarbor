@@ -10,4 +10,4 @@ Prompt design guidelines and provider-specific formatting rules for LLM prompts 
 == Related ==
 
 * [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] - AI Knowledge Extraction Layer
-* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - LLM abstraction layer details
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] - System architecture and LLM abstraction

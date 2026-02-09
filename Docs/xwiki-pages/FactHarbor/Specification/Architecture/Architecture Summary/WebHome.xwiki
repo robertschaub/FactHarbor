@@ -2,7 +2,7 @@
 
 === Component Overview ===
 
-**FactHarbor POC1** uses a **separated services architecture** with two main components:
+**FactHarbor** uses a **separated services architecture** with two main components:
 
 1. **.NET API (apps/api)** - Job persistence, status tracking, SSE events
 1*. Technology: ASP.NET Core 8.0
@@ -108,4 +108,4 @@ See LLM Text Analysis Pipeline Deep Analysis (archived) for full specification.
 
 ----
 
-**Navigation:** [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] | Next: [[AKEL Pipeline Flow>>FactHarbor.Specification.Implementation.Architecture Overview.AKEL Pipeline Flow.WebHome]]
+**Navigation:** [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] | Next: [[System Components>>FactHarbor.Specification.Architecture.System Components.WebHome]]

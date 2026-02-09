@@ -1,434 +1,95 @@
 = Architecture =
 
-{{warning}}
-**POC1 Implementation Note (v2.6.40+):** The POC1 implementation uses ASP.NET Core 8.0 (C#) + Next.js 14+ (TypeScript) with SQLite and Vercel AI SDK. This specification describes the **target production architecture**. Sections that differ significantly from POC1 are marked with warning boxes.
-{{/warning}}
+FactHarbor's architecture is designed for **simplicity, automation, and continuous improvement**. This page provides an overview with key diagrams; child pages contain detailed documentation.
 
-{{info}}
-**See also:** [[Architecture Overview (Implementation)>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] for the current implementation architecture (v2.10.2) with system flows, component interactions, and implementation status.
-{{/info}}
+== Core Principles ==
 
-FactHarbor's architecture is designed for **simplicity, automation, and continuous improvement**.
-== 1. Core Principles ==
 * **AI-First**: AKEL (AI) is the primary system, humans supplement
-* **Publish by Default**: No centralized approval (removed in V0.9.50), publish with confidence scores
+* **Publish by Default**: No centralized approval, publish with confidence scores
 * **System Over Data**: Fix algorithms, not individual outputs
 * **Measure Everything**: Quality metrics drive improvements
 * **Scale Through Automation**: Minimal human intervention
 * **Start Simple**: Add complexity only when metrics prove necessary
-== 2. High-Level Architecture ==
+
+See [[Design Decisions>>FactHarbor.Specification.Design-Decisions]] and [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]] for detailed rationale.
+
+== System Architecture ==
+
 {{include reference="FactHarbor.Specification.Diagrams.High-Level Architecture.WebHome"/}}
-=== 2.1 Three-Layer Architecture ===
-FactHarbor uses a clean three-layer architecture:
-==== Interface Layer ====
-Handles all user and system interactions:
-* **Web UI**: Browse claims, view evidence, submit feedback
-* **REST API**: Programmatic access for integrations
-* **Authentication & Authorization**: User identity and permissions
-* **Rate Limiting**: Protect against abuse
-==== Processing Layer ====
-Core business logic and AI processing:
-* **AKEL Pipeline**: AI-driven claim analysis (parallel processing)
- * STEP 1 – UNDERSTAND: Parse and extract claims, detect AnalysisContexts
- * STEP 2-4 – RESEARCH: Gather evidence from multiple sources, check source reliability
- * STEP 4.4-4.6 – CONTEXT REFINEMENT: Refine AnalysisContext assignments
- * STEP 5 – VERDICTS: Synthesize verdicts per claim per context
- * STEP 6 – SUMMARY: Generate two-panel summary
- * STEP 7 – REPORT: Generate full analysis report
 
-* **LLM Abstraction Layer**: Provider-agnostic AI access
- * Multi-provider support (Anthropic, OpenAI, Google, local models)
- * Automatic failover and rate limit handling
- * Per-stage model configuration
- * Cost optimization through provider selection
- * No vendor lock-in
-* **Background Jobs**: Automated maintenance tasks
- * Source track record updates (scheduled batch)
- * Cache warming and invalidation
- * Metrics aggregation
- * Data archival
-* **Quality Monitoring**: Automated quality checks
- * Anomaly detection
- * Contradiction detection
- * Completeness validation
-* **Moderation Detection**: Automated abuse detection
- * Spam identification
- * Manipulation detection
- * Flag suspicious activity
-==== Data & Storage Layer ====
+FactHarbor uses a **two-service architecture**:
 
-{{warning}}
-**POC1:** Uses SQLite for job persistence and in-memory caching. PostgreSQL, Redis, and S3 are planned for production but not enabled in POC1.
-{{/warning}}
+* **.NET API (apps/api)** — ASP.NET Core 8.0, SQLite, job persistence, status tracking, SSE events
+* **Next.js Web App (apps/web)** — Next.js 14+ (TypeScript, React), UI and analysis engine
 
-Persistent data storage and caching:
-* **PostgreSQL**: Primary database for all core data
- * Claims, evidence, sources, users
- * Scenarios, UCM config audit
- * Built-in full-text search
- * Time-series capabilities for metrics
-* **Redis**: High-speed caching layer
- * Session data
- * Frequently accessed claims
- * API rate limiting
-* **S3 Storage**: Long-term archival
- * Old processing logs (90+ days)
- * AKEL processing logs
- * Backup snapshots
-**Optional future additions** (add only when metrics prove necessary):
-* **Elasticsearch**: If PostgreSQL full-text search becomes slow
-* **TimescaleDB**: If metrics queries become a bottleneck
+The system follows a three-layer design:
 
+* **Interface Layer**: Web UI, REST API, real-time SSE updates
+* **Processing Layer**: AKEL pipeline (AI-driven claim analysis), LLM abstraction, quality gates
+* **Data & Storage Layer**: SQLite (current), PostgreSQL + Redis + S3 (planned for production)
 
-=== 2.2 LLM Abstraction Layer ===
+See [[Architecture Summary>>FactHarbor.Specification.Architecture.Architecture Summary.WebHome]] for component details and shared modules. See [[System Components>>FactHarbor.Specification.Architecture.System Components.WebHome]] for interaction diagrams and key files.
+
+== AKEL Pipeline ==
+
+{{include reference="FactHarbor.Specification.Diagrams.AKEL Architecture.WebHome"/}}
+
+The AI Knowledge Extraction Layer (AKEL) is the core analysis engine. It supports three pipeline variants (Orchestrated, Monolithic Canonical, Monolithic Dynamic) with shared modules for evidence filtering, verdict corrections, and source reliability.
+
+See [[AI Knowledge Extraction Layer (AKEL)>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] for the full specification. See [[AKEL Pipeline Flow>>FactHarbor.Specification.Implementation.AKEL Pipeline Flow.WebHome]] for the step-by-step implementation flow.
+
+== Data Architecture ==
+
+{{include reference="FactHarbor.Specification.Diagrams.Core Data Model ERD.WebHome"/}}
+
+The analysis result model centres on: ARTICLE → CLAIM → CLAIM_VERDICT → EVIDENCE_ITEM → SOURCE, with AnalysisContexts and KeyFactors providing structured decomposition. See [[Data Models>>FactHarbor.Specification.Architecture.Data Models.WebHome]] for entity details and the job lifecycle model.
+
+{{include reference="FactHarbor.Specification.Diagrams.Storage Architecture.WebHome"/}}
+
+Current implementation uses SQLite across three databases (factharbor.db, config.db, source-reliability.db). Production target: PostgreSQL (primary), Redis (caching), S3 (archival).
+
+{{include reference="FactHarbor.Specification.Diagrams.Versioning Architecture.WebHome"/}}
+
+Configuration uses content-addressed immutable blobs with activation pointers, enabling reproducible analysis runs.
+
+== LLM Integration ==
 
 {{include reference="FactHarbor.Specification.Diagrams.LLM Abstraction Architecture.WebHome"/}}
 
-{{warning}}
-**POC1 Implementation:** Uses **Vercel AI SDK** with multi-provider support (Anthropic, OpenAI, Google, Mistral). Configuration via UCM (Unified Config Management) Pipeline Config. Model tiering is implemented: separate models for UNDERSTAND, EXTRACT_EVIDENCE, and VERDICT phases.
-{{/warning}}
+FactHarbor uses a provider-agnostic abstraction layer via the **Vercel AI SDK** for all AI interactions:
 
-**Purpose:** FactHarbor uses a provider-agnostic abstraction layer for all AI interactions, avoiding vendor lock-in and enabling flexible provider selection.
+* **Providers**: Anthropic (Claude), OpenAI (GPT), Google (Gemini), Mistral (fallback to Anthropic)
+* **Model Tiering**: Separate models per pipeline phase — budget models for extraction, premium for analysis
+* **Configuration**: Runtime model switching via UCM Admin UI (##modelUnderstand##, ##modelExtractEvidence##, ##modelVerdict##)
+* **Failover**: Automatic fallback with circuit breaker pattern
+* **No Vendor Lock-In**: Switch providers based on cost, quality, or availability without code changes
 
-**Multi-Provider Support:**
-* **Anthropic:** Claude models (Haiku for extraction, Sonnet for analysis)
-* **OpenAI:** GPT models (GPT-4o, GPT-4o Mini)
-* **Google:** Gemini models (Pro, Flash)
-* **Mistral:** Mistral models
-* **Future:** Local models (Llama) for on-premises deployments
+See [[LLM Abstraction Layer>>FactHarbor.Specification.POC.API-and-Schemas.LLM Abstraction Layer.WebHome]] for implementation details. See [[Design Decisions §9>>FactHarbor.Specification.Design-Decisions#Section-9]] for rationale.
 
-**Provider Interface (POC1 — Vercel AI SDK):**
-* Vercel AI SDK `generateText()` / `streamText()` with unified provider interface
-* Per-phase model configuration via UCM: `modelUnderstand`, `modelExtractEvidence`, `modelVerdict`
-* Provider auto-detection from model ID string
-* Prompt builder with provider-specific optimizations (XML for Claude, step-by-step for GPT, etc.)
+== Technology Stack ==
 
-**Configuration (POC1 — UCM Pipeline Config):**
-* Runtime model switching via Admin UI (Admin → Config → Pipeline)
-* Per-phase model selection for cost optimization
-* LLM tiering toggle (`isLLMTiering`) for using budget models on extraction
-* Model knowledge toggle (`allowModelKnowledge`) to control LLM training data usage
-
-**Failover Strategy:**
-* Automatic fallback: Primary → Secondary → Tertiary
-* Circuit breaker pattern for unavailable providers
-* Health checking and provider availability monitoring
-* Graceful degradation when all providers unavailable
-
-**Cost Optimization:**
-* Track and compare costs across providers per request
-* Enable A/B testing of different models for quality/cost tradeoffs
-* Per-stage provider selection for optimal cost-efficiency
-* Cost comparison: Anthropic ($0.114), OpenAI ($0.065), Google ($0.072) per article at 0% cache
-
-**Architecture Pattern:**
-
-{{code}}
-AKEL Phases          LLM Abstraction       Providers
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-UNDERSTAND       ──→ Vercel AI SDK     ──→ Anthropic (Claude)
-EXTRACT_EVIDENCE ──→ UCM Config        ──→ OpenAI (GPT)
-VERDICT          ──→ Prompt Builder    ──→ Google (Gemini)
-                                        └→ Mistral
-{{/code}}
-
-**Benefits:**
-* **No Vendor Lock-In:** Switch providers based on cost, quality, or availability without code changes
-* **Resilience:** Automatic failover ensures service continuity during provider outages
-* **Cost Efficiency:** Use optimal provider per task (cheap for extraction, quality for analysis)
-* **Quality Assurance:** Cross-provider output verification for critical claims
-* **Regulatory Compliance:** Use specific providers for data residency requirements
-* **Future-Proofing:** Easy integration of new models as they become available
-
-**Cross-References:**
-* [[Requirements>>FactHarbor.Specification.Requirements.WebHome#NFR-14]]: NFR-14 (formal requirement)
-* [[POC Requirements>>FactHarbor.Specification.POC.Requirements#NFR-POC-11]]: NFR-POC-11 (POC1 implementation)
-* [[API Specification — LLM Abstraction Layer>>FactHarbor.Specification.POC.API-and-Schemas.LLM Abstraction Layer.WebHome]]: LLM abstraction layer (implementation details)
-* [[Design Decisions>>FactHarbor.Specification.Design-Decisions#Section-9]]: Section 9 (design rationale)
-
-
-=== 2.2 Design Philosophy ===
-**Start Simple, Evolve Based on Metrics**
-The architecture deliberately starts simple:
-* Single primary database (PostgreSQL handles most workloads initially)
-* Three clear layers (easy to understand and maintain)
-* Automated operations (minimal human intervention)
-* Measure before optimizing (add complexity only when proven necessary)
-See [[Design Decisions>>FactHarbor.Specification.Design-Decisions]] and [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]] for detailed rationale.
-== 3. AKEL Architecture ==
-{{include reference="FactHarbor.Specification.Diagrams.AKEL Architecture.WebHome"/}}
-See [[AI Knowledge Extraction Layer (AKEL)>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] for detailed information.
-
-== 3.5 Claim Processing Architecture ==
-
-FactHarbor's claim processing architecture is designed to handle both single-claim and multi-claim submissions efficiently.
-
-=== Multi-Claim Handling ===
-
-Users often submit:
-* **Text with multiple claims**: Articles, statements, or paragraphs containing several distinct factual claims
-* **Web pages**: URLs that are analyzed to extract all verifiable claims
-* **Single claims**: Simple, direct factual statements
-
-The first processing step is always **Claim Extraction**: identifying and isolating individual verifiable claims from submitted content.
-
-=== Processing Phases ===
-
-**POC Implementation (Two-Phase):**
-
-Phase 1 - Claim Extraction:
-* LLM analyzes submitted content
-* Extracts all distinct, verifiable claims
-* Returns structured list of claims with context
-
-Phase 2 - Parallel Analysis:
-* Each claim processed independently by LLM
-* Single call per claim generates: Evidence, AnalysisContexts, Sources, Verdict
-* Parallelized across all claims
-* Results aggregated for presentation
-
-**Production Implementation (Three-Phase):**
-
-Phase 1 - Extraction + Validation:
-* Extract claims from content
-* Validate clarity and uniqueness
-* Filter vague or duplicate claims
-
-Phase 2 - Evidence Gathering (Parallel):
-* Independent evidence gathering per claim
-* Source validation and scenario generation
-* Quality gates prevent poor data from advancing
-
-Phase 3 - Verdict Generation (Parallel):
-* Generate verdict from validated evidence
-* Confidence scoring and risk assessment
-* Low-confidence cases routed to human review
-
-=== Architectural Benefits ===
-
-**Scalability:**
-* Process 100 claims with ~3x latency of single claim
-* Parallel processing across independent claims
-* Linear cost scaling with claim count
-=== 2.3 Design Philosophy ===
-**Quality:**
-* Validation gates between phases
-* Errors isolated to individual claims
-* Clear observability per processing step
-
-**Flexibility:**
-* Each phase optimizable independently
-* Can use different model sizes per phase
-* Easy to add human review at decision points
-
-== 4. Storage Architecture ==
-{{include reference="FactHarbor.Specification.Diagrams.Storage Architecture.WebHome"/}}
-See [[Storage Strategy>>FactHarbor.Specification.Architecture.WebHome]] for detailed information.
-== 4.5 Versioning Architecture ==
-{{include reference="FactHarbor.Specification.Diagrams.Versioning Architecture.WebHome"/}}
-== 5. Automated Systems in Detail ==
-FactHarbor relies heavily on automation to achieve scale and quality. Here's how each automated system works:
-=== 5.1 AKEL (AI Knowledge Extraction Layer) ===
-**What it does**: Primary AI processing engine that analyzes claims automatically
-**Inputs**:
-* User-submitted claim text or URL
-* Web search results and fetched sources
-* Source reliability cache (LLM-evaluated scores)
-**Processing steps (POC1 — Orchestrated Pipeline)**:
-1. **UNDERSTAND**: Extract claims, detect AnalysisContexts, discover KeyFactors, apply Gate 1
-2. **RESEARCH**: Iterative web search, fetch and parse sources, extract evidence items
-3. **CONTEXT REFINEMENT**: Refine AnalysisContext assignments from evidence
-4. **VERDICTS**: Generate per-claim verdicts with confidence, apply Gate 4
-5. **SUMMARY**: Build two-panel summary (Overview + Key Findings)
-6. **REPORT**: Generate full markdown analysis report
-**Outputs**:
-* `ClaimUnderstanding` — extracted claims, AnalysisContexts, KeyFactors
-* `EvidenceItem[]` — evidence with source attribution and probative value
-* `ClaimVerdict[]` — per-claim verdicts on 7-point scale
-* `ArticleAnalysis` — overall analysis result with quality gates
-* Markdown report
-**Timing**: 30-300 seconds depending on claim complexity
-=== 5.2 Background Jobs ===
-
-{{warning}}
-**Not implemented in POC1.** Source reliability uses a pure LLM + Cache architecture (batch prefetch → in-memory map → sync lookup). No background jobs exist in the current implementation.
-{{/warning}}
-
-**Source Track Record Updates** (Scheduled Batch):
-* Analyze claim outcomes from recent period
-* Calculate source accuracy and reliability
-* Update source_track_record table
-* Never triggered by individual claims (prevents circular dependencies)
-**Cache Management** (Continuous):
-* Warm cache for popular claims
-* Invalidate cache on claim updates
-* Monitor cache hit rates
-**Metrics Aggregation** (Recurring):
-* Roll up detailed metrics
-* Calculate system health indicators
-* Generate performance reports
-**Data Archival** (Scheduled):
-* Move old AKEL logs to S3 (90+ days)
-* Archive old processing logs
-* Compress and backup data
-=== 5.3 Quality Monitoring ===
-
-{{warning}}
-**Not implemented in POC1.** Quality monitoring is planned for production. POC1 has Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence) as inline pipeline checks, plus metrics collection.
-{{/warning}}
-
-**Automated checks run continuously**:
-* **Anomaly Detection**: Flag unusual patterns
- * Sudden confidence score changes
- * Unusual evidence distributions
- * Suspicious source patterns
-* **Contradiction Detection**: Identify conflicts
- * Evidence that contradicts other evidence
- * Claims with internal contradictions
- * Source track record anomalies
-* **Completeness Validation**: Ensure thoroughness
- * Sufficient evidence gathered
- * Multiple source types represented
- * Key scenarios identified
-=== 5.4 Moderation Detection ===
-
-{{warning}}
-**Not implemented in POC1.** Moderation and abuse detection are planned for production release.
-{{/warning}}
-
-**Automated abuse detection**:
-* **Spam Identification**: Pattern matching for spam claims
-* **Manipulation Detection**: Identify coordinated editing
-* **Gaming Detection**: Flag attempts to game source scores
-* **Suspicious Activity**: Log unusual behavior patterns
-**Human Review**: Moderators review flagged items, system learns from decisions
-== 6. Scalability Strategy ==
-
-{{warning}}
-**Not implemented in POC1.** POC1 runs as a single-instance application. The scalability strategy below describes the target production architecture.
-{{/warning}}
-=== 6.1 Horizontal Scaling ===
-Components scale independently:
-* **AKEL Workers**: Add more processing workers as claim volume grows
-* **Database Read Replicas**: Add replicas for read-heavy workloads
-* **Cache Layer**: Redis cluster for distributed caching
-* **API Servers**: Load-balanced API instances
-=== 6.2 Vertical Scaling ===
-Individual components can be upgraded:
-* **Database Server**: Increase CPU/RAM for PostgreSQL
-* **Cache Memory**: Expand Redis memory
-* **Worker Resources**: More powerful AKEL worker machines
-=== 6.3 Performance Optimization ===
-Built-in optimizations:
-* **Denormalized Data**: Cache summary data in claim records (70% fewer joins)
-* **Parallel Processing**: AKEL pipeline processes in parallel (40% faster)
-* **Intelligent Caching**: Redis caches frequently accessed data
-* **Background Processing**: Non-urgent tasks run asynchronously
-== 7. Monitoring & Observability ==
-
-{{warning}}
-**Partially implemented in POC1.** POC1 has metrics collection and an admin metrics dashboard. Production-grade alerting, dashboards, and observability infrastructure are planned.
-{{/warning}}
-=== 7.1 Key Metrics ===
-System tracks:
-* **Performance**: AKEL processing time, API response time, cache hit rate
-* **Quality**: Confidence score distribution, evidence completeness, contradiction rate
-* **Usage**: Claims per day, active users, API requests
-* **Errors**: Failed AKEL runs, API errors, database issues
-=== 7.2 Alerts ===
-Automated alerts for:
-* Processing time >30 seconds (threshold breach)
-* Error rate >1% (quality issue)
-* Cache hit rate <80% (cache problem)
-* Database connections >80% capacity (scaling needed)
-=== 7.3 Dashboards ===
-Real-time monitoring:
-* **System Health**: Overall status and key metrics
-* **AKEL Performance**: Processing time breakdown
-* **Quality Metrics**: Confidence scores, completeness
-* **User Activity**: Usage patterns, peak times
-== 8. Security Architecture ==
-
-{{warning}}
-**Not implemented in POC1.** POC1 has no authentication, authorization, or rate limiting. All endpoints are open. Security architecture below describes the target production system.
-{{/warning}}
-=== 8.1 Authentication & Authorization ===
-* **User Authentication**: Secure login with password hashing
-* **Role-Based Access**: Reader, User (Registered), UCM Administrator, Moderator
-* **API Keys**: For programmatic access
-* **Rate Limiting**: Prevent abuse
-=== 8.2 Data Security ===
-* **Encryption**: TLS for transport, encrypted storage for sensitive data
-* **Audit Logging**: Track all significant changes
-* **Input Validation**: Sanitize all user inputs
-* **SQL Injection Protection**: Parameterized queries
-=== 8.3 Abuse Prevention ===
-* **Rate Limiting**: Prevent flooding and DDoS
-* **Automated Detection**: Flag suspicious patterns
-* **Human Review**: Moderators investigate flagged content
-* **Ban Mechanisms**: Block abusive users/IPs
-== 9. Deployment Architecture ==
-=== 9.1 Production Environment ===
-**Components**:
-* Load Balancer (HAProxy or cloud LB)
-* Multiple API servers (stateless)
-* AKEL worker pool (auto-scaling)
-* PostgreSQL primary + read replicas
-* Redis cluster
-* S3-compatible storage
-**Regions**: Single region for V1.0, multi-region when needed
-=== 9.2 Development & Staging ===
-**Development**: Local Docker Compose setup
-**Staging**: Scaled-down production replica
-**CI/CD**: Automated testing and deployment
-=== 9.3 Disaster Recovery ===
-* **Database Backups**: Automated backups to S3
-* **Point-in-Time Recovery**: Transaction log archival
-* **Replication**: Real-time replication to standby
-* **Recovery Time Objective**: <4 hours
-
-=== 9.5 Federation Architecture Diagram ===
-
-{{include reference="FactHarbor.Specification.Diagrams.Federation Architecture.WebHome"/}}
-
-== 10. Future Architecture Evolution ==
-=== 10.1 When to Add Complexity ===
-See [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]] for specific triggers.
-**Elasticsearch**: When PostgreSQL search consistently >500ms
-**TimescaleDB**: When metrics queries consistently >1s 
-**Federation**: When 10,000+ users and explicit demand
-**Advanced User Management**: When submission volume requires automated quota management
-=== 10.2 Federation (V2.0+) ===
-**Deferred until**:
-* Core product proven with 10,000+ users
-* User demand for decentralization
-* Single-node limits reached
-See [[Federation & Decentralization>>FactHarbor.Specification.Federation & Decentralization.WebHome]] for future plans.
-== 11. Technology Stack Summary ==
-
-**API Backend (POC1 — implemented)**:
-* ASP.NET Core 8.0 (C#)
-* SQLite database (PostgreSQL planned for production)
-
-**Web Application (POC1 — implemented)**:
-* Next.js 14+ (TypeScript, React, CSS Modules)
-* Server-side rendering
-
-**AI/LLM (POC1 — implemented)**:
-* Vercel AI SDK with multi-provider support
-* Providers: Anthropic (Claude), OpenAI (GPT), Google (Gemini), Mistral
-* Model tiering: separate models per pipeline phase (UNDERSTAND, EXTRACT_EVIDENCE, VERDICT)
-* UCM (Unified Config Management) for runtime configuration
+**Current Implementation:**
+* ASP.NET Core 8.0 (C#) — API backend with SQLite
+* Next.js 14+ (TypeScript, React, CSS Modules) — Web application
+* Vercel AI SDK — Multi-provider LLM support (Anthropic, OpenAI, Google, Mistral)
+* UCM (Unified Config Management) — Runtime configuration
 
 **Target Production Stack** (planned):
 * PostgreSQL (primary database), Redis (caching), S3 (archival storage)
 * Docker containers, Kubernetes or cloud auto-scaling
 * Prometheus + Grafana for monitoring
-* Structured logging, error tracking
-== 12. Related Pages ==
+
+== Detailed Architecture ==
+
+* [[Architecture Summary>>FactHarbor.Specification.Architecture.Architecture Summary.WebHome]] — Components, shared analyzer modules, security model
+* [[System Components>>FactHarbor.Specification.Architecture.System Components.WebHome]] — Interaction diagram, key files, UCM architecture
+* [[Data Models>>FactHarbor.Specification.Architecture.Data Models.WebHome]] — ERD, entity details, job lifecycle data model
+* [[Target Production Architecture>>FactHarbor.Specification.Architecture.Target Production.WebHome]] — Scalability, security, deployment, monitoring, future evolution
+
+== Related ==
+
 * [[AI Knowledge Extraction Layer (AKEL)>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]
-* [[Storage Strategy>>FactHarbor.Specification.Architecture.WebHome]]
-* [[Data Model>>FactHarbor.Specification.Data Model.WebHome]]
-* [[API Layer>>FactHarbor.Specification.Architecture.WebHome]]
+* [[Data Model (Specification)>>FactHarbor.Specification.Data Model.WebHome]]
 * [[Design Decisions>>FactHarbor.Specification.Design-Decisions]]
 * [[When to Add Complexity>>FactHarbor.Specification.When-to-Add-Complexity]]
+* [[Implementation>>FactHarbor.Specification.Implementation.WebHome]] — Pipeline details, source reliability, quality gates

@@ -18,7 +18,7 @@
 == Related ==
 
 * [[Media Source Database>>FactHarbor.Specification.Media Source Database.WebHome]] — User-facing source reliability documentation
-* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] — System architecture (SR integration context)
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] — System architecture (SR integration context)
 * [[KeyFactors Design>>FactHarbor.Specification.Implementation.KeyFactors Design.WebHome]] — KeyFactor classification (references SR)
 
 == Historical ==

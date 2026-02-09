@@ -1,6 +1,7 @@
-# Implementation navigation order (overview first, then systems)
-Architecture Overview
+# Implementation navigation order
+AKEL Pipeline Flow
+Implementation Status and Quality
 Pipeline Architecture
-KeyFactors Design
 Source Reliability System
+KeyFactors Design
 Schema Migration Strategy

@@ -10,5 +10,5 @@ FactHarbor's AKEL claim analysis pipeline engine. The pipeline supports three ar
 
 == Related ==
 
-* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - Full system architecture
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] - System architecture and key diagrams
 * [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] - AI Knowledge Extraction Layer details

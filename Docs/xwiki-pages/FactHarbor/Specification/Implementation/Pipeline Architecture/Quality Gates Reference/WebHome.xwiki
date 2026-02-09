@@ -19,7 +19,7 @@ Quality Gates are checkpoints in the FactHarbor analysis pipeline that enforce m
 **Implemented Gates**: Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence Assessment)
 
 **Replaces scattered documentation in**:
-* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] (Quality Gates section)
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] (Quality Gates section)
 * Calculations.md (Gate 4 sections, still in Docs/ARCHITECTURE/)
 * [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] (quality gates mentions)
 
@@ -558,7 +558,7 @@ After all penalties, confidence cannot drop below ##minConfidenceFloor## (defaul
 == 12. Related Documentation ==
 
 * Calculations.md (see Calculations.md in local docs) - Verdict calculation methodology, confidence modulation
-* [[Architecture Overview>>FactHarbor.Specification.Implementation.Architecture Overview.WebHome]] - Architecture overview, pipeline flow
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] - Architecture overview and key diagrams
 * [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] - Pipeline variants and quality gate enforcement
 * Evidence_Quality_Filtering.md (see Evidence_Quality_Filtering.md in local docs) - Evidence filtering (related to proposed Gate 3)
 
