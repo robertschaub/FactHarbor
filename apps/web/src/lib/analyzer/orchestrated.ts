@@ -1166,7 +1166,7 @@ async function refineContextsFromEvidence(
   const seedContexts = detectionMethod === "heuristic"
     ? detectContexts(analysisInput) || []
     : (await detectContextsHybrid(analysisInput, pipelineCfg!)) || [];
-  const seedHint = seedContexts.length > 0 ? formatDetectedContextsHint(seedContexts, true) : "";
+  const seedHint = seedContexts.length > 0 ? formatDetectedContextsHint(seedContexts, false) : "";
 
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),
@@ -1245,11 +1245,17 @@ Return:
 - claimContextAssignments: (optional) map any claimIds that clearly belong to a specific contextId
 `;
 
-  // v2.6.39: Log when seed hints are passed to refinement
+  // v2.6.39: Log seed detection results for context stability diagnostics
   if (seedContexts.length > 0) {
     debugLog("refineContextsFromEvidence: passing seed hints as candidates", {
+      detectionMethod,
       seedCount: seedContexts.length,
       seedIds: seedContexts.map((s) => s.id),
+      seedNames: seedContexts.map((s) => s.name),
+    });
+  } else {
+    debugLog("refineContextsFromEvidence: no seed contexts detected", {
+      detectionMethod,
     });
   }
 
@@ -1793,6 +1799,12 @@ Return:
       });
       return { updated: false, llmCalls: 1 };
     }
+
+    debugLog("refineContextsFromEvidence: frame signal check PASSED", {
+      contextCount: contextsNow.length,
+      contextNames: contextsNow.map((c: any) => c.name),
+      seedCount: seedContexts.length,
+    });
   }
 
   const claimAssignments = new Map<string, string>();
@@ -9168,7 +9180,7 @@ The JSON object MUST include these top-level keys:
   // (the normalized analysis input), not the context name/id.
   const contextVerdictClaimText = resolveAnalysisPromptInput(understanding, state);
   let correctedAnalysisContextAnswers = parsed.analysisContextAnswers.map((pa: any) => {
-    const factors = pa.keyFactors as KeyFactor[];
+    const factors = (pa.keyFactors || []) as KeyFactor[];
     const ctxMeta = understanding.analysisContexts.find(
       (p: any) => p.id === pa.contextId,
     );
@@ -9565,8 +9577,8 @@ The JSON object MUST include these top-level keys:
     answer: clampedAvgTruthPct,
     confidence: avgConfidence,
     truthPercentage: clampedAvgTruthPct,
-    shortAnswer: parsed.verdictSummary.shortAnswer,
-    nuancedAnswer: parsed.verdictSummary.nuancedAnswer,
+    shortAnswer: parsed.verdictSummary?.shortAnswer || "",
+    nuancedAnswer: parsed.verdictSummary?.nuancedAnswer || "",
     keyFactors: prunedSummaryKeyFactors, // v2.8.6: Use pruned keyFactors
     hasMultipleContexts: hasMultipleContexts,
     analysisContextAnswers: correctedAnalysisContextAnswers,
@@ -10224,11 +10236,11 @@ ${evidenceItemsFormatted}`;
   ).length;
 
   // DEBUG: Log raw values from LLM before normalization
-  console.log("[generateSingleContextVerdicts] Raw verdictSummary.answer =", parsed.verdictSummary.answer, "type =", typeof parsed.verdictSummary.answer);
-  console.log("[generateSingleContextVerdicts] Raw verdictSummary.confidence =", parsed.verdictSummary.confidence, "type =", typeof parsed.verdictSummary.confidence);
+  console.log("[generateSingleContextVerdicts] Raw verdictSummary.answer =", parsed.verdictSummary?.answer, "type =", typeof parsed.verdictSummary?.answer);
+  console.log("[generateSingleContextVerdicts] Raw verdictSummary.confidence =", parsed.verdictSummary?.confidence, "type =", typeof parsed.verdictSummary?.confidence);
 
-  let answerTruthPct = normalizePercentage(parsed.verdictSummary.answer);
-  let correctedConfidence = normalizePercentage(parsed.verdictSummary.confidence);
+  let answerTruthPct = normalizePercentage(parsed.verdictSummary?.answer);
+  let correctedConfidence = normalizePercentage(parsed.verdictSummary?.confidence);
 
   // DEBUG: Log normalized values
   console.log("[generateSingleContextVerdicts] Normalized answerTruthPct =", answerTruthPct);
@@ -10250,8 +10262,8 @@ ${evidenceItemsFormatted}`;
     answer: clampedAnswerTruthPct,
     confidence: correctedConfidence,
     truthPercentage: clampedAnswerTruthPct,
-    shortAnswer: parsed.verdictSummary.shortAnswer || "",
-    nuancedAnswer: parsed.verdictSummary.nuancedAnswer || "",
+    shortAnswer: parsed.verdictSummary?.shortAnswer || "",
+    nuancedAnswer: parsed.verdictSummary?.nuancedAnswer || "",
     keyFactors: prunedKeyFactors, // v2.8.6: Use pruned keyFactors
     hasMultipleContexts: false,
     hasContestedFactors,

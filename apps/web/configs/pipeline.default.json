@@ -16,7 +16,7 @@
   "allowModelKnowledge": false,
   "deterministic": true,
   "contextDedupThreshold": 0.85,
-  "contextDetectionMethod": "heuristic",
+  "contextDetectionMethod": "hybrid",
   "contextDetectionEnabled": true,
   "contextDetectionMinConfidence": 0.7,
   "contextDetectionMaxContexts": 5,
@@ -57,12 +57,12 @@
     "densityAnchor": {
       "enabled": true,
       "minConfidenceBase": 15,
-      "minConfidenceMax": 60,
-      "sourceCountThreshold": 5
+      "minConfidenceMax": 75,
+      "sourceCountThreshold": 3
     },
     "bandSnapping": {
       "enabled": true,
-      "strength": 0.7
+      "strength": 0.5
     },
     "verdictCoupling": {
       "enabled": true,

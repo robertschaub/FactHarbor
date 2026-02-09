@@ -550,8 +550,10 @@ describe("calibrateConfidence (master function)", () => {
   });
 
   it("should not apply density anchor when raw confidence exceeds floor", () => {
+    // With new defaults (minConfidenceMax=75, sourceCountThreshold=3),
+    // 5 sources → density 1.0 → floor = 75. Raw must exceed 75.
     const result = calibrateConfidence(
-      70, 65, richEvidence, sources5, [],
+      80, 65, richEvidence, sources5, [],
       DEFAULT_CALIBRATION_CONFIG,
     );
     expect(result.adjustments.some(a => a.type === "density_anchor")).toBe(false);
@@ -709,21 +711,23 @@ describe("calibrateConfidence (master function)", () => {
   });
 
   it("should produce empty adjustments when confidence is already well-calibrated", () => {
+    // With new defaults (minConfidenceMax=75, sourceCountThreshold=3),
+    // 5 sources → density 1.0 → floor = 75. Raw must be >= 75.
+    // 75 is the "high" band snapTo target → no band snapping.
+    // Verdict 75 is "strong" (>=70) → minConfidenceStrong=50, 75 >= 50 → no coupling.
+    // Context spread 10 < 25 → no consistency penalty.
     const result = calibrateConfidence(
-      60, // moderate-high band center
-      60, // moderate verdict
+      75, // high band snap target (no snapping needed)
+      75, // strong verdict (no coupling adjustment)
       richEvidence,
       sources5,
       [
-        makeContextAnswer({ confidence: 55 }),
-        makeContextAnswer({ confidence: 65 }),
+        makeContextAnswer({ confidence: 70 }),
+        makeContextAnswer({ confidence: 80 }),
       ],
       DEFAULT_CALIBRATION_CONFIG,
     );
-    // 60 is already in the moderate_high band, rich evidence → density floor likely below 60
-    // Verdict 60 is neither strong nor neutral-range for coupling
-    // Context spread 10 < 25 → no consistency penalty
-    expect(result.adjustments.length).toBeLessThanOrEqual(1); // at most band snapping
+    expect(result.adjustments.length).toBe(0);
   });
 });
 

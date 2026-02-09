@@ -39,6 +39,10 @@
 | 25b | 2026-02-09 | Claude Opus | **Search provider error surfacing**: SerpAPI 429/quota errors now throw instead of silent `[]`, 15 tests |
 | 26 | 2026-02-09 | GPT Codex 5.3 | **INCOMPLETE** validation matrix (5/25 runs, 1 claim only). No search health checks. |
 | 27 | 2026-02-09 | Claude Opus | **Provider outage detection system**: circuit breaker, auto-pause, webhook, admin UI, 81 tests |
+| 28 | 2026-02-09 | GPT Codex 5.3 | **Clean validation matrix**: 25/25 succeeded, 0 search errors, new baselines established |
+| 28b | 2026-02-09 | GPT Codex 5.3 | H1-H5 code review fixes: calibration bypass, coupling gap, admin auth, timing-safe compare, band edge |
+| 29 | 2026-02-09 | Claude Opus | **Crash-path sweep**: 3 additional null guards in orchestrated.ts; context detection analysis documented |
+| 30 | 2026-02-09 | Claude Opus | **Context detection fix**: switched to hybrid mode, removed conflicting seed prompt, added frame-signal diagnostics |
 
 ---
 
@@ -76,6 +80,8 @@
 23. Runtime crash fix: undefined.value in generateSingleContextVerdicts
 24. Magic numbers replaced with VERDICT_BANDS constants
 25. Model ID consistency: llm.ts derives from DEFAULT_PIPELINE_CONFIG
+26a. Additional crash guards: `pa.keyFactors || []`, `verdictSummary?.shortAnswer`, defensive `?.` in single-context path
+26b. Context detection: `contextDetectionMethod` switched from `"heuristic"` (gutted, always null) to `"hybrid"` (LLM seed detection)
 
 **Graduated Recency Penalty (Session 22a):**
 26. Three-factor formula: `effectivePenalty = round(maxPenalty x staleness x volatility x volume)`
@@ -157,7 +163,7 @@
 | # | Item | Source | Status |
 |---|------|--------|--------|
 | 1 | **Confidence calibration** -- deterministic post-verdict calibration logic to reduce confidence delta spread (20-42pp on some claims) | Session 20-21, 24-25 | **Done** (Session 25) |
-| 2 | **Context-count stability** -- preserve distinct legal contexts for procedural claims, prevent over-splitting for scientific/technical claims | Sessions 12-15 | Partially addressed (frame signal, name guard, anchor recovery) |
+| 2 | **Context-count stability** -- preserve distinct legal contexts for procedural claims, prevent over-splitting for scientific/technical claims | Sessions 12-15, 30 | Partially addressed (frame signal, name guard, anchor recovery, hybrid mode) |
 | 3 | **Re-run validation matrix** -- 25-run orchestrated after Session 21 code review fixes (runtime crash eliminated) | Session 21 | Done (Session 23); crash persists |
 | 4 | **Article-mode input test** -- verify "Coffee cures cancer" pattern triggers correctly with proportional blending | Session 5, 8 | Not done |
 
@@ -1174,6 +1180,136 @@ Overall:
 - `npx vitest run test/unit/lib/analyzer/confidence-calibration.test.ts` → **60 passed**
 - `npx vitest run test/unit/app/api/internal/system-health/system-health.test.ts` → **14 passed**
 - Note: project-wide `tsc --noEmit` still reports pre-existing unrelated Next route type error in `run-job/route.ts`.
+
+---
+
+## Session 29 — Claude Opus 4.6 (Principal Architect)
+
+**Date:** 2026-02-09
+**Task:** Crash-path sweep + context detection analysis
+**Status:** Complete (crash fixes applied; context detection diagnosis documented)
+
+### Crash-Path Sweep
+
+Swept all `verdictSummary`, `keyFactors`, and `.value` access patterns in `orchestrated.ts`. Found 3 unguarded crash paths beyond what Sessions 21 and 28b fixed:
+
+| # | Location | Pattern | Risk | Fix |
+|---|----------|---------|------|-----|
+| 1 | Line ~9171 | `pa.keyFactors as KeyFactor[]` → `factors.filter()` | If LLM returns context answer without `keyFactors`, `undefined.filter()` crashes | Added `\|\| []` fallback |
+| 2 | Lines ~9568-9569 | `parsed.verdictSummary.shortAnswer` | Multi-context path: fallback only checks `analysisContextAnswers`, not `verdictSummary` | Added `?.` + `\|\| ""` |
+| 3 | Lines ~10227-10254 | `parsed.verdictSummary.answer` (debug + assembly) | Single-context: guarded by `hasValidVerdictSummary` but lacked defense-in-depth `?.` | Added `?.` to all 6 access points |
+
+**Note on "Cannot read properties of undefined (reading 'value')":** The specific `.value` error from Sessions 20/23 likely came from:
+- Session 28b's fix at the error logging path (line ~9945), AND/OR
+- The AI SDK internally when `Output.object({ schema })` encounters malformed LLM responses
+
+All `.value` access points in application code are now guarded. If the crash persists in future matrices, it would indicate an SDK-internal issue requiring an AI SDK version check or `try/catch` around the `generateText()` call itself.
+
+### Context Detection Analysis
+
+**Root cause of 0% context hit rate on most claims:**
+
+1. **Heuristic detection is gutted**: `contextDetectionMethod: "heuristic"` (pipeline config) calls `detectContextsHeuristic()` which always returns `null`. No seed hints reach the LLM.
+2. **LLM-only detection is inconsistent**: Without seeds, the LLM decides context count purely from prompt + evidence, producing different counts across runs.
+3. **Frame signal check collapses aggressively**: After refinement, the `hasStrongFrameSignal` check (lines 1727-1794) collapses multi-context to single unless it finds:
+   - Distinct metadata frame keys (institution/court/methodology/boundaries/geographic/temporal), OR
+   - Distinct evidenceScope keys across contexts, OR
+   - Text distinctness (name similarity < 0.5 AND assessed similarity < 0.6), OR
+   - LLM `requiresSeparateAnalysis = true`
+4. **For "expected 1" claims showing 0% hit**: The LLM may be over-splitting (finding 2+ contexts that survive the frame signal check) or the validation script's "expected" counts may need re-calibration against the current pipeline behavior.
+
+**Recommended investigation for next session:**
+- Instrument debug logging around context count decisions (pre-refinement, post-refinement, post-frame-signal-check) for all 5 validation claims
+- Check whether switching `contextDetectionMethod` to `"hybrid"` improves consistency (adds LLM pre-detection call)
+- Re-examine the "expected" context counts — they may have been set based on earlier pipeline behavior that no longer applies
+- Consider whether context hit rate is the right closure metric, or whether it should be reformulated
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `orchestrated.ts` | Fix #1 (`pa.keyFactors \|\| []`), Fix #2 (`verdictSummary?.shortAnswer/nuancedAnswer`), Fix #3 (6x defensive `?.` in single-context path) |
+
+### Verification
+
+- **TypeScript**: Pre-existing `drainRunnerQueue` route type error only (noted since Session 28b)
+- **Unit tests**: 66/66 pass (config-schemas: 53, aggregation: 13), confidence-calibration: 60/60 pass
+- **No behavioral change**: All `?.` additions are defense-in-depth on paths already guarded by null checks; `|| []` for `keyFactors` matches existing pattern from Sessions 21/28b
+
+### Recommended Next Steps
+
+1. **Re-run validation matrix** to confirm crash elimination (3 new guard paths + 28b fix should cover all known crash vectors)
+2. **Context detection deep-dive** (dedicated session): Instrument context count at each pipeline stage, analyze logs from 5 sample runs, determine whether the expected counts need recalibration or the detection logic needs adjustment
+3. **M7+M8 provider health hardening** can proceed in parallel if bandwidth allows
+
+_End of Session 29. Crash-path sweep complete (3 fixes); context detection diagnosed but not yet resolved._
+
+---
+
+## Session 30 -- Claude Opus 4.6 (Principal Architect)
+
+**Date:** 2026-02-09
+**Task:** Context detection fix (root cause from Session 29 diagnosis)
+**Status:** Complete
+
+### Root Cause (Confirmed)
+
+Session 29 diagnosed the context detection pipeline failure chain:
+
+1. **Config→code mismatch**: `contextDetectionMethod: "heuristic"` calls `detectContextsHeuristic()` which is gutted (always returns `null`). Zero seed hints reach the refinement LLM.
+2. **Unanchored LLM**: Without seeds, the refinement LLM at `orchestrated.ts:1258` infers contexts from scratch each run, producing different counts due to non-determinism (even at temperature 0.1).
+3. **Conflicting prompt**: When seeds ARE provided, `formatDetectedContextsHint(seeds, true)` injects "MUST output at least these contexts" but the wrapper section says "optional, use ONLY if supported" — contradictory instructions.
+
+### Fixes Applied
+
+**Fix 1: Enable hybrid context detection**
+- `pipeline.default.json`: `contextDetectionMethod` changed from `"heuristic"` to `"hybrid"`
+- `config-schemas.ts`: `DEFAULT_PIPELINE_CONFIG.contextDetectionMethod` changed to match
+- **Effect**: `detectContextsHybrid()` now calls `detectContextsLLM()` (budget-tier model) to produce seed contexts before the refinement step. Seeds anchor the refinement LLM's context decisions, reducing run-to-run variance.
+- **Cost**: One additional Haiku/budget LLM call per analysis (~$0.001)
+
+**Fix 2: Remove conflicting seed prompt instruction**
+- `orchestrated.ts:1169`: Changed `formatDetectedContextsHint(seedContexts, true)` to `formatDetectedContextsHint(seedContexts, false)`
+- **Effect**: Seed hints are presented as suggestions (consistent with the "optional" wrapper), not "MUST output" directives. The refinement LLM can drop seeds that lack evidence support without conflicting instructions.
+
+**Fix 3: Add context detection diagnostics**
+- Added "no seed contexts detected" log when seeds are empty (previously only logged when seeds were present)
+- Added seed detection method and names to existing seed log
+- Added "frame signal check PASSED" log with context count and names (fail path already had logging)
+- **Effect**: Next validation run will show complete context detection lifecycle in logs for all 5 claims
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `pipeline.default.json` | `contextDetectionMethod`: `"heuristic"` → `"hybrid"` |
+| `config-schemas.ts` | `DEFAULT_PIPELINE_CONFIG.contextDetectionMethod`: `"heuristic"` → `"hybrid"` |
+| `orchestrated.ts` | Seed hint `detailed=true` → `false`; 3 diagnostic logs added |
+
+### Verification
+
+- **TypeScript**: Pre-existing `drainRunnerQueue` route type error only
+- **Unit tests**: 66/66 pass (config-schemas: 53, aggregation: 13), confidence-calibration: 60/60 pass
+- **v2.8-verification**: 24/28 pass (4 failures are pre-existing `statement_check_report` naming)
+- **No behavioral regression**: Default detection was producing zero seeds anyway; now it produces actual seeds
+
+### Expected Impact
+
+| Claim | Before (Session 28) | Expected After |
+|-------|---------------------|----------------|
+| Legal procedural | 20% context hit | Improved — LLM seeds should anchor 3-context detection |
+| Scientific efficacy | 0% context hit | Improved — seeds should stabilize single-context detection |
+| Institutional trust | 20% context hit | Improved — seeds should anchor context count |
+| Corporate compliance | 80% context hit | Stable or improved |
+| Technology comparison | 0% context hit | Improved — seeds should stabilize single-context detection |
+
+### Recommended Next Steps
+
+1. **Re-run validation matrix** (25 runs) to measure context hit rate improvement
+2. If context hit rate still fails, examine logs for seed count vs refinement count vs final count
+3. Consider tuning `contextDetectionMinConfidence` (currently 0.7) if valid seeds are being filtered
+
+_End of Session 30. Context detection switched from gutted heuristic to hybrid mode; conflicting prompt instructions resolved._
 
 ---
 

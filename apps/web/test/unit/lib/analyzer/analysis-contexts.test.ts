@@ -52,16 +52,19 @@ describe('Context Detection - Generic by Design', () => {
       expect(statementHint).toContain('CONTEXT DETECTION HINT');
     });
 
-    it('detects legal/institutional terms', () => {
-      expect(generateContextDetectionHint('court ruling on case')).toContain('court');
-      expect(generateContextDetectionHint('tribunal judgment')).toContain('tribunal');
-      expect(generateContextDetectionHint('appeal hearing')).toContain('appeal');
+    it('only detects capitalized proper nouns (not lowercase common words)', () => {
+      // extractCoreEntities uses regex [A-Z][a-z]+ — only proper nouns
+      expect(generateContextDetectionHint('court ruling on case')).toBe('');
+      expect(generateContextDetectionHint('tribunal judgment')).toBe('');
+      // Capitalized proper nouns are detected
+      expect(generateContextDetectionHint('Supreme Court ruling')).toContain('supreme court');
     });
 
-    it('detects jurisdiction indicators', () => {
+    it('detects capitalized jurisdiction names', () => {
       expect(generateContextDetectionHint('Brazilian supreme court')).toContain('brazilian');
-      expect(generateContextDetectionHint('EU commission ruling')).toContain('eu');
-      expect(generateContextDetectionHint('US federal court')).toContain('us');
+      // All-caps abbreviations (EU, US) don't match [A-Z][a-z]+ pattern
+      expect(generateContextDetectionHint('EU commission ruling')).toBe('');
+      expect(generateContextDetectionHint('United States federal court')).toContain('united states');
     });
 
     it('returns empty hint when no entities detected', () => {
@@ -185,32 +188,23 @@ describe('Context Detection - Generic by Design', () => {
 // ============================================================================
 describe('detectContexts (v2.8 - Heuristic Pre-Detection)', () => {
   describe('Comparison Claims', () => {
-    it('detects production/usage contexts for efficiency comparisons with "than"', () => {
-      // Pattern requires BOTH comparison words (more/less/than) AND efficiency keywords
-      // The word 'energy' is in efficiencyKeywords pattern
+    it('returns null for efficiency comparisons (LLM handles context detection)', () => {
+      // Heuristic pre-detection is deferred to LLM in the UNDERSTAND phase
       const contexts = detectContexts('Hydrogen cars use more energy than electric cars');
-      
-      expect(contexts).not.toBeNull();
-      expect(contexts!.length).toBeGreaterThanOrEqual(2);
-      
-      const contextIds = contexts!.map(s => s.id);
-      expect(contextIds).toContain('CTX_PRODUCTION');
-      expect(contextIds).toContain('CTX_USAGE');
+
+      expect(contexts).toBeNull();
     });
 
-    it('detects contexts for performance comparisons', () => {
+    it('returns null for performance comparisons (LLM handles context detection)', () => {
       const contexts = detectContexts('Technology A has better performance than Technology B');
-      
-      expect(contexts).not.toBeNull();
-      expect(contexts!.some(s => s.id === 'CTX_PRODUCTION')).toBe(true);
-      expect(contexts!.some(s => s.id === 'CTX_USAGE')).toBe(true);
+
+      expect(contexts).toBeNull();
     });
 
-    it('detects contexts for "vs" comparisons with efficiency keywords', () => {
+    it('returns null for "vs" comparisons (LLM handles context detection)', () => {
       const contexts = detectContexts('Solar energy consumption vs wind energy consumption');
-      
-      expect(contexts).not.toBeNull();
-      expect(contexts!.length).toBeGreaterThanOrEqual(2);
+
+      expect(contexts).toBeNull();
     });
 
     it('returns null for non-comparison efficiency claims', () => {
@@ -222,50 +216,42 @@ describe('detectContexts (v2.8 - Heuristic Pre-Detection)', () => {
   });
 
   describe('Legal/Trial Fairness Claims', () => {
-    it('detects contexts for trial fairness claims', () => {
+    it('returns null for trial fairness claims (LLM handles context detection)', () => {
       const contexts = detectContexts('The trial was fair and based on law');
-      
-      expect(contexts).not.toBeNull();
-      expect(contexts!.some(s => s.id === 'CTX_LEGAL_PROC')).toBe(true);
-      expect(contexts!.some(s => s.id === 'CTX_OUTCOMES')).toBe(true);
+
+      expect(contexts).toBeNull();
     });
 
-    it('detects contexts for judgment/ruling claims', () => {
+    it('returns null for judgment/ruling claims (LLM handles context detection)', () => {
       const contexts = detectContexts('Was the judgment fair and legitimate?');
-      
-      expect(contexts).not.toBeNull();
-      expect(contexts!.length).toBeGreaterThanOrEqual(2);
+
+      expect(contexts).toBeNull();
     });
 
-    it('detects contexts for court procedure claims', () => {
+    it('returns null for court procedure claims (LLM handles context detection)', () => {
       const contexts = detectContexts('The court followed proper legal procedures');
-      
-      expect(contexts).not.toBeNull();
-      expect(contexts!.some(s => s.type === 'legal')).toBe(true);
+
+      expect(contexts).toBeNull();
     });
   });
 
   describe('Environmental/Health Comparisons', () => {
-    it('detects direct/lifecycle contexts for pollution comparisons', () => {
-      // Pattern requires BOTH comparison (than/vs) AND env/health keyword (pollution/emission/etc)
+    it('returns null for pollution comparisons (LLM handles context detection)', () => {
       const contexts = detectContexts('Factory A causes less pollution than Factory B');
-      
-      expect(contexts).not.toBeNull();
-      expect(contexts!.some(s => s.id === 'CTX_DIRECT')).toBe(true);
-      expect(contexts!.some(s => s.id === 'CTX_LIFECYCLE')).toBe(true);
+
+      expect(contexts).toBeNull();
     });
 
-    it('detects contexts for environmental impact comparisons', () => {
+    it('returns null for environmental impact comparisons (LLM handles context detection)', () => {
       const contexts = detectContexts('Solar has lower environmental impact than coal');
-      
-      expect(contexts).not.toBeNull();
-      expect(contexts!.length).toBeGreaterThanOrEqual(2);
+
+      expect(contexts).toBeNull();
     });
 
-    it('detects contexts for safety hazard comparisons', () => {
+    it('returns null for safety hazard comparisons (LLM handles context detection)', () => {
       const contexts = detectContexts('Process A poses more hazard than Process B');
-      
-      expect(contexts).not.toBeNull();
+
+      expect(contexts).toBeNull();
     });
   });
 
@@ -280,13 +266,11 @@ describe('detectContexts (v2.8 - Heuristic Pre-Detection)', () => {
       expect(contexts).toBeNull();
     });
 
-    it('detects multiple context types when patterns overlap', () => {
-      // This has both comparison AND legal fairness patterns
+    it('returns null even when patterns overlap (LLM handles context detection)', () => {
+      // This has both comparison AND legal fairness patterns, but heuristic detection is deferred to LLM
       const contexts = detectContexts('The trial outcome had more impact than the previous ruling and was fair');
-      
-      expect(contexts).not.toBeNull();
-      // Should detect both legal and comparison contexts
-      expect(contexts!.length).toBeGreaterThan(2);
+
+      expect(contexts).toBeNull();
     });
   });
 });

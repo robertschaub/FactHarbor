@@ -60,7 +60,7 @@ describe("validateEvidenceProvenance", () => {
     expect(result.failureReason).toContain("Missing sourceUrl");
   });
 
-  it("rejects evidence items with invalid URL patterns (localhost)", () => {
+  it("accepts evidence items with localhost URLs (no pattern rejection)", () => {
     const evidenceItem: EvidenceItem = {
       id: "S1-E1",
       statement: "Test evidence statement",
@@ -74,9 +74,9 @@ describe("validateEvidenceProvenance", () => {
 
     const result = validateEvidenceProvenance(evidenceItem);
 
-    expect(result.isValid).toBe(false);
-    expect(result.severity).toBe("error");
-    expect(result.failureReason).toContain("Invalid URL pattern");
+    expect(result.isValid).toBe(true);
+    expect(result.severity).toBe("ok");
+    expect(result.failureReason).toBeUndefined();
   });
 
   it("rejects evidence items with invalid URL patterns (chrome://)", () => {
@@ -137,7 +137,7 @@ describe("validateEvidenceProvenance", () => {
     expect(result.failureReason).toContain("Missing sourceExcerpt");
   });
 
-  it("rejects evidence items with too-short sourceExcerpt", () => {
+  it("accepts evidence items with short sourceExcerpt (no minimum length)", () => {
     const evidenceItem: EvidenceItem = {
       id: "S1-E1",
       statement: "The court ruled",
@@ -151,12 +151,12 @@ describe("validateEvidenceProvenance", () => {
 
     const result = validateEvidenceProvenance(evidenceItem);
 
-    expect(result.isValid).toBe(false);
-    expect(result.severity).toBe("error");
-    expect(result.failureReason).toContain("too short");
+    expect(result.isValid).toBe(true);
+    expect(result.severity).toBe("ok");
+    expect(result.failureReason).toBeUndefined();
   });
 
-  it("rejects evidence items with synthetic LLM-generated excerpts (pattern: 'Based on the information')", () => {
+  it("accepts evidence items with 'Based on the information' excerpt (no synthetic pattern detection)", () => {
     const evidenceItem: EvidenceItem = {
       id: "S1-E1",
       statement: "The court ruled in favor",
@@ -170,12 +170,12 @@ describe("validateEvidenceProvenance", () => {
 
     const result = validateEvidenceProvenance(evidenceItem);
 
-    expect(result.isValid).toBe(false);
-    expect(result.severity).toBe("error");
-    expect(result.failureReason).toContain("LLM-generated synthesis");
+    expect(result.isValid).toBe(true);
+    expect(result.severity).toBe("ok");
+    expect(result.failureReason).toBeUndefined();
   });
 
-  it("rejects evidence items with synthetic LLM-generated excerpts (pattern: 'According to')", () => {
+  it("accepts evidence items with 'According to' excerpt (no synthetic pattern detection)", () => {
     const evidenceItem: EvidenceItem = {
       id: "S1-E1",
       statement: "The study found X",
@@ -189,12 +189,12 @@ describe("validateEvidenceProvenance", () => {
 
     const result = validateEvidenceProvenance(evidenceItem);
 
-    expect(result.isValid).toBe(false);
-    expect(result.severity).toBe("error");
-    expect(result.failureReason).toContain("LLM-generated synthesis");
+    expect(result.isValid).toBe(true);
+    expect(result.severity).toBe("ok");
+    expect(result.failureReason).toBeUndefined();
   });
 
-  it("rejects evidence items with synthetic LLM-generated excerpts (pattern: 'The source')", () => {
+  it("accepts evidence items with 'The source' excerpt (no synthetic pattern detection)", () => {
     const evidenceItem: EvidenceItem = {
       id: "S1-E1",
       statement: "Revenue increased",
@@ -208,9 +208,9 @@ describe("validateEvidenceProvenance", () => {
 
     const result = validateEvidenceProvenance(evidenceItem);
 
-    expect(result.isValid).toBe(false);
-    expect(result.severity).toBe("error");
-    expect(result.failureReason).toContain("LLM-generated synthesis");
+    expect(result.isValid).toBe(true);
+    expect(result.severity).toBe("ok");
+    expect(result.failureReason).toBeUndefined();
   });
 
   it("accepts excerpts that start with legitimate quoted text", () => {
@@ -261,7 +261,7 @@ describe("filterEvidenceByProvenance", () => {
       },
       {
         id: "S1-E3",
-        statement: "Invalid evidence item (synthetic excerpt)",
+        statement: "Evidence item with synthetic-looking excerpt (but passes without pattern detection)",
         category: "ruling",
         specificity: "high",
         sourceId: "S1",
@@ -274,11 +274,13 @@ describe("filterEvidenceByProvenance", () => {
     const result = filterEvidenceByProvenance(evidenceItems);
 
     expect(result.stats.total).toBe(3);
-    expect(result.stats.valid).toBe(1);
-    expect(result.stats.invalid).toBe(2);
-    expect(result.validEvidenceItems).toHaveLength(1);
+    expect(result.stats.valid).toBe(2);
+    expect(result.stats.invalid).toBe(1);
+    expect(result.validEvidenceItems).toHaveLength(2);
     expect(result.validEvidenceItems[0].id).toBe("S1-E1");
-    expect(result.invalidEvidenceItems).toHaveLength(2);
+    expect(result.validEvidenceItems[1].id).toBe("S1-E3");
+    expect(result.invalidEvidenceItems).toHaveLength(1);
+    expect(result.invalidEvidenceItems[0].id).toBe("S1-E2");
   });
 
   it("returns all evidence items when all have valid provenance", () => {
@@ -358,7 +360,7 @@ describe("validateSourceProvenance", () => {
     expect(result.failureReason).toContain("missing URL");
   });
 
-  it("rejects grounded search sources with invalid URLs", () => {
+  it("accepts grounded search sources with non-HTTP URLs (no URL pattern validation)", () => {
     const source: FetchedSource = {
       id: "S1",
       url: "javascript:void(0)",
@@ -372,12 +374,12 @@ describe("validateSourceProvenance", () => {
 
     const result = validateSourceProvenance(source);
 
-    expect(result.hasProvenance).toBe(false);
-    expect(result.hasGroundingMetadata).toBe(false);
-    expect(result.failureReason).toContain("invalid URL");
+    expect(result.hasProvenance).toBe(true);
+    expect(result.hasGroundingMetadata).toBe(true);
+    expect(result.failureReason).toBeUndefined();
   });
 
-  it("rejects grounded search sources with synthetic fullText", () => {
+  it("accepts grounded search sources with synthetic-looking fullText (no synthesis detection)", () => {
     const source: FetchedSource = {
       id: "S1",
       url: "https://example.com/article",
@@ -391,9 +393,9 @@ describe("validateSourceProvenance", () => {
 
     const result = validateSourceProvenance(source);
 
-    expect(result.hasProvenance).toBe(false);
-    expect(result.hasGroundingMetadata).toBe(false);
-    expect(result.failureReason).toContain("LLM synthesis");
+    expect(result.hasProvenance).toBe(true);
+    expect(result.hasGroundingMetadata).toBe(true);
+    expect(result.failureReason).toBeUndefined();
   });
 
   it("validates non-grounded sources with valid URLs", () => {

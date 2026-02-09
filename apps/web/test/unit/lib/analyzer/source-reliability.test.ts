@@ -64,26 +64,31 @@ describe("extractDomain", () => {
 
 describe("isImportantSource", () => {
   describe("blog platform filtering", () => {
-    it("skips common blog platforms", () => {
+    it("skips common blog platforms in skipPlatforms config", () => {
+      // Only platforms in SR_CONFIG.skipPlatforms are filtered:
+      // ["blogspot.", "wordpress.com", "medium.com", "substack.com"]
       expect(isImportantSource("myblog.blogspot.com")).toBe(false);
       expect(isImportantSource("user.wordpress.com")).toBe(false);
       expect(isImportantSource("author.medium.com")).toBe(false);
       expect(isImportantSource("newsletter.substack.com")).toBe(false);
-      expect(isImportantSource("site.tumblr.com")).toBe(false);
     });
 
-    it("skips website builder platforms", () => {
-      expect(isImportantSource("mysite.wix.com")).toBe(false);
-      expect(isImportantSource("business.weebly.com")).toBe(false);
-      expect(isImportantSource("portfolio.squarespace.com")).toBe(false);
-      expect(isImportantSource("blog.ghost.io")).toBe(false);
+    it("allows blog/builder platforms not in skipPlatforms config", () => {
+      // These platforms were removed from the configurable skipPlatforms list
+      // and are no longer filtered by isImportantSource
+      expect(isImportantSource("site.tumblr.com")).toBe(true);
+      expect(isImportantSource("mysite.wix.com")).toBe(true);
+      expect(isImportantSource("business.weebly.com")).toBe(true);
+      expect(isImportantSource("portfolio.squarespace.com")).toBe(true);
+      expect(isImportantSource("blog.ghost.io")).toBe(true);
     });
 
-    it("skips hosting platforms", () => {
-      expect(isImportantSource("user.github.io")).toBe(false);
-      expect(isImportantSource("app.netlify.app")).toBe(false);
-      expect(isImportantSource("site.vercel.app")).toBe(false);
-      expect(isImportantSource("app.herokuapp.com")).toBe(false);
+    it("allows hosting platforms not in skipPlatforms config", () => {
+      // Hosting platforms are no longer in the default skipPlatforms list
+      expect(isImportantSource("user.github.io")).toBe(true);
+      expect(isImportantSource("app.netlify.app")).toBe(true);
+      expect(isImportantSource("site.vercel.app")).toBe(true);
+      expect(isImportantSource("app.herokuapp.com")).toBe(true);
     });
 
     it("allows legitimate news domains", () => {

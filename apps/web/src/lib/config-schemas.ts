@@ -217,12 +217,12 @@ export const PipelineConfigSchema = z.object({
     densityAnchor: z.object({
       enabled: z.boolean().default(true),
       minConfidenceBase: z.number().int().min(5).max(30).default(15),
-      minConfidenceMax: z.number().int().min(30).max(70).default(60),
-      sourceCountThreshold: z.number().int().min(1).max(10).default(5),
+      minConfidenceMax: z.number().int().min(30).max(85).default(75),
+      sourceCountThreshold: z.number().int().min(1).max(10).default(3),
     }).default({}),
     bandSnapping: z.object({
       enabled: z.boolean().default(true),
-      strength: z.number().min(0).max(1).default(0.7),
+      strength: z.number().min(0).max(1).default(0.5),
       customBands: z.array(z.object({
         min: z.number().int(),
         max: z.number().int(),
@@ -417,8 +417,8 @@ export const PipelineConfigSchema = z.object({
   if (data.confidenceCalibration === undefined) {
     data.confidenceCalibration = {
       enabled: true,
-      densityAnchor: { enabled: true, minConfidenceBase: 15, minConfidenceMax: 60, sourceCountThreshold: 5 },
-      bandSnapping: { enabled: true, strength: 0.7 },
+      densityAnchor: { enabled: true, minConfidenceBase: 15, minConfidenceMax: 75, sourceCountThreshold: 3 },
+      bandSnapping: { enabled: true, strength: 0.5 },
       verdictCoupling: { enabled: true, strongVerdictThreshold: 70, minConfidenceStrong: 50, minConfidenceNeutral: 25 },
       contextConsistency: { enabled: true, maxConfidenceSpread: 25, reductionFactor: 0.5 },
     };
@@ -514,7 +514,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   contextDedupThreshold: 0.85, // NEW: Use new key name (v2.9.0: Default to 0.85 per original config.ts:187)
 
   // Context detection settings (NEW: Use new key names)
-  contextDetectionMethod: "heuristic",
+  contextDetectionMethod: "hybrid",
   contextDetectionEnabled: true,
   contextDetectionMinConfidence: 0.7,
   contextDetectionMaxContexts: 5,
@@ -551,8 +551,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   recencyGraduatedPenalty: true,
   confidenceCalibration: {
     enabled: true,
-    densityAnchor: { enabled: true, minConfidenceBase: 15, minConfidenceMax: 60, sourceCountThreshold: 5 },
-    bandSnapping: { enabled: true, strength: 0.7 },
+    densityAnchor: { enabled: true, minConfidenceBase: 15, minConfidenceMax: 75, sourceCountThreshold: 3 },
+    bandSnapping: { enabled: true, strength: 0.5 },
     verdictCoupling: { enabled: true, strongVerdictThreshold: 70, minConfidenceStrong: 50, minConfidenceNeutral: 25 },
     contextConsistency: { enabled: true, maxConfidenceSpread: 25, reductionFactor: 0.5 },
   },

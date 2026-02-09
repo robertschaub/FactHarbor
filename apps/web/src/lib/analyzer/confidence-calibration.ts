@@ -37,13 +37,13 @@ export interface CalibrationResult {
 export interface DensityAnchorConfig {
   enabled: boolean;
   minConfidenceBase: number;  // floor for sparse evidence (default 15)
-  minConfidenceMax: number;   // ceiling for rich evidence (default 60)
-  sourceCountThreshold: number; // sources at which density maxes out (default 5)
+  minConfidenceMax: number;   // ceiling for rich evidence (default 75)
+  sourceCountThreshold: number; // sources at which density maxes out (default 3)
 }
 
 export interface BandSnappingConfig {
   enabled: boolean;
-  strength: number; // 0 = no snapping, 1 = full snap (default 0.7)
+  strength: number; // 0 = no snapping, 1 = full snap (default 0.5)
   customBands?: Array<{ min: number; max: number; snapTo: number }>;
 }
 
@@ -91,12 +91,12 @@ export const DEFAULT_CALIBRATION_CONFIG: ConfidenceCalibrationConfig = {
   densityAnchor: {
     enabled: true,
     minConfidenceBase: 15,
-    minConfidenceMax: 60,
-    sourceCountThreshold: 5,
+    minConfidenceMax: 75,
+    sourceCountThreshold: 3,
   },
   bandSnapping: {
     enabled: true,
-    strength: 0.7,
+    strength: 0.5,
   },
   verdictCoupling: {
     enabled: true,

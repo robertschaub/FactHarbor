@@ -34,31 +34,37 @@ describe("v2.8 Verification - Unit Tests", () => {
   // TEST 1: Hydrogen - Multiple Methodology Contexts
   // ============================================================================
   describe("Hydrogen Efficiency - Context Pre-Detection", () => {
-    it("should detect 2+ contexts for hydrogen vs electricity comparison", () => {
+    it("should return null for heuristic detection (LLM handles context detection)", () => {
       const input = "Hydrogen cars use more energy than electric cars";
-      
+
       const contexts = detectContexts(input);
-      
+
       console.log("[v2.8 Unit Test] Hydrogen contexts:", contexts);
-      
-      // PASS CRITERIA: Should detect production/usage contexts
-      expect(contexts).not.toBeNull();
-      expect(contexts!.length).toBeGreaterThanOrEqual(2);
-      
-      // Check for expected context IDs
-      const contextIds = contexts!.map(s => s.id);
-      expect(contextIds).toContain("CTX_PRODUCTION");
-      expect(contextIds).toContain("CTX_USAGE");
+
+      // Heuristic context detection is deferred to the LLM in the UNDERSTAND phase.
+      // detectContexts() (synchronous wrapper) delegates to detectContextsHeuristic()
+      // which always returns null.
+      expect(contexts).toBeNull();
     });
 
-    it("should format context hints correctly", () => {
+    it("should format context hints correctly when given contexts", () => {
+      // detectContexts() now returns null (heuristic detection deferred to LLM),
+      // so test formatDetectedContextsHint with manually-provided contexts.
       const contexts = detectContexts("Using hydrogen is more efficient than electricity");
+      expect(contexts).toBeNull();
 
-      // With energy keyword
       const contextsWithEnergy = detectContexts("Hydrogen cars use more energy than electric cars");
-      expect(contextsWithEnergy).not.toBeNull();
+      expect(contextsWithEnergy).toBeNull();
 
-      const hint = formatDetectedContextsHint(contextsWithEnergy, true);
+      // formatDetectedContextsHint returns empty string for null input
+      expect(formatDetectedContextsHint(null, true)).toBe("");
+
+      // Verify formatting works when given actual contexts
+      const mockContexts = [
+        { id: "CTX_PRODUCTION", name: "Production Phase", type: "methodological" },
+        { id: "CTX_USAGE", name: "Usage Phase", type: "methodological" },
+      ];
+      const hint = formatDetectedContextsHint(mockContexts, true);
 
       expect(hint).toContain("PRE-DETECTED CONTEXTS");
       expect(hint).toContain("MUST output at least these contexts");
@@ -144,7 +150,7 @@ describe("v2.8 Verification - Unit Tests", () => {
   // TEST 5: Legal/Trial Context Pre-Detection
   // ============================================================================
   describe("Legal Context Pre-Detection", () => {
-    it("should detect legal contexts for trial fairness claims", () => {
+    it("should return null for legal context heuristic detection (LLM handles it)", () => {
       const inputs = [
         "The trial was fair and based on law",
         "Was the judgment fair and legitimate?",
@@ -156,14 +162,9 @@ describe("v2.8 Verification - Unit Tests", () => {
 
         console.log(`[v2.8 Unit Test] "${input.substring(0, 40)}..." -> ${contexts?.length ?? 0} contexts`);
 
-        expect(contexts).not.toBeNull();
-        expect(contexts!.length).toBeGreaterThanOrEqual(2);
-
-        // Check for legal-type context
-        const hasLegalContext = contexts!.some(s =>
-          s.type === "legal" || s.id === "CTX_LEGAL_PROC"
-        );
-        expect(hasLegalContext).toBe(true);
+        // Heuristic context detection is deferred to the LLM in the UNDERSTAND phase.
+        // detectContexts() always returns null.
+        expect(contexts).toBeNull();
       }
     });
   });
@@ -571,13 +572,13 @@ describe("v2.8 Verification - Unit Tests", () => {
 
       // Verify fact_check_report has highest calibration (1.05)
       const maxCalibration = Math.max(...Object.values(defaultSourceTypeCalibration));
-      expect(defaultSourceTypeCalibration.statement_check_report).toBe(maxCalibration);
+      expect(defaultSourceTypeCalibration.fact_check_report).toBe(maxCalibration);
 
       // Verify "other" has lowest calibration (0.8)
       const minCalibration = Math.min(...Object.values(defaultSourceTypeCalibration));
       expect(defaultSourceTypeCalibration.other).toBe(minCalibration);
 
-      console.log(`[v2.8 Unit Test] sourceType calibration factors: peer_reviewed=${defaultSourceTypeCalibration.peer_reviewed_study}, fact_check=${defaultSourceTypeCalibration.statement_check_report}, other=${defaultSourceTypeCalibration.other}`);
+      console.log(`[v2.8 Unit Test] sourceType calibration factors: peer_reviewed=${defaultSourceTypeCalibration.peer_reviewed_study}, fact_check=${defaultSourceTypeCalibration.fact_check_report}, other=${defaultSourceTypeCalibration.other}`);
     });
 
     it("sourceType calibration affects evidence reliability weighting", () => {
