@@ -65,7 +65,7 @@ graph TB
 **KeyFactors** are optional decomposition questions discovered during the understanding phase:
 * Not stored as separate entities
 * Help break down complex claims into checkable sub-questions
-* See [[KeyFactors Design>>FactHarbor.Specification.Implementation.KeyFactors Design.WebHome]] for design rationale
+* See [[KeyFactors Design>>FactHarbor.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] for design rationale
 
 == 7-Point Verdict Scale ==
 

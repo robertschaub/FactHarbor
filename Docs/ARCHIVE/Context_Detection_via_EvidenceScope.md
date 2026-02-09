@@ -444,6 +444,6 @@ Key benefits:
 ## Related Documentation
 
 - [Calculations.md](Calculations.md) - Verdict calculation methodology
-- [Pipeline Architecture](../xwiki-pages/FactHarbor/Specification/Implementation/Pipeline%20Architecture/TriplePath%20Architecture/WebHome.xwiki) - Pipeline architecture
+- [Pipeline Architecture](../xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki) - Pipeline architecture
 - [Terminology Reference](../xwiki-pages/FactHarbor/Specification/Reference/Terminology/WebHome.xwiki) - AnalysisContext vs EvidenceScope definitions
 - [Changelog_v2.6.38_to_v2.6.40.md](../ARCHIVE/STATUS/Changelog_v2.6.38_to_v2.6.40.md) - Recent terminology fixes

@@ -1,0 +1,285 @@
+= Evidence Quality Filtering Architecture =
+
+{{info}}
+**Developer Reference** — Deterministic post-processing filter that enforces probative value standards on LLM-extracted evidence, ensuring only well-attributed, specific evidence reaches verdict aggregation.
+
+**Key File**: ##apps/web/src/lib/analyzer/evidence-filter.ts##
+{{/info}}
+
+**Version**: 2.6.42
+**Date**: 2026-02-02
+
+----
+
+== 1. Introduction ==
+
+=== 1.1 Purpose ===
+
+The Evidence Quality Filter is a **deterministic post-processing layer** that removes low-quality evidence items that slip through the LLM extraction process. It enforces **probative value standards** to ensure only well-attributed, specific evidence reaches the verdict aggregation stage.
+
+=== 1.2 Problem Statement ===
+
+During evidence extraction, LLMs may occasionally extract items that:
+
+* Use vague attribution ("some say", "many believe")
+* Lack concrete source excerpts or URLs
+* Are too short to be meaningful
+* Duplicate existing evidence
+* Fail category-specific quality checks
+
+=== 1.3 Solution ===
+
+A **multi-layer defense strategy** combines LLM instruction (soft enforcement) with deterministic filtering (hard enforcement) across 7 layers.
+
+----
+
+== 2. Multi-Layer Claim Filtering Defense ==
+
+=== 2.1 7-Layer Defense ===
+
+{{mermaid}}
+flowchart TB
+    subgraph SOFT["Soft Enforcement"]
+        L1["Layer 1: Evidence Quality Filtering<br/>evidence-filter.ts<br/>Filter vague/incomplete evidence"]
+    end
+
+    subgraph HARD["Hard Enforcement"]
+        L2["Layer 2: Provenance Validation<br/>provenance-validation.ts<br/>Reject synthetic/LLM-generated content"]
+        L3["Layer 3: Tangential Baseless Pruning<br/>aggregation.ts<br/>Remove tangential claims with 0 facts"]
+        L4["Layer 4: Thesis Relevance Filtering<br/>aggregation.ts<br/>Tangential claims get weight=0"]
+        L5["Layer 5: Opinion-Only Factor Pruning<br/>aggregation.ts<br/>Remove opinion-only keyFactors"]
+        L6["Layer 6: Contestation Validation<br/>aggregation.ts<br/>Downgrade opinion-based contestation"]
+        L7["Layer 7: Context-Aware Routing<br/>analysis-contexts.ts<br/>Route to correct analytical context"]
+    end
+
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7
+
+    style L1 fill:#c8e6c9,color:#000
+    style L2 fill:#fff9c4,color:#000
+    style L3 fill:#fff9c4,color:#000
+    style L4 fill:#fff9c4,color:#000
+    style L5 fill:#fff9c4,color:#000
+    style L6 fill:#fff9c4,color:#000
+    style L7 fill:#e3f2fd,color:#000
+{{/mermaid}}
+
+//Green = evidence quality filter (this page). Yellow = deterministic enforcement layers. Blue = context-aware routing. Each layer catches issues the previous layers may have missed.//
+
+=== 2.2 Layer Protection Summary ===
+
+|= Layer |= What It Filters |= Verdict Impact
+| **1** | Vague attribution, missing sources | Evidence never reaches aggregation
+| **2** | LLM-generated text, synthetic URLs | Hallucinated "evidence" rejected
+| **3** | Tangential claims with 0 evidence | Claims removed from report
+| **4** | All tangential claims | Claims contribute weight=0 to verdict
+| **5** | Opinion-only keyFactors | Factors removed from report
+| **6** | Opinion-based contestation | Full weight retained (doubt does not equal contestation)
+| **7** | Cross-context evidence | Claims evaluated in correct analytical frame
+
+----
+
+== 3. Two-Layer Enforcement Strategy ==
+
+=== 3.1 Layer 1: LLM Prompts (Soft Enforcement) ===
+
+**Location**: ##apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts##
+
+Approximately 85-90% compliance, cost-effective, but inconsistent across providers.
+
+=== 3.2 Layer 2: Deterministic Filter (Hard Enforcement) ===
+
+**Location**: ##apps/web/src/lib/analyzer/evidence-filter.ts##
+
+100% consistent enforcement via ##filterByProbativeValue()##.
+
+=== 3.3 Combined Effect ===
+
+{{mermaid}}
+flowchart LR
+    RAW["Raw Evidence<br/>~50% false positive rate"] --> SOFT["Layer 1: LLM Prompts<br/>~85-90% compliance"]
+    SOFT --> DET["Layer 2: Deterministic Filter<br/>filterByProbativeValue()"]
+    DET --> CLEAN["Clean Evidence<br/>~0% false positive rate"]
+
+    style RAW fill:#ffcdd2,color:#000
+    style SOFT fill:#fff9c4,color:#000
+    style DET fill:#c8e6c9,color:#000
+    style CLEAN fill:#c8e6c9,color:#000
+{{/mermaid}}
+
+//Red = unfiltered evidence with high false positive rate. Yellow = LLM soft enforcement reduces rate to ~10%. Green = deterministic filter brings false positive rate to ~0%.//
+
+**Result**: Layer 1 reduces false positive rate from ~50% to ~10%. Layer 2 reduces from ~10% to ~0%.
+
+----
+
+== 4. Filter Rules ==
+
+=== 4.1 Statement Quality ===
+
+|= Rule |= Value |= Description
+| ##minStatementLength## | 20 characters | Minimum length for a statement to be considered meaningful
+| ##maxVaguePhraseCount## | 2 | Maximum vague phrases allowed (13 vague phrase patterns detected)
+
+**Detected Vague Phrases** include patterns such as: "some say", "many believe", "it is thought", "reportedly", "allegedly", "sources say", and similar attributions lacking specificity.
+
+=== 4.2 Source Linkage ===
+
+|= Rule |= Value |= Description
+| ##requireSourceExcerpt## | ##true## | Every evidence item must include a source excerpt
+| ##minExcerptLength## | 30 characters | Minimum length for a source excerpt
+| ##requireSourceUrl## | ##true## | Every evidence item must link to a source URL
+
+=== 4.3 Category-Specific Rules ===
+
+|= Category |= Requirement |= Rationale
+| **statistic** | ##requireNumber=true##, ##minExcerptLength=50## | Statistics must contain actual numbers and longer excerpts for context
+| **expert_quote** | ##requireAttribution=true## | Quotes must name the expert or institution
+| **event** | ##requireTemporalAnchor=true## | Events must include dates or temporal references
+| **legal_provision** | ##requireCitation=true## | Legal references must cite specific provisions
+
+=== 4.4 Deduplication ===
+
+|= Rule |= Value |= Description
+| ##deduplicationThreshold## | 0.85 | Jaccard similarity threshold; evidence items exceeding this are considered duplicates
+
+----
+
+== 5. Configuration ==
+
+The ##ProbativeFilterConfig## interface contains all settings, which are admin-editable via UCM CalcConfig.
+
+{{code language="typescript"}}
+interface ProbativeFilterConfig {
+  minStatementLength: number;        // default: 20
+  maxVaguePhraseCount: number;       // default: 2
+  requireSourceExcerpt: boolean;     // default: true
+  minExcerptLength: number;          // default: 30
+  requireSourceUrl: boolean;         // default: true
+  deduplicationThreshold: number;    // default: 0.85
+  categoryRules: {
+    statistic: { requireNumber: boolean; minExcerptLength: number };
+    expert_quote: { requireAttribution: boolean };
+    event: { requireTemporalAnchor: boolean };
+    legal_provision: { requireCitation: boolean };
+  };
+}
+{{/code}}
+
+All settings are managed through the UCM CalcConfig administrative interface. Changes take effect on the next analysis run without redeployment.
+
+----
+
+== 6. Classification Fallbacks ==
+
+When the LLM fails to classify an evidence item, the system applies **safe defaults** that are conservative without being alarmist:
+
+|= Field |= Fallback Value |= Rationale
+| ##harmPotential## | ##"medium"## | Neutral -- does not inflate or deflate harm assessment
+| ##factualBasis## | ##"unknown"## | Conservative -- avoids asserting factual basis without evidence
+| ##isContested## | ##false## | Does not reduce weight without evidence of contestation
+| ##sourceAuthority## | ##"secondary"## | Neutral middle tier -- neither boosts nor penalizes
+| ##evidenceBasis## | ##"anecdotal"## | Weakest credible type -- avoids overstating evidence strength
+
+=== 6.1 Fallback Rate Monitoring ===
+
+|= Fallback Rate |= Status |= Action
+| < 5% | Healthy | Normal operation, no intervention needed
+| 5-10% | Investigate | Review LLM extraction prompts for classification gaps
+| > 10% | Warning | Prompt engineering review recommended
+| > 20% | Critical | Immediate investigation required; may indicate LLM provider regression
+
+----
+
+== 7. Examples ==
+
+=== 7.1 Vague Attribution Filtered ===
+
+{{code}}
+Input evidence:
+  statement: "Some experts believe this is wrong"
+  sourceExcerpt: ""
+  sourceUrl: ""
+
+Filter result: REMOVED
+Reasons:
+  - Vague phrase detected: "some experts believe" (1 of max 2)
+  - Missing source excerpt (requireSourceExcerpt=true)
+  - Missing source URL (requireSourceUrl=true)
+{{/code}}
+
+=== 7.2 Statistic Without Number Filtered ===
+
+{{code}}
+Input evidence:
+  statement: "Studies show a significant increase in outcomes"
+  category: "statistic"
+  sourceExcerpt: "The report indicates improvement"
+  sourceUrl: "https://example.com/report"
+
+Filter result: REMOVED
+Reasons:
+  - Category 'statistic' requires a number (requireNumber=true)
+  - Excerpt too short for statistic (30 < minExcerptLength 50)
+{{/code}}
+
+=== 7.3 Well-Formed Evidence Passes ===
+
+{{code}}
+Input evidence:
+  statement: "The 2024 audit found 14 compliance violations across 3 departments"
+  category: "statistic"
+  sourceExcerpt: "According to the annual audit report published March 2024, inspectors identified 14 separate compliance violations spanning the finance, operations, and HR departments."
+  sourceUrl: "https://example.gov/audit-2024"
+
+Filter result: PASS
+  - Statement length: 71 chars (>= 20)
+  - No vague phrases detected
+  - Source excerpt: 162 chars (>= 50 for statistic)
+  - Source URL present
+  - Number detected in statement ("14", "3")
+{{/code}}
+
+=== 7.4 Duplicate Evidence Filtered ===
+
+{{code}}
+Evidence A: "The report found 14 compliance violations in 3 departments"
+Evidence B: "14 compliance violations were found across three departments per the report"
+
+Jaccard similarity: 0.89 (> threshold 0.85)
+Filter result: Evidence B REMOVED as duplicate of Evidence A
+{{/code}}
+
+----
+
+== 8. Troubleshooting ==
+
+=== 8.1 Common Issues ===
+
+|= Issue |= Cause |= Solution
+| Too much evidence filtered | Filter rules too strict for domain | Review ##minStatementLength## and ##maxVaguePhraseCount## in UCM CalcConfig; consider domain-specific tuning
+| Duplicate evidence not caught | Low similarity between paraphrased items | Lower ##deduplicationThreshold## (default 0.85); consider semantic deduplication in future
+| Category rules rejecting valid evidence | LLM misclassifying evidence categories | Check evidence category assignment in extraction prompts; classification fallbacks may be masking the issue
+| High fallback rate (>10%) | LLM provider not returning classification fields | Review extraction prompt templates in ##extract-evidence-base.ts##; check provider response schemas
+| Statistics passing without numbers | Category misclassified as general evidence | Verify category assignment; ##requireNumber## only applies to ##statistic## category
+
+=== 8.2 Testing ===
+
+**Test Files**:
+* ##apps/web/test/unit/lib/analyzer/evidence-filter.test.ts## -- Evidence filter unit tests
+* ##apps/web/test/unit/lib/analyzer/v2.8-verification.test.ts## -- 7-layer defense enhancement tests
+
+**Coverage**: 53 tests for evidence filter + 30 tests for 7-layer defense enhancements = **83 total tests**.
+
+----
+
+== 9. Related Documentation ==
+
+* [[Quality Gates>>FactHarbor.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] -- Quality gate checkpoints (Gate 1, Gate 4)
+* [[Calculations and Verdicts>>FactHarbor.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] -- Verdict calculation, confidence modulation
+* [[Context Detection>>FactHarbor.Specification.Architecture.Deep Dive.Context Detection.WebHome]] -- Context-aware routing (Layer 7)
+* [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] -- Source credibility evaluation
+* [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] -- Pipeline architecture and filter integration
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Specification.Architecture.Deep Dive.WebHome]] | Prev: [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] | Next: [[Calculations and Verdicts>>FactHarbor.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]]

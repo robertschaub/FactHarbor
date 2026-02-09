@@ -1,0 +1,186 @@
+= Future Architecture =
+
+{{info}}
+This page describes **planned production capabilities** that are not yet implemented. The current system runs as a two-service application (Next.js + .NET API) with SQLite. See [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] for the current design.
+{{/info}}
+
+== Roadmap Overview ==
+
+{{mermaid}}
+flowchart LR
+    subgraph POC["POC (Current)"]
+        P1["Single host"]
+        P2["SQLite x 3"]
+        P3["Shared secrets"]
+        P4["Manual ops"]
+    end
+
+    subgraph ALPHA["Alpha"]
+        A1["User auth"]
+        A2["PostgreSQL"]
+        A3["RBAC"]
+        A4["Rate limiting"]
+    end
+
+    subgraph BETA["Beta"]
+        B1["Horizontal scaling"]
+        B2["Redis caching"]
+        B3["Prometheus + Grafana"]
+        B4["Moderation tools"]
+    end
+
+    subgraph V1["V1.0"]
+        V1A["Multi-region"]
+        V1B["OpenTelemetry"]
+        V1C["Log aggregation"]
+        V1D["Full DR"]
+    end
+
+    subgraph V2["V2.0+"]
+        V2A["Federation"]
+        V2B["Vector DB"]
+        V2C["Advanced analytics"]
+    end
+
+    POC --> ALPHA --> BETA --> V1 --> V2
+
+    style POC fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style ALPHA fill:#fff9c4,stroke:#f9a825,color:#000
+    style BETA fill:#fff3e0,stroke:#e65100,color:#000
+    style V1 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style V2 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+{{/mermaid}}
+
+//Green = current POC. Yellow = Alpha (next). Orange = Beta. Blue = V1.0. Purple = V2.0+. Each phase builds on the previous.//
+
+== Planned Automated Systems ==
+
+=== Background Jobs (Alpha) ===
+
+|= System |= Schedule |= Purpose
+| Source Track Record Updates | Scheduled batch | Analyze claim outcomes, update source accuracy
+| Cache Management | Continuous | Warm cache, invalidate on updates, monitor hit rates
+| Metrics Aggregation | Recurring | Roll up detailed metrics, calculate health indicators
+| Data Archival | Scheduled | Move old logs to S3 (90+ days), compress backups
+
+=== Quality Monitoring (Beta) ===
+
+|= Check |= Description
+| Anomaly Detection | Flag unusual patterns in confidence scores, evidence distributions
+| Contradiction Detection | Identify evidence conflicts, internal claim contradictions
+| Completeness Validation | Ensure sufficient evidence, multiple source types
+
+=== Moderation Detection (Beta) ===
+
+|= Check |= Description
+| Spam Identification | Pattern matching for spam claims
+| Manipulation Detection | Identify coordinated editing
+| Gaming Detection | Flag attempts to game source scores
+| Suspicious Activity | Log unusual behavior patterns
+
+== Scalability Strategy ==
+
+=== Horizontal Scaling ===
+
+|= Component |= Scaling Approach
+| AKEL Workers | Add more processing workers as claim volume grows
+| Database Read Replicas | Add replicas for read-heavy workloads
+| Cache Layer | Redis cluster for distributed caching
+| API Servers | Load-balanced stateless instances
+
+=== Performance Optimization ===
+
+|= Optimization |= Expected Impact
+| Denormalized data | Cache summary data in claim records (70% fewer joins)
+| Parallel processing | AKEL pipeline processes in parallel (40% faster)
+| Intelligent caching | Redis caches frequently accessed data
+| Background processing | Non-urgent tasks run asynchronously
+
+== Monitoring and Observability ==
+
+=== Key Metrics ===
+
+|= Category |= Metrics
+| **Performance** | AKEL processing time, API response time, cache hit rate
+| **Quality** | Confidence score distribution, evidence completeness, contradiction rate
+| **Usage** | Claims per day, active users, API requests
+| **Errors** | Failed AKEL runs, API errors, database issues
+
+=== Alert Thresholds ===
+
+|= Condition |= Alert Level
+| Processing time > 30 seconds | Warning
+| Error rate > 1% | Critical
+| Cache hit rate < 80% | Warning
+| Database connections > 80% capacity | Critical
+
+=== Monitoring Stack ===
+
+|= Capability |= Technology |= Phase
+| Metrics collection | Prometheus | Beta
+| Dashboards | Grafana | Beta
+| Alerting | Prometheus Alertmanager | Beta
+| Distributed tracing | OpenTelemetry | V1.0
+| Log aggregation | ELK or Loki | V1.0
+
+== Security Roadmap ==
+
+|= Capability |= Phase |= Description
+| User authentication | Alpha | Secure login with password hashing
+| RBAC | Alpha | Reader, User, Admin, Moderator roles
+| Rate limiting | Alpha | Per-user and per-IP throttling
+| SSRF protection | Alpha | Sanitize URLs before fetching
+| CORS tightening | Alpha | Restrict allowed origins
+| Audit logging | Beta | Track all significant changes
+| API keys | Beta | Programmatic access tokens
+| Abuse prevention | Beta | Automated detection and ban mechanisms
+
+== Deployment Evolution ==
+
+=== Production Environment (Beta+) ===
+
+|= Component |= Technology
+| Load Balancer | HAProxy or cloud LB
+| API Servers | Multiple stateless instances
+| AKEL Workers | Auto-scaling pool
+| Primary Database | PostgreSQL
+| Read Replicas | PostgreSQL streaming replication
+| Cache | Redis cluster
+| Object Storage | S3-compatible
+
+=== Disaster Recovery ===
+
+|= Aspect |= Current (POC) |= Target (Production)
+| **Backups** | Manual SQLite file copy | Automated PostgreSQL backups to S3
+| **Recovery** | Restore SQLite files | Point-in-time recovery from transaction logs
+| **Replication** | None (single instance) | PostgreSQL streaming replication
+| **RTO** | Manual (hours) | < 4 hours
+| **Data loss window** | Since last backup | Minutes (WAL-based)
+
+== When to Add Complexity ==
+
+Each technology addition has a specific trigger — do not add prematurely:
+
+|= Technology |= Trigger |= Current Status
+| **PostgreSQL** | Multiple users / shared state needed | Planned (Alpha)
+| **Redis** | Multi-instance deployment needed | Planned (Beta)
+| **Elasticsearch** | PostgreSQL search consistently > 500ms | Not needed yet
+| **TimescaleDB** | Metrics queries consistently > 1s | Not needed yet
+| **Vector DB** | Semantic search / RAG features needed | Not needed yet
+| **Federation** | 10,000+ users and explicit demand | Deferred (V2.0+)
+
+== Federation (V2.0+) ==
+
+**Deferred until**:
+* Core product proven with 10,000+ users
+* User demand for decentralization
+* Single-node limits reached
+
+Federation would enable:
+* Distributed fact-checking across independent instances
+* Cross-instance verdict sharing and consensus
+* Regional deployment for data sovereignty
+
+----
+
+**Navigation:** [[Architecture>>FactHarbor.Specification.Architecture.WebHome]]

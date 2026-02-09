@@ -550,7 +550,7 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 - **Search Provider Documentation**: Clarified that all pipelines require search credentials
   - Added Section 8 to Pipeline Architecture doc
   - Added troubleshooting for "No sources fetched" issue
-  - See: [Pipeline Architecture](../xwiki-pages/FactHarbor/Specification/Implementation/Pipeline%20Architecture/TriplePath%20Architecture/WebHome.xwiki)
+  - See: [Pipeline Architecture](../xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki)
 
 ### v2.8.3 LLM-Only Text Analysis (January 30, 2026)
 - **Contract Updated**: Text analysis is LLM-only for all 4 analysis points (no heuristic fallback)
@@ -729,7 +729,7 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 - **Complete Issue List**: `Docs/STATUS/KNOWN_ISSUES.md` - All known bugs with workarounds
 - **Development History**: `Docs/STATUS/HISTORY.md` - Full version history and architectural decisions
 - **Documentation**: `Docs/` folder (organized by category)
-- **Architecture**: `Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture Overview/WebHome.xwiki`
+- **Architecture**: `Docs/xwiki-pages/FactHarbor/Specification/Architecture/System%20Design/WebHome.xwiki`
 - **Calculations**: `Docs/ARCHITECTURE/Calculations.md`
 - **Getting Started**: `Docs/xwiki-pages/FactHarbor/User Guides/Getting Started/WebHome.xwiki`
 - **LLM Configuration**: `Docs/xwiki-pages/FactHarbor/User Guides/LLM Configuration/WebHome.xwiki`

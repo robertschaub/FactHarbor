@@ -133,13 +133,13 @@ User Guides/ ★ NEW (could be separate space or under Roadmap/)
 
 | # | Source File | Target xWiki Page | Rationale |
 |---|-------------|-------------------|-----------|
-| 1 | ARCHITECTURE/Overview.md | Specification/Implementation/Architecture Overview | Comprehensive POC1 implementation architecture |
-| 2 | ARCHITECTURE/Pipeline_TriplePath_Architecture.md | Specification/Implementation/Pipeline Architecture/TriplePath Architecture | Pipeline variants reference |
-| 3 | ARCHITECTURE/Context_and_EvidenceScope_Detection_Guide.md | Specification/Implementation/Pipeline Architecture/Context & EvidenceScope Detection | Detection methodology |
-| 4 | ARCHITECTURE/Quality_Gates_Reference.md | Specification/Implementation/Pipeline Architecture/Quality Gates Reference | Gate 1 & 4 reference |
-| 5 | ARCHITECTURE/Source_Reliability.md | Specification/Implementation/Source Reliability System | SR system documentation |
-| 6 | ARCHITECTURE/KeyFactors_Design.md | Specification/Implementation/KeyFactors Design | KeyFactor classification design |
-| 7 | ARCHITECTURE/Schema_Migration_Strategy.md | Specification/Implementation/Schema Migration Strategy | Migration patterns |
+| 1 | ARCHITECTURE/Overview.md | Specification/Architecture/System Design | Comprehensive POC1 implementation architecture |
+| 2 | ARCHITECTURE/Pipeline_TriplePath_Architecture.md | Specification/Architecture/Deep Dive/Pipeline Variants | Pipeline variants reference |
+| 3 | ARCHITECTURE/Context_and_EvidenceScope_Detection_Guide.md | Specification/Architecture/Deep Dive/Context Detection | Detection methodology |
+| 4 | ARCHITECTURE/Quality_Gates_Reference.md | Specification/Architecture/Deep Dive/Quality Gates | Gate 1 & 4 reference |
+| 5 | ARCHITECTURE/Source_Reliability.md | Specification/Architecture/Deep Dive/Source Reliability | SR system documentation |
+| 6 | ARCHITECTURE/KeyFactors_Design.md | Specification/Architecture/Deep Dive/KeyFactors Design | KeyFactor classification design |
+| 7 | ARCHITECTURE/Schema_Migration_Strategy.md | Specification/Architecture/Deep Dive/Schema Migration | Migration patterns |
 
 ---
 
@@ -232,7 +232,7 @@ See [Quality Gates Reference](Quality_Gates_Reference.md)
 
 These must be updated to xWiki links:
 ```xwiki
-[[Specification.Implementation.Pipeline Architecture.Quality Gates Reference]]
+[[Specification.Architecture.Deep Dive.Quality Gates]]
 ```
 
 **Affected files**: All 23 files have cross-references

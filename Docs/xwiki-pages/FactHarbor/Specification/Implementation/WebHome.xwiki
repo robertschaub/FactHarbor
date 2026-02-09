@@ -1,26 +1,27 @@
 = Implementation =
 
-This section documents the **implementation details** of FactHarbor — code-level pipeline flows, system internals, and operational status.
+{{warning}}
+**Documentation Restructured.** Implementation content has been consolidated into the [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] section for a unified reading experience. Use the mapping below to find the new locations.
+{{/warning}}
 
-== Pipeline ==
+== Page Mapping ==
 
-* [[AKEL Pipeline Flow>>FactHarbor.Specification.Implementation.AKEL Pipeline Flow.WebHome]] — 5-step pipeline flow (Understand → Research → Verdict → Summary → Report) with step-by-step detail
-* [[Pipeline Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.WebHome]] — Pipeline variants, context detection, quality gates
-** [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] — Orchestrated, Monolithic Canonical, Monolithic Dynamic
-** [[Context and EvidenceScope Detection>>FactHarbor.Specification.Implementation.Pipeline Architecture.Context and EvidenceScope Detection.WebHome]] — Context detection methodology and EvidenceScope system
-** [[Quality Gates Reference>>FactHarbor.Specification.Implementation.Pipeline Architecture.Quality Gates Reference.WebHome]] — Gate 1 and Gate 4 quality validation
+|= Old Location |= New Location
+| AKEL Pipeline Flow | [[AKEL Pipeline>>FactHarbor.Specification.Architecture.AKEL Pipeline.WebHome]] (overview) and [[Orchestrated Pipeline>>FactHarbor.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] (deep dive)
+| Pipeline Architecture | [[AKEL Pipeline>>FactHarbor.Specification.Architecture.AKEL Pipeline.WebHome]] (overview)
+| TriplePath Architecture | [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]
+| Context and EvidenceScope Detection | [[Context Detection>>FactHarbor.Specification.Architecture.Deep Dive.Context Detection.WebHome]]
+| Quality Gates Reference | [[Quality Gates>>FactHarbor.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]
+| Source Reliability System (5 sub-pages) | [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]]
+| KeyFactors Design | [[KeyFactors Design>>FactHarbor.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]]
+| Schema Migration Strategy | [[Schema Migration>>FactHarbor.Specification.Architecture.Deep Dive.Schema Migration.WebHome]]
 
-== Core Systems ==
+== Remaining Pages ==
 
-* [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] — Source reliability scoring and track records (user-facing: [[Media Source Database>>FactHarbor.Specification.Media Source Database.WebHome]])
-* [[KeyFactors Design>>FactHarbor.Specification.Implementation.KeyFactors Design.WebHome]] — KeyFactor classification and design
-* [[Schema Migration Strategy>>FactHarbor.Specification.Implementation.Schema Migration Strategy.WebHome]] — Database schema migration patterns
-
-== Status ==
+These pages were not moved and remain in this section:
 
 * [[Implementation Status and Quality>>FactHarbor.Specification.Implementation.Implementation Status and Quality.WebHome]] — Spec alignment, working features, known gaps, quality gates, performance, testing infrastructure
 
-== Related ==
+----
 
-* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] — System design and key diagrams
-* [[Data Model>>FactHarbor.Specification.Data Model.WebHome]] — Database schema and entities
+**Navigation:** [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] | [[Deep Dive Index>>FactHarbor.Specification.Architecture.Deep Dive.WebHome]]

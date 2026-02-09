@@ -10,4 +10,4 @@ Schema definitions and mappings used in FactHarbor's data pipeline. These supple
 == Related ==
 
 * [[Data Model>>FactHarbor.Specification.Data Model.WebHome]] - Core data model specification
-* [[Schema Migration Strategy>>FactHarbor.Specification.Implementation.Schema Migration Strategy.WebHome]] - Migration patterns
+* [[Schema Migration>>FactHarbor.Specification.Architecture.Deep Dive.Schema Migration.WebHome]] - Migration patterns

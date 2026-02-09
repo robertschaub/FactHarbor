@@ -172,13 +172,13 @@ These are the detailed implementation docs. Need to verify they match source cod
 | Page | Title | Key Checks |
 |------|-------|------------|
 | `Implementation/WebHome.xwiki` | Implementation index | Verify links, add cross-ref to POC-to-Alpha |
-| `Implementation/Architecture Overview/WebHome.xwiki` | Architecture Overview | Verify pipeline steps match `orchestrated.ts`, entity names match `types.ts` |
-| `Implementation/Pipeline Architecture/WebHome.xwiki` | Pipeline Architecture | Verify 7-step pipeline, step names, file references |
-| `Implementation/KeyFactors Design/WebHome.xwiki` | KeyFactors Design | Verify KeyFactor fields match `types.ts` (contestationReason, factualBasis) |
-| `Implementation/Source Reliability System/WebHome.xwiki` | Source Reliability | Verify cache schema matches `source-reliability-cache.ts`, MBFC→LLM+Cache |
-| `Implementation/Context and EvidenceScope Detection/WebHome.xwiki` | Context vs EvidenceScope | Verify AnalysisContext fields (assessedStatement v2.6.39+), EvidenceScope fields |
-| `Implementation/Quality Gates Reference/WebHome.xwiki` | Quality Gates | Verify Gate 1 + Gate 4 thresholds/logic match `quality-gates.ts` |
-| `Implementation/Schema Migration Strategy/WebHome.xwiki` | Schema Migration | Verify v3.0 migration details |
+| `Architecture/System Design/WebHome.xwiki` | Architecture Overview | Verify pipeline steps match `orchestrated.ts`, entity names match `types.ts` |
+| `Architecture/AKEL Pipeline/WebHome.xwiki` | Pipeline Architecture | Verify 7-step pipeline, step names, file references |
+| `Architecture/Deep Dive/KeyFactors Design/WebHome.xwiki` | KeyFactors Design | Verify KeyFactor fields match `types.ts` (contestationReason, factualBasis) |
+| `Architecture/Deep Dive/Source Reliability/WebHome.xwiki` | Source Reliability | Verify cache schema matches `source-reliability-cache.ts`, MBFC→LLM+Cache |
+| `Architecture/Deep Dive/Context Detection/WebHome.xwiki` | Context vs EvidenceScope | Verify AnalysisContext fields (assessedStatement v2.6.39+), EvidenceScope fields |
+| `Architecture/Deep Dive/Quality Gates/WebHome.xwiki` | Quality Gates | Verify Gate 1 + Gate 4 thresholds/logic match `quality-gates.ts` |
+| `Architecture/Deep Dive/Schema Migration/WebHome.xwiki` | Schema Migration | Verify v3.0 migration details |
 
 **Key source code references to verify against:**
 - `apps/web/src/lib/analyzer/types.ts` — All entity interfaces

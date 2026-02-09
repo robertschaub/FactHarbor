@@ -909,7 +909,7 @@ These options control the multi-layer claim filtering system:
 
 - [Evidence Quality Filtering](../ARCHITECTURE/Evidence_Quality_Filtering.md) - Evidence filter details
 - [Provider Prompt Formatting](../xwiki-pages/FactHarbor/Specification/Reference/Prompt%20Engineering/Provider-Specific%20Formatting/WebHome.xwiki) - Prompt configuration
-- [Schema Migration Strategy](../xwiki-pages/FactHarbor/Specification/Implementation/Schema%20Migration%20Strategy/WebHome.xwiki) - Backward compatibility
+- [Schema Migration Strategy](../xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Schema%20Migration/WebHome.xwiki) - Backward compatibility
 - [Admin Config Implementation](../../apps/web/src/app/admin/config/page.tsx) - UI code
 
 ---

@@ -90,7 +90,7 @@
 
 === Quality Gates ===
 
-> For detailed quality gates reference, see [[Quality Gates Reference>>FactHarbor.Specification.Implementation.Pipeline Architecture.Quality Gates Reference.WebHome]].
+> For detailed quality gates reference, see [[Quality Gates>>FactHarbor.Specification.Architecture.Deep Dive.Quality Gates.WebHome]].
 
 **Gate 1: Claim Validation**
 * Filters out opinions, predictions, low-specificity claims
@@ -257,14 +257,14 @@ See: Promptfoo Testing Guide (in User Guides)
 
 === Related Documentation ===
 
-* **Context Detection**: [[Context and EvidenceScope Detection>>FactHarbor.Specification.Implementation.Pipeline Architecture.Context and EvidenceScope Detection.WebHome]] - Consolidated context detection guide
-* **Quality Gates**: [[Quality Gates Reference>>FactHarbor.Specification.Implementation.Pipeline Architecture.Quality Gates Reference.WebHome]] - Quality gates reference
-* **Calculations**: Calculations.md (see Calculations.md in local docs) - Verdict calculation methodology
-* **KeyFactors Design**: [[KeyFactors Design>>FactHarbor.Specification.Implementation.KeyFactors Design.WebHome]] - KeyFactors implementation details
-* **Source Reliability**: [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] - Source scoring system
-* **Prompt Architecture**: Prompt_Architecture.md (see Prompt_Architecture.md in local docs) - Modular prompt composition system
+* **Context Detection**: [[Context Detection>>FactHarbor.Specification.Architecture.Deep Dive.Context Detection.WebHome]] - Consolidated context detection guide
+* **Quality Gates**: [[Quality Gates>>FactHarbor.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] - Quality gates reference
+* **Calculations**: [[Calculations and Verdicts>>FactHarbor.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] - Verdict calculation methodology
+* **KeyFactors Design**: [[KeyFactors Design>>FactHarbor.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] - KeyFactors implementation details
+* **Source Reliability**: [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] - Source scoring system
+* **Prompt Architecture**: [[Prompt Architecture>>FactHarbor.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] - Modular prompt composition system
 * **Promptfoo Testing**: [[Promptfoo Testing>>FactHarbor.User Guides.Promptfoo Testing.WebHome]] - Prompt testing guide
-* **Pipeline Architecture**: [[TriplePath Architecture>>FactHarbor.Specification.Implementation.Pipeline Architecture.TriplePath Architecture.WebHome]] - Triple-path pipeline design
+* **Pipeline Architecture**: [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] - Triple-path pipeline design
 * **Getting Started**: [[Getting Started>>FactHarbor.User Guides.Getting Started.WebHome]] - Setup and installation
 * **LLM Configuration**: [[LLM Configuration>>FactHarbor.User Guides.LLM Configuration.WebHome]] - Provider configuration
 

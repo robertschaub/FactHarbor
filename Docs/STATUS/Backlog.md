@@ -133,5 +133,5 @@
 
 - **Detailed Analysis**: `Docs/STATUS/Improvement_Recommendations.md`
 - **Current Status**: `Docs/STATUS/Current_Status.md`
-- **Architecture**: `Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture Overview/WebHome.xwiki`
+- **Architecture**: `Docs/xwiki-pages/FactHarbor/Specification/Architecture/System%20Design/WebHome.xwiki`
 - **Coding Guidelines**: `Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding Guidelines/WebHome.xwiki`

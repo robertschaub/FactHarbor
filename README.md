@@ -59,7 +59,7 @@ After installing, open any `.xwiki` file and press `Ctrl+Shift+V` to toggle a li
 **Suggested reading order to get familiar with FactHarbor:**
 1. [Specification root](Docs/xwiki-pages/FactHarbor/Specification/WebHome.xwiki) — mission, purpose, core concepts, functional lifecycle
 2. [Architecture](Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki) — system architecture with embedded diagrams
-3. [Implementation Overview](Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture%20Overview/WebHome.xwiki) — current codebase architecture, data models, component interactions
+3. [Implementation Overview](Docs/xwiki-pages/FactHarbor/Specification/Architecture/System%20Design/WebHome.xwiki) — current codebase architecture, data models, component interactions
 4. [POC Specification](Docs/xwiki-pages/FactHarbor/Specification/POC/WebHome.xwiki) — what POC1 proves, success criteria, scope
 
 ### xWiki Documentation (Master Source)
@@ -72,11 +72,11 @@ After installing, open any `.xwiki` file and press `Ctrl+Shift+V` to toggle a li
 - **[LLM Configuration](Docs/xwiki-pages/FactHarbor/User%20Guides/LLM%20Configuration/WebHome.xwiki)** - Configure AI providers and search
 
 ### Architecture
-- **[Overview](Docs/xwiki-pages/FactHarbor/Specification/Implementation/Architecture%20Overview/WebHome.xwiki)** - System architecture, data models, component interactions (xWiki)
+- **[Overview](Docs/xwiki-pages/FactHarbor/Specification/Architecture/System%20Design/WebHome.xwiki)** - System architecture, data models, component interactions (xWiki)
 - **[Calculations](Docs/ARCHITECTURE/Calculations.md)** - Verdict calculation methodology (.md — active development)
 - **[Evidence Quality Filtering](Docs/ARCHITECTURE/Evidence_Quality_Filtering.md)** - Multi-layer filtering defense (.md — active development)
-- **[Source Reliability](Docs/xwiki-pages/FactHarbor/Specification/Implementation/Source%20Reliability%20System/WebHome.xwiki)** - Source scoring system (xWiki)
-- **[Pipeline Architecture](Docs/xwiki-pages/FactHarbor/Specification/Implementation/Pipeline%20Architecture/TriplePath%20Architecture/WebHome.xwiki)** - Triple-path pipeline design (xWiki)
+- **[Source Reliability](Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Source%20Reliability/WebHome.xwiki)** - Source scoring system (xWiki)
+- **[Pipeline Architecture](Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki)** - Triple-path pipeline design (xWiki)
 
 ### Development
 - **[Coding Guidelines](Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding%20Guidelines/WebHome.xwiki)** - Code quality standards and principles (xWiki)

@@ -13,7 +13,7 @@ The **Media Source Database** is FactHarbor's system for evaluating and tracking
 This is **not** a static list. Sources are evaluated on-demand by AI, cross-checked by a second model, and cached for 90 days. Any source on the internet can be evaluated — there is no pre-seeded database to go stale.
 
 {{info}}
-**Implementation Details:** See [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] for the technical implementation: LLM-powered scoring, batch prefetch architecture, cache strategy, and dual-model cross-checking.
+**Implementation Details:** See [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] for the technical implementation: LLM-powered scoring, batch prefetch architecture, cache strategy, and dual-model cross-checking.
 {{/info}}
 
 == Why It Exists ==
@@ -146,7 +146,7 @@ The Media Source Database is configured via **UCM** (Admin → Config → Source
 | Consensus threshold | 0.20 | Maximum score difference between models
 | Default score | 0.50 | Score for unknown sources (neutral center)
 
-See [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] for full configuration reference and implementation details.
+See [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] for full configuration reference and implementation details.
 
 ----
 
@@ -207,7 +207,7 @@ The standalone service will expose a public API:
 
 == Related Pages ==
 
-* [[Source Reliability System (Implementation)>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]] — Technical architecture, code integration, and API details
+* [[Source Reliability (Deep Dive)>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] — Technical architecture, code integration, and API details
 * [[Source Reliability Export Guide>>FactHarbor.User Guides.Source Reliability Export.WebHome]] — How to export evaluation data
-* [[Quality Gates>>FactHarbor.Specification.Implementation.Pipeline Architecture.Quality Gates Reference.WebHome]] — How quality gates interact with source reliability
+* [[Quality Gates>>FactHarbor.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] — How quality gates interact with source reliability
 * [[Evidence and Verdict Workflow>>FactHarbor.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]] — How evidence flows through the system

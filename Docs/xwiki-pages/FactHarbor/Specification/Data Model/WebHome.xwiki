@@ -8,7 +8,7 @@ This specification describes the **target** normalized data model. Current imple
 * **Storage**: JSON blobs in SQLite (not normalized PostgreSQL tables)
 * **AnalysisContexts + KeyFactors**: Bounded analytical frames and decomposition questions embedded in result JSON (not separate stored entities)
 * **Caching**: Redis cache not implemented; no claim caching yet
-* **Source Scoring**: LLM + Cache architecture (batch prefetch → in-memory map → sync lookup). See [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]].
+* **Source Scoring**: LLM + Cache architecture (batch prefetch → in-memory map → sync lookup). See [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]].
 * **User System**: Not implemented (no authentication)
 * **Evidence**: Uses `EvidenceItem` with `statement` field. Evidence IDs use E-prefix (E1, E2, E3...).
 
@@ -71,7 +71,7 @@ Fields: claim_id, source_id, excerpt, url, relevance_score, supports
 * Quality thresholds: 90+=Exceptional, 70-89=Reliable, 50-69=Acceptable, 30-49=Questionable, <30=Unreliable
 
 {{info}}
-**Current Implementation (v2.6.40+):** Source reliability uses a **Pure LLM + Cache architecture** (v2.2). Sources are batch-evaluated via LLM calls, cached in-memory, and used synchronously during analysis. Multi-model consensus (Claude + GPT) is supported. There is no weekly background job — scores are computed on-demand and cached with configurable TTL. See [[Source Reliability System>>FactHarbor.Specification.Implementation.Source Reliability System.WebHome]].
+**Current Implementation (v2.6.40+):** Source reliability uses a **Pure LLM + Cache architecture** (v2.2). Sources are batch-evaluated via LLM calls, cached in-memory, and used synchronously during analysis. Multi-model consensus (Claude + GPT) is supported. There is no weekly background job — scores are computed on-demand and cached with configurable TTL. See [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]].
 {{/info}}
 
 **See**: SOURCE Track Record System documentation for complete details on calculation, updates, and usage

@@ -124,7 +124,7 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 | `apps/web/src/app/jobs/[id]/page.tsx` | Job results UI |
 | `apps/api/Controllers/JobsController.cs` | Job CRUD API |
 | `Docs/ARCHITECTURE/Calculations.md` | Verdict calculation documentation |
-| `Docs/xwiki-pages/FactHarbor/Specification/Implementation/Source Reliability System/WebHome.xwiki` | Source reliability documentation |
+| `Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep Dive/Source Reliability/WebHome.xwiki` | Source reliability documentation |
 
 ---
 

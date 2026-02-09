@@ -1,0 +1,182 @@
+= Data Model =
+
+FactHarbor's data model centres on the analysis result — a structured representation of an article's claims, the evidence found, the verdicts generated, and the sources consulted. This page defines the core entities, the 7-point verdict scale, and the job lifecycle.
+
+== Core Entity Model ==
+
+{{mermaid}}
+erDiagram
+    ARTICLE ||--o{ CLAIM : "contains"
+    ARTICLE ||--|| ARTICLE_VERDICT : "has overall"
+    CLAIM ||--|| CLAIM_VERDICT : "evaluated as"
+    CLAIM ||--o{ CLAIM : "depends on"
+    CLAIM_VERDICT }o--o{ EVIDENCE : "supported by"
+    SOURCE ||--o{ EVIDENCE : "provides"
+    ARTICLE ||--o{ SOURCE : "references"
+
+    ARTICLE {
+        string id PK "Job ID"
+        string inputType "text or url"
+        string articleThesis "Main argument"
+        string detectedInputType "question, claim, or article"
+        json analysisContexts "Detected contexts"
+        string schemaVersion "2.7.0"
+    }
+
+    CLAIM {
+        string id PK "SC1, C1, etc."
+        string text "The claim statement"
+        string type "legal, procedural, factual, evaluative"
+        boolean isCentral "Central claim flag"
+        string contextId "Linked AnalysisContext"
+        string_array dependsOn "Prerequisite claim IDs"
+    }
+
+    CLAIM_VERDICT {
+        string verdict "7-point scale label"
+        int truthPercentage "0-100 calibrated score"
+        int confidence "0-100 LLM confidence"
+        string reasoning "Explanation"
+        string riskTier "A, B, or C"
+        string_array supportingEvidenceIds "Evidence IDs"
+    }
+
+    ARTICLE_VERDICT {
+        string articleVerdict "7-point scale label"
+        int articleTruthPercentage "0-100 calibrated"
+        int claimsTotal "Total claims analysed"
+        int claimsSupported "Truth >= 72%"
+        int claimsRefuted "Truth < 43%"
+    }
+
+    EVIDENCE {
+        string id PK "S1-E1 format"
+        string statement "Extracted evidence"
+        string category "legal_provision, statistic, event, etc."
+        string sourceExcerpt "Original text excerpt"
+        string contextId "Linked AnalysisContext"
+    }
+
+    SOURCE {
+        string id PK "S1, S2, etc."
+        string url "Full URL"
+        string domain "Extracted domain"
+        int trackRecordScore "0-100 reliability"
+        boolean fetchSuccess "Content retrieval success"
+    }
+{{/mermaid}}
+
+//The core entity chain: ARTICLE contains CLAIMs, each CLAIM has a CLAIM_VERDICT, verdicts are supported by EVIDENCE items, and each EVIDENCE comes from a SOURCE. Claims can depend on other claims (dependency chains). The ARTICLE also has an overall ARTICLE_VERDICT aggregated from individual claim verdicts.//
+
+=== Key Concepts ===
+
+* **AnalysisContext** — A bounded analytical frame for multi-perspective topics (e.g., "legal proceedings" vs. "public health impact" for the same article). Each context gets separate analysis, and results are aggregated per-context.
+* **KeyFactor** — A decomposition question that guides the analysis of complex claims (e.g., "Was due process followed?" for a legal claim). Claims map to KeyFactors, and KeyFactor verdicts aggregate into context answers.
+* **Dependency Chains** — Claims can depend on other claims. If a prerequisite claim fails (e.g., "Event occurred on date X"), dependent claims inherit the failure.
+
+== 7-Point Verdict Scale ==
+
+{{mermaid}}
+flowchart LR
+    TRUE["TRUE\n90-100%"]
+    MT["MOSTLY\nTRUE\n72-89%"]
+    LT["LEANING\nTRUE\n57-71%"]
+    MIXED["MIXED /\nUNVERIFIED\n43-56%"]
+    LF["LEANING\nFALSE\n29-42%"]
+    MF["MOSTLY\nFALSE\n11-28%"]
+    FALSE["FALSE\n0-10%"]
+
+    TRUE --- MT --- LT --- MIXED --- LF --- MF --- FALSE
+
+    style TRUE fill:#2e7d32,color:#fff
+    style MT fill:#43a047,color:#fff
+    style LT fill:#66bb6a,color:#000
+    style MIXED fill:#fdd835,color:#000
+    style LF fill:#ff9800,color:#000
+    style MF fill:#e65100,color:#fff
+    style FALSE fill:#b71c1c,color:#fff
+{{/mermaid}}
+
+//The 7-point truth scale maps truth percentages to verdict labels. MIXED (evidence on both sides, confidence >= 50%) and UNVERIFIED (insufficient evidence, confidence < 50%) share the same percentage range but differ in their confidence interpretation.//
+
+|= Verdict |= Truth % Range |= Meaning
+| **TRUE** | 90-100% | Claim is well-supported by strong evidence
+| **MOSTLY TRUE** | 72-89% | Claim is largely supported with minor caveats
+| **LEANING TRUE** | 57-71% | More evidence supports than contradicts, but not conclusive
+| **MIXED** | 43-56% (confidence >= 50%) | Significant evidence on both sides
+| **UNVERIFIED** | 43-56% (confidence < 50%) | Insufficient evidence to determine truth
+| **LEANING FALSE** | 29-42% | More evidence contradicts than supports
+| **MOSTLY FALSE** | 11-28% | Claim is largely contradicted by evidence
+| **FALSE** | 0-10% | Claim is strongly contradicted by evidence
+
+=== MIXED vs. UNVERIFIED ===
+
+Both occupy the 43-56% truth range. The distinction is **confidence-based**:
+* **MIXED**: The system found substantial evidence but it points in opposing directions (high confidence in the conflict)
+* **UNVERIFIED**: The system could not find enough evidence to make a determination (low confidence due to insufficient data)
+
+== Job Lifecycle ==
+
+{{mermaid}}
+erDiagram
+    JOB ||--o{ JOB_EVENT : "emits"
+    JOB ||--o| ANALYSIS_RESULT : "produces"
+
+    JOB {
+        string JobId PK "GUID"
+        string Status "QUEUED, RUNNING, SUCCEEDED, FAILED, PAUSED"
+        int Progress "0-100"
+        string InputType "text or url"
+        string InputValue "The submitted content"
+        datetime CreatedUtc "When submitted"
+        datetime UpdatedUtc "Last status change"
+    }
+
+    JOB_EVENT {
+        long Id PK "Auto-increment"
+        string JobId FK "Parent job"
+        string Level "info, warn, error"
+        string Message "Event description"
+        datetime TsUtc "Event timestamp"
+    }
+
+    ANALYSIS_RESULT {
+        string schemaVersion "2.7.0"
+        json meta "Providers, timing, gate stats"
+        string articleVerdict "7-point verdict"
+        int articleTruthPercentage "0-100"
+        json claimPattern "supported/uncertain/refuted counts"
+        int llmCalls "Total LLM invocations"
+    }
+{{/mermaid}}
+
+//Jobs progress through a lifecycle: QUEUED → RUNNING → SUCCEEDED or FAILED. If the system auto-pauses due to provider outage, jobs remain QUEUED until processing resumes. Events are logged at each stage and streamed to the client via SSE.//
+
+=== Job Status Transitions ===
+
+|= Status |= Meaning
+| **QUEUED** | Job submitted, waiting for runner capacity
+| **RUNNING** | AKEL pipeline is executing
+| **SUCCEEDED** | Analysis complete, results available
+| **FAILED** | Analysis failed (provider error, timeout, or input issue)
+| **PAUSED** | System auto-paused due to provider outage (jobs resume when system recovers)
+
+== Storage ==
+
+Analysis results are currently stored as **JSON blobs** in SQLite (via the .NET Entity Framework ##ResultJson## field). The full entity model above lives within this JSON blob — it is not normalised into separate database tables.
+
+|= Database |= Technology |= Contents
+| ##factharbor.db## | .NET Entity Framework Core | Jobs, events, analysis results (JSON), metrics
+| ##config.db## | Next.js better-sqlite3 | UCM configuration blobs, activation pointers, usage tracking
+| ##source-reliability.db## | Next.js better-sqlite3 | Source credibility evaluation cache
+
+**Target Evolution:** PostgreSQL for primary storage (enabling full-text search, user accounts), with the JSON blob approach preserved for backwards compatibility during migration. See [[Storage and Configuration>>FactHarbor.Specification.Architecture.Storage and Configuration.WebHome]] for details.
+
+== Deep Dives ==
+
+* [[Calculations and Verdicts>>FactHarbor.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Verdict calculation formulas, aggregation hierarchy, weighting factors
+* [[Confidence Calibration>>FactHarbor.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]] — 4-layer confidence system, penalty calculations
+
+----
+
+**Navigation:** [[Architecture>>FactHarbor.Specification.Architecture.WebHome]] | Prev: [[AKEL Pipeline>>FactHarbor.Specification.Architecture.AKEL Pipeline.WebHome]] | Next: [[External Dependencies>>FactHarbor.Specification.Architecture.External Dependencies.WebHome]]

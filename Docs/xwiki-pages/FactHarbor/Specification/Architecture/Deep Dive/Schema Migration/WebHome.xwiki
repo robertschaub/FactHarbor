@@ -1,0 +1,268 @@
+= Schema Migration Strategy =
+
+{{info}}
+**Developer Reference** — Schema evolution strategy for maintaining backward compatibility while improving terminology and structure. Covers additive changes, CalcConfig versioning, job JSON compatibility, and migration phases.
+{{/info}}
+
+**Version**: 1.0
+**Date**: 2026-01-29
+**Status**: Active
+
+----
+
+== 1. Introduction ==
+
+=== Why Schema Evolution Matters ===
+
+As FactHarbor evolves, we must change data structures without breaking:
+* **Stored job results** (SQLite database: ##ResultJson## column)
+* **Stored configuration profiles** (UCM database: CalcConfig, SearchConfig, PromptConfig)
+* **External API consumers** (if any integrations depend on our JSON schemas)
+* **In-flight analysis jobs** (during rolling deploys)
+
+A naive "find and rename" approach would cause:
+* Old job results to become unparseable -> UI breaks for historical jobs
+* Stored config profiles to fail validation -> admins lose custom settings
+* External integrations to break silently -> data pipelines fail
+
+This document defines our **schema evolution strategy** to maintain backward compatibility while improving terminology and structure.
+
+----
+
+== 2. Current Approach ==
+
+=== Principle: Additive Changes Only (Phase 2) ===
+
+During Phase 0-2.5 (terminology migration), all schema changes are **additive**:
+
+==== 2.1 Optional Fields ====
+
+New fields are added with **optional** (##?##) suffix in TypeScript:
+
+{{code language="typescript"}}
+// Before (Phase 0)
+interface EvidenceItem {
+  id: string;
+  fact: string;
+  category: string;
+  sourceId: string;
+}
+
+// After (Phase 2)
+interface EvidenceItem {
+  id: string;
+  fact: string;
+  category: string;
+  sourceId: string;
+  // NEW: Phase 2 fields (optional)
+  probativeValue?: "high" | "medium" | "low";
+  evidenceScope?: {
+    name: string;
+    sourceType?: SourceType;
+  };
+}
+{{/code}}
+
+**Benefits**: Old data without these fields still validates. Code can use ##??## operator for defaults. No database migration required.
+
+==== 2.2 Deprecated Aliases ====
+
+Old names remain as **type aliases** during gradual migration:
+
+{{code language="typescript"}}
+export interface EvidenceItem { /* ... */ }
+
+/**
+ * @deprecated Use EvidenceItem instead (v2.6.41+)
+ */
+export type ExtractedFact = EvidenceItem;
+{{/code}}
+
+==== 2.3 Fallback Defaults ====
+
+Code uses ##??## operator to provide defaults when fields are missing:
+
+{{code language="typescript"}}
+const probativeValue = evidence.probativeValue ?? "medium";
+const sourceType = evidence.evidenceScope?.sourceType ?? "other";
+{{/code}}
+
+----
+
+== 3. CalcConfig Versioning Strategy ==
+
+=== 3.1 Problem: Admin Configuration Evolution ===
+
+Admin-editable configurations (CalcConfig, SearchConfig, PromptConfig) are stored as JSON in SQLite (UCM system). When we add new config fields:
+* Old stored profiles lack these fields
+* Code needs to provide sensible defaults
+* Admin UI should show defaults when fields missing
+
+=== 3.2 Solution: Optional Fields + Default Merging ===
+
+{{code language="typescript"}}
+// When loading stored profile
+function loadCalcConfig(storedJson: string): CalcConfig {
+  const stored = JSON.parse(storedJson) as Partial<CalcConfig>;
+  // Merge with defaults (new fields filled in if missing)
+  return {
+    ...DEFAULT_CALC_CONFIG,
+    ...stored,
+  };
+}
+{{/code}}
+
+**Result**: Old profiles without new fields get defaults. Admin UI shows default values. User can edit and save, which populates the new fields.
+
+=== 3.3 Admin UI Handling ===
+
+{{code language="typescript"}}
+<input
+  type="number"
+  value={config.probativeValueWeights?.high ?? 1.0}
+  onChange={(e) => {
+    onChange({
+      ...config,
+      probativeValueWeights: {
+        ...config.probativeValueWeights,
+        high: parseFloat(e.target.value) || 1.0,
+      },
+    });
+  }}
+/>
+{{/code}}
+
+**Behavior**: If field missing → shows default. If field present → shows stored value. On edit → creates/updates the field.
+
+----
+
+== 4. Job JSON Backward Compatibility ==
+
+=== 4.1 Problem: Stored Job Results ===
+
+Job results are stored in ASP.NET API database:
+* SQLite table: ##AnalysisJobs##
+* Column: ##ResultJson## (TEXT, JSON blob)
+* Loaded by ##/jobs/[id]## UI for display
+
+**Risk**: If field names change in output, old jobs become unparseable and the UI breaks for historical data.
+
+=== 4.2 Solution: Keep Output Schema Stable (Phase 2) ===
+
+During Phase 2, **output JSON schema is unchanged**:
+* Still write ##facts[]## array (not ##evidence[]##)
+* Still write ##fact## field (not ##statement##)
+* Only internal TypeScript types use new names
+
+=== 4.3 Future: Schema Versioning (Phase 3) ===
+
+When Phase 3 renames fields in output, a schema version header is added:
+
+{{code language="typescript"}}
+interface VersionedResult {
+  schemaVersion: string;  // "2.6", "2.7", "3.0"
+  // ... rest of result
+}
+
+function parseJobResult(json: string): AnalysisResult {
+  const raw = JSON.parse(json);
+  const version = raw.schemaVersion || "2.6"; // Legacy default
+
+  if (semver.lt(version, "3.0.0")) {
+    return transformLegacyResult(raw);
+  }
+  return raw as AnalysisResult;
+}
+{{/code}}
+
+----
+
+== 5. External API Considerations ==
+
+=== 5.1 Current API Exposure ===
+
+{{code}}
+GET /api/fh/jobs/[id]   → Returns: { ResultJson: string }
+GET /api/fh/analyze      → Returns: AnalysisResult (JSON)
+{{/code}}
+
+**Assumption**: No external integrations currently depend on our schema.
+
+=== 5.2 Mitigation: API Versioning (If Needed) ===
+
+If external consumers are identified:
+
+|= Option |= Approach
+| **A: Versioned Endpoints** (Recommended) | ##/api/v1/analyze## (legacy) vs ##/api/v2/analyze## (new)
+| **B: Deprecation Headers** | ##X-Deprecated-Field: facts## / ##X-Schema-Version: 2.6##
+| **C: Dual Output** | Include both ##facts[]## and ##evidence[]## with deprecation notice
+
+=== 5.3 Action Required Before Phase 3 ===
+
+1. **Audit external consumers**: Check logs, ask stakeholders
+1. **If none**: Proceed with field renames
+1. **If exist**: Implement API versioning strategy
+
+----
+
+== 6. Testing Requirements ==
+
+=== Backward Compatibility Test Suite ===
+
+**Location**: ##apps/web/test/unit/lib/analyzer/schema-backward-compatibility.test.ts##
+
+**Required Tests**:
+* Type compatibility (new interface accepts required fields)
+* Optional field defaults (missing new fields get safe defaults via ##??##)
+* CalcConfig merging (old profiles without new fields load correctly)
+* JSON parsing (version detection, legacy transformation)
+
+=== Test Execution Frequency ===
+
+* **Before each Phase completion**: Verify no regressions
+* **Before Phase 3 field renames**: Full suite must pass
+* **CI/CD pipeline**: Run on every commit
+
+----
+
+== 7. Migration Phases ==
+
+|= Phase |= Name |= Status |= Schema Impact
+| 0 | Documentation Updates | Complete | None
+| 1 | Comments and Labels | Complete | None
+| 1.5 | Layer 2 Filter | Complete | Additive (no breaking changes)
+| 2 | New Fields | Complete | Additive (optional fields)
+| 2.1 | Gradual Code Migration | In Progress | None (internal type renames)
+| 2.5 | Source Type Prompts | Complete | Additive
+| 3 | Field Renames | Complete (v3.0/v3.1) | **Breaking** — legacy names removed
+
+=== Phase 3 Renames (v3.0/v3.1) ===
+
+* ##facts[]## -> ##evidenceItems[]##
+* ##fact## field -> ##statement##
+* ##supportingFactIds## -> ##supportingEvidenceIds##
+* ##distinctProceedings## -> ##analysisContexts##
+* ##relatedProceedingId##/##proceedingId## -> ##contextId##
+* Migration script: ##apps/api/scripts/migrate-terminology-v2.7.ts##
+
+----
+
+== Schema Version History ==
+
+|= Version |= Date |= Schema Changes |= Migration Required?
+| 2.6.17 | 2025-11 | Initial UCM system, base schema | N/A (baseline)
+| 2.6.33 | 2025-12 | Source reliability fields added | No (additive)
+| 2.6.38 | 2026-01 | Triple-path pipeline (no schema change) | No
+| 2.6.41 | 2026-01 | Phase 2: probativeValue, sourceType (optional) | No (optional fields)
+| 3.0.0 | TBD | Phase 3: Field renames (facts -> evidence) | Yes (transformation)
+
+----
+
+== Related Documentation ==
+
+* [[Data Model>>FactHarbor.Specification.Architecture.Data Model.WebHome]] — Entity relationships and current schema
+* [[Storage and Configuration>>FactHarbor.Specification.Architecture.Storage and Configuration.WebHome]] — UCM config management
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Specification.Architecture.Deep Dive.WebHome]]
