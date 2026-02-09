@@ -1,0 +1,27 @@
+# Diagrams navigation order (architecture → pipelines → data → workflows → users → automation)
+# Architecture
+High-Level Architecture
+Storage Architecture
+Federation Architecture
+Versioning Architecture
+# Data models
+Core Data Model ERD
+Audit Trail ERD
+# Pipelines
+AKEL Architecture
+LLM Abstraction Architecture
+Orchestrated Pipeline Internal
+Monolithic Canonical Pipeline Internal
+Monolithic Dynamic Pipeline Internal
+# Workflows
+Claim and Scenario Workflow
+Evidence and Verdict Workflow
+Quality and Audit Workflow
+# Users and roles
+Human User Roles
+Technical and System Users
+User Class Diagram
+# Automation
+Automation Level
+Automation Roadmap
+Manual vs Automated matrix
