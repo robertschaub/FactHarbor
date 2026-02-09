@@ -109,3 +109,6 @@ source-reliability.db
 apps/web/prompt-versions.db*
 
 /Docs/WIP/WRITE_LOCK.md
+
+# GitHub Pages build output (generated, deploy via gh-pages branch)
+gh-pages-build/

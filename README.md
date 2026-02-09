@@ -1,10 +1,10 @@
-# FactHarbor — POC1 (Next.js + .NET + SQLite)
+# FactHarbor (Next.js + .NET + SQLite)
 
-**Version**: 2.6.33 | **Schema**: 2.7.0 | **Status**: Operational POC
+**Version**: 2.6.33 | **Schema**: 2.7.0 | **Status**: Alpha
 
 > **[What is FactHarbor?](ONEPAGER.md)** — Vision, mission, and how it works.
 
-This repository is a runnable POC scaffold:
+This repository contains:
 - **apps/api**: ASP.NET Core API (system of record: jobs, status, results, events)
 - **apps/web**: Next.js app (UI + AI orchestrator)
 
@@ -33,6 +33,12 @@ powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
 
 > Stable reference documentation lives in **xWiki format** under `Docs/xwiki-pages/FactHarbor/`.
 > Active development docs and operational files remain as `.md`. See [AGENTS.md](AGENTS.md) for format rules.
+
+### Browse Documentation Online
+
+The full specification and guides are available as a rendered documentation site — no download required:
+
+**[FactHarbor Documentation](https://robertschaub.github.io/FactHarbor/)** — full page tree, search, wiki links, include transclusion, Mermaid diagrams, deep linking via URL hash.
 
 ### Browse Documentation Locally
 
