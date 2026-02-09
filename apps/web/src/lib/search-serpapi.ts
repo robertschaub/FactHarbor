@@ -1,4 +1,4 @@
-import { WebSearchOptions, WebSearchResult } from "./web-search";
+import { WebSearchOptions, WebSearchResult, SearchProviderError } from "./web-search";
 
 type SerpApiResult = {
   title?: string;
@@ -57,11 +57,21 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
 
     if (!res.ok) {
       console.error(`[Search] SerpAPI: ❌ HTTP error: ${res.status} ${res.statusText}`);
+      let errorBody = "";
       try {
-        const errorData = await res.text();
-        console.error(`[Search] SerpAPI: Error response body:`, errorData.substring(0, 500));
+        errorBody = await res.text();
+        console.error(`[Search] SerpAPI: Error response body:`, errorBody.substring(0, 500));
       } catch (e) {
         // Ignore parse errors
+      }
+      // Throw fatal error for rate limits and quota exhaustion so callers can detect it
+      if (res.status === 429 || res.status === 403 || errorBody.includes("out of searches") || errorBody.includes("quota")) {
+        throw new SearchProviderError(
+          "SerpAPI",
+          res.status,
+          true,
+          `SerpAPI HTTP ${res.status}: ${errorBody.substring(0, 200) || res.statusText}`,
+        );
       }
       return [];
     }
@@ -70,14 +80,21 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
     const results = data.organic_results ?? [];
     console.log(`[Search] SerpAPI: ✅ Received ${results.length} organic results`);
 
+    // Check for API-level errors in the response body (can occur with 200 status)
+    const apiError = (data as any).error;
+    if (apiError) {
+      const errorStr = typeof apiError === "string" ? apiError : JSON.stringify(apiError);
+      console.error(`[Search] SerpAPI: API error:`, errorStr);
+      if (errorStr.includes("out of searches") || errorStr.includes("quota") || errorStr.includes("limit")) {
+        throw new SearchProviderError("SerpAPI", 200, true, `SerpAPI API error: ${errorStr.substring(0, 200)}`);
+      }
+    }
+
     if (results.length === 0) {
       console.warn(`[Search] SerpAPI: ⚠️ No organic_results in response. Full response keys: ${Object.keys(data).join(", ")}`);
       // Log search metadata if available
       if ((data as any).search_metadata) {
         console.log(`[Search] SerpAPI: Search metadata:`, JSON.stringify((data as any).search_metadata, null, 2));
-      }
-      if ((data as any).error) {
-        console.error(`[Search] SerpAPI: API error:`, (data as any).error);
       }
     }
 
@@ -95,6 +112,10 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
     console.log(`[Search] SerpAPI: Returning ${out.length} valid results`);
     return out;
   } catch (error) {
+    // Re-throw SearchProviderError so callers can detect fatal provider failures
+    if (error instanceof SearchProviderError) {
+      throw error;
+    }
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error(`[Search] SerpAPI: ❌ Fetch failed: ${errorMsg}`);
     if (error instanceof Error && error.name === "TimeoutError") {

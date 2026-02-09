@@ -1,4 +1,4 @@
-import { WebSearchOptions, WebSearchResult } from "./web-search";
+import { WebSearchOptions, WebSearchResult, SearchProviderError } from "./web-search";
 
 type GoogleCseItem = {
   title?: string;
@@ -59,11 +59,21 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
 
     if (!res.ok) {
       console.error(`[Search] Google CSE: ❌ HTTP error: ${res.status} ${res.statusText}`);
+      let errorBody = "";
       try {
-        const errorData = await res.text();
-        console.error(`[Search] Google CSE: Error response body:`, errorData.substring(0, 500));
+        errorBody = await res.text();
+        console.error(`[Search] Google CSE: Error response body:`, errorBody.substring(0, 500));
       } catch (e) {
         // Ignore parse errors
+      }
+      // Throw fatal error for rate limits and quota exhaustion so callers can detect it
+      if (res.status === 429 || res.status === 403 || errorBody.includes("quota") || errorBody.includes("limit exceeded")) {
+        throw new SearchProviderError(
+          "Google-CSE",
+          res.status,
+          true,
+          `Google CSE HTTP ${res.status}: ${errorBody.substring(0, 200) || res.statusText}`,
+        );
       }
       return [];
     }
@@ -72,14 +82,21 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
     const results = data.items ?? [];
     console.log(`[Search] Google CSE: ✅ Received ${results.length} results`);
 
+    // Check for API-level errors in the response body (can occur with 200 status)
+    const apiError = (data as any).error;
+    if (apiError) {
+      const errorStr = typeof apiError === "string" ? apiError : JSON.stringify(apiError);
+      console.error(`[Search] Google CSE: API error:`, errorStr);
+      if (errorStr.includes("quota") || errorStr.includes("limit") || errorStr.includes("billing")) {
+        throw new SearchProviderError("Google-CSE", 200, true, `Google CSE API error: ${errorStr.substring(0, 200)}`);
+      }
+    }
+
     if (results.length === 0) {
       console.warn(`[Search] Google CSE: ⚠️ No items in response. Full response keys: ${Object.keys(data).join(", ")}`);
       // Log search information if available
       if ((data as any).searchInformation) {
         console.log(`[Search] Google CSE: Search info:`, JSON.stringify((data as any).searchInformation, null, 2));
-      }
-      if ((data as any).error) {
-        console.error(`[Search] Google CSE: API error:`, JSON.stringify((data as any).error, null, 2));
       }
     }
 
@@ -97,6 +114,10 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
     console.log(`[Search] Google CSE: Returning ${out.length} valid results`);
     return out;
   } catch (error) {
+    // Re-throw SearchProviderError so callers can detect fatal provider failures
+    if (error instanceof SearchProviderError) {
+      throw error;
+    }
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error(`[Search] Google CSE: ❌ Fetch failed: ${errorMsg}`);
     if (error instanceof Error && error.name === "TimeoutError") {
