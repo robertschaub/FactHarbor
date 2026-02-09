@@ -153,10 +153,7 @@ def generate_viewer_html(template_path: Path) -> str:
     html = html.replace('<title>XWiki Viewer</title>',
                         '<title>FactHarbor Documentation</title>')
 
-    # 2. Default to preview-only view
-    html = html.replace('class="view-split"', 'class="view-preview"')
-
-    # 3. Logo branding
+    # 2. Logo branding
     html = html.replace(
         'XWiki<span>Viewer</span>',
         'FactHarbor<span>Docs</span>'
@@ -334,9 +331,6 @@ loadBundle();"""
 .view-toggle button[onclick*="split"] { display: none !important; }
 #dropOverlay { display: none !important; }
 #bundleMeta { display: none; color: var(--text-dim); font-size: .75em; margin-left: 8px; }
-/* Hide WebHome entries from tree — folders already load their WebHome on click */
-.tree-item.tree-page[data-ref$=".WebHome"],
-.tree-item.tree-page[data-ref="WebHome"] { display: none !important; }
 """
     html = html.replace('</style>', hide_css + '</style>')
 
@@ -350,17 +344,6 @@ loadBundle();"""
     html = html.replace(
         '<div class="main-area hidden" id="mainArea">',
         '<div class="main-area" id="mainArea">'
-    )
-
-    # 12. Set initial view to preview (not split)
-    # The view-toggle active button should be Preview
-    html = html.replace(
-        '<button onclick="setView(\'preview\')" id="vPreview">Preview</button>',
-        '<button onclick="setView(\'preview\')" id="vPreview" class="active">Preview</button>'
-    )
-    html = html.replace(
-        '<button onclick="setView(\'split\')" id="vSplit" class="active">Split</button>',
-        '<button onclick="setView(\'split\')" id="vSplit">Split</button>'
     )
 
     return html
