@@ -11,11 +11,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getConfigSnapshot, formatSnapshotForDisplay } from '@/lib/config-snapshots';
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> }
+  _request: NextRequest,
+  context: { params: Promise<{ jobId: string }> }
 ) {
   try {
-    const { jobId } = await params;
+    const { jobId } = await context.params;
 
     if (!jobId) {
       return NextResponse.json(
