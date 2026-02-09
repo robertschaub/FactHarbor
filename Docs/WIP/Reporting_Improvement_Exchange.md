@@ -37,6 +37,8 @@
 | 24 | 2026-02-09 | Kimi Cline | **Confidence calibration design**: 4-layer system (density anchor, band snapping, verdict coupling, context consistency) |
 | 25 | 2026-02-09 | Claude Opus | **Confidence calibration implemented**: 4 layers, 58 tests, UCM-configurable, backwards-compatible |
 | 25b | 2026-02-09 | Claude Opus | **Search provider error surfacing**: SerpAPI 429/quota errors now throw instead of silent `[]`, 15 tests |
+| 26 | 2026-02-09 | GPT Codex 5.3 | **INCOMPLETE** validation matrix (5/25 runs, 1 claim only). No search health checks. |
+| 27 | 2026-02-09 | Claude Opus | **Provider outage detection system**: circuit breaker, auto-pause, webhook, admin UI, 81 tests |
 
 ---
 
@@ -88,10 +90,24 @@
 36. Context confidence consistency: penalizes divergence >25pp across contexts
 37. Configurable via `confidenceCalibration` nested object (4 sub-sections, each toggleable)
 
+**Search Provider Error Surfacing (Session 25b):**
+33. SearchProviderError class: typed errors with provider name, status code, fatal flag
+34. Google CSE + SerpAPI adapters throw on fatal failures instead of returning `[]`
+35. Orchestrated pipeline surfaces errors as `search_provider_error` analysis warnings
+
+**Provider Outage Detection (Session 27):**
+36. Circuit breaker per provider (search/llm): CLOSED→OPEN→HALF_OPEN state machine
+37. Error classification: provider_outage, rate_limit, timeout, unknown categories
+38. Auto-pause: runner queue halts when circuit trips, jobs stay QUEUED (not lost)
+39. Webhook notifications: fire-and-forget POST to FH_WEBHOOK_URL with optional HMAC
+40. System health API (Next.js + C#): GET state, POST resume/pause
+41. UI: SystemHealthBanner (polls every 30s), admin controls, PAUSED job status
+42. Pipeline instrumentation: all 4 search call sites + job runner record provider health
+
 **UCM Configurability (Sessions 7-9, 11-15, 22a, 25):**
-30. CalcConfig fully wired: 13 sections, 68 fields across 10 files
-31. PipelineConfig: 15+ new configurable fields added across all sessions
-32. Dead `searchRelevanceLlmEnabled` removed
+43. CalcConfig fully wired: 13 sections, 68 fields across 10 files
+44. PipelineConfig: 15+ new configurable fields added across all sessions
+45. Dead `searchRelevanceLlmEnabled` removed
 
 ### Current Model Mapping (Post-Session 18)
 
@@ -116,7 +132,9 @@
 
 ---
 
-## Latest Validation Results (Session 14 / Post-Session 13 Fixes)
+## Latest Validation Results (Session 14 / Post-Session 13 Fixes) — ⚠️ POTENTIALLY CONTAMINATED
+
+> **Warning**: These results pre-date Session 25b (search error surfacing). SerpAPI 429 errors were silently swallowed during this period. Scores may reflect degraded evidence. See **Validation Matrix Contamination Notice** below for details. New clean baselines will be established in Session 28.
 
 | Claim | Score Var | Pass | Conf Delta | Pass | Context Hit | Pass |
 |-------|-----------|------|------------|------|-------------|------|
@@ -217,6 +235,9 @@ Items from Kimi's plan that are **not implemented** but could be added if the si
 | 7 | Graduated recency penalty: 3-factor formula (staleness x volatility x volume) | 22a | Done |
 | 8 | Recency penalty: use existing signals, no new LLM calls, simple boolean toggle | 22a | Done |
 | 9 | Confidence calibration: 4-layer deterministic post-processing, UCM-configurable, runs before recency/low-source penalties | 25 | Done |
+| 10 | Search provider errors must throw (not silently return `[]`) to enable provider health tracking | 25b | Done |
+| 11 | Provider outage system: circuit breaker + auto-pause + webhook + admin UI; threshold from `heuristicCircuitBreakerThreshold` | 27 | Done |
+| 12 | All pre-Session-25b validation matrices are contaminated — new clean baselines required | 27 | Action: Session 28 |
 
 ---
 
@@ -888,6 +909,179 @@ Implemented Kimi's 4-layer confidence calibration system as designed in Session 
 
 - **Session 25b (Complete)**: Search provider error surfacing — SerpAPI 429/quota errors now visible in analysis warnings instead of silently swallowed
 - **Session 26 (Codex)**: Re-run 25-run validation matrix with both Session 22a graduated recency + Session 25 confidence calibration active. Target: all 5 claims pass confidence delta <= 15pp. **Must verify search provider health before and during runs** (see Session 26 brief).
+
+---
+
+## Session 26 -- GPT Codex 5.3 (Senior Dev)
+
+**Date:** 2026-02-09
+**Task:** Post-Session-25 validation matrix (25-run orchestrated) with Session 14 baseline comparison
+**Status:** INCOMPLETE (5/25 runs only — 1 claim)
+
+### Executed
+
+1. Ran 5 runs for claim_1_bolsonaro only (other 4 claims: 0 runs)
+2. Session was cut short — reason unclear. Only the Bolsonaro claim was tested.
+
+### Artifacts
+
+- `artifacts/session26_orchestrated_matrix.jsonl` (5 entries)
+- `artifacts/session26_orchestrated_summary.json`
+- `artifacts/session26_orchestrated_overall.json`
+- `artifacts/session14_vs_session26_delta.json`
+- `artifacts/session26_warning_checks.json`
+
+### Partial Results (Bolsonaro only)
+
+| Claim | Score Variance | Target | Pass | Confidence Delta | Target | Pass |
+|---|---:|---:|:---:|---:|---:|:---:|
+| Bolsonaro procedural fairness | 14 | <=15 | ✅ | 20 | <=15 | ❌ |
+
+### Assessment
+
+- Session 26 is **incomplete** — only 1/5 claims was tested.
+- The `warning_checks.json` does not include `search_provider_error` checks, so we cannot confirm whether search provider failures occurred during these runs.
+- **This session's results should not be used for gate closure decisions** until the full 25-run matrix is completed.
+
+---
+
+## ⚠️ Validation Matrix Contamination Notice
+
+**Issue:** Sessions 10-23 ran **before** Session 25b's search provider error surfacing fix. During this period, SerpAPI HTTP 429 ("Your account has run out of searches") errors were **silently swallowed** — the pipeline converted them to empty result arrays indistinguishable from legitimate "no results found" responses. This means any run where SerpAPI was exhausted would have proceeded with degraded/missing search evidence, producing unreliable verdict scores.
+
+**Known contamination:**
+- **Session 23** (25 runs): Confirmed by Session 25b discovery that SerpAPI was returning 429 during this period. All 25 runs are potentially contaminated — verdict scores, confidence values, and variance calculations may be based on incomplete evidence. The 2 failed runs and high variance on vaccine/technology claims may be partially attributable to missing search results.
+- **Session 26** (5 runs): Ran after the fix but the validation script does not check for `search_provider_error` warnings. Incomplete session (1/5 claims). Cannot confirm search health.
+- **Sessions 10, 11, 13, 14, 16, 19, 20**: All ran before the fix. May or may not have been affected depending on SerpAPI quota availability at time of execution. Cannot be verified retroactively.
+
+**Impact on closure criteria:** The gate results tables in Sessions 12-14, 23 are **unreliable** as baselines. Any comparison against these sessions should note this caveat.
+
+**Remediation required (assigned to GPT Codex 5.3, Session 28):**
+1. Move contaminated artifacts to `artifacts/pre-search-fix/` subdirectory
+2. Update the validation matrix script to check for `search_provider_error` warnings in output and fail the run if any are present
+3. Re-run the full 25-run matrix (5 claims x 5 runs) with:
+   - SerpAPI quota verified before starting
+   - `search_provider_error` warning check in post-run validation
+   - Provider outage system active (auto-pause will halt the matrix if providers fail)
+4. Establish new clean baselines, discard all pre-Session-25b results as historical-only
+
+---
+
+## Session 27 -- Claude Opus 4.6 (Principal Architect)
+
+**Date:** 2026-02-09
+**Task:** Provider Outage Detection & Response System
+**Status:** Complete
+
+### Problem Statement
+
+When external providers (search APIs like SerpAPI/Google CSE, or LLM providers like Anthropic/OpenAI) fail entirely — due to quota exhaustion, rate limits, or outages — the pipeline either silently degrades (producing incomplete results with missing evidence) or fails individual jobs without preventing new jobs from being submitted into the same broken state. Session 23's contaminated validation matrix is a direct consequence of this.
+
+### Architecture
+
+```
+Provider fails → ProviderHealth circuit opens → drainRunnerQueue pauses
+    ↓                                               ↓
+Webhook fires to admin          New jobs stay QUEUED (not lost)
+    ↓                                               ↓
+Admin fixes issue → POST /resume → circuit resets → queue drains again
+    ↓
+SystemHealthBanner shows "paused" state in UI
+```
+
+### Implementation Summary
+
+| Component | Files | Description |
+|-----------|-------|-------------|
+| Circuit Breaker | `provider-health.ts` | globalThis singleton, CLOSED→OPEN→HALF_OPEN state machine per provider (search/llm), configurable threshold |
+| Error Classification | `error-classification.ts` | Categorizes errors as provider_outage, rate_limit, timeout, unknown; handles SearchProviderError + AI SDK errors |
+| Webhook Notifications | `provider-webhook.ts` | Fire-and-forget POST to `FH_WEBHOOK_URL`, optional HMAC-SHA256 via `FH_WEBHOOK_SECRET` |
+| Auto-Pause Runner | `run-job/route.ts` | Classifies errors in catch block, records provider health, pauses system when circuit trips; drainRunnerQueue skips jobs when paused |
+| System Health API (Next.js) | `system-health/route.ts` (internal + fh) | GET health state, POST resume/pause with webhook + queue drain |
+| System Health API (C#) | `SystemHealthController.cs` | Proxy endpoints at `/v1/system/health`, `/v1/system/resume`, `/v1/system/pause` |
+| UI Banner | `SystemHealthBanner.tsx` | Client component polling every 30s, amber warning when paused, dismissible |
+| Admin Controls | `admin/page.tsx` | System Health section with provider state cards, Resume/Pause buttons |
+| Jobs Page | `jobs/page.tsx` | PAUSED status styling |
+| Pipeline Instrumentation | `orchestrated.ts` | All 4 search call sites record provider failures/successes |
+
+### Files Changed/Created
+
+| File | Action |
+|------|--------|
+| `apps/web/src/lib/provider-health.ts` | CREATE |
+| `apps/web/src/lib/error-classification.ts` | CREATE |
+| `apps/web/src/lib/provider-webhook.ts` | CREATE |
+| `apps/web/src/app/api/internal/run-job/route.ts` | MODIFY |
+| `apps/web/src/app/api/internal/system-health/route.ts` | CREATE |
+| `apps/web/src/app/api/fh/system-health/route.ts` | CREATE |
+| `apps/api/Controllers/SystemHealthController.cs` | CREATE |
+| `apps/web/src/components/SystemHealthBanner.tsx` | CREATE |
+| `apps/web/src/components/SystemHealthBanner.module.css` | CREATE |
+| `apps/web/src/app/layout.tsx` | MODIFY |
+| `apps/web/src/app/jobs/page.tsx` | MODIFY |
+| `apps/web/src/app/jobs/page.module.css` | MODIFY |
+| `apps/web/src/app/admin/page.tsx` | MODIFY |
+| `apps/web/src/lib/analyzer/orchestrated.ts` | MODIFY |
+
+### Test Coverage
+
+| Test File | Tests | Type |
+|-----------|-------|------|
+| `provider-health.test.ts` | 20 | Unit — circuit breaker state transitions, pause/resume, isolation |
+| `error-classification.test.ts` | 19 | Unit — SearchProviderError, LLM errors, timeouts, shape checking |
+| `provider-webhook.test.ts` | 5 | Unit — webhook firing, HMAC signature, env var handling |
+| `auto-pause-flow.integration.test.ts` | 15 | Integration — end-to-end classify→record→pause flow |
+| `system-health.test.ts` | 14 | Integration — API route handlers, auth, resume/pause actions |
+| `drain-runner-pause.integration.test.ts` | 8 | Integration — drainRunnerQueue pause guard, queue preservation |
+| **Total** | **81** | All passing |
+
+Full test suite: 826 passed, 36 failed (all pre-existing).
+
+### Configuration
+
+- **Circuit breaker threshold**: Uses `heuristicCircuitBreakerThreshold` from pipeline config (default 3)
+- **Webhook URL**: `FH_WEBHOOK_URL` env var (optional, no-op if not set)
+- **Webhook HMAC**: `FH_WEBHOOK_SECRET` env var (optional, adds `X-Webhook-Signature` header)
+- **Admin key**: `FH_ADMIN_KEY` env var (required for POST actions in production)
+
+### Backwards Compatibility
+
+- When `FH_WEBHOOK_URL` is not set: webhook is silently skipped
+- Circuit breaker threshold uses existing pipeline config field (default 3)
+- No database schema changes needed (Status is already a free-form string)
+- If provider-health module fails to load: runner falls back to current behavior
+
+---
+
+## Session 28 -- GPT Codex 5.3 (Senior Dev) -- NEXT
+
+**Task: Clean Validation Matrix with Provider Health Verification**
+
+Session 27 established that all previous validation matrices (Sessions 10-26) may be contaminated by silent search provider failures. A clean re-run is needed.
+
+**Prerequisites:**
+- Provider outage system (Session 27) is active — will auto-pause if providers fail
+- Search provider error surfacing (Session 25b) is active — warnings visible in output
+- SerpAPI quota must be verified before starting
+
+**Execution steps:**
+1. Acquire WRITE_LOCK
+2. Move contaminated artifacts: `mkdir artifacts/pre-search-fix && mv artifacts/session{10,11,13,14,16,19,20,23,26}* artifacts/pre-search-fix/`
+3. Verify SerpAPI quota: run a test search query, confirm no 429 response
+4. `npm run reseed:force -- --configs` (picks up all Session 22a-27 changes)
+5. Run 25-run orchestrated matrix (5 claims x 5 runs) — same claims as Sessions 10/12/14
+6. **Post-run validation** (for each run):
+   - Check `analysisWarnings` for any `type: "search_provider_error"` entries → mark run as invalid if found
+   - Check system health API: `GET /api/fh/system-health` → confirm `systemPaused: false`
+   - If system auto-paused during matrix: stop, report which runs completed, mark remaining as not-run
+7. Compare against Session 14 baselines (noting they are contaminated — for directional reference only)
+8. Document as Session 28: clean results table, search health verification, new baselines
+9. Artifacts: `artifacts/session28_orchestrated_matrix.jsonl`, `_summary.json`, `_overall.json`, `_search_health.json`
+10. Release WRITE_LOCK
+
+**Key difference from prior sessions:** This is the first validation matrix where silent search failures are impossible. Any search provider failure will either:
+- Surface as a `search_provider_error` warning in the analysis output
+- Trip the circuit breaker and auto-pause the system (halting the matrix)
 
 ---
 
