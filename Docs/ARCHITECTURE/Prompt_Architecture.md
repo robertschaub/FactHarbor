@@ -289,7 +289,7 @@ This ensures consistent behavior across all three pipelines while preventing bot
 ## Related Documentation
 
 - [OUTPUT_SCHEMAS.md](../../apps/web/src/lib/analyzer/prompts/OUTPUT_SCHEMAS.md) - Centralized JSON schema reference for all LLM phases
-- [LLM Configuration Guide](../xwiki-pages/FactHarbor/Product%20Development/Development/Subsystems%20and%20Components/LLM%20Configuration/WebHome.xwiki) - User-facing provider setup
+- [LLM Configuration Guide](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Subsystems%20and%20Components/LLM%20Configuration/WebHome.xwiki) - User-facing provider setup
 - [LLM Schema Mapping](../xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data%20Models%20and%20Schemas/LLM%20Schema%20Mapping/WebHome.xwiki) - TypeScript to LLM output mapping
 - [Pipeline Architecture](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki) - Overall pipeline design
 - [Calculations](./Calculations.md) - Verdict calculation methodology including multi-context averaging

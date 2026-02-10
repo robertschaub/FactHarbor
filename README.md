@@ -18,7 +18,7 @@
    ```
 4. Open http://localhost:3000
 
-See the [Getting Started Guide](Docs/xwiki-pages/FactHarbor/Product%20Development/DevOps/Guidelines/Getting%20Started/WebHome.xwiki) for detailed setup instructions.
+See the [Getting Started Guide](https://robertschaub.github.io/FactHarbor/) in the online documentation for detailed setup instructions.
 
 ## Documentation
 
