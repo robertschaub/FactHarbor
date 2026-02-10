@@ -36,14 +36,33 @@ export interface VerdictBandConfig {
   MOSTLY_FALSE: number;  // default 15
 }
 
-const DEFAULT_BANDS: VerdictBandConfig = {
+/**
+ * System-level verdict band boundaries. These define what each verdict MEANS
+ * and are NOT configurable via UCM. Changing these would break historical
+ * comparisons, API contracts, and user expectations.
+ */
+export const VERDICT_BANDS: Readonly<VerdictBandConfig> = Object.freeze({
   TRUE: 86,
   MOSTLY_TRUE: 72,
   LEANING_TRUE: 58,
   MIXED: 43,
   LEANING_FALSE: 29,
   MOSTLY_FALSE: 15,
-};
+});
+
+/** Full band ranges [min, max] — structural constant, not configurable. */
+export const VERDICT_BAND_RANGES = Object.freeze({
+  true: [86, 100] as const,
+  mostlyTrue: [72, 85] as const,
+  leaningTrue: [58, 71] as const,
+  mixed: [43, 57] as const,
+  leaningFalse: [29, 42] as const,
+  mostlyFalse: [15, 28] as const,
+  false: [0, 14] as const,
+});
+
+/** @deprecated Use VERDICT_BANDS directly. Alias kept for existing internal callers. */
+const DEFAULT_BANDS = VERDICT_BANDS;
 
 // ============================================================================
 // PERCENTAGE CALCULATIONS

@@ -164,10 +164,14 @@ ${
   allowModelKnowledge
     ? `
 **Use background knowledge**: For well-known information, established procedures, widely-reported events, you KNOW the answer - use it!
-Do NOT mark as "neutral" if you know from training data.`
+Do NOT mark as "neutral" if you know from training data.
+However, when your training knowledge CONTRADICTS the provided web evidence, ALWAYS defer to the web evidence.`
     : `
 **Evidence-only mode**: Use ONLY provided evidence and sources.
-Do NOT rely on training data for factual assertions.`
+Do NOT rely on training data for factual assertions.
+If evidence is insufficient to support a claim, say so explicitly and keep the verdict in the UNVERIFIED band (43-57%).
+Do NOT fill reasoning gaps with your own knowledge — this causes "bounce-back" hallucination where confident-sounding but fabricated reasoning replaces missing evidence.
+When web evidence contradicts your training knowledge, ALWAYS defer to the web evidence.`
 }
 
 **Contestation**:
@@ -242,5 +246,12 @@ For EACH claim:
 - keyFactors.factor: ≤12 words
 - keyFactors.explanation: ≤1 sentence
 - claimVerdicts.reasoning: ≤2 sentences
-- Keep shortAnswer concise`;
+- Keep shortAnswer concise
+
+## FINAL VALIDATION (check before responding)
+- Every claim in reasoning references a supportingEvidenceId
+- ratingConfirmation matches verdict percentage direction
+- Confidence reflects evidence strength, not reasoning confidence
+- No claims in reasoning that aren't supported by cited evidence
+- If evidence was insufficient for any claim, that claim's verdict is in UNVERIFIED band (43-57%)`;
 }

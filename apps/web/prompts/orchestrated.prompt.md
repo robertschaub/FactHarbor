@@ -393,6 +393,8 @@ Return empty array if no such outcomes are found.
 
 ## EXTRACT_EVIDENCE
 
+**ANTI-FABRICATION (CRITICAL)**: Extract ONLY from the provided source text. Do NOT fabricate, infer, or add information not present in the source. If a source is vague or lacks specifics, extract fewer items rather than filling gaps. Do NOT use your training knowledge to supplement what the source actually says.
+
 Extract SPECIFIC evidence items. Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.
 If the source contains evidence items relevant to MULTIPLE known contexts, include them and set contextId accordingly.

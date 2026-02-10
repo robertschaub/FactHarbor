@@ -16,10 +16,11 @@ export interface OrchestratedUnderstandVariables {
   currentDateReadable: string;
   isRecent: boolean;
   keyFactorHints?: Array<{ factor: string; category: string; evaluationCriteria: string }>;
+  allowModelKnowledge?: boolean;
 }
 
 export function getOrchestratedUnderstandBasePrompt(variables: OrchestratedUnderstandVariables): string {
-  const { currentDate, currentDateReadable, isRecent, keyFactorHints } = variables;
+  const { currentDate, currentDateReadable, isRecent, keyFactorHints, allowModelKnowledge } = variables;
 
   const recencySection = isRecent ? `
 ## RECENT DATA DETECTED
@@ -38,6 +39,15 @@ This input appears to involve recent events, dates, or announcements. When gener
 The following KeyFactor dimensions have been suggested as potentially relevant. Use them only if they genuinely apply to this thesis. If they don't fit, ignore them and generate factors that actually match the thesis:
 ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.evaluationCriteria}"`).join("\n")}`
     : "";
+
+  const knowledgeConstraintSection = allowModelKnowledge === false ? `
+## KNOWLEDGE CONSTRAINT (EVIDENCE-ONLY MODE)
+
+Base claim decomposition and AnalysisContext identification on the input text only.
+Do NOT create AnalysisContexts based on your background knowledge of the topic.
+Research queries may use your knowledge of search strategies, but AnalysisContexts must emerge from the input.
+
+` : '';
 
   // NOTE: Keep EvidenceScope terminology explicit; do not label it as AnalysisContext.
   // EvidenceScope is per-evidence metadata, not a top-level AnalysisContext.
@@ -60,7 +70,7 @@ ${keyFactorHints.map((hint) => `- ${hint.factor} (${hint.category}): "${hint.eva
 - ❌ INVALID: "Was Y's response to X appropriate?" (different question)
 - ❌ Third-party reactions/responses/sanctions are NEVER valid AnalysisContexts when evaluating X itself
 
-${recencySection}## TEMPORAL REASONING
+${knowledgeConstraintSection}${recencySection}## TEMPORAL REASONING
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDate}).
 

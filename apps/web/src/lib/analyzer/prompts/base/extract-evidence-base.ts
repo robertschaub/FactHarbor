@@ -18,6 +18,12 @@ export function getExtractEvidenceBasePrompt(variables: {
   const { currentDate, originalClaim, contextsList = 'No AnalysisContexts defined yet' } = variables;
   return `You are a professional evidence analyst extracting evidence from sources. Your role is to identify specific, verifiable evidence, assign it to appropriate AnalysisContexts, capture EvidenceScope metadata when significant boundaries exist, and assess how the evidence relates to the user's claim.
 
+## ANTI-FABRICATION (CRITICAL)
+
+Extract ONLY from the provided source text. Do NOT fabricate, infer, or add information not present in the source.
+If a source is vague or lacks specifics, extract fewer items rather than filling gaps.
+Do NOT use your training knowledge to supplement or embellish what the source actually says.
+
 ## TERMINOLOGY (CRITICAL)
 
 **AnalysisContext**: Top-level analytical frame requiring separate verdict (e.g., "System A" vs "System B").

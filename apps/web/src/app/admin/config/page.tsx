@@ -110,16 +110,8 @@ interface SearchConfig {
 }
 
 // Calculation config type (simplified for form)
+// Note: verdictBands are system constants defined in truth-scale.ts, not configurable here.
 interface CalcConfig {
-  verdictBands: {
-    true: [number, number];
-    mostlyTrue: [number, number];
-    leaningTrue: [number, number];
-    mixed: [number, number];
-    leaningFalse: [number, number];
-    mostlyFalse: [number, number];
-    false: [number, number];
-  };
   aggregation: {
     centralityWeights: { high: number; medium: number; low: number };
     harmPotentialMultiplier: number;
@@ -244,15 +236,6 @@ const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 };
 
 const DEFAULT_CALC_CONFIG: CalcConfig = {
-  verdictBands: {
-    true: [86, 100],
-    mostlyTrue: [72, 85],
-    leaningTrue: [58, 71],
-    mixed: [43, 57],
-    leaningFalse: [29, 42],
-    mostlyFalse: [15, 28],
-    false: [0, 14],
-  },
   aggregation: {
     centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
     harmPotentialMultiplier: 1.5,
@@ -380,7 +363,7 @@ const CONFIG_TYPES: { type: ConfigType; title: string; description: string }[] =
   {
     type: "calculation",
     title: "Calculation",
-    description: "Verdict bands, centrality weights, quality gates",
+    description: "Aggregation weights, quality gates, context similarity",
   },
   {
     type: "pipeline",
@@ -2580,8 +2563,8 @@ export default function ConfigAdminPage() {
           }
         } else if (selectedType === "calculation") {
           // Check required top-level keys for calculation config
-          if (!parsed.aggregation || !parsed.verdictBands || !parsed.sourceReliability) {
-            throw new Error("Invalid calculation config: missing 'aggregation', 'verdictBands', or 'sourceReliability' fields");
+          if (!parsed.aggregation || !parsed.sourceReliability) {
+            throw new Error("Invalid calculation config: missing 'aggregation' or 'sourceReliability' fields");
           }
         }
 

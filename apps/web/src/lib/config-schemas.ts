@@ -755,6 +755,9 @@ function validateGate4Hierarchy(gates: QualityGates): boolean {
 }
 
 export const CalcConfigSchema = z.object({
+  // verdictBands: System constant defined in truth-scale.ts — NOT configurable via UCM.
+  // Accepted here as optional for backwards compatibility with existing config.db entries,
+  // but the values are ignored at runtime.
   verdictBands: z
     .object({
       true: IntRangeTuple,
@@ -766,7 +769,8 @@ export const CalcConfigSchema = z.object({
       false: IntRangeTuple,
     })
     .refine(validateBandsContiguous, "Verdict bands must be contiguous")
-    .refine(validateBandsComplete, "Bands must cover 0-100 completely"),
+    .refine(validateBandsComplete, "Bands must cover 0-100 completely")
+    .optional(),
 
   aggregation: z.object({
     centralityWeights: z
@@ -904,15 +908,7 @@ export const CalcConfigSchema = z.object({
 export type CalcConfig = z.infer<typeof CalcConfigSchema>;
 
 export const DEFAULT_CALC_CONFIG: CalcConfig = {
-  verdictBands: {
-    true: [86, 100],
-    mostlyTrue: [72, 85],
-    leaningTrue: [58, 71],
-    mixed: [43, 57],
-    leaningFalse: [29, 42],
-    mostlyFalse: [15, 28],
-    false: [0, 14],
-  },
+  // verdictBands: System constant in truth-scale.ts — removed from UCM config.
   aggregation: {
     centralityWeights: {
       high: 3.0,

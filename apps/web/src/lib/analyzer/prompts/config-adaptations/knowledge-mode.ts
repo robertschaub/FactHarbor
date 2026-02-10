@@ -26,7 +26,9 @@ export function getWithModelKnowledgeAdaptation(): string {
 - User claim: "NASA faked the moon landing"
 - You KNOW from extensive training data that moon landings were real
 - Even with limited provided evidence, factor scoring should reflect this knowledge
-- Mark factors like "Physical evidence exists" as supports="yes" based on your knowledge`;
+- Mark factors like "Physical evidence exists" as supports="yes" based on your knowledge
+
+**CRITICAL**: When your training knowledge CONTRADICTS the provided web evidence, ALWAYS defer to the web evidence. Your training data may be outdated or incomplete.`;
 }
 
 export function getWithoutModelKnowledgeAdaptation(): string {
@@ -45,5 +47,8 @@ export function getWithoutModelKnowledgeAdaptation(): string {
 - User claim: "NASA faked the moon landing"
 - Provided evidence has 2 supporting evidence items, 0 contradicting
 - Score based ONLY on these 2 items, not your broader knowledge
-- If a factor isn't addressed in provided evidence, mark as "neutral" even if you know the answer`;
+- If a factor isn't addressed in provided evidence, mark as "neutral" even if you know the answer
+
+**When evidence is insufficient**: Say so explicitly. Do NOT fill reasoning gaps with your own knowledge — this causes "bounce-back" hallucination where confident-sounding but fabricated reasoning replaces missing evidence.
+When web evidence contradicts your training knowledge, ALWAYS defer to the web evidence.`;
 }

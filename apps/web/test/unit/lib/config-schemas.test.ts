@@ -319,8 +319,8 @@ describe("CalcConfigSchema", () => {
   });
 
   it("validates calc config structure", () => {
-    // Just verify the default config is valid - CalcConfig is complex
-    expect(DEFAULT_CALC_CONFIG).toHaveProperty("verdictBands");
+    // verdictBands are system constants in truth-scale.ts, no longer in CalcConfig
+    expect(DEFAULT_CALC_CONFIG).not.toHaveProperty("verdictBands");
     expect(DEFAULT_CALC_CONFIG).toHaveProperty("aggregation");
     expect(DEFAULT_CALC_CONFIG).toHaveProperty("sourceReliability");
     expect(DEFAULT_CALC_CONFIG).toHaveProperty("qualityGates");

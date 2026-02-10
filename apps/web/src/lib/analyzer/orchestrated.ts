@@ -85,6 +85,7 @@ import {
   monitorOpinionAccumulation,
 } from "./aggregation";
 import { detectContexts, detectContextsHybrid, formatDetectedContextsHint } from "./analysis-contexts";
+import { VERDICT_BANDS } from "./truth-scale";
 import { getModelForTask } from "./llm";
 import {
   detectAndCorrectVerdictInversion,
@@ -99,6 +100,7 @@ import {
 import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { calibrateConfidence, DEFAULT_CALIBRATION_CONFIG, type ConfidenceCalibrationConfig } from "./confidence-calibration";
+import { checkVerdictGrounding, applyGroundingPenalty, DEFAULT_GROUNDING_PENALTY_CONFIG } from "./grounding-check";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { getAnalyzerConfig, type PipelineConfig, type SearchConfig, type CalcConfig, DEFAULT_CALC_CONFIG } from "@/lib/config-loader";
 import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
@@ -2947,9 +2949,19 @@ For "The review followed proper procedures":
 - You KNOW standard procedure requirements apply in this context
 - Therefore: Assign a truth percentage in the TRUE/MOSTLY-TRUE band (72-100%), not the UNVERIFIED band (43-57%).
 
-Prioritize provided sources when available, but actively supplement with your knowledge.`;
+Prioritize provided sources when available, but actively supplement with your knowledge.
+
+**CRITICAL**: When your training knowledge CONTRADICTS the provided web evidence, ALWAYS defer to the web evidence. Your training data may be outdated or incomplete — the web evidence is more current.`;
   }
-  return "Use ONLY the provided evidence and sources. If information is missing, keep the answer in the UNVERIFIED band (43-57%). Do not add evidence not present in the sources.";
+  return `## KNOWLEDGE SOURCE INSTRUCTIONS (EVIDENCE-ONLY MODE)
+
+Use ONLY the provided evidence and sources. Do NOT rely on training data for factual assertions.
+
+**When evidence is insufficient**: If evidence does not cover a claim, say so explicitly and keep the verdict in the UNVERIFIED band (43-57%). Do NOT fill reasoning gaps with your own knowledge — this causes "bounce-back" hallucination where confident-sounding but fabricated reasoning replaces missing evidence.
+
+**When web evidence contradicts your training knowledge**: ALWAYS defer to the provided web evidence, regardless of what your training data suggests. Your training data may be outdated or incomplete.
+
+Do not add evidence not present in the sources.`;
 }
 
 /**
@@ -3165,18 +3177,7 @@ type ArticleVerdict7Point =
 // Confidence threshold to distinguish MIXED from UNVERIFIED (default; overridden by CalcConfig at runtime)
 let MIXED_CONFIDENCE_THRESHOLD = DEFAULT_CALC_CONFIG.mixedConfidenceThreshold;
 
-/**
- * Verdict band lower bounds derived from CalcConfig.verdictBands.
- * Initialized with defaults; overwritten when calcConfig is loaded.
- */
-let VERDICT_BANDS = {
-  TRUE: DEFAULT_CALC_CONFIG.verdictBands.true[0],
-  MOSTLY_TRUE: DEFAULT_CALC_CONFIG.verdictBands.mostlyTrue[0],
-  LEANING_TRUE: DEFAULT_CALC_CONFIG.verdictBands.leaningTrue[0],
-  MIXED: DEFAULT_CALC_CONFIG.verdictBands.mixed[0],
-  LEANING_FALSE: DEFAULT_CALC_CONFIG.verdictBands.leaningFalse[0],
-  MOSTLY_FALSE: DEFAULT_CALC_CONFIG.verdictBands.mostlyFalse[0],
-};
+// VERDICT_BANDS imported from truth-scale.ts — system constant, not configurable via UCM.
 
 /**
  * Context similarity weights derived from CalcConfig.contextSimilarity.
@@ -5092,7 +5093,12 @@ Common incompatibility signals (only split if evidence supports each):
 - Different measurement system boundaries
 - Different process phases that yield incomparable outputs
 
-${recencyMatters ? `## ⚠️ RECENT DATA DETECTED
+${(pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) === false ? `## KNOWLEDGE CONSTRAINT (EVIDENCE-ONLY MODE)
+
+Base claim decomposition and AnalysisContext identification on the input text only.
+Do NOT create AnalysisContexts based on your background knowledge of the topic.
+Research queries may use your knowledge of search strategies, but AnalysisContexts must emerge from the input.
+` : ''}${recencyMatters ? `## ⚠️ RECENT DATA DETECTED
 
 This input appears to involve recent events, dates, or announcements. When generating research queries:
 - **PRIORITIZE**: Queries that will help find the most current information via web search
@@ -7680,6 +7686,9 @@ CRITICAL: Be precise about direction! If the user claims "X is better than Y" an
 
   const systemPrompt = `Extract SPECIFIC evidence items. Focus: ${focus}
  ${targetContextId ? `Target context: ${targetContextId}` : ""}
+
+**ANTI-FABRICATION (CRITICAL)**: Extract ONLY from the provided source text. Do NOT fabricate, infer, or add information not present in the source. If a source is vague or lacks specifics, extract fewer items rather than filling gaps.
+
 Track contested claims with isContestedClaim and claimSource.
 Only HIGH/MEDIUM specificity.
 If the source contains evidence items relevant to MULTIPLE known contexts, include them (do not restrict to only the target),
@@ -8565,7 +8574,11 @@ You MUST provide a complete verdictSummary with:
   * 29-42 = LEANING-FALSE (some counter-evidence)
   * 15-28 = MOSTLY-FALSE (strong counter-evidence)
   * 0-14 = FALSE (direct contradiction)
-- **confidence**: A NUMBER from 0-100 indicating how confident you are in the verdict
+- **confidence**: A NUMBER from 0-100 measuring EVIDENCE STRENGTH (not reasoning confidence):
+  * 80-100: Multiple high-quality sources agree, consistent evidence
+  * 60-79: Good sources, minor gaps or dated info
+  * 40-59: Mixed source quality or some contradictions
+  * Below 40: Limited evidence or significant uncertainty
 - **shortAnswer**: A descriptive sentence summarizing the finding
 - **nuancedAnswer**: A longer explanation of the verdict
 - **keyFactors**: Array of key factors evaluated
@@ -8675,7 +8688,8 @@ ${contextsFormatted}
 
    ${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events, established procedures/standards, and widely-reported information, you ALREADY KNOW the relevant information - use it!
    DO NOT mark factors as "neutral" if you know the answer from your training data.
-   Example: If you know a process followed standard procedures, mark it "yes" even if sources don't explicitly state it.` : "Use ONLY the provided evidence and sources."}
+   However, when your training knowledge CONTRADICTS the provided web evidence, ALWAYS defer to the web evidence.` : `Use ONLY the provided evidence and sources.
+   If evidence is insufficient for a factor, mark as "neutral" — do NOT fill gaps with your own knowledge.`}
 
    CRITICAL: Being "contested" or "disputed" by stakeholders = supports="yes" (if evidence supports it), NOT "neutral"
    Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
@@ -8766,7 +8780,14 @@ ${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 - keyFactors.factor: <= 12 words. keyFactors.explanation: <= 1 sentence.
 - claimVerdicts.reasoning: <= 2 short sentences.
 - supportingEvidenceIds: include up to 5 IDs per claim (or [] if unclear).
-- calibrationNote: keep very short (or "" if not applicable).`;
+- calibrationNote: keep very short (or "" if not applicable).
+
+## FINAL VALIDATION (check before responding)
+- Every claim in reasoning references a supportingEvidenceId
+- ratingConfirmation matches verdict percentage direction
+- Confidence reflects evidence strength, not reasoning confidence
+- No claims in reasoning that aren't supported by cited evidence
+- If evidence was insufficient for any claim, that claim's verdict is in UNVERIFIED band (43-57%)`;
 
   const systemPrompt = systemPromptBase + brevityRules;
 
@@ -9743,7 +9764,11 @@ You MUST provide a complete verdictSummary with:
   * 29-42 = LEANING-FALSE (some counter-evidence)
   * 15-28 = MOSTLY-FALSE (strong counter-evidence)
   * 0-14 = FALSE (direct contradiction)
-- **confidence**: A NUMBER from 0-100 indicating how confident you are in the verdict
+- **confidence**: A NUMBER from 0-100 measuring EVIDENCE STRENGTH (not reasoning confidence):
+  * 80-100: Multiple high-quality sources agree, consistent evidence
+  * 60-79: Good sources, minor gaps or dated info
+  * 40-59: Mixed source quality or some contradictions
+  * Below 40: Limited evidence or significant uncertainty
 - **shortAnswer**: A descriptive sentence summarizing the finding
 - **nuancedAnswer**: A longer explanation of the verdict
 - **keyFactors**: Array of key factors evaluated
@@ -9829,7 +9854,9 @@ Key factors must address the SUBSTANCE of the original claim:
 - supports="neutral": Use ONLY when you genuinely have no information about this factor
 
 ${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events and widely-reported information, use what you know!
-DO NOT mark factors as "neutral" if you know the answer from your training data.` : "Use ONLY the provided evidence and sources."}
+DO NOT mark factors as "neutral" if you know the answer from your training data.
+However, when your training knowledge CONTRADICTS the provided web evidence, ALWAYS defer to the web evidence.` : `Use ONLY the provided evidence and sources.
+If evidence is insufficient for a factor, mark as "neutral" — do NOT fill gaps with your own knowledge.`}
 
 CRITICAL: Being "contested" by stakeholders does NOT make something neutral.
 Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
@@ -9883,6 +9910,14 @@ ${getKnowledgeInstruction(
   understanding,
   state.pipelineConfig?.recencyCueTerms,
 )}
+
+## FINAL VALIDATION (check before responding)
+- Every claim in reasoning references a supportingEvidenceId
+- ratingConfirmation matches verdict percentage direction
+- Confidence reflects evidence strength, not reasoning confidence
+- No claims in reasoning that aren't supported by cited evidence
+- If evidence was insufficient for any claim, that claim's verdict is in UNVERIFIED band (43-57%)
+
 ${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 
   const userPrompt = `## ${inputLabel}
@@ -10572,6 +10607,14 @@ ${getKnowledgeInstruction(
   understanding,
   state.pipelineConfig?.recencyCueTerms,
 )}
+
+## FINAL VALIDATION (check before responding)
+- Every claim in reasoning references a supportingEvidenceId
+- ratingConfirmation matches verdict percentage direction
+- Confidence reflects evidence strength, not reasoning confidence
+- No claims in reasoning that aren't supported by cited evidence
+- If evidence was insufficient for any claim, that claim's verdict is in UNVERIFIED band (43-57%)
+
 ${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
 
   // KeyFactors are now generated in understanding phase, not verdict generation
@@ -11563,14 +11606,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // Apply CalcConfig to module-level verdict scale
   MIXED_CONFIDENCE_THRESHOLD = calcConfig.mixedConfidenceThreshold;
-  VERDICT_BANDS = {
-    TRUE: calcConfig.verdictBands.true[0],
-    MOSTLY_TRUE: calcConfig.verdictBands.mostlyTrue[0],
-    LEANING_TRUE: calcConfig.verdictBands.leaningTrue[0],
-    MIXED: calcConfig.verdictBands.mixed[0],
-    LEANING_FALSE: calcConfig.verdictBands.leaningFalse[0],
-    MOSTLY_FALSE: calcConfig.verdictBands.mostlyFalse[0],
-  };
+  // VERDICT_BANDS: system constant from truth-scale.ts, not overridden by CalcConfig.
   // Apply CalcConfig to claim clustering
   if (calcConfig.claimClustering) {
     CLAIM_CLUSTERING_CONFIG = {
@@ -13198,6 +13234,51 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           details: {
             adjustments: calResult.adjustments,
             warnings: calResult.warnings,
+          },
+        });
+      }
+    }
+
+    // Layer 5: Grounding check — validate verdict reasoning against cited evidence
+    if (claimVerdicts.length > 0 && state.evidenceItems.length > 0) {
+      const groundingResult = checkVerdictGrounding(claimVerdicts, state.evidenceItems);
+      debugLog("Grounding check result", {
+        groundingRatio: groundingResult.groundingRatio.toFixed(2),
+        warnings: groundingResult.warnings,
+        details: groundingResult.verdictDetails.map(d => ({
+          claimId: d.claimId,
+          ratio: d.ratio.toFixed(2),
+          hasCitedEvidence: d.hasCitedEvidence,
+        })),
+      });
+
+      // Apply grounding penalty to verdictSummary confidence
+      if (verdictSummary?.confidence != null) {
+        const gp = applyGroundingPenalty(
+          verdictSummary.confidence,
+          groundingResult.groundingRatio,
+          DEFAULT_GROUNDING_PENALTY_CONFIG,
+        );
+        if (gp.applied) {
+          debugLog("Grounding penalty applied to verdictSummary", {
+            before: verdictSummary.confidence,
+            after: gp.adjustedConfidence,
+            penalty: gp.penalty,
+            groundingRatio: groundingResult.groundingRatio.toFixed(2),
+          });
+          verdictSummary.confidence = gp.adjustedConfidence;
+        }
+      }
+
+      // Log grounding warnings
+      if (groundingResult.warnings.length > 0) {
+        state.analysisWarnings.push({
+          type: "grounding_check",
+          severity: "warning",
+          message: `Grounding ratio: ${(groundingResult.groundingRatio * 100).toFixed(0)}% — ${groundingResult.warnings.length} verdict(s) with low evidence grounding`,
+          details: {
+            groundingRatio: groundingResult.groundingRatio,
+            warnings: groundingResult.warnings,
           },
         });
       }

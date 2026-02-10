@@ -1,35 +1,5 @@
 {
   "schemaVersion": "3.0.0",
-  "verdictBands": {
-    "true": [
-      86,
-      100
-    ],
-    "mostlyTrue": [
-      72,
-      85
-    ],
-    "leaningTrue": [
-      58,
-      71
-    ],
-    "mixed": [
-      43,
-      57
-    ],
-    "leaningFalse": [
-      29,
-      42
-    ],
-    "mostlyFalse": [
-      15,
-      28
-    ],
-    "false": [
-      0,
-      14
-    ]
-  },
   "aggregation": {
     "centralityWeights": {
       "high": 3,

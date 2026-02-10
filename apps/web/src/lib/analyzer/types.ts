@@ -652,7 +652,8 @@ export type AnalysisWarningType =
   | "context_without_evidence"      // AnalysisContext has claims but no evidence
   | "recency_evidence_gap"          // Time-sensitive claim lacks recent evidence
   | "confidence_calibration"        // Confidence was adjusted by calibration system
-  | "low_source_count";             // Thin evidence base (few unique sources)
+  | "low_source_count"              // Thin evidence base (few unique sources)
+  | "grounding_check";              // Verdict reasoning poorly grounded in cited evidence
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.
