@@ -287,7 +287,9 @@ def generate_viewer_html(template_path: Path) -> str:
 // =================================================================
 async function loadBundle(){
   try {
-    const resp = await fetch('pages.json');
+    // Cache-busting: append timestamp to force fresh fetch
+    const cacheBust = new Date().getTime();
+    const resp = await fetch('pages.json?v='+cacheBust);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     const bundle = await resp.json();
     pageTree = bundle.tree;
