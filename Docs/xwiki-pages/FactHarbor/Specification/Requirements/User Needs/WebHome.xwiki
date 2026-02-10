@@ -243,12 +243,12 @@ Full verdict evolution timeline has been **dropped from V1.0**. The system track
 
 **Maps to**: ~~FR8 (Deferred)~~, Data Model (UCM config tracking), NFR3 (Transparency)
 
-=== UN-16: AI vs. Human Review Status ===
-**As** an article reader, 
-**I want** to know if the verdict was AI-generated, human-reviewed, or expert-validated, 
-**so that** I can gauge the appropriate level of trust and understand the review process used.
+=== UN-16: Analysis Origin and Review Status ===
+**As** an article reader,
+**I want** to know how the verdict was generated (AI pipeline, configuration version) and whether expert input was involved,
+**so that** I can gauge the appropriate level of trust and understand the analysis process used.
 
-**Maps to**: AKEL (Publication Modes), Section 5 (Risk Tiers), Data Model (AuthorType field)
+**Maps to**: AKEL (Content States), Section 5 (Risk Tiers), Data Model (AuthorType field)
 
 == 8. User Need → Requirements Mapping Summary ==
 
@@ -283,7 +283,7 @@ This section provides a consolidated view of how user needs drive system require
 |(% style="width:45%" %)Quality Gates|(% style="width:55%" %)UN-9 (methodology transparency)
 |(% style="width:45%" %)Contradiction Search (Gate 2)|(% style="width:55%" %)UN-8 (understanding disagreement)
 |(% style="width:45%" %)Bubble Detection|(% style="width:55%" %)UN-10 (manipulation tactics)
-|(% style="width:45%" %)Publication Modes|(% style="width:55%" %)UN-16 (AI vs. human review status)
+|(% style="width:45%" %)Content States|(% style="width:55%" %)UN-16 (Analysis origin and review status)
 |(% style="width:45%" %)Risk Tiers|(% style="width:55%" %)UN-16 (appropriate review level)
 
 === 8.4 Data Model Coverage ===

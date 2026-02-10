@@ -155,7 +155,7 @@ FactHarbor is designed for evolving knowledge:
 5. Assigns risk tier
 6. Detects AnalysisContexts and KeyFactors
 7. Runs quality gates
-8. Publishes as AI-Generated (Mode 2) if passes
+8. Publishes as AI-Generated if passes
 == 8. What are "risk tiers" and why do they matter? ==
 Risk tiers determine review requirements and publication workflow:
 **Tier A (High Risk)**:

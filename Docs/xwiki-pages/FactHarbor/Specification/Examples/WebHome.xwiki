@@ -424,13 +424,12 @@ Based on the current implementation (v2.10.2), the following summarizes what AKE
 * Harm potential assessment
 * Full markdown report generation
 
-== Requires Human Review (planned for Alpha/Production) ==
+== System Improvement Opportunities ==
 
-* High-risk tier claims (medical, legal, elections) — human review before publication
-* Definition boundaries for ambiguous terms
-* Ethical constraints on sensitive topics
-* Final verdict approval for contested or high-risk claims
-* Publication mode decisions (Draft-Only vs AI-Generated vs Human-Reviewed)
+* High-risk tier claims (medical, legal, elections) — UCM config tuning for domain-specific prompts and thresholds
+* Definition boundaries for ambiguous terms — improved claim decomposition rules
+* Ethical constraints on sensitive topics — risk tier configuration and warning labels
+* Contested or high-risk claims — higher sampling audit rates, confidence threshold adjustments
 
 == See Also ==
 

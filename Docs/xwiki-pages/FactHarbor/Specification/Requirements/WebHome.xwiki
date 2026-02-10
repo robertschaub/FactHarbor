@@ -11,7 +11,7 @@
 == Navigation ==
 
 * **[[User Needs>>FactHarbor.Specification.Requirements.User Needs.WebHome]]** - What users need from FactHarbor (drives these requirements)
-* **[[Roles & Publication Modes>>FactHarbor.Specification.Requirements.Roles.WebHome]]** - User roles and publication modes
+* **[[Roles & Content States>>FactHarbor.Specification.Requirements.Roles.WebHome]]** - User roles and content states
 * **This page** - How we fulfill those needs through system design
 
 (% class="box infomessage" %)

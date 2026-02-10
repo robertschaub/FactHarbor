@@ -30,7 +30,7 @@ See [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] for
 7. Publishes result
 **Processing time**: Typically <20 seconds
 **No human approval required** - publication is automatic
-=== 2.3 Publication States ===
+=== 2.3 Content States ===
 **Processing**: AKEL working on claim (not visible to public)
 **Published**: AKEL completed evaluation (public)
 * Verdict displayed with confidence score

@@ -174,17 +174,18 @@ See [[Calculations documentation>>FactHarbor.Specification.Implementation.WebHom
 The following features are **planned but not yet implemented**. They represent the target production architecture (Alpha/Beta/V1.0).
 {{/warning}}
 
-=== 10.1 Publication Modes and Risk Tiers ===
+=== 10.1 Content States and Risk Tiers ===
 
-**Planned publication modes:**
-* **Mode 1 (Draft-Only)**: Content that fails quality gates, kept in internal review queue
-* **Mode 2 (AI-Generated)**: Published with clear labeling, all quality gates passed
-* **Mode 3 (Human-Reviewed)**: Validated by human reviewers
+**Content states:**
+* **Published**: All quality gates passed, visible to users with AI-Generated labeling
+* **Hidden**: Moderated content (abuse, spam) — not visible to regular users
+
+Analyses that fail quality gates are recorded internally but never published. Quality improvements flow through UCM configuration changes — fix the system, not the data.
 
 **Planned risk tiers:**
-* **Tier A (High Risk)**: Medical, legal, elections — human review required
+* **Tier A (High Risk)**: Medical, legal, elections — published with strong warnings, higher sampling audit rate
 * **Tier B (Medium Risk)**: Contested policy, complex science — sampling audits
-* **Tier C (Low Risk)**: Definitions, established facts — AI-draft default
+* **Tier C (Low Risk)**: Definitions, established facts — standard labeling
 
 === 10.2 Enhanced Quality Gates ===
 

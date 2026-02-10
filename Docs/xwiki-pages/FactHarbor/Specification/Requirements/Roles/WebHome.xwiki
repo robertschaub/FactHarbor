@@ -1,10 +1,10 @@
-= Roles & Publication Modes =
+= Roles & Content States =
 
 **Version:** 0.10.0
 **Last Updated:** February 2026
 **Status:** Current
 
-This page defines user roles and publication modes in FactHarbor.
+This page defines user roles and content states in FactHarbor.
 
 == 1. User Roles ==
 
@@ -117,74 +117,35 @@ Moderators DO NOT handle: CONTENT QUALITY (that's automated)
 
 **User Needs served**: UN-16 (Expert validation status)
 
-== 2. Publication Modes ==
+== 2. Content States ==
 
 **Fulfills**: UN-1 (Trust indicators), UN-16 (Review status transparency)
 
-FactHarbor uses **TWO publication modes** (not three). Focus is on transparency and confidence scoring, not gatekeeping.
+FactHarbor uses **two content states**: Published and Hidden. Analysis data is immutable — quality improvements flow through UCM configuration changes, not data edits. Analyses that fail quality gates are recorded internally but never published; the system is improved to address recurring failures.
 
-=== 2.1 Mode 1: Draft-Only ===
+=== 2.1 Published ===
 
-**Status**: Not visible to public
+**Status**: Visible to all users
 
-**When Used:**
-* Quality gates failed
-* Confidence below threshold
-* Structural integrity issues
-* Insufficient evidence
-
-**What Happens:**
-* Content remains private
-* System logs failure reasons
-* Prompts/algorithms improved based on patterns
-* Content may be re-processed after improvements
-
-**NOT "pending human approval"** - it's blocked because it doesn't meet automated quality standards.
-
-=== 2.2 Mode 2: AI-Generated (Public) ===
-
-**Status**: Published and visible to all users
-
-**When Used:**
+**When:**
 * Quality gates passed
 * Confidence ≥ threshold
 * Meets structural requirements
 * Sufficient evidence found
 
-**Includes:**
-* Confidence score displayed (0-100%)
+**Displayed with content:**
+* Confidence score (0-100%)
+* Source Quality Score (0-100%)
 * Risk tier badge (A/B/C)
-* Quality indicators
+* Controversy flag (if high dispute among sources)
+* Completeness score (% of expected fields filled)
+* Analysis date and UCM Config Version
 * Clear "AI-Generated" labeling
-* Sampling audit status
 
 **Labels by Risk Tier:**
 * **Tier A (High Risk):** "⚠️ AI-Generated - High Impact Topic - Seek Professional Advice"
 * **Tier B (Medium Risk):** "🤖 AI-Generated - May Contain Errors"
 * **Tier C (Low Risk):** "🤖 AI-Generated"
-
-**System Improvement:**
-* Quality improvements flow through UCM configuration changes
-* All config changes versioned and auditable
-* Every analysis references the UCM config snapshot used
-* Sampling audits identify systematic issues for UCM config improvement
-
-== 3. Content States ==
-
-=== 3.1 Published ===
-
-**Status**: Visible to all users
-
-**Includes:**
-* AI-generated analyses (default state after passing gates)
-
-**Quality Indicators** (displayed with content):
-* **Confidence Score**: 0-100% (AI's confidence in analysis)
-* **Source Quality Score**: 0-100% (based on source track record)
-* **Controversy Flag**: If high dispute among sources
-* **Completeness Score**: % of expected fields filled
-* **Analysis Date**: When the analysis was performed
-* **UCM Config Version**: Which configuration version produced this analysis
 
 **Automatic Warnings:**
 * Confidence < 60%: "Low confidence - use caution"
@@ -192,9 +153,15 @@ FactHarbor uses **TWO publication modes** (not three). Focus is on transparency 
 * High controversy: "Disputed - multiple interpretations exist"
 * Medical/Legal/Safety domain: "Seek professional advice"
 
-**User Needs served**: UN-1 (Trust score), UN-9 (Methodology transparency), ~~UN-15 (Evolution timeline - Deferred)~~, UN-16 (Review status)
+**System Improvement:**
+* Quality improvements flow through UCM configuration changes
+* All config changes versioned and auditable
+* Every analysis references the UCM config snapshot used
+* Sampling audits identify systematic issues for UCM config improvement
 
-=== 3.2 Hidden ===
+**User Needs served**: UN-1 (Trust score), UN-9 (Methodology transparency), UN-16 (Review status)
+
+=== 2.2 Hidden ===
 
 **Status**: Not visible to regular users (only to moderators)
 
@@ -214,7 +181,7 @@ FactHarbor uses **TWO publication modes** (not three). Focus is on transparency 
 
 **Note**: Content is hidden, not deleted (for audit trail)
 
-== 4. Roles Overview ==
+== 3. Roles Overview ==
 
 **Four roles:**
 
@@ -226,7 +193,7 @@ FactHarbor uses **TWO publication modes** (not three). Focus is on transparency 
 
 **Key Principle**: Analysis output data is immutable. Quality improvements flow through UCM configuration changes, not data edits.
 
-== 5. Principles ==
+== 4. Principles ==
 
 * **Improve the system, not the data** — analysis outputs are immutable
 * **Low barrier to entry** — anyone can browse and search without registration; submission requires a free account
@@ -235,7 +202,7 @@ FactHarbor uses **TWO publication modes** (not three). Focus is on transparency 
 * **No gatekeeping** for content publication
 * **Every report references its config** — full reproducibility via UCM config snapshots
 
-== 6. Related Pages ==
+== 5. Related Pages ==
 
 * [[AKEL>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] - AI system
 * [[Workflows>>FactHarbor.Specification.Workflows.WebHome]] - Process workflows

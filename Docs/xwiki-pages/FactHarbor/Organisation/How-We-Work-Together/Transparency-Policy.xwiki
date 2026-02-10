@@ -123,7 +123,7 @@ Published **twice yearly** (January and July):
 * Types of data requested
 === 6.2 Content Moderation ===
 * Total moderation actions by category
-* Publication mode changes (Mode 1 → 2, etc.)
+* Content state changes (e.g. Published → Hidden)
 * Quality gate failures by gate
 * Community flags and expert reviews
 * Takedown requests and responses
