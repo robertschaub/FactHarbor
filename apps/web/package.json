@@ -22,11 +22,11 @@
     "promptfoo:view": "promptfoo view"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.1",
+    "@ai-sdk/anthropic": "^3.0.39",
     "@ai-sdk/google": "^3.0.1",
-    "@ai-sdk/mistral": "^3.0.1",
+    "@ai-sdk/mistral": "^3.0.19",
     "@ai-sdk/openai": "^3.0.1",
-    "ai": "^6.0.3",
+    "ai": "^6.0.78",
     "canvas": "^3.2.0",
     "cheerio": "^1.1.2",
     "kill-port": "^2.0.1",
@@ -46,8 +46,8 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/ws": "^8.18.1",
-    "promptfoo": "^0.120.17",
+    "promptfoo": "^0.120.23",
     "typescript": "^5.5.4",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.18"
   }
 }
