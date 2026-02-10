@@ -179,7 +179,7 @@ CLAUDE.md, copilot-instructions.md, and AGENTS.md all described data flow, auth,
 | # | Question | Original Answer | Implementation Resolution |
 |---|----------|----------------|--------------------------|
 | 1 | Is the 5-phase multi-agent workflow used? | Yes, for complex/risky work. | Added usage note to Multi_Agent_Collaboration_Rules.md |
-| 2 | Has Canonical pipeline been removed? | "Yes, fully removed." | **Incorrect.** 640 occurrences remain. Updated AGENTS.md to note deprecated status. Removal is a separate task. |
+| 2 | Has Canonical pipeline been removed? | "Yes, fully removed." | **Now resolved.** Code removed in commit `88e7fc4`. Remaining "canonical" occurrences are either data-normalization functions (canonicalize) or ARCHIVE/historical references — both correct to keep. |
 | 3 | Current version numbers? | Reset to 1.0. | Updated to "Pre-release (targeting v1.0)" in AGENTS.md and Current_Status.md |
 | 4 | Cursor-specific conventions? | "Don't know — please propose." | Created 4 glob-scoped `.mdc` files in `.cursor/rules/` |
 | 5 | Keep CONTRIBUTING.md? | Yes, expand. | Expanded from 11 to 56 lines |
@@ -222,13 +222,16 @@ CLAUDE.md, copilot-instructions.md, and AGENTS.md all described data flow, auth,
 
 | Item | Reason | Tracking |
 |------|--------|----------|
-| Canonical pipeline removal (640 refs, 97 files) | Large engineering task, not an instruction-file issue | `Docs/WIP/Canonical_Pipeline_Removal_Plan.md` |
+| ~~Canonical pipeline removal (640 refs, 97 files)~~ | **COMPLETED** — Code removed in commit `88e7fc4`, doc cleanup in subsequent commits | `Docs/WIP/Canonical_Pipeline_Removal_Plan.md` (status: COMPLETED) |
 | Version/model refs in CHANGELOG.md, Docs/ARCHIVE/ | Historical records, not stale references | N/A |
 | AGENT.md (singular) universal standard adoption | Only ~informational status; AGENTS.md has 60,000+ adoption | Monitor [agentmd/agent.md](https://github.com/agentmd/agent.md) |
 | Ruler/AI-Rulez config management tool | Adds build complexity; manual sync is manageable at current scale (5 tools) | Reconsider if drift becomes a problem |
 | Vitest tests all broken (47/47 fail) | All test files fail with "No test suite found" — likely vitest config or import issue, not missing tests | Investigate vitest configuration |
 | `Current_Status.md` inline version refs (v2.6.38, v2.8.1, v2.9.0 etc.) | Historical "when added" markers inside feature descriptions contrast oddly with "Pre-release v1.0" header | Decide: keep as historical context or strip for v1.0 reset |
-| `.gitignore` line 79 "canonical prompts" comment | Uses "canonical" meaning "authoritative", not the pipeline variant — but could confuse agents following the deprecated-code rule | Clarify comment wording |
+| ~~`.gitignore` line 79 "canonical prompts" comment~~ | **FIXED** — Changed to "primary prompts" to avoid confusion with the removed pipeline variant | Done |
+| Per-file test/lint commands in AGENTS.md | Anthropic recommends per-file commands for fast feedback loops (Grade A). Blocked by vitest config being broken. | Add after vitest fix |
+| Claude Code hooks for quality gates | Anthropic: "Unlike CLAUDE.md instructions which are advisory, hooks are deterministic." Set up Stop hooks for formatting/linting. | Separate engineering task |
+| Claude Code Skills for pipeline terminology | Anthropic recommends Skills for domain knowledge that shouldn't bloat every session. Pipeline terminology could move to `.claude/skills/`. | Consider after evaluating `@AGENTS.md` import overhead |
 
 ---
 

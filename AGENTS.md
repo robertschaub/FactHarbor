@@ -11,7 +11,7 @@ Applies to all paths unless a closer `AGENTS.md` overrides it (e.g., `apps/api/A
 - **No domain-specific hardcoding.** Code, prompts, and logic must work for ANY topic.
 - **No hardcoded keywords.** No lists like `['bolsonaro', 'trump', 'vaccine']`.
 - **Parameterize, don't specialize.** Use configuration over conditionals.
-- **No new code for deprecated/replaced things.** If something is marked deprecated, replaced, or renamed (e.g., Monolithic Canonical pipeline, `ExtractedFact` → `EvidenceItem`, `fact` → `statement`), do not extend, reference, or build on it. Use only the current version.
+- **No new code for removed/replaced things.** If something has been removed, replaced, or renamed (e.g., Monolithic Canonical pipeline [removed], `ExtractedFact` → `EvidenceItem`, `fact` → `statement`), do not extend, reference, or build on it. Use only the current version.
 
 ### Analysis Prompt Rules
 These rules apply specifically to the LLM prompts used in the analysis pipeline (under `apps/web/prompts/`). Improving these prompts for quality and efficiency is welcome — but only with explicit human approval.
@@ -64,6 +64,8 @@ User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port
 | `apps/web/src/lib/config-storage.ts` | Unified Config Management: SQLite storage |
 | `apps/web/src/app/api/internal/run-job/route.ts` | Runner route (job execution entry point) |
 | `apps/api/Services/JobService.cs` | All DB writes (creates event rows for audit) |
+
+**Pattern references:** When adding new code, study existing patterns first. For controller patterns follow `JobsController.cs`, for service patterns follow `JobService.cs`, for pipeline modules study how `evidence-filter.ts` and `aggregation.ts` are structured.
 
 Full project structure: see Architecture diagram above and `apps/api/AGENTS.md` for .NET details.
 
@@ -118,7 +120,9 @@ If the user assigns you a role (Lead Architect, Lead Developer, Senior Developer
 ### Working Principles
 
 - **Stay focused.** Do the task you were given. Do not wander into adjacent improvements unless asked.
+- **Plan before non-trivial changes.** For multi-file changes or unfamiliar code: explore the relevant code, draft an approach, then implement. Skip planning only for single-file, obvious changes.
 - **Quality over quantity.** A small, correct change beats a large, sloppy one. Read before you edit. Verify after you change.
+- **Verify your work.** After implementing, run tests, build, or check output. Don't mark work done without verification.
 - **Be cost-aware.** Minimize unnecessary LLM calls, file reads, and token usage. Don't re-read files you already have in context. Don't generate verbose output when concise will do.
 - **Don't gold-plate.** Deliver what was requested — don't also refactor the file, add comments, and update docs unrequested. But DO report issues, inconsistencies, or improvement opportunities you notice along the way — just flag them, don't act on them without asking.
 - **Cross-check code against docs.** When working on code, consult the related documentation under `Docs/xwiki-pages/FactHarbor/` (see the area-to-document mapping in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §1.2). When working on docs, check the code it describes. Report any mismatches — stale docs and diverged implementations are high-value catches.
@@ -151,7 +155,7 @@ Config: `apps/api/appsettings.Development.json` (from `.example`). Web: `apps/we
 
 ## Current State (Pre-release, targeting v1.0)
 
-Pipeline variants: Orchestrated (default), Monolithic Dynamic (experimental). Monolithic Canonical is deprecated — see `Docs/WIP/Canonical_Pipeline_Removal_Plan.md`.
+Pipeline variants: Orchestrated (default), Monolithic Dynamic (fast alternative). Monolithic Canonical was removed in v2.10.x.
 
 LLM Tiering: Haiku 4.5 (extract/understand), Sonnet 4.5 (verdict/context refinement).
 

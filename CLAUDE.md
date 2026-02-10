@@ -1,7 +1,6 @@
 # Claude Code instructions — FactHarbor
 
-> **For domain-heavy tasks** (pipeline changes, prompt engineering, terminology, architecture):
-> read `/AGENTS.md` first — it contains all project rules, terminology, and architecture reference.
+Project rules, terminology, and architecture: @AGENTS.md
 
 ## Project overview
 

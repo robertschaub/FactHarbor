@@ -14,7 +14,7 @@
 - **Pipeline Variants**:
   - Orchestrated Pipeline (default, production quality)
   - Monolithic Dynamic (experimental, flexible output)
-  - Monolithic Canonical (deprecated — removal planned, see `Docs/WIP/Canonical_Pipeline_Removal_Plan.md`)
+  - ~~Monolithic Canonical~~ (removed in v2.10.x)
 - Multi-context detection and analysis
 - **Heuristic Context Pre-Detection**: Code-level pattern detection for comparison, legal, and environmental claims
 - **Context Overlap Detection**: LLM-driven merge heuristics with defensive validation (v2.6.38)
@@ -185,7 +185,7 @@
 | **Next.js Web App** | ✅ Operational | Pipeline variants operational |
 | **.NET API** | ✅ Operational | SQLite for local, PostgreSQL for production |
 | **Job Orchestration** | ✅ Working | SSE events, exponential backoff retry |
-| **Pipeline Variants** | ✅ Operational | Orchestrated (default) + Monolithic Dynamic; Canonical deprecated |
+| **Pipeline Variants** | ✅ Operational | Orchestrated (default) + Monolithic Dynamic (Twin-Path) |
 | **LLM Integration** | ✅ Multi-provider | Anthropic (recommended), OpenAI, Google, Mistral |
 | **LLM Tiering** | ✅ Implemented | Per-task model selection for cost optimization |
 | **Search Integration** | ✅ Multi-provider | Google CSE, SerpAPI, Gemini Grounded |
@@ -544,7 +544,7 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
   - 4 analysis points: Input Classification, Evidence Quality, Context Similarity, Verdict Validation
   - ITextAnalysisService interface with HeuristicTextAnalysisService, LLMTextAnalysisService, HybridTextAnalysisService
   - Per-analysis-point feature flags for gradual rollout
-  - Multi-pipeline support (Orchestrated, Canonical, Dynamic)
+  - Multi-pipeline support (Orchestrated, Dynamic) — Canonical was later removed in v2.10.x
   - Cost estimate: $0.007-0.028/job (~5.3% increase with Haiku)
   - See: [LLM Text Analysis Pipeline Deep Analysis](../ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
 - **Search Provider Documentation**: Clarified that all pipelines require search credentials
