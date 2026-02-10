@@ -78,11 +78,28 @@
     "nearDuplicateAssessedThreshold": 0.85,
     "nearDuplicateForceScore": 0.92,
     "nearDuplicateSubjectGuardThreshold": 0.5,
+    "nearDuplicateMinNameSim": 0.25,
+    "nearDuplicateMinPrimarySim": 0.15,
     "fallbackEvidenceCapPercent": 40
   },
   "fallback": {
     "step1RelaxInstitution": true,
     "step2RelevanceFloor": 0.4,
     "step3BroadEnabled": true
+  },
+  "provenanceValidation": {
+    "minExcerptLength": 24
+  },
+  "riskTiers": {
+    "highConfidenceThreshold": 70,
+    "mediumConfidenceThreshold": 40
+  },
+  "contextRefinement": {
+    "minAssignmentCoverage": 0.7,
+    "maxEvidenceCeiling": 8
+  },
+  "frameSignal": {
+    "nameDistinctnessThreshold": 0.5,
+    "assessedDistinctnessThreshold": 0.6
   }
 }

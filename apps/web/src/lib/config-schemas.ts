@@ -266,6 +266,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Max search results for criticism/counterevidence queries (default: 8)"),
   searchRetryBeforeFallback: z.boolean().optional()
     .describe("Retry original queries with modified terms before triggering adaptive fallback (default: true)"),
+  planningMaxSearchQueries: z.number().int().min(3).max(12).optional()
+    .describe("Max search queries generated during planning phase in monolithic-dynamic pipeline (default: 8)"),
   contextClaimsAnchorDivergenceThreshold: z.number().int().min(0).max(50).optional()
     .describe("Min divergence between context verdict and claims average to trigger anchoring (default: 15)"),
   contextClaimsAnchorClaimsWeight: z.number().min(0).max(1).optional()
@@ -297,6 +299,9 @@ export const PipelineConfigSchema = z.object({
   ),
   monolithicDynamicTimeoutMs: z.number().int().min(60000).max(600000).optional().describe(
     "Max runtime for monolithic dynamic pipeline (ms)"
+  ),
+  monolithicMaxEvidenceBeforeStop: z.number().int().min(5).max(20).optional().describe(
+    "Max evidence items collected before stopping monolithic research (default: 8)"
   ),
 
   // === Claim Filtering Enhancements ===
@@ -365,6 +370,9 @@ export const PipelineConfigSchema = z.object({
   }
   if (data.monolithicDynamicTimeoutMs === undefined) {
     data.monolithicDynamicTimeoutMs = 150000;
+  }
+  if (data.monolithicMaxEvidenceBeforeStop === undefined) {
+    data.monolithicMaxEvidenceBeforeStop = 8;
   }
   if (data.thesisRelevanceValidationEnabled === undefined) {
     data.thesisRelevanceValidationEnabled = true;
@@ -459,6 +467,9 @@ export const PipelineConfigSchema = z.object({
   if (data.searchRetryBeforeFallback === undefined) {
     data.searchRetryBeforeFallback = true;
   }
+  if (data.planningMaxSearchQueries === undefined) {
+    data.planningMaxSearchQueries = 8;
+  }
   if (data.contextClaimsAnchorDivergenceThreshold === undefined) {
     data.contextClaimsAnchorDivergenceThreshold = 15;
   }
@@ -531,6 +542,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   extractEvidenceLlmTimeoutMs: 300000,
   monolithicCanonicalTimeoutMs: 180000,
   monolithicDynamicTimeoutMs: 150000,
+  monolithicMaxEvidenceBeforeStop: 8,
   thesisRelevanceValidationEnabled: true,
   thesisRelevanceLowConfidenceThreshold: 70,
   thesisRelevanceAutoDowngradeThreshold: 60,
@@ -568,6 +580,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   searchAdaptiveFallbackMaxQueries: 2,
   searchMaxResultsCriticism: 8,
   searchRetryBeforeFallback: true,
+  planningMaxSearchQueries: 8,
   contextClaimsAnchorDivergenceThreshold: 15,
   contextClaimsAnchorClaimsWeight: 0.6,
   probativeDeduplicationThreshold: 0.75,
@@ -854,6 +867,8 @@ export const CalcConfigSchema = z.object({
     nearDuplicateForceScore: z.number().min(0).max(1),
     nearDuplicateSubjectGuardThreshold: z.number().min(0).max(1).optional(),
     nearDuplicateNameGuardThreshold: z.number().min(0).max(1).optional(),
+    nearDuplicateMinNameSim: z.number().min(0).max(1).optional(),
+    nearDuplicateMinPrimarySim: z.number().min(0).max(1).optional(),
     anchorRecoveryThreshold: z.number().min(0).max(1).optional(),
     fallbackEvidenceCapPercent: z.number().int().min(10).max(100).optional(),
   }).optional(),
@@ -871,6 +886,25 @@ export const CalcConfigSchema = z.object({
     step1RelaxInstitution: z.boolean(),
     step2RelevanceFloor: z.number().min(0).max(1),
     step3BroadEnabled: z.boolean(),
+  }).optional(),
+
+  provenanceValidation: z.object({
+    minExcerptLength: z.number().int().min(10).max(100),
+  }).optional(),
+
+  riskTiers: z.object({
+    highConfidenceThreshold: z.number().int().min(50).max(90),
+    mediumConfidenceThreshold: z.number().int().min(20).max(70),
+  }).optional(),
+
+  contextRefinement: z.object({
+    minAssignmentCoverage: z.number().min(0).max(1),
+    maxEvidenceCeiling: z.number().int().min(5).max(20),
+  }).optional(),
+
+  frameSignal: z.object({
+    nameDistinctnessThreshold: z.number().min(0).max(1),
+    assessedDistinctnessThreshold: z.number().min(0).max(1),
   }).optional(),
 });
 
@@ -954,6 +988,8 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     nearDuplicateForceScore: 0.92,
     nearDuplicateSubjectGuardThreshold: 0.5,
     nearDuplicateNameGuardThreshold: 0.4,
+    nearDuplicateMinNameSim: 0.25,
+    nearDuplicateMinPrimarySim: 0.15,
     anchorRecoveryThreshold: 0.6,
     fallbackEvidenceCapPercent: 40,
   },
@@ -968,6 +1004,21 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     step1RelaxInstitution: true,
     step2RelevanceFloor: 0.4,
     step3BroadEnabled: true,
+  },
+  provenanceValidation: {
+    minExcerptLength: 24,
+  },
+  riskTiers: {
+    highConfidenceThreshold: 70,
+    mediumConfidenceThreshold: 40,
+  },
+  contextRefinement: {
+    minAssignmentCoverage: 0.7,
+    maxEvidenceCeiling: 8,
+  },
+  frameSignal: {
+    nameDistinctnessThreshold: 0.5,
+    assessedDistinctnessThreshold: 0.6,
   },
 };
 

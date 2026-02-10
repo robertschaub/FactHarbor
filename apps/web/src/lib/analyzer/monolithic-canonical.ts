@@ -82,9 +82,9 @@ function buildHeuristicSubClaims(
   return candidates.map((text) => ({ text }));
 }
 
-function excerptAppearsInContent(excerpt: string, content: string): boolean {
+function excerptAppearsInContent(excerpt: string, content: string, minLength: number = 24): boolean {
   const ex = String(excerpt || "").trim();
-  if (ex.length < 24) return false; // too short to validate reliably
+  if (ex.length < minLength) return false; // too short to validate reliably
   const c = String(content || "");
   if (!c) return false;
   const nEx = normalizeForContainsMatch(ex);
@@ -614,12 +614,14 @@ export async function runMonolithicCanonical(
 ): Promise<{ resultJson: any; reportMarkdown: string }> {
   const startTime = Date.now();
   // We use tiered models below instead of a single getModel()
-  const [pipelineResult, searchResult] = await Promise.all([
+  const [pipelineResult, searchResult, calcResult] = await Promise.all([
     loadPipelineConfig("default", input.jobId),
     loadSearchConfig("default", input.jobId),
+    getConfig("calculation", "default", { jobId: input.jobId }),
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
+  const calcConfig = calcResult.config;
   const monolithicBudget = {
     ...MONOLITHIC_BUDGET,
     timeoutMs: pipelineConfig.monolithicCanonicalTimeoutMs ?? MONOLITHIC_BUDGET.timeoutMs,
@@ -966,7 +968,8 @@ export async function runMonolithicCanonical(
             specificity: "medium" as const,
           };
 
-          if (!excerptAppearsInContent(f.sourceExcerpt, content)) {
+          const minExcerptLen = calcConfig.provenanceValidation?.minExcerptLength ?? 24;
+          if (!excerptAppearsInContent(f.sourceExcerpt, content, minExcerptLen)) {
             console.warn(
               `[MonolithicCanonical] Dropping evidence item with non-verifiable excerpt (not found in fetched content): ${f.sourceUrl}`,
             );
@@ -976,7 +979,8 @@ export async function runMonolithicCanonical(
           evidenceItems.push(newEvidenceItem);
         }
 
-        needsMoreResearch = extraction.needsMoreResearch && evidenceItems.length < 8;
+        const maxEvidenceBeforeStop = pipelineConfig.monolithicMaxEvidenceBeforeStop ?? 8;
+        needsMoreResearch = extraction.needsMoreResearch && evidenceItems.length < maxEvidenceBeforeStop;
       } catch (err) {
         console.error("Evidence extraction failed:", err);
         needsMoreResearch = false;
@@ -1115,7 +1119,11 @@ export async function runMonolithicCanonical(
       verdict: adjustedVerdict,
       truthPercentage: adjustedVerdict,
       confidence: adjustedConfidence,
-      riskTier: adjustedConfidence >= 70 ? "A" : adjustedConfidence >= 40 ? "B" : "C",
+      riskTier: adjustedConfidence >= (calcConfig.riskTiers?.highConfidenceThreshold ?? 70)
+        ? "A"
+        : adjustedConfidence >= (calcConfig.riskTiers?.mediumConfidenceThreshold ?? 40)
+        ? "B"
+        : "C",
       reasoning: v.reasoning,
       supportingEvidenceIds: validatedEvidenceItems.map((f) => f.id),
       highlightColor: getHighlightColor(adjustedVerdict),

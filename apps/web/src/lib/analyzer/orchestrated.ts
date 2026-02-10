@@ -1113,7 +1113,8 @@ async function refineContextsFromEvidence(
   // If we don't have enough evidence, skip refinement (avoid hallucinated contexts).
   // v2.6.39: Align threshold with mode config (quick=6, deep=8) to enable refinement in quick mode
   const config = getActiveConfig(state.pipelineConfig);
-  const minEvidenceItemsForRefinement = Math.min(8, config.minEvidenceItemsRequired);
+  const maxEvidenceCeiling = state.calcConfig.contextRefinement?.maxEvidenceCeiling ?? 8;
+  const minEvidenceItemsForRefinement = Math.min(maxEvidenceCeiling, config.minEvidenceItemsRequired);
   if (evidenceItems.length < minEvidenceItemsForRefinement) {
     const mode = state.pipelineConfig?.analysisMode ?? DEFAULT_PIPELINE_CONFIG.analysisMode;
     debugLog(`[Refine] Skipping refinement: ${evidenceItems.length} evidence items < ${minEvidenceItemsForRefinement} threshold (mode: ${mode})`);
@@ -1302,7 +1303,8 @@ Return:
 
   // Validate coverage: we need assignments for most evidence items, and at least one evidence item per context.
   const assignmentCount = normalizedEvidenceAssignments.length;
-  if (assignmentCount < Math.floor(promptEvidenceItems.length * 0.7)) {
+  const minCoverage = state.calcConfig.contextRefinement?.minAssignmentCoverage ?? 0.7;
+  if (assignmentCount < Math.floor(promptEvidenceItems.length * minCoverage)) {
     debugLog("refineContextsFromEvidence: rejected (insufficient evidence assignments)", {
       evidenceItemsInPrompt: promptEvidenceItems.length,
       totalEvidenceItems: evidenceItems.length,
@@ -1738,6 +1740,8 @@ Return:
     // names AND assessed statements, they represent genuinely distinct analytical
     // frames even without structured evidenceScope metadata.
     if (!hasStrongFrameSignal && contextsNow.length >= 2) {
+      const nameThreshold = state.calcConfig.frameSignal?.nameDistinctnessThreshold ?? 0.5;
+      const assessedThreshold = state.calcConfig.frameSignal?.assessedDistinctnessThreshold ?? 0.6;
       for (let i = 0; i < contextsNow.length && !hasStrongFrameSignal; i++) {
         for (let j = i + 1; j < contextsNow.length && !hasStrongFrameSignal; j++) {
           const cA = contextsNow[i] as any;
@@ -1749,7 +1753,7 @@ Return:
           if (nameA && nameB && assessedA && assessedB) {
             const nSim = calculateTextSimilarity(nameA, nameB);
             const aSim = calculateTextSimilarity(assessedA, assessedB);
-            if (nSim < 0.5 && aSim < 0.6) {
+            if (nSim < nameThreshold && aSim < assessedThreshold) {
               hasStrongFrameSignal = true;
               debugLog("refineContextsFromEvidence: text distinctness provides strong frame signal", {
                 contextA: nameA,
@@ -2280,7 +2284,9 @@ function calculateContextSimilarity(a: AnalysisContext, b: AnalysisContext): num
   // even when assessed statements are similar (e.g., "Criminal proceedings" vs "Electoral eligibility")
   const nameGuardThreshold = csCfg.nearDuplicateNameGuardThreshold ?? 0.4;
   const hasDistinctName = nameSim > 0 && nameSim < nameGuardThreshold;
-  if (assessedSim >= csCfg.nearDuplicateAssessedThreshold && (nameSim >= 0.25 || primarySim >= 0.15) && !hasDistinctInstitution && !hasDistinctSubject && !hasDistinctName) {
+  const minNameSim = csCfg.nearDuplicateMinNameSim ?? 0.25;
+  const minPrimarySim = csCfg.nearDuplicateMinPrimarySim ?? 0.15;
+  if (assessedSim >= csCfg.nearDuplicateAssessedThreshold && (nameSim >= minNameSim || primarySim >= minPrimarySim) && !hasDistinctInstitution && !hasDistinctSubject && !hasDistinctName) {
     similarity = Math.max(similarity, csCfg.nearDuplicateForceScore);
   }
 
@@ -3186,6 +3192,8 @@ let CONTEXT_SIMILARITY_CONFIG = {
   nearDuplicateForceScore: DEFAULT_CALC_CONFIG.contextSimilarity?.nearDuplicateForceScore ?? 0.92,
   nearDuplicateSubjectGuardThreshold: DEFAULT_CALC_CONFIG.contextSimilarity?.nearDuplicateSubjectGuardThreshold ?? 0.5,
   nearDuplicateNameGuardThreshold: DEFAULT_CALC_CONFIG.contextSimilarity?.nearDuplicateNameGuardThreshold ?? 0.4,
+  nearDuplicateMinNameSim: DEFAULT_CALC_CONFIG.contextSimilarity?.nearDuplicateMinNameSim ?? 0.25,
+  nearDuplicateMinPrimarySim: DEFAULT_CALC_CONFIG.contextSimilarity?.nearDuplicateMinPrimarySim ?? 0.15,
   anchorRecoveryThreshold: DEFAULT_CALC_CONFIG.contextSimilarity?.anchorRecoveryThreshold ?? 0.6,
   fallbackEvidenceCapPercent: DEFAULT_CALC_CONFIG.contextSimilarity?.fallbackEvidenceCapPercent ?? 40,
 };
@@ -11582,6 +11590,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       nearDuplicateForceScore: calcConfig.contextSimilarity.nearDuplicateForceScore,
       nearDuplicateSubjectGuardThreshold: calcConfig.contextSimilarity.nearDuplicateSubjectGuardThreshold ?? 0.5,
       nearDuplicateNameGuardThreshold: calcConfig.contextSimilarity.nearDuplicateNameGuardThreshold ?? 0.4,
+      nearDuplicateMinNameSim: calcConfig.contextSimilarity.nearDuplicateMinNameSim ?? 0.25,
+      nearDuplicateMinPrimarySim: calcConfig.contextSimilarity.nearDuplicateMinPrimarySim ?? 0.15,
       anchorRecoveryThreshold: calcConfig.contextSimilarity.anchorRecoveryThreshold ?? 0.6,
       fallbackEvidenceCapPercent: calcConfig.contextSimilarity.fallbackEvidenceCapPercent ?? 40,
     };
