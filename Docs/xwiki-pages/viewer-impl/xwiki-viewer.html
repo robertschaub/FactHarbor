@@ -1006,6 +1006,11 @@ async function loadPage(ref, addHistory=true){
       file = await page.handle.getFile();
     } else if(page.fileObj){
       file = page.fileObj;
+    } else if(page.serverUrl){
+      const res = await fetch(page.serverUrl);
+      if(!res.ok){ showToast('Cannot load page from server'); return; }
+      const text = await res.text();
+      file = new File([text], page.name, {type:'text/plain', lastModified:Date.now()});
     } else { showToast('Cannot read page'); return; }
 
     const text = await file.text();
@@ -1182,13 +1187,13 @@ function renderTree(tree, depth=0){
       const id = 'tg-'+item.segments.join('-');
       const folderPath = item.segments.join('.');
       html += `<div class="tree-item" style="padding-left:${8+pad}px">
-        <svg class="ti-arrow open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" onclick="toggleFolder('${id}',this.parentElement);event.stopPropagation()"><path d="m9 18 6-6-6-6"/></svg>
+        <svg class="ti-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" onclick="toggleFolder('${id}',this.parentElement);event.stopPropagation()"><path d="m9 18 6-6-6-6"/></svg>
         <span class="ti-folder-label" onclick="openFolder('${id}',this.parentElement,'${escAttr(folderPath)}')">
           <svg class="ti-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
           <span class="ti-label">${esc(item.name)}</span>
         </span>
       </div>
-      <div class="tree-group" id="${id}">${renderTree(item.children, depth+1)}</div>`;
+      <div class="tree-group collapsed" id="${id}">${renderTree(item.children, depth+1)}</div>`;
     } else {
       html += `<div class="tree-item tree-page" data-ref="${esc(item.ref)}" style="padding-left:${8+pad+16}px" onclick="loadPage('${escAttr(item.ref)}')">
         <svg class="ti-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
@@ -1335,8 +1340,8 @@ async function openFolderPicker(){
       addRecent(dirHandle.name,'folder');
       showEditor();
       showToast(`Loaded ${count} pages from ${dirHandle.name}/`);
-      const firstRef = Object.keys(pageIndex)[0];
-      if(firstRef) await loadPage(firstRef);
+      const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+      if(rootRef) await loadPage(rootRef);
     } catch(e){ if(e.name!=='AbortError') console.warn(e); }
   } else {
     // Fallback: use webkitdirectory input (works in Firefox, Chrome, Edge, Safari)
@@ -1371,8 +1376,8 @@ document.getElementById('folderInput').addEventListener('change', async e => {
   showEditor();
   showToast(`Loaded ${count} pages from ${rootName}/`);
 
-  const firstRef = Object.keys(pageIndex)[0];
-  if(firstRef) await loadPage(firstRef);
+  const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+  if(rootRef) await loadPage(rootRef);
   e.target.value = '';
 });
 
@@ -1602,8 +1607,8 @@ async function handleDrop(dt){
           document.getElementById('treeSidebar').classList.remove('collapsed');
           addRecent(dirHandle.name,'folder');
           showEditor(); showToast(`Loaded ${count} pages from ${dirHandle.name}/`);
-          const firstRef = Object.keys(pageIndex)[0];
-          if(firstRef) await loadPage(firstRef);
+          const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+          if(rootRef) await loadPage(rootRef);
           return;
         } else {
           const file = await handle.getFile();
@@ -1632,8 +1637,8 @@ async function handleDrop(dt){
             document.getElementById('treeSidebar').classList.remove('collapsed');
             addRecent(rootName,'folder');
             showEditor(); showToast(`Loaded ${count} pages from ${rootName}/`);
-            const firstRef = Object.keys(pageIndex)[0];
-            if(firstRef) await loadPage(firstRef);
+            const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+            if(rootRef) await loadPage(rootRef);
             return;
           }
         }catch(e){console.warn('Entry drop error:',e)}
@@ -1783,17 +1788,91 @@ function copyPagePath(){
 }
 
 // =================================================================
+// Server-mode auto-loading (when served by Open-XWikiViewer.ps1)
+// =================================================================
+async function loadFromServer(){
+  try {
+    const res = await fetch('/wiki-manifest.json');
+    if(!res.ok) return false;
+    const manifest = await res.json();
+    const tree = buildTreeFromManifest(manifest);
+    pageTree = tree;
+    pageIndex = buildPageIndex(tree);
+    dirHandle = null;
+    const count = Object.keys(pageIndex).length;
+    document.getElementById('treeBody').innerHTML = renderTree(tree);
+    document.getElementById('treeCount').textContent = `(${count})`;
+    document.getElementById('treeSidebar').classList.remove('collapsed');
+    showEditor();
+    showToast(`Loaded ${count} pages`);
+    const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+    if(rootRef) await loadPage(rootRef);
+    return true;
+  } catch(e){ return false; }
+}
+
+function buildTreeFromManifest(manifest){
+  const root = [];
+  const folderMap = {};
+  const sorts = manifest.sorts || {};
+  for(const relPath of manifest.files){
+    const parts = relPath.split('/');
+    const fileName = parts.pop();
+    const baseName = fileName.replace(/\.[^.]+$/,'');
+    const segments = [...parts, baseName];
+    const ref = segments.join('.');
+    const entry = {
+      type:'file', name:fileName, baseName, ref, segments,
+      relPath, handle:null, fileObj:null,
+      serverUrl:'/wiki/'+encodeURI(relPath),
+      parentPath:parts.join('.')
+    };
+    let currentChildren = root;
+    for(let i=0; i<parts.length; i++){
+      const folderPath = parts.slice(0,i+1).join('/');
+      if(!folderMap[folderPath]){
+        const folder = {type:'folder', name:parts[i], segments:parts.slice(0,i+1), children:[]};
+        currentChildren.push(folder);
+        folderMap[folderPath] = folder.children;
+      }
+      currentChildren = folderMap[folderPath];
+    }
+    currentChildren.push(entry);
+  }
+  applySortToTree(root, '', sorts);
+  return root;
+}
+
+function applySortToTree(items, path, sorts){
+  const sortOrder = sorts[path];
+  if(sortOrder){
+    applySortOrder(items, sortOrder);
+  } else {
+    items.sort((a,b)=>{
+      if(a.type!==b.type) return a.type==='folder'?-1:1;
+      return a.name.localeCompare(b.name, undefined, {sensitivity:'base'});
+    });
+  }
+  for(const item of items){
+    if(item.type==='folder' && item.children){
+      const childPath = path ? path+'/'+item.name : item.name;
+      applySortToTree(item.children, childPath, sorts);
+    }
+  }
+}
+
+// =================================================================
 // Init
 // =================================================================
 mermaid.initialize({startOnLoad:false,theme:'default',securityLevel:'loose',fontFamily:'Outfit,sans-serif',
   themeVariables:{primaryColor:'#f0ebe3',primaryBorderColor:'#c9915a',primaryTextColor:'#2e2b26',lineColor:'#8a8580',secondaryColor:'#eaf2fa',tertiaryColor:'#fdf5e0'}});
 renderRecentList();
 
-// Auto-open folder picker if ?open=folder in URL
-(function(){
+// Auto-load: try server-provided wiki first, then fall back to folder picker
+(async function(){
   const params = new URLSearchParams(window.location.search);
-  if(params.get('open') === 'folder'){
-    // Small delay so page renders first
+  const loaded = await loadFromServer();
+  if(!loaded && params.get('open') === 'folder'){
     setTimeout(()=> openFolderPicker(), 300);
   }
 })();

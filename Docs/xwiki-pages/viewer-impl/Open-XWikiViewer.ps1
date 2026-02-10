@@ -67,8 +67,39 @@ if (-not (Test-Path $viewerPath)) {
 }
 
 $viewerContent = [System.IO.File]::ReadAllBytes($viewerPath)
+
+# Scan FactHarbor wiki directory for auto-loading
+$wikiRoot = Join-Path (Split-Path $scriptDir) 'FactHarbor'
+$manifestBytes = $null
+if (Test-Path $wikiRoot) {
+    $allFiles = Get-ChildItem -Path $wikiRoot -Recurse -File
+    $wikiFiles = $allFiles | Where-Object { $_.Extension -eq '.xwiki' }
+    $sortFiles = $allFiles | Where-Object { $_.Name -eq '_sort' }
+
+    $fileList = @()
+    foreach ($f in $wikiFiles) {
+        $fileList += $f.FullName.Substring($wikiRoot.Length + 1).Replace('\', '/')
+    }
+
+    $sortData = @{}
+    foreach ($sf in $sortFiles) {
+        if ($sf.Directory.FullName -eq $wikiRoot) {
+            $key = ''
+        } else {
+            $key = $sf.Directory.FullName.Substring($wikiRoot.Length + 1).Replace('\', '/')
+        }
+        $lines = @(Get-Content $sf.FullName -Encoding UTF8 | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') })
+        $sortData[$key] = $lines
+    }
+
+    $manifest = @{ root = 'FactHarbor'; files = $fileList; sorts = $sortData }
+    $manifestJson = $manifest | ConvertTo-Json -Depth 4 -Compress
+    $manifestBytes = [System.Text.Encoding]::UTF8.GetBytes($manifestJson)
+    Write-Host "  Wiki:   $wikiRoot ($($fileList.Count) pages)" -ForegroundColor DarkGray
+}
+
 $prefix = "http://localhost:$Port/"
-$queryParam = if ($NoAutoOpen) { '' } else { '?open=folder' }
+$queryParam = if ($NoAutoOpen -or $manifestBytes) { '' } else { '?open=folder' }
 $url = "${prefix}xwiki-viewer.html${queryParam}"
 
 # MIME types for serving
@@ -183,6 +214,30 @@ try {
             $response.Headers.Add('Access-Control-Allow-Origin', '*')
             $response.OutputStream.Write($viewerContent, 0, $viewerContent.Length)
             Write-Host "  $(Get-Date -Format 'HH:mm:ss') GET /$requestPath" -ForegroundColor DarkGray
+        }
+        # Serve wiki manifest for auto-loading
+        elseif ($requestPath -eq 'wiki-manifest.json' -and $manifestBytes) {
+            $response.ContentType = 'application/json; charset=utf-8'
+            $response.ContentLength64 = $manifestBytes.Length
+            $response.Headers.Add('Access-Control-Allow-Origin', '*')
+            $response.OutputStream.Write($manifestBytes, 0, $manifestBytes.Length)
+            Write-Host "  $(Get-Date -Format 'HH:mm:ss') GET /wiki-manifest.json" -ForegroundColor DarkGray
+        }
+        # Serve wiki files from FactHarbor directory
+        elseif ($requestPath.StartsWith('wiki/') -and $wikiRoot -and (Test-Path $wikiRoot)) {
+            $wikiRelPath = [Uri]::UnescapeDataString($requestPath.Substring(5))
+            $wikiFilePath = [System.IO.Path]::GetFullPath((Join-Path $wikiRoot $wikiRelPath))
+            if ($wikiFilePath.StartsWith($wikiRoot) -and (Test-Path $wikiFilePath -PathType Leaf)) {
+                $fileBytes = [System.IO.File]::ReadAllBytes($wikiFilePath)
+                $response.ContentType = 'text/plain; charset=utf-8'
+                $response.ContentLength64 = $fileBytes.Length
+                $response.Headers.Add('Access-Control-Allow-Origin', '*')
+                $response.OutputStream.Write($fileBytes, 0, $fileBytes.Length)
+            } else {
+                $response.StatusCode = 404
+                $msg = [System.Text.Encoding]::UTF8.GetBytes("Not found")
+                $response.OutputStream.Write($msg, 0, $msg.Length)
+            }
         }
         # Serve other files from the script directory (for potential local assets)
         else {
