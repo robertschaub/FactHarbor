@@ -9,7 +9,6 @@
   },
   "categories": ["Other"],
   "activationEvents": [
-    "onLanguage:xwiki",
     "workspaceContains:**/*.xwiki"
   ],
   "main": "./dist/extension.js",
@@ -27,6 +26,7 @@
         {
           "id": "xwikiPages",
           "name": "XWiki Pages",
+          "icon": "$(book)",
           "when": "workspaceFolderCount > 0"
         }
       ]
