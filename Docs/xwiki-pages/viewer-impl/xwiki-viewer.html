@@ -1872,7 +1872,12 @@ renderRecentList();
 (async function(){
   const params = new URLSearchParams(window.location.search);
   const loaded = await loadFromServer();
-  if(!loaded && params.get('open') === 'folder'){
+  if(loaded){
+    const pageParam = params.get('page');
+    if(pageParam && pageIndex[pageParam]){
+      await loadPage(pageParam);
+    }
+  } else if(params.get('open') === 'folder'){
     setTimeout(()=> openFolderPicker(), 300);
   }
 })();
