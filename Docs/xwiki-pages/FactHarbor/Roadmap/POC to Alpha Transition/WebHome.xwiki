@@ -8,7 +8,7 @@
 | Processes diverse articles without crashes | Works | **MET** | Pipeline operational, SSE lifecycle management, retry with backoff | No
 | Generates verdicts for all factual claims | Works | **MET** | 7-point verdict scale, per-claim and article verdicts | No
 | Blocks non-factual claims (0% pass through) | 0% | **MET (different approach)** | Gate 1 uses LLM text analysis for factuality classification rather than rule-based opinion detection | No
-| Blocks insufficient-evidence verdicts | 0% with <2 sources | **CODE-ENFORCED** | Gate 4 enforces minimum 2 sources (##quality-gates.ts## line 131-132); central claims exempt | No
+| Blocks insufficient-evidence verdicts | 0% with <2 sources | **CODE-ENFORCED** | Gate 4 enforces minimum 2 sources (##quality-gates.ts##); central claims exempt | No
 | Hallucination rate <10% | <10% | **UNKNOWN** | No baseline test run; 38 promptfoo test cases built but not executed | **YES**
 | 0 opinions published as facts | 0% | **MET (different approach)** | LLM classifies input types at Gate 1; not rule-based | No
 | Average quality score >=7.0/10 | >=7.0 | **UNKNOWN** | No baseline test run | **YES**

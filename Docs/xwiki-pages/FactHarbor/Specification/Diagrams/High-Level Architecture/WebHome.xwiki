@@ -66,13 +66,13 @@ graph TB
 
 == Key Files ==
 
-|= File |= Lines |= Purpose
-| ##orchestrated.ts## | ~13300 | Main orchestrated pipeline
-| ##monolithic-dynamic.ts## | ~735 | Monolithic dynamic pipeline (fast alternative)
-| ##analysis-contexts.ts## | ~600 | AnalysisContext pre-detection
-| ##aggregation.ts## | ~400 | Verdict aggregation + claim weighting
-| ##evidence-filter.ts## | ~300 | Deterministic evidence quality filtering
-| ##source-reliability.ts## | ~500 | LLM-based source reliability scoring
+|= File |= Purpose
+| ##orchestrated.ts## | Main orchestrated pipeline
+| ##monolithic-dynamic.ts## | Monolithic dynamic pipeline (fast alternative)
+| ##analysis-contexts.ts## | AnalysisContext pre-detection
+| ##aggregation.ts## | Verdict aggregation + claim weighting
+| ##evidence-filter.ts## | Deterministic evidence quality filtering
+| ##source-reliability.ts## | LLM-based source reliability scoring
 
 == Environment Variables ==
 

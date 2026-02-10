@@ -18,12 +18,12 @@ graph TB
         CONTEXTS[analysis-contexts.ts Context Detection]
         AGG[aggregation.ts Verdict Aggregation]
         CLAIM_D[claim-decomposition.ts]
-        EF[evidence-filter.ts ~330 lines]
-        QG[quality-gates.ts ~410 lines]
-        SR[source-reliability.ts ~620 lines]
-        VC[verdict-corrections.ts ~310 lines]
-        TS[truth-scale.ts ~280 lines]
-        BU[budgets.ts ~250 lines]
+        EF[evidence-filter.ts]
+        QG[quality-gates.ts]
+        SR[source-reliability.ts]
+        VC[verdict-corrections.ts]
+        TS[truth-scale.ts]
+        BU[budgets.ts]
     end
 
     subgraph Dispatch[Pipeline Dispatch]
@@ -97,5 +97,5 @@ graph TB
 == Detailed Pipeline Diagrams ==
 
 For internal implementation details of each pipeline variant:
-* [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]] - 7-step staged workflow (~13,300 lines)
-* [[Monolithic Dynamic Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] - Fast streamlined analysis (~735 lines)
+* [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]] - 7-step staged workflow
+* [[Monolithic Dynamic Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] - Fast streamlined analysis

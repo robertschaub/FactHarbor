@@ -1,5 +1,5 @@
 {{info}}
-**Fast Alternative Pipeline (v2.6.33)** — Flexible output structure not bound to canonical schema. File: ##monolithic-dynamic.ts## (~550 lines). Streamlined analysis at lower cost, complementing the Orchestrated pipeline.
+**Fast Alternative Pipeline (v2.6.33)** — Flexible output structure not bound to canonical schema. File: ##monolithic-dynamic.ts##. Streamlined analysis at lower cost, complementing the Orchestrated pipeline.
 {{/info}}
 
 = Monolithic Dynamic Pipeline Internal Flow =
@@ -132,13 +132,12 @@ erDiagram
 
 = Differences from Other Pipelines =
 
-|= Aspect |= Orchestrated |= Mono Canonical |= Mono Dynamic
-| Schema | Canonical fixed | Canonical fixed | Flexible
-| UI | Jobs page | Jobs page | Dynamic viewer
-| Fallback | Default | To Orchestrated | None
-| Budget | Generous | Moderate | Restrictive
-| Label | Standard | Standard | Experimental
-| Code | ~13300 lines | ~1500 lines | ~735 lines
+|= Aspect |= Orchestrated |= Mono Dynamic
+| Schema | Canonical fixed | Flexible
+| UI | Jobs page | Dynamic viewer
+| Fallback | Default | None
+| Budget | Generous | Restrictive
+| Label | Comprehensive | Streamlined
 
 = Use Cases =
 
