@@ -1,9 +1,0 @@
-= Development Guidelines =
-
-Development standards for FactHarbor contributors and AI agents. Covers code style, naming conventions, how to define and use EvidenceScope in claims, and the testing strategy (unit tests, promptfoo LLM testing, quality gates).
-
-== Guidelines ==
-
-* [[Coding Guidelines>>FactHarbor.Specification.Development.Guidelines.Coding Guidelines.WebHome]] - Code style, naming conventions, and best practices
-* [[Scope Definition Guidelines>>FactHarbor.Specification.Development.Guidelines.Scope Definition Guidelines.WebHome]] - How to define and use EvidenceScope in claims
-* [[Testing Strategy>>FactHarbor.Specification.Development.Guidelines.Testing Strategy.WebHome]] - Test pyramid, promptfoo testing, and quality assurance

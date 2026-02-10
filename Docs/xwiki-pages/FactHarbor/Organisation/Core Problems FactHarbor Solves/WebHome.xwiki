@@ -83,7 +83,7 @@ FactHarbor aims to:
 * **Resist manipulation** through transparent reasoning and quality oversight
 * **Evolve with research** by continuously improving analysis through UCM configuration
 == 4. Related Pages ==
-* [[Requirements (Roles)>>FactHarbor.Specification.Requirements.WebHome]]
-* [[AKEL (AI Knowledge Extraction Layer)>>FactHarbor.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]
-* [[Functional Requirements>>FactHarbor.Specification.Requirements.WebHome]]
-* [[Federation & Decentralization>>FactHarbor.Specification.Federation & Decentralization.WebHome]]
+* [[Requirements (Roles)>>FactHarbor.Product Development.Requirements.WebHome]]
+* [[AKEL (AI Knowledge Extraction Layer)>>FactHarbor.Product Development.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]
+* [[Functional Requirements>>FactHarbor.Product Development.Requirements.WebHome]]
+* [[Federation & Decentralization>>FactHarbor.Product Development.Specification.Federation & Decentralization.WebHome]]

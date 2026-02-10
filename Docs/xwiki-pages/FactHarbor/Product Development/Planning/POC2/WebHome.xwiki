@@ -1,0 +1,255 @@
+{{warning}}
+**Superseded:** POC2 has been superseded by [[POC to Alpha Transition>>FactHarbor.Product Development.Planning.POC to Alpha Transition.WebHome]]. This page is retained for historical reference.
+{{/warning}}
+
+= POC2: Robust Quality & Reliability =
+
+**Phase Goal:** Prove AKEL produces high-quality outputs consistently at scale
+
+**Success Metric:** <5% hallucination rate, all 4 quality gates operational
+
+== 1. Overview ==
+
+POC2 extends POC1 by implementing the full quality assurance framework (all 4 gates), adding evidence deduplication, and processing significantly more test articles to validate system reliability at scale.
+
+**Key Innovation:** Complete quality validation pipeline catches all categories of errors
+
+**What We're Proving:**
+
+* All 4 quality gates work together effectively
+* Evidence deduplication prevents artificial inflation
+* System maintains quality at larger scale
+* Quality metrics dashboard provides actionable insights
+
+== 2. New Requirements ==
+
+=== 2.1 NFR11: Complete Quality Assurance Framework ===
+
+**Add Gates 2 & 3** (POC1 had only Gates 1 & 4)
+
+==== Gate 2: Evidence Relevance Validation ====
+
+**Purpose:** Ensure AI-linked evidence actually relates to the claim
+
+**Validation Checks:**
+
+1. **Semantic Similarity:** Cosine similarity between claim and evidence embeddings ≥ 0.6
+2. **Entity Overlap:** At least 1 shared named entity between claim and evidence
+3. **Topic Relevance:** Evidence discusses the claim's subject matter (score ≥ 0.5)
+
+**Action if Failed:**
+
+* Discard irrelevant evidence (don't count it)
+* If <2 relevant evidence items remain → "Insufficient Evidence" verdict
+* Log discarded evidence for quality review
+
+**Target:** 0% of evidence cited is off-topic
+
+==== Gate 3: Scenario Coherence Check ====
+
+**Purpose:** Validate scenarios are logical, complete, and meaningfully different
+
+**Validation Checks:**
+
+1. **Completeness:** All required fields populated (assumptions, scope, evidence context)
+2. **Internal Consistency:** Assumptions don't contradict each other (score <0.3)
+3. **Distinctiveness:** Scenarios are meaningfully different (similarity <0.8)
+4. **Minimum Detail:** At least 1 specific assumption per scenario
+
+**Action if Failed:**
+
+* Merge duplicate scenarios
+* Flag contradictory assumptions for review
+* Reduce confidence score by 20%
+* Do not publish if <2 distinct scenarios
+
+**Target:** 0% duplicate scenarios, all scenarios internally consistent
+
+=== 2.2 FR54: Evidence Deduplication (NEW) ===
+
+**Importance:** HIGH 
+**Fulfills:** Accurate evidence counting, prevents artificial inflation
+
+**Purpose:** Prevent counting the same evidence multiple times when cited by different sources
+
+**Problem:**
+
+* Wire services (AP, Reuters) redistribute same content
+* Different sites cite the same original study
+* Aggregators copy primary sources
+* AKEL might count this as "5 sources" when it's really 1
+
+**Solution: Content Fingerprinting**
+
+* Generate SHA-256 hash of normalized text
+* Detect near-duplicates (≥85% similarity) using fuzzy matching
+* Track which sources cited each unique piece of evidence
+* Display provenance chain to user
+
+**Target:** Duplicate detection >95% accurate, evidence counts reflect reality
+
+=== 2.3 NFR13: Quality Metrics Dashboard (Internal) ===
+
+**Importance:** HIGH 
+**Fulfills:** Real-time quality monitoring during development
+
+**Dashboard Metrics:**
+
+* Claim processing statistics
+* Gate performance (pass/fail rates for each gate)
+* Evidence quality metrics
+* Hallucination rate tracking
+* Processing performance
+
+**Target:** Dashboard functional, all metrics tracked, exportable
+
+== 3. Success Criteria ==
+
+**✅ Quality:**
+
+* Hallucination rate <5% (target: <3%)
+* Average quality rating ≥8.0/10
+* 0 critical failures (publishable falsities)
+* Gates correctly identify >95% of low-quality outputs
+
+**✅ All 4 Gates Operational:**
+
+* Gate 1: Claim validation working
+* Gate 2: Evidence relevance filtering working
+* Gate 3: Scenario coherence checking working
+* Gate 4: Verdict confidence assessment working
+
+**✅ Evidence Deduplication:**
+
+* Duplicate detection >95% accurate
+* Evidence counts reflect reality
+* Provenance tracked correctly
+
+**✅ Metrics Dashboard:**
+
+* All metrics implemented and tracking
+* Dashboard functional and useful
+* Alerts trigger appropriately
+
+== 4. Architecture Notes ==
+
+**POC2 Enhanced Architecture:**
+
+{{code}}
+Input → AKEL Processing → All 4 Quality Gates → Display
+ (claims + scenarios (1: Claim validation
+ + evidence linking 2: Evidence relevance
+ + verdicts) 3: Scenario coherence
+ 4: Verdict confidence)
+{{/code}}
+
+**Key Additions from POC1:**
+
+* Scenario generation component
+* Evidence deduplication system
+* Gates 2 & 3 implementation
+* Quality metrics collection
+
+**Still Simplified vs. Full System:**
+
+* Single AKEL orchestration (not multi-component pipeline)
+* No review queue
+* No federation architecture
+
+**See:** [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] for details
+
+== 5. Context-Aware Analysis (Conditional Feature) ==
+
+**Status:** Depends on POC1 experimental test results
+
+**Background:**
+
+POC1 tested context-aware analysis as an experimental feature using Approach 1 (Single-Pass Holistic Analysis). The goal is to detect when articles use accurate individual claims but reach misleading conclusions through faulty logic or selective presentation.
+
+**See:** [[Article Verdict Problem>>FactHarbor.Product Development.Specification.POC.Article-Verdict-Problem]] for complete investigation
+
+=== 5.1 POC2 Implementation Path ===
+
+**Decision based on POC1 test results (30-article test set):**
+
+==== If POC1 Accuracy ≥70% (Success) ====
+
+**Action:** Implement as standard feature (no longer experimental)
+
+**Enhancement to FR4:**
+* Context-aware analysis becomes part of standard Analysis Summary
+* Article verdict may differ from simple claim average
+* AI evaluates logical structure and reasoning quality
+
+**Potential Upgrade to Approach 6 (Hybrid):**
+* Add weighted claim importance (some claims more central than others)
+* Add rule-based fallacy detection alongside AI reasoning
+* Combine AI judgment with heuristic checks for robustness
+
+**Target:** Maintain ≥70% accuracy at detecting misleading articles
+
+==== If POC1 Accuracy 50-70% (Promising) ====
+
+**Action:** Implement alternative Approach 4 (Weighted Aggregation)
+
+**Instead of holistic analysis:**
+* AI assigns importance weights (0-1) to each claim
+* Weight based on: claim centrality, evidence strength, logical role
+* Article verdict = weighted average of claim verdicts
+* More structured than pure AI reasoning
+
+**Rationale:** If holistic reasoning is inconsistent, structured weighting may work better
+
+==== If POC1 Accuracy <50% (Insufficient) ====
+
+**Action:** Defer context-aware analysis to post-POC2
+
+**Fallback:**
+* Focus on individual claim accuracy only
+* Article verdict = simple average of claim verdicts
+* Note limitation: May miss misleading articles built from accurate claims
+
+**Future consideration:** Try Approach 7 (LLM-as-Judge) with better models in future releases
+
+=== 5.2 Testing in POC2 ===
+
+**If context-aware feature is implemented:**
+
+* Expand test set from 30 to 100 articles
+* Include more diverse article types (op-eds, news, analysis, advocacy)
+* Track false positive rate (flagging good articles as misleading)
+* Validate with subject matter experts when possible
+
+**Success Metrics:**
+* ≥70% accuracy on misleading article detection
+* <15% false positive rate
+* Reasoning is comprehensible to users
+
+=== 5.3 Architecture Notes ===
+
+**Context-aware analysis adds NO additional API calls**
+
+The enhanced analysis happens within the existing AKEL workflow:
+
+{{code}}
+Standard Flow: Context-Aware Enhancement:
+1. Extract claims 1. Extract claims + mark central claims
+2. Find evidence 2. Find evidence
+3. Generate verdicts 3. Generate verdicts
+4. Write summary 4. Write context-aware summary
+ (evaluates article structure)
+{{/code}}
+
+**Cost:** $0 increase (same API calls, enhanced prompt only)
+
+**See:** [[POC Requirements>>FactHarbor.Product Development.Specification.POC.Requirements]] Component 1 for implementation details
+
+== Related Pages ==
+
+* [[POC to Alpha Transition>>FactHarbor.Product Development.Planning.POC to Alpha Transition.WebHome]] — Supersedes this document
+* [[POC1>>FactHarbor.Product Development.Planning.POC1.WebHome]] — Previous phase
+* [[Beta>>FactHarbor.Product Development.Planning.Beta0.WebHome]] — Follows Alpha in revised roadmap
+* [[Roadmap Overview>>FactHarbor.Product Development.Planning.WebHome]]
+* [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]]
+
+**Version:** V0.9.70 (original specification)

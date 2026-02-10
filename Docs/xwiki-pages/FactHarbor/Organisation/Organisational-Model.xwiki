@@ -72,7 +72,7 @@ FactHarbor operates as a **Swiss Verein** (non-profit association) with a **simp
 * ✅ When metrics show problems, fix the ALGORITHM
 * ❌ Do NOT manually correct individual outputs
 === 2.3.5 Team Roles Diagram ===
-{{include reference="FactHarbor.Specification.Diagrams.Human User Roles.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Specification.Diagrams.Human User Roles.WebHome"/}}
 == 3. Decision-Making ==
 === 3.1 Routine Operations ===
 **Handled by**: Technical Coordinator + Community Coordinator

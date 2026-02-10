@@ -1,0 +1,270 @@
+= POC1: Core Workflow with Quality Gates =
+
+**Phase Goal:** Prove AKEL can produce credible, quality outputs without manual intervention
+
+**Success Metric:** <10% hallucination rate, quality gates prevent low-confidence publications
+
+== 1. Overview ==
+
+POC1 validates that the core AKEL workflow (Article → Claims → Verdicts) can produce trustworthy fact-checking analyses automatically. This phase implements **2 critical quality gates** to prevent low-quality outputs from being published.
+
+**Key Innovation:** Quality validation BEFORE publication, not after
+
+**What We're Proving:**
+
+* AKEL can reliably extract factual claims from articles
+* AKEL can generate credible verdicts with proper evidence
+* **AKEL can assess article credibility beyond simple claim averaging** (context-aware analysis)
+* Quality gates prevent hallucinations and low-confidence outputs
+* Fully automated approach is viable
+
+== 2. Scope ==
+
+=== In Scope ===
+
+* Core AKEL workflow (claim extraction, verdict generation)
+* **Gate 1:** Claim Validation (factual vs. opinion/prediction)
+* **Gate 4:** Verdict Confidence Assessment (minimum 2 sources, quality thresholds)
+* Basic UI to display results
+* Manual quality tracking
+
+=== Out of Scope (Deferred to POC2+) ===
+
+* User accounts / authentication
+* Corrections system
+* Search engine optimization (ClaimReview schema)
+* Image verification
+* Archive.org integration
+* Security hardening
+* Gates 2 & 3 (Evidence relevance, AnalysisContext coherence)
+
+{{info}}
+**Now Implemented in POC1:** The following items were originally deferred but have been implemented:
+* **API endpoints** — ASP.NET Core 8.0 API (`apps/api/`)
+* **A/B testing** — Built-in A/B testing framework (`apps/web/src/lib/analyzer/ab-testing.ts`)
+{{/info}}
+
+=== Context-Aware Analysis (Implemented) ===
+
+{{info}}
+**Status: Production Feature.** Context-aware analysis was originally listed as experimental. It is now a core production feature implemented as **AnalysisContext detection** in the orchestrated pipeline.
+{{/info}}
+
+**What was implemented:**
+* Claims are decomposed into **AnalysisContexts** — bounded analytical frames that identify distinct verifiable aspects
+* Each AnalysisContext contains **KeyFactors** — specific questions to investigate, with contestation tracking
+* The pipeline evaluates evidence per-context, producing independent verdicts that are then aggregated
+* This is more sophisticated than the original "single-pass holistic" proposal — it uses structured multi-context decomposition rather than a simple prompt enhancement
+
+**See:** [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] and [[AKEL>>FactHarbor.Product Development.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] for details
+
+== 3. Requirements ==
+
+=== 3.1 NFR11: Quality Assurance Framework (POC1 Lite Version) ===
+
+**Importance:** CRITICAL - Core POC1 Requirement 
+**Fulfills:** AI safety, credibility, prevents embarrassing failures
+
+**Specification:**
+
+AKEL must validate outputs before displaying to users. POC1 implements a **2-gate subset** of the full NFR11 framework.
+
+==== Gate 1: Claim Validation ====
+
+**Purpose:** Ensure extracted claims are factual assertions, not opinions or predictions
+
+**Validation Checks:**
+
+1. **Factual Statement Test:** Can this be verified with evidence?
+2. **Opinion Detection:** Contains hedging language? ("I think", "probably", "best", "worst")
+3. **Specificity Score:** Contains concrete details? (names, numbers, dates, locations)
+4. **Future Prediction Test:** Makes claims about future events?
+
+**Pass Criteria:**
+{{code}}- isFactual: true
+- opinionScore: ≤ 0.3
+- specificityScore: ≥ 0.3
+- claimType: FACTUAL{{/code}}
+
+**Action if Failed:**
+
+* Flag as "Non-verifiable: Opinion/Prediction/Ambiguous"
+* Do NOT generate analysis contexts or verdicts
+* Display explanation to user
+
+**Target:** 0% opinion statements processed as facts
+
+==== Gate 4: Verdict Confidence Assessment ====
+
+**Purpose:** Only publish verdicts with sufficient evidence and confidence
+
+**Validation Checks:**
+
+1. **Evidence Count:** Minimum 2 independent sources
+2. **Source Quality:** Average reliability ≥ 0.6 (on 0-1 scale)
+3. **Evidence Agreement:** % supporting vs. contradicting ≥ 0.6
+4. **Uncertainty Factors:** Count of hedging statements in reasoning
+
+**Confidence Tiers:**
+{{code}}HIGH (80-100%):
+ - ≥3 sources
+ - ≥0.7 average quality
+ - ≥80% agreement
+ 
+MEDIUM (50-79%):
+ - ≥2 sources
+ - ≥0.6 average quality
+ - ≥60% agreement
+ 
+LOW (0-49%):
+ - ≥2 sources BUT low quality/agreement
+ 
+INSUFFICIENT:
+ - <2 sources → DO NOT PUBLISH{{/code}}
+
+**POC1 Publication Rule:**
+
+* Minimum **MEDIUM** confidence required
+* Blocked verdicts show "Insufficient Evidence" message
+
+**Target:** 0% verdicts published with <2 sources
+
+=== 3.2 Modified FR7: Automated Verdicts (Enhanced) ===
+
+**Enhancement for POC1:**
+
+After AKEL generates a verdict, it must pass through the quality validation pipeline:
+
+{{code}}
+AKEL Workflow (POC1):
+
+1. Extract claims from article
+ ↓
+2. [GATE 1] Validate each claim is fact-checkable
+ ↓ (pass claims only)
+3. Generate verdicts for each claim
+ ↓
+4. [GATE 4] Validate verdict has sufficient evidence
+ ↓ (pass verdicts only)
+5. Display to user
+
+Failed claims/verdicts:
+- Store in database with failure reason
+- Display explanatory message to user
+- Log for quality metrics tracking
+{{/code}}
+
+**Updated Verdict States:**
+
+* PUBLISHED - Passed all gates
+* INSUFFICIENT_EVIDENCE - Failed Gate 4
+* NON_FACTUAL_CLAIM - Failed Gate 1
+* PROCESSING - In progress
+* ERROR - System failure
+
+=== 3.3 Modified FR4: Analysis Summary (Enhanced) ===
+
+**Enhancement for POC1:**
+
+Analysis Summary must now display quality metadata:
+
+{{code}}
+Analysis Summary:
+ Total Claims Found: 5
+ Verifiable Claims: 3
+ Non-verifiable (Opinion): 1
+ Non-verifiable (Prediction): 1
+ 
+ Verdicts Generated: 3
+ High Confidence: 1
+ Medium Confidence: 2
+ Insufficient Evidence: 0
+ 
+ Evidence Sources: 12 total
+ Average Source Quality: 0.73
+ 
+ Quality Score: 8.5/10
+{{/code}}
+
+== 4. Success Criteria ==
+
+POC1 is considered **SUCCESSFUL** if:
+
+**✅ Functional:**
+
+* Processes diverse test articles without crashes
+* Generates verdicts for all factual claims
+* Blocks all non-factual claims (0% pass through)
+* Blocks all insufficient-evidence verdicts (0% with <2 sources)
+
+**✅ Quality:**
+
+* Hallucination rate <10% (manual verification)
+* 0 verdicts with <2 sources published
+* 0 opinion statements published as facts
+* Average quality score ≥7.0/10
+
+**✅ Performance:**
+
+* Processing time reasonable for POC demonstration
+* Quality gates execute efficiently
+* UI displays results clearly
+
+**✅ Learnings:**
+
+* Identified prompt engineering improvements
+* Documented AKEL strengths/weaknesses
+* Validated threshold values
+* Clear path to POC2 defined
+
+== 5. Decision Gates ==
+
+**POC → Alpha Decision:**
+
+* **IF** hallucination rate >10% → Pause, improve prompts before Alpha
+* **IF** majority of claims non-processable → Rethink claim extraction approach
+* **IF** quality gates too strict (excessive blocking) → Adjust thresholds
+* **IF** quality gates too loose (hallucinations pass) → Tighten criteria
+
+**Only proceed to Alpha if all success criteria met**
+
+== 6. Architecture Notes ==
+
+**Actual POC1 Architecture (Implemented):**
+
+{{code}}
+User Input → STEP 1: UNDERSTAND (claim decomposition, AnalysisContext detection)
+           → STEP 2-4: RESEARCH & EVIDENCE (web search, evidence extraction, quality filtering)
+           → STEP 4.4-4.6: CONTEXT REFINEMENT (supplemental claims/contexts)
+           → STEP 5: VERDICTS (per-context verdicts with 7-point truth scale)
+           → STEP 6: SUMMARY (aggregation across contexts)
+           → STEP 7: REPORT (final output with quality gates)
+{{/code}}
+
+**vs. Full System (Future):**
+
+{{code}}
+Above pipeline + Review Queue → Publication workflow → User contributions
+{{/code}}
+
+**Current POC1 Simplifications (vs. full production):**
+
+* 2 quality gates (Gate 1 + Gate 4) instead of 4
+* No review queue or publication workflow
+* No user accounts or contribution system
+* SQLite storage (not PostgreSQL)
+* Single-instance deployment
+
+**See:** [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] for details
+
+== Related Pages ==
+
+* [[POC to Alpha Transition>>FactHarbor.Product Development.Planning.POC to Alpha Transition.WebHome]] — Phase redefinition and transition assessment
+* [[Roadmap Overview>>FactHarbor.Product Development.Planning.WebHome]] — All phases
+* [[POC2 Requirements>>FactHarbor.Product Development.Planning.POC2.WebHome]] — Superseded by POC to Alpha Transition
+* [[Requirements>>FactHarbor.Product Development.Requirements.WebHome]] — Full system requirements
+* [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] — System architecture
+* [[NFR11 Full Specification>>FactHarbor.Product Development.Requirements.WebHome#NFR11]] — Complete quality framework
+
+**Document Status:** POC1 Feature-Complete (v2.10.2) — Pending baseline quality test to declare POC complete and enter Alpha
+**Version:** v2.10.2

@@ -203,11 +203,11 @@ The fact-checking landscape in 2025 is experiencing significant disruption. Meta
 === Key Differentiators ===
 
 1. **Scenario-Based Analysis:** A claim isn't just "true" or "false"—it's "true under these assumptions, false under those"
-1. **Truth Landscape:** Shows where a claim holds, fails, and where reasonable disagreement exists
+1. **Evidence Landscape:** Shows where a claim holds, fails, and where reasonable disagreement exists
 1. **Transparent Reasoning:** Every step from claim → scenario → evidence → verdict is visible
 1. **Probabilistic Verdicts:** Not just labels, but likelihood ranges with explicit uncertainty factors
 1. **Versioned Knowledge:** Updates tracked; evidence evolution visible
-1. **Federated Model:** No single entity controls truth; nodes can synchronize
+1. **Federated Model:** No single entity controls the narrative; nodes can synchronize
 
 ----
 

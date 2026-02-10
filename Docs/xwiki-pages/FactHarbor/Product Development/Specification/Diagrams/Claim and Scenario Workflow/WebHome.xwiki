@@ -1,0 +1,79 @@
+{{info}}
+**Current Implementation (v2.10.2)** — The pipeline uses **AnalysisContexts** (bounded analytical frames) and **KeyFactors** (decomposition questions with contestation tracking), discovered during the understanding phase.
+{{/info}}
+
+= Claim Analysis Workflow =
+
+{{mermaid}}
+
+graph TB
+    Start[User Submission]
+
+    subgraph Step1[Step 1 Understand]
+        Extract{understandClaim LLM Analysis}
+        Gate1{Gate 1 Claim Validation}
+        DetectType[Detect Input Type]
+        DetectContexts[Detect Contexts]
+        KeyFactors[Discover KeyFactors]
+    end
+
+    subgraph Step2[Step 2 Research]
+        Decide[decideNextResearch]
+        Search[Web Search]
+        Fetch[Fetch Sources]
+        Facts[extractEvidence]
+    end
+
+    subgraph Step3[Step 3 Verdict]
+        Verdict[generateVerdicts]
+        Gate4{Gate 4 Confidence Check}
+    end
+
+    subgraph Output[Output]
+        Publish[Publish Result]
+        LowConf[Low Confidence Flag]
+    end
+
+    Start --> Extract
+    Extract --> Gate1
+    Gate1 -->|Pass Factual| DetectType
+    Gate1 -->|Fail Opinion| Exclude[Exclude from analysis]
+    DetectType --> DetectContexts
+    DetectContexts --> KeyFactors
+    KeyFactors --> Decide
+    Decide --> Search
+    Search --> Fetch
+    Fetch --> Facts
+    Facts -->|More research needed| Decide
+    Facts -->|Sufficient evidence| Verdict
+    Verdict --> Gate4
+    Gate4 -->|High or Medium confidence| Publish
+    Gate4 -->|Low or Insufficient| LowConf
+
+{{/mermaid}}
+
+== Quality Gates (Implemented) ==
+
+|= Gate |= Name |= Purpose |= Pass Criteria
+| **Gate 1** | Claim Validation | Filter non-factual claims | Factual, opinion score 0.3 or less, specificity 0.3 or more
+| **Gate 4** | Verdict Confidence | Ensure sufficient evidence | 2 or more sources, avg quality 0.6 or more, agreement 60% or more
+
+//Gates 2 (Contradiction Search) and 3 (Uncertainty Quantification) are not yet implemented.//
+
+== KeyFactors (Replaces Scenarios) ==
+
+**KeyFactors** are optional decomposition questions discovered during the understanding phase:
+* Not stored as separate entities
+* Help break down complex claims into checkable sub-questions
+* See [[KeyFactors Design>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] for design rationale
+
+== 7-Point Verdict Scale ==
+
+* **TRUE** (86-100%) - Claim is well-supported by evidence
+* **MOSTLY-TRUE** (72-85%) - Largely accurate with minor caveats
+* **LEANING-TRUE** (58-71%) - More evidence supports than contradicts
+* **MIXED** (43-57%, high confidence) - Roughly equal evidence both ways
+* **UNVERIFIED** (43-57%, low confidence) - Insufficient evidence to determine
+* **LEANING-FALSE** (29-42%) - More evidence contradicts than supports
+* **MOSTLY-FALSE** (15-28%) - Largely inaccurate
+* **FALSE** (0-14%) - Claim is refuted by evidence

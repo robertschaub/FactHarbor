@@ -1,0 +1,132 @@
+= FactHarbor Architecture =
+
+FactHarbor is an **AI-powered fact-checking platform** that analyses claims and articles using multiple LLM providers and web search, producing structured verdicts with evidence provenance and confidence scores.
+
+This section provides a comprehensive view of the system architecture, organised for different audiences — from executive overview to developer reference.
+
+== How It Works ==
+
+FactHarbor's core is the **AKEL pipeline** (AI Knowledge Extraction Layer): a multi-step analysis engine that decomposes claims, researches evidence from the web, and generates verdicts on a 7-point verdict scale.
+
+{{mermaid}}
+flowchart LR
+    INPUT["Article or Claim"] --> UNDERSTAND["Understand\n& Decompose"]
+    UNDERSTAND --> RESEARCH["Research\nEvidence"]
+    RESEARCH --> VERDICTS["Generate\nVerdicts"]
+    VERDICTS --> REPORT["Structured\nReport"]
+
+    style INPUT fill:#e3f2fd,stroke:#1565c0,color:#000
+    style UNDERSTAND fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style RESEARCH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style VERDICTS fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style REPORT fill:#fff9c4,stroke:#f9a825,color:#000
+{{/mermaid}}
+
+//The pipeline extracts claims from input, searches the web for evidence, evaluates each claim against evidence, and produces a detailed report with verdicts, confidence scores, and source citations.//
+
+== System Context ==
+
+{{mermaid}}
+flowchart TB
+    USER["Users\n(Readers, Analysts, Admins)"]
+
+    subgraph FH["FactHarbor Platform"]
+        direction LR
+        WEB["Next.js Web App\nUI + Analysis Engine"]
+        API[".NET API\nJob Management"]
+        DB[("SQLite\nDatabases")]
+    end
+
+    subgraph LLM["LLM Providers"]
+        ANTHROPIC["Anthropic\n(Claude)"]
+        OPENAI["OpenAI\n(GPT)"]
+        GOOGLE["Google\n(Gemini)"]
+        MISTRAL["Mistral"]
+    end
+
+    subgraph SEARCH["Search Providers"]
+        CSE["Google CSE"]
+        SERP["SerpAPI"]
+    end
+
+    USER --> FH
+    WEB <--> API
+    API --> DB
+    WEB --> DB
+    WEB --> LLM
+    WEB --> SEARCH
+
+    style FH fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style LLM fill:#e3f2fd,stroke:#1565c0,color:#000
+    style SEARCH fill:#fff3e0,stroke:#e65100,color:#000
+    style USER fill:#f3e5f5,stroke:#6a1b9a,color:#000
+{{/mermaid}}
+
+//FactHarbor uses a two-service architecture: a Next.js app for the user interface and AKEL analysis engine, backed by a .NET API for job persistence. The system integrates with multiple LLM and search providers for vendor independence.//
+
+== Core Principles ==
+
+* **AI-First** — The AKEL pipeline is the primary analytical system; humans supplement, not gate-keep
+* **Publish by Default** — No centralised approval; every verdict carries confidence scores and evidence provenance
+* **System Over Data** — Improve algorithms, not individual outputs
+* **Measure Everything** — Quality metrics drive all improvements
+* **No Vendor Lock-In** — Switch LLM or search providers based on cost, quality, or availability without code changes
+* **Start Simple** — Add complexity only when metrics prove it necessary
+
+== Technology Stack ==
+
+|= Layer |= Technology |= Purpose
+| **Frontend** | Next.js (TypeScript, React) | User interface, admin dashboard
+| **Analysis Engine** | TypeScript, Vercel AI SDK | AKEL pipeline, LLM orchestration
+| **API Backend** | ASP.NET Core 8 (C#) | Job scheduling, persistence, SSE events
+| **Storage** | SQLite (3 databases) | Jobs, configuration, source reliability cache
+| **LLM Providers** | Anthropic, OpenAI, Google, Mistral | Multi-provider AI with per-task model tiering
+| **Web Search** | Google CSE, SerpAPI | Evidence retrieval with provider fallback
+| **Quality** | Vitest, PromptFoo | Automated testing and prompt evaluation
+
+== Architecture Documentation ==
+
+=== Architectural Views (for Architects and Product Owners) ===
+
+|= Page |= What You'll Learn
+| [[System Design>>FactHarbor.Product Development.Specification.Architecture.System Design.WebHome]] | Two-service architecture, request lifecycle, technology stack, inter-service communication
+| [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]] | 5-step analysis flow, pipeline variants, shared analysis modules
+| [[Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]] | Complete entity model (10 entities from ClaimUnderstanding to ArticleAnalysis), quality gate and configuration entities, 7-point verdict scale, job lifecycle
+| [[External Dependencies>>FactHarbor.Product Development.Specification.Architecture.External Dependencies.WebHome]] | LLM providers and model tiering, search providers, provider health monitoring
+| [[Storage and Configuration>>FactHarbor.Product Development.Specification.Architecture.Storage and Configuration.WebHome]] | Three-database architecture, UCM configuration management, storage evolution roadmap
+| [[Quality and Trust>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust.WebHome]] | Quality gates, evidence filtering, source reliability, confidence calibration
+| [[Security and Operations>>FactHarbor.Product Development.Specification.Architecture.Security and Operations.WebHome]] | Security model, deployment topology, user roles, monitoring
+
+=== Deep Dives (for Developers and Testers) ===
+
+| [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Role-based navigation to detailed implementation references
+
+Includes: Orchestrated Pipeline internals, Pipeline Variants (Twin-Path), Quality Gates Reference, Context Detection, Evidence Quality Filtering, Source Reliability System, Calculations and Verdicts, Prompt Architecture, Confidence Calibration.
+
+=== Future Architecture ===
+
+| [[Future>>FactHarbor.Product Development.Specification.Architecture.Future.WebHome]] | Target production architecture, federation vision, automation roadmap
+
+== Reading Paths ==
+
+{{info}}
+**Sponsor or executive?** Start here, then optionally read [[Quality and Trust>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust.WebHome]] to understand what makes the analysis trustworthy.
+
+**Product Owner or Architect?** Read the 7 Architectural Views above in order (~30-45 minutes for a thorough understanding).
+
+**Developer or Tester?** Complete the Architect path first for context, then use the [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] to navigate to references relevant to your task.
+{{/info}}
+
+== Project Status ==
+
+|= Phase |= Status |= Description
+| **POC** | Current | Single-instance deployment, SQLite storage, core AKEL pipeline with 3 variants, 800+ unit tests
+| **Alpha** | Planned | User accounts, PostgreSQL migration, quality gate closure
+| **Beta** | Planned | Multi-instance, monitoring, Shadow Mode (self-learning prompt optimisation)
+| **V1.0** | Vision | Federation (multi-instance sync), full automation, public API
+
+== Related ==
+
+* [[Design Decisions>>FactHarbor.Product Development.Specification.Design-Decisions]] — Rationale for key architectural choices
+* [[When to Add Complexity>>FactHarbor.Product Development.DevOps.Guidelines.When to Add Complexity.WebHome]] — Decision triggers for technology additions
+* [[Requirements>>FactHarbor.Product Development.Requirements.WebHome]] — User needs and system requirements

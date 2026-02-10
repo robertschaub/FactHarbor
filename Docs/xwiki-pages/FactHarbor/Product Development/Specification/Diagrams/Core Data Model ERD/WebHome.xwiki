@@ -1,0 +1,116 @@
+{{info}}
+This diagram shows the **current implementation** data model. Storage is JSON blobs in SQLite. AnalysisContexts (bounded analytical frames) and KeyFactors (decomposition questions with contestation tracking) are embedded in result JSON, not separate stored entities. No user system implemented.
+
+Updated 2026-02-08 per documentation audit report.
+{{/info}}
+
+= Current Implementation Data Model =
+
+{{mermaid}}
+
+erDiagram
+    ARTICLE ||--o{ CLAIM : contains
+    ARTICLE ||--|| ARTICLE_VERDICT : has
+    CLAIM ||--|| CLAIM_VERDICT : has
+    CLAIM ||--o{ CLAIM : depends_on
+    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : supported_by
+    SOURCE ||--o{ EVIDENCE_ITEM : provides
+    ARTICLE ||--o{ ANALYSIS_CONTEXT : has
+
+    ARTICLE {
+        string id_PK
+        string inputType
+        string inputValue
+        string articleThesis
+        string detectedInputType
+        boolean requiresSeparateAnalysis
+        json analysisContexts
+        string schemaVersion
+    }
+
+    CLAIM {
+        string id_PK
+        string articleId_FK
+        string text
+        string type
+        string claimRole
+        string_array dependsOn
+        string keyFactorId
+        boolean isCentral
+        string contextId
+    }
+
+    CLAIM_VERDICT {
+        string claimId_FK
+        number verdict
+        number truthPercentage
+        number confidence
+        string reasoning
+        string_array supportingEvidenceIds
+        string ratingConfirmation
+        boolean isContested
+        string contestedBy
+        string factualBasis
+    }
+
+    ARTICLE_VERDICT {
+        string articleId_FK
+        string verdict
+        int truthPercentage
+        int confidence
+        string summary
+    }
+
+    EVIDENCE_ITEM {
+        string id_PK
+        string sourceId_FK
+        string statement
+        string sourceExcerpt
+        string category
+        string claimDirection
+        string contextId
+        string sourceAuthority
+        string probativeValue
+        string evidenceBasis
+        number extractionConfidence
+    }
+
+    SOURCE {
+        string id_PK
+        string url
+        string title
+        float trackRecordScore
+        float trackRecordConfidence
+        boolean trackRecordConsensus
+        string category
+        boolean fetchSuccess
+    }
+
+    ANALYSIS_CONTEXT {
+        string id_PK
+        string name
+        string shortName
+        string subject
+        string temporal
+        string status
+        string outcome
+        string assessedStatement
+        json metadata
+    }
+
+{{/mermaid}}
+
+== Key Implementation Notes ==
+
+**7-Point Verdict Scale:**
+* TRUE (86-100%) / MOSTLY-TRUE (72-85%) / LEANING-TRUE (58-71%)
+* MIXED (43-57%, high confidence) / UNVERIFIED (43-57%, low confidence)
+* LEANING-FALSE (29-42%) / MOSTLY-FALSE (15-28%) / FALSE (0-14%)
+
+**ratingConfirmation (v2.8.4):** LLM-provided verdict direction confirmation ("claim_supported" | "claim_refuted" | "mixed"). Used for direction mismatch validation.
+
+**KeyFactors:** Optional decomposition questions discovered during analysis - not stored as separate entities.
+
+**Storage:** All data stored as JSON blob in SQLite ##ResultJson## field.
+
+**See Also:** [[Target Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]] for normalized design.

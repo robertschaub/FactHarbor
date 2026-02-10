@@ -1,0 +1,307 @@
+= Documentation Viewer =
+
+FactHarbor documentation is written in xWiki 2.1 syntax and stored as ##.xwiki## files under ##Docs/xwiki-pages/FactHarbor/##. Three viewers let you browse the rendered documentation without an xWiki server.
+
+----
+
+== Table of Contents ==
+
+* [[Viewing Options>>||anchor="HViewingOptions"]]
+* [[GitHub Pages (Online)>>||anchor="HGitHubPages28Online29"]]
+* [[Local Browser Viewer>>||anchor="HLocalBrowserViewer"]]
+* [[VS Code Extension>>||anchor="HVSCodeExtension"]]
+* [[Viewer Features>>||anchor="HViewerFeatures"]]
+* [[Custom Navigation Order (_sort files)>>||anchor="HCustomNavigationOrder28_sortfiles29"]]
+* [[Rebuilding GitHub Pages>>||anchor="HRebuildingGitHubPages"]]
+
+----
+
+== Viewing Options ==
+
+|= Method |= When to Use |= Requirements
+| **GitHub Pages** | Browse documentation online, share links | Web browser only
+| **Local Viewer** | Full-featured editing and preview | Git clone, Chrome/Edge
+| **VS Code Extension** | In-editor preview while coding | VS Code with extension installed
+
+----
+
+== GitHub Pages (Online) ==
+
+The simplest way to read documentation. No installation needed.
+
+**URL:** [[https:~~/~~/robertschaub.github.io/FactHarbor/>>https://robertschaub.github.io/FactHarbor/]]
+
+=== Features ===
+
+* Full rendered documentation with tree navigation
+* Page search (filter by name)
+* Wiki link resolution and click-through navigation
+* Include macros rendered inline
+* Mermaid diagrams
+* Deep linking — share URLs to specific pages (e.g. ##~#Organisation.Governance.WebHome##)
+
+=== Deep Linking ===
+
+Every page has a unique hash-based URL. When you navigate to a page, the browser URL updates automatically. Copy and share the URL to link directly to that page.
+
+Examples:
+* ##https:~~/~~/robertschaub.github.io/FactHarbor/~#Organisation.Governance.WebHome##
+* ##https:~~/~~/robertschaub.github.io/FactHarbor/~#Product Development.Specification.Architecture.WebHome##
+
+=== Limitations ===
+
+* **Read-only** — no source editing or file watching
+* **Snapshot** — reflects the last deployment, not live changes
+* **No source view** — only the rendered preview is available
+
+----
+
+== Local Browser Viewer ==
+
+Full-featured viewer with source editing, split view, and live file watching.
+
+=== Quick Start ===
+
+From the project root, run:
+
+{{code language="bash"}}
+Docs\xwiki-pages\View.cmd
+{{/code}}
+
+This starts a local HTTP server on ##localhost:8471## and opens Chrome (or Edge) with the folder picker. Select the ##FactHarbor## folder to load all pages.
+
+=== VS Code Tasks ===
+
+The project's ##.vscode/tasks.json## includes viewer tasks. Use **Terminal > Run Task**:
+
+* **XWiki Viewer: Open** — starts server and opens Chrome
+* **XWiki Viewer: Open (Edge)** — starts server and opens Edge
+* **XWiki Viewer: Quick Open (no server)** — opens via ##file:~~/~~/## directly
+
+=== PowerShell Options ===
+
+{{code language="powershell"}}
+# Default: Chrome on port 8471
+.\Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1
+
+# Custom port and browser
+.\Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1 -Port 9000 -Browser edge
+
+# Skip auto folder picker
+.\Docs\xwiki-pages\viewer-impl\Open-XWikiViewer.ps1 -NoAutoOpen
+{{/code}}
+
+=== Features ===
+
+* **View modes**: Preview (default), Split (source + preview side-by-side), Source
+* **Source editing**: Edit xWiki source directly in the browser, with ##Ctrl+Enter## to re-render
+* **File watching**: Detects when files change on disk and reloads automatically (requires File System Access API — Chrome or Edge)
+* **Tree navigation**: Sidebar with expandable folders, click to open pages
+* **Page search**: Filter pages by name in the sidebar search box
+* **Wiki links**: ##~[~[label>>Page~]~]## links resolve and navigate between pages
+* **Includes**: ##~{~{include reference="..."~}~}## renders the included page inline with a header
+* **Mermaid diagrams**: ##~{~{mermaid~}~}...~{~{/mermaid~}~}## renders as SVG diagrams
+* **Back/Forward**: Browser-style navigation history between pages
+* **Breadcrumbs**: Show the current page path for orientation
+
+----
+
+== VS Code Extension ==
+
+Preview xWiki pages directly in VS Code, side-by-side with the source.
+
+=== Installation ===
+
+The extension is located at ##tools/vscode-xwiki-preview/##. To install:
+
+{{code language="bash"}}
+cd tools/vscode-xwiki-preview
+npm install
+npm run compile
+{{/code}}
+
+Then in VS Code, use **Run > Start Debugging** (F5) to launch an Extension Development Host with the extension loaded.
+
+=== Usage ===
+
+1. Open any ##.xwiki## file in VS Code
+1. The **XWiki Pages** tree appears in the sidebar (Explorer view)
+1. Click any page in the tree to open it
+1. The preview panel opens automatically beside the source
+
+=== Features ===
+
+* **Live preview**: Updates as you type
+* **Tree sidebar**: XWiki Pages tree view in the Explorer panel
+* **Wiki link resolution**: Links shown as resolved (solid underline) or unresolved (wavy underline)
+* **Include rendering**: Included pages are fetched and rendered inline
+* **Click navigation**: Click wiki links or tree items to navigate
+* **Mermaid diagrams**: Rendered in the preview panel
+
+----
+
+== Viewer Features ==
+
+=== Feature Comparison ===
+
+|= Feature |= GitHub Pages |= Local Viewer |= VS Code
+| Rendered preview | Yes | Yes | Yes
+| Source editing | No | Yes | Yes (native editor)
+| Split view | No | Yes | Yes (side-by-side)
+| File watching | No | Yes | Yes (automatic)
+| Tree navigation | Yes | Yes | Yes
+| Page search | Yes | Yes | VS Code search
+| Wiki links | Yes | Yes | Yes
+| Includes | Yes | Yes | Yes
+| Mermaid diagrams | Yes | Yes | Yes
+| Deep linking | Yes (hash URLs) | No | No
+| Offline use | No | Yes | Yes
+| Custom sort order | Yes | Yes | Yes
+
+=== Wiki Links ===
+
+Wiki links follow xWiki syntax:
+
+{{code language="none"}}
+[[Display Text>>Space.Page.WebHome]]
+[[Simple Link>>PageName]]
+{{/code}}
+
+In all viewers, links are colour-coded:
+* **Resolved** (solid underline) — the target page exists; click to navigate
+* **Unresolved** (wavy underline, amber) — the target page was not found in the current tree
+
+=== Include Macros ===
+
+The ##~{~{include~}~}## macro pulls content from another page and renders it inline:
+
+{{code language="none"}}
+{{include reference="Organisation.Governance.WebHome"/}}
+{{/code}}
+
+Included content appears in a bordered box with a header showing the source page name. Click the header to navigate to the original page. Includes resolve up to 5 levels deep; circular includes are detected and shown as an error.
+
+=== Mermaid Diagrams ===
+
+Wrap Mermaid syntax in the ##~{~{mermaid~}~}## macro:
+
+{{code language="none"}}
+{{mermaid}}
+graph TD
+  A[Start] --> B{Decision}
+  B -->|Yes| C[Action]
+  B -->|No| D[End]
+{{/mermaid}}
+{{/code}}
+
+All three viewers render Mermaid diagrams as interactive SVG.
+
+----
+
+== Custom Navigation Order (_sort files) ==
+
+By default, folders appear before files and everything is sorted alphabetically. To define a custom order, place a ##_sort## file in any directory.
+
+=== Format ===
+
+{{code language="none"}}
+# Lines starting with # are comments
+Organisation
+Product Development
+License and Disclaimer
+{{/code}}
+
+**Rules:**
+* One name per line — folder name or page filename without the ##.xwiki## extension
+* Items listed appear **first**, in the order given
+* Unlisted items follow after, sorted alphabetically
+* Folders always appear before files within each group
+* Empty lines and lines starting with ##~### are ignored
+
+=== Example ===
+
+The top-level ##_sort## file at ##Docs/xwiki-pages/FactHarbor/_sort## sets this order:
+
+{{code language="none"}}
+# Top-level navigation order
+Organisation
+Product Development
+License and Disclaimer
+{{/code}}
+
+Without this file, the order would be alphabetical: License and Disclaimer, Organisation, Product Development. With the ##_sort## file, Organisation appears first, followed by Product Development, then License and Disclaimer.
+
+=== Where _sort Files Work ===
+
+* **GitHub Pages** — the build script reads ##_sort## files and bakes the order into ##pages.json##
+* **Local viewer** — reads ##_sort## files at runtime via the File System Access API
+* **VS Code extension** — reads ##_sort## files via the VS Code filesystem API
+
+You can place a ##_sort## file in any subdirectory. Each directory manages its own order independently.
+
+=== Current _sort Files ===
+
+|= Directory |= Purpose
+| ##FactHarbor/## | Top-level section order
+| ##FactHarbor/Organisation/## | Organisation sub-pages order
+| ##FactHarbor/Product Development/## | Product Development section order
+| ##FactHarbor/Product Development/Specification/## | Specification sub-pages order
+| ##FactHarbor/Product Development/DevOps/## | DevOps sub-pages order
+
+To add custom ordering to a new directory, create a ##_sort## text file listing the desired order.
+
+----
+
+== Rebuilding GitHub Pages ==
+
+After editing documentation, rebuild and deploy the GitHub Pages site:
+
+=== Build ===
+
+{{code language="bash"}}
+python Docs/xwiki-pages/scripts/build_ghpages.py
+{{/code}}
+
+This generates ##gh-pages-build/index.html## and ##gh-pages-build/pages.json##.
+
+=== Deploy ===
+
+{{code language="bash"}}
+# Stash any uncommitted changes
+git stash
+
+# Switch to gh-pages branch
+git checkout gh-pages
+
+# Copy build output
+copy gh-pages-build\index.html .
+copy gh-pages-build\pages.json .
+
+# Commit and push
+git add index.html pages.json .nojekyll
+git commit -m "docs: update gh-pages"
+git push origin gh-pages
+
+# Switch back
+git checkout main
+git stash pop
+{{/code}}
+
+The site updates within a few minutes at [[https:~~/~~/robertschaub.github.io/FactHarbor/>>https://robertschaub.github.io/FactHarbor/]].
+
+=== Build Options ===
+
+{{code language="bash"}}
+# Custom content directory
+python Docs/xwiki-pages/scripts/build_ghpages.py --content-dir path/to/pages
+
+# Custom output directory
+python Docs/xwiki-pages/scripts/build_ghpages.py -o my-output-dir
+
+# Custom viewer template
+python Docs/xwiki-pages/scripts/build_ghpages.py --viewer path/to/xwiki-viewer.html
+{{/code}}
+
+----
+
+**Last Updated**: February 8, 2026

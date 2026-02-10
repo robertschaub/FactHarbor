@@ -1,0 +1,192 @@
+= AKEL Pipeline =
+
+The **AI Knowledge Extraction Layer (AKEL)** is FactHarbor's core analysis engine. It takes an article or claim as input and produces a structured verdict report through a 5-step process: Understand, Research, Verdict, Summary, and Report.
+
+== Pipeline Overview ==
+
+{{mermaid}}
+flowchart TB
+    subgraph Input["Input"]
+        URL["URL"]
+        TEXT["Text / Claim"]
+    end
+
+    subgraph Retrieval["Content Retrieval"]
+        FETCH["Extract text\nfrom URL"]
+    end
+
+    subgraph Step1["Step 1: Understand"]
+        UNDERSTAND["Detect input type\nExtract claims & dependencies\nIdentify analysis contexts\nAssign risk tiers"]
+        GATE1{{"Gate 1\nClaim Validation"}}
+    end
+
+    subgraph Step2["Step 2: Research (Iterative)"]
+        DECIDE["Generate search\nqueries"]
+        SEARCH["Web Search\n(Google CSE / SerpAPI)"]
+        EXTRACT["Fetch sources &\nextract evidence"]
+        CHECK{{"Research\ncomplete?"}}
+    end
+
+    subgraph Step3["Step 3: Verdict"]
+        VERDICT["Generate claim verdicts\n(7-point scale)"]
+        AGGREGATE["Aggregate into\narticle verdict"]
+        GATE4{{"Gate 4\nConfidence Assessment"}}
+    end
+
+    subgraph Step4["Step 4: Summary"]
+        SUMMARY["Build two-panel\nsummary"]
+    end
+
+    subgraph Step5["Step 5: Report"]
+        REPORT["Generate markdown\nreport"]
+    end
+
+    subgraph Output["Output"]
+        RESULT["AnalysisResult JSON\n+ Markdown Report"]
+    end
+
+    URL --> FETCH --> UNDERSTAND
+    TEXT --> UNDERSTAND
+    UNDERSTAND --> GATE1
+    GATE1 --> DECIDE
+    DECIDE --> SEARCH --> EXTRACT --> CHECK
+    CHECK -->|"More research needed"| DECIDE
+    CHECK -->|"Complete"| VERDICT
+    VERDICT --> AGGREGATE --> GATE4
+    GATE4 --> SUMMARY --> REPORT --> RESULT
+
+    style Step1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Step2 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Step3 fill:#fff9c4,stroke:#f9a825,color:#000
+    style Step4 fill:#f3e5f5,stroke:#6a1b9a,color:#000
+    style Step5 fill:#f3e5f5,stroke:#6a1b9a,color:#000
+{{/mermaid}}
+
+//The AKEL pipeline processes input through 5 steps. Step 2 (Research) is iterative — the system keeps searching until evidence is sufficient or the budget is exhausted. Quality gates validate claims (Gate 1) and verdict confidence (Gate 4).//
+
+=== Step-by-Step ===
+
+**Step 1: Understand** — Analyses the input to determine what needs checking.
+* Detects input type: question, statement, or article
+* Extracts individual claims with dependency chains
+* Identifies analysis contexts (bounded analytical frames for multi-perspective topics)
+* Assigns risk tiers (A=high, B=medium, C=low) to guide research depth
+* Applies **Gate 1** (Claim Validation): filters opinions, predictions, and non-factual statements
+
+**Step 2: Research** — Iteratively searches the web for evidence.
+* Generates targeted search queries based on claims and gaps
+* Fetches and parses source content (HTML via cheerio, PDF via pdf2json)
+* Extracts evidence items from each source (statements, statistics, expert quotes)
+* Applies evidence quality filtering (probative value, deduplication, provenance)
+* Repeats until research is complete or iteration/token budget is exhausted (default: 5 iterations, 750K tokens)
+
+**Step 3: Verdict** — Evaluates each claim against the evidence.
+* Generates per-claim verdicts on the 7-point scale (TRUE → FALSE)
+* Propagates dependency failures (if prerequisite claim fails, dependent claims inherit)
+* Aggregates claim verdicts into an overall article verdict using weighted averages (centrality, harm potential, evidence quality, source reliability)
+* Applies **Gate 4** (Confidence Assessment): flags low-confidence verdicts
+
+**Step 4: Summary** — Structures results for presentation.
+* Builds a two-panel summary (Overview + Key Findings)
+
+**Step 5: Report** — Generates the final output.
+* Produces a markdown report with all sections: Summary, Claims, Sources, Verdict
+
+== Pipeline Variants ==
+
+FactHarbor supports two pipeline variants. The **orchestrated** pipeline is the comprehensive default; the **monolithic dynamic** variant is a fast, lower-cost alternative.
+
+{{mermaid}}
+flowchart LR
+    INPUT["User Input"] --> DISPATCH{{"Pipeline\nDispatch"}}
+
+    DISPATCH -->|"orchestrated\n(default)"| ORCH["Orchestrated\nMulti-step workflow\nFull quality gates"]
+    DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic\nSingle LLM call\nFlexible output"]
+
+    ORCH --> RESULT["AnalysisResult\nJSON"]
+    DYN --> RESULT
+
+    style ORCH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style DYN fill:#f3e5f5,stroke:#6a1b9a,color:#000
+{{/mermaid}}
+
+//Both variants produce an AnalysisResult JSON output. The orchestrated pipeline is the default and most capable; the monolithic dynamic variant trades depth for speed and flexibility.//
+
+|= Variant |= Approach |= Quality |= Speed |= Use Case
+| **Orchestrated** | Multi-step workflow with iterative research, quality gates, evidence filtering | Highest | Slower (multiple LLM calls) | Production analysis
+| **Monolithic Dynamic** | Single LLM tool-loop call, flexible output | Streamlined | Fastest | Fast analysis, second opinion
+
+== Shared Analysis Modules ==
+
+All pipeline variants share a common set of analysis modules. This ensures consistency in verdict calculations, evidence quality, and source reliability across pipelines.
+
+{{mermaid}}
+flowchart TB
+    subgraph Pipelines["Pipeline Variants"]
+        ORCH["Orchestrated"]
+        DYN["Dynamic"]
+    end
+
+    subgraph Analysis["Analysis & Weighting"]
+        AGG["aggregation.ts\nVerdict weighting,\ncontestation detection"]
+        CLAIM_D["claim-decomposition.ts\nClaim parsing,\nnormalisation"]
+        CONTEXTS["analysis-contexts.ts\nContext detection"]
+    end
+
+    subgraph Quality["Quality & Filtering"]
+        EF["evidence-filter.ts\nProbative value filtering"]
+        QG["quality-gates.ts\nGate 1 + Gate 4"]
+        VC["verdict-corrections.ts\nVerdict inversion detection"]
+    end
+
+    subgraph Trust["Trust & Scoring"]
+        SR["source-reliability.ts\nSource credibility scoring"]
+        TS["truth-scale.ts\n7-point verdict mapping"]
+        BU["budgets.ts\nToken/cost budgets"]
+    end
+
+    ORCH --> Analysis
+    ORCH --> Quality
+    ORCH --> Trust
+    DYN --> SR
+    DYN --> TS
+    DYN --> BU
+
+    style Pipelines fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Analysis fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Quality fill:#fff9c4,stroke:#f9a825,color:#000
+    style Trust fill:#f3e5f5,stroke:#6a1b9a,color:#000
+{{/mermaid}}
+
+//Shared modules are grouped by function: Analysis (verdict weighting, claim parsing, context detection), Quality (evidence filtering, quality gates, verdict corrections), and Trust (source reliability, truth scale mapping, budget enforcement). The Orchestrated pipeline uses all modules; the Monolithic Dynamic variant uses a subset.//
+
+|= Module |= Used By |= Purpose
+| ##aggregation.ts## | Orch | Verdict weighting by centrality/harm/evidence quality, contestation validation
+| ##claim-decomposition.ts## | Orch | Claim text parsing and normalisation
+| ##analysis-contexts.ts## | Orch | Heuristic context pre-detection before LLM
+| ##evidence-filter.ts## | Orch | Probative value filtering, false positive rate calculation
+| ##quality-gates.ts## | Orch | Gate 1 (claim validation) and Gate 4 (verdict confidence)
+| ##verdict-corrections.ts## | Orch | Post-hoc verdict direction mismatch corrections
+| ##source-reliability.ts## | Orch, Dyn | LLM-based source credibility evaluation with SQLite cache
+| ##truth-scale.ts## | Dyn | Percentage-to-verdict label mapping (7-point scale)
+| ##budgets.ts## | Orch, Dyn | Token and cost budget tracking and enforcement
+
+== Budget Controls ==
+
+The orchestrated pipeline enforces budgets to prevent runaway LLM costs:
+
+|= Budget |= Default |= Purpose
+| Max iterations per context | 5 | Limits research rounds per analysis context
+| Max total tokens | 750,000 | Caps total LLM token consumption across all steps
+| Max total iterations | 20 | Hard limit on total research iterations across all contexts
+
+== Deep Dives ==
+
+For detailed implementation references:
+* [[Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] — Step-by-step with function names, LLM call points, and budget controls
+* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — Invariants, shared primitives, result model, configuration
+* [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] — Gate 1 and Gate 4 criteria, confidence penalties
+
+----
+
+**Navigation:** [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] | Prev: [[System Design>>FactHarbor.Product Development.Specification.Architecture.System Design.WebHome]] | Next: [[Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]]

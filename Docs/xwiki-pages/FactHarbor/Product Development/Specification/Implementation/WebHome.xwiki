@@ -1,0 +1,27 @@
+= Implementation =
+
+{{warning}}
+**Documentation Restructured.** Implementation content has been consolidated into the [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] section for a unified reading experience. Use the mapping below to find the new locations.
+{{/warning}}
+
+== Page Mapping ==
+
+|= Old Location |= New Location
+| AKEL Pipeline Flow | [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]] (overview) and [[Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] (deep dive)
+| Pipeline Architecture | [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]] (overview)
+| Twin-Path Architecture | [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]
+| Context and EvidenceScope Detection | [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]]
+| Quality Gates Reference | [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]
+| Source Reliability System (5 sub-pages) | [[Source Reliability>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]]
+| KeyFactors Design | [[KeyFactors Design>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]]
+| Schema Migration Strategy | [[Schema Migration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Schema Migration.WebHome]]
+
+== Remaining Pages ==
+
+These pages were not moved and remain in this section:
+
+* [[Implementation Status and Quality>>FactHarbor.Product Development.Specification.Implementation.Implementation Status and Quality.WebHome]] — Spec alignment, working features, known gaps, quality gates, performance, testing infrastructure
+
+----
+
+**Navigation:** [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] | [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]]

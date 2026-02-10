@@ -295,8 +295,8 @@ npm run test:ab
 |----------|---------|
 | **QUICKSTART.md** | 5-minute setup guide |
 | **FINAL_DELIVERY_REPORT.md** | Complete implementation summary |
-| **Docs/xwiki-pages/FactHarbor/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki** | Metrics API documentation |
-| **Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Testing Strategy/WebHome.xwiki** | Testing approach & cost management |
+| **Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki** | Metrics API documentation |
+| **Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki** | Testing approach & cost management |
 | **BUILD_FIXES_2026-01-19.md** | Build issue resolutions |
 
 ---

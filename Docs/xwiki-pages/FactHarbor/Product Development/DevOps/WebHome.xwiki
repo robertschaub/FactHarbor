@@ -1,0 +1,43 @@
+= DevOps =
+
+Development guidelines, tooling, deployment, and subsystem guides for FactHarbor contributors.
+
+----
+
+== [[Guidelines>>FactHarbor.Product Development.DevOps.Guidelines.WebHome]] ==
+
+Development standards for code, testing, and data modelling.
+
+* [[Coding Guidelines>>FactHarbor.Product Development.DevOps.Guidelines.Coding Guidelines.WebHome]] — Code style, naming conventions, and best practices
+* [[Scope Definition Guidelines>>FactHarbor.Product Development.DevOps.Guidelines.Scope Definition Guidelines.WebHome]] — How to define and use EvidenceScope in claims
+* [[Testing Strategy>>FactHarbor.Product Development.DevOps.Guidelines.Testing Strategy.WebHome]] — Test pyramid, promptfoo testing, and quality assurance
+* [[Getting Started>>FactHarbor.Product Development.DevOps.Guidelines.Getting Started.WebHome]] — Quick start guide
+
+== [[Tooling>>FactHarbor.Product Development.DevOps.Tooling.WebHome]] ==
+
+Development environment setup, tool decisions, and developer tools.
+
+* [[1st Run Checklist>>FactHarbor.Product Development.DevOps.Tooling.1st Run Checklist.WebHome]] — End-to-end setup for first run
+* [[Installation Checklist>>FactHarbor.Product Development.DevOps.Tooling.Installation Checklist.WebHome]] — Phased setup guide
+* [[Tools Decisions>>FactHarbor.Product Development.DevOps.Tooling.Tools Decisions.WebHome]] — Documented tool choices from POC1 to Beta
+* [[Documentation Viewer>>FactHarbor.Product Development.DevOps.Tooling.Documentation Viewer.WebHome]] — Browse documentation online, locally, or in VS Code
+* [[Promptfoo Testing>>FactHarbor.Product Development.DevOps.Tooling.Promptfoo Testing.WebHome]] — Prompt testing and evaluation with promptfoo
+
+== [[Deployment>>FactHarbor.Product Development.DevOps.Deployment.WebHome]] ==
+
+Hosting, CI/CD, and environment configuration.
+
+* [[Zero-Cost Hosting Implementation Guide>>FactHarbor.Product Development.DevOps.Deployment.Zero-Cost Hosting Implementation Guide.WebHome]] — Fly.io deployment for pre-release beta ($0-5/month)
+
+== [[Subsystems and Components>>FactHarbor.Product Development.DevOps.Subsystems and Components.WebHome]] ==
+
+Guides for using and configuring FactHarbor's key subsystems.
+
+* [[Admin Interface>>FactHarbor.Product Development.DevOps.Subsystems and Components.Admin Interface.WebHome]] — Admin panel and management interface
+* [[LLM Configuration>>FactHarbor.Product Development.DevOps.Subsystems and Components.LLM Configuration.WebHome]] — Configuring LLM providers and models
+* [[Source Reliability Export>>FactHarbor.Product Development.DevOps.Subsystems and Components.Source Reliability Export.WebHome]] — Exporting source reliability data
+
+== Related ==
+
+* [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] — System architecture and key diagrams
+* [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]] — Glossary of terms

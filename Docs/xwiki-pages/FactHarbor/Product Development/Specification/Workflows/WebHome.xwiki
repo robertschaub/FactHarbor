@@ -1,0 +1,129 @@
+= Workflows =
+
+{{info}}
+**Implementation Status:** Only the Claim Submission (Section 2) and Automated Analysis (Section 3) workflows are implemented in the current POC. Sections 4-11 describe the **target production architecture** (Beta/V1.0). See [[AKEL>>FactHarbor.Product Development.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] for the implemented pipeline.
+{{/info}}
+
+FactHarbor workflows are **simple, automated, focused on continuous improvement**.
+== 1. Core Principles ==
+* **Automated by default**: AI processes everything
+* **Publish immediately**: No centralized approval (removed in V0.9.50)
+* **Quality through monitoring**: Not gatekeeping
+* **Fix systems, not data**: Errors trigger improvements
+* **Human-in-loop**: Only for edge cases and abuse
+== 2. Claim Submission Workflow ==
+
+=== 2.1 Claim Extraction ===
+
+When registered users submit content (text, articles, web pages), FactHarbor first extracts individual verifiable claims:
+
+**Input Types:**
+* Single claim: "The Earth is flat"
+* Text with multiple claims: "Climate change is accelerating. Sea levels rose 3mm in 2023. Arctic ice decreased 13% annually."
+* URLs: Web pages analyzed for factual claims
+
+**Extraction Process:**
+* LLM analyzes submitted content
+* Identifies distinct, verifiable factual claims
+* Separates claims from opinions, questions, or commentary
+* Each claim becomes independent for processing
+
+**Output:**
+* List of claims with context
+* Each claim assigned unique ID
+* Original context preserved for reference
+
+This extraction ensures:
+* Each claim receives focused analysis
+* Multiple claims in one submission are all processed
+* Claims are properly isolated for independent verification
+* Context is preserved for accurate interpretation
+
+{{{
+User submits → Duplicate detection → Categorization → Processing queue → User receives ID
+}}}
+**Timeline**: Seconds
+**No approval needed**
+
+== 2.5 Claim Analysis Workflow ==
+
+{{include reference="FactHarbor.Product Development.Specification.Diagrams.Claim and Scenario Workflow.WebHome"/}}
+
+== 3. Automated Analysis Workflow ==
+{{{
+Claim from queue
+↓
+Evidence gathering (AKEL)
+↓
+Source evaluation (track record check)
+↓
+AnalysisContext detection + evidence routing
+↓
+Verdict synthesis
+↓
+Risk assessment
+↓
+Quality gates (confidence > 40%? risk < 80%?)
+↓
+Publish OR Flag for improvement
+}}}
+**Timeline**: 10-30 seconds
+**90%+ published automatically**
+== 3.5 Evidence and Verdict Workflow ==
+{{include reference="FactHarbor.Product Development.Specification.Diagrams.Evidence and Verdict Workflow.WebHome"/}}
+== 4. Publication Workflow ==
+**Standard (90%+)**: Pass quality gates → Publish immediately with confidence scores
+**High Risk (<10%)**: Risk > 80% → Moderator review
+**Low Quality**: Confidence < 40% → Improvement queue → Re-process
+== 5. UCM Configuration Workflow ==
+{{{
+UCM Administrator updates config → New immutable blob created → Activated → Jobs reference new config → Quality monitored
+}}}
+**Analysis data is immutable** — quality improvements flow through UCM config changes
+**Every analysis job** records the UCM config snapshot used for reproducibility
+== 5.5 Quality and Audit Workflow ==
+
+{{include reference="FactHarbor.Product Development.Specification.Diagrams.Quality and Audit Workflow.WebHome"/}}
+
+== 6. Flagging Workflow ==
+{{{
+User flags issue → Categorize (abuse/quality) → Automated or manual resolution
+}}}
+**Quality issues**: Add to improvement queue → System fix → Auto re-process
+**Abuse**: Moderator review → Action taken
+== 7. Moderation Workflow ==
+**Automated pre-moderation**: 95% published automatically
+**Moderator queue**: Only high-risk or flagged content
+**Appeal process**: Different moderator → Governing Team if needed
+== 8. System Improvement Workflow ==
+**Improvement cycle**:
+{{{
+Review error patterns
+Develop fixes
+Test improvements
+Deploy & re-process
+Monitor metrics
+}}}
+**Error capture**:
+{{{
+Error detected → Categorize → Root cause → Improvement queue → Pattern analysis
+}}}
+**A/B Testing**:
+{{{
+New algorithm → Split traffic (90% control, 10% test) → Run test period → Compare metrics → Deploy if better
+}}}
+== 9. Quality Monitoring Workflow ==
+**Continuous**: Calculate metrics, detect anomalies
+**Recurring**: Update source track records, aggregate error patterns
+**Periodic**: System improvement cycle, performance review
+== 10. Source Track Record Workflow ==
+**Initial score**: New source starts at 50 (neutral)
+**Recurring updates**: Calculate accuracy, correction frequency, update score
+**Continuous**: All claims using source recalculated when score changes
+== 11. Re-Processing Workflow ==
+**Triggers**: System improvement deployed, source score updated, new evidence, error fixed
+**Process**: Identify affected claims → Re-run AKEL → Compare → Update if better → Log change
+== 12. Related Pages ==
+* [[Requirements>>FactHarbor.Product Development.Requirements.WebHome]]
+* [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]]
+* [[Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]]

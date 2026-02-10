@@ -1,0 +1,277 @@
+= POC1 Codegen Contract =
+
+----
+
+== Version History ==
+
+|=Version|=Date|=Changes
+|0.4.1|2025-12-24|Applied 9 critical fixes: file format notice, verdict taxonomy, canonicalization algorithm, Stage 1 cost policy, BullMQ fix, language in cache key, historical claims TTL, idempotency, copyright policy
+|0.4|2025-12-24|**BREAKING:** 3-stage pipeline with claim-level caching, user tier system, cache-only mode for free users, Redis cache architecture
+|0.3.1|2025-12-24|Fixed single-prompt strategy, SSE clarification, schema canonicalization, cost constraints
+|0.3|2025-12-24|Added complete API endpoints, LLM config, risk tiers, scraping details
+
+----
+
+{{info}}
+**Canonical Data Model:** See [[Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]] for the canonical data model specification. This page documents the POC1 API contract and endpoint schemas.
+{{/info}}
+
+== POC1 Codegen Contract (Canonical) ==
+
+{{info}}
+This section is the **authoritative, code-generation-ready contract** for POC1.
+If any other page conflicts with this section, **this section wins**.
+{{/info}}
+
+=== Canonical outputs ===
+* **result.json**: schema-validated, machine-readable output
+* **report.md**: deterministic template rendering from ``result.json`` (LLM must not free-write the final report)
+
+=== Locked enums ===
+**Scenario verdict** (``ScenarioVerdict.verdict_label``):
+* ``Highly likely`` | ``Likely`` | ``Unclear`` | ``Unlikely`` | ``Highly unlikely`` | ``Unsubstantiated``
+
+**Claim verdict** (``ClaimVerdict.verdict_label``):
+* ``Supported`` | ``Refuted`` | ``Inconclusive``
+
+**Mapping rule (summary):**
+* Primary-interpretation scenario:
+** ``Highly likely`` / ``Likely`` ⇒ ``Supported``
+** ``Highly unlikely`` / ``Unlikely`` ⇒ ``Refuted``
+** ``Unclear`` / ``Unsubstantiated`` ⇒ ``Inconclusive``
+* If scenarios materially disagree (assumption-dependent outcomes) ⇒ ``Inconclusive`` (explain why)
+
+=== Deterministic claim normalization (cache key) ===
+* Normalization version: ``v1norm1``
+* Cache namespace: ``claim:v1norm1:{language}:{sha256(canonical_claim_text)}``
+* Normative reference implementation is defined in [[Data Schemas and Cache>>FactHarbor.Product Development.Specification.POC.API-and-Schemas.Data Schemas and Cache.WebHome]] section 5.1.1 (no ellipses; must match exactly).
+
+=== Idempotency ===
+Clients SHOULD send:
+* Header: ``Idempotency-Key: <client-generated-uuid>`` (preferred)
+or
+* Body: ``client.request_id``
+
+Server rules:
+* Same key + same request body ⇒ return existing job (``200``) and include ``idempotent=true``.
+* Same key + different request body ⇒ ``409`` ``VALIDATION_ERROR``.
+
+Idempotency TTL: 24 hours.
+
+=== Minimal OpenAPI 3.1 (authoritative for codegen) ===
+{{code language="yaml"}}
+openapi: 3.1.0
+info:
+  title: FactHarbor POC1 API
+  version: 0.9.106
+servers:
+  - url: /
+paths:
+  /v1/analyze:
+    post:
+      summary: Create analysis job
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobCreated'
+        '4XX':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /v1/jobs/{job_id}:
+    get:
+      summary: Get job status
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    delete:
+      summary: Cancel job (best-effort) and delete artifacts
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: No Content }
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /v1/jobs/{job_id}/events:
+    get:
+      summary: Job progress via SSE (no token streaming)
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: text/event-stream
+  /v1/jobs/{job_id}/result:
+    get:
+      summary: Get final JSON result
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+        '409':
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /v1/jobs/{job_id}/report:
+    get:
+      summary: Download report (markdown)
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Authorization
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: text/markdown
+        '409':
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /v1/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    AnalyzeRequest:
+      type: object
+      properties:
+        input_url: { type: ['string', 'null'] }
+        input_text: { type: ['string', 'null'] }
+        options:
+          type: object
+          properties:
+            max_claims: { type: integer, minimum: 1, maximum: 50, default: 5 }
+            cache_preference:
+              type: string
+              enum: [prefer_cache, allow_partial, cache_only, skip_cache]
+              default: prefer_cache
+            browsing:
+              type: string
+              enum: [on, off]
+              default: on
+            output_report: { type: boolean, default: true }
+        client:
+          type: object
+          properties:
+            request_id: { type: string }
+    JobCreated:
+      type: object
+      required: [job_id, status, created_at, links]
+      properties:
+        job_id: { type: string }
+        status: { type: string }
+        created_at: { type: string }
+        links:
+          type: object
+          properties:
+            self: { type: string }
+            events: { type: string }
+            result: { type: string }
+            report: { type: string }
+    Job:
+      type: object
+      required: [job_id, status, created_at, updated_at]
+      properties:
+        job_id: { type: string }
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELED]
+        created_at: { type: string }
+        updated_at: { type: string }
+    AnalysisResult:
+      type: object
+      properties:
+        job_id: { type: string }
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: object }
+{{/code}}
+
+----
+
+**Navigation:** [[API & Schemas>>FactHarbor.Product Development.Specification.POC.API-and-Schemas.WebHome]] | Next: [[Pipeline Architecture>>FactHarbor.Product Development.Specification.POC.API-and-Schemas.Pipeline Architecture.WebHome]]

@@ -35,11 +35,12 @@ The initial consolidation into xWiki is **complete**. Your role is **ongoing mai
 ```
 Docs/xwiki-pages/
 ├── FactHarbor/                    (main documentation tree)
-│   ├── Specification/             (Requirements, Architecture, Diagrams)
-│   ├── Roadmap/                   (Implementation plans, guidance)
 │   ├── Organisation/              (Governance, processes, policies)
-│   ├── FH Analysis Reports/       (Analysis results)
-│   ├── User Guides/               (Getting started, admin, LLM config)
+│   ├── Product Development/       (All product-related documentation)
+│   │   ├── Requirements/          (Functional requirements, user needs, roles)
+│   │   ├── Specification/         (Architecture, data model, diagrams)
+│   │   ├── Planning/              (Phases, status, roadmap)
+│   │   └── DevOps/                (Guidelines, tooling, deployment, subsystems)
 │   ├── License and Disclaimer/
 │   └── WebHome.xwiki              (Root page)
 │

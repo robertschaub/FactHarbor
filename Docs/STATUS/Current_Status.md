@@ -40,9 +40,9 @@
 - **probativeValue Field**: Quality assessment (high/medium/low) with admin-configurable weights
 - **SourceType Classification**: 9 source types with reliability calibration factors
 - **Schema Backward Compatibility**: Optional fields + deprecated aliases for smooth migration
-  - See: [Schema Migration Strategy](../xwiki-pages/FactHarbor/Specification/Implementation/Schema%20Migration%20Strategy/WebHome.xwiki)
+  - See: [Schema Migration Strategy](../xwiki-pages/FactHarbor/Product Development/Specification/Implementation/Schema%20Migration%20Strategy/WebHome.xwiki)
 - **Provider-Specific Prompts**: Optimized formatting for Anthropic, OpenAI, Google, Mistral
-  - See: [Provider Prompt Formatting](../xwiki-pages/FactHarbor/Specification/Reference/Prompt%20Engineering/Provider-Specific%20Formatting/WebHome.xwiki)
+  - See: [Provider Prompt Formatting](../xwiki-pages/FactHarbor/Product Development/Specification/Reference/Prompt%20Engineering/Provider-Specific%20Formatting/WebHome.xwiki)
 
 **LLM Text Analysis Pipeline (v2.9+):**
 - **Four Analysis Points**: Input Classification, Evidence Quality, Context Similarity, Verdict Validation
@@ -87,7 +87,7 @@
   - Evidence Quality (5 tests): Quality levels, expert attribution, filtering
   - Context Similarity (5 tests): Duplicate detection, phase buckets, merge logic
   - Verdict Validation (8 tests): Inversion, harm potential, contestation
-- See: [Promptfoo Testing Guide](../xwiki-pages/FactHarbor/User%20Guides/Promptfoo%20Testing/WebHome.xwiki)
+- See: [Promptfoo Testing Guide](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Tooling/Promptfoo%20Testing/WebHome.xwiki)
 
 **UI/UX:**
 - Analysis submission interface
@@ -550,7 +550,7 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 - **Search Provider Documentation**: Clarified that all pipelines require search credentials
   - Added Section 8 to Pipeline Architecture doc
   - Added troubleshooting for "No sources fetched" issue
-  - See: [Pipeline Architecture](../xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki)
+  - See: [Pipeline Architecture](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki)
 
 ### v2.8.3 LLM-Only Text Analysis (January 30, 2026)
 - **Contract Updated**: Text analysis is LLM-only for all 4 analysis points (no heuristic fallback)
@@ -729,11 +729,11 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 - **Complete Issue List**: `Docs/STATUS/KNOWN_ISSUES.md` - All known bugs with workarounds
 - **Development History**: `Docs/STATUS/HISTORY.md` - Full version history and architectural decisions
 - **Documentation**: `Docs/` folder (organized by category)
-- **Architecture**: `Docs/xwiki-pages/FactHarbor/Specification/Architecture/System%20Design/WebHome.xwiki`
+- **Architecture**: `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/System%20Design/WebHome.xwiki`
 - **Calculations**: `Docs/ARCHITECTURE/Calculations.md`
-- **Getting Started**: `Docs/xwiki-pages/FactHarbor/User Guides/Getting Started/WebHome.xwiki`
-- **LLM Configuration**: `Docs/xwiki-pages/FactHarbor/User Guides/LLM Configuration/WebHome.xwiki`
-- **Coding Guidelines**: `Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding Guidelines/WebHome.xwiki`
+- **Getting Started**: `Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Getting Started/WebHome.xwiki`
+- **LLM Configuration**: `Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Subsystems and Components/LLM Configuration/WebHome.xwiki`
+- **Coding Guidelines**: `Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki`
 
 ### Debugging
 
@@ -755,7 +755,7 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 | No progress updates | Check `FH_ADMIN_KEY` matches `Admin:Key` |
 | API not starting | DB is auto-created on startup; check API console for DB errors, and (local dev) delete `apps/api/factharbor.db` to recreate |
 | Search not working | Verify Web Search config is enabled in UCM (Admin → Config → Web Search) and the search API key is set |
-| No sources fetched | Configure `SERPAPI_API_KEY` or `GOOGLE_CSE_API_KEY`+`GOOGLE_CSE_ID`. See [LLM Configuration](../xwiki-pages/FactHarbor/User%20Guides/LLM%20Configuration/WebHome.xwiki) |
+| No sources fetched | Configure `SERPAPI_API_KEY` or `GOOGLE_CSE_API_KEY`+`GOOGLE_CSE_ID`. See [LLM Configuration](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Subsystems%20and%20Components/LLM%20Configuration/WebHome.xwiki) |
 
 ---
 

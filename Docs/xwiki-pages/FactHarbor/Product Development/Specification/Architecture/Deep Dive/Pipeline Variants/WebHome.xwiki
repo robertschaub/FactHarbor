@@ -1,0 +1,228 @@
+= Pipeline Variants =
+
+{{info}}
+**Developer Reference** — Twin-path pipeline architecture: the two selectable analysis variants, their shared primitives, invariants, result model, and configuration.
+
+**Key Files**: ##orchestrated.ts##, ##monolithic-dynamic.ts##
+{{/info}}
+
+== Architecture Overview ==
+
+FactHarbor supports two analysis pipeline variants. Both share the same infrastructure primitives but differ in orchestration approach and result flexibility.
+
+{{mermaid}}
+flowchart TD
+    UI["Analyze UI"] --> API["API: Create Job"]
+    API --> STORE["Job Store"]
+    STORE --> RUNNER["Runner"]
+    RUNNER --> DISPATCH{"Dispatch by<br/>pipelineVariant"}
+
+    DISPATCH -->|"orchestrated<br/>(default)"| ORCH["Orchestrated Pipeline<br/>TypeScript-orchestrated<br/>Fixed AKEL stages<br/>Production-ready"]
+    DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic<br/>LLM tool-loop<br/>Flexible schema<br/>Fast alternative"]
+
+    ORCH --> CANONICAL_PAYLOAD["Canonical Payload"]
+    DYN --> DYNAMIC_PAYLOAD["Dynamic Payload"]
+
+    CANONICAL_PAYLOAD --> ENVELOPE["Result Envelope"]
+    DYNAMIC_PAYLOAD --> ENVELOPE
+
+    ENVELOPE --> RESULT["Store + Display"]
+
+    style ORCH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style DYN fill:#e3f2fd,stroke:#1565c0,color:#000
+{{/mermaid}}
+
+//Green = comprehensive (default), Blue = fast alternative. Both variants converge on a common result envelope for auditability.//
+
+== Non-Negotiable Invariants ==
+
+Both variants must preserve these architectural invariants:
+
+|= Invariant |= Requirement
+| **Pipeline integrity** | Understand → Research → Verdict (no stage skipping)
+| **Input neutrality** | Question vs. statement divergence target <= 4 points (avg absolute)
+| **Context detection** | Multi-context detection with unified "Context" terminology
+| **Quality gates** | Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
+| **Generic by design** | No domain-specific hardcoding or keyword lists
+| **No synthetic evidence** | Evidence must be attributable to fetched sources with real URLs + excerpts
+| **Fail closed** | Missing/invalid provenance degrades confidence or triggers fallback — never hallucinate
+
+== Variant Comparison ==
+
+|= Criterion |= Orchestrated |= Monolithic Dynamic
+| **Maturity** | Production-ready (comprehensive) | Production-ready (fast alternative)
+| **Result Schema** | Canonical (stable) | Dynamic (flexible)
+| **UI Compatibility** | Full support | Separate viewer needed
+| **Quality Gates** | Gate 1 + Gate 4 | Minimum safety contract
+| **Pipeline Stages** | Fixed AKEL | LLM tool-loop
+| **Provenance** | Strict | Minimum requirements
+| **Budget Control** | Iterations / sources | maxSteps / sources
+| **Cost Predictability** | High | Low
+| **Typical Latency** | 2-5 min | 20-60s
+| **Use Case** | Comprehensive analysis (default) | Fast analysis, second opinion
+
+=== Decision Tree ===
+
+{{mermaid}}
+flowchart TD
+    START{"What is your goal?"}
+
+    START -->|"Comprehensive<br/>fact-checking"| ORCH["Use Orchestrated<br/>Default choice"]
+    START -->|"Fast check or<br/>second opinion"| FAST{"Want LLM-driven<br/>result structure?"}
+
+    FAST -->|"Yes — streamlined"| DYN["Use Monolithic Dynamic<br/>Fast alternative"]
+    FAST -->|"No — standard format"| ORCH
+
+    style ORCH fill:#c8e6c9,color:#000
+    style DYN fill:#e3f2fd,color:#000
+{{/mermaid}}
+
+== Shared Primitives ==
+
+Both variants reuse stable infrastructure primitives. Orchestration logic stays isolated per variant to prevent cross-contamination.
+
+=== What Is Shared ===
+
+{{mermaid}}
+flowchart TD
+    subgraph Shared["Shared Primitives"]
+        NORM["Input Normalization"]
+        BUDGETS["Budget Framework"]
+        SEARCH["Search + Fetch Adapters"]
+        PROV["Provenance Validation"]
+        META["Result Envelope Metadata"]
+    end
+
+    subgraph Modules["Shared Analyzer Modules"]
+        CTX["analysis-contexts.ts"]
+        AGG["aggregation.ts"]
+        CLAIM["claim-decomposition.ts"]
+        SR["source-reliability.ts"]
+        EF["evidence-filter.ts"]
+        VC["verdict-corrections.ts"]
+    end
+
+    subgraph Pipelines["Pipeline Implementations (Isolated)"]
+        ORCH["orchestrated.ts"]
+        DYN["monolithic-dynamic.ts"]
+    end
+
+    Shared --> Pipelines
+    Modules --> ORCH
+    SR --> DYN
+    PROV --> DYN
+
+    style Shared fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Modules fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style Pipelines fill:#fff3e0,stroke:#e65100,color:#000
+{{/mermaid}}
+
+//Shared primitives and analyzer modules are used by both pipelines. Orchestration logic is isolated per variant — no cross-calls between implementations.//
+
+=== What Is Kept Separate ===
+
+* Orchestrated pipeline orchestration logic (##orchestrated.ts##)
+* Dynamic monolithic tool-loop orchestration logic (##monolithic-dynamic.ts##)
+
+=== Text Analysis Service (v2.9+) ===
+
+LLM-only text analysis (no heuristic fallback), shared by both pipelines:
+
+|= Analysis Point |= Pipeline Phase |= Purpose
+| Input Classification | Understand | Decompose claims, detect comparative/compound
+| Evidence Quality | Research | Filter low-quality evidence, assess probative value
+| Context Similarity | Organize | Merge similar contexts, infer phase buckets
+| Verdict Validation | Aggregate | Detect inversions, harm potential, contestation
+
+== Result Model ==
+
+=== Common Result Envelope ===
+
+Every job result includes a common envelope regardless of variant:
+
+|= Field |= Type |= Description
+| ##pipelineVariant## | string | ##"orchestrated"## / ##"monolithic_dynamic"##
+| ##pipelineVersion## | string | Schema version / build info
+| ##budgets## | object | Configured caps (iterations, maxSteps, maxSources, tokens)
+| ##budgetStats## | object | Observed usage
+| ##warnings## | array | Fallback events, provenance rejections
+| ##providerInfo## | object | Model and provider identifiers used
+
+=== Canonical Payload ===
+
+Used by ##orchestrated##. Must match the entity model that the existing Jobs UI expects: claims, claim verdicts, article verdict, evidence items, sources.
+
+=== Dynamic Payload (Minimum Safety Contract) ===
+
+Used by ##monolithic_dynamic##. Allows flexible structure but requires:
+
+|= Field |= Required |= Description
+| ##rawJson## | Yes | The model's full JSON output
+| ##citations## | Yes | Array with ##url## (HTTP(S)), ##excerpt## (non-trivial), ##title## (optional)
+| ##narrativeMarkdown## | No | Human-readable explanation
+| ##toolTrace## | No | Tool-call trace (queries, fetched URLs, timestamps)
+
+== Configuration ==
+
+=== Pipeline Selection (UCM) ===
+
+{{code language="json"}}
+{
+  "defaultPipelineVariant": "orchestrated",
+  "allowedVariants": [
+    "orchestrated",
+    "monolithic_dynamic"
+  ]
+}
+{{/code}}
+
+=== Per-Job Override (API) ===
+
+{{code language="json"}}
+POST /api/fh/jobs
+{
+  "inputType": "text",
+  "inputValue": "...",
+  "pipelineVariant": "orchestrated"
+}
+{{/code}}
+
+The selected variant is **persisted on the job at creation time**, ensuring reproducibility even if defaults change later.
+
+== Fallback Behavior ==
+
+|= Variant |= Trigger |= Action
+| **Monolithic Dynamic** | Citation missing | Reject result, require minimum contract
+| **Monolithic Dynamic** | Budget exceeded | Mark job as failed with budget stats
+| **Monolithic Dynamic** | Timeout | Return partial results with warning
+
+== Performance Characteristics ==
+
+Typical analysis time for a 5-10 claim article:
+
+|= Variant |= p50 |= p95 |= Est. Cost
+| **Orchestrated** | 2-3 min | 5-7 min | $0.15-0.30
+| **Monolithic Dynamic** | 1-2 min | 3-10 min | $0.10-0.50
+
+== Risks and Mitigations ==
+
+|= Risk |= Description |= Mitigation
+| **Complexity creep** | Multiple variants can explode configuration and branching | Single dispatcher + strict shared-primitive boundary
+| **Current-path regressions** | Refactoring shared primitives can change orchestrated behavior | Phase unifications behind thin wrappers; contract tests
+| **Dynamic output safety** | Dynamic payload could omit evidence or mislead users | Minimum safety contract; clear pipeline labelling in UI
+| **Cost/latency tail risk** | Uncontrolled tool loops cause runaway cost | maxSteps + maxSources + timeouts + budget enforcement
+| **Security/abuse risk** | Users pick dynamic path consuming resources differently | Budget enforcement; optionally gate variants later
+
+== Search Provider Requirements ==
+
+Both pipelines use ##searchWebWithProvider()## and require at least one search provider:
+
+|= Provider |= Environment Variables |= Notes
+| **SerpAPI** | ##SERPAPI_API_KEY## | Pay-per-use (~$0.002/search)
+| **Google CSE** | ##GOOGLE_CSE_API_KEY## + ##GOOGLE_CSE_ID## | Free tier: 100 queries/day
+
+Without search credentials, analysis continues without external sources (LLM internal knowledge only if ##FH_ALLOW_MODEL_KNOWLEDGE=true##).
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Prev: [[Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] | Next: [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]

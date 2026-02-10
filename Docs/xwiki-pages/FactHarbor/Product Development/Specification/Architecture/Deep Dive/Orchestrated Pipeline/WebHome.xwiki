@@ -1,0 +1,195 @@
+= Orchestrated Pipeline =
+
+{{info}}
+**Developer Reference** — Detailed implementation of the default pipeline with function names, LLM call points, budget controls, and adaptive fallback mechanisms.
+
+**Key File**: ##apps/web/src/lib/analyzer/orchestrated.ts##
+{{/info}}
+
+== Pipeline Flow ==
+
+The Orchestrated Pipeline follows a fixed 5-step AKEL flow: Understand → Research → Verdict → Summary → Report. Each step is TypeScript-orchestrated with explicit LLM call points and deterministic control flow.
+
+{{mermaid}}
+flowchart TB
+    subgraph Entry["Entry Point"]
+        INPUT["runFactHarborAnalysis()"]
+        NORM["Input Normalization"]
+        BUDGET["Initialize Budget Tracker"]
+    end
+
+    subgraph Step1["Step 1: UNDERSTAND"]
+        UC["understandClaim()"]
+        LLM1["LLM Call 1:<br/>Claim Extraction"]
+        SCOPE["detectContexts()<br/>Heuristic pre-detection"]
+        GATE1["Gate 1: Claim Validation<br/>Filter opinions, predictions"]
+        QUERIES["Generate research queries"]
+    end
+
+    subgraph Step2["Step 2: RESEARCH (Iterative Loop)"]
+        DECIDE["decideNextResearch()<br/>LLM Call per iteration"]
+        SEARCH["searchWebWithProvider()"]
+        FETCH["fetchSourceContent()<br/>Parallel fetching"]
+        SR["prefetchSourceReliability()<br/>Batch reliability lookup"]
+        PREFILTER["Relevance Pre-Filter"]
+        ADAPTIVE{"Candidates >= 5?"}
+        FALLBACK["Adaptive Fallback:<br/>Relax constraints"]
+        EXTRACT["extractEvidence() per source<br/>LLM Call per source"]
+        BUDGET_CHECK{"Budget exceeded?"}
+    end
+
+    subgraph Step3["Step 3: VERDICT"]
+        CLAIM_V["generateClaimVerdicts()<br/>LLM Call"]
+        WEIGHT["calculateWeightedVerdictAverage()"]
+        CONTEST["detectClaimContestation()"]
+        HARM["detectHarmPotential()"]
+        GATE4["Gate 4: Confidence Assessment"]
+        ARTICLE_V["generateArticleVerdict()<br/>LLM Call"]
+    end
+
+    subgraph Step4["Step 4: SUMMARY"]
+        SUMMARY["generateTwoPanelSummary()"]
+    end
+
+    subgraph Step5["Step 5: REPORT"]
+        REPORT["generateReport() markdown"]
+    end
+
+    subgraph Output["Output"]
+        RESULT["AnalysisResult JSON"]
+        MARKDOWN["Report Markdown"]
+    end
+
+    INPUT --> NORM --> BUDGET --> UC
+    UC --> LLM1 --> SCOPE --> GATE1 --> QUERIES
+
+    QUERIES --> DECIDE --> SEARCH --> FETCH --> SR --> PREFILTER
+    PREFILTER --> ADAPTIVE
+    ADAPTIVE -- "Yes" --> EXTRACT
+    ADAPTIVE -- "No" --> FALLBACK --> EXTRACT
+    EXTRACT --> BUDGET_CHECK
+    BUDGET_CHECK -->|"No"| DECIDE
+    BUDGET_CHECK -->|"Yes"| CLAIM_V
+
+    CLAIM_V --> WEIGHT --> CONTEST --> HARM --> GATE4 --> ARTICLE_V
+
+    ARTICLE_V --> SUMMARY --> REPORT
+    REPORT --> RESULT
+    REPORT --> MARKDOWN
+
+    style LLM1 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style DECIDE fill:#e3f2fd,stroke:#1565c0,color:#000
+    style EXTRACT fill:#e3f2fd,stroke:#1565c0,color:#000
+    style CLAIM_V fill:#e3f2fd,stroke:#1565c0,color:#000
+    style ARTICLE_V fill:#e3f2fd,stroke:#1565c0,color:#000
+    style GATE1 fill:#fff9c4,stroke:#f9a825,color:#000
+    style GATE4 fill:#fff9c4,stroke:#f9a825,color:#000
+{{/mermaid}}
+
+//Blue nodes = LLM call points. Yellow nodes = quality gates. The research loop iterates until budget limits are reached or sufficient evidence is gathered.//
+
+== Step-by-Step Reference ==
+
+=== Step 1: UNDERSTAND ===
+
+|= Function |= Purpose |= LLM Calls
+| ##runFactHarborAnalysis()## | Main entry point, initializes state | 0
+| ##normalizeYesNoQuestionToStatement()## | Converts yes/no questions to neutral statements | 0
+| ##understandClaim()## | Extracts claims, detects input type (question/claim/article), identifies thesis | 1
+| ##detectContexts()## | Heuristic pre-detection of AnalysisContexts from input text | 0
+| Gate 1 | Filters opinions, predictions, low-specificity claims (keeps central claims) | 0
+
+**Output**: Array of validated claims with types, roles, dependencies, and context assignments.
+
+=== Step 2: RESEARCH ===
+
+|= Function |= Purpose |= LLM Calls
+| ##decideNextResearch()## | Generates targeted search queries based on claims and gaps | 1 per iteration
+| ##searchWebWithProvider()## | Executes web search (Google CSE or SerpAPI) | 0
+| ##fetchSourceContent()## | Parallel content fetching with timeout | 0
+| ##prefetchSourceReliability()## | Batch source reliability evaluation (async boundary) | 0 (external API)
+| ##buildAdaptiveFallbackQueries()## | Relaxes search constraints when candidates < threshold | 0
+| ##extractEvidence()## | Extracts evidence items from each source document | 1 per source
+
+**Adaptive Fallback**: When fewer than 5 candidate sources are found, the system generates up to 2 additional fallback queries with relaxed constraints.
+
+**Loop Termination**: The research loop exits when any budget limit is reached (iterations, tokens, or sources).
+
+=== Step 3: VERDICT ===
+
+|= Function |= Purpose |= LLM Calls
+| ##generateClaimVerdicts()## | Per-claim verdict with truth percentage, confidence, reasoning | 1
+| ##calculateWeightedVerdictAverage()## | Aggregates claim verdicts into weighted averages | 0
+| ##detectClaimContestation()## | Identifies claims with significant counter-evidence | 0
+| ##detectHarmPotential()## | Flags claims with potential harm implications | 0
+| Gate 4 | Assesses verdict confidence (source count, fact count, reasoning quality) | 0
+| ##generateArticleVerdict()## | Overall article verdict aggregated from claims | 1
+
+**Post-Processing** — After LLM verdict generation, deterministic corrections are applied:
+* ##detectAndCorrectVerdictInversion()## — Fixes direction mismatches between truth% and verdict label
+* ##applyEvidenceWeighting()## — Adjusts truth% based on source reliability scores
+* Confidence calibration — 4-layer system (density, band snapping, verdict coupling, context consistency)
+
+=== Steps 4-5: SUMMARY and REPORT ===
+
+|= Function |= Purpose |= LLM Calls
+| ##generateTwoPanelSummary()## | Formats results for the UI two-panel display | 0
+| ##generateReport()## | Generates human-readable Markdown report | 0
+
+No LLM calls — these steps use deterministic formatting of the verdict results.
+
+== Budget Controls ==
+
+Budget limits prevent runaway costs and ensure predictable analysis times.
+
+|= Parameter |= Default |= Config Property |= Purpose
+| Max iterations per context | 5 | ##maxIterationsPerContext## | Limits research depth per AnalysisContext
+| Max total iterations | 20 | ##maxTotalIterations## | Caps total research iterations across all contexts
+| Max total tokens | 750,000 | ##maxTotalTokens## | Token budget across all LLM calls
+
+== Adaptive Fallback Parameters ==
+
+|= Parameter |= Default |= Config Property |= Purpose
+| Min candidates before fallback | 5 | ##searchAdaptiveFallbackMinCandidates## | Triggers fallback when sources are sparse
+| Max extra fallback queries | 2 | ##searchAdaptiveFallbackMaxQueries## | Limits additional search queries
+
+== LLM Call Summary ==
+
+|= Pipeline Phase |= Call Count |= Model Tier
+| Understand (claim extraction) | 1 | Standard
+| Research (query generation) | 1 per iteration | Budget
+| Research (evidence extraction) | 1 per source | Budget
+| Verdict (claim verdicts) | 1 | Premium
+| Verdict (article verdict) | 1 | Premium
+
+**Typical total**: 8-15 LLM calls for a standard article analysis (5-10 claims, 5-8 sources).
+
+== Shared Modules ==
+
+|= Module |= Key Functions Used |= Pipeline Phase
+| ##analysis-contexts.ts## | ##detectContexts()##, ##canonicalizeContexts()## | Understand
+| ##claim-decomposition.ts## | ##normalizeClaimText()##, ##deriveCandidateClaimTexts()## | Understand
+| ##quality-gates.ts## | Gate 1 (claim validation), Gate 4 (confidence) | Understand, Verdict
+| ##evidence-filter.ts## | ##filterByProbativeValue()##, ##countVaguePhrases()## | Research
+| ##source-reliability.ts## | ##prefetchSourceReliability()##, ##applyEvidenceWeighting()## | Research, Verdict
+| ##aggregation.ts## | ##calculateWeightedVerdictAverage()##, ##detectClaimContestation()## | Verdict
+| ##verdict-corrections.ts## | ##detectAndCorrectVerdictInversion()## | Verdict
+| ##provenance-validation.ts## | ##filterEvidenceByProvenance()## | Research
+| ##confidence-calibration.ts## | 4-layer calibration pipeline | Verdict
+
+== Output Schema ==
+
+The pipeline produces the **canonical result schema** used by the Jobs UI:
+
+|= Field |= Type |= Description
+| ##article## | object | Input metadata, thesis, analysisContexts
+| ##claims## | array | Extracted claims with types, roles, dependencies
+| ##claimVerdicts## | array | Per-claim verdicts with truthPercentage, confidence, reasoning
+| ##articleVerdict## | object | Overall verdict aggregated from claims
+| ##evidenceItems## | array | Evidence extracted from sources
+| ##sources## | array | Source metadata with reliability scores
+| ##meta## | object | Providers, timing, gate stats, budget usage
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Next: [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]

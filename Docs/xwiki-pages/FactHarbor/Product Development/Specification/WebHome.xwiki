@@ -1,0 +1,105 @@
+{{info title="Version 2.10.2"}}
+This document describes the **Specification** of FactHarbor. It is a working draft. See [[Project Status>>FactHarbor.Product Development.Planning.Project Status.WebHome]] for current development phase.
+{{/info}}
+
+= Specification =
+
+This section defines the functional specification and technical architecture of FactHarbor. See also [[Requirements>>FactHarbor.Product Development.Requirements.WebHome]] (sibling section).
+
+== 1. Mission ==
+
+**FactHarbor brings clarity and transparency to a world full of unclear, controversial, and misleading information by shedding light on the context, assumptions, and evidence behind claims — empowering people to better understand and judge wisely.**
+
+== 2. Purpose ==
+
+Modern society faces a deep informational crisis:
+
+* Misinformation spreads faster than corrections.
+* High-quality evidence is buried under noise.
+* Meanings shift depending on context — but this is rarely made explicit.
+* Users lack tools to understand *why* information conflicts.
+* Claims are evaluated without clearly defined assumptions.
+
+FactHarbor introduces structure, transparency, and evidence-based reasoning. It provides:
+
+* Automated claim extraction and evidence research.
+* Multiple analytical perspectives (AnalysisContexts) for ambiguous claims.
+* Transparent assumptions, definitions, and boundaries.
+* Full evidence provenance — every verdict traceable to sources.
+* Structured verdicts on a 7-point evidence scale (well-supported → refuted).
+* Immutable analysis outputs — quality improves through system improvements, not data edits.
+
+== 3. Core Concepts ==
+
+* **Claim**: A statement needing structured verification.
+* **AnalysisContext**: A bounded analytical frame (legal, methodological, temporal) requiring a separate verdict.
+* **KeyFactor**: A decomposition question that breaks a claim into verifiable dimensions.
+* **EvidenceItem**: A piece of evidence extracted from a source, with provenance and reliability scoring.
+* **Verdict**: An evidence-based rating on a 7-point scale, per claim and per AnalysisContext.
+* **AKEL**: The AI Knowledge Extraction Layer — FactHarbor's automated analysis engine.
+* **UCM**: Unified Configuration Management — versioned system configuration that controls analysis behaviour.
+* **Content States**: Published (passed quality gates, visible to all) or Hidden (moderated due to policy violations).
+
+== 4. How It Works ==
+
+FactHarbor follows an automated analysis lifecycle:
+
+1. **Submission** — User submits a URL or text. Claims are automatically extracted and normalised.
+2. **Analysis** — AKEL researches evidence from the web, evaluates source reliability, and generates structured verdicts.
+3. **Quality gates** — Automated gates validate claims (Gate 1) and assess verdict confidence (Gate 4).
+4. **Publication** — Results that pass quality gates are published with confidence scores, source quality indicators, and clear AI-generated labeling.
+5. **System improvement** — Quality improves through system changes (code, prompts, configuration) — analysis data is immutable.
+
+//No human review of individual analyses. Improve the system, not the data.//
+
+== 5. Reading Guide ==
+
+This specification is organised from conceptual overview to implementation detail.
+
+=== Functional Specification ===
+
+//What the system does — for stakeholders, new team members, and anyone wanting to understand FactHarbor.//
+
+* [[AKEL>>FactHarbor.Product Development.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] — AI analysis engine: claim extraction, evidence research, verdict generation
+* [[Requirements>>FactHarbor.Product Development.Requirements.WebHome]] — Functional requirements, user needs, roles & content states
+* [[Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]] — Entity relationships and target schema
+* [[Workflows>>FactHarbor.Product Development.Specification.Workflows.WebHome]] — Claim submission and analysis lifecycle
+* [[Automation>>FactHarbor.Product Development.Specification.Automation.WebHome]] — Automation philosophy and roadmap
+* [[Media Source Database>>FactHarbor.Product Development.Specification.Media Source Database.WebHome]] — Source credibility evaluation and tracking
+
+=== Architecture ===
+
+//How it's built — for developers and architects.//
+
+* [[Architecture Overview>>FactHarbor.Product Development.Specification.Architecture.WebHome]] — System design, AKEL pipeline, quality & trust, storage, security
+* [[Architecture Deep Dives>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] — Implementation details: pipeline variants, quality gates, source reliability, calculations
+
+=== Reference ===
+
+//Look-up material — terminology, schemas, examples.//
+
+* [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]] — Authoritative glossary and field mappings
+* [[Data Models and Schemas>>FactHarbor.Product Development.Specification.Reference.Data Models and Schemas.WebHome]] — Schema definitions and LLM response mappings
+* [[Prompt Engineering>>FactHarbor.Product Development.Specification.Reference.Prompt Engineering.WebHome]] — Prompt design guidelines and provider-specific formatting
+* [[FAQ>>FactHarbor.Product Development.Specification.FAQ.WebHome]] — Frequently asked questions
+* [[Data Examples>>FactHarbor.Product Development.Specification.Examples.WebHome]] — Sample data structures across the entity model
+* [[Review & Data Use>>FactHarbor.Product Development.Specification.Review & Data Use.WebHome]] — Data usage policies
+
+=== Diagrams ===
+
+//Visual index — all diagrams with links to their contextual pages.//
+
+* [[Diagrams>>FactHarbor.Product Development.Specification.Diagrams.WebHome]] — Architecture, pipeline, data model, workflow, and automation diagrams
+
+=== Future — After First Public Release ===
+
+//Planned capabilities not yet implemented. Included for architectural context.//
+
+* [[Federation & Decentralization>>FactHarbor.Product Development.Specification.Federation & Decentralization.WebHome]] — Cross-node knowledge alignment (planned for post-V1.0)
+
+=== POC Archive ===
+
+//Historical specifications and early trial reports from the POC development phase.//
+
+* [[Analysis Reports (Early Trials)>>FactHarbor.Product Development.Specification.FH Analysis Reports.WebHome]] — Sample analyses from POC development (v0.9.x), retained for reference and regression testing
+* [[POC Specification>>FactHarbor.Product Development.Specification.POC.WebHome]] — POC phase requirements, API contracts, and schemas

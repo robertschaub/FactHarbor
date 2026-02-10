@@ -833,9 +833,9 @@ var patterns = new[] {
 
 - **Current Status**: `Docs/STATUS/Current_Status.md`
 - **Backlog**: `Docs/STATUS/Backlog.md`
-- **Architecture**: `Docs/xwiki-pages/FactHarbor/Specification/Architecture/System%20Design/WebHome.xwiki`
+- **Architecture**: `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/System%20Design/WebHome.xwiki`
 - **Calculations**: `Docs/ARCHITECTURE/Calculations.md`
-- **Coding Guidelines**: `Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding Guidelines/WebHome.xwiki`
+- **Coding Guidelines**: `Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki`
 
 ---
 

@@ -1,0 +1,285 @@
+= Requirements Roadmap Matrix =
+
+**Last Updated:** 2026-02-07
+**Version:** 4.1 (Updated phase definitions)
+**Status:** Authoritative Source
+
+{{info}}
+**Purpose:** This is the single source of truth for:
+* Requirement-to-phase mapping
+* Implementation levels (Basic → Enhanced → Complete)
+* Importance and Urgency prioritization
+* User Needs fulfillment by phase
+
+All other documents reference this matrix rather than duplicating information.
+{{/info}}
+
+== Phase Definitions ==
+
+|= Phase |= Goal |= Key Focus
+| **POC** | Prove AI can analyze claims automatically | Core workflow + quality gates + AnalysisContext detection (**Feature-complete at v2.10.2**, pending baseline test)
+| **POC2** | Improve reliability and robustness | Merged into Alpha/Beta
+| **Alpha** | Quality measurement + optimization | Baseline testing, caching, quality improvements based on empirical data
+| **Beta** | User testing with limited audience | Production readiness, user features, security, PostgreSQL
+| **V1.0** | Public production launch | IFCN compliance, search visibility
+| **V1.x** | Feature expansion | Advanced capabilities, browser extensions
+| **V2.0+** | Advanced capabilities | Video verification, OSINT, federation
+
+**Phase Philosophy:** Each phase builds on proven capabilities from previous phases. We validate AI quality before adding production features.
+
+== Requirement Categories ==
+
+**This matrix covers ALL requirements from the baseline:**
+
+**1. Functional Requirements (24 total)**
+* **FR1-FR13**: Core workflow and POC requirements
+* **FR44-FR54**: Advanced features and future enhancements
+* **FR14-FR43**: Numbers reserved (not used)
+
+**2. Non-Functional Requirements (9 total)**
+* **NFR1-NFR5**: Basic quality attributes (Performance, Scalability, Transparency, Security & Privacy, Maintainability)
+* **NFR11-NFR14**: Formal quality, security, metrics, and LLM abstraction requirements
+
+**3. User Needs (20 total)**
+* **UN-1 to UN-28**: User requirements (with some gaps in numbering)
+
+{{warning}}
+**Future Requirement Numbering:** To avoid conflicts with existing requirements, new requirements will use:
+* **FR55-FR84** for future functional requirements
+* **NFR14-NFR18** for future non-functional requirements 
+* **UN-29 to UN-36** for future user needs
+
+See [[Gap Analysis>>FactHarbor.Product Development.Requirements.GapAnalysis]] for features not yet assigned formal requirement numbers.
+{{/warning}}
+
+== Requirements by Phase ==
+
+**Note:** Requirements organized by phase, with Formal requirements listed first, followed by POC-specific implementation details.
+
+=== POC1 ===
+
+**Goal:** Prove that AI can extract claims and determine verdicts automatically
+
+**Experimental Feature:** Context-aware analysis (tests if article credibility differs from claim average)
+
+**Requirements:** 2 formal + 9 POC-specific
+
+==== Formal Requirements ====
+
+|= ID |= Title |= Importance |= Urgency |= Notes
+| **FR7** | Automated Verdicts (Enhanced with Quality Gates) | CRITICAL | HIGH | Core AKEL capability - system cannot function without automated verdict generation
+| **FR4** | Analysis Summary (Enhanced with Context-Aware Analysis) | HIGH | HIGH | Enhanced in POC1 to test context-aware analysis (experimental feature). If successful (≥70% accuracy), ships in POC2. See [[Article Verdict Problem>>FactHarbor.Product Development.Specification.POC.Article-Verdict-Problem]]
+
+==== POC-Specific Requirements ====
+
+| **NFR14** | LLM Provider Abstraction | HIGH | HIGH | Provider-agnostic architecture, no vendor lock-in, POC1 implements with Anthropic primary
+|= ID |= Title |= Notes
+| **FR1** | Claim Intake | Part of FR7 implementation
+| **FR2** | Claim Normalization | Part of FR7 implementation
+| **FR3** | Claim Classification | Part of FR7 implementation
+| **FR5** | Evidence Linking | Part of FR7 implementation
+| **FR6** | Scenario Comparison | Part of FR7 implementation
+| **FR12** | Two-Panel Summary View (Article Summary with FactHarbor Analysis Summary) | Part of FR4 implementation
+| **NFR1** | Performance | Basic implementation
+| **NFR2** | Scalability | Basic implementation
+| **NFR3** | Transparency | Basic implementation
+
+**Context-Aware Analysis Details:**
+* **Approach:** Single-Pass Holistic Analysis (Approach 1)
+* **Implementation:** Enhanced AI prompt to evaluate logical structure
+* **Testing:** 30-article test set (10 straightforward, 10 misleading, 10 complex)
+* **Success Criteria:** ≥70% accuracy detecting misleading articles
+* **Decision Path:** If ≥70% → ship in POC2; if 50-70% → try weighted aggregation; if <50% → defer
+* **Cost:** Zero increase (no additional API calls, no architecture changes)
+* **Documentation:** [[Article Verdict Problem>>FactHarbor.Product Development.Specification.POC.Article-Verdict-Problem]]
+
+=== POC2 ===
+
+**Goal:** Improve system reliability and add essential quality features
+
+**Requirements:** 2 formal
+
+|= ID |= Title |= Importance |= Urgency |= Notes
+| **NFR11** | AKEL Quality Assurance Framework | CRITICAL | HIGH | Without quality gates, automated analysis cannot be trusted. POC1 implements 2 gates (Gates 1 & 4), POC2 implements all gates
+| **FR54** | Evidence Deduplication | CRITICAL | LOW | Essential for data integrity and preventing duplicate processing
+
+=== Beta 0 ===
+
+**Goal:** Prepare for public launch with essential user-facing features and security
+
+**Requirements:** 2 formal + 6 POC-specific
+
+==== Formal Requirements ====
+
+|= ID |= Title |= Importance |= Urgency |= Notes
+| **NFR12** | Security Controls | CRITICAL | MEDIUM | Essential for production deployment (moved from V1.0 to Beta 0 for earlier security hardening)
+| **NFR13** | Quality Metrics Transparency | HIGH | MEDIUM | Users need to understand quality levels
+
+==== POC-Specific Requirements ====
+
+|= ID |= Title |= Notes
+| **FR9** | Publication Workflow | Production-ready publishing system
+| **FR10** | Moderation | Moderation tools and processes
+| **FR11** | Audit Trail | Production-ready audit logging
+| **FR13** | In-Article Claim Highlighting | User-facing feature for article analysis
+| **NFR4** | Security & Privacy | Basic security and privacy controls
+| **NFR5** | Maintainability | Code quality and maintainability standards
+
+=== V1.0 ===
+
+**Goal:** Full production launch with IFCN compliance and search engine visibility
+
+**Requirements:** 4 formal
+
+|= ID |= Title |= Importance |= Urgency |= Notes
+| **FR44** | ClaimReview Schema Implementation | HIGH | MEDIUM | Required for search engine discoverability (Google/Bing fact-check visibility)
+| **FR45** | User Corrections Notification System | HIGH | MEDIUM | Critical for user trust and transparency, IFCN compliance
+| **FR48** | Contributor Safety Framework | HIGH | MEDIUM | Protects contributors from harassment
+| **FR49** | A/B Testing Framework | MEDIUM | MEDIUM | Enables continuous system improvement through experimentation
+
+=== V1.1 ===
+
+**Goal:** Add advanced capabilities
+
+**Requirements:** 2 formal
+
+|= ID |= Title |= Importance |= Urgency |= Notes
+| **FR50** | OSINT Toolkit Integration | HIGH | LOW | Valuable capability (geolocation, chronolocation, social media analysis)
+| **FR52** | Interactive Detection Training | MEDIUM | LOW | Education and media literacy features
+
+=== V1.5 ===
+
+**Goal:** Media verification expansion (image, video, audio)
+
+**Requirements:** 4 formal
+
+|= ID |= Title |= Importance |= Urgency |= Notes
+| **FR46** | Image Verification System | HIGH | MEDIUM | Moved from V1.0 to V1.5 to focus V1.0 on core text-based fact-checking. Includes reverse image search, manipulation detection, EXIF analysis
+| **FR51** | Video Verification System | HIGH | LOW | Moved from V1.1 to V1.5. Includes keyframe extraction, deepfake detection, metadata analysis
+| **FR47** | Archive.org Integration | MEDIUM | MEDIUM | Moved from Beta 0 to V1.5. Ensures evidence persistence even if original sources deleted
+| **FR53** | Cross-Organizational Sharing | MEDIUM | LOW | Collaboration with other fact-checkers (IFCN/EFCSN members)
+
+=== Deferred (Not in V1.5) ===
+
+**Requirements deferred beyond V1.5:**
+
+|= ID |= Title |= Notes
+| **FR8** | Time Evolution | Version history for claims and verdicts. Deferred - UCM config audit trail in V1.0
+
+== Requirements Summary by Phase ==
+
+|= Phase |= Formal Requirements |= POC-Specific |= Total |= Cumulative
+| **POC1** | 3 (FR4, FR7, NFR14) | 9 | 12 | 12
+| **POC2** | 2 (FR54, NFR11) | 0 | 2 | 14
+| **Beta 0** | 2 (NFR12, NFR13) | 6 | 8 | 22
+| **V1.0** | 4 (FR44, FR45, FR48, FR49) | 0 | 4 | 26
+| **V1.1** | 2 (FR50, FR52) | 0 | 2 | 28
+| **V1.5** | 4 (FR46, FR47, FR51, FR53) | 0 | 4 | 32
+| **Deferred** | 0 | 1 (FR8) | 1 | 33
+
+**Total Requirements:** 33 (24 FR + 9 NFR)
+
+== User Needs by Phase ==
+
+**Summary of when each User Need is fulfilled:**
+
+|= User Need |= Title |= Fulfilled in Phase |= Via Requirements
+| **UN-1** | Trust Assessment at a Glance | POC1 | FR7, NFR13
+| **UN-2** | Claim Extraction and Verification | POC1 | FR7
+| **UN-3** | Article Summary with FactHarbor Analysis Summary | POC1 | FR4 (enhanced with context-aware analysis), FR12, NFR14 (cost sustainability)
+| **UN-4** | Social Media Fact-Checking | POC1 | FR7
+| **UN-5** | Source Provenance and Track Records | POC1 | FR4, FR6
+| **UN-6** | Publisher Reliability History | POC1 | FR4, FR6
+| **UN-7** | Evidence Transparency | POC1 | FR4, NFR13, NFR14 (no hidden vendor dependencies)
+| **UN-8** | Understanding Disagreement and Consensus | POC1 | FR7
+| **UN-9** | Methodology Transparency | POC1 | NFR13
+| **UN-10** | Manipulation Tactics Detection | V1.5 | FR52
+| **UN-11** | Filtered Research | POC2 | FR54
+| **UN-12** | Submit Unchecked Claims | POC1 | FR7, FR1
+| **UN-13** | Cite FactHarbor Verdicts | Beta 0 | FR13, FR44
+| **UN-14** | API Access for Integration | V1.0 | Production API infrastructure
+| **UN-15** | Verdict Evolution Timeline | Deferred (Not in V1.0) | FR8 - UCM config evolution tracking, NFR14 (modular design enables evolution)
+| **UN-16** | AI vs. Human Review Status | POC1 | NFR13
+| **UN-17** | In-Article Claim Highlighting | Beta 0 | FR13
+| **UN-26** | Search Engine Visibility | V1.0 | FR44
+| **UN-27** | Visual Claim Verification | V1.5 (images), V1.5 (video) | FR46, FR51
+| **UN-28** | Safe Contribution Environment | V1.0 | FR48
+
+**Total User Needs:** 20 (UN-1 to UN-28, with gaps)
+
+**Note:** UN-29 to UN-36 reserved for future user needs from Gap Analysis
+
+== All Requirements List ==
+
+**For reference, complete list of all requirements:**
+
+**Functional Requirements (24):**
+* POC1: FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR12
+* POC2: FR54
+* Beta 0: FR9, FR10, FR11, FR13
+* V1.0: FR44, FR45, FR48, FR49
+* V1.1: FR50, FR52
+* V1.5: FR46, FR47, FR51, FR53
+* Deferred: FR8
+
+**Non-Functional Requirements (8):**
+* POC1: NFR1, NFR2, NFR3, NFR14
+* POC2: NFR11
+* Beta 0: NFR4, NFR5, NFR12, NFR13
+
+**User Needs (20):**
+UN-1, UN-2, UN-3, UN-4, UN-5, UN-6, UN-7, UN-8, UN-9, UN-10, UN-11, UN-12, UN-13, UN-14, UN-15, UN-16, UN-17, UN-26, UN-27, UN-28
+
+== Key Changes in V4.0 (COMPLETE) ==
+
+**This version is COMPLETE and includes ALL requirements from baseline:**
+
+1. **All 32 Requirements Now Included**
+ - **Added:** FR3, FR8, FR9, FR10, FR12, NFR4, NFR5 (were missing in V3.0)
+ - **Total:** 24 FR + 8 NFR = 32 requirements
+
+2. **Context-Aware Analysis in POC1**
+ - FR4 enhanced to test context-aware analysis (experimental)
+ - See [[Article Verdict Problem>>FactHarbor.Product Development.Specification.POC.Article-Verdict-Problem]]
+
+3. **Media Verification in V1.5**
+ - FR46 (Image), FR51 (Video), FR47 (Archive.org)
+ - Consolidated in V1.5 release
+
+4. **Security Earlier (Beta 0)**
+ - NFR12 moved from V1.0 to Beta 0
+ - NFR4 (Security & Privacy) also in Beta 0
+
+5. **Future Numbering Reserved**
+ - FR55-FR84, NFR14-NFR18, UN-29 to UN-36
+
+== Gap Analysis Features (Not Yet Formal Requirements) ==
+
+The following features from [[Gap Analysis>>FactHarbor.Product Development.Requirements.GapAnalysis]] are not yet assigned formal requirement numbers but would use FR55+, NFR14+, UN-29+ when formalized:
+
+**15 gap features across 7 categories:**
+* Accessibility (2): WCAG compliance, Multilingual support
+* Platform Integration (2): Browser extensions, Embeddable widgets
+* Media Verification (3): Image/Video (FR46/FR51), Audio (not yet formalized)
+* Mobile & Offline (2): Mobile apps/PWA, Offline access
+* Education (2): Educational resources, Media literacy
+* Collaboration (2): Professional tools, Community discussion
+* Advanced Features (2): User analytics, Personalization
+
+== References ==
+
+**This matrix is referenced by:**
+* [[Requirements>>FactHarbor.Product Development.Requirements.WebHome]] - Main requirements specification
+* [[POC Requirements>>FactHarbor.Product Development.Specification.POC.Requirements]] - POC1 & POC2 detailed specifications
+* [[Implementation Roadmap>>FactHarbor.Product Development.Planning.WebHome]] - High-level phase descriptions
+* [[Gap Analysis>>FactHarbor.Product Development.Requirements.GapAnalysis]] - Features not yet in V1.5
+* [[Article Verdict Problem>>FactHarbor.Product Development.Specification.POC.Article-Verdict-Problem]] - Context-aware analysis solution
+
+**Maintenance:**
+* Update this matrix when adding new requirements
+* Update this matrix when changing phase assignments or importance/urgency
+* Verify other documents still reference correctly after updates
+* Use FR55+, NFR14+, UN-29+ for new requirements
+
+**Last Review:** 2025-12-23 (V4.0 - COMPLETE) 
+**Next Review:** After POC1 completion or when adding new requirements

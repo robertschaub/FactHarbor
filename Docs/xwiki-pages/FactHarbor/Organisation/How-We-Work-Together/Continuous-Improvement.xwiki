@@ -190,7 +190,7 @@
 * Error rate
 * Response time
 * Resource utilization
-**See**: [[System Performance Metrics>>FactHarbor.Specification.System-Performance-Metrics]]
+**See**: [[System Performance Metrics>>FactHarbor.Product Development.Specification.System-Performance-Metrics]]
 === 5.2 Targets and Thresholds ===
 **For each metric**:
 * Target: Where we want to be
@@ -368,6 +368,6 @@
 **Remember**: Continuous improvement means we're always learning, always testing, always getting better.
 == 12. Related Pages ==
 * [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] - Why we automate
-* [[System Performance Metrics>>FactHarbor.Specification.System-Performance-Metrics]] - What we measure
+* [[System Performance Metrics>>FactHarbor.Product Development.Specification.System-Performance-Metrics]] - What we measure
 * [[Contributor Processes>>FactHarbor.Organisation.Contributor-Processes]] - How to propose improvements
 * [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - How improvements are approved

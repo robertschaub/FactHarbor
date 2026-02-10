@@ -29,7 +29,7 @@ Agents edit `.xwiki` files directly — no conversion needed.
 
 ```bash
 # Edit any page (pure xWiki 2.1 syntax)
-code Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki
+code Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/WebHome.xwiki
 code Docs/xwiki-pages/FactHarbor/Organisation/Governance/WebHome.xwiki
 
 # Commit changes
@@ -107,7 +107,7 @@ Do NOT use `{{code language="mermaid"}}` — it doesn't work.
 
 The conversion scripts derive pageId, parent, and title from file paths:
 
-- **WebHome pages**: Title = parent directory name (e.g., `FactHarbor/Specification/WebHome.xwiki` → title "Specification")
+- **WebHome pages**: Title = parent directory name (e.g., `FactHarbor/Product Development/Specification/WebHome.xwiki` → title "Specification")
 - **Non-WebHome pages**: Title = first xWiki heading (`= Title =`)
 - **Escaped dots**: Directory names with dots (e.g., `Architecture Analysis 1.Jan.26`) are escaped in pageIds as `\.`
 

@@ -170,7 +170,7 @@ flowchart TD
 
 **Implementation (v2.8):**
 - `validateContestation()` in `aggregation.ts`: KeyFactor-level validation (orchestrated pipeline)
-- `detectClaimContestation()` in `aggregation.ts`: Claim-level heuristic (canonical pipeline)
+- `detectClaimContestation()` in `aggregation.ts`: Claim-level heuristic (shared)
 
 ### Evidence Item Categorization
 
@@ -686,7 +686,7 @@ FactHarbor's calculation system:
 4. **Modulates by confidence** using truth bands
 5. **De-duplicates near-identical claims** to prevent double-counting
 6. **Handles dependencies** to avoid cascading false prerequisites
-7. **Applies quality gates** (Gate 1, Gate 4) for evidence sufficiency (see [Quality Gates Reference](../xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Quality%20Gates/WebHome.xwiki))
+7. **Applies quality gates** (Gate 1, Gate 4) for evidence sufficiency (see [Quality Gates Reference](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Quality%20Gates/WebHome.xwiki))
 8. **Guards against unsupported judgments** (pseudoscience, proportionality without benchmarks)
 9. **Applies source reliability weighting** to adjust verdicts based on source credibility (v2.6.35+)
 
@@ -695,5 +695,5 @@ All calculations are designed to be **transparent**, **traceable**, and **determ
 ---
 
 *See also:*
-- *[Quality Gates Reference](../xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Quality%20Gates/WebHome.xwiki) for quality gates details*
-- *[Source Reliability System](../xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Source%20Reliability/WebHome.xwiki) for full Source Reliability system documentation*
+- *[Quality Gates Reference](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Quality%20Gates/WebHome.xwiki) for quality gates details*
+- *[Source Reliability System](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Source%20Reliability/WebHome.xwiki) for full Source Reliability system documentation*

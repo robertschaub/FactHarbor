@@ -1,0 +1,110 @@
+= V1.0: Public Launch =
+
+**Phase Goal:** Production-ready public launch with IFCN compliance
+
+**Success Metric:** IFCN compliant, Google indexed, sustained quality
+
+== 1. Overview ==
+
+V1.0 is the public launch with all production requirements:
+
+* ClaimReview schema (Google/Bing visibility)
+* Complete corrections system
+* Full security audit
+* IFCN/EFCSN compliance
+* Public quality metrics
+
+**This is the FIRST public release**
+
+== 2. Launch Blockers ==
+
+**MUST HAVE before public launch:**
+
+1. ✅ FR44: ClaimReview Schema Implementation
+2. ✅ FR45: Complete Corrections System
+3. ✅ NFR11: Hardened Quality Gates (<5% hallucinations sustained)
+4. ✅ NFR12: Full Security Audit (0 critical/high vulnerabilities)
+5. ✅ NFR13: Public Quality Metrics Dashboard
+6. ✅ IFCN Compliance Documentation
+7. ✅ Privacy Policy & Terms of Service
+
+**Cannot launch without ALL of these**
+
+== 3. Key Requirements ==
+
+=== FR44: ClaimReview Schema ===
+
+**Google Fact Check Visibility**
+
+Schema.org structured data for every published analysis.
+
+**Mapping:**
+
+* 80-100% likelihood → 5 (Highly Supported)
+* 60-79% → 4 (Supported)
+* 40-59% → 3 (Mixed/Uncertain)
+* 20-39% → 2 (Questionable)
+* 0-19% → 1 (Refuted)
+
+**Target:** Indexed in Google Fact Check Explorer
+
+=== NFR12: Full Security Audit ===
+
+**Production Security**
+
+* Professional penetration testing
+* Code review for vulnerabilities
+* Dependency vulnerability scanning
+* GDPR compliance audit (if EU users)
+
+**Target:** 0 critical/high vulnerabilities, audit report published
+
+=== NFR13: Public Quality Metrics ===
+
+**Transparency Dashboard**
+
+Public-facing metrics:
+
+* Claims analyzed
+* Quality gates performance
+* Hallucination rate
+* Evidence quality metrics
+* User feedback scores
+
+**Target:** Dashboard live, transparent, trustworthy
+
+== 4. Success Criteria ==
+
+* ✅ IFCN certified (or compliant)
+* ✅ Google Fact Check Explorer indexed
+* ✅ Security audit passed
+* ✅ <5% hallucination rate sustained
+* ✅ User satisfaction target met
+* ✅ System stability demonstrated
+* ✅ All launch blockers resolved
+
+== 5. Post-Launch Roadmap ==
+
+**Near-term (V1.x):**
+
+* Enhanced contributor safety (FR48)
+* Browser extensions
+* A/B testing framework (FR49)
+* Image verification advanced (FR46)
+
+**Long-term (V2.0+):**
+
+* Video verification (FR51)
+* OSINT toolkit integration (FR50)
+* Interactive detection training (FR52)
+* Cross-organizational sharing (FR53)
+
+== Related Pages ==
+
+* [[POC to Alpha Transition>>FactHarbor.Product Development.Planning.POC to Alpha Transition.WebHome]] — Phase redefinition
+* [[Beta>>FactHarbor.Product Development.Planning.Beta0.WebHome]] — Previous phase
+* [[Roadmap Overview>>FactHarbor.Product Development.Planning.WebHome]]
+* [[Requirements>>FactHarbor.Product Development.Requirements.WebHome]]
+
+**Document Status:** V1.0 Specification
+**Version:** V0.9.70

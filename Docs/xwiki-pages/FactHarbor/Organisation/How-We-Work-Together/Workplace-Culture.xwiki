@@ -247,7 +247,7 @@ FactHarbor's workplace culture draws from three complementary sources:
 * Rationale explained
 * Trade-offs acknowledged
 * Open to questions
-**Transparency in metrics** (see [[System Performance Metrics>>FactHarbor.Specification.System-Performance-Metrics]]):
+**Transparency in metrics** (see [[System Performance Metrics>>FactHarbor.Product Development.Specification.System-Performance-Metrics]]):
 * Performance dashboards public
 * Success/failure metrics visible
 * Improvement progress tracked

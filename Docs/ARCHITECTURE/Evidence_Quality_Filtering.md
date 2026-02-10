@@ -3,7 +3,7 @@
 **Version**: 2.6.42
 **Date**: 2026-02-02
 **Status**: Implemented (Phase 1.5 + 7-Layer Defense documented)
-**Related**: [Schema Migration Strategy](../xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Schema%20Migration/WebHome.xwiki), [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md)
+**Related**: [Schema Migration Strategy](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Schema%20Migration/WebHome.xwiki), [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md)
 
 ---
 
@@ -1285,7 +1285,7 @@ Evidence Item
 
 ## Appendix B: Related Documents
 
-- [Schema Migration Strategy](../xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Schema%20Migration/WebHome.xwiki) - Backward compatibility approach
+- [Schema Migration Strategy](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Schema%20Migration/WebHome.xwiki) - Backward compatibility approach
 - [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md) - Phase 1.5 context
 - [AGENTS.md](../../AGENTS.md) - LLM guidance for evidence extraction
 - [evidence-filter.ts](../../apps/web/src/lib/analyzer/evidence-filter.ts) - Implementation

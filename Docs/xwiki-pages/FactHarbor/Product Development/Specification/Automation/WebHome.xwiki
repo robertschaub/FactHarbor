@@ -1,0 +1,203 @@
+= Automation =
+
+{{warning}}
+**POC1 Implementation Status (February 2026):** This page describes the **target automation architecture** for FactHarbor at production maturity. In POC1 (v2.6.40+), the following are **implemented**: core AKEL claim analysis pipeline (7-step orchestrated), 2 quality gates (Gate 1 + Gate 4), multi-provider LLM support, A/B testing, and source reliability scoring. The following are **not yet implemented**: risk tiers (A/B/C), publication states, moderation system, human review queue, and automation level progression (Release 0.5/1.0/2.0).
+{{/warning}}
+
+**How FactHarbor scales through automated claim evaluation.**
+== 1. Automation Philosophy ==
+FactHarbor is **automation-first**: AKEL (AI Knowledge Extraction Layer) makes all content decisions. Humans monitor system performance and improve algorithms.
+**Why automation:**
+* **Scale**: Can process millions of claims
+* **Consistency**: Same evaluation criteria applied uniformly
+* **Transparency**: Algorithms are auditable
+* **Speed**: Results in <20 seconds typically
+See [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] for detailed principles.
+== 2. Claim Processing Flow ==
+=== 2.1 User Submits Claim ===
+* User provides claim text + source URLs
+* System validates format
+* Assigns processing ID
+* Queues for AKEL processing
+=== 2.2 AKEL Processing ===
+**AKEL automatically:**
+1. Parses claim into testable components
+2. Extracts evidence from sources
+3. Scores source credibility
+4. Evaluates claim against evidence
+5. Generates verdict with confidence score
+6. Assigns risk tier (A/B/C)
+7. Publishes result
+**Processing time**: Typically <20 seconds
+**No human approval required** - publication is automatic
+=== 2.3 Content States ===
+**Processing**: AKEL working on claim (not visible to public)
+**Published**: AKEL completed evaluation (public)
+* Verdict displayed with confidence score
+* Evidence and sources shown
+* Risk tier indicated
+* Users can report issues
+**Flagged**: AKEL identified issue requiring moderator attention (still public)
+* Low confidence below threshold
+* Detected manipulation attempt
+* Unusual pattern
+* Moderator reviews and may take action
+
+== 2.5 LLM-Based Processing Architecture ==
+
+FactHarbor delegates complex reasoning and analysis tasks to Large Language Models (LLMs). The architecture evolves from POC to production:
+
+=== Actual POC1 Implementation: 7-Step Orchestrated Pipeline ===
+
+1. **UNDERSTAND** — Claim decomposition, AnalysisContext detection, KeyFactor generation
+2. **RESEARCH** — Web search query generation and execution
+3. **EVIDENCE** — Source fetching, evidence extraction with quality filtering
+4. **CONTEXT REFINEMENT** — Supplemental claims/contexts discovery
+5. **VERDICTS** — Per-context verdict generation with 7-point verdict scale
+6. **SUMMARY** — Multi-context aggregation and two-panel summary
+7. **REPORT** — Final markdown report with quality gate checks
+
+**Characteristics:**
+* Multi-step workflow with explicit quality gates between phases
+* Multi-provider LLM support via Vercel AI SDK (Anthropic, OpenAI, Google, Mistral)
+* Model tiering: different models for understand, extract_evidence, and verdict phases
+* Iterative research with configurable search depth
+* 7-layer evidence quality defense
+
+=== Target Production Three-Phase Approach ===
+
+**Phase 1: Claim Extraction + Validation**
+* Extract distinct verifiable claims
+* Validate claim clarity and uniqueness
+* Remove duplicates and vague claims
+
+**Phase 2: Evidence Gathering (Parallel)**
+* For each claim independently:
+ * Find supporting and contradicting evidence
+ * Identify authoritative sources
+ * Detect AnalysisContexts
+* Validation: Check evidence quality and source validity
+* Error containment: Issues in one claim don't affect others
+
+**Phase 3: Verdict Generation (Parallel)**
+* For each claim:
+ * Generate verdict based on validated evidence
+ * Assess confidence and risk level
+ * Flag low-confidence results for human review
+* Validation: Check verdict consistency with evidence
+
+**Advantages:**
+* Error containment between phases
+* Clear quality gates and validation
+* Observable metrics per phase
+* Scalable (parallel processing across claims)
+* Adaptable (can optimize each phase independently)
+
+=== LLM Task Delegation ===
+
+All complex cognitive tasks are delegated to LLMs:
+* **Claim Extraction**: Understanding context, identifying distinct claims
+* **Evidence Finding**: Analyzing sources, assessing relevance
+* **AnalysisContext Detection**: Identifying bounded analytical frames and KeyFactors
+* **Source Evaluation**: Assessing reliability and authority
+* **Verdict Generation**: Synthesizing evidence into conclusions
+* **Risk Assessment**: Evaluating potential impact
+
+=== Error Mitigation ===
+
+Research shows sequential LLM calls face compound error risks. FactHarbor mitigates this through:
+* **Validation gates** between phases
+* **Confidence thresholds** for quality control
+* **Parallel processing** to avoid error propagation across claims
+* **Human review queue** for low-confidence verdicts
+* **Independent claim processing** - errors in one claim don't cascade to others
+
+== 3. Risk Tiers ==
+Risk tiers classify claims by potential impact and guide audit sampling rates.
+=== 3.1 Tier A (High Risk) ===
+**Domains**: Medical, legal, elections, safety, security
+**Characteristics**:
+* High potential for harm if incorrect
+* Complex specialized knowledge required
+* Often subject to regulation
+**Publication**: AKEL publishes automatically with prominent risk warning
+**Audit rate**: Higher sampling recommended
+=== 3.2 Tier B (Medium Risk) ===
+**Domains**: Complex policy, science, causality claims
+**Characteristics**:
+* Moderate potential impact
+* Requires careful evidence evaluation
+* Multiple valid interpretations possible
+**Publication**: AKEL publishes automatically with standard risk label
+**Audit rate**: Moderate sampling recommended
+=== 3.3 Tier C (Low Risk) ===
+**Domains**: Definitions, established facts, historical data
+**Characteristics**:
+* Low potential for harm
+* Well-documented information
+* Clear right/wrong answers typically
+**Publication**: AKEL publishes by default
+**Audit rate**: Lower sampling recommended
+== 4. Quality Gates ==
+AKEL applies quality gates before publication. If any fail, claim is **flagged** (not blocked - still published).
+**Quality gates**:
+* Sufficient evidence extracted (≥2 sources)
+* Sources meet minimum credibility threshold
+* Confidence score calculable
+* No detected manipulation patterns
+* Claim parseable into testable form
+**Failed gates**: Claim published with flag for moderator review
+== 5. Automation Levels ==
+{{include reference="FactHarbor.Product Development.Specification.Diagrams.Automation Level.WebHome"/}}
+FactHarbor progresses through automation maturity levels:
+**Release 0.5** (Proof-of-Concept): Tier C only, human review required
+**Release 1.0** (Initial): Tier B/C auto-published, Tier A flagged for review
+**Release 2.0** (Mature): All tiers auto-published with risk labels, sampling audits
+See [[Automation Roadmap>>FactHarbor.Product Development.Specification.Diagrams.Automation Roadmap.WebHome]] for detailed progression.
+
+== 5.5 Automation Roadmap ==
+
+{{include reference="FactHarbor.Product Development.Specification.Diagrams.Automation Roadmap.WebHome"/}}
+
+== 6. Human Role ==
+Humans do NOT review content for approval. Instead:
+**Monitoring**: Watch aggregate performance metrics
+**Improvement**: Fix algorithms when patterns show issues
+**Exception handling**: Review AKEL-flagged items
+**Governance**: Set policies AKEL applies
+See [[Contributor Processes>>FactHarbor.Organisation.Contributor-Processes]] for how to improve the system.
+
+== 6.5 Manual vs Automated Matrix ==
+
+{{include reference="FactHarbor.Product Development.Specification.Diagrams.Manual vs Automated matrix.WebHome"/}}
+
+== 7. Moderation ==
+Moderators handle items AKEL flags:
+**Abuse detection**: Spam, manipulation, harassment
+**Safety issues**: Content that could cause immediate harm
+**System gaming**: Attempts to manipulate scoring
+**Action**: May temporarily hide content, ban users, or propose algorithm improvements
+**Does NOT**: Routinely review claims or override verdicts
+See [[Organisational Model>>FactHarbor.Organisation.Organisational-Model]] for moderator role details.
+== 8. Continuous Improvement ==
+**Performance monitoring**: Track AKEL accuracy, speed, coverage
+**Issue identification**: Find systematic errors from metrics
+**Algorithm updates**: Deploy improvements to fix patterns
+**A/B testing**: Validate changes before full rollout
+**Retrospectives**: Learn from failures systematically
+See [[Continuous Improvement>>FactHarbor.Organisation.How-We-Work-Together.Continuous-Improvement]] for improvement cycle.
+== 9. Scalability ==
+Automation enables FactHarbor to scale:
+* **Millions of claims** processable
+* **Consistent quality** at any volume
+* **Cost efficiency** through automation
+* **Rapid iteration** on algorithms
+Without automation: Human review doesn't scale, creates bottlenecks, introduces inconsistency.
+== 10. Transparency ==
+All automation is transparent:
+* **Algorithm parameters** documented
+* **Evaluation criteria** public
+* **Source scoring rules** explicit
+* **Confidence calculations** explained
+* **Performance metrics** visible
+See [[System Performance Metrics>>FactHarbor.Product Development.Specification.System-Performance-Metrics]] for what we measure.

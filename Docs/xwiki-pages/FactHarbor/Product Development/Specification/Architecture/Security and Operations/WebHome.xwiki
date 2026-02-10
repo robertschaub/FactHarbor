@@ -1,0 +1,186 @@
+= Security and Operations =
+
+This page documents FactHarbor's current security model, deployment topology, user roles, and operational considerations. It distinguishes between what is implemented today (POC) and what is planned for production.
+
+== Security Model ==
+
+{{mermaid}}
+flowchart TB
+    subgraph Implemented["Implemented (POC)"]
+        RUNNER_KEY["Runner Route Protection\n/api/internal/run-job\nrequires x-runner-key header"]
+        ADMIN_KEY["Admin API Protection\nPOST endpoints\nrequire X-Admin-Key header"]
+        TIMING["Timing-Safe Comparison\nfor secret validation"]
+        HEALTH_AUTH["System Health Auth\nresume/pause require admin key\nin production"]
+    end
+
+    subgraph Planned["Planned (Alpha/Beta)"]
+        USER_AUTH["User Authentication\nLogin, registration,\npassword hashing"]
+        RBAC["Role-Based Access Control\nReader, User, Admin,\nModerator roles"]
+        RATE_LIMIT["Rate Limiting\nPer-user and per-IP\nquota enforcement"]
+        SSRF["SSRF Protection\nURL fetching\nsanitisation"]
+    end
+
+    subgraph Always["Always Active"]
+        TLS["HTTPS/TLS\nTransport encryption"]
+        PARAMS["Parameterised Queries\nSQL injection prevention"]
+        ZOD_VAL["Zod Validation\nAll config and API input\nschema-validated"]
+    end
+
+    style Implemented fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style Planned fill:#fff9c4,stroke:#f9a825,color:#000
+    style Always fill:#e3f2fd,stroke:#1565c0,color:#000
+{{/mermaid}}
+
+//Green = implemented in current POC. Yellow = planned for Alpha/Beta. Blue = always active regardless of deployment phase. The current security model protects internal endpoints with shared secrets; full user authentication is planned for Alpha.//
+
+=== Current Protections ===
+
+|= Protection |= Scope |= Mechanism
+| Runner route | ##/api/internal/run-job## | ##x-runner-key## header must match ##FH_INTERNAL_RUNNER_KEY## env var
+| Admin endpoints | System health POST, config changes | ##X-Admin-Key## header must match ##FH_ADMIN_KEY## env var
+| Secret comparison | All key validations | Timing-safe comparison (prevents timing attacks)
+| Input validation | All API inputs, all configs | Zod schema validation
+| SQL injection | All database access | Parameterised queries (EF Core + better-sqlite3)
+
+=== Production Hardening Needed ===
+
+* **User authentication** — Login, registration, session management
+* **RBAC** — Role-based access control (Reader, User, Admin, Moderator)
+* **SSRF protection** — Sanitise URLs before fetching (prevent internal network access)
+* **Rate limiting** — Per-user and per-IP request throttling
+* **CORS tightening** — Restrict allowed origins in production
+* **Audit logging** — Track all significant administrative actions
+
+== Deployment Topology ==
+
+{{mermaid}}
+flowchart TB
+    subgraph Current["Current (POC / Development)"]
+        direction TB
+        HOST["Single Host"]
+        NEXT["Next.js\nport 3000"]
+        DOTNET[".NET API\nport 5000"]
+        SQLITE["3x SQLite\nfiles"]
+
+        HOST --> NEXT
+        HOST --> DOTNET
+        HOST --> SQLITE
+    end
+
+    subgraph Production["Target Production"]
+        direction TB
+        LB["Load Balancer"]
+        API1["API Server 1"]
+        API2["API Server N"]
+        WORKERS["AKEL Worker Pool\n(auto-scaling)"]
+        PG_PRIMARY["PostgreSQL\nPrimary"]
+        PG_REPLICA["PostgreSQL\nReplica(s)"]
+        REDIS_OPT["Redis\n(if multi-instance)"]
+        MONITOR["Prometheus\n+ Grafana"]
+
+        LB --> API1
+        LB --> API2
+        API1 --> WORKERS
+        API2 --> WORKERS
+        API1 --> PG_PRIMARY
+        API2 --> PG_REPLICA
+        PG_PRIMARY --> PG_REPLICA
+        WORKERS --> PG_PRIMARY
+        MONITOR -.-> API1
+        MONITOR -.-> WORKERS
+    end
+
+    style Current fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style Production fill:#e3f2fd,stroke:#1565c0,color:#000
+{{/mermaid}}
+
+//Current deployment: single host with both services and SQLite files. Target production: load-balanced API servers, auto-scaling AKEL workers, PostgreSQL with read replicas, optional Redis for shared caching, and Prometheus/Grafana monitoring.//
+
+=== Current Development Setup ===
+
+{{code}}
+# Terminal 1: Start C# API
+cd apps/api && dotnet run --configuration Development
+# Runs on http://localhost:5000, Swagger at /swagger
+
+# Terminal 2: Start Next.js dev server
+cd apps/web && npm run dev
+# Runs on http://localhost:3000
+{{/code}}
+
+=== CI/CD Pipeline ===
+
+|= Stage |= Runner |= Actions
+| Build | Windows (GitHub Actions) | Node 20 setup, .NET 8 setup, ##npm ci##, ##npm build## (Next.js), ##dotnet build## (.NET Release)
+
+== User Roles ==
+
+{{mermaid}}
+flowchart TB
+    subgraph Current_Roles["Implemented"]
+        READER["Reader\n(anonymous)"]
+        ADMIN["UCM Admin\n(via admin key)"]
+    end
+
+    subgraph Planned_Roles["Planned"]
+        USER["Registered User\n(submit analyses)"]
+        MODERATOR["Moderator\n(review flagged content)"]
+    end
+
+    READER -->|"View analyses,\nbrowse results"| VIEW["Read-Only\nAccess"]
+    ADMIN -->|"Change configs,\nresume/pause system"| CONFIG["Admin\nAccess"]
+    USER -->|"Submit claims,\nview own history"| SUBMIT["Submit\nAccess"]
+    MODERATOR -->|"Review flags,\nban users"| MOD["Moderation\nAccess"]
+
+    style Current_Roles fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style Planned_Roles fill:#fff9c4,stroke:#f9a825,color:#000
+{{/mermaid}}
+
+//Two roles are currently implemented: anonymous Reader (view only) and UCM Admin (configuration management via admin key). Registered User and Moderator roles are planned for Alpha/Beta.//
+
+|= Role |= Status |= Capabilities
+| **Reader** | Implemented | View published analyses and reports
+| **UCM Admin** | Implemented | Change pipeline/search/calculation configs, resume/pause system, view system health
+| **Registered User** | Planned (Alpha) | Submit articles/claims for analysis, view own job history
+| **Moderator** | Planned (Beta) | Review flagged content, manage user access, investigate abuse
+
+== Monitoring and Observability ==
+
+=== Current (POC) ===
+
+|= Capability |= Status |= Mechanism
+| System health endpoint | Implemented | ##GET /api/fh/system-health## — provider circuit state, pause status
+| Provider health banner | Implemented | UI banner when system is auto-paused
+| Job event streaming | Implemented | SSE events for real-time progress tracking
+| Analysis metrics | Implemented | Per-job metrics stored in ##AnalysisMetrics## table
+| Debug logging | Implemented | ##FH_DEBUG_LOG_PATH## for detailed pipeline logs
+
+=== Planned (Production) ===
+
+|= Capability |= Technology |= When
+| Metrics collection | Prometheus | Beta
+| Dashboards | Grafana | Beta
+| Alerting | Prometheus Alertmanager | Beta
+| Distributed tracing | OpenTelemetry | V1.0
+| Log aggregation | ELK or Loki | V1.0
+
+=== Key Metrics to Track ===
+
+|= Category |= Metrics
+| **Performance** | AKEL processing time, API response time, LLM call latency, search latency
+| **Quality** | Confidence score distribution, evidence count per analysis, Gate 4 pass rate
+| **Cost** | LLM tokens consumed, search API calls, cost per analysis
+| **Reliability** | Provider failure rate, circuit breaker trips, auto-pause events
+
+== Disaster Recovery ==
+
+|= Aspect |= Current (POC) |= Target (Production)
+| **Backups** | Manual SQLite file copy | Automated PostgreSQL backups to S3
+| **Recovery** | Restore SQLite files | Point-in-time recovery from transaction logs
+| **Replication** | None (single instance) | PostgreSQL streaming replication
+| **RTO** | Manual (hours) | < 4 hours
+| **Data loss window** | Since last backup | Minutes (WAL-based)
+
+----
+
+**Navigation:** [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] | Prev: [[Quality and Trust>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust.WebHome]]

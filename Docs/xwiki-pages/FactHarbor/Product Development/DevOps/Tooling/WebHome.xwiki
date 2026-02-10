@@ -1,0 +1,20 @@
+= Tooling =
+
+Development environment setup, tool decisions, and testing/documentation tools for FactHarbor contributors.
+
+----
+
+== Setup ==
+
+* **[[1st Run Checklist>>FactHarbor.Product Development.DevOps.Tooling.1st Run Checklist.WebHome]]** — Step-by-step checklist to ensure POC1 runs end-to-end on the first attempt
+* **[[Installation Checklist>>FactHarbor.Product Development.DevOps.Tooling.Installation Checklist.WebHome]]** — Phased setup guide for a predictable, low-friction installation
+* **[[Tools Decisions>>FactHarbor.Product Development.DevOps.Tooling.Tools Decisions.WebHome]]** — Documented tool choices from POC1 to Beta with upgrade paths
+
+== Developer Tools ==
+
+* **[[Documentation Viewer>>FactHarbor.Product Development.DevOps.Tooling.Documentation Viewer.WebHome]]** — Browse documentation online, locally, or in VS Code
+* **[[Promptfoo Testing>>FactHarbor.Product Development.DevOps.Tooling.Promptfoo Testing.WebHome]]** — Prompt testing and evaluation with promptfoo
+
+== Archived ==
+
+* **[[Source Reliability Bundle>>FactHarbor.Product Development.DevOps.Tooling.Source Reliability Bundle.WebHome]]** — (Archived) Static SR bundle approach, replaced by the LLM-powered Source Reliability Service in v2.6

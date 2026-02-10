@@ -1,0 +1,45 @@
+= Project Status =
+
+**FactHarbor is an operational fact-analysis platform in active development.**
+
+----
+
+== Current Status ==
+
+|= |= |
+| **Version** | v2.10.2 |
+| **Phase** | Alpha Transition |
+| **Codebase** | Next.js (UI + AI orchestrator) + ASP.NET Core (API + persistence) |
+
+== What's Operational ==
+
+* **Automated claim analysis** — submit a URL or text, get structured verdicts with evidence
+* **Multi-provider AI** — Anthropic, OpenAI, Google, Mistral via Vercel AI SDK with tiered model routing
+* **7-point verdict scale** — TRUE to FALSE with confidence, distinguishing contested from insufficient evidence
+* **Multi-context detection** — identifies and analyzes separate analytical frames independently (legal, scientific, temporal)
+* **Quality gates** — claim validation (Gate 1) and verdict confidence (Gate 4)
+* **Source reliability scoring** — LLM-based evaluation with multi-model consensus and caching
+* **Evidence quality filtering** — probative value assessment, source authority, extraction confidence
+* **Real-time progress** — Server-Sent Events for live analysis updates
+* **PDF/HTML/text input** — extract and analyze content from URLs or pasted text
+
+== Development Phases ==
+
+|= Phase |= Status |= Focus
+| **Proof of Concept** | Completed | Core AI workflow, quality gates, multi-provider support
+| **Alpha** | In progress | Baseline quality validation, prompt optimization, confidence calibration
+| **Beta** | Planned | User testing, production hardening, moderation tooling
+| **V1.0** | Planned | Public launch, API access, continuous quality improvement
+
+== Alpha Priorities ==
+
+1. Run baseline quality test (30 test cases across domains)
+2. Validate v2.8 prompt optimizations against real analysis runs
+3. Connect metrics infrastructure to analyzer pipeline
+4. Surface quality gate decisions in UI
+
+== Links ==
+
+* [[Detailed Roadmap>>FactHarbor.Product Development.Planning.WebHome]] — full phase definitions, success criteria, requirements mapping
+* [[Specification>>FactHarbor.Product Development.Specification.WebHome]] — architecture, data models, requirements
+* [[Known Issues>>https://github.com/robertschaub/FactHarbor]] — bug tracking and limitations

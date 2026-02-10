@@ -63,7 +63,7 @@ def derive_parent(page_id: str) -> Optional[str]:
     Derive parent from pageId (handles escaped dots in names).
     FactHarbor.Specification.WebHome → FactHarbor.WebHome
     FactHarbor.WebHome → None (root)
-    FactHarbor.Roadmap.Architecture Analysis 1\.Jan\.26.WebHome → FactHarbor.Roadmap.WebHome
+    FactHarbor.Planning.Architecture Analysis 1\.Jan\.26.WebHome → FactHarbor.Planning.WebHome
     FactHarbor.Specification.SomePage → FactHarbor.Specification.WebHome
     """
     parts = split_page_id(page_id)

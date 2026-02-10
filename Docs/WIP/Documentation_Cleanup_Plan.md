@@ -244,14 +244,14 @@ These diagram pages were NOT updated in this session. Need to check each one.
 
 | Page | Key Checks |
 |------|------------|
-| `Roadmap/Requirements-Roadmap-Matrix/WebHome.xwiki` | Update phase labels, verify requirement mappings |
-| `Roadmap/Development Guidance/WebHome.xwiki` | Verify current |
+| `Planning/Requirements-Roadmap-Matrix/WebHome.xwiki` | Update phase labels, verify requirement mappings |
+| `Development/Tooling/WebHome.xwiki` | Verify current |
 | `Roadmap/Architecture Analysis*/WebHome.xwiki` | Verify current |
 | `Roadmap/Specification vs*/WebHome.xwiki` | Verify current |
 | `Roadmap/Zero-Cost Hosting*/WebHome.xwiki` | Verify current |
 | `Roadmap/Future Milestones` | Check if exists, update if needed |
 
-#### 2G. User Guides and FH Analysis Reports
+#### 2G. Subsystems and Components, and FH Analysis Reports
 
 | Page | Key Checks |
 |------|------------|
@@ -268,7 +268,7 @@ These diagram pages were NOT updated in this session. Need to check each one.
 | Development/ | 5 | 1-2 light updates | Low |
 | Other Specification/ | 8 | 3-4 need terminology/accuracy updates | Medium |
 | Roadmap/ (remaining) | 5 | 2-3 need phase label updates | Low |
-| User Guides | 5 | 1-2 verify accuracy | Low |
+| Subsystems and Components | 4 | 1-2 verify accuracy | Low |
 | **Total** | ~50 pages | **~20-25 need changes** | **~4-6 hours** |
 
 ---
@@ -293,7 +293,7 @@ These diagram pages were NOT updated in this session. Need to check each one.
 4. **Reference/ pages** — Schema verification
 5. **Remaining Roadmap/ pages** — Phase label updates
 6. **Development/, FAQ, other** — Light verification
-7. **User Guides** — Accuracy check
+7. **Subsystems and Components** — Accuracy check
 
 ### Phase 3: Verification
 

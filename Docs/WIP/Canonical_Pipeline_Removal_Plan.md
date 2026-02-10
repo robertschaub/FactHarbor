@@ -1,5 +1,7 @@
 # Plan: Remove Monolithic Canonical Pipeline
 
+**Status:** COMPLETED (implemented in commit `88e7fc4`, documentation cleanup in subsequent commits)
+
 ## Context
 
 The Monolithic Canonical pipeline (`monolithic_canonical`) was an experimental pipeline variant introduced for faster single-context analysis with canonical schema output. With the Orchestrated pipeline as the stable default and Monolithic Dynamic as the experimental alternative, the Canonical pipeline is no longer needed and adds maintenance overhead.

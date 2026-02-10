@@ -19,12 +19,13 @@
 
 ```
 xwiki-pages/
-├── FactHarbor/                        (137 pages - single combined tree)
-│   ├── Specification/                 (Requirements, Architecture, Diagrams, etc.)
-│   ├── Roadmap/                       (Implementation plans, guidance)
+├── FactHarbor/                        (137+ pages - single combined tree)
 │   ├── Organisation/                  (Governance, processes, policies)
-│   ├── FH Analysis Reports/           (Analysis results)
-│   ├── User Guides/                   (Getting started, admin, LLM config)
+│   ├── Product Development/           (All product-related documentation)
+│   │   ├── Requirements/              (Functional requirements, user needs, roles)
+│   │   ├── Specification/             (Architecture, data model, diagrams, etc.)
+│   │   ├── Planning/                  (Phases, status, roadmap)
+│   │   └── DevOps/                    (Guidelines, tooling, deployment, subsystems)
 │   ├── License and Disclaimer/
 │   └── WebHome.xwiki                  (FactHarbor root page)
 │
@@ -47,7 +48,7 @@ xwiki-pages/
 **Edit .xwiki files directly - no conversion needed:**
 ```bash
 # Edit any page
-code Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki
+code Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/WebHome.xwiki
 code Docs/xwiki-pages/FactHarbor/Organisation/Governance/WebHome.xwiki
 
 # Commit changes
@@ -76,7 +77,7 @@ python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output F
 
 Each `.xwiki` file contains **pure xWiki 2.1 syntax** - exactly what you would paste into the xWiki page editor.
 
-**Example:** `FactHarbor/Specification/WebHome.xwiki`
+**Example:** `FactHarbor/Product Development/Specification/WebHome.xwiki`
 ```xwiki
 = Specification =
 
@@ -103,8 +104,8 @@ graph TD
 | - parent: | `None` (root) |
 | - title: | `FactHarbor` (from directory name) |
 | - syntax: | `xwiki/2.1` |
-| **File:** `FactHarbor/Specification/WebHome.xwiki` | |
-| - pageId: | `FactHarbor.Specification.WebHome` |
+| **File:** `FactHarbor/Product Development/Specification/WebHome.xwiki` | |
+| - pageId: | `FactHarbor.Product Development.Specification.WebHome` |
 | - parent: | `FactHarbor.WebHome` |
 | - title: | `Specification` (from directory name) |
 | - syntax: | `xwiki/2.1` |

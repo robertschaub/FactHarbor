@@ -50,7 +50,7 @@ At our core is a simple principle: reasoning must be as transparent as the resul
 **AI’s Role**
 AI is the engine. It searches multiple LLM's (Large Language Models) and the web for evidence, extracts testable claims, assesses sources by track record, actively seeks contradicting evidence, and produces transparent verdicts with confidence scores. It works fast, at scale, and consistently — but always within the rules and policies humans define. Every step of its reasoning is documented and auditable.
 
-**Human's Role**
+**The Human Role**
 Humans are system architects, not content judges. They design and refine the rules, prompts, and policies that guide AI behavior — always with neutrality, fairness, and transparency as goals. When results fall short, humans improve the methodology itself, not individual outputs. Fix the system, not the data. This keeps the platform scalable, unbiased, and accountable.
 
 == How It Works: The Core Concepts ==
@@ -60,8 +60,8 @@ FactHarbor structures reasoning into transparent steps, moving beyond simple hea
 * **Claims & Clusters** – We group similar real-world statements into clusters to avoid duplicates and keep related claims together.
 * **AnalysisContexts** – A claim might be true in one context but false in another. An AnalysisContext is a bounded analytical frame — a specific set of assumptions, definitions, and scope — containing KeyFactors that break the claim into checkable sub-questions.
 * **Evidence** – Data and sources are linked to specific contexts, not just to the claim in general.
-* **Verdicts** – We assign likelihoods (e.g., "Highly likely", "Unsubstantiated") to each context, based on the available evidence.
-* **Truth Landscape** – The result is not a single word, but a landscape showing where a claim holds up, where it fails, and where the evidence is still unclear.
+* **Verdicts** – We produce evidence-based ratings (e.g., "Well Supported", "Mixed Evidence", "Contradicted") for each analytical perspective, grounded in the available evidence.
+* **Evidence Landscape** – The result is not a single label, but a multi-perspective view showing where a claim is well-supported, where it's contradicted, and where the evidence is still unclear.
 
 == The Lifecycle: From Input to Verdict ==
 
@@ -71,7 +71,7 @@ Data in FactHarbor flows through a structured, auditable process:
 * **Context Detection:** AI identifies AnalysisContexts and KeyFactors; the pipeline researches each independently.
 * **Evidence Handling:** Evidence is retrieved, assessed for quality, and linked.
 * **Verdict Creation:** Drafting reasoning and likelihoods for each AnalysisContext.
-* **Public Presentation:** The "Truth Landscape" is published for users to explore.
+* **Public Presentation:** The evidence landscape — multi-perspective results with full provenance — is published for users to explore.
 
 == Explore FactHarbor ==
 
@@ -80,70 +80,18 @@ Data in FactHarbor flows through a structured, auditable process:
 (((
 == [[Organisation>>FactHarbor.Organisation.WebHome]] ==
 
-**//Structure, Governance, and Funding.//**
-Discover how we are organised, how decisions are made, and how you can contribute.
-
-* [[Go to Organisation>>FactHarbor.Organisation.WebHome]]
+**//How We Operate.//**
+Governance, decision-making, team structure, and how to get involved as a contributor.
 )))
 )))
 
 (((
 (% class="box" %)
 (((
-== [[Specification>>FactHarbor.Specification.WebHome]] ==
+== [[Product Development>>FactHarbor.Product Development.WebHome]] ==
 
-**//Deep Technical Specs.//**
-Dive into the Architecture, Data Models, API definitions, and detailed algorithms.
-
-* [[Go to Specification>>FactHarbor.Specification.WebHome]]
-)))
-)))
-
-(((
-(% class="box" %)
-(((
-== [[User Guides>>FactHarbor.User Guides.WebHome]] ==
-
-**//Operational Guides.//**
-Getting started, admin interface, LLM configuration, testing, and data export guides.
-
-* [[Go to User Guides>>FactHarbor.User Guides.WebHome]]
-)))
-)))
-
-(((
-(% class="box" %)
-(((
-== [[Roadmap>>FactHarbor.Roadmap.WebHome]] ==
-
-**//Development Phases and Timeline.//**
-Development phases, guidance, and hosting strategy.
-
-* [[Go to Roadmap>>FactHarbor.Roadmap.WebHome]]
-)))
-)))
-
-(((
-(% class="box" %)
-(((
-== [[Project Status>>FactHarbor.Project Status.WebHome]] ==
-
-**//Current Phase and Capabilities.//**
-What's operational, development phases, and Alpha priorities.
-
-* [[Go to Project Status>>FactHarbor.Project Status.WebHome]]
-)))
-)))
-
-(((
-(% class="box" %)
-(((
-== [[FH Analysis Reports>>FactHarbor.FH Analysis Reports.WebHome]] ==
-
-**//Sample Analyses.//**
-Fact-checking reports across different domains and languages, demonstrating the evidence-based methodology.
-
-* [[Go to Analysis Reports>>FactHarbor.FH Analysis Reports.WebHome]]
+**//The Full Picture.//**
+Requirements, specification, architecture, planning, and development tooling — from what the system does to how it's built and run.
 )))
 )))
 
@@ -152,9 +100,7 @@ Fact-checking reports across different domains and languages, demonstrating the 
 (((
 == [[License and Disclaimer>>FactHarbor.License and Disclaimer.WebHome]] ==
 
-**//Licensing, Attribution, and Legal.//**
-Open-source licensing terms, usage disclaimers, and attribution requirements.
-
-* [[Go to License and Disclaimer>>FactHarbor.License and Disclaimer.WebHome]]
+**//Open Source, Open Data.//**
+Multi-license model (MIT, AGPL-3.0, CC BY-SA 4.0), usage terms, and attribution requirements.
 )))
 )))
