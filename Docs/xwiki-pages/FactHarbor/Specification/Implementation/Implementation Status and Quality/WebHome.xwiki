@@ -264,7 +264,7 @@ See: Promptfoo Testing Guide (in User Guides)
 * **Source Reliability**: [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] - Source scoring system
 * **Prompt Architecture**: [[Prompt Architecture>>FactHarbor.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] - Modular prompt composition system
 * **Promptfoo Testing**: [[Promptfoo Testing>>FactHarbor.User Guides.Promptfoo Testing.WebHome]] - Prompt testing guide
-* **Pipeline Architecture**: [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] - Triple-path pipeline design
+* **Pipeline Architecture**: [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] - Twin-path pipeline design
 * **Getting Started**: [[Getting Started>>FactHarbor.User Guides.Getting Started.WebHome]] - Setup and installation
 * **LLM Configuration**: [[LLM Configuration>>FactHarbor.User Guides.LLM Configuration.WebHome]] - Provider configuration
 

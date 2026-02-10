@@ -76,7 +76,7 @@ After installing, open any `.xwiki` file and press `Ctrl+Shift+V` to toggle a li
 - **[Calculations](Docs/ARCHITECTURE/Calculations.md)** - Verdict calculation methodology (.md — active development)
 - **[Evidence Quality Filtering](Docs/ARCHITECTURE/Evidence_Quality_Filtering.md)** - Multi-layer filtering defense (.md — active development)
 - **[Source Reliability](Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Source%20Reliability/WebHome.xwiki)** - Source scoring system (xWiki)
-- **[Pipeline Architecture](Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki)** - Triple-path pipeline design (xWiki)
+- **[Pipeline Architecture](Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki)** - Twin-path pipeline design (xWiki)
 
 ### Development
 - **[Coding Guidelines](Docs/xwiki-pages/FactHarbor/Specification/Development/Guidelines/Coding%20Guidelines/WebHome.xwiki)** - Code quality standards and principles (xWiki)

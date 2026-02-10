@@ -46,7 +46,7 @@
 **LLM Text Analysis Pipeline (v2.9+):**
 - **Four Analysis Points**: Input Classification, Evidence Quality, Context Similarity, Verdict Validation
 - **LLM-Only Contract**: All analysis points are always LLM-driven (no hybrid/heuristic fallback)
-- **Multi-Pipeline Support**: Works across Orchestrated, Monolithic Canonical, and Monolithic Dynamic pipelines
+- **Multi-Pipeline Support**: Works across Orchestrated and Monolithic Dynamic pipelines
 - **Telemetry**: Built-in metrics for success rates, latency
 - **Bug Fix (v2.8.1)**: Counter-claim detection removed from verdict prompt (was overriding better understand-phase detection)
 - **Prompt Files**: Located in `apps/web/prompts/text-analysis/` with README documentation
@@ -181,10 +181,10 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| **Next.js Web App** | ✅ Operational | Triple-Path Pipeline complete |
+| **Next.js Web App** | ✅ Operational | Twin-Path Pipeline complete |
 | **.NET API** | ✅ Operational | SQLite for local, PostgreSQL for production |
 | **Job Orchestration** | ✅ Working | SSE events, exponential backoff retry |
-| **Triple-Path Pipeline** | ✅ Complete | Orchestrated, Monolithic Canonical, Monolithic Dynamic |
+| **Twin-Path Pipeline** | ✅ Complete | Orchestrated and Monolithic Dynamic |
 | **LLM Integration** | ✅ Multi-provider | Anthropic (recommended), OpenAI, Google, Mistral |
 | **LLM Tiering** | ✅ Implemented | Per-task model selection for cost optimization |
 | **Search Integration** | ✅ Multi-provider | Google CSE, SerpAPI, Gemini Grounded |
