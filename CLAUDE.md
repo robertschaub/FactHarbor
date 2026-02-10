@@ -1,57 +1,64 @@
 # Claude Code instructions — FactHarbor
 
-Purpose: short, actionable notes to help Claude Code be immediately productive in this repo.
+> **For domain-heavy tasks** (pipeline changes, prompt engineering, terminology, architecture):
+> read `/AGENTS.md` first — it contains all project rules, terminology, and architecture reference.
 
 ## Project overview
 
-This is a small POC with two apps:
-- `apps/api` — ASP.NET Core API (SQLite by default). Key files: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`, `Controllers/*`.
-- `apps/web` — Next.js app (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer.ts`.
+Two apps + one tool:
+- `apps/api` — ASP.NET Core API (SQLite). Key files: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`, `Controllers/*`.
+- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/orchestrated.ts`.
 - `tools/vscode-xwiki-preview` — VS Code extension for XWiki page previews.
 
 ## Primary data flow
 
-1. Client/UI -> API creates a job via the `JobService` (`apps/api/Services/JobService.cs`).
-2. API triggers the runner via `RunnerClient` (`apps/api/Services/RunnerClient.cs`) which POSTs to the Next internal route `/api/internal/run-job`.
-3. Runner (Next route at `apps/web/src/app/api/internal/run-job/route.ts`) fetches the job (`/v1/jobs/{id}`), calls `runFactHarborAnalysis` from `apps/web/src/lib/analyzer.ts`, and writes progress/results back to API internal endpoints (`/internal/v1/jobs/{jobId}/status` and `/internal/v1/jobs/{jobId}/result`).
+1. Client/UI -> API creates a job via `JobService` (`apps/api/Services/JobService.cs`).
+2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
+3. Runner fetches the job, calls `runFactHarborAnalysis`, writes progress/results back to API.
+
+## Critical terminology (always follow — see AGENTS.md for full details)
+
+- **AnalysisContext** = Top-level analytical frame. NEVER call this "scope".
+- **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
+- **EvidenceItem** = Extracted evidence. NEVER call these "facts" in new code.
+- **No hardcoded keywords**: Code, prompts, and logic must be generic for ANY topic.
+- **Input neutrality**: "Was X fair?" must yield same analysis as "X was fair" (tolerance ≤4%).
 
 ## Auth & headers
 
-Internal endpoints are protected by shared secrets in headers:
-- Runner calls Next: header `X-Runner-Key` (Runner:RunnerKey in API config / `FH_INTERNAL_RUNNER_KEY` in web env).
-- Runner -> API internal updates: header `X-Admin-Key` (API `Admin:Key` / env `FH_ADMIN_KEY`).
-- See `apps/api/appsettings.Development.example.json` for config keys.
+- Runner -> Next: header `X-Runner-Key` (`FH_INTERNAL_RUNNER_KEY`)
+- Runner -> API: header `X-Admin-Key` (`FH_ADMIN_KEY`)
+- Config: `apps/api/appsettings.Development.json` (from `.example`), `apps/web/.env.local` (from `.env.example`).
 
-## Environment & run commands
+## Run commands
 
-- Create env copies: `apps/web/.env.local` (from `.env.example`) and `apps/api/appsettings.Development.json` (from `appsettings.Development.example.json`).
-- Bootstrap (Windows):
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
-  ```
-- Web dev: `cd apps/web && npm run dev` (Next on port 3000).
-- API: open `apps.api.sln` or `cd apps/api && dotnet run` (API on port 5000 by default).
-- Tests: `npm test` (runs vitest in apps/web workspace).
-- Build: `npm -w apps/web run build`.
-
-## Important env names / config keys
-
-- Web/runner: `FH_INTERNAL_RUNNER_KEY`, `FH_API_BASE_URL`, `FH_ADMIN_KEY`, `FH_RUNNER_KEY` (check `.env.example`).
-- API config (appsettings): `Runner:BaseUrl`, `Runner:RunnerKey`, `Admin:Key`, `ConnectionStrings:FhDbSqlite`.
-
-## Status values & job schema
-
-`JobEntity` (apps/api/Data/Entities.cs) uses `Status` values like `QUEUED`, `RUNNING`, `SUCCEEDED`, `FAILED`; `Progress` is 0-100. Results stored in `ResultJson` and `ReportMarkdown`.
+- Bootstrap: `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1`
+- Web: `cd apps/web && npm run dev` (port 3000)
+- API: `cd apps/api && dotnet run` (port 5000)
+- Tests: `npm test` (vitest). Build: `npm -w apps/web run build`.
 
 ## Patterns & conventions
 
-- Keep internal endpoints idempotent and guarded by header checks (`X-Admin-Key` or `X-Runner-Key`). See `InternalJobsController.cs` and `run-job/route.ts` for examples.
-- Use `JobService` for any DB changes to keep events consistent (it appends `JobEventEntity` rows for history).
-- Runner code runs in the Next server runtime (`export const runtime = "nodejs"`); prefer fetch-based calls with `{ cache: "no-store" }` for fresh reads.
-- DB is auto-created in `Program.cs` via `db.Database.EnsureCreated()` — migrations are not used in this POC.
-- Platform is Windows. Use PowerShell-compatible commands.
+- Internal endpoints: idempotent, guarded by `X-Admin-Key` / `X-Runner-Key` headers.
+- Use `JobService` for all DB changes (appends `JobEventEntity` for audit history).
+- DB auto-created via `EnsureCreated()` — no migrations in this POC.
+- Platform: Windows. Use PowerShell-compatible commands.
+
+## Safety
+
+- No production data access. No secrets in commits.
+- No destructive git commands unless explicitly asked.
+- Do not overwrite `apps/api/factharbor.db` unless asked.
+
+## Agent handoff
+
+If another tool would be better, say so and explain what context it needs:
+- **Cursor Composer**: multi-file refactors with visual diff.
+- **GitHub Copilot**: inline completions.
+- **Cline**: autonomous multi-step workflows.
+Full reference: `/AGENTS.md` Agent Handoff Protocol.
 
 ## Workflow
 
-- Solo developer + AI agents. Direct push to main is the normal workflow.
-- Commit messages follow conventional commits: `type(scope): description`.
+- Solo developer + AI agents. Direct push to main is normal.
+- Commits: conventional commits `type(scope): description`.

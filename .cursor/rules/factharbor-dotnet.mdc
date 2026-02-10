@@ -1,0 +1,26 @@
+---
+description: FactHarbor .NET API rules for apps/api
+globs: apps/api/**/*.cs
+---
+
+# FactHarbor — .NET API Rules
+
+## Technology
+- .NET 8, ASP.NET Core with controllers
+- Entity Framework Core 8 with SQLite
+- Swagger at `http://localhost:5000/swagger`
+
+## Key Patterns
+- **No EF migrations.** DB auto-created via `db.Database.EnsureCreated()` in `Program.cs`.
+- **All DB writes go through `JobService`.** It appends `JobEventEntity` rows for audit history. Never write to DbContext directly from controllers.
+- **Internal endpoints use header auth.** `InternalJobsController` checks `X-Admin-Key` via `IsAuthorized()`.
+- **RunnerClient has built-in retry** with exponential backoff.
+
+## Project Structure
+- `Controllers/`: JobsController, AnalyzeController, InternalJobsController, HealthController, VersionController, MetricsController, SystemHealthController
+- `Services/`: JobService (DB writes), RunnerClient (HTTP to Next.js runner)
+- `Data/`: Entities.cs (JobEntity, JobEventEntity), FhDbContext.cs
+
+## Commands
+- Run: `cd apps/api && dotnet watch run` (hot reload)
+- Build: `cd apps/api && dotnet build`

@@ -1,0 +1,27 @@
+---
+description: FactHarbor TypeScript/Next.js rules for apps/web
+globs: apps/web/**/*.ts,apps/web/**/*.tsx
+---
+
+# FactHarbor — TypeScript / Next.js Rules
+
+## Key Context
+- Main pipeline: `apps/web/src/lib/analyzer/orchestrated.ts` (~13,600 lines — navigate carefully)
+- Alternative pipeline: `apps/web/src/lib/analyzer/monolithic-dynamic.ts`
+- Types: `apps/web/src/lib/analyzer/types.ts`
+- Internal runner route: `apps/web/src/app/api/internal/run-job/route.ts`
+
+## Patterns
+- Runner code uses `export const runtime = "nodejs"` (Next.js server runtime)
+- Prefer `{ cache: "no-store" }` for fetch calls — ensures fresh reads
+- No hardcoded keywords in prompts or code — keep everything generic
+- Use `JobService` (via API) for any job status changes
+
+## Commands
+- Test: `npm test` (vitest, runs from repo root)
+- Build: `npm -w apps/web run build`
+- Dev: `cd apps/web && npm run dev` (port 3000)
+
+## Auth Headers
+- `X-Runner-Key`: runner -> Next.js internal routes
+- `X-Admin-Key`: runner -> API internal endpoints

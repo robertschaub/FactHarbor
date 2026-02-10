@@ -1,15 +1,25 @@
 # Copilot / AI agent instructions — FactHarbor
 
+> **For domain-heavy tasks** (pipeline changes, prompt engineering, terminology, architecture):
+> read `/AGENTS.md` first — it contains all project rules, terminology, and architecture reference.
+
 Purpose: short, actionable notes to help an AI coding agent be immediately productive in this repo.
 
 - **Big picture**: This is a small POC with two apps:
   - `apps/api` — ASP.NET Core API (SQLite by default). Key files: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`, `Controllers/*`.
-  - `apps/web` — Next.js app (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer.ts`.
+  - `apps/web` — Next.js app (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/orchestrated.ts`.
 
 - **Primary data flow** (follow these files for behavior):
   1. Client/UI -> API creates a job via the `JobService` (`apps/api/Services/JobService.cs`).
   2. API triggers the runner via `RunnerClient` (`apps/api/Services/RunnerClient.cs`) which POSTs to the Next internal route `/api/internal/run-job`.
   3. Runner (Next route at `apps/web/src/app/api/internal/run-job/route.ts`) fetches the job (`/v1/jobs/{id}`), calls `runFactHarborAnalysis` from `apps/web/src/lib/analyzer.ts`, and writes progress/results back to API internal endpoints (`/internal/v1/jobs/{jobId}/status` and `/internal/v1/jobs/{jobId}/result`).
+
+- **Critical terminology** (always follow — see AGENTS.md for details):
+  - **AnalysisContext** = Top-level analytical frame. NEVER call this "scope".
+  - **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
+  - **EvidenceItem** = Extracted evidence. NEVER call these "facts" in new code.
+  - **No hardcoded keywords**: Code and prompts must be generic for ANY topic.
+  - **Input neutrality**: "Was X fair?" must yield same analysis as "X was fair".
 
 - **Auth & headers**: internal endpoints are protected by shared secrets in headers:
   - Runner calls Next: header `X-Runner-Key` (Runner:RunnerKey in API config / `FH_INTERNAL_RUNNER_KEY` in web env).
@@ -37,13 +47,14 @@ Purpose: short, actionable notes to help an AI coding agent be immediately produ
   - Runner code runs in the Next server runtime (`export const runtime = "nodejs"`); prefer fetch-based calls with `{ cache: "no-store" }` for fresh reads.
   - DB is auto-created in `Program.cs` via `db.Database.EnsureCreated()` — migrations are not used in this POC.
 
-- **Integration and testing tips for agents**:
-  - To locally test the end-to-end flow: start API and web, then create a job via the API UI or `POST /v1/jobs` (follow `JobsController.cs`). Verify runner receives job by checking logs and API job status changes.
-  - When changing internal headers or keys, update both API `appsettings` and web env variables consistently.
+- **Safety**:
+  - Do not access production systems or real customer data.
+  - Do not change secrets/credentials or commit them.
+  - Avoid destructive git commands unless explicitly asked.
+
+- **Agent handoff**: You are primarily used for inline completions and chat. For large multi-file refactors, suggest Cursor Composer or Claude Code. See `/AGENTS.md` Agent Handoff Protocol for full reference.
 
 - **Where to look for behavior examples**:
   - Runner trigger: `apps/api/Services/RunnerClient.cs` (constructs URL and header `X-Runner-Key`).
   - Runner implementation: `apps/web/src/app/api/internal/run-job/route.ts` (shows how job is fetched, how status/result PUTs happen, and error handling).
   - Job lifecycle: `apps/api/Services/JobService.cs` and `apps/api/Controllers/InternalJobsController.cs` (status/result endpoints).
-
-If anything here is unclear or you'd like me to expand examples (curl snippets, env samples, or step-by-step run-through), tell me which part to elaborate.

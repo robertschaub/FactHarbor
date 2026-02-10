@@ -1,6 +1,6 @@
 # FactHarbor Current Status
 
-**Version**: 2.10.2 (Code) | 2.7.0 (Schema Output)
+**Version**: Pre-release (targeting v1.0)
 **Last Updated**: 2026-02-04
 **Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Optimization v2.8.1 + LLM Tiering Enabled)
 
@@ -11,9 +11,10 @@
 ### ✅ What Works
 
 **Core Analysis Pipeline:**
-- **Twin-Path Architecture**:
-  - Orchestrated Pipeline (default, highest quality)
+- **Pipeline Variants**:
+  - Orchestrated Pipeline (default, production quality)
   - Monolithic Dynamic (experimental, flexible output)
+  - Monolithic Canonical (deprecated — removal planned, see `Docs/WIP/Canonical_Pipeline_Removal_Plan.md`)
 - Multi-context detection and analysis
 - **Heuristic Context Pre-Detection**: Code-level pattern detection for comparison, legal, and environmental claims
 - **Context Overlap Detection**: LLM-driven merge heuristics with defensive validation (v2.6.38)
@@ -56,7 +57,7 @@
 - `scopes.ts`: Context detection (`detectScopes()`, `formatDetectedScopesHint()`)
 - `aggregation.ts`: Verdict weighting (`validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()`)
 - `claim-decomposition.ts`: Claim parsing utilities
-- Consistent behavior across canonical and orchestrated pipelines
+- Consistent behavior across orchestrated and dynamic pipelines
 
 **Infrastructure:**
 - Job lifecycle management (QUEUED → RUNNING → SUCCEEDED/FAILED)
@@ -75,7 +76,7 @@
 - ⚠️ **A/B Testing Framework**: Built but not executed (requires $100-200)
 - ⚠️ **Schema Retry Logic**: Implemented in separate module, not integrated
 - ⚠️ **Parallel Verdict Generation**: Built (50-80% speed improvement) but not integrated
-- ✅ **Tiered LLM Routing**: Enabled (Haiku 3.5 for extract/understand, Sonnet 4 for verdict/context refinement)
+- ✅ **Tiered LLM Routing**: Enabled (Haiku 4.5 for extract/understand, Sonnet 4.5 for verdict/context refinement)
 
 **Promptfoo Testing Infrastructure (v2.8.2 - OPERATIONAL)**:
 - ✅ **38 Total Test Cases** across 3 configurations
@@ -181,10 +182,10 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| **Next.js Web App** | ✅ Operational | Twin-Path Pipeline complete |
+| **Next.js Web App** | ✅ Operational | Pipeline variants operational |
 | **.NET API** | ✅ Operational | SQLite for local, PostgreSQL for production |
 | **Job Orchestration** | ✅ Working | SSE events, exponential backoff retry |
-| **Twin-Path Pipeline** | ✅ Complete | Orchestrated and Monolithic Dynamic |
+| **Pipeline Variants** | ✅ Operational | Orchestrated (default) + Monolithic Dynamic; Canonical deprecated |
 | **LLM Integration** | ✅ Multi-provider | Anthropic (recommended), OpenAI, Google, Mistral |
 | **LLM Tiering** | ✅ Implemented | Per-task model selection for cost optimization |
 | **Search Integration** | ✅ Multi-provider | Google CSE, SerpAPI, Gemini Grounded |

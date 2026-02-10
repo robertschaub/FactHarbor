@@ -1,0 +1,21 @@
+---
+description: FactHarbor xWiki documentation rules
+globs: Docs/xwiki-pages/**/*.xwiki
+---
+
+# FactHarbor — xWiki Editing Rules
+
+Read `Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md` for full xWiki syntax rules.
+
+## Quick Syntax Reference (xWiki 2.1)
+- Headings: `= H1 =`, `== H2 ==`, `=== H3 ===`
+- Bold: `**bold**`, Italic: `//italic//`
+- Links: `[[Link Text>>Space.Page]]`
+- Info boxes: `{{info}}...{{/info}}`, `{{warning}}...{{/warning}}`
+- Diagrams: `{{mermaid}}...{{/mermaid}}`
+- Code: `{{code language="..."}}...{{/code}}`
+
+## Rules
+- Preserve existing syntax when editing.
+- Each document lives in ONE authoritative format (`.md` or `.xwiki`, not both).
+- Follow terminology from `/AGENTS.md` (AnalysisContext, EvidenceScope, EvidenceItem).

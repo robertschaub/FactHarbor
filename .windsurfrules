@@ -1,0 +1,49 @@
+# FactHarbor — Windsurf Rules
+
+Full rules in `/AGENTS.md`. Read it for any domain-heavy task (pipeline, prompts, terminology).
+
+## Project
+POC with two apps:
+- `apps/api`: ASP.NET Core (.NET 8) + SQLite. Run: `cd apps/api && dotnet watch run` (port 5000)
+- `apps/web`: Next.js (UI + analysis pipeline). Run: `cd apps/web && npm run dev` (port 3000)
+
+Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pipeline -> Results back to API.
+
+## CRITICAL Terminology
+- **AnalysisContext** = top-level analytical frame. NEVER call "scope".
+- **EvidenceScope** = per-evidence source metadata. NEVER call "context".
+- **EvidenceItem** = extracted evidence. NEVER call "fact" in new code.
+- **No hardcoded keywords** in code/prompts. Generic for ANY topic.
+- **Input neutrality**: questions and statements must yield identical analysis (≤4%).
+
+## Auth
+Internal endpoints use shared secret headers:
+- `X-Runner-Key`: Runner -> Next.js internal routes
+- `X-Admin-Key`: Runner -> API internal endpoints
+Config: `apps/api/appsettings.Development.example.json`, `apps/web/.env.example`
+
+## Commands
+- Test: `npm test` (vitest)
+- Build: `npm -w apps/web run build`
+- Bootstrap: `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1`
+
+## Key Patterns
+- All DB writes go through `JobService` (never direct DbContext)
+- DB auto-created via `EnsureCreated()` — no EF migrations
+- Runner code: `export const runtime = "nodejs"`, use `{ cache: "no-store" }` for fetch
+- `orchestrated.ts` is ~13,600 lines — navigate carefully
+
+## Safety
+- No production data access. No secrets in commits.
+- No destructive git without explicit ask.
+- Platform: Windows. PowerShell-compatible commands.
+
+## Agent Handoff
+If a task exceeds Cascade context limits or needs deep reasoning, recommend:
+- **Claude Code (Opus)**: complex architecture, multi-step reasoning
+- **Cursor Composer**: multi-file refactors with visual diff preview
+See `/AGENTS.md` Agent Handoff Protocol for full reference.
+
+## Conventions
+- Commits: `type(scope): description`
+- Solo developer + AI agents. Direct push to main is normal.

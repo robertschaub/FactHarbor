@@ -1,141 +1,71 @@
 # AGENTS.md
 
-## Purpose
-
-This file defines how AI coding agents should operate in the FactHarbor repository.
-
-## Scope
-
-- Applies to all paths under this repo unless a closer AGENTS.md overrides it.
+How AI coding agents should operate in the FactHarbor repository.
+Applies to all paths unless a closer `AGENTS.md` overrides it (e.g., `apps/api/AGENTS.md`).
 
 ---
 
 ## Fundamental Rules
 
 ### Generic by Design
-- **No domain-specific hardcoding**: Code, prompts, and logic must work for ANY topic
-- **No hardcoded keywords**: Avoid lists like `['bolsonaro', 'trump', 'vaccine']`
-- **Parameterize, don't specialize**: Use configuration over conditionals
-- **No test-case terms in prompts**: LLM prompt examples must NOT contain terms, phrases, or patterns from known test cases or verification inputs. Examples must be abstract/generic (e.g., "Entity A did X" not "Country built industry"). This prevents "teaching to the test" and ensures genuine generalization.
+- **No domain-specific hardcoding.** Code, prompts, and logic must work for ANY topic.
+- **No hardcoded keywords.** No lists like `['bolsonaro', 'trump', 'vaccine']`.
+- **Parameterize, don't specialize.** Use configuration over conditionals.
+- **No new code for deprecated/replaced things.** If something is marked deprecated, replaced, or renamed (e.g., Monolithic Canonical pipeline, `ExtractedFact` → `EvidenceItem`, `fact` → `statement`), do not extend, reference, or build on it. Use only the current version.
 
-### Do not optimize prompts just for some test-case(s)
-- **Do not enforce** to find Contexts (AnalysisContext) or Scope (EvidenceScope) by using non generic terms in prompts.
-- **Do not enforce** to find different AnlysisContexts by date-periods or regions, such AnlysisContexts must be found naturally by LLM (Such boundaries could be found in evidence documentation).
+### Analysis Prompt Rules
+These rules apply specifically to the LLM prompts used in the analysis pipeline (under `apps/web/prompts/`). Improving these prompts for quality and efficiency is welcome — but only with explicit human approval.
+- **No test-case terms.** Prompt examples must be abstract (e.g., "Entity A did X" not "Country built industry"). This prevents teaching-to-the-test.
+- **Do not enforce** finding AnalysisContexts or EvidenceScopes by using non-generic terms, date-periods, or regions. These must emerge naturally from evidence.
 
-### Context vs Scope - NEVER CONFUSE
-- **AnalysisContext** = Top-level analytical frame requiring separate analysis
-- **EvidenceScope** = Per-evidence source metadata (methodology, temporal bounds, boundaries of evidence)
-- **NEVER** use "scope" when referring to AnalysisContext - always say "context"
-- **NEVER** use "context" when referring to source metadata - always say "evidenceScope"
-- Variables: Use `context`/`analysisContext` for top-level frames, `evidenceScope` for evidence metadata
-- UI: Display "Context" cards, never "Scope" cards (unless specifically about evidence scope)
+### Terminology — NEVER Confuse These
 
-### EvidenceItem (formerly ExtractedFact)
-- **EvidenceItem** = Extracted evidence from a source (NOT a verified fact)
-- **Legacy name**: `ExtractedFact` - removed in v3.1 breaking change
-- **Key fields**:
-  - `statement` (legacy: `fact`) - the extracted statement text
-  - `category` - type of evidence (direct_evidence, statistic, expert_quote, etc.)
-  - `claimDirection` - whether evidence supports/contradicts/neutral to thesis
-  - `evidenceScope` - source methodology metadata
-  - `probativeValue` - quality assessment (high/medium/low)
-  - `sourceType` - classification of source (peer_reviewed_study, news_primary, etc.)
-- **NEVER** call these "facts" in new code - always "evidence" or "evidence items"
+| Term | Meaning | Variable names | NEVER call it |
+|------|---------|---------------|---------------|
+| **AnalysisContext** | Top-level analytical frame requiring separate analysis | `context`, `analysisContext` | "scope" |
+| **EvidenceScope** | Per-evidence source metadata (methodology, temporal bounds) | `evidenceScope` | "context" |
+| **EvidenceItem** | Extracted evidence from a source (NOT a verified fact) | — | "fact" (in new code) |
+| **probativeValue** | Quality assessment of evidence (high/medium/low). Assigned by LLM, filtered by `evidence-filter.ts` | — | — |
+| **SourceType** | Source classification (peer_reviewed_study, news_primary, etc.). Used for reliability calibration. | — | — |
 
-### probativeValue Field
-- **probativeValue** = Quality assessment of evidence item (high/medium/low)
-- Assigned during extraction by LLM based on:
-  - Statement specificity
-  - Source attribution quality
-  - Verifiability
-- Used for verdict weighting - high probative evidence has more influence
-- **Layer 2 filter**: evidence-filter.ts removes items that fail deterministic checks
-
-### SourceType Enum
-- **SourceType** = Classification of evidence source
-- Values: peer_reviewed_study, fact_check_report, government_report, legal_document,
-  news_primary, news_secondary, expert_statement, organization_report, other
-- Used in EvidenceScope for source reliability calibration
-- Different types may receive different weight adjustments in aggregation
+EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceScope`, `probativeValue`, `sourceType`. See `apps/web/src/lib/analyzer/types.ts` for full schema.
 
 ### Input Neutrality
-- **Question ≈ Statement**: "Was X fair?" must yield same analysis as "X was fair"
-- **Format independence**: Input phrasing must NOT affect analysis depth or structure
-- **Tolerance**: Verdict difference between formats should be ≤4%
+- "Was X fair?" must yield same analysis as "X was fair" (tolerance ≤4%)
+- Input phrasing must NOT affect analysis depth or structure
 
 ### Pipeline Integrity
-- **No stage skipping**: Understand → Research → Verdict (all required)
-- **Evidence transparency**: Every verdict must cite supporting or opposing evidence items
-- **Quality gates**: Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
+- **No stage skipping:** Understand → Research → Verdict (all required)
+- **Evidence transparency:** Every verdict must cite supporting or opposing evidence items
+- **Quality gates:** Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 
 ---
 
-## Architecture Quick Reference
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        USER INPUT                           │
-│              (question / statement / URL)                   │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  apps/web (Next.js)                         │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  src/lib/analyzer/orchestrated.ts - Main pipeline    │   │
-│  │  - understandClaim() → Research → generateVerdicts()│   │
-│  │  - Multi-context detection & analysis               │   │
-│  │  - LLM calls via AI SDK (OpenAI/Anthropic/etc)      │   │
-│  └─────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  src/app/api/fh/* - API routes                      │   │
-│  │  src/app/jobs/[id]/page.tsx - Results display       │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ HTTP
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  apps/api (ASP.NET Core)                    │
-│  - Job persistence (SQLite: factharbor.db)                  │
-│  - Controllers: Jobs, Analyze, Health, Version              │
-│  - Swagger: http://localhost:5000/swagger                   │
-└─────────────────────────────────────────────────────────────┘
+User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port 5000)
+             ├─ src/lib/analyzer/                 ├─ Controllers/ (Jobs, Analyze, Internal)
+             │  orchestrated.ts (~13600 lines)    ├─ Services/ (JobService, RunnerClient)
+             │  monolithic-dynamic.ts             ├─ Data/ (Entities, FhDbContext)
+             ├─ src/app/api/internal/run-job/     └─ SQLite: factharbor.db
+             └─ LLM calls via AI SDK              Swagger: http://localhost:5000/swagger
 ```
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
-| `apps/web/src/lib/analyzer/orchestrated.ts` | Main orchestrated pipeline (~12000 lines) |
-| `apps/web/src/lib/analyzer/monolithic-dynamic.ts` | Monolithic dynamic pipeline (fast alternative) |
+| `apps/web/src/lib/analyzer/orchestrated.ts` | Main pipeline (~13600 lines — navigate carefully) |
 | `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
-| `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation + claim weighting logic |
-| `apps/web/src/lib/analyzer/analysis-contexts.ts` | AnalysisContext detection and handling |
+| `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation + claim weighting |
 | `apps/web/src/lib/analyzer/evidence-filter.ts` | Deterministic evidence quality filtering |
-| `apps/web/src/lib/analyzer/llm.ts` | LLM model selection + tiering per task |
-| `apps/web/src/lib/analyzer/model-tiering.ts` | Model tier definitions, cost calculations |
-| `apps/web/src/lib/analyzer/verdict-corrections.ts` | Counter-claim detection, verdict direction |
-| `apps/web/src/lib/analyzer/truth-scale.ts` | 7-point verdict scale + percentage mapping |
 | `apps/web/src/lib/analyzer/source-reliability.ts` | Source reliability: prefetch, lookup, weighting |
-| `apps/web/src/lib/source-reliability-cache.ts` | SQLite cache for source scores |
-| `apps/web/src/lib/config-storage.ts` | Unified Config Management: SQLite storage layer |
-| `apps/web/src/lib/config-loader.ts` | Config caching and effective config resolution |
-| `apps/web/configs/pipeline.default.json` | Default pipeline configuration |
-| `apps/web/src/app/jobs/[id]/page.tsx` | Job results UI |
-| `apps/api/Controllers/JobsController.cs` | Job CRUD API |
-| `Docs/ARCHITECTURE/Calculations.md` | Verdict calculation documentation |
-| `Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep Dive/Source Reliability/WebHome.xwiki` | Source reliability documentation |
+| `apps/web/src/lib/config-storage.ts` | Unified Config Management: SQLite storage |
+| `apps/web/src/app/api/internal/run-job/route.ts` | Runner route (job execution entry point) |
+| `apps/api/Services/JobService.cs` | All DB writes (creates event rows for audit) |
 
----
-
-## Workflow
-
-1. Read relevant files before editing
-2. Use existing scripts and tooling; avoid inventing new workflows
-3. If a required command is unknown, ask or leave a TODO note
-4. Prefer small, focused changes that are easy to review
-5. Preserve existing style and conventions
-6. Avoid refactors unless explicitly requested
+Full project structure: see Architecture diagram above and `apps/api/AGENTS.md` for .NET details.
 
 ---
 
@@ -144,32 +74,22 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 | Action | Command |
 |--------|---------|
 | Quick start | `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1` |
-| Restart services | `.\scripts\restart-clean.ps1` |
-| Stop services | `.\scripts\stop-services.ps1` |
-| Web dev server | `cd apps/web; npm run dev` |
-| API dev server | `cd apps/api; dotnet watch run` |
-| Build web | `cd apps/web; npm run build` |
-| Tests | `npm test` (placeholder) |
-| Lint | `npm run lint` (placeholder) |
+| Restart / Stop services | `.\scripts\restart-clean.ps1` / `.\scripts\stop-services.ps1` |
+| Web dev server | `cd apps/web; npm run dev` (port 3000) |
+| API dev server | `cd apps/api; dotnet watch run` (port 5000) |
+| Build web | `npm -w apps/web run build` |
+| Tests | `npm test` — runs vitest (`npm -w apps/web test`) |
+| Lint | `npm run lint` — placeholder (not yet configured) |
 
 ---
 
 ## Reading .xwiki Files
 
-Some documentation lives in xWiki 2.1 format (`.xwiki` files) under `Docs/xwiki-pages/FactHarbor/`.
-These are readable plain text with minor syntax differences from Markdown:
+Documentation lives in xWiki 2.1 format under `Docs/xwiki-pages/FactHarbor/`. Quick syntax: `= H1 =`, `== H2 ==`, `**bold**`, `//italic//`, `[[Link>>Target]]`, `{{info}}...{{/info}}`, `{{mermaid}}...{{/mermaid}}`, `{{code language="..."}}...{{/code}}`.
 
-- `= Heading =` (level 1), `== Heading ==` (level 2), etc. — instead of `#`, `##`
-- `**bold**` (same as Markdown), `//italic//` (instead of `*italic*`)
-- `{{info}}...{{/info}}` for info boxes — read the text inside
-- `{{warning}}...{{/warning}}` for warning boxes
-- `{{mermaid}}...{{/mermaid}}` for diagrams — same as ` ```mermaid ` blocks
-- `[[Link Text>>Space.Page]]` for internal wiki links
-- `{{code language="..."}}...{{/code}}` for code blocks
+Preserve existing syntax when editing. Full rules: `Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md`.
 
-When editing .xwiki files, preserve the existing syntax. Refer to `Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md` for full syntax rules.
-
-**Format rule**: Each document exists in exactly ONE authoritative format. If a `.md` file shows "Moved to xWiki", read the `.xwiki` file instead. Active development docs (Calculations, Evidence_Quality_Filtering, Prompt_Architecture, UCM guides) remain as `.md`.
+**Format rule:** Each document exists in exactly ONE authoritative format. If a `.md` file shows "Moved to xWiki", read the `.xwiki` file instead.
 
 ---
 
@@ -180,50 +100,67 @@ When editing .xwiki files, preserve the existing syntax. Refer to `Docs/AGENTS/G
 - Do not modify generated files or dependencies (e.g., `node_modules`) unless requested
 - Avoid destructive git commands unless explicitly asked
 - Do not overwrite `apps/api/factharbor.db` unless asked
+- Platform is Windows. Use PowerShell-compatible commands.
+
+---
+
+## Agent Handoff Protocol
+
+When starting any new task, every agent MUST:
+
+1. **Assess fit**: Is this task best suited for the current agent/tool, or would another be more effective?
+2. **Recommend if not**: Tell the user which agent/tool to use, why, what context it needs (files to read, decisions already made), and any work completed so far.
+
+### Roles & Multi-Agent Workflows
+
+If the user assigns you a role (Lead Architect, Lead Developer, Senior Developer, LLM Expert, Tech Writer), read `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` for role definitions, workflows, and collaboration protocols. The area-to-document mapping in that file tells you which docs to read for each task area.
+
+### Working Principles
+
+- **Stay focused.** Do the task you were given. Do not wander into adjacent improvements unless asked.
+- **Quality over quantity.** A small, correct change beats a large, sloppy one. Read before you edit. Verify after you change.
+- **Be cost-aware.** Minimize unnecessary LLM calls, file reads, and token usage. Don't re-read files you already have in context. Don't generate verbose output when concise will do.
+- **Don't gold-plate.** Deliver what was requested — don't also refactor the file, add comments, and update docs unrequested. But DO report issues, inconsistencies, or improvement opportunities you notice along the way — just flag them, don't act on them without asking.
+- **Cross-check code against docs.** When working on code, consult the related documentation under `Docs/xwiki-pages/FactHarbor/` (see the area-to-document mapping in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §1.2). When working on docs, check the code it describes. Report any mismatches — stale docs and diverged implementations are high-value catches.
+- **Summarize when done.** List files touched, note assumptions, and flag if tests were not run and why.
+
+### Tool Strengths Reference
+
+| Task Type | Best Tool | Why |
+|-----------|-----------|-----|
+| Complex architecture, multi-step reasoning | Claude Code (Opus) | Deep reasoning, plan mode |
+| Inline code completions | GitHub Copilot | Fast, context-aware |
+| Multi-file refactors with preview | Cursor (Composer) | Visual diff, multi-file edits |
+| Autonomous multi-step workflows | Cline | Runs commands, creates files autonomously |
+| Documentation + diagrams | Agent with TECH_WRITER role | See `Docs/AGENTS/TECH_WRITER_START_HERE.md` |
+| .NET API work | Any agent | Read `apps/api/AGENTS.md` first |
+| xWiki documentation | Any agent | Read `Docs/AGENTS/AGENTS_xWiki.md` first |
 
 ---
 
 ## Authentication
 
-| Key | Environment Variable | Purpose |
-|-----|---------------------|---------|
-| Admin Key | `FH_ADMIN_KEY` | Admin endpoints |
-| Runner Key | `FH_INTERNAL_RUNNER_KEY` | Internal job execution |
+| Header / Variable | Purpose |
+|-------------------|---------|
+| `X-Admin-Key` / `FH_ADMIN_KEY` | Internal API endpoints |
+| `X-Runner-Key` / `FH_INTERNAL_RUNNER_KEY` | Runner → Next.js trigger |
 
-Default placeholders in `appsettings.Development.json` - replace for security.
+Config: `apps/api/appsettings.Development.json` (from `.example`). Web: `apps/web/.env.local` (from `.env.example`).
 
 ---
 
-## Current State (v2.10.2 project / v2.6.41 schema)
+## Current State (Pre-release, targeting v1.0)
 
-### Working Features
-- ✅ Multi-context detection and analysis (AnalysisContext)
-- ✅ Input neutrality (question ≈ statement within ±5%)
-- ✅ AnalysisContext/EvidenceScope extraction from sources
-- ✅ Temporal reasoning (current date awareness)
-- ✅ Claim deduplication for fair aggregation
-- ✅ KeyFactors discovery and aggregation
-- ✅ Twin-path pipeline (Orchestrated, Monolithic Dynamic)
-- ✅ LLM Tiering (Haiku 3.5 for extract/understand, Sonnet 4 for verdict/context refinement)
-- ✅ Evidence Quality Filtering (deterministic post-LLM filter for probative value)
-- ✅ Source Reliability (LLM evaluation with multi-model consensus, caching, evidence weighting, entity-level evaluation)
-- ✅ Source Reliability Hardening (SOURCE TYPE CAPS, asymmetric confidence gating, brand variant matching)
-- ✅ Unified Configuration Management (database-backed version control for search, calculation, and prompt configs)
+Pipeline variants: Orchestrated (default), Monolithic Dynamic (experimental). Monolithic Canonical is deprecated — see `Docs/WIP/Canonical_Pipeline_Removal_Plan.md`.
 
-### Key Environment Variables
+LLM Tiering: Haiku 4.5 (extract/understand), Sonnet 4.5 (verdict/context refinement).
 
-Analysis configuration (pipeline/search/calculation/SR) is managed in UCM (Admin → Config). Env vars are reserved for infra/runtime concerns.
+For full feature list and known issues, see `Docs/STATUS/Current_Status.md`.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `FH_RUNNER_MAX_CONCURRENCY` | `3` | Max parallel analysis jobs |
-| `FH_CONFIG_DB_PATH` | `./config.db` | UCM SQLite location (optional) |
+| `FH_CONFIG_DB_PATH` | `./config.db` | UCM SQLite location |
 | `FH_SR_CACHE_PATH` | `./source-reliability.db` | SR cache database path |
 
----
-
-## Output
-
-- Summarize changes and list files touched
-- Note any assumptions or follow-up steps
-- If tests were not run, say why
+Analysis configuration (pipeline/search/calculation/SR) is managed in UCM (Admin → Config). Env vars are for infra/runtime only.

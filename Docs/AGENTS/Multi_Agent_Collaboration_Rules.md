@@ -9,7 +9,7 @@
 
 ## Purpose
 
-This document defines the rules, roles, and workflow for multi-agent collaboration on FactHarbor development tasks. It establishes a structured approach where multiple LLM agents (GPT-5.2-CODEX, Claude Sonnet, Claude Opus) work collaboratively through defined roles to plan, review, implement, and validate changes.
+This document defines the rules, roles, and workflow for multi-agent collaboration on FactHarbor development tasks. It establishes a structured approach where multiple LLM agents (via Claude Code, Cursor, Cline, GitHub Copilot, and other tools) work collaboratively through defined roles to plan, review, implement, and validate changes.
 
 ---
 
@@ -173,6 +173,8 @@ When a task specifies an **Area**, read the corresponding documents:
 ---
 
 ## 3. Workflow Patterns
+
+> **Usage:** The 5-phase workflow below is active for complex or risky tasks. For simple changes, use the Quick Fix Workflow (3.2).
 
 ### 3.1 Standard Feature Workflow
 
@@ -367,34 +369,36 @@ After any code change:
 
 ---
 
-## 6. Agent-Specific Guidelines
+## 6. Model-Class Guidelines
 
-### 6.1 GPT-5.2-CODEX High
+> **Note:** These are organized by capability tier, not specific model versions, to avoid staleness as models evolve.
 
-**Strengths:** Large context, code generation, analysis
-**Best For:** Implementation, complex code review, architecture analysis
+### 6.1 High-Capability Models (e.g., Claude Opus, GPT-o3, Gemini 2.5 Pro)
+
+**Strengths:** Deep reasoning, complex analysis, nuanced understanding, large context
+**Best For:** Architecture decisions, complex investigations, quality gates, trade-off analysis
 **Considerations:**
-- May need explicit reminders about FactHarbor terminology
-- Excellent for generating comprehensive test cases
+- Reserve for high-stakes decisions and ambiguous problem spaces
+- Excellent for multi-step planning and code review
 - Good at finding edge cases in implementations
 
-### 6.2 Claude Sonnet
+### 6.2 Mid-Tier Models (e.g., Claude Sonnet, GPT-4.1, Gemini 2.5 Flash)
 
-**Strengths:** Balanced cost/capability, good reasoning
-**Best For:** Standard reviews, documentation, routine implementation
+**Strengths:** Balanced cost/capability, good reasoning, fast iteration
+**Best For:** Standard reviews, documentation, routine implementation, iterative review cycles
 **Considerations:**
-- Well-suited for iterative review cycles
-- Good at following structured protocols
+- Well-suited for following structured protocols
 - Efficient for documentation tasks
+- Good default for most development work
 
-### 6.3 Claude Opus
+### 6.3 Lightweight Models (e.g., Claude Haiku, GPT-4.1 mini, Kimi K2)
 
-**Strengths:** Deep reasoning, complex analysis, nuanced understanding
-**Best For:** Architecture decisions, complex investigations, quality gates
+**Strengths:** Fast, cost-effective, good for bulk operations
+**Best For:** Fast iterations, autonomous workflows (Cline), bulk operations, extract/understand tasks
 **Considerations:**
-- Reserve for high-stakes decisions
-- Excellent for trade-off analysis
-- Best for ambiguous problem spaces
+- May need explicit reminders about FactHarbor terminology — follow AGENTS.md strictly
+- When using Kimi K2 via Cline: be aware it may not know FactHarbor conventions
+- Best paired with clear, structured instructions
 
 ---
 
@@ -463,4 +467,4 @@ Before marking any task complete:
 ---
 
 **Document Maintainer:** Lead Architect
-**Last Reviewed:** 2026-02-03
+**Last Reviewed:** 2026-02-10
