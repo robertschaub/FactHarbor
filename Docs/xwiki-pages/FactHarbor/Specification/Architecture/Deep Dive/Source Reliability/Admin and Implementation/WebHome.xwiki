@@ -107,11 +107,10 @@ The LLM evaluation prompt includes the current date and temporal guidance:
 
 === Pipeline Integration ===
 
-Source Reliability is integrated into all three pipelines:
+Source Reliability is integrated into both pipelines:
 
 |= Pipeline |= File |= Status |= Implementation
 | **Orchestrated** | ##orchestrated.ts## | Full | Prefetch + lookup + evidence weighting
-| **Monolithic Canonical** | ##monolithic-canonical.ts## | Full | Prefetch + lookup + verdict adjustment
 | **Monolithic Dynamic** | ##monolithic-dynamic.ts## | Full | Prefetch + lookup + verdict adjustment
 
 All pipelines follow the same pattern:

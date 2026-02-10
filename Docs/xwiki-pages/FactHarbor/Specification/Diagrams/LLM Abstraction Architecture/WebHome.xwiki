@@ -9,9 +9,8 @@ Updated 2026-02-08 per documentation audit report.
 {{mermaid}}
 
 graph TB
-    subgraph Pipelines[Triple-Path Pipelines]
+    subgraph Pipelines[Twin-Path Pipelines]
         ORCH[Orchestrated orchestrated.ts]
-        CANON[Monolithic Canonical]
         DYN[Monolithic Dynamic]
     end
 
@@ -36,7 +35,6 @@ graph TB
     end
 
     ORCH --> ROUTE
-    CANON --> ROUTE
     DYN --> ROUTE
     ROUTE --> SDK
     SDK --> ANT

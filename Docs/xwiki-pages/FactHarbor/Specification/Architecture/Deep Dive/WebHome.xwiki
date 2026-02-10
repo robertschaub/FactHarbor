@@ -12,7 +12,7 @@ This section contains detailed implementation references for developers and test
 
 |= Page |= Description |= Key Files
 | [[Orchestrated Pipeline>>FactHarbor.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] | Detailed 5-step flow with function names, LLM call points, budget controls, and adaptive fallback | ##orchestrated.ts## (~13,600 lines)
-| [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] | TriplePath architecture: invariants, shared primitives, result model, variant selection, configuration | ##orchestrated.ts##, ##monolithic-canonical.ts##, ##monolithic-dynamic.ts##
+| [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] | Twin-path architecture: invariants, shared primitives, result model, variant selection, configuration | ##orchestrated.ts##, ##monolithic-dynamic.ts##
 
 === Quality and Evidence ===
 

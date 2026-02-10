@@ -372,7 +372,7 @@ Track costs via the admin dashboard (when implemented):
 
 **"No sources were fetched" (All pipelines including Dynamic):**
 
-All three pipelines (Orchestrated, Monolithic Canonical, Monolithic Dynamic) require search provider credentials to perform web searches. Without them, the pipeline will:
+Both pipelines (Orchestrated and Monolithic Dynamic) require search provider credentials to perform web searches. Without them, the pipeline will:
 1. Generate search queries (correctly)
 1. Attempt searches (loop runs but returns empty)
 1. Continue without external sources (LLM uses only internal knowledge)

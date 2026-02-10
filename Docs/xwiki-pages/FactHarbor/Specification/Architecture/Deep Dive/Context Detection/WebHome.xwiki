@@ -266,7 +266,6 @@ Instead of hardcoding specific terms or categories, FactHarbor uses **ONE univer
 |= File |= Purpose
 | ##apps/web/src/lib/analyzer/analysis-contexts.ts## | Heuristic pre-detection, ##detectContexts()##
 | ##apps/web/src/lib/analyzer/orchestrated.ts## | Orchestrated pipeline (primary)
-| ##apps/web/src/lib/analyzer/monolithic-canonical.ts## | Canonical monolithic pipeline
 | ##apps/web/src/lib/analyzer/monolithic-dynamic.ts## | Dynamic monolithic pipeline
 
 **Prompt Templates**:

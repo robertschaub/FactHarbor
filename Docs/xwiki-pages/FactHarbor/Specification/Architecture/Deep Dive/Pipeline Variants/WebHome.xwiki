@@ -1,14 +1,14 @@
 = Pipeline Variants =
 
 {{info}}
-**Developer Reference** — Triple-Path pipeline architecture: the three selectable analysis variants, their shared primitives, invariants, result model, and configuration.
+**Developer Reference** — Twin-path pipeline architecture: the two selectable analysis variants, their shared primitives, invariants, result model, and configuration.
 
-**Key Files**: ##orchestrated.ts##, ##monolithic-canonical.ts##, ##monolithic-dynamic.ts##
+**Key Files**: ##orchestrated.ts##, ##monolithic-dynamic.ts##
 {{/info}}
 
 == Architecture Overview ==
 
-FactHarbor supports three analysis pipeline variants. All share the same infrastructure primitives but differ in orchestration approach and result flexibility.
+FactHarbor supports two analysis pipeline variants. Both share the same infrastructure primitives but differ in orchestration approach and result flexibility.
 
 {{mermaid}}
 flowchart TD
@@ -18,11 +18,9 @@ flowchart TD
     RUNNER --> DISPATCH{"Dispatch by<br/>pipelineVariant"}
 
     DISPATCH -->|"orchestrated<br/>(default)"| ORCH["Orchestrated Pipeline<br/>TypeScript-orchestrated<br/>Fixed AKEL stages<br/>Production-ready"]
-    DISPATCH -->|"monolithic_canonical"| CANON["Monolithic Canonical<br/>LLM tool-loop<br/>Canonical schema<br/>Experimental"]
-    DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic<br/>LLM tool-loop<br/>Flexible schema<br/>Highly experimental"]
+    DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic<br/>LLM tool-loop<br/>Flexible schema<br/>Experimental"]
 
     ORCH --> CANONICAL_PAYLOAD["Canonical Payload"]
-    CANON --> CANONICAL_PAYLOAD
     DYN --> DYNAMIC_PAYLOAD["Dynamic Payload"]
 
     CANONICAL_PAYLOAD --> ENVELOPE["Result Envelope"]
@@ -31,15 +29,14 @@ flowchart TD
     ENVELOPE --> RESULT["Store + Display"]
 
     style ORCH fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style CANON fill:#fff9c4,stroke:#f9a825,color:#000
     style DYN fill:#ffcdd2,stroke:#c62828,color:#000
 {{/mermaid}}
 
-//Green = production-ready, Yellow = experimental, Red = highly experimental. All variants converge on a common result envelope for auditability.//
+//Green = production-ready, Red = experimental. Both variants converge on a common result envelope for auditability.//
 
 == Non-Negotiable Invariants ==
 
-All three variants must preserve these architectural invariants:
+Both variants must preserve these architectural invariants:
 
 |= Invariant |= Requirement
 | **Pipeline integrity** | Understand → Research → Verdict (no stage skipping)
@@ -52,17 +49,17 @@ All three variants must preserve these architectural invariants:
 
 == Variant Comparison ==
 
-|= Criterion |= Orchestrated |= Monolithic Canonical |= Monolithic Dynamic
-| **Maturity** | Production-ready | Experimental | Highly experimental
-| **Result Schema** | Canonical (stable) | Canonical (stable) | Dynamic (flexible)
-| **UI Compatibility** | Full support | Full support | Separate viewer needed
-| **Quality Gates** | Gate 1 + Gate 4 | Gate 1 + Gate 4 | Minimum safety contract
-| **Pipeline Stages** | Fixed AKEL | LLM tool-loop | LLM tool-loop
-| **Provenance** | Strict | Strict | Minimum requirements
-| **Budget Control** | Iterations / sources | maxSteps / sources | maxSteps / sources
-| **Cost Predictability** | High | Medium | Low
-| **Typical Latency** | 2-5 min | 1.5-4 min | 1-4 min
-| **Use Case** | Production | Research / A-B testing | Format experimentation
+|= Criterion |= Orchestrated |= Monolithic Dynamic
+| **Maturity** | Production-ready | Experimental
+| **Result Schema** | Canonical (stable) | Dynamic (flexible)
+| **UI Compatibility** | Full support | Separate viewer needed
+| **Quality Gates** | Gate 1 + Gate 4 | Minimum safety contract
+| **Pipeline Stages** | Fixed AKEL | LLM tool-loop
+| **Provenance** | Strict | Minimum requirements
+| **Budget Control** | Iterations / sources | maxSteps / sources
+| **Cost Predictability** | High | Low
+| **Typical Latency** | 2-5 min | 1-4 min
+| **Use Case** | Production | Format experimentation
 
 === Decision Tree ===
 
@@ -70,23 +67,19 @@ All three variants must preserve these architectural invariants:
 flowchart TD
     START{"What is your goal?"}
 
-    START -->|"Production<br/>fact-checking"| PROD{"Need canonical<br/>result schema?"}
+    START -->|"Production<br/>fact-checking"| ORCH["Use Orchestrated<br/>Default choice"]
     START -->|"Experimentation<br/>or research"| EXP{"Want LLM-driven<br/>result structure?"}
 
-    PROD -->|"Yes — UI compatibility"| ORCH["Use Orchestrated<br/>Default choice"]
-    PROD -->|"Flexible structure OK"| CANON["Consider Monolithic Canonical<br/>Experimental"]
-
-    EXP -->|"Yes — custom format"| DYN["Use Monolithic Dynamic<br/>Highly experimental"]
-    EXP -->|"No — standard format"| CANON
+    EXP -->|"Yes — custom format"| DYN["Use Monolithic Dynamic<br/>Experimental"]
+    EXP -->|"No — standard format"| ORCH
 
     style ORCH fill:#c8e6c9,color:#000
-    style CANON fill:#fff9c4,color:#000
     style DYN fill:#ffcdd2,color:#000
 {{/mermaid}}
 
 == Shared Primitives ==
 
-All three variants reuse stable infrastructure primitives. Orchestration logic stays isolated per variant to prevent cross-contamination.
+Both variants reuse stable infrastructure primitives. Orchestration logic stays isolated per variant to prevent cross-contamination.
 
 === What Is Shared ===
 
@@ -111,13 +104,11 @@ flowchart TD
 
     subgraph Pipelines["Pipeline Implementations (Isolated)"]
         ORCH["orchestrated.ts"]
-        CANON["monolithic-canonical.ts"]
         DYN["monolithic-dynamic.ts"]
     end
 
     Shared --> Pipelines
     Modules --> ORCH
-    Modules --> CANON
     SR --> DYN
     PROV --> DYN
 
@@ -126,17 +117,16 @@ flowchart TD
     style Pipelines fill:#fff3e0,stroke:#e65100,color:#000
 {{/mermaid}}
 
-//Shared primitives and analyzer modules are used by all pipelines. Orchestration logic is isolated per variant — no cross-calls between implementations.//
+//Shared primitives and analyzer modules are used by both pipelines. Orchestration logic is isolated per variant — no cross-calls between implementations.//
 
 === What Is Kept Separate ===
 
 * Orchestrated pipeline orchestration logic (##orchestrated.ts##)
-* Monolithic tool-loop orchestration logic (separate modules)
-* Canonical result UI vs. dynamic result viewer
+* Dynamic monolithic tool-loop orchestration logic (##monolithic-dynamic.ts##)
 
 === Text Analysis Service (v2.9+) ===
 
-LLM-only text analysis (no heuristic fallback), shared by all three pipelines:
+LLM-only text analysis (no heuristic fallback), shared by both pipelines:
 
 |= Analysis Point |= Pipeline Phase |= Purpose
 | Input Classification | Understand | Decompose claims, detect comparative/compound
@@ -151,7 +141,7 @@ LLM-only text analysis (no heuristic fallback), shared by all three pipelines:
 Every job result includes a common envelope regardless of variant:
 
 |= Field |= Type |= Description
-| ##pipelineVariant## | string | ##"orchestrated"## / ##"monolithic_canonical"## / ##"monolithic_dynamic"##
+| ##pipelineVariant## | string | ##"orchestrated"## / ##"monolithic_dynamic"##
 | ##pipelineVersion## | string | Schema version / build info
 | ##budgets## | object | Configured caps (iterations, maxSteps, maxSources, tokens)
 | ##budgetStats## | object | Observed usage
@@ -160,7 +150,7 @@ Every job result includes a common envelope regardless of variant:
 
 === Canonical Payload ===
 
-Used by ##orchestrated## and ##monolithic_canonical##. Must match the entity model that the existing Jobs UI expects: claims, claim verdicts, article verdict, evidence items, sources.
+Used by ##orchestrated##. Must match the entity model that the existing Jobs UI expects: claims, claim verdicts, article verdict, evidence items, sources.
 
 === Dynamic Payload (Minimum Safety Contract) ===
 
@@ -181,7 +171,6 @@ Used by ##monolithic_dynamic##. Allows flexible structure but requires:
   "defaultPipelineVariant": "orchestrated",
   "allowedVariants": [
     "orchestrated",
-    "monolithic_canonical",
     "monolithic_dynamic"
   ]
 }
@@ -203,9 +192,6 @@ The selected variant is **persisted on the job at creation time**, ensuring repr
 == Fallback Behavior ==
 
 |= Variant |= Trigger |= Action
-| **Monolithic Canonical** | Schema/semantic validation failure | Fall back to Orchestrated Pipeline
-| **Monolithic Canonical** | Provenance violations | Drop evidence or fail closed
-| **Monolithic Canonical** | Budget exceeded | Mark job as failed with budget stats
 | **Monolithic Dynamic** | Citation missing | Reject result, require minimum contract
 | **Monolithic Dynamic** | Budget exceeded | Mark job as failed with budget stats
 | **Monolithic Dynamic** | Timeout | Return partial results with warning
@@ -216,13 +202,12 @@ Typical analysis time for a 5-10 claim article:
 
 |= Variant |= p50 |= p95 |= Est. Cost
 | **Orchestrated** | 2-3 min | 5-7 min | $0.15-0.30
-| **Monolithic Canonical** | 1.5-2.5 min | 4-8 min | $0.12-0.40
 | **Monolithic Dynamic** | 1-2 min | 3-10 min | $0.10-0.50
 
 == Risks and Mitigations ==
 
 |= Risk |= Description |= Mitigation
-| **Complexity creep** | Three variants can explode configuration and branching | Single dispatcher + strict shared-primitive boundary
+| **Complexity creep** | Multiple variants can explode configuration and branching | Single dispatcher + strict shared-primitive boundary
 | **Current-path regressions** | Refactoring shared primitives can change orchestrated behavior | Phase unifications behind thin wrappers; contract tests
 | **Dynamic output safety** | Dynamic payload could omit evidence or mislead users | Minimum safety contract; UI labels as experimental
 | **Cost/latency tail risk** | Uncontrolled tool loops cause runaway cost | maxSteps + maxSources + timeouts + budget enforcement
@@ -230,7 +215,7 @@ Typical analysis time for a 5-10 claim article:
 
 == Search Provider Requirements ==
 
-All three pipelines use ##searchWebWithProvider()## and require at least one search provider:
+Both pipelines use ##searchWebWithProvider()## and require at least one search provider:
 
 |= Provider |= Environment Variables |= Notes
 | **SerpAPI** | ##SERPAPI_API_KEY## | Pay-per-use (~$0.002/search)

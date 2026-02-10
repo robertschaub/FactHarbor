@@ -10,7 +10,7 @@ Diagrams are now **embedded alongside their descriptions** in the Architecture d
 
 |= Diagram |= Now Located In |= Status
 | High-Level Architecture | [[System Design>>FactHarbor.Specification.Architecture.System Design.WebHome]] | Current
-| AKEL Triple-Path Architecture | [[AKEL Pipeline>>FactHarbor.Specification.Architecture.AKEL Pipeline.WebHome]] | Current
+| AKEL Twin-Path Architecture | [[AKEL Pipeline>>FactHarbor.Specification.Architecture.AKEL Pipeline.WebHome]] | Current
 | Core Data Model ERD | [[Data Model>>FactHarbor.Specification.Architecture.Data Model.WebHome]] | Current
 | Storage Architecture | [[Storage and Configuration>>FactHarbor.Specification.Architecture.Storage and Configuration.WebHome]] | Current
 | LLM Abstraction | [[External Dependencies>>FactHarbor.Specification.Architecture.External Dependencies.WebHome]] | Current
@@ -19,7 +19,6 @@ Diagrams are now **embedded alongside their descriptions** in the Architecture d
 
 |= Diagram |= Now Located In |= Status
 | Orchestrated Pipeline Internal | [[Orchestrated Pipeline (Deep Dive)>>FactHarbor.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] | Current
-| Monolithic Canonical Internal | [[Pipeline Variants (Deep Dive)>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] | Current
 | Monolithic Dynamic Internal | [[Pipeline Variants (Deep Dive)>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] | Current
 
 === Workflows ===
@@ -57,7 +56,6 @@ The individual diagram pages below are preserved for backward compatibility. Eac
 
 === Pipeline Internals ===
 * [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]]
-* [[Monolithic Canonical Pipeline Internal>>FactHarbor.Specification.Diagrams.Monolithic Canonical Pipeline Internal.WebHome]]
 * [[Monolithic Dynamic Pipeline Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]]
 
 === Workflows ===

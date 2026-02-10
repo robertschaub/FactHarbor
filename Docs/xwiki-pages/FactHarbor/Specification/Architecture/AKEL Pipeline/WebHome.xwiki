@@ -94,30 +94,26 @@ flowchart TB
 
 == Pipeline Variants ==
 
-FactHarbor supports three pipeline variants. The **orchestrated** pipeline is the primary production pipeline; the monolithic variants are used for testing and experimentation.
+FactHarbor supports two pipeline variants. The **orchestrated** pipeline is the primary production pipeline; the monolithic dynamic variant is used for testing and experimentation.
 
 {{mermaid}}
 flowchart LR
     INPUT["User Input"] --> DISPATCH{{"Pipeline\nDispatch"}}
 
     DISPATCH -->|"orchestrated\n(default)"| ORCH["Orchestrated\nMulti-step workflow\nFull quality gates"]
-    DISPATCH -->|"monolithic_canonical"| CANON["Monolithic Canonical\nSingle LLM call\nCanonical output"]
     DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic\nSingle LLM call\nFlexible output"]
 
     ORCH --> RESULT["AnalysisResult\nJSON"]
-    CANON --> RESULT
     DYN --> RESULT
 
     style ORCH fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style CANON fill:#fff9c4,stroke:#f9a825,color:#000
     style DYN fill:#f3e5f5,stroke:#6a1b9a,color:#000
 {{/mermaid}}
 
-//All three variants produce the same output schema (AnalysisResult JSON). The orchestrated pipeline is the default and most capable; monolithic variants trade depth for speed.//
+//Both variants produce an AnalysisResult JSON output. The orchestrated pipeline is the default and most capable; the monolithic dynamic variant trades depth for speed and flexibility.//
 
 |= Variant |= Approach |= Quality |= Speed |= Use Case
 | **Orchestrated** | Multi-step workflow with iterative research, quality gates, evidence filtering | Highest | Slower (multiple LLM calls) | Production analysis
-| **Monolithic Canonical** | Single LLM tool-loop call, canonical output schema | Medium | Fast | Quick analysis, testing
 | **Monolithic Dynamic** | Single LLM tool-loop call, flexible output | Experimental | Fastest | Research and experimentation
 
 == Shared Analysis Modules ==
@@ -128,7 +124,6 @@ All pipeline variants share a common set of analysis modules. This ensures consi
 flowchart TB
     subgraph Pipelines["Pipeline Variants"]
         ORCH["Orchestrated"]
-        CANON["Canonical"]
         DYN["Dynamic"]
     end
 
@@ -153,12 +148,6 @@ flowchart TB
     ORCH --> Analysis
     ORCH --> Quality
     ORCH --> Trust
-    CANON --> AGG
-    CANON --> CLAIM_D
-    CANON --> CONTEXTS
-    CANON --> SR
-    CANON --> TS
-    CANON --> BU
     DYN --> SR
     DYN --> TS
     DYN --> BU
@@ -169,18 +158,18 @@ flowchart TB
     style Trust fill:#f3e5f5,stroke:#6a1b9a,color:#000
 {{/mermaid}}
 
-//Shared modules are grouped by function: Analysis (verdict weighting, claim parsing, context detection), Quality (evidence filtering, quality gates, verdict corrections), and Trust (source reliability, truth scale mapping, budget enforcement). The Orchestrated pipeline uses all modules; Monolithic variants use a subset.//
+//Shared modules are grouped by function: Analysis (verdict weighting, claim parsing, context detection), Quality (evidence filtering, quality gates, verdict corrections), and Trust (source reliability, truth scale mapping, budget enforcement). The Orchestrated pipeline uses all modules; the Monolithic Dynamic variant uses a subset.//
 
 |= Module |= Used By |= Purpose
-| ##aggregation.ts## | Orch, Canon | Verdict weighting by centrality/harm/evidence quality, contestation validation
-| ##claim-decomposition.ts## | Orch, Canon | Claim text parsing and normalisation
-| ##analysis-contexts.ts## | Orch, Canon | Heuristic context pre-detection before LLM
+| ##aggregation.ts## | Orch | Verdict weighting by centrality/harm/evidence quality, contestation validation
+| ##claim-decomposition.ts## | Orch | Claim text parsing and normalisation
+| ##analysis-contexts.ts## | Orch | Heuristic context pre-detection before LLM
 | ##evidence-filter.ts## | Orch | Probative value filtering, false positive rate calculation
 | ##quality-gates.ts## | Orch | Gate 1 (claim validation) and Gate 4 (verdict confidence)
 | ##verdict-corrections.ts## | Orch | Post-hoc verdict direction mismatch corrections
-| ##source-reliability.ts## | Orch, Canon, Dyn | LLM-based source credibility evaluation with SQLite cache
-| ##truth-scale.ts## | Canon, Dyn | Percentage-to-verdict label mapping (7-point scale)
-| ##budgets.ts## | Orch, Canon, Dyn | Token and cost budget tracking and enforcement
+| ##source-reliability.ts## | Orch, Dyn | LLM-based source credibility evaluation with SQLite cache
+| ##truth-scale.ts## | Dyn | Percentage-to-verdict label mapping (7-point scale)
+| ##budgets.ts## | Orch, Dyn | Token and cost budget tracking and enforcement
 
 == Budget Controls ==
 

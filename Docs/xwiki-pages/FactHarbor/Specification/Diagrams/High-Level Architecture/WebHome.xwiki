@@ -19,7 +19,7 @@ graph TB
         JOBS_API[api fh jobs]
         RUN_JOB[api internal run-job]
         ORCH[orchestrated.ts]
-        CANON[monolithic-canonical.ts]
+        DYN[monolithic-dynamic.ts]
         SHARED[Shared Modules]
         WEBSEARCH[web-search.ts]
         SR[source-reliability.ts]
@@ -44,11 +44,11 @@ graph TB
     ANALYZE_API --> DOTNET_API
     DOTNET_API --> SQLITE
     RUN_JOB --> ORCH
-    RUN_JOB --> CANON
+    RUN_JOB --> DYN
     ORCH --> SHARED
-    CANON --> SHARED
+    DYN --> SHARED
     ORCH --> LLM
-    CANON --> LLM
+    DYN --> LLM
     ORCH --> WEBSEARCH
     WEBSEARCH --> SEARCH
     SHARED --> SR
@@ -68,7 +68,7 @@ graph TB
 
 |= File |= Lines |= Purpose
 | ##orchestrated.ts## | ~13300 | Main orchestrated pipeline
-| ##monolithic-canonical.ts## | ~1500 | Monolithic canonical pipeline
+| ##monolithic-dynamic.ts## | ~735 | Experimental monolithic dynamic pipeline
 | ##analysis-contexts.ts## | ~600 | AnalysisContext pre-detection
 | ##aggregation.ts## | ~400 | Verdict aggregation + claim weighting
 | ##evidence-filter.ts## | ~300 | Deterministic evidence quality filtering

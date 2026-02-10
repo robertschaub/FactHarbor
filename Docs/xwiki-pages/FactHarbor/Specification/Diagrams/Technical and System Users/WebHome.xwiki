@@ -51,7 +51,7 @@ erDiagram
 |= Component |= Target Purpose |= Current Status
 | **USER** | User accounts with reputation | Not implemented (anonymous only)
 | **MODERATOR** | Appointed users with permissions | Not implemented
-| **AKEL** | AI processing engine | Implemented (Triple-Path pipeline)
+| **AKEL** | AI processing engine | Implemented (Twin-Path pipeline)
 | **BACKGROUND_SCHEDULER** | Periodic tasks | Not implemented
 | **SEARCH_INDEXER** | Elasticsearch sync | Not implemented (no Elasticsearch)
 
