@@ -1522,7 +1522,7 @@ function PipelineConfigForm({
           onChange={(e) => updateField("defaultPipelineVariant", e.target.value as PipelineConfig["defaultPipelineVariant"])}
         >
           <option value="orchestrated">Orchestrated (highest quality)</option>
-          <option value="monolithic_dynamic">Monolithic Dynamic (experimental)</option>
+          <option value="monolithic_dynamic">Monolithic Dynamic (fast alternative)</option>
         </select>
         <div className={styles.formHelp}>User can override per-job in UI</div>
       </div>

@@ -114,7 +114,7 @@ flowchart LR
 
 |= Variant |= Approach |= Quality |= Speed |= Use Case
 | **Orchestrated** | Multi-step workflow with iterative research, quality gates, evidence filtering | Highest | Slower (multiple LLM calls) | Production analysis
-| **Monolithic Dynamic** | Single LLM tool-loop call, flexible output | Experimental | Fastest | Research and experimentation
+| **Monolithic Dynamic** | Single LLM tool-loop call, flexible output | Streamlined | Fastest | Fast analysis, second opinion
 
 == Shared Analysis Modules ==
 

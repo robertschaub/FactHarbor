@@ -219,9 +219,9 @@
   color: #e65100;
 }
 
-.pipelineBadgeExp {
-  background-color: #fce4ec;
-  color: #c2185b;
+.pipelineBadgeDyn {
+  background-color: #e3f2fd;
+  color: #1565c0;
 }
 
 .jobPreview {

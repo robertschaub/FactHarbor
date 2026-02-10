@@ -201,7 +201,7 @@ These diagram pages were NOT updated in this session. Need to check each one.
 | `Diagrams/Human User Roles/WebHome.xwiki` | Verify roles reflect current (no user accounts yet) |
 | `Diagrams/LLM Abstraction Architecture/WebHome.xwiki` | Verify multi-provider via Vercel AI SDK, model tiering |
 | `Diagrams/Manual vs Automated matrix/WebHome.xwiki` | Verify automation levels |
-| `Diagrams/Monolithic Dynamic Pipeline Internal/WebHome.xwiki` | Experimental pipeline — verify marked as experimental |
+| `Diagrams/Monolithic Dynamic Pipeline Internal/WebHome.xwiki` | Dynamic pipeline — verify descriptions current |
 | `Diagrams/Quality and Audit Workflow/WebHome.xwiki` | Verify gates, quality workflow |
 | `Diagrams/Technical and System Users/WebHome.xwiki` | Verify system components |
 | `Diagrams/User Class Diagram/WebHome.xwiki` | Verify user roles |

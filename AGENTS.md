@@ -107,7 +107,7 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 | File | Purpose |
 |------|---------|
 | `apps/web/src/lib/analyzer/orchestrated.ts` | Main orchestrated pipeline (~12000 lines) |
-| `apps/web/src/lib/analyzer/monolithic-dynamic.ts` | Monolithic dynamic pipeline (experimental) |
+| `apps/web/src/lib/analyzer/monolithic-dynamic.ts` | Monolithic dynamic pipeline (fast alternative) |
 | `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
 | `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation + claim weighting logic |
 | `apps/web/src/lib/analyzer/analysis-contexts.ts` | AnalysisContext detection and handling |

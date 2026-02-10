@@ -175,7 +175,7 @@ export default function AnalyzePage() {
                 <span className={styles.pipelineInfoBadge} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#28a745", color: "#fff", borderRadius: 3 }}>Default</span>
               </div>
               <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
-                <span title="Quality">⭐⭐⭐⭐⭐</span>
+                <span title="Approach">Comprehensive</span>
                 <span title="Speed">2-5 min</span>
                 <span title="Cost">$0.50-$2</span>
               </div>
@@ -185,12 +185,12 @@ export default function AnalyzePage() {
               onClick={() => setPipelineVariant("monolithic_dynamic")}
             >
               <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
-                <span>⚗️</span>
+                <span>⚡</span>
                 <strong>Dynamic</strong>
-                <span className={styles.pipelineInfoBadgeExp} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#e65100", color: "#fff", borderRadius: 3 }}>Exp.</span>
+                <span className={styles.pipelineInfoBadgeFast} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#1976d2", color: "#fff", borderRadius: 3 }}>Fast</span>
               </div>
               <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
-                <span title="Quality">⭐⭐⭐</span>
+                <span title="Approach">Streamlined</span>
                 <span title="Speed">20-60s</span>
                 <span title="Cost">$0.10-$0.40</span>
               </div>

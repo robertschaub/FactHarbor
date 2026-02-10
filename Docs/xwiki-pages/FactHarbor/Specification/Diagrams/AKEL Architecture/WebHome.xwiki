@@ -98,4 +98,4 @@ graph TB
 
 For internal implementation details of each pipeline variant:
 * [[Orchestrated Pipeline Internal>>FactHarbor.Specification.Diagrams.Orchestrated Pipeline Internal.WebHome]] - 7-step staged workflow (~13,300 lines)
-* [[Monolithic Dynamic Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] - Flexible experimental output (~735 lines)
+* [[Monolithic Dynamic Internal>>FactHarbor.Specification.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] - Fast streamlined analysis (~735 lines)

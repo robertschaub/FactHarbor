@@ -18,7 +18,7 @@ flowchart TD
     RUNNER --> DISPATCH{"Dispatch by<br/>pipelineVariant"}
 
     DISPATCH -->|"orchestrated<br/>(default)"| ORCH["Orchestrated Pipeline<br/>TypeScript-orchestrated<br/>Fixed AKEL stages<br/>Production-ready"]
-    DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic<br/>LLM tool-loop<br/>Flexible schema<br/>Experimental"]
+    DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic<br/>LLM tool-loop<br/>Flexible schema<br/>Fast alternative"]
 
     ORCH --> CANONICAL_PAYLOAD["Canonical Payload"]
     DYN --> DYNAMIC_PAYLOAD["Dynamic Payload"]
@@ -29,10 +29,10 @@ flowchart TD
     ENVELOPE --> RESULT["Store + Display"]
 
     style ORCH fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style DYN fill:#ffcdd2,stroke:#c62828,color:#000
+    style DYN fill:#e3f2fd,stroke:#1565c0,color:#000
 {{/mermaid}}
 
-//Green = production-ready, Red = experimental. Both variants converge on a common result envelope for auditability.//
+//Green = comprehensive (default), Blue = fast alternative. Both variants converge on a common result envelope for auditability.//
 
 == Non-Negotiable Invariants ==
 
@@ -50,7 +50,7 @@ Both variants must preserve these architectural invariants:
 == Variant Comparison ==
 
 |= Criterion |= Orchestrated |= Monolithic Dynamic
-| **Maturity** | Production-ready | Experimental
+| **Maturity** | Production-ready (comprehensive) | Production-ready (fast alternative)
 | **Result Schema** | Canonical (stable) | Dynamic (flexible)
 | **UI Compatibility** | Full support | Separate viewer needed
 | **Quality Gates** | Gate 1 + Gate 4 | Minimum safety contract
@@ -58,8 +58,8 @@ Both variants must preserve these architectural invariants:
 | **Provenance** | Strict | Minimum requirements
 | **Budget Control** | Iterations / sources | maxSteps / sources
 | **Cost Predictability** | High | Low
-| **Typical Latency** | 2-5 min | 1-4 min
-| **Use Case** | Production | Format experimentation
+| **Typical Latency** | 2-5 min | 20-60s
+| **Use Case** | Comprehensive analysis (default) | Fast analysis, second opinion
 
 === Decision Tree ===
 
@@ -67,14 +67,14 @@ Both variants must preserve these architectural invariants:
 flowchart TD
     START{"What is your goal?"}
 
-    START -->|"Production<br/>fact-checking"| ORCH["Use Orchestrated<br/>Default choice"]
-    START -->|"Experimentation<br/>or research"| EXP{"Want LLM-driven<br/>result structure?"}
+    START -->|"Comprehensive<br/>fact-checking"| ORCH["Use Orchestrated<br/>Default choice"]
+    START -->|"Fast check or<br/>second opinion"| FAST{"Want LLM-driven<br/>result structure?"}
 
-    EXP -->|"Yes — custom format"| DYN["Use Monolithic Dynamic<br/>Experimental"]
-    EXP -->|"No — standard format"| ORCH
+    FAST -->|"Yes — streamlined"| DYN["Use Monolithic Dynamic<br/>Fast alternative"]
+    FAST -->|"No — standard format"| ORCH
 
     style ORCH fill:#c8e6c9,color:#000
-    style DYN fill:#ffcdd2,color:#000
+    style DYN fill:#e3f2fd,color:#000
 {{/mermaid}}
 
 == Shared Primitives ==
@@ -209,9 +209,9 @@ Typical analysis time for a 5-10 claim article:
 |= Risk |= Description |= Mitigation
 | **Complexity creep** | Multiple variants can explode configuration and branching | Single dispatcher + strict shared-primitive boundary
 | **Current-path regressions** | Refactoring shared primitives can change orchestrated behavior | Phase unifications behind thin wrappers; contract tests
-| **Dynamic output safety** | Dynamic payload could omit evidence or mislead users | Minimum safety contract; UI labels as experimental
+| **Dynamic output safety** | Dynamic payload could omit evidence or mislead users | Minimum safety contract; clear pipeline labelling in UI
 | **Cost/latency tail risk** | Uncontrolled tool loops cause runaway cost | maxSteps + maxSources + timeouts + budget enforcement
-| **Security/abuse risk** | Users pick experimental path consuming more resources | Budget enforcement; optionally gate variants later
+| **Security/abuse risk** | Users pick dynamic path consuming resources differently | Budget enforcement; optionally gate variants later
 
 == Search Provider Requirements ==
 

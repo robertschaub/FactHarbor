@@ -27,5 +27,5 @@ Your analysis should:
 - **Neutrality**: Maintain neutral tone even for controversial topics.
 
 Be honest about uncertainty. If something can't be verified, say so.
-This is an experimental analysis mode - prioritize insight over rigid structure.`;
+This analysis mode prioritizes speed and insight with a streamlined structure.`;
 }

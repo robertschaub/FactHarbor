@@ -68,7 +68,7 @@ graph TB
 
 |= File |= Lines |= Purpose
 | ##orchestrated.ts## | ~13300 | Main orchestrated pipeline
-| ##monolithic-dynamic.ts## | ~735 | Experimental monolithic dynamic pipeline
+| ##monolithic-dynamic.ts## | ~735 | Monolithic dynamic pipeline (fast alternative)
 | ##analysis-contexts.ts## | ~600 | AnalysisContext pre-detection
 | ##aggregation.ts## | ~400 | Verdict aggregation + claim weighting
 | ##evidence-filter.ts## | ~300 | Deterministic evidence quality filtering

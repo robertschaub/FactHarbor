@@ -1,6 +1,6 @@
-{{warning}}
-**Experimental (v2.6.33)** - Flexible output structure not bound to canonical schema. File: ##monolithic-dynamic.ts## (~550 lines). Labeled as "Experimental" in UI.
-{{/warning}}
+{{info}}
+**Fast Alternative Pipeline (v2.6.33)** — Flexible output structure not bound to canonical schema. File: ##monolithic-dynamic.ts## (~550 lines). Streamlined analysis at lower cost, complementing the Orchestrated pipeline.
+{{/info}}
 
 = Monolithic Dynamic Pipeline Internal Flow =
 

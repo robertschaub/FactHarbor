@@ -128,7 +128,7 @@ export default function JobsPage() {
   const getPipelineBadge = (variant?: string): { icon: string; label: string; className: string } => {
     switch (variant) {
       case "monolithic_dynamic":
-        return { icon: "⚗️", label: "Dynamic", className: styles.pipelineBadgeExp };
+        return { icon: "⚡", label: "Dynamic", className: styles.pipelineBadgeDyn };
       case "orchestrated":
       default:
         return { icon: "🎯", label: "Orchestrated", className: styles.pipelineBadgeDefault };

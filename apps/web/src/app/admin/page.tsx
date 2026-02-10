@@ -338,7 +338,7 @@ export default function AdminPage() {
               Highest quality multi-stage pipeline. Best for complex claims and multi-context analysis.
             </div>
             <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666" }}>
-              <span title="Quality">⭐⭐⭐⭐⭐</span>
+              <span title="Approach">Comprehensive</span>
               <span title="Speed">2-5 min</span>
               <span title="Cost">$0.50-$2</span>
             </div>
@@ -350,24 +350,24 @@ export default function AdminPage() {
             tabIndex={0}
             style={{
               cursor: "pointer",
-              border: defaultPipeline === "monolithic_dynamic" ? "2px solid #e65100" : "1px solid #ddd",
+              border: defaultPipeline === "monolithic_dynamic" ? "2px solid #1976d2" : "1px solid #ddd",
               borderRadius: 8,
               padding: 14,
-              background: defaultPipeline === "monolithic_dynamic" ? "#fff4f0" : "#fff",
+              background: defaultPipeline === "monolithic_dynamic" ? "#e3f2fd" : "#fff",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span>⚗️</span>
+              <span>⚡</span>
               <strong>Monolithic Dynamic</strong>
-              <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: defaultPipeline === "monolithic_dynamic" ? "#e65100" : "#666" }}>
-                {defaultPipeline === "monolithic_dynamic" ? "Selected" : "Experimental"}
+              <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: defaultPipeline === "monolithic_dynamic" ? "#1976d2" : "#666" }}>
+                {defaultPipeline === "monolithic_dynamic" ? "Selected" : "Alternative"}
               </span>
             </div>
             <div style={{ fontSize: 13, color: "#555" }}>
-              Flexible output structure for quick estimates and exploration. Lowest cost option.
+              Fast, streamlined analysis at lower cost. Can complement Orchestrated as a second opinion.
             </div>
             <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666" }}>
-              <span title="Quality">⭐⭐⭐</span>
+              <span title="Approach">Streamlined</span>
               <span title="Speed">20-60s</span>
               <span title="Cost">$0.10-$0.40</span>
             </div>

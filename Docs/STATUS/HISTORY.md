@@ -76,7 +76,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
    - Produces canonical result schema, full budget control
 
 2. **Monolithic Dynamic**:
-   - Experimental LLM tool-loop, flexible LLM-defined output
+   - Fast LLM tool-loop, flexible LLM-defined output
    - Minimum safety contract (citations required)
 
 **Architecture Principles**:

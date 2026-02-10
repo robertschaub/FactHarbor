@@ -353,13 +353,13 @@ Rationale:
 
 #### Decision 4: Dynamic pipeline target
 
-**Recommendation: Track dynamic separately as "experimental/exploratory". Do NOT require it to meet orchestrated targets in this plan.**
+**Recommendation: Track dynamic separately as an alternative pipeline. Do NOT require it to meet orchestrated targets in this plan.**
 
 Rationale:
-- Orchestrated is the quality pipeline. Stabilizing it is the primary objective.
-- Dynamic serves a different purpose: faster, more exploratory, lower-cost analysis. Forcing it to match orchestrated quality would either (a) make it as expensive as orchestrated, or (b) delay plan closure indefinitely.
+- Orchestrated is the comprehensive pipeline. Stabilizing it is the primary objective.
+- Dynamic serves a different purpose: faster, lower-cost analysis that can complement orchestrated. Forcing it to match orchestrated quality would either (a) make it as expensive as orchestrated, or (b) delay plan closure indefinitely.
 - Instead: define *separate, lighter* quality targets for dynamic (e.g., variance <= 20, no hard context recall requirement) and track them in Phase 3c.
-- Users who need high-quality reports should use orchestrated. Dynamic is for quick checks.
+- Users who need comprehensive reports should use orchestrated. Dynamic is for fast analysis.
 
 **One exception**: Dynamic should not produce *misleading* results. If dynamic produces a confident verdict that contradicts orchestrated's verdict on the same input, that's a bug worth fixing regardless of phase.
 
@@ -512,7 +512,7 @@ Ratifying all 5 LLM Expert decisions as team lead. Recording for audit trail:
 | 1 | Enable `llmTiering=true` | YES | **APPROVED + DONE** | Implemented this session. One-line rollback if regressions. |
 | 2 | Context refinement → `modelVerdict` | Reuse modelVerdict | **APPROVED + DONE** | No new schema field. Revisit if verdict moves to Opus. |
 | 3 | `llm.ts` as single source of truth | YES, deprecate routing in model-tiering.ts | **APPROVED, DEFERRED to Phase 3b** | Non-blocking. Type definitions stay. |
-| 4 | Dynamic pipeline target | Track separately, experimental | **APPROVED** | Dynamic must not produce contradictory confident results vs orchestrated. Otherwise separate quality bar. |
+| 4 | Dynamic pipeline target | Track separately, alternative pipeline | **APPROVED** | Dynamic must not produce contradictory confident results vs orchestrated. Otherwise separate quality bar. |
 | 5 | Acceptance thresholds | Score variance <= 10, multi-context >= 80%, irrelevant < 10%, failure < 1% | **APPROVED with additions** | Added: verdict confidence stability <= 15pp (per LLM Expert). |
 
 ### Accepted Closure Criteria
@@ -1482,7 +1482,7 @@ This audit ensures nothing falls through the cracks before the next iteration.
 
 | # | Item | Decision | Status |
 |---|------|----------|--------|
-| C1 | **Dynamic pipeline alignment** (Phase 3c) | Decision 4: Track separately as experimental | No alignment work started. Blocked on orchestrated closure. |
+| C1 | **Dynamic pipeline alignment** (Phase 3c) | Decision 4: Track separately as alternative pipeline | No alignment work started. Blocked on orchestrated closure. |
 | C2 | **Verdict calibration under sparse evidence** (Phase 3d) | Deferred | Partially addressed: low-source penalty + confidence floor + prompt refinements. No dedicated calibration table. |
 | C3 | **Verification gate and rollout criteria** (Phase 3e) | Closure criteria approved (Session 3-4) | Criteria defined but not yet passed. |
 
