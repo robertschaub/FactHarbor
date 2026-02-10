@@ -1,0 +1,211 @@
+= AKEL — AI Knowledge Extraction Layer =
+
+AKEL is FactHarbor's automated intelligence subsystem — the core analysis engine that transforms unstructured text and URLs into structured, transparent claim analyses with evidence-based verdicts.
+
+{{info}}
+**Current Implementation:** v2.10.2 (POC Complete, Alpha Transition) — Single-node orchestrated pipeline in TypeScript/Next.js. See [[Implementation>>FactHarbor.Specification.Implementation.WebHome]] for detailed documentation.
+{{/info}}
+
+== 1. Purpose and Role ==
+
+AKEL transforms unstructured inputs into structured, transparent analyses. All outputs are AI-generated and clearly labeled.
+
+**Core responsibilities (implemented):**
+* Claim extraction and classification from arbitrary text or URLs
+* AnalysisContext detection (bounded analytical frames requiring separate verdicts)
+* KeyFactor discovery (decomposition questions for structured evaluation)
+* Evidence extraction with source attribution and probative value filtering
+* Source reliability scoring (LLM + Cache architecture)
+* Verdict generation on a 7-point truth scale (TRUE → FALSE)
+* Quality gate enforcement (Gate 1: Claim Validation, Gate 4: Verdict Confidence)
+* Transparent reporting with full evidence provenance
+
+== 2. Components ==
+
+The AKEL implementation consists of these core modules in `apps/web/src/lib/analyzer/`:
+
+|= Module |= File |= Purpose |
+| **Orchestrated Pipeline** | `orchestrated.ts` (~13,300 lines) | Main analysis pipeline: UNDERSTAND → RESEARCH → CONTEXT REFINEMENT → VERDICTS → SUMMARY → REPORT |
+| **Prompt Builder** | `prompts/prompt-builder.ts` | Composes LLM prompts from base templates + provider variants + config adaptations |
+| **Evidence Filter** | `evidence-filter.ts` | Deterministic 7-layer defense against low-quality evidence |
+| **Source Reliability** | `source-reliability.ts` | LLM-evaluated source credibility scoring with cache |
+| **Quality Gates** | `quality-gates.ts` | Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence Assessment) |
+| **Aggregation** | `aggregation.ts` | Verdict weighting, contestation validation, de-duplication |
+| **Provenance Validation** | `provenance-validation.ts` | Reject synthetic/LLM-generated content |
+| **Verdict Corrections** | `verdict-corrections.ts` | Detect and correct verdict inversions |
+| **AnalysisContext Detection** | `analysis-contexts.ts` | Heuristic context pre-detection for multi-context claims |
+| **Metrics** | `metrics.ts` | Performance, quality, and cost tracking |
+
+== 3. Pipeline: From Input to Verdict ==
+
+=== 3.1 Pipeline Variants ===
+
+FactHarbor supports two pipeline variants (configurable via UCM Pipeline Config):
+
+|= Variant |= Description |= Status |
+| **orchestrated** (default) | Multi-step pipeline with iterative research, context refinement, and structured aggregation | ✅ Primary |
+| **monolithic_dynamic** | LLM-planned dynamic analysis approach | ✅ Available |
+
+=== 3.2 Orchestrated Pipeline Steps ===
+
+**STEP 1 — UNDERSTAND:**
+* Extract claims with roles (core, attribution, source, timing) and centrality
+* Detect preliminary AnalysisContexts (legal, methodological, temporal)
+* Discover KeyFactors (decomposition questions)
+* Apply Gate 1: Filter opinions, predictions, low-specificity claims (keep central claims)
+
+**STEP 2-4 — RESEARCH + EVIDENCE:**
+* Iterative research cycle (2-3 rounds)
+* Generate targeted search queries
+* Fetch and parse sources (HTML, PDF)
+* Extract evidence items with probative value scoring
+* Apply 7-layer evidence quality defense
+
+**STEP 4.4-4.6 — CONTEXT REFINEMENT:**
+* Refine AnalysisContext assignments based on evidence
+* Route evidence items to correct analytical contexts
+* Detect context overlaps and merge where appropriate
+
+**STEP 5 — VERDICTS:**
+* Generate per-claim verdicts with confidence scores
+* Apply source reliability weighting
+* Aggregation: Evidence → Claims → KeyFactors → AnalysisContexts → Overall
+* Apply Gate 4: Verdict Confidence Assessment
+
+**STEP 6 — SUMMARY:**
+* Generate two-panel summary (Overview + Key Findings)
+
+**STEP 7 — REPORT:**
+* Generate full markdown analysis report
+
+=== 3.3 Model Tiering ===
+
+Different LLM models can be assigned per phase via UCM Pipeline Config:
+
+|= Phase |= Config Field |= Typical Model |
+| UNDERSTAND | `modelUnderstand` | Claude Sonnet / GPT-4o |
+| EXTRACT_EVIDENCE | `modelExtractEvidence` | Claude Haiku / GPT-4o Mini (budget) |
+| VERDICT | `modelVerdict` | Claude Sonnet / GPT-4o (premium) |
+
+== 4. Inputs and Outputs ==
+
+=== 4.1 Inputs ===
+* User-submitted text (claim, question, or article)
+* User-submitted URL (fetched and analyzed)
+* UCM configuration (pipeline, search, calculation, prompt, SR configs)
+
+=== 4.2 Outputs (TypeScript types from `types.ts`) ===
+
+|= Type |= Description |
+| `ClaimUnderstanding` | Extracted claims, AnalysisContexts, KeyFactors, research queries |
+| `EvidenceItem` | Individual evidence with `statement`, `category`, `sourceExcerpt`, `probativeValue`, `evidenceScope` |
+| `FetchedSource` | Source with URL, title, content, `trackRecordScore` |
+| `ClaimVerdict` | Per-claim verdict: `truthPercentage`, `confidence`, `verdict` (7-point scale), `keyFactors` |
+| `AnalysisContext` | Bounded analytical frame: `name`, `subject`, `methodology`, `boundaries`, `status` |
+| `ArticleAnalysis` | Overall result: `articleVerdict`, `analysisContextAnswers`, `qualityGates`, `warnings` |
+
+== 5. Quality Gates ==
+
+Two quality gates are implemented:
+
+=== 5.1 Gate 1: Claim Validation ===
+
+Applied during UNDERSTAND phase. Very permissive by design — filters only extremely content-poor claims:
+* Content word count < 3 (significant words) → Filtered
+* All other claims treated as AMBIGUOUS (potentially verifiable)
+* Central claims → Always kept regardless of content quality
+
+Stats tracked in `qualityGates.gate1Stats`: `total`, `passed`, `filtered`, `centralKept`
+
+=== 5.2 Gate 4: Verdict Confidence Assessment ===
+
+Applied during VERDICT phase. Assesses evidence sufficiency based on source count, quality, and agreement:
+
+|= Tier |= Criteria |
+| **HIGH** | ≥3 sources, ≥0.7 avg source quality, ≥80% evidence agreement |
+| **MEDIUM** | ≥2 sources, ≥0.6 avg source quality, ≥60% evidence agreement |
+| **LOW** | ≥2 sources but below MEDIUM quality/agreement thresholds |
+| **INSUFFICIENT** | <2 sources → DO NOT PUBLISH |
+
+**Publication rule:** Minimum MEDIUM confidence required (central claims always publishable with caveats).
+
+Stats tracked in `qualityGates.gate4Stats`: `total`, `publishable`, `highConfidence`, `mediumConfidence`, `lowConfidence`, `insufficient`, `centralKept`
+
+== 6. Evidence Quality: 7-Layer Defense ==
+
+AKEL implements a comprehensive 7-layer defense against low-quality evidence:
+
+|= Layer |= Name |= Purpose |
+| 1 | Evidence Quality Filtering | Filter vague/incomplete evidence at extraction |
+| 2 | Provenance Validation | Reject synthetic/LLM-generated content |
+| 3 | Tangential Baseless Pruning | Remove tangential claims with 0 supporting evidence |
+| 4 | Thesis Relevance Filtering | Weight tangential claims at 0 in verdict calculation |
+| 5 | Opinion-Only Factor Pruning | Remove KeyFactors with factualBasis="opinion" |
+| 6 | Contestation Validation | Distinguish documented counter-evidence from mere doubt |
+| 7 | Context-Aware Routing | Route claims to correct AnalysisContext |
+
+== 7. Source Reliability ==
+
+**Architecture:** Pure LLM + Cache (v2.2)
+
+* **Batch prefetch**: Before analysis, batch-evaluate source domains via LLM
+* **In-memory cache**: Store scores in memory map for sync lookup during analysis
+* **Scoring**: 7-band credibility scale (0.0–1.0), score directly used as verdict weight
+* **Multi-model consensus**: Optional cross-provider agreement (Claude + GPT within 15%)
+* **Configurable** via UCM SR Config: `enabled`, `confidenceThreshold`, `cacheTtlDays`, `defaultScore`
+
+== 8. Verdict Calculation ==
+
+* **7-point truth scale**: TRUE (86-100%) → MOSTLY-TRUE → LEANING-TRUE → MIXED/UNVERIFIED (43-57%) → LEANING-FALSE → MOSTLY-FALSE → FALSE (0-14%)
+* **MIXED vs UNVERIFIED**: Distinguished by confidence (≥60% = MIXED, <60% = UNVERIFIED)
+* **Contestation**: Documented counter-evidence reduces weight (established: 0.3×, disputed: 0.5×); mere opinion/doubt: full weight
+* **De-duplication**: Near-duplicate claims clustered (Jaccard ≥0.6), weight distributed
+* **Dependency handling**: Claims with failed dependencies excluded from aggregation
+
+See [[Calculations documentation>>FactHarbor.Specification.Implementation.WebHome]] for full methodology.
+
+== 9. Architecture Diagram ==
+
+{{include reference="FactHarbor.Specification.Diagrams.AKEL Architecture.WebHome"/}}
+
+== 10. Future AKEL Capabilities ==
+
+{{warning}}
+The following features are **planned but not yet implemented**. They represent the target production architecture (Alpha/Beta/V1.0).
+{{/warning}}
+
+=== 10.1 Publication Modes and Risk Tiers ===
+
+**Planned publication modes:**
+* **Mode 1 (Draft-Only)**: Content that fails quality gates, kept in internal review queue
+* **Mode 2 (AI-Generated)**: Published with clear labeling, all quality gates passed
+* **Mode 3 (Human-Reviewed)**: Validated by human reviewers
+
+**Planned risk tiers:**
+* **Tier A (High Risk)**: Medical, legal, elections — human review required
+* **Tier B (Medium Risk)**: Contested policy, complex science — sampling audits
+* **Tier C (Low Risk)**: Definitions, established facts — AI-draft default
+
+=== 10.2 Enhanced Quality Gates ===
+
+Additional quality gates are planned:
+* **Gate 2**: Mandatory contradiction search (counter-evidence, reservations, bubble detection)
+* **Gate 3**: Uncertainty quantification (confidence scores, limitations, data gaps)
+
+=== 10.3 Audit System ===
+
+Planned stratified sampling audits by risk tier, confidence score, and traffic.
+
+=== 10.4 Federation ===
+
+In Release 1.0+, AKEL will participate in cross-node knowledge alignment:
+* Share embeddings and canonicalized claim forms
+* Exchange contradiction alerts
+* Trust-level-based data exchange between nodes
+
+== 11. Related Pages ==
+* [[Architecture>>FactHarbor.Specification.Architecture.WebHome]]
+* [[Data Model>>FactHarbor.Specification.Data Model.WebHome]]
+* [[Automation>>FactHarbor.Specification.Automation.WebHome]]
+* [[Requirements (Roles)>>FactHarbor.Specification.Requirements.WebHome]]
+* [[Workflows>>FactHarbor.Specification.Workflows.WebHome]]
