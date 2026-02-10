@@ -64,23 +64,18 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 
 ---
 
-### Triple-Path Pipeline Architecture (v2.6.33)
+### Twin-Path Pipeline Architecture (v2.6.33, updated v2.10.x)
 
 **Context**: Different use cases require different trade-offs between quality, speed, and cost.
 
-**Decision**: Implemented three user-selectable analysis modes:
+**Decision**: Implemented two user-selectable analysis modes (originally three; Monolithic Canonical removed in v2.10.x as redundant):
 
 1. **Orchestrated Pipeline** (default):
-   - TypeScript-orchestrated staged pipeline (Understand → Research → Verdict)
+   - TypeScript-orchestrated staged pipeline (Understand -> Research -> Verdict)
    - Highest quality, explicit multi-scope detection
    - Produces canonical result schema, full budget control
 
-2. **Monolithic Canonical**:
-   - LLM tool-loop with search/fetch tools
-   - Faster, lower cost, LLM-inferred multi-scope detection
-   - Strict budgets with fail-closed behavior
-
-3. **Monolithic Dynamic**:
+2. **Monolithic Dynamic**:
    - Experimental LLM tool-loop, flexible LLM-defined output
    - Minimum safety contract (citations required)
 

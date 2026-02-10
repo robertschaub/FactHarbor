@@ -45,7 +45,7 @@ import {
 } from './analyzer/metrics-integration';
 
 // In runAnalysis() function, add at the very start:
-initializeMetrics(jobId, 'orchestrated'); // or 'monolithic-canonical'
+initializeMetrics(jobId, 'orchestrated'); // or 'monolithic-dynamic'
 
 try {
   // Your existing code...

@@ -18,7 +18,6 @@ This directory contains all LLM prompts used by FactHarbor. Prompts are stored i
 | Profile | File | Description |
 |---------|------|-------------|
 | `orchestrated` | `orchestrated.prompt.md` | Main pipeline prompt (Understand phase) |
-| `monolithic-canonical` | `monolithic-canonical.prompt.md` | Single-call pipeline prompt |
 | `source-reliability` | `source-reliability.prompt.md` | Source reliability evaluation |
 | `text-analysis-*` | `text-analysis/*.prompt.md` | LLM text analysis (4 prompts) |
 

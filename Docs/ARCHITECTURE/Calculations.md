@@ -536,9 +536,9 @@ This prevents unsupported judgments like "27-year sentence was proportionate" wi
 ## 10. Source Reliability Weighting
 
 **Version**: v2.6.35+  
-**Files**: `source-reliability.ts`, `monolithic-canonical.ts`, `monolithic-dynamic.ts`
+**Files**: `source-reliability.ts`, `monolithic-dynamic.ts`
 
-Source reliability scores influence verdict calculations by adjusting truth percentages based on the credibility of evidence sources. This applies across **all three analysis pipelines**.
+Source reliability scores influence verdict calculations by adjusting truth percentages based on the credibility of evidence sources. This applies across **all analysis pipelines**.
 
 ### Score = Verdict Weight
 
@@ -662,12 +662,11 @@ This results in 50% weight (neutral), applying appropriate skepticism without co
 
 ### Pipeline Integration
 
-Source reliability weighting is applied in all three pipelines:
+Source reliability weighting is applied in all pipelines:
 
 | Pipeline | Implementation |
 |----------|----------------|
 | **Orchestrated** | `applyEvidenceWeighting()` function |
-| **Monolithic Canonical** | Inline calculation in verdict building |
 | **Monolithic Dynamic** | Inline calculation with `adjustedVerdictScore` |
 
 ### Design Rationale

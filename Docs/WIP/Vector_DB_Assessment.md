@@ -8,11 +8,11 @@ Status: Draft
 
 Vector search is not required to deliver the core Shadow Mode value described in `Docs/WIP/Shadow_Mode_Architecture.md`, but it can improve similarity detection and clustering beyond exact text-hash matches. The current architecture is SQLite-first with offline analysis and async logging; vectors should remain optional and offline to preserve performance and pipeline determinism.
 
-The best plug-in point is the text-analysis service layer (`apps/web/src/lib/analyzer/text-analysis-llm.ts` and `apps/web/src/lib/analyzer/text-analysis-service.ts`) because it centralizes the LLM classification calls used by orchestrated and monolithic pipelines. This keeps Shadow Mode generic and avoids domain-specific prompt tuning that would violate AGENTS.md rules.
+The best plug-in point is the text-analysis service layer (`apps/web/src/lib/analyzer/text-analysis-llm.ts` and `apps/web/src/lib/analyzer/text-analysis-service.ts`) because it centralizes the LLM classification calls used by the orchestrated and monolithic-dynamic pipelines. This keeps Shadow Mode generic and avoids domain-specific prompt tuning that would violate AGENTS.md rules.
 
 ## Current Components and Hooks
 
-- Analysis pipelines: `apps/web/src/lib/analyzer/orchestrated.ts` and `apps/web/src/lib/analyzer/monolithic-canonical.ts`.
+- Analysis pipelines: `apps/web/src/lib/analyzer/orchestrated.ts` and `apps/web/src/lib/analyzer/monolithic-dynamic.ts`.
 - LLM classification entry points: `apps/web/src/lib/analyzer/text-analysis-llm.ts` (`classifyInput`, `assessEvidenceQuality`, `analyzeScopeSimilarity`, `validateVerdicts`).
 - Evidence metadata and terminology: `apps/web/src/lib/analyzer/types.ts` (AnalysisContext vs EvidenceScope separation).
 - Existing SQLite cache patterns: `apps/web/src/lib/source-reliability-cache.ts` (TTL, migration patterns).

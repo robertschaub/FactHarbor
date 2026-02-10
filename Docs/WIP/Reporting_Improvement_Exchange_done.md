@@ -1583,7 +1583,7 @@ Files to modify:
 
 #### Phase P1D — UCM-Complete Model Routing (AFTER P1C VALIDATION)
 
-**Rationale**: After Session 18 (P1A), model IDs are updated but fallback chains in `llm.ts` (`defaultModelNameForTask()`, `getModel()`) still contain hardcoded model ID strings. If an operator updates model IDs via UCM/Admin UI, these code-level fallbacks silently override the intent. All pipelines (`orchestrated`, `monolithic-canonical`, `monolithic-dynamic`, `analysis-contexts`) already call `getModelForTask()` from `llm.ts`, but the resolver itself has hardcoded defaults that bypass UCM when config fields are null.
+**Rationale**: After Session 18 (P1A), model IDs are updated but fallback chains in `llm.ts` (`defaultModelNameForTask()`, `getModel()`) still contain hardcoded model ID strings. If an operator updates model IDs via UCM/Admin UI, these code-level fallbacks silently override the intent. All pipelines (`orchestrated`, `monolithic-dynamic`, `analysis-contexts`) already call `getModelForTask()` from `llm.ts`, but the resolver itself has hardcoded defaults that bypass UCM when config fields are null.
 
 **Goal**: Make model selection and fallback IDs fully UCM-managed for all pipelines. No hardcoded model IDs in any code path.
 
@@ -1591,7 +1591,7 @@ Files to modify:
 - `llm.ts:defaultModelNameForTask()` — 4 provider switch cases with 8 hardcoded model IDs
 - `llm.ts:getModel()` — 4 hardcoded legacy model IDs
 - `model-tiering.ts:ANTHROPIC_MODELS/OPENAI_MODELS/GOOGLE_MODELS` — 9 hardcoded model IDs in constants
-- Pipelines using `getModelForTask()`: orchestrated (via `llm.ts`), monolithic-canonical (`llm.ts:696,787,1039`), monolithic-dynamic (`llm.ts:268,416`), analysis-contexts (`llm.ts:105`)
+- Pipelines using `getModelForTask()`: orchestrated (via `llm.ts`), monolithic-dynamic (`llm.ts:268,416`), analysis-contexts (`llm.ts:105`)
 
 **Actions:**
 1. Add UCM fields for provider-specific fallback model IDs:
@@ -1600,10 +1600,10 @@ Files to modify:
 2. Refactor `llm.ts:defaultModelNameForTask()` to read from `DEFAULT_PIPELINE_CONFIG` or a provider-model registry loaded from UCM, instead of hardcoded switch cases
 3. Refactor `llm.ts:getModel()` legacy path to use the same UCM-backed resolver
 4. Replace hardcoded `ANTHROPIC_MODELS`/`OPENAI_MODELS`/`GOOGLE_MODELS` constants in `model-tiering.ts` with values derived from UCM config (or make them the single source that UCM defaults reference)
-5. Wire all pipelines to the same UCM resolver — verify `orchestrated`, `monolithic-canonical`, `monolithic-dynamic`, and `analysis-contexts` all resolve identically
+5. Wire all pipelines to the same UCM resolver — verify `orchestrated`, `monolithic-dynamic`, and `analysis-contexts` all resolve identically
 6. Run `npm run reseed:force -- --configs` after schema changes
 7. Validate with cross-pipeline routing tests:
-   - Verify all 3 pipelines select the same model for the same task + provider
+   - Verify all 2 pipelines select the same model for the same task + provider
    - Verify UCM override of fallback model ID propagates to all pipelines
    - Verify null/missing config gracefully falls back to `DEFAULT_PIPELINE_CONFIG` values (not hardcoded strings)
 

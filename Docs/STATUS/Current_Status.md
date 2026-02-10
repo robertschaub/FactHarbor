@@ -11,9 +11,8 @@
 ### ✅ What Works
 
 **Core Analysis Pipeline:**
-- **Triple-Path Architecture**:
+- **Twin-Path Architecture**:
   - Orchestrated Pipeline (default, highest quality)
-  - Monolithic Canonical (faster, lower cost)
   - Monolithic Dynamic (experimental, flexible output)
 - Multi-context detection and analysis
 - **Heuristic Context Pre-Detection**: Code-level pattern detection for comparison, legal, and environmental claims

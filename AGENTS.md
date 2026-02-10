@@ -107,7 +107,7 @@ This file defines how AI coding agents should operate in the FactHarbor reposito
 | File | Purpose |
 |------|---------|
 | `apps/web/src/lib/analyzer/orchestrated.ts` | Main orchestrated pipeline (~12000 lines) |
-| `apps/web/src/lib/analyzer/monolithic-canonical.ts` | Monolithic canonical pipeline |
+| `apps/web/src/lib/analyzer/monolithic-dynamic.ts` | Monolithic dynamic pipeline (experimental) |
 | `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
 | `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation + claim weighting logic |
 | `apps/web/src/lib/analyzer/analysis-contexts.ts` | AnalysisContext detection and handling |
@@ -203,7 +203,7 @@ Default placeholders in `appsettings.Development.json` - replace for security.
 - ✅ Temporal reasoning (current date awareness)
 - ✅ Claim deduplication for fair aggregation
 - ✅ KeyFactors discovery and aggregation
-- ✅ Triple-path pipeline (Orchestrated, Monolithic Canonical, Monolithic Dynamic)
+- ✅ Twin-path pipeline (Orchestrated, Monolithic Dynamic)
 - ✅ LLM Tiering (Haiku 3.5 for extract/understand, Sonnet 4 for verdict/context refinement)
 - ✅ Evidence Quality Filtering (deterministic post-LLM filter for probative value)
 - ✅ Source Reliability (LLM evaluation with multi-model consensus, caching, evidence weighting, entity-level evaluation)
