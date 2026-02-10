@@ -1,5 +1,5 @@
 {{info}}
-**Current Implementation (v2.6.33)** - Only Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence) are implemented. Gates 2-3 are planned for future.
+**Current Implementation (v2.10.2)** - Only Gate 1 (Claim Validation) and Gate 4 (Verdict Confidence) are implemented. Gates 2-3 are planned for future.
 {{/info}}
 
 = Quality Gates Flow =

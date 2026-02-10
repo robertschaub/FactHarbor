@@ -252,9 +252,9 @@ If external consumers are identified:
 |= Version |= Date |= Schema Changes |= Migration Required?
 | 2.6.17 | 2025-11 | Initial UCM system, base schema | N/A (baseline)
 | 2.6.33 | 2025-12 | Source reliability fields added | No (additive)
-| 2.6.38 | 2026-01 | Triple-path pipeline (no schema change) | No
+| 2.6.38 | 2026-01 | Twin-path pipeline (no schema change) | No
 | 2.6.41 | 2026-01 | Phase 2: probativeValue, sourceType (optional) | No (optional fields)
-| 3.0.0 | TBD | Phase 3: Field renames (facts -> evidence) | Yes (transformation)
+| 3.0.0 | 2026-02 | Phase 3: Field renames (facts -> evidence) | Yes (transformation)
 
 ----
 

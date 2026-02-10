@@ -536,7 +536,7 @@ A: Use "AnalysisContext" for precision or "context" for brevity. **NEVER use "fr
 * v2-to-v3-migration-guide.md - Migration guide for v3.0/v3.1
 * AGENTS.md - High-level rules for context detection
 * types.ts - TypeScript interface definitions
-* Pipeline_TriplePath_Architecture.md - Pipeline design
+* Pipeline Variants documentation - Pipeline design (see [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]])
 
 ----
 

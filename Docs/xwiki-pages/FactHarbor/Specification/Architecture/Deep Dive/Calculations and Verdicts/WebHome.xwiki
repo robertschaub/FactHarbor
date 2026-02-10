@@ -118,7 +118,7 @@ flowchart TD
 **Implementation (v2.8):**
 
 * ##validateContestation()## in ##aggregation.ts## -- KeyFactor-level validation (orchestrated pipeline)
-* ##detectClaimContestation()## in ##aggregation.ts## -- Claim-level heuristic (canonical pipeline)
+* ##detectClaimContestation()## in ##aggregation.ts## -- Claim-level heuristic (shared)
 
 === 2.2 Evidence Item Categorization ===
 

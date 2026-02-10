@@ -69,22 +69,22 @@ graph TB
 
 == Pipeline Variants ==
 
-|= Variant |= File |= Lines |= Approach |= Output Schema
-| **Orchestrated** | ##orchestrated.ts## | ~13,300 | Multi-step workflow with explicit stages | Canonical (structured)
-| **Monolithic Dynamic** | ##monolithic-dynamic.ts## | ~735 | Single LLM tool-loop call | Dynamic (flexible)
+|= Variant |= File |= Approach |= Output Schema
+| **Orchestrated** | ##orchestrated.ts## | Multi-step workflow with explicit stages | Canonical (structured)
+| **Monolithic Dynamic** | ##monolithic-dynamic.ts## | Single LLM tool-loop call | Dynamic (flexible)
 
 == Shared Modules ==
 
-|= Module |= Lines |= Used By |= Purpose
-| ##analysis-contexts.ts## | | Orch | Heuristic context pre-detection before LLM
-| ##aggregation.ts## | | Orch | Verdict weighting, contestation validation
-| ##claim-decomposition.ts## | | Orch | Claim text parsing and normalization
-| ##evidence-filter.ts## | ~330 | Orch | Probative value filtering, false positive rate calculation
-| ##quality-gates.ts## | ~410 | Orch | Gate 1 (claim validation) and Gate 4 (verdict confidence)
-| ##source-reliability.ts## | ~620 | Orch, Dyn | LLM-based source reliability evaluation with cache
-| ##verdict-corrections.ts## | ~310 | Orch | Post-hoc verdict direction mismatch corrections
-| ##truth-scale.ts## | ~280 | Dyn | Percentage-to-verdict label mapping
-| ##budgets.ts## | ~250 | Orch, Dyn | Token/cost budget tracking and enforcement
+|= Module |= Used By |= Purpose
+| ##analysis-contexts.ts## | Orch | Heuristic context pre-detection before LLM
+| ##aggregation.ts## | Orch | Verdict weighting, contestation validation
+| ##claim-decomposition.ts## | Orch | Claim text parsing and normalization
+| ##evidence-filter.ts## | Orch | Probative value filtering, false positive rate calculation
+| ##quality-gates.ts## | Orch | Gate 1 (claim validation) and Gate 4 (verdict confidence)
+| ##source-reliability.ts## | Orch, Dyn | LLM-based source reliability evaluation with cache
+| ##verdict-corrections.ts## | Orch | Post-hoc verdict direction mismatch corrections
+| ##truth-scale.ts## | Dyn | Percentage-to-verdict label mapping
+| ##budgets.ts## | Orch, Dyn | Token/cost budget tracking and enforcement
 
 == Orchestrated Pipeline Steps ==
 

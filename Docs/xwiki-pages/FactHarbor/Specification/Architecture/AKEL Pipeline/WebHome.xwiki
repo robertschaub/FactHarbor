@@ -94,7 +94,7 @@ flowchart TB
 
 == Pipeline Variants ==
 
-FactHarbor supports two pipeline variants. The **orchestrated** pipeline is the primary production pipeline; the monolithic dynamic variant is used for testing and experimentation.
+FactHarbor supports two pipeline variants. The **orchestrated** pipeline is the comprehensive default; the **monolithic dynamic** variant is a fast, lower-cost alternative.
 
 {{mermaid}}
 flowchart LR

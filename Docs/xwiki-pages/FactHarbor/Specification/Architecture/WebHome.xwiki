@@ -101,7 +101,7 @@ flowchart TB
 
 | [[Deep Dive Index>>FactHarbor.Specification.Architecture.Deep Dive.WebHome]] | Role-based navigation to detailed implementation references
 
-Includes: Orchestrated Pipeline internals, Pipeline Variants (TriplePath), Quality Gates Reference, Context Detection, Evidence Quality Filtering, Source Reliability System, Calculations and Verdicts, Prompt Architecture, Confidence Calibration.
+Includes: Orchestrated Pipeline internals, Pipeline Variants (Twin-Path), Quality Gates Reference, Context Detection, Evidence Quality Filtering, Source Reliability System, Calculations and Verdicts, Prompt Architecture, Confidence Calibration.
 
 === Future Architecture ===
 

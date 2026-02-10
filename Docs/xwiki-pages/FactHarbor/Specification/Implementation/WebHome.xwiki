@@ -9,7 +9,7 @@
 |= Old Location |= New Location
 | AKEL Pipeline Flow | [[AKEL Pipeline>>FactHarbor.Specification.Architecture.AKEL Pipeline.WebHome]] (overview) and [[Orchestrated Pipeline>>FactHarbor.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] (deep dive)
 | Pipeline Architecture | [[AKEL Pipeline>>FactHarbor.Specification.Architecture.AKEL Pipeline.WebHome]] (overview)
-| TriplePath Architecture | [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]
+| Twin-Path Architecture | [[Pipeline Variants>>FactHarbor.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]
 | Context and EvidenceScope Detection | [[Context Detection>>FactHarbor.Specification.Architecture.Deep Dive.Context Detection.WebHome]]
 | Quality Gates Reference | [[Quality Gates>>FactHarbor.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]
 | Source Reliability System (5 sub-pages) | [[Source Reliability>>FactHarbor.Specification.Architecture.Deep Dive.Source Reliability.WebHome]]
