@@ -142,7 +142,7 @@ Now proceed with your task as {ROLE}.
 ## Constraints & Context
 - Must not increase per-analysis LLM costs by more than 15%
 - Shadow results should be stored for later analysis
-- Must work with all three pipeline modes (Orchestrated, Canonical, Dynamic)
+- Must work with both pipeline modes (Orchestrated, Monolithic Dynamic)
 
 ---
 

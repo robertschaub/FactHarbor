@@ -121,6 +121,7 @@ If the user assigns you a role (Lead Architect, Lead Developer, Senior Developer
 
 - **Stay focused.** Do the task you were given. Do not wander into adjacent improvements unless asked.
 - **Plan before non-trivial changes.** For multi-file changes or unfamiliar code: explore the relevant code, draft an approach, then implement. Skip planning only for single-file, obvious changes.
+- **Don't guess — read or ask.** If unsure what code does, read it. Don't assume from function names or training knowledge. If still unsure, ask the human. Check actual project dependencies (`package.json`, `.csproj`) rather than assuming library/framework behavior.
 - **Quality over quantity.** A small, correct change beats a large, sloppy one. Read before you edit. Verify after you change.
 - **Verify your work.** After implementing, run tests, build, or check output. Don't mark work done without verification.
 - **Be cost-aware.** Minimize unnecessary LLM calls, file reads, and token usage. Don't re-read files you already have in context. Don't generate verbose output when concise will do.
