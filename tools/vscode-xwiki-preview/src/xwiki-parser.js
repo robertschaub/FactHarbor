@@ -280,13 +280,15 @@ class XWikiParser {
     return h+'</table>\n';
   }
   splitTableCells(row){
-    const cells=[];let cur='',depth=0,i=0;
+    const cells=[];let cur='',depth=0,linkDepth=0,i=0;
     while(i<row.length&&row[i]!=='|')i++;
     if(i<row.length)i++;
     while(i<row.length){
       if(row[i]==='('&&row.substring(i,i+3)==='((('){depth++;cur+='(((';i+=3;continue}
       if(row[i]===')'&&row.substring(i,i+3)===')))'){depth--;if(depth<0)depth=0;cur+=')))';i+=3;continue}
-      if(row[i]==='|'&&depth===0){cells.push(cur);cur='';i++;continue}
+      if(row[i]==='['&&row[i+1]==='['){linkDepth++;cur+='[[';i+=2;continue}
+      if(row[i]===']'&&row[i+1]===']'){linkDepth--;if(linkDepth<0)linkDepth=0;cur+=']]';i+=2;continue}
+      if(row[i]==='|'&&depth===0&&linkDepth===0){cells.push(cur);cur='';i++;continue}
       cur+=row[i];i++;
     }
     if(cur.trim())cells.push(cur);
