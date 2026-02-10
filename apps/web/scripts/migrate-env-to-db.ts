@@ -153,7 +153,6 @@ function readPipelineConfigFromEnv(): PipelineConfig {
   if (process.env.FH_DEFAULT_PIPELINE_VARIANT) {
     config.defaultPipelineVariant = process.env.FH_DEFAULT_PIPELINE_VARIANT as
       | "orchestrated"
-      | "monolithic_canonical"
       | "monolithic_dynamic";
   }
 

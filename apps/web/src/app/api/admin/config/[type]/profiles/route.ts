@@ -49,7 +49,7 @@ export async function GET(req: Request, context: RouteParams) {
     // Always include default profiles
     const defaultProfiles =
       type === "prompt"
-        ? ["orchestrated", "monolithic-canonical", "monolithic-dynamic", "source-reliability"]
+        ? ["orchestrated", "monolithic-dynamic", "source-reliability"]
         : ["default"];
 
     // Merge: default profiles first, then any from DB not already in defaults

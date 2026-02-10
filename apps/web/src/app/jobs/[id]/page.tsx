@@ -333,7 +333,7 @@ export default function JobPage() {
     : (result?.meta?.pipelineVariant || requestedPipelineVariant);
   const pipelineVariant = executedPipelineVariant;
 
-  // v2.8.2: For dynamic pipeline, use citations array; for canonical pipelines, use sources array
+  // v2.8.2: For dynamic pipeline, use citations array; for orchestrated, use sources array
   // Dynamic pipeline stores fetched sources as citations with different structure
   const sources = pipelineVariant === "monolithic_dynamic"
     ? (result?.citations || []).map((c: any) => ({
@@ -505,11 +505,11 @@ export default function JobPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span><b>ID:</b> <code>{job.jobId}</code></span>
             <Badge
-              bg={pipelineVariant === "monolithic_dynamic" ? "#fce4ec" : pipelineVariant === "monolithic_canonical" ? "#fff3e0" : "#e3f2fd"}
-              color={pipelineVariant === "monolithic_dynamic" ? "#c2185b" : pipelineVariant === "monolithic_canonical" ? "#e65100" : "#1565c0"}
+              bg={pipelineVariant === "monolithic_dynamic" ? "#fce4ec" : "#e3f2fd"}
+              color={pipelineVariant === "monolithic_dynamic" ? "#c2185b" : "#1565c0"}
               title={`Pipeline: ${pipelineVariant || "orchestrated"}`}
             >
-              {pipelineVariant === "monolithic_dynamic" ? "⚗️ Dynamic" : pipelineVariant === "monolithic_canonical" ? "🔬 Canonical" : "🎯 Orchestrated"}
+              {pipelineVariant === "monolithic_dynamic" ? "⚗️ Dynamic" : "🎯 Orchestrated"}
             </Badge>
           </div>
           <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>

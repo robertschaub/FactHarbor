@@ -84,7 +84,7 @@ export interface AnalysisMetrics {
   // Identification
   jobId: string;
   schemaVersion: string;
-  pipelineVariant: 'orchestrated' | 'monolithic-canonical' | 'monolithic-dynamic';
+  pipelineVariant: 'orchestrated' | 'monolithic-dynamic';
   timestamp: Date;
   
   // Performance

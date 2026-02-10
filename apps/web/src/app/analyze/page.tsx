@@ -164,7 +164,7 @@ export default function AnalyzePage() {
         {/* Pipeline selection cards */}
         <div className={styles.pipelineInfo} style={{ marginBottom: 16 }}>
           <label className={styles.variantLabel} style={{ display: "block", marginBottom: 8 }}>Pipeline:</label>
-          <div className={styles.pipelineInfoGrid} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+          <div className={styles.pipelineInfoGrid} style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
             <div
               className={`${styles.pipelineInfoCard} ${pipelineVariant === "orchestrated" ? styles.pipelineInfoCardSelected : ""}`}
               onClick={() => setPipelineVariant("orchestrated")}
@@ -178,21 +178,6 @@ export default function AnalyzePage() {
                 <span title="Quality">⭐⭐⭐⭐⭐</span>
                 <span title="Speed">2-5 min</span>
                 <span title="Cost">$0.50-$2</span>
-              </div>
-            </div>
-            <div
-              className={`${styles.pipelineInfoCard} ${pipelineVariant === "monolithic_canonical" ? styles.pipelineInfoCardSelected : ""}`}
-              onClick={() => setPipelineVariant("monolithic_canonical")}
-            >
-              <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
-                <span>🔬</span>
-                <strong>Canonical</strong>
-                <span className={styles.pipelineInfoBadgeBeta} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#ffc107", color: "#333", borderRadius: 3 }}>Beta</span>
-              </div>
-              <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
-                <span title="Quality">⭐⭐⭐⭐</span>
-                <span title="Speed">30-90s</span>
-                <span title="Cost">$0.15-$0.60</span>
               </div>
             </div>
             <div

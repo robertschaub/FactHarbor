@@ -15,7 +15,6 @@ export const runtime = "nodejs";
 
 const VALID_PROFILES = [
   "orchestrated",
-  "monolithic-canonical",
   "monolithic-dynamic",
   "source-reliability",
   "text-analysis-input",

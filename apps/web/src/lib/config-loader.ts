@@ -383,7 +383,7 @@ export interface ResolvedPromptConfig {
  * Load prompt config with caching and lazy fallback seeding.
  * If no DB config exists, seeds from file automatically.
  *
- * @param profile - Pipeline name (orchestrated, monolithic-canonical, etc.)
+ * @param profile - Pipeline name (orchestrated, monolithic-dynamic, etc.)
  * @param jobId - Optional job ID for usage tracking
  */
 export async function loadPromptConfig(

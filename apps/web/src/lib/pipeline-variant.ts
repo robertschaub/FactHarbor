@@ -1,10 +1,9 @@
-export type PipelineVariant = "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
+export type PipelineVariant = "orchestrated" | "monolithic_dynamic";
 
 export const PIPELINE_STORAGE_KEY = "fh_default_pipeline";
 
 const VALID: ReadonlySet<string> = new Set([
   "orchestrated",
-  "monolithic_canonical",
   "monolithic_dynamic",
 ]);
 

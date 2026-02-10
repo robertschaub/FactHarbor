@@ -294,9 +294,6 @@ export const PipelineConfigSchema = z.object({
     .describe("Max total queries issued during gap research (separate from main research budget)"),
 
   // === Pipeline Runtime Timeouts ===
-  monolithicCanonicalTimeoutMs: z.number().int().min(60000).max(600000).optional().describe(
-    "Max runtime for monolithic canonical pipeline (ms)"
-  ),
   monolithicDynamicTimeoutMs: z.number().int().min(60000).max(600000).optional().describe(
     "Max runtime for monolithic dynamic pipeline (ms)"
   ),
@@ -323,7 +320,7 @@ export const PipelineConfigSchema = z.object({
     .describe("Warn if opinion-based keyFactors exceed this percentage (default: 70)"),
 
   // === Pipeline Selection ===
-  defaultPipelineVariant: z.enum(["orchestrated", "monolithic_canonical", "monolithic_dynamic"])
+  defaultPipelineVariant: z.enum(["orchestrated", "monolithic_dynamic"])
     .optional()
     .describe("Default pipeline variant for new jobs"),
 }).transform((data) => {
@@ -364,9 +361,6 @@ export const PipelineConfigSchema = z.object({
   }
   if (data.extractEvidenceLlmTimeoutMs === undefined) {
     data.extractEvidenceLlmTimeoutMs = 300000;
-  }
-  if (data.monolithicCanonicalTimeoutMs === undefined) {
-    data.monolithicCanonicalTimeoutMs = 180000;
   }
   if (data.monolithicDynamicTimeoutMs === undefined) {
     data.monolithicDynamicTimeoutMs = 150000;
@@ -540,7 +534,6 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   understandMaxChars: 12000,
   understandLlmTimeoutMs: 600000,
   extractEvidenceLlmTimeoutMs: 300000,
-  monolithicCanonicalTimeoutMs: 180000,
   monolithicDynamicTimeoutMs: 150000,
   monolithicMaxEvidenceBeforeStop: 8,
   thesisRelevanceValidationEnabled: true,
@@ -1031,7 +1024,6 @@ const PromptFrontmatterSchema = z.object({
   version: z.string().regex(/^\d+\.\d+(\.\d+)?(-[\w]+)?$/),
   pipeline: z.enum([
     "orchestrated",
-    "monolithic-canonical",
     "monolithic-dynamic",
     "source-reliability",
     "text-analysis",  // LLM text analysis prompts (input, evidence, context, verdict)
@@ -1135,7 +1127,7 @@ export function validatePromptContent(content: string): ValidationResult {
     // Validate pipeline value if we got it
     const pipeline = frontmatter.pipeline;
     if (pipeline && typeof pipeline === "string") {
-      const validPipelines = ["orchestrated", "monolithic-canonical", "monolithic-dynamic", "source-reliability", "text-analysis"];
+      const validPipelines = ["orchestrated", "monolithic-dynamic", "source-reliability", "text-analysis"];
       if (!validPipelines.includes(pipeline)) {
         errors.push(`Invalid pipeline: ${pipeline}. Valid: ${validPipelines.join(", ")}`);
       }

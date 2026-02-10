@@ -27,14 +27,12 @@ const activePromptFiles = new Map<Pipeline, string>();
 /** Valid pipeline identifiers */
 export type Pipeline =
   | "orchestrated"
-  | "monolithic-canonical"
   | "monolithic-dynamic"
   | "source-reliability"
   | "text-analysis";  // LLM text analysis prompts
 
 const VALID_PIPELINES: Pipeline[] = [
   "orchestrated",
-  "monolithic-canonical",
   "monolithic-dynamic",
   "source-reliability",
   "text-analysis",

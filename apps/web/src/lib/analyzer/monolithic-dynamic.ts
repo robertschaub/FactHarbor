@@ -2,8 +2,8 @@
  * Monolithic Dynamic Pipeline (PR 4)
  *
  * Experimental single-context analysis that produces flexible/dynamic output.
- * Unlike the canonical pipeline, this allows the LLM more freedom in structuring
- * the analysis while maintaining minimum safety contracts.
+ * This allows the LLM more freedom in structuring the analysis while
+ * maintaining minimum safety contracts.
  *
  * Key features:
  * - Flexible output structure (not bound to canonical schema)

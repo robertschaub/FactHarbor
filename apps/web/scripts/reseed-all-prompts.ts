@@ -36,7 +36,6 @@ import {
 const ALL_PROMPT_PROFILES = [
   // Main pipelines
   "orchestrated",
-  "monolithic-canonical",
   "monolithic-dynamic",
   "source-reliability",
   // Text-analysis LLM prompts

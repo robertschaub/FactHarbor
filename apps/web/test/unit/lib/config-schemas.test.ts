@@ -166,8 +166,8 @@ describe("PipelineConfigSchema", () => {
 
   it("validates defaultPipelineVariant enum", () => {
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "orchestrated" }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_canonical" }).success).toBe(true);
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_dynamic" }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_canonical" }).success).toBe(false);
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "invalid" }).success).toBe(false);
   });
 

@@ -79,7 +79,7 @@ tests:
       - text-analysis-input
     vars:
       inputText: "The Earth is approximately 4.5 billion years old"
-      pipeline: "monolithic-canonical"
+      pipeline: "orchestrated"
       promptHash: "test-hash-1"
     assert:
       - type: is-json
@@ -112,7 +112,7 @@ tests:
       - text-analysis-input
     vars:
       inputText: "Electric vehicles are more efficient than hydrogen fuel cell cars"
-      pipeline: "monolithic-canonical"
+      pipeline: "orchestrated"
       promptHash: "test-hash-2"
     assert:
       - type: is-json
@@ -135,7 +135,7 @@ tests:
       - text-analysis-input
     vars:
       inputText: "Biden won the 2020 election; inflation reached 40-year highs in 2022"
-      pipeline: "monolithic-canonical"
+      pipeline: "orchestrated"
       promptHash: "test-hash-3"
     assert:
       - type: is-json
@@ -158,7 +158,7 @@ tests:
       - text-analysis-input
     vars:
       inputText: "The CEO resigned and the stock price dropped 15%"
-      pipeline: "monolithic-canonical"
+      pipeline: "orchestrated"
       promptHash: "test-hash-4"
     assert:
       - type: is-json
@@ -181,7 +181,7 @@ tests:
       - text-analysis-input
     vars:
       inputText: "Cats and dogs are both mammals that make popular pets"
-      pipeline: "monolithic-canonical"
+      pipeline: "orchestrated"
       promptHash: "test-hash-5"
     assert:
       - type: is-json
@@ -202,7 +202,7 @@ tests:
       - text-analysis-input
     vars:
       inputText: "Tesla is the best electric vehicle company in the world"
-      pipeline: "monolithic-canonical"
+      pipeline: "orchestrated"
       promptHash: "test-hash-6"
     assert:
       - type: is-json
@@ -220,7 +220,7 @@ tests:
       - text-analysis-input
     vars:
       inputText: "AI will replace 50% of jobs by 2035"
-      pipeline: "monolithic-canonical"
+      pipeline: "orchestrated"
       promptHash: "test-hash-7"
     assert:
       - type: is-json
@@ -238,7 +238,7 @@ tests:
       - text-analysis-input
     vars:
       inputText: "The government's new healthcare policy will reduce costs for middle-class families while improving coverage for pre-existing conditions, but critics argue it will increase the national debt and reduce doctor choice"
-      pipeline: "monolithic-canonical"
+      pipeline: "orchestrated"
       promptHash: "test-hash-8"
     assert:
       - type: is-json

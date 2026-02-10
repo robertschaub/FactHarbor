@@ -1260,7 +1260,6 @@ import { existsSync } from "fs";
 
 export const VALID_PROMPT_PROFILES = [
   "orchestrated",
-  "monolithic-canonical",
   "monolithic-dynamic",
   "source-reliability",
   // LLM text analysis prompts (4 analysis points)

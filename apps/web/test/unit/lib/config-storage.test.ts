@@ -564,7 +564,7 @@ describe("Profile Management", () => {
     const now = new Date().toISOString();
 
     // Insert configs for multiple profiles
-    const profiles = ["orchestrated", "monolithic-canonical", "monolithic-dynamic", "source-reliability"];
+    const profiles = ["orchestrated", "monolithic-dynamic", "source-reliability"];
 
     for (let i = 0; i < profiles.length; i++) {
       await db.run(

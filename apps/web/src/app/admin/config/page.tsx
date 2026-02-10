@@ -203,7 +203,7 @@ interface PipelineConfig {
   // Retrieval
   pdfParseTimeoutMs?: number;
   // Pipeline selection
-  defaultPipelineVariant?: "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
+  defaultPipelineVariant?: "orchestrated" | "monolithic_dynamic";
   recencyCueTerms?: string[];
 }
 
@@ -1522,7 +1522,6 @@ function PipelineConfigForm({
           onChange={(e) => updateField("defaultPipelineVariant", e.target.value as PipelineConfig["defaultPipelineVariant"])}
         >
           <option value="orchestrated">Orchestrated (highest quality)</option>
-          <option value="monolithic_canonical">Monolithic Canonical (faster)</option>
           <option value="monolithic_dynamic">Monolithic Dynamic (experimental)</option>
         </select>
         <div className={styles.formHelp}>User can override per-job in UI</div>
@@ -2043,7 +2042,7 @@ export default function ConfigAdminPage() {
   // Fetch profile options from backend
   const [profileOptions, setProfileOptions] = useState<string[]>(
     selectedType === "prompt"
-      ? ["orchestrated", "monolithic-canonical", "monolithic-dynamic", "source-reliability"]
+      ? ["orchestrated", "monolithic-dynamic", "source-reliability"]
       : ["default"]
   );
   const [profileNotFound, setProfileNotFound] = useState(false);
@@ -2076,7 +2075,7 @@ export default function ConfigAdminPage() {
       .catch(() => {
         // Fallback to defaults on error
         const defaults = selectedType === "prompt"
-          ? ["orchestrated", "monolithic-canonical", "monolithic-dynamic", "source-reliability"]
+          ? ["orchestrated", "monolithic-dynamic", "source-reliability"]
           : ["default"];
         // Still inject urlProfile if present
         if (urlProfile && !defaults.includes(urlProfile)) {

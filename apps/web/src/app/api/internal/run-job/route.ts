@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { runFactHarborAnalysis } from "@/lib/analyzer";
-import { runMonolithicCanonical } from "@/lib/analyzer/monolithic-canonical";
 import { runMonolithicDynamic } from "@/lib/analyzer/monolithic-dynamic";
 import { debugLog } from "@/lib/analyzer/debug";
 import { classifyError } from "@/lib/error-classification";
@@ -13,7 +12,7 @@ import {
 } from "@/lib/provider-health";
 import { fireWebhook } from "@/lib/provider-webhook";
 
-type PipelineVariant = "orchestrated" | "monolithic_canonical" | "monolithic_dynamic";
+type PipelineVariant = "orchestrated" | "monolithic_dynamic";
 
 export const runtime = "nodejs";
 
@@ -150,27 +149,6 @@ async function runJobBackground(jobId: string) {
         inputValue,
         onEvent: async (m, p) => emit("info", m, p),
       });
-    } else if (pipelineVariant === "monolithic_canonical") {
-      // Monolithic tool loop with canonical schema output
-      try {
-        result = await runMonolithicCanonical({
-          jobId,
-          inputType,
-          inputValue,
-          onEvent: async (m, p) => emit("info", m, p),
-        });
-      } catch (monolithicError: any) {
-        // Fallback to orchestrated on failure
-        await emit("warn", `Monolithic canonical failed, falling back to orchestrated: ${monolithicError?.message}`, 10);
-        usedFallback = true;
-        fallbackReason = monolithicError?.message || "Unknown error";
-        result = await runFactHarborAnalysis({
-          jobId,
-          inputType,
-          inputValue,
-          onEvent: async (m, p) => emit("info", m, p),
-        });
-      }
     } else if (pipelineVariant === "monolithic_dynamic") {
       // Monolithic tool loop with dynamic schema output
       try {

@@ -312,7 +312,7 @@ export default function AdminPage() {
           <Link href="/analyze">Analyze</Link>.
         </p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
           <div
             onClick={() => selectPipeline("orchestrated")}
             role="button"
@@ -341,35 +341,6 @@ export default function AdminPage() {
               <span title="Quality">⭐⭐⭐⭐⭐</span>
               <span title="Speed">2-5 min</span>
               <span title="Cost">$0.50-$2</span>
-            </div>
-          </div>
-
-          <div
-            onClick={() => selectPipeline("monolithic_canonical")}
-            role="button"
-            tabIndex={0}
-            style={{
-              cursor: "pointer",
-              border: defaultPipeline === "monolithic_canonical" ? "2px solid #ffc107" : "1px solid #ddd",
-              borderRadius: 8,
-              padding: 14,
-              background: defaultPipeline === "monolithic_canonical" ? "#fffaf0" : "#fff",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span>🔬</span>
-              <strong>Monolithic Canonical</strong>
-              <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: defaultPipeline === "monolithic_canonical" ? "#ffc107" : "#666" }}>
-                {defaultPipeline === "monolithic_canonical" ? "Selected" : "Beta"}
-              </span>
-            </div>
-            <div style={{ fontSize: 13, color: "#555" }}>
-              Faster single-context analysis with canonical output. Good balance of speed and quality.
-            </div>
-            <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666" }}>
-              <span title="Quality">⭐⭐⭐⭐</span>
-              <span title="Speed">30-90s</span>
-              <span title="Cost">$0.15-$0.60</span>
             </div>
           </div>
 
