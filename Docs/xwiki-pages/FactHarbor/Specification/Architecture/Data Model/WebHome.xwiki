@@ -2,6 +2,12 @@
 
 FactHarbor's data model centres on the **analysis result** — a structured representation of how claims are decomposed, researched, and evaluated. This page defines the complete entity landscape derived from the source code, the 7-point verdict scale, and the job lifecycle.
 
+== Entity Overview ==
+
+The following diagram shows all major entity groups and their primary relationships at a glance. For detailed views (result fields, target database, runtime entities, UI visibility), see [[Entity Views>>FactHarbor.Specification.Diagrams.Entity Views.WebHome]].
+
+{{include reference="FactHarbor.Specification.Diagrams.Entity Views.WebHome" section="HOverviewERD"/}}
+
 == Analysis Entity Model ==
 
 The core analysis pipeline produces a hierarchy of entities: the input is decomposed into contexts, factors, and claims (Step 1), evidence is gathered from web sources (Step 2), and verdicts are generated per-claim and aggregated per-context into an overall article analysis (Steps 3-5).

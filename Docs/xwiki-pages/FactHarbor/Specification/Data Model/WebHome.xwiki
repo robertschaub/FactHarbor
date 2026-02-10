@@ -475,6 +475,10 @@ UCM Config V2: prompt_template = "Analyze the following claim with focus on sour
 
 == 4. Target Database Schema ==
 
+The following ERD visualises all target database tables — existing (green), target normalisation from JSON (blue), and planned future tables (red). For the full multi-view entity reference, see [[Entity Views>>FactHarbor.Specification.Diagrams.Entity Views.WebHome]].
+
+{{include reference="FactHarbor.Specification.Diagrams.Entity Views.WebHome" section="HTargetDatabaseEntities"/}}
+
 === 4.1 Primary Storage (PostgreSQL) ===
 
 **ClaimVerdicts Table**:

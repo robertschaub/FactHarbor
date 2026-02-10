@@ -12,6 +12,7 @@ Diagrams are now **embedded alongside their descriptions** in the Architecture d
 | High-Level Architecture | [[System Design>>FactHarbor.Specification.Architecture.System Design.WebHome]] | Current
 | AKEL Twin-Path Architecture | [[AKEL Pipeline>>FactHarbor.Specification.Architecture.AKEL Pipeline.WebHome]] | Current
 | Core Data Model ERD | [[Data Model>>FactHarbor.Specification.Architecture.Data Model.WebHome]] | Current
+| **Entity Views (5 views)** | [[Entity Views>>FactHarbor.Specification.Diagrams.Entity Views.WebHome]] + [[Data Model>>FactHarbor.Specification.Architecture.Data Model.WebHome]] | Current
 | Storage Architecture | [[Storage and Configuration>>FactHarbor.Specification.Architecture.Storage and Configuration.WebHome]] | Current
 | LLM Abstraction | [[External Dependencies>>FactHarbor.Specification.Architecture.External Dependencies.WebHome]] | Current
 
@@ -51,6 +52,7 @@ The individual diagram pages below are preserved for backward compatibility. Eac
 * [[High-Level Architecture>>FactHarbor.Specification.Diagrams.High-Level Architecture.WebHome]]
 * [[AKEL Architecture>>FactHarbor.Specification.Diagrams.AKEL Architecture.WebHome]]
 * [[Core Data Model ERD>>FactHarbor.Specification.Diagrams.Core Data Model ERD.WebHome]]
+* [[**Entity Views** (Overview, Result, Target DB, Runtime, UI)>>FactHarbor.Specification.Diagrams.Entity Views.WebHome]]
 * [[Storage Architecture>>FactHarbor.Specification.Diagrams.Storage Architecture.WebHome]]
 * [[LLM Abstraction Architecture>>FactHarbor.Specification.Diagrams.LLM Abstraction Architecture.WebHome]]
 
