@@ -19,7 +19,7 @@ public sealed class JobEntity
     public string? InputPreview { get; set; }
 
     /// <summary>
-    /// Pipeline variant: "orchestrated" (default), "monolithic_canonical", or "monolithic_dynamic"
+    /// Pipeline variant: "orchestrated" (default) or "monolithic_dynamic"
     /// </summary>
     public string PipelineVariant { get; set; } = "orchestrated";
 

@@ -7,7 +7,7 @@ namespace FactHarbor.Api.Controllers;
 public sealed record CreateJobRequest(
     string inputType,
     string inputValue,
-    string? pipelineVariant = "orchestrated"  // "orchestrated", "monolithic_canonical", or "monolithic_dynamic"
+    string? pipelineVariant = "orchestrated"  // "orchestrated" or "monolithic_dynamic"
 );
 public sealed record CreateJobResponse(string jobId, string status);
 
