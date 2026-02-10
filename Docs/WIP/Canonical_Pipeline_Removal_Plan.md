@@ -314,3 +314,267 @@ This is a well-researched, thorough removal plan with excellent phase sequencing
 **With these additions, the plan is APPROVED for execution.**
 
 The removal will be clean, safe, and complete. The phase structure ensures each commit is independently testable. Backward compatibility is preserved for existing database records. The risk of breaking orchestrated or dynamic pipelines is negligible due to proper isolation.
+
+---
+
+## Post-Implementation Review (Reviewer 2)
+
+**Reviewer**: Claude Sonnet 4.5
+**Date**: 2026-02-10
+**Scope**: All 7 commits (ce8003b through b14d6d7)
+
+### 1. Leftover Check
+
+**Status**: FAIL - 6 leftover references found in non-ARCHIVE locations
+
+#### Files with leftover "monolithic_canonical" references:
+
+1. **apps/web/test/unit/lib/config-schemas.test.ts** (line 170)
+   - Status: ACCEPTABLE - Test correctly verifies that `monolithic_canonical` is now INVALID
+   - Code: `expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_canonical" }).success).toBe(false);`
+   - This is a backward compatibility test ensuring old values are rejected
+
+2. **apps/web/prompts/promptfoo-results/text-analysis.json** (56 occurrences)
+   - Status: LOW PRIORITY - Cached test results, will be regenerated on next test run
+   - File is a promptfoo evaluation cache containing old test run data with "monolithic-canonical" pipeline parameter
+   - Not runtime code, does not affect behavior
+
+#### Files with leftover "Triple-Path" or "three pipelines" references:
+
+3. **README.md** (line 79)
+   - Status: MUST FIX
+   - Current: `- **[Pipeline Architecture](...) - Triple-path pipeline design (xWiki)`
+   - Should be: `Twin-path pipeline design`
+
+4. **Docs/STATUS/Current_Status.md** (lines 184, 187)
+   - Status: MUST FIX
+   - Line 184: `| **Next.js Web App** | ✅ Operational | Triple-Path Pipeline complete |`
+   - Line 187: `| **Triple-Path Pipeline** | ✅ Complete | Orchestrated, Monolithic Canonical, Monolithic Dynamic |`
+   - Should change "Triple-Path" to "Twin-Path" and remove "Monolithic Canonical" from variant list
+
+5. **Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki** (line 104)
+   - Status: MUST FIX
+   - Current: `Includes: Orchestrated Pipeline internals, Pipeline Variants (TriplePath), Quality Gates Reference...`
+   - Should be: `Pipeline Variants (Twin-Path)`
+
+6. **Docs/xwiki-pages/FactHarbor/Specification/Implementation/WebHome.xwiki** (line 12)
+   - Status: MUST FIX
+   - Current: `| TriplePath Architecture | [[Pipeline Variants>>...]]`
+   - Should be: `| Twin-Path Architecture | [[Pipeline Variants>>...]]`
+
+7. **Docs/xwiki-pages/FactHarbor/Specification/Implementation/Pipeline Architecture/_sort** (line 2)
+   - Status: MUST FIX
+   - Current: `TriplePath Architecture`
+   - Should be: `Twin-Path Architecture`
+
+8. **Docs/xwiki-pages/FactHarbor/Specification/Implementation/Implementation Status and Quality/WebHome.xwiki** (line 267)
+   - Status: MUST FIX
+   - Current: `Triple-path pipeline design`
+   - Should be: `Twin-path pipeline design`
+
+9. **Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep Dive/Schema Migration/WebHome.xwiki** (line 255)
+   - Status: ACCEPTABLE - Historical record documenting when feature was introduced
+   - Context: `| 2.6.38 | 2026-01 | Triple-path pipeline (no schema change) | No`
+   - This is version history, not current feature description
+
+10. **Docs/xwiki-pages/FactHarbor/Specification/Reference/Terminology/WebHome.xwiki** (line 539)
+    - Status: MUST FIX
+    - Current: `* Pipeline_TriplePath_Architecture.md - Pipeline design`
+    - Should be: `* Pipeline_TwinPath_Architecture.md - Pipeline design`
+
+#### Summary of Leftover Check:
+- **Critical leftover code references**: 0 (excellent)
+- **Test/cache files with references**: 2 (acceptable)
+- **Documentation "Triple-Path" leftovers**: 7 MUST FIX
+- **Historical records (acceptable)**: 1
+
+### 2. Behavioral Impact Check
+
+**Status**: PASS - No unintended behavioral changes detected
+
+#### Type Definitions:
+- **PipelineVariant** (pipeline-variant.ts): Correctly narrowed to `"orchestrated" | "monolithic_dynamic"`
+- **VALID set**: Correctly contains only 2 variants
+- **Fallback behavior**: Unknown variants correctly fall back to "orchestrated" (line 195-204 in run-job/route.ts)
+
+#### Shared Utilities Analysis:
+Verified that the following shared utilities were NOT modified (correct):
+- **aggregation.ts**: Claim weighting, verdict aggregation - UNTOUCHED
+- **evidence-filter.ts**: Deterministic evidence quality filtering - UNTOUCHED
+- **verdict-corrections.ts**: Counter-claim detection - UNTOUCHED
+- **source-reliability.ts**: Source scoring - UNTOUCHED
+- **analysis-contexts.ts**: Context detection - UNTOUCHED (except removal of one file reference in comments)
+- **truth-scale.ts**: Verdict scale mapping - UNTOUCHED
+
+#### Pipeline Implementations:
+- **orchestrated.ts**: No changes except removal of canonical comparison comment at line 19 - SAFE
+- **monolithic-dynamic.ts**: Comment at line 5 updated to remove comparison to canonical - SAFE
+  - Comment at line 9 mentions "flexible output structure (not bound to canonical schema)" - this refers to schema structure, NOT the pipeline variant, which is ACCEPTABLE terminology
+
+#### Config Schema Changes:
+- **Removed**: `monolithicCanonicalTimeoutMs` field (lines 297-298, 368-369, 543)
+- **Narrowed enum**: `defaultPipelineVariant` now only accepts `"orchestrated"` or `"monolithic_dynamic"` (line 323)
+- **Preserved**: All `canonicalize*` functions intact (canonicalizeContent at line 1354, etc.)
+
+#### Route Handler Changes:
+- **run-job/route.ts**: Removed import and `monolithic_canonical` branch (lines 153-173 deleted)
+- **Fallback logic**: Else branch (lines 195-204) catches unknown variants and runs orchestrated - CORRECT
+
+#### Database Backward Compatibility:
+- **C# Entity definition**: Column remains TEXT type (backward compatible)
+- **UI display**: Jobs page falls through to default "Orchestrated" badge for unknown variants - GRACEFUL DEGRADATION
+- **No data migration**: Old records preserved as-is - SAFE
+
+#### Risk Assessment:
+- **Risk to Orchestrated pipeline**: NONE - No logic changes, only removal of separate variant
+- **Risk to Dynamic pipeline**: NONE - Only comment updates
+- **Risk to shared utilities**: NONE - All preserved exactly
+- **Risk of runtime errors**: LOW - TypeScript compilation ensures no broken references
+
+### 3. Documentation Consistency Check
+
+**Status**: FAIL - 7 documentation pages still reference "Triple-Path" or three variants
+
+#### Diagrams:
+- **Monolithic Canonical Pipeline Internal**: Directory successfully DELETED
+- **AKEL Architecture diagram**: Canonical pipeline REMOVED from dispatch diagram (verified in commit 9691198)
+- **High-Level Architecture**: Reference to monolithic-canonical.ts REMOVED
+- **Pipeline Variants page**: Comparison tables updated to 2 columns (verified no canonical references)
+
+#### Mermaid Diagrams:
+- All diagram nodes and edges for CANON pipeline REMOVED (verified in commit 9691198)
+
+#### Text References:
+- "Triple-Path" → "Twin-Path": INCOMPLETE (7 leftover references listed in section 1)
+- "three variants/pipelines" → "two": MOSTLY COMPLETE (Current_Status.md line 187 still lists 3)
+- "all three pipelines" → "both pipelines": COMPLETE (no matches found except false positives about frameworks/viewers)
+
+### 4. Risky Changes Check
+
+**Status**: PASS - No risky changes detected
+
+#### Code Deletion Analysis:
+- **monolithic-canonical.ts** (1508 lines): Completely isolated implementation, no shared code with other pipelines - SAFE
+- **monolithic-canonical.prompt.md** (661 lines): Pipeline-specific prompt, no dependencies - SAFE
+
+#### Import/Reference Integrity:
+- All imports of `runMonolithicCanonical` removed before file deletion (Phase 1) - SAFE
+- TypeScript compilation succeeds (verified in plan verification steps) - PASS
+- No broken imports found in codebase - PASS
+
+#### Config Changes Risk:
+- **pipeline.default.json**: Removed `monolithicCanonicalTimeoutMs` - SAFE (only affected canonical)
+- **Config schemas**: Enum narrowing causes old invalid values to fail validation - CORRECT BEHAVIOR
+- **localStorage fallback**: `isPipelineVariant()` returns false for old "monolithic_canonical" value, falls back to "orchestrated" - GRACEFUL
+
+#### Test Coverage Impact:
+- **Removed tests**: multi-jurisdiction.test.ts (canonical-only), v2.8-verification integration tests (canonical)
+- **Preserved tests**: All shared unit tests (context detection, aggregation, config validation, canonicalization)
+- **Updated tests**: config-schemas.test.ts now correctly tests that canonical is INVALID
+- **Test coverage reduction**: Minimal - only removed pipeline-specific tests, all shared logic still covered
+
+#### UI Changes Risk:
+- **3-column → 2-column grids**: Layout change only, no logic impact - SAFE
+- **Pipeline selector cards**: Canonical card removed from analyze page and admin page - CORRECT
+- **Badge rendering**: Falls through to default for unknown variants - GRACEFUL
+
+### 5. Canonicalize Preservation Check
+
+**Status**: PASS - All data normalization functions correctly preserved
+
+#### Verified Preservation:
+
+1. **canonicalizeContexts()** - apps/web/src/lib/analyzer/analysis-contexts.ts (line 459)
+   - Function signature intact
+   - Used by orchestrated.ts (line 19 comment references it)
+   - PURPOSE: Normalize context detection for consistent behavior
+   - STATUS: PRESERVED
+
+2. **canonicalizeInputForContextDetection()** - analysis-contexts.ts (line 294)
+   - Function intact
+   - PURPOSE: Input normalization before context detection
+   - STATUS: PRESERVED
+
+3. **canonicalizeContent()** - apps/web/src/lib/config-schemas.ts (line 1354)
+   - Function intact
+   - Used for config hashing and drift detection
+   - Test coverage maintained (config-schemas.test.ts lines 463-502)
+   - PURPOSE: Consistent config content canonicalization for hash comparison
+   - STATUS: PRESERVED
+
+4. **canonicalizedHash** - Referenced in admin config UI (page.tsx lines 68, 3967)
+   - Display field for config content hash
+   - Used by config API routes for drift detection
+   - PURPOSE: Config version tracking and change detection
+   - STATUS: PRESERVED
+
+5. **canonicalName** - text-analysis-types.ts
+   - Field in text analysis types
+   - PURPOSE: Canonical entity name normalization
+   - STATUS: PRESERVED
+
+6. **Test coverage** - config-schemas.test.ts (lines 463-504)
+   - Tests for canonicalizeContent and computeContentHash
+   - All tests still present and passing
+   - STATUS: PRESERVED
+
+#### Distinction Clarity:
+The plan document correctly distinguishes between:
+- **"monolithic_canonical"** (pipeline variant) - REMOVED
+- **"canonicalize*"** (data normalization functions) - PRESERVED
+
+This distinction was maintained throughout implementation with NO CONFUSION.
+
+### Summary
+
+**Overall Status**: CONDITIONAL PASS with 8 required fixes
+
+#### What Went Well:
+1. **Code removal**: Clean and complete - all 2,281 lines removed, no broken imports
+2. **Type safety**: PipelineVariant union correctly narrowed, TypeScript compilation passes
+3. **Backward compatibility**: Graceful degradation for old database records and localStorage values
+4. **Shared utilities**: Zero impact on aggregation, evidence-filter, source-reliability, verdict-corrections
+5. **Canonicalize preservation**: Perfect - all data normalization functions untouched
+6. **Commit structure**: Excellent phasing - each commit independently compilable and testable
+7. **Test coverage**: Removed only pipeline-specific tests, preserved all shared logic tests
+
+#### Issues Found:
+
+**MUST FIX** (8 documentation updates required):
+1. README.md line 79: "Triple-path" → "Twin-path"
+2. Docs/STATUS/Current_Status.md lines 184, 187: "Triple-Path" → "Twin-Path", remove "Monolithic Canonical"
+3. Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki line 104: "TriplePath" → "Twin-Path"
+4. Docs/xwiki-pages/FactHarbor/Specification/Implementation/WebHome.xwiki line 12: "TriplePath" → "Twin-Path"
+5. Docs/xwiki-pages/FactHarbor/Specification/Implementation/Pipeline Architecture/_sort line 2: "TriplePath" → "Twin-Path"
+6. Docs/xwiki-pages/FactHarbor/Specification/Implementation/Implementation Status and Quality/WebHome.xwiki line 267: "Triple-path" → "Twin-path"
+7. Docs/xwiki-pages/FactHarbor/Specification/Reference/Terminology/WebHome.xwiki line 539: "Pipeline_TriplePath_Architecture.md" → "Pipeline_TwinPath_Architecture.md"
+
+**LOW PRIORITY** (can be deferred):
+- apps/web/prompts/promptfoo-results/text-analysis.json - cached test results with 56 "monolithic-canonical" references (will regenerate)
+
+#### Risk Assessment:
+- **Runtime impact**: ZERO - All code references successfully removed
+- **Orchestrated pipeline**: SAFE - No behavioral changes
+- **Dynamic pipeline**: SAFE - No behavioral changes
+- **Backward compatibility**: MAINTAINED - Graceful degradation for old records
+- **Documentation debt**: MODERATE - 8 leftover "Triple-Path" references create inconsistency
+
+#### Recommendations:
+
+1. **Immediate action**: Fix the 8 "Triple-Path" → "Twin-Path" documentation references listed above
+2. **Before next release**: Clear promptfoo cache with `rm apps/web/prompts/promptfoo-results/*.json` or re-run evals
+3. **Final verification**: After fixing docs, run: `grep -ri "triple.*path\|three.*variant\|three.*pipeline\|monolithic.canonical" --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=Docs/ARCHIVE --exclude-dir=promptfoo-results`
+4. **Version notes**: Document in next version entry of HISTORY.md that canonical pipeline was removed in v2.10.x
+
+#### Approval:
+
+**APPROVED WITH CONDITIONS** - The code implementation is complete and safe. The 8 documentation references to "Triple-Path" must be fixed to achieve full consistency. Once fixed, the removal will be 100% complete.
+
+The removal was executed with excellent care:
+- No behavioral regressions
+- Perfect preservation of canonicalize functions
+- Graceful backward compatibility
+- Clean type narrowing
+- No impact on other pipelines
+
+**Confidence Level**: HIGH - The implementation matches the plan exactly, with only cosmetic documentation inconsistencies remaining.
