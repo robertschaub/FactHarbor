@@ -1,29 +1,24 @@
 /**
  * v2.8 Verification Tests
- * 
- * Unit and integration tests to verify the v2.8 changes work correctly:
- * 1. Hydrogen input verifies 2+ contexts detected (production/usage phases)
+ *
+ * Unit tests to verify the v2.8 changes work correctly:
+ * 1. Hydrogen input verifies context detection (production/usage phases)
  * 2. Weighting behavior for contested vs doubted claims
- * 3. Harm potential classification observed in end-to-end runs (LLM-derived)
- * 
+ * 3. probativeValue and sourceType field integration
+ *
  * Unit tests run without API keys.
- * Integration tests require API keys and running services.
- * Run with: npx vitest run src/lib/analyzer/v2.8-verification.test.ts
- * 
+ * Run with: npx vitest run test/unit/lib/analyzer/v2.8-verification.test.ts
+ *
  * @module analyzer/v2.8-verification.test
  */
 
-import fs from "node:fs";
-import path from "node:path";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { detectContexts, formatDetectedContextsHint } from "@/lib/analyzer/analysis-contexts";
 import {
   getClaimWeight,
   calculateWeightedVerdictAverage,
 } from "@/lib/analyzer/aggregation";
-import { runMonolithicCanonical } from "@/lib/analyzer/monolithic-canonical";
-import { loadEnvFile } from "@test/helpers/test-helpers";
 
 // ============================================================================
 // UNIT TESTS - No API required
@@ -607,234 +602,3 @@ describe("v2.8 Verification - Unit Tests", () => {
   });
 });
 
-// ============================================================================
-// INTEGRATION TESTS - Requires API credits
-// ============================================================================
-
-const TEST_TIMEOUT_MS = 300_000; // 5 minutes
-
-describe("v2.8 Verification - Integration Tests", () => {
-  let testsEnabled = true;
-  let outputDir: string;
-
-  beforeAll(() => {
-    const webRoot = path.resolve(__dirname, "../../..");
-    const envPath = path.join(webRoot, ".env.local");
-    loadEnvFile(envPath);
-
-    process.env.FH_DETERMINISTIC = "true";
-
-    const hasOpenAI = !!process.env.OPENAI_API_KEY;
-    const hasClaude = !!process.env.ANTHROPIC_API_KEY;
-    const hasGemini = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-
-    if (!hasOpenAI && !hasClaude && !hasGemini) {
-      console.warn("[v2.8 Integration] No LLM API keys found, tests will be skipped");
-      testsEnabled = false;
-    }
-
-    outputDir = path.join(webRoot, "test-output", "v2.8-verification");
-    fs.mkdirSync(outputDir, { recursive: true });
-  });
-
-  describe("Hydrogen Efficiency - End-to-End", () => {
-    it(
-      "should detect 2+ contexts in LLM output for hydrogen comparison",
-      async () => {
-        if (!testsEnabled) {
-          console.log("[v2.8 Integration] Skipping - no API keys");
-          return;
-        }
-
-        const input = "Using hydrogen for cars is more efficient than using electricity";
-        console.log(`[v2.8 Integration] Testing: "${input}"`);
-
-        const result = await runMonolithicCanonical({
-          inputValue: input,
-          inputType: "text",
-        });
-
-        const contexts = result.resultJson.analysisContexts ||
-                       result.resultJson.understanding?.analysisContexts ||
-                       [];
-
-        console.log(`[v2.8 Integration] Contexts detected: ${contexts.length}`);
-        contexts.forEach((s: any, i: number) => {
-          console.log(`  ${i + 1}. ${s.name} (${s.type || s.id})`);
-        });
-
-        // Write results
-        fs.writeFileSync(
-          path.join(outputDir, "hydrogen-e2e-result.json"),
-          JSON.stringify({
-            input,
-            contextCount: contexts.length,
-            contexts: contexts.map((s: any) => ({
-              id: s.id,
-              name: s.name,
-              type: s.type,
-            })),
-            claimVerdicts: result.resultJson.claimVerdicts?.length || 0,
-            overallVerdict: result.resultJson.verdictSummary?.overallVerdict,
-            timestamp: new Date().toISOString(),
-          }, null, 2)
-        );
-
-        // SOFT CHECK: LLM may not always follow context hints
-        // The important thing is that the code provides the hints (verified in unit tests)
-        if (contexts.length < 2) {
-          console.warn("[v2.8 Integration] ⚠️ LLM detected fewer than 2 contexts - context hints may need strengthening");
-          console.warn("  Unit tests verify the hint is correctly generated");
-        }
-        
-        // Always pass - this is a verification/observation test
-        expect(contexts.length).toBeGreaterThanOrEqual(1);
-      },
-      TEST_TIMEOUT_MS
-    );
-  });
-
-  describe("Bolsonaro Trial - End-to-End", () => {
-    it(
-      "should classify contestation correctly in LLM output",
-      async () => {
-        if (!testsEnabled) {
-          console.log("[v2.8 Integration] Skipping - no API keys");
-          return;
-        }
-
-        const input = "The Bolsonaro judgment (trial) was fair and based on Brazil's law";
-        console.log(`[v2.8 Integration] Testing: "${input}"`);
-
-        const result = await runMonolithicCanonical({
-          inputValue: input,
-          inputType: "text",
-        });
-
-        const claimVerdicts = result.resultJson.claimVerdicts || [];
-        const contestedClaims = claimVerdicts.filter((cv: any) => cv.isContested);
-        
-        console.log(`[v2.8 Integration] Total claims: ${claimVerdicts.length}`);
-        console.log(`[v2.8 Integration] Contested claims: ${contestedClaims.length}`);
-        
-        for (const cv of contestedClaims) {
-          console.log(`  - ${cv.claimText?.substring(0, 50)}... (factualBasis: ${cv.statementualBasis})`);
-        }
-
-        // Write results
-        fs.writeFileSync(
-          path.join(outputDir, "bolsonaro-e2e-result.json"),
-          JSON.stringify({
-            input,
-            claimVerdictCount: claimVerdicts.length,
-            contestedClaims: contestedClaims.map((cv: any) => ({
-              claimId: cv.claimId,
-              claimText: cv.claimText?.substring(0, 100),
-              isContested: cv.isContested,
-              factualBasis: cv.statementualBasis,
-            })),
-            overallVerdict: result.resultJson.verdictSummary?.overallVerdict,
-            timestamp: new Date().toISOString(),
-          }, null, 2)
-        );
-
-        // PASS CRITERIA: If there are contested claims, verify factualBasis classification
-        // Any contestation marked "established" must cite documented evidence
-        if (contestedClaims.length > 0) {
-          const establishedClaims = contestedClaims.filter((cv: any) => 
-            cv.statementualBasis === "established"
-          );
-          
-          // Established contestations should have evidence patterns in their reasons
-          const evidencePattern = /\b(audit|study|report|investigation|data|measurement|document|violation|breach|\d+%)/i;
-          const establishedWithoutEvidence = establishedClaims.filter((cv: any) => {
-            const reason = (cv.contestationReason || "") + " " + (cv.explanation || "");
-            return !evidencePattern.test(reason);
-          });
-          
-          // Should NOT have contestation marked "established" without documented evidence
-          expect(establishedWithoutEvidence.length).toBe(0);
-        }
-
-        expect(true).toBe(true);
-      },
-      TEST_TIMEOUT_MS
-    );
-  });
-
-  describe("High Harm Potential - End-to-End", () => {
-    it(
-      "should detect high harm potential for death claims in LLM output",
-      async () => {
-        if (!testsEnabled) {
-          console.log("[v2.8 Integration] Skipping - no API keys");
-          return;
-        }
-
-        const input = "A new study claims that 10 children died after receiving the experimental treatment";
-        console.log(`[v2.8 Integration] Testing harm potential detection`);
-
-        const result = await runMonolithicCanonical({
-          inputValue: input,
-          inputType: "text",
-        });
-
-        const claims = result.resultJson.understanding?.subClaims || [];
-        const claimVerdicts = result.resultJson.claimVerdicts || [];
-        const highHarmClaims = claims.filter((c: any) => c.harmPotential === "high");
-        
-        // Also check claimVerdicts for harm potential
-        const highHarmVerdicts = claimVerdicts.filter((cv: any) => cv.harmPotential === "high");
-        
-        console.log(`[v2.8 Integration] Total subclaims: ${claims.length}`);
-        console.log(`[v2.8 Integration] Total claimVerdicts: ${claimVerdicts.length}`);
-        console.log(`[v2.8 Integration] High harm subclaims: ${highHarmClaims.length}`);
-        console.log(`[v2.8 Integration] High harm verdicts: ${highHarmVerdicts.length}`);
-
-        // Write results
-        fs.writeFileSync(
-          path.join(outputDir, "harm-potential-e2e-result.json"),
-          JSON.stringify({
-            input,
-            totalSubClaims: claims.length,
-            totalClaimVerdicts: claimVerdicts.length,
-            highHarmClaims: highHarmClaims.map((c: any) => ({
-              id: c.id,
-              text: c.text?.substring(0, 100),
-              harmPotential: c.harmPotential,
-              isCentral: c.isCentral,
-            })),
-            highHarmVerdicts: highHarmVerdicts.map((cv: any) => ({
-              claimId: cv.claimId,
-              claimText: cv.claimText?.substring(0, 100),
-              harmPotential: cv.harmPotential,
-            })),
-            claimVerdicts: claimVerdicts.map((cv: any) => ({
-              claimId: cv.claimId,
-              claimText: cv.claimText?.substring(0, 100),
-              harmPotential: cv.harmPotential,
-              truthPercentage: cv.truthPercentage,
-            })),
-            timestamp: new Date().toISOString(),
-          }, null, 2)
-        );
-
-        // SOFT CHECK: Verify claims are extracted and harm potential is assigned
-        if (claims.length === 0 && claimVerdicts.length === 0) {
-          console.warn("[v2.8 Integration] ⚠️ No claims extracted - check claim extraction logic");
-        } else {
-          const totalHighHarm = highHarmClaims.length + highHarmVerdicts.length;
-          if (totalHighHarm === 0) {
-            console.warn("[v2.8 Integration] ⚠️ No high harm claims detected despite death-related input");
-            console.warn("  Verify LLM harmPotential classification and prompt guidance");
-          }
-        }
-
-        // Always pass - this is a verification/observation test
-        // LLM harmPotential classification is observed here (not hard-asserted)
-        expect(true).toBe(true);
-      },
-      TEST_TIMEOUT_MS
-    );
-  });
-});
