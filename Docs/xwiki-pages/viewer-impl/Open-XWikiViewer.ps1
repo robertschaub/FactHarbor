@@ -68,10 +68,13 @@ if (-not (Test-Path $viewerPath)) {
 
 $viewerContent = [System.IO.File]::ReadAllBytes($viewerPath)
 
-# Scan FactHarbor wiki directory for auto-loading
+# FactHarbor wiki directory for auto-loading
 $wikiRoot = Join-Path (Split-Path $scriptDir) 'FactHarbor'
-$manifestBytes = $null
-if (Test-Path $wikiRoot) {
+$wikiExists = Test-Path $wikiRoot
+
+# Build manifest dynamically (called on each request to pick up new/changed files)
+function Build-WikiManifest {
+    if (-not $wikiExists) { return $null }
     $allFiles = Get-ChildItem -Path $wikiRoot -Recurse -File
     $wikiFiles = $allFiles | Where-Object { $_.Extension -eq '.xwiki' }
     $sortFiles = $allFiles | Where-Object { $_.Name -eq '_sort' }
@@ -94,12 +97,17 @@ if (Test-Path $wikiRoot) {
 
     $manifest = @{ root = 'FactHarbor'; files = $fileList; sorts = $sortData }
     $manifestJson = $manifest | ConvertTo-Json -Depth 4 -Compress
-    $manifestBytes = [System.Text.Encoding]::UTF8.GetBytes($manifestJson)
-    Write-Host "  Wiki:   $wikiRoot ($($fileList.Count) pages)" -ForegroundColor DarkGray
+    return [System.Text.Encoding]::UTF8.GetBytes($manifestJson)
+}
+
+# Initial scan for page count display
+if ($wikiExists) {
+    $initCount = (Get-ChildItem -Path $wikiRoot -Recurse -File -Filter '*.xwiki').Count
+    Write-Host "  Wiki:   $wikiRoot ($initCount pages)" -ForegroundColor DarkGray
 }
 
 $prefix = "http://localhost:$Port/"
-$queryParam = if ($NoAutoOpen -or $manifestBytes) { '' } else { '?open=folder' }
+$queryParam = if ($NoAutoOpen -or $wikiExists) { '' } else { '?open=folder' }
 $url = "${prefix}xwiki-viewer.html${queryParam}"
 
 # MIME types for serving
@@ -215,13 +223,20 @@ try {
             $response.OutputStream.Write($viewerContent, 0, $viewerContent.Length)
             Write-Host "  $(Get-Date -Format 'HH:mm:ss') GET /$requestPath" -ForegroundColor DarkGray
         }
-        # Serve wiki manifest for auto-loading
-        elseif ($requestPath -eq 'wiki-manifest.json' -and $manifestBytes) {
-            $response.ContentType = 'application/json; charset=utf-8'
-            $response.ContentLength64 = $manifestBytes.Length
-            $response.Headers.Add('Access-Control-Allow-Origin', '*')
-            $response.OutputStream.Write($manifestBytes, 0, $manifestBytes.Length)
-            Write-Host "  $(Get-Date -Format 'HH:mm:ss') GET /wiki-manifest.json" -ForegroundColor DarkGray
+        # Serve wiki manifest for auto-loading (rebuilt each request to pick up changes)
+        elseif ($requestPath -eq 'wiki-manifest.json' -and $wikiExists) {
+            $freshManifest = Build-WikiManifest
+            if ($freshManifest) {
+                $response.ContentType = 'application/json; charset=utf-8'
+                $response.ContentLength64 = $freshManifest.Length
+                $response.Headers.Add('Access-Control-Allow-Origin', '*')
+                $response.OutputStream.Write($freshManifest, 0, $freshManifest.Length)
+                Write-Host "  $(Get-Date -Format 'HH:mm:ss') GET /wiki-manifest.json (fresh)" -ForegroundColor DarkGray
+            } else {
+                $response.StatusCode = 404
+                $msg = [System.Text.Encoding]::UTF8.GetBytes("No wiki found")
+                $response.OutputStream.Write($msg, 0, $msg.Length)
+            }
         }
         # Serve wiki files from FactHarbor directory
         elseif ($requestPath.StartsWith('wiki/') -and $wikiRoot -and (Test-Path $wikiRoot)) {
