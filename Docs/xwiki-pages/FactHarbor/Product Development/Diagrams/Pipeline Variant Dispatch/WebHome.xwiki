@@ -1,0 +1,23 @@
+= Pipeline Variant Dispatch =
+
+{{mermaid}}
+flowchart TD
+    UI["Analyze UI"] --> API["API: Create Job"]
+    API --> STORE["Job Store"]
+    STORE --> RUNNER["Runner"]
+    RUNNER --> DISPATCH{"Dispatch by<br/>pipelineVariant"}
+
+    DISPATCH -->|"orchestrated<br/>(default)"| ORCH["Orchestrated Pipeline<br/>TypeScript-orchestrated<br/>Fixed AKEL stages<br/>Production-ready"]
+    DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic<br/>LLM tool-loop<br/>Flexible schema<br/>Fast alternative"]
+
+    ORCH --> CANONICAL_PAYLOAD["Canonical Payload"]
+    DYN --> DYNAMIC_PAYLOAD["Dynamic Payload"]
+
+    CANONICAL_PAYLOAD --> ENVELOPE["Result Envelope"]
+    DYNAMIC_PAYLOAD --> ENVELOPE
+
+    ENVELOPE --> RESULT["Store + Display"]
+
+    style ORCH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style DYN fill:#e3f2fd,stroke:#1565c0,color:#000
+{{/mermaid}}

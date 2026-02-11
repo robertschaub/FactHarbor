@@ -210,4 +210,4 @@ The standalone service will expose a public API:
 * [[Source Reliability (Deep Dive)>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] — Technical architecture, code integration, and API details
 * [[Source Reliability Export Guide>>FactHarbor.Product Development.DevOps.Subsystems and Components.Source Reliability Export.WebHome]] — How to export evaluation data
 * [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] — How quality gates interact with source reliability
-* [[Evidence and Verdict Workflow>>FactHarbor.Product Development.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]] — How evidence flows through the system
+* [[Evidence and Verdict Workflow>>FactHarbor.Product Development.Diagrams.Evidence and Verdict Workflow.WebHome]] — How evidence flows through the system

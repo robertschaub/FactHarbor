@@ -1,0 +1,36 @@
+= Request Lifecycle =
+
+{{mermaid}}
+sequenceDiagram
+    participant U as User (Browser)
+    participant NUI as Next.js UI
+    participant NAPI as Next.js /api/fh/*
+    participant DAPI as .NET API
+    participant DB as SQLite
+    participant RUN as Next.js /api/internal/run-job
+    participant AKEL as AKEL Pipeline
+
+    U->>NUI: Submit article/URL
+    NUI->>NAPI: POST /api/fh/analyze
+    NAPI->>DAPI: POST /v1/analyze
+    DAPI->>DB: Create job (QUEUED)
+    DAPI-->>NAPI: 201 {jobId}
+    NAPI-->>NUI: Redirect to /jobs/{id}
+
+    DAPI->>RUN: POST /api/internal/run-job (async, with retry)
+    RUN->>DB: Update status (RUNNING)
+    RUN->>AKEL: Execute pipeline
+
+    Note over AKEL: Understand → Research → Verdicts → Report
+
+    AKEL-->>RUN: AnalysisResult JSON
+    RUN->>DAPI: PATCH /v1/internal/jobs/{id}
+    DAPI->>DB: Save result (SUCCEEDED)
+
+    U->>NUI: Poll /jobs/{id}
+    NUI->>NAPI: GET /api/fh/jobs/{id}/events
+    NAPI->>DAPI: GET /v1/jobs/{id}/events (SSE)
+    DAPI-->>U: Stream events in real-time
+{{/mermaid}}
+
+//Full request lifecycle from user submission through job queuing, AKEL pipeline execution, and real-time event streaming back to the browser.//

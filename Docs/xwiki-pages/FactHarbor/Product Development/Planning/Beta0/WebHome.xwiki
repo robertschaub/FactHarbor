@@ -85,7 +85,7 @@ Beta 0 adds user-facing features and essential production infrastructure:
 * [[Alpha (previously POC2)>>FactHarbor.Product Development.Planning.POC2.WebHome]] — Previous phase (superseded)
 * [[V1.0>>FactHarbor.Product Development.Planning.V10.WebHome]] — Next phase (launch)
 * [[Roadmap Overview>>FactHarbor.Product Development.Planning.WebHome]]
-* [[Storage Architecture>>FactHarbor.Product Development.Specification.Diagrams.Storage Architecture.WebHome]] — PostgreSQL migration planned for Beta
+* [[Storage Architecture>>FactHarbor.Product Development.Diagrams.Storage Architecture.WebHome]] — PostgreSQL migration planned for Beta
 
 **Document Status:** Beta Specification
 **Version:** V0.9.70

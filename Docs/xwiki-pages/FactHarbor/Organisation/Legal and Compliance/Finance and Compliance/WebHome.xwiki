@@ -1,0 +1,76 @@
+= Finance & Compliance =
+== 1. Purpose ==
+The Finance & Compliance framework ensures that FactHarbor is funded in a transparent, neutral, and sustainable way, and that financial decisions can be audited and explained.
+== 2. Funding Principles ==
+* Full transparency about all significant funding sources and major expenses.
+* No political or lobbying money.
+* No funding that is conditional on specific claim outcomes.
+* Preference for funding models that protect independence and neutrality.
+== 3. Allowed Funding ==
+Examples of allowed funding sources:
+* public donations and small recurring contributions
+* neutral grants and research funding with no control over outcomes
+* institutional support where the institution has no editorial or governance influence.
+== 4. Prohibited Funding ==
+Examples of prohibited or highly discouraged funding:
+* money from political parties or lobbying organisations
+* funding that is explicitly tied to desired conclusions or claim outcomes
+* funding that requires hidden influence on content, moderation, or recommendation logic.
+== 5. Budgeting and Documentation ==
+* Budgets are planned per phase and reviewed regularly.
+* Every significant expense must be linked to a budget line and justification.
+* The Finance & Compliance Lead is responsible for keeping the ledger up-to-date.
+== 6. Reimbursable Expense Report ==
+See [[Reimbursable Expense Report>>FactHarbor.Organisation.Legal and Compliance.Reimbursable Expenses.WebHome]].
+FactHarbor maintains a transparency ledger that records:
+* incoming donations and grants
+* major expenses
+* open obligations and earmarked funds
+* links to public reports where appropriate.
+== 7. Internal Controls ==
+* For sensitive transactions, at least two people must be involved (e.g. Finance & Compliance Lead plus a second reviewer).
+* Access to financial systems and banking credentials is limited and logged.
+* Regular internal reviews check for anomalies or conflicts of interest.
+== 8. Reporting ==
+* Internal: periodic financial updates for the Governing Team.
+* External: at least annual public reports summarising funding sources, major expenses, and key risks.
+== 9. Compliance Dimensions ==
+Finance & Compliance covers:
+* legal compliance (non-profit law, contracts, licences)
+* financial compliance (book-keeping standards, taxation where applicable)
+* data protection (handling of donor and user data)
+* operational compliance (e.g. auditability and traceability of decisions).
+== 10. Funding Model Table ==
+(% style="width:100%" %)
+|=Category|=Revenue model|=Primary compromise / risk|=Suitable phases|
+|Foundation|Donations, grants|Relies on public goodwill; uncertain funding.|Any|
+|Services|Paid support / consulting|Diverts time from core development.|Released products|
+|Knowledge|Training & certification|Creates incentive to gate expertise.|Released products with federation|
+|Ecosystem|Recurring community membership|Requires continuous value delivery.|Any|
+|(% rowspan="2" %)Development|One-time goal campaigns|(% rowspan="2" %)Campaign failure delays progress.|(% rowspan="2" %)Best for early phases|
+|e.g. crowdfunding|
+== 11. Startup Phase & Founder Financing ==
+In the earliest phase, FactHarbor may operate as a **founder-driven, small organisation** with very limited formal structure.
+This section collects design principles for that phase, before a formal non-profit entity is created.
+* **Founder self-funding**
+ The Founder (or a small initial circle) can cover early expenses – for example hosting, domain names, or basic tooling – without creating an expectation of profit.
+* **No fixed salaries at the very start**
+ In the most early phase, work is typically unpaid or compensated informally.
+ Salaries for the Founder or other contributors only become appropriate when:
+ * sustainable funding is available, and
+ * this fits the chosen non-profit legal form and its rules.
+* **Recording early expenses**
+ Early out-of-pocket expenses by the Founder can optionally be recorded as:
+ * a **non-interest-bearing loan** or
+ * a clearly documented "Founder contribution balance".
+ Any later reimbursement:
+ * is limited to actual documented costs,
+ * is treated as operational reimbursement, **not** as profit distribution, and
+ * must be transparently documented in the financial records.
+* **Transition to a mission-locked non-profit**
+ When FactHarbor moves to a formal non-profit entity (e.g. a Swiss Verein or a comparable form), the Finance & Compliance framework should:
+ * ensure that the new entity is **mission-locked** (no profit distribution; all income used for the public purpose),
+ * define whether and how recorded founder contributions can be reimbursed, and
+ * document any **Asset Transfer Protocol** (e.g. domains, repositories, trademarks) in a transparent, auditable way.
+These points are design guidelines and must be checked against the final legal form and jurisdiction before they are implemented.
+They complement, but do not replace, the general principles in this page.

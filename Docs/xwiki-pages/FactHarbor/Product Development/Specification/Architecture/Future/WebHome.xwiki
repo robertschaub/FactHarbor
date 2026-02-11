@@ -6,50 +6,7 @@ This page describes **planned production capabilities** that are not yet impleme
 
 == Roadmap Overview ==
 
-{{mermaid}}
-flowchart LR
-    subgraph POC["POC (Current)"]
-        P1["Single host"]
-        P2["SQLite x 3"]
-        P3["Shared secrets"]
-        P4["Manual ops"]
-    end
-
-    subgraph ALPHA["Alpha"]
-        A1["User auth"]
-        A2["PostgreSQL"]
-        A3["RBAC"]
-        A4["Rate limiting"]
-    end
-
-    subgraph BETA["Beta"]
-        B1["Horizontal scaling"]
-        B2["Redis caching"]
-        B3["Prometheus + Grafana"]
-        B4["Moderation tools"]
-    end
-
-    subgraph V1["V1.0"]
-        V1A["Multi-region"]
-        V1B["OpenTelemetry"]
-        V1C["Log aggregation"]
-        V1D["Full DR"]
-    end
-
-    subgraph V2["V2.0+"]
-        V2A["Federation"]
-        V2B["Vector DB"]
-        V2C["Advanced analytics"]
-    end
-
-    POC --> ALPHA --> BETA --> V1 --> V2
-
-    style POC fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style ALPHA fill:#fff9c4,stroke:#f9a825,color:#000
-    style BETA fill:#fff3e0,stroke:#e65100,color:#000
-    style V1 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style V2 fill:#f3e5f5,stroke:#7b1fa2,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Architecture Roadmap.WebHome"/}}
 
 //Green = current POC. Yellow = Alpha (next). Orange = Beta. Blue = V1.0. Purple = V2.0+. Each phase builds on the previous.//
 

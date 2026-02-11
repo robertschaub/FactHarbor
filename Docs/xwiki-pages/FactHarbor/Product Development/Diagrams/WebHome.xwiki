@@ -1,0 +1,109 @@
+= Diagrams =
+
+{{info}}
+Non-trivial diagrams live in dedicated pages here and are **{{include}}d** into the Architecture, Specification, and Planning pages where they are described.
+{{/info}}
+
+== Architecture ==
+
+* [[System Architecture>>FactHarbor.Product Development.Diagrams.System Architecture.WebHome]] — Two-service architecture (API + Web/Runner)
+* [[System Context>>FactHarbor.Product Development.Diagrams.System Context.WebHome]] — Users, platform, LLM and search providers
+* [[Request Lifecycle>>FactHarbor.Product Development.Diagrams.Request Lifecycle.WebHome]] — End-to-end request sequence
+* [[Technology Stack>>FactHarbor.Product Development.Diagrams.Technology Stack.WebHome]] — Frameworks, libraries, and infrastructure
+* [[External Dependencies Map>>FactHarbor.Product Development.Diagrams.External Dependencies Map.WebHome]] — LLM, search, and retrieval dependencies
+* [[LLM Model Tiering>>FactHarbor.Product Development.Diagrams.LLM Model Tiering.WebHome]] — Model selection per pipeline stage
+* [[Storage Architecture>>FactHarbor.Product Development.Diagrams.Storage Architecture.WebHome]] — Three-database architecture layout
+* [[Storage Roadmap>>FactHarbor.Product Development.Diagrams.Storage Roadmap.WebHome]] — Storage evolution POC → Alpha → Beta → V1.0+
+* [[Deployment Topology>>FactHarbor.Product Development.Diagrams.Deployment Topology.WebHome]] — POC vs production deployment
+* [[Security Model>>FactHarbor.Product Development.Diagrams.Security Model.WebHome]] — Implemented, planned, and always-active security layers
+* [[Circuit Breaker States>>FactHarbor.Product Development.Diagrams.Circuit Breaker States.WebHome]] — Provider health circuit breaker state machine
+* [[Federation Architecture>>FactHarbor.Product Development.Diagrams.Federation Architecture.WebHome]] — Decentralized node architecture (future)
+
+== AKEL ==
+
+* [[AKEL Engine Overview>>FactHarbor.Product Development.Diagrams.AKEL Engine Overview.WebHome]] — 5-step engine summary
+* [[AKEL Analysis Pipeline>>FactHarbor.Product Development.Diagrams.AKEL Analysis Pipeline.WebHome]] — Pipeline with quality gates
+* [[AKEL Pipeline Detail>>FactHarbor.Product Development.Diagrams.AKEL Pipeline Detail.WebHome]] — Detailed 5-step pipeline flow
+* [[AKEL Shared Modules>>FactHarbor.Product Development.Diagrams.AKEL Shared Modules.WebHome]] — Shared analysis modules
+* [[AKEL Quality Assurance>>FactHarbor.Product Development.Diagrams.AKEL Quality Assurance.WebHome]] — Quality gates, evidence defence, source trust pillars
+
+== Data Models ==
+
+* [[Analysis Entity Model ERD>>FactHarbor.Product Development.Diagrams.Analysis Entity Model ERD.WebHome]] — Complete entity relationship model
+* [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] — Core entities overview
+* [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]] — Overview, Result, Target DB, Runtime, UI views
+* [[Job Lifecycle ERD>>FactHarbor.Product Development.Diagrams.Job Lifecycle ERD.WebHome]] — Job and event entity model
+* [[KeyFactor Entity Model>>FactHarbor.Product Development.Diagrams.KeyFactor Entity Model.WebHome]] — KeyFactor entity relationships
+* [[KeyFactor Data Flow>>FactHarbor.Product Development.Diagrams.KeyFactor Data Flow.WebHome]] — KeyFactor data through pipeline phases
+* [[KeyFactor Claim Mapping>>FactHarbor.Product Development.Diagrams.KeyFactor Claim Mapping.WebHome]] — KeyFactor-to-claim relationship graph
+* [[KeyFactor Hierarchy>>FactHarbor.Product Development.Diagrams.KeyFactor Hierarchy.WebHome]] — Thesis → KeyFactors → Claims decomposition
+* [[Verdict Scale>>FactHarbor.Product Development.Diagrams.Verdict Scale.WebHome]] — 7-point verdict scale (TRUE to FALSE)
+* [[Audit Trail ERD>>FactHarbor.Product Development.Diagrams.Audit Trail ERD.WebHome]] — Job and UCM audit trail entities
+
+== Config ==
+
+* [[UCM Config Precedence>>FactHarbor.Product Development.Diagrams.UCM Config Precedence.WebHome]] — Configuration source precedence chain
+* [[UCM Config Architecture>>FactHarbor.Product Development.Diagrams.UCM Config Architecture.WebHome]] — Admin UI, validation, storage, and runtime flow
+
+== Pipelines ==
+
+* [[Orchestrated Pipeline Detail>>FactHarbor.Product Development.Diagrams.Orchestrated Pipeline Detail.WebHome]] — Comprehensive 5-step with LLM calls
+* [[Monolithic Dynamic Pipeline Internal>>FactHarbor.Product Development.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] — Internal Monolithic Dynamic execution flow
+* [[Pipeline Shared Primitives>>FactHarbor.Product Development.Diagrams.Pipeline Shared Primitives.WebHome]] — Shared primitives architecture
+* [[Pipeline Variant Dispatch>>FactHarbor.Product Development.Diagrams.Pipeline Variant Dispatch.WebHome]] — Analysis dispatch and convergence flow
+
+== Overview ==
+
+* [[Claim and Scenario Lifecycle (Overview)>>FactHarbor.Product Development.Diagrams.Claim and Scenario Lifecycle (Overview).WebHome]] — End-to-end lifecycle overview
+
+== Workflows ==
+
+* [[Claim and Scenario Workflow>>FactHarbor.Product Development.Diagrams.Claim and Scenario Workflow.WebHome]]
+* [[Evidence and Verdict Workflow>>FactHarbor.Product Development.Diagrams.Evidence and Verdict Workflow.WebHome]]
+* [[Quality and Audit Workflow>>FactHarbor.Product Development.Diagrams.Quality and Audit Workflow.WebHome]]
+
+== Quality ==
+
+* [[Quality Gates Flow>>FactHarbor.Product Development.Diagrams.Quality Gates Flow.WebHome]] — Gate 1 + Gate 4 flow
+* [[Quality Gates Integration>>FactHarbor.Product Development.Diagrams.Quality Gates Integration.WebHome]] — Pipeline integration points
+* [[Evidence Defence in Depth>>FactHarbor.Product Development.Diagrams.Evidence Defence in Depth.WebHome]] — 6-layer defence model
+* [[Evidence Quality Filtering Pipeline>>FactHarbor.Product Development.Diagrams.Evidence Quality Filtering Pipeline.WebHome]] — 7-layer filtering pipeline
+* [[Context Detection Phases>>FactHarbor.Product Development.Diagrams.Context Detection Phases.WebHome]] — Multi-phase context detection
+* [[Context Detection Decision Tree>>FactHarbor.Product Development.Diagrams.Context Detection Decision Tree.WebHome]] — AnalysisContext vs EvidenceScope decision tree
+* [[Doubted vs Contested Flow>>FactHarbor.Product Development.Diagrams.Doubted vs Contested Flow.WebHome]] — Counter-evidence weight reduction flow
+
+== Source Reliability ==
+
+* [[Source Reliability Overview>>FactHarbor.Product Development.Diagrams.Source Reliability Overview.WebHome]] — System architecture overview
+* [[Source Reliability Flow>>FactHarbor.Product Development.Diagrams.Source Reliability Flow.WebHome]] — 3-phase prefetch/lookup/weighting sequence
+* [[Source Reliability Prefetch Flow>>FactHarbor.Product Development.Diagrams.Source Reliability Prefetch Flow.WebHome]] — Phase 1 async prefetch decision flow
+
+== Users and Roles ==
+
+* [[Human User Roles>>FactHarbor.Product Development.Diagrams.Human User Roles.WebHome]]
+* [[Technical and System Users>>FactHarbor.Product Development.Diagrams.Technical and System Users.WebHome]]
+* [[User Class Diagram>>FactHarbor.Product Development.Diagrams.User Class Diagram.WebHome]]
+* [[Role-Based Access Control>>FactHarbor.Product Development.Diagrams.Role-Based Access Control.WebHome]] — Implemented vs planned access levels
+
+== Planning ==
+
+* [[Development Roadmap>>FactHarbor.Product Development.Diagrams.Development Roadmap.WebHome]] — POC → Alpha → Beta → V1.0
+* [[Architecture Roadmap>>FactHarbor.Product Development.Diagrams.Architecture Roadmap.WebHome]] — Phase-by-phase capability evolution
+
+== Testing ==
+
+* [[Promptfoo Test Coverage>>FactHarbor.Product Development.Diagrams.Promptfoo Test Coverage.WebHome]] — Test configurations and provider matrix
+
+== Automation ==
+
+* [[Automation Level>>FactHarbor.Product Development.Diagrams.Automation Level.WebHome]]
+* [[Automation Roadmap>>FactHarbor.Product Development.Diagrams.Automation Roadmap.WebHome]]
+* [[Manual vs Automated Matrix>>FactHarbor.Product Development.Diagrams.Manual vs Automated matrix.WebHome]]
+
+== Outdated ==
+
+* [[Outdated Diagrams>>FactHarbor.Product Development.Diagrams.Outdated.WebHome]] — Superseded diagram pages, retained for historical reference
+
+----
+
+**Navigation:** [[Specification>>FactHarbor.Product Development.Specification.WebHome]] | [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]]

@@ -1,0 +1,61 @@
+= AKEL Pipeline Detail =
+
+{{mermaid}}
+flowchart TB
+    subgraph Input["Input"]
+        URL["URL"]
+        TEXT["Text / Claim"]
+    end
+
+    subgraph Retrieval["Content Retrieval"]
+        FETCH["Extract text\nfrom URL"]
+    end
+
+    subgraph Step1["Step 1: Understand"]
+        UNDERSTAND["Detect input type\nExtract claims & dependencies\nIdentify analysis contexts\nAssign risk tiers"]
+        GATE1{{"Gate 1\nClaim Validation"}}
+    end
+
+    subgraph Step2["Step 2: Research (Iterative)"]
+        DECIDE["Generate search\nqueries"]
+        SEARCH["Web Search\n(Google CSE / SerpAPI)"]
+        EXTRACT["Fetch sources &\nextract evidence"]
+        CHECK{{"Research\ncomplete?"}}
+    end
+
+    subgraph Step3["Step 3: Verdict"]
+        VERDICT["Generate claim verdicts\n(7-point scale)"]
+        AGGREGATE["Aggregate into\narticle verdict"]
+        GATE4{{"Gate 4\nConfidence Assessment"}}
+    end
+
+    subgraph Step4["Step 4: Summary"]
+        SUMMARY["Build two-panel\nsummary"]
+    end
+
+    subgraph Step5["Step 5: Report"]
+        REPORT["Generate markdown\nreport"]
+    end
+
+    subgraph Output["Output"]
+        RESULT["AnalysisResult JSON\n+ Markdown Report"]
+    end
+
+    URL --> FETCH --> UNDERSTAND
+    TEXT --> UNDERSTAND
+    UNDERSTAND --> GATE1
+    GATE1 --> DECIDE
+    DECIDE --> SEARCH --> EXTRACT --> CHECK
+    CHECK -->|"More research needed"| DECIDE
+    CHECK -->|"Complete"| VERDICT
+    VERDICT --> AGGREGATE --> GATE4
+    GATE4 --> SUMMARY --> REPORT --> RESULT
+
+    style Step1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Step2 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Step3 fill:#fff9c4,stroke:#f9a825,color:#000
+    style Step4 fill:#f3e5f5,stroke:#6a1b9a,color:#000
+    style Step5 fill:#f3e5f5,stroke:#6a1b9a,color:#000
+{{/mermaid}}
+
+//The AKEL pipeline processes input through 5 steps. Step 2 (Research) is iterative -- the system keeps searching until evidence is sufficient or the budget is exhausted. Quality gates validate claims (Gate 1) and verdict confidence (Gate 4).//

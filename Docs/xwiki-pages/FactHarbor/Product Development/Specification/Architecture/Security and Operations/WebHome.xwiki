@@ -4,32 +4,7 @@ This page documents FactHarbor's current security model, deployment topology, us
 
 == Security Model ==
 
-{{mermaid}}
-flowchart TB
-    subgraph Implemented["Implemented (POC)"]
-        RUNNER_KEY["Runner Route Protection\n/api/internal/run-job\nrequires x-runner-key header"]
-        ADMIN_KEY["Admin API Protection\nPOST endpoints\nrequire X-Admin-Key header"]
-        TIMING["Timing-Safe Comparison\nfor secret validation"]
-        HEALTH_AUTH["System Health Auth\nresume/pause require admin key\nin production"]
-    end
-
-    subgraph Planned["Planned (Alpha/Beta)"]
-        USER_AUTH["User Authentication\nLogin, registration,\npassword hashing"]
-        RBAC["Role-Based Access Control\nReader, User, Admin,\nModerator roles"]
-        RATE_LIMIT["Rate Limiting\nPer-user and per-IP\nquota enforcement"]
-        SSRF["SSRF Protection\nURL fetching\nsanitisation"]
-    end
-
-    subgraph Always["Always Active"]
-        TLS["HTTPS/TLS\nTransport encryption"]
-        PARAMS["Parameterised Queries\nSQL injection prevention"]
-        ZOD_VAL["Zod Validation\nAll config and API input\nschema-validated"]
-    end
-
-    style Implemented fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style Planned fill:#fff9c4,stroke:#f9a825,color:#000
-    style Always fill:#e3f2fd,stroke:#1565c0,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Security Model.WebHome"/}}
 
 //Green = implemented in current POC. Yellow = planned for Alpha/Beta. Blue = always active regardless of deployment phase. The current security model protects internal endpoints with shared secrets; full user authentication is planned for Alpha.//
 
@@ -53,46 +28,7 @@ flowchart TB
 
 == Deployment Topology ==
 
-{{mermaid}}
-flowchart TB
-    subgraph Current["Current (POC / Development)"]
-        direction TB
-        HOST["Single Host"]
-        NEXT["Next.js\nport 3000"]
-        DOTNET[".NET API\nport 5000"]
-        SQLITE["3x SQLite\nfiles"]
-
-        HOST --> NEXT
-        HOST --> DOTNET
-        HOST --> SQLITE
-    end
-
-    subgraph Production["Target Production"]
-        direction TB
-        LB["Load Balancer"]
-        API1["API Server 1"]
-        API2["API Server N"]
-        WORKERS["AKEL Worker Pool\n(auto-scaling)"]
-        PG_PRIMARY["PostgreSQL\nPrimary"]
-        PG_REPLICA["PostgreSQL\nReplica(s)"]
-        REDIS_OPT["Redis\n(if multi-instance)"]
-        MONITOR["Prometheus\n+ Grafana"]
-
-        LB --> API1
-        LB --> API2
-        API1 --> WORKERS
-        API2 --> WORKERS
-        API1 --> PG_PRIMARY
-        API2 --> PG_REPLICA
-        PG_PRIMARY --> PG_REPLICA
-        WORKERS --> PG_PRIMARY
-        MONITOR -.-> API1
-        MONITOR -.-> WORKERS
-    end
-
-    style Current fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style Production fill:#e3f2fd,stroke:#1565c0,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Deployment Topology.WebHome"/}}
 
 //Current deployment: single host with both services and SQLite files. Target production: load-balanced API servers, auto-scaling AKEL workers, PostgreSQL with read replicas, optional Redis for shared caching, and Prometheus/Grafana monitoring.//
 
@@ -115,26 +51,7 @@ cd apps/web && npm run dev
 
 == User Roles ==
 
-{{mermaid}}
-flowchart TB
-    subgraph Current_Roles["Implemented"]
-        READER["Reader\n(anonymous)"]
-        ADMIN["UCM Admin\n(via admin key)"]
-    end
-
-    subgraph Planned_Roles["Planned"]
-        USER["Registered User\n(submit analyses)"]
-        MODERATOR["Moderator\n(review flagged content)"]
-    end
-
-    READER -->|"View analyses,\nbrowse results"| VIEW["Read-Only\nAccess"]
-    ADMIN -->|"Change configs,\nresume/pause system"| CONFIG["Admin\nAccess"]
-    USER -->|"Submit claims,\nview own history"| SUBMIT["Submit\nAccess"]
-    MODERATOR -->|"Review flags,\nban users"| MOD["Moderation\nAccess"]
-
-    style Current_Roles fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style Planned_Roles fill:#fff9c4,stroke:#f9a825,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Role-Based Access Control.WebHome"/}}
 
 //Two roles are currently implemented: anonymous Reader (view only) and UCM Admin (configuration management via admin key). Registered User and Moderator roles are planned for Alpha/Beta.//
 

@@ -12,7 +12,7 @@ FactHarbor is **automation-first**: AKEL (AI Knowledge Extraction Layer) makes a
 * **Consistency**: Same evaluation criteria applied uniformly
 * **Transparency**: Algorithms are auditable
 * **Speed**: Results in <20 seconds typically
-See [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] for detailed principles.
+See [[Automation Philosophy>>FactHarbor.Organisation.Strategy.Automation Philosophy.WebHome]] for detailed principles.
 == 2. Claim Processing Flow ==
 === 2.1 User Submits Claim ===
 * User provides claim text + source URLs
@@ -148,16 +148,16 @@ AKEL applies quality gates before publication. If any fail, claim is **flagged**
 * Claim parseable into testable form
 **Failed gates**: Claim published with flag for moderator review
 == 5. Automation Levels ==
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.Automation Level.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.Automation Level.WebHome"/}}
 FactHarbor progresses through automation maturity levels:
 **Release 0.5** (Proof-of-Concept): Tier C only, human review required
 **Release 1.0** (Initial): Tier B/C auto-published, Tier A flagged for review
 **Release 2.0** (Mature): All tiers auto-published with risk labels, sampling audits
-See [[Automation Roadmap>>FactHarbor.Product Development.Specification.Diagrams.Automation Roadmap.WebHome]] for detailed progression.
+See [[Automation Roadmap>>FactHarbor.Product Development.Diagrams.Automation Roadmap.WebHome]] for detailed progression.
 
 == 5.5 Automation Roadmap ==
 
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.Automation Roadmap.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.Automation Roadmap.WebHome"/}}
 
 == 6. Human Role ==
 Humans do NOT review content for approval. Instead:
@@ -165,11 +165,11 @@ Humans do NOT review content for approval. Instead:
 **Improvement**: Fix algorithms when patterns show issues
 **Exception handling**: Review AKEL-flagged items
 **Governance**: Set policies AKEL applies
-See [[Contributor Processes>>FactHarbor.Organisation.Contributor-Processes]] for how to improve the system.
+See [[Contributor Processes>>FactHarbor.Organisation.How-We-Work-Together.Contributor Processes.WebHome]] for how to improve the system.
 
 == 6.5 Manual vs Automated Matrix ==
 
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.Manual vs Automated matrix.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.Manual vs Automated matrix.WebHome"/}}
 
 == 7. Moderation ==
 Moderators handle items AKEL flags:
@@ -178,7 +178,7 @@ Moderators handle items AKEL flags:
 **System gaming**: Attempts to manipulate scoring
 **Action**: May temporarily hide content, ban users, or propose algorithm improvements
 **Does NOT**: Routinely review claims or override verdicts
-See [[Organisational Model>>FactHarbor.Organisation.Organisational-Model]] for moderator role details.
+See [[Organisational Model>>FactHarbor.Organisation.Governance.Organisational Model.WebHome]] for moderator role details.
 == 8. Continuous Improvement ==
 **Performance monitoring**: Track AKEL accuracy, speed, coverage
 **Issue identification**: Find systematic errors from metrics

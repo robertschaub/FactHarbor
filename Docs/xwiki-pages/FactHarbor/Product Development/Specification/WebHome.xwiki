@@ -42,6 +42,8 @@ FactHarbor introduces structure, transparency, and evidence-based reasoning. It 
 
 == 4. How It Works ==
 
+{{include reference="FactHarbor.Product Development.Diagrams.Claim and Scenario Lifecycle (Overview).WebHome"/}}
+
 FactHarbor follows an automated analysis lifecycle:
 
 1. **Submission** — User submits a URL or text. Claims are automatically extracted and normalised.
@@ -89,7 +91,7 @@ This specification is organised from conceptual overview to implementation detai
 
 //Visual index — all diagrams with links to their contextual pages.//
 
-* [[Diagrams>>FactHarbor.Product Development.Specification.Diagrams.WebHome]] — Architecture, pipeline, data model, workflow, and automation diagrams
+* [[Diagrams>>FactHarbor.Product Development.Diagrams.WebHome]] — Architecture, pipeline, data model, workflow, and automation diagrams
 
 === Future — After First Public Release ===
 

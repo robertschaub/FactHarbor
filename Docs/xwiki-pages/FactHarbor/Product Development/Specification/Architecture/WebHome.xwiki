@@ -26,41 +26,7 @@ flowchart LR
 
 == System Context ==
 
-{{mermaid}}
-flowchart TB
-    USER["Users\n(Readers, Analysts, Admins)"]
-
-    subgraph FH["FactHarbor Platform"]
-        direction LR
-        WEB["Next.js Web App\nUI + Analysis Engine"]
-        API[".NET API\nJob Management"]
-        DB[("SQLite\nDatabases")]
-    end
-
-    subgraph LLM["LLM Providers"]
-        ANTHROPIC["Anthropic\n(Claude)"]
-        OPENAI["OpenAI\n(GPT)"]
-        GOOGLE["Google\n(Gemini)"]
-        MISTRAL["Mistral"]
-    end
-
-    subgraph SEARCH["Search Providers"]
-        CSE["Google CSE"]
-        SERP["SerpAPI"]
-    end
-
-    USER --> FH
-    WEB <--> API
-    API --> DB
-    WEB --> DB
-    WEB --> LLM
-    WEB --> SEARCH
-
-    style FH fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style LLM fill:#e3f2fd,stroke:#1565c0,color:#000
-    style SEARCH fill:#fff3e0,stroke:#e65100,color:#000
-    style USER fill:#f3e5f5,stroke:#6a1b9a,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.System Context.WebHome"/}}
 
 //FactHarbor uses a two-service architecture: a Next.js app for the user interface and AKEL analysis engine, backed by a .NET API for job persistence. The system integrates with multiple LLM and search providers for vendor independence.//
 

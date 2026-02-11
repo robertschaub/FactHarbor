@@ -1,0 +1,52 @@
+= Source Reliability Flow =
+
+{{mermaid}}
+sequenceDiagram
+    participant User
+    participant Analyzer as orchestrated.ts
+    participant Prefetch as prefetchSourceReliability()
+    participant Cache as SQLite Cache
+    participant LLM as LLM Endpoint
+    participant Map as In-Memory Map
+    participant Lookup as getTrackRecordScore()
+    participant Weight as applyEvidenceWeighting()
+
+    Note over User,Weight: PHASE 1: Async Prefetch (before source fetching)
+    User->>Analyzer: Submit claim for analysis
+    Analyzer->>Analyzer: Search for sources
+    Analyzer->>Prefetch: await prefetchSourceReliability(urls)
+
+    loop For each unique domain
+        Prefetch->>Cache: Batch lookup
+        alt Cache Hit
+            Cache-->>Prefetch: Return cached score
+            Prefetch->>Map: Store score
+        else Cache Miss + Important Source
+            Prefetch->>LLM: Evaluate source (internal API)
+            LLM-->>Prefetch: Score + confidence
+            Prefetch->>Cache: Save (TTL: 90 days)
+            Prefetch->>Map: Store score
+        else Cache Miss + Unimportant Source
+            Prefetch->>Map: Store null
+        end
+    end
+
+    Prefetch-->>Analyzer: Done
+
+    Note over User,Weight: PHASE 2: Sync Lookup (during source fetching)
+    loop For each source URL
+        Analyzer->>Lookup: getTrackRecordScore(url)
+        Lookup->>Map: Read from map
+        Map-->>Lookup: Score or null
+        Lookup-->>Analyzer: Return immediately (no I/O)
+        Analyzer->>Analyzer: Assign trackRecordScore to FetchedSource
+    end
+
+    Note over User,Weight: PHASE 3: Evidence Weighting (after verdicts)
+    Analyzer->>Weight: applyEvidenceWeighting(verdicts, facts, sources)
+    Weight->>Weight: Calculate avg source score per verdict
+    Weight->>Weight: Adjust truthPercentage and confidence
+    Weight-->>Analyzer: Weighted verdicts
+
+    Analyzer-->>User: Analysis complete
+{{/mermaid}}

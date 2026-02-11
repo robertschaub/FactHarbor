@@ -10,27 +10,7 @@
 
 FactHarbor supports two analysis pipeline variants. Both share the same infrastructure primitives but differ in orchestration approach and result flexibility.
 
-{{mermaid}}
-flowchart TD
-    UI["Analyze UI"] --> API["API: Create Job"]
-    API --> STORE["Job Store"]
-    STORE --> RUNNER["Runner"]
-    RUNNER --> DISPATCH{"Dispatch by<br/>pipelineVariant"}
-
-    DISPATCH -->|"orchestrated<br/>(default)"| ORCH["Orchestrated Pipeline<br/>TypeScript-orchestrated<br/>Fixed AKEL stages<br/>Production-ready"]
-    DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic<br/>LLM tool-loop<br/>Flexible schema<br/>Fast alternative"]
-
-    ORCH --> CANONICAL_PAYLOAD["Canonical Payload"]
-    DYN --> DYNAMIC_PAYLOAD["Dynamic Payload"]
-
-    CANONICAL_PAYLOAD --> ENVELOPE["Result Envelope"]
-    DYNAMIC_PAYLOAD --> ENVELOPE
-
-    ENVELOPE --> RESULT["Store + Display"]
-
-    style ORCH fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style DYN fill:#e3f2fd,stroke:#1565c0,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Pipeline Variant Dispatch.WebHome"/}}
 
 //Green = comprehensive (default), Blue = fast alternative. Both variants converge on a common result envelope for auditability.//
 
@@ -77,47 +57,19 @@ flowchart TD
     style DYN fill:#e3f2fd,color:#000
 {{/mermaid}}
 
+== Monolithic Dynamic Internals ==
+
+Internal execution flow, budget constraints, safety contract, and output schema of the Monolithic Dynamic pipeline:
+
+{{include reference="FactHarbor.Product Development.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome"/}}
+
 == Shared Primitives ==
 
 Both variants reuse stable infrastructure primitives. Orchestration logic stays isolated per variant to prevent cross-contamination.
 
 === What Is Shared ===
 
-{{mermaid}}
-flowchart TD
-    subgraph Shared["Shared Primitives"]
-        NORM["Input Normalization"]
-        BUDGETS["Budget Framework"]
-        SEARCH["Search + Fetch Adapters"]
-        PROV["Provenance Validation"]
-        META["Result Envelope Metadata"]
-    end
-
-    subgraph Modules["Shared Analyzer Modules"]
-        CTX["analysis-contexts.ts"]
-        AGG["aggregation.ts"]
-        CLAIM["claim-decomposition.ts"]
-        SR["source-reliability.ts"]
-        EF["evidence-filter.ts"]
-        VC["verdict-corrections.ts"]
-    end
-
-    subgraph Pipelines["Pipeline Implementations (Isolated)"]
-        ORCH["orchestrated.ts"]
-        DYN["monolithic-dynamic.ts"]
-    end
-
-    Shared --> Pipelines
-    Modules --> ORCH
-    SR --> DYN
-    PROV --> DYN
-
-    style Shared fill:#e3f2fd,stroke:#1565c0,color:#000
-    style Modules fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style Pipelines fill:#fff3e0,stroke:#e65100,color:#000
-{{/mermaid}}
-
-//Shared primitives and analyzer modules are used by both pipelines. Orchestration logic is isolated per variant — no cross-calls between implementations.//
+{{include reference="FactHarbor.Product Development.Diagrams.Pipeline Shared Primitives.WebHome"/}}
 
 === What Is Kept Separate ===
 

@@ -286,11 +286,11 @@ Fields: entity_id, reported_by, issue_type, status, resolution_note
 
 == 1.11 Current Implementation ERD ==
 
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.Core Data Model ERD.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome"/}}
 
 == 1.12 User Class Diagram ==
 
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.User Class Diagram.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.User Class Diagram.WebHome"/}}
 
 == 2. Versioning Strategy ==
 
@@ -475,9 +475,9 @@ UCM Config V2: prompt_template = "Analyze the following claim with focus on sour
 
 == 4. Target Database Schema ==
 
-The following ERD visualises all target database tables — existing (green), target normalisation from JSON (blue), and planned future tables (red). For the full multi-view entity reference, see [[Entity Views>>FactHarbor.Product Development.Specification.Diagrams.Entity Views.WebHome]].
+The following ERD visualises all target database tables — existing (green), target normalisation from JSON (blue), and planned future tables (red). For the full multi-view entity reference, see [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
 
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.Entity Views.WebHome" section="HTargetDatabaseEntities"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.Entity Views.WebHome" section="HTargetDatabaseEntities"/}}
 
 === 4.1 Primary Storage (PostgreSQL) ===
 

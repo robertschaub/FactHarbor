@@ -1,0 +1,36 @@
+= Development Roadmap =
+
+{{mermaid}}
+
+graph LR
+    subgraph Phase1[POC Complete]
+        P1A[Run baseline test]
+        P1B[Integrate metrics]
+    end
+
+    subgraph Phase2[Alpha]
+        P2A[Alpha 0.1: Baseline + metrics]
+        P2B[Alpha 0.2: Caching]
+        P2C[Alpha 0.3: Quality improvements]
+        P2D[Alpha 0.4: Performance]
+        P2E[Alpha 0.5: Security review]
+    end
+
+    subgraph Phase3[Beta]
+        P3A[PostgreSQL migration]
+        P3B[User accounts]
+        P3C[Browse/search]
+        P3D[Evidence dedup FR54]
+    end
+
+    subgraph Phase4[V1.0]
+        P4A[Public launch]
+    end
+
+    Phase1 --> Phase2
+    Phase2 --> Phase3
+    Phase3 --> Phase4
+
+{{/mermaid}}
+
+//The agreed development roadmap: POC -> Alpha -> Beta -> V1.0, with key milestones per phase.//

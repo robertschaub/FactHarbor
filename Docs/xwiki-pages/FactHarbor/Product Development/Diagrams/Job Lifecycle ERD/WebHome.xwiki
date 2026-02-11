@@ -1,0 +1,36 @@
+= Job Lifecycle ERD =
+
+{{mermaid}}
+erDiagram
+    JOB ||--o{ JOB_EVENT : "emits"
+    JOB ||--o| ANALYSIS_RESULT : "produces"
+
+    JOB {
+        string JobId PK "GUID"
+        string Status "QUEUED, RUNNING, SUCCEEDED, FAILED, PAUSED"
+        int Progress "0-100"
+        string InputType "text or url"
+        string InputValue "The submitted content"
+        datetime CreatedUtc "When submitted"
+        datetime UpdatedUtc "Last status change"
+    }
+
+    JOB_EVENT {
+        long Id PK "Auto-increment"
+        string JobId FK "Parent job"
+        string Level "info, warn, error"
+        string Message "Event description"
+        datetime TsUtc "Event timestamp"
+    }
+
+    ANALYSIS_RESULT {
+        string schemaVersion "2.7.0"
+        json meta "Providers, timing, gate stats"
+        string articleVerdict "7-point verdict"
+        int articleTruthPercentage "0-100"
+        json claimPattern "supported/uncertain/refuted counts"
+        int llmCalls "Total LLM invocations"
+    }
+{{/mermaid}}
+
+//Jobs progress through a lifecycle: QUEUED -> RUNNING -> SUCCEEDED or FAILED. If the system auto-pauses due to provider outage, jobs remain QUEUED until processing resumes. Events are logged at each stage and streamed to the client via SSE.//

@@ -1,0 +1,25 @@
+= Doubted vs Contested Flow =
+
+{{mermaid}}
+flowchart TD
+    subgraph Input["Opposition/Criticism"]
+        OPP[Someone opposes or criticizes the claim]
+    end
+
+    OPP --> CHECK{Has documented<br/>counter-evidence?}
+
+    CHECK -->|No evidence| DOUBTED["DOUBTED<br/>factualBasis: opinion/alleged"]
+    CHECK -->|Some evidence| DISPUTED["CONTESTED<br/>factualBasis: disputed"]
+    CHECK -->|Strong evidence| ESTABLISHED["CONTESTED<br/>factualBasis: established"]
+
+    DOUBTED --> W1["Weight: 1.0x<br/>Full weight"]
+    DISPUTED --> W2["Weight: 0.5x<br/>Reduced"]
+    ESTABLISHED --> W3["Weight: 0.3x<br/>Heavily reduced"]
+
+    style DOUBTED fill:#fff3e0,color:#000
+    style DISPUTED fill:#ffecb3,color:#000
+    style ESTABLISHED fill:#ffcdd2,color:#000
+    style W1 fill:#c8e6c9,color:#000
+    style W2 fill:#fff9c4,color:#000
+    style W3 fill:#ffcdd2,color:#000
+{{/mermaid}}

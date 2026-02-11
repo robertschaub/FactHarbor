@@ -1,0 +1,54 @@
+= Claim and Scenario Lifecycle (Overview) =
+
+{{mermaid}}
+flowchart TD
+    classDef ai fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef gate fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef ucm fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    %% 1. Understanding
+    subgraph Understanding ["1. Understanding"]
+        direction TB
+        Input[User Submits URL/Text] --> Understand[Understand Claim]
+        Understand:::ai --> Discovered["Discovers: Claims, AnalysisContexts,\nKeyFactors, Research Queries"]
+        Discovered:::ai --> Gate1[Gate 1: Claim Validation]
+        Gate1:::gate
+    end
+    %% 2. Evidence Retrieval
+    subgraph Evidence ["2. Evidence Retrieval"]
+        direction TB
+        Search[AI Web Search]:::ai --> Fetch[Source Fetching]
+        Fetch:::ai --> Extract[Evidence Extraction]
+        Extract:::ai --> Quality[Quality Filtering]
+        Quality:::ai --> Refine[Context Refinement]
+        Refine:::ai
+    end
+    %% 3. Verdict Generation
+    subgraph Verdicts ["3. Verdict Generation"]
+        direction TB
+        PerContext[Per-Context Verdicts]:::ai --> KeyFactors[KeyFactor Analysis]
+        KeyFactors:::ai --> Aggregate[Cross-Context Aggregation]
+        Aggregate:::ai --> Gate4[Gate 4: Confidence Check]
+        Gate4:::gate
+    end
+    %% 4. Presentation
+    subgraph Public ["4. Public Presentation"]
+        direction TB
+        Summary[Analysis Summary]
+        VerdictScale[7-Point Verdict Scale]
+        EvidenceView[Evidence & Sources]
+    end
+    %% 5. UCM Feedback Loop
+    subgraph UCMLoop ["5. System Improvement"]
+        direction TB
+        Metrics[Monitor Quality Metrics]
+        UCMConfig[UCM Config Update]:::ucm
+    end
+    %% Flow
+    Understanding --> Evidence
+    Evidence --> Verdicts
+    Verdicts --> Public
+    Public -.-> Metrics
+    UCMConfig -.->|improved config| Understanding
+{{/mermaid}}
+
+Fully automated pipeline. No human editing of analysis data. Quality gates (blue) are mandatory: Gate 1 filters non-factual claims before research; Gate 4 validates verdict confidence before publication. System improvements flow through UCM configuration changes (dashed orange). AnalysisContexts are discovered during understanding and refined after evidence retrieval.

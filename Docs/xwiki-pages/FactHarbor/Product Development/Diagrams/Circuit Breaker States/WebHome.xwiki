@@ -1,0 +1,27 @@
+= Circuit Breaker States =
+
+{{mermaid}}
+stateDiagram-v2
+    [*] --> CLOSED: System starts healthy
+    CLOSED --> OPEN: Consecutive failures >= threshold
+    OPEN --> HALF_OPEN: Admin resumes system
+    HALF_OPEN --> CLOSED: Next call succeeds
+    HALF_OPEN --> OPEN: Next call fails
+
+    note right of CLOSED
+        Normal operation.
+        Failures counted.
+    end note
+
+    note right of OPEN
+        Circuit tripped.
+        System auto-paused.
+        New jobs stay QUEUED.
+        Webhook fires to admin.
+    end note
+
+    note right of HALF_OPEN
+        Admin resumed system.
+        Testing if provider recovered.
+    end note
+{{/mermaid}}

@@ -287,7 +287,7 @@
 * What are the trade-offs?
 * What are the success metrics?
 * Review date?
-**See**: [[Decision Processes>>FactHarbor.Organisation.Decision-Processes]]
+**See**: [[Decision Processes>>FactHarbor.Organisation.Governance.Decision Processes.WebHome]]
 === 8.3 Learning Library ===
 **Collect**:
 * Failed experiments (what didn't work)
@@ -367,7 +367,7 @@
 ---
 **Remember**: Continuous improvement means we're always learning, always testing, always getting better.
 == 12. Related Pages ==
-* [[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]] - Why we automate
+* [[Automation Philosophy>>FactHarbor.Organisation.Strategy.Automation Philosophy.WebHome]] - Why we automate
 * [[System Performance Metrics>>FactHarbor.Product Development.Specification.System-Performance-Metrics]] - What we measure
-* [[Contributor Processes>>FactHarbor.Organisation.Contributor-Processes]] - How to propose improvements
+* [[Contributor Processes>>FactHarbor.Organisation.How-We-Work-Together.Contributor Processes.WebHome]] - How to propose improvements
 * [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - How improvements are approved

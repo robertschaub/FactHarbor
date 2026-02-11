@@ -1,0 +1,22 @@
+= Verdict Scale =
+
+{{mermaid}}
+flowchart LR
+    TRUE["TRUE\n86-100%"]
+    MT["MOSTLY\nTRUE\n72-85%"]
+    LT["LEANING\nTRUE\n58-71%"]
+    MIXED["MIXED /\nUNVERIFIED\n43-57%"]
+    LF["LEANING\nFALSE\n29-42%"]
+    MF["MOSTLY\nFALSE\n15-28%"]
+    FALSE["FALSE\n0-14%"]
+
+    TRUE --- MT --- LT --- MIXED --- LF --- MF --- FALSE
+
+    style TRUE fill:#2e7d32,color:#fff
+    style MT fill:#43a047,color:#fff
+    style LT fill:#66bb6a,color:#000
+    style MIXED fill:#fdd835,color:#000
+    style LF fill:#ff9800,color:#000
+    style MF fill:#e65100,color:#fff
+    style FALSE fill:#b71c1c,color:#fff
+{{/mermaid}}

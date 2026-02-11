@@ -1,2 +1,18 @@
 = Governance Structure =
-{{include reference="FactHarbor.Organisation.Diagrams.Governance Structure_Mermaid.WebHome"/}}
+
+{{mermaid}}
+graph TD
+ A[General Assembly] -->|Elects| B[Governing Team 3-7]
+ B -->|Oversees| C[Team Members full-time]
+ C -->|Technical Coordinator| D[AKEL & Infrastructure]
+ C -->|Community Coordinator| E[Moderators part-time]
+ E -->|Moderate| F[Content]
+ G[Readers - Guests] -->|Browse/View| F
+ G2[Users - Registered] -->|Submit/Flag| F
+ H[UCM Administrators] -->|Configure| I[UCM System Config]
+ style A fill:#e1f5ff
+ style B fill:#ffe1f5
+ style D fill:#fff5e1
+{{/mermaid}}
+
+Simplified structure: General Assembly → Governing Team → Team Members. Readers (guests) browse and view. Registered users submit content (rate-limited). UCM Administrators manage system configuration.

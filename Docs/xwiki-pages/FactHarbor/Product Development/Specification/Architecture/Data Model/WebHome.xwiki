@@ -4,121 +4,15 @@ FactHarbor's data model centres on the **analysis result** — a structured repr
 
 == Entity Overview ==
 
-The following diagram shows all major entity groups and their primary relationships at a glance. For detailed views (result fields, target database, runtime entities, UI visibility), see [[Entity Views>>FactHarbor.Product Development.Specification.Diagrams.Entity Views.WebHome]].
+The following diagram shows all major entity groups and their primary relationships at a glance. For detailed views (result fields, target database, runtime entities, UI visibility), see [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
 
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.Entity Views.WebHome" section="HOverviewERD"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.Entity Views.WebHome" section="HOverviewERD"/}}
 
 == Analysis Entity Model ==
 
 The core analysis pipeline produces a hierarchy of entities: the input is decomposed into contexts, factors, and claims (Step 1), evidence is gathered from web sources (Step 2), and verdicts are generated per-claim and aggregated per-context into an overall article analysis (Steps 3-5).
 
-{{mermaid}}
-erDiagram
-    CLAIM_UNDERSTANDING ||--o{ ANALYSIS_CONTEXT : "detects"
-    CLAIM_UNDERSTANDING ||--o{ KEY_FACTOR : "discovers"
-    CLAIM_UNDERSTANDING ||--o{ SUB_CLAIM : "decomposes into"
-
-    SUB_CLAIM }o--o| ANALYSIS_CONTEXT : "scoped to"
-    SUB_CLAIM }o--o| KEY_FACTOR : "addresses"
-
-    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "supported by"
-    CLAIM_VERDICT }o--o| ANALYSIS_CONTEXT : "evaluated in"
-    CLAIM_VERDICT }o--o| KEY_FACTOR : "addresses"
-
-    EVIDENCE_ITEM }o--|| FETCHED_SOURCE : "from"
-
-    ARTICLE_ANALYSIS ||--o{ CLAIM_VERDICT : "aggregates"
-    ARTICLE_ANALYSIS ||--o{ CONTEXT_ANSWER : "per context"
-    CONTEXT_ANSWER }o--|| ANALYSIS_CONTEXT : "answers"
-
-    CLAIM_UNDERSTANDING {
-        string detectedInputType "claim or article"
-        string impliedClaim "Main assertion"
-        string articleThesis "Article thesis"
-        string riskTier "A B or C"
-    }
-
-    ANALYSIS_CONTEXT {
-        string id PK "CTX_xxx"
-        string name "Full name"
-        string subject "What is analysed"
-        string status "concluded ongoing pending unknown"
-        json metadata "Domain-specific details"
-    }
-
-    KEY_FACTOR {
-        string question "Decomposition question"
-        string factor "Short label"
-        string category "procedural evidential methodological"
-        string supports "yes no neutral"
-        boolean isContested "Contested flag"
-        string factualBasis "established disputed opinion unknown"
-    }
-
-    SUB_CLAIM {
-        string id PK "SC1 C1 etc"
-        string text "Claim statement"
-        string type "legal procedural factual evaluative"
-        boolean isCentral "Central claim flag"
-        string centrality "high medium low"
-        string harmPotential "high medium low"
-        string contextId FK "Linked AnalysisContext"
-        string keyFactorId FK "Linked KeyFactor"
-    }
-
-    CLAIM_VERDICT {
-        string claimId PK "Claim identifier"
-        int truthPercentage "0-100 calibrated"
-        int confidence "0-100"
-        string verdict "7-point scale label"
-        string riskTier "A B or C"
-        string reasoning "Explanation"
-        string_array supportingEvidenceIds "Evidence IDs"
-        string contextId FK "Linked AnalysisContext"
-        string keyFactorId FK "Linked KeyFactor"
-    }
-
-    EVIDENCE_ITEM {
-        string id PK "S1-E1 format"
-        string statement "Extracted evidence text"
-        string category "legal_provision statistic event etc"
-        string sourceExcerpt "Original text excerpt"
-        string probativeValue "high medium low"
-        string sourceAuthority "primary secondary opinion contested"
-        string evidenceBasis "scientific documented anecdotal etc"
-        string contextId FK "Linked AnalysisContext"
-        string sourceId FK "Linked FetchedSource"
-    }
-
-    FETCHED_SOURCE {
-        string id PK "S1 S2 etc"
-        string url "Full URL"
-        string domain "Extracted domain"
-        float trackRecordScore "0.0-1.0 reliability"
-        float trackRecordConfidence "0.0-1.0 eval confidence"
-        boolean trackRecordConsensus "Multi-model consensus"
-        boolean fetchSuccess "Content retrieval success"
-    }
-
-    CONTEXT_ANSWER {
-        string contextId FK "CTX_xxx"
-        string contextName "Full name"
-        int truthPercentage "0-100"
-        int confidence "0-100"
-        string shortAnswer "Brief answer"
-    }
-
-    ARTICLE_ANALYSIS {
-        string articleVerdict "7-point scale label"
-        int articleTruthPercentage "0-100 calibrated"
-        int claimsTotal "Total claims analysed"
-        int claimsSupported "Truth >= 72 pct"
-        int claimsRefuted "Truth < 43 pct"
-        boolean isPseudoscience "Pseudoscience detected"
-    }
-{{/mermaid}}
-
-//The complete analysis entity chain. Step 1 (Understand) produces CLAIM_UNDERSTANDING with detected ANALYSIS_CONTEXTs, KEY_FACTORs, and SUB_CLAIMs. Step 2 (Research) gathers EVIDENCE_ITEMs from FETCHED_SOURCEs. Steps 3-5 generate CLAIM_VERDICTs per claim, CONTEXT_ANSWERs per context, and an overall ARTICLE_ANALYSIS. All entities are embedded in the analysis result JSON blob — not separate database tables.//
+{{include reference="FactHarbor.Product Development.Diagrams.Analysis Entity Model ERD.WebHome"/}}
 
 == Entity Descriptions ==
 
@@ -164,28 +58,9 @@ For configuration storage and versioning, see [[Storage and Configuration>>FactH
 
 == 7-Point Verdict Scale ==
 
-{{mermaid}}
-flowchart LR
-    TRUE["TRUE\n86-100%"]
-    MT["MOSTLY\nTRUE\n72-85%"]
-    LT["LEANING\nTRUE\n58-71%"]
-    MIXED["MIXED /\nUNVERIFIED\n43-57%"]
-    LF["LEANING\nFALSE\n29-42%"]
-    MF["MOSTLY\nFALSE\n15-28%"]
-    FALSE["FALSE\n0-14%"]
+{{include reference="FactHarbor.Product Development.Diagrams.Verdict Scale.WebHome"/}}
 
-    TRUE --- MT --- LT --- MIXED --- LF --- MF --- FALSE
-
-    style TRUE fill:#2e7d32,color:#fff
-    style MT fill:#43a047,color:#fff
-    style LT fill:#66bb6a,color:#000
-    style MIXED fill:#fdd835,color:#000
-    style LF fill:#ff9800,color:#000
-    style MF fill:#e65100,color:#fff
-    style FALSE fill:#b71c1c,color:#fff
-{{/mermaid}}
-
-//The 7-point truth scale maps truth percentages to verdict labels. MIXED (evidence on both sides, confidence >= 60%) and UNVERIFIED (insufficient evidence, confidence < 60%) share the same percentage range but differ in their confidence interpretation.//
+//The 7-point verdict scale maps truth percentages to verdict labels. MIXED (evidence on both sides, confidence >= 60%) and UNVERIFIED (insufficient evidence, confidence < 60%) share the same percentage range but differ in their confidence interpretation.//
 
 |= Verdict |= Truth % Range |= Meaning
 | **TRUE** | 86-100% | Claim is well-supported by strong evidence
@@ -205,40 +80,7 @@ Both occupy the 43-57% truth range. The distinction is **confidence-based**:
 
 == Job Lifecycle ==
 
-{{mermaid}}
-erDiagram
-    JOB ||--o{ JOB_EVENT : "emits"
-    JOB ||--o| ANALYSIS_RESULT : "produces"
-
-    JOB {
-        string JobId PK "GUID"
-        string Status "QUEUED, RUNNING, SUCCEEDED, FAILED, PAUSED"
-        int Progress "0-100"
-        string InputType "text or url"
-        string InputValue "The submitted content"
-        datetime CreatedUtc "When submitted"
-        datetime UpdatedUtc "Last status change"
-    }
-
-    JOB_EVENT {
-        long Id PK "Auto-increment"
-        string JobId FK "Parent job"
-        string Level "info, warn, error"
-        string Message "Event description"
-        datetime TsUtc "Event timestamp"
-    }
-
-    ANALYSIS_RESULT {
-        string schemaVersion "2.7.0"
-        json meta "Providers, timing, gate stats"
-        string articleVerdict "7-point verdict"
-        int articleTruthPercentage "0-100"
-        json claimPattern "supported/uncertain/refuted counts"
-        int llmCalls "Total LLM invocations"
-    }
-{{/mermaid}}
-
-//Jobs progress through a lifecycle: QUEUED → RUNNING → SUCCEEDED or FAILED. If the system auto-pauses due to provider outage, jobs remain QUEUED until processing resumes. Events are logged at each stage and streamed to the client via SSE.//
+{{include reference="FactHarbor.Product Development.Diagrams.Job Lifecycle ERD.WebHome"/}}
 
 === Job Status Transitions ===
 
@@ -248,6 +90,10 @@ erDiagram
 | **SUCCEEDED** | Analysis complete, results available
 | **FAILED** | Analysis failed (provider error, timeout, or input issue)
 | **PAUSED** | System auto-paused due to provider outage (jobs resume when system recovers)
+
+== Audit Trail ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.Audit Trail ERD.WebHome"/}}
 
 == Storage ==
 

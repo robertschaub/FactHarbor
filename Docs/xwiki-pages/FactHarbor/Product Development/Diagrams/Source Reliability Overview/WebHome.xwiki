@@ -1,0 +1,35 @@
+= Source Reliability Overview =
+
+{{mermaid}}
+flowchart TB
+    subgraph analysis [FactHarbor Analysis Pipeline]
+        AN[orchestrated.ts<br/>Analyzer]
+        PF[prefetchSourceReliability<br/>Batch Prefetch]
+        SR[source-reliability.ts<br/>Sync Lookup + Weighting]
+    end
+
+    subgraph cache [Source Reliability Cache]
+        SQLITE[(SQLite<br/>source-reliability.db)]
+        MAP[In-Memory Map<br/>prefetchedScores]
+    end
+
+    subgraph evaluation [LLM Evaluation - Sequential Refinement]
+        EVAL["/api/internal/evaluate-source"]
+        LLM1[Claude<br/>Initial Evaluation]
+        LLM2[OpenAI mini model<br/>Cross-check and Refine]
+        FINAL[Final Result]
+    end
+
+    AN -->|1. Extract URLs| PF
+    PF -->|2. Batch lookup| SQLITE
+    SQLITE -->|3. Cache hits| MAP
+    PF -->|4. Cache miss| EVAL
+    EVAL --> LLM1
+    LLM1 -->|Initial result| LLM2
+    LLM2 -->|Refined result| FINAL
+    FINAL -->|5. Store score| SQLITE
+    FINAL -->|6. Populate| MAP
+    AN -->|7. Sync lookup| SR
+    SR -->|8. Read from| MAP
+    SR -->|9. Apply to| VERDICTS[Verdict Weighting]
+{{/mermaid}}

@@ -1,0 +1,27 @@
+= Storage Roadmap =
+
+{{mermaid}}
+flowchart LR
+    subgraph P1["POC (Current)"]
+        S1["3x SQLite\n+ in-memory Map"]
+    end
+
+    subgraph P2["Alpha"]
+        S2["Add URL cache\nAdd claim cache\n(still SQLite)"]
+    end
+
+    subgraph P3["Beta"]
+        S3["PostgreSQL\nfor factharbor.db\n(user accounts, search)"]
+    end
+
+    subgraph P4["V1.0+"]
+        S4["Redis IF multi-instance\nVector DB IF Shadow Mode\nS3 IF >50GB"]
+    end
+
+    P1 --> P2 --> P3 --> P4
+
+    style P1 fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style P2 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style P3 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style P4 fill:#f3e5f5,stroke:#6a1b9a,color:#000
+{{/mermaid}}

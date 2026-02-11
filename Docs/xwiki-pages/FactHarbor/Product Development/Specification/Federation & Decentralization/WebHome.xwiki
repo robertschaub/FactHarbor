@@ -110,4 +110,4 @@ Until then: **Focus on making the core product excellent** 🎯
 * [[When to Add Complexity>>FactHarbor.Product Development.DevOps.Guidelines.When to Add Complexity.WebHome]] - Federation triggers
 == Historical Note ==
 Earlier specification versions included detailed federation specifications. These have been moved to future vision documents. The federation architecture is well-designed and ready to implement when the time comes — not before V2.0+.
-**See**: [[Federation Architecture Diagram>>FactHarbor.Product Development.Specification.Diagrams.Federation Architecture.WebHome]] for the target architecture.
+{{include reference="FactHarbor.Product Development.Diagrams.Federation Architecture.WebHome"/}}

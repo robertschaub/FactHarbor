@@ -1,0 +1,37 @@
+= Quality Gates Flow =
+
+{{mermaid}}
+flowchart TB
+    subgraph Input["Step 1: Understand"]
+        CLAIMS["Extracted Claims"]
+        GATE1{{"Gate 1\nClaim Validation"}}
+        PASS1["Factual claims\nproceed to research"]
+        FAIL1["Opinions, predictions,\nnon-factual filtered out"]
+    end
+
+    subgraph Research["Step 2: Research"]
+        EVIDENCE["Evidence gathered\nfrom web sources"]
+    end
+
+    subgraph Verdict["Step 3: Verdict"]
+        VERDICTS["Claim verdicts\ngenerated"]
+        GATE4{{"Gate 4\nConfidence Assessment"}}
+        HIGH["HIGH / MEDIUM\nconfidence — publish"]
+        LOW["LOW confidence —\nflag for review"]
+        INSUF["INSUFFICIENT —\nmore research needed"]
+    end
+
+    CLAIMS --> GATE1
+    GATE1 -->|"Pass"| PASS1
+    GATE1 -->|"Fail"| FAIL1
+    PASS1 --> EVIDENCE --> VERDICTS --> GATE4
+    GATE4 -->|"HIGH/MEDIUM"| HIGH
+    GATE4 -->|"LOW"| LOW
+    GATE4 -->|"INSUFFICIENT"| INSUF
+
+    style Input fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Research fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Verdict fill:#fff9c4,stroke:#f9a825,color:#000
+{{/mermaid}}
+
+//Quality gates in the AKEL pipeline: Gate 1 filters non-factual claims before research, Gate 4 assesses verdict confidence based on evidence count, source quality, and agreement.//

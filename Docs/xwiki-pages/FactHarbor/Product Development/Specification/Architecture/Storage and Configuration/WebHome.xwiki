@@ -4,30 +4,7 @@ FactHarbor uses a three-database architecture with SQLite and a Unified Config M
 
 == Three-Database Architecture ==
 
-{{mermaid}}
-flowchart TB
-    subgraph NextJS["Next.js Web App"]
-        PIPELINE["AKEL Pipeline"]
-        CONFIG_SVC["Config Storage\n(config-storage.ts)"]
-        SR_SVC["SR Cache\n(source-reliability-cache.ts)"]
-    end
-
-    subgraph DotNet[".NET API"]
-        EF["Entity Framework\nCore"]
-    end
-
-    FH_DB[("factharbor.db\nJobs, events, metrics\n(.NET EF Core)")]
-    CONFIG_DB[("config.db\nUCM configuration\n(Next.js better-sqlite3)")]
-    SR_DB[("source-reliability.db\nSource credibility cache\n(Next.js better-sqlite3)")]
-
-    EF --> FH_DB
-    CONFIG_SVC --> CONFIG_DB
-    SR_SVC --> SR_DB
-    PIPELINE -->|"via REST API"| EF
-
-    style NextJS fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style DotNet fill:#e3f2fd,stroke:#1565c0,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Storage Architecture.WebHome"/}}
 
 //Each database has a single owner: factharbor.db is managed by the .NET API, config.db and source-reliability.db by the Next.js app. This prevents cross-service write conflicts and keeps each database focused on one concern.//
 
@@ -48,52 +25,7 @@ flowchart TB
 
 UCM provides runtime configuration management with schema validation, version tracking, and hot-reload support.
 
-{{mermaid}}
-flowchart TB
-    subgraph Admin["Admin UI"]
-        EDITOR["Config Editor\n(JSON / Form view)"]
-        HISTORY["Version History\n& Compare"]
-    end
-
-    subgraph Types["Configuration Types"]
-        PIPELINE["Pipeline Config"]
-        SEARCH["Search Config"]
-        CALC["Calculation Config"]
-        SR["Source Reliability"]
-        PROMPTS["Prompt Templates"]
-    end
-
-    subgraph Validation["Validation"]
-        ZOD["Zod Schema\nValidation"]
-        CANON["SHA-256\nContent Hash"]
-    end
-
-    subgraph Storage["SQLite (config.db)"]
-        BLOBS["config_blobs\n(immutable, content-addressed)"]
-        ACTIVE["config_active\n(activation pointers)"]
-        SNAPSHOTS["job_config_snapshots\n(per-job tracking)"]
-    end
-
-    subgraph Runtime["Runtime"]
-        CACHE["In-memory Map\n(60s TTL)"]
-        JOB["Analysis Job\n(reads snapshot)"]
-    end
-
-    EDITOR --> Types
-    Types --> ZOD
-    ZOD -->|"valid"| CANON
-    CANON --> BLOBS
-    BLOBS --> ACTIVE
-    ACTIVE --> SNAPSHOTS
-    ACTIVE --> CACHE
-    CACHE --> JOB
-    HISTORY --> BLOBS
-
-    style Admin fill:#f3e5f5,stroke:#6a1b9a,color:#000
-    style Validation fill:#fff9c4,stroke:#f9a825,color:#000
-    style Storage fill:#e3f2fd,stroke:#1565c0,color:#000
-    style Runtime fill:#e8f5e9,stroke:#2e7d32,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.UCM Config Architecture.WebHome"/}}
 
 //Admin edits a config in the UI. It passes through Zod schema validation, gets content-addressed (SHA-256), and stored as an immutable blob. An activation pointer selects the current version. Each analysis job snapshots the active config, ensuring reproducible results.//
 
@@ -124,31 +56,7 @@ flowchart TB
 
 == Storage Evolution Roadmap ==
 
-{{mermaid}}
-flowchart LR
-    subgraph P1["POC (Current)"]
-        S1["3x SQLite\n+ in-memory Map"]
-    end
-
-    subgraph P2["Alpha"]
-        S2["Add URL cache\nAdd claim cache\n(still SQLite)"]
-    end
-
-    subgraph P3["Beta"]
-        S3["PostgreSQL\nfor factharbor.db\n(user accounts, search)"]
-    end
-
-    subgraph P4["V1.0+"]
-        S4["Redis IF multi-instance\nVector DB IF Shadow Mode\nS3 IF >50GB"]
-    end
-
-    P1 --> P2 --> P3 --> P4
-
-    style P1 fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style P2 fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style P3 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style P4 fill:#f3e5f5,stroke:#6a1b9a,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Storage Roadmap.WebHome"/}}
 
 //Storage evolves incrementally: expand SQLite caching first (Alpha), migrate to PostgreSQL when user accounts and search are needed (Beta), add Redis/Vector DB/S3 only when specific triggers are met (V1.0+).//
 
@@ -160,6 +68,10 @@ flowchart LR
 | **Redis** | Defer | Multiple application instances needing shared cache
 | **Vector DB** | Defer | Shadow Mode data proves near-duplicate detection needs exceed text hashing
 | **S3** | Defer | Storage exceeds ~50GB
+
+== Deep Dive ==
+
+* [[Storage Technology>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Storage Technology.WebHome]] — Detailed caching value analysis, Redis/PostgreSQL/Vector DB assessments, cost modelling
 
 ----
 

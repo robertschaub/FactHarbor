@@ -1,0 +1,26 @@
+= Storage Architecture =
+
+{{mermaid}}
+flowchart TB
+    subgraph NextJS["Next.js Web App"]
+        PIPELINE["AKEL Pipeline"]
+        CONFIG_SVC["Config Storage\n(config-storage.ts)"]
+        SR_SVC["SR Cache\n(source-reliability-cache.ts)"]
+    end
+
+    subgraph DotNet[".NET API"]
+        EF["Entity Framework\nCore"]
+    end
+
+    FH_DB[("factharbor.db\nJobs, events, metrics\n(.NET EF Core)")]
+    CONFIG_DB[("config.db\nUCM configuration\n(Next.js better-sqlite3)")]
+    SR_DB[("source-reliability.db\nSource credibility cache\n(Next.js better-sqlite3)")]
+
+    EF --> FH_DB
+    CONFIG_SVC --> CONFIG_DB
+    SR_SVC --> SR_DB
+    PIPELINE -->|"via REST API"| EF
+
+    style NextJS fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style DotNet fill:#e3f2fd,stroke:#1565c0,color:#000
+{{/mermaid}}

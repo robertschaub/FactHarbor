@@ -1,0 +1,40 @@
+= LLM Model Tiering =
+
+{{mermaid}}
+flowchart LR
+    subgraph Tasks["Pipeline Tasks"]
+        UNDERSTAND["Understand\n(budget)"]
+        EXTRACT["Extract Evidence\n(budget)"]
+        REFINE["Context Refinement\n(standard)"]
+        VERDICT["Verdict Generation\n(premium)"]
+    end
+
+    subgraph Tiering["Model Tiering"]
+        ROUTER["model-tiering.ts"]
+    end
+
+    subgraph SDK["Vercel AI SDK"]
+        AISDK["generateText()\ngenerateObject()"]
+    end
+
+    subgraph Providers["Active Provider"]
+        BUDGET["Budget Model"]
+        STANDARD["Standard Model"]
+        PREMIUM["Premium Model"]
+    end
+
+    UNDERSTAND --> ROUTER
+    EXTRACT --> ROUTER
+    REFINE --> ROUTER
+    VERDICT --> ROUTER
+    ROUTER --> AISDK
+    AISDK --> BUDGET
+    AISDK --> STANDARD
+    AISDK --> PREMIUM
+
+    style Tasks fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Tiering fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Providers fill:#fff9c4,stroke:#f9a825,color:#000
+{{/mermaid}}
+
+//Per-task model tiering: lightweight tasks (extraction, understanding) use budget models, while critical tasks (verdict reasoning) use premium models. All calls routed through the Vercel AI SDK.//

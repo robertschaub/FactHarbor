@@ -1,0 +1,48 @@
+= System Architecture =
+
+{{mermaid}}
+flowchart TB
+    subgraph Client["Client Layer"]
+        BROWSER["Web Browser"]
+    end
+
+    subgraph NextJS["Next.js Web App (port 3000)"]
+        UI["UI Pages\n/analyze, /jobs, /admin"]
+        FH_API["Proxy API Routes\n/api/fh/*"]
+        INTERNAL["Internal API\n/api/internal/run-job"]
+        AKEL["AKEL Pipeline\norchestrated.ts"]
+        SHARED["Shared Modules\nevidence-filter, aggregation,\nquality-gates, source-reliability"]
+        CONFIG_DB[("config.db\nUCM Config")]
+        SR_DB[("source-reliability.db\nSR Cache")]
+    end
+
+    subgraph DotNet[".NET API (port 5000)"]
+        CONTROLLERS["Controllers\nAnalyze, Jobs, Health"]
+        SERVICES["Services\nJobService, RunnerClient"]
+        MAIN_DB[("factharbor.db\nJobs & Events")]
+    end
+
+    subgraph External["External Services"]
+        LLM["LLM Providers\nAnthropic, OpenAI, Google, Mistral"]
+        SEARCH["Search Providers\nGoogle CSE, SerpAPI"]
+    end
+
+    BROWSER --> UI
+    UI --> FH_API
+    FH_API --> CONTROLLERS
+    CONTROLLERS --> SERVICES
+    SERVICES --> MAIN_DB
+    SERVICES -->|"POST /api/internal/run-job\n(with retry + backoff)"| INTERNAL
+    INTERNAL --> AKEL
+    AKEL --> SHARED
+    AKEL --> LLM
+    AKEL --> SEARCH
+    AKEL --> CONFIG_DB
+    SHARED --> SR_DB
+
+    style NextJS fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style DotNet fill:#e3f2fd,stroke:#1565c0,color:#000
+    style External fill:#fff3e0,stroke:#e65100,color:#000
+{{/mermaid}}
+
+//Two-service architecture: Next.js web app (UI + AKEL analysis engine) and .NET API (job management + persistence), communicating via HTTP on a single host.//

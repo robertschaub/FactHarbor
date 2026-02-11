@@ -1,0 +1,29 @@
+= Evidence Quality Filtering Pipeline =
+
+{{mermaid}}
+flowchart TB
+    subgraph SOFT["Soft Enforcement"]
+        L1["Layer 1: Evidence Quality Filtering<br/>evidence-filter.ts<br/>Filter vague/incomplete evidence"]
+    end
+
+    subgraph HARD["Hard Enforcement"]
+        L2["Layer 2: Provenance Validation<br/>provenance-validation.ts<br/>Reject synthetic/LLM-generated content"]
+        L3["Layer 3: Tangential Baseless Pruning<br/>aggregation.ts<br/>Remove tangential claims with 0 facts"]
+        L4["Layer 4: Thesis Relevance Filtering<br/>aggregation.ts<br/>Tangential claims get weight=0"]
+        L5["Layer 5: Opinion-Only Factor Pruning<br/>aggregation.ts<br/>Remove opinion-only keyFactors"]
+        L6["Layer 6: Contestation Validation<br/>aggregation.ts<br/>Downgrade opinion-based contestation"]
+        L7["Layer 7: Context-Aware Routing<br/>analysis-contexts.ts<br/>Route to correct analytical context"]
+    end
+
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7
+
+    style L1 fill:#c8e6c9,color:#000
+    style L2 fill:#fff9c4,color:#000
+    style L3 fill:#fff9c4,color:#000
+    style L4 fill:#fff9c4,color:#000
+    style L5 fill:#fff9c4,color:#000
+    style L6 fill:#fff9c4,color:#000
+    style L7 fill:#e3f2fd,color:#000
+{{/mermaid}}
+
+//Green = evidence quality filter. Yellow = deterministic enforcement layers. Blue = context-aware routing. Each layer catches issues the previous layers may have missed.//

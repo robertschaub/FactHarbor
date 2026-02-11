@@ -1,0 +1,131 @@
+= Storage Technology =
+
+{{info}}
+**Developer Reference** — Detailed technology assessments for FactHarbor's storage layer: caching strategy, database evolution, and technology adoption criteria.
+
+For the architectural overview, see [[Storage and Configuration>>FactHarbor.Product Development.Specification.Architecture.Storage and Configuration.WebHome]].
+{{/info}}
+
+== Storage Patterns ==
+
+* **Analysis results**: JSON blob in ##ResultJson## column (per job), stored once by .NET API
+* **Config blobs**: Content-addressable with SHA-256 hash as PK, history tracked
+* **Job config snapshots**: Pipeline + search + SR config captured per job for auditability
+* **SR cache**: Per-domain reliability assessment with multi-model consensus scores
+
+**Current limitations:**
+* No relational queries across claims, evidence, or sources from different analyses
+* No full-text search on analysis content
+* Single-writer limitation (SQLite) — fine for single-instance but blocks horizontal scaling
+* Every analysis re-fetches URL content and recomputes all LLM calls from scratch
+
+== Caching Value Analysis ==
+
+{{warning}}
+The EVALUATE items require deeper analysis during Alpha planning before committing to scope and timeline.
+{{/warning}}
+
+|= Cacheable Item |= Estimated Savings |= Latency Impact |= Complexity |= Recommendation
+| **Claim-level results** | 30-50% LLM cost on duplicate claims | None (cache lookup) | MEDIUM — needs canonical claim hash + TTL + prompt-version awareness | EVALUATE in Alpha
+| **URL content** | $0 API cost but 5-15s latency per source | Major — eliminates re-fetch | LOW — URL hash + content + timestamp | EVALUATE in Alpha
+| **LLM responses** | Highest per-call savings | None | HIGH — prompt hash + input hash, invalidation on prompt change | DEFER — claim-level caching captures most benefit
+| **Search query results** | Marginal — search APIs are cheap | Minor | MEDIUM — results go stale quickly | NOT RECOMMENDED — volatile, low ROI
+
+=== Cost Impact Modeling ===
+
+Assuming ~$0.10-$2.00 per analysis (depending on article complexity and model tier):
+
+|= Usage Level |= Current Cost/day |= With Claim Cache (-35%) |= With URL Cache
+| 10 analyses/day | $1-20 | $0.65-13 | Same cost, 30-60s faster
+| 100 analyses/day | $10-200 | $6.50-130 | Same cost, 5-15 min faster
+| 1000 analyses/day | $100-2,000 | $65-1,300 | Same cost, 50-150 min faster
+
+**Key insight**: Claim caching saves money; URL caching saves time. Both follow the existing SQLite + in-memory ##Map## pattern from source reliability.
+
+== Redis Assessment ==
+
+=== Current Reality ===
+
+|= Original Redis Use Case |= Current Solution |= Gap?
+| Hot data caching | In-memory ##Map## (config), SQLite (SR) | No gap at current scale
+| Session management | No user auth = no sessions | Not needed until Beta
+| Rate limiting | Not implemented | Can be in-process for single-instance
+| Pub/sub for real-time | SSE events work without Redis | No gap for single-instance
+
+=== When Redis Becomes Necessary ===
+
+Redis adds value when:
+* **Multiple application instances** need shared cache/state (horizontal scaling)
+* **Sub-millisecond cache lookups** required (SQLite is ~1-5ms, sufficient for current needs)
+* **Distributed rate limiting** needed across multiple servers
+
+**Trigger criteria** (following [[When-to-Add-Complexity>>FactHarbor.Product Development.DevOps.Guidelines.When to Add Complexity.WebHome]] philosophy):
+* Single-instance SQLite cache latency >100ms
+* Need for >1 application instance
+* Rate limiting required across instances
+
+{{info}}
+**Decision: DEFER Redis.** Not needed for current or near-term development. SQLite + in-memory ##Map## handles all current caching needs.
+{{/info}}
+
+== PostgreSQL Assessment ==
+
+=== Current SQLite Limitations ===
+
+|= Limitation |= Impact |= When It Hurts
+| JSON blob storage (no relational queries) | Cannot query across analyses | When browse/search is needed
+| Single-writer | No concurrent writes | When horizontal scaling is needed
+| No complex aggregation | Cannot run cross-analysis analytics | When quality dashboards need SQL
+| No full-text search | Cannot search claim text or evidence | When browse/search is needed
+
+=== What PostgreSQL Enables ===
+
+* Browse/search claims across all analyses
+* Quality metrics dashboards with SQL aggregation
+* Evidence deduplication (FR54) with relational queries
+* User accounts and permissions (Beta requirement)
+* Multi-instance deployments
+
+=== Migration Path ===
+
+The .NET API already has PostgreSQL support configured (##appsettings.json##). Switching is a configuration change, not a code rewrite.
+
+**Note**: Keep SQLite for ##config.db## (portable) and ##source-reliability.db## (standalone). Only ##factharbor.db## needs PostgreSQL.
+
+{{info}}
+**Decision: EVALUATE for Alpha/Beta.** Add PostgreSQL when user accounts + search + evidence dedup needed. Requires deeper analysis during Alpha planning.
+{{/info}}
+
+== Vector Database Assessment ==
+
+{{info}}
+Full assessment: ##Docs/WIP/Vector_DB_Assessment.md## (February 2, 2026)
+{{/info}}
+
+**Conclusion**: Vector search is not required for core functionality. Vectors add value only for approximate similarity (near-duplicate claim detection, edge case clustering) and should remain **optional and offline** to preserve pipeline performance and determinism.
+
+**When to add**: Only after Shadow Mode data collection proves that near-duplicate detection needs exceed text-hash capability. Start with lightweight normalization + n-gram overlap (no vector DB needed).
+
+{{info}}
+**Decision: DEFER.** Re-evaluate after Shadow Mode data collection.
+{{/info}}
+
+== Decision Summary ==
+
+|= Technology |= Decision |= When |= Status
+| **SQLite URL cache** | EVALUATE | Alpha planning | Needs further analysis
+| **SQLite claim cache** | EVALUATE | Alpha planning | Needs further analysis
+| **Redis** | DEFER | Multi-instance | Agreed
+| **PostgreSQL** | EVALUATE | Alpha/Beta | Needs further analysis
+| **Vector DB** | DEFER | Post-Shadow Mode | Agreed
+| **S3** | DEFER | V1.0+ | Agreed
+
+{{info}}
+DEFER items are agreed. EVALUATE items (URL cache, claim cache, PostgreSQL) require deeper analysis during Alpha release planning — scope, dependencies, and prioritization to be determined as part of Alpha milestones.
+{{/info}}
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | [[Storage and Configuration>>FactHarbor.Product Development.Specification.Architecture.Storage and Configuration.WebHome]]
+
+**Document Status:** PARTIALLY APPROVED (February 2026) — DEFER decisions agreed; EVALUATE items need Alpha-phase analysis

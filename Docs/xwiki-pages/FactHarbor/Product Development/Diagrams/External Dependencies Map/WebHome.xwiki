@@ -1,0 +1,50 @@
+= External Dependencies Map =
+
+{{mermaid}}
+flowchart TB
+    subgraph FH["FactHarbor"]
+        AKEL["AKEL Pipeline"]
+        TIERING["Model Tiering\n(model-tiering.ts)"]
+        SEARCH_ABS["Search Abstraction\n(web-search.ts)"]
+        RETRIEVAL["Content Retrieval\n(retrieval.ts)"]
+        HEALTH["Provider Health\n(provider-health.ts)"]
+    end
+
+    subgraph LLM["LLM Providers (via Vercel AI SDK)"]
+        ANTHROPIC["Anthropic\nClaude Haiku 4.5\nClaude Opus 4.6"]
+        OPENAI["OpenAI\nGPT-4.1-mini\nGPT-4.1"]
+        GOOGLE["Google\nGemini 2.5-flash\nGemini 2.5-pro"]
+        MISTRAL["Mistral\nLarge / Small"]
+    end
+
+    subgraph SEARCH["Search Providers"]
+        CSE["Google Custom\nSearch Engine"]
+        SERP["SerpAPI"]
+    end
+
+    subgraph CONTENT["Content Sources"]
+        HTML["HTML Pages\n(via cheerio)"]
+        PDF["PDF Documents\n(via pdf2json)"]
+    end
+
+    AKEL --> TIERING
+    TIERING --> ANTHROPIC
+    TIERING --> OPENAI
+    TIERING --> GOOGLE
+    TIERING --> MISTRAL
+    AKEL --> SEARCH_ABS
+    SEARCH_ABS -->|"Primary"| CSE
+    SEARCH_ABS -->|"Fallback"| SERP
+    AKEL --> RETRIEVAL
+    RETRIEVAL --> HTML
+    RETRIEVAL --> PDF
+    HEALTH -.->|"monitors"| LLM
+    HEALTH -.->|"monitors"| SEARCH
+
+    style FH fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style LLM fill:#e3f2fd,stroke:#1565c0,color:#000
+    style SEARCH fill:#fff3e0,stroke:#e65100,color:#000
+    style CONTENT fill:#f3e5f5,stroke:#6a1b9a,color:#000
+{{/mermaid}}
+
+//FactHarbor's external dependency map showing integrations with 4 LLM providers, 2 search providers, and web content sources, all routed through abstraction layers and monitored by the provider health system.//

@@ -191,40 +191,7 @@ See Calculations.md (see Calculations.md in local docs) for detailed verdict cal
 
 === Promptfoo Test Coverage (v2.8.2) ===
 
-{{mermaid}}
-flowchart TB
-    subgraph Configs["📋 Test Configurations"]
-        SR[promptfooconfig.source-reliability.yaml<br/>7 test cases]
-        VD[promptfooconfig.yaml<br/>5 test cases]
-        TA[promptfooconfig.text-analysis.yaml<br/>26 test cases]
-    end
-
-    subgraph TextAnalysis["🔬 Text Analysis Tests (26 cases)"]
-        INPUT[Input Classification<br/>8 tests]
-        EVIDENCE[Evidence Quality<br/>5 tests]
-        SCOPE[Context Similarity<br/>5 tests]
-        VERDICT[Verdict Validation<br/>8 tests]
-    end
-
-    subgraph Providers["🤖 Test Providers"]
-        HAIKU[Claude Haiku]
-        GPT4MINI[GPT-4o Mini]
-    end
-
-    TA --> INPUT
-    TA --> EVIDENCE
-    TA --> SCOPE
-    TA --> VERDICT
-
-    INPUT --> HAIKU
-    INPUT --> GPT4MINI
-    EVIDENCE --> HAIKU
-    EVIDENCE --> GPT4MINI
-    SCOPE --> HAIKU
-    SCOPE --> GPT4MINI
-    VERDICT --> HAIKU
-    VERDICT --> GPT4MINI
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Promptfoo Test Coverage.WebHome"/}}
 
 === Test Summary ===
 

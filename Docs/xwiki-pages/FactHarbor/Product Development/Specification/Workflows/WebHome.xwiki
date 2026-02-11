@@ -47,7 +47,7 @@ User submits → Duplicate detection → Categorization → Processing queue →
 
 == 2.5 Claim Analysis Workflow ==
 
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.Claim and Scenario Workflow.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.Claim and Scenario Workflow.WebHome"/}}
 
 == 3. Automated Analysis Workflow ==
 {{{
@@ -70,7 +70,7 @@ Publish OR Flag for improvement
 **Timeline**: 10-30 seconds
 **90%+ published automatically**
 == 3.5 Evidence and Verdict Workflow ==
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.Evidence and Verdict Workflow.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.Evidence and Verdict Workflow.WebHome"/}}
 == 4. Publication Workflow ==
 **Standard (90%+)**: Pass quality gates → Publish immediately with confidence scores
 **High Risk (<10%)**: Risk > 80% → Moderator review
@@ -83,7 +83,7 @@ UCM Administrator updates config → New immutable blob created → Activated �
 **Every analysis job** records the UCM config snapshot used for reproducibility
 == 5.5 Quality and Audit Workflow ==
 
-{{include reference="FactHarbor.Product Development.Specification.Diagrams.Quality and Audit Workflow.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.Quality and Audit Workflow.WebHome"/}}
 
 == 6. Flagging Workflow ==
 {{{

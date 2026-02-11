@@ -162,7 +162,7 @@ Now at v2.10.2:
 
 |= Aspect |= POC (Current) |= Alpha (Proposed)
 | Quality | Unknown baseline | Measured, tracked, targets set
-| Caching | None beyond SR | Claim + URL caching (see [[Storage Architecture>>FactHarbor.Product Development.Specification.Diagrams.Storage Architecture.WebHome]])
+| Caching | None beyond SR | Claim + URL caching (see [[Storage Architecture>>FactHarbor.Product Development.Diagrams.Storage Architecture.WebHome]])
 | Testing | Manual only | Promptfoo + baseline + metrics
 | Config | Hot-reload ready | Validated in production-like conditions
 | Phase label | "POC1 v2.10.2" | "Alpha 0.1"
@@ -204,38 +204,7 @@ POC1 (Specification Complete) -> POC2 (Quality & Reliability) -> Beta 0 (User Te
 
 === Current Roadmap ===
 
-{{mermaid}}
-
-graph LR
-    subgraph Phase1[POC Complete]
-        P1A[Run baseline test]
-        P1B[Integrate metrics]
-    end
-
-    subgraph Phase2[Alpha]
-        P2A[Alpha 0.1: Baseline + metrics]
-        P2B[Alpha 0.2: Caching]
-        P2C[Alpha 0.3: Quality improvements]
-        P2D[Alpha 0.4: Performance]
-        P2E[Alpha 0.5: Security review]
-    end
-
-    subgraph Phase3[Beta]
-        P3A[PostgreSQL migration]
-        P3B[User accounts]
-        P3C[Browse/search]
-        P3D[Evidence dedup FR54]
-    end
-
-    subgraph Phase4[V1.0]
-        P4A[Public launch]
-    end
-
-    Phase1 --> Phase2
-    Phase2 --> Phase3
-    Phase3 --> Phase4
-
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Development Roadmap.WebHome"/}}
 
 **POC Complete** (after baseline test): Run baseline quality test, integrate metrics, document results.
 
@@ -269,7 +238,7 @@ All decisions are agreed. Next steps: (1) Run baseline quality test, (2) Integra
 
 == Related Pages ==
 
-* [[Storage Architecture>>FactHarbor.Product Development.Specification.Diagrams.Storage Architecture.WebHome]] — Database and caching decisions (Alpha milestone 0.2)
+* [[Storage Architecture>>FactHarbor.Product Development.Diagrams.Storage Architecture.WebHome]] — Database and caching decisions (Alpha milestone 0.2)
 * [[POC1>>FactHarbor.Product Development.Planning.POC1.WebHome]] — Original POC1 goals and current implementation status
 * [[POC2>>FactHarbor.Product Development.Planning.POC2.WebHome]] — Original POC2 goals (superseded by this document)
 * [[Roadmap Overview>>FactHarbor.Product Development.Planning.WebHome]] — Implementation roadmap

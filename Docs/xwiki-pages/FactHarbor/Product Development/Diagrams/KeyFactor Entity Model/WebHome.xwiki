@@ -1,0 +1,106 @@
+= KeyFactor Entity Model =
+
+{{mermaid}}
+erDiagram
+    ANALYSIS ||--o| ARTICLE : "analyzes"
+    ANALYSIS ||--|| THESIS : "has"
+    ANALYSIS ||--o{ KEY_FACTOR : "decomposes into"
+    ANALYSIS ||--|| OVERALL_VERDICT : "produces"
+
+    ARTICLE ||--|{ CLAIM : "contains"
+
+    THESIS ||--o{ KEY_FACTOR : "decomposed by"
+
+    KEY_FACTOR ||--o{ CLAIM : "answered by"
+    KEY_FACTOR ||--o| CONTESTATION : "may have"
+    KEY_FACTOR ||--|| FACTOR_VERDICT : "has"
+
+    CLAIM ||--o{ EVIDENCE : "supported by"
+    CLAIM ||--|| CLAIM_VERDICT : "has"
+
+    EVIDENCE }o--|| SOURCE : "from"
+
+    FACTOR_VERDICT }o--o{ CLAIM_VERDICT : "aggregates"
+    OVERALL_VERDICT }o--o{ FACTOR_VERDICT : "derived from"
+    OVERALL_VERDICT }o--o{ CLAIM_VERDICT : "also considers"
+
+    ANALYSIS {
+        string id PK
+        string inputType "text|url"
+        string inputValue
+        datetime createdAt
+    }
+
+    ARTICLE {
+        string id PK
+        string url
+        string title
+        string fullText
+    }
+
+    THESIS {
+        string id PK
+        string statement "main claim or question"
+        string impliedClaim "what YES would confirm"
+    }
+
+    KEY_FACTOR {
+        string id PK
+        string question "decomposition question"
+        string factor "short label"
+        string category "procedural|evidential|methodological"
+    }
+
+    FACTOR_VERDICT {
+        string id PK
+        string supports "yes|no|neutral"
+        string explanation
+    }
+
+    CLAIM {
+        string id PK
+        string text
+        string type "legal|procedural|factual|evaluative"
+        string role "core|attribution|source|timing"
+        boolean isCentral
+        string keyFactorId FK "which factor this answers"
+    }
+
+    EVIDENCE {
+        string id PK
+        string fact
+        string category
+        string sourceExcerpt
+        boolean isContestedClaim
+    }
+
+    SOURCE {
+        string id PK
+        string url
+        string title
+        float trackRecordScore
+    }
+
+    CONTESTATION {
+        string id PK
+        string contestedBy
+        string factualBasis "established|disputed|opinion|unknown"
+        string reason
+    }
+
+    CLAIM_VERDICT {
+        string id PK
+        string verdict "7-point scale"
+        int truthPercentage
+        string reasoning
+    }
+
+    OVERALL_VERDICT {
+        string id PK
+        string verdict
+        int truthPercentage
+        string verdictReason
+    }
+{{/mermaid}}
+
+//Entity relationship model showing Thesis -> KeyFactor -> Claim hierarchy, with contestation attaching at the KeyFactor level.//

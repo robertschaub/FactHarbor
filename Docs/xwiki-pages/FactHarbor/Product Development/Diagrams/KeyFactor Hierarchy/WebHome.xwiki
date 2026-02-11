@@ -1,0 +1,39 @@
+= KeyFactor Hierarchy =
+
+{{mermaid}}
+flowchart TB
+    THESIS["THESIS\n'The Bolsonaro trial was fair'"]
+
+    KF1["KEY FACTOR\n'Due process\nfollowed?'"]
+    KF2["KEY FACTOR\n'Evidence basis'"]
+    KF3["KEY FACTOR\n'Impartiality'"]
+
+    THESIS --> KF1
+    THESIS --> KF2
+    THESIS --> KF3
+
+    C1["Claim\nSC1"]
+    C2["Claim\nSC2"]
+    C3["Claim\nSC3"]
+    C4["Claim\nSC4"]
+    C5["Claim\nSC5"]
+    C6["Claim\nSC6"]
+
+    KF1 --> C1
+    KF1 --> C2
+    KF2 --> C3
+    KF2 --> C4
+    KF3 --> C5
+    KF3 --> C6
+
+    style THESIS fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style KF1 fill:#e1f5fe,stroke:#0288d1,color:#000
+    style KF2 fill:#e1f5fe,stroke:#0288d1,color:#000
+    style KF3 fill:#e1f5fe,stroke:#0288d1,color:#000
+    style C1 fill:#fff3e0,stroke:#ef6c00,color:#000
+    style C2 fill:#fff3e0,stroke:#ef6c00,color:#000
+    style C3 fill:#fff3e0,stroke:#ef6c00,color:#000
+    style C4 fill:#fff3e0,stroke:#ef6c00,color:#000
+    style C5 fill:#fff3e0,stroke:#ef6c00,color:#000
+    style C6 fill:#fff3e0,stroke:#ef6c00,color:#000
+{{/mermaid}}

@@ -4,50 +4,7 @@ FactHarbor uses a **two-service architecture**: a Next.js web application (UI + 
 
 == Two-Service Architecture ==
 
-{{mermaid}}
-flowchart TB
-    subgraph Client["Client Layer"]
-        BROWSER["Web Browser"]
-    end
-
-    subgraph NextJS["Next.js Web App (port 3000)"]
-        UI["UI Pages\n/analyze, /jobs, /admin"]
-        FH_API["Proxy API Routes\n/api/fh/*"]
-        INTERNAL["Internal API\n/api/internal/run-job"]
-        AKEL["AKEL Pipeline\norchestrated.ts"]
-        SHARED["Shared Modules\nevidence-filter, aggregation,\nquality-gates, source-reliability"]
-        CONFIG_DB[("config.db\nUCM Config")]
-        SR_DB[("source-reliability.db\nSR Cache")]
-    end
-
-    subgraph DotNet[".NET API (port 5000)"]
-        CONTROLLERS["Controllers\nAnalyze, Jobs, Health"]
-        SERVICES["Services\nJobService, RunnerClient"]
-        MAIN_DB[("factharbor.db\nJobs & Events")]
-    end
-
-    subgraph External["External Services"]
-        LLM["LLM Providers\nAnthropic, OpenAI, Google, Mistral"]
-        SEARCH["Search Providers\nGoogle CSE, SerpAPI"]
-    end
-
-    BROWSER --> UI
-    UI --> FH_API
-    FH_API --> CONTROLLERS
-    CONTROLLERS --> SERVICES
-    SERVICES --> MAIN_DB
-    SERVICES -->|"POST /api/internal/run-job\n(with retry + backoff)"| INTERNAL
-    INTERNAL --> AKEL
-    AKEL --> SHARED
-    AKEL --> LLM
-    AKEL --> SEARCH
-    AKEL --> CONFIG_DB
-    SHARED --> SR_DB
-
-    style NextJS fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style DotNet fill:#e3f2fd,stroke:#1565c0,color:#000
-    style External fill:#fff3e0,stroke:#e65100,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.System Architecture.WebHome"/}}
 
 //The Next.js app serves the UI and runs the AKEL analysis engine. The .NET API manages job persistence, status tracking, and event streaming. Both access separate SQLite databases; the .NET API triggers the analysis engine via HTTP.//
 
@@ -60,38 +17,7 @@ flowchart TB
 
 == Request Lifecycle ==
 
-{{mermaid}}
-sequenceDiagram
-    participant U as User (Browser)
-    participant NUI as Next.js UI
-    participant NAPI as Next.js /api/fh/*
-    participant DAPI as .NET API
-    participant DB as SQLite
-    participant RUN as Next.js /api/internal/run-job
-    participant AKEL as AKEL Pipeline
-
-    U->>NUI: Submit article/URL
-    NUI->>NAPI: POST /api/fh/analyze
-    NAPI->>DAPI: POST /v1/analyze
-    DAPI->>DB: Create job (QUEUED)
-    DAPI-->>NAPI: 201 {jobId}
-    NAPI-->>NUI: Redirect to /jobs/{id}
-
-    DAPI->>RUN: POST /api/internal/run-job (async, with retry)
-    RUN->>DB: Update status (RUNNING)
-    RUN->>AKEL: Execute pipeline
-
-    Note over AKEL: Understand → Research → Verdicts → Report
-
-    AKEL-->>RUN: AnalysisResult JSON
-    RUN->>DAPI: PATCH /v1/internal/jobs/{id}
-    DAPI->>DB: Save result (SUCCEEDED)
-
-    U->>NUI: Poll /jobs/{id}
-    NUI->>NAPI: GET /api/fh/jobs/{id}/events
-    NAPI->>DAPI: GET /v1/jobs/{id}/events (SSE)
-    DAPI-->>U: Stream events in real-time
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Request Lifecycle.WebHome"/}}
 
 //A user submits input, the .NET API queues a job and triggers the analysis runner. The AKEL pipeline runs asynchronously, and results are streamed back to the user via Server-Sent Events.//
 
@@ -106,55 +32,7 @@ sequenceDiagram
 
 == Technology Stack ==
 
-{{mermaid}}
-flowchart TB
-    subgraph UI_LAYER["User Interface"]
-        REACT["React 18"]
-        NEXTJS["Next.js App Router"]
-        CSS["CSS Modules"]
-    end
-
-    subgraph ENGINE["Analysis Engine"]
-        TS["TypeScript"]
-        AI_SDK["Vercel AI SDK"]
-        ZOD["Zod Validation"]
-        CHEERIO["cheerio (HTML)"]
-        PDF["pdf2json (PDF)"]
-    end
-
-    subgraph API_LAYER["API Backend"]
-        DOTNET[".NET 8 / ASP.NET Core"]
-        EF["Entity Framework Core"]
-        SQLITE_LIB["Microsoft.Data.Sqlite"]
-    end
-
-    subgraph STORAGE["Storage"]
-        FH_DB["factharbor.db\nJobs, events, metrics"]
-        CFG_DB["config.db\nUCM configuration"]
-        SR_DB["source-reliability.db\nSource credibility cache"]
-    end
-
-    subgraph EXTERNAL["External Services"]
-        ANTHROPIC["Anthropic (Claude Haiku 4.5, Opus 4.6)"]
-        OPENAI["OpenAI (GPT-4.1, GPT-4.1-mini)"]
-        GOOGLE["Google (Gemini 2.5-pro, 2.5-flash)"]
-        MISTRAL_P["Mistral (Large, Small)"]
-        GCSE["Google Custom Search Engine"]
-        SERP["SerpAPI"]
-    end
-
-    UI_LAYER --> ENGINE
-    ENGINE --> EXTERNAL
-    UI_LAYER --> API_LAYER
-    API_LAYER --> STORAGE
-    ENGINE --> STORAGE
-
-    style UI_LAYER fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style ENGINE fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style API_LAYER fill:#e3f2fd,stroke:#1565c0,color:#000
-    style STORAGE fill:#fff9c4,stroke:#f9a825,color:#000
-    style EXTERNAL fill:#fff3e0,stroke:#e65100,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Technology Stack.WebHome"/}}
 
 //The technology stack is organised in layers: UI (React/Next.js), Engine (TypeScript/AI SDK), API (.NET/EF Core), Storage (SQLite), and External Services (LLM + search providers with specific model versions).//
 

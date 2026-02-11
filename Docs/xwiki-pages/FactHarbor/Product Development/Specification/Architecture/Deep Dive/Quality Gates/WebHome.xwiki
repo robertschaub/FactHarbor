@@ -24,37 +24,7 @@ Quality Gates ensure that:
 
 === 2.1 Pipeline Integration ===
 
-{{mermaid}}
-flowchart TB
-    subgraph UNDERSTAND["Phase 1: UNDERSTAND"]
-        Input[User Input] --> ClaimExtraction[Claim Extraction]
-        ClaimExtraction --> GATE1["Gate 1: Claim Validation<br/>Filter opinions,<br/>predictions,<br/>low-specificity"]
-        GATE1 -->|Pass| ValidClaims[Valid Claims]
-        GATE1 -.->|Fail| ExcludedClaims[Excluded Claims<br/>with reasons]
-    end
-
-    subgraph RESEARCH["Phase 2: RESEARCH"]
-        ValidClaims --> Search[Web Search]
-        Search --> Sources[Source Documents]
-        Sources --> EvidenceExtraction[Evidence Extraction]
-    end
-
-    subgraph VERDICT["Phase 3: VERDICT GENERATION"]
-        EvidenceExtraction --> VerdictGeneration[Verdict Generation]
-        VerdictGeneration --> GATE4["Gate 4: Confidence Assessment<br/>Check source count,<br/>fact count,<br/>reasoning quality"]
-        GATE4 -->|Pass| PublishableVerdicts[Publishable Verdicts]
-        GATE4 -->|Warn| LowConfidenceVerdicts[Low Confidence<br/>Verdicts]
-    end
-
-    style GATE1 fill:#fff9c4,color:#000
-    style GATE4 fill:#fff9c4,color:#000
-    style ExcludedClaims fill:#ffcdd2,color:#000
-    style ValidClaims fill:#c8e6c9,color:#000
-    style PublishableVerdicts fill:#c8e6c9,color:#000
-    style LowConfidenceVerdicts fill:#ffecb3,color:#000
-{{/mermaid}}
-
-//Yellow = quality gate checkpoints. Green = passed. Red = excluded. Orange = low confidence warning.//
+{{include reference="FactHarbor.Product Development.Diagrams.Quality Gates Integration.WebHome"/}}
 
 === 2.2 Gate States ===
 

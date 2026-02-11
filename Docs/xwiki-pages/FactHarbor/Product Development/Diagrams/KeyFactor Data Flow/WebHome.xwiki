@@ -1,0 +1,33 @@
+= KeyFactor Data Flow =
+
+{{mermaid}}
+flowchart TD
+    subgraph "Step 1: Understand"
+        INPUT[User Input] --> DETECT[Detect Input Type]
+        DETECT --> THESIS_EXT[Extract Thesis]
+        THESIS_EXT --> DECOMPOSE[Decompose into KeyFactors]
+        DECOMPOSE --> CLAIMS_EXT[Extract Claims per Factor]
+    end
+
+    subgraph "Step 2: Research"
+        CLAIMS_EXT --> SEARCH[Search for Evidence]
+        SEARCH --> FETCH[Fetch Sources]
+        FETCH --> EXTRACT[Extract Evidence]
+    end
+
+    subgraph "Step 3: Verdict Generation"
+        EXTRACT --> CLAIM_EVAL[Evaluate Each Claim]
+        CLAIM_EVAL --> FACTOR_AGG[Aggregate by KeyFactor]
+        FACTOR_AGG --> CONTEST[Identify Contestations]
+        CONTEST --> OVERALL[Generate Overall Verdict]
+    end
+
+    subgraph "Output"
+        OVERALL --> RESULT[Analysis Result]
+        RESULT --> KF_OUT[KeyFactors with verdicts]
+        RESULT --> CV_OUT[Claim Verdicts]
+        RESULT --> OV_OUT[Overall Verdict]
+    end
+{{/mermaid}}
+
+//KeyFactors are discovered in the Understand step and guide research. Verdicts are aggregated per factor in the Verdict step.//

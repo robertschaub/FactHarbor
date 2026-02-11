@@ -1,0 +1,25 @@
+= KeyFactor Claim Mapping =
+
+{{mermaid}}
+graph TD
+    KF1[KeyFactor: Due Process] --> C1[Claim: Court followed procedures]
+    KF1 --> C2[Claim: Defendant had legal representation]
+    KF1 --> C3[Claim: Appeals process was available]
+
+    KF2[KeyFactor: Evidence Basis] --> C4[Claim: Ruling cited documented evidence]
+    KF2 --> C5[Claim: Video evidence was authenticated]
+
+    KF3[KeyFactor: Impartiality] --> C6[Claim: Judge had no conflicts of interest]
+    KF3 --> C7[Claim: Judge served on both cases]
+
+    style KF1 fill:#e1f5fe,color:#000
+    style KF2 fill:#e1f5fe,color:#000
+    style KF3 fill:#e1f5fe,color:#000
+    style C1 fill:#fff3e0,color:#000
+    style C2 fill:#fff3e0,color:#000
+    style C3 fill:#fff3e0,color:#000
+    style C4 fill:#fff3e0,color:#000
+    style C5 fill:#fff3e0,color:#000
+    style C6 fill:#fff3e0,color:#000
+    style C7 fill:#fff3e0,color:#000
+{{/mermaid}}

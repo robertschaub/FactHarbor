@@ -33,6 +33,7 @@ This section contains detailed implementation references for developers and test
 |= Page |= Description |= Key Files
 | [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] | Modular prompt composition, provider-specific variants, token optimisation | ##prompts/##
 | [[KeyFactors Design>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] | KeyFactor classification and decomposition | ##orchestrated.ts##
+| [[Storage Technology>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Storage Technology.WebHome]] | Caching value analysis, Redis/PostgreSQL/Vector DB assessments, cost modelling | ##config-storage.ts##, ##source-reliability-cache.ts##
 | [[Schema Migration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Schema Migration.WebHome]] | Database schema evolution patterns | ##Data/##
 
 == By Role ==

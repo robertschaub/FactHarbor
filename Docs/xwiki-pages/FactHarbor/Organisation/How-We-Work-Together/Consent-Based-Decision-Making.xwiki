@@ -96,7 +96,7 @@
 * ✅ Timeline set
 * ✅ Success metrics defined
 * ✅ Review date scheduled
-**Decision record created** (see [[Decision Processes>>FactHarbor.Organisation.Decision-Processes]]).
+**Decision record created** (see [[Decision Processes>>FactHarbor.Organisation.Governance.Decision Processes.WebHome]]).
 == 5. When to Use Consent ==
 **Use consent for**:
 * ✅ Algorithm changes
@@ -212,5 +212,5 @@
 * Major strategic changes → Voting (General Assembly)
 **See also**:
 * [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - Overall governance structure
-* [[Decision Processes>>FactHarbor.Organisation.Decision-Processes]] - Types of decisions
-* [[Contributor Processes>>FactHarbor.Organisation.Contributor-Processes]] - How to propose changes
+* [[Decision Processes>>FactHarbor.Organisation.Governance.Decision Processes.WebHome]] - Types of decisions
+* [[Contributor Processes>>FactHarbor.Organisation.How-We-Work-Together.Contributor Processes.WebHome]] - How to propose changes

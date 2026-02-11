@@ -1,0 +1,73 @@
+# Diagrams navigation order
+# Architecture
+System Architecture
+System Context
+Request Lifecycle
+Technology Stack
+External Dependencies Map
+LLM Model Tiering
+Storage Architecture
+Storage Roadmap
+Deployment Topology
+Security Model
+Circuit Breaker States
+Federation Architecture
+# AKEL
+AKEL Engine Overview
+AKEL Analysis Pipeline
+AKEL Pipeline Detail
+AKEL Shared Modules
+AKEL Quality Assurance
+# Data models
+Analysis Entity Model ERD
+Core Data Model ERD
+Entity Views
+Job Lifecycle ERD
+KeyFactor Entity Model
+KeyFactor Data Flow
+KeyFactor Claim Mapping
+KeyFactor Hierarchy
+Verdict Scale
+Audit Trail ERD
+# Config
+UCM Config Precedence
+UCM Config Architecture
+# Pipelines
+Orchestrated Pipeline Detail
+Monolithic Dynamic Pipeline Internal
+Pipeline Shared Primitives
+Pipeline Variant Dispatch
+# Overview
+Claim and Scenario Lifecycle (Overview)
+# Workflows
+Claim and Scenario Workflow
+Evidence and Verdict Workflow
+Quality and Audit Workflow
+# Quality
+Quality Gates Flow
+Quality Gates Integration
+Evidence Defence in Depth
+Evidence Quality Filtering Pipeline
+Context Detection Phases
+Context Detection Decision Tree
+Doubted vs Contested Flow
+# Source Reliability
+Source Reliability Overview
+Source Reliability Flow
+Source Reliability Prefetch Flow
+# Users and roles
+Human User Roles
+Technical and System Users
+User Class Diagram
+Role-Based Access Control
+# Planning
+Development Roadmap
+Architecture Roadmap
+# Testing
+Promptfoo Test Coverage
+# Automation
+Automation Level
+Automation Roadmap
+Manual vs Automated matrix
+# Outdated
+Outdated

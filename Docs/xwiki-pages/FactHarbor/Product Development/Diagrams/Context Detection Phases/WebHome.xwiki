@@ -1,0 +1,33 @@
+= Context Detection Phases =
+
+{{mermaid}}
+flowchart TB
+    subgraph UNDERSTAND["Phase 1: UNDERSTAND"]
+        Input[User Input] --> InitialDetection["Initial Context Detection<br/>From input text alone<br/>No evidence yet"]
+        InitialDetection --> Claims["Claim Extraction<br/>Claims tagged with contextId"]
+    end
+
+    subgraph RESEARCH["Phase 2: RESEARCH"]
+        Claims --> Search[Web Search]
+        Search --> Sources[Source Documents]
+    end
+
+    subgraph EXTRACT["Phase 3: EXTRACT_EVIDENCE"]
+        Sources --> EV[Evidence Extraction]
+        EV --> ES["EvidenceScope Metadata<br/>Per-evidence boundaries captured"]
+    end
+
+    subgraph REFINE["Phase 4: CONTEXT_REFINEMENT"]
+        InitialDetection --> Merge["Merge/Refine Contexts<br/>Evidence-based discovery<br/>Overlap detection<br/>LLM-driven merge"]
+        EV --> Merge
+        ES -.->|"Informs context<br/>discovery"| Merge
+        Merge --> FinalContexts["Final Contexts<br/>Max 5 contexts<br/>Warnings if 4-5"]
+    end
+
+    style InitialDetection fill:#fff3e0,color:#000
+    style ES fill:#fff9c4,color:#000
+    style Merge fill:#c8e6c9,color:#000
+    style FinalContexts fill:#e3f2fd,color:#000
+{{/mermaid}}
+
+//Orange = initial detection from input. Yellow = EvidenceScope metadata. Green = context refinement. Blue = final contexts.//

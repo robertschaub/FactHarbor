@@ -1,7 +1,7 @@
 = Data Examples =
 
 {{info}}
-**Current Implementation** — These examples use the current data model entities: ARTICLE, CLAIM, EVIDENCE_ITEM, SOURCE, ANALYSIS_CONTEXT, CLAIM_VERDICT, and ARTICLE_VERDICT. All data is stored as JSON in SQLite. See [[Core Data Model ERD>>FactHarbor.Product Development.Specification.Diagrams.Core Data Model ERD.WebHome]] for the entity diagram and [[Evidence and Verdict Workflow>>FactHarbor.Product Development.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]] for the verdict generation flow.
+**Current Implementation** — These examples use the current data model entities: ARTICLE, CLAIM, EVIDENCE_ITEM, SOURCE, ANALYSIS_CONTEXT, CLAIM_VERDICT, and ARTICLE_VERDICT. All data is stored as JSON in SQLite. See [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] for the entity diagram and [[Evidence and Verdict Workflow>>FactHarbor.Product Development.Diagrams.Evidence and Verdict Workflow.WebHome]] for the verdict generation flow.
 
 **Note:** Examples include ##opposingEvidenceIds## (on CLAIM_VERDICT) and ##bias## (on SOURCE) which are planned Phase 2 fields not yet in the current code. The ##methodology## field on ANALYSIS_CONTEXT is stored within the ##metadata## JSON in the current implementation. Updated 2026-02-08 per documentation audit.
 {{/info}}
@@ -16,7 +16,7 @@ The following examples illustrate complete, realistic FactHarbor data objects ac
 | **EVIDENCE_ITEM** | Individual evidence statement extracted from a source
 | **SOURCE** | Fetched web source with reliability scoring
 | **ANALYSIS_CONTEXT** | Bounded analytical frame requiring a separate verdict
-| **CLAIM_VERDICT** | Per-claim verdict on the 7-point truth scale
+| **CLAIM_VERDICT** | Per-claim verdict on the 7-point verdict scale
 | **ARTICLE_VERDICT** | Aggregated overall verdict for the article
 
 = Example A — "Hydrogen cars are more energy efficient than EVs" =
@@ -418,7 +418,7 @@ Based on the current implementation (v2.10.2), the following summarizes what AKE
 * Evidence extraction with source attribution and probative value scoring
 * Source reliability scoring (LLM + Cache architecture)
 * 7-layer evidence quality defense (provenance, tangential pruning, contestation validation)
-* Verdict generation on 7-point truth scale with confidence scoring
+* Verdict generation on 7-point verdict scale with confidence scoring
 * Quality gate enforcement (Gate 1: Claim Validation, Gate 4: Verdict Confidence)
 * Contestation detection (doubted vs contested status)
 * Harm potential assessment
@@ -433,7 +433,7 @@ Based on the current implementation (v2.10.2), the following summarizes what AKE
 
 == See Also ==
 
-* [[Core Data Model ERD>>FactHarbor.Product Development.Specification.Diagrams.Core Data Model ERD.WebHome]]
-* [[Evidence and Verdict Workflow>>FactHarbor.Product Development.Specification.Diagrams.Evidence and Verdict Workflow.WebHome]]
+* [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]]
+* [[Evidence and Verdict Workflow>>FactHarbor.Product Development.Diagrams.Evidence and Verdict Workflow.WebHome]]
 * [[AKEL>>FactHarbor.Product Development.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]]
 * [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]

@@ -1,0 +1,109 @@
+= Analysis Entity Model ERD =
+
+{{mermaid}}
+erDiagram
+    CLAIM_UNDERSTANDING ||--o{ ANALYSIS_CONTEXT : "detects"
+    CLAIM_UNDERSTANDING ||--o{ KEY_FACTOR : "discovers"
+    CLAIM_UNDERSTANDING ||--o{ SUB_CLAIM : "decomposes into"
+
+    SUB_CLAIM }o--o| ANALYSIS_CONTEXT : "scoped to"
+    SUB_CLAIM }o--o| KEY_FACTOR : "addresses"
+
+    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "supported by"
+    CLAIM_VERDICT }o--o| ANALYSIS_CONTEXT : "evaluated in"
+    CLAIM_VERDICT }o--o| KEY_FACTOR : "addresses"
+
+    EVIDENCE_ITEM }o--|| FETCHED_SOURCE : "from"
+
+    ARTICLE_ANALYSIS ||--o{ CLAIM_VERDICT : "aggregates"
+    ARTICLE_ANALYSIS ||--o{ CONTEXT_ANSWER : "per context"
+    CONTEXT_ANSWER }o--|| ANALYSIS_CONTEXT : "answers"
+
+    CLAIM_UNDERSTANDING {
+        string detectedInputType "claim or article"
+        string impliedClaim "Main assertion"
+        string articleThesis "Article thesis"
+        string riskTier "A B or C"
+    }
+
+    ANALYSIS_CONTEXT {
+        string id PK "CTX_xxx"
+        string name "Full name"
+        string subject "What is analysed"
+        string status "concluded ongoing pending unknown"
+        json metadata "Domain-specific details"
+    }
+
+    KEY_FACTOR {
+        string question "Decomposition question"
+        string factor "Short label"
+        string category "procedural evidential methodological"
+        string supports "yes no neutral"
+        boolean isContested "Contested flag"
+        string factualBasis "established disputed opinion unknown"
+    }
+
+    SUB_CLAIM {
+        string id PK "SC1 C1 etc"
+        string text "Claim statement"
+        string type "legal procedural factual evaluative"
+        boolean isCentral "Central claim flag"
+        string centrality "high medium low"
+        string harmPotential "high medium low"
+        string contextId FK "Linked AnalysisContext"
+        string keyFactorId FK "Linked KeyFactor"
+    }
+
+    CLAIM_VERDICT {
+        string claimId PK "Claim identifier"
+        int truthPercentage "0-100 calibrated"
+        int confidence "0-100"
+        string verdict "7-point scale label"
+        string riskTier "A B or C"
+        string reasoning "Explanation"
+        string_array supportingEvidenceIds "Evidence IDs"
+        string contextId FK "Linked AnalysisContext"
+        string keyFactorId FK "Linked KeyFactor"
+    }
+
+    EVIDENCE_ITEM {
+        string id PK "S1-E1 format"
+        string statement "Extracted evidence text"
+        string category "legal_provision statistic event etc"
+        string sourceExcerpt "Original text excerpt"
+        string probativeValue "high medium low"
+        string sourceAuthority "primary secondary opinion contested"
+        string evidenceBasis "scientific documented anecdotal etc"
+        string contextId FK "Linked AnalysisContext"
+        string sourceId FK "Linked FetchedSource"
+    }
+
+    FETCHED_SOURCE {
+        string id PK "S1 S2 etc"
+        string url "Full URL"
+        string domain "Extracted domain"
+        float trackRecordScore "0.0-1.0 reliability"
+        float trackRecordConfidence "0.0-1.0 eval confidence"
+        boolean trackRecordConsensus "Multi-model consensus"
+        boolean fetchSuccess "Content retrieval success"
+    }
+
+    CONTEXT_ANSWER {
+        string contextId FK "CTX_xxx"
+        string contextName "Full name"
+        int truthPercentage "0-100"
+        int confidence "0-100"
+        string shortAnswer "Brief answer"
+    }
+
+    ARTICLE_ANALYSIS {
+        string articleVerdict "7-point scale label"
+        int articleTruthPercentage "0-100 calibrated"
+        int claimsTotal "Total claims analysed"
+        int claimsSupported "Truth >= 72 pct"
+        int claimsRefuted "Truth < 43 pct"
+        boolean isPseudoscience "Pseudoscience detected"
+    }
+{{/mermaid}}
+
+//The complete analysis entity chain. Step 1 (Understand) produces CLAIM_UNDERSTANDING with detected ANALYSIS_CONTEXTs, KEY_FACTORs, and SUB_CLAIMs. Step 2 (Research) gathers EVIDENCE_ITEMs from FETCHED_SOURCEs. Steps 3-5 generate CLAIM_VERDICTs per claim, CONTEXT_ANSWERs per context, and an overall ARTICLE_ANALYSIS. All entities are embedded in the analysis result JSON blob — not separate database tables.//

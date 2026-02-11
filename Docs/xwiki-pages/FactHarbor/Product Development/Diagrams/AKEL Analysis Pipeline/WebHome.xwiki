@@ -1,0 +1,44 @@
+= AKEL Analysis Pipeline =
+
+{{mermaid}}
+flowchart TB
+    INPUT["User Input\n(text or URL)"] --> STEP1
+
+    subgraph STEP1["1. Understand"]
+        CLAIMS["Extract claims\nwith dependencies"]
+        CONTEXTS["Detect analysis\ncontexts"]
+        FACTORS["Discover\nKeyFactors"]
+        GATE1{{"Gate 1\nClaim Validation"}}
+        CLAIMS --> GATE1
+        CONTEXTS ~~~ FACTORS
+    end
+
+    STEP1 --> STEP2
+
+    subgraph STEP2["2. Research (iterative)"]
+        QUERY["Generate\nsearch queries"]
+        FETCH["Fetch & parse\nsources"]
+        FILTER["Filter evidence\n(7-layer defense)"]
+        QUERY --> FETCH --> FILTER
+        FILTER -.->|"gaps remain"| QUERY
+    end
+
+    STEP2 --> STEP3
+
+    subgraph STEP3["3. Verdict"]
+        PERCLAIM["Per-claim verdicts\n(7-point scale)"]
+        AGG["Aggregate weighted\nverdicts"]
+        GATE4{{"Gate 4\nConfidence Assessment"}}
+        PERCLAIM --> AGG --> GATE4
+    end
+
+    STEP3 --> STEP4["4. Summary"] --> STEP5["5. Report"] --> RESULT["AnalysisResult\n+ Markdown Report"]
+
+    style STEP1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style STEP2 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style STEP3 fill:#fff9c4,stroke:#f9a825,color:#000
+    style STEP4 fill:#f3e5f5,stroke:#6a1b9a,color:#000
+    style STEP5 fill:#f3e5f5,stroke:#6a1b9a,color:#000
+{{/mermaid}}
+
+//The 5-step AKEL analysis pipeline with quality gates. Step 2 (Research) is iterative. Gate 1 validates claims; Gate 4 assesses verdict confidence.//

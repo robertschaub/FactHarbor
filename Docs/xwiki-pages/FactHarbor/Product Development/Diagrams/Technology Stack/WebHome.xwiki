@@ -1,0 +1,53 @@
+= Technology Stack =
+
+{{mermaid}}
+flowchart TB
+    subgraph UI_LAYER["User Interface"]
+        REACT["React 18"]
+        NEXTJS["Next.js App Router"]
+        CSS["CSS Modules"]
+    end
+
+    subgraph ENGINE["Analysis Engine"]
+        TS["TypeScript"]
+        AI_SDK["Vercel AI SDK"]
+        ZOD["Zod Validation"]
+        CHEERIO["cheerio (HTML)"]
+        PDF["pdf2json (PDF)"]
+    end
+
+    subgraph API_LAYER["API Backend"]
+        DOTNET[".NET 8 / ASP.NET Core"]
+        EF["Entity Framework Core"]
+        SQLITE_LIB["Microsoft.Data.Sqlite"]
+    end
+
+    subgraph STORAGE["Storage"]
+        FH_DB["factharbor.db\nJobs, events, metrics"]
+        CFG_DB["config.db\nUCM configuration"]
+        SR_DB["source-reliability.db\nSource credibility cache"]
+    end
+
+    subgraph EXTERNAL["External Services"]
+        ANTHROPIC["Anthropic (Claude Haiku 4.5, Opus 4.6)"]
+        OPENAI["OpenAI (GPT-4.1, GPT-4.1-mini)"]
+        GOOGLE["Google (Gemini 2.5-pro, 2.5-flash)"]
+        MISTRAL_P["Mistral (Large, Small)"]
+        GCSE["Google Custom Search Engine"]
+        SERP["SerpAPI"]
+    end
+
+    UI_LAYER --> ENGINE
+    ENGINE --> EXTERNAL
+    UI_LAYER --> API_LAYER
+    API_LAYER --> STORAGE
+    ENGINE --> STORAGE
+
+    style UI_LAYER fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style ENGINE fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style API_LAYER fill:#e3f2fd,stroke:#1565c0,color:#000
+    style STORAGE fill:#fff9c4,stroke:#f9a825,color:#000
+    style EXTERNAL fill:#fff3e0,stroke:#e65100,color:#000
+{{/mermaid}}
+
+//Technology stack organised in layers: UI (React/Next.js), Engine (TypeScript/AI SDK), API (.NET/EF Core), Storage (SQLite), and External Services (LLM + search providers with specific model versions).//

@@ -1,0 +1,22 @@
+= Context Detection Decision Tree =
+
+{{mermaid}}
+flowchart TD
+    START{"What am I describing?"}
+
+    START -->|"Top-level<br/>question/thesis"| Q1{"Does it require<br/>separate analysis?"}
+    START -->|"Evidence source<br/>metadata"| SCOPE["Use EvidenceScope"]
+
+    Q1 -->|"Yes — different questions"| CTX["Use AnalysisContext"]
+    Q1 -->|"No — same question,<br/>different perspectives"| NOCTX["Single AnalysisContext"]
+
+    CTX --> EX1["Example:<br/>'Proceeding A fairness' vs<br/>'Proceeding B fairness'<br/>= 2 AnalysisContexts"]
+
+    NOCTX --> EX2["Example:<br/>'Is claim X true?' with<br/>sources from different orgs<br/>= 1 AnalysisContext"]
+
+    SCOPE --> EX3["Example:<br/>evidenceScope: methodology<br/>= 'Framework A',<br/>boundaries = 'Full system'"]
+
+    style CTX fill:#c8e6c9,color:#000
+    style SCOPE fill:#fff9c4,color:#000
+    style NOCTX fill:#e3f2fd,color:#000
+{{/mermaid}}

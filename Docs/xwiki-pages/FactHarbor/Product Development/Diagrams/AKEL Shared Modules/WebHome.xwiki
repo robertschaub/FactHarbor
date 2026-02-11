@@ -1,0 +1,41 @@
+= AKEL Shared Modules =
+
+{{mermaid}}
+flowchart TB
+    subgraph Pipelines["Pipeline Variants"]
+        ORCH["Orchestrated"]
+        DYN["Dynamic"]
+    end
+
+    subgraph Analysis["Analysis & Weighting"]
+        AGG["aggregation.ts\nVerdict weighting,\ncontestation detection"]
+        CLAIM_D["claim-decomposition.ts\nClaim parsing,\nnormalisation"]
+        CONTEXTS["analysis-contexts.ts\nContext detection"]
+    end
+
+    subgraph Quality["Quality & Filtering"]
+        EF["evidence-filter.ts\nProbative value filtering"]
+        QG["quality-gates.ts\nGate 1 + Gate 4"]
+        VC["verdict-corrections.ts\nVerdict inversion detection"]
+    end
+
+    subgraph Trust["Trust & Scoring"]
+        SR["source-reliability.ts\nSource credibility scoring"]
+        TS["truth-scale.ts\n7-point verdict mapping"]
+        BU["budgets.ts\nToken/cost budgets"]
+    end
+
+    ORCH --> Analysis
+    ORCH --> Quality
+    ORCH --> Trust
+    DYN --> SR
+    DYN --> TS
+    DYN --> BU
+
+    style Pipelines fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Analysis fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Quality fill:#fff9c4,stroke:#f9a825,color:#000
+    style Trust fill:#f3e5f5,stroke:#6a1b9a,color:#000
+{{/mermaid}}
+
+//Shared modules are grouped by function: Analysis (verdict weighting, claim parsing, context detection), Quality (evidence filtering, quality gates, verdict corrections), and Trust (source reliability, truth scale mapping, budget enforcement). The Orchestrated pipeline uses all modules; the Monolithic Dynamic variant uses a subset.//

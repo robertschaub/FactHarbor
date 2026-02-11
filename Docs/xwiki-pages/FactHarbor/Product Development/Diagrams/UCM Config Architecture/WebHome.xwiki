@@ -1,0 +1,48 @@
+= UCM Config Architecture =
+
+{{mermaid}}
+flowchart TB
+    subgraph Admin["Admin UI"]
+        EDITOR["Config Editor\n(JSON / Form view)"]
+        HISTORY["Version History\n& Compare"]
+    end
+
+    subgraph Types["Configuration Types"]
+        PIPELINE["Pipeline Config"]
+        SEARCH["Search Config"]
+        CALC["Calculation Config"]
+        SR["Source Reliability"]
+        PROMPTS["Prompt Templates"]
+    end
+
+    subgraph Validation["Validation"]
+        ZOD["Zod Schema\nValidation"]
+        CANON["SHA-256\nContent Hash"]
+    end
+
+    subgraph Storage["SQLite (config.db)"]
+        BLOBS["config_blobs\n(immutable, content-addressed)"]
+        ACTIVE["config_active\n(activation pointers)"]
+        SNAPSHOTS["job_config_snapshots\n(per-job tracking)"]
+    end
+
+    subgraph Runtime["Runtime"]
+        CACHE["In-memory Map\n(60s TTL)"]
+        JOB["Analysis Job\n(reads snapshot)"]
+    end
+
+    EDITOR --> Types
+    Types --> ZOD
+    ZOD -->|"valid"| CANON
+    CANON --> BLOBS
+    BLOBS --> ACTIVE
+    ACTIVE --> SNAPSHOTS
+    ACTIVE --> CACHE
+    CACHE --> JOB
+    HISTORY --> BLOBS
+
+    style Admin fill:#f3e5f5,stroke:#6a1b9a,color:#000
+    style Validation fill:#fff9c4,stroke:#f9a825,color:#000
+    style Storage fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Runtime fill:#e8f5e9,stroke:#2e7d32,color:#000
+{{/mermaid}}

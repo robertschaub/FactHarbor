@@ -1,0 +1,27 @@
+= Source Reliability Prefetch Flow =
+
+{{mermaid}}
+flowchart TD
+    subgraph prefetch [Phase 1: Async Prefetch]
+        URLS[Extract Source URLs] --> DEDUP[Deduplicate Domains]
+        DEDUP --> BATCH[Batch Cache Lookup]
+        BATCH --> LOOP{For Each Domain}
+        LOOP --> HIT{Cache Hit?}
+        HIT -->|Yes| MAP[Add to In-Memory Map]
+        HIT -->|No| RATE{Rate Limit OK?}
+        RATE -->|No| SKIP[Store null in Map]
+        RATE -->|Yes| FILTER{isImportantSource?}
+        FILTER -->|Blog/Spam TLD| SKIP
+        FILTER -->|Legitimate| LLM[Multi-Model LLM<br/>Internal API Only]
+        LLM --> CONF{Confidence >= 0.8?}
+        CONF -->|No| SKIP
+        CONF -->|Yes| CONS{Models Agree?<br/>Diff <= 0.20}
+        CONS -->|No| SKIP
+        CONS -->|Yes| SAVE[Cache + Add to Map]
+    end
+
+    style RATE fill:#f99,color:#000
+    style FILTER fill:#ff9,color:#000
+    style SKIP fill:#ddd,color:#000
+    style SAVE fill:#9f9,color:#000
+{{/mermaid}}

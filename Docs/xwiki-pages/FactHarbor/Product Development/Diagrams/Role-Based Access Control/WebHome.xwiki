@@ -1,0 +1,22 @@
+= Role-Based Access Control =
+
+{{mermaid}}
+flowchart TB
+    subgraph Current_Roles["Implemented"]
+        READER["Reader\n(anonymous)"]
+        ADMIN["UCM Admin\n(via admin key)"]
+    end
+
+    subgraph Planned_Roles["Planned"]
+        USER["Registered User\n(submit analyses)"]
+        MODERATOR["Moderator\n(review flagged content)"]
+    end
+
+    READER -->|"View analyses,\nbrowse results"| VIEW["Read-Only\nAccess"]
+    ADMIN -->|"Change configs,\nresume/pause system"| CONFIG["Admin\nAccess"]
+    USER -->|"Submit claims,\nview own history"| SUBMIT["Submit\nAccess"]
+    MODERATOR -->|"Review flags,\nban users"| MOD["Moderation\nAccess"]
+
+    style Current_Roles fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style Planned_Roles fill:#fff9c4,stroke:#f9a825,color:#000
+{{/mermaid}}

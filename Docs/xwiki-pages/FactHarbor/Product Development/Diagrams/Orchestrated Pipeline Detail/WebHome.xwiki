@@ -1,0 +1,79 @@
+= Orchestrated Pipeline Detail =
+
+{{mermaid}}
+flowchart TB
+    subgraph Entry["Entry Point"]
+        INPUT["runFactHarborAnalysis()"]
+        NORM["Input Normalization"]
+        BUDGET["Initialize Budget Tracker"]
+    end
+
+    subgraph Step1["Step 1: UNDERSTAND"]
+        UC["understandClaim()"]
+        LLM1["LLM Call 1:<br/>Claim Extraction"]
+        SCOPE["detectContexts()<br/>Heuristic pre-detection"]
+        GATE1["Gate 1: Claim Validation<br/>Filter opinions, predictions"]
+        QUERIES["Generate research queries"]
+    end
+
+    subgraph Step2["Step 2: RESEARCH (Iterative Loop)"]
+        DECIDE["decideNextResearch()<br/>LLM Call per iteration"]
+        SEARCH["searchWebWithProvider()"]
+        FETCH["fetchSourceContent()<br/>Parallel fetching"]
+        SR["prefetchSourceReliability()<br/>Batch reliability lookup"]
+        PREFILTER["Relevance Pre-Filter"]
+        ADAPTIVE{"Candidates >= 5?"}
+        FALLBACK["Adaptive Fallback:<br/>Relax constraints"]
+        EXTRACT["extractEvidence() per source<br/>LLM Call per source"]
+        BUDGET_CHECK{"Budget exceeded?"}
+    end
+
+    subgraph Step3["Step 3: VERDICT"]
+        CLAIM_V["generateClaimVerdicts()<br/>LLM Call"]
+        WEIGHT["calculateWeightedVerdictAverage()"]
+        CONTEST["detectClaimContestation()"]
+        HARM["detectHarmPotential()"]
+        GATE4["Gate 4: Confidence Assessment"]
+        ARTICLE_V["generateArticleVerdict()<br/>LLM Call"]
+    end
+
+    subgraph Step4["Step 4: SUMMARY"]
+        SUMMARY["generateTwoPanelSummary()"]
+    end
+
+    subgraph Step5["Step 5: REPORT"]
+        REPORT["generateReport() markdown"]
+    end
+
+    subgraph Output["Output"]
+        RESULT["AnalysisResult JSON"]
+        MARKDOWN["Report Markdown"]
+    end
+
+    INPUT --> NORM --> BUDGET --> UC
+    UC --> LLM1 --> SCOPE --> GATE1 --> QUERIES
+
+    QUERIES --> DECIDE --> SEARCH --> FETCH --> SR --> PREFILTER
+    PREFILTER --> ADAPTIVE
+    ADAPTIVE -- "Yes" --> EXTRACT
+    ADAPTIVE -- "No" --> FALLBACK --> EXTRACT
+    EXTRACT --> BUDGET_CHECK
+    BUDGET_CHECK -->|"No"| DECIDE
+    BUDGET_CHECK -->|"Yes"| CLAIM_V
+
+    CLAIM_V --> WEIGHT --> CONTEST --> HARM --> GATE4 --> ARTICLE_V
+
+    ARTICLE_V --> SUMMARY --> REPORT
+    REPORT --> RESULT
+    REPORT --> MARKDOWN
+
+    style LLM1 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style DECIDE fill:#e3f2fd,stroke:#1565c0,color:#000
+    style EXTRACT fill:#e3f2fd,stroke:#1565c0,color:#000
+    style CLAIM_V fill:#e3f2fd,stroke:#1565c0,color:#000
+    style ARTICLE_V fill:#e3f2fd,stroke:#1565c0,color:#000
+    style GATE1 fill:#fff9c4,stroke:#f9a825,color:#000
+    style GATE4 fill:#fff9c4,stroke:#f9a825,color:#000
+{{/mermaid}}
+
+//Blue nodes = LLM call points. Yellow nodes = quality gates. The research loop iterates until budget limits are reached or sufficient evidence is gathered.//

@@ -1,0 +1,23 @@
+= AKEL Quality Assurance =
+
+{{mermaid}}
+flowchart LR
+    subgraph Gates["Quality Gates"]
+        G1["Gate 1\nClaim Validation\n(UNDERSTAND phase)"]
+        G4["Gate 4\nVerdict Confidence\n(VERDICT phase)"]
+    end
+
+    subgraph Defense["Evidence Quality"]
+        EF["7-Layer Defense\nagainst low-quality\nevidence"]
+    end
+
+    subgraph Trust["Source Trust"]
+        SR["Source Reliability\nLLM-evaluated\ncredibility scoring"]
+    end
+
+    Gates ~~~ Defense ~~~ Trust
+
+    style Gates fill:#fff9c4,stroke:#f9a825,color:#000
+    style Defense fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Trust fill:#e8f5e9,stroke:#2e7d32,color:#000
+{{/mermaid}}

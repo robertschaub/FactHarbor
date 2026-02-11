@@ -1,133 +1,68 @@
 = Organisation =
-This section describes **how FactHarbor operates** as an organization.
-== 1. Core Philosophy ==
-**[[Automation Philosophy>>FactHarbor.Organisation.Automation-Philosophy]]** 
-* AKEL is primary, humans monitor and improve
-* Fix the system, not the data
-* Scale through automation, not people
-== 2. Governance & Decision Making ==
-**[[Governance>>FactHarbor.Organisation.Governance.WebHome]]**
-* Organizational structure (Verein, Governing Team, Team Members)
-* Automation governance (what AKEL decides vs humans)
-* Financial governance
-**[[Decision Processes>>FactHarbor.Organisation.Decision-Processes]]**
-* Types of decisions (strategic, tactical, operational)
-* Automation boundary
-* Escalation paths
-**[[Consent-Based Decision Making>>FactHarbor.Organisation.How-We-Work-Together.Consent-Based-Decision-Making]]** 
-* Sociocracy 3.0 pattern for system changes
-* Consent vs consensus
-* Process steps and examples
-== 3. Team & Roles ==
-**[[Organisational Model>>FactHarbor.Organisation.Organisational-Model]]**
-* Legal structure (Swiss Verein)
-* Team structure (minimal, automation-first)
-* Roles and responsibilities
-**[[Roles & Bodies>>FactHarbor.Organisation.Roles-Bodies]]**
-* Executive roles and governance bodies
-* Domain ownership (S3 pattern)
-* Support and advisory roles
-== 4. Contributors & Community ==
-**[[Contributor Processes>>FactHarbor.Organisation.Contributor-Processes]]**
-* How to improve the SYSTEM (not review content)
-* RFC workflow
-* Contributor roles and trust levels
-* Quality standards
-== 5. How We Work Together ==
-**[[How We Work Together>>FactHarbor.Organisation.How-We-Work-Together.WebHome]]**
-=== Culture & Values ===
-**[[Workplace Culture>>FactHarbor.Organisation.How-We-Work-Together.Workplace-Culture]]**
-* Best Workplace Blueprint principles
-* Sociocracy 3.0 integration
-* AI-first culture
-* How we work together
-**[[Continuous Improvement>>FactHarbor.Organisation.How-We-Work-Together.Continuous-Improvement]]**
-* Improvement cycle (observe → analyze → test → deploy)
-* Improvement cadence
-* Retrospectives and learning
-**[[Consent-Based Decision Making>>FactHarbor.Organisation.How-We-Work-Together.Consent-Based-Decision-Making]]**
-* Sociocracy 3.0 pattern for system changes
-* Consent vs consensus
-* Process steps and examples
-=== Guidelines & Policies ===
-**[[Global Rules>>FactHarbor.Organisation.How-We-Work-Together.GlobalRules.WebHome]]**
-* Evidence evaluation rules
-* Risk tier definitions
-* Source scoring criteria
-**[[Terms of Service>>FactHarbor.Organisation.How-We-Work-Together.Terms-of-Service]]**
-**[[Privacy Policy>>FactHarbor.Organisation.How-We-Work-Together.Privacy-Policy]]**
-**[[Transparency Policy>>FactHarbor.Organisation.How-We-Work-Together.Transparency-Policy]]**
-**[[Security Policy>>FactHarbor.Organisation.How-We-Work-Together.Security-Policy]]**
-== 6. Policies & Compliance ==
-== 7. Operational Readiness ==
-**[[Operational Readiness Checklist>>FactHarbor.Organisation.Operational-Readiness-Checklist]]**
-* Pre-launch requirements
-* Technical readiness
-* Legal and financial readiness
-* Operational readiness
-**[[Transition Model>>FactHarbor.Organisation.Transition-Model]]**
-* From development to operations
-* Phased rollout
-== 8. Supporting Documents ==
-**[[Global Rules>>FactHarbor.Organisation.How-We-Work-Together.GlobalRules.WebHome]]**
-* Evidence evaluation rules
-* Risk tier definitions
-* Source scoring criteria
-**[[Open Source Model and Licensing>>FactHarbor.Organisation.Open Source Model and Licensing]]**
-* Open source philosophy
-* Licensing choices
-* Community governance
-**[[Contributor License Agreement>>FactHarbor.Organisation.CLA]]**
-* CLA terms
-* IP assignment
-== 9. Domain Knowledge ==
-**[[Core Problems FactHarbor Solves>>FactHarbor.Organisation.Core Problems FactHarbor Solves.WebHome]]**
-* Information overload
-* Trust and credibility issues
-* Context collapse
-* Source reliability
-== 10. Strategy & Positioning ==
-**[[Competitive Analysis>>FactHarbor.Organisation.Competitive Analysis.WebHome]]**
-* Market landscape and gap identification
-* Comparison with existing fact-checking platforms
-**[[Cooperation Opportunities>>FactHarbor.Organisation.Cooperation Opportunities.WebHome]]**
-* Global fact-checking ecosystem partnerships
-* Funding organizations, academic institutions, civic tech networks
-**[[Ideal Customer Profile (ICP)>>FactHarbor.Organisation.Ideal Customer Profile (ICP).WebHome]]**
-* Target customer segments and partner profiles
-* Product development and partnership strategy
-**[[Large Donations Policy & Strategy>>FactHarbor.Organisation.Large Donations Policy & Strategy.WebHome]]**
-* Donation acceptance policy and governance
-* Transparency and independence safeguards
-== 11. Visual Diagrams ==
-**[[Diagrams>>FactHarbor.Organisation.Diagrams.WebHome]]**
-* Governance Structure
-* Domain Interaction Map
-* Claim and Scenario Lifecycle
+
+This section describes **how FactHarbor operates** as an organization — governance, culture, legal framework, and strategy.
+
+{{include reference="FactHarbor.Organisation.Diagrams.Governance Structure.WebHome"/}}
+
+== Governance ==
+
+Structure, roles, decision processes, and operational readiness.
+
+* [[Governance>>FactHarbor.Organisation.Governance.WebHome]] — Organisational model, roles, decision processes, transition plan, and operational readiness
+
+== How We Work Together ==
+
+Culture, values, guidelines, policies, and contributor processes.
+
+* [[How We Work Together>>FactHarbor.Organisation.How-We-Work-Together.WebHome]] — Workplace culture, consent-based decisions, global rules, policies, and contributor processes
+
+== Legal and Compliance ==
+
+Legal foundations, licensing, contributor agreements, and financial governance.
+
+* [[Legal and Compliance>>FactHarbor.Organisation.Legal and Compliance.WebHome]] — Legal framework, open source licensing, CLA, finance, and donations policy
+
+== Strategy ==
+
+Mission context, operating philosophy, market positioning, and partnerships.
+
+* [[Strategy>>FactHarbor.Organisation.Strategy.WebHome]] — Core problems, automation philosophy, competitive analysis, ICP, and cooperation opportunities
+
+== Diagrams ==
+
+Visual reference diagrams for governance, domains, and workflows.
+
+* [[Diagrams>>FactHarbor.Organisation.Diagrams.WebHome]] — Governance Structure, Domain Interaction Map, Claim and Scenario Lifecycle
+
 ---
+
 == Key Principles ==
+
 ==== Automation First ====
 * AKEL makes content decisions
 * Humans improve algorithms
 * Scale through code, not people
+
 ==== Continuous Improvement ====
 * Measure everything
 * Test before deploying
 * Learn from failures
 * Iterate rapidly
+
 ==== Transparency ====
 * Open decisions
 * Public metrics
 * Documented rationale
 * Auditable code
+
 ==== Empowerment ====
 * Clear domains
 * Autonomous decisions
 * Support and resources
 * Trust by default
+
 ==== User Focus ====
 * Serve users' needs
 * Protect privacy
 * Build trust
 * Enable informed decisions
----

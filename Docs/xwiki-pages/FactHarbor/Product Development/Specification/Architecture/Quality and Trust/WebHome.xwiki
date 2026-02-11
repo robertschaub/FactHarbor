@@ -6,39 +6,7 @@ FactHarbor employs multiple quality mechanisms to ensure analysis results are tr
 
 Two quality gates are integrated into the AKEL pipeline: Gate 1 validates claims at input, Gate 4 assesses verdict confidence at output.
 
-{{mermaid}}
-flowchart TB
-    subgraph Input["Step 1: Understand"]
-        CLAIMS["Extracted Claims"]
-        GATE1{{"Gate 1\nClaim Validation"}}
-        PASS1["Factual claims\nproceed to research"]
-        FAIL1["Opinions, predictions,\nnon-factual filtered out"]
-    end
-
-    subgraph Research["Step 2: Research"]
-        EVIDENCE["Evidence gathered\nfrom web sources"]
-    end
-
-    subgraph Verdict["Step 3: Verdict"]
-        VERDICTS["Claim verdicts\ngenerated"]
-        GATE4{{"Gate 4\nConfidence Assessment"}}
-        HIGH["HIGH / MEDIUM\nconfidence — publish"]
-        LOW["LOW confidence —\nflag for review"]
-        INSUF["INSUFFICIENT —\nmore research needed"]
-    end
-
-    CLAIMS --> GATE1
-    GATE1 -->|"Pass"| PASS1
-    GATE1 -->|"Fail"| FAIL1
-    PASS1 --> EVIDENCE --> VERDICTS --> GATE4
-    GATE4 -->|"HIGH/MEDIUM"| HIGH
-    GATE4 -->|"LOW"| LOW
-    GATE4 -->|"INSUFFICIENT"| INSUF
-
-    style Input fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style Research fill:#e3f2fd,stroke:#1565c0,color:#000
-    style Verdict fill:#fff9c4,stroke:#f9a825,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Quality Gates Flow.WebHome"/}}
 
 //Gate 1 filters non-factual claims (opinions, predictions) before research begins. Gate 4 evaluates verdict quality based on evidence count, source quality, and evidence agreement — only HIGH and MEDIUM confidence verdicts are published without flags.//
 
@@ -62,37 +30,7 @@ flowchart TB
 
 Evidence and verdicts are protected by a **two-phase defence** system. Phase 1 operates before verdict generation (ensuring only quality evidence reaches aggregation). Phase 2 operates after verdict generation (ensuring verdicts are sound).
 
-{{mermaid}}
-flowchart TB
-    RAW["Raw Evidence\n(from LLM extraction)"]
-
-    subgraph P1["Phase 1: Evidence Quality (Pre-Verdict)"]
-        L1["LLM Prompt Instructions\n(guide extraction quality)"]
-        L2["Deterministic Filter\n(min length, vague phrases, dedup,\ncategory rules, probative scoring)"]
-        L3["Provenance Validation\n(reject synthetic/LLM-generated content)"]
-    end
-
-    subgraph P2["Phase 2: Verdict Quality (Post-Verdict)"]
-        L4["Source Reliability Weighting\n(domain credibility 0.0-1.0)"]
-        L5["Aggregation Pruning\n(tangential, opinion-only,\ncontestation validation)"]
-        L6["Verdict Corrections\n(inversion detection,\ndirection mismatch fix)"]
-    end
-
-    CLEAN["Validated Verdict\n(published to report)"]
-
-    RAW --> L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> CLEAN
-
-    style RAW fill:#ffcdd2,stroke:#b71c1c,color:#000
-    style CLEAN fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style P1 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style P2 fill:#fff9c4,stroke:#f9a825,color:#000
-    style L1 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L2 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L3 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L4 fill:#fff9c4,stroke:#f9a825,color:#000
-    style L5 fill:#fff9c4,stroke:#f9a825,color:#000
-    style L6 fill:#fff9c4,stroke:#f9a825,color:#000
-{{/mermaid}}
+{{include reference="FactHarbor.Product Development.Diagrams.Evidence Defence in Depth.WebHome"/}}
 
 //Phase 1 (blue) filters evidence before verdict generation: LLM-guided extraction, deterministic quality filters, and provenance validation. Phase 2 (yellow) protects verdict quality: source reliability weighting, aggregation pruning of tangential/opinion-only claims, and verdict corrections.//
 
