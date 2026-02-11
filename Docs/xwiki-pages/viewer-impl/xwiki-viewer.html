@@ -1198,7 +1198,7 @@ function renderTree(tree, depth=0){
     if(item.type === 'folder'){
       const id = 'tg-'+item.segments.join('-');
       const folderPath = item.segments.join('.');
-      html += `<div class="tree-item" style="padding-left:${8+pad}px">
+      html += `<div class="tree-item tree-folder" data-folder-path="${esc(folderPath)}" style="padding-left:${8+pad}px">
         <svg class="ti-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" onclick="toggleFolder('${id}',this.parentElement);event.stopPropagation()"><path d="m9 18 6-6-6-6"/></svg>
         <span class="ti-folder-label" onclick="openFolder('${id}',this.parentElement,'${escAttr(folderPath)}')">
           <svg class="ti-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
@@ -1268,13 +1268,24 @@ function openFolder(id, el, folderPath){
 }
 
 function highlightTreeItem(ref){
-  document.querySelectorAll('.tree-page').forEach(el=>{
-    el.classList.toggle('active', el.dataset.ref === ref);
-  });
+  // Clear all active states (pages and folders)
+  document.querySelectorAll('.tree-item.active').forEach(el=> el.classList.remove('active'));
+
+  // For WebHome refs, highlight the parent folder instead of the hidden page element
+  let target = null;
+  const baseName = ref.split('.').pop();
+  if(baseName === 'WebHome' || baseName === 'webhome'){
+    const folderPath = ref.split('.').slice(0,-1).join('.');
+    target = document.querySelector(`.tree-folder[data-folder-path="${CSS.escape(folderPath)}"]`);
+  }
+  if(!target){
+    target = document.querySelector(`.tree-page[data-ref="${CSS.escape(ref)}"]`);
+  }
+  if(!target) return;
+  target.classList.add('active');
+
   // Expand parent folders and scroll into view
-  const active = document.querySelector(`.tree-page[data-ref="${CSS.escape(ref)}"]`);
-  if(!active) return;
-  let parent = active.parentElement;
+  let parent = target.parentElement;
   while(parent && parent.id !== 'treeBody'){
     if(parent.classList.contains('tree-group') && parent.classList.contains('collapsed')){
       parent.classList.remove('collapsed');
@@ -1286,7 +1297,7 @@ function highlightTreeItem(ref){
     }
     parent = parent.parentElement;
   }
-  active.scrollIntoView({block:'nearest',behavior:'smooth'});
+  target.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 
 function filterTree(query){
