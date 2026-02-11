@@ -1,7 +1,7 @@
 = Source Reliability =
 
 {{info}}
-**Developer Reference** — LLM-based source reliability evaluation, 7-band credibility scale, multi-language support, caching, and pipeline integration.
+**Developer Reference** — Implementation details for the [[Media Source Database>>FactHarbor.Product Development.Specification.Media Source Database.WebHome]], FactHarbor's AI-powered source credibility service. Currently embedded in the analysis pipeline; planned to become a standalone public service and API.
 
 **Key File**: ##apps/web/src/lib/analyzer/source-reliability.ts##
 {{/info}}
