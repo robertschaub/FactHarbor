@@ -55,13 +55,14 @@ Humans are system architects, not content judges. They design and refine the rul
 
 == How It Works: The Core Concepts ==
 
-FactHarbor structures reasoning into transparent steps, moving beyond simple headlines:
+FactHarbor structures reasoning into transparent, inspectable steps:
 
-* **Claims & Clusters** – We group similar real-world statements into clusters to avoid duplicates and keep related claims together.
-* **AnalysisContexts** – A claim might be true in one context but false in another. An AnalysisContext is a bounded analytical frame — a specific set of assumptions, definitions, and scope — containing KeyFactors that break the claim into checkable sub-questions.
-* **Evidence** – Data and sources are linked to specific contexts, not just to the claim in general.
-* **Verdicts** – We produce evidence-based ratings (e.g., "Well Supported", "Mixed Evidence", "Contradicted") for each analytical perspective, grounded in the available evidence.
-* **Evidence Landscape** – The result is not a single label, but a multi-perspective view showing where a claim is well-supported, where it's contradicted, and where the evidence is still unclear.
+* **Claims** – The system extracts the key assertions from your input and identifies what actually needs to be verified. Related statements are grouped together to avoid duplication and keep the analysis focused.
+* **Analytical Contexts** – A claim might be well-supported in one context but contradicted in another. FactHarbor identifies the different perspectives, assumptions, and definitions that shape how a claim should be evaluated — and analyzes each one independently.
+* **Evidence** – AI searches across fact-checkers, academic studies, reports, and the open web. Each piece of evidence is assessed for quality, relevance, and linked to the specific context it applies to — not just to the claim in general.
+* **Source Reliability** – Every source is scored for credibility using multi-model AI evaluation. Track record matters: a peer-reviewed study carries different weight than a social media post.
+* **Verdicts** – For each analytical perspective, FactHarbor produces an evidence-based rating (e.g., "Well Supported", "Mixed Evidence", "Contradicted") with explicit confidence levels and full reasoning.
+* **Evidence Landscape** – The result is not a single label, but a multi-perspective view showing where a claim is well-supported, where it's contradicted, and where reasonable people may still disagree — with every conclusion traceable back to its sources.
 
 == The Lifecycle: From Input to Verdict ==
 

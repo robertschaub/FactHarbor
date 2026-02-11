@@ -381,7 +381,7 @@ See: [Prompt Optimization Summary](../WIP/Prompt_Optimization_Investigation.md)
 
 **📝 Documentation Updated:**
 - [UCM Enhancement Recommendations](../RECOMMENDATIONS/UCM_Enhancement_Recommendations.md) - Sprint completion documented
-- [Unified Config Management User Guide](../USER_GUIDES/Unified_Config_Management.md) - New Section 7 added
+- [Unified Config Management User Guide](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Subsystems%20and%20Components/Unified%20Config%20Management/WebHome.xwiki) - New Section 7 added
 
 **🎯 Next Step:** Proceed to Phase 0 Validation with complete operational toolkit.
 

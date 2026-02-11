@@ -179,7 +179,7 @@ Provider-specific settings are configured via **PromptConfig** in the Unified Co
 }
 {{/code}}
 
-See: Unified Config Management User Guide for profile management
+See: [[Unified Config Management>>FactHarbor.Product Development.DevOps.Subsystems and Components.Unified Config Management.WebHome]] for profile management
 
 ----
 
@@ -291,7 +291,7 @@ Default per-provider routing (unless overridden in pipeline config):
 
 ==== Per-task model overrides (optional) ====
 
-Override the model names per task via the pipeline config (UCM), not environment variables. See Unified Config Management User Guide for editing pipeline profiles.
+Override the model names per task via the pipeline config (UCM), not environment variables. See [[Unified Config Management>>FactHarbor.Product Development.DevOps.Subsystems and Components.Unified Config Management.WebHome]] for editing pipeline profiles.
 
 === Tuning analysis depth (implemented) ===
 
@@ -453,7 +453,7 @@ curl https://api.openai.com/v1/chat/completions \
 
 === Custom Model Selection ===
 
-FactHarbor supports task-tiered model routing. Configure tiering and per-task model overrides in the **pipeline config** (UCM) rather than environment variables. See Unified Config Management User Guide for editing pipeline profiles.
+FactHarbor supports task-tiered model routing. Configure tiering and per-task model overrides in the **pipeline config** (UCM) rather than environment variables. See [[Unified Config Management>>FactHarbor.Product Development.DevOps.Subsystems and Components.Unified Config Management.WebHome]] for editing pipeline profiles.
 
 === Fallback Configuration ===
 

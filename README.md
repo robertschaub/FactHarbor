@@ -1,49 +1,71 @@
 # FactHarbor
 
-**AI-powered evidence analysis for claims and narratives.**
+## What is FactHarbor?
 
-**Version**: 2.6.33 | **Schema**: 2.7.0 | **Status**: Alpha
+FactHarbor is an AI-powered platform that turns complex, contested information into structured breakdowns that make reasoning visible and verifiable.
 
-> **[What is FactHarbor?](ONEPAGER.md)** — Vision, mission, and how it works.
+An Evidence Model contains:
+
+- **Claims** — Key assertions extracted from the source material
+- **Analysis Contexts** — The frames and conditions under which claims may hold or fail
+- **Evidence** — Supporting and opposing sources with quality ratings and reliability scores
+- **Verdicts** — Conclusions with explicit confidence levels and cited evidence
+- **Full Transparency** — Every assumption, algorithm, and data source is exposed
+
+The result is not a single verdict, but an **evidence landscape** — showing where a claim holds up, where it fails, and where reasonable disagreement exists.
+
+**Who benefits?** Journalists, researchers, educators, policy analysts, and anyone navigating contested claims who wants to *understand*, not just believe.
+
+## Documentation
+
+**[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
+
+## Contributing
+
+Contributions are welcome — FactHarbor is in alpha, and your input shapes the platform.
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Setup, testing, coding standards
+- **[AGENTS.md](AGENTS.md)** — Rules and terminology for AI coding assistants
 
 ## Quick Start (Windows)
 
-1. Install prerequisites: Node.js LTS, .NET SDK 8.x, Git
-2. Copy env files:
+**Prerequisites:** Node.js 18+, .NET SDK 8.0, Git
+
+1. Clone the repo
+2. Copy environment files:
    - `apps/web/.env.example` → `apps/web/.env.local`
    - `apps/api/appsettings.Development.example.json` → `apps/api/appsettings.Development.json`
-3. Run:
+3. Bootstrap:
    ```powershell
    powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
    ```
 4. Open http://localhost:3000
 
-See the [Getting Started Guide](https://robertschaub.github.io/FactHarbor/?page=Product+Development.DevOps.Guidelines.Getting+Started.WebHome) for detailed setup instructions.
+See the [Getting Started Guide](https://robertschaub.github.io/FactHarbor/?page=Product+Development.DevOps.Guidelines.Getting+Started.WebHome) for detailed setup, configuration, and troubleshooting.
 
-## Documentation
+**Tech stack:** Next.js + ASP.NET Core + LLM orchestration (Anthropic, OpenAI, Google, Mistral)
 
-**[Browse online](https://robertschaub.github.io/FactHarbor/)** — full rendered documentation with search, navigation, and diagrams.
-
-**Browse locally** — run `Docs\xwiki-pages\View.cmd` to launch the local viewer, or install the [VS Code extension](tools/vscode-xwiki-preview/) for in-editor preview.
-
-All reference documentation lives as `.xwiki` files under [`Docs/xwiki-pages/FactHarbor/`](Docs/xwiki-pages/). See the [xWiki Pages README](Docs/xwiki-pages/README.md) for format details and sync workflow.
-
-## Repository Structure
+**Repository structure:**
 
 ```
-apps/api/       ASP.NET Core API (jobs, status, results)
-apps/web/       Next.js app (UI + AI orchestrator)
-Docs/           Documentation (xWiki pages, status, architecture)
+apps/api/       ASP.NET Core API (jobs, persistence, status)
+apps/web/       Next.js app (UI + AI orchestration pipeline)
+Docs/           xWiki documentation (specs, guides, architecture)
 scripts/        Setup and management scripts
-tools/          VS Code xWiki preview extension
 ```
-
-## Contributing
-
-- **[AGENTS.md](AGENTS.md)** — Rules for AI coding assistants
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — How to contribute
-- **[Current Status](Docs/STATUS/Current_Status.md)** — What works, known issues, priorities
-
 ## License
 
-See [LICENSE.md](LICENSE.md).
+FactHarbor uses a multi-license model to maximize openness while protecting transparency:
+
+| Content | License |
+|---------|---------|
+| Documentation | CC BY-SA 4.0 |
+| Code (default) | MIT |
+| Code (core engine) | AGPL-3.0 |
+| Structured data | ODbL |
+
+See [LICENSE.md](LICENSE.md) for full details.
+
+---
+
+*FactHarbor — Making complex claims transparent through evidence, context, and open reasoning.*

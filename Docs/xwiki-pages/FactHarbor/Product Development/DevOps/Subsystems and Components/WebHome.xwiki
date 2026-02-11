@@ -5,6 +5,7 @@ Guides for using and configuring FactHarbor's key subsystems.
 == Administration ==
 
 * [[Admin Interface>>FactHarbor.Product Development.DevOps.Subsystems and Components.Admin Interface.WebHome]] — Admin panel and management interface
+* [[Unified Config Management>>FactHarbor.Product Development.DevOps.Subsystems and Components.Unified Config Management.WebHome]] — Configuration profiles, versioning, and runtime settings
 * [[LLM Configuration>>FactHarbor.Product Development.DevOps.Subsystems and Components.LLM Configuration.WebHome]] — Configuring LLM providers and models
 
 == Data Export ==

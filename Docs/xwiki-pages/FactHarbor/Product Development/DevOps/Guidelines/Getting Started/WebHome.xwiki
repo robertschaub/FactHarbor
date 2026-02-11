@@ -216,7 +216,7 @@ After first run, configure your LLM provider:
 
 **Note:** The deprecated ##LLM_PROVIDER## environment variable is no longer used. Provider selection is now managed via UCM.
 
-See Unified Config Management Guide for detailed configuration options.
+See [[Unified Config Management>>FactHarbor.Product Development.DevOps.Subsystems and Components.Unified Config Management.WebHome]] for detailed configuration options.
 
 ----
 
@@ -415,7 +415,7 @@ Now that FactHarbor is running:
 ** Verify all API keys are valid
 ** Test LLM and search provider connectivity
 1. **Read the Documentation**:
-** Unified Config Management - Runtime configuration
+** [[Unified Config Management>>FactHarbor.Product Development.DevOps.Subsystems and Components.Unified Config Management.WebHome]] — Runtime configuration
 ** [[LLM Configuration>>FactHarbor.Product Development.DevOps.Subsystems and Components.LLM Configuration.WebHome]] - Configure AI providers
 ** ##Docs/ARCHITECTURE/Calculations.md## - How verdicts are calculated
 1. **Customize Your Setup**:
