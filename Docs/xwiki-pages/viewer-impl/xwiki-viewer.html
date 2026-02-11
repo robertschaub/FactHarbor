@@ -775,7 +775,7 @@ class XWikiParser {
   }
   renderTOC(){if(!this.headings.length)return'';let h='<div class="xwiki-toc"><div class="toc-title">Table of Contents</div><ul>';for(const hd of this.headings)h+=`<li class="toc-h${hd.level}"><a href="#${hd.id}">${this.esc(hd.text)}</a></li>`;return h+'</ul></div>'}
   esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-  escAttr(t){return t.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+  escAttr(t){return t.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
   slug(t){return t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}
 }
 
@@ -894,11 +894,20 @@ async function renderPreview(){
   // Mark resolved/unresolved wiki links
   previewEl.querySelectorAll('.wiki-link').forEach(el => {
     const ref = el.getAttribute('data-wiki-ref');
-    const resolved = resolveRef(ref);
+    // Anchor-only links (||anchor="...") are always valid — skip page resolution
+    if(ref && ref.startsWith('||')){
+      el.classList.add('resolved');
+      el.title = 'Anchor link';
+      return;
+    }
+    // Strip ||params from ref for page resolution
+    const pipeIdx = ref ? ref.indexOf('||') : -1;
+    const pageRef = pipeIdx >= 0 ? ref.substring(0, pipeIdx).trim() : ref;
+    const resolved = resolveRef(pageRef);
     el.classList.toggle('resolved', !!resolved);
     el.classList.toggle('unresolved', !resolved);
     if(resolved) el.title = resolved.relPath;
-    else el.title = `Page not found: ${ref}`;
+    else el.title = `Page not found: ${pageRef}`;
   });
 
   mermaidRenderCount++;
@@ -1000,18 +1009,28 @@ function resolveRef(ref){
 }
 
 async function navigateToRef(ref){
-  // Handle in-page anchor links: ||anchor="id"
-  const anchorMatch = ref.match(/^\|\|anchor=["']?([^"']+)["']?$/);
-  if(anchorMatch){
-    scrollToAnchor(anchorMatch[1]);
+  // Split page ref from ||parameters (e.g. "Page.WebHome||anchor="id"")
+  let pageRef = ref, anchor = null;
+  const pipeIdx = ref.indexOf('||');
+  if(pipeIdx >= 0){
+    const params = ref.substring(pipeIdx + 2);
+    const am = params.match(/anchor=["']?([^"']+)["']?/);
+    if(am) anchor = am[1];
+    pageRef = ref.substring(0, pipeIdx).trim();
+  }
+  // Pure anchor link (no page ref) — scroll within current page
+  if(!pageRef && anchor){
+    scrollToAnchor(anchor);
     return;
   }
-  const page = resolveRef(ref);
+  if(!pageRef){ showToast(`Invalid link: ${ref}`); return; }
+  const page = resolveRef(pageRef);
   if(!page){
-    showToast(`Page not found: ${ref}`);
+    showToast(`Page not found: ${pageRef}`);
     return;
   }
   await loadPage(page.ref, true);
+  if(anchor) setTimeout(() => scrollToAnchor(anchor), 150);
 }
 
 function scrollToAnchor(id){
@@ -1808,7 +1827,7 @@ When you open a wiki folder, the viewer scans all .xwiki/.wiki/.txt/.md files an
 // =================================================================
 function formatSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function escAttr(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+function escAttr(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 let toastTimer=null;
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500)}
 

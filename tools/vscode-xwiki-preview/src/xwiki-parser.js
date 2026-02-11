@@ -339,7 +339,7 @@ class XWikiParser {
   }
   renderTOC(){if(!this.headings.length)return'';let h='<div class="xwiki-toc"><div class="toc-title">Table of Contents</div><ul>';for(const hd of this.headings)h+=`<li class="toc-h${hd.level}"><a href="#${hd.id}">${this.esc(hd.text)}</a></li>`;return h+'</ul></div>'}
   esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-  escAttr(t){return t.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+  escAttr(t){return t.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
   slug(t){return t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}
 }
 
