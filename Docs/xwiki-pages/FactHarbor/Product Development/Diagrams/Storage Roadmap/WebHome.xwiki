@@ -3,7 +3,7 @@
 {{mermaid}}
 flowchart LR
     subgraph P1["POC (Current)"]
-        S1["3x SQLite\n+ in-memory Map"]
+        S1["factharbor.db\nconfig.db\nsource-reliability.db\n+ in-memory Map"]
     end
 
     subgraph P2["Alpha"]

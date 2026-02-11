@@ -6,7 +6,7 @@ sequenceDiagram
     participant NUI as Next.js UI
     participant NAPI as Next.js /api/fh/*
     participant DAPI as .NET API
-    participant DB as SQLite
+    participant DB as factharbor.db
     participant RUN as Next.js /api/internal/run-job
     participant AKEL as AKEL Pipeline
 

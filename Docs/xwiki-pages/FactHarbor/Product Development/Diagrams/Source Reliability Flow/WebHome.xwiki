@@ -5,7 +5,7 @@ sequenceDiagram
     participant User
     participant Analyzer as orchestrated.ts
     participant Prefetch as prefetchSourceReliability()
-    participant Cache as SQLite Cache
+    participant Cache as source-reliability.db
     participant LLM as LLM Endpoint
     participant Map as In-Memory Map
     participant Lookup as getTrackRecordScore()

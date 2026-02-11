@@ -2,14 +2,14 @@
 
 {{mermaid}}
 flowchart TD
-    START([System Startup]) --> CHECK_DB{Database<br/>has configs?}
+    START([System Startup]) --> CHECK_DB{config.db<br/>has configs?}
 
     CHECK_DB -->|No - Fresh DB| SEED_FILES[Load from JSON files<br/>apps/web/configs/]
-    CHECK_DB -->|Yes| LOAD_DB[Load from Database]
+    CHECK_DB -->|Yes| LOAD_DB[Load from config.db]
 
     SEED_FILES --> VALIDATE_FILE{Valid JSON<br/>and schema?}
     VALIDATE_FILE -->|No| FALLBACK_CODE[Use code constants<br/>config-schemas.ts]
-    VALIDATE_FILE -->|Yes| WRITE_DB[Write to Database]
+    VALIDATE_FILE -->|Yes| WRITE_DB[Write to config.db]
     WRITE_DB --> ACTIVATE
 
     LOAD_DB --> VALIDATE_DB{Valid schema?}
@@ -19,12 +19,12 @@ flowchart TD
     FALLBACK_FILE --> VALIDATE_FILE
     FALLBACK_CODE --> ACTIVATE
 
-    ACTIVATE --> RUNTIME[Runtime Authority:<br/>Database]
+    ACTIVATE --> RUNTIME[Runtime Authority:<br/>config.db]
 
     subgraph Manual Updates
         ADMIN[Admin UI Update] --> VALIDATE_ADMIN{Valid JSON<br/>and schema?}
         VALIDATE_ADMIN -->|No| REJECT[Reject with error]
-        VALIDATE_ADMIN -->|Yes| SAVE_DB[Save to Database]
+        VALIDATE_ADMIN -->|Yes| SAVE_DB[Save to config.db]
         SAVE_DB --> VERSION[Create new version]
         VERSION --> ACTIVATE
 
@@ -45,4 +45,4 @@ flowchart TD
     style REJECT fill:#ffcdd2
 {{/mermaid}}
 
-//How FactHarbor loads, validates, and activates configurations at runtime. Fallback chain: Database -> JSON files -> Code constants.//
+//How FactHarbor loads, validates, and activates configurations at runtime. Fallback chain: config.db -> JSON files -> Code constants.//

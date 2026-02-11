@@ -8,7 +8,9 @@ flowchart TB
         direction LR
         WEB["Next.js Web App\nUI + Analysis Engine"]
         API[".NET API\nJob Management"]
-        DB[("SQLite\nDatabases")]
+        FH_DB[("factharbor.db\nJobs & Events")]
+        CFG_DB[("config.db\nUCM Config")]
+        SR_DB[("source-reliability.db\nSR Cache")]
     end
 
     subgraph LLM["LLM Providers"]
@@ -25,8 +27,9 @@ flowchart TB
 
     USER --> FH
     WEB <--> API
-    API --> DB
-    WEB --> DB
+    API --> FH_DB
+    WEB --> CFG_DB
+    WEB --> SR_DB
     WEB --> LLM
     WEB --> SEARCH
 

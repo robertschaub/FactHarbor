@@ -7,7 +7,7 @@ flowchart TB
         HOST["Single Host"]
         NEXT["Next.js\nport 3000"]
         DOTNET[".NET API\nport 5000"]
-        SQLITE["3x SQLite\nfiles"]
+        SQLITE["factharbor.db\nconfig.db\nsource-reliability.db"]
 
         HOST --> NEXT
         HOST --> DOTNET
