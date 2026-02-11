@@ -20,39 +20,11 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 **[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
 
-## Contributing
+## Getting Started
 
-Contributions are welcome — FactHarbor is in alpha, and your input shapes the platform.
-
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Setup, testing, coding standards
-- **[AGENTS.md](AGENTS.md)** — Rules and terminology for AI coding assistants
-
-## Quick Start (Windows)
-
-**Prerequisites:** Node.js 18+, .NET SDK 8.0, Git
-
-1. Clone the repo
-2. Copy environment files:
-   - `apps/web/.env.example` → `apps/web/.env.local`
-   - `apps/api/appsettings.Development.example.json` → `apps/api/appsettings.Development.json`
-3. Bootstrap:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
-   ```
-4. Open http://localhost:3000
-
-See the [Getting Started Guide](https://robertschaub.github.io/FactHarbor/?page=Product+Development.DevOps.Guidelines.Getting+Started.WebHome) for detailed setup, configuration, and troubleshooting.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for prerequisites (including API keys), setup, and how to run the application locally.
 
 **Tech stack:** Next.js + ASP.NET Core + LLM orchestration (Anthropic, OpenAI, Google, Mistral)
-
-**Repository structure:**
-
-```
-apps/api/       ASP.NET Core API (jobs, persistence, status)
-apps/web/       Next.js app (UI + AI orchestration pipeline)
-Docs/           xWiki documentation (specs, guides, architecture)
-scripts/        Setup and management scripts
-```
 ## License
 
 FactHarbor uses a multi-license model to maximize openness while protecting transparency:

@@ -4,6 +4,8 @@
 
 This guide will help you set up and run FactHarbor on your local machine from scratch. It combines installation prerequisites with first-run configuration to ensure a smooth setup experience.
 
+For a quick summary, see [[CONTRIBUTING.md>>https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md]] in the GitHub repository.
+
 ----
 
 == Table of Contents ==
@@ -128,7 +130,7 @@ All commands must succeed before continuing.
 === 1. Clone the Repository ===
 
 {{code language="bash"}}
-git clone https://github.com/yourusername/factharbor.git
+git clone https://github.com/robertschaub/FactHarbor.git
 cd factharbor
 {{/code}}
 
@@ -152,18 +154,39 @@ cd factharbor
 copy .env.example .env.local
 {{/code}}
 
-1. Edit ##.env.local## and configure:
+1. Edit ##.env.local## and configure your API keys and internal secrets:
+
+=== Required API Keys ===
+
+FactHarbor requires API keys from external AI and search providers. You must register with these services before running analyses.
+
+|= Provider |= Key |= Required? |= Sign Up
+| **Anthropic** (Claude) | ##ANTHROPIC_API_KEY## | **Yes** | [[console.anthropic.com>>https://console.anthropic.com/]]
+| **OpenAI** | ##OPENAI_API_KEY## | **Yes** | [[platform.openai.com>>https://platform.openai.com/]]
+| **Google Custom Search** | ##GOOGLE_CSE_API_KEY## + ##GOOGLE_CSE_ID## | **Yes** | [[programmablesearchengine.google.com>>https://programmablesearchengine.google.com/]]
+| Google Gemini | ##GOOGLE_GENERATIVE_AI_API_KEY## | Optional | [[aistudio.google.com>>https://aistudio.google.com/]]
+| Mistral | ##MISTRAL_API_KEY## | Optional | [[console.mistral.ai>>https://console.mistral.ai/]]
+| SerpAPI | ##SERPAPI_API_KEY## | Optional (fallback search) | [[serpapi.com>>https://serpapi.com/]]
+
+{{info}}
+**Cost note:** These are commercial services with pay-per-use pricing. Both Anthropic and OpenAI offer free trial credits for new accounts. Google CSE provides 100 free queries/day. Typical development usage costs single-digit $/month. See each provider's website for current pricing and free tier details.
+
+**Licensing:** By using these API keys you agree to each provider's terms of service. FactHarbor itself is open source, but the external AI and search services it depends on are commercial products with their own licensing terms.
+{{/info}}
+
+=== Example .env.local ===
 
 {{code language="bash"}}
-# Required: Your OpenAI or Anthropic API key
-OPENAI_API_KEY=sk-...
-# or
+# LLM providers (both required)
 ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
 
-# Verify this points to local API
+# Web search (Google CSE recommended)
+GOOGLE_CSE_API_KEY=...
+GOOGLE_CSE_ID=...
+
+# Internal keys (must match API settings)
 FH_API_BASE_URL=http://localhost:5000
-
-# Required: Must match API settings
 FH_ADMIN_KEY=your-secure-admin-key
 FH_INTERNAL_RUNNER_KEY=your-secure-runner-key
 {{/code}}
@@ -342,7 +365,7 @@ Your setup is successful when:
 
 |= Symptom |= Likely Cause |= Solution
 | **Job stuck in QUEUED** | Runner key mismatch | Check ##FH_INTERNAL_RUNNER_KEY## matches ##Runner:RunnerKey##
-| **Job fails immediately** | Missing LLM API key | Add ##OPENAI_API_KEY## or ##ANTHROPIC_API_KEY## to ##.env.local##
+| **Job fails immediately** | Missing LLM API key | Add ##ANTHROPIC_API_KEY## and ##OPENAI_API_KEY## to ##.env.local## (both required)
 | **No progress updates** | Admin key mismatch | Check ##FH_ADMIN_KEY## matches ##Admin:Key##
 | **API not starting** | Database error | The DB is auto-created on startup; check API logs, then (local dev) delete ##apps/api/factharbor.db## and restart
 | **Port already in use** | Previous instance running | Stop services with ##scripts/stop-services.ps1##
@@ -427,7 +450,7 @@ Now that FactHarbor is running:
 
 == Additional Resources ==
 
-* **Project Repository**: [[https:~~/~~/github.com/yourusername/factharbor>>https://github.com/yourusername/factharbor]]
+* **Project Repository**: [[https:~~/~~/github.com/robertschaub/FactHarbor>>https://github.com/robertschaub/FactHarbor]]
 * **Documentation**: See ##Docs/## folder
 * **Scripts Reference**: See ##scripts/## folder for automation tools
 * **AGENTS.md**: Guidelines for AI coding assistants (in project root)
