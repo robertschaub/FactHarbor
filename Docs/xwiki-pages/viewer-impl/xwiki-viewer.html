@@ -830,16 +830,21 @@ async function resolveIncludes(html, includedRefs, depth = 0) {
 
     try {
       // Fetch the page content
-      let file;
-      if (page.handle) {
-        file = await page.handle.getFile();
+      let text;
+      if (page.content !== undefined) {
+        text = page.content;
+      } else if (page.handle) {
+        const file = await page.handle.getFile();
+        text = await file.text();
       } else if (page.fileObj) {
-        file = page.fileObj;
+        text = await page.fileObj.text();
+      } else if (page.serverUrl) {
+        const res = await fetch(page.serverUrl);
+        if (!res.ok) throw new Error('Cannot load from server');
+        text = await res.text();
       } else {
         throw new Error('Cannot read page');
       }
-
-      const text = await file.text();
 
       // Parse the included content with a fresh parser instance
       const includeParser = new XWikiParser();
@@ -1000,23 +1005,30 @@ async function loadPage(ref, addHistory=true){
   const page = pageIndex[ref];
   if(!page) return;
   try {
-    // Support both FS API handles and direct File objects (webkitdirectory fallback)
-    let file;
-    if(page.handle){
-      file = await page.handle.getFile();
+    // Support bundle content, FS API handles, server URLs, and direct File objects
+    let text, fileSize=0, fileMod=Date.now();
+    if(page.content !== undefined){
+      text = page.content;
+      fileSize = new Blob([text]).size;
+    } else if(page.handle){
+      const file = await page.handle.getFile();
+      text = await file.text();
+      fileSize = file.size;
+      fileMod = file.lastModified;
     } else if(page.fileObj){
-      file = page.fileObj;
+      text = await page.fileObj.text();
+      fileSize = page.fileObj.size;
+      fileMod = page.fileObj.lastModified;
     } else if(page.serverUrl){
       const res = await fetch(page.serverUrl);
       if(!res.ok){ showToast('Cannot load page from server'); return; }
-      const text = await res.text();
-      file = new File([text], page.name, {type:'text/plain', lastModified:Date.now()});
+      text = await res.text();
+      fileSize = new Blob([text]).size;
     } else { showToast('Cannot read page'); return; }
 
-    const text = await file.text();
     editorEl.value = text;
     lastContent = text;
-    lastMod = file.lastModified;
+    lastMod = fileMod;
     currentPageRef = ref;
     currentFileHandle = page.handle || null;
     currentSpace = page.segments.slice(0,-1);
@@ -1024,7 +1036,7 @@ async function loadPage(ref, addHistory=true){
     const hasHandle = !!page.handle;
     document.getElementById('filename').textContent = page.name;
     document.getElementById('filename').title = getPageRelPath(page);
-    document.getElementById('fileSize').textContent = formatSize(file.size);
+    document.getElementById('fileSize').textContent = formatSize(fileSize);
     document.getElementById('fileInfo').style.display = 'flex';
     document.getElementById('btnReload').disabled = !hasHandle;
     document.getElementById('btnWatch').style.display = hasHandle ? '' : 'none';
