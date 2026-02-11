@@ -237,6 +237,9 @@ class XWikiParser {
     // Wiki links
     text=text.replace(/\[\[([^\]]+?)&gt;&gt;(?!https?:\/\/)([^\]]+?)\]\]/g,(m,label,ref)=>{
       ref=ref.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+      // Handle in-page anchor links: ||anchor="id"
+      const anc=ref.match(/^\|\|anchor=["']?([^"']+)["']?$/);
+      if(anc){const slug=anc[1].replace(/^H/,'').replace(/([a-z0-9])([A-Z])/g,'$1-$2').replace(/[^a-zA-Z0-9]+/g,'-').toLowerCase().replace(/(^-|-$)/g,'');return `<a href="#${this.esc(slug)}">${label}</a>`}
       this.wikiLinks.push(ref);
       return `<a class="wiki-link" data-wiki-ref="${this.esc(ref)}" href="#">${label}</a>`;
     });

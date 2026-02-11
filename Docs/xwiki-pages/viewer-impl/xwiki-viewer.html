@@ -1000,12 +1000,32 @@ function resolveRef(ref){
 }
 
 async function navigateToRef(ref){
+  // Handle in-page anchor links: ||anchor="id"
+  const anchorMatch = ref.match(/^\|\|anchor=["']?([^"']+)["']?$/);
+  if(anchorMatch){
+    scrollToAnchor(anchorMatch[1]);
+    return;
+  }
   const page = resolveRef(ref);
   if(!page){
     showToast(`Page not found: ${ref}`);
     return;
   }
   await loadPage(page.ref, true);
+}
+
+function scrollToAnchor(id){
+  // Normalize: strip xWiki H-prefix, remove non-alphanumeric, lowercase
+  const norm = s => s.replace(/^H/,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
+  const target = norm(id);
+  const previewEl = document.querySelector('.preview-content') || document;
+  for(const el of previewEl.querySelectorAll('[id]')){
+    if(norm(el.id) === target){
+      el.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+  }
+  showToast('Anchor not found: ' + id);
 }
 
 // =================================================================
