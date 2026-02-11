@@ -307,9 +307,13 @@ async function loadBundle(){
     document.getElementById('treeCount').textContent = '('+count+')';
     document.getElementById('treeSidebar').classList.remove('collapsed');
     showEditor();
-    // Navigate to hash target or root page
+    // Navigate to ?page= param, hash target, or root page
+    const params = new URLSearchParams(location.search);
+    const pageParam = params.get('page');
     const hashRef = location.hash.slice(1);
-    const initRef = (hashRef && pageIndex[hashRef]) ? hashRef : (bundle.rootRef || Object.keys(pageIndex)[0]);
+    const initRef = (pageParam && pageIndex[pageParam]) ? pageParam
+      : (hashRef && pageIndex[hashRef]) ? hashRef
+      : (bundle.rootRef || Object.keys(pageIndex)[0]);
     if(initRef) await loadPage(initRef);
     // Show metadata
     const meta = document.getElementById('bundleMeta');
@@ -337,11 +341,16 @@ window.addEventListener('hashchange',()=>{
 """
 
     # Replace the init block at the end of the file
-    old_init = """// Auto-open folder picker if ?open=folder in URL
-(function(){
+    old_init = """// Auto-load: try server-provided wiki first, then fall back to folder picker
+(async function(){
   const params = new URLSearchParams(window.location.search);
-  if(params.get('open') === 'folder'){
-    // Small delay so page renders first
+  const loaded = await loadFromServer();
+  if(loaded){
+    const pageParam = params.get('page');
+    if(pageParam && pageIndex[pageParam]){
+      await loadPage(pageParam);
+    }
+  } else if(params.get('open') === 'folder'){
     setTimeout(()=> openFolderPicker(), 300);
   }
 })();"""
