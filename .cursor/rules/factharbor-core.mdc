@@ -32,6 +32,12 @@ POC with two apps:
 - Platform: Windows. Use PowerShell-compatible commands.
 - Solo developer + AI agents. Direct push to main is normal.
 
+## Roles
+
+When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role definition to load from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 and which documents to read.
+
+**Context-budget note:** If loading all Required Reading exceeds your context window, load only the role entry from §2 and defer document reads until needed for the specific task.
+
 ## Agent Handoff
 If another tool would be better for the task, say so:
 - Claude Code (Opus): complex architecture, deep reasoning, plan mode

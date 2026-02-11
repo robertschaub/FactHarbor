@@ -38,6 +38,12 @@ Config: `apps/api/appsettings.Development.example.json`, `apps/web/.env.example`
 - No destructive git without explicit ask.
 - Platform: Windows. PowerShell-compatible commands.
 
+## Roles
+
+When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role definition to load from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 and which documents to read.
+
+**Context-budget note:** If loading all Required Reading exceeds Cascade's context window, load only the role entry from §2 and defer document reads until needed for the specific task.
+
 ## Agent Handoff
 If a task exceeds Cascade context limits or needs deep reasoning, recommend:
 - **Claude Code (Opus)**: complex architecture, multi-step reasoning

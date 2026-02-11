@@ -52,6 +52,8 @@ Purpose: short, actionable notes to help an AI coding agent be immediately produ
   - Do not change secrets/credentials or commit them.
   - Avoid destructive git commands unless explicitly asked.
 
+- **Roles**: When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role to load from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 and which documents to read. If loading all Required Reading exceeds your context window, load only the role entry and defer reads until needed.
+
 - **Agent handoff**: You are primarily used for inline completions and chat. For large multi-file refactors, suggest Cursor Composer or Claude Code. See `/AGENTS.md` Agent Handoff Protocol for full reference.
 
 - **Where to look for behavior examples**:

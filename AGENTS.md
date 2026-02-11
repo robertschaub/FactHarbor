@@ -113,9 +113,38 @@ When starting any new task, every agent MUST:
 1. **Assess fit**: Is this task best suited for the current agent/tool, or would another be more effective?
 2. **Recommend if not**: Tell the user which agent/tool to use, why, what context it needs (files to read, decisions already made), and any work completed so far.
 
-### Roles & Multi-Agent Workflows
+### Role Activation Protocol
 
-If the user assigns you a role (Lead Architect, Lead Developer, Senior Developer, LLM Expert, Tech Writer), read `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` for role definitions, workflows, and collaboration protocols. The area-to-document mapping in that file tells you which docs to read for each task area.
+When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
+
+1. **Look up the role** in the alias table below → find the canonical role name
+2. **Read required documents** listed for that role in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 Role Registry
+3. **Check learnings**: Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas from previous agents
+4. **Acknowledge**: State your role, focus areas, and which docs you've loaded
+5. **Stay in role**: Focus on that role's concerns. Flag (don't act on) issues outside your scope.
+6. **On handoff/completion**: Summarize work done, decisions made, open items, files touched. If you learned something useful, append it to `Role_Learnings.md`.
+
+**Role Alias Quick-Reference:**
+
+| User Says | Maps To | Registry Section |
+|-----------|---------|-----------------|
+| "Senior Architect", "Principal Architect" | Lead Architect | §2.1 |
+| "Lead Developer" | Lead Developer | §2.2 |
+| "Senior Developer" | Senior Developer | §2.3 |
+| "Tech Writer", "xWiki Expert", "xWiki Developer" | Technical Writer | §2.4 |
+| "LLM Expert", "AI Consultant", "FH Analysis Expert" | LLM Expert | §2.5 |
+| "Product Manager", "Product Owner", "Sponsor" | Product Strategist | §2.6 |
+| "Code Reviewer" | Code Reviewer | §2.7 |
+| "Security Expert" | Security Expert | §2.8 |
+| "GIT Expert", "GitHub Expert" | DevOps Expert | §2.9 |
+| "Agents Supervisor" | Captain (human role) | §2.10 |
+
+**If the role is NOT in the table above:**
+1. Tell the user which existing role is closest (if any) and ask whether to use that one
+2. If no close match: read `/AGENTS.md` + `/Docs/STATUS/Current_Status.md` as baseline, then ask the user what documents and source files are relevant for this role
+3. Proceed with steps 3-5 above once clarified
+
+Full role definitions, required reading, and area-to-document mapping: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
 
 ### Working Principles
 

@@ -49,6 +49,11 @@ Two apps + one tool:
 - No destructive git commands unless explicitly asked.
 - Do not overwrite `apps/api/factharbor.db` unless asked.
 
+## Roles & Multi-Agent Workflow
+
+When user assigns a role with "As \<Role\>", follow the Role Activation Protocol in `AGENTS.md`.
+Role definitions and required reading: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2.
+
 ## Agent handoff
 
 If another tool would be better, say so and explain what context it needs:

@@ -7,7 +7,51 @@
 
 ## How to Use
 
-Copy the template below and fill in the `{PLACEHOLDERS}`. The meta-prompt provides consistent context and rules for any agent taking on a FactHarbor task.
+Two options depending on task complexity:
+
+### Quick-Start (for simple/moderate tasks)
+
+Most tasks only need a one-liner. The "As \<Role\>" pattern triggers the Role Activation Protocol in AGENTS.md:
+
+```
+As {ROLE}, {one-sentence task}.
+Area: {area from Multi_Agent_Collaboration_Rules.md §1.2}
+Complexity: {simple|moderate|complex}
+```
+
+**Examples:**
+```
+As Senior Developer, fix the confidence calibration test that's failing on edge cases.
+Area: Calculations
+Complexity: simple
+```
+
+```
+As LLM Expert, investigate why verdict confidence is consistently too high on controversial topics.
+Area: Prompts, Calculations
+Complexity: moderate
+```
+
+```
+As Tech Writer, update the Architecture Overview to reflect the new grounding-check module.
+Area: Documentation
+Complexity: simple
+```
+
+### Captain's Assignment Checklist
+
+What to provide based on task complexity:
+
+| Complexity | What to Include |
+|------------|----------------|
+| **Simple** | Role + instruction (the "As \<Role\> ..." pattern above) |
+| **Moderate** | + Area + relevant context/files |
+| **Complex** | + Constraints + acceptance criteria + related WIP docs + which roles reviewed previously |
+| **Investigation** | + Observed symptoms + recent changes + expected vs actual behavior |
+
+### Full Template (for complex/multi-agent tasks)
+
+Copy the template below and fill in the `{PLACEHOLDERS}`. Use this for complex tasks or when multiple agents will collaborate on the same work.
 
 ---
 
@@ -18,7 +62,7 @@ Copy the template below and fill in the `{PLACEHOLDERS}`. The meta-prompt provid
 
 ## Your Role
 **Role:** {ROLE}
-<!-- Options: Lead Architect | Lead Developer | Senior Developer | Technical Writer | LLM Expert -->
+<!-- Options: Lead Architect | Lead Developer | Senior Developer | Technical Writer | LLM Expert | Product Strategist | Code Reviewer | Security Expert | DevOps Expert -->
 
 ---
 
@@ -369,4 +413,4 @@ Now proceed with your task as LLM Expert.
 ---
 
 **Document Maintainer:** Lead Architect
-**Last Reviewed:** 2026-02-03
+**Last Reviewed:** 2026-02-10
