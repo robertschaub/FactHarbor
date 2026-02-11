@@ -1,7 +1,7 @@
 {{info}}
 This diagram shows the **current implementation** data model. Storage is JSON blobs in SQLite. AnalysisContexts (bounded analytical frames) and KeyFactors (decomposition questions with contestation tracking) are embedded in result JSON, not separate stored entities. No user system implemented.
 
-Updated 2026-02-08 per documentation audit report.
+Updated 2026-02-11 per source code audit against ##types.ts## and ##Entities.cs##.
 {{/info}}
 
 = Current Implementation Data Model =
@@ -10,12 +10,15 @@ Updated 2026-02-08 per documentation audit report.
 
 erDiagram
     ARTICLE ||--o{ CLAIM : contains
-    ARTICLE ||--|| ARTICLE_VERDICT : has
+    ARTICLE ||--|| ARTICLE_ANALYSIS : has
     CLAIM ||--|| CLAIM_VERDICT : has
     CLAIM ||--o{ CLAIM : depends_on
     CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : supported_by
     SOURCE ||--o{ EVIDENCE_ITEM : provides
     ARTICLE ||--o{ ANALYSIS_CONTEXT : has
+    ARTICLE_ANALYSIS ||--o{ CONTEXT_ANSWER : "per context"
+    CONTEXT_ANSWER }o--|| ANALYSIS_CONTEXT : answers
+    EVIDENCE_ITEM ||--o| EVIDENCE_SCOPE : has_scope
 
     ARTICLE {
         string id_PK
@@ -32,70 +35,99 @@ erDiagram
         string id_PK
         string articleId_FK
         string text
-        string type
-        string claimRole
+        string type "legal procedural factual evaluative"
+        string claimRole "core attribution source timing"
         string_array dependsOn
-        string keyFactorId
+        string keyFactorId FK
         boolean isCentral
-        string contextId
+        string centrality "high medium low"
+        string harmPotential "high medium low"
+        string contextId FK
     }
 
     CLAIM_VERDICT {
         string claimId_FK
-        number verdict
-        number truthPercentage
-        number confidence
+        number verdict "0-100 raw"
+        number truthPercentage "0-100 calibrated"
+        number confidence "0-100"
         string reasoning
         string_array supportingEvidenceIds
-        string ratingConfirmation
+        string riskTier "A B or C"
+        string ratingConfirmation "v2.8.4 direction check"
         boolean isContested
         string contestedBy
-        string factualBasis
+        string factualBasis "established disputed opinion unknown"
+        boolean isCounterClaim "inverts for aggregation"
     }
 
-    ARTICLE_VERDICT {
-        string articleId_FK
-        string verdict
-        int truthPercentage
-        int confidence
-        string summary
+    ARTICLE_ANALYSIS {
+        number articleTruthPercentage "0-100"
+        number articleVerdict "7-point scale number"
+        string articleVerdictReason
+        string articleVerdictReliability "high or low"
+        boolean hasMultipleContexts
+        json claimPattern "supported uncertain refuted counts"
+        boolean isPseudoscience
+    }
+
+    CONTEXT_ANSWER {
+        string contextId FK
+        string contextName
+        number truthPercentage "0-100"
+        number confidence "0-100"
+        string shortAnswer
     }
 
     EVIDENCE_ITEM {
         string id_PK
         string sourceId_FK
         string statement
+        string category "legal_provision statistic event etc"
+        string specificity "high medium"
+        string sourceUrl
+        string sourceTitle
         string sourceExcerpt
-        string category
-        string claimDirection
-        string contextId
-        string sourceAuthority
-        string probativeValue
-        string evidenceBasis
-        number extractionConfidence
+        string claimDirection "supports contradicts neutral"
+        string contextId FK
+        string probativeValue "high medium low"
+        string sourceAuthority "primary secondary opinion contested"
+        string evidenceBasis "scientific documented anecdotal etc"
+        number extractionConfidence "0-100"
+    }
+
+    EVIDENCE_SCOPE {
+        string name "Short label"
+        string methodology "Standard referenced"
+        string boundaries "What is included or excluded"
+        string geographic "Geographic scope of source data"
+        string temporal "Time period of source data"
+        string sourceType "peer_reviewed_study news_primary etc"
     }
 
     SOURCE {
         string id_PK
         string url
         string title
-        float trackRecordScore
-        float trackRecordConfidence
+        string fullText "Retrieved page content"
+        float trackRecordScore "0.0-1.0"
+        float trackRecordConfidence "0.0-1.0"
         boolean trackRecordConsensus
         string category
         boolean fetchSuccess
+        string fetchedAt
+        string searchQuery "Query that found this source"
     }
 
     ANALYSIS_CONTEXT {
-        string id_PK
+        string id_PK "CTX_xxx"
         string name
         string shortName
         string subject
         string temporal
-        string status
+        string status "concluded ongoing pending unknown"
         string outcome
         string assessedStatement
-        json metadata
+        json metadata "Domain-specific details"
     }
 
 {{/mermaid}}
@@ -109,8 +141,10 @@ erDiagram
 
 **ratingConfirmation (v2.8.4):** LLM-provided verdict direction confirmation ("claim_supported" | "claim_refuted" | "mixed"). Used for direction mismatch validation.
 
-**KeyFactors:** Optional decomposition questions discovered during analysis - not stored as separate entities.
+**EvidenceScope:** Optional per-evidence metadata describing the methodology and boundaries of the source document. Embedded in EvidenceItem, not a separate stored entity.
+
+**KeyFactors:** Optional decomposition questions discovered during analysis — not stored as separate entities. See [[KeyFactor Entity Model>>FactHarbor.Product Development.Diagrams.KeyFactor Entity Model.WebHome]].
 
 **Storage:** All data stored as JSON blob in SQLite ##ResultJson## field.
 
-**See Also:** [[Target Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]] for normalized design.
+**See Also:** [[Target Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]] for normalized design. For complete field-level detail per pipeline phase, see [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].

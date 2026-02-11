@@ -95,31 +95,20 @@ Use EvidenceScope metadata when:
 
 === 4.3 Data Flow ===
 
-**Phase 1: Initial Context Detection**
-{{code language="typescript"}}
-interface AnalysisContext {
-  id: string;              // e.g., "CTX_INST_A", "CTX_METHOD_X"
-  name: string;            // Human-readable name
-  shortName: string;       // Abbreviation
-  institution?: string;    // Court, agency, organization
-  methodology?: string;    // Standard/method used
-  boundaries?: string;     // What's included/excluded
-  temporal?: string;       // Time period
-  subject: string;         // What's being analyzed
-  status: "concluded" | "ongoing" | "pending" | "unknown";
-}
-{{/code}}
+**Phase 1: Initial Context Detection** — produces AnalysisContext entities. **Phase 3: EvidenceScope Capture** — attaches EvidenceScope metadata to evidence items.
 
-**Phase 3: EvidenceScope Capture**
-{{code language="typescript"}}
-interface EvidenceScope {
-  name: string;         // "Framework A", "Court B"
-  methodology: string;  // "Standard X", "Full system boundary"
-  boundaries: string;   // "Full system", "Subsystem only"
-  geographic: string;   // "Region A"
-  temporal: string;     // "Period 1"
-}
-{{/code}}
+For full field definitions see [[Entity Views (Understanding Phase + Research Phase)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]]. Key fields for context detection:
+
+|= Entity |= Field |= Role in Detection
+| AnalysisContext | ##id## | Unique identifier (CTX_xxx)
+| AnalysisContext | ##name## / ##shortName## | Human-readable labels
+| AnalysisContext | ##subject## | What is being analysed — the core distinguishing field
+| AnalysisContext | ##temporal## | Time period (creates context if primary subject)
+| AnalysisContext | ##status## | concluded / ongoing / pending / unknown
+| AnalysisContext | ##metadata## (JSONB) | Domain-specific details (institution, methodology, boundaries)
+| EvidenceScope | ##methodology## | Standard referenced by the source
+| EvidenceScope | ##boundaries## | What the source includes/excludes
+| EvidenceScope | ##geographic## / ##temporal## | Source data region and period
 
 ----
 

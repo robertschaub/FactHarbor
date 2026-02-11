@@ -1,106 +1,111 @@
 = KeyFactor Entity Model =
 
+{{info}}
+KeyFactors are decomposition questions discovered during the Understand phase and assessed during the Verdict phase. Definitions (KEY_FACTOR_DEF) live in ClaimUnderstanding; verdicts (KEY_FACTOR_VERDICT) live inside each AnalysisContextAnswer. Contestation fields are embedded in KEY_FACTOR_VERDICT — there is no separate Contestation entity.
+
+Updated 2026-02-11 per ##types.ts## interfaces: ##ClaimUnderstanding.keyFactors##, ##KeyFactor##, ##FactorAnalysis##, ##AnalysisContextAnswer##.
+{{/info}}
+
 {{mermaid}}
+
 erDiagram
-    ANALYSIS ||--o| ARTICLE : "analyzes"
-    ANALYSIS ||--|| THESIS : "has"
-    ANALYSIS ||--o{ KEY_FACTOR : "decomposes into"
-    ANALYSIS ||--|| OVERALL_VERDICT : "produces"
+    CLAIM_UNDERSTANDING ||--o{ KEY_FACTOR_DEF : "discovers"
+    CLAIM_UNDERSTANDING ||--o{ SUB_CLAIM : "decomposes into"
 
-    ARTICLE ||--|{ CLAIM : "contains"
+    SUB_CLAIM }o--o| KEY_FACTOR_DEF : "addresses"
+    SUB_CLAIM ||--|| CLAIM_VERDICT : "has"
+    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "supported by"
 
-    THESIS ||--o{ KEY_FACTOR : "decomposed by"
+    CONTEXT_ANSWER ||--o{ KEY_FACTOR_VERDICT : "contains"
+    CONTEXT_ANSWER ||--o| FACTOR_ANALYSIS : "summarises"
+    KEY_FACTOR_VERDICT }o--o| KEY_FACTOR_DEF : "assesses"
 
-    KEY_FACTOR ||--o{ CLAIM : "answered by"
-    KEY_FACTOR ||--o| CONTESTATION : "may have"
-    KEY_FACTOR ||--|| FACTOR_VERDICT : "has"
+    ARTICLE_ANALYSIS ||--o{ CONTEXT_ANSWER : "per context"
 
-    CLAIM ||--o{ EVIDENCE : "supported by"
-    CLAIM ||--|| CLAIM_VERDICT : "has"
-
-    EVIDENCE }o--|| SOURCE : "from"
-
-    FACTOR_VERDICT }o--o{ CLAIM_VERDICT : "aggregates"
-    OVERALL_VERDICT }o--o{ FACTOR_VERDICT : "derived from"
-    OVERALL_VERDICT }o--o{ CLAIM_VERDICT : "also considers"
-
-    ANALYSIS {
-        string id PK
-        string inputType "text|url"
-        string inputValue
-        datetime createdAt
+    CLAIM_UNDERSTANDING {
+        string impliedClaim "Main assertion"
+        string articleThesis "Article thesis"
+        string riskTier "A B or C"
     }
 
-    ARTICLE {
-        string id PK
-        string url
-        string title
-        string fullText
+    KEY_FACTOR_DEF {
+        string id PK "KF_xxx"
+        string question "Decomposition question"
+        string factor "Short label"
+        string category "procedural evidential methodological factual evaluative"
     }
 
-    THESIS {
-        string id PK
-        string statement "main claim or question"
-        string impliedClaim "what YES would confirm"
+    KEY_FACTOR_VERDICT {
+        string factor "Short label"
+        string supports "yes no neutral"
+        string explanation "Reasoning"
+        boolean isContested
+        string contestedBy "Who or what contests"
+        string contestationReason "Why contested"
+        string factualBasis "established disputed opinion unknown"
     }
 
-    KEY_FACTOR {
-        string id PK
-        string question "decomposition question"
-        string factor "short label"
-        string category "procedural|evidential|methodological"
+    FACTOR_ANALYSIS {
+        number positiveFactors
+        number negativeFactors
+        number neutralFactors
+        number contestedNegatives
+        string verdictExplanation
     }
 
-    FACTOR_VERDICT {
-        string id PK
-        string supports "yes|no|neutral"
-        string explanation
-    }
-
-    CLAIM {
-        string id PK
-        string text
-        string type "legal|procedural|factual|evaluative"
-        string role "core|attribution|source|timing"
+    SUB_CLAIM {
+        string id PK "SC1 C1 etc"
+        string text "Claim statement"
+        string type "legal procedural factual evaluative"
+        string claimRole "core attribution source timing"
         boolean isCentral
-        string keyFactorId FK "which factor this answers"
-    }
-
-    EVIDENCE {
-        string id PK
-        string fact
-        string category
-        string sourceExcerpt
-        boolean isContestedClaim
-    }
-
-    SOURCE {
-        string id PK
-        string url
-        string title
-        float trackRecordScore
-    }
-
-    CONTESTATION {
-        string id PK
-        string contestedBy
-        string factualBasis "established|disputed|opinion|unknown"
-        string reason
+        string keyFactorId FK "Linked KeyFactor"
+        string contextId FK "Linked AnalysisContext"
     }
 
     CLAIM_VERDICT {
-        string id PK
-        string verdict "7-point scale"
-        int truthPercentage
+        string claimId PK
+        int truthPercentage "0-100 calibrated"
+        int confidence "0-100"
+        string verdict "7-point scale label"
         string reasoning
+        boolean isContested
+        string factualBasis "established disputed opinion unknown"
     }
 
-    OVERALL_VERDICT {
-        string id PK
-        string verdict
-        int truthPercentage
-        string verdictReason
+    EVIDENCE_ITEM {
+        string id PK "S1-E1 format"
+        string statement "Extracted evidence text"
+        string category "legal_provision statistic event etc"
+        string claimDirection "supports contradicts neutral"
+        string probativeValue "high medium low"
     }
+
+    CONTEXT_ANSWER {
+        string contextId FK "CTX_xxx"
+        string contextName
+        number truthPercentage "0-100"
+        number confidence "0-100"
+        string shortAnswer
+    }
+
+    ARTICLE_ANALYSIS {
+        number articleTruthPercentage "0-100 calibrated"
+        number articleVerdict "7-point scale number"
+        string articleVerdictReason
+    }
+
 {{/mermaid}}
 
-//Entity relationship model showing Thesis -> KeyFactor -> Claim hierarchy, with contestation attaching at the KeyFactor level.//
+== KeyFactor Lifecycle ==
+
+1. **Understand phase** — CLAIM_UNDERSTANDING discovers KEY_FACTOR_DEFs (decomposition questions) and SUB_CLAIMs. Each SUB_CLAIM may be mapped to a KEY_FACTOR_DEF via ##keyFactorId##.
+1. **Research phase** — EVIDENCE_ITEMs are gathered for each SUB_CLAIM.
+1. **Verdict phase** — Each SUB_CLAIM receives a CLAIM_VERDICT. Per-context CONTEXT_ANSWERs contain KEY_FACTOR_VERDICTs (one per factor) and an optional FACTOR_ANALYSIS summarising the factor verdict counts.
+1. **Aggregation** — ARTICLE_ANALYSIS aggregates across all CONTEXT_ANSWERs.
+
+== Contestation ==
+
+Contestation is **embedded in KEY_FACTOR_VERDICT**, not a separate entity. When ##isContested## is true, ##contestedBy## and ##contestationReason## describe the dissent. The ##factualBasis## field (established / disputed / opinion / unknown) indicates the epistemological status of the factor's conclusion.
+
+//For full field-level detail see [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]]. For the complete analysis entity chain see [[Analysis Entity Model ERD>>FactHarbor.Product Development.Diagrams.Analysis Entity Model ERD.WebHome]].//

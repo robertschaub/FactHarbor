@@ -24,24 +24,7 @@ FactHarbor's target data model is **simple, focused, and designed for automated 
 **Current**: Embedded in ##AnalysisResult## JSON blob (see [[Architecture Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]]).
 **Target**: Normalised into PostgreSQL table.
 
-**Fields**:
-* **claimId** (text PK): Claim identifier (SC1, C1, etc.)
-* **jobId** (UUID FK): Parent analysis job
-* **claimText** (text): The claim statement
-* **type** (text): "legal", "procedural", "factual", "evaluative"
-* **isCentral** (boolean): Central claim flag
-* **centrality** (text): "high", "medium", "low" — weight multiplier (3x, 2x, 1x)
-* **harmPotential** (text): "high", "medium", "low"
-* **truthPercentage** (int): 0-100 calibrated truth score
-* **confidence** (int): 0-100 confidence in verdict
-* **verdict** (text): 7-point scale label (TRUE, MOSTLY_TRUE, etc.)
-* **riskTier** (text): "A", "B", or "C"
-* **reasoning** (text): Explanation of verdict
-* **supportingEvidenceIds** (text[]): References to EvidenceItem IDs
-* **contextId** (text FK): Linked AnalysisContext
-* **keyFactorId** (text FK): Linked KeyFactor
-* **isContested** (boolean): Whether claim is contested
-* **factualBasis** (text): "established", "disputed", "opinion", "unknown"
+Per-claim assessment with truth percentage on the 7-point scale, confidence, and evidence references. Linked to an AnalysisContext and optional KeyFactor. For field-level detail see [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] and [[Entity Views (Target Database)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
 
 ==== Performance Optimisation: Denormalised Fields ====
 
@@ -77,37 +60,14 @@ FactHarbor's target data model is **simple, focused, and designed for automated 
 **Current**: Embedded in ##AnalysisResult## JSON blob.
 **Target**: Normalised into PostgreSQL table.
 
-**Fields**:
-* **id** (text PK): Evidence ID (S1-E1 format)
-* **jobId** (UUID FK): Parent analysis job
-* **statement** (text): Extracted evidence text
-* **category** (text): "legal_provision", "evidence", "direct_evidence", "expert_quote", "statistic", "event", "criticism"
-* **sourceId** (text FK): Reference to FetchedSource
-* **sourceUrl** (text): URL of source
-* **sourceExcerpt** (text): Quoted excerpt from source
-* **contextId** (text FK): Reference to AnalysisContext
-* **probativeValue** (text): "high", "medium", "low"
-* **sourceAuthority** (text): "primary", "secondary", "opinion", "contested"
-* **evidenceBasis** (text): "scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"
-* **claimDirection** (text): "supports", "contradicts", "neutral"
-* **extractionConfidence** (int): 0-100 LLM confidence
+Extracted evidence from a source document, with category, direction (supports/contradicts/neutral), probativeValue, and optional EvidenceScope metadata. For field-level detail see [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] and [[Entity Views (Research Phase)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
 
 === 1.3 FetchedSource (normalised from JSON) ===
 
 **Current**: Embedded in ##AnalysisResult## JSON blob. Source reliability cached in ##source-reliability.db##.
 **Target**: Normalised into PostgreSQL table with dedicated reliability tracking.
 
-**Fields**:
-* **id** (text PK): Source ID (S1, S2, etc.)
-* **url** (text): Full URL
-* **domain** (text): Extracted domain (e.g., "nytimes.com")
-* **title** (text): Page title
-* **trackRecordScore** (float): 0.0-1.0 reliability score from LLM evaluation
-* **trackRecordConfidence** (float): 0.0-1.0 confidence in the evaluation
-* **trackRecordConsensus** (boolean): Whether multi-model consensus was achieved
-* **fetchSuccess** (boolean): Whether content retrieval succeeded
-* **fetchedAt** (timestamp): When source was fetched
-* **category** (text): Source category
+Web source fetched during research, with LLM-evaluated reliability score (0.0-1.0), optional multi-model consensus, and fetch metadata. For field-level detail see [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] and [[Entity Views (Research Phase)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
 
 ==== Source Reliability Scoring ====
 
@@ -156,19 +116,7 @@ async function refreshStaleSourceScores(): Promise<void> {
 **Current**: Embedded in ##ClaimUnderstanding## within the ##AnalysisResult## JSON blob.
 **Target**: Normalised into PostgreSQL table.
 
-**Purpose**: Bounded analytical frame for evaluating claims from different perspectives. Each AnalysisContext represents a specific analytical dimension detected during the Understanding phase.
-
-**Fields**:
-* **id** (text PK): Context identifier (CTX_xxx)
-* **jobId** (UUID FK): Parent analysis job
-* **name** (text): Full context name
-* **shortName** (text): Short label
-* **subject** (text): What is being analysed
-* **temporal** (text): Time period
-* **status** (text): "concluded", "ongoing", "pending", "unknown"
-* **outcome** (text): Result/conclusion
-* **assessedStatement** (text): What is being assessed in this context
-* **metadata** (JSONB): Domain-specific details (institution, jurisdiction, methodology, etc.)
+**Purpose**: Bounded analytical frame for evaluating claims from different perspectives. Each AnalysisContext represents a specific analytical dimension detected during the Understanding phase. Carries subject, temporal scope, status, outcome, and domain-specific metadata (JSONB). For field-level detail see [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] and [[Entity Views (Understanding Phase)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
 
 **How Found**: Input analysis → Context detection → Create AnalysisContext → Link claims to contexts
 
@@ -481,42 +429,20 @@ The following ERD visualises all target database tables — existing (green), ta
 
 === 4.1 Primary Storage (PostgreSQL) ===
 
-**ClaimVerdicts Table**:
-* Current state per analysis job
-* Fields: claimId, jobId, claimText, type, isCentral, centrality, harmPotential, truthPercentage, confidence, verdict, riskTier, reasoning, supportingEvidenceIds, contextId, keyFactorId
+For field-level detail of all target tables, see [[Entity Views (Target Database)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
 
-**EvidenceItems Table**:
-* All evidence records
-* Fields: id, jobId, statement, category, sourceId, sourceUrl, sourceExcerpt, contextId, probativeValue, sourceAuthority, evidenceBasis, claimDirection, extractionConfidence
-
-**FetchedSources Table**:
-* Source data and reliability cache
-* Fields: id, jobId, url, domain, title, trackRecordScore (float 0.0-1.0), trackRecordConfidence, trackRecordConsensus, fetchSuccess, fetchedAt, category
-
-**AnalysisContexts Table**:
-* Detected analytical frames
-* Fields: id, jobId, name, shortName, subject, temporal, status, outcome, assessedStatement, metadata (JSONB)
-
-**User Table** (planned):
-* All user accounts
-* Fields: id, username, email, role (Reader/UCM Administrator/Moderator), created_at, last_active
-
-**UCM Config Tables** (already implemented):
-* config_blobs: Immutable config versions (hash, config_type, content, changed_by, change_reason, created_at)
-* config_active: Currently active config per type (config_type, blob_hash, activated_at, activated_by)
-* config_usage: Per-job config snapshots (job_id, config_type, blob_hash, snapshot_at)
-
-**Flag Table** (planned):
-* User-reported issues
-* Fields: id, entity_type, entity_id, reported_by, issue_type, description, status, resolved_by, resolution_note, created_at, resolved_at
-
-**ErrorPattern Table** (planned):
-* System improvement queue
-* Fields: id, error_category, claim_id, description, root_cause, frequency, status, created_at, fixed_at
-
-**QualityMetric Table** (planned):
-* Time-series quality data
-* Fields: id, metric_type, metric_category, value, target, timestamp
+|= Table |= Status |= Purpose
+| ##claim_verdicts## | Target | Normalised from JSON — per-claim assessments
+| ##evidence_items## | Target | Normalised from JSON — extracted evidence
+| ##fetched_sources## | Target | Normalised from JSON — web sources with reliability scores
+| ##analysis_contexts## | Target | Normalised from JSON — bounded analytical frames
+| ##users## | Planned | User accounts (Alpha phase)
+| ##config_blobs## | Exists | Immutable config versions (content-addressed)
+| ##config_active## | Exists | Currently active config per type
+| ##config_usage## | Exists | Per-job config snapshots
+| ##flags## | Planned | User-reported quality issues (Alpha phase)
+| ##error_patterns## | Planned | System improvement queue (Alpha/Beta phase)
+| ##quality_metrics## | Planned | Time-series quality tracking (Alpha/Beta phase)
 
 === 4.2 What's NOT Stored (Computed on-the-fly) ===
 

@@ -29,6 +29,8 @@ Non-trivial diagrams live in dedicated pages here and are **{{include}}d** into 
 
 == Data Models ==
 
+**Primary field-level reference:** [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]] — five complementary views (Overview, Result, Target DB, Runtime, UI) with complete field detail per entity.
+
 * [[Analysis Entity Model ERD>>FactHarbor.Product Development.Diagrams.Analysis Entity Model ERD.WebHome]] — Complete entity relationship model
 * [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] — Core entities overview
 * [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]] — Overview, Result, Target DB, Runtime, UI views

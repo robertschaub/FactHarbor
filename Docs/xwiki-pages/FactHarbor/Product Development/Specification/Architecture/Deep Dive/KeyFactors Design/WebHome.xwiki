@@ -137,15 +137,16 @@ Contestation attaches to KeyFactors (not Claims) because:
 * Not about atomic facts ("court met on date X")
 
 {{code language="typescript"}}
+// KeyFactor verdict (per AnalysisContextAnswer) — types.ts
 interface KeyFactor {
-  factor: string;
-  question: string;
+  factor: string;                // Short label (matches KEY_FACTOR_DEF.factor)
   supports: "yes" | "no" | "neutral";
   explanation: string;
 
   // Contestation
   isContested: boolean;
   contestedBy: string;           // e.g. "stakeholder group", "opposition coalition"
+  contestationReason: string;    // Why the finding is contested
   factualBasis: "established" | "disputed" | "opinion" | "unknown";
 }
 {{/code}}

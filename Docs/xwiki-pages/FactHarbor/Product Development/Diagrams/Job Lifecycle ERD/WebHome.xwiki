@@ -7,12 +7,18 @@ erDiagram
 
     JOB {
         string JobId PK "GUID"
-        string Status "QUEUED, RUNNING, SUCCEEDED, FAILED, PAUSED"
+        string Status "QUEUED RUNNING SUCCEEDED FAILED PAUSED"
         int Progress "0-100"
         string InputType "text or url"
         string InputValue "The submitted content"
+        string InputPreview "First N chars for display"
+        string PipelineVariant "orchestrated or monolithic_dynamic"
+        string PromptContentHash "SHA-256 of prompt used"
+        string ResultJson "Analysis result JSON blob"
+        string ReportMarkdown "Generated report"
         datetime CreatedUtc "When submitted"
         datetime UpdatedUtc "Last status change"
+        datetime PromptLoadedUtc "When prompt was loaded"
     }
 
     JOB_EVENT {

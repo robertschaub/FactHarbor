@@ -3,7 +3,7 @@
 
 **Source of truth**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/api/Data/Entities.cs##, ##config-schemas.ts##
 
-Created 2026-02-10.
+Created 2026-02-10. Updated 2026-02-11.
 {{/info}}
 
 = Entity Views =
@@ -263,11 +263,13 @@ erDiagram
         string id_PK
         string url
         string title
+        string fullText
         float trackRecordScore
         float trackRecordConfidence
         boolean trackRecordConsensus
         string category
         boolean fetchSuccess
+        string fetchedAt
         string searchQuery
     }
 
@@ -345,6 +347,7 @@ erDiagram
     CONTEXT_ANSWER {
         string contextId_FK
         string contextName
+        number answer
         int truthPercentage
         int confidence
         string shortAnswer
@@ -356,6 +359,7 @@ erDiagram
         string explanation
         boolean isContested
         string contestedBy
+        string contestationReason
         string factualBasis
     }
 
@@ -567,8 +571,10 @@ erDiagram
         string name
         string shortName
         string subject
+        string temporal
         string status
         string outcome
+        string assessedStatement
         json metadata_JSONB
     }
 

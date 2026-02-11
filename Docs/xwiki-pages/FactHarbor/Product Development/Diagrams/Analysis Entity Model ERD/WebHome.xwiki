@@ -3,55 +3,84 @@
 {{mermaid}}
 erDiagram
     CLAIM_UNDERSTANDING ||--o{ ANALYSIS_CONTEXT : "detects"
-    CLAIM_UNDERSTANDING ||--o{ KEY_FACTOR : "discovers"
+    CLAIM_UNDERSTANDING ||--o{ KEY_FACTOR_DEF : "discovers"
     CLAIM_UNDERSTANDING ||--o{ SUB_CLAIM : "decomposes into"
 
     SUB_CLAIM }o--o| ANALYSIS_CONTEXT : "scoped to"
-    SUB_CLAIM }o--o| KEY_FACTOR : "addresses"
+    SUB_CLAIM }o--o| KEY_FACTOR_DEF : "addresses"
 
     CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "supported by"
     CLAIM_VERDICT }o--o| ANALYSIS_CONTEXT : "evaluated in"
-    CLAIM_VERDICT }o--o| KEY_FACTOR : "addresses"
+    CLAIM_VERDICT }o--o| KEY_FACTOR_DEF : "addresses"
 
     EVIDENCE_ITEM }o--|| FETCHED_SOURCE : "from"
+    EVIDENCE_ITEM ||--o| EVIDENCE_SCOPE : "has scope"
 
     ARTICLE_ANALYSIS ||--o{ CLAIM_VERDICT : "aggregates"
     ARTICLE_ANALYSIS ||--o{ CONTEXT_ANSWER : "per context"
     CONTEXT_ANSWER }o--|| ANALYSIS_CONTEXT : "answers"
+    CONTEXT_ANSWER ||--o{ KEY_FACTOR_VERDICT : "contains"
+    CONTEXT_ANSWER ||--o| FACTOR_ANALYSIS : "summarises"
 
     CLAIM_UNDERSTANDING {
         string detectedInputType "claim or article"
         string impliedClaim "Main assertion"
         string articleThesis "Article thesis"
+        string backgroundDetails "Broader frame"
         string riskTier "A B or C"
     }
 
     ANALYSIS_CONTEXT {
         string id PK "CTX_xxx"
         string name "Full name"
+        string shortName "Short label"
         string subject "What is analysed"
+        string temporal "Time period"
         string status "concluded ongoing pending unknown"
+        string outcome "Result or conclusion"
+        string assessedStatement "What is assessed"
         json metadata "Domain-specific details"
     }
 
-    KEY_FACTOR {
+    KEY_FACTOR_DEF {
+        string id PK "KF_xxx"
         string question "Decomposition question"
         string factor "Short label"
-        string category "procedural evidential methodological"
+        string category "procedural evidential methodological factual evaluative"
+    }
+
+    KEY_FACTOR_VERDICT {
+        string factor "Short label"
         string supports "yes no neutral"
-        boolean isContested "Contested flag"
+        string explanation "Reasoning"
+        boolean isContested
+        string contestedBy "Who or what contests"
+        string contestationReason "Why contested"
         string factualBasis "established disputed opinion unknown"
+    }
+
+    FACTOR_ANALYSIS {
+        number positiveFactors
+        number negativeFactors
+        number neutralFactors
+        number contestedNegatives
+        string verdictExplanation
     }
 
     SUB_CLAIM {
         string id PK "SC1 C1 etc"
         string text "Claim statement"
         string type "legal procedural factual evaluative"
+        string claimRole "core attribution source timing"
         boolean isCentral "Central claim flag"
         string centrality "high medium low"
         string harmPotential "high medium low"
+        string checkWorthiness "high medium low"
+        string_array dependsOn "Claim IDs"
+        string_array keyEntities "Named entities"
         string contextId FK "Linked AnalysisContext"
         string keyFactorId FK "Linked KeyFactor"
+        string approximatePosition "Position in source"
     }
 
     CLAIM_VERDICT {
@@ -64,46 +93,67 @@ erDiagram
         string_array supportingEvidenceIds "Evidence IDs"
         string contextId FK "Linked AnalysisContext"
         string keyFactorId FK "Linked KeyFactor"
+        boolean isCounterClaim "Inverts for aggregation"
     }
 
     EVIDENCE_ITEM {
         string id PK "S1-E1 format"
         string statement "Extracted evidence text"
         string category "legal_provision statistic event etc"
+        string specificity "high medium"
+        string sourceId FK "Linked FetchedSource"
+        string sourceUrl "Source URL"
+        string sourceTitle "Source title"
         string sourceExcerpt "Original text excerpt"
+        string claimDirection "supports contradicts neutral"
+        string contextId FK "Linked AnalysisContext"
         string probativeValue "high medium low"
         string sourceAuthority "primary secondary opinion contested"
         string evidenceBasis "scientific documented anecdotal etc"
-        string contextId FK "Linked AnalysisContext"
-        string sourceId FK "Linked FetchedSource"
+        number extractionConfidence "0-100"
+    }
+
+    EVIDENCE_SCOPE {
+        string name "Short label"
+        string methodology "Standard referenced"
+        string boundaries "Included or excluded"
+        string geographic "Source data region"
+        string temporal "Source data period"
+        string sourceType "peer_reviewed_study etc"
     }
 
     FETCHED_SOURCE {
         string id PK "S1 S2 etc"
         string url "Full URL"
-        string domain "Extracted domain"
+        string title "Page title"
+        string fullText "Retrieved content"
         float trackRecordScore "0.0-1.0 reliability"
         float trackRecordConfidence "0.0-1.0 eval confidence"
         boolean trackRecordConsensus "Multi-model consensus"
+        string category "Source category"
         boolean fetchSuccess "Content retrieval success"
+        string fetchedAt "When fetched"
+        string searchQuery "Query that found source"
     }
 
     CONTEXT_ANSWER {
         string contextId FK "CTX_xxx"
         string contextName "Full name"
-        int truthPercentage "0-100"
-        int confidence "0-100"
+        number answer "Truth percentage raw"
+        number truthPercentage "0-100 for display"
+        number confidence "0-100"
         string shortAnswer "Brief answer"
     }
 
     ARTICLE_ANALYSIS {
-        string articleVerdict "7-point scale label"
-        int articleTruthPercentage "0-100 calibrated"
-        int claimsTotal "Total claims analysed"
-        int claimsSupported "Truth >= 72 pct"
-        int claimsRefuted "Truth < 43 pct"
+        number articleTruthPercentage "0-100 calibrated"
+        number articleVerdict "7-point scale number"
+        string articleVerdictReason "Overall explanation"
+        string articleVerdictReliability "high or low"
+        boolean hasMultipleContexts "Distinct contexts flag"
+        json claimPattern "supported uncertain refuted counts"
         boolean isPseudoscience "Pseudoscience detected"
     }
 {{/mermaid}}
 
-//The complete analysis entity chain. Step 1 (Understand) produces CLAIM_UNDERSTANDING with detected ANALYSIS_CONTEXTs, KEY_FACTORs, and SUB_CLAIMs. Step 2 (Research) gathers EVIDENCE_ITEMs from FETCHED_SOURCEs. Steps 3-5 generate CLAIM_VERDICTs per claim, CONTEXT_ANSWERs per context, and an overall ARTICLE_ANALYSIS. All entities are embedded in the analysis result JSON blob — not separate database tables.//
+//The complete analysis entity chain. Step 1 (Understand) produces CLAIM_UNDERSTANDING with detected ANALYSIS_CONTEXTs, KEY_FACTOR_DEFs, and SUB_CLAIMs. Step 2 (Research) gathers EVIDENCE_ITEMs (with optional EVIDENCE_SCOPEs) from FETCHED_SOURCEs. Steps 3-5 generate CLAIM_VERDICTs per claim, CONTEXT_ANSWERs (with KEY_FACTOR_VERDICTs and FACTOR_ANALYSIS) per context, and an overall ARTICLE_ANALYSIS. All entities are embedded in the analysis result JSON blob — not separate database tables.//

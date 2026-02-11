@@ -14,6 +14,8 @@ The core analysis pipeline produces a hierarchy of entities: the input is decomp
 
 {{include reference="FactHarbor.Product Development.Diagrams.Analysis Entity Model ERD.WebHome"/}}
 
+//For complete field-level detail per entity and per pipeline phase, see [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].//
+
 == Entity Descriptions ==
 
 |= Entity |= Purpose |= Source Interface |= Key Relationships
