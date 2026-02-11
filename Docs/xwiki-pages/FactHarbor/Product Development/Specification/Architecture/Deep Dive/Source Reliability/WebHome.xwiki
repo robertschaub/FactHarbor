@@ -1,12 +1,12 @@
 = Source Reliability =
 
 {{info}}
-**Developer Reference** — Implementation details for the [[Media Source Database>>FactHarbor.Product Development.Specification.Media Source Database.WebHome]], FactHarbor's AI-powered source credibility service. Currently embedded in the analysis pipeline; planned to become a standalone public service and API.
+**Developer Reference** — Implementation details for the [[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]], FactHarbor's AI-powered source credibility service. Currently embedded in the analysis pipeline; planned to become a standalone public service and API.
 
 **Key File**: ##apps/web/src/lib/analyzer/source-reliability.ts##
 {{/info}}
 
-**User-facing name**: [[Media Source Database>>FactHarbor.Product Development.Specification.Media Source Database.WebHome]]
+**User-facing name**: [[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]]
 **Version**: 1.4 (Multi-Language Support)
 **Status**: Operational
 
@@ -22,7 +22,7 @@
 
 == Related ==
 
-* [[Media Source Database>>FactHarbor.Product Development.Specification.Media Source Database.WebHome]] — User-facing source reliability documentation
+* [[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]] — User-facing source reliability documentation
 * [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] — System architecture (SR integration context)
 * [[Quality and Trust>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust.WebHome]] — Source reliability scoring overview
 

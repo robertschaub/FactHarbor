@@ -67,7 +67,7 @@ This specification is organised from conceptual overview to implementation detai
 * [[Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]] — Entity relationships and target schema
 * [[Workflows>>FactHarbor.Product Development.Specification.Workflows.WebHome]] — Claim submission and analysis lifecycle
 * [[Automation>>FactHarbor.Product Development.Specification.Automation.WebHome]] — Automation philosophy and roadmap
-* [[Media Source Database>>FactHarbor.Product Development.Specification.Media Source Database.WebHome]] — AI-powered source credibility evaluation: dual-model cross-check, 19-language support, 7-band scale (standalone service planned)
+* [[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]] — AI-powered source credibility evaluation: dual-model cross-check, 19-language support, 7-band scale (standalone service planned)
 
 === Architecture ===
 
