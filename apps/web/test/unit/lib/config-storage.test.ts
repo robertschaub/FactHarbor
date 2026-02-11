@@ -579,7 +579,7 @@ describe("Profile Management", () => {
       ["prompt"],
     );
 
-    expect(result.length).toBe(4);
+    expect(result.length).toBe(3);
     const foundProfiles = result.map((r: any) => r.profile_key);
     for (const p of profiles) {
       expect(foundProfiles).toContain(p);

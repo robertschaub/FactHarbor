@@ -52,6 +52,16 @@ describe.sequential("llm integration", () => {
       return;
     }
 
+    // Skip when no LLM API keys are available (e.g., in CI)
+    const hasApiKey =
+      !!process.env.OPENAI_API_KEY ||
+      !!process.env.ANTHROPIC_API_KEY ||
+      !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!hasApiKey) {
+      console.warn("[LLM Integration] No API keys found, skipping");
+      return;
+    }
+
     const outputDir = path.join(webRoot, config.outputDir ?? "test/output");
     fs.mkdirSync(outputDir, { recursive: true });
     const runId = new Date().toISOString().replace(/[:.]/g, "-");

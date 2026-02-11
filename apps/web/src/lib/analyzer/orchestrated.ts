@@ -40,7 +40,7 @@
  */
 
 import { z } from "zod";
-import { generateText, NoObjectGeneratedError, Output } from "ai";
+import { generateText, NoObjectGeneratedError, NoOutputGeneratedError, Output } from "ai";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { searchWebWithProvider, getActiveSearchProviders, type WebSearchResult, type SearchProviderErrorInfo } from "@/lib/web-search";
 import { recordProviderFailure, recordProviderSuccess } from "@/lib/provider-health";
@@ -86,7 +86,7 @@ import {
 } from "./aggregation";
 import { detectContexts, detectContextsHybrid, formatDetectedContextsHint } from "./analysis-contexts";
 import { VERDICT_BANDS } from "./truth-scale";
-import { getModelForTask } from "./llm";
+import { getModelForTask, getStructuredOutputProviderOptions } from "./llm";
 import {
   detectAndCorrectVerdictInversion,
   detectCounterClaim,
@@ -918,6 +918,12 @@ const SEARCH_RELEVANCE_SCHEMA = z.object({
   reason: z.string().max(400),
 });
 
+const SEARCH_RELEVANCE_SCHEMA_ANTHROPIC = z.object({
+  classification: z.enum(["primary_source", "secondary_commentary", "unrelated"]),
+  confidence: z.number(),
+  reason: z.string(),
+});
+
 function buildRelevanceContextSummary(contexts: AnalysisContext[]): string {
   if (!contexts || contexts.length === 0) return "No contexts available.";
   return contexts
@@ -972,11 +978,17 @@ Return JSON with: classification, confidence (0-100), reason.`;
         { role: "user", content: userPrompt },
       ],
       temperature: getDeterministicTemperature(0.1, pipelineConfig),
-      output: Output.object({ schema: SEARCH_RELEVANCE_SCHEMA }),
+      output: Output.object({
+        schema: isAnthropicProvider(pipelineConfig?.llmProvider)
+          ? SEARCH_RELEVANCE_SCHEMA_ANTHROPIC
+          : SEARCH_RELEVANCE_SCHEMA,
+      }),
+      providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
     });
 
     const parsed = extractStructuredOutput(response);
     if (!parsed) return null;
+    // Always validate with the strict schema (clamps confidence to 0-100)
     const safe = SEARCH_RELEVANCE_SCHEMA.safeParse(parsed);
     if (!safe.success) return null;
     return safe.data;
@@ -1272,6 +1284,7 @@ Return:
       ],
       temperature: getDeterministicTemperature(0.1, state.pipelineConfig),
       output: Output.object({ schema }),
+      providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
     });
     refined = extractStructuredOutput(result);
   } catch (err: any) {
@@ -3012,6 +3025,11 @@ Return ONLY valid JSON matching the exact schema structure.
   return "";
 }
 
+function isAnthropicProvider(providerOverride?: string): boolean {
+  const provider = (providerOverride ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic").toLowerCase();
+  return provider === "anthropic" || provider === "claude";
+}
+
 /**
  * Safely extract structured output from AI SDK generateText result
  * Handles different SDK versions and result structures
@@ -4358,7 +4376,7 @@ const SUBCLAIM_SCHEMA_LENIENT = z.object({
   centrality: z.enum(["high", "medium", "low"]).catch("medium"),
   isCentral: z.boolean().catch(false),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).catch("direct"), // Default to direct for backward compat
-  thesisRelevanceConfidence: z.number().int().min(0).max(100).catch(100),
+  thesisRelevanceConfidence: z.number().catch(100),
   // v2.8.4: Counter-claim detection - default to false (thesis-aligned) for backward compat
   isCounterClaim: z.boolean().catch(false),
   contextId: z.string().default(""),
@@ -4767,7 +4785,19 @@ const ANALYSIS_CONTEXT_SCHEMA = z.object({
     // Regulatory domain
     regulatoryBody: z.string().optional(),
     standardApplied: z.string().optional(),
-  }).passthrough().default({}),  // passthrough allows any additional fields
+  }).default({}),
+});
+
+const ANALYSIS_CONTEXT_SCHEMA_ANTHROPIC = z.object({
+  id: z.string(),
+  name: z.string(),
+  shortName: z.string(),
+  subject: z.string(),
+  temporal: z.string(),
+  status: z.enum(["concluded", "ongoing", "pending", "unknown"]),
+  outcome: z.string(),
+  assessedStatement: z.string(),
+  metadata: z.object({}),
 });
 
 // NOTE: OpenAI structured output requires ALL properties to be in "required" array.
@@ -4807,6 +4837,56 @@ const UNDERSTANDING_SCHEMA_OPENAI = z.object({
   ),
 });
 
+const SUBCLAIM_SCHEMA_ANTHROPIC = z.object({
+  id: z.string(),
+  text: z.string(),
+  type: z.enum(["legal", "procedural", "factual", "evaluative"]),
+  claimRole: z.enum(["attribution", "source", "timing", "core", "unknown"]),
+  dependsOn: z.array(z.string()),
+  keyEntities: z.array(z.string()),
+  checkWorthiness: z.enum(["high", "medium", "low"]),
+  harmPotential: z.enum(["high", "medium", "low"]),
+  centrality: z.enum(["high", "medium", "low"]),
+  isCentral: z.boolean(),
+  thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]),
+  thesisRelevanceConfidence: z.number(),
+  isCounterClaim: z.boolean(),
+  contextId: z.string(),
+  approximatePosition: z.string(),
+  keyFactorId: z.string(),
+});
+
+const UNDERSTANDING_SCHEMA_ANTHROPIC = z.object({
+  detectedInputType: z.enum(["claim", "article"]),
+  analysisIntent: z.enum(["verification", "exploration", "comparison", "none"]),
+  originalInputDisplay: z.string(),
+  impliedClaim: z.string(),
+  analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA_ANTHROPIC),
+  requiresSeparateAnalysis: z.boolean(),
+  backgroundDetails: z.string(),
+  mainThesis: z.string(),
+  articleThesis: z.string(),
+  subClaims: z.array(SUBCLAIM_SCHEMA_ANTHROPIC),
+  distinctEvents: z.array(
+    z.object({
+      name: z.string(),
+      date: z.string(),
+      description: z.string(),
+    }),
+  ),
+  legalFrameworks: z.array(z.string()),
+  researchQueries: z.array(z.string()),
+  riskTier: z.enum(["A", "B", "C"]),
+  keyFactors: z.array(
+    z.object({
+      id: z.string(),
+      evaluationCriteria: z.string(),
+      factor: z.string(),
+      category: z.enum(["procedural", "evidential", "methodological", "factual", "evaluative"]),
+    }),
+  ),
+});
+
 const SUPPLEMENTAL_SUBCLAIMS_SCHEMA = z.object({
   subClaims: z.array(SUBCLAIM_SCHEMA),
 });
@@ -4825,7 +4905,7 @@ const SUPPLEMENTAL_SUBCLAIM_LITE_SCHEMA = z.object({
   centrality: z.enum(["high", "medium", "low"]).optional(),
   isCentral: z.boolean().optional(),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).optional(),
-  thesisRelevanceConfidence: z.number().int().min(0).max(100).optional(),
+  thesisRelevanceConfidence: z.number().optional(),
   approximatePosition: z.string().optional(),
   keyFactorId: z.string().optional(),
 });
@@ -5722,9 +5802,13 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
     (pipelineConfig?.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic").toLowerCase();
   const isOpenAiProvider =
     providerName === "openai" || providerName.startsWith("gpt") || providerName.includes("openai");
+  const isAnthropic =
+    providerName === "anthropic" || providerName === "claude" || providerName.includes("anthropic");
   const understandingSchemaForProvider = isOpenAiProvider
     ? UNDERSTANDING_SCHEMA_OPENAI
-    : UNDERSTANDING_SCHEMA_LENIENT;
+    : isAnthropic
+      ? UNDERSTANDING_SCHEMA_ANTHROPIC
+      : UNDERSTANDING_SCHEMA_LENIENT;
 
   const tryStructured = async (prompt: string, attemptLabel: string) => {
     const startTime = Date.now();
@@ -5749,6 +5833,7 @@ If the input is a comparative efficiency/performance/effectiveness claim, then:
       ],
       temperature: getDeterministicTemperature(0.3, pipelineConfig),
       output: Output.object({ schema: understandingSchemaForProvider }),
+      providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
       }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`understandClaim LLM timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
@@ -6395,6 +6480,7 @@ async function requestSupplementalSubClaims(
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
       output: Output.object({ schema: SUPPLEMENTAL_SUBCLAIMS_SCHEMA_LITE }),
+      providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
     });
 
     supplemental = extractStructuredOutput(result);
@@ -6570,6 +6656,7 @@ Use empty strings "" and empty arrays [] when unknown.`;
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
       output: Output.object({ schema }),
+      providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
     });
     const raw = extractStructuredOutput(result) as any;
     if (!raw) return null;
@@ -6664,6 +6751,7 @@ Extract outcomes that need separate evaluation claims.`;
       ],
       temperature: getDeterministicTemperature(0.2, state.pipelineConfig),
       output: Output.object({ schema: OUTCOME_SCHEMA }),
+      providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
     });
 
     const extracted = extractStructuredOutput(result);
@@ -7743,6 +7831,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
       output: Output.object({ schema: EVIDENCE_SCHEMA }),
+      providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
       }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`extractEvidence LLM timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
@@ -8208,6 +8297,19 @@ const EVIDENCE_QUALITY_SCHEMA = z.object({
   diversity: z.number().min(0).max(1),
 });
 
+// Anthropic output_format currently rejects numeric min/max in JSON schema.
+// Keep provider-side schema unconstrained and validate/normalize after generation.
+const EVIDENCE_QUALITY_SCHEMA_ANTHROPIC = z.object({
+  scientificCount: z.number(),
+  documentedCount: z.number(),
+  anecdotalCount: z.number(),
+  theoreticalCount: z.number(),
+  pseudoscientificCount: z.number(),
+  weightedQuality: z.number(),
+  strongestBasis: z.enum(["scientific", "documented", "theoretical", "anecdotal", "pseudoscientific"]),
+  diversity: z.number(),
+});
+
 const EVIDENCE_QUALITY_SCHEMA_LENIENT = z
   .object({
     scientificCount: z.number().catch(0),
@@ -8257,6 +8359,41 @@ const VERDICTS_SCHEMA_MULTI_CONTEXT = z.object({
       // "mixed" = evidence is balanced or insufficient (verdict should be 43-57)
       ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
       evidenceQuality: EVIDENCE_QUALITY_SCHEMA.optional(),
+    }),
+  ),
+});
+
+const VERDICTS_SCHEMA_MULTI_CONTEXT_ANTHROPIC = z.object({
+  verdictSummary: z.object({
+    answer: z.number(),
+    confidence: z.number(),
+    shortAnswer: z.string(),
+    nuancedAnswer: z.string(),
+    keyFactors: z.array(KEY_FACTOR_SCHEMA),
+    calibrationNote: z.string(),
+  }),
+  analysisContextAnswers: z.array(
+    z.object({
+      contextId: z.string(),
+      contextName: z.string(),
+      answer: z.number(),
+      confidence: z.number(),
+      shortAnswer: z.string(),
+      keyFactors: z.array(KEY_FACTOR_SCHEMA),
+    }),
+  ),
+  analysisContextSummary: z.string(),
+  claimVerdicts: z.array(
+    z.object({
+      claimId: z.string(),
+      verdict: z.number(),
+      confidence: z.number(),
+      riskTier: z.enum(["A", "B", "C"]),
+      reasoning: z.string(),
+      supportingEvidenceIds: z.array(z.string()).optional(),
+      contextId: z.string(),
+      ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
+      evidenceQuality: EVIDENCE_QUALITY_SCHEMA_ANTHROPIC.optional(),
     }),
   ),
 });
@@ -8389,6 +8526,28 @@ const VERDICTS_SCHEMA_SIMPLE = z.object({
   ),
 });
 
+const VERDICTS_SCHEMA_SIMPLE_ANTHROPIC = z.object({
+  verdictSummary: z.object({
+    answer: z.number(),
+    confidence: z.number(),
+    shortAnswer: z.string(),
+    nuancedAnswer: z.string(),
+    keyFactors: z.array(KEY_FACTOR_SCHEMA),
+  }),
+  claimVerdicts: z.array(
+    z.object({
+      claimId: z.string(),
+      verdict: z.number(),
+      confidence: z.number(),
+      riskTier: z.enum(["A", "B", "C"]),
+      reasoning: z.string(),
+      supportingEvidenceIds: z.array(z.string()).optional(),
+      ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
+      evidenceQuality: EVIDENCE_QUALITY_SCHEMA_ANTHROPIC.optional(),
+    }),
+  ),
+});
+
 const VERDICTS_SCHEMA_CLAIM = z.object({
   claimVerdicts: z.array(
     z.object({
@@ -8420,6 +8579,38 @@ const VERDICTS_SCHEMA_CLAIM = z.object({
     articleConfidence: z.number().min(0).max(100),
     verdictDiffersFromClaimAverage: z.boolean(),
     verdictDifferenceReason: z.string(), // empty string if not applicable
+  }),
+});
+
+const VERDICTS_SCHEMA_CLAIM_ANTHROPIC = z.object({
+  claimVerdicts: z.array(
+    z.object({
+      claimId: z.string(),
+      verdict: z.number(),
+      confidence: z.number(),
+      riskTier: z.enum(["A", "B", "C"]),
+      reasoning: z.string(),
+      supportingEvidenceIds: z.array(z.string()).optional(),
+      ratingConfirmation: z.enum(["claim_supported", "claim_refuted", "mixed"]),
+      isContested: z.boolean(),
+      contestedBy: z.string(),
+      factualBasis: z.enum(["established", "disputed", "opinion", "unknown"]),
+      evidenceQuality: EVIDENCE_QUALITY_SCHEMA_ANTHROPIC.optional(),
+    }),
+  ),
+  articleAnalysis: z.object({
+    thesisSupported: z.boolean(),
+    logicalFallacies: z.array(
+      z.object({
+        type: z.string(),
+        description: z.string(),
+        affectedClaims: z.array(z.string()),
+      }),
+    ),
+    articleVerdict: z.number(),
+    articleConfidence: z.number(),
+    verdictDiffersFromClaimAverage: z.boolean(),
+    verdictDifferenceReason: z.string(),
   }),
 });
 
@@ -8806,6 +8997,9 @@ ${evidenceItemsFormatted}
 Provide SEPARATE answers for each context.`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null = null;
+  const multiContextOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
+    ? VERDICTS_SCHEMA_MULTI_CONTEXT_ANTHROPIC
+    : VERDICTS_SCHEMA_MULTI_CONTEXT;
 
   // Retry once in "extreme compact" mode to reduce the chance of truncated JSON output.
   // This is especially important when many evidence items/claims exist (deep mode).
@@ -8960,7 +9154,7 @@ The JSON object MUST include these top-level keys:
           { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
-        maxOutputTokens: 4096,
+        maxOutputTokens: 8192,
       });
       state.llmCalls++;
       recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
@@ -9019,8 +9213,9 @@ The JSON object MUST include these top-level keys:
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
         // Explicit maxOutputTokens avoids relying on SDK/provider defaults (which can be too low for multi-context verdicts).
-        maxOutputTokens: 4096,
-        output: Output.object({ schema: VERDICTS_SCHEMA_MULTI_CONTEXT }),
+        maxOutputTokens: 8192,
+        output: Output.object({ schema: multiContextOutputSchema }),
+        providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
       });
       state.llmCalls++;
       recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
@@ -9044,11 +9239,13 @@ The JSON object MUST include these top-level keys:
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       const isNoObj = NoObjectGeneratedError.isInstance(err);
+      const isNoOutput = typeof NoOutputGeneratedError !== "undefined" && NoOutputGeneratedError.isInstance?.(err);
       debugLog("generateMultiContextVerdicts: ERROR", {
         attempt: attempt.label,
         error: errMsg,
         name: err instanceof Error ? err.name : typeof err,
-        finishReason: isNoObj ? (err as any).finishReason : undefined,
+        errorType: isNoOutput ? "NoOutputGeneratedError" : isNoObj ? "NoObjectGeneratedError" : "other",
+        finishReason: (isNoObj || isNoOutput) ? (err as any).finishReason : undefined,
         hasText: isNoObj ? !!(err as any).text : undefined,
         textSnippet: isNoObj ? String((err as any).text || "").slice(0, 1200) : undefined,
         cause: (err as any)?.cause
@@ -9066,6 +9263,9 @@ The JSON object MUST include these top-level keys:
       // Check for OpenAI schema validation errors
       if (errMsg.includes("Invalid schema") || errMsg.includes("required")) {
         debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_CONTEXT");
+      }
+      if (errMsg.includes("output_format.schema") && errMsg.includes("maximum, minimum")) {
+        debugLog("❌ Anthropic schema constraint error (numeric bounds unsupported)");
       }
       state.llmCalls++;
 
@@ -9146,7 +9346,7 @@ The JSON object MUST include these top-level keys:
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
       nuancedAnswer:
-        "Verdict generation failed due to a structured-output error (often caused by truncated JSON). Manual review recommended.",
+        "Verdict generation failed due to a structured-output error (schema/provider mismatch or malformed JSON). Manual review recommended.",
       keyFactors: [],
       hasMultipleContexts: true,
       analysisContextAnswers: understanding.analysisContexts.map(
@@ -9930,79 +10130,112 @@ ${claimsFormatted}
 ${evidenceItemsFormatted}`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_SIMPLE> | null = null;
+  const singleContextOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
+    ? VERDICTS_SCHEMA_SIMPLE_ANTHROPIC
+    : VERDICTS_SCHEMA_SIMPLE;
 
-  try {
-    const result = await generateText({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
-      maxOutputTokens: 4096,
-      output: Output.object({ schema: VERDICTS_SCHEMA_SIMPLE }),
-    });
-    state.llmCalls++;
-    recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
+  // Retry once in compact mode if primary attempt fails (mirrors multi-context retry pattern).
+  const singleCtxAttempts: Array<{ label: string; extraSystem: string }> = [
+    { label: "primary", extraSystem: "" },
+    {
+      label: "retry-compact",
+      extraSystem: `\n\n## COMPACT MODE (RETRY)\n- keyFactors: 3 items max.\n- reasoning: 1-2 short sentences.\n- Be concise to avoid output truncation.`,
+    },
+  ];
 
-    // Handle different AI SDK versions - safely extract structured output
-    let rawOutput = extractStructuredOutput(result);
-    if (rawOutput) {
-      // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
-      // The LLM sometimes returns {"$PARAMETER_NAME": {actual data}} instead of {actual data}
-      if (rawOutput.$PARAMETER_NAME && typeof rawOutput.$PARAMETER_NAME === 'object') {
-        console.log("[generateSingleContextVerdicts] Unwrapping $PARAMETER_NAME wrapper");
-        rawOutput = rawOutput.$PARAMETER_NAME;
-      }
-      // Also check for other common wrapper patterns
-      const wrapperKeys = ['data', 'result', 'output', 'response'];
-      for (const key of wrapperKeys) {
-        if (rawOutput[key] && typeof rawOutput[key] === 'object' &&
-            (rawOutput[key].verdictSummary || rawOutput[key].claimVerdicts)) {
-          console.log(`[generateSingleContextVerdicts] Unwrapping ${key} wrapper`);
-          rawOutput = rawOutput[key];
-          break;
+  for (const attempt of singleCtxAttempts) {
+    if (parsed?.verdictSummary && parsed?.claimVerdicts) break;
+
+    try {
+      const result = await generateText({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt + attempt.extraSystem },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
+        maxOutputTokens: 8192,
+        output: Output.object({ schema: singleContextOutputSchema }),
+        providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
+      });
+      state.llmCalls++;
+      recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
+
+      // Handle different AI SDK versions - safely extract structured output
+      let rawOutput = extractStructuredOutput(result);
+      if (rawOutput) {
+        // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
+        // The LLM sometimes returns {"$PARAMETER_NAME": {actual data}} instead of {actual data}
+        if (rawOutput.$PARAMETER_NAME && typeof rawOutput.$PARAMETER_NAME === 'object') {
+          console.log("[generateSingleContextVerdicts] Unwrapping $PARAMETER_NAME wrapper");
+          rawOutput = rawOutput.$PARAMETER_NAME;
         }
+        // Also check for other common wrapper patterns
+        const wrapperKeys = ['data', 'result', 'output', 'response'];
+        for (const key of wrapperKeys) {
+          if (rawOutput[key] && typeof rawOutput[key] === 'object' &&
+              (rawOutput[key].verdictSummary || rawOutput[key].claimVerdicts)) {
+            console.log(`[generateSingleContextVerdicts] Unwrapping ${key} wrapper`);
+            rawOutput = rawOutput[key];
+            break;
+          }
+        }
+
+        // CRITICAL FIX: Validate against schema with coercion for numeric fields
+        // The LLM sometimes returns answer/confidence as strings like "65" instead of 65
+        const coercedOutput = {
+          ...rawOutput,
+          verdictSummary: rawOutput.verdictSummary ? {
+            ...rawOutput.verdictSummary,
+            answer: typeof rawOutput.verdictSummary.answer === 'string'
+              ? parseFloat(rawOutput.verdictSummary.answer)
+              : rawOutput.verdictSummary.answer,
+            confidence: typeof rawOutput.verdictSummary.confidence === 'string'
+              ? parseFloat(rawOutput.verdictSummary.confidence)
+              : rawOutput.verdictSummary.confidence,
+          } : rawOutput.verdictSummary,
+          claimVerdicts: (rawOutput.claimVerdicts || []).map((cv: any) => ({
+            ...cv,
+            verdict: typeof cv.verdict === 'string' ? parseFloat(cv.verdict) : cv.verdict,
+            confidence: typeof cv.confidence === 'string' ? parseFloat(cv.confidence) : cv.confidence,
+            supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateSingleContextVerdicts"),
+          })),
+        };
+
+        // Debug: Log what we received vs what we're using
+        console.log("[Analyzer] generateSingleContextVerdicts: Raw verdictSummary.answer =", rawOutput.verdictSummary?.answer, "type =", typeof rawOutput.verdictSummary?.answer);
+        console.log("[Analyzer] generateSingleContextVerdicts: Coerced verdictSummary.answer =", coercedOutput.verdictSummary?.answer);
+
+        parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
       }
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : String(err);
+      const errName = err instanceof Error ? err.name : typeof err;
+      const isNoOutput = typeof NoOutputGeneratedError !== "undefined" && NoOutputGeneratedError.isInstance?.(err);
+      const isNoObject = NoObjectGeneratedError.isInstance?.(err);
+      console.warn(
+        `[Analyzer] Structured output failed for verdicts (${attempt.label}), using fallback: ${errMessage}`,
+      );
+      debugLog(`generateSingleContextVerdicts: structured output failed (${attempt.label})`, {
+        error: errMessage,
+        name: errName,
+        errorType: isNoOutput ? "NoOutputGeneratedError" : isNoObject ? "NoObjectGeneratedError" : "other",
+        finishReason: (isNoOutput || isNoObject) ? (err as any).finishReason : undefined,
+        hasText: isNoObject ? !!(err as any).text : undefined,
+        stack: err instanceof Error ? err.stack?.split("\n").slice(0, 10).join("\n") : undefined,
+      });
+      if (isNoOutput) {
+        debugLog("generateSingleContextVerdicts: NoOutputGeneratedError - output getter threw (likely native output_format failure)");
+      }
+      if (errMessage.includes("output_format.schema") && errMessage.includes("maximum, minimum")) {
+        debugLog("generateSingleContextVerdicts: Anthropic schema constraint error (numeric bounds unsupported)");
+      }
+      state.llmCalls++;
 
-      // CRITICAL FIX: Validate against schema with coercion for numeric fields
-      // The LLM sometimes returns answer/confidence as strings like "65" instead of 65
-      const coercedOutput = {
-        ...rawOutput,
-        verdictSummary: rawOutput.verdictSummary ? {
-          ...rawOutput.verdictSummary,
-          answer: typeof rawOutput.verdictSummary.answer === 'string'
-            ? parseFloat(rawOutput.verdictSummary.answer)
-            : rawOutput.verdictSummary.answer,
-          confidence: typeof rawOutput.verdictSummary.confidence === 'string'
-            ? parseFloat(rawOutput.verdictSummary.confidence)
-            : rawOutput.verdictSummary.confidence,
-        } : rawOutput.verdictSummary,
-        claimVerdicts: (rawOutput.claimVerdicts || []).map((cv: any) => ({
-          ...cv,
-          verdict: typeof cv.verdict === 'string' ? parseFloat(cv.verdict) : cv.verdict,
-          confidence: typeof cv.confidence === 'string' ? parseFloat(cv.confidence) : cv.confidence,
-          supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateSingleContextVerdicts"),
-        })),
-      };
-
-      // Debug: Log what we received vs what we're using
-      console.log("[Analyzer] generateSingleContextVerdicts: Raw verdictSummary.answer =", rawOutput.verdictSummary?.answer, "type =", typeof rawOutput.verdictSummary?.answer);
-      console.log("[Analyzer] generateSingleContextVerdicts: Coerced verdictSummary.answer =", coercedOutput.verdictSummary?.answer);
-
-      parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_SIMPLE>;
+      if (attempt.label === "primary") {
+        debugLog("generateSingleContextVerdicts: primary attempt failed, retrying in compact mode");
+      }
     }
-  } catch (err) {
-    const errMessage = err instanceof Error ? err.message : String(err);
-    console.warn(
-      `[Analyzer] Structured output failed for verdicts, using fallback: ${errMessage}`,
-    );
-    debugLog("generateSingleContextVerdicts: structured output failed", {
-      error: errMessage,
-      name: err instanceof Error ? err.name : typeof err,
-      stack: err instanceof Error ? err.stack?.split("\n").slice(0, 10).join("\n") : undefined,
-    });
-    state.llmCalls++;
   }
 
   // Fallback if structured output failed or verdictSummary is missing
@@ -10045,7 +10278,7 @@ ${evidenceItemsFormatted}`;
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
       nuancedAnswer:
-        "Verdict generation failed due to a structured-output error (often caused by truncated JSON). Manual review recommended.",
+        "Verdict generation failed due to a structured-output error (schema/provider mismatch or malformed JSON). Manual review recommended.",
       keyFactors: [],
       hasMultipleContexts: false,
     };
@@ -10632,76 +10865,108 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
 - However, do NOT place claims in the FALSE band (0-14%) unless directly contradicted by strong evidence`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_CLAIM> | null = null;
+  const claimOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
+    ? VERDICTS_SCHEMA_CLAIM_ANTHROPIC
+    : VERDICTS_SCHEMA_CLAIM;
 
-  try {
-    const result = await generateText({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${evidenceItemsFormatted}`,
-        },
-      ],
-      temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
-      maxOutputTokens: 4096,
-      output: Output.object({ schema: VERDICTS_SCHEMA_CLAIM }),
-    });
-    state.llmCalls++;
-    recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
+  // Retry once in compact mode if primary attempt fails (mirrors multi-context retry pattern).
+  const claimAttempts: Array<{ label: string; extraSystem: string }> = [
+    { label: "primary", extraSystem: "" },
+    {
+      label: "retry-compact",
+      extraSystem: `\n\n## COMPACT MODE (RETRY)\n- reasoning: 1-2 short sentences.\n- Be concise to avoid output truncation.`,
+    },
+  ];
 
-    // Handle different AI SDK versions - safely extract structured output
-    let rawOutput = extractStructuredOutput(result);
-    if (rawOutput) {
-      // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
-      if (rawOutput.$PARAMETER_NAME && typeof rawOutput.$PARAMETER_NAME === 'object') {
-        console.log("[generateClaimVerdicts] Unwrapping $PARAMETER_NAME wrapper");
-        rawOutput = rawOutput.$PARAMETER_NAME;
-      }
-      // Also check for other common wrapper patterns
-      const wrapperKeys = ['data', 'result', 'output', 'response'];
-      for (const key of wrapperKeys) {
-        if (rawOutput[key] && typeof rawOutput[key] === 'object' &&
-            (rawOutput[key].articleAnalysis || rawOutput[key].claimVerdicts)) {
-          console.log(`[generateClaimVerdicts] Unwrapping ${key} wrapper`);
-          rawOutput = rawOutput[key];
-          break;
+  for (const attempt of claimAttempts) {
+    if (parsed?.claimVerdicts) break;
+
+    try {
+      const result = await generateText({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt + attempt.extraSystem },
+          {
+            role: "user",
+            content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${evidenceItemsFormatted}`,
+          },
+        ],
+        temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
+        maxOutputTokens: 8192,
+        output: Output.object({ schema: claimOutputSchema }),
+        providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
+      });
+      state.llmCalls++;
+      recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
+
+      // Handle different AI SDK versions - safely extract structured output
+      let rawOutput = extractStructuredOutput(result);
+      if (rawOutput) {
+        // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
+        if (rawOutput.$PARAMETER_NAME && typeof rawOutput.$PARAMETER_NAME === 'object') {
+          console.log("[generateClaimVerdicts] Unwrapping $PARAMETER_NAME wrapper");
+          rawOutput = rawOutput.$PARAMETER_NAME;
         }
-      }
-
-      // CRITICAL FIX: Coerce string values to numbers (LLM sometimes returns "65" instead of 65)
-      const coerceToNumber = (val: any): number | any => {
-        if (typeof val === 'string') {
-          const parsed = parseFloat(val.replace('%', '').trim());
-          return Number.isFinite(parsed) ? parsed : val;
+        // Also check for other common wrapper patterns
+        const wrapperKeys = ['data', 'result', 'output', 'response'];
+        for (const key of wrapperKeys) {
+          if (rawOutput[key] && typeof rawOutput[key] === 'object' &&
+              (rawOutput[key].articleAnalysis || rawOutput[key].claimVerdicts)) {
+            console.log(`[generateClaimVerdicts] Unwrapping ${key} wrapper`);
+            rawOutput = rawOutput[key];
+            break;
+          }
         }
-        return val;
-      };
 
-      const coercedOutput = {
-        ...rawOutput,
-        articleAnalysis: rawOutput.articleAnalysis ? {
-          ...rawOutput.articleAnalysis,
-          articleVerdict: coerceToNumber(rawOutput.articleAnalysis.articleVerdict),
-          articleConfidence: coerceToNumber(rawOutput.articleAnalysis.articleConfidence),
-        } : rawOutput.articleAnalysis,
-        claimVerdicts: (rawOutput.claimVerdicts || []).map((cv: any) => ({
-          ...cv,
-          verdict: coerceToNumber(cv.verdict),
-          confidence: coerceToNumber(cv.confidence),
-          supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateClaimVerdicts"),
-        })),
-      };
+        // CRITICAL FIX: Coerce string values to numbers (LLM sometimes returns "65" instead of 65)
+        const coerceToNumber = (val: any): number | any => {
+          if (typeof val === 'string') {
+            const parsed = parseFloat(val.replace('%', '').trim());
+            return Number.isFinite(parsed) ? parsed : val;
+          }
+          return val;
+        };
 
-      parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
+        const coercedOutput = {
+          ...rawOutput,
+          articleAnalysis: rawOutput.articleAnalysis ? {
+            ...rawOutput.articleAnalysis,
+            articleVerdict: coerceToNumber(rawOutput.articleAnalysis.articleVerdict),
+            articleConfidence: coerceToNumber(rawOutput.articleAnalysis.articleConfidence),
+          } : rawOutput.articleAnalysis,
+          claimVerdicts: (rawOutput.claimVerdicts || []).map((cv: any) => ({
+            ...cv,
+            verdict: coerceToNumber(cv.verdict),
+            confidence: coerceToNumber(cv.confidence),
+            supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateClaimVerdicts"),
+          })),
+        };
+
+        parsed = coercedOutput as z.infer<typeof VERDICTS_SCHEMA_CLAIM>;
+      }
+    } catch (err: any) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const isNoOutput = typeof NoOutputGeneratedError !== "undefined" && NoOutputGeneratedError.isInstance?.(err);
+      const isNoObj = NoObjectGeneratedError.isInstance?.(err);
+      console.error(
+        `[Analyzer] Structured output failed for claim verdicts (${attempt.label}):`,
+        errMsg,
+      );
+      debugLog(`generateClaimVerdicts: structured output failed (${attempt.label})`, {
+        error: errMsg,
+        name: err instanceof Error ? err.name : typeof err,
+        errorType: isNoOutput ? "NoOutputGeneratedError" : isNoObj ? "NoObjectGeneratedError" : "other",
+        finishReason: isNoObj ? (err as any)?.finishReason : undefined,
+      });
+      if (errMsg.includes("output_format.schema") && errMsg.includes("maximum, minimum")) {
+        debugLog("generateClaimVerdicts: Anthropic schema constraint error (numeric bounds unsupported)");
+      }
+      state.llmCalls++;
+
+      if (attempt.label === "primary") {
+        debugLog("generateClaimVerdicts: primary attempt failed, retrying in compact mode");
+      }
     }
-  } catch (err: any) {
-    console.error(
-      "[Analyzer] Structured output failed for claim verdicts:",
-      err?.message || err,
-    );
-    console.error("[Analyzer] Full error:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2).slice(0, 2000));
-    state.llmCalls++;
   }
 
   // If structured output failed, create fallback verdicts

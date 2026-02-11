@@ -15,7 +15,7 @@ import {
 } from "./config";
 import { z } from "zod";
 import { generateText, Output } from "ai";
-import { getModelForTask, extractStructuredOutput } from "./llm";
+import { getModelForTask, extractStructuredOutput, getStructuredOutputProviderOptions } from "./llm";
 import { getDeterministicTemperature } from "./config";
 import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
 import { splitByConfigurableHeuristics } from "./normalization-heuristics";
@@ -55,6 +55,30 @@ export const ContextDetectionOutputSchema = z.object({
       confidence: z.number().min(0).max(1),
       reasoning: z.string(),
       metadata: z.record(z.any()).optional(),
+    }),
+  ),
+  requiresSeparateAnalysis: z.boolean(),
+  rationale: z.string(),
+});
+
+// Anthropic output_format currently rejects numeric bounds and additionalProperties=true.
+const ContextDetectionOutputSchemaAnthropic = z.object({
+  contexts: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum([
+        "methodological",
+        "legal",
+        "scientific",
+        "general",
+        "regulatory",
+        "temporal",
+        "geographic",
+      ]),
+      confidence: z.number(),
+      reasoning: z.string(),
+      metadata: z.object({}).optional(),
     }),
   ),
   requiresSeparateAnalysis: z.boolean(),
@@ -118,6 +142,10 @@ export async function detectContextsLLM(
   const systemPrompt = `You identify distinct AnalysisContexts for a claim.\n\nCRITICAL TERMINOLOGY:\n- Use "AnalysisContext" to mean top-level bounded analytical frames.\n- Use "EvidenceScope" only for per-source metadata (methodology/boundaries/time/geo).\n- Avoid the bare word "context" unless you explicitly mean AnalysisContext.\n\nINCOMPATIBILITY TEST: Split contexts ONLY if combining them would be MISLEADING because they evaluate fundamentally different things.\n\nWHEN TO SPLIT (only when clearly supported):\n- Different formal authorities (distinct institutional decision-makers)\n- Different measurement boundaries or system definitions\n- Different regulatory regimes or time periods that change the analytical frame\n\nDO NOT SPLIT ON:\n- Pro vs con viewpoints\n- Different evidence types\n- Incidental geographic/temporal mentions\n- Public perception or meta commentary\n- Third-party reactions/responses to X (when evaluating X itself)\n\nOUTPUT REQUIREMENTS:\n- Provide contexts as JSON array under 'contexts'.\n- Each context must include id, name, type, confidence (0-1), reasoning, metadata.\n- Use neutral, generic names tied to the input (no domain-specific hardcoding).${seedHint}${entityHint}`;
 
   const userPrompt = `Detect distinct AnalysisContexts for:\n\n${text}`;
+  const isAnthropic = (config.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic").toLowerCase() === "anthropic";
+  const outputSchema = isAnthropic
+    ? ContextDetectionOutputSchemaAnthropic
+    : ContextDetectionOutputSchema;
 
   try {
     const result = await generateText({
@@ -127,12 +155,18 @@ export async function detectContextsLLM(
         { role: "user", content: userPrompt },
       ],
       temperature: getDeterministicTemperature(0.2, config),
-      output: Output.object({ schema: ContextDetectionOutputSchema }),
+      output: Output.object({ schema: outputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(config.llmProvider ?? "anthropic"),
     });
 
     const output = extractStructuredOutput(result) as ContextDetectionOutput | null;
     if (!output || !Array.isArray(output.contexts)) {
       return heuristicSeeds || [];
+    }
+
+    // Normalize confidence values (Anthropic schema omits .min/.max bounds)
+    for (const c of output.contexts) {
+      c.confidence = Math.max(0, Math.min(1, c.confidence ?? 0));
     }
 
     const minConfidence =

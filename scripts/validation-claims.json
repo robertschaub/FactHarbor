@@ -1,0 +1,37 @@
+[
+  {
+    "id": "claim_1_bolsonaro",
+    "text": "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?",
+    "expectedContexts": 2,
+    "varianceTarget": 15,
+    "confidenceTarget": 15
+  },
+  {
+    "id": "claim_2_vaccine",
+    "text": "Are mRNA vaccines effective and safe for preventing severe COVID-19 outcomes?",
+    "expectedContexts": 1,
+    "varianceTarget": 10,
+    "confidenceTarget": 15
+  },
+  {
+    "id": "claim_3_government_trust",
+    "text": "Can statements from the current federal government be trusted as reliable evidence without independent corroboration?",
+    "expectedContexts": 1,
+    "varianceTarget": 15,
+    "confidenceTarget": 15
+  },
+  {
+    "id": "claim_4_corporate_compliance",
+    "text": "Was FTX corporate governance and financial reporting compliant with applicable regulations before its collapse?",
+    "expectedContexts": 1,
+    "varianceTarget": 15,
+    "confidenceTarget": 15
+  },
+  {
+    "id": "claim_5_technology_comparison",
+    "text": "Is lithium-ion battery storage more energy-efficient than hydrogen storage for grid-scale applications?",
+    "expectedContexts": 1,
+    "varianceTarget": 10,
+    "confidenceTarget": 15
+  }
+]

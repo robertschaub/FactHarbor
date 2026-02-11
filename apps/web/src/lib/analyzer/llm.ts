@@ -32,6 +32,28 @@ export interface ModelInfo {
 
 export type ModelTask = "understand" | "extract_evidence" | "context_refinement" | "verdict" | "report";
 
+/**
+ * Get providerOptions to force jsonTool structured output mode for Anthropic.
+ *
+ * @ai-sdk/anthropic v3.0.39+ defaults structuredOutputMode to "auto", which
+ * uses native output_format for newer Claude models. Native output_format can
+ * fail with deeply nested schemas (arrays of objects with enums, optional fields).
+ * Forcing "jsonTool" uses the proven JSON tool approach.
+ *
+ * Returns undefined for non-Anthropic providers (no-op).
+ */
+export function getStructuredOutputProviderOptions(
+  provider: string,
+): Record<string, Record<string, string>> | undefined {
+  const p = (provider || "").toLowerCase();
+  if (p === "anthropic" || p === "claude") {
+    return {
+      anthropic: { structuredOutputMode: "jsonTool" },
+    };
+  }
+  return undefined;
+}
+
 function normalizeProvider(raw: string): "anthropic" | "google" | "mistral" | "openai" {
   const p = (raw || "").toLowerCase().trim();
   if (p === "anthropic" || p === "claude") return "anthropic";
@@ -181,16 +203,20 @@ export function extractStructuredOutput(result: unknown): unknown {
   const resultObj = result as Record<string, unknown>;
   console.log("[Analyzer] extractStructuredOutput: Checking result with keys:", Object.keys(resultObj));
 
-  const safeGet = (getter: () => unknown) => {
+  const safeGet = (getter: () => unknown, label?: string) => {
     try {
       return getter();
-    } catch {
+    } catch (e) {
+      if (label) {
+        const err = e instanceof Error ? e : undefined;
+        console.warn(`[Analyzer] extractStructuredOutput: ${label} getter threw:`, err?.name, err?.message?.slice(0, 200));
+      }
       return undefined;
     }
   };
 
-  // Try result.output
-  const output = safeGet(() => resultObj.output);
+  // Try result.output (AI SDK 6.x getter — may throw NoOutputGeneratedError)
+  const output = safeGet(() => resultObj.output, "result.output");
   console.log("[Analyzer] extractStructuredOutput: result.output =", output !== undefined ? "exists" : "undefined");
   if (output !== undefined && output !== null) {
     const outputObj = output as Record<string, unknown>;

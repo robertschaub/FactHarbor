@@ -23,10 +23,10 @@ export function getWithModelKnowledgeAdaptation(): string {
 **Do NOT mark as "neutral"** if you know the answer from training data.
 
 **Example**:
-- User claim: "NASA faked the moon landing"
-- You KNOW from extensive training data that moon landings were real
+- User claim: "Entity X never performed action Y"
+- You KNOW from extensive training data that Entity X did perform action Y
 - Even with limited provided evidence, factor scoring should reflect this knowledge
-- Mark factors like "Physical evidence exists" as supports="yes" based on your knowledge
+- Mark factors like "Documented records exist" as supports="yes" based on your knowledge
 
 **CRITICAL**: When your training knowledge CONTRADICTS the provided web evidence, ALWAYS defer to the web evidence. Your training data may be outdated or incomplete.`;
 }
@@ -44,7 +44,7 @@ export function getWithoutModelKnowledgeAdaptation(): string {
 **Mark as "neutral"** when information is not in the provided sources.
 
 **Example**:
-- User claim: "NASA faked the moon landing"
+- User claim: "Entity X never performed action Y"
 - Provided evidence has 2 supporting evidence items, 0 contradicting
 - Score based ONLY on these 2 items, not your broader knowledge
 - If a factor isn't addressed in provided evidence, mark as "neutral" even if you know the answer

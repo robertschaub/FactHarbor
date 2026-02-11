@@ -16,7 +16,7 @@
 
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { getModel, getModelForTask } from "./llm";
+import { getModel, getModelForTask, getStructuredOutputProviderOptions } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import { filterEvidenceByProvenance } from "./provenance-validation";
@@ -138,6 +138,44 @@ const DynamicAnalysisSchema = z.object({
   limitations: z.array(z.string()).optional().describe("Known limitations of this analysis"),
   searchQueries: z.array(z.string()).describe("Queries used for research"),
   additionalInsights: z.any().optional().describe("Any additional structured insights"),
+});
+
+const DynamicAnalysisSchemaAnthropic = z.object({
+  summary: z.string().describe("A comprehensive summary of the analysis"),
+  verdict: z
+    .object({
+      label: z.string().describe("Verdict label (e.g., 'Mostly True', 'Unverifiable', 'Context Needed')"),
+      score: z.number().describe("REQUIRED: Truth score 0-100 (0=False, 50=Unverified, 100=True)"),
+      confidence: z.number().describe("REQUIRED: Confidence level 0-100"),
+      reasoning: z.string().optional().describe("Brief reasoning for the verdict"),
+    })
+    .optional(),
+  findings: z
+    .array(
+      z.object({
+        point: z.string().describe("A key finding or observation"),
+        support: z.enum(["strong", "moderate", "weak", "none"]).describe("Level of evidence support"),
+        sources: z.array(z.string()).optional().describe("Source URLs that support this finding"),
+        notes: z.string().optional().describe("Additional notes about this finding"),
+      })
+    )
+    .optional(),
+  methodology: z.string().optional().describe("Brief description of analysis approach"),
+  limitations: z.array(z.string()).optional().describe("Known limitations of this analysis"),
+  searchQueries: z.array(z.string()).describe("Queries used for research"),
+  additionalInsights: z.object({}).optional().describe("Any additional structured insights"),
+});
+
+const DynamicPlanSchema = z.object({
+  keyQuestions: z.array(z.string()).describe("Main questions to investigate"),
+  searchQueries: z.array(z.string()).min(3),
+  analysisApproach: z.string().describe("Recommended approach for this content"),
+});
+
+const DynamicPlanSchemaAnthropic = z.object({
+  keyQuestions: z.array(z.string()).describe("Main questions to investigate"),
+  searchQueries: z.array(z.string()),
+  analysisApproach: z.string().describe("Recommended approach for this content"),
 });
 
 // ============================================================================
@@ -280,6 +318,9 @@ export async function runMonolithicDynamic(
   });
 
   const maxSearchQueries = pipelineConfig?.planningMaxSearchQueries ?? 8;
+  const understandProvider = detectProvider(understandModel.modelName || "");
+  const planOutputSchema =
+    understandProvider === "anthropic" ? DynamicPlanSchemaAnthropic : DynamicPlanSchema;
   const planResult = await generateText({
     model: understandModel.model,
     messages: [
@@ -290,18 +331,16 @@ export async function runMonolithicDynamic(
       { role: "user", content: textToAnalyze },
     ],
     temperature: getDeterministicTemperature(0.2, pipelineConfig),
-    output: Output.object({
-      schema: z.object({
-        keyQuestions: z.array(z.string()).describe("Main questions to investigate"),
-        searchQueries: z.array(z.string()).min(3).max(maxSearchQueries),
-        analysisApproach: z.string().describe("Recommended approach for this content"),
-      }),
-    }),
+    output: Output.object({ schema: planOutputSchema }),
+    providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
   });
   recordLLMCall(budgetTracker, 2000);
 
   const plan = extractStructuredOutput(planResult);
-  const queriesToRun = plan?.searchQueries || [`claim verification: ${textToAnalyze.slice(0, 100)}`];
+  const plannedQueries = Array.isArray(plan?.searchQueries) ? plan.searchQueries : [];
+  const queriesToRun = plannedQueries.slice(0, maxSearchQueries).length > 0
+    ? plannedQueries.slice(0, maxSearchQueries)
+    : [`claim verification: ${textToAnalyze.slice(0, 100)}`];
 
   // Step 2: Research phase - gather sources
   const sourceContents: Array<{ url: string; title: string; content: string }> = [];
@@ -414,9 +453,13 @@ export async function runMonolithicDynamic(
       : "No external sources were successfully retrieved.";
 
   const verdictModel = getModelForTask("verdict", undefined, pipelineConfig ?? undefined);
+  const verdictProvider = detectProvider(verdictModel.modelName || "");
+  const dynamicOutputSchema = verdictProvider === "anthropic"
+    ? DynamicAnalysisSchemaAnthropic
+    : DynamicAnalysisSchema;
   const dynamicAnalysisPrompt = buildPrompt({
     task: 'dynamic_analysis',
-    provider: detectProvider(verdictModel.modelName || ''),
+    provider: verdictProvider,
     modelName: verdictModel.modelName || '',
     config: {
       allowModelKnowledge: pipelineConfig.allowModelKnowledge,
@@ -449,7 +492,8 @@ Provide your dynamic analysis.`,
       },
     ],
     temperature: getDeterministicTemperature(0.15, pipelineConfig),
-    output: Output.object({ schema: DynamicAnalysisSchema }),
+    output: Output.object({ schema: dynamicOutputSchema }),
+    providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
   });
   recordLLMCall(budgetTracker, 4000);
 

@@ -31,6 +31,9 @@ jobs:
       - name: Install JS deps
         run: npm ci
 
+      - name: Run Tests
+        run: npm test
+
       - name: Build Web
         run: npm --workspace apps/web run build
 

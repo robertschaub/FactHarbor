@@ -2,7 +2,8 @@
  * 25-Run Validation Matrix Runner
  * 5 claims x 5 runs = 25 total orchestrated pipeline runs
  *
- * Usage: node scripts/run-validation-matrix.js [session_label]
+ * Usage: node scripts/run-validation-matrix.js [session_label] [claims_file]
+ * Claims default to scripts/validation-claims.json
  * Output: artifacts/session<label>_orchestrated_matrix.jsonl
  */
 
@@ -11,45 +12,15 @@ const path = require('path');
 
 const API_URL = process.env.FH_API_URL || 'http://localhost:3000';
 const SESSION_LABEL = process.argv[2] || 'current';
+const CLAIMS_FILE = process.argv[3] || path.join(__dirname, 'validation-claims.json');
 const OUTPUT_FILE = path.join(__dirname, '..', 'artifacts', `session${SESSION_LABEL}_orchestrated_matrix.jsonl`);
 
-const CLAIMS = [
-  {
-    id: 'claim_1_bolsonaro',
-    text: "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?",
-    expectedContexts: 2,
-    varianceTarget: 15,
-    confidenceTarget: 15,
-  },
-  {
-    id: 'claim_2_vaccine',
-    text: 'Are mRNA vaccines effective and safe for preventing severe COVID-19 outcomes?',
-    expectedContexts: 1,
-    varianceTarget: 10,
-    confidenceTarget: 15,
-  },
-  {
-    id: 'claim_3_government_trust',
-    text: 'Can statements from the current federal government be trusted as reliable evidence without independent corroboration?',
-    expectedContexts: 1,
-    varianceTarget: 15,
-    confidenceTarget: 15,
-  },
-  {
-    id: 'claim_4_corporate_compliance',
-    text: 'Was FTX corporate governance and financial reporting compliant with applicable regulations before its collapse?',
-    expectedContexts: 1, // 1-2
-    varianceTarget: 15,
-    confidenceTarget: 15,
-  },
-  {
-    id: 'claim_5_technology_comparison',
-    text: 'Is lithium-ion battery storage more energy-efficient than hydrogen storage for grid-scale applications?',
-    expectedContexts: 1,
-    varianceTarget: 10,
-    confidenceTarget: 15,
-  },
-];
+if (!fs.existsSync(CLAIMS_FILE)) {
+  console.error(`Claims file not found: ${CLAIMS_FILE}`);
+  console.error('Usage: node scripts/run-validation-matrix.js [session_label] [claims_file]');
+  process.exit(1);
+}
+const CLAIMS = JSON.parse(fs.readFileSync(CLAIMS_FILE, 'utf-8'));
 
 const RUNS_PER_CLAIM = 5;
 
