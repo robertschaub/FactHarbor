@@ -13,6 +13,33 @@ Applies to all paths unless a closer `AGENTS.md` overrides it (e.g., `apps/api/A
 - **Parameterize, don't specialize.** Use configuration over conditionals.
 - **No new code for removed/replaced things.** If something has been removed, replaced, or renamed (e.g., Monolithic Canonical pipeline [removed], `ExtractedFact` → `EvidenceItem`, `fact` → `statement`), do not extend, reference, or build on it. Use only the current version.
 
+### LLM Intelligence Migration (MANDATORY)
+**Priority: CRITICAL | Scope: Entire analysis codebase | Exceptions: NONE**
+
+Deterministic text-analysis logic that makes analytical decisions MUST be replaced with LLM-powered intelligence. **New deterministic text-analysis decision logic MUST NOT be created.** When implementing any feature that requires understanding, classifying, comparing, or interpreting text meaning — use an LLM call, never regex, keywords, heuristics, or rules.
+
+**REPLACE existing / NEVER CREATE new** (deterministic logic making analytical decisions about text):
+- Regex/pattern/keyword-based classification, scoring, or routing that interprets meaning
+- Text similarity heuristics that influence analytical outcomes
+- Rule-based NLP, entity extraction, or semantic matching driving analysis
+- Any hardcoded decision tree that determines what text *means*
+
+**KEEP** (deterministic structural plumbing):
+- Input validation (null/empty, format, length), type coercion, schema guards
+- ID generation, hashing, normalization, formatting
+- Routing, retry, timeout, concurrency limits — anything that doesn't interpret meaning
+
+**Efficiency mandates** (intelligence must not be wasteful):
+- **Batch aggressively.** One structured prompt over 10 separate calls.
+- **Cache ruthlessly.** Identical/equivalent inputs hit cache before LLM. No repeated reasoning.
+- **Tier intelligently.** Lightweight models for simple decisions; powerful models for complex reasoning only.
+- **Minimize tokens.** Lean prompts, bounded outputs, no redundant context.
+- **Pre-filter before calling.** Trivial validation stays deterministic.
+
+**When writing or reviewing analysis code:** If you encounter existing deterministic logic making semantic decisions, flag it for replacement. Do not extend, optimize, or build on it — migrate it to LLM. If you are about to write new text-analysis logic, it MUST use LLM intelligence from the start.
+
+Full migration plan and function inventory: `Docs/WIP/Efficient_LLM_Intelligence_Migration_Plan.md`
+
 ### Analysis Prompt Rules
 These rules apply specifically to the LLM prompts used in the analysis pipeline (under `apps/web/prompts/`). Improving these prompts for quality and efficiency is welcome — but only with explicit human approval.
 - **No test-case terms.** Prompt examples must be abstract (e.g., "Entity A did X" not "Country built industry"). This prevents teaching-to-the-test.
