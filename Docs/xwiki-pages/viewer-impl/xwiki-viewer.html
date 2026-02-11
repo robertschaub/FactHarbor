@@ -651,6 +651,12 @@ class XWikiParser {
   inl(text){
     if(!text)return'';
     text=this.esc(text);
+    // Handle inline (% ... %) parameters as styled spans (quotes are &quot; after esc)
+    text=text.replace(/\(%\s*(.*?)\s*%\)([\s\S]*?)(?=\(%\s*.*?\s*%\)|$)/g,(m,raw,content)=>{
+      const attrs=raw.replace(/&quot;/g,'"').replace(/&amp;/g,'&');
+      const ha=this.buildAttrs(this.parseParams(attrs));
+      return ha?`<span${ha}>${content}</span>`:content;
+    });
     text=text.replace(/##(.+?)##/g,'<code>$1</code>');
     text=text.replace(/`([^`]+?)`/g,'<code>$1</code>');
     text=text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
@@ -706,9 +712,13 @@ class XWikiParser {
         const ct=cell.trim();
         if(!ct)continue;
         const isHdr=ct.startsWith('=');
-        const content=isHdr?ct.slice(1):ct;
+        let content=isHdr?ct.slice(1):ct;
+        // Extract inline parameters (% ... %) at start of cell
+        let cellAttrs='';
+        const pm=content.match(/^\s*\(%\s*(.*?)\s*%\)([\s\S]*)/);
+        if(pm){cellAttrs=this.buildAttrs(this.parseParams(pm[1]));content=pm[2]}
         const rendered=this.renderCellContent(content.trim());
-        h+=isHdr?`<th>${rendered}</th>`:`<td>${rendered}</td>`;
+        h+=isHdr?`<th${cellAttrs}>${rendered}</th>`:`<td${cellAttrs}>${rendered}</td>`;
       }
       h+='</tr>';
     }
