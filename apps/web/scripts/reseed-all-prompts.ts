@@ -2,7 +2,8 @@
  * Reseed All Configs
  *
  * Re-seeds ALL prompt profiles and UCM configs from their source files.
- * This forces the database to reload from the current file versions.
+ * In normal mode, only system-seeded/system-default entries are refreshed.
+ * Use --force to overwrite active entries regardless of origin.
  *
  * Usage:
  *   npx tsx scripts/reseed-all-prompts.ts              # Reseed all configs
@@ -19,31 +20,20 @@
 
 import {
   seedPromptFromFile,
+  refreshPromptFromFileIfSystemSeed,
   closeConfigDb,
   getActiveConfigHash,
   getActiveConfig,
   saveConfigBlob,
   activateConfig,
   loadDefaultConfigFromFile,
+  VALID_PROMPT_PROFILES,
   type ConfigType,
 } from "../src/lib/config-storage";
 import {
   getDefaultConfig,
   canonicalizeContent,
 } from "../src/lib/config-schemas";
-
-// All valid prompt profiles (must match VALID_PROMPT_PROFILES in config-storage.ts)
-const ALL_PROMPT_PROFILES = [
-  // Main pipelines
-  "orchestrated",
-  "monolithic-dynamic",
-  "source-reliability",
-  // Text-analysis LLM prompts
-  "text-analysis-input",
-  "text-analysis-evidence",
-  "text-analysis-context",
-  "text-analysis-verdict",
-] as const;
 
 // UCM config types (excludes "prompt" which is handled separately)
 const UCM_CONFIG_TYPES: Array<Exclude<ConfigType, "prompt">> = [
@@ -159,20 +149,36 @@ async function reseedPrompt(
     // Get current active hash (if any)
     const previousHash = await getActiveConfigHash("prompt", profile);
 
-    // Seed from file (force mode overwrites, normal mode is idempotent)
-    const result = await seedPromptFromFile(profile, forceMode);
+    // Force mode: overwrite active prompt from file.
+    if (forceMode) {
+      const seeded = await seedPromptFromFile(profile, true);
+      if (seeded.error) {
+        return { name: profile, type: "prompt", action: "error", error: seeded.error };
+      }
 
-    if (result.error) {
-      return { name: profile, type: "prompt", action: "error", error: result.error };
-    }
-
-    if (result.seeded) {
-      const isUpdate = previousHash && previousHash !== result.contentHash;
+      const isUpdate = previousHash && previousHash !== seeded.contentHash;
       return {
         name: profile,
         type: "prompt",
         action: isUpdate ? "updated" : "seeded",
-        contentHash: result.contentHash || undefined,
+        contentHash: seeded.contentHash || undefined,
+        previousHash: previousHash || undefined,
+      };
+    }
+
+    // Normal mode: refresh only system-seeded prompts when file changed.
+    const refreshed = await refreshPromptFromFileIfSystemSeed(profile);
+    if (refreshed.error) {
+      return { name: profile, type: "prompt", action: "error", error: refreshed.error };
+    }
+
+    if (refreshed.refreshed) {
+      const isUpdate = previousHash && previousHash !== refreshed.contentHash;
+      return {
+        name: profile,
+        type: "prompt",
+        action: isUpdate ? "updated" : "seeded",
+        contentHash: refreshed.contentHash || undefined,
         previousHash: previousHash || undefined,
       };
     }
@@ -181,7 +187,7 @@ async function reseedPrompt(
       name: profile,
       type: "prompt",
       action: "skipped",
-      contentHash: result.contentHash || undefined,
+      contentHash: refreshed.contentHash || undefined,
     };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -245,7 +251,7 @@ async function main() {
       console.log("--- Prompts ---");
     }
 
-    for (const profile of ALL_PROMPT_PROFILES) {
+    for (const profile of VALID_PROMPT_PROFILES) {
       if (!quietMode) {
         process.stdout.write(`Processing: ${profile.padEnd(30)}`);
       }
