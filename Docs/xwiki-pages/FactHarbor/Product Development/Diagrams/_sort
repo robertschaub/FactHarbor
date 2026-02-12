@@ -6,6 +6,7 @@ Request Lifecycle
 Technology Stack
 External Dependencies Map
 LLM Model Tiering
+LLM Abstraction Architecture
 Storage Architecture
 Storage Roadmap
 Deployment Topology

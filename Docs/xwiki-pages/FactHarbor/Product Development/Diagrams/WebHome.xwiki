@@ -12,6 +12,7 @@ Non-trivial diagrams live in dedicated pages here and are **{{include}}d** into 
 * [[Technology Stack>>FactHarbor.Product Development.Diagrams.Technology Stack.WebHome]] — Frameworks, libraries, and infrastructure
 * [[External Dependencies Map>>FactHarbor.Product Development.Diagrams.External Dependencies Map.WebHome]] — LLM, search, and retrieval dependencies
 * [[LLM Model Tiering>>FactHarbor.Product Development.Diagrams.LLM Model Tiering.WebHome]] — Model selection per pipeline stage
+* [[LLM Abstraction Architecture>>FactHarbor.Product Development.Diagrams.LLM Abstraction Architecture.WebHome]] — Multi-provider abstraction, tiered routing, provider model mapping
 * [[Storage Architecture>>FactHarbor.Product Development.Diagrams.Storage Architecture.WebHome]] — Three-database architecture layout
 * [[Storage Roadmap>>FactHarbor.Product Development.Diagrams.Storage Roadmap.WebHome]] — Storage evolution POC → Alpha → Beta → V1.0+
 * [[Deployment Topology>>FactHarbor.Product Development.Diagrams.Deployment Topology.WebHome]] — POC vs production deployment

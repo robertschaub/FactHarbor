@@ -1,3 +1,7 @@
+{{info}}
+**Current Implementation** — Orchestrated pipeline: ##orchestrated.ts## (~13,600 lines). Updated 2026-02-12 from source code.
+{{/info}}
+
 = Orchestrated Pipeline Detail =
 
 {{mermaid}}
@@ -5,43 +9,51 @@ flowchart TB
     subgraph Entry["Entry Point"]
         INPUT["runFactHarborAnalysis()"]
         NORM["Input Normalization"]
-        BUDGET["Initialize Budget Tracker"]
+        BUDGET["Initialize Budget Tracker<br/>+ Evidence Processors"]
     end
 
     subgraph Step1["Step 1: UNDERSTAND"]
-        UC["understandClaim()"]
-        LLM1["LLM Call 1:<br/>Claim Extraction"]
-        SCOPE["detectContexts()<br/>Heuristic pre-detection"]
+        CLASSIFY["classifyInput()<br/>Input type classification"]
+        UC["understandClaim()<br/>Claim extraction + dependencies"]
+        CTX["detectContexts()<br/>Heuristic + LLM hybrid"]
         GATE1["Gate 1: Claim Validation<br/>Filter opinions, predictions"]
-        QUERIES["Generate research queries"]
+        SUPP["requestSupplementalContexts()<br/>+ requestSupplementalSubClaims()"]
+        DEDUP_CTX["deduplicateContexts()<br/>Merge similar contexts"]
+        QUERIES["Initial research queries"]
     end
 
     subgraph Step2["Step 2: RESEARCH (Iterative Loop)"]
-        DECIDE["decideNextResearch()<br/>LLM Call per iteration"]
+        DECIDE["decideNextResearch()<br/>Select category + query"]
         SEARCH["searchWebWithProvider()"]
-        FETCH["fetchSourceContent()<br/>Parallel fetching"]
+        RELEVANCE["assessSearchRelevanceBatch()<br/>Classify: primary / secondary / unrelated"]
+        ADAPTIVE{"Candidates<br/>≥ threshold?"}
+        FALLBACK["Retry + Fallback Searches<br/>Relax constraints, broaden terms"]
+        FETCH["fetchSourceContent()<br/>Parallel web fetch"]
         SR["prefetchSourceReliability()<br/>Batch reliability lookup"]
-        PREFILTER["Relevance Pre-Filter"]
-        ADAPTIVE{"Candidates >= 5?"}
-        FALLBACK["Adaptive Fallback:<br/>Relax constraints"]
-        EXTRACT["extractEvidence() per source<br/>LLM Call per source"]
-        BUDGET_CHECK{"Budget exceeded?"}
+        PROV["Provenance Validation<br/>Reject synthetic content"]
+        EXTRACT["extractEvidence()<br/>per source"]
+        EV_PROC["Evidence Processing<br/>Dedup · Normalize · Recency"]
+        BUDGET_CHK{"Budget exceeded<br/>or sufficient<br/>evidence?"}
+    end
+
+    subgraph Step2b["Post-Research Refinement"]
+        REFINE["refineContextsFromEvidence()<br/>Enrich context metadata"]
+        ENRICH["enrichContextsWithOutcomes()<br/>Fill vague outcomes"]
+        PRUNE["pruneWeakAnchorContexts()<br/>Remove low-evidence contexts"]
+        SELECT["selectEvidenceForVerdicts()<br/>Diverse evidence selection"]
     end
 
     subgraph Step3["Step 3: VERDICT"]
-        CLAIM_V["generateClaimVerdicts()<br/>LLM Call"]
-        WEIGHT["calculateWeightedVerdictAverage()"]
+        VERDICTS["generateVerdicts()<br/>Multi-context / single / claim"]
+        WEIGHT["calculateWeightedVerdictAverage()<br/>+ articleVerdict"]
         CONTEST["detectClaimContestation()"]
         HARM["detectHarmPotential()"]
+        GROUND["checkVerdictGrounding()<br/>Validate reasoning ↔ evidence"]
         GATE4["Gate 4: Confidence Assessment"]
-        ARTICLE_V["generateArticleVerdict()<br/>LLM Call"]
     end
 
-    subgraph Step4["Step 4: SUMMARY"]
+    subgraph Step4["Steps 4–5: SUMMARY + REPORT"]
         SUMMARY["generateTwoPanelSummary()"]
-    end
-
-    subgraph Step5["Step 5: REPORT"]
         REPORT["generateReport() markdown"]
     end
 
@@ -50,30 +62,104 @@ flowchart TB
         MARKDOWN["Report Markdown"]
     end
 
-    INPUT --> NORM --> BUDGET --> UC
-    UC --> LLM1 --> SCOPE --> GATE1 --> QUERIES
+    INPUT --> NORM --> BUDGET --> CLASSIFY
 
-    QUERIES --> DECIDE --> SEARCH --> FETCH --> SR --> PREFILTER
-    PREFILTER --> ADAPTIVE
-    ADAPTIVE -- "Yes" --> EXTRACT
-    ADAPTIVE -- "No" --> FALLBACK --> EXTRACT
-    EXTRACT --> BUDGET_CHECK
-    BUDGET_CHECK -->|"No"| DECIDE
-    BUDGET_CHECK -->|"Yes"| CLAIM_V
+    CLASSIFY --> UC --> CTX --> GATE1
+    GATE1 --> SUPP --> DEDUP_CTX --> QUERIES
 
-    CLAIM_V --> WEIGHT --> CONTEST --> HARM --> GATE4 --> ARTICLE_V
+    QUERIES --> DECIDE
+    DECIDE --> SEARCH --> RELEVANCE --> ADAPTIVE
+    ADAPTIVE -- "Yes" --> FETCH
+    ADAPTIVE -- "No" --> FALLBACK --> FETCH
+    FETCH --> SR --> PROV --> EXTRACT
+    EXTRACT --> EV_PROC --> BUDGET_CHK
+    BUDGET_CHK -->|"No — next iteration"| DECIDE
+    BUDGET_CHK -->|"Yes"| REFINE
 
-    ARTICLE_V --> SUMMARY --> REPORT
+    REFINE --> ENRICH --> PRUNE --> SELECT
+
+    SELECT --> VERDICTS --> WEIGHT --> CONTEST --> HARM --> GROUND --> GATE4
+
+    GATE4 --> SUMMARY --> REPORT
     REPORT --> RESULT
     REPORT --> MARKDOWN
 
-    style LLM1 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style DECIDE fill:#e3f2fd,stroke:#1565c0,color:#000
+    style CLASSIFY fill:#e3f2fd,stroke:#1565c0,color:#000
+    style UC fill:#e3f2fd,stroke:#1565c0,color:#000
+    style CTX fill:#e3f2fd,stroke:#1565c0,color:#000
+    style SUPP fill:#e3f2fd,stroke:#1565c0,color:#000
+    style DEDUP_CTX fill:#e3f2fd,stroke:#1565c0,color:#000
+    style RELEVANCE fill:#e3f2fd,stroke:#1565c0,color:#000
     style EXTRACT fill:#e3f2fd,stroke:#1565c0,color:#000
-    style CLAIM_V fill:#e3f2fd,stroke:#1565c0,color:#000
-    style ARTICLE_V fill:#e3f2fd,stroke:#1565c0,color:#000
+    style REFINE fill:#e3f2fd,stroke:#1565c0,color:#000
+    style ENRICH fill:#e3f2fd,stroke:#1565c0,color:#000
+    style PRUNE fill:#e3f2fd,stroke:#1565c0,color:#000
+    style SELECT fill:#e3f2fd,stroke:#1565c0,color:#000
+    style VERDICTS fill:#e3f2fd,stroke:#1565c0,color:#000
+    style GROUND fill:#e3f2fd,stroke:#1565c0,color:#000
+    style SEARCH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style FALLBACK fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style FETCH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style PROV fill:#fff3e0,stroke:#e65100,color:#000
+    style EV_PROC fill:#fff3e0,stroke:#e65100,color:#000
+    style SR fill:#fff3e0,stroke:#e65100,color:#000
     style GATE1 fill:#fff9c4,stroke:#f9a825,color:#000
     style GATE4 fill:#fff9c4,stroke:#f9a825,color:#000
 {{/mermaid}}
 
-//Blue nodes = LLM call points. Yellow nodes = quality gates. The research loop iterates until budget limits are reached or sufficient evidence is gathered.//
+**Legend:** (% blue %) LLM calls ~· (% green %) Web search / fetch ~· (% orange %) Evidence processing (deterministic) ~· (% yellow %) Quality gates
+
+== LLM Call Inventory ==
+
+|= Phase |= Function |= Model Tier |= Frequency
+| Understand | ##classifyInput()## | Budget (Haiku) | Once (optional)
+| Understand | ##understandClaim()## | Budget (Haiku) | Once
+| Understand | ##detectContexts()## | Budget (Haiku) | Once (if hybrid mode)
+| Understand | ##requestSupplementalContexts()## | Budget (Haiku) | Once (if ≤1 context)
+| Understand | ##requestSupplementalSubClaims()## | Budget (Haiku) | Once (if under-covered)
+| Understand | ##deduplicateContexts()## | Budget (Haiku) | Once (if ≥2 contexts)
+| Research | ##assessSearchRelevanceBatch()## | Budget (Haiku) | Per search batch, per iteration
+| Research | ##extractEvidence()## | Budget (Haiku) | Per fetched source (5–15+ typical)
+| Post-Research | ##refineContextsFromEvidence()## | Standard (Haiku) | Per context
+| Post-Research | ##enrichContextsWithOutcomes()## | Premium (Sonnet) | Per context (if vague outcome)
+| Post-Research | ##pruneWeakAnchorContexts()## | Budget (Haiku) | Once (if multiple contexts)
+| Post-Research | ##selectEvidenceForVerdicts()## | Budget (Haiku) | Once
+| Verdict | ##generateVerdicts()## | Premium (Sonnet) | Once (+ retry on failure)
+| Verdict | ##checkVerdictGrounding()## | Budget (Haiku) | Once (batched)
+
+== Web Search / Fetch Calls ==
+
+|= Function |= Type |= Frequency
+| ##searchWebWithProvider()## | Web Search (Google CSE / SerpAPI) | 1–3 per iteration (main + retries)
+| ##fetchSourceContent()## | HTTP fetch (parallel) | Per candidate URL (5–15+ typical)
+| ##prefetchSourceReliability()## | SR cache lookup (+ LLM if cache miss) | Batch per iteration
+
+== Deterministic Processing ==
+
+|= Function |= Module |= Purpose
+| ##decideNextResearch()## | orchestrated.ts | Select next research category + generate query
+| Provenance Validation | ##provenance-validation.ts## | Reject synthetic / LLM-generated content
+| Evidence Deduplication | ##evidence-deduplication.ts## | Jaccard similarity + LLM-assisted dedup
+| Evidence Normalization | ##evidence-normalization.ts## | Structural fallback tracking
+| Recency Assessment | ##evidence-recency.ts## | Temporal relevance scoring
+| ##calculateWeightedVerdictAverage()## | ##aggregation.ts## | Weighted verdict + articleVerdict
+| ##detectClaimContestation()## | ##aggregation.ts## | Counter-evidence weight reduction
+| ##detectHarmPotential()## | ##aggregation.ts## | Harm flag for high-stakes claims
+
+== Budget Controls ==
+
+|= Parameter |= Default |= Config Property
+| Max iterations per context | 5 | ##maxIterationsPerContext##
+| Max total iterations | 20 | ##maxTotalIterations##
+| Max total tokens | 750,000 | ##maxTotalTokens##
+| Min candidates before fallback | 5 | ##searchAdaptiveFallbackMinCandidates##
+| Max extra fallback queries | 2 | ##searchAdaptiveFallbackMaxQueries##
+
+== Typical LLM Call Counts ==
+
+|= Scenario |= LLM Calls |= Web Searches
+| Minimal (single claim, few sources) | ~8–12 | 2–4
+| Typical (multi-claim, 3–5 iterations) | ~25–50 | 6–12
+| Large (multi-context, full fallback) | ~60–100+ | 12–20+
+
+//Budget (Haiku) handles ~70% of calls (extraction, similarity, relevance). Premium (Sonnet) handles ~30% (verdict reasoning, outcome enrichment). All calls go through Vercel AI SDK with tiered model routing.//

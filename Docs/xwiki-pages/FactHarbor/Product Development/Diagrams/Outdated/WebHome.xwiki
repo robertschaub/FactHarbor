@@ -1,9 +1,3 @@
 = Outdated Diagrams =
 
-These diagram pages have been superseded by more detailed inline diagrams in the Architecture documentation. They are retained for historical reference.
-
-* [[High-Level Architecture>>FactHarbor.Product Development.Diagrams.Outdated.High-Level Architecture.WebHome]]
-* [[AKEL Architecture>>FactHarbor.Product Development.Diagrams.Outdated.AKEL Architecture.WebHome]]
-* [[LLM Abstraction Architecture>>FactHarbor.Product Development.Diagrams.Outdated.LLM Abstraction Architecture.WebHome]]
-* [[Orchestrated Pipeline Internal>>FactHarbor.Product Development.Diagrams.Outdated.Orchestrated Pipeline Internal.WebHome]]
-* [[Versioning Architecture>>FactHarbor.Product Development.Diagrams.Outdated.Versioning Architecture.WebHome]]
+//No outdated diagrams at this time. Previously archived diagrams were reviewed on 2026-02-12: four were deleted (replaced by current diagrams), one (LLM Abstraction Architecture) was updated and restored to the active Diagrams folder.//

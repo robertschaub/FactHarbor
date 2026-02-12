@@ -1,0 +1,107 @@
+{{info}}
+**Current Implementation** — Uses Vercel AI SDK for multi-provider abstraction. Provider selected via ##LLM_PROVIDER## environment variable (default: anthropic). Tiered model routing uses budget models for extraction, premium for verdict reasoning. Per-task model overrides available via UCM.
+
+Updated 2026-02-12 — Restored from Outdated after source-code verification.
+{{/info}}
+
+= LLM Abstraction Architecture =
+
+{{mermaid}}
+
+graph TB
+    subgraph Pipelines["Pipeline Implementations"]
+        ORCH["Orchestrated<br/>orchestrated.ts"]
+        DYN["Monolithic Dynamic<br/>monolithic-dynamic.ts"]
+    end
+
+    subgraph Tiering["Model Tiering"]
+        ROUTE["model-tiering.ts<br/>Task → Tier Router"]
+    end
+
+    subgraph AISDK["Vercel AI SDK"]
+        SDK["generateText()<br/>generateObject()"]
+    end
+
+    subgraph Providers["LLM Providers"]
+        ANT["Anthropic<br/>Haiku 4.5 / Sonnet 4.5"]
+        OAI["OpenAI<br/>GPT-4.1-mini / GPT-4.1"]
+        GOO["Google<br/>Gemini 2.5-flash / 2.5-pro"]
+        MIS["Mistral<br/>mistral-small / mistral-large"]
+    end
+
+    subgraph Config["Configuration"]
+        ENV["LLM_PROVIDER<br/>FH_DETERMINISTIC"]
+        UCM["UCM Overrides<br/>modelUnderstand, modelVerdict, ..."]
+    end
+
+    ORCH --> ROUTE
+    DYN --> ROUTE
+    ROUTE --> SDK
+    SDK --> ANT
+    SDK --> OAI
+    SDK --> GOO
+    SDK --> MIS
+    ENV --> ROUTE
+    UCM --> ROUTE
+
+    style Pipelines fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Tiering fill:#e3f2fd,stroke:#1565c0,color:#000
+    style AISDK fill:#fff3e0,stroke:#e65100,color:#000
+    style Providers fill:#fff9c4,stroke:#f9a825,color:#000
+    style Config fill:#f3e5f5,stroke:#6a1b9a,color:#000
+
+{{/mermaid}}
+
+== Tiered Model Routing ==
+
+Tasks are routed to appropriate model tiers for cost optimization:
+
+|= Task Type |= Tier |= Purpose
+| ##understand## | Budget | Claim extraction and classification
+| ##extract_evidence## | Budget | Evidence extraction from sources
+| ##context_refinement## | Standard | AnalysisContext refinement
+| ##verdict## | Premium | Verdict reasoning (critical quality)
+| ##supplemental## | Standard | Supplemental generation
+| ##summary## | Standard | Summary generation
+
+== Provider Model Mapping ==
+
+|= Provider |= Budget |= Standard |= Premium
+| **Anthropic** | claude-haiku-4-5 | claude-haiku-4-5 | claude-sonnet-4-5
+| **OpenAI** | gpt-4.1-mini | gpt-4.1 | gpt-4.1
+| **Google** | gemini-2.5-flash | gemini-2.5-pro | gemini-2.5-pro
+| **Mistral** | mistral-small-latest | mistral-large-latest | mistral-large-latest
+
+{{warning}}
+**Mistral dual-path note:** When tiered model routing is enabled (##model-tiering.ts##), Mistral falls back to Anthropic models for all tiers. When tiering is disabled (##llm.ts## default path), Mistral uses its own models as shown above.
+{{/warning}}
+
+== Configuration ==
+
+|= Variable |= Default |= Options
+| ##LLM_PROVIDER## | anthropic | anthropic, openai, google, mistral
+| ##FH_DETERMINISTIC## | true | true = temperature 0, false = default
+| ##modelUnderstand## | claude-haiku-4-5-20251001 | Any model ID (UCM override)
+| ##modelExtractEvidence## | claude-haiku-4-5-20251001 | Any model ID (UCM override)
+| ##modelVerdict## | claude-sonnet-4-5-20250929 | Any model ID (UCM override)
+
+== Implementation Status ==
+
+|= Feature |= Status |= Notes
+| **Multi-provider support** | Implemented | Anthropic, OpenAI, Google, Mistral
+| **Provider selection** | Implemented | Via ##LLM_PROVIDER## env var
+| **Deterministic mode** | Implemented | ##FH_DETERMINISTIC=true## sets temperature 0
+| **Tiered model routing** | Implemented | ##model-tiering.ts## routes tasks to budget/standard/premium
+| **Per-task model overrides** | Implemented | Via UCM: ##modelUnderstand##, ##modelExtractEvidence##, ##modelVerdict##
+| **Structured output** | Implemented | Zod schemas with ##generateObject()##, provider-specific adaptations
+| **Automatic failover** | Not implemented | Manual provider switch only
+| **Per-stage provider** | Not implemented | Single provider for all stages (different models per tier)
+
+== Key Files ==
+
+|= File |= Purpose
+| ##llm.ts## | Provider selection, model info, structured output helpers
+| ##model-tiering.ts## | Task-to-tier routing, model definitions, cost calculation
+| ##schema-retry.ts## | Structured output retry with provider-specific fallbacks
+| ##prompts/prompt-builder.ts## | Provider-adapted prompt construction
+| ##prompts/config-adaptations/structured-output.ts## | Per-provider structured output guidance

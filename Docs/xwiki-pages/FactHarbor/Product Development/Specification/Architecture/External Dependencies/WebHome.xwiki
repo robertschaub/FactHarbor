@@ -18,13 +18,15 @@ The AKEL pipeline uses **per-task model tiering** to balance cost and quality. L
 
 //Pipeline tasks are routed to the appropriate model tier via model-tiering.ts. All LLM calls go through the Vercel AI SDK, which provides a unified interface across providers.//
 
+For detailed provider model mapping, tiered routing configuration, and implementation status, see [[LLM Abstraction Architecture>>FactHarbor.Product Development.Diagrams.LLM Abstraction Architecture.WebHome]].
+
 === Provider Model Mapping ===
 
 |= Task |= Tier |= Anthropic |= OpenAI |= Google |= Mistral
 | understand | Budget | Claude Haiku 4.5 | GPT-4.1-mini | Gemini 2.5-flash | (Anthropic fallback)
 | extract_evidence | Budget | Claude Haiku 4.5 | GPT-4.1-mini | Gemini 2.5-flash | (Anthropic fallback)
-| context_refinement | Standard | Claude Sonnet 4.5 | GPT-4.1 | Gemini 2.5-pro | (Anthropic fallback)
-| verdict | Premium | Claude Opus 4.6 | GPT-4.1 | Gemini 2.5-pro | (Anthropic fallback)
+| context_refinement | Standard | Claude Haiku 4.5 | GPT-4.1 | Gemini 2.5-pro | (Anthropic fallback)
+| verdict | Premium | Claude Sonnet 4.5 | GPT-4.1 | Gemini 2.5-pro | (Anthropic fallback)
 
 === LLM Configuration ===
 
