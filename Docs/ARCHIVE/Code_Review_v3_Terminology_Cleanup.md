@@ -141,7 +141,7 @@ Per instructions, this review will verify:
   claimDirection?: "supports" | "contradicts" | "neutral";
   evidenceScope?: EvidenceScope;
   probativeValue?: "high" | "medium" | "low";
-  sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
+  sourceAuthority?: "primary" | "secondary" | "opinion";
   evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
   // ...
 }

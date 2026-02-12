@@ -108,7 +108,7 @@ erDiagram
         string claimDirection "supports contradicts neutral"
         string contextId FK "Linked AnalysisContext"
         string probativeValue "high medium low"
-        string sourceAuthority "primary secondary opinion contested"
+        string sourceAuthority "primary secondary opinion"
         string evidenceBasis "scientific documented anecdotal etc"
         number extractionConfidence "0-100"
     }

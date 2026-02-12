@@ -107,7 +107,7 @@ Check schema files in `apps/web/src/lib/analyzer/types.ts` or related schema def
 ### 1. Add `sourceAuthority` to EvidenceItem/ExtractedFact
 
 ```typescript
-sourceAuthority: z.enum(["primary", "secondary", "opinion", "contested"]).optional()
+sourceAuthority: z.enum(["primary", "secondary", "opinion"]).optional()
 ```
 
 ### 2. Add `evidenceBasis` to EvidenceItem/ExtractedFact

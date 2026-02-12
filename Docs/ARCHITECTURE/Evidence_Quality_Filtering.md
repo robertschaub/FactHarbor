@@ -1188,7 +1188,7 @@ graph TB
 | `harmPotential` | Enum (5 values) | `"medium"` | critical → high → **medium** → low → none | Claims |
 | `factualBasis` | Enum (7 values) | `"unknown"` | scientific_consensus → ... → **unknown** → opinion_based | KeyFactors |
 | `isContested` | Boolean | `false` | true \| **false** | KeyFactors |
-| `sourceAuthority` | Enum (5 values) | `"secondary"` | primary → **secondary** → tertiary → expert → institutional | Evidence |
+| `sourceAuthority` | Enum (3 values) | `"secondary"` | primary → **secondary** → opinion | Evidence |
 | `evidenceBasis` | Enum (6 values) | `"anecdotal"` | peer_reviewed_study → ... → **anecdotal** → none | Evidence |
 
 #### 1. Result JSON (`classificationFallbacks` field)

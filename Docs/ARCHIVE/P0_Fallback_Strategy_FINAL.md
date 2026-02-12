@@ -195,8 +195,8 @@ function getSourceAuthorityWithFallback(
   evidenceText: string,
   evidenceIndex: number,
   tracker: FallbackTracker
-): "primary" | "secondary" | "opinion" | "contested" {
-  const validValues = ["primary", "secondary", "opinion", "contested"];
+): "primary" | "secondary" | "opinion" {
+  const validValues = ["primary", "secondary", "opinion"];
 
   // LLM provided valid value → use it
   if (llmValue && validValues.includes(llmValue)) {

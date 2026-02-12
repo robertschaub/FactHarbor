@@ -226,7 +226,7 @@ The Core Data Model ERD is labeled v2.10.2 but was not updated when these fields
 
 | Field | Added In | Purpose | ERD Missing? |
 |-------|----------|---------|-------------|
-| `sourceAuthority` | v2.6 | primary/secondary/opinion/contested | YES |
+| `sourceAuthority` | v2.6 | primary/secondary/opinion | YES |
 | `probativeValue` | v2.8 | high/medium/low | YES |
 | `evidenceBasis` | v2.8 | scientific/documented/anecdotal/etc | YES |
 | `extractionConfidence` | v2.8 | 0-100 confidence score | YES |

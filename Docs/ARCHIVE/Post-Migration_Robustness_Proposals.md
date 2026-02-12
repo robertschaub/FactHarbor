@@ -102,9 +102,9 @@ function getHarmPotentialWithFallback(
 function getSourceAuthorityWithFallback(
   llmValue: string | undefined,
   sourceText: string
-): "primary" | "secondary" | "opinion" | "contested" {
+): "primary" | "secondary" | "opinion" {
   // Tier 1: Trust LLM
-  if (llmValue && ["primary", "secondary", "opinion", "contested"].includes(llmValue)) {
+  if (llmValue && ["primary", "secondary", "opinion"].includes(llmValue)) {
     return llmValue as any;
   }
 
@@ -463,7 +463,7 @@ export class ClassificationTelemetryCollector {
   private data: Partial<ClassificationTelemetry> = {
     harmPotential: { high: 0, medium: 0, low: 0, fallbackUsed: 0 },
     factualBasis: { established: 0, disputed: 0, opinion: 0, unknown: 0, fallbackUsed: 0 },
-    sourceAuthority: { primary: 0, secondary: 0, opinion: 0, contested: 0, fallbackUsed: 0 },
+    sourceAuthority: { primary: 0, secondary: 0, opinion: 0, fallbackUsed: 0 },
     evidenceBasis: { scientific: 0, documented: 0, anecdotal: 0, theoretical: 0, pseudoscientific: 0, fallbackUsed: 0 }
   };
 
@@ -646,7 +646,7 @@ export interface Claim {
 
 export interface EvidenceItem {
   // Existing fields...
-  sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
+  sourceAuthority?: "primary" | "secondary" | "opinion";
   evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
 
   // NEW: Confidence in source/evidence classification (0-100)
@@ -748,7 +748,7 @@ FactHarbor uses LLM-based classification for all semantic judgments:
 - **factualBasis** (established/disputed/opinion/unknown): Quality of counter-evidence
 
 ### Evidence-Level Classifications
-- **sourceAuthority** (primary/secondary/opinion/contested): Reliability of source
+- **sourceAuthority** (primary/secondary/opinion): Reliability of source
 - **evidenceBasis** (scientific/documented/anecdotal/theoretical/pseudoscientific): Type of evidence
 
 ### Fallback Strategy

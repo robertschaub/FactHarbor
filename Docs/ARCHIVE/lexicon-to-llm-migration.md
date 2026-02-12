@@ -497,7 +497,7 @@ For OPINION sources (executive orders, dissenting opinions, press releases, spok
 
 ```typescript
 // Add to EvidenceItem/ExtractedFact
-sourceAuthority: z.enum(["primary", "secondary", "opinion", "contested"]).optional()
+sourceAuthority: z.enum(["primary", "secondary", "opinion"]).optional()
 ```
 
 **SE REVIEW COMMENT:** Prefer mapping to existing `SourceType` (peer_reviewed_study, government_report, etc.) or define a strict mapping table between the two to avoid taxonomy drift.
@@ -912,7 +912,7 @@ These are NOT semantic judgments - they're format/structure operations:
 **What to implement:**
 
 1. **Add to EvidenceItem schema:** `sourceAuthority` field
-   - Add: `sourceAuthority: z.enum(["primary", "secondary", "opinion", "contested"]).optional()`
+   - Add: `sourceAuthority: z.enum(["primary", "secondary", "opinion"]).optional()`
 
 2. **Add to EvidenceItem schema:** `evidenceBasis` field
    - Add: `evidenceBasis: z.enum(["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"]).optional()`

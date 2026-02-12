@@ -20,6 +20,7 @@ This section contains detailed implementation references for developers and test
 | [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] | Gate 1 (claim validation) and Gate 4 (confidence assessment) — criteria, examples, configuration | ##quality-gates.ts##
 | [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] | 7-layer defence strategy, filter rules, category-specific requirements, troubleshooting | ##evidence-filter.ts##, ##provenance-validation.ts##
 | [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] | AnalysisContext and EvidenceScope detection methodology, multi-phase pipeline | ##analysis-contexts.ts##
+| [[Direction Semantics>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Direction Semantics.WebHome]] | Multi-layer direction semantics, scope mismatch problem, LLM-code alignment, counter-claim handling | ##orchestrated.ts##, ##types.ts##
 
 === Calculations and Scoring ===
 

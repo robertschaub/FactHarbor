@@ -32,7 +32,7 @@ Track the following metrics per analysis:
 - Classification value distributions:
   - harmPotential: {high: N, medium: N, low: N}
   - factualBasis: {established: N, disputed: N, opinion: N, unknown: N}
-  - sourceAuthority: {primary: N, secondary: N, opinion: N, contested: N}
+  - sourceAuthority: {primary: N, secondary: N, opinion: N}
   - evidenceBasis: {scientific: N, documented: N, anecdotal: N, theoretical: N, pseudoscientific: N}
   - isContested: {true: N, false: N}
 

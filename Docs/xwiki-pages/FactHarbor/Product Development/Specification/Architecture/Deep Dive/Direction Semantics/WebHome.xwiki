@@ -1,0 +1,470 @@
+= Direction Semantics =
+
+{{info}}
+**Developer Reference** — This page documents the multi-layer direction semantics in FactHarbor's analysis pipeline. Understanding these semantics is critical for maintaining LLM-code alignment and avoiding direction confusion bugs.
+
+**Key Files**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/web/src/lib/analyzer/orchestrated.ts##, ##apps/web/prompts/orchestrated.prompt.md##
+{{/info}}
+
+**Version**: 2.6.41
+**Status**: Operational (Step 4 LLM-based validation)
+
+----
+
+== 1. The Core Concern
+
+**LLM interpretation must match source-code interpretation exactly**, or the system will produce inconsistent results. Direction semantics are the most common source of LLM-code misalignment.
+
+The system has multiple "direction" concepts that can easily conflate, leading to:
+- Wrong verdict flips during auto-correction
+- Scope mismatch between evidence direction and sub-claim verdicts
+- Counter-claims being treated incorrectly
+
+----
+
+== 2. The Direction Stack ==
+
+The system has **four distinct direction layers**:
+
+{{mermaid}}
+graph TB
+    subgraph Layer4["Layer 4: VERDICT DIRECTION"]
+        V["verdict.truthPercentage: 0-100<br/>'Is this sub-claim TRUE or FALSE?'"]
+    end
+
+    subgraph Layer3["Layer 3: EVIDENCE DIRECTION"]
+        E["claimDirection: supports | contradicts | neutral<br/>'Does this evidence SUPPORT or CONTRADICT<br/>the ORIGINAL claim?'"]
+    end
+
+    subgraph Layer2["Layer 2: CLAIM DIRECTION"]
+        C["isCounterClaim: boolean<br/>'Does this sub-claim support or oppose<br/>the main thesis?'"]
+    end
+
+    subgraph Layer1["Layer 1: THESIS DIRECTION"]
+        T["impliedClaim: string<br/>'What is the original user claim?'"]
+    end
+
+    Layer1 --> Layer2
+    Layer2 --> Layer3
+    Layer3 --> Layer4
+
+    style Layer1 fill:#e8f5e9,color:#000
+    style Layer2 fill:#fff9c4,color:#000
+    style Layer3 fill:#e3f2fd,color:#000
+    style Layer4 fill:#f3e5f5,color:#000
+{{/mermaid}}
+
+|= Layer |= Field |= Question Answered |= Scope
+| **1. Thesis** | ##impliedClaim## | What is the original user claim? | Entire analysis
+| **2. Claim** | ##isCounterClaim## | Does this sub-claim support or oppose the thesis? | Per sub-claim
+| **3. Evidence** | ##claimDirection## | Does evidence support or contradict the ORIGINAL claim? | Per evidence item
+| **4. Verdict** | ##truthPercentage## | Is this sub-claim TRUE or FALSE? | Per sub-claim verdict
+
+**Critical**: Each layer has a different scope. Conflating them causes direction confusion bugs.
+
+----
+
+== 3. The Confusion Problem ==
+
+=== 3.1 Example Scenario ===
+
+**Original Claim (Thesis)**: "The trial was fair"
+
+**Sub-claim SC1**: "The judge recused themselves due to conflict of interest"
+- ##isCounterClaim: true## (opposes thesis that trial was fair)
+- Evidence confirms recusal
+- Evidence ##claimDirection: "supports"## (supports SC1 being true)
+- **But SC1 being TRUE means the trial was NOT fair**
+
+**Sub-claim SC2**: "The defendant received legal representation"
+- ##isCounterClaim: false## (supports thesis that trial was fair)
+- Evidence confirms representation
+- Evidence ##claimDirection: "supports"## (supports SC2 being true)
+- **SC2 being TRUE means the trial WAS fair**
+
+=== 3.2 The Direction Matrix ===
+
+|= Evidence Direction |= Claim Type |= Verdict Implication
+| ##supports## SC1 | Counter-claim | Thesis = FALSE
+| ##contradicts## SC1 | Counter-claim | Thesis = TRUE
+| ##supports## SC2 | Thesis-aligned | Thesis = TRUE
+| ##contradicts## SC2 | Thesis-aligned | Thesis = FALSE
+
+**The LLM must understand this matrix. If it conflates layers, verdicts flip incorrectly.**
+
+----
+
+== 4. The Scope Mismatch Problem ==
+
+{{mermaid}}
+graph TD
+    subgraph Evidence["EVIDENCE claimDirection"]
+        Dir["claimDirection: 'contradicts'<br/>(relative to ORIGINAL CLAIM)"]
+        E1["Evidence E1: 'Judge recused'<br/>→ contradicts 'trial was fair'"]
+    end
+
+    subgraph Verdict["SUB-CLAIM VERDICT"]
+        SC["SC1: 'Judge recused'<br/>→ verdict should be HIGH (true)"]
+        Mis["❌ MISMATCH:<br/>Evidence 'contradicts' but supports SC1"]
+    end
+
+    Evidence --> Verdict
+
+    style Evidence fill:#e3f2fd,color:#000
+    style Verdict fill:#f3e5f5,color:#000
+    style Mis fill:#ffcdd2,color:#000
+{{/mermaid}}
+
+**The Problem**:
+1. Evidence ##claimDirection## is relative to the ORIGINAL claim
+2. Sub-claim verdict validation uses this direction
+3. But sub-claims may have different direction semantics (counter-claims)
+4. Validator sees "contradicts" evidence + HIGH verdict → flags as mismatch
+5. **Wrong flip** if auto-correct is enabled
+
+---
+
+== 5. Implementation ==
+
+=== 5.1 Evidence Direction (claimDirection) ===
+
+**File**: ##apps/web/src/lib/analyzer/types.ts:477##
+
+{{code language="typescript"}}
+interface EvidenceItem {
+  // Direction relative to ORIGINAL USER CLAIM
+  claimDirection: "supports" | "contradicts" | "neutral";
+}
+{{/code}}
+
+**Prompt Definition**: ##apps/web/prompts/orchestrated.prompt.md## EXTRACT_EVIDENCE section
+
+{{code}}
+For EVERY extracted evidence item, evaluate claimDirection:
+- "supports": This evidence item provides evidence that SUPPORTS the user's claim being TRUE
+- "contradicts": This evidence item provides evidence that CONTRADICTS the user's claim
+- "neutral": This evidence item is contextual/background information
+
+CRITICAL: claimDirection is ALWAYS relative to the ORIGINAL USER CLAIM, not sub-claims.
+{{/code}}
+
+=== 5.2 Counter-Claim Detection (isCounterClaim) ===
+
+**File**: ##apps/web/src/lib/analyzer/types.ts:563##
+
+{{code language="typescript"}}
+interface SubClaim {
+  // Does this claim test the OPPOSITE of the thesis?
+  isCounterClaim: boolean;
+}
+{{/code}}
+
+**Prompt Definition**: ##apps/web/prompts/orchestrated.prompt.md## UNDERSTAND section
+
+{{code}}
+isCounterClaim = true when the claim evaluates the OPPOSITE position:
+- Thesis: "X is fair" → Claim: "X violated due process" → isCounterClaim: true
+
+WHY THIS MATTERS: Counter-claims have their verdicts INVERTED during aggregation.
+{{/code}}
+
+=== 5.3 Verdict Direction Validation ===
+
+**Version**: v2.6.41+ (Step 4)
+
+**File**: ##apps/web/src/lib/analyzer/orchestrated.ts:3487##
+
+The validation uses **LLM-based per-claim semantic evaluation** instead of comparing ##claimDirection## counters:
+
+{{code language="typescript"}}
+// Function: batchDirectionValidationLLM
+// Location: orchestrated.ts:3487
+async function batchDirectionValidationLLM(
+  inputs: Array<{
+    claimText: string;
+    verdictPct: number;
+    evidenceStatements: string[];  // Array of evidence statement strings
+  }>,
+): Promise<DirectionValidationBatchResult> {
+  // Returns: { results: [...] | null, degraded: boolean }
+  // LLM evaluates each sub-claim + evidence + verdict triple semantically
+  // This resolves the scope mismatch
+}
+{{/code}}
+
+**Return Type**:
+
+{{code language="typescript"}}
+interface DirectionValidationBatchResult {
+  results: Array<{
+    aligned: boolean;
+    expectedDirection?: "high" | "low";
+    reason?: string
+  }> | null;
+  degraded: boolean;  // true if LLM call failed, results may be null
+}
+{{/code}}
+
+**Prompt Definition**: ##apps/web/prompts/orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER section
+
+{{code}}
+For each verdict:
+- Read the sub-claim being rated
+- Read the evidence statements (ignore direction labels — assess meaning directly)
+- Determine whether the evidence supports or contradicts the sub-claim
+- Compare against the verdict percentage
+
+A verdict is MISALIGNED if:
+- Evidence mostly supports the sub-claim BUT verdict is below 43%
+- Evidence mostly contradicts the sub-claim BUT verdict is above 72%
+- Note: Contestation or dispute about interpretation does NOT make a factual claim false
+{{/code}}
+
+**Critical**: "ignore direction labels — assess meaning directly" — This resolves the scope mismatch by having the LLM evaluate the sub-claim directly, not via original-claim direction.
+
+=== 5.4 Auto-Correct Status ===
+
+**Auto-correct is DISABLED** (warning-only mode):
+
+{{code language="typescript"}}
+// File: apps/web/src/lib/analyzer/orchestrated.ts
+// Lines: 8097, 8694, 9414 (three verdict generation paths)
+const {
+  validatedVerdicts: directionValidatedVerdicts,
+  mismatches: verdictMismatches,
+  warnings: verdictDirectionWarnings,
+  degraded: directionValidationDegraded,
+} = await validateVerdictDirections(
+  weightedClaimVerdicts,
+  state.evidenceItems,
+  { autoCorrect: false }  // DISABLED until LLM per-claim validation is proven
+);
+{{/code}}
+
+=== 5.5 Degraded Mode Behavior ===
+
+When the LLM validation call fails, the system enters **degraded mode**:
+
+{{code language="typescript"}}
+// batchDirectionValidationLLM returns on failure:
+return { results: null, degraded: true };
+
+// validateVerdictDirections handles degraded mode:
+if (llmBatch.degraded || !llmBatch.results) {
+  // Emit warning
+  state.analysisWarnings.push({
+    type: "direction_validation_degraded",
+    severity: "warning",
+    message: "Direction validation LLM failed; using fallback assessment"
+  });
+  // Return verdicts unchanged with degraded: true
+  return { validatedVerdicts, mismatches: [], warnings, degraded: true };
+}
+{{/code}}
+
+**Operational Impact**:
+- In degraded mode, verdicts are NOT validated for direction alignment
+- A warning is emitted for monitoring
+- Manual review may be needed for affected analyses
+
+----
+
+== 6. Contestation vs Contradiction ==
+
+**CRITICAL DISTINCTION**:
+
+|= Concept | Meaning | Effect on Verdict
+| **Contestation** | Stakeholders dispute interpretation/completeness | Reduces confidence, NOT verdict direction
+| **Contradiction** | Evidence directly refutes the factual claim | Affects verdict direction
+
+**Contestation Fields** (assertion-level, NOT source-level):
+
+{{code language="typescript"}}
+// ClaimVerdict: types.ts:315-318
+interface ClaimVerdict {
+  isContested: boolean;
+  contestedBy: string;
+  factualBasis: "established" | "disputed" | "opinion" | "unknown";
+}
+
+// EvidenceItem: types.ts:471
+interface EvidenceItem {
+  isContestedClaim: boolean;
+  claimSource: string;
+}
+{{/code}}
+
+**Prompt Definition**: ##apps/web/prompts/orchestrated.prompt.md## VERDICT section
+
+{{code}}
+CONTESTED ≠ FALSE:
+- If evidence confirms the factual component being rated BUT stakeholders dispute
+  interpretation → verdict should be >=50% with reduced confidence
+- If evidence directly refutes the factual component → verdict should be <50%
+- Contestation affects confidence, not direction, for the factual component being rated
+{{/code}}
+
+**Example**:
+- Claim: "Company released 3M pages of documents"
+- Evidence: Company released 3M pages (confirmed)
+- Contestation: "Only half of what was expected"
+- **Correct verdict**: 70% (Mostly True - factual claim confirmed)
+- **Correct confidence**: 65% (reduced due to completeness dispute)
+
+----
+
+== 7. LLM-Prompt Contract Requirements ==
+
+For the LLM to interpret direction exactly as code does, the prompt must document semantics explicitly:
+
+=== 7.1 Define Direction Relative to Original Claim ===
+
+{{code}}
+claimDirection is ALWAYS relative to the ORIGINAL USER CLAIM, not sub-claims.
+
+Example:
+- Original claim: "Trial was fair"
+- Evidence: "Judge recused due to conflict"
+- claimDirection: "contradicts" (contradicts "trial was fair")
+
+Even if this evidence is cited for a sub-claim about recusal, the direction
+is still relative to the ORIGINAL claim.
+{{/code}}
+
+=== 7.2 Explain Counter-Claim Semantics ===
+
+{{code}}
+Counter-claims (isCounterClaim: true) test the OPPOSITE of the thesis.
+
+If evidence supports a counter-claim:
+- The counter-claim is TRUE
+- The thesis is FALSE
+- verdict should be HIGH for the counter-claim
+- This does NOT mean the evidence "contradicts" the counter-claim
+{{/code}}
+
+=== 7.3 Require Explicit Evidence-Claim Mapping ===
+
+{{code}}
+supportingEvidenceIds (REQUIRED): Cite at least one evidence ID when supporting
+evidence exists; if none exists, use [] and explicitly state insufficiency in reasoning.
+{{/code}}
+
+=== 7.4 Multilingual Semantic Invariance ===
+
+{{code}}
+CRITICAL: Direction semantics must hold across languages, not just English keywords.
+
+The semantic interpretation of:
+- claimDirection: supports/contradicts/neutral
+- isCounterClaim: true/false
+- Contestation vs Contradiction
+
+Must be invariant across all languages. The LLM must assess MEANING, not just
+keyword matching. A claim that "X était injuste" (French: "X was unfair") must
+be treated identically to "X was unfair" in English for direction purposes.
+
+Prompt instructions use English keywords for consistency, but LLM interpretation
+must be language-agnostic at the semantic level.
+{{/code}}
+
+----
+
+== 8. Anti-Pattern Warning ==
+
+{{warning}}
+**DO NOT** use Layer 3 evidence direction counters alone to auto-correct Layer 4 verdicts.
+
+**Why**: Layer 3 (##claimDirection##) is scoped to the ORIGINAL claim. Layer 4 (##truthPercentage##) is scoped to the SUB-CLAIM. These are different scopes.
+
+**Wrong approach** (causes direction confusion bugs):
+{{code language="typescript"}}
+// ❌ WRONG: Auto-correct based on claimDirection counters
+if (supportCount > contradictCount && verdictPct < 43) {
+  verdictPct = 65; // Wrong flip!
+}
+{{/code}}
+
+**Correct approach** (use LLM semantic validation):
+{{code language="typescript"}}
+// ✅ CORRECT: LLM evaluates sub-claim + evidence semantically
+const llmInputs = candidates.map((c) => ({
+  claimText: c.verdict.claimText || c.verdict.claimId,
+  verdictPct: c.verdict.truthPercentage,
+  evidenceStatements: c.linkedEvidence.map((e) => e.statement),  // string[]
+}));
+const llmBatch = await batchDirectionValidationLLM(llmInputs);
+// Result includes semantic assessment, ignoring direction label scope issues
+{{/code}}
+
+**Current status**: Auto-correct is **DISABLED** (warning-only mode). See ##orchestrated.ts:8097,8694,9414##.
+{{/warning}}
+
+----
+
+== 9. Warning Metadata ==
+
+When direction mismatches are detected, warning payloads include **legacy directional metadata** from the old counter-based approach. This metadata is kept for debugging but is **NOT reliable for sub-claim direction assessment**:
+
+{{code language="typescript"}}
+interface DirectionMismatchWarning {
+  type: "verdict_direction_mismatch";
+  severity: "warning";
+  message: string;
+  details: {
+    claimId: string;
+    verdictPct: number;
+    legacyDirectionalMetadata: {
+      supportPct: number;       // Based on claimDirection counters
+      contradictPct: number;    // RELATIVE TO ORIGINAL CLAIM
+      neutralPct: number;       // NOT reliable for sub-claim direction
+      note: "Based on original-claim direction labels, not semantic evaluation";
+    };
+    llmAssessment?: string;     // LLM's semantic evaluation reason
+    evidenceIds: string[];      // Which evidence was considered
+  };
+}
+{{/code}}
+
+**Important**: Use ##llmAssessment## for accurate direction evaluation. The ##legacyDirectionalMetadata## is kept for backward compatibility and debugging only.
+
+----
+
+== 10. Verification Checklist ==
+
+To ensure LLM-code alignment:
+
+|= Check |= Code Location |= Prompt Location
+| ##claimDirection## defined relative to original claim | ##types.ts:477## | ##orchestrated.prompt.md## EXTRACT_EVIDENCE
+| Counter-claim direction semantics | ##types.ts:563## (isCounterClaim) | ##orchestrated.prompt.md## UNDERSTAND
+| Evidence-to-verdict mapping | ##orchestrated.ts:validateVerdictDirections## | ##orchestrated.prompt.md## VERDICT
+| Auto-correct disabled | ##orchestrated.ts:8097,8694,9414## | N/A (code-only)
+| Contestation ≠ False | ##types.ts:315-318,471## | ##orchestrated.prompt.md## VERDICT
+| LLM per-claim validation | ##orchestrated.ts:3487## (batchDirectionValidationLLM) | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
+| Contestation fields separate from direction | ##types.ts## (isContestedClaim, contestedBy) | ##orchestrated.prompt.md## VERDICT
+| Degraded mode handling | ##orchestrated.ts:validateVerdictDirections## | N/A (code-only)
+
+----
+
+== 11. Common Pitfalls ==
+
+|= Pitfall |= Symptom |= Fix
+| **Conflating layers** | Wrong verdict flips | Use LLM per-claim validation
+| **Auto-correct with scope mismatch** | Correct verdicts flipped to wrong | Disable auto-correct, warning-only
+| **Contestation treated as contradiction** | High verdicts become low | Separate contestation from direction in prompts
+| **Evidence direction used for sub-claim validation** | Counter-claims flagged incorrectly | Use semantic LLM validation instead
+| **Ignoring degraded mode** | Silent validation failures | Monitor ##direction_validation_degraded## warnings
+
+----
+
+== 12. Related Documentation ==
+
+* [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] -- Verdict scale, aggregation, counter-evidence handling
+* [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] -- Gate 1 (claim validation) and Gate 4 (confidence assessment)
+* [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] -- 7-layer evidence filtering strategy
+* [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] -- AnalysisContext detection, multi-context handling
+* [[Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] -- Full 5-step pipeline flow
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Prev: [[Confidence Calibration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]] | Next: [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]]
