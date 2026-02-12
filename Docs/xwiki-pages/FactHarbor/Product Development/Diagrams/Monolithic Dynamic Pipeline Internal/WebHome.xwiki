@@ -1,5 +1,5 @@
 {{info}}
-**Fast Alternative Pipeline (v2.6.33)** — Flexible output structure not bound to canonical schema. File: ##monolithic-dynamic.ts##. Streamlined analysis at lower cost, complementing the Orchestrated pipeline.
+**Fast Alternative Pipeline** — Flexible output structure not bound to canonical schema. File: ##apps/web/src/lib/analyzer/monolithic-dynamic.ts##. Streamlined analysis at lower cost, complementing the Orchestrated pipeline. Updated 2026-02-12 from source code.
 {{/info}}
 
 = Monolithic Dynamic Pipeline Internal Flow =
@@ -11,19 +11,30 @@ flowchart TB
         INPUT[runMonolithicDynamic]
         BUDGET[Initialize Budget maxIterations 4 maxSearches 6]
         TIMEOUT[Start timeout 2.5 minutes]
+        SR_CLEAR[Clear SR cache]
     end
 
-    subgraph Analysis[Single LLM Analysis]
-        PROMPT[Build dynamic analysis prompt]
-        LLM[LLM Call DynamicAnalysisSchema]
-        SEARCH[searchWebWithProvider]
-        FETCH[fetchSourceContent]
+    subgraph Plan[Step 1: Plan Research]
+        PLAN["[LLM] Initial analysis<br/>DynamicPlanSchema"]
+    end
+
+    subgraph Research[Step 2: Research Loop]
+        SEARCH["[WEB] searchWebWithProvider()<br/>Execute search queries"]
+        FETCH["[WEB] fetchSourceContent()<br/>Parallel fetch"]
+        SR_PREFETCH["[EXT] prefetchSourceReliability()<br/>Batch reliability lookup"]
+        BUDGET_CHK{Budget exceeded?<br/>maxSearches / maxFetches}
+    end
+
+    subgraph Analysis[Step 3: Analysis]
+        PROMPT[Build dynamic analysis prompt<br/>+ source texts + reliability scores]
+        LLM["[LLM] Final analysis<br/>DynamicAnalysisSchema"]
     end
 
     subgraph Safety[Safety Contract Enforcement]
         CITATIONS[Extract citations array]
         RAW[Store rawJson]
         VALIDATE[Validate minimum fields]
+        SR_ATTACH["[EXT] Attach trackRecordScore<br/>to citations"]
     end
 
     subgraph Transform[Output Transform]
@@ -36,25 +47,32 @@ flowchart TB
         MARKDOWN[reportMarkdown experimental label]
     end
 
-    INPUT --> BUDGET
-    BUDGET --> TIMEOUT
-    TIMEOUT --> PROMPT
+    INPUT --> BUDGET --> TIMEOUT --> SR_CLEAR --> PLAN
 
-    PROMPT --> LLM
-    LLM --> SEARCH
-    SEARCH --> FETCH
-    FETCH --> LLM
+    PLAN --> SEARCH
+    SEARCH --> FETCH --> SR_PREFETCH --> BUDGET_CHK
+    BUDGET_CHK -->|No — next iteration| SEARCH
+    BUDGET_CHK -->|Yes| PROMPT
 
-    LLM --> CITATIONS
-    CITATIONS --> RAW
-    RAW --> VALIDATE
+    PROMPT --> LLM --> CITATIONS
 
-    VALIDATE --> DYNAMIC
-    DYNAMIC --> REPORT
+    CITATIONS --> RAW --> VALIDATE --> SR_ATTACH
+
+    SR_ATTACH --> DYNAMIC --> REPORT
     REPORT --> RESULT
     REPORT --> MARKDOWN
 
+    style PLAN fill:#e3f2fd,stroke:#1565c0,color:#000
+    style LLM fill:#e3f2fd,stroke:#1565c0,color:#000
+    style SEARCH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style FETCH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style SR_PREFETCH fill:#fff3e0,stroke:#e65100,color:#000
+    style SR_CLEAR fill:#fff3e0,stroke:#e65100,color:#000
+    style SR_ATTACH fill:#fff3e0,stroke:#e65100,color:#000
+
 {{/mermaid}}
+
+**Legend:** ##[LLM]## = LLM call ~· ##[WEB]## = Web/Search/Fetch call ~· ##[EXT]## = External service/cache boundary. (Colors remain as secondary visual cue.)
 
 = Key Characteristics =
 
