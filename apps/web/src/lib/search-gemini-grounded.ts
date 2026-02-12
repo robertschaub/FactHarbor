@@ -10,6 +10,7 @@
 
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
+import { loadAndRenderSection } from "./analyzer/prompt-loader";
 
 export interface GroundedSearchResult {
   /** Sources discovered by Gemini's search grounding */
@@ -58,13 +59,18 @@ export async function searchWithGrounding(
   // Full grounding support will be available when the SDK is upgraded.
   const model = google(modelName);
 
-  // Build the search prompt - explicitly request current/recent information
-  const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const searchPrompt = context
-    ? `Today's date is ${currentDate}.\n\nContext: ${context}\n\nResearch Task: ${prompt}\n\nProvide factual information with specific details, dates, and sources. Focus on the most recent and verifiable information available. Include specific dates, names, and outcomes where possible.`
-    : `Today's date is ${currentDate}.\n\nResearch Task: ${prompt}\n\nProvide factual information with specific details, dates, and sources. Focus on the most recent and verifiable information available. Include specific dates, names, and outcomes where possible.`;
-
   try {
+    const currentDateIso = new Date().toISOString().slice(0, 10);
+    const renderedPrompt = await loadAndRenderSection("orchestrated", "GROUNDED_SEARCH_REQUEST", {
+      CURRENT_DATE_ISO: currentDateIso,
+      CONTEXT_TEXT: context || "",
+      RESEARCH_TASK: prompt,
+    });
+    if (!renderedPrompt?.content?.trim()) {
+      throw new Error("Missing GROUNDED_SEARCH_REQUEST prompt section in orchestrated prompt profile");
+    }
+    const searchPrompt = renderedPrompt.content;
+
     const result = await generateText({
       model,
       prompt: searchPrompt,

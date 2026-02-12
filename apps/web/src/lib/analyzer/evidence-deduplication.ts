@@ -23,7 +23,7 @@ export interface DeduplicationState {
  * Provides methods for:
  * - URL normalization and deduplication
  * - Evidence statement similarity detection
- * - Jaccard similarity calculation (fallback)
+ * - LLM-driven semantic similarity checks
  */
 export class EvidenceDeduplicator {
   constructor(
@@ -104,13 +104,9 @@ export class EvidenceDeduplicator {
     // Second pass: batch LLM similarity for near-duplicate detection
     if (existingItems.length === 0) return false;
 
-    // If LLM similarity function not provided, fall back to Jaccard
+    // No hidden deterministic semantic fallback.
     if (!this.assessTextSimilarityBatch) {
-      for (const existing of existingItems) {
-        if (jaccardSimilarity(newItem.statement, existing.statement) >= similarityThreshold) {
-          return true;
-        }
-      }
+      console.warn("[Deduplicator] assessTextSimilarityBatch unavailable; skipping near-duplicate semantic check");
       return false;
     }
 
@@ -157,8 +153,8 @@ export class EvidenceDeduplicator {
 }
 
 /**
- * Jaccard similarity calculation (word-level structural similarity)
- * Used as fallback when LLM similarity is unavailable
+ * Legacy export for backward compatibility only.
+ * Do not use for analysis decisions.
  */
 export function jaccardSimilarity(text1: string, text2: string): number {
   const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);

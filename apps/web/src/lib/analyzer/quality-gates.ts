@@ -52,16 +52,7 @@ export function validateClaimGate1(
   isCentral: boolean = false,
   gateConfig?: QualityGateConfig,
 ): ClaimValidationResult {
-  const minContentWords = gateConfig?.gate1MinContentWords ?? 3;
-
-  // Content word count: helps keep verifiable, mechanism-style claims
-  // that don't necessarily include numbers/dates (common in comparative decompositions).
-  const contentWordCount = claimText
-    .toLowerCase()
-    .replace(/[^\w\s]/g, " ")
-    .split(/\s+/)
-    .filter(w => w.length >= 4)
-    .length;
+  void gateConfig;
 
   // All claims are treated as potentially verifiable (AMBIGUOUS)
   // LLM analysis handles factuality through grounding
@@ -71,10 +62,8 @@ export function validateClaimGate1(
   const specificityScore = 0;
   const futureOriented = false;
 
-  // Pass criteria: filter only extremely content-poor claims (noise)
-  // Central claims are still always kept.
-  const isContentPoor = contentWordCount < minContentWords;
-  const wouldPass = !isContentPoor;
+  // Structural-only gate: reject only empty claims (no language-dependent text scoring).
+  const wouldPass = String(claimText || "").trim().length > 0;
 
   // CRITICAL: Central claims always pass Gate 1
   const passed = wouldPass || isCentral;

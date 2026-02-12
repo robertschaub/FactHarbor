@@ -18,6 +18,7 @@ import { generateText, Output } from "ai";
 import { getModelForTask, extractStructuredOutput, getStructuredOutputProviderOptions } from "./llm";
 import { getDeterministicTemperature } from "./config";
 import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
+import { loadAndRenderSection } from "./prompt-loader";
 
 // ============================================================================
 // TYPES
@@ -98,6 +99,17 @@ export type ContextDetectionOutput = z.infer<typeof ContextDetectionOutputSchema
  */
 export const UNASSIGNED_CONTEXT_ID = "CTX_UNASSIGNED";
 
+async function renderOrchestratedSection(
+  sectionName: string,
+  variables: Record<string, string>,
+): Promise<string> {
+  const rendered = await loadAndRenderSection("orchestrated", sectionName, variables);
+  if (!rendered?.content?.trim()) {
+    throw new Error(`Missing or empty orchestrated prompt section: ${sectionName}`);
+  }
+  return rendered.content;
+}
+
 // ============================================================================
 // HEURISTIC CONTEXT PRE-DETECTION (v2.8)
 // ============================================================================
@@ -134,16 +146,19 @@ export async function detectContextsLLM(
         .map((s) => `- ${s.id}: ${s.name} (${s.type})`)
         .join("\n")}`
     : "";
-
-  const systemPrompt = `You identify distinct AnalysisContexts for a claim.\n\nCRITICAL TERMINOLOGY:\n- Use "AnalysisContext" to mean top-level bounded analytical frames.\n- Use "EvidenceScope" only for per-source metadata (methodology/boundaries/time/geo).\n- Avoid the bare word "context" unless you explicitly mean AnalysisContext.\n\nINCOMPATIBILITY TEST: Split contexts ONLY if combining them would be MISLEADING because they evaluate fundamentally different things.\n\nWHEN TO SPLIT (only when clearly supported):\n- Different formal authorities (distinct institutional decision-makers)\n- Different measurement boundaries or system definitions\n- Different regulatory regimes or time periods that change the analytical frame\n\nDO NOT SPLIT ON:\n- Pro vs con viewpoints\n- Different evidence types\n- Incidental geographic/temporal mentions\n- Public perception or meta commentary\n- Third-party reactions/responses to X (when evaluating X itself)\n\nOUTPUT REQUIREMENTS:\n- Provide contexts as JSON array under 'contexts'.\n- Each context must include id, name, type, typeLabel, confidence (0-1), reasoning, metadata.\n- typeLabel: a short category label (e.g., "Electoral", "Scientific", "Regulatory", "General").\n- Use neutral, generic names tied to the input (no domain-specific hardcoding).${seedHint}`;
-
-  const userPrompt = `Detect distinct AnalysisContexts for:\n\n${text}`;
   const isAnthropic = (config.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic").toLowerCase() === "anthropic";
   const outputSchema = isAnthropic
     ? ContextDetectionOutputSchemaAnthropic
     : ContextDetectionOutputSchema;
 
   try {
+    const systemPrompt = await renderOrchestratedSection("ANALYSIS_CONTEXT_DETECTION_SYSTEM", {
+      SEED_HINT: seedHint,
+    });
+    const userPrompt = await renderOrchestratedSection("ANALYSIS_CONTEXT_DETECTION_USER", {
+      INPUT_TEXT: text,
+    });
+
     const result = await generateText({
       model: modelInfo.model,
       messages: [
@@ -271,7 +286,7 @@ async function mergeAndDeduplicateContexts(
 
 /**
  * LLM-powered context name similarity assessment (batch).
- * Falls back to Jaccard similarity on LLM failure.
+ * Returns missing scores on LLM failure (callers apply explicit defaults).
  */
 async function assessContextNameSimilarityBatch(
   pairs: Array<{ id: string; textA: string; textB: string }>,
@@ -283,17 +298,15 @@ async function assessContextNameSimilarityBatch(
     const pairTexts = pairs
       .map((p, i) => `[${i}] A: "${p.textA.slice(0, 200)}" | B: "${p.textB.slice(0, 200)}"`)
       .join("\n");
+    const prompt = await renderOrchestratedSection("ANALYSIS_CONTEXT_SIMILARITY_BATCH_USER", {
+      PAIR_TEXTS: pairTexts,
+    });
 
     const result = await generateText({
       model: modelInfo.model,
       messages: [{
         role: "user",
-        content: `Rate the semantic similarity of each analysis context name pair below on a scale from 0.0 (completely different topics) to 1.0 (same topic, possibly paraphrased).
-
-Pairs:
-${pairTexts}
-
-Return ONLY a JSON array of numbers (0.0 to 1.0), one per pair. No explanation.`,
+        content: prompt,
       }],
       temperature: 0,
     });
@@ -310,23 +323,10 @@ Return ONLY a JSON array of numbers (0.0 to 1.0), one per pair. No explanation.`
       }
       return map;
     }
-  } catch {
-    // LLM call failed — structural fallback
+  } catch (err) {
+    console.warn("[assessContextNameSimilarityBatch] LLM call failed; leaving scores unset", err);
   }
-
-  // Structural fallback: Jaccard similarity
-  const normalize = (s: string) =>
-    (s || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2);
-  const map = new Map<string, number>();
-  for (const pair of pairs) {
-    const words1 = new Set(normalize(pair.textA));
-    const words2 = new Set(normalize(pair.textB));
-    if (words1.size === 0 || words2.size === 0) { map.set(pair.id, 0); continue; }
-    const intersection = new Set([...words1].filter((w) => words2.has(w)));
-    const union = new Set([...words1, ...words2]);
-    map.set(pair.id, union.size === 0 ? 0 : intersection.size / union.size);
-  }
-  return map;
+  return new Map();
 }
 
 /**
@@ -379,35 +379,11 @@ export function formatDetectedContextsHint(contexts: DetectedAnalysisContext[] |
  */
 export function canonicalizeInputForContextDetection(input: string, pipelineConfig?: PipelineConfig): string {
   void pipelineConfig;
-  let text = String(input || "")
+  return String(input || "")
     .trim()
     .replace(/[?!.]+$/, "")
     .replace(/\s+/g, " ")
     .trim();
-
-  // Normalize case for consistency (lowercase for comparison)
-  const contextKey = text.toLowerCase();
-
-  console.log(`[Context Canonicalization] Input: "${input.substring(0, 60)}..."`);
-  console.log(`[Context Canonicalization] Canonical: "${contextKey.substring(0, 60)}..."`);
-
-  return contextKey;
-}
-
-/**
- * Extract core semantic entities from text for context matching.
- * These are the key nouns/proper nouns that define what the input is about.
- *
- * CRITICAL: This function MUST receive the original-case text (before lowercasing)
- * to properly detect proper nouns via capitalization patterns.
- */
-function extractCoreEntities(text: string): string[] {
-  // Look for proper nouns (capitalized words that aren't sentence-start)
-  // Matches single words (Einstein) and multi-word names (Angela Merkel)
-  const properNouns = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/g) || [];
-
-  // Deduplicate and normalize to lowercase
-  return [...new Set(properNouns.map(n => n.toLowerCase()))];
 }
 
 /**
@@ -417,23 +393,8 @@ function extractCoreEntities(text: string): string[] {
  * IMPORTANT: Pass the ORIGINAL text (not lowercased) so proper nouns are detected.
  */
 export function generateContextDetectionHint(originalInput: string): string {
-  const entities = extractCoreEntities(originalInput);
-
-  if (entities.length === 0) {
-    return '';
-  }
-
-  // Build a hint that emphasizes what contexts to look for
-  const hint = `
-CONTEXT DETECTION HINT (for input neutrality):
-Focus on detecting contexts related to these core entities: ${entities.join(', ')}.
-Do NOT detect contexts based on:
-- Whether the input is phrased as a question or statement
-- Public perception/opinion contexts (unless explicitly mentioned in input)
-- Meta-level contexts about "trust" or "confidence" in institutions (unless core topic)
-Focus on concrete, factual contexts (legal proceedings, regulatory reviews, methodological frameworks).
-`;
-  return hint;
+  void originalInput;
+  return "";
 }
 
 // ============================================================================
@@ -555,15 +516,14 @@ export function canonicalizeContextsWithRemap(
     const rawShort = String(p?.shortName || "").trim();
     const inferredShortFromName = extractAllCapsToken(rawName);
     const toAcronym = inferToAcronym(rawName);
-    // Detect generic names using the LLM-provided typeLabel instead of hardcoded domain terms.
-    // A name is generic if it's empty, just "General", or matches "<typeLabel> context/proceeding".
+    // Detect generic names using structural signals only (no language-specific token lists).
     const nameLower = rawName.toLowerCase();
+    const idLower = String(p?.id || "").toLowerCase();
+    const typeLower = String(typeLabel || "").toLowerCase();
     const isGenericName =
       rawName.length === 0 ||
-      /^general$/i.test(rawName) ||
-      (typeLabel && nameLower === `${typeLabel.toLowerCase()} context`) ||
-      (typeLabel && nameLower === `${typeLabel.toLowerCase()} proceeding`) ||
-      /^\w+\s+(context|proceeding|analysis|assessment)$/i.test(rawName);
+      nameLower === idLower ||
+      (typeLower.length > 0 && nameLower === typeLower);
     const subj = String(p?.subject || "").trim();
     const fallbackName = subj
       ? subj.substring(0, 120)

@@ -13,6 +13,7 @@
 import { generateText } from "ai";
 import type { ClaimVerdict, EvidenceItem } from "./types";
 import { getModelForTask } from "./llm";
+import { loadAndRenderSection } from "./prompt-loader";
 
 // ============================================================================
 // TYPES
@@ -75,17 +76,15 @@ async function extractKeyTermsBatch(reasonings: string[]): Promise<string[][]> {
     .map((r, i) => `[${i}]: ${r.slice(0, 500)}`)
     .join("\n");
 
-  const prompt = `Extract key factual terms from each numbered reasoning text below. These terms should be specific domain nouns, proper nouns, numbers, technical terms, and specific descriptors that could be traced back to cited evidence sources.
-
-Exclude: common English words, analysis words (evidence, claim, supports, contradicts, suggests, indicates, based, therefore, however, verdict, true, false, mixed), and words shorter than 3 characters.
-
-Reasonings:
-${numberedReasonings}
-
-Return ONLY a JSON array of arrays, one inner array of lowercase string terms per reasoning. No explanation.
-Example: [["solar", "panels", "efficiency", "2024"], ["battery", "lithium", "cost"]]`;
-
   try {
+    const rendered = await loadAndRenderSection("orchestrated", "GROUNDING_KEY_TERMS_BATCH_USER", {
+      NUMBERED_REASONINGS: numberedReasonings,
+    });
+    if (!rendered?.content?.trim()) {
+      throw new Error("Missing or empty orchestrated prompt section: GROUNDING_KEY_TERMS_BATCH_USER");
+    }
+    const prompt = rendered.content;
+
     const result = await generateText({
       model: modelInfo.model,
       messages: [{ role: "user", content: prompt }],
@@ -102,16 +101,12 @@ Example: [["solar", "panels", "efficiency", "2024"], ["battery", "lithium", "cos
         Array.isArray(terms) ? terms.filter((t): t is string => typeof t === "string") : []
       );
     }
-  } catch {
-    // LLM call failed — fall through to fallback
+  } catch (err) {
+    console.warn("[extractKeyTermsBatch] LLM extraction failed; returning empty term sets", err);
   }
 
-  // Fallback: simple tokenization (no stop words, just length filter)
-  return reasonings.map((r) =>
-    [...new Set(
-      r.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((t) => t.length >= 4)
-    )]
-  );
+  // No hidden deterministic fallback.
+  return reasonings.map(() => []);
 }
 
 /**

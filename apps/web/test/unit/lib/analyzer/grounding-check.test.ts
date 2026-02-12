@@ -72,14 +72,10 @@ describe("extractKeyTerms", () => {
     expect(terms).toEqual(["valid", "term"]);
   });
 
-  it("falls back to simple tokenization when LLM fails", async () => {
+  it("returns empty term set when LLM fails (no deterministic fallback)", async () => {
     mockGenerateText.mockRejectedValueOnce(new Error("LLM unavailable"));
     const terms = await extractKeyTerms("The battery technology improved dramatically");
-    // Fallback: words >= 4 chars, lowercased, deduplicated
-    expect(terms).toContain("battery");
-    expect(terms).toContain("technology");
-    expect(terms).toContain("improved");
-    expect(terms).toContain("dramatically");
+    expect(terms).toEqual([]);
   });
 });
 

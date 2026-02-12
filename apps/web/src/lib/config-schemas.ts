@@ -97,6 +97,23 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 
 const CONTEXT_PATTERN_ID_REGEX = /^CTX_[A-Z_]+$/;
 
+const TEMPORAL_PROMPT_TEXT_DEFAULTS = {
+  temporalPromptContractTemplate:
+    "## TEMPORAL AWARENESS CONTRACT (MANDATORY)\nCURRENT DATE: {{CURRENT_DATE_ISO}}\n- Treat your training knowledge as potentially stale for recent developments after your training snapshot.\n{{KNOWLEDGE_RULE}}\n{{RECENCY_RULE}}\n{{NO_FRESH_EVIDENCE_RULE}}\n{{RELATIVE_TIME_RULE}}",
+  temporalPromptKnowledgeRuleAllowed:
+    "- Background knowledge can support stable historical/process context, but current-status facts must defer to provided evidence.",
+  temporalPromptKnowledgeRuleEvidenceOnly:
+    "- Use evidence-only reasoning. Do not fill current-status gaps with background knowledge.",
+  temporalPromptRecencyRuleSensitive:
+    "- This topic is recency-sensitive. Any claim about current status requires cited web evidence anchored to dates.",
+  temporalPromptRecencyRuleGeneral:
+    "- If the claim is not explicitly time-sensitive, still avoid unsupported assumptions about the present.",
+  temporalPromptNoFreshEvidenceRule:
+    "- If current-status evidence is missing or stale, keep verdicts in UNVERIFIED (43-57%) instead of guessing.",
+  temporalPromptRelativeTimeRule:
+    '- Do not use unanchored relative-time statements ("currently", "recently", "today") unless backed by cited evidence.',
+} as const;
+
 export const PipelineConfigSchema = z.object({
   // === Model Selection ===
   llmProvider: z.enum(["anthropic", "openai", "google", "mistral"]).optional().describe("Primary LLM provider for analysis"),
@@ -264,10 +281,21 @@ export const PipelineConfigSchema = z.object({
     .describe("Confidence penalty (percentage points) when unique source count is at or below lowSourceThreshold (default: 15)"),
   recencyCueTerms: z.array(z.string().min(1)).max(50).optional()
     .describe("Configurable recency cue terms for time-sensitive detection (default: empty)"),
-  normalizationPredicateStarters: z.array(z.string().min(1)).max(300).optional()
-    .describe("Configurable predicate starter terms for yes/no normalization splitting (default: empty)"),
-  normalizationAdjectiveSuffixes: z.array(z.string().min(1)).max(30).optional()
-    .describe("Configurable adjective suffixes for yes/no normalization splitting (default: empty)"),
+  // UCM-managed templates for temporal-awareness prompt injection (used in verdict prompts).
+  temporalPromptContractTemplate: z.string().min(1).max(4000).optional()
+    .describe("Template for temporal awareness contract injected into verdict prompts"),
+  temporalPromptKnowledgeRuleAllowed: z.string().min(1).max(1000).optional()
+    .describe("Rule text when model knowledge is allowed"),
+  temporalPromptKnowledgeRuleEvidenceOnly: z.string().min(1).max(1000).optional()
+    .describe("Rule text when model knowledge is disallowed"),
+  temporalPromptRecencyRuleSensitive: z.string().min(1).max(1000).optional()
+    .describe("Rule text when claim is recency-sensitive"),
+  temporalPromptRecencyRuleGeneral: z.string().min(1).max(1000).optional()
+    .describe("Rule text when claim is not recency-sensitive"),
+  temporalPromptNoFreshEvidenceRule: z.string().min(1).max(1000).optional()
+    .describe("Rule text for missing/stale current evidence"),
+  temporalPromptRelativeTimeRule: z.string().min(1).max(1000).optional()
+    .describe("Rule text for relative-time language constraints"),
   searchRelevanceLlmMode: z.enum(["off", "auto", "on"]).optional()
     .describe("LLM relevance classification mode: off | auto | on (default: auto)"),
   searchRelevanceLlmMaxCalls: z.number().int().min(0).max(10).optional()
@@ -451,11 +479,26 @@ export const PipelineConfigSchema = z.object({
   if (data.recencyCueTerms === undefined) {
     data.recencyCueTerms = [];
   }
-  if (data.normalizationPredicateStarters === undefined) {
-    data.normalizationPredicateStarters = [];
+  if (data.temporalPromptContractTemplate === undefined) {
+    data.temporalPromptContractTemplate = TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptContractTemplate;
   }
-  if (data.normalizationAdjectiveSuffixes === undefined) {
-    data.normalizationAdjectiveSuffixes = [];
+  if (data.temporalPromptKnowledgeRuleAllowed === undefined) {
+    data.temporalPromptKnowledgeRuleAllowed = TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptKnowledgeRuleAllowed;
+  }
+  if (data.temporalPromptKnowledgeRuleEvidenceOnly === undefined) {
+    data.temporalPromptKnowledgeRuleEvidenceOnly = TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptKnowledgeRuleEvidenceOnly;
+  }
+  if (data.temporalPromptRecencyRuleSensitive === undefined) {
+    data.temporalPromptRecencyRuleSensitive = TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptRecencyRuleSensitive;
+  }
+  if (data.temporalPromptRecencyRuleGeneral === undefined) {
+    data.temporalPromptRecencyRuleGeneral = TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptRecencyRuleGeneral;
+  }
+  if (data.temporalPromptNoFreshEvidenceRule === undefined) {
+    data.temporalPromptNoFreshEvidenceRule = TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptNoFreshEvidenceRule;
+  }
+  if (data.temporalPromptRelativeTimeRule === undefined) {
+    data.temporalPromptRelativeTimeRule = TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptRelativeTimeRule;
   }
   if (data.searchRelevanceLlmMode === undefined) {
     data.searchRelevanceLlmMode = "auto";
@@ -579,8 +622,13 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   lowSourceThreshold: 2,
   lowSourceConfidencePenalty: 15,
   recencyCueTerms: [],
-  normalizationPredicateStarters: [],
-  normalizationAdjectiveSuffixes: [],
+  temporalPromptContractTemplate: TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptContractTemplate,
+  temporalPromptKnowledgeRuleAllowed: TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptKnowledgeRuleAllowed,
+  temporalPromptKnowledgeRuleEvidenceOnly: TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptKnowledgeRuleEvidenceOnly,
+  temporalPromptRecencyRuleSensitive: TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptRecencyRuleSensitive,
+  temporalPromptRecencyRuleGeneral: TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptRecencyRuleGeneral,
+  temporalPromptNoFreshEvidenceRule: TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptNoFreshEvidenceRule,
+  temporalPromptRelativeTimeRule: TEMPORAL_PROMPT_TEXT_DEFAULTS.temporalPromptRelativeTimeRule,
   searchRelevanceLlmMode: "auto",
   searchRelevanceLlmMaxCalls: 3,
   searchAdaptiveFallbackMinCandidates: 5,

@@ -12,24 +12,6 @@
 import type { EvidenceItem, ClaimUnderstanding, AnalysisContext } from "./types";
 
 /**
- * Month name to index mapping for date parsing
- */
-const MONTH_NAME_TO_INDEX: Record<string, number> = {
-  jan: 0, january: 0,
-  feb: 1, february: 1,
-  mar: 2, march: 2,
-  apr: 3, april: 3,
-  may: 4,
-  jun: 5, june: 5,
-  jul: 6, july: 6,
-  aug: 7, august: 7,
-  sep: 8, sept: 8, september: 8,
-  oct: 9, october: 9,
-  nov: 10, november: 10,
-  dec: 11, december: 11,
-};
-
-/**
  * Helper to push unique date candidates
  */
 function pushDateCandidate(dates: Date[], seen: Set<string>, date: Date | null) {
@@ -81,7 +63,7 @@ export class RecencyAssessor {
     understanding?: any,
     cueTerms?: string[],
   ): boolean {
-    const lowerText = text.toLowerCase();
+    void cueTerms;
 
     // Check for recent date mentions (within last 3 years)
     const currentYear = this.currentDate.getFullYear();
@@ -100,16 +82,6 @@ export class RecencyAssessor {
       for (const context of understanding.analysisContexts) {
         const dateStr = (context as AnalysisContext).temporal || "";
         if (dateStr && recentYears.some(year => dateStr.includes(String(year)))) {
-          return true;
-        }
-      }
-    }
-
-    if (Array.isArray(cueTerms) && cueTerms.length > 0) {
-      for (const term of cueTerms) {
-        if (!term) continue;
-        const needle = term.toLowerCase();
-        if (needle && lowerText.includes(needle)) {
           return true;
         }
       }
@@ -138,17 +110,6 @@ export class RecencyAssessor {
       const day = Number(match[3]);
       if (year < 1900 || year > maxYear) continue;
       pushDateCandidate(dates, seen, new Date(year, month, day));
-    }
-
-    // Month names: January 2024, Feb 2024
-    const monthPattern = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(20\d{2})\b/g;
-    for (const match of lower.matchAll(monthPattern)) {
-      const monthToken = match[1];
-      const year = Number(match[2]);
-      const monthIndex = MONTH_NAME_TO_INDEX[monthToken];
-      if (monthIndex == null || year < 1900 || year > maxYear) continue;
-      const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-      pushDateCandidate(dates, seen, new Date(year, monthIndex, lastDay));
     }
 
     // Quarters: Q1 2024, Q2 2024
