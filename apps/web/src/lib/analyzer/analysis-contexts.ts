@@ -360,44 +360,6 @@ export function formatDetectedContextsHint(contexts: DetectedAnalysisContext[] |
 }
 
 // ============================================================================
-// INPUT CANONICALIZATION FOR CONTEXT DETECTION (v2.8.2)
-// ============================================================================
-
-/**
- * Canonicalize input text for context detection to ensure consistent context
- * identification regardless of input phrasing (question vs statement).
- *
- * This addresses the input neutrality issue where:
- * - "Was the legal proceeding fair?" detected 3 contexts
- * - "The legal proceeding was fair" detected 4 contexts
- *
- * The function normalizes both phrasings to the same canonical form for
- * context detection purposes.
- *
- * @param input - Raw or pre-normalized input text
- * @returns Canonical form for context detection
- */
-export function canonicalizeInputForContextDetection(input: string, pipelineConfig?: PipelineConfig): string {
-  void pipelineConfig;
-  return String(input || "")
-    .trim()
-    .replace(/[?!.]+$/, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/**
- * Generate a context detection hint based on the original input text.
- * This helps guide the LLM to detect consistent contexts regardless of phrasing.
- *
- * IMPORTANT: Pass the ORIGINAL text (not lowercased) so proper nouns are detected.
- */
-export function generateContextDetectionHint(originalInput: string): string {
-  void originalInput;
-  return "";
-}
-
-// ============================================================================
 // DETERMINISTIC CONTEXT ID GENERATION
 // ============================================================================
 
