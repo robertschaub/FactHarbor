@@ -29,7 +29,7 @@ There is no single combined profile object; each config type is versioned indepe
 * **PipelineConfig** — LLM provider selection, model routing, budgets, feature flags
 * **SearchConfig** — Web search behavior (provider, max results, timeouts)
 * **CalcConfig** — Calculation thresholds and verdict bands
-* **PromptConfig** — LLM prompts and templates
+* **PromptConfig** — Prompt profiles (pipeline + text-analysis templates) stored in UCM
 * **Evidence Lexicon** — Evidence filtering patterns (UCM lexicon)
 * **Aggregation Lexicon** — Aggregation heuristics (UCM lexicon)
 * **Source Reliability (SR)** — SR service config (separate SR domain)
@@ -270,34 +270,23 @@ interface ConfigProfile<T> {
 
 === 5.2 PromptConfig ===
 
-**Purpose**: Controls LLM behavior and prompt templates
+**Purpose**: Stores prompt text templates by profile. Runtime behavior fields (provider, model routing, budget controls) are in ##PipelineConfig##.
 
-**Key Settings**:
+**Supported Prompt Profiles**:
 
-|= Setting |= Description |= Default |= Range
-| **provider** | LLM provider (anthropic/openai/google) | ##anthropic## | —
-| **model** | Specific model (sonnet-4/gpt-4/gemini-1.5-pro) | Provider default | —
-| **temperature** | Creativity level (lower = more deterministic) | ##0.2## | 0.0–1.0
-| **maxTokens** | Max output tokens per LLM call | ##8000## | 1000–200000
-| **systemPrompt** | Custom system prompt (optional) | ##""## | —
-| **tier** | Budget tier (premium/standard/budget) | ##standard## | —
-| **knowledgeMode** | Use model knowledge (with/without) | ##without## | —
+|= Profile Key |= Used By |= Default File Path
+| ##orchestrated## | Orchestrated analysis pipeline | ##apps/web/prompts/orchestrated.prompt.md##
+| ##monolithic-dynamic## | Monolithic dynamic pipeline | ##apps/web/prompts/monolithic-dynamic.prompt.md##
+| ##source-reliability## | Source reliability evaluator | ##apps/web/prompts/source-reliability.prompt.md##
+| ##text-analysis-input## | Input classification stage | ##apps/web/prompts/text-analysis/text-analysis-input.prompt.md##
+| ##text-analysis-evidence## | Evidence-quality stage | ##apps/web/prompts/text-analysis/text-analysis-evidence.prompt.md##
+| ##text-analysis-context## | Context similarity stage | ##apps/web/prompts/text-analysis/text-analysis-context.prompt.md##
+| ##text-analysis-verdict## | Verdict-validation stage | ##apps/web/prompts/text-analysis/text-analysis-verdict.prompt.md##
 
-**Example PromptConfig**:
-
-{{code language="json"}}
-{
-  "provider": "anthropic",
-  "model": "claude-sonnet-4",
-  "temperature": 0.0,
-  "maxTokens": 16000,
-  "systemPrompt": "",
-  "tier": "premium",
-  "knowledgeMode": "without"
-}
-{{/code}}
-
-**Use Case**: High-stakes fact-checking with deterministic output
+**Operational Notes**:
+* Prompt import/export/reseed APIs validate profile keys against the canonical allowlist.
+* For ##text-analysis-*## profiles, frontmatter pipeline is validated as ##text-analysis##.
+* Prompt text that influences analysis should be managed via UCM prompt profiles (not hardcoded in runtime code).
 
 === 5.3 CalcConfig ===
 
@@ -384,6 +373,23 @@ evidenceFilter: {
 | **llmTiering** | Enable model tiering | ##false## | —
 | **searchEnabled** | Enable search step | ##true## | —
 
+==== Additional Admin-Exposed Fields (Current UI) ====
+
+|= Setting |= Description |= Default
+| **understandMaxChars** | Max input chars sent to UNDERSTAND | ##12000##
+| **understandLlmTimeoutMs** | LLM timeout for UNDERSTAND stage | ##600000##
+| **extractEvidenceLlmTimeoutMs** | LLM timeout for EXTRACT_EVIDENCE stage | ##300000##
+| **temporalPromptContractTemplate** | Temporal contract template injected into prompts | UCM default text
+| **temporalPromptKnowledgeRuleAllowed** | Knowledge rule when model knowledge is allowed | UCM default text
+| **temporalPromptKnowledgeRuleEvidenceOnly** | Knowledge rule for evidence-only runs | UCM default text
+| **temporalPromptRecencyRuleSensitive** | Recency rule for time-sensitive claims | UCM default text
+| **temporalPromptRecencyRuleGeneral** | Recency rule for general claims | UCM default text
+| **temporalPromptNoFreshEvidenceRule** | Guardrail when fresh evidence is missing | UCM default text
+| **temporalPromptRelativeTimeRule** | Relative-time wording guardrail | UCM default text
+| **gapResearchEnabled** | Enable post-pass gap-driven research | ##true##
+| **gapResearchMaxIterations** | Max gap-research iterations | ##2##
+| **gapResearchMaxQueries** | Max gap-research queries | ##8##
+
 ==== Claim Filtering Options ====
 
 These options control the multi-layer claim filtering system:
@@ -442,12 +448,11 @@ These options control the multi-layer claim filtering system:
 * maxResults: ##12## (gather more evidence)
 * domainWhitelist: Trusted sources only (nih.gov, gov, .edu, nature.com, etc.)
 
-**PromptConfig**:
-* Provider: ##anthropic## (strongest reasoning)
-* Model: ##claude-sonnet-4##
-* Temperature: ##0.0## (deterministic)
-* Tier: ##premium## (no limits)
-* knowledgeMode: ##without## (sources-only)
+**PipelineConfig**:
+* llmProvider: ##anthropic## (strong reasoning on complex claims)
+* modelVerdict: high-quality reasoning model
+* deterministic: ##true## (reproducible outputs)
+* allowModelKnowledge: ##false## (evidence-first)
 
 **CalcConfig**:
 * Verdict bands: Conservative (shift thresholds higher)
@@ -468,12 +473,11 @@ These options control the multi-layer claim filtering system:
 * maxResults: ##10##
 * domainWhitelist: ##[]## (no restrictions)
 
-**PromptConfig**:
-* Provider: ##google## (good for exploration)
-* Model: ##gemini-1.5-pro##
-* Temperature: ##0.3## (slightly more creative)
-* Tier: ##standard##
-* knowledgeMode: ##with## (allow model knowledge for context)
+**PipelineConfig**:
+* llmProvider: ##google## (or preferred exploratory provider)
+* analysisMode: ##deep##
+* allowModelKnowledge: ##true## (broader context exploration)
+* llmTiering: ##true## (cost-balanced)
 
 **CalcConfig**:
 * Verdict bands: Standard (default)
@@ -495,12 +499,11 @@ These options control the multi-layer claim filtering system:
 * maxSourcesPerIteration: ##2##
 * timeoutMs: ##8000## (shorter timeout)
 
-**PromptConfig**:
-* Provider: ##anthropic##
-* Model: ##claude-haiku-3.5## (cheapest, still good)
-* Temperature: ##0.2##
-* maxTokens: ##4000## (reduced)
-* Tier: ##budget## (enforces token limits)
+**PipelineConfig**:
+* llmTiering: ##true## (cheaper models for simpler stages)
+* modelExtractEvidence: lower-cost extraction model
+* maxTotalTokens: reduced budget cap
+* maxTokensPerCall: reduced per-call cap
 
 **CalcConfig**:
 * Verdict bands: Standard
@@ -520,10 +523,10 @@ These options control the multi-layer claim filtering system:
 * maxResults: ##8##
 * dateRestrict: ##null## (include historical cases)
 
-**PromptConfig**:
-* Provider: ##anthropic##
-* Model: ##claude-sonnet-4## (best for legal reasoning)
-* systemPrompt: "You are analyzing legal claims. Focus on case law, statutes, and court rulings. Cite specific cases and provisions."
+**PipelineConfig + Prompt Profiles**:
+* llmProvider: ##anthropic##
+* modelVerdict: high-quality reasoning model
+* Customize domain instructions in UCM prompt profile (usually ##prompt:orchestrated##)
 
 **CalcConfig**:
 * sourceTypeCalibration: Boost legal sources — legal_document 1.10, government_report 1.05, other 0.6
@@ -547,7 +550,7 @@ These options control the multi-layer claim filtering system:
 **Solutions**:
 1. Check browser console for validation errors (F12 → Console tab)
 1. Verify all required fields have values
-1. Check value ranges: maxResults 1–20, temperature 0.0–1.0, timeoutMs 1000–60000
+1. Check value ranges: maxResults 1–20, contextDedupThreshold 0.5–1.0, timeoutMs 1000–60000
 
 === Profile Import Fails ===
 
@@ -746,19 +749,18 @@ These options control the multi-layer claim filtering system:
 }
 {{/code}}
 
-=== Default PromptConfig ===
+=== Default Prompt Profiles ===
 
-{{code language="json"}}
-{
-  "provider": "anthropic",
-  "model": "claude-sonnet-3.5",
-  "temperature": 0.2,
-  "maxTokens": 8000,
-  "systemPrompt": "",
-  "tier": "standard",
-  "knowledgeMode": "without"
-}
-{{/code}}
+Prompt defaults are seeded from markdown files, one profile per prompt domain:
+
+|= Profile Key |= Default File
+| ##orchestrated## | ##apps/web/prompts/orchestrated.prompt.md##
+| ##monolithic-dynamic## | ##apps/web/prompts/monolithic-dynamic.prompt.md##
+| ##source-reliability## | ##apps/web/prompts/source-reliability.prompt.md##
+| ##text-analysis-input## | ##apps/web/prompts/text-analysis/text-analysis-input.prompt.md##
+| ##text-analysis-evidence## | ##apps/web/prompts/text-analysis/text-analysis-evidence.prompt.md##
+| ##text-analysis-context## | ##apps/web/prompts/text-analysis/text-analysis-context.prompt.md##
+| ##text-analysis-verdict## | ##apps/web/prompts/text-analysis/text-analysis-verdict.prompt.md##
 
 === Default CalcConfig ===
 

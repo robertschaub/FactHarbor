@@ -29,7 +29,7 @@ The Unified Configuration Management system provides a single interface for mana
 | **Search** | ##default## | Web search provider settings
 | **Calculation** | ##default## | Verdict aggregation and weighting parameters
 | **Source Reliability** | ##default## | SR service thresholds, caching, filtering (separate SR domain)
-| **Prompt** | ##orchestrated##, ##monolithic-dynamic##, ##source-reliability## | LLM prompt templates for each pipeline
+| **Prompt** | ##orchestrated##, ##monolithic-dynamic##, ##source-reliability##, ##text-analysis-input##, ##text-analysis-evidence##, ##text-analysis-context##, ##text-analysis-verdict## | LLM prompt templates (pipeline + text-analysis stages)
 
 === Tabs ===
 

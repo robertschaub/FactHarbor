@@ -443,7 +443,7 @@ See: [Knowledge_Transfer_UCM_Terminology.md](../Knowledge_Transfer_UCM_Terminolo
   - `POST /api/admin/config/prompt/:profile/import` - Upload .prompt.md files with validation
   - `GET /api/admin/config/prompt/:profile/export` - Download prompts with metadata
   - `POST /api/admin/config/prompt/:profile/reseed` - Re-seed from disk for dev workflow
-  - Text-analysis profiles now supported: `text-analysis-input`, `text-analysis-evidence`, `text-analysis-scope`, `text-analysis-verdict` (legacy filename for context similarity)
+  - Text-analysis profiles now supported: `text-analysis-input`, `text-analysis-evidence`, `text-analysis-context`, `text-analysis-verdict`
 - **Comprehensive Test Coverage**: 158 unit tests for config system (A+ grade)
   - `config-schemas.test.ts`: 50 tests for validation, parsing, canonicalization
   - `config-storage.test.ts`: 26 tests for CRUD, caching, env overrides

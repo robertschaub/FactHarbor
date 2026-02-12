@@ -133,7 +133,7 @@ apps/web/
     ├── source-reliability-prompt.txt
     ├── text-analysis-input-prompt.txt        # Input classification tests
     ├── text-analysis-evidence-prompt.txt     # Evidence quality tests
-    ├── text-analysis-scope-prompt.txt        # Context similarity tests (legacy filename)
+    ├── text-analysis-context-prompt.txt      # Context similarity tests
     └── text-analysis-verdict-prompt.txt      # Verdict validation tests
 {{/code}}
 
