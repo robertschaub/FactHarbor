@@ -1,5 +1,7 @@
 # Copilot / AI agent instructions — FactHarbor
 
+> **Canonical source:** `/AGENTS.md`. This file is a summary. If rules diverge, follow AGENTS.md.
+>
 > **For domain-heavy tasks** (pipeline changes, prompt engineering, terminology, architecture):
 > read `/AGENTS.md` first — it contains all project rules, terminology, and architecture reference.
 

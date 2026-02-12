@@ -1,5 +1,7 @@
 # FactHarbor — Cline Rules
 
+> **Canonical source:** `/AGENTS.md`. This file is a summary. If rules diverge, follow AGENTS.md.
+
 **Read `/AGENTS.md` first** — it contains all project rules, terminology, architecture, and safety rules. This file adds Cline-specific notes.
 
 ## Project Overview
@@ -44,6 +46,12 @@ Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pip
 ## When Using Kimi K2 as the Model
 
 Kimi K2 may not know FactHarbor conventions. Follow the terminology section above strictly. When in doubt, read `/AGENTS.md` for the authoritative glossary.
+
+## Roles
+
+When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role definition to load from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 and which documents to read.
+
+**Context-budget note:** If loading all Required Reading exceeds your context window, load only the role entry from §2 and defer document reads until needed for the specific task.
 
 ## Agent Handoff
 

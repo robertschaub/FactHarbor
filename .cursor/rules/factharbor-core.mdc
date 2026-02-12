@@ -5,6 +5,8 @@ alwaysApply: true
 
 # FactHarbor — Core Rules
 
+> **Canonical source:** `/AGENTS.md`. This file is a summary. If rules diverge, follow AGENTS.md.
+
 Read `/AGENTS.md` for full project rules, architecture, and domain knowledge.
 
 ## Project Overview
