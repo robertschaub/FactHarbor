@@ -104,7 +104,6 @@ export {
   extractDomain,
   isImportantSource,
   normalizeTrackRecordScore,
-  clampTruthPercentage,
   calculateEffectiveWeight,
 
   // Configuration

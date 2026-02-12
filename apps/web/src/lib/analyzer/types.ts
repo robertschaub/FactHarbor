@@ -7,6 +7,45 @@
  */
 
 // ============================================================================
+// BRANDED TYPES FOR RUNTIME VALIDATION
+// ============================================================================
+
+/**
+ * Validates a truth percentage value.
+ *
+ * This function enforces that truth percentages are:
+ * - Finite numbers (not NaN, not Infinity)
+ * - Within the valid [0, 100] range
+ *
+ * If validation fails, throws an error with diagnostic information.
+ * This fail-fast approach helps catch calculation bugs during development
+ * rather than silently masking them with fallback values.
+ *
+ * @param value - The number to validate
+ * @param context - Optional context string for error messages (e.g., "claim verdict", "SR adjustment")
+ * @returns The validated value
+ * @throws Error if value is non-finite or out of range
+ */
+export function assertValidTruthPercentage(
+  value: number,
+  context?: string
+): number {
+  if (!Number.isFinite(value)) {
+    throw new Error(
+      `Invalid truth percentage${context ? ` (${context})` : ""}: ${value} is not finite (NaN or Infinity)`
+    );
+  }
+
+  if (value < 0 || value > 100) {
+    throw new Error(
+      `Invalid truth percentage${context ? ` (${context})` : ""}: ${value} is out of valid range [0, 100]`
+    );
+  }
+
+  return value;
+}
+
+// ============================================================================
 // INPUT TYPES
 // ============================================================================
 
@@ -643,6 +682,7 @@ export type AnalysisWarningSeverity = "error" | "warning" | "info";
  */
 export type AnalysisWarningType =
   | "verdict_direction_mismatch"    // Verdict percentage contradicts evidence direction
+  | "report_damaged"                // Final report integrity degraded by critical failures
   | "structured_output_failure"     // LLM structured output failed, using fallback
   | "evidence_filter_degradation"   // LLM evidence filter failed, using heuristics
   | "search_fallback"               // Grounded search failed, using standard search

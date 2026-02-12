@@ -13,12 +13,11 @@
 // Re-export everything from orchestrated pipeline
 export {
   runFactHarborAnalysis,
-  normalizeYesNoQuestionToStatement,
   normalizeTrackRecordScore,
-  clampTruthPercentage,
 } from "./analyzer/orchestrated";
 
-// Re-export types that may be used externally
+// Re-export validation utilities and types
+export { assertValidTruthPercentage } from "./analyzer/types";
 export type {
   AnalysisInput,
   ResearchState,

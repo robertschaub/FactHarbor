@@ -12,6 +12,7 @@
 import { CONFIG } from "./config";
 import { getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
 import type { ClaimVerdict, EvidenceItem, FetchedSource } from "./types";
+import { assertValidTruthPercentage } from "./types";
 import { batchGetCachedData, setCachedScore, setCacheTtlDays, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
 import { getSRConfig, scoreToFactualRating, setSRConfig } from "../source-reliability-config";
 import type { SourceReliabilityConfig } from "../config-schemas";
@@ -374,16 +375,6 @@ export function normalizeTrackRecordScore(score: number): number {
   return Math.max(0, Math.min(1, score));
 }
 
-/**
- * Clamp truth percentage to valid [0, 100] range
- */
-export function clampTruthPercentage(value: number): number {
-  if (!Number.isFinite(value)) {
-    return 50; // Default to neutral if invalid
-  }
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
 // ============================================================================
 // EVIDENCE WEIGHTING
 // ============================================================================
@@ -510,8 +501,8 @@ export function applyEvidenceWeighting(
     // Adjust confidence: scale by reliability
     const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avgWeight / 2));
 
-    // Clamp to valid ranges
-    const clampedTruth = clampTruthPercentage(adjustedTruth);
+    // Validate truth percentage is in valid range (SR adjustment can produce edge-case values)
+    const clampedTruth = assertValidTruthPercentage(Math.round(adjustedTruth), "SR-adjusted truth");
     const clampedConfidence = Math.max(0, Math.min(100, adjustedConfidence));
 
     return {
