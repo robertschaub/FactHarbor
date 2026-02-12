@@ -2450,6 +2450,68 @@ function isAnthropicProvider(providerOverride?: string): boolean {
   return provider === "anthropic" || provider === "claude";
 }
 
+type LlmProviderIssue = {
+  kind: "quota_or_credits" | "invalid_api_key" | "rate_limited" | "service_unavailable";
+  message: string;
+  hint: string;
+};
+
+function classifyLlmProviderIssue(errorText: string): LlmProviderIssue | null {
+  const msg = String(errorText || "").toLowerCase();
+
+  if (
+    msg.includes("credit balance is too low") ||
+    msg.includes("insufficient_quota") ||
+    (msg.includes("quota") && (msg.includes("exceeded") || msg.includes("exhausted")))
+  ) {
+    return {
+      kind: "quota_or_credits",
+      message: "LLM provider credits/quota exhausted. Verdict generation could not complete.",
+      hint: "Add provider credits or raise quota, then rerun analysis.",
+    };
+  }
+
+  if (
+    msg.includes("invalid_api_key") ||
+    (msg.includes("api key") && (msg.includes("invalid") || msg.includes("missing"))) ||
+    msg.includes("unauthorized") ||
+    msg.includes(" 401")
+  ) {
+    return {
+      kind: "invalid_api_key",
+      message: "LLM provider authentication failed (invalid/missing API key).",
+      hint: "Fix the provider API key in environment/UCM settings, then rerun analysis.",
+    };
+  }
+
+  if (
+    msg.includes("rate limit") ||
+    msg.includes("too many requests") ||
+    msg.includes(" 429")
+  ) {
+    return {
+      kind: "rate_limited",
+      message: "LLM provider rate limit hit during analysis.",
+      hint: "Retry after cooldown or reduce concurrency/request volume.",
+    };
+  }
+
+  if (
+    msg.includes("service unavailable") ||
+    msg.includes("temporarily unavailable") ||
+    msg.includes("overloaded") ||
+    msg.includes(" 503")
+  ) {
+    return {
+      kind: "service_unavailable",
+      message: "LLM provider service was temporarily unavailable.",
+      hint: "Retry once provider service recovers.",
+    };
+  }
+
+  return null;
+}
+
 /**
  * Safely extract structured output from AI SDK generateText result
  * Handles different SDK versions and result structures
@@ -7163,6 +7225,7 @@ async function generateMultiContextVerdicts(
   const userPrompt = renderedVerdictUser.content;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null = null;
+  let llmProviderIssue: LlmProviderIssue | null = null;
   const multiContextOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
     ? VERDICTS_SCHEMA_MULTI_CONTEXT_ANTHROPIC
     : VERDICTS_SCHEMA_MULTI_CONTEXT;
@@ -7420,6 +7483,10 @@ async function generateMultiContextVerdicts(
       if (errMsg.includes("output_format.schema") && errMsg.includes("maximum, minimum")) {
         debugLog("âŒ Anthropic schema constraint error (numeric bounds unsupported)");
       }
+      const providerIssue = classifyLlmProviderIssue(errMsg);
+      if (providerIssue && !llmProviderIssue) {
+        llmProviderIssue = providerIssue;
+      }
       state.llmCalls++;
 
       // Attempt recovery from the SDK error payload (often contains the raw JSON/text).
@@ -7473,8 +7540,9 @@ async function generateMultiContextVerdicts(
         confidence: 50,
         truthPercentage: 50,
         riskTier: "B" as const,
-        reasoning:
-          "Unable to generate verdict due to structured-output failure. Manual review recommended.",
+        reasoning: llmProviderIssue
+          ? "Unable to generate verdict due to LLM provider failure."
+          : "Unable to generate verdict due to structured-output failure. Manual review recommended.",
         supportingEvidenceIds: [],
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
@@ -7498,8 +7566,9 @@ async function generateMultiContextVerdicts(
       confidence: 50,
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
-      nuancedAnswer:
-        "Verdict generation failed due to a structured-output error (schema/provider mismatch or malformed JSON). Manual review recommended.",
+      nuancedAnswer: llmProviderIssue
+        ? `Verdict generation failed because the LLM provider was unavailable: ${llmProviderIssue.message}`
+        : "Verdict generation failed due to a structured-output error (schema/provider mismatch or malformed JSON). Manual review recommended.",
       keyFactors: [],
       hasMultipleContexts: true,
       analysisContextAnswers: understanding.analysisContexts.map(
@@ -7540,15 +7609,28 @@ async function generateMultiContextVerdicts(
       },
     };
 
-    // P1: Track structured output failure
-    state.analysisWarnings.push({
-      type: "structured_output_failure",
-      severity: "error",
-      message: "Multi-context verdict generation failed due to structured output error. Using fallback verdicts (50% uncertain).",
-      details: {
-        fallbackClaimCount: fallbackVerdicts.length,
-      },
-    });
+    if (llmProviderIssue) {
+      state.analysisWarnings.push({
+        type: "llm_provider_error",
+        severity: "error",
+        message: `Multi-context verdict generation failed: ${llmProviderIssue.message}`,
+        details: {
+          issueKind: llmProviderIssue.kind,
+          remediationHints: [llmProviderIssue.hint],
+          fallbackClaimCount: fallbackVerdicts.length,
+        },
+      });
+    } else {
+      // P1: Track structured output failure
+      state.analysisWarnings.push({
+        type: "structured_output_failure",
+        severity: "error",
+        message: "Multi-context verdict generation failed due to structured output error. Using fallback verdicts (50% uncertain).",
+        details: {
+          fallbackClaimCount: fallbackVerdicts.length,
+        },
+      });
+    }
 
     return { claimVerdicts: fallbackVerdicts, articleAnalysis, verdictSummary };
   }
@@ -8152,6 +8234,7 @@ async function generateSingleContextVerdicts(
   const userPrompt = renderedAnswerUser.content;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_SIMPLE> | null = null;
+  let llmProviderIssue: LlmProviderIssue | null = null;
   const singleContextOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
     ? VERDICTS_SCHEMA_SIMPLE_ANTHROPIC
     : VERDICTS_SCHEMA_SIMPLE;
@@ -8252,6 +8335,10 @@ async function generateSingleContextVerdicts(
       if (errMessage.includes("output_format.schema") && errMessage.includes("maximum, minimum")) {
         debugLog("generateSingleContextVerdicts: Anthropic schema constraint error (numeric bounds unsupported)");
       }
+      const providerIssue = classifyLlmProviderIssue(errMessage);
+      if (providerIssue && !llmProviderIssue) {
+        llmProviderIssue = providerIssue;
+      }
       state.llmCalls++;
 
       if (attempt.label === "primary") {
@@ -8277,7 +8364,9 @@ async function generateSingleContextVerdicts(
         confidence: 50,
         truthPercentage: 50,
         riskTier: "B" as const,
-        reasoning: "Unable to generate verdict due to structured-output failure.",
+        reasoning: llmProviderIssue
+          ? "Unable to generate verdict due to LLM provider failure."
+          : "Unable to generate verdict due to structured-output failure.",
         supportingEvidenceIds: [],
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
@@ -8299,8 +8388,9 @@ async function generateSingleContextVerdicts(
       confidence: 50,
       truthPercentage: 50,
       shortAnswer: "Unable to determine - analysis failed",
-      nuancedAnswer:
-        "Verdict generation failed due to a structured-output error (schema/provider mismatch or malformed JSON). Manual review recommended.",
+      nuancedAnswer: llmProviderIssue
+        ? `Verdict generation failed because the LLM provider was unavailable: ${llmProviderIssue.message}`
+        : "Verdict generation failed due to a structured-output error (schema/provider mismatch or malformed JSON). Manual review recommended.",
       keyFactors: [],
       hasMultipleContexts: false,
     };
@@ -8331,15 +8421,28 @@ async function generateSingleContextVerdicts(
       },
     };
 
-    // P1: Track structured output failure
-    state.analysisWarnings.push({
-      type: "structured_output_failure",
-      severity: "error",
-      message: "Single-context verdict generation failed due to structured output error. Using fallback verdicts (50% uncertain).",
-      details: {
-        fallbackClaimCount: fallbackVerdicts.length,
-      },
-    });
+    if (llmProviderIssue) {
+      state.analysisWarnings.push({
+        type: "llm_provider_error",
+        severity: "error",
+        message: `Single-context verdict generation failed: ${llmProviderIssue.message}`,
+        details: {
+          issueKind: llmProviderIssue.kind,
+          remediationHints: [llmProviderIssue.hint],
+          fallbackClaimCount: fallbackVerdicts.length,
+        },
+      });
+    } else {
+      // P1: Track structured output failure
+      state.analysisWarnings.push({
+        type: "structured_output_failure",
+        severity: "error",
+        message: "Single-context verdict generation failed due to structured output error. Using fallback verdicts (50% uncertain).",
+        details: {
+          fallbackClaimCount: fallbackVerdicts.length,
+        },
+      });
+    }
 
     return { claimVerdicts: fallbackVerdicts, articleAnalysis, verdictSummary };
   }
@@ -8751,6 +8854,7 @@ ${providerPromptHint}`;
   systemPrompt += `\n\n${renderedClaimEvidenceQuality.content}`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_CLAIM> | null = null;
+  let llmProviderIssue: LlmProviderIssue | null = null;
   const claimOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
     ? VERDICTS_SCHEMA_CLAIM_ANTHROPIC
     : VERDICTS_SCHEMA_CLAIM;
@@ -8847,6 +8951,10 @@ ${providerPromptHint}`;
       if (errMsg.includes("output_format.schema") && errMsg.includes("maximum, minimum")) {
         debugLog("generateClaimVerdicts: Anthropic schema constraint error (numeric bounds unsupported)");
       }
+      const providerIssue = classifyLlmProviderIssue(errMsg);
+      if (providerIssue && !llmProviderIssue) {
+        llmProviderIssue = providerIssue;
+      }
       state.llmCalls++;
 
       if (attempt.label === "primary") {
@@ -8868,8 +8976,9 @@ ${providerPromptHint}`;
         confidence: 50,
         truthPercentage: 50,
         riskTier: "B" as const,
-        reasoning:
-          "Unable to generate verdict due to structured-output failure. Manual review recommended.",
+        reasoning: llmProviderIssue
+          ? "Unable to generate verdict due to LLM provider failure."
+          : "Unable to generate verdict due to structured-output failure. Manual review recommended.",
         supportingEvidenceIds: [],
         isCentral: claim.isCentral || false,
         centrality: claim.centrality || "medium",
@@ -8913,15 +9022,28 @@ ${providerPromptHint}`;
       },
     };
 
-    // P1: Track structured output failure
-    state.analysisWarnings.push({
-      type: "structured_output_failure",
-      severity: "error",
-      message: "Claim verdict generation failed due to structured output error. Using fallback verdicts (50% uncertain).",
-      details: {
-        fallbackClaimCount: fallbackVerdicts.length,
-      },
-    });
+    if (llmProviderIssue) {
+      state.analysisWarnings.push({
+        type: "llm_provider_error",
+        severity: "error",
+        message: `Claim verdict generation failed: ${llmProviderIssue.message}`,
+        details: {
+          issueKind: llmProviderIssue.kind,
+          remediationHints: [llmProviderIssue.hint],
+          fallbackClaimCount: fallbackVerdicts.length,
+        },
+      });
+    } else {
+      // P1: Track structured output failure
+      state.analysisWarnings.push({
+        type: "structured_output_failure",
+        severity: "error",
+        message: "Claim verdict generation failed due to structured output error. Using fallback verdicts (50% uncertain).",
+        details: {
+          fallbackClaimCount: fallbackVerdicts.length,
+        },
+      });
+    }
 
     return { claimVerdicts: fallbackVerdicts, articleAnalysis };
   }
@@ -9603,6 +9725,7 @@ function generateMethodologyAssessment(
 }
 
 const REPORT_DAMAGE_TRIGGER_TYPES = new Set<string>([
+  "llm_provider_error",
   "structured_output_failure",
   "budget_exceeded",
   "search_provider_error",
@@ -9610,6 +9733,8 @@ const REPORT_DAMAGE_TRIGGER_TYPES = new Set<string>([
 
 function reportDamageHintForType(type: string): string {
   switch (type) {
+    case "llm_provider_error":
+      return "Check LLM provider credits/quota/API key/availability and rerun after provider health is restored.";
     case "structured_output_failure":
       return "Retry with fewer claims/contexts or shorter outputs; structured output failures are often truncation-related.";
     case "budget_exceeded":
@@ -10277,7 +10402,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       isGroundedSearchAvailable(state.pipelineConfig?.llmProvider)
     ) {
       await emit(
-        `ðŸ” Using Gemini Grounded Search for: "${decision.focus}"`,
+        `\u{1F50D} Using Gemini Grounded Search for: "${decision.focus}"`,
         baseProgress + 1,
       );
 
@@ -10309,7 +10434,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           const domainPreview = uniqueGroundedDomains.length <= 3
             ? uniqueGroundedDomains.join(', ')
             : `${uniqueGroundedDomains.slice(0, 3).join(', ')} +${uniqueGroundedDomains.length - 3} more`;
-          await emit(`ðŸ“Š Checking source reliability (${uniqueGroundedDomains.length}): ${domainPreview}`, baseProgress + 3);
+          await emit(`\u{1F4CA} Checking source reliability (${uniqueGroundedDomains.length}): ${domainPreview}`, baseProgress + 3);
           // v2.9.0: Use SR service interface
           await srService.prefetch(groundedUrls);
 
@@ -10434,7 +10559,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       const searchProviders = getActiveSearchProviders(searchConfig).join("+");
       const dateFilterMsg = dateRestrict ? ` [filtering: past ${dateRestrict === "y" ? "year" : dateRestrict === "m" ? "month" : "week"}]` : "";
       await emit(
-        `ðŸ” Searching [${searchProviders}]${dateFilterMsg}: "${query}"`,
+        `\u{1F50D} Searching [${searchProviders}]${dateFilterMsg}: "${query}"`,
         baseProgress + 1,
       );
 
@@ -10781,7 +10906,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
         if (fallbackQueries.length > 0) {
           await emit(
-            `ðŸ” Adaptive fallback step 3: broad search (${relevantResults.length}/${adaptiveMinCandidates} candidates)`,
+            `\u{1F501} Adaptive fallback step 3: broad search (${relevantResults.length}/${adaptiveMinCandidates} candidates)`,
             baseProgress + 2,
           );
         }
@@ -10948,7 +11073,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const domainPreview2 = uniqueDomainsToFetch.length <= 3
       ? uniqueDomainsToFetch.join(', ')
       : `${uniqueDomainsToFetch.slice(0, 3).join(', ')} +${uniqueDomainsToFetch.length - 3} more`;
-    await emit(`ðŸ“Š Checking source reliability (${uniqueDomainsToFetch.length}): ${domainPreview2}`, baseProgress + 4);
+    await emit(`\u{1F4CA} Checking source reliability (${uniqueDomainsToFetch.length}): ${domainPreview2}`, baseProgress + 4);
     // v2.9.0: Use SR service interface
     await srService.prefetch(urlsToFetch);
 

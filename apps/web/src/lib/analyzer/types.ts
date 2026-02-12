@@ -683,6 +683,7 @@ export type AnalysisWarningSeverity = "error" | "warning" | "info";
 export type AnalysisWarningType =
   | "verdict_direction_mismatch"    // Verdict percentage contradicts evidence direction
   | "report_damaged"                // Final report integrity degraded by critical failures
+  | "llm_provider_error"            // LLM provider failed (quota/credits/auth/rate/service)
   | "structured_output_failure"     // LLM structured output failed, using fallback
   | "evidence_filter_degradation"   // LLM evidence filter failed, using heuristics
   | "search_fallback"               // Grounded search failed, using standard search

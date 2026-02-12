@@ -24,6 +24,7 @@ const fieldDefaults: Record<string, string> = {
 
 const WARNING_TYPE_LABELS: Record<string, string> = {
   report_damaged: "Report Damaged",
+  llm_provider_error: "LLM Provider Error",
   verdict_direction_mismatch: "Verdict Direction Mismatch",
   structured_output_failure: "Structured Output Failure",
   evidence_filter_degradation: "Evidence Filter Degradation",
@@ -41,6 +42,7 @@ const WARNING_TYPE_LABELS: Record<string, string> = {
 
 const WARNING_TYPE_HINTS: Record<string, string> = {
   report_damaged: "Treat this report as non-final until critical issues are resolved and the analysis is re-run.",
+  llm_provider_error: "Check LLM provider credits/quota/API key/availability and rerun once provider health is restored.",
   structured_output_failure: "Retry with reduced output scope or shorter prompts to avoid structured-output truncation.",
   budget_exceeded: "Increase token/iteration budget or narrow analysis scope.",
   search_provider_error: "Check search provider quota/key health and rerun after recovery.",
