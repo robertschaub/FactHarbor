@@ -13,12 +13,12 @@ Applies to all paths unless a closer `AGENTS.md` overrides it (e.g., `apps/api/A
 - **Parameterize, don't specialize.** Use configuration over conditionals.
 - **No new code for removed/replaced things.** If something has been removed, replaced, or renamed (e.g., Monolithic Canonical pipeline [removed], `ExtractedFact` → `EvidenceItem`, `fact` → `statement`), do not extend, reference, or build on it. Use only the current version.
 
-### LLM Intelligence Migration (MANDATORY)
+### LLM Intelligence (MANDATORY)
 **Priority: CRITICAL | Scope: Entire analysis codebase | Exceptions: NONE**
 
 Deterministic text-analysis logic that makes analytical decisions MUST be replaced with LLM-powered intelligence. **New deterministic text-analysis decision logic MUST NOT be created.** When implementing any feature that requires understanding, classifying, comparing, or interpreting text meaning — use an LLM call, never regex, keywords, heuristics, or rules.
 
-**REPLACE existing / NEVER CREATE new** (deterministic logic making analytical decisions about text):
+**NEVER CREATE** (deterministic logic making analytical decisions about text):
 - Regex/pattern/keyword-based classification, scoring, or routing that interprets meaning
 - Text similarity heuristics that influence analytical outcomes
 - Rule-based NLP, entity extraction, or semantic matching driving analysis
@@ -37,8 +37,6 @@ Deterministic text-analysis logic that makes analytical decisions MUST be replac
 - **Pre-filter before calling.** Trivial validation stays deterministic.
 
 **When writing or reviewing analysis code:** If you encounter existing deterministic logic making semantic decisions, flag it for replacement. Do not extend, optimize, or build on it — migrate it to LLM. If you are about to write new text-analysis logic, it MUST use LLM intelligence from the start.
-
-Full migration plan and function inventory: `Docs/WIP/Efficient_LLM_Intelligence_Migration_Plan.md`
 
 ### Multilingual Robustness (MANDATORY)
 Analysis behavior must be robust across languages (e.g., English, French, German, and others), not just English.
