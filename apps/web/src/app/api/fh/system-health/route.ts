@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getHealthState, resumeSystem, pauseSystem } from "@/lib/provider-health";
 import { fireWebhook } from "@/lib/provider-webhook";
-import { drainRunnerQueue } from "@/app/api/internal/run-job/route";
+import { drainRunnerQueue } from "@/lib/internal-runner-queue";
 
 export const runtime = "nodejs";
 

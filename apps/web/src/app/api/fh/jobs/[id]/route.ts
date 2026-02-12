@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 type RouteParams = { id?: string };
-type RouteContext = { params: RouteParams | Promise<RouteParams> };
+type RouteContext = { params: Promise<RouteParams> };
 
 async function resolveJobId(context: RouteContext): Promise<string | null> {
   const resolvedParams = await context.params;

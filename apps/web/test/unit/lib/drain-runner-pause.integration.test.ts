@@ -136,7 +136,7 @@ describe("drainRunnerQueue pause integration", () => {
       pauseSystem("Provider down");
 
       // Import and call drainRunnerQueue
-      const { drainRunnerQueue } = await import("@/app/api/internal/run-job/route");
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
       const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       await drainRunnerQueue();
@@ -179,7 +179,7 @@ describe("drainRunnerQueue pause integration", () => {
       // System is NOT paused
       expect(isSystemPaused()).toBe(false);
 
-      const { drainRunnerQueue } = await import("@/app/api/internal/run-job/route");
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
       await drainRunnerQueue();
 
       // Should have made API calls (job processing started — past the pause check)
@@ -209,7 +209,7 @@ describe("drainRunnerQueue pause integration", () => {
       pauseSystem("Provider down");
       resumeSystem();
 
-      const { drainRunnerQueue } = await import("@/app/api/internal/run-job/route");
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
       await drainRunnerQueue();
 
       // Should process jobs (not paused anymore)
