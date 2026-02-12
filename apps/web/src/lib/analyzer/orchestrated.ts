@@ -120,6 +120,27 @@ import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "../config-schemas";
 import { FallbackTracker } from "./classification-fallbacks";
 import { formatFallbackReportMarkdown } from "./format-fallback-report";
 
+// Phase 2a: Evidence Processor Modules
+import {
+  EvidenceDeduplicator,
+  jaccardSimilarity,
+  type DeduplicationState,
+} from "./evidence-deduplication";
+import {
+  EvidenceNormalizer,
+  type RawEvidenceItem,
+} from "./evidence-normalization";
+import {
+  RecencyAssessor,
+  type RecencyValidationResult,
+  type RecencyPenaltyResult,
+} from "./evidence-recency";
+import {
+  mergeContextMetadata,
+  buildContextDescription,
+  buildRelevanceContextSummary,
+} from "./evidence-context-utils";
+
 // Configuration, helpers, and debug utilities imported from modular files above
 
 // NOTE: AnalysisContext canonicalization helpers extracted to ./analyzer/analysis-contexts
@@ -391,62 +412,6 @@ function normalizeKeyFactorClassifications<T extends {
  * Normalize evidence classifications with fallback tracking
  * Call this after evidence extraction to ensure all classification fields are defined
  */
-function normalizeEvidenceClassifications<T extends {
-  statement?: string;
-  sourceAuthority?: string;
-  evidenceBasis?: string;
-}>(
-  evidence: T[],
-  tracker: FallbackTracker,
-  locationPrefix: string = "Evidence"
-): T[] {
-  return evidence.map((ev, index) => {
-    const validSourceAuth = ["primary", "secondary", "opinion", "contested"];
-    const validEvidenceBasis = ["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"];
-
-    let sourceAuthority = ev.sourceAuthority;
-    let evidenceBasis = ev.evidenceBasis;
-    const text = ev.statement || "";
-
-    // Normalize sourceAuthority
-    if (!sourceAuthority || !validSourceAuth.includes(sourceAuthority)) {
-      const reason = !sourceAuthority ? 'missing' : 'invalid';
-      sourceAuthority = "secondary"; // Safe default
-
-      tracker.recordFallback({
-        field: 'sourceAuthority',
-        location: `${locationPrefix} #${index + 1}`,
-        text: text.substring(0, 100),
-        defaultUsed: sourceAuthority,
-        reason
-      });
-
-      console.warn(`[Fallback] sourceAuthority: ${locationPrefix} #${index + 1} - using default "secondary" (reason: ${reason})`);
-    }
-
-    // Normalize evidenceBasis
-    if (!evidenceBasis || !validEvidenceBasis.includes(evidenceBasis)) {
-      const reason = !evidenceBasis ? 'missing' : 'invalid';
-      evidenceBasis = "anecdotal"; // Safe default
-
-      tracker.recordFallback({
-        field: 'evidenceBasis',
-        location: `${locationPrefix} #${index + 1}`,
-        text: text.substring(0, 100),
-        defaultUsed: evidenceBasis,
-        reason
-      });
-
-      console.warn(`[Fallback] evidenceBasis: ${locationPrefix} #${index + 1} - using default "anecdotal" (reason: ${reason})`);
-    }
-
-    return {
-      ...ev,
-      sourceAuthority: sourceAuthority as "primary" | "secondary" | "opinion" | "contested",
-      evidenceBasis: evidenceBasis as "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific"
-    };
-  });
-}
 
 interface RelevanceCheck {
   isRelevant: boolean;
@@ -572,20 +537,6 @@ function buildAdaptiveFallbackQueries(params: {
     .slice(0, maxQueries);
 }
 
-/**
- * Build a concise textual description of a context for LLM prompts (structural plumbing).
- */
-function buildContextDescription(ctx: AnalysisContext): string {
-  if (!ctx) return "";
-  const meta = (ctx.metadata || {}) as Record<string, any>;
-  const parts = [
-    ctx.subject || ctx.assessedStatement || ctx.name || "",
-    meta.institution || meta.court || meta.regulatoryBody || "",
-    meta.jurisdiction || meta.geographic || "",
-    normalizeContextAlias(ctx.shortName) || "",
-  ].filter(Boolean);
-  return parts.join(" | ");
-}
 
 /**
  * Build context-aware criticism queries that focus on relevant actors/jurisdictions.
@@ -667,7 +618,7 @@ async function assessSearchRelevanceBatch(
       ? "MODERATE mode: Result should reference the entity and relate to the analytical context. Institution match is preferred but not required if the result clearly discusses the same subject matter."
       : "RELAXED mode: Result should be about the same general topic/entity. Accept results with meaningful entity or context overlap.";
 
-  const contextSummary = buildRelevanceContextSummary(contexts);
+  const contextSummary = buildRelevanceContextSummary(contexts as AnalysisContext[]);
 
   const resultEntries = results.map((r, idx) => ({
     id: `r${idx}`,
@@ -864,25 +815,6 @@ async function pruneWeakAnchorContexts(
   };
 }
 
-function buildRelevanceContextSummary(contexts: AnalysisContext[]): string {
-  if (!contexts || contexts.length === 0) return "No contexts available.";
-  return contexts
-    .map((ctx, idx) => {
-      const meta = ctx.metadata || {};
-      const institution = meta.institution || meta.court || "";
-      const jurisdiction = meta.jurisdiction || meta.geographic || "";
-      const methodology = meta.methodology || "";
-      return [
-        `Context ${idx + 1}: ${ctx.subject || ctx.name || ctx.shortName || "General"}`,
-        institution ? `Institution: ${institution}` : "",
-        jurisdiction ? `Jurisdiction: ${jurisdiction}` : "",
-        methodology ? `Methodology: ${methodology}` : "",
-      ]
-        .filter(Boolean)
-        .join(" | ");
-    })
-    .join("\n");
-}
 
 /**
  * Final verification: Check all classifications at end of analysis
@@ -995,6 +927,7 @@ async function refineContextsFromEvidence(
   state: ResearchState,
   model: any,
 ): Promise<{ updated: boolean; llmCalls: number }> {
+  const evidenceNormalizer = new EvidenceNormalizer(state.fallbackTracker);
   if (!state.understanding) return { updated: false, llmCalls: 0 };
 
   const preRefineUnderstanding = JSON.parse(JSON.stringify(state.understanding)) as ClaimUnderstanding;
@@ -1215,7 +1148,7 @@ Return:
   const evidenceAssignments = next.evidenceContextAssignments || [];
   const normalizedEvidenceAssignments = evidenceAssignments.map((a) => ({
     ...a,
-    evidenceId: normalizeEvidenceId(String(a.evidenceId ?? ""), "refineContextsFromEvidence"),
+    evidenceId: evidenceNormalizer.normalizeId(String(a.evidenceId ?? ""), "refineContextsFromEvidence"),
   }));
 
   const claimAssignmentsList = next.claimContextAssignments || [];
@@ -2126,20 +2059,6 @@ Example: [0.85, 0.12, 0.67]`,
 }
 
 /**
- * Structural Jaccard word-overlap similarity (fallback + reporting).
- * Used when LLM is unavailable and for non-decision reporting metrics.
- */
-function jaccardSimilarity(text1: string, text2: string): number {
-  const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
-  const words1 = new Set(normalize(text1));
-  const words2 = new Set(normalize(text2));
-  if (words1.size === 0 || words2.size === 0) return 0;
-  const intersection = new Set([...words1].filter(w => words2.has(w)));
-  const union = new Set([...words1, ...words2]);
-  return intersection.size / union.size;
-}
-
-/**
  * LLM-powered context similarity assessment.
  * Replaces the deterministic weighted Jaccard approach with semantic LLM assessment.
  * Falls back to the text-analysis service's analyzeContextSimilarity, then structural fallback.
@@ -2258,28 +2177,6 @@ async function selectEvidenceItemsForContextRefinementPrompt(
 }
 
 // calculateContextSimilarity removed — replaced by assessContextSimilarity (LLM-powered)
-
-function mergeContextMetadata(primary: AnalysisContext, duplicates: AnalysisContext[]): AnalysisContext {
-  const merged: AnalysisContext = { ...(primary as any) };
-  const outMeta: Record<string, any> = { ...(((primary as any).metadata as any) || {}) };
-
-  for (const dup of duplicates || []) {
-    const dm: Record<string, any> = ((dup as any)?.metadata as any) || {};
-    for (const [k, v] of Object.entries(dm)) {
-      const existing = outMeta[k];
-      const isEmpty =
-        existing === undefined ||
-        existing === null ||
-        (typeof existing === "string" && existing.trim() === "");
-      if (isEmpty && v !== undefined && v !== null && !(typeof v === "string" && v.trim() === "")) {
-        outMeta[k] = v;
-      }
-    }
-  }
-
-  (merged as any).metadata = outMeta;
-  return merged;
-}
 
 async function deduplicateContexts(
   contexts: AnalysisContext[],
@@ -2548,361 +2445,7 @@ async function validateAndFixContextNameAlignment(
   });
 }
 
-/**
- * Pipeline Phase 1: Normalize URL for deduplication
- * Removes tracking params, normalizes www prefix, lowercases, removes hash fragments
- */
-function normalizeUrlForDedup(url: string): string {
-  try {
-    const parsed = new URL(url);
-    // Remove common tracking params
-    const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'ref', 'source'];
-    for (const param of trackingParams) {
-      parsed.searchParams.delete(param);
-    }
-    // Remove hash fragment
-    parsed.hash = "";
-    // Normalize hostname: lowercase and remove www prefix
-    parsed.hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
-    return parsed.toString().toLowerCase();
-  } catch {
-    // If URL parsing fails, return lowercased original
-    return url.toLowerCase();
-  }
-}
 
-/**
- * Pipeline Phase 1: Filter search results to exclude already-processed URLs
- * Returns only new URLs and tracks them in the state
- */
-function deduplicateSearchUrls<T extends { url: string }>(
-  results: T[],
-  state: { processedUrls: Set<string>; urlDeduplicationCount: number },
-): T[] {
-  const deduplicated: T[] = [];
-  for (const result of results) {
-    const normalized = normalizeUrlForDedup(result.url);
-    if (state.processedUrls.has(normalized)) {
-      state.urlDeduplicationCount++;
-      console.log(`[Analyzer] URL dedup: Skipping already-processed URL: ${result.url}`);
-      continue;
-    }
-    state.processedUrls.add(normalized);
-    deduplicated.push(result);
-  }
-  return deduplicated;
-}
-
-/**
- * NEW v2.6.29: Check if an evidence item is a duplicate or near-duplicate of existing items
- * Returns true if the evidence item should be skipped (is duplicate)
- */
-async function isDuplicateEvidenceItem(
-  newItem: EvidenceItem,
-  existingItems: EvidenceItem[],
-  threshold: number = 0.85,
-): Promise<boolean> {
-  const newItemLower = newItem.statement.toLowerCase().trim();
-
-  // First pass: check for exact matches (structural)
-  for (const existing of existingItems) {
-    if (newItemLower === existing.statement.toLowerCase().trim()) {
-      return true;
-    }
-  }
-
-  // Second pass: batch LLM similarity for near-duplicate detection
-  if (existingItems.length === 0) return false;
-  const pairs = existingItems.map((existing, i) => ({
-    id: `dup-${i}`,
-    textA: newItem.statement,
-    textB: existing.statement,
-  }));
-  const scores = await assessTextSimilarityBatch(pairs);
-  for (let i = 0; i < existingItems.length; i++) {
-    if ((scores.get(`dup-${i}`) ?? 0) >= threshold) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * NEW v2.6.29: Filter out duplicate evidence items from a list, keeping the first occurrence
- * Optionally merges fromOppositeClaimSearch flag if duplicate found from opposite search
- */
-async function deduplicateEvidenceItems(
-  newEvidenceItems: EvidenceItem[],
-  existingEvidenceItems: EvidenceItem[],
-  threshold?: number,
-): Promise<EvidenceItem[]> {
-  const result: EvidenceItem[] = [];
-
-  for (const item of newEvidenceItems) {
-    if (!await isDuplicateEvidenceItem(item, existingEvidenceItems, threshold) && !await isDuplicateEvidenceItem(item, result, threshold)) {
-      result.push(item);
-    } else {
-      // Log deduplication for debugging
-      console.log(`[Analyzer] Deduplication: Skipping near-duplicate evidence item: "${item.statement.substring(0, 60)}..."`);
-    }
-  }
-
-  return result;
-}
-
-/**
- * Detect if a topic likely requires recent data
- * Returns true if dates, recent keywords, or temporal indicators suggest recency matters
- * v2.6.23: Removed domain-specific person names to comply with Generic by Design principle
- */
-function isRecencySensitive(
-  text: string,
-  understanding?: ClaimUnderstanding,
-  cueTerms?: string[],
-): boolean {
-  const lowerText = text.toLowerCase();
-
-  // Check for recent date mentions (within last 3 years from current date - extended for better coverage)
-  const currentYear = new Date().getFullYear();
-  const recentYears = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
-  const yearPattern = /\b(20\d{2})\b/;
-  const yearMatch = text.match(yearPattern);
-  if (yearMatch) {
-    const mentionedYear = parseInt(yearMatch[1]);
-    if (recentYears.includes(mentionedYear)) {
-      return true;
-    }
-  }
-
-  // Check understanding for recent dates in contexts
-  if (understanding?.analysisContexts) {
-    for (const context of understanding.analysisContexts) {
-      const dateStr = context.date || context.temporal || "";
-      if (dateStr && recentYears.some(year => dateStr.includes(String(year)))) {
-        return true;
-      }
-    }
-  }
-
-  if (Array.isArray(cueTerms) && cueTerms.length > 0) {
-    for (const term of cueTerms) {
-      if (!term) continue;
-      const needle = term.toLowerCase();
-      if (needle && lowerText.includes(needle)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-const MONTH_NAME_TO_INDEX: Record<string, number> = {
-  jan: 0,
-  january: 0,
-  feb: 1,
-  february: 1,
-  mar: 2,
-  march: 2,
-  apr: 3,
-  april: 3,
-  may: 4,
-  jun: 5,
-  june: 5,
-  jul: 6,
-  july: 6,
-  aug: 7,
-  august: 7,
-  sep: 8,
-  sept: 8,
-  september: 8,
-  oct: 9,
-  october: 9,
-  nov: 10,
-  november: 10,
-  dec: 11,
-  december: 11,
-};
-
-function pushDateCandidate(dates: Date[], seen: Set<string>, date: Date | null) {
-  if (!date || Number.isNaN(date.getTime())) return;
-  const key = date.toISOString().slice(0, 10);
-  if (seen.has(key)) return;
-  seen.add(key);
-  dates.push(date);
-}
-
-function extractTemporalDateCandidates(text: string, currentDate: Date): Date[] {
-  const dates: Date[] = [];
-  const seen = new Set<string>();
-  const lower = String(text || "").toLowerCase();
-  if (!lower) return dates;
-
-  const currentYear = currentDate.getFullYear();
-  const maxYear = currentYear + 1;
-
-  const isoPattern = /\b(20\d{2})[\/\-.](\d{1,2})[\/\-.](\d{1,2})\b/g;
-  for (const match of lower.matchAll(isoPattern)) {
-    const year = Number(match[1]);
-    const month = Number(match[2]) - 1;
-    const day = Number(match[3]);
-    if (year < 1900 || year > maxYear) continue;
-    pushDateCandidate(dates, seen, new Date(year, month, day));
-  }
-
-  const monthPattern = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(20\d{2})\b/g;
-  for (const match of lower.matchAll(monthPattern)) {
-    const monthToken = match[1];
-    const year = Number(match[2]);
-    const monthIndex = MONTH_NAME_TO_INDEX[monthToken];
-    if (monthIndex == null || year < 1900 || year > maxYear) continue;
-    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-    pushDateCandidate(dates, seen, new Date(year, monthIndex, lastDay));
-  }
-
-  const quarterPattern = /\bq([1-4])\s*(20\d{2})\b/g;
-  for (const match of lower.matchAll(quarterPattern)) {
-    const quarter = Number(match[1]);
-    const year = Number(match[2]);
-    if (year < 1900 || year > maxYear) continue;
-    const monthIndex = quarter * 3 - 1;
-    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-    pushDateCandidate(dates, seen, new Date(year, monthIndex, lastDay));
-  }
-
-  const rangePattern = /\b(19|20)\d{2}\s*[-–]\s*(19|20)\d{2}\b/g;
-  for (const match of lower.matchAll(rangePattern)) {
-    const endYear = Number(match[2]);
-    if (endYear < 1900 || endYear > maxYear) continue;
-    pushDateCandidate(dates, seen, new Date(endYear, 11, 31));
-  }
-
-  const yearPattern = /\b(19|20)\d{2}\b/g;
-  for (const match of lower.matchAll(yearPattern)) {
-    const year = Number(match[0]);
-    if (year < 1900 || year > maxYear) continue;
-    pushDateCandidate(dates, seen, new Date(year, 11, 31));
-  }
-
-  return dates;
-}
-
-function validateEvidenceRecency(
-  evidenceItems: EvidenceItem[],
-  currentDate: Date,
-  windowMonths: number
-): { hasRecentEvidence: boolean; latestEvidenceDate?: string; signalsCount: number; dateCandidates: number } {
-  const temporalSignals: string[] = [];
-  for (const item of evidenceItems || []) {
-    if (item?.evidenceScope?.temporal) temporalSignals.push(item.evidenceScope.temporal);
-    if (item?.sourceTitle) temporalSignals.push(item.sourceTitle);
-    if (item?.sourceUrl) temporalSignals.push(item.sourceUrl);
-  }
-
-  const dates: Date[] = [];
-  for (const signal of temporalSignals) {
-    dates.push(...extractTemporalDateCandidates(signal, currentDate));
-  }
-
-  let latestDate: Date | undefined;
-  for (const d of dates) {
-    if (!latestDate || d > latestDate) latestDate = d;
-  }
-
-  const cutoff = new Date(currentDate);
-  cutoff.setMonth(cutoff.getMonth() - Math.max(1, windowMonths));
-  const hasRecentEvidence = !!latestDate && latestDate >= cutoff;
-
-  return {
-    hasRecentEvidence,
-    latestEvidenceDate: latestDate ? latestDate.toISOString() : undefined,
-    signalsCount: temporalSignals.length,
-    dateCandidates: dates.length,
-  };
-}
-
-/**
- * Calculate a graduated recency evidence gap penalty.
- *
- * Instead of a flat binary penalty, uses three independent factors:
- * 1. Staleness curve: how far outside the recency window the evidence is
- * 2. Topic volatility: how time-critical the topic is (from LLM granularity)
- * 3. Evidence volume: more evidence (even if dated) attenuates the penalty
- *
- * Formula: effectivePenalty = round(maxPenalty × staleness × volatility × volume)
- */
-export function calculateGraduatedRecencyPenalty(
-  latestEvidenceDate: string | undefined,
-  currentDate: Date,
-  windowMonths: number,
-  maxPenalty: number,
-  granularity: "week" | "month" | "year" | "none" | undefined,
-  dateCandidates: number,
-): {
-  effectivePenalty: number;
-  breakdown: {
-    monthsOld: number | null;
-    stalenessMultiplier: number;
-    volatilityMultiplier: number;
-    volumeMultiplier: number;
-    formula: string;
-  };
-} {
-  // --- Factor 1: Staleness Curve ---
-  let monthsOld: number | null = null;
-  let stalenessMultiplier = 1.0; // default: full staleness if no date at all
-
-  if (latestEvidenceDate) {
-    const latestDate = new Date(latestEvidenceDate);
-    if (!isNaN(latestDate.getTime())) {
-      const diffMs = currentDate.getTime() - latestDate.getTime();
-      monthsOld = diffMs / (30.44 * 24 * 60 * 60 * 1000);
-
-      if (monthsOld <= windowMonths) {
-        stalenessMultiplier = 0;
-      } else {
-        // Linear ramp from 0 to 1 over an additional windowMonths period
-        stalenessMultiplier = Math.min(1, Math.max(0, (monthsOld - windowMonths) / windowMonths));
-      }
-    }
-  }
-
-  // --- Factor 2: Topic Volatility ---
-  const VOLATILITY_MAP: Record<string, number> = {
-    week: 1.0,
-    month: 0.8,
-    year: 0.4,
-    none: 0.2,
-  };
-  const volatilityMultiplier = granularity ? (VOLATILITY_MAP[granularity] ?? 0.7) : 0.7;
-
-  // --- Factor 3: Evidence Volume Attenuation ---
-  let volumeMultiplier: number;
-  if (dateCandidates === 0) {
-    volumeMultiplier = 1.0;
-  } else if (dateCandidates <= 10) {
-    volumeMultiplier = 0.9;
-  } else if (dateCandidates <= 25) {
-    volumeMultiplier = 0.7;
-  } else {
-    volumeMultiplier = 0.5;
-  }
-
-  // --- Combined formula ---
-  const effectivePenalty = Math.round(maxPenalty * stalenessMultiplier * volatilityMultiplier * volumeMultiplier);
-
-  return {
-    effectivePenalty,
-    breakdown: {
-      monthsOld,
-      stalenessMultiplier,
-      volatilityMultiplier,
-      volumeMultiplier,
-      formula: `round(${maxPenalty} × ${stalenessMultiplier.toFixed(2)} × ${volatilityMultiplier.toFixed(2)} × ${volumeMultiplier.toFixed(2)}) = ${effectivePenalty}`,
-    },
-  };
-}
 
 function getKnowledgeInstruction(
   allowModelKnowledge: boolean,
@@ -2910,7 +2453,8 @@ function getKnowledgeInstruction(
   understanding?: ClaimUnderstanding,
   cueTerms?: string[],
 ): string {
-  const recencyMatters = text ? isRecencySensitive(text, understanding, cueTerms) : false;
+  const assessor = new RecencyAssessor();
+  const recencyMatters = text ? assessor.isRecencySensitive(text, understanding, cueTerms) : false;
 
   if (allowModelKnowledge) {
     const recencyGuidance = recencyMatters ? `
@@ -5017,6 +4561,7 @@ async function understandClaim(
   model: any,
   pipelineConfig?: PipelineConfig,
 ): Promise<ClaimUnderstanding> {
+  const recencyAssessor = new RecencyAssessor();
   const deterministic = pipelineConfig?.deterministic ?? DEFAULT_PIPELINE_CONFIG.deterministic;
   const keyFactorHints = pipelineConfig?.keyFactorHints ?? DEFAULT_PIPELINE_CONFIG.keyFactorHints;
   // Get current date for temporal reasoning
@@ -5052,7 +4597,7 @@ async function understandClaim(
     analysisInput.length > understandMaxChars ? analysisInput.slice(0, understandMaxChars) : analysisInput;
 
   // Detect recency sensitivity for this analysis (using input as provided)
-  const recencyMatters = isRecencySensitive(
+  const recencyMatters = recencyAssessor.isRecencySensitive(
     analysisInput,
     undefined,
     pipelineConfig?.recencyCueTerms,
@@ -6876,6 +6421,7 @@ interface ResearchDecision {
 }
 
 function decideNextResearch(state: ResearchState): ResearchDecision {
+  const recencyAssessor = new RecencyAssessor();
   const config = getActiveConfig(state.pipelineConfig);
   const categories = [
     ...new Set(state.evidenceItems.map((f: EvidenceItem) => f.category)),
@@ -6943,7 +6489,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
 
   // Detect if this topic requires recent data
   // v2.6.25: Use impliedClaim (normalized) for consistent recency detection across input styles
-  const recencyMatters = isRecencySensitive(
+  const recencyMatters = recencyAssessor.isRecencySensitive(
     understanding.impliedClaim || understanding.articleThesis || state.originalInput || "",
     understanding,
     state.pipelineConfig?.recencyCueTerms,
@@ -7042,7 +6588,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
           `${qBase} study`,
           `${qBase} criticism`,
         ],
-        recencyMatters: isRecencySensitive(
+        recencyMatters: recencyAssessor.isRecencySensitive(
           basis,
           understanding,
           state.pipelineConfig?.recencyCueTerms,
@@ -7059,7 +6605,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     const claimsWithoutEvidence = directClaimsForResearch.filter((claim: any) => {
       // Check if this claim appears to be about recent events
       const claimText = claim.text || "";
-      const isRecentClaim = isRecencySensitive(
+      const isRecentClaim = recencyAssessor.isRecencySensitive(
         claimText,
         undefined,
         state.pipelineConfig?.recencyCueTerms,
@@ -7615,62 +7161,10 @@ const EVIDENCE_SCHEMA = z.object({
   ),
 });
 
-function normalizeEvidenceId(id: string, source: string): string {
-  if (!id || typeof id !== "string") return "";
-  const normalized = id.replace(/(^|-)F(\d+)/g, "$1E$2");
-  if (normalized !== id) {
-    console.warn(`[${source}] Legacy F-prefix evidence ID "${id}" detected; use "${normalized}"`);
-  }
-  return normalized;
-}
 
-function normalizeEvidenceIdList(ids: string[], source: string): string[] {
-  return ids
-    .map((id) => normalizeEvidenceId(String(id ?? ""), source))
-    .filter((id) => id.length > 0);
-}
-
-type RawEvidenceItem = {
-  statement?: string;
-  category?: string;
-  specificity?: "high" | "medium" | "low";
-  sourceExcerpt?: string;
-  contextId?: string;
-  isContestedClaim?: boolean;
-  claimSource?: string;
-  claimDirection?: "supports" | "contradicts" | "neutral";
-  sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
-  evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
-  probativeValue?: "high" | "medium" | "low";
-  evidenceScope?: any;
-};
-
-function normalizeEvidenceItems(raw: any, source: string): RawEvidenceItem[] {
-  const rawItems = Array.isArray(raw?.evidenceItems) ? raw.evidenceItems : [];
-
-  if (!Array.isArray(rawItems)) return [];
-
-  const normalized = rawItems.map((item: any) => ({
-    statement: item.statement ?? "",
-    category: item.category ?? "evidence",
-    specificity: item.specificity ?? "medium",
-    sourceExcerpt: item.sourceExcerpt ?? "",
-    contextId: item.contextId ?? "",
-    isContestedClaim: item.isContestedClaim ?? false,
-    claimSource: item.claimSource ?? "",
-    claimDirection: item.claimDirection ?? "neutral",
-    sourceAuthority: item.sourceAuthority,
-    evidenceBasis: item.evidenceBasis,
-    probativeValue: item.probativeValue,
-    evidenceScope: item.evidenceScope,
-  }));
-
-  return normalized;
-}
-
-function normalizeSupportingEvidenceIds(raw: any, source: string): string[] {
+function normalizeSupportingEvidenceIds(raw: any, source: string, normalizer: EvidenceNormalizer): string[] {
   if (Array.isArray(raw?.supportingEvidenceIds) && raw.supportingEvidenceIds.length > 0) {
-    return normalizeEvidenceIdList(raw.supportingEvidenceIds, source);
+    return normalizer.normalizeIdList(raw.supportingEvidenceIds, source);
   }
   return [];
 }
@@ -7687,6 +7181,8 @@ async function extractEvidence(
   extractionStats?: { llmFilterFailed?: boolean },  // P3: Track LLM filter failures
   evidenceFilterConfig?: Partial<ProbativeFilterConfig>,
 ): Promise<EvidenceItem[]> {
+  const fallbackTracker = new FallbackTracker();
+  const evidenceNormalizer = new EvidenceNormalizer(fallbackTracker);
   console.log(`[Analyzer] extractEvidence called for source ${source.id}: "${source.title?.substring(0, 50)}..."`);
   console.log(`[Analyzer] extractEvidence: fetchSuccess=${source.fetchSuccess}, fullText length=${source.fullText?.length ?? 0}`);
 
@@ -7811,7 +7307,7 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       console.warn(`[Analyzer] extractEvidence: structured output validation failed for ${source.id}`, parsed.error?.message);
     }
 
-    const extractedItems = normalizeEvidenceItems(rawOutput, `Analyzer.extractEvidence:${source.id}`);
+    const extractedItems = evidenceNormalizer.normalizeItems(rawOutput, `Analyzer.extractEvidence:${source.id}`);
     console.log(`[Analyzer] extractEvidence: Raw extraction has ${extractedItems.length} evidence items`);
 
     if (!extractedItems || extractedItems.length === 0) {
@@ -8142,6 +7638,7 @@ async function extractEvidenceParallel(
   options: ParallelExtractionOptions,
   existingEvidenceItems: EvidenceItem[],
 ): Promise<ParallelExtractionResult> {
+  const evidenceDeduplicator = new EvidenceDeduplicator(0.85, assessTextSimilarityBatch);
   const startTime = Date.now();
   const allEvidenceItems: EvidenceItem[] = [];
   let llmFilterFailures = 0;
@@ -8184,7 +7681,7 @@ async function extractEvidenceParallel(
           llmFilterFailures++;
         }
         // Deduplicate against existing and already-collected items
-        const uniqueItems = await deduplicateEvidenceItems(
+        const uniqueItems = await evidenceDeduplicator.deduplicateItems(
           result.value.items,
           [...existingEvidenceItems, ...allEvidenceItems],
           options.claimSimilarityThreshold,
@@ -8686,6 +8183,9 @@ async function generateMultiContextVerdicts(
   articleAnalysis: ArticleAnalysis;
   verdictSummary: VerdictSummary;
 }> {
+  // Phase 2a: Create local evidence normalizer instance
+  const evidenceNormalizer = new EvidenceNormalizer(state.fallbackTracker);
+
   const contextsFormatted = understanding.analysisContexts
     .map(
       (s: AnalysisContext) =>
@@ -8986,7 +8486,7 @@ Provide SEPARATE answers for each context.`;
     },
   ];
 
-  const normalizeMultiContextOutput = (obj: any) => {
+  const normalizeMultiContextOutput = (obj: any, evidenceNormalizer: EvidenceNormalizer) => {
     if (!obj || typeof obj !== "object") return obj;
 
     // CRITICAL FIX: Unwrap $PARAMETER_NAME wrapper that some LLM providers add
@@ -9041,7 +8541,7 @@ Provide SEPARATE answers for each context.`;
         ...cv,
         verdict: coerceToNumber(cv.verdict),
         confidence: coerceToNumber(cv.confidence),
-        supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "normalizeMultiContextOutput"),
+        supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "normalizeMultiContextOutput", evidenceNormalizer),
       }));
     }
 
@@ -9063,7 +8563,7 @@ Provide SEPARATE answers for each context.`;
       candidates.push(cause.message);
 
     for (const c of candidates) {
-      const obj = normalizeMultiContextOutput(tryParseFirstJsonObject(c));
+      const obj = normalizeMultiContextOutput(tryParseFirstJsonObject(c), evidenceNormalizer);
       if (!obj) continue;
 
       // Try strict first; if it still fails, accept a leniently-normalized version.
@@ -9136,7 +8636,7 @@ The JSON object MUST include these top-level keys:
         return null;
       }
 
-      const obj = normalizeMultiContextOutput(tryParseFirstJsonObject(txt));
+      const obj = normalizeMultiContextOutput(tryParseFirstJsonObject(txt), evidenceNormalizer);
       if (!obj) {
         debugLog("generateMultiContextVerdicts: JSON fallback could not find JSON object", {
           textSnippet: txt.slice(0, 800),
@@ -9192,7 +8692,7 @@ The JSON object MUST include these top-level keys:
       // Handle different AI SDK versions - safely extract structured output
       const rawOutput = extractStructuredOutput(result);
       if (rawOutput) {
-        parsed = normalizeMultiContextOutput(rawOutput) as z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT>;
+        parsed = normalizeMultiContextOutput(rawOutput, evidenceNormalizer) as z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT>;
         debugLog("generateMultiContextVerdicts: SUCCESS", {
           attempt: attempt.label,
           hasVerdictSummary: !!parsed.verdictSummary,
@@ -9894,6 +9394,7 @@ async function generateSingleContextVerdicts(
   articleAnalysis: ArticleAnalysis;
   verdictSummary: VerdictSummary;
 }> {
+  const evidenceNormalizer = new EvidenceNormalizer(state.fallbackTracker);
   // Get current date for temporal reasoning
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
@@ -10167,7 +9668,7 @@ ${evidenceItemsFormatted}`;
             ...cv,
             verdict: typeof cv.verdict === 'string' ? parseFloat(cv.verdict) : cv.verdict,
             confidence: typeof cv.confidence === 'string' ? parseFloat(cv.confidence) : cv.confidence,
-            supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateSingleContextVerdicts"),
+            supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateSingleContextVerdicts", evidenceNormalizer),
           })),
         };
 
@@ -10602,6 +10103,7 @@ async function generateClaimVerdicts(
   claimVerdicts: ClaimVerdict[];
   articleAnalysis: ArticleAnalysis;
 }> {
+  const evidenceNormalizer = new EvidenceNormalizer(state.fallbackTracker);
   // Detect if topic involves procedural/legal/institutional analysis
   // This determines whether to generate Key Factors (unified analysis mode)
   const isProceduralTopic = detectProceduralTopic(understanding, state.originalText);
@@ -10907,7 +10409,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
             ...cv,
             verdict: coerceToNumber(cv.verdict),
             confidence: coerceToNumber(cv.confidence),
-            supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateClaimVerdicts"),
+            supportingEvidenceIds: normalizeSupportingEvidenceIds(cv, "generateClaimVerdicts", evidenceNormalizer),
           })),
         };
 
@@ -11816,6 +11318,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const fallbackTracker = new FallbackTracker();
 
   // ============================================================================
+  // Phase 2a: Initialize Evidence Processor Modules
+  // ============================================================================
+  const evidenceDeduplicator = new EvidenceDeduplicator(0.85, assessTextSimilarityBatch);
+  const evidenceNormalizer = new EvidenceNormalizer(fallbackTracker);
+  const recencyAssessor = new RecencyAssessor();
+
+  // ============================================================================
   // v2.9.0 Phase 3: Initialize SR service (interface-based modularity)
   // ============================================================================
   const srService = getDefaultSRService();
@@ -12251,7 +11760,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
       // Pipeline Phase 1: Apply URL deduplication to grounded search results
       const validGroundedSources = groundedResult.sources.filter(s => s.url && s.url.trim().length > 0);
-      const groundedUrlCandidates = deduplicateSearchUrls(validGroundedSources, state)
+      const groundedUrlCandidates = evidenceDeduplicator.filterDuplicateUrls(validGroundedSources, state)
           .slice(0, searchConfig.maxSourcesPerIteration);
 
         if (groundedUrlCandidates.length === 0) {
@@ -12353,7 +11862,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     for (const query of decision.queries || []) {
       // Pipeline Phase 1: Use LLM-derived temporalContext when available, fallback to pattern-based
       const temporalContext = state.understanding?.temporalContext;
-      const queryRecencySensitive = isRecencySensitive(
+      const queryRecencySensitive = recencyAssessor.isRecencySensitive(
         query,
         state.understanding || undefined,
         state.pipelineConfig?.recencyCueTerms,
@@ -12461,7 +11970,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // First filter out results with empty URLs
     const validUrlResults = searchResults.filter((r) => r.url && r.url.trim().length > 0);
     // Apply cross-iteration deduplication using normalized URLs
-    const deduplicatedResults = deduplicateSearchUrls(validUrlResults, state);
+    const deduplicatedResults = evidenceDeduplicator.filterDuplicateUrls(validUrlResults, state);
     // Preserve provider relevance ordering, limit to max sources per iteration
     const uniqueResults = selectDiverseSearchResultsByQuery(
       deduplicatedResults,
@@ -12603,9 +12112,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           // Evaluate retry results with ORIGINAL strictness (not relaxed)
           const newRetryResults: typeof uniqueResults = [];
           for (const result of results) {
-            const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
+            const normalizedUrl = evidenceDeduplicator.normalizeUrl(String((result as any).url || ""));
             const existingUrl = relevantResults.some(
-              (r) => normalizeUrlForDedup(String((r as any).url || "")) === normalizedUrl,
+              (r) => evidenceDeduplicator.normalizeUrl(String((r as any).url || "")) === normalizedUrl,
             );
             if (!existingUrl) {
               newRetryResults.push({ ...result, query } as typeof uniqueResults[number]);
@@ -12643,14 +12152,14 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     if (adaptiveApplies) {
       const initiallyKept = relevantResults.length;
       const primaryResultCount = relevantResults.length;
-      const selectedUrlKeys = new Set(relevantResults.map((r) => normalizeUrlForDedup(String((r as any).url || ""))));
+      const selectedUrlKeys = new Set(relevantResults.map((r) => evidenceDeduplicator.normalizeUrl(String((r as any).url || ""))));
 
       // Graduated fallback: 3 steps of increasing relaxation (RC1 fix)
       // Step 1: Relax institution match only, keep context match.
       // This allows results from different institutions about the same context.
       if (FALLBACK_CONFIG.step1RelaxInstitution) {
         const step1Candidates = uniqueResults.filter((result) => {
-          const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
+          const normalizedUrl = evidenceDeduplicator.normalizeUrl(String((result as any).url || ""));
           if (selectedUrlKeys.has(normalizedUrl)) return false;
           const domain = extractDomain(result.url || "");
           if (domain && !isImportantSource(domain)) return false;
@@ -12671,7 +12180,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
               (result as any)._isFallback = true;
               (result as any)._fallbackStep = 1;
               relevantResults.push(result);
-              selectedUrlKeys.add(normalizeUrlForDedup(String((result as any).url || "")));
+              selectedUrlKeys.add(evidenceDeduplicator.normalizeUrl(String((result as any).url || "")));
             }
           }
         }
@@ -12688,7 +12197,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       if (relevantResults.length < adaptiveMinCandidates) {
         const step2Before = relevantResults.length;
         const step2Candidates = uniqueResults.filter((result) => {
-          const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
+          const normalizedUrl = evidenceDeduplicator.normalizeUrl(String((result as any).url || ""));
           if (selectedUrlKeys.has(normalizedUrl)) return false;
           const domain = extractDomain(result.url || "");
           if (domain && !isImportantSource(domain)) return false;
@@ -12709,7 +12218,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
               (result as any)._isFallback = true;
               (result as any)._fallbackStep = 2;
               relevantResults.push(result);
-              selectedUrlKeys.add(normalizeUrlForDedup(String((result as any).url || "")));
+              selectedUrlKeys.add(evidenceDeduplicator.normalizeUrl(String((result as any).url || "")));
             }
           }
         }
@@ -12800,7 +12309,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
         if (fallbackSearchResults.length > 0) {
           const fallbackCandidates = selectDiverseSearchResultsByQuery(
-            deduplicateSearchUrls(
+            evidenceDeduplicator.filterDuplicateUrls(
               fallbackSearchResults.filter((r) => r.url && r.url.trim().length > 0),
               state,
             ),
@@ -12808,7 +12317,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           );
 
           const step3Filtered = fallbackCandidates.filter((result) => {
-            const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
+            const normalizedUrl = evidenceDeduplicator.normalizeUrl(String((result as any).url || ""));
             if (selectedUrlKeys.has(normalizedUrl)) return false;
             const domain = extractDomain(result.url || "");
             if (domain && !isImportantSource(domain)) return false;
@@ -12829,7 +12338,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
                 (result as any)._isFallback = true;
                 (result as any)._fallbackStep = 3;
                 relevantResults.push(result);
-                selectedUrlKeys.add(normalizeUrlForDedup(String((result as any).url || "")));
+                selectedUrlKeys.add(evidenceDeduplicator.normalizeUrl(String((result as any).url || "")));
               }
             }
           }
@@ -13093,7 +12602,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
       // Deduplicate and fetch sources
       const deduplicatedGapResults = selectDiverseSearchResultsByQuery(
-        deduplicateSearchUrls(
+        evidenceDeduplicator.filterDuplicateUrls(
         gapSearchResults.filter((r) => r.url && r.url.trim().length > 0),
         state,
         ),
@@ -13313,9 +12822,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // P0: Normalize evidence classifications with fallback tracking before verdict generation
   if (state.evidenceItems.length > 0) {
-    state.evidenceItems = normalizeEvidenceClassifications(
+    state.evidenceItems = evidenceNormalizer.normalizeClassifications(
       state.evidenceItems,
-      state.fallbackTracker,
       "Evidence"
     );
   }
@@ -13494,7 +13002,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const recencyMatters =
     (temporalContext?.isRecencySensitive && temporalContext.confidence >= temporalConfThreshold) ||
     (recencyBasis
-      ? isRecencySensitive(
+      ? recencyAssessor.isRecencySensitive(
         recencyBasis,
         state.understanding || undefined,
         state.pipelineConfig?.recencyCueTerms,
@@ -13504,7 +13012,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   if (recencyMatters) {
     const windowMonths = state.pipelineConfig.recencyWindowMonths ?? 6;
     const penalty = state.pipelineConfig.recencyConfidencePenalty ?? 20;
-    const recencyCheck = validateEvidenceRecency(state.evidenceItems, new Date(), windowMonths);
+    const recencyCheck = recencyAssessor.validateRecency(state.evidenceItems, windowMonths);
     debugLog("Recency evidence check", {
       recencyMatters,
       windowMonths,
@@ -13525,9 +13033,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       let penaltyBreakdown: Record<string, unknown> | undefined;
 
       if (useGraduated) {
-        const result = calculateGraduatedRecencyPenalty(
+        const result = recencyAssessor.calculateGraduatedPenalty(
           recencyCheck.latestEvidenceDate,
-          new Date(),
           windowMonths,
           penalty,
           temporalContext?.granularity,

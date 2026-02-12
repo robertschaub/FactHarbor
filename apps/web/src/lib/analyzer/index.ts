@@ -150,3 +150,18 @@ export {
 
 export type { ModelInfo } from "./llm";
 export { getModel, extractStructuredOutput, clampConfidence } from "./llm";
+
+// ============================================================================
+// EVIDENCE PROCESSOR MODULES (Phase 2a)
+// ============================================================================
+
+export { EvidenceDeduplicator, jaccardSimilarity } from "./evidence-deduplication";
+export type { DeduplicationState } from "./evidence-deduplication";
+
+export { EvidenceNormalizer } from "./evidence-normalization";
+export type { RawEvidenceItem } from "./evidence-normalization";
+
+export { RecencyAssessor } from "./evidence-recency";
+export type { RecencyValidationResult, RecencyPenaltyResult } from "./evidence-recency";
+
+export { mergeContextMetadata, buildContextDescription, buildRelevanceContextSummary } from "./evidence-context-utils";
