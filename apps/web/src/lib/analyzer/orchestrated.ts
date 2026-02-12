@@ -223,8 +223,8 @@ function getSourceAuthorityWithFallback(
   evidenceText: string,
   evidenceIndex: number,
   tracker: FallbackTracker
-): "primary" | "secondary" | "opinion" | "contested" {
-  const validValues = ["primary", "secondary", "opinion", "contested"];
+): "primary" | "secondary" | "opinion" {
+  const validValues = ["primary", "secondary", "opinion"];
 
   // LLM provided valid value â†’ use it
   if (llmValue && validValues.includes(llmValue)) {
@@ -879,7 +879,7 @@ function verifyFinalClassifications(
   // Verify evidence items have sourceAuthority and evidenceBasis
   state.evidenceItems.forEach((item: any, index: number) => {
     // sourceAuthority
-    if (!item.sourceAuthority || !["primary", "secondary", "opinion", "contested"].includes(item.sourceAuthority)) {
+    if (!item.sourceAuthority || !["primary", "secondary", "opinion"].includes(item.sourceAuthority)) {
       const reason = !item.sourceAuthority ? 'missing' : 'invalid';
       tracker.recordFallback({
         field: 'sourceAuthority',
@@ -3471,172 +3471,262 @@ function countBySourceDeduped(evidence: EvidenceItem[]): {
 }
 
 /**
- * P0: Validate verdict direction against evidence direction.
- * Detects when LLM returns HIGH verdict (>=72%) but majority of evidence contradicts the claim.
+ * LLM-powered direction validation batch.
+ * For each verdict, asks the LLM whether the truth percentage is
+ * directionally consistent with the cited evidence.
+ * Resolves the claimDirection scope mismatch by having the LLM
+ * evaluate the sub-claim/evidence relationship directly.
+ */
+type DirectionValidationResult = { aligned: boolean; expectedDirection?: "high" | "low"; reason?: string };
+
+interface DirectionValidationBatchResult {
+  results: DirectionValidationResult[] | null;
+  degraded: boolean;
+}
+
+async function batchDirectionValidationLLM(
+  inputs: Array<{
+    claimText: string;
+    verdictPct: number;
+    evidenceStatements: string[];
+  }>,
+): Promise<DirectionValidationBatchResult> {
+  if (inputs.length === 0) return { results: [], degraded: false };
+
+  const modelInfo = getModelForTask("extract_evidence"); // Haiku tier
+
+  const pairs = inputs
+    .map((v, i) => {
+      const evidenceList = v.evidenceStatements
+        .map((s, j) => `  ${j + 1}. ${s}`)
+        .join("\n");
+      return `[${i}] Sub-claim: "${v.claimText.slice(0, 200)}"\nVerdict: ${v.verdictPct}%\nEvidence:\n${evidenceList}`;
+    })
+    .join("\n\n");
+
+  try {
+    const rendered = await loadAndRenderSection("orchestrated", "VERDICT_DIRECTION_VALIDATION_BATCH_USER", {
+      VERDICT_DIRECTION_PAIRS: pairs,
+    });
+    if (!rendered?.content?.trim()) {
+      throw new Error("Missing or empty prompt section: VERDICT_DIRECTION_VALIDATION_BATCH_USER");
+    }
+
+    const result = await generateText({
+      model: modelInfo.model,
+      messages: [{ role: "user", content: rendered.content }],
+      temperature: 0.1,
+    });
+
+    let text = result.text.trim();
+    text = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "");
+    const parsed = JSON.parse(text);
+
+    if (Array.isArray(parsed) && parsed.length === inputs.length) {
+      return {
+        results: parsed.map((item: any) => ({
+          aligned: item?.aligned !== false,
+          expectedDirection: item?.expectedDirection === "high" || item?.expectedDirection === "low"
+            ? item.expectedDirection : undefined,
+          reason: typeof item?.reason === "string" ? item.reason : undefined,
+        })),
+        degraded: false,
+      };
+    }
+  } catch (err) {
+    console.warn("[batchDirectionValidationLLM] LLM validation failed; skipping direction judgments", err);
+  }
+
+  // Degraded fallback: return null results — caller must skip judgments and keep verdicts unchanged
+  return { results: null, degraded: true };
+}
+
+/**
+ * P0: Validate verdict direction against evidence direction (LLM-powered).
+ * Uses LLM to evaluate whether each verdict's truth percentage is
+ * directionally consistent with the cited evidence, resolving the
+ * claimDirection scope mismatch that affected deterministic validation.
  *
  * @param claimVerdicts - Verdicts to validate
  * @param evidenceItems - All evidence items
  * @param options - Validation options
  * @returns Object with validated verdicts and any direction mismatches found
  */
-function validateVerdictDirections(
+async function validateVerdictDirections(
   claimVerdicts: ClaimVerdict[],
   evidenceItems: EvidenceItem[],
   options: {
-    /** Threshold for evidence majority (default 0.6 = 60%) */
-    majorityThreshold?: number;
     /** Whether to auto-correct mismatched verdicts (default false) */
     autoCorrect?: boolean;
-    /** Minimum unique directional source votes to trigger validation (default 2) */
+    /** Minimum linked evidence items to trigger validation (default 2) */
     minEvidenceCount?: number;
   } = {},
-): {
+): Promise<{
   validatedVerdicts: ClaimVerdict[];
   mismatches: VerdictDirectionMismatch[];
   warnings: AnalysisWarning[];
-} {
+  degraded: boolean;
+}> {
   const {
-    majorityThreshold = 0.6,
     autoCorrect = false,
     minEvidenceCount = 2,
   } = options;
 
   const mismatches: VerdictDirectionMismatch[] = [];
   const warnings: AnalysisWarning[] = [];
+  const validatedVerdicts = [...claimVerdicts]; // mutable copy
 
-  const validatedVerdicts = claimVerdicts.map((verdict) => {
-    // Get evidence items linked to this claim
+  // Pass 1: collect candidates for LLM validation
+  type Candidate = {
+    verdictIndex: number;
+    verdict: ClaimVerdict;
+    linkedEvidence: EvidenceItem[];
+    dedupedCounts: ReturnType<typeof countBySourceDeduped>;
+  };
+  const candidates: Candidate[] = [];
+
+  for (let i = 0; i < claimVerdicts.length; i++) {
+    const verdict = claimVerdicts[i];
     const supportingIds = verdict.supportingEvidenceIds || [];
     const linkedEvidence = evidenceItems.filter((e) => supportingIds.includes(e.id));
 
-    // Skip validation if not enough evidence
-    if (linkedEvidence.length < minEvidenceCount) {
-      return verdict;
-    }
+    if (linkedEvidence.length < minEvidenceCount) continue;
 
-    // Count direction by unique source (one source = one vote)
+    // Collect directional metadata (for diagnostics only — NOT used for gating)
     const dedupedCounts = countBySourceDeduped(linkedEvidence);
-    const supportCount = dedupedCounts.supports;
-    const contradictCount = dedupedCounts.contradicts;
-    const neutralCount = dedupedCounts.neutral;
-    const totalDirectional = supportCount + contradictCount;
 
-    // Skip if no directional evidence or too few unique directional sources
-    if (totalDirectional === 0 || totalDirectional < minEvidenceCount) {
-      return verdict;
-    }
+    candidates.push({ verdictIndex: i, verdict, linkedEvidence, dedupedCounts });
+  }
 
-    // Determine expected direction based on evidence majority
-    const supportRatio = supportCount / totalDirectional;
-    const contradictRatio = contradictCount / totalDirectional;
+  if (candidates.length === 0) {
+    return { validatedVerdicts, mismatches, warnings, degraded: false };
+  }
 
-    // Evidence suggests claim should be TRUE (high verdict)
-    const evidenceSuggestsHigh = supportRatio >= majorityThreshold;
-    // Evidence suggests claim should be FALSE (low verdict)
-    const evidenceSuggestsLow = contradictRatio >= majorityThreshold;
+  // Batch LLM direction validation (single call for all candidates)
+  const llmInputs = candidates.map((c) => ({
+    claimText: c.verdict.claimText || c.verdict.claimId,
+    verdictPct: c.verdict.truthPercentage,
+    evidenceStatements: c.linkedEvidence.map((e) => e.statement),
+  }));
+  const llmBatch = await batchDirectionValidationLLM(llmInputs);
 
-    // Determine actual direction from verdict
-    const verdictIsHigh = verdict.truthPercentage >= VERDICT_BANDS.MOSTLY_TRUE;
-    const verdictIsLow = verdict.truthPercentage < VERDICT_BANDS.MIXED;
+  // If LLM failed (degraded), skip all mismatch judgments — keep verdicts unchanged
+  if (llmBatch.degraded || !llmBatch.results) {
+    return { validatedVerdicts, mismatches, warnings, degraded: true };
+  }
 
-    // Check for mismatch
-    const hasDirectionMismatch =
-      (evidenceSuggestsLow && verdictIsHigh) || // Counter-evidence but HIGH verdict
-      (evidenceSuggestsHigh && verdictIsLow);    // Support evidence but LOW verdict
+  // Pass 2: process LLM results
+  for (let j = 0; j < candidates.length; j++) {
+    const { verdictIndex, verdict, linkedEvidence, dedupedCounts } = candidates[j];
+    const llmResult = llmBatch.results[j];
 
-    if (hasDirectionMismatch) {
-      const expectedDirection = evidenceSuggestsHigh ? "high" : "low";
-      const actualDirection = verdictIsHigh ? "high" : "low";
+    if (llmResult.aligned) continue;
 
-      const mismatch: VerdictDirectionMismatch = {
-        claimId: verdict.claimId,
-        claimText: verdict.claimText || "",
-        verdictPct: verdict.truthPercentage,
-        evidenceSupportCount: supportCount,
-        evidenceContradictCount: contradictCount,
-        evidenceNeutralCount: neutralCount,
-        expectedDirection,
-        actualDirection,
-        wasCorrect: false,
-      };
+    // LLM flagged this verdict as misaligned
+    const expectedDirection = llmResult.expectedDirection || (verdict.truthPercentage >= 50 ? "low" : "high");
+    const actualDirection = verdict.truthPercentage >= 50 ? "high" : "low";
 
-      // Log the mismatch
-      console.warn(`[VerdictValidation] Direction mismatch detected for claim ${verdict.claimId}:`, {
-        verdictPct: verdict.truthPercentage,
-        supportCount,
-        contradictCount,
-        neutralCount,
-        totalSources: dedupedCounts.totalSources,
-        expectedDirection,
-        actualDirection,
-      });
+    const claimTextPreview = verdict.claimText?.substring(0, 50) || verdict.claimId;
+    const evidenceIds = linkedEvidence.map((e) => e.id);
 
-      // Auto-correct if enabled
-      if (autoCorrect) {
-        let correctedPct: number;
-        if (evidenceSuggestsLow && verdictIsHigh) {
-          // Evidence contradicts but verdict is HIGH - pull down to LEANING-FALSE range
-          correctedPct = Math.min(35, 100 - verdict.truthPercentage);
-        } else {
-          // Evidence supports but verdict is LOW - pull up to LEANING-TRUE range
-          correctedPct = Math.max(65, 100 - verdict.truthPercentage);
-        }
-        mismatch.correctedVerdictPct = correctedPct;
+    const mismatch: VerdictDirectionMismatch = {
+      claimId: verdict.claimId,
+      claimText: verdict.claimText || "",
+      verdictPct: verdict.truthPercentage,
+      evidenceSupportCount: dedupedCounts.supports,
+      evidenceContradictCount: dedupedCounts.contradicts,
+      evidenceNeutralCount: dedupedCounts.neutral,
+      expectedDirection,
+      actualDirection,
+      wasCorrect: false,
+    };
 
-        mismatches.push(mismatch);
+    console.warn(`[VerdictValidation] LLM direction mismatch for claim ${verdict.claimId}:`, {
+      verdictPct: verdict.truthPercentage,
+      expectedDirection,
+      reason: llmResult.reason || "no reason provided",
+    });
 
-        // Add warning
-        warnings.push({
-          type: "verdict_direction_mismatch",
-          severity: "warning",
-          message: `Verdict for "${verdict.claimText?.substring(0, 50)}..." was ${verdict.truthPercentage}% but ${Math.round(contradictRatio * 100)}% of evidence contradicts it. Auto-corrected to ${correctedPct}%.`,
-          details: {
-            claimId: verdict.claimId,
-            expectedDirection,
-            actualVerdictPct: verdict.truthPercentage,
-            evidenceSupportPct: Math.round(supportRatio * 100),
-            correctedVerdictPct: correctedPct,
-          },
-        });
-
-        return {
-          ...verdict,
-          truthPercentage: correctedPct,
-          verdict: correctedPct,
-          highlightColor: getHighlightColor7Point(correctedPct),
-          // Add flag to indicate this was auto-corrected
-          verdictDirectionCorrected: true,
-          originalVerdictPct: verdict.truthPercentage,
-        } as ClaimVerdict;
+    if (autoCorrect) {
+      let correctedPct: number;
+      if (expectedDirection === "low") {
+        correctedPct = Math.min(35, 100 - verdict.truthPercentage);
+      } else {
+        correctedPct = Math.max(65, 100 - verdict.truthPercentage);
       }
-
+      mismatch.correctedVerdictPct = correctedPct;
       mismatches.push(mismatch);
 
-      // Add warning (without correction)
       warnings.push({
         type: "verdict_direction_mismatch",
         severity: "warning",
-        message: `Verdict for "${verdict.claimText?.substring(0, 50)}..." is ${verdict.truthPercentage}% but ${Math.round(contradictRatio * 100)}% of evidence contradicts it. Manual review recommended.`,
+        message:
+          `Verdict for "${claimTextPreview}..." misaligned with evidence (LLM-assessed). ` +
+          `Original verdict: ${verdict.truthPercentage}%. ` +
+          `LLM: ${llmResult.reason || "direction inconsistent"}. ` +
+          `Auto-corrected to ${correctedPct}%.`,
         details: {
           claimId: verdict.claimId,
           expectedDirection,
+          actualDirection,
           actualVerdictPct: verdict.truthPercentage,
-          evidenceSupportPct: Math.round(supportRatio * 100),
+          evidenceIds: evidenceIds.slice(0, 10),
+          correctedVerdictPct: correctedPct,
+          llmReason: llmResult.reason,
+          legacyDirectionalMetadata: {
+            note: "claimDirection counts are scoped to original user claim, not sub-claims; use LLM assessment instead",
+            evidenceSupportCount: dedupedCounts.supports,
+            evidenceContradictCount: dedupedCounts.contradicts,
+            evidenceNeutralCount: dedupedCounts.neutral,
+          },
+        },
+      });
+
+      validatedVerdicts[verdictIndex] = {
+        ...verdict,
+        truthPercentage: correctedPct,
+        verdict: correctedPct,
+        highlightColor: getHighlightColor7Point(correctedPct),
+        verdictDirectionCorrected: true,
+        originalVerdictPct: verdict.truthPercentage,
+      } as ClaimVerdict;
+    } else {
+      mismatches.push(mismatch);
+
+      warnings.push({
+        type: "verdict_direction_mismatch",
+        severity: "warning",
+        message:
+          `Verdict for "${claimTextPreview}..." misaligned with evidence (LLM-assessed). ` +
+          `Verdict: ${verdict.truthPercentage}%. ` +
+          `LLM: ${llmResult.reason || "direction inconsistent"}. ` +
+          "Manual review recommended.",
+        details: {
+          claimId: verdict.claimId,
+          expectedDirection,
+          actualDirection,
+          actualVerdictPct: verdict.truthPercentage,
+          evidenceIds: evidenceIds.slice(0, 10),
+          llmReason: llmResult.reason,
+          legacyDirectionalMetadata: {
+            note: "claimDirection counts are scoped to original user claim, not sub-claims; use LLM assessment instead",
+            evidenceSupportCount: dedupedCounts.supports,
+            evidenceContradictCount: dedupedCounts.contradicts,
+            evidenceNeutralCount: dedupedCounts.neutral,
+          },
         },
       });
     }
-
-    return verdict;
-  });
+  }
 
   if (mismatches.length > 0) {
-    debugLog("validateVerdictDirections: Found mismatches", {
+    debugLog("validateVerdictDirections: Found mismatches (LLM-powered)", {
       count: mismatches.length,
       claimIds: mismatches.map((m) => m.claimId),
     });
   }
 
-  return { validatedVerdicts, mismatches, warnings };
+  return { validatedVerdicts, mismatches, warnings, degraded: false };
 }
 
 /**
@@ -6120,14 +6210,13 @@ const EVIDENCE_SCHEMA = z.object({
       claimSource: z.string(), // empty string if not applicable
       // NEW v2.6.29: Does this evidence item support or contradict the ORIGINAL user claim?
       claimDirection: z.enum(["supports", "contradicts", "neutral"]),
-      // NEW: Source authority classification
-      sourceAuthority: z.enum(["primary", "secondary", "opinion", "contested"]).optional(),
-      // NEW: Evidence basis classification
-      evidenceBasis: z
-        .enum(["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"])
-        .optional(),
-      // Phase 1.5: Probative value assessment
-      probativeValue: z.enum(["high", "medium", "low"]).optional(),
+      // Source authority classification: producer type only (primary/secondary/opinion)
+      // Contestation is handled at assertion level (isContestedClaim, contestedBy), not source type
+      sourceAuthority: z.enum(["primary", "secondary", "opinion"]),
+      // Evidence basis classification (required — prompt instructs LLM; normalization fallback is safety net)
+      evidenceBasis: z.enum(["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"]),
+      // Probative value assessment (required — prompt instructs LLM; normalization fallback is safety net)
+      probativeValue: z.enum(["high", "medium", "low"]),
       // EvidenceScope: Captures the methodology/boundaries of the source document
       // (e.g., different analytical standards, different regulatory frameworks, different time periods)
       evidenceScope: z.object({
@@ -7999,16 +8088,26 @@ async function generateMultiContextVerdicts(
     state.sources,
   );
 
-  // P0: Validate verdict direction against evidence direction (multi-context path)
+  // P0: Validate verdict direction against evidence direction (multi-context path, LLM-powered)
   const {
     validatedVerdicts: directionValidatedVerdicts,
     mismatches: verdictMismatches,
     warnings: verdictDirectionWarnings,
-  } = validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
-    majorityThreshold: 0.6,
-    autoCorrect: true, // Auto-correct mismatches for better accuracy
+    degraded: directionValidationDegraded,
+  } = await validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
+    autoCorrect: false,
     minEvidenceCount: 2,
   });
+
+  // Surface direction validation degradation warning
+  if (directionValidationDegraded) {
+    state.analysisWarnings.push({
+      type: "direction_validation_degraded",
+      severity: "warning",
+      message: "Direction validation LLM failed; verdicts kept unchanged. Direction mismatch detection skipped.",
+      details: { verdictCount: weightedClaimVerdicts.length },
+    });
+  }
 
   // Add any direction mismatch warnings to state
   if (verdictDirectionWarnings.length > 0) {
@@ -8586,16 +8685,26 @@ async function generateSingleContextVerdicts(
     state.sources,
   );
 
-  // P0: Validate verdict direction against evidence direction (single-context path)
+  // P0: Validate verdict direction against evidence direction (single-context path, LLM-powered)
   const {
     validatedVerdicts: directionValidatedVerdicts,
     mismatches: verdictMismatches,
     warnings: verdictDirectionWarnings,
-  } = validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
-    majorityThreshold: 0.6,
-    autoCorrect: true, // Auto-correct mismatches for better accuracy
+    degraded: directionValidationDegraded,
+  } = await validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
+    autoCorrect: false,
     minEvidenceCount: 2,
   });
+
+  // Surface direction validation degradation warning
+  if (directionValidationDegraded) {
+    state.analysisWarnings.push({
+      type: "direction_validation_degraded",
+      severity: "warning",
+      message: "Direction validation LLM failed; verdicts kept unchanged. Direction mismatch detection skipped.",
+      details: { verdictCount: weightedClaimVerdicts.length },
+    });
+  }
 
   // Add any direction mismatch warnings to state
   if (verdictDirectionWarnings.length > 0) {
@@ -9296,16 +9405,26 @@ ${providerPromptHint}`;
     state.sources,
   );
 
-  // P0: Validate verdict direction against evidence direction (claim verdicts path)
+  // P0: Validate verdict direction against evidence direction (claim verdicts path, LLM-powered)
   const {
     validatedVerdicts: directionValidatedVerdicts,
     mismatches: verdictMismatches,
     warnings: verdictDirectionWarnings,
-  } = validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
-    majorityThreshold: 0.6,
-    autoCorrect: true, // Auto-correct mismatches for better accuracy
+    degraded: directionValidationDegraded,
+  } = await validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
+    autoCorrect: false,
     minEvidenceCount: 2,
   });
+
+  // Surface direction validation degradation warning
+  if (directionValidationDegraded) {
+    state.analysisWarnings.push({
+      type: "direction_validation_degraded",
+      severity: "warning",
+      message: "Direction validation LLM failed; verdicts kept unchanged. Direction mismatch detection skipped.",
+      details: { verdictCount: weightedClaimVerdicts.length },
+    });
+  }
 
   // Add any direction mismatch warnings to state
   if (verdictDirectionWarnings.length > 0) {
@@ -11602,12 +11721,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         })),
       });
 
-      // Apply grounding penalty to verdictSummary confidence
+      // Apply grounding penalty to verdictSummary confidence (UCM-configurable)
+      const groundingPenaltyConfig = state.calcConfig.groundingPenalty ?? DEFAULT_GROUNDING_PENALTY_CONFIG;
       if (verdictSummary?.confidence != null) {
         const gp = applyGroundingPenalty(
           verdictSummary.confidence,
           groundingResult.groundingRatio,
-          DEFAULT_GROUNDING_PENALTY_CONFIG,
+          groundingPenaltyConfig,
         );
         if (gp.applied) {
           debugLog("Grounding penalty applied to verdictSummary", {
@@ -11620,12 +11740,25 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         }
       }
 
+      // Surface grounding degradation warning if LLM adjudication failed
+      if (groundingResult.degraded) {
+        state.analysisWarnings.push({
+          type: "grounding_check_degraded",
+          severity: "warning",
+          message: `Grounding adjudication LLM failed; using conservative fallback ratios (0.5). Grounding penalties may be inaccurate.`,
+          details: {
+            groundingRatio: groundingResult.groundingRatio,
+            verdictCount: claimVerdicts.length,
+          },
+        });
+      }
+
       // Log grounding warnings
       if (groundingResult.warnings.length > 0) {
         state.analysisWarnings.push({
           type: "grounding_check",
           severity: "warning",
-          message: `Grounding ratio: ${(groundingResult.groundingRatio * 100).toFixed(0)}% â€” ${groundingResult.warnings.length} verdict(s) with low evidence grounding`,
+          message: `Grounding ratio: ${(groundingResult.groundingRatio * 100).toFixed(0)}% \u2013 ${groundingResult.warnings.length} verdict(s) with low evidence grounding`,
           details: {
             groundingRatio: groundingResult.groundingRatio,
             warnings: groundingResult.warnings,
@@ -11898,6 +12031,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       analysisMode: mode,
       llmProvider: provider,
       llmModel: modelName,
+      promptContentHash,
+      promptLoadedUtc,
       searchProvider: searchConfig.provider,
       inputType: input.inputType,
       detectedInputType: state.understanding!.detectedInputType,

@@ -1,4 +1,9 @@
 /**
+ * @deprecated This base prompt builder is retained for historical reference.
+ * The orchestrated pipeline loads runtime prompt content from
+ * `apps/web/prompts/orchestrated.prompt.md` via prompt profiles/UCM.
+ * Keep this file aligned only when explicitly migrating prompt sections.
+ *
  * Base prompt template for EXTRACT_EVIDENCE phase (Evidence extraction from sources)
  *
  * This prompt instructs the LLM to:
@@ -129,7 +134,9 @@ Classify the authority level of the source for each evidence item:
 - **primary**: Original research, official records, court documents, audited datasets
 - **secondary**: News reporting or analysis summarizing primary sources
 - **opinion**: Editorials, advocacy statements, public commentary without concrete evidence
-- **contested**: The source itself is disputed or unreliable within the AnalysisContext
+
+Note: Contestation (whether a source's claims are disputed) is NOT a source authority type.
+Use isContestedClaim and claimSource fields for that.
 
 **CRITICAL**:
 - Opinion sources are NOT documented evidence even if they use evidence-like language
@@ -237,7 +244,7 @@ Return JSON with \`evidenceItems\` array (preferred). Each evidence item MUST in
 - claimDirection: "supports" | "contradicts" | "neutral"
 - contextId: string (AnalysisContext ID or "")
 - probativeValue: "high" | "medium"
-- sourceAuthority: "primary" | "secondary" | "opinion" | "contested" (REQUIRED)
+- sourceAuthority: "primary" | "secondary" | "opinion" (REQUIRED)
 - evidenceBasis: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific" (REQUIRED)
 - evidenceScope: object with {name, methodology, boundaries, geographic, temporal} OR null`;
 }

@@ -2,9 +2,10 @@
  * Grounding Check Test Suite
  *
  * Tests for:
- * 1. LLM-powered key term extraction from reasoning
- * 2. Grounding ratio calculation in checkVerdictGrounding
+ * 1. LLM-powered key term extraction from reasoning (extractKeyTerms)
+ * 2. LLM-powered grounding adjudication in checkVerdictGrounding
  * 3. applyGroundingPenalty structural logic
+ * 4. Degraded-path behavior when LLM adjudication fails
  *
  * @module analyzer/grounding-check.test
  */
@@ -32,13 +33,27 @@ vi.mock("@/lib/analyzer/llm", () => ({
   })),
 }));
 
+// Mock prompt-loader to return a simple rendered prompt
+vi.mock("@/lib/analyzer/prompt-loader", () => ({
+  loadAndRenderSection: vi.fn(() =>
+    Promise.resolve({ content: "mocked prompt content" })
+  ),
+}));
+
 import { generateText } from "ai";
 const mockGenerateText = vi.mocked(generateText);
 
-// Helper: configure mock to return specific terms
+// Helper: configure mock to return specific terms (for extractKeyTerms)
 function mockLLMTerms(termArrays: string[][]) {
   mockGenerateText.mockResolvedValueOnce({
     text: JSON.stringify(termArrays),
+  } as any);
+}
+
+// Helper: configure mock to return adjudication ratios (for checkVerdictGrounding)
+function mockAdjudicationRatios(ratios: number[]) {
+  mockGenerateText.mockResolvedValueOnce({
+    text: JSON.stringify(ratios),
   } as any);
 }
 
@@ -80,7 +95,7 @@ describe("extractKeyTerms", () => {
 });
 
 // ============================================================================
-// checkVerdictGrounding
+// checkVerdictGrounding (LLM-powered adjudication)
 // ============================================================================
 
 describe("checkVerdictGrounding", () => {
@@ -116,11 +131,12 @@ describe("checkVerdictGrounding", () => {
   it("returns ratio 1 for empty verdicts", async () => {
     const result = await checkVerdictGrounding([], []);
     expect(result.groundingRatio).toBe(1);
+    expect(result.degraded).toBeFalsy();
     expect(mockGenerateText).not.toHaveBeenCalled();
   });
 
-  it("matches terms that appear in evidence corpus", async () => {
-    mockLLMTerms([["battery", "efficiency"]]);
+  it("returns LLM-adjudicated grounding ratio for verdict with evidence", async () => {
+    mockAdjudicationRatios([0.85]);
     const verdict = makeVerdict({
       reasoning: "The battery efficiency was demonstrated clearly",
       supportingEvidenceIds: ["e1"],
@@ -133,13 +149,14 @@ describe("checkVerdictGrounding", () => {
     ];
 
     const result = await checkVerdictGrounding([verdict], evidence);
-    expect(result.groundingRatio).toBeGreaterThan(0);
+    expect(result.groundingRatio).toBe(0.85);
+    expect(result.degraded).toBeFalsy();
     const detail = result.verdictDetails[0];
-    expect(detail.groundedTermCount).toBeGreaterThan(0);
+    expect(detail.ratio).toBe(0.85);
+    expect(detail.hasCitedEvidence).toBe(true);
   });
 
-  it("returns ratio 0 when reasoning has terms but no cited evidence", async () => {
-    mockLLMTerms([["vaccine", "effective", "trials"]]);
+  it("returns ratio 0 when reasoning has no cited evidence (no LLM call)", async () => {
     const verdict = makeVerdict({
       reasoning: "The vaccine was proven effective in trials",
       supportingEvidenceIds: [],
@@ -147,12 +164,14 @@ describe("checkVerdictGrounding", () => {
     const result = await checkVerdictGrounding([verdict], []);
     expect(result.groundingRatio).toBe(0);
     expect(result.warnings.length).toBeGreaterThan(0);
+    // No LLM call — verdict handled structurally (no evidence = ungrounded)
+    expect(mockGenerateText).not.toHaveBeenCalled();
   });
 
-  it("warns when grounding ratio is very low", async () => {
-    mockLLMTerms([["cryptocurrency", "volatility", "regulatory"]]);
+  it("warns when LLM returns very low grounding ratio", async () => {
+    mockAdjudicationRatios([0.15]);
     const verdict = makeVerdict({
-      reasoning: "The cryptocurrency market experienced extreme volatility and regulatory uncertainty",
+      reasoning: "The cryptocurrency market experienced extreme volatility",
       supportingEvidenceIds: ["e1"],
     });
     const evidence = [
@@ -163,13 +182,13 @@ describe("checkVerdictGrounding", () => {
     ];
 
     const result = await checkVerdictGrounding([verdict], evidence);
-    // Terms from crypto reasoning should NOT match GDP evidence
-    expect(result.groundingRatio).toBe(0);
+    expect(result.groundingRatio).toBe(0.15);
     expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings[0]).toContain("low grounding ratio");
   });
 
   it("batches multiple verdicts in a single LLM call", async () => {
-    mockLLMTerms([["solar", "panels"], ["wind", "turbines"]]);
+    mockAdjudicationRatios([0.85, 0.9]);
     const verdicts = [
       makeVerdict({
         claimId: "c1",
@@ -188,22 +207,70 @@ describe("checkVerdictGrounding", () => {
     ];
 
     const result = await checkVerdictGrounding(verdicts, evidence);
-    // Should make only ONE LLM call for both verdicts
+    // Should make only ONE LLM call for both verdicts (adjudication batch)
     expect(mockGenerateText).toHaveBeenCalledTimes(1);
     expect(result.verdictDetails).toHaveLength(2);
+    expect(result.degraded).toBeFalsy();
   });
 
-  it("handles trivial reasoning with no extractable terms", async () => {
-    mockLLMTerms([[]]);
+  it("returns ratio 1 for verdict without reasoning (trivially grounded)", async () => {
     const verdict = makeVerdict({
-      reasoning: "Yes",
+      reasoning: "",
       supportingEvidenceIds: ["e1"],
     });
     const evidence = [makeEvidence({ id: "e1", statement: "Some evidence" })];
 
     const result = await checkVerdictGrounding([verdict], evidence);
-    // No terms → ratio defaults to 1 (trivial reasoning)
     expect(result.verdictDetails[0].ratio).toBe(1);
+    // No LLM call — empty reasoning is trivially grounded
+    expect(mockGenerateText).not.toHaveBeenCalled();
+  });
+
+  // ---- Degraded-path tests ----
+
+  it("returns degraded=true with conservative 0.5 ratio on LLM failure", async () => {
+    mockGenerateText.mockRejectedValueOnce(new Error("LLM unavailable"));
+    const verdict = makeVerdict({
+      reasoning: "This reasoning should trigger adjudication",
+      supportingEvidenceIds: ["e1"],
+    });
+    const evidence = [
+      makeEvidence({ id: "e1", statement: "Evidence for grounding" }),
+    ];
+
+    const result = await checkVerdictGrounding([verdict], evidence);
+    expect(result.degraded).toBe(true);
+    expect(result.groundingRatio).toBe(0.5);
+    expect(result.verdictDetails[0].ratio).toBe(0.5);
+  });
+
+  it("does not silently return 1.0 (all grounded) on LLM failure", async () => {
+    mockGenerateText.mockRejectedValueOnce(new Error("LLM timeout"));
+    const verdicts = [
+      makeVerdict({
+        claimId: "c1",
+        reasoning: "Reasoning A",
+        supportingEvidenceIds: ["e1"],
+      }),
+      makeVerdict({
+        claimId: "c2",
+        reasoning: "Reasoning B",
+        supportingEvidenceIds: ["e2"],
+      }),
+    ];
+    const evidence = [
+      makeEvidence({ id: "e1", statement: "Evidence 1" }),
+      makeEvidence({ id: "e2", statement: "Evidence 2" }),
+    ];
+
+    const result = await checkVerdictGrounding(verdicts, evidence);
+    // Must NOT be 1.0 — that would hide the failure
+    expect(result.groundingRatio).not.toBe(1);
+    expect(result.degraded).toBe(true);
+    // Each verdict should get 0.5 (conservative fallback)
+    for (const detail of result.verdictDetails) {
+      expect(detail.ratio).toBe(0.5);
+    }
   });
 });
 

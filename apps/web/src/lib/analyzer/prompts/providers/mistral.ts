@@ -92,7 +92,7 @@ export function getMistralExtractEvidenceVariant(): string {
   "sourceExcerpt": "[copy 50-200 chars verbatim from source]",
   "claimDirection": "[pick one: supports | contradicts | neutral]",
   "contextId": "[AnalysisContext ID or empty string]",
-  "sourceAuthority": "[pick one: primary | secondary | opinion | contested]",
+  "sourceAuthority": "[pick one: primary | secondary | opinion]",
   "evidenceBasis": "[pick one: scientific | documented | anecdotal | theoretical | pseudoscientific]",
   "evidenceScope": [object or null]
 }

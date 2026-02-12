@@ -2,8 +2,8 @@
  * Post-Verdict Grounding Check (M2 from Anti-Hallucination Strategy)
  *
  * Validates that verdict reasoning is grounded in cited evidence items.
- * Key term extraction from reasoning is now LLM-powered (AGENTS.md compliance).
- * Term matching against evidence corpus remains structural.
+ * Grounding adjudication is fully LLM-powered (AGENTS.md compliance):
+ * the LLM directly rates how well reasoning traces to cited evidence.
  *
  * Returns a groundingRatio (0-1) used by confidence calibration (Layer 5).
  *
@@ -26,6 +26,8 @@ export interface GroundingCheckResult {
   verdictDetails: VerdictGroundingDetail[];
   /** Warning messages for ungrounded verdicts */
   warnings: string[];
+  /** True when LLM adjudication failed and ratios are conservative fallback values */
+  degraded?: boolean;
 }
 
 export interface VerdictGroundingDetail {
@@ -146,13 +148,142 @@ function buildEvidenceCorpus(
 }
 
 /**
+ * Build formatted evidence text for LLM grounding adjudication.
+ * Returns human-readable evidence listing per verdict.
+ */
+function buildEvidenceText(
+  evidenceIds: string[],
+  allEvidence: EvidenceItem[],
+): string {
+  const evidenceMap = new Map(allEvidence.map(e => [e.id, e]));
+  const parts: string[] = [];
+
+  for (const id of evidenceIds) {
+    const item = evidenceMap.get(id);
+    if (item) {
+      let text = `- ${id}: ${item.statement}`;
+      if (item.sourceExcerpt) {
+        text += ` [excerpt: "${item.sourceExcerpt.slice(0, 200)}"]`;
+      }
+      parts.push(text);
+    }
+  }
+
+  return parts.join("\n");
+}
+
+/**
+ * LLM-powered grounding adjudication.
+ * For each verdict with cited evidence, asks the LLM to rate
+ * how well the reasoning is grounded in the cited evidence.
+ * Replaces the previous term-extraction + substring-matching approach.
+ *
+ * @returns Array of grounding ratios (0-1), one per input
+ */
+interface AdjudicationBatchResult {
+  ratios: number[];
+  degraded: boolean;
+}
+
+async function adjudicateGroundingBatch(
+  inputs: Array<{ reasoning: string; evidenceText: string }>,
+): Promise<AdjudicationBatchResult> {
+  if (inputs.length === 0) return { ratios: [], degraded: false };
+
+  const modelInfo = getModelForTask("extract_evidence"); // Haiku tier — fast, cheap
+
+  const pairs = inputs
+    .map((v, i) => `[${i}] Reasoning: ${v.reasoning.slice(0, 500)}\nEvidence:\n${v.evidenceText}`)
+    .join("\n\n");
+
+  try {
+    const rendered = await loadAndRenderSection("orchestrated", "GROUNDING_ADJUDICATION_BATCH_USER", {
+      VERDICT_EVIDENCE_PAIRS: pairs,
+    });
+    if (!rendered?.content?.trim()) {
+      throw new Error("Missing or empty prompt section: GROUNDING_ADJUDICATION_BATCH_USER");
+    }
+
+    const result = await generateText({
+      model: modelInfo.model,
+      messages: [{ role: "user", content: rendered.content }],
+      temperature: 0.1,
+    });
+
+    let text = result.text.trim();
+    text = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "");
+    const parsed = JSON.parse(text);
+
+    if (Array.isArray(parsed) && parsed.length === inputs.length) {
+      return {
+        ratios: parsed.map((item: unknown) => {
+          if (typeof item === "number") return Math.max(0, Math.min(1, item));
+          if (typeof item === "object" && item !== null && "groundingRatio" in item) {
+            const ratio = (item as { groundingRatio: unknown }).groundingRatio;
+            if (typeof ratio === "number") return Math.max(0, Math.min(1, ratio));
+          }
+          return 0.5; // Conservative fallback for unparseable individual item
+        }),
+        degraded: false,
+      };
+    }
+  } catch (err) {
+    console.warn("[adjudicateGroundingBatch] LLM adjudication failed; using conservative fallback (0.5)", err);
+  }
+
+  // Degraded fallback: conservative 0.5 ratio — caller must surface degradation warning
+  return { ratios: inputs.map(() => 0.5), degraded: true };
+}
+
+/**
+ * Fill missing supportingEvidenceIds by reading structural evidence ID citations
+ * from verdict reasoning (e.g., S1-E5). This does not infer semantics.
+ */
+function hydrateSupportingEvidenceIdsFromReasoning(
+  claimVerdicts: ClaimVerdict[],
+  allEvidence: EvidenceItem[],
+): ClaimVerdict[] {
+  if (!claimVerdicts.length || !allEvidence.length) return claimVerdicts;
+
+  const evidenceIdLookup = new Map<string, string>();
+  for (const item of allEvidence) {
+    evidenceIdLookup.set(item.id.toUpperCase(), item.id);
+  }
+
+  return claimVerdicts.map((verdict) => {
+    const hasCitations =
+      Array.isArray(verdict.supportingEvidenceIds) && verdict.supportingEvidenceIds.length > 0;
+    if (hasCitations) return verdict;
+
+    const reasoning = verdict.reasoning || "";
+    const cited = reasoning.match(/\bS\d+-E\d+\b/gi) || [];
+    if (cited.length === 0) return verdict;
+
+    const hydrated = Array.from(
+      new Set(
+        cited
+          .map((id) => evidenceIdLookup.get(id.toUpperCase()))
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    if (hydrated.length === 0) return verdict;
+
+    return {
+      ...verdict,
+      supportingEvidenceIds: hydrated,
+    };
+  });
+}
+
+/**
  * Check how well a verdict's reasoning is grounded in its cited evidence.
  *
  * For each claim verdict:
- * 1. Extract key terms from the reasoning text (LLM-powered)
- * 2. Build a corpus from the cited supportingEvidenceIds
- * 3. Count how many key terms appear in the evidence corpus
- * 4. Return ratio of grounded terms / total terms
+ * 1. Hydrate any missing citations from reasoning text (structural)
+ * 2. For verdicts with cited evidence: LLM rates grounding (0-1)
+ * 3. For verdicts without evidence: ratio = 0 (ungrounded)
+ * 4. For verdicts without reasoning: ratio = 1 (trivially grounded)
  */
 export async function checkVerdictGrounding(
   claimVerdicts: ClaimVerdict[],
@@ -162,86 +293,96 @@ export async function checkVerdictGrounding(
     return { groundingRatio: 1, verdictDetails: [], warnings: [] };
   }
 
-  // Batch extract key terms from all verdict reasonings in one LLM call
-  const reasonings = claimVerdicts.map((v) => v.reasoning || "");
-  const allKeyTerms = await extractKeyTermsBatch(reasonings);
+  const hydratedClaimVerdicts = hydrateSupportingEvidenceIdsFromReasoning(
+    claimVerdicts,
+    allEvidence,
+  );
 
-  const verdictDetails: VerdictGroundingDetail[] = [];
+  // Categorize verdicts and prepare LLM adjudication inputs
+  const adjudicationInputs: Array<{ index: number; reasoning: string; evidenceText: string }> = [];
+  const verdictDetails: VerdictGroundingDetail[] = new Array(hydratedClaimVerdicts.length);
   const warnings: string[] = [];
-  let totalGroundedTerms = 0;
-  let totalTerms = 0;
 
-  for (let i = 0; i < claimVerdicts.length; i++) {
-    const verdict = claimVerdicts[i];
+  for (let i = 0; i < hydratedClaimVerdicts.length; i++) {
+    const verdict = hydratedClaimVerdicts[i];
     const evidenceIds = verdict.supportingEvidenceIds || [];
     const hasCitedEvidence = evidenceIds.length > 0;
-    const keyTerms = allKeyTerms[i] ?? [];
+    const reasoning = verdict.reasoning || "";
 
-    if (keyTerms.length === 0) {
-      // No meaningful terms to check — consider fully grounded (trivial reasoning)
-      verdictDetails.push({
+    if (!reasoning.trim()) {
+      // No reasoning — trivially grounded
+      verdictDetails[i] = {
         claimId: verdict.claimId,
         groundedTermCount: 0,
         totalTermCount: 0,
         ratio: 1,
         hasCitedEvidence,
-      });
+      };
       continue;
     }
 
     if (!hasCitedEvidence) {
-      // No cited evidence but has reasoning — fully ungrounded
-      verdictDetails.push({
+      // Has reasoning but no cited evidence — fully ungrounded
+      verdictDetails[i] = {
         claimId: verdict.claimId,
         groundedTermCount: 0,
-        totalTermCount: keyTerms.length,
+        totalTermCount: 100,
         ratio: 0,
         hasCitedEvidence: false,
-      });
-      totalTerms += keyTerms.length;
+      };
       warnings.push(
-        `Claim ${verdict.claimId}: reasoning has ${keyTerms.length} key terms but no cited evidence`,
+        `Claim ${verdict.claimId}: reasoning present but no cited evidence`,
       );
       continue;
     }
 
-    // Build evidence corpus and check term presence (structural)
-    const corpus = buildEvidenceCorpus(evidenceIds, allEvidence);
-    let groundedCount = 0;
+    // Has both reasoning and evidence — queue for LLM adjudication
+    adjudicationInputs.push({
+      index: i,
+      reasoning,
+      evidenceText: buildEvidenceText(evidenceIds, allEvidence),
+    });
+  }
 
-    for (const term of keyTerms) {
-      if (corpus.includes(term.toLowerCase())) {
-        groundedCount++;
-      }
-    }
+  // Batch LLM adjudication for all verdicts with evidence (single call)
+  const adjudicationResult = adjudicationInputs.length > 0
+    ? await adjudicateGroundingBatch(
+        adjudicationInputs.map(v => ({ reasoning: v.reasoning, evidenceText: v.evidenceText })),
+      )
+    : { ratios: [], degraded: false };
 
-    const ratio = keyTerms.length > 0 ? groundedCount / keyTerms.length : 1;
+  // Fill in adjudicated results
+  for (let j = 0; j < adjudicationInputs.length; j++) {
+    const { index } = adjudicationInputs[j];
+    const verdict = hydratedClaimVerdicts[index];
+    const ratio = adjudicationResult.ratios[j] ?? 0.5;
 
-    verdictDetails.push({
+    verdictDetails[index] = {
       claimId: verdict.claimId,
-      groundedTermCount: groundedCount,
-      totalTermCount: keyTerms.length,
+      groundedTermCount: Math.round(ratio * 100),
+      totalTermCount: 100,
       ratio,
       hasCitedEvidence: true,
-    });
-
-    totalGroundedTerms += groundedCount;
-    totalTerms += keyTerms.length;
+    };
 
     if (ratio < 0.3) {
       warnings.push(
-        `Claim ${verdict.claimId}: low grounding ratio ${(ratio * 100).toFixed(0)}% ` +
-        `(${groundedCount}/${keyTerms.length} terms found in cited evidence)`,
+        `Claim ${verdict.claimId}: low grounding ratio ${(ratio * 100).toFixed(0)}%`,
       );
     }
   }
 
-  const overallRatio = totalTerms > 0 ? totalGroundedTerms / totalTerms : 1;
+  // Overall ratio: average across all verdicts with reasoning (non-trivial)
+  const nonTrivialDetails = verdictDetails.filter(d => d && d.totalTermCount > 0);
+  const overallRatio = nonTrivialDetails.length > 0
+    ? nonTrivialDetails.reduce((sum, d) => sum + d.ratio, 0) / nonTrivialDetails.length
+    : 1;
 
   return {
     groundingRatio: overallRatio,
-    verdictDetails,
+    verdictDetails: verdictDetails.filter(Boolean),
     warnings,
+    degraded: adjudicationResult.degraded,
   };
 }
 

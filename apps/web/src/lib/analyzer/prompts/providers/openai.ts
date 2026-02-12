@@ -103,7 +103,7 @@ export function getOpenAIExtractEvidenceVariant(): string {
 - claimDirection: "supports" | "contradicts" | "neutral"
 - contextId: string (AnalysisContext ID or "")
 - evidenceScope: object with name, methodology, boundaries, geographic, temporal (or null if not defined)
-- sourceAuthority: "primary" | "secondary" | "opinion" | "contested" (REQUIRED for each evidence item)
+- sourceAuthority: "primary" | "secondary" | "opinion" (REQUIRED for each evidence item)
 - evidenceBasis: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific" (REQUIRED)
 
 ### CLAIM DIRECTION RULES

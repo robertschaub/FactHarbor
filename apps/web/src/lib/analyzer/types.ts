@@ -482,7 +482,7 @@ export interface EvidenceItem {
   // (e.g., WTW vs TTW, EU vs US standards, different time periods)
   evidenceScope?: EvidenceScope;
   // NEW: Source authority classification (LLM)
-  sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
+  sourceAuthority?: "primary" | "secondary" | "opinion";
   // NEW: Evidence basis classification (LLM)
   evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
   // NEW v2.8: Probative value - LLM assessment of evidence quality
@@ -695,7 +695,9 @@ export type AnalysisWarningType =
   | "recency_evidence_gap"          // Time-sensitive claim lacks recent evidence
   | "confidence_calibration"        // Confidence was adjusted by calibration system
   | "low_source_count"              // Thin evidence base (few unique sources)
-  | "grounding_check";              // Verdict reasoning poorly grounded in cited evidence
+  | "grounding_check"               // Verdict reasoning poorly grounded in cited evidence
+  | "grounding_check_degraded"      // LLM grounding adjudication failed; ratios are fallback values
+  | "direction_validation_degraded"; // LLM direction validation failed; verdicts kept unchanged
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

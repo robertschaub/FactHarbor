@@ -90,7 +90,7 @@ interface EvidenceItem {
   claimDirection: "supports" | "contradicts" | "neutral";
   contextId: string;                 // AnalysisContext ID or ""
   probativeValue: "high" | "medium"; // LOW items should not be extracted
-  sourceAuthority: "primary" | "secondary" | "opinion" | "contested";
+  sourceAuthority: "primary" | "secondary" | "opinion";
   evidenceBasis: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
   evidenceScope: EvidenceScope | null;
 }

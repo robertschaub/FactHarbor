@@ -71,5 +71,11 @@
   "frameSignal": {
     "nameDistinctnessThreshold": 0.35,
     "assessedDistinctnessThreshold": 0.45
+  },
+  "groundingPenalty": {
+    "enabled": true,
+    "threshold": 0.5,
+    "reductionFactor": 0.3,
+    "floorRatio": 0.1
   }
 }

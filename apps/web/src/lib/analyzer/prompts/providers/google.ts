@@ -88,7 +88,7 @@ Each evidence item MUST have:
 - [ ] claimDirection: "supports" | "contradicts" | "neutral"
 - [ ] contextId: string (AnalysisContext ID or "")
 - [ ] evidenceScope: object OR null (NEVER missing/undefined)
-- [ ] sourceAuthority: "primary" | "secondary" | "opinion" | "contested"
+- [ ] sourceAuthority: "primary" | "secondary" | "opinion"
 - [ ] evidenceBasis: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific"
 
 ### EVIDENCE SCOPE FORMAT

@@ -971,6 +971,17 @@ export const CalcConfigSchema = z.object({
     maxEvidenceSelection: z.number().int().min(1).max(50),
     maxContextsPerClaim: z.number().int().min(1).max(20),
   }).optional(),
+
+  groundingPenalty: z.object({
+    /** Enable/disable grounding penalty for confidence calibration */
+    enabled: z.boolean(),
+    /** Grounding ratio below this triggers a penalty (0-1) */
+    threshold: z.number().min(0).max(1),
+    /** How aggressively to reduce confidence (0-1, applied as * 100 percentage points max) */
+    reductionFactor: z.number().min(0).max(1),
+    /** Minimum grounding ratio before maximum penalty applies (0-1) */
+    floorRatio: z.number().min(0).max(1),
+  }).optional(),
 });
 
 export type CalcConfig = z.infer<typeof CalcConfigSchema>;
@@ -1081,6 +1092,12 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     similarityBatchSize: 25,
     maxEvidenceSelection: 10,
     maxContextsPerClaim: 5,
+  },
+  groundingPenalty: {
+    enabled: true,
+    threshold: 0.5,
+    reductionFactor: 0.3,
+    floorRatio: 0.1,
   },
 };
 

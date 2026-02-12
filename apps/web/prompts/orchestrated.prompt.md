@@ -25,6 +25,8 @@ requiredSections:
   - "VERDICT"
   - "ANSWER"
   - "CLAIM_VERDICTS"
+  - "GROUNDING_ADJUDICATION_BATCH_USER"
+  - "VERDICT_DIRECTION_VALIDATION_BATCH_USER"
 ---
 
 ## CONTEXT_REFINEMENT
@@ -517,6 +519,40 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 
 **IMPORTANT**: Different sources may use different contexts. A "40% efficiency" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing context enables accurate comparisons.
 
+### EVIDENCE CLASSIFICATION (REQUIRED for every evidence item)
+
+**sourceAuthority** — WHO produced this evidence (producer type only):
+- **primary**: Original research, official records, court documents, audited datasets
+- **secondary**: News reporting or analysis summarizing primary sources
+- **opinion**: Editorials, advocacy, public commentary without concrete evidence
+
+Note: Contestation (whether a source's claims are disputed) is NOT a source authority type. Use isContestedClaim and claimSource fields for that.
+
+Decision: If source lacks concrete records, measurements, or verifiable documentation → **opinion**.
+Opinion items MUST have probativeValue="low" and MUST NOT be returned.
+
+**evidenceBasis** — HOW was this evidence established:
+- **scientific**: Empirical studies, experiments, measured data with documented methodology
+- **documented**: Official records, audits, legal findings, verified logs, filed documents
+- **anecdotal**: Personal accounts, testimony, or observations without broader verification
+- **theoretical**: Logical arguments or models without empirical confirmation
+- **pseudoscientific**: Claims that conflict with established scientific principles
+
+Decision tree:
+1. Contains measurements/experiments with documented methodology → **scientific**
+2. Contains official records, filings, audits, or certified documents → **documented**
+3. Contains personal accounts, testimony, or unverified observations → **anecdotal**
+4. Contains logical reasoning without empirical data → **theoretical**
+5. Contradicts established scientific consensus → **pseudoscientific**
+6. Unclear or ambiguous → **anecdotal**
+
+**probativeValue** — STRENGTH of this evidence for the claims:
+- **high**: Strong attribution, specific content, directly relevant
+- **medium**: Moderate attribution, some specificity, reasonably relevant
+- **low**: Weak/missing attribution, vague content — DO NOT EXTRACT these items
+
+All three fields are REQUIRED for every evidence item.
+
 ---
 
 ## EXTRACT_EVIDENCE_USER
@@ -645,9 +681,16 @@ For ALL claims listed, provide verdicts:
 - The verdict MUST rate whether THE CLAIM AS STATED is true
 - ratingConfirmation: "claim_supported" | "claim_refuted" | "mixed"
 
+**supportingEvidenceIds (REQUIRED)**: Cite at least one evidence ID (e.g., S1-E3, S5-E1) when supporting evidence exists; if none exists, use [] and explicitly state insufficiency in reasoning.
+
 **CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
 - DO NOT rate whether your analysis reasoning is correct - rate whether THE CLAIM TEXT matches the evidence
 - The reasoning field explains why the verdict is high or low
+
+**CONTESTED ≠ FALSE**:
+- If evidence confirms the factual component being rated BUT stakeholders dispute interpretation or completeness → verdict should be >=50% (facts confirmed) with reduced confidence (uncertainty from contestation)
+- If evidence directly refutes the factual component being rated → verdict should be <50%
+- Contestation affects confidence, not direction, for the factual component being rated
 
 Use these bands to calibrate:
 * 86-100: TRUE (strong support, no credible counter-evidence)
@@ -930,6 +973,55 @@ ${NUMBERED_REASONINGS}
 Return ONLY a JSON array of arrays, one inner array of lowercase string terms per reasoning.
 No explanation.
 Example: [["solar", "panels", "efficiency", "2024"], ["battery", "lithium", "cost"]]
+
+---
+
+## GROUNDING_ADJUDICATION_BATCH_USER
+
+For each numbered verdict below, rate how well the reasoning is grounded in (supported by) the cited evidence.
+
+Rate each from 0.0 to 1.0:
+- 1.0 = reasoning is fully traceable to cited evidence
+- 0.7+ = reasoning mostly supported, minor inferences acceptable
+- 0.3-0.7 = reasoning partially supported, some claims lack evidence basis
+- <0.3 = reasoning largely unsupported by cited evidence
+
+Well-grounded: key factual claims in reasoning trace to evidence items. Paraphrasing is fine.
+Poorly grounded: reasoning introduces factual claims not present in cited evidence.
+
+${VERDICT_EVIDENCE_PAIRS}
+
+Return ONLY a JSON array of numbers (one ratio per verdict):
+[0.85, 0.3, 0.95]
+No explanation.
+
+---
+
+## VERDICT_DIRECTION_VALIDATION_BATCH_USER
+
+For each numbered verdict below, evaluate whether the truth percentage is directionally consistent with the cited evidence.
+
+For each verdict:
+- Read the sub-claim being rated
+- Read the evidence statements (ignore direction labels — assess meaning directly)
+- Determine whether the evidence supports or contradicts the sub-claim
+- Compare against the verdict percentage (0=completely false, 100=completely true)
+
+A verdict is MISALIGNED if:
+- Evidence mostly supports the sub-claim BUT verdict is below 43%
+- Evidence mostly contradicts the sub-claim BUT verdict is above 72%
+- Note: Contestation or dispute about interpretation does NOT make a factual claim false
+
+A verdict is ALIGNED if:
+- Evidence direction is consistent with the verdict range
+- Mixed or ambiguous evidence yields a mixed verdict (43-72%)
+
+${VERDICT_DIRECTION_PAIRS}
+
+Return ONLY a JSON array, one entry per verdict:
+[{"aligned": true}, {"aligned": false, "expectedDirection": "high", "reason": "brief explanation"}]
+expectedDirection: "high" means evidence suggests >=50%, "low" means <50%.
+No explanation outside the JSON.
 
 ---
 

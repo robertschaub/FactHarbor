@@ -21,7 +21,7 @@ export type RawEvidenceItem = {
   isContestedClaim?: boolean;
   claimSource?: string;
   claimDirection?: "supports" | "contradicts" | "neutral";
-  sourceAuthority?: "primary" | "secondary" | "opinion" | "contested";
+  sourceAuthority?: "primary" | "secondary" | "opinion";
   evidenceBasis?: "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific";
   probativeValue?: "high" | "medium" | "low";
   evidenceScope?: any;
@@ -109,12 +109,18 @@ export class EvidenceNormalizer {
     locationPrefix: string = "Evidence"
   ): T[] {
     return evidence.map((ev, index) => {
-      const validSourceAuth = ["primary", "secondary", "opinion", "contested"];
+      const validSourceAuth = ["primary", "secondary", "opinion"];
       const validEvidenceBasis = ["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"];
 
       let sourceAuthority = ev.sourceAuthority;
       let evidenceBasis = ev.evidenceBasis;
       const text = ev.statement || "";
+
+      // Normalize legacy "contested" → "secondary" (contested is not a producer type; contestation is at assertion level)
+      if (sourceAuthority === "contested") {
+        console.warn(`[Normalize] sourceAuthority: ${locationPrefix} #${index + 1} - legacy "contested" mapped to "secondary"`);
+        sourceAuthority = "secondary";
+      }
 
       // Normalize sourceAuthority
       if (!sourceAuthority || !validSourceAuth.includes(sourceAuthority)) {
@@ -150,7 +156,7 @@ export class EvidenceNormalizer {
 
       return {
         ...ev,
-        sourceAuthority: sourceAuthority as "primary" | "secondary" | "opinion" | "contested",
+        sourceAuthority: sourceAuthority as "primary" | "secondary" | "opinion",
         evidenceBasis: evidenceBasis as "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific"
       };
     });
