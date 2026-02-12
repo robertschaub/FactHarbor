@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { normalizeTrackRecordScore, clampTruthPercentage } from "@/lib/analyzer";
+import { normalizeTrackRecordScore, assertValidTruthPercentage } from "@/lib/analyzer";
 
 describe("normalizeTrackRecordScore (Unit Tests)", () => {
   it("grounded search sources use 0-1 scale (not 0-100)", () => {
@@ -79,25 +79,25 @@ describe("normalizeTrackRecordScore (Unit Tests)", () => {
   });
 });
 
-describe("clampTruthPercentage (Unit Tests)", () => {
-  it("truth percentage clamping prevents invalid values", () => {
-    expect(clampTruthPercentage(150)).toBe(100); // Clamped to 100
-    expect(clampTruthPercentage(-50)).toBe(0); // Clamped to 0
-    expect(clampTruthPercentage(75)).toBe(75); // Already valid
-    expect(clampTruthPercentage(Infinity)).toBe(50); // Non-finite → default
-    expect(clampTruthPercentage(NaN)).toBe(50); // Non-finite → default
+describe("assertValidTruthPercentage (Unit Tests)", () => {
+  it("passes valid values unchanged", () => {
+    expect(assertValidTruthPercentage(0)).toBe(0);
+    expect(assertValidTruthPercentage(50)).toBe(50);
+    expect(assertValidTruthPercentage(100)).toBe(100);
+    expect(assertValidTruthPercentage(75)).toBe(75);
   });
 
-  it("handles valid range [0, 100]", () => {
-    expect(clampTruthPercentage(0)).toBe(0);
-    expect(clampTruthPercentage(50)).toBe(50);
-    expect(clampTruthPercentage(100)).toBe(100);
+  it("throws for out-of-range values", () => {
+    expect(() => assertValidTruthPercentage(150)).toThrow();
+    expect(() => assertValidTruthPercentage(-50)).toThrow();
+    expect(() => assertValidTruthPercentage(100.5)).toThrow();
+    expect(() => assertValidTruthPercentage(-0.1)).toThrow();
   });
 
-  it("handles edge cases", () => {
-    expect(clampTruthPercentage(-Infinity)).toBe(50);
-    expect(clampTruthPercentage(100.5)).toBe(100);
-    expect(clampTruthPercentage(-0.1)).toBe(0);
+  it("throws for non-finite values", () => {
+    expect(() => assertValidTruthPercentage(Infinity)).toThrow();
+    expect(() => assertValidTruthPercentage(-Infinity)).toThrow();
+    expect(() => assertValidTruthPercentage(NaN)).toThrow();
   });
 });
 
@@ -118,7 +118,7 @@ describe("trackRecordScore Scale Consistency", () => {
   });
 });
 
-describe("Integration: normalizeTrackRecordScore + clampTruthPercentage", () => {
+describe("Integration: normalizeTrackRecordScore + assertValidTruthPercentage", () => {
   it("prevents invalid verdict math from scale mismatch", () => {
     // Simulate the bug scenario
     const buggyScore = 50; // Wrong scale (0-100)
@@ -132,8 +132,8 @@ describe("Integration: normalizeTrackRecordScore + clampTruthPercentage", () => 
     const baseTruthPct = 50;
     const adjustedTruthPct = Math.round(baseTruthPct + (normalizedScore - 0.5) * 100);
 
-    // Step 3: Clamp the result
-    const finalTruthPct = clampTruthPercentage(adjustedTruthPct);
+    // Step 3: Validate the result
+    const finalTruthPct = assertValidTruthPercentage(adjustedTruthPct);
 
     expect(finalTruthPct).toBeGreaterThanOrEqual(0);
     expect(finalTruthPct).toBeLessThanOrEqual(100);

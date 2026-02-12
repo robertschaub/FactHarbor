@@ -17,6 +17,14 @@ import {
   recordProviderFailure,
 } from "@/lib/provider-health";
 
+vi.mock("@/lib/analyzer", () => ({
+  runFactHarborAnalysis: vi.fn(async () => ({ resultJson: { meta: {} } })),
+}));
+
+vi.mock("@/lib/analyzer/monolithic-dynamic", () => ({
+  runMonolithicDynamic: vi.fn(async () => ({ resultJson: { meta: {} } })),
+}));
+
 // Reset globalThis state between tests
 beforeEach(() => {
   (globalThis as any).__fhProviderHealthState = undefined;

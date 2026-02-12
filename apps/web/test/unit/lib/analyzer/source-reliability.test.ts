@@ -19,9 +19,9 @@ import {
   SR_CONFIG,
   applyEvidenceWeighting,
   normalizeTrackRecordScore,
-  clampTruthPercentage,
   scoreToCredibilityLevel,
 } from "@/lib/analyzer/source-reliability";
+import { assertValidTruthPercentage } from "@/lib/analyzer/types";
 
 describe("extractDomain", () => {
   it("extracts domain from standard URLs", () => {
@@ -399,12 +399,14 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     expect(result[0].evidenceWeight).toBeCloseTo(0.7, 2);
   });
 
-  it("clamps truth percentage to valid range", () => {
-    // Test with extreme values
-    expect(clampTruthPercentage(150)).toBe(100);
-    expect(clampTruthPercentage(-50)).toBe(0);
-    expect(clampTruthPercentage(NaN)).toBe(50);
-    expect(clampTruthPercentage(Infinity)).toBe(50);
+  it("validates truth percentage range (fail-fast)", () => {
+    expect(assertValidTruthPercentage(0)).toBe(0);
+    expect(assertValidTruthPercentage(50)).toBe(50);
+    expect(assertValidTruthPercentage(100)).toBe(100);
+    expect(() => assertValidTruthPercentage(150)).toThrow();
+    expect(() => assertValidTruthPercentage(-50)).toThrow();
+    expect(() => assertValidTruthPercentage(NaN)).toThrow();
+    expect(() => assertValidTruthPercentage(Infinity)).toThrow();
   });
 
   it("normalizes 0-100 scale scores to 0-1", () => {
