@@ -170,28 +170,22 @@ export function inferToAcronym(text: string): string {
 }
 
 /**
- * Infer context type label from AnalysisContext data
+ * Get context type label from LLM-provided typeLabel, falling back to the
+ * detection schema `type` field, then "General".
+ *
+ * Previously used hardcoded regex patterns with domain-specific keywords.
+ * Now relies on LLM intelligence per AGENTS.md LLM Intelligence Migration mandate.
  */
 export function inferContextTypeLabel(p: any): string {
-  const hay = [
-    p?.name,
-    p?.shortName,
-    p?.metadata?.court,
-    p?.metadata?.institution,
-    p?.subject,
-    ...(Array.isArray(p?.metadata?.charges) ? p.metadata.charges : []),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-  if (/(election|electoral|ballot|campaign|ineligib|tse)\b/.test(hay)) return "Electoral";
-  if (/(criminal|prosecut|indict|investigat|police|coup|stf|supreme)\b/.test(hay))
-    return "Criminal";
-  if (/\bcivil\b/.test(hay)) return "Civil";
-  if (/(regulator|administrat|agency|licens|compliance)\b/.test(hay)) return "Regulatory";
-  if (/(wtw|ttw|wtt|lifecycle|lca|iso\s*\d|methodology)\b/i.test(hay)) return "Methodological";
-  if (/(efficien|performance|measure|benchmark|comparison)\b/i.test(hay)) return "Analytical";
+  // Primary: LLM-provided typeLabel (from UNDERSTAND or SUPPLEMENTAL_CONTEXTS output)
+  if (p?.typeLabel && typeof p.typeLabel === "string" && p.typeLabel.trim().length > 0) {
+    return p.typeLabel.trim();
+  }
+  // Secondary: detection schema `type` field (from context detection LLM call)
+  if (p?.type && typeof p.type === "string" && p.type.trim().length > 0) {
+    const t = p.type.trim();
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
   return "General";
 }
 

@@ -35,31 +35,31 @@ function normalize(input: string): string {
 const NORMALIZATION_PAIRS = [
   {
     question: "Was the court judgment fair?",
-    expected: "The court judgment was fair",
+    expected: "Was the court judgment fair",
   },
   {
     question: "Did Tesla's revenue increase?",
-    expected: "Tesla's revenue did increase",
+    expected: "Did Tesla's revenue increase",
   },
   {
     question: "Is climate change caused by humans?",
-    expected: "Climate change is caused by humans",
+    expected: "Is climate change caused by humans",
   },
   {
     question: "Were the results accurate?",
-    expected: "The results were accurate",
+    expected: "Were the results accurate",
   },
   {
     question: "Has the vaccine been proven effective?",
-    expected: "The vaccine has been proven effective",
+    expected: "Has the vaccine been proven effective",
   },
   {
     question: "Can solar power replace fossil fuels?",
-    expected: "Solar power can replace fossil fuels",
+    expected: "Can solar power replace fossil fuels",
   },
   {
     question: "Does remote work improve productivity?",
-    expected: "Remote work does improve productivity",
+    expected: "Does remote work improve productivity",
   },
 ];
 
@@ -69,12 +69,10 @@ const NORMALIZATION_PAIRS = [
 
 describe("Normalization Contract", () => {
   describe("normalizeYesNoQuestionToStatement", () => {
-    it("converts question form to statement form", () => {
+    it("keeps question wording and strips trailing question marks", () => {
       for (const pair of NORMALIZATION_PAIRS) {
         const result = normalize(pair.question);
-        // The exact transformation may vary slightly, but it should be a statement (no ?)
-        expect(result.endsWith("?")).toBe(false);
-        console.log(`  "${pair.question}" -> "${result}"`);
+        expect(result).toBe(pair.expected);
       }
     });
 
@@ -162,36 +160,36 @@ describe("Normalization Contract", () => {
     });
   });
 
-  describe("Regression: no broken grammar from fallback", () => {
-    const REGRESSION_CASES = [
-      {
-        question: "Is aspirin effective for pain relief?",
-        expected: "Aspirin is effective for pain relief",
-      },
-      {
-        question: "Is U.S. inflation currently below 3 percent?",
-        expected: "U.S. inflation is currently below 3 percent",
-      },
-      {
-        question: "Is Donald Trump currently the President of the United States?",
-        expected: "Donald Trump is currently the President of the United States",
-      },
-      {
-        question: "Has the vaccine been proven effective?",
-        expected: "The vaccine has been proven effective",
-      },
-      {
-        question: "Is the policy controversial?",
-        expected: "The policy is controversial",
-      },
-      {
-        question: "Was the decision appropriate?",
-        expected: "The decision was appropriate",
-      },
-      {
-        question: "Are electric vehicles really better for the environment?",
-        expected: "Electric vehicles are really better for the environment",
-      },
+describe("Regression: no broken grammar from fallback", () => {
+  const REGRESSION_CASES = [
+    {
+      question: "Is aspirin effective for pain relief?",
+      expected: "Is aspirin effective for pain relief",
+    },
+    {
+      question: "Is U.S. inflation currently below 3 percent?",
+      expected: "Is U.S. inflation currently below 3 percent",
+    },
+    {
+      question: "Is Donald Trump currently the President of the United States?",
+      expected: "Is Donald Trump currently the President of the United States",
+    },
+    {
+      question: "Has the vaccine been proven effective?",
+      expected: "Has the vaccine been proven effective",
+    },
+    {
+      question: "Is the policy controversial?",
+      expected: "Is the policy controversial",
+    },
+    {
+      question: "Was the decision appropriate?",
+      expected: "Was the decision appropriate",
+    },
+    {
+      question: "Are electric vehicles really better for the environment?",
+      expected: "Are electric vehicles really better for the environment",
+    },
     ];
 
     for (const { question, expected } of REGRESSION_CASES) {
@@ -201,8 +199,8 @@ describe("Normalization Contract", () => {
       });
     }
 
-    it("never produces 'It is the case that' for common question patterns", () => {
-      const commonQuestions = [
+    it("never produces 'It is the case that' for ANY question pattern", () => {
+      const allQuestions = [
         "Is aspirin effective for pain relief?",
         "Is the economy currently stable?",
         "Was the ruling justified?",
@@ -210,9 +208,14 @@ describe("Normalization Contract", () => {
         "Is climate change real?",
         "Were the elections fair?",
         "Is remote work beneficial for productivity?",
+        "Can solar power replace fossil fuels?",
+        "Could autonomous vehicles reduce traffic fatalities?",
+        "Should governments regulate artificial intelligence?",
+        "Will electric planes become commercially viable?",
+        "Would universal basic income reduce poverty?",
       ];
 
-      for (const question of commonQuestions) {
+      for (const question of allQuestions) {
         const result = normalize(question);
         expect(result).not.toContain("It is the case that");
         expect(result).not.toContain("It was the case that");
@@ -220,6 +223,75 @@ describe("Normalization Contract", () => {
         expect(result).not.toContain("It were the case that");
       }
     });
+
+    it("preserves question form (minus ?) when heuristic split fails", () => {
+      // When the subject/predicate boundary can't be found (verb not in predicate starters),
+      // normalization should return the original input with just "?" stripped — this is
+      // always better input for the LLM than a garbled transformation.
+      // NOTE: "replace", "regulate", "achieve" are NOT in normalizationPredicateStarters,
+      // so these cases genuinely fall through to the fallback.
+      const unsplittableCases = [
+        {
+          question: "Can solar power replace fossil fuels?",
+          expected: "Can solar power replace fossil fuels",
+        },
+        {
+          question: "Should we ban nuclear weapons?",
+          expected: "Should we ban nuclear weapons",
+        },
+        {
+          question: "Will humanity ever colonize Mars?",
+          expected: "Will humanity ever colonize Mars",
+        },
+      ];
+
+      for (const { question, expected } of unsplittableCases) {
+        const result = normalize(question);
+        expect(result).toBe(expected);
+      }
+    });
+  });
+
+  describe("Regression: no garbled splits from hyphenated/modifier matches", () => {
+    const GARBLED_REGRESSION_CASES = [
+      {
+        question: "Is lithium-ion battery storage more energy-efficient than hydrogen storage?",
+        mustNotContain: ["energy- is", "energy-is", "- is "],
+        description: "hyphenated compound 'energy-efficient' must not be split",
+      },
+      {
+        question: "Can statements from the current federal government be trusted as reliable evidence?",
+        mustNotContain: ["trusted as can", "as can reliable"],
+        description: "modifier 'as reliable' must not cause garbled split",
+      },
+      {
+        question: "Has the cost-effective solution been proven reliable?",
+        mustNotContain: ["cost- has", "cost-has", "- has "],
+        description: "hyphenated compound 'cost-effective' must not be split",
+      },
+      {
+        question: "Is the new policy more effective than the old one?",
+        mustNotContain: ["more is effective", "policy more is"],
+        description: "modifier 'more effective' must not cause garbled split",
+      },
+      {
+        question: "Were the long-term results accurate?",
+        mustNotContain: ["long- were", "- were "],
+        description: "hyphenated compound 'long-term' must not be split",
+      },
+    ];
+
+    for (const { question, mustNotContain, description } of GARBLED_REGRESSION_CASES) {
+      it(`${description}: "${question}"`, () => {
+        const result = normalize(question);
+        expect(result.endsWith("?")).toBe(false);
+        for (const forbidden of mustNotContain) {
+          expect(result).not.toContain(forbidden);
+        }
+        // Verify no trailing hyphens in result
+        expect(result).not.toMatch(/\w-\s/);
+      });
+    }
   });
 
   describe("Contract verification", () => {

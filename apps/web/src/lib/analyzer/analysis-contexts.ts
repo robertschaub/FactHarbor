@@ -18,7 +18,6 @@ import { generateText, Output } from "ai";
 import { getModelForTask, extractStructuredOutput, getStructuredOutputProviderOptions } from "./llm";
 import { getDeterministicTemperature } from "./config";
 import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
-import { splitByConfigurableHeuristics } from "./normalization-heuristics";
 
 // ============================================================================
 // TYPES
@@ -54,6 +53,7 @@ export const ContextDetectionOutputSchema = z.object({
       ]),
       confidence: z.number().min(0).max(1),
       reasoning: z.string(),
+      typeLabel: z.string().optional(),
       metadata: z.record(z.any()).optional(),
     }),
   ),
@@ -78,6 +78,7 @@ const ContextDetectionOutputSchemaAnthropic = z.object({
       ]),
       confidence: z.number(),
       reasoning: z.string(),
+      typeLabel: z.string().optional(),
       metadata: z.object({}).optional(),
     }),
   ),
@@ -134,12 +135,7 @@ export async function detectContextsLLM(
         .join("\n")}`
     : "";
 
-  const entities = extractCoreEntities(text);
-  const entityHint = entities.length
-    ? `\n\nCORE ENTITIES: ${entities.join(", ")}`
-    : "";
-
-  const systemPrompt = `You identify distinct AnalysisContexts for a claim.\n\nCRITICAL TERMINOLOGY:\n- Use "AnalysisContext" to mean top-level bounded analytical frames.\n- Use "EvidenceScope" only for per-source metadata (methodology/boundaries/time/geo).\n- Avoid the bare word "context" unless you explicitly mean AnalysisContext.\n\nINCOMPATIBILITY TEST: Split contexts ONLY if combining them would be MISLEADING because they evaluate fundamentally different things.\n\nWHEN TO SPLIT (only when clearly supported):\n- Different formal authorities (distinct institutional decision-makers)\n- Different measurement boundaries or system definitions\n- Different regulatory regimes or time periods that change the analytical frame\n\nDO NOT SPLIT ON:\n- Pro vs con viewpoints\n- Different evidence types\n- Incidental geographic/temporal mentions\n- Public perception or meta commentary\n- Third-party reactions/responses to X (when evaluating X itself)\n\nOUTPUT REQUIREMENTS:\n- Provide contexts as JSON array under 'contexts'.\n- Each context must include id, name, type, confidence (0-1), reasoning, metadata.\n- Use neutral, generic names tied to the input (no domain-specific hardcoding).${seedHint}${entityHint}`;
+  const systemPrompt = `You identify distinct AnalysisContexts for a claim.\n\nCRITICAL TERMINOLOGY:\n- Use "AnalysisContext" to mean top-level bounded analytical frames.\n- Use "EvidenceScope" only for per-source metadata (methodology/boundaries/time/geo).\n- Avoid the bare word "context" unless you explicitly mean AnalysisContext.\n\nINCOMPATIBILITY TEST: Split contexts ONLY if combining them would be MISLEADING because they evaluate fundamentally different things.\n\nWHEN TO SPLIT (only when clearly supported):\n- Different formal authorities (distinct institutional decision-makers)\n- Different measurement boundaries or system definitions\n- Different regulatory regimes or time periods that change the analytical frame\n\nDO NOT SPLIT ON:\n- Pro vs con viewpoints\n- Different evidence types\n- Incidental geographic/temporal mentions\n- Public perception or meta commentary\n- Third-party reactions/responses to X (when evaluating X itself)\n\nOUTPUT REQUIREMENTS:\n- Provide contexts as JSON array under 'contexts'.\n- Each context must include id, name, type, typeLabel, confidence (0-1), reasoning, metadata.\n- typeLabel: a short category label (e.g., "Electoral", "Scientific", "Regulatory", "General").\n- Use neutral, generic names tied to the input (no domain-specific hardcoding).${seedHint}`;
 
   const userPrompt = `Detect distinct AnalysisContexts for:\n\n${text}`;
   const isAnthropic = (config.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic").toLowerCase() === "anthropic";
@@ -326,60 +322,18 @@ export function formatDetectedContextsHint(contexts: DetectedAnalysisContext[] |
  * @returns Canonical form for context detection
  */
 export function canonicalizeInputForContextDetection(input: string, pipelineConfig?: PipelineConfig): string {
-  let text = input.trim();
+  void pipelineConfig;
+  let text = String(input || "")
+    .trim()
+    .replace(/[?!.]+$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
-  // 1. Remove question marks and trailing punctuation
-  text = text.replace(/[?!.]+$/, '').trim();
-
-  // 2. Normalize auxiliary verb questions to statements
-  // Uses the same robust approach as normalizeYesNoQuestionToStatement in analyzer.ts
-  const auxMatch = text.match(
-    /^(was|were|is|are|did|do|does|has|have|had|can|could|will|would|should|may|might)\s+(.+)$/i
-  );
-  if (auxMatch) {
-    const aux = auxMatch[1].toLowerCase();
-    const rest = auxMatch[2].trim();
-
-    if (rest) {
-      // Try to split on clear subject boundaries first (parentheses, comma)
-      const lastParen = rest.lastIndexOf(")");
-      if (lastParen > 0 && lastParen < rest.length - 1) {
-        const subject = rest.slice(0, lastParen + 1).trim();
-        const predicate = rest.slice(lastParen + 1).trim();
-        text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-      } else {
-        const commaIdx = rest.indexOf(",");
-        if (commaIdx > 0 && commaIdx < rest.length - 1) {
-          const subject = rest.slice(0, commaIdx).trim();
-          const predicate = rest.slice(commaIdx + 1).trim();
-          text = `${subject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-        } else {
-          const split = splitByConfigurableHeuristics(rest, pipelineConfig ?? DEFAULT_PIPELINE_CONFIG);
-
-          // Final fallback: use "It is the case that" form
-          if (!split) {
-            const copulas = new Set(["is", "are", "was", "were"]);
-            text = copulas.has(aux)
-              ? `it ${aux} the case that ${rest}`
-              : `it is the case that ${rest}`;
-          } else {
-            text = `${split.subject} ${aux} ${split.predicate}`.replace(/\s+/g, " ").trim();
-          }
-        }
-      }
-    }
-  }
-
-  // 3. Extract core semantic entities BEFORE lowercasing
-  // This preserves proper nouns for entity detection
-  const coreEntities = extractCoreEntities(text);
-
-  // 4. Normalize case for consistency (lowercase for comparison)
+  // Normalize case for consistency (lowercase for comparison)
   const contextKey = text.toLowerCase();
 
   console.log(`[Context Canonicalization] Input: "${input.substring(0, 60)}..."`);
   console.log(`[Context Canonicalization] Canonical: "${contextKey.substring(0, 60)}..."`);
-  console.log(`[Context Canonicalization] Core entities: ${coreEntities.join(', ')}`);
 
   return contextKey;
 }
@@ -490,100 +444,15 @@ function generateDeterministicContextId(
   return `CTX_${fullHash}`;
 }
 
+/**
+ * Canonicalize contexts in an understanding object.
+ * Thin wrapper around canonicalizeContextsWithRemap that discards the ID remap.
+ */
 export function canonicalizeContexts(
   input: string,
   understanding: any,
 ): any {
-  if (!understanding) return understanding;
-  const contexts = Array.isArray(understanding.analysisContexts)
-    ? understanding.analysisContexts
-    : [];
-  if (contexts.length === 0) return understanding;
-
-  // Stable ordering to prevent run-to-run drift in labeling and downstream selection.
-  // Use a lightweight, mostly-provider-invariant key: inferred type + institution code + court string.
-  const sorted = [...contexts].sort((a: any, b: any) => {
-    const al = inferContextTypeLabel(a);
-    const bl = inferContextTypeLabel(b);
-    const ar = contextTypeRank(al);
-    const br = contextTypeRank(bl);
-    if (ar !== br) return ar - br;
-
-    const ak = `${detectInstitutionCode(a)}|${String(a.metadata?.court || a.metadata?.institution || "").toLowerCase()}|${String(a.name || "").toLowerCase()}`;
-    const bk = `${detectInstitutionCode(b)}|${String(b.metadata?.court || b.metadata?.institution || "").toLowerCase()}|${String(b.name || "").toLowerCase()}`;
-    return ak.localeCompare(bk);
-  });
-
-  const idRemap = new Map<string, string>();
-  const usedIds = new Set<string>();
-  const hasExplicitYear = /\b(19|20)\d{2}\b/.test(input);
-  const inputLower = input.toLowerCase();
-  const hasExplicitStatusAnchor =
-    /\b(sentenced|convicted|acquitted|indicted|charged|ongoing|pending|concluded)\b/.test(
-      inputLower,
-    );
-
-  const canonicalContexts = sorted.map((p: any, idx: number) => {
-    const typeLabel = inferContextTypeLabel(p);
-    const inst = detectInstitutionCode(p);
-    // Generate deterministic ID (PR 3: Pipeline Redesign)
-    let newId = generateDeterministicContextId(p, inst, idx);
-    // Handle collisions (extremely rare with hash-based IDs)
-    if (usedIds.has(newId)) newId = `${newId}_${idx + 1}`;
-    usedIds.add(newId);
-    idRemap.set(p.id, newId);
-    const rawName = String(p?.name || "").trim();
-    const rawShort = String(p?.shortName || "").trim();
-    const inferredShortFromName = extractAllCapsToken(rawName);
-    const toAcronym = inferToAcronym(rawName);
-
-    // Preserve meaningful context names from the model/evidence. Only synthesize a fallback
-    // when the name is missing or obviously generic.
-    const isGenericName =
-      rawName.length === 0 ||
-      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context)$/i.test(
-        rawName,
-      ) ||
-      /^general$/i.test(rawName);
-
-    const subj = String(p?.subject || "").trim();
-    const fallbackName = subj
-      ? subj.substring(0, 120)
-      : inst
-        ? `${typeLabel} context (${inst})`
-        : `${typeLabel} context`;
-    const name = isGenericName ? fallbackName : rawName;
-
-    // Prefer institution codes for legal contexts; otherwise infer an acronym from the name.
-    const shortName =
-      (rawShort && rawShort.length <= 12 ? rawShort : "") ||
-      (inst ? inst : toAcronym || inferredShortFromName) ||
-      `CTX${idx + 1}`;
-    return {
-      ...p,
-      id: newId,
-      // Keep human-friendly labels, but avoid overwriting meaningful model-provided names.
-      name,
-      shortName,
-      // Avoid presenting unanchored specifics as evidence.
-      date: hasExplicitYear ? p.date : "",
-      status: hasExplicitStatusAnchor ? p.status : "unknown",
-    };
-  });
-
-  const remappedClaims = (understanding.subClaims || []).map((c: any) => {
-    const rp = c.contextId;
-    return {
-      ...c,
-      contextId: rp && idRemap.has(rp) ? idRemap.get(rp) : rp,
-    };
-  });
-
-  return {
-    ...understanding,
-    analysisContexts: canonicalContexts,
-    subClaims: remappedClaims,
-  };
+  return canonicalizeContextsWithRemap(input, understanding).understanding;
 }
 
 export function canonicalizeContextsWithRemap(
@@ -613,10 +482,9 @@ export function canonicalizeContextsWithRemap(
   const usedIds = new Set<string>();
   const hasExplicitYear = /\b(19|20)\d{2}\b/.test(input);
   const inputLower = input.toLowerCase();
-  const hasExplicitStatusAnchor =
-    /\b(sentenced|convicted|acquitted|indicted|charged|ongoing|pending|concluded)\b/.test(
-      inputLower,
-    );
+  // Trust the LLM's status if it produced a non-unknown value.
+  // Previously used hardcoded legal keywords (sentenced, convicted, acquitted, etc.)
+  // which violated AGENTS.md "No hardcoded keywords" rule.
 
   const canonicalContexts = sorted.map((p: any, idx: number) => {
     const typeLabel = inferContextTypeLabel(p);
@@ -631,12 +499,15 @@ export function canonicalizeContextsWithRemap(
     const rawShort = String(p?.shortName || "").trim();
     const inferredShortFromName = extractAllCapsToken(rawName);
     const toAcronym = inferToAcronym(rawName);
+    // Detect generic names using the LLM-provided typeLabel instead of hardcoded domain terms.
+    // A name is generic if it's empty, just "General", or matches "<typeLabel> context/proceeding".
+    const nameLower = rawName.toLowerCase();
     const isGenericName =
       rawName.length === 0 ||
-      /^(general|analytical|methodological|criminal|civil|regulatory|electoral)\s+(proceeding|context)$/i.test(
-        rawName,
-      ) ||
-      /^general$/i.test(rawName);
+      /^general$/i.test(rawName) ||
+      (typeLabel && nameLower === `${typeLabel.toLowerCase()} context`) ||
+      (typeLabel && nameLower === `${typeLabel.toLowerCase()} proceeding`) ||
+      /^\w+\s+(context|proceeding|analysis|assessment)$/i.test(rawName);
     const subj = String(p?.subject || "").trim();
     const fallbackName = subj
       ? subj.substring(0, 120)
@@ -654,7 +525,7 @@ export function canonicalizeContextsWithRemap(
       name,
       shortName,
       date: hasExplicitYear ? p.date : "",
-      status: hasExplicitStatusAnchor ? p.status : "unknown",
+      status: (p.status && p.status !== "unknown") ? p.status : "unknown",
     };
   });
 

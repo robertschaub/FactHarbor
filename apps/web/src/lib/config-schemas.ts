@@ -1006,8 +1006,8 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     maxEvidenceCeiling: 8,
   },
   frameSignal: {
-    nameDistinctnessThreshold: 0.5,
-    assessedDistinctnessThreshold: 0.6,
+    nameDistinctnessThreshold: 0.35,
+    assessedDistinctnessThreshold: 0.45,
   },
 };
 

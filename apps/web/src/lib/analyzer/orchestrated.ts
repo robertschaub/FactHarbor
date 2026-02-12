@@ -1113,15 +1113,35 @@ async function refineContextsFromEvidence(
 ): Promise<{ updated: boolean; llmCalls: number }> {
   if (!state.understanding) return { updated: false, llmCalls: 0 };
 
-  const preRefineContexts = state.understanding.analysisContexts || [];
+  const preRefineUnderstanding = JSON.parse(JSON.stringify(state.understanding)) as ClaimUnderstanding;
+  const preRefineContexts = preRefineUnderstanding.analysisContexts || [];
   const preRefineEvidenceContextById = new Map<string, string>();
   for (const item of state.evidenceItems || []) {
     preRefineEvidenceContextById.set(String(item.id || ""), String((item as any).contextId || ""));
   }
   const preRefineClaimContextById = new Map<string, string>();
-  for (const claim of state.understanding.subClaims || []) {
+  for (const claim of preRefineUnderstanding.subClaims || []) {
     preRefineClaimContextById.set(String(claim.id || ""), String((claim as any).contextId || ""));
   }
+  const rollbackRefinement = (
+    reason: string,
+    details?: Record<string, unknown>,
+  ): { updated: false; llmCalls: number } => {
+    state.understanding = JSON.parse(JSON.stringify(preRefineUnderstanding)) as ClaimUnderstanding;
+    for (const item of state.evidenceItems || []) {
+      const originalContextId = preRefineEvidenceContextById.get(String(item.id || ""));
+      (item as any).contextId = originalContextId ?? "";
+    }
+    for (const claim of state.understanding.subClaims || []) {
+      claim.contextId = preRefineClaimContextById.get(String(claim.id || "")) ?? "";
+    }
+    debugLog("refineContextsFromEvidence: rolled back to pre-refinement state", {
+      reason,
+      restoredContextCount: state.understanding.analysisContexts?.length ?? 0,
+      ...(details || {}),
+    });
+    return { updated: false, llmCalls: 1 };
+  };
 
   const evidenceItems = state.evidenceItems || [];
   // If we don't have enough evidence, skip refinement (avoid hallucinated contexts).
@@ -1685,28 +1705,14 @@ Return:
         contextId: s.id,
         contextName: s.name,
       });
-      return { updated: false, llmCalls: 1 };
+      return rollbackRefinement("context-with-zero-evidence", {
+        contextId: s.id,
+        contextName: s.name,
+      });
     }
   }
 
-  // Optional: enforce EvidenceScope name alignment based on context metadata + per-evidence evidenceScope signals.
-  const nameAlignmentEnabled =
-    state.pipelineConfig?.contextNameAlignmentEnabled ??
-    DEFAULT_PIPELINE_CONFIG.contextNameAlignmentEnabled;
-  if (nameAlignmentEnabled) {
-    const thr =
-      state.pipelineConfig?.contextNameAlignmentThreshold ??
-      DEFAULT_PIPELINE_CONFIG.contextNameAlignmentThreshold ??
-      0.3;
-    const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.3;
-    state.understanding!.analysisContexts = validateAndFixContextNameAlignment(
-      state.understanding!.analysisContexts || [],
-      state.evidenceItems || [],
-      threshold,
-    );
-  }
-
-  // Avoid over-splitting into “dimension contexts” (e.g., cost vs infrastructure) unless the
+  // Avoid over-splitting into "dimension contexts" (e.g., cost vs infrastructure) unless the
   // evidence indicates genuinely distinct analytical frames (methodology/boundaries/geography/temporal).
   if ((state.understanding!.analysisContexts?.length ?? 0) > 1) {
     const contextsNow = state.understanding!.analysisContexts || [];
@@ -1755,8 +1761,8 @@ Return:
     // names AND assessed statements, they represent genuinely distinct analytical
     // frames even without structured evidenceScope metadata.
     if (!hasStrongFrameSignal && contextsNow.length >= 2) {
-      const nameThreshold = state.calcConfig.frameSignal?.nameDistinctnessThreshold ?? 0.5;
-      const assessedThreshold = state.calcConfig.frameSignal?.assessedDistinctnessThreshold ?? 0.6;
+      const nameThreshold = state.calcConfig.frameSignal?.nameDistinctnessThreshold ?? 0.35;
+      const assessedThreshold = state.calcConfig.frameSignal?.assessedDistinctnessThreshold ?? 0.45;
       for (let i = 0; i < contextsNow.length && !hasStrongFrameSignal; i++) {
         for (let j = i + 1; j < contextsNow.length && !hasStrongFrameSignal; j++) {
           const cA = contextsNow[i] as any;
@@ -1783,14 +1789,23 @@ Return:
     }
 
     // If the refinement LLM explicitly determined separate analysis is required AND
-    // contexts survived deduplication, trust the LLM's judgment as a frame signal.
-    // The LLM prompt includes explicit rules about multiple proceedings, different authorities,
-    // different system boundaries, etc. — its judgment is informed.
+    // there is at least partial metadata/evidence support, trust the LLM's judgment.
+    // Require partial support to prevent unconditional acceptance of LLM frame signals
+    // when there is no structural evidence backing the split.
     if (!hasStrongFrameSignal && llmRequestedSeparateAnalysis) {
-      hasStrongFrameSignal = true;
-      debugLog("refineContextsFromEvidence: LLM requiresSeparateAnalysis accepted as frame signal", {
-        contextCount: contextsNow.length,
-      });
+      const hasPartialSupport = contextFrameKeys.size >= 1 || distinctEvidenceScopeKeys.size >= 1;
+      if (hasPartialSupport) {
+        hasStrongFrameSignal = true;
+        debugLog("refineContextsFromEvidence: LLM requiresSeparateAnalysis accepted (partial metadata support)", {
+          contextCount: contextsNow.length,
+          contextFrameKeys: contextFrameKeys.size,
+          distinctEvidenceScopeKeys: distinctEvidenceScopeKeys.size,
+        });
+      } else {
+        debugLog("refineContextsFromEvidence: LLM requiresSeparateAnalysis rejected (no metadata support)", {
+          contextCount: contextsNow.length,
+        });
+      }
     }
 
     if (!hasStrongFrameSignal) {
@@ -1816,7 +1831,12 @@ Return:
         contextsWithEvidenceScope,
         highSimilarityPairs: pairs.slice(0, 8),
       });
-      return { updated: false, llmCalls: 1 };
+      return rollbackRefinement("weak-frame-signal", {
+        contextCount: contextsNow.length,
+        contextFrameKeyCount: contextFrameKeys.size,
+        distinctEvidenceScopeKeys: distinctEvidenceScopeKeys.size,
+        contextsWithEvidenceScope,
+      });
     }
 
     debugLog("refineContextsFromEvidence: frame signal check PASSED", {
@@ -1824,6 +1844,25 @@ Return:
       contextNames: contextsNow.map((c: any) => c.name),
       seedCount: seedContexts.length,
     });
+  }
+
+  // Optional: enforce EvidenceScope name alignment based on context metadata + per-evidence evidenceScope signals.
+  // NOTE: This runs AFTER the frame signal check so that text-distinctness evaluates original LLM names,
+  // not scope-inflated names (which inflate similarity and cause false frame-signal passes).
+  const nameAlignmentEnabled =
+    state.pipelineConfig?.contextNameAlignmentEnabled ??
+    DEFAULT_PIPELINE_CONFIG.contextNameAlignmentEnabled;
+  if (nameAlignmentEnabled) {
+    const thr =
+      state.pipelineConfig?.contextNameAlignmentThreshold ??
+      DEFAULT_PIPELINE_CONFIG.contextNameAlignmentThreshold ??
+      0.3;
+    const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.3;
+    state.understanding!.analysisContexts = validateAndFixContextNameAlignment(
+      state.understanding!.analysisContexts || [],
+      state.evidenceItems || [],
+      threshold,
+    );
   }
 
   const claimAssignments = new Map<string, string>();
@@ -1854,60 +1893,15 @@ Return:
 }
 
 export function normalizeYesNoQuestionToStatement(input: string, pipelineConfig?: PipelineConfig): string {
-  const trimmed = input.trim().replace(/\?+$/, "");
-
-  // Handle the common yes/no forms in a way that is stable and avoids bad grammar.
-  // Goal: "Was the X fair and based on Y?" -> "The X was fair and based on Y"
-  // NOTE: needsNormalizationEntry (entry point) checks a broader set of auxiliaries (did/do/does/has/have/had/can/...),
-  // so this function must also handle those; otherwise question vs statement inputs can diverge.
-  const m = trimmed.match(
-    /^(was|were|is|are|did|do|does|has|have|had|can|could|will|would|should|may|might)\s+(.+)$/i,
-  );
-  if (!m) {
-    return trimmed;
-  }
-
-  const aux = m[1].toLowerCase(); // was|were|is|are|did|do|does|has|have|had|can|could|will|would|should|may|might
-  const rest = m[2].trim();
-  if (!rest) return trimmed;
-
-  // Prefer splitting on a clear subject boundary (parentheses / comma) when present.
-  const lastParen = rest.lastIndexOf(")");
-  if (lastParen > 0 && lastParen < rest.length - 1) {
-    const subject = rest.slice(0, lastParen + 1).trim();
-    const predicate = rest.slice(lastParen + 1).trim();
-    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
-    const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-    return out;
-  }
-
-  const commaIdx = rest.indexOf(",");
-  if (commaIdx > 0 && commaIdx < rest.length - 1) {
-    const subject = rest.slice(0, commaIdx).trim();
-    const predicate = rest.slice(commaIdx + 1).trim();
-    const capSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
-    const out = `${capSubject} ${aux} ${predicate}`.replace(/\s+/g, " ").trim();
-    return out;
-  }
-
-  const split = splitByConfigurableHeuristics(rest, pipelineConfig);
-  if (split) {
-    const capSubject = split.subject.charAt(0).toUpperCase() + split.subject.slice(1);
-    const out = `${capSubject} ${aux} ${split.predicate}`.replace(/\s+/g, " ").trim();
-    return out;
-  }
-
-  // Fallback: don't guess a subject/predicate split; keep the remainder intact and use a stable grammatical form.
-  // For copulas (is/are/was/were), "It <aux> the case that …" is grammatical.
-  // For other auxiliaries, avoid "It do/has/can the case that …" and instead keep meaning with "It is the case that …".
-  const copulas = new Set(["is", "are", "was", "were"]);
-  const out = copulas.has(aux)
-    ? `It ${aux} the case that ${rest}`
-    : `It is the case that ${rest}`;
-  // Preserve modality/tense as much as possible by not dropping content; we only normalize the question form.
-  // (We intentionally do NOT attempt complex verb conjugation.)
-  const normalized = out.replace(/\s+/g, " ").trim();
-  return normalized;
+  void pipelineConfig;
+  // LLM-first minimal normalization:
+  // keep user phrasing intact and only remove trailing question marks/punctuation.
+  // This avoids heuristic sentence rewrites that can produce garbled claims.
+  return String(input || "")
+    .trim()
+    .replace(/\?+$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
@@ -2029,7 +2023,7 @@ function analyzeEvidenceGaps(
     const relevantEvidence = evidenceItems.filter((e) => {
       // Check if evidence is assigned to same context
       if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
-      // Check for text similarity
+      // MIGRATION: semantic decision — replace with LLM-based relevance scoring
       const similarity = calculateTextSimilarity(e.statement, claim.text);
       return similarity > evidenceSimilarityThreshold;
     });
@@ -2165,6 +2159,7 @@ function selectEvidenceItemsForContextRefinementPrompt(
     if (item.fromOppositeClaimSearch) mustKeepIds.add(item.id);
     if (item.evidenceScope) mustKeepIds.add(item.id);
     if (item.contextId) {
+      // MIGRATION: semantic decision — replace with LLM-based evidence relevance scoring
       const score = input ? calculateTextSimilarity(input, item.statement || "") : 0;
       const existing = bestByContext.get(item.contextId);
       if (!existing || score > existing.score) {
@@ -2181,6 +2176,7 @@ function selectEvidenceItemsForContextRefinementPrompt(
   const scored = evidenceItems
     .filter((item) => item?.id && !mustKeepIds.has(item.id))
     .map((item) => {
+      // MIGRATION: semantic decision — replace with LLM-based evidence relevance scoring
       const score = input ? calculateTextSimilarity(input, item.statement || "") : 0;
       return { item, score };
     })
@@ -3923,7 +3919,6 @@ import {
   extractDomain,
   isImportantSource,
 } from "./source-reliability";
-import { splitByConfigurableHeuristics } from "./normalization-heuristics";
 
 // Re-export for backward compatibility
 export { prefetchSourceReliability, getTrackRecordScore };
@@ -4635,6 +4630,7 @@ function ensureUnassignedClaimsContext(
     let bestId = candidates[0].id;
     let bestScore = -1;
     for (const c of candidates) {
+      // MIGRATION: semantic decision — replace with LLM-based claim-to-context assignment
       const score = text ? calculateTextSimilarity(text, c.signature) : 0;
       if (score > bestScore) {
         bestScore = score;
@@ -5054,32 +5050,15 @@ async function understandClaim(
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   // =========================================================================
-  // INPUT CONTRACT: Caller (runFactHarborAnalysis) MUST normalize input before calling.
-  // This function receives already-normalized statement-form input.
+  // INPUT CONTRACT: Caller passes the user text as entered (trimmed only).
+  // This function must not rely on deterministic rewording.
   // =========================================================================
   const trimmedInputRaw = input.trim();
 
   // Store original input for UI display (before any normalization)
   const originalInputDisplay = trimmedInputRaw;
 
-  // CONTRACT ASSERTION: Input should already be normalized by caller.
-  // In development/test mode, warn if input looks like a question (indicates contract violation).
-  if (process.env.NODE_ENV !== "production") {
-    const looksLikeQuestion =
-      trimmedInputRaw.endsWith("?") ||
-      /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(
-        trimmedInputRaw,
-      );
-    if (looksLikeQuestion) {
-      console.warn(
-        "[Analyzer] CONTRACT VIOLATION: understandClaim received question-form input. " +
-        "Caller should normalize via normalizeYesNoQuestionToStatement() before calling."
-      );
-      console.warn(`[Analyzer]   Input: "${trimmedInputRaw.substring(0, 100)}..."`);
-    }
-  }
-
-  // Use input directly - it should already be normalized by caller
+  // Use input directly - preserve user phrasing.
   const analysisInput = trimmedInputRaw;
 
   // Safety: extremely long article/PDF inputs can cause provider hangs or excessive prompt sizes.
@@ -5094,7 +5073,7 @@ async function understandClaim(
   const analysisInputForLLM =
     analysisInput.length > understandMaxChars ? analysisInput.slice(0, understandMaxChars) : analysisInput;
 
-  // Detect recency sensitivity for this analysis (using normalized input)
+  // Detect recency sensitivity for this analysis (using input as provided)
   const recencyMatters = isRecencySensitive(
     analysisInput,
     undefined,
@@ -5772,14 +5751,14 @@ For "This product causes a specific harm."
 ]
 **CLAIM-TO-FACTOR MAPPING**: If you generate keyFactors, map each claim to the most relevant factor using keyFactorId. Claims can only map to one factor. Use empty string "" for claims that don't address any specific factor.
 
-**CRITICAL OUTPUT CONSTRAINT (comparative efficiency/performance claims)**:
-If the input is a comparative efficiency/performance/effectiveness claim, then:
-- \`analysisContexts\` MUST contain **at least 2** items
-- \`requiresSeparateAnalysis\` MUST be \`true\`
+**COMPARATIVE CLAIM GUIDANCE (evidence-gated)**:
+For comparative efficiency/performance/effectiveness claims:
+- Use 2+ \`analysisContexts\` with \`requiresSeparateAnalysis=true\` ONLY when evidence indicates distinct analytical frames (e.g., different boundaries, methodologies, institutions, jurisdictions, or time windows).
+- If evidence stays within one consistent analytical frame, keep exactly 1 \`analysisContext\` and set \`requiresSeparateAnalysis=false\`.
 
 ### FINAL OUTPUT CHECKLIST (MANDATORY)
-- If the input is a comparative efficiency/performance/effectiveness claim: did you output **2+** \`analysisContexts\` and set \`requiresSeparateAnalysis=true\`?
-- If \`analysisContexts\` has 2+ items: did you assign each core claim a non-empty \`contextId\` (avoid leaving claims unassigned)?
+- If you output 2+ \`analysisContexts\`: did you set \`requiresSeparateAnalysis=true\` and assign each core claim a non-empty \`contextId\`?
+- If you output 1 \`analysisContext\`: did you avoid artificial topic-dimension splits that are not evidence-backed?
 - Did you avoid adding off-thesis dimensions (do not invent unrelated metrics that are not in the user's claim)?`;
 
 // Use normalized analysisInput (yes/no→statement) for consistent LLM analysis
@@ -6073,25 +6052,19 @@ Now analyze the input and output JSON only.`;
   parsed = reconcileContextsWithClaimAssignments(parsed);
 
   // =========================================================================
-  // POST-PROCESSING: Use early-normalized input for input neutrality
-  // Since we normalized to statements BEFORE the LLM call (lines 2504-2528),
-  // both paths now converge. We use:
-  // - originalInputDisplay (raw input): for UI display
-  // - analysisInput (from line 2528): for analysis (impliedClaim)
+  // POST-PROCESSING: preserve user phrasing and only apply structural defaults.
   // =========================================================================
   const trimmedInput = input.trim();
 
   // UI display: prefer the original raw input; otherwise use trimmed input
   parsed.originalInputDisplay = originalInputDisplay || parsed.originalInputDisplay || trimmedInput;
 
-  // v2.6.26: ALWAYS force impliedClaim to normalized statement for input neutrality
-  // Regardless of what LLM returns, use analysisInput to ensure any input style
-  // produces identical analysis results. This is unconditional - no checking LLM output.
-  const llmImpliedClaim = parsed.impliedClaim;
-  parsed.impliedClaim = analysisInput;
-  console.log(`[Analyzer] Input Neutrality: impliedClaim forced to normalized statement`);
-  console.log(`[Analyzer]   LLM returned: "${(llmImpliedClaim || '').substring(0, 80)}..."`);
-  console.log(`[Analyzer]   Using: "${analysisInput.substring(0, 80)}..."`);
+  // Do not overwrite model phrasing; only provide a fallback when missing.
+  const llmImpliedClaim = String(parsed.impliedClaim || "").trim();
+  parsed.impliedClaim = llmImpliedClaim || analysisInput;
+  if (!llmImpliedClaim) {
+    console.log(`[Analyzer] impliedClaim missing; defaulted to input text`);
+  }
   // Validate parsed has required fields
   if (!parsed.subClaims || !Array.isArray(parsed.subClaims)) {
     console.error(
@@ -6104,8 +6077,7 @@ Now analyze the input and output JSON only.`;
   // Canonicalize contexts early so:
   // - IDs are stable (P1/P2/...) instead of model-invented IDs
   // - downstream research queries don't drift because the model changed labels/dates
-  // v2.6.23: Use analysisInput (normalized statement) for consistent context canonicalization
-  // This ensures any input phrasing yields identical context detection and research queries
+  // Canonicalize context IDs/ordering deterministically; keep text phrasing as returned by model.
   parsed = canonicalizeContexts(analysisInput, parsed);
   // Ensure flag consistency after canonicalization (some providers drift this field).
   parsed.requiresSeparateAnalysis = (parsed.analysisContexts?.length ?? 0) > 1;
@@ -6187,16 +6159,13 @@ Now analyze the input and output JSON only.`;
   }
 
   // If the model under-split contexts for a claim, do a single best-effort retry
-  // focused ONLY on context detection. v2.6.30: Simplified - single input type after normalization
+  // focused ONLY on context detection.
   if (
     deterministic &&
     parsed.detectedInputType === "claim" &&
     (parsed.analysisContexts?.length ?? 0) <= 1
   ) {
-    // v2.6.23: Use normalized analysisInput for context detection to maintain input neutrality.
-      // When deterministic mode is enabled, yes/no forms are normalized to statements earlier (lines 2507-2528).
-    // Using the same normalized form here ensures context detection aligns with claim analysis,
-    // preventing context-to-statement misalignment and maintaining input neutrality.
+    // Reuse the same analysisInput string for the supplemental context pass.
     const supplementalInput = parsed.impliedClaim || analysisInput;
     const supplemental = await requestSupplementalContexts(supplementalInput, model, parsed, pipelineConfig);
     if (supplemental?.analysisContexts && supplemental.analysisContexts.length > 1) {
@@ -6205,7 +6174,7 @@ Now analyze the input and output JSON only.`;
         requiresSeparateAnalysis: true,
         analysisContexts: supplemental.analysisContexts,
       };
-      // v2.6.23: Use analysisInput (normalized statement) for consistent context canonicalization
+      // Reuse the same analysisInput string for context canonicalization.
       parsed = canonicalizeContexts(analysisInput, parsed);
       debugLog("understandClaim: supplemental contexts applied", {
         detectedInputType: parsed.detectedInputType,
@@ -6292,7 +6261,7 @@ Now analyze the input and output JSON only.`;
   // PR-E: Now operates on Gate1-lite FILTERED claims (fixes Blocker E ordering)
   if (!isShortSimpleInput) {
     for (let attempt = 0; attempt < SUPPLEMENTAL_REPROMPT_MAX_ATTEMPTS; attempt++) {
-      // Use analysisInput (normalized statement) for input neutrality
+      // Reuse analysisInput for supplemental claim generation.
       const supplementalClaims = await requestSupplementalSubClaims(
         analysisInput,
         model,
@@ -6701,9 +6670,11 @@ async function extractOutcomeClaimsFromEvidence(
 
   if (!evidenceText || evidenceText.length < 100) return [];
 
-  // Check if any evidence items mention outcomes (quick heuristic check before LLM call)
-  const outcomeKeywords = /\b(\d+\s*(?:year|month|day)\s*(?:sentence|prison|jail|ban|ineligible|suspended|fine|penalty|sanction)|sentenced|convicted|acquitted|fined|banned|ineligible)\b/i;
-  if (!outcomeKeywords.test(evidenceText)) {
+  // Quick structural check: skip LLM call if evidence has no numeric quantities
+  // (outcomes are typically quantifiable: durations, amounts, percentages).
+  // This replaces a previous domain-specific keyword list per AGENTS.md rules.
+  const hasQuantifiableContent = /\d+\s*[-–]?\s*(?:year|month|day|week|hour|percent|%|\$|€|£)/i.test(evidenceText);
+  if (!hasQuantifiableContent) {
     return [];
   }
 
@@ -7884,6 +7855,9 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       const before = filteredEvidenceItems.length;
       filteredEvidenceItems = filteredEvidenceItems.filter((item) => {
         const hay = `${item.statement}\n${item.sourceExcerpt}`.toLowerCase();
+        // MIGRATION: semantic decision — replace with LLM-based impact assessment.
+        // These hardcoded terms violate AGENTS.md "No hardcoded keywords" but are kept
+        // as a safety filter for low-trackRecord sources until LLM replacement is available.
         const isHighImpactOutcome =
           hay.includes("sentenced") ||
           hay.includes("convicted") ||
@@ -11970,32 +11944,18 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   await emit(`Analysis mode: ${mode} (v${CONFIG.schemaVersion}) | LLM: ${llmLabel}`, 2);
 
   // ==========================================================================
-  // v2.6.26: EARLY INPUT NORMALIZATION at entry point for complete input neutrality
-  // Normalize yes/no phrasing to statements BEFORE any analysis begins
-  // The original input is preserved only for UI display (originalInputDisplay)
+  // Input handling:
+  // Keep user phrasing intact for analysis. Do not rewrite question/statement form.
   // ==========================================================================
   const rawInputValue = input.inputValue.trim();
-  const needsNormalizationEntry =
-    rawInputValue.endsWith("?") ||
-    /^(was|is|are|were|did|do|does|has|have|had|can|could|will|would|should|may|might)\s/i.test(rawInputValue);
-
-  // Normalize to statement form for ALL analysis
-  // Also strip trailing period from statements to ensure identical text for both input phrasings
-  let normalizedInputValue = needsNormalizationEntry
-    ? normalizeYesNoQuestionToStatement(rawInputValue, pipelineConfig)
-    : rawInputValue;
-
-  // CRITICAL: Remove trailing period from ALL inputs for exact text matching
-  // This ensures "Was X fair?" -> "X was fair" matches "X was fair." -> "X was fair"
-  normalizedInputValue = normalizedInputValue.replace(/\.+$/, "").trim();
+  const analysisInputValue = rawInputValue;
 
   // Store original input for UI display (will be set in understanding.originalInputDisplay)
   const originalInputDisplay = rawInputValue;
 
-  console.log(`[Analyzer] v2.6.26 Input Neutrality: Entry point normalization`);
+  console.log(`[Analyzer] Input handling: preserving user phrasing`);
   console.log(`[Analyzer]   Original: "${rawInputValue.substring(0, 100)}"`);
-  console.log(`[Analyzer]   Normalized: "${normalizedInputValue.substring(0, 100)}"`);
-  // normalizedInputValue is now the canonical form for all analysis paths
+  console.log(`[Analyzer]   Analysis input: "${analysisInputValue.substring(0, 100)}"`);
 
   // Initialize budget tracker (PR 6: p95 Hardening)
   const budget = getBudgetConfig(pipelineConfig);
@@ -12040,7 +12000,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   }
 
   const state: ResearchState = {
-    originalInput: normalizedInputValue,  // v2.6.26: Use NORMALIZED input everywhere
+    originalInput: analysisInputValue,
     originalText: "",
     inputType: input.inputType,
     understanding: null,
@@ -12072,7 +12032,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   };
 
   // Handle URL
-  let textToAnalyze = normalizedInputValue;  // v2.6.26: Use normalized input
+  let textToAnalyze = analysisInputValue;
   if (input.inputType === "url") {
     await emit("Fetching URL content", 3);
     try {
@@ -12098,7 +12058,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     state.understanding = await understandClaim(textToAnalyze, understandModelInfo.model, state.pipelineConfig);
     state.llmCalls++; // understandClaim uses 1 LLM call
 
-    // UI-only: preserve original input text for display; analysis uses normalized statement
+    // UI-only: preserve original input text for display.
     state.understanding.originalInputDisplay = originalInputDisplay;
 
     const step1Elapsed = Date.now() - step1Start;

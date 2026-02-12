@@ -264,6 +264,7 @@ Return JSON with:
 - analysisContexts: Array of detected AnalysisContext objects, each with:
   - id, name, shortName, subject, temporal, status, outcome, metadata
   - **assessedStatement** (v2.6.39): What is being assessed in this AnalysisContext
+  - **typeLabel**: A short category label for this context (e.g., "Electoral", "Criminal", "Scientific", "Methodological", "Regulatory", "Analytical", "General"). Choose the single label that best describes the analytical domain.
 - requiresSeparateAnalysis: boolean
 - researchQueries: 4-6 specific search queries
 - keyFactors: Array of KeyFactors (or empty array)

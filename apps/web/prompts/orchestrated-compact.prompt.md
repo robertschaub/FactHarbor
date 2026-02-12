@@ -109,7 +109,7 @@ Detect if input needs 2+ AnalysisContexts.
 
 Return JSON: { analysisContexts: [], requiresSeparateAnalysis: boolean }
 
-Split only for genuinely distinct frames (not viewpoints). Schema: id, name, shortName, subject, temporal, status, outcome, assessedStatement, metadata.
+Split only for genuinely distinct frames (not viewpoints). Schema: id, name, shortName, subject, temporal, status, outcome, assessedStatement, typeLabel, metadata. typeLabel: category (e.g., "Electoral", "Scientific", "Regulatory", "General").
 
 ---
 

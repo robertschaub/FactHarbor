@@ -196,6 +196,7 @@ export interface AnalysisContext {
   status: "concluded" | "ongoing" | "pending" | "unknown";
   outcome: string;               // Result/conclusion/finding
   assessedStatement?: string;    // v2.6.39: What is being assessed in this context (Assessment must summarize this)
+  typeLabel?: string;            // LLM-provided category label (e.g., "Electoral", "Scientific", "Regulatory", "General")
 
   // Flexible metadata (domain-specific details stored as key-value)
   metadata: {

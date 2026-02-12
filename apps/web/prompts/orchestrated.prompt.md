@@ -310,7 +310,7 @@ Return JSON with:
 - articleThesis: Neutral summary of what the article claims
 - backgroundDetails: the background details — broader frame or topic of the input article (empty string if none). NOTE: despite the field name, this is NOT an AnalysisContext.
 - subClaims: Array of claims with id, text, type, claimRole, centrality, isCentral, checkWorthiness, harmPotential, dependsOn, thesisRelevance, thesisRelevanceConfidence, isCounterClaim, contextId, keyFactorId
-- analysisContexts: Array of detected AnalysisContext objects with id, name, shortName, subject, temporal, status, outcome, assessedStatement, metadata
+- analysisContexts: Array of detected AnalysisContext objects with id, name, shortName, subject, temporal, status, outcome, assessedStatement, typeLabel, metadata. typeLabel is a short category label (e.g., "Electoral", "Criminal", "Scientific", "Methodological", "Regulatory", "Analytical", "General")
 - requiresSeparateAnalysis: boolean
 - researchQueries: 4-6 specific search queries
 - keyFactors: Array of KeyFactors (or empty array)
@@ -367,6 +367,7 @@ analysisContexts items must include:
 - status (concluded|ongoing|pending|unknown)
 - outcome (string)
 - assessedStatement (string): What is being assessed in this context
+- typeLabel (string): Category label (e.g., "Electoral", "Criminal", "Scientific", "Methodological", "Regulatory", "Analytical", "General")
 - metadata (object)
 
 Use empty strings "" and empty arrays [] when unknown.
